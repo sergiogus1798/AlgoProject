@@ -75,11 +75,13 @@ def _pair(name: str, doc: object, path: list, new: object) -> str:
         if levels["min_levels"] > levels["max_levels"]:
             raise ValueError(f"min_levels {levels['min_levels']} quedaría por encima de "
                              f"max_levels {levels['max_levels']}.")
-    if (name, path) in (("sppdesign", ["design", "n_target"]), ("variants", ["minimum", "variants"])):
-        cap = new if name == "sppdesign" else read(studies.FILES["sppdesign"])["design"]["n_target"]
-        floor = new if name == "variants" else read(studies.FILES["variants"])["minimum"]["variants"]
-        if cap < floor:
-            return f" — ojo: el máximo de variantes ({cap}) queda por debajo del mínimo ({floor})"
+    if name == "thresholds" and path[-1] == "value":
+        rows = {r["key"]: r["value"] for r in doc["thresholds"]}
+        key = doc["thresholds"][path[1]]["key"]
+        if key == "variants.n_min" and new > rows["variants.n_max"]:
+            return f" — ojo: el mínimo de variantes ({new}) queda por encima del tope ({rows['variants.n_max']})"
+        if key == "variants.n_max" and new < rows["variants.n_min"]:
+            return f" — ojo: el tope de variantes ({new}) queda por debajo del mínimo ({rows['variants.n_min']})"
     if name == "sppdesign" and path[:2] == ["design", "strata"]:
         total = sum({**doc["design"]["strata"], path[-1]: new}.values())
         if not isclose(total, 1.0):

@@ -149,7 +149,8 @@ def with_studies(sections: list[dict]) -> list[dict]:
         out.append({"file": "build", "key": "cscv", "groups": [], "fields": cscv,
                     "help": studies.CSCV_HELP, "files": where(cscv),
                     "source": f"{len(where(cscv))} ficheros de estudio"})
-        for key, text in (("gate", studies.GATE_HELP), ("falsepositives", studies.FP_HELP)):
+        for key, text in (("surfaces", studies.SURF_HELP), ("wfmreading", studies.WFM_HELP),
+                          ("gate", studies.GATE_HELP), ("falsepositives", studies.FP_HELP)):
             rows = [{**f, "help": clean(f["help"])} for f in studies.fields(key)]
             out.append({"file": "build", "key": key, "groups": [], "fields": rows, "help": text,
                         "files": where(rows), "source": f"{len(where(rows))} ficheros de estudio"})

@@ -6,7 +6,7 @@ FAMILIES = {
     "Cribado": "Las cribas IS/OOS que pasó o la tiraron: degradación, coste, muestreo.",
     "Transferencia": "Si el edge viaja: otros mercados y otros timeframes, contra su nulo.",
     "Rotura": "MC Retest: qué perturbación la rompe y cuánto, una tarea por causa.",
-    "Optimización": "SPP, variantes, WFC y CSCV: si el óptimo es meseta o pico.",
+    "Optimización": "SPP, variantes, WFC y CSCV: si elegir por el pasado sirve fuera, y qué parámetros mueven el resultado.",
     "Cierre": "WFM y el análisis conjunto de 17, 18, 18.5 y 19.",
     "Lecturas": "Monkey, exposición, mapa condicional y estructura.",
 }
@@ -36,11 +36,15 @@ PREFLIGHT = (
 # The steps whose short line the drawer shows under the step's own why.
 STEP_NOTES = {
     "4": PREFLIGHT,
-    "17": "QUÉ MIRA. Para cada madre, sus variantes (la misma lógica con otros parámetros): "
-          "¿las que mejor van dentro de muestra son también las que mejor van fuera? Un punto "
-          "por variante, beneficio IS contra beneficio OOS, y su correlación de rangos (rho). "
-          "Una nube en diagonal ascendente dice que optimizar sirve; una nube sin forma, que el "
-          "óptimo del IS es suerte. Describe, no descarta. Lee el oos2 y apunta su fila en el "
+    "16.5": "QUÉ HACE. Fabrica los parámetros de cada madre en un lote de variantes (un hipercubo "
+            "latino sobre la meseta del SPP), lo reteste en SQX y dibuja el mapa de parámetros: "
+            "qué parámetros mueven el exceso por año de la madre y si ese ranking se puede leer "
+            "o es ruido. Diagnóstico: no corta nada, y el mapa no lee oos2.",
+    "17": "QUÉ MIRA. Para cada madre, sus variantes: ¿las que mejor van dentro de muestra son "
+          "también las que mejor van fuera? Mide la ρ de Spearman del exceso por año (un "
+          "coeficiente de −1 a +1) contra un nulo que voltea los días de fuera, y mira si el top "
+          "que elegiría un optimizador gana fuera. Estado: PASA (un veto levantado, no un voto a "
+          "favor), LIMBO o NO PASA. No descarta en SQX. Lee el oos2 y apunta su fila en el "
           "ledger.",
 }
 

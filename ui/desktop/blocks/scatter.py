@@ -100,7 +100,11 @@ def widget(block: dict) -> QWidget:
     items = [("box", SERIES[i % len(SERIES)], g) for i, g in enumerate(_groups(b))]
     if b["fit"]:
         f = b["fit"]
-        items.append(("dash", T["text"], f"recta ajustada, pendiente {chart.num(f['slope'])}, "
+        # The WFC's line is Spearman's (a coefficient from -1 to 1, never a percentage), not a fit.
+        rank = "Spearman" in (b.get("note") or "")
+        items.append(("dash", T["text"], f"recta de Spearman, pendiente {chart.num(f['slope'])}, "
+                                         f"ρ = {f['r']:.3f}" if rank else
+                                         f"recta ajustada, pendiente {chart.num(f['slope'])}, "
                                          f"r = {f['r']:.3f}"))
     if b["n_all"] > MOST:
         items.append(("box", T["faint"], f"muestra de {MOST} de {b['n_all']} puntos"

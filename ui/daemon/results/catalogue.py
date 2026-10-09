@@ -69,7 +69,7 @@ ROLE: dict[str, str | Callable[[dict], bool]] = {
     "mcRetest": "describe",
     # a design brief for the variant factory, not a cut
     "spp": "describe",
-    # reads the variant batch for peak vs plateau; "no elige nada" (WORKFLOW)
+    # a map of which parameters move the excess; "no elige nada" (WORKFLOW)
     "cloud": "describe",
     # the 17/18/18.5/19 pieces feed step 20's blind read and cut nobody before it
     "wfc": "describe",

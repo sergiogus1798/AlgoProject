@@ -20,10 +20,14 @@ from core.paths import ROOT
 from ui.daemon.sqxconfig import api, studies
 
 # What the owner found missing on 2026-09-28, and the rest of both steps' inputs.
-WFC = {("sppdesign", "n_target"), ("variants", "variants"), ("variants", "seed"),
-       ("batch", "min_trades"), ("batch", "split_mode"), ("wfcstudy", "rho_floor")}
-CSCV = {("thresholds", "value"), ("cscvstudy", "rules"), ("cscvstudy", "plateau_radius"),
-        ("cscvstudy", "bootstrap"), ("batch", "split_mode")}
+WFC = {("sppdesign", "n_target"), ("thresholds", "value"), ("variants", "seed"),
+       ("batch", "min_trades"), ("batch", "split_mode"), ("thresholds", "value"), ("calibcfg", "seed"),
+       ("cloudcfg", "sobol_power")}
+CSCV = {("thresholds", "value"), ("cscvstudy", "seed"), ("cscvstudy", "median_low")}
+# Steps 18.5 and 19 are editable from the window like the other two (2026-10-07).
+SURFACES = {("thresholds", "value"), ("surfstudy", "chunk"), ("surfstudy", "workers"),
+            ("batch", "min_trades")}
+WFM = {("thresholds", "value"), ("wfmstudy", "modo_real"), ("wfmstudy", "charged")}
 
 
 def http() -> TestClient:
@@ -113,10 +117,10 @@ def studies_leaves(path: Path) -> list[dict]:
 def main() -> None:
     """List both sections, then write on temporary copies and read the files back."""
     failures = []
-    real = {k: p.read_bytes() for k, p in studies.FILES.items()}
+    real = {k: p.read_bytes() for k, p in studies.FILES.items() if p.exists()}
     c = http()
     secs = {s["key"]: s for s in c.get("/api/sqxconfig").json()["sections"]}
-    for key, want in (("wfc", WFC), ("cscv", CSCV)):
+    for key, want in (("wfc", WFC), ("cscv", CSCV), ("surfaces", SURFACES), ("wfmreading", WFM)):
         have = {(f.get("file"), f["path"][-1] if f.get("file") != "thresholds" else "value")
                 for f in secs.get(key, {"fields": []})["fields"]}
         missing = want - have
@@ -127,9 +131,10 @@ def main() -> None:
         failures.append("cscv: los bloques no dicen sus 12870 particiones")
 
     with tempfile.TemporaryDirectory() as tmp:
-        copies = {k: Path(tmp) / f"{k}.yaml" for k in studies.FILES}
-        for k, p in studies.FILES.items():
-            shutil.copy(p, copies[k])
+        # the calibration's file may not exist yet (another agent writes it)
+        copies = {k: Path(tmp) / f"{k}.yaml" for k, p in studies.FILES.items() if p.exists()}
+        for k in copies:
+            shutil.copy(studies.FILES[k], copies[k])
         with mock.patch.dict(studies.FILES, copies):
             text = {k: p.read_text(encoding="utf-8") for k, p in copies.items()}
             code, out = post(c, "sppdesign", ["design", "n_target"], "6000")
@@ -139,8 +144,7 @@ def main() -> None:
             for file, path, value, why in (
                     ("sppdesign", ["design", "n_target"], "5000.5", "entero"),
                     ("sppdesign", ["design", "min_levels"], "12", "max_levels"),
-                    ("cscvstudy", ["cscv", "score"], "calmar", "opciones"),
-                    ("cscvstudy", ["cscv", "rules"], ["argmax", "argmax"], "repite"),
+                    ("wfmstudy", ["modo_real"], "otro", "opciones"),
                     ("variants", ["execute", "project"], "Builder", "no es un valor"),
                     ("batch", ["min_trades"], "-1", "mínimo")):
                 code, out = post(c, file, path, value)
@@ -181,17 +185,21 @@ def main() -> None:
             code, out = post(c, "thresholds", ["thresholds", i, "why"], "  ")
             if code != 422:
                 failures.append(f"un porqué vacío se aceptó: {code} {out}")
-            code, out = post(c, "sppdesign", ["design", "n_target"], "500")
-            if code != 200 or "por debajo del mínimo" not in out["note"]:
-                failures.append(f"máximo bajo el mínimo sin aviso: {code} {out}")
-            post(c, "wfcstudy", ["rho_floor"], "1")
-            if not isinstance(read(copies["wfcstudy"])["rho_floor"], float):
-                failures.append("rho_floor escrito «1» perdió su tipo float")
+            nmin = next(i for i, r in enumerate(read(copies["thresholds"])["thresholds"])
+                        if r["key"] == "variants.n_min")
+            code, out = post(c, "thresholds", ["thresholds", nmin, "value"], "90000")
+            if code != 200 or "por encima del tope" not in out["note"]:
+                failures.append(f"mínimo sobre el tope sin aviso: {code} {out}")
+            gap = next(i for i, r in enumerate(read(copies["thresholds"])["thresholds"])
+                       if r["key"] == "wfc.r_sel_min_gap")
+            post(c, "thresholds", ["thresholds", gap, "value"], "1")
+            if not isinstance(read(copies["thresholds"])["thresholds"][gap]["value"], float):
+                failures.append("r_sel_min_gap escrito «1» perdió su tipo float")
             code, out = post(c, "batch", ["min_trades"], "31")
             if code != 200 or not out.get("reload"):
                 failures.append(f"un valor compartido por WFC y CSCV no pide recargar: {code} {out}")
             doubled = copies["thresholds"].read_text(encoding="utf-8").replace(
-                "  - key: marketSurfaces.rho_floor", "  - key: cscv.blocks", 1)
+                "  - key: marketSurfaces.null_draws", "  - key: cscv.blocks", 1)
             copies["thresholds"].write_text(doubled, encoding="utf-8")
             r = c.get("/api/sqxconfig")
             locked = [f for s in r.json().get("sections", []) if s["key"] == "cscv"
@@ -199,12 +207,13 @@ def main() -> None:
             if not locked or "2 veces" not in locked[0]["locked"]:
                 failures.append(f"una fila duplicada del Ledger tumba la zona: {r.status_code}")
             failures += gate_checks(c, copies)
-    if {k: p.read_bytes() for k, p in studies.FILES.items()} != real:
+    if {k: p.read_bytes() for k, p in studies.FILES.items() if p.exists()} != real:
         failures.append("un fichero real cambió: las escrituras debían ir a las copias")
     if failures:
         print("\n".join(failures))
         sys.exit(1)
     print(f"ok: WFC {len(secs['wfc']['fields'])} valores, CSCV {len(secs['cscv']['fields'])}, "
+          f"superficies {len(secs['surfaces']['fields'])}, WFM {len(secs['wfmreading']['fields'])}, "
           "escrituras y negativas sobre copias")
 
 

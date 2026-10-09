@@ -19,7 +19,10 @@ WORDS = {
     "STRONG": "pass", "ACCEPTABLE": "pass", "MARGINAL": "watch",              # mcRetest
     "FAIL": "fail", "INCONCLUSIVE": "none",
     "worth_it": "pass", "not_worth_it": "fail",                               # exposure
-    "predicts": "pass", "blind": "watch", "perverse": "fail",                 # wfm
+    "predicts": "pass", "blind": "watch", "perverse": "fail",                 # old wfm
+    "pasa": "pass", "limbo": "watch", "no_pasa": "fail",                      # steps 17-19
+    "positivo": "pass", "neutro": "watch", "perverso": "fail",                # step 18.5
+    "REVISAR": "watch",                                                       # step 20
     "survives": "pass", "inherited": "watch", "fails": "fail",                # crossTF
     "control_failed": "watch", "silent": "none", "unusable": "none",
 }

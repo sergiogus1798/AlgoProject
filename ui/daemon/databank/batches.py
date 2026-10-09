@@ -1,4 +1,4 @@
-"""The studies that write into a mother's variant batch: cloud, wfc (and its compositions),
+"""The studies that write into a mother's variant batch: cloud, wfc (its three compositions in one file),
 cscv, marketSurfaces."""
 
 from collections import defaultdict
@@ -51,7 +51,7 @@ def entry(path: Path) -> dict | None:
     past the window's 20-s timeout («El demonio no responde», 🔬 2026-10-01).
 
     Args:
-        path: `estudios/<study>.json` or `estudios/wfc_<composition>.json`.
+        path: `estudios/<study>.json`.
     """
     return store.cached(path, _entry)
 
@@ -76,8 +76,7 @@ def mothers(project: str) -> dict[str, dict]:
         project: Project name.
 
     Returns:
-        norm name → {study: entry}. Each `wfc_<composition>.json` lands under `wfc` as its
-        own sub-panel (`verdict` and `score` of that composition). A mother with two batches
+        norm name → {study: entry}. A mother with two batches
         gets one entry per study that says so instead of a figure.
     """
     out: dict[str, dict] = {}
@@ -92,14 +91,5 @@ def mothers(project: str) -> dict[str, dict]:
             path = folders[0] / "estudios" / f"{study}.json"
             if path.is_file() and (got := entry(path)):     # a copy: the cached one stays clean
                 mine[study] = {**got, "fields": dict(got["fields"]), "states": dict(got["states"])}
-        for path in sorted((folders[0] / "estudios").glob("wfc_*.json")):
-            got = entry(path)
-            if got is None:
-                continue
-            wfc = mine.setdefault("wfc", {**got, "verdict": None, "fields": {}, "states": {}})
-            comp = path.stem.removeprefix("wfc_")
-            wfc["fields"][(comp, "verdict")] = got["verdict"]
-            wfc["fields"][(comp, "score")] = got["fields"].get(("", "score"))
-            wfc["states"][comp] = got["state"]
     return out
 

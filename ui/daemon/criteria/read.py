@@ -174,6 +174,8 @@ def said(rule: object) -> str:
         return "—" if rule is None else str(rule)
     if not rule or "sha" in rule:
         return "—"
+    if not ({"fact", "all", "any"} & rule.keys()):   # a setting, like the dev draw's `dev.on`
+        return "; ".join(f"{k} = {v}" for k, v in rule.items())
     return f"{row(rule)['label']}: " + " · limbo ".join(t for t in test(rule) if t != "—")
 
 

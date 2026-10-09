@@ -24,7 +24,7 @@ def every_project() -> dict[str, object]:
 @ROUTER.get("/api/projects/one")
 def one_project(name: str) -> dict[str, object]:
     """One project's symbol, timeframe and template from `registry.csv` alone — what a zone
-    titles itself with before the gallery's ~12 s list has arrived (📓 2026-09-30: «· ? · ?»).
+    titles itself with before the gallery's list has arrived (📓 2026-09-30: «· ? · ?»).
 
     Returns:
         `symbol`, `timeframe`, `template` (library name); {} for a project the registry lacks.

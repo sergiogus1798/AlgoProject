@@ -2,7 +2,7 @@
 
 import re
 import zipfile
-from functools import cache, lru_cache
+from functools import cache
 from pathlib import Path
 
 from core import worker

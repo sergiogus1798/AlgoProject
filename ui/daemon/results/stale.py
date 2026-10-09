@@ -31,8 +31,8 @@ def _signed(study: str, overrides: list[str], population: bool) -> str | None:
 def fresh(study: str, project: str, manifest: Path | None, population: bool) -> set[str]:
     """Every hash a run of this study for this project would sign with today's config.
 
-    The ways it can be run: with the runner's per-project substitutions (cloud's `run.symbol`,
-    the gate's `monkey.timeframe`…; none for most studies), or with the overrides its own run
+    The ways it can be run: with the runner's per-project substitutions (the gate's
+    `monkey.timeframe`…; none for most studies), or with the overrides its own run
     recorded in its manifest (a run by hand, outside the window) — each under every value of a
     per-run choice (`knobs.CHOICES`, the WFC's `split_mode`), which picks what to read and
     never makes a result stale (owner, 2026-10-01).

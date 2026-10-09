@@ -6,6 +6,8 @@ NO = " Sin umbral todavía: no cambia ningún veredicto."
 METRIC = {"Net_Profit": "Net Profit", "Profit_Factor": "PF", "Ret_DD": "Ret/DD",
           "Max_Drawdown": "DD", "Sharpe": "Sharpe", "Sortino": "Sortino", "R_Edge": "R/Edge"}
 TOKEN = "(" + "|".join(METRIC) + ")"
+WFC_COMP = (" Composición {0}: c1 = build+oos1 → oos2, c2 = build → oos1+oos2, "
+            "c3 = build → oos2.")
 # (study, pattern of the field) → (header, sentence); {0}, {1} are the pattern's groups, said
 # as the panel says them.
 FAMILIES = [
@@ -26,14 +28,34 @@ FAMILIES = [
     ("spp", rf"Wasserstein_{TOKEN}", "W/IQR {0}",
      "Distancia de Wasserstein entre las permutaciones IS y OOS1 dividida por el IQR de IS, "
      "en {0}: cuántos IQR separan las dos distribuciones. 0 = iguales; bilateral. Diagnóstico."),
-    ("wfc", r"exceso_persistencia_(oos1|oos2|minimo)", "Exc. persist. {0}",
-     "Persistencia del top: parte del mejor 20 % del build que queda en la mitad superior "
-     "fuera de muestra ({0}), menos el 50 % que sale por azar. 0,10 = 10 puntos de exceso. "
-     "Una familia sin ventaja da entre −0,27 y +0,29. Ofrecido como criterio."),
-    ("wfc", r"mediana_ratio_Sharpe", "Ratio Sharpe OOS/IS",
-     "Mediana, variante a variante, del Sharpe OOS entre el Sharpe IS (anualizados), solo "
-     "donde el IS supera 0,1. Por debajo de 1, decae. Diagnóstico: una familia sin ventaja "
-     "cubre de −1,2 a 1,2."),
+    ("wfc", r"wfc\.(c[123])\.rho", "ρ {0}",
+     "ρ de Spearman entre el exceso por año de dentro y el de fuera. De −1 a +1 (+1 mismo "
+     "orden, 0 ningún parecido, −1 invertido): un coeficiente, no un porcentaje." + WFC_COMP),
+    ("wfc", r"wfc\.(c[123])\.p_mas", "p+ {0}",
+     "Fracción de sorteos del nulo de volteo con una ρ igual o mayor que la observada. "
+     "Pequeño = el orden se repite fuera más que por ruido." + WFC_COMP),
+    ("wfc", r"wfc\.(c[123])\.p_menos", "p− {0}",
+     "Fracción de sorteos del nulo con una ρ igual o menor que la observada. Pequeño = lo "
+     "mejor de dentro tiende a ser lo peor de fuera." + WFC_COMP),
+    ("wfc", r"wfc\.(c[123])\.nulo_p5", "Nulo p5 {0}",
+     "Percentil 5 de la ρ en el nulo de volteo (la misma familia sin ventaja fuera). Una ρ "
+     "entre el p5 y el p95 no se distingue del ruido." + WFC_COMP),
+    ("wfc", r"wfc\.(c[123])\.nulo_p95", "Nulo p95 {0}",
+     "Percentil 95 de la ρ en el nulo de volteo. Una ρ entre el p5 y el p95 no se distingue "
+     "del ruido." + WFC_COMP),
+    ("wfc", r"wfc\.(c[123])\.nivel_top", "Nivel top {0}",
+     "Mediana del exceso por año fuera de las variantes del top de dentro. Por encima de 0, "
+     "lo que elegiría un optimizador gana fuera." + WFC_COMP),
+    ("wfc", r"wfc\.(c[123])\.p_nivel", "p nivel {0}",
+     "Fracción de sorteos del nulo de volteo (los mismos del orden) cuya mediana del top es "
+     "igual o mayor que la observada. Pequeño (≤ 0,05) = el top gana fuera más que por ruido. "
+     "Sólo se anota: ya no decide el estado." + WFC_COMP),
+    ("wfc", r"wfc\.(c[123])\.nivel_todas", "Nivel todas {0}",
+     "Mediana del exceso por año fuera de todas las variantes medidas." + WFC_COMP),
+    ("wfc", r"wfc\.(c[123])\.r_sel", "R_sel {0}",
+     "Retención de la prima de selección: (nivel del top − nivel de todas) fuera ÷ lo mismo "
+     "dentro. 1 = se conserva; 0 = elegir no sirve; negativo = perverso. Vacío si la prima "
+     "de dentro es casi nula." + WFC_COMP),
     ("mcRetest", r"percentil_original_estres", "Percentil orig. estrés",
      "Porcentaje de re-ejecuciones del estrés combinado con menos Net Profit que el backtest "
      "original. 50 = el original es un resultado típico; cerca de 100 = casi ninguna lo "
@@ -44,13 +66,6 @@ FAMILIES = [
     ("mcRetest", r"distancia_IQR_estres", "Dist. IQR estrés",
      "Original − mediana de las re-ejecuciones del estrés combinado, en rangos "
      "intercuartílicos de las re-ejecuciones (1 IQR ≈ 1,35 sigmas)."),
-    ("marketSurfaces", r"lift_Jaccard_mediano_(build|oos1|oos2)", "Lift Jaccard {0}",
-     "Mediana entre mercados de J / J por azar en {0}, con el azar medido sobre las propias "
-     "superficies (el otro mercado sin ventaja). 1 = el solape del azar. Diagnóstico: en un "
-     "mercado suelto hace falta ~3 para salirse del azar."),
-    ("marketSurfaces", r"exceso_madre_en_top_(build|oos1|oos2)", "Exc. madre top {0}",
-     "Parte de los mercados secundarios con la madre en su decil superior en {0}, menos lo "
-     "que saldría sin ventaja. 0,20 = 20 puntos de exceso. Diagnóstico."),
 ]
 SHOWN = {"oos1": "OOS1", "oos2": "OOS2", "build": "IS", "minimo": "mínimo"}
 

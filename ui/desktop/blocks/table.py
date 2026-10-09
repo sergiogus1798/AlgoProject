@@ -16,7 +16,7 @@ from ui.text.glossary import label
 from ui.desktop.theme import T
 
 VISIBLE = 16        # rows shown before the table scrolls inside itself
-WIDEST = 460        # a column of sentences is cut here; the whole sentence is on hover
+WIDEST = 560        # a column of sentences is cut here; the whole sentence is on hover
 # Columns holding a full SQX symbol: shown by its short name (core.symbols.alias), the whole
 # string stays on hover so nothing is lost, only shortened on screen.
 MARKET_COLS = {"market", "mercado", "symbol", "activo", "asset"}
@@ -24,8 +24,9 @@ MARKET_COLS = {"market", "mercado", "symbol", "activo", "asset"}
 # automatically: the contract never colours data, so this is the renderer reading the study's
 # own word (CONTRACT §2). Only words that say passed or failed outright (§1, 2026-10-01): not
 # «veto», «avisa», «fails» or «survives», which a study writes as a reason or a code.
-PASS_WORDS = {"pass", "pasa", "aprobado", "mantener", "fiable"}
-FAIL_WORDS = {"fail", "falla", "no pasa", "muere", "suspenso", "descartar", "no fiable"}
+PASS_WORDS = {"pass", "pasa", "aprobado", "mantener"}
+FAIL_WORDS = {"fail", "falla", "no pasa", "muere", "suspenso", "descartar"}
+WATCH_WORDS = {"limbo"}     # the WFC's state for «indeciso» (encargo 48)
 # A column in percent prints one decimal (§1 «7,7 %, no 8 %»): a «%» that is a unit, not one
 # right after a number — «A CI 95 %» or «intervalo 95 % desde» name a confidence level — or a
 # `_pct` key («dd_pct_95»).
@@ -59,7 +60,8 @@ class Cell(QTableWidgetItem):
         super().__init__(printed)
         self.value = value
         word = " ".join(value.lower().split()) if isinstance(value, str) else ""
-        state = state or ("pass" if word in PASS_WORDS else "fail" if word in FAIL_WORDS else None)
+        state = state or ("pass" if word in PASS_WORDS else "fail" if word in FAIL_WORDS
+                          else "watch" if word in WATCH_WORDS else None)
         if state:
             font = self.font()
             font.setBold(True)

@@ -59,6 +59,13 @@ class Opens:
         if not said:
             self.open_zone("Estrategia")
 
+    def open_campaign(self, workflow: str, names: list, index: int) -> None:
+        """PORTFOLIOS' «Campaña»: the Estrategia page on a saved workflow's strategy, walkable."""
+        said = self.estrategia.show_campaign(workflow, names, index)
+        self.status.setText(said)
+        if not said:
+            self.open_zone("Estrategia")
+
     def open_template(self, name: str) -> None:
         """Jump from a coverage cell to that template's page.
 

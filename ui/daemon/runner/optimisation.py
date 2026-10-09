@@ -6,12 +6,10 @@ from ui.daemon.runner import where
 
 def cloud(c: dict, strategy: str) -> list[str] | str:
     """The parameter cloud of one mother's variant batch."""
-    work = where.batch(c["project"], strategy, ("metrics.parquet", "equity.parquet"))
-    # The project's own asset: config.yaml names the donor (XAUUSD), which the window showed as
-    # what ran on a USDJPY project (owner, 2026-09-28, «chau USD»).
+    # Asset and timeframe come off the batch itself (`look.market`), so no `--set run.symbol`.
+    work = where.batch(c["project"], strategy, ("metrics.parquet", "manifest.parquet", "variant_trades.parquet"))
     return work if isinstance(work, str) else [
-        "-m", "studies.optimisation.cloud.report", "--work", str(work),
-        "--set", f"run.symbol={c['asset']}"]
+        "-m", "studies.optimisation.cloud.report", "--work", str(work)]
 
 
 def signed(c: dict, strategy: str, module: str, needs: tuple[str, ...]) -> list[str] | str:
@@ -38,19 +36,19 @@ def signed(c: dict, strategy: str, module: str, needs: tuple[str, ...]) -> list[
 def wfc(c: dict, strategy: str) -> list[str] | str:
     """Step 17: in against out over one mother's variant batch, the composition config.yaml says."""
     return signed(c, strategy, "studies.optimisation.wfc.report",
-                  ("metrics.parquet", "collected.json"))
+                  ("metrics.parquet", "variant_trades.parquet"))
 
 
 def cscv(c: dict, strategy: str) -> list[str] | str:
     """Step 18: the probability the selection overfits, over one mother's variant batch."""
     return signed(c, strategy, "studies.optimisation.cscv.report",
-                  ("metrics.parquet", "equity.parquet"))
+                  ("metrics.parquet", "variant_trades.parquet"))
 
 
 def market_surfaces(c: dict, strategy: str) -> list[str] | str:
     """Step 18.5: the same parameter region on every market, over one mother's batch."""
     return signed(c, strategy, "studies.optimisation.marketSurfaces.report",
-                  ("metrics.parquet", "segments.parquet", "equity_markets.parquet"))
+                  ("metrics.parquet", "segments.parquet", "variant_trades.parquet"))
 
 
 def wfm(c: dict, strategy: str) -> list[str] | str:

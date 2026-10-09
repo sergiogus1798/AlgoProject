@@ -14,6 +14,7 @@ daemon never imports the window, so they moved here.
 | `glossary.py` | The one glossary of visible labels: `label(key)` → the Spanish words, initial capital; an unknown identifier (`null.chunk3_traits`) is humanised, never shown raw. New keys are appended at the end of `LABELS`. `knob(key)` labels a config knob part by part (`knob.<part>` first): «Nulos › Corridas», never `nulls.draws` | imported | key → label |
 | `glossary_crossmarket.py` | The Spanish labels of cross-market's verdict.csv columns (P1-P9), merged into `glossary.LABELS` | imported | key → label |
 | `glossary_gate.py` | The Spanish labels of the gate's facts (a funnel rule reads «fact + pass line») and of its config knobs in Configuración SQX (`sqx.` keys), merged into `glossary.LABELS` | imported | key → label |
+| `glossary_steps.py` | The facts and config knobs of steps 17-19 in Spanish (`p_perdida`, `bajo_p5`, `block_weeks`…), merged into `glossary.LABELS` without overwriting a word the window already says | imported | key → label |
 | `verdictwords.py` | `verdict_word(v)`: a study's raw verdict word (`fails`, `pass`, `blind`) in Spanish, sentence case; any other value unchanged | imported by the databank table's model | word → word |
 | `buttonhelp.py` | What every button does: `help_for(text, scopes)` finds the sentence by the button's text, `normalise`d (no ▶ ↻ × signs, no «(3)» or «17-19» counts, no «quoted» names, lower case); a «Clase › texto» entry wins for a button inside that class | imported | text → sentence |
 | `buttonhelp_texts.py` | The registry itself, `HELP`: one or two Spanish sentences per button text, grounded in what its slot does — whether it writes, whether it asks first, whether it touches SQX | imported | — |
@@ -23,8 +24,9 @@ daemon never imports the window, so they moved here.
 | `columnhelp_metrics.py` | `METRICS`: one sentence per SQX metric, from the snippet SQX computes it with (`internal/extend/Snippets/SQ/Columns/Databanks/`) or the project's own columns (PSR, TRL Ratio, DoF Ratio, Param Count) | imported | — |
 | `columnhelp_verdicts.py` | `VERDICTS`: per study, the question it answers and what each verdict word the window shows means | imported | — |
 | `columnhelp_fields.py` | `FIELDS`: (study, field) → sentence for every non-family study column, grounded in the code that writes it | imported | — |
+| `columnhelp_steps.py` | `STEPS`: (study, field) → sentence for every column of steps 18, 18.5 and 19 (CSCV, market surfaces, WFM), one line in Spanish per statistic | imported | — |
 | `columnhelp_closing.py` | exposure's fixed fields and the two families — `bench_<sizing>_<stat>`, `strat_<stat>`, `lots_<sizing>`, atrCalculator's `<kind>_p<N>` and `n_winners_<segment>` — resolved by regex | imported | field → sentence |
-| `columnhelp_criteria.py` | The criteria-metric columns of spp, wfc, mcRetest and marketSurfaces (owner, 2026-10-04: computed and shown, no threshold), resolved by pattern — `criteria(study, field)` → (header of at most 22 characters, sentence saying what it is, how to read it, and whether it is offered or a diagnostic) | imported | (study, field) → header, sentence |
+| `columnhelp_criteria.py` | The criteria-metric columns of spp, wfc and mcRetest (owner, 2026-10-04: computed and shown, no threshold), resolved by pattern — `criteria(study, field)` → (header of at most 22 characters, sentence saying what it is, how to read it, and whether it is offered or a diagnostic) | imported | (study, field) → header, sentence |
 | `columnhelp_tf.py` | `TF`: header (≤ 22 characters) and «?» of the cross-TF `tf_*` columns of the T0-T4 reading (encargo 47), beside the old columns and marked «sin cortar» | imported | field → header, sentence |
 
 ## Contracts and traps

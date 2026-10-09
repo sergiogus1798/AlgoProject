@@ -3,8 +3,8 @@
 from datetime import date
 from functools import lru_cache
 
-from core import assetdata, assetranges, assetwrite
-from core.assetcheck import (REQUIRED, before_data, mc_pending, past_data, pending, provisional,
+from core import assetranges, assetwrite
+from core.assetcheck import (REQUIRED, mc_pending, past_data, pending, provisional,
                              segments_pending, validate)
 from core.assetdata import (RESERVED, classes, fields, load, markets, policy, schema, special_notes,
                             symbols)
@@ -55,20 +55,22 @@ def state() -> dict:
     """Everything the asset zone needs to open, in one round trip.
 
     Returns:
-        A row per asset, the retired shelf, the class schemas, the shared files it can
-        edit and the cross-asset notes the preflight surfaces. Nineteen assets is one
-        parse, so paging it would add a mode for nothing on loopback.
+        A row per asset, the retired shelf, the class schemas and the cross-asset notes the
+        preflight surfaces. Nineteen assets is one parse, so paging it would add a mode for nothing
+        on loopback.
     """
     return {"assets": [row(s) for s in symbols()], "retired": assetwrite.retired(),
-            "classes": classes(), "shared": list(assetwrite.SHARED),
+            "classes": classes(),
             "special": [f.name for f in special_notes()], "required": REQUIRED}
 
 
-def one(symbol: str) -> dict:
+def one(symbol: str, leaves: bool = True) -> dict:
     """One asset in full: its decisions, its windows, its universe and its file.
 
     Args:
         symbol: Asset name.
+        leaves: False leaves the file's raw leaves out (`[]`): reading the YAML for them is
+            two thirds of the call and the window shows them only on request.
 
     Returns:
         The costs with their units and what SQX carries today, the segments already turned
@@ -97,7 +99,7 @@ def one(symbol: str) -> dict:
             "notes": list(data.get("notes") or []),
             "projects": list(data.get("projects_using_it") or []),
             "problems": problems(data), "report": report(symbol),
-            "leaves": _leaves(symbol), "prior": prior(symbol)}
+            "leaves": _leaves(symbol) if leaves else [], "prior": prior(symbol)}
 
 
 @lru_cache(maxsize=1)
@@ -171,20 +173,6 @@ def _leaves(name: str) -> list[dict]:
     return [{**leaf, "path": [str(k) for k in leaf["path"]],
              "value": str(leaf["value"]) if isinstance(leaf["value"], date) else leaf["value"]}
             for leaf in leaves(assetwrite.path_of(name))]
-
-
-def shared(name: str) -> dict:
-    """One of the four shared files, ready to edit.
-
-    Args:
-        name: A key of assetwrite.SHARED.
-
-    Returns:
-        Its leaves and the path it lives at, so the window can say which file it is
-        changing — these four decide things for all nineteen assets at once.
-    """
-    return {"name": name, "file": str(assetwrite.path_of(name).relative_to(ASSETS.parent)),
-            "leaves": _leaves(name)}
 
 
 def set_value(name: str, path: list, text: str, kind: str) -> dict:

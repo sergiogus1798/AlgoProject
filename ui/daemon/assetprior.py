@@ -11,26 +11,29 @@ VERDICTS = ["bien", "sin_confirmar", "sin_medir", "mal"]   # the order the Carac
 
 
 @lru_cache(maxsize=1)
-def measured(stamp: tuple) -> dict[str, dict[str, dict[str, str]]]:
-    """What the market profile measured for every asset, family and timeframe.
+def _tables(stamp: tuple) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """The profile's graded measures and its sweep variants, read once per `stamp`."""
+    folder = research_profiles_dir()
+    return (priorview.graded(pd.read_csv(folder / "measures.csv")),
+            pd.read_parquet(folder / "sweep" / "variants.parquet"))
+
+
+@lru_cache(maxsize=32)
+def measured(stamp: tuple, symbol: str) -> dict[str, dict[str, str]]:
+    """What the market profile measured for one asset: family and timeframe.
 
     Args:
         stamp: The mtimes of the profile's two files: the cache key, so a new profile is read.
+        symbol: The asset; computing all nineteen at the first request cost 3.4 s.
 
     Returns:
-        Asset → family → timeframe → `priorview` flag (a favor / sin evidencia / en contra).
-        Each asset's rows are cut out once: asking the whole table 384 times cost 4.7 s.
+        Family → timeframe → `priorview` flag (a favor / sin evidencia / en contra); {} when
+        the profile has no row for the asset.
     """
-    folder = research_profiles_dir()
-    rows = priorview.graded(pd.read_csv(folder / "measures.csv"))
-    variants = pd.read_parquet(folder / "sweep" / "variants.parquet")
-    out: dict = {}
-    for symbol, mine in rows.groupby("symbol"):
-        swept = variants[variants["symbol"] == symbol]
-        out[symbol] = {f: {t: flag for t in priorview.TIMEFRAMES
-                           if (flag := flag_of(mine, swept, symbol, t, f))}
-                       for f in priorview.PRIOR["families"]}
-    return out
+    rows, variants = _tables(stamp)
+    mine, swept = rows[rows["symbol"] == symbol], variants[variants["symbol"] == symbol]
+    return {f: {t: flag for t in priorview.TIMEFRAMES if (flag := flag_of(mine, swept, symbol, t, f))}
+            for f in priorview.PRIOR["families"]} if len(mine) else {}
 
 
 def flag_of(rows: pd.DataFrame, variants: pd.DataFrame, symbol: str, timeframe: str,
@@ -55,14 +58,14 @@ def prior(symbol: str) -> list[dict]:
     """
     folder = research_profiles_dir()
     files = [folder / "measures.csv", folder / "sweep" / "variants.parquet"]
-    seen = measured(tuple(f.stat().st_mtime_ns for f in files)) if all(
+    seen = measured(tuple(f.stat().st_mtime_ns for f in files), symbol) if all(
         f.exists() for f in files) else {}
     known = symbol in priorview.PRIOR["matrix"]
-    if not known and symbol not in seen:
+    if not known and not seen:
         return []
     rows = []
     for f in priorview.PRIOR["families"]:
-        flags = seen.get(symbol, {}).get(f, {})
+        flags = seen.get(f, {})
         level = priorview.matrix(symbol, f) if known else None
         favour = [t for t, flag in flags.items() if flag == priorview.FOR]
         against = [t for t, flag in flags.items() if flag == priorview.AGAINST]

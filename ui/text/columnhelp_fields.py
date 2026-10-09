@@ -8,83 +8,75 @@ Each sentence follows the code that writes the field: the study's `summary`/`ver
 PIECE = "Estado que escribió su propio estudio, sin rederivar: "
 
 FIELDS = {
-    ("blindJoint", "wfc"): PIECE + "pass = fiable, watch = indeciso, fail = no fiable.",
-    ("blindJoint", "cscv"): PIECE + "pass con PBO hasta el 50 %, fail por encima.",
-    ("blindJoint", "marketSurfaces"): PIECE + "pass = la región viaja, watch = a medias, "
-                                              "fail = no viaja.",
-    ("blindJoint", "wfm"): PIECE + "pass = predicts, watch = blind, fail = perverse.",
+    ("blindJoint", "wfc"): PIECE + "pass = PASA (sin fallo: elegir por el pasado no "
+                              "lleva a algo que pierda fuera), watch = LIMBO (indeciso), "
+                              "fail = NO PASA (fallo).",
+    ("blindJoint", "cscv"): PIECE + "pass = PASA (no descarta), watch = LIMBO, fail = NO PASA "
+                                    "(la elegida pierde fuera en demasiadas particiones).",
+    ("blindJoint", "marketSurfaces"): PIECE + "pass = PASA, watch = LIMBO (sin dato, prima "
+                                              "baja u oos2 perverso), fail = NO PASA (el "
+                                              "orden entre mercados es perverso).",
+    ("blindJoint", "wfm"): PIECE + "pass = PASA, watch = LIMBO, fail = NO PASA (L1 pierde en "
+                                   "oos2 más de lo que explica el ruido).",
 
-    ("cloud", "point"): "Dónde está la madre entre sus vecinas (a 2 escalones) por su Ret/DD en "
-                        "build: plateau = su vecindad rinde parecido; spike = casi nada a su "
-                        "alrededor se le acerca; middling = no destaca en su propia nube.",
-    ("cloud", "surface"): "Forma de la superficie junto a la madre: smooth = función suave de "
-                          "los parámetros; rough = vecinas inmediatas discrepan, el resultado "
-                          "es en buena parte sorteo; off_centre = el óptimo suave está en otro "
-                          "sitio.",
-    ("cloud", "temporal"): "Tres lecturas año a año: broad o carried (la familia gana casi "
-                           "todos los años, o unos la sostienen y en otros pierde entera); "
-                           "persistent o reshuffled (el orden de las variantes sobrevive al año "
-                           "siguiente, o se rebaraja); drift_low o drift_high (la región buena "
-                           "se queda o se desplaza).",
-    ("cloud", "variants"): "Variantes del lote que entran en la nube, tras quitar los canarios "
-                           "y las de menos de 30 operaciones; la madre nunca se quita.",
-    ("cloud", "dropped"): "Variantes quitadas antes de leer: los canarios, puestos a propósito "
-                          "en los extremos de la rejilla, y las de menos de 30 operaciones.",
-    ("cloud", "r2"): "R² de un modelo cuadrático del Ret/DD en build ajustado a la vecindad de "
-                     "la madre, de 0 a 1: qué parte de las diferencias entre vecinas explican "
-                     "los parámetros de forma suave.",
-    ("cloud", "roughness"): "Desacuerdo entre vecinas sin suponer modelo: mediana de la "
-                            "distancia de cada variante a la mediana de sus 8 más próximas, en "
-                            "rangos intercuartílicos del Ret/DD. Alto = el sorteo pesa más que "
-                            "los parámetros.",
-    ("cloud", "gap"): "Sharpe anualizado de la P&L diaria de la madre sola menos el de un "
-                      "reparto a partes iguales entre vecinas buenas y distantes. Muy positivo "
-                      "= sus vecinas no reproducen buena parte de su ventaja (sobreajuste).",
-    ("cloud", "rho_median"): "Mediana, entre años consecutivos, de la ρ de Spearman del Sharpe "
-                             "de las variantes de un año con el siguiente. Cerca de 0, el orden "
-                             "se rebaraja cada año y optimizarlo es optimizar ruido.",
-    ("cloud", "drift_median"): "Mediana de cuánto se mueve de un año al siguiente el centro del "
-                               "decil de mejores variantes, en fracción del rango explorado de "
-                               "cada parámetro. Alto = la región buena se desplaza.",
+    ("cloud", "variants"): "Variantes del lote que entran en el mapa de parámetros, tras quitar "
+                           "los controles, los duplicados exactos y las que no llegan al suelo "
+                           "de operaciones; la madre nunca se quita.",
+    ("cloud", "live"): "Parámetros vivos: los que se mueven en el lote. Con k vivos la superficie "
+                       "cuadrática tiene 1 + 2k + k(k−1)/2 coeficientes.",
+    ("cloud", "r2_adj"): "R² ajustado de la superficie cuadrática del exceso por año en build, "
+                         "de 0 a 1 como mucho: qué parte de las diferencias entre variantes "
+                         "explican los parámetros, descontando los coeficientes usados. Es una "
+                         "fracción de varianza, no un porcentaje de acierto.",
+    ("cloud", "r2_ref"): "El R² ajustado que da el ruido puro: se baraja el exceso entre las "
+                         "variantes y se toma el percentil configurado de los R² ajustados "
+                         "resultantes. El mapa sólo se lee por encima de él.",
+    ("cloud", "legible"): "Sí si el R² ajustado real supera su referencia barajada: el ranking "
+                          "de parámetros (Sobol) se puede leer. No = sin estructura "
+                          "distinguible del ruido. Diagnóstico: no corta nada.",
 
-    ("wfc", "score"): "ρ de Spearman entre el Net Profit dentro y fuera de muestra de las "
-                      "variantes, de −1 a 1. Se decide con su intervalo del 95 %, no con el "
-                      "punto: el umbral es 0,30.",
-    ("cscv", "score"): "El PBO de la regla argmax, de 0 a 1 (0,13 es un 13 %); 0,5 es lo que "
-                       "vale elegir al azar. Los informes recientes lo dejan aquí vacío y lo "
-                       "dan en el veredicto.",
-
-    ("marketSurfaces", "call"): "La lectura del estudio, la misma palabra que su veredicto.",
-    ("marketSurfaces", "state"): "pass, watch o fail de esa lectura: viaja, a medias, no viaja.",
-    ("marketSurfaces", "declared"): "Mercados que _markets.yaml declara para el activo: el "
-                                    "denominador; uno que falte en el lote cuenta como no "
-                                    "pasado.",
-    ("marketSurfaces", "markets"): "Mercados presentes en el lote, el principal incluido.",
-    ("marketSurfaces", "variants"): "Variantes distintas del lote leídas en las superficies.",
-    ("marketSurfaces", "segments"): "Tramos de la historia en los que se compara cada par de "
-                                    "mercados.",
-    ("marketSurfaces", "costs_provisional"): "Verdadero si algún mercado se retesteó con costes "
-                                             "aún provisionales en assets/: el coste puede "
-                                             "reordenar una superficie, así que la lectura es "
-                                             "provisional.",
-
-    ("wfm", "rho"): "ρ media (por z de Fisher) de las celdas de la matriz entre el Ret/DD en "
-                    "muestra de cada configuración elegida y el que dio en el tramo siguiente. "
-                    "Negativa = lo que optimiza mejor va peor después.",
-    ("wfm", "low"): "Extremo inferior del intervalo bootstrap al 95 % de esa ρ, remuestreando "
-                    "celdas y no tramos. Optimista: las celdas reparten la misma historia.",
-    ("wfm", "high"): "Extremo superior del intervalo bootstrap al 95 % de esa ρ, remuestreando "
-                     "celdas y no tramos. Optimista: las celdas reparten la misma historia.",
-    ("wfm", "cells"): "Celdas de la matriz (número de tramos × % fuera de muestra) con al menos "
-                      "5 tramos utilizables.",
-    ("wfm", "steps"): "Tramos walk-forward sumados en esas celdas.",
-    ("wfm", "share_negative"): "Fracción de celdas con ρ negativa, de 0 a 1.",
-    ("wfm", "share_changed"): "Mediana de la fracción de parámetros que el optimizador cambia de "
-                              "un tramo al siguiente, de 0 a 1.",
-    ("wfm", "drift_high"): "Verdadero si esa fracción llega a 0,5: cada reoptimización elige una "
-                           "estrategia sustancialmente distinta. Junto a blind o perverse es lo "
-                           "coherente, no un segundo hallazgo.",
-
+    ("wfc", "composicion"): "La composición que decide el estado: c1 = build+oos1 dentro, oos2 "
+                            "fuera. Las otras dos (c2 = build → oos1+oos2, c3 = build → oos2) "
+                            "se miden y se anotan al lado.",
+    ("wfc", "estado"): "PASA, LIMBO o NO PASA de la composición que decide. PASA: el top que "
+                       "elegiría un optimizador gana fuera y el orden no es perverso; es un "
+                       "veto levantado, no un voto a favor. LIMBO: gana pero optimizar empeora, "
+                       "o no hay dato. NO PASA: el top no gana fuera.",
+    ("wfc", "orden"): "Positivo, neutro o perverso: si el orden de las variantes por exceso "
+                      "dentro se repite fuera más de lo que da el ruido (p+ ≤ α), no dice nada, "
+                      "o va al revés (p− ≤ α, lo mejor de dentro es lo peor de fuera).",
+    ("wfc", "fuerte"): "Un orden positivo con ρ igual o mayor que el 0,30 de Tinsley. Es una "
+                       "etiqueta: no cambia el estado.",
+    ("wfc", "n"): "Variantes medidas, tras quitar controles, duplicados exactos y las que no "
+                  "llegan a los suelos de operaciones.",
+    ("wfc", "rho"): "ρ de Spearman entre el exceso por año de dentro y el de fuera, variante a "
+                    "variante, de −1 a +1: +1 mismo orden, 0 ningún parecido, −1 invertido. Es "
+                    "un coeficiente, no un porcentaje.",
+    ("wfc", "p_mas"): "Fracción de sorteos del nulo de volteo con una ρ igual o mayor que la "
+                      "observada. Pequeño (≤ α) = el orden se repite fuera más que por ruido.",
+    ("wfc", "p_menos"): "Fracción de sorteos del nulo con una ρ igual o menor que la observada. "
+                        "Pequeño (≤ α) = lo mejor de dentro tiende a ser lo peor de fuera.",
+    ("wfc", "nivel_top"): "Mediana del exceso por año fuera de las variantes del top de dentro. "
+                          "Por encima de 0, lo que elegiría un optimizador gana fuera.",
+    ("wfc", "r_sel"): "Retención de la prima de selección: (nivel del top − nivel de todas) "
+                      "fuera ÷ lo mismo dentro. 1 = se conserva entera; 0 = elegir no sirve; "
+                      "negativo = selección perversa. Vacío si la prima de dentro es casi nula.",
+    ("wfc", "p_nivel"): "Fracción de sorteos del nulo de volteo cuya mediana del top es igual o "
+                        "mayor que la observada. Sólo se anota: el estado ya no depende de él.",
+    ("wfc", "fines_de_semana"): "Fracción de operaciones fuera de muestra cerradas lunes o martes "
+                                "tras un fin de semana abierto. Si es alta el nulo se repite con "
+                                "bloques de dos semanas (aviso, no cambia el estado).",
+    ("wfc", "orden_bloque"): "El orden (positivo, neutro, perverso) releído con bloques de dos "
+                             "semanas en el nulo: si cambia, el resultado depende de cómo se "
+                             "agrupan las semanas.",
+    ("wfc", "descuadre_sqx"): "Variantes cuyo beneficio neto recalculado difiere del NetProfit "
+                              "de SQX más allá de la tolerancia: la única comprobación de los "
+                              "costes reconstruidos.",
+    ("wfc", "wfc.c1.estado"): "PASA, LIMBO o NO PASA de c1 (build+oos1 → oos2), el que juzga el "
+                              "piloto: el hecho `wfc.c1.estado` del paso 17.",
+    ("wfc", "score"): "ρ de Spearman de la composición que decide, de −1 a +1. Es un "
+                      "coeficiente, no un porcentaje; se lee contra su nulo (p+, p−), no contra "
+                      "un umbral fijo.",
     ("crossTF", "seen"): "Sharpe por operación, sin anualizar, de la hermana escalada en ese "
                          "timeframe: el estadístico que se juzga.",
     ("crossTF", "p"): "p empírico contra el nulo que sólo cambia cuándo entra cada operación, en "

@@ -5,13 +5,13 @@ from sqx.projects import registry
 
 # The knobs `ui/daemon/runner/` replaces at run time with the project's own, by `--set`
 # (`readings.entry_quality`, `readings.conditional_map`, `readings.exposure`,
-# `optimisation.cloud`, `screening.gate`): the config.yaml's value (the donor's, XAUUSD, M30)
+# `screening.gate`): the config.yaml's value (the donor's, XAUUSD, M30)
 # never runs for another asset. Kept in step with the runner by hand; the test
 # `tests/test_ui_workflow.py` reads the runner's argv against it.
 SET = {"entryQuality": {"run.feed": "feed", "run.timeframe": "timeframe"},
        "conditionalMap": {"run.symbol": "symbol", "run.feed": "feed",
                           "run.timeframe": "timeframe"},
-       "cloud": {"run.symbol": "symbol"}, "exposure": {"study.timeframe": "timeframe"},
+       "exposure": {"study.timeframe": "timeframe"},
        "gate": {"monkey.timeframe": "timeframe"}}
 # Knobs naming an asset or a grid that the runner does NOT replace: the file's value runs,
 # whatever the project trades. Empty since 2026-09-28 (cloud, exposure and gate now get theirs).

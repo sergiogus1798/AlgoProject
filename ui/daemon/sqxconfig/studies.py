@@ -7,40 +7,56 @@ study's own knobs, and the CSCV's blocks, which live in the ledger's frozen thre
 stamped with who and when on every write (`studywrite.py`).
 """
 
+from functools import lru_cache
 from math import comb
+from pathlib import Path
 
 from core.assetyaml import leaves, read
 from core.paths import ROOT
 from engines.variants.panel import SHORTCUTS
-from studies.optimisation.cscv.measure.cscv import SCORES
-from studies.optimisation.cscv.measure.rules import RULES
 from sqx.variants.tooltips import TIPS as FACTORY_TIPS
 from studies.breakage.spp.tooltips import TIPS as SPP_TIPS
 from studies.optimisation.cscv.tooltips import TIPS as CSCV_TIPS
+from studies.optimisation.cloud.tooltips import TIPS as CLOUD_TIPS
+from studies.optimisation.marketSurfaces.tooltips import TIPS as SURF_TIPS
 from studies.optimisation.wfc.tooltips import TIPS as WFC_TIPS
+from studies.optimisation.wfm.tooltips import TIPS as WFM_TIPS
 from studies.screening.analysis.tradelevel import WINDOWS
 from studies.screening.falsePositives.tooltips import TIPS as FP_TIPS
 from studies.screening.gate.tooltips import TIPS as GATE_TIPS
 from ui.daemon.sqxconfig.options import choice
+from ui.daemon.sqxconfig.studyhelp import CSCV_HELP, FP_HELP, GATE_HELP, SURF_HELP, WFM_HELP  # noqa: F401
 
 # Short names the window sends back, so it never sends a path; REL is what the window prints.
 REL = {"variants": "sqx/variants/config.yaml", "sppdesign": "studies/breakage/spp/config.yaml",
        "batch": "engines/variants/config.yaml", "wfcstudy": "studies/optimisation/wfc/config.yaml",
-       "cscvstudy": "studies/optimisation/cscv/config.yaml", "thresholds": "ledger/thresholds.yaml",
+       "cscvstudy": "studies/optimisation/cscv/config.yaml",
+       "surfstudy": "studies/optimisation/marketSurfaces/config.yaml",
+       "wfmstudy": "studies/optimisation/wfm/config.yaml", "thresholds": "ledger/thresholds.yaml",
        "gatecfg": "studies/screening/gate/config.yaml",
-       "fpcfg": "studies/screening/falsePositives/config.yaml"}
+       "fpcfg": "studies/screening/falsePositives/config.yaml",
+       "cloudcfg": "studies/optimisation/cloud/config.yaml",
+       "calibcfg": "studies/optimisation/wfc/calibrate/config.yaml"}
 FILES = {name: ROOT / rel for name, rel in REL.items()}
 
 # (file, the branch shown, its heading) per section, in the order the section lists them.
 PARTS = {
-    "wfc": [("sppdesign", ["design"], "Variantes por madre · diseño del lote"),
-            ("variants", ["minimum"], "Mínimo de variantes por madre"),
+    # Encargo 48: the batch's size is the ledger's `variants.*`; the SPP's `n_target` and `strata`
+    # are no longer read by the factory (OPEN question to the owner: drop this first part?). The
+    # map (step 16.5) and the calibration (a file that may not exist yet) have their own parts.
+    "wfc": [("sppdesign", ["design"], "Variantes por madre · diseño del lote (el brief del SPP)"),
+            ("variants", ["size"], "Tamaño del lote de variantes"),
             ("variants", ["design"], "Fábrica de variantes · semilla y rejillas"),
             ("variants", ["canaries"], "Canarios de control"),
+            ("cloudcfg", [], "Mapa de parámetros · paso 16.5"),
             ("batch", [], "Lectura del lote · compartido con el CSCV"),
-            ("wfcstudy", [], "Lectura del WFC")],
-    "cscv": [("cscvstudy", ["cscv"], "El CSCV"),
-             ("batch", [], "Lectura del lote · compartido con el WFC")],
+            ("wfcstudy", [], "Lectura del WFC"),
+            ("calibcfg", [], "Calibración del criterio del WFC")],
+    "cscv": [("cscvstudy", [], "El CSCV")],
+    # Steps 18.5 and 19 (owner, 2026-10-07): one part each, the study's whole file.
+    "surfaces": [("surfstudy", [], "Las superficies de mercado"),
+                 ("batch", [], "Lectura del lote · compartido con el WFC")],
+    "wfmreading": [("wfmstudy", [], "La WFM")],
     # Step 8, owner 2026-10-07: every value a rule of the gate reads is an input. The rules'
     # own thresholds live in pipeline/autopilot/criteria.yaml, not here.
     "gate": [("gatecfg", ["screens"], "Cribas del nivel 0"),
@@ -59,58 +75,28 @@ PARTS = {
                        ("fpcfg", ["population"], "Poblaciones de prueba con ventaja plantada")],
 }
 
+from studies.optimisation.wfc.calibrate.tooltips import TIPS as CALIB_TIPS
+from ui.daemon.sqxconfig.ranges import RANGES
+
 PLACEHOLDER = "ledger:"   # what a config.yaml writes where the ledger owns the number
-SHARE = (0, 1)            # a fraction of something
-# (file, last key) -> (min, max). Every other number is open.
-RANGES = {("sppdesign", "n_target"): (1, None), ("sppdesign", "min_span"): SHARE,
-          ("sppdesign", "min_levels"): (2, 50), ("sppdesign", "max_levels"): (2, 50),
-          ("sppdesign", "plateau_share"): SHARE, ("sppdesign", "neighbourhood"): SHARE,
-          ("sppdesign", "factorial"): SHARE, ("sppdesign", "coverage"): SHARE,
-          ("variants", "variants"): (1, None), ("variants", "widen_step"): SHARE,
-          ("variants", "max_span"): (0, 2), ("variants", "radius"): (1, None),
-          ("variants", "min_levels"): (2, None), ("variants", "span"): SHARE,
-          ("variants", "steps"): (2, None), ("variants", "n"): (0, None),
-          ("batch", "min_trades"): (0, None), ("wfcstudy", "rho_floor"): (-1, 1),
-          ("wfcstudy", "table_ends"): (1, None), ("cscvstudy", "plateau_radius"): (1, None),
-          ("cscvstudy", "bootstrap"): (1, None), ("cscvstudy", "cluster_k_max"): (1, None),
-          ("thresholds", "cscv.blocks"): (4, 20),
-          # Step 8. A repetition count starts at 5,000 (encargo 44, J1): fewer is a coarse p.
-          ("gatecfg", "draws"): (5000, None), ("gatecfg", "permutations"): (5000, None),
-          ("gatecfg", "sequences"): (5000, None), ("gatecfg", "phi_min"): (0, None),
-          ("gatecfg", "phi_max"): (0, None), ("gatecfg", "min_strategies"): (2, None),
-          ("gatecfg", "cap_log_rate"): (0, None), ("gatecfg", "cap_slope"): (0, None),
-          ("gatecfg", "k"): (1, None), ("gatecfg", "drop_trades"): (0, None),
-          ("gatecfg", "percentile"): (50, 100), ("gatecfg", "block"): (1, None),
-          ("gatecfg", "seed"): (0, None), ("gatecfg", "min_trades"): (0, None),
-          ("fpcfg", "per_donor"): (1, None), ("fpcfg", "per_level"): (1, None),
-          ("fpcfg", "seed"): (0, None)}
 # A key that may be blank: a blank seed draws a new one each run, a blank cap leaves it open.
 OPTIONAL = {("gatecfg", "seed"), ("gatecfg", "cap_slope"), ("fpcfg", "seed")}
-CHOICES = {("batch", "split_mode"): list(SHORTCUTS), ("cscvstudy", "period"): ["D", "W", "ME"],
-           ("cscvstudy", "score"): list(SCORES),
+CHOICES = {("batch", "split_mode"): list(SHORTCUTS), ("wfmstudy", "modo_real"): ["fijo", "reoptimizado"],
            ("gatecfg", "window"): list(WINDOWS), ("gatecfg", "variant"): list("abcd"),
            ("gatecfg", "drop_period"): list(WINDOWS), ("gatecfg", "period"): list(WINDOWS),
            ("fpcfg", "rung"): ["free", "timing"], ("fpcfg", "sizing"): ["donor", "atr"]}
 # The two studies re-read these at analysis time: a batch already harvested reads differently.
 # Said once per group, not per row: in CSCV every row would carry it.
-REREAD = ("batch", "wfcstudy", "cscvstudy", "thresholds")
+REREAD = ("batch", "wfcstudy", "cscvstudy", "surfstudy", "wfmstudy", "thresholds")
 WARN = ("⚠ El WFC y el CSCV leen estos valores al leer el lote, no al fabricarlo: volver a leer "
         "un lote ya hecho con otro valor da otro resultado. Cámbialos antes de leer, no después.")
 # The window speaks Spanish and these config.yaml comments are English, written for the code:
 # each value's help is its study's own Spanish tooltip. `batch` is the exception, its comments
 # are already the owner's words, in Spanish.
-TIPS = {"variants": FACTORY_TIPS, "sppdesign": SPP_TIPS, "wfcstudy": WFC_TIPS,
-        "cscvstudy": CSCV_TIPS, "gatecfg": GATE_TIPS, "fpcfg": FP_TIPS}
-CSCV_HELP = ("Paso 18. Donde el WFC pregunta si esta superficie se mantuvo fuera de muestra, el "
-             "CSCV pregunta lo que hay detrás: ¿la MANERA de elegir parámetros tiende a "
-             "sobreajustar? Parte la historia en bloques, prueba cada mitad posible como dentro "
-             "de muestra contra la otra, y cuenta cuántas veces la variante elegida dentro queda "
-             "por debajo de la mediana fuera: eso es el PBO. Lee siempre build+oos1+oos2.")
-GATE_HELP = ("Paso 8. Cada valor que lee la puerta, por nivel: cuánto se resta de deriva, cuántos "
-             "sorteos, qué tope. Los umbrales con los que se juzga cada regla (>= 100, > 0…) viven "
-             "en pipeline/autopilot/criteria.yaml, no aquí.")
-FP_HELP = ("Falsos positivos. El control negativo de la cadena: monos que la cadena juzga como a "
-           "una población real, y las poblaciones de prueba con ventaja plantada.")
+TIPS = {"variants": FACTORY_TIPS, "cloudcfg": CLOUD_TIPS, "calibcfg": CALIB_TIPS, "sppdesign": SPP_TIPS, "wfcstudy": WFC_TIPS,
+        "cscvstudy": CSCV_TIPS,
+        "surfstudy": SURF_TIPS, "wfmstudy": WFM_TIPS, "gatecfg": GATE_TIPS, "fpcfg": FP_TIPS}
+
 
 
 def spec(name: str, path: list, value: object, threshold: str = "") -> dict:
@@ -131,8 +117,6 @@ def spec(name: str, path: list, value: object, threshold: str = "") -> dict:
         return {"type": "text"}
     if (name, last) in CHOICES:
         return {"type": "choice", "options": choice(CHOICES[name, last])}
-    if (name, last) == ("cscvstudy", "rules"):
-        return {"type": "choices", "options": choice(list(RULES))}
     if (name, last) in OPTIONAL:   # empty or a number, never anything else
         lo, hi = RANGES[name, last]
         return {"type": "number", "min": lo, "max": hi, "optional": True}
@@ -145,6 +129,13 @@ def spec(name: str, path: list, value: object, threshold: str = "") -> dict:
     return {"type": "list" if isinstance(value, list) else "text"}
 
 
+@lru_cache(maxsize=4)
+def _ledger(path: Path, stamp: int) -> list[tuple[int, dict]]:
+    """The ledger's rows with their index, read once per version of the file (`stamp` is its mtime):
+    the zone lists some thirty ledger-backed values and re-read the file for each, 7 s a render."""
+    return list(enumerate(read(path)["thresholds"]))
+
+
 def row(key: str) -> tuple[int, dict]:
     """The ledger's row for one threshold, and its index in `thresholds`.
 
@@ -152,7 +143,8 @@ def row(key: str) -> tuple[int, dict]:
         ValueError unless the key is declared exactly once, as `ledger.thresholds.value`
         refuses too; `ledger_fields` shows that as a locked value instead of failing the zone.
     """
-    rows = [(i, r) for i, r in enumerate(read(FILES["thresholds"])["thresholds"]) if r["key"] == key]
+    rows = [(i, r) for i, r in _ledger(FILES["thresholds"], FILES["thresholds"].stat().st_mtime_ns)
+            if r["key"] == key]
     if len(rows) != 1:
         raise ValueError(f"{key}: declarado {len(rows)} veces en ledger/thresholds.yaml, y "
                          "el estudio necesita exactamente una fila")
@@ -225,7 +217,7 @@ def fields(section: str) -> list[dict]:
     """Every study value one section of the zone shows, in the order of PARTS.
 
     Args:
-        section: "wfc" or "cscv".
+        section: a key of PARTS.
 
     Returns:
         One field per value, with its own `file` (a key of FILES), `group` (its heading),
@@ -234,6 +226,8 @@ def fields(section: str) -> list[dict]:
     """
     out = []
     for name, branch, group in PARTS[section]:
+        if not FILES[name].exists():
+            continue
         for leaf in leaves(FILES[name]):
             path = leaf["path"]
             if path[:len(branch)] != branch or (path[0] == "screens" and path[-1] != "min_trades"):

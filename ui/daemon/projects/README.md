@@ -29,7 +29,7 @@ places that each know part of a project:
   this project running. The master is never asked anything (`tasklog.status` refuses it).
 - **A project SQX is writing is counted by its files**, not its roster: `find.roster` returns
   nothing while the log has the project running, so a half-written `.sqx` is never hashed.
-- **The first answer of a daemon costs ~12 s** (2026-09-27, 7 181 strategies on three installs):
+- **The first answer of a daemon cost ~12 s on 2026-09-27** (7 181 strategies on three installs; 0.13 s cold on 2026-10-04, 229 projects):
   every roster is hashed once. The counts are then cached per folder mtime in `sources.distinct`,
   unbounded, because `find.roster`'s own cache holds 64 folders and the gallery walks ~400 —
   with only that cache every call cost the full 12 s. Warm: ~0.03 s.

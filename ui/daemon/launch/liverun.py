@@ -1,6 +1,7 @@
 """«Lanzar en SQX» on a GUI session already up: configure a copy, push it, run, mirror to disk, export — no restart."""
 
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -11,10 +12,11 @@ from core.datapaths import tmp_dir
 from core.phases import phase
 from core.paths import ROOT
 from ledger import steprows
-from sqx.projects import crosstfload, live, stage
+from sqx.projects import crosstfload, exiting, live, stage
 from ui.daemon.advance.run import say
 from ui.daemon.launch import configure, preflight
 from ui.daemon.launch import run as launcher
+from ui.daemon.launch import steps as launchsteps
 from ui.daemon.launch.run import assets, compare, counts, record, snapshot
 
 
@@ -32,15 +34,44 @@ def export(role: str, project: str) -> None:
                     "--project", project], cwd=ROOT, check=True)
 
 
-def close(role: str, project: str) -> None:
+def close(role: str, project: str, failed: dict | None = None) -> None:
     """End the session: this project's export, then the stop without the script's own, which
     unmarked read the whole install (🔬 2026-10-05: 229 s of a 243 s stop re-exporting another
-    project's databanks)."""
-    try:
-        live.sync(role, project)
-        export(role, project)
+    project's databanks).
+
+    `failed`: the SQX action (`run.merged`'s, with its `steps`) the run died in — a cancel or
+    a task past its deadline. Its memory is partial, so no sync and no export: the session is
+    made to exit and killed by PID once the other projects saved (`exiting.stop`), and the
+    action's output databanks are emptied on disk and the project log of that start set
+    aside (`.descartado`), because the rail reads any file there, or today's «TASK FINISHED»
+    in that log, as the step done, and a resume would skip it (owner, 2026-10-06: the step
+    is run again).
+    """
+    if failed is None:
+        try:
+            live.sync(role, project)
+            export(role, project)
+        finally:
+            live.stop(role, export=False)
+        return
+    was = signal.signal(signal.SIGTERM, signal.SIG_IGN)   # the loop's STOP hit this close half-way and
+    try:                                                  # left outputs the rail took for a done step
+        print(exiting.stop(role, project), flush=True)    # (🔬 2026-10-06); it waits on us instead
     finally:
-        live.stop(role, export=False)
+        live.stop(role, export=False)                  # the script's own cleanup: lock, Xvfb
+    held = preflight.tasks(project)
+    titles = {t for s in failed["steps"] for t in launchsteps.of_step(s["n"], held["cfx"])["titles"]}
+    for task in held["tasks"]:
+        if task["title"] in titles:
+            for f in (held["cfx"].parent / "databanks" / task["output"]).glob("*.sqx"):
+                f.unlink()
+    newest = max((held["cfx"].parent / "log").glob("global_log_*.log"), key=lambda f: f.stat().st_mtime)
+    if newest.stat().st_mtime < failed["since"]:        # the step never started: that log is an earlier step's
+        newest = None
+    else:
+        newest.rename(newest.with_suffix(".log.descartado"))
+    print(f"vaciadas en disco las salidas del paso {failed['n']} y apartado {newest.name if newest else 'ningún log'}: se repetirá al reanudar", flush=True)
+    signal.signal(signal.SIGTERM, was)
 
 
 def execute(pre: dict, project: str) -> dict:
@@ -68,12 +99,12 @@ def execute(pre: dict, project: str) -> dict:
     with tempfile.TemporaryDirectory(dir=tmp_dir()) as tmp:
         staged = Path(tmp) / "project.cfx"
         shutil.copy2(held, staged)
-        off = configure.run({**pre, "cfx": staged}, say)
-        titles = [t for t in titles if t not in off]
         for bank in pre.get("fill", []):         # writes the copy and the databank's folder
             say(9, f"llenando {bank}")
             with phase("fill", bank):
                 print(crosstfload.fill(bank, project, role, staged), flush=True)
+        off = configure.run({**pre, "cfx": staged, "databanks": held.parent / "databanks"}, say)   # after the fill
+        titles = [t for t in titles if t not in off]
         if live.added(staged, held):
             # A project built before the CrossTF tasks were made at step 5: the fill added
             # tasks, which only a closed SQX takes (hard rule 4). Restart chain, then reopen.

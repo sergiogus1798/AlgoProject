@@ -2,7 +2,7 @@
 
 import re
 
-from ui.text import glossary_crossmarket, glossary_gate
+from ui.text import glossary_crossmarket, glossary_gate, glossary_steps
 
 # Metric and column keys the window shows today, by the spelling their writer uses: SQX's
 # metric names, the report columns of the studies, the gate's screens and the config knobs.
@@ -90,9 +90,8 @@ LABELS = {
     "sqx.op": "Operador", "sqx.value": "Valor", "sqx.what": "Qué es", "sqx.spread": "Spread",
     "sqx.fields": "Campos", "sqx.unit": "Unidad", "sqx.sqx": "Ajuste de SQX", "sqx.note": "Nota",
     "sqx.commission": "Comisión", "sqx.field": "Campo", "sqx.sqx_method": "Método de SQX",
-    # WFC and CSCV's study files (owner, 2026-09-28): the batch, the factory, the two readings
     "sqx.n_target": "Máx. variantes por madre", "sqx.variants": "Mín. variantes por madre",
-    "sqx.strata": "Estratos", "sqx.neighbourhood": "Vecindad", "sqx.factorial": "Factorial",
+    "sqx.size": "Tamaño del lote", "sqx.n_min": "Mín. variantes", "sqx.n_max": "Máx. variantes", "sqx.strata": "Estratos", "sqx.neighbourhood": "Vecindad", "sqx.factorial": "Factorial",
     "sqx.coverage": "Cobertura", "sqx.min_span": "Recorrido mínimo ±", "sqx.plateau_share": "Meseta",
     "sqx.min_levels": "Mín. niveles", "sqx.max_levels": "Máx. niveles", "sqx.widen_step": "Ensanche",
     "sqx.max_span": "Recorrido máximo ±", "sqx.radius": "Radio", "sqx.frozen": "Congelados",
@@ -130,7 +129,7 @@ LABELS = {
     "control": "Control", "missing": "Faltan", "broken": "Se rompe en",
     "score": "Puntuación", "point": "Punto", "surface": "Superficie", "temporal": "Temporal",
     "variants": "Variantes", "dropped": "Descartadas", "r2": "R²", "gap": "Hueco",
-    "rho_median": "ρ mediana", "drift_median": "Deriva mediana", "roughness": "Rugosidad",
+    "R_sel": "R_sel", "per_coefficient": "Variantes por coeficiente", "r2_adj": "R² ajustado", "r2_ref": "R² del ruido", "legible": "Legible",
     # the study result's drawings (plan 24, F5): densities, grids side by side, partial re-runs
     "grid.mark": "La celda de la madre (sus parámetros)", "grid.empty": "Sin dato",
     "grid.shared": "Escala común a las rejillas:", "density.shift": "Desplazamiento de la mediana",
@@ -200,8 +199,8 @@ LABELS = {
     "knob.proof": "Prueba", "knob.barrier": "Barrera", "knob.statistics": "Estadísticos",
     "knob.dependence": "Dependencia", "knob.breaks": "Rupturas", "knob.delay": "Retraso",
 }
-LABELS.update(glossary_crossmarket.LABELS)
-LABELS.update(glossary_gate.LABELS)   # appended last, as every new key is
+LABELS |= glossary_crossmarket.LABELS | glossary_gate.LABELS
+LABELS |= {k: v for k, v in glossary_steps.LABELS.items() if k not in LABELS}
 
 # Words a humanised key spells its own way: acronyms in capitals, a few English words in Spanish.
 WORDS = {"null": "nulo", "r": "R", "is": "IS", "oos": "OOS", "oos1": "OOS1", "oos2": "OOS2", "pf": "PF", "dd": "DD",
@@ -224,6 +223,8 @@ def label(key: object) -> str:
     key = str(key)
     if key in LABELS:
         return LABELS[key]
+    if not key[:1].isascii() or re.match(r"p[+−]", key):
+        return key      # «ρ de Spearman», «p+»: capital rho is a P to the eye, and P+ a different symbol
     if KEY.fullmatch(key):
         split = re.sub(r"(?<=[a-z])(?=[A-Z])", "_", key)          # camelCase too: isOos
         key = " ".join(WORDS.get(w.lower(), w) for w in re.split(r"[._]+", split) if w)

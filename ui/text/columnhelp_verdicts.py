@@ -31,29 +31,30 @@ VERDICTS = {
     "spp": "¿Merece esta estrategia miles de variantes? Lee la rejilla de permutación de "
            "parámetros de SQX: SEGUIR si su mejor punto supera el máximo que daría una rejilla "
            "de puro ruido del mismo tamaño efectivo; RUIDO si no.",
-    "cloud": "¿Es el punto elegido un pico de suerte o una meseta, y aguanta su nube de "
-             "variantes partida por años? Diagnóstico sin veredicto (celda vacía): sus lecturas "
-             "están en Punto, Superficie y Temporal.",
-    "wfc": "¿Lo que optimiza bien dentro de muestra predice lo que va bien fuera? «fiable» si el "
-           "intervalo del 95 % de la ρ entre el Net Profit dentro y fuera de las variantes "
-           "queda entero por encima de 0,30; «no fiable» si queda entero por debajo; "
-           "«indeciso» si lo cruza: faltan puntos. Cada partición es su subcolumna.",
-    "cscv": "¿Elegir parámetros por el mejor resultado dentro de muestra lleva a sobreajuste? "
-            "El PBO es en qué parte de las particiones de la historia en dos mitades lo elegido "
-            "en una acaba por debajo de la mediana en la otra. «PBO x % con argmax»: pasa hasta "
-            "el 50 %, falla por encima.",
-    "marketSurfaces": "¿Es la región buena de parámetros la misma en los otros mercados? «la "
-                      "región viaja» si en cada tramo leído pasa la parte mínima de los "
-                      "mercados declarados; «no viaja» si no la alcanza en ninguno; «a medias» "
-                      "si los tramos discrepan.",
-    "wfm": "¿Reoptimizar con el Walk Forward Matrix elige lo que luego va mejor? predicts: el "
-           "intervalo de la ρ entre el Ret/DD en muestra de lo elegido y el que dio después "
-           "queda por encima de 0; blind: cruza el 0 (reoptimizar no aporta); perverse: queda "
-           "por debajo (elige lo que va a fallar).",
+    "cloud": "¿Qué parámetros mueven el exceso de la madre, y se puede leer ese ranking? "
+             "Diagnóstico sin veredicto (celda vacía): sus lecturas están en R² ajustado, R² "
+             "del ruido y Legible.",
+    "wfc": "¿Elegir por el pasado sirve fuera? PASA si el top por exceso dentro gana fuera y el "
+           "orden no es perverso (un veto levantado, no un voto a favor); LIMBO si gana pero "
+           "optimizar empeora, o no hay dato; NO PASA si el top no gana fuera. Se juzga la "
+           "composición c1 (build+oos1 → oos2); c2 y c3 se anotan.",
+    "cscv": "¿Elegir la mejor variante del pasado sirve fuera? Se corta la historia en 16 bloques "
+            "y se prueba cada mitad como «dentro» contra la otra. NO PASA si la elegida pierde "
+            "fuera en la mitad de las particiones o más, o si su PBO llega al p95 del nulo; "
+            "LIMBO desde el 25 % de pérdida o con pocas variantes; PASA = no descarta.",
+    "marketSurfaces": "¿El orden de las variantes en el mercado principal se repite en los demás? "
+                      "Positivo si lo hace más que el ruido; neutro si no dice nada; perverso "
+                      "(NO PASA) si va al revés. LIMBO sin dato (menos de 5 mercados con "
+                      "pesos), con la prima del mejor 20 % bajo el p5 del nulo, o si oos2 sale "
+                      "perverso.",
+    "wfm": "¿Reoptimizar con la Walk Forward Matrix gana en oos2? Sólo cuentan las operaciones "
+           "que cierran en oos2, con sus costes. L1 es la mediana de las 30 celdas contra un "
+           "nulo de signos semanales: NO PASA si pierde más de lo que explica el ruido (p− ≤ "
+           "0,05), LIMBO si no gana, PASA si gana («reoptimizar gana» o «no descarta»).",
     "blindJoint": "Paso 20: los cuatro resultados ciegos (WFC, CSCV, superficies, WFM) leídos "
-                  "juntos, y si la madre bate al buy & hold en oos2. MANTENER mientras el "
-                  "dueño no fije cómo se combinan (anota y no corta); DESCARTAR sólo cuando la "
-                  "lectura elegida la tumba.",
+                  "juntos, y si la madre bate al buy & hold en oos2. Provisional: manda el "
+                  "peor estado. DESCARTAR si alguno es NO PASA, REVISAR si alguno es LIMBO, "
+                  "MANTENER si todos pasan. Las demás lecturas anotan y no cortan.",
     "exposure": "¿Vale el tiempo de mercado que consume? Aprobado si por hora expuesta rinde al "
                 "menos 2 veces lo del buy & hold a igual riesgo y se puede leer (30 operaciones, "
                 "250 días, ganan los dos); Suspenso si no. Rendir menos que el buy & hold en "

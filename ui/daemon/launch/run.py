@@ -150,14 +150,14 @@ def execute(pre: dict, project: str) -> dict:
     say(5, "copiando el proyecto")
     with phase("snapshot"):
         kept, before = snapshot(pre["cfx"].parent), counts(pre["cfx"].parent)
-    with phase("configure"):
-        off = configure.run(pre, say)           # a silenced MC Retest stays off
-    titles = [t for t in titles if t not in off]
     for bank in pre.get("fill", []):             # CrossTF_Input (10.5), CrossTF_Mothers (13)
         say(9, f"llenando {bank}")
         with phase("fill", bank):
             print(crosstfload.fill(bank, project, role), flush=True)
         before = counts(pre["cfx"].parent)      # what the fill wrote is not a loss of the run
+    with phase("configure"):                    # after the fill: the configurator reads the input population
+        off = configure.run(pre, say)           # a silenced MC Retest stays off
+    titles = [t for t in titles if t not in off]
     titles += crosstfload.separate_titles(pre["cfx"]) if "CrossTF" in titles else []   # D1/MT4
     say(10, f"activando solo {', '.join(titles)}")
     stage.just(pre["cfx"], titles)

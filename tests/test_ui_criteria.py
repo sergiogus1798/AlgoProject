@@ -48,7 +48,10 @@ def test_state_write_stamp_freeze() -> None:
             c = http()
             state = c.get("/api/criteria").json()
             ns = [s["n"] for s in state["steps"]]
-            assert ns[:5] == ["8", "10", "12", "14", "16"] and "6" not in ns and "20" in ns
+            assert ns[:6] == ["8", "10", "11.5", "12", "14", "16"] and "6" not in ns and "20" in ns
+            assert ns[ns.index("17"):ns.index("20")] == ["17", "18", "18.5", "19"]
+            wfm = next(s for s in state["steps"] if s["n"] == "19")
+            assert [r["rule"].get("missing") for r in wfm["rows"]] == ["limbo", "limbo", "pass", "pass"]
             assert state["frozen"] is None and state["history"] == []
             assert [r["kind"] for r in state["build"]["rows"]] == ["Métrica SQX"] * 3
             eight = state["steps"][0]

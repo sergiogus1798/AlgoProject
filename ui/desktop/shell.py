@@ -151,6 +151,7 @@ class Shell(Opens, QWidget):
         self.workspace.strategy_chosen.connect(self.open_strategy)
         self.workspace.databanks_wanted.connect(lambda: self.open_zone("Databanks"))
         self.zones["Portfolios"].import_requested.connect(self.open_archived)
+        self.zones["Portfolios"].campaign_requested.connect(self.open_campaign)
 
     def data_landed(self, piece: str) -> None:
         """A piece of the selected databank finished loading: redraw what reads it.

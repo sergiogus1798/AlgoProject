@@ -58,6 +58,25 @@ class StrategyZone(QStackedWidget):
         self.imported.open(shown)
         return ""
 
+    def show_campaign(self, workflow: str, names: list[str], index: int) -> str:
+        """Open a saved workflow's strategies on the imported page, walkable one by one.
+
+        Args:
+            workflow: The workflow's folder name.
+            names: The strategies to walk, in order.
+            index: Which one to show first.
+
+        Returns:
+            "" when it opened; otherwise the sentence saying why not.
+        """
+        if self.imported is None:
+            self.imported = ImportedFicha()
+            self.addWidget(self.imported)
+        said = self.imported.open_series(workflow, names, index)
+        if not said:
+            self.setCurrentWidget(self.imported)
+        return said
+
 
 def origin(shell: QWidget) -> tuple[str, str]:
     """The databank panel's tab (and its open sub-panel) the ficha was opened from.

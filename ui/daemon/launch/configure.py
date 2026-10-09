@@ -1,6 +1,7 @@
 """Run the configurator of every chosen task still unconfigured, as its skill does, with the worker stopped."""
 
 import subprocess
+from pathlib import Path
 import sys
 import zipfile
 from collections.abc import Callable
@@ -28,6 +29,9 @@ def run(pre: dict, say: Callable[[int, str], None]) -> list[str]:
     for module, titles in pre.get("configure", {}).items():
         extra = (["--timeframe", pre["row"]["timeframe"]] if module.endswith("crossmarket")
                  else ["--input", inputs[titles[0]]])
+        if module.endswith("mcretest"):      # the population it reads lives by the REAL project, not a staged copy
+            banks = pre.get("databanks") or pre["cfx"].parent / "databanks"   # (🔬 2026-10-06: it saw none, kept Exits)
+            extra += ["--databank-dir", str(Path(banks) / inputs[titles[0]])]
         say(8, f"configurando {', '.join(titles)} ({module})")
         got = subprocess.run([sys.executable, "-m", module, pre["row"]["symbol"], "--cfx",
                               str(pre["cfx"]), *extra], capture_output=True, text=True, cwd=ROOT)

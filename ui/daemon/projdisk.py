@@ -1,6 +1,7 @@
 """What a project's folder on disk says: the installs, their projects, a project's tasks, databank counts, genetic settings."""
 
 import zipfile
+from functools import lru_cache
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -31,7 +32,7 @@ def projects(install: Path) -> list[str]:
 
 
 def tasks(cfx: Path) -> list[dict]:
-    """The tasks of a project, in the order SQX runs them.
+    """The tasks of a project, in the order SQX runs them; read again only when its file changed.
 
     Args:
         cfx: The project's `project.cfx`, a zip.
@@ -40,6 +41,12 @@ def tasks(cfx: Path) -> list[dict]:
         One dict per task: `title` (what the log calls it), `type`, `active` (what the next
         start runs), `output` and `input` databank names.
     """
+    return [dict(t) for t in _tasks(cfx, cfx.stat().st_mtime_ns)]
+
+
+@lru_cache(maxsize=256)
+def _tasks(cfx: Path, stamp: int) -> tuple[dict, ...]:
+    """`tasks` for one mtime `stamp` (the cache key): the zip is opened once per save."""
     out = []
     with zipfile.ZipFile(cfx) as z:
         root = ElementTree.fromstring(z.read("config.xml"))
@@ -49,7 +56,7 @@ def tasks(cfx: Path) -> list[dict]:
             out.append({"title": t.get("title"), "type": t.get("type"),
                         "active": t.get("active") == "true",
                         "output": banks.get("Output", ""), "input": banks.get("Input", "")})
-    return out
+    return tuple(out)
 
 
 def counts(project_dir: Path) -> dict[str, int]:
