@@ -145,7 +145,8 @@ a missing year is NaN.
   `freq_off` NaN. An absent market (no trade) counts as flagged; its `z_freq` is NaN. The population median needs
   two strategies (`centred.centre`, `min_strategies=2`), otherwise the centre is 0.
 - **P1:** `.sqx` located by `rglob` in `raw/<project>/` and accepted only when its identity equals the strategy's.
-- **P7:** `e_principal` is read from an `e_principal` column of the export if it has one, else NaN (tau_half NaN).
+- **P7:** `e_principal` is the main market's own `e` over V2 (its oos1), computed here by `run._e_principal` with the
+  same pricing, shifts and `rules.per_market` as every `e_j` (2026-10-09); NaN when the main has no cost card.
   `tau_half` is -inf when fewer than half the markets stand; NaN needs e_principal not above 0.
 - **P9:** the year is the calendar year of the close; a year under `min_trades_year` joins the next, a short tail
   joins the last group; a group sits at its trades-weighted mean year; `t_fin` is the last calendar year with data.

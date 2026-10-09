@@ -74,6 +74,27 @@ def _frequency(inputs: dict, strategies: list[str], feeds: list[str], cuts: dict
     return z, off.where(main.groupby("strategy").size().reindex(strategies).gt(0)), counts
 
 
+def _home(inputs: dict, params: dict, cal: pd.DataFrame, t: dict) -> tuple[str, dict | None]:
+    """The main market on its own window, priced like any other: (feed, `tensor.market`'s or None)."""
+    feed = inputs["universe"]["main"]
+    (costs, _), span, bars = validity.card(feed, SEGMENT), markets.own_window(feed), inputs["bars"][feed]
+    if not costs or not span:
+        return feed, None
+    bars = bars[(bars.index >= span["from"]) & (bars.index < pd.Timestamp(span["to"]) + pd.Timedelta(days=1))]
+    with np.errstate(divide="ignore"):
+        return feed, tensor.market(bars, costs, params, cal, t["validity"]["flat_atr_fraction"])
+
+
+def _e_principal(trades: pd.DataFrame, home: tuple[str, dict | None], cal: pd.DataFrame,
+                 shifts: np.ndarray, t: dict) -> float:
+    """P7's denominator, §4.3: the main's e on oos1 (V2), the same `rules.per_market` e as every e_j."""
+    feed, priced = home
+    if priced is None:
+        return np.nan
+    one = tensor.build({feed: trades}, {feed: priced}, cal, shifts, t["shift_step"], t["judge_on"])
+    return float(rules.per_market(one, rules.windows(cal)["V2"])["e"].iloc[0])
+
+
 def _net_t(trades: dict[str, pd.DataFrame]) -> float:
     """The t of the weekly net P/L (SQX's) summed over the markets: annotated, judges nothing."""
     weeks = [stat.weekly(m["Profit/Loss"].to_numpy(), m["Close time"].to_numpy().astype("datetime64[D]"))
@@ -129,14 +150,12 @@ def run(project: str, databank: str, asset: str, export: str, out: Path,
     empty = inputs["trades"].iloc[:0]
     z_freq, off, counts = _frequency(inputs, strategies, feeds, cuts, t, by)
     distance = units.fixed(project, strategies, inputs["identity"])
-    e_main = (inputs["trades"].groupby("strategy", observed=True)["e_principal"].first()
-              if "e_principal" in inputs["trades"] else pd.Series(dtype=float))
+    home = _home(inputs, params, cal, t)
     verdict, rows, series, kept = [], [], {}, []
     for s in strategies:
         mine = {f: by.get((s, f), empty).reset_index(drop=True) for f in feeds}
         one = tensor.build(mine, fixed, cal, shifts, t["shift_step"], t["judge_on"])
-        got = rules.evaluate(one, cal, t,
-                             float(e_main.get(s, np.nan)))
+        got = rules.evaluate(one, cal, t, _e_principal(by.get((s, home[0]), empty).reset_index(drop=True), home, cal, shifts, t))
         kept += records.rows(one, rules.windows(cal), got, s, inputs["identity"].get(s) or "", t["seed"])
         valid, listed = len(feeds), len(found)
         verdict.append({"strategy": s, "markets": listed, "markets_valid": valid,

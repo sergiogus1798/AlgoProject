@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Cross TF's phase 2 (encargo 47, part S): M15 from the doctrine, and a `build`-window twin of
-every sibling timeframe but D1, declared once in `workflow.CROSSTF_BUILD`."""
+every sibling timeframe, declared once in `workflow.CROSSTF_BUILD`."""
 
 import sys
 import zipfile
@@ -14,8 +14,7 @@ from sqx.projects.setups import set_span
 from tests.test_crosstf_separate import CONFIG, TASK
 
 DOCTRINE = {"engine": "MetaTrader5 (hedged)",
-            "crosstf": {"timeframes": {"M30": ["M15", "H1", "H4"], "H1": ["M30", "H4", "D1"]},
-                        "engines": {"D1": "MetaTrader4"}}}
+            "crosstf": {"timeframes": {"M30": ["M15", "H1", "H4"], "H1": ["M30", "H4"]}}}
 
 
 def test_m15_falls_out_of_the_doctrine() -> None:
@@ -25,8 +24,15 @@ def test_m15_falls_out_of_the_doctrine() -> None:
     assert rows["M15"]["engine"] == "MetaTrader5 (hedged)"
 
 
-def test_phase2_names_skip_d1_and_leave_phase1_alone() -> None:
-    """One build twin per sibling but D1; the old task regex does not see them."""
+def test_no_mother_timeframe_lists_d1() -> None:
+    """D1 was removed from Cross TF (owner, 2026-10-09): the live doctrine names it nowhere."""
+    from core.assetdata import doctrine
+    study = doctrine()["crosstf"]
+    assert all("D1" not in tfs for tfs in study["timeframes"].values()) and "engines" not in study
+
+
+def test_phase2_names_one_twin_per_sibling_and_leave_phase1_alone() -> None:
+    """One build twin per sibling; the old task regex does not see them."""
     twins = crosstfsolo.phase2("H1", d=DOCTRINE)
     assert [s["title"] for s in twins] == ["CrossTF M30 build", "CrossTF H4 build"]
     assert [s["databank"] for s in twins] == ["CrossTF_M30_build", "CrossTF_H4_build"]
@@ -66,7 +72,8 @@ def test_phase2_task_is_written_over_build(tmp_path: Path) -> None:
 if __name__ == "__main__":
     import tempfile
     test_m15_falls_out_of_the_doctrine()
-    test_phase2_names_skip_d1_and_leave_phase1_alone()
+    test_no_mother_timeframe_lists_d1()
+    test_phase2_names_one_twin_per_sibling_and_leave_phase1_alone()
     with tempfile.TemporaryDirectory() as tmp:
         test_phase2_task_is_written_over_build(Path(tmp))
     print("ok")

@@ -158,7 +158,7 @@ def execute(pre: dict, project: str) -> dict:
     with phase("configure"):                    # after the fill: the configurator reads the input population
         off = configure.run(pre, say)           # a silenced MC Retest stays off
     titles = [t for t in titles if t not in off]
-    titles += crosstfload.separate_titles(pre["cfx"]) if "CrossTF" in titles else []   # D1/MT4
+    titles += crosstfload.separate_titles(pre["cfx"]) if "CrossTF" in titles else []   # the per-timeframe tasks
     say(10, f"activando solo {', '.join(titles)}")
     stage.just(pre["cfx"], titles)
     say(15, f"arrancando el {preflight.ROLES.get(role, role)}")

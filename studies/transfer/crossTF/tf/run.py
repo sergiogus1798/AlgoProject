@@ -50,7 +50,7 @@ def write(out: Path, got: dict, cfg: dict, export: Path, directory: Path) -> dic
     made = inputs.made(got["plan"])
     costs, cuts, reason = inputs.cards(got["feed"])
     trades = {"oos1": inputs.oos1(got["plan"], got["trades"]),
-              "build": None if reason else inputs.build(export, directory, got["identity"])}
+              "build": None if reason else inputs.build(export, directory, got["identity"], made)}
     kept = []
     both = read(made, trades, got["frames"], costs, cuts, sizing.doctrine(), cfg["tf"],
                 cfg["run"]["blocks"][0], got["identity"], reason, kept)

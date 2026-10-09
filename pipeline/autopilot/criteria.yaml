@@ -78,7 +78,7 @@ steps:
       - {fact: gate.scorecard.estaticas_value, pass: "> 0"}
       # R4a — operaciones al año en el build
       - {fact: gate.scorecard.is_trades_per_year, pass: ">= 35", limbo: ">= 20",
-         by: {H4: {pass: ">= 35", limbo: ">= 15"}}}
+         by: {H4: {pass: ">= 20", limbo: ">= 15"}}}
       # R5b — operaciones en oos1. Nunca da Falla
       - {fact: gate.scorecard.sanidad_value, pass: ">= 100", else: limbo}
       # R3 — t del exceso. Sin Limbo y sin excepciones por timeframe
@@ -130,9 +130,9 @@ steps:
     # Paso 10 — «¿la lógica viaja?» (encargo 46): P1-P9 de la propuesta del dueño del 2026-10-06
     # (criterios-paso-10-otros-mercados-propuesta.md, §7.2 y §7.3), lo que mide
     # studies/transfer/crossmarket/travel. PROVISIONAL y SIN CALIBRAR: las líneas son las de la
-    # propuesta; falta pasar la población nula y la de ventaja plantada. P7 sin dato (tau_half
-    # vacío mientras el mono del paso 8 no entregue e_principal) da Limbo: hasta entonces
-    # ninguna estrategia pasa el paso 10. Una condición con dos hechos (frecuencia, mercados en
+    # propuesta; falta pasar la población nula y la de ventaja plantada. P7 divide entre e_principal,
+    # la ventaja del principal en su oos1, que crossmarket calcula él mismo desde el 2026-10-09
+    # (antes sin dato: nadie pasaba el paso 10). Una condición con dos hechos (frecuencia, mercados en
     # contra, degradación) es una regla compuesta: `all` = la peor parte, `any` = la mejor.
     rules:
       # 7.1 — controles previos: la lista de mercados es usable

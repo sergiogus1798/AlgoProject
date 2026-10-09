@@ -24,6 +24,15 @@ TAIL = 25
 SLOTS = fanout.CORES
 WIDE = {"crossmarket", "monkey", "gate", "mcRetest", "feedQuality", "cscv", "monteCarlo"}
 LIGHT = 3
+# A WIDE test run once per picked survivor, not once on the population, takes ~1.3 cores and
+# 1.9 GB each: this many at once. One by one, 1,352 survivors held a run 6 h 30 (2026-10-09).
+PICKED = {"monkey": 8}
+
+
+def width(key: str, commands: int) -> int:
+    """How many of a test's commands a step runs at once: one when the test fans out itself."""
+    wide = 1 if key in WIDE else max(1, SLOTS // LIGHT)
+    return PICKED.get(key, wide) if commands > 1 else wide
 # Nothing new starts below this much free RAM unless the lane is empty. 20 GB is the owner's
 # reserve for Python (knowhow/perf/ram-budget.md, 125 GB = heaps + Python 20 + OS 10-12):
 # below it a new study would eat into what the custodian's JVM grows into while it runs.

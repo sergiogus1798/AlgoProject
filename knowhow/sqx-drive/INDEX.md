@@ -3,7 +3,7 @@
 - `api-no-auth` — Is the SQX command API authenticated, and who can reach it on the network?
 - `cannot-start-unresolved-past-data` — Why does `-project action=start` reply "Cannot start project" over unresolved resources, without saying "Error"?
 - `crosstf-input-filled-by-no-task` — What fills `CrossTF_Input` before step 11, given that no task writes it?
-- `crosstf-one-task-per-timeframe` — How is Cross TF wired: one retest task per timeframe, and which engine does D1 use?
+- `crosstf-one-task-per-timeframe` — How is Cross TF wired: one retest task per timeframe, and what happened to D1?
 - `crosstf-period-source` — What counts as a period (bar length) to rescale when building a cross-timeframe sibling?
 - `crosstf-scaling-coefficients` — Which coefficients of a cross-timeframe sibling are divided by the ATR ratio c, and what does step 10.5 actually scale?
 - `custom-timeframe-h12` — How does SQX run a custom timeframe like H12 in a task's `<Setup>`?

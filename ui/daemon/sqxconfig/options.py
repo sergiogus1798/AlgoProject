@@ -87,7 +87,7 @@ def _build(path: list, value: object) -> dict | None:
     if path == ["databank", "stop_condition"]:
         return {"type": "choice", "options": choice(L.STOP_CONDITIONS)}
     if path[:2] == ["crosstf", "timeframes"]:
-        return {"type": "choices", "options": choice([t for t in MINUTES if t != last]),
+        return {"type": "choices", "options": choice([t for t in MINUTES if t not in (last, "D1")]),
                 "warn": L.REREAD.format(who="el estudio crossTF (studies/transfer/crossTF)")}
     if section == "crosschecks" and last in ("build", "default"):
         return {"type": "choices", "options": choice(L.CROSSCHECKS)}

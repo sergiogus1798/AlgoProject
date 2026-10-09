@@ -1,16 +1,16 @@
 ---
-q: How is Cross TF wired: one retest task per timeframe, and which engine does D1 use?
-kw: Cross TF one task per timeframe; CrossTF M30 H4 D1 tasks; CrossTF_D1 databank; D1 MetaTrader 4 engine no session; why not RetestOnAdditionalMarkets for timeframes; crossTF blocks.json databanks; crosstf.engines
+q: How is Cross TF wired: one retest task per timeframe, and what happened to D1?
+kw: Cross TF one task per timeframe; CrossTF M30 H4 tasks; D1 removed from crossTF 2026-10-09; no MetaTrader 4 engine for D1; why not RetestOnAdditionalMarkets for timeframes; crossTF blocks.json databanks
 tag: 🔬  date: 2026-09-30  see: export/data-all-blocks, sqx-drive/crosstf-scaling-coefficients, sqx-drive/crosstf-input-filled-by-no-task
 ---
-# Cross TF runs one retest per timeframe, never blocks of the cross-check; D1 on the MetaTrader 4 engine
+# Cross TF runs one retest per timeframe, never blocks of the cross-check; D1 was removed (2026-10-09)
 `sqx.projects.crosstf.wire` writes `CrossTF` (the mothers' timeframe, cross-check OFF) and one
 «CrossTF <TF>» per `crosstf.timeframes` entry (`crosstfsolo`, copied from `CrossTF`: same window,
-costs, precision), each reading `CrossTF_Input` and writing `CrossTF_<TF>`; `crosstf.engines` picks
-the engine per timeframe (D1 → `MetaTrader4`). `blocks.json` lists `blocks` and `databanks` in order;
+costs, precision), each reading `CrossTF_Input` and writing `CrossTF_<TF>`, all on the doctrine's
+engine. `blocks.json` lists `blocks` and `databanks` in order;
 `studies.transfer.crossTF.inputs.gather` reads one export per timeframe as that block. Owner,
-2026-09-30: a `data=all` export cannot be split on one symbol (`export/data-all-blocks`), and on the
-MT5 engine a D1 strategy enters at 00:00 while a prop firm's session opens at 00:05 — it traded nothing.
+2026-09-30: a `data=all` export cannot be split on one symbol (`export/data-all-blocks`). D1 (own task on
+the MetaTrader 4 engine, 2026-09-30) was removed by the owner on 2026-10-09: no D1 sibling, task or engine entry.
 
 ## Evidence
 - 🔬 Phase 2 (encargo 47): per sibling timeframe a twin task «CrossTF <TF> build» → databank `CrossTF_<TF>_build`

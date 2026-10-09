@@ -23,7 +23,7 @@ MAIN_DATES = re.compile(r'<Setup dateFrom="([^"]+)" dateTo="([^"]+)"')
 # `RetestOnAdditionalMarkets`. SQX's `data=all` export interleaves the blocks by open time, and
 # on one symbol nothing tells them apart: the k-th occurrence of a ticket read the blocks by
 # how fast each traded (from H1, M30's trades were read as H1's). One task, one databank, one
-# unambiguous export — and D1 on MetaTrader 4, which asks for no session.
+# unambiguous export.
 
 
 def main_chart(text: str) -> tuple[str, str]:

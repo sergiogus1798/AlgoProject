@@ -52,7 +52,8 @@ def listing() -> None:
                   f"{registry.kind(p.name):<6} {r.get('purpose', '')}")
 
 
-def retire(name: str, role: str, keep: list[str], apply: bool, own: bool = False) -> str:
+def retire(name: str, role: str, keep: list[str], apply: bool, own: bool = False,
+           drop_unsaved: bool = False) -> str:
     """Archive one project's config (plus any databank named) and remove it from its install.
 
     Args:
@@ -63,6 +64,8 @@ def retire(name: str, role: str, keep: list[str], apply: bool, own: bool = False
         own: The caller built this project in the same job and is done with it (MT5
             Bridge's `Test_MT5Verify_…`): the FRESH_MINUTES wait, which protects someone
             else still collecting, is skipped. Every other refusal stands.
+        drop_unsaved: The owner said to lose the step-8 survivors the store does not hold
+            (owner, 2026-10-09: 1,352 near-clones took 3 h to save). Never set by a sweep.
 
     Returns:
         One line saying what was, or would be, done.
@@ -85,11 +88,11 @@ def retire(name: str, role: str, keep: list[str], apply: bool, own: bool = False
     missing = [b for b in keep if not (folder / "databanks" / b).is_dir()]
     if missing:
         raise SystemExit(f"{name} has no databank {', '.join(missing)}.")
-    lost = save.unsaved(name)
+    lost = [] if drop_unsaved else save.unsaved(name)
     if lost:
         raise SystemExit(f"{name}: {len(lost)} supervivientes del paso 8 no están guardadas en el "
                          f"almacén ({', '.join(lost[:3])}…): retirarlo borraría sus .sqx. Antes: "
-                         f"python3 -m core.store save {name}")
+                         f"python3 -m core.store save {name} (o --drop-unsaved si el dueño las da por perdidas)")
     out = retired_project(inst.name, name, date.today().isoformat())
     line = f"{inst.name}/{name}: {d['tasks']} tareas, {d['mb']:.0f} MB → {out}"
     if not apply:
@@ -143,6 +146,8 @@ def main() -> None:
     ap.add_argument("--yes", action="store_true", help="really do it; without it, a dry run")
     ap.add_argument("--own", action="store_true",
                     help="the caller built it in this same job: skip the 60-min freshness wait")
+    ap.add_argument("--drop-unsaved", action="store_true",
+                    help="retire although step-8 survivors are not in the store: their .sqx are lost")
     a = ap.parse_args()
     if a.sweep:
         sweep_all(a.yes)
@@ -151,7 +156,7 @@ def main() -> None:
         listing()
         return
     for n in a.names:
-        print(retire(n, a.role, a.keep, a.yes, a.own))
+        print(retire(n, a.role, a.keep, a.yes, a.own, a.drop_unsaved))
     if not a.yes:
         print("dry run — add --yes to retire them")
 

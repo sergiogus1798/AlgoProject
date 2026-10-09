@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Cross TF (owner, 2026-09-30): every timeframe a task of its own, never a block of the
-cross-check whose export cannot be split on one symbol — D1 on MetaTrader 4 — and the study
+cross-check whose export cannot be split on one symbol — and the study
 reads each task's export as that timeframe's block."""
 
 import json
@@ -26,33 +26,33 @@ TASK = ('<Task><Data><Setups><Setup dateFrom="2008.01.01" engine="MetaTrader5 (h
         '<Condition use="true" /><Databanks retestSelected="false">'
         '<Databank label="Output databank" name="Output" value="CrossTF" />'
         '<Databank label="Input databank" name="Input" value="CrossTF_Input" /></Databanks></Task>')
-SOLO = {"timeframe": "D1", "title": "CrossTF D1", "databank": "CrossTF_D1",
-        "engine": "MetaTrader4"}
+SOLO = {"timeframe": "M30", "title": "CrossTF M30", "databank": "CrossTF_M30",
+        "engine": "MetaTrader5 (hedged)"}
 
 
-def test_d1_task_is_written_beside_crosstf() -> None:
-    """A new task, its own databank declared, on D1 and MT4, with no cross-check and no live
+def test_task_is_written_beside_crosstf() -> None:
+    """A new task, its own databank declared, on its timeframe, with no cross-check and no live
     condition; written twice, it is rewritten in place, never duplicated."""
     members = {"config.xml": CONFIG.encode(), "Retest-Task15.xml": TASK.encode()}
     member = crosstfsolo.write(members, TASK, SOLO)
     assert member == crosstfsolo.write(members, TASK, SOLO) == "Retest-Task16.xml"
     config = members["config.xml"].decode()
-    assert crosstfsolo.present(config) == ["CrossTF D1"]
-    assert '<Databank name="CrossTF_D1"' in config
+    assert crosstfsolo.present(config) == ["CrossTF M30"]
+    assert '<Databank name="CrossTF_M30"' in config
     task = members[member].decode()
     assert 'timeframe="H1"' not in task and 'timeframe="H4"' not in task
-    assert 'engine="MetaTrader5' not in task and 'engine="MetaTrader4"' in task
+    assert 'timeframe="M30"' in task
     assert '<RetestOnAdditionalMarkets use="false"' in task and 'use="true"' not in task
-    assert 'name="Output" value="CrossTF_D1"' in task
+    assert 'name="Output" value="CrossTF_M30"' in task
     assert 'name="Input" value="CrossTF_Input"' in task
 
 
 def test_study_reads_one_databank_per_timeframe(tmp_path: Path) -> None:
-    """CrossTF is block 0 whatever its rows said; CrossTF_M30, _H4, _D1 become 1, 2, 3."""
+    """CrossTF is block 0 whatever its rows said; CrossTF_M30, _H4 become 1, 2."""
     batch = tmp_path / "batch"
     batch.mkdir()
-    banks = ["CrossTF", "CrossTF_M30", "CrossTF_H4", "CrossTF_D1"]
-    (batch / "blocks.json").write_text(json.dumps({"blocks": ["H1", "M30", "H4", "D1"],
+    banks = ["CrossTF", "CrossTF_M30", "CrossTF_H4"]
+    (batch / "blocks.json").write_text(json.dumps({"blocks": ["H1", "M30", "H4"],
                                                    "databanks": banks}))
     day = tmp_path / "raw" / "P" / "{}" / "2026-09-30"
     export = Path(str(day).format("CrossTF")) / "trades.parquet"
@@ -62,12 +62,12 @@ def test_study_reads_one_databank_per_timeframe(tmp_path: Path) -> None:
         pd.DataFrame({"strategy": ["A", f"A_Scaled{bank[-2:]}"], "Ticket": [1, 1],
                       "Profit/Loss": [float(i), 1.0]}).to_parquet(folder / "trades.parquet")
     got = inputs.gather(batch, export, pd.read_parquet(export))
-    assert list(got["block"]) == [0, 0, 1, 1, 2, 2, 3, 3]
-    assert list(got.loc[got["block"] == 3, "Profit/Loss"]) == [3.0, 1.0]
+    assert list(got["block"]) == [0, 0, 1, 1, 2, 2]
+    assert list(got.loc[got["block"] == 2, "Profit/Loss"]) == [2.0, 1.0]
 
 if __name__ == "__main__":
     import tempfile
-    test_d1_task_is_written_beside_crosstf()
+    test_task_is_written_beside_crosstf()
     with tempfile.TemporaryDirectory() as tmp:
         test_study_reads_one_databank_per_timeframe(Path(tmp))
     print("ok")

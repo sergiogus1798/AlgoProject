@@ -3,10 +3,11 @@ q: Why do most built strategies fall under step 8's 35 trades/year floor?
 kw: trades per year 35 floor R4a, limbo 20-35 fail <20, build acceptance 10-16 trades/year, assets/_study.yaml, cal6 aroon 15 trades per year
 tag: 🔬  date: 2026-10-09  see: research/is-filters-inside-the-build, research/step8-gate-measured-on-six-populations
 ---
-# The build accepts 10-16 trades/year but step 8's R4a wants 35 (limbo 20-35, fail <20)
-The acceptance filter in `assets/_study.yaml` takes 10-16 trades/year as floor; the floor of 35 is applied
-only at step 8. Strategies that pass R3 at 1.65 are mostly under 35/year; a build over a slow-trading
-template yields populations R4a empties. Decision belongs to the owner (floor in the build vs at step 8).
+# The build accepted 10-16 trades/year while step 8's R4a wanted 35; since 2026-10-09 both ask the same
+Until then the acceptance filter in `assets/_study.yaml` took 10-16 trades/year as floor (30 with a ceiling
+of 75-100 by default) and the 35 was applied only at step 8, so a slow-trading template built populations
+R4a emptied. Owner, 2026-10-09: the build asks 35/year on M15, M30 and H1 and 20 on H4, with no ceiling
+and no per-symbol exception; R4a passes at 35 (limbo 20-35), on H4 at 20 (limbo 15-20).
 
 ## Evidence
 - 🔬 IS trades/year ≥ 35 among the 10,000 built (2026-10-08/09): cal1 6,869; cal2 6,758; cal3 105 (median 23.5); cal4 2,167 (median 20.4); cal5 3,239 (median 27.5); cal6 15 (95th percentile 25.8).

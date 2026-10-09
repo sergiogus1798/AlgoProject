@@ -53,7 +53,7 @@ at the end of `docs/encargos/47-paso-12-otras-temporalidades-pico-aislado.md`.
   T1 and T2b read «no data») → **11.7** SQX on `build`, only the mothers still in `CrossTF_Input`
   (skipped, with a line, in a project without phase-2 tasks) → **12** the same study again, with the
   build. With no cut yet, 11.5 drops nobody, so every mother runs phase 2 — what the validation needs.
-- **Neighbours.** M30 mother: M15 and H1, far H4. H1 mother: M30 and H4, no far one; D1 only annotated.
+- **Neighbours.** M30 mother: M15 and H1, far H4. H1 mother: M30 and H4, no far one.
 - **Outputs**, in the run's folder beside the old ones: `tf_siblings.parquet` (one row per mother ×
   timeframe: T0 and its reason, `z_frec`, `e`, `ret`, `z_delta`, `z_build`, window matches,
   `ret_build` and its percentile, a state per test) and `tf_mothers.csv` (one row per mother: states of
@@ -98,11 +98,7 @@ proposal (`verdict.py`, `cells.beyond`, `tests/test_crosstf_facts.py`), not yet 
 - **A seed.** `--seed N` (or `run.seed`) replays the nulls exactly; the manifest records
   `nulls_seed` either way. A rule on a p or a z needs it fixed.
 
-**D1.** The doctrine still lists D1 for an H1 mother (its own task, MetaTrader 4), but every D1
-sibling of an H1 Simple Strategy is clamped (exits of 2–24 bars ÷ 24): the criteria calibration
-of 2026-10-02 runs without it (owner: «quítalo») through `crosstfload --targets M30 H4`, which
-leaves the doctrine and the D1 task's design alone. Every other target runs and is read for
-every mother: M30 → H1 and H4, H1 → M30 and H4.
+**D1.** Removed by the owner on 2026-10-09: no mother timeframe lists it, no D1 sibling or task is made, and no timeframe has an engine of its own. M30 → M15, H1 and H4; H1 → M30 and H4.
 
 ## What the fabrication scales (changed 2026-10-07, encargo 47 part F)
 
@@ -134,8 +130,7 @@ nothing inside the module; `report` orchestrates.
 ## The trap a future session will step in
 
 **Each timeframe is its own SQX task and its own databank** (owner, 2026-09-30): `CrossTF` runs the
-mothers' timeframe (block 0), and `CrossTF_M30`, `CrossTF_H4`, `CrossTF_D1` (D1 on the MetaTrader 4
-engine) the others. They used to be blocks of one `RetestOnAdditionalMarkets` task, and that export
+mothers' timeframe (block 0), and `CrossTF_M30`, `CrossTF_H4` the others. They used to be blocks of one `RetestOnAdditionalMarkets` task, and that export
 cannot be split on one symbol: the rows come sorted by open time and the k-th occurrence of a
 ticket labelled the blocks by how fast each traded — from H1, M30's trades were scored as the H1
 baseline (`knowhow/export/data-all-blocks.md`). `inputs.blocks()` reads the timeframes and

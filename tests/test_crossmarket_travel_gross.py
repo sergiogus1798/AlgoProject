@@ -11,7 +11,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from studies.transfer.crossmarket.travel import rules, shift, sizing, stat, tensor
+from studies.transfer.crossmarket.travel import rules, run, shift, sizing, stat, tensor
 from tests.test_crossmarket_travel import DAYS, PARAMS, SEED, calendar, costs, frame
 
 MARKETS, STRATEGIES, RUNS = 4, 120, 200
@@ -77,3 +77,14 @@ def test_e_and_net_arrays_stay_net_whatever_judge_says() -> None:
     mask = rules.windows(cal)["all"]
     assert np.allclose(rules.per_market(gross, mask)["e"], rules.per_market(net, mask)["e"])
     assert not np.allclose(rules.per_market(gross, mask)["z"], rules.per_market(net, mask)["z"])
+
+
+def test_e_principal_is_the_main_e_on_v2() -> None:
+    """P7's denominator is `per_market`'s e of the main over V2, not over the whole span."""
+    cal, t = calendar(), {"shift_step": "week", "judge_on": "gross"}
+    shifts, mine, home = shift.draws(cal, SEED, 50), high_atr_strategy(1)["M0"], ("M0", regimes()["M0"])
+    whole = tensor.build({"M0": mine}, {"M0": home[1]}, cal, shifts, "week", "gross")
+    got = run._e_principal(mine, home, cal, shifts, t)
+    assert np.isfinite(got) and got == rules.per_market(whole, rules.windows(cal)["V2"])["e"].iloc[0]
+    assert got != rules.per_market(whole, rules.windows(cal)["all"])["e"].iloc[0]
+    assert np.isnan(run._e_principal(mine, ("M0", None), cal, shifts, t))

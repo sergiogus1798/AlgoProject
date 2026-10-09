@@ -86,8 +86,11 @@ def main() -> None:
     refuses("refuses: timeframe without trades_per_year", text, "XAUUSD", "M30")
     refuses("refuses: no profit_factor_min", text.replace("  profit_factor_min: 1.20\n", ""),
             "XAUUSD", "H1")
-    refuses("refuses: a ceiling missing", text.replace("H1: {min: 30, max: 75}", "H1: {min: 30}"),
-            "XAUUSD", "H1")
+    with tempfile.TemporaryDirectory() as tmp:
+        (Path(tmp) / "s.yaml").write_text(text.replace("H1: {min: 30, max: 75}", "H1: {min: 30}"), "utf-8")
+        check("no ceiling written: the floor alone",
+              rankings.describe(filters(load("XAUUSD"), "H1", "study", Path(tmp) / "s.yaml"))
+              == "study @IS: NumberOfTrades >= 300 & ProfitFactor >= 1.2 & NetProfit > 0")
     refuses("refuses: a sample that is not IS", text.replace("sample: IS", "sample: OOS"),
             "XAUUSD", "H1")
     refuses("refuses: calibration without its block", text.split("calibration:")[0],

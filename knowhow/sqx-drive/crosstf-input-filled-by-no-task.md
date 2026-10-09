@@ -21,7 +21,7 @@ before 13 — the eight MCR tasks of a `--workflow` project read that, not `Resu
   `EmptyDataError: No columns to parse from file`, raised via `layout.splits → table.table → metrics.export`.
 - The only fabrication, `AlgoData/crosstf/<P>/2026-09-27/`, predates the project folder (2026-09-28 12:07).
 - Fix verified on `Test_USDJPY_crosstfDiag_H1` (conductor): `ui.daemon.launch.run --step 11` filled 12
-  .sqx (3 mothers + M30/H4/D1 siblings), SQX loaded them at start, CrossTF 0 → 12, export 12 rows ×
+  .sqx (3 mothers + M30/H4/D1 siblings (D1 since removed, 2026-10-09)), SQX loaded them at start, CrossTF 0 → 12, export 12 rows ×
   38 columns + 19 154 trades, `crossTF.report` read every cell; `--mothers` put 3 in CrossTF_Mothers.
 - The 3 test mothers made 0 trades on D1 even unscaled: D1 cells can be empty, not only clamped.
 - H1→M30 (ratio 0.5) doubles periods: shift 0, never clamped. H1→D1 clamps nearly all (shift 2–15).

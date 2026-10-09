@@ -42,7 +42,7 @@ verdict:
 tf:
   neighbours: {M30: [M15, H1], H1: [M30, H4]}   # per mother timeframe, the two siblings that decide
   far: {M30: H4}                # the far sibling: annotated, and it lowers a pass to limbo (T3).
-                                # Any other sibling of the batch (D1 for an H1 mother) is only annotated
+                                # Any other sibling of the batch is only annotated
   runs:                         # the joint random runs, as step 10's (crossmarket/travel)
     draws: 5000                 # B per window; the same runs for a mother and all her siblings
     seed: 20261007              # keyed with each calendar cell; written in tf_mothers.csv

@@ -158,7 +158,7 @@ def evaluate(one: dict, cal: pd.DataFrame, cfg: dict, e_principal: float = np.na
         one: A strategy's tensor over the valid markets.
         cal: `cells.table()`.
         cfg: The `travel` section of config.yaml.
-        e_principal: The main's e (R per trade, oos1); NaN until the step-8 monkey supplies it.
+        e_principal: The main's e (R per trade, oos1); as `run._e_principal` computes it.
 
     Returns:
         `verdict` (the contract's columns for P3-P9 and `trades`), `markets` (`per_market`), `d_y` and `beta`

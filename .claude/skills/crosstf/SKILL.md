@@ -83,7 +83,7 @@ name patterns of `sqx/variants/config.yaml` are only a fallback. A custom block 
 rule is left unscaled and its sibling comes back `unusable`.
 
 ```bash
-python3 -m sqx.variants.scale --mothers <dir de .sqx> --project <P> --source H1   # M30 + H4 + D1
+python3 -m sqx.variants.scale --mothers <dir de .sqx> --project <P> --source H1   # M30 + H4
 #   [--symbol <SYMBOL>]  asset whose bars give c (default: the first mother's)
 ```
 
@@ -110,9 +110,8 @@ The two columns it prints, `clamped` and `max_rounding_shift`, are recorded and 
 length is rounded to the nearest integer, floor 2, and the sibling is read like any other. It also lists the int parameters the whitelist did not claim — review
 them, do not assume they are wrong.
 
-⚠️ **D1 is not reachable from H1 by scaling.** Measured: ÷24 moves parameters 140–586 % and clamps
-every period at the builder's floor. The doctrine still lists D1 from H1 (owner, 2026-09-29); the
-criteria calibration of 2026-10-02 runs without it (`crosstfload --targets M30 H4`). **A faster target is fine**: H1→M30 doubles the
+⚠️ **D1 was removed from Cross TF** (owner, 2026-10-09): ÷24 moved parameters 140–586 % and clamped
+every period at the builder's floor, so no mother timeframe lists it and no D1 sibling is made. **A faster target is fine**: H1→M30 doubles the
 periods, no clamp (→ `knowhow/sqx-drive/crosstf-input-filled-by-no-task.md`).
 
 ⚠️ **Short lengths hit the floor, and the sibling is read all the same** (owner, 2026-10-02). A
@@ -126,17 +125,17 @@ task titled `CrossTF`, which reads `CrossTF_Input` and writes `CrossTF`:
 ```bash
 python3 -m core.assets <SYMBOL>                           # hard rule 5, blocking
 python3 -m sqx.projects.crosstf <SYMBOL> --cfx <install>/user/projects/<P>/project.cfx
-                                         # --timeframes H4 D1 overrides the doctrine's list
+                                         # --timeframes M30 H4 overrides the doctrine's list
 ```
 
 The timeframes, the window and the precision come from `crosstf:` in `assets/_build.yaml`
 (`segment: oos1`, `precision: 1` — owner, 2026-10-02: the step reads oos1 only, at the selected
 timeframe's precision). The timeframes depend on the one the strategy was built
-on: **from M30: M15, H1 and H4** (owner, 2026-10-07; H1 and H4 since 2026-09-26); **from H1: M30, H4 and D1** (owner, 2026-09-29).
+on: **from M30: M15, H1 and H4** (owner, 2026-10-07; H1 and H4 since 2026-09-26); **from H1: M30 and H4** (owner, 2026-09-29; D1 removed 2026-10-09).
 H12 is a custom SQX timeframe and works as-is in a task if named (→ `knowhow/sqx-drive/custom-timeframe-h12.md`).
 `sqx.variants.scale --source H1` fabricates every sibling of the list by default. The study derives the same block order itself — the siblings'
 `source_tf` in `scaling.parquet`, then this list (2026-09-27; it used to be a hand-edited
-`run.blocks`). D1 (or H12) siblings of short
+`run.blocks`). H12 siblings of short
 periods come back `clamped` — they are read only as the unscaled row. `--timeframes` overrides the list for
 a one-off — then, and only then, the command prints the `--set run.blocks=[…]` the study needs;
 the window and the precision are not overridable on purpose.
@@ -203,5 +202,5 @@ the `Symbol` column, which is identical across the timeframes of one asset.
 - Discard a sibling for rounding or for hitting the floor (owner, 2026-10-02) — only an unverified
   custom-block length makes one `unusable`.
 - Run it with the cross-check's acceptance conditions live.
-- Build D1-scaled siblings and read them as scaled.
+- Build D1 siblings: D1 is not part of Cross TF.
 - Run it on the master, or on a stock project.

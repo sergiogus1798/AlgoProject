@@ -153,9 +153,9 @@ def test_the_window_rows_gain_tf_columns_only_when_the_run_has_the_files(tmp_pat
 
 def test_the_build_databanks_are_found_without_a_build_databanks_entry(tmp_path: Path) -> None:
     """blocks.json written at fabrication names the timeframes only: the twins' databanks come
-    from `CROSSTF_BUILD`, D1 left out; an explicit entry wins; no file, none."""
+    from `CROSSTF_BUILD`; an explicit entry wins; no file, none."""
     assert tfinputs.build_banks(tmp_path) == {}
-    blocks = {"blocks": ["M30", "M15", "H1", "H4", "D1"]}
+    blocks = {"blocks": ["M30", "M15", "H1", "H4"]}
     (tmp_path / "blocks.json").write_text(json.dumps(blocks), encoding="utf-8")
     assert tfinputs.build_banks(tmp_path) == {tf: f"CrossTF_{tf}_build" for tf in ("M15", "H1", "H4")}
     (tmp_path / "blocks.json").write_text(json.dumps(blocks | {"build_databanks": {"H1": "X"}}),

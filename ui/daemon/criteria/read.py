@@ -150,7 +150,7 @@ def build() -> dict:
     study = yaml.safe_load(buildfilters.STUDY.read_text(encoding="utf-8"))
     base, sample = study["defaults"], study["sample"]
     own = {**(study.get("classes") or {}), **(study.get("symbols") or {})}
-    per_year = " · ".join(f"{tf}: {v['min']:g} a {v['max']:g}"
+    per_year = " · ".join(f"{tf}: {v['min']:g}" + (f" a {v['max']:g}" if v.get("max") is not None else " o más")
                           for tf, v in base["trades_per_year"].items())
     rows = [("Operaciones por año", "NumberOfTrades", per_year),
             ("Profit Factor", "ProfitFactor", f">= {base['profit_factor_min']:g}"),

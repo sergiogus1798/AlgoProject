@@ -204,7 +204,7 @@ def advance(project: str, databank: str) -> None:
     pre["skip"] += configure.run(pre, say)      # its configurator first; silenced MCRs off
     say(25, "activando " + ", ".join(t for t in stage.titles(pre["stage"]) if t not in pre["skip"]))
     on = stage.apply(pre["cfx"], [pre["stage"]], pre["skip"])
-    if pre["stage"] == "crosstf":               # D1 on MT4: its own task, created by the fill
+    if pre["stage"] == "crosstf":               # its per-timeframe tasks, created by the fill
         stage.just(pre["cfx"], [t for t, a in on if a]
                    + crosstfload.separate_titles(pre["cfx"]))
     say(30, f"arrancando el {role}")

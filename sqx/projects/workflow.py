@@ -24,9 +24,9 @@ CROSSTF = {"title": "CrossTF", "input": "CrossTF_Input", "output": "CrossTF",
 # Phase 2 of step 12 (encargo 47, part S): a twin of each sibling timeframe's «CrossTF <TF>» task
 # over the `build` window, same input, its own databank — the names of every one are here and
 # nowhere else. Created at step 5 with the rest; step 11 runs only the oos1 tasks, step 11.7
-# only these. D1 (MetaTrader 4) is phase 1 only: it is annotated, it neither judges nor brakes.
+# only these.
 CROSSTF_BUILD = {"title": "CrossTF {tf} build", "databank": "CrossTF_{tf}_build",
-                 "segment": "build", "step": "11.7", "skip": ("D1",)}
+                 "segment": "build", "step": "11.7"}
 
 
 def steps() -> list[str]:

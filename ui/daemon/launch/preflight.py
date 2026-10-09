@@ -21,7 +21,7 @@ FILLS = {"CrossTF_Input": "· Antes de arrancar (paso 10.5), con el worker parad
                           "supervivientes de Cross Market se escalan a los timeframes de "
                           "`crosstf.timeframes` y se cargan con sus hermanas en «CrossTF_Input», "
                           "que se vacía antes; «CrossTF» corre el timeframe de la madre, y cada "
-                          "otro, su tarea «CrossTF <TF>» (D1 con el motor de MT4).",
+                          "otro, su tarea «CrossTF <TF>».",
          "CrossTF_Mothers": "· Antes de arrancar, con el worker parado: las madres que tiene "
                             "«CrossTF», sin sus hermanas escaladas, se copian a «CrossTF_Mothers» "
                             "(que se vacía antes): es lo que lee el MC Retest."}

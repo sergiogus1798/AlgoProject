@@ -72,9 +72,9 @@ def filters(data: dict, timeframe: str, mode: str = "study", path: Path = STUDY)
         per_year = _need(_need(block, "trades_per_year", where), timeframe,
                          f"`trades_per_year` de {where}")
         bounds = [(">=", math.ceil(_need(per_year, "min", f"`trades_per_year.{timeframe}`")
-                                   * years)),
-                  ("<=", math.floor(_need(per_year, "max", f"`trades_per_year.{timeframe}`")
-                                    * years))]
+                                   * years))]
+        if per_year.get("max") is not None:     # the ceiling is optional (owner, 2026-10-09: none today)
+            bounds.append(("<=", math.floor(per_year["max"] * years)))
         rest = [("ProfitFactor", ">=", _need(block, "profit_factor_min", where)),
                 ("NetProfit", ">", _need(block, "net_profit_min", where))]
     triples = [("NumberOfTrades", op, value) for op, value in bounds] + rest

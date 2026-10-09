@@ -76,7 +76,7 @@ def build_banks(directory: Path) -> dict[str, str]:
         {timeframe: databank}: `build_databanks` of the batch's `blocks.json` when it names
         them, else the databank `CROSSTF_BUILD` gives each sibling timeframe `blocks.json`
         lists (the fabrication wrote it before step 11.7 existed in the project, so it cannot
-        know them), D1 left out; {} without a `blocks.json`. A name whose export is not on
+        know them); {} without a `blocks.json`. A name whose export is not on
         disk is skipped by `build`, so a project without phase 2 reads «no build data».
     """
     found = directory / "blocks.json"
@@ -84,27 +84,33 @@ def build_banks(directory: Path) -> dict[str, str]:
         return {}
     blocks = json.loads(found.read_text(encoding="utf-8"))
     return blocks.get("build_databanks") or {
-        tf: CROSSTF_BUILD["databank"].format(tf=tf) for tf in blocks.get("blocks", [])[1:]
-        if tf not in CROSSTF_BUILD["skip"]}
+        tf: CROSSTF_BUILD["databank"].format(tf=tf) for tf in blocks.get("blocks", [])[1:]}
 
 
-def build(export: Path, directory: Path, identity: dict) -> pd.DataFrame | None:
+def build(export: Path, directory: Path, identity: dict, made: pd.DataFrame) -> pd.DataFrame | None:
     """The build-window trades of the siblings and of their mothers, or None when phase 2 did not run.
 
     Args:
         export: The `CrossTF` `trades.parquet` of this run, raw/<project>/<databank>/<day>/.
         directory: The batch's folder.
         identity: Mother name to identity, as the study resolved it.
+        made: What `made` returned: which sibling belongs to which timeframe.
 
     Returns:
         KEEP. Siblings: each phase-2 databank's `trades.parquet` beside `export` (same day,
-        else its newest). Mothers: never rerun — the gate's harvest of `Results`
+        else its newest), only the siblings fabricated for that databank's timeframe — every
+        strategy is retested in every one of them, and pooled they gave a sibling 3-7 times
+        her trades and z_build of ±10-19 (2026-10-09). Mothers: never rerun — the gate's harvest of `Results`
         (`core.paths.harvest_dir`, newest day), matched by `identity`. A mother missing there
         simply has no rows, which the table reads as «no build data».
     """
     banks = build_banks(directory)
-    days = [_day(export.parents[2] / bank.replace(" ", "_"), export.parent.name) for bank in banks.values()]
-    frames = [pd.read_parquet(d / "trades.parquet").astype({"strategy": str})[KEEP] for d in days if d]
+    frames = []
+    for tf, bank in banks.items():
+        day = _day(export.parents[2] / bank.replace(" ", "_"), export.parent.name)
+        if day:
+            got = pd.read_parquet(day / "trades.parquet").astype({"strategy": str})[KEEP]
+            frames.append(got[got["strategy"].isin(made.loc[made["timeframe"] == tf, "sibling"])])
     if not frames:
         return None
     harvest = _day(paths.harvest_dir(export.parents[2].name, MAIN_DATABANK, "x").parent, export.parent.name)

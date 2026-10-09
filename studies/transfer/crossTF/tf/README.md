@@ -49,7 +49,7 @@ A state with no data is `limbo` and its `<test>_why` says what is missing (`unve
 
 `inputs.build_banks(batch folder)` is the only place that knows where they are: `{timeframe:
 databank}` under `build_databanks` of the batch's `blocks.json`, else `CROSSTF_BUILD`'s name for each
-sibling timeframe of its `blocks` (D1 left out; `afterrun` exports those databanks after step 11.7),
+sibling timeframe of its `blocks` (`afterrun` exports those databanks after step 11.7),
 `{}` without a `blocks.json`. Each databank's
 `trades.parquet` is read beside the `CrossTF` export; the mothers' own build trades come from the
 gate's harvest of `Results`, by identity. No build → T1 and T2b are `no_build_data`, and `state`

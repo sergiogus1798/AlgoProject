@@ -155,17 +155,19 @@ def test_build_seam() -> None:
         batch, raw = Path(tmp) / "batch", Path(tmp) / "raw" / "Test_P"
         export = raw / "CrossTF" / "2026-10-07" / "trades.parquet"
         batch.mkdir()
-        assert inputs.build_banks(batch) == {} and inputs.build(export, batch, {}) is None
+        made = pd.DataFrame({"sibling": ["S0_H1", "S0_H4"], "timeframe": ["H1", "H4"]})
+        assert inputs.build_banks(batch) == {} and inputs.build(export, batch, {}, made) is None
         (batch / "blocks.json").write_text(json.dumps({"blocks": ["M30", "H1"]}))
-        assert inputs.build(export, batch, {}) is None                        # a project made before phase 2
+        assert inputs.build(export, batch, {}, made) is None                        # a project made before phase 2
         (batch / "blocks.json").write_text(json.dumps({"build_databanks": {"H1": "CrossTF H1 Build"}}))
-        assert inputs.build(export, batch, {}) is None                        # named, not exported yet
+        assert inputs.build(export, batch, {}, made) is None                        # named, not exported yet
         day = raw / "CrossTF_H1_Build" / "2026-10-06"
         day.mkdir(parents=True)
-        trades = pd.DataFrame({"strategy": pd.Categorical(["S0_H1"]), "Open time": pd.Timestamp("2015-01-05"),
+        # SQX retests every strategy in every phase-2 databank: only the sibling of that timeframe counts
+        trades = pd.DataFrame({"strategy": pd.Categorical(["S0_H1", "S0_H4", "S0"]), "Open time": pd.Timestamp("2015-01-05"),
                                "Close time": pd.Timestamp("2015-01-06"), "Type": "Buy", "block": 0})
         trades.to_parquet(day / "trades.parquet")
-        got = inputs.build(export, batch, {})
+        got = inputs.build(export, batch, {}, made)
         assert list(got.columns) == inputs.KEEP and list(got["strategy"]) == ["S0_H1"]
 
 
