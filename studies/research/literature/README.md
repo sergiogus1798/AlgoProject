@@ -35,7 +35,7 @@ here is about 41k tokens (tools, MCP servers, skills), re-read at every tool use
 run uses no agent loop: `calls.py` prints a prompt, `claude -p --tools ""` answers once, `calls.py`
 applies the answer through the same `reject` and `accept` — the validator is unchanged. One
 triage call over the abstracts, one extraction call per surviving paper on its `excerpt`, one
-retry when a draft is refused, then `failed`. `run.model` (opus) reads, `run.triage_model` (sonnet)
+retry when a draft is refused, then `failed`. `run.model` (opus) reads, `run.triage_model` (haiku)
 triages; `run.budget_tokens` is a runaway guard, not a ration (owner: spend what reading needs).
 What each scheme cost per paper: `knowhow/market-profile/literature-scout-yield.md`; today: `report`.
 

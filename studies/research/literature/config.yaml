@@ -9,7 +9,7 @@ run:
   pause_s: 3.0               # arXiv asks for one request every three seconds
   model: opus                # the call that reads a paper and extracts its rules (owner,
                              # 2026-10-02: «lo que necesites para leer y entender los papers»)
-  triage_model: sonnet       # the one call that sorts the abstracts by the hard filters
+  triage_model: haiku        # the one call that sorts the abstracts by the hard filters (Haiku 5.5, 2026-10-09)
   budget_tokens: 3000000     # a runaway guard, not a ration: the run launches no further call
                              # past this (a full run of 20 papers is about 150-400k). Cost is
                              # told in tokens, never dollars: the owner pays a monthly plan

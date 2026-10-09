@@ -1,7 +1,7 @@
 ---
 q: Where does most of the token spend of a long session go?
 kw: why are the tokens so high, where do Claude tokens go, token cost, cache read, long session, 1M context, compact, clear, graphify code graph, graphify-out, graphify query explain affected, reduce tokens
-tag: 🔬  date: 2026-10-02  see: cron-schedule-no-shared-minute
+tag: 🔬  date: 2026-10-02  see: cron-schedule-no-shared-minute, what-a-tool-sends-is-re-read-too
 ---
 # Three quarters of the spend is re-reading a long session's context, not the fixed prompt
 Every turn re-reads the conversation: cost is 75 % cache reads, 16 % cache writes, 8 % output. The dear sessions
@@ -32,3 +32,15 @@ By context size of the turn (main sessions, same transcripts): under 200k 15 % o
 300000` in `~/.claude/settings.json` (tokens or `auto`; `/autocompact` shows and sets it; env
 `CLAUDE_CODE_AUTO_COMPACT_WINDOW`). Subagents: `general-purpose` on Opus 22.8 % of the spend, on Sonnet 7.7 %, every
 named expert under 0.5 %. Cache rewritten after a pause over 5 min: 261 times, 6.2 % extra — `/compact` before leaving.
+2026-10-09: 406 transcripts of this project (2026-09-17 → 10-09), every component of `usage` summed: **16.000 M
+tokens**, 98,0 % cache read, 1,6 % cache write, 0,4 % output. By model: Opus 5.5 60 %, Opus 5 23 %, Sonnet 5
+13,5 %, Fable 5.1 3 %. Amortised cost of a block (its tokens x the assistant messages that follow it in the same
+session): `Bash` results 3,71 Bn (23.540 calls, 470 tokens each), the `Bash` commands themselves 1,49 Bn (5,4 M
+raw, 230 tokens each), `Read` 364 M (510 calls), the owner's own text 293 M, images 152 M (353 reads, 430k
+amortised each), `Agent` results 151 M. The fixed prefix is 41k (median of the first message) x 58.667 assistant
+messages = 2,42 Bn, 15 %. 12.680 of the Bash calls opened with a `cd` of their own. The 15 longest sessions were
+53 % of the whole spend; one prompt alone («Lee docs/encargos/21-prueba-workflow-completo.md») ran 2.393 steps.
+Daily spend after the 2026-10-02 measures (`bashOutputMaxChars: 10000`, `autoCompactWindow: 300000`, rules 16-18):
+1.200-2.666 M a day in late September against 175-290 M a day from 10-05 — the measures worked, rule 20 is the
+increment. Subagent spend is NOT in these files (`isSidechain` carries no usage): 1.174 `Agent` calls, of which
+659 council members, are invisible here — hence the council only on design tasks.

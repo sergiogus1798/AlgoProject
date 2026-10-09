@@ -121,7 +121,11 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
     its skill, exports, renames, regenerating docs, sync. A subagent spawned for it takes `model:
     "sonnet"` — and so does every `general-purpose` or `Explore` subagent unless its brief is design,
     statistics or authoring, said in the brief (they ran on Opus by default: 23 % of the spend); a
-    `claude -p` script or an agent file for it says `sonnet`. A session whose task is
+    `claude -p` script or an agent file for it says `sonnet` — and the purely mechanical unattended
+    work says `haiku` (Haiku 5.5, `claude-haiku-5-5`, 20x cheaper than Sonnet per input token, owner
+    2026-10-09): sweeping projects, proposing commit messages, triaging papers, regenerating docs.
+    Sonnet stays wherever the job judges code, statistics or prose — `auditor`, `fixer`, `fundingWatcher`,
+    `uiCritic`. A session whose task is
     mechanical and that runs on Opus says so in its first line — «tarea mecánica: `/model sonnet`» — and
     carries on; only the owner switches a session's model. Opus is for designing, deciding, statistics
     and authoring ideas or templates.
@@ -142,6 +146,19 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
     times), and a failure gets the skill's three tries, then a report — never a hand-driven step, an
     edit to `criteria.yaml` or a direct call to SQX to get past it. What each step reads and fills:
     `.claude/skills/workflow-simple/steps.md`.
+
+20. **Every tool call is paid for again on every later turn — so they are few and small.** Owner,
+    2026-10-09, «regla dura», from the audit of 406 transcripts (16.000 M tokens, 98 % of them cache
+    reads): `Bash` alone is 33 % of the whole spend — 23.540 calls, 3,71 Bn in their results and 1,49 Bn
+    in the commands themselves. So: **one `Bash` per step**, never a `cd` of its own (54 % of the calls
+    opened with one — absolute path, or chain with `&&`); every output capped (`| tail -20`, `grep -c`,
+    a count instead of a list); and **no inline heredoc over ~20 lines** — the script goes to a file in
+    the scratchpad and runs from there, because a heredoc stays in the context and is re-read by every
+    turn after it. **No image in the main conversation**: a PNG is ~1,6k tokens re-read until the session
+    ends (430k each, measured) — `/ui-shot` looks at it inside the `uiCritic` agent and nothing else
+    opens one. And **one task per session, `/clear` between tasks**: a session's cost grows with the
+    SQUARE of its length, and the 15 longest were 53 % of everything.
+    → `knowhow/eng/token-spend-is-context-reread.md`
 
 ## ROUTER — read only what the task needs
 

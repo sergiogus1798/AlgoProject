@@ -54,7 +54,7 @@ fi
 
 TODAY=$(date +%F)
 . "$ROOT/bin/lib-agent-alert.sh"
-agent_run weekly-project-cleanup sonnet "$DATA/audit/${TODAY}-proyectos.md" timeout 1h "$CLAUDE" -p --output-format json --agent projectJanitor --model sonnet \
+agent_run weekly-project-cleanup haiku "$DATA/audit/${TODAY}-proyectos.md" timeout 1h "$CLAUDE" -p --output-format json --agent projectJanitor --model haiku \
   --permission-mode acceptEdits "${ADD_DIRS[@]}" \
   --allowedTools=Bash,Read,Grep,Glob,Write \
   "Weekly SQX project cleanup, unattended from cron: nobody can answer, so never ask — when in \

@@ -38,4 +38,5 @@
 - `tmp-partition-fills-with-scratchpads` — Why does the 3.9 GB /tmp partition fill up, and what frees it?
 - `token-spend-is-context-reread` — Where does most of the token spend of a long session go?
 - `vscode-has-no-statusline-usage-json` — Why is ~/.claude/usage.json never written under the VSCode extension?
+- `what-a-tool-sends-is-re-read-too` — Why cap what a tool call SENDS, not only what it returns?
 - `windows-portability` — Which parts of the project run on Windows and which are Linux-only?

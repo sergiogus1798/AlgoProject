@@ -97,7 +97,7 @@ Write two files with the Write tool and nothing else, no other file in the repo:
 Finish with one line in Spanish: how many groups, files proposed, files EN CURSO, files PARADAS."
 
 . "$ROOT/bin/lib-agent-alert.sh"
-agent_run nightly-commit-proposal sonnet "$OUT.json" timeout 30m "$CLAUDE" -p --output-format json --model sonnet \
+agent_run nightly-commit-proposal haiku "$OUT.json" timeout 30m "$CLAUDE" -p --output-format json --model haiku \
   --permission-mode acceptEdits --add-dir "$DATA" --add-dir "$IN" \
   --allowedTools Read Grep Glob Write \
     "Bash(git status*)" "Bash(git diff*)" "Bash(git log*)" "Bash(git show*)" "Bash(git ls-files*)" \
