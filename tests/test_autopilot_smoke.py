@@ -20,7 +20,9 @@ def test_smoke_keeps_only_readability(monkeypatch: pytest.MonkeyPatch) -> None:
     kept = {r["fact"] for s in steps.values() for r in s["rules"]}
     assert kept and kept <= judge.READABLE
     assert all(len(s["rules"]) <= full[n] for n, s in steps.items())
-    assert all(s.get("cut") for n, s in steps.items() if full[n])     # the cut is not touched
+    notes = ("17", "18", "18.5", "19")      # the blind block annotates: cut null
+    assert all(s.get("cut") for n, s in steps.items() if full[n] and n not in notes)
+    assert all(steps[n]["cut"] is None for n in notes)
 
 
 def test_smoke_refuses_a_trade_project() -> None:

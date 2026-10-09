@@ -24,6 +24,7 @@ KEEP = "MANTENER"     # anything but DESCARTAR keeps a strategy (sqx/curate/READ
 # strategy can be read at all are kept, so the dev draw always has someone to draw (🔬 2026-10-04,
 # 1,000 built, 0 alive at step 8: the run ended there and tested nothing after it).
 SMOKE = "ALGO_SMOKE"
+SMOKE_MARK = "smoke"     # an empty file in the run's folder: the run judged in smoke mode
 READABLE = {"gate.scorecard." + fact for fact in (     # the gate's level 0
     "presencia_passed", "sanidad_passed", "sanidad_value", "estaticas_value",
     "is_trades_per_year")}

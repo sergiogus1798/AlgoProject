@@ -24,13 +24,17 @@ values, launch, wait, and report.
 If the owner did not give one of them, ask for it. `--smoke` only when he says it is a functional
 test (a `Test_` project): then only the readability rules judge.
 
+`--until <step>` (`oos`, `crossmarket`, `crosstf`, `mcretest`, `spp`) only when the owner asks for a
+run that ends at that step: the project is created without the later steps' tasks and the run
+ends at that step's judge («Se para antes del paso N: el proyecto no lleva sus tareas»).
+
 Before launching: `.claude/skills/sqx-wait/preflight.sh` — the custodian must be free. If someone
 else holds it, say so and stop.
 
 ## 2. Launch — one command, in the background
 
 ```bash
-bin/workflow.sh simple <PROJECT> <SYMBOL> <TF> <SIDE> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES> [--smoke]
+bin/workflow.sh simple <PROJECT> <SYMBOL> <TF> <SIDE> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke]
 ```
 
 Run it with `run_in_background: true` and do NOTHING until it notifies (hard rule 18): no polling, no

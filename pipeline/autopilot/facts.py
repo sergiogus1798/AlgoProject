@@ -6,10 +6,10 @@ import re
 import unicodedata
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
-from pipeline.autopilot import tffacts
+from pipeline.autopilot import batchfacts, tffacts
+from pipeline.autopilot.batchfacts import number
 from studies.transfer.crossTF.verdict import MEANS
 from ui.daemon.workflow import sources
 from ui.daemon.workflow.steps import STEPS
@@ -18,7 +18,6 @@ BY_N = {s["n"]: s for s in STEPS}
 # A scaled sibling's name ends in its target timeframe (`sqx.projects.crosstfload.SIBLING`).
 TARGET = re.compile(r"_Scaled([MHD]\d+)(\(\d+\))?$")
 COLUMNS = ["study", "strategy", "identity", "key", "value"]
-BOOLS = {"True": 1.0, "False": 0.0}
 # The per-strategy CSVs a result folder may hold, read column by column as `<stem>_csv.<col>`:
 # a study's own verdict, and the monkey's ladder (`nulls.csv`, one row per strategy × market).
 CSVS = ("verdict.csv", "nulls.csv")
@@ -30,22 +29,6 @@ def slug(text: str) -> str:
     """A title as a key part: accents dropped, lower case, runs of anything else as one `_`."""
     plain = unicodedata.normalize("NFKD", str(text)).encode("ascii", "ignore").decode()
     return re.sub(r"[^0-9a-z]+", "_", plain.lower()).strip("_")
-
-
-def number(value: object) -> float | None:
-    """A cell as a float, or None when it is not a number (text, None, NaN).
-
-    A CSV cell comes as text: a number in it is read, and "True"/"False" are 1 and 0.
-    """
-    if isinstance(value, str):
-        value = BOOLS.get(value, value)
-        try:
-            value = float(value)
-        except ValueError:
-            return None
-    if not isinstance(value, (bool, int, float, np.number, np.bool_)):
-        return None
-    return float(value) if value == value else None
 
 
 def block(b: dict) -> list[tuple[str, float | None]]:
@@ -107,7 +90,7 @@ def per_strategy(study: str, df: pd.DataFrame, prefix: str, skip: set[str]) -> l
 
 
 def from_folder(study: str, folder: Path) -> list[dict]:
-    """The rows of one result folder: its per-strategy JSONs, its one-row-per-strategy parquets
+    """The rows of one result folder: its per-strategy JSONs (their `facts` dict too), its one-row-per-strategy parquets
     and CSVs (`CSVS`), `verdict_csv.drop` (1 when the study itself said DESCARTAR) and, where
     the CSV has a `verdict_state`, `verdict_csv.state_pass` (1 when it is pass). A parquet with
     one row per strategy AND `market` gives `<stem>.<market>.<col>`, one key per market.
@@ -120,7 +103,8 @@ def from_folder(study: str, folder: Path) -> list[dict]:
     for f in sorted((folder / "estrategias").glob("*.json")):
         r = json.loads(f.read_text(encoding="utf-8"))
         rows += [{"study": study, "strategy": r["strategy"], "identity": r.get("identity", ""),
-                  "key": k, "value": number(x)} for k, x in flatten(r)]
+                  "key": k, "value": number(x)}
+                 for k, x in flatten(r) + batchfacts.flat(r.get("facts") or {})]   # the WFM's page
     for f in sorted(folder.glob("*.parquet")):
         df = pd.read_parquet(f)
         df = df.reset_index() if df.index.name == "identity" else df
@@ -202,6 +186,12 @@ def crosstf_rows(folder: Path) -> list[dict]:
     return rows + tffacts.rows(folder)
 
 
+def file_rows(study: str, file: Path) -> list[dict]:
+    """The facts of one result that is a FILE, `<batch>/estudios/<study>.json` (the WFC, 18, 18.5):
+    the contract's own `flatten` plus the study's `facts` (`batchfacts.rows`)."""
+    return batchfacts.rows(study, file, flatten(json.loads(file.read_text(encoding="utf-8"))))
+
+
 def gather(project: str, n: str) -> pd.DataFrame:
     """Every number the studies of step `n` and its extras (`steps.EXTRA`: step 8's monkey,
     entryQuality) wrote for `project`, from each one's newest result.
@@ -218,8 +208,11 @@ def gather(project: str, n: str) -> pd.DataFrame:
     """
     rows = []
     for study in BY_N[n]["studies"] + BY_N[n]["extra"]:
-        found = [r for r in sources.results(project, study, False if study == "edgeCost"
-                                            else None) if r["path"].is_dir()]
+        every = sources.results(project, study, False if study == "edgeCost" else None)
+        files = {r["path"].parent.parent.name: r["path"] for r in reversed(every)
+                 if r["path"].is_file()}        # a batch study: one file per mother, newest wins
+        rows += [x for f in files.values() for x in file_rows(study, f)]
+        found = [r for r in every if r["path"].is_dir()]
         if found:
             rows += (crosstf_rows if study == "crossTF" else
                      lambda f: from_folder(study, f))(found[0]["path"])

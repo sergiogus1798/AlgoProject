@@ -200,6 +200,10 @@ def test_on_the_recorded_run() -> None:
     assert left == [] and len(picked) == len(said)
     for p in picked:
         assert abs(p["x"] - said.at[p["strategy"], f"x_p{P}"]) < 1e-4 and Path(p["sqx"]).exists()
+    if not list((DATA / "strategyPermutations" / REAL).glob("*/variant_trades.parquet")):
+        print("skipped the window's wfc command: no batch of this run holds variant_trades.parquet "
+              "(step 17 needs the trades; they were never exported for this run)")
+        return
     argv = call.window("wfc", REAL, "", "USDJPY", [said.index[0]])[0]
     assert argv[:2] == ["-m", "studies.optimisation.wfc.report"] and argv[-2] == "--family"
 

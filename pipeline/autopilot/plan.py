@@ -16,7 +16,8 @@ def plan(data: dict, given: dict = tail.NOTHING) -> dict:
     Returns:
         `do` — [{n, title, kind, tests}] in order — `skipped` — [{n, why}], the steps that do
         not apply to this project (11.7 without phase-2 tasks) — and `stop` — {n, why}, n None
-        when the rail runs out. Up to 16.5 the kinds are sqx, python, judge and variants: a judging
+        when the rail runs out. Up to 16.5 the kinds are sqx, python, judge, neighbours (step
+        13's T1 batch, right before its SQX tasks) and variants: a judging
         step (8, 10, 12, 14, 16) gets a `judge` right before the next SQX step that still
         has to run: cutting before a step already done would cut for nothing. From 17 on
         the walk is `tail.walk`'s. It stops at what a person does (1-5), anything running,
@@ -24,12 +25,17 @@ def plan(data: dict, given: dict = tail.NOTHING) -> dict:
         pending at the stop is judged there: its facts are recorded, and a cut it makes is
         what the next step will read.
     """
-    do, skipped, stale, pending = [], [], False, None
+    do, skipped, stale, pending, owed = [], [], False, None, None
+
+    def judged() -> list[dict]:
+        """The pending judge, after the tests a failed run left its step owing."""
+        left = [owed] if owed and owed["n"] == pending and owed["tests"] else []
+        return left + [{"n": pending, "title": "juicio", "kind": "judge", "tests": []}]
 
     def halt(n: str | None, why: str) -> dict:
         """The plan, ending before step `n` with the pending judge, if any, done first."""
         if pending:
-            do.append({"n": pending, "title": "juicio", "kind": "judge", "tests": []})
+            do.extend(judged())
         return {"do": do, "skipped": skipped, "stop": {"n": n, "why": why}}
 
     for step in data["steps"]:
@@ -46,6 +52,9 @@ def plan(data: dict, given: dict = tail.NOTHING) -> dict:
             keys = chainplan.tests(step, stale) if stale or state != "done" else []
             if keys:
                 do.append({"n": n, "title": step["title"], "kind": "python", "tests": keys})
+            else:   # done by its evidence, yet a run that failed halfway never ran these
+                owed = {"n": n, "title": step["title"], "kind": "python",
+                        "tests": chainplan.tests(step, False)}
             pending = n if n in chainplan.JUDGES else pending
             continue
         if n == chainplan.PHASE2 and not step.get("titles"):
@@ -64,7 +73,7 @@ def plan(data: dict, given: dict = tail.NOTHING) -> dict:
             continue
         if n == "16.5":       # the variant factory runs here, unattended (pipeline.autopilot.variants)
             if pending:
-                do.append({"n": pending, "title": "juicio", "kind": "judge", "tests": []})
+                do.extend(judged())
                 pending = None
             do.append({"n": n, "title": step["title"], "kind": "variants", "tests": []})
             stale = True
@@ -73,9 +82,14 @@ def plan(data: dict, given: dict = tail.NOTHING) -> dict:
             return halt(n, ELSEWHERE[n])
         if not step.get("stage") and n != chainplan.PHASE2:
             return halt(n, "no tiene tareas de SQX que el autopiloto sepa lanzar")
+        if state == "missing":      # a project trimmed to an earlier step (`workflow.trim`)
+            return halt(n, "el proyecto no lleva sus tareas: acaba aquí")
         if pending:
-            do.append({"n": pending, "title": "juicio", "kind": "judge", "tests": []})
+            do.extend(judged())
             pending = None
+        if n == "13":     # T1 first, on who step 12's cut left: its batch is measured before the
+            # MC Retest's ingest is dated, and a run that fails in it leaves the 13 to do again
+            do.append({"n": n, "title": "vecinas (T1)", "kind": "neighbours", "tests": []})
         do.append({"n": n, "title": step["title"], "kind": "sqx", "tests": []})
         stale = True
     return halt(None, "no queda ningún paso")

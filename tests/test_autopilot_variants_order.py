@@ -16,6 +16,7 @@ def _ran(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, live_on: bool) -> list
     monkeypatch.setattr(variants, "briefs", lambda p: sorted(tmp_path.glob("design_brief_*.json")))
     monkeypatch.setattr(variants, "variants_dir", lambda p, m: tmp_path / m)
     monkeypatch.setattr(variants.live, "mine", lambda role: live_on)
+    monkeypatch.setattr(variants.legmod, "legs", lambda: [{"databank": "d"}])
     monkeypatch.setattr(variants, "wire",
                         lambda p, r, markets=True: seen.append(f"wire{'' if markets else '-'}"))
     monkeypatch.setattr(variants, "_py", lambda mod, *a: seen.append(
@@ -26,14 +27,16 @@ def _ran(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, live_on: bool) -> list
 
 def test_live_runs_every_pilot_first_without_the_extra_markets(
         monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """Live: the legs without markets, both pilots, the legs rewired, then each batch."""
-    mother = ["execute", "equity", "collect", "execute.clear"]
+    """Live: the legs without markets, both pilots, the legs rewired, each batch, then each map."""
+    mother = ["execute", "equity", "collect", "export_retest", "varianttrades", "execute.clear"]
     assert _ran(monkeypatch, tmp_path, True) == [
-        "wire-", "make", "make", "wire", *mother, *mother, "mothertrades"]
+        "wire-", "make", "make", "wire", *mother, *mother, "mothertrades", "report", "report"]
 
 
 def test_the_restart_route_keeps_its_order(monkeypatch: pytest.MonkeyPatch,
                                            tmp_path: Path) -> None:
     """Restart: one wiring, then make and its batch mother by mother."""
-    mother = ["make", "execute", "equity", "collect", "execute.clear"]
-    assert _ran(monkeypatch, tmp_path, False) == ["wire", *mother, *mother, "mothertrades"]
+    mother = ["make", "execute", "equity", "collect", "export_retest", "varianttrades",
+              "execute.clear"]
+    assert _ran(monkeypatch, tmp_path, False) == [
+        "wire", *mother, *mother, "mothertrades", "report", "report"]

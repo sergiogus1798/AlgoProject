@@ -25,12 +25,16 @@ python3 -m pipeline.autopilot.run --project P > /dev/null 2>&1
 ```
 
 with `run_in_background: true`. You are woken when it exits. `run.py` already waits on each SQX step
-itself (one start, `Project finished`, one stop), so no `wait.sh` is needed here. Meanwhile, if asked how it goes,
+itself (by default ONE live SQX GUI session for the whole run; `--restart` is the way back to a start and a stop at every step), so no `wait.sh` is needed here. `--smoke` (a `Test_`
+project only, refused otherwise) is the functional test of the chain: only the `judge.READABLE` rules judge, so
+the dev draw always keeps someone; `criteria.yaml` is untouched. A known SQX abort (fastutil
+NullPointerException) is rerun once by the autopilot itself. Meanwhile, if asked how it goes,
 read only the newest `AlgoData/autopilot/<P>/*/estado.txt` (one line).
 
 ## 3. After
 
-Read `AlgoData/autopilot/<P>/<stamp>/resumen.md`, and `fallo.md` only if it exists. Report to the
+Read `AlgoData/autopilot/<P>/<stamp>/resumen.md`, and `fallo.md` only if it exists. For where the time
+went read `tiempos.md` (seconds per action: sqx / arranque / parada / export / sync / copias / resto). Report to the
 owner in Spanish: per step, what ran, how long, the cut (in → out, limbo count), and where it
 stopped. On a failure, say the step and the reason from `fallo.md`; do not dig into logs unless
 he asks.

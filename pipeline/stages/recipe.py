@@ -39,7 +39,7 @@ def stages() -> list[dict]:
     return _load(RECIPE, RECIPE.stat().st_mtime_ns)["stages"]
 
 
-def context(project: str, databank: str, strategy: str, day: str) -> dict:
+def context(project: str, databank: str, strategy: str, day: str, family: str = "free") -> dict:
     """Every placeholder a recipe row can use, for one mother strategy.
 
     Args:
@@ -47,6 +47,7 @@ def context(project: str, databank: str, strategy: str, day: str) -> dict:
         databank: Databank the SPP export came from, underscores not spaces.
         strategy: Name as SQX shows it.
         day: Report date as YYYY-MM-DD.
+        family: The template family the WFC signs its ledger rows with.
 
     Returns:
         The substitution table. `work` and `reports` are absolute because commands receive
@@ -54,7 +55,7 @@ def context(project: str, databank: str, strategy: str, day: str) -> dict:
     """
     work = state.work_dir(project, strategy)
     return {"project": project, "databank": databank, "strategy": strategy,
-            "safe": state.safe(strategy), "day": day, "work": str(work),
+            "safe": state.safe(strategy), "day": day, "family": family, "work": str(work),
             "reports": str(report_dir(project, databank, day)),
             # 0 means "the whole design": --sample 0 is falsy to the factory, which then
             # fabricates every planned row rather than a slice of them.

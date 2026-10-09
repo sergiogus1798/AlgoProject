@@ -25,6 +25,29 @@ def test_a_missing_fact_goes_where_its_rule_says() -> None:
         assert criteria.judged(rule, {}, "a", {})[0] == want
 
 
+def test_a_judged_step_with_cut_null_annotates_and_cuts_nothing() -> None:
+    """`cut: null` with rules: the verdict is returned, the ledger row written, apply_verdict never called."""
+    rows = []
+    cfg = {"dev": {"on": False, "at": [], "seed": 1, "sample": 1}, "steps": {"17": {"cut": None, "segment": "oos2",
+           "rules": [{"fact": "k", "pass": ">= 1", "else": "fail"}]}, "16": {"cut": "SPP OOS"}}}
+    pop = pd.DataFrame([{"strategy": "S1", "identity": "i1"}])
+    found = pd.DataFrame([{"strategy": "S1", "identity": "i1", "key": "k", "value": 0.0}])
+    about = {"symbol": "XAUUSD", "timeframe": "H1", "family": "mono"}
+
+    def never(*a) -> None:
+        """A cut: forbidden here."""
+        raise AssertionError("cut called")
+    with tempfile.TemporaryDirectory() as tmp, \
+            patched(judge.facts, gather=lambda p, n: found), \
+            patched(judge, population=lambda *a: pop, tags=lambda p: set()), \
+            patched(judge.apply_verdict, apply=never), \
+            patched(judge.survivors, about=lambda p: about), \
+            patched(judge.record, log=lambda sid, row: rows.append(row)):
+        got = judge.judge("Test_x", "17", "custodian", Path(tmp) / "p17", cfg)
+        assert got["before"] == got["after"] == 1 and "anota" in got["corte"]
+        assert "fail" in (Path(tmp) / "p17" / "verdict.csv").read_text() and rows[0]["n_out"] == 1
+
+
 def test_the_judge_that_cuts_everybody_signs_the_ledger_and_the_run_ends_in_fin() -> None:
     """Zero left after the cut: one ledger row with the file's hash, then FIN, no fallo.md."""
     rows = []

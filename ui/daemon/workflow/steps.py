@@ -51,7 +51,7 @@ S = [
     ("16", "Análisis SPP", "Análisis SPPs en Python", "python", "study", ["spp"], "SPP", "",
      ("spp",)),
     ("16.5", "Variantes para el WFC", "Preparación de variantes para el WFC", "sqx",
-     "variants", [], "WFM + WFC + CSCV + Market Surfaces", "", "batch"),
+     "variants", ["cloud"], "WFM + WFC + CSCV + Market Surfaces", "", "batch"),
     ("17", "Walk Forward Correlation", "Walk Forward Correlation", "python", "study", ["wfc"],
      "WFM + WFC + CSCV + Market Surfaces", "", "batch"),
     ("18", "CSCV", "CSCV", "python", "study", ["cscv"],

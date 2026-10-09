@@ -2,17 +2,19 @@
 
 from pathlib import Path
 
-from pipeline.autopilot import blind, closing, finalists, kept, survivors, traded
+from pipeline.autopilot import blind, closing, finalists, kept, neighbours, survivors, traded
 
+# `neighbours` is not the tail's: step 13's T1 batch is dispatched here like the tail's batches.
 KINDS = {"blind", "wfm", "kept", "ledger", "joint", "reading", "structural", "stop", "edge",
-         "finalists", "mt5verify"}
+         "finalists", "mt5verify", "neighbours"}
 
 
 def run(action: dict, project: str, role: str, out: Path, cfg: dict) -> str:
     """Run one action of `tail.walk`.
 
     Args:
-        action: {n, kind, tests, …} with `redo`, `databank` or `params` where its kind has one.
+        action: {n, kind, tests, …} with `redo` and `oos2`, `databank` or `params` where its
+            kind has one.
         project: Project name.
         role: The worker holding the project.
         out: The autopilot run's folder; its name stamps the batches of 23 and 24.
@@ -27,10 +29,13 @@ def run(action: dict, project: str, role: str, out: Path, cfg: dict) -> str:
     kind, n = action["kind"], action["n"]
     if kind == "mt5verify":
         return finalists.verify(project, action["params"], out)
+    if kind == "neighbours":      # who ENTERS step 13, not who a later step's cut left
+        return neighbours.run(project, role, neighbours.entering(project, role), out.name)
     # The finalists are who is left after step 25's own cut, the day it has one.
     mothers = survivors.mothers(project, role, cfg, "26" if kind == "finalists" else n)
     if kind == "blind":
-        return blind.look(project, n, action["tests"][0], mothers, action["redo"])
+        return blind.look(project, n, action["tests"][0], mothers, action["redo"],
+                          action.get("oos2", True))
     if kind == "wfm":
         return blind.wfm(project, role)
     if kind == "ledger":

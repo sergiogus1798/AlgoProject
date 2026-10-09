@@ -14,6 +14,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pipeline.autopilot import criteria, judge, plan, tffacts
+from sqx.projects import cfxio, workflow as wf
 from sqx.projects.workflow import CROSSTF_BUILD
 from studies.transfer.crossTF.tf import inputs as tfinputs
 from ui.daemon.launch import chainplan, steps as launchsteps
@@ -169,3 +170,42 @@ def test_the_rail_row_and_the_criteria_know_the_new_steps() -> None:
     assert cfg["rules"] == [] and cfg["cut"] == "CrossTF_Input" and cfg["siblings"] == "follow"
     assert "11.5" in chainplan.JUDGES and "stage" not in {s["n"]: s for s in STEPS}["11.7"]
     assert [s["n"] for s in STEPS if s["n"].startswith("11")] == ["11", "11.5", "11.7"]
+
+
+def test_a_rerun_runs_the_tests_a_failed_step_8_left_before_its_judge() -> None:
+    """Step 8 reads done by its evidence once the gate wrote, though a later test failed the
+    run: the rerun runs what is still pending there, then judges (2026-10-07: it went straight
+    to the judge)."""
+    steps = []
+    for spec in STEPS[:[s["n"] for s in STEPS].index("9") + 1]:
+        state = lambda k: "done" if k == "gate" else "pending"
+        steps.append({**spec, "state": "pending" if spec["n"] == "9" else "done", "stage": "x",
+                      "tests": [{"key": k, "runnable": True, "auto": True, "state": state(k)}
+                                for k in spec["studies"] + (["monkey"] if spec["n"] == "8" else [])]})
+    todo = plan.plan({"steps": steps, "family": "fam"})["do"]
+    assert [(a["n"], a["kind"]) for a in todo[:3]] == [("8", "python"), ("8", "judge"), ("9", "sqx")]
+    assert "monkey" in todo[0]["tests"] and "gate" not in todo[0]["tests"]
+
+
+def test_a_project_trimmed_to_crosstf_ends_at_the_12_judge(tmp_path: Path) -> None:
+    """`workflow.trim` drops the tasks of the later steps, and the plan ends before the 13
+    (state `missing`) with the 12 judged — no T1 neighbours, no MC Retest."""
+    task = '  <Task type="Retest" active="false" taskXMLFile="{f}" title="{t}" />\n'
+    kept, cut = ["OOS", "CrossTF", "CrossTF H1 build"], ["MCR 7 OHLC", "SPP IS", "WFM", "WFC 1 IS"]
+    files = {t: f"Retest-Task{i}.xml" for i, t in enumerate(kept + cut)}
+    config = "<Project><Tasks>\n" + "".join(task.format(f=f, t=t) for t, f in files.items()) + "</Tasks></Project>"
+    cfx = tmp_path / "project.cfx"
+    with zipfile.ZipFile(cfx, "w") as z:
+        z.writestr("config.xml", config)
+        for f in files.values():
+            z.writestr(f, "<x/>")
+    assert wf.trim(cfx, "crosstf") == cut
+    left = cfxio.members(cfx)
+    assert sorted(left) == sorted(["config.xml"] + [files[t] for t in kept])
+    assert all(t not in left["config.xml"].decode() for t in cut)
+
+    data = rail(TWINS, last="13")
+    data["steps"][-1]["state"] = "missing"
+    todo = plan.plan(data)
+    assert kinds(todo)[-2:] == [("12", "python"), ("12", "judge")] and todo["stop"]["n"] == "13"
+    assert all(kind != "neighbours" for _, kind in kinds(todo))

@@ -61,11 +61,10 @@ def from_batch(batch: Path, base: dict, frame: pd.DataFrame) -> list[dict]:
     if (batch / "wfc.json").exists() and not recorded(frame, 17, batch):
         w = json.loads((batch / "wfc.json").read_text(encoding="utf-8"))
         found += rows(17, {**base, "launched_by": "studies.optimisation.wfc.report"},
-                      w["n"] + w["dropped"] + w["dropped_thin"],
+                      w["n"],
                       computed(batch / "estudios" / "wfc.json"), "wfc/rho",
-                      f"backfill · {batch.name} · {w['call']} rho {w['rho']:.3f} "
-                      f"IC [{w['ci95'][0]:.3f}, {w['ci95'][1]:.3f}] · IS {w['in_sample']} "
-                      f"OOS {w['out_of_sample']}")
+                      f"backfill · {batch.name} · {w['call']} rho {w['rho']} "
+                      f"· IS {w['in_sample']} OOS {w['out_of_sample']}")
     if (batch / "cscv.json").exists() and not recorded(frame, 18, batch):
         c = json.loads((batch / "cscv.json").read_text(encoding="utf-8"))
         found += rows(18, {**base, "launched_by": "studies.optimisation.cscv.report"},
@@ -89,7 +88,7 @@ def from_wfm(folder: Path, base: dict) -> list[dict]:
     verdict = pd.read_csv(folder / "verdict.csv")
     first = sorted((folder / "estrategias").glob("*.json"))[0]
     return rows(19, {**base, "launched_by": "studies.optimisation.wfm.report"}, len(verdict),
-                computed(first), "wfm/rho",
+                computed(first), "wfm/l1_mediana_exceso+l1_p_menos",
                 f"backfill · {folder} · {verdict['verdict'].value_counts().to_dict()}")
 
 

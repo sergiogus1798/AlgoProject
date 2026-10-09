@@ -7,7 +7,6 @@ from pathlib import Path
 
 from core.assets import load as load_asset, provisional
 from core.datapaths import pipeline_dir
-from core.paths import DATA
 
 BRANCH = "pipeline"
 FILE = "state.json"

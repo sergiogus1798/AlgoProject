@@ -106,6 +106,11 @@ def test_after_cut_keeps_a_judged_reading_before_the_judge() -> None:
     assert got[2]["cut"]
     plain = run.after_cut(actions, {"steps": {"8": {"rules": []}}})
     assert plain[2]["tests"] == ["monkey", "entryQuality"]
+    # monkeyExcess reads the panel monkey writes: it never stays behind, before the cut — and it
+    # is not run after it either, where the monkey of a picked list writes no panel
+    both = [{**actions[0], "tests": ["gate", "monkeyExcess", "monkey"]}, actions[1]]
+    got = run.after_cut(both, {"steps": {"8": {"rules": []}}})
+    assert got[0]["tests"] == ["gate"] and got[2]["tests"] == ["monkey"]
 
 
 if __name__ == "__main__":

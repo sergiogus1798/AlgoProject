@@ -112,6 +112,31 @@ def rewire(members: dict[str, bytes]) -> None:
     members["config.xml"] = declare(members["config.xml"].decode("utf-8"), names).encode("utf-8")
 
 
+def trim(cfx: Path, until: str) -> list[str]:
+    """Drop the tasks of every step after `until`: the project, and the autopilot, end there.
+
+    Args:
+        cfx: A workflow project no install holds.
+        until: The last step kept, a key of stages.yaml.
+
+    Returns:
+        The titles dropped. Their databanks stay declared, empty.
+    """
+    order = steps()
+    later = {t for s in order[order.index(until) + 1:] for t in titles(s)}
+    members = cfxio.members(cfx)
+    config, gone = members["config.xml"].decode("utf-8"), []
+    for tag in re.findall(r"[ \t]*<Task\b[^>]*/>\n?", config):
+        title = re.search(r'title="([^"]*)"', tag)
+        if title and title.group(1) in later:
+            config = config.replace(tag, "", 1)
+            del members[re.search(r'taskXMLFile="([^"]*)"', tag).group(1)]
+            gone.append(title.group(1))
+    members["config.xml"] = config.encode("utf-8")
+    cfxio.write(cfx, members)
+    return gone
+
+
 def finish(cfx: Path, symbol: str) -> None:
     """Price the cross-timeframe task over its own span, then leave only Build and OOS on.
 

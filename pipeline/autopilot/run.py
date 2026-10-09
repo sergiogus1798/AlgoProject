@@ -92,9 +92,9 @@ def merged(todo: list[dict]) -> list[dict]:
     return out
 
 
-# Per-strategy readings outside the sequence that run on the survivors of step 8's cut, not on
-# the whole build (owner, 2026-10-01: 200 of step 8's 297 s were these on all 571).
-AFTER_CUT = {"8": ["monkey", "monkeyExcess", "entryQuality"]}   # monkeyExcess reads monkey's panel
+# Per-strategy readings that run on the survivors of step 8's cut, not on the whole build (owner,
+# 2026-10-01). monkeyExcess leaves too, not run: knowhow/pipeline/monkeyexcess-after-the-cut.md
+AFTER_CUT = {"8": ["monkey", "monkeyExcess", "entryQuality"]}
 
 
 def after_cut(actions: list[dict], cfg: dict) -> list[dict]:
@@ -109,13 +109,13 @@ def after_cut(actions: list[dict], cfg: dict) -> list[dict]:
         moved = [k for k in AFTER_CUT.get(a["n"], [])
                  if a["kind"] == "python" and k in a["tests"] and k not in judged]
         if moved:
-            late[a["n"]] = {"n": a["n"], "title": a["title"], "kind": "python", "tests": moved,
-                            "cut": True}
+            late[a["n"]] = {"n": a["n"], "title": a["title"], "kind": "python",
+                            "tests": [k for k in moved if k != "monkeyExcess"], "cut": True}
             a = {**a, "tests": [k for k in a["tests"] if k not in moved]}
             if not a["tests"]:
                 continue
         out.append(a)
-        if a["kind"] == "judge" and a["n"] in late:
+        if a["kind"] == "judge" and a["n"] in late and late[a["n"]]["tests"]:
             out.append(late.pop(a["n"]))
     return out
 
@@ -235,11 +235,11 @@ def main() -> None:
     os.environ[AUTONOMOUS] = "1"   # D4 (owner, 2026-10-04): oos2's door binds this run and its subprocesses
     given = tail.inputs(a, judge.settings())
     if a.plan:
-        print(json.dumps(plan.plan(workflow.workflow(a.project), given), indent=1,
-                         ensure_ascii=False))
+        print(json.dumps(plan.plan(workflow.workflow(a.project), given), indent=1, ensure_ascii=False))
         return
     out = RUNS / a.project / f"{datetime.now():%Y%m%d-%H%M%S}"
     out.mkdir(parents=True)
+    (out / judge.SMOKE_MARK).touch() if a.smoke else None   # the store stamps its verdicts as smoke
     os.environ[phases.ENV] = str(out / "fases.csv")
     print(f"carpeta del run: {out}", flush=True)
     signal.signal(signal.SIGTERM, chain.cancelled)

@@ -18,11 +18,12 @@ def task(title: str, source: str, output: str) -> dict:
 
 TASKS = ([task("CrossTF", "CrossTF_Input", "CrossTF")]
          + [task(t, "CrossTF_Mothers", t) for t in titles("mcretest")]
-         + [task("SPP IS", "MCR 8 Stress", "SPP IS"), task("SPP OOS", "SPP IS", "SPP OOS")])
+         + [task("SPP IS", "MCR 7 OHLC", "SPP IS"), task("SPP OOS", "SPP IS", "SPP OOS")])
 
 
 def test_all_eight_mc_retests_run_after_crosstf() -> None:
-    """The eight read the same databank: none is skipped, and the fill comes first."""
+    """Every MC Retest of the stage (three since 2026-10-07; the name is from when they were
+    eight) reads the same databank: none is skipped, and the fill comes first."""
     got = next_task(TASKS, "CrossTF")
     assert got["stage"] == "mcretest" and got["fill"] == "CrossTF_Mothers"
     assert got["skip"] == []
@@ -30,7 +31,7 @@ def test_all_eight_mc_retests_run_after_crosstf() -> None:
 
 def test_spp_oos_chains_behind_spp_is() -> None:
     """SPP OOS reads what SPP IS writes: both run in the one start."""
-    got = next_task(TASKS, "MCR 8 Stress")
+    got = next_task(TASKS, "MCR 7 OHLC")
     assert got["task"] == "SPP IS" and got["skip"] == []
 
 

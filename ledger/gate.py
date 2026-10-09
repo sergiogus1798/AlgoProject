@@ -6,9 +6,14 @@ agent that makes the development decisions should still be held to the door is l
 the door stays built and such an agent opts in by setting `ALGO_AUTONOMOUS=1`.
 """
 
+import hashlib
+import json
+
 import pandas as pd
+import yaml
 
 from core import assetdata
+from core.paths import DATA, ROOT
 
 # Which workflow step each name in `_policy.yaml`'s `reserved_for` refers to. The policy
 # file names tests, not numbers, and the numbers are what a caller has. A name here that the
@@ -19,6 +24,10 @@ STEPS = {"WFC": 17, "CSCV": 18, "MarketSurfaces": 18.5, "WFM": 19, "BlindJoint":
 BLIND = (17, 18, 19)
 AUTONOMOUS = assetdata.AUTONOMOUS
 enforced = assetdata.enforced      # the door is shut only for an autonomous agent
+# `seal` (encargo 48): the seal inside the study, shut for everyone, human or not.
+CRITERIA = ROOT / "pipeline" / "autopilot" / "criteria.yaml"
+CALIBRATION = DATA / "ledger" / "wfc_calibration.json"
+JUDGED = (17,)      # the steps whose reading of a reserved segment needs a written, calibrated criterion
 
 
 def reserved(symbol: str) -> dict[str, list[int]]:
@@ -67,6 +76,51 @@ def allow(step: int, segment: str, symbol: str) -> None:
                 f"ledger: el paso {step} no puede mirar `{part}` de {symbol}: está "
                 f"reservado para {', '.join(names)}. Cada mirada lo gasta "
                 f"(assets/_policy.yaml, WORKFLOW.md §la puerta de un solo sentido)")
+
+
+def criteria_hash(step: dict | None) -> str:
+    """sha256 of a canonical dump of one `criteria.yaml` entry: the value the calibration signs."""
+    return hashlib.sha256(json.dumps(step, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+
+
+def seal(step: float, segment: str, symbol: str) -> None:
+    """Refuse a read of a reserved segment unless the step may and its criterion is written and calibrated.
+
+    Args:
+        step: Workflow step, as in `allow`.
+        segment: The segment read, or several joined by "+".
+        symbol: The asset.
+
+    Raises:
+        PermissionError: A part of `segment` is reserved and (a) this step is not in its
+            `reserved_for`, or (b) the step is in `JUDGED` and `criteria.yaml` has no rules for
+            it, or `CALIBRATION` is missing, was written for another entry "17" (`criteria_hash`) or has `abre` other than true.
+
+        Unlike `allow` this does not look at `ALGO_AUTONOMOUS`: a human is shut out too, until
+        the owner's rule is written and measured against a null (owner, 2026-10-07).
+    """
+    held = reserved(symbol)
+    for part in segment.split("+"):
+        allowed = held.get(part)
+        if allowed is None:
+            continue
+        if step not in allowed:
+            raise PermissionError(f"ledger: el paso {step} no puede mirar `{part}` de {symbol}: "
+                                  f"no está en su reserva (assets/_policy.yaml)")
+        if step not in JUDGED:
+            continue
+        entry = yaml.safe_load(CRITERIA.read_text(encoding="utf-8")).get("steps", {}).get(str(int(step)), {}) or {}
+        rules = entry.get("rules")
+        if not rules:
+            raise PermissionError(f"ledger: `{part}` sellado: criteria.yaml no tiene regla "
+                                  f"para el paso {step}")
+        found = json.loads(CALIBRATION.read_text(encoding="utf-8")) if CALIBRATION.exists() else {}
+        if found.get("criteria_sha256") != criteria_hash(entry):
+            raise PermissionError(f"ledger: `{part}` sellado: no hay calibración registrada para "
+                                  f"este criteria.yaml ({CALIBRATION})")
+        if found.get("abre") is not True:
+            raise PermissionError(f"ledger: `{part}` sellado: la calibración registrada el "
+                                  f"{found.get('fecha')} no abre el bloque (abre: false)")
 
 
 def done(frame: pd.DataFrame) -> dict[int, bool]:

@@ -12,7 +12,7 @@ SIGNED = {"wfc", "cscv", "marketSurfaces", "blindJoint"}
 # never ticked by default nor in «correr todo»; the window asks before each run.
 SPENDS = {"wfc": "lee el oos2 y escribe su fila en el ledger",
           "cscv": "lee el oos2 y escribe su fila en el ledger",
-          "marketSurfaces": "lee el oos2 y escribe su fila en el ledger",
+          "marketSurfaces": "lee build y oos1 (el oos2 sólo en el bloque ciego) y escribe su fila en el ledger",
           "wfm": "lee el oos2 de la Walk Forward Matrix",
           "blindJoint": "lee el oos2 del paso 20 y escribe su fila en el ledger"}
 SQX_STEP = ("paso de SQX: su tarea se lanza con el ▶ SQX de la tarjeta; su análisis se corre "

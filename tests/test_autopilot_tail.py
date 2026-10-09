@@ -23,7 +23,8 @@ from ui.daemon.workflow.steps import STEPS
 MT5 = {"start": "2024-01-01", "end": "2026-08-30", "model": "ohlc_m1", "firms": ["ftmo"]}
 GIVEN = {"panel": {"21": "OOS", "22": "Results"}, "mt5": MT5, "judged": set()}
 WHO = {"symbol": "USDJPY", "timeframe": "H1", "feed": "USDJPY_M1", "family": "fam"}
-BLOCK = [("17", "blind"), ("18", "blind"), ("18.5", "blind")]
+# 18.5's deciding reading first (build+oos1), then the three looks at oos2
+BLOCK = [("18.5", "blind"), ("17", "blind"), ("18", "blind"), ("18.5", "blind")]
 CLOSING = [("21", "reading"), ("22", "reading"), ("23", "structural"), ("24", "stop"),
            ("25", "edge"), ("25", "finalists")]
 
@@ -67,7 +68,7 @@ def test_the_whole_tail_in_order() -> None:
                           *CLOSING, ("26", "mt5verify")]
     assert got["stop"] == {"n": None, "why": "no queda ningún paso"}
     assert all(a["redo"] for a in got["do"] if a["kind"] == "blind")
-    assert got["do"][-1]["params"] == MT5 and got["do"][11]["databank"] == "OOS"
+    assert got["do"][-1]["params"] == MT5 and got["do"][12]["databank"] == "OOS"
     json.dumps(got)     # plan.json is written as it comes
 
 
@@ -110,6 +111,45 @@ def test_a_rerun_takes_up_where_it_stopped() -> None:
     # a step the owner gives rules to is judged right after it runs
     got = plan.plan(rail("24"), GIVEN | {"judged": {"8", "24"}})
     assert kinds(got)[:3] == [("24", "stop"), ("24", "judge"), ("25", "edge")]
+
+
+def test_the_block_is_judged_and_18_5_is_split() -> None:
+    """With rules for 17, 18, 18.5 and 19: 18.5 is read without oos2 and judged before any
+    blind look, the three are judged as the looks close (18.5 again), and 19 after its reading."""
+    got = plan.plan(rail(), GIVEN | {"judged": {"17", "18", "18.5", "19"}})
+    assert kinds(got)[2:15] == [
+        ("18.5", "blind"), ("18.5", "judge"), ("17", "blind"), ("18", "blind"), ("18.5", "blind"),
+        ("17", "judge"), ("18", "judge"), ("18.5", "judge"), ("19", "sqx"), ("19", "wfm"),
+        ("19", "kept"), ("19", "judge"), ("19", "ledger")]
+    assert [a["oos2"] for a in got["do"] if a["kind"] == "blind"] == [False, True, True, True]
+    # only the steps with rules are judged; a block already done is not judged again
+    got = plan.plan(rail(), GIVEN | {"judged": {"18"}})
+    assert [n for n, k in kinds(got) if k == "judge"] == ["16", "18", "20"]
+    got = plan.plan(rail("21"), GIVEN | {"judged": {"17", "18", "18.5", "19"}})
+    assert not any(k == "blind" or (k == "judge" and n != "20") for n, k in kinds(got))
+
+
+def test_the_deciding_reading_does_not_ask_for_oos2() -> None:
+    """18.5 before the block: the door is not asked and the study gets no `--oos2`; inside the
+    block it is asked, the flag is added, and a result without its oos2 reading is run again."""
+    ran, asked = [], []
+    mothers = pd.DataFrame({"strategy": ["M"], "identity": ["i"], "file": [None]})
+    with tempfile.TemporaryDirectory() as tmp, \
+            patched(survivors, about=lambda p: WHO), \
+            patched(gate, allow=lambda *a: asked.append(a)), \
+            patched(call, run=ran.append, window=lambda *a: [["-m", a[0]]]), \
+            patched(blind, variants_dir=lambda p, m: Path(tmp) / m):
+        said = blind.look("P", "18.5", "marketSurfaces", mothers, redo=False, oos2=False)
+        assert asked == [] and ran == [["-m", "marketSurfaces"]] and "sin oos2" in said
+        result = Path(tmp) / "M" / "estudios" / "marketSurfaces.json"
+        result.parent.mkdir(parents=True)
+        result.write_text(json.dumps({"facts": {"orden": {"estado": "neutro"}}}))
+        assert "0 madre(s)" in blind.look("P", "18.5", "marketSurfaces", mothers, False, False)
+        del ran[:]
+        blind.look("P", "18.5", "marketSurfaces", mothers, redo=False)
+        assert asked == [(18.5, "oos2", "USDJPY")] and ran == [["-m", "marketSurfaces", "--oos2"]]
+        result.write_text(json.dumps({"facts": {"oos2": {"perverso": 0}}}))
+        assert "0 madre(s)" in blind.look("P", "18.5", "marketSurfaces", mothers, redo=False)
 
 
 def ledger(folder: Path, steps: list[int]) -> None:
@@ -196,6 +236,9 @@ if __name__ == "__main__":
     test_the_whole_tail_in_order()
     test_clean_stops()
     test_a_rerun_takes_up_where_it_stopped()
+    test_the_block_is_judged_and_18_5_is_split()
+    test_the_deciding_reading_does_not_ask_for_oos2()
     test_the_door_refuses_to_read_without_the_three_rows()
     test_nobody_left_is_a_clean_end()
     print("ok")
+

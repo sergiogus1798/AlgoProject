@@ -79,7 +79,7 @@ def log_wfm(project: str, export: Path, n: int, command: str) -> str:
     for segment in blind.SEGMENTS:
         record.log(sid, {"step": 19, "launched_by": command, "symbol": row["symbol"],
                          "timeframe": row["timeframe"], "segment": segment, "n_in": n,
-                         "n_out": n, "criterion": "wfm/rho", "note": note})
+                         "n_out": n, "criterion": "wfm/l1_mediana_exceso+l1_p_menos", "note": note})
     return f"Ledger: tres filas del paso 19 en {sid}"
 
 

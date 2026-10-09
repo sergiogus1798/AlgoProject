@@ -177,7 +177,7 @@ def test_needs() -> None:
 
 def test_project_knobs() -> None:
     """The drawer's knobs are the ones the runner runs: entryQuality's feed is the project's,
-    and the cloud's symbol, which the runner now sets too (2026-09-28), is the project's."""
+    and the cloud takes no symbol at all (encargo 48: asset and timeframe come off the batch)."""
     from ui.daemon.results import forproject
     from ui.daemon.results.api import config
     from ui.daemon import runs
@@ -187,8 +187,8 @@ def test_project_knobs() -> None:
     assert got["run.feed"]["value"] == mine["feed"] and "note" in got["run.feed"]
     argv = readings.entry_quality(runs.context(PROJECT, "CrossTF", "S", mine["symbol"]), "S")
     assert f"run.feed={mine['feed']}" in argv, argv
-    cloud = {k["key"]: k for s in config("cloud", PROJECT)["sections"] for k in s["knobs"]}
-    assert cloud["run.symbol"]["value"] == mine["symbol"] and "warn" not in cloud["run.symbol"]
+    cloud = {k["key"] for s in config("cloud", PROJECT)["sections"] for k in s["knobs"]}
+    assert not any(k.startswith("run.") for k in cloud), cloud   # the cloud takes no symbol now
 
 
 if __name__ == "__main__":

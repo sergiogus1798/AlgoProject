@@ -1,6 +1,8 @@
 """Steps 17 to 20, blind: each look admitted and computed, the ledger rows of 17-19 written, then the joint reading."""
 
+import json
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import pandas as pd
 
@@ -15,12 +17,23 @@ from ui.daemon import jobs
 from ui.daemon.launch import preflight
 
 
+# The flag that adds a study's oos2 reading to the one that decides without it (18.5).
+OOS2 = {"marketSurfaces": "--oos2"}
+
+
 def admit(project: str, n: str) -> None:
     """Ask the ledger's door before step `n` looks at oos2 (it raises only for an autonomous agent)."""
     gate.allow(float(n), "oos2", survivors.about(project)["symbol"])
 
 
-def look(project: str, n: str, key: str, mothers: pd.DataFrame, redo: bool) -> str:
+def has(file: Path, flag: str | None) -> bool:
+    """Whether a mother's result is there — with its oos2 reading, when a `flag` asks for one."""
+    return file.exists() and (
+        not flag or "oos2" in (json.loads(file.read_text(encoding="utf-8")).get("facts") or {}))
+
+
+def look(project: str, n: str, key: str, mothers: pd.DataFrame, redo: bool,
+         oos2: bool = True) -> str:
     """One of 17, 18, 18.5 over every mother's variant batch, computed and not read.
 
     Args:
@@ -30,22 +43,28 @@ def look(project: str, n: str, key: str, mothers: pd.DataFrame, redo: bool) -> s
         mothers: `survivors.mothers`.
         redo: The batches are new (16.5 ran in this run): every mother again. Otherwise a
             mother that has the study's result is skipped — each run is a look the ledger counts.
+        oos2: False for 18.5's deciding reading, run before the block: build and oos1 only,
+            so the door is not asked and the study runs without its `OOS2` flag.
 
     Returns:
         How many mothers were read and how many already were. The study signs its own
         ledger rows (`engines.variants.look`); none of its numbers is printed here.
     """
-    admit(project, n)
+    flag = OOS2.get(key) if oos2 else None
+    if oos2:
+        admit(project, n)
     todo = [m for m in mothers["strategy"]
-            if redo or not (variants_dir(project, m) / "estudios" / f"{key}.json").exists()]
+            if redo or not has(variants_dir(project, m) / "estudios" / f"{key}.json", flag)]
     who = survivors.about(project)
     # The mothers at once, by the window's own width rule (`chain.python_step`): each writes
     # its own <work>/estudios and the ledger takes concurrent appends (18.5: 570 s in a row).
     # ponytail: no RAM floor (a mother's study is ~13 MB of input); `chain.floored` if one grows.
     width = 1 if key in jobs.WIDE else max(1, jobs.SLOTS // jobs.LIGHT)
     with ThreadPoolExecutor(width) as pool:
-        list(pool.map(call.run, call.window(key, project, "", who["symbol"], todo) if todo else []))
-    return f"{key}: {len(todo)} madre(s) leídas a ciegas, {len(mothers) - len(todo)} ya lo estaban"
+        list(pool.map(call.run, [argv + [flag] * bool(flag) for argv in
+                                 call.window(key, project, "", who["symbol"], todo)] if todo else []))
+    how = "a ciegas" if oos2 else "sin oos2 (la lectura que decide)"
+    return f"{key}: {len(todo)} madre(s) leídas {how}, {len(mothers) - len(todo)} ya lo estaban"
 
 
 def bank(project: str) -> str:

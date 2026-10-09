@@ -69,7 +69,7 @@ def results(project: str, key: str, strategy_runs: bool | None = None) -> list[d
     Returns:
         One dict per result: `path`, `day`, `databank` (None for a batch) and `manifest`.
         Reports live under reports/<project>/<databank>/<day>/<key>/; batch studies under
-        `BATCH_ROOTS`/<project>/<batch>/estudios/<key>(.json).
+        `BATCH_ROOTS`/<project>/<batch>[/<pass>]/estudios/<key>(.json).
     """
     if key == "mt5Validation":
         return verified(project)
@@ -80,7 +80,8 @@ def results(project: str, key: str, strategy_runs: bool | None = None) -> list[d
         found.append({"path": folder, "day": folder.parent.name,
                       "databank": folder.parent.parent.name, "manifest": manifest})
     for root in BATCH_ROOTS:
-        for hit in (DATA / root / project).glob(f"*/estudios/{key}*"):
+        top = DATA / root / project      # step 24's batch is two passes: <batch>/pass1, pass2
+        for hit in (*top.glob(f"*/estudios/{key}*"), *top.glob(f"*/*/estudios/{key}*")):
             if hit.name in (key, f"{key}.json"):
                 found.append({"path": hit, "day": day_of(hit), "databank": None,
                               "manifest": {}})

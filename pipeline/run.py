@@ -40,7 +40,7 @@ def one(strategy: str, args: argparse.Namespace, settings: dict) -> str:
     """
     work = state.work_dir(args.project, strategy)
     state.open_run(work, strategy, args.project, args.databank, args.asset)
-    ctx = recipe.context(args.project, args.databank, strategy, args.report_day)
+    ctx = recipe.context(args.project, args.databank, strategy, args.report_day, args.family)
 
     for row in recipe.stages():
         stage = recipe.resolve(row, ctx)
@@ -68,6 +68,8 @@ def main() -> None:
     ap.add_argument("--report-day", default=date.today().isoformat(),
                     help="fecha de la carpeta de informes que sppUltra escribe")
     ap.add_argument("--asset", help="nombre en assets/; por defecto, el del proyecto")
+    ap.add_argument("--family", default="free",
+                    help="familia de plantillas con la que el WFC firma sus filas del ledger")
     ap.add_argument("--sweep", action="store_true",
                     help="borra los datos de variantes al terminar cada madre")
     args = ap.parse_args()

@@ -3,8 +3,8 @@
 # every choice is an argument, a missing one is an error, and the first failure ends it.
 #
 # Usage:
-#   bin/workflow.sh simple   <PROJECT> <SYMBOL> <TF> <long|short> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES> [--smoke]
-#   bin/workflow.sh template <PROJECT> <SYMBOL> <TF> <TEMPLATE.sqx> <PALETTE|-> "<PURPOSE>" <STRATEGIES> <MINUTES> [--smoke]
+#   bin/workflow.sh simple   <PROJECT> <SYMBOL> <TF> <long|short> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke]
+#   bin/workflow.sh template <PROJECT> <SYMBOL> <TF> <TEMPLATE.sqx> <PALETTE|-> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke]
 #   bin/workflow.sh run      <PROJECT> [--smoke] [--restart]
 #   bin/workflow.sh plan     <PROJECT>
 #
@@ -15,9 +15,13 @@
 #   run       runs an existing project from wherever its rail says it is.
 #   plan      prints what `run` would do and runs nothing.
 #
+#   --until    (simple, template) the project carries no task after this step, and the run ends
+#              at its judge: oos (7), crossmarket (10), crosstf (12), mcretest (14), spp (16).
 #   --smoke    functional test, Test_ projects only: only the readability rules judge.
 #   --restart  the old route (SQX starts and stops at every step, slower). Only when
 #              the single session fails.
+#   --own-log  (run) the worker's recent log is the caller's own previous try, not
+#              someone else's run: do not wait its 15 quiet minutes.
 #
 # Exit 0: the run ended (read the printed resumen.md). Non-zero: it did not start or it failed;
 # the reason is printed. Never retry by hand what this script refused: report it.
@@ -26,7 +30,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
 die() { printf 'workflow: %s\n' "$*" >&2; exit 1; }
 MODE=${1:-}; P=${2:-}
-[[ $MODE =~ ^(simple|template|run|plan)$ && -n $P ]] || { sed -n '2,24p' "$0"; exit 2; }
+[[ $MODE =~ ^(simple|template|run|plan)$ && -n $P ]] || { sed -n '2,26p' "$0"; exit 2; }
 [[ $P =~ ^(Test|Trade|Research)_[A-Za-z0-9_]+$ ]] || die "nombre de proyecto no válido: $P (Test_/Trade_/Research_, solo guiones bajos)"
 ROLE=custodian
 CFX=$(python3 -c "from core.paths import project_dir, worker_dir; print(project_dir('$P', worker_dir('$ROLE')) / 'project.cfx')") || die "no se resuelve la ruta del proyecto"
@@ -39,6 +43,8 @@ FLAGS=()
 if [[ $MODE == simple || $MODE == template ]]; then
     [[ $# -ge 9 ]] || die "$MODE necesita 8 argumentos tras el modo: mira el uso (bin/workflow.sh)"
     SYMBOL=$3; TF=$4; WHAT=$5; PALETTE=$6; PURPOSE=$7; N=$8; MIN=$9; shift 9
+    UNTIL=; if [[ ${1:-} == --until ]]; then UNTIL=${2:-}; shift 2; fi
+    [[ -z $UNTIL || $UNTIL =~ ^(oos|crossmarket|crosstf|mcretest|spp)$ ]] || die "--until no conoce el paso «$UNTIL»"
     if [[ $MODE == simple ]]; then
         [[ $WHAT =~ ^(long|short)$ ]] || die "el lado es long o short, no «$WHAT»"
         KIND=(--simple "$WHAT")
@@ -53,6 +59,10 @@ if [[ $MODE == simple || $MODE == template ]]; then
     python3 -m sqx.projects.builder "$P" --purpose "$PURPOSE" "${KIND[@]}" --symbol "$SYMBOL" \
         --role $ROLE --timeframe "$TF" --workflow --max-strategies "$N" --minutes "$MIN" \
         || die "el builder no creó $P"
+    if [[ -n $UNTIL ]]; then
+        python3 -c "import sys; from pathlib import Path; from sqx.projects.workflow import trim; print('sin las tareas de después de', sys.argv[2] + ':', ', '.join(trim(Path(sys.argv[1]), sys.argv[2])))" "$CFX" "$UNTIL" \
+            || die "no se recortó $P a «$UNTIL»"
+    fi
     if [[ $PALETTE != - ]]; then
         python3 -m sqx.projects.buildingblocks --project "$P" --palette "$PALETTE" --role $ROLE \
             || die "no se aplicó la paleta $PALETTE"
@@ -63,7 +73,7 @@ else
     [[ -e $CFX ]] || die "$P no existe en el $ROLE: créalo con «simple» o «template»"
 fi
 for flag in "$@"; do
-    [[ $flag =~ ^--(smoke|restart)$ ]] || die "opción desconocida: $flag"
+    [[ $flag =~ ^--(smoke|restart|own-log)$ ]] || die "opción desconocida: $flag"
     FLAGS+=("$flag")
 done
 
@@ -75,7 +85,10 @@ OUT=$(sed -n 's/^carpeta del run: //p' "$LOG" | head -1)
 if [[ -z $OUT ]]; then      # refused before it began: its own words are the reason
     tail -5 "$LOG" >&2; rm -f "$LOG"; die "el autopiloto no empezó"
 fi
-rm -f "$LOG"
+mv "$LOG" "$OUT/salida.txt"     # everything it printed stays with the run, the refusal's reason too
+if [[ ! -e $OUT/estado.txt ]]; then     # its folder made, then refused (the worker not free)
+    tail -5 "$OUT/salida.txt" >&2; die "el autopiloto no empezó"
+fi
 cat "$OUT/estado.txt"
 [[ -e $OUT/fallo.md ]] && head -5 "$OUT/fallo.md"
 echo "resumen: $OUT/resumen.md"
