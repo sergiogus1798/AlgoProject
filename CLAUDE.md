@@ -158,7 +158,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
 | what a prop firm's account costs with its add-ons, and its rules (the firms of `AlgoData/funding/firms.yaml`; adding one: `/firm-onboard`) | `python3 -m portfolio.funded.catalog.show <firm or plan>`, then `portfolio/funded/catalog/README.md` — refreshed every Sunday by the `fundingWatcher` agent |
 | prop-firm discounts: what is on today, and whether one is worth it | `python3 -m portfolio.funded.deals.worth [deal_id]`, then `portfolio/funded/deals/README.md` — hunted daily at 10:00 by the `dealHunter` agent, desktop notification |
 | MetaTrader 5: install under Wine, backtest an SQX EA in its tester, compare with SQX, read the terminal (MCP `mt5`, no order tools) | `mt5/README.md`, then OPEN.md #78 |
-| step 26: a strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account (window › MT5 BRIDGE › Verificar) | `mt5/verify/README.md`, then encargo 34 §0.5 |
+| step 26: a strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account (window › MT5 BRIDGE › Verificar) | `mt5/verify/README.md`, then `docs/encargos/55-mt5-paso-26-y-flota.md` §1 |
 | whether a result beats random entry, and which channel the edge lives in | `studies/readings/monkey/README.md` |
 | cribar una poblacion OOS entera hasta una lista de supervivientes | `studies/screening/gate/README.md` |
 | running something, or explaining to a human how to | the chapter in `AlgoData/manual-fuentes/` (`00-empezar.md`, then that module's); the owner gets the PDF in `docs/manual/` |

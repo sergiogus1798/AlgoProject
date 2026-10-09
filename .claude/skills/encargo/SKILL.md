@@ -15,7 +15,7 @@ An encargo is what one instance needs for its part, and nothing more. It is disp
    to the owner now, or — when only the executing agent can frame it — a line under «Decisiones
    del dueño». Never a default written into the brief.
 3. **Write `docs/encargos/NN-<nombre>.md`** in this shape (copy the tone of a recent one, e.g.
-   `sed -n 1,60p docs/encargos/42-*.md`):
+   `sed -n 1,60p docs/encargos/51-*.md`):
 
    | section | holds |
    |---|---|
@@ -35,7 +35,7 @@ An encargo is what one instance needs for its part, and nothing more. It is disp
 4. **Register it:** a row in `docs/encargos/README.md` under its batch (`fichero | qué construye |
    depende de`); a new batch gets a dated heading saying where it comes from.
 5. **A plan that spans sessions** carries a state table and a log at the top, updated by each
-   session (model: `41-fases-0-y-1.md`).
+   session (model: `49-plan-fases-0-y-1-y-criterios-10-a-20.md`).
 6. **Dispatch it as a loop when it has an `Objetivo — un comando`.** The last line of the encargo is
    the command that launches it:
 

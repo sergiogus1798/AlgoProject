@@ -34,117 +34,49 @@ El 2026-10-06 salieron, por orden del dueño, el **27** (la criba de MAE profund
 `studies/screening/maeDepth/`; su umbral sigue siendo decisión suya) y el **32** (`ledger/tried.py`
 registra lo que prueba cada barrido).
 
-## La tanda de validación — los seis del PDF `IMPROVEMENTS`, 2026-09-24
+El 2026-10-09, por orden del dueño, los 24 encargos que quedaban se reagruparon por temática en los
+ocho de abajo y se borraron: cada nuevo lleva sólo lo que falta por hacer, las preguntas abiertas y lo
+que sólo estaba escrito en sus originales. El **38** (recuadro de la meseta) y el **39** (edge según
+los costes) salieron sin heredero: se construyeron y un rediseño posterior quitó lo construido
+(`ca7dd56` y `90d516d`). Los originales siguen legibles con `git show c923d10:docs/encargos/<fichero>`.
 
-Salen de la revisión del PDF del dueño. **El 8 es el cimiento y va primero**: los otros cinco
-escriben en él.
+## Los encargos vivos — reagrupados por temática el 2026-10-09
 
-| fichero | qué construye | depende de |
+Los ocho son **planes vivos**: llevan tabla de estado y bitácora, y cada sesión actualiza su fila.
+
+| fichero | qué queda por hacer | depende de |
 |---|---|---|
-| `9-monos-de-punta-a-punta.md` | el control negativo: 10.000 monos por los 25 pasos, y cuántos llegan. Aparcado el 2026-09-26 y **reabierto por el dueño el 2026-10-04**: `studies/screening/falsePositives/` aplica ya el paso 8; falta el mono del paso 10 y la corrida a escala, que es del dueño | — |
-| `13-alfa-beta.md` | **interrogante aparcado**, no encargo: nadie lo coge hasta cerrar la secuencia individual | — |
+| `49-plan-fases-0-y-1-y-criterios-10-a-20.md` | **el plan que ordena a los demás** (puntos 0.1-1.9, misma numeración que el 41): cerrar la fase 0, el registro completo, el autopilot para poblaciones nulas, las firmas del dueño; y el punto 1.6 — una regla medida o una razón escrita para los pasos 10, 12, 14, 16 y 20, los hechos del paso 16 y los umbrales de cuatro estudios al ledger | las firmas del dueño; los encargos 50 y 53 |
+| `50-pasos-6-a-8-puerta-y-receta.md` | la puerta del paso 8: el embudo de las dos poblaciones de prueba, las líneas que fija el dueño, cargarlas, la documentación, la corrida de verificación y apagar `dev.on`; y la receta de filtros del IS del paso 6 por activo × marco × familia | máquina libre; dos paradas del dueño; el carril (regla 19) |
+| `51-pasos-10-a-12-transferencia.md` | paso 10: calibrar P1-P9 y adaptar la pestaña Cross Market de la ventana; pasos 10.5-12: la primera corrida real, el «corta» del dueño con su paquete de reglas y borrar la lectura vieja `z_new` | el custodio libre; el «corta» del dueño |
+| `52-pasos-16.5-a-18.5-variantes-y-meseta.md` | validar el WFC y la nube con un lote real (ya hay uno en disco); la meseta en el tiempo (tramo contra tramo) y el mapa de ventaja sobre el mono en Market Surfaces, ambos a reescribir contra el estudio actual | el «adelante» del dueño; `oos2` para la meseta |
+| `53-monos-y-nulos.md` | el control negativo: el mono por los pasos 10 a 20 y la corrida a 10.000, los monos seleccionados dentro de SQX con el bloque con semilla, lo que queda vivo de los nulos, y el hueco aleatorio a prueba | reglas firmadas de los pasos 10-20 (encargo 49); el custodio libre |
+| `54-fondeo.md` | que la ventana edite los datos del dueño que el simulador de fondeo necesita, la tabla de planes sobre una cartera real, y el módulo de riesgo máximo por operación (cola del peor día, drawdown esperado de la cartera) | los datos y decisiones del dueño; un pool validado (encargo 55) |
+| `55-mt5-paso-26-y-flota.md` | paso 26: el test en verde, el drawdown flotante con M1, una superviviente real verificada y el pool que lee la cartera; flota: paquete de despliegue con perfil `.chr`, registro de magics, acciones sobre la VPS, exportador de carteras y conciliación con las diez cuentas | una superviviente real; la VPS; OPEN.md #78 |
+| `56-lecturas-nuevas.md` | cinco lecturas sueltas, cada una despachable por separado: estacionalidad, señal por plantilla, replay de operaciones, cerebro con probabilidades y —aparcado por el dueño— alfa y beta | lo ya exportado; preguntas del dueño por frente |
 
-## La tanda del PDF `PARAMETER_SPACE_TESTS`, 2026-09-24
+## Adónde fue cada encargo viejo
 
-Del PDF del dueño sobre la nube de clones. Lo implementable **ya está implementado** y vive en
-`studies/optimisation/cloud/` (A1, A2, A3, B2, C1) y en `engines/nulls/filter.py` (la mitad del D1 que no
-necesita SQX). Los dos que quedaban —el 12 y el 15— se construyeron el 2026-09-26.
+Para resolver una cita antigua («encargo 44», «el plan 41 §1.5») en el código, en `OPEN.md` o en un dossier.
 
-**El punto 5 del PDF (perturbación de zona horaria) se ha retirado.** Decisión del dueño,
-2026-09-24: no le sirve. Su encargo se ha borrado.
-
-**El punto 6 se ha convertido en otra cosa y ya está construido.** En vez de la descomposición
-alfa/beta, el dueño pidió medir la dicotomía **rendimiento contra exposición al mercado** — una
-estrategia que saca un 5 % estando dentro una hora a la semana contra un buy and hold que saca un
-10 % estando dentro siempre. Es `studies/closing/exposure/`, el **paso 21** del `WORKFLOW.md`, con su
-página de manual `docs/manual/10-cierre.pdf` (cap. 38-exposicion). La alfa y la beta quedan como interrogante dentro
-de esa misma carpeta, en `13-alfa-beta.md`.
-
-**El punto 2 del PDF (permutaciones de Masters) no tiene encargo propio, a propósito.** Se
-investigó: la API de SQX no tiene verbo de import, el almacén de datos está compartido por symlink
-con el maestro y `strategies/translate/` está vacío. El encargo 9 responde la misma pregunta —la
-tasa de falsos positivos de la cadena— con la maquinaria de monos que ya existe. Decisión del
-dueño, 2026-09-24: **«monos se ha dicho»**.
-
-## La tanda del PDF `TRADE_LEVEL_TESTS`, 2026-09-24
-
-Siete tests sobre listas de operaciones y datos M1, ninguno necesita SQX. **Seis están
-construidos** — `studies/readings/profitShape/` (items 1, 2 y 7), `studies/readings/entryQuality/` (item 3 y
-el tier 1 del 4), `studies/readings/conditionalMap/` (item 6, paso 22) y, el 2026-09-26,
-`studies/data/feedQuality/` (item 5, el **17**: calidad del feed, pasos 4 y 8, sobre las respuestas
-del dueño a las 16 decisiones; lo que quedó abierto está en su `POSSIBLE_IMPROVEMENTS.md`). Queda uno:
-
-| fichero | qué construye | qué lo bloquea |
-|---|---|---|
-| `16-replay-de-operaciones.md` | el tier 2 del retraso: reejecutar cada operación desde una entrada desplazada | hay que recalcular stops, y **esta población no tiene ninguno** con el que validarlo |
-
-## El rediseño de la ventana, 2026-09-27 — retirado el 2026-09-28
-
-Los encargos **22** (rediseño de la ventana), **23** (archivo de estrategias) y el plan **24** que los
-ejecutó se retiraron el 2026-09-28: 21 frentes en cuatro olas, cada uno con un revisor detrás, y una
-auditoría final contra los dos encargos. Lo que enseñaron vive en `ui/README.md` (las zonas y las
-seis decisiones del dueño), `core/archive/README.md`, `docs/manual/02-la-ventana.pdf`, `knowhow/`
-(eng, locations, sqx-drive, research) y `OPEN.md` §81-§82 (las decisiones que quedan en manos del
-dueño y la prueba en vivo de «Continuar workflow», pendiente de su autorización).
-
-## La tanda de las ideas de internet y de los libros, 2026-09-28
-
-Salen del dossier `docs/AgentPDFs/ideas-de-internet-y-libros-2026-09-27.md`, elegidas por el dueño.
-
-| fichero | qué construye | depende de |
-|---|---|---|
-| `25-estacionalidad.md` | desglose estacional de una estrategia: si su resultado se concentra en unos meses, unos días de la semana o unas horas, o está repartido, medido contra el azar. Nace de la comparación con BuildAlpha del 2026-09-27; sin empezar | lo ya exportado (`metrics/` y operaciones); no toca SQX |
-| `26-senal-por-plantilla.md` | desglose de la señal agregado por plantilla, no por estrategia suelta: qué plantillas de la librería merece la pena seguir explotando. Misma comparación con BuildAlpha; sin empezar | métricas y operaciones de proyectos con plantillas de la librería; no toca SQX |
-| `28-hueco-aleatorio-a-prueba.md` | ¿aporta el hueco aleatorio de SQX? A: A/B fija contra fija + hueco, automatizado con la skill `/ab-hueco` (por construir); B: atribución fija contra hueco en el paso 23; C: bloque de ruido y barrido de complejidad | el custodio libre para A y C |
-| `29-meseta-en-el-tiempo.md` | la región buena de parámetros, ¿en el mismo sitio en `build`, `oos1` y `oos2` por separado? Ampliación del paso 18.5, de mercado contra mercado a tramo contra tramo; y la tabla que dirá si la meseta predice supervivencia | un lote de variantes retesteado; lectura ciega del paso 20 |
-| `30-monos-seleccionados-en-sqx.md` | monos de entrada aleatoria construidos y seleccionados por el Builder de SQX con el bloque RAND, pasados por la cadena real: la tasa de falsos positivos con la selección incluida. Construye además `RandomEntrySeeded`, el bloque con semilla. Reabierto por el dueño el 2026-09-28 | instalar los bloques en el custodio; 28 C depende de él |
-| `31-mapa-ventaja-sobre-el-mono.md` | una capa nueva del paso 18.5: la rejilla mercado × parámetro coloreada por la ventaja sobre el mono de cada celda, no por el beneficio neto, con corrección por pruebas múltiples. Necesita exportar operaciones del lote por mercado: medir antes lo que cuesta | un lote de variantes retesteado en los mercados; un worker libre para el export |
-| `33-economia-del-fondeo.md` | el fondeo como flujo de caja banco ↔ empresa: catálogo de planes y add-ons extraído (Hantec ya, 44 planes), reglas como máquina de estados sobre equity flotante, ciclo compra → fases → fondeada → cobros simulado por bloques, contra el mono y con recorte del edge; devuelve qué plan, add-ons y riesgo comprar. Contesta `portfolio/DECISIONS.md` #6 | una cartera en el archivo; los huecos del catálogo confirmados por el dueño |
-| `34-validacion-mt5-pool.md` | el paso 26: la estrategia ya buena en 1-25 se backtestea en MT5 con la feed de cada empresa; SQX traducido a su reloj y sus costes se compara en operaciones, P&L diario del servidor, peor día y drawdown intradía con umbrales fijados antes; si coincide, entra en el pool validado de esa empresa, lo único que lee la cartera | OPEN.md #78 |
-
-## La flota en vivo, 2026-09-29
-
-| fichero | qué construye | depende de |
-|---|---|---|
-| `35-flota-mt5-en-la-vps.md` | las cuentas de fondeo en vivo de la VPS Windows, vistas desde la ventana del Linux (estado, semáforo contra los límites de cada empresa, conciliación con SQX por magic), y el despliegue de EAs desde una carpeta de `.mq5` y el Excel del dueño con perfiles de gráficos generados; más el exportador de carteras (magic, riesgo, noticias, comentario, nombre) | specs de la VPS y la plantilla de Excel del dueño; el exportador, de OPEN.md #78.3 |
-
-## Lo que quedó sin hacer del feedback de la ventana, 2026-10-01
-
-Salen de la auditoría del feedback del 2026-09-30 (`AlgoData/audit/feedback-ui-2026-09-30/`): tres
-puntos que la sesión de esa noche dejó a medias y que no son un arreglo de una tarde.
-
-| fichero | qué construye | depende de |
-|---|---|---|
-| `38-recuadro-de-la-meseta.md` | en Market Surfaces, que el recuadro pintado sea la meseta que se mide (hoy es un cuadrado de radio 2 sin el filtro de delta, y la meseta es una sola variante en 7 de 15 madres), un mínimo de variantes para llamarla meseta, y JSON de menos de 2 MB | el mínimo, del dueño |
-| `39-edge-segun-los-costes.md` | Edge por coste completo: el swap de cada operación modelado (hoy solo un residuo), una tabla por coste y la sensibilidad del edge a cada coste ×0…×3 con su punto muerto, por estrategia y en la población | el umbral del color, del dueño |
-| `40-cerebro-con-probabilidades.md` | una regresión logística que da a cada estrategia la probabilidad de pasar el paso siguiente, calibrada con nuestros datos (prototipo sobre 49.124 de XAUUSD: AUC 0,69-0,74, bien calibrada), como estudio y como regla de `criteria.yaml` con su coste | el objetivo y el corte de `p`, del dueño; runs completos para el objetivo bueno |
-| `41-fases-0-y-1.md` | **plan vivo** de las fases 0 y 1 del dossier `estado-y-direccion-2026-10-02`: proteger lo hecho (cortafuegos, commit, copia) y que la fábrica decida (criterios firmados, registro completo, monos de punta a punta con los encargos 9 y 30). Lleva tabla de estado y bitácora; cada sesión actualiza su punto | las decisiones D1-D7 del dueño; los encargos 9 y 30 |
-
-## La recalibración de los criterios, 2026-10-06
-
-Salen de los dos prompts del 2026-10-02 (`docs/AgentPDFs/prompt-recalibracion-pasos-6-7-8` y
-`prompt-criterios-otros-pasos`, borrados; en git hasta `936e394`), reescritos contra el estado de
-hoy: la calibración del día 4 se borró entera por el spread y no queda herramienta ni nulo en disco.
-
-| fichero | qué construye | depende de |
-|---|---|---|
-| `42-recalibracion-pasos-6-7-8.md` | la receta de filtros del IS en SQX (paso 6) y las reglas Pasa / Limbo / Falla del primer cribado OOS (pasos 7-8), por activo × marco × familia, sobre poblaciones sin seleccionar con su gemela aleatoria y nulos nuevos; incluye el punto 1.5 del plan 41 | ocho decisiones del dueño, la primera el carril (regla 19) |
-| `43-criterios-pasos-10-a-20.md` | una regla medida, o una razón escrita, para los pasos 10, 12, 14, 16 y 20; es el punto 1.6 del plan 41 | el 42 entregado |
-| `44-puerta-is-oos-paso-8.md` | la puerta IS/OOS nueva del paso 8, tras la revisión del dueño del 2026-10-06: R3 con la deriva por ventana y sin Limbo; R5 a R9b, calidad de datos, retraso de una barra y mono rediseñados; la cascada de la regla más barata a la más cara; todos los parámetros en la ventana; y las dos poblaciones de prueba con las que se fijan las líneas | nada; lleva su tabla de estado |
-| `46-paso-10-otros-mercados-la-logica-viaja.md` | **plan vivo**: el paso 10 nuevo — P1-P9 de la propuesta del dueño del 2026-10-06, todo contra las mismas corridas al azar conjuntas (z conjunta, V2, quitar cada mercado, amplitud, τ½, mercados en contra, frecuencia, degradación); se construye al lado y el corte espera al dueño | el mono del 44 para `e_principal` (P7) |
-| `45-modulo-de-fondeo.md` | el riesgo máximo por operación que admite una cartera dentro del límite diario y total de una cuenta de fondeo (adonde van R9a y R9c al salir del paso 8): la cola del peor día y el drawdown esperado de la cartera | el 44 (parte L y el bootstrap de R6); cinco decisiones del dueño antes de programar |
-| `47-paso-12-otras-temporalidades-pico-aislado.md` | **plan vivo**: los pasos 10.5, 11 y 12 nuevos — T0-T4 de la propuesta del dueño del 2026-10-07 (comparabilidad, frecuencia, retención en oos1, hermana frente al azar en el build, TF lejano, coincidencia) contra corridas al azar conjuntas por año; hermana M15, coeficientes escalados con el cociente de ATR, cascada 11 · 11.5 · 11.7 · 12; se construye al lado y el corte espera al dueño | las piezas del 46 (`travel/`), que se importan sin editar |
-| `48-pasos-16.5-y-17-fabrica-nube-y-wfc.md` | **plan vivo**: el 16.5 deja de juzgar (lote por hipercubo latino sobre los vivos, operaciones de todas las variantes, nube como mapa de Sobol) y el 17 juzga con el exceso por año, un nulo de volteo de signos y el nivel del top, sólo en build+oos1 → oos2; oos2 sellado en el estudio hasta tener criterio escrito y calibración registrada | el exceso del paso 14 y el brief del SPP (sesión de los pasos 14 y 16) |
-
-## Lo que no es un encargo
-
-| fichero | qué es |
-|---|---|
-| `5-nulos.md` | informe de cierre del módulo `studies/readings/monkey/`, con cinco cosas pendientes en su §6. Se queda hasta que esas cinco estén resueltas o descartadas |
+| viejo | ahora | viejo | ahora |
+|---|---|---|---|
+| 5 nulos (§6) | 53, parte 5 | 35 flota MT5 | 55 |
+| 9 monos de punta a punta | 53, partes 1-3 | 38 recuadro de la meseta | sin heredero |
+| 13 alfa y beta | 56, frente 5 | 39 edge según los costes | sin heredero |
+| 16 replay de operaciones | 56, frente 3 | 40 cerebro con probabilidades | 56, frente 4 |
+| 25 estacionalidad | 56, frente 1 | 41 fases 0 y 1 | 49 (misma numeración de puntos) |
+| 26 señal por plantilla | 56, frente 2 | 42 recalibración 6-7-8 | 50, parte 7 |
+| 28 hueco aleatorio | 53, parte 6 | 43 criterios 10 a 20 | 49, §3 |
+| 29 meseta en el tiempo | 52, parte M | 44 puerta del paso 8 | 50, partes 1-6 |
+| 30 monos en SQX | 53, parte 4 | 45 módulo de fondeo | 54, frentes D-G |
+| 31 mapa de ventaja sobre el mono | 52, parte R | 46 paso 10 | 51 |
+| 33 economía del fondeo | 54, frentes A-C | 47 paso 12 | 51 |
+| 34 validación MT5 y pool | 55 (su §0.5 es ahora el §1) | 48 pasos 16.5 y 17 | 52, partes V y Q |
 
 ## Cómo se despacha
 
-> Lee `docs/encargos/16-replay-de-operaciones.md` y ejecútalo entero. Es tu encargo completo: no necesitas
+> Lee `docs/encargos/51-pasos-10-a-12-transferencia.md` y ejecútalo entero. Es tu encargo completo: no necesitas
 > leer el plan grande ni los otros encargos. Si algo te bloquea, párate y dímelo.
 
 ## Protocolo anticolisión
