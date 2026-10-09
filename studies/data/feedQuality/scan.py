@@ -99,7 +99,7 @@ def main() -> None:
     progress(2, "calendario")
     dukas = {f: (inputs.bars(f)["at"], session.without_hours(inputs.week_mask(CFG, f),
                                                               CFG["rollover_hours"]))
-             for f in inputs.calendar_feeds()}
+             for f in inputs.calendar_feeds(CFG)}
     RUNS.append(calendar.silences(dukas, CFG))
     del dukas
     RUNS[0].to_parquet(feed_quality_dir() / "calendar.parquet")

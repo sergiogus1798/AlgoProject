@@ -19,7 +19,7 @@ travel is copied or edited.
 | `rules.py` | T0's reason, `z_frec`, the per-sibling states of T1 / T2a / T2b, T4's `overlap`, the population `centre` and `percentile`, and `mother`: §6 with T3's brake | imported | measured columns → pass / limbo / fail, why |
 | `table.py` | `measure` (every sibling in each window), `judge` (the siblings table, `SIBLINGS`), `mothers` (one row per mother, `MOTHERS`) | imported | made, trades, bars → the two tables |
 | `inputs.py` | What it is run on: the siblings made and the oos1 trades from what the study loaded, the asset's costs and cuts, and **the seam of phase 2**: `build_banks` / `build` | imported | plan, packed trades, batch folder → frames |
-| `run.py` | `read` (plain data in, both tables out — what the tests call) and `write` (a loaded batch → the two files); `report.py` calls `write` after the old reading is on disk | imported | `many.load` → `tf_siblings.parquet`, `tf_mothers.csv` |
+| `run.py` | `read` (plain data in, both tables out — what the tests call) and `write` (a loaded batch → the two files); `report.py` calls `write` after the old reading is on disk | imported | `many.load` → `tf_siblings.parquet`, `tf_mothers.csv`, `distribuciones.parquet` |
 
 ## What is measured where
 

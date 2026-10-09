@@ -7,7 +7,7 @@ import sys
 
 from core import fanout
 from core.paths import report_dir
-from core.study import identity, output, verdicts
+from core.study import draws, identity, output, verdicts
 from studies.transfer.crossmarket import load, many, one
 from studies.transfer.crossmarket.inputs import config
 
@@ -54,6 +54,7 @@ def main() -> None:
                                                                         False: ""}))
     verdicts.write(out, table, inputs["path"], " ".join(sys.argv), overrides)
     got["markets"].to_parquet(out / "markets.parquet", index=False)
+    draws.save(out, got["draws"])
     print(f"\n{len(got['table'])} estrategias medidas -> {out / 'verdict.csv'}")
 
 

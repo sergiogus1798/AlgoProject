@@ -1,4 +1,4 @@
-"""The runner of the travel test: one export in, verdict.csv, markets.parquet and crossmarket.json out, in a folder it is given."""
+"""The runner of the travel test: one export in, verdict.csv, markets.parquet, crossmarket.json and distribuciones.parquet out, in a folder it is given."""
 
 import json
 from pathlib import Path
@@ -7,9 +7,10 @@ import numpy as np
 import pandas as pd
 
 from core import paths
+from core.study import draws
 from studies.transfer.crossmarket import load
 from studies.transfer.crossmarket.inputs import config, markets
-from studies.transfer.crossmarket.travel import cells, frequency, rules, shift, sizing, stat, tensor, units, validity
+from studies.transfer.crossmarket.travel import cells, frequency, records, rules, shift, sizing, stat, tensor, units, validity
 
 VERDICT = ["strategy", "markets", "markets_valid", "invalid_fraction", "fixed_distance", "freq_off",
            "freq_off_fraction", "z_conj", "p_conj", "z_conj_v2", "z_conj_v0", "z_conj_v1",
@@ -101,8 +102,8 @@ def run(project: str, databank: str, asset: str, export: str, out: Path,
         overrides: Dotted `--set` overrides of config.yaml.
 
     Returns:
-        `verdict` and `markets` (the frames written) and `checks` (§7.1's row per market).
-        Written: `verdict.csv`, `markets.parquet` and `crossmarket.json` (config, windows, the
+        `verdict` and `markets` (the frames written), `checks` (§7.1's row per market) and `draws`.
+        Written: `verdict.csv`, `markets.parquet`, `distribuciones.parquet` and `crossmarket.json` (config, windows, the
         §7.1 table and each strategy's d_y).
     """
     _free(out, project, databank, export)
@@ -130,12 +131,13 @@ def run(project: str, databank: str, asset: str, export: str, out: Path,
     distance = units.fixed(project, strategies, inputs["identity"])
     e_main = (inputs["trades"].groupby("strategy", observed=True)["e_principal"].first()
               if "e_principal" in inputs["trades"] else pd.Series(dtype=float))
-    verdict, rows, series = [], [], {}
+    verdict, rows, series, kept = [], [], {}, []
     for s in strategies:
         mine = {f: by.get((s, f), empty).reset_index(drop=True) for f in feeds}
         one = tensor.build(mine, fixed, cal, shifts, t["shift_step"], t["judge_on"])
         got = rules.evaluate(one, cal, t,
                              float(e_main.get(s, np.nan)))
+        kept += records.rows(one, rules.windows(cal), got, s, inputs["identity"].get(s) or "", t["seed"])
         valid, listed = len(feeds), len(found)
         verdict.append({"strategy": s, "markets": listed, "markets_valid": valid,
                         "invalid_fraction": 1 - valid / listed, "fixed_distance": distance[s],
@@ -151,8 +153,9 @@ def run(project: str, databank: str, asset: str, export: str, out: Path,
     verdict, rows = pd.DataFrame(verdict)[VERDICT], pd.concat(rows, ignore_index=True)[MARKETS]
     verdict.to_csv(out / "verdict.csv", index=False)
     rows.to_parquet(out / "markets.parquet", index=False)
+    draws.save(out, kept)
     (out / "crossmarket.json").write_text(json.dumps(_clean({
         "config": t, "cuts": {k: str(v) for k, v in cuts.items()}, "cells": len(cal),
         "checks": found, "excluded": left, "d_y": series, "project": project, "databank": databank,
         "export": export, "asset": asset}), indent=1), encoding="utf-8")
-    return {"verdict": verdict, "markets": rows, "checks": found}
+    return {"verdict": verdict, "markets": rows, "checks": found, "draws": kept}

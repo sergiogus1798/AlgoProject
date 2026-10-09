@@ -4,12 +4,15 @@
 import argparse
 import json
 from datetime import date
+from pathlib import Path
+
+import pandas as pd
 
 from core import assetdata, fanout
 from core.archive.manifest import registry
 from core.manifest import write as write_manifest
 from core.paths import report_dir
-from core.study import identity, output
+from core.study import draws, identity, output
 from core.study.render import markdown
 from engines.nulls import inputs, model
 from studies.readings.monkey import many, one
@@ -46,6 +49,12 @@ def additional_only(project: str, feeds: list[str]) -> list[str]:
     return kept
 
 
+def sign(rows: list[dict], signed: dict) -> None:
+    """Put each row's strategy identity on it, as nulls.csv does; unresolved stays empty."""
+    for r in rows:
+        r["identity"] = str(signed.get(r["strategy"]) or "")
+
+
 def main() -> None:
     """Run one strategy, or every strategy of one export, through every rung."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -65,11 +74,15 @@ def main() -> None:
                     help="with --strategy: which one the call and the channels read")
     ap.add_argument("--limit", type=int, default=0, help="first N strategies only, for a trial")
     ap.add_argument("--set", action="extend", nargs="+", default=[], help="section.key=value")
+    ap.add_argument("--seed", type=int, default=None,
+                    help="root of the monkeys' random streams; omitted, a fresh one is drawn. "
+                         "Every run writes the one it used (manifest, nulls.csv): pass it back "
+                         "to get the same p-values")
     ap.add_argument("--workers", type=int, default=fanout.CORES,
                     help="strategies run at once; each process holds one strategy's blocks")
     a = ap.parse_args()
 
-    cfg = inputs.config(a.set)
+    cfg = inputs.config(a.set + inputs.seeded(a.seed))
     packed = inputs.newest(a.project, a.databank)
     # A cross-market export names its markets in `Symbol`; a one-market one only in its
     # manifest, which is why --feed is its market.
@@ -82,9 +95,14 @@ def main() -> None:
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "monkey"
     if a.strategy:
         assert len(feeds) == 1, "--strategy lee un mercado: di cuál con --feed"
+        kept = []
         got = one.run(a.strategy, {"trades": inputs.sample(packed, a.strategy, a.sample, a.feed),
                                    "frame": frames[a.feed], "folder": packed.parent},
-                     cfg, a.statistic)
+                     cfg, a.statistic, kept)
+        # One strategy must not wipe the population's rows: replace only its own identity.
+        ident = output.identify(packed.parent, [a.strategy])[a.strategy]
+        sign(kept, {a.strategy: ident})
+        draws.merge(out, kept)
         title = f"Contra el mono — {a.strategy}"
         print(markdown.render(got, title))
         print(f"-> {output.member(out, got, title, f'Muestra {a.sample}.')}")
@@ -105,9 +123,12 @@ def main() -> None:
     signed = output.identify(packed.parent, sorted(set(got["panel"].index)))
     if identity.note(signed):
         print(identity.note(signed))
+    sign(got["draws"], signed)
+    draws.save(out, got["draws"])
     got["panel"].insert(0, "identity", got["panel"].index.map(signed))
     got["panel"].insert(1, "note", got["panel"]["identity"].isna().map({True: identity.NOTE,
                                                                         False: ""}))
+    got["panel"]["seed"] = cfg["nulls"]["seed"]
     got["panel"].to_csv(out / "nulls.csv")
     (out / "rungs.json").write_text(json.dumps(model.RANDOMISES, indent=2), encoding="utf-8")
     write_manifest(out,
@@ -117,9 +138,11 @@ def main() -> None:
                     "seed": cfg["nulls"]["seed"], "overrides": a.set},
                    " ".join(["python3 -m studies.readings.monkey.report", "--project", a.project,
                              "--databank", a.databank, *(["--feed", a.feed] if a.feed else []),
-                             "--timeframe", a.timeframe, "--sample", a.sample]),
+                             "--timeframe", a.timeframe, "--sample", a.sample,
+                             "--seed", str(cfg["nulls"]["seed"])]),
                    {"nulls.csv": len(got["panel"])})
-    print(f"\n{len(got['panel'])} estrategias x mercado ({len(feeds)} mercados) -> {out}")
+    print(f"\n{len(got['panel'])} estrategias x mercado ({len(feeds)} mercados), "
+          f"semilla {cfg['nulls']['seed']} -> {out}")
 
 
 if __name__ == "__main__":

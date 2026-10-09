@@ -10,12 +10,29 @@ from studies.closing.blindJoint.pieces import PIECES
 # | reading    | holds fixed                     | tolerates                           |
 # |------------|---------------------------------|-------------------------------------|
 # | unanimidad | every piece in `pass`           | nothing                             |
-# | sin_fallo  | no piece in `fail`              | `watch`: indeciso, ciego, a medias  |
+# | sin_fallo  | no piece in `fail`              | `watch`: indeciso, ciego, a medias, |
+# |            |                                 | and the WFC's LIMBO (`pieces.WFC`)  |
 # | ninguna    | nothing: the pieces are context | everything; the StepM decides alone |
+# | peor       | no piece in `fail`              | nothing silently: the mother's call |
+# |            |                                 | is her WORST piece (`worst`), and   |
+# |            |                                 | the StepM is shown and decides none |
+#
+# `peor` is PROVISIONAL (owner, 2026-10-07), until step 20 is redesigned: «the worst state wins»
+# over the four states of 17, 18, 18.5 and 19 — any fail DESCARTAR, else any watch REVISAR, else
+# MANTENER. It is the one reading whose call has three values and does not wait for the StepM.
+WORST = "peor"
+
+
+def worst(states: list[str]) -> str:
+    """The worst of a mother's piece states: fail, else pass when every one passes, else watch."""
+    return "fail" if "fail" in states else "pass" if all(s == "pass" for s in states) else "watch"
+
+
 COMBINE = {
     "unanimidad": lambda states: all(s == "pass" for s in states),
     "sin_fallo": lambda states: not any(s == "fail" for s in states),
     "ninguna": lambda states: True,
+    WORST: lambda states: worst(states) != "fail",
 }
 
 # Over whom the StepM counts its search (encargo 10 §3, "una K que no es la K real").
@@ -30,11 +47,11 @@ def names() -> list[tuple[str, str]]:
     """Every distinct reading, as (pieces, population).
 
     Returns:
-        The product, minus `ninguna` with `supervivientes`: when the pieces keep everyone
-        the two populations are the same one.
+        The product, minus `ninguna` and `peor` with `supervivientes`: when the pieces keep
+        everyone the two populations are the same one, and `peor` does not read the StepM.
     """
     return [(c, p) for c in COMBINE for p in POPULATIONS
-            if not (c == "ninguna" and p == "supervivientes")]
+            if not (c in ("ninguna", WORST) and p == "supervivientes")]
 
 
 def label(reading: tuple[str, str]) -> str:
@@ -66,10 +83,15 @@ def verdicts(states: pd.DataFrame, named: dict[str, list[str]]) -> pd.DataFrame:
     Returns:
         Mothers down, readings across, each cell `pass`, `fail` or `none` (the StepM half
         of the call could not be read). A mother passes a reading when the pieces keep it
-        AND the StepM names it over that reading's population.
+        AND the StepM names it over that reading's population. Under `peor` the cell is her
+        worst piece — `pass`, `watch` or `fail` — whatever the StepM named.
     """
     table = {}
     for reading in names():
+        if reading[0] == WORST:
+            table[label(reading)] = [worst(row[list(PIECES)].tolist())
+                                     for _, row in states.iterrows()]
+            continue
         survivors = set(kept(states, reading[0]))
         chosen = named[label(reading)]
         table[label(reading)] = [

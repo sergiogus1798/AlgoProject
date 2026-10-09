@@ -7,7 +7,7 @@ from datetime import date
 
 from core.manifest import write as write_manifest
 from core.paths import report_dir
-from core.study import output
+from core.study import draws, output
 from ledger import tried
 from pipeline.autopilot import criteria, judge
 from studies.screening.gate import cascade, inputs, many
@@ -52,6 +52,8 @@ def main() -> None:
               "harvest": str(folder), "split": data["split"], "end": data["end"],
               "missing_oos": len(data["missing"]), "levels": [level for level, _ in LEVELS],
               "cascade": cfg["cascade"]["on"], "overrides": a.set}
+    if a.from_level == "0":      # a whole run starts clean: no level's rows of an older seed stay
+        (out / draws.FILE).unlink(missing_ok=True)
     got = many.run(data, cfg, rules, source, a.from_level)
     scores, funnel = got["scores"], got["funnel"]
     used = {knob: int(scores[column].dropna().iloc[0]) for knob, column in SEEDS.items()

@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from core import tradestore
+from core.study import draws
 from core.significance import annual_sharpe
 from engines.nulls import model, simulate, verdict
 
@@ -29,7 +30,7 @@ def _trusted(said: list[str]) -> list[str]:
 
 
 def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
-            statistic: str, rung: str, key: str, min_trades: int) -> dict:
+            statistic: str, rung: str, key: str, min_trades: int, cell: dict | None = None) -> dict:
     """One cell's statistics, their empirical p, and what there is to distrust about them.
 
     The statistics are priced from the bars by `engines.nulls.simulate`, never read off SQX,
@@ -47,6 +48,9 @@ def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
         rung: A key of `engines.nulls.model.RUNGS`.
         key: What identifies the cell, strategy and block; it seeds the cell's monkeys.
         min_trades: `usable.min_trades` of this study's config; below it the cell gets no p.
+        cell: What tells this cell apart (strategy, block, timeframe, role, mother, seed): given,
+            the result carries `draws`, one `core.study.draws` row per statistic of `seen_all`
+            (metric = the statistic's name; z and p of the headline one are made of its row).
 
     Returns:
         `trades`, `seen`, `p`, `null_mean`, `null_sd`, `z` (the headline statistic's distance
@@ -78,7 +82,9 @@ def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
     drawn = simulate.nulls(kept, rung, nullcfg, key)
     p_all = {n: verdict.pvalue(seen_all[n], drawn[n], n) for n in names}
     mean, sd = float(np.mean(drawn[statistic])), float(np.std(drawn[statistic], ddof=1))
-    return {"trades": len(rows), "seen": seen_all[statistic], "p": p_all[statistic],
+    rec = {} if cell is None else {"draws": [draws.record("crossTF.cell", n, seen_all[n], drawn[n],
+                                                           **cell) for n in names]}
+    return {**rec, "trades": len(rows), "seen": seen_all[statistic], "p": p_all[statistic],
             "null_mean": mean, "null_sd": sd, "z": (seen_all[statistic] - mean) / sd if sd else np.nan,
             "seen_all": seen_all, "p_all": p_all,
             "warnings": _trusted(verdict.distrust(kept, p_all, len(rows), nullcfg))}
@@ -120,7 +126,7 @@ def curve(rows: pd.DataFrame, points: int = 50) -> list[float] | None:
 
 
 def panel(plan: pd.DataFrame, packed: pd.DataFrame, frames: dict, nullcfg: dict,
-          cfg: dict) -> pd.DataFrame:
+          cfg: dict, sink: list | None = None) -> pd.DataFrame:
     """Every cell of the matrix, measured.
 
     Args:
@@ -129,16 +135,24 @@ def panel(plan: pd.DataFrame, packed: pd.DataFrame, frames: dict, nullcfg: dict,
         frames: Timeframe to bars, from `inputs.bars`.
         nullcfg: What `engines.nulls.inputs.config` returned.
         cfg: What `inputs.config` returned.
+        sink: When given, the `draws` rows of every cell are appended to it.
 
     Returns:
         The plan with what `numbers` returned joined onto it, one row per cell,
         `corr_vs_baseline` (`correlations`, NaN on a baseline) and what `beyond` adds.
     """
     statistic, rung = cfg["verdict"]["statistic"], cfg["verdict"]["rung"]
+    where = lambda r: None if sink is None else dict(
+        strategy=r.strategy, block=r.block, timeframe=r.timeframe, role=r.role, mother=r.mother,
+        seed=nullcfg["nulls"]["seed"])
     measured = [numbers(tradestore.block(packed, row.strategy, row.block),
                         frames[row.timeframe], nullcfg, statistic, rung,
-                        f"{row.strategy}|{row.block}", cfg["usable"]["min_trades"])
+                        f"{row.strategy}|{row.block}", cfg["usable"]["min_trades"], where(row))
                 for row in plan.itertuples()]
+    for m in measured:
+        rows = m.pop("draws", [])
+        if sink is not None:
+            sink.extend(rows)
     alike = correlations(plan, packed).rename(columns={"corr": "corr_vs_baseline"})
     out = pd.concat([plan.reset_index(drop=True), pd.DataFrame(measured)], axis=1)
     return beyond(out.merge(alike[["strategy", "timeframe", "role", "corr_vs_baseline"]],

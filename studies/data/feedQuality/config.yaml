@@ -46,6 +46,9 @@ alarm:
   action: ledger:feedQuality.action                        # mark | drop, como el edge por coste
 review:
   extreme_per_column: 20                                   # los más extremos por columna, para revisarlos a mano
+calendar_feeds:                                            # los de Dukascopy: deciden festivos y cortes
+  [XAGUSD_M1, XAUUSD_M1, USDJPY_M1, AUDJPY_M1, AUDUSD_M1, CADJPY_M1, EURJPY_M1, EURUSD_M1,
+   GBPJPY_M1, GBPUSD_M1, USDCAD_M1, USDCHF_M1]
 K:                                                         # por feed, criterio de la decisión 3
   UKOIL.cash_M1: ledger:feedQuality.K.UKOIL.cash_M1
   XAGUSD_M1: ledger:feedQuality.K.XAGUSD_M1
@@ -60,6 +63,20 @@ K:                                                         # por feed, criterio 
   GBPUSD_M1: ledger:feedQuality.K.GBPUSD_M1
   USDCAD_M1: ledger:feedQuality.K.USDCAD_M1
   USDCHF_M1: ledger:feedQuality.K.USDCHF_M1
+  NIKKEI225_M1: ledger:feedQuality.K.NIKKEI225_M1
+  DAX40_M1: ledger:feedQuality.K.DAX40_M1
+  DJ30_M1: ledger:feedQuality.K.DJ30_M1
+  USA500_M1: ledger:feedQuality.K.USA500_M1
+  USATEC_M1: ledger:feedQuality.K.USATEC_M1
+  USOIL.cash_M1: ledger:feedQuality.K.USOIL.cash_M1
+  AUDNZD_M1: ledger:feedQuality.K.AUDNZD_M1
+  AUS200_M1: ledger:feedQuality.K.AUS200_M1
+  EURAUD_M1: ledger:feedQuality.K.EURAUD_M1
+  EURGBP_M1: ledger:feedQuality.K.EURGBP_M1
+  HK50_M1: ledger:feedQuality.K.HK50_M1
+  NZDUSD_M1: ledger:feedQuality.K.NZDUSD_M1
+  UK100_M1: ledger:feedQuality.K.UK100_M1
+  XCUUSD_M1: ledger:feedQuality.K.XCUUSD_M1
 sessions:                                                  # por feed, deducida del feed
   UKOIL.cash_M1: ledger:feedQuality.sessions.UKOIL.cash_M1
   XAGUSD_M1: ledger:feedQuality.sessions.XAGUSD_M1
@@ -74,3 +91,17 @@ sessions:                                                  # por feed, deducida 
   GBPUSD_M1: ledger:feedQuality.sessions.GBPUSD_M1
   USDCAD_M1: ledger:feedQuality.sessions.USDCAD_M1
   USDCHF_M1: ledger:feedQuality.sessions.USDCHF_M1
+  NIKKEI225_M1: ledger:feedQuality.sessions.NIKKEI225_M1
+  DAX40_M1: ledger:feedQuality.sessions.DAX40_M1
+  DJ30_M1: ledger:feedQuality.sessions.DJ30_M1
+  USA500_M1: ledger:feedQuality.sessions.USA500_M1
+  USATEC_M1: ledger:feedQuality.sessions.USATEC_M1
+  USOIL.cash_M1: ledger:feedQuality.sessions.USOIL.cash_M1
+  AUDNZD_M1: ledger:feedQuality.sessions.AUDNZD_M1
+  AUS200_M1: ledger:feedQuality.sessions.AUS200_M1
+  EURAUD_M1: ledger:feedQuality.sessions.EURAUD_M1
+  EURGBP_M1: ledger:feedQuality.sessions.EURGBP_M1
+  HK50_M1: ledger:feedQuality.sessions.HK50_M1
+  NZDUSD_M1: ledger:feedQuality.sessions.NZDUSD_M1
+  UK100_M1: ledger:feedQuality.sessions.UK100_M1
+  XCUUSD_M1: ledger:feedQuality.sessions.XCUUSD_M1

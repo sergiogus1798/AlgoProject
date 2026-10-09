@@ -37,7 +37,7 @@ def newest(project: str, databank: str) -> Path:
         Its folder. Harvests are dated and immutable, so the newest is the current one.
     """
     folder = DATA / "harvest" / project / databank.replace(" ", "_")
-    return sorted(p for p in folder.iterdir() if p.is_dir())[-1]
+    return sorted(p for p in folder.iterdir() if p.is_dir() and p.name[0] != "_")[-1]
 
 
 def trades(folder: Path) -> pd.DataFrame:

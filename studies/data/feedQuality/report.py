@@ -11,13 +11,29 @@ import argparse
 from datetime import date
 from pathlib import Path
 
-from core import manifest
+from core import fanout, manifest
 from core.barstore import read
 from core.paths import report_dir
 from core.study import output, verdicts
 from core.study.render import markdown
 from core.study.result import progress
 from studies.data.feedQuality import inputs, many, one, template, touch
+
+# What `attribute` reads, set by main() before the fan-out: `fork` hands it to every worker.
+STATE: dict = {}
+
+
+def attribute(identity: str) -> dict | None:
+    """One strategy's trades against the feed's anomalies; None when its .sqx is not found."""
+    s = STATE
+    name, source = s["names"][identity], s["source"]
+    sqx = template.find(Path(source["install"]), source["project"], source["oos_databank"], name)
+    if sqx is None:
+        return None
+    rules = template.rules(sqx)
+    marked = touch.mark(s["trades"].iloc[s["rows"].get(identity, [])], s["events"], s["index"],
+                        s["timeframe"], rules, s["cfg"]["spike"]["include_non_reverting"])
+    return one.run(name, identity, marked, rules, s["cfg"])
 
 
 def main() -> None:
@@ -42,18 +58,18 @@ def main() -> None:
     wanted = names[names == a.strategy].index if a.strategy else names.index
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "feedQuality"
 
-    results, unread = {}, []
-    for n, identity in enumerate(wanted):
-        sqx = template.find(Path(source["install"]), source["project"], source["oos_databank"],
-                            names[identity])
-        if sqx is None:
-            unread.append(names[identity])
-            continue
-        rules = template.rules(sqx)
-        mine = trades[trades["identity"] == identity]
-        marked = touch.mark(mine, ev, index, timeframe, rules, cfg["spike"]["include_non_reverting"])
-        results[identity] = one.run(names[identity], identity, marked, rules, cfg)
-        progress(100 * (n + 1) // len(wanted), names[identity])
+    # One process per core: 10,000 strategies one after another were 42 min of step 8
+    # (🔬 2026-10-08, DJ30 H1); the reading is deterministic, so the order changes nothing.
+    rows = trades.groupby("identity").indices
+    STATE.update(names=names, source=source, trades=trades, events=ev,
+                 index=index, timeframe=timeframe, cfg=cfg, rows=rows)
+    found, done = {}, 0
+    for identity, got in fanout.run(attribute, {i: len(rows.get(i, [])) for i in wanted},
+                                    fanout.CORES):
+        found[identity], done = got, done + 1
+        progress(100 * done // len(wanted), names[identity])
+    results = {i: found[i] for i in wanted if found[i] is not None}
+    unread = [names[i] for i in wanted if found[i] is None]
 
     if a.strategy:
         got = results[wanted[0]]

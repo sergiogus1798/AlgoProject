@@ -93,6 +93,21 @@ def z_total(cell: dict) -> float:
     return stat.z(float(cell["real"]), cell["null"])["z"] if cell["n"] > 0 else np.nan
 
 
+def delta(mother: dict, sibling: dict) -> tuple[float, np.ndarray] | None:
+    """delta = e_mother - e_sibling, per trade on the judged quantity: the real one and every run's.
+
+    Args:
+        mother, sibling: Their entries of ONE runs() call, so the runs are paired.
+
+    Returns:
+        (real, one per run); None when either has no trade.
+    """
+    if not (mother["n"] > 0 and sibling["n"] > 0):
+        return None
+    per_trade = lambda key: mother[key] / mother["n"] - sibling[key] / sibling["n"]
+    return float(per_trade("real")), per_trade("null")
+
+
 def z_delta(mother: dict, sibling: dict) -> float:
     """z of delta = e_mother - e_sibling against the same difference in every joint run.
 
@@ -104,10 +119,10 @@ def z_delta(mother: dict, sibling: dict) -> float:
         correlation between the two is inside the sd, nothing is estimated apart. NaN when
         either has no trade or the difference does not vary.
     """
-    if not (mother["n"] > 0 and sibling["n"] > 0):
+    got = delta(mother, sibling)
+    if got is None:
         return np.nan
-    per_trade = lambda key: mother[key] / mother["n"] - sibling[key] / sibling["n"]
-    real, runs = float(per_trade("real")), per_trade("null")
+    real, runs = got
     if real == 0 and not runs.any():
         return 0.0          # the sibling IS her mother: no difference in any run, not «no data»
     return stat.z(real, runs)["z"]

@@ -127,10 +127,11 @@ def newest(project: str, databank: str) -> Path:
         databank: Databank name as SQX shows it.
 
     Returns:
-        Its folder. Harvests are dated and immutable, so the newest is the current one.
+        Its folder. Harvests are dated and immutable, so the newest is the current one;
+        `_aparte` (what `harvest.set_aside` moved away) is not a harvest and sorts after every date.
     """
     folder = DATA / "harvest" / project / databank.replace(" ", "_")
-    return sorted(p for p in folder.iterdir() if p.is_dir())[-1]
+    return sorted(p for p in folder.iterdir() if p.is_dir() and p.name[0] != "_")[-1]
 
 
 def load(folder: Path) -> dict:

@@ -30,7 +30,7 @@ def config(overrides: list[str]) -> dict:
 def newest(project: str, databank: str) -> Path:
     """The most recent harvest of one databank (harvests are dated and immutable)."""
     folder = DATA / "harvest" / project / databank.replace(" ", "_")
-    return sorted(p for p in folder.iterdir() if p.is_dir())[-1]
+    return sorted(p for p in folder.iterdir() if p.is_dir() and p.name[0] != "_")[-1]
 
 
 def load(folder: Path, feed: str, cfg: dict) -> dict:

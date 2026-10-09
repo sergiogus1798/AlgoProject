@@ -166,7 +166,7 @@ def moves(feed: str, days: pd.DatetimeIndex) -> pd.Series:
     Returns:
         Price change per panel day, the first one NaN: each day's last M1 close minus the
         day before's, the instants the panel marks its positions at (part A,
-        `studies/screening/snoopingScreen/inputs.py`, copied not imported).
+        the deleted `snoopingScreen/inputs.py`).
     """
     return closecurve.day_closes(read_bars(feed, ["Close"])).reindex(days).diff()
 

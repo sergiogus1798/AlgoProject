@@ -21,7 +21,8 @@ runner; the thresholds that cut Pasa / Limbo / Falla still live in `criteria.yam
 | `frequency.py` | P2: z_freq of every strategy in every market, centred on the population's median log-rate | imported | counts, main trades → z_freq |
 | `units.py` | P1 for an export: finds each strategy's `.sqx` under `raw/<project>/` (identity must match) and counts `fixed_distances` | imported | names, identities → count or NaN |
 | `rules.py` | P3-P9 from one strategy's tensor: z_conj and windows, leave-one-market-out, breadth, tau_half, N_peor, degradation | imported | tensor → verdict columns |
-| `run.py` | `run.run(project, databank, asset, export, out)`: loads the export, checks the markets, builds the tensors, writes `verdict.csv`, `markets.parquet`, `crossmarket.json` into `out` | imported (no `__main__`: part E wires it) | export → three files |
+| `records.py` | `records.rows`: the `core.study.draws` rows of one strategy (z_conj, z_conj_v0/v1/v2, z_minus_market, p_breadth, z_beta raw; per-market `z` histogram only) | imported by run.py | tensor → distribuciones.parquet |
+| `run.py` | `run.run(project, databank, asset, export, out)`: loads the export, checks the markets, builds the tensors, writes `verdict.csv`, `markets.parquet`, `crossmarket.json` and `distribuciones.parquet` (the random runs behind each z, via `records.py`) into `out` | imported (no `__main__`: part E wires it) | export → four files |
 
 ## Gross or net: `travel.judge_on` (encargo 46, decision 10, part G)
 

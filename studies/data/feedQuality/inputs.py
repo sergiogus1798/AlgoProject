@@ -34,14 +34,19 @@ def feeds() -> list[str]:
     return list(library())
 
 
-def calendar_feeds() -> list[str]:
+def calendar_feeds(cfg: dict) -> list[str]:
     """The feeds that decide the library's calendar: one provider's, Dukascopy's.
+
+    Args:
+        cfg: config()'s dict; `calendar_feeds` names them.
 
     Returns:
         Brent comes from FTMO; a silence of its own says nothing about Dukascopy's
-        holidays (owner's answer 2.10).
+        holidays (owner's answer 2.10). Named since the 2026-10-01 rename took the
+        provider out of the feed's name; an index is left out, its exchange has holidays
+        of its own.
     """
-    return [f for f in feeds() if "_Dukas" in f]
+    return [f for f in feeds() if f in cfg["calendar_feeds"]]
 
 
 def tick(b: dict, years: list[int]) -> float:
@@ -94,7 +99,7 @@ def harvest(project: str, databank: str) -> Path:
         Its folder. Harvests are dated and immutable, so the newest is the current one.
     """
     folder = DATA / "harvest" / project / databank.replace(" ", "_")
-    return sorted(p for p in folder.iterdir() if p.is_dir())[-1]
+    return sorted(p for p in folder.iterdir() if p.is_dir() and p.name[0] != "_")[-1]
 
 
 def strategies(folder: Path) -> pd.DataFrame:

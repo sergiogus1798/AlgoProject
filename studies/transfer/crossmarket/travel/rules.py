@@ -145,7 +145,7 @@ def degradation(one: dict, cal: pd.DataFrame, whole: np.ndarray, deg: dict) -> d
     mean = np.average(d, weights=n)
     end = mean + beta * (rows[-1][0] - np.average(t, weights=n))
     return {"beta": float(beta), "z_beta": float((beta - spread.mean()) / spread.std(ddof=1))
-            if spread.std(ddof=1) > 0 else np.nan,
+            if spread.std(ddof=1) > 0 else np.nan, "draws": (float(beta), spread),
             "e_end": float(end), "e_end_ratio": float(end / mean) if mean else np.nan,
             "d_y": [{"years": [int(r[0]) for r in g], "trades": int(m), "d": float(v)}
                     for g, m, v in zip(groups, n, d)]}
@@ -161,8 +161,8 @@ def evaluate(one: dict, cal: pd.DataFrame, cfg: dict, e_principal: float = np.na
         e_principal: The main's e (R per trade, oos1); NaN until the step-8 monkey supplies it.
 
     Returns:
-        `verdict` (the contract's columns for P3-P9 and `trades`), `markets` (`per_market`) and
-        `d_y`.
+        `verdict` (the contract's columns for P3-P9 and `trades`), `markets` (`per_market`), `d_y` and `beta`
+        (z_beta's observed slope and the random runs' slopes, None under `min_years`).
     """
     mask = windows(cal)
     got = {k: stat.joint(one, cells=mask[k]) for k in mask}
@@ -172,13 +172,14 @@ def evaluate(one: dict, cal: pd.DataFrame, cfg: dict, e_principal: float = np.na
     trades, min_n = rows["trades"].to_numpy(), cfg["min_trades_market"]
     n_worse = worse(rows["z"].to_numpy(), trades, min_n, cfg["worse_z"])
     slope = degradation(on_net(one), cal, mask["all"], cfg["degradation"])     # e_end, beta: net
-    z_beta = degradation(one, cal, mask["all"], cfg["degradation"])["z_beta"]  # z_beta: judged
+    judged = degradation(one, cal, mask["all"], cfg["degradation"])    # z_beta: judged
     verdict = {"z_conj": got["all"]["z"], "p_conj": got["all"]["p"], "z_conj_v2": got["V2"]["z"],
                "z_conj_v0": got["V0"]["z"], "z_conj_v1": got["V1"]["z"],
                "z_minus_market": z_minus, "minus_market": who,
                "p_breadth": p_breadth, "breadth_count": count,
                "tau_half": tau_half(rows["e"].to_numpy(), trades, e_principal, min_n),
                "e_principal": e_principal, "worse": n_worse, "worse_fraction": n_worse / len(rows),
-               "z_beta": z_beta, "e_end": slope["e_end"], "beta": slope["beta"],
+               "z_beta": judged["z_beta"], "e_end": slope["e_end"], "beta": slope["beta"],
                "e_end_ratio": slope["e_end_ratio"], "trades": float(trades.sum())}
-    return {"verdict": verdict, "markets": rows, "d_y": slope["d_y"]}
+    return {"verdict": verdict, "markets": rows, "d_y": slope["d_y"],
+            "beta": judged.get("draws")}

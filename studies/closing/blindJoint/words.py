@@ -4,11 +4,12 @@ import re
 
 STATE = {"pass": "Pasa", "fail": "Falla", "watch": "Vigilar", "none": "Sin juicio",
          "info": "Info"}
-CALL = {"blind": "Ciega", "predicts": "Predice", "perverse": "Perversa"}
+CALL = {"blind": "Ciega", "predicts": "Predice", "perverse": "Perversa",
+        "pasa": "Pasa", "limbo": "Limbo", "no_pasa": "No pasa"}
 
 
 def call(label: str) -> str:
-    """A piece's call with a capital, its English word (WFM's `blind`) in Spanish."""
+    """A piece's call with a capital, its English word (an old WFM `blind`) or a snake_case state (`no_pasa`) in Spanish."""
     label = CALL.get(label, label)
     return label[:1].upper() + label[1:]
 

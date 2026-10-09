@@ -14,6 +14,7 @@ TIPS = {
     "spike.m_sensitivity": "Otros m que el informe cuenta al lado, sin efecto en la atribución.",
     "spike.include_non_reverting": "Si los picos que no vuelven marcan también operaciones "
                                    "(decisión 6: no).",
+    "calendar_feeds": "Los feeds de Dukascopy que deciden festivos y cortes de sesión.",
     "rollover_hours": "Horas del reloj del feed que no cuentan ni para congelados ni para "
                       "huecos: el rollover de Nueva York.",
     "frozen.length": "Velas M1 seguidas con OHLC idéntico para llamarlo congelado.",

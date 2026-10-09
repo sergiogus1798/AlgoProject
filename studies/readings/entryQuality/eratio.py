@@ -73,7 +73,8 @@ def band(frame: pd.DataFrame, found: dict, keep: np.ndarray, scale: np.ndarray,
         cfg: The `eratio` block of config.yaml.
 
     Returns:
-        The 5th, 50th and 95th percentile of e(k) over `draws` random sets. The real curve
+        The 5th, 50th and 95th percentile of e(k) over `draws` random sets, and those sets'
+        own curves as `stacked` (draws x horizons). The real curve
         sitting inside this band means the entry rule bought nothing that entering at the
         same hours on random days would not have given.
 
@@ -94,7 +95,8 @@ def band(frame: pd.DataFrame, found: dict, keep: np.ndarray, scale: np.ndarray,
     stacked = np.vstack(drawn)
     return {"low": np.quantile(stacked, 0.05, axis=0),
             "median": np.quantile(stacked, 0.5, axis=0),
-            "high": np.quantile(stacked, 0.95, axis=0), "draws": cfg["draws"]}
+            "high": np.quantile(stacked, 0.95, axis=0), "draws": cfg["draws"],
+            "stacked": stacked}
 
 
 def table(real: np.ndarray, bands: dict, marks: list[int]) -> pd.DataFrame:

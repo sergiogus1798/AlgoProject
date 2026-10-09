@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from core.paths import report_dir
-from core.study import output, verdicts
+from core.study import draws, output, verdicts
 from core.study.config import fingerprint
 from ledger import record, study as studymod
 from studies.closing.blindJoint import inputs, many, one, pieces, readings
@@ -134,6 +134,9 @@ def main() -> None:
         print(f"\nSPA/StepM sin leer: {refused}\nsin fila en el ledger: no se abrió oos2")
     else:
         spa = measured["spa"]
+        kept = measured["spa_drawn"]    # the bootstrap each SPA p was counted on
+        draws.save(out, [draws.record("blindJoint", f"spa_{k}", kept["observed"], kept[k])
+                         for k in spa])
         print(f"\nSPA  lower {spa['lower']:.3f}  consistent {spa['consistent']:.3f}  "
               f"upper {spa['upper']:.3f} · Sharpe del buy & hold {measured['sharpe_bh']:.3f}")
         written = ledger_row(a, cfg, measured, span)

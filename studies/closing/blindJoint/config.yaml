@@ -16,16 +16,19 @@ benchmark:
 
 stepm:
   fwer: ledger:snoopingScreen.stepm.fwer
-                              # the same FWER the owner set for part A, read from the same row
-                              # of ledger/thresholds.yaml: one test, one error rate
+                              # the FWER the owner set 2026-09-25, read
+                              # from this row of ledger/thresholds.yaml
 
 joint:
   # `pieces` is an OPEN DECISION OF THE OWNER (hard rule 11). While either key is null the
   # study shows the verdict under every reading side by side, cuts nobody (every row MANTENER)
   # and records a soft row. Both set make one reading the call.
-  pieces: sin_fallo           # decided 2026-10-04 (owner). How the four pieces combine:
-                              # unanimidad (all four pass) or
-                              # sin_fallo (none fails; indeciso/ciego tolerated) or ninguna
+  pieces: peor                # PROVISIONAL (owner, 2026-10-07), until step 20 is redesigned:
+                              # the worst state of 17, 18, 18.5 and 19 wins — any NO PASA
+                              # DESCARTAR, else any LIMBO REVISAR, else MANTENER; the StepM is
+                              # computed and shown and decides nothing. It was sin_fallo
+                              # (owner, 2026-10-04). The others: unanimidad (all four pass),
+                              # sin_fallo (none fails; indeciso/ciego tolerated), ninguna
                               # (the pieces are context and the StepM decides alone)
   population: entrantes       # decided 2026-10-04 (P2, the Council on the owner's delegation).
                               # Over whom the StepM counts its search: entrantes (every mother

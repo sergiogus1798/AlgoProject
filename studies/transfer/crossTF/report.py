@@ -9,7 +9,7 @@ from pathlib import Path
 from core.assetdata import load
 from core.datapaths import crosstf_dir
 from core.paths import export_dir
-from core.study import output, verdicts
+from core.study import draws, output, verdicts
 from core.study.render import markdown
 from studies.transfer.crossTF import inputs, many
 from studies.transfer.crossTF.tf import run as tf_run
@@ -40,6 +40,7 @@ def write(out: Path, got: dict, identity: str | None, strategy: str | None, titl
         return
     output.population(out, "crossTF", got["population"], title)
     got["panel"].to_parquet(out / "cells.parquet", index=False)
+    draws.save(out, got.get("draws", []))
     verdicts.write(out, got["table"], export, command, overrides,
                    extra={"nulls_seed": got["nulls_seed"]})
 

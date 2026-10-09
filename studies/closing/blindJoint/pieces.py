@@ -11,6 +11,9 @@ from core.paths import DATA, report_dir
 # the mother's variant batch; the WFM reads SQX's own matrix, one export for every mother.
 PIECES = {"wfc": 17, "cscv": 18, "marketSurfaces": 18.5, "wfm": 19}
 NAMES = {"wfc": "WFC", "cscv": "CSCV", "marketSurfaces": "superficies", "wfm": "WFM"}
+# Step 17 says PASA / LIMBO / NO PASA (owner, 2026-10-07): PASA is no failure, NO PASA a failure,
+# LIMBO undecided. A PASA lifts a veto and is no vote in favour.
+WFC = {"pasa": "pass", "limbo": "watch", "no_pasa": "fail"}
 
 
 def batches(project: str) -> dict[str, Path]:
@@ -50,12 +53,17 @@ def said(file: Path) -> dict:
 
     Returns:
         label, state, the one-line meaning and when it was computed. The state is the
-        study's own — step 20 reads it and never re-derives it, so a threshold lives in
-        one place.
+        study's own `verdict.state` (pass | watch | fail = PASA | LIMBO | NO PASA) — step 20
+        reads it and never re-derives it, so a threshold lives in one place. The WFC's is its
+        deciding composition's `estado`, translated by `WFC`. Only this small result is
+        opened, never a study's heavy detail.
     """
     result = json.loads(file.read_text(encoding="utf-8"))
     verdict = result["verdict"]
-    return {"label": verdict["label"], "state": verdict["state"],
+    # Only the WFC's: the surfaces carry an `estado` too (`orden.estado`), in other words.
+    judged = [c["estado"] for c in (result.get("facts") or {}).values()
+              if file.stem == "wfc" and isinstance(c, dict) and "estado" in c]
+    return {"label": verdict["label"], "state": WFC[judged[0]] if judged else verdict["state"],
             "score": verdict.get("score"), "meaning": verdict["meaning"],
             "computed_at": result["computed_at"], "summary": result.get("summary") or {}}
 

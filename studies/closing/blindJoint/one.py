@@ -9,7 +9,7 @@ from studies.closing.blindJoint import readings, words
 from studies.closing.blindJoint.pieces import NAMES, PIECES
 
 MODULE = "blindJoint"
-CALL = {"pass": "Pasa", "fail": "No pasa", "none": "Sin leer"}
+CALL = {"pass": "Pasa", "watch": "Revisar", "fail": "No pasa", "none": "Sin leer"}
 
 
 def chosen(cfg: dict) -> tuple[str, str] | None:
@@ -82,7 +82,10 @@ def run(row: pd.Series, got: dict, cfg: dict) -> dict:
     calls = got["calls"].loc[row.name]
     reading = chosen(cfg)
     state = calls[readings.label(reading)] if reading else "info"
-    meaning = (f"Bajo la lectura {words.reading(reading)}: las piezas se combinan por "
+    meaning = ("Provisional: gana el peor estado de las cuatro piezas — una en No pasa descarta, "
+               "una en Limbo deja a revisar. El StepM se enseña y no decide."
+               if reading and reading[0] == readings.WORST else
+               f"Bajo la lectura {words.reading(reading)}: las piezas se combinan por "
                f"{reading[0].replace('_', ' ')} y el StepM cuenta su búsqueda sobre las "
                f"{reading[1]}."
                if reading else

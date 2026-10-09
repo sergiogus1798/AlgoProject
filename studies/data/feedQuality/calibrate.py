@@ -114,7 +114,7 @@ def main() -> None:
                                      CFG["session"]["share"])
     progress(10, "calendario")
     RUNS = calendar.silences({f: (at[f], session.without_hours(MASKS[f], CFG["rollover_hours"]))
-                              for f in inputs.calendar_feeds()}, CFG)
+                              for f in inputs.calendar_feeds(CFG)}, CFG)
     del at
     found = {}
     for n, (feed, got) in enumerate(fanout.run(one_feed, {f: 1 for f in feeds}, a.workers)):

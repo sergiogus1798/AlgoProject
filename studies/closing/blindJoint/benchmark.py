@@ -16,7 +16,7 @@ def equal_risk(panel: pd.DataFrame, moves: pd.Series,
     Returns:
         The excess panel, and the lots of the asset each mother is held against.
 
-        Copied from `studies/screening/snoopingScreen/benchmark.py` (a helper two studies
+        Copied from the deleted `snoopingScreen/benchmark.py` (a helper two studies
         need is copied, not shared). With both sides equally volatile a positive mean
         excess is exactly a Sharpe ratio above buy and hold's.
     """

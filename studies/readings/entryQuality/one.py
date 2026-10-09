@@ -7,7 +7,7 @@ import numpy as np
 
 from core import barstore
 from core.barstore import read as read_bars
-from core.study import output, result as envelope
+from core.study import draws, output, result as envelope
 from engines.market import calibrate
 from studies.readings.entryQuality import contract, delay, eratio, excursion, inputs
 
@@ -80,13 +80,32 @@ def by_side(found: dict, normal: dict, keep: np.ndarray) -> dict[str, np.ndarray
     return out
 
 
-def run(strategy: str, export: Path, cfg: dict) -> dict:
+def records(strategy: str, found: dict, cfg: dict) -> list[dict]:
+    """The random e-ratio at every horizon, as `core.study.draws` rows.
+
+    Args:
+        strategy: Its name.
+        found: What `read` returned.
+        cfg: What `inputs.config` returned.
+
+    Returns:
+        One row per horizon, observed = the strategy's own e(k), the draws = the random sets'.
+        No p is computed by this study; the rows let one be.
+    """
+    seed = cfg["eratio"]["seed"]
+    return [draws.record("entryQuality", "eratio", found["real"][k], found["bands"]["stacked"][:, k],
+                         strategy=strategy, horizon=k + 1, seed=seed, raw=False)
+            for k in range(found["real"].size)]
+
+
+def run(strategy: str, export: Path, cfg: dict, keep: list | None = None) -> dict:
     """Whether one strategy's entry carries information, and what arriving late costs.
 
     Args:
         strategy: Its name exactly as the export spells it.
         export: The `trades.parquet` an export wrote.
         cfg: What `inputs.config` returned.
+        keep: When given, the strategy's `records` are appended to it.
 
     Returns:
         The contract dict: two tabs, each with its reading. No overall verdict: it
@@ -94,6 +113,8 @@ def run(strategy: str, export: Path, cfg: dict) -> dict:
     """
     started = time.time()
     found = read(export, strategy, cfg)
+    if keep is not None:
+        keep.extend(records(strategy, found, cfg))
     found["sides"] = by_side(found["found"], found["walk"], found["keep"])
     kept, total = int(found["keep"].sum()), int(found["keep"].size)
     return envelope.envelope(

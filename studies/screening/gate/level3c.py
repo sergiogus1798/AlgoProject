@@ -6,11 +6,13 @@ import numpy as np
 import pandas as pd
 
 from core import fanout
+from core.study import draws
 from engines.nulls import verdict, windowed
 from engines.nulls.model import RUNGS
 from studies.screening.analysis import resample, tradelevel
 
 FACTS = ("z_mono", "mono_p", *(f"z_mono_{rung}" for rung in RUNGS), "mono_seed")
+DRAWS = "_draws"        # the key a worker hands its distributions back under; no fact
 HEADLINE = "timing"    # the rung `z_mono` is: same trades, sides and holds, drawn moments
 
 # What the workers read. Set by run() before the pool is built and never written again:
@@ -35,14 +37,17 @@ def _one(identity: str) -> dict:
     mine = windowed.located(shared, at.get_indexer(own["open_time"]),
                             at.get_indexer(own["close_time"]), own["lots"].to_numpy(float),
                             own["side"].to_numpy(float), own["window"].to_numpy())
-    seen, row = float(own["pnl"].mean()), {}
+    seen, row, kept = float(own["pnl"].mean()), {}, []
     for rung in RUNGS:
         drawn = windowed.means(shared, mine, _SHARED["costs"], rung, _SHARED["draws"],
                                resample.stream(_SHARED["seed"], f"{identity}|{rung}"))
         row[f"z_mono_{rung}"] = windowed.z(seen, drawn)
+        kept.append(draws.record("gate.3c", f"z_mono_{rung}", seen, drawn, str(identity),
+                                 rung=rung, seed=_SHARED["seed"], p="nulls.verdict.pvalue(net)",
+                                 unit="P/L medio por operación"))
         if rung == HEADLINE:
             row["z_mono"], row["mono_p"] = row[f"z_mono_{rung}"], verdict.pvalue(seen, drawn, "net")
-    return row
+    return row | {DRAWS: kept}
 
 
 def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
@@ -78,5 +83,6 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
                    grid=windowed.grid(bars, inside, labels), draws=knobs["draws"], seed=seed)
     sizes = {identity: len(own) for identity, own in _SHARED["oos"].items()}
     rows = dict(fanout.run(_one, sizes, os.cpu_count()))
+    draws.save(data.get("out"), [d for row in rows.values() for d in row.pop(DRAWS)])
     facts = pd.DataFrame.from_dict(rows, orient="index").reindex(index=alive, columns=list(FACTS))
     return facts.assign(mono_seed=float(seed))

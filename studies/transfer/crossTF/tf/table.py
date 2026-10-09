@@ -3,9 +3,11 @@
 import numpy as np
 import pandas as pd
 
+from core.study import draws
 from studies.screening.analysis import centred
 from studies.transfer.crossTF.tf import null, rules
 
+TEST = "crossTF.tf"
 BAR = {"M15": 900, "M30": 1800, "H1": 3600, "H4": 14400, "D1": 86400}      # seconds per bar
 MEASURED = ["n_oos1", "n_mother_oos1", "e_oos1", "e_mother_oos1", "z_delta", "overlap_oos1",
             "n_build", "n_mother_build", "e_build", "e_mother_build", "z_build", "overlap_build",
@@ -32,7 +34,7 @@ def _phi(build: pd.DataFrame, mothers: list[str], cuts: dict, f: dict) -> pd.Ser
 
 
 def measure(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: dict[str, pd.DataFrame],
-            costs: dict[str, dict], cuts: dict, params: dict, tf: dict, source: str) -> pd.DataFrame:
+            costs: dict[str, dict], cuts: dict, params: dict, tf: dict, source: str, sink: list | None = None) -> pd.DataFrame:
     """Every sibling against her mother through the joint random runs, window by window.
 
     Args:
@@ -47,6 +49,8 @@ def measure(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: di
         params: The doctrine's money management.
         tf: The `tf` section of config.yaml.
         source: The mothers' timeframe.
+        sink: When given, the `core.study.draws` rows of every `z_build` and `z_delta` are
+            appended to it (observed = the real total R, or delta per trade).
 
     Returns:
         `made` plus MEASURED. A strategy with no row in a window's frame has no data there
@@ -73,14 +77,20 @@ def measure(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: di
                     out.loc[r.Index, [f"n_mother_{window}", f"e_mother_{window}"]] = mum["n"], null.edge(mum)
                 if me:
                     out.loc[r.Index, [f"n_{window}", f"e_{window}"]] = me["n"], null.edge(me)
+                where = dict(strategy=r.sibling, mother=mother, sibling=r.sibling,
+                             timeframe=r.timeframe, window=window, seed=tf["runs"]["seed"])
                 if window == "build" and me:
                     out.loc[r.Index, "z_build"] = null.z_total(me)
+                    if sink is not None and me["n"] > 0:
+                        sink.append(draws.record(TEST, "z_build", float(me["real"]), me["null"], **where))
                 if mum and me:
                     out.loc[r.Index, f"overlap_{window}"] = rules.overlap(
                         members[source]["Open time"].to_numpy(), members[r.timeframe]["Open time"].to_numpy(),
                         BAR[source])
                     if window == "oos1":
                         out.loc[r.Index, "z_delta"] = null.z_delta(mum, me)
+                        if sink is not None and null.delta(mum, me) is not None:
+                            sink.append(draws.record(TEST, "z_delta", *null.delta(mum, me), **where))
     if trades.get("build") is not None:
         phi = _phi(trades["build"], sorted(made["mother"].unique()), cuts, tf["frequency"])
         out["phi"] = out["mother"].map(phi)

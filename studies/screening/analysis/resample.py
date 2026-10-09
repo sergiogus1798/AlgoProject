@@ -69,6 +69,31 @@ def p_upper(null: np.ndarray, observed: float, slack: float = 0.0) -> float:
     return float(((null >= observed - slack).sum() + 1) / (len(null) + 1))
 
 
+def q_null(values: np.ndarray, sizes: np.ndarray, permutations: int,
+           rng: np.random.Generator) -> tuple[np.ndarray, float, float]:
+    """The Q of homogeneity under shuffles of the trades across periods, and the observed one.
+
+    Args:
+        values: One figure per trade, sorted so that each period's trades are together.
+        sizes: What periods() returned for them; at least two.
+        permutations: Shuffles of the trades across periods, every period keeping its size.
+        rng: The strategy's stream.
+
+    Returns:
+        (the statistic per shuffle, the observed one, its rounding slack). Q is ranked through
+        the between-period sum of squares alone: the total is the same in every shuffle, so
+        the within-period variance Q divides by moves with it.
+    """
+    centred = values - values.mean()
+    starts = np.cumsum(sizes) - sizes
+    # ponytail: one permutations x trades matrix (8 bytes each); chunk the shuffles if a
+    # strategy ever brings enough trades for that to matter
+    between = (np.add.reduceat(rng.permuted(np.tile(centred, (permutations, 1)), axis=1),
+                               starts, axis=1) ** 2 / sizes).sum(axis=1)
+    observed = (np.add.reduceat(centred, starts) ** 2 / sizes).sum()
+    return between, float(observed), len(centred) * np.finfo(float).eps * (centred @ centred)
+
+
 def homogeneity(values: np.ndarray, sizes: np.ndarray, permutations: int,
                 rng: np.random.Generator) -> float:
     """Permutation p of the Q of homogeneity: are the periods' means further apart than chance?
@@ -80,20 +105,12 @@ def homogeneity(values: np.ndarray, sizes: np.ndarray, permutations: int,
         rng: The strategy's stream.
 
     Returns:
-        The share of shuffles whose Q reaches the observed one; NaN with fewer than two
-        periods. Q is ranked through the between-period sum of squares alone: the total is
-        the same in every shuffle, so the within-period variance Q divides by moves with it.
+        The share of shuffles whose Q (`q_null`) reaches the observed one; NaN with fewer than
+        two periods.
     """
     if len(sizes) < 2:
         return np.nan
-    centred = values - values.mean()
-    starts = np.cumsum(sizes) - sizes
-    # ponytail: one permutations x trades matrix (8 bytes each); chunk the shuffles if a
-    # strategy ever brings enough trades for that to matter
-    between = (np.add.reduceat(rng.permuted(np.tile(centred, (permutations, 1)), axis=1),
-                               starts, axis=1) ** 2 / sizes).sum(axis=1)
-    observed = (np.add.reduceat(centred, starts) ** 2 / sizes).sum()
-    return p_upper(between, observed, len(centred) * np.finfo(float).eps * (centred @ centred))
+    return p_upper(*q_null(values, sizes, permutations, rng))
 
 
 def max_drawdown(pnl: np.ndarray) -> np.ndarray:

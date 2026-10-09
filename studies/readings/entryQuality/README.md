@@ -12,7 +12,7 @@ They share one kernel — the forward path from an entry — which is why they a
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `report.py` | **The command**: one strategy's two readings, printed and written to `reports/<P>/<D>/<export day>/entryQuality/estrategias/` | `python3 -m studies.readings.entryQuality.report --export <trades.parquet> --strategy "Strategy 35.44.31"` | trades + bars → two readings |
+| `report.py` | **The command**: one strategy's two readings, printed and written to `reports/<P>/<D>/<export day>/entryQuality/estrategias/`, and the random e-ratio per horizon (one row per strategy and horizon, histogram + tails, no raw draws) into `entryQuality/distribuciones.parquet` (`core/study/draws.py`) | `python3 -m studies.readings.entryQuality.report --export <trades.parquet> --strategy "Strategy 35.44.31"` | trades + bars → two readings |
 | `one.py` | The measurements — the e-ratio against its band, per side, and the two delay tables — as the contract's data the window paints | imported — the window calls it | trades + bars → result |
 | `contract.py` | The two tabs, each with its reading, and the glossary | imported | numbers → tabs |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |

@@ -12,6 +12,7 @@ from studies.readings.monkey import one
 # What the workers read, set before the pool forks: every market's bars, the config and every
 # (strategy, market)'s trades on the sample, each handed over without pickling.
 _SHARED: dict = {}
+DRAWS = "_draws"        # the key a worker hands its distributions back under; no panel column
 
 
 def _one(key: tuple[str, str]) -> dict:
@@ -21,8 +22,8 @@ def _one(key: tuple[str, str]) -> dict:
     cfg = {**_SHARED["cfg"], "feed": key[1]}
     # Seeded by the strategy alone, as before markets were split: a one-market export
     # draws exactly the monkeys it always drew.
-    return one.row(one.measure(trades, _SHARED["frames"][key[1]], cfg, key[0]),
-                   len(trades), cfg)
+    got = one.measure(trades, _SHARED["frames"][key[1]], cfg, key[0])
+    return one.row(got, len(trades), cfg) | {DRAWS: one.records(got, key[0], cfg, key[1])}
 
 
 def run(sample: dict[tuple[str, str], pd.DataFrame], frames: dict[str, pd.DataFrame],
@@ -37,7 +38,7 @@ def run(sample: dict[tuple[str, str], pd.DataFrame], frames: dict[str, pd.DataFr
 
     Returns:
         {"population": the export's result, "panel": nulls.csv's frame, one row per strategy
-        and market}. This module judges nobody: the population verdict — how many beat
+        and market, "draws": the `core.study.draws` rows of every pair, identity empty}. This module judges nobody: the population verdict — how many beat
         their monkeys against how many chance gives — is tasks' monkeyExcess, which reads
         this panel.
     """
@@ -48,9 +49,10 @@ def run(sample: dict[tuple[str, str], pd.DataFrame], frames: dict[str, pd.DataFr
     for frame in frames.values():
         simulate.warm(frame, cfg)
     simulate.prime(simulate.fixed(sample[keys[0]], frames[keys[0][1]], cfg), cfg)
-    rows = {}
+    rows, kept = {}, []
     for i, (key, got) in enumerate(fanout.run(_one, {k: len(sample[k]) for k in keys},
                                               workers), 1):
+        kept += got.pop(DRAWS)
         rows[key] = got
         envelope.progress(100 * i // len(keys), f"{i}/{len(keys)} {key[0]} · {key[1]}")
     panel = pd.DataFrame([{"strategy": s, "market": m, **rows[s, m]} for s, m in keys])
@@ -71,4 +73,4 @@ def run(sample: dict[tuple[str, str], pd.DataFrame], frames: dict[str, pd.DataFr
             note=f"{cfg['nulls']['draws']:,} monos por estrategia, mercado y peldaño, "
                  f"semilla {cfg['nulls']['seed']}. Sin veredicto: cuántas baten a sus monos "
                  f"contra cuántas daría el azar lo dice monkeyExcess, que lee este panel.")])
-    return {"population": population, "panel": panel}
+    return {"population": population, "panel": panel, "draws": kept}

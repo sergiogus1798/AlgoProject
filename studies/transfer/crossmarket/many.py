@@ -74,7 +74,8 @@ def run(inputs: dict, cfg: dict, workers: int = 0, overrides: list[str] | None =
 
     Returns:
         {"population": the export's result, "table": one row per strategy (verdict.csv),
-        "markets": one row per strategy and market (markets.parquet)}.
+        "markets": one row per strategy and market (markets.parquet), "draws": the rows of
+        `travel.records` (distribuciones.parquet)}.
     """
     started = time.time()
     got = measure(inputs, overrides)
@@ -83,6 +84,6 @@ def run(inputs: dict, cfg: dict, workers: int = 0, overrides: list[str] | None =
     table = table[[*HEAD, *table.columns.difference(HEAD, sort=False)]]
     markets = got["markets"].assign(identity=lambda t: t["strategy"].map(ident))
     envelope.progress(100, f"{len(table)} estrategias medidas")
-    return {"population": population(table, got, cfg, started), "table": table,
+    return {"population": population(table, got, cfg, started), "table": table, "draws": got["draws"],
             "markets": markets[["strategy", "identity", *markets.columns.difference(
                 ["strategy", "identity"], sort=False)]]}

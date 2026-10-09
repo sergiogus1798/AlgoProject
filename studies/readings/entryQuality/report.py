@@ -2,9 +2,12 @@
 """The command: whether one strategy's entry carries information, and what arriving late costs."""
 
 import argparse
+import json
 from pathlib import Path
 
-from core.study import output
+import pandas as pd
+
+from core.study import draws, output
 from core.study.render import markdown
 from studies.readings.entryQuality import inputs, one
 
@@ -19,14 +22,17 @@ def main() -> None:
     a = ap.parse_args()
 
     cfg = inputs.config(a.overrides)
-    got = one.run(a.strategy, a.export, cfg)
+    kept = []
+    got = one.run(a.strategy, a.export, cfg, kept)
     run = cfg["run"]
     title = f"Calidad de la entrada — {a.strategy}"
     lede = (f"Muestra {run['sample']} · {run['feed']} {run['timeframe']} · "
             f"{got['summary']['full_path']} de {got['summary']['trades']} operaciones con "
             f"camino completo.")
+    out = output.folder(a.export, "entryQuality")
+    draws.merge(out, kept)
     print(markdown.render(got, title))
-    print(f"-> {output.member(output.folder(a.export, 'entryQuality'), got, title, lede)}")
+    print(f"-> {output.member(out, got, title, lede)}")
 
 
 if __name__ == "__main__":

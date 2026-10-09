@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from core.study import draws
 from studies.transfer.crossmarket.travel import sizing
 from studies.transfer.crossTF.tf import inputs, table
 
@@ -12,7 +13,7 @@ SIBLINGS, MOTHERS = "tf_siblings.parquet", "tf_mothers.csv"
 
 def read(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: dict[str, pd.DataFrame],
          costs: dict | None, cuts: dict | None, params: dict, tf: dict, source: str,
-         identity: dict, reason: str = "") -> dict[str, pd.DataFrame]:
+         identity: dict, reason: str = "", sink: list | None = None) -> dict[str, pd.DataFrame]:
     """Both tables from plain data: no file, no asset card, no SQX.
 
     Args:
@@ -20,6 +21,7 @@ def read(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: dict[
             `costs` and `cuts` are None when `reason` says the batch cannot be priced.
         identity: Mother name to identity.
         reason: Why nothing can be measured; "" when it can.
+        sink: As `table.measure` takes it.
 
     Returns:
         `siblings` (`table.SIBLINGS`, one row per mother and sibling timeframe) and `mothers`
@@ -27,7 +29,7 @@ def read(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: dict[
         phase-1 reading: T1 and T2b are limbo with `no_build_data`, `phase1` is final.
     """
     measured = table.blank(made) if reason else table.measure(made, trades, bars, costs, cuts,
-                                                               params, tf, source)
+                                                               params, tf, source, sink)
     siblings = table.judge(measured, tf, source, reason)
     return {"siblings": siblings, "mothers": table.mothers(siblings, tf, source, identity)}
 
@@ -43,14 +45,16 @@ def write(out: Path, got: dict, cfg: dict, export: Path, directory: Path) -> dic
         directory: The batch's folder, which holds `scaling.parquet` and `blocks.json`.
 
     Returns:
-        What read() returned; written as `tf_siblings.parquet` and `tf_mothers.csv`.
+        What read() returned; written as `tf_siblings.parquet` and `tf_mothers.csv`, plus `distribuciones.parquet`.
     """
     made = inputs.made(got["plan"])
     costs, cuts, reason = inputs.cards(got["feed"])
     trades = {"oos1": inputs.oos1(got["plan"], got["trades"]),
               "build": None if reason else inputs.build(export, directory, got["identity"])}
+    kept = []
     both = read(made, trades, got["frames"], costs, cuts, sizing.doctrine(), cfg["tf"],
-                cfg["run"]["blocks"][0], got["identity"], reason)
+                cfg["run"]["blocks"][0], got["identity"], reason, kept)
+    draws.save(out, kept)
     both["siblings"].to_parquet(out / SIBLINGS, index=False)
     both["mothers"].to_csv(out / MOTHERS, index=False)
     return both

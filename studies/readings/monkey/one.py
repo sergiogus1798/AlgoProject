@@ -5,7 +5,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from core.study import blocks, identity, output, result as envelope
+from core.study import blocks, draws, identity, output, result as envelope
 from engines.nulls import simulate, verdict
 
 MODULE = "nulls"
@@ -91,7 +91,27 @@ def tabs(got: dict, cfg: dict, statistic: str) -> list[dict]:
             envelope.tab("channels", "De dónde sale la ventaja", [channels])]
 
 
-def run(strategy: str, given: dict, cfg: dict, statistic: str = "net") -> dict:
+def records(got: dict, name: str, cfg: dict, market: str = "") -> list[dict]:
+    """Every rung's null distribution of every statistic, as `core.study.draws` rows.
+
+    Args:
+        got: What `measure` returned.
+        name: The strategy.
+        cfg: What inputs.config() returned.
+        market: The feed the strategy was read on, when the export holds several.
+
+    Returns:
+        One row per rung and statistic, metric `p_<rung>_<stat>` as in nulls.csv, observed =
+        the real run's statistic. The identity is left empty: the report signs it.
+    """
+    seed = cfg["nulls"]["seed"]
+    return [draws.record("monkey", f"p_{rung}_{n}", got["seen"][n], values[n], strategy=name,
+                         market=market, rung=rung, stat=n, seed=seed)
+            for rung, values in got["per_rung"].items() for n in cfg["statistics"]["report"]]
+
+
+def run(strategy: str, given: dict, cfg: dict, statistic: str = "net",
+        keep: list | None = None) -> dict:
     """One strategy against its monkeys.
 
     Args:
@@ -100,6 +120,7 @@ def run(strategy: str, given: dict, cfg: dict, statistic: str = "net") -> dict:
             folder, whose manifest names project and databank for the identity}.
         cfg: What inputs.config() returned, with `feed` set.
         statistic: Which statistic the headline call and the channels read.
+        keep: When given, the strategy's `records` are appended to it.
 
     Returns:
         The contract dict: a call on the headline rung, three tabs, the reasons to distrust.
@@ -107,6 +128,8 @@ def run(strategy: str, given: dict, cfg: dict, statistic: str = "net") -> dict:
     started = time.time()
     trades = given["trades"]
     got = measure(trades, given["frame"], cfg, strategy)
+    if keep is not None:
+        keep.extend(records(got, strategy, cfg))
     p, alpha = got["found"][statistic], cfg["verdict"]["alpha"]
     said = blocks.verdict(
         "bate al mono" if p <= alpha else "no se distingue del mono",

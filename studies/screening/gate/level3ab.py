@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 
+from core.study import draws
 from studies.screening.analysis import resample, tradelevel
 
 FACTS = ("q_p", "q_seed", "dd_p", "dd_esperado_r", "dd_seed")
@@ -35,19 +36,28 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
     oos = data["oos"][data["oos"]["identity"].isin(alive)]
     period = tradelevel.calendar(oos["open_time"], spread["period"])
     build = {key: pnl.to_numpy(float) for key, pnl in data["build"].groupby("identity")["pnl"]}
-    rows = {}
+    rows, kept = {}, []
     for identity, mine in oos.assign(period=period).groupby("identity", sort=False):
         order = np.argsort(mine["period"].to_numpy(), kind="stable")
-        row = {"q_p": resample.homogeneity(
-            mine["excess"].to_numpy(float)[order],
-            resample.periods(mine["period"].to_numpy(), spread["min_trades"]),
-            spread["permutations"], resample.stream(q_seed, str(identity)))}
+        sizes = resample.periods(mine["period"].to_numpy(), spread["min_trades"])
+        row = {"q_p": np.nan}
+        if len(sizes) >= 2:
+            between, seen, slack = resample.q_null(
+                mine["excess"].to_numpy(float)[order], sizes, spread["permutations"],
+                resample.stream(q_seed, str(identity)))
+            row["q_p"] = resample.p_upper(between, seen, slack)
+            kept.append(draws.record("gate.3b", "q_p", seen, between, str(identity), seed=q_seed,
+                                     p="resample.p_upper", unit="Q entre periodos"))
         if identity in build:
             pnl = mine["pnl"].to_numpy(float)
             simulated = resample.drawdowns(build[identity], pnl.mean(), len(pnl), fall["block"],
                                            fall["sequences"], resample.stream(dd_seed, str(identity)))
             row["dd_p"] = resample.p_upper(simulated, resample.max_drawdown(pnl))
             row["dd_esperado_r"] = np.percentile(simulated, fall["percentile"]) / risk
+            kept.append(draws.record("gate.3a", "dd_p", float(resample.max_drawdown(pnl)), simulated,
+                                     str(identity), seed=dd_seed, p="resample.p_upper",
+                                     unit="drawdown máximo, divisa de la cuenta", risk=risk))
         rows[identity] = row
+    draws.save(data.get("out"), kept)
     facts = pd.DataFrame.from_dict(rows, orient="index").reindex(index=alive, columns=list(FACTS))
     return facts.assign(q_seed=float(q_seed), dd_seed=float(dd_seed))

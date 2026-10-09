@@ -12,7 +12,7 @@ joint, per window V0/V1/V2, per market, all-but-one, per year — is read from i
 cancel for ATR-conditioned entries, so z is read on gross R (`travel.judge_on`).
 
 ```
-many.py / one.py / report.py ──▶ travel/run.py ──▶ verdict.csv, markets.parquet, crossmarket.json
+many.py / one.py / report.py ──▶ travel/run.py ──▶ verdict.csv, markets.parquet, crossmarket.json, distribuciones.parquet
                                    │  cells, sizing, shift, tensor, stat   (the machinery)
                                    └─ rules, frequency, validity, units    (P1-P9 and the §7.1 controls)
 ```

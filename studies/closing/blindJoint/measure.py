@@ -84,8 +84,10 @@ def run(data: dict, cfg: dict) -> dict:
     table = pd.DataFrame({
         "lots_bh": lots, "sharpe": days.mean() / days.std(ddof=1) * np.sqrt(YEAR),
         "excess_day": excess.mean(), "named_all": excess.columns.isin(everyone)})
+    drawn: dict = {}
     return {**got, "named": named, "calls": readings.verdicts(got["states"], named),
-            "spa": superior.spa(tested, block, boot["reps"], boot["seed"]),
+            "spa": superior.spa(tested, block, boot["reps"], boot["seed"], drawn),
+            "spa_drawn": drawn,
             "table": table, "block": block, "days": len(excess), "flat": flat,
             "K": tested.shape[1], "panel": days, "held": held,
             "sharpe_bh": float(held.mean() / held.std(ddof=1) * np.sqrt(YEAR))}

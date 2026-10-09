@@ -127,11 +127,13 @@ def run(got: dict, cfg: dict) -> dict:
     Returns:
         {"population": the result, "panel": every cell, "table": one row per scaled
         sibling with its mother's identity and its reading as `verdict`, "nulls_seed": the
-        root `engines.nulls.inputs.config` drew for this run's monkeys}.
+        root `engines.nulls.inputs.config` drew for this run's monkeys, "draws": the
+        `core.study.draws` rows of every cell's nulls}.
     """
     started = time.time()
     envelope.progress(10, f"midiendo {len(got['plan'])} celdas contra sus nulos")
-    panel = cells.panel(got["plan"], got["trades"], got["frames"], got["nullcfg"], cfg)
+    kept = []
+    panel = cells.panel(got["plan"], got["trades"], got["frames"], got["nullcfg"], cfg, kept)
     readings = verdict.read(panel, got["scaling"], cfg)
     v = cfg["verdict"]
     pairs = ", ".join(f"bloque {i} = {tf}" for i, tf in enumerate(cfg["run"]["blocks"]))
@@ -216,4 +218,4 @@ def run(got: dict, cfg: dict) -> dict:
     population = envelope.envelope(MODULE, None, None, cfg, started, tabs, said, warn, glossary)
     envelope.progress(100, f"{len(readings)} hermanas en {len(tfs)} timeframes")
     return {"population": population, "panel": panel, "table": table,
-            "nulls_seed": got["nullcfg"]["nulls"]["seed"]}
+            "nulls_seed": got["nullcfg"]["nulls"]["seed"], "draws": kept}
