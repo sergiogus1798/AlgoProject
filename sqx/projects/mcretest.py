@@ -12,7 +12,7 @@ from core.assetcheck import pending
 from core.assetdata import doctrine, load
 from sqx.projects import cfxio
 from sqx.projects.databanks import set_databank
-from sqx.projects.orders import pending_orders
+from sqx.projects.orders import pending_orders, with_exits
 from sqx.projects.perturbations import disable, usable, write_task
 from sqx.projects.stage import own
 
@@ -69,13 +69,13 @@ def configure(cfx: Path, symbol: str, source: str, databank: Path | None) -> dic
     with zipfile.ZipFile(cfx) as z:
         members = {n: z.read(n) for n in z.namelist()}
     config = members["config.xml"].decode("utf-8")
-    orders = pending_orders(members, databank)
+    orders, exits = pending_orders(members, databank), with_exits(databank)
     catalogue = doctrine()["mc_retest"]
 
     rows = []
     for spec in catalogue["tasks"]:
         member = member_of(config, spec["title"])
-        methods, dropped = usable(spec, data, orders["pending"])
+        methods, dropped = usable(spec, data, orders["pending"], exits)
         if not member or not methods:
             rows.append({"title": spec["title"], "member": member, "written": False,
                          "dropped": dropped,
@@ -95,7 +95,7 @@ def configure(cfx: Path, symbol: str, source: str, databank: Path | None) -> dic
 
     members["config.xml"] = config.encode("utf-8")
     cfxio.write(cfx, members)
-    return {"project": ElementTree.fromstring(config).get("name"), "orders": orders,
+    return {"project": ElementTree.fromstring(config).get("name"), "orders": orders, "exits": exits,
             "simulations": catalogue["simulations"], "input": source, "tasks": rows}
 
 

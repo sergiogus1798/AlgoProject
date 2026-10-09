@@ -20,11 +20,14 @@ FROM_ASSET = {method: name for name, method in RANDOMIZE.items()}
 # to price a PENDING order may sit before the broker refuses it, so over a population that
 # only enters at market it randomises a number nothing reads. Owner's rule, 2026-09-23.
 NEEDS_PENDING = ("RandomizeMinDistance",)
+# Same shape: exit parameters are perturbed only where some are set (stop, target, trailing,
+# exit after bars). Over condition-only exits SQX's MC sub-jobs never return (🔬 2026-10-06).
+NEEDS_EXITS = ("RandomizeExitParameters",)
 # Reserved for the WFC and the WFM. A task here may not name it, in a span or alone.
 RESERVED = "oos2"
 
 
-def usable(spec: dict, data: dict, pending: bool | None) -> tuple[dict, dict]:
+def usable(spec: dict, data: dict, pending: bool | None, exits: bool | None = None) -> tuple[dict, dict]:
     """Which of a task's perturbations can actually run here, and why the rest cannot.
 
     Args:
@@ -32,6 +35,8 @@ def usable(spec: dict, data: dict, pending: bool | None) -> tuple[dict, dict]:
         data: One asset as load() returned it.
         pending: Whether the population trades with stop or limit orders. None when the
             build has not run and the question is still open.
+        exits: Whether any strategy has an exit method set (`orders.with_exits`); None
+            before the build, which keeps the method.
 
     Returns:
         (methods to write, dropped method to its reason). Conditionality belongs to the
@@ -47,6 +52,9 @@ def usable(spec: dict, data: dict, pending: bool | None) -> tuple[dict, dict]:
                                if pending is False else
                                "sin poblacion construida: el generador PUEDE emitir "
                                "ordenes pendientes, la pregunta sigue abierta")
+        elif method in NEEDS_EXITS and exits is False:
+            dropped[method] = ("la poblacion sale solo por condicion, sin stop, objetivo ni "
+                               "trailing: nada que perturbar, y SQX se cuelga intentandolo")
         elif span.get("min") is None and method in FROM_ASSET:
             dropped[method] = (f"rango {FROM_ASSET[method]} sin decidir en "
                                f"assets/symbols/{data['symbol']}.yaml")

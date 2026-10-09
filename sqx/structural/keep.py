@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core import worker
 from core.paths import worker_dir
+from sqx.projects import live
 from sqx.structural import make
 from sqx.variants import inputs
 
@@ -51,10 +52,11 @@ def main() -> None:
     ap.add_argument("--work", required=True, type=Path, help="the batch directory")
     a = ap.parse_args()
 
-    # Reading files is safe with the install up, but a sync could be deleting them.
+    # Reading files is safe with the install up, but a sync could be deleting them. Not on this
+    # holder's live session: `livexec.synced` wrote them from memory, and a sync keeps what it holds.
     role = inputs.load()["execute"]["role"]
     held = worker.holding(worker_dir(role))
-    if held:
+    if held and not live.mine(role):
         raise SystemExit(f"{role} sigue arriba (PID {held}): espera a que `execute` lo pare")
     done = keep(a.work)
     done.to_parquet(a.work / FILE, compression="zstd", index=False)

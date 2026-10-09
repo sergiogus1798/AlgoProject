@@ -24,7 +24,7 @@ def _read(cfx: Path) -> dict:
 def _fake_install(root: Path) -> tuple:
     """Patch the installs to one fake custodian under `root`, with its port answering."""
     return (mock.patch.object(cfxio, "_installs", lambda: {"custodian": (root.resolve(), 5070)}),
-            mock.patch.object(cfxio, "_answers", lambda port: True),
+            mock.patch.object(cfxio, "listening", lambda port: True),
             mock.patch.object(cfxio, "holding", lambda install: []))
 
 
@@ -73,10 +73,10 @@ def test_held() -> None:
                 raise AssertionError("write went through a held file")
             assert cfx.read_bytes() == b"x"
             cfxio.write(cfx, MEMBERS, force=True)
-        with a, mock.patch.object(cfxio, "_answers", lambda port: False), \
+        with a, mock.patch.object(cfxio, "listening", lambda port: False), \
                 mock.patch.object(cfxio, "holding", lambda install: [4242]):
             assert cfxio.held(cfx) == "custodian"           # JVM booting: no port yet, a process
-        with a, mock.patch.object(cfxio, "_answers", lambda port: False), c:
+        with a, mock.patch.object(cfxio, "listening", lambda port: False), c:
             assert cfxio.held(cfx) is None                  # down and no process
 
 

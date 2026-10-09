@@ -6,6 +6,7 @@ import zipfile
 from pathlib import Path
 
 from core.symbols import current
+from sqx.projects import registryxml
 
 SYMBOL = re.compile(r'<Symbol\b[^>]*?name="([^"]+)"[^>]*?>.*?</Symbol>', re.S)
 CHART = re.compile(r'<Chart\b[^>]*?symbol="([^"]+)"')
@@ -27,22 +28,8 @@ def main_feed(members: dict[str, bytes], build_member: str) -> str:
     return CHART.search(members[build_member].decode("utf-8")).group(1)
 
 
-def definitions(source: Path, feed: str) -> tuple[str, str, str]:
-    """One asset's three resource blocks, read out of a project that already trades it.
-
-    Args:
-        source: A project.cfx defining the feed. Read only — never written, so a live
-            install may hold it open.
-        feed: SQX symbol name to bring over.
-
-    Returns:
-        (the <Symbol> block, its <InstrumentInfo>, its <Broker>). The instrument definition
-        must agree with SQX's own registry or the project refuses to start with "unresolved
-        resources", so it is copied verbatim from a project SQX itself produced.
-
-    Raises:
-        SystemExit: When `source` does not define that feed either. Nothing is invented.
-    """
+def project_definitions(source: Path, feed: str) -> tuple[str, str, str] | None:
+    """A feed's (<Symbol>, <InstrumentInfo>, <Broker>) as one project.cfx carries them, or None."""
     with zipfile.ZipFile(source) as z:
         for name in (n for n in z.namelist() if n.endswith(".xml") and n != "config.xml"):
             # A project written before SQX's feeds were renamed names them the old way.
@@ -56,8 +43,32 @@ def definitions(source: Path, feed: str) -> tuple[str, str, str]:
                         if m.group(1) == instrument and m.group(0) != block)
             entry = next(m.group(0) for m in BROKER.finditer(text) if m.group(1) == broker)
             return block, info, entry
-    raise SystemExit(f"{source} no define el feed {feed} tampoco. Hay que darlo de alta en "
-                     "SQX — un símbolo no se inventa.")
+    return None
+
+
+def definitions(source: Path | None, feed: str) -> tuple[str, str, str]:
+    """One asset's three resource blocks: from a project that already trades it, else the registry.
+
+    Args:
+        source: A project.cfx that may define the feed, or None when no project does. Read
+            only — never written, so a live install may hold it open.
+        feed: SQX symbol name to bring over.
+
+    Returns:
+        (the <Symbol> block, its <InstrumentInfo>, its <Broker>). The instrument definition
+        must agree with SQX's own registry or the project refuses to start with "unresolved
+        resources", so it is copied from a project SQX itself produced, or written from the
+        registry by `registryxml` — which `refresh` brings every block to anyway.
+
+    Raises:
+        SystemExit: When neither defines that feed. Nothing is invented.
+    """
+    blocks = project_definitions(source, feed) if source else None
+    blocks = blocks or registryxml.definitions(feed)
+    if not blocks:
+        raise SystemExit(f"falta el FEED {feed}: no lo define ningún proyecto ni el Data Manager "
+                         "de SQX. Hay que darlo de alta en SQX — un símbolo no se inventa.")
+    return blocks
 
 
 def one_task(text: str, donor_feed: str, blocks: tuple[str, str, str]) -> str:
@@ -85,14 +96,14 @@ def one_task(text: str, donor_feed: str, blocks: tuple[str, str, str]) -> str:
 
 
 def borrow_symbol(members: dict[str, bytes], feed: str, build_member: str,
-                  source: Path) -> str | None:
+                  source: Path | None) -> str | None:
     """Point every task of a clone at this asset's feed, patched in place.
 
     Args:
         members: The .cfx contents by member name.
         feed: The SQX symbol the project must trade, from the asset's file.
         build_member: The member whose first <Chart> names the donor's own feed.
-        source: A project.cfx that defines `feed`.
+        source: A project.cfx that defines `feed`, or None to take it from SQX's registry.
 
     Returns:
         The feed that was replaced, or None when the donor already traded this asset.

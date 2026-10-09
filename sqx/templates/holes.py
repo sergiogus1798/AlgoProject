@@ -15,6 +15,7 @@ GROUPS_REL = "user/settings/blockGroups.xml"
 # — SameCondition, NegatedCondition, OppositeValue — repeat or invert another hole rather
 # than drawing from anywhere, so they carry no group and nothing can narrow them.
 HOLES = {"RandomCondition": "condition", "RandomValue": "value"}
+LOGIC = {"AND", "OR", "Not"}
 
 
 def group_names(install: Path) -> dict[str, str]:
@@ -63,6 +64,50 @@ def shape(path: Path, install: Path = MASTER) -> dict:
                       "group": names.get(group, group) if group else None,
                       "unknown_group": bool(group) and group not in names})
     return {"holes": found, "fixed": sorted(blocks(rules(path)))}
+
+
+def _count(item: ElementTree.Element, got: dict[str, int]) -> None:
+    """Add one node of a signal's tree to the count, walking through AND, OR and Not."""
+    if item.get("key") in LOGIC:
+        for child in item.findall("Block/Item"):
+            _count(child, got)
+    elif item.get("categoryType") == "randomBlock":
+        bound = any(p.get("key") == "#Group#" and (p.text or "").strip() for p in item)
+        got["bound" if bound else "free"] += 1
+    else:
+        # Owner, 2026-10-05: the same condition twice on two periods (double ROC, double Vortex)
+        # is ONE idea, so a side counts each distinct block shape once.
+        twin = tuple(i.get("key") for i in item.iter("Item"))
+        got["fixed"] += twin not in got.setdefault("_twins", set())
+        got["_twins"].add(twin)
+
+
+def conditions(path: Path) -> dict[str, dict[str, int]]:
+    """How many conditions a template nails down and how many it leaves open, per side.
+
+    Args:
+        path: A template .sqx.
+
+    Returns:
+        `entry` and `exit`, each `fixed` (a literal condition), `bound` (a random block tied to
+        a group — how this project fixes an idea and still draws its periods, `build.group_xml`)
+        and `free` (a random block with no group: the hole a palette governs). A side is read
+        off the signal variable's name (`LongEntrySignal`, `ShortExitSignal`…); of a side's
+        signals the fullest one counts, since one strategy trades one direction (rule 13).
+    """
+    with zipfile.ZipFile(path) as z:
+        root = ElementTree.fromstring(z.read(next(n for n in z.namelist() if n.endswith(INNER))))
+    names = {v.findtext("id"): v.findtext("name") or "" for v in root.iter("variable")}
+    out = {side: {"fixed": 0, "bound": 0, "free": 0} for side in ("entry", "exit")}
+    for signal in root.iter("signal"):
+        got = {"fixed": 0, "bound": 0, "free": 0}
+        for item in signal.findall("Item"):
+            _count(item, got)
+        side = "exit" if "Exit" in names.get(signal.get("variable"), "") else "entry"
+        got.pop("_twins", None)
+        if sum(got.values()) > sum(out[side].values()):
+            out[side] = got
+    return out
 
 
 def reach(shape_of: dict) -> str:

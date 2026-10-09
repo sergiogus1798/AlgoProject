@@ -47,7 +47,8 @@ def members(cfx: Path) -> tuple[list[str], list[str]]:
     """
     with zipfile.ZipFile(cfx) as z:
         declared = TASK_REF.findall(z.read("config.xml").decode("utf-8", "replace"))
-        return declared, [t for t in declared if t not in z.namelist()]
+        names = set(z.namelist())
+        return declared, [t for t in declared if t not in names]
 
 
 def mojibake(cfx: Path) -> dict[str, str]:

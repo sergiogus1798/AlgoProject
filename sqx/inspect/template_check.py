@@ -8,7 +8,7 @@ import zipfile
 from pathlib import Path
 from xml.etree import ElementTree
 
-from core.cfx import resolve, task_xml, tasks
+from core.cfx import task_xml, tasks
 from core.paths import MASTER, WORKERS, project_dir
 from core.sqxfile import INNER
 

@@ -6,6 +6,7 @@ from datetime import date
 
 from core import assetdata
 from core.assetdata import sqx_settings, window
+from sqx.projects import registryxml
 
 SETUP = re.compile(r"<Setup\b[^>]*>.*?</Setup>", re.S)
 SYMBOL = re.compile(r"<Symbol\b[^>]*?>")
@@ -121,6 +122,9 @@ def set_data_range(text: str, data: dict, span: tuple[int, int]) -> tuple[str, i
     in sync. A task whose Setup asks for 2008-2026 while its Symbol still declares the
     donor's 2018-2022 is asking to trade bars it never loaded, and nothing in SQX complains.
     Only this asset's own entries are touched: an additional market keeps its own range.
+    Then every <Symbol> of the task — this feed and the cross-check markets — is clipped
+    to the bars the registry holds (`registryxml.clip`): a range past a feed's last bar
+    made `action=start` refuse the WFM task — «Cannot start project», 2026-10-06.
     """
     def rewrite(m: re.Match) -> str:
         """One <Symbol>, rewritten when it is this asset's feed."""
@@ -130,7 +134,9 @@ def set_data_range(text: str, data: dict, span: tuple[int, int]) -> tuple[str, i
         return re.sub(r'dateTo="\d+"', f'dateTo="{span[1]}"', one, count=1)
 
     found = [m for m in SYMBOL.finditer(text) if f'name="{data["sqx_symbol"]}"' in m.group(0)]
-    return SYMBOL.sub(rewrite, text), len(found)
+    return registryxml.clip(SYMBOL.sub(rewrite, text)), len(found)
+
+OOS_RANGE = re.compile(r'(<OutOfSample[^>]*>\s*<Range )dateFrom="[^"]*" dateTo="[^"]*"')
 
 
 def set_costs(text: str, data: dict, segment: str) -> tuple[str, int]:
@@ -163,6 +169,10 @@ def set_costs(text: str, data: dict, segment: str) -> tuple[str, int]:
         return one_setup(m.group(0), data, segment)
 
     text, _ = set_data_range(SETUP.sub(rewrite, text), data, window(data, segment))
+    # The donor's <OutOfSample><Range> is XAUUSD's oos1. Left as it was, an asset whose oos1 has
+    # other years (the indices: 2020-2023) gets its retest split in two sample blocks (2026-10-02).
+    a, b = bounds(data, segment)
+    text = OOS_RANGE.sub(rf'\g<1>dateFrom="{a}" dateTo="{b}"', text)
     return text, done
 
 

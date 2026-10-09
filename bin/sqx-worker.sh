@@ -85,7 +85,7 @@ source "$ROOT/bin/sqx-lock.sh"
 install_pids() {
   local p here
   here=$(readlink -f "$WORKER")
-  for p in $(pgrep -x 'sqcli|StrategyQuantX' 2>/dev/null); do
+  for p in $(pgrep -x 'sqcli|StrategyQuantX|strategyquantx_ui' 2>/dev/null); do   # the GUI's Electron too
     [ "$(readlink -f "/proc/$p/cwd" 2>/dev/null)" = "$here" ] && printf '%s\n' "$p"
   done
   return 0
@@ -348,13 +348,27 @@ case "${1:-}" in
     for _ in $(seq 1 "$STOP_WAIT"); do alive || break; echo -n "."; sleep 1; done
     echo
     if alive; then
-      STOPPED=0
-      if [ "$SENT" = "7" ]; then
-        echo "⚠️ $ROLE STILL RUNNING and not answering — do not read its databanks yet"
-      else
-        echo "⚠️ $ROLE STILL RUNNING after 5 min — do not read its databanks yet"
+      # Owner, 2026-10-06: an SQX that does not leave is killed, never left for him to kill from the
+      # system monitor. Not while it is still saving: its log moves while the shutdown sync writes
+      # databanks (minutes with many projects), so wait while it moves, up to 15 min; 60 s of
+      # silence with the process still here is the hang. Then SIGTERM by PID, SIGKILL what remains.
+      LOGF="$WORKER/user/log/StrategyQuant/log_$(date +%Y_%m_%d).log"
+      echo "$ROLE still here after $STOP_WAIT s: waiting while its log moves (it may be saving)"
+      for _ in $(seq 1 60); do
+        alive || break
+        if [ -f "$LOGF" ] && [ $(( $(date +%s) - $(stat -c %Y "$LOGF") )) -lt 60 ]; then sleep 15; else break; fi
+      done
+      if alive; then
+        echo "   $ROLE silent for 60 s and not leaving: killing by PID $(install_pids | tr '\n' ' ')(never by pattern)"
+        for p in $(install_pids); do kill -TERM "$p" 2>/dev/null; done
+        for _ in $(seq 1 30); do alive || break; sleep 1; done
+        for p in $(install_pids); do kill -KILL "$p" 2>/dev/null; done
+        sleep 2
       fi
-      echo "   PID(s) holding $WORKER: $(install_pids | tr '\n' ' ')— kill by PID, never by pattern"
+    fi
+    if alive; then
+      STOPPED=0
+      echo "⚠️ $ROLE STILL RUNNING even after the kill — PID(s) $(install_pids | tr '\n' ' ')"
     else
       STOPPED=1
       echo "$ROLE stopped"

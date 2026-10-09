@@ -11,6 +11,7 @@ from xml.etree import ElementTree
 
 from core.datapaths import retired_project
 from core.paths import MASTER, WORKERS
+from core.store import save
 from core.worker import holding, installs
 from sqx.projects import cfxio
 from sqx.projects import registry, sweep
@@ -84,6 +85,11 @@ def retire(name: str, role: str, keep: list[str], apply: bool, own: bool = False
     missing = [b for b in keep if not (folder / "databanks" / b).is_dir()]
     if missing:
         raise SystemExit(f"{name} has no databank {', '.join(missing)}.")
+    lost = save.unsaved(name)
+    if lost:
+        raise SystemExit(f"{name}: {len(lost)} supervivientes del paso 8 no están guardadas en el "
+                         f"almacén ({', '.join(lost[:3])}…): retirarlo borraría sus .sqx. Antes: "
+                         f"python3 -m core.store save {name}")
     out = retired_project(inst.name, name, date.today().isoformat())
     line = f"{inst.name}/{name}: {d['tasks']} tareas, {d['mb']:.0f} MB → {out}"
     if not apply:

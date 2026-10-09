@@ -4,7 +4,7 @@
 |---|---|---|---|
 | `build.py` | Put one concrete condition — authored, or native from the install's AlgoWizard `config.xml` — into a proven skeleton, inside a one-item group so the builder draws its periods at random; `--param` fixes what the owner named | `python3 -m sqx.templates.build <name> <blocks.xml\|config.xml> <key> <out.sqx> [--param '#Type#=1']` | a skeleton + one block → `.sqx` + `deps/groups.xml` |
 | `registry.py` | Record a template in the library, and each market it has been tried on | `python3 -m sqx.templates.registry --help` | a template or a run → a row in `registry.csv` / `runs.csv` |
-| `holes.py` | Which parts of a template the builder fills at random, which are bound to a group, and which the template fixes | imported | a `.sqx` → its holes and its fixed blocks |
+| `holes.py` | Which parts of a template the builder fills at random, which are bound to a group, and which the template fixes; `conditions()` counts them per side (entry, exit) as fixed, bound and free — what rule 14's arithmetic in `sqx/projects/buildrules.py` reads | imported | a `.sqx` → its holes and its fixed blocks |
 
 What the owner means by "create a strategy", in his words (2026-09-22). Three steps, in order:
 

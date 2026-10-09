@@ -12,7 +12,12 @@ build: [CONSTRUCCION]
 oos: [OOS]
 crossmarket: [Retest Markets - Family]
 crosstf: [CrossTF]
-mcretest: [MCR 1 Bar, MCR 2 Spread, MCR 3 Slippage, MCR 4 MinDist, MCR 5 Params, MCR 6 Exits,
-           MCR 7 OHLC, MCR 8 Stress]
+# Owner, 2026-10-07: step 13 runs the control (T3) and the history task (T2) only; MCR 2 Spread,
+# 3 Slippage, 5 Params, 6 Exits and 8 Stress stay defined in assets/_build.yaml and are not run
+# (T1, the parameter neighbours, goes through the variant factory: pipeline/autopilot/neighbours.py).
+# «MCR 7 OHLC» is LAST on purpose: the builder chains «SPP IS» to the task before it, and step 14
+# cuts that databank (criteria.yaml). A project built before this still carries the other five,
+# switched off, and its «SPP IS» still reads «MCR 8 Stress».
+mcretest: [MCR 1 Bar, MCR 4 MinDist, MCR 7 OHLC]
 spp: [SPP IS, SPP OOS]
 wfm: [WFM]

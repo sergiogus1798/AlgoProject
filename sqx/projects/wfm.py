@@ -121,9 +121,11 @@ def write_task(text: str, cfg: dict, data: dict) -> tuple[str, dict]:
     # one's end, and the reason a walk-forward gets history in front of the reserved tail:
     # the first pass has to optimise on something before it can run on anything. Unlike the
     # spans of the MC Retest it is NOT priced at its last segment: `costs_segment` says at
-    # whose costs, because eighteen years charged at the four-year tail's spread would be a
-    # price nobody trades at (owner, 2026-09-24). So costs come from one segment and the
-    # window from another, and the two Setup dates are written over what pricing left.
+    # whose costs — oos1's — because the whole window charged at the tail's spread would be
+    # a price nobody traded at (owner, 2026-09-24). The analysis re-charges the trades that
+    # close in oos2 at oos2's own costs (`studies/optimisation/wfm/measure/excess.py`). So
+    # costs come from one segment and the window from another, and the two Setup dates are
+    # written over what pricing left.
     names = cfg["segment"].split("..")
     text, setups = set_costs(text, data, cfg["costs_segment"])
     start, end = bounds(data, names[0])[0], bounds(data, names[-1])[1]
@@ -225,12 +227,12 @@ def main() -> None:
           f"{done['conditions']} propias escritas: una casilla aprueba con "
           f"{done['threshold_pct']} % de ellas cumplidas")
     if done["min_squares"]:
-        print(f"      la estrategia pasa si encuentra {done['min_squares']} casillas "
+        print(f"      SQX marca FAILED a quien no encuentre {done['min_squares']} casillas "
               f"aprobadas en un area de {done['area']} — {done['positions']} posiciones "
-              "posibles. Quien no lo encuentre queda marcada FAILED en SQX, NO se borra "
-              "(DeleteFailedStrategies=false): el export lo anota y la ventana lo avisa")
+              "posibles. Marca, NO borra (DeleteFailedStrategies=false), y NO juzga: el "
+              "paso 19 lo decide el analisis en oos2, que anota el area corregida")
     else:
-        print("      min_squares 0 — modo mapa: puntua cada casilla y no descarta a nadie")
+        print("      min_squares 0 — modo mapa: puntua cada casilla y no marca a nadie")
     if done["others_on"]:
         print(f"      ⚠️ esta tarea corre ademas: {', '.join(done['others_on'])} — el "
               "proyecto no paso por la doctrina")

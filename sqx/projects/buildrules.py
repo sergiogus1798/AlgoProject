@@ -2,6 +2,9 @@
 """The shape of the strategy a task may generate: how complex, which orders, which exits."""
 
 import re
+from pathlib import Path
+
+from sqx.templates.holes import conditions
 
 # Bars are what SQX stores, hours are what the owner reasons in. A 24-bar cap means one
 # day on H1 and half a day on M30, so the conversion has to happen per task.
@@ -18,6 +21,7 @@ EXIT_BLOCKS = {"stop_loss": ["StopLoss.StopLoss"],
 ALWAYS, SOMETIMES = "100", "50"
 BARS_BLOCK = "ExitAfterBars.ExitAfterBars"
 BLOCKS = re.compile(r"<Blocks\b[^>]*>.*?</Blocks>", re.S)
+STRATEGY_TYPE = re.compile(r"<StrategyType[^>]*>")
 
 
 def block_use(text: str, key: str, use: bool, probability: str | None = None) -> str:
@@ -109,6 +113,59 @@ def set_exit_types(text: str, exits: dict, timeframe: str) -> tuple[str, int]:
     return text.replace(section, out.replace(bars, fixed, 1), 1), enabled
 
 
+def what_to_build(text: str, complexity: dict, exit_required: bool) -> dict[str, tuple[int, int]]:
+    """«What to build» for one Build task: min and max conditions for `entry` and for `exit`.
+
+    Args:
+        text: A Build task XML; its <StrategyType> says Simple Strategy or which template.
+        complexity: The doctrine's `complexity` mapping.
+        exit_required: The doctrine's `exits.condition_required` — a template's exit floor.
+
+    Returns:
+        Owner's rule 14 (2026-10-02): at most `max_*_conditions` per side. A Simple Strategy
+        counts per strategy, so it gets `complexity.simple` as written. With a template SQX
+        applies the range to EACH random hole, on top of what the template fixes, so a side
+        gets 0..(cap − fixed). A hole bound to a group is this project's fixed condition and
+        is filled by the same range: a side holding one is written 1..1, never 0, which would
+        let SQX leave the idea out.
+    """
+    tag = STRATEGY_TYPE.search(text).group(0)
+    if 'type="template"' not in tag:
+        return {side: tuple(complexity["simple"][side]) for side in ("entry", "exit")}
+    counted = conditions(Path(re.search(r'templateFile="([^"]*)"', tag).group(1)))
+    out = {}
+    for side, floor in (("entry", 1), ("exit", int(exit_required))):
+        c = counted[side]
+        hi = max(complexity[f"max_{side}_conditions"] - c["fixed"] - c["bound"], 0)
+        out[side] = (1, 1) if c["bound"] else (min(0 if c["fixed"] else floor, hi), hi)
+    return out
+
+
+def over_the_cap(template: Path, complexity: dict) -> list[str]:
+    """Why a template cannot be built under rule 14, one line per side that breaks it.
+
+    Args:
+        template: A template .sqx.
+        complexity: The doctrine's `complexity` mapping.
+
+    Returns:
+        Empty when it fits. Two free holes on a side is 0..4 conditions whatever the range,
+        and fixed conditions plus a hole above the cap leaves the hole nothing to hold.
+    """
+    out = []
+    for side, c in conditions(template).items():
+        cap, fixed = complexity[f"max_{side}_conditions"], c["fixed"] + c["bound"]
+        if c["free"] > 1:
+            out.append(f"{template.name}: {c['free']} huecos aleatorios libres en «{side}». Con "
+                       "dos huecos salen hasta 4 condiciones; una plantilla de solo huecos es "
+                       "una Simple Strategy (--simple long|short), no una plantilla (regla 14).")
+        elif fixed + c["free"] > cap:
+            out.append(f"{template.name}: {fixed} condiciones fijas + {c['free']} hueco en "
+                       f"«{side}» pasan del máximo de {cap} (regla 14): con {cap} fijas no "
+                       "cabe hueco.")
+    return out
+
+
 def set_complexity(text: str, complexity: dict, exit_types: int, exit_required: bool) -> str:
     """Cap how many conditions a generated strategy may carry, and how far back it may look.
 
@@ -116,19 +173,19 @@ def set_complexity(text: str, complexity: dict, exit_types: int, exit_required: 
         text: A task XML.
         complexity: The doctrine's `complexity` mapping.
         exit_types: How many exit types the task leaves enabled.
-        exit_required: Whether every strategy must carry an exit condition. False leaves
-            minExitConditions at zero, which is what makes the rule exit optional — the
-            bar exit is what guarantees the position closes.
+        exit_required: Whether a template's strategies must carry an exit condition. False
+            leaves its minExitConditions at zero, which is what makes the rule exit optional
+            — the bar exit is what guarantees the position closes.
 
     Returns:
-        The text with the Main chart's bounds rewritten. The lookback is min and max at
-        once: a single shift value is the only way to stop the generator reaching back
-        for the bar that happens to fit.
+        The text with the Main chart's bounds rewritten from `what_to_build`. The lookback is
+        min and max at once: a single shift value is the only way to stop the generator
+        reaching back for the bar that happens to fit.
     """
     shift = complexity["lookback_bars"]
-    want = {"minConditions": 1, "maxConditions": complexity["max_entry_conditions"],
-            "minExitConditions": int(exit_required),
-            "maxExitConditions": complexity["max_exit_conditions"],
+    bounds = what_to_build(text, complexity, exit_required)
+    want = {"minConditions": bounds["entry"][0], "maxConditions": bounds["entry"][1],
+            "minExitConditions": bounds["exit"][0], "maxExitConditions": bounds["exit"][1],
             "minExitTypes": 1, "maxExitTypes": exit_types,
             "minShift": shift, "maxShift": shift}
     tag = re.search(r'<Chart name="Main chart"[^>]*>', text).group(0)

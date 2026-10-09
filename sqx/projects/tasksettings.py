@@ -170,11 +170,16 @@ def set_genetic(text: str) -> bool | str:
     Returns:
         The text, or it unchanged when the task has no <BuildMode> — only a Build task
         does. The block is a copy of his own tuned project rather than values chosen
-        here; `buildmode_model.xml` says where it came from and when.
+        here; `buildmode_model.xml` says where it came from and when. The one thing kept
+        from the task is its `generationType`: a random-generation twin (`patch.set_generation`)
+        stays one however often the doctrine is re-applied.
     """
-    if not BUILDMODE.search(text):
+    found = BUILDMODE.search(text)
+    if not found:
         return text
     model = BUILDMODE.search(BUILDMODE_MODEL.read_text(encoding="utf-8")).group(0)
+    mode = re.search(r'generationType="[^"]*"', found.group(0)).group(0)
+    model = re.sub(r'generationType="[^"]*"', mode, model, count=1)
     return BUILDMODE.sub(lambda _: model, text, count=1)
 
 

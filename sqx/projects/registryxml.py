@@ -36,6 +36,34 @@ def _registry(sql: str, args: tuple) -> dict | None:
     return dict(r) if r else None
 
 
+def bars(feed: str) -> tuple[int, int] | None:
+    """(first, last) bar of a feed in epoch milliseconds, or None when the registry lacks it."""
+    d = _registry("SELECT DATEFROM, DATETO FROM DATA WHERE SYMBOL = ?", (feed,))
+    return (d["DATEFROM"], d["DATETO"]) if d else None
+
+
+def clip(text: str) -> str:
+    """Every <Symbol> range of a task cut to the bars its feed has; unknown feeds pass unchanged.
+
+    A range ending after the feed's last bar is «unresolved resources» and `action=start`
+    refuses the task: the main feed (XAUUSD to 2026-09-30, bars to 02:58 that day) and a
+    cross-check market alike (UKOIL.cash in the donor's WFM task, 2026-10-06).
+    """
+    def one(m: re.Match) -> str:
+        """One <Symbol> block, its range inside its own bars."""
+        held = bars(m.group(1))
+        if not held:
+            return m.group(0)
+        head = re.match(r"<Symbol\b[^>]*>", m.group(0)).group(0)
+        lo, hi = (int(re.search(rf'{k}="(\d+)"', head).group(1)) for k in ("dateFrom", "dateTo"))
+        lo, hi = max(lo, held[0] // DAY * DAY), min(hi, held[1])
+        new = re.sub(r'dateFrom="\d+"', f'dateFrom="{lo}"', head, count=1)
+        new = re.sub(r'dateTo="\d+"', f'dateTo="{hi}"', new, count=1)
+        return m.group(0).replace(head, new, 1)
+
+    return SYMBOL.sub(one, text)
+
+
 def instrument_xml(name: str) -> str:
     """`<InstrumentInfo/>` exactly as SQX's InstrumentInfo.getXML() writes it from its registry.
 
@@ -137,7 +165,7 @@ def refresh(text: str) -> str:
         if entry and "<Brokers>" in text and f'id="{broker_id}"' not in \
                 text.split("<Brokers>")[1].split("</Brokers>")[0]:
             text = text.replace("<Brokers>", f"<Brokers>\n      {entry}", 1)
-    return text
+    return clip(text)      # a cross-check market's window past its own last bar (UKOIL, 2026-10-06)
 
 
 def refresh_all(members: dict[str, bytes]) -> None:
@@ -146,12 +174,13 @@ def refresh_all(members: dict[str, bytes]) -> None:
         members[member] = refresh(members[member].decode("utf-8")).encode("utf-8")
 
 
-def unresolved(cfx: Path, active_only: bool = True) -> list[str]:
+def unresolved(cfx: Path, active_only: bool = False) -> list[str]:
     """What SQX would call «unresolved resources» in a project, read off the files — nothing started.
 
     Args:
         cfx: A project.cfx. Read only.
-        active_only: Check only the tasks config.xml has switched on — the ones a start runs.
+        active_only: Check only the tasks config.xml has switched on. SQX checks EVERY task:
+            a start with the WFM alone active was refused over an inactive WFC leg (📓 2026-10-06).
 
     Returns:
         One line per mismatch, «member: what», empty when every task agrees with the registry.

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from core import manifest
 from core.datapaths import log_archive
-from core.paths import DATA, MASTER, WORKERS
+from core.paths import MASTER, WORKERS
 
 # 4.6 GB single-day logs exist, so stream rather than read; level 1 keeps a daily run cheap
 # and text logs compress to a few per cent either way.

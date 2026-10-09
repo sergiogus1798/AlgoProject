@@ -1,8 +1,8 @@
 """Drive one headless GUI-mode SQX session (`bin/sqx-worker.sh --gui`) through the window's own /project servlet."""
 
 import json
-import shutil
 import os
+import shutil
 import re
 import subprocess
 import tempfile
@@ -17,7 +17,7 @@ from pathlib import Path
 from core import worker
 from core.datapaths import tmp_dir
 from core.paths import ROOT, WORKERS
-from sqx.projects import cfxio
+from sqx.projects import cfxio, taskcap
 
 SCRIPT = ROOT / "bin" / "sqx-worker.sh"
 MISSES = 5          # polls in a row the port must refuse before `wait` calls the session dead
@@ -54,8 +54,7 @@ def _up(role: str) -> bool:
 
 def mine(role: str) -> bool:
     """Whether a GUI session this holder started is up on that worker."""
-    top = _top(role)
-    lock = top / "user/log/OWNER"
+    top, lock = _top(role), _top(role) / "user/log/OWNER"
     if not (top / "user/log/XVFB").exists() or not lock.exists():
         return False
     return _up(role) and json.loads(lock.read_text())["holder"] == _holder()
@@ -117,13 +116,12 @@ def mark(role: str) -> tuple[Path, int]:
 def wait(role: str, since: tuple[Path, int]) -> str:
     """Block until the project started after `since` ends; the line that ended it.
 
-    The agent never reads SQX's log: this does, and returns one line. Nothing here stops a
-    build: `/project/stop` does not stop one (🔬), so the build ends on its own `time-limit`.
-    SystemExit when the log shows an abort line (`BAD`), the port stays down MISSES polls in a row,
-    or past `worker.MAX_HOURS`.
+    The agent never reads SQX's log: this does, and returns one line. A build ends on its own
+    `time-limit` (`/project/stop` does not stop one, 🔬). SystemExit on an abort line (`BAD`),
+    a task past its deadline (`taskcap`), the port down MISSES polls in a row, or `worker.MAX_HOURS`.
     """
     log, offset = since
-    began, down = time.monotonic(), 0
+    began, down, cap = time.monotonic(), 0, taskcap.fresh()
     while True:
         down = 0 if _up(role) else down + 1           # asked before the read: the last line counts
         with open(log, "rb") as f:
@@ -132,10 +130,12 @@ def wait(role: str, since: tuple[Path, int]) -> str:
         whole = chunk[:chunk.rfind(b"\n") + 1]        # a half-written line waits for its end
         offset += len(whole)
         for line in whole.decode("utf-8", "replace").splitlines():
+            taskcap.note(cap, line)
             if END.search(line):
                 return line.strip()
             if BAD.search(line):                      # the abort line: «Project finished» never comes
                 raise SystemExit(f"{role}: SQX abortó la corrida: {line.strip()[:200]} ({log})")
+        taskcap.enforce(cap, role, log)
         if not whole and _log(role) != log:           # midnight: its end read, the next day's
             log, offset = _log(role), 0
             continue
@@ -159,9 +159,7 @@ def push(role: str, project: str, staged: Path, held: Path) -> str:
         staged: The copy of `held` the configurators and `stage.just` wrote.
         held: The project.cfx the running install holds (hard rule 4: never written here).
     """
-    new = cfxio.members(staged)
-    old = cfxio.members(held)
-    extra = added(staged, held)
+    new, old, extra = cfxio.members(staged), cfxio.members(held), added(staged, held)
     if extra:
         raise SystemExit(f"la copia trae ficheros que el proyecto vivo no tiene: {extra}")
     for name in sorted(n for n in new if n != "config.xml" and new[n] != old[n]):
@@ -225,15 +223,18 @@ def cut(role: str, project: str, bank: str, names: list[str]) -> int:
 def load(role: str, project: str, bank: str) -> int:
     """Make memory hold exactly the .sqx a fill just wrote into the databank's folder.
 
-    A file written beside a live databank and never loaded is deleted by its next sync (hard
-    rule 1), so the folder is copied aside, the databank cleared and refilled from the copy.
-    A load that has not finished in 120 s raises BEFORE any sync and leaves the copy on disk.
+    A file never loaded is deleted by the next sync (hard rule 1): the folder is copied aside,
+    memory cut to nothing (`clear="true"` does NOT empty it: 🔬 2026-10-06, 6 held + 3 = 9) and
+    refilled from the copy; a load not done in 120 s raises BEFORE any sync, copy kept.
     """
     folder = _top(role) / "user/projects" / project / "databanks" / bank
     want = len(list(folder.glob("*.sqx")))
     tmp = tempfile.mkdtemp(dir=tmp_dir())
     for f in folder.glob("*.sqx"):
         shutil.copy2(f, tmp)
+    stale = call(role, "listStrategies", projectName=project, databankName=bank)["strategies"]
+    if stale:
+        cut(role, project, bank, stale)
     call(role, "loadFilesToDatabank", projectName=project, databankName=bank, folder=tmp,
          clear="true", all="true")
     for _ in range(600):

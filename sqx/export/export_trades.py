@@ -8,7 +8,7 @@ from datetime import date
 from pathlib import Path
 
 from core import exportdrv, manifest, sqxfile, tradepack
-from core.paths import MASTER, databank_dir, export_dir, worker_dir
+from core.paths import MASTER, databank_dir, export_dir, project_dir, worker_dir
 
 
 SAMPLE_SEED = 20260914   # a subset export is a sample, and a sample has to be reproducible
@@ -67,6 +67,39 @@ def sign(staged: Path, out: Path, prefix: str = "") -> int:
     return len(found)
 
 
+def lineage(project: str, databank: str, install: Path, staged: Path, out: Path) -> int:
+    """Write `out/lineage.csv` (strategy, identity, mother): whose each exported strategy is.
+
+    A task that rewrites the strategy (the WFM optimises its parameters) gives it another
+    identity, and a name alone does not say whose it is: names are reused from one build of
+    a project to the next. This is read while the project still holds both ends: `mother` is
+    the one identity the files of that name carry in the project's other databanks, the
+    strategy's own when none differs, and EMPTY when two differ (a databank left over from
+    another build) — an empty mother is never paired (`core.store.extra.named`).
+
+    Args:
+        project: Project name.
+        databank: The databank being exported.
+        install: The install holding the project.
+        staged: The staged copies, named after their strategies.
+        out: The export directory.
+
+    Returns:
+        Rows left without a mother.
+    """
+    rows, orphans = [], 0
+    for f in sorted(staged.glob("*.sqx")):
+        own = sqxfile.identity(f)
+        others = {sqxfile.identity(o)
+                  for o in project_dir(project, install).glob(f"databanks/*/{f.name}")
+                  if o.parent.name != databank} - {own}
+        mother = own if not others else others.pop() if len(others) == 1 else ""
+        orphans += not mother
+        rows.append(f"{f.stem},{own},{mother}\n")
+    (out / "lineage.csv").write_text("strategy,identity,mother\n" + "".join(rows), encoding="utf-8")
+    return orphans
+
+
 def main() -> None:
     """Stage a databank, export every trade of it, and pack them into one Parquet."""
     ap = argparse.ArgumentParser()
@@ -104,6 +137,9 @@ def main() -> None:
     # databank, and 757 of them weighed 119 MB beside a 20 MB Parquet. Their identities
     # stay, in identity.csv.
     sign(staged, out)
+    orphans = lineage(a.project, a.databank, install, staged, out)
+    if orphans:
+        print(f"lineage: {orphans} strategies carry two other identities in this project")
     shutil.rmtree(staged)
 
     manifest.write(out,

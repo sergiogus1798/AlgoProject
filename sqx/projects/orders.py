@@ -12,6 +12,11 @@ PENDING = ("EnterAtStop", "EnterAtLimit")
 ORDER_BLOCK = re.compile(r'<Block\b[^>]*category="orderTypes"[^>]*>')
 ENTRY_ITEM = re.compile(r'<Item\b[^>]*\bkey="(Enter\w+)"')
 PORTFOLIO = "strategy_Portfolio.xml"
+# An exit method is a Param flagged exitMethod="true"; one that is set holds a Formula other
+# than `.None` or a value other than 0 (a variable name counts). RandomizeExitParameters over
+# a population with none set never finishes: SQX's MC sub-jobs wait for each other for ever
+# (🔬 2026-10-06, three runs of «MCR 6 Exits» on 3 condition-exit strategies, 22 min each).
+EXIT_PARAM = re.compile(r'<Param\b[^>]*\bexitMethod="true"[^>]*>(.*?)</Param>', re.S)
 
 
 def allowed(text: str) -> set[str]:
@@ -94,3 +99,23 @@ def pending_orders(members: dict[str, bytes], databank: Path | None) -> dict:
                         if n.endswith(".xml") and n != "config.xml"))
     return {"pending": None if may & set(PENDING) else False, "types": sorted(may),
             "source": "generator", "read": 0}
+
+
+def exits_set(text: str) -> bool:
+    """Whether a strategy's portfolio XML has any exit method set (stop, target, trailing,
+    exit after bars, move to BE); the Params are always present, so presence says nothing."""
+    for body in (b.strip() for b in EXIT_PARAM.findall(text)):
+        if ('.None"' not in body) if body.startswith("<Formula") else body not in ("", "0"):
+            return True
+    return False
+
+
+def with_exits(databank: Path | None) -> bool | None:
+    """Whether any strategy of the databank has an exit method set; None with no population."""
+    if not databank or not any(databank.glob("*.sqx")):
+        return None
+    for strategy in sorted(databank.glob("*.sqx")):
+        with zipfile.ZipFile(strategy) as z:
+            if exits_set(z.read(PORTFOLIO).decode("utf-8", "replace")):
+                return True
+    return False
