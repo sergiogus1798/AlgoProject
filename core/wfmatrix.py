@@ -26,9 +26,10 @@ def _params(text: str) -> dict:
 
     Returns:
         Parameter name to value, values kept as text because a parameter may be integer,
-        float or an enum label and the study must not guess which.
+        float or an enum label and the study must not guess which. Empty when the attribute is
+        missing: SQX wrote periods without it on Trade_NIKKEI225_M30_volatilidadL (📓 2026-10-04).
     """
-    return dict(pair.split("=", 1) for pair in text.split(",") if pair)
+    return dict(pair.split("=", 1) for pair in (text or "").split(",") if pair)
 
 
 def _seconds(node: ET.Element, attr: str) -> int:

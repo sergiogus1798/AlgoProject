@@ -56,6 +56,8 @@ def from_harvest(project: str, databank: str, names: list[str],
         if day and path.parent.name > day:
             continue
         source = json.loads((path.parent / "manifest.json").read_text(encoding="utf-8"))["source"]
+        if "databank" not in source:      # a variants cosecha (Stop_p90): batch, feed — not a databank
+            continue
         side = {source["databank"].replace("_", " "): "strategy_build",
                 source["oos_databank"].replace("_", " "): "strategy"}.get(wanted)
         if side is None:

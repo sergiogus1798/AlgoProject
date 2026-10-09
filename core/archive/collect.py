@@ -196,6 +196,8 @@ def harvest_rows(folder: Path, identity: str, out: Path) -> dict:
     out.mkdir()
     counts = {}
     for name in ("metrics", "equity", "trades"):
+        if not (folder / f"{name}.parquet").exists():     # a harvest of metrics alone (Stop_p90)
+            continue
         rows = pd.read_parquet(folder / f"{name}.parquet", filters=[("identity", "==", identity)])
         rows.to_parquet(out / f"{name}.parquet")
         counts[name] = len(rows)

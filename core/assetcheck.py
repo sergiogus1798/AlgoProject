@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from core.assetdata import fields, load, schema
+from core.assetdata import fields
 
 # Cost fields that block authoring while undecided, per class. The swaps do not block.
 # One spread per segment for every class since 2026-09-30 (owner): IS, OOS1 and OOS2.

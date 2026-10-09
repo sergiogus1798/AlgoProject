@@ -50,12 +50,13 @@ def pack(files: list[Path], out: Path, per_market: bool) -> dict:
     Args:
         files: One CSV per strategy, as orderstocsv wrote them.
         out: Parquet to write.
-        per_market: As in tradestore.frame().
+        per_market: True for a data=all export: its CSVs carry several result blocks, and
+            `Symbol` and `block` are kept.
 
     Returns:
-        What tradestore.frame() counts. The file reads back equal to packing
-        tradestore.frame(): same rows in the same order, `Ticket` NaN for the strategies
-        that did not need it, the text columns categorical over every value of the export.
+        {"spill", "info"}; `info` counts strategies, trades, columns, `kept_ticket` and
+        `torn_blocks`. The file holds every strategy's rows in file order, `Ticket` NaN for
+        the strategies that did not need it, the text columns categorical over every value of the export.
         Processes, not threads: 🔬 2026-09-25 sixteen threads were slower than one, the
         parse beyond read_csv holds the GIL.
     """

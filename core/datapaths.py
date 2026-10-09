@@ -215,14 +215,10 @@ def bar_file(feed: str) -> Path:
 
 
 def spread_dir(feed: str = "") -> Path:
-    """Where the spread study keeps one tick feed's minute table and its reports.
-
-    Args:
-        feed: SQX tick feed; empty for the study's own folder.
+    """One tick feed's spread folder (minute table + reports) under the data root; empty feed = the study's own.
 
     Returns:
-        Path under the data root. The minute table is derived from `tick_file(feed)` and
-        stamped with that file's size and date, so a refreshed history orphans it.
+        The minute table derives from `tick_file(feed)` and is stamped with its size and date.
     """
     return DATA / "spread" / feed
 
@@ -238,13 +234,15 @@ def portfolio_dir() -> Path:
 
 
 def tmp_dir() -> Path:
-    """The project's own temp folder, so its scratch never lands on the 3.9 GB `/tmp` partition.
+    """The project's own temp folder `<data root>/tmp` (created on first call), off the 3.9 GB `/tmp`.
 
-    Returns:
-        `<data root>/tmp`, created on first call. Pass it as `dir=` to `tempfile`; the context
-        managers delete their folder on exit, and `bin/weekly-claude-cleanup.sh` prunes whatever
-        a crashed run left behind.
+    Pass it as `dir=` to `tempfile`; `bin/weekly-claude-cleanup.sh` prunes what a crashed run left.
     """
     out = DATA / "tmp"
     out.mkdir(parents=True, exist_ok=True)
     return out
+
+
+def campaign_dir() -> Path:
+    """The campaign's root: `ledger.jsonl`, `batches/<id>.json`, `runs/<workflow>/`, the STOP file."""
+    return DATA / "campaign"

@@ -51,7 +51,8 @@ def grid(b: dict) -> str:
         body.append(f'<text class="tick" x="{left - 8}" y="{y + 17}" text-anchor="end">'
                     f"{escape(str(r))}</text>")
         for j, v in enumerate(b["values"][i]):
-            fill = "var(--card)" if v is None else colours[int(np.searchsorted(cut, v))]
+            # A block with more levels than the scale has colours killed step 18.5 (2026-10-06).
+            fill = "var(--card)" if v is None else colours[min(int(np.searchsorted(cut, v)), len(colours) - 1)]
             text = (b["labels"][i][j] if b["labels"] else svg.num(v))
             ink = "cell dark" if fill in DARK else "cell"
             body.append(f'<rect x="{left + j * cw:.1f}" y="{y}" width="{cw - 1:.1f}" '

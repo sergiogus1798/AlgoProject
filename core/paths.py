@@ -233,6 +233,12 @@ def ledger_file(study: str) -> Path:
     return DATA / "ledger" / f"{study}.jsonl"
 
 
+def store_dir() -> Path:
+    """The strategy store's root: one `<identity>/` per strategy that passed the gate, growing
+    by one file per set of tests (owner, 2026-10-08)."""
+    return DATA / "store"
+
+
 def archive_dir() -> Path:
     """The strategy archive's root: one read-only `<identity>/<YYYY-MM-DDTHHMM>/` per version."""
     return DATA / "archive"

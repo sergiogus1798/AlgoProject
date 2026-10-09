@@ -60,5 +60,16 @@ def check(labelled: pd.DataFrame, steps: list[dict]) -> pd.DataFrame:
     """
     got = labelled["period"].value_counts()
     return pd.DataFrame([{"index": s["index"], "assigned": int(got.get(s["index"], 0)),
-                          "stored": int(s["oos_NumberOfTrades"])}
+                          "stored": stored(s)}
                          for s in steps if not s["future"]])
+
+
+def stored(step: dict) -> int:
+    """The trades SQX stored for one step; 0 for a step it optimised and never ran.
+
+    📓 2026-10-04, Trade_NIKKEI225_M30_volatilidadL: 2 of 3,300 past steps carry
+    `OptimizationStats` and neither `testParameters` nor `RunStats` — no parameters chosen,
+    so nothing traded there, and no trade may be assigned to it either.
+    """
+    n = step.get("oos_NumberOfTrades")
+    return 0 if n is None or pd.isna(n) else int(n)
