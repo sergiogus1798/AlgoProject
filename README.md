@@ -1,8 +1,37 @@
 # AlgoProject
 
-Strategy development for MetaTrader 5 prop-firm and real accounts. StrategyQuant X generates and
-robustness-tests candidates; Python does the mathematics that decides which of them are real; a
+A research pipeline for systematic trading strategies, from a published idea to a strategy
+validated in MetaTrader 5 on prop-firm and real accounts. StrategyQuant X generates and
+robustness-tests candidates; Python does the statistics that decide which of them are real; a
 desktop window drives the whole chain and shows its results.
+
+## What it is built around
+
+**Most backtested edges are selection artefacts, so the pipeline is designed to reject.** Every
+candidate is judged against a null rather than against zero, and every look at the data is counted:
+
+- **Thresholds frozen before looking.** Each judging step reads its criteria from `ledger/`, set
+  before the population exists; a global search ledger records every search that reduced a
+  population, so multiple testing is corrected over what was actually tried.
+- **Nulls that fit the question.** Random-entry traders with the strategy's own exits and costs,
+  joint year-shift nulls for cross-market and cross-timeframe transfer, CSCV for the probability of
+  backtest overfitting, stepwise multiple-testing inference over the survivors (`engines/`).
+- **Three out-of-sample windows, one of them blind.** Strategies are built on `build`, screened on
+  `oos1`, and `oos2` stays reserved for the final joint verdict.
+- **Pessimistic costs.** Measured spread per session segment, slippage, and commission and swap at
+  the worst of the brokers traded, set per task (`assets/`).
+
+## Automated research, supervised
+
+The chain runs unattended, and a person decides at every point where a decision spends compute or
+commits to a result:
+
+| stage | what runs by itself | what the owner decides |
+|---|---|---|
+| research | a daily scout reads published research and extracts each rule as an entry anchored to verbatim quotes; a market profile measures the entries; a director agent ranks asset × timeframe × direction × family cells and brings three ideas, each attacked by a reviewer agent before any CPU is spent | which proposal to run — a veto in the window; an ambiguous rule is a question, never a silent default |
+| workflow | one command creates the project and runs steps 5 to 25 — every SQX task and Python study — judging each step by the frozen criteria and cutting the population itself; a campaign loops it over template × asset × timeframe | every argument of the run, and each launch from the window is confirmation-gated |
+| upkeep | nightly audit, documentation and fix agents; a daily commit proposal | the commit — agents propose, they never commit or push |
+
 
 ## The sequence
 
