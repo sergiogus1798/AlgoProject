@@ -45,11 +45,11 @@ portfolio/common/monteCarlo/   el Monte Carlo de operaciones, que es una pregunt
 | `strategies.sppUltra` | `studies.breakage.spp` | `15-sppultra.md`, `33-spp.md` |
 | `strategies.parameterCloud` | `studies.optimisation.cloud` | `39-nube-de-parametros.md` |
 | `strategies.walkForwardCorrelation` | `studies.optimisation.wfc` | `19-wfc.md`, `37-wfc-retest.md` |
-| `strategies.walkForwardCorrelation.pbo` y su `measure/cscv`, `measure/rules`, `verdict/` | `studies.optimisation.cscv` (`report`, `measure.cscv`, `measure.rules`, `verdict`) | `25-cscv.md` |
+| `strategies.walkForwardCorrelation.pbo` y su `measure/cscv`, `measure/rules`, `verdict/` | `studies.optimisation.cscv` (`report`, `measure.cscv`, `verdict`; `measure.rules` ya no existe) | `25-cscv.md` |
 | `strategies.walkForwardMatrix` | `studies.optimisation.wfm` | `14-walkforwardmatrix.md`, `34-wfm.md` |
 | `strategies.exposure` | `studies.closing.exposure` | `38-exposicion.md` |
 | `nulls` (el estudio de entrada aleatoria) | `studies.readings.monkey` | `26-nulos.md` |
-| `strategies.profitShape` | `studies.readings.profitShape` | — |
+| `strategies.profitShape` | `studies.readings.profitShape` (retirado el 2026-10-06, encargo 44: ya no está en el árbol) | — |
 | `strategies.entryQuality` | `studies.readings.entryQuality` | `42-calidad-de-la-entrada.md` |
 | `strategies.monteCarlo` | `portfolio.common.monteCarlo` | `07-montecarlo.md` |
 
@@ -106,7 +106,7 @@ estrategia, `verdict.csv` (`strategy`, `identity`, `verdict`) y `manifest.json`.
 | `decay.csv`, `decay.md` sueltos (columna `name`) | `decay/verdict.csv` (columna `strategy`), `decay/decay.*` |
 | `excess.md` suelto | `monkeyExcess/monkeyExcess.*` |
 | `exposure.csv`, `exposure.json`, `exposure_<E>.csv/.json` sueltos | `exposure/verdict.csv`, `exposure/exposure.*`, `exposure/estrategias/<E>.*` |
-| `walkforwardmatrix.md`, `cell_correlations.csv` sueltos | `wfm/wfm.*`, `wfm/cell_correlations.csv` |
+| `walkforwardmatrix.md`, `cell_correlations.csv` sueltos | `wfm/wfm.*`, `wfm/cell_excess.csv` (el exceso por celda; `cell_correlations.csv` ya no se escribe desde el rediseño del paso 19, 2026-10-07) |
 | `sppultra.md`, `design_brief_<E>.json` sueltos | `spp/estrategias/<E>.*`, `spp/design_brief_<E>.json` |
 | `gate/resumen.md` | `gate/gate.md` (+ `.html`, `.json`); `scorecard.parquet`, `funnel.csv`, `verdict*.csv` igual |
 | `crossmarket/` (`verdict.csv`, `crossmarket.*`) | igual, más `estrategias/` con el estudio completo de una estrategia (`--strategy`) |
@@ -138,7 +138,7 @@ Carpetas creadas vacías, con su README, para los encargos que todavía no está
 | encargo | va a |
 |---|---|
 | 9 — falsos positivos | `studies/screening/falsePositives/` |
-| 10 — data snooping | `engines/inference/snooping/` (el motor), `studies/screening/snoopingScreen/` (la criba), `studies/closing/blindJoint/` (la prueba conjunta del paso 20) |
+| 10 — data snooping | `engines/inference/snooping/` (el motor), `studies/screening/snoopingScreen/` (la criba; retirada, encargo 44), `studies/closing/blindJoint/` (la prueba conjunta del paso 20) |
 | 11 — coste del filo | `studies/readings/edgeCost/` |
 | 12 — estructura | `studies/readings/structure/` (la mitad estadística; la del XML va a `sqx/structural/`) |
 | 13 — alfa y beta | dentro de `studies/closing/exposure/` (nota en su README) |

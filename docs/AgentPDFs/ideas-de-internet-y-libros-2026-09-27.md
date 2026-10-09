@@ -49,6 +49,8 @@ perderla. Después se agruparon por la pregunta que responden:
 6. **Proceso, cultura e interfaz.**
 7. **Las locas**, en una lista aparte.
 8. **Lo que este dossier no verifica.**
+9. **Añadido del 2026-10-02: Kaufman, *Trading Systems and Methods*.** 179 fichas de un libro que llegó
+   después, en sección propia, sin fundir con las anteriores.
 
 **Cómo leer cada entrada.** Cada idea lleva cuatro etiquetas:
 
@@ -4245,3 +4247,1747 @@ parece: una plantilla lunar es el mejor control negativo de la cadena, porque no
 - **La lectura de algunos libros narrativos fue por palabras clave** en sus capítulos de relato: el centro
   de *When Genius Failed*, los perfiles de *Trend Following* y la parte de diario de *The Trend Following
   Bible*. Los capítulos de método se leyeron enteros.
+
+## 9 · Añadido del 2026-10-02: Kaufman, *Trading Systems and Methods*
+
+**De dónde sale.** Perry J. Kaufman, *Trading Systems and Methods*, 5.ª edición (Wiley, 2013), 1.232
+páginas en PDF, en `~/Desktop/Books/TradingSystemsAndMethods_Kaufman.pdf`. No estaba entre los 24 libros
+de la noche del 26 al 27 de septiembre: llegó a la carpeta el 2 de octubre. Ocho agentes leyeron el
+libro entero en paralelo, cada uno su tramo de capítulos (del prefacio al capítulo 24; los apéndices de
+tablas, la bibliografía y el índice no se leyeron), y apuntaron sólo los hallazgos: resultados de pruebas
+con sus cifras, comparaciones entre métodos, reglas lo bastante exactas para probarse y avisos sobre
+pruebas y sobreajuste. Las definiciones de manual de los indicadores no se copiaron. Salieron
+**179 fichas**, con el mismo formato que el resto del dossier.
+
+**Por qué va en sección propia.** Las secciones 1 a 7 son la fusión de aquella noche y sus recuentos
+(390 entradas, las treinta mejores) no se han tocado. Estas fichas no se han fundido con las de las
+secciones 3 a 6: cuando una idea ya estaba en el dossier, la ficha lo dice en su «Estado» y sólo se quedó
+si Kaufman añade una cifra, una fórmula o una salvedad.
+
+**Cómo leerlo.** Primero lo que contradice al proyecto (9.0), luego las fichas de más valor, y después
+los ocho tramos en el orden del libro. Las páginas citadas son las impresas (la del PDF menos 20).
+
+**La misma advertencia de siempre.** Casi todas las pruebas de Kaufman son sobre futuros con datos
+diarios, muchas sin costes y con los parámetros elegidos sobre toda la muestra. Ninguna cifra es un prior:
+lo que se construya pasa por el ledger y por la cadena como cualquier otra idea. Nada de esta sección está
+aceptado ni construido.
+
+### 9.0 · Lo que contradice al proyecto
+
+Lo que el libro dice en contra de algo que el proyecto hace hoy, tal como lo vio cada agente en su tramo.
+Son 26; cada una remite a su ficha.
+
+- **Probar es para validar una idea con premisa, no para descubrirla escaneando** — hoy el proyecto genera con SQX por búsqueda masiva de combinaciones dentro de una familia; Kaufman dice que usar el test para «descubrir» por escaneo está mal encaminado y que la premisa sale de la observación, no del ordenador (p. 22). — entrada en 9.1.
+- **Costes: sobrestimarlos daña tanto como subestimarlos** — hoy los costes se modelan pesimistas (colchón de 1,25 sobre el peor broker); Kaufman afirma que cargar costes irreales puede hacer rechazar un método válido (p. 22). — entrada en 9.1.
+- **Robustez cuesta rendimiento: menos reglas, más mercados, peor curva** — hoy se exige validar en otros mercados; Kaufman admite que concentrarse en un solo mercado conocido puede dar mejores resultados que un método generalizado (p. 21). — entrada en 9.1.
+- **La ruptura de N barras: el mejor N cambia por década y por mercado** — Kaufman prueba N de 10 a 100 y elige el mejor «sin costes aplicados», con futuros ajustados; el proyecto modela costes de forma pesimista desde la generación y solo considera válida una prueba con spread, deslizamiento, swap y comisión (p. 225). — entrada en 9.2.
+- **Swing con umbral porcentual** — Todos los sistemas por eventos del capítulo (ruptura de N, swing, punto y figura, Keltner) están siempre en el mercado, invirtiendo la posición en la señal contraria; el proyecto exige una sola dirección por estrategia y no admite largo y corto en la misma plantilla (p. 188-189, 222, 227). — entrada en 9.2.
+- **Esperar el retroceso mejora el precio de entrada...** — Kaufman recomienda entrar en el retroceso tras la ruptura con orden límite o con una orden de parada en el nivel; el proyecto entra solo a mercado y no deja generar bloques de entrada con stop o límite (p. 207-209). — entrada en 9.2.
+- **La ruptura de N barras: el mejor N cambia por década y por mercado** — La regla semanal de Hochheimer (señal solo en el cierre del viernes, 75 % de los mercados con más riesgo que los cruces) usa el día de la semana, un bloque prohibido en la generación del proyecto; solo valdría como estudio o régimen (p. 227-228). — entrada en 9.2.
+- **Gráficos horarios muestran sobre todo ruido; las tendencias rápidas ganan en el backtest pero son inestables** — el proyecto genera familias de tendencia en M30 y H1 (D1 solo como contexto); Kaufman, con datos diarios, afirma que cuanto más rápido el marco más ruido y menos estabilidad, y que no está claro que el intradía tenga tendencias persistentes (p. 313, 330). — entrada en 9.3.
+- **Un sistema de tendencia gana con pocas operaciones ganadoras, y poner stops o toma de beneficios recorta la cola** — el paso 24 pone un stop de ATR leído del MAE y las cuentas de fondeo tienen límites de pérdida; Kaufman dice que stops y toma de beneficios reducen o eliminan la posibilidad de capturar la cola, necesaria para el beneficio a largo plazo (p. 320). — entrada en 9.3.
+- **Con más de 200 operaciones en 20 años (unas 10 al año) el factor de beneficio empeora con los costes** — el proyecto exige al menos 40-50 operaciones al año por estrategia; Kaufman encuentra que, en el euro, los periodos que dan muchas operaciones rinden peor tras costes, y propone un rango de 2-3 a 100 al año (p. 346, 348). — entrada en 9.3.
+- **Entrar en el retroceso dentro de la tendencia, con un oscilador corto: el que más sentido tiene** — el proyecto exige stop y vigila la pérdida flotante (MAE) y los límites diarios de las cuentas fondeadas; Kaufman dice que con la entrada en retroceso «la tendencia da protección» y no hace falta stop, porque si el precio sigue en contra la señal de tendencia se invierte y se cierra (p. 380). — entrada en 9.4.
+- **Entrar contra el momentum en el extremo pierde; seguirlo, no** — el proyecto mantiene una familia de reversión a la media (paleta `reversion_base_v2`) cuyas entradas se apoyan en osciladores en extremo; Kaufman probó en futuros que esa entrada «agresiva» es perdedora y que, al contrario, comprar al cruzar el umbral superior daba pequeños beneficios constantes (p. 380). — entrada en 9.4.
+- **Volumen intradía en forma de W o U: compararlo con la misma hora, no con el resto del día** — hoy el proyecto prohíbe en generación todo bloque que lea el reloj o el calendario (regla 15); Kaufman dice que una condición de volumen intradía solo es correcta si se compara cada franja con la misma franja de días anteriores, y que sin eso es siempre cierta o siempre falsa según la hora (p. 561-562). — entrada en 9.5.
+- **Operar la reacción del día del informe: Ruggiero, Raschke y la sorpresa de desempleo** — el proyecto no deja que el generador dispare entradas por día de evento o de calendario; las reglas de Warwick, Ruggiero y Raschke que cita Kaufman entran precisamente el día del informe o la apertura siguiente (p. 627 y 629-630). — entrada en 9.5.
+- **El movimiento intradía es sobre todo ruido: la tendencia exige varios días** — el proyecto genera y valida con SQX estrategias de seguimiento de tendencia en M30, H1 y H4 (una de las familias de idea) y las pasa por nulos de entrada aleatoria y cross TF; Kaufman afirma que los métodos de tendencia «no se usan» con tiempo de espera inferior a 3 días y «probablemente no se aplican» bajo 20 días, y que en el corto plazo conviene preferir reversión y esperar retrocesos (p. 745) — entrada en 9.6.
+- **Aritmética del coste intradía: la tendencia paga el doble de deslizamiento que la reversión** — el proyecto modela los costes de forma pesimista y uniforme según activo y tramo, sin distinguir familia; Kaufman dice que la reversión sufre «conservadoramente» el 50 % del deslizamiento de la tendencia y que el deslizamiento debe subir con la volatilidad con un suelo (p. 741-744) — entrada en 9.6.
+- **Adaptativo frente a simple: sin estabilidad fuera de muestra no hay garantía** — el proyecto fija parámetros por estrategia y los valida con SPP (permutación) y retest; Kaufman sostiene que una ruptura de tamaño fijo «no funcionará con el tiempo» y que «volver a probar y cambiar periódicamente rara vez funciona», y que el valor debe adaptarse solo a la volatilidad (p. 764, 797) — entrada en 9.6.
+- **Probar es validar una idea, no descubrirla: escribir las expectativas antes** — hoy el proyecto genera con SQX (búsqueda genética sobre una paleta) y criba después con la cadena de pruebas; Kaufman dice que probar combinaciones sin expectativa previa no distingue una buena idea de un ajuste a los datos y que las pruebas no deben servir para descubrir (p. 907). — entrada en 9.7.
+- **Periodos de entrenamiento alternos y aleatorios, fijados al empezar y distintos para cada sistema** — el proyecto usa `build`, `oos1` y `oos2` como bloques contiguos y los mismos para todas las plantillas de un activo; Kaufman considera que el primer o último 50 % contiguo no es robusto si el mercado cambia y que lo más robusto son tramos alternos aleatorios, distintos por sistema (p. 916-917). — entrada en 9.7.
+- **Qué mercados tienen tendencia: el oro y el S&P casi nunca ganan con tendencia diaria, el petróleo y el EURUSD casi siempre** — el oro es el activo base del proyecto y admite familias de tendencia; en las pruebas de Kaufman (futuros diarios 1990-2011) solo el 8 % de las combinaciones de tendencia ganó en oro (p. 964). Matiz suyo: pudo cambiar en los últimos años, y M30-H4 en CFD no es lo mismo. — entrada en 9.7.
+- **Reoptimizar solo tras acumular un 5-10 % de datos nuevos; tras un choque, no** — el proyecto congela `oos2` y no gasta datos de validación; Kaufman recomienda una última prueba con todos los datos antes de operar y reoptimizar periódicamente con datos nuevos (p. 952, 979). — entrada en 9.7.
+- **Qué predice la volatilidad de mañana: rango reciente alto y RSI de 3 días bajo** — la regla 15 prohíbe en generación cualquier bloque de calendario; Kaufman cita el día de la semana como predictor de volatilidad (lunes menos, martes y viernes más; p. 858). Solo podría ser un estudio de régimen, nunca un bloque. — entrada en 9.7.
+- **La generación genética «con todo» sobreajusta: más potencia no es lo esencial** — hoy el proyecto genera con SQX (búsqueda genética sobre una paleta por familia, con servidor de 80 g); Kaufman dice que la potencia de cálculo no es esencial y que sobreajusta si no hay hipótesis previa (p. 987-988). El proyecto lo mitiga con las reglas 14 y 15, pero la apuesta por potencia sigue en contra de su consejo. — entrada en 9.8.
+- **Los choques de precio inflan el backtest y la selección los premia** — hoy la fase de generación y de cribado trata todos los días igual y selecciona por métricas de la muestra; Kaufman dice que los parámetros ganadores suelen serlo por haber caído del lado bueno de algún choque (p. 993 y 997). — entrada en 9.8.
+- **Después de un choque el precio suele revertir: qué hacer con la posición abierta** — hoy las cuentas fondeadas tienen límite de caída diaria y total; Kaufman recomienda mantener la posición con pérdida grande tras un choque esperando la reversión, lo cual no cabe con esos límites (p. 997-998). — entrada en 9.8.
+- **Un sistema que solo compra siempre funciona en el mercado alcista** — hoy las estrategias son de una sola dirección (regla 13) y a menudo largas en oro, validadas en ventanas con tendencia alcista; Kaufman avisa de que una estrategia solo larga se valida en cualquier mercado alcista y solo se prueba en mercados de distinto tipo (p. 1020-1021). — entrada en 9.8.
+
+### Las fichas de más valor
+
+Las 21 fichas que los agentes puntuaron con valor 4 o 5, de las 179. El detalle está en su tramo.
+
+- **Choques de precio: el mejor óptimo es el que más se quedó con un golpe de suerte** — valor 5, en 9.7.
+- **La desviación típica y la covarianza engañan si la estrategia está fuera del mercado muchos días** — valor 5, en 9.8.
+- **La ruptura de N barras: el mejor N cambia por década y por mercado** — valor 4, en 9.2.
+- **Las diez figuras de Lo, Mamaysky y Wang: reglas exactas, control aleatorio y qué pasa tres días después** — valor 4, en 9.2.
+- **El periodo pesa más que el método: media, exponencial, pendiente y momento rinden casi igual** — valor 4, en 9.3.
+- **Un sistema de tendencia gana con pocas operaciones ganadoras, y poner stops o toma de beneficios recorta la cola** — valor 4, en 9.3.
+- **Gráficos horarios muestran sobre todo ruido; las tendencias rápidas ganan en el backtest pero son inestables** — valor 4, en 9.3.
+- **Choques de precio: medir la sorpresa con el rango verdadero y mirar los días siguientes** — valor 4, en 9.5.
+- **Órdenes que no se ejecutan («unables») se llevan los beneficios y nunca las pérdidas** — valor 4, en 9.6.
+- **Una regla nueva solo vale si mejora la media de toda la rejilla sin subir su dispersión** — valor 4, en 9.7.
+- **Sensibilidad en n dimensiones: capas concéntricas alrededor de los parámetros elegidos** — valor 4, en 9.7.
+- **Qué mercados tienen tendencia: el oro y el S&P casi nunca ganan con tendencia diaria, el petróleo y el EURUSD casi siempre** — valor 4, en 9.7.
+- **¿Está roto el modelo? Probabilidad de un drawdown dado el rendimiento y la volatilidad de la prueba** — valor 4, en 9.7.
+- **Los choques de precio inflan el backtest y la selección los premia** — valor 4, en 9.8.
+- **Filtro integrado frente a vertical: el filtro mejora si sube el porcentaje de combinaciones rentables** — valor 4, en 9.8.
+- **Un sistema que solo compra siempre funciona en el mercado alcista: la trampa de la plata y el Nasdaq** — valor 4, en 9.8.
+- **Las estrategias de la misma familia se correlacionan, y más cuando acierta o falla todo a la vez** — valor 4, en 9.8.
+- **El tamaño que corresponde a una caída máxima de prop firm sale de la volatilidad objetivo** — valor 4, en 9.8.
+- **Riesgo de ruina con ganancias distintas de pérdidas: tabla con cifras** — valor 4, en 9.8.
+- **Esperar un retroceso tras la señal, con ventana máxima de 5 días** — valor 4, en 9.8.
+- **¿Está roto el modelo?: binomial y chi-cuadrado sobre acierto, y pendiente de rendimientos** — valor 4, en 9.8.
+
+### 9.1 · Fundamentos: expectativas, medidas y distribuciones (prefacio y caps. 1-2)
+
+Estos capítulos fijan el marco: qué es un sistema sistemático, cómo medir el «ruido» de un mercado, cuánta muestra hace falta para fiarse de un resultado, y las medidas básicas de rentabilidad, riesgo y distribución. Las tres ideas de más valor aquí son: (1) el ratio de eficiencia (cuánto del recorrido de un precio es neto y cuánto es vaivén) predice qué mercados admiten seguimiento de tendencia y qué marco temporal conviene a cada familia; (2) las reglas de muestra (el error baja con la raíz del número de operaciones, y una curtosis alta en los rendimientos diarios huele a sobreajuste); (3) probar sirve para validar una idea, no para descubrirla escaneando combinaciones, y el segundo intento sobre el mismo tramo fuera de muestra ya está contaminado. La parte de oferta y demanda, cobwebs y modelos del cacao es de materias primas agrícolas y casi no se aplica aquí.
+
+#### El ratio de eficiencia separa mercados de tendencia de mercados de ruido
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 1, p. 10-14.
+
+**Qué dice.** El ruido se mide con el ratio de eficiencia (ER): cambio neto del precio en n barras dividido entre la suma de los movimientos de cada barra en valor absoluto. Cerca de 1 es tendencia limpia, cerca de 0 es puro vaivén. Se distingue de la volatilidad: dos series con una suma de movimientos parecida (595 y 554) tienen ER de 0,06 (neto 35) y 0,56 (neto 310). Para ver si importa, calcula el ER medio a 20 días de futuros de muchos sectores y bolsas del mundo (enero de 2000 a marzo de 2012) y le aplica un seguimiento de tendencia muy básico, media móvil de 40 días, largo cuando sube y corto cuando baja, siempre dentro y sin costes. En el gráfico de dispersión (ER medio frente a factor de beneficio, o sea beneficios brutos entre pérdidas brutas) hay una relación creciente: poco ruido es bueno para tendencia, mucho ruido no, y por extensión el ruido favorece la reversión a la media. El orden por sectores, de más a menos tendencia: tipos de interés a corto, tipos largos, cruces del dólar, energía, metales y, al final, índices bursátiles, los más ruidosos y los peores para tendencia. El rango del ER en el gráfico va de 0,204 a unos 0,266; los factores de beneficio por mercado no son legibles en la extracción. El texto y el pie de la figura se contradicen en si el ER es de 20 o de 40 días.
+
+**Qué significaría aquí.** Un estudio barato previo a generar: ER por activo y marco (M30, H1, H4) sobre la ventana de build, y con él decidir qué familia de plantilla tiene sentido en cada celda (seguimiento de tendencia y ruptura donde el ER es alto, reversión donde es bajo). Sirve también como contrapeso: el oro y el petróleo caen en la zona media del orden de Kaufman, así que no hay que esperar tendencia limpia de partida. El ER no lee reloj ni calendario, no choca con ninguna regla.
+
+**Estado.** AMPLÍA (`studies/readings/conditionalMap/regime.py` ya usa el ER de Kaufman como variable de régimen, y la dossier de ideas lo cita en una entrada sobre el mapa condicional; falta usarlo como selector de familia por celda activo-marco antes de gastar CPU) — **Tipo.** estudio · generación — **Locura.** 0 — **Valor.** 3 (barato, de una sola pasada y orienta el reparto de CPU entre familias)
+
+#### Más ruido cuanto más corta la barra, y el ruido de cada mercado cambia con los años
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 1, p. 8-9 y 14-16.
+
+**Qué dice.** Al pasar de gráfico diario a semanal o mensual la tendencia aparece; al pasar a barras de 20 minutos el mismo tramo (crudo en julio de 2008) se vuelve errático. Kaufman concluye que el seguidor de tendencia a largo plazo debe usar datos de baja frecuencia y el operador de corto plazo, alta frecuencia y reversión a la media, aunque admite muchas excepciones. Además, en los índices bursátiles norteamericanos el ruido sube de forma continua entre 1990-1994 y 2005-2009 (medido por periodos de 5 años), en paralelo al aumento de volumen; lo atribuye a que el mercado «madura» y recibe un flujo constante de órdenes sin relación entre sí. Los valores medios citados son unos 0,25 para Norteamérica y 0,37 para el Shanghai Composite en 2005-2010; el texto usa «más ruido» para el valor más alto, lo cual choca con la definición del ER como cerca de 1 igual a tendencia, y no se puede resolver con la extracción.
+
+**Qué significaría aquí.** (1) Medir el ER por activo y por marco, no solo por activo: M30 frente a H4 del mismo oro puede ser otra familia. (2) Partir la ventana de build en tramos de 2-3 años y mirar si el ER de cada activo deriva; si deriva, una estrategia de tendencia construida en el tramo viejo está en un régimen que ya no existe. Esto refuerza que el OOS sea el tramo reciente. Sin choque con las reglas.
+
+**Estado.** AMPLÍA (la deriva temporal del ER por activo, mirada como alarma de validez de la ventana de build) — **Tipo.** estudio · datos — **Locura.** 0 — **Valor.** 3 (orienta qué ventana de build es representativa del presente)
+
+#### Probar es para validar una idea con premisa, no para descubrirla escaneando
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 1, p. 18-19 y 22 (y prefacio, p. xvi).
+
+**Qué dice.** Ocho pautas: partir de una premisa sólida que viene de observar el precio o de una fuente creíble («no se descubre probando todo en un ordenador»); enunciarla de la forma más simple; no dar nada por supuesto; probar primero lo más importante y construir despacio para entender qué aporta cada regla («solución transparente»); vigilar los errores de omisión (costes y riesgos que no se incluyeron); desconfiar de los buenos resultados tanto como de los malos («los resultados sorprendentemente buenos suelen estar mal»); no usar atajos ni trabajo ajeno sin verificarlo; empezar por el final, definiendo el objetivo. Sobre el test, dice que está «mal encaminado» cuando se usa para «descubrir» un método escaneando combinaciones; su fin es validar y mostrar robustez. Y que más filtros acaban en sobreajuste o en no operar (p. 21).
+
+**Qué significaría aquí.** Aquí es contradicción parcial: la generación de SQX es justo búsqueda masiva de combinaciones. Lo que el proyecto ya hace para compensarlo es la regla 15 (una familia por run con su paleta), el máximo de 2 condiciones, y la cadena de nulos y el libro de pruebas múltiples. La lectura útil es el control «surprisingly good»: un ejercicio escrito de qué debería ser cierto de un superviviente (premisa de la familia) antes de mirar la métrica, y descartar al que gana por una razón que no encaja con la premisa de su plantilla. Choca, en espíritu, con generar sin idea previa.
+
+**Estado.** YA EXISTE (reglas 11, 14 y 15 del proyecto y el libro de pruebas múltiples; en la dossier de ideas aparece en entradas de datos y de teoría previa, p. ej. «Un backtest rentable sin teoría…») — **Tipo.** proceso — **Locura.** 0 — **Valor.** 2 (confirma lo que se hace; solo aporta el control de «buen resultado sospechoso»)
+
+#### El fuera de muestra se usa una sola vez; a la segunda ya está contaminado
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 2, p. 27-28.
+
+**Qué dice.** «Todo test es sobreajuste de los datos», pero no hay otra forma de saber si algo funciona. Se reservan datos nunca vistos y se corre el programa una sola vez: si pasa se opera, si falla se acabó. Mirar por qué falló y cambiar las reglas introduce realimentación: el fuera de muestra queda contaminado y el segundo intento «siempre será mejor, pero ya está sobreajustado». Propone, en vez de 10 años de build y 10 de validación, alternar tramos de 2 años dentro y fuera de muestra (sin mirar los de fuera) porque los mercados cambian; reconoce que alternar rompe las tendencias largas continuas y lo deja para el cap. 21, que no está en este tramo. Avisa de que reservar el 50 % de los datos deja la mitad de patrones disponibles para construir.
+
+**Qué significaría aquí.** El proyecto ya usa `build`, `oos1` y `oos2` contiguos, y `oos2` solo se autorizó para calibrar. El añadido útil, si no existe ya, es contar cuántas veces se ha mirado cada tramo OOS de cada celda (activo, marco, familia): una vez gastado, el siguiente OOS es el `oos2`. La alternativa de tramos intercalados sería un build distinto: no cambia el SQX actual, y exige en SQX un periodo de datos no contiguo, que no es trivial; tómalo como idea de estudio, no de generación.
+
+**Estado.** YA EXISTE (tramos `build`/`oos1`/`oos2` y libro de pruebas múltiples; el contador de miradas por tramo y celda no lo he comprobado) — **Tipo.** proceso — **Locura.** 1 — **Valor.** 2 (ya se hace; lo nuevo es solo la variante de tramos alternos)
+
+#### Error de muestra: baja con la raíz del número de operaciones, 400 para un 5 %
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 2, p. 28-29.
+
+**Qué dice.** El error de muestra es 1 dividido entre la raíz de N (N = número de elementos). Con una operación es el 100 %, con cuatro el 50 %, y para llegar al 5 % hacen falta 400 operaciones. A un sistema lento que hace 2-3 operaciones al año le propone aplicar el mismo método a muchos mercados y sumar las operaciones (el cap. 21 lo desarrolla). Una operación al día en 5 años son 1.250 operaciones y en 10 años 2.500; incluso con esa muestra hay que cubrir mercados de distintos tipos. Aparte, los grados de libertad de un test son el número de operaciones y, cuantos más parámetros tenga la estrategia, más operaciones se necesitan para la misma confianza (p. 47).
+
+**Qué significaría aquí.** Con el mínimo del proyecto, 40-50 operaciones al año, una estrategia con 5 años de build tiene 200-250 operaciones y un error relativo de alrededor del 6-7 % por esta regla (16 operaciones al año y un error cercano al 13 % en menos de un año). Un cribado concreto: exigir un mínimo absoluto de operaciones por estrategia además del mínimo anual, y pedir más operaciones cuanto más parámetros tenga la estrategia (nº de parámetros por operaciones como columna del criba). No choca con ninguna regla, apoya la de 40-50 al año.
+
+**Estado.** AMPLÍA («operaciones hasta significancia» de la dossier, entrada del 4σ²/μ²; aquí se añade la regla simple 1/√N y la relación parámetros-operaciones) — **Tipo.** estudio · generación — **Locura.** 0 — **Valor.** 2 (regla rápida y legible para el dueño, pero ya hay algo más fino)
+
+#### Los datos de build deben cubrir un mercado alcista, uno bajista y laterales, y los recientes pesan más
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 2, p. 29, y prefacio, p. xvi.
+
+**Qué dice.** La muestra debe incluir al menos un mercado alcista, uno bajista y periodos laterales, y mejor más de uno de cada. Con 10 años del S&P (1990-2000) o 25 años de bonos del Tesoro a 10 años hasta 2010 solo se ve un mercado alcista, y cualquier estrategia compradora parecería rentable. Cuando una empresa o un mercado cambia de estructura (el euro sustituyendo a las monedas europeas) los datos viejos pueden no valer. En el prefacio añade que es bueno que una estrategia ganara en los años 80, pero «más importante» que lo hiciera en los últimos 5 o 10 años.
+
+**Qué significaría aquí.** Una comprobación de cobertura antes de lanzar un build: ¿la ventana de build del activo contiene tramos de subida, bajada y lateral medidos (con el ER o con la pendiente)? Para el oro, una ventana dominada por una sola subida larga produciría estrategias largas con mucho «beta» disfrazado de ventaja; relevante con la regla 13 (una dirección): una plantilla corta construida en una ventana alcista tendrá pocos ejemplos favorables. Usar el aviso para decidir, por celda, si la dirección larga o la corta tiene datos de verdad.
+
+**Estado.** AMPLÍA (los regímenes ya existen en `engines/` y en los nulos; la cobertura de la ventana de build por dirección como condición previa a un run no consta) — **Tipo.** datos · proceso — **Locura.** 0 — **Valor.** 3 (evita gastar CPU en celdas cuya ventana no permite validar la dirección)
+
+#### Una curtosis alta en los rendimientos diarios de un sistema es señal de sobreajuste
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 2, p. 42-43.
+
+**Qué dice.** La curtosis (grado de «apuntamiento» de la distribución: la normal vale 3, y la curtosis en exceso es la medida menos 3) sirve al revisar tests de sistemas: la de los rendimientos diarios de un sistema rentable debería ser algo mejor que la normal, pero «si la curtosis está por encima de 7 u 8, empieza a parecer que el método está sobreajustado». Su razón: una curtosis alta significa un número abrumador de operaciones ganadoras de tamaño parecido, algo improbable en el trading real. Cualquier valor alto debe levantar sospecha inmediata. No da base empírica ni muestra de sistemas; es una regla práctica del autor.
+
+**Qué significaría aquí.** Una columna de alarma, no un filtro: curtosis en exceso del P&L diario por estrategia sobre el tramo build, y revisar a mano las que superen 7-8 (umbral a calibrar con la propia población, no tomarlo como cierto). Cuesta una línea sobre datos ya exportados; el coste en estrategias solo se sabe midiendo cuántas supervivientes del build la superan. Ojo: en cuentas de fondeo con salidas fijas (stop y objetivo) la curtosis sube por construcción, así que la lectura debe hacerse por familia de salida.
+
+**Estado.** AMPLÍA (`core.significance` ya usa asimetría y curtosis para corregir el Sharpe probabilístico; no hay un umbral de curtosis como alarma de sobreajuste) — **Tipo.** estudio · generación — **Locura.** 1 — **Valor.** 3 (alarma barata y distinta de las que ya hay; hay que calibrar el umbral con nuestra población)
+
+#### La desviación típica falla con precios asimétricos; usar percentiles de la distribución empírica
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 2, p. 36-37 y 43.
+
+**Qué dice.** No hay distribuciones normales en el trading: con un sistema de tendencia y stop fijo, los beneficios van de cero a muy grandes y las pérdidas están acotadas por el stop, lo que da asimetría positiva. En el trigo (25 años) la media es 3,62 $ y la desviación 1,16 $; una desviación a la izquierda cae en 2,46 $, un tramo sin datos, y 3,5 desviaciones a la derecha, que deberían contener el 100 %, caen en 7,68 $, muy por debajo del máximo real. Recomienda el histograma o los percentiles ordenados (con 300 datos mensuales, el 10 % está en la posición 30, el 90 % en la 271 y la mediana en la 151). Admite que ni uno ni otro dicen cómo de grande será la mayor pérdida futura: «veremos beneficios y pérdidas mayores que los vistos, quizá mucho mayores».
+
+**Qué significaría aquí.** Para fondeo, donde el límite de pérdida diaria es una cola y no una desviación, el riesgo debe leerse en percentiles empíricos y en remuestreo, no en «k sigmas». Es lo que ya hace el Monte Carlo de operaciones; la lección es no resumir la cola con σ en ningún informe al dueño ni en reglas de tamaño.
+
+**Estado.** YA EXISTE (`portfolio/common/monteCarlo/`, remuestreo de operaciones) — **Tipo.** riesgo — **Locura.** 0 — **Valor.** 1 (práctica ya estándar en el proyecto)
+
+#### Mensual parece menos volátil que diario: 18,6 % frente a 15,3 % en el S&P
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 2, p. 53-54.
+
+**Qué dice.** Los resultados mensuales publicados favorecen a quien los publica: es raro que el máximo o el mínimo del valor de cuenta caiga el último día del mes, y los extremos casi no se ven. Con el S&P de 1990 a 2010, la volatilidad anualizada de los rendimientos diarios fue del 18,6 % y la de los mensuales del 15,3 %, un 17,7 % menos, con igual rentabilidad anualizada porque solo usa los valores inicial y final. Quien hace la diligencia debida pide datos diarios para no pasar por alto una gran caída a mitad de mes. Sobre pérdidas, avisa de que usar solo los drawdowns limita los casos y descarta que ganancias mayores se asocien a más riesgo: con poco dato conviene usar ganancias y pérdidas, con mucho dato el drawdown solo es buena medida.
+
+**Qué significaría aquí.** En fondeo manda el límite diario y el flotante: toda métrica de riesgo debe calcularse con equity diario o intradía (con MAE), nunca con cierres mensuales. Un control: comparar para cada superviviente la volatilidad con retornos de operación o diarios frente a la que saldría de resúmenes mensuales, y desconfiar de cualquier cifra de terceros (EAs de mercado, otros libros) dada en mensual. El mismo aviso vale para los informes de MT5.
+
+**Estado.** AMPLÍA (la dossier de ideas ya recoge «MAR con drawdown diario en vez de fin de mes: de 1,22 a 0,99», de Faith; Kaufman añade la cifra de volatilidad diaria frente a mensual en el S&P) — **Tipo.** riesgo · proceso — **Locura.** 0 — **Valor.** 2 (confirma una regla que ya se sigue; sirve de cifra citable)
+
+#### Cualquier razón rentabilidad/riesgo ordena parecido; el máximo drawdown y Calmar cubren lo que la σ pierde
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 2, p. 58-59 y 53.
+
+**Qué dice.** La razón de información es rentabilidad anualizada entre riesgo anualizado; la de Sharpe resta la tasa libre de riesgo; la de Treynor divide por la beta; la de Calmar usa el máximo drawdown (de un pico de valor de cuenta al mínimo posterior, medido en porcentaje); la de Sortino usa la volatilidad a la baja. Dice que cada autor cree que las de los demás están defectuosas, pero «las razones más populares suelen ordenar los candidatos en un orden parecido» y que las más simples son las mejores. La razón del máximo drawdown: en un historial largo, un único drawdown enorme se pierde dentro de la desviación típica entre muchos «normales».
+
+**Qué significaría aquí.** Para ordenar supervivientes no merece la pena un debate de métricas: usar una razón rentabilidad/riesgo con drawdown (Calmar o equivalente) y el máximo drawdown absoluto como regla aparte, que es lo que importa al fondeo. Un test rápido del proyecto: calcular el coeficiente de rango de Spearman entre Sharpe, Sortino y Calmar sobre una población real y confirmar si ordenan igual; si coinciden por encima de 0,9, se deja de discutir la métrica. Interesa porque la dossier ya trae la métrica a optimizar como decisión pendiente del dueño.
+
+**Estado.** YA EXISTE (Sortino y semivarianza en la dossier de ideas; Calmar y fórmulas de métricas en `knowhow/sqx-format/metric-formulas.md`; la métrica de la búsqueda genética en `knowhow/research/ga-target-choice.md`) — **Tipo.** estudio · proceso — **Locura.** 0 — **Valor.** 1 (afirmación de autoridad sin datos propios)
+
+#### Test t con grados de libertad igual al número de operaciones, y test de dos muestras entre periodos
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 2, p. 47-48.
+
+**Qué dice.** El estadístico t (media de los cambios dividida entre su desviación y multiplicada por la raíz de n; los grados de libertad son n-1) mide cuánto se parece una muestra pequeña a la normal. Valores críticos de la cola superior de 0,025 (95 % a dos colas): 12,706 con 1 grado, 2,228 con 10, 2,086 con 20, 2,042 con 30, 1,980 con 120 y 1,960 en el límite normal. Aplicado a un sistema, los grados de libertad son las operaciones, y se necesitan más cuantas más variables tenga. El test t de dos muestras (con los grados de libertad por la aproximación de Satterthwaite) sirve para comparar dos periodos y ver si una estrategia opera de forma consistente, usando el rendimiento neto de cada operación. Avisa de que no se debe usar para descartar datos «inconsistentes», porque las características de los mercados cambian y el sistema debe adaptarse.
+
+**Qué significaría aquí.** Un contraste directo y barato entre los tramos de una misma estrategia: media del beneficio por operación en `build` frente a `oos1` con el test de dos muestras, con la probabilidad adjunta, en el cribado OOS. Solo contra una pendiente cero no vale (con muchas estrategias hay que corregir por pruebas múltiples, ya en el libro de pruebas). Es un tipo de prueba, no un filtro nuevo: sirve como columna de diagnóstico.
+
+**Estado.** AMPLÍA (hay t y Sharpe probabilístico en `core.significance` y nulos en OOS; el contraste de igualdad de medias entre tramos de la misma estrategia con Satterthwaite no consta) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (estándar, pero da una cifra de «¿cambió el edge?» que hoy se infiere de umbrales)
+
+#### Las convenciones de retorno y anualización cambian las cifras: 125,85 % frente a 119,69 %
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 2, p. 49-51 y 52-53.
+
+**Qué dice.** Con 22 días de P&L de un ejemplo, el retorno medio diario es 0,00350 con el método estándar (cambio relativo) y 0,00339 con el logarítmico; la rentabilidad anualizada compuesta (AROR) es 125,85 % frente a 119,69 %, y la desviación diaria 0,01502 (anualizada 23,846 %) frente a 0,01495 (23,730 %). Anualiza con 252 días de negociación (262 en Europa, 360 para el Tesoro, 365 para datos que cambian a diario). El factor de anualización del riesgo es la raíz del número de datos al año (√252 para diario, √12 para mensual); el texto dice en un punto «multiplicar por 252», pero los números del ejemplo (0,01502 · √252 = 0,2384) confirman la raíz. El NAV (valor liquidativo) se compone: NAV(t) = NAV(t-1) · (1 + r), con base 100.
+
+**Qué significaría aquí.** Es un detalle de definición: los activos de este proyecto (oro, plata, petróleo, forex, índices como CFD) operan unas 260 jornadas con sesiones casi continuas, y 252 sirve para acciones de EE. UU. Conviene fijar una constante por activo en un único sitio y que cualquier comparación entre estrategias de distinto tramo use la misma convención. Sin choque con las reglas.
+
+**Estado.** NUEVA (no he comprobado dónde se define hoy la anualización; no consta una comparación entre convenciones) — **Tipo.** proceso — **Locura.** 0 — **Valor.** 1 (higiene de definiciones, sin efecto en decisiones)
+
+#### Escalar toda estrategia a la misma volatilidad objetivo antes de compararlas
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 2, p. 51-53.
+
+**Qué dice.** La volatilidad objetivo es una desviación típica anualizada de los rendimientos. Con 23,8 % de volatilidad real y un objetivo del 12 %, se corrige invirtiendo 23,8/12 = 1,98 veces más capital (de 100.000 a 198.000 $) con la misma posición, o reduciendo la posición entre 1,98 con el mismo capital. Los resultados del libro se presentan al 12 % salvo que se diga otra cosa; lo considera un nivel modesto, que puede subir hasta el 18 % en algunos fondos de cobertura. Su fin: ver todos los sistemas a un nivel de riesgo que represente resultados reales. Aviso: aplicado al 16 % de probabilidad de perder una σ, «hay un 16 % de probabilidad de perder el 23,8 % en un año», lectura que solo vale con retornos normales.
+
+**Qué significaría aquí.** Para el cribado entre estrategias con distinto tamaño de posición, ordenar siempre a riesgo igualado (y a lote fijo para el gate de SQX). En fondeo la restricción relevante no es la σ anual sino el drawdown diario y total de la firma: el equivalente es escalar cada estrategia al riesgo que consuma una fracción fija del límite diario con MAE, no a una σ del 12 %. Esa es la forma de comparar candidatas a cartera.
+
+**Estado.** NUEVA — **Tipo.** cartera · riesgo — **Locura.** 0 — **Valor.** 3 (la comparación a riesgo igualado es el prerrequisito de cualquier ranking entre estrategias de distinto lote)
+
+#### Costes: sobrestimarlos daña tanto como subestimarlos, y los sistemas direccionales pagan más deslizamiento
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 1, p. 22.
+
+**Qué dice.** «Un sistema que rinde bien en papel puede ser pésimo al operarlo.» Los sistemas rápidos de corto plazo son los más sensibles a los costes porque el beneficio esperado por operación es pequeño. Las estrategias direccionales (comprar si sube, vender si baja) tienen más deslizamiento que las de reversión a la media. Y: «Hay el mismo daño en sobrestimar los costes que en subestimarlos»; cargar un sistema con tarifas irreales puede mostrar pérdidas donde había beneficio y llevar a rechazar un método válido. No aporta cifras de esa pérdida.
+
+**Qué significaría aquí.** Aquí hay un choque con la política declarada del proyecto: los costes se modelan «pesimistas» (factor 1,25, el mayor de los dos brokers, % más un poco de spread). Kaufman diría que el pesimismo también cuesta estrategias buenas. Un estudio concreto: para cada superviviente de un run, la tabla de «a qué factor de coste muere», para ver cuántas se perderían entre el coste real y el coste con colchón. La decisión es del dueño; el dato que falta es cuántas estrategias separa el 1,25 del 1,0. Además, la familia de reversión debería recibir menos deslizamiento que las direccionales en los tests, si el broker lo confirma.
+
+**Estado.** AMPLÍA (los costes por activo viven en `assets/`; el coste en estrategias del colchón pesimista no consta en lo que busqué) — **Tipo.** estudio · proceso — **Locura.** 1 — **Valor.** 3 (cuantifica cuántas estrategias buenas se pierden por el colchón de costes elegido)
+
+#### Robustez cuesta rendimiento: menos reglas, más mercados, peor curva
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), prefacio, p. xvi, y cap. 1, p. 21-22.
+
+**Qué dice.** Una solución robusta (la que funciona en muchas situaciones y mercados y sigue haciéndolo) tiene un perfil de rentabilidad y riesgo menos atractivo que uno ajustado a los datos: éxito con menos reglas sobre más mercados y datos da robustez, pero a costa de menor rentabilidad y mayor riesgo. Si se intenta quitar todo el riesgo a una operación, «aflorará en otro sitio cuando menos convenga». Un resultado robusto «nunca parecerá tan bueno como el resultado optimizado de un solo valor», pero usar el mismo sistema en todas las acciones del mismo sector da una expectativa más realista y más probabilidad de éxito. Diversificar puede hacerse con dos estrategias distintas en un mismo mercado en vez de una estrategia en muchos mercados (p. 21), y concentrarse en un mercado conocido puede dar mejores resultados.
+
+**Qué significaría aquí.** Confirma la cadena (cross-market, SPP, WFM). El matiz que choca un poco: Kaufman admite que un especialista de un solo mercado puede rendir mejor, mientras el proyecto exige validar en otros mercados. Este proyecto se centra en el oro; lo coherente es que el cross-market sirva para rechazar el sobreajuste, no para exigir que la estrategia gane en plata y petróleo. La decisión de cuánto exigir en mercados adicionales ya es del dueño.
+
+**Estado.** YA EXISTE (`crossmarket`, `crosstf`, SPP, WFM) — **Tipo.** proceso — **Locura.** 0 — **Valor.** 1 (resume el diseño del proyecto)
+
+#### En materias primas, parte del resultado puede ser inflación o dólar y no el activo
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 2, p. 74-76.
+
+**Qué dice.** Con el trigo en efectivo de 1985 a octubre de 2010 (índices base 100), el índice de precios al productor (PPI) casi se duplica (de 1,0 a 1,8), el índice del dólar (DX) se reduce a la mitad (0,51) y el trigo sube un 69 % (de 3,56 a 7,13 $). Dividir el trigo entre el PPI o multiplicarlo por el DX deja el precio «sin cambio» a largo plazo, de modo que la subida se explica por inflación, dólar o ambos. Conclusión de Kaufman: el éxito de muchas estrategias de trigo puede depender de la tendencia de la inflación y no de los factores del trigo; para operar estacionalidad habría que cubrir el efecto del dólar (vender DX por el mismo valor en dólares que se compra de trigo), porque si no el resultado queda «al azar». No presenta una prueba de estrategia, solo el ejemplo gráfico.
+
+**Qué significaría aquí.** El oro y el petróleo están en dólares. Un estudio: para cada superviviente, la correlación de su P&L diario o mensual con el cambio del índice del dólar por tramos, y si el rendimiento sobrevive al restar la parte explicada por el dólar. Si una familia larga de oro es en realidad «corto de dólar», no diversifica con otra. Los datos del dólar son externos al precio del activo; coherente con las reglas porque no hay bloque de reloj, pero fuera de SQX.
+
+**Estado.** AMPLÍA (la dossier ya recoge correlaciones oro-DXY de entre -0,3 y -0,5 y una entrada de activos líderes; no consta atribuir el P&L de cada estrategia al dólar) — **Tipo.** estudio · cartera — **Locura.** 1 — **Valor.** 2 (útil para cartera con varios metales y petróleo)
+
+### 9.2 · Gráficos, sistemas chartistas y tendencias por eventos: rupturas, swings, punto y figura (caps. 3-5)
+
+Los capítulos 3 a 5 recorren el análisis gráfico clásico (tendencias, soportes, patrones de una barra, figuras de suelo y techo), los sistemas que lo automatizan (Dunnigan, Nofri, retrocesos, canales, DeMark) y las tendencias «por eventos», que ignoran el tiempo y solo reaccionan al precio: swing, punto y figura y ruptura de N barras. Casi todo el capítulo 3 es descriptivo; lo útil está en los capítulos 4 y 5. Las tres ideas de más valor: (1) el mejor periodo N de una ruptura cambia por mercado y por década, y casi cualquier N gana en un mercado que tendió; (2) el tamaño de caja del punto y figura fijado en % del precio da resultados incoherentes y fijarlo en múltiplos del ATR (rango medio verdadero) los agrupa mucho más; (3) la prueba de Lo-Mamaysky-Wang define diez figuras con reglas exactas, las compara con series aleatorias y mide lo que ocurre tres días después. Kaufman da pocas cifras de prueba propias y casi todas son de futuros anteriores a 2011.
+
+#### La ruptura de N barras: el mejor N cambia por década y por mercado
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 5, p. 222-228.
+
+**Qué dice.** Regla básica: comprar si el máximo de hoy supera el máximo de las últimas N barras y vender si el mínimo rompe el mínimo de las N; siempre en el mercado. Versión conservadora: usar el cierre en vez del máximo. Probó N de 10 a 100 en pasos de 5 sobre petróleo crudo (futuros ajustados, **sin costes**): solo una prueba perdió dinero, pero el mejor N fue 75 en 1991-2000, 15 en 2001-2010 y 100 en todo el periodo. En la tabla 5.7 (2001-2010) el mejor N salta de 10 a 95 según el mercado, y el porcentaje de valores de N que ganan va de 9 % (S&P, con 207 operaciones y N=65) a 95-100 % (crudo, euro). El oro con N=90 ganó 15.370 $ en 10 operaciones y solo el 21 % de los N probados ganaron. Dice que una N pequeña (menos de 5) ya no es «por eventos» sino continuación de tendencia, y que una N grande aumenta el riesgo por operación (distancia hasta el extremo opuesto). Propone también ajustar N a la volatilidad: N de hoy = N inicial × volatilidad normal / volatilidad actual.
+
+**Qué significaría aquí.** Es exactamente la lectura que ya hacen SPP y la matriz walk-forward, pero con un criterio útil: para cada plantilla de ruptura, informar no solo el mejor N sino el porcentaje de N vecinos rentables en cada mitad de la historia y en cada mercado. Un N que gana solo porque el mercado tendió (crudo, todos los N ganan) no distingue nada. El N adaptativo a la volatilidad es un bloque candidato (N variable) para una familia de ruptura en M30/H1/H4.
+
+**Estado.** AMPLÍA (SPP y walk-forward matrix ya miden la meseta; falta el porcentaje de pruebas rentables por mercado y la comparación entre mitades) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 4 (mide justo el riesgo de elegir N por beneficio máximo, que es el defecto más común de las rupturas)
+
+#### Punto y figura: la caja fija en % del precio es inestable; en múltiplos del ATR se agrupa
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 5, p. 201-206 y 217-220.
+
+**Qué dice.** El punto y figura (columnas de X y O que solo cambian de columna tras una reversión de 3 cajas) es un sistema por eventos: compra cuando una X supera en una caja la X más alta de la columna anterior. Estudios antiguos con la regla simple: Thiel y Davis (futuros, 1960-1969) dieron 799 señales, 53 % ganadoras y 311 $ de beneficio medio en unos 50 días; Zieg y Kaufman (22 mercados, seis meses hasta mayo de 1974, muy volátiles) dieron 375 señales, 40 % ganadoras, 306 $ y 12,4 días de duración media. Con cajas fijadas al inicio como % del precio (0,1 % a 2 %) sobre 15 futuros en 2000-2010, los resultados son «inconsistentes»: bonos y euro ganan casi con cualquier caja, los índices de bolsa pierden casi siempre y los eurodólares casi no operan (el precio 99 hace que el % sea enorme). Cambiando la caja cada día a un % del precio mejora el S&P (rentable por debajo del 1,4 %) pero el euro no opera en cajas grandes y el oro empeora: «cambia la forma, sigue siendo inconsistente». Con la caja igual a un factor × ATR de 50 días (de 0,2 a 3,0) las tres series (euro, S&P, oro) tienen un número de operaciones parecido y las pérdidas se agrupan en celdas vecinas. Kaufman concluye que «hay técnicas que sí funcionan», pero en su propia tabla 5.6 aún hay pérdidas fuertes (euro −77.363 con factor 2,0) y varias celdas tienen entre 5 y 13 operaciones: muestra mínima.
+
+**Qué significaría aquí.** Un umbral que depende del precio en bruto (pips, puntos, % fijo) no es transferible entre oro, plata, petróleo e índices ni entre años de volatilidad distinta; en el cruce de mercados y de temporalidades conviene que todo umbral de ruptura o de reversión se exprese en múltiplos del ATR y que el estudio compare ambas formas. No existe un bloque «punto y figura» en SQX: se emularía con un swing de umbral en ATR (siguiente entrada). Las cifras de las tablas son sin costes: no valen como expectativa.
+
+**Estado.** NUEVA — **Tipo.** generación — **Locura.** 1 — **Valor.** 3 (el hallazgo de normalizar por ATR es sólido y barato de aplicar; el sistema en sí no se puede construir tal cual en SQX)
+
+#### Swing con umbral porcentual: usar el valor de la barra anterior y fijar qué pasa en la barra que rompe ambos lados
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 5, p. 182-189 y 212.
+
+**Qué dice.** Un swing es un movimiento sostenido de un tamaño mínimo; el filtro de swing puede ser fijo (puntos) o un % del precio. Con valor fijo, el gráfico es insensible cuando el precio es bajo y cambia de swing a cada rato cuando es alto; con % se mantiene la sensibilidad durante años. Hay que usar el valor mínimo de swing de la barra anterior, no el de hoy, «para no hacer trampa mirando un día adelante». Ante una barra que marca a la vez un máximo nuevo y una reversión suficiente (barra exterior), el punto y figura tradicional registra la continuación y la regla alternativa registra la reversión primero; Kaufman dice que las pruebas por ordenador mostraron que la alternativa suele ser mejor (el stop y el cambio de tendencia llegan antes) salvo cuando la reversión es pequeña y las barras anchas son frecuentes (la cifra no se da). Dos formas de operar: conservadora (comprar cuando el máximo del swing actual supera el del swing alcista anterior) y activa (comprar en cuanto se reconoce el swing alcista). Ventaja que señala: si el precio se queda de lado no hay acción alguna, a diferencia de una media móvil que exige que el precio siga subiendo; coste: el riesgo por operación puede ser muy grande si no hay retrocesos intermedios.
+
+**Qué significaría aquí.** Una familia de ruptura de swing (umbral = k × ATR o k × % del precio) como alternativa a la ruptura de N barras: una sola dirección, una o dos condiciones, entrada a mercado. En el motor de pruebas propio (no en SQX) hay que fijar de antemano qué ocurre en una barra exterior y qué valor del umbral se usa, y dejarlo anotado: es una ambigüedad que cambia la serie de señales. Revisar si SQX tiene un bloque de máximo/mínimo de swing («SwingHigh/Low», ZigZag) antes de crear uno propio.
+
+**Estado.** NUEVA (el dossier solo trata «swing» como edad de tramo, otra idea) — **Tipo.** generación — **Locura.** 0 — **Valor.** 3 (familia de ruptura distinta de Donchian y con mejor comportamiento declarado en laterales; sin cifras de prueba en el libro)
+
+#### Día exterior con cierre exterior: dejó de funcionar a mediados de los 80 y la regla inversa rinde mejor
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 4, p. 157-158.
+
+**Qué dice.** Un día exterior tiene máximo mayor y mínimo menor que el día anterior; si además el cierre queda fuera del rango previo (por encima del máximo o por debajo del mínimo) se llama cierre exterior. Arnold (1984) comprobó en una muestra pequeña de divisas, metales y financieros: comprar al cierre si cierra sobre el máximo previo, vender si cierra bajo el mínimo previo, stop justo bajo el mínimo (sobre el máximo) del día exterior y cierre a los tres días; variando la salida de 1 a 5 días, la formación predecía movimientos bastante consistentes a tres días. Kaufman añade que eso funcionaba en los 70 y quizá hasta principios de los 80, «pero ya no desde mediados de los 80»: si se invierten las reglas (vender cuando cierra por encima del máximo previo en un día volátil) los resultados son «mucho mejores». Sugiere salida condicional en vez de fija y descartar los días anchos que siguen a uno muy estrecho. No da cifras.
+
+**Qué significaría aquí.** Un estudio de reversión de una sola dirección: tras un día (o barra H4) con rango alto y cierre fuera del rango previo, vender (o comprar) en contra, salida a N barras o con stop de ATR, con el filtro de «rango previo estrecho» como segunda condición. Sirve también como aviso para la generación: una regla de ruptura que ya no funciona puede funcionar al revés porque el patrón es de agotamiento, y SQX no lo prueba salvo que se le deje generar ambos sentidos como plantillas separadas (regla 13).
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 2 — **Valor.** 3 (idea barata, medible en horas con los datos del proyecto, pero Kaufman no da ninguna cifra y la afirmación es de memoria)
+
+#### Reversión clave: sola «sorprendentemente floja», con filtro de rango mejora mucho
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 3, p. 109-111.
+
+**Qué dice.** Día de reversión: máximo nuevo seguido de cierre más bajo (o al revés). Reversión clave: además el mínimo del día es menor que el mínimo previo y el cierre menor que el cierre previo. El análisis más completo (Evans, 1985) concluyó que su rendimiento era «llamativamente poco impresionante»; los estudios del propio Kaufman son «no concluyentes». Reglas programables que da: cierre previo sobre su media de N días, máximo del día igual al mayor de N días, mínimo menor que el previo y cierre menor que el previo. En su hoja de cálculo con fuelóleo (2005-2011) las reglas básicas dieron «ganancias marginales» y un filtro que solo toma el día si su rango verdadero supera 1,5 × el rango verdadero medio de los 20 días anteriores fue «mucho mejor» (sin cifras en el texto). Añade que una reversión importa en el extremo tras una subida acelerada y con volatilidad creciente, no en un máximo intermedio.
+
+**Qué significaría aquí.** Es un patrón de una barra con una condición de contexto (tendencia previa de N barras) y otra de volatilidad (rango > 1,5 × ATR20): cabe en el límite de dos condiciones por lado. Estudio de lectura: medir el retorno a 1-5 barras tras la reversión clave en XAUUSD y en índices en H1 y H4 con y sin el filtro de rango, contra el nulo de entrada aleatoria. No hay cifras del libro que usar como umbral.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (otro patrón de reversión en una barra; el filtro de volatilidad es la parte que merece medirse)
+
+#### Picos, pivotes y ruptura de pivote: más fiable que entrar con el cierre del patrón
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 3, p. 106-109, y cap. 4, p. 158 y 192.
+
+**Qué dice.** Un pico (spike) se define con exactitud: máximo de ayer mayor que el máximo de los N días previos en más de k × ATR(N) y mayor que el máximo de hoy en más de k × ATR(N); k debe ser al menos 0,75 y con k > 1 son mejores pero escasos. Solo se reconoce un día después. Un pivote es un máximo (o mínimo) mayor que 1-3 barras a cada lado y, según Colby y Meyers, entrar al romper el máximo o el mínimo del pivote es «mucho más fiable» que entrar en la dirección de la reversión al cierre de la última barra. Colby probó una regla de pivote inverso en el Dow Jones durante 101 años hasta diciembre de 2000: casi 7.000 operaciones (70 al año) con «beneficios significativos» (sin cifra de rentabilidad). Los pivotes se pueden usar como un swing sin retroceso mínimo; con 10 o 20 días a cada lado el comportamiento se parece al de un sistema de macrotendencia. Coste: un pivote de 5 días tiene un retraso de tres días hasta identificarse.
+
+**Qué significaría aquí.** Dos bloques medibles: «pico de k × ATR» como filtro de contexto (y no como señal) y «ruptura del último pivote de n barras» como familia de ruptura distinta de Donchian, con n de 2 a 20. Importante en el motor propio: el pivote solo se conoce n barras después, así que la señal no puede usar la barra del pivote como si fuera conocida (mirada al futuro); revisar que las plantillas con extremos de swing en SQX usan solo extremos ya confirmados.
+
+**Estado.** AMPLÍA (en el dossier hay ideas de reversión por rango y por día interior, no la ruptura de pivote ni la definición del pico) — **Tipo.** generación — **Locura.** 0 — **Valor.** 3 (definiciones exactas y una advertencia de mirada al futuro que afecta a la validez de cualquier bloque de extremos)
+
+#### Congestión de Nofri: la única familia de reversión del libro y cuándo no operarla
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 4, p. 155-156.
+
+**Qué dice.** Sistema contra la tendencia para mercados laterales: si el precio está en un rango definido (un máximo seguido de dos cierres más bajos arriba, un mínimo seguido de dos cierres más altos abajo) y cierra dos días seguidos en la misma dirección, se toma la posición contraria al cierre del segundo día y se sale al cierre del tercero si hay beneficio. Tras un gran movimiento hay que esperar 10 días y tras una falsa ruptura de 2-3 días, 7 días. Kaufman lo programó definiendo «gran movimiento» como un cambio neto en 10 días que duplica el cambio medio histórico, y «falsa ruptura» como salir del rango y volver en dos días. Sin stops, porque se opera un día. Resultado: buen rendimiento «durante un periodo sorprendentemente largo» en trigo, pero algunos mercados tuvieron grandes pérdidas en la crisis de 2008; no da cifras. Observa que cuando el tercer día es otra vez en contra se cierra con pérdida y se reabre en el mismo instante: la regla de dos días en la misma dirección se repite. Es la única estrategia del capítulo que no sigue tendencias.
+
+**Qué significaría aquí.** Plantilla de reversión de corto plazo con una condición de contexto (rango definido) y una de patrón (dos cierres seguidos); cabe en las dos condiciones. Atención al riesgo en cuentas de fondeo: la repetición automática en una racha adversa multiplica la pérdida flotante (MAE); si se prueba, con el filtro de «gran movimiento previo» como condición dura y tope de reentradas.
+
+**Estado.** NUEVA — **Tipo.** generación — **Locura.** 1 — **Valor.** 3 (reversión sin cifras, pero con reglas completas y un filtro de régimen aprovechable)
+
+#### Las diez figuras de Lo, Mamaysky y Wang: reglas exactas, control aleatorio y qué pasa tres días después
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 4, p. 176-178.
+
+**Qué dice.** Lo, Mamaysky y Wang suavizaron el precio con regresión por núcleo y definieron 10 figuras (hombro-cabeza-hombro, ampliación, triángulo, rectángulo y doble, cada una en techo y suelo) con cinco extremos locales E1 a E5 en una ventana móvil de 38 días. Ejemplos: hombro-cabeza-hombro techo: E3 mayor que E1 y E5, E1 y E5 a menos de un 1,5 % de su media, E2 y E4 a menos de un 1,5 % de su media; rectángulo: techos y suelos a menos de un 0,75 % de su media y el techo más bajo por encima del suelo más alto; los dos extremos del doble techo separados por más de 22 días. Muestra: varios cientos de acciones de EE. UU. de 1962 a 1996; más de 2.000 dobles techos y dobles suelos y más de 1.600 hombros de cada tipo. Control: una serie sintética aleatoria produjo solo un tercio de los hombro-cabeza-hombro, «luego las figuras no son azar». Medida: rendimiento de los tres días siguientes; todas las figuras salvo el triángulo techo dieron rentabilidad positiva y cinco fueron significativas (hombro techo, ampliación suelo, rectángulo techo, rectángulo suelo y doble techo). Con volumen creciente los resultados mejoran en general; con volumen decreciente son mejores en el hombro techo y en ambos rectángulos. Kaufman señala que el resultado fue acogido porque confirma lo esperado.
+
+**Qué significaría aquí.** Plantilla de método más que de señal: definir una figura con reglas numéricas sobre un suavizado, contar apariciones y compararlas con una serie aleatoria con la misma volatilidad, y medir el retorno a pocas barras con el procedimiento de nulos del proyecto. El horizonte de tres días es de acciones diarias y el rendimiento no incluye costes ni es operable: no sirve como expectativa en CFD en H1, hay que repetirlo. El rectángulo y el doble suelo son los únicos que se pueden expresar en dos condiciones.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 1 — **Valor.** 4 (es el único test publicado con reglas completas, muestra grande y control aleatorio de figuras del capítulo; sirve de molde para estudiar patrones sin caer en la «interpretación»)
+
+#### Clasificación de Bulkowski: el triángulo simétrico y las ampliaciones; las velas, por cierre, tamaño y volumen
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 3, p. 144 y cap. 4, p. 178-179.
+
+**Qué dice.** Del resumen de Bulkowski (*Encyclopedia of Chart Patterns*) Kaufman recoge solo el orden, sin cifras. Mejores cinco alcistas: ruptura al alza de rectángulo techo, de cuña descendente, de triángulo ascendente, de doble suelo y de triángulo simétrico tras caída (que confirma lo contrario de lo que se espera, y con alta fiabilidad). Mejores cinco bajistas: escalones descendentes, ruptura a la baja de triángulo simétrico en tendencia bajista y de tres tipos de ampliación; las ampliaciones son más fiables hacia abajo. El triángulo simétrico es el patrón «más fiable» porque pronostica un movimiento fiable en ambas direcciones. Sobre velas, Bulkowski: rinden mejor las de cierre en el primer tercio inferior de la barra (luego medio y alto), las de mercado bajista, las de volumen alto, las de mechas largas y las inusualmente altas. En huecos (100 acciones, cierre del hueco en una semana): ruptura 1 % al alza y 6 % a la baja, continuación 11 % y 10 %, agotamiento 58 % y 72 %.
+
+**Qué significaría aquí.** Casi nada del orden es directamente operable sin las tasas de éxito. Lo aprovechable: (a) la regla de que el tamaño de la vela y la posición del cierre en la barra importan, expresable como «rango de la barra > x ATR» y «cierre en el tercio inferior»; (b) para el análisis de huecos, la tabla de cierre semanal: tras un hueco por ruptura casi nunca se cierra la semana siguiente. En XAUUSD el hueco relevante es el del fin de semana, que ya se estudia.
+
+**Estado.** AMPLÍA (el dossier ya trata los huecos de fin de semana del XAUUSD y la apertura con hueco en reversión; las propiedades de las velas de Bulkowski son nuevas) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (sin cifras del libro; sirve de lista de variables a medir, no de resultados)
+
+#### Retrocesos: cuantos más niveles, más fácil que el precio pare en uno por azar
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 4, p. 159-167.
+
+**Qué dice.** Los niveles aceptados son 100 %, 50 %, 61,8 %/38,2 % (Fibonacci), 66 %, 75 %, 25 %, 12,5 % y otros según el autor. Kaufman señala el problema obvio: si hay tantos niveles posibles el precio se parará en alguno aunque sea por casualidad; sin más información los retrocesos más importantes son los mayores: 100 %, luego 50 %, luego 33 % y 25 %, y deja a Fibonacci aparte porque «parece haber buen apoyo» (admite que las reglas de retroceso «no se han probado científicamente»). Para hacer sistemática la idea recomienda dejar el objetivo un 10 % a 15 % más cerca del nivel, y entrar solo cuando hay confirmación en ese nivel (menos movimiento, menos volatilidad o menos volumen) y no por anticipación. Tubbs afirma acertar 4 de 5 con la «ley de proporción» (½, ⅔, ¾ del movimiento previo) sin pruebas. DeMark mide desde el máximo más alto desde la última vez que el mercado estuvo en el mínimo actual y aplica 0,618, 1,618, 0,382, 0,5, 1,382, 2,236 y 2,618.
+
+**Qué significaría aquí.** Un retroceso con muchos niveles posibles necesita corregirse por pruebas múltiples: si un estudio de «precio rebota en Fibonacci» prueba k niveles, el libro de pruebas debe contar k intentos y compararlos con un nulo con niveles al azar. Útil como regla de proceso: tolerancia de un 10-15 % alrededor del nivel y confirmación, no entrada por límite en el nivel exacto.
+
+**Estado.** AMPLÍA (el dossier ya tiene «Retroceso dentro de la tendencia» y una regla de barrer alrededor de constantes Fibonacci; el 10-15 % de tolerancia y el nulo con niveles al azar son lo nuevo) — **Tipo.** estudio — **Locura.** 1 — **Valor.** 2 (la crítica de pruebas múltiples ya está en el proyecto; Kaufman no aporta cifras)
+
+#### Esperar el retroceso mejora el precio de entrada pero pierde los mayores movimientos; el stop pegado a la entrada «no tiene base lógica»
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 3, p. 98, y cap. 5, p. 207-209.
+
+**Qué dice.** Tras romper una línea se puede esperar un tiempo, esperar una reversión tras la ruptura o exigir salir de una banda de seguridad. Kaufman: «un retraso normalmente da mejor precio, pero si el precio cae rápido sin volver, el precio de entrada es mucho peor; la mayoría de los mayores beneficios vienen de rupturas que nunca retroceden y capturar una sola compensa todas las pequeñas pérdidas por señales falsas». Los operadores que esperan «pueden ganar de forma constante, pero no suelen ganar con los mayores movimientos». En el punto y figura, entrar en un retroceso tras la señal (riesgo de 4 cajas, por ejemplo) limita el riesgo con un nivel de soporte lógico como stop; pero entrar en la señal y poner el stop a la primera reversión «no tiene base lógica y dará rápidamente una operación perdedora». Pedir un máximo nuevo de más de una caja y un mínimo de reversión más alto es exigir que la velocidad de movimiento aumente.
+
+**Qué significaría aquí.** Compara dos plantillas de ruptura: entrada a mercado inmediata frente a esperar una barra de confirmación o un retroceso. La segunda choca con la regla de entradas a mercado cuando se implementa con orden límite en el retroceso; se puede imitar a mercado con la condición «una barra después, el cierre sigue fuera del rango». La advertencia de que un stop cercano sin lógica mata la operación enlaza con los stops por ATR: medir cuántas operaciones salen por stop en las 3 primeras barras.
+
+**Estado.** AMPLÍA (el dossier ya tiene «El tipo de orden como canal: ruptura con stop, retroceso con límite»; aquí el matiz de la confirmación por barras a mercado y la medida de salidas tempranas) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (el compromiso entre precio de entrada y movimientos grandes perdidos es medible con los mismos datos y afecta al número de operaciones por año)
+
+#### Volver al ruido normal no es una ruptura
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 3, p. 100 y 118.
+
+**Qué dice.** Todos los mercados tienen un nivel normal de ruido (los índices de bolsa el mayor, los tipos a corto plazo el menor). Cuando la volatilidad cae por debajo de ese nivel hay inactividad a corto plazo, y «una subida de la volatilidad hasta niveles normales no debe confundirse con una ruptura». Un triángulo cuya punta es menor que el ruido normal acabará en una bandera o banderín y su ruptura «no sería fiable». Estrechar los soportes y resistencias dentro de un rango en calma da rupturas «menos fiables», porque son un silencio dentro del ruido normal; pero existen dos escuelas: las que creen que la ruptura es más fiable tras volatilidad baja y las que prefieren volatilidad alta (lo remite a los capítulos 20 y VIX). Dice también que los mercados se mueven de lado «alrededor del 80 % del tiempo».
+
+**Qué significaría aquí.** Un filtro de ruptura con la comparación explícita: rango de la barra de ruptura frente a ATR de largo plazo (por ejemplo ATR corto / ATR largo), midiendo en un estudio si las rupturas tras compresión (ATR corto < ATR largo) valen más o menos que las rupturas con expansión ya en marcha, por mercado y temporalidad. Es una condición de régimen de volatilidad; sin cifras en el libro, que deja las dos escuelas abiertas.
+
+**Estado.** AMPLÍA (el dossier ya tiene ideas de compresión de rango NR4/NR7; falta medirla contra la ruptura con expansión en el mismo estudio) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (decide una pregunta abierta con datos propios y se traduce en un filtro de generación)
+
+#### Un patrón raro no permite probar robustez moviendo parámetros
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 4, p. 175-176.
+
+**Qué dice.** Al comparar la ruptura de N días con el Sequential de DeMark (cuenta de 9 cierres más bajos que el de 4 días antes y 13 más bajos que el de 2 días antes, de 21 a 39 días de formación): la ruptura se prueba en robustez comparando periodos algo más largos y más cortos, y a mayor periodo las operaciones son más selectivas, con más beneficio por operación y un perfil mejor. En un patrón único (isla de reversión, Sequential) «no hay forma de medir la robustez en esos términos»: solo hay una cuenta de 13 y un patrón; solo se puede aplicar el método a mercados distintos y sin relación y decidir si es demasiado específico para sobrevivir.
+
+**Qué significaría aquí.** Regla para la cadena de pruebas: una estrategia generada cuya condición es una cuenta o un patrón discreto (sin parámetro que se pueda mover) no tiene meseta en SPP, y el único test de robustez que le queda es el cruce de mercados y de temporalidades. Marcarlas en el informe del SPP como «sin meseta medible» en vez de dejar un hueco que se lee como éxito.
+
+**Estado.** NUEVA — **Tipo.** proceso — **Locura.** 0 — **Valor.** 3 (aclara qué dice el SPP de las estrategias con parámetros discretos y evita leer un vacío como robustez)
+
+#### La mirada atrás convierte las sorpresas en señales predecibles
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 3, p. 93, 132-133, 144 y 147-148.
+
+**Qué dice.** La tendencia se ve mejor después de ocurrida; la señal de nueva tendencia aparece cuando la incertidumbre es máxima. Una sacudida de precio (price shock) no se puede prever, pero años después un programa puede encontrar «una tendencia o una figura que predijo ese movimiento» y registra el beneficio como previsible: «se basa la conclusión en una falsa premisa». Propone un ejercicio: tapar la parte derecha del gráfico, decidir con órdenes concretas, avanzar un día y anotar solo las órdenes que se habrían ejecutado, sin trampa. También: el éxito puede lograrse reconociendo la tendencia en el 60 % de los casos; en un sistema de tendencia típico basta acertar entre el 30 % y el 35 % porque las ganancias individuales son mucho mayores que las pérdidas.
+
+**Qué significaría aquí.** Dos usos: en la lectura del libro de pruebas, comprobar cuánto del beneficio de una estrategia proviene de unas pocas sacudidas (quitar las 3-5 mejores operaciones o las barras de noticias de mayor rango) y si sin ellas se mantiene; y fijar que las condiciones de las plantillas solo usen datos confirmados al cierre de la barra anterior. Es práctica ya habitual en el proyecto; lo único nuevo es la comparación del 30-35 % de aciertos con la proporción ganancia/pérdida.
+
+**Estado.** YA EXISTE (el estudio de operaciones y nulos de entrada aleatoria ya mide dependencia de pocas operaciones; no hay estudio específico de «sacudidas») — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (confirma práctica ya vigente; la parte nueva es quitar las barras de choque)
+
+#### Las tortugas: la versión rápida (20/10) ganó solo al principio y la lenta (55/20) a lo largo de 30 años
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 5, p. 229-233.
+
+**Qué dice.** Sistema 1: entrada al superar el máximo de 20 días y salida bajo el mínimo de 10; ignorar la entrada si la anterior del sistema 1 fue ganadora (salvo pérdida de al menos 2L, L = ATR de 20 días). Sistema 2: 55 días de entrada y 20 de salida, sin filtro. Stop a 2L de la entrada, tamaño de la unidad = 1 % de capital / (L × valor del punto), añadir unidades por cada L a favor (máximo 5), topes de 4, 6, 10 y 12 unidades por mercado, grupo correlado, mercados relacionados y neto total, y recortar la posición un 20 % por cada 10 % de caída desde el máximo del capital. Kaufman lo programó solo en cobre desde 1980: el 55/20 dio beneficios estables durante los 30 años y el 20/10 solo ganó en la primera parte de los años 80, justo cuando Dennis decidió formar a las tortugas; avisa de que es un solo mercado y no está implementado todo. En la comparación con la ruptura de N días en cobre 1980-2010, todos los N de 10 a 100 menos uno ganaron, y 55 y 20 «no fueron la mejor elección».
+
+**Qué significaría aquí.** El dossier ya contiene la regla de tortuga y varias entradas sobre ella; lo aportado aquí es la advertencia: un sistema validado en la época en que se descubrió suele ser el que más «caduca». Útil como patrón: pedir siempre que la versión rápida de una familia de ruptura gane también en la segunda mitad de la historia y no solo en la primera, y recortar el tamaño con la caída del capital como regla de riesgo para cuentas de fondeo (20 % menos por cada 10 % de caída, con 10 % de recuperación por cada 6⅔ % de ganancia).
+
+**Estado.** YA EXISTE (dossier: varias entradas sobre las tortugas) — **Tipo.** riesgo — **Locura.** 0 — **Valor.** 2 (la comparación rápida frente a lenta en cobre y la regla de reducción con la caída son lo único nuevo)
+
+#### Cobrar pronto no mejora el beneficio total pero puede mejorar la relación beneficio/riesgo; el tamaño tras pérdida puede arruinar
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 5, p. 211-212, y cap. 4, p. 162-163.
+
+**Qué dice.** Con un beneficio abierto grande, un stop de seguimiento igual al valor de reversión (caja × 3) tras un movimiento sostenido de al menos 10 cajas deja entrar de nuevo en la misma dirección; en un ejemplo ganó 4 cajas más y en otro perdió 4 de los beneficios potenciales. Conclusión de Kaufman: «en general, cobrar pequeños beneficios así no mejora la rentabilidad total porque suele perder los mayores movimientos; puede, sin embargo, reducir el riesgo de pérdida más rápido que los beneficios, con mejor relación beneficio/riesgo»; cualquier regla nueva debe probarse en distintas condiciones. Aparte, la regla de Trident de aumentar la posición tras cada pérdida («como la martingala») es razonable en conceptos pero «el tamaño de posición puede llevar a la ruina».
+
+**Qué significaría aquí.** Un estudio de salida: comparar, con las mismas entradas, salida por señal contraria frente a stop de seguimiento por ATR tras X ATR de beneficio abierto, midiendo caída máxima, MAE diaria y beneficio/riesgo, no solo beneficio. Para las cuentas de fondeo la comparación importa más por el riesgo que por el beneficio. La martingala ni se prueba: con el límite de pérdida diaria de FTMO y Hantec es ruina segura.
+
+**Estado.** AMPLÍA (hay estudios de salidas y de riesgo; falta comparar explícitamente cobro con stop de seguimiento por ATR en la misma población) — **Tipo.** riesgo — **Locura.** 0 — **Valor.** 2 (confirma que el criterio de salida debe valorarse en riesgo, que ya se hace)
+
+#### Objetivos por altura del patrón: los lejanos son menos fiables y conviene recortarlos
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 3, p. 133-139, y cap. 5, p. 213-217.
+
+**Qué dice.** El objetivo de un rango lateral se proyecta con la altura del rango (resistencia menos soporte) sumada a la ruptura; la versión «ancho del patrón + soporte» es poco realista si la formación es muy larga; una tercera opción, más práctica, es usar la volatilidad media del patrón o reducir el objetivo un 20 %: «un objetivo más cercano se alcanza más a menudo». En el triple techo del gas natural, el objetivo con altura 1,75 (7,25 proyectados) se alcanzó con facilidad y el de 2,65 (5,55) se alcanzó solo tras pararse en 6,50: «los objetivos lejanos son menos fiables». En el punto y figura, el recuento vertical (reversión inicial × 3 cajas) tiende a subestimar el movimiento y el horizontal es más exacto pero depende de elegir la anchura de la base. Kaufman reconoce que son directrices, no predicciones («no es una varita mágica»). Sin pruebas con muestra.
+
+**Qué significaría aquí.** Salida por objetivo con una sola condición: objetivo = k × altura del rango previo (o k × ATR) con k de 0,8 a 1; comparar k = 1 con k = 0,8 en la misma entrada. Como el objetivo fijo reduce la cola de beneficios, importa en el ledger de pruebas múltiples: declarar cuántos k se probaron.
+
+**Estado.** AMPLÍA (existe el ATR como salida y el límite de dos condiciones; falta la proporción respecto a la altura del patrón) — **Tipo.** generación — **Locura.** 0 — **Valor.** 2 (la idea es estándar; lo aprovechable es el recorte del 20 % y la advertencia de objetivos lejanos)
+
+#### El empuje de Dunnigan: confirmar el giro con una barra medida en volatilidad
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 4, p. 152-154.
+
+**Qué dice.** Dunnigan (años 50) abandonó su primer sistema de ruptura por rachas largas de pérdidas, aunque el resultado neto era rentable, y concluyó que cada mercado necesita medidas distintas según el nivel de precio. Su método del empuje (thrust) exige dos de cuatro patrones preliminares (prueba del suelo, cierre invertido, rango estrecho, rango interior) y un empuje al día siguiente; la regla del giro de tendencia: dos días seguidos con máximos y mínimos mayores, confirmados al romper el máximo del tramo bajista. Para sustituir su empuje en puntos propone medirlo contra la desviación típica de los cambios diarios o el ATR. Ruggiero lo actualizó para programarlo y dice que con esa regla simple los resultados «son buenos y similares a los de métodos más complejos». Dunnigan aceptó que su primer empuje era demasiado sensible y lo endureció exigiendo que todo el rango del día quedase fuera del anterior.
+
+**Qué significaría aquí.** Plantilla de giro de dos condiciones: «dos barras con máximos y mínimos crecientes» más «ruptura del máximo del último tramo bajista», con un empuje mínimo en ATR. Una sola dirección, a mercado, en H1 o H4.
+
+**Estado.** NUEVA — **Tipo.** generación — **Locura.** 0 — **Valor.** 2 (regla simple y plausible, sin cifras que la apoyen)
+
+### 9.3 · Tendencia: regresión, medias y sistemas de tendencia comparados (caps. 6-8)
+
+El capítulo 6 es casi todo econometría (regresión entre dos mercados, ARIMA, Kalman) y aporta poco; lo útil es la pendiente de regresión como señal de tendencia y el aviso de que una relación ajustada «siempre da respuesta» aunque no signifique nada. El capítulo 7 repasa medias móviles y suavizados. El capítulo 8 es el valioso: describe el perfil de un sistema de tendencia (pocas operaciones ganadoras, perfil de «cola gruesa»), compara seis sistemas sobre 20 años y da reglas de prueba. Las tres ideas más valiosas: (1) el periodo de cálculo pesa más que el método y los métodos rinden casi igual, así que probar variantes de media, exponencial y pendiente es repetir la misma prueba; (2) si una entrada retrasada o una banda mejora o empeora depende de cuánto ruido tiene el mercado; (3) una combinación de periodos no se acepta salvo que muchas de sus vecinas también ganen.
+
+#### El periodo pesa más que el método: media, exponencial, pendiente y momento rinden casi igual
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 8, p. 330, 342-349, 360.
+
+**Qué dice.** Compara momento de N días, media simple, suavizado exponencial, pendiente de regresión lineal, ruptura de N días y ruptura por oscilación (swing) en 20 años hasta febrero de 2011, con periodos de 5 a 160 días, siempre en el mercado y sin stops. Mercados: eurodólar, euro, S&P, crudo, y las acciones IBM, Bank of America y Ford. En el eurodólar los factores de beneficio (profit factor: ganancias brutas entre pérdidas brutas) de cinco de los métodos salen «sorprendentemente» agrupados y mejoran todos al alargar el periodo. Dice: «las diferencias de rendimiento neto entre métodos son pequeñas, mayores cuanto más rápidos»; lo que cambia es la frecuencia de operaciones, el tamaño de cada una y el riesgo. Y: «elegir el periodo es más importante que el método». La media y el momento tienen fiabilidad (porcentaje de operaciones ganadoras) de unos 34 %, la pendiente y la exponencial unos 43 %, la ruptura casi 50 % con menos de la mitad de operaciones y grandes ganancias por operación pero mucho más riesgo. Conclusión suya: «no hay mejor sistema, solo compromisos».
+
+**Qué significaría aquí.** Para el libro de ensayos del ledger de pruebas múltiples, media simple, exponencial, pendiente de regresión y momento de una misma ventana deberían contar casi como un solo ensayo efectivo, no cuatro. Y al diseñar paletas por familia de tendencia, es más rentable barrer bien el rango de periodos que añadir un indicador de suavizado más. La ruptura es una familia distinta (menos operaciones, más riesgo por operación) y sí merece su propia tirada. No choca con ninguna regla.
+
+**Estado.** AMPLÍA (paletas por familia y ledger de ensayos: cuántos ensayos independientes hay realmente entre indicadores de suavizado) — **Tipo.** generación — **Locura.** 0 — **Valor.** 4 (reduce el recuento de pruebas y evita gastar CPU en variantes casi idénticas)
+
+#### Si un tramo de periodos o una banda ayuda depende del ruido del mercado, y a veces se invierte
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 8, p. 315-318, 320-321, 329.
+
+**Qué dice.** Entrada con la dirección de la media frente al cruce del precio con la media (amazon, 10 años; entre paréntesis precio-cruce): a 80 días factor de beneficio 1,34 (1,31); a 40, 1,46 (1,12); a 20, 1,45 (0,98); a 10, 0,81 (0,82); a 5, 0,84 (0,92). Con la dirección hay entre 26 % y 37 % menos operaciones; en el periodo de 5 días gana el cruce, y él mismo dice que es un solo ejemplo. Retraso de entrada (cierre de la señal, apertura siguiente, cierre siguiente), 10 años: en el eurodólar (el mercado de menos ruido) todos los periodos ganan al entrar en el cierre y retrasar empeora el factor de beneficio. En el S&P (el de más ruido) esperar mejora salvo a 5 días: a 40 días pasa de −29.138 $ (factor 0,75) a +5.013 $ (1,05) al entrar en el cierre siguiente. Banda de máximos y mínimos en lugar del cierre: en el eurodólar empeora (a 80 días 2,94 baja a 2,18); en el S&P mejora (a 40 días de −10.337 $ y factor 0,91 a +12.402 $ y 1,14; a 80 días 1,54 sube a 1,74). Aparte: retrasar a la apertura siguiente mejoró el precio de ejecución en un 75 % de los casos pero redujo el beneficio total, porque se pierden las rupturas rápidas que no retroceden.
+
+**Qué significaría aquí.** Un estudio: medir el nivel de ruido de cada activo y marco (XAUUSD, plata, petróleo, FX, índices) y comprobar si «entrar una barra tarde» y «bandas amplias» ayudan en los ruidosos y dañan en los de tendencia limpia. Hoy las órdenes son a mercado y la señal se calcula al cierre de barra: este estudio diría si conviene retrasar una barra en determinados activos. Es medición, no regla de generación; no choca con las reglas.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 1 — **Valor.** 3 (resultado claro en un par de mercados de otra época; falta ver si se repite en CFD de 30 minutos a 4 horas)
+
+#### Una combinación de periodos solo se acepta si muchas combinaciones vecinas también ganan
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 8, p. 356-357, 359-360.
+
+**Qué dice.** «Si una tendencia de 10 días no gana y una de 20 tampoco, pero la combinación gana, ¿la operarías?» Respuesta: no, salvo que un porcentaje muy grande de las combinaciones ganen o que cada tendencia tenga un propósito con un periodo que lo refleje. En la misma línea: el ordenador sirve para validar una idea, no para descubrirla (p. 331), y un periodo «mejor» de 3 días frente a 20 es difícil de alcanzar con costes reales y mercados rápidos (p. 360). Ejemplo en eurobund (1990 a mediados de 2011, un solo mercado, él avisa de que no basta): media de 40 días, beneficio neto 13.300, factor 1,11, 310 operaciones; de 80 días, 55.620, factor 1,88, 152 operaciones; cruce 40-80, 35.040, 1,45, 229; tres medias 20-40-80, 61.210, 2,80, unas 42 operaciones.
+
+**Qué significaría aquí.** Cuadra con el paso de permutación de parámetros (SPP) y con la matriz de avance (WFM), pero Kaufman da la regla de aceptación en una frase: la estrategia pasa solo si una fracción alta del vecindario de periodos también gana. Se puede medir ya sobre la nube de SPP como «porcentaje de celdas con factor de beneficio mayor que 1» y exigirlo como criterio, en lugar de mirar solo la celda elegida. Con 2 condiciones por estrategia las combinaciones de varias medias del ejemplo no caben en una plantilla, pero la regla de aceptación sí.
+
+**Estado.** YA EXISTE (SPP y CSCV miden la nube de parámetros; el dossier tiene «Rejillas geométricas de parámetros») · AMPLÍA (criterio explícito de fracción de vecinos rentables y la advertencia de que los casos 20-40-80 son un solo mercado) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (formaliza un criterio que ya se mira de forma cualitativa)
+
+#### Un sistema de tendencia gana con pocas operaciones ganadoras, y poner stops o toma de beneficios recorta la cola
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 8, p. 309-311, 317-320.
+
+**Qué dice.** Los precios no son aleatorios: hay más rachas largas que las esperadas por azar y menos cortas (la «cola gruesa»); una media de 40 días sobre bonos, S&P, euro, crudo y oro muestra histogramas de operaciones con una cola derecha muy larga y una izquierda corta; en el S&P, un solo beneficio compensa más de 30 pérdidas del tamaño típico. Perfil del nasdaq-100 a 40 días, 10 años: 150 operaciones, 52 ganadoras (34,7 %), las ganadoras duran 31,65 barras de media y las perdedoras 6,64, hasta 10 pérdidas seguidas (las cifras de importe medio de la tabla salen ilegibles en la extracción y no coinciden entre sí; no las uso). Regla general: porcentaje de aciertos a menudo por debajo del 30 %, la ganancia media debe superar claramente la pérdida media. Frase clave: añadir toma de beneficios o stops «reduce o elimina la posibilidad de capturar la cola, que se ha demostrado necesaria para el beneficio a largo plazo».
+
+**Qué significaría aquí.** Dos usos. Primero, el cribado debería esperar, en una familia de tendencia pura, una fiabilidad del 25-40 % y no descartarla por baja; hoy conviene comprobar que ningún filtro de generación (porcentaje de ganadoras mínimo) mata justo este perfil. Segundo, choca con el paso 24 (stop de ATR leído del MAE) y con los límites de pérdida diaria de las cuentas de fondeo: Kaufman dice que el stop cuesta la cola; la cuenta de fondeo exige límites. Habría que medir, por familia, cuánto beneficio pierde un stop que quepa en el límite diario. No choca con una regla escrita, pero sí con la intención del paso 24.
+
+**Estado.** AMPLÍA (el dossier ya tiene «los sistemas de cruce de medias tienen un stop implícito»; Kaufman añade el coste medido en la cola y el perfil de fiabilidad esperado) — **Tipo.** riesgo — **Locura.** 0 — **Valor.** 4 (afecta directamente a filtros de cribado y al diseño del stop en fondeo)
+
+#### Con más de 200 operaciones en 20 años (unas 10 al año) el factor de beneficio empeora con los costes
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 8, p. 346-349.
+
+**Qué dice.** Para el euro (mercado de tendencia moderada, 20 años) dibuja el factor de beneficio contra el número de operaciones de los cinco sistemas: los periodos que dan más de 200 operaciones en 20 años «no eran tan buenos como los lentos», y por debajo de 1,0 se pierde. Costes de la prueba: 20 $ por operación en futuros, 0,01 $ por acción. Sin ellos «los sistemas muy rápidos muestran resultados mucho mejores de los que pueden lograr». Reglas de prueba que propone: rango de velocidades entre 2-3 y 100 operaciones al año como máximo, mismos 20 años para todo, empezar todas las pruebas el mismo día aunque el periodo corto necesite menos datos, costes realistas, y valorar con factor de beneficio o ratio de información (rentabilidad anualizada entre riesgo anualizado), no con el beneficio neto.
+
+**Qué significaría aquí.** El mínimo de 40-50 operaciones al año del proyecto queda en el extremo rápido de su rango (que él pone hasta 100 al año): ahí los costes pesan mucho. Conviene un estudio sencillo: factor de beneficio frente a operaciones por año por familia y activo, con los costes pesimistas, para ver si hay un codo y si el mínimo de 40-50 debería ser más alto en M30, o si la significancia estadística compensa. La regla de empezar todas las variantes el mismo día ya se cumple en SQX por ventana común.
+
+**Estado.** AMPLÍA (costes pesimistas y mínimo de operaciones ya existen; falta la curva factor de beneficio contra frecuencia) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (comprueba una regla del dueño con datos propios)
+
+#### Elegir el periodo por la longitud media del vaivén: un cuarto del swing
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 8, p. 359-363.
+
+**Qué dice.** Regla sin ordenador: marcar en el gráfico los máximos y mínimos de los movimientos que se quieren capturar, medir su duración media y usar un cuarto como periodo de la media. En IBM de julio de 2000 a mayo de 2002: 8 techos y suelos en 22 meses, vaivén medio de unos 2,75 meses, redondeado a 3, media de 16 días. Con cambio de dirección de la media: 36 operaciones, 20 ganadoras, +114,71 $ por acción sobre un precio de unos 100 $, sin costes. Segunda variante: un periodo igual al peor retroceso a evitar (42 días) esquivó la corrección pero perdió de forma apreciable en los dos años: «es mejor aceptar las pequeñas pérdidas frecuentes que intentar eliminarlas». Y: si una búsqueda automática da un periodo «mejor» de seis meses o más, es un fallo al capturar un movimiento estacional; el periodo debe ser menor que un cuarto de la duración de la tendencia.
+
+**Qué significaría aquí.** Un estudio que mida, por activo y marco horario, la duración mediana de los vaivenes (por ejemplo con un zigzag) y proponga el rango de periodos que SQX puede sortear: un cuarto de esa duración, con margen. Sirve para acotar la paleta de periodos de las familias de tendencia en lugar de barrer todo. Cuidado: medirlo sobre la misma ventana que luego se evalúa es una mirada que cuenta en el ledger; hacerlo solo sobre el IS. El ejemplo de Kaufman es un caso, en una ventana, sin costes.
+
+**Estado.** NUEVA — **Tipo.** generación — **Locura.** 1 — **Valor.** 3 (idea barata y comprobable que reduce el espacio de búsqueda, pero evidencia propia muy débil)
+
+#### Consenso de medias vecinas: confiar en un cambio de tendencia solo si los periodos vecinos coinciden
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 8, p. 363-366.
+
+**Qué dice.** Una media de 20 días que da señal de venta mientras las de 19 y 21 días no la dan indica que un solo dato que sale de la ventana provocó el giro: no hay que fiarse. Los cambios ordenados (todos los periodos cortos giran primero, luego los más largos) son los fiables; los cambios con patrón erráticos en los periodos cortos son ruido. Propone automatizar: tomar un rango de periodos antes del objetivo, ver la dirección de cada uno y o bien promediar las direcciones o bien exigir progresión consistente; extender un poco más allá del periodo objetivo da confirmación a cambio de un pequeño retraso. Es tabla de ejemplo, sin prueba de rendimiento. También sugiere, en vez de elegir un periodo, promediar varios y quedarse con el consenso, con lo que se elimina la dependencia de una sola elección.
+
+**Qué significaría aquí.** Es una condición de plantilla posible: «la dirección de la media de n−1 y n+1 coincide con la de n». Con el límite de 2 condiciones por estrategia, ocuparía una. Antes se mediría como estudio: ¿las señales con vecinos coincidentes ganan más que las demás, en IS? Es una forma de la robustez de la cuenca de parámetros, pero aplicada a cada señal. Sin prueba propia de Kaufman, es idea no medida.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 2 — **Valor.** 2 (idea sin números en el libro; sería un filtro más sobre una señal ya lenta)
+
+#### La dirección de la media y el momento de N días son lo mismo, y suelen ganar al cruce de precio
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 7, p. 284; cap. 8, p. 315-316, 367-368.
+
+**Qué dice.** La dirección de una media simple de n días sube exactamente cuando el precio de hoy es mayor que el de hace n días, así que equivale al momento de n días (precio de hoy menos el de hace n días). Dice: «mantén la pregunta: ¿es mejor que el simple cambio de precio?» y «en la mayoría de los casos los resultados son mejores que con el cruce del precio con la media» porque la media es más suave y el cruce genera más operaciones y más costes. Con periodos grandes la media y el momento se parecen mucho.
+
+**Qué significaría aquí.** Añade un criterio de redundancia: una estrategia cuya señal sea «precio mayor que precio de hace n barras» y otra con «dirección de la media de n» son la misma estrategia; antes de contar ambas como independientes en la cartera o en el ledger, comparar sus señales. Se puede probar con las estrategias supervivientes: correlación de posiciones entre las de familia media y las de momento. No choca con ninguna regla.
+
+**Estado.** NUEVA (no he encontrado en el dossier la identidad media-direccional = momento) — **Tipo.** cartera — **Locura.** 0 — **Valor.** 3 (útil para detectar duplicados disfrazados en la selección de cartera)
+
+#### La pendiente de regresión junto con R: tendencia y consistencia del movimiento
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 6, p. 252-256, 273-276.
+
+**Qué dice.** Una pendiente de regresión lineal da la dirección (compra con pendiente positiva, venta con negativa) y no necesita banda de confianza porque los periodos largos ya suavizan. Pero la misma pendiente puede salir de un movimiento limpio o de uno muy ruidoso; la correlación R de los precios contra la secuencia 1, 2, 3… (con signo, no R²) mide la consistencia: R negativa significa tendencia bajista. Con 60 días, la media es la más lenta, la pendiente la más rápida e inestable, y R aporta otra visión del cambio de tendencia. Sobre bandas de confianza (±1,96 o 2 desviaciones de los residuos): el número de falsas penetraciones baja al alejar la banda pero baja también el total, y «a cualquier distancia siguen quedando muchas señales erróneas»; la pendiente es la mejor aproximación de la dirección. Una regresión detecta antes un cambio de dirección que una media.
+
+**Qué significaría aquí.** SQX ya trae bloques de regresión lineal (`LinearRegression`, `LinRegBarClosesAbove`, `Slope Direction Line`). Habría que añadir R de precio contra tiempo como filtro de calidad de tendencia (condición de una sola línea: R de 60 barras mayor que 0,7, por ejemplo) y medirlo en el estudio de perfil de mercado. El umbral concreto no está en el libro: sería nuestro, y cada umbral probado cuenta en el ledger. No choca con las reglas.
+
+**Estado.** AMPLÍA (existen bloques de pendiente/regresión en la taxonomía; falta el filtro por R y su medición) — **Tipo.** generación — **Locura.** 0 — **Valor.** 2 (idea razonable, sin cifras de eficacia en el libro)
+
+#### Las rachas direccionales largas de los precios no vienen de autocorrelación diaria: en el oro es casi cero
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 6, p. 269-270.
+
+**Qué dice.** Correlograma (autocorrelaciones a 15 retardos) de las primeras diferencias de 20 años de futuros de oro: todos los valores caen aproximadamente entre −0,07 y +0,03; ninguno cerca del 0,40 que justificaría diferenciar de nuevo. Es decir, el cambio de un día no predice el siguiente de forma lineal. Esto convive con su tesis del cap. 8: los sistemas de tendencia ganan por la cola de rachas largas, no por una dependencia diaria.
+
+**Qué significaría aquí.** Dato de referencia para el oro: cualquier estrategia XAUUSD de tendencia no debería esperar edge de autocorrelación lineal de rendimientos diarios; su edge, si lo hay, está en rachas raras. Se puede comprobar en los marcos M30-H4 con el estudio de tendencia o reversión (exponente de Hurst, ADF) que el dossier ya menciona. Valor bajo porque es una cifra de una gráfica ilegible en los valores exactos.
+
+**Estado.** YA EXISTE (dossier: tests de tendencia o reversión, ADF y exponente) · AMPLÍA (cifra de referencia del oro diario y la relación con la cola) — **Tipo.** datos — **Locura.** 0 — **Valor.** 2 (confirma algo esperable con un dato poco preciso)
+
+#### Una regresión da respuesta aunque no signifique nada: umbral de R² y quitar la tendencia antes de correlacionar
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 6, p. 248-249, 259, 262.
+
+**Qué dice.** Mínimos cuadrados «siempre da una respuesta, aunque no haya nada que haga una serie dependiente de otra». Si R² es menor de 0,20 la regresión «no tiene valor práctico». En su ejemplo maíz-soja R² = 0,83; oro-minera (Barrick) con precios o con índices, solo 0,26, aunque la pendiente salió casi 1:1 (1,012). Para correlacionar dos series de precios hay que quitar antes la tendencia y usar variaciones porcentuales (o diferencias en futuros con ajuste de histórico); si no, una tendencia común exagera la correlación. Y el modelo solo es fiable dentro del rango de datos con que se ajustó: fuera de él, la capacidad de predicción baja con el tiempo.
+
+**Qué significaría aquí.** Las correlaciones entre estrategias y entre activos en cartera y en el cribado de mercados adicionales deben calcularse sobre rendimientos (ya se hace en CSCV con rendimientos diarios), no sobre curvas de equity ni precios. Comprobar que ningún informe de la ventana muestre una correlación de niveles. Es práctica estándar.
+
+**Estado.** YA EXISTE (`knowhow/research/cscv-daily-returns.md`) — **Tipo.** proceso — **Locura.** 0 — **Valor.** 1 (práctica estándar ya aplicada)
+
+#### El error de predicción crece con el horizonte: la única predicción útil es la de una barra
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 7, p. 281-283.
+
+**Qué dice.** Con 10 años de General Electric y una regresión móvil de 20 días, la desviación típica del error de la proyección a 1, 2, 3, 5 y 10 días es 1,137, 1,336, 1,519, 1,860 y 2,672. Por eso «cualquier predicción usada en estrategias será a un día». Para ser rentable basta una de dos: acertar más del 50 % de los días con movimientos medios iguales arriba y abajo, o acertar menos del 50 % pero con aciertos más grandes que fallos; «es verdad cuando funciona y no cuando no», y los periodos de cálculo cortos no tienen tendencia (remite a su cap. 1).
+
+**Qué significaría aquí.** Como estudio de decaimiento de la señal: para cada superviviente, rentabilidad media condicionada a la señal a 1, 2, 3, 5 y 10 barras (el dossier tiene un estudio parecido de beneficio abierto medio desde el día 0 al 150). Ayudaría a fijar la salida por tiempo y a ver si el edge vive en la barra siguiente o tarda. La cifra de GE no se traslada a oro; solo la forma.
+
+**Estado.** YA EXISTE (dossier: «beneficio abierto medio de todas las señales del día 0 al 150») · AMPLÍA (número de partida del libro) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (la idea ya está en el dossier; esto solo añade una cifra de otro activo)
+
+#### Distribución de periodos para optimizar: el suavizado exponencial se reparte en escala logarítmica
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 7, p. 295-301; cap. 8, p. 337.
+
+**Qué dice.** La constante estándar 2/(n+1) deja un impacto residual de datos antiguos de entre 13 % y 14 % (frente a la media simple, que descarta del todo). Un suavizado del 10 % es más lento que una media de 10 días y uno del 5 % más lento que una de 20. Si se prueban constantes equiespaciadas (0,1; 0,2; … 0,9), la mitad de las pruebas caen en medias de 3 días o menos: 0,10 equivale a 20 días, 0,20 a 10, 0,30 a 6, 0,50 a 3, 0,90 a 1,15. La relación entre constante y días es casi logarítmica. Para una muestra representativa propone duplicar el periodo (5, 10, 20, 40, 80, 160) para mantener el mismo cambio porcentual y evitar que los periodos largos, que se parecen mucho entre sí, pesen más al promediar. Una frase suya (p. 300) dice que las constantes equiespaciadas son mejor distribución de prueba que los días equiespaciados, lo que contradice la recomendación de duplicar; el texto es ambiguo y me quedo con la de duplicar, que repite en p. 315 y 337.
+
+**Qué significaría aquí.** El dossier ya tiene rejillas geométricas para SPP. Lo nuevo: al promediar resultados por periodo (por ejemplo en el estudio del cap. 8 comparado) ponderar por cuántas octavas cubre cada celda, y confirmar cómo SQX sortea periodos en los bloques exponenciales (si sortea la constante o los días).
+
+**Estado.** YA EXISTE (dossier: «Rejillas geométricas de parámetros») · AMPLÍA (equivalencia constante-días y el sesgo al promediar) — **Tipo.** generación — **Locura.** 0 — **Valor.** 2 (confirma y precisa algo ya anotado)
+
+#### Bollinger de 2 desviaciones no cubre el 95 %: cubre un 87 % en precios reales
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 8, p. 323-326.
+
+**Qué dice.** Como los precios no son normales, dos desviaciones típicas equivalen a una banda del 87 % (con normalidad serían el 95,4 %). Una vez el precio sale de una banda de Bollinger suele permanecer fuera varios días seguidos («alto momento»). Tras una racha volátil la banda forma una «burbuja» que tarda en estrecharse. Una corrección de McNicholl usa constante 0,15 y multiplicador 2,5: no quita la burbuja, pero corrige más rápido. Bollinger recomienda confirmar con volumen y amplitud de mercado y considera la volatilidad cíclica sin periodo regular (muy baja anuncia alta). Entradas por banda de ancho de rango también sirven de salida por la línea central: reduce a la mitad el tamaño de la orden y permite reentrar en la misma dirección (p. 327-328).
+
+**Qué significaría aquí.** El multiplicador 2 no es un percentil; si se prueba un umbral de banda en un estudio, medir su frecuencia real de cruce en cada activo en lugar de suponer 5 %. Las bandas con salida en la línea central son compatibles con una dirección y entradas a mercado. Bloques de volumen o de amplitud no existen en CFD de oro y divisas y no se aplican.
+
+**Estado.** AMPLÍA (dossier: Bollinger es el 12 % del uso de indicadores; falta la cifra del 87 %) — **Tipo.** datos — **Locura.** 0 — **Valor.** 2 (precisión útil para fijar umbrales; sin prueba de rentabilidad)
+
+#### Gráficos horarios muestran sobre todo ruido; las tendencias rápidas ganan en el backtest pero son inestables
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 8, p. 313, 330-331, 341-342, 360.
+
+**Qué dice.** «Cuanto más te alejas del gráfico, más clara la tendencia: en el semanal más que en el diario y en el horario, sobre todo ruido.» Las tendencias rápidas «siempre muestran beneficios en el backtest, pero tienden a ser menos estables e inconsistentes», y los datos de baja frecuencia dan mejor rendimiento con tendencia larga. Con media móvil a lo largo de 20 años: eurodólar, euro y crudo ganan con la mayoría de periodos pero pierden en los muy cortos; el S&P pierde casi siempre; las tres acciones pierden en casi todos los periodos. Para el eurodólar los resultados son estables entre 25 y 160 días. Dice que no queda claro que un gráfico intradía tenga tendencias persistentes y que no puede asegurarlo.
+
+**Qué significaría aquí.** Es el punto principal en contra del uso de M30 y H1 para familias de tendencia pura: Kaufman mide en datos diarios, así que no es una prueba directa sobre CFD de 30 minutos, pero el aviso pide mirar con más sospecha las estrategias de tendencia rápidas. Estudio: comparar, por activo, el factor de beneficio medio de las familias de tendencia en M30, H1 y H4 con los mismos costes pesimistas, y ver si H4 domina. Si es así, la prioridad de generación de tendencia pura sería H4.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 0 — **Valor.** 4 (decide en qué marcos horarios gastar CPU de tendencia, con CFD y costes reales)
+
+#### Esperar una barra tras la señal pierde sobre todo las rupturas rápidas; no inventes un retroceso de entrada
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 8, p. 316-317, 328-329.
+
+**Qué dice.** Entre las reglas para mejorar la entrada (cierre tras la señal, apertura siguiente, retraso de 1 a 3 días, retroceso del 50 %, riesgo máximo) avisa: «una orden contingente que se pierde está garantizada de ser un beneficio». Prueba de años en seguidores de tendencia: dejar la orden calculada al cierre para la apertura siguiente mejoró el precio de ejecución en un 75 % de las veces y bajó el beneficio total. Propone combinar: entrar tras un retroceso de 0,5 ATR o en el siguiente cierre, lo que ocurra primero. Además insiste en coherencia: la señal calculada al cierre implica entrar en el cierre; esperar a la apertura de la barra siguiente significa que no se sigue el sistema probado, por lo que se debe probar la ejecución real.
+
+**Qué significaría aquí.** No he comprobado cómo ejecuta SQX la orden tras la señal; lo que sí hay que vigilar es que lo probado en SQX y lo operado en MT5 sea la misma regla de ejecución. Un estudio sobre si una entrada con límite a retroceso de ATR pierde más rupturas rápidas de las que ahorra choca con la regla de «solo a mercado», por lo que sería una consulta al dueño, no una prueba que lanzar.
+
+**Estado.** AMPLÍA (dossier: prueba de retraso de señal) — **Tipo.** proceso — **Locura.** 0 — **Valor.** 2 (confirma que lo actual es coherente; no abre nada nuevo sin romper la regla de órdenes a mercado)
+
+#### Volatilidad y número de contratos: tamaño de posición inverso al ATR
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 8, p. 352-353, 355.
+
+**Qué dice.** Para el sistema de medias de Donchian de 5 y 20 días: tamaño de posición = inversión entre (ATR × valor del punto), con el ATR del periodo largo. Aplicado a maíz desde 1960, sin costes, sin probar parámetros y en un solo mercado, el sistema de Donchian modernizado fue rentable de forma continuada durante 50 años; él mismo avisa de que los costes fueron mucho más altos hasta mediados de los noventa y que es un solo ejemplo. En los índices ajusta la volatilidad anualizada de la serie a un 12 % para comparar (Golden Cross, 11 años desde mediados de 1999: pasivo −7,8 %, con la cruz 66,7 % en índice y 36,7 % en futuros).
+
+**Qué significaría aquí.** El dimensionado por ATR ya es regla estándar en cartera y fondeo. Lo único aprovechable es la comparación con la volatilidad objetivo igual para todas las series al comparar rendimientos; el Golden Cross es de bolsa y no aplica. Valor bajo.
+
+**Estado.** YA EXISTE (portfolio: dimensionado por volatilidad) — **Tipo.** cartera — **Locura.** 0 — **Valor.** 1 (práctica estándar, evidencia de un solo mercado sin costes)
+
+### 9.4 · Momentum y osciladores, estacionalidad y ciclos (caps. 9-11)
+
+Estos tres capítulos cubren los indicadores de cambio de precio (momentum, RSI, estocástico, MACD, divergencias), los patrones estacionales y de calendario, y el análisis de ciclos (Fourier, MESA, Hilbert). Kaufman casi no da pruebas con cifras en el capítulo 9: lo valioso son sus advertencias. Las tres ideas que más sirven al proyecto son: entrar contra el momentum en el extremo pierde, mientras que entrar en un retroceso dentro de una tendencia sí tiene sentido; los umbrales fijos de un oscilador no valen porque la escala del momentum cambia con la volatilidad; y la estacionalidad solo se sostiene si hay una razón de fondo y se vuelve frágil con pocos años (casi todo su material es de cereales y acciones, no de oro).
+
+#### Entrar contra el momentum en el extremo pierde; seguirlo, no
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 9, p. 380.
+
+**Qué dice.** Kaufman probó, en una buena muestra de mercados de futuros, la entrada «agresiva» (vender cuando el momentum supera el umbral superior, comprar cuando perfora el inferior) con un stop al cierre del día. Por error el ordenador hizo lo contrario (compró al cruzar el umbral superior) y salieron beneficios pequeños pero constantes. Conclusión suya: los periodos de momentum alto duran lo bastante como para capturar ganancias, y la entrada agresiva contra el movimiento es una estrategia perdedora. Añade: «que el momentum decline no significa que el precio caiga». No da cifras de la prueba.
+
+**Qué significaría aquí.** Es un aviso para la familia de reversión a la media: un oscilador en extremo, por sí solo, no es una razón para entrar en contra. Habría que medir, con el mismo estudio del mono (entrada aleatoria) que ya usa el proyecto, si las plantillas de reversión que entran en el extremo ganan al azar y en qué canal. Su lectura inversa (continuación tras superar el umbral) se puede probar como plantilla propia de ruptura de momentum. Ojo: Kaufman no da números, así que es una hipótesis, no un resultado que podamos copiar.
+
+**Estado.** AMPLÍA (el dossier «Filtro de momentum sobre una entrada de reversión: los movimientos pequeños revierten, los grandes no» dice algo parecido; aquí se añade la prueba invertida por error) — **Tipo.** estudio — **Locura.** 1 — **Valor.** 3 (avisa de un fallo probable de toda la familia de reversión, sin cifras que lo cuantifiquen)
+
+#### La escala del momentum cambia con la volatilidad: los umbrales fijos no sirven
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 9, p. 379-380.
+
+**Qué dice.** En el S&P entre 2005 y 2011, las bandas de entrada del momentum a 20 días habrían estado en torno a ±30 en 2006 (volatilidad muy baja). En 2007, una compra a −30 habría acumulado una pérdida abierta de 120 puntos al caer el momentum a −150; habría que ensanchar a ±75, y en 2008 cualquier compra contra la caída habría perdido todo el capital. Con la volatilidad baja otra vez, las bandas hay que estrechar. Dice que el problema del momentum para el momento de entrada es que «la escala es impredecible», y propone bandas que se ajusten solas o una forma distinta de medir. Cita como bandas posibles: un porcentaje del máximo posible, o 2 desviaciones típicas de los valores del momentum (así solo un 5 % de los valores las superan). Los stops deben crecer con la volatilidad: un porcentaje del precio o un múltiplo de la volatilidad.
+
+**Qué significaría aquí.** Confirma una regla de generación: cualquier umbral de oscilador o de distancia debe ir normalizado (por ATR, por desviación típica móvil o por rango del periodo) y nunca en puntos de precio. Es comprobable en el banco actual: cuántas estrategias llevan umbrales en puntos brutos y cómo rinden en los años de volatilidad distinta (oro 2008, 2020, 2022). También sirve para el riesgo en cuentas fondeadas: el stop y el tamaño deben ir en unidades de volatilidad.
+
+**Estado.** YA EXISTE en parte (el RSI y el estocástico ya van acotados 0-100; el dossier lo recoge en entradas de normalización por volatilidad) — **Tipo.** generación — **Locura.** 0 — **Valor.** 2 (práctica estándar; lo útil es la prueba concreta del S&P que la justifica)
+
+#### Entrar en el retroceso dentro de la tendencia, con un oscilador corto: el que más sentido tiene
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 9, p. 376-377, 380, 418, 426.
+
+**Qué dice.** Usar el oscilador no como estrategia sino como temporizador de una tendencia: cuando la señal de tendencia está activa, se espera a que un oscilador corto (momentum a 6 días con tendencia de 30 a 50, o estocástico de 5 días con media de 40) marque un retroceso. Regla concreta: comprar con la media de 40 días al alza y el estocástico de 5 días por debajo de 20; vender con la media a la baja y el estocástico por encima de 80. Dice que la tendencia da protección: si el precio sigue cayendo, la tendencia cambia y la posición se cierra, sin necesidad de stop. Consejos: salir de inmediato cuando cambia la tendencia (esperar «el momento perfecto» para salir arriesga mucho); añadir una regla que fuerce la entrada tras n días para no perder el movimiento entero; y afinar el periodo del oscilador para que dé al menos uno, mejor dos, extremos en la espera que uno tolera (ejemplo: si se acepta esperar 2 días, un oscilador de 3 periodos diarios o de 10 de barras de 1 hora). Dice también que los valores del oscilador que no son extremos «dan muy poca información útil».
+
+**Qué significaría aquí.** Es exactamente una plantilla de 2 condiciones (tendencia fija más un hueco aleatorio con un oscilador corto) y encaja con las reglas 13 y 14 del proyecto. Es candidato a familia «retroceso en tendencia» en H1 y H4 de oro: la condición de tendencia es la fija y el hueco aleatorio se llena con osciladores cortos. Ya existe una paleta de ese tipo (`pullback_base_v3`), así que lo nuevo es la regla de «entrada forzada tras n días» y el criterio de calibrar el periodo contra la espera tolerada. Choca con una regla del proyecto en un punto: «no hace falta stop» no vale para las cuentas fondeadas, donde el límite de pérdida diaria obliga a tener stop.
+
+**Estado.** YA EXISTE (paleta `sqx/blocks/palettes/pullback_base_v3.yaml`); AMPLÍA con la entrada forzada tras n días y el criterio de calibración — **Tipo.** generación — **Locura.** 0 — **Valor.** 3 (idea sólida y ya cubierta; las dos adiciones son pequeñas pero comprobables)
+
+#### RSI de 2 periodos de Stokes: cambió de seguir a revertir hacia 1998
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 9, p. 389-391.
+
+**Qué dice.** Michael Stokes (blog MarketSci, 2008) cambia el RSI (índice de fuerza relativa de Wilder) para que cada cambio diario sea de 2 días en vez de 1. Regla sobre el S&P: comprar al siguiente cierre cuando el RSI de 2 días cruza por debajo de 10, vender en corto cuando cruza por encima de 90, y salir un día después al cierre. El gráfico que Kaufman reproduce, de 1970 a 2008, muestra que la rentabilidad se invirtió hacia 1998: de 1970 a 1998 el RSI alto era un buen indicador de tendencia (el S&P seguía subiendo), y desde 1998 es mucho mejor como reversión a la media. Con escalado de la posición (el porcentaje sube cuanto más extremo el RSI) y separando largos de cortos de 2000 a 2008, ambos lados funcionaron, algo poco habitual porque la mayoría de mercados tiene sesgo alcista. Kaufman avisa: las operaciones de un día son muy sensibles a los costes, hay que comprobar que el beneficio por contrato cubre comisiones y deslizamiento; y esperar a que el RSI cruce 50 para salir no funciona, porque el RSI puede quedarse mucho tiempo por encima o por debajo de 50. Las cifras del gráfico no se leen en el texto extraído.
+
+**Qué significaría aquí.** Es el caso más claro del libro de que una misma regla cambia de signo con el periodo: un motivo más para que el estudio de estabilidad por periodos (walk-forward) mire el signo y no solo el tamaño del beneficio. Como regla de generación, indica que una salida por tiempo (1 a 3 barras) es la compañera natural de una entrada de reversión con oscilador de periodo muy corto. Con M30 y H1 de oro, el coste por operación de un trade de una barra es el punto débil: comprobar con la tabla de costes del proyecto antes de lanzar. Ambos lados funcionando no ayuda directamente porque el proyecto separa largo y corto en plantillas distintas, pero permite que cada una se pruebe sola.
+
+**Estado.** NUEVA (el dossier cita a Connors y su RSI corto, no la prueba de Stokes ni el cambio de régimen de 1998) — **Tipo.** estudio — **Locura.** 1 — **Valor.** 3 (el cambio de signo es el aviso más concreto del capítulo; la regla en sí es sencilla)
+
+#### El 70-30 de Wilder queda demasiado cerca; el periodo del RSI debe elegirse por cuántos movimientos sostenidos hay
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 9, p. 387-388.
+
+**Qué dice.** Un estudio de Aan (1985) sobre el RSI de 14 días halló que los techos y suelos medios se agrupan alrededor de 72 y 32; es decir, el 50 % de los valores cae entre 72 y 32, lo que equivale a unos 0,675 desviaciones típicas. De ahí que los niveles 70-30 de Wilder estén demasiado juntos para ser selectivos; Kaufman propone el equivalente de 1,5 desviaciones típicas como compromiso entre frecuencia de operaciones y riesgo, y dice que es más seguro equivocarse por el lado de menos riesgo. Si el RSI da demasiadas operaciones, mejora combinar un intervalo más largo y bandas más altas. Si se alarga un movimiento sostenido más allá del periodo del RSI (14 días), el RSI se queda arriba y luego se aplana: hay que elegir un periodo para el que haya pocos movimientos sostenidos grandes. Para más extremos se puede bajar a 10 con zonas 80-20. Otra variante suya: sumar cambios de n días en vez de días sueltos para suavizar (con 14 grupos de 2 días se necesitan 28 días).
+
+**Qué significaría aquí.** Dos cosas comprobables. Primero, qué umbrales de RSI deja dibujar el constructor en los huecos aleatorios: si salen valores como 30 o 70 casi siempre, la frecuencia de señales será alta y el coste por operación mayor. Segundo, el periodo del oscilador contra la distribución de rachas sostenidas del activo: un estudio descriptivo de «cuánto dura un movimiento sin retroceso» por activo y marco temporal que oriente el rango de periodos permitidos en cada paleta.
+
+**Estado.** AMPLÍA («Gramática completa de eventos de umbral para osciladores» recoge los cruces, no la distribución real del RSI ni el 1,5 desviaciones) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (dato de 1985 sobre acciones; sirve como hipótesis para elegir rangos, no como resultado)
+
+#### Estocástico en tendencia sostenida: se queda fuera de la zona, hay que combinarlo con la tendencia, y salir por el oscilador cuesta caro
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 9, p. 394-396.
+
+**Qué dice.** En una tendencia a la baja sostenida, los valores del estocástico caen por debajo del umbral inferior y se quedan allí mucho tiempo; aunque el cálculo móvil pretende autoajustarse, lo práctico es combinar sus señales con una tendencia (media de 60 días y estocástico de 20 días en el S&P, de diciembre de 2001 a septiembre de 2002: dos buenas ventas, cuando %D pasa de 80 y cruza hacia abajo la línea de señal). Aviso general: si el precio sube y no retrocede no hay señal, o llega cuando el beneficio ya pasó. «Retrasar la entrada es una oportunidad perdida, pero retrasar la salida es una pérdida real»; por eso es peligroso usar una regla de temporización para salir. Una cifra concreta: llegar a los valores extremos 0 y 100 del estocástico rápido exige siete cierres consecutivos en máximos (o mínimos).
+
+**Qué significaría aquí.** Refuerza la regla del proyecto de que el oscilador solo aporta como segunda condición, junto a una condición de tendencia, y de que las salidas no deben depender del mismo oscilador de entrada. Para la plantilla de retroceso: la salida debe ser independiente (cambio de tendencia, objetivo en ATR o tiempo), no «cuando el estocástico cruza».
+
+**Estado.** YA EXISTE (el diseño de dos condiciones con tendencia fija y un hueco aleatorio, regla 14 de CLAUDE.md) — **Tipo.** generación — **Locura.** 0 — **Valor.** 2 (confirma el diseño actual; la frase sobre salida y entrada es útil como criterio)
+
+#### Divergencia precio-momentum: reglas exactas, cómo programarla y por qué llega tarde
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 9, p. 418-426.
+
+**Qué dice.** Divergencia: precio y momentum van en direcciones opuestas (precio sube y momentum baja = bajista). Cuanto más grande, más probable el giro; la que se forma en meses anticipa un giro mayor que la de horas; es mejor cuando el indicador parte de un extremo. Problema: se ve tarde, porque al reconocer el segundo pico de momentum este ya suele estar cerca de su nivel neutro (50 o 0). Reglas de salida: cerrar cuando el momentum supera el último pico (la divergencia desapareció), cuando llega al nivel neutro, o cuando el MACD cruza la señal hacia arriba. Anticipar: entrar cuando el precio rompe la resistencia anterior y el momentum actual es menor que el del pico previo; o dividir el capital en tres tercios (primer máximo, momentum a un 15-20 % del pico anterior, cruce de señal). Si solo se toma una, la segunda; si el único es el tercero, el precio ya cayó. Programa de Kaufman: precios por oscilaciones del 2 a 5 %, estocástico de 5 a 10 periodos, diferencia mínima de 5 puntos entre picos de momentum, salida cuando %D llega a 50 (o a 60 o 40) o %K toca 20; reconoce que «no siempre encuentra la divergencia que el ojo ve», sobre todo en techos redondeados sin oscilaciones. Alternativa: comparar las pendientes de regresión del precio y del momentum (doble suavizado 20-20-20) y vender cuando convergen más allá de un umbral.
+
+**Qué significaría aquí.** El dossier ya trae «Divergencia precio-momentum con una definición programable» (de Katz, con RSI «terrible» y MACD distinto); Kaufman aporta los parámetros concretos y la versión por pendientes, que evita buscar picos. Sería un bloque a medida de SQX (divergencia por pendientes) o, mejor, un estudio previo que mida la tasa de éxito de la divergencia en H1/H4 de oro antes de gastar CPU. Dos condiciones por lado se cumplen (la divergencia cuenta como una).
+
+**Estado.** AMPLÍA (dossier: «Divergencia precio-momentum con una definición programable»; aquí los parámetros 2-5 %, 5 puntos, salida a 50 y la versión por pendientes) — **Tipo.** estudio — **Locura.** 1 — **Valor.** 3 (idea muy popular, difícil de programar y sin cifras de rentabilidad en el libro)
+
+#### TSI y TRIX: suavizar la diferencia primero reduce el retardo; anticipar por la pendiente casi nula
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 9, p. 404-407.
+
+**Qué dice.** El True Strength Index de Blau suaviza dos veces (exponenciales de r y s periodos) los cambios de 1 día y los divide por lo mismo con valor absoluto; así queda entre −100 y +100. Tiene poco retardo para lo suave que sale, porque primero acelera (primeras diferencias) y luego frena. Mejora de Kaufman: sustituir el cambio de 1 día por el de n días (por ejemplo 10-20-20) para suavizar más con un retardo algo mayor. Con una línea muy suave se puede anticipar el giro: en vez de esperar a que cambie de signo la pendiente, vender cuando la pendiente es casi nula y sigue aplanándose, lo cual reduce mucho el retardo a costa de algunas señales falsas. TRIX (Hutson) hace tres suavizados exponenciales y diferencia al final (más suave aún que el TSI, con retardo algo mayor). Se opera por cruce de cero, o por 2-3 periodos consecutivos de subida o bajada. No hay cifras de rentabilidad.
+
+**Qué significaría aquí.** Si el catálogo de indicadores de SQX no incluye TSI o TRIX hay que construir un bloque a medida (regla de sqx-custom-block). Es de poca prioridad: son tendencia suavizada y no una familia nueva. Lo útil para la generación es la idea de «pendiente casi nula» como condición de salida o de cambio de régimen, ya expresable con la pendiente de una media.
+
+**Estado.** NUEVA (el dossier no menciona TSI ni TRIX) — **Tipo.** generación — **Locura.** 1 — **Valor.** 1 (indicadores de tendencia más suaves sin prueba de que ganen a una media)
+
+#### Velocidad y aceleración: un mercado lateral exige las dos cerca de cero
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 9, p. 414-416.
+
+**Qué dice.** Velocidad es la primera diferencia (momentum) y aceleración la segunda. Para detectar un mercado lateral no basta con velocidad cercana a cero (el precio puede haber subido y bajado con fuerza y quedar igual que hace n días): hace falta que velocidad y aceleración estén cerca de cero. Ejemplo con una serie de 12 valores: la aceleración se vuelve negativa en el sexto, aunque la velocidad siga siendo positiva (el precio sigue subiendo, pero más despacio), y esa señal precede al giro de precio un día. Las medias móviles simples, ponderadas y exponenciales tienen velocidad constante y no sirven para este esquema; solo valen las de segundo orden.
+
+**Qué significaría aquí.** Una condición de régimen de dos medidas (|pendiente| baja y |cambio de pendiente| bajo) como filtro de «lateral» para plantillas de reversión, medible en el perfil de mercado ya existente. Es un estudio de bajo coste: se calcula sobre los datos que ya hay y se compara contra el índice de eficiencia (efficiency ratio) que el mapa condicional ya usa. No lleva cifras de rentabilidad.
+
+**Estado.** AMPLÍA (el dossier ya usa el efficiency ratio de Kaufman para tendencia y lateralidad; aquí una segunda medida distinta) — **Tipo.** estudio — **Locura.** 1 — **Valor.** 2 (variante de algo ya medido, sin evidencia de que sea mejor)
+
+#### Oscilador con filtro ADX: operar la reversión solo con tendencia débil
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 9, p. 417.
+
+**Qué dice.** Regla de Lars Kestner: oscilador = media de 10 días menos media de 50 días del cierre. Si el oscilador baja respecto a ayer y el ADX de 14 es menor que 30, vender en la siguiente apertura; si sube y el ADX es menor que 30, comprar. Salir al contrario cuando el oscilador gira. No da resultados en la página.
+
+**Qué significaría aquí.** Una plantilla de 2 condiciones por lado (el oscilador de dos medias más un filtro ADX) que cumple la regla 14. El dossier ya recoge que los osciladores solo funcionan con el ADX cayendo; aquí se añade una regla programable con umbral 30. Se podría construir como plantilla de reversión con el ADX como condición fija y el hueco aleatorio para el oscilador.
+
+**Estado.** AMPLÍA (dossier: «Pendiente del ADX: los osciladores solo funcionan con el ADX cayendo») — **Tipo.** generación — **Locura.** 0 — **Valor.** 2 (regla sin resultados publicados; útil como plantilla)
+
+#### Banda que se ajusta sola: el índice de divergencia (diferencia de medias entre su desviación típica)
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 9, p. 384-385.
+
+**Qué dice.** Índice de divergencia (DI): media rápida de 10 días menos media lenta de 40 días, dividido entre la desviación típica de los cambios diarios del periodo lento. Las bandas de entrada son ±1,0 por la desviación típica del propio DI, de modo que se ensanchan o estrechan con la volatilidad. Reglas: comprar cuando el DI baja de la banda inferior dentro de una tendencia al alza; vender cuando sube de la superior dentro de una tendencia a la baja; salir al cruzar el cero. Se muestra sobre futuros del S&P 500 sin cifras de rendimiento.
+
+**Qué significaría aquí.** Es una solución concreta al problema de las bandas de escala impredecible. Una plantilla de dos condiciones (tendencia más DI bajo su banda) normalizada de forma automática, sin parámetros en puntos. Se puede construir como bloque a medida y probar contra el mono en H1/H4 de oro.
+
+**Estado.** NUEVA — **Tipo.** generación — **Locura.** 1 — **Valor.** 3 (resuelve la escala por construcción y es una plantilla directa de 2 condiciones; sin cifras publicadas)
+
+#### Estacionalidad: con futuros ajustados hacia atrás el patrón sale distinto que con precio al contado
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 10, p. 430-433, 466-469.
+
+**Qué dice.** Comparó la estacionalidad del trigo con precios al contado (1966-2011) y con futuros continuos ajustados hacia atrás. El contado da el patrón clásico (mínimos en mayo-junio por la cosecha); los futuros ajustados no, y con la mediana salen mínimos exagerados en julio. Los futuros ajustados llegan a precios absurdos hacia atrás (trigo en 1965: 1,72 dólares al contado y 12,45 ajustado), por lo que no se pueden usar porcentajes: con diferencias de precio, los años recientes, mucho más volátiles, dominan el resultado. En el maíz, el patrón de futuros ajustados difiere del contado y del contrato de diciembre aislado. Su conclusión: para estacionalidad hay que usar los precios exactos del momento (contado o un único contrato), y tener claros los sesgos del dato.
+
+**Qué significaría aquí.** El proyecto negocia CFD sin rolar (oro) o con rolado distinto (petróleo, UKOIL/USOIL): antes de cualquier estudio estacional sobre petróleo hay que comprobar si la serie de CFD tiene saltos de rolado y si se mide en rendimientos porcentuales y no en puntos. Para el oro, el CFD sigue al contado y este problema no aplica. Como estudio sería solo una regla de higiene del dato.
+
+**Estado.** AMPLÍA (el dossier tiene «Estacionalidad del oro y de las materias primas con receta sin fugas»; no menciona el sesgo del ajuste hacia atrás) — **Tipo.** datos — **Locura.** 0 — **Valor.** 2 (aviso útil para el petróleo, nulo para el oro)
+
+#### La estacionalidad exige una causa real y se prueba para validar, no para descubrir
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 10, p. 470-473, 484.
+
+**Qué dice.** Anécdota de un académico que halló 18 años seguidos en que a una buena cosecha de café en Sudamérica le seguía una buena de trigo en Europa; había probado centenares de combinaciones, vendió trigo y fracasó el primer año. Moraleja de Kaufman: «el ordenador sirve para validar una creencia, no para crearla»; hace falta una razón fundamental clara. Tres estudios sobre las mismas materias primas (Grushcow y Smith, ContiCommodity con solo 10 años, Bernstein con 46 a 53 años de contado) discrepan a menudo; el de 10 años es el más distinto. Solo los agrícolas y el cobre muestran estacionalidad consistente; plata, divisas y mercados financieros no. Para mercados financieros pregunta si «la demanda de dinero es mayor en verano» y concluye que «es muy poco probable»; si un patrón no se explica por fundamentos, evitarlo. Un patrón de calendario concreto no debe afinarse a un día (la naturaleza no es precisa): usar mensual o, como mucho, semanal.
+
+**Qué significaría aquí.** Respalda la regla 15 del proyecto (sin bloques de calendario en la generación) con un argumento de overfitting. Para el oro, Kaufman no ofrece ninguna estacionalidad fundamentada (menciona demanda de joyería y refugio). Cualquier estudio estacional del oro debería partir de una causa declarada de antemano (el dossier cita Año Nuevo chino y Diwali) y medirse con la correlación entre mitades antes de gastar CPU. Choca con la regla 15 si se quiere meter el mes o el día en un bloque: solo valdría como estudio o como régimen, nunca como bloque de generación.
+
+**Estado.** YA EXISTE (dossier: «Validar un perfil estacional antes de gastar CPU: correlación entre mitades» y «Puerta de validez de cualquier perfil estacional: correlación entre mitades (Cycle-R)») — **Tipo.** proceso — **Locura.** 0 — **Valor.** 2 (confirma una regla ya adoptada; la anécdota sirve como argumento para el manual)
+
+#### Los patrones estacionales cambian y unos pocos años raros los deforman
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 10, p. 440, 452-453, 472, 478-479.
+
+**Qué dice.** En el algodón (1973-2011), promediar solo los dos últimos años da un patrón muy distinto del largo (salto del 17 % en octubre, en plena cosecha). Los extremos no estacionales suelen ir hacia precios más altos: en septiembre el mayor movimiento mensual al alza fue del 45 %, frente a una caída máxima de unos 22 % en octubre. En el trigo, el mínimo estacional pasó de junio (1966-2010) a abril en 2001-2010. En el S&P de 1982 a 2010, el patrón de verano flojo cambió entre los primeros 19 años y los últimos 10, y el dicho «compra en mayo y vete» ya no vale. Recomienda la mediana mejor que la media, no quitar años raros sin más (lo compara con Long Term Capital Management) y ventanas más anchas al anticipar el mínimo.
+
+**Qué significaría aquí.** Para cualquier perfil estacional que el proyecto estudie (por ejemplo del oro), medir la estabilidad partiendo los años en mitades y con submuestras recientes, y comparar media con mediana. Es otra forma de decir que un patrón de calendario hallado en 20 años puede no valer en los últimos 5. Choca con el uso en generación (regla 15): solo para estudio.
+
+**Estado.** YA EXISTE (dossier: «Puerta de validez de cualquier perfil estacional» y la regla de correlación entre mitades) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (confirma; añade la advertencia de media contra mediana)
+
+#### Una estacionalidad real aparece como volatilidad que crece poco a poco, no como un salto
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 10, p. 453-454, 473.
+
+**Qué dice.** Para confirmar que un patrón es estacional y no una casualidad, mide la volatilidad mensual (cambio porcentual de precio por mes, promedio, máximo y mínimo). En el aceite de calefacción (1984-2010), abril a junio son los mínimos de volatilidad y diciembre-enero los máximos; la subida y bajada gradual alrededor del mes pico indica una preocupación estacional que se acumula, mientras que un choque aislado produciría un salto en un solo mes sin crecimiento previo. Con ello propone reducir el tamaño de la posición en los meses de más riesgo y de poca actividad.
+
+**Qué significaría aquí.** Un test barato de realidad para cualquier perfil estacional del petróleo o el oro: la volatilidad mensual debe seguir una forma suave (por ejemplo, rampa de 2-3 meses) para que el patrón de rendimiento valga la pena. Útil también para el riesgo en cuentas fondeadas (reducir tamaño cuando la volatilidad estacional sube), aunque ajustar tamaño por mes sería un uso de calendario; de nuevo, estudio o régimen, no bloque.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 1 — **Valor.** 2 (complementa la correlación entre mitades con un segundo criterio; solo hay un ejemplo en el libro)
+
+#### Clasificar el año por su posición en el rango de los últimos 5 años para saber si es estacional
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 10, p. 459-468.
+
+**Qué dice.** Con el maíz, Kaufman separa años «alcistas» y «bajistas» (en 41 años, 16 alcistas y 25 bajistas; alcista es que el promedio de julio a diciembre supere el de enero a junio). El patrón estacional normal solo aparece en los bajistas. Para decidir antes si el año será estacional, usa la posición del precio dentro del rango máximo-mínimo de los 5 años anteriores (como un estocástico crudo): si a final de abril está en el 50 % inferior, comprar y salir a final de julio; si a final de julio está en el 35 % superior, vender hasta octubre; si a final de enero ya está en el 35 % superior, vender hasta octubre. Sobre contado de maíz, 37 años, el resultado es bueno pero impracticable porque exige contado. Con el contrato de diciembre aislado, vender a final de febrero y salir a final de julio fue «consistentemente rentable», comprar de julio a octubre quedó en equilibrio; con futuros ajustados, 12 de 21 años ganadores, con ganancias muy superiores a las pérdidas. Advertencia mía: la definición de año alcista usa información de todo el año, así que solo clasifica la historia y no sirve en vivo.
+
+**Qué significaría aquí.** La idea transferible es el filtro de contexto «posición del precio en el rango de los últimos 5 años» como régimen para condicionar cualquier estrategia, que el mapa condicional del proyecto podría medir. No se transfiere el maíz ni el calendario. Como regla de generación choca con la regla 15 (usa meses de entrada y salida).
+
+**Estado.** NUEVA (como régimen de rango multianual) — **Tipo.** estudio — **Locura.** 2 — **Valor.** 2 (la idea de régimen es aprovechable; el sistema de maíz no)
+
+#### Efectos de calendario en índices (festivos, fin de mes, noviembre-abril): fuertes antes y flojos después
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 10, p. 479-483.
+
+**Qué dice.** Merrill (1897-1964): el día antes de los festivos el mercado sube el 67,9 % de las veces frente al 50,8 % el día después; de Acción de Gracias a Año Nuevo, 74 %; del 4 de julio al Día del Trabajo, 69 %. Fosback comprando dos días antes de un festivo mayor y vendiendo el día antes (1928-1975) ganó un 880 % con un 70 % de operaciones ganadoras, mientras mantener largo el resto de días perdía un 41 %. Un estudio posterior de Freeburg lo confirma pero «no tan impresionante», y también en bonos. Estrategia de fin de mes: comprar el último o penúltimo día y salir el cuarto día hábil del mes siguiente; sigue viable en el S&P y bonos pero menos rentable. El indicador de enero de McGinley (si los cinco primeros días de enero suben, comprar el S&P todo el año; si suben al menos un 4 %, el año siempre cerró al alza) y su chi cuadrado no se leen en el texto extraído (tabla ilegible). Con los datos del Dow de los 12 años hasta 2010, el barómetro de enero acertó en 7 años con una ganancia neta de 14 puntos: «muy débil». Septiembre se muestra flojo de forma consistente; octubre tiene más rebotes del 5 % en 10 días (17 desde 1950).
+
+**Qué significaría aquí.** Solo vale para índices (US500, US30, DE40) y mide efectos de calendario que la regla 15 prohíbe como bloque de generación. Sirve como estudio de contexto, no como idea de plantilla: el propio Kaufman muestra que el efecto se debilitó cuando se publicó. Para el oro no hay nada equivalente en el libro.
+
+**Estado.** NUEVA (el dossier cita estacionalidad del oro y de materias primas, no el efecto festivo en índices) — **Tipo.** estudio — **Locura.** 2 — **Valor.** 1 (choca con la regla 15 y se debilita con la publicación)
+
+#### Un ciclo corto detectado quiere decir «mercado lateral»: Ehlers usa el ciclo como régimen, no como entrada
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 11, p. 514-515.
+
+**Qué dice.** John Ehlers busca ciclos muy cortos con muy pocos datos (análisis de entropía máxima, MESA) no para operarlos sino para distinguir mercado de tendencia y lateral: si existe un ciclo corto, el mercado no tiene tendencia. Un ciclo útil aparece solo alrededor del 20 % del tiempo. Una tendencia existe si la línea de precio suavizada no ha cruzado la línea de tendencia instantánea en la última media-ciclo dominante. Los ciclos cortos son de conducta humana, no de fundamentales, y duran poco, de ahí que se estimen con datos recientes. Fourier exige al menos 256 puntos y 16 ciclos consistentes de 16 barras, lo que descarta el análisis a corto plazo.
+
+**Qué significaría aquí.** El dossier ya tiene la entrada «Relación señal-ruido del ciclo dominante como régimen (no como entrada)», que cita la misma lógica con un banco de filtros. Lo que aporta Kaufman es la cifra del 20 % de las veces que hay ciclo útil, la regla de tendencia por cruce (programable con dos medias) y el mínimo de datos de Fourier. Para M30 y H1 de oro, MESA sí encaja por usar muestras cortas; sería un régimen de 2 clases (ciclo / tendencia) para segmentar el rendimiento de las plantillas.
+
+**Estado.** YA EXISTE (dossier: «Relación señal-ruido del ciclo dominante como régimen (no como entrada)»); AMPLÍA con el 20 %, la regla del cruce y el mínimo de 256 puntos — **Tipo.** estudio — **Locura.** 2 — **Valor.** 2 (ya recogido; el aporte es la cifra y la regla de cruce)
+
+#### Ciclos: ocho repeticiones, causa de fondo, y periodos que varían un 20-40 %
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 11, p. 486-488, 491, 505.
+
+**Qué dice.** Antes de elegir un mercado para ciclos hay que ver que existe un ciclo dominante y saber por qué existe, para no descubrir patrones falsos. Hacen falta al menos ocho repeticiones para dar un ciclo por válido. Ganado: ciclo de 9 a 11 meses con variación de ±1 mes (cerca del 20 %); franco suizo: dos ciclos posibles de 24 a 35 semanas con variación del 40 %, sin causa fundamental atribuible, y después un ciclo de unas 38 semanas con rango de 30 a 52; «la variación entre techos hará difícil una estrategia sistemática». Del ciclo de Kondratieff de 54 años dice que con una variación de solo el 10 % se entraría 5 años pronto o tarde, y solo hay tres ciclos completos. La transformada de Fourier no es fiable si los datos no son estacionarios; las acciones que cambian de estructura no son candidatas. Ni los ciclos de mercado ni los estacionales reciben cifras de rentabilidad en este capítulo.
+
+**Qué significaría aquí.** Para divisas e índices del proyecto, que no tienen causa de fondo de ciclo, no hay base para una plantilla de ciclo. Úsese solo como régimen (entrada anterior). Cualquier propuesta de ciclo debería cumplir antes: causa declarada, ocho repeticiones y periodo estable al medirlo en mitades.
+
+**Estado.** NUEVA como criterio de admisión (el dossier no tiene criterio de validez para ciclos) — **Tipo.** proceso — **Locura.** 0 — **Valor.** 2 (criterio de rechazo barato; ningún dato propio)
+
+#### Transformada de Fisher: giros más nítidos que un oscilador de momentum
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 11, p. 518-520.
+
+**Qué dice.** La transformada de Fisher (Ehlers) reescala el precio dentro de su canal de máximo y mínimo de p periodos, lo alisa y aplica una transformación que lo deja casi gaussiano (con forma de campana), de modo que los picos y valles quedan más marcados. En datos mensuales de AMR (12 meses de canal) los picos de la Fisher quedan muy alineados con los del precio y con muy poco retardo respecto a la transformada de Hilbert, aunque a veces se adelanta y se queda arriba. Regla: vender cuando la Fisher cruza hacia abajo su disparador (equivalente a la línea de señal del MACD); la experiencia dice que las mejores señales son las que ocurren justo tras un máximo o mínimo extremo, no cerca de cero. La Fisher inversa sobre el RSI da una distribución bipolar con valores agrupados cerca de ±1. Sin cifras de rentabilidad.
+
+**Qué significaría aquí.** Si no está entre los bloques de SQX, un bloque a medida (Fisher de p barras con cruce de su disparador, solo tras extremo). La regla «solo tras un extremo» es como la que Kaufman aplica al MACD. Es un candidato más para el hueco aleatorio de las paletas de reversión, sin garantía alguna de superar a un estocástico.
+
+**Estado.** NUEVA (el dossier solo lo menciona en dos líneas dispersas, sin regla) — **Tipo.** generación — **Locura.** 1 — **Valor.** 1 (otro oscilador acotado; sin prueba de que aporte algo al banco)
+
+#### Periodo del indicador como fracción del ciclo, y el CCI de Lambert
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 9, p. 376, 387; cap. 11, p. 521.
+
+**Qué dice.** Para elegir el periodo de un momentum: se promedian los días entre picos y valles de un gráfico y se usa la mitad o un cuarto. Wilder eligió 14 días para el RSI como media de un ciclo natural (un mes), pero esa elección «puede no ser» la mejor. El Cycle Channel Index (Lambert, el CCI) usa un periodo N menor que un cuarto del ciclo, y divide por 0,015 veces la desviación media para que entre el 70 % y el 80 % de los valores caigan entre +100 y −100; un valor superior a +100 indica giro al alza del ciclo. Mejorar el momento exige un N lo más corto posible pero con desviación media representativa del ruido.
+
+**Qué significaría aquí.** Un criterio de partida para limitar el rango de periodos que se dibujan en cada hueco aleatorio: el periodo es una fracción del ciclo dominante o de la duración típica de un movimiento del activo y el marco temporal. Se puede estimar con el estudio de rachas, sin pretender que haya ciclo. Es más una regla de higiene del espacio de búsqueda que una idea nueva.
+
+**Estado.** NUEVA como criterio de rangos de periodo — **Tipo.** generación — **Locura.** 0 — **Valor.** 2 (ayuda a acotar el espacio de búsqueda, que reduce pruebas y el castigo por pruebas múltiples)
+
+#### Ciclo presidencial de EE. UU. y otros ciclos de calendario: una muestra minúscula
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 11, p. 492-494.
+
+**Qué dice.** Dow Jones 1912-1992: el año previo a las elecciones es el de mayores ganancias, seguido de un año electoral razonablemente fuerte; los dos años posteriores rinden por debajo de la media. Appel resume: año electoral +10 %, año siguiente +4,5 %, segundo año tras la elección −1,25 %, año previo +20 %. En años en que el mercado empezó el año a menos del 8 % de su máximo de 2 años, la media entre tres periodos del año electoral dio 11,66 % (11 observaciones: 1936 a 1992). Con S&P de 1983 a 2010, la tabla actualizada (ilegible en el texto) confirma, dice Kaufman, buen rendimiento en el año previo y excelente en el electoral.
+
+**Qué significaría aquí.** Casi nada: 11 observaciones, un solo mercado (EE. UU.) y es un efecto de calendario, vetado en generación por la regla 15. Sirve solo como ejemplo en el manual del peligro de patrones con muestra mínima.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 3 — **Valor.** 1 (muestra de 11 años; choca con la regla 15)
+
+### 9.5 · Volumen y amplitud, spreads y arbitraje, técnicas de comportamiento (caps. 12-14)
+
+Estos tres capítulos son sobre todo catálogo de indicadores y de ideas heredadas (volumen, amplitud de mercado, diferenciales entre mercados, noticias, sentimiento, Elliott, Gann, astrología), con muy pocas pruebas cifradas. Kaufman lo dice él mismo: casi nada de volumen y amplitud está probado de forma sistemática. Lo más valioso para el proyecto es el estudio de «choques de precio» (cómo se mueve el precio los días siguientes a una sesión de volatilidad anómala, con cifras en bonos, crudo y S&P), la advertencia sobre ratios entre mercados que no son estables (oro/plata) y sus problemas de volatilidad y costes, y la regla de comparar el volumen siempre contra su propia media y no contra el valor bruto. Casi todo lo bursátil (amplitud de acciones, fusiones, futuros de acciones, cosechas) no aplica a CFD de oro, plata, petróleo, divisas e índices.
+
+#### Pico de volumen medido contra una media retrasada, no contra el día anterior
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 12, p. 530 y 554-555.
+
+**Qué dice.** Un «pico de volumen» es un día con al menos el doble de volumen que la media de las últimas semanas (más de un mes, mejor más de tres). Regla exacta: hay pico si el volumen de hoy es mayor que T veces la media de n días, donde esa media termina 5 días antes de hoy (así las 2-3 jornadas de volumen creciente que preceden al pico no la inflan). Interpretación clásica: el pico marca el final del movimiento, no su fuerza; en Microsoft, los picos caen casi siempre en días de gran movimiento y preceden giros, aunque no siempre grandes. En futuros del Nasdaq y del crudo ve picos en los giros y volumen bajo en la continuación, pero advierte de que «no hay pruebas completas» que lo confirmen.
+
+**Qué significaría aquí.** Un bloque o rasgo «tick volume de la barra frente a la media de n barras retrasada 5» para estudiar si precede reversión (señal de agotamiento) en XAUUSD o Brent a H1/H4. Es un estudio a medir contra el mono de entrada aleatoria antes de pensar en un bloque. Los retrasos y el umbral T se preregistran. Cuidado: el tick volume de MT5 es del bróker.
+
+**Estado.** AMPLÍA (el dossier ya propone un bloque «pico de volumen» con tick volume en «Volumen de ticks, volumen firmado y desequilibrio de órdenes»; Kaufman añade la media retrasada 5 días y el aviso de que no hay pruebas) — **Tipo.** estudio — **Locura.** 1 — **Valor.** 3 (idea comprobable con datos propios, pero sin cifras de Kaufman que la respalden).
+
+#### Volumen como filtro de entrada: quita operaciones y reduce riesgo
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 12, p. 556-557.
+
+**Qué dice.** Saitta: exigir que el volumen actual supere su media de 10 días como condición sobre una tendencia de 20 días. Kaufman destaca el beneficio colateral: la condición elimina «un número sustancial de operaciones», y si el resultado neto es el mismo, es mejor el sistema filtrado porque pasa más tiempo fuera del mercado, no invierte posición en cada señal y mejora la liquidez. Waxenberg: cambio de tendencia confirmado por un volumen un 20 % por encima de la media de 10 días; extremo a partir de un +40 %; sugiere bandas de Bollinger (2 desviaciones típicas) para sustituir los porcentajes fijos. No da resultados numéricos.
+
+**Qué significaría aquí.** Una prueba de «con y sin» sobre una familia de tendencia: misma entrada, más la condición de tick volume > media de n barras. Cuenta como una de las 2 condiciones de entrada (regla 14), así que sustituye a otra, no se añade. Coste a medir: operaciones por año (mínimo 40-50). Umbrales como percentil de su propia historia en vez de 20 %/40 % fijos.
+
+**Estado.** AMPLÍA (volumen relativo ya sugerido en el dossier, «Volatilidad relativa a la misma franja horaria») — **Tipo.** generación — **Locura.** 0 — **Valor.** 2 (práctica estándar; sin evidencia propia aquí).
+
+#### Volumen intradía en forma de W o U: compararlo con la misma hora, no con el resto del día
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 12, p. 529 y 560-562.
+
+**Qué dice.** El volumen intradía no es plano: forma de W (alto al abrir, cae, sube a mediodía, cae, sube al cierre) y, con Europa y EE. UU. abiertos, patrones distintos por mercado (medido 1995-2005 en tick volume por franjas de 15 minutos en crudo, DAX, Nasdaq y bono a 30 años). Por eso «volumen creciente» como condición es siempre cierta en la segunda mitad de la sesión y siempre falsa por la mañana. Receta: comparar cada franja con la misma franja del día anterior o con su media de n días; la segunda barra como porcentaje de la primera; abrir con volumen alto anticipa volumen y volatilidad altos todo el día.
+
+**Qué significaría aquí.** Cualquier condición de volumen a M30/H1 debe normalizarse por franja horaria, pero eso es un bloque que lee el reloj, y la regla 15 lo prohíbe en generación. Sirve como estudio o como régimen, no como bloque; alternativa dentro de la regla: usar la media móvil de las últimas n barras sin mirar la hora (pierde la corrección del patrón diario, y Kaufman avisa de que entonces la condición es inútil).
+
+**Estado.** YA EXISTE (dossier, «Volatilidad relativa a la misma franja horaria (volumen en el tiempo)») — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (choca con la regla 15 en generación; solo como estudio).
+
+#### Filtrar los días de poco volumen y los movimientos pequeños antes de acumular un índice de volumen
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 12, p. 563-564.
+
+**Qué dice.** El OBV (On-Balance Volume, volumen acumulado con signo del cambio del cierre) asigna todo el volumen a un lado aunque el índice suba solo 0,25 puntos. Propone: ignorar los días con volumen por debajo de media menos 1 o 2 desviaciones típicas, y los días con cambio de precio dentro de ±0,10 o ±0,25 desviaciones de la media. Afirma que 1 desviación quita «el 16 % más bajo de los días» y 2 desviaciones «el 32 %». Esa cifra no cuadra con una distribución normal (2 desviaciones por abajo dejarían fuera cerca del 2,5 %); es un error del libro o una cifra para otra distribución, no usarla sin medirla.
+
+**Qué significaría aquí.** Si se usa cualquier acumulado de volumen o de dirección, ignorar las barras en que el precio casi no se movió es una opción sensata (menos ruido), pero hay que medir cuántas barras quita realmente en M30/H1 de oro y no fiarse del 16 % ni del 32 %.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 0 — **Valor.** 1 (detalle de indicador; la cifra del libro es dudosa).
+
+#### Los indicadores de volumen y de amplitud no están probados: Kaufman exige prueba antes de usarlos
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 12, p. 540, 542 y 552-553.
+
+**Qué dice.** Tras 20 indicadores (OBV, acumulación/distribución de Chaikin, índice de flujo de dinero, fuerza de Elder, MACD ponderado por volumen, índice de demanda, oscilador de empuje…), concluye que «volumen y amplitud son más difíciles que los de precio porque sus valores tienen más varianza», que traducir un concepto sólido a una estrategia rentable es más duro, y que hace falta «un método totalmente sistemático» para validarlos. Para el OBV pide una prueba amplia en muchos mercados y señala que bonos serían más interesantes que el S&P. Las únicas cifras publicadas son de Fosback (acciones, 1941-1975): con el índice de volumen positivo (PVI) en tendencia alcista hay un 79 % de probabilidad de mercado alcista y con tendencia bajista un 67 % de mercado bajista; con el índice de volumen negativo (NVI) alcista, 96 % de mercado alcista, y bajista solo 50 %. El MACD con volumen «parece cambiar poco».
+
+**Qué significaría aquí.** Confirma el criterio del proyecto: ningún indicador de volumen entra a generación sin pasar por el mono y por el cribado. Las cifras de Fosback son de acciones, sin costes, sobre un solo mercado y época, y sin corregir por el número de variantes probadas: no sirven como prior.
+
+**Estado.** YA EXISTE (dossier: Aronson y Hsu-Kuan sobre reglas OBV; prueba de cada regla contra el mono) — **Tipo.** proceso — **Locura.** 0 — **Valor.** 2 (refuerza lo ya adoptado).
+
+#### Amplitud de mercado como señal contraria: más caídas que subidas anticipa subida
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 12, p. 553 y 558.
+
+**Qué dice.** Citando a Connors: con más valores bajando que subiendo en la NYSE al menos 3 días seguidos, el S&P ganó de media un 0,50 % la semana siguiente; con más caídas que subidas en el Nasdaq al menos 2 días seguidos, el Nasdaq 100 ganó un 0,80 %; con caídas al menos el doble que subidas en la NYSE, el S&P ganó un 0,60 %. En el caso opuesto no hubo apenas ganancia. Periodo 1996-2003, que incluyó mercados alcistas y bajistas extremos. Regla de Connors sobre el índice: vender si subidas/bajadas > 2,0 y comprar si < 0,50, salida a 5 días. Kaufman la probó con posición mantenida hasta señal contraria (figura 12.11, curva sin números legibles). Su lectura: las acciones tienen más ruido y tienden a revertir.
+
+**Qué significaría aquí.** El proyecto no tiene datos de amplitud de acciones para sus CFD de índices; solo sería un prior (reversión corta en índices). Si algún día se bajan los avances/descensos de un índice desde el feed, sería un estudio, no un bloque de SQX. Es un resultado de un solo autor sin corregir por pruebas múltiples.
+
+**Estado.** AMPLÍA (el dossier ya recoge reversión corta en CFD de índices como prior) — **Tipo.** datos — **Locura.** 1 — **Valor.** 1 (datos de acciones que el proyecto no tiene).
+
+#### Modelo integrado de pronóstico: precio, volumen, interés abierto y OBV con pesos probados
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 12, p. 558-559.
+
+**Qué dice.** Para cada serie (precio, volumen, interés abierto, OBV) se calcula el pronóstico a un día como valor actual más la pendiente de regresión lineal de los últimos n días. El n óptimo se elige como el que minimiza la desviación típica del error de pronóstico, y mejor un solo n robusto para todas. Después un índice = w1·precio + (1−w1)·(w2·volumen + w3·interés + w4·OBV), con pesos que suman 1 probados por retroceso; si un componente no ayuda, su peso debería ir a cero. No da resultados.
+
+**Qué significaría aquí.** Una versión sin interés abierto (que no existe en CFD) con tick volume como único extra: ¿mejora la tendencia sobre el precio solo? Hay que pagar la búsqueda de pesos y n en el libro de pruebas (cada combinación cuenta como intento, deflated Sharpe). Sin evidencia de Kaufman, es más una plantilla de experimento que un hallazgo.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 1 — **Valor.** 2 (experimento razonable, pero el coste en grados de libertad es alto y no hay resultado previo).
+
+#### Índice de facilitación del mercado: rango dividido por tick volume
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 12, p. 564.
+
+**Qué dice.** Bill Williams: índice de facilitación = rango de la barra / tick volume de la misma barra, que mide cuánto se «dispone» el mercado a mover el precio. Lectura combinada con el cambio de tick volume: índice sube y volumen sube, confirma dirección; ambos bajan, dirección falsa, no operar; índice baja y volumen sube, mala entrada, con cautela; índice sube y volumen baja, posible tendencia nueva o fin de la anterior. Kaufman reconoce que no está claro que más volumen implique más movimiento, aunque sí prepara más volatilidad. Sin prueba.
+
+**Qué significaría aquí.** Un rasgo para el perfil de mercado (rango por unidad de tick volume en M30/H1 de oro) y, como mucho, un bloque con un solo umbral; sirve también de pista del coste de ejecución (poco movimiento por tick = mercado «fino»).
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 1 — **Valor.** 2 (cuadra con los datos que sí hay, pero sin evidencia).
+
+#### El tick volume como sustituto del volumen real y su límite
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 12, p. 528-529 y 559-560.
+
+**Qué dice.** El tick volume (número de cambios de precio en la barra) se relaciona directamente con el volumen real porque un mercado más activo oscila más veces entre oferta y demanda; Kaufman lo da por «aproximación razonable» y, en la práctica, «la única opción» sin servicio de volumen. Un tick volume alto al abrir implica un volumen alto en toda la sesión. Avisa de que el sello de tiempo de la barra de CQG es el inicio del intervalo, y que la última barra del día solo contiene el último minuto y parece de volumen muy alto (conviene fundirla con la anterior).
+
+**Qué significaría aquí.** Respalda usar el tick volume de los feeds M1 como volumen. Dos cautelas: es un volumen del bróker (los feeds del proyecto vienen de Dukascopy y se pasan a reloj de FTMO) y el cuidado con el sello de tiempo y la última barra afecta a cualquier rasgo de volumen a H1/H4 si el cierre de sesión parte barras.
+
+**Estado.** YA EXISTE (dossier, «Volumen de ticks, volumen firmado y desequilibrio de órdenes») — **Tipo.** datos — **Locura.** 0 — **Valor.** 2 (confirma una decisión de datos ya tomada).
+
+#### Volumen alto significa riesgo alto, aunque el precio no se haya movido
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 12, p. 534.
+
+**Qué dice.** Volumen alto y volatilidad alta suelen coincidir, pero no siempre: en un día de volumen alto con cierre casi sin cambio, muchos participantes se compensaron entre sí; si mañana hay desequilibrio y el volumen sigue alto, el precio puede romper en cualquier dirección. Conclusión: «volumen alto significa riesgo alto, incluso en los días en que no se materializa».
+
+**Qué significaría aquí.** Para riesgo en fondeo (límites diarios y totales, flotante): un indicador de «tick volume relativo alto con rango pequeño» como aviso para reducir tamaño o no abrir al día siguiente. Es un filtro de riesgo del lado de la cartera/vivo, no una entrada. Hay que medirlo: ¿predice rango del día siguiente más allá de la volatilidad reciente (la que ya conoce el ATR)?
+
+**Estado.** NUEVA — **Tipo.** riesgo — **Locura.** 1 — **Valor.** 2 (plausible y barato de medir, sin cifra de Kaufman).
+
+#### Pares: entrada por diferencia de estocásticos y salida al cruzar cero, con retención de pocos días
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 13, p. 583-585.
+
+**Qué dice.** Los pares se eligen por correlación entre 0,5 y 0,7 (menos, más riesgo; más, no deja beneficio que cubra costes) o, mejor, por cointegración (la relación de largo plazo se mantiene; encuentra muchos más pares). Regla 1: diferencia entre los estocásticos de 14 periodos de ambas patas; entrar si supera ±50 (rango −100/+100), salir al volver a cero. Regla 2, «indicador de estrés»: un estocástico bruto calculado sobre esa diferencia; entrar por encima de 95 o por debajo de 5. Como la estrategia revierte a la media, hay que retener pocos días: más tiempo hace que la tendencia de cada serie «luche» con la corrección y el beneficio se complica. Ejemplo HPQ-SUN; sin resultados cifrados.
+
+**Qué significaría aquí.** El proyecto no opera diferenciales (cada estrategia es de un solo instrumento y una sola dirección, regla 13), pero la receta sirve para una familia futura de «oro frente a plata» con dos patas en MT5. Como estudio: usar los propios feeds XAU/XAG con reversión del estocástico de la ratio, medido contra el mono y con coste de dos patas. Hasta que llegue la cartera, no es prioridad.
+
+**Estado.** AMPLÍA (el dossier tiene «Instrumentos sintéticos de relación: ratios y diferenciales como mercados nuevos» y «Primer estudio de pares cuando llegue la cartera»; Kaufman aporta la regla exacta de entrada y salida y el criterio 0,5-0,7) — **Tipo.** estudio — **Locura.** 1 — **Valor.** 2 (concreta una idea ya anotada pero sin evidencia).
+
+#### Igualar el riesgo de las dos patas con ATR en dinero y un mismo importe
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 13, p. 586 y 615-616.
+
+**Qué dice.** Si una pata cotiza a 5 $ y otra a 25 $, 100 acciones de cada una hacen que el resultado dependa solo de la más volátil. Receta: dividir un mismo importe (por ejemplo 1.000 $) entre el valor en dinero del rango medio verdadero de 20 días; ejemplo: ATR 0,25 en la de 5 $ da 4.000 acciones, ATR 1 en la de 25 $ da 1.000. Si la volatilidad de las dos patas difiere en más de un 20 %, reajustar. Advertencia: una pata con volatilidad muy distinta convierte el diferencial en una posición simple en la más volátil, y un diferencial muy volátil puede tener más riesgo que una posición simple en una pata (menos margen = más apalancamiento).
+
+**Qué significaría aquí.** Ya hay cobertura de dimensionamiento por volatilidad en la cartera; esta es una receta concreta si algún día se monta un diferencial. También sirve de aviso a la cartera: dos estrategias con volatilidades muy distintas no «se compensan» con tamaños iguales.
+
+**Estado.** YA EXISTE (dossier, «Parámetros en unidades de volatilidad…»; `portfolio/` dimensiona por volatilidad) — **Tipo.** cartera — **Locura.** 0 — **Valor.** 2 (práctica estándar, aplicable si hay diferenciales).
+
+#### Un ratio entre dos mercados como mercado nuevo: crudo/oro con media de 40 semanas
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 13, p. 604-606.
+
+**Qué dice.** Dividir el precio del crudo por el del oro crea una serie en la que se aplica una media móvil de 40 semanas: la media del ratio gira «mucho antes» que cada mercado y captura un beneficio significativo. Con tamaños ajustados por volatilidad, los resultados del ratio fueron más bajos que los de operar crudo y oro por separado, pero con menos volatilidad: subiendo la volatilidad del ratio un factor 2,64 queda en igualdad, y aun así el neto de los mercados individuales es «casi el doble». La correlación de los cambios semanales de beneficio entre ratio e individual fue 0,42. El ratio opera mucho más a menudo, con los precios de entrada de cada pata sin cambiar largos periodos. Con el crudo a 135 $ y el oro a 950 $ el ratio vale 0,19, y hacen falta 1,42 contratos de oro por uno de crudo. Aviso: con series de futuros ajustadas hacia atrás el ratio puede acercarse a cero o ser negativo en los datos antiguos; solo usó datos desde 2000. Reconoce que es una sola prueba con una sola media.
+
+**Qué significaría aquí.** Construir series sintéticas (XAU/XAG, Brent/XAU) con los propios feeds y lanzar SQX sobre ellas; se operan con dos patas. Como el ratio no mejoró lo individual y duplicó el coste de operar (dos patas, más operaciones), la ganancia es de diversificación, no de rentabilidad: medirla en correlación de equity respecto a la cartera existente.
+
+**Estado.** AMPLÍA (dossier, «Instrumentos sintéticos de relación…», sin estas cifras) — **Tipo.** generación — **Locura.** 2 — **Valor.** 3 (único dato comparativo del capítulo; su resultado, inferior al individual, frena la idea).
+
+#### La razón oro/plata no es estable: no asumirla como relación de reversión
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 13, p. 600-601.
+
+**Qué dice.** La razón oro/plata «normal» de 33:1 solo ha sido normal a ratos. Desde finales de los años 60 hasta la crisis de 1980 osciló entre aproximadamente 20:1 y 45:1 en un ciclo lento; en la crisis de los Hunt (septiembre 1979-septiembre 1980) rondó 33:1 con mucha volatilidad; tras ella llegó a 56:1 en junio de 1982 (oro 314 $, plata 5,57 $), tocó 33:1 un año después y se abrió a 66:1 en junio de 1986. Desde finales de 2008 superó 100:1 y volvió a 70:1; al cruzar el oro 1.200 $ la plata se disparó y la razón cayó hacia 33:1 antes de una nueva caída de la plata. Hubo beneficio en periodos estables (2010-mediados 2011), pero «la estabilidad de la razón está en la percepción del público». La razón platino/oro ha sido más estable porque ambos se usan en la industria, aunque con cambios estructurales posibles.
+
+**Qué significaría aquí.** Para cualquier estudio de pares oro/plata o de cruce de mercados con XAUUSD y XAGUSD: no asumir estacionariedad; exigir prueba de cointegración o de vida media en ventanas móviles y medir en `build` solo, con un régimen o filtro que apague la estrategia cuando la relación se rompe (vida media de la reversión, como en la «Tarjeta de carácter del mercado» del dossier). Para la cartera: oro y plata no son dos activos independientes ni están ligados de forma fija.
+
+**Estado.** AMPLÍA (dossier: cointegración oro/plata 2015-2025 y «Tarjeta de carácter del mercado»; Kaufman da la historia larga de 50 años que muestra rupturas) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (aviso con cifras históricas útil para plata y oro).
+
+#### Saltos de volatilidad en una relación: el filtro de volatilidad mínima y el riesgo de reversión a la media
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 13, p. 603-604 y 610-611.
+
+**Qué dice.** Con la razón S&P/Nasdaq (2006-2011), comprar a 0,05 y vender a 0,15 funcionó en la primera mitad, pero en la crisis de septiembre de 2008 vender a 0,15 habría supuesto un riesgo «catastrófico»; desde julio de 2009 la volatilidad cae y la razón ya no vuelve a 0,15. El valor relativo da buena hora de entrada pero no dice si la volatilidad es demasiado baja para cubrir los costes; se necesita un filtro de volatilidad mínima, que además reduce el número de operaciones y elige las de más potencial. Un salto de volatilidad produce pérdida con cualquier método. Otros factores: la volatilidad de un diferencial sube con el precio; los eventos específicos afectan a cada pata de forma distinta; el margen reducido de un diferencial aumenta el apalancamiento y el riesgo puede superar al de una pata sola.
+
+**Qué significaría aquí.** Dos lecciones para cualquier familia de reversión (oro incluido): (1) umbrales fijos de la señal en valor absoluto pueden quedar fuera de rango tras un cambio de régimen de volatilidad; usar percentil o desviaciones de la propia historia; (2) un filtro de volatilidad mínima («el movimiento esperado debe superar x veces el coste de ida y vuelta») es coherente con los costes pesimistas del proyecto y con el mínimo de 40-50 operaciones al año, que quedan en tensión. Se puede medir con el estudio de rasgos de mercado.
+
+**Estado.** AMPLÍA (dossier: «Semáforo de volatilidad» y «Parámetros en unidades de volatilidad y umbrales como percentil de su propia historia») — **Tipo.** generación — **Locura.** 0 — **Valor.** 3 (explica con un caso real por qué el umbral absoluto falla).
+
+#### Probar con precio spot o con precio a plazo no da el mismo resultado: el carry entra en el backtest
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 13, p. 575 y 595-599.
+
+**Qué dice.** «Al probar estrategias con cruces de divisas no es bueno usar el tipo spot y luego operar futuros»: la paridad de tipos de interés hace que el precio a plazo se mueva de forma sistemática a favor o en contra, de modo que los resultados con precios a plazo difieren de los de spot. El oro es un mercado de «carry puro»: el precio de un vencimiento lejano es el spot más interés, almacenamiento y seguro; con el diciembre 2011 a 1.484,9 y el diciembre 2012 a 1.496,9 (5 de abril de 2011, 362 días) el rendimiento anualizado implícito fue de 80,37 puntos básicos, frente a 43 de los depósitos en eurodólares. La operación de carry en divisas (comprar la de mayor tipo de interés real, vender la de menor) depende del sesgo a plazo, no de cobrar el diferencial, ya incluido en el precio a plazo. En un solo mes de prueba (marzo de 2009), 6 de 7 cruces siguieron la expectativa del carry; el rendimiento «continúa funcionando pero con intervalos de alta volatilidad y drawdown», con riesgo de concentración en la moneda que se financia.
+
+**Qué significaría aquí.** El proyecto prueba CFD con swap pesimista; esta advertencia confirma que el swap es parte del rendimiento y no un detalle: una estrategia larga de oro paga financiación positiva y una de divisas puede ganar o pagar según el diferencial. Comprobar que el swap modelado es el del bróker y que los cruces de divisas se prueban en la serie con el swap incluido. Un estudio «¿cuánto del resultado de una familia de divisas viene del diferencial de tipos?» es separable del resto.
+
+**Estado.** AMPLÍA (los costes con swap ya existen: `knowhow/costs/`; Kaufman añade la separación del componente de carry en el resultado) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (útil para FX y oro; coherente con los costes pesimistas del proyecto).
+
+#### Choques de precio: medir la sorpresa con el rango verdadero y mirar los días siguientes
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 14, p. 624-634.
+
+**Qué dice.** Detección: razón de volatilidad = rango verdadero de hoy / rango verdadero medio de n días retrasado m días (típicamente n = 60 y m = 30; el retraso evita perder dos choques seguidos); con razón > 3,0 hay «un día en que una noticia causó un choque significativo»; en las pruebas usó un umbral de 2,0. La oportunidad no está en posicionarse antes (50 % de acierto, riesgo muy alto) sino en el patrón posterior. Resultados de 10 años hasta abril de 2011, posición al cierre del día del choque: bono a 30 años, el promedio de todos los choques superiores a 48/32 muestra un retorno lento en la dirección del choque durante unos días (el choque bajista da cerca de un punto entero, con poca volatilidad), distinto de la lectura de «los mayores choques» (que no son representativos); crudo, choques de al menos 4 $ por barril (promedio cercano a 6 $) terminaron unos 2 $ más bajos a los 3-4 días tanto los alcistas como los bajistas, y los de más de 1 $ dan resultados mucho más apagados; S&P, choques alcistas de más de 30 puntos seguidos de caídas sostenidas de unos 40 puntos (unos 2.000 $ por contrato) y choques bajistas sin beneficio ni pérdida. A los 10 días la tendencia de fondo vuelve a verse. Kaufman no da número de operaciones, costes ni significancia.
+
+**Qué significaría aquí.** Un estudio propio y barato con los feeds de oro, plata, Brent e índices a H1/H4: marcar las barras con razón de rango verdadero > 2 y 3 y medir el retorno acumulado de 1 a 10 barras contra el mono, sin mirar el reloj ni el calendario (la sorpresa se mide por el precio, no por la hora). Resultado a decidir: familia de «reversión tras choque» o de «continuación tras choque» por activo. El número de choques por año y la significancia (con corrección por probar varios umbrales) determinarán si cumple el mínimo de operaciones.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 1 — **Valor.** 4 (comprobable con datos propios, sin bloque de tiempo, y con cifras de partida en tres mercados que el proyecto toca).
+
+#### Condicionar el choque a dónde cierra la barra, y la regla de Warwick
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 14, p. 627 y 634-635.
+
+**Qué dice.** Con el bono a 30 años, umbral de choque de 1,5 veces el rango verdadero medio y el cierre en el 20 % más alto o más bajo del rango del día, los 6 días siguientes cambian de forma clara respecto al análisis sin condicionar: tras un choque alcista, el cierre bajo tiende a continuar bajando (apenas 17 puntos básicos de media) y el cierre alto no continúa; tras un choque bajista, la reacción alcista es más fuerte si el cierre fue cerca del máximo (unos 50 puntos básicos en 2 días, luego vuelve al nivel del choque). Kaufman avisa de que el bono llevaba 25 años subiendo, así que esa subida puede ser regreso a la tendencia. Warwick: comprar al cierre si el día de evento cierra en el 20 % superior del rango y existe un patrón histórico de continuación, mantener un número fijo de días y poner stop. Larson (maíz, 1960): el 81 % del cambio de precio ocurre el día del evento, hay una reversión típica del 8 % en 4 días y un cambio neto del 27 % en la dirección original a 45 días.
+
+**Qué significaría aquí.** Segunda capa del estudio anterior: añadir la posición del cierre dentro del rango (cierre en el 20 % superior/inferior) como condición, que usa solo precio. Una familia de continuación y otra de reversión, con salida a un número de barras fijo (preregistrado). Cuenta como una de las 2 condiciones de entrada.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 1 — **Valor.** 3 (idea precisa y comprobable, aunque la evidencia citada es de bonos y de un mercado alcista).
+
+#### Reacción a una noticia = a × sorpresa + b × revisión, con peso decreciente en el tiempo
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 14, p. 620-621 y 626.
+
+**Qué dice.** Tras un informe económico el cambio de precio esperado es a × (valor actual − expectativa) + b × (revisión del dato anterior), con a > b, hallados por regresión. La influencia se diluye con el tiempo y propone que decaiga con el cuadrado del tiempo transcurrido desde la noticia. La mejor medida de la expectativa es el precio justo antes del informe: si el bono sube antes de un informe de desempleo, el mercado espera peor desempleo; si el informe sale neutro, el precio cae para corregir. Regla de oficio: si una noticia alcista no hace subir al mercado, buscar un sitio para vender; muchas veces el precio abre con hueco a la baja tras un informe alcista que no alcanzó las expectativas. Cita a un estudio del Wall Street Journal: los lectores interpretan igual el 90 % de las noticias.
+
+**Qué significaría aquí.** Para el módulo de noticias de los EA (`ea-news`) y para la lista de eventos de fondeo: guardar consenso y dato real, no solo la hora; así la «sorpresa» es el rasgo. Como estudio, la regresión de reacción por tipo de evento (oro frente a NFP, CPI, Fed) mide cuánto de la volatilidad de oro es explicable por la sorpresa. No como entrada direccional.
+
+**Estado.** AMPLÍA (dossier, «Calendario económico: sorpresa frente a consenso, y usarlo para volatilidad y exclusión, no para dirección»; Kaufman añade la forma funcional y el decaimiento) — **Tipo.** datos — **Locura.** 0 — **Valor.** 3 (formaliza un uso ya aceptado y es útil para la exclusión de noticias en fondeo).
+
+#### Operar la reacción del día del informe: Ruggiero, Raschke y la sorpresa de desempleo
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 14, p. 629-630.
+
+**Qué dice.** Ruggiero (175 días de informe): los bonos reaccionan de más a los informes de precios al productor (PPI), desempleo y ventas minoristas; compra si el estocástico bruto de un día (cierre − mínimo)/(máximo − mínimo) es < 0,50 y vende si > 0,50, en la apertura siguiente, con retención de 3 días; el PPI fue el mejor, luego ventas minoristas y por último desempleo, aunque rentable. Raschke: si un informe de la mañana hace saltar el bono por encima del máximo del día anterior en una cantidad de 32avos de punto (las cifras exactas salen ilegibles en el texto extraído), orden de venta un poco por debajo de ese máximo y stop un poco por encima del máximo del día, llevado a equilibrio cuanto antes. Desempleo mensual: cuando el mercado subestima la cifra en al menos 0,2 %, el S&P rindió un 4,5 % de media en los 27 días siguientes y el bono a 30 años un 3,2 % entre los días 3 y 28. Sin costes ni número de eventos para estas últimas.
+
+**Qué significaría aquí.** Todas estas entradas se disparan por el día de un informe (calendario), lo que choca con la regla 15 para generación; como estudio de eventos sobre oro o Brent con el calendario económico sí cabe (y combina con `ea-news`, que ya conoce los eventos). Los números de Ruggiero y Raschke son de bonos, un mercado que el proyecto no opera.
+
+**Estado.** AMPLÍA (dossier, «Calendario económico…» y «La señal fallida como señal: el extremo que no revierte y la noticia que no mueve») — **Tipo.** estudio — **Locura.** 1 — **Valor.** 2 (choca con la regla 15; cifras de bonos y de acciones).
+
+#### Informe de posiciones de los grandes comerciales (COT): el índice estocástico de Briese y las reglas de Ruggiero
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 14, p. 635-641.
+
+**Qué dice.** Jiler concluyó tras muchos años que los grandes comerciales (hedgers) predicen mejor que los grandes especuladores y estos mejor que los pequeños; avisa de ignorar desviaciones del 5 % o menos respecto a lo normal y ser cauto con las de más del 40 %. Un estudio de 36 mercados (1983-1989): un peso grande de posiciones comerciales anticipó movimientos significativos el 67 % de las veces. Briese: COT Index = estocástico de la posición neta con ventana de 1,5 a 4 años (0-100). Ruggiero: comerciales por encima de 80 y pequeños por debajo de 20 → venta, y al revés para compra; en el S&P, comprar cuando el índice de comerciales cruza 80 y el S&P cierra por debajo de hace 4 semanas, salir en 40; para el bono, índice de comerciales con disparador 30, pequeños con 50 y un desfase de una semana, «muy exitoso» sin cifras. Mantener entre 3 y 6 meses. Kaufman corrige un error del texto de Ruggiero (la señal de venta aparecía como compra). Ruggiero también propone una versión solo larga («fase de marcado»: correlación precio-volumen > 0,3, Herrick Payoff > 0, índice de comerciales > 85) sin resultados legibles.
+
+**Qué significaría aquí.** Un filtro de régimen o rasgo de contexto semanal para oro y plata (el COT existe para sus futuros): índice de comerciales extremo como condición permitida, medido contra su gemelo de precio. Trampa clásica: el COT se publica el viernes con datos del martes, así que hay que unirlo por la fecha de publicación (el dossier ya lo marca). El 67 % del estudio de 1983-1989 viene de un solo estudio en mercados agrícolas sobre todo y sin corregir por pruebas múltiples.
+
+**Estado.** YA EXISTE (dossier: «COT: unirlo por la fecha de PUBLICACIÓN», «Qué puede y qué no puede hacer el COT» e «Índice COT…»; Kaufman aporta los umbrales exactos) — **Tipo.** datos — **Locura.** 1 — **Valor.** 3 (idea aceptada con reglas exactas, pero horizonte de 3-6 meses es lento frente a M30/H4).
+
+#### Sentimiento contrario: los umbrales fijos fallan, usar máximos y mínimos relativos
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 14, p. 622-623 y 642-646.
+
+**Qué dice.** Opinión contraria como filtro, no como sistema de entrada: «no da el momento». Consenso alcista de Hadady: nivel neutro 55 %, rango normal 30-80 %, sobrecompra a 90 % y sobreventa a 20 %, cambio del 10 % en 2 semanas como significativo. Lección de la razón put/call: antes de 1986 se consideraba el mercado listo para subir con el volumen de puts por encima del 65 % de los calls, y para bajar por debajo del 35 %; en los mercados volátiles de 1986-1987 esos niveles «resultaron demasiado cercanos» y el indicador cayó en desuso. Remedio: usar máximos y mínimos relativos (vender cuando pasa del 65 % y gira a la baja). Esto resta timing pero baja el riesgo y sube la fiabilidad. Medios de comunicación como contrario: titulares de «sequía mortal» en los máximos del trigo, portada de *Barron's* en agosto de 1987 antes de la caída de octubre; sin cifras.
+
+**Qué significaría aquí.** Para cualquier indicador de sentimiento (posicionamiento minorista de brókers, COT de pequeños, VIX): usar percentil sobre su propia historia, no el nivel absoluto de un libro; coincide con la lección del bloque anterior. Solo como filtro de régimen.
+
+**Estado.** AMPLÍA (dossier, «Sentimiento minorista y consenso» y «Noticias y atención mediática»; Kaufman añade el caso del put/call 1986-87 como prueba de que el umbral absoluto envejece) — **Tipo.** estudio — **Locura.** 1 — **Valor.** 2 (la lección es útil, el resto es anecdótico y sin cifras).
+
+#### Oscilador de ondas de Elliott automatizado: 5 y 35 sobre el precio medio, con parámetros declarados pero sin resultados
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 14, p. 658-659.
+
+**Qué dice.** Oscilador de ondas de Elliott (EWO) = media simple de 5 periodos − media simple de 35 del precio medio (máximo+mínimo)/2. Nueva tendencia alcista si el EWO marca un máximo de n periodos, o si estaba por debajo de cero y ha rebotado un porcentaje («disparador») de su mínimo de n periodos. Se entra largo al abrir en el inicio de la onda 3 y de la onda 5 y se sale cuando el EWO cae bajo cero. En el futuro del EURUSD de 2000 a mayo de 2011, «excelentes resultados» con tendencia de 40 días, osciladores 5 y 35 y disparador 0,35, y los mismos valores fueron los mejores para el S&P en el mismo periodo. No da cifras de beneficio, operaciones ni drawdown, y los mismos datos sirvieron para elegir y para presentar el resultado. Kaufman reconoce que la teoría es «muy interpretativa» y que la quinta onda a veces no llega a formarse.
+
+**Qué significaría aquí.** Una media 5 contra 35 del precio medio es un cruce de medias estándar (en SQX ya existe como bloque de oscilador/cruce de medias); la parte de «contar ondas» no se puede expresar con 2 condiciones. Sin evidencia, no vale como prior; si interesa, entra como una variante más de la familia de tendencia con parámetros 5/35 y se mide como cualquier otra.
+
+**Estado.** NUEVA — **Tipo.** generación — **Locura.** 2 — **Valor.** 1 (sin evidencia y con el parámetro elegido sobre la misma muestra).
+
+#### Fibonacci, Gann, astrología y fases de la Luna: solo valen si se convierten en una regla medible
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 14, p. 648-683 (en especial 657, 666-667, 677 y 683).
+
+**Qué dice.** Más de 35 páginas de Fibonacci, Elliott, Gann (ángulos 1×1, 2×1…, cuadrado de 44 centavos, fechas del equinoccio), planetas y eclipses. Los «resultados» son ejemplos escogidos a posteriori: en su propio ejemplo de ciclo del Dow, una subida de 371,6 % es llamada «cercana a la razón de Fibonacci de 38,2 %» y el objetivo de 5.444 puntos «puede fallar hasta un 10 %». Del estudio lunar de 1972 en cinco mercados (plata, trigo, ganado, cacao, azúcar) dice que mostraron «una asombrosa capacidad» de subir tras luna llena y bajar tras luna nueva, sin cifras. Gann: los operadores prefieren números redondos, así que hay más actividad al cruzar niveles enteros (100 en el S&P, 1.000 en el Dow). Su propio aviso sobre todo esto: sin probarlo con reglas automáticas «tendemos a recordar las buenas operaciones y olvidar las pequeñas pérdidas frecuentes».
+
+**Qué significaría aquí.** Las fases lunares y las fechas de calendario son bloques de tiempo o de calendario (regla 15): prohibidos en generación y, como mucho, estudio con calendario y mono, con el número de variantes contado en el libro de pruebas. Los números redondos como nivel sí caben como estudio de precio. Sin evidencia, sin prioridad.
+
+**Estado.** YA EXISTE (dossier: Katz y literatura lunar, «Rejillas geométricas de parámetros», números de Fibonacci en SPP y «Niveles obvios: números redondos») — **Tipo.** estudio — **Locura.** 3 — **Valor.** 1 (sin pruebas y chocan con la regla 15 en lo del calendario).
+
+#### Filtro de oscilación en dinero y objetivos de tiempo contando barras (Golden Section Compass)
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 14, p. 663-665.
+
+**Qué dice.** El sistema de Fischer marca un posible giro en el día t tal que T = 1,618 × (día del mínimo i − día del mínimo previo) + día del mínimo i (igual con máximos), y entra largo si, tras un «día objetivo de tiempo», el cierre supera el máximo de los últimos 5 días, con stop en el mínimo reciente. El objetivo de precio de la onda 3 se calcula como 0,618 × (máximo − mínimo de la onda 1) + máximo de la onda 1 (1,618 para la onda 5). Lo útil: el filtro de oscilación. En oro, un filtro de 10 o 20 $ por onza «produce máximos y mínimos de ruido, no de comportamientos significativos»; 50 $ marca los significativos; debe ajustarse a la volatilidad porque «a precios más altos el ruido también aumenta». El sistema «no puede forzarse a dar más señales de las que permiten los patrones naturales».
+
+**Qué significaría aquí.** El hallazgo aplicable es el tamaño del filtro de oscilación (zigzag) en unidades de volatilidad, no del precio absoluto: relevante para cualquier bloque de «último máximo/mínimo de oscilación» en XAUUSD (un umbral de 20 $ de 2011 es ruido en la volatilidad actual). Las razones 1,618 y 0,618 no tienen respaldo medido.
+
+**Estado.** AMPLÍA (dossier: «Parámetros en unidades de volatilidad y umbrales como percentil de su propia historia») — **Tipo.** generación — **Locura.** 2 — **Valor.** 2 (la parte de Fibonacci no se sostiene, la del filtro de oscilación en unidades de volatilidad sí).
+
+### 9.6 · Patrones, intradía, técnicas adaptativas, distribución de precios y varios marcos temporales (caps. 15-19)
+
+Kaufman recorre aquí los patrones «de manual» (hora del día, huecos de apertura, día de la semana, día del mes, días de reversión), el trading intradía (costes, rupturas del rango de apertura, filtros de volatilidad), las medias adaptativas (la suya, KAMA, frente a VIDYA, MAMA y la correlación), las distribuciones de precios (asimetría, curtosis, Market Profile) y las combinaciones de marcos temporales. Lo más valioso para este proyecto: (1) la lección de multiplicidad de los estudios de día de la semana, donde 16 combinaciones dan «unas 9 significativas» sólo por azar; (2) la aritmética de costes y de órdenes no ejecutadas en intradía; (3) la comparación de medias adaptativas, con KAMA como la mejor y el oro como su punto débil. Casi todas las pruebas de Kaufman son sin costes y en futuros (S&P, bonos, crudo, oro, trigo), no en CFD.
+
+#### El grueso del movimiento diario ocurre antes de la primera barra
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 15, p. 691-696.
+
+**Qué dice.** En futuros del S&P (2000-mayo 2011, barras de 30 minutos) el movimiento medio neto del día es casi cero; el modesto avance posible está en seguir la dirección «cierre previo a fin de primera barra», y después de la primera barra casi no hay cambio. Con el EURUSD (mismo periodo) la ganancia media quedó toda en el movimiento nocturno y desde las 3 de la mañana de Nueva York los precios tienden a revertir. Por regímenes (2001-02 bajista, 2003-07 alcista normal, 2008 desplome, 2009-11 alcista fuerte) el patrón cambia: sólo 2008 es consistente y en el alcista fuerte la dirección de la apertura se revierte. Si se exige un hueco mínimo de 50 puntos básicos (pb; 1 pb = 0,01 %) hasta el final de la primera barra, el resto del día continúa modestamente en la dirección del hueco; sin filtro revierte. Kaufman avisa de que los regímenes se clasificaron después del hecho.
+
+**Qué significaría aquí.** Un estudio de «dónde se gana el movimiento» en XAUUSD y FX: separar el retorno nocturno/primera barra del resto del día, por régimen, antes de elegir hora o tipo de entrada. Los bloques de hora están prohibidos en generación (regla 15); esto sería sólo estudio o descriptor de régimen, no un bloque que el constructor pueda dibujar.
+
+**Estado.** AMPLÍA (el dossier ya trae «La apertura y los niveles de referencia de la sesión como anclas» y «Los patrones de apertura necesitan una sesión»; aquí se añade la partición nocturno/primera barra/resto por régimen y el filtro de hueco mínimo) — **Tipo.** estudio — **Locura.** 1 — **Valor.** 3 (útil como diagnóstico; choca con la regla de no usar reloj en generación)
+
+#### Cuándo se forma el máximo o el mínimo del día
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 15, p. 696-699.
+
+**Qué dice.** En el S&P (2000-2011) la apertura es el momento con más probabilidad de ser máximo o mínimo del día: el doble que el cierre y ocho veces más que a mitad de sesión. Tras un hueco de ±2 %, la razón apertura:cierre baja de 2,5:1 a 1,6:1 y el mínimo del día cae «abrumadoramente» en la apertura si el hueco es al alza. En el EURUSD el patrón es parecido pero más suave y con tres tramos (Europa sola, solape, EE. UU. sola). Regla operativa que propone: una hora después de abrir, el extremo temprano es candidato fuerte a extremo del día; si se rompe, el cierre es el siguiente candidato; a mitad de día se compra la prueba del mínimo. En los años 1995-96 (mercado alcista fuerte) el patrón en U desapareció.
+
+**Qué significaría aquí.** Descriptor para un estudio de salidas y de MAE (pérdida flotante máxima) en intradía: la probabilidad de que el extremo ya esté hecho crece con las barras transcurridas. Útil para decidir si una salida «al cierre de sesión» pierde mucho frente a una salida por tiempo en barras. No es un bloque de generación (usa el reloj).
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 1 — **Valor.** 2 (descriptivo; sin cifras de rentabilidad ni costes)
+
+#### Huecos de apertura: casi siempre se cruza el cierre previo, pero no hay continuación al día siguiente
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 15, p. 699-707; cap. 16, p. 751-753.
+
+**Qué dice.** Con tablas por tamaño de hueco (pasos de 25 o 10 pb) en acciones (ABX, XOM, AMZN, LUV) y cinco futuros (bonos a 30 años, DAX, EURUSD, oro, trigo; 2000-2011) mide: cierre en la dirección del hueco, cierre bajo la apertura, cruce del cierre previo y continuación en la apertura siguiente. Resultados: los huecos pequeños (≈0,1-0,3 %) cruzan el cierre previo 74-94 % de las veces; la continuación al día siguiente ronda 50 % salvo casos con 3-10 observaciones que Kaufman descarta por pocos datos. En bonos, un hueco al alza que cierra bajo la apertura ocurre 0-13 % de las veces. Los huecos en futuros que casi operan 24 horas (e-mini S&P) son mínimos: el hueco medio como porcentaje del rango diario bajó en S&P, Nasdaq, Brent, ganado y azúcar entre 1994 y 2011; Kaufman concluye que el hueco como señal «parece menos probable» hoy en futuros, y sigue valiendo en acciones por los resultados fuera de horario.
+
+**Qué significaría aquí.** El oro y los índices CFD son casi continuos, así que la mayor parte del «hueco» está en el domingo por la noche. Antes de construir una familia «desvanecer el hueco» hay que medir el tamaño real del hueco en los datos del proyecto (M30/H1) y no esperar el efecto de las acciones. Encaja con el estudio de huecos de fin de semana del dossier.
+
+**Estado.** YA EXISTE (dossier: «Desvanecer el hueco: Oops!, huecos de sesión y hueco de fin de semana» y «Huecos de fin de semana: el riesgo del viernes»); AMPLÍA con la cifra de que el hueco relativo ha ido bajando 1994-2011 y con el 50 % de continuación — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (confirma, con números, que un hueco aislado no es señal)
+
+#### Desvanecer huecos medianos funciona en acciones; los grandes son estructurales
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 15, p. 707-711.
+
+**Qué dice.** Regla de Reverre: orden límite de compra si abre más de 1 % por debajo del cierre previo (venta si más de 1 % por encima) y salida al cierre del día. En las acciones del Dow, con prueba original de 1 año: beneficio medio largo 0,057 $ y corto 0,034 $ por acción, y el óptimo del hueco fue 1,25 % en 2004. Actualizado con General Electric (enero 2000-mayo 2011, sin costes): 2,13 centavos por acción con filtro de 1 % y 3,39 con 2 %. Los huecos de 1 % son ruido que se corrige; los de más de 2 % dan mucho más beneficio y pérdida porque son más «estructurales». En la variante cierre a cierre (movimientos del 20 % más grande), las pérdidas aparecen con huecos de 4 % en 2000-2011 y quedan beneficios sólo en la ventana de 2 % a 4 %, sobre lo que Kaufman pregunta si es «sensato o sobreajuste».
+
+**Qué significaría aquí.** Muestra de cómo el mismo patrón cambia de signo con el tamaño: una familia de reversión por hueco necesitaría tamaño del hueco en múltiplos de ATR (no en %) y una prueba de que la ventana buena no es un pico. Beneficio de 2-3 centavos por acción no sobrevive a un spread real.
+
+**Estado.** AMPLÍA (el dossier ya tiene el hueco como estudio; aquí añadimos que el tamaño relativo del hueco separa ruido de estructura y los números de GE) — **Tipo.** generación — **Locura.** 0 — **Valor.** 2 (referencia de familia de reversión; los números son de acciones y sin costes)
+
+#### Día de la semana: 16 combinaciones dan «unas 9 significativas» por azar
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 15, p. 711-725.
+
+**Qué dice.** Codifica la semana como secuencia de X (mismo sentido que el movimiento viernes-lunes) y O (sentido contrario) y cuenta la probabilidad del día siguiente en 11 años (≈500 semanas; ≈30 casos por rama el viernes). En el e-mini S&P el martes revierte el 54 %; ramas de viernes llegan a 57 % pero con 6 % de probabilidad de producirse. Bank of America 66 % y Intel 64 % en ramas distintas; en oro y trigo hay ramas de 55-67 % (trigo: el jueves siempre favorece revertir el lunes). Con filtro de tendencia (media de 20, 50 o 200 días) la probabilidad de un patrón sube unos puntos: EURUSD «si martes revierte, jueves revierte» pasa de 55 % a 61 % con el filtro de 200 días; S&P «martes revierte» 54 % → 56 % con 50 días, pero no mejora en todos. En el estudio fin de semana/lunes con 16 combinaciones por mercado, «unas 9 de 16 estaban lo bastante lejos del 50 %», y avisa de que subir de 3 a 16 casos aumenta la probabilidad de un buen resultado por azar. Prefiere combinaciones que mejoren de forma consistente con todas las tendencias.
+
+**Qué significaría aquí.** Estudio como ejercicio de multiplicidad (regla del libro de pruebas): al buscar sobre secuencias de dirección, el número de ramas probadas debe entrar en el ledger de pruebas y en el valor de Sharpe deflactado. Un día de la semana como condición choca con la regla 15 (prohibidos reloj y calendario en generación); como estudio descriptivo sí cabe.
+
+**Estado.** AMPLÍA (el dossier ya trae «Heterogeneidad de la volatilidad por día de la semana, separada de la dirección»; aquí se añade el caso trabajado de las ramas X/O con sus tamaños de muestra y el recuento 9 de 16) — **Tipo.** estudio — **Locura.** 1 — **Valor.** 3 (ejemplo claro de multiplicidad con cifras)
+
+#### Día del mes: el patrón de fin de mes cambia de signo entre décadas
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 15, p. 726-730.
+
+**Qué dice.** Retornos medios por día del mes (primeros 10 y últimos 10 días) en el S&P (1982-2000 y 2001-2011), eurodólar, crudo, oro y soja. S&P: compra concentrada en los primeros 1-3 días del mes, sobre todo el primero, en ambos periodos. Crudo y oro: en los primeros años el último día del mes cayó con fuerza (oro 1975-2000 bajista a fin de mes), en 2001-2011 el final de mes es alcista (oro: compras consistentes en los últimos 6 días). Soja 1949-2000 tenía el final de mes con más caídas. Resumen: en los últimos 10 años todos los mercados muestran compra al final del mes; propone comprar unos 4 días antes de fin de mes y cerrar al final del primer día del mes. Avisa de que oro y crudo se confunden con la tendencia de cada época.
+
+**Qué significaría aquí.** Mismo veredicto que el día de la semana: estacionalidad de calendario, prohibida como bloque de generación (regla 15). Como estudio, la lección útil es que el signo cambió entre décadas, de modo que un filtro así tiene que probarse en cada subperiodo y no confiar en el promedio completo.
+
+**Estado.** YA EXISTE (dossier, familia de estacionalidad y calendario, con las reservas de la regla 15) — **Tipo.** estudio — **Locura.** 1 — **Valor.** 1 (calendario; sólo vale como advertencia de inestabilidad entre épocas)
+
+#### Días de reversión: la reversión de la apertura no se sostiene hasta el cierre
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 15, p. 730-732.
+
+**Qué dice.** Tabla 15.13 (enero 2000-julio 2011, ≈2800 casos por mercado; EURUSD, notas a 10 años, oro, crudo, trigo, S&P, AMZN, XOM) con porcentajes de apertura/cierre «en la dirección de la continuación». Casi todos están entre 40 y 57 %, es decir, sin sesgo claro. Excepciones: en el S&P, tras un día de máximo más alto y cierre más bajo, la apertura siguiente continúa a la baja el 52 % pero el cierre sólo el 43 %: el mercado sube de la apertura al cierre; tras día de mínimo más bajo y cierre más alto, sólo 40 % abre al alza y 53 % cierra al alza. En el trigo, tras tendencia bajista, abre al alza con probabilidad alta (32 % abre a la baja). Kaufman reconoce que el sesgo del S&P supera el sesgo alcista general esperado, pero no da expectativa en dinero.
+
+**Qué significaría aquí.** El patrón de reversión de dos barras (máximo alto/cierre bajo) es un candidato típico de «condición» que el constructor puede componer con bloques de precio; el resultado dice que la apertura siguiente es más ruido que señal. No sirve de filtro de entrada por sí solo.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (muestra grande pero sin expectativa; refuerza que el patrón de velas aislado no basta)
+
+#### Secuencias repetidas: la muestra se desploma con la longitud del patrón
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 15, p. 734-736.
+
+**Qué dice.** Probabilidad de día alcista tras día alcista ≈55 % en bolsa por sesgo inversor y regla de subida, ≈50 % en el resto de mercados. Con 1000 días y patrones de longitud k hay 2^k combinaciones: 25 % de los días cumplen el patrón de 2, 1/9 de 3 combinaciones, y con 10 días «muy pocas apariciones»; un patrón de 10 que se repite 10 veces en 1000 precios con 70 % de acierto «no tiene casos suficientes». Remedio que propone: contar el total de días alcistas dentro de una secuencia larga (15 de 20, por ejemplo) en lugar del patrón exacto. Y sobre la búsqueda automática: dejar que el ordenador defina patrones sin límite es «sobreajuste, pero a un nivel muy sofisticado».
+
+**Qué significaría aquí.** Es un argumento para la regla de máximo de 2 condiciones por lado y para exigir muchos casos por rama del mapa condicional. La alternativa del conteo (bullishness) es un descriptor continuo en lugar de un patrón binario, útil como condición con menos grados de libertad.
+
+**Estado.** YA EXISTE (regla 14 del proyecto y el control de multiplicidad del mapa condicional; el dossier recoge «Multiplicidad dentro del mapa condicional»); AMPLÍA con el descriptor de «conteo de días alcistas en la ventana» — **Tipo.** generación — **Locura.** 0 — **Valor.** 2 (refuerzo de una regla ya adoptada)
+
+#### Aritmética del coste intradía: la tendencia paga el doble de deslizamiento que la reversión
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 16, p. 739-744.
+
+**Qué dice.** Ejemplo del e-mini S&P: rango diario 931 $, comisión 10 $ por lado y deslizamiento 100 $ dejan 821 $. Un sistema de tendencia típico gana 1/3 de las veces con ganadoras del doble que las perdedoras: queda en «pérdida igual a los costes de transacción» (una ganancia de 90 $ por dos pérdidas de 45 $ es equilibrio). Los sistemas de reversión tienen «conservadoramente» 50 % del deslizamiento de uno de tendencia, porque entran contra el movimiento con órdenes límite; si hay que cortar la pérdida, sí sufren el mismo deslizamiento. Rango de apertura a cierre = sólo la mitad del rango total del día. Deslizamiento: «menos de 1 tick» como media, salvo tras un dato sorpresa; propone ajustar el deslizamiento al alza en proporción a la volatilidad diaria pero nunca por debajo de un mínimo.
+
+**Qué significaría aquí.** Modelar el deslizamiento por familia (tendencia frente a reversión) y por volatilidad del momento, con un suelo, en lugar de un valor fijo para todo. Los costes del proyecto ya son pesimistas; este matiz sólo cambiaría el reparto entre familias y su exposición a noticias.
+
+**Estado.** AMPLÍA (el dossier tiene «El slippage depende del tipo de orden y de lo concurrido del nivel» e «Inflar la comisión durante el build»; aquí se añaden el factor 50 % para reversión y el suelo en el ajuste por volatilidad) — **Tipo.** datos — **Locura.** 0 — **Valor.** 3 (cifra concreta para la política de costes)
+
+#### Órdenes que no se ejecutan («unables») se llevan los beneficios y nunca las pérdidas
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 16, p. 742-743.
+
+**Qué dice.** En entradas a favor del movimiento hay días en que el mercado salta tras una noticia y no se puede entrar cerca del precio del sistema; esas operaciones se saltan y «nunca reducen las pérdidas». Cifra: sistema con beneficio medio 250 $, pérdida media 150 $ y 50 % de acierto (5000 $ por 100 operaciones, factor de beneficio 1,66); con 10 % de órdenes no ejecutadas, todas ellas salen de las ganadoras: 5 operaciones, 1250 $, queda 4750 $ y el factor baja a 1,50. En energía, un brote geopolítico llegó a dejar 20 % de operaciones sin ejecutar en un mes con estrategia direccional. Mercados que abren justo antes de datos oficiales son los más propensos.
+
+**Qué significaría aquí.** En el backtest de SQX todas las órdenes se ejecutan, así que el resultado está sesgado a favor justo en las operaciones de ruptura (stop/limit prohibidos en generación aquí, pero válido para entradas a mercado con deslizamiento). Un estudio de sensibilidad «eliminar el X % de las mejores operaciones de entrada» mide ese riesgo. En fondeo (FTMO, Hantec) importa además por los saltos de noticias.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 1 — **Valor.** 4 (sesgo real y no modelado; fácil de medir con las operaciones exportadas)
+
+#### El movimiento intradía es sobre todo ruido: la tendencia exige varios días
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 16, p. 745-747.
+
+**Qué dice.** «Los métodos tradicionales, en particular los de seguimiento de tendencia, no se usan para trading con tiempo de espera inferior a 3 días y probablemente no se aplican bajo 20 días.» El movimiento a corto plazo es sobre todo ruido; las consecuencias que saca son esperar un retroceso para entrar y preferir la reversión a la media; los patrones gráficos clásicos intradía (triángulos, banderas) serían «patrones aleatorios sin significado». Recuerda que el movimiento abierto-cierre es la mitad del rango del día y que sólo podría capturarse un 25 % tras identificar la tendencia, de modo que la tendencia con barras cortas debe abarcar varios días. Plantea además si usar distinto periodo de media por mercado es sobreajuste o simple personalidad de cada mercado.
+
+**Qué significaría aquí.** Pone en duda la familia «seguimiento de tendencia» en M30/H1 si el tiempo de espera medio es de horas; el proyecto lo contrasta ya con los nulos de entrada aleatoria y el reescalado por marcos temporales. Sugiere un corte del mapa condicional por tiempo de espera, que decida si una familia de tendencia se mantiene o no en 1-3 días.
+
+**Estado.** AMPLÍA (el dossier incluye tesis de ruido y reversión en horizontes cortos; aquí se añade la cifra de 3 días y 20 días para el seguimiento de tendencia) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (afirmación fuerte y comprobable con el material propio)
+
+#### Ruptura del rango de apertura: el día interior selecciona; mantener de un día a otro sube el beneficio por operación
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 16, p. 759-764.
+
+**Qué dice.** Datos de Crabel de 1990: con un día interior previo el porcentaje de operaciones ganadoras sube en bonos (76 % frente a 60 % con ruptura de apertura +16 ticks), soja (70 % frente a 60 %) y ganado en parte; en el S&P baja (61 % frente a 68 %). Actualización de Kaufman con barras de 5 minutos hasta febrero 2011: en el crudo (marzo 2009-febrero 2011) todas las rupturas de 0,05 a 1,00 $ dieron beneficio sin costes y el beneficio por contrato se acerca a 100 $ cuando la ruptura es grande; manteniendo la operación de un día a otro sube el beneficio por operación pero baja el factor de beneficio; con día interior y noche, las operaciones se reducen mucho (sólo ≈10 % de los días cumple la condición) y el beneficio por contrato y el factor de beneficio «se disparan». En oro y bonos mantener de un día a otro aumenta los retornos pero siguen siendo «demasiado pequeños». La ruptura con tamaño fijo «no funcionará con el tiempo»; propone ATR de n barras × factor (hasta 2,0) y filtrar con HV(6) < HV(100) (reduce un 50 % las operaciones).
+
+**Qué significaría aquí.** Familia «ruptura desde la apertura» con ancho en ATR y preparación de día estrecho o volatilidad corta frente a larga. Ya está en el dossier; lo nuevo es la advertencia de que el beneficio sin costes por contrato en oro y bonos es pequeño y que se paga en número de operaciones (10 %), por lo que el mínimo de 40-50 operaciones al año de la regla del proyecto puede ser el límite.
+
+**Estado.** YA EXISTE (dossier: «Ruptura de volatilidad desde la apertura de sesión (apertura ± k x unidad de volatilidad)» y «La apertura y los niveles de referencia de la sesión como anclas»); AMPLÍA con la cifra de 10 % de días válidos con día interior y el contraste fijo frente a ATR — **Tipo.** generación — **Locura.** 0 — **Valor.** 3 (el recorte de operaciones frente al mínimo anual es la parte útil)
+
+#### Filtros de la ruptura del rango de apertura: confirmar por tiempo y esperar tras un hueco
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 16, p. 762-770.
+
+**Qué dice.** Raschke: rango NR4 (cuarto día con menor rango que los 3 anteriores), parada de compra 1 tick sobre el máximo del NR4, salida si no hay beneficio en 2 días. Raschke y Connors, «Momentum Pinball» (RSI de 3 días del cambio de 1 día < 30 para comprar, ruptura de la primera hora, parada en el mínimo de la primera hora, llevar la operación si hay beneficio): en el e-mini S&P 2000-mayo 2011 dio 703 $ por contrato en 1734 operaciones sin costes. Fisher: el precio debe permanecer sobre la línea de ruptura durante la mitad del tiempo del rango de apertura antes de comprar, e invertir si cae bajo el mínimo del rango; si no hay beneficio tras 1 × tiempo del rango, salir. Williams para el S&P: %R < 20 % y cierre inferior al de hace 7 días, no día interior, ruptura de apertura + 20 % del rango de ayer.
+
+**Qué significaría aquí.** Dos mecanismos probables como bloques de condición: «confirmación por permanencia» (retraso de entrada de la mitad del rango) y «salida por tiempo sin beneficio». Ambos tienen sentido con entradas a mercado; las órdenes stop de Raschke están prohibidas en generación.
+
+**Estado.** AMPLÍA (el dossier recoge NR4/NR7 y los filtros HV(6)/HV(100); no la confirmación por permanencia de Fisher ni la salida si no hay beneficio tras un tiempo) — **Tipo.** generación — **Locura.** 1 — **Valor.** 3 (la confirmación por permanencia es fácil de convertir en estudio)
+
+#### Desvanecer el movimiento de una barra con volatilidad triple (shock de precio intradía)
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 16, p. 775-777.
+
+**Qué dice.** Un shock es una barra con rango al menos 3 veces la media de las barras previas (o 2 veces la media de esa misma barra los 100 días anteriores). Regla: si la barra cierra en el 20 % superior vender, en el 20 % inferior comprar; no poner parada durante las 2 barras siguientes; parada bajo el mínimo de las 3 barras; salir al cierre. «No es una estrategia sofisticada» pero dio beneficio en oro (barras de 20 minutos desde 2000) y en bonos a 30 años con factor 2,5; no ofrece cifras. Los picos de volatilidad se concentran en la apertura y tras datos económicos. Sugiere salir cuando el volumen cae a la media de esa barra.
+
+**Qué significaría aquí.** Familia de reversión tras barra de rango extremo, relevante para oro en M30/H1 con filtro de ATR relativo. Debe ir con parada y salida por tiempo; la «parada retrasada 2 barras» es dudosa para fondeo con límite diario de pérdida.
+
+**Estado.** NUEVA — **Tipo.** generación — **Locura.** 1 — **Valor.** 3 (idea de familia de reversión comprobable; Kaufman no da números)
+
+#### La media adaptativa de Kaufman (KAMA) frente a VIDYA, MAMA y la correlación
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 17, p. 779-788.
+
+**Qué dice.** KAMA usa el cociente de eficiencia ER = movimiento neto de n cierres / suma de movimientos absolutos cierre a cierre (1 si todos van en la misma dirección, 0 si no hay avance neto) y constante de suavizado sc = [ER × (rápida − lenta) + lenta]², con rápida = 2/(2+1) y lenta = 2/(30+1); al elevar al cuadrado el extremo lento equivale a unos 900 periodos y el rápido a unos 4. Periodo de ER: 8-10, nunca más de 14; límite superior de 30 fijo; filtro pequeño para el cambio de dirección (ejemplo 0,1 desviaciones típicas del cambio de la línea). Comparación 1990-julio 2011 en futuros (periodos de la tabla: KAMA 10,5-30; correlación 20; VIDYA 9,30; MAMA 0,05-0,50): ratio de beneficio medio KAMA 1,53 y MAMA 1,36, ambos antes de costes; orden de resultado e inverso del número de operaciones: KAMA, MAMA, correlación (r²), VIDYA. En el oro el factor de beneficio fue KAMA 0,86, correlación 0,92, VIDYA 0,84 y MAMA 1,16 (operaciones 189, 203, 455, 222). Todos ganan de media en 20 años y pocos mercados pierden. Kaufman reconoce que es difícil compararlos con una media simple porque habría que probar todos los periodos con distribución logarítmica.
+
+**Qué significaría aquí.** El ER ya existe en el proyecto como medida de ruido (mapa condicional, calidad de entrada). Lo nuevo es usarlo como velocidad de una media o de un trailing stop. Si el constructor dispone de un bloque KAMA, hay que fijar sus límites y no dejar optimizar los periodos extremos. Señal para oro: KAMA tiene PF < 1 antes de costes.
+
+**Estado.** AMPLÍA (existe el efficiency ratio como estadística en `studies/readings/conditionalMap` y `entryQuality/eratio.py`; no hay un bloque de media adaptativa ni una comparación de adaptativas) — **Tipo.** generación — **Locura.** 0 — **Valor.** 3 (bloque nuevo plausible; resultados mixtos por mercado)
+
+#### Parada que se acerca con el cociente de eficiencia (Knapp) y la lección del Parabolic SAR
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 17, p. 790-792.
+
+**Qué dice.** Wilder: aceleración AF inicia en 0,02 al abrir la operación, sube 0,02 con cada nuevo extremo y se limita a 0,20; el SAR nunca se acerca al precio más que el mínimo (máximo) de hoy o ayer; siempre en el mercado. Kaufman destaca que «aumentar la velocidad de la tendencia a medida que la operación gana» es una idea válida que ningún otro método adaptativo ha incorporado. Variante de Knapp con ATR(10) y ER(10): parada inicial a 6 ATR de la entrada; si ER < 0,30 la parada no se mueve; si 0,30 < ER < 0,60 se acerca 0,1 ATR (largo) o 0,5 ATR (corto); si ER > 0,60 se acerca 0,2 ATR (largo) o 0,1 ATR (corto); el trailing sólo avanza a favor. Nota que las reglas no son simétricas entre largos y cortos. No da resultados de prueba.
+
+**Qué significaría aquí.** Salida (trailing) cuyo ritmo depende del ER: un bloque de salida o un estudio de salidas para plantillas de tendencia. Cuenta como una condición de salida. Sin cifras, queda como hipótesis.
+
+**Estado.** NUEVA — **Tipo.** generación — **Locura.** 1 — **Valor.** 2 (hipótesis razonable pero sin ninguna prueba en el libro)
+
+#### Adaptativo frente a simple: sin estabilidad fuera de muestra no hay garantía
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 17, p. 788, 797-799.
+
+**Qué dice.** Las técnicas adaptativas parecen chocar con el enfoque estadístico de reglas simples sobre largos periodos de prueba, pero ya se ha pasado de valores fijos (parada de 500 $, ruptura de 50 puntos) a criterios basados en volatilidad. Riesgo: en cada nivel de volatilidad, sobre todo extremos, hay pocas observaciones y «no estamos tan seguros de que la escala funcione en todos los niveles»; sólo se juzga por la mejora del perfil de toda la prueba. Dice que las técnicas «pueden funcionar mejor que un periodo estático, pero están lejos de ser la solución final». Un proceso adaptativo alternativo es volver a probar con datos recientes; el problema es que cuanto más rápido se reacciona, menos datos hay. Indica además que un bloque adaptativo debe probarse sobre una muestra con periodos distribuidos de forma progresiva (logarítmica) para no ponderar el extremo lento.
+
+**Qué significaría aquí.** Argumento para exigir que cualquier bloque adaptativo se compare contra la media simple en la rejilla de periodos que ya recorre SPP (permutación de parámetros), con muestreo logarítmico de los periodos, y no sólo contra un periodo elegido.
+
+**Estado.** YA EXISTE (el SPP del proyecto y el libro de pruebas cubren la lógica); AMPLÍA con el muestreo logarítmico de la rejilla de periodos — **Tipo.** proceso — **Locura.** 0 — **Valor.** 2 (refuerza una práctica existente; el muestreo logarítmico es detalle útil)
+
+#### Distribución de retornos: la desviación típica engaña con asimetría; mejor ordenar y contar
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 18, p. 801-804, 812-816.
+
+**Qué dice.** Los retornos de un sistema de tendencia están muy sesgados a la derecha porque captura colas y corta pérdidas. Ejemplo: media móvil de 80 días en bonos a 30 años, 1990-2011, retorno medio 232 $ y desviación típica 2621 $; tres desviaciones dan +8097 $ y −7632 $, valores en medio de la cola derecha y fuera del gráfico por la izquierda. Para el 10 % mejor y peor de una distribución asimétrica, lo práctico es ordenar los resultados y contar desde cada extremo: −1625 $ y +2062 $ en ese ejemplo. La mediana es mejor medida de lo normal que la media (trigo: media 362,75 $, mediana 341,50 $; la diferencia de posición entre ambas mide la asimetría). Las bandas de Bollinger quedan retrasadas tras un movimiento volátil; para detectar volatilidad inusual conviene compararla con un periodo más largo y desplazado (por ejemplo 6 meses acabando hace 1 mes, o 12 meses acabando hace 3), y así dos periodos volátiles seguidos se reconocen.
+
+**Qué significaría aquí.** Para cribado y Monte Carlo: umbrales de pérdida como percentiles empíricos de las operaciones y no media ± k desviaciones; y para el régimen de volatilidad, el cociente «volatilidad actual / volatilidad larga desplazada» como descriptor sin retraso de Bollinger. Útil para límites de pérdida diaria en fondeo.
+
+**Estado.** AMPLÍA (los percentiles empíricos ya son práctica en los estudios de Monte Carlo; el descriptor de volatilidad con ventana larga desplazada es nuevo) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (aplicable ya al régimen y a los umbrales de riesgo)
+
+#### Curtosis y asimetría móviles como señales: reglas sin resultados
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 18, p. 818-822.
+
+**Qué dice.** Asimetría móvil (cuatro pasos de suavizado exponencial doble) como indicador adelantado de cambio de tendencia: picos en julio 2009 (inicio de una subida) y junio 2010 en el e-mini S&P. Reglas de tendencia: comprar cuando el exceso de curtosis cruza por debajo de 0, asimetría > 0 y volatilidad > mínimo; vender con asimetría < 0. Reglas de reversión: comprar cuando el exceso de curtosis cruza por encima de 0, asimetría < 0 y volatilidad > mínimo (mejor con volatilidad alta). Parada de 5 puntos bajo el mínimo de 10 barras. Ejemplo en S&P de 30 minutos con curtosis de 40 barras, asimetría de 15 barras y ATR(10 días). Reconoce que con datos intradía el ruido hace menos estable la distribución. No presenta ningún resultado agregado.
+
+**Qué significaría aquí.** Dos descriptores de régimen (curtosis y asimetría de retornos en ventana corta) para el mapa condicional, no una estrategia: sin números en el libro no hay evidencia a favor. Cuenta como condición cada uno.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 2 — **Valor.** 2 (idea de descriptor sin ninguna prueba que la respalde)
+
+#### Market Profile: no entrar en tendencia hasta salir del área de valor
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 18, p. 822-832.
+
+**Qué dice.** El área de valor reúne cerca del 70 % del volumen (o del tiempo: «oportunidades tiempo/precio», TPO, bloques de 30 minutos por precio) y el precio rota alrededor de su centro «al menos 80 % del tiempo». Una tendencia se anuncia cuando el precio sale del área o hay más TPO a un lado; si la salida atrae volumen se forma una nueva área («tendencia de valor»). Kaufman propone un filtro objetivo (de Jones): área de valor = dos desviaciones típicas del centro por el recuento de TPO; operar la tendencia basada en medias sólo tras salir del área. Con diarios: 60 % central de 132 precios del EuroStoxx (febrero-julio 2011) dio 2735 y 2906; sólo el nivel de 2735 coincidía con una serie de mínimos y con la ruptura. Es un caso único y dice que el interés por la técnica ha bajado.
+
+**Qué significaría aquí.** Filtro de régimen «precio fuera del rango de valor de N barras» para plantillas de ruptura; el dossier ya tiene el perfil de tiempo. Sólo hay un ejemplo y ningún test.
+
+**Estado.** YA EXISTE (dossier: «Perfil de tiempo en precio: punto de control, área de valor y “huecos”»); AMPLÍA con la regla de 60 % central de la distribución como umbral de ruptura — **Tipo.** estudio — **Locura.** 1 — **Valor.** 2 (un solo caso; el dossier ya lo cubre)
+
+#### Dos marcos temporales: el oscilador de entrada debe ser mucho más corto que la tendencia
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 19, p. 833-835, 838, 841.
+
+**Qué dice.** Si la tendencia se mantiene unos 23 días hábiles, el oscilador de entrada debe dar una buena entrada en los primeros 3-5 días (10-20 %), de modo que sus periodos sean menores de 5 días. Aunque el oscilador por sí solo pierda, el beneficio viene de la tendencia; sólo se usa el primer sobrevendido tras la señal de tendencia. Ejemplo con EURUSD y media de 60 días: entrar con la tendencia (30 julio 2010 a 16 diciembre) ganó 2075 $; esperar el primer sobrevendido de un estocástico de 3 días (11 agosto a 31 diciembre) ganó 6200 $; en la segunda operación la espera dio peor precio, «no toda entrada es mejor». El estocástico estándar de 14 días da pocas oscilaciones y entradas muy retrasadas. Es un solo ejemplo. Además: no se puede sustituir una media de 10 periodos de barras de 1 hora por una de 40 periodos de barras de 15 minutos, porque menos puntos sobre el mismo tramo siempre dan un resultado más suave; los marcos distintos no equivalen a tres medias.
+
+**Qué significaría aquí.** Dos aplicaciones: (1) diseño de plantillas «tendencia + entrada en retroceso» con un condicionante de 1 + 1 hueco, y (2) una advertencia para el reescalado entre marcos temporales: escalar los periodos entre H1 y H4 no reproduce la señal de un marco más lento, lo que justifica contrastar cada celda frente a su propio nulo (como ya hace el proyecto).
+
+**Estado.** AMPLÍA (el dossier ya tiene el mapa condicional y el cross TF; no tiene la regla de oscilador de entrada «periodo menor de 1/5 del periodo de tendencia» ni la advertencia de no equivalencia entre marcos) — **Tipo.** generación — **Locura.** 0 — **Valor.** 3 (dos ideas útiles al diseño y al reescalado de cross TF)
+
+#### Continuidad del beneficio por operación frente al tiempo de espera como prueba de robustez
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 19, p. 838.
+
+**Qué dice.** En un sistema de tendencia robusto, una media de 100 días frente a una de 50 da mayor beneficio por operación, más fiabilidad y proporcionalmente menos operaciones, y el patrón continúa al alargar el periodo (se invierte al acortarlo). Los periodos muy cortos quedan descartados por ruido, deslizamiento y comisiones relativos; los muy largos, por grandes oscilaciones del capital. Al ver los resultados de la prueba como una imagen continua debe haber un patrón claro y rentable y continuidad al trazar el beneficio por operación frente al tiempo medio de espera. Kaufman presenta esto como el rasgo que Krausz incorpora al diseñar su programa.
+
+**Qué significaría aquí.** Prueba de forma barata sobre la salida de SPP: trazar beneficio por operación frente a tiempo medio de espera y exigir monotonía suave; una cresta aislada es sospechosa de sobreajuste. Ya hay un perfil SPP; esto añade una comprobación sobre su forma.
+
+**Estado.** AMPLÍA (la salida de SPP del proyecto es un mapa de parámetros; no incluye este contraste monótono beneficio-por-operación contra tiempo de espera) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (criterio de robustez barato y sin datos nuevos)
+
+### 9.7 · Técnicas avanzadas y prueba de sistemas: optimización, robustez y sobreajuste (caps. 20-21)
+
+El capítulo 20 reúne medidas y usos de la volatilidad (filtros de entrada, salidas, ruido frente a tendencia) y tres técnicas de búsqueda (sistemas expertos, redes neuronales, algoritmos genéticos); el 21 es un manual completo de cómo probar un sistema sin engañarse. Lo más valioso: (1) robustez medida como la **fracción de combinaciones de parámetros que ganan**, y esperar la media de todas las pruebas y no la mejor; (2) los **choques de precio** (un día enorme e impredecible) hacen que el mejor óptimo sea el que más se quedó con un golpe de suerte; (3) una batería de reglas de higiene: rangos fijados de antemano, a lo sumo cuatro variables, fuera de muestra gastado una vez, y una regla nueva solo vale si mejora la media de toda la rejilla. Casi todas las pruebas son de futuros diarios 1990-2011, así que las cifras son orientativas y no se trasladan tal cual al oro en M30-H4.
+
+#### Probar es validar una idea, no descubrirla: escribir las expectativas antes
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 906-907, 976-977.
+
+**Qué dice.** «Las pruebas deben servir para decidir entre compromisos de riesgo y beneficio, no para descubrir.» Antes de probar hay que escribir una estimación del número de operaciones, del porcentaje de ganadoras y hasta del beneficio neto; la prueba las confirma o delata un error. También: sospechar de los buenos resultados tanto como de los malos («buenos resultados por la razón equivocada siguen siendo un error»), y programar todas las reglas porque obliga a pensar las contingencias.
+
+**Qué significaría aquí.** Al elegir una celda de investigación, el ideaExpert escribiría (y el ledger congelaría) una previsión de operaciones por año, tasa de acierto y rango de Sharpe antes de lanzar el build; una superviviente cuyo perfil se aleja mucho de lo previsto se revisa antes de celebrarla. Choca de frente con la generación masiva de SQX, que es descubrimiento puro: se compensa con que la idea y la familia de bloques se fijan antes (regla 15) y con la puerta posterior.
+
+**Estado.** AMPLÍA (el ledger ya congela umbrales; falta congelar la previsión de operaciones y acierto por celda antes del build) — **Tipo.** proceso — **Locura.** 0 — **Valor.** 3 (barato, y detecta resultados buenos por la razón equivocada)
+
+#### A lo sumo cuatro variables: las mejores fórmulas probadas por Futures Truth tienen pocas
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 919.
+
+**Qué dice.** En las pruebas de Futures Truth (una organización que valida y vigila sistemas a la venta), los sistemas que mejor funcionaron en vivo «suelen tener cuatro variables o menos». Robusto = rinde con los menos parámetros sobre la mayor cantidad de datos. Además exige que cada regla se apoye en un fenómeno real de precio o fundamental: un patrón hallado por optimización es «más probablemente una ilusión» sin esa razón. No da el tamaño de la muestra de sistemas ni su periodo.
+
+**Qué significaría aquí.** Apoya la regla dura 14 (máximo 2 condiciones de entrada y 2 de salida) con una medida: con el ledger, cruzar el número de parámetros libres de cada superviviente (periodos, umbrales, stops) con su supervivencia en `oos1` y `oos2`, y ver si a partir de 4-5 parámetros cae. Si cae, un tope de parámetros libres por plantilla sería un filtro de generación; si no cae, se anota que el tope de Kaufman no se reproduce con SQX.
+
+**Estado.** AMPLÍA (regla 14 limita condiciones, no parámetros libres; no se ha encontrado un estudio que cruce parámetros libres con supervivencia) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (barato con datos del ledger; cuantifica una regla que hoy es solo de principio)
+
+#### Rangos de parámetros fijados antes y nunca ampliados tras un mal resultado
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 908-909, 941, 977.
+
+**Qué dice.** El rango de cada parámetro se decide de antemano según el sentido de la idea y no se cambia. Ejemplo: una media corta se prueba de 3 a 15 días, así que el RSI de entrada va de 3 a 10 días, no de 3 a 50. Si el RSI de 45 días «ganara», el concepto original se descartaría para perseguir «un callejón sin salida casi seguro sobreajustado». Si con rangos de sentido común no gana, se revisa el concepto. Limitar el número de pruebas es una ventaja porque obliga a decidir antes.
+
+**Qué significaría aquí.** Una regla de proceso para el SPP y el builder: el rango de cada periodo y umbral queda escrito en la plantilla o la paleta antes del build y no se amplía tras ver resultados; ampliar es abrir una celda nueva y suma pruebas al ledger. Hoy nada impide ampliar el rango de un bloque entre dos builds de la misma idea.
+
+**Estado.** AMPLÍA (el ledger cuenta pruebas; no registra si el rango de un bloque cambió entre builds de la misma celda) — **Tipo.** proceso — **Locura.** 0 — **Valor.** 3 (el sesgo es silencioso y la regla cuesta cero)
+
+#### Probar los periodos en escala porcentual, no en pasos iguales
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 909, 929, 978.
+
+**Qué dice.** La diferencia entre medias de 49 y 50 días es del 2 %; entre 2 y 3 días, del 50 %. Con pasos iguales, los promedios de todas las pruebas quedan dominados por los periodos largos, que se parecen entre sí. Propone valores crecientes en porcentaje (empezar en 1 y multiplicar por 1,5: 1; 1,5; 2,2; 3,3; 5,0; 7,6; 11,4; 17,1; 25,6; 38,4; 57,7) o, si la plataforma exige pasos iguales, ponderar los resultados para compensar.
+
+**Qué significaría aquí.** Comprobar cómo reparte SQX los rangos de periodo en el SPP y en el builder; si es aritmético, el «porcentaje de pruebas rentables» y la media de la rejilla (ver entradas siguientes) quedarían sesgados hacia lo lento. Una rejilla geométrica para el SPP, o pesos inversos al ancho relativo del escalón en el cálculo de la meseta.
+
+**Estado.** YA EXISTE en el dossier de ideas («Periodos muestreados en escala logarítmica y largo y corto construidos por separado»); AMPLÍA solo con la serie ×1,5 y la ponderación como alternativa — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (la idea ya está; falta comprobar qué hace el SPP)
+
+#### Periodos de entrenamiento alternos y aleatorios, fijados al empezar y distintos para cada sistema
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 916-917.
+
+**Qué dice.** Reservar el primer 50 % o el último 50 % como muestra de entrenamiento falla si el mercado cambia de carácter. Los periodos alternos son mejores, y los alternos de longitud aleatoria («el método de prueba más robusto»): con 20 años, 2 tramos de entrenamiento y 2 de validación, longitud entre 2 y 8 años sorteada con un número aleatorio. Se fijan al inicio del desarrollo y no se tocan; cada sistema tiene su propio reparto, para no probar siempre los mismos datos. Los resultados se juntan como cambios diarios en una sola serie, no como beneficio total de cada tramo.
+
+**Qué significaría aquí.** Choca con el reparto actual: `build`, `oos1` y `oos2` son bloques contiguos y los mismos para todas las plantillas de un activo. Un estudio de datos: ¿cambia el ranking de supervivientes si el entrenamiento son tramos alternos del mismo histórico y el resto es validación? No se propone sustituir el esquema (SQX trabaja con ventanas), sino medirlo una vez en una celda.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 2 — **Valor.** 2 (interesante pero SQX encaja mal con tramos intercalados y gasta `oos1`)
+
+#### El fuera de muestra se gasta una vez, y suele rendir la mitad que el de dentro
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 917, 979-980.
+
+**Qué dice.** Solo se debe usar el fuera de muestra en la prueba final, sin incluir la parte de entrenamiento; «raramente» iguala el perfil de dentro y «más a menudo muestra cerca del 50 % de los rendimientos». Una caída del ratio de información (rendimiento anualizado entre su desviación anualizada) de 2,0 a 1,0 «es un resultado razonablemente bueno»; de 2,0 a 0,4 es un problema. Si entonces se detecta un caso que un filtro simple arreglaría y se añade, eso es retroalimentación: «el resultado siempre es sobreajuste y la probabilidad de que funcione se desploma». Si no hay datos recientes, vale un mercado similar.
+
+**Qué significaría aquí.** Dos usos concretos: (1) una referencia calibrada para la puerta del `oos1`: pérdida de Sharpe de ~50 % es lo normal y no una causa de descarte por sí sola; (2) la regla «nunca arreglar tras ver `oos1`» ya está en el proyecto, y el mismo texto justifica que `oos2` no se use para calibrar (como pide la memoria del propietario).
+
+**Estado.** YA EXISTE («Los pliegues de walk-forward dan una varianza; el fuera de muestra se gasta una vez» y la regla del «mitad del beneficio» del dossier); AMPLÍA con la referencia 2,0→1,0 como pérdida normal y 2,0→0,4 como alarma — **Tipo.** proceso — **Locura.** 0 — **Valor.** 2 (confirma lo hecho; da dos cifras para calibrar la puerta)
+
+#### Walk-forward con ventanas cortas favorece los modelos rápidos; el óptimo que salta es la señal
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 918-919.
+
+**Qué dice.** En el paso adelante (walk-forward: elegir parámetros en una ventana y aplicarlos a la siguiente), una ventana de entrenamiento de 2 años contiene pocas operaciones de un modelo lento y, si hay mercado alcista, cualquier tendencia largo gana lo mismo: sesgo a lo rápido. Se detecta porque el periodo óptimo salta entre ventanas (por ejemplo 10 días, luego 50, luego 15). Remedio: alargar la ventana de 2 a 5 años, a costa de reservar datos iniciales. Además, repetir el walk-forward varias veces agota el fuera de muestra.
+
+**Qué significaría aquí.** Para la matriz walk-forward (30 celdas), añadir como diagnóstico la estabilidad del parámetro óptimo (o del cuartil de periodos ganadores) entre filas y columnas de la matriz: un óptimo errático dice que las ventanas son demasiado cortas para la lentitud de la estrategia. Aplica sobre todo a H4, que acumula pocas operaciones por ventana.
+
+**Estado.** AMPLÍA (la WFM ya se evalúa por área de celdas; la inestabilidad del parámetro óptimo entre ventanas no es una de sus diez condiciones) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (diagnóstico barato sobre un resultado que ya se calcula)
+
+#### Reparto 70/20/10: entrenar, probar para decidir cuándo parar y reservar el final
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 20, p. 891, 901-902.
+
+**Qué dice.** Para redes neuronales y algoritmos genéticos aconseja entrenar con el 70 % más antiguo, usar el 20 % siguiente como datos de prueba que deciden cuándo la búsqueda ha convergido, y guardar el 10 % final como validación sin tocar. Para un algoritmo genético solo, 70-80 % de entrenamiento y 20-30 % fuera de muestra (60-40 o 50-50 si hay muchos datos). El rendimiento fuera «normalmente empeora pero debe cumplir criterios mínimos». Las redes y genéticos «casi siempre» encuentran la solución en un sistema cerrado, pero el mercado no lo es, y los resultados pueden aparecer por azar.
+
+**Qué significaría aquí.** El esquema `build` / `oos1` / `oos2` ya es esta estructura de tres partes. Lo útil es la idea de que el segundo tramo es parte de la búsqueda (decide cuándo parar) y el tercero es el único intocable, justo la distinción que hace falta mantener entre `oos1` (se usa para cribar y calibrar) y `oos2` (solo validar). No cambia ningún proceso.
+
+**Estado.** YA EXISTE (esquema `build`/`oos1`/`oos2` del proyecto y la regla de que `oos2` no se gasta) — **Tipo.** proceso — **Locura.** 0 — **Valor.** 1 (práctica estándar que el proyecto ya aplica)
+
+#### Optimizar por columnas se atasca en las crestas; repetir con semillas distintas y mirar los 20 mejores
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 920-921, 933-935; cap. 20, p. 902.
+
+**Qué dice.** Optimizar un parámetro cada vez (el mejor del primero, luego el siguiente) puede no encontrar nunca el pico si el mapa tiene una cresta diagonal; su ejemplo de rejilla da 300 en lugar de 400. Remedio: empezar desde valores aleatorios y repetir; con 3 semillas que llegan al mismo pico «se puede concluir con cierta certeza» que es el pico (en una rejilla pequeña). Para el genético: ejemplo de 8 parámetros con 2.332.800.000 combinaciones (64.800 horas a 10 pruebas por segundo) resuelto con un genético en unas 100 pasadas, repetido 5 veces con semillas distintas (500 pasadas, unos 30 minutos); mezclar el 10-15 % de las cadenas y mutar una casilla en el 10 %. Guardar las 20 mejores cadenas: si se agrupan en una zona, es más robusto; si difieren mucho, «la integridad del resultado está en duda». En el cap. 20: correr el genético unas 10 veces con semillas distintas; si más del 25 % se cambia, no converge.
+
+**Qué significaría aquí.** El generador de SQX es un genético; hoy una celda es una corrida. Repetir la misma plantilla y activo con 3-5 semillas y comprobar si los mejores de cada corrida caen en la misma región de parámetros (o en la misma familia de bloques) daría una medida de reproducibilidad de la búsqueda antes de gastar la cadena posterior. Coste: 3-5 veces el CPU del build, así que solo para celdas que ya mostraron algo.
+
+**Estado.** AMPLÍA (el dossier ya recoge «La búsqueda genética y el hueco aleatorio» y el A/B de la función de aptitud; la reproducibilidad entre semillas y el agrupamiento de los 20 mejores no figuran) — **Tipo.** generación — **Locura.** 1 — **Valor.** 3 (mide si lo hallado es del mercado o de la semilla; cuesta CPU)
+
+#### Una función de aptitud concreta: beneficio por operación × (1 − 1/√n) × cociente beneficio bruto/pérdida bruta
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 20, p. 898.
+
+**Qué dice.** Propone ordenar las cadenas del genético con tres cosas a la vez: beneficio por operación (PPT), número de operaciones (NT) y suavidad (GP/GL, beneficio bruto entre pérdida bruta), o el ratio de información en su lugar. La fórmula sale mal extraída, pero sus dos ejemplos la fijan: PPT × (1 − 1/√NT) × GP/GL da 170,75 para 500 $ por operación en 10 operaciones con GP/GL = 0,5 (cálculo propio: 170,9), y 315,00 para 250 $ en 100 operaciones con 1,4 (cálculo propio: 315,0). El de menos beneficio por operación gana porque tiene más operaciones y mejor cociente. Cada analista debe construir su criterio.
+
+**Qué significaría aquí.** Un candidato a la función de aptitud del build (o a un orden de lectura de la databank): premia el tamaño de muestra con un término que crece despacio y castiga el beneficio concentrado. Encaja con el mínimo de 40-50 operaciones por año. Hay que probarlo contra la función actual en una celda, no adoptarlo.
+
+**Estado.** AMPLÍA (el dossier tiene «La función de aptitud del genético es una variable de experimento» y su A/B; esta aporta una fórmula concreta con los números del libro) — **Tipo.** generación — **Locura.** 1 — **Valor.** 2 (una fórmula más para el A/B ya propuesto)
+
+#### Una regla nueva solo vale si mejora la media de toda la rejilla sin subir su dispersión
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 937-938, 979.
+
+**Qué dice.** Al refinar una regla se puede mejorar un caso concreto y empeorar el resto: el perfil resultante tiene picos más altos y más pérdidas en otros parámetros, con la media igual pero más extremo; «una curtosis muy alta es señal de sobreajuste». Criterio práctico: tras añadir una regla, la media de todas las pruebas debe subir con la desviación igual, o la desviación bajar con la media igual; si no, la regla solo arregló un caso. Y una regla que afecta a una o dos operaciones «es improbable que funcione en el futuro».
+
+**Qué significaría aquí.** Para decidir si añadir un bloque o filtro a una plantilla, comparar el SPP (o la nube) antes y después con dos números: media y desviación del Sharpe o PF en toda la rejilla, y exigir mejora global. Aplica también al hueco aleatorio: un bloque que mejora la mejor estrategia pero no la media de la población es un bloque de ajuste fino.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 0 — **Valor.** 4 (regla concreta, barata y alineada con lo que SQX hace de forma natural: muchas variantes por plantilla)
+
+#### Suavizar el mapa de resultados con los vecinos y leer su forma
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 924-928, 931-932.
+
+**Qué dice.** Para elegir parámetros de forma automática, sustituir cada resultado por la media de sus vecinos (3 puntos en una dimensión; 9 casillas en dos, con versiones de 6 y 4 en bordes y esquinas) y quedarse con el máximo del mapa suavizado: así un pico aislado (por ejemplo 1.000, 8.000, 3.000, 4.000 → el 8.000 se sustituye por la media o la interpolación) no gana. Lectura de formas: una zona rentable ancha que se va apagando es buena; dos zonas (rápida y lenta) son típicas de mercados muy volátiles, y la lenta se prefiere por costes; un pico estrecho de la media de 3 días rodeado de pérdidas indica un golpe de suerte; un patrón errático «indica que la estrategia no es fiable o que el programa tiene errores».
+
+**Qué significaría aquí.** El SPP ya produce el mapa; añadir dos números: el máximo suavizado (en vez del máximo bruto) como valor que se reporta, y una etiqueta de forma (meseta ancha, dos regiones, pico aislado, errático). El dossier ya propone el detector de acantilados; el máximo suavizado y la preferencia por la región lenta ante dos regiones son lo nuevo.
+
+**Estado.** AMPLÍA (dossier: «Detector de acantilados y lectura del vecindario con una métrica de riesgo» y «Meseta no es robustez»; falta el suavizado por vecinos y la preferencia por la región lenta) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (barato sobre el SPP existente)
+
+#### Sensibilidad en n dimensiones: capas concéntricas alrededor de los parámetros elegidos
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 943-944.
+
+**Qué dice.** Con n parámetros, mover cada uno por separado no basta. Calcular la distancia (radio de una «esfera» de n dimensiones, la fórmula sale ilegible pero es la euclídea) de cada prueba a los valores elegidos, ordenarlas de menor a mayor radio, partirlas en, por ejemplo, 10 grupos iguales (capas concéntricas) y promediar el rendimiento por capa: se ve cuánto decae al alejarse en cualquier dirección. Una variante: parámetros aleatorios dentro de un rango, y buscar la capa más robusta. Regla: pequeños cambios no deben arruinar la rentabilidad; si el rendimiento cae en todas las direcciones, el modelo es «una solución de pico» y casi seguro sobreajustado.
+
+**Qué significaría aquí.** Resuelve un problema ya documentado: con seis parámetros vivos, una caja de radio 2 en todos a la vez suele contener solo a la madre (n = 1). Con capas por distancia en vez de una caja, siempre hay vecinos y se puede dibujar la curva de decaimiento por capa, con el cociente de rendimiento de la capa 1 entre el del centro como número.
+
+**Estado.** AMPLÍA (`knowhow/research/plateau-radius-degenerates-at-six-params.md` describe el problema; la solución por capas de distancia no está en `studies/optimisation/cloud` ni en el dossier) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 4 (arregla una limitación conocida de la nube de parámetros)
+
+#### Robustez = fracción de combinaciones que ganan; umbral orientativo del 70 %
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 943, 945, 958-959, 963-964, 976.
+
+**Qué dice.** Su medida de robustez es el «% de pruebas rentables»: de 40 periodos probados (2 a 80 días, paso 2), cuántos terminan en beneficio, con costes de 40 $ por vuelta. «Si 30 de 40 son rentables, el resultado es 75 %.» Propone 70 % como umbral de aceptación para un mercado con una estrategia (11 de 17 mercados lo superan), y avisa que el umbral solo vale para pruebas iniciales en un rango razonable: si luego se estrecha el rango para eliminar periodos perdedores, deja de aplicarse. Aviso añadido: con pocas operaciones el factor de beneficio se dispara (con 2 operaciones sale 100), así que no sirve como medida de robustez. Y el recuento relevante son las pruebas acumuladas de todas las estrategias, no de una.
+
+**Qué significaría aquí.** Una métrica barata para el SPP y la nube: la fracción de combinaciones (en rejilla de escala porcentual) con Sharpe neto positivo y con al menos 40-50 operaciones por año, y su umbral. Se leería junto con la media de la rejilla. Con la regla de mínimo de operaciones aplicada, evita el efecto «factor de beneficio infinito con 2 operaciones».
+
+**Estado.** AMPLÍA (el SPP y la nube miden meseta y vecindario; la fracción de pruebas rentables sobre toda la rejilla parece solo figurar en la configuración de la nube, sin umbral del 70 %) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (medida simple y fácil de leer por el propietario)
+
+#### Esperar la media de todas las pruebas menos una desviación, no la mejor
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 943, 976.
+
+**Qué dice.** Las expectativas deben ser el rendimiento medio de todas las pruebas, «porque no se sabe qué combinación será la mejor»; el sistema con mayor media y más pruebas rentables es el mejor. Un indicador estadístico: rendimiento ajustado = media de todas las pruebas − 1 desviación típica de todas ellas, con una probabilidad del 84 % de alcanzarlo (supuesto de normalidad, dicho por él en términos generales). Lo que importa, resume, son las medias (beneficio, operaciones, drawdown, beneficio por operación) y la desviación de los beneficios de toda la rejilla; la mejor combinación distrae.
+
+**Qué significaría aquí.** Una cifra de expectativa realista por plantilla: media − 1 desviación del Sharpe neto en toda la rejilla o población de variantes, a poner junto al Sharpe del elegido. La diferencia entre ambos es el recorte esperado por seleccionar el máximo. Complementa el Sharpe deflactado del ledger, que corrige por número de pruebas pero no usa la rejilla de la propia estrategia.
+
+**Estado.** AMPLÍA (el dossier recoge la mitad del beneficio como regla y el ledger el Sharpe deflactado; media − 1 desviación de la rejilla no figura) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (cifra simple de recorte para presentar al propietario)
+
+#### Qué mercados tienen tendencia: el oro y el S&P casi nunca ganan con tendencia diaria, el petróleo y el EURUSD casi siempre
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 957-964, 976.
+
+**Qué dice.** 17 futuros líquidos, datos diarios 1990 a mediados de 2011, 5 métodos de tendencia (media simple, exponencial, ponderada lineal, pendiente de regresión, ruptura de N días), periodos de 2 a 80 en pasos de 2, 40 $ por vuelta. Porcentaje medio de periodos rentables entre los 5 métodos: EURUSD 87 %, crudo 85 %, cobre 83 %, DAX 82 %, USDJPY 81 %, gasóleo 78 %, Eurobund 76 %, gas natural 75 %, NASDAQ 75 %; en el otro extremo oro 8 % (media simple 3 %, regresión 0 %), trigo 14 %, S&P 19 %, soja 19 %, dólar canadiense 26 %. Explica el oro como 15 de 20 años en mínimos, y matiza que si las pruebas mostraran que fue muy rentable en los últimos 5 años podría incluirse por diversificación. Lo lento gana: la mejor zona suele incluir 80 días.
+
+**Qué significaría aquí.** Datos diarios de futuros no son M30-H4 de CFD, así que no se traslada la cifra, sino el método: antes de generar una familia de tendencia en un mercado, pasar los cinco métodos simples por una rejilla de periodos y mirar el porcentaje de rentables. Un oro con 8 % diario apunta a que una familia de tendencia pura en oro tiene el viento en contra, justo en el activo base del proyecto. Reforzaría empezar el oro por reversión o ruptura de rango, y dejar tendencia para el petróleo y los mayores.
+
+**Estado.** AMPLÍA (`studies/research/marketProfile` ya mide deriva, eficiencia de Kaufman y coste sobre ATR por mercado; el perfil de tendencia con 5 métodos y su porcentaje de rentables no se ha encontrado) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 4 (decide qué familia lanzar en cada activo, con una prueba barata sin SQX)
+
+#### No es el método, es el mercado; y añadir una segunda media no mejora
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 963-967.
+
+**Qué dice.** Con los mismos 17 mercados, los cinco métodos dan medias de rentabilidad parecidas (beneficio neto medio por mercado en dólares: media simple 121.042, exponencial 100.983, ponderada 97.299, regresión 100.930, ruptura 108.323; factor de beneficio 1,52 / 1,62 / 1,41 / 1,94 / 2,59). Regresión y ruptura tienen mejor PF pero muy pocas operaciones (100 y 54 en 20 años: la ruptura 2,7 por año, riesgo alto); la media simple tiene el mayor beneficio medio sin esa exposición. El cruce de dos medias (3 a 21 rápida, 10 a 80 lenta) sale peor: robustez 46 % frente a 55-65 %, PF 1,34, y 222 $ por contrato frente a 357 de la media simple y 1.301 de la regresión (62 % y 17 %); en Eurodólar solo 81 $, «el límite bajo de lo seguro». Un mercado que gana con ruptura y falla con regresión no es candidato a tendencia.
+
+**Qué significaría aquí.** Dos lecturas: (1) la familia importa menos que el mercado, así que el cribado por mercado (entrada anterior) va antes que afinar la familia; (2) la segunda condición no mejora el resultado de forma automática, lo que respalda el límite de 2 condiciones y suma un test: comparar, en una misma celda, plantillas de una y de dos condiciones fijas, y exigir que la segunda mejore la media de la población y no solo a los mejores. Y cuidado con el beneficio por operación: debe sobrar para costes y spread del CFD.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (cifras comparables para decidir entre una y dos condiciones fijas)
+
+#### Contra la tendencia rápida: comprar cuando la lenta sube y la rápida gira abajo
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 950-951.
+
+**Qué dice.** En mercados con ruido, las tendencias rápidas pierden de forma persistente (en el NASDAQ 1991-2011 todo periodo de 1 a 11 días perdió con fuerza). Explotarlo: comprar cuando la media lenta sube y la rápida gira a la baja; vender en corto cuando la lenta baja y la rápida gira al alza; salir cuando la lenta cambia de dirección (y no se invierte posición). NASDAQ 1991-2011, tabla del libro: media simple, 64.385 $, PF 1,51, 212 operaciones, 35 % ganadoras, 277 $ por operación; con el «fade», 53.380 $, PF 2,26, 72 operaciones, 47 %, 741 $ por operación. Mejoran todas las estadísticas salvo el beneficio neto, y sin inversión de posición mejora la liquidez.
+
+**Qué significaría aquí.** Una familia de plantilla de entrada de dos condiciones: dirección de la tendencia lenta (fija) más giro contrario de la rápida (el hueco aleatorio o un bloque concreto), una sola dirección por plantilla, en índices ruidosos (US500, NAS100) en H1-H4, donde se espera más ruido. Por ser larga o corta por separado, encaja con la regla 13; el fade en largo solo opera cuando la lenta sube. A comprobar el mínimo de 40-50 operaciones por año: 72 en 20 años es muy poco.
+
+**Estado.** NUEVA — **Tipo.** generación — **Locura.** 1 — **Valor.** 3 (idea sencilla y con cifras, pero con muy pocas operaciones)
+
+#### Choques de precio: el mejor óptimo es el que más se quedó con un golpe de suerte
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 950, 953, 970-975, 979.
+
+**Qué dice.** Un choque de precio es un movimiento enorme e impredecible; en una prueba histórica siempre hay y el ordenador no distingue un beneficio sostenido de un regalo. Si hubo 10 choques en 20 años y el sistema ganó en 8, se sobreestima el beneficio al menos por 3 choques que casi seguro habrían sido pérdidas, y se subestima el riesgo, que es lo fatal porque permite apalancarse de más. Quitar el resultado de los días con rango superior a 5 veces el rango medio de los 10 días anteriores (S&P 1991-2009, media móvil) muestra que los choques perjudican de forma consistente a la tendencia. Recomienda listar los choques como días con rango de al menos 3,5 veces el rango medio reciente, ver cuántos dieron beneficio, y si fueron más del 50 %, invertir el beneficio medio de ese día por una pérdida equivalente (solo un día). Caso del petróleo 1990 (media móvil, invasión de Kuwait y respuesta de EE. UU.): el óptimo eligió 15 días (6.975 $), luego 20 días (19.810 $, y 3.225 $ sin el choque), luego 35 días (28.335 $, y 2.495 $ sin los choques, cuando el vecindario de ese pico eran pérdidas). Elegir la zona estable (unos 60 días) rinde mucho menos.
+
+**Qué significaría aquí.** Un estudio nuevo para las supervivientes (y para los bloques de entrada): marcar las barras con rango mayor que 3,5 veces el ATR de las 10 anteriores, calcular el beneficio de la estrategia sin esas barras y la fracción de choques ganados. Una superviviente que depende de choques o gana más del 50 % de ellos tiene riesgo subestimado, algo crítico en cuentas de fondeo con límite diario. Es independiente del reloj, así que no choca con la regla 15. Falta decidir si cuenta como estudio de lectura o puerta del paso previo a cartera.
+
+**Estado.** NUEVA (no hay estudio de choques de precio; el dossier solo lo nombra como paso del workflow) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 5 (barato, usa las operaciones ya exportadas y toca el riesgo diario de las cuentas fondeadas)
+
+#### Estudiar las operaciones extremas: muchas grandes ganancias y ninguna gran pérdida es sobreajuste
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 943, 998.
+
+**Qué dice.** Las mayores ganancias y pérdidas deciden el resultado, y hay que mirarlas una a una: pueden ser choques de precio o un dato erróneo. «Si hay varias grandes ganancias y ninguna gran pérdida, se puede estar seguro de que se han sobreajustado los datos.» Un resultado excepcional con pocas operaciones es un problema, y las estadísticas por sí solas no bastan para saber si el programa hace lo debido: hay que mirar operaciones concretas, por ejemplo demasiadas terminadas en stop y pocas en objetivo.
+
+**Qué significaría aquí.** Una bandera barata por superviviente a partir de las operaciones exportadas: razón entre la mayor ganancia y la mayor pérdida, y cuántas operaciones aportan el 50 % del beneficio. Sirve de entrada a la prueba de choques (entrada anterior) y a los árboles de dependencia de una o dos operaciones.
+
+**Estado.** AMPLÍA (el dossier tiene asimetría y «Lo que la muestra no ha visto: colas…»; la bandera ganancia máxima sin pérdida máxima no figura) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (barata pero poco novedosa)
+
+#### El coste como cuarta dimensión del mapa: cuatro niveles de coste sobre la misma rejilla
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 941-942, 949.
+
+**Qué dice.** NASDAQ 1991-2011, media simple, costes por vuelta de 0, 50, 100 y 150 $: sin costes la mayoría de periodos de más de 15 días ganan; al subir los costes la zona rentable se estrecha a periodos entre unos 45 y 75 días. Lección: incluir costes realistas, pero costes demasiado altos hacen que todo parezca pérdida. Un beneficio medio por operación de 50 $ en divisas suele quedar anulado por un deslizamiento de más de 4 puntos base por lado. Los sistemas muy rápidos «parecen buenos hasta que se aplican costes realistas»; ser conservador con el deslizamiento elimina sistemas rápidos que pueden ser muy rentables, así que debe medirse en operaciones reales.
+
+**Qué significaría aquí.** El SPP ya permite variar el spread; correr el mismo mapa a 0, 1, 1,25 y 1,5 veces el coste modelado (el proyecto usa coste pesimista, factor 1,25) y ver cuánto se encoge la meseta. El ancho de la zona rentable frente al coste sería un número por estrategia: las que mueren a 1,25 veces no merecen pasar a cartera.
+
+**Estado.** YA EXISTE en parte («Coste cero para separar "sin información" de "información comida por costes"»; coste con factor 1,25 en la configuración de activos); AMPLÍA con el barrido de costes como mapa de la meseta — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (aprovecha el SPP existente)
+
+#### Drawdown sorprendentemente pequeño es señal de sobreajuste; usar el medio de la rejilla
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 942, 951, 966.
+
+**Qué dice.** El drawdown máximo es muy errático y no es el riesgo mayor del futuro; sirve como idea del capital mínimo. «Un drawdown máximo sorprendentemente pequeño es señal de sobreajuste o de un periodo de prueba muy corto.» Es más seguro usar el drawdown máximo medio de una rejilla de pruebas que el del mejor resultado, y un inversor suele capitalizar la cuenta con tres veces el drawdown máximo. Dos pruebas vecinas con drawdown de 10.000 $ y otra intermedia con 5.000 $: asumir que la intermedia habría tenido los mismos 10.000 $; promediar los rendimientos pero usar el mayor drawdown. También: un beneficio con riesgo doble equivale (con reservas suficientes) a la mitad con riesgo mitad, por eso se compara beneficio entre riesgo.
+
+**Qué significaría aquí.** Para fondeo, donde el drawdown diario y total manda: informar para cada plantilla el drawdown máximo de la rejilla en su peor vecino (o el percentil 90) y no el de la elegida, y tratar una superviviente con drawdown mucho menor que el de sus vecinos como sospechosa de suerte de calendario.
+
+**Estado.** AMPLÍA (el dossier tiene «Lo que la muestra no ha visto: colas, regla de tres y drawdown que crece con los datos»; el drawdown del peor vecino de la meseta no figura) — **Tipo.** riesgo — **Locura.** 0 — **Valor.** 3 (aplica directo a los límites de la cuenta fondeada)
+
+#### Pendiente de los rendimientos periódicos y tiempo en el mercado como criterios de elección
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 942, 979-980.
+
+**Qué dice.** Dos criterios poco usados: (1) la pendiente de una regresión lineal sobre los rendimientos trimestrales o anuales; pendiente decreciente = rendimiento mejor en el pasado (decaimiento), plana = ideal, creciente = mejor con los patrones actuales; elegir parámetros con rentabilidad repartida de forma uniforme, mejor un aumento moderado reciente que un decaimiento (los índices de acciones rindieron mucho en los 90 y decayeron después). (2) Entre dos conjuntos de parámetros de rendimiento parecido, elegir el que pasa menos tiempo en el mercado: estar fuera «es la única defensa contra los choques de precio»; con posición 60 % del tiempo, hay un 40 % de probabilidad de evitar un choque. Prefiere estrategias que no inviertan posición, para mejorar el deslizamiento y la liquidez.
+
+**Qué significaría aquí.** Dos columnas más para la tabla de supervivientes: pendiente del Sharpe anual (o trimestral) a lo largo de `build`, `oos1` y `oos2`, y porcentaje de tiempo en el mercado, con la regla de desempate a favor del menor. SQX ya calcula el tiempo en mercado; se leería junto al drawdown flotante (MAE) que importa en fondeo.
+
+**Estado.** AMPLÍA (el estudio `marketSurfaces` ya recoge el porcentaje de tiempo en mercado de SQX; la pendiente de rendimientos periódicos y el desempate no figuran) — **Tipo.** cartera — **Locura.** 0 — **Valor.** 2 (dos columnas baratas)
+
+#### Reoptimizar solo tras acumular un 5-10 % de datos nuevos; tras un choque, no
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 951-953, 979.
+
+**Qué dice.** Una optimización no es el final: tras elegir y validar, una última prueba con todos los datos (más datos dan una solución más robusta) puede cambiar algo los parámetros, pero «no de forma significativa»; un cambio grande avisa de ventana corta o mala elección. Reoptimizar cuando haya un 5-10 % de datos nuevos respecto de la ventana original, con la zona óptima moviéndose poco; si salta mucho, o los datos fueron inusualmente volátiles (el salto está justificado) o la ventana original era corta y eligió un modelo rápido. Tras una mala racha provocada por un choque, «es muy probable que reoptimizar no cambie nada», y fabricar reglas nuevas para ese caso es sobreajustar.
+
+**Qué significaría aquí.** Para las estrategias vivas (o en demo): un disparador de revisión por datos nuevos (5-10 %) y una regla de no tocar nada tras un solo choque. Choca en parte con la idea de congelar `oos2`: la reoptimización con todos los datos solo se haría tras la validación final, y gastaría esos datos. No hay proceso de revisión periódica de supervivientes en vivo hoy.
+
+**Estado.** NUEVA — **Tipo.** vivo — **Locura.** 0 — **Valor.** 3 (necesario antes de operar en real; hoy no hay política)
+
+#### ¿Está roto el modelo? Probabilidad de un drawdown dado el rendimiento y la volatilidad de la prueba
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 21, p. 953.
+
+**Qué dice.** Un sistema no debe decaer sistemáticamente desde el primer día; si un sistema nuevo pierde de forma continuada hasta igualar su drawdown máximo de prueba, algo va mal. Probabilidad de un drawdown de al menos P (en fracción del máximo de equity) = (1 − P)^(2μ/σ²), con μ el rendimiento medio por periodo y σ su desviación (supone rendimientos normales; extraída de Wolberg). Su ejemplo, que coincide al recalcular: rendimiento anual del 30 % con 250 días, μ = 0,00105 diario, σ = 0,00945, exponente 2μ/σ² = 23,51; con confianza del 95 %, P = (1 − 95/100)^(1/23,51) = 0,880, es decir, un drawdown de al menos 12 % en el 5 % de los meses. Sobre mercados reales las colas son más largas.
+
+**Qué significaría aquí.** Un monitor para estrategias vivas o en cuenta de evaluación: con μ y σ del `oos`, calcular el drawdown que se espera superar solo con probabilidad del 5 % y avisar cuando el real lo cruce; es un contraste simple de «¿el modelo está roto?». Sirve también para dimensionar el riesgo frente al límite de la prop firm. Supone normalidad y operaciones independientes, que a menudo no se dan, por lo que el Monte Carlo a nivel de operación sigue siendo la referencia.
+
+**Estado.** AMPLÍA (existe Monte Carlo de operaciones en `portfolio/common/monteCarlo`; esta fórmula cerrada de bajo coste para vigilancia no se ha encontrado) — **Tipo.** vivo — **Locura.** 0 — **Valor.** 4 (monitor sencillo que enlaza con los límites de fondeo)
+
+#### Filtro de volatilidad en la entrada: entrar solo cuando la volatilidad es baja mejora más que solo cuando es alta
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 20, p. 861-866.
+
+**Qué dice.** Probó un sistema de media de 40 días (compra cuando gira al alza, vende cuando gira a la baja), futuros ajustados 1990 a julio de 2011, 15 $ por lado, con filtro de entrada por volatilidad (desviación típica de los rendimientos de 20 días por un factor), que retrasa la entrada hasta que se cumple. Filtro bajo (entrar solo con volatilidad bajo el umbral): Eurodólar PF de 2,11 a 2,50 con 247 a 175 operaciones y beneficio por operación de 166 a 244 (+47 %); crudo PF de 1,49 a 1,67; S&P de −37.187 $ (PF 0,83) a +6.650 $ (PF 1,07); Amazon PF de 1,16 a 1,51. Todos los mercados mejoran con umbral bajo 0,35. El filtro alto (entrar solo sobre el umbral) también mejora, pero menos y con umbrales poco consistentes; en el Eurodólar, ratio de información 1,143 (bajo) frente a 0,867 (alto). Aviso: el umbral se optimizó por mercado, de 0,05 a 1,0 en pasos de 0,05, sobre los mismos datos, así que las mejoras son optimistas y no son fuera de muestra. En trading rápido eliminar la entrada; en tendencia lenta, retrasarla.
+
+**Qué significaría aquí.** Como condición de filtro de volatilidad en una plantilla de tendencia (una condición fija más el filtro, sin más huecos), con el umbral como parámetro de la celda y no optimizado por mercado. La señal clara es «bajo mejor que alto». El filtro debe leer volatilidad (ATR o desviación), no reloj ni calendario. Probar primero en el estudio de mapa condicional con el coste en operaciones perdidas.
+
+**Estado.** AMPLÍA (el dossier tiene «Semáforo de volatilidad: verde todo, ámbar solo salidas, rojo fuera» y el `conditionalMap` ya corta por volatilidad; los números de «bajo mejor que alto» y la opción eliminar-o-retrasar no figuran) — **Tipo.** generación — **Locura.** 0 — **Valor.** 3 (idea estándar con números; el óptimo se eligió dentro de muestra)
+
+#### Salida por volatilidad extrema con reentrada cuando la volatilidad vuelve a un cuarto
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 20, p. 865-866.
+
+**Qué dice.** Bonos a 30 años de EE. UU. 2000 a julio de 2011, media de 40 días: salir (largo o corto) cuando el rendimiento del día supera 10 veces la volatilidad de los 20 días previos. Resultado: beneficio neto 4.500 $ (PF 1,02, 350 operaciones) sin la salida; 12.968 $ (PF 1,07) con ella; y 34.781 $ (PF 1,16, 387 operaciones, 40,8 % ganadoras) si además se permite reentrar en la misma dirección cuando la volatilidad cae a un cuarto de la del día de salida. Es una sola prueba (un mercado, un factor 10) y un sistema marginalmente rentable al inicio. Explica que las salidas por volatilidad llegan tarde ante un choque pero ayudan cuando el movimiento extremo viene tras semanas de subida.
+
+**Qué significaría aquí.** Como salida de catástrofe sin parámetro que buscar (barra con rango mayor que k veces el ATR) y con regla de reentrada, a medir sobre supervivientes de tendencia. Es parecida a la salida por barra adversa ya propuesta, y suma la regla de reentrada.
+
+**Estado.** YA EXISTE en el dossier («Salida por un día de volatilidad adversa, sin buscar parámetros»); AMPLÍA con la reentrada al caer la volatilidad a un cuarto y las cifras de bonos — **Tipo.** estudio — **Locura.** 1 — **Valor.** 2 (una prueba única en un mercado)
+
+#### Volatilidad relativa con la ventana larga retardada, y rangos mejor que cierres
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 20, p. 848-855.
+
+**Qué dice.** Volatilidad relativa = volatilidad corta (n) entre volatilidad larga (m), con m al menos 5 veces n, mejor 10. Mejora: retardar la larga para que termine antes de empezar la corta (periodos sin solape), así tras un episodio volátil la larga no incluye la volatilidad reciente y no hace parecer normal lo que aún es alto. Con el cobre mensual (1974 a julio de 2011), el rango máximo-mínimo del mes muestra con claridad la relación precio-volatilidad y tiende a cero cerca de 0,50 $/libra, mientras que los rendimientos dan una nube confusa: «el rango es una medida más eficaz cuando hay máximos y mínimos». ATR frente a volatilidad anualizada: el ATR es más suave y salta menos con los huecos; en algunos tramos el rango crece y la volatilidad anualizada no. Una medida de volatilidad por cierres se corrompe en series ajustadas.
+
+**Qué significaría aquí.** Para cualquier régimen o filtro de volatilidad: calcular volatilidad relativa con la ventana larga retardada y con ATR (rango) y no con desviación de cierres. Aplica a CFD sin ajuste de contratos. La volatilidad crece con el precio (relación casi proporcional que describe Kaufman en p. 849): normalizar por ATR en vez de usar importes fijos.
+
+**Estado.** AMPLÍA (el dossier tiene «Parámetros en unidades de volatilidad y umbrales como percentil de su propia historia» y «Contracción y expansión del rango»; la ventana larga retardada sin solape no figura) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (detalle técnico útil, de bajo coste)
+
+#### Ruido: el mercado ruidoso retrasa entradas y salidas; tendencia a largo, reversión a corto
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 20, p. 868-871, 881-882.
+
+**Qué dice.** El ruido es el movimiento errático del precio, medible con el ratio de eficiencia de Kaufman (cambio neto entre suma de movimientos absolutos, de 0 a 1). Los índices de renta variable tienen el mayor ruido y los tipos a corto el menor; los mercados jóvenes menos, y el ruido crece con la madurez. Con poco ruido (Eurodólar) una ruptura simple captura gran parte del movimiento; con ruido medio (EURUSD) se entra y sale tarde con menos beneficio; con ruido enorme (índices) cuando la tendencia se identifica «no hay beneficio». Casi la mitad de los movimientos cambia de dirección al día siguiente, el 25 % sigue 2 días, el 12,5 % 3 días; el tamaño también es aleatorio (50 % pequeños, 25 % el doble, 12,5 % el cuádruple). Conclusión: el ruido domina el corto plazo y la tendencia el largo; con más ruido hay que alargar el periodo o usar reversión con tenencia corta.
+
+**Qué significaría aquí.** El ratio de eficiencia ya está en el perfil de mercado; la regla nueva es usarlo para asignar familia por celda: eficiencia baja en H1 → reversión a la media; eficiencia alta → tendencia; y para elegir la lentitud inicial de la tendencia. Un indicador por barra (ER) tiene también un bloque nativo en SQX en la paleta de tendencia.
+
+**Estado.** YA EXISTE (`studies/research/marketProfile` incluye la eficiencia de Kaufman; `sqx/blocks/palettes/tendencia_base.yaml` lo referencia); AMPLÍA solo con la regla de asignar familia por nivel de ruido y las proporciones de continuación de 25 % y 12,5 % — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (confirma una herramienta que el proyecto ya tiene)
+
+#### Qué predice la volatilidad de mañana: rango reciente alto y RSI de 3 días bajo
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 20, p. 857-858.
+
+**Qué dice.** Resumen de William Brower sobre futuros del S&P (23/12/1987 a 15/12/1995): un ATR de 3 días alto «fue un muy buen predictor de volatilidad alta»; un RSI de 3 días por debajo de 40 también; un día con máximo menor y mínimo mayor que el anterior (barra interior) predice modestamente volatilidad menor; los lunes menos volatilidad y martes y viernes la mayor. Otras condiciones sobre el cierre y el máximo anteriores dieron predictores buenos pero con pocos casos (161 y 101). La tabla se lee con dificultad por la extracción: no se dan umbrales fiables salvo los citados.
+
+**Qué significaría aquí.** Un corte barato para el mapa condicional: P(rango de mañana alto | ATR corto alto o barra interior), sin leer calendario. El efecto día de la semana choca con la regla 15 (sin bloques de calendario en generación) y solo podría ser un estudio de régimen, nunca un bloque.
+
+**Estado.** AMPLÍA («Contracción y expansión del rango: la huella del agrupamiento de volatilidad» y «Heterogeneidad de la volatilidad por día de la semana» ya existen en el dossier; el RSI de 3 días como predictor de volatilidad no) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (muestra pequeña, un mercado, 1987-1995)
+
+### 9.8 · Consideraciones prácticas, control de riesgo y cartera (caps. 22-24)
+
+Los tres capítulos cubren lo que ocurre entre el backtest y el dinero real: los choques de precio y por qué el backtest los trata como días normales, los compromisos entre tendencia y reversión, cómo medir y limitar el riesgo (tamaño por volatilidad, riesgo de ruina, métricas de caída) y cómo construir una cartera de estrategias. Las tres ideas de más valor para este proyecto son: (1) el backtest y la selección por «mejor resultado» premian los choques de precio, que no se repiten; (2) la fórmula de riesgo de ruina con ganancias distintas de pérdidas, aplicable a un límite de caída de prop firm; (3) la desviación típica y la covarianza engañan cuando las estrategias están fuera del mercado muchos días, justo el caso de nuestras carteras. Kaufman también mide con cifras si esperar un retroceso antes de entrar mejora una señal de tendencia.
+
+#### Los choques de precio inflan el backtest y la selección los premia
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 22, p. 993 y 997.
+
+**Qué dice.** Un choque de precio es un suceso inesperado (el sistema nunca sabe de qué lado estará). El backtest no los separa: los trata como días normales, y la combinación de parámetros que gana suele ser la que cayó del lado bueno de algún choque. Kaufman afirma que ninguna posición abierta puede suponerse en el lado correcto en más del 50 % de los choques, y que esto explica por qué lo fuera de muestra y lo real nunca rinden como el test. Define un día de choque como un rango de un día de cinco veces el rango medio verdadero (ATR, rango medio de las barras previas) y propone acumular, solo en esos días, el cambio neto relativo a la posición: así se ve cuánto del beneficio histórico es suerte de choque.
+
+**Qué significaría aquí.** Un estudio de población: para cada superviviente, beneficio neto sin los días con rango ≥ 5 × ATR (en XAUUSD, petróleo y plata hay muchos). Si el resultado sin choques cae a cero o a negativo, la estrategia vive de azar; si sube, la estrategia pierde con los choques y la cartera debe reservarles margen. Es un filtro de cribado fuera de muestra, con su coste en estrategias descartadas a la vista. Cuenta como una prueba más en el ledger de pruebas múltiples.
+
+**Estado.** AMPLÍA (el dossier menciona una «prueba de choques de precio» para supervivientes y `portfolio/BUILD_COMPENDIUM.md` recoge el estrés por MAE; falta esta medición concreta del beneficio sin días de 5 × ATR) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 4 (el umbral es explícito, barato de calcular y ataca el sesgo que más daño hace al pasar a real).
+
+#### Después de un choque el precio suele revertir: qué hacer con la posición abierta
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 22, p. 996-1000.
+
+**Qué dice.** En cuatro choques (secuestro de Gorbachev 1991, elección británica 1992, invasión de Kuwait por EE. UU. en enero de 1991, 11-S) y el zumo de naranja de enero de 2012 (sube un 16 % en 2 días y devuelve un 15 % en los 2 siguientes), el precio se va a un extremo y después revierte «durante más tiempo». No siempre pierde el seguidor de tendencia: depende de su posición. Regla propuesta: si el choque da un beneficio inesperado, salir; si da una pérdida grande, mantener esperando la reversión (con reservas suficientes); añadir solo cuando baje la volatilidad. Además, tras el choque las medias móviles de 50, 100 y 200 días quedan «desfasadas» (en octubre de 1987 tardaron entre 2 y 10 meses en girar), de modo que seguir la señal de la media es ir contra la realidad; propone reiniciar las tendencias cuando baje la volatilidad.
+
+**Qué significaría aquí.** Dos usos. Como estudio: medir, en oro y petróleo, el retorno de los 1 a 5 días siguientes a un día de rango ≥ 5 × ATR, según la dirección del día. Como regla de riesgo: choca con la regla de la prop firm, porque «mantener la pérdida esperando reversión» no cabe con un límite diario de caída; aquí manda cerrar y esperar. Solo el lado «salir si hay beneficio inesperado» es compatible.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 1 — **Valor.** 2 (los ejemplos son 5 casos anecdóticos y la parte «mantener» no es aplicable con límites de caída).
+
+#### La diversificación desaparece en una crisis, y qué número de activos basta
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 22, p. 992-993; cap. 23, p. 1046; cap. 24, p. 1101-1102 y 1105-1106.
+
+**Qué dice.** En un choque todos los mercados se mueven juntos porque lo que mueve el precio es el dinero que sale, no los fundamentales; en la crisis de 2008 las correlaciones se acercaron a 1. La correlación móvil a 60 días del S&P contra oro y euro llegó a −0,6 (se movían a la vez en dirección contraria al bono normal). Con diversificación perfecta el riesgo baja a 1/√n... Kaufman la dibuja como 50 % con 2 activos, 33 % con 3, 25 % con 4 (lo escribe así, aunque la raíz cuadrada daría 71 %, 58 %, 50 %); en la práctica, una cartera bien diversificada baja el riesgo inicial como mucho a la mitad, y la mejora tras 4 activos es pequeña. Las únicas defensas que cita: estar fuera del mercado el mayor tiempo posible, limitar el apalancamiento y usar estrategias poco correlacionadas.
+
+**Qué significaría aquí.** Para la cartera de oro, plata, petróleo, divisas e índices: no confiar en la correlación media; calcularla también en los días de mayor movimiento y en los peores meses. El proyecto ya lo recoge. Atención: la aritmética del 50 %/33 %/25 % es imprecisa en el libro, no usarla como regla de dimensionado.
+
+**Estado.** YA EXISTE (`portfolio/BUILD_COMPENDIUM.md`, correlación en días de estrés: «ρ 0,1 total y 0,8 en estrés») — **Tipo.** cartera — **Locura.** 0 — **Valor.** 2 (confirma lo que ya se hace; el libro no añade número utilizable).
+
+#### Paper trading con ejecución en el peor precio de los 5 minutos siguientes
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 22, p. 988.
+
+**Qué dice.** Los datos fuera de muestra reservados acaban usándose varias veces, de modo que el sistema queda sobreajustado aunque no se quiera; lo más seguro es un periodo de paper trading con las expectativas anotadas antes (frecuencia, duración media, porcentaje de aciertos, tamaño de ganancia y de pérdida). Al simular, se asume que la ejecución es el peor precio de los 5 minutos posteriores a la señal intradía; después, empezar con poco dinero.
+
+**Qué significaría aquí.** Un periodo de demo en MT5 antes del real o de la prop firm, con una ficha de expectativas por estrategia sacada del backtest y un informe automático que compara lo real con esa ficha. Y en la comparación MT5 frente a SQX, evaluar también el relleno al peor precio de los 5 minutos siguientes. Encaja con el paso 26 (MT5 Bridge) y con el `weeklyReconciler` pendiente.
+
+**Estado.** AMPLÍA (`mt5/verify` compara SQX con MT5; no existe la ficha de expectativas ni el relleno pesimista de 5 minutos) — **Tipo.** vivo — **Locura.** 0 — **Valor.** 3 (barato y evita arrancar con dinero una estrategia cuyo perfil real no se conoce).
+
+#### Filtro integrado frente a vertical: el filtro mejora si sube el porcentaje de combinaciones rentables
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 22, p. 988-990.
+
+**Qué dice.** Hay dos formas de construir: vertical (cada regla se prueba sola y debe ser rentable antes de añadir la siguiente) e integrada (varias reglas interdependientes, como velocidad de tendencia y filtro de volatilidad). Cuando la parte de tendencia sola no es rentable pero la combinación sí, unos lo llaman sofisticación y otros sobreajuste. El criterio de Kaufman: tabular el porcentaje de combinaciones de parámetros rentables (robustez del cap. 21); si el porcentaje con el filtro es mayor que el de la tendencia sola, el filtro mejora; si no, es sobreajuste. Añade que una regla de entrada ambigua cambia el resultado (ejemplo: «volumen mayor que ayer» frente a «mayor que la media de 10 días») y que los sistemas con filtros añadidos hasta que «parecen muy buenos» son sobreajuste (p. 1011).
+
+**Qué significaría aquí.** Una prueba de la segunda condición: para cada plantilla con 1 fija + 1 aleatoria, comparar el porcentaje de la rejilla SPP que es rentable con la condición aleatoria frente a sin ella. Si no sube, la condición añadida no cuenta. Es compatible con el máximo de 2 condiciones por lado y justifica descartar plantillas cuya segunda condición solo pule el mejor punto.
+
+**Estado.** AMPLÍA (SPP ya da el mapa de parámetros; falta comparar el porcentaje rentable con y sin la condición añadida) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 4 (criterio simple, cuantitativo y aplicable a cada plantilla).
+
+#### La tendencia pura gana un 30-45 % de operaciones; la reversión, muchas pequeñas y pocas grandes pérdidas
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 22, p. 1012-1015; cap. 23, p. 1045.
+
+**Qué dice.** En seguimiento de tendencia es «irreal» esperar más de un 40-45 % de operaciones ganadoras; lo normal es 30-35 %, con muchas pérdidas pequeñas y pocas ganancias grandes. La reversión a la media es lo contrario: muchas ganancias pequeñas y pocas pérdidas grandes, con riesgo medio por operación mayor. Si se entra en la zona «ligeramente sobrecomprada», casi la mitad de las operaciones se paran con un stop moderado y las pérdidas igualan las ganancias; si se entra en la zona extrema, hay menos pérdidas pero casi no hay oportunidades. Para reducir riesgo hay que aceptar más pérdidas pequeñas o menos operaciones. Una media móvil o un breakout no pueden bajar el número de operaciones de tendencia por debajo de un umbral porque toda tendencia cae en un lateral.
+
+**Qué significaría aquí.** Una verificación de coherencia en el cribado: una estrategia que SQX etiqueta como de tendencia (media, ruptura) con más del 50 % de acierto, o una de reversión con pérdida media inferior a la ganancia media, merece sospecha de ajuste excesivo (curva suave por apertura de ventana o por un stop que nunca se activó). Con ≥ 40-50 operaciones por año, los acierto y el cociente ganancia media/pérdida media son buena huella del tipo de convexidad.
+
+**Estado.** AMPLÍA (el dossier ya propone etiquetar convexidad larga o corta con datos y `studies/readings/profitShape` mide la forma del beneficio; falta el umbral 30-45 % por familia) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (regla de sentido común barata contra curvas «demasiado buenas»).
+
+#### Un sistema que solo compra siempre funciona en el mercado alcista: la trampa de la plata y el Nasdaq
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 22, p. 1020-1021.
+
+**Qué dice.** Un sistema vendido en 1974 para plata («comprar siempre, nunca vender, cerrar cuando haya beneficio, cubrir todas las llamadas de margen») había «funcionado siempre». Entrando al azar entre 1975 y 1986 había más de 10 : 1 de probabilidades de perder, y desde febrero de 1980 perdió durante 6 años; quien entró en la primera mitad de 1975 vio resultados de +0,51 a −0,18 dólares por onza. Lo mismo vale para comprar el Nasdaq en los años 90 (con cualquier método, indicador o dardo siempre se ganaba) y perder lo mismo de 2000 a 2003. Dice que el único test de una estrategia es ganar dinero en distintos tipos de mercado; y avisa de que el oro de 2011 repite el patrón.
+
+**Qué significaría aquí.** Muy relevante para XAUUSD y para la regla de una dirección por estrategia: una estrategia solo larga en oro construida en una ventana alcista (como 2002-2011) puede ser el «comprar siempre». Pedir a cada superviviente larga un contraste contra «comprar y mantener» o contra entrada aleatoria del mismo lado dentro de cada ventana, y exigir que no pierda en la ventana bajista o lateral. No choca con la regla 13; la refuerza.
+
+**Estado.** AMPLÍA (los nulos de entrada aleatoria `studies/readings/monkey` ya existen; falta el benchmark pasivo direccional por ventana) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 4 (el riesgo de ajustarse a la tendencia del oro es concreto y esta es una comprobación barata).
+
+#### Las estrategias de la misma familia se correlacionan, y más cuando acierta o falla todo a la vez
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 22, p. 1021-1026.
+
+**Qué dice.** Lukac, Brorsen e Irwin compararon 12 sistemas de tendencia (canales, medias, momentum, parabólico) en 12 mercados de futuros, 1978-1984, optimizados cada año con 3 años de datos. La correlación de los beneficios mensuales entre pares va de 0,37 a 0,81 (todas significativas); ninguna familia es claramente más correlacionada, salvo el parabólico y el direccional parabólico (uno se basa en el otro). Los sistemas están en el mismo lado del mercado entre el 53 % y el 87 % de los días, aunque solo coinciden en la misma operación en el mismo día entre un 4 % y un 38 % de las veces. Con medias móviles de 10 a 60 días sobre el bono a 30 años (2000-2011) la correlación de las variaciones de beneficio baja con la distancia entre periodos: 0,511 entre 10 y 20 días, 0,265 entre 10 y 60 días, 0,747 entre 50 y 60 días. Por eso no conviene probar periodos en incrementos iguales (favorece los lentos). Y cuando todos están en el mismo lado es cuando más riesgo hay: ante un choque caen juntos.
+
+**Qué significaría aquí.** Dos usos: (1) en la cartera, contar estrategias independientes, no estrategias: diez variantes de un cruce de medias en oro son una sola apuesta; (2) en SPP y en la fábrica de variantes, espaciar los periodos de forma proporcional (geométrica) en lugar de lineal. Combinar con el número de operaciones independientes de la cartera.
+
+**Estado.** AMPLÍA (`portfolio` ya mide correlación y número efectivo de estrategias; falta el espaciado geométrico de la rejilla SPP y la correlación por distancia relativa de periodo) — **Tipo.** cartera — **Locura.** 0 — **Valor.** 4 (justifica que no se cuente cada superviviente de una misma familia como activo independiente).
+
+#### Mezclar familias distintas, incluso en conflicto sobre el mismo mercado
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 24, p. 1102-1103.
+
+**Qué dice.** Con la correlación subiendo en las crisis, conviene variar la estrategia y no solo el mercado. Medias móviles, ARIMA y punto y figura son métodos distintos pero todos de tendencia: sacan el beneficio de los mismos movimientos. Para diversificar, elegir atributos funcionales distintos: tendencia, reversión (estocástico, opinión contraria), spreads, fundamental y carry. Distintas estrategias pueden mantener posiciones en conflicto sobre el mismo mercado, lo que baja el riesgo total.
+
+**Qué significaría aquí.** En el proyecto cada estrategia es de una sola dirección, y las que son «cortas» se generan aparte. Una cartera por activo con una tendencia larga y una reversión corta (o al revés) ya implementa esta idea sin romper la regla 13. Pedir al constructor de carteras que penalice una cartera cuyas estrategias comparten familia.
+
+**Estado.** AMPLÍA (`portfolio` ya limita correlación; falta una restricción por familia de plantilla) — **Tipo.** cartera — **Locura.** 0 — **Valor.** 3 (sencillo de añadir con la etiqueta de familia que ya genera el flujo).
+
+#### Tamaño por volatilidad: la exposición cambió 6 veces y la volatilidad de la cartera iba de 6 % a 25 %
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 22, p. 991; cap. 23, p. 1050-1054; cap. 24, p. 1142-1144.
+
+**Qué dice.** Con el mismo número de contratos del Nasdaq, el riesgo de 2000 era 6 veces el de 1996 (precio de 600 a 4.000); el stop y el tamaño deben variar con la volatilidad. Sin ajustar el tamaño, la volatilidad de una cartera pasó en 3 años de un 6 % a un 25 %. Comparando tres formas de dimensionar (dólares iguales, volatilidad anualizada, ATR) sobre Bank of America con una media de 200 días en 20 años, el tamaño por ATR dio una volatilidad un 27 % menor que un número fijo de acciones. Estabilizar la volatilidad con un factor retrasado de la volatilidad móvil de 10 días (objetivo 12 %) llevó el cociente de información de 1,27 a 1,38 en 17 años, pero la volatilidad media quedó en 13,7 %, no en 12 %, porque el factor es retrasado. Cada cambio de tamaño cuesta: usar una ventana más larga o cambiar solo si la volatilidad se mueve, por ejemplo, un 20 %.
+
+**Qué significaría aquí.** Para la cartera y las cuentas fondeadas: dimensionar cada estrategia por ATR (o por la desviación de sus propias pérdidas y ganancias) y no por lotes fijos; un umbral de cambio del 20 % evita pagar spread en cada reajuste. El dossier ya advierte de que el objetivo de volatilidad es procíclico y propone suelos y techos.
+
+**Estado.** YA EXISTE (dossier: «El volatility targeting es procíclico: suelo de volatilidad y tope de apalancamiento»; `portfolio/BUILD_COMPENDIUM.md`) — **Tipo.** cartera — **Locura.** 0 — **Valor.** 2 (aporta los números 1,27 → 1,38 y el umbral del 20 %, nada nuevo en concepto).
+
+#### El tamaño que corresponde a una caída máxima de prop firm sale de la volatilidad objetivo
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 23, p. 1048-1050.
+
+**Qué dice.** Método de reservas: con los beneficios y pérdidas diarios de la historia simulada, la inversión necesaria es la desviación típica anualizada de esos P/L dividida entre la volatilidad objetivo (típica 15 %). Ejemplo: 1 contrato de euro-dólar (EURUSD) con una desviación anualizada de 39.989 dólares da una inversión de 266.592 dólares para un 15 %. Con 2 a 2,5 desviaciones se pierde del orden del 37 % del capital, así que 15 % es un objetivo agresivo. Si el límite de caída máxima es del 10 %, la volatilidad objetivo equivalente es una quinta parte del 15 % (3 %), lo que reduce la rentabilidad esperada un 80 %. En la práctica, el objetivo más bajo viable es 6 %, normalmente 8 %. Los fondos fijan una pérdida máxima (de 10 % a 50 %) tras la cual se liquidan las posiciones.
+
+**Qué significaría aquí.** Una regla para dimensionar en FTMO y Hantec: calcular el capital equivalente de cada estrategia desde la desviación de sus P/L diarios y compararlo con la cuenta; el límite diario y el total fijan el máximo de volatilidad objetivo. Su aritmética es una aproximación de 2,5 σ con rendimiento normal; la prop firm exige además el MAE (pérdida flotante), que esta cifra no incluye.
+
+**Estado.** AMPLÍA (`portfolio/funded` ya dimensiona contra las reglas de cada firma; falta la relación explícita límite de caída ↔ volatilidad objetivo con los 2,5 σ) — **Tipo.** riesgo — **Locura.** 0 — **Valor.** 4 (conecta directamente con los límites que mandan en fondeo).
+
+#### Riesgo de ruina con ganancias distintas de pérdidas: tabla con cifras
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 23, p. 1072-1076.
+
+**Qué dice.** Fórmula de Vince para ganancia media distinta de pérdida media. Con Z = pG × gananciaMedia% − pP × pérdidaMedia% y A = √((pG × gananciaMedia%)² + (pP × pérdidaMedia%)²), P = 0,5 × (1 + Z / A), y riesgo de ruina = ((1 − P) / P)^(PérdidaMáxima / A). Ejemplo (acierto 40 %, ganancia media 400, pérdida media 200, inversión 10.000, pérdida máxima 25 %): 0,63 %. Si la inversión baja a 5.000: 7,93 %; a 2.500: 28,17 %. Con ganancia media de 350: 5,22 %; de 325: 20,21 %; con 325 y pérdida máxima del 15 %: 38,31 %. Es decir, el riesgo sube mucho más rápido que la inversión baja, y mucho más rápido que el borde. Verificado con la fórmula: el caso 1 da 0,63 %.
+
+**Qué significaría aquí.** Una calculadora por estrategia y por cuenta fondeada: pérdida máxima = límite de caída de la prop firm (10 % total, 5 % diaria según firma), probabilidad de acierto, ganancia y pérdida medias de las operaciones del OOS. Un umbral de rechazo (por ejemplo, riesgo de ruina > 5 %) sería un filtro de cartera. Aviso: asume operaciones independientes y distribución estable; el MAE y las colas gordas empeoran el resultado real.
+
+**Estado.** AMPLÍA (el dossier tiene «Riesgo de ruina y la caída más grande que asumes que llega mañana» y `portfolio` simula con Monte Carlo; no hay esta fórmula cerrada para filtrar rápido) — **Tipo.** riesgo — **Locura.** 0 — **Valor.** 4 (barata, ejecutable sin simulación y atada al límite de caída que manda).
+
+#### Medidas de caída: Sharpe no ve el orden de las pérdidas
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 23, p. 1034-1040.
+
+**Qué dice.** El Sharpe y el cociente de información cumplen «más beneficio, mejor» pero no distinguen pérdidas seguidas de pérdidas alternas ni grandes subidas de pérdidas repartidas. Los resultados mensuales son siempre mejores que los diarios porque están suavizados (el valor de fin de mes rara vez es el mínimo). Alternativas: Calmar (rentabilidad anualizada dividida entre la caída máxima histórica, que él avisa de que se subestima si el periodo evitó un choque), Sortino (solo caídas por debajo de un mínimo aceptable), índice Ulcer (raíz de la media de los cuadrados de las caídas desde el máximo) y el cociente de caída DR = rentabilidad / desviación típica de las caídas diarias (DP), que omite los días en máximos y por tanto es más conservador. Un riesgo mayor lo tienen los sistemas probados con muestras pequeñas, con pocas caídas históricas, concentrados en pocos grupos o que componen posiciones. Sus ejemplos: una pérdida mensual con 68 % de probabilidad entre +15 % y −5 % (media 5 %, desviación 10 %) implica 50 % de perder el 15 % en 20 meses; con un 1 % de probabilidad mensual de perder el 50 %, a los 50 meses hay un 50 % de haberla sufrido.
+
+**Qué significaría aquí.** Ordenar y cribar con una medida de caída además del Sharpe, y calcularla sobre pérdidas flotantes (MAE) y no sobre cierres diarios, pues el que manda en FTMO/Hantec es el flotante. Reportar siempre cuántos años y cuántas caídas respaldan la métrica.
+
+**Estado.** YA EXISTE (el dossier ya propone Sortino y desviación/semidesviación; hay Calmar en `studies/optimisation/wfm` y Ulcer en `studies/breakage/mcRetest`) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (la lista es conocida; solo aporta el cociente DR y el aviso de muestra pequeña).
+
+#### Esperar un retroceso tras la señal, con ventana máxima de 5 días
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 23, p. 1078-1080.
+
+**Qué dice.** Con una media móvil de 80 días (1990 a mediados de 2011, futuros del bono a 30 años, el mini S&P y el oro), esperar a que el precio mejore un umbral desde la señal, y entrar al cierre del quinto día si no llegó, recorta las operaciones un 40 % en los tres mercados y mejora el resultado. Oro: de −1.580 a +12.170 con el umbral mínimo y hasta +22.420 con 19-20 puntos (aciertos 32,9 % → 34,0 %); S&P: de −44.162 a −13.888 con 5 puntos; bono: de 61.468 a 72.781 con umbral mínimo y hasta ~73.000 con 0,25 (mejora pequeña, porque es el mercado de más tendencia). Con RSI de 8 días y umbrales 30/70 en lugar del precio: bono 65.750, S&P −10.550, oro 22.180, pero con menos operaciones. Conclusión de Kaufman: la ventana máxima es esencial, pues sin ella se perdería la operación excepcional. Los umbrales están en puntos, distintos por mercado; propone probar porcentajes con cuidado por los precios ajustados de contratos.
+
+**Qué significaría aquí.** Una variante de entrada para las estrategias de tendencia: en lugar de entrar a mercado en la señal, entrar al mercado cuando el precio mejore k × ATR dentro de una ventana de n barras, o al cierre de la última. Encaja con las entradas a mercado de la regla 15 (no es una orden stop/limit: se evalúa en la barra). Medirlo con `entryQuality`, con costes pesimistas, y contarlo como prueba en el ledger. Atención: Kaufman no menciona costes en este test y usó un solo periodo de media.
+
+**Estado.** AMPLÍA (`studies/readings/entryQuality/delay.py` ya mide entrar tarde; el dossier tiene «Entrar escalonado»; falta esta variante de entrada con retroceso + ventana máxima) — **Tipo.** generación — **Locura.** 1 — **Valor.** 4 (cifras muy claras en oro, el primer mercado, y mejora el número de operaciones falsas).
+
+#### Entrar escalonado: cinco partes separadas mejoran los mercados con ruido
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 23, p. 1076-1078.
+
+**Qué dice.** Misma media de 80 días, 1990-2011. Entrar con 5 contratos de golpe frente a 1 contrato por día durante 5 días, o espaciados cada 2, 3, 4 y 5 días (hasta 21 días en total). Cociente beneficio/inversión (inversión = volatilidad dividida entre 15 %): S&P pasa de −0,13 (entrada única) a 0,18 con 5 días de espaciado; oro de 0,29 a 0,47 con espaciado 2 y se estabiliza; bono de 1,28 a 1,37 con espaciado 2 y baja a 1,13 con 5. Kaufman concluye que espaciar 2 días mejora los tres, y que el tiempo total debería ser proporcional a la velocidad de la tendencia o al tiempo medio de la operación (con una media de 10 días, 21 días no tiene sentido). El efecto es sustituir la incertidumbre de un solo punto de entrada por un valor medio más estable.
+
+**Qué significaría aquí.** Para la fábrica de variantes, una entrada escalonada solo si cada tramo se evalúa como entrada válida (el dossier ya lo exige) y contando que 5 entradas multiplican por 5 el spread y el slippage. Con un tamaño por posición de una sola dirección, es una variante de dimensionado más que una idea de entrada. Es probable que su efecto se deba a que suaviza la elección del punto de entrada, no a una ventaja nueva.
+
+**Estado.** YA EXISTE (dossier: «Entrar escalonado: solo si cada tramo es una buena operación por sí mismo») — **Tipo.** generación — **Locura.** 1 — **Valor.** 2 (aporta cifras pero choca con los costes pesimistas por el multiplicador de operaciones).
+
+#### Añadir con beneficios mejora los futuros; promediar a la baja empeora casi todo
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 23, p. 1081-1084.
+
+**Qué dice.** Con una media de 60 días, añadir una unidad cada n días solo si la operación está en nuevo máximo de beneficio, hasta 5 unidades, mejora los dos futuros: notas a 10 años de 13.734 a hasta 30.791 (PF 1,11 → 1,49 con 3 días) y S&P de 22.162 a 34.463 con 5 días (PF 1,14 → 1,43). En las acciones, Apple pasa de 430,35 a 350,82 de beneficio total aunque el PF sube de 2,79 a 4,34; Amazon empeora. Promediar a la baja (añadir en nuevo mínimo) mejora solo Apple (430 a 877 con 1 día); en notas y S&P es peor o igual: notas con 1 día −7.234, S&P con 1 día −2.475. Kaufman espera que añadir con beneficios o escalonar sean mejores que promediar a la baja. Un problema de componer: mayor tamaño en el peor precio, con el riesgo concentrado cuando el mercado gira.
+
+**Qué significaría aquí.** Confirma la regla de «no promediar a la baja» (el libro lo repite como regla de sentido común y de optimal f). Añadir a ganadoras no es una variante prioritaria: SQX trabaja con una posición y la comparación de costes sería desfavorable.
+
+**Estado.** AMPLÍA (el dossier tiene la parte de entrada escalonada; esta es la comparación con promediar a la baja) — **Tipo.** generación — **Locura.** 0 — **Valor.** 2 (descarta una idea; no hay prueba en oro ni en divisas).
+
+#### Un stop adaptativo mejoró todas las combinaciones en bonos, pero un stop falla cuando más hace falta
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 23, p. 1054-1061.
+
+**Qué dice.** Con medias de 10 a 100 días en incrementos de 10 sobre bono a 30 años (2000-2011) y un stop de desviación típica (Dev-stop de Kase, calculado con 40 días y factor 2 a 10), 50 pruebas: la media de cada factor de stop (de 4.681 a 27.184, con 4 el mejor) supera la media sin stop (2.316), y salvo una celda cada periodo con stop supera su versión sin stop. Con stop fijo en dólares o en porcentaje no ocurre. Kaufman lo califica de mejora robusta pero de un solo mercado y un solo periodo, en el que además hay tendencia fuerte. Si los datos fueran aleatorios, el número de veces que se toca un stop multiplicado por su distancia sería constante, así que un stop solo es bueno si mejora a lo aleatorio. Los stops se ejecutan al peor precio en un choque; los que mejor funcionan son los que se adaptan a la volatilidad y los de arrastre antes que los iniciales. En reversión, el stop baja el acierto y rompe el equilibrio ganancia-pérdida.
+
+**Qué significaría aquí.** El proyecto ya construye mucho sin stop (el dossier lo discute largo) y compara con un stop en estudios posteriores. Aporta un diseño de prueba: mallar periodo × factor de stop, comparar el promedio de la fila con «sin stop» y comprobar si el stop mejora a un stop aleatorio equivalente. Un stop dinámico no es un bloque de tiempo, no choca con la regla 15.
+
+**Estado.** YA EXISTE (dossier: «Escalera de excursión adversa condicional (DevStops de Kase)» y «Volver a pasar el filtro con el stop puesto») — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (el diseño «stop contra stop aleatorio de igual distancia» merece comprobarse en el dossier).
+
+#### Recoger beneficios: un objetivo perjudica a la media lenta y ayuda a la rápida y ruidosa
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 23, p. 1057-1058.
+
+**Qué dice.** Euro futuro en barras de 60 minutos, 2002-2010, con objetivo de beneficio = factor × ATR de 20 barras (tras tocarlo se espera la siguiente tendencia). Media de 80 barras: sin objetivo 121.655 (PF 2,738, 45 % de aciertos); cualquier objetivo reduce el resultado (factor 10: 94.405; factor 3: 25.383 con PF 1,385; factor 0,5: 11.308, aciertos 69 %). Media de 5 barras (pierde sin objetivo: −3.278, PF 0,991): con factor 7,5 gana 19.098 (PF 1,053) y con 5,5 a 9 es positiva, pero con factor ≤ 4,5 pierde más (por ejemplo −31.050 con 2). Conclusión: con periodos largos el objetivo recorta la cola gorda; con el rápido, el ruido lo hace útil. Los factores «se suelen hallar por minería de datos». Menciona salir en tres tramos (objetivos 1130, 1133 y 1135 en vez de 1133).
+
+**Qué significaría aquí.** Para M30 y H1: no añadir un objetivo fijo a una tendencia lenta (reduce el beneficio y el PF) y probarlo, con el factor fijado antes, solo en las rápidas. La curva de una media de 5 barras con objetivo en rango estrecho (5,5 a 9) es un ejemplo de parche que convierte una pérdida en un pequeño beneficio: contar la búsqueda de factores como pruebas.
+
+**Estado.** AMPLÍA (hay salidas en `knowhow/export/exits-and-m1-library.md` y el dossier discute objetivos; no hay esta tabla factor × velocidad) — **Tipo.** generación — **Locura.** 0 — **Valor.** 3 (regla clara: el objetivo depende de la velocidad de la entrada).
+
+#### El oro no es un mercado de tendencia en el test de Kaufman: eficiencia 0,1296 y PF 0,94
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 22, p. 990; cap. 23, p. 1070-1072.
+
+**Qué dice.** El ratio de eficiencia (cambio neto dividido entre la suma de los cambios absolutos, ER) mide ruido: cuanto más cerca de 0, más ruido. Con una media simple de 65 días y el ER medio de 65 días, 1990 a mediados de 2011, hay una relación creciente entre ER y factor de beneficio. Ejemplos (ER, PF): eurodólar 0,1816, 2,43; crudo 0,1377, 2,12; euro 0,1429, 1,62; cobre 0,1389, 1,70; nasdaq 0,1327, 1,42; oro 0,1296, 0,94; S&P 0,1203, 1,16; soja 0,1277, 0,87; trigo 0,1248, 0,99. Los mercados con PF < 1 «no son buenos candidatos a tendencia» pero pueden serlo a reversión. El rango del ER es muy estrecho porque el periodo es largo. También: mercados de un mismo sector deben comportarse parecido; si dos similares difieren, hay que preocuparse.
+
+**Qué significaría aquí.** El oro en el futuro diario con una media de 65 días tuvo PF 0,94 en 1990-2011: no es un mercado trivial para tendencia pura, y es el primer mercado del proyecto. Medir el ER del oro, la plata y el petróleo en M30, H1 y H4 por régimen y comparar con el éxito de las familias de tendencia frente a reversión, antes de generar. Y exigir que oro y plata (mismo sector) den resultados parecidos como contraste de mercados adicionales. Aviso: es un solo sistema, futuros diarios y sin costes.
+
+**Estado.** YA EXISTE (`studies/readings/conditionalMap/regime.py` y `studies/research/marketProfile` miden tendencia por ratio de eficiencia; el dossier lo cita) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 3 (aporta la cifra del oro en datos diarios largos).
+
+#### Operar sobre la curva de capital no mejora de forma consistente
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 23, p. 1085-1088.
+
+**Qué dice.** Una media móvil de 10 o de 60 días sobre el beneficio acumulado de una media de 80 días (usar el rendimiento del día siguiente solo si la curva sube), 1990-2011, sin costes de cambio, mejora el S&P y el oro, pero empeora de forma notable el bono (el mercado con más tendencia). No hay consistencia. Hay que mirar antes si los rendimientos tienen autocorrelación positiva, y la curva hipotética siempre es mejor que la real, así que aplicar el filtro a curvas hipotéticas es poco fiable. Otro ejemplo: ciclos de +100 %/−50 % dejan el capital igual si se compone; si se mantiene la inversión y se acumula una reserva, el capital crece (de 20.000 a 30.000 en el segundo ciclo, con reasignación al 50 % tras cada fase).
+
+**Qué significaría aquí.** Descartar filtros de apagado por curva de capital como mejora general en las estrategias de SQX; si se prueba, medir autocorrelación de los P/L por operación y contarlo como prueba. Para las cuentas fondeadas la idea útil es otra: no componer el tamaño con los beneficios durante una racha.
+
+**Estado.** YA EXISTE (dossier: «Operaciones que no son independientes: n efectivo, rachas y filtros de curva de capital»; `studies/readings/profitShape/dependence.py`) — **Tipo.** estudio — **Locura.** 0 — **Valor.** 2 (confirma lo que ya se midió; el resultado de bono contra oro y S&P es la cifra nueva).
+
+#### Un Monte Carlo que reordena operaciones es «inusualmente severo» para la tendencia
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 23, p. 1088-1089.
+
+**Qué dice.** El análisis de riesgo por Monte Carlo, que mueve bloques o secuencias de rendimientos al azar, es «inusualmente severo» porque ignora la causa y el efecto. En una tendencia larga, los beneficios sostenidos suelen ir seguidos de una reversión, y el tamaño del giro al final es proporcional a la tendencia previa por el retraso. Moverlo en el tiempo puede crear una gran pérdida sin el beneficio previo, algo «injusto» con la estrategia. Aun así, dice que incluso el análisis de resultados reales infravalora el riesgo futuro.
+
+**Qué significaría aquí.** Un aviso a la hora de interpretar el Monte Carlo a nivel de operación de `portfolio/common/monteCarlo`: el remuestreo por bloques conjunto conserva parte de esa dependencia; el barajado simple de operaciones no. Anotar en el informe cuál se usa y que el barajado simple de una estrategia de tendencia da caídas máximas pesimistas. No sustituye el criterio de ser pesimista (es lo que busca el proyecto), pero debe leerse así. El MC Retest de SQX no reordena, perturba datos.
+
+**Estado.** AMPLÍA (`portfolio/common/monteCarlo` y `knowhow/sqx-format/mc-retest-reconstruction.md`; falta documentar el sesgo del barajado simple en tendencia) — **Tipo.** cartera — **Locura.** 1 — **Valor.** 2 (matiz de interpretación, no un test nuevo).
+
+#### ¿Está roto el modelo?: binomial y chi-cuadrado sobre acierto, y pendiente de rendimientos
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 23, p. 1066 y 1092-1097.
+
+**Qué dice.** Una media móvil se espera con un 33 % de aciertos y ganancia/pérdida 4 : 1; si las 10 primeras operaciones pierden, ¿se para? Con probabilidad de pérdida p = 2/3: en 15 operaciones, 13 o más pérdidas tienen un 8 % de probabilidad (comprobado: 7,9 %), y en 10 operaciones, 10 pérdidas un 1,7 %. Kaufman marca «algo va mal» si hay más de 12 pérdidas en 15. Contraste de bondad (χ²): esperado 35 % de aciertos, real 20 % sobre 5 operaciones da χ² = 9,89, significativo entre 0,1 % y 1 %; para el recuento de rachas del precio en 8 longitudes χ² = 5,47 (probabilidad ~55 %, no significativo, aunque las rachas de 4 a 5 días tienen un 11 %). Con menos de 5 casos por celda, corregir con Yates y desconfiar. Para detectar decaimiento, ajustar una recta a los rendimientos anuales: 24, 18, 20, 15 y 19 % dan media 19,2 % pero pendiente 17,9 %; pendiente descendente = el sistema no se adapta.
+
+**Qué significaría aquí.** Reglas de apagado para estrategias en vivo y en demo: dada la probabilidad de pérdida del OOS, la tabla binomial da el número de pérdidas seguidas o en una muestra que dispara una revisión (p. ej. ≤ 5 % de probabilidad). Es la base del `weeklyReconciler` pendiente y de un criterio objetivo para retirar una estrategia fondeada antes de tocar el límite. Con ≥ 40-50 operaciones al año, hay datos suficientes cada pocos meses; la pendiente de los rendimientos trimestrales detecta decaimiento.
+
+**Estado.** AMPLÍA (OPEN.md #85 menciona el reconciliador semanal; no existe el criterio binomial/χ² de «estrategia rota») — **Tipo.** vivo — **Locura.** 0 — **Valor.** 4 (da un criterio objetivo de parada que hoy no hay, atado a la fase 0-1 de fondeo).
+
+#### La desviación típica y la covarianza engañan si la estrategia está fuera del mercado muchos días
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 24, p. 1115-1117.
+
+**Qué dice.** Un sistema con dos medias que está en el mercado solo el 50 % del tiempo tiene días con retorno cero; su desviación típica diaria sale la mitad que la del activo pasivo, y el optimizador de media-varianza le dará más tamaño. Una estrategia en el mercado el 25 % del tiempo parecería la mitad de arriesgada que otra al 50 % con el mismo beneficio y recibiría el doble de tamaño; pero los días en que ambas están dentro, el riesgo es el mismo, y el riesgo real es mayor de lo esperado. La covarianza sufre igual: si dos estrategias se solapan solo el 25 % de los días, la correlación se calcula con todos los días y se ahoga lo que pasa cuando coinciden. En un caso extremo de una tendencia y una reversión que operan el 3 % de los días, la salta de riesgo al operar juntas puede no estar prevista. Además, las estrategias selectivas (10-20 % del tiempo) con un pago alto por día activo se eliminan porque tienen «beta baja», aunque diversifican.
+
+**Qué significaría aquí.** Muchas supervivientes de SQX en H1 y H4 están fuera del mercado gran parte del tiempo. En la construcción de cartera: (1) calcular correlación y riesgo en los días en que ambas están activas y la co-actividad, además de sobre todos los días; (2) no dar más tamaño a una estrategia solo porque su desviación diaria es baja por estar poco tiempo dentro; (3) no descartar una estrategia selectiva por beta baja sin mirar su pago por día activo. Los límites de caída diaria de la prop firm se miden en los días que coinciden.
+
+**Estado.** AMPLÍA (`portfolio/common/construct/search/README.md` y `portfolio/common/monteCarlo/inputs/README.md` hablan de solapamiento; falta el criterio de correlación en días de co-actividad y la corrección del tamaño por tiempo en el mercado) — **Tipo.** cartera — **Locura.** 0 — **Valor.** 5 (es el fallo clásico de una cartera de estrategias de tendencia y afecta directamente al riesgo de una cuenta fondeada).
+
+#### Función objetivo de la cartera: rendimiento entre la semivarianza de las caídas
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 24, p. 1111-1114 y 1117-1119.
+
+**Qué dice.** Con Solver sobre S&P, oro, Apple y Microsoft durante un año, las ponderaciones óptimas (0,091 S&P, 0,550 oro, 0,359 Apple, 0 Microsoft) llevan el cociente de 1,3651 a 1,9723, pero «saber lo que pasó el año pasado» no dice nada del siguiente; y no hay estudios que muestren qué ventana (5 años recalculada cada trimestre, o 3 años cada mes) predice mejor. Como medida de riesgo discute tres: volatilidad anualizada (premia estar poco en el mercado), residuos de una regresión lineal (penaliza también los tramos de beneficio por encima de la recta) y la semivarianza de las caídas diarias (desviación típica de las distancias al máximo previo; solo hay valor distinto de cero en días sin nuevo máximo). Kaufman elige como función objetivo: rendimiento anualizado / semivarianza de caídas, con un riesgo mínimo y máximo obligados (si no, el programa reparte poco y baja el riesgo). El periodo de optimización debe incluir un ciclo estacional entero para no mezclar activos de temporadas opuestas.
+
+**Qué significaría aquí.** En `portfolio/common/construct/search` usar una función objetivo basada en caída (idealmente flotante, MAE) y no en volatilidad; fijar un rango de riesgo; y considerar una ventana mínima que cubra varios regímenes. El resultado in-sample de Solver (1,36 → 1,97) es un ejemplo de sobreajuste: contar cada configuración probada en el ledger.
+
+**Estado.** AMPLÍA (el dossier propone medidas de caída; falta fijar la semivarianza de caídas como objetivo con rango de riesgo mínimo y máximo en la búsqueda) — **Tipo.** cartera — **Locura.** 0 — **Valor.** 3 (alineada con el límite de caída que manda en fondeo).
+
+#### Búsqueda genética de pesos: repetir con grupos nuevos, no una pasada larga
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 24, p. 1121-1133 y 1140-1141.
+
+**Qué dice.** Su método GASP (algoritmo genético para carteras): un grupo de 5.000 asignaciones aleatorias, selección de las mejores, cruce y mutación (cruzar 10-20 %, mutar 5-15 %). Es más eficiente repetir 5 veces con 50-100 ciclos y grupos nuevos que una sola vez con 500 ciclos; la convergencia llega a los 50 ciclos. Verificar que no es un máximo local: las asignaciones de cada pasada deben ser parecidas y puede haber muchos máximos locales con función objetivo igual pero pesos distintos. Ejemplo con 19 estrategias del Nasdaq 100 (1995-2002, 7,16 años, elegir 12): el 80 % de la mejora ocurre en los primeros 15 casos, el resto en los siguientes 45 y nada después; el objetivo sube de 17,315 a 17,801 y 17,894 en 3 pasadas mientras el rendimiento solo pasa de 49,46 % a 50,95 %; en cada pasada se usan entre 10 y 12 activos. Concentrar el 90 % del peso en el 10 % de los activos es habitual; limitar a un subconjunto (15 de 100) es sub-óptimo pero práctico. Al limitar la liquidez, el programa descarta carteras que superen un tope de volumen (1-3 % del volumen diario).
+
+**Qué significaría aquí.** Para la búsqueda de cartera: exigir que 3 a 5 arranques independientes den pesos parecidos antes de aceptar una cartera, y mirar la estabilidad de los pesos entre arranques como medida de si la solución es robusta. Y limitar el número de estrategias activas (el subconjunto) por simplicidad operativa en MT5.
+
+**Estado.** AMPLÍA (`portfolio/common/construct/search/trials.py` ya busca carteras con pruebas contadas; falta la comprobación de estabilidad entre arranques) — **Tipo.** cartera — **Locura.** 0 — **Valor.** 3 (verificación barata de que el resultado no depende de la semilla).
+
+#### La generación genética «con todo» sobreajusta: más potencia no es lo esencial
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 22, p. 987-988.
+
+**Qué dice.** Es tentador echar todos los indicadores, tendencias, datos fundamentales y reglas en un bote y dejar que el ordenador encuentre la mejor combinación con optimización por fuerza bruta, redes neuronales o algoritmos genéticos, pero «una solución sobreajustada no funciona». Más potencia de cálculo acelera el proceso pero no es esencial; hay un buen argumento de que menos potencia obliga a razonar la solución de antemano, que es lo que habría que hacer en cualquier caso. Antes de programar algo a medida, hay mucho que aprender con las herramientas estándar (osciladores, medias, rupturas con periodos variables y cambio de frecuencia de datos).
+
+**Qué significaría aquí.** Respalda las reglas 14 y 15 (máximo 2 condiciones, nunca toda la paleta, una familia de ideas por ejecución) como la defensa frente al sobreajuste de la generación genética de SQX, y recuerda que la potencia del servidor (custodio con 80 g) no sustituye la hipótesis previa.
+
+**Estado.** YA EXISTE (reglas 14 y 15 de CLAUDE.md; ledger de pruebas múltiples) — **Tipo.** proceso — **Locura.** 0 — **Valor.** 1 (no añade número; confirma el rumbo).
+
+#### Rachas de días al alza y a la baja en 15 futuros: menos rachas de 4-5 días, y entrar tras reversión en el DAX
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 22, p. 1004-1006 y cap. 23, p. 1096-1097.
+
+**Qué dice.** En 15 mercados diversos de futuros, 2000 a mediados de 2011, comparó el número de rachas de subidas o bajadas consecutivas con el esperado al azar (una racha de longitud n tiene probabilidad (1/2)^(n+2)). En promedio hay 19 rachas de 1 día más de las esperadas (de 658), pero menos de 4 y 5 días (−6,87 y −1,87). El DAX tiene muchas más reversiones de 1 día (+97,85) y los eurodólares muchas menos (−93,15). Antes (estudios anteriores) los mercados llevaban esa diferencia a una cola gorda de rachas largas; esto ya no ocurre. Uso propuesto: en el DAX, esperar a una reversión antes de entrar tras una señal de tendencia; en eurodólares, entrar de inmediato. El contraste χ² de todas las longitudes de racha conjuntas no es significativo (χ² = 5,47; ~55 %). Los totales de la tabla 22.2 están desalineados por la extracción, las cifras por mercado son las del texto.
+
+**Qué significaría aquí.** Un perfil de mercado: contar rachas de cierres consecutivos en M30, H1 y H4 de oro, plata, petróleo y las divisas, comparadas con el azar, y decidir si conviene retrasar la entrada (reversión de 1 barra) como en el entrada con retroceso. Es un estudio de datos, no una regla de generación. No usa reloj ni calendario.
+
+**Estado.** NUEVA — **Tipo.** estudio — **Locura.** 1 — **Valor.** 2 (medición barata del ruido de corto plazo por mercado; el resultado global no es significativo).
+
+#### Martingala y antimartingala sobre una tendencia: no añaden nada utilizable
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 22, p. 1006-1010.
+
+**Qué dice.** Doblar el tamaño en cada cierre en contra dentro de una tendencia de 60 días, con tope de 8 contratos y 25 dólares por ida y vuelta, 2000-mediados de 2011. Eurodólares (mercado muy tendencial): cociente de información 6,67 (media simple) a 8,17 sin tope y 8,28 con tope 8, con beneficio de 16.375 por contrato a 529.243 (pero con 8 contratos de capital permanente; la media simple con 8 contratos da 131.000). S&P mini (ruidoso): media 1,18; martingala sin tope 3,84 (beneficio 1,37 millones, desviación 355.856) pero la versión con tope 8, la única operable, 1,04: peor que la media simple. Antimartingala (doblar tras día ganador, volver a 1 tras perdedor), eurodólares: sin tope −16.443 (cociente −0,03, tres casos con pérdida enorme), tope 2 cociente 10,95, tope 8 cociente 9,81, tope 4 cociente 0,36 (la pérdida llega con la posición mayor). En el S&P empeora.
+
+**Qué significaría aquí.** Documenta por qué no se generan variantes de martingala ni de rejilla: en el mercado ruidoso (índices, y el oro también ruidoso según su ER) el tope operable rinde peor que la entrada simple, y con límites de caída diaria de prop firm un tamaño que se dobla es incompatible. Los resultados del cuadro con tope en eurodólares dependen de una estructura de muy poco ruido.
+
+**Estado.** NUEVA — **Tipo.** riesgo — **Locura.** 2 — **Valor.** 2 (sirve para rechazar una idea recurrente con números, no para construir).
+
+#### Apalancar poco aumenta la supervivencia más que reduce el rendimiento; estar fuera del mercado evita choques
+**Fuente.** Kaufman, *Trading Systems and Methods* (5.ª ed.), cap. 23, p. 1028 y 1032; cap. 24, p. 1105.
+
+**Qué dice.** La única forma de reducir el efecto de un choque es estar fuera del mercado: un método que está dentro el 40 % del tiempo tiene un 60 % de probabilidad de evitar un choque. Un programa con apalancamiento total y rendimiento teórico del 200 % anual queda en pérdida total tras un choque adverso; uno desapalancado que rinde el 20 % es 10 veces más probable que sobreviva. «Una pequeña reducción del rendimiento por una reducción mayor de la exposición es un buen cambio.» Reglas de sentido común: no arriesgar más del 5 % del capital por operación; saber la salida antes de entrar; salir rápido de la que va mal; no cubrir llamadas de margen; liquidar primero la peor posición; no promediar a la baja. Otras ideas del capítulo: menos tiempo en el mercado es una característica deseable de un sistema; los costes pesan más cuanto más se opera, cuanto menor es la ganancia media y cuanto más se opera a favor de la tendencia, de modo que ante dos sistemas con igual ganancia bruta se prefiere el de menos operaciones y mercados más líquidos.
+
+**Qué significaría aquí.** Añadir «fracción de tiempo en el mercado» y «ganancia por operación» al cribado de supervivientes como desempate y como proxy de exposición a choques. Un límite de riesgo por operación bastante más estricto que el 5 % (con límites de caída del 5-10 %, el 5 % por operación es inaceptable): usar 0,5 %-1 %.
+
+**Estado.** AMPLÍA (no existe un campo de tiempo en el mercado en el cribado ni como desempate) — **Tipo.** riesgo — **Locura.** 0 — **Valor.** 3 (barato, y el 5 % por operación del libro choca con los límites de fondeo).
+
+### 9.9 · Lo que esta sección no verifica
+
+- **Las tablas y las fórmulas salieron dañadas en la extracción del PDF.** Donde una cifra no se leía, la
+  ficha lo dice y no la cita. Quedaron sin leer, entre otras: los factores de beneficio por mercado de la
+  figura 1.7, los totales de las tablas 8.7 y 22.2, las tablas del indicador de enero, del ciclo
+  presidencial y del calendario semanal (cap. 10), las condiciones de la tabla 20.1 y las salidas
+  numéricas de las páginas 1135-1140.
+- **Dos fórmulas están reconstruidas** a partir de los ejemplos resueltos del libro, no copiadas: la de
+  aptitud del algoritmo genético y la de probabilidad de drawdown (9.7). Cada ficha lo marca.
+- **Posibles erratas del propio Kaufman**, señaladas en su ficha: en la página 52 dice «multiplicar por
+  252» pero sus números usan la raíz de 252; y afirma que un filtro de 2 desviaciones típicas descarta el
+  32 % de los casos, cuando una normal da en torno al 5 % (2,5 % por cada lado).
+- **Los estados NUEVA, YA EXISTE y AMPLÍA** salen de búsquedas por palabra clave de cada agente en el
+  repositorio y en este dossier, no de una auditoría. Puede haber piezas construidas, o ideas ya recogidas
+  en las secciones 3 a 6, que no encontraron.
+- **Ninguna cifra se ha reproducido aquí** con los datos del proyecto.
+- **Las figuras** (gráficos) no se pueden leer del texto extraído; lo que sólo estaba en un gráfico no
+  está en las fichas.
