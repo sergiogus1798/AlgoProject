@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from core.paths import DATA
+from core.symbols import alias
 from ui.daemon.runner import where
 
 NO_CROSS = ("necesita el export del retest cross-market de este databank (skill /crossmarket); si "
@@ -73,12 +74,12 @@ STUDIES = {
 
 
 def only_options(c: dict) -> list[dict]:
-    """Crossmarket's sub-tests runnable alone: each market of the export but the base one.
+    """Crossmarket's sub-tests runnable alone: each market of the export, the main one included.
 
     Args:
         c: What `runs.context` built.
 
     Returns:
-        `[{"key": feed, "label": feed}, ...]`; empty when the export is not cross-market.
+        `[{"key": feed, "label": alias}, ...]`; empty when the export is not cross-market.
     """
-    return [{"key": f, "label": f} for f in c["markets"] if c["multimarket"] and f != c["feed"]]
+    return [{"key": f, "label": alias(f)} for f in c["markets"] if c["multimarket"]]

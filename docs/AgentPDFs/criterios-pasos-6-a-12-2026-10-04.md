@@ -1,5 +1,11 @@
 # Criterios de los pasos 6, 8, 10 y 12 — recalibración por activo, marco y familia
 
+> **⚠️ Las cifras de este dossier no valen (2026-10-09).** Salen de la calibración `Test_Calib_*`, borrada
+> entera el 2026-10-04 porque el spread estaba mal. El paso 8 se rige hoy por
+> `puerta-is-oos-paso-08-especificacion-2026-10-06.md`, el 10 y el 12 por sus dossiers `criterios-paso-10-*`
+> y `criterios-paso-12-*`; la receta del paso 6 está sin recalibrar (`OPEN.md` §93). Se conserva sólo como
+> historia.
+
 **2026-10-04 · propuesta de agente, PROVISIONAL hasta que la apruebes.** Sustituye a
 `criterios-pasos-6-y-8-2026-10-02.md`, cuyas poblaciones incumplían las reglas 14 y 15. Qué filtros
 poner en el Build de SQX (paso 6), qué exigir tras el retest fuera de muestra (paso 8), y qué

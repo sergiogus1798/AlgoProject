@@ -127,13 +127,13 @@ def test_refusals() -> None:
 
 
 def test_only_options() -> None:
-    """crossmarket offers each non-base market of the export; other studies offer none."""
+    """crossmarket offers each market of the export, the main one included; other studies offer none."""
     http = client()
     got = http.get("/api/study/only", params={
         "study": "crossmarket", "project": PROJECT, "databank": "Retest_Markets_-_Family",
         "asset": "USDJPY"}).json()["options"]
     keys = [o["key"] for o in got]
-    assert keys and "USDJPY_M1" not in keys, keys
+    assert keys and "USDJPY_DukasM1_the5ers" in keys, keys
     assert http.get("/api/study/only", params={"study": "gate"}).json() == {"options": []}
 
 

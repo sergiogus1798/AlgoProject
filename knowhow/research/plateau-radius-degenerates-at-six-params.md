@@ -5,6 +5,7 @@ tag: 🔬  date: 2026-09-30  see: research/cloud-ranking-stability
 ---
 # A Chebyshev box of radius 2 across six live parameters usually holds only the mother
 `marketSurfaces.measure.region.plateau` (a box of radius `region_radius` on every parameter at once;
+itself removed in the marketSurfaces rework, commit `ca7dd56` — no study draws or measures this box now;
 the cloud's own copy, `cloud.model.neighbourhood`, was retired with encargo 48, 2026-10-07) shrinks fast
 with the parameter count: at ~500 variants sampled from a space of millions, a box that must hold on **all**
 six live parameters simultaneously usually contains nobody but θ₀ itself. This is not a bug —

@@ -53,7 +53,8 @@ TYPES = {bool: "bool", int: "int", float: "float", str: "str", list: "list"}
 # `split_mode` is where the owner picks the WFC's in-sample — `build` alone (oos1_oos2) or
 # `build+oos1` (oos2_only) — per run, in the strategy view, not as a databank sub-panel per
 # composition (owner, 2026-10-01).
-CHOICES = {"split_mode": list(panel.SHORTCUTS)}
+CHOICES = {"split_mode": list(panel.SHORTCUTS), "travel.judge_on": ["gross", "net"],
+           "travel.shift_unit": ["year", "semester"], "travel.shift_step": ["week", "day"]}
 
 # Where the loaders read from: a study's config.yaml, the shared variant and null configs,
 # the ledger's frozen thresholds. Any YAML there changing invalidates every cached config.

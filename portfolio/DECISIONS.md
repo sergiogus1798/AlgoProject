@@ -3,13 +3,52 @@
 Questions the owner has not settled yet. Nothing here is implemented; do not guess an answer.
 Settled on 2026-09-29 and moved to the section «Settled by the owner» below: #1 (same pool), #3 (equal weight as the
 baseline, pluggable weights), #7 (Monte Carlo of every kind), #8 (fixed fractional), #4 (every
-correlation threshold 0.30 by default), #9 (siblings face the same filter, no special rule) and #11 (search `build`, test `oos1`+`oos2`). #10 (near-survivors enter, marked) was settled on 2026-09-30. #13 (the funded portfolio is chosen by the funded yardstick inside the engine) was settled on 2026-09-30 by the session, the owner having delegated it — `PLAN.md` §14. #2 (size), #5 (rebalancing) and #12 (no «on probation» category) were decided on 2026-10-04 by the Council on the owner's delegation, and #11 was amended the same day (how the two out-of-sample segments are read) — section «Decided by the Council» below. The readings those answers left open (R1-R4, Q16's sequence) were settled by the owner on 2026-10-05 — section below, `real.shift_minimum: metric` included.
+correlation threshold 0.30 by default), #9 (siblings face the same filter, no special rule) and #11 (search `build`, test `oos1`+`oos2`). #10 (near-survivors enter, marked) was settled on 2026-09-30. #13 (the funded portfolio is chosen by the funded yardstick inside the engine) was settled on 2026-09-30 by the session, the owner having delegated it — `PLAN.md` §14. #2 (size), #5 (rebalancing) and #12 (no «on probation» category) were decided on 2026-10-04 by the Council on the owner's delegation, and #11 was amended the same day (how the two out-of-sample segments are read) — section «Decided by the Council» below. #6 (the prop-firm rules to encode) was settled in pieces by the owner between 2026-09-29 and 2026-10-05 — section «Settled by the owner — #6» below, with what it leaves open. The readings those answers left open (R1-R4, Q16's sequence) were settled by the owner on 2026-10-05 — section below, `real.shift_minimum: metric` included.
 
-| # | question | why it matters |
-|---|---|---|
-| 6 | Prop-firm rules to encode: daily loss, total drawdown, minimum days, consistency — and which firm (static or trailing DD, news windows). **Belongs to encargo 33 now** (owner, 2026-09-29): outright prohibitions filter the pool before the search, the rest is sizing after it | Encargo 33 (`docs/encargos/33-economia-del-fondeo.md`) answers it from data |
+No decision is wholly open: #6 is settled in part and its remainder is listed in its own section below.
 
-Answer one, and it moves from here into a settled section below.
+## Settled by the owner — #6, the prop-firm rules to encode (encargo 33 deliverable 8)
+
+Which rules, and of which firm. Each line says where the owner's answer is written.
+
+- **Which firms and plans: Hantec and FTMO, active firms only, accounts of 10k USD at most, EAs
+  allowed, list prices** (owner, 2026-09-29; `OPEN.md` #85 «Decided by the owner»; encargo 33 §3.5;
+  `funded/sim/config.yaml` `universe`). Only the owner makes a firm active.
+- **Which rules: the ones the catalogue holds per plan**, read from `funding.sqlite` and never typed
+  by hand — target, daily loss, maximum loss (static or trailing), minimum days, consistency, time
+  limit (`funded/rules/catalog.py`, encargo 33 §2-§3.1).
+- **Semantics of the rule machine** (owner, 2026-09-30; `PLAN.md` §12 «Answered», `funded/rules/README.md`):
+  breach is strictly below a floor, on the day's worst floating equity; Hantec Express trailing rises
+  with the intraday high and locks at the starting balance at +6 %; FTMO 1-step trails the highest
+  end-of-day balance; a target is met on the closed balance at the day's end; a day's profit is its
+  closed P&L; FTMO 1-step has no minimum trading days.
+- **Outright prohibitions filter the pool before the search; the rest is sizing after it**
+  (owner, 2026-09-29, see «Settled by the owner — moved verbatim» below). **Friday close / no news:
+  the strategy is dropped from that plan's pool**, never trimmed (owner, 2026-09-30; `PLAN.md` §12,
+  encargo 33 §6.2).
+- **A rule the catalogue marks unconfirmed is used as read and flagged «sin confirmar» in every
+  result** (owner, 2026-09-30; encargo 33 §6.1).
+- **One risk per phase (1, 2, 3, funded), a searched dimension counted in the ledger, unchanged
+  after a payout** (owner, 2026-09-30; encargo 33 §6.3).
+- **Re-buy after a failure: `same_plan` and `none`, both compared** (owner, 2026-10-05; encargo 33
+  §6.4). **Prices are list prices, discounts ignored** (owner, 2026-09-29; encargo 33 §6.6).
+  **USD accounts only** (§6.5). **Cash budget 1,000 € in total** (§3.5).
+
+**Still open in #6 (the owner's calls; nothing here is guessed):**
+
+- The gaps the catalogue lacks and the Terms do not settle (encargo 33 §2, `knowhow/costs/funded-stage-catalogue-gaps.md`):
+  Hantec fee refund (`gaps.hantec_fee_refund`), Hantec Endurance days between payouts, what a payout does
+  to the trailing floor of a funded Hantec Express and of the FTMO 1-step (`gaps.*`, all `null`, the
+  bank simulation refuses without them), FTMO 2-step fee refund per account (modelled as no refund by
+  the Council, 2026-10-04, unconfirmed), whether Hantec's «Profit Target −2 %» lowers every phase
+  (Council: phase 1 only), Hantec's prohibited-strategies article.
+- From encargo 33 §2: the target of phases 2 and 3, the base profit share of the challenges, the exact
+  consistency formula, the daily-loss basis as the Terms word it, minimum payout, open-risk limit,
+  leverage and scaling plan — no owner answer is recorded for them in the brief, the READMEs or
+  `OPEN.md` #85.
+- Candidate firms (FundedNext, FundingPips) wait on the owner's admission calls (`OPEN.md` #85).
+- `funded.open_risk_cap` (R5 above) and the payout cushion, tax rate, payout fee, denied-payout and
+  firm-closure probabilities (`owner.*`, `null`) are his and unanswered.
 
 ## Settled by the owner — 2026-10-05 (the readings the Council's answers left open)
 

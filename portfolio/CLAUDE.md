@@ -41,6 +41,23 @@ for the owner. The portfolio maths is built (2026-10-05) in `common/construct/` 
 (`AlgoData/funding/funding.sqlite`, Hantec and FTMO, every add-on combination priced), refreshed
 every Sunday by the `fundingWatcher` agent. The economics on top of it is encargo 33.
 
+**Funded rules, written here first** (owner; details in `DECISIONS.md` «Settled by the owner — #6»):
+- The unit is the bank, not the account: a funded account is an option bought for a price, so the
+  figure is the expected cash received minus the expected cash paid, re-buys included. Loss is capped
+  at the price, gain is the tail; several accounts on one portfolio fail together and count as one bet.
+- Rules are pure functions over the firm-server day's floating equity (`funded/rules/`), read from
+  the catalogue, never typed. Breach is strictly below a floor; an unconfirmed rule is used as the
+  catalogue reads it and flagged «sin confirmar» in every result.
+- What a firm forbids outright (weekend holding, news windows) drops the strategy from that plan's
+  pool before the search; it is never trimmed. Daily loss, total drawdown and minimum days are met by
+  sizing after the search.
+- Universe: active firms (Hantec, FTMO), USD accounts of 10k at most, list prices, 1,000 EUR total
+  cash budget. One risk per phase, a searched dimension counted in the ledger. Re-buy `same_plan` and
+  `none` both compared. Haircuts 0/25/50/75/100 %, 50 % decides; the edge level comes from OOS, the
+  path shape from the long history.
+- Every input still `null` in `funded/sim/config.yaml` (`owner.*`, `gaps.*`) is the owner's: the
+  commands refuse without it. Do not fill one in.
+
 **Testing this module never writes the real root.** A test run is the real code under
 `ALGO_DATA_ROOT=<AlgoData>/portfolio/_test/root` (`portfolio/testroot/README.md`): its own ledger,
 archive, pools and runs, the pool `Test_nikkei_ref`, relaxed thresholds passed with `--set`. Every

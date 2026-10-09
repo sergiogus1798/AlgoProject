@@ -29,6 +29,27 @@ TIPS = {
                        "(max_fill_error, en múltiplos del ATR mediano) por encima del cual las "
                        "velas probablemente no son las del backtest: un spread constante vive "
                        "muy por debajo y no lo dispara.",
+    "travel.frequency.z": "|z| de la frecuencia de operaciones de un mercado a partir del cual se "
+                          "marca: opera con una frecuencia distinta a la del principal.",
+    "travel.frequency.phi_min": "Límite inferior de la sobredispersión estimada en el build del "
+                                "principal; por debajo se usa este valor.",
+    "travel.frequency.phi_max": "Límite superior de la sobredispersión estimada en el build del "
+                                "principal; por encima se usa este valor.",
+    "travel.validity.point_value_margin": "Diferencia máxima, en proporción, entre el valor del punto "
+                                          "de la ficha y el de la regresión; por encima el mercado "
+                                          "no es válido.",
+    "travel.validity.flat_atr_fraction": "Fracción del ATR mediano por debajo de la cual una barra "
+                                         "se da por defectuosa y se excluye.",
+    "travel.validity.max_displaced_share": "Parte máxima de entradas uniformes que un desplazamiento "
+                                           "puede mandar a una barra posterior por un hueco de datos; "
+                                           "por encima, ese mercado y celda quedan fuera como sin dato.",
+    "travel.validity.max_fill_error": "Error mediano de precio, en múltiplos del ATR mediano, por "
+                                      "encima del cual las velas probablemente no son las del "
+                                      "backtest; un spread constante vive muy por debajo.",
+    "travel.degradation.min_trades_year": "Operaciones mínimas de un año; con menos se agrupa con "
+                                          "el siguiente.",
+    "travel.degradation.min_years": "Años mínimos tras agrupar; con menos no hay dato de "
+                                    "degradación.",
     "travel.degradation": "Degradación en el tiempo (P9): los años con menos operaciones que el "
                           "mínimo se agrupan con el siguiente, y con menos años que el mínimo "
                           "tras agrupar no hay dato.",

@@ -1,5 +1,10 @@
 # Criterios de búsqueda y descarte — pasos 6 y 8 del workflow
 
+> **⚠️ Las cifras de este dossier no valen (2026-10-09).** Sus poblaciones incumplían las reglas 14 y 15,
+> y la calibración que lo sustituyó se borró entera el 2026-10-04 por el spread. El paso 8 se rige hoy por
+> `puerta-is-oos-paso-08-especificacion-2026-10-06.md`; la receta del paso 6 está sin recalibrar
+> (`OPEN.md` §93). Se conserva sólo como historia.
+
 **2026-10-02 · propuesta de agente, PROVISIONAL hasta que la apruebes.** Qué estrategia entra en el
 databank mientras SQX construye (paso 6) y cuál sigue adelante después del retest fuera de muestra
 (paso 8), con tres veredictos: **Pass**, **Limbo** y **Fallo**.

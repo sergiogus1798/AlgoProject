@@ -182,8 +182,7 @@ def widget(block: dict) -> QWidget:
 def _thresholded(table: QTableWidget, cols: list[int], cfg: dict) -> QWidget:
     """A table with one editable threshold over one or several columns, recolouring all of
     them on every change — no call back to the study: the p-values are already in the table
-    (CONTRACT §5.9), e.g. crossmarket's «P por modelo» market × model table, one threshold for
-    every model column at once.
+    (CONTRACT §5.9), one threshold for every p column of the table at once.
 
     Args:
         table: The built table.
