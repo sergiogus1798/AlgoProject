@@ -1,7 +1,7 @@
 ---
 q: What exits, direction and stops does the XAUUSD corpus have?
 kw: XAUUSD generated strategies stop loss take profit; SLPT None; long only; ExitAfterBars 8; bar-cap vs signal-exit populations; XAUUSD in-sample window
-tag: 🤔  date: 2026-09-04  see: authoring/bar-exit-ignores-task, authoring/build-doctrine-sections, research/research-lessons
+tag: 🤔  date: 2026-10-04  see: export/exits-and-m1-library, authoring/bar-exit-ignores-task, authoring/build-doctrine-sections, research/research-lessons
 ---
 # The XAUUSD corpus has no SL, no PT, no trailing; long-only; every exit capped at 8 bars
 All 231 carry `SQ.Formulas.SLPT.None`: Build task `<SLRequired>false`, `<SLATR>false`, `<PTRequired>false`
@@ -10,7 +10,7 @@ Two structurally different populations share the pool: never pool exit statistic
 vs signal-exit split below is 🤔, not 🔬 (retagged 2026-09-29, issue 13): unstated threshold,
 n=11 for one arm, and the 231 denominator itself carries the corpus's own duplicate-trade problem —
 redo on deduplicated trade lists over one window before trusting the comparison.** Every figure
-here is from the old project's export and cannot be reproduced from today's data root (OPEN §12).
+here is from the old project's export and cannot be reproduced from today's data root (OPEN §12). Not: «every exit is capped at 8 bars» for the 757-strategy `MC_Trades` corpus — there 19.55 % of trades close on `Exit Signal` (🔬, `export/exits-and-m1-library`, counted 2026-09-25).
 
 ## Evidence
 - `<MarketSides type="long">`: 231/231 long entry, 0 short.

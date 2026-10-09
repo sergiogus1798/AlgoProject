@@ -5,8 +5,10 @@ tag: 🔬  date: 2026-09-24  see: research/trade-filter-parameter-space, researc
 ---
 # A smooth, profitable cloud can still reshuffle which member is best every year
 Smooth within a window does not mean the shape carries into the next. Here the family makes money but which member
-is best is noise, so in-sample tuning of this logic buys nothing. CSCV (`walkForwardCorrelation`) is deliberately
-blind to chronology; `f_y` and rho are chronological per period — both are needed.
+is best is noise, so in-sample tuning of this logic buys nothing. CSCV (`studies/optimisation/cscv`) is deliberately
+blind to chronology; `f_y` and rho are chronological per period — both are needed. (The cloud's year-by-year
+stability reading that measured this was retired 2026-10-07, encargo 48; the WFC's rho against a sign-flip null
+takes its place.)
 
 ## Evidence
 `Strategy 17.9.39` batch (998 variants after the trade floor), per calendar year over build + `oos1` (`oos2` untouched):

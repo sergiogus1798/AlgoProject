@@ -16,11 +16,14 @@
 - `mcp-server-limits` — What can SQX's MCP server on the master do, and why does a project that fails to load vanish silently?
 - `mcr-nullpointer-fastutil-transient` — Why does an MC Retest task crash SQX with a fastutil NullPointerException and leave the project hung?
 - `monitor-tail-trips-worker-holding-check` — Why did `worker.holding()` count a monitor tail process as holding a worker, and how is it fixed?
+- `old-chain-spp-reads-mcr8` — Why does an old project's SPP IS read an empty MCR 8 Stress, and how do I repoint it?
 - `only-flag-wrong-databank` — After `builder --only`, why does a task read the wrong databank and how do I rethread each task's Input?
 - `owner-lock` — How does the real owner lock written by `bin/sqx-worker.sh` work, and what does `advance.busy` read?
 - `project-log-written-in-pieces` — Why does a project's global_log show a killed run's "started" and incomplete lines in the day's log?
 - `project-verb` — What do the `-project` verbs create or modify via the API, and why does `loadconfig` never overwrite?
 - `renaming-feeds` — How does `-symbol action=edit symbol=OLD name=NEW` rename a feed, and why is the timezone ignored?
+- `retest-task-hangs-silently-deadline` — Why did «MCR 6 Exits» sit for hours with no «Task finished» and no error, and what ends a task that does not advance?
+- `retire-own-and-wait-per-task` — How do I retire my own Test_ project after a run and wait for another session's multi-task run?
 - `running-a-task-headless` — How do I run one workflow step headless: stop, then start with only its tasks `active="true"`?
 - `spp-harness-needs-its-own-project` — Where must the SPP reconnaissance harness live: in the mother's own workflow project, found by title?
 - `spp-headless` — Does a headless SPP persist its results, and how do I judge its progress (JVM RSS, one per install)?
@@ -28,6 +31,7 @@
 - `start-before-databanks-load` — Why does a task started while SQX is still loading its databanks retest nothing?
 - `study-cli-defaults-to-master` — Why does a study's CLI default to the master install, and who must resolve the real install?
 - `three-install-topology` — What are the three SQX installs (master, conductor W1, custodian W2), their ports and what each is for?
+- `transient-abort-automatic-retry` — What does the autopilot do when SQX aborts with «Error while running project», and why must the rerun undo first?
 - `unresolved-resources-exact-xml` — Why does SQX report "Unresolved resources" when a task's resource XML differs from what its registry writes?
 - `unselected-build-population` — Why does a Build with only `trades >= 100, NetProfit > 0` fill with thousands of strategies, and how do I box it?
 - `variant-chain-custom-project` — What silently breaks `sqx.variants` when run in a custom project, and how are the six breakers handled?

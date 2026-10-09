@@ -1,7 +1,7 @@
 ---
 q: Why does an MC Retest task crash SQX with a fastutil NullPointerException and leave the project hung?
 kw: MC Retest crash NullPointerException fastutil IntArrayList wrapped null; MCR 1 Bar Error while running project; WFC 1 IS variants pilot aborted; project hangs after crash no Project finished; transient SQX engine bug
-tag: 🔬  date: 2026-09-30  see: authoring/cloned-custom-block-native-key
+tag: 🔬  date: 2026-10-05  see: sqx-drive/transient-abort-automatic-retry, authoring/cloned-custom-block-native-key
 ---
 # A retest task can crash SQX's own engine with a fastutil NullPointerException — transient, not the project, and the project hangs silently afterwards
 Right after `Task finished`, the log shows `Error while running project` with a `NullPointerException`
@@ -10,6 +10,7 @@ in fastutil (`IntArrayList.getInt ... "this.wrapped" is null`) — SQX's own cod
 whose CPU `TIME` stops climbing. `action=stop` then `action=start` reran clean. Seen on `MCR 1 Bar`
 (twice) and on the variants pilot's `WFC 1 IS`; the launchers now read «Error while running
 project» in the log and stop (`advance.run.watch`, `sqx.variants.banks.aborted`): rerun that step.
+Not specific to MC Retest; the autopilot reruns it once → `sqx-drive/transient-abort-automatic-retry`.
 
 ## Evidence
 - 🔬 2026-09-30, `Test_USDJPY_donchianUpperCrossUp_H1`: `MCR 1 Bar` 15 strategies, NPE right after
@@ -49,11 +50,8 @@ market entries) with no repeat of the exception anywhere in a fresh multi-thousa
   databank` climbing normally task by task (80→88→96→98→104→112→...). During a genuinely running
   task, `ps` `TIME` climbed by ~8 minutes of CPU per 5 seconds of wall clock (≈70-80 cores active),
   a clean discriminator from the frozen-crash signature above.
-- 🤔 `action=status` does not refresh its own counters mid-task for MCR-type tasks the way it does
-  during the build/generation phase (which shows `Strategies generated` climbing into the thousands
-  live) — several consecutive real, non-crashed status calls returned identical text for tens of
-  seconds while the task was genuinely retesting. Do not read a static status line alone as a hang;
-  corroborate with `ps` CPU time before concluding the project is stuck.
+- 🤔 `action=status` does not refresh its counters mid-task for MCR-type tasks (identical text for tens of
+  seconds while genuinely retesting): corroborate a static status line with `ps` CPU time before calling it a hang.
 - Not reproduced a third time; no other session's log around that timestamp shows JVM GC pressure or
   OOM. Left as 🤔 whether it's a race in SQX's stats aggregation when a MC task with silenced
   acceptance conditions finishes and the next one's databank stats are computed concurrently.
@@ -67,3 +65,6 @@ market entries) with no repeat of the exception anywhere in a fresh multi-thousa
   mid-chain crash leaves stale duplicate `.sqx` on disk that a naive count or a manual glob would
   double. Worth a manual check of `databanks/<task>/` for `(1)` names after any run that crashed and
   was restarted rather than resumed.
+- 📓 2026-10-04, custodian, restart route, `Trade_NIKKEI225_M30_volatilidadL`: the same exception on `WFC 1 IS` during
+  step 24's first pass, 18 of 60 retested; `banks.aborted` caught it and the autopilot stopped. The same batch
+  had run clean half an hour earlier on the live GUI session (`--live`).

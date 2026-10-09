@@ -1,11 +1,11 @@
 ---
 q: Why does MetaEditor64.exe under Wine exit 0 yet compile nothing, or not what I changed?
 kw: MetaEditor64.exe compile silently does nothing under Wine, wine argument space splitting, NtQueryAttributesFile Program not found, MetaEditor shares terminal data folder lock, compile with terminal open, sqx_indicators ok false errors 0, folder compile skips existing ex5, changed indicator keeps old build, Period identifier already used
-tag: 🔬  date: 2026-09-29  see: mt5/mt5-under-wine
+tag: 🔬  date: 2026-10-04  see: mt5/mt5-under-wine, mt5/metaeditor-compiles-outside-data-folder
 ---
 # Three silent traps in MetaEditor64.exe under Wine — each exits 0 and compiles nothing, or not what you changed
 - Wine does not requote a `wine <exe> arg…` argument with a space in it, and every prefix path has one (`Program Files`, `MetaTrader 5`): `/compile:C:\Program Files\...` truncates to `C:\Program`, exits 0, no log; quoting doesn't fix it. Fix: `wine.run(cwd=MQL5/)` + a relative argument (`/compile:Indicators\Foo.mq5`), no space up to that point (`mt5/wine.py::run()`'s `cwd`).
-- MetaEditor also shares `terminal64.exe`'s data-folder lock: terminal up → exits 0, only the log's BOM, nothing compiled. `compile_path()` now checks `wine.terminal_running()` first and raises, instead of `{"ok": false, "errors": 0, "messages": []}`. SQX's 48 `Sq*` then compiled clean, 0 errors, 5 harmless warnings.
+- MetaEditor also shares `terminal64.exe`'s data-folder lock: terminal up and the source inside the data folder's `MQL5/` → exits 0, only the log's BOM, nothing compiled (a source OUTSIDE it compiles with the terminal up → `mt5/metaeditor-compiles-outside-data-folder`). `compile_path()` now checks `wine.terminal_running()` first and raises, instead of `{"ok": false, "errors": 0, "messages": []}`. SQX's 48 `Sq*` then compiled clean, 0 errors, 5 harmless warnings.
 - A **folder** compile (`/compile:Indicators`) builds only the sources that have no `.ex5` — a newer `.mq5`, even with a fresh mtime, is skipped, and a folder where every `.ex5` exists returns a 2-byte log and `ok: false` exactly like the lock above. A single-file `/compile:` always builds. `sqx_indicators()` therefore deletes each copied source's `.ex5` before the folder compile.
 - An `input int Period` fails with `error 282: identifier 'Period' already used` (it is a built-in function); rename the variable, keep the `// Period` comment that MT5 shows as its label — `iCustom` passes inputs by position, so callers are unaffected.
 

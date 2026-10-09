@@ -15,3 +15,5 @@
 - `simple-strategy-build-xml` — Which Build task switches make a Simple Strategy build, and where is its direction set?
 - `template-family-is-the-folder` — What defines a project's template family: the library folder name or the .sqx file stem?
 - `template-page-resolves-groups-on-master` — Which install's `blockGroups.xml` does the template page use to resolve a hole's group?
+- `template-second-chart-aborts-build` — Why does a build abort at once with «Strategy from template file requires 2 charts, 1 defined»?
+- `timeframe-missing-from-study-yaml-cannot-build` — Why does the builder refuse a project on M15 with «falta M15 en trades_per_year»?

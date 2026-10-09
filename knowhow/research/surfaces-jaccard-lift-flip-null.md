@@ -5,14 +5,16 @@ tag: 🔬  date: 2026-10-04  see: wfc-top-persistence-sign-flip-null
 ---
 # Neither separates on the Nikkei: both stay diagnostics. J by chance is 0.04–0.09 per market, not 0.053, and one market's lift needs ~3 to leave its null
 
-`studies/optimisation/marketSurfaces/measure/lift.py`. J by chance comes from the other market
+Both metrics were retired (their module was deleted) on 2026-10-07 (step 18.5 now reads the Spearman order
+of the variants against a weekly sign-flip null: `studies/optimisation/marketSurfaces/README.md`); the finding below is what
+motivated it. J by chance comes from the other market
 under zero edge (daily sign flips shared by variants and markets), not from q/(2−q): 0.04–0.09 per
 market, and one market's lift needs ~3 to leave its null — only the median over markets is
 readable. On the Nikkei neither metric leaves the null: diagnostics, not offered. The unit check
 (absolute vs dimensionless parameters) is NOT done: no register says a parameter's unit.
 
 ## Evidence
-`studies/optimisation/marketSurfaces/measure/lift.py`. J_chance is not q/(2−q): it is the mean J
+The deleted `measure/lift.py` (see git history). J_chance is not q/(2−q): it is the mean J
 of the main market's real top decile against the other market under zero edge — each of its days
 keeps its size and takes a random sign, the same for every variant and, per calendar day, for every
 market (1,000 draws), so variants and markets stay as dependent as they are. Lift = J / J_chance.
@@ -43,4 +45,4 @@ trade most fill both tops, and that alone overlaps more than these markets do. S
 study's own call («la región no viaja») and as the owner's example (J 0.03–0.07 in 11 of 12).
 Caveat for a batch where it does separate: on long-only strategies two markets drifting together
 rank variants by time-in-market, which lifts J with no region travelling — read it beside
-`rho_neutral`. Test: `tests/test_surfaces_lift.py`.
+`rho_neutral`. The test file is gone with the module.

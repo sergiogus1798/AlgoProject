@@ -1,10 +1,10 @@
 ---
 q: How do I run one workflow step headless: stop, then start with only its tasks `active="true"`?
 kw: startOnlyTask does nothing Total tested 0; action=start runs whole chain; inactive task active=false SKIPPED; Project finished in log; second start does nothing needs stop; retestSelected missing retests nothing; DeleteFailedStrategies in harness
-tag: 🔬  date: 2026-09-25  see: sqx-drive/project-verb, sqx-drive/spp-task-type
+tag: 🔬  date: 2026-10-04  see: sqx-drive/live-chain-without-restart, sqx-drive/project-verb, sqx-drive/spp-task-type
 ---
 # Run a step with `stop` then `start`, only its tasks `active="true"`; never `startOnlyTask`
-`-project action=startOnlyTask` logs success and tests nothing. `action=start` works and runs every
+`-project action=startOnlyTask` logs success and tests nothing (sqcli picks the first task of the same TYPE, not the one named; only GUI mode can run one named task → `sqx-drive/live-chain-without-restart`). `action=start` works and runs every
 **active** task in config order; a task with `active="false"` is skipped. So one project can hold
 the whole workflow: switch on the step's tasks (`sqx.projects.stage`), everything else off. A
 `GoToTask` left active loops forever. The end shows as `Project finished` in SQX's own log.

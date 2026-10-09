@@ -1,13 +1,15 @@
 ---
 q: How do I parse `dailyEquity.bin`: what does each daily value mean and which series is `Main`?
 kw: parse dailyEquity.bin, is SQX daily equity the day's low or close, daily low equity MAE per day, daily equity curve without SQX, sub-period / split OOS study, which dailyEquity.bin (Main vs Portfolio vs AdditionalMarket), equity vs net profit mismatch, open position last bar, is daily equity mark-to-market, which day is the equity stamped, align equity with bars / benchmark, cross-check market curve sum vs NetProfit
-tag: 🔬  date: 2026-10-04  see: sqx-format/equity-reconstruction-usdjpy-gap, research/gate-t-scales, sqx-format/result-sections, sqx-format/sqx-zip-members, sqx-format/leg-curve-warmup
+tag: 🔬  date: 2026-10-04  see: export/archived-trades-vs-reclocked-bars, sqx-format/equity-reconstruction-usdjpy-gap, research/gate-t-scales, sqx-format/result-sections, sqx-format/sqx-zip-members, sqx-format/leg-curve-warmup
 ---
 # dailyEquity.bin parses: each trading day's LOWEST equity (floating at the M1 wicks), cumulative; take `Main`
 `core/sqxstats.equity(path, result="Main")`: one point per trading day, cumulative from the leg's start.
-🔬 **Day D = the lowest equity reached during D on the feed's clock** (closed + open positions at their
+🔬 **Day D = the lowest equity reached during D on the feed's clock AT THE BACKTEST** (closed + open positions at their
 worst M1 wick), **not a mark to market**: its differences are low-to-low, never daily P&L — rebuild MTM
-from trades + M1 (`portfolio/common/construct/equity/`). Only `Main` matches net profit; reconcile at a
+from trades + M1 (`portfolio/common/construct/equity/`). 🔬 **Sampled only while a position is open** (2026-10-06):
+a day that ends flat after an exit shows the worst wick BEFORE the exit, never the lower realised level after it;
+a flat day shows the previous close. `reconcile.low_equity` reads `days.low_open` for that; `days["low"]` stays economic. Only `Main` matches net profit; reconcile at a
 window boundary; a cross-check market's leg misses net profit (median up to ~475 $) — check by rank.
 
 ## Evidence
@@ -33,6 +35,9 @@ Evidence: `AlgoData/scratch/null-fpr-2026-10-04/` `b1_curves.py`, `b2_stats.py`,
   build 2,667 days and oos1 1,316 days **100 % within 1 $ (max 0.16 $)**; the same days' MTM close
   match only 45 % (median gap 81 $), the previous day's close 45 %. Daily P&L from its differences
   correlates 0.45 with the rebuilt MTM P&L. Golden: `tests/test_portfolio_universe.py`.
+  🔬 2026-10-04: on today's EETUS bars it reads 96.7 % — the clock alone; `clock.reclock` to Asia/Jerusalem
+  gives 100 % back; today's card point value (631.34, not the trades' 653.92) would read 45 %
+  (`export/archived-trades-vs-reclocked-bars`).
   The first point shows it: day 2008-01-02 reads −1,198.27 = that day's trade's `MAE ($)`, the next
   day −376.79 = its `Profit/Loss`. ⚠ Readers that difference this curve as daily P&L (the variant
   batches' `equity.parquet` in CSCV) read low-to-low changes — `OPEN.md` #88.

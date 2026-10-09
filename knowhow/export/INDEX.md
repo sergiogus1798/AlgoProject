@@ -23,5 +23,6 @@
 - `storage-format` — In what format are per-test trades and exports stored on disk?
 - `trade-export-columns` — Which of the 16 trade-export columns are needed and which can be derived?
 - `trades-export-staging-clobbered-spp` — Which folders does `export_trades` stage into, and why must it not touch `strategies/`?
+- `wfm-export-recharge-and-score` — Whose costs does a WFM export carry, why can't reprice.real price its EndTest trades, and what is SQX's score built on?
 - `wfm-export` — How is a Walk Forward Matrix exported and read, and what do its per-step fitness and last steps mean?
 - `what-a-project-stores` — What should a project store of its data, and how are strategies deduplicated?

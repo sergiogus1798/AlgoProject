@@ -1,13 +1,13 @@
 ---
 q: Which genetic-algorithm target should the build optimise, given the run-to-run noise?
 kw: which genetic algorithm GA target / fitness to use? Ret/DD vs Sharpe vs R Expectancy vs RSquared, seed variance run-to-run, Sharpe (IS) threshold 0.6, minimum trades 100, second condition, acceptance vs selection
-tag: 🔬  date: 2026-09-05  see: research/is-proxies-top-decile, research/post-selection-bias
+tag: 🔬  date: 2026-10-04  see: research/is-filters-inside-the-build, research/is-proxies-top-decile, research/post-selection-bias
 ---
 # GA target is unresolved: run-to-run noise (~16 pp) exceeds every target effect
 One run per arm cannot rank GA targets; you need replicates per arm or a fixed seed. What does replicate:
 select `Sharpe Ratio (IS)` ≥ 0.6 after the build (one condition only), keep the in-sample floor at ≥ 100
 trades (a sanity floor; raising it hurts). Prefer selection on a finished databank; setting it as a
-build-time acceptance changes what the GA breeds from — treat that as a new arm.
+build-time acceptance changes what the GA breeds from — treat that as a new arm — tested since: an IS filter inside the Build yields 70-98 % fewer oos1-robust per minute than the same cut afterwards (`research/is-filters-inside-the-build`, 🔬 2026-10-04).
 
 ## Evidence
 XAUUSD, five 10,000-strategy runs, same build, IS min 100 trades, only target differs: `OOS` Ret/DD,

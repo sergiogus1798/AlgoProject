@@ -26,7 +26,7 @@ After a retest run `-databank action=synctofiles` and wait before reading `.sqx`
   | `MC Trades` | 757 whole `.sqx` retested 2008–2026 | 31 s |
   ≈ 24 strategies/s → 11,597 variants ≈ 8 min. Compute is not the constraint.
 - 🔬 Lazy disk: run reported `Total tested 2000`, exported 2,000 rows, 962 `.sqx` on disk. Export reads memory.
-  Sync wait: `sqx/variants/config.yaml: execute.sync_s` (20 s). `ran.json` records `n_on_disk` beside `n_returned`.
+  Sync wait: `sqx/variants/config.yaml: execute.sync_tries` polls of `poll_seconds`. `ran.json` records `n_on_disk` beside `n_returned`.
 - 📓 Curves are cheap: `dailyEquity.bin` from 962 `.sqx`, no SQX running: 1.5 s, 5.9 MB Parquet.
   `orderstocsv` ≈ 4 min / 231 strategies → ~90 min for 5,000. For returns-per-period questions
   (CSCV, variant correlation, variant portfolio) use the curve, not trades.

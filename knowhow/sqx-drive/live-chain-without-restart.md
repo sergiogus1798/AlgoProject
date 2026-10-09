@@ -1,6 +1,6 @@
 ---
 q: How do I continue a workflow without restarting SQX, running or editing any task live in GUI mode?
-kw: run the workflow without restarting SQX; startOnlyTask runs the wrong task; startFromTask Task 'Build strategies' does not exist; cut a databank with the worker up; step project loadconfig; time between tasks; build to OOS gap; copy databank between projects; remove deletes folder; ServletProject.jar GUI endpoints; GUI mode headless Xvfb; browserToken; runThisTaskOnly projectXML; updateTaskXML live edit; removeReports delete by name; loadGridData metrics; CLI not ready; exitapp; databank names with spaces over HTTP
+kw: run the workflow without restarting SQX; cap a build at N strategies or T minutes whichever first; build cannot be stopped early; startOnlyTask runs the wrong task; startFromTask Task 'Build strategies' does not exist; cut a databank with the worker up; step project loadconfig; time between tasks; build to OOS gap; copy databank between projects; remove deletes folder; ServletProject.jar GUI endpoints; GUI mode headless Xvfb; browserToken; runThisTaskOnly projectXML; updateTaskXML live edit; removeReports delete by name; loadGridData metrics; CLI not ready; exitapp; databank names with spaces over HTTP
 tag: 🔬  date: 2026-10-01  see: databanks/databank-verbs, databanks/curating-a-databank, perf/autopilot-dead-time, databanks/no-spaces-in-names
 ---
 # In GUI mode (`sqx-worker.sh --gui`) one SQX session runs any task, edits any task and cuts any databank live; sqcli cannot pick a task
@@ -40,6 +40,17 @@ runs only that task (without `projectXML`: nothing). `/call` says «CLI not read
   time-limit. 🔬 `databank-full` with 300 / 10 min ran 49 min (606 accepted, Results held at 300);
   `time-limit` 2 min stopped itself at 123 s (`restartCount` 5 changes nothing). The type comes
   from `databank.stop_condition` in assets/_build.yaml, now `time-limit`.
+- 🤔 So a live build cannot be capped at «N strategies or T minutes, whichever first»: only
+  `time-limit` is honoured (always T minutes), N is the databank's size (it keeps the best N), and
+  `/project/stop` does not stop a build — nothing from outside ends it early; and `/main/exitapp`
+  does not either: 🔬 2026-10-06 SQX ran «Save all strategies before exiting SQX» over every other
+  project (7 projects, 09:03 → 09:11, one thread, `Databank 'P/bank' saved … Sync triggered by`)
+  while the build kept 100 % CPU to its 15-min `time-limit`, then ran the next active task (OOS)
+  and only then exited. The running project's own databank was saved by two threads at once
+  (2,985 files for 3,000 in memory: a race). What frees the machine in minutes is `exitapp`,
+  waiting for those save lines of every other project's databank on disk, then a kill by PID
+  (`sqx/projects/exiting.py`; owner, 2026-10-06: the running project's memory is lost). Not re-tested
+  for the campaign; evidence `assets/_build.yaml:76-84`, `sqx/projects/live.py:121`, the lines above.
 - «Last generation» is held on «Auto-sync never» in memory whatever config.xml says: it never
   reaches disk, so `live.sync` skips any databank whose live `syncType` is that.
 - GUI mode uses `StrategyQuantX.config`, not `sqcli.config`: the custodian's was 8g, set to 80g

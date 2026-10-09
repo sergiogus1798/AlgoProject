@@ -1,17 +1,33 @@
 ---
 q: Why does a strategy archived before 2026-10-01 not match the bars now on disk?
-kw: archived strategy trades clock vs bars clock; feed renamed 2026-10-01 EETUS; USDJPY_DukasM1_the5ers Asia/Jerusalem; MAE MFE licence refused after feed rename; inputs.source.load clock; sqx.inspect.feeds.timezone current(); universe rebuild differs; portfolio pool m1_test_uno excluded
-tag: 🔬  date: 2026-10-02  see: export/feed-clock-timezones, export/mae-mfe-from-m1
+kw: clock.reclock; golden drift; point value alone clock alone; archived strategy trades clock vs bars clock; feed renamed 2026-10-01 EETUS; USDJPY_DukasM1_the5ers Asia/Jerusalem; MAE MFE licence refused after feed rename; inputs.source.load clock; sqx.inspect.feeds.timezone current(); universe rebuild differs; portfolio pool m1_test_uno excluded
+tag: 🔬  date: 2026-10-04  see: export/feed-clock-timezones, export/mae-mfe-from-m1, sqx-format/equity-reconstruction-usdjpy-gap
 ---
 # A strategy archived before 2026-10-01 no longer matches the bars on disk: trades in the old feed clock, bars in EETUS
-`inputs.source.load` reads a member's clock **live** from the master's registry through `core.symbols.current(feed)`; since the
-feeds were unified on 2026-10-01 `USDJPY_DukasM1_the5ers` resolves to `USDJPY_M1`, stamped in EETUS, while the archived
-trades are still in Asia/Jerusalem. The two agree most of the year and are one hour apart in the weeks Israel and the US
-change time apart, so the M1 rebuild is wrong for the trades opened then and the universe **refuses** the member (licence
-under 99 %). A pool of strategies archived before that date needs its trades re-harvested on the new feed, or the clock
-frozen at archive time and the trades shifted to the bars' clock — not decided; nothing was changed.
+`inputs.source.load` reads a member's clock **live** (`core.symbols.current(feed)`): since 2026-10-01 `USDJPY_DukasM1_the5ers`
+resolves to `USDJPY_M1`, stamped in EETUS, while the archived trades are still in Asia/Jerusalem — one hour apart in the weeks
+Israel and the US change time apart, so the rebuild misses there and the universe **refuses** the member (licence < 99 %).
+🔬 The clock is the WHOLE cause: `equity.clock.reclock(bars, "EETUS", "Asia/Jerusalem")` — same instants, old labels — gives
+back 100 % of the days. The point value plays no part while it is measured off the trades. Production still reads clock and
+commission live (`inputs/source.py`, `equity/universe.py`): freezing them at archive time, or re-harvesting, is the owner's
+decision — the archive stores the old feed NAME, not its zone.
 
 ## Evidence
+- 🔬 2026-10-04, golden `4d679e…/2026-09-28T0919`, daily low vs SQX within 1 $ (`AlgoData/scratch/golden-drift-2026-10-04/d1_explain.py`):
+
+  | point value | bars as on disk (EETUS) | re-stamped to Asia/Jerusalem |
+  |---|---|---|
+  | measured off the trades = archived card, 653.92 | 3,777 of 3,906 days (96.7 %), max 2,871 $; MAE 94.3 % | **3,983 of 3,983 (100 %), max 0.16 $; MAE 100 %** |
+  | today's card, 631.34 | 44.1 %; MAE 3.8 % | 45.4 % |
+
+  The 129 missing days: March 61, October 48, November 11, September 8 (Israel changed in September before 2013), April 1.
+  No old-feed bars are left on disk (`bars/USDJPY_M1` only). Jerusalem − EETUS: 0 h on 90.6 % of minutes, −1 h on 9.3 %
+  (US already on summer time and Israel not, or Israel back and the US not), +1 h on 0.03 %.
+- Same golden with today's card commission (5 $/lot) charged as `universe._commission` does: 44.7 % / 40.0 % — it was
+  built at 0 (`closecurve.measured` reads 0.00). `source.load`'s `calibrate.point_value` (a plain fit) is biased once
+  trades carry commission and swap: 631.06 against 631.34 on a current strategy, MFE licence 98.9 % instead of 99.7 %.
+- Tests: the old golden pinned on its clock (`tests/test_portfolio_mtm.py`, `test_portfolio_universe.py`), the current
+  feed's own golden in `tests/test_portfolio_golden_current.py`.
 - Archived `4d679e…/2026-09-28T0919`, 2026-10-02: `source.load()["clock"]` = `EETUS`; the universes cached on 2026-09-30 say
   `Asia/Jerusalem` in `manifest.json`.
 - `equity.excursions.licence` on today's `USDJPY_M1`: MAE exact 94.3 %, MFE 97.4 % (100 % / 99.9 % on 2026-09-30) →

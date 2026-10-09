@@ -13,8 +13,11 @@
 - `loaded-name-is-filename` — How does SQX name a loaded strategy, and what happens on a filename collision?
 - `mc-retest-reconstruction` — Which MC Retest metrics can be reconstructed exactly from a simulation's P/L vector?
 - `mc-retest-storage` — What does an MC Retest store per simulation: the P/L vector and which metric quantile levels?
+- `mcr-ohlc-changes-trade-count` — Does MCR 7 OHLC keep the original's trades, and do the harvest's IS trades match sqxretest.original()?
+- `mcr-start-bar-reruns-identical` — Does MCR 1 Bar (random start bar) change a strategy's trades, so can T3 retention discriminate?
 - `metric-formulas` — How are Calmar and `UlcerPerformanceIndex` computed in SQX, and which one can't be reconstructed?
 - `money-management-atr-fixed-risk` — How does the workflow size each trade: fixed $1,000 risk over 4*ATR(20)?
+- `names-reused-between-builds` — Can I pair a strategy across builds or databanks of one project by its name?
 - `oos-range-marker` — Where is a task's out-of-sample span stored: `<OutOfSample><Range/></OutOfSample>` under `<Data>`?
 - `optimization-profile-bin` — How do I read `optimizationProfile.bin`, the SPP profile, with `core/optprofile.py`?
 - `optimization-profile-byte-order` — Why does an SPP databank look changed after every SQX save though nothing in it changed?

@@ -1,6 +1,6 @@
 ---
 q: Why did the equity rebuild from trades and M1 miss SQX's daily curve on USDJPY, and what makes it reconcile?
-kw: paths.py reconstruction does not reconcile USDJPY, equity rebuild vs dailyEquity.bin gap, commission while position open, 5 $ per lot gap, commission charged at entry floating equity, swap not in floating, MAE MFE without commission, USA500 97 % within 1 $, point value 653.92 vs 631.34 card recalibrated, closecurve.measured, la curva reconstruida no reproduce la de SQX, DST weeks March October gap EET EETUS feed clock changed
+kw: exit at 02:00 flat day gap, SQX low sampled only while open, days.low_open, paths.py reconstruction does not reconcile USDJPY, equity rebuild vs dailyEquity.bin gap, commission while position open, 5 $ per lot gap, commission charged at entry floating equity, swap not in floating, MAE MFE without commission, USA500 97 % within 1 $, point value 653.92 vs 631.34 card recalibrated, closecurve.measured, la curva reconstruida no reproduce la de SQX, DST weeks March October gap EET EETUS feed clock changed
 tag: 🔬  date: 2026-10-04  see: sqx-format/daily-equity-bin, research/gate-t-scales, export/mae-mfe-from-m1
 ---
 # SQX's daily curve carries the whole round-turn commission from the ENTRY; the rebuild booked it at the close
@@ -8,10 +8,15 @@ Pass `commission` to `equity/paths.minute_path` (or use `equity/closecurve.panel
 full round-turn commission off the floating equity from the entry minute — gap = 5.000 $ × lots on USDJPY, no
 dependence on nights held (swap is NOT in floating; `MAE ($)`/`MFE ($)` carry neither). Read point value and
 commission off the trades (`closecurve.measured`), not the card: a recalibrated card is not the build's. A
-population built on a feed whose clock later changed still fails in the DST weeks — refuse it, do not patch it.
+population built on a feed whose clock later changed still fails in the DST weeks — refuse it, or rebuild it on bars
+re-stamped to its own clock (`clock.reclock`, 🔬 100 %: `export/archived-trades-vs-reclocked-bars`).
 Economically SQX is the right side: a broker debits the commission at the deal, so equity is lower from the entry.
 
 ## Evidence
+- 🔬 2026-10-06 (the rebuild took a level SQX never samples — `sqx-format/daily-equity-bin`), `Test_USA500_H1_indicesIBS`, 3 mothers, oos2, refused at 98.56 %: all 10 gap days (2.5-58 $) were
+  days whose only trade exited at 02:00 and left the strategy flat; SQX = the worst wick of 01:00-01:59 (±0.15 $),
+  the rebuild = the realised level after the exit, lower by swap + slippage. With `days.low_open`: 100 % (max 0.18 $),
+  USDJPY M30 still 100 %.
 `AlgoData/scratch/close-curve-2026-10-04/`: `g1_gap_cause.py` (cause), `g2_reconcile.py` + `g2_run.log` (after).
 - Cause, 400 strategies of `Test_Calib_USDJPY_H1_momentumL`, oos1, 514,381 strategy-days: flat days 100 % within
   1 $; of 182,389 days whose low falls with a position open, 0 %. gap ÷ lots at the low minute: median 5.000,
@@ -25,5 +30,6 @@ Economically SQX is the right side: a broker debits the commission at the deal, 
   with the measured value median day share 0.577 → 0.986, 10 of 60 licensed. Of the 1,090 remaining gap days 824
   fall in March and 232 in Oct–Nov — the weeks EU and US clocks differ: built before the 2026-10-01 feed change.
 - 🤔 `PercentageBased` commission (`paths.entry_commission`): only reconciled at 0 % (indices); XCUUSD, the one
-  asset with a non-zero %, has no harvest. Confirm on its first population.
+  asset with a non-zero %, has no harvest. Confirm on its first population. Checked again 2026-10-04: the trades of
+  all 70 index harvests fit a commission of 0.000 % (`scratch/golden-drift-2026-10-04/p1_pct_commission.csv`).
 - Not fixed here: `portfolio/common/construct/search/stageb_data.py:62` calls `minute_path` without commission.

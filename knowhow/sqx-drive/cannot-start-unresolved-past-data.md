@@ -1,14 +1,15 @@
 ---
 q: Why does `-project action=start` reply "Cannot start project" over unresolved resources, without saying "Error"?
 kw: Cannot start project Project has unresolved resources; action=start reply not an error; launcher waits forever esperando 0 probadas; data range dateTo past last bar; verify window Hasta last day of data; which task is unresolved; InstrumentInfo decimals; feed converted EETUS generic instrument; probe a task
-tag: 🔬  date: 2026-10-01  see: authoring/donor-clone-market, costs/per-task-costs, sqx-drive/renaming-feeds
+tag: 🔬  date: 2026-10-06  see: authoring/donor-clone-market, costs/per-task-costs, sqx-drive/renaming-feeds
 ---
 # «Unresolved resources» = a task's <Resources> disagree with the registry; `action=start` does not say «Error»
 Reply «Cannot start project…» (test «Cannot start», not «rror»). SQX (`ProjectResources.
 checkTaskResources`) checks each task's `<Symbol>` against `data.db` (timezone, dates, instrument
 numbers), each `<Instruments>`/`<Session>` as an EXACT STRING vs its `getXML()`, each `<Broker>` by
 timezone. A feed converted after cloning breaks every task naming it; `decimals` = tick step's.
-Static check, nothing started: `sqx.projects.registryxml.unresolved(cfx)` lists what a start would refuse.
+Static check: `registryxml.unresolved(cfx)` lists what a start would refuse — in EVERY task, inactive ones too (📓 2026-10-06). `registryxml.clip` (from `refresh` and `set_data_range`)
+cuts EVERY <Symbol> of a task to its feed's bars — main and cross-check markets (XAUUSD, UKOIL.cash in the WFM task, 2026-10-06).
 Bisect: one-task probe `.cfx` → `loadconfig` into a live worker → `start` (instant) → `remove`.
 
 ## Evidence

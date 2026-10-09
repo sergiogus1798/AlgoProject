@@ -15,6 +15,9 @@
 - `server-cores-and-ram` — How many cores does the server really have, and do SMT and oversubscription help?
 - `smt-in-sqx-retest` — How many threads does an SQX retest scale to on this server?
 - `stage-b-monte-carlo-cost` — How long does Stage B take per 10-member combination, and what dominates its cost?
+- `step-16-5-time-split` — Where does step 16.5's wall time go on the restart route, and what does the Python side cost?
+- `variant-trades-export-cost` — What does exporting every variant's trades cost, and why is it no longer only the mother's?
+- `variants-batch-size-and-flush` — How do SQX compute, flush to disk and the pilot scale with variant batch size at step 16.5?
 - `window-waits-off-gui-thread` — Why did the desktop window freeze on reloads, and where must daemon waits happen?
 - `workflow-step-durations` — Which SQX workflow step costs the most time, and how does WFC's per-mother cost scale?
 - `yaml-parsing-cost` — How should YAML asset files be read to avoid re-parsing them per strategy?

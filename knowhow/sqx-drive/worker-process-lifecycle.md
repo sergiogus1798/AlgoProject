@@ -1,16 +1,16 @@
 ---
 q: How do I tell a worker is alive, and when do `stop` and `start` exit 1 in `bin/sqx-worker.sh`?
-kw: worker did not stop but still up; sqx-worker.sh stop exit code; stop exits 1 STILL RUNNING; start in progress flock .start.lock; two starts race; start timeout kills sqcli; stale XVFB file; stop on booting worker; find worker pid; process named sqcli; worker up then Connection refused; licence check exit; worker-daemon.log; how long does a worker take to open its port
-tag: 🔬  date: 2026-10-03  see: sqx-drive/driving-a-role, sqx-drive/owner-lock
+kw: worker did not stop but still up; sqx-worker.sh stop exit code; stop kills hung SQX by PID; STILL RUNNING even after the kill; start in progress flock .start.lock; two starts race; start timeout kills sqcli; stale XVFB file; stop on booting worker; find worker pid; process named sqcli; worker up then Connection refused; licence check exit; worker-daemon.log; how long does a worker take to open its port
+tag: 🔬  date: 2026-10-06  see: sqx-drive/driving-a-role, sqx-drive/owner-lock
 ---
 # A worker is alive while its port answers OR its process exists; `stop` and `start` exit 1 when they failed
-`bin/sqx-worker.sh`: "running" = the port **or** a `sqcli`/`StrategyQuantX` whose `/proc/<pid>/cwd`
-is the install (its command line is just `./sqcli`). `stop` exits **1** if the worker is still alive
-at the end (lock kept, PIDs printed, no export). `start` and `run` hold a non-blocking `flock` on
-`user/log/.start.lock` from check to launch: a second one exits 1, `REFUSING: … in progress`. A port
-not up in 120 s: `start` kills the sqcli it launched, by PID, and exits 1. Never kill by pattern.
-"worker up" can still be followed by a licence-check exit 2 s later: on a first `Connection
-refused`, read the last 3 lines of `user/log/worker-daemon.log`.
+`bin/sqx-worker.sh`: "running" = the port **or** a `sqcli`/`StrategyQuantX`/`strategyquantx_ui` whose
+`/proc/<pid>/cwd` is the install. `stop`: exit sent, 5 min; still up → waits while the day's SQX log
+moves (saving), ≤15 min; 60 s silent → SIGTERM, SIGKILL **by PID** (owner, 2026-10-06); exits **1** only
+if it survives that (lock kept, no export). `start`/`run` hold a `flock` on `user/log/.start.lock` from
+check to launch (a second one exits 1, `REFUSING: … in progress`); port not up in 120 s → `start` kills
+its sqcli by PID, exits 1. "worker up" then `Connection refused` 2 s later = licence-check exit: read
+the last 3 lines of `user/log/worker-daemon.log`. Never kill by pattern.
 
 ## Evidence
 ```bash
