@@ -21,9 +21,13 @@ COLUMNS = ["Type", "Open time", "Open price", "Size", "Close time", "Close price
 
 
 def batch(project: str) -> Path | None:
-    """The newest step-24 batch that reached its second pass: the folder holding its manifest."""
+    """The newest step-24 batch whose second pass ran: the folder holding its `ran.json`.
+
+    A pass fabricated and never retested has its manifest and no `ran.json`: a run cut there
+    and resumed read it as step 24's result (📓 2026-10-05, FileNotFoundError at step 25).
+    """
     root = DATA / "atrCalculator" / project
-    found = [*root.glob("*/pass2/manifest.parquet"), *root.glob("pass2/manifest.parquet")]
+    found = [*root.glob("*/pass2/ran.json"), *root.glob("pass2/ran.json")]
     return max(found, key=lambda f: f.stat().st_mtime).parent if found else None
 
 

@@ -109,7 +109,13 @@ def test_the_traded_version_is_the_ledgers_percentile() -> None:
             patched(finalists.sqxfile, identity=lambda f: f"grafted-{f.stem}"):
         who = mothers(Path(tmp) / "bank", ["Strategy 1", "Strategy 2", "Strategy 3"])
         assert traded.stops("Pr", who) == ([], list(who["strategy"]))      # no batch at all
+        cut = Path(tmp) / "atrCalculator" / "Pr" / "R0" / "pass2"       # fabricated, never retested
+        cut.mkdir(parents=True)
+        pd.DataFrame({"x": [1.0]}).to_parquet(cut / "manifest.parquet")
+        assert traded.batch("Pr") is None
         folder = batch(Path(tmp), ["Strategy 1", "Strategy 3"])
+        os.utime(cut / "manifest.parquet", (time.time() + 600,) * 2)    # newer, and still not the batch
+        assert traded.batch("Pr") == folder
         picked, left = traded.stops("Pr", who)
         assert left == ["Strategy 2"]
         assert [(p["variant"], p["x"], p["percentile"]) for p in picked] == [
@@ -208,9 +214,33 @@ def test_on_the_recorded_run() -> None:
     assert argv[:2] == ["-m", "studies.optimisation.wfc.report"] and argv[-2] == "--family"
 
 
+def test_keep_reads_this_holders_live_session_and_no_other() -> None:
+    """Step 23 died on «custodian sigue arriba» with the autopilot's own live session up
+    (📓 2026-10-04): an install up refuses the copy unless the session is this holder's."""
+    from sqx.structural import keep
+    ran, was = [], (keep.worker.holding, keep.live.mine, keep.keep, sys.argv)
+    keep.worker.holding = lambda top: [1]
+    keep.keep = lambda work: ran.append(work) or pd.DataFrame(
+        {k: ["x"] for k in ("leg", "variant_id", "kind", "block", "blocks", "direction")} | {"ok": [True]})
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            sys.argv = ["keep", "--work", tmp]
+            keep.live.mine = lambda role: False
+            try:
+                keep.main()
+            except SystemExit as e:
+                assert "sigue arriba" in str(e) and not ran, e
+            keep.live.mine = lambda role: True
+            keep.main()
+            assert ran == [Path(tmp)] and (Path(tmp) / keep.FILE).exists()
+    finally:
+        keep.worker.holding, keep.live.mine, keep.keep, sys.argv = was
+
+
 if __name__ == "__main__":
     test_the_two_batches_in_order()
     test_the_traded_version_is_the_ledgers_percentile()
     test_step_26_is_its_agents_and_refuses_cleanly()
     test_on_the_recorded_run()
+    test_keep_reads_this_holders_live_session_and_no_other()
     print("ok")

@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 from core.paths import DATA, project_dir
+from core.study import identity
 from ledger import gate
 from pipeline.autopilot import call, survivors, variants
 from sqx.curate import apply_verdict
@@ -19,7 +20,11 @@ STRUCTURE = ("build", "oos1")
 def reading(project: str, key: str, databank: str, mothers: pd.DataFrame) -> str:
     """Step 21 or 22: one strategy study per mother, on the databank the owner named."""
     who = survivors.about(project)
-    jobs = call.window(key, project, databank, who["symbol"], list(mothers["strategy"]))
+    # A mother carries her last databank's name («…(1)» after a retest); the study reads the
+    # panel databank's cosecha, which knows her by its own (📓 2026-10-05, step 22, IndexError).
+    spelt = identity.spelt(project, databank, list(mothers["identity"]))
+    names = [spelt.get(m.identity, m.strategy) for m in mothers.itertuples()]
+    jobs = call.window(key, project, databank, who["symbol"], names)
     for argv in jobs:
         call.run(argv)
     return f"{key} sobre {databank}: {len(jobs)} madre(s)"
