@@ -12,7 +12,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
-from core import assetdata, barstore
+from core import assetdata, barstore, manifest
 from core.paths import export_dir
 from engines.market import reprice
 from studies.breakage.mcRetest.model.retention import retention
@@ -126,6 +126,8 @@ def measure(project: str, work: Path, symbol: str, timeframe: str, day: str) -> 
     path = export_dir(project, STORE, day) / FILE
     path.parent.mkdir(parents=True, exist_ok=True)
     out.to_parquet(path, compression="zstd", index=False)
+    manifest.write(path.parent, {"project": project, "batch": str(work), "feed": feed},
+                   "studies.breakage.mcRetest.neighbours.t1", {FILE: len(out)})
     return path
 
 

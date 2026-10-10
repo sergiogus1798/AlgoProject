@@ -98,6 +98,9 @@ def test_only_bar_and_ohlc() -> None:
     assert facts["fragilidad.t3.build.distinct"] == 4 and facts["fragilidad.t2.build.n"] == RUNS
     assert facts["fragilidad.t2.build.same_count_frac"] == 1.0
     assert len(population["members"]) == 1
+    # without the stress task its three columns are absent, and so is their help (OPEN.md #109)
+    tables = [b for t in population["population"]["tabs"] for b in t["blocks"] if b.get("help")]
+    assert tables and all(len(b["help"]) == len(b["columns"]) for b in tables)
     assert population["members"][0]["verdict"]["label"] == "INCONCLUSIVE"
 
 
@@ -111,7 +114,36 @@ def test_t1_facts_enter_the_tab() -> None:
     assert retention.tab({"retention": {"t2": None, "t3": None}}, None) is None
 
 
+def test_the_neighbour_table_carries_its_manifest() -> None:
+    """`t1.measure` files its parquet with a manifest beside it (OPEN.md #109: the 2026-10-08
+    export had none, and the audit cannot tell such a folder from a torn one)."""
+    import json
+
+    from core import manifest
+    from studies.breakage.mcRetest.neighbours import t1
+    was = (t1.assetdata.load, t1.barstore.read, t1.reprice.costs, t1.excess.totals, t1.export_dir)
+    with tempfile.TemporaryDirectory() as tmp:
+        root, legs = Path(tmp), [{"segment": "build", "databank": "B"}]
+        (root / "ran.json").write_text(json.dumps({"legs": legs}))
+        pd.DataFrame({"variant_id": ["V0"], "strategy": ["M"], "neighbour": [0]}).to_parquet(
+            root / "manifest.parquet")
+        raw = root / "raw" / "B" / "d" / t1.BATCH
+        raw.mkdir(parents=True)
+        pd.DataFrame({"strategy": ["V0"], "Symbol": ["F"]}).to_parquet(raw / "trades.parquet")
+        pd.DataFrame({"strategy": ["V0"]}).to_csv(raw / "identity.csv")
+        t1.assetdata.load = lambda symbol: {"sqx_symbol": "F", "segments": {"build": {"from": 1, "to": 2}}}
+        t1.barstore.read = t1.reprice.costs = lambda *a: None
+        t1.excess.totals = lambda *a: pd.DataFrame({"net": [1.0]}, index=["V0"])
+        t1.export_dir = lambda project, bank, day, *tag: root / "raw" / bank / day
+        try:
+            out = t1.measure("P", root, "X", "M30", "d")
+        finally:
+            t1.assetdata.load, t1.barstore.read, t1.reprice.costs, t1.excess.totals, t1.export_dir = was
+        assert manifest.read(out.parent)["counts"] == {t1.FILE: 1}
+
+
 if __name__ == "__main__":
     test_only_bar_and_ohlc()
     test_t1_facts_enter_the_tab()
+    test_the_neighbour_table_carries_its_manifest()
     print("ok")

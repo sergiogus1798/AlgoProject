@@ -32,7 +32,8 @@ def population(result: dict, members: list[dict], cfg: dict, started: float) -> 
     passed = int(rows.verdict.isin(["STRONG", "ACCEPTABLE", "MARGINAL"]).sum())
     counts = rows.verdict.value_counts()
     strategy_table = blocks.table("Estrategia a estrategia", rows.drop(columns=["identity"]))
-    strategy_table["help"] = SHOWN_HELP + criteria.HELP[1:4]
+    # The three criteria columns are there only when the stress task ran (criteria.summary).
+    strategy_table["help"] = (SHOWN_HELP + criteria.HELP[1:4])[:len(strategy_table["columns"])]
     tabs = [envelope.tab("summary", "Veredictos", [
         {"kind": "bars", "title": "Veredictos", "unit": "estrategias", "reference": None,
          "items": [{"label": v, "value": int(counts.get(v, 0)), "error": None,
