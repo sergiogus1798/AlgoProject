@@ -21,12 +21,11 @@ from ui.daemon.batch import api, panel
 from ui.desktop.batchview import tab
 
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
-# Since F13 (2026-09-28): the one batch on disk, the Donchian mother's 150 variants over five
-# axes. The batch folder without metrics.parquet and the 1,093-variant batch of the retired
-# fixture (USDJPY_workflow_profiling_v1) have no counterpart: that refusal is built in a
-# temporary folder, and the view is drawn on this batch only.
-REAL = ("Test_USDJPY_donchianUpperCrossUp_M30", "Strategy_9.27.83")
-VARIANTS, AXES = 150, 5
+# One real batch on disk. The batch folder without metrics.parquet has no real counterpart:
+# that refusal is built in a temporary folder, and the view is drawn on this batch only.
+# A `Trade_` project's batch: a `Test_` one is retired with its data (the one pinned before was).
+REAL = ("Trade_NIKKEI225_M30_volatilidadL", "Strategy_10.11.484")
+VARIANTS, AXES = 420, 8
 
 
 def http() -> TestClient:
