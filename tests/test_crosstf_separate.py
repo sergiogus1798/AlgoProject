@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -64,6 +65,9 @@ def test_study_reads_one_databank_per_timeframe(tmp_path: Path) -> None:
     got = inputs.gather(batch, export, pd.read_parquet(export))
     assert list(got["block"]) == [0, 0, 1, 1, 2, 2]
     assert list(got.loc[got["block"] == 2, "Profit/Loss"]) == [2.0, 1.0]
+    (batch / "blocks.json").unlink()        # 📓 2026-10-01: filed under a temporary folder's name
+    with pytest.raises(SystemExit, match="blocks.json"):
+        inputs.gather(batch, export, pd.read_parquet(export))
 
 if __name__ == "__main__":
     import tempfile

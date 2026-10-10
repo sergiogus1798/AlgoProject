@@ -78,6 +78,9 @@ def gather(directory: Path, export: Path, packed: pd.DataFrame) -> pd.DataFrame:
     banks = json.loads(found.read_text(encoding="utf-8")).get("databanks") if found.exists() \
         else None
     if not banks:
+        if "block" not in packed:       # one task per timeframe, and nothing says which databanks
+            raise SystemExit(f"{found} no existe o no lista `databanks`, y el export no trae "
+                             "bloques: `sqx.projects.crosstf` no archivó este run en esa carpeta")
         return packed
     frames = [packed.assign(block=0)]
     for i, bank in enumerate(banks[1:], 1):
