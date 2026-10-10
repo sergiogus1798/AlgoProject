@@ -94,3 +94,15 @@ if __name__ == "__main__":
     test_a_step_13_already_done_plans_no_neighbours()
     test_the_stage_runs_three_tasks_and_step_14_cuts_what_spp_reads()
     print("ok (the dispatch test needs pytest)")
+
+
+def test_a_python_step_the_last_run_failed_at_runs_again_though_its_rail_says_done(tmp_path: Path) -> None:
+    """OPEN #111: partial results make step 14 «done»; `FALLO en el paso 14` reopens it."""
+    data = rail("14")
+    for s in data["steps"]:
+        for t in s["tests"]:
+            t["state"] = "done"
+    (tmp_path / "1").mkdir()
+    (tmp_path / "1" / "estado.txt").write_text("01:25:24 FALLO en el paso 14: x\n", encoding="utf-8")
+    plan.reopen(data, tmp_path / "2")
+    assert ("14", "python") in kinds(plan.plan(data))

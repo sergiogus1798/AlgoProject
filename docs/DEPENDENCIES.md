@@ -17,7 +17,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/archive/__init__.py` | 1 | The strategy archive: one strategy frozen with every result, read back without recomputing. | — | — |
 | `core/archive/__main__.py` | 5 | `python3 -m core.archive` runs the archive's command. | core | — |
 | `core/archive/cli.py` | 57 | The archive's command: list what is archived, archive one strategy, show one. | core, ui | — |
-| `core/archive/collect.py` | 204 | Find every report file of one identity across a project's databanks and freeze a copy of it. | core | pandas |
+| `core/archive/collect.py` | 205 | Find every report file of one identity across a project's databanks and freeze a copy of it. | core | pandas |
 | `core/archive/manifest.py` | 78 | What the archive freezes beside the results: the project's registry row, the asset card, the ledger count. | core, ledger | — |
 | `core/archive/read.py` | 72 | Read an archived strategy back in the shapes the daemon serves a live one — files only, nothing run. | core | pandas |
 | `core/assetcheck.py` | 172 | What is missing or wrong about an asset: undecided values, and windows the data cannot fill. | core | — |
@@ -40,7 +40,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/fleetpaths.py` | 38 | Where the live MT5 fleet's files are, and each account's plan from machine.yaml. | core | yaml |
 | `core/manifest.py` | 76 | Every export writes one of these. Without it an export cannot be reproduced or trusted. | core | — |
 | `core/optprofile.py` | 198 | Read the Sys. Param Permutation profile SQX stores inside a .sqx, without SQX running. | — | — |
-| `core/paths.py` | 244 | Every path and port in the project. The only module allowed to know where things live. | — | yaml |
+| `core/paths.py` | 248 | Every path and port in the project. The only module allowed to know where things live. | — | yaml |
 | `core/phases.py` | 34 | Wall clock of a named sub-phase, appended to the CSV `ALGO_PHASES` names; nothing without it. | — | — |
 | `core/researchpaths.py` | 30 | Where the research director's pieces live under the data root. | core | — |
 | `core/significance.py` | 164 | Could this edge be zero? The Sharpe-based tests three studies now share, and the one Sharpe total. | — | numpy, pandas, scipy |
@@ -50,17 +50,17 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/sqxview.py` | 69 | The owner's «Export Data View» as SQStats keys: a databank's metrics with no SQX running. | core | pandas |
 | `core/store/__init__.py` | 1 | The strategy store: one folder per strategy that passed the gate, one file per set of tests. | — | — |
 | `core/store/__main__.py` | 5 | Makes `python3 -m core.store` run `cli.main`. | core | — |
-| `core/store/audit.py` | 106 | Whether everything a project left on disk is in the store: each folder in some zip, or ignored by name. | core | — |
+| `core/store/audit.py` | 107 | Whether everything a project left on disk is in the store: each folder in some zip, or ignored by name. | core | — |
 | `core/store/cli.py` | 102 | The store's command: save a project's survivors, verify what is stored, list it, open one. | core | — |
-| `core/store/extra.py` | 196 | What the report folders do not hand a stored strategy: its trades everywhere, its scaled sisters, and which files are the population's. | core | pandas |
-| `core/store/late.py` | 193 | What steps 13 to 20 leave outside the report folders: the rest of each export, and the variant batch. | core | — |
-| `core/store/save.py` | 165 | Save a project's gate survivors into the store: the .sqx once, then one file per set of tests. | core | — |
+| `core/store/extra.py` | 211 | What the report folders do not hand a stored strategy: its trades everywhere, its scaled sisters, and which files are the population's. | core | pandas |
+| `core/store/late.py` | 204 | What steps 13 to 20 leave outside the report folders: the rest of each export, and the variant batch. | core | — |
+| `core/store/save.py` | 173 | Save a project's gate survivors into the store: the .sqx once, then one file per set of tests. | core | — |
 | `core/store/verify.py` | 58 | Whether a stored strategy is whole: its file carries its identity and every file its recorded hash. | core | — |
 | `core/store/write.py` | 208 | Write into a strategy's folder so that a cut leaves it as it was or as it will be, never half. | core | — |
 | `core/study/__init__.py` | 1 | The contract every study module speaks: its config, its blocks, its result and its page. | — | — |
 | `core/study/bands.py` | 24 | N curves drawn as percentile bands (5-95, 25-75), the median and the original — a `cone` block. | core | numpy |
 | `core/study/blockcheck.py` | 23 | The optional keys of a block: a distribution's series and shift, a grid's mark and scale. | — | numpy |
-| `core/study/blocks.py` | 248 | The kinds of block a study result is made of, built from raw numbers and checked. | core | numpy |
+| `core/study/blocks.py` | 249 | The kinds of block a study result is made of, built from raw numbers and checked. | core | numpy |
 | `core/study/clip.py` | 26 | The one rule every histogram of the window follows: the axis spans percentiles 0.5-99.5, outliers are not drawn. | — | numpy |
 | `core/study/config.py` | 82 | A study's knobs: its config.yaml read, overridden from the command line, and fingerprinted. | core | — |
 | `core/study/draws.py` | 100 | The simulated distribution behind a z or a p, kept so nobody reruns a test to look at it. | — | numpy, pandas |
@@ -239,7 +239,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `pipeline/autopilot/judge.py` | 216 | One judging step: its facts, the criteria, the dev draw, the verdict.csv and the cut in SQX. | core, ledger, pipeline, sqx, ui | pandas, yaml |
 | `pipeline/autopilot/kept.py` | 70 | What the funding module keeps of each strategy that passed the WFM: its oos1 floating curve and risk numbers. | core, pipeline, studies | pandas |
 | `pipeline/autopilot/neighbours.py` | 106 | Step 13's T1 batch for the autopilot: wire two WFC legs, then make → retest → export trades → measure → clear. | core, pipeline, sqx, ui | pandas |
-| `pipeline/autopilot/plan.py` | 117 | What the autopilot runs, in WORKFLOW.md's order: the window's chain without its stops at the judging steps. | core, pipeline, ui | — |
+| `pipeline/autopilot/plan.py` | 138 | What the autopilot runs, in WORKFLOW.md's order: the window's chain without its stops at the judging steps. | core, pipeline, ui | — |
 | `pipeline/autopilot/resume.py` | 106 | Bring a retired project back from the strategy store, ready for `bin/workflow.sh run` at step 13. | core, sqx | — |
 | `pipeline/autopilot/run.py` | 250 | Autopilot: one project's workflow, SQX and Python, judging and cutting at each judging step without stopping. | core, pipeline, sqx, ui | — |
 | `pipeline/autopilot/survivors.py` | 68 | Who walks the tail: the strategies left in the databank the last judged step cut. | core, sqx, ui | pandas |
@@ -487,7 +487,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/projects/tasksettings.py` | 229 | Task settings that must be identical across a whole project: timeframe, engine, MM, hours. | — | — |
 | `sqx/projects/wfc.py` | 232 | Write the WFC/CSCV retest: one task per segment, each at its own costs, markets included. | core, sqx | — |
 | `sqx/projects/wfm.py` | 247 | Write the Walk Forward Matrix task of a custom project: the grid, and the reserved window. | core, sqx | — |
-| `sqx/projects/workflow.py` | 167 | Give a donor clone every task of the workflow: keep the steps' own, add the ones it lacks. | core, sqx | yaml |
+| `sqx/projects/workflow.py` | 170 | Give a donor clone every task of the workflow: keep the steps' own, add the ones it lacks. | core, sqx | yaml |
 | `sqx/structural/keep.py` | 71 | After the run: copy the retested files out of the install and check each still carries its edit. | core, sqx | pandas |
 | `sqx/structural/logic.py` | 164 | Rewrite a strategy's rules, not its values: drop one entry condition, or flip the order direction. | — | — |
 | `sqx/structural/make.py` | 115 | Fabricate the structural batch of one or more mothers: write the files, read them back, refuse a mismatch. | sqx | pandas |
@@ -927,7 +927,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_autopilot_blind_criteria.py` | 113 | The rules `criteria.yaml` gives steps 18, 18.5 and 19, on hand-made fact rows: every branch | pipeline | pandas |
 | `tests/test_autopilot_closing.py` | 246 | The autopilot's steps 23 to 26 with SQX and the studies replaced by stubs that record each | core, ledger, mt5, pipeline, sqx, tests | pandas |
 | `tests/test_autopilot_criteria.py` | 108 | The autopilot's inference: one rule gives pass, limbo or fail; a strategy is its worst rule; | pipeline, sqx | pandas |
-| `tests/test_autopilot_crosstf_cascade.py` | 211 | Steps 11 -> 11.5 -> 11.7 -> 12 (encargo 47, part P): the autopilot's plan and the window's chain | pipeline, sqx, studies, ui | pandas |
+| `tests/test_autopilot_crosstf_cascade.py` | 236 | Steps 11 -> 11.5 -> 11.7 -> 12 (encargo 47, part P): the autopilot's plan and the window's chain | pipeline, sqx, studies, ui | pandas |
 | `tests/test_autopilot_facts.py` | 121 | The autopilot's facts: every number a step-8 study writes per strategy reaches a key a | pipeline, studies | pandas |
 | `tests/test_autopilot_facts_batch.py` | 66 | A batch study's result that is a FILE (the WFC) reaches facts, and the seal of oos2 holds. | ledger, pipeline | pytest, yaml |
 | `tests/test_autopilot_judge_identity.py` | 73 | The judge finds the facts of a strategy whose identity changed between the build and the | pipeline | pandas |
@@ -935,7 +935,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_autopilot_policy.py` | 59 | Owner's 2026-10-04 decisions on the autopilot: a missing fact fails only in the two sanity rules, | core, ledger, pipeline | pytest |
 | `tests/test_autopilot_segment.py` | 25 | 18.5's second judgement is signed with oos2: the plan's judge action and the ledger row it writes. | pipeline, test_autopilot_tail | — |
 | `tests/test_autopilot_smoke.py` | 35 | The autopilot's smoke mode: only the readability rules judge, and only on a Test_ project. | pipeline | pytest |
-| `tests/test_autopilot_step13.py` | 112 | Step 13 since 2026-10-07: the autopilot plans T1's neighbour batch right before the MC Retest | pipeline, sqx, ui | pytest, yaml |
+| `tests/test_autopilot_step13.py` | 124 | Step 13 since 2026-10-07: the autopilot plans T1's neighbour batch right before the MC Retest | pipeline, sqx, ui | pytest, yaml |
 | `tests/test_autopilot_step14_rules.py` | 91 | Step 14's rules in criteria.yaml (T1, T2, T3; provisional, owner 2026-10-07) through the judge's | pipeline, studies | pandas, yaml |
 | `tests/test_autopilot_tail.py` | 244 | The autopilot's tail, 17 → 26, on hand-built rails and a ledger in a temp folder: the order | ledger, pipeline, ui | pandas |
 | `tests/test_autopilot_timing.py` | 40 | The autopilot's timing table: a nested phase's seconds leave its parent, and SQX stays apart. | core, pipeline | pytest |
@@ -943,7 +943,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_autopilot_zero.py` | 131 | Zero survivors end the autopilot cleanly, a missing fact goes where its rule says, the judge | pipeline, sqx, tests | pandas |
 | `tests/test_batches.py` | 87 | Known answers for the batch check: a batch against itself, two fair draws, and a shifted funnel. | studies | numpy, pandas |
 | `tests/test_blindjoint.py` | 155 | Step 20 on mothers whose answer is known: noise names nobody, a planted edge is named, the pieces veto. | ledger, studies | numpy, pandas |
-| `tests/test_blocks_shared.py` | 73 | Known answers for the shared drawing blocks: sign caption, band helper, scatter cap, red-green ramp. | core, ui | PySide6, numpy |
+| `tests/test_blocks_shared.py` | 84 | Known answers for the shared drawing blocks: sign caption, band helper, scatter cap, red-green ramp. | core, ui | PySide6, numpy |
 | `tests/test_build_acceptance.py` | 104 | Golden and refusal tests for step 6: the Build's acceptance filters from a `_study.yaml`. | core, sqx | — |
 | `tests/test_builder_feedswap.py` | 126 | Known-answer test for `sqx.projects.builder`: a non-XAUUSD project must actually swap | core, sqx | — |
 | `tests/test_builder_scope.py` | 140 | Known-answer test for the builder's scope rule (owner, 2026-09-29): from the master, a new | core, sqx | — |
@@ -988,7 +988,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_edgecost.py` | 78 | edgeCost on trades built by hand: oos1 only, the common repricer's cost as the denominator. | engines, studies | numpy, pandas, pytest |
 | `tests/test_entry_location.py` | 36 | entryQuality puts an entry filled inside a bar on the bar that contains it. | studies | numpy, pandas |
 | `tests/test_exits.py` | 24 | `sqx.projects.orders.exits_set`: a portfolio with an exit method set vs one that exits by condition only. | sqx | — |
-| `tests/test_export_manifests.py` | 85 | A trades export and an SPP export of the same databank and day keep each other's files. | core, sqx, tools | — |
+| `tests/test_export_manifests.py` | 86 | A trades export and an SPP export of the same databank and day keep each other's files. | core, sqx, tools | — |
 | `tests/test_exposure.py` | 58 | studies.closing.exposure on hand-built bars and trades: which bar a position is held on, | studies | numpy, pandas |
 | `tests/test_false_positives.py` | 213 | Known answers for the monkeys-through-the-chain control: on a price that climbs in a straight | core, engines, pipeline, studies | numpy, pandas, yaml |
 | `tests/test_feed_from_db.py` | 137 | Known-answer test: a feed no project carries gets its resources from SQX's data registry. | sqx | — |
@@ -1133,8 +1133,8 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_sqxfile.py` | 68 | Golden-file test for core.sqxfile: a parser that breaks silently poisons every analysis. | core | — |
 | `tests/test_sqxretest.py` | 109 | Golden-file test for core.sqxretest: the Monte Carlo Retest reader every later number rests on. | core | — |
 | `tests/test_stoploss.py` | 93 | Golden-file test for the stop-loss graft: a stop written wrong trades unprotected in silence. | sqx | — |
-| `tests/test_store.py` | 134 | The store under injected faults: a cut write, a missing file, a flipped byte, an orphan. | core | pandas, pytest |
-| `tests/test_store_late.py` | 92 | Steps 13 to 20 in the store: who a renamed identity belongs to, and the audit that nothing is left out. | core, sqx | pandas, pytest |
+| `tests/test_store.py` | 146 | The store under injected faults: a cut write, a missing file, a flipped byte, an orphan. | core | pandas, pytest |
+| `tests/test_store_late.py` | 122 | Steps 13 to 20 in the store: who a renamed identity belongs to, and the audit that nothing is left out. | core, sqx | pandas, pytest |
 | `tests/test_strategymeta.py` | 112 | Golden-file test for sqx.inspect.strategymeta: the fields the strategy panel shows. | core, sqx | — |
 | `tests/test_strategymeta_fixed_distance.py` | 100 | Test for sqx.inspect.strategymeta.fixed_distance: fixed pips found, ATR/percent/level not. | sqx | pytest |
 | `tests/test_structural.py` | 128 | Golden-file test for the structural factory: an ablation or an inversion written wrong runs in silence. | sqx | — |
@@ -1146,7 +1146,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_thresholds.py` | 88 | A migrated threshold reaches its module from ledger/thresholds.yaml and from nowhere else. | core, ledger | — |
 | `tests/test_tradestore_close.py` | 27 | The trade library keeps `Close type` and `Close price`: `reprice.real` needs both to fill a stop. | core | pandas |
 | `tests/test_ui_batch.py` | 203 | The variant batch: /api/batch shows oos2 to a human and never lets it out to an autonomous agent, and «Lote» draws a real batch offscreen. | core, ledger, ui | PySide6, fastapi, pandas |
-| `tests/test_ui_blocks.py` | 113 | Every block kind of every real study result draws offscreen, and nothing raises. | core, ui | PySide6 |
+| `tests/test_ui_blocks.py` | 115 | Every block kind of every real study result draws offscreen, and nothing raises. | core, ui | PySide6 |
 | `tests/test_ui_campaign.py` | 96 | PORTFOLIOS › Campaña over the daemon in-process, on a saved workflow of AlgoData/campaign: the list, | ui | PySide6, fastapi |
 | `tests/test_ui_cmdpalette.py` | 206 | The Ctrl+K palette offscreen over the whole daemon in-process: matching, the four ways out, recents. | core, ui | PySide6, fastapi, pandas |
 | `tests/test_ui_columns.py` | 250 | The databank table's metric chooser: hide, add, «–» and why, kept per databank as a diff, restore. | ui | PySide6, httpx |
@@ -1190,7 +1190,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_wfm_levels.py` | 114 | Step 19's known answers: the oos2 re-charge on a hand-made trade, L1's false-positive rate on | engines, studies | numpy, pandas |
 | `tests/test_wfm_objectives.py` | 79 | Known answers for SQX's WFM objectives and area rule: one hand-built cell, one 6x5 matrix. | core, studies | numpy |
 | `tests/test_wfm_one.py` | 94 | Walk-Forward Matrix's «Run solo esta estrategia»: `--strategy` asks `many.one` for that | core, studies | pandas |
-| `tests/test_worker_lifecycle.py` | 221 | bin/sqx-worker.sh's start/stop lifecycle, without ever touching a real worker. | — | — |
+| `tests/test_worker_lifecycle.py` | 224 | bin/sqx-worker.sh's start/stop lifecycle, without ever touching a real worker. | — | — |
 | `tests/test_worker_lock.py` | 153 | bin/sqx-lock.sh's owner lock (OPEN.md #32): a fake install dir, no real worker touched. | core | — |
 | `tools/audit_tests.py` | 114 | Runs every tests/test_*.py for the daily audit, in parallel, and names the ones set aside. | core | — |
 | `tools/checks.py` | 250 | Verify every mechanical rule in CODESTYLE.md and list what breaks them. | core, depmap, knowhowmap, knowhowrefs, layering | — |

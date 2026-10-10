@@ -125,6 +125,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 108 | 🟠 | Step 12 redesigned (T0-T4, steps 11.5 and 11.7) built beside the old one: waits for the first real run and the owner's «corta» | OPEN.md |
 | 109 | 🟠 | mcRetest «Estrategia a estrategia» table fails to draw in the window: 11 help entries for 8 columns | OPEN.md |
 | 110 | 🟡 | Two-chart strategies: steps 10, 13-18.5 not yet run in SQX on a two-chart mother (wired in `stage.just`, verified through step 8 and step 26) | OPEN.md |
+| 111 | 🟢 | A study that fails halfway leaves partial results and the resume treats its step as done | docs/OPEN-closed.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 

@@ -132,3 +132,15 @@ def test_a_strategy_owns_its_sisters_rows_and_nobody_elses(tmp_path: Path) -> No
     assert extra.population(src, "id", ["Strategy 1.2.3"], tmp_path / "pop")
     assert sorted(p.name for p in (tmp_path / "pop").iterdir()) == ["funnel.csv", "study.json"]
     assert sorted(p.name for p in src.iterdir()) == ["S.json", "cells.parquet"]
+
+
+def test_two_identities_each_other_s_mother_keep_the_gate_one(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The gate's identity is the stored one: a mutual lineage must not swap it with the retest copy's."""
+    from core.store import late, save
+    rep, run = tmp_path / "reports/P/Results/d/gate", tmp_path / "autopilot/P/r/paso-8"
+    for folder, ident in ((rep, "A"), (run, "B")):
+        folder.mkdir(parents=True)
+        (folder / "verdict.csv").write_text(f"strategy,identity,verdict\nS,{ident},MANTENER\n", encoding="utf-8")
+    monkeypatch.setattr(save, "DATA", tmp_path)
+    monkeypatch.setattr(late, "mothers", lambda p: {"A": "B", "B": "A"})   # mutual: gate A stays, B maps to A
+    assert list(save.verdicts("P")) == ["A"]

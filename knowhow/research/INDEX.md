@@ -17,6 +17,7 @@
 - `cusum-blind-spot` — Does a CUSUM non-rejection show a strategy is stable?
 - `daily-block-seams` — How must a daily block bootstrap treat floating equity at each block seam?
 - `darwinex-darwinia-published-rules` — What does Darwinex publish on DARWIN risk normalisation, D-Score, DarwinIA SILVER/GOLD and trading constraints?
+- `distribution-series-outside-the-bins` — Why did the spp report crash with "unsupported operand NoneType * float" on a distribution overlay?
 - `drift-term-biased-by-side` — Why is the gate's drift_excess_t biased toward one side (long or short) of an asset, and how much?
 - `entry-vs-chance` — Do the entries or the exits carry the edge on this corpus, and how to tell?
 - `eta-squared-vs-duplicates` — Should an inert parameter be frozen by the duplicate test or by eta-squared?
@@ -57,6 +58,7 @@
 - `spp-noise-gate-centred-no-floor` — How does the SPP noise gate decide, and is there a minimum trade count?
 - `spp-origin-level-sampled-once` — What happens when an SPP step grid does not contain the original parameter value?
 - `stageb-selector-p-reads-high` — Which P(pass) of stage B's winner may be reported — the one that chose it, or a re-draw?
+- `step14-rules-on-selected-and-unselected` — Do step 14's T1/T2/T3 rules separate good strategies from unselected ones, and which should move?
 - `step8-gate-measured-on-six-populations` — How many monkeys and how many real strategies cross step 8, and which rules discriminate?
 - `surfaces-jaccard-lift-flip-null` — Do the surfaces' Jaccard lift, or «the mother inside the other markets' top decile», beat a zero-edge market?
 - `t1-optimistic-on-near-clones` — Why does stage B's trade bootstrap T1 give a higher P(pass) than D, T2 and stage A, and is it a bug?

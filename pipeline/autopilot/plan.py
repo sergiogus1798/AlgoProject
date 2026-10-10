@@ -1,8 +1,27 @@
 """What the autopilot runs, in WORKFLOW.md's order: the window's chain without its stops at the judging steps."""
 
+import re
+from pathlib import Path
+
 from pipeline.autopilot import tail
 from ui.daemon.launch import chainplan
 from ui.daemon.launch.steps import ELSEWHERE
+
+
+def reopen(data: dict, out: Path) -> dict:
+    """A python study that failed halfway left partial results the rail reads as done (OPEN #111):
+    when the run before `out` (the newest stamp folder beside it) ended in `FALLO en el paso N` at a python step, `N` runs again."""
+    try:
+        said = (max(d for d in out.parent.iterdir() if d.is_dir() and d != out) / "estado.txt").read_text(encoding="utf-8").splitlines()[-1]
+    except (OSError, IndexError, ValueError):
+        return data
+    m = re.search(r"FALLO en el paso (\S+):", said)
+    for step in data["steps"]:
+        if m and step["n"] == m[1] and step["kind"] == "python":
+            step["state"] = "pending"
+            for t in step["tests"]:
+                t["state"] = "pending"
+    return data
 
 
 def plan(data: dict, given: dict = tail.NOTHING) -> dict:
@@ -72,6 +91,9 @@ def plan(data: dict, given: dict = tail.NOTHING) -> dict:
         if n in chainplan.FILLED_BY_NEXT:
             continue
         if n == "16.5":       # the variant factory runs here, unattended (pipeline.autopilot.variants)
+            if any(s["n"] == "19" and s["state"] == "missing" for s in data["steps"]):
+                # trimmed to spp: the batch would feed steps this project does not carry
+                return halt(n, "el proyecto no lleva sus tareas: acaba aquí")
             if pending:
                 do.extend(judged())
                 pending = None

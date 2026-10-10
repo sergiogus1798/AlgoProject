@@ -1700,3 +1700,16 @@ and the brake are shared with the ledger's trial count (another session's work i
 Not carried over: C14 (the gallery recreates its cards on every filter change: 20 ms with 230 projects, the review itself said to skip it).
 
 **Closed 2026-10-06.** All six resolved 2026-10-06. (1) m30: the safety factor is 1.0 since 2026-10-04, so the MC band no longer carries 1.25; a segment's points now have one definition, `studies.data.spread.verdict.points` (mean relative spread × the segment's mean price ÷ tick — the 2026-10-04 convention), called by the report and by the onboarding, with a known answer in `tests/test_spread.py`; the onboarding no longer writes MC Retest bounds (`mc_range` and `config.yaml` `mc:` deleted), so a new card resolves to multiples like the recalibrated ones. Dry run on XAUUSD: build 13.31 points against the card's 13.33. Still true and not changed: the onboarding measures Darwinex's ticks, while the 27 cards were recalibrated from the prop firms' ticks by a script that is not in the repo. (2) B6/C10: no change — `retire.py` and `vocabulary.py` already import `core.worker.installs`; `ui/daemon/projdisk.installs` keeps the workers first on purpose and `cfxio._installs` adds ports. (3) B8: resolving the data root costs 43 ms, left as it is; a crash of the collector now raises one alert a day through `bin/lib-agent-alert.sh`. (4) B12 `quantile_shift` and (5) D10 `worker_staging` deleted with their mentions. (6) D7: `arch` 8.0.0 was installed and reverted — `tests/test_snooping.py` went from 12 s to over 400 s on it; `mcp` 2.x brings six new dependencies and a moved API for no gain. Both stay pinned.
+
+## 111. 🟢 A study that fails halfway leaves partial results and the resume treats its step as done
+
+Found 2026-10-10 on `Test_DAX40_M30_momentumL_mc3`: the spp report wrote 3 of 10 strategies and crashed
+(fixed separately, `knowhow/research/distribution-series-outside-the-bins.md`). `bin/workflow.sh run <P>
+--smoke --own-log` then planned only «16 judge» (598 facts, 3 strategies) and never reran the study, and
+step 16.5 worked on 3 mothers. Cause: `ui/daemon/workflow/derive.py::study` calls a step done as soon as
+`sources.results` finds any result. The rule is shared by every study step and by the window, so the fix
+is the owner's design decision (options: a completeness marker written last by the study; compare the
+strategies in the results with the mother list). Until then: delete the step's partial results before
+resuming. → `knowhow/pipeline/study-partial-evidence-counts-as-done.md`
+
+**Closed 2026-10-10.** Fixed at the autopilot only (the window's rule is unchanged): `pipeline.autopilot.plan.reopen`, called by `run.autopilot` before planning, sets a python step and its tests to pending when the previous stamp folder's `estado.txt` ends in `FALLO en el paso N`, so the resume reruns that step's studies. Test `tests/test_autopilot_step13.py::test_a_python_step_the_last_run_failed_at_runs_again_though_its_rail_says_done`. Limit: a failure outside the autopilot (a study run by hand) is not seen. Card: knowhow/pipeline/study-partial-evidence-counts-as-done.md.

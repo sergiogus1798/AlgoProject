@@ -23,6 +23,7 @@
 - `project-log-written-in-pieces` — Why does a project's global_log show a killed run's "started" and incomplete lines in the day's log?
 - `project-verb` — What do the `-project` verbs create or modify via the API, and why does `loadconfig` never overwrite?
 - `renaming-feeds` — How does `-symbol action=edit symbol=OLD name=NEW` rename a feed, and why is the timezone ignored?
+- `resultgroup-missing-result-old-feed-name` — What is «ResultGroup doesn't contain result with key 'Main: USDCAD_DukasM1_the5ers/H1'» in SQX's log?
 - `retest-task-hangs-silently-deadline` — Why did «MCR 6 Exits» sit for hours with no «Task finished» and no error, and what ends a task that does not advance?
 - `retire-own-and-wait-per-task` — How do I retire my own Test_ project after a run and wait for another session's multi-task run?
 - `running-a-task-headless` — How do I run one workflow step headless: stop, then start with only its tasks `active="true"`?

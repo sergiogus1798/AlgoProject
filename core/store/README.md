@@ -16,7 +16,7 @@ snapshots written by hand) stays as the reader of what was archived before.
 | `cli.py` | The command: `save <project> [--sqx-dir DIR]`, `verify [identity…]`, `audit <project>`, `list`, `open <identity start or strategy name> --out DIR` (the folder unpacked as plain folders, its `.sqx` under the strategy's name; refused when damaged; several hits are listed, never guessed); exit 1 on a survivor without file or a damaged folder | `python3 -m core.store save Test_X` | args → printed |
 | `write.py` | The only writer: `atomic` (temporary, fsync, sealed, rename), `locked` (one writer per cell: every manifest change is read-change-rewrite), `put_sqx`, `add` (one zip per set of tests, never overwritten), `pooled` (equal bytes once per cell, hard-linked into each folder), `step`, `run` | imported | files → `store/<cell>/<name> <identity8>/` |
 | `verify.py` | `check(identity)`: the `.sqx` carries the folder's identity, every file its recorded sha256, nothing unnamed; `stored()` | imported | folder → problems |
-| `extra.py` | What the report folders do not hand over: `population` (the files that are the same for every strategy, split into a zip of their own), `trades` (the strategy's and its sisters' trades in every exported databank — other markets, other timeframes — a databank repeating another's trades named in `also`), `sisters` (step 12's `scaling.parquet` rows with each file's identity, and the sisters' rows of every report table) | imported | raw, crosstf, reports → folders to zip |
+| `extra.py` | What the report folders do not hand over: `population` (the files that are the same for every strategy, split into a zip of their own), `trades` (the strategy's and its sisters' trades in every exported databank — other markets, other timeframes — a databank repeating another's trades named in `also`), `sisters` (step 12's `scaling.parquet` rows with each file's identity, and the sisters' rows of every report table), `neighbours` (step 13's T1 table cut to the strategy) | imported | raw, crosstf, reports → folders to zip |
 | `late.py` | What steps 13-20 leave outside the report folders: `mothers` (identity a task gave a strategy -> the one it is stored under, from every export's `lineage.csv`), `names`, `cut`, `exports` (an export's sub-folders: MC simulations, SPP runs, WFM cells), `variants` (step 16.5's batch and the studies read on it), `leftovers`, `unpaired` | imported | raw, reports, variants → folders to zip |
 | `audit.py` | `held` / `missing(project)`: what a project left on disk that no stored strategy's zip holds (`FALTA`, exit 1) and what vouches for no stored strategy (`ajeno`) | `python3 -m core.store audit Test_X` | project folders → printed |
 | `save.py` | `project(name, sqx_dirs)`: every gate survivor of a project with its studies, trades everywhere, sisters, cosecha rows, cost card and each step's verdict; `unsaved(name)` for the retire guard | imported | reports, harvest, autopilot → store |
@@ -44,6 +44,7 @@ AlgoData/store/<SYMBOL>_<TF>_<template>/      a cell: every run of it saves here
                                               strategy costs past step 12)
     optimizacion.<day>.zip                    the studies read on that batch (cloud, WFC, CSCV, 18.5)
     metricas.zip                              the strategy's metrics
+    vecinas.zip                               its rows of step 13's T1 neighbours table
     cosecha.<databank>.<day>.zip              the strategy's metrics, equity and trades rows
     costes.<SYMBOL>.zip                       the cost card on the day of saving
 ```
@@ -57,6 +58,9 @@ study's zip with the rest: no test is rerun to look at one.
 **The pool.** A folder still holds every file — copying it elsewhere carries everything — and the
 disk pays once for what 41 strategies share. After a purge, a pool file with `st_nlink == 1` is
 garbage.
+
+A strategy SQX gave a second identity (each the other's mother in `lineage.csv`, `late.aliases`) is saved whole
+under the gate's identity: its crossmarket and sisters ride in the same folder.
 
 The state «where it got to» is nothing but the steps in the manifest and the files present. A cut
 write leaves a hidden `.tmp`; a file written but not yet named in the manifest is an orphan `verify`

@@ -39,7 +39,11 @@ def verdicts(project: str) -> dict[str, dict[str, dict]]:
             path.parent.name.removeprefix("paso-"), path.parent.parent.name)
         with path.open(encoding="utf-8", newline="") as fh:
             for row in csv.DictReader(fh):
-                out.setdefault(mother.get(row["identity"], row["identity"]), {})[n] = {
+                # lineage can name two identities each other's mother: the gate's one stays
+                who = row["identity"]
+                if not (gate and mother.get(mother.get(who)) == who):
+                    who = mother.get(who, who)
+                out.setdefault(who, {})[n] = {
                     "strategy": row["strategy"], "verdict": row["verdict"],
                     "outcome": row.get("outcome", ""), "reason": row.get("reason", ""), "run": run,
                     # a smoke run's word is the readability rules' alone, never a real verdict
@@ -91,7 +95,8 @@ def one(project: str, sqx: Path, steps: dict[str, dict], generated: int) -> str:
         "code_version": code_version(),
         "criteria_sha256_at_save": hashlib.sha256(CRITERIA.read_bytes()).hexdigest()})
     with tempfile.TemporaryDirectory() as tmp:
-        entries, loose, skipped = collect.freeze(project, identity, Path(tmp) / "reports")
+        entries, loose, skipped = collect.freeze(project, identity, Path(tmp) / "reports",
+                                                  late.aliases(project, identity))
         if loose:       # CSVs outside any study folder with rows of this identity
             sueltos = Path(tmp) / "sueltos"
             for rel in loose:
@@ -109,9 +114,12 @@ def one(project: str, sqx: Path, steps: dict[str, dict], generated: int) -> str:
                           about | {"population": True})
             if any(src.rglob("*.*")):
                 write.add(identity, stem, src, about)
-        for stem, src, about in (extra.trades(project, name, identity, Path(tmp) / "raw")
-                                 + extra.sisters(project, name, identity, Path(tmp) / "sisters")
+        for stem, src, about in (extra.trades(project, name, identity, Path(tmp) / "raw",
+                                                     late.aliases(project, identity))
+                                 + extra.sisters(project, name, identity, Path(tmp) / "sisters",
+                                                      late.aliases(project, identity))
                                  + extra.metrics(project, name, Path(tmp) / "metrics")
+                                 + extra.neighbours(project, name, Path(tmp) / "neighbours")
                                  + late.unpaired(
                                      project, identity,
                                      {f"{e['databank']}/{e['day']}/{e['study']}" for e in entries},

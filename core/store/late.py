@@ -30,6 +30,17 @@ def mothers(project: str) -> dict[str, str]:
     return {k: v for k, v in out.items() if k not in clash and k != v}
 
 
+def aliases(project: str, identity: str) -> frozenset[str]:
+    """The identity SQX gave the same strategy later, when the two name each other mother.
+
+    Only a mutual pair counts: a variant has a mother that does not point back, and is another
+    strategy (`verdicts` reads the same pairs the same way).
+    """
+    mother = mothers(project)
+    other = mother.get(identity)
+    return frozenset({other} if other and mother.get(other) == identity else ())
+
+
 def names(project: str, databank: str, day: str, identity: str) -> set[str]:
     """The names a stored strategy goes by in one databank on one day; empty when nobody vouches.
 

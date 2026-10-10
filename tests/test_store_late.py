@@ -90,3 +90,33 @@ def test_the_audit_names_what_no_zip_holds(data: Path, tmp_path: Path) -> None:
     assert audit.missing(P) == ([], [])
     (data / "newthing" / P).mkdir(parents=True)        # a writer nobody gave a place
     assert audit.missing(P)[0] == [f"newthing/{P}: carpeta que el almacén no conoce"]
+
+
+def test_t1_neighbours_are_cut_to_the_strategy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Step 13's T1 table keeps only the strategy's rows."""
+    monkeypatch.setattr(extra, "DATA", tmp_path)
+    day = tmp_path / "raw" / P / "T1_Neighbours" / "2026-10-10"
+    day.mkdir(parents=True)
+    pd.DataFrame({"strategy": ["S 1", "S 1", "S 2"], "neighbour": [1, 2, 3]}).to_parquet(day / "neighbours.parquet")
+    got = extra.neighbours(P, "S 1", tmp_path / "out")
+    assert got[0][0] == "vecinas" and got[0][2]["rows"] == 2
+    assert extra.neighbours(P, "S 9", tmp_path / "out2") == []
+
+
+def test_a_second_identity_is_an_alias_only_when_the_two_name_each_other_mother(data: Path, tmp_path: Path) -> None:
+    """A variant (its mother does not point back) is another strategy; a mutual pair is one."""
+    lineage(data, MOTHER)
+    assert late.aliases(P, MOTHER) == frozenset() and late.aliases(P, WFM) == frozenset()
+    (data / "raw" / P / "WFM" / "2026-10-08" / "lineage.csv").write_text(
+        f"strategy,identity,mother\nS 1,{WFM},{MOTHER}\nS 1,{MOTHER},{WFM}\n")
+    extra.table.cache_clear()
+    assert late.aliases(P, MOTHER) == {WFM} and late.aliases(P, WFM) == {MOTHER}
+    from core.archive import collect
+    monkey = pytest.MonkeyPatch()
+    monkey.setattr(collect, "DATA", data)
+    try:
+        assert not any(e["study"] == "wfm" for e in collect.freeze(P, MOTHER, tmp_path / "x")[0])
+        got = collect.freeze(P, MOTHER, tmp_path / "y", late.aliases(P, MOTHER))[0]
+    finally:
+        monkey.undo()
+    assert [e["names"] for e in got if e["study"] == "wfm"] == [["S 1"]]

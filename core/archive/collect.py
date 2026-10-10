@@ -16,12 +16,12 @@ def _rows(path: Path) -> list[dict]:
         return list(csv.DictReader(fh))
 
 
-def _names(folder: Path, identity: str) -> tuple[list[str], list[str], str | None]:
+def _names(folder: Path, ids: frozenset[str]) -> tuple[list[str], list[str], str | None]:
     """The names this identity goes by in one study folder, or why the folder cannot say.
 
     Args:
         folder: reports/<P>/<D>/<day>/<study>/.
-        identity: SHA-256 of the normalised XML.
+        ids: The strategy's identity and any alias SQX gave it (`late.aliases`).
 
     Returns:
         (names with a per-strategy JSON, every name, reason). Names pair through any CSV
@@ -44,9 +44,9 @@ def _names(folder: Path, identity: str) -> tuple[list[str], list[str], str | Non
         got = json.loads(path.read_text(encoding="utf-8"))
         name, rows = got.get("strategy") or path.stem, True
         signed = signed or bool(got.get("identity"))
-        if (got.get("identity") or table.get(name)) == identity:
+        if (got.get("identity") or table.get(name)) in ids:
             own.append(name)
-    names = sorted(set(own) | {n for n, i in table.items() if i == identity})
+    names = sorted(set(own) | {n for n, i in table.items() if i in ids})
     reason = None
     if not names and not rows:
         reason = "sin filas por estrategia: solo resultado de población o tablas sin columna strategy"
@@ -55,12 +55,12 @@ def _names(folder: Path, identity: str) -> tuple[list[str], list[str], str | Non
     return own, names, reason
 
 
-def _table(path: Path, identity: str, names: list[str], out: Path) -> None:
+def _table(path: Path, ids: frozenset[str], names: list[str], out: Path) -> None:
     """Freeze one table: only this strategy's rows when it names strategies, whole otherwise.
 
     Args:
         path: A .csv or .parquet of the study folder.
-        identity: The strategy's identity.
+        ids: The strategy's identities.
         names: Its names in this folder.
         out: The folder to write the copy into.
 
@@ -70,9 +70,9 @@ def _table(path: Path, identity: str, names: list[str], out: Path) -> None:
     """
     frame = pd.read_parquet(path) if path.suffix == ".parquet" else pd.read_csv(path, dtype=str)
     if frame.index.name == "identity":
-        frame = frame[frame.index == identity]
-    elif "identity" in frame.columns and frame["identity"].eq(identity).any():
-        frame = frame[frame["identity"] == identity]
+        frame = frame[frame.index.isin(ids)]
+    elif "identity" in frame.columns and frame["identity"].isin(ids).any():
+        frame = frame[frame["identity"].isin(ids)]
     elif "strategy" in frame.columns:
         frame = frame[frame["strategy"].isin(names)]
     elif path.suffix == ".parquet":
@@ -83,12 +83,12 @@ def _table(path: Path, identity: str, names: list[str], out: Path) -> None:
         frame.to_csv(out / path.name, index=False)
 
 
-def _freeze(folder: Path, identity: str, own: list[str], names: list[str], out: Path) -> list[str]:
+def _freeze(folder: Path, ids: frozenset[str], own: list[str], names: list[str], out: Path) -> list[str]:
     """Copy what one study folder holds about this strategy.
 
     Args:
         folder: The study folder.
-        identity: The strategy's identity.
+        ids: The strategy's identities.
         own: Its names with a per-strategy JSON.
         names: Every name it goes by here.
         out: The mirror folder inside the archive.
@@ -104,7 +104,7 @@ def _freeze(folder: Path, identity: str, own: list[str], names: list[str], out: 
         shutil.copy2(folder / "estrategias" / f"{name}.json", out / "estrategias" / f"{name}.json")
     for path in sorted(folder.iterdir()):
         if path.suffix in (".csv", ".parquet"):
-            _table(path, identity, names, out)
+            _table(path, ids, names, out)
         elif path.suffix == ".json" and (path.stem in (folder.name, "manifest") or
                                          json.loads(path.read_text(encoding="utf-8"))
                                          .get("strategy") in names):
@@ -120,12 +120,12 @@ def _hash(folder: Path, own: list[str]) -> str | None:
     return None
 
 
-def _loose(root: Path, identity: str, out: Path) -> tuple[list[str], list[dict]]:
+def _loose(root: Path, ids: frozenset[str], out: Path) -> tuple[list[str], list[dict]]:
     """The CSVs outside any study folder — at the project's or a day's level — cut to this identity.
 
     Args:
         root: reports/<P>/.
-        identity: The strategy's identity.
+        ids: The strategy's identities.
         out: `<version>/reports/`.
 
     Returns:
@@ -138,7 +138,7 @@ def _loose(root: Path, identity: str, out: Path) -> tuple[list[str], list[dict]]
     for path in sorted(root.glob("*.csv")) + sorted(root.glob("*/*/*.csv")):
         rel = path.relative_to(root)
         frame = pd.read_csv(path, dtype=str)
-        rows = frame[frame.eq(identity).any(axis=1)]
+        rows = frame[frame.isin(ids).any(axis=1)]
         if len(rows):
             (out / rel).parent.mkdir(parents=True, exist_ok=True)
             rows.to_csv(out / rel, index=False)
@@ -148,13 +148,14 @@ def _loose(root: Path, identity: str, out: Path) -> tuple[list[str], list[dict]]
     return frozen, skipped
 
 
-def freeze(project: str, identity: str, out: Path) -> tuple[list[dict], list[str], list[dict]]:
+def freeze(project: str, identity: str, out: Path, also: frozenset[str] = frozenset()) -> tuple[list[dict], list[str], list[dict]]:
     """Every study, every databank and every day that judged this identity, frozen.
 
     Args:
         project: SQX project name.
         identity: SHA-256 of the strategy's normalised XML.
         out: `<version>/reports/`, mirrored as `<databank>/<day>/<study>/`.
+        also: Identities SQX gave the same strategy later; their rows are its rows.
 
     Returns:
         (entries, loose, skipped). One entry per study folder that names the identity:
@@ -163,22 +164,22 @@ def freeze(project: str, identity: str, out: Path) -> tuple[list[dict], list[str
         kept. `skipped`: `{path, reason}` for everything that could not be paired — nothing
         is left out silently.
     """
-    root = DATA / "reports" / project
+    root, ids = DATA / "reports" / project, frozenset({identity, *also})
     entries, skipped = [], []
     for folder in sorted(root.glob("*/*/*")):
         databank, day = folder.parts[-3:-1]
         if not folder.is_dir() or databank.startswith("_"):
             continue
-        own, names, reason = _names(folder, identity)
+        own, names, reason = _names(folder, ids)
         if reason:
             skipped.append({"path": folder.relative_to(root).as_posix(), "reason": reason})
         if not names:
             continue
-        files = _freeze(folder, identity, own, names, out / databank / day / folder.name)
+        files = _freeze(folder, ids, own, names, out / databank / day / folder.name)
         entries.append({"databank": databank, "day": day, "study": folder.name,
                         "named": own[0] if own else None, "names": names,
                         "config_hash": _hash(folder, own), "files": files})
-    loose, lost = _loose(root, identity, out)
+    loose, lost = _loose(root, ids, out)
     return entries, loose, skipped + lost
 
 

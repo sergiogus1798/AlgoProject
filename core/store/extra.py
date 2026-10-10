@@ -102,7 +102,8 @@ def named(folder: Path, name: str, identity: str) -> bool:
     return False
 
 
-def trades(project: str, name: str, identity: str, tmp: Path) -> list[tuple[str, Path, dict]]:
+def trades(project: str, name: str, identity: str, tmp: Path,
+           also: frozenset[str] = frozenset()) -> list[tuple[str, Path, dict]]:
     """The strategy's and its sisters' trades in every databank that was exported.
 
     Args:
@@ -111,6 +112,7 @@ def trades(project: str, name: str, identity: str, tmp: Path) -> list[tuple[str,
         identity: Its identity; an export whose `identity.csv` does not pair the two is
             another strategy's under the same name and is left out.
         tmp: A scratch folder.
+        also: Identities SQX gave the same strategy later (`late.aliases`).
 
     Returns:
         (file stem, folder, what the manifest says) per databank and day with trades of it:
@@ -122,7 +124,7 @@ def trades(project: str, name: str, identity: str, tmp: Path) -> list[tuple[str,
     for path in sorted((DATA / "raw" / project).glob("*/*/trades.parquet")):
         databank, day = path.parts[-3:-1]
         rows = family(table(path), name)
-        if not len(rows) or not named(path.parent, name, identity):
+        if not len(rows) or not any(named(path.parent, name, i) for i in {identity, *also}):
             continue
         # `Ticket` is SQX's numbering inside one databank, not part of a trade
         print_ = int(pd.util.hash_pandas_object(rows.drop(columns="Ticket", errors="ignore"),
@@ -140,7 +142,8 @@ def trades(project: str, name: str, identity: str, tmp: Path) -> list[tuple[str,
     return found
 
 
-def sisters(project: str, name: str, identity: str, tmp: Path) -> list[tuple[str, Path, dict]]:
+def sisters(project: str, name: str, identity: str, tmp: Path,
+            also: frozenset[str] = frozenset()) -> list[tuple[str, Path, dict]]:
     """What step 12 made of the strategy on other timeframes, enough to make it again.
 
     Args:
@@ -149,6 +152,7 @@ def sisters(project: str, name: str, identity: str, tmp: Path) -> list[tuple[str
         identity: Its identity: a batch whose mother file of that name is another strategy
             is left out.
         tmp: A scratch folder.
+        also: Identities SQX gave the same strategy later (`late.aliases`): the mother's file may carry one.
 
     Returns:
         One entry per day the mother was scaled: its rows of `scaling.parquet` (every
@@ -160,7 +164,7 @@ def sisters(project: str, name: str, identity: str, tmp: Path) -> list[tuple[str
     for path in sorted((DATA / "crosstf" / project).glob("*/scaling.parquet")):
         day, out = path.parent.name, tmp / path.parent.name
         mother = path.parent / "sqx" / f"{name}.sqx"     # the mothers ride along verbatim
-        n = _cut(path, name, out) if mother.exists() and sqxfile.identity(mother) == identity else 0
+        n = _cut(path, name, out) if mother.exists() and sqxfile.identity(mother) in {identity, *also} else 0
         if n:
             rows = pd.read_parquet(out / path.name)
             # What a rebuilt sister is checked against: SQX's retest gives the same strategy
@@ -194,3 +198,14 @@ def metrics(project: str, name: str, tmp: Path) -> list[tuple[str, Path, dict]]:
             for path in sorted((DATA / "metrics" / project).glob("*/metrics.csv")))
     return [("metricas", tmp, {"study": "metricas", "rows": n})] if n else []
 
+
+
+def neighbours(project: str, name: str, tmp: Path) -> list[tuple[str, Path, dict]]:
+    """Step 13's T1 batch (`raw/<P>/T1_Neighbours/<day>/neighbours.parquet`) cut to the strategy.
+
+    Returns:
+        One entry, `vecinas`: its rows of each day's table, which no `mcRetest` result carries.
+    """
+    n = sum(_cut(path, name, tmp / path.parent.name)
+            for path in sorted((DATA / "raw" / project / "T1_Neighbours").glob("*/neighbours.parquet")))
+    return [("vecinas", tmp, {"study": "vecinas", "rows": n})] if n else []

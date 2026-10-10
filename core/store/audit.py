@@ -16,6 +16,7 @@ IGNORED = {
     "projects": "el registro y los project.cfx retirados",
     "atrCalculator": "pasos 21 en adelante (rejilla de stops): aún no se guardan",
     "structural": "pasos 21 en adelante (pruebas estructurales): aún no se guardan",
+    "neighbours": "los .sqx de las vecinas de T1 se rehacen de la madre; su tabla va en vecinas.*",
     "store": "el propio almacén",
 }
 READ = ("reports", "raw", "metrics", "crosstf", "strategyPermutations")

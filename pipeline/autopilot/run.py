@@ -142,7 +142,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
     if busy:
         sys.exit("el worker no está libre:\n  " + "\n  ".join(busy))
     cfg = judge.settings()
-    todo = plan.plan(workflow.workflow(project), given)
+    todo = plan.plan(plan.reopen(workflow.workflow(project), out), given)
     for skip in todo.get("skipped", []):
         print(f"paso {skip['n']} saltado: {skip['why']}", flush=True)
     (out / "plan.json").write_text(json.dumps(todo, indent=1, ensure_ascii=False), encoding="utf-8")
