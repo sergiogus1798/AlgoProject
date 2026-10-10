@@ -7,6 +7,7 @@
 - `intraday-floating-resolution` — What resolution is enough to compute a portfolio's worst intraday floating, and what does summing members' worsts do?
 - `measuring-project-cost` — How should the time, memory and disk cost of a project be measured?
 - `monte-carlo-bandwidth` — What limits Monte Carlo speed, and how should its memory use be budgeted?
+- `nulls-draws-is-disk-bound` — Does raising the monkey's `draws` reduce how many strategies pass by chance, and what does it cost?
 - `numba-division` — Which `@njit` options must every numba kernel in this project use?
 - `per-strategy-readings-ram` — How much RAM and time do profitShape and entryQuality take per strategy, and how many can run in parallel?
 - `process-pool-shutdown` — How do I find and kill orphan forkserver processes left by a global process pool?
@@ -17,6 +18,7 @@
 - `smt-in-sqx-retest` — How many threads does an SQX retest scale to on this server?
 - `stage-b-monte-carlo-cost` — How long does Stage B take per 10-member combination, and what dominates its cost?
 - `step-16-5-time-split` — Where does step 16.5's wall time go on the restart route, and what does the Python side cost?
+- `steps-13-to-16-durations` — How long do autopilot steps 13 to 16 take, and what does the spp skill's "half an hour per mother" get wrong?
 - `variant-trades-export-cost` — What does exporting every variant's trades cost, and why is it no longer only the mother's?
 - `variants-batch-size-and-flush` — How do SQX compute, flush to disk and the pilot scale with variant batch size at step 16.5?
 - `window-waits-off-gui-thread` — Why did the desktop window freeze on reloads, and where must daemon waits happen?

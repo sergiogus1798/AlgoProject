@@ -106,7 +106,7 @@ def records(got: dict, name: str, cfg: dict, market: str = "") -> list[dict]:
     """
     seed = cfg["nulls"]["seed"]
     return [draws.record("monkey", f"p_{rung}_{n}", got["seen"][n], values[n], strategy=name,
-                         market=market, rung=rung, stat=n, seed=seed)
+                         market=market, rung=rung, stat=n, seed=seed, raw=False)
             for rung, values in got["per_rung"].items() for n in cfg["statistics"]["report"]]
 
 
