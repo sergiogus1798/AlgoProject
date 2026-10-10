@@ -209,3 +209,28 @@ def test_a_project_trimmed_to_crosstf_ends_at_the_12_judge(tmp_path: Path) -> No
     todo = plan.plan(data)
     assert kinds(todo)[-2:] == [("12", "python"), ("12", "judge")] and todo["stop"]["n"] == "13"
     assert all(kind != "neighbours" for _, kind in kinds(todo))
+
+
+def test_a_project_trimmed_to_spp_keeps_the_wfc_legs_step_13_runs_through(tmp_path: Path) -> None:
+    """`--until mcretest|spp` reaches step 13, whose neighbour batch retests on the WFC legs:
+    trimming them failed the run at 13 («None no esta en project.cfx», 2026-10-09)."""
+    task = '  <Task type="Retest" active="false" taskXMLFile="{f}" title="{t}" />\n'
+    titles = ["OOS", "MCR 7 OHLC", "SPP IS", "WFM", "WFC 1 IS", "WFC 2 OOS1", "WFC 3 OOS2"]
+    files = {t: f"Retest-Task{i}.xml" for i, t in enumerate(titles)}
+    config = "<Project><Tasks>\n" + "".join(task.format(f=f, t=t) for t, f in files.items()) + "</Tasks></Project>"
+    cfx = tmp_path / "project.cfx"
+    with zipfile.ZipFile(cfx, "w") as z:
+        z.writestr("config.xml", config)
+        for f in files.values():
+            z.writestr(f, "<x/>")
+    assert wf.trim(cfx, "spp") == ["WFM"]
+
+
+def test_a_project_trimmed_to_spp_ends_at_the_16_judge() -> None:
+    """Trimmed to spp, the WFM (19) is missing: the plan ends before the variant factory (16.5)
+    instead of running it and failing at 18.5 (2026-10-10)."""
+    data = rail(TWINS, last="19")
+    data["steps"][-1]["state"] = "missing"
+    todo = plan.plan(data)
+    assert todo["stop"]["n"] == "16.5" and kinds(todo)[-1] == ("16", "judge")
+    assert all(kind != "variants" for _, kind in kinds(todo))

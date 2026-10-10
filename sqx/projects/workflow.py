@@ -123,7 +123,10 @@ def trim(cfx: Path, until: str) -> list[str]:
         The titles dropped. Their databanks stay declared, empty.
     """
     order = steps()
-    later = {t for s in order[order.index(until) + 1:] for t in titles(s)}
+    after = order[order.index(until) + 1:]
+    if "mcretest" not in after:       # step 13's neighbour batch runs through the WFC legs
+        after = [s for s in after if s != "wfc"]
+    later = {t for s in after for t in titles(s)}
     members = cfxio.members(cfx)
     config, gone = members["config.xml"].decode("utf-8"), []
     for tag in re.findall(r"[ \t]*<Task\b[^>]*/>\n?", config):
