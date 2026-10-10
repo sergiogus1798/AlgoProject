@@ -10,7 +10,7 @@ def extensions(block: dict, where: str) -> None:
         for s in block.get("series", []):
             if {"label", "counts", "n", "median"} - set(s) or len(s["counts"]) != len(width):
                 raise ValueError(f"{where}: series {s.get('label')!r} malformed")
-            if abs(float(np.dot(s["counts"], width)) - 1) > 1e-3:
+            if any(s["counts"]) and abs(float(np.dot(s["counts"], width)) - 1) > 1e-3:
                 raise ValueError(f"{where}: series {s['label']!r} is not a density of area 1")
         if block.get("shift") is not None and {"median", "ks_p"} - set(block["shift"]):
             raise ValueError(f"{where}: shift lacks median or ks_p")

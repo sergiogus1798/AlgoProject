@@ -71,3 +71,14 @@ if __name__ == "__main__":
     test_bands_percentiles_of_a_tiny_array()
     test_scatter_cap_and_ramp()
     print("ok")
+
+
+def test_a_series_with_nothing_inside_the_shared_bins_is_a_flat_zero() -> None:
+    """A series the union's clip leaves outside the bins was 0/0, None after JSON, and a
+    TypeError in the block check that failed step 16 (2026-10-10)."""
+    import numpy as np
+    from core.study import blockcheck, blocks
+    a, b = np.linspace(0, 1, 2000), np.array([1e9])
+    block = blocks.distribution("t", "", np.concatenate([a, b]), None, "n", series={"a": a, "b": b})
+    assert block["series"][1]["counts"] == [0.0] * (len(block["bins"]) - 1)
+    blockcheck.extensions(block, "x")

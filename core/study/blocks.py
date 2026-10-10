@@ -130,7 +130,8 @@ def distribution(title: str, unit: str, values: np.ndarray, real: float | None, 
             r = (reals or {}).get(label)
             out["series"].append({"label": label, "n": len(s), "median": _num(np.median(s)),
                                   "real": _num(r) if r is not None else None,
-                                  "counts": [float(x) for x in c / (len(kept) * width)]})
+                                  # no value inside the shared bins: a flat zero, not 0/0
+                                  "counts": [float(x) for x in c / (max(len(kept), 1) * width)]})
     if shift is not None:
         out["shift"] = {"median": _num(shift["median"]), "ks_p": _num(shift["ks_p"])}
     return out
