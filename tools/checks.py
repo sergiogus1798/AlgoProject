@@ -17,8 +17,7 @@ ROOT, MAX_LINES = depmap.ROOT, 250
 PATHS_MODULE = ROOT / "core" / "paths.py"
 DEVELOPER_ONLY = {"tools", "tests"}
 ABSOLUTE = re.compile(r"""["'](?:/home/|/root/|~/)""")
-PIP_NAME = {"yaml": "PyYAML", "sklearn": "scikit-learn", "PIL": "Pillow",
-            "ruamel": "ruamel.yaml"}
+PIP_NAME = {"yaml": "PyYAML", "sklearn": "scikit-learn", "PIL": "Pillow", "ruamel": "ruamel.yaml"}
 
 
 def too_long(files: list[Path]) -> list[str]:
@@ -114,13 +113,13 @@ def missing_requirements(files: list[Path]) -> list[str]:
 
 
 def unlisted_in_readme(files: list[Path]) -> list[str]:
-    """Python files their folder's README.md does not mention.
+    """Python files their folder's README.md does not mention, and table rows naming a file that is gone.
 
     Args:
         files: Project Python files.
 
     Returns:
-        One message per missing README or unlisted file.
+        One message per missing README, unlisted file or row without its file (OPEN.md #22).
     """
     out = []
     for folder in sorted({f.parent for f in files}):
@@ -130,9 +129,10 @@ def unlisted_in_readme(files: list[Path]) -> list[str]:
             out.append(f"{folder.relative_to(ROOT)}/: no README.md")
             continue
         text = readme.read_text(encoding="utf-8")
-        for f in sorted(folder.glob("*.py")):
-            if f.name not in text:
-                out.append(f"{folder.relative_to(ROOT)}/README.md: {f.name} not listed")
+        out += [f"{folder.relative_to(ROOT)}/README.md: {f.name} not listed"
+                for f in sorted(folder.glob("*.py")) if f.name not in text]
+        out += [f"{folder.relative_to(ROOT)}/README.md: lists {n}, which is not there"     # a table row's own file
+                for n in re.findall(r"^\|\s*`([\w/]+\.py)`", text, re.M) if not (folder / n).exists()]
     return out
 
 

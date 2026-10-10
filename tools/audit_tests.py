@@ -37,7 +37,9 @@ ASIDE: dict[str, tuple[str, str]] = {
         "the results catalogue does not match studies/ (board, marketProfile, memory, monteCarlo): "
         "ui/daemon/results/ and studies/research are in motion in another session", "2026-10-02"),
     "tests/test_ui_strategy.py": (
-        "strategy meta has no 'backtest' key: ui/daemon/ is modified by another session", "2026-10-02"),
+        "strategy meta has no 'backtest' key: the pinned project (Test_USDJPY_donchianUpperCrossUp_M30) "
+        "is retired from every install, so no project.cfx gives the task; needs a new golden strategy",
+        "2026-10-02"),
 }
 
 
