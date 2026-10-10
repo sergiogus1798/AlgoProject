@@ -54,6 +54,13 @@ mt5_prefix: ~/Desktop/MT5
 # Optional: the newest VS Code extension's bundled binary, else `claude` on the PATH.
 # claude_bin: ~/.local/bin/claude
 
+# Other servers that run workflows on a copy of THIS machine's master data. bin/mirror-data.sh
+# copies user/data to each after the weekly update. `ssh` is an alias of ~/.ssh/config with a
+# key that needs no passphrase; `master` is the SQX folder over there, relative to its home.
+# Optional: omit the block on a machine that feeds no other.
+# mirrors:
+#   gorilla: {ssh: sqx2, master: Desktop/SQX}
+
 # Where exported data lives. Never inside the repo.
 data_root: ~/Desktop/AlgoData
 

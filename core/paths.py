@@ -42,6 +42,10 @@ WORKERS = {"conductor": {"path": WORKER, "port": WORKER_PORT}}
 WORKERS.update({role: {"path": Path(w["path"]).expanduser(), "port": w["port"]}
                 for role, w in (_CFG.get("sqx_workers") or {}).items()})
 
+# Other servers that hold a copy of this machine's master data: {name: {ssh, master}}, the ssh
+# alias and the master folder over there. Optional; bin/mirror-data.sh is the only reader.
+MIRRORS = _CFG.get("mirrors") or {}
+
 WORKER_SH = ROOT / "bin" / "sqx-worker.sh"
 ASSETS = ROOT / "assets"
 # La taxonomía de bloques: configuración a mano, versionada, no un derivado del install.

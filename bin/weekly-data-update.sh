@@ -91,6 +91,15 @@ rm -f "$OUT"
 echo "--- refreshing broker commission percentages"
 python3 -m core.commission --refresh || echo "--- core.commission --refresh failed, continuing"
 
+# the other servers read a copy of this data (owner, 2026-10-10): refresh it while nothing runs
+if [ "$rc" -eq 0 ]; then
+  echo "--- mirroring the data to the other servers"
+  bin/mirror-data.sh || {
+    . "$ROOT/bin/lib-agent-alert.sh"
+    agent_alert weekly-data-update "bin/mirror-data.sh failed: another server holds last week's data (rerun it by hand)"
+  }
+fi
+
 echo "=== $(date -Is) weekly data update end"
 # a refused update (master GUI up, rule 2) or a failed one leaves the data stale and the Saturday
 # oos2 roll failing; the log alone told nobody

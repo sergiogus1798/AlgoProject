@@ -13,7 +13,8 @@ the data root, not into the repo.
 | `sqx-lock.sh` | The lock library behind `sqx-worker.sh`: one `OWNER` file per install, refuses a second holder |
 | `clone-sqx-worker.sh` | Clone the SQX master into a headless worker of a given role (both closed; refuses if it exists) |
 | `sqx-log-prune.sh` | Cap the size of SQX's own log directories (archives first). Cron daily 04:15 |
-| `weekly-data-update.sh` | The GUI's "Update all" on the master, then refresh asset data ranges and broker commissions. Cron Saturday 02:00 |
+| `weekly-data-update.sh` | The GUI's "Update all" on the master, then refresh asset data ranges and broker commissions, then `mirror-data.sh`. Cron Saturday 02:00 |
+| `mirror-data.sh` | Copy the master's `user/data` to the master of every server under `mirrors:` in `machine.yaml` (gorilla). Refuses while SQX runs at either end. Called by the weekly update; by hand after adding a feed |
 | `monthly-oos2-roll.sh` | Move each decided `oos2` window in `assets/_policy.yaml` to the end of the previous month. Cron Saturday 02:05; acts only when due |
 | `weekly-reconcile.sh` | Live accounts against the SQX backtest of the same strategies, for the ISO week just ended. Written, not in the crontab |
 

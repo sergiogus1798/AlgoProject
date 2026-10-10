@@ -91,7 +91,11 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
     is the version control, not the folder. Never commit on your own: a task that changed anything ends
     with the list of files changed and, as its last line, **¿Quieres hacer el commit?** — commit only
     after he says yes, staging only the files of that task (never `git add -A`: other sessions leave their
-    own changes in the same tree).
+    own changes in the same tree). **One exception, the owner's (2026-10-10): the second server.**
+    `gorilla` (ssh `sqx2`, Ryzen 7950X) holds a read-only clone at `~/Desktop/AlgoProject` whose
+    only git verb is `git pull` before a run — never a commit, a branch or an edit there. This
+    machine is `leaseWeb`; name everything of each server with its suffix (`custodio_gorilla`).
+    Gorilla's market data is a mirror of this master's (`bin/mirror-data.sh`), never its own.
 
 13. **One direction per template and per build: long OR short, never both in one strategy.** Owner,
     2026-10-01, «regla dura». `sqx.projects.builder` refuses a template whose `Long entry` and
