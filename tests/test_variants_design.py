@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Known-answer test for the variant design: Latin hypercube, classes, size, controls (encargo 48 F)."""
 
+import re
 import sys
+import tempfile
+import zipfile
 from pathlib import Path
 
 import numpy as np
@@ -9,6 +12,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from sqx.variants import make
+from sqx.variants.build import rewrite
 from sqx.variants.design import lhs, plan
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -56,6 +61,21 @@ def main() -> None:
           "shift y congelado quedan en el valor de la madre en todas las variantes")
     check(failures, report["asked"] == 40 and report["kept"] + report["shortfall"] == 40,
           f"tamaño pedido 40 ({report['kept']} + faltan {report['shortfall']})")
+    with tempfile.TemporaryDirectory() as tmp:     # a brief from another snapshot: refused early
+        parent = Path(tmp) / "S.sqx"
+        with zipfile.ZipFile(parent, "w") as z:
+            z.writestr(rewrite.PORTFOLIO, "<variable><name>A</name><type>int</type><value>1</value></variable>")
+        make.same_snapshot({"strategy": "S", "parameters": [{"name": "A"}], "frozen": []}, parent)
+        try:
+            make.same_snapshot({"strategy": "S", "parameters": [{"name": "A"}], "frozen": [{"name": "B"}]}, parent)
+            refused = False
+        except SystemExit as said:
+            refused = "['B']" in str(said)
+        check(failures, refused, "un brief con un parámetro que la madre no declara se rechaza antes del piloto")
+    # `make` prints these of the report: one it names and `build` no longer returns ended a run
+    # at step 16.5 (📓 2026-10-08, KeyError 'full_space')
+    printed = set(re.findall(r"""\breport\[['"](\w+)['"]\]""", (Path(__file__).resolve().parents[1] / "sqx/variants/make.py").read_text())) - {"pilot"}
+    check(failures, printed <= set(report), f"make imprime sólo claves del informe ({sorted(printed - set(report))})")
     check(failures, table["tuple_hash"].is_unique, "ninguna tupla repetida")
     check(failures, (table[table["stratum"] == "inert"]["canary_expect_same_as"] == "P00000").all()
           and (table["stratum"] == "inert").sum() == 1, "un par inerte, que debe igualar a la madre")

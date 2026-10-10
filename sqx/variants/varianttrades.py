@@ -11,11 +11,19 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
+from core.assetdata import load
 from core.paths import export_dir
+from sqx.projects import registry
 from sqx.variants import legs as legmod
 
 TAG = "variants"                  # the `export_retest --batch` tag of this export
 OUT = "variant_trades.parquet"    # what `engines/variants/excess.py` reads
+
+
+def main_feed(project: str) -> str:
+    """The SQX feed of the asset the project was built on, from its registry row."""
+    row = next(r for r in reversed(registry.rows()) if r["name"] == project)
+    return load(row["symbol"])["sqx_symbol"]
 
 
 def gather(work: Path, project: str, day: str | None = None) -> int:
@@ -29,16 +37,18 @@ def gather(work: Path, project: str, day: str | None = None) -> int:
     Returns:
         The trades written. Schema: `core.tradestore.KEEP` (schema T) plus `variant_id` (the
         file name SQX kept, collision suffix stripped), `leg` (`build`, `oos1`, `oos2`),
-        `market` (`Main` for result block 0, else the feed in `Symbol`) and `block`. The
+        `market` (`Main` where `Symbol` is the project's own feed, else that feed) and `block`,
+        which is NOT the market (knowhow/export/data-all-blocks.md). The
         controls are in it, tagged in `manifest.parquet`; nobody analyses them.
         The per-leg export folders are removed: this file is their only keeper.
     """
     day = day or date.today().isoformat()
-    parts, folders = [], []
+    parts, folders, own = [], [], main_feed(project)
     for leg in legmod.legs():
         folder = export_dir(project, leg["databank"], day, TAG)
         frame = pd.read_parquet(folder / "trades.parquet")
-        market = frame["Symbol"].astype(str).where(frame["block"] > 0, legmod.MAIN)
+        symbol = frame["Symbol"].astype(str)
+        market = symbol.where(symbol != own, legmod.MAIN)
         parts.append(frame.assign(
             variant_id=frame["strategy"].astype(str).str.replace(r"\(\d+\)$", "", regex=True),
             leg=leg["segment"], market=market).drop(columns=["strategy"]))

@@ -17,16 +17,18 @@ def test_gather_joins_the_legs_and_names_the_market(monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(varianttrades.legmod, "legs", lambda: LEGS)
     monkeypatch.setattr(varianttrades, "export_dir",
                         lambda p, db, day, tag: tmp_path / "raw" / db)
+    monkeypatch.setattr(varianttrades, "main_feed", lambda project: "XAUUSD_M1")
     for leg in LEGS:
         folder = tmp_path / "raw" / leg["databank"]
         folder.mkdir(parents=True)
         pd.DataFrame({"strategy": ["P00001(1)", "P00001"], "Symbol": ["XAUUSD_M1", "XAGUSD_M1"],
-                      "block": [0, 1], "Size": [1.0, 2.0]}).to_parquet(folder / "trades.parquet")
+                      "block": [1, 0], "Size": [1.0, 2.0]}).to_parquet(folder / "trades.parquet")
     n = varianttrades.gather(tmp_path, "P")
     got = pd.read_parquet(tmp_path / varianttrades.OUT)
     assert n == 6 and set(got["leg"]) == {"build", "oos1", "oos2"}
     assert set(got["variant_id"]) == {"P00001"} and "strategy" not in got
     assert sorted(set(got["market"])) == ["Main", "XAGUSD_M1"]
+    assert set(got.loc[got["market"] == "Main", "Symbol"]) == {"XAUUSD_M1"}    # by feed, not by block
     assert not (tmp_path / "raw" / "bank_build").exists()
 
 

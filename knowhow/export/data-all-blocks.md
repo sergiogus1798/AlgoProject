@@ -29,3 +29,7 @@ tag: 🔬  date: 2026-09-30  see: export/data-all-crossmarket, export/wfm-export
   k-th occurrence goes to the fastest trader first: from H1, M30 took block 0 and H1 block 1 —
   the Cross TF study scored M30 as the baseline. `-tools action=orderstocsv` only knows
   `data=main|all` (`internal/web/SQUANT/help.txt`). Owner chose one task per timeframe.
+- 🔬 2026-10-09, `Test_USDJPY_M30_doubleROCLong_10k`, three variant batches of 1,004: `varianttrades.gather` named
+  the market `Main` where `block == 0` and 856-967 variants per batch got other symbols' trades as Main
+  (one variant's oos2 "Main": 503 AUDNZD, 105 USDJPY of its 608). Step 17 died in `reprice.real` on an
+  AUDNZD trade stamped 2023-12-25, no USDJPY bar. Fixed: Main is `Symbol == the project's feed`.

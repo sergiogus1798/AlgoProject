@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core import assets, sqxfile
 from sqx.variants import inputs, manifest, pilot as pilotmod
-from sqx.variants.build import fabricate
+from sqx.variants.build import fabricate, rewrite
 from sqx.variants.design import levels, plan
 
 SQX_DIR = "sqx"
@@ -37,6 +37,23 @@ def preflight(parent: Path) -> None:
     """
     symbol, _ = sqxfile.symbol(parent)
     print(assets.report(symbol))
+
+
+def same_snapshot(design: dict, parent: Path) -> None:
+    """Refuse a brief that names a parameter the parent does not declare, before the pilot
+    spends SQX time: the brief and the export's strategy copy are then two snapshots (a rebuild
+    reuses names), and the fabrication would die on the first tuple (📓 2026-10-06, step 16.5,
+    «not variables of this strategy: ['SqueezeBB']»).
+
+    Args:
+        design: A parsed brief.
+        parent: The parent `.sqx`.
+    """
+    declared = rewrite.declared(rewrite.members(parent)[rewrite.PORTFOLIO].decode("utf-8"))
+    stray = sorted({p["name"] for p in design["parameters"] + design["frozen"]} - set(declared))
+    if stray:
+        sys.exit(f"{design['strategy']}: el brief nombra {stray} y {parent} no los declara: el brief "
+                 "y la copia de la estrategia son de exportaciones distintas; reexporta el SPP")
 
 
 def main() -> None:
@@ -66,6 +83,7 @@ def main() -> None:
     settings = inputs.load()
     parent = inputs.source(design)
     preflight(parent)
+    same_snapshot(design, parent)
     out = args.out or inputs.out_dir(args.project, design["strategy"])
     out.mkdir(parents=True, exist_ok=True)
 
