@@ -81,6 +81,14 @@ def test_one_strategy_leaves_the_population_alone() -> None:
         assert got["strategy"] == "Strategy 1.1.2" and got["identity"] == "id-Strategy 1.1.2"
 
 
+def test_a_period_without_parameters_reads_empty() -> None:
+    """SQX wrote WFM periods with no `testParameters`: the export of step 19 died on None
+    (📓 2026-10-04, Trade_NIKKEI225_M30_volatilidadL)."""
+    from core import wfmatrix
+    assert wfmatrix._params(None) == {} and wfmatrix._params("A=1,B=x,") == {"A": "1", "B": "x"}
+
+
 if __name__ == "__main__":
+    test_a_period_without_parameters_reads_empty()
     test_one_strategy_leaves_the_population_alone()
     print("ok")

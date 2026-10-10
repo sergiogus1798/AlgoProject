@@ -201,10 +201,24 @@ def check_rates() -> None:
     assert planted["positivo"] > 0.8 and planted["perverso"] == 0, planted
 
 
+def check_nothing_usable() -> None:
+    """No usable variant, or a value past the colour scale, is a NaN and a cell — not a crash.
+
+    Step 18.5 died three times on them (📓 2026-10-04 quantile and fit of nothing on
+    Trade_NIKKEI225_M30_volatilidadL; 2026-10-06 a grid value beyond the last colour)."""
+    from core.study.render import grids as drawn
+    from studies.optimisation.marketSurfaces.measure import premium
+    assert np.isnan(premium.premium(np.arange(5.0), np.zeros(5, bool)))
+    cell = {"rows": ["a"], "cols": ["x"], "values": [[99.0]], "labels": None,
+            "scale": "sequential", "scale_range": [0, 1], "levels": None, "title": "t"}
+    assert "<rect" in drawn.grid(cell)
+
+
 def main() -> None:
     """Run every check; the first that fails raises."""
     for check in (check_example, check_weights, check_exclusions, check_main_untouched,
-                  check_oos2_split, check_determinism_and_states, check_rates):
+                  check_oos2_split, check_determinism_and_states, check_rates,
+                  check_nothing_usable):
         check()
         print(f"ok {check.__name__}: {check.__doc__.splitlines()[0]}")
 
