@@ -4,11 +4,15 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
+from unittest import mock
+
+import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.paths import DATA  # noqa: E402
 from core.study import identity, output  # noqa: E402
+from pipeline.autopilot import closing  # noqa: E402
 from sqx.export import export_trades  # noqa: E402
 
 PROJECT = "Test_USDJPY_donchianUpperCrossUp_M30"      # live on SQX_w2; the names below were cut from it on 2026-09-29
@@ -40,8 +44,37 @@ def exporters() -> None:
         assert identity.from_export(trades, names) == KNOWN
 
 
+def variants_cosecha() -> None:
+    """A cosecha of a variants batch has no databank in its manifest: skipped, not a KeyError
+    that ended step 10 (📓 2026-10-06, Test_USDJPY_M30_doubleROCLong). On a scratch data root."""
+    with tempfile.TemporaryDirectory() as tmp:
+        folder = Path(tmp) / "harvest" / "P" / "Stop_p90" / "2026-10-06"
+        folder.mkdir(parents=True)
+        (folder / "metrics.parquet").touch()
+        (folder / "manifest.json").write_text('{"source": {"batch": "b", "feed": "f"}}', encoding="utf-8")
+        paired = Path(tmp) / "harvest" / "P" / "Results" / "2026-10-05"
+        paired.mkdir(parents=True)
+        (paired / "manifest.json").write_text('{"source": {"databank": "Results", "oos_databank": "OOS"}}', encoding="utf-8")
+        pd.DataFrame({"strategy": ["Strategy 1.2.3"], "strategy_build": ["Strategy 1.2.3"]}, index=["id1"]).to_parquet(paired / "metrics.parquet")
+        real, identity.DATA = identity.DATA, Path(tmp)
+        try:
+            assert identity.from_harvest("P", "Results", ["S"]) == {"S": None}
+            # the cosecha's own name for a mother a retest respelt: what step 22 must ask for
+            assert identity.spelt("P", "Results", ["id1", "id2"]) == {"id1": "Strategy 1.2.3"}
+            assert identity.spelt("P", "CrossTF_Mothers", ["id1"]) == {}
+            asked = []
+            with mock.patch.object(closing.survivors, "about", lambda p: {"symbol": "X"}), \
+                    mock.patch.object(closing.call, "window", lambda *a: asked.append(a[-1]) or []):
+                closing.reading("P", "conditionalMap", "Results", pd.DataFrame(
+                    {"strategy": ["Strategy 1.2.3(1)", "Strategy 9(1)"], "identity": ["id1", "id2"]}))
+            assert asked == [["Strategy 1.2.3", "Strategy 9(1)"]], asked
+        finally:
+            identity.DATA = real
+
+
 def main() -> None:
     """Each source on its own, then the chain, then the names nobody holds."""
+    variants_cosecha()
     names = list(KNOWN)
     assert identity.lookup(PROJECT, "Results", names) == dict.fromkeys(names)
     # The cosecha names the build databank on `strategy_build` and its OOS one on `strategy`.

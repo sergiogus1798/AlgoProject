@@ -68,6 +68,29 @@ def from_harvest(project: str, databank: str, names: list[str],
     return found
 
 
+def spelt(project: str, databank: str, identities: list[str]) -> dict[str, str]:
+    """How the newest cosecha that paired this databank names each identity.
+
+    Args:
+        project: SQX project.
+        databank: Databank name, with spaces or underscores.
+        identities: Strategy identities.
+
+    Returns:
+        identity -> its `strategy` name there, only for those the cosecha holds; empty when no
+        cosecha paired the databank. A later databank respells a strategy («Strategy 1.2.3(1)»
+        after a retest), and a study run on the cosecha knows only the cosecha's name.
+    """
+    wanted = databank.replace("_", " ")
+    for path in sorted((DATA / "harvest" / project).glob("*/*/metrics.parquet"),
+                       key=lambda p: p.parent.name, reverse=True):
+        source = json.loads((path.parent / "manifest.json").read_text(encoding="utf-8"))["source"]
+        if wanted in (source.get("databank", "").replace("_", " "), source.get("oos_databank", "").replace("_", " ")):
+            names = pd.read_parquet(path, columns=["strategy"])["strategy"]
+            return {i: names[i] for i in identities if i in names.index}
+    return {}
+
+
 def from_export(folder: Path, names: list[str]) -> dict[str, str | None]:
     """Each named strategy's identity, from what an exporter left beside its export.
 
