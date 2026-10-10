@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from core import fanout
-from portfolio.common.construct.equity import blocks, paths, stopexit
+from portfolio.common.construct.equity import blocks, paths, stopexit, universe
 from portfolio.common.construct.mc import units
 
 # Set before the pool forks, so a worker reads the bars and the sources without pickling.
@@ -60,7 +60,7 @@ def _member(row: int) -> dict:
     s, factor = _STATE["sources"][identity], _STATE["factors"][identity]
     bars = _STATE["bars"][s["feed"]]
     s = {**s, "trades": stopexit.retime(s["trades"], bars, s["timeframe"])}
-    path = paths.minute_path(s["trades"], bars, s["point_value"])
+    path = paths.minute_path(s["trades"], bars, s["point_value"], universe._commission(s))
     got = blocks.blocks(path, s["clock"], _STATE["zone"], _STATE["grid"])
     _STATE["low1"][row] = got["low"][_STATE["keep"]] * factor
     _STATE["high1"][row] = got["high"][_STATE["keep"]] * factor

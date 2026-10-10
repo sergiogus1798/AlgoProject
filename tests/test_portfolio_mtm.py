@@ -174,6 +174,33 @@ def check_golden() -> None:
           f"blocks {t_blocks:.2f}s")
 
 
+def check_stage_b_charges_the_commission() -> None:
+    """Stage B's minute path is the universe's: the card's commission from the entry
+    (OPEN.md #88: it was built without, so its floating equity sat above SQX's)."""
+    from portfolio.common.construct.search import stageb_data as sb
+    bars, seen = _bars("2024-01-02 00:00", 3), []
+    was = (sb.stopexit.retime, sb.universe._commission, sb.paths.minute_path, sb.blocks.blocks,
+           sb.units.slots, sb.units.units)
+    sb.stopexit.retime = lambda trades, bars, timeframe: trades
+    sb.universe._commission = lambda s: "the card's"
+    sb.paths.minute_path = lambda *a: seen.append(a[3:])
+    sb.blocks.blocks = lambda *a: {"low": np.zeros(1), "high": np.zeros(1)}
+    sb.units.slots = sb.units.units = lambda *a: None
+    sb._STATE.update(members=["m"], factors={"m": 1.0}, bars={"F": bars}, zone="", grid=0,
+                     low1=np.zeros((1, 1)), high1=np.zeros((1, 1)), keep=slice(None),
+                     cut=(bars.index[0], bars.index[-1]), days=None, minutes=None,
+                     sources={"m": {"feed": "F", "trades": None, "timeframe": "M30",
+                                    "point_value": 1.0, "clock": ""}})
+    try:
+        sb._member(0)
+    finally:
+        (sb.stopexit.retime, sb.universe._commission, sb.paths.minute_path, sb.blocks.blocks,
+         sb.units.slots, sb.units.units) = was
+        sb._STATE.clear()
+    assert seen == [("the card's",)], seen
+    print("ok: stage B charges the commission")
+
+
 def main() -> None:
     """Run every check; a failure raises and exits non-zero."""
     check_long_across_days()
@@ -181,6 +208,7 @@ def main() -> None:
     check_weekend_gap()
     check_eetus_and_dst()
     check_blocks_and_carry()
+    check_stage_b_charges_the_commission()
     check_golden()
     print("ok")
 
