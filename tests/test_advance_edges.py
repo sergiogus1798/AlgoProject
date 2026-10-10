@@ -15,6 +15,7 @@ from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from tests.test_advance import CALLS, P, fakes, tree, write  # noqa: E402
+from sqx.projects import taskcap  # noqa: E402
 from ui.daemon import progress  # noqa: E402
 from ui.daemon.advance import api, preflight, run, sqxlog  # noqa: E402
 
@@ -161,12 +162,50 @@ def test_own_release(root: Path) -> None:
     assert workerguard.orphans(set()) == [], "a release is not an orphaned launch"
 
 
+def test_causes(root: Path) -> None:
+    """A failure report gets the Java exception under SQX's abort line: once however often SQX
+    repeats it, without its stack, and nothing an earlier run logged."""
+    write(root, ["java.lang.Exception: an earlier run's."])
+    offsets = sqxlog.mark(root)
+    assert sqxlog.causes(root, offsets) == ""
+    write(root, ["17:53:40.279 [Thread-1] INFO  ProgressEngine - CONSTRUCCION : Error while running project 'X'.",
+                 "java.lang.Exception: Strategy from template file requires 2 charts, 1 defined.",
+                 "\tat com.strategyquant.tradinglib.generator.StrategyTemplateGenerator.fixCharts(Unknown Source)"] * 2)
+    got = sqxlog.causes(root, offsets)
+    assert got.count("requires 2 charts, 1 defined.") == 1, got
+    assert "earlier" not in got and "fixCharts" not in got, got
+
+
+def test_hung_task_is_cut(root: Path) -> None:
+    """«MCR 6 Exits» opened and never closed (📓 three runs): past 3× its longest the wait
+    exits; a finished task and the build, which ends on its own time-limit, never do."""
+    taskcap._history = lambda: root / "task-durations.json"
+    open_, done = "ProgressEngine - {} : ================", "ProgressEngine - {} : Task finished in 500.0 s."
+    cap = taskcap.fresh()
+    for line in (open_.format("MCR 6 Exits"), done.format("MCR 6 Exits"), open_.format("MCR 6 Exits")):
+        taskcap.note(cap, line)
+    assert cap["longest"] == {"MCR 6 Exits": 500.0} and cap["task"] == "MCR 6 Exits"
+    taskcap.enforce(cap, "custodian", root)                        # just opened: inside the deadline
+    cap["since"] -= max(taskcap.FLOOR, taskcap.TIMES * 500) + 1
+    try:
+        taskcap.enforce(cap, "custodian", root)
+    except SystemExit as e:
+        assert "MCR 6 Exits" in str(e) and "no avanza" in str(e), e
+    else:
+        raise AssertionError("a task past its deadline was left running")
+    for line in (done.format("MCR 6 Exits"), open_.format(taskcap.stage.titles("build")[0])):
+        taskcap.note(cap, line)
+    cap["since"] -= 10 * taskcap.UNKNOWN
+    taskcap.enforce(cap, "custodian", root)                        # the build is never cut
+
+
 if __name__ == "__main__":
     for test in (test_start_refused, test_start_never_logged, test_start_fails_halfway,
                  test_across_midnight, test_no_template_skips_ledger,
                  test_second_refused_while_queued, test_copies_counted,
                  test_busy_names_the_lock_holder, test_own_release,
-                 test_ready_waits_for_the_load, test_restore_after_sync_race):
+                 test_ready_waits_for_the_load, test_restore_after_sync_race, test_causes,
+                 test_hung_task_is_cut):
         with tempfile.TemporaryDirectory() as scratch:
             began = time.time()
             test(Path(scratch))

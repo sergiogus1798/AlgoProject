@@ -7,6 +7,10 @@ from pathlib import Path
 from ui.daemon import progress
 
 KEEP = 20_000       # lines held; run_state needs the start, the task lines and the last percent
+# The line SQX writes under «Error while running project»: the Java exception, which is the cause
+# (📓 2026-10-07, «java.lang.Exception: Strategy from template file requires 2 charts, 1 defined.»).
+CAUSE = re.compile(r"^[\w.$]+(?:Exception|Error): ")
+CAUSES = 5          # distinct ones a failure report keeps, the newest
 
 
 def path(top: Path, day: date) -> Path:
@@ -77,3 +81,17 @@ def matching(top: Path, offsets: dict[Path, int], rx: re.Pattern[str]) -> list[s
             found += [line for raw in fh
                       if rx.search(line := raw.decode("utf-8", errors="replace"))]
     return found
+
+
+def causes(top: Path, offsets: dict[Path, int]) -> str:
+    """The Java exceptions SQX logged since `offsets`, as the block a failure report appends.
+
+    Args:
+        top: The install.
+        offsets: What `mark` returned before the run.
+
+    Returns:
+        A fenced markdown block of the newest distinct ones, or "" when SQX logged none.
+    """
+    found = list(dict.fromkeys(line.strip() for line in matching(top, offsets, CAUSE)))[-CAUSES:]
+    return "\nLo que SQX escribió en su log:\n\n```\n" + "\n".join(found) + "\n```\n" if found else ""
