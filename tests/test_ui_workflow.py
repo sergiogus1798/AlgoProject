@@ -123,6 +123,16 @@ def test_seal() -> None:
     assert on_disk["state"] == "sealed" and "backfill" in on_disk["why"]
 
 
+def test_a_16_5_with_a_mother_short_of_its_batch_is_pending(monkeypatch) -> None:
+    """📓 gorilla 2026-10-11: an OutOfMemoryError left 2 of 3 mothers collected, «done» sent the
+    rail to 18.5 and it died on the third's missing metrics.parquet."""
+    spec, ctx = {"n": "16.5", "title": "Variantes"}, {"sqx": None, "project": "P"}
+    monkeypatch.setattr(derive.sources, "variants", lambda p: (3, 2, "2026-10-11"))
+    assert derive.variants(spec, ctx)["state"] == "pending"
+    monkeypatch.setattr(derive.sources, "variants", lambda p: (3, 3, "2026-10-11"))
+    assert derive.variants(spec, ctx)["state"] == "done"
+
+
 def test_widget() -> None:
     """Proyecto's rail draws the real project and its cards, and one grab is saved."""
     data = _route_autonomous()

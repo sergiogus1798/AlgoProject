@@ -153,9 +153,16 @@ def variants(spec: dict, ctx: dict) -> dict:
         if live["state"] == "running":
             return live
     mothers, collected, day = sources.variants(ctx["project"])
-    if collected:
+    # Every mother, not just one: a run that died mid-16.5 leaves the mothers before it
+    # collected and the rest without their parquets, and «done» sent the rail on to 17-19,
+    # where the first study that opened the half-made batch failed (📓 gorilla, 2026-10-11:
+    # 2 of 3 collected after an OutOfMemoryError, 18.5 dead on the third).
+    if collected and collected == mothers:
         return step("done", f"{collected} de {mothers} madre(s) con su lote cosechado.",
                     mothers, collected, day)
+    if collected:
+        return step("pending", f"{collected} de {mothers} madre(s) con su lote cosechado: "
+                    f"el paso se rehace entero.", mothers, collected, day)
     return step("pending", f"{mothers} madre(s) preparadas, ninguna cosechada." if mothers
                 else "Sin lotes en strategyPermutations/ para este proyecto.")
 
