@@ -102,8 +102,12 @@ else
 fi
 
 # ---------------------------------------------------------------- 5. heap
-say "7. worker heap: sqcli ${SQCLI_XMX}, GUI 8g (in case you ever open it there), -Xms 1g"
-sed -i -e 's/^option -Xmx.*$/option -Xmx8g/' -e 's/^option -Xms.*$/option -Xms1g/' \
+# Both binaries get the role's heap: the single-session route the autopilot uses runs the GUI
+# one headless under Xvfb, so the GUI's heap IS the workflow's heap. It used to be 8g here, "in
+# case you ever open it there", and gorilla's custodian died of OutOfMemoryError retesting WFC 2
+# OOS1 at step 16.5 with 7 GB of usable heap on a 124 GB box (📓 2026-10-11).
+say "7. worker heap: sqcli and GUI ${SQCLI_XMX}, -Xms 1g"
+sed -i -e "s/^option -Xmx.*\$/option -Xmx${SQCLI_XMX}/" -e 's/^option -Xms.*$/option -Xms1g/' \
   "$WORKER/StrategyQuantX.config"
 sed -i 's/^option -Xms.*$/option -Xms1g/' "$WORKER/sqcli.config"
 grep -q 'Xmx' "$WORKER/sqcli.config" \
