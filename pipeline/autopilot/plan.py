@@ -1,11 +1,32 @@
 """What the autopilot runs, in WORKFLOW.md's order: the window's chain without its stops at the judging steps."""
 
 import re
+import sys
 from pathlib import Path
 
+from core.assetdata import load
+from core.paths import feed_quality_dir
 from pipeline.autopilot import tail
 from ui.daemon.launch import chainplan
 from ui.daemon.launch.steps import ELSEWHERE
+
+
+def scanned(asset: str, do: list[dict]) -> None:
+    """Refuse a plan that runs feedQuality on a feed step 4 never scanned, before any CPU is
+    spent: the study reads the scan's `summary.json`, and without it the run died at step 8,
+    after the build (📓 2026-10-04 NIKKEI225, 2026-10-05 USA500). The campaign asks the same
+    before it queues (`pipeline.campaign.plan`).
+
+    Args:
+        asset: The project's asset.
+        do: The plan's actions.
+    """
+    if not any("feedQuality" in a.get("tests", []) for a in do):
+        return
+    feed = load(asset)["sqx_symbol"]
+    if not (feed_quality_dir(feed) / "summary.json").exists():
+        sys.exit(f"el feed {feed} no está escaneado y el paso 8 lo lee: corre antes "
+                 f"`python3 -m studies.data.feedQuality.scan --feed {feed}`")
 
 
 def reopen(data: dict, out: Path) -> dict:
