@@ -47,7 +47,7 @@ def rail(pending_from: str = "16.5", family: str | None = "fam", **states: str) 
     (keys as `s18_5` for step 18.5)."""
     at = [s["n"] for s in STEPS].index(pending_from)
     over = {k[1:].replace("_", "."): v for k, v in states.items()}
-    return {"family": family, "steps": [
+    return {"asset": "X", "family": family, "steps": [
         {"n": s["n"], "title": s["title"], "kind": s["kind"], "stage": s.get("stage"),
          "state": over.get(s["n"], "done" if i < at else "pending"),
          "tests": [{"key": "wfm", "state": "done" if i < at else "pending"}] * (s["n"] == "19")}
@@ -70,6 +70,12 @@ def test_the_whole_tail_in_order() -> None:
     assert all(a["redo"] for a in got["do"] if a["kind"] == "blind")
     assert got["do"][-1]["params"] == MT5 and got["do"][12]["databank"] == "OOS"
     json.dumps(got)     # plan.json is written as it comes
+
+
+def test_until_wfm_stops_before_20() -> None:
+    """`--until wfm`: the block, the WFM and the ledger rows, then a clean stop before step 20."""
+    got = plan.plan(rail(), GIVEN | {"until": "wfm"})
+    assert kinds(got)[-2:] == [("19", "kept"), ("19", "ledger")] and got["stop"]["n"] == "20"
 
 
 def test_clean_stops() -> None:
@@ -221,7 +227,7 @@ def test_nobody_left_is_a_clean_end() -> None:
             "stop": {"n": "26", "why": "x"}}
     with tempfile.TemporaryDirectory() as tmp, \
             patched(run.advance, where=lambda p: {"role": "custodian"}, busy=lambda *a: []), \
-            patched(run.workflow, workflow=lambda p: {}), \
+            patched(run.workflow, workflow=lambda p: {"asset": "X"}), \
             patched(run.plan, plan=lambda data, given: todo), \
             patched(run.variants, run=lambda *a: started.append(a)), \
             patched(survivors, databank_dir=lambda *a: Path(tmp) / "empty"):

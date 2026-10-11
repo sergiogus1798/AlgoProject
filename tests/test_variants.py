@@ -93,6 +93,8 @@ def invariants() -> list[str]:
     if same[rewrite.PORTFOLIO].decode("utf-8").replace(
             f"<!--variant_id:{VARIANT_ID}-->", "") != portfolio:
         out.append("rewriting the parent's own tuple did not reproduce the parent")
+    if tuples.tuple_hash({"a": -0.0}) != tuples.tuple_hash({"a": 0}):
+        out.append("-0.0 and 0 hash apart: a plan holding -0.0 never matches its file")
     return out
 
 

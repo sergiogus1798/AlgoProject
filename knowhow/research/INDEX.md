@@ -49,6 +49,8 @@
 - `post-selection-bias` — Why is any statistic measured after filtering on the OOS biased?
 - `psr-dsr-two-conventions-jsharpe` — How does our PSR/MinTRL/DSR convention differ from the jsharpe package?
 - `random-entry-nulls` — Why does a monkey verdict depend more on the statistic than on the null?
+- `random-trader-benchmark-footprint` — Why was benchmark=0 the wrong null for PSR, and what does footprint() price instead?
+- `random-trader-oos-only` — Where may the random trader be read: OOS and additional markets only, never the main market's build?
 - `rank-score-rar-is-a-mean` — Why does the portfolio rank search (M3) pick a single strategy, K = 1, on a pool of similar strategies?
 - `regime-atr-is-lagged-one-day` — Must I shift engines.regimes.regime.atr by a day before using it?
 - `research-lessons` — What lessons apply to stop-fill simulations, range restriction and p-values at large n?
@@ -60,6 +62,7 @@
 - `stageb-selector-p-reads-high` — Which P(pass) of stage B's winner may be reported — the one that chose it, or a re-draw?
 - `step14-rules-on-selected-and-unselected` — Do step 14's T1/T2/T3 rules separate good strategies from unselected ones, and which should move?
 - `step8-gate-measured-on-six-populations` — How many monkeys and how many real strategies cross step 8, and which rules discriminate?
+- `steps-17-to-19-measured-on-eight-mothers` — How many mothers do steps 17, 18, 18.5 and 19 stop, and what does each step cost in time?
 - `surfaces-jaccard-lift-flip-null` — Do the surfaces' Jaccard lift, or «the mother inside the other markets' top decile», beat a zero-edge market?
 - `t1-optimistic-on-near-clones` — Why does stage B's trade bootstrap T1 give a higher P(pass) than D, T2 and stage A, and is it a bug?
 - `trade-filter-parameter-space` — What does a trade-count floor remove in parameter space before a surface is fitted?

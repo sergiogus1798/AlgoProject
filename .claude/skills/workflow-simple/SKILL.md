@@ -24,7 +24,7 @@ values, launch, wait, and report.
 If the owner did not give one of them, ask for it. `--smoke` only when he says it is a functional
 test (a `Test_` project): then only the readability rules judge.
 
-`--until <step>` (`oos`, `crossmarket`, `crosstf`, `mcretest`, `spp`) only when the owner asks for a
+`--until <step>` (`oos`, `crossmarket`, `crosstf`, `mcretest`, `spp`, `wfm` — `wfm` keeps every task, stops before step 20 and is repeated on `run`) only when the owner asks for a
 run that ends at that step: the project is created without the later steps' tasks and the run
 ends at that step's judge («Se para antes del paso N: el proyecto no lleva sus tareas»).
 

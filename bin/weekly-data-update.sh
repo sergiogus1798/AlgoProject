@@ -11,6 +11,8 @@
 #   4. python3 -m core.commission --refresh — every confirmed broker's `pct_now` from the
 #      close the update just brought in (owner, 2026-09-29). Runs even if step 2 found nothing
 #      new; does not stop the script on failure, since it only affects step 26/weeklyReconciler.
+#   5. python3 -m sqx.export.sync_bars — the M1 bar library the studies read, brought up to what
+#      step 2 fetched; a failure alerts and does not stop the script.
 #
 # Cron: Saturday 02:00 (it was 03:00, the audit's minute). bin/monthly-oos2-roll.sh starts five
 # minutes later and waits on this script's lock, so that order must hold.
@@ -90,6 +92,16 @@ rm -f "$OUT"
 
 echo "--- refreshing broker commission percentages"
 python3 -m core.commission --refresh || echo "--- core.commission --refresh failed, continuing"
+
+# Python's M1 library follows SQX's data: without this the studies price trades on bars that end
+# before the window `_policy.yaml` now declares (step 18.5 died on it, 2026-10-10)
+if [ "$rc" -eq 0 ]; then
+  echo "--- syncing the M1 bar library"
+  python3 -m sqx.export.sync_bars || {
+    . "$ROOT/bin/lib-agent-alert.sh"
+    agent_alert weekly-data-update "sqx.export.sync_bars failed: the bar library is behind SQX's data (rerun it by hand)"
+  }
+fi
 
 # the other servers read a copy of this data (owner, 2026-10-10): refresh it while nothing runs
 if [ "$rc" -eq 0 ]; then

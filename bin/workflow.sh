@@ -5,7 +5,7 @@
 # Usage:
 #   bin/workflow.sh simple   <PROJECT> <SYMBOL> <TF> <long|short> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke]
 #   bin/workflow.sh template <PROJECT> <SYMBOL> <TF> <TEMPLATE.sqx> <PALETTE|-> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke]
-#   bin/workflow.sh run      <PROJECT> [--smoke] [--restart]
+#   bin/workflow.sh run      <PROJECT> [--until wfm] [--smoke] [--restart]
 #   bin/workflow.sh plan     <PROJECT>
 #
 #   simple    creates a Simple Strategy project (no template, one side) on the custodian,
@@ -16,7 +16,8 @@
 #   plan      prints what `run` would do and runs nothing.
 #
 #   --until    (simple, template) the project carries no task after this step, and the run ends
-#              at its judge: oos (7), crossmarket (10), crosstf (12), mcretest (14), spp (16).
+#              at its judge: oos (7), crossmarket (10), crosstf (12), mcretest (14), spp (16), wfm (19: the
+#              project keeps every task and the run stops before step 20; repeat it on «run»).
 #   --smoke    functional test, Test_ projects only: only the readability rules judge.
 #   --restart  the old route (SQX starts and stops at every step, slower). Only when
 #              the single session fails.
@@ -44,7 +45,7 @@ if [[ $MODE == simple || $MODE == template ]]; then
     [[ $# -ge 9 ]] || die "$MODE necesita 8 argumentos tras el modo: mira el uso (bin/workflow.sh)"
     SYMBOL=$3; TF=$4; WHAT=$5; PALETTE=$6; PURPOSE=$7; N=$8; MIN=$9; shift 9
     UNTIL=; if [[ ${1:-} == --until ]]; then UNTIL=${2:-}; shift 2; fi
-    [[ -z $UNTIL || $UNTIL =~ ^(oos|crossmarket|crosstf|mcretest|spp)$ ]] || die "--until no conoce el paso «$UNTIL»"
+    [[ -z $UNTIL || $UNTIL =~ ^(oos|crossmarket|crosstf|mcretest|spp|wfm)$ ]] || die "--until no conoce el paso «$UNTIL»"
     if [[ $MODE == simple ]]; then
         [[ $WHAT =~ ^(long|short)$ ]] || die "el lado es long o short, no «$WHAT»"
         KIND=(--simple "$WHAT")
@@ -59,7 +60,9 @@ if [[ $MODE == simple || $MODE == template ]]; then
     python3 -m sqx.projects.builder "$P" --purpose "$PURPOSE" "${KIND[@]}" --symbol "$SYMBOL" \
         --role $ROLE --timeframe "$TF" --workflow --max-strategies "$N" --minutes "$MIN" \
         || die "el builder no creó $P"
-    if [[ -n $UNTIL ]]; then
+    if [[ $UNTIL == wfm ]]; then    # nothing to drop: the tail itself stops before step 20
+        FLAGS+=(--until wfm)
+    elif [[ -n $UNTIL ]]; then
         python3 -c "import sys; from pathlib import Path; from sqx.projects.workflow import trim; print('sin las tareas de después de', sys.argv[2] + ':', ', '.join(trim(Path(sys.argv[1]), sys.argv[2])))" "$CFX" "$UNTIL" \
             || die "no se recortó $P a «$UNTIL»"
     fi
@@ -70,6 +73,10 @@ if [[ $MODE == simple || $MODE == template ]]; then
     FLAGS+=(--own-log)          # this script wrote the worker's recent log itself
 else
     shift 2
+    if [[ ${1:-} == --until ]]; then    # only the tail's cut is repeated on a resume
+        [[ ${2:-} == wfm ]] || die "«run» sólo conoce --until wfm"
+        FLAGS+=(--until wfm); shift 2
+    fi
     [[ -e $CFX ]] || die "$P no existe en el $ROLE: créalo con «simple» o «template»"
 fi
 for flag in "$@"; do

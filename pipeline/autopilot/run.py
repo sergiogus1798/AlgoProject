@@ -17,11 +17,9 @@ from core.assetdata import AUTONOMOUS
 from core.paths import DATA
 from pipeline.autopilot import blind, call, judge, plan, tail, tailrun, timing, variants
 from pipeline.autopilot.survivors import Done, mothers
-from ui.daemon.advance import preflight as advance
+from ui.daemon.advance import preflight as advance, sqxlog
 from sqx.projects import live
-from ui.daemon.launch import chain, liverun, preflight
-from ui.daemon.launch import steps as launchsteps
-from ui.daemon.launch import run as launcher
+from ui.daemon.launch import chain, liverun, preflight, run as launcher, steps as launchsteps
 from ui.daemon.workflow import api as workflow
 
 RUNS = DATA / "autopilot"
@@ -142,11 +140,13 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
     if busy:
         sys.exit("el worker no está libre:\n  " + "\n  ".join(busy))
     cfg = judge.settings()
-    todo = plan.plan(plan.reopen(workflow.workflow(project), out), given)
+    data = plan.reopen(workflow.workflow(project), out)
+    todo = plan.plan(data, given)
+    plan.scanned(data["asset"], todo["do"])
     for skip in todo.get("skipped", []):
         print(f"paso {skip['n']} saltado: {skip['why']}", flush=True)
     (out / "plan.json").write_text(json.dumps(todo, indent=1, ensure_ascii=False), encoding="utf-8")
-    done, filled, ran_sqx, bad, t0 = [], set(), own_log, None, time.time()
+    done, filled, ran_sqx, bad, failed_at, t0, logs = [], set(), own_log, None, "", time.time(), sqxlog.mark(advance.WORKERS[where["role"]]["path"])
     actions = after_cut(merged(todo["do"]), cfg)
     if on_live:
         began = time.monotonic()
@@ -202,9 +202,9 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
         bad = dict(actions[at], since=t0) if at < len(actions) and actions[at]["kind"] == "sqx" else None
         (out / "fallo.md").write_text(
             f"# Fallo en el paso {n}\n\n{failed}\n\n```\n"
-            + "".join(traceback.format_exc().splitlines(keepends=True)[-TAIL:]) + "```\n",
-            encoding="utf-8")
-        summary(out, project, done, todo["stop"], error=n)
+            + "".join(traceback.format_exc().splitlines(keepends=True)[-TAIL:]) + "```\n"
+            + sqxlog.causes(advance.WORKERS[where["role"]]["path"], logs), encoding="utf-8")
+        summary(out, project, done, todo["stop"], error=(failed_at := n))
         mark(out, n, "falló")
         status(out, f"FALLO en el paso {n}: {str(failed).splitlines()[0] if str(failed) else ''}")
         raise
@@ -215,7 +215,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
             done.append({"n": "-", "kind": "parada", "s": time.monotonic() - began,
                          "what": "parada y export final"})
             phases.row("accion", "- parada", done[-1]["s"])
-            summary(out, project, done, todo["stop"])
+            summary(out, project, done, todo["stop"], error=failed_at)   # the stop's row must not erase «Falló»
     status(out, f"FIN · {len(done)} acciones · resumen en {out / 'resumen.md'}")
 
 

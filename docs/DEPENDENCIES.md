@@ -104,7 +104,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `engines/market/feed/scale.py` | 116 | The size of an ordinary one-minute move at each hour of the week, trailing, with a floor. | — | numpy, pandas |
 | `engines/market/feed/session.py` | 92 | A feed's trading week as a minute-of-week mask: deduced from the feed, written and read as text. | engines | numpy |
 | `engines/market/feed/spikes.py` | 84 | Spikes on the close and on the wick, in units of the bar's own scale, and whether they reverted. | — | numpy |
-| `engines/market/reprice.py` | 208 | The one repricer: a market-order trade's money P/L from raw bar opens and the task's declared costs, as SQX charges them. | core | numpy, pandas |
+| `engines/market/reprice.py` | 209 | The one repricer: a market-order trade's money P/L from raw bar opens and the task's declared costs, as SQX charges them. | core | numpy, pandas |
 | `engines/nulls/__init__.py` | 1 | The null engine: random traders with the same opportunity set. | — | — |
 | `engines/nulls/barrier.py` | 80 | The triple-barrier exit: where a trade leaves, given a stop, a target and a time limit. | engines | numpy |
 | `engines/nulls/filter.py` | 58 | The random-filter benchmark: is a filter better than dropping the same share at random? | — | numpy, pandas |
@@ -243,7 +243,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `pipeline/autopilot/resume.py` | 106 | Bring a retired project back from the strategy store, ready for `bin/workflow.sh run` at step 13. | core, sqx | — |
 | `pipeline/autopilot/run.py` | 250 | Autopilot: one project's workflow, SQX and Python, judging and cutting at each judging step without stopping. | core, pipeline, sqx, ui | — |
 | `pipeline/autopilot/survivors.py` | 68 | Who walks the tail: the strategies left in the databank the last judged step cut. | core, sqx, ui | pandas |
-| `pipeline/autopilot/tail.py` | 166 | The autopilot's plan from step 17 on: the blind block, step 20 judged, the closing steps, the finalists. | — | — |
+| `pipeline/autopilot/tail.py` | 170 | The autopilot's plan from step 17 on: the blind block, step 20 judged, the closing steps, the finalists. | — | — |
 | `pipeline/autopilot/tailrun.py` | 55 | One action of the tail's plan, run: the dispatch from its kind to the module that does it. | pipeline | — |
 | `pipeline/autopilot/tffacts.py` | 49 | Step 12's redesigned facts (encargo 47): `crossTF.tf.*`, read from the two files the study writes beside the old reading. | — | pandas |
 | `pipeline/autopilot/timing.py` | 66 | Where a run's wall clock went: `fases.csv` (`core.phases`) folded into one row per action, SQX apart from everything around it. | core | pandas |
@@ -525,7 +525,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/variants/spp.py` | 157 | Run one mother's SPP reconnaissance on the custodian and export the permutation table. | core, sqx | — |
 | `sqx/variants/stopgrid.py` | 96 | Fabricate each mother's stop-loss batch: the original, the X = 1000 probe and the grid's X. | sqx | pandas |
 | `sqx/variants/tooltips.py` | 38 | One sentence per config.yaml knob of the variant factory, for the window's Configuración SQX › WFC. | — | — |
-| `sqx/variants/tuples.py` | 59 | The canonical form of a parameter tuple and its hash. Both ends of the factory use it. | — | — |
+| `sqx/variants/tuples.py` | 60 | The canonical form of a parameter tuple and its hash. Both ends of the factory use it. | — | — |
 | `sqx/variants/united.py` | 184 | Per-segment and per-market metrics read off the .sqx, and the exact union of any of them. | core, sqx | numpy, pandas |
 | `sqx/variants/varianttrades.py` | 76 | Every variant's trades on the three legs and every market, in one `variant_trades.parquet` per batch. | core, sqx | pandas |
 | `studies/breakage/mcRetest/contract/__init__.py` | 1 | The Monte Carlo Retest result read as the contract's blocks. | — | — |
@@ -937,7 +937,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_autopilot_smoke.py` | 35 | The autopilot's smoke mode: only the readability rules judge, and only on a Test_ project. | pipeline | pytest |
 | `tests/test_autopilot_step13.py` | 124 | Step 13 since 2026-10-07: the autopilot plans T1's neighbour batch right before the MC Retest | pipeline, sqx, ui | pytest, yaml |
 | `tests/test_autopilot_step14_rules.py` | 91 | Step 14's rules in criteria.yaml (T1, T2, T3; provisional, owner 2026-10-07) through the judge's | pipeline, studies | pandas, yaml |
-| `tests/test_autopilot_tail.py` | 244 | The autopilot's tail, 17 → 26, on hand-built rails and a ledger in a temp folder: the order | ledger, pipeline, ui | pandas |
+| `tests/test_autopilot_tail.py` | 250 | The autopilot's tail, 17 → 26, on hand-built rails and a ledger in a temp folder: the order | ledger, pipeline, ui | pandas |
 | `tests/test_autopilot_timing.py` | 40 | The autopilot's timing table: a nested phase's seconds leave its parent, and SQX stays apart. | core, pipeline | pytest |
 | `tests/test_autopilot_variants_order.py` | 42 | Step 16.5's order of work: live, every pilot first on the main market alone; restart, as it was. | pipeline | pytest |
 | `tests/test_autopilot_zero.py` | 131 | Zero survivors end the autopilot cleanly, a missing fact goes where its rule says, the judge | pipeline, sqx, tests | pandas |
@@ -1172,7 +1172,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_ui_tearsheet.py` | 197 | The Ficha: its two routes on the real cosecha and on synthetic ones, and its drawing offscreen. | core, ui | PySide6, fastapi, pandas |
 | `tests/test_ui_workflow.py` | 202 | The workflow rail, both sides: the route on a real project, the blind door, Proyecto's rail. | core, ledger, ui | PySide6, fastapi |
 | `tests/test_variant_excess.py` | 136 | The shared excess: per trade it is the repricer minus the drift term, per year its sum over the | engines, studies | numpy, pandas, pytest |
-| `tests/test_variants.py` | 122 | Golden-file test for sqx.variants: a rewriter that breaks silently fabricates a wrong study. | sqx | — |
+| `tests/test_variants.py` | 124 | Golden-file test for sqx.variants: a rewriter that breaks silently fabricates a wrong study. | sqx | — |
 | `tests/test_variants_design.py` | 91 | Known-answer test for the variant design: Latin hypercube, classes, size, controls (encargo 48 F). | sqx, test_variants_pilot | numpy, pandas |
 | `tests/test_variants_harness.py` | 127 | harness.write touches only the task its `kind` names by title, never another task's. | sqx | — |
 | `tests/test_variants_panel.py` | 70 | The panel's three compositions and its variant filters, on a synthetic C3 table. | engines, ledger | pandas, pytest |

@@ -26,6 +26,8 @@ def flags(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--panel", action="append", default=[], metavar="PASO=DATABANK",
                     help="el databank que lee un paso de panel: 21 (exposición, su export con "
                          "OOS1) y 22 (mapa condicional, su cosecha); se repite")
+    ap.add_argument("--until", choices=["wfm"],
+                    help="el run acaba tras el paso 19 (la WFM, su lectura y las filas del ledger)")
     ap.add_argument("--mt5-from", help="paso 26: primer día del backtest, YYYY-MM-DD")
     ap.add_argument("--mt5-to", help="paso 26: último día, YYYY-MM-DD")
     ap.add_argument("--mt5-model", help="paso 26: el modelo del tester de MT5")
@@ -37,7 +39,7 @@ def flags(ap: argparse.ArgumentParser) -> None:
 def inputs(a: argparse.Namespace, cfg: dict) -> dict:
     """What `walk` needs beside the rail: the panel databanks, step 26's parameters as its
     agent takes them, and the steps `criteria.yaml` gives rules to."""
-    return {"panel": dict(p.split("=", 1) for p in a.panel),
+    return {"panel": dict(p.split("=", 1) for p in a.panel), "until": a.until,
             "mt5": {"start": a.mt5_from, "end": a.mt5_to, "model": a.mt5_model,
                     "firms": a.mt5_firms.split(",") if a.mt5_firms else [],
                     "ticks": a.mt5_real_ticks},
@@ -63,7 +65,7 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
         WFM in SQX, its reading, what the funding module keeps of each that passed it (`kept`)
         and 19 judged — a judge only for a step `criteria.yaml` gives rules; the ledger rows
         of 17-19 and the door, step 20 and its judge, 21-22 on the
-        databanks given, 23 and 24 in SQX, 25, the finalists, 26. A step done is skipped;
+        databanks given, 23 and 24 in SQX, 25, the finalists, 26 — or, with `until: wfm`, a clean stop before 20. A step done is skipped;
         the block's looks are planned whenever any of 17-19 is not, because the rail calls a
         step done as soon as ONE mother has its result. 20, and any of 21-25 with rules, is
         judged right after it runs. It stops, cleanly, at a step in marcha, without a family, at 21 or 22 without their databank, and before 26
@@ -140,6 +142,8 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
         return halt("20", "está en marcha")
     if due("20"):
         add("19", "ledger", title="filas de 17-19 en el ledger")
+    if given.get("until") == "wfm":
+        return halt("20", "--until wfm: el run acaba tras la WFM")
     visit("20", "joint", tests=["blindJoint"])
     for n, key in PANEL.items():
         if n == running:

@@ -15,9 +15,10 @@ def canonical(values: dict[str, float]) -> str:
         `name=value` pairs sorted by name and joined by `;`, the value formatted with
         `%g`. The format is type-free on purpose: the design holds 67.0 and the strategy
         file holds 67, and a hash that told those apart would report every variant as a
-        mismatch between the plan and the disk.
+        mismatch between the plan and the disk. `+ 0.0` folds -0.0 into 0: a design that
+        rounds a tiny negative to an enum's first value holds -0.0, and the file holds 0.
     """
-    return ";".join(f"{name}={values[name]:g}" for name in sorted(values))
+    return ";".join(f"{name}={values[name] + 0.0:g}" for name in sorted(values))
 
 
 def tuple_hash(values: dict[str, float]) -> str:

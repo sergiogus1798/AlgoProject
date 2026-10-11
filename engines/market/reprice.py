@@ -201,7 +201,8 @@ def real(trades: pd.DataFrame, bars: pd.DataFrame, costs: Costs,
             f"{bad.sum()} trades the common repricer cannot fill (a stamp that is no bar's, "
             f"an unknown Close type or a price exit outside its bar): strategies "
             f"{trades.loc[bad, 'identity'].unique()[:5].tolist()}, first at "
-            f"{trades.loc[bad, 'Close time'].min()}")
+            f"{trades.loc[bad, 'Close time'].min()}; the bars end at {bars.index[-1]} "
+            f"(behind the trades: python3 -m sqx.export.sync_bars)")
     net, cost = pnl(fills(bars, enter), np.where(np.isnan(stop), fills(bars, leave), stop),
                     *time, side, trades["Size"].to_numpy(), costs)
     return pd.DataFrame({"enter": enter, "leave": leave, "side": side, "stop": stop,
