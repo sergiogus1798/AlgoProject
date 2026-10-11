@@ -89,7 +89,17 @@ def main() -> None:
             print(f"  MAL  {identity[:12]}  " + "; ".join(bad))
         sys.exit(1 if got["problems"] or got["no_sqx"] else 0)
     wrong = 0
-    for identity in (getattr(a, "identity", None) or verify.stored()):
+    # Through `resolve`, like `open`: what `list` prints is `identity[:12]`, and verifying that
+    # prefix used to report the strategy as broken — «el manifiesto nombra otra identidad;
+    # strategy.sqx no tiene la identidad de su carpeta» — instead of saying it is a prefix
+    # (📓 2026-10-11). A word that names nothing stops the command rather than verifying all.
+    chosen = []
+    for token in getattr(a, "identity", None) or []:
+        hit = resolve(token)
+        if not hit:
+            sys.exit(f"{token}: nada guardado empieza así ni se llama así")
+        chosen += hit
+    for identity in (chosen or verify.stored()):
         doc, bad = write.manifest(identity), verify.check(identity) if a.verb == "verify" else []
         o, steps = doc.get("origin", {}), doc.get("steps", {})
         last = max(steps, key=float) if steps else "?"

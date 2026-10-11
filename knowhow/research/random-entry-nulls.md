@@ -1,7 +1,7 @@
 ---
 q: Why does a monkey verdict depend more on the statistic than on the null?
-kw: monkey random-entry null what it measures, studies/readings/monkey/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed PYTHONHASHSEED, PSR benchmark 0 wrong null OPEN.md #71 crossmarket monteCarlo mcRetest, footprint noise bug total variance, random trader only vs OOS never vs build IS owner 2026-09-29
-tag: 🔬  date: 2026-09-29  see: research/hardest-null, research/entry-vs-chance, research/post-selection-bias, research/mintrl-explosion-is-correct
+kw: monkey random-entry null what it measures, studies/readings/monkey/ statistic choice sharpe net dd pf retdd, sizing channel ATR, monkey bar set by cost not drift, MinTRL vs monkey, PSR approximation tail, nulls seed PYTHONHASHSEED
+tag: 🔬  date: 2026-10-11  see: research/random-trader-benchmark-footprint, research/random-trader-oos-only, research/hardest-null, research/entry-vs-chance, research/post-selection-bias, research/mintrl-explosion-is-correct
 ---
 # A monkey verdict depends on the statistic far more than on the null: report all five
 `engines/nulls/config.yaml` lists five statistics and chooses none; never report one. Sharpe is scale-invariant, so
@@ -9,14 +9,9 @@ being calmer than chance counts as edge under `sharpe` but not under `net`. Beat
 than beating zero (its mean is cost-negative). Use fill `open-open` (reconciled). Normal approximation (PSR/MinTRL)
 is fine for a gate at p≈0.05, not for the extreme tail after multiplicity — BH on the short list uses the simulation.
 
-**2026-09-29 (OPEN.md #71):** `benchmark=0` was the wrong null; `footprint()` now prices a same-footprint random trader against the market's own bar-to-bar noise (law of total variance), shared by `crossmarket`, `monteCarlo` and `mcRetest` — see Evidence.
-**Same day, second rule (owner):** the random trader may only be read on OOS or on an additional market, never the main market's build — it already selected the strategy. Enforced in `monteCarlo`, `mcRetest`, `readings/monkey` (IST refused on the own market); `crossmarket`, `gate.monkey` already were. Audit below Evidence.
+Two later rules split into their own cards: the benchmark (`random-trader-benchmark-footprint`) and where the random trader may be read (`random-trader-oos-only`).
 
 ## Evidence
-
-**Footprint fix, 🔬 2026-09-29.** mcRetest, `Test_USDJPY_donchianUpperCrossUp_M30` (real ingest, read-only, session algoproject-36's data): before, benchmark +2.0 to +2.2/strategy, `p_positive` 1.0→0.0 for all five checked; after, benchmark +0.004 to +0.006, `p_positive` back to 1.0. `analytic_sharpe`'s own `psr` stays ≈1.0 either side — a separate scale mismatch (summed, not per-trade, `returns`), still open.
-crossmarket, real USDJPY M30 bars 2018–2022 through the study's own `backtest.setting()`/`exposure.run()` (no XAUUSD trade harvest on disk to run the real pipeline on): before, benchmark **-11.18** (mu_m≈+2e-6/bar, near-zero drift, so a near-constant series driven to an extreme Sharpe by holding-time alone), `psr=1.000000`; after (sigma_m≈7.1e-4/bar), benchmark **-0.070**, `psr=0.556` against an observed Sharpe of -0.062 — plausible instead of saturated.
-
 `studies/readings/monkey/` on `raw/XAUUSD/MC_Trades/2026-09-19, deleted 2026-09-25/`: 757 strategies, 960,705 trades, sample `OOS1` (2018–2022, 320,423 trades),
 2,500 draws per rung, fill `open-open` reconciled (median 0.999983, min 0.99945). XAUUSD costs PROVISIONAL.
 - ⚠️ Not: close-close fill — 4–13 % lost correlation moved percentages by 10–26 pp with no alarm.
@@ -49,15 +44,3 @@ Not: `default_rng([seed, abs(hash(rung)) % 2**32])` — `hash()` of a str is per
 so `nulls.seed` fixed nothing; two `studies.screening.gate.report` runs gave 227 vs 229 survivors (identical with `PYTHONHASHSEED=0`).
 p-values stored before the fix came from other monkeys; vs new ones over 15,140 p, difference within Monte Carlo error.
 
-**OOS-only audit, 2026-09-29 (owner).** `monteCarlo.run._family_e()` restricts to
-`stream.restrict(source, stream.samples(source)["OOS"])` before `footprint()`/`psr()` (was: whole
-IS+OOS); < `confidence.MEAN_PROVISIONAL` OOS trades → NaN + `data`/`oos_thin` veto, never IS.
-`mcRetest.measure.originals.read()` keeps `sample == "OOS"` only from the harvest (was: both
-sides); < `run.MIN_OOS_TRADES` (5) → printed warning, still computed. KAT:
-`tests/test_montecarlo_oos.py`. `crossmarket` already compliant: additional markets run their
-whole window (never selected on); the main market's full backtest shows only as "referencia",
-excluded from the verdict; the OOS reading was `orchestrate/stretch.py`'s `oos_tab` (deleted 2026-10-07, encargo 46; see git history before that commit).
-`gate.monkey` already filters `sample == "OOS"`. `monkey.report --sample` defaults `OOS1`; not a
-hard refusal — an additional market legitimately reads `IST` too (never selected on either
-sample), so its help text spells out the distinction. `crossTF` reads a retest task's own
-window, never a build task's — no mixing found.

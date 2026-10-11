@@ -63,7 +63,8 @@ with tempfile.TemporaryDirectory() as tmp:
         assert (out / "strategies" / "Strategy 1.sqx").exists(), mod.__name__
     assert manifest.read(out)["command"].startswith("export_trades.py")
     assert sorted(p.name for p in out.iterdir()) == [
-        "identity.csv", "manifest.json", "spp", "strategies", "timeframes.csv", "trades.parquet"]
+        "identity.csv", "lineage.csv", "manifest.json", "spp", "strategies", "timeframes.csv",
+        "trades.parquet"]
 
     # The audit: a manifest in the folder that holds the data, or above it, covers it; a
     # half-finished export (CSVs, no manifest) is reported once, by its dated folder.

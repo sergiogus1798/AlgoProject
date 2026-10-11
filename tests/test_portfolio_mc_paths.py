@@ -35,7 +35,7 @@ def make_trades(rng: np.random.Generator, bars: pd.DataFrame, edge: float,
         side = 1 if rng.random() < 0.5 else -1
         rows.append({"Type": "Buy" if side > 0 else "Sell", "Open time": t[pos], "Close time": t[c],
                      "Open price": close[pos], "Close price": close[c - 1], "Size": 1.0,
-                     "Close type": "Exit Signal", "Profit/Loss": side * (close[c - 1] - close[pos]) * 100 + edge})
+                     "Close type": "Exit Signal", "sample": "", "Profit/Loss": side * (close[c - 1] - close[pos]) * 100 + edge})
         pos = c + int(rng.integers(*gap))
     return pd.DataFrame(rows)
 
@@ -57,7 +57,7 @@ def bar_world(seed: int, n_members: int, start: str, end: str, edge: float = 0.0
         feed = "FA" if clones or i % 2 == 0 else "FB"
         trades = shared if clones else make_trades(rng, bars[feed], edge)
         name = f"m{i:02d}"
-        sources[name] = {"trades": trades, "feed": feed, "timeframe": "M30", "clock": "UTC", "point_value": 100.0}
+        sources[name] = {"trades": trades, "feed": feed, "timeframe": "M30", "clock": "UTC", "point_value": 100.0, "symbol": "XAUUSD"}
         path = eq_paths.minute_path(trades, bars[feed], 100.0)
         table = eq_days.server_days(path, "UTC", zone)
         daily[name] = eq_days.daily_pnl(table)

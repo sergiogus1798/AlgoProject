@@ -126,6 +126,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 109 | 🟠 | mcRetest «Estrategia a estrategia» table fails to draw in the window: 11 help entries for 8 columns | OPEN.md |
 | 110 | 🟡 | Two-chart strategies: steps 10, 13-18.5 not yet run in SQX on a two-chart mother (wired in `stage.just`, verified through step 8 and step 26) | OPEN.md |
 | 111 | 🟢 | A study that fails halfway leaves partial results and the resume treats its step as done | docs/OPEN-closed.md |
+| 112 | 🟡 | Knowhow weekly pass 2026-10-11: cards in the wrong domain (market-profile, perf, locations), one open corpus contradiction | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -211,7 +212,7 @@ not the bar file's.
    `diagnostics.max_fill_error`. Both verified to still fire (a feed displaced 3 ATR, 6% of entries
    moved half an ATR, H1 bars under an M30 backtest). On the three real markets both are now silent,
    which is correct: there are no intrabar fills in this fleet.
-   `studies/transfer/crossmarket/POSSIBLE_IMPROVEMENTS.md` §4 holds every measurement.
+   `studies/transfer/crossmarket/POSSIBLE_IMPROVEMENTS.md` §4 held every measurement (file gone by 2026-10-11 — the numbers are in git history).
 8. ⚪ **M1 execution was considered for the random-entry study and is not needed by this fleet.**
    Asked 2026-09-21. It would fix nothing here: no strategy has a price exit, every exit lands on a
    bar open, the zero-duration trades share one timestamp (no interval exists at any resolution),
@@ -935,3 +936,15 @@ those tasks: read its SQX log for `requires 2 charts` if one aborts.
 `tests/test_mt5verify.py` fails on its own since the feed rename of 2026-10-01: it asks the frozen
 donor for `XAUUSD_M1` and the donor still carries `XAUUSD_DukasM1_Infinox`. Unrelated to charts.
 
+## 112. 🟡 Knowhow weekly pass 2026-10-11: cards in the wrong domain, one open contradiction
+
+Found by the weekly quality pass (one domain at a time; `eng`, `costs`, `locations`, `mt5`, `authoring`, `columns`, `conditions`, `perf`, `ui`, `pipeline` read by `q:` lines only, no overlaps worth a merge). Not moved — domain tables are the owner's structure.
+
+**Filed in the wrong domain:** 🤔 (judged from the `q:` line)
+- `market-profile/` holds literature-scout facts: `literature-same-paper-short-title`, `literature-scout-yield`, `paper-search-sources`, `verbatim-quote-matching` → `research/` (or a literature domain); `typed-failure-causes` (autopilot) → `pipeline/`; `hypothesis-sheet-vs-build`, `ideas-are-ledger-trials`, `reviewer-adds-no-trials` are idea-expert facts, not market-profile.
+- `perf/window-waits-off-gui-thread` is a Qt/GUI-thread fact → `ui/`.
+- `locations/live-ea-magic-numbers` → `mt5/`; `locations/wfc-databanks-hold-variants` → `databanks/`.
+
+**Contradiction left open:** `locations/xauusd-corpus` (🤔, 231 strategies, «every exit capped at 8 bars», old project's export) vs `export/exits-and-m1-library` (🔬, 757-strategy `MC_Trades`: 19.55 % of trades close on `Exit Signal`). They describe two different corpora; the first card's heading still reads as general. Confirm with the owner which corpus is the live one, then retitle or retire the old card (its data cannot be reproduced, OPEN §12).
+
+**Stale words in `perf/server-cores-and-ram`:** its `kw:` still names «Xmx108g» and the `smt-in-sqx-retest` body speaks of the master at `-1`; heaps are now 24/16/80 g (`perf/ram-budget`). 🤔 Re-measure core counts on the leaseWeb machine before editing.

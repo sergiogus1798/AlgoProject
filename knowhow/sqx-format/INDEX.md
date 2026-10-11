@@ -8,7 +8,7 @@
 - `fixed-distance-keys` — Which keys in strategy_Portfolio.xml mark a fixed pips distance (stop, target, trailing, break-even, filter)?
 - `grafting-a-stop-loss` — How do I graft a stop loss into a strategy: which two text substitutions turn `SLPT.None` into `ATRBasedValue`?
 - `how-a-strategy-was-tested` — How do I find the task a .sqx was last tested with, through `lastSettings.xml`?
-- `identity-differs-across-databanks` — Why does the identity a study records for a strategy change between databanks of one project?
+- `identity-differs-across-databanks` — Why does the identity a study records for a strategy change between databanks of one project (only WFM does)?
 - `leg-curve-warmup` — Why does each leg's curve open about two months before its segment, with zero P&L?
 - `loaded-name-is-filename` — How does SQX name a loaded strategy, and what happens on a filename collision?
 - `mc-retest-reconstruction` — Which MC Retest metrics can be reconstructed exactly from a simulation's P/L vector?

@@ -13,6 +13,7 @@
 - `resumable-jobs` — What three separate facts must hold for a resumable job to skip its work?
 - `step10-p1-p7-never-have-data` — Why can step 10 never give "Pasa"?
 - `step12-zbuild-not-centred-and-d1-sister-empty` — Why is step 12's z_build of scaled sisters not centred on 0, and why is the D1 sister empty?
+- `step16-5-incomplete-batch-reruns-and-dies-later` — Why does a run that died mid step 16.5 die again on resume, at step 18.5?
 - `store-second-identity-is-an-alias` — Why did a stored strategy lack its crossmarket and its step-12 sisters, which sat under another identity?
 - `study-partial-evidence-counts-as-done` — Why does a resume skip a study step that crashed halfway and leave it with partial results?
 - `thresholds-live-in-the-ledger` — Where does a threshold's number live, and what does config.yaml hold instead?

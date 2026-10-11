@@ -4,6 +4,7 @@
 - `checker-blind-spots` — Why does checks.py miss absolute paths in bin/*.sh, and why does mapfile < <(...) lose the exit status?
 - `claude-hooks-guard` — Which commands does .claude/hooks/guard.py block, and which does it let through?
 - `claude-permission-path-syntax` — Why does a deny rule like Edit(**/project.cfx) not block anything outside this repo?
+- `clean-clone-differs-from-the-working-tree` — Why does code pass on leaseWeb but fail on a fresh clone (gorilla), and what do I fix?
 - `cron-schedule-no-shared-minute` — How do I pick a cron minute that no other job uses, and which job must start after which?
 - `crontab-long-tmpdir-path` — Why does `crontab <file>` fail with a wrong filename when the file sits in a long scratchpad path?
 - `decay-needs-build-and-retest` — Why are sharpe_is and retention empty in the decay study when run on a workflow's OOS databank?

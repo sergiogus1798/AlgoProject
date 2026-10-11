@@ -73,7 +73,7 @@ def test_the_judge_that_cuts_everybody_signs_the_ledger_and_the_run_ends_in_fin(
                 "stop": {"n": "26", "why": "x"}}
         out = Path(tmp)
         with patched(run.advance, where=lambda p: {"role": "custodian"}, busy=lambda *a: []), \
-                patched(run.workflow, workflow=lambda p: {}), \
+                patched(run.workflow, workflow=lambda p: {"asset": "X"}), \
                 patched(run.plan, plan=lambda data, given: todo), \
                 patched(run.judge, judge=lambda *a: got, settings=lambda: cfg), \
                 patched(run, sqx_step=lambda *a: started.append(a)):
@@ -100,7 +100,32 @@ def test_wait_fails_on_the_abort_line_instead_of_returning_it() -> None:
             assert time.monotonic() - began < 2
 
 
+def test_resume_takes_only_whole_strategies_of_that_project() -> None:
+    """`resume.chosen`: a word naming none or two, a torn strategy, another project's and two
+    of one name are each refused before any project is rebuilt."""
+    from pipeline.autopilot import resume
+    store = {"a": ["A1"], "b": ["B1"], "two": ["A1", "B1"], "torn": ["T1"], "other": ["O1"]}
+    origin = {"A1": ("P", "S 1"), "B1": ("P", "S 1"), "T1": ("P", "S 2"), "O1": ("Q", "S 3")}
+    was = resume.store.resolve, resume.verify.check, resume.write.manifest
+    resume.store.resolve = lambda token: store.get(token, [])
+    resume.verify.check = lambda identity: ["sin trades"] if identity == "T1" else []
+    resume.write.manifest = lambda identity: {"origin": dict(zip(("project", "strategy"), origin[identity]))}
+    try:
+        assert resume.chosen(["a"], "P") == {"A1": "S 1"}
+        for words, said in ((["none"], "nombra 0"), (["two"], "nombra 2"), (["torn"], "no está entera"),
+                            (["other"], "salió de Q"), (["a", "b"], "mismo nombre")):
+            try:
+                resume.chosen(words, "P")
+            except SystemExit as e:
+                assert said in str(e), e
+            else:
+                raise AssertionError(f"{words} was taken")
+    finally:
+        resume.store.resolve, resume.verify.check, resume.write.manifest = was
+
+
 if __name__ == "__main__":
     test_a_missing_fact_goes_where_its_rule_says()
     test_the_judge_that_cuts_everybody_signs_the_ledger_and_the_run_ends_in_fin()
     test_wait_fails_on_the_abort_line_instead_of_returning_it()
+    test_resume_takes_only_whole_strategies_of_that_project()

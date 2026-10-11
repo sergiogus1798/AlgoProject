@@ -5,8 +5,15 @@ config/machine.yaml
 *.csv
 *.parquet
 *.sqx
-# The golden-test fixture is the one exception: 28 KB, and the .sqx parser needs it.
+# The exceptions are code, not data: what a clean clone needs to run and to pass its tests.
+# Until 2026-10-11 only the first was here, and gorilla — which only ever gets `git pull` — had
+# no template skeletons (sqx/templates/build.py reads them), no fleet fixtures and no symbol
+# table: 344 KB in all.
 !tests/fixtures/*.sqx
+!tests/fixtures/**/*.csv
+!tests/fixtures/**/*.parquet
+!tools/sqx-lab/**/skeletons/*.sqx
+!mt5/symbols.csv
 *.cfx.bak
 
 # Throwaway work.

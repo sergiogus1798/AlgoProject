@@ -1,7 +1,7 @@
 ---
 q: How do I snapshot `user/projects` before a restart, and when can I delete it?
 kw: snapshot user/projects before restart, snapshot size exclude log, rsync snapshot, dedupe snapshot link-dest, delete snapshot after restart, count sqx per databank
-tag: 🔬  date: 2026-09-23  see: databanks/sync-deletes-unloaded-files, databanks/sync-only-touches-loaded
+tag: 🔬  date: 2026-09-23  see: databanks/sync-deletes-unloaded-files
 ---
 # Snapshot `user/projects` before any restart, without `log/`; delete it once the restart is verified
 `rsync -a --exclude='log/'` — a complete safety net since loss is always disk-vs-memory. Take the copy,

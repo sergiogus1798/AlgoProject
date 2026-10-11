@@ -5,12 +5,13 @@
 - `data-all-blocks` — How do I split a `data=all` export into its blocks when they are not contiguous?
 - `data-all-crossmarket` — How does `data=all` write additional markets into a strategy's CSV, and how do I split them?
 - `databank-metrics-is-oos` — How do I get paired IS and OOS databank metrics from SQX?
-- `exits-and-m1-library` — What exit types does the XAUUSD corpus use, and how fast does the M1 library load?
+- `exits-and-m1-library` — What exit types does the XAUUSD MC_Trades corpus use, and are they path-independent?
 - `export-retest-batch-tag` — How do I tell apart same-day `export_dir(project, databank, day)` exports, which have no step in the path?
 - `exposure-and-edgecost-input-contracts` — Which databank or export name must the exposure and edge-cost readers of `export_retest` output be given?
 - `feed-clock-timezones` — In which timezone does SQX stamp a feed's timestamps, and how do I convert to UTC?
 - `fill-and-pricing` — At what prices and moments does SQX fill entries and exits for this fleet?
 - `harvest-equity-vs-trades` — Why do a harvest's daily equity curve and its trade list end at different totals?
+- `m1-library-loads-whole` — How fast does the XAUUSD M1 bar library load, and is it OHLC-consistent?
 - `mae-mfe-from-m1` — How does SQX compute a trade's MAE and MFE from M1 bars?
 - `maedepth-duration-cut-exit-after-x` — Why does the anomalous-duration cut of the deep-MAE screen mark nothing on a real population?
 - `off-grid-stamps-and-stop-exits` — How does SQX stamp and fill a stop-loss exit and a trade whose bar starts late, and how is each repriced?

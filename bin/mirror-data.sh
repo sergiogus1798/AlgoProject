@@ -8,6 +8,9 @@
 # copy made under it is torn, and a workflow over there must not have its bars change mid-run.
 # The remote workers pick the new data up by themselves: bin/sqx-worker.sh syncs on every start.
 #
+# After the copy the mirror gets the manual's sources and refreshes its own M1 bar library
+# (sqx.export.sync_bars through bin/remote.sh), so its studies read what its SQX reads.
+#
 # Called by bin/weekly-data-update.sh after a successful update; by hand after adding a feed.
 #
 # Usage:
@@ -23,15 +26,16 @@ DRY=(); [ "${1:-}" = "--dry-run" ] && DRY=(--dry-run --itemize-changes)
 
 # one line per mirror: <name> <ssh host> <master folder on it>, then this machine's master
 _CFG=$(python3 -c '
-from core.paths import MASTER, MIRRORS
+from core.paths import MANUAL_SRC, MASTER, MIRRORS
 from core.worker import holding
 print(MASTER)
 print(*holding(MASTER))
+print(MANUAL_SRC)
 for name, m in MIRRORS.items():
     print(name, m["ssh"], m["master"])') || { echo "mirror-data: cannot read the paths"; exit 1; }
 mapfile -t _CFG <<< "$_CFG"
-MASTER="${_CFG[0]}"; HELD="${_CFG[1]}"
-[ "${#_CFG[@]}" -gt 2 ] || { echo "mirror-data: no mirrors in machine.yaml; nothing to do"; exit 0; }
+MASTER="${_CFG[0]}"; HELD="${_CFG[1]}"; MANUAL="${_CFG[2]}"
+[ "${#_CFG[@]}" -gt 3 ] || { echo "mirror-data: no mirrors in machine.yaml; nothing to do"; exit 0; }
 [ -z "$HELD" ] || { echo "mirror-data: the master here is running (PID $HELD); nothing copied"; exit 1; }
 
 exec 8>"/tmp/.mirror-data-$(id -u).lock"
@@ -39,7 +43,7 @@ flock -n 8 || { echo "mirror-data: another copy is running; nothing done"; exit 
 
 SSH=(ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30)
 rc=0
-for line in "${_CFG[@]:2}"; do
+for line in "${_CFG[@]:3}"; do
   read -r name host dest <<< "$line"
   # -x matches the process name itself, so this never sees its own command line (hard rule 2)
   busy=$("${SSH[@]}" "$host" 'pgrep -u "$USER" -x "sqcli|StrategyQuantX" | tr "\n" " "') \
@@ -49,6 +53,15 @@ for line in "${_CFG[@]:2}"; do
   rsync -a --delete --partial --info=stats1 "${DRY[@]}" -e "${SSH[*]}" \
     "$MASTER/user/data/" "$host:$dest/user/data/" \
     || { echo "mirror-data: the copy to $name failed"; rc=1; continue; }
+  # The data is only half of it: the studies read the M1 bar library, exported from that data,
+  # and checks.py reads the manual's sources. A mirror with fresh data and last week's library
+  # refused its first workflow at step 4 (📓 gorilla, 2026-10-11: 27 feeds behind).
+  if [ "${#DRY[@]}" -eq 0 ]; then
+    rsync -a --delete -e "${SSH[*]}" "$MANUAL/" "$host:Desktop/AlgoData/manual-fuentes/" \
+      || { echo "mirror-data: the manual's sources did not reach $name"; rc=1; }
+    bin/remote.sh "$name" python3 -m sqx.export.sync_bars \
+      || { echo "mirror-data: the bar library on $name is behind its data"; rc=1; continue; }
+  fi
   echo "--- $(date -Is) $name: done"
 done
 exit $rc

@@ -337,13 +337,13 @@ Recomputed honouring `active`, across all 15 renderable projects:
 | EURJPY_H1 | **no** — task 18 off | 7 → 7 |
 
 **Four projects loop forever, not nine, and three at-risk counts are inflated.** The error is in the
-safe direction — it over-warns — but the 🔬 claim in `knowhow/databanks/sync-only-touches-loaded.md` that "every project on this install
+safe direction — it over-warns — but the 🔬 claim in `knowhow/databanks/sync-deletes-unloaded-files.md` that "every project on this install
 has that shape" is wrong as written, and issue 1's mitigation would be aimed partly at clear tasks
 that are already disabled.
 
 **Fix:** filter on `active` in `databank_flow()` and `tldr()`. The per-project pipeline maps this
 issue was written against are retired pending a redesigned format (below); once that format lands,
-regenerate for all 15 projects and rewrite issue 1's table and the `knowhow/databanks/sync-only-touches-loaded.md` bullet. The
+regenerate for all 15 projects and rewrite issue 1's table and the `knowhow/databanks/sync-deletes-unloaded-files.md` bullet. The
 `terminal` list is affected too — a databank cleared only by a disabled task is currently excluded
 from it.
 

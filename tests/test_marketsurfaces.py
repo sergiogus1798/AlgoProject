@@ -150,12 +150,15 @@ def check_oos2_split() -> None:
 
 
 def check_determinism_and_states() -> None:
-    """One seed, one result, whatever the chunk; and the worst reading names the state."""
+    """One seed, one result, whatever the chunk; and the worst reading names the state.
+
+    To nine digits: the chunked product rounds its last bit by the CPU's BLAS kernel, and
+    gorilla's 7950X gave -0.6231758175072347 where this server gives ...346 (📓 2026-10-11)."""
     data, design, years = batch_data(7, True, tilt=0.4)
     first = one.facts(one.measure(data, design, TABLE, years, CFG, True), CFG)
     again = one.facts(one.measure(data, design, TABLE, years, CFG | {"null": CFG["null"] | {"chunk": 7}}, True), CFG)
     other = one.facts(one.measure(data, design, TABLE, years, CFG | {"null": CFG["null"] | {"seed": 9}}, True), CFG)
-    assert blocks.plain(first) == blocks.plain(again) and first[0]["orden"]["nulo_p95"] != other[0]["orden"]["nulo_p95"]
+    assert blocks.plain(first, 9) == blocks.plain(again, 9) and first[0]["orden"]["nulo_p95"] != other[0]["orden"]["nulo_p95"]
     assert first[0]["orden"]["estado"] == "positivo" and first[1] == "pass"
     turned = one.facts(one.measure(*batch_data(7, False, tilt=-0.4)[:1], design, TABLE, years, CFG, False), CFG)
     assert turned[0]["orden"]["estado"] == "perverso" and turned[1] == "fail"

@@ -40,9 +40,9 @@ que sólo estaba escrito en sus originales. El **38** (recuadro de la meseta) y 
 los costes) salieron sin heredero: se construyeron y un rediseño posterior quitó lo construido
 (`ca7dd56` y `90d516d`). Los originales siguen legibles con `git show c923d10:docs/encargos/<fichero>`.
 
-## Los encargos vivos — reagrupados por temática el 2026-10-09
+## Los encargos vivos — reagrupados por temática el 2026-10-09 (el 57 es posterior, 2026-10-10)
 
-Los ocho son **planes vivos**: llevan tabla de estado y bitácora, y cada sesión actualiza su fila.
+Los nueve son **planes vivos**: llevan tabla de estado y bitácora, y cada sesión actualiza su fila.
 
 | fichero | qué queda por hacer | depende de |
 |---|---|---|
@@ -54,6 +54,7 @@ Los ocho son **planes vivos**: llevan tabla de estado y bitácora, y cada sesió
 | `54-fondeo.md` | que la ventana edite los datos del dueño que el simulador de fondeo necesita, la tabla de planes sobre una cartera real, y el módulo de riesgo máximo por operación (cola del peor día, drawdown esperado de la cartera) | los datos y decisiones del dueño; un pool validado (encargo 55) |
 | `55-mt5-paso-26-y-flota.md` | paso 26: el test en verde, el drawdown flotante con M1, una superviviente real verificada y el pool que lee la cartera; flota: paquete de despliegue con perfil `.chr`, registro de magics, acciones sobre la VPS, exportador de carteras y conciliación con las diez cuentas | una superviviente real; la VPS; OPEN.md #78 |
 | `56-lecturas-nuevas.md` | cinco lecturas sueltas, cada una despachable por separado: estacionalidad, señal por plantilla, replay de operaciones, cerebro con probabilidades y —aparcado por el dueño— alfa y beta | lo ya exportado; preguntas del dueño por frente |
+| `57-gorilla-en-la-ventana.md` | fase 1: bloque «custodio_gorilla» en «En marcha» leyendo `/proc` por SSH (sólo mirar); fase 2: selector de servidor en los tres lanzadores, bloqueada por las respuestas del dueño | regla 3, regla 12 |
 
 ## Adónde fue cada encargo viejo
 

@@ -4,7 +4,8 @@ kw: step 17 wfc limbo p_nivel never passes; step 18 cscv pbo 0.82 passes; step 1
 tag: 🔬  date: 2026-10-11  see: research/step8-gate-measured-on-six-populations, pipeline/variant-batch-refused-on-negative-zero, pipeline/bar-library-behind-sqx-kills-the-oos2-reading
 ---
 # Steps 18 and 18.5 stopped none of 8 mothers, 3 of them unfiltered; step 17 passed none; step 19 passed all 3 unfiltered
-Measures, not a change (thresholds are the owner's; 8 mothers is a small sample). 17 WFC: 0 pasa, 7 limbo,
+Measures, not a change (thresholds are the owner's; 8 mothers is a small sample — 10 with the USATEC run below,
+whose 2 mothers all came from the dev draw). 17 WFC: 0 pasa, 7 limbo,
 1 no pasa. 18 CSCV: 8 pasa (PBO up to 0.82 passes, never over its null's p95). 18.5: 8 pasa, order always
 «neutro». 19 WFM: 6 pasa, 2 limbo — and the 3 unfiltered `--smoke` mothers pass all of 18, 18.5 and 19.
 Cost: 16.5 = 260-380 s a mother; 17, 18, 18.5 under 1 min each; 19 = 16-25 min, ~10 of them SQX's reopen.
@@ -37,3 +38,21 @@ which 574-594 is `liverun`'s deliberate SQX reopen (`AGED`) and only 196-343 the
 Whole run 6→19: 132-164 min; step 8's studies over 10,000 are 48-58 min, more than the build (40).
 
 `AlgoData/autopilot/Test_{USA500_H1_tendencia_wf1,DAX40_H1_reversion_wf2,NIKKEI225_M30_volatilidad_wf3,XAUUSD_H1_ruptura_wf4,XAUUSD_H1_ruptura_wf4s}/*/` — `resumen.md`, `tiempos.md`, `paso-<N>/{verdict.csv,hechos.parquet}`; the smoke run's 17-19 are not judged (no `paso-17..19`): its facts are in `AlgoData/strategyPermutations/<P>/<mother>/estudios/*.json` and `AlgoData/reports/<P>/WFM/2026-10-11/wfm/verdict.csv`.
+
+### USATEC H1 ruptura, leaseWeb (2026-10-11): the first run to reach WFM with no failure
+`Test_USATEC_H1_ruptura_leaseWeb`: long, palette `ruptura_base_v3`, 10,000 strategies, 30 min build,
+`--until wfm`. 36 actions, 167.2 min, no `fallo.md`. 📓
+- Funnel: 6+7 built 10,000 and retested them OOS. **Step 8 cut ALL of them by the real criteria**; the dev
+  draw (`dev.sample: 3`, seed 2281916898) saved 3, all limbo. 9-10 crossmarket 3 → 2 (2 limbo). 11 CrossTF
+  0 → 6; 12 cut 6 → 2 (2 limbo). 13 neighbours (2 mothers, 1002 files); MCR 1 Bar 0 → 2, MCR 4 MinDist
+  0 → 0, MCR 7 OHLC 0 → 2; 14 kept 2 → 2. 15 SPP IS+OOS 0 → 2. 16.5 two batches. 17, 18, 18.5 read both
+  mothers (1 limbo at 17 and 18.5). 19 WFM 0 → 2, reading written, 2 saved for funding, 3 ledger rows.
+- **The decision-grade fact:** second time (after NIKKEI225 M30) that step 8 leaves ZERO real survivors of
+  10,000, now in another family (breakout). Everything that ran 9-19 came from the dev draw: the readings at
+  17-19 are still measured on strategies the gate rejected.
+- Wall seconds: 6+7 = 2445 (SQX 1871, export 456, sync 116); **8 = 4347 (73 min, vs ~50 measured before)**
+  with seven studies (gate, isOos, filters, decay, falsePositives, edgeCost, feedQuality) over 10,000 of an
+  index with data from 2012; 9 = 34; 10 = 21; 11 = 88; 11.5 = 39; 11.7 = 42; 12 = 41; 13 neighbours = 69,
+  13 sqx = 64; 14 = 32; 15 = 206; 16 = 6; 16.5 = 627 total (306 + 299 per mother, inside the 260-380);
+  17 = 6; 18 = 18; 18.5 = 35 + 47; 19 sqx = 1186 (20 min, inside the 16-25); stop + final export = 524.
+- Reproduce: `AlgoData/autopilot/Test_USATEC_H1_ruptura_leaseWeb/*/{resumen.md,tiempos.md}`.

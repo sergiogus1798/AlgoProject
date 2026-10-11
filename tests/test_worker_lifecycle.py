@@ -174,23 +174,25 @@ def test_start_that_never_opens_its_port_is_killed(root: Path) -> None:
 
 
 def test_stop_exits_1_when_the_worker_survives(root: Path) -> None:
-    """A worker that takes the -exit and stays up: `stop` says STILL RUNNING, exits 1 and
-    keeps the owner lock — it used to exit 0."""
+    """A worker that takes the -exit and stays up: since 2026-10-06 `stop` kills it by PID once
+    it has been silent (SIGTERM, then SIGKILL), says so, and exits 0 — it used to leave it up.
+    "STILL RUNNING" and exit 1 are left for a kill that does not land (not reproducible here)."""
     sh, w = fake_root(root, "deaf")
     try:
         assert script(sh, "start").returncode == 0
         pid = int((w / "launched.pid").read_text())
         got = script(sh, "stop", SQX_STOP_WAIT="3")
-        assert got.returncode == 1 and "STILL RUNNING" in got.stdout, got.stdout + got.stderr
+        assert got.returncode == 0 and "killing by PID" in got.stdout, got.stdout + got.stderr
         assert str(pid) in got.stdout, got.stdout
-        assert alive(pid) and (w / "user" / "log" / "OWNER").exists()
+        assert not alive(pid), "the deaf worker survived the kill"
     finally:
         reap(w)
 
 
 def test_stop_sees_a_worker_whose_port_is_down(root: Path) -> None:
     """A live sqcli with no port (still booting, or hung): `stop` does not call it "not
-    running" and does not remove its lock; it fails in seconds, not after five minutes."""
+    running": it says it could not reach it, then (since 2026-10-06) kills it by PID once it
+    has been silent, and does not wait five minutes."""
     sh, w = fake_root(root, "noport")
     log = w / "user" / "log" / "worker-daemon.log"
     log.write_text("SQX CLI is now ready\n")      # skip the 30 s boot wait
@@ -201,10 +203,11 @@ def test_stop_sees_a_worker_whose_port_is_down(root: Path) -> None:
             json.dumps({"holder": "tester", "pid": booting.pid, "since": "now"}))
         began = time.time()
         got = script(sh, "stop")
-        assert got.returncode == 1, got.stdout + got.stderr
+        assert got.returncode == 0, got.stdout + got.stderr
         assert "not running" not in got.stdout and "could not reach" in got.stdout, got.stdout
-        assert time.time() - began < 60
-        assert booting.poll() is None and (w / "user" / "log" / "OWNER").exists()
+        assert "killing by PID" in got.stdout, got.stdout
+        assert time.time() - began < 120
+        assert booting.wait(timeout=10) is not None
     finally:
         booting.kill()
         booting.wait()

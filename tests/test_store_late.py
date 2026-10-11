@@ -1,13 +1,14 @@
 """Steps 13 to 20 in the store: who a renamed identity belongs to, and the audit that nothing is left out."""
 
 import shutil
+import sys
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
 from core import sqxfile
-from core.store import audit, extra, late, verify, write
+from core.store import audit, cli, extra, late, verify, write
 from sqx.export import export_trades
 
 SQX = Path(__file__).parent / "fixtures" / "strategy.sqx"
@@ -120,3 +121,20 @@ def test_a_second_identity_is_an_alias_only_when_the_two_name_each_other_mother(
     finally:
         monkey.undo()
     assert [e["names"] for e in got if e["study"] == "wfm"] == [["S 1"]]
+
+
+def test_verify_takes_the_prefix_list_prints(monkeypatch: pytest.MonkeyPatch,
+                                             capsys: pytest.CaptureFixture) -> None:
+    """📓 2026-10-11: `list` prints identity[:12] and `verify <that>` called the strategy broken
+    («el manifiesto nombra otra identidad») instead of resolving the prefix, as `open` does."""
+    monkeypatch.setattr(cli.verify, "stored", lambda: [MOTHER])
+    monkeypatch.setattr(cli.write, "manifest", lambda i: {"origin": {"strategy": "S 1"}})
+    monkeypatch.setattr(cli.verify, "check", lambda i: [] if i == MOTHER else ["roto"])
+    monkeypatch.setattr(sys, "argv", ["store", "verify", MOTHER[:12]])
+    with pytest.raises(SystemExit) as ended:
+        cli.main()
+    assert ended.value.code == 0 and capsys.readouterr().out.startswith("ok  ")
+    monkeypatch.setattr(sys, "argv", ["store", "verify", "Test_x"])
+    with pytest.raises(SystemExit) as stop:
+        cli.main()
+    assert "nada guardado" in str(stop.value)

@@ -57,6 +57,8 @@ def fixtures() -> list[Path]:
 def check_file(path: Path, view: result.ResultView, seen: Counter) -> None:
     """Draw every block of one result through `kinds.draw`, then the whole page."""
     data = json.loads(path.read_text(encoding="utf-8"))
+    if "tabs" not in data:      # a study's raw output (batches.json), not a page the window draws
+        return
     for tab in data["tabs"]:
         for b in tab["blocks"]:
             if b["kind"] == "table":

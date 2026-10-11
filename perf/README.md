@@ -5,6 +5,7 @@ para que dos fechas se puedan comparar.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `__init__.py` | makes `perf` a regular package, so it beats the system `perf` module Ubuntu's linux-tools puts on the path (gorilla) | — | — |
 | `catalogue.py` | measures every target, appends it, judges it against last time | `python3 -m perf.catalogue` | registry → rows in `history.csv` |
 | `store.py` | the catalogue files, the commit and the machine's load at the time | imported | rows → CSV under the data root |
 | `verdict.py` | what counts as a regression, and what is only noise | imported | history → one verdict per target |

@@ -7,6 +7,7 @@ from pathlib import Path
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import pytest  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from PySide6.QtWidgets import QApplication, QPushButton  # noqa: E402
@@ -123,7 +124,8 @@ def test_seal() -> None:
     assert on_disk["state"] == "sealed" and "backfill" in on_disk["why"]
 
 
-def test_a_16_5_with_a_mother_short_of_its_batch_is_pending(monkeypatch) -> None:
+def test_a_16_5_with_a_mother_short_of_its_batch_is_pending(
+        monkeypatch: pytest.MonkeyPatch) -> None:
     """📓 gorilla 2026-10-11: an OutOfMemoryError left 2 of 3 mothers collected, «done» sent the
     rail to 18.5 and it died on the third's missing metrics.parquet."""
     spec, ctx = {"n": "16.5", "title": "Variantes"}, {"sqx": None, "project": "P"}

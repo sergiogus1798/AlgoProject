@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from engines.nulls import inputs, simulate, verdict
-from studies.readings.monkey import one
+from studies.readings.monkey import one, report
 from test_nulls_seed import kept
 
 NAME = "Strategy 1.0"
@@ -30,3 +30,7 @@ def test_recorded_row_reproduces_the_p() -> None:
         side = r["n_ge"] if verdict.GOOD_HIGH[w["stat"]] else r["n_le"]
         p = verdict.pvalue(got["seen"][w["stat"]], got["per_rung"][w["rung"]][w["stat"]], w["stat"])
         assert np.isclose((side + 1) / (r["n_finite"] + 1), p)
+    # the report signs these rows by their own `strategy` column: it once looked for it inside
+    # `where`, which never held it, and ended step 8 (📓 2026-10-08, KeyError 'strategy')
+    report.sign(rows, {NAME: "id"})
+    assert {r["identity"] for r in rows} == {"id"}

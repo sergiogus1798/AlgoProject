@@ -132,7 +132,7 @@ def widget(block: dict) -> QWidget:
     table.compact = bool(b.get("compact"))
     table.setHorizontalHeaderLabels([label(c) for c in b["columns"]])
     help_ = b.get("help") or [None] * len(b["columns"])
-    for j, h in enumerate(help_):
+    for j, h in enumerate(help_[:len(b["columns"])]):   # a stale report may carry more help than columns
         if h:
             table.horizontalHeaderItem(j).setToolTip(h)   # the uniform "?" of CONTRACT §5
     table.verticalHeader().setVisible(False)

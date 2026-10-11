@@ -1,7 +1,7 @@
 ---
 q: What is «ResultGroup doesn't contain result with key 'Main: USDCAD_DukasM1_the5ers/H1'» in SQX's log?
 kw: ResultGroup doesn't contain result with key, SQ4LoaderPlugin Cannot find result, ResultsMap.get, DukasM1_the5ers, old feed name, loadSQ4File
-tag: 🔬  date: 2026-10-10  see: sqx-drive/unresolved-resources-exact-xml
+tag: 🔬  date: 2026-10-10  see: sqx-drive/cannot-start-unresolved-past-data
 ---
 # It is SQX loading an old `.sqx` whose stored result names a feed renamed on 2026-10-01
 `SQ4LoaderPlugin.loadResultsData` (stack: `FileHandler.loadFile` → `ResultsGroup.subResult`) logs it as ERROR

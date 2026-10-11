@@ -7,6 +7,5 @@
 - `memory-vs-disk-exporter` — Why do file-based exports see an empty databank that is full in memory, even with Auto-sync every 1 hour?
 - `no-spaces-in-names` — Why is a databank with spaces in its name unreachable through the HTTP API?
 - `snapshot-before-restart` — How do I snapshot `user/projects` before a restart, and when can I delete it?
-- `sync-deletes-unloaded-files` — Why does a databank sync delete .sqx files that were not loaded in memory?
-- `sync-only-touches-loaded` — Does a sync prune a databank nobody opened, or only the loaded ones?
+- `sync-deletes-unloaded-files` — Why does a databank sync delete .sqx files that were not loaded in memory — and is a databank nobody opened safe?
 - `variants-one-big-load-loses-is-results` — Why does a 5,000-variant WFC load end with fewer strategies in WFC_Build than in the OOS legs?

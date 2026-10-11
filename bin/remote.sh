@@ -45,7 +45,10 @@ cd ~/$REPO || { echo 'remote: no clone at ~/$REPO on $NAME' >&2; exit 97; }
 if pgrep -u \"\$USER\" -x 'sqcli|StrategyQuantX' >/dev/null; then
   echo 'remote: SQX is running on $NAME — no pull, the code stays as it is under the run' >&2
 else
-  git pull --ff-only -q || { echo 'remote: git pull failed on $NAME — nothing run' >&2; exit 97; }
+  # One pull at a time: two commands sent at once each pulled, both wrote FETCH_HEAD, and one
+  # died with «Cannot fast-forward to multiple branches» and ran nothing (📓 2026-10-11).
+  flock -w 120 .git/remote-pull.lock git pull --ff-only -q \\
+    || { echo 'remote: git pull failed on $NAME — nothing run' >&2; exit 97; }
 fi
 export SQX_OWNER=\"\${SQX_OWNER:-claude_leaseWeb}\"
 $RUN"
