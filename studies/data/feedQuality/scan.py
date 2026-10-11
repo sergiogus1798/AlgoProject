@@ -80,7 +80,9 @@ def index_rows(found: list[dict]) -> str:
 def write_index(block: str) -> None:
     """Put the block into AlgoData/INDEX.md, replacing the previous one."""
     path = DATA / "INDEX.md"
-    text = path.read_text(encoding="utf-8")
+    # A data root that was never indexed has no INDEX.md (📓 gorilla, 2026-10-11): the scan
+    # had already written every summary and died here, on the last line of its work.
+    text = path.read_text(encoding="utf-8") if path.exists() else "# AlgoData\n"
     if BEGIN in text:
         text = text[:text.index(BEGIN)] + block + text[text.index(END) + len(END):]
     else:
@@ -102,6 +104,9 @@ def main() -> None:
              for f in inputs.calendar_feeds(CFG)}
     RUNS.append(calendar.silences(dukas, CFG))
     del dukas
+    # On a machine that never scanned, this folder does not exist yet and the write died
+    # (📓 gorilla, 2026-10-11): only the per-feed folder below is created, and later.
+    feed_quality_dir().mkdir(parents=True, exist_ok=True)
     RUNS[0].to_parquet(feed_quality_dir() / "calendar.parquet")
     names = a.feed or inputs.feeds()
     found = {}
