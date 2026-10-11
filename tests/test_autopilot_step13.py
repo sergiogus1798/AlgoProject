@@ -89,10 +89,26 @@ def test_the_stage_runs_three_tasks_and_step_14_cuts_what_spp_reads() -> None:
     assert io["SPP OOS"]["Input"] == "SPP IS"
 
 
+def test_a_plan_with_feedquality_refuses_an_unscanned_feed(tmp_path: Path = Path("/nonexistent")) -> None:
+    """Before any CPU: a plan that runs feedQuality on a feed with no `summary.json` exits; one
+    that does not run it, or whose feed is scanned, goes on."""
+    do = [{"n": "8", "kind": "python", "tests": ["gate", "feedQuality"]}]
+    with pytest.MonkeyPatch.context() as m:
+        m.setattr(plan, "load", lambda asset: {"sqx_symbol": "X_M1"})
+        m.setattr(plan, "feed_quality_dir", lambda feed: tmp_path / feed)
+        with pytest.raises(SystemExit, match="X_M1 no está escaneado"):
+            plan.scanned("X", do)
+        plan.scanned("X", [{"n": "6", "kind": "sqx"}, {"n": "8", "kind": "python", "tests": ["gate"]}])
+        m.setattr(plan, "feed_quality_dir", lambda feed: Path(__file__).parent)   # any folder...
+        m.setattr(Path, "exists", lambda self: True)                              # ...with the file
+        plan.scanned("X", do)
+
+
 if __name__ == "__main__":
     test_t1_runs_after_step_12s_judge_and_before_the_mc_retest()
     test_a_step_13_already_done_plans_no_neighbours()
     test_the_stage_runs_three_tasks_and_step_14_cuts_what_spp_reads()
+    test_a_plan_with_feedquality_refuses_an_unscanned_feed()
     print("ok (the dispatch test needs pytest)")
 
 
@@ -106,3 +122,18 @@ def test_a_python_step_the_last_run_failed_at_runs_again_though_its_rail_says_do
     (tmp_path / "1" / "estado.txt").write_text("01:25:24 FALLO en el paso 14: x\n", encoding="utf-8")
     plan.reopen(data, tmp_path / "2")
     assert ("14", "python") in kinds(plan.plan(data))
+
+
+def test_a_failed_variant_batch_runs_again_too(tmp_path: Path) -> None:
+    """📓 2026-10-11 gorilla: 16.5 died of OutOfMemoryError, the rerun read its half-made batch
+    as done and 18.5 failed on the mother that had no metrics.parquet."""
+    data = rail("16", last="16.5")
+    for s in data["steps"]:
+        s["state"] = "done"
+        for t in s["tests"]:
+            t["state"] = "done"
+    (tmp_path / "1").mkdir()
+    (tmp_path / "1" / "estado.txt").write_text(
+        "09:32:02 FALLO en el paso 16.5: sqx.variants.execute: x\n", encoding="utf-8")
+    plan.reopen(data, tmp_path / "2")
+    assert ("16.5", "variants") in kinds(plan.plan(data))
