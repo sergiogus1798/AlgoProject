@@ -2,6 +2,7 @@
 
 - `archived-trades-vs-reclocked-bars` — Why does a strategy archived before 2026-10-01 not match the bars now on disk?
 - `bars` — How do I export bars from SQX: which symbol form and how many timeframes per JVM?
+- `cross-market-export-judged-by-first-file` — Why did step 10 say the retest cross-market export is missing when the export exists?
 - `data-all-blocks` — How do I split a `data=all` export into its blocks when they are not contiguous?
 - `data-all-crossmarket` — How does `data=all` write additional markets into a strategy's CSV, and how do I split them?
 - `databank-metrics-is-oos` — How do I get paired IS and OOS databank metrics from SQX?
