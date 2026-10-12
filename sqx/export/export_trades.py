@@ -9,6 +9,7 @@ from pathlib import Path
 
 from core import exportdrv, manifest, sqxfile, tradepack
 from core.paths import MASTER, databank_dir, export_dir, project_dir, worker_dir
+from sqx.export import memtrades
 
 
 SAMPLE_SEED = 20260914   # a subset export is a sample, and a sample has to be reproducible
@@ -127,7 +128,11 @@ def main() -> None:
         "strategy,timeframe\n" + "".join(f"{k},{v}\n" for k, v in timeframes.items()))
     print(f"staged {len(timeframes)} strategies from {a.project}/{a.databank}")
 
-    exportdrv.trades(staged, csvs)
+    newest = max(f.stat().st_mtime for f in databank_dir(a.project, a.databank, install).glob("*.sqx"))
+    if memtrades.take(a.project, a.databank, set(timeframes), newest, csvs):
+        print("operaciones escritas desde la memoria de la sesión viva (AlgoTrades), sin orderstocsv")
+    else:
+        exportdrv.trades(staged, csvs)
     # The CSVs are an intermediate, not the export: nine tenths of their bytes are quoting,
     # repeated text and four columns that are derivable back. Bars are not copied here at
     # all — they live once in the M1 library, which covers more history than this window did.

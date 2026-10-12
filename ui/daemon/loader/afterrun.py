@@ -108,6 +108,12 @@ def extras(project: str, role: str, top: Path) -> list[tuple[str, list[str]]]:
     return out
 
 
+def stale_trades(role: str, project: str) -> list[str]:
+    """The project's databanks whose trades `export` would write now, in its order."""
+    return [db for p, db in banks(progress.installs()[role], project)
+            if db not in UNREAD_TRADES and "trades" in state.commands(p, state.status(p, db))]
+
+
 def export(role: str, only: str | None = None) -> int:
     """Run what the loader would queue for each databank of the project that ran; return the
     failures. The launcher marks that project (`workerguard.mark`) and the mark outlives this

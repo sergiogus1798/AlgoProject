@@ -12,11 +12,13 @@ from core.datapaths import tmp_dir
 from core.phases import phase
 from core.paths import ROOT
 from ledger import steprows
+from sqx.export import memtrades
 from sqx.projects import crosstfload, exiting, live, stage
 from ui.daemon.advance.run import say
 from ui.daemon.launch import configure, preflight
 from ui.daemon.launch import run as launcher
 from ui.daemon.launch import steps as launchsteps
+from ui.daemon.loader import afterrun
 from ui.daemon.launch.run import assets, compare, counts, record, snapshot
 
 
@@ -29,7 +31,13 @@ AGED = {*stage.titles("spp"), *stage.titles("wfm")}
 def export(role: str, project: str) -> None:
     """The export a stop would run, on the files the sync just wrote (`afterrun --live`), of this
     project alone: unmarked, it read every project of the install at each step (🔬 2026-10-05,
-    ~60 s a step and another session's databanks re-exported)."""
+    ~60 s a step and another session's databanks re-exported).
+
+    The trades go first, from the session's memory (`memtrades`, the AlgoTrades snippet): 4 s
+    per 1,000 strategies against orderstocsv's 274 (🔬 2026-10-12); `export_trades` takes them."""
+    with phase("export.memoria"):
+        wrote = memtrades.run(role, project, afterrun.stale_trades(role, project))
+    print(f"operaciones desde memoria: {wrote or 'ninguna (orderstocsv)'}", flush=True)
     subprocess.run([sys.executable, "-m", "ui.daemon.loader.afterrun", "--role", role, "--live",
                     "--project", project], cwd=ROOT, check=True)
 

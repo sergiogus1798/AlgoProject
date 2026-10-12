@@ -17,6 +17,7 @@
 - `maedepth-duration-cut-exit-after-x` — Why does the anomalous-duration cut of the deep-MAE screen mark nothing on a real population?
 - `off-grid-stamps-and-stop-exits` — How does SQX stamp and fill a stop-loss exit and a trade whose bar starts late, and how is each repriced?
 - `orderstocsv-schema` — What traps does `orderstocsv` have when exporting every .sqx of a folder in one JVM?
+- `orderstocsv-slow-is-datamanager` — Why does orderstocsv take minutes per databank, and what writes the same trade CSVs in seconds?
 - `sequential-opt-not-wfc` — Can a sequential optimisation's runs be paired as a walk-forward correlation (WFC)?
 - `spp-export` — How do I export an SPP permutation table when SQX has no CLI export for it?
 - `spp-pairing-for-wfc` — When do two SPP runs pair tuple by tuple for a WFC, and why do they share ~0 at defaults?

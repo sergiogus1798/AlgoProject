@@ -7,6 +7,7 @@
 - `crosstf-period-source` — What counts as a period (bar length) to rescale when building a cross-timeframe sibling?
 - `crosstf-scaling-coefficients` — Which coefficients of a cross-timeframe sibling are divided by the ATR ratio c, and what does step 10.5 actually scale?
 - `custom-timeframe-h12` — How does SQX run a custom timeframe like H12 or M10 in a task's `<Setup>`?
+- `customanalysis-task-reads-any-project` — Can a CustomAnalysis snippet read or cut another project's databank in memory, and where should its task live?
 - `driving-a-role` — How do scripts pick a worker install: where are roles defined and what does `--role ROLE` resolve to?
 - `export-after-every-stop` — What does `bin/sqx-worker.sh stop` export from the install's databanks, and what decides that the worker is busy?
 - `export-mql5-source-headless` — How do I get MQL5 source out of SQX headless, given that no sqcli verb writes it?
@@ -14,6 +15,7 @@
 - `import-csv-as-symbol` — How do I import a CSV of bars as a new symbol headless, and what does it cost?
 - `install-ports-and-heap` — Where do an SQX install's port, heap and core usage live (`AppSettings.txt`, `settings.xml`, `sqcli.config`)?
 - `live-chain-without-restart` — How do I continue a workflow without restarting SQX, running or editing any task live in GUI mode?
+- `mcp-server-gui-mode-only` — Does SQX's built-in MCP server answer on a worker, and is it worth registering in Claude Code?
 - `mcp-server-limits` — What can SQX's MCP server on the master do, and why does a project that fails to load vanish silently?
 - `mcr-nullpointer-fastutil-transient` — Why does an MC Retest task crash SQX with a fastutil NullPointerException and leave the project hung?
 - `monitor-tail-trips-worker-holding-check` — Why did `worker.holding()` count a monitor tail process as holding a worker, and how is it fixed?
@@ -29,6 +31,7 @@
 - `retire-own-and-wait-per-task` — How do I retire my own Test_ project after a run and wait for another session's multi-task run?
 - `running-a-task-headless` — How do I run one workflow step headless: stop, then start with only its tasks `active="true"`?
 - `second-server-gorilla` — How is the second server (gorilla) set up, how do I run something there, and what traps does a fresh clone hit?
+- `snippets-compile-on-start` — How does a Java snippet of ours get compiled and loaded by a worker, and how do I know it did?
 - `spp-harness-needs-its-own-project` — Where must the SPP reconnaissance harness live: in the mother's own workflow project, found by title?
 - `spp-headless` — Does a headless SPP persist its results, and how do I judge its progress (JVM RSS, one per install)?
 - `spp-task-type` — Which task type is the SPP (`OptProfileSysParamPermutation`) and why does `SequentialOptimization` write no profile?

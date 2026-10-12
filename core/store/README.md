@@ -76,3 +76,7 @@ from the store is `pipeline.autopilot.resume`.
 Saving from inside the workflow at step 8 and after each step; re-running a stored strategy in SQX
 and comparing with the stored numbers; step 21 on (steps 22-24 were deleted on 2026-10-11); the window's zone.
 Skills: `/store-save`, `/store-open`, `/store-resume`, `/rebuild-sister`.
+
+A manifest may also carry `aliases` (the identity the strategy had before 2026-10-12, when the signal
+variables left the hash) and `merged` (what a second folder of the same strategy said, folded in
+that day) — `knowhow/sqx-format/identity-differs-across-databanks.md`.

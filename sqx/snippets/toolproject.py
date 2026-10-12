@@ -1,0 +1,56 @@
+"""The one-task project every worker carries to run the project's CustomAnalysis snippets from."""
+
+from pathlib import Path
+
+from core.paths import worker_dir
+from sqx.projects import cfxio
+
+# The task lives in a project of its own and reads any other project's databank, so no
+# workflow project carries a task that is not a backtest (17 places assume every task is one).
+NAME = "Trade_AlgoTools"
+MEMBER = "CustomAnalysis-Task1.xml"
+CONFIG = f"""<?xml version='1.0' encoding='utf-8'?>
+<Project name="{NAME}" version="142.2399">
+  <Tasks>
+    <Task name="Custom analysis" type="CustomAnalysis" taskXMLFile="{MEMBER}" title="Export trades" active="true" />
+  </Tasks>
+  <Databanks>
+    <Databank name="Results" view="Default - Main data" syncType="Auto-sync every 1 hour" position="0" />
+  </Databanks>
+</Project>
+"""
+SETTINGS = """<Settings>
+  <CustomAnalysis>
+    <PerStrategy1>none</PerStrategy1>
+    <PerStrategy2>none</PerStrategy2>
+    <FullDatabank1>AlgoTrades</FullDatabank1>
+    <FullDatabank2>none</FullDatabank2>
+    <RemoveFailedStrategies>false</RemoveFailedStrategies>
+    <Filter>true</Filter>
+    <InputArgsPerStrategy1 />
+    <InputArgsPerStrategy2 />
+    <InputArgsFullDatabank1>{args}</InputArgsFullDatabank1>
+    <InputArgsFullDatabank2 />
+  </CustomAnalysis>
+  <Databanks>
+    <Databank label="Input databank" name="Input" value="Results" />
+    <Databank label="Output databank" name="Output" value="Results" />
+  </Databanks>
+</Settings>
+"""
+
+
+def cfx(role: str) -> Path:
+    """The tool project's .cfx on an install."""
+    return worker_dir(role) / "user/projects" / NAME / "project.cfx"
+
+
+def ensure(role: str) -> bool:
+    """Create the tool project on a stopped install; whether it was missing."""
+    file = cfx(role)
+    if file.exists():
+        return False
+    (file.parent / "databanks/Results").mkdir(parents=True)
+    cfxio.write(file, {"config.xml": CONFIG.encode("utf-8"),
+                      MEMBER: SETTINGS.format(args="").encode("utf-8")})
+    return True
