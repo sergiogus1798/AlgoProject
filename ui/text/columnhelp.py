@@ -7,7 +7,7 @@ field with no sentence returns None: an unknown column gets no «?» rather than
 
 import re
 
-from ui.text.columnhelp_closing import ATR, BENCH, LOTS, STRAT, WINNERS, atr, exposure
+from ui.text.columnhelp_closing import BENCH, LOTS, STRAT, exposure
 from ui.text.columnhelp_criteria import criteria
 from ui.text.columnhelp_fields import FIELDS
 from ui.text.columnhelp_metrics import METRICS
@@ -101,16 +101,12 @@ LABEL = {
     ("exposure", "efficiency"): "Eficiencia", ("exposure", "return_ratio"): "Retorno / B&H",
     ("exposure", "dd_ratio"): "DD / DD B&H", ("exposure", "hours_off"): "Horas fuera/semana",
     ("exposure", "captured"): "Movimiento capturado", ("exposure", "aligned"): "Alineado",
-    ("exposure", "reasons"): "Motivos",
+    ("exposure", "notes"): "Avisos",
 }
 
 STAT_LABEL = {"net": "Net Profit", "return_pct": "Retorno %", "cagr_pct": "CAGR %",
               "maxdd_pct": "DD máx %", "vol": "Vol.", "sharpe": "Sharpe"}
 SIZING_LABEL = {"one_lot": "B&H 1 lote", "avg_size": "B&H medio", "equal_risk": "B&H riesgo"}
-ATR_LABEL = {"x": "X p{p}", "low": "X p{p} IC bajo", "high": "X p{p} IC alto",
-             "unreliable": "X p{p} poco fiable", "zone": "Zona p{p}",
-             "effective_oos1": "p efectivo OOS1 p{p}", "effective_oos2": "p efectivo OOS2 p{p}"}
-WINNERS_LABEL = {"build": "Ganadoras IS", "oos1": "Ganadoras OOS1", "oos2": "Ganadoras OOS2"}
 SAMPLE = re.compile(r" [(\[](IS|OOS|OOS1|OOS2|IS\+OOS1)[)\]]$")
 
 
@@ -132,8 +128,6 @@ def help_for(kind: str, study: str, field: str) -> str | None:
         return STUDY[(study, field)]
     if study == "exposure":
         return exposure(field)
-    if study == "atrCalculator":
-        return atr(field)
     if got := criteria(study, field):
         return got[1]
     return None
@@ -159,10 +153,6 @@ def label_for(study: str, field: str) -> str | None:
         return f"{STAT_LABEL[got[1]]} estrategia"
     if study == "exposure" and (got := LOTS.match(field)):
         return f"Lotes {SIZING_LABEL[got[1]]}"
-    if study == "atrCalculator" and (got := ATR.match(field)):
-        return ATR_LABEL[got[1]].format(p=got[2])
-    if study == "atrCalculator" and (got := WINNERS.match(field)):
-        return WINNERS_LABEL[got[1]]
     if got := criteria(study, field):
         return got[0]
     return None

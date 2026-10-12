@@ -6,6 +6,6 @@ WORKFLOW steps —.
 |---|---|
 | `monkey/` | Is it better than a monkey with the same opportunity set, and which channel is the edge in? |
 | `entryQuality/` | Does the entry carry information, and what does arriving late cost? |
-| `edgeCost/` | How much edge per unit of cost paid — step 8 (population screen) and step 25 (the traded version) |
-| `structure/` | Which block carries the edge, read from ablations and the inversion run by `sqx/structural/` — step 23 |
-| `conditionalMap/` | Where on the market-state grid it earns, classified with data closed before entry — step 22 |
+| `edgeCost/` | How much edge per unit of cost paid — step 8 (population screen); the `--strategy` mode stays as a standalone command, no step runs it |
+
+`structure/` (step 23) and `conditionalMap/` (step 22) were deleted on 2026-10-11; see git history.

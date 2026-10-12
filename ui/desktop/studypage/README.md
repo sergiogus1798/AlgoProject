@@ -83,7 +83,7 @@ Grabs in `scratch/ui-plan/shots/E-*.png`. The Ficha: `python3 tests/test_ui_tear
   aún no conectado» (`notes.absent`).
 - **The drawer's edits reach only the next run**, as `--set`; they are kept per study while the
   page lives and forgotten by «restablecer». The hash shown is `POST /api/config/hash` of those
-  edits; `entryQuality` and `conditionalMap` get extra `--set` from the runner (feed, timeframe),
+  edits; `entryQuality` gets extra `--set` from the runner (feed, timeframe),
   so their «coincide» compares the owner's knobs only.
 - **The catalogue's `one`/`many`/`runnable`/`why_not` are the runner's** (`ui.daemon.runner.table`,
   wired 2026-09-26): a study the runner refuses (marketSurfaces, blindJoint…)

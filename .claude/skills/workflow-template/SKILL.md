@@ -1,6 +1,6 @@
 ---
 name: workflow-template
-description: Run the WHOLE workflow (steps 5 to 25) from an already authored strategy template (.sqx) with one command that creates the project, applies the palette to its random hole and runs every SQX task and study unattended. Fully mechanical, any model can run it. Use when the owner asks to run, launch or test the workflow on a template ("con plantilla", "con template", "esta idea").
+description: Run the WHOLE workflow (steps 5 to 21, then 26) from an already authored strategy template (.sqx) with one command that creates the project, applies the palette to its random hole and runs every SQX task and study unattended. Fully mechanical, any model can run it. Use when the owner asks to run, launch or test the workflow on a template ("con plantilla", "con template", "esta idea").
 ---
 
 # /workflow-template
@@ -49,7 +49,7 @@ The command does, in this order, and stops at the first failure:
 1. `python3 -m core.assets <SYMBOL>` (hard rule 5).
 2. `sqx.projects.builder … --workflow` — the project, with every step's task, on the custodian.
 3. `sqx.projects.buildingblocks --palette …` — the blocks the build may draw.
-4. `pipeline.autopilot.run` — steps 6 to 25 in ONE SQX session, judging and cutting by
+4. `pipeline.autopilot.run` — steps 6 to 21 (then 26, when its parameters are given) in ONE SQX session, judging and cutting by
    `pipeline/autopilot/criteria.yaml`. What each step runs and which databank it reads and
    fills: `.claude/skills/workflow-simple/steps.md`.
 

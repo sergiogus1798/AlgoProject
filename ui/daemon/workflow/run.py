@@ -83,7 +83,7 @@ def plan(spec: dict, key: str, ctx: dict, databank: str, picked: list[str]) -> l
     entry = table.STUDIES.get(key, {})
     if "plan" not in entry:
         return table.why_not(key) or "estudio desconocido"
-    scope = ("one" if spec.get("only_strategy") or not entry["many"] or (picked and entry["one"])
+    scope = ("one" if not entry["many"] or (picked and entry["one"])
              else "many")
     if spec["feeds"] == "batch":
         return table.jobs({"study": key, "scope": "one", "project": ctx["project"],

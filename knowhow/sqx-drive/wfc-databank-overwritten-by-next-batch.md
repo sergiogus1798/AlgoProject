@@ -6,7 +6,7 @@ tag: 🔬  date: 2026-09-26  see: sqx-drive/variants-execute-needs-worker-it-sta
 # `sqx.variants.equity` reads the LIVE `WFC_Build/OOS1/OOS2` databank folders, not an export — running any later batch through the same project erases the previous one's equity data
 Every `sqx.variants.execute` clears and reloads the project's three WFC databanks, and `equity.py`
 globs `*.sqx` straight from them (`ran.json` → `databank_dir`), not from `export_retest`'s parquet.
-Run `equity` and `collect` right after `execute`, before a structural (step 23) or stopgrid (step 24)
+Run `equity` and `collect` right after `execute`, before a structural (step 23) or stopgrid (step 24) (both deleted 2026-10-11; the hazard stands for any other batch through the same project)
 batch touches the same project — otherwise they read another batch ("17 bloques donde ninguna curva
 cuadra con lo que SQX guardo").
 
@@ -31,7 +31,7 @@ holding someone else's strategies.
 
 - 2026-09-26, `USDJPY_workflow_profiling_v1`. Order of operations: `variants.execute` for mother
   `1.29.55` (1.093 variants, WFC 1/2/3 complete) → `variants.execute` for mother `1.28.59` (1.457
-  variants) → `sqx.structural.make`/`execute` (12 files, reused the same three databanks) →
+  variants) → `sqx.structural.make`/`execute` (deleted 2026-10-11) (12 files, reused the same three databanks) →
   `sqx.variants.stopgrid`/`execute` pass1 (2 files) → pass2 (22 files) — each overwrote
   `WFC_Build`/`WFC_OOS1`/`WFC_OOS2` again.
 - Calling `sqx.variants.equity --work .../Strategy_1.29.55` afterwards: `PROGRESS 100 22 variantes x

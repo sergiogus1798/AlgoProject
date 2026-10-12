@@ -2,11 +2,11 @@
 
 from pathlib import Path
 
-from pipeline.autopilot import blind, closing, finalists, kept, neighbours, survivors, traded
+from pipeline.autopilot import blind, closing, finalists, kept, neighbours, survivors
 
 # `neighbours` is not the tail's: step 13's T1 batch is dispatched here like the tail's batches.
-KINDS = {"blind", "wfm", "kept", "ledger", "joint", "reading", "structural", "stop", "edge",
-         "finalists", "mt5verify", "neighbours"}
+KINDS = {"blind", "wfm", "kept", "ledger", "joint", "reading", "finalists", "mt5verify",
+         "neighbours"}
 
 
 def run(action: dict, project: str, role: str, out: Path, cfg: dict) -> str:
@@ -17,7 +17,7 @@ def run(action: dict, project: str, role: str, out: Path, cfg: dict) -> str:
             kind has one.
         project: Project name.
         role: The worker holding the project.
-        out: The autopilot run's folder; its name stamps the batches of 23 and 24.
+        out: The autopilot run's folder; its name stamps the batches.
         cfg: `judge.settings()`.
 
     Returns:
@@ -31,7 +31,7 @@ def run(action: dict, project: str, role: str, out: Path, cfg: dict) -> str:
         return finalists.verify(project, action["params"], out)
     if kind == "neighbours":      # who ENTERS step 13, not who a later step's cut left
         return neighbours.run(project, role, neighbours.entering(project, role), out.name)
-    # The finalists are who is left after step 25's own cut, the day it has one.
+    # The finalists are who is left after step 26's own cut, the day it has one.
     mothers = survivors.mothers(project, role, cfg, "26" if kind == "finalists" else n)
     if kind == "blind":
         return blind.look(project, n, action["tests"][0], mothers, action["redo"],
@@ -44,12 +44,6 @@ def run(action: dict, project: str, role: str, out: Path, cfg: dict) -> str:
         return blind.joint(project)
     if kind == "reading":
         return closing.reading(project, action["tests"][0], action["databank"], mothers)
-    if kind == "structural":
-        return closing.structural(project, role, mothers, out.name)
-    if kind == "stop":
-        return closing.stop(project, role, mothers, out.name)
-    if kind == "edge":
-        return traded.edge(project, mothers)
     if kind == "kept":
         return kept.save(project, blind.bank(project))
     return finalists.write(project, mothers, out)

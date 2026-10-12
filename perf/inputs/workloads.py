@@ -13,7 +13,6 @@ from portfolio.common.monteCarlo.inputs import config as mc_config, costs, strea
 from engines.inference.snooping import superior
 from pipeline.autopilot import facts
 from studies.breakage.mcRetest.measure import store
-from studies.closing.atrCalculator import inputs as atr_inputs, load as atr_load, one as atr_one
 from studies.data.feedQuality import detect as fq_detect, inputs as fq_inputs
 from studies.research.pooledProfile import inputs as pooled_inputs, one as pooled_one
 from studies.research.profilePower import inputs as power_inputs, one as power_one
@@ -98,25 +97,6 @@ def retest_load_sims(cfg: dict) -> dict:
                             where.name)
     size = sum(p.stat().st_size for p in (where / store.SIMS).rglob("*.parquet"))
     return {"scale": len(frame), "bytes_in": size}
-
-
-def atrcalculator_reading(cfg: dict) -> dict:
-    """The ATR stop study's reading (§2) on every strategy of one export, bootstrap included.
-
-    Args:
-        cfg: What config.load() returned.
-
-    Returns:
-        Trades read and bytes read. The bootstrap of the percentiles is the cost that
-        grows, linear in winners times resamples.
-    """
-    s = cfg["sample"]
-    study = atr_inputs.config([])
-    got = atr_load.load(s["project"], [s["atr_databank"]], s["bars_feed"], s["asset"],
-                        s["atr_timeframe"], None, study)
-    for name in got["strategies"]:
-        atr_one.run(name, got, study)
-    return {"scale": len(got["trades"]), "bytes_in": sample.weight(got["packed"])}
 
 
 def snooping_superior(cfg: dict) -> dict:

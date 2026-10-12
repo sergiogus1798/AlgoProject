@@ -37,6 +37,7 @@ tables contradicted the code) and the 2026-09-22 review. All are in git history.
 | `criterios-paso-08-R6-R7-R8-propuesta-2026-10-06` | the owner's own proposal (2026-10-06) to redesign step 8's R6, R7 and R8; not loaded — encargo 44 carries it and what must be measured first |
 | `criterios-paso-08-R9-propuesta-2026-10-06` | the owner's own proposal (2026-10-06): step 8 keeps only R9b (on the 95th percentile of MAE) and R9a/R9c move to a funding module yet to be designed; not loaded — encargo 44 |
 | `criterios-paso-08-mono-propuesta-2026-10-06` | the owner's own proposal (2026-10-06): the monkey becomes R3's non-parametric control (continuous z, doctrine sizing, draws inside the period) once its repricing is audited; not loaded — encargo 44 |
+| `criterios-mcpt-fabrica-propuesta-2026-10-12` | the owner's own proposal (2026-10-12): the whole factory (Builder + pipeline) rerun K times on sign-flipped synthetic prices, FDR per stage, lift per step, TFP of step 8 against its nominal; dispatched as encargo 58 |
 | `criterios-paso-08-estudios-4.2-4.3-4.4-propuesta-2026-10-06` | the owner's own proposal (2026-10-06): step 8 drops the snooping screen, the family sieve and profitShape, and entryQuality's one-bar delay becomes a rule; not loaded — encargo 44 |
 | `criterios-paso-08-estudios-4.5-4.6-4.7-propuesta-2026-10-06` | the owner's own proposal (2026-10-06): feedQuality becomes a rule (edge retained without the trades that touch an anomaly), step 8's repricing at Darwinex's spread goes, and edgeCost loses edge_median and n; not loaded — encargo 44 |
 | `criterios-paso-08-indice-decisiones-2026-10-06` | the owner's index of the step-8 review (2026-10-06): the decision per rule, the cheapest-first cascade, the null and planted-edge test populations and the order of work; not loaded — encargo 44 |
@@ -87,3 +88,4 @@ tables contradicted the code) and the 2026-09-22 review. All are in git history.
   language of the conversation it walks into, and says which on its last page.
 
 Not covered by `tools/checks.py`: these are hand-triggered deliverables, not generated on every run.
+| `medicion-stop-lejano-2026-10-11` (+pdf) | the owner's dossier: the pre-registered far-stop measurement (NO PASA: 2·X touches 11.55 % of trades, limit 1 %), its calibration, the account-breach table and what it decides (no per-trade stop) | current |

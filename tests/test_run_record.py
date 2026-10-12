@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Known-answer test for OPEN.md #80: crossTF and structure must read an old run's own record
+"""Known-answer test for OPEN.md #80: crossTF must read an old run's own record
 (blocks.json, ran.json) rather than today's assets/_build.yaml, and fall back only when it is
 missing."""
 
@@ -13,7 +13,6 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from studies.readings.structure import inputs as structure_inputs
 from studies.transfer.crossTF import inputs as crosstf_inputs
 
 TODAY_DOCTRINE = {"crosstf": {"timeframes": {"H1": ["H4", "D1"]}},
@@ -51,22 +50,6 @@ def main() -> None:
             got = crosstf_inputs.blocks(scaling, ["H1", "H2"], batch)
         if got != ["H1", "H2"]:
             failures.append("blocks() ignoro un run.blocks explicito")
-
-        # structure: ran.json says WFC_Build actually ran under oos1 (renamed since) — today's
-        # wfc.tasks must never relabel it.
-        (batch / "ran.json").write_text(json.dumps(
-            {"legs": [{"databank": "WFC_Build", "segment": "oos1"}]}), encoding="utf-8")
-        with mock.patch("studies.readings.structure.inputs.assetdata.doctrine",
-                        return_value=TODAY_DOCTRINE):
-            got = structure_inputs.segments(batch)
-        if got != {"WFC_Build": "oos1"}:
-            failures.append(f"segments() con ran.json dio {got}, se esperaba el del archivo")
-
-        with mock.patch("studies.readings.structure.inputs.assetdata.doctrine",
-                        return_value=TODAY_DOCTRINE):
-            got = structure_inputs.segments(empty)
-        if got != {"WFC_Build": "build", "WFC_OOS1": "oos1"}:
-            failures.append(f"segments() sin archivo dio {got}, se esperaba la doctrina de hoy")
 
     print("\n".join(failures) or
           "ok: blocks.json y ran.json mandan sobre un run ya hecho; sin ellos, la doctrina de "

@@ -14,8 +14,8 @@ IGNORED = {
     "autopilot": "el diario de cada run; lo que dijo cada paso está en el manifiesto",
     "harvest": "las métricas de toda la población generada; las de cada guardada van en cosecha.*",
     "projects": "el registro y los project.cfx retirados",
-    "atrCalculator": "pasos 21 en adelante (rejilla de stops): aún no se guardan",
-    "structural": "pasos 21 en adelante (pruebas estructurales): aún no se guardan",
+    "atrCalculator": "datos del paso 24 (borrado el 2026-10-11): ya no se escriben, quedan en disco",
+    "structural": "datos del paso 23 (borrado el 2026-10-11): ya no se escriben, quedan en disco",
     "neighbours": "los .sqx de las vecinas de T1 se rehacen de la madre; su tabla va en vecinas.*",
     "store": "el propio almacén",
 }

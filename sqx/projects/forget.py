@@ -10,6 +10,8 @@ from sqx.projects import retire
 # The top-level AlgoData trees that nest a subfolder per project name. Shared or reference
 # data (bars, barsDerived, spread, templates, ledger, projectsBackup, cache, snapshots, logs,
 # profiling, notes, pipeline) is never named here and forget() never touches it.
+# "structural" and "atrCalculator" are no longer written (steps 23-24 deleted) but still
+# hold old per-project data on disk.
 PROJECT_DIRS = ("crosstf", "harvest", "metrics", "reports", "structural",
                 "strategyPermutations", "atrCalculator", "raw")
 

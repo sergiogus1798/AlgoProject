@@ -17,7 +17,9 @@ from ledger import record, study as studymod
 from studies.closing.blindJoint import inputs, many, one, pieces, readings
 
 
-VERDICT = {"fail": "DESCARTAR", "watch": "REVISAR"}     # any other call keeps: MANTENER
+# Only DESCARTAR cuts: the autopilot's step-20 rule reads `verdict_csv.drop` (criteria.yaml).
+# REVISAR is KEPT, flagged for the owner's eye; any other call keeps: MANTENER.
+VERDICT = {"fail": "DESCARTAR", "watch": "REVISAR"}
 
 
 def ledger_row(a: argparse.Namespace, cfg: dict, got: dict, span: tuple) -> dict:
@@ -46,17 +48,17 @@ def ledger_row(a: argparse.Namespace, cfg: dict, got: dict, span: tuple) -> dict
         "window_to": str(span[1].date()), "n_in": k,
         "n_out": int((got["calls"][readings.label(reading)] != "fail").sum()) if reading else k,
         "criterion": f"blindJoint/{readings.label(reading) if reading else 'sin_regla'}",
-        "thresholds": {"fwer": cfg["stepm"]["fwer"], "benchmark": cfg["benchmark"]["sizing"],
+        "thresholds": {"fwer": cfg["stepm"]["fwer"], "benchmark": "random_trader", **cfg["benchmark"],
                        **cfg["joint"]},
-        "seeds": [cfg["bootstrap"]["seed"]],
+        "seeds": [cfg["bootstrap"]["seed"], cfg["benchmark"]["seed"]],
         "note": f"{'soft: ' if not reading else ''}pasan por lectura {counts}; SPA "
-                f"{got['spa']}; buy & hold Sharpe {got['sharpe_bh']:.3f}"},
+                f"{got['spa']}; benchmark: random trader of the mother's footprint"},
         (got["table"]["sharpe"] / np.sqrt(252)).values)
 
 
 def verdict_table(population: pd.DataFrame, got: dict, cfg: dict) -> pd.DataFrame:
     """One row per mother for /curate: DESCARTAR only under a chosen reading that drops her,
-    REVISAR (kept, like anything but DESCARTAR) for a `watch` under `peor`."""
+    REVISAR (kept and flagged, never cut: like anything but DESCARTAR) for a `watch` under `peor`."""
     reading = one.chosen(cfg)
     rows = []
     for mother, row in population.iterrows():
@@ -112,8 +114,8 @@ def main() -> None:
                       f"oos2 {span[0].date()} → {span[1].date()}"}
     if not refused:
         panel = inputs.panel(batches, span, a.feed)
-        data |= {"panel": panel, "moves": inputs.moves(a.feed, panel.index),
-                 "point_value": inputs.point_value(a.symbol)}
+        random, mc = inputs.random_traders(batches, span, a.feed, cfg)
+        data |= {"panel": panel, "benchmark": random.reindex(panel.index), "mc": mc}
     got = many.run(data, cfg)
     measured = got["measured"]
 
@@ -138,7 +140,7 @@ def main() -> None:
         draws.save(out, [draws.record("blindJoint", f"spa_{k}", kept["observed"], kept[k])
                          for k in spa])
         print(f"\nSPA  lower {spa['lower']:.3f}  consistent {spa['consistent']:.3f}  "
-              f"upper {spa['upper']:.3f} · Sharpe del buy & hold {measured['sharpe_bh']:.3f}")
+              f"upper {spa['upper']:.3f} · contra el operador al azar de su misma huella")
         written = ledger_row(a, cfg, measured, span)
         print(f"ledger: {written['study']} paso 20")
     print(f"-> {out}")

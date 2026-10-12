@@ -4,7 +4,7 @@ kw: atr lag, double lag, conditionalMap, regime atr D-1, garch lagged, look-ahea
 tag: 🔬  date: 2026-10-04
 ---
 # `regime.atr` is already lagged one day — never shift it again
-Value at D = ATR at close of D-1, like `garch()`. `conditionalMap` shifted again (double lag), fixed. `studies/research/marketProfile/context.py` only takes its mean, unaffected.
+Value at D = ATR at close of D-1, like `garch()`. `conditionalMap` shifted again (deleted 2026-10-11, step 22) (double lag), fixed. `studies/research/marketProfile/context.py` only takes its mean, unaffected.
 
 ## Evidence
 2026-10-04 cleanup (`CALC_REVIEW.md`, deleted 2026-10-06).

@@ -47,13 +47,16 @@ que sólo el dueño puede dar.
 | 18 | **CSCV** — «¿elegir la mejor variante del pasado sirve fuera?»: 16 bloques, 12.870 particiones, sobre el exceso semanal neto de las variantes (lee `variant_trades.parquet`); **NO PASA** si la elegida pierde fuera en la mitad de las particiones o más (`p_perdida` ≥ 0,5) o si su PBO llega al p95 de su propio nulo; **LIMBO** si `p_perdida` supera el p95 de la de su propio nulo (casi nunca salta con variantes correlacionadas) o con menos de 30 variantes; PASA = no descarta. Anota el PBO y su p, la recta de degradación (β, R²), el recorte del Sharpe, la dominancia estocástica, la potencia con un Sharpe plantado y la lectura de la madre. ⚠️ El corte de 0,5 suspende al 29 % de los paneles correlados sin ventaja con Sharpe semanal 0,03 | `studies/optimisation/cscv/report.py`, manual `25-cscv.md` | ✅ construido sin SQX · 🟡 sin lote real con `variant_trades.parquet` |
 | 18.5 | **Superficies por mercado** — «¿el orden de las variantes en el mercado principal se repite en los demás?» (los de `_markets.yaml`, cuyo número depende del activo; los casi idénticos comparten un peso): ρ de Spearman media ponderada del exceso bruto contra un nulo de volteo semanal conjunto; orden positivo / neutro / perverso. **Partido en dos**: la lectura que decide (build+oos1) se corre y se juzga tras el 16.5, ANTES del bloque ciego (perverso → NO PASA; sin dato, o la prima del mejor 20 % bajo el p5 de su nulo → LIMBO); la lectura de oos2 se calcula dentro del bloque ciego y sólo puede añadir LIMBO | `studies/optimisation/marketSurfaces/report.py [--oos2]`, manual `52-superficies-mercado.md` | ✅ construido sin SQX · 🟡 sólo probado con paneles sintéticos (ningún lote real tiene `variant_trades.parquet`) |
 | 19 | **Walk Forward Matrix en SQX** — la tarea (30 celdas) y su lectura: sólo cuentan las operaciones que cierran en `oos2`, recobradas con los costes de oos2; **L1** (mediana de las 30 celdas del exceso neto por año contra un nulo de volteo semanal) decide: NO PASA si p− ≤ 0,05, LIMBO si no gana, PASA si gana. `modo_real` (por defecto `fijo`) añade, en `reoptimizado`, dos reglas que sólo pueden dar LIMBO. L2, celdas efectivas, deriva y el área de SQX se anotan | `sqx/projects/wfm.py`, `/wfm`; el análisis es `studies/optimisation/wfm/`, manual `34-wfm.md` | ✅ la tarea y la lectura (una corrida real: 10 madres del Nikkei, 4 PASA, 5 LIMBO, 1 NO PASA) |
-| 20 | **Análisis conjunto de 17, 18, 18.5 y 19** — y el SPA/StepM de cada madre contra el buy & hold a igual riesgo sobre `oos2` (encargo 10 B). Lectura provisional `peor` (dueño, 2026-10-07): **manda el peor de los cuatro estados**: algún NO PASA → DESCARTAR, algún LIMBO → REVISAR, si no MANTENER | `studies/closing/blindJoint/report.py`, manual `56-paso-20.md`; antes, `ledger.backfill --blind` (17-19 no se apuntan solos) | ✅ · 🟡 provisional hasta que el dueño rediseñe el paso 20 · el SPA sobre `oos2` se lee para un humano; sólo un agente autónomo lo encuentra cerrado (`BlindJoint` fuera de `reserved_for`) |
-| 21 | **Exposición contra el buy and hold** — qué tiempo de mercado costó lo que ganó | `studies/closing/exposure/`, `docs/manual/10-cierre.pdf` (cap. 38-exposicion) | ✅ |
-| 22 | **Mapa condicional** — clasifica cada operación por el estado del mercado al entrar (volatilidad realizada, tendencia, día de la semana) y lee el P&L celda a celda; fabrica hipótesis, no filtra | `studies/readings/conditionalMap/`, manual `53-mapa-condicional.md` | 🟡 · ✅ sesión (Tokio 9-18, Londres 8-17, Nueva York 8-17, cada una en su hora local, y el solape) con las horas del dueño del 2026-09-26: `studies/readings/conditionalMap/sessions.py`, OPEN.md #47 |
-| 23 | **Estructura** — por superviviente: una ablación por condición de entrada y la inversión de la orden en las mismas entradas. ¿Qué condición aporta por operación contra un recorte al azar, cuál es redundante, y vive el filo en la dirección? Diagnóstico, nunca selección | `sqx.structural.make` → `sqx.variants.execute` (custodio) → `sqx.structural.keep` → `sqx.export.export_retest` → `studies/readings/structure/report.py`, manual `51-estructura.md` | ✅ · lee `build` y `oos1` · sin stops: la inversión se niega si la madre ya lleva stop/target (por eso va antes del 24) · D3 (mono dentro de SQX) cerrado como imposible |
-| 24 | **El stop loss para MT5** — a cuántos ATR, leído del MAE de las operaciones, **sin optimizar** | `studies/closing/atrCalculator/`, `sqx/variants/stopgrid.py`, manual `54-atr-calculator.md` | 🟡 construido y probado en SQX sobre una estrategia de desarrollo; falta una superviviente real · lee `build`, `oos1` y `oos2` |
-| 25 | **Edge por coste, por estrategia** — la misma lectura sobre el export de trades de la versión que se va a operar, para confirmar que el edge sigue por encima del umbral con el stop puesto | `studies/readings/edgeCost/report.py ... --strategy "<nombre>"`, mismo manual `50-edge-por-coste.md` | ✅ · misma forma de columnas que el export de la puerta, ningún cambio de código entre los dos usos |
-| 26 | **Validación en MT5 con la feed de cada empresa de fondeo → pool validado** — sobre la estrategia ya dada por buena en 1-25: SQX traducido al reloj y los costes de la empresa contra el backtest de MT5 en el tramo común, comparando operaciones, P&L diario en el día del servidor, peor día y drawdown intradía con umbrales fijados antes; si coincide, entra en el pool de esa empresa, lo único que lee la cartera (dueño, 2026-09-29) | encargo 34, `mt5/verify/`, ventana › MT5 BRIDGE › Verificar | 🟡 la verificación está construida (2026-09-29): un backtest de SQX con las condiciones de cada empresa contra el del EA en MT5 en la cuenta de esa empresa, con los cinco umbrales del dueño; falta el pool, y una superviviente real |
+| 20 | **Análisis conjunto de 17, 18, 18.5 y 19** — y el SPA/StepM de cada madre contra un trader al azar con la misma huella sobre `oos2` (encargo 10 B). Lectura provisional `peor` (dueño, 2026-10-07): **manda el peor de los cuatro estados**: algún NO PASA → DESCARTAR, algún LIMBO → REVISAR, si no MANTENER; la cadena corta lo que sale DESCARTAR (2026-10-11) | `studies/closing/blindJoint/report.py`, manual `56-paso-20.md`; antes, `ledger.backfill --blind` (17-19 no se apuntan solos) | ✅ · 🟡 provisional hasta que el dueño rediseñe el paso 20 · el SPA sobre `oos2` se lee para un humano; sólo un agente autónomo lo encuentra cerrado (`BlindJoint` fuera de `reserved_for`) |
+| 21 | **Exposición contra el buy and hold** — qué tiempo de mercado costó lo que ganó | `studies/closing/exposure/`, `docs/manual/10-cierre.pdf` (cap. 38-exposicion) | ✅ · sólo describe: sin veredicto ni umbral de eficiencia (2026-10-11) |
+| 26 | **Validación en MT5 con la feed de cada empresa de fondeo → pool validado** — sobre la estrategia ya dada por buena en 1-25: SQX traducido al reloj y los costes de la empresa contra el backtest de MT5 en el tramo común, comparando operaciones, P&L diario en el día del servidor, peor día y drawdown intradía con umbrales fijados antes (fila 1: el emparejamiento exigido en los dos sentidos; fila 1b: la salida también coincide; «Sin veredicto» si SQX tiene menos de `mt5verify.trades_min` operaciones, y no se anota en el pool; el primer veredicto cuenta en el pool; `exit_same_min` y `trades_min` son provisionales hasta una corrida de referencia, OPEN.md); si coincide, entra en el pool de esa empresa, lo único que lee la cartera (dueño, 2026-09-29) | encargo 34, `mt5/verify/`, ventana › MT5 BRIDGE › Verificar | 🟡 la verificación está construida (2026-09-29): un backtest de SQX con las condiciones de cada empresa contra el del EA en MT5 en la cuenta de esa empresa, con los cinco umbrales del dueño; falta el pool, y una superviviente real |
+
+**Pasos que ya no están en la cadena** (sus números no se reutilizan):
+
+- **22** — **Mapa condicional** — eliminado (2026-10-11): el estudio y su paso se borraron del código; no se renumera ningún paso
+- **23** — **Estructura** — eliminado (2026-10-11): el estudio y las variantes estructurales (`make`, `keep`, `plan`) se borraron; sólo queda `sqx/structural/logic.py`, que lee la lógica de una estrategia
+- **24** — **El stop loss para MT5** — eliminado (2026-10-11). La medición preregistrada dio NO PASA (`portfolio/DECISIONS.md`, entrada del 2026-10-11; dossier `medicion-stop-lejano-2026-10-11.md`): un stop lejano 2·X toca el 11,55 % de las operaciones, el límite era el 1 %. Las estrategias operan sin stop por operación y el 26 recibe el `.sqx` de la madre tal cual
+- **25** — **Edge por coste, por estrategia** — fuera de la cadena (2026-10-11): ningún paso lo corre; el modo `--strategy` de `studies/readings/edgeCost/report.py` sigue como orden suelta (el paso 8 usa el modo población)
 
 **Tres lecturas adicionales que no son pasos nuevos y no renumeran nada.** Dos sobre una
 estrategia y su lista de operaciones, gratis y sin SQX: `studies/readings/profitShape/` (manual
@@ -91,7 +94,7 @@ Los pasos 1 a 20 preguntan si la ventaja es **real**. El 21 pregunta qué **form
 retorno conseguido con el 4 % de ocupación no es el mismo objeto que conseguido estando dentro
 siempre, porque las horas fuera no tienen gap, ni noticia, ni drawdown, ni capital inmovilizado.
 
-Mide tres cosas y no las confunde: lo que ganó **en total** contra un buy and hold **al mismo
+Sólo describe (2026-10-11): sin veredicto ni umbral de eficiencia. Mide tres cosas y no las confunde: lo que ganó **en total** contra un buy and hold **al mismo
 riesgo**, lo que gana **por hora expuesta**, y cuánto del movimiento del mercado ocurrió mientras
 tenía posición — que es lo que separa una ventaja propia de estar presente en los tramos buenos.
 
@@ -99,25 +102,16 @@ tenía posición — que es lo que separa una ventaja propia de estar presente e
 se cierra la secuencia individual. Si algún día se construye la regresión, va en
 `studies/closing/exposure/`, que ya tiene montada su antesala.
 
-## El paso 24 — el stop loss que MT5 exige
+## El paso 24 — eliminado (2026-10-11)
 
-Encargo del dueño, 2026-09-25/26. La cadena construye **sin stop a propósito**: un stop es un
-parámetro más y cada parámetro es sitio para el sobreajuste. Pero MT5 lo exige, así que al final
-de la secuencia individual se le pone uno a la estrategia que ya sobrevivió todo.
-
-> *«No quiero que sea una optimización ni nada.»*
-
-El stop es un **colchón**: corta las pérdidas largas que ya no se recuperan y deja a la estrategia
-el aire que necesita contra el ruido. Su distancia, `SL = X·ATR`, se **lee** del MAE de las
-operaciones —cuánto se fueron en contra las ganadoras, a partir de dónde ya no se recupera casi
-ninguna— con una regla fijada antes de mirar. No se barre una rejilla ni se elige la X que más
-gana. X sale **sólo del IS**, como percentil de las ganadoras (por defecto 80, 85, 90 y 95; tantos como se quiera con
-`--percentiles`, un sub-estudio cada uno), con ATR(20). `oos1` y `oos2` dicen si se transfiere. El coste y la estabilidad los mide SQX con sus propios
-spread y slippage: variantes un poco por encima y por debajo de cada X (±20 % por defecto),
-buscando meseta, no máximo. «Meseta» se lee con la puntuación del dueño —40 % PF, 30 % neto,
-30 % DD máximo, cada uno contra la original sin stop—, que sólo describe la forma y no ordena X.
-Después, si hace falta, se repite alguno de los tests anteriores sobre la versión con stop, y nada
-más. Detalle en `docs/manual/10-cierre.pdf` (cap. 54-atr-calculator).
+La cadena construye **sin stop a propósito**: un stop es un parámetro más y cada parámetro es
+sitio para el sobreajuste. MT5 lo exigía, y el paso 24 intentó dárselo con un stop lejano
+`SL = X·ATR` leído del MAE. La medición preregistrada del 2026-10-11 dio **NO PASA**: ese stop
+toca el 11,55 % de las operaciones (el límite era el 1 %), es decir, ya no es un colchón sino un
+filtro. Decisión del dueño: el paso, su estudio (`atrCalculator`) y su injerto en SQX se borraron.
+Las estrategias operan sin stop por operación y el 26 recibe el `.sqx` de la madre. Registro:
+`portfolio/DECISIONS.md` (2026-10-11), `docs/AgentPDFs/medicion-stop-lejano-2026-10-11.md` y
+OPEN.md #113 (lo que queda: el dimensionado de la cartera aún supone un stop por operación).
 
 ## El Monte Carlo de bootstrap está FUERA, a propósito
 
@@ -138,13 +132,11 @@ dimensionamiento y riesgo de ruina dada una distribución de trades— y ahí s�
 
 Sale de `assets/_policy.yaml` y no se negocia por paso:
 
-- `build` — sólo el paso 6. Es la única muestra que el generador ve. El paso 22 (mapa condicional)
-  también lo lee, pero sólo para congelar sus cortes de tercil — clasifica la muestra de
+- `build` — sólo el paso 6. Es la única muestra que el generador ve. El mapa condicional (22, eliminado)
+  también lo leía, sólo para congelar sus cortes de tercil — clasificaba la muestra de
   `run.sample` (por defecto `oos1`), nunca la construye contra ella.
-- `oos1` — del 7 al 16, el paso 22
-  (mapa condicional) y el paso 23 (tests estructurales, junto con `build`).
-- `oos2` — lo leen 17, 18, 18.5 y 19 (WFC, CSCV, superficies por mercado y WFM) y **el paso 24**
-  (stop loss ATR), sobre la superviviente, para ver si la X del IS se transfiere. Cada lectura deja
+- `oos1` — del 7 al 16 (junto con `build`).
+- `oos2` — lo leen 17, 18, 18.5 y 19 (WFC, CSCV, superficies por mercado y WFM). Cada lectura deja
   su fila en el ledger.
 
 **Un humano puede mirar cualquier tramo cuando quiera** (dueño, 2026-09-28). La regla de «no quemar
@@ -172,7 +164,7 @@ no identifica, SQX renombra en colisión.
 - **Workflow profesional**: el embudo corta hasta el paso 16 (8, 10, 12, 14 y 16 juzgan y su
   veredicto se aplica antes de la siguiente tarea de SQX). Lo que sobrevive al 16 pasa **entero**
   por 16.5, 17, 18, 18.5 y 19 —las cuatro piezas, sin filtrar una con otra— y el 20 las lee
-  juntas; 21-25 se corren sobre lo que salga del 20.
+  juntas; 21 (y el 26, cuando se piden sus cuatro parámetros) se corre sobre lo que salga del 20; 22-25 ya no están en la cadena.
 - **No** se filtra con la WFM (ni con ninguna de las cuatro) antes de correr las demás.
 - **Excepción**: con otro fin que no sea sacar una estrategia rentable —probar o mejorar el
   código—, se puede correr un solo paso suelto; la ventana lo permite con el ▶ de cada tarjeta.

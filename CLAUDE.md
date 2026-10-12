@@ -79,6 +79,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
     cross-checks. **A workflow run lives in ONE project** (owner, 2026-09-25): `builder --workflow`
     creates every step's task at step 5, and each step switches on only its own before `action=start`,
     which skips inactive tasks (`sqx.projects.stage`; every configurator does it for its step).
+    `MonteCarloManipulation` is never switched on, in any project or task (owner, 2026-10-11): `set_crosschecks` and `resources.refuse` refuse it.
 11. **Ambiguous? Ask — always.** Owner, "guárdatelo a fuego". When an idea for a strategy or an automation
     admits more than one reading — "crosses above the Keltner": the upper band or the middle line? — list
     the readings and ask which, at every link of the chain (idea → block → group → template → project)
@@ -149,7 +150,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
 19. **The workflow runs through ONE command, never step by step by hand.** Owner, 2026-10-05, «regla
     dura»: `bin/workflow.sh` — `simple` (no template, `/workflow-simple`), `template` (an authored
     `.sqx`, `/workflow-template`), `run` (an existing project, from where its rail is) — creates
-    the project and runs steps 6 to 25 in one SQX session (`pipeline.autopilot.run`; 160 min for
+    the project and runs steps 6 to 21 (then 26 when its four parameters are given) in one SQX session (`pipeline.autopilot.run`; 160 min for
     1,000 strategies and 10 mothers, 230 by hand). Every choice is an argument the owner gives; a
     missing one is a question (rule 11). Nothing CPU-heavy runs beside it (it doubled SQX's task
     times), and a failure gets the skill's three tries, then a report — never a hand-driven step, an

@@ -8,7 +8,7 @@ from pathlib import Path
 from ui.daemon.databank.batches import STUDIES as BATCH_STUDIES
 from ui.daemon.databank.batches import batches
 from ui.daemon.databank.cells import norm
-from ui.daemon.results import lote, store
+from ui.daemon.results import store
 from ui.daemon.results.slice import KEYS, mine
 
 NOT_CONTRACT = "informe anterior al contrato de estudios (sin tabs ni config_hash)"
@@ -138,26 +138,11 @@ def _batch(project: str, study: str, strategy: str) -> Iterator[dict]:
                identity=row["identity"], origin=f"lote {found[0].name}", elsewhere=None)
 
 
-def _lote(project: str, study: str, strategy: str) -> Iterator[dict]:
-    """A one-off multi-mother lote's results for this strategy, newest first (the ATR pass1 and
-    pass2 both answer: the owner reads the newest, told which pass it is — 2026-10-01)."""
-    found = [(p, row) for a in aliases(strategy) for p in lote.paths(project, study, a)
-             for row in [store.slim(p)] if row is not None]
-    found.sort(key=lambda f: f[1]["computed_at"] or "", reverse=True)
-    for i, (path, row) in enumerate(found):
-        name = lote.name(path)
-        note = f"lote {name}" + (f", el más nuevo de {len(found)}" if i == 0 and len(found) > 1
-                                 else "")
-        yield _hit(path, "file", row, alias=strategy, day=(row["computed_at"] or "")[:10],
-                   identity=row["identity"], origin=f"lote {name}", elsewhere=None, note=note,
-                   manifest=path.parent.parent / "manifest.json")
-
-
 def sources(project: str, databank: str, study: str, strategy: str,
             day: str = "") -> Iterator[dict]:
     """Every candidate result, in the order they are preferred when identity does not decide.
 
-    This databank's days newest first; then, for a strategy, the one-off lotes and every other
+    This databank's days newest first; then, for a strategy, every other
     databank of the project, newest report first — a strategy is one entity across the
     project (owner, 2026-09-30). A batch study reads only the mother's variant batch.
 
@@ -182,11 +167,7 @@ def sources(project: str, databank: str, study: str, strategy: str,
     tree = layout(project)
     others = sorted((d for d in tree if d != here), key=lambda d: max(
         (x for days in tree[d].values() for x in days), default=""), reverse=True)
-    for db in [here, None, *others] if strategy else [here]:
-        if db is None:                       # the lotes, project-wide, before other databanks
-            found = _lote(project, study, strategy) if study in lote.ROOTS else iter([])
-            yield from (h for h in found if not day or h["day"] == day)
-            continue
+    for db in [here, *others] if strategy else [here]:
         for d in tree.get(db, {}).get(study, []):
             if day and d != day:
                 continue

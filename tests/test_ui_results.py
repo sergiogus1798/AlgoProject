@@ -87,29 +87,6 @@ def check_result(c: TestClient, failures: list[str]) -> None:
         failures.append("una celda con un estado fuera de los cinco")
 
 
-def check_lote(c: TestClient, failures: list[str]) -> None:
-    """`structure`/`atrCalculator` (block G's audit, 2026-09-30): found by name in the mother's
-    `structural`/`atrCalculator` lote, whichever databank is asked, not only the ones under
-    `reports/` — real fixture mothers of two projects."""
-    mothers = {"Test_USDJPY_donchianUpperCrossUp_H1": ["Strategy 16.9.76", "Strategy 10.9.72",
-                                                        "Strategy 21.9.59"],
-              "Test_USDJPY_donchianUpperCrossUp_M30": ["Strategy 9.27.83", "Strategy 10.11.79",
-                                                        "Strategy 9.25.72"]}
-    for project, names in mothers.items():
-        for name in names:
-            got = c.get("/api/result", params={"project": project, "databank": "Results",
-                                                "study": "structure", "strategy": name}).json()
-            if got["result"] is None:
-                failures.append(f"{project}/{name}: sin lectura estructural: {got['meta']}")
-    # atrCalculator's H1 mothers sit in two passes (pass1, pass2): both are fine (owner,
-    # 2026-10-01), the newest answers and says which.
-    got = c.get("/api/result", params={"project": "Test_USDJPY_donchianUpperCrossUp_H1",
-                                       "databank": "Results", "study": "atrCalculator",
-                                       "strategy": "Strategy 16.9.76"}).json()
-    if got["result"] is None or "pass2" not in str(got["meta"]):
-        failures.append(f"atrCalculator con dos pasadas no lee la más nueva: {got['meta']}")
-
-
 def check_old_reports(c: TestClient, failures: list[str]) -> None:
     """Reports that predate the contract are skipped with a reason, never a crash."""
     for project in sorted(p.name for p in (DATA / "reports").iterdir() if p.is_dir()):
@@ -153,7 +130,7 @@ def main() -> None:
     """Run every check and exit non-zero on the first failure list."""
     c = client()
     failures: list[str] = []
-    for check in (check_catalogue, check_result, check_lote, check_old_reports, check_config):
+    for check in (check_catalogue, check_result, check_old_reports, check_config):
         check(c, failures)
     print("\n".join(failures) or "ok: catálogo, resultado por identidad, historial, matriz, "
                                  "lotes estructurales, informes antiguos y cajón de "

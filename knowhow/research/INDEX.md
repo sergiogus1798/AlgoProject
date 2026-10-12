@@ -21,6 +21,7 @@
 - `drift-term-biased-by-side` — Why is the gate's drift_excess_t biased toward one side (long or short) of an asset, and how much?
 - `entry-vs-chance` — Do the entries or the exits carry the edge on this corpus, and how to tell?
 - `eta-squared-vs-duplicates` — Should an inert parameter be frozen by the duplicate test or by eta-squared?
+- `far-stop-touches-too-many-trades` — Is there a far per-trade ATR stop that rarely fires on these bar-count-exit strategies?
 - `fdr-raises-on-nan-p` — Why does Benjamini-Hochberg raise, and where must NaN p-values be filtered?
 - `fixed-reference-window-edge` — Why use a centered reference window instead of a fixed-boundary one?
 - `funded-bank-ev-read-against-the-monkey` — Why does a zero-edge trader show positive bank EV on some prop plans?
@@ -61,6 +62,7 @@
 - `spp-origin-level-sampled-once` — What happens when an SPP step grid does not contain the original parameter value?
 - `stageb-selector-p-reads-high` — Which P(pass) of stage B's winner may be reported — the one that chose it, or a re-draw?
 - `step14-rules-on-selected-and-unselected` — Do step 14's T1/T2/T3 rules separate good strategies from unselected ones, and which should move?
+- `step20-benchmark-random-trader-mean` — What does step 20 use as its benchmark, and how is it built from random traders?
 - `step8-gate-measured-on-six-populations` — How many monkeys and how many real strategies cross step 8, and which rules discriminate?
 - `steps-17-to-19-measured-on-eight-mothers` — How many mothers do steps 17, 18, 18.5 and 19 stop, and what does each step cost in time?
 - `surfaces-jaccard-lift-flip-null` — Do the surfaces' Jaccard lift, or «the mother inside the other markets' top decile», beat a zero-edge market?

@@ -10,18 +10,6 @@ from ui.daemon.databank import cells
 from ui.daemon.databank.metrics import swap_block
 
 
-def _lote_file(data: Path, root: str, project: str, lote: str, study: str, name: str,
-               label: str) -> None:
-    """One strategy's result inside a one-off multi-mother lote, contract-shaped enough for
-    `store.slim` to read it — `<data>/<root>/<project>/<lote>/estudios/<study>/estrategias/`."""
-    path = (data / root / project / lote / "estudios" / study / "estrategias" / f"{name}.json")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"strategy": name, "identity": f"id-{name}", "config_hash": "h",
-                                "computed_at": "2026-09-30T00:00:00", "study": study, "tabs": [],
-                                "verdict": {"label": label, "state": "pass"}}),
-                    encoding="utf-8")
-
-
 def test_swap_block_recovers_oos_filed_as_is() -> None:
     """`SPP OOS` files its real numbers as `(IS)`, `(OOS)` at zero — swap to `(OOS)`."""
     frame = pd.DataFrame({"Net profit (IS)": [100.0, 200.0], "Net profit (OOS)": [0.0, 0.0],
@@ -69,26 +57,3 @@ def test_split_study_verdict_summarises_the_worst_sub(monkeypatch: pytest.Monkey
     out = cells.from_csv("crossTF", None)
     assert out["S1"]["state"] == "fail"
     assert out["S1"]["verdict"] == "fails"          # the worst sub's own word, not None
-
-
-def test_lotes_reads_a_one_off_multi_mother_batch(tmp_path: Path,
-                                                   monkeypatch: pytest.MonkeyPatch) -> None:
-    """`structure`/`atrCalculator` never write under `reports/` — `cells.lotes()` is the only
-    reader that finds them, by name, project-wide (📓 2026-09-30, block G/A1's audit: the
-    Cierre «Estructura» sub-panel fell back to the whole 300-row build roster for 3 real
-    mothers)."""
-    monkeypatch.setattr(cells, "DATA", tmp_path)
-    _lote_file(tmp_path, "structural", "P", "lote1", "structure", "Strategy 1.1.1", "ok")
-    got = cells.lotes("P")
-    assert set(got) == {"1.1.1"}
-    assert got["1.1.1"]["structure"]["verdict"] == "ok"
-
-
-def test_lotes_refuses_two_lotes_of_the_same_strategy(tmp_path: Path,
-                                                       monkeypatch: pytest.MonkeyPatch) -> None:
-    """Two passes of the ATR batch over the same mothers (real case on `..._H1`): no entry
-    beats a wrong one, same as `lote.path`'s own ambiguity refusal."""
-    monkeypatch.setattr(cells, "DATA", tmp_path)
-    _lote_file(tmp_path, "atrCalculator", "P", "pass1", "atrCalculator", "Strategy 1.1.1", "ok")
-    _lote_file(tmp_path, "atrCalculator", "P", "pass2", "atrCalculator", "Strategy 1.1.1", "ok")
-    assert cells.lotes("P") == {}

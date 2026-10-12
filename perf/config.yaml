@@ -71,8 +71,6 @@ sample:
   trades_databank: null           # MC_Trades was deleted 2026-09-25; name an export that holds
                                   # both trades/ CSVs and the strategies/ .sqx they came from
   retest_databank: MCR_All        # the ingested parquet the retest study reads back
-  atr_databank: Results           # an export spanning IS and oos1, for the ATR stop study (step 24)
-  atr_timeframe: H1               # the timeframe that export's strategies run on
   bars_feed: XAUUSD_M1
   harvest: [Test_USA500_H1_indicesIBS, Results, USA500]  # project, databank, asset of the gate harvest the
                                   # SPA and StepM bench is timed on (newest day)

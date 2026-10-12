@@ -14,6 +14,6 @@ databanks. The live chain does not rerun: it ends the step. Step 24: a failed pa
 ## Evidence
 - 🔬 2026-10-05, custodian, smoke run `Test_NIKKEI225_M30_simpleL_ref`: a plain rerun of the OOS retest left
   2,000 strategies for 1,000 built; the dev draw kept 20 instead of 10, every later SQX step computed double,
-  step 22 (conditionalMap) died with IndexError (the `(1)` names are not in Results).
+  step 22 (conditionalMap) (deleted 2026-10-11) died with IndexError (the `(1)` names are not in Results).
 - 📓 Sightings: OOS retest (step 7, 01:55, task `OOS`); `WFC 1 IS` in step 24 pass 2 (01:13). Not MC-only.
 - 📓 Step 24: pass 1's report alone made the rail call 24 done; step 25 then crashed on missing `pass2/ran.json`.

@@ -19,7 +19,7 @@ exist (note opens `lote <batch>`). ⚠️ Since 2026-09-28 the door binds only u
   returns 0 rows with the ledger read, 6 with an empty one.
 - Before (2026-09-26), `USDJPY_H1_crossAboveHMA_v1`: blindJoint raised `faltan [17, 18, 19]` although
   results existed; 15 backfilled rows opened it.
-- ⚠️ The family is part of the study id: atrCalculator logged USDJPY under
+- ⚠️ The family is part of the study id: atrCalculator [deleted 2026-10-11, step 24] logged USDJPY under
   `USDJPY_H1_USDJPY_workflow_profiling_v1` (project as family), the rest under `…_crossAboveHMA_v1`.
 - `pipeline/recipe.yaml` still calls both reports without `--family`. The window's runner passes it
   since 2026-09-28: the template folder from `projects/registry.csv` (`ui/daemon/runner/where.family`).

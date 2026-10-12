@@ -33,8 +33,7 @@ def finalist(name: str) -> dict:
     """A finalist as the autopilot hands it, described from its real file."""
     file = MOTHERS / f"{name}.sqx"
     return {"strategy": name, "identity": sqxfile.identity(file), "mother": name,
-            "sqx": str(file), "symbol": "USDJPY", "timeframe": "H1",
-            "stop": {"percentile": 95, "x": 1.5}}
+            "sqx": str(file), "symbol": "USDJPY", "timeframe": "H1"}
 
 
 FINALISTS = [finalist(n) for n in REAL]
@@ -146,7 +145,6 @@ def test_a_finalist_that_is_not_its_file_is_a_reason(tmp_path: Path) -> None:
     one = FINALISTS[0]
     assert "no existe" in reasons([{**one, "sqx": str(tmp_path / "x.sqx")}], PARAMS)
     assert "le falta mother" in reasons([{k: v for k, v in one.items() if k != "mother"}], PARAMS)
-    assert "le falta stop.percentile/x" in reasons([{**one, "stop": {"x": 1}}], PARAMS)
     assert "la finalista dice" in reasons([{**one, "identity": "0" * 64}], PARAMS)
     assert "la finalista dice" in reasons([{**one, "timeframe": "H4"}], PARAMS)
 
@@ -166,8 +164,7 @@ def test_run_records_every_verdict_and_goes_on_past_a_fail(tmp_path: Path,
     assert set(pool.read("ftmo")["strategy"]) == {"Strategy 16.9.76", "Strategy 10.9.72"}
     assert pool.read("hantec").empty
     row = pool.history("ftmo").iloc[0]
-    assert (row["project"], row["mother"], row["stop_percentile"], row["stop_x"]) == \
-        (PROJECT, "Strategy 16.9.76", "95", "1.5")
+    assert (row["project"], row["mother"]) == (PROJECT, "Strategy 16.9.76")
     assert row["identity"] == FINALISTS[0]["identity"] and row["run"].startswith("20261001-")
     seen = (tmp_path / "paso-26" / "verificados.csv").read_text(encoding="utf-8")
     assert seen.count("\n") == 7

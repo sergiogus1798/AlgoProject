@@ -114,7 +114,7 @@ def phase2(spec: dict, ctx: dict) -> dict:
 
 def running_job(ctx: dict, spec: dict) -> dict | None:
     """A job of this daemon still running one of the step's studies on this project; a job
-    the rail started names its step, so edgeCost of step 8 does not light step 25."""
+    the rail started names its step, so a study run for one step does not light another."""
     return next((j for j in jobs.listing() if j["rc"] is None
                  and j.get("project") == ctx["project"]
                  and j.get("step", spec["n"]) == spec["n"]
@@ -123,9 +123,7 @@ def running_job(ctx: dict, spec: dict) -> dict | None:
 
 def study(spec: dict, ctx: dict) -> dict:
     """A Python step: the newest contract result of its studies, and its funnel."""
-    only = spec.get("only_strategy", False) if "edgeCost" in spec["studies"] else None
-    found = {k: sources.results(ctx["project"], k, only if k == "edgeCost" else None)
-             for k in spec["studies"]}
+    found = {k: sources.results(ctx["project"], k) for k in spec["studies"]}
     key = next((k for k in spec["studies"] if found[k]), None)
     if key is None:
         job = running_job(ctx, spec)

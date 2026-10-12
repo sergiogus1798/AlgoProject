@@ -29,10 +29,9 @@ install over HTTP or starts one.
   Each entry says whether it has `one`, `many` and whether its command takes `--set`; a study
   the window never starts carries only `why`.
 - **Some commands get `--set` from the context before the owner's overrides**: `entryQuality`
-  (`run.feed`, `run.timeframe`) and `conditionalMap` (`run.symbol`, `run.feed`,
-  `run.timeframe`) keep the feed in `config.yaml`, where it would otherwise read XAUUSD for every
-  project. Their `config_hash` includes these, so a drawer that hashes only the owner's overrides
-  marks their results stale.
+  (`run.feed`, `run.timeframe`) keeps the feed in `config.yaml`, where it would otherwise read XAUUSD for every
+  project. Its `config_hash` includes these, so a drawer that hashes only the owner's overrides
+  marks its results stale.
 - **A cross-market export is one whose `Symbol` names more than one feed.** Every export carries
   the column since 2026-09-24; testing for the column refused every single-market study.
 - **`only` never goes through a study's `report --only`**, which rewrote the full run's
@@ -47,7 +46,7 @@ install over HTTP or starts one.
   `AlgoData/projects/registry.csv` (owner, Q9 of plan 24): a library template is
   `<name>/template.sqx`, so the name is its folder, not the file's stem. A project with no
   template in the registry is refused with that sentence: nothing is signed under a guess.
-  `--timeframe` comes from the same row. atrCalculator's family defaults to the project.
+  `--timeframe` comes from the same row.
 - **isOos has no `--strategy`.** It reads the metrics export, the newest cosecha, or both; `one`
   with N strategies is one job, because `table.jobs` folds identical commands.
 - **blindJoint** is started only after the rail's own check of the ledger's door, and its

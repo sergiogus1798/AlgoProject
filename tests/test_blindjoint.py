@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 20 on mothers whose answer is known: noise names nobody, a planted edge is named, the pieces veto."""
+"""Step 20 on mothers whose answer is known: noise and random traders name nobody, a planted edge is named, the pieces veto."""
 
 import os
 import sys
@@ -10,12 +10,19 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engines.market import reprice
 from ledger import gate
-from studies.closing.blindJoint import inputs, many, measure, one, readings, report
+from studies.closing.blindJoint import (benchmark, inputs, many, measure, one, readings,
+                                         report)
 from studies.closing.blindJoint.pieces import PIECES
 
 DAYS, K, SEEDS = 1250, 5, 20
 CFG = inputs.config(["bootstrap.reps=500"])
+# The random-trader case: a market that drifts up, 60 one-minute bars a day, a spread to pay.
+MINUTES, TRADES, DRIFT, RUNS = 60, 150, 0.004, 10
+COSTS = {"point_value": 1.0, "tick_size": 0.01, "spread": 0.05, "slippage": 0.0,
+         "commission_method": "SizeBased", "commission": 0.0, "swap_long": 0.0,
+         "swap_short": 0.0, "triple": 4, "rollover": 23}
 
 
 def mothers(states: dict[str, list[str]], missing: dict[str, list[str]] = None) -> pd.DataFrame:
@@ -45,11 +52,11 @@ def market(seed: int, edge: str | None) -> dict:
 
     Args:
         seed: Seed of the draw.
-        edge: The mother given a true daily Sharpe of 0.25 (about 0.18 once buy and hold
-            at equal risk is subtracted), or None.
+        edge: The mother given a true daily Sharpe of 0.25, or None.
 
     Returns:
-        `panel`, `moves` and `point_value`, as report.py hands them to measure.run.
+        `panel`, `benchmark` and `mc`, as report.py hands them to measure.run; the random
+        traders earn nothing here, so the excess is the mother's own day.
     """
     rng = np.random.default_rng(seed)
     names = [f"m{i}" for i in range(K)]
@@ -57,8 +64,44 @@ def market(seed: int, edge: str | None) -> dict:
                          rng.standard_t(4, (DAYS + 1, K)), columns=names)
     if edge:
         panel[edge] += 0.25 * panel[edge].std()
-    moves = pd.Series(np.r_[np.nan, rng.normal(0.0, 1.0, DAYS)], index=panel.index)
-    return {"panel": panel, "moves": moves, "point_value": 100.0}
+    return {"panel": panel, "benchmark": 0.0 * panel, "mc": pd.Series(0.0, index=names)}
+
+
+def traders(seed: int, edge: float) -> dict:
+    """Mothers that ARE random traders of their own footprint, on a market that drifts up.
+
+    Args:
+        seed: Seed of the market and of the mothers.
+        edge: Account currency added to every trade of `m1`, the one planted edge.
+
+    Returns:
+        What measure.run takes, plus `sum` (each mother's total excess) and `bars`. Every
+        mother is long TRADES times at uniform bars, held 30 to 600 bars, priced by the
+        repricer at COSTS and booked on the day she closes; her benchmark is
+        `benchmark.footprint` of those trades. Long in a rising market, each of them makes
+        money — and none of it is hers.
+    """
+    rng = np.random.default_rng(seed)
+    days = pd.bdate_range("2021-01-04", periods=DAYS)
+    index = pd.DatetimeIndex(np.add.outer(days.values, np.arange(MINUTES) *
+                                          np.timedelta64(1, "m")).ravel())
+    price = 100 + np.cumsum(rng.normal(DRIFT, 0.05, len(index) + 1))
+    bars = pd.DataFrame({"Open": price[:-1], "Close": price[1:]}, index=index)
+    panel, random, mc = {}, {}, {}
+    for m in (f"m{i}" for i in range(K)):
+        hold = rng.integers(30, 600, TRADES)
+        enter = rng.integers(0, len(index) - hold)
+        net, _ = reprice.pnl(price[enter], price[enter + hold], index.values[enter],
+                             index.values[enter + hold], 1.0, np.ones(TRADES), COSTS)
+        trades = pd.DataFrame({"Open time": index[enter], "Close time": index[enter + hold],
+                               "Type": "Buy", "Size": 1.0,
+                               "Profit/Loss": net + edge * (m == "m1")})
+        panel[m] = trades.groupby(trades["Close time"].dt.normalize())["Profit/Loss"].sum() \
+            .reindex(days, fill_value=0.0)
+        random[m], mc[m] = benchmark.footprint(trades, bars, COSTS, CFG["benchmark"])
+    panel, random = pd.DataFrame(panel), pd.DataFrame(random)
+    return {"panel": panel, "benchmark": random, "mc": pd.Series(mc),
+            "sum": (panel - random).sum(), "bars": bars}
 
 
 def main() -> None:
@@ -86,6 +129,31 @@ def main() -> None:
             failures.append(f"semilla {s}: con las piezas de contexto m1 no pasa")
     if hits < SEEDS:
         failures.append(f"edge plantado: el StepM lo nombra en {hits} de {SEEDS}")
+
+    # The benchmark's known answer: a mother that IS a random trader of her own footprint
+    # earns the drift and no excess; a constant edge per trade is excess, to the cent.
+    sums, drift, named, found = [], [], 0, 0
+    for s in range(RUNS):
+        flat, planted = traders(s, 0.0), traders(s, 3.0)
+        sums += list(flat["sum"])
+        drift += list(flat["panel"].sum())
+        named += bool(measure.run({"population": passing, **flat}, CFG)["named"][everyone])
+        got = measure.run({"population": passing, **planted}, CFG)
+        found += got["named"][everyone] == ["m1"]
+        gain = planted["sum"]["m1"] - flat["sum"]["m1"]
+        if abs(gain - 3.0 * TRADES) > 1e-6 or got["table"].loc["m1", "excess_day"] <= 0:
+            failures.append(f"semilla {s}: un edge de 3 por operación da un exceso de {gain:.2f}")
+        if not np.allclose(planted["benchmark"], flat["benchmark"]) or \
+                (flat["benchmark"].index != flat["panel"].index).any():
+            failures.append(f"semilla {s}: el operador al azar depende del resultado de la madre")
+    sums, drift = np.array(sums), np.array(drift)
+    z = sums.mean() / (sums.std(ddof=1) / np.sqrt(len(sums)))
+    if abs(z) > 3 or drift.mean() < 5 * abs(sums.mean()):
+        failures.append(f"madres al azar: exceso medio {sums.mean():.1f} (z {z:.2f}) con una "
+                        f"deriva de {drift.mean():.1f}: el operador al azar no la descuenta")
+    if named > 2 or found < RUNS:      # Binomial(10, 0.05): three or more, 1.2 %
+        failures.append(f"madres al azar: el StepM nombra a alguna en {named} de {RUNS}; el "
+                        f"edge plantado sale solo en {found} de {RUNS}")
 
     states = measure.states(vetoed)
     if readings.kept(states, "sin_fallo") != ["m0", "m2", "m3", "m4"] or \
@@ -145,7 +213,10 @@ def main() -> None:
 
     print("\n".join(failures) or
           f"ok: sobre ruido el StepM nombra alguna madre en {false} de {SEEDS} semillas; el "
-          f"edge plantado sale nombrado en {hits} de {SEEDS} y aun así una pieza en fail lo "
+          f"edge plantado sale nombrado en {hits} de {SEEDS}; madres que SON operadores al azar "
+          f"en un mercado con deriva ganan {drift.mean():.0f} y exceden {sums.mean():.1f} "
+          f"(z {z:.2f}), nombradas en {named} de {RUNS}, y un edge por operación sale en {found} "
+          f"de {RUNS}; una pieza en fail "
           f"veta bajo unanimidad y sin_fallo; una madre incompleta no se lee; sin oos2 no se "
           f"decide; y la puerta ciega se niega sin 17, 18 y 19")
     sys.exit(1 if failures else 0)

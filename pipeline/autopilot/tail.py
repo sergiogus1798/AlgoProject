@@ -12,8 +12,7 @@ SPLIT = "18.5"
 # Their tests read «the databank the panel shows» (`workflow.steps`, feeds ()): the rail
 # knows none, and the 2026-09-30 hand run used two (exposure on CrossTF_Mothers, the map on
 # Results). Not chosen here (hard rule 11): `--panel 21=<databank>`, or a clean stop.
-PANEL = {"21": "exposure", "22": "conditionalMap"}
-BATCH = {"23": "structural", "24": "stop"}      # a batch retested on the three WFC legs
+PANEL = {"21": "exposure"}
 # Step 26's parameters and the flag each comes from: nothing is defaulted (owner).
 MT5 = {"start": "--mt5-from", "end": "--mt5-to", "model": "--mt5-model", "firms": "--mt5-firms"}
 NOTHING = {"panel": {}, "mt5": {}, "judged": set()}
@@ -25,7 +24,7 @@ def flags(ap: argparse.ArgumentParser) -> None:
     """The tail's inputs on `pipeline.autopilot.run`'s command line, none with a default."""
     ap.add_argument("--panel", action="append", default=[], metavar="PASO=DATABANK",
                     help="el databank que lee un paso de panel: 21 (exposición, su export con "
-                         "OOS1) y 22 (mapa condicional, su cosecha); se repite")
+                         "OOS1); se repite")
     ap.add_argument("--until", choices=["wfm"],
                     help="el run acaba tras el paso 19 (la WFM, su lectura y las filas del ledger)")
     ap.add_argument("--mt5-from", help="paso 26: primer día del backtest, YYYY-MM-DD")
@@ -64,11 +63,11 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
         that has its result unless `redo`), then 17, 18 and 18.5 judged as the looks close; the
         WFM in SQX, its reading, what the funding module keeps of each that passed it (`kept`)
         and 19 judged — a judge only for a step `criteria.yaml` gives rules; the ledger rows
-        of 17-19 and the door, step 20 and its judge, 21-22 on the
-        databanks given, 23 and 24 in SQX, 25, the finalists, 26 — or, with `until: wfm`, a clean stop before 20. A step done is skipped;
+        of 17-19 and the door, step 20 and its judge, 21 on the
+        databank given, the finalists, 26 — or, with `until: wfm`, a clean stop before 20. A step done is skipped;
         the block's looks are planned whenever any of 17-19 is not, because the rail calls a
-        step done as soon as ONE mother has its result. 20, and any of 21-25 with rules, is
-        judged right after it runs. It stops, cleanly, at a step in marcha, without a family, at 21 or 22 without their databank, and before 26
+        step done as soon as ONE mother has its result. 20, and 21 with rules, is
+        judged right after it runs. It stops, cleanly, at a step in marcha, without a family, at 21 without its databank, and before 26
         without every one of its parameters.
     """
     by = {s["n"]: s for s in steps}
@@ -111,7 +110,7 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
         else:
             pending = n if judged else None
 
-    running = next((n for n in (*BLOCK, "19", "20", *PANEL, *BATCH, "25")
+    running = next((n for n in (*BLOCK, "19", "20", *PANEL)
                     if by[n]["state"] == "running"), None)
     block = any(due(n) for n in (*BLOCK, "19"))
     if (block or due("20")) and not family:
@@ -152,16 +151,7 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
             return halt(n, f"falta --panel {n}=<databank>: el databank que lee {key} no lo "
                            "sabe el raíl y no se elige por ti")
         visit(n, "reading", tests=[key], databank=given["panel"].get(n))
-    for n, kind in BATCH.items():
-        if n == running:
-            return halt(n, "está en marcha")
-        ran = due(n)
-        visit(n, kind)
-        stale = stale or ran
-    if running == "25":
-        return halt("25", "está en marcha")
-    visit("25", "edge", tests=["edgeCost"])
-    add("25", "finalists", title="finalistas para el paso 26")
+    add("26", "finalists", title="finalistas para el paso 26")
     missing = [flag for key, flag in MT5.items() if not given["mt5"].get(key)]
     if not missing:
         add("26", "mt5verify", params=given["mt5"])

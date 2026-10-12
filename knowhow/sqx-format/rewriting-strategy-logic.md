@@ -9,7 +9,7 @@ tag: 🔬  date: 2026-09-26  see: sqx-format/writing-a-variant, conditions/no-se
 - Invert = negate every `#Direction#` in `<Rules>` (entries and `ClosePosition`) and swap the side
   words (`Long entry`/`exit` rule names, `MarketPositionIsLong`). Same entries, opposite side, exactly.
 - ⚠️ Same trades after an ablation ≠ SQX ignored it: read the **retested** file back. If the block is
-  gone, the condition was redundant on that history (`sqx.structural.keep`).
+  gone, the condition was redundant on that history (`sqx.structural.keep`, deleted 2026-10-11, step 23).
 - Only without stop/target/trailing is the flip a mirror; `sqx.structural.logic.invert` refuses otherwise.
 
 ## Evidence
@@ -23,4 +23,4 @@ Value1 crosses above 57.72, exit after 24 bars), WFC legs at precision 2, 2026-0
   −1.0000; move at mid +32,349 / −32,349. Nets: mother 30,063 = 32,349 − 2,286 spread; inverted
   −49,521 = −32,349 − 2,286 spread − 14,886 short swap (−10.4 points/night).
 - SQX's own short entry keeps `label="Long"` beside `-1` (`tests/fixtures/strategy.sqx`): the label is cosmetic.
-- Factory: `sqx/structural/`; golden `tests/test_structural.py` hashes equal the retested XML.
+- Factory: `sqx/structural/` — only `logic.py` kept; `keep`/`make`/`plan` deleted 2026-10-11 (step 23); golden `tests/test_structural.py` hashes equal the retested XML.

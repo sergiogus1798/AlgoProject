@@ -92,10 +92,7 @@ def _build(path: list, value: object) -> dict | None:
     if section == "crosschecks" and last in ("build", "default"):
         return {"type": "choices", "options": choice(L.CROSSCHECKS)}
     if last in ("segment", "costs_segment"):
-        found = {"type": "choice", "options": choice(spans(section))}
-        if section == "wfc":
-            found["warn"] = L.REREAD.format(who="la lectura de estructura (studies/readings/structure)")
-        return found
+        return {"type": "choice", "options": choice(spans(section))}
     if path == ["wfm", "wf_type"]:
         return {"type": "choice", "options": [{"value": k, "text": f"{k} · {v[1]}"}
                                               for k, v in WF_TYPES.items()]}

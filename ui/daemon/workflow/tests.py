@@ -33,8 +33,6 @@ def keys(spec: dict) -> list[str]:
         then its `extra` readings. Generated from the catalogue, never listed by hand.
     """
     filed = [k for k, row in catalogue.STUDIES.items() if row[3] == spec["n"]]
-    if spec.get("only_strategy"):
-        filed = []      # step 25 is edgeCost per strategy; step 8 owns the catalogue's row
     return list(dict.fromkeys(spec["studies"] + filed + spec["extra"]))
 
 
@@ -95,8 +93,7 @@ def one(spec: dict, key: str, ctx: dict, live: list[dict]) -> dict:
                and ctx["blind"]["sealed"] else table.why_not(key)
                or (where.no_family(ctx["project"]) if key in SIGNED and not ctx["family"]
                    else None))
-    only = spec.get("only_strategy", False) if key == "edgeCost" else None
-    found = sources.results(ctx["project"], key, only)
+    found = sources.results(ctx["project"], key)
     row = {"key": key, "title": title, "config": summary(key, ctx["project"]),
            "runnable": not refused,
            "databank": found[0]["databank"] if found else None, "spends": SPENDS.get(key, ""),

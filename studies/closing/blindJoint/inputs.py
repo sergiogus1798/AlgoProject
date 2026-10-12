@@ -1,4 +1,4 @@
-"""What step 20 reads: its knobs, the ledger's two doors, the mothers' oos2 days and the asset's bars."""
+"""What step 20 reads: its knobs, the ledger's two doors, the mothers' oos2 days and their random traders'."""
 
 from pathlib import Path
 
@@ -7,8 +7,10 @@ import pandas as pd
 from core.assetdata import load as load_asset, window as asset_window
 from core.barstore import source as read_bars
 from core.study import config as study_config
+from engines.market import reprice
 from ledger import gate, study as studymod, thresholds
 from portfolio.common.construct.equity import closecurve
+from studies.closing.blindJoint import benchmark
 
 CONFIG = Path(__file__).with_name("config.yaml")
 STEP = 20
@@ -156,28 +158,26 @@ def panel(batches: dict[str, Path], span: tuple[pd.Timestamp, pd.Timestamp],
     return profit.reindex(columns=list(batches)).fillna(0.0)
 
 
-def moves(feed: str, days: pd.DatetimeIndex) -> pd.Series:
-    """The asset's price change between consecutive days of the panel, close to close.
+def random_traders(batches: dict[str, Path], span: tuple[pd.Timestamp, pd.Timestamp],
+                   feed: str, cfg: dict) -> tuple[pd.DataFrame, pd.Series]:
+    """What a random trader with each mother's own footprint earns per oos2 day.
 
     Args:
+        batches: {mother: batch folder}, the complete mothers only.
+        span: What window() returned.
         feed: SQX feed name, e.g. "USDJPY_M1".
-        days: The panel's index.
+        cfg: What config() returned.
 
     Returns:
-        Price change per panel day, the first one NaN: each day's last M1 close minus the
-        day before's, the instants the panel marks its positions at (part A,
-        the deleted `snoopingScreen/inputs.py`).
+        One column per mother on the panel's days (`benchmark.footprint`), and each column's
+        Monte Carlo standard error per day. It opens nothing step 20 had not opened: the
+        mothers' oos2 trades and the feed's M1 bars are what `panel` already read, behind
+        the same door, and the costs are the asset card's.
     """
-    return closecurve.day_closes(read_bars(feed, ["Close"])).reindex(days).diff()
-
-
-def point_value(symbol: str) -> float:
-    """Account currency per 1.0 of price and 1.0 of lot, from the asset file.
-
-    Args:
-        symbol: Asset name, e.g. "USDJPY".
-
-    Returns:
-        The figure SQX holds for the instrument.
-    """
-    return float(load_asset(symbol)["instrument"]["point_value"])
+    bars = read_bars(feed, ["Open", "Close"])
+    bars = bars[(bars.index >= span[0]) & (bars.index < span[1])]
+    costs = reprice.costs(feed, SEGMENT)
+    got = {m: benchmark.footprint(mother_trades(b, span), bars, costs, cfg["benchmark"])
+           for m, b in batches.items()}
+    return (pd.DataFrame({m: g[0] for m, g in got.items()}),
+            pd.Series({m: g[1] for m, g in got.items()}))

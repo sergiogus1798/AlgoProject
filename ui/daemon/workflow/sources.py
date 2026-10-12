@@ -63,8 +63,8 @@ def results(project: str, key: str, strategy_runs: bool | None = None) -> list[d
     Args:
         project: Project name.
         key: Study folder name, e.g. "gate".
-        strategy_runs: For edgeCost, which runs to keep: True only those launched with
-            `--strategy` (step 25), False only the population ones (step 8), None all.
+        strategy_runs: For edgeCost, which runs to keep: False only the population ones
+            (step 8: old `--strategy` runs still sit on disk without a manifest), None all.
 
     Returns:
         One dict per result: `path`, `day`, `databank` (None for a batch) and `manifest`.
@@ -80,7 +80,7 @@ def results(project: str, key: str, strategy_runs: bool | None = None) -> list[d
         found.append({"path": folder, "day": folder.parent.name,
                       "databank": folder.parent.parent.name, "manifest": manifest})
     for root in BATCH_ROOTS:
-        top = DATA / root / project      # step 24's batch is two passes: <batch>/pass1, pass2
+        top = DATA / root / project
         for hit in (*top.glob(f"*/estudios/{key}*"), *top.glob(f"*/*/estudios/{key}*")):
             if hit.name in (key, f"{key}.json"):
                 found.append({"path": hit, "day": day_of(hit), "databank": None,

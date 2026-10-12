@@ -52,8 +52,7 @@ FAMILIES = {
         "29-puerta", "98-criba-mae-profundo", "99-monos-por-la-cadena",
         "108-lotes-de-una-celda"]),
     "06-lecturas": ("Lecturas de una estrategia", [
-        "26-nulos", "50-edge-por-coste", "42-calidad-de-la-entrada",
-        "53-mapa-condicional", "51-estructura"]),
+        "26-nulos", "50-edge-por-coste", "42-calidad-de-la-entrada"]),
     "07-otros-mercados-y-timeframes": ("Otros mercados y otros timeframes", [
         "30-crossmarket", "05-retest-mercados", "39-crossmarket-lote", "31-crosstf"]),
     "08-montecarlo": ("Monte Carlo y MC Retest", [
@@ -62,8 +61,8 @@ FAMILIES = {
         "33-spp", "08-spp", "09-diccionario-spp", "15-sppultra", "18-variantes",
         "37-wfc-retest", "19-wfc", "107-wfc-calibracion", "25-cscv", "39-nube-de-parametros",
         "52-superficies-mercado", "34-wfm", "09-wfm", "14-walkforwardmatrix"]),
-    "10-cierre": ("El cierre: paso 20, exposición, stop y MetaTrader 5", [
-        "56-paso-20", "85-autopiloto-cierre", "38-exposicion", "54-atr-calculator", "60-mt5", "76-mt5-verificar", "86-mt5-pool-validado",
+    "10-cierre": ("El cierre: paso 20, exposición y MetaTrader 5", [
+        "56-paso-20", "85-autopiloto-cierre", "38-exposicion", "60-mt5", "76-mt5-verificar", "86-mt5-pool-validado",
         "75-filtro-noticias", "93-metatracker", "94-flota-colector"]),
     "11-cartera": ("Cartera: el pool, el universo, las parejas y la búsqueda de fondeo", [
         "77-cartera-pool", "78-cartera-universo", "79-cartera-fondeo",

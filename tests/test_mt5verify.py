@@ -72,6 +72,16 @@ def judged(failures: list[str]) -> None:
                              ("EETUS", "EETUS"))["summary"]
     if got["state"] != "fail" or got["row_1"] != 0.0:
         failures.append(f"sin operaciones en MT5 no falla la fila 1: {got}")
+    extra = trades(63, 1).iloc[60:].assign(**{"Open time": lambda f: f["Open time"] + pd.Timedelta(days=900),
+                                              "Close time": lambda f: f["Close time"] + pd.Timedelta(days=900)})
+    got = judge.firm_result("ftmo", sqx, pd.concat([sqx, extra], ignore_index=True), "H1", 100000,
+                            cfg, "XAUUSD", INST, ("EETUS", "EETUS"))["summary"]
+    if got["state"] != "fail" or not got["row_1"] < 0.95:
+        failures.append(f"3 operaciones de más en MT5 no fallan la fila 1: {got}")
+    got = judge.firm_result("ftmo", sqx.iloc[:20], sqx.iloc[:20], "H1", 100000, cfg, "XAUUSD", INST,
+                            ("EETUS", "EETUS"))["summary"]
+    if got["state"] != "none":
+        failures.append(f"menos operaciones de SQX que el mínimo no dan «sin veredicto»: {got}")
 
 
 def priced(failures: list[str]) -> None:

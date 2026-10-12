@@ -18,14 +18,6 @@ def exported(c: dict) -> list[str] | str:
     return where.distinct(Path(c["trades"]), "strategy") or "el export no nombra estrategias"
 
 
-def harvested(c: dict) -> list[str] | str:
-    """Every strategy of the databank's newest cosecha, as its builds spell them."""
-    if not c["harvest"]:
-        return "necesita la cosecha de este databank (studies.screening.gate.harvest, skill /oos-gate)"
-    names = where.distinct(Path(c["harvest_dir"]) / "metrics.parquet", "strategy_build")
-    return names or "la cosecha no nombra estrategias"
-
-
 def monkey(c: dict, strategy: str) -> list[str] | str:
     """The entry-timing null: one strategy on its own market, or every strategy of the export."""
     if not c["export"]:
@@ -59,18 +51,6 @@ def edge_cost(c: dict, strategy: str) -> list[str] | str:
              c["databank"], "--feed", c["feed"]] + (["--strategy", strategy] if strategy else []))
 
 
-def conditional_map(c: dict, strategy: str) -> list[str] | str:
-    """Step 22: one strategy's entries against the regime they were taken in."""
-    if not c["harvest"]:
-        return "necesita la cosecha de este databank (studies.screening.gate.harvest, skill /oos-gate)"
-    frame = where.harvest_timeframe(c["harvest_dir"])
-    if not frame:
-        return "la cosecha mezcla varios timeframes: córrelo desde la terminal con run.timeframe"
-    return ["-m", "studies.readings.conditionalMap.report", "--harvest", str(c["harvest_dir"]),
-            "--strategy", strategy, "--set", f"run.symbol={c['asset']}", f"run.feed={c['feed']}",
-            f"run.timeframe={frame}"]
-
-
 def exposure(c: dict, strategy: str) -> list[str] | str:
     """Step 21: market time against buy and hold."""
     if runs.own_trades(c):
@@ -81,12 +61,6 @@ def exposure(c: dict, strategy: str) -> list[str] | str:
              c["databank"], "--feed", c["feed"], "--symbol", c["asset"]]
             + (["--strategy", strategy] if strategy else [])
             + (["--set", f"study.timeframe={frame}"] if frame else []))
-
-
-def atr_calculator(c: dict, strategy: str) -> list[str] | str:
-    """Step 24: the stop's X from the MAE of the IS winners; spends its look in the ledger."""
-    got = runs.atr_calculator(c | {"strategy": strategy})
-    return got if isinstance(got, str) or strategy else got[:-2]
 
 
 def monte_carlo(c: dict, strategy: str) -> list[str] | str:
@@ -119,12 +93,7 @@ STUDIES = {
     "entryQuality": {"plan": entry_quality, "one": True, "many": True, "sets": True,
                      "population": exported},
     "edgeCost": {"plan": edge_cost, "one": True, "many": True, "sets": True},
-    "conditionalMap": {"plan": conditional_map, "one": True, "many": True, "sets": True,
-                       "population": harvested},
     "exposure": {"plan": exposure, "one": True, "many": True, "sets": True},
-    "atrCalculator": {"plan": atr_calculator, "one": True, "many": True, "sets": True},
     "monteCarlo": {"plan": monte_carlo, "one": True, "many": True, "sets": True},
-    "structure": {"why": "lee un lote estructural ya retesteado y elige sus piernas (--work, "
-                         "--databank): desde la terminal, tras sqx.structural"},
     "blindJoint": {"plan": blind_joint, "one": False, "many": True, "sets": True},
 }

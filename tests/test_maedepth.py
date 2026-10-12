@@ -10,7 +10,6 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engines.market import atr as sqx_atr, excursion
-from studies.closing.atrCalculator import one as atr_one
 from studies.screening.maeDepth import inputs, many, measures
 
 
@@ -53,9 +52,6 @@ def main() -> None:
     free = many.panel(both, names, cfg)
     if free["marcada"].any() or (free["verdict"] != "MANTENER").any():
         failures.append("panel: sin umbral fijado nadie puede marcarse")
-    # The step-24 study reads the very same function, so the two steps cannot disagree.
-    if atr_one.excursion is not excursion:
-        failures.append("atrCalculator ya no usa engines.market.excursion")
     print("FALLA\n" + "\n".join(failures) if failures else "ok: maedepth")
     sys.exit(1 if failures else 0)
 

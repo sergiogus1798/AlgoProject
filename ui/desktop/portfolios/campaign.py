@@ -20,9 +20,8 @@ FLOWS = (("Fecha", "Cuándo se guardó el workflow."), ("Activo", "El símbolo d
          ("Finales", "Las estrategias que salieron del paso 25: las que se guardaron en el archivo."))
 STEPS = (("Paso", "El número del WORKFLOW."), ("Tipo", "sqx: corre en StrategyQuant; python: un estudio; judge: aplica el criterio."),
          ("Seg", "Segundos de reloj que tardó."), ("Qué hizo", "Lo que dijo el autopiloto, con «entran → quedan» donde cribó."))
-STRATS = (("Final", "La variante con su stop (S…V…) de una madre: lo que se llevaría a probar."),
-          ("Madre", "La estrategia de SQX de la que sale: casi todos los estudios llevan su firma."),
-          ("Stop", "Percentil del stop ATR y su múltiplo x (paso 24)."))
+STRATS = (("Final", "La estrategia superviviente, sin stop por operación: lo que se llevaría a probar."),
+          ("Madre", "La estrategia de SQX de la que sale: casi todos los estudios llevan su firma."))
 INTRO = ("Cada workflow completo que la campaña guardó, con TODOS sus resultados. Elige uno para ver su embudo y cuánto "
          "tardó cada fase; elige estrategias y «Abrir» las enseña en Estrategia, una a una, con «anterior / siguiente».")
 
@@ -145,8 +144,7 @@ class CampaignPage(QFrame):
         self.funnel.setToolTip("Cada tramo es «qué se cribó: cuántas entraron → cuántas quedaron», en el orden en que "
                                "corrió el workflow.")
         _fill(self.steps, [(r["step"], r["kind"], num(r["seconds"]), r["what"]) for r in got["steps"]])
-        _fill(self.strats, [(s["name"], s["mother"], f"p{s['stop']['percentile']} · x {s['stop']['x']}"
-                             if s["stop"] else "—") for s in got["strategies"]])
+        _fill(self.strats, [(s["name"], s["mother"]) for s in got["strategies"]])
         lost = got["not_kept"]
         self.kept.setText(f"{num(len(lost))} cosas no se copiaron (ficheros grandes o intermedios)." if lost else "")
         self.kept.setToolTip("\n".join(f"{x['path']}: {x['reason']}" for x in lost[:30]))

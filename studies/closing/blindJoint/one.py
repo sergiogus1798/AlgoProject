@@ -29,33 +29,34 @@ def parts(row: pd.Series, got: dict) -> list[dict]:
     named = bool(got["table"].loc[row.name, "named_all"])
     return said + [{"label": "20 SPA/StepM", "state": "pass" if named else "fail",
                     "value": float(got["table"].loc[row.name, "sharpe"]),
-                    "note": "nombrada contra el buy & hold" if named else
-                            f"no nombrada; Sharpe del buy & hold {got['sharpe_bh']:.3f}"}]
+                    "note": "nombrada: gana más que sus mismas operaciones entradas al azar"
+                            if named else "no nombrada: no se distingue de entrar al azar"}]
 
 
-def equity_chart(mother: str, got: dict, lots_bh: float) -> dict:
-    """The mother's own oos2 equity next to buy & hold's, both at the same daily risk.
+def equity_chart(mother: str, got: dict) -> dict:
+    """The mother's own oos2 equity next to what her random trader earns on average.
 
     Args:
         mother: The mother's name, a column of `got["panel"]`.
-        got: What measure.run() returned (`panel`, `held`, both already on oos2's days).
-        lots_bh: The buy & hold size measure.equal_risk() found for this mother.
+        got: What measure.run() returned (`panel`, `benchmark`, both on oos2's days).
 
     Returns:
-        A "lines" block: two cumulative curves on the same USD axis (feedback §9.2, adding
-        the original backtest's own curve beside buy & hold — same risk scaling as the
-        stats table above).
+        A "lines" block: two cumulative curves on the same USD axis; the gap between them
+        is the excess the SPA tests.
     """
     mine = got["panel"][mother].cumsum()
-    bh = (got["held"] * lots_bh).cumsum()
-    return {"kind": "lines", "title": "Equity en oos2: la madre contra el buy & hold "
-            "a igual riesgo", "unit": "USD", "x": [d.strftime("%Y-%m-%d") for d in mine.index],
+    random = got["benchmark"][mother].cumsum()
+    return {"kind": "lines", "title": "Equity en oos2: la madre contra su operador al azar",
+            "unit": "USD", "x": [d.strftime("%Y-%m-%d") for d in mine.index],
             "series": [{"label": "Madre", "values": [float(v) for v in mine], "role": "real"},
-                       {"label": "Buy & hold (igual riesgo)", "values": [float(v) for v in bh],
-                        "role": "reference"}],
+                       {"label": "Operador al azar (media)",
+                        "values": [float(v) for v in random], "role": "reference"}],
             "auto_dash_negative": True, "zero_shade": True,
-            "note": "Misma escala de riesgo que la tabla de arriba: lotes de buy & hold "
-                    "elegidos para que su volatilidad diaria iguale a la de la madre."}
+            "note": "El operador al azar hace las mismas operaciones que la madre — cuántas, "
+                    "de qué lado, con qué lotes, cuánto dura cada una y a qué coste — pero "
+                    "entra en momentos al azar de oos2. La línea es la media de todos ellos: "
+                    "lo que da el mercado por estar dentro ese tiempo. Lo que la madre queda "
+                    "por encima es lo que vale su entrada."}
 
 
 def run(row: pd.Series, got: dict, cfg: dict) -> dict:
@@ -104,14 +105,18 @@ def run(row: pd.Series, got: dict, cfg: dict) -> dict:
     tabs = [envelope.tab("pieces", "Las cuatro piezas", [pieces, says])]
     if not got["refused"]:
         r = got["table"].loc[row.name]
-        tabs.append(envelope.tab("benchmark", "Contra el buy & hold en oos2", [
-            blocks.table("Contra el buy & hold a igual riesgo", pd.DataFrame(
+        tabs.append(envelope.tab("benchmark", "Contra el operador al azar en oos2", [
+            blocks.table("Contra un operador al azar con su misma huella", pd.DataFrame(
                 [["Sharpe anual de la madre", r["sharpe"]],
-                 ["Sharpe anual del buy & hold", got["sharpe_bh"]],
-                 ["Lotes de buy & hold a igual riesgo", r["lots_bh"]],
-                 ["Exceso medio diario (USD)", r["excess_day"]]], columns=["qué", "valor"]),
-                "Exceso positivo ⇔ Sharpe mayor que el del buy & hold."),
-            equity_chart(row.name, got, r["lots_bh"])]))
+                 ["Operador al azar, media diaria (USD)", r["random_day"]],
+                 ["Exceso medio diario de la madre (USD)", r["excess_day"]],
+                 ["Error de simulación del operador al azar (USD/día)", r["mc_day"]]],
+                columns=["qué", "valor"]),
+                "Exceso positivo = la madre gana más que sus mismas operaciones entradas al "
+                "azar. Batirlo es que ese exceso no se explique por suerte, contadas todas las "
+                "madres que llegaron (SPA y StepM). El error de simulación es lo que se mueve "
+                "la media del azar por haber simulado un número finito de operadores."),
+            equity_chart(row.name, got)]))
     return envelope.envelope(MODULE, row.name, row["identity"], cfg, started, tabs, said,
                              summary={"complete": True, "call": state,
                                       **{p: row[p]["state"] for p in PIECES},

@@ -10,8 +10,8 @@ from ui.daemon.advance.preflight import by_identity
 from ui.daemon.runner import where
 
 # The steps whose `cut` in criteria.yaml names where the survivors live from then on: 16
-# today («SPP OOS»), and 20-25 the day the owner gives one of them rules and a `cut`.
-CUTS = ("16", "20", "21", "22", "23", "24", "25")
+# today («SPP OOS»), and 20 and 21 the day the owner gives one of them rules and a `cut`.
+CUTS = ("16", "20", "21")
 
 
 class Done(Exception):

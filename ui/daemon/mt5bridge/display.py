@@ -44,9 +44,9 @@ def polish(result: dict | None, firm_names: dict[str, str]) -> dict | None:
                     digits = PERCENT.get(part["label"].split(" · ")[0])
                     if digits is not None and part.get("value") is not None:
                         part["shown"] = percent(part["value"], digits)
-    lines = [{"kind": "callout", "state": "pass" if state == "pass" else "fail",
+    lines = [{"kind": "callout", "state": {"pass": "pass", "none": "none"}.get(state, "fail"),
               "text": f"{firm_names.get(firm, firm)}: "
-                      f"{'validada' if state == 'pass' else 'no validada'}"}
+                      f"{ {'pass': 'validada', 'none': 'sin veredicto'}.get(state, 'no validada')}"}
              for firm, state in (result.get("summary", {}).get("firms") or {}).items()
              for state in [state["state"]]]
     for tab in result.get("tabs", []):

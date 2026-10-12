@@ -12,7 +12,7 @@ from mt5.verify import firms, pool
 from ui.daemon.mt5bridge import runs
 
 ROLE = "conductor"              # where mt5.verify.run builds its Test_ project (its config.yaml)
-KEYS = ("strategy", "identity", "mother", "sqx", "symbol", "timeframe", "stop")
+KEYS = ("strategy", "identity", "mother", "sqx", "symbol", "timeframe")
 PARAMS = {"start": "el primer día de la ventana, AAAA-MM-DD o MT5",
           "end": "el último día de la ventana, AAAA-MM-DD",
           "model": "el modelo del tester de MT5",
@@ -27,11 +27,11 @@ def unfit(finalist: dict) -> list[str]:
     """
     name = finalist.get("strategy", "?")
     missing = [k for k in KEYS if k not in finalist]
-    if missing or not {"percentile", "x"} <= set(finalist["stop"]):
-        return [f"{name}: a la finalista le falta {', '.join(missing) or 'stop.percentile/x'}"]
+    if missing:
+        return [f"{name}: a la finalista le falta {', '.join(missing)}"]
     file = Path(finalist["sqx"])
     if not (file.is_absolute() and file.is_file()):
-        return [f"{name}: su .sqx con el stop no existe en {file}"]
+        return [f"{name}: su .sqx no existe en {file}"]
     asset, rest = sqxfile.symbol(file)
     held = (asset, rest.rsplit("_", 1)[-1], sqxfile.identity(file))
     said = (finalist["symbol"], finalist["timeframe"], finalist["identity"])
@@ -59,7 +59,7 @@ def check(project: str, finalists: list[dict], params: dict) -> dict:
 
     Args:
         project: The workflow project the finalists come from.
-        finalists: `{strategy, identity, mother, sqx, symbol, timeframe, stop: {percentile, x}}`.
+        finalists: `{strategy, identity, mother, sqx, symbol, timeframe}`.
         params: `{start, end, model, firms}` — the owner's, each time; none has a default —
             and the optional `ticks`: a second tester pass on real ticks (`mt5.verify.ticks`).
 
@@ -87,8 +87,7 @@ def check(project: str, finalists: list[dict], params: dict) -> dict:
     since = ("lo más antiguo que tengan todos los servidores y SQX" if start.upper() == runs.DEEPEST
              else f"el {start or '—'}")
     listed = "\n".join(f"  · {f.get('strategy')} ({f.get('symbol')} {f.get('timeframe')}, madre "
-                       f"{f.get('mother')}, stop p{(f.get('stop') or {}).get('percentile')} × "
-                       f"{(f.get('stop') or {}).get('x')})" for f in finalists)
+                       f"{f.get('mother')})" for f in finalists)
     accounts = "; ".join(f"{firms.label(f)}: cuenta {MT5_ACCOUNTS[f]['login']} en "
                          f"{MT5_ACCOUNTS[f]['server']}" for f in chosen if f in MT5_ACCOUNTS)
     text = (f"Paso 26 de {project}: se van a verificar {len(finalists)} estrategias desde {since} "
@@ -163,6 +162,9 @@ def run(project: str, finalists: list[dict], params: dict, out: Path) -> str:
         pool.record(rows)
         seen += [{"strategy": r["strategy"], "firm": r["firm"], "verdict": r["verdict"],
                   "run": r["run"], "note": ""} for r in rows]
+        seen += [{"strategy": f["strategy"], "firm": firm, "verdict": "sin veredicto",
+                  "run": mine[-1]["run"], "note": "pocas operaciones de SQX"}
+                 for firm, st in mine[-1]["firms"].items() if st == "none"]
         seen += [{"strategy": f["strategy"], "firm": firm, "verdict": "sin verificar",
                   "run": mine[-1]["run"], "note": why}
                  for firm, why in mine[-1]["refused"].items()]

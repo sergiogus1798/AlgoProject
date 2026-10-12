@@ -50,6 +50,20 @@ Which rules, and of which firm. Each line says where the owner's answer is writt
 - `funded.open_risk_cap` (R5 above) and the payout cushion, tax rate, payout fee, denied-payout and
   firm-closure probabilities (`owner.*`, `null`) are his and unanswered.
 
+## Settled by the owner — 2026-10-11 (the per-trade stop: the p90 leaves; a criterion written before looking decides the far stop)
+
+Pre-registered: written here before `studies/closing/atrCalculator/breach.py` read any MAE. The
+numbers live in `ledger/thresholds.yaml` (`closing.stop.far_k`, `closing.stop.far_max_touch`).
+
+> El p90 sale en todos los casos. Con k = 2 fijado antes de mirar: si el stop 2·X toca menos del 1 % de las operaciones —todas las madres y `build`+`oos1` juntos, cota superior del intervalo de Wilson al 95 %— se injerta antes del 16.5 con X fijo; si no, ningún stop por operación y el riesgo se controla en la cuenta (`portfolio/`). `oos2` no se lee. k = 1,5 y las tasas de ruptura se informan, no deciden.
+
+- X is what step 24 already reads: the p90 of the MAE/ATR(20) of each mother's `build` winners.
+  A trade is «touched» at k when its MAE reaches k·X·ATR.
+- Background (measured before the decision): the p90 stop, grafted after all validation, fires on
+  23-41 % of the trades and costs 32 % of the `oos1` net.
+- `portfolio.funded.stop_percentile: 90` stays in the ledger until the pipeline stops reading it;
+  this entry is what supersedes its `why`.
+
 ## Settled by the owner — 2026-10-05 (the readings the Council's answers left open)
 
 `PLAN.md` §12 «Readings the Council's answers leave open», items 1-7. Knobs in

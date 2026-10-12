@@ -1,9 +1,7 @@
-"""Compare each firm's SQX retest with its MT5 backtest on the five rows of encargo 34, and judge.
+"""Compare each firm's SQX retest with its MT5 backtest on the rows of encargo 34, and judge.
 
-One merged tab reads better than one per firm (owner, 2026-09-29 §3.7): a shared parameter
-table, one P&L chart with every firm's pair of curves, and one verdict block per firm — tagged
-`"firm"` so the window can show or hide a firm's own blocks and chart series when its light is
-toggled, without asking the study to run again.
+One merged tab (owner, 2026-09-29 §3.7): a shared parameter table, one P&L chart with every
+firm's curves, one verdict block per firm tagged `"firm"` so the window can toggle it.
 """
 from collections.abc import Callable
 
@@ -27,12 +25,9 @@ def shifted(frame: pd.DataFrame, hours: int) -> pd.DataFrame:
 def clock(sqx: pd.DataFrame, mt5: pd.DataFrame, tolerance_min: float, max_h: int) -> int:
     """The whole-hour shift from SQX's feed clock to the firm's server clock that pairs most.
 
-    SQX stamps its feed's zone (`knowhow/export/feed-clock-timezones.md`), MT5 its server's,
-    and the two need not be the same zone nor change hour on the same day. The shift is read
-    off the trades rather than assumed: most pairs within half the tolerance first — with a
-    tolerance of one H1 bar a one-hour error still pairs everything, and greedy pairing can
-    even find one pair more (🔬 2026-09-30: 376 pairs all 1 h off beat 375 exact ones) —
-    then most pairs, then the smallest total entry gap, then the smaller shift.
+    SQX stamps its feed's zone, MT5 its server's (`knowhow/export/feed-clock-timezones.md`):
+    read off the trades: most pairs within half the tolerance (🔬 2026-09-30: greedy pairing
+    can find one more at 1 h off), then most pairs, smallest entry gap, smaller shift.
     """
     if sqx.empty or mt5.empty:
         return 0
@@ -65,7 +60,7 @@ def max_dd(frame: pd.DataFrame, deposit: float) -> float:
 
 def rows(sqx: pd.DataFrame, mt5: pd.DataFrame, pairs: pd.DataFrame, deposit: float,
          th: dict) -> list[dict]:
-    """The five figures, each with its threshold and whether it passes.
+    """The six figures, each with its threshold and whether it passes.
 
     Returns:
         [{"row", "label", "value", "limit", "state", "note"}]. A figure that cannot be
@@ -75,6 +70,8 @@ def rows(sqx: pd.DataFrame, mt5: pd.DataFrame, pairs: pd.DataFrame, deposit: flo
     hit = pairs.dropna(subset=["Open time_mt5"])
     matched = len(hit) / len(pairs) if len(pairs) else None
     matched_mt5 = len(hit) / len(mt5) if len(mt5) else None
+    both = min(matched or 0.0, matched_mt5 or 0.0) if matched is not None or matched_mt5 is not None else None
+    same_exit = float((hit["Close time_mt5"] == hit["Close time"]).mean()) if len(hit) else None
     losses = sqx.loc[sqx["Profit/Loss"] < 0, "Profit/Loss"].abs()
     r = float(losses.mean()) if len(losses) else None
     diff = hit["Profit/Loss_mt5"] - hit["Profit/Loss"]
@@ -97,9 +94,12 @@ def rows(sqx: pd.DataFrame, mt5: pd.DataFrame, pairs: pd.DataFrame, deposit: flo
                 "state": "pass" if ok else "fail", "note": note}
 
     return [
-        one("1", "operaciones de SQX emparejadas en MT5", matched, th["matched_min"], True,
-            f"{len(hit)} de {len(pairs)} de SQX; de las {len(mt5)} de MT5, "
-            f"{'—' if matched_mt5 is None else f'{matched_mt5:.0%}'} tienen pareja"),
+        one("1", "operaciones emparejadas, en el peor de los dos sentidos", both, th["matched_min"], True,
+            f"{len(hit)} parejas: {'—' if matched is None else f'{matched:.0%}'} de las "
+            f"{len(pairs)} de SQX y {'—' if matched_mt5 is None else f'{matched_mt5:.0%}'} "
+            f"de las {len(mt5)} de MT5"),
+        one("1b", "parejas que cierran a la misma hora", same_exit, th["exit_same_min"], True,
+            "la salida también tiene que coincidir, no solo la entrada"),
         one("2", "diferencia media por operación emparejada, en R", gap_r,
             th["trade_gap_max_r"], False,
             "media de |P&L MT5 − P&L SQX| del movimiento de precio, al valor de punto fijo "
@@ -148,16 +148,20 @@ def firm_result(firm: str, sqx: pd.DataFrame, mt5: pd.DataFrame, timeframe: str,
     moved = shifted(sqx, hours)
     pairs = compare.pair(moved, mt5, tolerance)
     got = rows(moved, mt5, pairs, deposit, th)
-    ok = all(r["state"] == "pass" for r in got)
+    few = len(sqx) < th["trades_min"]
+    state = "none" if few else "pass" if all(r["state"] == "pass" for r in got) else "fail"
+    ok = state == "pass"
     failed = [r["row"] for r in got if r["state"] == "fail"]
     label = firms.label(firm)
-    meaning = (f"{label} — SQX reproduce lo que el EA hace en su cuenta: el histórico largo de "
+    meaning = (f"{label} — SQX tiene menos de {th['trades_min']} operaciones en la ventana: muestra corta, ni "
+               "pasa ni falla y no se anota en el pool." if few else
+               f"{label} — SQX reproduce lo que el EA hace en su cuenta: el histórico largo de "
                "SQX vale para ella." if ok else
                f"{label} — falla{'n' if len(failed) > 1 else ''} la{'s' if len(failed) > 1 else ''} "
                f"fila{'s' if len(failed) > 1 else ''} {', '.join(failed)} de los criterios de "
                "aceptación: casi siempre es el reloj o un coste; se corrige y se compara una vez "
                "más, y si sigue fallando la estrategia no entra en el pool de esta empresa.")
-    verdict = blocks.verdict("Validada" if ok else "No validada", "pass" if ok else "fail",
+    verdict = blocks.verdict("Sin veredicto" if few else "Validada" if ok else "No validada", state,
                              meaning, parts=[{"label": f"{r['row']} · {r['label']}",
                                               "state": r["state"], "value": r["value"],
                                               "note": f"límite {r['limit']} · {r['note']}"}
@@ -173,7 +177,7 @@ def firm_result(firm: str, sqx: pd.DataFrame, mt5: pd.DataFrame, timeframe: str,
                                    "sin pareja de " + str(len(pairs)) + "; si hay muchas y "
                                    "seguidas, mira el reloj o el historial de la empresa en "
                                    "esas fechas"), "firm": firm}
-    summary = {"firm": firm, "state": "pass" if ok else "fail", "clock_h": hours,
+    summary = {"firm": firm, "state": state, "clock_h": hours,
                "sqx_trades": len(sqx), "mt5_trades": len(mt5),
                **{f"row_{r['row']}": r["value"] for r in got}}
     return {"verdict": verdict, "lonely": lonely_block, "summary": summary, "pairs": pairs,

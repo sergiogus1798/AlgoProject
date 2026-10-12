@@ -7,7 +7,7 @@ import numpy as np
 from core.study import blockcheck, clip
 
 # The five words a block may colour itself with; the window's scale (ui/desktop/theme.py)
-# has one colour per word and no other. MANTENER, FAIL or worth_it live in verdict.csv.
+# has one colour per word and no other. MANTENER or FAIL live in verdict.csv.
 STATES = ("pass", "fail", "watch", "info", "none")
 
 # Every key a block of each kind must carry, beyond "kind". Optional keys are not listed.

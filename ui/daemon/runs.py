@@ -99,22 +99,6 @@ def exposure(c: dict) -> list[str] | str:
             c["strategy"]]
 
 
-def atr_calculator(c: dict) -> list[str] | str:
-    """Step 22: the stop's X read from the MAE of the IS winners; SQX's half needs /variants."""
-    if not c["export"]:
-        return NO_TRADES
-    folder = DATA / "raw" / c["project"] / c["databank"].replace(" ", "_") / c["export"]
-    said = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
-    # export_retest signs them under `source`, export_trades under `counts` (2026-09-28: every
-    # single-market export read «sin timeframe» and monkey/entryQuality/atr never ran).
-    frames = said["source"].get("timeframes") or said.get("counts", {}).get("timeframes") or []
-    if len(frames) != 1:
-        return "el export no dice en qué timeframe corre la estrategia; pásalo a mano con --timeframe"
-    return ["-m", "studies.closing.atrCalculator.report", "--project", c["project"],
-            "--databank", c["databank"], "--feed", c["feed"], "--symbol", c["asset"],
-            "--timeframe", frames[0], "--strategy", c["strategy"]]
-
-
 def entryquality(c: dict) -> list[str] | str:
     """The entry alone, against random entries at the same hours; prints, writes nothing."""
     if own_trades(c):
@@ -148,7 +132,6 @@ def crossmarket(c: dict) -> list[str] | str:
 
 
 RUNS = {"gate": gate, "monteCarlo": monte_carlo, "monkey": nulls, "exposure": exposure,
-        "atrCalculator": atr_calculator,
         "entryQuality": entryquality, "decay": decay,
         "mcRetest": mc_retest, "wfm": wfm, "crossmarket": crossmarket,
         "curate": lambda c: "es una skill: /curate, desde Claude Code",

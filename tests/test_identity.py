@@ -59,13 +59,13 @@ def variants_cosecha() -> None:
         real, identity.DATA = identity.DATA, Path(tmp)
         try:
             assert identity.from_harvest("P", "Results", ["S"]) == {"S": None}
-            # the cosecha's own name for a mother a retest respelt: what step 22 must ask for
+            # the cosecha's own name for a mother a retest respelt: what a step must ask for
             assert identity.spelt("P", "Results", ["id1", "id2"]) == {"id1": "Strategy 1.2.3"}
             assert identity.spelt("P", "CrossTF_Mothers", ["id1"]) == {}
             asked = []
             with mock.patch.object(closing.survivors, "about", lambda p: {"symbol": "X"}), \
                     mock.patch.object(closing.call, "window", lambda *a: asked.append(a[-1]) or []):
-                closing.reading("P", "conditionalMap", "Results", pd.DataFrame(
+                closing.reading("P", "exposure", "Results", pd.DataFrame(
                     {"strategy": ["Strategy 1.2.3(1)", "Strategy 9(1)"], "identity": ["id1", "id2"]}))
             assert asked == [["Strategy 1.2.3", "Strategy 9(1)"]], asked
         finally:

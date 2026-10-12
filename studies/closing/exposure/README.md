@@ -12,10 +12,10 @@ same return earned by being in it every minute, because the hours it was not exp
 gap, no news and no drawdown.
 
 ```
-config.yaml ─▶ inputs ─▶ occupancy ─▶ benchmark ─▶ compare ─▶ verdict ─▶ report
- every knob    trades,   how much     what buy     the        is that    the
-               bars,     market it    and hold     numbers    time worth  panel
-               window    stood in     means here              it
+config.yaml ─▶ inputs ─▶ occupancy ─▶ benchmark ─▶ compare ─▶ report
+ every knob    trades,   how much     what buy     the        the
+               bars,     market it    and hold     numbers    panel
+               window    stood in     means here
 ```
 
 | file | what it does | run it | in → out |
@@ -24,13 +24,12 @@ config.yaml ─▶ inputs ─▶ occupancy ─▶ benchmark ─▶ compare ─�
 | `occupancy.py` | Lots held at every bar, the share of open hours that is, and how much of the market's movement happened while it was holding | imported | trades + bars → exposure, presence |
 | `benchmark.py` | The three sizing conventions of "buy and hold", and what each earned per day | imported | bars + trades → lots, daily P&L |
 | `compare.py` | What each side earned and risked, and what one hour of exposure bought | imported | daily P&L → statistics, trade-off |
-| `verdict.py` | Is the market time worth what it brings back | imported | numbers → verdict, reasons |
 | `load.py` | The window from policy, its bars, the point value, the newest export on the configured sample, and each strategy's identity | imported | export + feed → inputs |
-| `one.py` | One strategy measured — occupancy, the three buy and hold conventions, the trade-off, presence — and judged, as the contract's data the window paints | imported — the window calls it | inputs → result |
+| `one.py` | One strategy measured — occupancy, the three buy and hold conventions, the trade-off, presence — with its `notes`, as the contract's data the window paints | imported — the window calls it | inputs → result |
 | `many.py` | Every strategy, and the population read as one result | imported | inputs → results |
 | `report.py` | **The command**: every strategy to `reports/<P>/<D>/<day>/exposure/` (`verdict.csv`, a page and a JSON each, the population's page), or `--strategy` for one alone | `python3 -m studies.closing.exposure.report --project XAUUSD --databank "MC Trades" --feed XAUUSD_M1 --symbol XAUUSD [--strategy S]` | export → reports |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
-| `config.yaml` | The sample, the segment, the three conventions and the gate | edited | — |
+| `config.yaml` | The sample, the segment, the three conventions and when to warn | edited | — |
 
 Manual page, in Spanish, for whoever runs it: `docs/manual/10-cierre.pdf` (cap. 38-exposicion).
 
@@ -74,12 +73,11 @@ export and the bias runs the safe way.
 error, and the financing cost of holding gold for five years is a decision about the benchmark,
 not a fact about it. Naming it here is cheaper than pretending it was modelled.
 
-## A warning about the population it was first run on
+## It describes, it does not judge
 
-🔬 Run over the 757 strategies of `XAUUSD/MC Trades`, 755 come out `worth_it`. That is not a
-useless gate: that databank descends from a task carrying three acceptance conditions on
-`main/OOS`, so 99.9 % of it is profitable out of sample by construction
-(`docs/encargos/5-nulos.md` §6bis). A gate applied to a population that was already filtered on
-the same axis has nothing left to cut. Read the distribution instead — median occupancy 8.3 %,
-median efficiency 16.3x — and run the gate where it bites, which is a population that has not
-been pre-filtered on profit.
+Owner, 2026-10-11: there is no `worth_it` / `not_worth_it` and no efficiency threshold. The 2.0x
+bar was what random placement of the same exposure achieves, it was read on oos1 (which selected
+the mothers), and nothing consumed the verdict. The study reports occupancy, hours per week,
+notional committed, the buy and hold comparison and `efficiency` as plain numbers, and `notes`
+lists why a figure may be hard to read (few trades, short window, a losing side, timing-like
+presence). `verdict.csv` keeps its name for the window but carries no `verdict` column.

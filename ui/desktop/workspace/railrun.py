@@ -25,9 +25,8 @@ def post(path: str, body: dict) -> dict:
 def panel_choice(rail: QWidget, n: str = "") -> tuple[str, list[str]]:
     """The databank of step `n`'s own sub-panel and the rows chosen there, ('', []) without one.
 
-    Each of 21-25 reads its own sub-panel (Cierre › Exposición reads OOS, Mapa condicional
-    and Stop ATR read Results); taking whichever sub-panel happened to be open sent every
-    step to OOS (📓 2026-09-29: conditionalMap «necesita la cosecha», atrCalculator crashed).
+    Each step reads its own sub-panel; taking whichever sub-panel happened to be open sent
+    every step to the wrong databank.
     The rows chosen count only while that sub-panel is the one on screen.
     """
     zone = rail.parentWidget()

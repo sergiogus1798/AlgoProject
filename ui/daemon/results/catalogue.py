@@ -32,12 +32,9 @@ STUDIES = {
     "wfm": ("optimisation", "studies.optimisation.wfm", "Walk Forward Matrix", "19"),
     "blindJoint": ("closing", "studies.closing.blindJoint", "Lectura conjunta", "20"),
     "exposure": ("closing", "studies.closing.exposure", "Exposición contra buy & hold", "21"),
-    "atrCalculator": ("closing", "studies.closing.atrCalculator", "Stop loss ATR", "24"),
     "monkey": ("readings", "studies.readings.monkey", "Test del mono", None),
     "entryQuality": ("readings", "studies.readings.entryQuality", "Calidad de la entrada", None),
     "edgeCost": ("readings", "studies.readings.edgeCost", "Edge por coste", "8"),
-    "conditionalMap": ("readings", "studies.readings.conditionalMap", "Mapa condicional", "22"),
-    "structure": ("readings", "studies.readings.structure", "Estructura", "23"),
     "monteCarlo": ("readings", "portfolio.common.monteCarlo", "Monte Carlo de operaciones", None),
     "feedQuality": ("data", "studies.data.feedQuality", "Calidad del feed", "8"),
     "maeDepth": ("screening", "studies.screening.maeDepth", "Criba del MAE profundo", "8"),
@@ -78,17 +75,11 @@ ROLE: dict[str, str | Callable[[dict], bool]] = {
     "wfm": "describe",
     # MANTENER for all while joint.pieces or joint.population is null; DESCARTAR once both set
     "blindJoint": lambda cfg: bool(cfg["joint"]["pieces"] and cfg["joint"]["population"]),
-    # worth_it / not_worth_it, never DESCARTAR
+    # describes since 2026-10-11: no verdict
     "exposure": "describe",
-    # verdict block `info`, "never a choice" (README)
-    "atrCalculator": "describe",
     # the trade-level readings describe one strategy; none writes DESCARTAR
     "monkey": "describe",
     "entryQuality": "describe",
-    # "fabrica hipótesis, no filtra" (WORKFLOW step 22)
-    "conditionalMap": "describe",
-    # "Diagnóstico, nunca selección" (WORKFLOW step 23)
-    "structure": "describe",
     # verdict.csv carries a tier, not a verdict column
     "monteCarlo": "describe",
     # DESCARTAR only with verdict.action = drop; mark today (ledger, 2026-09-26)

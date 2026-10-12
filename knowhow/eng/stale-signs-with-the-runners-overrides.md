@@ -5,7 +5,7 @@ tag: 🔬  date: 2026-10-01  see: eng/population-signs-a-different-config-than-s
 ---
 # A result is stale only when no way the window could run it today signs its hash
 The window runs several studies with per-project `--set` overrides (`ui/daemon/results/forproject.py`
-`SET`: cloud's `run.symbol`, the gate's `monkey.timeframe`, exposure, conditionalMap,
+`SET`: cloud's `run.symbol`, the gate's `monkey.timeframe`, exposure, conditionalMap (deleted 2026-10-11),
 entryQuality), and the run signs the config WITH them. Comparing against the bare config
 (`knobs.signed(study, [])`) marked 14 of 15 freshly run H1 clouds «Caducado». `ui/daemon/results/
 stale.fresh` now builds every hash a run could sign today — the runner's overrides, or those the

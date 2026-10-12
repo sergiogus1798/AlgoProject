@@ -17,4 +17,4 @@ tag: 🔬  date: 2026-10-01  see: costs/sessions-per-asset, export/trade-export-
   `EURUSD_DukasM1_the5ers` and `USDJPY_DukasM1_the5ers` (Asia/Jerusalem), `BRENTCMDUSD_ftmo` (EETUS).
 - `tests/test_conditionalmap.py`: 2021-03-20 23:30 `EETUS` is 16:30 in New York (open); read as
   `EET` it would be 17:30 (closed) — the test fails if EETUS is treated as EET.
-- Used by `studies/readings/conditionalMap/sessions.py`.
+- Used by `studies/readings/conditionalMap/sessions.py` (deleted 2026-10-11, step 22).

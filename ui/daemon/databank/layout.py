@@ -35,8 +35,6 @@ TABS = [
         ("Walk Forward Matrix", ["wfm"], "wfm", None)]),
     ("Cierre", [("Análisis conjunto (paso 20)", ["blindJoint"], "", None),
                 ("Exposición", ["exposure"], "", None),
-                ("Mapa condicional", ["conditionalMap"], "", None),
-                ("Estructura", ["structure"], "", None), ("Stop ATR", ["atrCalculator"], "", None),
                 ("Edge por coste", ["edgeCost"], "", None)]),
 ]
 # The sub-panels of step 20 and of the three it waits for, locked while the ledger's door is.

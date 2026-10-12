@@ -21,12 +21,11 @@ from pipeline.autopilot import blind, call, plan, run, survivors, tail
 from ui.daemon.workflow.steps import STEPS
 
 MT5 = {"start": "2024-01-01", "end": "2026-08-30", "model": "ohlc_m1", "firms": ["ftmo"]}
-GIVEN = {"panel": {"21": "OOS", "22": "Results"}, "mt5": MT5, "judged": set()}
+GIVEN = {"panel": {"21": "OOS"}, "mt5": MT5, "judged": set()}
 WHO = {"symbol": "USDJPY", "timeframe": "H1", "feed": "USDJPY_M1", "family": "fam"}
 # 18.5's deciding reading first (build+oos1), then the three looks at oos2
 BLOCK = [("18.5", "blind"), ("17", "blind"), ("18", "blind"), ("18.5", "blind")]
-CLOSING = [("21", "reading"), ("22", "reading"), ("23", "structural"), ("24", "stop"),
-           ("25", "edge"), ("25", "finalists")]
+CLOSING = [("21", "reading"), ("26", "finalists")]
 
 
 @contextlib.contextmanager
@@ -61,7 +60,7 @@ def kinds(got: dict) -> list[tuple[str, str]]:
 
 def test_the_whole_tail_in_order() -> None:
     """16 judged, the variants, the blind block with the WFM and its rows, 20 and its judge,
-    21-25, the finalists, step 26 — and every blind look redone, the batches being new."""
+    21, the finalists, step 26 — and every blind look redone, the batches being new."""
     got = plan.plan(rail(), GIVEN)
     assert kinds(got) == [("16", "judge"), ("16.5", "variants"), *BLOCK, ("19", "sqx"),
                           ("19", "wfm"), ("19", "kept"), ("19", "ledger"), ("20", "joint"), ("20", "judge"),
@@ -82,10 +81,10 @@ def test_clean_stops() -> None:
     """Nothing is defaulted: 26 without every parameter, 21 without its databank, 17 without
     a family and a step in marcha each end the plan before it, saying what is missing."""
     got = plan.plan(rail(), GIVEN | {"mt5": MT5 | {"model": None, "firms": []}})
-    assert kinds(got)[-1] == ("25", "finalists") and got["stop"]["n"] == "26"
+    assert kinds(got)[-1] == ("26", "finalists") and got["stop"]["n"] == "26"
     assert "--mt5-model, --mt5-firms" in got["stop"]["why"] and "--mt5-from" not in got["stop"]["why"]
 
-    got = plan.plan(rail(), GIVEN | {"panel": {"22": "Results"}})
+    got = plan.plan(rail(), GIVEN | {"panel": {}})
     assert kinds(got)[-2:] == [("20", "joint"), ("20", "judge")]
     assert got["stop"]["n"] == "21" and "--panel 21=" in got["stop"]["why"]
 
@@ -93,12 +92,12 @@ def test_clean_stops() -> None:
     assert kinds(got) == [("16", "judge"), ("16.5", "variants")]
     assert got["stop"] == {"n": "17", "why": tail.NO_FAMILY}
 
-    got = plan.plan(rail("23", s23="running"), GIVEN)
-    assert got["do"] == [] and got["stop"] == {"n": "23", "why": "está en marcha"}
+    got = plan.plan(rail("21", s21="running"), GIVEN)
+    assert got["stop"] == {"n": "21", "why": "está en marcha"}
 
     # without parameters and with 26 already verified, the rail simply runs out
     got = plan.plan(rail("26", s26="done"), tail.NOTHING)
-    assert kinds(got) == [("25", "finalists")] and got["stop"]["n"] is None
+    assert kinds(got) == [("26", "finalists")] and got["stop"]["n"] is None
 
 
 def test_a_rerun_takes_up_where_it_stopped() -> None:
@@ -111,12 +110,12 @@ def test_a_rerun_takes_up_where_it_stopped() -> None:
 
     # the block and 20 done, 21 done: only what is pending, and no judge of a step whose
     # next step already ran
-    got = plan.plan(rail("22"), GIVEN | {"mt5": {}})
+    got = plan.plan(rail("26"), GIVEN | {"mt5": {}})
     assert kinds(got) == CLOSING[1:] and got["stop"]["n"] == "26"
 
     # a step the owner gives rules to is judged right after it runs
-    got = plan.plan(rail("24"), GIVEN | {"judged": {"8", "24"}})
-    assert kinds(got)[:3] == [("24", "stop"), ("24", "judge"), ("25", "edge")]
+    got = plan.plan(rail("21"), GIVEN | {"judged": {"8", "21"}})
+    assert kinds(got)[-4:-1] == [("21", "reading"), ("21", "judge"), ("26", "finalists")]
 
 
 def test_the_block_is_judged_and_18_5_is_split() -> None:

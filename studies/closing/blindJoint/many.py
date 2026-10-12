@@ -28,7 +28,7 @@ def grid(title: str, frame: pd.DataFrame, labels: pd.DataFrame, note: str) -> di
 
 
 def spa_tab(got: dict, cfg: dict) -> dict:
-    """The SPA's three p-values and each mother against buy and hold, or why they are missing."""
+    """The SPA's three p-values and each mother against her random trader, or why they are missing."""
     if got["refused"]:
         return envelope.tab("spa", "SPA y StepM sobre oos2", [], note=(
             f"Sin leer. {got['refused']}. Las piezas de 17-19 sí se leen: no abren oos2, "
@@ -39,12 +39,14 @@ def spa_tab(got: dict, cfg: dict) -> dict:
         blocks.table("Las tres p del SPA de Hansen", pd.DataFrame(
             [[k, spa[k], MEANING[k]] for k in ("lower", "consistent", "upper")],
             columns=["p", "valor", "qué supone"]),
-            f"Nula: ninguna de las {got['K']} madres bate al buy & hold a igual riesgo."),
-        blocks.table("Cada madre contra el buy & hold", t.reset_index(names="madre")[
-            ["madre", "sharpe", "excess_day", "lots_bh", "named_all"]].rename(columns={
-                "excess_day": "exceso USD/día", "lots_bh": "lotes B&H",
-                "named_all": "StepM (entrantes)"}),
-            f"Sharpe del buy & hold {got['sharpe_bh']:.3f}; FWER {cfg['stepm']['fwer']}; "
+            f"Nula: ninguna de las {got['K']} madres gana más que un operador al azar con su "
+            f"misma huella (mismas operaciones, lado, lotes, duración y coste; entrada al azar)."),
+        blocks.table("Cada madre contra su operador al azar", t.reset_index(names="madre")[
+            ["madre", "sharpe", "excess_day", "random_day", "mc_day", "named_all"]].rename(
+                columns={"excess_day": "exceso USD/día", "random_day": "azar USD/día",
+                         "mc_day": "error simulación", "named_all": "StepM (entrantes)"}),
+            f"Azar = media de {cfg['benchmark']['draws']} operadores al azar (peldaño "
+            f"{cfg['benchmark']['rung']}); FWER {cfg['stepm']['fwer']}; "
             f"{got['days']} días; bloque medio {got['block']} días.")],
         note="Datos que ninguna criba miró: el resultado diario de cada madre de cierre a "
              "cierre, reconstruido con las operaciones de su retest en oos2 y las barras M1.")
@@ -104,7 +106,7 @@ def run(data: dict, cfg: dict) -> dict:
         spa_tab(got, cfg)]
     warnings = ([{"code": "policy", "state": "watch",
                   "text": f"Falta el StepM: no se pudo calcular ({got['refused']}). El veredicto sale "
-                          f"sólo de los cuatro estados; no hay contraste con el buy & hold en oos2."}]
+                          f"sólo de los cuatro estados; no hay contraste con el operador al azar en oos2."}]
                 if got["refused"] else []) + [
         {"code": "incomplete", "state": "watch",
          "text": f"{m}: le falta {', '.join(NAMES[p] for p in r['missing'])}; no se lee"}
@@ -120,8 +122,13 @@ def run(data: dict, cfg: dict) -> dict:
                                               "hasta que las cuatro existen."},
                   {"term": "lectura", "text": "Cómo se combinan las cuatro piezas y sobre "
                                               "quién cuenta el StepM; decisión del dueño."},
-                  {"term": "StepM", "text": "Romano y Wolf: qué madres concretas baten al "
-                                            "buy & hold controlando el error de la familia."}])
+                  {"term": "StepM", "text": "Romano y Wolf: qué madres concretas baten a su "
+                                            "operador al azar controlando el error de la "
+                                            "familia."},
+                  {"term": "operador al azar", "text": "Las mismas operaciones de la madre — "
+                   "número, lado, lotes, duración y coste — entradas en momentos al azar de "
+                   "oos2. Su media es lo que paga el mercado por estar dentro; descuenta la "
+                   "deriva del activo sin exigir batir a un largo apalancado."}])
     members = [one.run(row, got, cfg) for _, row in population.iterrows()]
     envelope.progress(100, result["verdict"]["label"])
     return {"population": result, "members": members, "measured": got}

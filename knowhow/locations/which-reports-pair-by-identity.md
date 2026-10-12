@@ -8,7 +8,7 @@ tag: 🔬  date: 2026-09-30  see: locations/crossmarket-report-signs-no-identity
 newest cosecha not newer than the export that paired THAT databank, then the `.sqx` the export kept
 in `strategies/`. mcRetest, crossTF, edgeCost, spp, profitShape and monkey sign the build's identity.
 `crossmarket` signs nothing once its databank is gone; a mother's batch studies
-(`estudios/{cloud,wfc,cscv,marketSurfaces}.json`) sign `identity: None`. `structure`/`atrCalculator`
+(`estudios/{cloud,wfc,cscv,marketSurfaces}.json`) sign `identity: None`. `structure`/`atrCalculator` (both deleted 2026-10-11, steps 22-24; their old reports remain)
 sign their own real identity from a one-off lote of several mothers (`structural/`/`atrCalculator/`,
 never `reports/`) — `ui.daemon.results.lote.path` finds them by name, project-wide.
 

@@ -52,14 +52,14 @@ def show(name: str) -> dict:
     Returns:
         The list row, plus `project`, `steps` (`step`, `kind`, `seconds`, `what`, `counts`),
         `strategies` (`name`, `identity`, `version`, `mother`, `mother_identity`,
-        `mother_version`, `stop`) and `not_kept` (`path`, `reason`).
+        `mother_version`) and `not_kept` (`path`, `reason`).
     """
     d = _doc(name)
     rows = [{"name": s["strategy"], "identity": s["identity"],
              "version": Path(s["archive"]).name if s.get("archive") else None,
              "mother": s["mother"], "mother_identity": s.get("mother_identity"),
-             "mother_version": Path(s["mother_archive"]).name if s.get("mother_archive") else None,
-             "stop": s.get("stop")} for s in d["strategies"]]
+             "mother_version": Path(s["mother_archive"]).name if s.get("mother_archive") else None}
+            for s in d["strategies"]]
     head = next(r for r in workflows() if r["name"] == name)
     return head | {"project": d["project"], "steps": d["steps"], "strategies": rows,
                    "not_kept": d.get("not_kept", [])}
@@ -77,7 +77,9 @@ def extras(name: str, mother: str) -> list[dict]:
     out = []
     for p in found:
         study = p.stem if p.parent.name == "estudios" else p.parent.parent.name
-        fam, _, title, step = catalogue.STUDIES.get(study, ("", "", study, ""))
+        if study not in catalogue.STUDIES:   # a study since deleted (steps 22-24): its file stays on disk
+            continue
+        fam, _, title, step = catalogue.STUDIES[study]
         rel = p.relative_to(folder)
         pas = next((x for x in rel.parts if x.startswith("pass")), "")
         out.append({"key": str(rel), "study": study, "title": f"{title} ({pas})" if pas else title, "step": step})
@@ -87,8 +89,7 @@ def extras(name: str, mother: str) -> list[dict]:
 def opened(name: str, strategy: str) -> dict:
     """What the Estrategia page needs to open one finalist: the MOTHER's archived version.
 
-    The studies of steps 8-22 are signed with the mother's identity and the variant has no
-    cosecha of its own, so the page reads the mother's version, labelled as hers.
+    The finalist is the mother: the studies of steps 8-21 are signed with her identity.
 
     Returns:
         `archive.show` of the mother (of the finalist itself when the mother was not archived),
@@ -101,12 +102,10 @@ def opened(name: str, strategy: str) -> dict:
     mother = bool(s["mother_identity"] and s["mother_version"])
     got = archive.show(s["mother_identity"], s["mother_version"]) if mother \
         else archive.show(s["identity"], s["version"])
-    stop = s["stop"] or {}
-    banner = (f"Esta final es la variante con stop p{stop.get('percentile', '?')} "
-              f"(x = {stop.get('x', '?')} ATR) de la madre «{s['mother']}». Las cifras y los estudios "
-              "de abajo son los de la madre («de la madre»): la variante no tiene cosecha propia "
-              "porque el stop se fabricó después.") if mother else \
-        "La madre de esta final no se archivó: solo se ven los estudios de la propia variante."
+    variant = mother and s["mother"] != s["name"]   # saved before 2026-10-11: a stop variant
+    banner = (f"Esta final es una variante con stop de la madre «{s['mother']}» (workflow anterior al "
+              "2026-10-11). Las cifras y los estudios de abajo son los de la madre.") if variant else \
+        "" if mother else "La madre de esta final no se archivó: solo se ven los estudios de la propia final."
     return got | {"label": s["name"], "banner": banner, "workflow": name,
                   "extras": extras(name, s["mother"])}
 

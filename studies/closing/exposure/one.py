@@ -6,14 +6,39 @@ import numpy as np
 import pandas as pd
 
 from core.study import blocks, result as envelope
-from studies.closing.exposure import benchmark, compare, occupancy, verdict
+from studies.closing.exposure import benchmark, compare, occupancy
 
 MODULE = "studies.closing.exposure"
 CONVENTIONS = {"one_lot": "un lote", "avg_size": "el tamaño medio de la estrategia",
                "equal_risk": "a igual riesgo (misma volatilidad diaria)"}
-# The verdict's own word (`worth_it`/`not_worth_it`, in verdict.csv for /curate) shown to the
-# reader (feedback §9.3, 2026-09-30): "Aprobado" (verde) / "Suspenso" (rojo).
-LABEL = {"worth_it": "Aprobado", "not_worth_it": "Suspenso"}
+NOTES = {
+    "few_trades": "{n} operaciones: por debajo de {min}, ninguna tasa es legible",
+    "short_window": "{days} dias de ventana: por debajo de {min}, el CAGR es una ficcion",
+    "loses": "pierde dinero en la ventana; la eficiencia por hora no se interpreta",
+    "bench_loses": "el buy & hold pierde en esta ventana: lee `return_pct` y el drawdown, "
+                   "no la eficiencia",
+    "timing": "capturo el {cap:.1%} del movimiento del mercado estando dentro el "
+              "{share:.1%} del tiempo, y alineado solo el {ali:.1%}: se parece mas a estar "
+              "presente en los tramos buenos que a una ventaja propia"}
+
+
+def notes(strategy: dict, bench: dict, exposure: dict, presence: dict, n: int, days: int,
+          cfg: dict) -> list[str]:
+    """The reasons not to trust the numbers; nothing is passed or failed."""
+    lim = cfg["notes"]
+    out = []
+    if n < lim["min_trades"]:
+        out.append(NOTES["few_trades"].format(n=n, min=lim["min_trades"]))
+    if days < lim["min_days"]:
+        out.append(NOTES["short_window"].format(days=days, min=lim["min_days"]))
+    if strategy["net"] <= 0:
+        out.append(NOTES["loses"])
+    if bench["return_pct"] <= 0:
+        out.append(NOTES["bench_loses"])
+    if presence["captured"] > exposure["share"] * 2 and presence["aligned"] <= 0:
+        out.append(NOTES["timing"].format(cap=presence["captured"], share=exposure["share"],
+                                          ali=presence["aligned"]))
+    return out
 SHORT = {"one_lot": "un lote", "avg_size": "tamaño medio", "equal_risk": "a igual riesgo"}
 
 
@@ -50,8 +75,8 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float, cfg: d
 
     Returns:
         One flat row: occupancy, the strategy's own statistics, the benchmark's under each
-        convention, the trade-off, where the market moved while it was holding, and the
-        verdict with its reasons.
+        convention, the trade-off, where the market moved while it was holding, and
+        `notes`, the reasons a figure may be hard to read.
     """
     equity = compare.equity_start(trades)
     moves = benchmark.moves(bars)
@@ -69,8 +94,7 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float, cfg: d
     head = cfg["benchmark"]["headline"]
     trade_off = compare.dichotomy(strategy, bench[head], exposure)
     days = (moves.index[-1] - moves.index[0]).days
-    said = verdict.judge(strategy, bench[head], exposure, trade_off, presence,
-                         len(trades), days, cfg)
+    said = notes(strategy, bench[head], exposure, presence, len(trades), days, cfg)
 
     out = {"n": len(trades), "days": days, "equity_start": equity}
     out |= {f"exp_{key}": value for key, value in exposure.items()}
@@ -79,7 +103,7 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float, cfg: d
             for name, found in bench.items() for key, value in found.items()}
     out |= {f"lots_{name}": size for name, size in lots.items()}
     out |= trade_off | presence
-    out |= {"verdict": said["verdict"], "reasons": " | ".join(said["reasons"])}
+    out["notes"] = " | ".join(said)
     return out
 
 
@@ -92,7 +116,7 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
         cfg: What `inputs.config` returned.
 
     Returns:
-        The contract dict: the verdict with its reasons, the trade-off, the three buy and
+        The contract dict: no verdict, the trade-off, the three buy and
         hold conventions and where the market moved while it was holding.
     """
     started = time.time()
@@ -100,13 +124,8 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
     found = measure(frame[frame["strategy"] == strategy], inputs["bars"],
                     inputs["point_value"], cfg)
     head = cfg["benchmark"]["headline"]
-    reasons = [r for r in found["reasons"].split(" | ") if r]
-    said = blocks.verdict(
-        LABEL[found["verdict"]], "pass" if found["verdict"] == "worth_it" else "fail",
-        f"Eficiencia {fmt(found['efficiency'])}x: por hora expuesta rinde eso veces lo que el "
-        f"buy & hold {CONVENTIONS[head]}. Pasa desde {fmt(cfg['gate']['min_efficiency'])}x.",
-        found["efficiency"], [{"label": r, "state": "watch", "value": None, "note": ""}
-                              for r in reasons])
+    warnings = [{"code": "nota", "state": "watch", "text": r}
+                for r in found["notes"].split(" | ") if r]
     span = inputs["span"]
     trade = blocks.table("La dicotomía", pd.DataFrame(
         [["Barras con posición", fmt(found["exp_share"] * 100, 2, "%")],
@@ -129,7 +148,7 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
             fmt(found[f"bench_{c}_maxdd_pct"], 1, "%"), fmt(found[f"bench_{c}_sharpe"])]
            for c in cfg["benchmark"]["report"]],
         columns=["", "Lotes", "Net Profit (USD)", "Retorno", "CAGR", "Drawdown", "Sharpe"]),
-        f"El veredicto lee la convención {CONVENTIONS[head]}.")
+        f"Se muestra frente a la convención {CONVENTIONS[head]}.")
     sides["align"] = ["left"] + ["right"] * 6
     presence = blocks.table("Dónde estaba cuando el mercado se movió", pd.DataFrame(
         [["Movimiento del mercado con posición", fmt(found["captured"] * 100, 2, "%")],
@@ -143,4 +162,4 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
         [envelope.tab("tradeoff", "Rendimiento contra exposición", [trade, sides, presence],
                       note=f"Muestra {cfg['study']['sample']}, {span[0].date()} a "
                            f"{span[1].date()}: {found['n']} operaciones.")],
-        said, glossary=GLOSSARY, summary=found)
+        warnings=warnings, glossary=GLOSSARY, summary=found)

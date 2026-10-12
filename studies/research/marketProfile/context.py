@@ -13,8 +13,8 @@ KAUFMAN_DAYS = 20
 def efficiency(close: pd.Series, window: int) -> pd.Series:
     """Kaufman's efficiency ratio: the net move over the path walked, 1 for a straight run.
 
-    The same formula as studies/readings/conditionalMap/regime.efficiency, copied because a
-    study never imports another and that one lags the series a day for a trade's entry.
+    Kaufman's ratio as the market profile reads it: on the bar itself, not lagged a day for a
+    trade's entry.
     """
     net = (close - close.shift(window)).abs()
     path = close.diff().abs().rolling(window).sum()

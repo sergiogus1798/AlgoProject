@@ -57,7 +57,7 @@ It applies to projects created from then on: nothing here touches an existing `p
   of its options (type included), a `choices` a list of them without repeats, a number inside
   `lists.RANGES`.
 - **Two values re-read past runs.** `crosstf.timeframes` and `wfc.tasks[].segment` carry `warn`:
-  `studies/transfer/crossTF` and `studies/readings/structure` read them from the file at analysis
+  `studies/transfer/crossTF` reads them from the file at analysis
   time (`knowhow/eng/studies-reread-build-yaml.md`, OPEN.md §80).
 - **The study files are not assets/.** `core.assetwrite` stays the only writer of `assets/`;
   `studywrite` writes the six study files through the same `assetyaml` round trip. The WFC and

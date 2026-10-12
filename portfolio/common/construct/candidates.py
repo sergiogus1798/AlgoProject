@@ -20,10 +20,9 @@ STUDY_STEP = {
     "edgeCost": "8", "monkey": "8",
     "crossmarket": "10", "crossTF": "12", "mcRetest": "14", "spp": "16",
     "wfc": "17", "cscv": "18", "marketSurfaces": "18.5", "wfm": "19",
-    "blindJoint": "20", "exposure": "21", "conditionalMap": "22", "structure": "23",
-    "atrCalculator": "24",
+    "blindJoint": "20", "exposure": "21",
 }
-SURVIVOR_WORDS = {"MANTENER", "survives", "worth_it", "predicts", "PASS"}
+SURVIVOR_WORDS = {"MANTENER", "survives", "predicts", "PASS"}
 NEAR_WORDS = {"DUDOSA", "INCONCLUSIVE"}
 # (study, word) pairs that inform without filtering: the workflow carries the strategy on and the
 # next step's word rules (owner, 2026-09-30: every H1 mother read FAIL at 14 and reached 16.5).

@@ -2,17 +2,31 @@
 #
 # Step 20 opens the four results that were withheld until all of them existed — the WFC (17),
 # the CSCV (18), the market surfaces (18.5) and the WFM (19) — and puts beside them the one
-# question none of them asks: does the mother beat buy and hold on oos2, once every mother that
-# reached this step is paid for (SPA and StepM, encargo 10 part B).
+# question none of them asks: does the mother beat a random trader with her own footprint on
+# oos2, once every mother that reached this step is paid for (SPA and StepM, encargo 10 part B).
 #
 # The segment is not a knob: it is oos2, the only stretch no selection step looked at. The
 # joined curve the batch keeps repeats two months of dates where each leg's warm-up overlaps the
 # leg before it; oos2 from its policy start is clear of them (knowhow/sqx-format/leg-curve-warmup.md).
 
 benchmark:
-  sizing: equal_risk          # owner, 2026-09-25, kept from part A. Buy and hold sized, per
-                              # mother, so its daily P&L is as volatile as the mother's: a
-                              # positive mean excess is exactly a Sharpe above buy and hold's
+  # Owner, 2026-10-11: the random trader with the mother's own footprint replaces buy and hold
+  # at equal risk. Each mother is held against the MEAN daily P&L of `draws` traders who take
+  # her trades — count, side, lots, costs — at entries drawn uniformly over oos2. It discounts
+  # the asset's drift for the time she is in the market, without asking her to beat a
+  # leveraged long. Read on oos2 only, never on the in-sample (owner, 2026-09-29).
+  rung: timing                # which rung of engines/nulls/model.py draws them. timing: each
+                              # trade keeps its own holding time and lots (the monkey study's
+                              # headline). timing_holds redraws the holding times among her
+                              # own; the two differ only if she sizes long and short holds
+                              # differently
+  draws: 2000                 # random traders averaged. The mean's Monte Carlo error is
+                              # sd(one trader's total) / sqrt(draws), and one trader's total
+                              # is about as volatile as the mother's own: so the error is
+                              # ~1/sqrt(2000) = 2.2 % of the mother's standard error — it
+                              # inflates the variance the SPA studentizes by 0.05 % and moves
+                              # a t by less than 0.05. Measured per mother: `mc_day`
+  seed: 0                     # fixed, like the bootstrap's: a rerun draws the same traders
 
 stepm:
   fwer: ledger:snoopingScreen.stepm.fwer

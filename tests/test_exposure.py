@@ -29,6 +29,17 @@ def test_presence_pairs_each_held_bar_with_its_own_move() -> None:
                            "Close price": [2.0, 1.0]})
     got = one.measure(trades, bars, 1.0, inputs.config([]))
     assert got["captured"] > 0.9 and got["aligned"] > 0.9
+    assert "verdict" not in got and "reasons" not in got and "notes" in got
+
+
+def test_overlapping_lots_closing_leave_no_float_residue_in_market() -> None:
+    """0.1 and 0.2 lots open together and close together: afterwards gross must read as out."""
+    index = pd.date_range("2020-01-01", periods=6, freq="1h")
+    t = [index[1], index[1]]
+    trades = pd.DataFrame({"Open time": t, "Close time": [index[3], index[3]],
+                           "Size": [0.1, 0.2], "Type": ["Buy", "Buy"]})
+    gross = occupancy.held(trades, index)["gross"]
+    assert (gross[3:] > 1e-9).sum() == 0 and (gross[1:3] > 1e-9).all()
 
 
 def test_entry_inside_a_bar_belongs_to_that_bar() -> None:

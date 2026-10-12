@@ -16,8 +16,6 @@ TARGETS: dict[str, dict] = {
                                 "call": workloads.montecarlo_analyse_long},
     "retest.load_sims": {"area": "strategies", "unit": "rows",
                          "call": workloads.retest_load_sims},
-    "atrcalculator.reading": {"area": "strategies", "unit": "trades",
-                              "call": workloads.atrcalculator_reading},
     "snooping.superior": {"area": "strategies", "unit": "cells",
                           "call": workloads.snooping_superior},
     "feedquality.detect": {"area": "strategies", "unit": "bars",

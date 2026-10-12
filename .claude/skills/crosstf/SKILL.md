@@ -43,7 +43,7 @@ mother's result already explains taken out (a sibling re-reads the same asset ov
   measure (`bar` in `sqx/variants/ranges.yaml`) is written `k / c`, `c` = the measured median-ATR
   ratio of the sibling's timeframe over the mother's (`--symbol` picks the asset; default, the first
   mother's). `window` and `other` coefficients stay; an unclassified one marks the sibling
-  `unverified`. At 10.5 strategies carry no stop (it is grafted at step 24), so today only
+  `unverified`. Strategies carry no stop (step 24, which grafted one, was deleted 2026-10-11), so only
   condition-block coefficients move.
 - **11** SQX on oos1: `CrossTF` and `CrossTF <TF>` (→ `CrossTF_<TF>`).
 - **11.5** python: the new study, phase 1 (T0, T2a, T3 on oos1). It cuts nobody until the owner

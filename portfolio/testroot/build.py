@@ -11,7 +11,7 @@ ROOT = REAL / "portfolio" / "_test" / "root"
 # What a run writes: real folders, empty at first.
 WRITABLE = ("ledger", "archive", "portfolio", "reports", "harvest", "barsDerived", "projects", "tmp")
 # What a run only reads: links to the real ones. A phase that needs another input adds a line.
-LINKS = ("bars", "atrCalculator", "funding", "projects/registry.csv")
+LINKS = ("bars", "funding", "projects/registry.csv")
 # Segments of the test calendar. The test pool has trades to the end of oos1 and none in oos2;
 # a code path that needs a later segment gets oos1's tail under oos2's name with
 # `--set calendar.pseudo_oos2_from=<this>`. It is not a holdout: every strategy was chosen on it.

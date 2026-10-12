@@ -17,7 +17,7 @@ def _archive(cell: dict, identity: str, sqx: str | Path, note: str) -> tuple[str
     """One `core.archive archive` call: the version folder, or None with the error's tail."""
     done = subprocess.run(
         [sys.executable, "-m", "core.archive", "archive", "--project", cell["project"],
-         "--databank", "Results", "--identity", identity, "--step", "25",
+         "--databank", "Results", "--identity", identity, "--step", "26",
          "--family", cell["template"], "--sqx", str(sqx), "--note", note],
         cwd=ROOT, capture_output=True, text=True)
     if done.returncode:
@@ -48,47 +48,37 @@ def _copy_small(src: Path, dst: Path, skipped: list[dict]) -> None:
 
 
 def freeze(cell: dict, finalists: list[dict], folder: Path, run: Path) -> tuple[list[dict], list[dict]]:
-    """Archive each distinct mother and finalist, link the finalists, copy what the archive cannot pair.
+    """Archive each finalist, link it, copy what the archive cannot pair.
 
-    The studies of steps 8-22 are signed with the MOTHER's identity, so the mother is archived too
-    (its .sqx is the one `atrCalculator/<P>/mothers/` holds) and each finalist records both versions.
-    Steps 16.5-18.5 (`strategyPermutations/<P>/<mother>/`) and 19-20 (`reports/<P>/WFM`, another identity
-    per databank) cannot be paired by identity: they are copied into `madres/` and `WFM/`.
+    A finalist IS its mother: the stopless strategy the chain validated. The studies of steps
+    8-21 are signed with her identity, so she is archived once and `mother_*` points at the
+    same version. Steps 16.5-18.5 (`strategyPermutations/<P>/<mother>/`) and 19-20
+    (`reports/<P>/WFM`, another identity per databank) cannot be paired by identity: they are
+    copied into `madres/` and `WFM/`.
 
     Args:
         cell: The ledger row, with `project`, `template`.
         finalists: `finalistas.json`'s rows.
         folder: The workflow's folder.
-        run: The autopilot run folder; its name is the stamp of steps 23-24's outputs.
+        run: The autopilot run folder; its name is the stamp of the structural batch.
 
     Returns:
         (finalists with `archive`, `mother_identity`, `mother_archive`; what could not be kept).
     """
     note = f"campaña {folder.name}"
-    skipped, mothers = [], {}
+    skipped = []
     (folder / "estrategias").mkdir()
     for f in finalists:
-        atr = Path(f["sqx"]).parents[3]                       # atrCalculator/<P>
-        if f["mother"] not in mothers:
-            sqx = atr / "mothers" / f"{f['mother']}.sqx"
-            ident = sqxfile.identity(sqx) if sqx.exists() else None
-            ver, err = _archive(cell, ident, sqx, note) if ident else (None, f"falta {sqx}")
-            mothers[f["mother"]] = (ident, ver)
-            if err:
-                skipped.append({"path": f["mother"], "reason": f"madre sin archivar: {err}"})
-        f["mother_identity"], f["mother_archive"] = mothers[f["mother"]]
         f["archive"], err = _archive(cell, f["identity"], f["sqx"], note)
+        f["mother_identity"], f["mother_archive"] = f["identity"], f["archive"]
         if err:
             skipped.append({"path": f["strategy"], "reason": f"final sin archivar: {err}"})
         else:
             (folder / "estrategias" / f["strategy"]).symlink_to(f["archive"])
-    for mother in mothers:                     # steps 16.5-18.5 (wfc, cscv, marketSurfaces) live here
+    for mother in dict.fromkeys(f["mother"] for f in finalists):   # steps 16.5-18.5 (wfc, cscv, marketSurfaces) live here
         _copy_small(variants_dir(cell["project"], mother), folder / "madres" / mother, skipped)
         skipped.append({"path": f"{variants_dir(cell['project'], mother)}/sqx", "reason": "los .sqx de las variantes del paso 16.5; la final ya está archivada"})
     if finalists:
         _copy_small(DATA / "reports" / cell["project"] / "WFM", folder / "WFM", skipped)   # steps 19-20, signed with the WFM identity
-        atr = Path(finalists[0]["sqx"]).parents[3]
-        _copy(atr / run.name, folder / "atrCalculator", skipped)
-        _copy(atr.parents[1] / "structural" / atr.name / run.name, folder / "structural", skipped)
-        skipped.append({"path": str(atr / "mothers"), "reason": "copias de las madres (50 MB): la madre archivada ya lleva su .sqx"})
+        _copy(DATA / "structural" / cell["project"] / run.name, folder / "structural", skipped)
     return finalists, skipped

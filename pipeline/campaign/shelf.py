@@ -41,5 +41,5 @@ def place(cell: dict, strategies: list[dict], workflow: Path) -> None:
                 if target:
                     (folder / name).symlink_to(target)
             rows.writerow({**{k: cell[k] for k in COLUMNS[1:6]}, "date": day, "strategy": s["strategy"],
-                           "mother": s["mother"], "identity": s["identity"], "stop_x": s["stop"]["x"],
+                           "mother": s["mother"], "identity": s["identity"],
                            "test": bool(cell.get("test")), "folder": folder, "workflow": workflow})

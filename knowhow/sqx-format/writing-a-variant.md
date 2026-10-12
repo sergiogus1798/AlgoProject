@@ -18,7 +18,7 @@ round trip. Write integral doubles with no decimal point (`%g`). Until retested 
   the in-file id exists because SQX may rename on collision.
 - 🔬 2026-09-26, `USDJPY_structural_v1` (custodian): four fabricated files retested on three legs and
   synced; each retested `strategy_Portfolio.xml` equals the fabricated one byte for byte **minus**
-  `<!--variant_id:…-->`. `sqx.structural.make.read_back` joins on the file name for that reason.
+  `<!--variant_id:…-->`. `sqx.structural.make.read_back` (deleted 2026-10-11, step 23) joins on the file name for that reason.
 - Fingerprint: every variant inherits the parent's; outer element's only child is self-closing.
 - ElementTree reformats attributes, self-closing tags, whitespace in a file SQX parses with its own reader.
 - Fixture's `TrailingStop1` is `double`, stored `50`; an `int` written `67.0` is a different file.

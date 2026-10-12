@@ -10,8 +10,8 @@ and the catalogue of the window (`docs/AgentPDFs/catalogo-para-la-ui-2026-09-25.
 | `transfer/` | does the edge work away from where it was built? | 9–12 | `crossmarket`, `crossTF` |
 | `breakage/` | had the world been slightly different, what breaks it? | 13–16 | `mcRetest`, `spp` |
 | `optimisation/` | does optimising buy anything, or is choosing parameters overfitting? | 16.5–19 | `cloud`, `wfc`, `cscv`, `marketSurfaces` (18.5), `wfm` |
-| `closing/` | the final call, the shape of the edge, and the stop it trades with | 20–21, 24 | `blindJoint` (20), `exposure`, `atrCalculator` (24) |
-| `readings/` | what one strategy's result is made of | 8, 22, 23, 25 | `monkey`, `entryQuality`, `edgeCost` (8 and 25), `conditionalMap` (22), `structure` (23) |
+| `closing/` | the final call and the shape of the edge | 20–21 | `blindJoint` (20), `exposure` (21) |
+| `readings/` | what one strategy's result is made of | 8 | `monkey`, `entryQuality`, `edgeCost` (8; `--strategy` standalone) |
 | `data/` | are the inputs fit to judge with? | 4, 8 | `feedQuality` (encargo 17), `spread` (step 4 only: its step-8 reading is gone) |
 | `research/` | where to look next, before any idea exists: what behaviour each asset × timeframe × direction shows against chance, how small an edge that profile can see, what was already tried, the literature | step 1 | `marketProfile`, `profilePower`, `pooledProfile`, `board`, `memory`, `literature` |
 

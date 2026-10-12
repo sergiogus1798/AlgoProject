@@ -1,4 +1,4 @@
-"""The list step 26 verifies: each survivor's stop-grafted file, written for its agent and handed to it."""
+"""The list step 26 verifies: each survivor's own file, written for its agent and handed to it."""
 
 import json
 from pathlib import Path
@@ -6,8 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 from core import sqxfile
-from pipeline.autopilot import survivors, traded
-from sqx.variants import stopgrid
+from pipeline.autopilot import survivors
 
 FILE = "finalistas.json"
 
@@ -21,25 +20,21 @@ def write(project: str, mothers: pd.DataFrame, out: Path) -> str:
         out: The autopilot run's folder.
 
     Returns:
-        How many finalists, and the mothers left out for lack of a step-24 stop, by name.
-        One object per finalist: `strategy` (the grafted file's own name, «<mother>
-        <variant>»), `identity` (that file's — a retest of it will carry another),
-        `mother`, `sqx` (absolute), `symbol`, `timeframe`, `stop` {percentile, x}.
+        How many finalists. One object per finalist, the mother that reached step 26 with no
+        stop: `strategy`, `identity` (the file's), `mother` (= `strategy`), `sqx` (the
+        mother's own file, absolute), `symbol`, `timeframe`.
 
     Raises:
         survivors.Done: The list is empty; the file is written all the same.
     """
-    picked, left = traded.stops(project, mothers)
     who = survivors.about(project)
-    rows = [{"strategy": stopgrid.NAME.format(strategy=p["strategy"], variant_id=p["variant"]),
-             "identity": sqxfile.identity(Path(p["sqx"])), "mother": p["strategy"],
-             "sqx": p["sqx"], "symbol": who["symbol"], "timeframe": who["timeframe"],
-             "stop": {"percentile": p["percentile"], "x": p["x"]}} for p in picked]
+    rows = [{"strategy": m.strategy, "identity": sqxfile.identity(Path(m.file)),
+             "mother": m.strategy, "sqx": str(Path(m.file).resolve()), "symbol": who["symbol"],
+             "timeframe": who["timeframe"]} for m in mothers.itertuples()]
     (out / FILE).write_text(json.dumps(rows, indent=1, ensure_ascii=False), encoding="utf-8")
-    said = f"SIN stop del paso 24, fuera: {', '.join(left)}" if left else ""
     if not rows:
-        raise survivors.Done("ningún finalista para el paso 26" + (f" ({said})" if said else ""))
-    return f"{len(rows)} finalista(s) en {out / FILE}" + (f"; {said}" if said else "")
+        raise survivors.Done("ningún finalista para el paso 26")
+    return f"{len(rows)} finalista(s) en {out / FILE}"
 
 
 def verify(project: str, params: dict, out: Path) -> str:

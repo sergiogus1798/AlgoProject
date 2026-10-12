@@ -6,7 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from core.paths import DATA
-from ui.daemon.results import catalogue, lote, store
+from ui.daemon.results import catalogue, store
 
 # Columns of a verdict.csv that are not a field of the strategy: its keys and the word itself.
 KEYS = {"strategy", "identity", "verdict", "verdict_state", "mother"}
@@ -135,46 +135,6 @@ def project(project_name: str) -> dict[str, dict]:
                 mine["by_name"].setdefault(norm(name), {})[folder.name] = entry
                 if entry["identity"]:
                     mine["by_id"].setdefault(entry["identity"], {})[folder.name] = entry
-    return out
-
-
-def lotes(project_name: str) -> dict[str, dict]:
-    """Every strategy a one-off multi-mother lote judged (`structure`, `atrCalculator`), by name.
-
-    Args:
-        project_name: Project name.
-
-    Returns:
-        norm name → {study: entry}, the same entry shape `from_json` builds. These two
-        studies fabricate a batch of SEVERAL mothers together under `structural/`/
-        `atrCalculator/<P>/<lote>/estudios/<study>/estrategias/<name>.json` — never under
-        `reports/`, so `project()` never saw them and a Cierre sub-panel fell back to the
-        whole build roster, 300 rows deep for 3-6 real mothers (📓 2026-09-30, block G/A1's
-        audit; `ui.daemon.results.lote` reads one strategy's file, this reads every one).
-        A strategy two lotes of the same study both claim carries no entry for it — the same
-        ambiguity `lote.path` refuses to guess at, one mother at a time.
-    """
-    out: dict[str, dict] = {}
-    for study, root in lote.ROOTS.items():
-        found: dict[str, list[Path]] = defaultdict(list)
-        for path in sorted((DATA / root / project_name).glob(
-                f"*/estudios/{study}/estrategias/*.json")):
-            found[path.stem].append(path)
-        for name, paths in found.items():
-            if len(paths) > 1:
-                continue
-            row = store.slim(paths[0])
-            if row is None:
-                continue
-            table = (store.tables(paths[0]) or {}).get(SUBTABLE.get(study))
-            fields = {}
-            for line in table["rows"] if table else []:
-                for column, value in zip(table["columns"][1:], line[1:]):
-                    fields[(str(line[0]), column)] = value
-            out.setdefault(norm(name), {})[study] = {
-                "identity": row["identity"], "verdict": row["label"], "state": row["state"],
-                "states": {}, "fields": fields, "name": row["strategy"],
-                "day": (row["computed_at"] or "")[:10]}
     return out
 
 

@@ -11,7 +11,7 @@ relative executable (`./sqcli`, `./StrategyQuantX`) run from it. If a guard stil
 it — it should now always be SQX.
 
 ## Evidence
-- 2026-09-26: `structural.keep` refused naming a PID that was `tail -n0 -F "$LOG"` on the custodian's
+- 2026-09-26: `structural.keep` (deleted 2026-10-11; the worker.holding check stands) refused naming a PID that was `tail -n0 -F "$LOG"` on the custodian's
   own SQX log; killing the Monitor let it through.
 - 2026-09-27 03:07: `execute --clear` refused for the nightly auditor's two PIDs
   (`timeout 2h claude -p --agent auditor …`, cwd `AlgoProject`), for the whole 2 h of its run.

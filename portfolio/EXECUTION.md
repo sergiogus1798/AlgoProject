@@ -195,7 +195,7 @@ Must NOT import `ui.*`, must NOT run `core.archive archive`, must NOT read SQX i
 
 ## 5 · Wave 3 — F2, the funded search's stage A (owner's answers: PLAN §12, rows «F2 …»)
 
-A member of a funded search is a strategy **with the step-24 stop grafted** (SL = X·ATR(20)),
+A member of a funded search is a strategy **with a stop grafted** (SL = X·ATR(20); step 24, which did it in the chain, was deleted on 2026-10-11, the sizing still reads one — OPEN.md #113),
 archived as its own identity; its harvest trades already carry the stop. SQX sized every trade at
 `risk_usd` over `atr_multiple`·ATR(20) (`ATRRiskBasedSizingFixedRisk`, 🔬 $1,000 over 4·ATR on the
 archived one), so at risk r of an account of size S a member's P&L is SQX's × f × r × S with
@@ -218,7 +218,7 @@ the build days with a full horizon after them. One risk for every phase (stage B
 
 | file | signatures |
 |---|---|
-| `inputs/risk.py` | `sizing(identity: str, version: str) -> dict` (`x`, `risk_usd`, `atr_multiple`, `min_size`, `factor`) from the archived `strategy.sqx` (the grafted `ATRBasedValue` stop, `sqx/variants/build/stoploss.py` writes it; the active `ATRRiskBasedSizingFixedRisk` of `lastSettings.xml`) and `harvest/trades.parquet`; raises `ValueError("sin stop del paso 24")` when there is no ATR stop |
+| `inputs/risk.py` | `sizing(identity: str, version: str) -> dict` (`x`, `risk_usd`, `atr_multiple`, `min_size`, `factor`) from the archived `strategy.sqx` (the grafted `ATRBasedValue` stop, `sqx/variants/build/stoploss.py` writes it; the active `ATRRiskBasedSizingFixedRisk` of `lastSettings.xml`) and `harvest/trades.parquet`; raises `ValueError("sin stop del paso 24")` (the message predates the deletion) when there is no ATR stop |
 | `search/greedy.py` | `seeds(graph: np.ndarray, n: int, rng: np.random.Generator) -> list[np.ndarray]` — shuffled greedy maximal cliques |
 | `search/genetic.py` | `run(graph, score: Callable[[np.ndarray], np.ndarray], seeds, cfg, rng) -> dict` — AF's GA rewritten as functions: tournament, union crossover, swap/add/remove mutation, children repaired to cliques (drop the worst-scoring offender) or discarded, elitism, stop on `stagnation` generations of the best **absolute** score; `score` takes a padded int32 [M, K_max] batch (the whole population at once, so `evaluate` fills every core) and returns [M]; returns every evaluated combination with its score, origin (seed/ga) and generation, and the best |
 | `search/trials.py` | `record(run: dict, pool: dict, plan_key: str, members_meta: dict, cfg: dict) -> list[dict]` — ledger rows (Q12, both): study `PORTFOLIO_<pool>_construct` (symbol = members' symbols joined with `+`, timeframe `mixed`) **and** one row in each member's own study; step 27, segment `build`, `n_in` = admissible pool, `n_out` = K, criterion `portfolio/funded/<plan_key>`, scores = every evaluated P(pass) (`score_unit: p_pass`) |

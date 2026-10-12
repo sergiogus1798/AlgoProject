@@ -1,6 +1,6 @@
 """Each trade's adverse excursion and final result in units of the ATR the stop would have used.
 
-Shared by `studies.closing.atrCalculator` (step 24) and `studies.screening.maeDepth` (step 8), so
+Used by `studies.screening.maeDepth` (step 8), so
 the two steps measure the same MAE in ATR, trade for trade."""
 
 import numpy as np

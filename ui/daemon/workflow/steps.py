@@ -65,14 +65,6 @@ S = [
      "blind", ["blindJoint"], "Cierre", "Análisis conjunto (paso 20)", ("wfm",)),
     ("21", "Exposición vs buy & hold", "Exposición contra el buy and hold", "python", "study",
      ["exposure"], "Cierre", "Exposición", ()),
-    ("22", "Mapa condicional", "Mapa condicional", "python", "study", ["conditionalMap"],
-     "Cierre", "Mapa condicional", ()),
-    ("23", "Estructura", "Estructura", "python", "study", ["structure"], "Cierre",
-     "Estructura", ()),
-    ("24", "Stop loss ATR", "El stop loss para MT5", "python", "study", ["atrCalculator"],
-     "Cierre", "Stop ATR", ()),
-    ("25", "Edge por coste, por estrategia", "Edge por coste, por estrategia", "python",
-     "study", ["edgeCost"], "Cierre", "Edge por coste", ()),
     ("26", "Validación MT5", "Validación en MT5 con la feed de cada empresa de fondeo → pool validado",
      "python", "study", ["mt5Validation"], "Cierre", "", ()),
 ]
@@ -83,13 +75,12 @@ EXTRA = {"8": ["monkey", "entryQuality"]}
 KEYS = ("n", "title", "doc", "kind", "how", "studies", "tab", "sub", "feeds")
 STEPS = [dict(zip(KEYS, row)) | ({"stage": STAGE[row[0]]} if row[0] in STAGE else {})
          | ({"bank": "CrossTF_Input"} if row[0] == "10.5" else {})
-         | ({"only_strategy": True} if row[0] == "25" else {})
          | {"extra": EXTRA.get(row[0], [])} for row in S]
 
 # Verdict words that mean the strategy is out. Anything else — MANTENER, INCONCLUSIVE, blind,
 # a describing word — keeps it in the funnel's `out`; the `why` prints every word counted.
-DROP = {"DESCARTAR", "FAIL", "fail", "reject", "dead", "not_worth_it"}
+DROP = {"DESCARTAR", "FAIL", "fail", "reject", "dead"}
 
 # Where a study's contract results live besides reports/<project>/<databank>/<day>/<key>/:
-# the batches of a mother (WFC, CSCV, market surfaces), the structural and the stop batches.
-BATCH_ROOTS = ("strategyPermutations", "structural", "atrCalculator")
+# the batches of a mother (WFC, CSCV, market surfaces).
+BATCH_ROOTS = ("strategyPermutations",)

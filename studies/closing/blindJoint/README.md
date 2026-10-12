@@ -1,33 +1,34 @@
-# blindJoint — step 20: the four withheld results read at once, and does the mother beat buy and hold?
+# blindJoint — step 20: the four withheld results read at once, and does the mother beat her own trades entered at random?
 
 WORKFLOW step 20, encargo 10 part B. Steps 17 (WFC), 18 (CSCV), 18.5 (market surfaces) and 19
 (WFM) run one after another and **nobody reads them until all exist** (owner, 2026-09-23). This is
 the reading: it opens the four through the ledger's door, puts each study's own call side by side,
-and adds the question none of them asks — **does the mother beat buy and hold on `oos2`, with every
-mother that reached this step paid for** (Hansen's SPA, Romano and Wolf's StepM, the engine of
+and adds the question none of them asks — **does the mother beat a random trader with her own
+footprint on `oos2`, with every mother that reached this step paid for** (Hansen's SPA, Romano and Wolf's StepM, the engine of
 part A).
 
 ```
 config.yaml ─▶ inputs ──────▶ pieces ─▶ measure ─────────▶ many / one ─▶ report
- every knob    the two doors,  what 17,  buy & hold, SPA,   the contract  pages, verdict.csv,
-               oos2 days,      18, 18.5  StepM per reading  dicts         readings.csv,
-               the asset       and 19    (readings)                       ledger row
+ every knob    the two doors,  what 17,  excess, SPA,       the contract  pages, verdict.csv,
+               oos2 days, the  18, 18.5  StepM per reading  dicts         readings.csv,
+               random traders  and 19    (readings)                       ledger row
+               (benchmark)
                                said
 ```
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `inputs.py` | The knobs, the blind door (`ledger.gate.allow_read`), the oos2 door (`gate.allow(20, "oos2")`), the trades door (each batch must hold the mother's `trades.parquet`), the mothers' own oos2 days rebuilt close to close from those trades and M1 — refused unless their daily lows reproduce the batch's SQX curve — and the asset's close-to-close moves | imported | ledger + batches + feed → frame, panel, moves |
+| `inputs.py` | The knobs, the blind door (`ledger.gate.allow_read`), the oos2 door (`gate.allow(20, "oos2")`), the trades door (each batch must hold the mother's `trades.parquet`), the mothers' own oos2 days rebuilt close to close from those trades and M1 — refused unless their daily lows reproduce the batch's SQX curve — and each mother's random traders (`random_traders`) | imported | ledger + batches + feed → frame, panel, benchmark |
 | `pieces.py` | Which mothers reached step 20, and what WFC, CSCV, surfaces and WFM said of each — their own state, never re-derived; a mother missing one is listed and never read | imported | batches + WFM report → population |
-| `benchmark.py` | Buy and hold sized to each mother's own daily volatility, and the excess over it (copied from part A) | imported | panel + moves → excess, lots |
+| `benchmark.py` | The expected daily P&L of a random trader with one mother's footprint: the mean of `benchmark.draws` traders drawn by a rung of `engines/nulls/model.py` and priced by `engines/market/reprice.py` | imported | trades + M1 bars + costs → daily series, its Monte Carlo error |
 | `readings.py` | **The open decisions as a registry**: how the four pieces combine, and over whom the StepM counts its search; `peor` (provisional), the one reading with three calls | imported | states, named → calls |
-| `measure.py` | The excess panel through the SPA and a StepM per reading, one row per mother | imported | inputs → p-values, named, calls |
+| `measure.py` | The excess panel (mother − her random traders' mean) through the SPA and a StepM per reading, one row per mother | imported | inputs → p-values, named, calls |
 | `one.py` | One mother as the contract's data: her four pieces as parts, her call under every reading | imported — the window calls it | row → result |
 | `many.py` | The population: the pieces grid, the readings grid, the SPA tab | imported | inputs → results |
 | `report.py` | **The command**: writes `reports/<P>/<WFM>/<day>/blindJoint/` a `distribuciones.parquet` (the SPA's bootstrap: `blindJoint`, `spa_lower|consistent|upper`) and, when it read oos2, a step-20 ledger row | `python3 -m studies.closing.blindJoint.report --project USDJPY_workflow_profiling_v1 --wfm-databank WFM --feed USDJPY_M1 --symbol USDJPY --timeframe H1 --family crossAboveHMA_v1` | pieces + oos2 → reports + ledger row |
 | `words.py` | Another study's call in Spanish: states, `blind`, `rho 0.45` → `ρ = 0,45` | imported by `one.py` | — |
 | `tooltips.py` | One Spanish sentence per `config.yaml` knob | imported | — |
-| `config.yaml` | The benchmark's sizing, the FWER (the ledger row part A reads), the two open decisions (`joint`), the bootstrap | edited | — |
+| `config.yaml` | The benchmark's rung, draws and seed, the FWER (the ledger row part A reads), the two open decisions (`joint`), the bootstrap | edited | — |
 
 Manual page, in Spanish: `docs/manual/10-cierre.pdf` (cap. 56-paso-20). Known-answer test:
 `tests/test_blindjoint.py`. The engine: `engines/inference/snooping/`.
@@ -35,8 +36,8 @@ Manual page, in Spanish: `docs/manual/10-cierre.pdf` (cap. 56-paso-20). Known-an
 ## What it decides, and what it leaves to the owner
 
 **Unambiguous, built:** the door; which mothers are complete; each piece's state exactly as its
-study wrote it; the mother's oos2 curve against equal-risk buy and hold (the owner's benchmark
-for part A, kept); the SPA's three p-values and the StepM at the FWER of `ledger/thresholds.yaml`.
+study wrote it; the mother's oos2 curve against the random trader of her own footprint (owner,
+2026-10-11; it replaced equal-risk buy and hold); the SPA's three p-values and the StepM at the FWER of `ledger/thresholds.yaml`.
 
 **Decided 2026-10-04 (P2):** `joint.population` is `entrantes` — the StepM's K is every mother
 that entered step 20. **Still open, exposed rather than chosen (hard rule 11):** `joint.pieces` —
@@ -58,6 +59,58 @@ The StepM and the SPA are computed and shown as before and decide nothing under 
 not wait for them: when oos2 or the mother's trades are refused (owner, 2026-10-08) the verdict is still given from the four
 states, no ledger row is written (oos2 was not opened) and the result carries the warning «Falta el StepM» with the reason. The ledger row's `n_out` counts whoever is not dropped. `sin_fallo`, `unanimidad` and
 `ninguna` are still there, side by side in `readings.csv`.
+
+## The benchmark: the mother's own trades, entered at random (owner, 2026-10-11)
+
+**What it is.** For each mother, `benchmark.draws` traders who each take *her* oos2 trades — the
+same count, the same side, the same lots, each trade's own holding time, the same declared
+costs — at entry bars drawn uniformly over oos2. The benchmark is their **mean** P&L per day,
+and the excess the SPA reads is the mother's day minus that mean. In plain words it is what the
+market pays for being in it that long, on that side, at that size: 🤔 away from the edges of the
+segment it is buy and hold at the mother's *time-averaged* lots, minus her costs. So it discounts
+the asset's drift without asking her to beat a leveraged long, which is what equal-risk buy and
+hold did (a strategy in the market 7 % of the time was held against a position sized to be as
+volatile as she is).
+
+**The null hypothesis of step 20.** *No mother that reached step 20 has an expected daily oos2
+P&L above that of her own trades entered at random*: `E[mother_k − random_k] ≤ 0` for every k.
+«Beating it» is the SPA rejecting that (one p for the family) and the StepM naming her (FWER of
+the ledger). The null is **conditional on her footprint**: how many trades she made, how long she
+held and at what size in oos2 are given to the null, so only *when she entered* is tested — the
+ladder's `timing` rung, the monkey study's headline. Read on oos2 only, never on the in-sample
+(owner, 2026-09-29; `knowhow/research/random-trader-oos-only.md`).
+
+**One generator, one repricer.** The draws are `engines.nulls.model.RUNGS[benchmark.rung]`, the
+ladder the monkey study reads, with two things changed on purpose and neither in the engine: the
+window is the whole of oos2 rather than her first trade to her last, and the bars are M1, the
+grid the mother's panel is marked on. The pricing is `engines.market.reprice.pnl` at
+`reprice.costs(feed, "oos2")`, not the ladder's `calibrate.charged`, which holds no spread and no
+slippage: in the monkey study that cancels (the real run is repriced the same way), here the
+mother's side is SQX's own P&L, so an under-charged benchmark would be a bar she pays twice.
+The ladder's kernel returns five statistics per run and no days; the mean needs none of them —
+it is linear, so `footprint` prices the traders' average position per M1 bar and marks it at each
+day's last M1 close, as the mother's panel is.
+
+**Does the SPA still hold?** Yes, with one approximation that is measured. The SPA needs the
+excess series stationary and weakly dependent; the benchmark is a smooth function of the same
+price path buy and hold was, so nothing changes there. What is new is that the mean is
+simulated: its Monte Carlo error is a fixed offset the bootstrap does not resample. One trader's
+total is about as volatile as the mother's own, so the offset's standard deviation is
+`1/sqrt(draws)` of the mother's standard error: at `draws: 2000`, **2.2 %** of it (🔬 1.2 %
+median, 1.5 % worst, over 300 synthetic mothers of 150 trades) — 0.05 % more variance than the
+SPA studentizes by, a t moved by less than 0.05. It is printed per mother (`mc_day`, «error
+simulación»). Draws are seeded (`benchmark.seed`), so a rerun gives the same benchmark.
+
+**Looks.** None added: the benchmark reads the mothers' oos2 trades and the feed's M1 bars,
+which `inputs.panel` already opens behind `gate.allow(20, "oos2")`, and the asset card. When
+the policy or the trades door refuses, it is not computed. The step-20 ledger row carries the
+benchmark's rung, draws and seed.
+
+**Known limits, the ladder's own** (`engines/nulls/README.md`): the random trades may overlap
+where the mother's never do; her lots are kept as they were, carrying the volatility of her real
+entries; entries are uniform over every M1 bar of the feed, not only the hours she trades. The
+costs are the asset card's for oos2 — a card recalibrated after the retest moves the benchmark
+by the difference.
 
 ## The four things this module exists to get right
 

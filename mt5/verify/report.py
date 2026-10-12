@@ -15,8 +15,8 @@ def finish(work: Path, meta: dict, cfg: dict, started: float, summaries: dict, r
           why: str, tabs: list | None = None) -> None:
     """Write result.json in the study contract, and the run's state beside it."""
     tabs = list(tabs or [])
-    rows = [{"empresa": firms.label(f), "veredicto": "Validada" if s["state"] == "pass" else
-            "No validada", "reloj (h)": s["clock_h"], "operaciones SQX": s["sqx_trades"],
+    rows = [{"empresa": firms.label(f), "veredicto": {"pass": "Validada", "none": "Sin veredicto"}.get(
+                s["state"], "No validada"), "reloj (h)": s["clock_h"], "operaciones SQX": s["sqx_trades"],
              "operaciones MT5": s["mt5_trades"],
              "calidad histórico MT5 (%)": s["mt5_history"]["history_quality_pct"],
              "MT5 empezó": s["mt5_history"]["start_actual"] + (
@@ -29,7 +29,8 @@ def finish(work: Path, meta: dict, cfg: dict, started: float, summaries: dict, r
     states = [s["state"] for s in summaries.values()]
     # Each firm is judged alone: one that validates is amber, never the red of none (📓 2026-09-30)
     overall = ("pass" if states and all(s == "pass" for s in states) else
-               "watch" if "pass" in states else "fail" if states else "none")
+               "watch" if "pass" in states else "none" if set(states) == {"none"} else
+               "fail" if states else "none")
     head = {"name": "resumen", "title": "Resumen",
             "note": (f"{meta['strategy']} · {meta['asset']} {meta['timeframe']} · "
                      f"{meta['from']} → {meta['to']} · modelo del tester «{meta['model']}». "
@@ -41,12 +42,15 @@ def finish(work: Path, meta: dict, cfg: dict, started: float, summaries: dict, r
                     *(["veredicto en Real ticks"] if meta.get("ticks") else [])]),
                 "una estrategia puede valer para una empresa y no para otra")]}
     good = [firms.label(f) for f, s in summaries.items() if s["state"] == "pass"]
-    bad = [firms.label(f) for f, s in summaries.items() if s["state"] != "pass"]
+    bad = [firms.label(f) for f, s in summaries.items() if s["state"] == "fail"]
+    short = [firms.label(f) for f, s in summaries.items() if s["state"] == "none"]
     meaning = why or (
         (f"Validada en {', '.join(good)}: SQX reproduce su cuenta y su histórico largo vale para "
          "ella. " if good else "") +
         (f"No validada en {', '.join(bad)}: SQX no reproduce lo que el EA hace en su cuenta; la "
          "pestaña de cada una dice qué fila falla. " if bad else "") +
+        (f"Sin veredicto en {', '.join(short)}: muy pocas operaciones de SQX para juzgar. "
+         if short else "") +
         "Cada empresa se juzga por separado.")
     verdict = study_result.blocks.verdict(
         {"pass": "Validada", "watch": f"Validada en {', '.join(good)}", "fail": "No validada",

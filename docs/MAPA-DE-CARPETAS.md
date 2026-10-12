@@ -140,9 +140,9 @@ Carpetas creadas vacías, con su README, para los encargos que todavía no está
 | 9 — falsos positivos | `studies/screening/falsePositives/` |
 | 10 — data snooping | `engines/inference/snooping/` (el motor), `studies/screening/snoopingScreen/` (la criba; retirada, encargo 44), `studies/closing/blindJoint/` (la prueba conjunta del paso 20) |
 | 11 — coste del filo | `studies/readings/edgeCost/` |
-| 12 — estructura | `studies/readings/structure/` (la mitad estadística; la del XML va a `sqx/structural/`) |
+| 12 — estructura | borrado el 2026-10-11 (`studies/readings/structure/`, `sqx/structural/{keep,make,plan}.py`; queda `sqx/structural/logic.py`), ver el historial de git |
 | 13 — alfa y beta | dentro de `studies/closing/exposure/` (nota en su README) |
-| 14 — mapa condicional | `studies/readings/conditionalMap/` |
+| 14 — mapa condicional | borrado el 2026-10-11 (`studies/readings/conditionalMap/`), ver el historial de git |
 | 15 — superficies de mercado | `studies/optimisation/marketSurfaces/` |
 | 16 — repetición de mercado | `engines/market/replay/` |
 | 17 — calidad del feed | `studies/data/feedQuality/` |
@@ -160,3 +160,5 @@ compararon las salidas: veredictos de mcRetest, crossmarket, exposure, decay y l
 scorecard y su embudo), los briefs de SPP (salvo el campo `source`, que es la ruta), las 48 celdas
 de crossTF, el panel de nulos, las celdas de WFM, `wfc.json`, `cscv.json` y la nube — idénticos. En
 Monte Carlo, las columnas deterministas idénticas y los niveles de las 36 estrategias iguales.
+
+**Borrado el 2026-10-11** (ver el historial de git): `studies/closing/atrCalculator/`, `pipeline/autopilot/traded.py`, `sqx/variants/stopgrid.py` y `closing.stop` (paso 24, stop loss por operación; la medición preregistrada dio NO PASA).

@@ -69,7 +69,7 @@ def run(argv: list[str]) -> None:
     """Run `python3 <argv>` from the repository root; its failure ends the step with its own words.
 
     Args:
-        argv: What follows `python3`, e.g. ["-m", "sqx.structural.keep", "--work", …].
+        argv: What follows `python3`, e.g. ["-m", "studies.readings.edgeCost.report", "--project", …].
 
     Nothing the command printed is shown: under the ledger's door a blind step's numbers
     must not be read before 17, 18 and 19 are all registered. Held in `chain.CHILDREN` while

@@ -47,7 +47,7 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=0,
                     help="export a reproducible random sample of this many strategies")
     ap.add_argument("--batch", default="",
-                    help="step tag, e.g. structure or stopgrid — several steps can retest the "
+                    help="step tag, e.g. structure or neighbours — several steps can retest the "
                          "same databank the same day; without a tag the later export overwrites "
                          "the earlier one's trades.parquet")
     a = ap.parse_args()

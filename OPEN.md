@@ -127,6 +127,13 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 110 | 🟡 | Two-chart strategies: steps 10, 13-18.5 not yet run in SQX on a two-chart mother (wired in `stage.just`, verified through step 8 and step 26) | OPEN.md |
 | 111 | 🟢 | A study that fails halfway leaves partial results and the resume treats its step as done | docs/OPEN-closed.md |
 | 112 | 🟡 | Knowhow weekly pass 2026-10-11: cards in the wrong domain (market-profile, perf, locations), one open corpus contradiction | OPEN.md |
+| 113 | 🔴 | Next batch needing MT5 or the custodian: portfolio sizing without a per-trade stop, step-26 calibration run, no-edge population through 18/18.5/19, leftovers | OPEN.md |
+| 114 | 🟠 | `builder.build()` installs the template before the gates: a refusal leaves it under live projects | OPEN.md |
+| 115 | 🟠 | The harvest cannot record WHY SQX dismissed a strategy | OPEN.md |
+| 116 | 🟠 | `sweep.py` retires a `Test_` parked between workflow steps (data loss) | OPEN.md |
+| 117 | 🟠 | NIKKEI225_M1 feed is nearly empty at the start of `build` | OPEN.md |
+| 118 | 🟠 | Deferred builder gates: task windows vs segment, second chart in a template | OPEN.md |
+| 119 | 🟡 | `MonteCarloManipulation` removed (owner 2026-10-11: never again) — custodian and gorilla still ON | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -948,3 +955,57 @@ Found by the weekly quality pass (one domain at a time; `eng`, `costs`, `locatio
 **Contradiction left open:** `locations/xauusd-corpus` (🤔, 231 strategies, «every exit capped at 8 bars», old project's export) vs `export/exits-and-m1-library` (🔬, 757-strategy `MC_Trades`: 19.55 % of trades close on `Exit Signal`). They describe two different corpora; the first card's heading still reads as general. Confirm with the owner which corpus is the live one, then retitle or retire the old card (its data cannot be reproduced, OPEN §12).
 
 **Stale words in `perf/server-cores-and-ram`:** its `kw:` still names «Xmx108g» and the `smt-in-sqx-retest` body speaks of the master at `-1`; heaps are now 24/16/80 g (`perf/ram-budget`). 🤔 Re-measure core counts on the leaseWeb machine before editing.
+
+## 113. 🔴 Next batch that needs MT5 or the custodian (owner, 2026-10-11)
+
+Opened with the 2026-10-11 tail change; updated the same day after the stop decision. Steps 22, 23
+and 24 were deleted (the 24 because its pre-registered measurement read NO PASA, `portfolio/DECISIONS.md`,
+dossier `docs/AgentPDFs/medicion-stop-lejano-2026-10-11.md`), step 25 left the chain, step 21 only
+describes, step 20 cuts DESCARTAR against a random trader with the same footprint, step 26 has rows 1 / 1b
+and «Sin veredicto».
+
+- **(1) Portfolio sizing still depends on a per-trade stop — design task.** Strategies now trade with
+  no stop, yet `portfolio/common/construct/inputs/risk.py` sizes from a grafted ATR stop
+  (`sqx/variants/build/stoploss.py`, ledger key `portfolio.funded.stop_percentile`). At the exported
+  size, ~50-77 % of simulated 100k accounts breach a firm limit. Next: size by the admissible floating
+  daily loss and cap the joint exposure.
+- **(a) Step-26 calibration.** One reference run per asset × firm with a trivial strategy, to set
+  `mt5verify.exit_same_min` and `mt5verify.trades_min` (provisional today). After it: rows 3b/4
+  relative to the mean daily |P&L|, SQX spread from history instead of an instant, MT5 equity
+  drawdown, and the pool moved to `portfolio/inputs/pool.py`.
+- **(b) No-edge calibration of 18 / 18.5 / 19.** A population with no edge through those steps, as
+  step 17's calibrate did, to see what the criteria let through.
+- **Leftovers.** Empty `stop_percentile` / `stop_x` columns in the pool and campaign CSVs. edgeCost's
+  `--strategy` mode stays because ~55 old result folders would otherwise be read by step 8.
+  `portfolio/common/construct/candidates.py:26` still names `worth_it` in `SURVIVOR_WORDS`. The dossiers
+  `docs/AgentPDFs/criterios-paso-2{2,3,4}-*.md` are historical.
+
+## 114. 🟠 `builder.build()` installs the template before the gates: a refusal leaves it under live projects
+
+Decisión pendiente del dueño. `builder.build()` hace `install_template` antes de los gates (`refuse`), así que una negativa deja la copia de la plantilla en el install, bajo proyectos vivos. 🔬 Mover `install_template` después de `refuse` falla: `configure.py:127` → `charts.streams` → `charts.wanted` (`charts.py:33`) abre el `templateFile` de la tarea (la ruta instalada) → `BadZipFile`.
+
+Opciones: (a) dejar la plantilla en el directorio temporal y apuntar `templateFile` ahí durante los gates; (b) que `charts.streams` reciba la plantilla de origen.
+
+## 115. 🟠 The harvest cannot record WHY SQX dismissed a strategy
+
+Decisión pendiente del dueño. 🔬 En `Test_NIKKEI225_M30_simpleL_fin`, `_val` y `Test_USDJPY_M30_doubleROCLong` el bitmask `StrategyProblems` del fichero de build es 0 en toda estrategia sin gemela OOS (300 muestreadas en cada uno); la razón vive en el fichero retestado, que es el que falta. `missing_oos.csv` ya tiene la columna y la cosecha imprime un aviso en mayúsculas; NO está activado un paro por «gemela ausente sin explicar». Para activarlo hay que leer la razón de SQX antes del descarte (`AutomaticDismissal` de la tarea Retest, 10 códigos, heredados del donante). Ficha: `knowhow/sqx-format/dismissal-reason-not-on-build-file.md`.
+
+## 116. 🟠 `sweep.py` retires a `Test_` parked between workflow steps (data loss)
+
+Decisión pendiente del dueño. `sqx/projects/sweep.py` retira un `Test_` intacto 24 h y no distingue un workflow aparcado entre pasos; `retire.py` hace rmtree de los databanks (pérdida de datos). El estado del carril vive en `ui.daemon.workflow.api.workflow`, y `tools/layering.py` deja a `sqx` importar solo `core`.
+
+Opciones: (a) inyectar `finished(project) -> bool` en `sweep.candidates`, como ya se hace con `describe`, desde un llamador fuera de `sqx/`; (b) bajar la derivación del carril por debajo de `ui/`. El Council del dueño rechazó una gracia de 7 días como sustituto.
+
+## 117. 🟠 NIKKEI225_M1 feed is nearly empty at the start of `build`
+
+Decisión pendiente del dueño. 📓 `build` empieza en el primer dato (2011-09-19; `assets/_policy.yaml:102-106`) y el feed M1 está casi vacío: 702 barras en 2011, ninguna oct 2011–ene 2012, 68.079 en 2012 (~305/día), 187.775 en 2013, mar–abr 2013 vacíos, ~305-336 mil/año desde 2020 (fuente: `~/Desktop/AlgoData/bars/NIKKEI225_M1/M1.parquet` y `feedQuality/NIKKEI225_M1/`). 🤔 Causa más probable de las primeras operaciones tardías; no comprobado contra un registro de operaciones. Lo que lo confirmaría: la fecha de la primera operación de una estrategia construida.
+
+Opciones: mover `build.from` a 2013, o comprobar antes las fechas de primera operación.
+
+## 118. 🟠 Deferred builder gates: task windows vs segment, second chart in a template
+
+Pendientes, sin decidir cuándo: (a) ningún gate comprueba que la ventana de fechas de cada tarea coincida con su segmento (`registryxml.clip` ya imprime lo que recorta); (b) ningún gate rechaza una plantilla con un segundo gráfico (aún no se sabe cómo la plantilla lo declara).
+
+## 119. 🟡 `MonteCarloManipulation` removed (owner 2026-10-11: never again) — custodian and gorilla still ON
+
+El código ya lo rechaza; apagado en el proyecto del conductor. Los 12 proyectos del custodio (`SQX_w2`) siguen ON porque su GUI estaba abierta. Pendiente: `python3 -m sqx.projects.rankings <project.cfx> --mc-off` en cada uno con el custodio cerrado (copia en `AlgoData/projectsBackup/mc_off_2026-10-11`), y lo mismo en gorilla por `bin/remote.sh gorilla` tras commit y push. Abierto también: `sqx/projects/mt5verify.py:128` emite `<MonteCarloManipulation />` sin atributo `use` en su plantilla de tarea; 🤔 confirmar que SQX lo lee como apagado.

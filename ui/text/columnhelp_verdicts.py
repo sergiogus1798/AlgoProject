@@ -52,16 +52,12 @@ VERDICTS = {
            "nulo de signos semanales: NO PASA si pierde más de lo que explica el ruido (p− ≤ "
            "0,05), LIMBO si no gana, PASA si gana («reoptimizar gana» o «no descarta»).",
     "blindJoint": "Paso 20: los cuatro resultados ciegos (WFC, CSCV, superficies, WFM) leídos "
-                  "juntos, y si la madre bate al buy & hold en oos2. Provisional: manda el "
+                  "juntos, y si la madre gana en oos2 más que sus mismas operaciones entradas al "
+                  "azar (operador al azar de igual huella). Provisional: manda el "
                   "peor estado. DESCARTAR si alguno es NO PASA, REVISAR si alguno es LIMBO, "
                   "MANTENER si todos pasan. Las demás lecturas anotan y no cortan.",
-    "exposure": "¿Vale el tiempo de mercado que consume? Aprobado si por hora expuesta rinde al "
-                "menos 2 veces lo del buy & hold a igual riesgo y se puede leer (30 operaciones, "
-                "250 días, ganan los dos); Suspenso si no. Rendir menos que el buy & hold en "
-                "total no suspende.",
-    "atrCalculator": "¿A qué distancia va un stop fijo X·ATR(20), leído del MAE de las ganadoras "
-                     "del IS y sin optimizar? Siempre «N X, sin elegir»: pone cada percentil al "
-                     "lado y decide el dueño.",
+    "exposure": "¿Cuánto tiempo de mercado consume y qué rinde por hora expuesta frente al buy & "
+                "hold? Sólo describe: no aprueba ni suspende.",
     "monkey": "¿Es mejor que un mono que opera el mismo mercado? Miles de versiones al azar con "
               "las mismas operaciones, cambiando sólo cuándo entran: «bate al mono» si su "
               "beneficio neto supera al 95 % de ellas (p ≤ 0,05), «no se distingue del mono» si "
@@ -77,12 +73,6 @@ VERDICTS = {
     "edgeCost": "¿Cuánto edge bruto lleva cada operación sobre el coste que pagó en oos1? «por "
                 "encima del umbral» si el edge medio llega a 2 veces ese coste, «por "
                 "debajo» si no. En verdict.csv, DESCARTAR sólo si el dueño eligió eliminar.",
-    "conditionalMap": "Dónde, en la rejilla de estados del mercado al entrar, gana la "
-                      "estrategia: P&L medio, su intervalo y tasa de acierto por celda. Fabrica "
-                      "hipótesis, no filtra: «descriptivo».",
-    "structure": "¿Qué condición de entrada lleva el edge, y vive en la dirección? Quita cada "
-                 "condición e invierte la estrategia en un lote retesteado por SQX. "
-                 "Diagnóstico, nunca selección: «descriptivo».",
     "feedQuality": "¿Cuánto beneficio se apoya en fallos del feed M1 (picos y vuelta, "
                    "congelados, huecos)? «alarma» si las operaciones que tocan uno llevan más "
                    "de lo que daría el azar; «sin alarma» si no; «insuficiente» con menos de 10 "

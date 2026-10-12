@@ -6,9 +6,7 @@ TIPS = {
                      "se toma de las propias operaciones.",
     "study.timeframe": "La rejilla de barras sobre la que se cuenta la ocupación.",
     "benchmark.report": "Las convenciones de buy & hold que se enseñan.",
-    "benchmark.headline": "La que lee el veredicto; a igual riesgo es la única en la que "
+    "benchmark.headline": "La contra la que se mide la dicotomía; a igual riesgo es la única en la que "
                           "«rinde menos» habla del edge y no del tamaño.",
-    "gate.min_efficiency": "Cuántas veces tiene que rendir por hora expuesta lo que rinde el "
-                           "buy & hold para merecer la pena.",
-    "gate.min_trades": "Por debajo de estas operaciones ninguna tasa es legible.",
-    "gate.min_days": "Una ventana más corta que esto convierte el CAGR en una ficción."}
+    "notes.min_trades": "Por debajo de estas operaciones se avisa de que ninguna tasa es legible.",
+    "notes.min_days": "Una ventana más corta que esto se avisa: convierte el CAGR en una ficción."}

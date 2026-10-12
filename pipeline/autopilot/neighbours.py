@@ -95,7 +95,7 @@ def entering(project: str, role: str) -> pd.DataFrame:
 
 
 def retest(project: str, role: str, work: Path) -> str:
-    """The batch through the two legs, as `closing.retest` runs one through the three: the
+    """The batch through the two legs: the
     project copied aside first (hard rule 1), the copy gone only when no databank the legs do
     not write lost a file."""
     folder = project_dir(project, apply_verdict.install_of(role))

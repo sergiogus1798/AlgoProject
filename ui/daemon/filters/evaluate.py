@@ -16,7 +16,7 @@ from ui.text.glossary import label
 # surfaces and the ATR stop may read it, exposure is judged over the whole history. `refused`
 # adds every study of a step the asset's `_policy.yaml` reserves oos2 for; the WFC's
 # compositions are caught by name below.
-OOS2_STUDIES = {"wfm", "blindJoint", "cscv", "marketSurfaces", "atrCalculator", "exposure"}
+OOS2_STUDIES = {"wfm", "blindJoint", "cscv", "marketSurfaces", "exposure"}
 OOS2 = re.compile(r"oos\s*_?2", re.IGNORECASE)
 SAMPLE = re.compile(r"^(.*) [(\[]([^()\[\]]+)[)\]]$")    # «Net profit (IS)», «… [OOS]»
 NUMERIC = (">", "<", ">=", "<=", "entre")

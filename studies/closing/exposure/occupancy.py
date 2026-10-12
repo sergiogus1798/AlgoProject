@@ -67,7 +67,7 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float,
         book that is as often one way as the other.
     """
     lots = held(trades, bars.index)
-    inside = lots["gross"] > 0
+    inside = lots["gross"] > 1e-9   # a float cumsum of overlapping lots leaves a residue
     notional = lots["gross"] * bars["Close"].to_numpy() * point_value
     span = (bars.index[-1] - bars.index[0]) + pd.Timedelta(minutes=bar_minutes(bars.index))
     return {"share": float(inside.mean()),

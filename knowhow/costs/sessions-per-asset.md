@@ -9,7 +9,7 @@ AND the feed's `<Symbol>` from a project holding both: `--session-from`, or by d
 `sqx/projects/source.py`) the newest such `project.cfx` on any install. Session alone was the trap:
 gold built at gold's spread on USDJPY hours (`OPEN.md` §35). No project for GBPUSD, AUDUSD, USDCAD,
 EURUSD → the builder refuses; register the session in SQX first. A session is the broker's trading
-**week**; the Asia/London/NY day split is the owner's, in `conditionalMap/config.yaml`.
+**week**; the Asia/London/NY day split is the owner's, in `conditionalMap/config.yaml` (study deleted 2026-10-11, step 22; the split is the owner's, re-home it before reusing).
 
 ## Evidence
 Donor `projectsBackup/XAUUSD_base_2026-09-21`. 📓 Sessions per master project (`.cfx`):

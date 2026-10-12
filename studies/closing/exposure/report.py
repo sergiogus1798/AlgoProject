@@ -6,7 +6,8 @@ import sys
 from datetime import date
 
 from core.paths import report_dir
-from core.study import output, verdicts
+from core import manifest
+from core.study import output
 from core.study.render import markdown
 from studies.closing.exposure import inputs, load, many, one
 
@@ -38,7 +39,10 @@ def main() -> None:
         output.member(out, m, f"Exposición — {m['strategy']}")
     output.population(out, "exposure", found["population"],
                       f"Exposición — {args.project} / {args.databank}")
-    verdicts.write(out, found["table"][many.CSV], got["packed"], " ".join(sys.argv), args.set)
+    # No verdict column: the study describes, so the window shows these as plain columns.
+    found["table"][many.CSV].to_csv(out / "verdict.csv", index=False)
+    manifest.write(out, {"input": str(got["packed"].resolve()), "overrides": args.set},
+                   " ".join(sys.argv), {"verdict.csv": len(found["table"])})
     print(markdown.render(found["population"], "Exposición"))
     print(f"-> {out / 'verdict.csv'}")
 

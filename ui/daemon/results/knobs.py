@@ -26,13 +26,10 @@ LOADERS = {
     "wfm": "studies.optimisation.wfm.inputs.config:load",
     "blindJoint": "studies.closing.blindJoint.inputs:config",
     "exposure": "studies.closing.exposure.inputs:config",
-    "atrCalculator": "studies.closing.atrCalculator.inputs:config",
     # the monkey has no config.yaml of its own: its knobs are the null engine's
     "monkey": "engines.nulls.inputs:config",
     "entryQuality": "studies.readings.entryQuality.inputs:config",
     "edgeCost": "studies.readings.edgeCost.inputs:config",
-    "conditionalMap": "studies.readings.conditionalMap.inputs:config",
-    "structure": "studies.readings.structure.inputs:config",
     "monteCarlo": "portfolio.common.monteCarlo.inputs.config:load",
     "feedQuality": "studies.data.feedQuality.inputs:config",
     "maeDepth": "studies.screening.maeDepth.inputs:config",

@@ -186,10 +186,9 @@ def test_lote() -> None:
 
 def test_origin() -> None:
     """§4.3/§9.4: a databank panel (and its sub-panel) opens the right study, never a family
-    sibling's — Cross Market stays Cross Market, Mapa condicional stays the conditional map."""
+    sibling's — Cross Market stays Cross Market, Exposición stays the exposure study."""
     assert default_study("Cross Market", "Resumen") == "crossmarket"
     assert default_study("Cross Timeframe", "H4") == "crossTF"
-    assert default_study("Cierre", "Mapa condicional") == "conditionalMap"
     assert default_study("Cierre", "Exposición") == "exposure"
     opt = "WFM + WFC + CSCV + Market Surfaces"
     assert default_study(opt, "Nube de parámetros") == "cloud"

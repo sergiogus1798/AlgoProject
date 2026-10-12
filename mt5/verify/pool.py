@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The validated pool of step 26: an append-only register per prop firm, the latest verdict per strategy wins."""
+"""The validated pool of step 26: an append-only register per prop firm, the first verdict per check counts."""
 import argparse
 import hashlib
 import json
@@ -53,17 +53,17 @@ def rows_of(run: Path, project: str = "", finalist: dict | None = None) -> list[
     Args:
         run: A folder of `RUNS`, with its `run.json` and `result.json`.
         project: The workflow project the strategy comes from; "" when nobody says.
-        finalist: The autopilot's finalist (`mother`, `stop`), when the check came from it.
+        finalist: The autopilot's finalist (`mother`), when the check came from it.
 
     Returns:
         A dict per judged firm, keys `COLUMNS`. Empty for a check that crashed. A firm the
-        check refused (no commission, no symbol) is not a verdict and gets no row.
+        check refused (no commission, no symbol) is not a verdict and gets no row, nor does
+        one without a verdict (`none`: too few SQX trades).
     """
     meta = json.loads((run / "run.json").read_text(encoding="utf-8"))
     if meta["state"] != "done":
         return []
     result = json.loads((run / "result.json").read_text(encoding="utf-8"))
-    stop = (finalist or {}).get("stop") or {}
     now = datetime.now().isoformat(timespec="seconds")
     return [{"identity": meta["identity"], "strategy": meta["strategy"], "project": project,
              "mother": (finalist or {}).get("mother", ""), "symbol": meta["asset"],
@@ -73,14 +73,14 @@ def rows_of(run: Path, project: str = "", finalist: dict | None = None) -> list[
              "thresholds_hash": thresholds_hash(meta, firm),
              "config_hash": result["config_hash"],
              **{k: s[k] for k in FIGURES},
-             "stop_percentile": stop.get("percentile", ""), "stop_x": stop.get("x", ""),
+             "stop_percentile": "", "stop_x": "",     # legacy columns of the append-only registers (step 24 is gone)
              "file": meta["file"], "recorded_on": now}
-            for firm, s in result["summary"]["firms"].items()]
+            for firm, s in result["summary"]["firms"].items() if s["state"] != "none"]
 
 
 def record(rows: list[dict]) -> None:
     """Append rows to their firms' registers. Nothing is ever rewritten: a second verdict
-    for the same strategy is a new line, and `read` takes the latest."""
+    for the same strategy is a new line, and `read` keeps the first."""
     for firm, mine in pd.DataFrame(rows, columns=list(COLUMNS)).groupby("firm", sort=False):
         out = path(firm)
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -96,14 +96,16 @@ def history(firm: str) -> pd.DataFrame:
 
 
 def read(firm: str) -> pd.DataFrame:
-    """The strategies validated for one firm today — what the portfolio side reads.
+    """The strategies validated for one firm — what the portfolio side reads.
 
     Returns:
-        One row per identity whose LATEST verdict (by `verified_on`) is `VALID`. A strategy
-        validated once and failed on a later check is out; the reverse is in.
+        One row per (identity, window, model) whose FIRST verdict (by `verified_on`) is
+        `VALID` (owner, 2026-10-11): a rerun stays in `history` but changes nothing here, so
+        a strategy cannot be re-rolled until it passes.
     """
-    last = history(firm).sort_values("verified_on", kind="stable").groupby("identity").tail(1)
-    return last[last["verdict"] == VALID].reset_index(drop=True)
+    key = ["identity", "window_from", "window_to", "model"]
+    first = history(firm).sort_values("verified_on", kind="stable").groupby(key).head(1)
+    return first[first["verdict"] == VALID].reset_index(drop=True)
 
 
 def rebuild(runs: Path | None = None) -> list[dict]:

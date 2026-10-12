@@ -20,7 +20,7 @@ and `ui/daemon/results/forproject.SET` lists them so the config viewer shows wha
 - 🤔 Still to review: `studies/breakage/spp/`, `studies/breakage/mcRetest/`, `studies/transfer/crossmarket/` take
   `--project`, but check none stores a feed.
 - 2026-09-28: the owner saw «XAU USD» in a USDJPY project (Calidad de entrada, Nube de parámetros).
-  The viewer showed config.yaml's donor values; entryQuality/conditionalMap ran right (`--set`), but
+  The viewer showed config.yaml's donor values; entryQuality/conditionalMap (conditionalMap deleted 2026-10-11) ran right (`--set`), but
   `cloud` (`run.symbol`), `exposure` (`study.timeframe`) and `gate` (`monkey.timeframe`) ran on the
   donor's XAUUSD/M30. Harmless on that M30 project (cloud's symbol only matters under
   `ALGO_AUTONOMOUS`); wrong on H1/H4. Runner now sets all three.

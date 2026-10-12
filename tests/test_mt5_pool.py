@@ -39,6 +39,18 @@ def test_a_finished_check_gives_one_row_per_judged_firm() -> None:
     assert len(ftmo["thresholds_hash"]) == 16 and ftmo["thresholds_hash"] == rows["hantec"]["thresholds_hash"]
 
 
+def test_a_check_without_verdict_gives_no_row(tmp_path: Path) -> None:
+    """A firm judged `none` (too few SQX trades) is not recorded."""
+    import json
+    import shutil
+    run = tmp_path / PASSED
+    shutil.copytree(pool.RUNS / PASSED, run)
+    res = json.loads((run / "result.json").read_text(encoding="utf-8"))
+    res["summary"]["firms"]["ftmo"]["state"] = "none"
+    (run / "result.json").write_text(json.dumps(res), encoding="utf-8")
+    assert [r["firm"] for r in pool.rows_of(run)] == ["hantec"]
+
+
 def test_a_crashed_check_gives_no_row() -> None:
     """A check that never judged is not a verdict."""
     assert pool.rows_of(pool.RUNS / CRASHED) == []
@@ -63,22 +75,20 @@ def test_rebuilt_register_reads_only_the_validated(register: Path) -> None:
     assert pool.read("the5ers").empty      # a firm nobody verified on: empty, not an error
 
 
-def test_latest_verdict_wins_and_nothing_is_rewritten(register: Path) -> None:
-    """A later fail takes a strategy out, a later pass puts it back, whatever the order written."""
+def test_first_verdict_counts_and_nothing_is_rewritten(register: Path) -> None:
+    """Owner 2026-10-11: reruns stay in the history but the first verdict is what `read` gives."""
     good = pool.rows_of(pool.RUNS / PASSED)[:1]
     bad = [{**good[0], "verdict": "fail", "run": "later", "verified_on": "2026-10-02T09:00:00"}]
     pool.record(good)
-    assert list(pool.read("ftmo")["identity"]) == [ID_PASSED]
     pool.record(bad)
-    assert pool.read("ftmo").empty and len(pool.history("ftmo")) == 2
-    # an older check added afterwards (a rebuild) does not override the newer verdict
-    pool.record([{**good[0], "run": "older", "verified_on": "2026-09-01T00:00:00"}])
-    assert pool.read("ftmo").empty and len(pool.history("ftmo")) == 3
-    again = [{**good[0], "run": "newest", "verified_on": "2026-10-03T09:00:00"}]
-    pool.record(again)
-    assert list(pool.read("ftmo")["run"]) == ["newest"]
-    assert pool.pending(good + again) == []
-    assert register.joinpath("ftmo.csv").read_text(encoding="utf-8").count("\n") == 5   # header + 4
+    assert list(pool.read("ftmo")["identity"]) == [ID_PASSED] and len(pool.history("ftmo")) == 2
+    # a failed first verdict is not rescued by a later pass; another window counts on its own
+    other = {**good[0], "run": "r3", "window_from": "1999-01-01"}
+    pool.record([{**good[0], "identity": "x" * 64, "verdict": "fail", "verified_on": "2026-10-01"},
+                 {**good[0], "identity": "x" * 64, "run": "r2", "verified_on": "2026-10-05"}, other])
+    assert "x" * 64 not in set(pool.read("ftmo")["identity"]) and len(pool.read("ftmo")) == 2
+    assert pool.pending(good + bad) == []
+    assert register.joinpath("ftmo.csv").read_text(encoding="utf-8").count("\n") == 6   # header + 5
 
 
 def test_another_version_of_the_strategy_does_not_inherit(register: Path) -> None:
@@ -88,9 +98,8 @@ def test_another_version_of_the_strategy_does_not_inherit(register: Path) -> Non
     assert ID_PASSED in set(pool.read("ftmo")["identity"])
 
 
-def test_the_autopilot_finalist_fills_mother_stop_and_project() -> None:
+def test_the_autopilot_finalist_fills_mother_and_project() -> None:
     """What only the autopilot knows travels into the row."""
     row = pool.rows_of(pool.RUNS / FAILED, "Trade_USDJPY_x_H1",
-                       {"mother": "Strategy 21.9", "stop": {"percentile": 95, "x": 1.5}})[0]
-    assert (row["project"], row["mother"], row["stop_percentile"], row["stop_x"]) == \
-        ("Trade_USDJPY_x_H1", "Strategy 21.9", 95, 1.5)
+                       {"mother": "Strategy 21.9"})[0]
+    assert (row["project"], row["mother"]) == ("Trade_USDJPY_x_H1", "Strategy 21.9")

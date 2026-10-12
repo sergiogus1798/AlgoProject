@@ -1,10 +1,10 @@
-"""The numbers of step 20: each mother against buy and hold on oos2, the SPA, and the StepM per reading."""
+"""The numbers of step 20: each mother against her random trader on oos2, the SPA, and the StepM per reading."""
 
 import numpy as np
 import pandas as pd
 
 from engines.inference.snooping import superior
-from studies.closing.blindJoint import benchmark, readings
+from studies.closing.blindJoint import readings
 
 YEAR = 252   # SQX's own convention (its SharpeRatio is weekday rows x sqrt(252))
 
@@ -47,19 +47,25 @@ def run(data: dict, cfg: dict) -> dict:
 
     Args:
         data: `population` (pieces.population), and — only when the policy let step 20
-            read oos2 — `panel`, `moves` and `point_value`; otherwise `refused`, the
-            policy's text.
+            read oos2 — `panel`, `benchmark` and `mc` (inputs.random_traders); otherwise
+            `refused`, the policy's text.
         cfg: What inputs.config() returned.
 
     Returns:
         `states`, `calls` (readings.verdicts), `named` per reading, and when the SPA ran
-        `spa`, `table` (one row per complete mother: lots, both Sharpe ratios, the mean
-        daily excess, whether the StepM over every entrant names it), `sharpe_bh`,
-        `block`, `days`, `flat` and `K`. Also `panel` (each mother's own daily P&L) and
-        `held` (buy & hold's daily P&L at one lot), both reindexed to the days actually
-        tested, so `one.py` can draw the two equity curves at equal risk. A mother whose
-        curve never moves on oos2 is kept out of the test: it has no variance to
-        studentize by and could not be named.
+        `spa`, `table` (one row per complete mother: her Sharpe ratio, her mean daily
+        excess over her random trader, that trader's mean day and its Monte Carlo error,
+        whether the StepM over every entrant names her), `block`, `days`, `flat` and `K`.
+        Also `panel` and `benchmark`, so `one.py` can draw the two equity curves. A mother
+        whose excess never moves on oos2 (she did not trade) is kept out of the test: it
+        has no variance to studentize by and could not be named.
+
+        The excess is the mother's day minus the MEAN day of the random traders with her
+        footprint, so the null the SPA tests is «no mother earns more than her own trades
+        entered at random»: the asset's drift, her time in the market, her side, her lots
+        and her costs are on both sides and cancel. The mean is simulated, and its error
+        is not bootstrapped: at `benchmark.draws` it is `mc_day`, about 1/sqrt(draws) of
+        the mother's own standard error (config.yaml).
     """
     got = {"states": states(data["population"]), "refused": data.get("refused")}
     if got["refused"]:
@@ -67,7 +73,8 @@ def run(data: dict, cfg: dict) -> dict:
         got["calls"] = readings.verdicts(got["states"], got["named"])
         return got
 
-    excess, lots = benchmark.equal_risk(data["panel"], data["moves"], data["point_value"])
+    days, random = data["panel"], data["benchmark"]
+    excess = days - random
     flat = list(excess.columns[excess.std(ddof=1) == 0])
     tested = excess.drop(columns=flat)
     boot = cfg["bootstrap"]
@@ -78,16 +85,14 @@ def run(data: dict, cfg: dict) -> dict:
                 else list(got["states"].index))
         named[readings.label(reading)] = stepm(tested, [m for m in pool if m not in flat],
                                                cfg, block)
-    days = data["panel"].loc[excess.index]
-    held = data["moves"].loc[excess.index] * data["point_value"]
     everyone = named[readings.label(("ninguna", "entrantes"))]
     table = pd.DataFrame({
-        "lots_bh": lots, "sharpe": days.mean() / days.std(ddof=1) * np.sqrt(YEAR),
-        "excess_day": excess.mean(), "named_all": excess.columns.isin(everyone)})
+        "sharpe": days.mean() / days.std(ddof=1) * np.sqrt(YEAR),
+        "excess_day": excess.mean(), "random_day": random.mean(), "mc_day": data["mc"],
+        "named_all": excess.columns.isin(everyone)})
     drawn: dict = {}
     return {**got, "named": named, "calls": readings.verdicts(got["states"], named),
             "spa": superior.spa(tested, block, boot["reps"], boot["seed"], drawn),
             "spa_drawn": drawn,
             "table": table, "block": block, "days": len(excess), "flat": flat,
-            "K": tested.shape[1], "panel": days, "held": held,
-            "sharpe_bh": float(held.mean() / held.std(ddof=1) * np.sqrt(YEAR))}
+            "K": tested.shape[1], "panel": days, "benchmark": random}

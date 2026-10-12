@@ -43,7 +43,7 @@ The conditions on must be inside the owner's band (90-170).
 
 ## 7. The rest — `/autopilot`
 
-From the build (step 6's task, chained with 7) to 16, then the tail 16.5 to 25 for every survivor
+From the build (step 6's task, chained with 7) to 16, then the tail 16.5 to 21 for every survivor
 (26 when its four parameters are given), unattended, reading only `resumen.md`.
 
 ## 8. Close

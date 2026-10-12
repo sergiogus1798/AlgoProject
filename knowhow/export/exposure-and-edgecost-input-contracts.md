@@ -24,7 +24,7 @@ are in the [columns]"` — nothing in the message points at "wrong databank". Fi
 `studies/closing/exposure/config.yaml`.
 
 ### `edgeCost.report --strategy <name>` needs the export's OWN names, not the mother's
-Run against a `stopgrid`/`variants` batch export (e.g. `WFC_Build` after `sqx.variants.stopgrid` +
+Run against a `stopgrid`/`variants` batch export (e.g. `WFC_Build` after `sqx.variants.stopgrid` (deleted 2026-10-11, step 24) +
 `sqx.variants.execute`), the strategies are renamed to the batch's variant IDs (`S00V000`,
 `S00V001`, ... — stopgrid's own scheme; `sqx.variants.make`'s general fabricator uses a different
 one). Passing the ORIGINAL mother name (`--strategy "Strategy 1.29.55"`) crashes with

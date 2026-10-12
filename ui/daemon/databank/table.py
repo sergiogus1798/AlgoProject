@@ -69,12 +69,10 @@ def roster(project: str, databank: str, own: dict,
     return "informes", rows
 
 
-def studies_of(key: str, name: str, own: dict, every: dict, mothers: dict, lotes: dict) -> dict:
+def studies_of(key: str, name: str, own: dict, every: dict, mothers: dict) -> dict:
     """What each study said of one row: this databank's reports by identity, then by name,
-    then any databank of the project by identity, then the mother's variant batch by name,
-    then the mother's one-off multi-mother lote (`structure`, `atrCalculator`) by name."""
-    found = dict(lotes.get(cells.norm(name), {}))
-    found |= dict(mothers.get(cells.norm(name), {}))
+    then any databank of the project by identity, then the mother's variant batch by name."""
+    found = dict(mothers.get(cells.norm(name), {}))
     found |= every.get(key, {})
     found |= own["by_name"].get(cells.norm(name), {})
     found |= own["by_id"].get(key, {})
@@ -134,14 +132,13 @@ def build(project: str, databank: str) -> dict:
     every = cells.project(project)
     own = every.get(db.replace(" ", "_"), {"by_id": {}, "by_name": {}})
     anywhere, mothers = cells.anywhere(every), batches.mothers(project)
-    lotes = cells.lotes(project)
     got_from, figures = metrics.source(project, db)
     rows_from, keys = roster(project, db, own, figures)
     blind, _ = door(project)
     hidden = set(SEALED) if blind["sealed"] else set()
     lines, fields = [], {}
     for key, name in sorted(keys.items(), key=lambda kv: kv[1]):
-        said = {s: e for s, e in studies_of(key, name, own, anywhere, mothers, lotes).items()
+        said = {s: e for s, e in studies_of(key, name, own, anywhere, mothers).items()
                 if s not in hidden}
         for study, e in said.items():
             fields.setdefault((study, "", "verdict"), None)

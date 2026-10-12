@@ -74,5 +74,5 @@ from the store is `pipeline.autopilot.resume`.
 ## Not built yet
 
 Saving from inside the workflow at step 8 and after each step; re-running a stored strategy in SQX
-and comparing with the stored numbers; steps 21 on (atrCalculator, structural); the window's zone.
+and comparing with the stored numbers; step 21 on (steps 22-24 were deleted on 2026-10-11); the window's zone.
 Skills: `/store-save`, `/store-open`, `/store-resume`, `/rebuild-sister`.

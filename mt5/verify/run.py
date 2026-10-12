@@ -231,7 +231,7 @@ def main() -> None:
         tabs = [ticks.tab(params, pieces, a.model)]
     meta.update(project=project, deposit=deposit, ea=ea["expert"], lots=sizing["params"]["Size"])
     report.finish(work, meta, cfg, started, summaries, refused, "", tabs)
-    say(100, " · ".join(f"{firms.label(f)}: {'Validada' if s['state'] == 'pass' else 'No validada'}"
+    say(100, " · ".join(f"{firms.label(f)}: { {'pass': 'Validada', 'none': 'Sin veredicto'}.get(s['state'], 'No validada')}"
                         for f, s in summaries.items()) or "sin empresas")
 
 

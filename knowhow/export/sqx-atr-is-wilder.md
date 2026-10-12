@@ -14,5 +14,5 @@ tag: 🔬  date: 2026-09-26  see: export/fill-and-pricing, sqx-format/grafting-a
 - Proof 2026-09-26, `Strategy 19.8.78` XAUUSD M30, 20 grafted variants X = 2.15–6.09, `ATRCalc_XAUUSD_M30_dev`:
   `|close − open| / (X·ATR)` of 8,100 stopped trades, p5–p95: bar before entry 1.001–1.006 (IS, 4,425),
   spread ≤ 0.011 in every window; entry bar 0.93–1.03, two bars before 0.98–1.18. Excess `|close−open| − X·ATR`
-  median 0.020 IS / 0.050 oos1, oos2 = the slippage of each window. `studies/closing/atrCalculator/proofs.py`.
+  median 0.020 IS / 0.050 oos1, oos2 = the slippage of each window. `studies/closing/atrCalculator/proofs.py` (deleted 2026-10-11, step 24).
 - Hand-computed known answer: `tests/test_atr.py`. 282,850 XAUUSD M30 bars in 0.12 s.

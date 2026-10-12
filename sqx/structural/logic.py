@@ -1,31 +1,18 @@
-"""Rewrite a strategy's rules, not its values: drop one entry condition, or flip the order direction."""
+"""Read a strategy's entry conditions and order direction from `strategy_Portfolio.xml`."""
 
 import re
 
 # The signals the builder writes, by the <name> of the boolean variable they assign. Only
-# the entries are ablated: an exit signal is a different test and none of this corpus has one.
+# the entries are read: none of this corpus has an exit signal.
 ENTRY_SIGNALS = ("LongEntrySignal", "ShortEntrySignal")
 VARIABLE = re.compile(r"<variable\b[^>]*>\s*<id>([^<]*)</id>\s*<name>([^<]*)</name>", re.S)
 SIGNAL = re.compile(r'<signal variable="([^"]+)">(.*?)</signal>', re.S)
-TOP = re.compile(r'\s*<Item key="(AND|OR)">')
+TOP = re.compile(r'\s*<Item key="(AND|OR)"[^>]*>')
 TAG = re.compile(r"<(/?)Block\b[^>]*?(/?)>")
 KEY = re.compile(r'<Item\b[^>]*?\bkey="([^"]+)"')
 RULES = re.compile(r"<Rules>.*?</Rules>", re.S)
 DIRECTION = re.compile(r'(<Param\b[^>]*key="#Direction#"[^>]*>)(-?\d+)(</Param>)')
-DIRECTION_ATTR = re.compile(r'\bvalue="(-?\d+)"')
 ENTRY_ORDER = re.compile(r'<Item\b[^>]*key="Enter(?:AtMarket|AtStop|AtLimit)"')
-# Everything that names a side, and its mirror. One alternation, so a swapped word is never
-# swapped back in the same pass.
-SIDES = {'Rule name="Long entry"': 'Rule name="Short entry"',
-         'Rule name="Long exit"': 'Rule name="Short exit"',
-         "MarketPositionIsLong": "MarketPositionIsShort",
-         "Market Position Is Long": "Market Position Is Short",
-         ') is Long"': ') is Short"'}
-SIDES |= {v: k for k, v in SIDES.items()}
-SIDE = re.compile("|".join(re.escape(k) for k in SIDES))
-# An exit placed at a price level is not mirrored by flipping the order: only strategies
-# with no stop, no target and no trailing are inverted. They are all ".None" at step 23.
-EXIT_FORMULA = re.compile(r'<Formula key="SQ\.Formulas\.(?:SLPT|RangeLevel|Range)\.(\w+)"')
 
 
 def _signal_ids(portfolio: str) -> dict[str, str]:
@@ -86,35 +73,6 @@ def conditions(portfolio: str) -> list[dict]:
     return rows
 
 
-def ablate(portfolio: str, signal: str, index: int) -> str:
-    """The same strategy with one entry condition deleted.
-
-    In an AND, one term fewer is the condition neutralised; in an OR it is the condition
-    forced false. No "always true" block is needed (encargo 12 §1).
-
-    Args:
-        portfolio: Text of `strategy_Portfolio.xml`.
-        signal: `LongEntrySignal` or `ShortEntrySignal`.
-        index: Which direct child of its AND/OR, as `conditions` numbers them.
-
-    Returns:
-        The text with that `<Block>…</Block>` gone and nothing else touched. Raises
-        ValueError when the operator would be left empty: that is not a filter removed,
-        it is a strategy with no entry rule, and SQX's reading of it is unknown.
-    """
-    vid = _signal_ids(portfolio)[signal]
-    match = next(m for m in SIGNAL.finditer(portfolio) if m.group(1) == vid)
-    body = match.group(2)
-    top = TOP.match(body)
-    spans = _top_blocks(body[top.end():]) if top else []
-    if len(spans) < 2:
-        raise ValueError(f"{signal} has {len(spans)} condition(s) under an AND/OR: "
-                         "deleting one would leave no entry rule")
-    s, e = spans[index]
-    at = match.start(2) + top.end()
-    return portfolio[:at + s] + portfolio[at + e:]
-
-
 def direction(portfolio: str) -> list[int]:
     """The direction every entry order of the strategy places, read back.
 
@@ -129,36 +87,3 @@ def direction(portfolio: str) -> list[int]:
     for order in ENTRY_ORDER.finditer(rules):
         out.append(int(DIRECTION.search(rules, order.end()).group(2)))
     return out
-
-
-def invert(portfolio: str) -> str:
-    """The same entry instants with the opposite order direction (encargo 12 §1, D2).
-
-    Every `#Direction#` in the rules changes sign — the entry orders' and the
-    ClosePosition's, whose `Any=0` stays 0 — and every word that names a side is swapped:
-    the rule names and `MarketPositionIsLong`↔`Short`. The signals and the conditions are
-    untouched, so the strategy enters on the very same bars. SQX's `label` attribute is
-    left as it is: SQX itself leaves it stale (a short entry it wrote carries `label="Long"`).
-
-    Args:
-        portfolio: Text of `strategy_Portfolio.xml`.
-
-    Returns:
-        The rewritten text. Raises ValueError when an entry carries a stop, a target, a
-        trailing or a break-even: those are placed at a distance the flip would mirror only
-        for some formulas, and at step 23 there are none to mirror.
-    """
-    rules = RULES.search(portfolio)
-    text = rules.group(0)
-    armed = [f for f in EXIT_FORMULA.findall(text) if f != "None"]
-    if armed:
-        raise ValueError(f"exit formulas {sorted(set(armed))}: inversion is only a mirror "
-                         "without stops, targets or trailing")
-
-    def flip(match: re.Match) -> str:
-        """One #Direction# parameter with its value, and its value attribute, negated."""
-        head = DIRECTION_ATTR.sub(lambda a: f'value="{-int(a.group(1))}"', match.group(1))
-        return f"{head}{-int(match.group(2))}{match.group(3)}"
-
-    text = SIDE.sub(lambda m: SIDES[m.group(0)], DIRECTION.sub(flip, text))
-    return portfolio[:rules.start()] + text + portfolio[rules.end():]

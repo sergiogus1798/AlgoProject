@@ -17,7 +17,7 @@ batch's `set(plan["variant_id"])`, keeps the first newest-first export that has 
 - Stored `manifest.json` of `Test_USDJPY_donchianUpperCrossUp_M30/Retest_Markets_-_Family/2026-09-28`
   showed a step-24 command overwriting a step-23 export written the same day, same `raw/<P>/<D>/<day>/`.
 - `export_dir("P", "WFC_Build", "2026-09-29", "structure")` and `..., "stopgrid")` resolve to
-  distinct paths; `structure.inputs.latest`/`atrCalculator.inputs.newest` each prefer their own
+  distinct paths; `structure.inputs.latest`/`atrCalculator.inputs.newest` (both deleted 2026-10-11, steps 22-24) each prefer their own
   tag's `trades.parquet` when present.
 - 2026-09-30: `structure.report --work .../Test_USDJPY_donchianUpperCrossUp_M30/2026-09-27
   --databank WFC_Build WFC_OOS1 ...` raised `KeyError: 'S00O00'` against the untagged

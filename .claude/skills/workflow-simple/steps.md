@@ -33,15 +33,15 @@ Sources: `pipeline/autopilot/{plan.py,criteria.yaml,README.md}`, `sqx/projects/{
 | 18.5 | blind | marketSurfaces | per mother | results | - |
 | 19 | sqx | `WFM`, then its reading and the ledger rows 17-19 | `SPP OOS` | `WFM` | - |
 | 20 | joint | blindJoint, then judge | 17, 18, 18.5, 19 | `paso-20/` | none named (`steps` has no "20") |
-| 21 | reading | exposure | panel `CrossTF_Mothers` (`--panel 21=`) | window results | - |
-| 22 | reading | conditionalMap | panel `Results` (`--panel 22=`) | window results | - |
-| 23 | structural | structural (ablations, order inversion) | the mothers left | `AlgoData/structural/<P>/<stamp>` | - |
-| 24 | stop | atrCalculator, two stopgrid passes | the mothers left | `AlgoData/atrCalculator/<P>/<stamp>` | - |
-| 25 | edge | edgeCost per version at stop p90 (`Stop_p90`) | step-24 variants | `finalistas.json` | - |
+| 21 | reading | exposure (describes only: no verdict, no efficiency threshold) | panel `CrossTF_Mothers` (`--panel 21=`) | window results | - |
+| 22 | - | conditionalMap: DELETED 2026-10-11 | - | - | - |
+| 23 | - | structural study: DELETED 2026-10-11 | - | - | - |
+| 24 | - | ATR stop (atrCalculator): DELETED 2026-10-11 (pre-registered measurement read NO PASA, `portfolio/DECISIONS.md`); strategies trade with no per-trade stop and step 26 receives the mother's own .sqx | - | - | - |
+| 25 | - | edgeCost per version: OUT of the chain (no step runs; `--strategy` mode stays standalone); the `finalists` action hangs from step 26 | - | `finalistas.json` | - |
 
 Notes
 - Variant databanks of 16.5: `WFC_Variants` in; `WFC_Build`, `WFC_OOS1`, `WFC_OOS2` out; emptied after each mother, once its trades are in `variant_trades.parquet`.
-- Only steps 8, 10, 12, 14, 16 have a `cut` in `criteria.yaml`; a step with rules and no `cut` stops the run, except 17 (`cut: null` written on purpose: it judges and cuts nothing). 16.5 and 20-25 do not cut.
+- Only steps 8, 10, 12, 14, 16 have a `cut` in `criteria.yaml`; a step with rules and no `cut` stops the run, except 17 (`cut: null` written on purpose: it judges and cuts nothing). 16.5 and 20-21 do not cut.
 - The run stops before step 26 (MT5) unless `--mt5-from`, `--mt5-to`, `--mt5-model`, `--mt5-firms` are all given.
 - Outputs: `AlgoData/autopilot/<P>/<stamp>/{estado.txt,resumen.md,tiempos.md,fallo.md,plan.json,paso-<n>/}`.
 - `fallo.md` exists only if the run failed; `estado.txt` last line is `FIN · …` or `FALLO en el paso N: …`.

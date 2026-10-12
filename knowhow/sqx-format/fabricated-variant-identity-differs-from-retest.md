@@ -14,7 +14,7 @@ what `mt5.verify.autopilot.unfit` recomputes); the retest step 26 runs will carr
 
 ## Evidence
 - `Test_USDJPY_donchianUpperCrossUp_H1`, step 24 pass 2 of 2026-09-30:
-  `atrCalculator/<P>/pass2/sqx/S00V014.sqx` → `b415d7e50c66…`;
+  `atrCalculator/<P>/pass2/sqx/S00V014.sqx` [deleted 2026-10-11, step 24] → `b415d7e50c66…`;
   `raw/<P>/WFC_Build|WFC_OOS1/2026-09-30/stopgrid/identity.csv`, `S00V014` → `1061d2aac782…`.
   Same for `S01V014` (`83c895d9…` vs `a9a16377…`) and `S02V014` (`2f79dda1…` vs `0db02097…`).
 - The mother's own file is stable: `mothers/Strategy 10.9.72.sqx` = the harvest's `746c8da7…`.

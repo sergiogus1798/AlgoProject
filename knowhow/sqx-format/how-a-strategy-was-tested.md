@@ -8,8 +8,8 @@ tag: 🔬  date: 2026-09-27  see: sqx-format/sqx-zip-members, costs/per-task-cos
   commission, swap; sizing; Databanks). The stored numbers ran on it; the `.cfx` is today's task.
 - `settings.xml` stamps flat scalars, times **HHMM** (`FridayExitTime 2100`; seconds, 75600, in lastSettings).
   `MoneyManagement.UseFromStrategy` false → the task's sizing, not the strategy's. `Symbol` may read `Portfolio`.
-- ⚠️ Generic builds write `<Item key="AND" generated=…>` with bare `<Item>` terms: `sqx.structural.logic`
-  reads that signal as ONE condition keyed `AND`. Reader for all this: `sqx.inspect.strategymeta`.
+- Generic builds write `<Item key="AND" generated=…>` with bare `<Item>` terms; `sqx.structural.logic` TOP accepts the extra attributes (fixed 2026-10-11, tests/test_structural.py) (`sqx/structural/logic.py` is kept; the rest of the package was deleted 2026-10-11, steps 22-23); before that it
+  read the signal as ONE condition keyed `AND`. Reader for all this: `sqx.inspect.strategymeta`.
 
 ## Evidence
 - 609 `.sqx` (≤15 per databank, all three installs, 2026-09-27): `lastSettings` output databank =

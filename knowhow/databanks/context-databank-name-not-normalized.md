@@ -24,5 +24,5 @@ Fix: `context()` normalizes once (`folder = databank.replace(" ", "_")`) before 
 same fix. The `--databank` argument passed on to the study script itself is left as SQX
 spells it — `core.paths` normalizes it again downstream, so scripts were never the problem.
 Every study `context()` serves (crossTF, mcRetest, spp, decay, wfm, monkey, exposure,
-atrCalculator, monteCarlo, profitShape, entryQuality) carried the same risk on any databank
+atrCalculator (deleted 2026-10-11), monteCarlo, profitShape, entryQuality) carried the same risk on any databank
 whose SQX name held a space, not only Cross Market.

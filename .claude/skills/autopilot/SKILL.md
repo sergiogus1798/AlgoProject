@@ -1,6 +1,6 @@
 ---
 name: autopilot
-description: Run a project's whole workflow unattended — every SQX task and Python study from the build (step 6's task, chained with 7) to 16, then the tail 16.5 to 25 for every survivor (26 when its four parameters are given), judging each judging step by criteria.yaml and cutting in SQX instead of stopping, cheap in tokens (reads only a status line and a short summary, never SQX's log). Use when the owner asks to run the workflow automatically, unattended, end to end, with the autopilot, or "sin pararse".
+description: Run a project's whole workflow unattended — every SQX task and Python study from the build (step 6's task, chained with 7) to 16, then the tail 16.5 to 21 for every survivor (26 when its four parameters are given), judging each judging step by criteria.yaml and cutting in SQX instead of stopping, cheap in tokens (reads only a status line and a short summary, never SQX's log). Use when the owner asks to run the workflow automatically, unattended, end to end, with the autopilot, or "sin pararse".
 ---
 
 # /autopilot

@@ -18,8 +18,7 @@ ORIGIN_STUDY: dict[str, str | dict[str, str]] = {
                   "Market Surfaces": "marketSurfaces", "Walk Forward Matrix": "wfm",
                   "WFC": "wfc", "": "wfc"},
     "Cierre": {"Análisis conjunto (paso 20)": "blindJoint", "Exposición": "exposure",
-              "Mapa condicional": "conditionalMap", "Estructura": "structure",
-              "Stop ATR": "atrCalculator", "Edge por coste": "edgeCost"}}
+              "Edge por coste": "edgeCost"}}
 
 
 def default_study(databank: str, sub: str) -> str | None:
