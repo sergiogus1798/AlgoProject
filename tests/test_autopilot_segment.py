@@ -12,11 +12,10 @@ from test_autopilot_tail import GIVEN, rail
 
 
 def test_185_second_judgement_carries_oos2() -> None:
-    """First 18.5 judge has no override; the one at the block's close carries `build+oos1+oos2`;
-    ledger_row signs the override and falls back to criteria.yaml's segment."""
+    """18.5 is off (encargo 65 row 8): the plan never judges it. ledger_row, still generic, signs
+    a segment override and falls back to criteria.yaml's segment."""
     got = plan.plan(rail(), GIVEN | {"judged": {"18.5"}})
-    twice = [a for a in got["do"] if (a["n"], a["kind"]) == ("18.5", "judge")]
-    assert [a.get("segment") for a in twice] == [None, "build+oos1+oos2"]
+    assert not [a for a in got["do"] if a["n"] == "18.5"]
     rows = []
     with mock.patch.object(judge.survivors, "about", return_value={"symbol": "X", "timeframe": "H1", "family": "f"}), \
             mock.patch.object(judge.record, "log", lambda sid, row: rows.append(row)):

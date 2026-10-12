@@ -57,7 +57,7 @@ def segment_door(symbol: str) -> str | None:
 
     Returns:
         None when it may; the refusal's text when it may not. A refusal is an answer the
-        report prints, not a failure: the joint reading of the four pieces reads no raw
+        report prints, not a failure: the joint reading of the three pieces reads no raw
         segment and goes on without the SPA. Who may read oos2 is `_policy.yaml`'s, the
         owner's file.
     """
@@ -116,7 +116,7 @@ def trades_door(batches: dict[str, Path]) -> str | None:
 
     Returns:
         None when all do; else the refusal's text, an answer the report prints like the
-        policy's: the four pieces are read and the SPA is not, with oos2 left unopened.
+        policy's: the three pieces are read and the SPA is not, with oos2 left unopened.
     """
     lacking = sorted(m for m, b in batches.items() if not (b / TRADES).exists())
     return (f"sin las operaciones de {', '.join(lacking)} ({TRADES} de su lote de variantes) "

@@ -48,9 +48,9 @@ Only the entry points sit in the root, because they are the only things that get
 | file | what it does | run it |
 |---|---|---|
 | `ingest.py` | Reads the task databanks that ran once (only `bar` is required; since 2026-10-07 the chain runs `bar` and `ohlc`), reconciles every reconstructed metric against SQX, and writes one dated immutable export — with the original's P/L vector per task (`original_pnl`) and its dated build trades (`build`), which T2 and T3 read | `python3 -m studies.breakage.mcRetest.ingest --project XAUUSD` |
-| `run.py` | Puts one strategy through the four questions and T2/T3 (`retention`) and returns the raw result the verdict reads; a task that did not run is a key that is not there | imported |
+| `run.py` | Puts one strategy through the four questions and returns the raw result the verdict reads; a task that did not run is a key that is not there | imported |
 | `load.py` | Everything one report reads from one ingest, once: simulations, originals, the confidence table, provenance and identity | imported |
-| `one.py` | **One strategy as the contract's data**: verdict, the tabs of what ran (the tab «Fragilidad» carries T1-T3, the facts step 14 is judged on), glossary, summary row | imported — the window calls it |
+| `one.py` | **One strategy as the contract's data**: verdict, the tabs of what ran (the tab «Fragilidad» carries T1, the facts step 14 records, incl. `percentil_madre` and `dd_r_p99`; it judges nothing), glossary, summary row | imported — the window calls it |
 | `many.py` | Every strategy, and what can only be said across them, as one result | imported |
 | `report.py` | The command: every strategy of one ingest, to `verdict.csv`, `distribuciones.parquet` (each task's SQX re-executions against the original; `--strategy` merges its rows in), one JSON and one page per strategy, and the ingest's page. `--strategy` («1.26.46» or «Strategy 1.26.46») runs `one.run` on that strategy alone and rewrites only its `estrategias/` JSON and page — `verdict.csv`, `mcRetest.json` and the battery's cross-strategy facts are the population's | `python3 -m studies.breakage.mcRetest.report --project XAUUSD [--strategy "Strategy 1.26.46"]` |
 | `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
@@ -87,9 +87,6 @@ earns its place by the question it answers, and each one lives in `verdict/`:
   `Stability` are computed by SQX on the *daily equity curve* and are among them — any per-trade
   version is a declared analogue under a different name, never a replication.
 - **The `bar` task is the denominator, not a test.** See `inputs/README.md`.
-- **A re-run has no dates.** T2 and T3 measure the excess over the calendar-year drift with what
-  SQX stores — a P/L vector per simulation — so T2 is approximate and T3 dates a run by the tail it
-  shares with the original. What is exact, what is not and what was measured: `measure/README.md`.
 - **Without `stress` this study's own verdict is INCONCLUSIVE, never FAIL** (`gates.production`):
   the chain switched it off on 2026-10-07 and the step is judged in `pipeline/autopilot/criteria.yaml`
   on the facts of the tab «Fragilidad». The old verdict, PSR, cost in sigmas and stress code stay

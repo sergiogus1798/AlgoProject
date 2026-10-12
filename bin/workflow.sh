@@ -3,13 +3,14 @@
 # every choice is an argument, a missing one is an error, and the first failure ends it.
 #
 # Usage:
-#   bin/workflow.sh simple   <PROJECT> <SYMBOL> <TF> <long|short> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke]
+#   bin/workflow.sh simple   <PROJECT> <SYMBOL> <TF> <long|short> <FAMILY> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke]
 #   bin/workflow.sh template <PROJECT> <SYMBOL> <TF> <TEMPLATE.sqx> <PALETTE|-> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke]
 #   bin/workflow.sh run      <PROJECT> [--until wfm] [--smoke] [--restart]
 #   bin/workflow.sh plan     <PROJECT>
 #
 #   simple    creates a Simple Strategy project (no template, one side) on the custodian,
-#             applies the palette, then runs it.
+#             applies the palette, then runs it. FAMILY is the idea family, required, one key of
+#             `_expected_sign` (assets/_markets.yaml); it is recorded in projects/registry.csv.
 #   template  the same from an authored template; the palette fills its random hole, `-` when
 #             the template has none (two fixed conditions a side, hard rule 14).
 #   run       runs an existing project from wherever its rail says it is.
@@ -31,7 +32,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
 die() { printf 'workflow: %s\n' "$*" >&2; exit 1; }
 MODE=${1:-}; P=${2:-}
-[[ $MODE =~ ^(simple|template|run|plan)$ && -n $P ]] || { sed -n '2,26p' "$0"; exit 2; }
+[[ $MODE =~ ^(simple|template|run|plan)$ && -n $P ]] || { sed -n '2,28p' "$0"; exit 2; }
 [[ $P =~ ^(Test|Trade|Research)_[A-Za-z0-9_]+$ ]] || die "nombre de proyecto no válido: $P (Test_/Trade_/Research_, solo guiones bajos)"
 ROLE=custodian
 CFX=$(python3 -c "from core.paths import project_dir, worker_dir; print(project_dir('$P', worker_dir('$ROLE')) / 'project.cfx')") || die "no se resuelve la ruta del proyecto"
@@ -42,13 +43,18 @@ fi
 
 FLAGS=()
 if [[ $MODE == simple || $MODE == template ]]; then
+    FAMILY=
+    if [[ $MODE == simple ]]; then    # FAMILY sits after the side: take it out, then both modes read alike
+        [[ $# -ge 10 ]] || die "simple necesita 9 argumentos tras el modo (con FAMILY): mira el uso (bin/workflow.sh)"
+        FAMILY=$6; set -- "${@:1:5}" "${@:7}"
+    fi
     [[ $# -ge 9 ]] || die "$MODE necesita 8 argumentos tras el modo: mira el uso (bin/workflow.sh)"
     SYMBOL=$3; TF=$4; WHAT=$5; PALETTE=$6; PURPOSE=$7; N=$8; MIN=$9; shift 9
     UNTIL=; if [[ ${1:-} == --until ]]; then UNTIL=${2:-}; shift 2; fi
     [[ -z $UNTIL || $UNTIL =~ ^(oos|crossmarket|crosstf|mcretest|spp|wfm)$ ]] || die "--until no conoce el paso «$UNTIL»"
     if [[ $MODE == simple ]]; then
         [[ $WHAT =~ ^(long|short)$ ]] || die "el lado es long o short, no «$WHAT»"
-        KIND=(--simple "$WHAT")
+        KIND=(--simple "$WHAT" --family "$FAMILY")
         [[ $PALETTE != - ]] || die "una Simple Strategy necesita paleta"
     else
         [[ -f $WHAT ]] || die "no existe la plantilla $WHAT"

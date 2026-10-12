@@ -117,8 +117,8 @@ The two exceptions, both the owner's (2026-09-27):
   (hard rule 11), a busy custodian and any other launcher. The job, labelled `launch`, takes
   each idea through `core.assets` → `templateArchitect` → `sqx.projects.builder --workflow` →
   `buildingBlocksExpert` → `pipeline.autopilot.run`, then closes the run in the research memory.
-  «Proponer investigación», beside it, runs the `researchDirector` (Claude, 10-30 $, no SQX)
-  after its own confirmation.
+  The window no longer launches the `researchDirector` (encargo 65 §2: «Proponer investigación» was
+  removed; `/research-direct` is run by hand).
 - **«Verificar en SQX y en MT5» runs step 26 for one strategy** (`daemon/mt5bridge/`,
   `desktop/mt5bridge/`; owner, 2026-09-29). The preflight refuses a conductor that is busy,
   an open MT5 terminal, a window or a tester model not chosen (neither has a default), and a firm

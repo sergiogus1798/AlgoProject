@@ -1,4 +1,4 @@
-"""Every mother that reached step 20, read as one result: the four pieces, the readings, the SPA."""
+"""Every mother that reached step 20, read as one result: the three pieces, the readings, the SPA."""
 
 import time
 
@@ -65,7 +65,7 @@ def headline(got: dict, cfg: dict, complete: int) -> dict:
              for r, n in counts.items()]
     if reading:
         n = counts[readings.label(reading)]
-        review = int((got["calls"][readings.label(reading)] == "watch").sum())   # `peor` only
+        review = int((got["calls"][readings.label(reading)] == "watch").sum())
         return blocks.verdict(f"{n} de {complete} pasan el paso 20",
                               "pass" if n else "watch" if review else "fail",
                               f"Lectura {words.reading(reading)}."
@@ -97,7 +97,7 @@ def run(data: dict, cfg: dict) -> dict:
     labels = pd.DataFrame({p: complete[p].map(lambda s: s["label"]) for p in PIECES})
     incomplete = population[~population["complete"]]
     tabs = [
-        envelope.tab("pieces", "Las cuatro piezas, a la vez", [
+        envelope.tab("pieces", "Las tres piezas, a la vez", [
             grid("Qué dijo cada estudio", got["states"].rename(columns={
                 p: f"{PIECES[p]} {NAMES[p]}" for p in PIECES}), labels,
                 "Azul oscuro pasa, azul medio a medias (indeciso, ciego), blanco no pasa. El "
@@ -106,7 +106,7 @@ def run(data: dict, cfg: dict) -> dict:
         spa_tab(got, cfg)]
     warnings = ([{"code": "policy", "state": "watch",
                   "text": f"Falta el StepM: no se pudo calcular ({got['refused']}). El veredicto sale "
-                          f"sólo de los cuatro estados; no hay contraste con el operador al azar en oos2."}]
+                          f"sólo de los tres estados; no hay contraste con el operador al azar en oos2."}]
                 if got["refused"] else []) + [
         {"code": "incomplete", "state": "watch",
          "text": f"{m}: le falta {', '.join(NAMES[p] for p in r['missing'])}; no se lee"}
@@ -117,10 +117,10 @@ def run(data: dict, cfg: dict) -> dict:
     result = envelope.envelope(
         one.MODULE, None, None, cfg, started, tabs, headline(got, cfg, len(complete)),
         warnings=warnings,
-        glossary=[{"term": "paso 20", "text": "La lectura conjunta y ciega de WFC, CSCV, "
-                                              "superficies por mercado y WFM, que no se miran "
-                                              "hasta que las cuatro existen."},
-                  {"term": "lectura", "text": "Cómo se combinan las cuatro piezas y sobre "
+        glossary=[{"term": "paso 20", "text": "La lectura conjunta y ciega de WFC, CSCV "
+                                              "y WFM, que no se miran "
+                                              "hasta que las tres existen."},
+                  {"term": "lectura", "text": "Cómo se combinan las tres piezas y sobre "
                                               "quién cuenta el StepM; decisión del dueño."},
                   {"term": "StepM", "text": "Romano y Wolf: qué madres concretas baten a su "
                                             "operador al azar controlando el error de la "

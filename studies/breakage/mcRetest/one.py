@@ -5,7 +5,6 @@ import time
 from core.study import draws, result as envelope
 from studies.breakage.mcRetest import run as study
 from studies.breakage.mcRetest.contract import retention, tabs
-from studies.breakage.mcRetest.measure import excess
 from studies.breakage.mcRetest.inputs import tasks
 
 MODULE = "studies.breakage.mcRetest"
@@ -51,7 +50,7 @@ def contract(got: dict, inputs: dict, cfg: dict, started: float) -> dict:
         something put it there, is {strategy: T1 facts} for `retention.tab`.
     """
     t1 = (inputs.get("t1") or {}).get(got["strategy"])
-    made = [tabs.verdict_tab(got), retention.tab(got, t1), tabs.cost_tab(got, cfg),
+    made = [tabs.verdict_tab(got), retention.tab(t1), tabs.cost_tab(got, cfg),
             tabs.stress_tab(got), tabs.tasks_tab(got), tabs.levels_tab(got, inputs["levels"], cfg)]
     identity = inputs["identity"].get(got["strategy"])
     kept = [draws.record("mcRetest", "net_p5", got[t]["original_net"], got[t]["_net"],
@@ -61,7 +60,7 @@ def contract(got: dict, inputs: dict, cfg: dict, started: float) -> dict:
     return envelope.envelope(
         MODULE, got["strategy"], identity, cfg, started,
         [t for t in made if t], tabs.verdict_block(got),
-        warnings=tabs.sparse_warnings(got) + retention.warnings(got), glossary=GLOSSARY,
+        warnings=tabs.sparse_warnings(got), glossary=GLOSSARY,
         summary=tabs.summary(got)) | {"draws": kept}
 
 
@@ -82,6 +81,6 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
                   if f"{t}/{strategy}" in inputs["provenance"]}
     bench = study.benchmarks(inputs["trades"], inputs["asset"]).get(strategy, 0.0)
     got = study.one(inputs["keys"], inputs["sims"], inputs["original"], provenance, strategy,
-                    bench, cfg, excess.context(inputs["keys"], inputs["asset"]))
+                    bench, cfg)
     envelope.progress(100, "hecho")
     return contract(got, inputs, cfg, started)

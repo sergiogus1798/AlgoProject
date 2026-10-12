@@ -22,7 +22,7 @@ def test_rows_reproduce_the_verdict() -> None:
     out = records.rows(one, rules.windows(CAL), got, "S", "id1", 7)
     verdict = got["verdict"]
     raw = {r["metric"]: r for r in out if len(r["draws"])}
-    assert set(raw) == {"z_conj", "z_conj_v0", "z_conj_v1", "z_conj_v2", "z_minus_market",
+    assert set(raw) == {"z_conj", "z_conj_v0", "z_conj_v1", "z_conj_v2", "z_conj_v0v2", "z_minus_market",
                         "p_breadth", "z_beta"}
     for metric, r in raw.items():
         assert json.loads(r["where"])["seed"] == 7 and r["strategy"] == "S" and r["identity"] == "id1"

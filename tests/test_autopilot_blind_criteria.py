@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The rules `criteria.yaml` gives steps 18, 18.5 and 19, on hand-made fact rows: every branch
+"""The rules `criteria.yaml` gives steps 18.5 (off, entry kept) and 19; 18 has none, on hand-made fact rows: every branch
 of each rule, the missing ones included, as the real file is read — and the two shapes those
 facts come in, a batch file and a WFM page."""
 
@@ -25,19 +25,8 @@ def state(n: str, row: dict[str, float]) -> str:
 
 
 def test_step_18() -> None:
-    """P of loss under 0.5 passes and from 0.5 fails (no band); P of loss at its null's p95 is
-    limbo; a PBO at its null's p95 fails; a missing fact is limbo, outranked by a fail."""
-    ok = {"cscv.p_perdida": 0.10, "cscv.p_perdida_sobre_p95": 0.0, "cscv.pbo_sobre_p95": 0.0}
-    assert state("18", ok) == "pass"
-    assert state("18", ok | {"cscv.p_perdida": 0.49}) == "pass"
-    assert state("18", ok | {"cscv.p_perdida": 0.5}) == "fail"
-    assert state("18", ok | {"cscv.p_perdida_sobre_p95": 1.0}) == "limbo"
-    assert state("18", ok | {"cscv.pbo_sobre_p95": 1.0}) == "fail"
-    assert state("18", ok | {"cscv.p_perdida": 0.7, "cscv.p_perdida_sobre_p95": 1.0}) == "fail"
-    assert state("18", {k: v for k, v in ok.items() if k != "cscv.p_perdida_sobre_p95"}) == "limbo"
-    assert state("18", {k: v for k, v in ok.items() if k != "cscv.p_perdida"}) == "limbo"
-    assert state("18", {k: v for k, v in ok.items() if k != "cscv.pbo_sobre_p95"}) == "limbo"
-    assert state("18", {"cscv.p_perdida": 0.7}) == "fail"         # a fail outranks «sin dato»
+    """18 is a column since encargo 65 §3c: no rules, so it judges and cuts nobody."""
+    assert STEPS["18"]["rules"] == []
 
 
 def test_step_18_5() -> None:

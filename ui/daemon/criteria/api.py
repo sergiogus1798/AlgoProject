@@ -19,7 +19,7 @@ class RuleChange(BaseModel):
 
 @ROUTER.get("/api/criteria")
 def criteria() -> dict[str, object]:
-    """Every step's rules, the Build filters, the dev draw, the freeze and the history.
+    """Every step's rules, the Build filters, the freeze and the history.
 
     Returns:
         What `read.state` builds.

@@ -11,7 +11,7 @@ from ui.desktop.criteria.parts import (COLUMNS, CUT, FREEZE, INTRO, OUTCOMES, TI
 from ui.desktop.theme import C, T
 
 class CriteriaZone(QFrame):
-    """The zone: the freeze and the dev draw on top, then one section per step in WORKFLOW's
+    """The zone: the freeze on top, then one section per step in WORKFLOW's
     order, then the history of changes. Reads the daemon on first show."""
 
     def __init__(self) -> None:
@@ -37,8 +37,8 @@ class CriteriaZone(QFrame):
         head = QHBoxLayout()
         head.addWidget(intro, 1)
         head.addWidget(mark(OUTCOMES))
-        self.frozen, self.dev, self.status = QLabel(""), QLabel(""), QLabel("", objectName="dim")
-        for banner in (self.frozen, self.dev):
+        self.frozen, self.status = QLabel(""), QLabel("", objectName="dim")
+        for banner in (self.frozen,):
             banner.setWordWrap(True)
             banner.hide()
         self.column = QVBoxLayout()
@@ -56,7 +56,6 @@ class CriteriaZone(QFrame):
         lay.addLayout(top)
         lay.addLayout(head)
         lay.addWidget(self.frozen)
-        lay.addWidget(self.dev)
         lay.addWidget(self.status)
         lay.addWidget(scroll, 1)
 
@@ -95,8 +94,8 @@ class CriteriaZone(QFrame):
                  f"{len(self.state['steps'])} pasos", T["muted"])
 
     def banners(self) -> None:
-        """Say that the criteria are frozen, and that the dev draw is on, when they are."""
-        frozen, dev = self.state["frozen"], self.state["dev"]
+        """Say that the criteria are frozen, when they are."""
+        frozen = self.state["frozen"]
         self.frozen.setVisible(bool(frozen))
         self.freeze.setEnabled(not frozen)
         self.freeze.setText("Congelados" if frozen else "Congelar")
@@ -107,13 +106,6 @@ class CriteriaZone(QFrame):
                                 f"({frozen['by']}): solo lectura.{hand}")
             self.frozen.setStyleSheet(f"color: {C['dead'] if hand else C['promising']}; "
                                       "font-weight: 700;")
-        self.dev.setVisible(bool(dev["on"]))
-        self.dev.setText(
-            f"Aviso — modo desarrollo activo: en el paso {', '.join(dev['at'])}, de las "
-            f"estrategias que pasan los criterios solo siguen {dev['sample']} elegidas al "
-            "azar. Sirve para probar la cadena, no para filtrar; se apaga con `dev.on: false` "
-            "en criteria.yaml.")
-        self.dev.setStyleSheet(f"color: {C['weak']}; font-weight: 700;")
 
     def heading(self, n: str, title: str, said: str) -> QHBoxLayout:
         """A section's kicker and the sentence under it; returns the kicker's row.

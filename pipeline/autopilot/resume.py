@@ -66,7 +66,8 @@ def builder_argv(project: str, row: dict, n: int, role: str) -> list[str]:
     return ["sqx.projects.builder", project, "--purpose",
             f"Reanudado del almacén con {n} estrategias: {row['purpose']}"[:300],
             *shape, "--symbol", row["symbol"], "--role", role, "--timeframe", row["timeframe"],
-            "--workflow", "--max-strategies", "1", "--minutes", "1"]
+            "--workflow", "--max-strategies", "1", "--minutes", "1",
+            *(["--family", row["family"]] if row.get("family") else [])]
 
 
 def main() -> None:

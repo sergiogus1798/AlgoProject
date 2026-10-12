@@ -6,7 +6,8 @@ from core.study import draws
 from studies.transfer.crossmarket.travel import stat
 
 TEST = "crossmarket.travel"
-JOINT = (("z_conj", "all"), ("z_conj_v0", "V0"), ("z_conj_v1", "V1"), ("z_conj_v2", "V2"))
+JOINT = (("z_conj", "all"), ("z_conj_v0", "V0"), ("z_conj_v1", "V1"), ("z_conj_v2", "V2"),
+         ("z_conj_v0v2", "V0V2"))
 
 
 def rows(one: dict, mask: dict, got: dict, name: str, identity: str, seed: int) -> list[dict]:

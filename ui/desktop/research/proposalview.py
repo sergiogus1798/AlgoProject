@@ -28,8 +28,7 @@ class ProposalView(QWidget):
         """Build the frame; the columns are drawn when a proposal lands."""
         super().__init__()
         self.fetch, self.send, self.sync, self.p = fetch, send, sync, {}
-        self.head = text("Todavía no hay ninguna propuesta: pulsa «Proponer investigación».",
-                         T["text"], 14)
+        self.head = text("Todavía no hay ninguna propuesta.", T["text"], 14)
         self.columns = QHBoxLayout()
         holder = QWidget()
         holder.setLayout(self.columns)

@@ -6,14 +6,15 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from core import paths
+from core import assetdata, paths
 from core.study import draws
+from studies.research.memory import sources
 from studies.transfer.crossmarket import load
 from studies.transfer.crossmarket.inputs import config, markets
 from studies.transfer.crossmarket.travel import cells, frequency, records, rules, shift, sizing, stat, tensor, units, validity
 
 VERDICT = ["strategy", "markets", "markets_valid", "invalid_fraction", "fixed_distance", "freq_off",
-           "freq_off_fraction", "z_conj", "p_conj", "z_conj_v2", "z_conj_v0", "z_conj_v1",
+           "freq_off_fraction", "z_conj", "p_conj", "z_conj_v2", "z_conj_v0", "z_conj_v1", "z_conj_v0v2",
            "z_minus_market", "minus_market", "p_breadth", "breadth_count", "tau_half", "e_principal",
            "worse", "worse_fraction", "z_beta", "e_end", "beta", "e_end_ratio", "net_t_pooled",
            "trades"]
@@ -52,6 +53,14 @@ def _checks(inputs: dict, cfg: dict, params: dict) -> tuple[list[dict], dict]:
     found += [{"market": f, "valid": False, "invalid_reason": "not_in_export"}
               for f in inputs["universe"]["absent"]]
     return found, {r["market"]: ready[r["market"]] for r in found if r["valid"]}
+
+
+def _family(project: str) -> str:
+    """The idea family of a project: its template's archetype, else the `family` the registry holds
+    for a Simple Strategy. '' for a project neither knows (judged as before)."""
+    row = sources.registry_projects().get(project, {})
+    name = sources.template_of(row)
+    return sources.templates().get(name, {}).get("archetype", "") or row.get("family") or ""
 
 
 def _frequency(inputs: dict, strategies: list[str], feeds: list[str], cuts: dict, t: dict,
@@ -151,11 +160,12 @@ def run(project: str, databank: str, asset: str, export: str, out: Path,
     z_freq, off, counts = _frequency(inputs, strategies, feeds, cuts, t, by)
     distance = units.fixed(project, strategies, inputs["identity"])
     home = _home(inputs, params, cal, t)
+    role = rules.roles(feeds, markets.classify(asset), _family(project), assetdata.expected_sign())
     verdict, rows, series, kept = [], [], {}, []
     for s in strategies:
         mine = {f: by.get((s, f), empty).reset_index(drop=True) for f in feeds}
         one = tensor.build(mine, fixed, cal, shifts, t["shift_step"], t["judge_on"])
-        got = rules.evaluate(one, cal, t, _e_principal(by.get((s, home[0]), empty).reset_index(drop=True), home, cal, shifts, t))
+        got = rules.evaluate(one, cal, t, _e_principal(by.get((s, home[0]), empty).reset_index(drop=True), home, cal, shifts, t), role)
         kept += records.rows(one, rules.windows(cal), got, s, inputs["identity"].get(s) or "", t["seed"])
         valid, listed = len(feeds), len(found)
         verdict.append({"strategy": s, "markets": listed, "markets_valid": valid,

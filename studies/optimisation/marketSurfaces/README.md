@@ -1,7 +1,7 @@
 # marketSurfaces — is what is best on the main market also best on the others?
 
-WORKFLOW step **18.5**, rewritten on 2026-10-07 from the owner's
-`criterios-paso-18.5-superficies-propuesta.md`. It reads the variant batch of step 16.5, never talks
+WORKFLOW step **18.5** — **off in the chain** (encargo 65 row 8, 2026-10-12): `pipeline/autopilot/tail.py` neither runs nor judges it and step 20 does not read it; it returns when the repricer's `descuadre < wfc.sqx_gap_relative`. The study stays and runs by hand. Rewritten on 2026-10-07 from the owner's
+`criterios-implementados-2026-10-12.md`. It reads the variant batch of step 16.5, never talks
 to SQX and never runs a backtest.
 
 ```

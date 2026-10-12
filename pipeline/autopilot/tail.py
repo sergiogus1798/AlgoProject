@@ -5,10 +5,8 @@ import argparse
 FIRST = "17"
 DONE = ("done", "sealed")       # sealed: 17-19 done, hidden by the ledger's door
 # Computed per mother over her variant batch, one after another, and read only at step 20.
-BLOCK = {"17": "wfc", "18": "cscv", "18.5": "marketSurfaces"}
-# Split (owner, 2026-10-07): its deciding reading (build+oos1) is run and judged after 16.5,
-# before any look at oos2; inside the block it is read again with oos2, which can only add Limbo.
-SPLIT = "18.5"
+# 18.5 (and its build+oos1 split) is off (encargo 65 row 8): back when the repricer's `descuadre < wfc.sqx_gap_relative`.
+BLOCK = {"17": "wfc", "18": "cscv"}
 # Their tests read «the databank the panel shows» (`workflow.steps`, feeds ()): the rail
 # knows none, and the 2026-09-30 hand run used two (exposure on CrossTF_Mothers, the map on
 # Results). Not chosen here (hard rule 11): `--panel 21=<databank>`, or a clean stop.
@@ -58,9 +56,8 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
         given: `inputs()`.
 
     Returns:
-        `do` and `stop` {n, why}, as `plan.plan`. In order: 18.5's deciding reading (`SPLIT`,
-        `oos2: False`) and its judge; the blind looks 17, 18, 18.5 (a look skips a mother
-        that has its result unless `redo`), then 17, 18 and 18.5 judged as the looks close; the
+        `do` and `stop` {n, why}, as `plan.plan`. In order: the blind looks 17, 18 (a look skips
+        a mother that has its result unless `redo`), then 17 and 18 judged as the looks close; the
         WFM in SQX, its reading, what the funding module keeps of each that passed it (`kept`)
         and 19 judged — a judge only for a step `criteria.yaml` gives rules; the ledger rows
         of 17-19 and the door, step 20 and its judge, 21 on the
@@ -116,16 +113,12 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
     if (block or due("20")) and not family:
         return halt(FIRST if block else "20", NO_FAMILY)
     if block:
-        if running == SPLIT:
-            return halt(SPLIT, "está en marcha")
-        add(SPLIT, "blind", tests=[BLOCK[SPLIT]], redo=stale, oos2=False)
-        judge(SPLIT)
         for n, key in BLOCK.items():
             if n == running:
                 return halt(n, "está en marcha")
             add(n, "blind", tests=[key], redo=stale, oos2=True)
         for n in BLOCK:         # each state is judged as the block's looks close, before the WFM
-            judge(n, **({"segment": "build+oos1+oos2"} if n == SPLIT else {}))   # 18.5 read oos2 this time
+            judge(n)
         if running == "19":
             return halt("19", "está en marcha")
         ran = due("19")

@@ -200,6 +200,11 @@ categories that answer different questions:
 - `structural` — similar structure (volatility, session, noise) with **no** shared driver. The hard
   test: transferring here means the logic caught something about price movement, not a macro factor.
 
+A top-level block of `_markets.yaml` that is **not** an asset: `_expected_sign` (owner, 2026-10-12) — per idea
+family (template archetype, or the `family` a Simple Strategy was created with; seven rows incl. `breakout`), `family: positive` and `structural: control` (negative control: passes with z <= 0,
+counts against P8 from z >= +1.65) or `none` (not judged). Written by `core.assetwrite.set_expected_sign`, read by
+`core.assetdata.expected_sign()`; `markets("_expected_sign")` returns `{}`.
+
 An optional `near_identical` key (owner, 2026-10-07) lists groups of feeds of one asset's block that are almost the same market (USA500, USATEC, DJ30); a group shares a total weight of 1 when market surfaces average across markets. Only `studies/optimisation/marketSurfaces` reads it.
 
 **The list is fixed before any result is looked at.** Choosing markets after seeing where the

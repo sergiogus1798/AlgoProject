@@ -11,6 +11,7 @@ from core import assetoverride
 from core.paths import ASSETS
 
 POLICY, CLASSES, MARKETS = "_policy.yaml", "_classes.yaml", "_markets.yaml"
+EXPECTED_SIGN = "_expected_sign"   # top-level key of _markets.yaml that is NOT an asset
 BUILD = "_build.yaml"   # how a strategy is generated; the symbol files say what it costs
 SYMBOLS = ASSETS / "symbols"   # one file per instrument; the `_*.yaml` above them are shared
 
@@ -216,16 +217,14 @@ def sqx_settings(data: dict, segment: str) -> dict:
 
 
 def markets(symbol: str) -> dict:
-    """The declared retest universe of one main asset.
+    """The declared retest universe of one main asset: main, timeframe and categories
+    ({family, structural} → [{feed, data_from}]); {} when it is not a declared main."""
+    return {} if symbol == EXPECTED_SIGN else _read(MARKETS).get(symbol, {})
 
-    Args:
-        symbol: Main asset, e.g. "XAUUSD".
 
-    Returns:
-        Keys main, timeframe and categories ({family, structural} → [{feed, data_from}]).
-        Empty dict when the asset is not a declared main.
-    """
-    return _read(MARKETS).get(symbol, {})
+def expected_sign() -> dict:
+    """{idea family: {family: positive, structural: control | none}}; not an asset (owner, 2026-10-12)."""
+    return _read(MARKETS).get(EXPECTED_SIGN, {})
 
 
 def symbol_for(feed: str) -> str | None:

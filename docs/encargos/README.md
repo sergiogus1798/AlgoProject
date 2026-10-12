@@ -70,6 +70,18 @@ suelo de 35 operaciones al año y la retirada de `MonteCarloManipulation` ya est
 | `61-money-management-por-stop.md` | las cinco comprobaciones antes de pasar al money management por stop loss (mismo ATR, tope de lotes, huecos, el EA de MT5, dónde se pone) y una recomendación; no cambia nada | nada; sólo lectura |
 | `62-registro-unico-de-ya-probado.md` | un comando de sólo lectura que responde «¿se probó esta celda?» contando los `Test_` y los tramos gastados, y las tablas de antes y después de dos cambios de estadística que decide el dueño: N por serie de precios y BH por familia fijada en la propuesta | nada para el comando y las tablas; el sí del dueño para aplicar |
 
+## Tanda del 2026-10-12 — de la opinión sobre los criterios de los 26 pasos
+
+Sale de la lectura del dossier `docs/AgentPDFs/criterios-implementados-2026-10-12.md` y del «anota eso en un encargo» del dueño.
+
+| fichero | qué construye | depende de |
+|---|---|---|
+| `63-criterios-del-workflow-opinion-y-rediseno-de-la-cola.md` | plan vivo: la opinión del 2026-10-12 (§0) y siete frentes — repricing que cuadre con SQX, `dev.on` apagado y una población entera con nula y plantada por la cola, `falsePositives` cacheado, el paso 14 por percentil entre vecinas, la cola 17-20 en una prueba prerregistrada en oos2, las reglas inertes del paso 8 a columnas, el perfil del paso 1 | las siete decisiones D-1..D-7 del dueño; los encargos 58, 59, 51, 60, 62 donde se solapan |
+| `63-prompt-segunda-opinion.md` | el prompt para que otro agente, sin ver la primera opinión, audite el mismo dossier desde potencia, economía y «qué haría un fondo» | nada |
+| `64-modelo-global-de-la-poblacion-y-stepm-en-el-paso-8.md` | plan vivo, segunda lectura con cómputo ilimitado en Python: N efectivo por solape de operaciones, StepM/SPA sobre las 10.000 del paso 8, modelo de mezcla empírico-bayesiano (P(μ>0) por estrategia, FDR local), los cambios al 63 (frente 2 primero y en Python, repricing al final, 13-14 a diagnóstico, paso 1 apagado) y la adjudicación de las tres opiniones por predicciones | D-1..D-5 del dueño; el 63 (frente 2), el 58 (poblaciones nula y plantada) |
+| `64-prompt-tercera-opinion.md` | el prompt para un tercer agente, sin ver las dos opiniones, con pregunta abierta y tabla de predicciones prerregistradas por paso | nada |
+| `65-consenso-cuatro-opiniones.md` | plan vivo: los diez cambios del consenso de las cuatro opiniones (§9 de `criterios-cuarta-opinion-2026-10-12.md`) en tres bloques — A borrados y apagados (`dev`, paso 1, cola 14/18/18.5/20, paso 10), B la estadística (mono con horas, contador por celda, una z y fdr local en el 8, lectura única de oos2, NIKKEI a 747, repreciador < 1 %), C build sintético y protocolo en vivo. Donde coincide con 63 o 64, manda este | nada; el bloque C espera al B |
+
 ## Adónde fue cada encargo viejo
 
 Para resolver una cita antigua («encargo 44», «el plan 41 §1.5») en el código, en `OPEN.md` o en un dossier.

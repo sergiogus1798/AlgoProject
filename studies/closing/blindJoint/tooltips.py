@@ -10,9 +10,9 @@ TIPS = {
     "benchmark.seed": "Semilla fija de los operadores al azar: un rerun sortea los mismos.",
     "stepm.fwer": "Probabilidad de nombrar al menos una madre que en realidad no gana más que "
                   "sus mismas operaciones entradas al azar; misma fila del ledger que el paso 8.",
-    "joint.pieces": "Cómo se combinan WFC, CSCV, superficies y WFM: peor (provisional: gana el "
-                    "peor estado; un No pasa descarta, un Limbo deja a revisar), unanimidad, "
-                    "sin_fallo o ninguna. Vacío = decisión pendiente del dueño: se enseñan todas.",
+    "joint.pieces": "Cómo se combinan WFC, CSCV y WFM: unanimidad, "
+                    "sin_fallo o ninguna. Vacío (el valor actual, dueño 2026-10-12) = nadie se "
+                    "descarta: se enseñan todas las lecturas.",
     "joint.population": "Sobre quién cuenta su búsqueda el StepM: supervivientes de las piezas "
                         "o entrantes al paso 20. Vacío = decisión pendiente del dueño.",
     "bootstrap.reps": "Remuestreos del bootstrap estacionario; más, p más finas y más lento.",

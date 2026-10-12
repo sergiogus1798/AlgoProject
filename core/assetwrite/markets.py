@@ -3,7 +3,7 @@
 import yaml
 from ruamel.yaml.comments import CommentedMap
 
-from core.assetdata import MARKETS
+from core.assetdata import EXPECTED_SIGN, MARKETS
 from core.assetyaml import read, write
 from core.paths import ASSETS
 
@@ -77,3 +77,32 @@ def flow(feed: dict) -> CommentedMap:
     one = CommentedMap({"feed": feed["feed"], "data_from": since or None})
     one.fa.set_flow_style()
     return one
+
+
+def set_expected_sign(table: dict[str, dict[str, str]]) -> dict:
+    """Write the expected-sign table: per idea family, what its family and structural markets must do.
+
+    Args:
+        table: {family: {"family": "positive", "structural": "control" | "none"}}, one row per
+            template archetype (owner, 2026-10-12). Replaces the block; nothing else in the file moves.
+
+    Returns:
+        The table as written, under the top-level key `_expected_sign` (not an asset).
+    """
+    path = ASSETS / MARKETS
+    doc = read(path)
+    block = CommentedMap()
+    for fam, row in table.items():
+        one = CommentedMap(row)
+        one.fa.set_flow_style()
+        block[fam] = one
+    first = EXPECTED_SIGN not in doc
+    doc[EXPECTED_SIGN] = block
+    if first:
+        doc.yaml_set_comment_before_after_key(EXPECTED_SIGN, before=(
+            "\nNO es un activo (dueño, 2026-10-12): el signo esperado de los mercados por familia de\n"
+            "idea (arquetipo de plantilla). `family: positive` siempre; `structural: control` = control\n"
+            "negativo (pasa con z <= 0, cuenta en P8 con z >= +1,65); `none` = sin signo, no se juzga.\n"
+            "Lo escribe core.assetwrite.set_expected_sign; lo lee core.assetdata.expected_sign."))
+    write(path, doc)
+    return table

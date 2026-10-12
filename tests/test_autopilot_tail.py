@@ -23,8 +23,8 @@ from ui.daemon.workflow.steps import STEPS
 MT5 = {"start": "2024-01-01", "end": "2026-08-30", "model": "ohlc_m1", "firms": ["ftmo"]}
 GIVEN = {"panel": {"21": "OOS"}, "mt5": MT5, "judged": set()}
 WHO = {"symbol": "USDJPY", "timeframe": "H1", "feed": "USDJPY_M1", "family": "fam"}
-# 18.5's deciding reading first (build+oos1), then the three looks at oos2
-BLOCK = [("18.5", "blind"), ("17", "blind"), ("18", "blind"), ("18.5", "blind")]
+# 18.5 is off (encargo 65 row 8): the block is the two looks 17 and 18, both at oos2
+BLOCK = [("17", "blind"), ("18", "blind")]
 CLOSING = [("21", "reading"), ("26", "finalists")]
 
 
@@ -67,7 +67,7 @@ def test_the_whole_tail_in_order() -> None:
                           *CLOSING, ("26", "mt5verify")]
     assert got["stop"] == {"n": None, "why": "no queda ningún paso"}
     assert all(a["redo"] for a in got["do"] if a["kind"] == "blind")
-    assert got["do"][-1]["params"] == MT5 and got["do"][12]["databank"] == "OOS"
+    assert got["do"][-1]["params"] == MT5 and got["do"][10]["databank"] == "OOS"
     json.dumps(got)     # plan.json is written as it comes
 
 
@@ -118,15 +118,15 @@ def test_a_rerun_takes_up_where_it_stopped() -> None:
     assert kinds(got)[-4:-1] == [("21", "reading"), ("21", "judge"), ("26", "finalists")]
 
 
-def test_the_block_is_judged_and_18_5_is_split() -> None:
-    """With rules for 17, 18, 18.5 and 19: 18.5 is read without oos2 and judged before any
-    blind look, the three are judged as the looks close (18.5 again), and 19 after its reading."""
+def test_the_block_is_judged_and_18_5_is_off() -> None:
+    """With rules for 17, 18, 18.5 and 19: 18.5 is neither run nor judged; 17 and 18 are looked
+    at (oos2) and judged as the looks close, and 19 after its reading."""
     got = plan.plan(rail(), GIVEN | {"judged": {"17", "18", "18.5", "19"}})
-    assert kinds(got)[2:15] == [
-        ("18.5", "blind"), ("18.5", "judge"), ("17", "blind"), ("18", "blind"), ("18.5", "blind"),
-        ("17", "judge"), ("18", "judge"), ("18.5", "judge"), ("19", "sqx"), ("19", "wfm"),
-        ("19", "kept"), ("19", "judge"), ("19", "ledger")]
-    assert [a["oos2"] for a in got["do"] if a["kind"] == "blind"] == [False, True, True, True]
+    assert kinds(got)[2:11] == [
+        ("17", "blind"), ("18", "blind"), ("17", "judge"), ("18", "judge"), ("19", "sqx"),
+        ("19", "wfm"), ("19", "kept"), ("19", "judge"), ("19", "ledger")]
+    assert not any(n == "18.5" for n, k in kinds(got))
+    assert [a["oos2"] for a in got["do"] if a["kind"] == "blind"] == [True, True]
     # only the steps with rules are judged; a block already done is not judged again
     got = plan.plan(rail(), GIVEN | {"judged": {"18"}})
     assert [n for n, k in kinds(got) if k == "judge"] == ["16", "18", "20"]
@@ -241,7 +241,7 @@ if __name__ == "__main__":
     test_the_whole_tail_in_order()
     test_clean_stops()
     test_a_rerun_takes_up_where_it_stopped()
-    test_the_block_is_judged_and_18_5_is_split()
+    test_the_block_is_judged_and_18_5_is_off()
     test_the_deciding_reading_does_not_ask_for_oos2()
     test_the_door_refuses_to_read_without_the_three_rows()
     test_nobody_left_is_a_clean_end()

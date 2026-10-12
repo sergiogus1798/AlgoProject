@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 20: the blind joint reading of 17, 18, 18.5 and 19, with SPA and StepM on oos2, and its ledger row."""
+"""Step 20: the blind joint reading of 17, 18 and 19, with SPA and StepM on oos2, and its ledger row."""
 
 import argparse
 import shlex
@@ -33,7 +33,7 @@ def ledger_row(a: argparse.Namespace, cfg: dict, got: dict, span: tuple) -> dict
 
     Returns:
         The row as written. Under a chosen reading `n_out` is how many it does not drop
-        (those that pass it, and under `peor` those left to review); with no
+        (those that pass it); with no
         reading chosen the row is soft (`n_out = n_in`) and every reading's count goes in
         the note, as a soft screen is recorded (`ledger/README.md`). The scores are the
         mothers' per-day Sharpe ratios, never annualised.
@@ -58,7 +58,7 @@ def ledger_row(a: argparse.Namespace, cfg: dict, got: dict, span: tuple) -> dict
 
 def verdict_table(population: pd.DataFrame, got: dict, cfg: dict) -> pd.DataFrame:
     """One row per mother for /curate: DESCARTAR only under a chosen reading that drops her,
-    REVISAR (kept and flagged, never cut: like anything but DESCARTAR) for a `watch` under `peor`."""
+    REVISAR (kept and flagged, never cut: like anything but DESCARTAR) for a `watch`."""
     reading = one.chosen(cfg)
     rows = []
     for mother, row in population.iterrows():
@@ -75,14 +75,14 @@ def verdict_table(population: pd.DataFrame, got: dict, cfg: dict) -> pd.DataFram
 
 
 def need_stepm(refused: str | None, cfg: dict) -> None:
-    """Raise when the StepM could not be read and the chosen reading needs it (every one but `peor`)."""
+    """Raise when the StepM could not be read and the chosen reading needs it."""
     reading = one.chosen(cfg)
-    if refused and reading and reading[0] != readings.WORST:
+    if refused and reading:
         raise PermissionError(f"{refused}. Una lectura elegida necesita el StepM sobre oos2")
 
 
 def main() -> None:
-    """Open the four pieces through the ledger's door, test oos2 if the policy allows, write."""
+    """Open the three pieces through the ledger's door, test oos2 if the policy allows, write."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--project", required=True)
     ap.add_argument("--wfm-databank", required=True, help="the WFM databank step 19 read")
@@ -99,10 +99,10 @@ def main() -> None:
     population = pieces.population(a.project, a.wfm_databank)
     refused = inputs.segment_door(a.symbol)
     if not refused and not population["complete"].any():
-        # 🔬 2026-09-29: with no mother holding all four pieces the panel came out empty, with
+        # 🔬 2026-09-29: with no mother holding all three pieces the panel came out empty, with
         # an integer index, and the oos2 prices raised TypeError. There is nothing to read:
         # the pieces are reported, oos2 stays closed and no ledger row is written.
-        refused = ("ninguna madre llega con las cuatro piezas (WFC, CSCV, superficies y WFM): "
+        refused = ("ninguna madre llega con las tres piezas (WFC, CSCV y WFM): "
                    "no hay nada que leer en oos2")
     batches = population.loc[population["complete"], "batch"].to_dict()
     refused = refused or inputs.trades_door(batches)

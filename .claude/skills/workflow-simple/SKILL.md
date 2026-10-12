@@ -5,10 +5,10 @@ description: Run the WHOLE workflow (steps 5 to 21, then 26) for a Simple Strate
 
 # /workflow-simple
 
-One command does everything: `bin/workflow.sh simple`. You decide nothing; you collect eight
+One command does everything: `bin/workflow.sh simple`. You decide nothing; you collect nine
 values, launch, wait, and report.
 
-## 1. The eight values — every one from the owner, none guessed
+## 1. The nine values — every one from the owner, none guessed
 
 | value | what | example |
 |---|---|---|
@@ -16,6 +16,7 @@ values, launch, wait, and report.
 | SYMBOL | the asset, as in `assets/` | `NIKKEI225` |
 | TF | `M15`, `M30`, `H1` or `H4` | `M30` |
 | SIDE | `long` or `short` — never both (hard rule 13) | `long` |
+| FAMILY | the idea family of the strategy, one key of `_expected_sign` in `assets/_markets.yaml` (`python3 -c "from core.assetdata import expected_sign; print(list(expected_sign()))"`): `breakout`, `trendFollowing`, `meanReversion`, `momentum`, `volatility`, `pattern`, `session`. Recorded in `projects/registry.csv`; step 10 reads it. **Missing or unclear: ask the owner (rule 11), never default** | `breakout` |
 | PALETTE | one idea family: a file name of `sqx/blocks/palettes/` without `.yaml` (hard rule 15) | `tendencia_base_v3` |
 | PURPOSE | one sentence, what the project is for | `"Tendencia en Nikkei M30, largos"` |
 | STRATEGIES | how many the build stops at | `1000` |
@@ -34,7 +35,7 @@ else holds it, say so and stop.
 ## 2. Launch — one command, in the background
 
 ```bash
-bin/workflow.sh simple <PROJECT> <SYMBOL> <TF> <SIDE> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke]
+bin/workflow.sh simple <PROJECT> <SYMBOL> <TF> <SIDE> <FAMILY> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke]
 ```
 
 Run it with `run_in_background: true` and do NOTHING until it notifies (hard rule 18): no polling, no

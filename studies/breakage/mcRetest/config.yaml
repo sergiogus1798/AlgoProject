@@ -30,10 +30,6 @@ fragility:
   cvar_alpha: 0.05         # the drawdown tail the gate reads, as a conditional mean
   n_resamples: 9999        # BCa resamples, for smooth statistics only; a quantile uses the exact interval
   confidence: 0.95
-  min_tail: 20             # T3: trades a re-run's tail must share with the original's to be dated
-                           # by it; P/L in cents repeats, and a shorter tail matches by chance
-  min_matched: 0.5         # T3: share of the re-runs that must be dated; below it there is no
-                           # retention (no data, which the judge reads as LIMBO)
 
 modes:
   dip_alpha: 0.05

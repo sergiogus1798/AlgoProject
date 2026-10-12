@@ -6,7 +6,7 @@ Sources: `pipeline/autopilot/{plan.py,criteria.yaml,README.md}`, `sqx/projects/{
 
 | step | kind | what runs | reads | fills | cut (criteria.yaml) |
 |---|---|---|---|---|---|
-| 5 | python (before the run) | `sqx.projects.builder --workflow` (+ `--palette`) | - | the project, every step's task | - |
+| 5 | python (before the run) | `sqx.projects.builder --workflow --family <FAMILY>` (+ `--palette`) | - | the project, every step's task | - |
 | 6 | sqx | task `CONSTRUCCION` | - | `Results` | - |
 | 7 | sqx | task `OOS` (run chained with 6) | `Results` | `OOS` | - |
 | 8 | python | gate, edgeCost, feedQuality, spread, isOos, filters, decay, monkeyExcess, falsePositives, monkey, then profitShape, entryQuality | `OOS` (+ build) | facts | - |
@@ -32,7 +32,7 @@ Sources: `pipeline/autopilot/{plan.py,criteria.yaml,README.md}`, `sqx/projects/{
 | 18 | blind | cscv | per mother | results | - |
 | 18.5 | blind | marketSurfaces | per mother | results | - |
 | 19 | sqx | `WFM`, then its reading and the ledger rows 17-19 | `SPP OOS` | `WFM` | - |
-| 20 | joint | blindJoint, then judge | 17, 18, 18.5, 19 | `paso-20/` | none named (`steps` has no "20") |
+| 20 | joint | blindJoint, then judge | 17, 18, 18.5, 19 | `paso-20/` | `SPP OOS` |
 | 21 | reading | exposure (describes only: no verdict, no efficiency threshold) | panel `CrossTF_Mothers` (`--panel 21=`) | window results | - |
 | 22 | - | conditionalMap: DELETED 2026-10-11 | - | - | - |
 | 23 | - | structural study: DELETED 2026-10-11 | - | - | - |
@@ -41,7 +41,7 @@ Sources: `pipeline/autopilot/{plan.py,criteria.yaml,README.md}`, `sqx/projects/{
 
 Notes
 - Variant databanks of 16.5: `WFC_Variants` in; `WFC_Build`, `WFC_OOS1`, `WFC_OOS2` out; emptied after each mother, once its trades are in `variant_trades.parquet`.
-- Only steps 8, 10, 12, 14, 16 have a `cut` in `criteria.yaml`; a step with rules and no `cut` stops the run, except 17 (`cut: null` written on purpose: it judges and cuts nothing). 16.5 and 20-21 do not cut.
+- Only steps 8, 10, 11.5, 12, 14, 16, 20 have a `cut` in `criteria.yaml`; steps 17, 18, 18.5, 19 have `cut: null` (judges and records without deleting); a step with rules and no `cut` stops the run. 16.5 and 21 do not cut.
 - The run stops before step 26 (MT5) unless `--mt5-from`, `--mt5-to`, `--mt5-model`, `--mt5-firms` are all given.
 - Outputs: `AlgoData/autopilot/<P>/<stamp>/{estado.txt,resumen.md,tiempos.md,fallo.md,plan.json,paso-<n>/}`.
 - `fallo.md` exists only if the run failed; `estado.txt` last line is `FIN · …` or `FALLO en el paso N: …`.

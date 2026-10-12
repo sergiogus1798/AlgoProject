@@ -105,11 +105,14 @@ FIELDS = {
                                           "a 1.",
     ("crossmarket", "z_conj"): "Cuántas desviaciones del azar gana la estrategia sumando todos los "
                                "mercados. El azar son sus mismas entradas movidas semanas enteras. "
-                               "2,33 ≈ una probabilidad del 1 % de que sea suerte.",
+                               "Anotada, no juzga: juzga la de V0 + V2.",
+    ("crossmarket", "z_conj_v0v2"): "La z conjunta sumando V0 (años anteriores al build del principal) "
+                                    "y V2 (los de su oos1); V1, donde se ajustó, queda fuera. Es la que "
+                                    "juzga el P3: 1,65 pasa, de 0 a 1,65 limbo, negativa falla.",
     ("crossmarket", "p_conj"): "Probabilidad de que el azar iguale o supere el resultado conjunto "
                                "real. Cuanto más baja, menos parece suerte.",
     ("crossmarket", "z_conj_v2"): "La z conjunta sólo en V2, los años de oos1 del principal: años "
-                                  "que el generador no vio. Negativa = dejó de funcionar ahí.",
+                                  "que el generador no vio. Anotada, no juzga.",
     ("crossmarket", "z_conj_v0"): "La z conjunta en V0, los años anteriores al build del principal. "
                                   "Anotada, no juzga.",
     ("crossmarket", "z_conj_v1"): "La z conjunta en V1, los años del build del principal, donde la "

@@ -1,8 +1,7 @@
-"""One judging step: its facts, the criteria, the dev draw, the verdict.csv and the cut in SQX."""
+"""One judging step: its facts, the criteria, the medoid cut, the verdict.csv and the cut in SQX."""
 
 import hashlib
 import os
-import random
 import sys
 from pathlib import Path
 
@@ -21,7 +20,7 @@ from ui.daemon.advance.preflight import by_identity
 CRITERIA = Path(__file__).with_name("criteria.yaml")
 KEEP = "MANTENER"     # anything but DESCARTAR keeps a strategy (sqx/curate/README.md)
 # A functional test of the chain (`run --smoke`, Test_ projects only): only the rules that say a
-# strategy can be read at all are kept, so the dev draw always has someone to draw (🔬 2026-10-04,
+# strategy can be read at all are kept, so the medoid cut always has someone to keep (🔬 2026-10-04,
 # 1,000 built, 0 alive at step 8: the run ended there and tested nothing after it).
 SMOKE = "ALGO_SMOKE"
 SMOKE_MARK = "smoke"     # an empty file in the run's folder: the run judged in smoke mode
@@ -31,12 +30,8 @@ READABLE = {"gate.scorecard." + fact for fact in (     # the gate's level 0
 
 
 def settings() -> dict:
-    """criteria.yaml, parsed. YAML 1.1 reads the key `on:` of `dev` as the boolean True, so it is
-    put back under "on" (🔬 2026-10-01: KeyError 'on' at the first judge ever run)."""
+    """criteria.yaml, parsed."""
     cfg = yaml.load(CRITERIA.read_text(encoding="utf-8"), Loader=yaml.CSafeLoader)
-    dev = cfg.get("dev") or {}
-    if True in dev:
-        dev["on"] = dev.pop(True)
     if os.environ.get(SMOKE) == "1":
         for step in cfg["steps"].values():
             step["rules"] = [r for r in step.get("rules") or [] if r.get("fact") in READABLE]
@@ -112,6 +107,24 @@ def fallen(project: str, pop: pd.DataFrame) -> dict[str, str]:
             for w, level, rule in zip(who, card["cayo_nivel"], card["cayo_regla"])}
 
 
+def largest(card: pd.DataFrame, top: int) -> pd.DataFrame:
+    """The scorecard rows of the medoids of the `top` largest groups: size (`redundancia_value`,
+    counted among the same survivors) descending, tie by `redundancia_grupo` ascending."""
+    mine = card[card["medoide"].fillna(False).astype(bool)]
+    return mine.sort_values(["redundancia_value", "redundancia_grupo"],
+                            ascending=[False, True]).head(top)
+
+
+def medoids(project: str, pop: pd.DataFrame, top: int) -> set[str]:
+    """`who` of the medoids of the `top` largest groups the gate marked in its scorecard."""
+    found = [r for r in facts.sources.results(project, "gate", None) if r["path"].is_dir()]
+    card = pd.read_parquet(found[0]["path"] / "scorecard.parquet").reset_index() if found else None
+    if card is None or "medoide" not in card:
+        sys.exit("paso con `medoids`: el scorecard de la puerta no trae la columna `medoide`")
+    _, who = resolve(pop, largest(card[card["strategy"].notna()], top))
+    return set(who)
+
+
 def siblings(pop: pd.DataFrame, is_sibling: pd.Series, judged: dict, follow: bool) -> dict:
     """What happens to the scaled siblings of the databank being cut.
 
@@ -138,7 +151,7 @@ def siblings(pop: pd.DataFrame, is_sibling: pd.Series, judged: dict, follow: boo
 def ledger_row(project: str, n: str, spec: dict, before: int, after: int, segment: str | None = None) -> None:
     """Sign this cut in the ledger: one row, with the sha256 of criteria.yaml (OPEN 1.3 item 2).
 
-    `segment:` of the step in criteria.yaml says what the cut read; oos1 when it does not
+    `segment:` of the step in criteria.yaml declares what the cut read; oos1 when it does not (steps 8, 10, 11.5, 12, 14, 16 and 20 declare it; others default to oos1)
     (a question for the owner: only step 8 declares it). `segment` overrides it (18.5's second
     judgement, read with oos2).
     """
@@ -163,23 +176,20 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | 
 
     Returns:
         `n`, `hechos` (rows gathered), `corte` (what was done, one line), and when a verdict
-        was written `before`, `after`, `limbo`, `seed`. A step with neither rules nor a dev
-        draw writes its facts and cuts nothing.
+        was written `before`, `after`, `limbo`, `seed`. A step with neither rules nor medoids
+        writes its facts and cuts nothing.
     """
     out.mkdir(parents=True, exist_ok=True)
     found = facts.gather(project, n)
     found.to_parquet(out / "hechos.parquet")
-    spec, dev = cfg["steps"].get(n, {}), cfg["dev"]
+    spec = cfg["steps"].get(n, {})
     rules = criteria.resolved(spec.get("rules") or [], tags(project))
-    sample = dev["sample"] if dev["on"] and n in dev["at"] else None
-    if not rules and sample is None:
+    if not rules and not spec.get("medoids"):
         return {"n": n, "hechos": len(found), "corte": "ninguno: el paso no tiene criterio"}
     if "cut" not in spec:
         sys.exit(f"paso {n}: tiene reglas y criteria.yaml no dice qué databank cortar (`cut`)")
     note = spec["cut"] is None       # `cut: null`: judged and written, nothing deleted (step 17)
     bank = survivors.bank(cfg, n) if note else spec["cut"]
-    if note:
-        sample = None
     pop = population(project, bank, role)
     if pop.empty:                    # nothing to judge: zero survivors, which `run` ends cleanly
         return {"n": n, "hechos": len(found), "before": 0, "after": 0, "limbo": [], "seed": None,
@@ -195,10 +205,11 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | 
                    if w in judged and judged[w][0] == "fail"}
     judged |= siblings(pop, sibling, judged, spec.get("siblings") == "follow")
     alive = sorted({w for w, (state, _) in judged.items() if state != "fail"})
-    seed = dev["seed"] if dev["seed"] is not None else random.randrange(2**32)
-    keep = set(random.Random(seed).sample(alive, min(sample, len(alive))) if sample else alive)
+    keep = set(alive)
+    if spec.get("medoids") and not note:
+        keep &= medoids(project, pop, spec["medoids"])
     pop["outcome"] = [judged[w][0] for w in pop["who"]]
-    pop["reason"] = [judged[w][1] or ("fuera del sorteo de desarrollo" if w not in keep else "")
+    pop["reason"] = [judged[w][1] or ("no es la medoide de su grupo" if w not in keep else "")
                      for w in pop["who"]]
     pop["verdict"] = [KEEP if note or w in keep else apply_verdict.DROP for w in pop["who"]]
     csv = out / "verdict.csv"
@@ -209,8 +220,8 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | 
     ledger_row(project, n, spec, cut["before"], cut["after"], segment)
     kept = (pop["outcome"] == "limbo") & (pop["verdict"] != apply_verdict.DROP) & ~sibling
     limbo = sorted(pop.loc[kept, "strategy"])
-    how = f"sorteo de {sample} (semilla {seed})" if len(keep) < len(alive) else "criterios"
+    how = "medoides" if len(keep) < len(alive) else "criterios"
     return {"n": n, "hechos": len(found), "before": cut["before"], "after": cut["after"],
-            "limbo": limbo, "seed": seed if sample else None,
+            "limbo": limbo, "seed": None,
             "corte": f"{bank}: {cut['before']} → {cut['after']} por {how}" + (" (anota, no corta)" if note else "")
                      + (f", {len(limbo)} en limbo" if limbo else "")}

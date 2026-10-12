@@ -66,6 +66,13 @@ FAMILIES = [
     ("mcRetest", r"distancia_IQR_estres", "Dist. IQR estrés",
      "Original − mediana de las re-ejecuciones del estrés combinado, en rangos "
      "intercuartílicos de las re-ejecuciones (1 IQR ≈ 1,35 sigmas)."),
+    ("marketSurfaces", r"lift_Jaccard_mediano_(build|oos1|oos2)", "Lift Jaccard {0}",
+     "Mediana entre mercados de J / J por azar en {0}, con el azar medido sobre las propias "
+     "superficies (el otro mercado sin ventaja). 1 = el solape del azar. Diagnóstico: en un "
+     "mercado suelto hace falta ~3 para salirse del azar."),
+    ("marketSurfaces", r"exceso_madre_en_top_(build|oos1|oos2)", "Exc. madre top {0}",
+     "Parte de los mercados secundarios con la madre en su decil superior en {0}, menos lo "
+     "que saldría sin ventaja. 0,20 = 20 puntos de exceso. Diagnóstico."),
 ]
 SHOWN = {"oos1": "OOS1", "oos2": "OOS2", "build": "IS", "minimo": "mínimo"}
 

@@ -8,6 +8,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
+from core.assetdata import expected_sign
 from core.datapaths import project_registry
 from sqx.projects.rankings import describe
 
@@ -17,7 +18,7 @@ from sqx.projects.rankings import describe
 KINDS = {"Test_": "test", "Trade_": "trade", "Research_": "research"}
 NAME_OK = re.compile(r"^(Test|Trade|Research)_[A-Za-z0-9_]+$")
 COLUMNS = ("name", "kind", "install", "created", "purpose", "symbol", "timeframe",
-           "template", "workflow", "retired", "archive", "acceptance")
+           "template", "workflow", "retired", "archive", "acceptance", "family")
 
 
 def check_name(name: str) -> str | None:
@@ -34,6 +35,24 @@ def check_name(name: str) -> str | None:
     return (f"'{name}': a project name starts with Test_ (a functional test, thrown away "
             "afterwards), Trade_ (meant to bear real fruit) or Research_ (the research queue's), then letters, digits and "
             "underscores only — the HTTP API splits its command on whitespace.")
+
+
+def check_family(family: str | None, simple: bool = True, name: str = "") -> str | None:
+    """Why a Simple Strategy's idea family is refused, or None when it is one of the table's rows.
+    With a template (`simple` False) a family is refused: the family is its archetype.
+    A name that already has a row with an empty family may be recreated without one (store-resume,
+    owner 2026-10-12, D7): such a project is judged as before.
+
+    The valid values are the keys of `_expected_sign` in assets/_markets.yaml (owner, 2026-10-12);
+    there is no default: a missing family is a question for the owner (rule 11).
+    """
+    valid = list(expected_sign())
+    if not simple:
+        return "--family es sólo de una Simple Strategy: con plantilla la familia es su arquetipo." if family else None
+    if family in valid or (not family and any(r["name"] == name and not r.get("family") for r in rows())):
+        return None
+    return (f"una Simple Strategy lleva su familia de idea (--family), una de: {', '.join(valid)}. "
+            f"Recibido: {family!r}. Sin valor por defecto: pregunta al dueño cuál es.")
 
 
 def kind(name: str) -> str:
@@ -84,7 +103,7 @@ def _write(all_rows: list[dict]) -> None:
         raise
 
 
-def record(done: dict, purpose: str, symbol: str, template: str) -> None:
+def record(done: dict, purpose: str, symbol: str, template: str, family: str = "") -> None:
     """Append the project `builder.build` just installed; a rebuild replaces its live row.
 
     Args:
@@ -92,12 +111,13 @@ def record(done: dict, purpose: str, symbol: str, template: str) -> None:
         purpose: One sentence: what the project is for.
         symbol: Asset name.
         template: Path of the template it builds from.
+        family: Idea family of a Simple Strategy (no template); empty for a template project.
     """
     row = {"name": done["project"], "kind": kind(done["project"]), "install": done["install"],
            "created": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
            "purpose": purpose, "symbol": symbol, "timeframe": done["timeframe"],
            "template": template, "workflow": "yes" if done.get("added") else "no",
-           "acceptance": describe(done["acceptance"])}
+           "acceptance": describe(done["acceptance"]), "family": family}
     with _locked():
         keep = [r for r in rows()
                 if not (r["name"] == done["project"] and r["install"] == done["install"]

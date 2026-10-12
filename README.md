@@ -89,7 +89,7 @@ exists (`studies/research/`):
 Steps 5 to 25 run through one command, in one SQX session:
 
 ```bash
-bin/workflow.sh simple   <PROJECT> <SYMBOL> <TF> <long|short> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES>
+bin/workflow.sh simple   <PROJECT> <SYMBOL> <TF> <long|short> <FAMILY> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES>
 bin/workflow.sh template <PROJECT> <SYMBOL> <TF> <TEMPLATE.sqx> <PALETTE|-> "<PURPOSE>" <STRATEGIES> <MINUTES>
 bin/workflow.sh run      <PROJECT>      # an existing project, from where its rail is
 bin/workflow.sh plan     <PROJECT>      # prints what `run` would do, runs nothing

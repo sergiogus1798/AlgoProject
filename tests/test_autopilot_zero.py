@@ -28,7 +28,7 @@ def test_a_missing_fact_goes_where_its_rule_says() -> None:
 def test_a_judged_step_with_cut_null_annotates_and_cuts_nothing() -> None:
     """`cut: null` with rules: the verdict is returned, the ledger row written, apply_verdict never called."""
     rows = []
-    cfg = {"dev": {"on": False, "at": [], "seed": 1, "sample": 1}, "steps": {"17": {"cut": None, "segment": "oos2",
+    cfg = {"steps": {"17": {"cut": None, "segment": "oos2",
            "rules": [{"fact": "k", "pass": ">= 1", "else": "fail"}]}, "16": {"cut": "SPP OOS"}}}
     pop = pd.DataFrame([{"strategy": "S1", "identity": "i1"}])
     found = pd.DataFrame([{"strategy": "S1", "identity": "i1", "key": "k", "value": 0.0}])
@@ -51,7 +51,7 @@ def test_a_judged_step_with_cut_null_annotates_and_cuts_nothing() -> None:
 def test_the_judge_that_cuts_everybody_signs_the_ledger_and_the_run_ends_in_fin() -> None:
     """Zero left after the cut: one ledger row with the file's hash, then FIN, no fallo.md."""
     rows = []
-    cfg = {"dev": {"on": False, "at": [], "seed": 1, "sample": 1}, "steps": {"8": {"cut": "OOS", "segment": "oos1",
+    cfg = {"steps": {"8": {"cut": "OOS", "segment": "oos1",
            "rules": [{"fact": "k", "pass": ">= 1", "else": "fail"}]}}}
     pop = pd.DataFrame([{"strategy": "S1", "identity": "i1"}])
     found = pd.DataFrame([{"strategy": "S1", "identity": "i1", "key": "k", "value": 0.0}])
@@ -129,3 +129,10 @@ if __name__ == "__main__":
     test_the_judge_that_cuts_everybody_signs_the_ledger_and_the_run_ends_in_fin()
     test_wait_fails_on_the_abort_line_instead_of_returning_it()
     test_resume_takes_only_whole_strategies_of_that_project()
+
+
+def test_largest_keeps_the_top_groups() -> None:
+    """Five groups: the 4 largest keep their medoid; the size tie goes to the first group name."""
+    card = pd.DataFrame({"strategy": list("abcde"), "medoide": True,
+                         "redundancia_value": [3, 2, 2, 2, 2], "redundancia_grupo": list("abcde")})
+    assert list(judge.largest(card, 4)["strategy"]) == list("abcd")

@@ -15,8 +15,7 @@ def test_smoke_keeps_only_readability(monkeypatch: pytest.MonkeyPatch) -> None:
     """With `ALGO_SMOKE=1` every step's rules are a subset of `READABLE`; without it, untouched."""
     monkeypatch.delenv(judge.SMOKE, raising=False)
     full = {n: len(s.get("rules") or []) for n, s in judge.settings()["steps"].items()}
-    # YAML reads `on:` as True: the judge reads these four by name (📓 2026-10-01, KeyError 'on')
-    assert set(judge.settings()["dev"]) == {"on", "sample", "at", "seed"}
+    assert "dev" not in judge.settings() and judge.settings()["steps"]["8"]["medoids"] == 4
     monkeypatch.setenv(judge.SMOKE, "1")
     steps = judge.settings()["steps"]
     kept = {r["fact"] for s in steps.values() for r in s["rules"]}

@@ -20,7 +20,7 @@ dates, side or size to compute a drift from (`knowhow/sqx-format/mc-retest-stora
 `model/retention.py`), `t1.<w>.ret_benef` (the same median on the profit total: high here and low
 on the excess is a false plateau — what holds is the market's drift) and `t1.<w>.beta_share`
 (drift the mother collected over her profit); and `t1.rho_vec`, Spearman between the neighbours'
-build excess and their oos1 excess. It judges nothing: the cuts are `pipeline/autopilot/criteria.yaml`'s.
+build excess and their oos1 excess; plus two facts for step 16.5's reading (encargo 65 §3d, owner 2026-10-12): `t1.oos1.percentil_madre` (the mother's oos1 excess net of drift as a percentile, 0-100, ties half, among her neighbours) and `t1.dd_r_p99` (p99 of the neighbours' maximum drawdown over build + oos1 together, in R = the doctrine's fixed risk per trade, `gate.market()["risk"]`; `dd_r` is a column of `neighbours.parquet` computed by `excess.drawdowns` with `resample.max_drawdown`; NaN on a table measured before it). They are columns of the «Fragilidad» tab (`mcRetest.fragilidad.t1.oos1.percentil_madre`, `...t1.ambas.dd_r_p99`) — no path yet makes 16.5 read step 14's facts. It judges nothing: the cuts are `pipeline/autopilot/criteria.yaml`'s.
 
 ## What it must never hold
 

@@ -180,6 +180,7 @@ def main() -> None:
     shape = ap.add_mutually_exclusive_group(required=True)
     shape.add_argument("--template", type=Path)
     shape.add_argument("--simple", choices=("long", "short"), help="Simple Strategy, one side")
+    ap.add_argument("--family", help="Simple Strategy's idea family (required): a key of `_expected_sign`")
     ap.add_argument("--random", action="store_true", help="random generation, not genetic")
     ap.add_argument("--symbol", required=True)
     ap.add_argument("--role", default="custodian")
@@ -191,13 +192,10 @@ def main() -> None:
                     "and feed from; default the newest one defining the feed — read only")
     ap.add_argument("--segment", choices=("build", "oos1"),
                     help="force one segment on every task; omit to take each task's own")
-    ap.add_argument("--tasks", default="Build",
-                    help="comma-separated donor task types to keep, e.g. Build,Retest")
-    ap.add_argument("--silence", default="",
-                    help="comma-separated task types whose acceptance conditions go off, "
-                         "e.g. Retest — the task then reads instead of filtering")
-    ap.add_argument("--only", help="comma-separated task XML files to narrow --tasks to, "
-                    "e.g. Build-Task3.xml,Retest-Task1.xml")
+    ap.add_argument("--tasks", default="Build", help="comma-separated donor task types to keep, e.g. Build,Retest")
+    ap.add_argument("--silence", default="", help="comma-separated task types whose acceptance goes off, "
+                    "e.g. Retest — the task then reads instead of filtering")
+    ap.add_argument("--only", help="comma-separated task XML files to narrow --tasks to, e.g. Build-Task3.xml")
     ap.add_argument("--workflow", action="store_true", help="every workflow task, Build+OOS on")
     ap.add_argument("--acceptance", choices=rankings.MODES, default="study", help="_study.yaml")
     ap.add_argument("--json", action="store_true", help="emit the result as JSON only")
@@ -205,6 +203,8 @@ def main() -> None:
 
     if registry.check_name(a.name):
         raise SystemExit(registry.check_name(a.name))
+    if msg := registry.check_family(a.family, bool(a.simple), a.name):
+        raise SystemExit(msg)
     if a.template and not a.template.exists():
         raise SystemExit(f"{a.template} does not exist.")
     # Only where something is built: mt5.verify passes a finished strategy as `--template`
@@ -239,7 +239,7 @@ def main() -> None:
                  tuple(x for x in a.silence.split(',') if x), a.workflow, a.acceptance,
                  a.simple, GENERATIONS[a.random])
 
-    registry.record(done, a.purpose, a.symbol, str(a.template or f"simple:{a.simple}"))
+    registry.record(done, a.purpose, a.symbol, str(a.template or f"simple:{a.simple}"), a.family or "")
     if a.json:
         print(json.dumps(done, indent=2))
         return

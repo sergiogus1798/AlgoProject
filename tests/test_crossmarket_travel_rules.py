@@ -48,8 +48,8 @@ def test_joint_and_windows() -> None:
     assert got["z_conj_v2"] == pytest.approx(2 / 4)
     assert got["z_conj_v0"] == pytest.approx(6 / 2)        # cell 0: 6 + 1 - 1 against sd 2
     assert got["z_conj_v1"] == pytest.approx(22 / 6)       # cells 1-3: 18 + 7 - 3 against sd 6
+    assert got["z_conj_v0v2"] == pytest.approx(8 / 6)      # cells 0, 4, 5 (V1 out): real 8; sd 6
     assert got["trades"] == 40 * 6 * 2 + 2 * 6             # the `after` cell's 99 is left out
-
 
 def test_leave_one_market_out() -> None:
     """Leave one market out."""
@@ -154,7 +154,7 @@ def test_degradation_beta_z_beta_e_end_and_pooling() -> None:
 def test_the_columns_are_the_contract() -> None:
     """The columns are the contract."""
     verdict = ["strategy", "markets", "markets_valid", "invalid_fraction", "fixed_distance", "freq_off",
-               "freq_off_fraction", "z_conj", "p_conj", "z_conj_v2", "z_conj_v0", "z_conj_v1",
+               "freq_off_fraction", "z_conj", "p_conj", "z_conj_v2", "z_conj_v0", "z_conj_v1", "z_conj_v0v2",
                "z_minus_market", "minus_market", "p_breadth", "breadth_count", "tau_half", "e_principal",
                "worse", "worse_fraction", "z_beta", "e_end", "beta", "e_end_ratio", "net_t_pooled", "trades"]
     assert run.VERDICT == verdict

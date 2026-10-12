@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from engines.variants import excess as engines_excess
 from pipeline.autopilot.facts import flatten
 from studies.breakage.mcRetest.neighbours import excess, t1
 
@@ -52,10 +53,16 @@ def table() -> pd.DataFrame:
     market = bars()
     out = pd.DataFrame({"variant_id": list(TRADES), "strategy": "Strategy 1.2.3",
                         "neighbour": [0, 1, 2]})
+    paths = []
     for window, span in SPANS.items():
-        got = excess.totals(trades(market, window), market, COSTS, span, DRIFT)
-        out = out.merge(got.add_prefix(f"{window}_"), left_on="variant_id", right_index=True)
-    return out
+        tr = trades(market, window)
+        per = engines_excess.per_trade(tr, market, COSTS, span, DRIFT)
+        paths.append(per.assign(**{"Close time": tr["Close time"]})
+                     [["variant_id", "Close time", "profit"]])
+        out = out.merge(excess.summed(per).add_prefix(f"{window}_"), left_on="variant_id",
+                        right_index=True)
+    dd = excess.drawdowns(paths, 2.0).rename("dd_r")
+    return out.merge(dd, left_on="variant_id", right_index=True)
 
 
 def test_excess_is_profit_minus_the_years_drift() -> None:
@@ -85,8 +92,16 @@ def test_facts_are_the_retention_of_the_excess(tmp_path: Path,
     assert got["t1.build.beta_share"] == pytest.approx(4 * S / (4 + 4 * S))
     assert got["t1.oos1.ret_med"] == pytest.approx(2 / 2) and got["t1.oos1.f_pos"] == 1.0
     assert got["t1.rho_vec"] == pytest.approx(-1.0)      # the better on build, the worse on oos1
-    assert len(got) == 13 and len(t1.table("P", "2026-10-07", "Strategy 1.2.3")) == 3
+    assert len(got) == 15 and len(t1.table("P", "2026-10-07", "Strategy 1.2.3")) == 3
 
+    # percentile of the mother's oos1 excess (2) among N1 (1) and N2 (3): one below, one above
+    assert got["t1.oos1.percentil_madre"] == pytest.approx(50.0)
+    # max drawdown over build+oos1 in R, by hand (1R = 2, a good trade 1.01, the bad one −0.99):
+    # N1 1.01, 2.02, 3.03, 2.04 (fall 0.99), 3.05, 3.07 and N2 −0.99 (fall 0.99), then up:
+    # 0.99 / 2 = 0.495 each, so their p99 is 0.495
+    dd = table().set_index("variant_id")["dd_r"]
+    assert dd.round(9).tolist() == [0.0, 0.495, 0.495]      # the mother never falls: all her trades win
+    assert got["t1.dd_r_p99"] == pytest.approx(0.495)
     assert t1.facts("P", "2026-10-07", "Strategy 7.7.7") is None     # not in the batch
     assert t1.facts("P", "2026-10-05", "1.2.3") is None              # before it was measured
     assert t1.facts("Other", "2026-10-07", "1.2.3") is None          # no batch at all

@@ -5,12 +5,13 @@ import pandas as pd
 
 from engines.inference.snooping import superior
 from studies.closing.blindJoint import readings
+from studies.closing.blindJoint.pieces import PIECES
 
 YEAR = 252   # SQX's own convention (its SharpeRatio is weekday rows x sqrt(252))
 
 
 def states(population: pd.DataFrame) -> pd.DataFrame:
-    """The four state words of every complete mother.
+    """The state words of every complete mother.
 
     Args:
         population: What `pieces.population` returned.
@@ -20,7 +21,7 @@ def states(population: pd.DataFrame) -> pd.DataFrame:
     """
     complete = population[population["complete"]]
     return pd.DataFrame({p: complete[p].map(lambda s: s["state"])
-                         for p in ("wfc", "cscv", "marketSurfaces", "wfm")})
+                         for p in PIECES})
 
 
 def stepm(excess: pd.DataFrame, columns: list[str], cfg: dict, block: int) -> list[str]:

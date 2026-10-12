@@ -1,4 +1,4 @@
-"""One mother at step 20: her four withheld results side by side, and her call under each reading."""
+"""One mother at step 20: her three withheld results side by side, and her call under each reading."""
 
 import time
 
@@ -20,7 +20,7 @@ def chosen(cfg: dict) -> tuple[str, str] | None:
 
 
 def parts(row: pd.Series, got: dict) -> list[dict]:
-    """The four pieces, each with its own study's state, and the StepM over every entrant."""
+    """The three pieces, each with its own study's state, and the StepM over every entrant."""
     said = [{"label": f"{PIECES[p]} {NAMES[p]}", "state": row[p]["state"],
              "value": row[p]["score"], "note": words.call(row[p]["label"])} for p in PIECES]
     if got["refused"]:
@@ -77,32 +77,29 @@ def run(row: pd.Series, got: dict, cfg: dict) -> dict:
         missing = ", ".join(f"{PIECES[p]} ({NAMES[p]})" for p in row["missing"])
         said = blocks.verdict("Incompleta", "none",
                               f"Le falta {missing}. El paso 20 es ciego hasta tener las "
-                              f"cuatro piezas, así que no se lee ninguna de las que tiene.")
+                              f"tres piezas, así que no se lee ninguna de las que tiene.")
         return envelope.envelope(MODULE, row.name, row["identity"], cfg, started, [], said,
                                  summary={"complete": False, "call": "none"})
     calls = got["calls"].loc[row.name]
     reading = chosen(cfg)
     state = calls[readings.label(reading)] if reading else "info"
-    meaning = ("Provisional: gana el peor estado de las cuatro piezas — una en No pasa descarta, "
-               "una en Limbo deja a revisar. El StepM se enseña y no decide."
-               if reading and reading[0] == readings.WORST else
-               f"Bajo la lectura {words.reading(reading)}: las piezas se combinan por "
+    meaning = (f"Bajo la lectura {words.reading(reading)}: las piezas se combinan por "
                f"{reading[0].replace('_', ' ')} y el StepM cuenta su búsqueda sobre las "
                f"{reading[1]}."
                if reading else
-               "El dueño no ha elegido todavía cómo se combinan las cuatro piezas ni sobre "
-               "quién cuenta el StepM (config.yaml, joint). Abajo, lo que diría cada lectura.")
+               "Paso 20 es un resumen: no descarta a nadie (dueño, 2026-10-12). Las piezas y el "
+               "StepM se enseñan como diagnóstico; abajo, lo que diría cada lectura.")
     said = blocks.verdict(CALL[state] if reading else "Sin regla", state, meaning, None,
                           parts(row, got))
     # The sentences go in a list block, which wraps; a table cell would cut them with «…».
-    pieces = blocks.table("Las cuatro piezas, como las dijo su estudio", pd.DataFrame(
+    pieces = blocks.table("Las tres piezas, como las dijo su estudio", pd.DataFrame(
         [[f"{PIECES[p]} {NAMES[p]}", words.call(row[p]["label"]), words.STATE[row[p]["state"]]]
          for p in PIECES], columns=["paso", "llamada", "estado"]))
     pieces["states"] = [[None, None, row[p]["state"]] for p in PIECES]
     says = {"kind": "list", "title": "Qué quiere decir cada una", "note": None,
             "items": [{"title": f"{PIECES[p]} {NAMES[p]} · {words.call(row[p]['label'])}",
                        "text": words.sentence(row[p]["meaning"])} for p in PIECES]}
-    tabs = [envelope.tab("pieces", "Las cuatro piezas", [pieces, says])]
+    tabs = [envelope.tab("pieces", "Las tres piezas", [pieces, says])]
     if not got["refused"]:
         r = got["table"].loc[row.name]
         tabs.append(envelope.tab("benchmark", "Contra el operador al azar en oos2", [

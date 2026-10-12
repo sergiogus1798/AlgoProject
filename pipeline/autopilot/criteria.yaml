@@ -49,12 +49,6 @@
 # each change is one line of ledger/criteria-history.jsonl. Its «Congelar» writes
 # `frozen: {on, by, sha}` here, first: from then on the window refuses every write. Lifting it
 # is deleting that line by hand.
-dev:
-  on: true
-  sample: 3
-  at: ["8"]
-  seed: null
-
 steps:
   # PROVISIONAL (Council 2026-10-04): do not freeze before a null population has run the chain. Step 21 annotates only: no rule on purpose.
   # Paso 8 — la puerta por niveles (encargo 44, conmutada el 2026-10-07): 16 reglas (R5 son dos
@@ -68,6 +62,7 @@ steps:
   # degradacion), R9a y R9c (peor día, drawdown / neto), spread.* y edgeCost.*.
   "8":
     cut: OOS
+    medoids: 4        # of the survivors, only the medoid (by entry-bar Jaccard) of the N largest structure groups; N is read here by the judge
     segment: oos1     # what the cut reads: the ledger row's segment (oos1 when a step omits it)
     rules:
       # R1a — la estrategia del build aparece en el retest
@@ -128,7 +123,7 @@ steps:
     cut: Retest Markets - Family
     segment: oos1
     # Paso 10 — «¿la lógica viaja?» (encargo 46): P1-P9 de la propuesta del dueño del 2026-10-06
-    # (criterios-paso-10-otros-mercados-propuesta.md, §7.2 y §7.3), lo que mide
+    # (criterios-implementados-2026-10-12.md, §7.2 y §7.3), lo que mide
     # studies/transfer/crossmarket/travel. PROVISIONAL y SIN CALIBRAR: las líneas son las de la
     # propuesta; falta pasar la población nula y la de ventaja plantada. P7 divide entre e_principal,
     # la ventaja del principal en su oos1, que crossmarket calcula él mismo desde el 2026-10-09
@@ -146,12 +141,10 @@ steps:
         all:
           - {fact: crossmarket.verdict_csv.freq_off, pass: "<= 0", limbo: "<= 2"}
           - {fact: crossmarket.verdict_csv.freq_off_fraction, pass: "<= 0.25"}
-      # P3 — z conjunta frente al azar, ventana completa
-      - {name: "P3 · Mejor que el azar en el conjunto", fact: crossmarket.verdict_csv.z_conj,
-         pass: ">= 2.33", limbo: ">= 0"}
-      # P4 — z conjunta en V2 (los años de oos1 del principal)
-      - {name: "P4 · Sigue en los años que no vio", fact: crossmarket.verdict_csv.z_conj_v2,
-         pass: ">= 0", limbo: "> -1.65"}
+      # P3 — z conjunta frente al azar sobre V0 + V2 (V1, donde el principal se ajustó, fuera;
+      # dueño, 2026-10-12). P4 (z_conj_v2) ya no juzga: queda como columna.
+      - {name: "P3 · Mejor que el azar en el conjunto", fact: crossmarket.verdict_csv.z_conj_v0v2,
+         pass: ">= 1.65", limbo: ">= 0"}
       # P5 — quitando cada mercado: la evidencia no cuelga de uno. Nunca da Falla
       - {name: "P5 · No depende de un solo mercado", fact: crossmarket.verdict_csv.z_minus_market,
          pass: ">= 1.65", else: limbo}
@@ -161,7 +154,9 @@ steps:
       # P7 — rendimiento mínimo en la mitad de los mercados, frente a casa. Sin dato: Limbo
       - {name: "P7 · Rendimiento mínimo en la mitad", fact: crossmarket.verdict_csv.tau_half,
          pass: ">= 0.5", limbo: "> 0", missing: limbo}
-      # P8 — mercados en contra: hasta 1 pasa, 2 Limbo, 3 o más (o más del 25 %) Falla
+      # P8 — mercados en contra: hasta 1 pasa, 2 Limbo, 3 o más (o más del 25 %) Falla.
+      # Los structural de volatility/meanReversion/session son control negativo y cuentan con z >= +1,65;
+      # los de trendFollowing/momentum/pattern no cuentan (assets/_markets.yaml › _expected_sign).
       - name: "P8 · Mercados en contra"
         all:
           - {fact: crossmarket.verdict_csv.worse, pass: "<= 1", limbo: "<= 2"}
@@ -201,27 +196,10 @@ steps:
   "14":
     cut: MCR 7 OHLC
     segment: oos1
-    # Paso 14 — «¿es frágil?»: T1, T2 y T3 de studies/breakage/mcRetest (pestaña «Fragilidad»),
-    # la retención del EXCESO sobre la deriva del mercado. Umbrales PROVISIONALES (dueño,
-    # 2026-10-07): son los de la propuesta, sin calibrar con población nula ni plantada. Pasar
-    # aquí es «no es frágil», no «tiene ventaja». Sin dato (sin lote de vecinas, ingesta sin las
-    # operaciones del build, exceso del original no positivo) es Limbo en todas.
-    rules:
-      # T1 build — vecinas de parámetros y salidas (fábrica de variantes, exceso exacto).
-      #   Pasa: ret_med >= 0.6 y f_pos >= 0.9 · Falla: ret_med < 0.3 o f_pos < 0.7 · Limbo: lo demás
-      - name: "T1 · Las vecinas conservan el exceso (build)"
-        all:
-          - {fact: mcRetest.fragilidad.t1.build.ret_med, pass: ">= 0.6", limbo: ">= 0.3", missing: limbo}
-          - {fact: mcRetest.fragilidad.t1.build.f_pos, pass: ">= 0.9", limbo: ">= 0.7", missing: limbo}
-      # T1 oos1 — sólo descarta: la vecina típica no puede perder el exceso fuera de muestra
-      - {name: "T1 · Las vecinas siguen en positivo (oos1)",
-         fact: mcRetest.fragilidad.t1.oos1.ret_med, pass: "> 0", missing: limbo}
-      # T2 build — histórico retocado (MCR 7 OHLC), medida aproximada
-      - {name: "T2 · Aguanta otro histórico (build)",
-         fact: mcRetest.fragilidad.t2.build.ret_med_aprox, pass: ">= 0.6", limbo: ">= 0.25", missing: limbo}
-      # T3 build — control de la barra inicial (MCR 1 Bar). Nunca da Falla
-      - {name: "T3 · Control de la barra inicial (build)",
-         fact: mcRetest.fragilidad.t3.build.ret_med, pass: ">= 0.8", else: limbo, missing: limbo}
+    # Paso 14 — columna, sin regla (consenso de las cuatro opiniones, encargo 65 §3d; dueño,
+    # 2026-10-12): T2 y T3 se borraron y T1 queda como hechos `mcRetest.fragilidad.t1.*` que el
+    # 16.5 enseña. No corta ni juzga.
+    rules: []
   "16":
     cut: SPP OOS
     segment: oos1
@@ -232,7 +210,7 @@ steps:
     cut: null
     rules: []
   "17":
-    # Paso 17 — «¿elegir por el pasado sirve fuera?» (propuesta criterios-paso-17-wfc, §6; dueño,
+    # Paso 17 — «¿elegir por el pasado sirve fuera?» (propuesta criterios-implementados-2026-10-12, §6; dueño,
     # 2026-10-07). Sólo la composición c1 (build+oos1 → oos2) decide. `wfc.c1.estado` es un
     # NÚMERO (los hechos lo son): pasa = 1, limbo = 0, no_pasa = -1. PASA es un veto levantado,
     # no un voto a favor. Tabla (dueño, 2026-10-08: el nivel LLEVA significancia, como en el
@@ -249,24 +227,18 @@ steps:
       - {name: "WFC · el top gana fuera y elegir no empeora (c1)",
          fact: wfc.c1.estado, pass: ">= 1", limbo: ">= 0", missing: limbo}
   "18":
-    # Paso 18 — CSCV y PBO (propuesta criterios-paso-18-cscv, §6.1 y §7; dueño, 2026-10-07).
-    # NO PASA si la elegida pierde fuera en la mitad o más de las particiones (P_pérdida >= 0,5)
-    # o si el PBO llega al p95 de su nulo (`cscv.pbo_sobre_p95` = 1); LIMBO si la P_pérdida llega al p95 de su nulo
-    # (`cscv.p_perdida_sobre_p95` = 1; dueño, 2026-10-08: sin banda 0,25-0,5); PASA («no descarta») el resto; sin dato (menos de 30 variantes) = LIMBO.
-    # Los cortes 0,25 y 0,5 son provisionales hasta calibrar. La gramática sólo dice cuándo se
-    # PASA: lo que no llega ni a `pass` ni a `limbo` es Falla (`else` ausente = fail). Lee el
-    # histórico entero (oos2 dentro): es del bloque ciego. `cut: null`: anota y juzga, no borra.
+    # Paso 18 — columna, sin veredicto (encargo 65 §3c; dueño, 2026-10-12): la CSCV y el PBO se
+    # calculan y se enseñan. Sus hechos (`cscv.p_perdida`,
+    # `cscv.p_perdida_sobre_p95`, `cscv.pbo_sobre_p95`) siguen en su estudio.
+    # Lee el histórico entero (oos2 dentro): es del bloque ciego.
     cut: null
     segment: build+oos1+oos2
-    rules:
-      - {name: "CSCV · la elegida no pierde fuera (P de pérdida)",
-         fact: cscv.p_perdida, pass: "< 0.5", missing: limbo}
-      - {name: "CSCV · la P de pérdida no llega al p95 de su nulo (dueño, 2026-10-08)",
-         fact: cscv.p_perdida_sobre_p95, pass: "< 1", else: limbo, missing: limbo}
-      - {name: "CSCV · el PBO no llega al p95 de su nulo",
-         fact: cscv.pbo_sobre_p95, pass: "< 1", missing: limbo}
+    rules: []
   "18.5":
-    # Paso 18.5 — superficies por mercado (propuesta criterios-paso-18.5-superficies, §5 y §9;
+    # APAGADO (encargo 65 fila 8): `pipeline/autopilot/tail.py` ya no lo planea ni lo juzga, y
+    # `studies/closing/blindJoint/pieces.py` ya no lo lee. Vuelve con el repreciador cuando
+    # `descuadre < wfc.sqx_gap_relative`. La entrada se conserva para entonces.
+    # Paso 18.5 — superficies por mercado (propuesta criterios-implementados-2026-10-12, §5 y §9;
     # dueño, 2026-10-07). El paso se parte: la lectura que decide (build+oos1) se corre y se
     # juzga tras el 16.5, ANTES del bloque ciego; dentro del bloque se relee con oos2 y se
     # vuelve a juzgar al cierre, y oos2 sólo puede añadir LIMBO. `orden.estado` es un NÚMERO:
@@ -285,7 +257,7 @@ steps:
       - {name: "Superficies · oos2 se pudo leer (bloque ciego; dueño, 2026-10-08)",
          fact: marketSurfaces.oos2.sin_dato, pass: "< 1", else: limbo, missing: pass}
   "19":
-    # Paso 19 — Walk Forward Matrix (propuesta criterios-paso-19-wfm, §5; dueño, 2026-10-07).
+    # Paso 19 — Walk Forward Matrix (propuesta criterios-implementados-2026-10-12, §5; dueño, 2026-10-07).
     # L1, siempre: NO PASA si p- <= 0,05 (reoptimizada pierde en dato limpio más que el ruido);
     # LIMBO si la mediana del exceso en oos2 <= 0 sin esa significancia; PASA el resto. Las dos
     # reglas `wfm.reopt.*` sólo existen con `modo_real: reoptimizado` (dueño, 2026-10-07: por

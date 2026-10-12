@@ -6,7 +6,7 @@ import pandas as pd
 
 from core.study import blocks, result as envelope
 from studies.screening.gate import cascade, measures, one
-from studies.screening.gate.redundancy import redundancia
+from studies.screening.gate.redundancy import medoides, redundancia
 
 
 def run(data: dict, cfg: dict, rules: list[dict], source: dict, start: str = "0") -> dict:
@@ -30,10 +30,13 @@ def run(data: dict, cfg: dict, rules: list[dict], source: dict, start: str = "0"
     scores, funnel = cascade.run(data, cfg, rules, start)
     scores = scores.join(measures.table(data))
     alive = scores.index[scores["survives"]].intersection(data["metrics"].index)
-    scores[["redundancia_value", "redundancia_note"]] = None  # nobody standing: nothing to group
+    scores[["redundancia_value", "redundancia_note", "redundancia_grupo"]] = None  # nobody standing
+    scores["medoide"] = False
     if len(alive):
         same = redundancia(data, alive, {})
         scores[["redundancia_value", "redundancia_note"]] = same[["value", "note"]]
+        medoid = medoides(data["metrics"], data["oos"], alive)
+        scores["redundancia_grupo"], scores["medoide"] = medoid["grupo"], medoid["medoide"].reindex(scores.index, fill_value=False)
     stand = int(scores["survives"].sum())
     doubt = int((scores["limbo"].fillna("") != "").sum())
     population = envelope.envelope(

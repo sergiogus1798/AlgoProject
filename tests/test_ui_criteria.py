@@ -102,8 +102,8 @@ def test_state_write_stamp_freeze() -> None:
             copy.write_text(copy.read_text(encoding="utf-8").replace('">= 0.5"', '">= 0.6"'),
                             encoding="utf-8")                         # edited by hand afterwards
             assert c.get("/api/criteria").json()["frozen"]["changed"] is True
-            dev = yaml.safe_load(copy.read_text(encoding="utf-8"))["dev"]
-            assert dev == yaml.safe_load(before)["dev"]               # `on:` survived the writes
+            medoids = yaml.safe_load(copy.read_text(encoding="utf-8"))["steps"]["8"]["medoids"]
+            assert medoids == yaml.safe_load(before)["steps"]["8"]["medoids"]   # survived the writes
     assert REAL.read_text(encoding="utf-8") == before
 
 

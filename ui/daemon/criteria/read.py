@@ -1,4 +1,4 @@
-"""What the Criterios zone shows: criteria.yaml step by step, the Build filters, dev, the freeze."""
+"""What the Criterios zone shows: criteria.yaml step by step, the Build filters, the freeze."""
 
 import hashlib
 import json
@@ -166,7 +166,7 @@ def build() -> dict:
 
 def said(rule: object) -> str:
     """One side of a history line in words: a rule; a step's whole list of rules, replaced at
-    once, as its lines joined; a plain value (a cut, the dev sample) as itself; «—» for none
+    once, as its lines joined; a plain value (a cut) as itself; «—» for none
     and for the freeze's own mark."""
     if isinstance(rule, list):
         return "; ".join(map(said, rule)) or "—"
@@ -174,7 +174,7 @@ def said(rule: object) -> str:
         return "—" if rule is None else str(rule)
     if not rule or "sha" in rule:
         return "—"
-    if not ({"fact", "all", "any"} & rule.keys()):   # a setting, like the dev draw's `dev.on`
+    if not ({"fact", "all", "any"} & rule.keys()):   # a setting, like `medoids`
         return "; ".join(f"{k} = {v}" for k, v in rule.items())
     return f"{row(rule)['label']}: " + " · limbo ".join(t for t in test(rule) if t != "—")
 
@@ -192,7 +192,7 @@ def state() -> dict:
 
     Returns:
         `frozen` (None, or `on`, `by` and `changed`: the file no longer matches what was
-        frozen), `dev`, `build` (step 6), `steps` — every step that has tests or an entry in
+        frozen), `build` (step 6), `steps` — every step that has tests or an entry in
         criteria.yaml, in WORKFLOW's order, each with `n`, `title`, `cut` (None: the file gives
         it no databank to cut, so no rule can be added from here), `rows`, `facts` and
         `offered` (facts published for a criterion with no threshold yet) — and `history`.
@@ -212,4 +212,4 @@ def state() -> dict:
                                for i, r in enumerate(rules)],
                       "facts": menu(s["n"], rules), "offered": offered(s["n"], rules)})
     return {"frozen": frozen and {**frozen, "changed": frozen["sha"] != sha(doc["steps"])},
-            "dev": doc["dev"], "build": build(), "steps": steps, "history": history()}
+            "build": build(), "steps": steps, "history": history()}

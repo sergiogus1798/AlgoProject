@@ -625,3 +625,16 @@ XCUUSD:
       - {feed: AUS200_M1, data_from: 2013-10-09}
       - {feed: EURUSD_M1, data_from: 2003-05-05}
       - {feed: USDJPY_M1, data_from: 2003-05-05}
+
+# NO es un activo (dueño, 2026-10-12): el signo esperado de los mercados por familia de
+# idea (arquetipo de plantilla). `family: positive` siempre; `structural: control` = control
+# negativo (pasa con z <= 0, cuenta en P8 con z >= +1,65); `none` = sin signo, no se juzga.
+# Lo escribe core.assetwrite.set_expected_sign; lo lee core.assetdata.expected_sign.
+_expected_sign:
+  breakout: {family: positive, structural: control}
+  volatility: {family: positive, structural: control}
+  meanReversion: {family: positive, structural: control}
+  session: {family: positive, structural: control}
+  trendFollowing: {family: positive, structural: none}
+  momentum: {family: positive, structural: none}
+  pattern: {family: positive, structural: none}

@@ -1,7 +1,7 @@
 # Every tunable of step 20, the blind joint reading. Nothing below is hidden in code.
 #
-# Step 20 opens the four results that were withheld until all of them existed — the WFC (17),
-# the CSCV (18), the market surfaces (18.5) and the WFM (19) — and puts beside them the one
+# Step 20 opens the three results that were withheld until all of them existed — the WFC (17),
+# the CSCV (18) and the WFM (19; 18.5 is off, encargo 65 row 8) — and puts beside them the one
 # question none of them asks: does the mother beat a random trader with her own footprint on
 # oos2, once every mother that reached this step is paid for (SPA and StepM, encargo 10 part B).
 #
@@ -37,13 +37,12 @@ joint:
   # `pieces` is an OPEN DECISION OF THE OWNER (hard rule 11). While either key is null the
   # study shows the verdict under every reading side by side, cuts nobody (every row MANTENER)
   # and records a soft row. Both set make one reading the call.
-  pieces: peor                # PROVISIONAL (owner, 2026-10-07), until step 20 is redesigned:
-                              # the worst state of 17, 18, 18.5 and 19 wins — any NO PASA
-                              # DESCARTAR, else any LIMBO REVISAR, else MANTENER; the StepM is
-                              # computed and shown and decides nothing. It was sin_fallo
-                              # (owner, 2026-10-04). The others: unanimidad (all four pass),
-                              # sin_fallo (none fails; indeciso/ciego tolerated), ninguna
-                              # (the pieces are context and the StepM decides alone)
+  pieces: null                # owner, 2026-10-12: NOBODY is discarded at step 20 — null, every row
+                              # MANTENER; the step is a summary and the StepM a diagnostic. The
+                              # `peor` reading was removed. The readings that remain, selectable:
+                              # unanimidad (all three pass), sin_fallo (none fails; indeciso/ciego
+                              # tolerated), ninguna (the pieces are context and the StepM decides
+                              # alone)
   population: entrantes       # decided 2026-10-04 (P2, the Council on the owner's delegation).
                               # Over whom the StepM counts its search: entrantes (every mother
                               # that reached step 20, as part A reads: the pieces chose on oos2

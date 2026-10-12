@@ -180,7 +180,6 @@ def test_launch_route_queues_one_job() -> None:
     assert sent["job"] == "job-1" and len(STARTED) == 1 and label == "launch"
     assert argv == ["-m", "ui.daemon.research.queue", "--proposal", p["id"]]
     assert kwargs == {"lane": "conductor"} and about["role"] == "custodian"
-    assert not c.post("/api/research/direct", json={"confirmed": False}).json()["ok"]
 
 
 def test_views_offscreen() -> None:
@@ -210,7 +209,7 @@ def test_views_offscreen() -> None:
         assert zone.proposal.columns.count() == 3 and zone.proposal.queue.rowCount() == 3
         assert zone.proposal.button.isEnabled() and not hasattr(zone.proposal, "prefix")
         SHOTS.mkdir(parents=True, exist_ok=True)
-        for n, name in enumerate(("mapa", "memoria", "proponer", "propuesta")):
+        for n, name in enumerate(("mapa", "memoria", "tablero", "propuesta")):
             zone.tabs.setCurrentIndex(n)
             app.processEvents()
             zone.grab().save(str(SHOTS / f"investigar-{name}.png"))

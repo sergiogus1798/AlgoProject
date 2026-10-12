@@ -1,8 +1,8 @@
-# blindJoint — step 20: the four withheld results read at once, and does the mother beat her own trades entered at random?
+# blindJoint — step 20: the three withheld results read at once, and does the mother beat her own trades entered at random?
 
-WORKFLOW step 20, encargo 10 part B. Steps 17 (WFC), 18 (CSCV), 18.5 (market surfaces) and 19
+WORKFLOW step 20, encargo 10 part B. Steps 17 (WFC), 18 (CSCV) and 19 (18.5, market surfaces, is off: encargo 65 row 8, back when the repricer's `descuadre < wfc.sqx_gap_relative`)
 (WFM) run one after another and **nobody reads them until all exist** (owner, 2026-09-23). This is
-the reading: it opens the four through the ledger's door, puts each study's own call side by side,
+the reading: it opens the three through the ledger's door, puts each study's own call side by side,
 and adds the question none of them asks — **does the mother beat a random trader with her own
 footprint on `oos2`, with every mother that reached this step paid for** (Hansen's SPA, Romano and Wolf's StepM, the engine of
 part A).
@@ -19,11 +19,11 @@ config.yaml ─▶ inputs ──────▶ pieces ─▶ measure ───�
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `inputs.py` | The knobs, the blind door (`ledger.gate.allow_read`), the oos2 door (`gate.allow(20, "oos2")`), the trades door (each batch must hold the mother's `trades.parquet`), the mothers' own oos2 days rebuilt close to close from those trades and M1 — refused unless their daily lows reproduce the batch's SQX curve — and each mother's random traders (`random_traders`) | imported | ledger + batches + feed → frame, panel, benchmark |
-| `pieces.py` | Which mothers reached step 20, and what WFC, CSCV, surfaces and WFM said of each — their own state, never re-derived; a mother missing one is listed and never read | imported | batches + WFM report → population |
+| `pieces.py` | Which mothers reached step 20, and what WFC, CSCV and WFM said of each — their own state, never re-derived; a mother missing one is listed and never read | imported | batches + WFM report → population |
 | `benchmark.py` | The expected daily P&L of a random trader with one mother's footprint: the mean of `benchmark.draws` traders drawn by a rung of `engines/nulls/model.py` and priced by `engines/market/reprice.py` | imported | trades + M1 bars + costs → daily series, its Monte Carlo error |
-| `readings.py` | **The open decisions as a registry**: how the four pieces combine, and over whom the StepM counts its search; `peor` (provisional), the one reading with three calls | imported | states, named → calls |
+| `readings.py` | **The open decisions as a registry**: how the three pieces combine, and over whom the StepM counts its search (`unanimidad`, `sin_fallo`, `ninguna`) | imported | states, named → calls |
 | `measure.py` | The excess panel (mother − her random traders' mean) through the SPA and a StepM per reading, one row per mother | imported | inputs → p-values, named, calls |
-| `one.py` | One mother as the contract's data: her four pieces as parts, her call under every reading | imported — the window calls it | row → result |
+| `one.py` | One mother as the contract's data: her three pieces as parts, her call under every reading | imported — the window calls it | row → result |
 | `many.py` | The population: the pieces grid, the readings grid, the SPA tab | imported | inputs → results |
 | `report.py` | **The command**: writes `reports/<P>/<WFM>/<day>/blindJoint/` a `distribuciones.parquet` (the SPA's bootstrap: `blindJoint`, `spa_lower|consistent|upper`) and, when it read oos2, a step-20 ledger row | `python3 -m studies.closing.blindJoint.report --project USDJPY_workflow_profiling_v1 --wfm-databank WFM --feed USDJPY_M1 --symbol USDJPY --timeframe H1 --family crossAboveHMA_v1` | pieces + oos2 → reports + ledger row |
 | `words.py` | Another study's call in Spanish: states, `blind`, `rho 0.45` → `ρ = 0,45` | imported by `one.py` | — |
@@ -49,16 +49,13 @@ DESCARTAR for a mother that reading drops.
 and ATRStop. Step 20 is not listed, so today the SPA half is **not read** and nothing is spent:
 the report says so, the pieces are still read (they open no raw segment), and no ledger row is
 written. The word the owner would add is `BlindJoint` (`ledger/gate.py` `STEPS`). A chosen
-reading that uses the StepM (every one but `peor`) raises while the policy refuses oos2 (`report.need_stepm`).
+reading that uses the StepM raises while the policy refuses oos2 (`report.need_stepm`).
 
-**Provisional since 2026-10-07 (owner), until step 20 is redesigned: `joint.pieces: peor`** — «the
-worst state wins» over the four states 17, 18, 18.5 and 19 now give (PASA / LIMBO / NO PASA =
-`verdict.state` pass / watch / fail): any fail → `DESCARTAR`, else any watch → `REVISAR` (kept:
-anything but DESCARTAR keeps), else `MANTENER`. It lives in ONE place (`readings.WORST`, `worst`).
-The StepM and the SPA are computed and shown as before and decide nothing under it; the call does
-not wait for them: when oos2 or the mother's trades are refused (owner, 2026-10-08) the verdict is still given from the four
-states, no ledger row is written (oos2 was not opened) and the result carries the warning «Falta el StepM» with the reason. The ledger row's `n_out` counts whoever is not dropped. `sin_fallo`, `unanimidad` and
-`ninguna` are still there, side by side in `readings.csv`.
+**Owner, 2026-10-12: nobody is discarded at step 20.** `joint.pieces: null`, so no reading is chosen,
+every row is `MANTENER` and `verdict_csv.drop` is 0 (the rule in `criteria.yaml` stays and finds
+nothing to cut). The step is a summary: the StepM and the SPA are a diagnostic, and the `REVISAR`
+label stays in `report.VERDICT`. The `peor` reading («the worst state wins») was removed. `sin_fallo`,
+`unanimidad` and `ninguna` remain selectable and are shown side by side in `readings.csv`.
 
 ## The benchmark: the mother's own trades, entered at random (owner, 2026-10-11)
 
@@ -144,7 +141,7 @@ name every column between them — never at part A's K = 200, often at step 20's
 
 ## What it found the first time (2026-09-26, `USDJPY_workflow_profiling_v1`)
 
-| mother | 17 WFC | 18 CSCV | 18.5 surfaces | 19 WFM | every reading using the pieces |
+| mother | 17 WFC | 18 CSCV | (18.5 off) | 19 WFM | every reading using the pieces |
 |---|---|---|---|---|---|
 | Strategy 1.28.59 | indeciso · watch | PBO 9 % · pass | no viaja · fail | blind · watch (SQX area filter FAILED) | NO PASA |
 | Strategy 1.29.55 | no fiable · fail | PBO 15 % · pass | no viaja · fail | perverse · fail | NO PASA |

@@ -1,4 +1,4 @@
-"""The routes of «Investigar»: the map, the memory, the board, the director and the queue."""
+"""The routes of «Investigar»: the map, the memory, the board, the proposal and the queue."""
 
 import json
 
@@ -11,22 +11,11 @@ from ui.daemon import jobs
 from ui.daemon.research import preflight, proposals, queue, views
 
 ROUTER = APIRouter()
-DIRECTOR = "researchDirector"
 # The queue is one more launcher: labelled `launch`, the other three refuse while it is queued
 # or running (`launch.api.queued`), and a cancel winds it down with SIGTERM (`winddown`).
 LABEL = "launch"
 FAILS = (OSError, KeyError, ValueError, StopIteration, IndexError, json.JSONDecodeError,
          pd.errors.ParserError)
-COST = ("El director lee el tablero, elige UNA celda y pide tres ideas al ideaExpert. Cuesta "
-        "unos 10-30 $ en tokens y tarda entre 20 y 60 minutos. No toca SQX ni lanza nada: "
-        "deja una propuesta que tú vetas aquí.")
-
-
-class Confirm(BaseModel):
-    """The owner confirmed spending the director's tokens."""
-
-    confirmed: bool = False
-
 
 class Veto(BaseModel):
     """One idea of a proposal, vetoed or not."""
@@ -88,27 +77,6 @@ def memory() -> dict:
 def board() -> dict:
     """The board, ordered now."""
     return safe(views.board)
-
-
-@ROUTER.get("/api/research/direct")
-def direct_state() -> dict:
-    """Whether the director runs, the step it recorded, and what a press costs."""
-    job = running(DIRECTOR)
-    last = next((j for j in reversed(jobs.listing()) if j["label"] == DIRECTOR), None)
-    return {"running": bool(job), "job": job or last, "cost": COST,
-            "step": safe(proposals.state) if job else {}, "steps": list(proposal.STEPS)}
-
-
-@ROUTER.post("/api/research/direct")
-def direct(req: Confirm) -> dict:
-    """Queue the director — only on the owner's confirmation, and never two at once."""
-    if not req.confirmed:
-        return {"ok": False, "reasons": ["falta confirmar el coste"], "cost": COST}
-    if running(DIRECTOR):
-        return {"ok": False, "reasons": ["el director ya está trabajando"]}
-    job = jobs.start(DIRECTOR, ["-m", "ui.daemon.research.direct"],
-                     {"project": "", "databank": "", "study": DIRECTOR})
-    return {"ok": True, "job": job["id"]}
 
 
 @ROUTER.get("/api/research/proposal")

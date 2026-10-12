@@ -7,6 +7,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import yaml
 
@@ -15,8 +16,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 from core import assetdata, barstore, manifest
 from core.paths import export_dir
 from engines.market import reprice
+from engines.variants import excess as engines_excess
 from studies.breakage.mcRetest.model.retention import retention
 from studies.breakage.mcRetest.neighbours import excess
+from studies.screening.gate import inputs as gate
 
 STORE, FILE = "T1_Neighbours", "neighbours.parquet"
 BATCH = "neighbours"                 # the tag `sqx.export.export_retest --batch` files the trades under
@@ -39,6 +42,11 @@ def summary(rows: pd.DataFrame) -> dict:
         mother collected over her profit; NaN when she did not earn), for build and for oos1,
         and `t1.rho_vec`, Spearman's rank correlation between the neighbours' build excess and
         their oos1 excess. A retention is NaN when the mother's own total is not positive.
+        Two facts that judge nothing (encargo 65 §3d): `t1.oos1.percentil_madre`, where the
+        mother's oos1 excess (net of drift) stands among her neighbours' — 0 to 100, ties
+        counting half — and `t1.dd_r_p99`, the 99th percentile of the neighbours' maximum
+        drawdown over build and oos1 together, in R (NaN on a table measured before the
+        `dd_r` column existed): the dispersion that fixes k.
     """
     mother, runs = rows[rows["neighbour"] == 0].iloc[0], rows[rows["neighbour"] > 0]
     out = {}
@@ -51,6 +59,11 @@ def summary(rows: pd.DataFrame) -> dict:
                                        else float("nan"))
     ranks = runs[[f"{seg}_excess" for seg in SEGMENTS]].rank()
     out["t1.rho_vec"] = float(ranks.iloc[:, 0].corr(ranks.iloc[:, 1]))
+    here, theirs = float(mother["oos1_excess"]), runs["oos1_excess"].to_numpy()
+    out["t1.oos1.percentil_madre"] = 100 * float((theirs < here).mean()
+                                                 + (theirs == here).mean() / 2)
+    out["t1.dd_r_p99"] = (float(np.percentile(runs["dd_r"], 99)) if "dd_r" in runs
+                          else float("nan"))
     return out
 
 
@@ -105,7 +118,7 @@ def measure(project: str, work: Path, symbol: str, timeframe: str, day: str) -> 
     feed = asset["sqx_symbol"]
     bars = barstore.read(feed, timeframe)
     drift = yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"]
-    out = plan
+    out, paths = plan, []
     for leg in json.loads((work / "ran.json").read_text(encoding="utf-8"))["legs"]:
         seg = leg["segment"]
         folder = sorted(export_dir(project, leg["databank"], "x").parent.glob(f"*/{BATCH}"))[-1]
@@ -116,9 +129,14 @@ def measure(project: str, work: Path, symbol: str, timeframe: str, day: str) -> 
         back = set(pd.read_csv(folder / "identity.csv")["strategy"]
                    .str.replace(COLLISION, "", regex=True))
         span = tuple(str(asset["segments"][seg][edge]) for edge in ("from", "to"))
-        got = excess.totals(trades, bars, reprice.costs(feed, seg), span, drift, feed)
+        per = engines_excess.per_trade(trades, bars, reprice.costs(feed, seg), span, drift, feed)
+        paths.append(per.assign(**{"Close time": trades["Close time"]})
+                     [["variant_id", "Close time", "profit"]])
+        got = excess.summed(per)
         got = got.reindex(plan.loc[plan["variant_id"].isin(back), "variant_id"]).fillna(0.0)
         out = out.merge(got.add_prefix(f"{seg}_"), left_on="variant_id", right_index=True)
+    out = out.merge(excess.drawdowns(paths, gate.market(feed)["risk"]).rename("dd_r"),
+                    left_on="variant_id", right_index=True, how="left").fillna({"dd_r": 0.0})
     orphans = sorted(set(plan["strategy"]) - set(out.loc[out["neighbour"] == 0, "strategy"]))
     if orphans:
         raise SystemExit(f"la madre no volvió del retest en algún tramo: {orphans}")

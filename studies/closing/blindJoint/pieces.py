@@ -1,4 +1,4 @@
-"""The four withheld results of each mother — 17, 18, 18.5 and 19 — as their own studies said them."""
+"""The three withheld results of each mother — 17, 18 and 19 — as their own studies said them."""
 
 import json
 from pathlib import Path
@@ -9,8 +9,9 @@ from core.paths import DATA, report_dir
 
 # Each piece, the step it is, and where its result lives. The first three are written beside
 # the mother's variant batch; the WFM reads SQX's own matrix, one export for every mother.
-PIECES = {"wfc": 17, "cscv": 18, "marketSurfaces": 18.5, "wfm": 19}
-NAMES = {"wfc": "WFC", "cscv": "CSCV", "marketSurfaces": "superficies", "wfm": "WFM"}
+# 18.5 ("marketSurfaces") is off (encargo 65 row 8): back when the repricer's `descuadre < wfc.sqx_gap_relative`.
+PIECES = {"wfc": 17, "cscv": 18, "wfm": 19}
+NAMES = {"wfc": "WFC", "cscv": "CSCV", "wfm": "WFM"}
 # Step 17 says PASA / LIMBO / NO PASA (owner, 2026-10-07): PASA is no failure, NO PASA a failure,
 # LIMBO undecided. A PASA lifts a veto and is no vote in favour.
 WFC = {"pasa": "pass", "limbo": "watch", "no_pasa": "fail"}
@@ -78,7 +79,7 @@ def population(project: str, wfm_databank: str) -> pd.DataFrame:
     Returns:
         One row per mother: `identity` (from the WFM verdict), `batch`, `complete`,
         `missing` and one `<piece>` column holding what said() returned, or None. A mother
-        is complete only with all four: WORKFLOW step 20 is blind until the four exist, so
+        is complete only with all three: WORKFLOW step 20 is blind until the three exist, so
         a mother with the WFM alone is listed and never read.
     """
     folder = wfm_report(project, wfm_databank)
@@ -88,13 +89,13 @@ def population(project: str, wfm_databank: str) -> pd.DataFrame:
     for mother in sorted(set(wfm.index) | set(found)):
         batch = found.get(mother)
         files = {p: batch / "estudios" / f"{p}.json" if batch else None
-                 for p in ("wfc", "cscv", "marketSurfaces")}
+                 for p in ("wfc", "cscv")}
         files["wfm"] = folder / "estrategias" / f"{mother}.json" if mother in wfm.index else None
         have = {p: f for p, f in files.items() if f is not None and f.exists()}
         missing = [p for p in PIECES if p not in have]
         rows.append({"mother": mother, "batch": batch,
                      "identity": wfm["identity"].get(mother) if mother in wfm.index else None,
                      "complete": not missing, "missing": missing,
-                     # Read only when all four are there: an incomplete mother stays blind.
+                     # Read only when all three are there: an incomplete mother stays blind.
                      **{p: said(have[p]) if not missing else None for p in PIECES}})
     return pd.DataFrame(rows).set_index("mother").assign(wfm_source=str(folder))

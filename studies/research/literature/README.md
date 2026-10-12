@@ -5,7 +5,7 @@ The front of the research chain. Before it, the literature file
 Python finds papers and keeps the books; the `literatureScout` agent
 (`.claude/agents/literatureScout.md`) only reads a paper and drafts an entry. **No LLM in this
 folder, no SQX, no price data**: the measuring is the market profile's
-(`../marketProfile/literature.py` reads the entries; `report --top-up` measures the new ones).
+(`../marketProfile/literature.py` reads the entries; `report --top-up` measures the new ones, run by hand).
 
 | file | what it does | run it | in → out |
 |---|---|---|---|

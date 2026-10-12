@@ -129,13 +129,12 @@ class Matrix(QWidget):
             p: `/api/research/proposal`: a proposal, `{"none": ...}` or `{"error": ...}`.
         """
         cell = p.get("cell")
-        self.see.setText("Ver propuesta" if cell else "Proponer investigación")
+        self.see.setText("Ver propuesta")
         self.proposal.setText(
             f"<b>El director propone</b> &nbsp; {cell['symbol']} · {cell['timeframe']} · "
             f"{cell['direction']} · <b>{names.family(cell['family'])}</b> &nbsp; — "
             f"{len(p['ideas'])} ideas, {p['created'][:10]}. Tú sólo vetas."
-            if cell else "<b>El director no tiene propuesta.</b> Pídele una: elige la mejor celda "
-                         "del tablero y trae tres ideas.")
+            if cell else "<b>No hay propuesta guardada.</b>")
 
     def row_label(self, row: str) -> str:
         """A row's header: a family by its shown name and how many templates it has."""

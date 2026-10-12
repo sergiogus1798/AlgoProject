@@ -51,7 +51,7 @@ VERDICTS = {
            "que cierran en oos2, con sus costes. L1 es la mediana de las 30 celdas contra un "
            "nulo de signos semanales: NO PASA si pierde más de lo que explica el ruido (p− ≤ "
            "0,05), LIMBO si no gana, PASA si gana («reoptimizar gana» o «no descarta»).",
-    "blindJoint": "Paso 20: los cuatro resultados ciegos (WFC, CSCV, superficies, WFM) leídos "
+    "blindJoint": "Paso 20: los tres resultados ciegos (WFC, CSCV, WFM) leídos "
                   "juntos, y si la madre gana en oos2 más que sus mismas operaciones entradas al "
                   "azar (operador al azar de igual huella). Provisional: manda el "
                   "peor estado. DESCARTAR si alguno es NO PASA, REVISAR si alguno es LIMBO, "

@@ -4,6 +4,7 @@ import pandas as pd
 
 from engines.market import reprice
 from engines.variants import excess
+from studies.screening.analysis import resample
 
 COLUMNS = ["excess", "profit", "drift", "trades"]
 
@@ -28,7 +29,31 @@ def totals(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
         drift, and `trades`.
         A variant without a trade in the window has no row. Raises as `reprice.real` does.
     """
-    per = excess.per_trade(trades, bars, costs, span, drift, feed)
+    return summed(excess.per_trade(trades, bars, costs, span, drift, feed))
+
+
+def summed(per: pd.DataFrame) -> pd.DataFrame:
+    """`totals`' sums over `engines.variants.excess.per_trade`'s rows, so a caller that also
+    wants the trades themselves (`drawdowns`) prices them once."""
     out = per.groupby("variant_id").agg(profit=("profit", "sum"), drift=("drift", "sum"),
                                         trades=("profit", "size"))
     return out.assign(excess=out["profit"] - out["drift"])[COLUMNS]
+
+
+def drawdowns(legs: list[pd.DataFrame], risk: float) -> pd.Series:
+    """Each variant's maximum drawdown over several windows together, in R.
+
+    Args:
+        legs: One frame per window: `variant_id`, `Close time` and `profit` per trade.
+        risk: 1R in account currency (`studies.screening.gate.inputs.market()["risk"]`: the
+            doctrine's fixed risk per trade, the same for every neighbour).
+
+    Returns:
+        Indexed by `variant_id`: the deepest fall of the closed-trade curve from its running
+        high (`studies.screening.analysis.resample.max_drawdown`, the curve starting at 0),
+        trades in close-time order across the windows, over `risk`. A variant with no
+        trade has no row.
+    """
+    trades = pd.concat(legs).sort_values("Close time", kind="stable")
+    return trades.groupby("variant_id")["profit"].agg(
+        lambda pnl: float(resample.max_drawdown(pnl.to_numpy()))) / risk

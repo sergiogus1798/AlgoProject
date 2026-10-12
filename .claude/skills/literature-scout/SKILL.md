@@ -21,10 +21,10 @@ python3 -m studies.research.literature.scout search          # 20 papers; --pape
 Prints `RUN <id>` and the new papers. A paper already in the register or in the literature file
 is dropped and recorded as `duplicate`. Nothing new → say so and go to step 4.
 
-## 2. Read the papers — `bin/daily-literature-scout.sh --no-top-up`
+## 2. Read the papers — `bin/daily-literature-scout.sh`
 
 ```bash
-bin/daily-literature-scout.sh --no-top-up     # search, triage, fetch, one call per paper, cost, register
+bin/daily-literature-scout.sh     # search, triage, fetch, one call per paper, cost, register
 ```
 
 It does step 1 itself. Every read is a single-turn headless call with no tools (owner,

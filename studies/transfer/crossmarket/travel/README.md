@@ -20,7 +20,7 @@ runner; the thresholds that cut Pasa / Limbo / Falla still live in `criteria.yam
 | `validity.py` | §7.1 per market, once, from every strategy's trades pooled: fill mismatch, card point value against the regression, share of defective bars, a complete cost card | imported | trades, bars, card → valid / reason |
 | `frequency.py` | P2: z_freq of every strategy in every market, centred on the population's median log-rate | imported | counts, main trades → z_freq |
 | `units.py` | P1 for an export: finds each strategy's `.sqx` under `raw/<project>/` (identity must match) and counts `fixed_distances` | imported | names, identities → count or NaN |
-| `rules.py` | P3-P9 from one strategy's tensor: z_conj and windows, leave-one-market-out, breadth, tau_half, N_peor, degradation | imported | tensor → verdict columns |
+| `rules.py` | P3-P9 from one strategy's tensor: z_conj and windows (V0 + V2 pooled = `z_conj_v0v2`, what P3 reads); `z_conj_v0v2` pools only the `free` markets when the idea family is known (negative controls and no-sign markets out; unknown family: all markets); the legacy `z_conj`, `z_conj_v0/v1/v2` keep every market, leave-one-market-out, breadth, tau_half, N_peor (`worse(role)`, `roles()`: negative controls from `core.assetdata.expected_sign`), degradation | imported | tensor → verdict columns |
 | `records.py` | `records.rows`: the `core.study.draws` rows of one strategy (z_conj, z_conj_v0/v1/v2, z_minus_market, p_breadth, z_beta raw; per-market `z` histogram only) | imported by run.py | tensor → distribuciones.parquet |
 | `run.py` | `run.run(project, databank, asset, export, out)`: loads the export, checks the markets, builds the tensors, writes `verdict.csv`, `markets.parquet`, `crossmarket.json` and `distribuciones.parquet` (the random runs behind each z, via `records.py`) into `out` | imported (no `__main__`: part E wires it) | export → four files |
 
@@ -31,7 +31,7 @@ than its shifted copies, so costs do not cancel (a no-edge population entering o
 z_conj +1.20 on net). With `judge_on: gross` (default; `net` restores the old numbers exactly) the tensor
 carries both, `gross = net + cost` from `reprice.pnl`:
 
-- **On the judged quantity (gross):** `z_conj`, `p_conj`, `z_conj_v0/v1/v2`, `z_minus_market`, per-market
+- **On the judged quantity (gross):** `z_conj`, `p_conj`, `z_conj_v0/v1/v2/v0v2`, `z_minus_market`, per-market
   `z` and `p`, `p_breadth`, `breadth_count`, `worse`, `worse_fraction`, `z_beta`.
 - **Always on NET R, the cost kept in `e`:** per-market `e`, hence `tau_half`; `e_end`, `beta`,
   `e_end_ratio`, `d_y`. The tensor keeps `real_net` / `null_net` beside `real` / `null` for them.

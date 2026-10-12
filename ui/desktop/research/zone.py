@@ -1,4 +1,4 @@
-"""BIBLIOTECA › Investigar: the four views of the research director in one terminal frame."""
+"""BIBLIOTECA › Investigar: the four views of the research board in one terminal frame."""
 
 from collections.abc import Callable
 
@@ -13,12 +13,12 @@ from ui.desktop.studypage.net import fetch as daemon_fetch
 from ui.desktop.studypage.net import send as daemon_send
 from ui.desktop.theme import T
 
-INTRO = ("Dónde investigar y con qué: Python mide los mercados y cuenta lo probado; el director "
-         "lee una página, elige una celda y trae tres ideas con sus bloques. Tú vetas y lanzas.")
+INTRO = ("Dónde investigar y con qué: Python mide los mercados y cuenta lo probado; el tablero "
+         "ordena las celdas. Las propuestas del director se guardan aquí; tú vetas y lanzas.")
 
 
 class ResearchZone(QFrame):
-    """Mapa · Memoria · Proponer investigación · Propuesta."""
+    """Mapa · Memoria · Tablero · Propuesta."""
 
     def __init__(self, fetch: Callable[..., dict] = daemon_fetch,
                  send: Callable[[str, dict], dict] = daemon_send) -> None:
@@ -34,13 +34,12 @@ class ResearchZone(QFrame):
         sync = fetch is not daemon_fetch
         self.map = MapView(fetch, sync)
         self.memory = MemoryView(fetch, sync)
-        self.direct = DirectView(fetch, send, sync)
+        self.direct = DirectView(fetch, sync)
         self.proposal = ProposalView(fetch, send, sync)
         self.tabs = QTabWidget()
         for name, view in (("Mapa", self.map), ("Memoria", self.memory),
-                           ("Proponer investigación", self.direct), ("Propuesta", self.proposal)):
+                           ("Tablero", self.direct), ("Propuesta", self.proposal)):
             self.tabs.addTab(view, name)
-        self.direct.proposed.connect(self.arrived)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(20, 16, 20, 16)
         lay.setSpacing(8)
@@ -76,9 +75,4 @@ class ResearchZone(QFrame):
 
     def open_proposal(self) -> None:
         """The library's front page asked for the director's proposal."""
-        self.tabs.setCurrentWidget(self.proposal)
-
-    def arrived(self) -> None:
-        """The director ended: show its proposal."""
-        self.proposal.reload()
         self.tabs.setCurrentWidget(self.proposal)

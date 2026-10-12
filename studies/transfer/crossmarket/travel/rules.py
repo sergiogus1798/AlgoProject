@@ -9,9 +9,9 @@ from studies.transfer.crossmarket.travel import stat
 
 
 def windows(cal: pd.DataFrame) -> dict[str, np.ndarray]:
-    """The cell masks every rule reads: the whole span (V0 + V1 + V2, never `after`) and each window."""
-    return {"all": (cal["window"] != "after").to_numpy(),
-            **{w: (cal["window"] == w).to_numpy() for w in ("V0", "V1", "V2")}}
+    """The cell masks every rule reads: the whole span (V0 + V1 + V2, never `after`), each window and V0 + V2 (V1, where the main was fitted, left out)."""
+    mask = {w: (cal["window"] == w).to_numpy() for w in ("V0", "V1", "V2")}
+    return {"all": (cal["window"] != "after").to_numpy(), **mask, "V0V2": mask["V0"] | mask["V2"]}
 
 
 def on_net(one: dict) -> dict:
@@ -89,10 +89,32 @@ def tau_half(e: np.ndarray, trades: np.ndarray, e_principal: float, min_trades: 
     return float(np.sort(tau)[::-1][math.ceil(len(tau) / 2) - 1])
 
 
-def worse(z: np.ndarray, trades: np.ndarray, min_trades: int, worse_z: float) -> int:
+def roles(feeds: list[str], category: dict[str, str], family: str, table: dict) -> list[str]:
+    """What each market is for P8: "free" (judged as ever), "control" or "skip" (owner, 2026-10-12).
+
+    Args:
+        feeds: The tensor's markets.
+        category: {feed: "family" | "structural"} (`inputs.markets.classify`); a feed not in it is "free".
+        family: The strategy's idea family (template archetype); '' or not in the table: all "free".
+        table: `core.assetdata.expected_sign()`.
+
+    Returns:
+        One role per feed: a structural market of a family whose row says `control` is a negative
+        control, `none` is left out; every other market keeps today's sense.
+    """
+    sign = table.get(family, {})
+    return [{"control": "control", "none": "skip"}.get(sign.get("structural"), "free")
+            if category.get(f) == "structural" else "free" for f in feeds]
+
+
+def worse(z: np.ndarray, trades: np.ndarray, min_trades: int, worse_z: float,
+          role: list[str] | None = None) -> int:
     """P8, §4.4: markets where the strategy does clearly worse than random (z <= worse_z); a
-    market under `min_trades` is not counted."""
-    return int(((trades >= min_trades) & (z <= worse_z)).sum())
+    market under `min_trades` is not counted. A negative control counts instead when z >= -worse_z
+    (it did clearly BETTER than random where it should not), a "skip" market never counts."""
+    role = np.array(role if role is not None else ["free"] * len(z))
+    bad = np.where(role == "control", z >= -worse_z, z <= worse_z) & (role != "skip")
+    return int(((trades >= min_trades) & bad).sum())
 
 
 def _pool(rows: list, floor: int) -> list[list]:
@@ -151,7 +173,8 @@ def degradation(one: dict, cal: pd.DataFrame, whole: np.ndarray, deg: dict) -> d
                     for g, m, v in zip(groups, n, d)]}
 
 
-def evaluate(one: dict, cal: pd.DataFrame, cfg: dict, e_principal: float = np.nan) -> dict:
+def evaluate(one: dict, cal: pd.DataFrame, cfg: dict, e_principal: float = np.nan,
+             role: list[str] | None = None) -> dict:
     """Every column of P3-P9 for one strategy, from its tensor.
 
     Args:
@@ -159,6 +182,7 @@ def evaluate(one: dict, cal: pd.DataFrame, cfg: dict, e_principal: float = np.na
         cal: `cells.table()`.
         cfg: The `travel` section of config.yaml.
         e_principal: The main's e (R per trade, oos1); as `run._e_principal` computes it.
+        role: `roles()` per market; None = every market "free" (P8 as before).
 
     Returns:
         `verdict` (the contract's columns for P3-P9 and `trades`), `markets` (`per_market`), `d_y` and `beta`
@@ -167,18 +191,21 @@ def evaluate(one: dict, cal: pd.DataFrame, cfg: dict, e_principal: float = np.na
     mask = windows(cal)
     got = {k: stat.joint(one, cells=mask[k]) for k in mask}
     rows = per_market(one, mask["all"])
+    free = None if role is None else np.array(role) == "free"     # controls and skips out of P3's z
+    v0v2 = stat.joint(one, free, mask["V0V2"])["z"]
     z_minus, who = minus_market(one, mask["all"])
     p_breadth, count = breadth(one, mask["all"])
     trades, min_n = rows["trades"].to_numpy(), cfg["min_trades_market"]
-    n_worse = worse(rows["z"].to_numpy(), trades, min_n, cfg["worse_z"])
+    n_worse = worse(rows["z"].to_numpy(), trades, min_n, cfg["worse_z"], role)
+    kept = len(rows) - (role or []).count("skip")
     slope = degradation(on_net(one), cal, mask["all"], cfg["degradation"])     # e_end, beta: net
     judged = degradation(one, cal, mask["all"], cfg["degradation"])    # z_beta: judged
     verdict = {"z_conj": got["all"]["z"], "p_conj": got["all"]["p"], "z_conj_v2": got["V2"]["z"],
-               "z_conj_v0": got["V0"]["z"], "z_conj_v1": got["V1"]["z"],
+               "z_conj_v0": got["V0"]["z"], "z_conj_v0v2": v0v2, "z_conj_v1": got["V1"]["z"],
                "z_minus_market": z_minus, "minus_market": who,
                "p_breadth": p_breadth, "breadth_count": count,
                "tau_half": tau_half(rows["e"].to_numpy(), trades, e_principal, min_n),
-               "e_principal": e_principal, "worse": n_worse, "worse_fraction": n_worse / len(rows),
+               "e_principal": e_principal, "worse": n_worse, "worse_fraction": n_worse / max(kept, 1),
                "z_beta": judged["z_beta"], "e_end": slope["e_end"], "beta": slope["beta"],
                "e_end_ratio": slope["e_end_ratio"], "trades": float(trades.sum())}
     return {"verdict": verdict, "markets": rows, "d_y": slope["d_y"],

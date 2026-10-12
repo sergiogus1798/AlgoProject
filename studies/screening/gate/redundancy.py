@@ -40,3 +40,36 @@ def redundancia(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
     note = first.where(size == 1, "grupo de " + first + " (" + size.astype(str) + ")")
     return pd.DataFrame({"value": size, "passed": True,
                          "note": note.mask(size == 1, "única")}).reindex(alive)
+
+
+def medoides(metrics: pd.DataFrame, oos: pd.DataFrame, alive: pd.Index) -> pd.DataFrame:
+    """The medoid of every structure group among the survivors.
+
+    Args:
+        metrics: The harvest's metrics, indexed by identity: `structure` and `strategy` (name).
+        oos: Per-trade table with `identity` and `open_time` (the gate's `operaciones.parquet`).
+        alive: Identities standing.
+
+    Returns:
+        Indexed by `alive`: `grupo` (the group's first name) and `medoide` (bool). The medoid is
+        the member with the highest mean Jaccard similarity of its set of entry bars against the
+        others of its group (tie: name order; a group of one is its own medoid).
+    """
+    out = pd.DataFrame({"grupo": None, "medoide": False}, index=alive)
+    if not len(alive):
+        return out
+    names = metrics.loc[alive, "strategy"]
+    groups = {s: sorted(g.index, key=names.get) for s, g in metrics.loc[alive].groupby("structure")}
+    out["grupo"] = [names[groups[metrics.at[i, "structure"]][0]] for i in alive]
+    bars = {i: set(g) for i, g in oos[oos["identity"].isin(alive)].groupby("identity")["open_time"]}
+
+    def jaccard(a: str, b: str) -> float:
+        """Share of entry bars the two strategies have in common."""
+        union = len(bars.get(a, ())) + len(bars.get(b, ())) - len(bars.get(a, set()) & bars.get(b, set()))
+        return len(bars.get(a, set()) & bars.get(b, set())) / union if union else 0.0
+
+    for members in groups.values():
+        score = {i: sum(jaccard(i, j) for j in members if j != i) / max(len(members) - 1, 1)
+                 for i in members}
+        out.loc[max(members, key=lambda i: (score[i], -members.index(i))), "medoide"] = True
+    return out

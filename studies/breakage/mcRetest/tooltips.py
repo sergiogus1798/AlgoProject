@@ -17,13 +17,6 @@ TIPS = {
     "scenario.ordering_metric": "La métrica que ordena las simulaciones cuando un nivel se lee "
                                 "como un escenario.",
     "scenario.show_levels": "Los niveles que se enseñan como escenario.",
-    "fragility.min_tail": "T3: operaciones seguidas, contadas desde la última, que una "
-                          "re-ejecución debe compartir con el original para heredar sus "
-                          "fechas. Con menos, la coincidencia puede ser casual (el beneficio "
-                          "en céntimos se repite) y la re-ejecución no cuenta.",
-    "fragility.min_matched": "T3: fracción mínima de re-ejecuciones con fechas (cola "
-                             "coincidente). Por debajo no se da retención: sin dato, que el "
-                             "juez lee como LIMBO, nunca NO PASA.",
     "fragility.fan_points": "Puntos de progreso normalizado del abanico de equity: las "
                             "simulaciones tienen longitudes distintas.",
     "fragility.n_resamples": "Remuestreos BCa para los estadísticos suaves; un cuantil usa el "
