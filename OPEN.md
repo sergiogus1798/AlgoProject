@@ -708,7 +708,7 @@ random draw of 5 at step 8 only; not `ALGO_AUTONOMOUS`. Phase 1 = steps 7 → 16
 ## 93. 🔴 Criteria of steps 6 and 8 proposed 2026-10-02 — four owner decisions, 15 assets unmeasured
 
 `assets/_study.yaml` (step 6) and step 8 of `pipeline/autopilot/criteria.yaml` carry an agent's
-proposal, calibrated in `docs/AgentPDFs/criterios-pasos-6-y-8-2026-10-02.md`. Open:
+proposal, calibrated in `docs/AgentPDFs/criterios-implementados-2026-10-12.md`. Open:
 
 - **Owner's decisions** (dossier §1): the trades-per-year floor (written as fail < 20, limbo 20-40,
   pass >= 40 on `is_trades_per_year`; he prefers 40-50 as a floor); `dev.on` still true, so the
@@ -753,7 +753,7 @@ proposal, calibrated in `docs/AgentPDFs/criterios-pasos-6-y-8-2026-10-02.md`. Op
   - The 28 calibration populations exceed the cap and used the broad palette (842 blocks) — they
     must be rebuilt per family before the criteria are taken as final.
 
-**2026-10-03.** 2026-10-03/04: steps 6 and 8 recalibrated (116 base cells, 201 populations, red-teamed) — dossier `docs/AgentPDFs/criterios-pasos-6-a-12-2026-10-04.md`, PROVISIONAL, owner's approval pending; proposals written in `assets/_study.yaml` (ceiling 75/yr, no floor beyond 10/yr, no PF/RetDD) and `pipeline/autopilot/criteria.yaml` (step 8; steps 10 and 12 still `rules: []`). Cards: `knowhow/research/{step6-floor-vs-step8-yield,is-filters-inside-the-build,oos1-oos2-persistence,drift-term-biased-by-side,crosstf-mother-sibling-dependence,crossmarket-effective-markets}.md`. Still open: (1) long builds (180 min, cap 10,000) with a full databank — no IS filter was tested there; (2) the gate's drift-term correction is proposed, NOT applied (`drift_excess_t`, and `crossmarket/simulate/excess.py` with it); (3) `wfc.py` gives extra markets the main's dates; (4) 7-11 % of strategies change identity between the build and the OOS databank (name join; fingerprint agrees 99.7-100 % on 3 populations); (5) the crossmarket and crossTF studies hard-code their window, so oos2 is read from raw exports; (6) `assets/_policy.yaml` oos2 end 2026-09-30 is past the last bar of XAUUSD, XAGUSD and HK50 — an OOS2 task cannot start (`knowhow/sqx-drive/cannot-start-unresolved-past-data.md`); (7) 31 H1 base cells have no oos2 (`oos2_job.sh` not run).
+**2026-10-03.** 2026-10-03/04: steps 6 and 8 recalibrated (116 base cells, 201 populations, red-teamed) — dossier `docs/AgentPDFs/criterios-implementados-2026-10-12.md`, PROVISIONAL, owner's approval pending; proposals written in `assets/_study.yaml` (ceiling 75/yr, no floor beyond 10/yr, no PF/RetDD) and `pipeline/autopilot/criteria.yaml` (step 8; steps 10 and 12 still `rules: []`). Cards: `knowhow/research/{step6-floor-vs-step8-yield,is-filters-inside-the-build,oos1-oos2-persistence,drift-term-biased-by-side,crosstf-mother-sibling-dependence,crossmarket-effective-markets}.md`. Still open: (1) long builds (180 min, cap 10,000) with a full databank — no IS filter was tested there; (2) the gate's drift-term correction is proposed, NOT applied (`drift_excess_t`, and `crossmarket/simulate/excess.py` with it); (3) `wfc.py` gives extra markets the main's dates; (4) 7-11 % of strategies change identity between the build and the OOS databank (name join; fingerprint agrees 99.7-100 % on 3 populations); (5) the crossmarket and crossTF studies hard-code their window, so oos2 is read from raw exports; (6) `assets/_policy.yaml` oos2 end 2026-09-30 is past the last bar of XAUUSD, XAGUSD and HK50 — an OOS2 task cannot start (`knowhow/sqx-drive/cannot-start-unresolved-past-data.md`); (7) 31 H1 base cells have no oos2 (`oos2_job.sh` not run).
 
 **2026-10-04.** Owner, 2026-10-04: the calibration study these criteria were derived from was run at a wrong spread («un fiasco») and its data, registry rows and ledger rows were deleted on his order. The step 6 and 8 figures in assets/_study.yaml therefore rest on nothing that exists any more: do not sign them and do not build on them; they need a new calibration at the recalibrated spreads (commit 3b71384), or the owner's own numbers. The oos2 look of that study happened regardless of the deletion.
 
@@ -978,7 +978,7 @@ and «Sin veredicto».
 - **Leftovers.** Empty `stop_percentile` / `stop_x` columns in the pool and campaign CSVs. edgeCost's
   `--strategy` mode stays because ~55 old result folders would otherwise be read by step 8.
   `portfolio/common/construct/candidates.py:26` still names `worth_it` in `SURVIVOR_WORDS`. The dossiers
-  `docs/AgentPDFs/criterios-paso-2{2,3,4}-*.md` are historical.
+  `docs/AgentPDFs/criterios-implementados-2026-10-12{2,3,4}-*.md` are historical.
 
 ## 114. 🟠 `builder.build()` installs the template before the gates: a refusal leaves it under live projects
 

@@ -108,7 +108,7 @@ def pooled_by(vocab: dict, key: str) -> list[str]:
 
 
 def find(vocab: dict, term: str) -> list[dict]:
-    """Every block whose key or display form mentions a term.
+    """Every block whose key, display form, category or help text mentions a term.
 
     Args:
         vocab: A vocabulary().
@@ -121,7 +121,8 @@ def find(vocab: dict, term: str) -> list[dict]:
     rows = []
     for origin in ("native", "custom"):
         for key, b in vocab[origin].items():
-            if needle in key.lower() or needle in (b["display"] or "").lower():
+            if any(needle in (text or "").lower()
+                   for text in (key, b["display"], b.get("category"), b.get("help"))):
                 rows.append({"key": key, "origin": origin, **b, "pooled_by": pooled_by(vocab, key)})
     return sorted(rows, key=lambda r: r["key"])
 

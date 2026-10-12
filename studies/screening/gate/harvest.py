@@ -4,6 +4,7 @@
 import argparse
 import random
 import shutil
+import zipfile
 from datetime import date, datetime
 from pathlib import Path
 
@@ -74,6 +75,14 @@ def set_aside(out: Path, identities: set) -> Path | None:
     return dest
 
 
+def problem_reasons(path: Path) -> str:
+    """SQX's «Strategy Problems» reasons of a stored .sqx, `;`-joined; empty when none or unreadable."""
+    try:
+        return ";".join(sqxfile.strategy_problems(path)["reasons"])
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return ""
+
+
 def main() -> None:
     """Match the two databanks on identity, take both, and write the joined tables."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -95,8 +104,13 @@ def main() -> None:
     pairs, alias, missing = pairing.pair(build, after)
     matched = sorted(pairs)
     print(f"{a.databank}: {len(build)} · {a.oos_databank}: {len(after)} · "
-          f"emparejadas por nombre {len(matched)} ({len(alias)} con identidad distinta) · sin OOS {len(missing)} · "
+          f"emparejadas por identidad {len(matched)} · mismo nombre e identidad distinta {len(alias)} · sin OOS {len(missing)} · "
           f"solo en OOS {len(set(after) - set(build) - set(alias))}")
+    if alias:
+        raise SystemExit(f"COSECHA PARADA: {len(alias)} estrategias del OOS comparten nombre con "
+                         f"una del build y tienen otra identidad (nombre reutilizado o fichero "
+                         f"reescrito); no se emparejan. Ver "
+                         f"knowhow/sqx-format/names-reused-between-builds.md")
     if a.limit and a.limit < len(matched):
         matched = sorted(random.Random(SAMPLE_SEED).sample(matched, a.limit))
 
@@ -114,15 +128,6 @@ def main() -> None:
     for side, folder in whole.items():
         export(folder, a, a.databank if side == "IS" else a.oos_databank, taken[side],
                sides[side]["packed"], install)
-    # A pair whose identity changed in the retest carries two identities, so the retest side
-    # is re-keyed to the build's before anything is joined on it.
-    if alias:
-        sides["OOS"]["metrics"] = sides["OOS"]["metrics"].rename(index=alias)
-        for frame in ("trades", "equity"):
-            # map, not replace: over 20 M rows `replace` with a dict took 11 s to do this
-            was = sides["OOS"][frame]["identity"]
-            sides["OOS"][frame]["identity"] = was.map(alias).fillna(was)
-
     metrics = sides["IS"]["metrics"].add_suffix(" [IS]").join(
         sides["OOS"]["metrics"].add_suffix(" [OOS]"))
     metrics = metrics.rename(columns={"Strategy Name [IS]": "strategy_build",
@@ -139,9 +144,14 @@ def main() -> None:
     trades.to_parquet(out / "trades.parquet", compression="zstd", index=False)
     equity = pd.concat([f["equity"].assign(sample=side) for side, f in sides.items()])
     equity.to_parquet(out / "equity.parquet", compression="zstd", index=False)
-    pd.DataFrame({"identity": missing,
-                  "strategy_build": [build[i].stem for i in missing]}).to_csv(
-        out / "missing_oos.csv", index=False)
+    problems = [problem_reasons(build[i]) for i in missing]
+    pd.DataFrame({"identity": missing, "strategy_build": [build[i].stem for i in missing],
+                  "StrategyProblems": problems}).to_csv(out / "missing_oos.csv", index=False)
+    # 🔬 2026-10-11: on the stored harvests the build file's bitmask is 0 for every strategy
+    # the retest dropped (SQX writes the reason on the retested file, which is gone), so a
+    # missing twin cannot be told dismissed-with-reason from lost: the harvest does not stop.
+    if (blind := sum(p == "" for p in problems)):
+        print(f"ATENCION: {blind} ESTRATEGIAS SIN GEMELA OOS Y SIN MOTIVO LEGIBLE EN SU .SQX DE BUILD")
 
     blocks = {side: f["sample"] for side, f in sides.items()}
     print(f"bloque con datos: build={blocks['IS']} · retesteo={blocks['OOS']}")
@@ -154,7 +164,7 @@ def main() -> None:
                    f"python3 -m studies.screening.gate.harvest --project {a.project} --databank "
                    f"'{a.databank}' --oos-databank '{a.oos_databank}'",
                    {"build": len(build), "oos": len(after), "matched": len(matched),
-                    "missing_oos": len(missing), "trades": len(trades),
+                    "missing_oos": len(missing), "alias": len(alias), "trades": len(trades),
                     "equity_days": len(equity), "metrics_columns": len(metrics.columns)})
     print(f"wrote {out}")
 

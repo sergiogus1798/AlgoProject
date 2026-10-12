@@ -83,7 +83,9 @@ def print_for(symbol: str, family: str) -> None:
         row = state.get(e["id"])
         print(f"\n{e['id']} · {e['family']} · {e['direction']}\n  regla: {e['translation']['entry']}"
               f"\n  fuente: {e['source']}\n  verificado: {e['verified']} · muestra: {e['sample']} · "
-              f"solapa build: {e['overlaps_is']}\n  fuera de muestra según la fuente: {e['decay']}"
+              f"solapa build: {e['overlaps_is']}"
+              f" · oos1: {e.get('overlaps_oos1', '-')}"
+              f" · oos2: {e.get('overlaps_oos2', '-')}\n  fuera de muestra según la fuente: {e['decay']}"
               + (f"\n  variantes que los autores dicen haber probado: "
                  f"{e['selection']['variants_tried']}" if "selection" in e else "")
               + (f"\n  estado: «{row['state']}» {row['reading']}" if row else ""))

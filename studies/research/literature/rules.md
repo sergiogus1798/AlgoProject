@@ -97,7 +97,7 @@ anchors:
   `measures` and say in `note` exactly which condition is missing: you never edit `rules.py`.
 - A paper with another rule that a filter excludes (it needs the T-bill rate, the clock): say so
   in `note`, naming the filter.
-- You never set `id`, `source`, `verified`, `overlaps_is` or `read`: Python stamps them.
+- You never set `id`, `source`, `verified`, `overlaps_is`, `overlaps_oos1`, `overlaps_oos2` or `read`: Python stamps them.
 
 ## An item of a code repository (key `gh-…`)
 

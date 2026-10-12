@@ -14,6 +14,7 @@ from studies.research.literature import (amend, anchors, dedupe, fetch, gather, 
 
 ORDER = ["id", "paper", "asset_class", "assets", "family", "direction", "horizon", "condition",
          "size", "sample", "source", "grade", "verified", "read", "needs_clock", "overlaps_is",
+         "overlaps_oos1", "overlaps_oos2",
          "decay", "selection", "translation", "anchors", "question", "similar_to"]
 # The four token counts of a headless run's `usage`: what was written, read and cached.
 USAGE = ["input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"]
@@ -115,8 +116,9 @@ def stamp(draft: dict, paper: dict, cfg: dict, similar: list[str]) -> dict:
              "source": f"{names} ({paper['year']}), '{paper['title']}', {paper['venue']} — "
                        f"{paper['url']} ({paper['read']} read)",
              "verified": schema.READS[paper["read"]], "read": paper["read"],
-             "overlaps_is": selection.overlap(chosen["sample_from"], chosen["sample_to"],
-                                              selection.symbols(draft, cfg["classes"])),
+             **{f"overlaps_{k}": selection.overlap(chosen["sample_from"], chosen["sample_to"],
+                                                   selection.symbols(draft, cfg["classes"]), seg)
+                for k, seg in (("is", "build"), ("oos1", "oos1"), ("oos2", "oos2"))},
              "similar_to": similar}
     if paper["source"] == "github":    # never the draft's word: a repository is not a paper
         entry["grade"] = f"code repository ({paper['venue']})"

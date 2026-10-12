@@ -2,6 +2,7 @@
 """Install authored custom blocks or random groups into a stopped SQX install's settings."""
 
 import argparse
+import os
 import shutil
 import time
 from pathlib import Path
@@ -9,6 +10,7 @@ from xml.etree import ElementTree
 
 from core import worker
 from core.paths import MASTER, WORKERS
+from sqx.blocks import taxonomy
 
 CUSTOM_REL = "user/settings/customBlocks.xml"
 GROUPS_REL = "user/settings/blockGroups.xml"
@@ -53,6 +55,30 @@ def store_of(authored: Path) -> tuple[str, str]:
     return STORES[ElementTree.parse(authored).getroot()[0].tag]
 
 
+def validate(blocks: Path, store: Path, attr: str) -> None:
+    """Refuse an authored XML that does not look like what the store already holds.
+
+    Raises:
+        SystemExit: One line naming the first problem; nothing has been written.
+    """
+    try:
+        new = ElementTree.parse(blocks).getroot()
+        old = ElementTree.parse(store).getroot()
+    except (ElementTree.ParseError, OSError) as err:
+        raise SystemExit(f"refused {blocks.name}: cannot read it or the store ({err})")
+    shape = {c.tag for c in old}
+    for item in new:
+        if item.tag not in shape:
+            raise SystemExit(f"refused {blocks.name}: <{item.tag}> is not a <{'/'.join(shape)}> "
+                             f"of {store.name}")
+        key = item.get(attr)
+        if not key or (attr == "key" and not key.startswith("CBlock_")):
+            raise SystemExit(f"refused {blocks.name}: a <{item.tag}> has {attr}={key!r}, "
+                             "custom blocks need a CBlock_ key")
+    if not len(new):
+        raise SystemExit(f"refused {blocks.name}: it holds no elements")
+
+
 def install(blocks: Path, into: Path) -> dict[str, list[str]]:
     """Add or replace custom blocks or random groups in one install's store.
 
@@ -67,6 +93,7 @@ def install(blocks: Path, into: Path) -> dict[str, list[str]]:
     """
     rel, attr = store_of(blocks)
     store = into / rel
+    validate(blocks, store, attr)
     tree = ElementTree.parse(store)
     root = tree.getroot()
     present = {item.get(attr): item for item in root}
@@ -82,7 +109,9 @@ def install(blocks: Path, into: Path) -> dict[str, list[str]]:
         root.append(item)
 
     ElementTree.indent(tree, space="  ")
-    tree.write(store, encoding="UTF-8", xml_declaration=True)
+    tmp = store.with_name(store.name + ".tmp")
+    tree.write(tmp, encoding="UTF-8", xml_declaration=True)
+    os.replace(tmp, store)
     return out
 
 
@@ -110,6 +139,11 @@ def main() -> None:
     total = len(ElementTree.parse(target["path"] / rel).getroot())
     print(f"{target['path'].name}: added {done['added']}, replaced {done['replaced']}")
     print(f"  {Path(rel).name} now holds {total}; previous copy kept at {kept}")
+    try:
+        taxonomy.refresh(args.role)
+    except (FileNotFoundError, KeyError, ValueError) as err:    # donor or install files absent
+        print(f"  taxonomy NOT refreshed ({err!r}): run python3 -m sqx.blocks.taxonomy "
+              f"--role {args.role}")
 
 
 if __name__ == "__main__":

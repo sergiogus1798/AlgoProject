@@ -5,6 +5,8 @@ import re
 from xml.etree import ElementTree
 
 DELETE_FAILED = re.compile(r"<DeleteFailedStrategies>\w+")
+# Never switched on, in any project or task (owner, 2026-10-11).
+MC_MANIPULATION = re.compile(r'(<MonteCarloManipulation )use="true"')
 
 
 def member_of(config: str, title: str) -> str | None:
@@ -119,3 +121,8 @@ def others_on(text: str, keep: str) -> list[str]:
     block = re.search(r"<CrossChecks\b.*?</CrossChecks>", text, re.S)
     return [child.tag for child in ElementTree.fromstring(block.group(0))
             if child.get("use") == "true" and child.tag != keep]
+
+
+def mc_manipulation_on(text: str) -> bool:
+    """Whether a task XML has the forbidden MonteCarloManipulation cross-check switched on."""
+    return bool(MC_MANIPULATION.search(text))

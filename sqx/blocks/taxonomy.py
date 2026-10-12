@@ -162,15 +162,25 @@ def main() -> None:
                     help="the project.cfx whose Build task lists the roles")
     ap.add_argument("--out", type=Path, default=TAXONOMY)
     args = ap.parse_args()
+    refresh(args.role, args.donor, args.out)
 
-    vocab = vocabulary(installs()[args.role])
-    roles = builder_roles(args.donor)
+
+def refresh(role: str, donor: Path = DONOR, out: Path = TAXONOMY) -> None:
+    """Re-read one install's vocabulary and rewrite the taxonomy file, keeping every label.
+
+    Args:
+        role: Install whose files are read (`installs()` key); only its files, never its API.
+        donor: The project.cfx whose Build task lists the roles; must exist.
+        out: The taxonomy file.
+    """
+    vocab = vocabulary(installs()[role])
+    roles = builder_roles(donor)
     newer = with_newer_own(roles, vocab)
-    taxonomy, added, dropped = merge(grouped(vocab, roles), read(args.out))
-    total = write(args.out, taxonomy)
+    taxonomy, added, dropped = merge(grouped(vocab, roles), read(out))
+    total = write(out, taxonomy)
     c = counts(taxonomy)
 
-    print(f"{args.out}: {total} bloques en {len(taxonomy)} categorías, leídos de "
+    print(f"{out}: {total} bloques en {len(taxonomy)} categorías, leídos de "
           f"{vocab['install']}")
     print(f"  papeles   señal {c['signal']} · indicador {c['indicator']} · nivel {c['level']}")
     print(f"  etiquetas {c['labelled']} puestas, {total - c['labelled']} por poner")

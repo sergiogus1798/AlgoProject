@@ -167,7 +167,6 @@ def build(name: str, template: Path | None, symbol: str, role: str, timeframe: s
                  "setups": {n: c.get("setups", 0) for n, (_, c) in costs.items()}}
 
         refuse(result, final, donor_feed, replaced)
-
         out.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(staged), str(out))
     return result
@@ -216,6 +215,8 @@ def main() -> None:
         raise SystemExit(f"{a.template.name} abre operaciones en {sides or 'ninguna dirección'}: "
                          "una plantilla, y un build, van en UNA sola dirección, long o short "
                          "(regla dura del dueño, 2026-10-01).")
+    if gate := buildrules.early_gates(a.name, a.role, a.template, a.workflow, a.timeframe):
+        raise SystemExit("\n".join(gate))
     if a.template and (over := buildrules.over_the_cap(a.template, doctrine()["complexity"])):
         raise SystemExit("\n".join(over))
     asset = load(a.symbol)
@@ -231,8 +232,7 @@ def main() -> None:
     if stop:
         raise SystemExit("\n".join(stop))
     borrow = a.session_from or source.pick(a.donor, asset["session"], asset["sqx_symbol"])
-    # `build` stages the project outside any install and moves it in only once every gate
-    # has passed (`refuse`, inside build()) — a raise here leaves nothing installed.
+    # `build` stages outside the install and moves in only after every gate (`refuse`).
     done = build(a.name, a.template, a.symbol, a.role, a.timeframe,
                  *caps(a.name, a.max_strategies, a.minutes), a.donor, a.segment, tuple(a.tasks.split(',')),
                  set(a.only.split(',')) if a.only else None, borrow,

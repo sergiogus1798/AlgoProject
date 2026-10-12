@@ -73,7 +73,7 @@ def pending(data: dict) -> list[str]:
         """Whether this field still has a real decision missing."""
         use = data["costs"][field]["use"]
         if isinstance(use, dict):
-            return any(v["value"] is None for v in use.values())
+            return any((use.get(seg) or {}).get("value") is None for seg in data["segments"])
         return use is None
 
     return [k for k in REQUIRED[data["class"]] if blocked(k)]

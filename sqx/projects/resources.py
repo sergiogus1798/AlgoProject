@@ -7,6 +7,7 @@ from pathlib import Path
 
 from core.symbols import current
 from sqx.projects import registryxml
+from sqx.projects.crosschecks import mc_manipulation_on
 
 SYMBOL = re.compile(r'<Symbol\b[^>]*?name="([^"]+)"[^>]*?>.*?</Symbol>', re.S)
 CHART = re.compile(r'<Chart\b[^>]*?symbol="([^"]+)"')
@@ -134,12 +135,17 @@ def refuse(result: dict, final: dict[str, bytes], donor_feed: str, replaced: str
         replaced: What `borrow_symbol` actually replaced, or None when no swap ran.
 
     Raises:
-        SystemExit: On a template that would be silently ignored, a task with zero Setups
+        SystemExit: On a task with MonteCarloManipulation on, a template that would be silently ignored, a task with zero Setups
             costed on the target feed, or the donor's own feed still readable in the output
             after a swap ran. `configure`'s per-task counts can each read as success while
             the project as a whole still trades the wrong market — OPEN.md issues 34-35, the
             USDJPY clone that built on gold with nothing in SQX complaining.
     """
+    on = sorted(m for m, blob in final.items()
+                if m.endswith(".xml") and mc_manipulation_on(blob.decode("utf-8")))
+    if on:
+        raise SystemExit(f"MonteCarloManipulation está encendido en {', '.join(on)}: no se usa "
+                         "nunca (dueño, 2026-10-11). Apágalo: python3 -m sqx.projects.rankings <cfx> --mc-off")
     if result["template_ignored"]:
         raise SystemExit("the template would be IGNORED: " + "; ".join(result["template_ignored"]))
     unpriced = [m for m, n in result["setups"].items() if not n]

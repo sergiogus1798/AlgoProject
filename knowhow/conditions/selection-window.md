@@ -15,7 +15,7 @@ tag: 🔬  date: 2026-09-17  see: conditions/retest-additional-markets, conditio
 | resultType | sampleType | active |
 |---|---|---|
 | `main`, `WhatIf`, `RetestWithHigherPrecision`, `MonteCarloRetest` | 127 (2008–2022) | 8 |
-| `WalkForwardOptimization`, `MonteCarloManipulation` | 10 (IS) | 10 |
+| `WalkForwardOptimization`, `MonteCarloManipulation` (never switched on, owner 2026-10-11) | 10 (IS) | 10 |
 | `WalkForwardMatrix` | 20 (OOS) | 2 — `NetProfit > 0` |
 | `RetestOnAdditionalMarkets` | 127 | 1 — `ProfitFactor > 1.5` |
 

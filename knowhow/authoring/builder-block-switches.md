@@ -1,7 +1,7 @@
 ---
 q: What does `<BuildingBlocks>` in the Build task gate: free holes only, or fixed blocks too?
 kw: which blocks can the builder sample; stop/limit entry blocks with market orders; clock calendar blocks never on; union of two palettes; BuildingBlocks in Build task use weight category; signals indicators stopLimitBlocks; use=false ignored by group-bound hole; fixed block outside switches; frozen donor BuildingBlocks stale; talib unreachable
-tag: 🔬  date: 2026-10-04  see: authoring/block-vocabulary, authoring/holes-groups-randomcondition, authoring/simple-strategy-build-xml
+tag: 🔬  date: 2026-10-11  see: authoring/block-vocabulary, authoring/holes-groups-randomcondition, authoring/simple-strategy-build-xml
 ---
 # `<BuildingBlocks>` in the Build task gates only FREE holes and generic generation
 Per-task `<Blocks><BuildingBlocks>`: 844 `<Block key= weight= use= category=>`. A `RandomCondition`
@@ -39,3 +39,4 @@ Donor `AlgoData/projectsBackup/XAUUSD_base_2026-09-21`; `Build-Task3.xml` 2.9 MB
   Keltner, so `CBlock_SqueezeOn` (> 0.5) is compression; the four native `TTMSqueezeMomentum*` fire only while the
   squeeze is ON (breakout, not momentum); CSSA high = range; `CBlock_BullishMarubozu(_2)` compares a body in price
   units and Close/High > 0.9 — not a marubozu, kept out of the five `_v3` palettes (90-150 blocks, same test).
+🔬 2026-10-11 (owner): `buildcensus.CLOCK_NAMES` adds `CBlock_TimeBreakoutLong`, `CBlock_TimeBreakoutLong_2`, `SessionHigh`, `SessionLow`, `SessionOpen` — the regex alone cannot see custom blocks. The builder also refuses a template whose FIXED blocks are clock (`buildrules.clock_fixed`).

@@ -4,6 +4,10 @@
 import re
 from pathlib import Path
 
+from core.assetdata import doctrine
+from core.paths import worker_dir
+from sqx.inspect.template_check import blocks, rules
+from sqx.projects.buildcensus import kind
 from sqx.templates.holes import conditions
 
 # Bars are what SQX stores, hours are what the owner reasons in. A 24-bar cap means one
@@ -138,6 +142,37 @@ def what_to_build(text: str, complexity: dict, exit_required: bool) -> dict[str,
         c = counted[side]
         hi = max(complexity[f"max_{side}_conditions"] - c["fixed"] - c["bound"], 0)
         out[side] = (1, 1) if c["bound"] else (min(0 if c["fixed"] else floor, hi), hi)
+    return out
+
+
+def clock_fixed(template: Path) -> list[str]:
+    """The fixed blocks of a template that read the clock or the calendar (rule 15), sorted."""
+    # `kind` only needs the category for a non-clock key, so any known one will do.
+    return sorted(k for k in blocks(rules(template)) if kind(k, 'category="signals"') == "clock")
+
+
+def exists(name: str, role: str) -> str | None:
+    """Where a live project of this name is (install folder or registry row), else None; a retired row is not live."""
+    folder = worker_dir(role) / "user/projects" / name
+    if folder.exists():
+        return str(folder)
+    from sqx.projects import registry  # here: registry -> rankings -> tasksettings -> this module
+    live = next((r for r in registry.rows() if r["name"] == name and not r["retired"]), None)
+    return f"registry.csv, install {live['install']}" if live else None
+
+
+def early_gates(name: str, role: str, template: Path | None, workflow: bool, timeframe: str) -> list[str]:
+    """Refusals before any work: a live name, a clock block fixed (rule 15), a timeframe crossTF lacks."""
+    live = exists(name, role)
+    out = [f"{name} ya existe ({live}): el builder no reconstruye un proyecto vivo. Elige otro "
+           "nombre, o retira el Test_ con sqx.projects.retire."] if live else []
+    known = doctrine()["crosstf"]["timeframes"]
+    if workflow and timeframe not in known:
+        out.append(f"{timeframe}: sin timeframes extra en assets/_build.yaml (crosstf.timeframes): "
+                   f"un workflow no se puede construir ahí. Conocidos: {', '.join(known)}")
+    if template and (clock := clock_fixed(template)):
+        out.append(f"{template.name}: condiciones fijas que leen el reloj o el calendario "
+                   f"({', '.join(clock)}): regla 15, ningún bloque de hora o fecha.")
     return out
 
 

@@ -13,23 +13,29 @@ def symbols(entry: dict, classes: dict[str, list[str]]) -> list[str]:
                      for s in v] or every
 
 
-def overlap(sample_from: int | None, sample_to: int | None, assets: list[str]) -> str:
-    """The `overlaps_is` line: the authors' sample years against the build windows of the assets.
+def overlap(sample_from: int | None, sample_to: int | None, assets: list[str],
+            segment: str = "build") -> str:
+    """The `overlaps_is` line (`overlaps_oos1`, `overlaps_oos2`): the authors' sample years against
+    one segment's windows of the assets.
 
     Args:
         sample_from, sample_to: First and last year of the paper's sample; None when the
             source does not state it.
         assets: Symbols of `assets/symbols/`.
+        segment: `build`, `oos1` or `oos2`.
 
     Returns:
         "not stated in source" without both years; else yes, partly or no, with the years.
     """
     if sample_from is None or sample_to is None:
         return "not stated in source"
-    spans = [assetdata.window(assetdata.load(s), "build") for s in assets]
+    try:
+        spans = [assetdata.window(assetdata.load(s), segment) for s in assets]
+    except ValueError:    # a segment whose dates are not decided yet
+        return f"not decided: {segment} has no dates"
     lo = min(pd.Timestamp(a, unit="ms").year for a, _ in spans)
     hi = max((pd.Timestamp(b, unit="ms") - pd.Timedelta(days=1)).year for _, b in spans)
-    ours = f"build {lo}-{hi}"
+    ours = f"{segment} {lo}-{hi}"
     if sample_to < lo or sample_from > hi:
         return f"no: sample {sample_from}-{sample_to} is outside {ours}"
     if sample_from <= lo and sample_to >= hi:

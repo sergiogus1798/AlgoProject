@@ -103,9 +103,10 @@ precision:
 # El de alta precisión SÓLO en la construcción — después no pinta nada, porque el propio
 # test ya va a 1 minuto. Y CON EL MISMO SPREAD que el test principal: el donante lo trae
 # a 0 con CustomSpread=true, o sea gratis, que es la versión optimista.
-# Cualquier otro se enciende sólo si el dueño lo pide.
+# Cualquier otro se enciende sólo si el dueño lo pide. MonteCarloManipulation NUNCA
+# (dueño, 2026-10-11): `set_crosschecks` y `resources.refuse` lo rechazan.
 crosschecks:
-  build: [MonteCarloManipulation]
+  build: []
   default: []
   precision: 3
 

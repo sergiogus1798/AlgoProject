@@ -18,7 +18,7 @@ STOP_CONDITIONS = ["databank-full", "passed-count", "time-limit", "never"]
 # The <Block category="orderTypes"> keys of the frozen donor's Build task.
 ORDER_TYPES = ["EnterAtMarket", "EnterAtStop", "EnterAtLimit", "EnterReverseAtMarket"]
 # The cross-checks a task of the donor carries under <CrossChecks>.
-CROSSCHECKS = ["RetestWithHigherPrecision", "RetestOnAdditionalMarkets", "MonteCarloManipulation",
+CROSSCHECKS = ["RetestWithHigherPrecision", "RetestOnAdditionalMarkets",
                "MonteCarloRetest", "OptProfileSysParamPermutation", "SequentialOptimization",
                "WalkForwardOptimization", "WalkForwardMatrix", "WhatIf"]
 # The <MoneyManagement><Method type=…> the donor's tasks carry. `tasksettings.set_money_management`

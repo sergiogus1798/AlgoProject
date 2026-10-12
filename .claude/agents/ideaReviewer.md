@@ -52,8 +52,8 @@ symbol's heading and read that section only: the file is 270 KB).
 2. **Cost.** The move per trade the mechanism can plausibly deliver against the asset's
    round-trip cost (spread + commission + slippage, from the asset's card), at the sheet's
    holding time, and the swap if it holds overnight. An expected move of a few costs is knocked
-   down here, not at step 8. Is the sheet's frequency above the owner's floor of 40-50 trades a
-   year once the builder's free condition has filtered it?
+   down here, not at step 8. Is the sheet's frequency above the owner's floor of 35 trades a
+   year on M15, M30 and H1 and 20 on H4 once the builder's free condition has filtered it?
 3. **Similarity.** Against each idea the memory lists and each template already run in the cell:
    same trigger with another period, the same mechanism under another name, or two of the three
    ideas being one idea twice. Against each closed failure: does this idea walk into what that

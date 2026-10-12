@@ -152,7 +152,13 @@ def main() -> None:
     if broken:
         print(f"ESQUEMA ROTO en assets/symbols/{symbol}.yaml: " + "; ".join(broken))
         sys.exit(3)
-    print(report(symbol))
+    missing = pending(data)
+    try:
+        print(report(symbol))
+    except (TypeError, KeyError):
+        if not missing:
+            raise
+        # an undecided commission leaves no overrides to print: the block below says why
     quality = feed_quality(data)
     if quality:
         print("\n" + "\n".join(quality))
@@ -161,11 +167,10 @@ def main() -> None:
     if segments_pending(data):
         print(f"\nAVISO: los tramos {', '.join(segments_pending(data))} no tienen fechas.\n"
               "Están en assets/_policy.yaml, bajo `segments:`, con los datos que SQX tiene al lado.")
-    loose = mc_pending(data)
+    loose = [] if missing else mc_pending(data)   # it prices the ranges: needs a decided commission
     if loose:
         print(f"\nAVISO: los rangos MC Retest {', '.join(loose)} no están decididos. No bloquea,\n"
               "pero esa tarea del MC Retest no es interpretable hasta que el dueño los fije.")
-    missing = pending(data)
     if missing:
         print(f"\nBLOQUEADO: {', '.join(missing)} sin valor pactado. Pregúntale al dueño.")
         sys.exit(2)

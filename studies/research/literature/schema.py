@@ -9,7 +9,7 @@ from studies.research.literature import anchors
 DRAFT = ["paper", "slug", "asset_class", "assets", "family", "direction", "horizon", "condition",
          "size", "sample", "grade", "needs_clock", "decay", "translation", "selection", "anchors"]
 OPTIONAL = ["question"]
-STAMPED = ["id", "source", "verified", "overlaps_is", "read", "similar_to"]
+STAMPED = ["id", "source", "verified", "overlaps_is", "overlaps_oos1", "overlaps_oos2", "read", "similar_to"]
 FAMILIES = ["tendencia", "ruptura", "reversion", "momentum", "volatilidad", "patron"]
 GRADES = ["peer-reviewed", "working paper", "quantified practitioner test", "code repository"]
 READS = {"full text": "yes (every anchor checked against the stored text)",

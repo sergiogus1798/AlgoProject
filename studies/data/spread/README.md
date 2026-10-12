@@ -8,7 +8,7 @@ asset whose price and spread explode, and a forex pair supposed to stay put. One
 - **Step 4 — describe the spread.** Per asset, independent of any strategy: the spread of every
   minute of Darwinex's ticks, by year in points and in basis points of price, by hour; whether
   the relative spread is constant (owner's ±20 %); if not, which model reconstructs it best back
-  to Dukascopy's first day; and the cost each segment should carry in SQX, times the owner's 1.25.
+  to Dukascopy's first day; and the cost each segment should carry in SQX, times the safety factor (`safety.factor` of the ledger, 1.0 since 2026-10-04).
 
 ```
 core.tickfile ─▶ inputs ─▶ measure ─▶ verdict (constancy, model ◀─ model.MODELS) ─▶ asset / scan     step 4
@@ -68,7 +68,7 @@ core.tickfile ─▶ inputs ─▶ measure ─▶ verdict (constancy, model ◀�
 - **The spread before October 2017 is modelled, never measured.** The build segment
   (2008–2017) is 97 % model. The validation measures the model on 2017–2026 only; brokers'
   spreads were plausibly wider before, so the reconstruction there is more likely short than
-  long — the factor 1.25 is the only margin against it.
+  long — the safety factor (1.0 since 2026-10-04, no margin) does not cover it.
 - **USDJPY's chosen model leans on the price level**, which over 2017–2026 moved with time;
   back in 2011–2012 (USDJPY at 76–80) it predicts the thinnest spreads of all. See
   `POSSIBLE_IMPROVEMENTS.md`.

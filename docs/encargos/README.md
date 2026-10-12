@@ -55,6 +55,20 @@ Los nueve son **planes vivos**: llevan tabla de estado y bitácora, y cada sesi�
 | `55-mt5-paso-26-y-flota.md` | paso 26: el test en verde, el drawdown flotante con M1, una superviviente real verificada y el pool que lee la cartera; flota: paquete de despliegue con perfil `.chr`, registro de magics, acciones sobre la VPS, exportador de carteras y conciliación con las diez cuentas | una superviviente real; la VPS; OPEN.md #78 |
 | `56-lecturas-nuevas.md` | cinco lecturas sueltas, cada una despachable por separado: estacionalidad, señal por plantilla, replay de operaciones, cerebro con probabilidades y —aparcado por el dueño— alfa y beta | lo ya exportado; preguntas del dueño por frente |
 | `57-gorilla-en-la-ventana.md` | fase 1: bloque «custodio_gorilla» en «En marcha» leyendo `/proc` por SSH (sólo mirar); fase 2: selector de servidor en los tres lanzadores, bloqueada por las respuestas del dueño | regla 3, regla 12 |
+| `58-mcpt-fabrica.md` | MCPT de la fábrica: el generador de series sintéticas (volteo de signo alrededor de la deriva anual) en el repo y validado, el símbolo SYN reimportado en el worker, la fábrica entera K = 5 veces sobre el real y K = 5 sobre ruido, y el veredicto por configuración (FDR por etapa, lift por paso, TFP del paso 8 frente al 5 %, repetibilidad); primera configuración XAUUSD H1 ruptura | la propuesta del dueño (`docs/AgentPDFs/criterios-mcpt-fabrica-propuesta-2026-10-12.md`); dos servidores libres ~14 h; preguntas §8 |
+
+## Tanda del 2026-10-11 — de la revisión del dueño de los pasos 1 a 7
+
+Salen de `~/Desktop/revision-pasos-01-07-2026-10-11.md` (cifras de los dossiers
+`docs/AgentPDFs/criterios-implementados-2026-10-12{1..7}-*-2026-10-08.md`), corregida con lo que el código dice ese día: el
+suelo de 35 operaciones al año y la retirada de `MonteCarloManipulation` ya estaban hechos y no llevan encargo.
+
+| fichero | qué construye | depende de |
+|---|---|---|
+| `59-politica-de-costes.md` | el recuento de estrategias que cambian de signo entre 304, 747 y 1.000 puntos (NIKKEI225, `build`) sobre una cosecha ya hecha, y después cinco decisiones del dueño ejecutadas: spread histórico de los índices, la hora del rollover, swap abonado a 0, el comando que calcula el método vigente y el coste de las salidas por stop | nada para el recuento; una respuesta del dueño por parte |
+| `60-estudio-del-build.md` | métrica de fitness × genético/aleatorio, ≥ 3 réplicas por brazo en una celda nueva con `criteria.yaml` congelado; la medida es supervivientes del paso 8 menos el control de monos, registrada por celda y plantilla; el resultado queda escrito en `_build.yaml` | la celda, las métricas y el brazo aleatorio (dueño); el custodio libre 14-30 h; el mono por el paso 8 (encargo 53 si falta la pieza) |
+| `61-money-management-por-stop.md` | las cinco comprobaciones antes de pasar al money management por stop loss (mismo ATR, tope de lotes, huecos, el EA de MT5, dónde se pone) y una recomendación; no cambia nada | nada; sólo lectura |
+| `62-registro-unico-de-ya-probado.md` | un comando de sólo lectura que responde «¿se probó esta celda?» contando los `Test_` y los tramos gastados, y las tablas de antes y después de dos cambios de estadística que decide el dueño: N por serie de precios y BH por familia fijada en la propuesta | nada para el comando y las tablas; el sí del dueño para aplicar |
 
 ## Adónde fue cada encargo viejo
 

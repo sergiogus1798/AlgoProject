@@ -8,7 +8,7 @@ from studies.research.memory import sources
 COLUMNS = ["idea", "symbol", "timeframe", "direction", "date", "rank", "hypotheses_measured",
            "origin", "from_book", "chosen", "attempts", "file"]
 HEADING = re.compile(r"^### Idea (\d+)[^—\n]*— `(\w+)` · (M15|M30|H1|H4|D1)\b(.*)$", re.M)
-HYPOTHESES = re.compile(r"Hip[oó]tesis medidas:?\s*\**\s*(\d+)")
+HYPOTHESES = re.compile(r"Hip[oó]tesis medidas(?: en total)?[ \t*]*:?[ \t*]*(\d+)")
 ORIGIN = re.compile(r"^\W*Origen:?\W*\s*(.+)$", re.M | re.I)
 PUBLISHED = ("libro", "bibliograf", "paper")    # an origin that carries its author's trials
 

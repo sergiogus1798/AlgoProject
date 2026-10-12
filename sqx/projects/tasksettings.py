@@ -146,6 +146,8 @@ def set_crosschecks(text: str, cc: dict, spread: float, enabled: list) -> str:
         retest carries a <Spread> of its own under CustomSpread: the donor ships it at
         zero, which reruns the strategy for free and calls the result a robustness check.
     """
+    if "MonteCarloManipulation" in enabled:
+        raise SystemExit("MonteCarloManipulation no se enciende nunca (dueño, 2026-10-11): quítalo de la lista.")
     found = CROSSCHECKS.search(text)
     if not found:
         return text

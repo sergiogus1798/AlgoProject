@@ -12,6 +12,9 @@ from sqx.templates.holes import conditions
 # Rule 15 (owner, 2026-10-02): nothing that reads the clock or the calendar. Every such block
 # the builder can sample is a native of SQX's «Bar And Time» category under one of these names.
 CLOCK = re.compile(r"^(Current|Bar)(Hour|Minute|DayOf|WeekOf|Month|Time)|^IsMonth")
+# Custom blocks that read the session or the clock, forbidden like the natives (owner, 2026-10-11).
+CLOCK_NAMES = frozenset({"CBlock_TimeBreakoutLong", "CBlock_TimeBreakoutLong_2",
+                         "SessionHigh", "SessionLow", "SessionOpen"})
 # The Build's own `category` per block → what it is to a strategy. `stopLimitBlocks` is the
 # price of a stop or limit ENTRY order; whether such an order can be placed at all is
 # `<OrderTypes>` (`EnterAtStop`, `EnterAtLimit`), which `buildrules.set_order_types` governs.
@@ -33,7 +36,8 @@ def kind(key: str, attrs: str) -> str:
         `clock` wins over the category: a clock block is one whether it is a condition
         (`BarHourIs`) or a value (`CurrentHour`).
     """
-    if CLOCK.match(key.rsplit(".", 1)[-1]):
+    name = key.rsplit(".", 1)[-1]
+    if CLOCK.match(name) or name in CLOCK_NAMES:
         return "clock"
     return KINDS[re.search(r'category="([^"]*)"', attrs).group(1)]
 
@@ -55,7 +59,7 @@ def census(cfx: Path) -> dict:
         `entry` and `exit` (min, max conditions of «What to build»), `order_types` and
         `exit_types` switched on, `blocks` (on / of, by `kind`) and `on` (the keys, by kind),
         `generation`, `genetic` (every scalar of `<BuildMode>`), `fitness`, `acceptance`
-        (the active `<Rankings>` conditions), `mc_manipulation`, and the caps.
+        (the active `<Rankings>` conditions), `mc_manipulation` (must read false: the cross-check is never used, owner 2026-10-11), and the caps.
     """
     with zipfile.ZipFile(cfx) as z:
         member = next(n for n in z.namelist() if n.startswith("Build-"))

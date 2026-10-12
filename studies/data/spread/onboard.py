@@ -104,7 +104,15 @@ def apply(p: dict, cfg: dict, spread_only: bool) -> None:
             (`core.assetranges.mc_retest`; owner, 2026-10-04).
     """
     s, day = p["symbol"], "onboard " + pd.Timestamp.now().strftime("%Y-%m-%d")
-    if not (SYMBOLS / f"{s}.yaml").exists():
+    if (SYMBOLS / f"{s}.yaml").exists():
+        # Marker of the newer method: its `why` says «sin factor» (the widest funded firm's
+        # time-weighted % of price, no safety factor; assets/RULES.md). 28 of 28 cards carry it.
+        newer = [f for f in p["spreads"] if "sin factor" in load(s)["costs"].get(f, {}).get("why", "")]
+        if newer:
+            raise SystemExit(f"{s}: NO escrito — {', '.join(newer)} ya llevan el spread del método "
+                             "nuevo (% del precio de la firma fondeada más ancha, sin factor); "
+                             "este módulo lo pisaría con el spread medio de Darwinex")
+    else:
         assetwrite.create(s, p["class"], p["broker"], p["bars"], None, p["instrument"])
     if not spread_only:
         for seg, bounds in p["segments"].items():

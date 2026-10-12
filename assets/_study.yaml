@@ -1,7 +1,7 @@
 # Filtros de aceptación del Build (paso 6): QUÉ estrategia entra en el databank mientras se genera.
 #
 # ⚠️ PROPUESTA DE AGENTE, 2026-10-04 — PROVISIONAL hasta que el dueño la apruebe. Recalibrada en
-# `docs/AgentPDFs/criterios-pasos-6-a-12-2026-10-04.md` §4 sobre 203 poblaciones bien construidas
+# `docs/AgentPDFs/criterios-implementados-2026-10-12.md` §4 sobre 203 poblaciones bien construidas
 # (Simple Strategy, 1..2 condiciones por lado, una paleta por familia) y un bucle de siete rondas de
 # builds con filtros dentro (`AlgoData/scratch/calib2/adaptive/RECIPE.md`).
 #
@@ -63,7 +63,7 @@ symbols: {}
 # ─── Modo calibración ──────────────────────────────────────────────────────────────────
 # `builder --acceptance calibration`: una población SIN seleccionar, para calibrar estos mismos
 # filtros y los criterios del paso 8. Sólo un mínimo absoluto de operaciones y beneficio > 0,
-# y el crosscheck MonteCarloManipulation del build apagado (no filtra nada y gasta CPU).
+# (el crosscheck MonteCarloManipulation no se usa nunca, dueño 2026-10-11).
 # Nunca para un proyecto `Trade_`.
 calibration:
   trades_min: 100

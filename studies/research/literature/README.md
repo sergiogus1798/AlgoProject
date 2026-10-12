@@ -16,7 +16,7 @@ folder, no SQX, no price data**: the measuring is the market profile's
 | `anchors.py` | Whether a quote is verbatim in the stored source at the place named (`abstract`, `p. N`), compared with spaces, hyphens and ligatures folded; `not stated in source` | imported | quote, place, text → errors |
 | `schema.py` | The entry's shape, the vocabulary (families, grades, the nine hard filters), the anchored fields, the clock words, the count of conditions, the open question; `validate` | imported | draft + source → every refusal |
 | `dedupe.py` | The same paper (arXiv id, DOI, title; a short title needs its first author too) and the same rule under another name (an equal `rule` measure in the profile or in another entry, whatever family either is filed under); rules that read alike | imported | paper / draft → what it duplicates |
-| `selection.py` | The assets an entry speaks of, and `overlaps_is`: the authors' sample years against the `build` windows of those assets | imported | entry → symbols, overlap line |
+| `selection.py` | The assets an entry speaks of, and `overlaps_is` / `overlaps_oos1` / `overlaps_oos2`: the authors' sample years against the `build` / `oos1` / `oos2` windows of those assets | imported | entry → symbols, overlap line |
 | `store.py` | The files under `AlgoData/research/literature/`: entries (`edges-*.yaml` by hand, `scout-<day>.yaml` by the scout), `papers.jsonl`, `papers/<key>.txt`, `runs.jsonl` | imported | — |
 | `amend.py` | What a session adds to a stored entry: the owner's answer to its question, and its measures once the condition exists — refused while the question is open, when a name is taken, or when a measure is the same rule as an existing one | imported; `scout measure ID SPECS.yaml`, `report --answer ID N` | entry + specs → the entry rewritten |
 | `rules.md` | The text both the headless calls and the agent are given: nothing is inferred, the hard filters, the draft and its anchors, ambiguity is a stop | read by `calls.py` and by `.claude/agents/literatureScout.md` | — |
@@ -55,7 +55,7 @@ What each scheme cost per paper: `knowhow/market-profile/literature-scout-yield.
   anchor, an abstract-only read quoting a page, and a value that says «not stated in source»
   while its anchor quotes something (or the reverse). What the code cannot check is that the
   *value* says no more than the quote: that is the agent's rule and the owner's reading.
-- **`id`, `source`, `verified`, `read`, `overlaps_is` are stamped** from the register and from
+- **`id`, `source`, `verified`, `read`, `overlaps_is`, `overlaps_oos1`, `overlaps_oos2` are stamped** from the register and from
   `assets/`, never drafted: a draft that carries one is refused.
 - **The clock** (hard rule 15): `needs_clock` must open with `no`, and the translation is
   searched for clock words. **Two conditions at most** (hard rule 14): `translation.conditions`

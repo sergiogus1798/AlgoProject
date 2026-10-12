@@ -2,6 +2,7 @@
 
 import re
 import sqlite3
+import sys
 import zipfile
 from pathlib import Path
 
@@ -56,7 +57,10 @@ def clip(text: str) -> str:
             return m.group(0)
         head = re.match(r"<Symbol\b[^>]*>", m.group(0)).group(0)
         lo, hi = (int(re.search(rf'{k}="(\d+)"', head).group(1)) for k in ("dateFrom", "dateTo"))
+        was = (lo, hi)
         lo, hi = max(lo, held[0] // DAY * DAY), min(hi, held[1])
+        if (lo, hi) != was:
+            print(f"registryxml.clip: {m.group(1)} {was[0]}..{was[1]} -> {lo}..{hi} (feed bars)", file=sys.stderr)
         new = re.sub(r'dateFrom="\d+"', f'dateFrom="{lo}"', head, count=1)
         new = re.sub(r'dateTo="\d+"', f'dateTo="{hi}"', new, count=1)
         return m.group(0).replace(head, new, 1)

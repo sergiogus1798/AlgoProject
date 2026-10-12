@@ -59,6 +59,16 @@ def fill(project: str, role: str, files: list[Path]) -> list[str]:
     return banks
 
 
+def builder_argv(project: str, row: dict, n: int, role: str) -> list[str]:
+    """The builder's command for a registry row; `simple:<side>` is a Simple Strategy, not a file."""
+    kind = row["template"]
+    shape = ["--simple", kind.split(":", 1)[1]] if kind.startswith("simple:") else ["--template", kind]
+    return ["sqx.projects.builder", project, "--purpose",
+            f"Reanudado del almacén con {n} estrategias: {row['purpose']}"[:300],
+            *shape, "--symbol", row["symbol"], "--role", role, "--timeframe", row["timeframe"],
+            "--workflow", "--max-strategies", "1", "--minutes", "1"]
+
+
 def main() -> None:
     """Recreate the project under its own name and load the chosen stored strategies into it."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -80,10 +90,7 @@ def main() -> None:
             raise SystemExit(f"{argv[0]} salió con error: no se reanuda nada")
 
     run("core.assets", row["symbol"])                                     # hard rule 5
-    run("sqx.projects.builder", a.project, "--purpose",
-        f"Reanudado del almacén con {len(picked)} estrategias: {row['purpose']}"[:300],
-        "--template", row["template"], "--symbol", row["symbol"], "--role", a.role,
-        "--timeframe", row["timeframe"], "--workflow", "--max-strategies", "1", "--minutes", "1")
+    run(*builder_argv(a.project, row, len(picked), a.role))
     with tempfile.TemporaryDirectory() as tmp:
         files = []
         for identity, name in picked.items():

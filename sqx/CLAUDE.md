@@ -6,7 +6,7 @@ writing anything that talks to SQX, and `knowhow/export/` before touching an exp
 ## Before authoring anything
 
 ```bash
-python3 -m core.assets <SYMBOL>      # blocking. Non-zero exit means stop and ask
+python3 -m core.assets <SYMBOL>      # blocking. Non-zero exit means stop and ask (exit 2 + BLOQUEADO = an undecided commission, no traceback since 2026-10-11)
 ```
 
 Then say out loud which spread, commission and swap you are applying and where they differ from what

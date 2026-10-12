@@ -1,6 +1,6 @@
 ---
 name: asset-onboard
-description: Add a new asset to assets/ with its whole cost card worked out from data — Darwinex's real spread per segment (measured, modelled back where there are no ticks), slippage at half of it, the owner's default commission and swap for its kind, the triple-swap night, and the MC Retest spread range from the real dispersion. Also refreshes the spreads of an existing asset. Use when the owner says "haz lo mismo para el cruce/índice/metal XXX", asks to add, create or onboard an asset, or asks to compute an asset's spread, slippage, commission or swap.
+description: Add a new asset to assets/ with its whole cost card worked out from data — Darwinex's real spread per segment (measured, modelled back where there are no ticks), slippage at 35 % of it, the owner's default commission and swap for its kind, the triple-swap night, and the MC Retest spread range from the real dispersion. Also refreshes the spreads of an existing asset. Use when the owner says "haz lo mismo para el cruce/índice/metal XXX", asks to add, create or onboard an asset, or asks to compute an asset's spread, slippage, commission or swap.
 ---
 
 # /asset-onboard
@@ -15,9 +15,9 @@ config.**
 | | index | metal | forex |
 |---|---|---|---|
 | segments | build from the first day of data to 2019, oos1 2020–2023, oos2 2024–31/08/2026 | build 2008–2017, oos1 2018–2022, oos2 2023–30/08/2026 ⚠️ | same as metal |
-| spread | mean Darwinex spread of each segment × 1.25, one per segment (`spread_oos2` its own) | same | same — one per segment since 2026-09-30 (owner) |
+| spread | mean Darwinex spread of each segment × `safety.factor` (1.0, no margin; ledger `spread.safety.factor`), one per segment (`spread_oos2` its own) | same | same — one per segment since 2026-09-30 (owner) |
 | build without ticks | **proportional to price** (`relativo`) | the best-validated model | best-validated |
-| slippage | half the spread of its segment | same | same |
+| slippage | 35 % of the spread of its segment (`slippage_share`, `studies/data/spread/config.yaml`) | same | same |
 | commission | 0 | 8 USD/lot round trip → % of notional at Darwinex's last price | 8 USD/lot |
 | swap | worst of FTMO and Hantec per side, live from MT5 (`fundedswap`, owner 2026-10-01): % annual | same | same, in SQX points |
 | triple swap | FRIDAY | WEDNESDAY | WEDNESDAY |
