@@ -24,6 +24,7 @@ LOADERS = {
     "cscv": "studies.optimisation.cscv.inputs.config:load",
     "marketSurfaces": "studies.optimisation.marketSurfaces.inputs.config:load",
     "wfm": "studies.optimisation.wfm.inputs.config:load",
+    "oos2Reading": "studies.optimisation.oos2Reading.inputs:config",
     "blindJoint": "studies.closing.blindJoint.inputs:config",
     "exposure": "studies.closing.exposure.inputs:config",
     # the monkey has no config.yaml of its own: its knobs are the null engine's

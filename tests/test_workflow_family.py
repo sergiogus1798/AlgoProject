@@ -14,7 +14,6 @@ from core import assetdata
 from pipeline.autopilot.resume import builder_argv
 from sqx.projects import registry
 from studies.research.memory import sources
-from studies.transfer.crossmarket.travel import run
 
 OLD = ["name", "kind", "install", "created", "purpose", "symbol", "timeframe", "template", "workflow",
        "retired", "archive", "acceptance"]
@@ -45,7 +44,7 @@ def test_refusal_lists_the_table_and_acceptance_reads_it() -> None:
 def test_old_row_without_the_column_reads_and_survives_a_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """An old file reads (no `family` key); the next record adds the column, old rows empty."""
     path = fake(tmp_path, monkeypatch)
-    assert "family" not in registry.rows()[0] and run._family("Test_old") == ""
+    assert "family" not in registry.rows()[0] and sources.family_of("Test_old") == ""
     registry.record(DONE, "p", "X", "simple:long", "breakout")
     by = {r["name"]: r for r in registry.rows()}
     assert by["Test_old"]["family"] == "" and by["Test_new"]["family"] == "breakout"
@@ -56,10 +55,10 @@ def test_family_resolves_from_the_registry_when_there_is_no_template(tmp_path: P
     """Template archetype first, else the registry's family, else none."""
     fake(tmp_path, monkeypatch)
     registry.record(DONE, "p", "X", "simple:long", "breakout")
-    assert run._family("Test_new") == "breakout" and run._family("Test_unknown") == ""
+    assert sources.family_of("Test_new") == "breakout" and sources.family_of("Test_unknown") == ""
     monkeypatch.setattr(sources, "templates", lambda: {"t1": {"archetype": "momentum"}})
     registry.record({**DONE, "project": "Test_tpl"}, "p", "X", "/x/templates/library/t1/template.sqx")
-    assert run._family("Test_tpl") == "momentum"
+    assert sources.family_of("Test_tpl") == "momentum"
 
 
 def test_resume_passes_the_family() -> None:

@@ -315,6 +315,14 @@ indices) is left unpriced rather than guessed; a `PercentageBased` broker needs 
 validation on each firm's feed) and `weeklyReconciler` (OPEN.md #78) read `pct_now` through — SQX
 workflow tasks never call it, they read `costs.commission.use` instead. → `knowhow/costs/commission-per-broker.md`.
 
+## Live failures — why a strategy left the live protocol (owner, 2026-10-12)
+
+An optional top-level list `live_failures` on an asset's card: one entry per failed row of the
+live protocol's stage A (`portfolio/funded/live`) — `date` (ISO), `strategy` (its name in the live
+register), `row` (the step-26 row: `2`, `3a`, `5`) and `value` (the measured figure). Absent until the
+first failure. Only `core.assetwrite.add_live_failure` writes it; `core.assetcheck.validate` looks at
+`costs`, `mc_retest` and `instrument` only, so the key is not rejected.
+
 ## Adding an asset
 
 From the window: **Nuevo activo**, which asks for the identity, the class and the three

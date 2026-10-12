@@ -108,7 +108,8 @@ def run(inputs: dict, cfg: dict) -> dict:
         facts[name] = chain.facts8(harvest, gate_cfg, edge)
         envelope.progress(40 + 45 * i // len(edges), f"cadena, ventaja {name}")
     facts[REAL] = chain.facts8(inputs["real"], gate_cfg)
-    walked = {name: chain.walk({"8": f}, list(f.index), steps, tags) for name, f in facts.items()}
+    walked = {name: chain.walk({"8": f}, list(f.index), steps, tags, inputs["batches"])
+              for name, f in facts.items()}
     funnel, rules = (pd.concat({name: got[i] for name, got in walked.items()}, names=["nivel"])
                      .reset_index("nivel").reset_index(drop=True) for i in (0, 1))
     for state in criteria.RANK:

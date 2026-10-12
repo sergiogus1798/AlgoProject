@@ -1,0 +1,19 @@
+# The single reading of oos2 (encargo 65 §6; owner, 2026-10-12, D2). Steps 17 and 19 keep judging;
+# this reading cuts in addition. It cuts ONLY by sign (z <= 0); the level z only orders the medoids.
+
+# Centred sign-flip null on the weekly excess series (engines.weekly.flip), one-sided.
+"null":   # quoted: YAML reads a bare null as the empty value
+
+  draws: ledger:oos2Reading.draws    # B; 5,000 is the floor, the owner wants precision (2026-10-12)
+  alpha: ledger:oos2Reading.alpha
+  seed: 20261012
+
+# The hours-restricted monkey of step 8 (engines.nulls.windowed): the mother's trades re-entered
+# at a uniform bar of oos2 at the clock hour of the trade they replace; its mean per week.
+benchmark:
+  rung: timing
+  draws: 2000
+  seed: 20261012
+
+# Looks at oos2 a cell (asset x timeframe x direction x family) may spend; the next one is refused.
+max_looks: ledger:oos2Reading.max_looks

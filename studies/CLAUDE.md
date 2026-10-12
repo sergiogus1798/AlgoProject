@@ -9,7 +9,7 @@ and the catalogue of the window (`docs/AgentPDFs/catalogo-para-la-ui-2026-09-25.
 | `screening/` | of thousands, which deserve to go on? | 7–8 (step 8 judges `gate` alone) | `gate`, `isOos`, `filters`, `replication`, `decay`, `monkeyExcess`, `maeDepth`, `falsePositives` (the chain's negative control), `batches` (several builds of one cell: do they add up?) (+ `analysis/`, their shared maths) |
 | `transfer/` | does the edge work away from where it was built? | 9–12 | `crossmarket`, `crossTF` |
 | `breakage/` | had the world been slightly different, what breaks it? | 13–16 | `mcRetest`, `spp` |
-| `optimisation/` | does optimising buy anything, or is choosing parameters overfitting? | 16.5–19 | `cloud`, `wfc`, `cscv`, `marketSurfaces` (18.5), `wfm` |
+| `optimisation/` | does optimising buy anything, or is choosing parameters overfitting? | 16.5–19 | `cloud`, `wfc`, `cscv`, `marketSurfaces` (18.5), `wfm`, `oos2Reading` (17 + 19, the single cut on oos2) |
 | `closing/` | the final call and the shape of the edge | 20–21 | `blindJoint` (20), `exposure` (21) |
 | `readings/` | what one strategy's result is made of | 8 | `monkey`, `entryQuality`, `edgeCost` (8; `--strategy` standalone) |
 | `data/` | are the inputs fit to judge with? | 4, 8 | `feedQuality` (encargo 17), `spread` (step 4 only: its step-8 reading is gone) |

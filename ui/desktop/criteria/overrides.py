@@ -63,7 +63,7 @@ HELP = {
 
 
 KNOWN = {"name", "fact", "pass", "limbo", "else", "is", "near_median", "limbo_near_median",
-         "by", "all", "any", "missing"}
+         "by", "all", "any", "missing", "alpha", "per"}
 
 
 def told(rule: dict) -> str:
@@ -72,7 +72,8 @@ def told(rule: dict) -> str:
         word, parts = ("Todas", rule["all"]) if "all" in rule else ("Alguna", rule["any"])
         return f"{word} de {len(parts)}:  " + "  /  ".join(told(p) for p in parts)
     test = {"pass": "Aprobado", "fail": "Suspenso"}[rule["is"]] if "is" in rule else \
-        f"±{100 * rule['near_median']:g} % de la mediana" if "near_median" in rule else rule["pass"]
+        f"±{100 * rule['near_median']:g} % de la mediana" if "near_median" in rule else \
+        f"≥ Φ⁻¹(1 − {rule['alpha']:g}/B), B de su celda" if "alpha" in rule else rule["pass"]
     tail = rule["fact"].rsplit(".", 1)[-1]
     # the gate's facts in the funnel's own words, the raw key kept beside as secondary text
     said = f"{label(tail)}   ·   {rule['fact']}" if tail in LABELS else rule["fact"]

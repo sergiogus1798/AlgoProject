@@ -77,6 +77,8 @@ def test(rule: dict) -> tuple[str, str]:
         band = "A ±{:g} % de la mediana".format
         return (band(100 * rule["near_median"]),
                 band(100 * rule["limbo_near_median"]) if "limbo_near_median" in rule else other)
+    if "alpha" in rule:      # per-cell: the judge computes the line from B (criteria.thresholded)
+        return f"≥ Φ⁻¹(1 − {rule['alpha']:g}/B), B = lotes de su celda", other
     return str(rule["pass"]), str(rule.get("limbo", other))
 
 

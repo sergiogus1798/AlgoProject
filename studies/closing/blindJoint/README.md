@@ -20,7 +20,6 @@ config.yaml ─▶ inputs ──────▶ pieces ─▶ measure ───�
 |---|---|---|---|
 | `inputs.py` | The knobs, the blind door (`ledger.gate.allow_read`), the oos2 door (`gate.allow(20, "oos2")`), the trades door (each batch must hold the mother's `trades.parquet`), the mothers' own oos2 days rebuilt close to close from those trades and M1 — refused unless their daily lows reproduce the batch's SQX curve — and each mother's random traders (`random_traders`) | imported | ledger + batches + feed → frame, panel, benchmark |
 | `pieces.py` | Which mothers reached step 20, and what WFC, CSCV and WFM said of each — their own state, never re-derived; a mother missing one is listed and never read | imported | batches + WFM report → population |
-| `benchmark.py` | The expected daily P&L of a random trader with one mother's footprint: the mean of `benchmark.draws` traders drawn by a rung of `engines/nulls/model.py` and priced by `engines/market/reprice.py` | imported | trades + M1 bars + costs → daily series, its Monte Carlo error |
 | `readings.py` | **The open decisions as a registry**: how the three pieces combine, and over whom the StepM counts its search (`unanimidad`, `sin_fallo`, `ninguna`) | imported | states, named → calls |
 | `measure.py` | The excess panel (mother − her random traders' mean) through the SPA and a StepM per reading, one row per mother | imported | inputs → p-values, named, calls |
 | `one.py` | One mother as the contract's data: her three pieces as parts, her call under every reading | imported — the window calls it | row → result |
@@ -61,7 +60,7 @@ label stays in `report.VERDICT`. The `peor` reading («the worst state wins») w
 
 **What it is.** For each mother, `benchmark.draws` traders who each take *her* oos2 trades — the
 same count, the same side, the same lots, each trade's own holding time, the same declared
-costs — at entry bars drawn uniformly over oos2. The benchmark is their **mean** P&L per day,
+costs — at entry bars drawn uniformly over oos2, at the hour of the trade they replace. The benchmark is their **mean** P&L per day,
 and the excess the SPA reads is the mother's day minus that mean. In plain words it is what the
 market pays for being in it that long, on that side, at that size: 🤔 away from the edges of the
 segment it is buy and hold at the mother's *time-averaged* lots, minus her costs. So it discounts
@@ -105,7 +104,7 @@ benchmark's rung, draws and seed.
 
 **Known limits, the ladder's own** (`engines/nulls/README.md`): the random trades may overlap
 where the mother's never do; her lots are kept as they were, carrying the volatility of her real
-entries; entries are uniform over every M1 bar of the feed, not only the hours she trades. The
+entries. Entries are uniform over every M1 bar of oos2 **at the clock hour of the trade each replaces** (the hours null, `engines.nulls.windowed`, owner 2026-10-12; lots stay hers). The
 costs are the asset card's for oos2 — a card recalibrated after the retest moves the benchmark
 by the difference.
 

@@ -55,3 +55,4 @@ tables contradicted the code) and the 2026-09-22 review. All are in git history.
 
 Not covered by `tools/checks.py`: these are hand-triggered deliverables, not generated on every run.
 | `medicion-stop-lejano-2026-10-11` (+pdf) | the owner's dossier: the pre-registered far-stop measurement (NO PASA: 2·X touches 11.55 % of trades, limit 1 %), its calibration, the account-breach table and what it decides (no per-trade stop) | current |
+| `criterios-paso-08-corrida-nula-2026-10-12` (+pdf) | the owner's dossier: step 8 table R3 / StepM 5 % / StepM 10 % / BH 10 % on USATEC H1 ruptura (all four StepM/BH name 0; R3 173), null run in progress (~10 h) | open |

@@ -9,3 +9,4 @@ Split into a folder on 2026-09-29 (`CODESTYLE.md` rule 1, 250 lines). Every call
 | `__init__.py` | One value, one cost with its `why`, one segment's end (`set_segment_end`, the monthly oos2 roll), or a whole asset into the library or onto the retired shelf | — | change → file |
 | `brokers.py` | Replace one asset's `costs.commission.brokers` table — the per-broker figures `commission.use` is picked from | — | brokers dict → file |
 | `markets.py` | `declare_main` gives an asset its own empty Cross Market block; `set_market` fills one category of it (`_markets.yaml`'s `family`/`structural` feeds) | — | feeds → file |
+| `failures.py` | Append one entry (`date`, `strategy`, `row`, `value`) to an asset's `live_failures` list — why the live protocol's stage A took a strategy out (owner, 2026-10-12) | — | failure → file |

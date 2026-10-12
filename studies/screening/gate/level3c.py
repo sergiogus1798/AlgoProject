@@ -80,7 +80,7 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
     labels = tradelevel.calendar(bars.index[inside], cfg["drift"]["window"])
     oos = data["oos"][data["oos"]["identity"].isin(alive)]
     _SHARED.update(oos=dict(tuple(oos.groupby("identity", sort=False))), costs=data["costs"],
-                   grid=windowed.grid(bars, inside, labels), draws=knobs["draws"], seed=seed)
+                   grid=windowed.grid(bars, inside, labels, data.get("session")), draws=knobs["draws"], seed=seed)
     sizes = {identity: len(own) for identity, own in _SHARED["oos"].items()}
     rows = dict(fanout.run(_one, sizes, os.cpu_count()))
     draws.save(data.get("out"), [d for row in rows.values() for d in row.pop(DRAWS)])

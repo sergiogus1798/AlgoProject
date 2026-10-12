@@ -6,7 +6,7 @@ from pipeline.autopilot import blind, closing, finalists, kept, neighbours, surv
 
 # `neighbours` is not the tail's: step 13's T1 batch is dispatched here like the tail's batches.
 KINDS = {"blind", "wfm", "kept", "ledger", "joint", "reading", "finalists", "mt5verify",
-         "neighbours"}
+         "neighbours", "oos2read"}
 
 
 def run(action: dict, project: str, role: str, out: Path, cfg: dict) -> str:
@@ -44,6 +44,8 @@ def run(action: dict, project: str, role: str, out: Path, cfg: dict) -> str:
         return blind.joint(project)
     if kind == "reading":
         return closing.reading(project, action["tests"][0], action["databank"], mothers)
+    if kind == "oos2read":
+        return blind.oos2read(project)
     if kind == "kept":
         return kept.save(project, blind.bank(project))
     return finalists.write(project, mothers, out)

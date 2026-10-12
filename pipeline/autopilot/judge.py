@@ -10,7 +10,7 @@ import yaml
 
 from core import assetdata
 from core.paths import databank_dir
-from ledger import record, study as studymod
+from ledger import cells, record, study as studymod
 from pipeline.autopilot import criteria, facts, survivors
 from sqx.curate import apply_verdict
 from sqx.projects import registry
@@ -148,7 +148,23 @@ def siblings(pop: pd.DataFrame, is_sibling: pd.Series, judged: dict, follow: boo
             for name, w in zip(mine["strategy"], mine["who"])}
 
 
-def ledger_row(project: str, n: str, spec: dict, before: int, after: int, segment: str | None = None) -> None:
+def per_cell(rules: list[dict], project: str) -> tuple[list[dict], dict]:
+    """The rules with each per-cell line (`alpha:`) computed from B, and what to sign in the ledger.
+
+    Returns:
+        (rules, `thresholds`): `{"batches_screened": B, "alpha": ..., "z_min": ...}` for the
+        first per-cell rule, `{}` when the step has none (B is not even read then).
+    """
+    mine = criteria.per_cell(rules)
+    if not mine:
+        return rules, {}
+    b = cells.batches_for(project)
+    return criteria.thresholded(rules, b), {"batches_screened": b, "alpha": mine[0]["alpha"],
+                                            "z_min": criteria.threshold(mine[0]["alpha"], b)}
+
+
+def ledger_row(project: str, n: str, spec: dict, before: int, after: int, segment: str | None = None,
+               thresholds: dict | None = None) -> None:
     """Sign this cut in the ledger: one row, with the sha256 of criteria.yaml (OPEN 1.3 item 2).
 
     `segment:` of the step in criteria.yaml declares what the cut read; oos1 when it does not (steps 8, 10, 11.5, 12, 14, 16 and 20 declare it; others default to oos1)
@@ -160,7 +176,8 @@ def ledger_row(project: str, n: str, spec: dict, before: int, after: int, segmen
     record.log(sid, {"step": float(n), "launched_by": "autopilot", "symbol": who["symbol"],
                      "timeframe": who["timeframe"], "segment": segment or spec.get("segment", "oos1"),
                      "n_in": before, "n_out": after, "criterion": f"criteria.yaml paso {n}",
-                     "config_hash": hashlib.sha256(CRITERIA.read_bytes()).hexdigest()})
+                     "config_hash": hashlib.sha256(CRITERIA.read_bytes()).hexdigest(),
+                     "thresholds": thresholds or None})
 
 
 def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | None = None) -> dict:
@@ -183,7 +200,7 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | 
     found = facts.gather(project, n)
     found.to_parquet(out / "hechos.parquet")
     spec = cfg["steps"].get(n, {})
-    rules = criteria.resolved(spec.get("rules") or [], tags(project))
+    rules, signed = per_cell(criteria.resolved(spec.get("rules") or [], tags(project)), project)
     if not rules and not spec.get("medoids"):
         return {"n": n, "hechos": len(found), "corte": "ninguno: el paso no tiene criterio"}
     if "cut" not in spec:
@@ -217,7 +234,9 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | 
     drops = int((pop["verdict"] == apply_verdict.DROP).sum())
     cut = apply_verdict.apply(project, bank, csv, role) if drops else \
         {"before": len(pop), "after": len(pop)}
-    ledger_row(project, n, spec, cut["before"], cut["after"], segment)
+    ledger_row(project, n, spec, cut["before"], cut["after"], segment, signed)
+    if n == "8":                     # the per-cell counter: this batch was screened on oos1
+        cells.note(project, len(pop))
     kept = (pop["outcome"] == "limbo") & (pop["verdict"] != apply_verdict.DROP) & ~sibling
     limbo = sorted(pop.loc[kept, "strategy"])
     how = "medoides" if len(keep) < len(alive) else "criterios"

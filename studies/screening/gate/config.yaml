@@ -44,7 +44,7 @@ screens:
       a nadie. El valor de la criba es el TAMAÑO del grupo
 
 monkey:
-  draws: 5000        # sorteos por estrategia del mono del nivel 3c
+  draws: 100000      # sorteos por estrategia del mono del nivel 3c. 100.000 (dueño, 2026-10-12, sin límite por cómputo): error Monte Carlo de la z ≈ √((1 + z²/2)/n) ≈ 0,005 con z ≈ 1,6
   timeframe: M30     # solo si la cosecha no trae `TimeFrame [IS]`: las barras de la corrida
   seed:              # raiz de los sorteos del mono. Vacia = nueva en cada corrida; la usada
                      # queda en el scorecard (mono_seed)

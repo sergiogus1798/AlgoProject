@@ -163,16 +163,15 @@ def test_every_population_walks_the_real_criteria_side_by_side() -> None:
                                       ignore_index=True), base)
     got = many.run({"real": real, "gate_cfg": cfg, "nullcfg": null_inputs.config(["nulls.seed=1"]),
                     "steps": yaml.safe_load(judge.CRITERIA.read_text(encoding="utf-8"))["steps"],
-                    "tags": {"H1"}, "source": {"seed": 1, "frozen": False}},
+                    "tags": {"H1"}, "batches": 1, "source": {"seed": 1, "frozen": False}},
                    fp_inputs.config(["population.per_level=40", "monkeys.per_donor=10"]))
     first = got["funnel"][got["funnel"]["step"] == "8"].set_index("nivel")
     assert first["n_in"].to_dict() == {"nula": 40, "0.05": 40, "0.10": 40, "0.15": 40, "reales": 6}
     assert (first["applied"] == first["rules"]).all() and not got["skipped"]
     rules = got["rules"][got["rules"]["applied"]]
-    r3 = rules[rules["label"].str.startswith("drift_excess_t")].set_index("nivel")["pass"]
+    r3 = rules[rules["label"].str.startswith("z del mono")].set_index("nivel")["pass"]
     assert r3["nula"] <= r3["0.05"] <= r3["0.10"] <= r3["0.15"] and r3["0.15"] >= 20
     assert (rules[["pass", "limbo", "fail"]].sum(axis=1) == rules["n_in"]).all()
-    assert rules.loc[rules["label"].str.startswith("is_trades"), "nota"].str.contains("hereda").all()
     assert set(got["facts"].index.get_level_values("nivel")) == set(first.index)
     wide = many.shares(got["rules"], list(first.index), "pass")
     assert list(wide.columns) == ["regla", *first.index] and len(wide) == rules["label"].nunique()

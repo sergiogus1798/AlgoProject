@@ -10,7 +10,7 @@ Sources: `pipeline/autopilot/{plan.py,criteria.yaml,README.md}`, `sqx/projects/{
 | 6 | sqx | task `CONSTRUCCION` | - | `Results` | - |
 | 7 | sqx | task `OOS` (run chained with 6) | `Results` | `OOS` | - |
 | 8 | python | gate, edgeCost, feedQuality, spread, isOos, filters, decay, monkeyExcess, falsePositives, monkey, then profitShape, entryQuality | `OOS` (+ build) | facts | - |
-| 8 | judge | rules of step 8 (R1-R9) + dev draw | facts | `paso-8/` | `OOS` |
+| 8 | judge | rules of step 8 (R1a, R1b, R2, R5c cost, R5d, data quality, delay, R6, R7 and ONE statistical rule: `z_mono >= Φ⁻¹(1 − 0.05/B)`, B = the cell's batches screened; R3, R4a, R5, R5b, R8, R9b are columns) + medoids | facts | `paso-8/` | `OOS` |
 | 9 | sqx | `Retest Markets - Family` | `OOS` (the cut's databank) | `Retest Markets - Family` | - |
 | 10 | python | crossmarket | `Retest Markets - Family` | facts | - |
 | 10 | judge | P1-P9 of encargo 46 (`criteria.yaml` step 10, provisional): `invalid_fraction`, `fixed_distance`, `freq_off`/`freq_off_fraction`, `z_conj`, `z_conj_v2`, `z_minus_market`, `p_breadth`, `tau_half` (over `e_principal`, the main's own e on oos1, computed by crossmarket), `worse`/`worse_fraction`, `z_beta`+`e_end`; the study writes no verdict of its own | facts | `paso-10/` | `Retest Markets - Family` |
@@ -30,8 +30,9 @@ Sources: `pipeline/autopilot/{plan.py,criteria.yaml,README.md}`, `sqx/projects/{
 | 16.5 | variants | `pipeline.autopilot.variants`: wire WFC legs; per mother make (Latin hypercube, 1,000-5,000 variants), execute, equity, collect, export every variant's trades, `variant_trades.parquet`, clear; then the mothers' trades and, with SQX idle, the parameter cloud (`studies.optimisation.cloud.report`) per batch. No rule, cuts nothing (`"16.5"`: `cut: null`) | survivors in `SPP OOS` matched to `SPP IS` | `WFC_Variants` -> `WFC_Build`/`WFC_OOS1`/`WFC_OOS2`; `estudios/cloud.json` (facts `vivos`, `r2_ajustado`, `legible`, `sobol_*`) | - |
 | 17 | blind | wfc: three compositions (`c1` build+oos1 → oos2 decides, `c2`, `c3` annotated); `facts.c1.estado` `pasa` / `limbo` / `no_pasa` (1 / 0 / -1): PASA = order not perverse, top median > 0 AND `p_nivel` ≤ `wfc.level_alpha` (0.05, the level's own sign-flip null); top > 0 without beating the null (or a perverse order) = LIMBO; top ≤ 0 = NO PASA. **oos2 is sealed** by `ledger.gate.seal` unless `python3 -m studies.optimisation.wfc.calibrate` wrote a record with `abre: true` for the current `"17"` entry (2026-10-07: `abre: true`; if the entry changes the seal closes again — report it, never edit the record or the criteria). Judged **without cutting** (`cut: null`): a verdict and a ledger row, nothing deleted; step 20 reads NO PASA as a failure | per mother | `estudios/wfc.json`, `paso-17` results | - |
 | 18 | blind | cscv | per mother | results | - |
-| 18.5 | blind | marketSurfaces | per mother | results | - |
+| 18.5 | blind | marketSurfaces, per mother only where step 17's `descuadre_sqx` < `wfc.sqx_gap_relative` (`blind.skipped`; else skipped with a line, limbo, no cut) | per mother | results | - |
 | 19 | sqx | `WFM`, then its reading and the ledger rows 17-19 | `SPP OOS` | `WFM` | - |
+| 19.5 | oos2read | `oos2Reading` (one look per cell, `studies/optimisation/oos2Reading`), then judge | `19` | `SPP OOS` | `SPP OOS` |
 | 20 | joint | blindJoint, then judge | 17, 18, 18.5, 19 | `paso-20/` | `SPP OOS` |
 | 21 | reading | exposure (describes only: no verdict, no efficiency threshold) | panel `CrossTF_Mothers` (`--panel 21=`) | window results | - |
 | 22 | - | conditionalMap: DELETED 2026-10-11 | - | - | - |
@@ -41,7 +42,7 @@ Sources: `pipeline/autopilot/{plan.py,criteria.yaml,README.md}`, `sqx/projects/{
 
 Notes
 - Variant databanks of 16.5: `WFC_Variants` in; `WFC_Build`, `WFC_OOS1`, `WFC_OOS2` out; emptied after each mother, once its trades are in `variant_trades.parquet`.
-- Only steps 8, 10, 11.5, 12, 14, 16, 20 have a `cut` in `criteria.yaml`; steps 17, 18, 18.5, 19 have `cut: null` (judges and records without deleting); a step with rules and no `cut` stops the run. 16.5 and 21 do not cut.
+- Only steps 8, 10, 11.5, 12, 14, 16, 19.5, 20 have a `cut` in `criteria.yaml`; steps 17, 18, 18.5, 19 have `cut: null`; 19.5 (the single oos2 reading, rule `oos2Reading.z > 0`) is the tail's ONLY cutting step, on `SPP OOS`, and a «solo vivo» cell (exit 3) or a missing fact is limbo, never a cut (judges and records without deleting); a step with rules and no `cut` stops the run. 16.5 and 21 do not cut.
 - The run stops before step 26 (MT5) unless `--mt5-from`, `--mt5-to`, `--mt5-model`, `--mt5-firms` are all given.
 - Outputs: `AlgoData/autopilot/<P>/<stamp>/{estado.txt,resumen.md,tiempos.md,fallo.md,plan.json,paso-<n>/}`.
 - `fallo.md` exists only if the run failed; `estado.txt` last line is `FIN · …` or `FALLO en el paso N: …`.

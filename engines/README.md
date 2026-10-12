@@ -9,7 +9,7 @@ engines and never another study — that is the rule this folder exists to keep.
 | `nulls/` | Random traders with the same opportunity set: the ladder on its own bars, and placement on other markets. `nulls.seed` is `null` by default — `inputs.config()` draws a fresh root from OS entropy every run (owner, 2026-09-29); an explicit int — `--seed <int>` on `monkey.report` and `gate.report`, `--set nulls.seed=<int>`, or `config.yaml` — reproduces one run. Every caller records the root it drew (`knowhow/eng/nulls-seed-fresh-per-run.md`). `nulls/windowed.py` — the gate's window-bound, cost-charged monkey | monkey, gate, crossTF, entry quality, cross-market |
 | `resample/` | Reorderings and resamplings of a trade sequence | Monte Carlo, the cross-market portfolio |
 | `regimes/` | The volatility state a trade was opened into | Monte Carlo |
-| `inference/` | Correcting for the search: Benjamini-Hochberg, the excess over chance, SPA and StepM | the gate, the population readings, the snooping screen |
+| `inference/` | Correcting for the search: Benjamini-Hochberg, the excess over chance, SPA and StepM, the local FDR of a lot of z (`localfdr`, the gate's `p_fdr`) | the gate, the population readings, the snooping screen |
 | `weekly/` | Trades into weeks × units of excess, gross and net, each trade whole in the week it closes in; the shared-sign weekly flip null, its p-values and a bulk Spearman | the WFC, the CSCV, market surfaces, the WFM |
 | `variants/` | A retested variant batch read back: usable points, the in-sample / out-of-sample boundary, the per-period panel, the filters, duplicates by fingerprint, the excess over drift | the WFC, the CSCV, the WFM |
 

@@ -41,6 +41,7 @@
 - `mcretest-original-among-reruns` — Is the MC Retest's «the original is not an outlier of its re-runs» usable as a criterion?
 - `mintrl-explosion-is-correct` — What does MinTRL return when the Sharpe is below the benchmark Sharpe?
 - `monkey-reprice-audit` — Why does the monkey's repriced net exceed SQX's P/L, and what convention reproduces SQX from bars?
+- `monkey-restricted-to-the-strategys-hours` — What does restricting the gate monkey to the strategy's own entry hours do to z_mono, and what is its MC error?
 - `monkey-size-carries-donor-volatility` — Why do random-entry monkeys fail the floating-risk rules (worst MAE, worst day in R) far more than real strategies?
 - `oos1-oos2-persistence` — How much of a strategy's per-trade Sharpe on oos1 persists on oos2, and what is a step-8 line worth there?
 - `pair-filters-false-rejection` — Why do pair filters (tail, rolling max, co-loss) reject independent strategies?

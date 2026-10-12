@@ -129,7 +129,7 @@ FACTS = {"8": facts8}
 
 
 def walk(facts: dict[str, pd.DataFrame], who: list[str], steps: dict,
-         tags: set[str]) -> tuple[pd.DataFrame, pd.DataFrame]:
+         tags: set[str], batches: int = 1) -> tuple[pd.DataFrame, pd.DataFrame]:
     """A population through every step of criteria.yaml, in its order.
 
     Args:
@@ -137,6 +137,7 @@ def walk(facts: dict[str, pd.DataFrame], who: list[str], steps: dict,
         who: Everyone who enters the first step.
         steps: `steps` of criteria.yaml.
         tags: What the project is, for a rule's `by`.
+        batches: B, for a per-cell rule's line (`criteria.thresholded`): the project's cell.
 
     Returns:
         The funnel — per step `n_in`, `pass`, `limbo`, `n_out` (pass + limbo: a limbo goes
@@ -148,7 +149,7 @@ def walk(facts: dict[str, pd.DataFrame], who: list[str], steps: dict,
     """
     alive, funnel, per_rule = list(who), [], []
     for n, spec in steps.items():
-        rules = criteria.resolved(spec.get("rules") or [], tags)
+        rules = criteria.thresholded(criteria.resolved(spec.get("rules") or [], tags), batches)
         have = facts[n] if n in facts else pd.DataFrame()
         cols, medians = {key: have[key] for key in have}, have.reindex(alive).median()
         standing, doubt, applied = set(alive), set(), 0

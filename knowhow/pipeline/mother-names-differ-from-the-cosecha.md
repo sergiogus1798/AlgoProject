@@ -7,7 +7,7 @@ tag: 🔬  date: 2026-10-09  see: pipeline/monkeyexcess-after-the-cut
 The autopilot's mothers (`survivors.mothers`) are named as the databank they survive in spells them, and
 a retest respells a strategy («Strategy 1.16.441(1)»). Steps 21-22 run one study per mother on the
 databank the owner named (`--panel 22=Results`), whose cosecha knows her as «Strategy 1.16.441»: the
-name never matched and `conditionalMap.inputs.identity_of` raised a bare IndexError. Since 2026-10-09
+name never matched and `conditionalMap.inputs.identity_of [step 22 deleted 2026-10-11]` raised a bare IndexError. Since 2026-10-09
 `closing.reading` asks `core.study.identity.spelt` for the cosecha's own name of each mother's identity,
 and keeps her name where no cosecha paired the databank (step 21 on `CrossTF_Mothers`, an export).
 Any new per-mother study on a harvested databank must go through the identity, never the name.

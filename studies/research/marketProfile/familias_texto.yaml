@@ -243,6 +243,21 @@ conditions:
   williams: cierre D1 > el de hace 30 días y < el de hace 9
   d1_down3: 3 cierres D1 bajistas seguidos
   keltner225: cierre a 2,25 ATR bajo su media de 20
+  trbo50: el cierre supera el máximo de los 50 cierres previos (la vela en que ocurre)
+  under_c50: cierre bajo el mínimo de los 50 cierres previos
+  trbo150: el cierre supera el máximo de los 150 cierres previos (la vela en que ocurre)
+  under_c150: cierre bajo el mínimo de los 150 cierres previos
+  trbo200: el cierre supera el máximo de los 200 cierres previos (la vela en que ocurre)
+  under_c200: cierre bajo el mínimo de los 200 cierres previos
+  d1_over_sma50: cierre D1 sobre su SMA50
+  d1_over_sma50_1pc: cierre D1 más de un 1 % sobre su SMA50
+  d1_under_sma50_1pc: cierre D1 más de un 1 % bajo su SMA50
+  d1_over_sma150: cierre D1 sobre su SMA150
+  d1_over_sma150_1pc: cierre D1 más de un 1 % sobre su SMA150
+  d1_under_sma150_1pc: cierre D1 más de un 1 % bajo su SMA150
+  d1_sma5_over_150: SMA5 D1 sobre su SMA150
+  d1_sma5_over_150_1pc: SMA5 D1 más de un 1 % sobre su SMA150
+  d1_sma5_under_150_1pc: SMA5 D1 más de un 1 % bajo su SMA150
 measures:
   look: largo si las últimas L velas subieron, mantenido H
   fitschen: cierre 1 desv. sobre su media de 20, 5 velas

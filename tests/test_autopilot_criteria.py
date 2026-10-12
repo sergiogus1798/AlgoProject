@@ -99,10 +99,27 @@ def test_compound_rule() -> None:
     assert criteria.reads([by, {"fact": "net", "pass": "> 0"}]) == {"t", "ok", "net"}
 
 
+def test_per_cell_rule_is_computed_from_b_and_signed() -> None:
+    """An `alpha` rule has no number in the yaml: the judge gives it Φ⁻¹(1 − alpha/B) from the
+    project's B (here faked as 2) and hands the ledger the B and the line it used; a step with
+    no per-cell rule signs nothing and never reads B (compounds are walked too)."""
+    z = {"fact": "z", "alpha": 0.05, "per": "cell", "missing": "fail"}
+    plain = {"fact": "net", "pass": "> 0"}
+    real, judge.cells.batches_for = judge.cells.batches_for, lambda project: 2
+    try:
+        rules, signed = judge.per_cell([plain, {"all": [z, plain]}], "P")
+        assert judge.per_cell([plain], "P") == ([plain], {})
+    finally:
+        judge.cells.batches_for = real
+    assert signed["batches_screened"] == 2 and round(signed["z_min"], 3) == 1.96
+    assert rules[0] == plain and rules[1]["all"][0] == {"fact": "z", "missing": "fail", "pass": f">= {signed['z_min']!r}"}
+
+
 if __name__ == "__main__":
     test_by_takes_the_first_entry_the_project_matches()
     test_outcomes_worst_rule_and_missing_is_limbo()
     test_tags_come_from_the_registry()
     test_verdict_rule()
     test_compound_rule()
+    test_per_cell_rule_is_computed_from_b_and_signed()
     print("ok")

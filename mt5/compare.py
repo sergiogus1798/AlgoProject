@@ -73,6 +73,12 @@ def window(trades: pd.DataFrame, start: str, end: str) -> pd.DataFrame:
     return trades[(t >= pd.Timestamp(start)) & (t < pd.Timestamp(end) + pd.Timedelta(days=1))]
 
 
+def mean_loss(sqx: pd.DataFrame) -> float | None:
+    """1 R of step 26: the mean losing trade of the SQX backtest (None without a loss)."""
+    loss = sqx.loc[sqx["Profit/Loss"] < 0, "Profit/Loss"].abs()
+    return float(loss.mean()) if len(loss) else None
+
+
 def in_points(trades: pd.DataFrame, instrument: dict) -> pd.DataFrame:
     """Each trade's P&L from its price move, at ONE point value for SQX and MT5 alike.
 

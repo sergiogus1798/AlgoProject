@@ -23,8 +23,14 @@ def atr_sized(kept: dict, enter: np.ndarray) -> np.ndarray:
     return windowed.atr_sized(known, located["entry"], located["size"], enter)
 
 
-SIZING = {"donor": lambda kept, enter, sizes: sizes,
-          "atr": lambda kept, enter, sizes: atr_sized(kept, enter)}
+def donor_sized(kept: dict, enter: np.ndarray, flat: bool) -> np.ndarray:
+    """The donor's lots on every drawn trade (`enter` is the raveled draws x trades), or their mean
+    when the rung strips the sizing."""
+    size = kept["located"]["size"]
+    return np.full(enter.shape, size.mean()) if flat else np.tile(size, enter.size // size.size)
+
+
+SIZING = {"donor": donor_sized, "atr": lambda kept, enter, flat: atr_sized(kept, enter)}
 
 
 def monkeys(donor: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict, knobs: dict,
@@ -37,7 +43,8 @@ def monkeys(donor: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict, knobs: dict
         nullcfg: What engines.nulls.inputs.config() returned; `nulls.seed` is the root.
         knobs: `monkeys` of config.yaml: `rung`, a key of engines.nulls.model.RUNGS (what
             the monkey keeps of the donor); `sizing`, a key of SIZING (`donor`: the sizes
-            the rung drew, `atr`: re-sized at its own entry); `per_donor`, how many.
+            the donor's, or their mean on a rung that strips the sizing;
+            `atr`: re-sized at its own entry); `per_donor`, how many.
         key: The donor's identity. It enters the seed and names the monkeys `<key>#<j>`.
 
     Returns:
@@ -58,10 +65,18 @@ def monkeys(donor: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict, knobs: dict
         corr = min(corr, kept["checks"]["corr"])
         rng = np.random.default_rng([nullcfg["nulls"]["seed"], simulate._stable(key),
                                      model.RUNG_ID[rung], i])
+        # The hours null (owner, 2026-10-12, encargo 65 §5.2): each monkey trade re-enters at a
+        # uniform bar of the donor's window AND at the clock hour of the trade it replaces.
+        at = kept["located"]
+        span = np.arange(at["window"][0], at["window"][1] + 1)
+        shared = windowed.grid(frame, span, np.zeros(span.size, int))
+        mine = windowed.located(shared, at["entry"], at["exit"], at["size"],
+                                np.where(own["Type"].astype(object) == "Buy", 1.0, -1.0),
+                                np.zeros(at["entry"].size, int))
         drawn = {k: np.ascontiguousarray(v).ravel()
-                 for k, v in model.RUNGS[rung](kept["located"], draws, rng).items()}
+                 for k, v in windowed.draw(shared, mine, rung, draws, rng).items()}
         bars, enter = kept["bars"], drawn["entries"]
-        drawn["sizes"] = SIZING[knobs["sizing"]](kept, enter, drawn["sizes"])
+        drawn["sizes"] = SIZING[knobs["sizing"]](kept, enter, windowed.REDRAWS[rung][1])
         assert np.isfinite(drawn["sizes"]).all(), f"{key}: a {sample} trade has no ATR to size by"
         leave, price = barrier.exits(enter, drawn["holds"], bars, {}, "pessimistic")
         pnl = barrier.pnl(enter, leave, price, drawn["sizes"], bars["enter_px"],

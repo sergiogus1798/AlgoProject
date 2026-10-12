@@ -21,8 +21,8 @@ def leaves(rule: dict) -> list[dict]:
     return [leaf for part in parts for leaf in leaves(part)] if parts else [rule]
 
 
-def test_missing_is_fail_in_exactly_the_sanity_rules_and_r3() -> None:
-    """presencia/sanidad and R3 (owner, 2026-10-06: R3 with no data fails) `fail`, every other
+def test_missing_is_fail_in_exactly_the_sanity_rules_and_the_z() -> None:
+    """presencia/sanidad and the z (owner, 2026-10-06: a rule with no data fails; the z took R3's place) `fail`, every other
     rule `limbo`, `pass` only on the four facts that are absent by design."""
     seen = {}
     for spec in judge.settings()["steps"].values():
@@ -31,7 +31,7 @@ def test_missing_is_fail_in_exactly_the_sanity_rules_and_r3() -> None:
                 seen.setdefault(r["fact"], set()).add(r.get("missing", "limbo"))
     assert {k for k, v in seen.items() if "fail" in v} == {
         "gate.scorecard.presencia_passed", "gate.scorecard.sanidad_passed",
-        "gate.scorecard.drift_excess_t"}
+        "gate.scorecard.z_mono"}
     # `pass` only where a fact is absent by design: 18.5's oos2 reading before the blind
     # block, and the WFM's reoptimised rules in modo fijo (owner, 2026-10-07)
     assert {k for k, v in seen.items() if "pass" in v} == {

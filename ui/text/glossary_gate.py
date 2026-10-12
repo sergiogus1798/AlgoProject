@@ -14,7 +14,7 @@ LABELS = {
     "t_a": "t de la calidad de datos", "n_afectadas": "Operaciones afectadas",
     "retraso_ret_min": "Retención con una barra de retraso",
     "retraso_t_delta": "t de la diferencia con retraso", "q_p": "p de la homogeneidad",
-    "dd_p": "p del drawdown", "z_mono": "z del mono",
+    "dd_p": "p del drawdown", "z_mono": "z del mono", "p_fdr": "Probabilidad de no ser azar",
     # the knobs of the gate's config as the Configuración SQX zone names them (`sqx.` prefix)
     "sqx.on": "Encendida", "sqx.window": "Ventana", "sqx.variant": "Variante del término",
     "sqx.se_skew_kurt": "Error estándar con sesgo y curtosis", "sqx.phi_min": "φ mínima",

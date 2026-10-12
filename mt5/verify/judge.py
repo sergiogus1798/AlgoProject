@@ -72,8 +72,7 @@ def rows(sqx: pd.DataFrame, mt5: pd.DataFrame, pairs: pd.DataFrame, deposit: flo
     matched_mt5 = len(hit) / len(mt5) if len(mt5) else None
     both = min(matched or 0.0, matched_mt5 or 0.0) if matched is not None or matched_mt5 is not None else None
     same_exit = float((hit["Close time_mt5"] == hit["Close time"]).mean()) if len(hit) else None
-    losses = sqx.loc[sqx["Profit/Loss"] < 0, "Profit/Loss"].abs()
-    r = float(losses.mean()) if len(losses) else None
+    r = compare.mean_loss(sqx)
     diff = hit["Profit/Loss_mt5"] - hit["Profit/Loss"]
     gap_r = float(diff.abs().mean()) / r if r and len(hit) else None
     a, b = daily(sqx, deposit), daily(mt5, deposit)

@@ -4,6 +4,7 @@ a seed replays bit for bit, and every drawn trade pays the declared spread and s
 import numpy as np
 import pandas as pd
 
+from engines.market.feed.scale import WEEK
 from engines.nulls import windowed
 from studies.screening.analysis import tradelevel
 from studies.screening.gate import level3c
@@ -149,3 +150,44 @@ def test_every_draw_pays_spread_and_slippage_and_stays_in_its_window() -> None:
         assert redraw or (drawn["holds"] == mine["hold"]).all()
         risk = drawn["sizes"] * (1.0 if flat else grid["atr"][drawn["entries"]])
         assert np.allclose(risk, risk.flat[0])
+
+
+def hours_of(grid: dict, entries: np.ndarray) -> np.ndarray:
+    """Clock hour of the bar each entry sits on."""
+    return grid["hour"][entries]
+
+
+def test_monkeys_enter_only_in_the_strategys_own_hours_with_its_counts() -> None:
+    """A strategy that enters only at 15:00 gives monkeys that enter only at 15:00, trade for
+    trade; one with entries at two hours keeps both counts in every monkey."""
+    grid = shared(bars())
+    rng = np.random.default_rng(10)
+    at = lambda h: grid["eligible"][grid["hour"][grid["eligible"]] == h][:-50]    # noqa: E731
+    for counts in ({15: 60}, {9: 40, 15: 25}):
+        entry = np.sort(np.concatenate([rng.choice(at(h), n, replace=False)
+                                        for h, n in counts.items()]))
+        mine = windowed.located(grid, entry, entry + 5, np.full(len(entry), 0.5),
+                                np.ones(len(entry)), tradelevel.calendar(grid["time"][entry], "year"))
+        for rung in windowed.REDRAWS:
+            drawn = windowed.draw(grid, mine, rung, 50, np.random.default_rng(11))
+            for h, n in counts.items():
+                assert ((hours_of(grid, drawn["entries"]) == h).sum(axis=1) == n).all(), (rung, h)
+            assert set(np.unique(hours_of(grid, drawn["entries"]))) == set(counts)
+
+
+def test_the_session_mask_is_respected() -> None:
+    """With the feed's session given, no monkey lands on a bar outside it (here Saturday and
+    Sunday, and the 15:00 hour of every day, are out; the strategy trades at 14:00)."""
+    frame = bars()
+    inside = np.arange(len(frame))[frame.index.slice_indexer(*SPAN)]
+    minute = (np.arange(WEEK) % 1440) // 60
+    week = (np.arange(WEEK) // 1440 < 5) & (minute != 15)
+    grid = windowed.grid(frame, inside, tradelevel.calendar(frame.index[inside], "year"), week)
+    assert not (grid["hour"][grid["eligible"]] == 15).any()
+    ok = grid["by_hour"][14][:-50]
+    entry = np.sort(np.random.default_rng(12).choice(ok, 50, replace=False))
+    mine = windowed.located(grid, entry, entry + 3, np.ones(50), np.ones(50),
+                            tradelevel.calendar(grid["time"][entry], "year"))
+    drawn = windowed.draw(grid, mine, "timing", 40, np.random.default_rng(13))
+    days = frame.index.dayofweek.to_numpy()[drawn["entries"]]
+    assert (days < 5).all() and (hours_of(grid, drawn["entries"]) == 14).all()

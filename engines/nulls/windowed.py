@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from engines.market import calibrate, reprice
+from engines.market.feed import scale
 
 # What each rung of model.RUNGS hands to chance here, beside the entry bar: (the hold is
 # redrawn from the strategy's own, the sizing by volatility is stripped).
@@ -42,24 +43,34 @@ def atr_sized(atr: np.ndarray, entry: np.ndarray, size: np.ndarray,
     return np.median(size * atr[entry]) / atr[enter]
 
 
-def grid(bars: pd.DataFrame, inside: np.ndarray, labels: np.ndarray) -> dict:
+def grid(bars: pd.DataFrame, inside: np.ndarray, labels: np.ndarray,
+         week_mask: np.ndarray | None = None) -> dict:
     """What every strategy of a run shares: the bars, their windows and where a draw may land.
 
     Args:
         bars: The strategies' own timeframe, the whole file, indexed by open time.
         inside: Positions of the bars of the sample (oos1), ascending.
         labels: The calendar window of each of those bars, same length.
+        week_mask: The feed's session (engines.market.feed.session), a WEEK-long minute-of-week
+            mask; a bar outside it is never drawn. None = every bar of the file, which is
+            already the session by construction (a feed has no bar where it did not quote).
 
     Returns:
         `bars`; `time`, their stamps; `atr`, the ATR known at each bar's open (the previous
         bar's — the one a rule that sizes at the entry can read, and the weight R3's blind
         trade uses); `eligible`, the positions of `inside` with a usable ATR; `bounds`, each
-        window's first and last position; `last`, the last position of the sample.
+        window's first and last position; `last`, the last position of the sample; `hour`, the
+        clock hour (0-23, the feed's own) of every bar's open; `by_hour`, `eligible` split by it.
     """
     atr = np.r_[np.nan, calibrate.atr(bars)[:-1]]
     usable = np.isfinite(atr[inside]) & (atr[inside] > 0)
+    if week_mask is not None:
+        usable &= week_mask[scale.minutes(bars.index[inside]) % scale.WEEK]
+    hour = bars.index.hour.to_numpy()
+    eligible = inside[usable]
     edges = pd.Series(inside).groupby(np.asarray(labels)).agg(["min", "max"])
-    return {"bars": bars, "time": bars.index.to_numpy(), "atr": atr, "eligible": inside[usable],
+    return {"bars": bars, "time": bars.index.to_numpy(), "atr": atr, "eligible": eligible,
+            "hour": hour, "by_hour": {int(h): eligible[hour[eligible] == h] for h in range(24)},
             "bounds": {label: (int(lo), int(hi)) for label, lo, hi in edges.itertuples()},
             "last": int(inside[-1])}
 
@@ -76,16 +87,17 @@ def located(shared: dict, entry: np.ndarray, leave: np.ndarray, size: np.ndarray
         window: The calendar window each trade opened in, a key of `shared["bounds"]`.
 
     Returns:
-        `entry`, `hold` (bars), `size`, `side`, and `lo` / `hi`, the first and last bar of
-        each trade's window.
+        `entry`, `hold` (bars), `size`, `side`, `hour` (clock hour of each trade's entry bar),
+        and `lo` / `hi`, the first and last bar of each trade's window.
     """
     lo, hi = np.array([shared["bounds"][label] for label in window]).T
     return {"entry": np.asarray(entry), "hold": np.asarray(leave) - np.asarray(entry),
-            "size": np.asarray(size, float), "side": np.asarray(side, float), "lo": lo, "hi": hi}
+            "size": np.asarray(size, float), "side": np.asarray(side, float),
+            "hour": shared["hour"][np.asarray(entry)], "lo": lo, "hi": hi}
 
 
 def draw(shared: dict, mine: dict, rung: str, draws: int, rng: np.random.Generator) -> dict:
-    """Monkeys of one strategy: every trade re-entered at a uniform bar of its own window.
+    """Monkeys of one strategy: every trade re-entered at a uniform bar of its own window AND hour.
 
     Args:
         shared: What grid() returned.
@@ -96,7 +108,9 @@ def draw(shared: dict, mine: dict, rung: str, draws: int, rng: np.random.Generat
 
     Returns:
         `entries`, `holds`, `sizes`, each (draws, trades). The entry is uniform over the
-        eligible bars of the trade's window that leave its hold room before the sample ends;
+        eligible bars of the trade's window, at the clock hour the real trade entered in (so the
+        monkey has the strategy's own count per hour), that leave its hold room before the
+        sample ends;
         the exit may cross into the next window, as a real trade's does, and never leaves the
         sample (a redrawn hold too long for the last window is cut to fit). Sizes are
         atr_sized() at the drawn bar, or the strategy's mean lots on the rungs that strip the
@@ -108,10 +122,15 @@ def draw(shared: dict, mine: dict, rung: str, draws: int, rng: np.random.Generat
     holds = (mine["hold"][(u[:, 1] * n).astype(np.int64)] if redraw
              else np.broadcast_to(mine["hold"], (draws, n)))
     holds = np.minimum(holds, shared["last"] - mine["lo"])
-    first = np.searchsorted(ok, mine["lo"])
-    room = np.searchsorted(ok, np.minimum(mine["hi"], shared["last"] - holds),
-                           side="right") - first
-    entries = ok[first + (u[:, 0] * np.maximum(room, 1)).astype(np.int64)]
+    entries = np.empty(holds.shape, np.int64)
+    for hour in np.unique(mine["hour"]):
+        cols = np.flatnonzero(mine["hour"] == hour)
+        at_hour = shared["by_hour"].get(int(hour), ok)
+        first = np.searchsorted(at_hour, mine["lo"][cols])
+        room = np.searchsorted(at_hour, np.minimum(mine["hi"][cols], shared["last"] - holds[:, cols]),
+                               side="right") - first
+        pick = first + (u[:, 0, cols] * np.maximum(room, 1)).astype(np.int64)
+        entries[:, cols] = at_hour[np.minimum(pick, at_hour.size - 1)]
     holds = np.minimum(entries + holds, shared["last"]) - entries
     sizes = (np.broadcast_to(mine["size"].mean(), entries.shape) if flat
              else atr_sized(shared["atr"], mine["entry"], mine["size"], entries))

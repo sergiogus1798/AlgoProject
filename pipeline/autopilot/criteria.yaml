@@ -57,7 +57,7 @@ steps:
   # Falla; el juez relee estas mismas reglas sobre el scorecard. Las líneas son las de la tabla
   # final del encargo (§1.2) y las lecturas del dueño (P.5 bis): R3 sin Limbo ni excepción por
   # timeframe, y sin dato Falla. Reglas de dos hechos: `all` = la peor parte, `any` = la mejor.
-  # Niveles: 0 = R1a a R5b · 1a = R3 · 1b = R5 a calidad de datos · 2 = retraso · 3 = R7, R6, mono.
+  # Niveles: 0 = R1a, R1b, R2 · 1b = coste, R5d, calidad de datos · 2 = retraso · 3 = R7, R6, la z del mono.
   # Fuera desde la conmutación: R5 vieja (oos_trades_per_year), R6-R8 viejas (forma,
   # degradacion), R9a y R9c (peor día, drawdown / neto), spread.* y edgeCost.*.
   "8":
@@ -71,34 +71,18 @@ steps:
       - {fact: gate.scorecard.sanidad_passed, pass: ">= 1", missing: fail}
       # R2 — neto de oos1
       - {fact: gate.scorecard.estaticas_value, pass: "> 0"}
-      # R4a — operaciones al año en el build
-      - {fact: gate.scorecard.is_trades_per_year, pass: ">= 35", limbo: ">= 20",
-         by: {H4: {pass: ">= 20", limbo: ">= 15"}}}
-      # R5b — operaciones en oos1. Nunca da Falla
-      - {fact: gate.scorecard.sanidad_value, pass: ">= 100", else: limbo}
-      # R3 — t del exceso. Sin Limbo y sin excepciones por timeframe
-      - {fact: gate.scorecard.drift_excess_t, pass: ">= 1.65", missing: fail}
-      # R5 — estabilidad de la frecuencia, |z|: el formato no tiene valor absoluto, asi que son
-      # dos reglas de un lado
-      - {fact: gate.scorecard.z_frec, pass: "<= 1.5", limbo: "<= 3.5"}
-      - {fact: gate.scorecard.z_frec, pass: ">= -1.5", limbo: ">= -3.5"}
-      # R5c — ventaja frente al coste: Pasa con t(k) >= 1,65 y edge >= 2; Falla solo con
-      # edge < 1,25; la t(k) baja nunca pasa de Limbo
-      - all:
-          - {fact: gate.scorecard.edge_mean_oos, pass: ">= 2", limbo: ">= 1.25"}
-          - {fact: gate.scorecard.t_exceso_k, pass: ">= 1.65", else: limbo}
+      # R4a, R5, R5b, R8, R9b — YA NO JUZGAN (dueño, 2026-10-12, encargo 65 §5.2): la puerta los
+      # sigue calculando y el scorecard los guarda como columnas (is_trades_per_year,
+      # sanidad_value, z_frec, t_sin_mejor_trimestre, t_sin_3_mejores, mae_p95_r), sin regla.
+      # R3 y la t de R5c (t_exceso_k) tampoco juzgan: los sustituye la z de abajo. Queda de R5c
+      # la parte del coste: la ventaja frente al coste, sin la t.
+      - {fact: gate.scorecard.edge_mean_oos, pass: ">= 2", limbo: ">= 1.25"}
       # R5d — degradacion dentro de oos1: t_b < -1,65 es Limbo, y Falla solo si ademas e_fin <= 0
       - all:
           - {fact: gate.scorecard.t_b, pass: ">= -1.65", else: limbo}
           - any:
               - {fact: gate.scorecard.t_b, pass: ">= -1.65"}
               - {fact: gate.scorecard.e_fin, pass: "> 0"}
-      # R8 — concentracion: las dos t >= 1,65 Pasa; alguna <= 0 Falla
-      - all:
-          - {fact: gate.scorecard.t_sin_mejor_trimestre, pass: ">= 1.65", limbo: "> 0"}
-          - {fact: gate.scorecard.t_sin_3_mejores, pass: ">= 1.65", limbo: "> 0"}
-      # R9b — percentil 95 de la MAE, en R (positivo)
-      - {fact: gate.scorecard.mae_p95_r, pass: "<= 1.5", limbo: "<= 2.5"}
       # Calidad de datos — Pasa con ret >= 0,60 o ninguna operacion afectada; Falla solo con
       # ret < 0,25 y t_a > 1,65 (la tercera parte: Limbo si t_a <= 1,65, nunca Pasa por si sola)
       - any:
@@ -117,8 +101,15 @@ steps:
       - {fact: gate.scorecard.q_p, pass: "> 0.05", else: limbo}
       # R6 — drawdown
       - {fact: gate.scorecard.dd_p, pass: "> 0.10", limbo: "> 0.01"}
-      # Mono. Nunca da Falla
-      - {fact: gate.scorecard.z_mono, pass: ">= 1.65", else: limbo}
+      # La z — LA regla que juzga (encargo 65 §5.2): la z de la estrategia sobre su mono con horas
+      # (sorteado solo en sus horas de entrada) >= Φ⁻¹(1 − alpha/B), B = lotes cribados en oos1 en
+      # la celda (activo × TF × dirección × familia) contando este. No lleva número: el umbral es
+      # por celda y lo calcula el juez (criteria.thresholded, ledger.cells.batches_for): 1,645 con
+      # B = 1; 1,960 con 2; 2,241 con 4. La fila del ledger anota B y el umbral usado.
+      - {name: "z del mono con horas, por celda", fact: gate.scorecard.z_mono, alpha: 0.05, per: cell,
+         missing: fail}
+      # p_fdr (probabilidad de no ser nula, nula empírica del lote; engines/inference/localfdr) es
+      # una COLUMNA del scorecard, sin regla: su corte espera a la fila 9 del encargo 65.
   "10":
     cut: Retest Markets - Family
     segment: oos1
@@ -235,9 +226,9 @@ steps:
     segment: build+oos1+oos2
     rules: []
   "18.5":
-    # APAGADO (encargo 65 fila 8): `pipeline/autopilot/tail.py` ya no lo planea ni lo juzga, y
-    # `studies/closing/blindJoint/pieces.py` ya no lo lee. Vuelve con el repreciador cuando
-    # `descuadre < wfc.sqx_gap_relative`. La entrada se conserva para entonces.
+    # De VUELTA (encargo 65 fila 8) sin su lectura previa build+oos1: `blind.skipped` salta la madre
+    # cuyo `descuadre_sqx` (wfc.json) no es < `wfc.sqx_gap_relative`, o no existe; sin hecho,
+    # `missing: limbo` la deja en LIMBO, nunca corta.
     # Paso 18.5 — superficies por mercado (propuesta criterios-implementados-2026-10-12, §5 y §9;
     # dueño, 2026-10-07). El paso se parte: la lectura que decide (build+oos1) se corre y se
     # juzga tras el 16.5, ANTES del bloque ciego; dentro del bloque se relee con oos2 y se
@@ -274,6 +265,20 @@ steps:
          fact: wfm.reopt.centro_exceso, pass: "> 0", else: limbo, missing: pass}
       - {name: "WFM · reoptimizar no empeora a congelar (sólo reoptimizado)",
          fact: wfm.reopt.l2_p_menos, pass: "> 0.05", else: limbo, missing: pass}
+  "19.5":
+    # Lectura única de oos2 (encargo 65 §6; dueño, 2026-10-12, D2): paso propio, 19.5, el ÚNICO que corta la cola. No
+    # sustituye a nadie: el estudio es
+    # `studies/optimisation/oos2Reading` (se firma como paso 19 ante `ledger.gate.seal`). Las
+    # reglas de 17 y 19 siguen juzgando y esta CORTA además: sobrevive quien supera las tres.
+    # Corta SÓLO por signo: `oos2Reading.z` es el exceso neto semanal de la madre sobre su mono con
+    # horas, en desviaciones de su nulo de volteos centrados (100.000, una cola). Su nivel (z) sólo ordena
+    # las medoides; la p y su error de simulación se publican, no cortan. Sin hecho (celda «solo vivo»,
+    # no se lee) = LIMBO: nadie se corta sin lectura.
+    cut: SPP OOS
+    segment: oos2
+    rules:
+      - {name: "Lectura única de oos2 · el exceso neto sobre el mono con horas no es negativo",
+         fact: oos2Reading.z, pass: "> 0", missing: limbo}
   "20":
     # Paso 20 — lectura conjunta ciega (dueño, 2026-10-11): corta lo que el estudio descarta.
     # `blindJoint.verdict_csv.drop` vale 1 cuando su verdict.csv dice DESCARTAR (lectura `fail`);

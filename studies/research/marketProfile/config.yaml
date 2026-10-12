@@ -220,3 +220,15 @@ measures:
   - {name: keltner225_mean,       family: reversion, tag: literature, lit: REV-45, fn: rule, args: {enter: keltner225, leave: above_sma20}}
   - {name: keltner225_hold8,      family: reversion, tag: literature, lit: REV-45, fn: rule, args: {enter: keltner225, cap: 8}}
   - {name: after_spike_21d,       family: reversion, tag: literature, lit: CARRY-49, fn: rule, args: {enter: week_up, when: [vol_spike], days: 21}}
+  - {name: trbo_c50_opp, family: ruptura, tag: literature, lit: BRK-60, fn: rule, args: {enter: trbo50, leave: under_c50}}
+  - {name: trbo_c150_opp, family: ruptura, tag: literature, lit: BRK-60, fn: rule, args: {enter: trbo150, leave: under_c150}}
+  - {name: trbo_c200_opp, family: ruptura, tag: literature, lit: BRK-60, fn: rule, args: {enter: trbo200, leave: under_c200}}
+  - {name: ma_d1_1_50, family: tendencia, tag: literature, lit: TR-65, fn: rule, args: {enter: d1_over_sma50, leave: "not:d1_over_sma50"}}
+  - {name: ma_d1_1_150, family: tendencia, tag: literature, lit: TR-65, fn: rule, args: {enter: d1_over_sma150, leave: "not:d1_over_sma150"}}
+  - {name: ma_d1_5_150, family: tendencia, tag: literature, lit: TR-65, fn: rule, args: {enter: d1_sma5_over_150, leave: "not:d1_sma5_over_150"}}
+  - {name: ma_d1_1_50_1pc, family: tendencia, tag: literature, lit: TR-65, fn: rule, args: {enter: d1_over_sma50_1pc, leave: d1_under_sma50_1pc}}
+  - {name: ma_d1_1_150_1pc, family: tendencia, tag: literature, lit: TR-65, fn: rule, args: {enter: d1_over_sma150_1pc, leave: d1_under_sma150_1pc}}
+  - {name: ma_d1_5_150_1pc, family: tendencia, tag: literature, lit: TR-65, fn: rule, args: {enter: d1_sma5_over_150_1pc, leave: d1_sma5_under_150_1pc}}
+  - {name: connors_down3_over_sma200_hold5, family: reversion, tag: literature, lit: REV-98, fn: rule, args: {enter: d1_down3, when: [up_d200], days: 5}}
+  - {name: d1_close_over_sma50_1pc_until_cross, family: tendencia, tag: literature, lit: TR-109, fn: rule, args: {enter: d1_over_sma50_1pc, leave: "not:d1_over_sma50"}}
+  - {name: atr_expansion_sma20, family: ruptura, tag: literature, lit: BRK-152, fn: rule, args: {enter: atr_up, when: [above_sma20], leave: "not:atr_up"}}

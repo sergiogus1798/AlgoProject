@@ -10,7 +10,7 @@ SHARPE_UNITS = ("per_period", "annualised")   # the only score units that are a 
 YEAR = 252      # trading days a year, for converting SQX's annualised Sharpes
 
 
-def accumulated(frame: pd.DataFrame, extra: int = 0) -> dict:
+def accumulated(frame: pd.DataFrame, extra: int | None = 0) -> dict:
     """The number of trials and the spread of their scores, over the whole study.
 
     Args:
@@ -37,6 +37,7 @@ def accumulated(frame: pd.DataFrame, extra: int = 0) -> dict:
     unit (`p_pass`, `ev_bank_usd`) still adds its `n_scored` to N, since those are looks, but
     its scores are not Sharpes and never reach sigma.
     """
+    extra = extra or 0
     scored = frame[frame["n_scored"].notna()] if len(frame) else frame
     if not len(scored):
         return {"n": 0, "sigma": float("nan"), "searches": 0}

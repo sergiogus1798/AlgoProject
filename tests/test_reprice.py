@@ -138,6 +138,58 @@ def test_costs_come_from_the_card() -> None:
     assert np.isclose(fx["tick_step"], 0.00001) and (fx["triple"], fx["rollover"]) == (2, 23)
     assert reprice.costs("USDJPY_M1", "oos1")["swap_short"] == yen["costs"]["swap_short"]["use"]
 
+
+# Real SQX trades, frozen with the costs their tasks ran with (the card is recalibrated, the trades
+# are not). 🔬 2026-10-12, scratchpad measurements over whole exports: 47,610 USDJPY shorts and
+# longs of Test_USDJPY_donchianUpperCrossUp_M30 whose fills sit on the bar open: 99.994 % within
+# 0.02 USD; 506,356 + 522,000 longs with a 5 USD/lot commission to the cent.
+SQX_TRADES = pd.read_csv(Path(__file__).parent / "fixtures" / "reprice_sqx_trades.csv",
+                         parse_dates=["open_time", "close_time"])
+DONCHIAN = {"point_value": 653.919, "tick_size": 0.01, "tick_step": 0.001, "spread": 0.002,
+            "slippage": 0.0, "commission_method": "SizeBased", "commission": 0.0, "swap_long": 0.0,
+            "swap_short": -10.4, "triple": 2, "rollover": 23}                 # swap in points
+USDJPY_5USD = {"point_value": 631.337046, "tick_size": 0.01, "tick_step": 0.001, "spread": 0.0058,
+               "slippage": 0.002, "commission_method": "SizeBased", "commission": 5.0,
+               "swap_long": 2.57, "swap_short": -22.15, "triple": 2, "rollover": 23}
+USA500_BUILD = {"point_value": 1.0, "tick_size": 0.01, "spread": 0.2767, "slippage": 0.0968,
+                "commission_method": "PercentageBased", "commission": 0.0, "swap_long": -5.72,
+                "swap_short": -2.84, "triple": 4, "rollover": 23}
+
+
+def sqx_case(name: str, costs: dict) -> None:
+    """Every fixture row of `name` repriced by pnl() lands on SQX's P/L to the cent."""
+    g = SQX_TRADES[SQX_TRADES["case"] == name]
+    got, _ = reprice.pnl(g["open_bar"].to_numpy(), g["close_bar"].to_numpy(), g["open_time"].to_numpy(),
+                         g["close_time"].to_numpy(), g["side"].to_numpy(), g["size"].to_numpy(), costs)
+    worst = np.abs(got - g["sqx_pnl"].to_numpy()).max()
+    assert len(g) and worst <= 0.02, f"{name}: worst trade {worst:.4f} USD from SQX"
+
+
+def test_real_sqx_shorts_and_swap_in_points() -> None:
+    """Sells and buys, 0, 1 and a triple (Wednesday) night, swap short -10.4 points: SQX's own."""
+    sqx_case("short_swap_points", DONCHIAN)
+    assert (SQX_TRADES["side"] < 0).any() and (SQX_TRADES["case"] == "short_swap_points").sum() >= 10
+
+
+def test_real_sqx_commission_per_lot() -> None:
+    """5 USD per lot, charged once: the USDJPY longs of the 10k batch, with 0, 1 and 3 nights."""
+    sqx_case("commission_per_lot", USDJPY_5USD)
+
+
+def test_real_sqx_endtest_fills_at_its_own_price() -> None:
+    """The trade still open when the window ends is closed at SQX's price, not at a bar open:
+    3 USA500 trades of Test_USA500_H1_tendencia_wf1 `build` (1,001 of 1,004 variants have one),
+    within 0.02 USD + 2 ticks x PV x size. At the bar open they would be 240 USD off."""
+    g = SQX_TRADES[SQX_TRADES["case"] == "endtest"]
+    for _, t in g.iterrows():
+        bars = pd.DataFrame({"Open": [t.open_bar, t.close_bar], "Low": [t.open_bar, t.low],
+                             "High": [t.open_bar, t.high]}, index=[t.open_time, t.close_time])
+        trade = pd.DataFrame({"identity": "s", "Type": "Buy", "Open time": [t.open_time], "Size": t["size"],
+                              "Close time": [t.close_time], "Close type": "EndTest", "Close price": t.close_price})
+        got = reprice.real(trade, bars, USA500_BUILD).iloc[0]
+        assert abs(got["pnl"] - t.sqx_pnl) <= 0.02 + 2 * 0.01 * t["size"], (got["pnl"], t.sqx_pnl)
+        assert not np.isnan(got["stop"])
+
 # Hourly bars of that Monday from 10:00. The M1 feed has no minute before 12:07 in the 12:00 bar.
 BARS = pd.DataFrame({"Open": [100.0, 101.0, 103.0, 99.0], "Low": [99.5, 100.5, 101.5, 98.0],
                      "High": [101.5, 102.5, 103.5, 99.5]},

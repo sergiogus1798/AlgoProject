@@ -32,6 +32,7 @@ class RuleDialog(QDialog):
         self.by = (rule or {}).get("by")
         self.rest = {k: v for k, v in (rule or {}).items() if k not in KNOWN}   # kept as found
         self.had_missing = "missing" in (rule or {})
+        self.cell = dict(rule) if rule and "alpha" in rule else None     # per-cell: returned as found
         self.parts: list[dict] = list((rule or {}).get("all") or (rule or {}).get("any") or [])
         self.kind = QComboBox()
         self.kind.addItems(KINDS[:COMPOUND] if nested else KINDS)
@@ -134,6 +135,10 @@ class RuleDialog(QDialog):
                 sign, _, number = str(rule[key]).partition(" ")
                 op.setCurrentText(sign)
                 value.setText(number)
+        if "alpha" in rule:      # the judge computes the line from B: nothing to type here
+            self.value.setText("por celda: Φ⁻¹(1 − α/B)")
+            self.value.setEnabled(False)
+            self.lvalue.setEnabled(False)
         self.list.addItems([told(p) for p in self.parts])
         for row in by_rows(rule.get("by")):
             self.add_by(*row)
@@ -193,6 +198,8 @@ class RuleDialog(QDialog):
     def built(self) -> dict:
         """The rule the form says, in criteria.yaml's shape. A box that is not a number raises
         ValueError; everything else is the daemon's to refuse."""
+        if self.cell is not None:
+            return self.cell
         kind = self.kind.currentIndex()
         name = {"name": self.name.text().strip()} if self.name.text().strip() else {}
         if kind == COMPOUND:

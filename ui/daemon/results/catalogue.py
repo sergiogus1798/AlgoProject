@@ -30,6 +30,7 @@ STUDIES = {
     "marketSurfaces": ("optimisation", "studies.optimisation.marketSurfaces",
                        "Superficies por mercado", "18.5"),
     "wfm": ("optimisation", "studies.optimisation.wfm", "Walk Forward Matrix", "19"),
+    "oos2Reading": ("optimisation", "studies.optimisation.oos2Reading", "Lectura única de oos2", "19.5"),
     "blindJoint": ("closing", "studies.closing.blindJoint", "Lectura conjunta", "20"),
     "exposure": ("closing", "studies.closing.exposure", "Exposición contra buy & hold", "21"),
     "monkey": ("readings", "studies.readings.monkey", "Test del mono", None),
@@ -73,6 +74,8 @@ ROLE: dict[str, str | Callable[[dict], bool]] = {
     "cscv": "describe",
     "marketSurfaces": "describe",
     "wfm": "describe",
+    # cuts by the sign of z in criteria.yaml (step 19.5); its own files write no verdict.csv
+    "oos2Reading": "describe",
     # MANTENER for all while joint.pieces or joint.population is null; DESCARTAR once both set
     "blindJoint": lambda cfg: bool(cfg["joint"]["pieces"] and cfg["joint"]["population"]),
     # describes since 2026-10-11: no verdict
@@ -110,7 +113,7 @@ ONE_WHY = {
 # Studies that write into a mother's variant batch (`estudios/`), not under reports/<P>/<D>/:
 # `ui.daemon.results.bank._batch_path` reads them from there instead of the databank's own
 # report folder, whichever databank the page opened from (`ui.daemon.databank.batches`).
-BATCH = {"cloud", "wfc", "cscv", "marketSurfaces"}
+BATCH = {"cloud", "wfc", "cscv", "marketSurfaces", "oos2Reading"}
 
 
 def folder(key: str) -> Path:

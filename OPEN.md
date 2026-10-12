@@ -134,6 +134,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 117 | 🟠 | NIKKEI225_M1 feed is nearly empty at the start of `build` | OPEN.md |
 | 118 | 🟠 | Deferred builder gates: task windows vs segment, second chart in a template | OPEN.md |
 | 119 | 🟡 | `MonteCarloManipulation` removed (owner 2026-10-11: never again) — custodian and gorilla still ON | OPEN.md |
+| 120 | 🟠 | El repreciador no reproduce a SQX en XAUUSD y USA500 (oos1) ni en DAX40 por décimas | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -1009,3 +1010,7 @@ Pendientes, sin decidir cuándo: (a) ningún gate comprueba que la ventana de fe
 ## 119. 🟡 `MonteCarloManipulation` removed (owner 2026-10-11: never again) — custodian and gorilla still ON
 
 El código ya lo rechaza; apagado en el proyecto del conductor. Los 12 proyectos del custodio (`SQX_w2`) siguen ON porque su GUI estaba abierta. Pendiente: `python3 -m sqx.projects.rankings <project.cfx> --mc-off` en cada uno con el custodio cerrado (copia en `AlgoData/projectsBackup/mc_off_2026-10-11`), y lo mismo en gorilla por `bin/remote.sh gorilla` tras commit y push. Abierto también: `sqx/projects/mt5verify.py:128` emite `<MonteCarloManipulation />` sin atributo `use` en su plantilla de tarea; 🤔 confirmar que SQX lo lee como apagado.
+
+## 120. 🟠 El repreciador no reproduce a SQX en XAUUSD y USA500 (oos1) ni en DAX40 por décimas
+
+Origen: encargo 65 fila 8, 2026-10-12. Hechos en `knowhow/research/monkey-reprice-audit.md`. SQX reparte cada fill entre los dos ticks que rodean al coste declarado y las barras guardadas no pueden reproducirlo (ruido sin sesgo). Descuadre medido: XAUUSD oos1 0,28-0,46, USA500 oos1 0,15, DAX40 0,011, 0-0,002 en el resto. Consecuencia: el paso 18.5 corre por madre sólo donde el descuadre es < `wfc.sqx_gap_relative` (`pipeline/autopilot/blind.py`, `skipped`). Sin verificar contra SQX: stop-loss corto, salidas por profit target, comisión PercentageBased (el builder simple corto en USDJPY no activa SL/PT, así que `Test_USDJPY_M30_cortosReprice_leaseWeb` se retiró sin correr). El `variant_trades.parquet` de 10k de USDJPY es anterior al commit c443f1d y mezcla 16 símbolos bajo `Main`: regenerar.

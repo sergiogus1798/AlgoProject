@@ -1,6 +1,7 @@
 """Pass, limbo or fail for each strategy of a population, from its facts and a step's rules."""
 
 import operator
+from statistics import NormalDist
 
 import pandas as pd
 
@@ -61,6 +62,34 @@ def resolved(rules: list[dict], tags: set[str]) -> list[dict]:
                       if set(str(key).split("+")) <= tags), {})
         rule = {k: v for k, v in rule.items() if k != "by"} | extra
         out.append(rule | {g: resolved(rule[g], tags) for g in GROUPS if g in rule})
+    return out
+
+
+def threshold(alpha: float, batches: int) -> float:
+    """Φ⁻¹(1 − alpha / B): the z a strategy must reach when B batches were screened in its cell."""
+    return NormalDist().inv_cdf(1 - alpha / max(1, batches))
+
+
+def per_cell(rules: list[dict]) -> list[dict]:
+    """The rules, compounds unfolded, that declare `alpha` instead of a line."""
+    return [r for rule in rules for r in ([rule] if "alpha" in rule else
+                                          per_cell(rule.get("all") or rule.get("any") or []))]
+
+
+def thresholded(rules: list[dict], batches: int) -> list[dict]:
+    """The rules with each per-cell one (`alpha:` instead of `pass:`) given its line for B batches.
+
+    Args:
+        rules: A step's rules, resolved. A rule with `alpha` declares only the level; it gets
+            `pass: ">= Φ⁻¹(1 − alpha / B)"`, `alpha` and `per` dropped. Compounds are walked.
+        batches: B, the batches screened in the project's cell counting the current one.
+    """
+    out = []
+    for rule in rules:
+        if "alpha" in rule:
+            rule = {k: v for k, v in rule.items() if k not in ("alpha", "per")} | {
+                "pass": f">= {threshold(rule['alpha'], batches)!r}"}
+        out.append(rule | {g: thresholded(rule[g], batches) for g in GROUPS if g in rule})
     return out
 
 

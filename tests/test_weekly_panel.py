@@ -71,6 +71,9 @@ def test_gap_to_sqx_counts_the_units_off() -> None:
     assert share == pytest.approx(1 / 3) and off.to_dict() == {"v2": -0.5}
     assert panel.sqx_gap(per, sqx, tolerance=1.0)[0] == 0
     assert panel.sqx_gap(per, sqx, relative=0.05)[0] == 0
+    # the allowance is the LARGER of floor and share, not their sum: 0.5 off on 23 needs 2.2 %
+    assert panel.sqx_gap(per, sqx, tolerance=0.1, relative=0.01)[0] == pytest.approx(1 / 3)
+    assert panel.sqx_gap(per, sqx, tolerance=0.1, relative=0.03)[0] == 0
 
 
 def test_straddle_counts_only_monday_and_tuesday_closes_after_a_weekend() -> None:

@@ -55,14 +55,6 @@ def _checks(inputs: dict, cfg: dict, params: dict) -> tuple[list[dict], dict]:
     return found, {r["market"]: ready[r["market"]] for r in found if r["valid"]}
 
 
-def _family(project: str) -> str:
-    """The idea family of a project: its template's archetype, else the `family` the registry holds
-    for a Simple Strategy. '' for a project neither knows (judged as before)."""
-    row = sources.registry_projects().get(project, {})
-    name = sources.template_of(row)
-    return sources.templates().get(name, {}).get("archetype", "") or row.get("family") or ""
-
-
 def _frequency(inputs: dict, strategies: list[str], feeds: list[str], cuts: dict, t: dict,
                by: dict) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
     """P2: z_freq per strategy and valid market, how many strategies' markets it flags, counts."""
@@ -160,7 +152,7 @@ def run(project: str, databank: str, asset: str, export: str, out: Path,
     z_freq, off, counts = _frequency(inputs, strategies, feeds, cuts, t, by)
     distance = units.fixed(project, strategies, inputs["identity"])
     home = _home(inputs, params, cal, t)
-    role = rules.roles(feeds, markets.classify(asset), _family(project), assetdata.expected_sign())
+    role = rules.roles(feeds, markets.classify(asset), sources.family_of(project), assetdata.expected_sign())
     verdict, rows, series, kept = [], [], {}, []
     for s in strategies:
         mine = {f: by.get((s, f), empty).reset_index(drop=True) for f in feeds}

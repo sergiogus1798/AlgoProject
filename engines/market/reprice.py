@@ -22,9 +22,11 @@ Costs = TypedDict("Costs", {"point_value": float, "tick_size": float, "spread": 
 WEEKDAYS = ("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY")
 DAY, EPOCH_WEEKDAY = 86400, 3      # seconds; 1970-01-01 was a Thursday
 # SQX's `Close type`, by where the exit fills: at a price of its own inside the bar it is
-# stamped with (SL measured; PT by the owner's rule, none harvested yet), or at a bar open.
-AT_PRICE = ("SL", "PT")
-AT_OPEN = ("Exit After X Bars", "Exit Signal", "End Of Friday (Time)", "EndTest", "Deleted")
+# stamped with (SL measured; PT by the owner's rule, none verified; EndTest measured 2026-10-12: the
+# trade still open when the window ends is closed at SQX's own price, 1,001 of 1,004 variants of
+# a USA500 batch were 240 USD off when filled at the bar open), or at a bar open.
+AT_PRICE = ("SL", "PT", "EndTest")
+AT_OPEN = ("Exit After X Bars", "Exit Signal", "End Of Friday (Time)", "Deleted")
 
 
 def costs(feed: str, segment: str) -> Costs:
@@ -81,14 +83,14 @@ def pnl(open_px: np.ndarray, close_px: np.ndarray, open_time: np.ndarray,
     bar, as fills() returns them — never SQX's fill prices: the spread and the slippage are
     applied here and only here, so a fill passed in would be charged them twice.
 
-    Audited against SQX to `0.02 + 2 * tick_size * point_value * size` per trade on longs at
-    zero commission with a percent swap (knowhow/research/monkey-reprice-audit.md). UNVERIFIED
-    against SQX, never reconciled trade by trade: shorts (the literal mirror, owner 2026-10-06:
-    sell at open - spread - slippage, buy back at open + slippage; `swap_short` applied with
-    the long's sign rule) and a non-zero commission (once, at the open: `PercentageBased` on the
-    entry notional, `SizeBased` per lot). A swap in points is verified on longs (USDJPY, 973
-    trades to 0.01 USD, knowhow/export/off-grid-stamps-and-stop-exits.md).
-
+    Audited against SQX (knowhow/research/monkey-reprice-audit.md): longs at zero commission with a
+    percent swap to `0.02 + 2 * tick_size * point_value * size` per trade; 🔬 2026-10-12, over whole
+    exports, a swap in points on longs AND shorts (47,610 USDJPY trades on the bar open, 99.994 %
+    within 0.02 USD, short swap -10.4 points recovered to 0.001 per night, triple night included)
+    and a SizeBased commission of 5 USD/lot (1.0 M longs to the cent). SQX puts the spread on the
+    BUY fill (a long's entry, a short's exit) and sells at the bar open less slippage; this puts it
+    on the entry of both sides: the same total, so the same P/L, and only a short stop would tell
+    them apart. Still UNVERIFIED: a short stop or target, a PT exit, a PercentageBased commission.
     Args:
         open_px, close_px: Raw bar opens, in price.
         open_time, close_time: Naive datetimes of those bars, on the feed's clock.
@@ -178,7 +180,8 @@ def real(trades: pd.DataFrame, bars: pd.DataFrame, costs: Costs,
         exit and NaN on a bar exit. An AT_PRICE exit fills at SQX's `Close price` and not at
         the open of the bar it is stamped with, which the stop was hit AFTER (owner,
         2026-10-07): raw = `Close price` + side x slippage, so pnl() lands on SQX's fill.
-        Reproduces SQX to 0.02 on 834 long SL exits; shorts and PT unverified. Raises on a
+        Reproduces SQX to 0.02 on 834 long SL exits and, as EndTest, to 2 ticks on the trade left
+        open at the window's end; short SL and PT unverified. Raises on a
         stamp that is no bar's, a `Close type` in neither list and a price exit outside its
         bar's range by more than spread + slippage, naming the strategies: dropping them
         would drop the stopped trades and inflate every t.

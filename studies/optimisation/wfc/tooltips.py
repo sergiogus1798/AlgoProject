@@ -29,8 +29,8 @@ TIPS = {
                             "cuando demasiadas operaciones cierran tras un fin de semana.",
     "check.sqx_tolerance": "Divisa de la cuenta que el neto reconstruido de una variante puede "
                            "separarse del NetProfit de SQX sin contar como descuadre.",
-    "check.sqx_relative": "Más esta fracción del NetProfit: la parte relativa de esa "
-                          "tolerancia.",
+    "check.sqx_relative": "Fracción del NetProfit: vale el mayor entre ella y el suelo en divisa, "
+                          "no su suma.",
     "min_trades": "Suelo del CSCV (paso 18), no del WFC: el paso 17 usa los suelos de "
                   "`panel`.",
     "split_mode": "Composición con la que el CSCV lee sus cuatro números cronológicos; el "

@@ -12,8 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engines.market import reprice
 from ledger import gate
-from studies.closing.blindJoint import (benchmark, inputs, many, measure, one, readings,
-                                         report)
+from engines.nulls import footprint as benchmark
+from studies.closing.blindJoint import inputs, many, measure, one, readings, report
 from studies.closing.blindJoint.pieces import PIECES
 
 DAYS, K, SEEDS = 1250, 5, 20
@@ -86,7 +86,9 @@ def traders(seed: int, edge: float) -> dict:
     index = pd.DatetimeIndex(np.add.outer(days.values, np.arange(MINUTES) *
                                           np.timedelta64(1, "m")).ravel())
     price = 100 + np.cumsum(rng.normal(DRIFT, 0.05, len(index) + 1))
-    bars = pd.DataFrame({"Open": price[:-1], "Close": price[1:]}, index=index)
+    bars = pd.DataFrame({"Open": price[:-1], "Close": price[1:],
+                         "High": np.maximum(price[:-1], price[1:]) + 0.01,
+                         "Low": np.minimum(price[:-1], price[1:]) - 0.01}, index=index)
     panel, random, mc = {}, {}, {}
     for m in (f"m{i}" for i in range(K)):
         hold = rng.integers(30, 600, TRADES)

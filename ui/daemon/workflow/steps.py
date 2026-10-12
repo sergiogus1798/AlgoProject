@@ -60,6 +60,8 @@ S = [
      ["marketSurfaces"], "WFM + WFC + CSCV + Market Surfaces", "", "batch"),
     ("19", "Walk Forward Matrix", "Walk Forward Matrix en SQX", "sqx", "sqx", ["wfm"],
      "WFM + WFC + CSCV + Market Surfaces", "Walk Forward Matrix", ("wfm",)),
+    ("19.5", "Lectura única de oos2", "Lectura única de oos2: el exceso neto sobre el mono con horas",
+     "python", "study", ["oos2Reading"], "WFM + WFC + CSCV + Market Surfaces", "", "batch"),
     ("20", "Análisis conjunto",
      "Análisis conjunto de 17, 18, 18.5 y 19", "python",
      "blind", ["blindJoint"], "Cierre", "Análisis conjunto (paso 20)", ("wfm",)),

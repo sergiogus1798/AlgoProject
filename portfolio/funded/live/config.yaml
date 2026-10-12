@@ -1,0 +1,14 @@
+# portfolio/funded/live — the live protocol (encargo 65 row 10); every number lives in ledger/thresholds.yaml.
+stage_a:
+  trades: ledger:funded.live.stage_a.trades
+  tolerance_bars: ledger:mt5verify.entry_tolerance_bars
+  matched_min: ledger:mt5verify.matched_min
+  trade_gap_max_r: ledger:mt5verify.trade_gap_max_r
+  daily_corr_min: ledger:mt5verify.daily_corr_min
+  dd_rel_gap_max: ledger:mt5verify.dd_rel_gap_max
+sprt:
+  mu0: ledger:funded.live.sprt.mu0
+  mu1: ledger:funded.live.sprt.mu1
+  sigma: ledger:funded.live.sprt.sigma
+  ln_a: ledger:funded.live.sprt.ln_a
+  ln_b: ledger:funded.live.sprt.ln_b

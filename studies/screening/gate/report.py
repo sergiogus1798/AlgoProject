@@ -41,8 +41,8 @@ def main() -> None:
     data = inputs.staged(data, a.feed, inputs.timeframe(data["metrics"], cfg, a.set), out)
     # The judge's own rules, read as the judge reads them (smoke mode included): the cascade
     # and the cut cannot disagree.
-    rules = criteria.resolved(judge.settings()["steps"]["8"].get("rules") or [],
-                              judge.tags(a.project))
+    rules, _ = judge.per_cell(criteria.resolved(judge.settings()["steps"]["8"].get("rules") or [],
+                                                judge.tags(a.project)), a.project)
     print(tried.note_project_run(a.project, "studies.screening.gate", folder.name, cfg,
                                  f"gate.report --set {' '.join(a.set)}".strip()))
     print(f"{len(data['metrics'])} emparejadas + {len(data['missing'])} sin OOS, "
@@ -76,7 +76,7 @@ def main() -> None:
                    f"python3 -m studies.screening.gate.report --project {a.project} "
                    f"--databank '{a.databank}' --feed {a.feed}"
                    + (f" --set {replay}" if replay else ""),
-                   {"entered": len(scores), "survives": int(scores["survives"].sum())})
+                   {"entered": len(scores), "survives": int(scores["survives"].sum())} | got["fdr"])
     print(f"\n{int(scores['survives'].sum())} de {len(scores)} siguen, semillas {used} -> {out}")
 
 

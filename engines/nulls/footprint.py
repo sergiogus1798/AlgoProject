@@ -1,10 +1,10 @@
-"""What a random trader with a mother's own footprint earns per day: the benchmark of step 20."""
+"""What a random trader with a mother's own footprint and clock hours earns per day: step 20's benchmark and the oos2 reading's monkey."""
 
 import numpy as np
 import pandas as pd
 
 from engines.market import reprice
-from engines.nulls import inputs as nulls_inputs, model
+from engines.nulls import inputs as nulls_inputs, windowed
 
 
 def footprint(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
@@ -13,7 +13,8 @@ def footprint(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
 
     Args:
         trades: One mother's trades inside the segment (schema T).
-        bars: The feed's M1 bars over the segment: Open and Close, naive bar-open index.
+        bars: The feed's M1 bars over the segment: Open, High, Low and Close (the last two for the
+            hours null's ATR), naive bar-open index.
         costs: `reprice.costs()` of the feed and segment — what the mother's own retest paid.
         knobs: `benchmark` of config.yaml: `rung`, `draws`, `seed`.
 
@@ -22,10 +23,11 @@ def footprint(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
         at the day's last M1 close; and the Monte Carlo standard error of that series' mean
         per day, same unit. No trades, a flat zero.
 
-        Each trader is drawn by the ladder's own rung (`engines.nulls.model`): the mother's
-        trade count, side and lots, each trade's holding time (in M1 bars), the entry at a
-        uniform bar of the WHOLE segment — not from her first trade to her last, which would
-        hand her when she started. Trades may overlap, as on the ladder. Priced by the one
+        Each trader is drawn by the hours null (`engines.nulls.windowed`, owner 2026-10-12):
+        the mother's trade count, side and lots, each trade's holding time (in M1 bars), the
+        entry at a uniform bar of the WHOLE segment — not from her first trade to her last,
+        which would hand her when she started — at the clock hour of the trade it replaces.
+        The lots stay hers: `windowed.draw` re-sizes by ATR, and here that is put back. Trades may overlap, as on the ladder. Priced by the one
         repricer at the declared costs, so every draw pays spread, slippage, commission and
         the swap of its own nights; the ladder's `calibrate.charged` holds no spread and
         would hand the benchmark what the mother paid
@@ -38,13 +40,18 @@ def footprint(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
     day = bars.index.normalize()
     if trades.empty:
         return pd.Series(0.0, index=day.unique()), 0.0
-    located = {**nulls_inputs.on_grid(trades, bars.index, np.inf), "window": (0, len(bars) - 1)}
+    where = nulls_inputs.on_grid(trades, bars.index, np.inf)
+    side = np.where(trades["Type"].astype(object) == "Buy", 1.0, -1.0)
+    shared = windowed.grid(bars, np.arange(len(bars)), np.zeros(len(bars), int))
+    mine = windowed.located(shared, where["entry"], where["exit"], where["size"], side,
+                            np.zeros(where["entry"].size, int))
     # ponytail: every draw priced at once, ~100 bytes per draw x trade (200 MB at 2,000 x
     # 1,000 trades); price in blocks as engines.nulls.windowed does if draws grows tenfold.
-    drawn = model.RUNGS[knobs["rung"]](located, knobs["draws"],
-                                       np.random.default_rng(knobs["seed"]))
+    drawn = windowed.draw(shared, mine, knobs["rung"], knobs["draws"],
+                          np.random.default_rng(knobs["seed"]))
+    drawn["sizes"] = np.broadcast_to(mine["size"].mean() if windowed.REDRAWS[knobs["rung"]][1]
+                                     else mine["size"], drawn["entries"].shape)
     enter, leave = drawn["entries"], drawn["entries"] + drawn["holds"]
-    side = np.where(trades["Type"].astype(object) == "Buy", 1.0, -1.0)
     opens, closes, time = bars["Open"].to_numpy(), bars["Close"].to_numpy(), bars.index.to_numpy()
     net, _ = reprice.pnl(opens[enter], opens[leave], time[enter], time[leave], side,
                          drawn["sizes"], costs)

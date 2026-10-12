@@ -42,7 +42,7 @@ FAMILIES = {
         "12-rendimiento", "64-archivo", "109-almacen-de-estrategias", "73-fondeo-catalogo",
         "74-fondeo-ofertas"]),
     "04-sqx-plantillas-y-proyectos": ("SQX: bloques, plantillas y proyectos", [
-        "40-sqx-lab", "36-taxonomia", "22-plantillas", "28-builder", "47-proyecto-workflow",
+        "40-sqx-lab", "111-snippets-de-sqx", "36-taxonomia", "22-plantillas", "28-builder", "47-proyecto-workflow",
         "06-mover-estrategias", "27-curar", "17-pipeline", "80-autopiloto", "105-workflow-de-un-comando", "106-campana", "55-retirar-proyectos",
         "62-metadatos-estrategia", "82-perfil-de-mercado", "81-memoria-de-resultados",
         "83-tablero-de-investigacion", "90-explorador-de-bibliografia", "97-inspeccionar-proyectos",
@@ -60,7 +60,7 @@ FAMILIES = {
     "09-optimizacion": ("Parámetros: SPP, variantes, WFC, CSCV y WFM", [
         "33-spp", "08-spp", "09-diccionario-spp", "15-sppultra", "18-variantes",
         "37-wfc-retest", "19-wfc", "107-wfc-calibracion", "25-cscv", "39-nube-de-parametros",
-        "52-superficies-mercado", "34-wfm", "09-wfm", "14-walkforwardmatrix"]),
+        "52-superficies-mercado", "34-wfm", "09-wfm", "14-walkforwardmatrix", "110-lectura-unica-oos2"]),
     "10-cierre": ("El cierre: paso 20, exposición y MetaTrader 5", [
         "56-paso-20", "85-autopiloto-cierre", "38-exposicion", "60-mt5", "76-mt5-verificar", "86-mt5-pool-validado",
         "75-filtro-noticias", "93-metatracker", "94-flota-colector"]),
@@ -68,7 +68,8 @@ FAMILIES = {
         "77-cartera-pool", "78-cartera-universo", "79-cartera-fondeo",
         "87-cartera-etapa-b-y-veredicto", "88-fondeo-caja", "96-cartera-busqueda-por-rangos",
         "100-cartera-raiz-de-prueba", "101-cartera-veredicto",
-        "102-fondeo-decision", "103-cartera-pesos-walk-forward", "104-cartera-incubacion"]),
+        "102-fondeo-decision", "103-cartera-pesos-walk-forward", "104-cartera-incubacion",
+        "112-protocolo-en-vivo"]),
     "12-en-real": ("En real: la cuenta contra SQX", [
         "89-reconciliador-semanal"]),
 }

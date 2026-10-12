@@ -1151,6 +1151,49 @@ thresholds:
     set_on: 2026-09-30
     why: el stop con el que se opera es SL = X·ATR(20) del paso 24; X = p90 del MAE/ATR de las ganadoras de build, la misma regla para todas, fijada antes de mirar ninguna cartera
 
+  # ── Fondeo · protocolo en vivo (encargo 65 fila 10): etapa A y SPRT de la fondeada ────
+  - key: funded.live.stage_a.trades
+    value: 30
+    source: portfolio/funded/live/config.yaml#stage_a.trades
+    set_by: Council (consenso de las cuatro opiniones, encargo 65 fila 10)
+    set_on: 2026-10-12
+    why: la etapa A lee las filas 1, 2, 3a y 5 del paso 26 sobre las 30 primeras operaciones reales (umbrales de las filas, mt5verify.*)
+
+  - key: funded.live.sprt.mu0
+    value: 0.0
+    source: portfolio/funded/live/config.yaml#sprt.mu0
+    set_by: Council (consenso de las cuatro opiniones, encargo 65 fila 10)
+    set_on: 2026-10-12
+    why: SPRT de la fondeada, R por operación — H0 sin ventaja
+
+  - key: funded.live.sprt.mu1
+    value: 0.10
+    source: portfolio/funded/live/config.yaml#sprt.mu1
+    set_by: Council (consenso de las cuatro opiniones, encargo 65 fila 10)
+    set_on: 2026-10-12
+    why: SPRT de la fondeada — H1 con ventaja de 0,10 R por operación
+
+  - key: funded.live.sprt.sigma
+    value: 0.706
+    source: portfolio/funded/live/config.yaml#sprt.sigma
+    set_by: Council (consenso de las cuatro opiniones, encargo 65 fila 10)
+    set_on: 2026-10-12
+    why: SPRT de la fondeada — desviación de R por operación; con mu1 da las fronteras +14,4 / −11,2 R sobre S_n − 0,05·n
+
+  - key: funded.live.sprt.ln_a
+    value: 2.89
+    source: portfolio/funded/live/config.yaml#sprt.ln_a
+    set_by: Council (consenso de las cuatro opiniones, encargo 65 fila 10)
+    set_on: 2026-10-12
+    why: SPRT de la fondeada — ln A; frontera alta cruzada, k al 1,5 %
+
+  - key: funded.live.sprt.ln_b
+    value: -2.25
+    source: portfolio/funded/live/config.yaml#sprt.ln_b
+    set_by: Council (consenso de las cuatro opiniones, encargo 65 fila 10)
+    set_on: 2026-10-12
+    why: SPRT de la fondeada — ln B; frontera baja cruzada, retirar y sustituir por otra medoide de la celda
+
   # ── Paso 27 · la cartera: el veredicto del camino real (portfolio/PLAN.md §5.5, Q11 d) ──
   - key: portfolio.verdict.null_draws
     value: 10000
@@ -1286,14 +1329,14 @@ thresholds:
     source: studies/optimisation/wfc/config.yaml#check.sqx_tolerance
     set_by: "provisional, propuesto por el agente que adaptó el WFC a la propuesta (2026-10-07); no lo ha fijado el dueño"
     set_on: 2026-10-07
-    why: "divisa de la cuenta que el neto reconstruido de una variante puede separarse del NetProfit de SQX en un tramo sin contar como descuadre"
+    why: "suelo, en divisa de la cuenta, de lo que el neto reconstruido de una variante puede separarse del NetProfit de SQX en un tramo sin contar como descuadre; manda el mayor entre este suelo y `wfc.sqx_gap_relative` (dueño, 2026-10-12)"
 
   - key: wfc.sqx_gap_relative
     value: 0.01
     source: studies/optimisation/wfc/config.yaml#check.sqx_relative
     set_by: "provisional, propuesto por el agente que adaptó el WFC a la propuesta (2026-10-07); no lo ha fijado el dueño"
     set_on: 2026-10-07
-    why: "más esta fracción del |NetProfit| del tramo: la tolerancia relativa del mismo descuadre"
+    why: "fracción del |NetProfit| del tramo: la tolerancia relativa del mismo descuadre; se cuadra si |dif| < max(suelo, esta fracción x |NetProfit|) (dueño, 2026-10-12)"
 
   - key: wfc.alpha
     value: 0.05
@@ -1434,3 +1477,24 @@ thresholds:
     set_by: dueño
     set_on: 2026-10-07
     why: "% fuera de muestra de la celda de operación en modo reoptimizado: el centro de la matriz (propuesta del paso 19, §4.3)"
+
+  - key: oos2Reading.draws
+    value: 100000
+    source: studies/optimisation/oos2Reading/config.yaml#null.draws
+    set_by: dueño
+    set_on: 2026-10-12
+    why: "volteos de signo semanales de la lectura única de oos2 (encargo 65 §6): 5.000 es el suelo; el dueño quiere precisión, no ahorro de cómputo"
+
+  - key: oos2Reading.alpha
+    value: 0.05
+    source: studies/optimisation/oos2Reading/config.yaml#null.alpha
+    set_by: dueño
+    set_on: 2026-10-12
+    why: "nivel de una cola contra el que se publica la p de la lectura única de oos2; no corta (corta sólo el signo de z)"
+
+  - key: oos2Reading.max_looks
+    value: 3
+    source: studies/optimisation/oos2Reading/config.yaml#max_looks
+    set_by: dueño
+    set_on: 2026-10-12
+    why: "miradas a oos2 que admite una celda (activo x TF x dirección x familia); con más es «solo vivo» y no se lee (encargo 65 §6)"

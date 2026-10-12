@@ -25,13 +25,13 @@ config.yaml ─▶ harvest ─▶ cascade ─▶ scorecard ─▶ verdict ─▶
 | `inputs.py` | The knobs, one harvest read back, the two windows glued into one curve, and `market()`: the asset behind the feed (point value, 1R, the build and oos1 windows); `staged()` also leaves `feed`, which `reprice.real` checks a late stamp against, and `build_pnl()` prices the build through it | imported | folder → frames, split, end |
 | `levels.py` | The levels of the new gate (encargo 44) in running order, and `facts()`: which level produces each scorecard column — a step-8 rule belongs to the level of its fact. | imported | — → `LEVELS`, fact → level |
 | `level0.py` | Level 0, read off the harvest alone: `presencia_passed`, `sanidad_passed`, `sanidad_value` (every paired strategy), `estaticas_value`, `is_trades_per_year` | imported | harvest + alive → facts |
-| `level1a.py` | Level 1a, R3: reprices the oos1 trades of the strategies still alive with `engines.market.reprice`, subtracts `tradelevel.drift_term` (`drift.window`, `drift.variant`) and gives `drift_excess_t`, the AR(1) t of the excess (`drift.se_skew_kurt`); writes `operaciones.parquet` (`identity, open_time, close_time, side, lots, pnl, cost, drift, excess, window, stop`; the two times are the open of the bar SQX's stamp belongs to, `stop` the raw price of a stop-loss exit, NaN on a bar exit: `reprice.real`) — only the alive, so a strategy that fell at level 0 has no row — and leaves it in `data["oos"]`. | imported | harvest + bars + costs + alive → fact + per-trade table |
-| `level1b_centred.py` | Level 1b, R5 and R5d: `z_frec`, `t_b`, `e_fin`, each against the centre of the run's strategies of the same side (long, short, or «ambos» for one that trades both); `e_fin` is the mean excess plus the centred slope × half the years of oos1; returns every strategy in `data["oos"]`, fallen or not, so its index is wider than `alive`. | imported | oos trades + build trades + alive → facts |
-| `level1b_onepass.py` | Level 1b, R5c, R8 and R9b on oos1: reads `data["oos"]`, `trades["MAE ($)"]` and `market["risk"]`; gives `edge_mean_oos`, `t_exceso_k`, `t_sin_mejor_trimestre`, `t_sin_3_mejores` and a positive `mae_p95_r`. | imported | oos trades + alive → facts |
+| `level1a.py` | Level 1a (R3 — a column since 2026-10-12, it no longer judges): reprices the oos1 trades of the strategies still alive with `engines.market.reprice`, subtracts `tradelevel.drift_term` (`drift.window`, `drift.variant`) and gives `drift_excess_t`, the AR(1) t of the excess (`drift.se_skew_kurt`); writes `operaciones.parquet` (`identity, open_time, close_time, side, lots, pnl, cost, drift, excess, window, stop`; the two times are the open of the bar SQX's stamp belongs to, `stop` the raw price of a stop-loss exit, NaN on a bar exit: `reprice.real`) — only the alive, so a strategy that fell at level 0 has no row — and leaves it in `data["oos"]`. | imported | harvest + bars + costs + alive → fact + per-trade table |
+| `level1b_centred.py` | Level 1b, R5 (a column now) and R5d: `z_frec`, `t_b`, `e_fin`, each against the centre of the run's strategies of the same side (long, short, or «ambos» for one that trades both); `e_fin` is the mean excess plus the centred slope × half the years of oos1; returns every strategy in `data["oos"]`, fallen or not, so its index is wider than `alive`. | imported | oos trades + build trades + alive → facts |
+| `level1b_onepass.py` | Level 1b, R5c, R8 and R9b on oos1 (only R5c's edge-over-cost part still judges; R8, R9b and R5c's t are columns): reads `data["oos"]`, `trades["MAE ($)"]` and `market["risk"]`; gives `edge_mean_oos`, `t_exceso_k`, `t_sin_mejor_trimestre`, `t_sin_3_mejores` and a positive `mae_p95_r`. | imported | oos trades + alive → facts |
 | `level1b_data.py` | Level 1b, data quality: `ret_datos`, `t_a` and `n_afectadas` from `data["oos"]` and `data["quality"]` (the feed's `feedQuality` folder). With no inventory, or one that ends before the last trade, the facts are NaN (Limbo) with a logged reason. | imported | oos trades + anomaly inventory → facts |
 | `level2.py` | Level 2, the one-bar delay: moves each oos1 trade of `data["oos"]` by every variant of `delay.variants` (E+1, S+1, ES+1; E-1 selectable), reprices with `engines.market.reprice` and the same drift term as level 1a, at the window of the moved open, and gives `retraso_ret_min` (smallest mean moved excess / mean original excess; empty when the original mean is not positive) and `retraso_t_delta` (paired t of that same variant); a trade shorter than the shift leaves both means of that variant; a stop-loss exit never moves (a resting order: only its entry slips); writes `retraso.parquet` and, with `delay.on_build`, `retraso_build.parquet`, which only annotates (needs `data["costs_build"]`). | imported | per-trade table + bars + costs + alive → 2 facts + per-variant table |
 | `level3ab.py` | Levels 3a and 3b, R7 and R6: `q_p`, the permutation p of the Q of homogeneity of the oos1 excess across `homogeneity.period` (thin periods joined, `homogeneity.min_trades`); `dd_p`, where oos1's closed-trade drawdown falls among `drawdown.sequences` block-bootstrapped sequences of the build's P/L shifted to oos1's mean; `dd_esperado_r`, their 95th percentile in R; `q_seed` and `dd_seed`, the roots used (fresh when the config's are null). | imported | `data["oos"]`, `data["build"]`, `market["risk"]` + alive → facts |
-| `level3c.py` | Level 3c, the monkey: `engines.nulls.windowed`, drawn inside `drift.window`, ATR-sized at the drawn bar, common repricer, oos1; facts `z_mono`, `mono_p`, `z_mono_<rung>`, `mono_seed`; forks with `core.fanout` | imported | oos trades + bars → facts |
+| `level3c.py` | Level 3c, the monkey: `engines.nulls.windowed`, drawn inside `drift.window` and at the clock hour of the real entry (the strategy's own count per hour, inside the session), ATR-sized at the drawn bar, common repricer, oos1; facts `z_mono` (**the one rule that judges the edge**, see «The z» below), `mono_p`, `z_mono_<rung>`, `mono_seed`; forks with `core.fanout` | imported | oos trades + bars → facts |
 | `redundancy.py` | The soft screen: are these N strategies or one repeated N times | imported | equity → groups |
 | `cascade.py` | Runs the levels of `levels.py` in order, each over what the last left (`cascade.on`; off = every level over everyone, a diagnostic), judges each level's rules of step "8" with `pipeline.autopilot.criteria`, writes the scorecard after each level (`--from-level` resumes) and `funnel.csv` by level and rule | imported | harvest → scorecard, funnel |
 | `measures.py` | The scorecard's **measured** columns, for every paired strategy whichever screen it died at: `trade_t`, `drift_excess_t`, trades per year, and the floating risk in R. No screen reads them | imported | trades + equity + bars → 14 columns |
@@ -120,6 +120,32 @@ on purpose:
 it will, as the row that thins a population before the per-mother protocol starts. `studies/screening/analysis`
 is a library folder with no entry points, so importing it does not point the arrow backwards — but a
 screen that needs new maths **extends that module** rather than growing a second copy of Lo (2002).
+
+## The z — the one statistical rule of step 8 (owner, 2026-10-12, encargo 65 §5.2)
+
+`z_mono` (the strategy's mean P/L per trade against the hours monkey, in the monkey's own sd) must
+reach **Φ⁻¹(1 − 0.05/B)**, B = the batches screened on oos1 in the project's cell (asset × timeframe ×
+direction × family) counting the current one (`ledger.cells.batches_for`): 1.645 with B = 1, 1.960
+with 2, 2.241 with 4. `criteria.yaml` declares only `alpha: 0.05, per: cell`; the line is computed by
+`judge.per_cell` (the gate's `report.py` and the judge both call it, so they cannot disagree) and the
+ledger row of the judgement records B and the line used (`thresholds`). No data means Fail. It replaces
+R3, R5c's t and the old fixed `z_mono >= 1.65` as judges. **R4a, R5, R5b, R8 and R9b are columns**: still
+computed and stored in the scorecard, judging nothing. The medoid cut (`medoids: 4`) runs after it.
+
+**`p_fdr` — a column, not a rule** (owner, 2026-10-12; its cut waits for row 9 of encargo 65). `many.run` fits
+`engines.inference.localfdr` on the `z_mono` of every strategy that reached level 3c in the lot — not on
+`falsePositives`: an empirical null N(δ₀, σ₀²) from the central 50 % of z, π₀ (≤ 1), and
+`p_fdr = 1 − π₀·f₀(z)/f(z)`, the probability the strategy is not null, 0 at or left of δ₀; fdr is made monotone by a cumulative maximum from the right (a z is as null as the worst fdr at or above it), so a lot whose tail is lighter than its own null gives p = 0 to everyone. With fewer than 500
+z it is empty. The scorecard comes ordered: survivors first, by `p_fdr` descending, ties and empties by `z_mono`.
+δ₀, σ₀, π₀ and the z read go in the population's funnel note and the manifest `counts`.
+
+`monkey.draws` is **100,000** (it was 5,000; owner: no compute limits). The Monte Carlo standard error
+of a z near the line is √((1 + z²/2)/n) ≈ 0.0048 at n = 100,000 (0.021 at 5,000), so the draw no longer
+moves a verdict at 1.645 / 1.960 / 2.241 except for a strategy within about 0.01 of the line.
+Measured 2026-10-12 on the USATEC export (`Test_USATEC_H1_ruptura_leaseWeb`, 169 alive, all cores):
+**149 s** for level 3c, four rungs each, i.e. 0.9 s per strategy — so a gate that no longer cuts at R3
+sends many more strategies to 3c: budget ~1 s per strategy per run, and the raw draws kept in
+`distribuciones.parquet` grow with it (~0.4 MB per rung per strategy at float32).
 
 ## Measured, not judged (2026-10-02)
 

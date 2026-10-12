@@ -8,9 +8,9 @@ from core.assetdata import load as load_asset, window as asset_window
 from core.barstore import source as read_bars
 from core.study import config as study_config
 from engines.market import reprice
+from engines.nulls import footprint
 from ledger import gate, study as studymod, thresholds
 from portfolio.common.construct.equity import closecurve
-from studies.closing.blindJoint import benchmark
 
 CONFIG = Path(__file__).with_name("config.yaml")
 STEP = 20
@@ -169,15 +169,15 @@ def random_traders(batches: dict[str, Path], span: tuple[pd.Timestamp, pd.Timest
         cfg: What config() returned.
 
     Returns:
-        One column per mother on the panel's days (`benchmark.footprint`), and each column's
+        One column per mother on the panel's days (`engines.nulls.footprint`), and each column's
         Monte Carlo standard error per day. It opens nothing step 20 had not opened: the
         mothers' oos2 trades and the feed's M1 bars are what `panel` already read, behind
         the same door, and the costs are the asset card's.
     """
-    bars = read_bars(feed, ["Open", "Close"])
+    bars = read_bars(feed, ["Open", "High", "Low", "Close"])
     bars = bars[(bars.index >= span[0]) & (bars.index < span[1])]
     costs = reprice.costs(feed, SEGMENT)
-    got = {m: benchmark.footprint(mother_trades(b, span), bars, costs, cfg["benchmark"])
+    got = {m: footprint.footprint(mother_trades(b, span), bars, costs, cfg["benchmark"])
            for m, b in batches.items()}
     return (pd.DataFrame({m: g[0] for m, g in got.items()}),
             pd.Series({m: g[1] for m, g in got.items()}))

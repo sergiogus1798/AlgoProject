@@ -23,8 +23,8 @@ from ui.daemon.workflow.steps import STEPS
 MT5 = {"start": "2024-01-01", "end": "2026-08-30", "model": "ohlc_m1", "firms": ["ftmo"]}
 GIVEN = {"panel": {"21": "OOS"}, "mt5": MT5, "judged": set()}
 WHO = {"symbol": "USDJPY", "timeframe": "H1", "feed": "USDJPY_M1", "family": "fam"}
-# 18.5 is off (encargo 65 row 8): the block is the two looks 17 and 18, both at oos2
-BLOCK = [("17", "blind"), ("18", "blind")]
+# 18.5 is back (encargo 65 row 8), without its build+oos1 split: the block is the three looks, all at oos2
+BLOCK = [("17", "blind"), ("18", "blind"), ("18.5", "blind")]
 CLOSING = [("21", "reading"), ("26", "finalists")]
 
 
@@ -63,18 +63,18 @@ def test_the_whole_tail_in_order() -> None:
     21, the finalists, step 26 — and every blind look redone, the batches being new."""
     got = plan.plan(rail(), GIVEN)
     assert kinds(got) == [("16", "judge"), ("16.5", "variants"), *BLOCK, ("19", "sqx"),
-                          ("19", "wfm"), ("19", "kept"), ("19", "ledger"), ("20", "joint"), ("20", "judge"),
+                          ("19", "wfm"), ("19", "kept"), ("19.5", "oos2read"), ("19", "ledger"), ("20", "joint"), ("20", "judge"),
                           *CLOSING, ("26", "mt5verify")]
     assert got["stop"] == {"n": None, "why": "no queda ningún paso"}
     assert all(a["redo"] for a in got["do"] if a["kind"] == "blind")
-    assert got["do"][-1]["params"] == MT5 and got["do"][10]["databank"] == "OOS"
+    assert got["do"][-1]["params"] == MT5 and got["do"][12]["databank"] == "OOS"
     json.dumps(got)     # plan.json is written as it comes
 
 
 def test_until_wfm_stops_before_20() -> None:
     """`--until wfm`: the block, the WFM and the ledger rows, then a clean stop before step 20."""
     got = plan.plan(rail(), GIVEN | {"until": "wfm"})
-    assert kinds(got)[-2:] == [("19", "kept"), ("19", "ledger")] and got["stop"]["n"] == "20"
+    assert kinds(got)[-3:] == [("19", "kept"), ("19.5", "oos2read"), ("19", "ledger")] and got["stop"]["n"] == "20"
 
 
 def test_clean_stops() -> None:
@@ -104,7 +104,8 @@ def test_a_rerun_takes_up_where_it_stopped() -> None:
     """17 and 18 done, 19 not: the looks are planned without `redo` (a mother with her
     result is skipped when run), the WFM runs, and everything after it runs again."""
     got = plan.plan(rail("19", s16_5="done"), GIVEN)
-    assert kinds(got) == [*BLOCK, ("19", "sqx"), ("19", "wfm"), ("19", "kept"), ("19", "ledger"),
+    assert kinds(got) == [*BLOCK, ("19", "sqx"), ("19", "wfm"), ("19", "kept"), ("19.5", "oos2read"),
+                          ("19", "ledger"),
                           ("20", "joint"), ("20", "judge"), *CLOSING, ("26", "mt5verify")]
     assert not any(a["redo"] for a in got["do"] if a["kind"] == "blind")
 
@@ -118,15 +119,14 @@ def test_a_rerun_takes_up_where_it_stopped() -> None:
     assert kinds(got)[-4:-1] == [("21", "reading"), ("21", "judge"), ("26", "finalists")]
 
 
-def test_the_block_is_judged_and_18_5_is_off() -> None:
-    """With rules for 17, 18, 18.5 and 19: 18.5 is neither run nor judged; 17 and 18 are looked
-    at (oos2) and judged as the looks close, and 19 after its reading."""
-    got = plan.plan(rail(), GIVEN | {"judged": {"17", "18", "18.5", "19"}})
-    assert kinds(got)[2:11] == [
-        ("17", "blind"), ("18", "blind"), ("17", "judge"), ("18", "judge"), ("19", "sqx"),
-        ("19", "wfm"), ("19", "kept"), ("19", "judge"), ("19", "ledger")]
-    assert not any(n == "18.5" for n, k in kinds(got))
-    assert [a["oos2"] for a in got["do"] if a["kind"] == "blind"] == [True, True]
+def test_the_block_is_judged_and_18_5_is_read_with_oos2() -> None:
+    """With rules for 17, 18, 18.5 and 19: the three looks (oos2), judged as they close (18.5 with
+    its oos2 segment), and 19 after its reading."""
+    got = plan.plan(rail(), GIVEN | {"judged": {"17", "18", "18.5", "19", "19.5"}})
+    assert kinds(got)[2:15] == [
+        ("17", "blind"), ("18", "blind"), ("18.5", "blind"), ("17", "judge"), ("18", "judge"), ("18.5", "judge"), ("19", "sqx"),
+        ("19", "wfm"), ("19", "kept"), ("19", "judge"), ("19.5", "oos2read"), ("19.5", "judge"), ("19", "ledger")]
+    assert [a["oos2"] for a in got["do"] if a["kind"] == "blind"] == [True] * 3
     # only the steps with rules are judged; a block already done is not judged again
     got = plan.plan(rail(), GIVEN | {"judged": {"18"}})
     assert [n for n, k in kinds(got) if k == "judge"] == ["16", "18", "20"]
@@ -143,7 +143,7 @@ def test_the_deciding_reading_does_not_ask_for_oos2() -> None:
             patched(survivors, about=lambda p: WHO), \
             patched(gate, allow=lambda *a: asked.append(a)), \
             patched(call, run=ran.append, window=lambda *a: [["-m", a[0]]]), \
-            patched(blind, variants_dir=lambda p, m: Path(tmp) / m):
+            patched(blind, variants_dir=lambda p, m: Path(tmp) / m, skipped=lambda p, m: None):
         said = blind.look("P", "18.5", "marketSurfaces", mothers, redo=False, oos2=False)
         assert asked == [] and ran == [["-m", "marketSurfaces"]] and "sin oos2" in said
         result = Path(tmp) / "M" / "estudios" / "marketSurfaces.json"
@@ -241,7 +241,7 @@ if __name__ == "__main__":
     test_the_whole_tail_in_order()
     test_clean_stops()
     test_a_rerun_takes_up_where_it_stopped()
-    test_the_block_is_judged_and_18_5_is_off()
+    test_the_block_is_judged_and_18_5_is_read_with_oos2()
     test_the_deciding_reading_does_not_ask_for_oos2()
     test_the_door_refuses_to_read_without_the_three_rows()
     test_nobody_left_is_a_clean_end()

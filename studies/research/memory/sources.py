@@ -49,6 +49,13 @@ def template_of(registry_row: dict) -> str:
     return found.group(1) if found else ""
 
 
+def family_of(project: str) -> str:
+    """The idea family of a project: its template's archetype, else the `family` the registry holds
+    for a Simple Strategy. '' for a project neither knows."""
+    row = registry_projects().get(project, {})
+    return templates().get(template_of(row), {}).get("archetype", "") or row.get("family") or ""
+
+
 def stage_of(step: str, title: str) -> str:
     """The stage a `title: A → B` pair of a resumen row counts, '' when it is not one."""
     if step == "8":

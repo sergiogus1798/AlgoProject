@@ -27,8 +27,7 @@ more, earns more» is an order the step should count is the owner's; today it co
 
 ## 1d. The tolerance of the SQX check
 
-`wfc.sqx_gap_tolerance` (1.0) and `wfc.sqx_gap_relative` (0.01) are provisional, set by the agent:
-no real batch has been repriced against SQX's `NetProfit` yet.
+`wfc.sqx_gap_tolerance` (1.0) and `wfc.sqx_gap_relative` (0.01) are combined as max(floor, share x |NetProfit|) (owner, 2026-10-12); the values are still the agent's.
 
 ## 2. Which trade count the partial rho controls for
 

@@ -108,8 +108,9 @@ def sqx_gap(per: pd.DataFrame, net_profit: pd.Series, unit: str = "variant_id",
         per: per_trade()'s rows, exactly the trades SQX's figure covers; reads `profit`.
         net_profit: SQX's `NetProfit` per unit, indexed by the unit; these are the units
             judged, one without a trade summing to zero.
-        tolerance: Account currency a unit may be off by.
-        relative: Plus this share of |NetProfit|.
+        tolerance: Account currency a unit may be off by: the floor.
+        relative: This share of |NetProfit|; the allowance is the larger of the two (owner,
+            2026-10-12), not their sum.
 
     Returns:
         (the share of units off by more than tolerance + relative x |NetProfit|, the gap sum -
@@ -117,7 +118,7 @@ def sqx_gap(per: pd.DataFrame, net_profit: pd.Series, unit: str = "variant_id",
     """
     gap = per.groupby(unit, observed=True)["profit"].sum().reindex(net_profit.index, fill_value=0.0) \
         - net_profit
-    off = gap[gap.abs() > tolerance + relative * net_profit.abs()]
+    off = gap[gap.abs() > np.maximum(tolerance, relative * net_profit.abs())]
     return len(off) / len(net_profit), off
 
 

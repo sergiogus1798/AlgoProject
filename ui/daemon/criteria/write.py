@@ -40,6 +40,9 @@ def check(rule: dict) -> None:
     if "is" in rule:
         if rule["is"] not in ("pass", "fail"):
             raise ValueError(f"Un veredicto es «pass» o «fail», no «{rule['is']}».")
+    elif "alpha" in rule:    # per-cell line: the judge computes it from B
+        if not (isinstance(rule["alpha"], (int, float)) and 0 < rule["alpha"] < 1):
+            raise ValueError(f"alpha «{rule['alpha']}» no está entre 0 y 1.")
     elif "near_median" in rule:
         for key in ("near_median", "limbo_near_median"):
             if key in rule and not (isinstance(rule[key], (int, float)) and rule[key] >= 0):
