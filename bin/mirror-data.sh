@@ -8,8 +8,9 @@
 # copy made under it is torn, and a workflow over there must not have its bars change mid-run.
 # The remote workers pick the new data up by themselves: bin/sqx-worker.sh syncs on every start.
 #
-# After the copy the mirror gets the manual's sources and refreshes its own M1 bar library
-# (sqx.export.sync_bars through bin/remote.sh), so its studies read what its SQX reads.
+# After the copy the mirror gets the manual's sources, refreshes its own M1 bar library
+# (sqx.export.sync_bars through bin/remote.sh) and rescans its feeds' quality, so its studies
+# read what its SQX reads and step 4 finds every feed scanned.
 #
 # Called by bin/weekly-data-update.sh after a successful update; by hand after adding a feed.
 #
@@ -61,6 +62,9 @@ for line in "${_CFG[@]:3}"; do
       || { echo "mirror-data: the manual's sources did not reach $name"; rc=1; }
     bin/remote.sh "$name" python3 -m sqx.export.sync_bars \
       || { echo "mirror-data: the bar library on $name is behind its data"; rc=1; continue; }
+    # And the scan step 4 asks for: a feed never scanned there is refused by the plan.
+    bin/remote.sh "$name" python3 -m studies.data.feedQuality.scan >/dev/null \
+      || { echo "mirror-data: the feed-quality scan failed on $name"; rc=1; continue; }
   fi
   echo "--- $(date -Is) $name: done"
 done
