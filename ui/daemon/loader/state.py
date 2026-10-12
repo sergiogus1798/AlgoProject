@@ -213,13 +213,13 @@ def commands(project: str, now: dict) -> dict[str, tuple[str, list[str]]]:
     if "metrics" in want:
         out["metrics"] = ("python", ["-m", "sqx.export.export_metrics", "--project", project,
                                      "--databank", db, *at])
-    first = find.files(top, project, db)[:1]
-    if "trades" in want and first:
+    files = find.files(top, project, db)
+    if "trades" in want and files:
         out["trades"] = ("conductor", (
             ["-m", "sqx.export.export_retest", "--project", project, "--databank", db, *at]
-            if find.cross_market(first[0]) else
+            if find.cross_market(files) else
             ["-m", "sqx.export.export_trades", "--project", project, "--databank", db,
-             "--symbol", find.feed(first[0]), *at]))
+             "--symbol", find.feed(files[0]), *at]))
     if "harvest" in want:
         out["harvest"] = ("conductor", ["-m", "studies.screening.gate.harvest", "--project",
                                         project, "--databank", db, "--oos-databank",

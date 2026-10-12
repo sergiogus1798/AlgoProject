@@ -65,6 +65,20 @@ def test_status_and_lanes() -> None:
     assert "sqx.export.export_retest" in todo["trades"][1], todo
 
 
+def test_one_strategy_without_markets_does_not_hide_the_cross_market(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    """📓 gorilla 2026-10-11: SQX kept a «no trades» strategy with its main result alone, it
+    sorted first, and the databank was exported as one market."""
+    files = [Path("a.sqx"), Path("b.sqx")]
+    monkeypatch.setattr(find, "install_of", lambda p, d: ("custodian", Path(".")))
+    monkeypatch.setattr(find, "files", lambda top, p, d: files)
+    monkeypatch.setattr(find.sqxstats, "results",
+                        lambda f: ["Main", "AdditionalMarket: X"] if f.name == "b.sqx" else ["Main"])
+    now = {"writing": False, "databank": "Retest Markets - Family", "role": "custodian",
+           "partner": None, "pieces": {"trades": {"state": "missing"}}}
+    assert "sqx.export.export_retest" in state.commands("P", now)["trades"][1]
+
+
 @NEEDS_FIXTURE
 def test_failure_and_retry() -> None:
     """A failed load stays failed and is not queued again until the owner retries."""

@@ -116,16 +116,20 @@ def files(top: Path, project: str, databank: str) -> list[Path]:
     return sorted(databank_dir(project, databank, top).glob("*.sqx"))
 
 
-def cross_market(sqx: Path) -> bool:
-    """Whether a strategy file carries cross-check markets, so its trades need `data=all`.
+def cross_market(files: list[Path]) -> bool:
+    """Whether a databank carries cross-check markets, so its trades need `data=all`.
+
+    Any file, not the first: SQX keeps a strategy its «no trades» filter failed with its main
+    result alone, and when that one sorted first the whole cross-market retest was exported
+    as one market and step 10 refused it (📓 gorilla, 2026-10-11).
 
     Args:
-        sqx: One strategy file of the databank.
+        files: The databank's strategy files.
 
     Returns:
-        True when it holds an `AdditionalMarket` result besides its main one.
+        True when one of them holds an `AdditionalMarket` result besides its main one.
     """
-    return any(r.startswith("AdditionalMarket") for r in sqxstats.results(sqx))
+    return any(r.startswith("AdditionalMarket") for f in files for r in sqxstats.results(f))
 
 
 def feed(sqx: Path) -> str:
