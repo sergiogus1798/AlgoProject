@@ -1157,7 +1157,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_ui_helpmark.py` | 207 | The «?» beside every button: the registry's keys, one mark per button that follows it, and — | ui, uiwalk | PySide6, pytest |
 | `tests/test_ui_labels.py` | 67 | No raw key and no scientific number on screen: the rail's config line, the filter labels, the knob sentences. | core, ui | yaml |
 | `tests/test_ui_library.py` | 104 | The library offscreen over the daemon in-process: one names table, Cobertura's links, the lazy zones. | ui | PySide6, fastapi |
-| `tests/test_ui_loader.py` | 181 | The databank loader: what it finds stale, the lane each piece takes, failures never retried alone. | ui | fastapi, pytest |
+| `tests/test_ui_loader.py` | 195 | The databank loader: what it finds stale, the lane each piece takes, failures never retried alone. | ui | fastapi, pytest |
 | `tests/test_ui_ops.py` | 214 | The operation zone: /api/pulse, /api/ops/sqx and /api/ledger read-only, and its widgets offscreen. | core, ui | PySide6, fastapi |
 | `tests/test_ui_portfolios.py` | 241 | Known-answer test of the PORTFOLIOS zone's daemon: known folders → the JSON the window paints, and the launchers' plumbing. | portfolio, ui | PySide6, pandas |
 | `tests/test_ui_research.py` | 238 | «Investigar»: its routes on a local app, the queue with fake steps, the preflight's refusals and | core, studies, ui | PySide6, fastapi, pandas |
@@ -1279,7 +1279,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/daemon/loader/__init__.py` | 1 | Loads a databank the window selects: what it lacks, what is stale, and the jobs that fetch it. | — | — |
 | `ui/daemon/loader/afterrun.py` | 176 | Export every new or stale databank of an install's custom projects, right after it stops. | core, sqx, studies, ui | — |
 | `ui/daemon/loader/api.py` | 34 | The routes that load a databank's data when the window selects it. | ui | fastapi, pydantic |
-| `ui/daemon/loader/find.py` | 209 | Where a databank's files live, which retest pairs with it, and whether SQX is writing it now. | core, ui | — |
+| `ui/daemon/loader/find.py` | 213 | Where a databank's files live, which retest pairs with it, and whether SQX is writing it now. | core, ui | — |
 | `ui/daemon/loader/state.py` | 250 | What of a databank is loaded, what is stale, and the commands that bring it up to date. | core, ui | — |
 | `ui/daemon/mt5bridge/__init__.py` | 1 | MT5 Bridge › Verificar: one strategy in SQX at each prop firm's conditions against its MT5 backtest. | — | — |
 | `ui/daemon/mt5bridge/api.py` | 159 | MT5 Bridge's routes: the form's options, past checks, one result, the preflight and the job. | core, mt5, ui | fastapi, pydantic |
