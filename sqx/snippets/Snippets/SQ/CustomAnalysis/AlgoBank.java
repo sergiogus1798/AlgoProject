@@ -38,14 +38,14 @@ import java.util.zip.CRC32;
  * inputArgs: "project|bank1;bank2|folder|keysFile|main or all|samples" — whose databanks, where to
  * write (the caller gives /dev/shm/algobank/<role>/<project>: per install, never hardcoded here), a text file with one "name<TAB>type" per statistic to store, whether the orders are the
  * main result's or every result's, and the sample-type codes to ask statistics for ("10,11,20").
- * The task's own databank is not read and is returned untouched, as in AlgoTrades.
+ * The task's own databank is not read and is returned untouched.
  *
  * A file gets its name only when it is whole: it is written as "<databank>.abk.tmp" and renamed.
  * An order whose type, sample type or close type has no label raises, and that databank gets no
  * file at all. "_done.tsv" is written last, one row per databank: name, strategies, orders, and
  * the milliseconds of the four passes (orders, equity, statistics, XML).
  *
- * One thread: parallelStream was 3.6 times slower in AlgoTrades. The order fields are written
+ * One thread: parallelStream was 3.6 times slower. The order fields are written
  * WITHOUT casts on purpose: a field that is not the type the format says does not compile, and
  * the compile error names it — change the format, never add the cast.
  */
@@ -133,7 +133,7 @@ public class AlgoBank extends CustomAnalysisMethod {
         int[] orderCount = new int[n];
         int[] xmlLength = new int[n];
         long orderTotal = 0;
-        // symbol -> its decimals, -1 when SQX does not know the symbol; looked up once, as AlgoTrades
+        // symbol -> its decimals, -1 when SQX does not know the symbol; looked up once
         LinkedHashMap<String, Integer> decimals = new LinkedHashMap<>();
         ArrayList<int[]> runs = new ArrayList<>();
         Type type = new Type();
