@@ -38,7 +38,7 @@ def eligible(index: pd.DatetimeIndex, entry: np.ndarray, horizon: int) -> np.nda
 
 
 def matched(index: pd.DatetimeIndex, pool: np.ndarray, entry: np.ndarray,
-            rng: np.random.Generator) -> np.ndarray:
+            rng: np.random.Generator, split: tuple | None = None) -> np.ndarray:
     """Random entry bars with the same time-of-day profile as the real ones.
 
     Args:
@@ -46,6 +46,8 @@ def matched(index: pd.DatetimeIndex, pool: np.ndarray, entry: np.ndarray,
         pool: What `eligible` returned.
         entry: Bar index of each real entry.
         rng: Seeded generator.
+        split: What `by_hour` returned for this index, pool and entry; computed when absent.
+            `band` passes it so the partition is built once, not once per draw.
 
     Returns:
         As many bar indices as there are real trades, drawn hour by hour so that the
@@ -53,12 +55,17 @@ def matched(index: pd.DatetimeIndex, pool: np.ndarray, entry: np.ndarray,
         benchmark is partly a statement about the session the strategy trades in, which is
         not what the entry signal is being credited with.
     """
-    hours = index.hour.to_numpy()
     picks = []
-    for hour, count in zip(*np.unique(hours[entry], return_counts=True)):
-        same = pool[hours[pool] == hour]
+    for same, count in split or by_hour(index, pool, entry):
         picks.append(rng.choice(same, size=count, replace=same.size < count))
     return np.concatenate(picks)
+
+
+def by_hour(index: pd.DatetimeIndex, pool: np.ndarray, entry: np.ndarray) -> list:
+    """The draw's fixed part: per hour of the real entries, the pool bars of that hour and the count."""
+    hours = index.hour.to_numpy()
+    return [(pool[hours[pool] == hour], count)
+            for hour, count in zip(*np.unique(hours[entry], return_counts=True))]
 
 
 def band(frame: pd.DataFrame, found: dict, keep: np.ndarray, scale: np.ndarray,
@@ -86,9 +93,9 @@ def band(frame: pd.DataFrame, found: dict, keep: np.ndarray, scale: np.ndarray,
     pool = eligible(frame.index, entry, cfg["horizon"])
     rng = np.random.default_rng(cfg["seed"])
     opens = frame["Open"].to_numpy()
-    drawn = []
+    drawn, split = [], by_hour(frame.index, pool, entry)
     for _ in range(cfg["draws"]):
-        picks = matched(frame.index, pool, entry, rng)
+        picks = matched(frame.index, pool, entry, rng, split)
         walk = excursion.paths(frame, picks, rng.permutation(side), opens[picks],
                                cfg["horizon"])
         drawn.append(curve(excursion.normalised(walk, scale[picks - 1])))

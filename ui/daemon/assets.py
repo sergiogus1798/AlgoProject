@@ -6,8 +6,8 @@ from functools import lru_cache
 from core import assetranges, assetwrite
 from core.assetcheck import (REQUIRED, mc_pending, past_data, pending, provisional,
                              segments_pending, validate)
-from core.assetdata import (RESERVED, classes, fields, load, markets, policy, schema, special_notes,
-                            symbols)
+from core.assetdata import RESERVED, classes, fields, load, policy, schema, symbols
+from core.assetmarkets import markets, special_notes
 from core.assets import report
 from core.assetyaml import leaves
 from core.paths import ASSETS, WORKERS

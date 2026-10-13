@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import math
 import re
 import sys
 import time
@@ -15,10 +16,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from core import worker
 from core.paths import worker_dir
 from core.phases import phase
+from sqx.projects import live, loadwait
 from sqx.variants import banks, inputs, legs as legmod, livexec
 
 TESTED, IN_BANK = banks.TESTED, banks.IN_BANK      # `spp` reads TESTED from here
-SETTLE = 8          # seconds SQX needs after `load` before the databank answers for them all
+LOAD_S = 60         # s to wait for SQX's «Strategies loaded» line after `load`, plus PER_FILE_S per file (then it fails loudly)
+PER_FILE_S = 0.05   # 10x the one timing taken (0.26 s for 50 files); not measured at 5,000-10,000: re-time on the custodian
 STOCK = {"Builder", "Retester"}   # SQX's own projects: never a harness (hard rule 10)
 
 
@@ -56,12 +59,11 @@ def awake(cfg: dict) -> bool:
                 "al owner (regla dura 3)")
         return False
     worker.start(cfg["role"])
-    for _ in range(cfg["ready_tries"]):
-        time.sleep(cfg["poll_seconds"])
+    for _ in range(bound := max(1, math.ceil(cfg["ready_tries"] * cfg["poll_seconds"]))):   # polled every second
+        time.sleep(1)
         if "not ready" not in _call("-project action=list", cfg):
             return True
-    raise SystemExit(f'{cfg["role"]} no respondio tras '
-                     f'{cfg["ready_tries"] * cfg["poll_seconds"]} s')
+    raise SystemExit(f'{cfg["role"]} no respondio tras {bound} s')
 
 
 def load(folder: Path, cfg: dict) -> None:
@@ -73,17 +75,15 @@ def load(folder: Path, cfg: dict) -> None:
 
     Returns:
         Nothing. The input and every leg's output databank are cleared first so the count afterwards is the batch and
-        not the batch plus whatever the last run left. Loading the same folder twice does
-        NOT de-duplicate -- SQX renames the second copy `P00000(1)` and keeps both.
+        not the batch plus whatever the last run left. Loading twice does NOT de-duplicate (`P00000(1)`).
     """
     source = legmod.source()
-    for bank in [source] + [leg["databank"] for leg in legmod.legs()]:
-        command = f'-databank action=clear project={cfg["project"]} name={bank}'
-        worker.checked(_call(command, cfg), command)
-        time.sleep(2)
+    for bank in [source] + [leg["databank"] for leg in legmod.legs()]:       # `clear` is synchronous (~10 ms, 🔬 2026-10-13)
+        worker.checked(_call(command := f'-databank action=clear project={cfg["project"]} name={bank}', cfg), command)
+    since = live.mark(cfg["role"])     # before the call: only a line written after it counts
     command = f'-databank action=load project={cfg["project"]} name={source} folder={folder}'
     worker.checked(_call(command, cfg), command)
-    time.sleep(SETTLE)
+    loadwait.loaded(cfg["role"], since, LOAD_S + PER_FILE_S * len(list(folder.glob("*.sqx"))), 0.25, source)   # the line, not the count: nothing compares it with the files
 
 
 def run(expected: int, cfg: dict, progress: Callable[[int, str], None]) -> int:

@@ -13,7 +13,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline.autopilot import criteria, judge, plan, tffacts
+from pipeline.autopilot import criteria, judge, plan, selection, tffacts
 from sqx.projects import cfxio, workflow as wf
 from sqx.projects.workflow import CROSSTF_BUILD
 from studies.transfer.crossTF.tf import inputs as tfinputs
@@ -99,10 +99,10 @@ def test_a_sibling_leaves_with_its_mother_at_11_5_and_always_at_12() -> None:
                         "who": ["M1", "M1_ScaledH1", "M2", "M2_ScaledH1(1)"]})
     is_sibling = pop["strategy"].str.contains("_Scaled")
     judged = {"M1": ("pass", ""), "M2": ("fail", "fail: x")}
-    follow = judge.siblings(pop, is_sibling, judged, True)
+    follow = selection.siblings(pop, is_sibling, judged, True)
     assert follow == {"M1_ScaledH1": ("pass", ""), "M2_ScaledH1(1)": ("fail", "fail: x")}
-    assert {s for s, (st, _) in judge.siblings(pop, is_sibling, judged, False).items()} == set(follow)
-    assert all(st == "fail" for st, _ in judge.siblings(pop, is_sibling, judged, False).values())
+    assert {s for s, (st, _) in selection.siblings(pop, is_sibling, judged, False).items()} == set(follow)
+    assert all(st == "fail" for st, _ in selection.siblings(pop, is_sibling, judged, False).values())
 
 
 def write_run(folder: Path) -> None:

@@ -78,6 +78,18 @@ def daily_blocks(days: dict[str, np.ndarray], horizon: int, n_paths: int, mean_b
     return out
 
 
+def path_seeds(n: int, rng: np.random.Generator) -> np.ndarray:
+    """One kernel seed per path, all different, uint64 [n].
+
+    numba's `np.random.seed` keeps 32 bits of whatever it is given, so the seeds are drawn from
+    [0, 2**32) WITHOUT replacement: no two paths share a stream. With replacement (until
+    2026-10-13) a million paths held ~116 repeated pairs. The paths' distribution is the same;
+    the draws are not, so paths stored before that date do not reproduce from their seed
+    (owner, 2026-10-13, encargo 66 §9).
+    """
+    return rng.choice(2**32, n, replace=False).astype(np.uint64)
+
+
 def _empty(n_paths: int, horizon: int) -> dict[str, np.ndarray]:
     """Zeroed output arrays for the laying kernels."""
     out = {k: np.zeros((n_paths, horizon)) for k in FIGURES[:4]}
@@ -107,7 +119,7 @@ def trade_bootstrap(members: list[dict], horizon: int, n_paths: int,
         raise ValueError(f"T1: los miembros {short} tienen menos de 2 operaciones: sin huecos que sortear")
     flat = lay.stack(members)
     out = _empty(n_paths, horizon)
-    seeds = rng.integers(0, 2**32, n_paths, dtype=np.uint64)
+    seeds = path_seeds(n_paths, rng)
     lay.t1(flat["start"], flat["n"], flat["pnl"], flat["low"], flat["high"], flat["level"],
            flat["first"], flat["gaps"], flat["gap_first"], seeds, members[0]["per_day"],
            out["closed"], out["float_end"], out["low"], out["high"], out["opened"])
@@ -134,7 +146,7 @@ def trade_blocks(members: list[dict], horizon: int, n_paths: int, window_days: i
     """
     flat = lay.by_day(lay.stack(members), members[0]["n_days"])
     out = _empty(n_paths, horizon)
-    seeds = rng.integers(0, 2**32, n_paths, dtype=np.uint64)
+    seeds = path_seeds(n_paths, rng)
     lay.t2(flat["start"], flat["n"], flat["pnl"], flat["open_slot"], flat["low"], flat["high"],
            flat["level"], flat["day_ptr"], seeds, float(window_days), members[0]["per_day"],
            out["closed"], out["float_end"], out["low"], out["high"], out["opened"])

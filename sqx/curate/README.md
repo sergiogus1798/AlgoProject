@@ -7,6 +7,7 @@ and every cut leaves a record of what it removed next to the verdict that asked 
 |---|---|---|---|
 | `verdict.py` | Write a `verdict.csv` from the databank's metrics export: keep what passes a pandas filter, or drop the names given; identities read from the files | `python3 -m sqx.curate.verdict --project P --databank Results --role custodian --keep "net_profit_oos > 0"` · `--drop "Strategy 11.4.39"` · `--columns` | `metrics.csv` → `AlgoData/reports/P/Results/<day>/curate/verdict-HHMMSS.csv` |
 | `apply_verdict.py` | Delete the strategies a verdict rejected from a databank (or move them into another databank with `--into`), after checking each file's identity and recording what was there. `--role` is **required** (it used to default to the master). The cut itself is `apply(project, databank, verdict_csv, role, into=None)`, importable: the window's «Continuar workflow» (`ui/daemon/advance/`) calls it | `python3 -m sqx.curate.apply_verdict --project P --databank Results --verdict <path>/verdict.csv --role custodian --apply` | `verdict.csv` → files deleted, `before-HHMMSS.csv` + `rejected-HHMMSS.csv` beside the verdict |
+| `aftercut.py` | What follows a verdict on the files, split out of `apply_verdict.py`: `remove` (delete or move the rejected) and `refilter` (cut the databank's trade export to the survivors instead of re-exporting) | imported by `apply_verdict` | files / export folder → same, cut |
 
 ## The contract between Python and SQX
 

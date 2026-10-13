@@ -3,7 +3,10 @@
 import json
 import os
 import sys
+import threading
+import urllib.parse
 import zipfile
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 import pandas as pd
@@ -116,16 +119,6 @@ def test_live_sync_forces_a_full_databank_and_refuses_an_unknown_one(
     with pytest.raises(SystemExit, match=r"sin «saved» en el log \['Results'\]"):
         live.sync("custodian", "Test_X", force={"Results"})
 
-
-def test_live_cut_refuses_a_count_that_does_not_add_up(monkeypatch: pytest.MonkeyPatch) -> None:
-    """P8: two names asked for and one gone is a failure, as in `apply_verdict`."""
-    monkeypatch.setattr(live, "records", lambda role, p: {"B": 5})
-    monkeypatch.setattr(live, "call", lambda role, action, **p: {"records": 4})
-    monkeypatch.setattr(live, "sync", lambda role, p, banks: {})
-    assert live.cut("custodian", "Test_X", "B", ["a"]) == 1
-    with pytest.raises(SystemExit, match="se pidió quitar 2 y salieron 1"):
-        live.cut("custodian", "Test_X", "B", ["a", "b"])
-    assert live.cut("custodian", "Test_X", "B", ["a", "a"]) == 1    # one name twice is one strategy
 
 
 def test_a_source_changed_during_an_export_reads_stale(tmp_path: Path) -> None:

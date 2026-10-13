@@ -30,13 +30,14 @@ def mothers(project: str) -> dict[str, str]:
     return {k: v for k, v in out.items() if k not in clash and k != v}
 
 
-def aliases(project: str, identity: str) -> frozenset[str]:
+def aliases(project: str, identity: str, mother: dict[str, str] | None = None) -> frozenset[str]:
     """The identity SQX gave the same strategy later, when the two name each other mother.
 
     Only a mutual pair counts: a variant has a mother that does not point back, and is another
-    strategy (`verdicts` reads the same pairs the same way).
+    strategy (`verdicts` reads the same pairs the same way). `mother`: what `mothers` returned,
+    when the caller already has it (a save asks once per survivor, and `mothers` walks every lineage.csv).
     """
-    mother = mothers(project)
+    mother = mothers(project) if mother is None else mother
     other = mother.get(identity)
     return frozenset({other} if other and mother.get(other) == identity else ())
 

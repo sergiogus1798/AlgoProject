@@ -53,7 +53,7 @@ def main() -> None:
               "missing_oos": len(data["missing"]), "levels": [level for level, _ in LEVELS],
               "cascade": cfg["cascade"]["on"], "overrides": a.set}
     if a.from_level == "0":      # a whole run starts clean: no level's rows of an older seed stay
-        (out / draws.FILE).unlink(missing_ok=True)
+        draws.reset(out)
     got = many.run(data, cfg, rules, source, a.from_level)
     scores, funnel = got["scores"], got["funnel"]
     used = {knob: int(scores[column].dropna().iloc[0]) for knob, column in SEEDS.items()

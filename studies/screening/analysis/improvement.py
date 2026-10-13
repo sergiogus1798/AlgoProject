@@ -10,6 +10,7 @@ CUTS = (5, 10, 20, 30, 50)
 MIN_SURVIVORS = 200
 DRAWS = 2000
 ALPHA = 0.05
+ROWS = 250      # resamples drawn at a time in _resampled: memory only, same draws
 SEED = 20260904
 
 # What the sweep's workers read, set before the fork.
@@ -103,9 +104,18 @@ def reach(tests: int) -> int:
 
 def _resampled(rng: np.random.Generator, kept: np.ndarray, level: float,
                draws: int) -> tuple[np.ndarray, np.ndarray]:
-    """The median and the hit rate of `draws` resamples of the survivors, one block."""
-    draw = kept[rng.integers(0, kept.size, (draws, kept.size))]
-    return np.median(draw, axis=1), (draw > level).mean(axis=1)
+    """The median and the hit rate of `draws` resamples of the survivors, one block.
+
+    Drawn ROWS resamples at a time: the generator hands out the same indices, and the
+    draws x survivors matrix (660 MB at 2,000 x 10,000) is never whole.
+    """
+    median, hit = np.empty(draws), np.empty(draws)
+    for done in range(0, draws, ROWS):
+        rows = min(ROWS, draws - done)
+        draw = kept[rng.integers(0, kept.size, (rows, kept.size))]
+        median[done:done + rows] = np.median(draw, axis=1)
+        hit[done:done + rows] = (draw > level).mean(axis=1)
+    return median, hit
 
 
 def lift(y: np.ndarray, mask: np.ndarray, level: float, draws: int = DRAWS,

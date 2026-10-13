@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from core import assetdata
 from engines.nulls import inputs as nullinputs
 from pipeline.autopilot import facts
-from studies.transfer.crossTF import cells, inputs, verdict
+from studies.transfer.crossTF import cells, inputs, siblings, verdict
 
 FEED = "XAUUSD_M1"
 START = pd.Timestamp(assetdata.window(assetdata.load("XAUUSD"), "oos1")[0], unit="ms")
@@ -86,7 +86,7 @@ def test_what_a_sibling_adds_and_what_the_mother_sums() -> None:
     got = panel()
     base, h4, m30 = cell(got, "baseline", "H1"), cell(got, "scaled", "H4"), \
         cell(got, "scaled", "M30")
-    rho = min(max(h4["corr_vs_baseline"], 0.0), cells.MOST_ALIKE)
+    rho = min(max(h4["corr_vs_baseline"], 0.0), siblings.MOST_ALIKE)
     assert abs(h4["z_new"] - (h4["z"] - rho * base["z"]) / np.sqrt(1 - rho ** 2)) < 1e-12
     assert m30["trades"] < 30 and np.isnan(m30["z_new"]) and np.isnan(m30["p"])
     assert base["combined_n_tested"] == 1 and base["combined_z_new"] == h4["z_new"]
@@ -163,7 +163,7 @@ def test_idle_months_count_as_zero_in_the_correlation() -> None:
                          "timeframe": ["H1", "H4"], "role": ["baseline", "scaled"]})
     packed = pd.concat([one.assign(strategy="A", block=0), other.assign(strategy="B", block=0),
                         late.assign(strategy="C", block=0)], ignore_index=True)
-    got = cells.correlations(plan, packed)["corr"].iloc[0]
+    got = siblings.correlations(plan, packed)["corr"].iloc[0]
     twelve = np.corrcoef(np.r_[pl, np.zeros(5)], np.r_[pl * 2 + np.array([1, 0, 2, 0, 1, 0]), np.zeros(5)])[0, 1]
     assert abs(got - twelve) < 1e-9, (got, twelve)
 

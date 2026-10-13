@@ -60,8 +60,14 @@ def reconcile(sqx: pd.DataFrame, live: pd.DataFrame, week: str, timeframe: str,
                                                            instrument["point_value"]))
     live["row"] = np.arange(len(live), dtype=float)
     sqx = _shaped(sqx, SQX)
-    sqx = _points(compare.to_zone(sqx, *zones), instrument).join(
-        floating.rebuild(sqx, bars, instrument["point_value"]))
+    zoned = compare.to_zone(sqx, *zones)
+    # MAE/MFE only for the trades the week can keep: opened inside it once the clock shift
+    # (at most max_offset_h) is applied, plus a day of margin. The rest are cut below anyway.
+    start, end = weeks.bounds(week)
+    margin = pd.Timedelta(hours=cfg["clock"]["max_offset_h"], days=1)
+    near = ((zoned["Open time"] >= start - margin) & (zoned["Open time"] < end + margin)).to_numpy()
+    sqx = _points(zoned, instrument).join(
+        floating.rebuild(sqx[near], bars, instrument["point_value"]))
     hours = clocks.clock(sqx, live, tolerance, cfg["clock"]["max_offset_h"])
     sqx = weeks.cut(clocks.shifted(sqx, hours), week)
     both = compare.pair(sqx, live, tolerance).astype(sqx.dtypes.to_dict())   # an empty side keeps its types

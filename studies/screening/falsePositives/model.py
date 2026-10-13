@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 
-from engines.nulls import barrier, model, simulate, windowed
+from engines.nulls import barrier, simulate, windowed
 
 SAMPLES = ("IS", "OOS")     # the gate's names: the asset's `build` segment and its `oos1`
 
@@ -63,8 +63,7 @@ def monkeys(donor: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict, knobs: dict
         own = donor[donor["sample"] == sample].sort_values("Open time").reset_index(drop=True)
         kept = simulate.fixed(own, frame, nullcfg)
         corr = min(corr, kept["checks"]["corr"])
-        rng = np.random.default_rng([nullcfg["nulls"]["seed"], simulate._stable(key),
-                                     model.RUNG_ID[rung], i])
+        rng = np.random.default_rng([nullcfg["nulls"]["seed"], simulate._stable(key), i])
         # The hours null (owner, 2026-10-12, encargo 65 §5.2): each monkey trade re-enters at a
         # uniform bar of the donor's window AND at the clock hour of the trade it replaces.
         at = kept["located"]
@@ -78,7 +77,7 @@ def monkeys(donor: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict, knobs: dict
         bars, enter = kept["bars"], drawn["entries"]
         drawn["sizes"] = SIZING[knobs["sizing"]](kept, enter, windowed.REDRAWS[rung][1])
         assert np.isfinite(drawn["sizes"]).all(), f"{key}: a {sample} trade has no ATR to size by"
-        leave, price = barrier.exits(enter, drawn["holds"], bars, {}, "pessimistic")
+        leave, price = barrier.vertical(enter, drawn["holds"], bars["leave_px"])
         pnl = barrier.pnl(enter, leave, price, drawn["sizes"], bars["enter_px"],
                           np.tile(kept["cost"], draws), kept["value"])
         # Worst price while held: the low for a long, the high for a short (value < 0). In

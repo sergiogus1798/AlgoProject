@@ -51,7 +51,8 @@ def excess(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str], cost
 
 
 def measure(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str],
-            costs: reprice.Costs, drift: dict, variants: list[str]) -> pd.DataFrame:
+            costs: reprice.Costs, drift: dict, variants: list[str],
+            moved: dict[str, np.ndarray] | None = None) -> pd.DataFrame:
     """Retention and paired t of every delay variant, per strategy.
 
     Args:
@@ -60,6 +61,9 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str],
         bars, span, costs: As excess() takes them.
         drift: The gate's `drift` block; `se_skew_kurt` picks the t, as in level 1a.
         variants: Keys of `SHIFTS`, in the order a tie for the worst is broken.
+        moved: Variant to its `excess()` over these same trades, filled here for the variants
+            it lacks. `excess` reads the fills and the sizes, never `pnl` or `excess`, so the
+            same trades with money added to every P/L (the control's planted edge) share it.
 
     Returns:
         One row per identity and variant, variants in the order given: `identity`, `variant`,
@@ -69,10 +73,11 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str],
         that it cannot price, is left out of both of its means.
     """
     t = tradelevel.t_skew_kurt if drift["se_skew_kurt"] else tradelevel.t
-    rows = []
+    rows, cache = [], {} if moved is None else moved
     for name in variants:
-        moved = excess(trades, bars, span, costs, drift, SHIFTS[name])
-        pair = trades.assign(moved=moved, delta=trades["excess"] - moved).dropna(subset=["delta"])
+        if name not in cache:
+            cache[name] = excess(trades, bars, span, costs, drift, SHIFTS[name])
+        pair = trades.assign(moved=cache[name], delta=trades["excess"] - cache[name]).dropna(subset=["delta"])
         mean = pair.groupby("identity", sort=False)[["excess", "moved"]].mean()
         rows.append(pd.DataFrame({
             "variant": name, "ret": (mean["moved"] / mean["excess"]).where(mean["excess"] > 0),

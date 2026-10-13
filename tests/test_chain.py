@@ -18,7 +18,7 @@ from sqx.projects import stage  # noqa: E402
 from tests.test_advance import CALLS, P  # noqa: E402
 from tests.test_launch import scratch  # noqa: E402
 from ui.daemon import jobs, workerguard  # noqa: E402
-from ui.daemon.launch import api, chain, chainplan, run  # noqa: E402
+from ui.daemon.launch import api, chain, chaincheck, chainplan, run  # noqa: E402
 from ui.daemon.launch import preflight as launch_preflight  # noqa: E402
 from ui.daemon.workflow.steps import STEPS  # noqa: E402
 from ui.daemon.workflow.tests import SPENDS  # noqa: E402
@@ -128,9 +128,9 @@ def test_chain_runs(root: Path) -> None:
     chain.rail.plan = lambda spec, k, ctx, db, picked: [{"label": k, "argv": ["-m", k],
                                                          "about": {}}]
     chain.command = lambda argv: (CALLS.append(("cmd", argv[1])), (0, ""))[1]
-    got = chain.check(P)
+    got = chaincheck.check(P)
     assert got["ok"], got
-    assert "Se para antes del paso 9" in chain.text(got, P)
+    assert "Se para antes del paso 9" in chaincheck.text(got, P)
     chain.chain(P)
     kinds = [x[0] if x[0] != "cmd" else x[1] for x in CALLS if x[0] not in ("state", "call")]
     assert kinds == ["assets", "just", "start", "stop", "assets", "just", "start", "stop",
@@ -142,7 +142,7 @@ def test_plan_diverged(root: Path) -> None:
     """The job runs the confirmed plan: a step whose state moved since is a halt, not a guess."""
     scratch(root, install="SQX_w2", role="custodian")
     chain.workflow.workflow = lambda p: rail({"6": "pending", "7": "pending"})
-    confirmed = chain.check(P)["plan"]
+    confirmed = chaincheck.check(P)["plan"]
     chain.workflow.workflow = lambda p: rail({"7": "pending"})       # 6 finished meanwhile
     try:
         chain.chain(P, confirmed)

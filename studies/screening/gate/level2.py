@@ -14,7 +14,9 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
     Args:
         data: The harvest as `inputs.load` gives it, plus `bars`, `market`, `costs`, `out` and
             `oos`, level 1a's per-trade table of oos1; with `delay.on_build` also
-            `costs_build`, reprice.costs of the feed's build segment.
+            `costs_build`, reprice.costs of the feed's build segment. `moved`, a dict, is
+            delay.measure's cache of oos1's moved excess: the control hands the same one to
+            every copy of a population.
         alive: Identities still in the cascade.
         cfg: The gate's config; reads `delay` and `drift`.
 
@@ -30,7 +32,7 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
     bars, windows, drift = data["bars"], data["market"]["windows"], cfg["drift"]
     variants = cfg["delay"]["variants"]
     oos = data["oos"][data["oos"]["identity"].isin(alive)]
-    table = delay.measure(oos, bars, windows["OOS"], data["costs"], drift, variants)
+    table = delay.measure(oos, bars, windows["OOS"], data["costs"], drift, variants, data.get("moved"))
     table.to_parquet(data["out"] / "retraso.parquet", index=False)
     if cfg["delay"]["on_build"]:
         raw = data["trades"]

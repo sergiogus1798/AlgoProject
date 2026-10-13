@@ -9,6 +9,7 @@ tag: 🔬  date: 2026-09-29  see: export/trade-export-columns, export/storage-fo
 2. `Sample type` is only as good as the strategy's last retest — use it when IST/OOS1 present, else `Open time`.
 3. Drop rows with a blank close price (last row may be an unfilled pending order, `Close type=EndTest`).
 4. Give it a folder, even for one strategy: `file=<one .sqx>` writes `<output>.csv` beside the output folder, not a CSV inside it.
+5. No multi-databank syntax (🔬 2026-10-13, conductor): `file="A;B"` -> «File 'A;B' doesn't exist», rc 1; a parent folder of A and B -> «doesn't exist!», rc 1 (not recursive); `file=A file=B` -> rc 0 but ONLY the last one is exported, silently. One launch ≈ 14.4 s for 30 strategies (almost all JVM). Several databanks = stage them in one flat folder; Results and OOS hold the same strategy names, so CSVs collide unless renamed per bank.
 
 ## Evidence
 2026-09-29, `mt5.verify`: `file=…/MT5Verify_ftmo/Strategy 3.48.75.sqx output=…/sqx/ftmo` → log «orders exported to '…/sqx/ftmo.csv'», the folder `sqx/ftmo/` left empty.

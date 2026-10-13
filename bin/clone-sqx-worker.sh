@@ -17,8 +17,9 @@ from core.paths import MASTER, WORKERS
 role = sys.argv[1]
 if role not in WORKERS:
     sys.exit(f"machine.yaml defines no worker role {role!r}; it has: " + ", ".join(WORKERS))
-print(MASTER); print(WORKERS[role]["path"]); print(WORKERS[role]["port"])' "$ROLE" 2>&1) || {
-  printf 'cannot resolve worker role "%s":\n  %s\n' "$ROLE" "$_WHERE"; exit 1; }
+print(MASTER); print(WORKERS[role]["path"]); print(WORKERS[role]["port"])' "$ROLE") || {
+  printf 'cannot resolve worker role "%s" (python said why, above)\n' "$ROLE"; exit 1; }
+# stdout only: with stderr folded in, a Python warning became line 1 and was read as MASTER.
 mapfile -t _WHERE <<< "$_WHERE"
 MASTER="${_WHERE[0]}"
 WORKER="${_WHERE[1]}"

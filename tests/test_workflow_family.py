@@ -10,7 +10,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core import assetdata
+from core import assetmarkets
 from pipeline.autopilot.resume import builder_argv
 from sqx.projects import registry
 from studies.research.memory import sources
@@ -36,9 +36,9 @@ def test_refusal_lists_the_table_and_acceptance_reads_it() -> None:
     """A missing or unknown family is refused with the valid values; every table row is accepted."""
     for bad in (None, "", "ruptura"):
         msg = registry.check_family(bad)
-        assert msg and all(k in msg for k in assetdata.expected_sign())
-    assert all(registry.check_family(k) is None for k in assetdata.expected_sign())
-    assert "breakout" in assetdata.expected_sign()
+        assert msg and all(k in msg for k in assetmarkets.expected_sign())
+    assert all(registry.check_family(k) is None for k in assetmarkets.expected_sign())
+    assert "breakout" in assetmarkets.expected_sign()
 
 
 def test_old_row_without_the_column_reads_and_survives_a_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

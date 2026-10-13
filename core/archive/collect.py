@@ -3,17 +3,58 @@
 import csv
 import json
 import shutil
+import threading
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
 from core.paths import DATA
+from core.study import draws
+
+
+_READ: dict = {}        # (path, kind) -> (mtime, size, value): a save freezes many survivors from the same files
+_LOCK = threading.Lock()    # the daemon's threads archive side by side
+_ROOM = 1 << 31         # bytes of files held; past it the cache starts again
+
+
+def _cached(path: Path, kind: str, load: Callable[[Path], Any]) -> Any:
+    """`load(path)`, parsed once per file version; callers never change what they get back."""
+    st = path.stat()
+    key, stamp = (path, kind), (st.st_mtime_ns, st.st_size)
+    with _LOCK:
+        hit = _READ.get(key)
+    if hit is not None and hit[0] == stamp:
+        return hit[1]
+    value = load(path)
+    with _LOCK:
+        if sum(v[0][1] for v in _READ.values()) > _ROOM:
+            _READ.clear()
+        _READ[key] = (stamp, value)
+    return value
+
+
+def release() -> None:
+    """Drop what the cache holds: a save or an archive is over, the daemon lives on."""
+    with _LOCK:
+        _READ.clear()
+
+
+def _csv_rows(path: Path) -> list[dict]:
+    """Every row of a CSV as a dict of strings."""
+    with path.open(encoding="utf-8", newline="") as fh:
+        return list(csv.DictReader(fh))
 
 
 def _rows(path: Path) -> list[dict]:
     """A CSV as a list of row dicts, every value a string."""
-    with path.open(encoding="utf-8", newline="") as fh:
-        return list(csv.DictReader(fh))
+    return _cached(path, "rows", _csv_rows)
+
+
+def _json(path: Path) -> dict:
+    """A JSON file parsed once per file version."""
+    return _cached(path, "json", lambda p: json.loads(p.read_text(encoding="utf-8")))
 
 
 def _names(folder: Path, ids: frozenset[str]) -> tuple[list[str], list[str], str | None]:
@@ -41,7 +82,7 @@ def _names(folder: Path, ids: frozenset[str]) -> tuple[list[str], list[str], str
                 table.setdefault(r["strategy"], r["identity"])
     own, signed = [], False
     for path in sorted(folder.glob("estrategias/*.json")):
-        got = json.loads(path.read_text(encoding="utf-8"))
+        got = _json(path)
         name, rows = got.get("strategy") or path.stem, True
         signed = signed or bool(got.get("identity"))
         if (got.get("identity") or table.get(name)) in ids:
@@ -68,7 +109,7 @@ def _table(path: Path, ids: frozenset[str], names: list[str], out: Path) -> None
         Nothing. A parquet that names no strategy is a population aggregate that can weigh
         megabytes and is left out; a CSV that names none (a funnel) is copied whole.
     """
-    frame = pd.read_parquet(path) if path.suffix == ".parquet" else pd.read_csv(path, dtype=str)
+    frame = _cached(path, "table", lambda p: pd.read_parquet(p) if p.suffix == ".parquet" else pd.read_csv(p, dtype=str))
     if frame.index.name == "identity":
         frame = frame[frame.index.isin(ids)]
     elif "identity" in frame.columns and frame["identity"].isin(ids).any():
@@ -106,8 +147,7 @@ def _freeze(folder: Path, ids: frozenset[str], own: list[str], names: list[str],
         if path.suffix in (".csv", ".parquet"):
             _table(path, ids, names, out)
         elif path.suffix == ".json" and (path.stem in (folder.name, "manifest") or
-                                         json.loads(path.read_text(encoding="utf-8"))
-                                         .get("strategy") in names):
+                                         _json(path).get("strategy") in names):
             shutil.copy2(path, out / path.name)
     return sorted(p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file())
 
@@ -116,7 +156,7 @@ def _hash(folder: Path, own: list[str]) -> str | None:
     """The config_hash of the result this folder holds for the strategy, else its population's."""
     for path in [folder / "estrategias" / f"{n}.json" for n in own] + [folder / f"{folder.name}.json"]:
         if path.is_file():
-            return json.loads(path.read_text(encoding="utf-8")).get("config_hash")
+            return _json(path).get("config_hash")
     return None
 
 
@@ -137,7 +177,7 @@ def _loose(root: Path, ids: frozenset[str], out: Path) -> tuple[list[str], list[
     frozen, skipped = [], []
     for path in sorted(root.glob("*.csv")) + sorted(root.glob("*/*/*.csv")):
         rel = path.relative_to(root)
-        frame = pd.read_csv(path, dtype=str)
+        frame = _cached(path, "table", lambda p: pd.read_csv(p, dtype=str))
         rows = frame[frame.isin(ids).any(axis=1)]
         if len(rows):
             (out / rel).parent.mkdir(parents=True, exist_ok=True)
@@ -170,6 +210,7 @@ def freeze(project: str, identity: str, out: Path, also: frozenset[str] = frozen
         databank, day = folder.parts[-3:-1]
         if not folder.is_dir() or databank.startswith("_"):
             continue
+        draws.consolidate(folder)       # a `--strategy` run leaves its rows apart; a copy by file name would miss them
         own, names, reason = _names(folder, ids)
         if reason:
             skipped.append({"path": folder.relative_to(root).as_posix(), "reason": reason})
@@ -181,25 +222,3 @@ def freeze(project: str, identity: str, out: Path, also: frozenset[str] = frozen
                         "config_hash": _hash(folder, own), "files": files})
     loose, lost = _loose(root, ids, out)
     return entries, loose, skipped + lost
-
-
-def harvest_rows(folder: Path, identity: str, out: Path) -> dict:
-    """The cosecha's three tables cut to this identity, every column kept.
-
-    Args:
-        folder: harvest/<P>/<D>/<day>/.
-        identity: The strategy's identity.
-        out: `<version>/harvest/`.
-
-    Returns:
-        Rows kept per table.
-    """
-    out.mkdir()
-    counts = {}
-    for name in ("metrics", "equity", "trades"):
-        if not (folder / f"{name}.parquet").exists():     # a harvest of metrics alone (Stop_p90)
-            continue
-        rows = pd.read_parquet(folder / f"{name}.parquet", filters=[("identity", "==", identity)])
-        rows.to_parquet(out / f"{name}.parquet")
-        counts[name] = len(rows)
-    return counts

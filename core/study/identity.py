@@ -1,12 +1,24 @@
 """The identity of a strategy named in an export: from an install, the cosecha, or the export's .sqx."""
 
 import json
+from collections.abc import Iterable
 from pathlib import Path
 
 import pandas as pd
 
-from core import sqxfile
+from core import fanout, identities, sqxfile
 from core.paths import DATA, MASTER, WORKERS, databank_dir
+
+
+POOL_FROM = 20      # fewer files than this: hashed here, a forked pool costs more than it saves
+
+
+def hashed(files: Iterable[Path]) -> dict[Path, str]:
+    """`sqxfile.identity` of each file: on every core from POOL_FROM files up (1.6 ms each in one)."""
+    files = list(dict.fromkeys(files))
+    if len(files) < POOL_FROM:
+        return {f: sqxfile.identity(f) for f in files}
+    return identities.many(files, fanout.CORES)
 
 
 def lookup(project: str, databank: str, names: list[str]) -> dict[str, str | None]:
@@ -25,10 +37,9 @@ def lookup(project: str, databank: str, names: list[str]) -> dict[str, str | Non
     found: dict[str, str | None] = dict.fromkeys(names)
     for install in [MASTER] + [w["path"] for w in WORKERS.values()]:
         folder = databank_dir(project, databank, install)
-        for name in [n for n, v in found.items() if v is None]:
-            path = folder / f"{name}.sqx"
-            if path.is_file():
-                found[name] = sqxfile.identity(path)
+        paths = {n: folder / f"{n}.sqx" for n, v in found.items() if v is None}
+        ids = hashed(p for p in paths.values() if p.is_file())
+        found |= {n: ids[p] for n, p in paths.items() if p in ids}
     return found
 
 
@@ -108,10 +119,9 @@ def from_export(folder: Path, names: list[str]) -> dict[str, str | None]:
         kept = pd.read_csv(folder / "identity.csv", dtype=str)
         found |= {n: i for n, i in zip(kept["strategy"], kept["identity"]) if n in found}
     for where in (folder / "strategies", folder.parent / "strategies"):
-        for name in [n for n, v in found.items() if v is None]:
-            path = where / f"{name}.sqx"
-            if path.is_file():
-                found[name] = sqxfile.identity(path)
+        paths = {n: where / f"{n}.sqx" for n, v in found.items() if v is None}
+        ids = hashed(p for p in paths.values() if p.is_file())
+        found |= {n: ids[p] for n, p in paths.items() if p in ids}
     return found
 
 

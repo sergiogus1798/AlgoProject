@@ -22,6 +22,20 @@ def versions(identity: str) -> list[str]:
                   if p.is_dir() and not p.name.startswith(".")) if folder.is_dir() else []
 
 
+_TEAR = '\n "tearsheet": '       # view.json is dumped with indent=1: this opening is the top-level key, never a nested one
+
+
+def _strategy(path: Path) -> str | None:
+    """`view["tearsheet"]["strategy"]`, parsing only the tearsheet (the rest is megabytes of results)."""
+    text = path.read_text(encoding="utf-8")
+    at = text.find(_TEAR)
+    if at < 0:
+        tear = json.loads(text)["tearsheet"]
+    else:
+        tear = json.JSONDecoder().raw_decode(text, at + len(_TEAR))[0]
+    return tear["strategy"] if isinstance(tear, dict) else None
+
+
 def listing() -> list[dict]:
     """Every archived strategy, one row per version.
 
@@ -34,10 +48,8 @@ def listing() -> list[dict]:
     for identity in sorted(p.name for p in root.iterdir() if p.is_dir()) if root.is_dir() else []:
         for version in versions(identity):
             doc = json.loads((root / identity / version / "manifest.json").read_text(encoding="utf-8"))
-            view = json.loads((root / identity / version / "view.json").read_text(encoding="utf-8"))
-            tear = view["tearsheet"]
             out.append({"identity": identity, "version": version,
-                        "strategy": tear["strategy"] if isinstance(tear, dict) else None,
+                        "strategy": _strategy(root / identity / version / "view.json"),
                         **{k: doc[k] for k in ("project", "databank", "step", "archived_at", "note")}})
     return out
 
@@ -70,3 +82,20 @@ def load(identity: str, version: str | None = None) -> dict:
     return {**shown, "manifest": json.loads((folder / "manifest.json").read_text(encoding="utf-8")),
             "version": folder.name, "folder": str(folder), "sqx": str(folder / "strategy.sqx"),
             "meta": json.loads(meta.read_text(encoding="utf-8")) if meta.is_file() else None}
+
+
+def frozen(manifest: dict, identity: str) -> tuple[str, dict]:
+    """A member's clock and per-segment commission, as frozen in its manifest when it was archived.
+
+    Args:
+        manifest: The version's `manifest.json` (`load(...)["manifest"]`).
+        identity: The member, for the message.
+
+    Returns:
+        (clock, commission). Raises when the manifest predates the fields: there is no
+        fallback to the live registry or card, which is the bug these fields exist to end.
+    """
+    if "clock" not in manifest or "commission" not in manifest:
+        raise KeyError(f"{identity[:12]}…: su manifiesto no guarda reloj ni comisión; "
+                       "rellénalo con `python3 -m portfolio.common.construct.inputs.backfill --yes`")
+    return manifest["clock"], manifest["commission"]

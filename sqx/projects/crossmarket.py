@@ -7,7 +7,8 @@ import zipfile
 from pathlib import Path
 from datetime import date
 
-from core.assetdata import doctrine, load, markets, sqx_settings, symbols
+from core.assetdata import doctrine, load, sqx_settings, symbols
+from core.assetmarkets import markets
 from sqx.projects import cfxio
 from sqx.projects.crossfeeds import with_feeds
 from sqx.projects.crosschecks import member_of, silence

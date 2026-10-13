@@ -96,7 +96,7 @@ def roles(feeds: list[str], category: dict[str, str], family: str, table: dict) 
         feeds: The tensor's markets.
         category: {feed: "family" | "structural"} (`inputs.markets.classify`); a feed not in it is "free".
         family: The strategy's idea family (template archetype); '' or not in the table: all "free".
-        table: `core.assetdata.expected_sign()`.
+        table: `core.assetmarkets.expected_sign()`.
 
     Returns:
         One role per feed: a structural market of a family whose row says `control` is a negative

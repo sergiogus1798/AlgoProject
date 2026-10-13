@@ -18,8 +18,8 @@ from portfolio.common.construct import universe as command  # noqa: E402
 from portfolio.common.construct.equity import blocks, matrix, universe  # noqa: E402
 from portfolio.common.construct.inputs import config, source  # noqa: E402
 
-IDENTITY = "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048"
-VERSION = "2026-09-28T0919"
+IDENTITY = "11278e59164e5e493095627093928bb1d8898afe6e0c2b51d0b07c8d39f00730"
+VERSION = "2026-10-06T2148"
 FAILURES = []
 
 

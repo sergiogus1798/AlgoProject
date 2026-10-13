@@ -97,6 +97,33 @@ holds_install() { [ -n "$(install_pids)" ]; }
 # both ends: a booting worker has a process and no port yet, and one shutting down may drop
 # the port while the JVM is still writing its databanks to disk.
 alive() { running || holds_install; }
+# Wait for the install's process to go, for at most $1 s (default 15), polling every second:
+# returns 0 the moment it is gone, 1 (saying what it waited for) when it is still there.
+settle_wait() {
+  for _ in $(seq 1 "${1:-15}"); do alive || return 0; sleep 1; done
+  echo "   still waiting for the $ROLE process to exit after ${1:-15} s" >&2
+  return 1
+}
+
+# Wait for process $1 to be gone, for at most $2 s, polling every second; 1 (saying so) when it is still there.
+pid_wait() {
+  for _ in $(seq 1 "$2"); do kill -0 "$1" 2>/dev/null || return 0; sleep 1; done
+  echo "   PID $1 still there after $2 s" >&2
+  return 1
+}
+# Wait for the X socket of display $1 (":N") for at most $2 s, polling every second, while the
+# Xvfb just launched (PID $3) is alive: a socket left by a killed one proves nothing, and a dead
+# Xvfb is no reason to keep waiting.
+XSOCK_DIR="${SQX_X_SOCKET_DIR:-/tmp/.X11-unix}"
+xvfb_wait() {
+  for _ in $(seq 1 "$2"); do
+    kill -0 "$3" 2>/dev/null || { echo "   Xvfb (PID $3) died before opening display $1" >&2; return 1; }
+    [ -S "$XSOCK_DIR/X${1#:}" ] && return 0
+    sleep 1
+  done
+  echo "   Xvfb display $1 has no socket after $2 s" >&2
+  return 1
+}
 
 # Seconds `start` waits for the port and `stop` waits for the process. 🔬 2026-10-03, 1,679
 # launches in both workers' launcher_*.log against "Server started on port" in SQX's log:
@@ -145,9 +172,11 @@ xvfb_pid() {
 # Kill this install's Xvfb if the file still names it, and remove the file either way.
 drop_xvfb() {
   local pid
-  [ -f "$(xvfb_file)" ] || return 0
-  pid=$(xvfb_pid) && kill "$pid" 2>/dev/null
-  rm -f "$(xvfb_file)"
+  if [ -f "$(xvfb_file)" ]; then
+    pid=$(xvfb_pid) && kill "$pid" 2>/dev/null
+    rm -f "$(xvfb_file)"
+  fi
+  rm -f "$XSOCK_DIR/X$(xvfb_display | tr -d :)"     # a killed Xvfb leaves its socket: stale for the next wait
 }
 
 # A start whose port never opened used to report the failure and leave its sqcli alive: it
@@ -161,7 +190,7 @@ kill_launched() {
     for _ in $(seq 1 30); do kill -0 "$pid" 2>/dev/null || break; sleep 1; done
     if kill -0 "$pid" 2>/dev/null; then
       echo "PID $pid ignored SIGTERM for 30 s — sending SIGKILL"
-      kill -9 "$pid" 2>/dev/null; sleep 2
+      kill -9 "$pid" 2>/dev/null; pid_wait "$pid" 5 || true
     fi
   fi
   if kill -0 "$pid" 2>/dev/null && install_pids | grep -qx -- "$pid"; then
@@ -365,7 +394,7 @@ case "${1:-}" in
         # blocked the next start (2026-10-09). A file written under user/projects counts as moving.
         if { [ -f "$LOGF" ] && [ $(( $(date +%s) - $(stat -c %Y "$LOGF") )) -lt 60 ]; } \
            || [ -n "$(find "$WORKER/user/projects" -type f -mmin -1 -print -quit 2>/dev/null)" ]; then
-          sleep 15
+          settle_wait 15 || true
         else
           break
         fi
@@ -375,7 +404,7 @@ case "${1:-}" in
         for p in $(install_pids); do kill -TERM "$p" 2>/dev/null; done
         for _ in $(seq 1 30); do alive || break; sleep 1; done
         for p in $(install_pids); do kill -KILL "$p" 2>/dev/null; done
-        sleep 2
+        settle_wait 5 || true
       fi
     fi
     if alive; then
@@ -385,6 +414,7 @@ case "${1:-}" in
       STOPPED=1
       echo "$ROLE stopped"
       drop_xvfb
+      rm -rf "/dev/shm/algobank/$ROLE"    # an .abk is a picture of the session's memory: stale once it ends
     fi
     # The worker just released its log. Quiescent install = safe moment to prune.
     "$ROOT/bin/sqx-log-prune.sh" --auto || true
@@ -397,8 +427,15 @@ case "${1:-}" in
     drop_lock_if_same "$LOCK0"
     # Owner, 2026-09-28: every SQX run is exported the moment it ends — metrics, trades and
     # the cosecha of each new or stale databank of the install's Test_/Trade_ projects.
-    # ALGO_NO_EXPORT=1 skips it. A failed export never fails the stop.
-    (cd "$ROOT" && python3 -m ui.daemon.loader.afterrun --role "$ROLE") || true
+    # ALGO_NO_EXPORT=1 skips it. A failed export never fails the stop (nine callers run it with
+    # check=True and the worker is already down), but it is never silent: stderr, and a FALLO
+    # line in THIS install's user/log/FALLO-export.txt. A run folder records no role, so writing
+    # into the newest estado.txt could hit another worker's run; the window does not read this file yet.
+    if ! (cd "$ROOT" && python3 -m ui.daemon.loader.afterrun --role "$ROLE"); then
+      MSG="FALLO en el export final tras parar el $ROLE (afterrun salió con error): las exportaciones de sus databanks pueden estar viejas"
+      echo "$MSG" >&2
+      printf '%s %s\n' "$(date +%F\ %H:%M:%S)" "$MSG" >>"$WORKER/user/log/FALLO-export.txt" || true
+    fi
     ;;
   start)
     clear_stale_lock
@@ -422,8 +459,9 @@ case "${1:-}" in
       OLD_TOKEN=$(gui_setting BrowserToken)
       setsid nohup "$HOME/.local/bin/Xvfb" "$DISP" -screen 0 1920x1080x24 -nolisten tcp \
         >"$WORKER/user/log/xvfb.log" 2>&1 </dev/null 9>&- &
-      echo $! >"$(xvfb_file)"
-      sleep 1
+      XVFB_PID=$!
+      echo "$XVFB_PID" >"$(xvfb_file)"
+      xvfb_wait "$DISP" 10 "$XVFB_PID" || { drop_xvfb; exit 1; }
       env -u ELECTRON_RUN_AS_NODE DISPLAY="$DISP" setsid nohup ./StrategyQuantX >"$LOG" 2>&1 </dev/null 9>&- &
     else
       env -u ELECTRON_RUN_AS_NODE setsid nohup ./sqcli >"$LOG" 2>&1 </dev/null 9>&- &
@@ -433,15 +471,15 @@ case "${1:-}" in
     # already held, and one that comes up late must never come up unowned.
     write_lock "$SQCLI_PID"
     echo -n "starting $ROLE"
-    for _ in $(seq 1 $((START_WAIT / 2))); do
-      running && break; echo -n "."; sleep 2
+    for _ in $(seq 1 "$START_WAIT"); do
+      running && break; echo -n "."; sleep 1
     done
     echo
     if running && [ "$GUI" = "1" ]; then
       # SQX writes a fresh BrowserToken to settings.xml once its GUI web server is up.
       echo -n "waiting for the GUI web server"
-      for _ in $(seq 1 90); do
-        [ "$(gui_setting BrowserToken)" != "$OLD_TOKEN" ] && break; echo -n "."; sleep 2
+      for _ in $(seq 1 180); do
+        [ "$(gui_setting BrowserToken)" != "$OLD_TOKEN" ] && break; echo -n "."; sleep 1
       done
       echo
       [ "$(gui_setting BrowserToken)" != "$OLD_TOKEN" ] || echo "⚠️ GUI web server did not report a new token"

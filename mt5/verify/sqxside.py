@@ -10,6 +10,7 @@ import pandas as pd
 
 from core import exportdrv, trades, worker
 from core.paths import ROOT, WORKERS, databank_dir, worker_dir
+from sqx.projects import live, loadwait
 from ui.daemon import workerguard
 from ui.daemon.advance import run as advance_run, sqxlog
 
@@ -37,6 +38,21 @@ def build(name: str, strategy: Path, asset: str, timeframe: str, role: str,
     if got.returncode:
         raise SystemExit(f"el builder no creó {name}:\n{(got.stderr or got.stdout)[-2000:]}")
     return json.loads(got.stdout[got.stdout.index("{"):])
+
+
+def synced(folder: Path, cfg: dict) -> bool:
+    """Whether `folder` holds .sqx files, all non-empty and unchanged across two consecutive polls.
+
+    The folder is read right after `synctofiles`: a file SQX is still writing is not taken (its
+    size moves or is 0). False after `sync_tries` polls of `poll_s` s."""
+    last: dict[str, int] | None = None
+    for _ in range(cfg["sync_tries"]):
+        now = {f.name: f.stat().st_size for f in folder.glob("*.sqx") if f.exists()}
+        if now and 0 not in now.values() and now == last:
+            return True
+        last = now
+        time.sleep(cfg["poll_s"])
+    return False
 
 
 def run(project: str, role: str, strategy: Path, work: Path, outputs: dict[str, str],
@@ -67,9 +83,10 @@ def run(project: str, role: str, strategy: Path, work: Path, outputs: dict[str, 
         worker.start(role)
         workerguard.mark(role, project)
         advance_run.ready(project, role)
+        since = live.mark(role)
         load = f"-databank action=load project={project} name={cfg['input']} folder={staged}"
         worker.checked(worker.call(load, role), load)
-        time.sleep(cfg["settle_s"])
+        loadwait.loaded(role, since, cfg['load_s'], cfg['poll_s'], cfg['input'])
         offsets = sqxlog.mark(top)
         reply = worker.call(f"-project action=start name={project}", role)
         if "rror" in reply or "Cannot start" in reply:     # «Project has unresolved resources»
@@ -79,11 +96,7 @@ def run(project: str, role: str, strategy: Path, work: Path, outputs: dict[str, 
         for firm, bank in outputs.items():
             worker.call(f"-databank action=synctofiles project={project} name={bank}", role)
             folder = databank_dir(project, bank, worker_dir(role))
-            for _ in range(cfg["sync_tries"]):
-                time.sleep(cfg["poll_s"])
-                if any(folder.glob("*.sqx")):
-                    break
-            else:       # a load or a sync that failed must never read as «SQX did not trade»
+            if not synced(folder, cfg):       # a load or a sync that failed must never read as «SQX did not trade»
                 raise SystemExit(f"{bank} ({firm}): nada en disco tras el sync de {project} en "
                                  f"{cfg['sync_tries'] * cfg['poll_s']} s: el retest no dejó su "
                                  "estrategia; no se compara nada")

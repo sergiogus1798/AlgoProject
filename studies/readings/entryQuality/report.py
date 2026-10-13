@@ -30,7 +30,7 @@ def main() -> None:
             f"{got['summary']['full_path']} de {got['summary']['trades']} operaciones con "
             f"camino completo.")
     out = output.folder(a.export, "entryQuality")
-    draws.merge(out, kept)
+    draws.merge(out, kept, defer=True)
     print(markdown.render(got, title))
     print(f"-> {output.member(out, got, title, lede)}")
 

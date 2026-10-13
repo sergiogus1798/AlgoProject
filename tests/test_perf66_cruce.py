@@ -123,3 +123,123 @@ def test_the_execute_phases_land_in_their_buckets(tmp_path: Path) -> None:
                                        "execute.sqx": "sqx", "execute.sync": "sync"}
     assert own["own"].round(3).to_dict() == {"accion": 30, "execute": 20, "execute.sqx": 40,
                                              "execute.sync": 10}
+
+
+@pytest.fixture
+def loader_world(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
+    """A tmp install (`Results` and `OOS`, two files each) under the REAL `state.status` / `commands` / `load`."""
+    import os
+    from ui.daemon.loader import find, state
+    top = tmp_path / "top"
+    banks = top / "user" / "projects" / "Test_P" / "databanks"
+    for bank in ("Results", "OOS"):
+        (banks / bank).mkdir(parents=True)
+        for n in ("A", "B"):
+            (banks / bank / f"{n}.sqx").write_bytes(b"x")
+    world = {"cross": False, "started": [], "ids": None}
+    monkeypatch.setattr(find, "install_of", lambda p, d: ("custodian", top))
+    monkeypatch.setattr(find, "spelled", lambda p, d: d)
+    monkeypatch.setattr(find, "partner", lambda t, p, d: "OOS" if d == "Results" else None)
+    monkeypatch.setattr(find, "files", lambda t, p, d: sorted((banks / d).glob("*.sqx")))
+    monkeypatch.setattr(find, "writing", lambda t, p: False)
+    monkeypatch.setattr(find, "cross_market", lambda files: world["cross"])
+    monkeypatch.setattr(find, "feed", lambda f: "EURUSD_M1")
+    monkeypatch.setattr(find, "roster", lambda p, d: world["ids"](d) if world["ids"] else
+                        {f.stem: f.stem for f in (banks / d).glob("*.sqx")})
+    monkeypatch.setattr(state.jobs, "listing", lambda: [])
+    monkeypatch.setattr(state, "fingerprint", lambda files: "sig")
+    monkeypatch.setattr(state, "export_dir", lambda p, d, day, batch="": tmp_path / "raw" / d / day)
+    monkeypatch.setattr(state, "harvest_dir", lambda p, d, day: tmp_path / "harvest" / d / day)
+    monkeypatch.setattr(state, "metrics_export", lambda p, d: tmp_path / "metrics" / d)
+    monkeypatch.setattr(state.jobs, "start",
+                        lambda name, argv, meta, lane: world["started"].append((meta["loader"], argv)))
+
+    def exported(bank: str, kind: str = "raw") -> None:
+        """Leave a manifest newer than the bank's files, as a finished export does."""
+        folder = tmp_path / kind / bank / "2026-01-01"
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "manifest.json").write_text("{}")
+        os.utime(folder / "manifest.json", (time.time() + 60, time.time() + 60))
+    world["exported"], world["tmp"] = exported, tmp_path
+    return world
+
+
+def exports_flag(todo: dict) -> list[str]:
+    """The harvest's `--exports`, when asked."""
+    return [a for a in todo.get("harvest", ("", []))[1] if a == "--exports"]
+
+
+def test_commands_asks_the_harvest_for_exports_when_either_side_is_stale(loader_world: dict) -> None:
+    """The step-7 case: the build's trades fresh, the retest's not -> still one pass; cross-market -> none."""
+    from ui.daemon.loader import state
+    now = state.status("Test_P", "Results")
+    assert exports_flag(state.commands("Test_P", now)) == ["--exports"]       # both stale
+    assert exports_flag(state.commands("Test_P", now, exports=False)) == []
+    loader_world["cross"] = True
+    assert exports_flag(state.commands("Test_P", now)) == []                  # `export_retest`'s shape
+    loader_world["cross"] = False
+    loader_world["exported"]("Results")
+    now = state.status("Test_P", "Results")
+    assert now["pieces"]["trades"]["state"] == "fresh"
+    assert exports_flag(state.commands("Test_P", now)) == ["--exports"]       # only the partner's are due
+    loader_world["exported"]("OOS")
+    assert exports_flag(state.commands("Test_P", state.status("Test_P", "Results"))) == []
+
+
+def test_load_queues_the_trades_unless_the_harvest_covers_the_whole_databank(loader_world: dict) -> None:
+    """A build with an unpaired strategy keeps its trades job (after the harvest); a fully paired one has the harvest write them."""
+    from ui.daemon.loader import state
+    state.load("Test_P", "Results")
+    assert [k for k, _ in loader_world["started"]] == ["metrics", "harvest"]
+    assert "--exports" in loader_world["started"][1][1]
+    for ids in (lambda d: {"A": "A", "B": "B"} if d == "Results" else {"A": "A"},      # one unpaired
+                lambda d: {"X": "A"}):                                                 # two files, one identity
+        loader_world["started"].clear()
+        loader_world["ids"] = ids
+        state.load("Test_P", "Results")
+        assert [k for k, _ in loader_world["started"]] == ["metrics", "harvest", "trades"]
+        assert "--exports" not in loader_world["started"][1][1]
+
+
+@pytest.mark.parametrize("wrote,runs", [(True, 0), (False, 1)])
+def test_chain_load_over_the_real_commands_skips_the_trades_the_harvest_wrote(
+        loader_world: dict, monkeypatch: pytest.MonkeyPatch, wrote: bool, runs: int) -> None:
+    """`chain.load`: the real `commands` puts the harvest first with `--exports`; `export_trades` runs only if it left them stale."""
+    from ui.daemon.launch import chain
+    asked: list[str] = []
+
+    def command(argv: list[str]) -> tuple[int, str]:
+        """Stand-in for the child: a harvest with `--exports` leaves both trade exports."""
+        asked.append(argv[1].rsplit(".", 1)[-1])
+        if argv[1].endswith("harvest") and "--exports" in argv and wrote:
+            loader_world["exported"]("Results")
+            loader_world["exported"]("OOS")
+        return 0, ""
+    monkeypatch.setattr(chain, "command", command)
+    assert chain.load("Test_P", "Results") == []
+    assert asked[:2] == ["export_metrics", "harvest"] and asked.count("export_trades") == runs
+
+
+def test_window_chain_prints_a_batch_that_lost_strategies(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
+    """Without a `tell` (the window's chain) the «FALLARON» line goes to the job's own log."""
+    from ui.daemon.launch import chain
+    monkeypatch.setattr(chain.workflow, "context", lambda p: {})
+    monkeypatch.setattr(chain, "feeds", lambda n, c: [])
+    monkeypatch.setattr(chain.rail, "BY_N", {"8": {}})
+    monkeypatch.setattr(chain.rail, "refusal", lambda n, k, c: None)
+    monkeypatch.setattr(chain.rail, "plan", lambda spec, k, c, db, picked: [{"label": "f", "argv": ["-m", "x"], "about": {}}])
+    monkeypatch.setattr(chain, "floored", lambda argv, key="", picked=None: (0, "FALLARON 2 de 16: a, b"))
+    assert chain.python_step("P", {"n": "8", "tests": ["filters"]}) == []
+    assert "filters: FALLARON 2 de 16: a, b" in capsys.readouterr().out
+
+
+def test_a_failed_harvest_does_not_take_the_trades_job_with_it(loader_world: dict, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The harvest that carried `--exports` failed: the next load offers the trades again (not the failed harvest)."""
+    from ui.daemon.loader import state
+    job = {"loader": "harvest", "project": "Test_P", "databank": "Results", "rc": 1, "cancelled": False, "tail": ["boom"]}
+    monkeypatch.setattr(state.jobs, "listing", lambda: [job])
+    state.load("Test_P", "Results")
+    assert [k for k, _ in loader_world["started"]] == ["metrics", "trades"]
+    loader_world["started"].clear()
+    state.load("Test_P", "Results", retry=True)      # the owner's retry: the harvest again, with the trades inside it
+    assert [k for k, _ in loader_world["started"]] == ["metrics", "harvest"]

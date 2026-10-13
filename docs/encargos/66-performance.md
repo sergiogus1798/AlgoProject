@@ -19,23 +19,23 @@ de hallazgos que la sección nombra; no toques nada fuera de los ficheros que no
 dos lecturas, para y dilo». La sesión verifica la entrega y **actualiza la fila y la bitácora antes
 de lanzar la siguiente**. Regla 12: un solo árbol, `master`, sin commits por tu cuenta.
 
-## Estado (2026-10-12)
+## Estado (2026-10-13)
 
 Estados: ⬜ sin empezar · 🟡 en curso · ✅ hecho (fecha y cifra medida) · 🔴 espera al dueño.
 Modelo: **O** = Opus (diseño de núcleos, estadística, autoría Java) · **S** = Sonnet · **H** = Haiku.
 
 | # | frente | modelo | depende de | necesita SQX vivo | estado |
 |---|---|---|---|---|---|
-| 1 | Errores: lo que da un número mal, pierde datos o rompe una reanudación | S | — | no | 🟡 2026-10-12: lo de la bitácora hecho; quedan §1.1 cuadrático, §1.2, §1.4 (16.5 por fase), §1.5 y la tabla de §1.6 |
-| 2 | Control de falsos positivos (37 % de la corrida) | S | 1 (`draws`) | no | ⬜ |
-| 3 | Los sorteos: núcleos del mono y del gate para 1 M | O | 2 | no | ⬜ |
-| 4 | Anchura: un comando por test y 48 núcleos donde hoy hay 1, 4, 8 o 16 | S | 1 | no | ⬜ |
-| 5 | Cruce SQX ↔ Python sin SQX vivo: una pasada, lecturas en paralelo, un proceso | S | — | no | 🟡 2026-10-12: lecturas en paralelo hechas (bitácora); queda lo demás de §5 |
-| 6 | `AlgoBank`: el binario por databank | O | 5 | **sí** (conductor) | ⬜ |
-| 7 | Esperas de SQX: reaperturas y custodio con un solo proyecto | S | — | **sí** | 🔴 D6 |
-| 8 | Almacén de población sin copia, y el motor por corrida | O | 4, 6 | no | ⬜ |
-| 9 | Velocidad puntual fuera del camino crítico | S | — | no | 🟡 2026-10-12: `atr`, `originals`, `depmap`/`checks`, `inputs.wide` hechos |
-| 10 | Que el catálogo de `perf/` mida bien | S | D8 | no | 🔴 D8 |
+| 1 | Errores: lo que da un número mal, pierde datos o rompe una reanudación | S | — | no | 🟡 2026-10-13: `draws` por estrategia plegado en diferido (candado por hilo, zstd 9, igual al plegado viejo por `assert_frame_equal`); 16.5 con marcador `.done` (0 llamadas a `wire` con madres acabadas); `ledger/tried.py` con candado; `stopexit` con recorte declarado. probado sin SQX; falta en vivo (16.5 sin sync §7.3). Queda D27 (ledger único) sin diseñar. Tanda 3 (D2, §1.5): los lanzadores de la ventana resuelven una raíz por ejecución (`ui/daemon/runner/rootseed.py`) y la pasan como `--seed`; `ui/daemon/runs.py` ya pasa `--timeframe`. probado sin SQX |
+| 2 | Control de falsos positivos (37 % de la corrida) | S | 1 (`draws`) | no | 🟡 2026-10-13: 79,5 → 11,6 s (NIKKEI M30, 200 monos, 2.000 sorteos, 4 pasadas, máquina cargada); `funnel` y `rules` bit a bit; D11 (`z_mono`): 3 columnas de peldaño vacías en `facts`. Revisión independiente: ninguna reutilización inválida. Falta comparar la pasada de la población real completa contra el código viejo |
+| 3 | Los sorteos: núcleos del mono y del gate para 1 M | O | 2 | no | 🟡 2026-10-13: mono 3c con núcleo de tabla + PCG64 en numba, bit a bit (1 M × 4 peldaños por estrategia: 111 → 10,8 s con 385 ops; 406 → 48,5 s con 1.532 ops); escalera sin `argsort` (500 ops × 200k sorteos: 5,63 → 1,64 s a 1 hilo, 0,50 s a 4); `drawdowns` ×9-11, `q_null` ×1,6-2,1, `_resampled` pico 128 → 24 MB, `footprint` 87 → 4 MB. probado sin SQX; falta en vivo. No hecho: 3.9d (mueve el último bit en 506 de 3.600 formas; pregunta 3) |
+| 4 | Anchura: un comando por test y 48 núcleos donde hoy hay 1, 4, 8 o 16 | S | 1 | no | 🟡 2026-10-13: crossTF, crossmarket, blindJoint, exposure, decay y spread scan sobre `core/fanout.py`; lanzador con reserva de RAM por peso (estudios anchos de uno en uno), `python_step` pliega 16 subprocesos en 1, «FALLARON n de N» llega a `estado.txt`. probado sin SQX; falta en vivo. Tanda 3: mono `--only` (§4.1) reutiliza la raíz guardada y fusiona en `nulls.csv`; se niega sin ejecución previa o con otra semilla, sorteos, peldaños, timeframe, feed, ajustes o export. §4.3 ya cubierto por la tanda 2. forkserver (§4.5) descartado: fork 0,15 s, forkserver 15,5 s con 48 procesos. probado sin SQX |
+| 5 | Cruce SQX ↔ Python sin SQX vivo: una pasada, lecturas en paralelo, un proceso | S | — | no | 🟡 2026-10-13: exports tras un paso sólo de los databanks del paso, una pasada de `orderstocsv` (`--exports` + `lineage.csv`), manifiesto con `since`; corte con `refilter` tras el veredicto (`sqx/curate/aftercut.py`). probado sin SQX; falta en vivo. Tanda 3 (§5.6/§5.7): las tres esperas ciegas (`kill` + `sleep 2` ×2, `sleep 1` tras Xvfb) esperan a la condición real con tope; sondeos a 1 s; `stop` sale en cuanto el proceso se ha ido; paso 26 espera «Strategies loaded». Los bucles que mandan `count` no se acortan. probado sin SQX |
+| 6 | `AlgoBank`: el binario por databank | O | 5 | **sí** (conductor) | 🟡 2026-10-13: snippet Java escrito, compilado e instalado SÓLO en el conductor (`install --check` ok); lector `core/bankfile.py`, disparador `sqx/export/membank.py`, carpeta `/dev/shm/algobank/<rol>/<proyecto>`. Sesión en vivo 2: los 11 tests en vivo pasan con la tercera versión del snippet (3 cambios Java, 1 de orden de lectura en `bankfile.trades`). 2 databanks 73.359 operaciones: 1,15-1,19 s frente a 2,95 s de AlgoTrades y 16-27 s por banco de `orderstocsv`; 10.000 estrategias (7,27 M órdenes): 7,8 s frente a 38,6 s; 905 MB de `/dev/shm` por 10.000 y nadie borra el `.abk` aún. AlgoTrades y `orderstocsv` intactos y siguen siendo las rutas en uso: ningún consumidor lee el `.abk`. Falta el conversor/consumidor, el borrado del `.abk` y instalarlo en los otros dos |
+| 7 | Esperas de SQX: reaperturas y custodio con un solo proyecto | S | — | **sí** | 🟡 2026-10-13: D6 contestada (medir A y B en el conductor, la mejor). Sin empezar la sesión del conductor: presave 7.1, exports en una JVM, arrancar sólo el proyecto, Build que para solo (D24), recorte de `Results` (D16), 16.5 sin sync 7.3. Tanda 3: presave 7.1 (variante B, `ALGO_PRESAVE=1`) y arranque esperando sólo al proyecto de la ejecución (variante A, `ALGO_AGED_EMPTY=1`) escritos y APAGADOS por defecto; se miden en el conductor y se borra la perdedora. Sesiones en vivo 1 y 2 (conductor, 2026-10-13): presave variante B medida (S15, 3.877 ficheros/79 bancos: parada 52,4 → 7,0 s, +6,6 s en segundo plano = 38,8 s netos, 74 %); variante A NO medida (pide sesión de ≥ 2 h). §7.4a exports en una JVM DESCARTADO: `orderstocsv` no admite varios databanks. §7.4b arrancar sólo el proyecto: sin ganancia a esta escala. D24 sigue ABIERTA (ver bitácora). Esperas de `load()` arregladas tras la sesión 1. D16, 7.3 y 7.4d sin medir |
+| 8 | Almacén de población sin copia, y el motor por corrida | O | 4, 6 | no | 🟡 2026-10-13: caché de listado con la hora del listado, `_READ`/`_PARTS` con candado y `release()`. D13 no (gorilla es instalación independiente): cae §8.6. probado sin SQX; falta en vivo. Falta lo que depende de 6. Tanda 3: caché de reprecio (§8.5) medida y retirada: 0,49 s sin caché, 0,08 s con ella, ~4 s por madre (el encargo estimaba 12-16 s) |
+| 9 | Velocidad puntual fuera del camino crítico | S | — | no | 🟡 2026-10-13: `atr`, `originals`, `depmap`/`checks`, `inputs.wide` y, nuevo: null de etapa B compilado (1,372 → 0,0004 ms/candidato), `family_d` ventanas 102,5 → 4,4 s, cosido pico 8,18 → 0,26 GB, volteo semanal pico ~8,5 → ~4,5 GB, `entryQuality` a 10.000 sorteos (D14), `sqxretest.stored`, mt5 compare/reconcile, `core/assetdata`. 9.19 borrada por muerta. probado sin SQX; falta en vivo. Tanda 3: CSCV (§9.23) con núcleo numba bit a bit, ×1,8 con 30 variantes y ×1,24-1,32 con 200-1.000 (la fila prometía ×1,33-1,44); lector de ticks en paralelo (§9.8, `core/tickparallel.py`) bit a bit, EURUSD 9,47 → 1,61 s y XAUUSD 20,44 → 3,28 s; `marketProfile` espejo perezoso (§9.9) pico 1.491 → 1.400 MB. probado sin SQX |
+| 10 | Que el catálogo de `perf/` mida bien | S | D8 | no | 🟡 2026-10-13: D8 contestada. PSS por `smaps_rollup`, `tracemalloc` sólo con `memtop`; `history.csv` viejo movido a `AlgoData/profiling/_antes-2026-10-13/`. Re-medida del catálogo al cierre |
 | ✓ | Cierre: tarjetas de `knowhow/`, manual, dependencias, presupuesto remedido | H | 1-10 | una corrida | ⬜ |
 
 **Orden.** 1 primero (arregla pérdidas de datos y es condición de 2 y 4). Después 2, 4 y 5, que son
@@ -148,6 +148,95 @@ los que hacen viable el millón de sorteos. 6 y 7 esperan a un hueco del conduct
     `bin/sqx-worker.sh:401` sigue con `afterrun … || true`: el `stop` no falla por un export.
   - **Decidido y sin construir:** D24, D16, D27, el PCG64 en el núcleo, el retiro automático del
     `Test_` al final de `bin/workflow.sh`, y `presave` a escala.
+- 2026-10-13 — **tandas 1 y 2.** Construido sin SQX vivo y sin commit.
+  - **Qué se hizo.** Por fila de la tabla:
+    - 1: `draws` por estrategia plegado en diferido (candado por hilo, zstd 9); 16.5 con marcador `.done`
+      (hash de brief, config de variantes, patas, ficha de costes e identidad de la madre); `ledger/tried.py` con candado; `stopexit` con recorte declarado.
+    - 2 y 3: control de falsos positivos; mono 3c con núcleo de tabla y PCG64 en numba; escalera sin `argsort`
+      con hilos sobre bloques sembrados; `drawdowns`, `q_null`, `_resampled` y `footprint` sin matriz.
+    - 4: crossTF, crossmarket, blindJoint, exposure, decay y spread scan sobre `core/fanout.py`; lanzador con
+      reserva de RAM por peso; `python_step` pliega 16 subprocesos en 1; «FALLARON n de N» llega a `estado.txt`.
+    - 5: exports tras un paso sólo de los databanks del paso, una pasada de `orderstocsv`, manifiesto con `since`
+      (se borra antes de reescribir); `refilter` tras el veredicto, sin interrumpir el corte.
+    - 6: snippet Java **sin compilar**, `core/bankfile.py`, `sqx/export/membank.py`, `/dev/shm/algobank/<rol>/<proyecto>`.
+    - 8: caché de listado con la hora del listado; `_READ`/`_PARTS` con candado y `release()`.
+    - 9 y cartera: pares rodantes, días, redundancia; null de etapa B compilado; `family_d`; cosido; volteo semanal;
+      semillas de caminos sin repetidas (numba guarda 32 bits); `entryQuality` a 10.000 sorteos; `sqxretest.stored`; mt5 compare/reconcile; `core/assetdata`.
+    - 10: PSS por `smaps_rollup`; `tracemalloc` sólo con `memtop`; `history.csv` viejo movido a `AlgoData/profiling/_antes-2026-10-13/`.
+    - `bin`: `workflow.sh` retira el `Test_` al acabar bien (`--own`; no con `--until`; no tras un fallo);
+      `sqx-worker.sh stop` sin `|| true` (FALLO a stderr y a `user/log/FALLO-export.txt`); `clone-sqx-worker.sh:21` sin `2>&1`.
+    - Tests que fallaban de antes, arreglados: `test_close_curve`, `test_mt5verify` (dos afirmaciones contrarias a la regla escrita), fixtures de `strategymeta` y `ui_strategy`, y los tres de cartera (el código estaba bien: datos archivados antes del cambio de reloj y comisión; pool `Test_nikkei_ref` regenerado en la raíz de pruebas). `test_taxonomy` sin tocar.
+    - Código borrado (regla 21): `pcg.integers`, la rama de niveles por operación de la escalera (`_priced`, `barrier.exits`), `consolidate_reports`, `_per_bar`; 9.19 por muerta.
+  - **Qué se verificó** (máquina cargada por otros agentes: las cifras son pesimistas):
+    - `python3 tools/depmap.py && python3 tools/checks.py` → «1596 files checked, 0 problems».
+    - Todos los `tests/test_perf66_*.py` uno a uno, más los de la zona: 337 tests de pytest pasan, 0 fallan.
+    - Scripts con rc=0: `test_worker_lifecycle`, `test_strategymeta`, `test_ui_strategy`, `test_oracle_rungs`, `test_nulls_seed`, `test_mt5verify`, `test_portfolio_build`, `test_portfolio_stageb`, `test_close_curve`, `test_portfolio_search`.
+    - Control de falsos positivos 79,5 → 11,6 s (NIKKEI M30, 200 monos, 2.000 sorteos, 4 pasadas); `funnel` y `rules` bit a bit.
+    - Mono 3c bit a bit y mismo estado del generador: 1 M × 4 peldaños por estrategia 111 → 10,8 s (385 ops), 406 → 48,5 s (1.532 ops).
+    - Escalera, 500 ops × 200k sorteos: 5,63 → 1,64 s (1 hilo), 0,50 s (4 hilos).
+    - `drawdowns` ×9-11; `q_null` ×1,6-2,1; `_resampled` pico 128 → 24 MB; `footprint` 87 → 4 MB.
+    - Null de etapa B 1,372 → 0,0004 ms/candidato; `family_d` ventanas 102,5 → 4,4 s; cosido pico 8,18 → 0,26 GB; volteo semanal pico ~8,5 → ~4,5 GB.
+    - **Nada de esto se ha probado en SQX vivo.**
+  - **Qué deja de reproducir lo guardado:** los caminos T1/T2, los nulls de etapa B (y lo que `funded_b` sortea después). `worst_path` pasa a ser reproducible (semilla fija en `stitch.py`). En `facts` quedan vacías las 3 columnas de peldaño (D3 sí, D11 `z_mono`).
+  - **Qué no se hizo y por qué:**
+    - 3.9d (`measure` del wfc en bloques): mueve el último bit en 506 de 3.600 formas → pregunta 3.
+    - Todo lo que necesita SQX vivo: sesión del conductor sin empezar (presave 7.1, exports en una JVM, arrancar sólo el proyecto, Build que para solo D24, recorte de `Results` D16, 11 tests de `AlgoBank`, comprobación del retest silenciado del paso 26, 16.5 sin sync 7.3).
+    - D27 (ledger único): sin diseñar; se presenta al dueño antes de construir.
+    - Medidas a escala en el custodio (N9 A, con aviso), re-medida del catálogo `perf/` y capítulo 12 del manual: al cierre.
+  - **Incidente.** Un agente ejecutó `git stash` y `git stash pop` por error sobre el árbol compartido. Comprobado después: sin conflictos, todo compila, los tests pasan.
+  - **Tres revisiones independientes** (Opus, sólo lectura): `/dev/shm/tmp66/review-sqx.md`, `review-data.md`, `review-2.md` y `review-3.md`. Todos sus hallazgos corregidos salvo los que quedan abiertos en las preguntas nuevas 1-6.
+- 2026-10-13 — **tanda 3.** Construido sin SQX vivo y sin commit.
+  - **Hecho.**
+    - 1: mono con una raíz por ejecución en los lanzadores de la ventana; `runs.py` pasa `--timeframe` o se niega.
+    - 4: mono `--only` (§4.1) con raíz guardada; capítulo `26-nulos.md` de las fuentes del manual actualizado (PDF sin regenerar).
+    - 5: esperas ciegas sustituidas por esperas a la condición con tope; paso 26 espera «Strategies loaded»; `mt5/reconcile/config.yaml` con las claves nuevas.
+    - 7: presave (variante B) y arranque esperando sólo al proyecto (variante A), apagados por defecto.
+    - 9: CSCV con núcleo numba (32 tests); lector de ticks en paralelo (bit a bit en EURUSD, 306 M ticks, y XAUUSD, 651 M); `marketProfile` espejo perezoso.
+  - **Medido (cifras).**
+    - CSCV: ×1,8 con 30 variantes, ×1,24-1,32 con 200-1.000. El coste mayor queda en el Sharpe.
+    - Ticks: EURUSD 9,47 → 1,61 s; XAUUSD 20,44 → 3,28 s; 2,91 s la primera lectura de cada proceso, por compilar. Sin caché de numba en disco: se quedaba obsoleta.
+    - `marketProfile`: pico 1.491 → 1.400 MB (−6 %), CPU 71 → 68 s (la fila estimaba 15-30 %).
+  - **Descartado tras medir.** Caché de reprecio §8.5: 0,49 s sin caché, 0,08 s con ella, ~4 s por madre (estimado 12-16 s); retirada, `engines/variants/excess.py` sin cambios. forkserver §4.5: fork 0,15 s, forkserver 15,5 s con 48 procesos; no se construye. §4.3: ya satisfecho por la tanda 2. `marketProfile` por trozos (D12): no construido, pregunta 8.
+  - **No hecho y por qué.**
+    - Exports de un paso en una sola JVM (§7.4a): no consta que `orderstocsv` acepte varios databanks por lanzamiento; experimento del conductor.
+    - D24 (Build que para solo): `databank-full` y `passed-count` tienen tarjetas que dicen que no pararon como se esperaba; se miden los dos en el conductor.
+    - D16: pregunta 7.
+    - Esperas de `load()` en `sqx/variants/execute.py` (4 × 2 s y 8 s): no hay señal por databank que no sea `count`; conductor.
+    - `memtrades` en una sola tarea: necesita el snippet Java; va con AlgoBank.
+  - **Cuarta revisión** (Opus, sólo lectura, `/dev/shm/tmp66/review-4.md`): 17 hallazgos, todos corregidos. 8 puntos sólo se resuelven en vivo (lista del conductor). Tarjetas nuevas de `knowhow/`: `perf/numba-cache-ignores-inlined-dependencies.md` y `research/cscv-four-deviations-from-the-published-statistic.md`.
+  - **Qué se verificó.**
+    - `python3 tools/depmap.py && python3 tools/checks.py` → «1606 files checked, 0 problems».
+    - Los 39 `tests/test_perf66_*.py` uno a uno, más `test_sqx_bridge` y los de la zona: 435 tests de pytest pasan, 0 fallan; 13 scripts de test con rc=0.
+    - **Nada de esto se ha probado en SQX vivo.**
+
+- 2026-10-13 — **sesiones en vivo 1 y 2 (conductor).** Informes: `/dev/shm/tmp66/live-session-1.md` y `live-session-2.md`. Sólo conductor (5060), proyectos `Test_Perf66_*` XAUUSD H1 retirados todos; worker parado por el script, sin OWNER ni `sqcli`. Sin commit.
+  - **Medido, sesión 1.**
+    - Base: arranque→listo 16,6 s, parada 5,9 s (17 ficheros, 1 banco). Modo CLI: 10,6 s al arrancar, parada 2,1 s, 0 líneas de guardado.
+    - Salida de SQX sin presave: lineal en bancos cargados. S1 (177 ficheros/5 bancos) 13,0 s; S5 (1.477/31) 27,1 s; S15 (3.877/79) 52,4 s. Serie, ~0,3-0,6 s por banco de 50.
+    - Presave variante B: S15, 77 bancos en 6,6 s (en paralelo; 5,4 s son de `Retester/Results`), parada 7,0 s: 52,4 → 7,0 s, 38,8 s netos (74 %). Se queda B. Interferencia con la primera tarea: 3,49 s frente a 1,42 s, confundida con el arranque en frío; no hay motivo para retrasarla.
+    - §7.4b sólo el proyecto: 24,7 frente a 24,9 s (177 ficheros), 27,8 frente a 28,2 (1.477), 31,0-31,8 frente a 30,7 (3.877). Sin ganancia: los 84 s del custodio no se reproducen con 3,9 k ficheros; ni confirmados ni refutados.
+    - `orderstocsv` sin sintaxis multibanco: un banco 14,3-14,6 s; `file="A;B"` y la carpeta madre fallan (rc 1); `file=A file=B` da rc 0 y exporta SÓLO el último.
+    - `clear` síncrono (8-16 ms); `load` asíncrono, línea «Strategies loaded» 0,26 s después para 50 ficheros; `synctofiles` síncrono (0,4-0,7 s por 50).
+    - D24: `databank-full` (Max 50) paró solo a los 50 (105,6 s CLI / 110 s GUI); `passed-count` 30 paró en 30 (97 s).
+    - Retest con 0 operaciones: un retest silenciado deja en la salida las estrategias sin operaciones (30 → 30 `.sqx`, 10 con 0 operaciones) mientras el estado dice «Failed 30, Passed 0».
+    - Regla 1: ningún recuento ni nombre de ficheros cambió en ningún ciclo.
+  - **Medido, sesión 2 (AlgoBank).** Los 11 tests en vivo pasan (compila a la primera en 3 instalaciones; operaciones, métricas de 116 claves, identidad, equity, otros tipos de tarea, banco vacío, banco en escritura, 10.000 estrategias, tras parada y arranque).
+    - 2 bancos, 73.359 operaciones: AlgoBank 1,15-1,19 s; AlgoTrades 2,95 s; `orderstocsv` 16-27 s por banco. 4 bancos pequeños: 1,04-1,11 s frente a 4,5 s. 17 estrategias WF (472.733 órdenes): `orderstocsv data=all` 168,3 s, AlgoBank ~1 s.
+    - 10.000 estrategias (7,27 M órdenes): `membank.run` 7,8 s; carga 1,5 s + operaciones 4,9 s; AlgoTrades 38,6 s. El plan estimaba 30-50 s para `export.trades` (569 s).
+    - 905 MB de `/dev/shm` por 10.000 estrategias; nadie borra el `.abk` todavía.
+    - Cambios: tres en `AlgoBank.java` (la excepción `StatsDontExistException` se captura; `getDouble(name, NaN)`; cabecera XML y CRLF para que el hash de identidad coincida) y uno en `core/bankfile.py` (`trades()` ordena por nombre de fichero).
+  - **Descartado tras medir.** Exports de un paso en una sola JVM (§7.4a): no existe sintaxis multibanco; sólo cabría reunir todo en una carpeta plana con renombrado por banco (~14 s por banco ahorrados). §7.4b: sin ganancia a esta escala. Variante A: no descartada, no medida.
+  - **Arreglado tras la sesión 1.**
+    - Presave (`sqx/projects/presaving.py`): `_work` espera, con tope `LOAD_S`, a que un banco «Auto-sync never» tenga tantos registros como ficheros antes de listarlo (`Retester/Results` se saltaba por seguir cargando).
+    - `load` sin esperas ciegas: espera la línea «Strategies loaded»; `loadwait` también; sin los `sleep` tras `clear`.
+    - `KeyError: 'DoFRatio'` en `studies/screening/gate/collect.py`: conserva el valor de SQX cuando la columna existe (los snippets DoFRatio/ParameterCount se quitaron de SQX el 2026-10-06).
+  - **Sigue sin medir.** Variante A de presave (sesión ≥ 2 h: SPP/WFM envejecida, log de GC); D16; 7.3; 7.4d; escala por encima de 3,9 k ficheros; hueco en el borrado del `.abk`; 7.4b en el custodio. Un sync de un banco ya limpio no escribe línea: `live.sync(force=…)` y el presave esperarían hasta el tope (seguro hoy; sin parchear).
+  - **Tres puntos abiertos (no resueltos).**
+    - (i) D24 contradictoria: la sesión 1 vio parar solo un Build `databank-full` a los 50; la sesión 2 vio el mismo tipo de parada repetirse (63+ «Build finished because databank is full», sin «Task finished») hasta cerrar la sesión. No se sabe qué las distingue. D24 sigue ABIERTA; tarjeta 🤔 en `knowhow/sqx-drive/live-chain-without-restart.md`.
+    - (ii) Incumplimiento de la regla 18 en la sesión 1: un bucle propio de sondeo a 1 s durante 112 s en vez de `wait.sh`.
+    - (iii) `Retester/Results` del conductor ya no es idéntico byte a byte a la instantánea `AlgoData/snapshots/conductor-2026-10-13-encargo66`: SQX reescribe las estrategias cargadas al salir. Identidad, estadísticas y órdenes iguales en las 17. Tarjeta `knowhow/databanks/sqx-rewrites-loaded-files-at-exit.md`.
+  - **Hallazgos fuera de lo tocado.** NPE interno de SQX tras acabar un retest (`wait.sh` lo da por fallado); `wait.sh` no distingue proyectos; un arranque GUI colgado en el diálogo de licencia; el decodificador offline de `orders.bin` lee mal las filas WF.
+  - **Tarjetas.** Nuevas: `export/orderstocsv-no-multi-databank.md`, `sqx-drive/retest-zero-trades-stays-in-output.md`, `sqx-drive/snippet-stats-api-traps.md`, `databanks/sqx-rewrites-loaded-files-at-exit.md`, `perf/algobank-vs-algotrades-vs-orderstocsv.md`. Editadas: `databanks/databank-verbs.md`, `sqx-drive/retire-own-and-wait-per-task.md`, `sqx-drive/live-chain-without-restart.md`. Instantáneas `...-encargo66` y `...-encargo66-abk` en `AlgoData/snapshots/` (borrables).
 
 ## Tu oficio
 
@@ -1214,24 +1303,43 @@ plano en `funded/sim/table.py` (~1 min de un estudio raro); pasadas del control 
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
-| # | pregunta | lecturas | qué cuesta cada una |
-|---|---|---|---|
-| D1 | ¿Se corrige el Drawdown de las uniones del 16.5 (§1.3)? | sí · sí, y se remide lo ya juzgado · no | sube el DD de las variantes que empiezan perdiendo; lo ya juzgado deja de ser comparable |
-| D2 | El mono tras el corte por la ruta de población (§4.1): ¿qué raíz y qué panel? | raíz fija por corrida, guardada · la del `config.yaml`; y `nulls.csv` sólo de supervivientes · de toda la población | con sólo supervivientes cambia el «cuántas baten al azar» de `monkeyExcess` |
-| D3 | ¿El control calcula sólo el peldaño juzgado (§2 E)? | sí · no | ÷4 en el 3c del control; tres columnas de `hechos_monos.parquet` vacías; ninguna cifra de `reglas.csv` cambia |
-| D4 | ¿Se dejan de guardar los sorteos crudos del 3c y de crossTF (§3.1)? | sí (histograma + extremos) · no | sin esto no cabe en RAM a 100.000 con 20.000 estrategias |
-| D5 | — retirada: la variante de tabla de §3.2 es bit a bit — | | |
-| D6 | Las reaperturas (§7.1): ¿no reabrir, guardar antes en paralelo, o las dos pruebas en el conductor y decidir con la cifra? Y ¿se retiran los `Test_` del custodio antes de cada corrida? | A · B · probar ambas · nada | ~1.220 s por corrida en juego; A alarga SPP y WFM (×2 y ×1,44 anotados, por remedir) |
-| D7 | `portfolio/common/construct/config.yaml` declara 80 GB contra los 20 de la regla 3 | es su presupuesto propio (corre sin SQX) · se baja | — |
-| D8 | `tracemalloc` del catálogo de `perf/` (§10) | sólo con `memtop > 0` · pasada aparte para la memoria · se queda | las cifras viejas dejan de ser comparables |
-| D9 | ¿Media del nulo corregida por variable de control en la escalera (§3.7)? | sí · no | precisión de 1,8 M de sorteos con 100.000; la media informada cambia de definición |
-| D10 | ¿Parada secuencial para los p (§3.7)? | sí, con qué `h` y por cuál de los 5 estadísticos · no | ×126 menos sorteos bajo la nula; histograma y media del nulo con menos sorteos |
-| D11 | ¿El gate juzga por `z_mono` o por `mono_p ≤ α/B` (§3.8)? | z (hoy) · p | medido con operaciones reales: con z el listón es 2-5 % más estricto en largos y 5-6 % más laxo en cortos; hoy los dos dan el mismo veredicto en 30 de 30 |
-| D12 | Cambios que mueven el flujo de sorteos sin mover la distribución: `marketProfile` troceado (§4.4), `stageb_null` compilado (§9) | sí · no | los resultados guardados dejan de reproducirse bit a bit |
-| D13 | ¿El control de falsos positivos corre en gorilla mientras esta máquina sigue con SQX (§8.6)? | sí, con una puerta nueva para copiar la cosecha y traer el informe · no | hasta 3.330 s menos aquí; `bin/remote.sh` sólo ejecuta y `bin/mirror-data.sh` sólo copia datos de mercado |
-| D14 | `entryQuality`: 200 sorteos para un p95 (`config.yaml`, `eratio.draws`) | subir (cuánto) · dejar | cambia la banda |
-| D19 | feedQuality: ¿sorteo de la alarma con claves `float32` (§4.3 bis c)? | sí · no | 12-15 s de 34; cambia el flujo de sorteos, p dentro del ruido |
-| D15 | ¿96 procesos en `core/fanout.py:13` para los núcleos del mono? | medir a máquina llena y decidir · dejar 48 | +20 % medido a media máquina; una tarjeta midió lo contrario en otro estudio |
+| # | pregunta | lecturas | qué cuesta cada una | respuesta del dueño (2026-10-13) |
+|---|---|---|---|---|
+| D1 | ¿Se corrige el Drawdown de las uniones del 16.5 (§1.3)? | sí · sí, y se remide lo ya juzgado · no | sube el DD de las variantes que empiezan perdiendo; lo ya juzgado deja de ser comparable | **no se vuelve a medir** |
+| D2 | El mono tras el corte por la ruta de población (§4.1): ¿qué raíz y qué panel? | raíz fija por corrida, guardada · la del `config.yaml`; y `nulls.csv` sólo de supervivientes · de toda la población | con sólo supervivientes cambia el «cuántas baten al azar» de `monkeyExcess` | **raíz fija por ejecución guardada (el panel, sin respuesta)** |
+| D3 | ¿El control calcula sólo el peldaño juzgado (§2 E)? | sí · no | ÷4 en el 3c del control; tres columnas de `hechos_monos.parquet` vacías; ninguna cifra de `reglas.csv` cambia | **sí** |
+| D4 | ¿Se dejan de guardar los sorteos crudos del 3c y de crossTF (§3.1)? | sí (histograma + extremos) · no | sin esto no cabe en RAM a 100.000 con 20.000 estrategias | **sí (que no pete la RAM)** |
+| D5 | — retirada: la variante de tabla de §3.2 es bit a bit — | | | — |
+| D6 | Las reaperturas (§7.1): ¿no reabrir, guardar antes en paralelo, o las dos pruebas en el conductor y decidir con la cifra? Y ¿se retiran los `Test_` del custodio antes de cada corrida? | A · B · probar ambas · nada | ~1.220 s por corrida en juego; A alarga SPP y WFM (×2 y ×1,44 anotados, por remedir) | **medir A y B en el conductor y quedarse con la mejor (retirar los `Test_` del custodio antes de cada corrida, sin respuesta)** |
+| D7 | `portfolio/common/construct/config.yaml` declara 80 GB contra los 20 de la regla 3 | es su presupuesto propio (corre sin SQX) · se baja | — | **80 GB de Python sólo con SQX parado** |
+| D8 | `tracemalloc` del catálogo de `perf/` (§10) | sólo con `memtop > 0` · pasada aparte para la memoria · se queda | las cifras viejas dejan de ser comparables | **`tracemalloc` sólo con `memtop`; las cifras viejas fuera** |
+| D9 | ¿Media del nulo corregida por variable de control en la escalera (§3.7)? | sí · no | precisión de 1,8 M de sorteos con 100.000; la media informada cambia de definición | **no** |
+| D10 | ¿Parada secuencial para los p (§3.7)? | sí, con qué `h` y por cuál de los 5 estadísticos · no | ×126 menos sorteos bajo la nula; histograma y media del nulo con menos sorteos | **no** |
+| D11 | ¿El gate juzga por `z_mono` o por `mono_p ≤ α/B` (§3.8)? | z (hoy) · p | medido con operaciones reales: con z el listón es 2-5 % más estricto en largos y 5-6 % más laxo en cortos; hoy los dos dan el mismo veredicto en 30 de 30 | **`z_mono`** |
+| D12 | Cambios que mueven el flujo de sorteos sin mover la distribución: `marketProfile` troceado (§4.4), `stageb_null` compilado (§9) | sí · no | los resultados guardados dejan de reproducirse bit a bit | **sí, las dos** |
+| D13 | ¿El control de falsos positivos corre en gorilla mientras esta máquina sigue con SQX (§8.6)? | sí, con una puerta nueva para copiar la cosecha y traer el informe · no | hasta 3.330 s menos aquí; `bin/remote.sh` sólo ejecuta y `bin/mirror-data.sh` sólo copia datos de mercado | **no: gorilla es instalación independiente (cae §8.6; D27 sigue por diseñar)** |
+| D14 | `entryQuality`: 200 sorteos para un p95 (`config.yaml`, `eratio.draws`) | subir (cuánto) · dejar | cambia la banda | **10.000 sorteos** |
+| D19 | feedQuality: ¿sorteo de la alarma con claves `float32` (§4.3 bis c)? | sí · no | 12-15 s de 34; cambia el flujo de sorteos, p dentro del ruido | **no** |
+| D15 | ¿96 procesos en `core/fanout.py:13` para los núcleos del mono? | medir a máquina llena y decidir · dejar 48 | +20 % medido a media máquina; una tarjeta midió lo contrario en otro estudio | **más pruebas a máquina entera** |
+
+**Respuestas N1…N14 (2026-10-13).** La pregunta de cada una está en la sesión del dueño; aquí sólo la respuesta:
+N1 A · N2 B · N3a B · N3b A · N4 B · N7a A (el ajuste existe) · N7b sí, más una idea nueva (calibrar el
+filtro mínimo con datos sintéticos; tres preguntas mías sin responder) · N8a B · N9 A (permiso para las dos
+medidas a escala en el custodio parado, avisando antes) · N10a B, y si no está roto A · N10b B · N10c B ·
+N10d código y test · N11 A · N12 no se construye salvo «N12 sí» · N13 A (el Objetivo pasa a
+`tests/test_perf66_*.py`) · N14 arreglar hasta que pasen los 11; AlgoTrades sigue mientras. Council: no.
+
+**Preguntas nuevas, abiertas (2026-10-13):**
+
+1. Comisión y reloj de un miembro de cartera: ¿congelados al archivar o leídos en vivo de la ficha (hoy)?
+2. El gate real 3c ya no guarda los sorteos crudos (`raw=False`, pieza 3.1): ¿vale o se devuelve?
+3. 3.9d: ¿se acepta mover el último bit de `rho` y `p_nivel` a cambio de ~4 GB por matriz?
+4. `barrier.intrabar` en `config`: ningún código lo lee ya (el encargo 53 §5c lo tiene pendiente de calibrar). ¿Se borra la clave?
+5. N7b (tres preguntas), N12, el fixture de 291 KB en el repo y `sample.trades_databank`.
+6. `docs/AgentPDFs/criterios-implementados-2026-10-12.md:2297` cita `_per_bar` (borrado). Es fichero de otra sesión: ¿se corrige?
+7. D16: ¿el recorte de `Results` se niega sólo si falta guardar algún superviviente o limbo (los rechazados se pierden a propósito)? ¿Y se añade un guardado en el almacén tras el paso 8?
+8. `marketProfile` por trozos (D12): ¿se mide la lectura que cambia el flujo de sorteos, o se deja? El null ya hace un sorteo cada vez, así que no hay memoria que acotar.
+9. CSCV: ¿se corrige alguna de las cuatro desviaciones (p. ej. rechazar bloques impares)? Cambiaría números guardados.
 
 ## Lo que no tocas
 
@@ -1248,15 +1356,14 @@ plano en `funded/sim/table.py` (~1 min de un estudio raro); pasadas del control 
 ## Objetivo — un comando
 
 ```
-python3 tools/depmap.py && python3 tools/checks.py && PYTHONPATH=. python3 -m pytest -q tests/test_perf66_bugs.py tests/test_perf66_cruce.py tests/test_perf66_p6.py tests/test_perf66_fp.py tests/test_perf66_draws.py tests/test_perf66_width.py tests/test_perf66_store.py tests/test_perf66_algobank.py
+python3 tools/depmap.py && python3 tools/checks.py && for f in tests/test_perf66_*.py; do PYTHONPATH=. python3 -m pytest -q "$f" || exit 1; done
 ```
 
-Los tres primeros ficheros existen desde la noche del 2026-10-12 y pasan. Los otros cinco los
-escribe cada frente con las pruebas de igualdad que su sección nombra (`fp` el 2, `draws` el 3,
-`width` el 4, `store` el 8, `algobank` el 6): pytest sale ≠ 0 mientras falte uno o falle una
-prueba. No se usa `pytest tests`: varios `test_*.py` son scripts que llaman a `sys.exit` al
-importarse y tumban la recogida. Los frentes 6 y 7 se verifican además a mano en el conductor
-(plan de §6): eso no cabe en un comando.
+Cubre `tests/test_perf66_*.py`, fichero a fichero (N13 = A, dueño, 2026-10-13); cada frente escribe
+el suyo con las pruebas de igualdad que su sección nombra. No se usa `pytest tests`: varios
+`test_*.py` son scripts que llaman a `sys.exit` al importarse y tumban la recogida; se corren aparte,
+uno a uno. Los frentes 6 y 7 se verifican además a mano en el conductor (plan de §6): eso no cabe en
+un comando.
 
 ## Cómo cierras
 

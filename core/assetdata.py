@@ -33,15 +33,21 @@ def enforced() -> bool:
 # asset file and a study calls it once per strategy or per cell -- 54 s of crossTF's 60 went
 # to parsing the same YAML 1,971 times.
 _PARSED: dict = {}
+_FEEDS: dict = {}     # symbol_for(): feed -> first asset, valid while the cards' stamps are
 
 
-def _parse(path: Path) -> dict:
-    """One YAML file, parsed once per version of it on disk; each caller gets its own copy."""
+def _shared(path: Path) -> dict:
+    """The parsed YAML itself, the cache's own object: READ-ONLY, never handed out."""
     stamp = path.stat()
     stamp = (stamp.st_mtime_ns, stamp.st_size)
     if _PARSED.get(path, (None,))[0] != stamp:
         _PARSED[path] = (stamp, safe_load(path.read_text(encoding="utf-8")))
-    return copy.deepcopy(_PARSED[path][1])
+    return _PARSED[path][1]
+
+
+def _parse(path: Path) -> dict:
+    """One YAML file, parsed once per version of it on disk; each caller gets its own copy."""
+    return copy.deepcopy(_shared(path))
 
 
 def _read(name: str) -> dict:
@@ -95,14 +101,16 @@ def load(symbol: str) -> dict:
         FileNotFoundError on an unknown asset is the intended outcome: nothing may be
         authored for one.
     """
-    base = policy()
-    data = _parse(SYMBOLS / f"{symbol}.yaml")
+    base = _shared(ASSETS / POLICY)
+    data = _shared(SYMBOLS / f"{symbol}.yaml")
     mine = (base["segments"].get(symbol) or {})
     # `from`/`to` first: an asset with no block yet in _policy.yaml — one just added, or
     # one that arrived as a cross-market feed — has undecided windows, not missing keys.
     segments = {name: {"from": None, "to": None, **spec, **(mine.get(name) or {})}
                 for name, spec in base["segments_default"].items()}
-    return {**base, **data, "segments": segments, "data": mine.get("data")}
+    # One copy of what is handed out; `base["segments"]` (every asset's block, the big part)
+    # is replaced above and never copied. 🔬 2026-10-13: encargo 66 §9.12.
+    return copy.deepcopy({**base, **data, "segments": segments, "data": mine.get("data")})
 
 
 def schema(data: dict) -> dict:
@@ -216,17 +224,6 @@ def sqx_settings(data: dict, segment: str) -> dict:
                      "short": use("swap_short"), **data["swap"]}}
 
 
-def markets(symbol: str) -> dict:
-    """The declared retest universe of one main asset: main, timeframe and categories
-    ({family, structural} → [{feed, data_from}]); {} when it is not a declared main."""
-    return {} if symbol == EXPECTED_SIGN else _read(MARKETS).get(symbol, {})
-
-
-def expected_sign() -> dict:
-    """{idea family: {family: positive, structural: control | none}}; not an asset (owner, 2026-10-12)."""
-    return _read(MARKETS).get(EXPECTED_SIGN, {})
-
-
 def symbol_for(feed: str) -> str | None:
     """Which asset file declares this SQX feed.
 
@@ -238,9 +235,11 @@ def symbol_for(feed: str) -> str | None:
         feed it read say whose costs its numbers carry, instead of naming one asset in a
         sentence that every asset then gets.
     """
-    return next((s for s in symbols() if load(s)["sqx_symbol"] == feed), None)
-
-
-def special_notes() -> list[Path]:
-    """Cross-asset special cases that apply to every project, sorted."""
-    return sorted((ASSETS / "special").glob("*.md"))
+    files = [SYMBOLS / f"{s}.yaml" for s in symbols()]
+    stamp = tuple((f.name, st.st_mtime_ns, st.st_size) for f in files for st in [f.stat()])
+    if _FEEDS.get("stamp") != stamp:       # an added, removed or edited card is a new stamp
+        by_feed: dict = {}
+        for f in files:
+            by_feed.setdefault(_shared(f)["sqx_symbol"], f.stem)
+        _FEEDS.update(stamp=stamp, by_feed=by_feed)
+    return _FEEDS["by_feed"].get(feed)

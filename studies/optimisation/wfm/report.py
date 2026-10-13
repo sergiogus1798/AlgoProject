@@ -31,7 +31,7 @@ def main() -> None:
         # Only its own JSON and page, as crossTF's --strategy: verdict.csv, wfm.json and
         # cell_excess.csv are the population's, and one strategy must not replace them.
         got = many.one(directory, config.load(args.overrides), args.strategy)
-        draws.merge(out, got.pop("draws", []))
+        draws.merge(out, got.pop("draws", []), defer=True)
         print(markdown.render(got, f"Walk-Forward Matrix — {args.strategy}"))
         print(f"-> {output.member(out, got, f'Walk-Forward Matrix — {args.strategy}')}")
         return

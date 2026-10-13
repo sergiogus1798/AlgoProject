@@ -8,6 +8,7 @@ from engines.market.calibrate import atr
 # The calendar windows a drift may be measured over: months spanned and the letter of the label.
 # Nothing shorter than a quarter: as the window nears a trade's hold its drift IS the trade's move.
 WINDOWS = {"year": (12, ""), "semester": (6, "H"), "quarter": (3, "Q")}
+NONE = np.empty(0, dtype=np.intp)  # a window the span holds no bar of
 # The drift term's variants: (one move per calendar window, the blind trade for the mean bar).
 VARIANTS = {"a": (False, False), "b": (True, False), "c": (False, True), "d": (True, True)}
 
@@ -126,9 +127,9 @@ def drift_term(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str], 
     held = (np.searchsorted(grid, trades["Close time"].to_numpy(), side="right")
             - np.searchsorted(grid, trades["Open time"].to_numpy(), side="right"))
     keys = pd.MultiIndex.from_arrays([mine["sample"].to_numpy(), held])
-    moved = {}
+    moved, bars_of = {}, pd.Series(inside).groupby(pool).indices
     for group, hold in keys.unique():
-        at = inside[pool == group]
+        at = inside[bars_of.get(group, NONE)]
         at = at[at + hold < len(opened)]
         moved[group, hold] = (((opened[at + hold] - opened[at]) * weight[at]).sum()
                               / weight[at].sum())

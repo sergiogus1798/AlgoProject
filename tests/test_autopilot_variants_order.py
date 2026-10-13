@@ -15,6 +15,7 @@ def _ran(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, live_on: bool) -> list
         (tmp_path / f"design_brief_{name}.json").write_text(json.dumps({"strategy": name}))
     monkeypatch.setattr(variants, "briefs", lambda p: sorted(tmp_path.glob("design_brief_*.json")))
     monkeypatch.setattr(variants, "variants_dir", lambda p, m: tmp_path / m)
+    monkeypatch.setattr(variants, "_stamp", lambda project, brief: "s")
     monkeypatch.setattr(variants.live, "mine", lambda role: live_on)
     monkeypatch.setattr(variants.legmod, "legs", lambda: [{"databank": "d"}])
     monkeypatch.setattr(variants, "wire",

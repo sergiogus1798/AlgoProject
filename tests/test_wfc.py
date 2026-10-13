@@ -131,8 +131,8 @@ def test_the_level_must_beat_its_null() -> None:
         assert state.judge(base | {"p_nivel": p_nivel, "nivel_top": -5.0}, CFG)["estado"] == "no_pasa"
     x = np.arange(100.0)
     flipped = np.tile(x, (19, 1)) - 1000.0
-    assert level.p_value(flipped, level.top(x, 0.2), 0.0) == pytest.approx(1 / 20)   # none at or above
-    assert level.p_value(flipped, level.top(x, 0.2), -1e9) == 1.0
+    assert level.p_value(np.median(flipped[:, level.top(x, 0.2)], axis=1), 0.0) == pytest.approx(1 / 20)   # none at or above
+    assert level.p_value(np.median(flipped[:, level.top(x, 0.2)], axis=1), -1e9) == 1.0
 
 
 if __name__ == "__main__":

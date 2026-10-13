@@ -1,13 +1,15 @@
 ---
 q: Why is numpy's rng.random the floor of a table-lookup Monte Carlo kernel, and how to beat it bit for bit?
-kw: PCG64 in numba, rng.random 3.15 ns, bit_generator.state, advance, reduceat pairwise, q_null, windowed gather, monte carlo kernel
-tag: 🔬  date: 2026-10-12  see: perf/numba-division
+kw: PCG64 in numba, pcg.py, lookup.py, has_uint32 advance clears buffer, Lemire bounded integers, rng.random 3.15 ns, bit_generator.state, advance, reduceat pairwise, q_null, windowed gather, monte carlo kernel
+tag: 🔬  date: 2026-10-13  see: perf/numba-division
 ---
 # `rng.random` costs 3.15 ns per uniform and is the floor of a table-lookup kernel; PCG64 inside numba gives the same stream at 2.24 ns
-Once draws are table lookups (`engines/nulls/windowed.py:121`), numpy's uniform is 3.15 of the kernel's 4.07 ns. Re-implement PCG64 in numba from `rng.bit_generator.state` and `advance()` the generator afterwards: identical stream, 2.24 ns. Numba's own generator is slower (5.86 ns) and changes the stream. To match numpy bit for bit in `q_null` (`studies/screening/analysis/resample.py:60-67`): `reduceat` sums `a[0] + pairwise(rest)`; `.sum(axis=1)` is pairwise over the row. Prototype only (scratchpad `p5py/`), not in the repo.
+Once draws are table lookups (`engines/nulls/lookup.py`, read through `windowed.means`), numpy's uniform is 3.15 of the kernel's 4.07 ns. `engines/nulls/pcg.py` re-implements PCG64 in numba from `rng.bit_generator.state` (`load`), and `store` writes the moved state back: identical stream, 2.24 ns. Write the state back, do not `advance()`: `advance()` clears the half word `integers` buffers on a 32-bit range (`has_uint32`, `uinteger`), which `rng.random` leaves alone — equal only on a generator that never drew a small integer. `q_null`'s shuffle (`permuted._shuffled`) carries numpy's own bounded draw: Lemire-style masked rejection, 32-bit halves of one word (low first). `pcg.integers` was deleted (no caller). Kernels inlining `pcg.py` must not be `cache=True`: numba keys the disk cache on the defining file only. Numba's own generator is slower (5.86 ns) and changes the stream. To match numpy bit for bit in `q_null` (`studies/screening/analysis/resample.py`): `reduceat` sums `a[0] + pairwise(rest)`; `.sum(axis=1)` is pairwise over the row — the gate kernel sidesteps it by filling a (draws, trades) matrix and letting numpy take `mean(axis=1)`. The gate-3c kernel and the generator are in the repo since 2026-10-13 (`tests/test_perf66_kernel.py`); the `q_null` part of this card was a prototype (scratchpad `p5py/`).
 
 ## Evidence
 - 🔬 n=300, 100,000 draws, synthetic trades on real XAUUSD H1: `timing` 4.07 -> 2.24 ns, `timing_holds`/`free` 10.9 -> 6.8 ns; `array_equal=True` vs the table gather. float32 2.09 ns and SFC64 1.77 ns change the stream.
-- 🔬 `q_null` shuffle in place: 12-17 -> 8.1-8.6 ns per element, bit for bit, n=17..3000.
+- 🔬 `q_null` shuffle in place (`studies/screening/analysis/permuted.py`, built 2026-10-13 on `pcg.step`/`pcg.word`): 12-17 -> 7.4-8.3 ns per element, x1.5-2.1, bit for bit, n=2..20,001 (`tests/test_perf66_resample.py`).
 - 🤔 1 M draws x 4 rungs: 9.0 -> 5.4 s per strategy-core (estimate).
+- 🔬 2026-10-13, in the repo, real USATEC H1 trades, 1 M draws, machine at load 33-50 of 48 cores (so slower than the prototype's idle figures): n=385, 24 distinct holds — `timing` 64.4 -> 3.13 ns per valuation, `timing_sizing` 68.1 -> 3.31, `timing_holds` 73.7 -> 11.0, `free` 82.2 -> 10.6; 4 rungs 111 -> 10.8 s per strategy-core. n=1,532: 406 -> 48.5 s. Table by (window, hour, side, hold): 0.24-0.88 MB without redrawn holds, 2.9-3.7 MB with; built in 5-32 ms. `array_equal` with the old `means` on 12 adversarial worlds x 4 rungs and 5 real strategies x 4 rungs, generator state equal.
+- 🔬 2026-10-13: packing `off`/`room` into one int32 array did not help the hold rungs (12.2 -> 17.3 ns at n=150, 20.3 -> 18.1 at n=2,896, noisy): not applied.
 - Source: `findings-PY5.md` NEW-1, NEW-3.

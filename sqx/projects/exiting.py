@@ -9,7 +9,7 @@ import urllib.request
 
 from core import worker
 from core.paths import WORKERS
-from sqx.projects import live
+from sqx.projects import live, presaving
 
 SAVED = re.compile(r"Databank '([^/']+)/([^']+)' saved .* Sync triggered by 'Save all strategies before exiting")
 PATIENCE = 15 * 60     # s the other projects' saves may take; past it nothing is killed and the script waits
@@ -34,11 +34,12 @@ def stop(role: str, running: str) -> str:
     A databank never synced (no file on disk) is not waited for: `# ponytail:` the exit saves
     it too, and a kill while it writes leaves it partial — none of a finished project's are.
     """
+    presaved = presaving.settle(role).get("clean", set())   # banks the presave already wrote: the exit logs no save line for them
     top, (log, offset) = WORKERS[role]["path"], live.mark(role)
     port, token = live._setting(role, "WebServerPortUsed"), live._setting(role, "BrowserToken")
     urllib.request.urlopen(urllib.request.Request(f"http://localhost:{port}/main/exitapp",
                                                   headers={"browserToken": token}), timeout=30).read()
-    pending, began, seen = banks(role, running), time.monotonic(), -1
+    pending, began, seen = banks(role, running) - presaved, time.monotonic(), -1
     while pending and worker.holding(top) and time.monotonic() - began < PATIENCE:
         time.sleep(2)
         with open(log, "rb") as f:

@@ -54,12 +54,17 @@ def fills(rebuilt: pd.DataFrame, trades: pd.DataFrame, bars: pd.DataFrame, point
         point_value: Account currency per 1.0 of price per lot.
 
     Returns:
-        `rebuilt`, `mae` no higher and `mfe` no lower than the move to that exit price.
+        `rebuilt`, `mae` no higher and `mfe` no lower than the move to that exit price;
+        `.attrs["clamped"]` counts the closes before the first bar, read at bar 0.
     """
     side = np.where(trades["Type"].astype(object) == "Buy", 1.0, -1.0)
     stopped = trades["Close type"].astype(str).isin(INTRABAR).to_numpy()
     at = np.searchsorted(bars.index.to_numpy(), trades["Close time"].to_numpy(), side="right") - 1
+    clamped = int((at < 0).sum())           # a close before the first bar: -1 would read the LAST bar
+    at = np.maximum(at, 0)
     price = np.where(stopped, trades["Close price"].to_numpy(np.float64), bars["Open"].to_numpy()[at])
     move = side * (price - trades["Open price"].to_numpy()) * trades["Size"].to_numpy() * point_value
-    return rebuilt.assign(mae=np.minimum(rebuilt["mae"], move),
-                          mfe=np.where(stopped, rebuilt["mfe"], np.maximum(rebuilt["mfe"], move)))
+    out = rebuilt.assign(mae=np.minimum(rebuilt["mae"], move),
+                         mfe=np.where(stopped, rebuilt["mfe"], np.maximum(rebuilt["mfe"], move)))
+    out.attrs["clamped"] = clamped          # rows whose exit minute predates the first bar (read at bar 0)
+    return out

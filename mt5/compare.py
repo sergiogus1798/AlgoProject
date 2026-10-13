@@ -1,4 +1,6 @@
 """Pair the trades of an MT5 backtest with SQX's for the same strategy and window, and measure the gap."""
+from bisect import bisect_left
+
 import numpy as np
 import pandas as pd
 
@@ -17,18 +19,37 @@ def pair(sqx: pd.DataFrame, mt5: pd.DataFrame, tolerance_min: float) -> pd.DataF
     Returns:
         One row per SQX trade, with the matched MT5 row's columns suffixed _mt5 (NaN when none).
     """
-    free = mt5.reset_index(drop=True).copy()
-    free["taken"] = False
+    mt5 = mt5.reset_index(drop=True)
+    cols = {c: mt5[c].tolist() for c in mt5.columns}
+    tol = pd.Timedelta(minutes=tolerance_min).value
+    # Per side, the still-free MT5 entries sorted by (time, original row): the nearest in time
+    # is one of the two neighbours of the SQX time; on an equal gap the first MT5 row wins,
+    # as `idxmin` did. NaT never pairs (its gap was NaN).
+    stamp = pd.to_datetime(mt5["Open time"])
+    free: dict = {}
+    for i, (k, t) in enumerate(zip(mt5["Type"].tolist(), stamp.astype("datetime64[ns]").astype("int64").tolist())):
+        if not (pd.isna(k) or pd.isna(stamp.iat[i])):
+            free.setdefault(k, []).append((t, i))
+    free = {k: ([t for t, _ in sorted(v)], [i for _, i in sorted(v)]) for k, v in free.items()}
     rows = []
     for values in sqx.itertuples(index=False, name=None):
         row = dict(zip(sqx.columns, values))
-        side = free[(free["Type"] == row["Type"]) & ~free["taken"]]
-        gap = (side["Open time"] - row["Open time"]).abs()
-        near = gap[gap <= pd.Timedelta(minutes=tolerance_min)]
-        if len(near):
-            i = near.idxmin()
-            free.loc[i, "taken"] = True
-            row.update({f"{c}_mt5": free.loc[i, c] for c in mt5.columns})
+        side, x = row["Type"], pd.to_datetime(row["Open time"])
+        if not (pd.isna(side) or pd.isna(x)) and side in free:
+            ts, ix = free[side]
+            x = x.as_unit("ns").value
+            p = bisect_left(ts, x)
+            best = None
+            if p < len(ts):
+                best = (ts[p] - x, ix[p], p)
+            if p:
+                q = bisect_left(ts, ts[p - 1])
+                low = (x - ts[p - 1], ix[q], q)
+                best = low if best is None or low[:2] < best[:2] else best
+            if best and best[0] <= tol:
+                i = best[1]
+                del ts[best[2]], ix[best[2]]
+                row.update({f"{c}_mt5": v[i] for c, v in cols.items()})
         rows.append(row)
     out = pd.DataFrame(rows, columns=[*sqx.columns, *(f"{c}_mt5" for c in mt5.columns)])
     return out.astype({f"{c}_mt5": mt5[c].dtype for c in mt5.columns})

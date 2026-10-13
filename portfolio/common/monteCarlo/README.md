@@ -67,7 +67,8 @@ study and computes none of the numbers it judges.
 - **It does not validate the edge.** It assumes it and measures what it rests on.
 - **It is not reproducible, on purpose.** No seed anywhere: every run draws fresh entropy.
   `simulate/stability.py` replaces reproducibility by measuring how far the gate-driving numbers
-  move between independent runs — which is the question a seed hides.
+  move between independent runs — which is the question a seed hides. One exception since
+  2026-10-13 (owner): Family D's stitched stress path is drawn from `simulate/stitch.py`'s `SEED`.
 
 ## The input contract is the only contract
 

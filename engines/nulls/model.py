@@ -4,7 +4,8 @@ Whatever a rung holds fixed, it gives to the null -- so a rung does not measure 
 attributes it. Match everything and the null is the strategy itself, p is 0.5 and nothing was
 measured; match nothing and the null is a monkey with the same opportunity set. The difference
 between two consecutive rungs is what that one channel was worth. Every rung shares the
-signature `(located, draws, rng)` in and entries, holds and sizes out."""
+signature `(located, draws, rng)` in and entries, holds and sizes out -- or, asked
+`placed=False`, the uniforms that place the entries, for the kernel that places as it prices."""
 
 import numpy as np
 
@@ -14,101 +15,89 @@ import numpy as np
 # declared simplification, not an oversight.
 
 
-def _place(located: dict, holds: np.ndarray, draws: int, rng: np.random.Generator) -> np.ndarray:
+def _place(located: dict, holds: np.ndarray, u: np.ndarray) -> np.ndarray:
     """Uniform entry bars, each late enough that its own hold still fits the window.
 
     Args:
         located: What inputs.on_grid() returned.
         holds: Bars each drawn trade is held, shape (draws, trades).
-        draws: How many runs.
-        rng: Seeded generator.
+        u: One uniform per drawn trade, same shape.
 
     Returns:
         Entry bar index, shape (draws, trades). The upper bound is per trade rather than a
         single one taken from the longest hold, which would leave the end of the window
         unreachable for every short trade and quietly bias the null away from it.
+        `kernel.ladder` computes this same expression trade by trade: change both or neither.
     """
     lo, hi = located["window"]
-    return (lo + rng.random((draws, holds.shape[1])) * (hi - holds - lo + 1)).astype(np.int64)
+    return (lo + u * (hi - holds - lo + 1)).astype(np.int64)
 
 
-def timing(located: dict, draws: int, rng: np.random.Generator) -> dict:
-    """Move every trade, keeping its own holding time and its own size.
-
-    Args:
-        located: What inputs.on_grid() returned.
-        draws: How many runs.
-        rng: Seeded generator.
-
-    Returns:
-        Keys `entries`, `holds`, `sizes`, each shape (draws, trades).
-    """
-    holds = np.broadcast_to(located["hold"], (draws, located["hold"].size))
-    return {"entries": _place(located, holds, draws, rng), "holds": holds,
-            "sizes": np.broadcast_to(located["size"], (draws, located["size"].size))}
-
-
-def timing_holds(located: dict, draws: int, rng: np.random.Generator) -> dict:
-    """Move every trade and redraw how long it is held, keeping its size.
+def _rung(located: dict, draws: int, rng: np.random.Generator, placed: bool, redraw: bool,
+          flat: bool) -> dict:
+    """The draw every rung is, differing only in what it hands to chance beyond the entry.
 
     Args:
         located: What inputs.on_grid() returned.
         draws: How many runs.
-        rng: Seeded generator.
+        rng: Seeded generator; one per block, the SAME for the four rungs (see below).
+        placed: False to hand back the uniforms `u` instead of the `entries` they place --
+            what `kernel.ladder` takes, sparing the int64 matrix.
+        redraw: Resample the holds with replacement from the strategy's own holding times,
+            so the distribution survives and the pairing with a trade does not -- which breaks
+            the leak from a path-dependent exit, whose duration is short because it worked.
+        flat: Size every trade at the strategy's mean, so the null risks the same money and
+            spreads it without regard to volatility.
 
     Returns:
-        Keys `entries`, `holds`, `sizes`. Holds are resampled with replacement from the
-        strategy's own holding times, so the distribution survives and the pairing with a
-        particular trade does not -- which is what breaks the leak from a path-dependent
-        exit, whose realised duration is short precisely because it worked.
+        Keys `holds`, `sizes`, and `entries` or `u`, each (draws, trades). Since 2026-10-13 the
+        four rungs read ONE stream (encargo 66, N12 B; common random numbers): the uniforms
+        `u` come first and are the same for every rung, the redrawn holds come second and are
+        the same for the two rungs that redraw them. A rung maps `u` onto the bars its hold
+        leaves room for, so the entries of `timing` and `timing_sizing` are identical, as are
+        those of `timing_holds` and `free`; a rung alone is the null it always was.
     """
-    pool = located["hold"]
-    holds = rng.choice(pool, size=(draws, len(pool)), replace=True)
-    return {"entries": _place(located, holds, draws, rng), "holds": holds,
-            "sizes": np.broadcast_to(located["size"], (draws, located["size"].size))}
+    n = located["hold"].size
+    u = rng.random((draws, n))
+    holds = (rng.choice(located["hold"], size=(draws, n), replace=True) if redraw
+             else np.broadcast_to(located["hold"], (draws, n)))
+    sizes = np.broadcast_to(located["size"].mean() if flat else located["size"], holds.shape)
+    if placed:
+        return {"entries": _place(located, holds, u), "holds": holds, "sizes": sizes}
+    return {"u": u, "holds": holds, "sizes": sizes}
 
 
-def timing_sizing(located: dict, draws: int, rng: np.random.Generator) -> dict:
-    """Move every trade and strip the volatility normalisation from its size.
+def timing(located: dict, draws: int, rng: np.random.Generator,
+           placed: bool = True) -> dict:
+    """Move every trade, keeping its own holding time and its own size (see `_rung`)."""
+    return _rung(located, draws, rng, placed, False, False)
 
-    Args:
-        located: What inputs.on_grid() returned.
-        draws: How many runs.
-        rng: Seeded generator.
 
-    Returns:
-        Keys `entries`, `holds`, `sizes`. Every trade is sized the same, at the strategy's
-        own mean, so the null risks the same money in total and allocates it without regard
-        to volatility. Against `timing`, the gap is what sizing by ATR was worth -- and it
-        is worth it through the variance, not the mean, which is why no correlation between
-        size and per-unit return can find it.
+def timing_holds(located: dict, draws: int, rng: np.random.Generator,
+                 placed: bool = True) -> dict:
+    """Move every trade and redraw how long it is held, keeping its size (see `_rung`)."""
+    return _rung(located, draws, rng, placed, True, False)
+
+
+def timing_sizing(located: dict, draws: int, rng: np.random.Generator,
+                  placed: bool = True) -> dict:
+    """Move every trade and strip the volatility normalisation from its size (see `_rung`).
+
+    Against `timing`, the gap is what sizing by ATR was worth -- through the variance, not the
+    mean, which is why no correlation between size and per-unit return can find it.
     """
-    holds = np.broadcast_to(located["hold"], (draws, located["hold"].size))
-    flat = np.broadcast_to(located["size"].mean(), holds.shape)
-    return {"entries": _place(located, holds, draws, rng), "holds": holds, "sizes": flat}
+    return _rung(located, draws, rng, placed, False, True)
 
 
-def free(located: dict, draws: int, rng: np.random.Generator) -> dict:
-    """Move every trade, redraw its holding time and strip its sizing.
+def free(located: dict, draws: int, rng: np.random.Generator,
+         placed: bool = True) -> dict:
+    """Move every trade, redraw its holding time and strip its sizing (see `_rung`).
 
-    Args:
-        located: What inputs.on_grid() returned.
-        draws: How many runs.
-        rng: Seeded generator.
-
-    Returns:
-        Keys `entries`, `holds`, `sizes`. The bottom of the ladder: only the trade count and
-        the cost survive, so this is the monkey, and its p is the one that speaks about
-        total edge rather than about one channel.
+    The bottom of the ladder: only the trade count and the cost survive, so this is the
+    monkey, and its p is the one that speaks about total edge rather than about one channel.
     """
-    drawn = timing_holds(located, draws, rng)
-    drawn["sizes"] = np.broadcast_to(located["size"].mean(), drawn["holds"].shape)
-    return drawn
+    return _rung(located, draws, rng, placed, True, True)
 
-
-# Fixed by hand, never enumerated: a rung's number enters its seed, so reordering RUNGS or
-# adding one must not move the monkeys of the others.
-RUNG_ID = {"timing": 1, "timing_holds": 2, "timing_sizing": 3, "free": 4}
 
 RUNGS = {"timing": timing, "timing_holds": timing_holds,
          "timing_sizing": timing_sizing, "free": free}

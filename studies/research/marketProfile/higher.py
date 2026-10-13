@@ -1,14 +1,15 @@
 """The wider frame of every bar: the D1 context as the day BEFORE left it, and the long averages."""
 
+from collections.abc import Iterator, Mapping
+
 import numpy as np
 import pandas as pd
 
 from studies.research.marketProfile import series
 
-# Keys that change sign when the series is turned upside down, and the level pairs that swap.
+# Keys that change sign when the series is turned upside down.
 SIGNED = ("sma5", "sma10", "sma14", "sma30", "sma50", "sma200", "d1_mom", "d1_above", "d1_band", "d1_mid", "d1_mac",
           "d1_run", "d1_out", "d1_open")
-SWAPPED = (("d1_hi", "d1_lo"),)
 
 
 def _rsi(close: np.ndarray, period: int) -> np.ndarray:
@@ -144,17 +145,70 @@ def context(d: dict, cal: dict, cfg: dict) -> dict:
     return out
 
 
-def mirror(d: dict) -> dict:
-    """The context upside down, on top of series.mirror: a long rule here is a short there.
+# Mirrored key -> the key it reads: highs and lows swap, so do the channels and the daily levels.
+_FROM = {"h": "l", "l": "h", "hi": "lo", "lo": "hi", "chi": "clo", "clo": "chi",
+         "d1_hi": "d1_lo", "d1_lo": "d1_hi"}
+_NEG = {"o", "h", "l", "c", "sma", "hi", "lo", "chi", "clo", "d1_hi", "d1_lo", *SIGNED}
+_REFLECT = {"rsi": 100, "d1_rsi": 100, "d1_ibs": 1}     # read from the other end: top - value
 
-    Signed distances and means change sign, the daily channel swaps its two sides, the RSI
-    and the IBS are read from the other end; ranges and volatility ratios stay as they are.
+
+class _Negated(Mapping):
+    """A dict of arrays seen with every value negated, each one only when it is read."""
+
+    def __init__(self, source: dict) -> None:
+        """Keep the source; nothing is computed yet."""
+        self._source = source
+
+    def __getitem__(self, key: object) -> np.ndarray:
+        """The negated array of one key."""
+        return -self._source[key]
+
+    def __iter__(self) -> Iterator:
+        """The source's keys."""
+        return iter(self._source)
+
+    def __len__(self) -> int:
+        """The source's size."""
+        return len(self._source)
+
+
+class _Upside(Mapping):
+    """The context upside down, built key by key on first read (see mirror)."""
+
+    def __init__(self, d: dict) -> None:
+        """Keep the context; nothing is computed yet."""
+        self._d, self._memo = d, {}
+
+    def __getitem__(self, key: str) -> np.ndarray | Mapping:
+        """One mirrored key, built on first read and kept."""
+        if key not in self._memo:
+            src = self._d[_FROM.get(key, key)]
+            if key in _NEG:
+                src = _Negated(src) if isinstance(src, dict) else -src
+            elif key in _REFLECT:
+                src = _REFLECT[key] - src
+            self._memo[key] = src
+        return self._memo[key]
+
+    def __iter__(self) -> Iterator:
+        """The context's keys."""
+        return iter(self._d)
+
+    def __len__(self) -> int:
+        """The context's size."""
+        return len(self._d)
+
+
+def mirror(d: dict) -> Mapping:
+    """The context upside down: a long rule here is a short there, bar for bar.
+
+    Args:
+        d: What context() returned.
+
+    Returns:
+        A read-only view. Prices are negated, highs and lows and the channels swapped, signed
+        distances and means change sign, the RSI and the IBS are read from the other end;
+        ranges and volatility ratios stay as they are. Each array is built when a measure
+        first reads it, so a measure pays only for what it uses.
     """
-    out = series.mirror(d)
-    for key in SIGNED:
-        out[key] = {n: -v for n, v in d[key].items()} if isinstance(d[key], dict) else -d[key]
-    for top, bottom in SWAPPED:
-        out[top] = {n: -v for n, v in d[bottom].items()}
-        out[bottom] = {n: -v for n, v in d[top].items()}
-    out["rsi"], out["d1_rsi"], out["d1_ibs"] = 100 - d["rsi"], 100 - d["d1_rsi"], 1 - d["d1_ibs"]
-    return out
+    return _Upside(d)

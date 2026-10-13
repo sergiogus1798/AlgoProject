@@ -28,9 +28,11 @@
 - `renaming-feeds` — How does `-symbol action=edit symbol=OLD name=NEW` rename a feed, and why is the timezone ignored?
 - `resultgroup-missing-result-old-feed-name` — What is «ResultGroup doesn't contain result with key 'Main: USDCAD_DukasM1_the5ers/H1'» in SQX's log?
 - `retest-task-hangs-silently-deadline` — Why did «MCR 6 Exits» sit for hours with no «Task finished» and no error, and what ends a task that does not advance?
+- `retest-zero-trades-stays-in-output` — Does a retest status of «Failed 30, Passed 0» mean the strategies are missing from the output databank?
 - `retire-own-and-wait-per-task` — How do I retire my own Test_ project after a run and wait for another session's multi-task run?
 - `running-a-task-headless` — How do I run one workflow step headless: stop, then start with only its tasks `active="true"`?
 - `second-server-gorilla` — How is the second server (gorilla) set up, how do I run something there, and what traps does a fresh clone hit?
+- `snippet-stats-api-traps` — What throws or silently returns 0 when a Java snippet reads a strategy's statistics?
 - `snippets-compile-on-start` — How does a Java snippet of ours get compiled and loaded by a worker, and how do I know it did?
 - `spp-harness-needs-its-own-project` — Where must the SPP reconnaissance harness live: in the mother's own workflow project, found by title?
 - `spp-headless` — Does a headless SPP persist its results, and how do I judge its progress (JVM RSS, one per install)?

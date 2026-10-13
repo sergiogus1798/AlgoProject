@@ -4,7 +4,7 @@ from datetime import date
 
 import pandas as pd
 
-from core import assetdata
+from core import assetdata, assetmarkets
 
 PROVISIONAL = "PROVISIONAL"
 GROUPS = "near_identical"      # the optional key of an asset's block in _markets.yaml
@@ -21,7 +21,7 @@ def declared(symbol: str) -> pd.DataFrame:
         `data_from` (ISO date or None) and `group` (the position of its group of
         near-identical markets in the block's `near_identical` list, -1 when it has none).
     """
-    block = assetdata.markets(symbol)
+    block = assetmarkets.markets(symbol)
     group = {feed: i for i, feeds in enumerate(block.get(GROUPS) or []) for feed in feeds}
     return pd.DataFrame(
         [{"feed": m["feed"], "category": category,

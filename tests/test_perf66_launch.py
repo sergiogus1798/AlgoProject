@@ -81,7 +81,7 @@ def test_a_failed_start_is_a_clear_failure_and_stops_nothing(
     why = "custodian: los databanks no terminaron de cargarse en 5 min; no se toca nada"
     closed = autopilot_fakes(monkeypatch, tmp_path, [])
     stopped = []
-    monkeypatch.setattr(live, "start", lambda role: (_ for _ in ()).throw(SystemExit(why)))
+    monkeypatch.setattr(live, "start", lambda role, *a, **k: (_ for _ in ()).throw(SystemExit(why)))
     monkeypatch.setattr(live, "stop", lambda *a, **k: stopped.append(a))
     monkeypatch.setattr(live, "gui_up", lambda role: True)
     monkeypatch.setattr(live, "mine", lambda role: True)
@@ -184,7 +184,7 @@ def test_a_load_or_a_sync_that_failed_is_not_an_empty_retest(
     replies, stops = {"load": "Error: Databank 'In' doesn't exist."}, []
     strategy = tmp_path / "S.sqx"
     strategy.write_text("x")
-    cfg = {"input": "In", "settle_s": 0, "sync_tries": 2, "poll_s": 0}
+    cfg = {"input": "In", "load_s": 0, "sync_tries": 2, "poll_s": 0}
     monkeypatch.setattr(sqxside, "WORKERS", {"conductor": {"path": tmp_path, "port": 1}})
     monkeypatch.setattr(sqxside, "worker_dir", lambda role: tmp_path)
     monkeypatch.setattr(sqxside, "databank_dir", lambda p, b, top: tmp_path / "databanks" / b)
@@ -197,6 +197,7 @@ def test_a_load_or_a_sync_that_failed_is_not_an_empty_retest(
     monkeypatch.setattr(sqxside.advance_run, "ready", lambda *a: None)
     monkeypatch.setattr(sqxside.advance_run, "watch", lambda *a: {})
     monkeypatch.setattr(sqxside.sqxlog, "mark", lambda top: {})
+    monkeypatch.setattr(sqxside.live, "mark", lambda role: ()); monkeypatch.setattr(sqxside.loadwait, "loaded", lambda *a: None)
     with pytest.raises(SystemExit, match="SQX rechazó `-databank action=load"):
         sqxside.run(P, "conductor", strategy, tmp_path / "work", {"ftmo": "Out FTMO"}, cfg)
     replies["load"] = "OK"
@@ -225,7 +226,7 @@ def test_close_after_a_failure_sets_aside_only_the_failed_actions_log(
             {"n": "13", "title": "s", "kind": "sqx", "tests": []}]
     closed, first = autopilot_fakes(monkeypatch, tmp_path / "run", todo), []
     (tmp_path / "run").mkdir()
-    monkeypatch.setattr(live, "start", lambda role: None)
+    monkeypatch.setattr(live, "start", lambda role, *a, **k: None)
     monkeypatch.setattr(live, "mine", lambda role: True)
     monkeypatch.setattr(run.chain, "python_step",
                         lambda *a, **k: (time.sleep(0.05), first.append(time.time()), [])[2])

@@ -83,6 +83,8 @@ Sale de la lectura del dossier `docs/AgentPDFs/criterios-implementados-2026-10-1
 | `65-consenso-cuatro-opiniones.md` | plan vivo: los diez cambios del consenso de las cuatro opiniones (§9 de `criterios-cuarta-opinion-2026-10-12.md`) en tres bloques — A borrados y apagados (`dev`, paso 1, cola 14/18/18.5/20, paso 10), B la estadística (mono con horas, contador por celda, una z y fdr local en el 8, lectura única de oos2, NIKKEI a 747, repreciador < 1 %), C build sintético y protocolo en vivo. Donde coincide con 63 o 64, manda este | nada; el bloque C espera al B |
 | `66-performance.md` | plan vivo: la auditoría de rendimiento y errores del Python del workflow (2026-10-12) — pérdida de filas en `draws.merge`, el control de falsos positivos (37 % de la corrida), núcleos del mono para 1 M de sorteos, 48 núcleos donde hoy hay 8, el binario `AlgoBank` por databank y el almacén sin copia; cada cambio con su prueba de igualdad | evidencia en `AlgoData/audit/performance-2026-10-12/`; comparte `gate/level3c.py` y `falsePositives/` con el 65 |
 
+| `67-filtro-minimo-calibrado-con-sinteticos.md` | el umbral mínimo del Build por celda (activo × TF), medido en lo que halla una hora de build sin filtros sobre series sintéticas; con su coste en estrategias rechazadas y minutos hasta 10.000 | `66` (D24 estable), `58` (generador) |
+
 ## Adónde fue cada encargo viejo
 
 Para resolver una cita antigua («encargo 44», «el plan 41 §1.5») en el código, en `OPEN.md` o en un dossier.

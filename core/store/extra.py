@@ -10,12 +10,13 @@ import pandas as pd
 
 from core import sqxfile
 from core.paths import DATA
+from core.study import identity as identities
 
 FABRICATED = "fabricated_identity"   # scaling.parquet: the identity of the sister's file as written
 KEYS = ("strategy", "mother", "name", "sibling", "Strategy Name")   # the columns a table names a strategy by
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=64)      # a save walks one project's tables per survivor in the same order: 64 holds a project's
 def table(path: Path) -> pd.DataFrame:
     """A .csv or .parquet, read once per save: a project's tables are cut 41 times over."""
     if path.suffix == ".parquet":
@@ -178,7 +179,8 @@ def sisters(project: str, name: str, identity: str, tmp: Path,
             rows = pd.read_parquet(out / path.name)
             # What a rebuilt sister is checked against: SQX's retest gives the same strategy
             # another identity (knowhow/sqx-format/fabricated-variant-identity-differs-from-retest.md).
-            rows[FABRICATED] = [sqxfile.identity(Path(f)) if Path(f).exists() else "" for f in rows["path"]]
+            made = identities.hashed(Path(f) for f in set(rows["path"]) if Path(f).exists())
+            rows[FABRICATED] = [made.get(Path(f), "") for f in rows["path"]]
             rows.to_parquet(out / path.name, index=False)
             for report in sorted((DATA / "reports" / project).glob(f"*/{day}/*/*")):
                 if report.suffix in (".csv", ".parquet"):

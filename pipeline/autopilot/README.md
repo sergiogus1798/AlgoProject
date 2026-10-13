@@ -11,7 +11,7 @@ and a limbo goes on, marked; a step without criteria lets everyone through.
 **Medoids** (`medoids: 4` on step 8 of `criteria.yaml`): of the strategies alive after the rules,
 only the medoid (highest mean Jaccard of entry bars within its `structure` group) of the 4 largest
 groups goes on; the rest are DROPped with «no es la medoide de su grupo». The gate marks the medoid of every group
-(`studies/screening/gate/redundancy.medoides`, `medoide` in the scorecard); the judge keeps the N largest (`judge.largest`).
+(`studies/screening/gate/redundancy.medoides`, `medoide` in the scorecard); the judge keeps the N largest (`selection.largest`).
 
 **The z** (owner, 2026-10-12, encargo 65 §5.2): step 8 has ONE statistical rule, `gate.scorecard.z_mono >= Φ⁻¹(1 − 0.05/B)`,
 B = batches screened on oos1 in the project's cell counting this one (`ledger.cells.batches_for`: 1.645 / 1.960 / 2.241 for
@@ -68,6 +68,8 @@ given: the tail (`tail.py`). 🤔 Built and tested with SQX stubbed; no real run
 | `tffacts.py` | The redesigned step-12 facts (encargo 47): `crossTF.tf.state`, `.phase1`, `.t1`, `.t2a`, `.t2b`, `.t3` per mother and `crossTF.tf.<TF>.<column>` per mother and sibling timeframe, from `tf_mothers.csv` and `tf_siblings.parquet`. A state is a number — **pass 1, limbo 0, fail −1** — so a rule reads `pass: ">= 1", limbo: ">= 0"`; an empty state is no fact (limbo by `missing:`); no file, no facts. Written beside the old facts, not cutting yet | imported by `facts.py` | the study's two files → fact rows |
 | `criteria.py` | The inference (and `thresholded`/`threshold`/`per_cell`: a rule with `alpha` gets its line Φ⁻¹(1 − alpha/B)): one rule → pass/limbo/fail (a threshold, distance to the population's median, or — 2026-10-03 — a verdict, `is: pass`/`is: fail` on a 1/0 fact; `else: limbo` on any of them makes not-met a limbo instead of a fail); a compound `all: [...]` / `any: [...]` is its worst / its best part, nested freely (`judged`); `reads` lists every fact the rules name, parts included; a strategy's outcome is its worst rule; a missing fact is limbo. `resolved` folds a rule's `by` in first: `by: {H4: {pass: ">= 2.5"}}` replaces the fields it names when the project has that tag — its timeframe, symbol or asset class (`judge.tags`, from the project registry); several joined by `+` must all hold, the first matching entry wins, no match leaves the rule as written | imported | facts + rules → `{id: (outcome, reason)}` |
 | `judge.py` | One judging step: facts to `hechos.parquet`, the databank's files by identity, the criteria, the medoid cut, `verdict.csv` (`strategy, verdict, identity, outcome, reason`), the cut | imported | step → databank cut, `paso-<n>/` |
+| `trim.py` | After step 8's cut (D16, encargo 66): save the survivors to the store (`core.store.save.project`), refuse unless every kept (survivor or limbo) strategy is in it, then cut `Results` to them with `apply_verdict.apply`; skipped when `Results` holds only survivors. Nothing after step 8 reads `Results` live | imported by `judge` | step-8 verdict + `Results` → `paso-8/verdict-results.csv` |
+| `selection.py` | Who a judging step keeps and drops, split out of `judge.py`: `resolve` (the identity lookup), `fallen`, `largest`/`medoids` (the step-8 medoid cut), `siblings` | imported by `judge` | population + facts → `who` keys, kept sets |
 | `criteria.yaml` | The rules and the step-8 `medoids`, commented. Also read and written by the window's «Criterios» zone (`ui/daemon/criteria/`): each change stamped in `ledger/criteria-history.jsonl`, and `frozen: {on, by, sha}` once the owner freezes them | edited, by hand or from the window | — |
 | `offered.yaml` | Step → the facts a study publishes for a criterion the owner has not set yet (owner, 2026-10-04: «calculados y visibles, sin juzgar»), each with its name on screen and the knowhow card of its zero-edge null. Read by the window's «Criterios» zone only (`ui/daemon/criteria/read.offered`): listed under their step with an empty threshold and offered in the fact picker. `judge.py` never reads it — a fact judges only once a rule in `criteria.yaml` names it. A fact enters after its null told it apart from the real values; one the null covers stays a diagnostic of its panel | edited | — |
 
@@ -176,7 +178,7 @@ databanks after 11.7 like any other).
 
 - **11.5 cuts nobody** until the owner says «corta»: `criteria.yaml` › `"11.5"` has `rules: []`, and
   `cut: CrossTF_Input`, `siblings: follow`. With rules, a mother that fails leaves `CrossTF_Input` **with
-  her siblings** and the siblings of the mothers that stay are kept (`judge.siblings`), because 11.7
+  her siblings** and the siblings of the mothers that stay are kept (`selection.siblings`), because 11.7
   reads that databank. 11.7 does not refill it (`launch/preflight.judge`: `fed` is empty for step 11.7).
 - **12** is as before: `crossTF.combined.z_new`, every sibling dropped, only the mother goes on.
 - **A project without twins** (`derive.phase2` gives `titles: []`): `plan` returns the step in `skipped`
@@ -202,7 +204,7 @@ Step 20 does not read 18.5 (`blindJoint/pieces.py` has no 18.5: a skipped mother
   pass`); `wfm.l1.p_menos`, `wfm.l1.mediana_exceso`, and `wfm.reopt.centro_exceso` /
   `wfm.reopt.l2_p_menos` only with `modo_real: reoptimizado` (`missing: pass`: modo fijo is not
   hurt). The WFM's come from its page `estrategias/<name>.json` (`facts.from_folder`), joined to
-  `SPP OOS` by name when the identity changed in the retest (`judge.resolve`).
+  `SPP OOS` by name when the identity changed in the retest (`selection.resolve`).
 - **The grammar says when a rule PASSES**: the specs' `fail: ">= 0.5"` is written `pass: "< 0.25",
   limbo: "< 0.5"` (not met = Fail, the default), and «can only give Limbo» is `else: limbo`.
 - **18.5** (see above) is judged with `segment` build+oos1+oos2 (`judge.judge`'s override).

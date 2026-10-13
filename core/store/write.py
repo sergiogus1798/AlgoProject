@@ -9,6 +9,8 @@ import hashlib
 import io
 import json
 import os
+import threading
+import time
 import zipfile
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -20,7 +22,7 @@ from core.paths import store_dir
 
 SQX, MANIFEST, RUNS = "strategy.sqx", "manifest.json", "runs.json"
 POOL = ".pool"          # store/<cell>/.pool/<sha256>.zip: every zip's bytes, once per cell
-_HELD: set[Path] = set()         # the cells this process holds the lock of
+_HELD = threading.local()        # per THREAD: the cells it holds the lock of (flock alone does not tell threads apart)
 EPOCH = (2000, 1, 1, 0, 0, 0)   # every zip member's date: the same content gives the same bytes
 
 
@@ -33,8 +35,35 @@ def folder(identity: str, cell: str = "", name: str = "") -> Path:
         name: Its name in SQX, for a new one (owner, 2026-10-08: a folder he can find by eye;
             the 8 letters keep apart the names SQX reuses from one build to the next).
     """
-    return next(iter(store_dir().glob(f"*/* {identity[:8]}")),
-                store_dir() / (cell or "_") / f"{name or '_'} {identity[:8]}")
+    held = _held().get(identity[:8])
+    if held is not None and not held.exists():      # gone within the same clock tick as the listing
+        _SEEN.clear()
+        held = _held().get(identity[:8])
+    return held or store_dir() / (cell or "_") / f"{name or '_'} {identity[:8]}"
+
+
+_SEEN: dict = {}        # store root -> (signature, {first 8 of identity: folder}, time of the listing)
+
+
+def _held() -> dict[str, Path]:
+    """Every stored folder by the 8 letters it ends in, listed again only when a cell folder changed.
+
+    A strategy folder appearing, going or being renamed changes its cell folder's mtime, so the
+    signature (the root's and every cell's) tells when the dictionary is stale.
+    """
+    root = store_dir()
+    cells = sorted((e for e in os.scandir(root) if e.is_dir() and not e.name.startswith(".")), key=lambda e: e.name) if root.is_dir() else []
+    sign = (root.stat().st_mtime_ns if cells else 0, tuple((e.name, e.stat().st_mtime_ns) for e in cells))
+    newest, seen = max([sign[0], *(m for _, m in sign[1])]), _SEEN.get(root, (None, {}, 0))
+    young = seen[2] - newest < 1_000_000_000    # listed within a clock tick of the newest mtime: a folder made later in that tick leaves it as it was
+    if young or seen[0] != sign:
+        held: dict[str, Path] = {}
+        for cell in cells:
+            for e in os.scandir(cell.path):
+                if not e.name.startswith(".") and " " in e.name:
+                    held.setdefault(e.name.rsplit(" ", 1)[1], Path(e.path))
+        _SEEN[root] = (sign, held, time.time_ns())
+    return _SEEN[root][1]
 
 
 def atomic(path: Path, data: bytes, seal: bool = True) -> None:
@@ -62,19 +91,20 @@ def locked(cell: Path) -> Iterator[None]:
     """One writer at a time per cell: every manifest and `runs.json` is read, changed, rewritten.
 
     Two saves of one cell at once lost half of what they wrote (reviewed 2026-10-08); the lock
-    is a file of the cell, held for the length of one change and re-entrant inside a process.
+    is a file of the cell, held for the length of one change and re-entrant inside a thread.
     """
-    if cell in _HELD:
+    mine = _HELD.__dict__.setdefault("cells", set())
+    if cell in mine:
         yield
         return
     cell.mkdir(parents=True, exist_ok=True)
     with (cell / ".lock").open("w") as fh:
         fcntl.flock(fh, fcntl.LOCK_EX)
-        _HELD.add(cell)
+        mine.add(cell)
         try:
             yield
         finally:
-            _HELD.discard(cell)
+            mine.discard(cell)
 
 
 def manifest(identity: str) -> dict:
@@ -106,6 +136,7 @@ def put_sqx(sqx: Path, cell: str, origin: dict) -> str:
     with locked(target.parent.parent):
         if not target.exists() or not _carries(target, identity):   # a damaged copy is replaced
             atomic(target, sqx.read_bytes())
+            _SEEN.clear()
         if not _carries(target, identity):
             raise OSError(f"{target}: lo guardado no tiene la identidad {identity[:12]}")
         if not manifest(identity):

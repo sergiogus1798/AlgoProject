@@ -8,7 +8,8 @@ from datetime import date
 
 
 from core import barstore, exportdrv, manifest
-from core.assetdata import markets, symbols
+from core.assetdata import symbols
+from core.assetmarkets import markets
 from core.paths import DATA, bar_source
 
 # Column positions of `-symbol action=list`: name, base symbol, resolution, timezone,

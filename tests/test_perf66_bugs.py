@@ -175,3 +175,45 @@ def test_a_simple_project_gets_a_cell_per_side() -> None:
     assert save.cell_of(row | {"template": "simple:long"}) == "DAX40_H1_simple_long"
     assert save.cell_of(row | {"template": "simple:short"}) == "DAX40_H1_simple_short"
     assert save.cell_of(row | {"template": "lib/ruptura/t.sqx"}) == "DAX40_H1_ruptura"
+
+
+def test_a_resumed_16_5_skips_a_finished_mother_and_redoes_a_changed_brief(monkeypatch: object,
+                                                                         tmp_path: Path) -> None:
+    """The marker holds the brief's hash: same brief, no rerun; another brief, rerun."""
+    from pipeline.autopilot import variants
+    brief = tmp_path / "design_brief_A.json"
+    brief.write_text(json.dumps({"strategy": "A", "source": str(tmp_path / "x" / "spp"), "v": 1}))
+    calls: list[str] = []
+    monkeypatch.setattr(variants, "wire", lambda *a, **k: None)
+    monkeypatch.setattr(variants, "briefs", lambda project: [brief])
+    monkeypatch.setattr(variants, "variants_dir", lambda project, strategy: tmp_path / strategy)
+    monkeypatch.setattr(variants.live, "mine", lambda role: False)
+    monkeypatch.setattr(variants.legmod, "legs", lambda *a: [])
+    monkeypatch.setattr(variants, "_py", lambda *a: calls.append(a[0]))
+    variants.run("P", "r")
+    first = calls.count("sqx.variants.make")
+    variants.run("P", "r")
+    assert (first, calls.count("sqx.variants.make")) == (1, 1)
+    brief.write_text(json.dumps({"strategy": "A", "source": str(tmp_path / "x" / "spp"), "v": 2}))
+    variants.run("P", "r")
+    assert calls.count("sqx.variants.make") == 2
+
+
+def _note_one(args: tuple[str, int]) -> None:
+    """One process notes one run of the same input under its own config."""
+    import time
+    from ledger import tried
+    folder, i = args
+    read = tried.read
+    tried.read = lambda study: (lambda f: (time.sleep(0.2), f)[1])(read(study))   # widen the race
+    tried.path = lambda study, p=Path(folder): p / f"{study}.jsonl"
+    tried.note_run("S", "m", "in", f"cfg{i}", "t")
+
+
+def test_eight_processes_noting_runs_keep_eight_rows_in_one_search(tmp_path: Path) -> None:
+    """Eight forked processes noting a run each leave eight rows under one search id."""
+    from ledger import tried
+    with mp.get_context("fork").Pool(8) as pool:
+        pool.map(_note_one, [(str(tmp_path), i) for i in range(8)], chunksize=1)
+    rows = [json.loads(x) for x in (tmp_path / "S.jsonl").read_text().splitlines()]
+    assert len(rows) == 8 and len({r["search_id"] for r in rows}) == 1

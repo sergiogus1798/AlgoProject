@@ -103,6 +103,6 @@ def set_expected_sign(table: dict[str, dict[str, str]]) -> dict:
             "\nNO es un activo (dueño, 2026-10-12): el signo esperado de los mercados por familia de\n"
             "idea (arquetipo de plantilla). `family: positive` siempre; `structural: control` = control\n"
             "negativo (pasa con z <= 0, cuenta en P8 con z >= +1,65); `none` = sin signo, no se juzga.\n"
-            "Lo escribe core.assetwrite.set_expected_sign; lo lee core.assetdata.expected_sign."))
+            "Lo escribe core.assetwrite.set_expected_sign; lo lee core.assetmarkets.expected_sign."))
     write(path, doc)
     return table

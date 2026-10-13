@@ -24,7 +24,12 @@ def signs(seed: int | np.random.SeedSequence, draws: int, weeks: int,
     """
     blocks = -(-weeks // block_weeks)
     coin = np.random.default_rng(seed).integers(0, 2, (draws, blocks), dtype=np.int8)
-    return np.repeat(coin * 2.0 - 1.0, block_weeks, axis=1)[:, :weeks]
+    # int8 until the last step, then in place: the float64 result is the only draws x weeks
+    # matrix ever held (it was three: two temporaries and the repeat's copy)
+    out = np.repeat(coin, block_weeks, axis=1)[:, :weeks].astype(np.float64)
+    out *= 2.0
+    out -= 1.0
+    return out
 
 
 def chunks(flips: np.ndarray, size: int) -> Iterator[np.ndarray]:

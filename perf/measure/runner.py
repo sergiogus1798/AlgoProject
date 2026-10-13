@@ -56,12 +56,13 @@ def measure(name: str, cfg: dict, memtop: int = 0) -> dict:
         memtop: How many allocation sites to report, largest first; 0 to report none.
 
     Returns:
-        Wall seconds, CPU seconds of the whole process tree (workers included), peak Python allocation and peak RSS of this process, plus the
+        Wall seconds, CPU seconds of the whole process tree (workers included), peak Python allocation (None unless memtop > 0: tracemalloc is off in a timing run) and peak RSS of this process, plus the
         scale and bytes the target reported. `alloc_peak_mb` counts only what Python
         allocated here: numpy buffers inside a worker process are invisible to it, which is
         why the harness samples the whole tree's RSS as well.
     """
-    tracemalloc.start()
+    if memtop:      # tracemalloc slows object-heavy code up to x1,8: only when memory is asked for
+        tracemalloc.start()
     state, done = {"size": 0, "snap": None}, threading.Event()
     watcher = threading.Thread(target=_watch, args=(state, done,
                                                     cfg["harness"]["sample_ms"] / 1000))
@@ -73,11 +74,13 @@ def measure(name: str, cfg: dict, memtop: int = 0) -> dict:
     done.set()
     if memtop:
         watcher.join()
-    alloc = tracemalloc.get_traced_memory()[1]
-    sites = [f"{s.traceback[0]}  {s.size / MB:.1f} MB"
-             for s in state["snap"].statistics("lineno")[:memtop]] if state["snap"] else []
-    tracemalloc.stop()
-    return {"wall_s": wall, "cpu_s": cpu, "alloc_peak_mb": alloc / MB, "alloc_top": sites,
+    alloc, sites = None, []
+    if memtop:
+        alloc = tracemalloc.get_traced_memory()[1] / MB
+        sites = [f"{s.traceback[0]}  {s.size / MB:.1f} MB"
+                 for s in state["snap"].statistics("lineno")[:memtop]] if state["snap"] else []
+        tracemalloc.stop()
+    return {"wall_s": wall, "cpu_s": cpu, "alloc_peak_mb": alloc, "alloc_top": sites,
             "self_rss_mb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024,
             "scale": out["scale"], "bytes_in_mb": out["bytes_in"] / MB}
 

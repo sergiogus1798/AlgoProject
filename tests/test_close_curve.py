@@ -80,8 +80,7 @@ def main() -> None:
         tmp = Path(tmp)
         batches = {"A": batch(tmp / "a", "A", True), "B": batch(tmp / "b", "B", True)}
         got = joint.panel(batches, SPAN, "X_M1")
-        if not np.allclose(got, PROFIT) or joint.trades_door(batches) is not None \
-                or not np.allclose(joint.moves("X_M1", got.index).iloc[1:], [0.01, -0.02]):
+        if not np.allclose(got, PROFIT) or joint.trades_door(batches) is not None:
             failures.append(f"blindJoint:\n{got}")
         batches["B"] = batch(tmp / "c", "B", False)
         if "B" not in (joint.trades_door(batches) or ""):

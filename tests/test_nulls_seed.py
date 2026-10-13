@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core import fanout
 from engines.nulls import inputs, model, simulate, verdict
+from studies.screening.analysis import resample
 
 BARS, TRADES, DRAWS = 20_000, 120, 300
 NAMES = [f"Strategy 1.{i}" for i in range(6)]
@@ -71,12 +72,22 @@ def main() -> None:
         failures.append("los monos de una estrategia no dependen sólo de la semilla")
     if np.array_equal(a, simulate.nulls(held, "free", _CFG, NAMES[1])["net"]):
         failures.append("dos estrategias sacaron los mismos monos")
-    # Two rungs draw from separate streams: handed the same model, they still differ.
+    # The four rungs share one stream (N12 B, 2026-10-13): handed the same model, they draw the same.
     spare, model.RUNGS["free"] = model.RUNGS["free"], model.RUNGS["timing"]
+    if not np.array_equal(simulate.nulls(held, "free", _CFG, NAMES[0])["net"],
+                          simulate.nulls(held, "timing", _CFG, NAMES[0])["net"]):
+        failures.append("dos peldaños con el mismo modelo no comparten el flujo aleatorio")
+    model.RUNGS["free"] = spare
+    # Restored from the flipped assertion: different models do give different monkeys, and
+    # level 3c's stream is not the stream of 3a/b (numpy pads [s, k] to [s, k, 0]).
     if np.array_equal(simulate.nulls(held, "free", _CFG, NAMES[0])["net"],
                       simulate.nulls(held, "timing", _CFG, NAMES[0])["net"]):
-        failures.append("dos peldaños comparten el mismo flujo aleatorio")
-    model.RUNGS["free"] = spare
+        failures.append("dos peldaños con modelos distintos sacaron los mismos monos")
+    if np.array_equal(resample.stream(5, "k").random(4), resample.stream(5, "k|mono").random(4)):
+        failures.append("el flujo de 3c es el de 3a/b")
+    if np.array_equal(np.random.default_rng([5, simulate._stable("k"), simulate.TAG, 0]).random(4),
+                      resample.stream(5, "k").random(4)):
+        failures.append("el flujo de los monos es el de remuestreo")
     fresh = [inputs.config([])["nulls"]["seed"] for _ in range(2)]
     if fresh[0] == fresh[1] or max(fresh) >= 2 ** 32:
         failures.append(f"semilla fresca: {fresh} (iguales, o no caben en 32 bits)")

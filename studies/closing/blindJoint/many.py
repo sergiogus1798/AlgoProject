@@ -4,6 +4,7 @@ import time
 
 import pandas as pd
 
+from core import fanout
 from core.study import blocks, result as envelope
 from studies.closing.blindJoint import measure, one, readings, words
 from studies.closing.blindJoint.pieces import NAMES, PIECES
@@ -12,6 +13,14 @@ LEVEL = {"pass": 1, "watch": 0, "fail": -1, "none": None, "info": None}
 MEANING = {"lower": "cuenta a favor todas las madres malas: el suelo de la p",
            "consistent": "la de Hansen: descarta sólo las claramente peores que el benchmark",
            "upper": "cuenta en contra todas las madres malas: el test de White"}
+
+
+_SHARED: dict = {}     # set by `run` before the fork, read by `_member` in the workers
+
+
+def _member(i: int) -> dict:
+    """Mother `i` of the population read, in a worker that inherited what step 20 measured."""
+    return one.run(_SHARED["rows"][i], _SHARED["got"], _SHARED["cfg"])
 
 
 def grid(title: str, frame: pd.DataFrame, labels: pd.DataFrame, note: str) -> dict:
@@ -129,6 +138,8 @@ def run(data: dict, cfg: dict) -> dict:
                    "número, lado, lotes, duración y coste — entradas en momentos al azar de "
                    "oos2. Su media es lo que paga el mercado por estar dentro; descuenta la "
                    "deriva del activo sin exigir batir a un largo apalancado."}])
-    members = [one.run(row, got, cfg) for _, row in population.iterrows()]
+    _SHARED.update(rows=[row for _, row in population.iterrows()], got=got, cfg=cfg)
+    done = dict(fanout.run(_member, {i: 1 for i in range(len(population))}, fanout.CORES))
+    members = [done[i] for i in range(len(population))]
     envelope.progress(100, result["verdict"]["label"])
     return {"population": result, "members": members, "measured": got}

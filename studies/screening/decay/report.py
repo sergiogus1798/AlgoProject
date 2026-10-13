@@ -4,12 +4,14 @@
 import argparse
 import sys
 import time
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
-from core import sqxfile, sqxstats
+from core import fanout, sqxfile, sqxstats
 from core.paths import MASTER, databank_dir, report_dir, worker_dir
 from core.study import blocks, output, result as envelope, verdicts
 from core.study.render import markdown
@@ -84,6 +86,23 @@ def joined(before: pd.Series, after: pd.Series, split: str) -> pd.Series:
     return daily.cumsum()
 
 
+BLOCK = 200      # files per task: a read is ~1 ms, so one task per file would cost more in hand-over than in work
+_SHARED: dict = {}     # set by `read_all` before the fork, read by `_block` in the workers
+
+
+def _block(start: int) -> list:
+    """`fn` over one block of files, in a worker that inherited the list."""
+    return [_SHARED["fn"](f) for f in _SHARED["files"][start:start + BLOCK]]
+
+
+def read_all(fn: Callable[[Any], Any], files: list) -> list:
+    """`[fn(f) for f in files]`, the files read on every core; the same list in the same order."""
+    _SHARED.update(fn=fn, files=files)
+    starts = {i: 1 for i in range(0, len(files), BLOCK)}
+    done = dict(fanout.run(_block, starts, fanout.CORES))
+    return [x for i in sorted(done) for x in done[i]]
+
+
 def curves(folder: Path, built: Path | None, split: str, strategy: str | None) -> dict:
     """Each strategy's daily equity, read from its .sqx, with its build's IS when given.
 
@@ -97,11 +116,12 @@ def curves(folder: Path, built: Path | None, split: str, strategy: str | None) -
         name -> curve, only names that also sit in the build when `built` is given.
     """
     files = [folder / f"{strategy}.sqx"] if strategy else sorted(folder.glob("*.sqx"))
-    got = {f.stem: sqxstats.equity(f) for f in files}
+    got = dict(zip([f.stem for f in files], read_all(sqxstats.equity, files)))
     if built is None:
         return got
-    return {n: joined(sqxstats.equity(built / f"{n}.sqx"), c, split)
-            for n, c in got.items() if (built / f"{n}.sqx").is_file()}
+    mine = [n for n in got if (built / f"{n}.sqx").is_file()]
+    return {n: joined(e, got[n], split)
+            for n, e in zip(mine, read_all(sqxstats.equity, [built / f"{n}.sqx" for n in mine]))}
 
 
 def write_one(out: Path, folder: Path, strategy: str, curve: pd.Series, split: str,
@@ -156,7 +176,7 @@ def main() -> None:
     dropped = int(clone.sum())
     kept = {name: c for name, c in found.items() if not clone[name]}
     rows = decay.table(kept, a.split, a.end)
-    identity = {n: sqxfile.identity(folder / f"{n}.sqx") for n in found}
+    identity = dict(zip(found, read_all(sqxfile.identity, [folder / f"{n}.sqx" for n in found])))
     source = {"split": a.split, "end": a.end, "duplicates_dropped": dropped}
     got = result(rows, source, started)
     title = f"Decaimiento — {a.project} / {a.databank}"

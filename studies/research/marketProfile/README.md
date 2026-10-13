@@ -30,7 +30,7 @@ same procedure inside each family — the owner chooses, the code never switches
 | `tooltips.py` | One Spanish sentence per knob | imported | — |
 | `inputs.py` | The config; an asset's build window; its M1 bars **cut to build** (skipped while the feed file is being rewritten); the resampling; the round-trip cost in price units | imported | asset → bars, cost |
 | `higher.py` | The wider frame of each bar: D1 bars built from the cell's own bars and read **one closed day late** (momentum, distance to the mean, daily channel, ATR, volatility ratio, RSI), the cell's long averages and RSI, and their mirror for shorts | imported | derived series → the same plus `d1_*`, `sma5/50/200`, `rsi` |
-| `series.py` | Bars as log arrays, the calendar that stays in place, the shared indicators, the mirror for shorts, the block-resampled draw, and the sign-flipped series `blocklen` checks against | imported | bars → arrays |
+| `series.py` | Bars as log arrays, the calendar that stays in place, the shared indicators, the block-resampled draw, and the sign-flipped series `blocklen` checks against | imported | bars → arrays |
 | `measure/` | The measures, one signature each (its own README) | imported | arrays → statistic, trades |
 | `context.py` | The context block: drift, clustering of volatility, cost over ATR, Kaufman efficiency | imported | bars → dict |
 | `one.py` | One cell: every measure on the real bars and on the null draws; p, z, effect and cost per trade, sign per year, how much the families fire on the same bars | imported | bars → rows |

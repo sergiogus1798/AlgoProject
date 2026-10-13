@@ -10,6 +10,26 @@ import numpy as np
 TRIAD_BYTES = 24  # two reads and one write of float64 per element, per pass
 
 
+_BUF: tuple = ()   # the worker's three vectors, written once by `_prepare` before any clock runs
+
+
+def _alloc(n: int) -> tuple:
+    """Three vectors of n float64, written so every page is really mapped (first touch paid here)."""
+    return np.ones(n), np.ones(n), np.ones(n)
+
+
+def _prepare(kb: float) -> None:
+    """Pool initializer: build the worker's vectors outside the timed region."""
+    global _BUF
+    os.environ["OMP_NUM_THREADS"] = "1"
+    _BUF = _alloc(max(int(kb * 1024 / TRIAD_BYTES), 1))
+
+
+def _warm(_: int) -> None:
+    """Hold a worker busy so the warm pass starts all of them, initializers included."""
+    time.sleep(0.2)
+
+
 def triad(kb: float, passes: int) -> int:
     """A STREAM triad: read two vectors, scale one, add, write the result.
 
@@ -21,9 +41,8 @@ def triad(kb: float, passes: int) -> int:
         Bytes moved. The standard memory-bandwidth kernel, chosen because it does almost no
         arithmetic: whatever it takes longer than, it took waiting for memory.
     """
-    os.environ["OMP_NUM_THREADS"] = "1"
     n = max(int(kb * 1024 / TRIAD_BYTES), 1)
-    a, b, c = (np.ones(n), np.ones(n), np.ones(n))
+    a, b, c = _BUF if _BUF and len(_BUF[0]) == n else _alloc(n)
     for _ in range(passes):
         np.add(b, c * 1.5, out=a)
     return n * TRIAD_BYTES * passes
@@ -58,9 +77,10 @@ def sweep(cfg: dict, kb: float) -> list[dict]:
     for workers in cfg["scaling"]["workers"]:
         if workers > (os.cpu_count() or 1):
             continue
-        with ProcessPoolExecutor(max_workers=workers, mp_context=ctx) as pool:
+        with ProcessPoolExecutor(max_workers=workers, mp_context=ctx,
+                                 initializer=_prepare, initargs=(kb,)) as pool:
             args = [(kb, passes)] * workers
-            list(pool.map(_job, args[:workers]))          # warm the pool before the clock
+            list(pool.map(_warm, range(workers)))              # start every worker, vectors built, before the clock
             start = time.perf_counter()
             moved = sum(pool.map(_job, args))
             elapsed = time.perf_counter() - start

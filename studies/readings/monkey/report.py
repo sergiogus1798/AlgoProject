@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import time
 from datetime import date
 from pathlib import Path
 
@@ -55,6 +56,52 @@ def sign(rows: list[dict], signed: dict) -> None:
         r["identity"] = str(signed.get(r["strategy"]) or "")
 
 
+def stamp(panel: pd.DataFrame, signed: dict, cfg: dict) -> None:
+    """Add nulls.csv's identity, note and seed columns to the panel, in place."""
+    panel.insert(0, "identity", panel.index.map(signed))
+    panel.insert(1, "note", panel["identity"].isna().map({True: identity.NOTE, False: ""}))
+    panel["seed"] = cfg["nulls"]["seed"]
+
+
+def saved_source(out: Path) -> dict:
+    """What the previous population run's manifest recorded, which `--only` must keep.
+
+    Raises:
+        SystemExit: There is no previous run in `out` to merge into.
+    """
+    try:
+        source = json.loads((out / "manifest.json").read_text(encoding="utf-8"))["source"]
+        int(source["seed"])
+        return source
+    except (OSError, KeyError, ValueError, TypeError):
+        raise SystemExit(f"--only completa una corrida previa y en {out} no hay ninguna con "
+                         "manifest: corre primero la población entera")
+
+
+def refuse_drift(saved: dict, now: dict) -> None:
+    """Refuse `--only` when any field of how the nulls were drawn differs from the manifest's.
+
+    Args:
+        saved: The manifest's `source`.
+        now: The same fields as this call computes them.
+
+    Raises:
+        SystemExit: Naming the first field that differs: rows computed two ways never share a nulls.csv.
+    """
+    for key, value in now.items():
+        if saved.get(key) != value:
+            raise SystemExit(f"--only: «{key}» difiere de la corrida guardada ({saved.get(key)!r} "
+                             f"guardado, {value!r} ahora): dos cálculos distintos no van en un "
+                             "mismo nulls.csv; corre la población entera")
+
+
+def merged(out: Path, panel: pd.DataFrame) -> pd.DataFrame:
+    """nulls.csv with `panel`'s strategies replaced and every other row kept, sorted as a full run is."""
+    old = pd.read_csv(out / "nulls.csv", index_col=0)
+    both = pd.concat([old[~old.index.isin(panel.index)], panel]).reset_index()
+    return both.sort_values(["strategy", "market"], kind="stable").set_index("strategy")
+
+
 def main() -> None:
     """Run one strategy, or every strategy of one export, through every rung."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -73,6 +120,10 @@ def main() -> None:
     ap.add_argument("--statistic", default="net",
                     help="with --strategy: which one the call and the channels read")
     ap.add_argument("--limit", type=int, default=0, help="first N strategies only, for a trial")
+    ap.add_argument("--only", default="",
+                    help="file of strategy names, one per line: run only those and merge them "
+                         "into the previous run's nulls.csv and distributions, under that run's "
+                         "root (a different --seed is refused)")
     ap.add_argument("--set", action="extend", nargs="+", default=[], help="section.key=value")
     ap.add_argument("--seed", type=int, default=None,
                     help="root of the monkeys' random streams; omitted, a fresh one is drawn. "
@@ -82,6 +133,14 @@ def main() -> None:
                     help="strategies run at once; each process holds one strategy's blocks")
     a = ap.parse_args()
 
+    out = report_dir(a.project, a.databank, date.today().isoformat()) / "monkey"
+    if a.only:
+        saved = saved_source(out)
+        root = int(saved["seed"])
+        if a.seed not in (None, root):
+            raise SystemExit(f"--only sigue con la semilla {root} de la corrida guardada: dos "
+                             f"raíces en un mismo nulls.csv no (pedida {a.seed})")
+        a.seed = root
     cfg = inputs.config(a.set + inputs.seeded(a.seed))
     packed = inputs.newest(a.project, a.databank)
     # A cross-market export names its markets in `Symbol`; a one-market one only in its
@@ -91,8 +150,11 @@ def main() -> None:
     if a.sample == "IST":
         feeds = additional_only(a.project, feeds)
     cfg["feed"] = " ".join(feeds)
+    if a.only:
+        refuse_drift(saved, {"feed": feeds, "timeframe": a.timeframe, "sample": a.sample,
+                             "input": str(packed.resolve()), "draws": cfg["nulls"]["draws"],
+                             "rungs": cfg["nulls"]["rungs"], "overrides": a.set})
     frames = {feed: inputs.bars(feed, a.timeframe) for feed in feeds}
-    out = report_dir(a.project, a.databank, date.today().isoformat()) / "monkey"
     if a.strategy:
         assert len(feeds) == 1, "--strategy lee un mercado: di cuál con --feed"
         kept = []
@@ -102,7 +164,7 @@ def main() -> None:
         # One strategy must not wipe the population's rows: replace only its own identity.
         ident = output.identify(packed.parent, [a.strategy])[a.strategy]
         sign(kept, {a.strategy: ident})
-        draws.merge(out, kept)
+        draws.merge(out, kept, defer=True)
         title = f"Contra el mono — {a.strategy}"
         print(markdown.render(got, title))
         print(f"-> {output.member(out, got, title, f'Muestra {a.sample}.')}")
@@ -117,7 +179,26 @@ def main() -> None:
     if a.limit:
         kept = sorted({name for name, _ in sample})[:a.limit]
         sample = {k: v for k, v in sample.items() if k[0] in kept}
+    if a.only:
+        names = set(Path(a.only).read_text(encoding="utf-8").split())
+        if names - {name for name, _ in sample}:
+            raise SystemExit(f"--only nombra estrategias que no están en el export: "
+                             f"{sorted(names - {name for name, _ in sample})[:5]}")
+        sample = {k: v for k, v in sample.items() if k[0] in names}
     got = many.run(sample, frames, cfg, a.workers)
+    if a.only:
+        signed = output.identify(packed.parent, sorted(set(got["panel"].index)))
+        sign(got["draws"], signed)
+        draws.merge(out, got["draws"])
+        stamp(got["panel"], signed, cfg)
+        whole = merged(out, got["panel"])
+        whole.to_csv(out / "nulls.csv")
+        output.population(out, "monkey", many.population(
+            whole.drop(columns=["identity", "note", "seed"]), len(feeds), cfg, time.time()),
+            f"Contra el mono — {a.project} / {a.databank}")
+        print(f"{len(got['panel'])} pares fundidos en {out / 'nulls.csv'} ({len(whole)} en total), "
+              f"semilla {cfg['nulls']['seed']}; resumen de población rehecho")
+        return
     output.population(out, "monkey", got["population"],
                       f"Contra el mono — {a.project} / {a.databank}")
     signed = output.identify(packed.parent, sorted(set(got["panel"].index)))
@@ -125,10 +206,7 @@ def main() -> None:
         print(identity.note(signed))
     sign(got["draws"], signed)
     draws.save(out, got["draws"])
-    got["panel"].insert(0, "identity", got["panel"].index.map(signed))
-    got["panel"].insert(1, "note", got["panel"]["identity"].isna().map({True: identity.NOTE,
-                                                                        False: ""}))
-    got["panel"]["seed"] = cfg["nulls"]["seed"]
+    stamp(got["panel"], signed, cfg)
     got["panel"].to_csv(out / "nulls.csv")
     (out / "rungs.json").write_text(json.dumps(model.RANDOMISES, indent=2), encoding="utf-8")
     write_manifest(out,

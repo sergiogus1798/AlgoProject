@@ -104,22 +104,6 @@ def derive(x: dict, cfg: dict) -> dict:
             "clo": {n: _lag(cs.rolling(n).min().to_numpy()) for n in cfg["close_channels"]}}
 
 
-def mirror(d: dict) -> dict:
-    """The same series upside down, so a measure written for longs reads shorts.
-
-    Args:
-        d: What derive() returned.
-
-    Returns:
-        Prices negated, highs and lows swapped, channels swapped. A long entry here is a
-        short entry on the real series, bar for bar.
-    """
-    return {**d, "o": -d["o"], "h": -d["l"], "l": -d["h"], "c": -d["c"], "sma": -d["sma"],
-            "hi": {n: -v for n, v in d["lo"].items()}, "lo": {n: -v for n, v in d["hi"].items()},
-            "chi": {n: -v for n, v in d["clo"].items()},
-            "clo": {n: -v for n, v in d["chi"].items()}}
-
-
 def gaps(x: dict) -> dict:
     """Each bar as four distances from the previous close: what a null draw reorders."""
     before = np.concatenate([[x["o"][0]], x["c"][:-1]])

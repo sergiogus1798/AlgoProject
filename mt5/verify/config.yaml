@@ -20,9 +20,9 @@ sqx:
   # The MT5 tester does not slip a market order, so neither does SQX here: a slippage on one
   # side only would read as an unfaithful EA.
   slippage: 0
-  settle_s: 8                         # SQX needs this after `load` before the task sees it
-  sync_tries: 60
-  poll_s: 5
+  load_s: 60                          # most s to wait for «Strategies loaded» after `load` (then it fails loudly)
+  sync_tries: 600                     # polls of poll_s for the synced .sqx on disk: 300 s, then it fails loudly
+  poll_s: 0.5
 
 # The MT5 side.
 mt5:

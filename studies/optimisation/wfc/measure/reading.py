@@ -6,6 +6,14 @@ from core.study import draws
 from engines.weekly import flip
 from studies.optimisation.wfc.measure import level
 
+# Draws per block: draws x variants is never held whole (4 GB at 1 M draws), only a block of it.
+BLOCK = 20_000
+
+
+def _spearman(fixed: np.ndarray, flips: np.ndarray, panel: np.ndarray) -> np.ndarray:
+    """flip.spearman of `fixed` against every draw of `flips @ panel`, a block of draws at a time."""
+    return np.concatenate([flip.spearman(fixed, part @ panel) for part in flip.chunks(flips, BLOCK)])
+
 
 def measure(e_is: dict, e_oos: dict, weeks: dict, years: float, cfg: dict,
             straddle: float = 0.0, name: str = "", comp: str = "",
@@ -47,24 +55,31 @@ def measure(e_is: dict, e_oos: dict, weeks: dict, years: float, cfg: dict,
     size = len(weeks["gross"])
     signs = flip.signs(main, knobs["draws"], size, knobs["block_weeks"])
     rho = float(flip.spearman(e_is["gross"], e_oos["gross"]))
-    spread = flip.spearman(e_is["gross"], signs @ weeks["gross"])
+    spread = _spearman(e_is["gross"], signs, weeks["gross"])
     where = {"strategy": name, "seed": knobs["seed"], "comp": comp}
     recs = [draws.record("wfc", "p_mas", rho, spread, **where, p="flip.tails",
                          unit="rho de Spearman en el nulo de signos semanal")]
     blocked = {"p_mas": None, "p_menos": None}
     if straddle > knobs["straddle_warn"]:
         again = flip.signs(wide, knobs["draws"], size, cfg["annotate"]["block_weeks"])
-        wider = flip.spearman(e_is["gross"], again @ weeks["gross"])
+        wider = _spearman(e_is["gross"], again, weeks["gross"])
         blocked = flip.tails(rho, wider)
         recs.append(draws.record("wfc", "p_mas_bloque", rho, wider, **where, p="flip.tails",
                                  unit="rho de Spearman con bloques de semanas"))
-    inside, outside, flat = e_is["net"], e_oos["net"], signs @ weeks["net"] / years
+    inside, outside = e_is["net"], e_oos["net"]
     best = level.top(inside, cfg["level"]["top_share"])
-    kept, kept_null = (level.retention(inside, out, best, gap) for out in (outside, flat))
+    kept = level.retention(inside, outside, best, gap)
+    tops, kept_null = [], []
+    for part in flip.chunks(signs, BLOCK):
+        flat = part @ weeks["net"] / years
+        tops.append(np.median(flat[:, best], axis=1))
+        if kept is not None:
+            kept_null.append(level.retention(inside, flat, best, gap))
+    tops = np.concatenate(tops)
     recs.append(draws.record("wfc", "p_nivel", float(np.median(outside[best])),
-                             np.median(flat[:, best], axis=1), **where, p="level.p_value",
+                             tops, **where, p="level.p_value",
                              unit="mediana fuera del top, exceso por año"))
-    low, high = (None, None) if kept is None else np.percentile(kept_null, [5, 95])
+    low, high = (None, None) if kept is None else np.percentile(np.concatenate(kept_null), [5, 95])
     win_in, win_out = inside > 0, outside > 0
     if record is not None:
         record.extend(recs)
@@ -75,7 +90,7 @@ def measure(e_is: dict, e_oos: dict, weeks: dict, years: float, cfg: dict,
         "p_mas_bloque": blocked["p_mas"], "p_menos_bloque": blocked["p_menos"],
         "n_top": int(best.sum()),
         "nivel_top": float(np.median(outside[best])),
-        "p_nivel": level.p_value(flat, best, float(np.median(outside[best]))),
+        "p_nivel": level.p_value(tops, float(np.median(outside[best]))),
         "nivel_todas": float(np.median(outside)),
         "nivel_top_dentro": float(np.median(inside[best])),
         "nivel_todas_dentro": float(np.median(inside)),

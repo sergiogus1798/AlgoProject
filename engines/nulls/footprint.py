@@ -45,30 +45,31 @@ def footprint(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
     shared = windowed.grid(bars, np.arange(len(bars)), np.zeros(len(bars), int))
     mine = windowed.located(shared, where["entry"], where["exit"], where["size"], side,
                             np.zeros(where["entry"].size, int))
-    # ponytail: every draw priced at once, ~100 bytes per draw x trade (200 MB at 2,000 x
-    # 1,000 trades); price in blocks as engines.nulls.windowed does if draws grows tenfold.
-    drawn = windowed.draw(shared, mine, knobs["rung"], knobs["draws"],
-                          np.random.default_rng(knobs["seed"]))
-    drawn["sizes"] = np.broadcast_to(mine["size"].mean() if windowed.REDRAWS[knobs["rung"]][1]
-                                     else mine["size"], drawn["entries"].shape)
-    enter, leave = drawn["entries"], drawn["entries"] + drawn["holds"]
     opens, closes, time = bars["Open"].to_numpy(), bars["Close"].to_numpy(), bars.index.to_numpy()
-    net, _ = reprice.pnl(opens[enter], opens[leave], time[enter], time[leave], side,
-                         drawn["sizes"], costs)
-    lots = side * drawn["sizes"]
-    paid = net - costs["point_value"] * lots * (opens[leave] - opens[enter])
-    held = (_per_bar(enter, lots, len(bars)) - _per_bar(leave, lots, len(bars))).cumsum()
+    draws, rng = knobs["draws"], np.random.default_rng(knobs["seed"])
+    entered, left, paid = np.zeros((3, len(bars)))
+    total = np.empty(draws)
+    # Priced in blocks, as windowed.means: a draw takes the same random numbers whatever the
+    # block, and np.add.at adds each bar's lots in bincount's very order, so nothing moves.
+    block = max(1, windowed.BLOCK // mine["entry"].size)
+    for done in range(0, draws, block):
+        drawn = windowed.draw(shared, mine, knobs["rung"], min(block, draws - done), rng)
+        enter, leave = drawn["entries"], drawn["entries"] + drawn["holds"]
+        sizes = mine["size"].mean() if windowed.REDRAWS[knobs["rung"]][1] else mine["size"]
+        lots = np.broadcast_to(side * sizes, enter.shape)
+        net, _ = reprice.pnl(opens[enter], opens[leave], time[enter], time[leave], side,
+                             np.broadcast_to(sizes, enter.shape), costs)
+        np.add.at(entered, enter.ravel(), lots.ravel())
+        np.add.at(left, leave.ravel(), lots.ravel())
+        np.add.at(paid, leave.ravel(),
+                  (net - costs["point_value"] * lots * (opens[leave] - opens[enter])).ravel())
+        total[done:done + len(net)] = net.sum(axis=1)
+    held = (entered / draws - left / draws).cumsum()
     # A bar's position is carried from its open to the next bar's; over a day's last bar it
     # is marked at that close, and the gap to the next open is the next day's.
     after = np.r_[opens[1:], closes[-1]]
     mark = np.where(np.r_[day[1:] != day[:-1], True], closes, after)
     gap = held * (after - mark)
-    money = (costs["point_value"] * (held * (mark - opens) + np.r_[0.0, gap[:-1]])
-             + _per_bar(leave, paid, len(bars)))
+    money = costs["point_value"] * (held * (mark - opens) + np.r_[0.0, gap[:-1]]) + paid / draws
     daily = pd.Series(money).groupby(day.to_numpy()).sum()
-    return daily, float(net.sum(axis=1).std(ddof=1) / np.sqrt(knobs["draws"]) / len(daily))
-
-
-def _per_bar(where: np.ndarray, what: np.ndarray, bars: int) -> np.ndarray:
-    """The mean over the traders (rows) of `what`, summed on the bar each entry of `where` names."""
-    return np.bincount(where.ravel(), what.ravel(), bars) / len(where)
+    return daily, float(total.std(ddof=1) / np.sqrt(draws) / len(daily))

@@ -22,11 +22,9 @@ if _TEST:
 # Optional: no browser is needed unless the manual is rendered to PDF.
 BROWSER = Path(_CFG.get("browser", "")).expanduser()
 WORKER_PORT = _CFG["worker_port"]
-# The desktop app's local daemon. Loopback only, never exposed; a machine that never
-# opens the app never sets it, so it carries a default rather than being required.
+# The desktop app's local daemon: loopback only, so it carries a default.
 UI_PORT = _CFG.get("ui_port", 8765)
-# MetaTrader 5 under Wine: the Wine prefix that holds the terminal. Optional until MT5 is
-# installed; its tester reports and exports go under the data root, never into the prefix.
+# MetaTrader 5 under Wine: the prefix holding the terminal; its reports go under the data root.
 MT5_PREFIX = Path(_CFG.get("mt5_prefix", "~/Desktop/MT5")).expanduser()
 MT5_DATA = DATA / "mt5"
 MT5_ACCOUNTS = _CFG.get("mt5_accounts") or {}   # {firm: {login, server}}; the terminal keeps the passwords
@@ -35,9 +33,8 @@ CLAUDE_BIN = Path(_CFG.get("claude_bin") or max(  # «Crear la plantilla con Cla
 STRATEGY_POOLS = {name: Path(p).expanduser()
                   for name, p in (_CFG.get("strategy_pools") or {}).items()}
 
-# Headless installs by role. The conductor is sqx_worker / worker_port themselves rather
-# than an entry of its own: two places holding the same port is how one of them goes stale.
-# Any other role — the custodian, and it is optional — comes from sqx_workers.
+# Headless installs by role. The conductor is sqx_worker / worker_port themselves (one place
+# per port); any other role, the custodian included and optional, comes from sqx_workers.
 WORKERS = {"conductor": {"path": WORKER, "port": WORKER_PORT}}
 WORKERS.update({role: {"path": Path(w["path"]).expanduser(), "port": w["port"]}
                 for role, w in (_CFG.get("sqx_workers") or {}).items()})
@@ -246,3 +243,8 @@ def store_dir() -> Path:
 def archive_dir() -> Path:
     """The strategy archive's root: one read-only `<identity>/<YYYY-MM-DDTHHMM>/` per version."""
     return DATA / "archive"
+
+
+def bank_dir(project: str, role: str) -> Path:
+    """In-memory folder of one install's transient `.abk` files for a project."""
+    return Path("/dev/shm/algobank") / role / project

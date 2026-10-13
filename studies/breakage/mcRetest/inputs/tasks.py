@@ -98,7 +98,7 @@ def provenance(path: Path) -> dict:
     settings, meta = sqxretest.settings(path), sqxretest.meta(path)
     return {"methods": settings["methods"],
             "declared": meta["declared"],
-            "stored": int(sqxretest.simulations(path)["index"].size),
+            "stored": sqxretest.stored(path),
             "scope": "full" if settings["full_sample"] else "is",
             "precision": PRECISION.get(settings["precision"], settings["precision"]),
             "date_range": meta["date_range"]}

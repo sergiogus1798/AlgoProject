@@ -2,6 +2,7 @@
 
 import json
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 import pandas as pd
@@ -9,7 +10,8 @@ import pandas as pd
 from pipeline.autopilot import criteria
 from studies.screening.analysis import delay, tradelevel
 from studies.screening.falsePositives import model
-from studies.screening.gate import cascade, inputs as gate_inputs, level1a, level2, level3ab, measures
+from studies.screening.gate import (cascade, inputs as gate_inputs, level0, level1a, level2, level3ab,
+                                    level3c, measures)
 from studies.screening.gate.levels import LEVELS
 
 
@@ -62,8 +64,8 @@ def _plant(data: dict, scores: pd.DataFrame, edge: float, cfg: dict) -> tuple[pd
     return t(data["oos"], "excess")[["ar1"]].set_axis(list(level1a.FACTS), axis=1), add / by.mean()
 
 
-def _delayed(data: dict, got: pd.DataFrame, everyone: pd.Index, cfg: dict,
-             share: pd.Series) -> pd.DataFrame:
+def _delayed(data: dict, got: pd.DataFrame, everyone: pd.Index, cfg: dict, share: pd.Series,
+             bare: pd.DataFrame | None) -> pd.DataFrame:
     """Level 2's facts of a planted population: the edge is in the moved trade too.
 
     Args:
@@ -73,6 +75,8 @@ def _delayed(data: dict, got: pd.DataFrame, everyone: pd.Index, cfg: dict,
         everyone: The population.
         cfg: The gate's config.
         share: Per identity, the planted amount over the planted mean excess.
+        bare: Level 2's table on `bare` (what the unplanted population got), or None to
+            run level 2 on it.
 
     Returns:
         `retraso_ret_min` with the plant added back to the moved mean, and `retraso_t_delta`
@@ -82,47 +86,97 @@ def _delayed(data: dict, got: pd.DataFrame, everyone: pd.Index, cfg: dict,
     # trades (hold shorter than the shift) has its own mean. Exact = delay.measure taking a
     # planted `moved`, which is the gate's file.
     worst = delay.worst(pd.read_parquet(data["out"] / "retraso.parquet"))["variant"]
-    level2.run({**data, "oos": data["bare"]}, everyone, cfg)
-    bare = pd.read_parquet(data["out"] / "retraso.parquet").set_index(["identity", "variant"])
-    paired = bare["t_delta"].reindex(list(zip(worst.index, worst))).to_numpy()
+    if bare is None:
+        level2.run({**data, "oos": data["bare"]}, everyone, cfg)
+        bare = pd.read_parquet(data["out"] / "retraso.parquet")
+    paired = bare.set_index(["identity", "variant"])["t_delta"].reindex(list(zip(worst.index, worst))).to_numpy()
     return pd.DataFrame({"retraso_ret_min": got["retraso_ret_min"].reindex(worst.index) + share,
                          "retraso_t_delta": paired}, index=worst.index)
 
 
-def facts8(data: dict, gate_cfg: dict, edge: float = 0.0) -> pd.DataFrame:
-    """Step 8's facts with the cascade off: every level of the gate over everybody.
+def _pass(base: dict, everyone: pd.Index, gate_cfg: dict, edge: float, cache: dict) -> pd.DataFrame:
+    """One population's facts, taking from `cache` what an earlier pass already measured and leaving there what a later one can take.
+
+    What an edge planted after level 1a cannot move is measured once, on the unplanted pass:
+    levels 0 and 1a, the moved excess and the unplanted table of level 2, `q_p` (Q is centred on the
+    mean) and the monkeys of level 3c, which are the same whatever the strategy earned.
+    """
+    data, scores = dict(base), pd.DataFrame(index=everyone)
+    pre, planted = cache.setdefault("pre", {}), edge != 0
+    for _, module in LEVELS:
+        if module in pre:
+            got = pre[module]
+            if module is level1a:
+                data["oos"] = pre["oos"]
+        elif module is level3c and planted and edge in cache.get("mono", {}):
+            got = cache["mono"][edge]
+        else:
+            if module is level3ab:
+                data["build"] = gate_inputs.build_pnl(data, everyone)
+                if planted and "q_p" in cache:
+                    data["q_p"] = cache["q_p"]
+            if module is level3c and not planted:
+                data["shifts"] = {e: model.planted(data["oos"], e)[1] for e in cache["edges"] if e}
+                data["shifted"] = cache["mono"] = {}
+            # the build delay no fact reads: written once, on the unplanted pass
+            cfg = {**gate_cfg, "delay": {**gate_cfg["delay"], "on_build": False}} if planted and module is level2 else gate_cfg
+            got = module.run(data, everyone, cfg)
+            if module in (level0, level1a):
+                pre[module] = got
+                if module is level1a:
+                    pre["oos"] = data["oos"]
+            if not planted and module is level2:
+                cache["delay"] = pd.read_parquet(data["out"] / "retraso.parquet")
+            if not planted and module is level3ab:
+                cache["q_p"] = got["q_p"]
+        if planted and module is level1a:
+            got, share = _plant(data, scores, edge, gate_cfg)
+        if planted and module is level2:
+            got = _delayed(data, got, everyone, gate_cfg, share, cache.get("delay"))
+        scores = scores.join(got.reindex(everyone).astype(float))
+    return scores.join(measures.table(data).astype(float)).add_prefix(cascade.PREFIX)
+
+
+def facts_edges(data: dict, gate_cfg: dict, edges: tuple[float, ...],
+                each: Callable[[float], None] = lambda edge: None) -> dict[float, pd.DataFrame]:
+    """Step 8's facts with the cascade off, for one population and the same one with edges planted.
 
     Args:
         data: A staged harvest, real (inputs.load()'s `real`) or as_harvest()'s.
         gate_cfg: The gate's `inputs.config()`.
-        edge: Sharpe per trade, net of costs, planted on every oos1 trade (model.planted); 0
-            plants nothing.
-            Only for a harvest of monkeys: the curve is rebuilt from closed trades.
+        edges: Sharpe per trade, net of costs, planted on every oos1 trade (model.planted),
+            each a pass; 0 plants nothing. Only for a harvest of monkeys: the curve is rebuilt
+            from closed trades. Put 0 first and every later pass takes what the edge cannot
+            move from it (_pass) instead of measuring it again.
+        each: Called with the edge after its pass.
 
     Returns:
-        Indexed by identity, one column per fact under the key the autopilot gives it
-        (`gate.scorecard.<column>`): every level of `levels.LEVELS` in order, each over the
-        whole population, and the measured columns. Nobody leaves, so the facts centred on
-        the population (R5, R5d) are centred on everyone: diagnostic only (owner,
-        2026-10-07). The levels' per-trade tables go to a folder that dies with the call.
+        Edge to the facts, indexed by identity, one column per fact under the key the
+        autopilot gives it (`gate.scorecard.<column>`): every level of `levels.LEVELS` in
+        order, each over the whole population, and the measured columns. Nobody leaves, so
+        the facts centred on the population (R5, R5d) are centred on everyone: diagnostic
+        only (owner, 2026-10-07). Nothing nobody reads is kept: no distribution is recorded
+        and level 3c draws only the rung `z_mono` is (`z_mono_<other rung>` is empty). The
+        levels' per-trade tables go to a folder that dies with the call.
 
         The planted edge is a constant per trade (the mean cost it pays back included): it
         does not depend on the fill, so it survives the one-bar delay whole (_delayed).
     """
     everyone = cascade.population(data).index
-    scores = pd.DataFrame(index=everyone)
+    cache = {"edges": edges, "moved": {}}
     with tempfile.TemporaryDirectory() as tmp:
-        data = {**data, "out": Path(tmp)}
-        for _, module in LEVELS:
-            if module is level3ab:
-                data["build"] = gate_inputs.build_pnl(data, everyone)
-            got = module.run(data, everyone, gate_cfg)
-            if edge and module is level1a:
-                got, share = _plant(data, scores, edge, gate_cfg)
-            if edge and module is level2:
-                got = _delayed(data, got, everyone, gate_cfg, share)
-            scores = scores.join(got.reindex(everyone).astype(float))
-    return scores.join(measures.table(data).astype(float)).add_prefix(cascade.PREFIX)
+        data = {**data, "out": Path(tmp), "keep_draws": False, "rungs": (level3c.HEADLINE,),
+                "moved": cache["moved"]}
+        got = {}
+        for edge in edges:
+            got[edge] = _pass(data, everyone, gate_cfg, edge, cache)
+            each(edge)
+    return got
+
+
+def facts8(data: dict, gate_cfg: dict, edge: float = 0.0) -> pd.DataFrame:
+    """Step 8's facts for one population with `edge` planted: facts_edges() of one pass."""
+    return facts_edges(data, gate_cfg, (edge,))[edge]
 
 
 FACTS = {"8": facts8}

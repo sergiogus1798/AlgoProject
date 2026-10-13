@@ -5,6 +5,15 @@ import numpy as np
 from portfolio.common.monteCarlo.simulate import metrics
 
 
+# worst_path's seed: the one seeded draw of this study (owner, 2026-10-13, encargo 66 §1.6).
+# Every other draw of monteCarlo is unseeded on purpose (simulate/README.md); a stress
+# reference that moved between two runs of the same strategy read as a finding when it was
+# only a redraw. Until that date the path was drawn from OS entropy: a stitched figure stored
+# before it does not reproduce, one stored after does.
+SEED = 20261013
+STRIP_BYTES = 256_000_000   # the index matrix and the gathered P&L of one strip
+
+
 def _bad_draws(pnl: np.ndarray, sims: int, quantiles: list[float],
                rng: np.random.Generator) -> dict[float, np.ndarray]:
     """One bootstrap realisation of a single period, per requested severity.
@@ -17,17 +26,29 @@ def _bad_draws(pnl: np.ndarray, sims: int, quantiles: list[float],
             reading off several positions — means the quantiles are directly comparable:
             the only thing that differs between them is which row of the same resample gets
             picked, not a fresh draw of randomness.
-        rng: Fresh generator.
+        rng: The path's generator; left where `sims` rows of draws leave it.
 
     Returns:
         {quantile: per-trade P&L of the chosen draw}, not a summary of it: the point of the
         stress path is that the pieces are concatenated, so the trades themselves have to
-        survive.
+        survive. Only each draw's total is kept, strip by strip; a chosen row is drawn again
+        from the generator state its strip started at, so memory is one strip whatever `sims`.
     """
-    idx = rng.integers(0, pnl.size, (sims, pnl.size))
-    drawn = pnl[idx]
-    order = np.argsort(drawn.sum(axis=1))
-    return {q: drawn[order[int(q * (sims - 1))]] for q in quantiles}
+    height = max(1, STRIP_BYTES // (16 * pnl.size))
+    states, totals = [], np.empty(sims)
+    for lo in range(0, sims, height):
+        states.append(rng.bit_generator.state)
+        rows = min(height, sims - lo)
+        totals[lo:lo + rows] = pnl[rng.integers(0, pnl.size, (rows, pnl.size))].sum(axis=1)
+    after = rng.bit_generator.state
+    order = np.argsort(totals)
+    out = {}
+    for q in quantiles:
+        strip, row = divmod(int(order[int(q * (sims - 1))]), height)
+        rng.bit_generator.state = states[strip]
+        out[q] = pnl[rng.integers(0, pnl.size, (row + 1, pnl.size))[row]]
+    rng.bit_generator.state = after
+    return out
 
 
 def worst_path(pnl: np.ndarray, segments: list[dict], sims: int, quantiles: list[float],
@@ -49,9 +70,10 @@ def worst_path(pnl: np.ndarray, segments: list[dict], sims: int, quantiles: list
         {quantile: core statistics of that quantile's stitched path}. Global Monte Carlo
         never produces this path: it asks what a bad decade looks like, while this asks what
         it looks like when every single period comes in near its own bad end. It is a stress
-        reference and feeds the narrative, never a gate on its own.
+        reference and feeds the narrative, never a gate on its own. Drawn from `SEED`: the same
+        stream gives the same path.
     """
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(SEED)
     per_segment = [_bad_draws(pnl[s["positions"]], sims, quantiles, rng) for s in segments
                    if s["positions"].size > 1]
     return {q: {**metrics.observed(np.concatenate([seg[q] for seg in per_segment]), equity0),

@@ -114,4 +114,17 @@ fi
 cat "$OUT/estado.txt"
 [[ -e $OUT/fallo.md ]] && head -5 "$OUT/fallo.md"
 echo "resumen: $OUT/resumen.md"
+# Rule 6 (owner D28): a Test_ project is retired when the run ends. A failed run keeps it for
+# inspection; a refusal (survivors not in the store) is an error, never silent. Trade_/Research_ stay.
+if [[ $P == Test_* ]]; then
+    if [[ -n ${UNTIL:-} || " ${FLAGS[*]} " == *" --until "* ]]; then   # unfinished on purpose: a later «run» resumes it
+        echo "workflow: la corrida lleva --until: $P NO se retira, queda para continuarlo con «run»" >&2
+    elif [[ $CODE -ne 0 ]]; then
+        echo "workflow: la corrida falló: $P NO se retira, queda para inspeccionarlo" >&2
+    else
+        bin/sqx-worker.sh --role $ROLE stop >&2 || die "no se paró el $ROLE: $P NO se retira"
+        python3 -m sqx.projects.retire "$P" --role $ROLE --yes --own >&2 \
+            || die "$P NO se retiró (¿supervivientes sin guardar?): guárdalas con /store-save y retíralo con python3 -m sqx.projects.retire $P --role $ROLE --yes"
+    fi
+fi
 exit $CODE

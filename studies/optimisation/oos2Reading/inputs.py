@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from core.assetdata import load as load_asset, window as asset_window
@@ -36,8 +37,11 @@ def window(symbol: str) -> tuple[pd.Timestamp, pd.Timestamp]:
 def mother_trades(batch: Path, span: tuple[pd.Timestamp, pd.Timestamp]) -> pd.DataFrame:
     """One mother's own trades inside oos2 (schema T plus `variant_id`): the variant the manifest flags `origin`."""
     origin = pd.read_parquet(batch / "manifest.parquet", columns=["variant_id", "origin"])
-    trades = pd.read_parquet(batch / TRADES)
-    trades = trades[trades["variant_id"] == origin.loc[origin["origin"], "variant_id"].item()]
+    mine = origin.loc[origin["origin"], "variant_id"].item()
+    trades = pd.read_parquet(batch / TRADES, filters=[("variant_id", "==", mine)])
+    if isinstance(trades.index, pd.RangeIndex):      # the filtered read renumbers; the labels are the file's rows
+        ids = pd.read_parquet(batch / TRADES, columns=["variant_id"])["variant_id"].to_numpy()
+        trades.index = np.flatnonzero(ids == mine)
     return trades[(trades["Open time"] >= span[0]) & (trades["Close time"] < span[1])]
 
 

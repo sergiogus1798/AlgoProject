@@ -220,3 +220,15 @@ def test_i_zip_archives_are_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     wfmatrix.matrix(path)
     assert verify._damaged(path) is None
     assert len(opened) == 3 and all(z.fp is None for z in opened)
+
+
+def test_stopexit_close_before_the_first_bar_does_not_read_the_last_bar() -> None:
+    """A close before the first bar is clamped, not read from the last bar."""
+    from portfolio.common.construct.equity import stopexit
+    bars = pd.DataFrame({"Open": [10.0, 99.0]},
+                        index=pd.to_datetime(["2024-01-01 10:00", "2024-01-01 10:01"]))
+    trades = pd.DataFrame({"Type": ["Buy"], "Close type": ["TP"], "Open price": [10.0], "Size": [1.0],
+                           "Close price": [10.0], "Close time": pd.to_datetime(["2024-01-01 09:00"])})
+    rebuilt = pd.DataFrame({"mae": [0.0], "mfe": [0.0]})
+    got = stopexit.fills(rebuilt, trades, bars, 1.0)
+    assert got["mfe"][0] == 0.0 and got.attrs["clamped"] == 1     # last bar would give 89

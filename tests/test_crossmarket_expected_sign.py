@@ -37,12 +37,12 @@ def test_roles_come_from_the_expected_sign_table() -> None:
 
 def test_expected_sign_is_read_and_is_not_an_asset() -> None:
     """The seven rows of _markets.yaml; `markets()` never hands the table back as a main's block."""
-    from core import assetdata
-    table = assetdata.expected_sign()
+    from core import assetmarkets
+    table = assetmarkets.expected_sign()
     assert sorted(table) == ["breakout", "meanReversion", "momentum", "pattern", "session", "trendFollowing", "volatility"]
     assert {f for f, r in table.items() if r["structural"] == "control"} == {"breakout", "volatility", "meanReversion", "session"}
     assert all(r["family"] == "positive" for r in table.values())
-    assert assetdata.markets("_expected_sign") == {} and assetdata.markets("XAUUSD")["categories"]
+    assert assetmarkets.markets("_expected_sign") == {} and assetmarkets.markets("XAUUSD")["categories"]
 
 
 def test_p3_z_pools_only_the_free_markets() -> None:

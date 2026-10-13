@@ -11,14 +11,15 @@ import pandas as pd
 
 from engines.market import calibrate, reprice
 from engines.market.feed import scale
+from engines.nulls import lookup
 
 # What each rung of model.RUNGS hands to chance here, beside the entry bar: (the hold is
 # redrawn from the strategy's own, the sizing by volatility is stripped).
 REDRAWS = {"timing": (False, False), "timing_holds": (True, False),
            "timing_sizing": (False, True), "free": (True, True)}
 
-# Trade valuations priced per reprice.pnl call. Memory and cache only: a draw consumes the
-# same random numbers whatever the block, so changing this moves no monkey.
+# Trade valuations priced per reprice.pnl call, which makes temporaries of ~10x that. Memory
+# only: the table holds the same values whatever the block, so changing this moves no monkey.
 BLOCK = 200_000
 
 
@@ -104,7 +105,12 @@ def draw(shared: dict, mine: dict, rung: str, draws: int, rng: np.random.Generat
         mine: What located() returned.
         rung: A key of REDRAWS (the names of model.RUNGS).
         draws: How many monkeys.
-        rng: Seeded generator.
+        rng: Seeded generator. Since 2026-10-13 (encargo 66, N12 B) a draw always consumes
+            `rng.random((draws, 2, trades))`: layer 0 places the entries, layer 1 redraws the
+            holds on the rungs that do. Hand every rung a generator in the same state and
+            they share their uniforms (common random numbers): `timing` and `timing_sizing`
+            enter at the same bars, as do `timing_holds` and `free`, and a rung maps a
+            uniform onto the bars ITS hold leaves room for, so a rung alone is the null it was.
 
     Returns:
         `entries`, `holds`, `sizes`, each (draws, trades). The entry is uniform over the
@@ -117,15 +123,18 @@ def draw(shared: dict, mine: dict, rung: str, draws: int, rng: np.random.Generat
         sizing. Monkeys may overlap, as on the ladder (model.py).
     """
     redraw, flat = REDRAWS[rung]
-    n, ok = mine["entry"].size, shared["eligible"]
-    u = rng.random((draws, 1 + redraw, n))
+    n = mine["entry"].size
+    u = rng.random((draws, 2, n))     # both layers whatever the rung: the stream is the same for the four
     holds = (mine["hold"][(u[:, 1] * n).astype(np.int64)] if redraw
              else np.broadcast_to(mine["hold"], (draws, n)))
     holds = np.minimum(holds, shared["last"] - mine["lo"])
     entries = np.empty(holds.shape, np.int64)
     for hour in np.unique(mine["hour"]):
         cols = np.flatnonzero(mine["hour"] == hour)
-        at_hour = shared["by_hour"].get(int(hour), ok)
+        at_hour = shared["by_hour"][int(hour)]
+        if not at_hour.size:
+            raise IndexError(f"no eligible bar at hour {hour}: a trade entered on a bar the "
+                             "grid never draws (no usable ATR, or outside the session)")
         first = np.searchsorted(at_hour, mine["lo"][cols])
         room = np.searchsorted(at_hour, np.minimum(mine["hi"][cols], shared["last"] - holds[:, cols]),
                                side="right") - first
@@ -157,6 +166,33 @@ def price(shared: dict, mine: dict, drawn: dict,
                        drawn["sizes"], costs)
 
 
+def priced(shared: dict, mine: dict, costs: reprice.Costs, rung: str) -> dict:
+    """Every trade a monkey of one strategy can draw under one rung, priced once.
+
+    Args:
+        shared: What grid() returned.
+        mine: What located() returned.
+        costs: reprice.costs() of the feed and segment.
+        rung: A key of REDRAWS.
+
+    Returns:
+        lookup.layout()'s `off`, `room` and `hid`, `redraw`, and `value`: the P/L price()
+        gives each candidate at the size draw() would give it there, BLOCK at a time. A draw
+        is then an index into `value` (lookup.means), never a new valuation.
+    """
+    redraw, flat = REDRAWS[rung]
+    cells = lookup.layout(shared, mine, redraw)
+    value = np.empty(cells["enter"].size)
+    for done in range(0, value.size, BLOCK):
+        enter, leave = (cells[k][done:done + BLOCK] for k in ("enter", "leave"))
+        sizes = (np.broadcast_to(mine["size"].mean(), enter.shape) if flat
+                 else atr_sized(shared["atr"], mine["entry"], mine["size"], enter))
+        value[done:done + BLOCK] = price(
+            shared, {"side": cells["side"][done:done + BLOCK]},
+            {"entries": enter, "holds": leave - enter, "sizes": sizes}, costs)[0]
+    return {"value": value, "redraw": redraw} | {k: cells[k] for k in ("off", "room", "hid")}
+
+
 def means(shared: dict, mine: dict, costs: reprice.Costs, rung: str, draws: int,
           rng: np.random.Generator) -> np.ndarray:
     """The mean P/L per trade of every monkey of one strategy under one rung.
@@ -167,18 +203,14 @@ def means(shared: dict, mine: dict, costs: reprice.Costs, rung: str, draws: int,
         costs: reprice.costs() of the feed and segment.
         rung: A key of REDRAWS.
         draws: How many monkeys.
-        rng: Seeded generator; the result depends on it and on nothing else.
+        rng: Seeded PCG64 generator; the result depends on it and on nothing else.
 
     Returns:
-        One mean per monkey, length `draws`, priced in blocks of BLOCK trade valuations.
+        One mean per monkey, length `draws` — the monkeys draw() and price() would give on the
+        same generator, bit for bit (tests/test_perf66_kernel.py), read off priced()'s table
+        instead of priced one by one.
     """
-    block = max(1, BLOCK // mine["entry"].size)
-    out = np.empty(draws)
-    for done in range(0, draws, block):
-        batch = min(block, draws - done)
-        out[done:done + batch] = price(shared, mine, draw(shared, mine, rung, batch, rng),
-                                       costs)[0].mean(axis=1)
-    return out
+    return lookup.means(priced(shared, mine, costs, rung), draws, rng)
 
 
 def z(seen: float, drawn: np.ndarray) -> float:

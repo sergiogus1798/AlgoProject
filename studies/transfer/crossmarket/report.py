@@ -26,7 +26,7 @@ def main() -> None:
     ap.add_argument("--only", help="with --strategy: this one market feed alone")
     ap.add_argument("--set", action="extend", nargs="+", default=[], metavar="KEY=VALUE")
     ap.add_argument("--workers", type=int, default=fanout.CORES,
-                    help="kept for the callers; the travel run is a single process")
+                    help="kept for the callers; the travel run uses every physical core")
     a = ap.parse_args()
 
     overrides = a.set

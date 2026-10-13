@@ -31,7 +31,7 @@ def test_a_finalist_is_the_mothers_own_file() -> None:
     """One row per mother: her name, her `.sqx` (absolute), no `stop` field; none is a clean end."""
     with tempfile.TemporaryDirectory() as tmp, \
             patched(survivors, about=lambda p: WHO), \
-            patched(finalists.sqxfile, identity=lambda f: f"id-{f.stem}"):
+            patched(finalists.identity, hashed=lambda files: {Path(f): f"id-{Path(f).stem}" for f in files}):
         who = mothers(Path(tmp) / "bank", ["Strategy 1", "Strategy 2"])
         said = finalists.write("Pr", who, Path(tmp))
         rows = json.loads((Path(tmp) / finalists.FILE).read_text())

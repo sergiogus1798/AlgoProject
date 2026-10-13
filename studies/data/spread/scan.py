@@ -15,13 +15,15 @@ from datetime import date
 
 import pandas as pd
 
-from core import assetdata
+from core import assetdata, fanout
 from core.datapaths import spread_dir
 from core.study import output
 from core.study.result import progress
 from studies.data.spread import asset, inputs, measure, verdict
 
 SEGMENTS = ("build", "oos1", "oos2")
+WIDTH = 8
+_SHARED: dict = {}     # set by `main` before the fork, read by `_asset` in the workers
 
 
 def declared(data: dict) -> str:
@@ -69,6 +71,11 @@ def one(symbol: str, cfg: dict) -> dict:
     return facts
 
 
+def _asset(symbol: str) -> dict:
+    """`one` in a worker that inherited the config."""
+    return one(symbol, _SHARED["cfg"])
+
+
 def main() -> None:
     """Scan every asset of the config, or those named."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -77,9 +84,15 @@ def main() -> None:
     a = ap.parse_args()
     cfg = inputs.config(a.set)
     names = a.symbol or list(cfg["assets"])
-    for n, symbol in enumerate(names):
-        progress(5 + 90 * n // len(names), symbol)
-        got = one(symbol, cfg)
+    _SHARED["cfg"] = cfg
+    # One asset per task, each writing only its own `spread/<tick feed>/` (a feed per asset).
+    # Eight at a time: each decodes a tick file of some GB.
+    done = {}
+    for symbol, got in fanout.run(_asset, {n: 1 for n in names}, min(WIDTH, fanout.CORES)):
+        done[symbol] = got
+        progress(5 + 90 * len(done) // len(names), symbol)
+    for symbol in names:
+        got = done[symbol]
         table = pd.DataFrame(got["proposal"]).set_index("tramo")
         print(f"\n{symbol}: relativo {'constante' if got['relative']['constant'] else 'NO constante'} "
               f"(peor año {got['relative']['worst']:.2f}×) → modelo {got['model']}, error hacia "

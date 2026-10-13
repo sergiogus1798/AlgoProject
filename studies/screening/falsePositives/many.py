@@ -8,8 +8,9 @@ import pandas as pd
 
 from core import fanout
 from core.study import blocks, result as envelope
-from engines.nulls import verdict
+from engines.nulls import lookup, verdict
 from pipeline.autopilot import criteria
+from studies.screening.analysis import resample
 from studies.screening.falsePositives import chain, model
 from studies.screening.gate.cascade import PREFIX
 
@@ -63,6 +64,8 @@ def population(inputs: dict, cfg: dict) -> tuple[pd.DataFrame, list[dict]]:
     rng = np.random.default_rng([inputs["source"]["seed"], 8])
     picked = [whole[i] for i in rng.permutation(len(whole))[:want]]
     _SHARED.update(inputs=inputs, knobs=knobs, donors=donors)
+    resample.warm()
+    lookup.warm()
     got = {}
     for i, (key, res) in enumerate(fanout.run(_donor, {k: len(donors[k]) for k in picked},
                                               fanout.CORES), 1):
@@ -103,10 +106,10 @@ def run(inputs: dict, cfg: dict) -> dict:
     trades, skipped = population(inputs, cfg)
     harvest = chain.as_harvest(trades, inputs["real"])
     edges = {NULL: 0.0} | {f"{edge:.2f}": edge for edge in cfg["population"]["edges"]}
-    facts = {}
-    for i, (name, edge) in enumerate(edges.items(), 1):
-        facts[name] = chain.facts8(harvest, gate_cfg, edge)
-        envelope.progress(40 + 45 * i // len(edges), f"cadena, ventaja {name}")
+    names, done = {edge: name for name, edge in edges.items()}, []
+    got = chain.facts_edges(harvest, gate_cfg, tuple(edges.values()), lambda edge: (done.append(edge), envelope.progress(
+        40 + 45 * len(done) // len(edges), f"cadena, ventaja {names[edge]}")))
+    facts = {name: got[edge] for name, edge in edges.items()}
     facts[REAL] = chain.facts8(inputs["real"], gate_cfg)
     walked = {name: chain.walk({"8": f}, list(f.index), steps, tags, inputs["batches"])
               for name, f in facts.items()}

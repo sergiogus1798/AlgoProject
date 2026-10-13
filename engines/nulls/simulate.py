@@ -4,12 +4,15 @@ It chooses no model -- the rung arrives as a key -- and judges nothing: every nu
 here with no threshold applied to it."""
 
 import hashlib
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import parent_process
 
 import numpy as np
 import pandas as pd
 
+from core import fanout
 from engines.market import calibrate
-from engines.nulls import barrier, inputs, kernel, model, stats
+from engines.nulls import inputs, kernel, model
 
 
 def fixed(trades: pd.DataFrame, frame: pd.DataFrame, cfg: dict) -> dict:
@@ -23,8 +26,6 @@ def fixed(trades: pd.DataFrame, frame: pd.DataFrame, cfg: dict) -> dict:
     Returns:
         The located trades, the bar arrays, the measured point value and per-trade cost, the
         price barriers, and the reconciliation that says whether any of it can be believed.
-        `levels` is empty for a strategy with neither stop nor target, which is the whole
-        XAUUSD corpus of 2026-09; `barrier.exits()` then takes its fast path.
     """
     located = inputs.on_grid(trades, frame.index, cfg["barrier"]["max_hold"])
     value = calibrate.point_value(trades)
@@ -35,7 +36,7 @@ def fixed(trades: pd.DataFrame, frame: pd.DataFrame, cfg: dict) -> dict:
               "high": frame["High"].to_numpy(np.float64),
               "enter_px": frame[enter].to_numpy(np.float64),
               "leave_px": frame[leave].to_numpy(np.float64)}
-    return {"located": located, "bars": arrays, "value": value, "cost": cost, "levels": {},
+    return {"located": located, "bars": arrays, "value": value, "cost": cost,
             "atr": calibrate.atr(frame, cfg["barrier"]["atr_bars"]), "checks": checks}
 
 
@@ -51,33 +52,6 @@ def warm(frame: pd.DataFrame, cfg: dict) -> None:
         depends on nothing else, so calling this first turns 234 x 39 ms into 39 ms.
     """
     calibrate.atr(frame, cfg["barrier"]["atr_bars"])
-
-
-def _priced(kept: dict, drawn: dict, intrabar: str) -> np.ndarray:
-    """Every statistic of a batch of runs, in kernel.NAMES order.
-
-    Args:
-        kept: What fixed() returned.
-        drawn: Keys `entries`, `holds`, `sizes`, each (runs, trades).
-        intrabar: barrier.intrabar, read only when the strategy carries price barriers.
-
-    Returns:
-        A (runs, 5) array. With no barriers -- the whole corpus of 2026-09 -- the compiled
-        kernel prices and measures in one pass; with barriers the numpy path does, since
-        which barrier wins inside a bar is a convention the kernel does not carry.
-    """
-    bars, out = kept["bars"], np.empty((drawn["entries"].shape[0], len(kernel.NAMES)))
-    if not kept["levels"]:
-        kernel.runs(drawn["entries"], drawn["holds"], drawn["sizes"], bars["enter_px"],
-                    bars["leave_px"], kept["cost"], kept["value"], out)
-        return out
-    flat = {key: np.ascontiguousarray(value).ravel() for key, value in drawn.items()}
-    batch = drawn["entries"].shape[0]
-    leave, price = barrier.exits(flat["entries"], flat["holds"], bars, kept["levels"], intrabar)
-    pnl = barrier.pnl(flat["entries"], leave, price, flat["sizes"], bars["enter_px"],
-                      np.tile(kept["cost"], batch), kept["value"])
-    got = stats.measure(pnl.reshape(batch, -1), list(kernel.NAMES))
-    return np.column_stack([got[name] for name in kernel.NAMES])
 
 
 def prime(kept: dict, cfg: dict) -> None:
@@ -112,12 +86,14 @@ def real(kept: dict, names: list[str]) -> dict:
         reconstruction agrees with SQX.
     """
     located = kept["located"]
-    got = _priced(kept, {"entries": located["entry"][None, :], "holds": located["hold"][None, :],
-                         "sizes": located["size"][None, :]}, "pessimistic")[0]
+    bars, got = kept["bars"], np.empty((1, len(kernel.NAMES)))
+    kernel.runs(located["entry"][None, :], located["hold"][None, :], located["size"][None, :],
+                bars["enter_px"], bars["leave_px"], kept["cost"], kept["value"], got)
+    got = got[0]
     return {name: float(got[kernel.NAMES.index(name)]) for name in names}
 
 
-def nulls(kept: dict, rung: str, cfg: dict, key: str) -> dict:
+def nulls(kept: dict, rung: str, cfg: dict, key: str, threads: int | None = None) -> dict:
     """Every null run under one rung, in blocks, each drawn from its own seeded stream.
 
     Args:
@@ -125,29 +101,54 @@ def nulls(kept: dict, rung: str, cfg: dict, key: str) -> dict:
         rung: A key of model.RUNGS.
         cfg: What inputs.config() returned.
         key: The strategy's name (what `monkey.one` passes). It enters the seed.
+        threads: Threads to spread the blocks over; None for every physical core, or one
+            inside a child process -- a fanout worker already has its core.
 
     Returns:
         One array per statistic, each of length nulls.draws. Block `i` draws from
-        `SeedSequence([root, _stable(key), rung id, i])`, where `root` is `cfg["nulls"]["seed"]`
+        `SeedSequence([root, _stable(key), TAG, i])` -- the same for every rung, which is
+        what makes the rungs share their uniforms (model._rung) -- where `root` is `cfg["nulls"]["seed"]`
         as `inputs.config()` resolved it -- a fresh one per run by default, or the explicit
         int a caller asked to reproduce. A strategy's monkeys depend on nothing but these
-        four: not on the process or the thread it ran in, not on which other strategies were
+        three: not on the process or the thread it ran in, not on which other strategies were
         in the batch, and on `nulls.draws` only through the last partial block -- raising it
-        appends blocks and leaves the full ones as they were, but `timing_holds` and `free`
-        redraw a last block that was partial, whose batch size changes what the stream yields. The block holds `chunk_trades` trade valuations: 🔬 swept
+        appends blocks and leaves the full ones as they were; the uniforms of a partial last
+        block are a prefix of a full one's, but `timing_holds` and `free` redraw its holds
+        after them, whose batch size changes what the stream yields. The block holds `chunk_trades` trade valuations: 🔬 swept
         2026-09-25, that is what keeps the kernel's working set in cache, and it is a count
         of trades rather than of runs because the cache sees bytes. Changing it changes the
-        streams, which is why it is a constant of the config.
+        streams, which is why it is a constant of the config. Each block writes its own
+        rows from its own stream, so the threads change nothing but the wall time: numpy
+        releases the GIL to draw and the kernel is `nogil`.
     """
     knobs, names = cfg["nulls"], cfg["statistics"]["report"]
-    root = [knobs["seed"], _stable(key), model.RUNG_ID[rung]]
-    block = max(1, knobs["chunk_trades"] // kept["located"]["entry"].size)
+    root = [knobs["seed"], _stable(key), TAG]
+    located, bars, (lo, hi) = kept["located"], kept["bars"], kept["located"]["window"]
+    block = max(1, knobs["chunk_trades"] // located["entry"].size)
     out = np.empty((knobs["draws"], len(kernel.NAMES)))
-    for i, done in enumerate(range(0, knobs["draws"], block)):
-        batch = min(block, knobs["draws"] - done)
-        drawn = model.RUNGS[rung](kept["located"], batch, np.random.default_rng(root + [i]))
-        out[done:done + batch] = _priced(kept, drawn, cfg["barrier"]["intrabar"])
+
+    def one(i: int) -> None:
+        """Draw and price block `i` of the draws into its rows of `out`."""
+        rows = out[i * block:(i + 1) * block]
+        rng = np.random.default_rng(root + [i])
+        drawn = model.RUNGS[rung](located, len(rows), rng, placed=False)
+        kernel.ladder(drawn["u"], drawn["holds"], drawn["sizes"], bars["enter_px"],
+                      bars["leave_px"], kept["cost"], kept["value"], lo, hi, rows)
+
+    blocks = range(-(-knobs["draws"] // block))
+    threads = min(len(blocks), threads or (1 if parent_process() else fanout.CORES))
+    if threads <= 1:
+        for i in blocks:
+            one(i)
+    else:
+        with ThreadPoolExecutor(threads) as pool:
+            list(pool.map(one, blocks))
     return {name: out[:, kernel.NAMES.index(name)] for name in names}
+
+
+# numpy pads a seed tuple with zeros, so [seed, k] == [seed, k, 0]: this tag keeps the monkeys' stream
+# off `resample.stream(seed, key)` (levels 3a/b) when a replay pins both seeds to one number.
+TAG = 0x4D4F4E4B
 
 
 def _stable(key: str) -> int:

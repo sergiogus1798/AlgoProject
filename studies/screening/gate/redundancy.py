@@ -69,7 +69,11 @@ def medoides(metrics: pd.DataFrame, oos: pd.DataFrame, alive: pd.Index) -> pd.Da
         return len(bars.get(a, set()) & bars.get(b, set())) / union if union else 0.0
 
     for members in groups.values():
-        score = {i: sum(jaccard(i, j) for j in members if j != i) / max(len(members) - 1, 1)
+        sim = {}   # symmetric: one Jaccard per unordered pair, summed in the same order as before
+        for a, i in enumerate(members):
+            for j in members[a + 1:]:
+                sim[i, j] = sim[j, i] = jaccard(i, j)
+        score = {i: sum(sim[i, j] for j in members if j != i) / max(len(members) - 1, 1)
                  for i in members}
-        out.loc[max(members, key=lambda i: (score[i], -members.index(i))), "medoide"] = True
+        out.loc[members[max(range(len(members)), key=lambda a: (score[members[a]], -a))], "medoide"] = True
     return out

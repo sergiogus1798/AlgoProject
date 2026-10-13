@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from core.store.write import locked
 from ledger import study as studymod
 from ledger.trials import SHARPE_UNITS
 
@@ -107,6 +108,12 @@ def note_run(study: str, module: str, input_hash: str, config_hash: str, launche
         The `search_id`, or None when this very run (same input, same config) was already noted.
         Running the gate three times with three thresholds is a sweep of three, and nobody has to say so.
     """
+    with locked(path(study).parent):      # read-then-append: two runs at once each opened their own search
+        return _note_run(study, module, input_hash, config_hash, launched_by)
+
+
+def _note_run(study: str, module: str, input_hash: str, config_hash: str, launched_by: str) -> str | None:
+    """Record a re-run (same module and input, new config) once; the search id, or None if already recorded."""
     seen = read(study)
     seen = seen[(seen["kind"] == "config") & (seen["name"] == module) & (seen["input_hash"] == input_hash)] \
         if len(seen) else seen

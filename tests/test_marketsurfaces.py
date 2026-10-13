@@ -10,7 +10,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core import assetdata
+from core import assetdata, assetmarkets
 from core.study import blocks
 from engines.weekly import flip
 from studies.optimisation.marketSurfaces import one, report
@@ -73,7 +73,7 @@ def check_weights() -> None:
     trio = nikkei[nikkei["group"] >= 0]
     assert set(trio["feed"]) == {"USA500_M1", "USATEC_M1", "DJ30_M1"}
     assert np.isclose(order.weights(nikkei["group"]).sum(), len(nikkei) - 2)
-    assert set(assetdata.markets("NIKKEI225")["categories"]) == {"family", "structural"}
+    assert set(assetmarkets.markets("NIKKEI225")["categories"]) == {"family", "structural"}
     data, design, years = batch_data(3, False)
     found = one.measure(data, design, TABLE, years, CFG, False)["principal"]
     assert np.allclose(found["mercados"]["weight"], [1 / 3] * 3 + [1] * 4) and found["orden"]["peso"] == 5

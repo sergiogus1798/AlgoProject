@@ -3,6 +3,17 @@
 import hashlib
 
 import numpy as np
+from numba import njit
+
+from studies.screening.analysis import permuted
+
+ROWS = 4096     # sequences whose block starts are drawn at a time: memory only, same stream
+
+
+def warm() -> None:
+    """Compile the drawdown and homogeneity kernels in the calling process, before a study forks: a fork child that compiles its own took the pool down."""
+    drawdowns(np.ones(2), 0.0, 2, 1, 1, stream(0, ""))
+    q_null(np.zeros(4), np.array([2, 2]), 1, stream(0, ""))
 
 
 def root(seed: int | None) -> int:
@@ -84,13 +95,12 @@ def q_null(values: np.ndarray, sizes: np.ndarray, permutations: int,
         the between-period sum of squares alone: the total is the same in every shuffle, so
         the within-period variance Q divides by moves with it.
     """
+    assert sizes.sum() == len(values), "the periods' sizes do not add up to the trades"
+    assert sizes[-1] >= 1, "the last period is empty"
     centred = values - values.mean()
     starts = np.cumsum(sizes) - sizes
-    # ponytail: one permutations x trades matrix (8 bytes each); chunk the shuffles if a
-    # strategy ever brings enough trades for that to matter
-    between = (np.add.reduceat(rng.permuted(np.tile(centred, (permutations, 1)), axis=1),
-                               starts, axis=1) ** 2 / sizes).sum(axis=1)
     observed = (np.add.reduceat(centred, starts) ** 2 / sizes).sum()
+    between = permuted.between(centred, starts, sizes, permutations, rng)
     return between, float(observed), len(centred) * np.finfo(float).eps * (centred @ centred)
 
 
@@ -142,8 +152,35 @@ def drawdowns(build: np.ndarray, mean: float, length: int, block: int, sequences
         One maximum drawdown per sequence, in the units of `build`. Blocks start anywhere a
         whole block fits and never wrap from the last trade to the first.
     """
+    if length < 1:
+        raise ValueError("a drawdown needs at least one trade per sequence")
     shifted = build - build.mean() + mean
     block = min(block, len(shifted))
-    starts = rng.integers(0, len(shifted) - block + 1, (sequences, -(-length // block)))
-    index = (starts[:, :, None] + np.arange(block)).reshape(sequences, -1)[:, :length]
-    return max_drawdown(shifted[index])
+    out = np.empty(sequences)
+    for done in range(0, sequences, ROWS):
+        part = out[done:done + ROWS]
+        _dd_stream(shifted, rng.integers(0, len(shifted) - block + 1,
+                                         (len(part), -(-length // block))), block, length, part)
+    return out
+
+
+@njit(cache=True, nogil=True)
+def _dd_stream(shifted: np.ndarray, starts: np.ndarray, block: int, length: int,
+               out: np.ndarray) -> None:
+    """max_drawdown() of each row of block starts, walked trade by trade and cut at `length`.
+
+    numba's max() drops a NaN that numpy's maximum carries, so a curve that stops being a
+    number is flagged and answered NaN, never a drawdown of 0 that looks measured.
+    """
+    for s in range(starts.shape[0]):
+        curve = peak = deepest = 0.0
+        left, bad = length, False
+        for first in starts[s]:
+            for i in range(first, first + min(block, left)):
+                curve += shifted[i]
+                peak = max(peak, curve)
+                fall = peak - curve
+                bad |= fall != fall
+                deepest = max(deepest, fall)
+            left -= block
+        out[s] = np.nan if bad else deepest

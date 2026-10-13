@@ -8,7 +8,7 @@ import pandas as pd
 
 from core import exportdrv, fanout, sqxfile, sqxstats, tradepack, tradestore
 from core.identities import many as identities_many
-from core.sqxview import LABEL, VIEW
+from core.sqxview import LABEL, VIEW, dof_ratio
 
 PREFIX = {"IS": "IS__", "OOS": "OOS__"}   # which databank a staged file came from
 # 🔬 2026-10-01, 2 x 5,130 strategies: the identities were hashed twice in one thread (33 s)
@@ -89,14 +89,20 @@ def metrics(read: dict[str, tuple]) -> tuple[pd.DataFrame, str]:
 
     Returns:
         (one row per stem with `Strategy Name`, `TimeFrame` and the filled block's columns,
-        the block's label). The timeframe is the feed's suffix inside the file's result name.
+        the block's label). `Param Count` / `DoF Ratio`: always Python's (`sqxfile.param_count`,
+        `sqxview.dof_ratio`), whatever SQX's export carries (owner, 2026-10-13). The timeframe is the feed's suffix inside the file's result name.
     """
     stats = {stem: got[0] for stem, got in read.items()}
     block = measured(stats)
     rows = {stem: {"Strategy Name": stem,
                    **({"TimeFrame": read[stem][2]} if block == 10 else {}),
-                   **{col: st[block][key] for col, key in VIEW[block]}}
+                   **{col: st[block][key] for col, key in VIEW[block]
+                      if key not in ("ParameterCount", "DoFRatio")}}
             for stem, st in stats.items()}
+    for stem, row in rows.items():       # SQX's stored value is never read: it is inflated on old strategies
+        if block == 10:
+            row["Param Count"] = sqxfile.param_count(_STAGED[stem])
+            row["DoF Ratio"] = dof_ratio(row["# of trades"], row["Param Count"])
     return pd.DataFrame.from_dict(rows, orient="index"), LABEL[block]
 
 

@@ -20,6 +20,7 @@ install over HTTP or starts one.
 | `transfer.py` | The command lines of steps 9-16: crossmarket, crossTF, mcRetest, spp; crossmarket's per-market sub-tests | imported | context → argv · sentence |
 | `optimisation.py` | The command lines of steps 16.5-19: cloud, wfc, cscv, marketSurfaces over a mother's batch, and wfm | imported | context → argv · sentence |
 | `readings.py` | The command lines of readings, closing (blindJoint included) and the trade Monte Carlo | imported | context → argv · sentence |
+| `rootseed.py` | The one root a monkey run draws from: the folder manifest's `seed`, else a saved `.seed`, else a fresh one | imported | databank → seed |
 | `where.py` | Where an input lives: newest dated folder, an export's markets and timeframe, a mother's batch, the crossTF fabrication, the project's registry row and template family | imported | data root → paths |
 
 ## Contracts and traps

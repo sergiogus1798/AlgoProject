@@ -31,6 +31,11 @@ LABEL = {10: "(IS)", 20: "(OOS)"}
 _FILES: dict[str, Path] = {}    # what frame() hands its forked children
 
 
+def dof_ratio(trades: float, params: int) -> float:
+    """The "DoF Ratio": in-sample trades per counted parameter, 0 when none."""
+    return round(trades / params, 2) if params else 0
+
+
 def frame(files: dict[str, Path]) -> pd.DataFrame:
     """The view's export of a databank, rebuilt from the files: what `metrics.csv` holds.
 
@@ -71,6 +76,5 @@ def _row(name: str) -> dict:
     # Both snippets were removed from the three installs on 2026-10-06 (they raised on
     # every WFM step and flooded the log), so a new strategy stores neither key: the
     # ratio is trades over the count above, for a strategy of any age.
-    row["DoF Ratio (IS)"] = (round(row["# of trades (IS)"] / row["Param Count (IS)"], 2)
-                             if row["Param Count (IS)"] else 0)
+    row["DoF Ratio (IS)"] = dof_ratio(row["# of trades (IS)"], row["Param Count (IS)"])
     return row

@@ -1,6 +1,7 @@
 """The one-task project every worker carries to run the project's CustomAnalysis snippets from."""
 
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 from core.paths import worker_dir
 from sqx.projects import cfxio
@@ -19,11 +20,11 @@ CONFIG = f"""<?xml version='1.0' encoding='utf-8'?>
   </Databanks>
 </Project>
 """
-SETTINGS = """<Settings>
+_SETTINGS = """<Settings>
   <CustomAnalysis>
     <PerStrategy1>none</PerStrategy1>
     <PerStrategy2>none</PerStrategy2>
-    <FullDatabank1>AlgoTrades</FullDatabank1>
+    <FullDatabank1>{snippet}</FullDatabank1>
     <FullDatabank2>none</FullDatabank2>
     <RemoveFailedStrategies>false</RemoveFailedStrategies>
     <Filter>true</Filter>
@@ -38,6 +39,18 @@ SETTINGS = """<Settings>
   </Databanks>
 </Settings>
 """
+# `sqx.export.memtrades` formats this one itself; it goes when AlgoTrades does (encargo 66 §6).
+SETTINGS = _SETTINGS.replace("{snippet}", "AlgoTrades")
+
+
+def settings(snippet: str, args: str) -> str:
+    """The task's XML set to run one CustomAnalysis snippet over the whole databank.
+
+    Args:
+        snippet: The snippet's name, as its constructor gives it to SQX ("AlgoBank").
+        args: Its `inputArgs`, as the snippet's own header documents them.
+    """
+    return _SETTINGS.format(snippet=snippet, args=escape(args))
 
 
 def cfx(role: str) -> Path:

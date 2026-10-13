@@ -3,19 +3,22 @@
 import hashlib
 import os
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import pandas as pd
 import yaml
 
 from core import assetdata
-from core.paths import databank_dir
+from core.paths import databank_dir, export_dir, harvest_dir, metrics_export
 from ledger import cells, record, study as studymod
-from pipeline.autopilot import criteria, facts, survivors
+from pipeline.autopilot import criteria, facts, selection, survivors, trim
 from sqx.curate import apply_verdict
 from sqx.projects import registry
 from sqx.projects.crosstfload import SIBLING
 from ui.daemon.advance.preflight import by_identity
+from ui.daemon.loader import find, state
+from ui.daemon.loader.fingerprint import fingerprint
 
 CRITERIA = Path(__file__).with_name("criteria.yaml")
 KEEP = "MANTENER"     # anything but DESCARTAR keeps a strategy (sqx/curate/README.md)
@@ -63,91 +66,6 @@ def population(project: str, bank: str, role: str) -> pd.DataFrame:
                          for i, fs in files.items() for f in fs])
 
 
-def resolve(pop: pd.DataFrame, found: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
-    """The key each file of the cut databank and each fact is judged under: the one lookup.
-
-    Args:
-        pop: The databank being cut: `strategy` (file name) and `identity`, one row per file.
-        found: The facts: `strategy` and `identity` ("" when a study files by name only).
-
-    Returns:
-        (`who` of every row of `pop`, `who` of every row of `found`). A file is its identity
-        when any fact carries it, else its name; a fact is its identity, or its strategy name
-        when it has none. A fact filed under an identity the cut databank does NOT hold — the
-        gate, spread and edgeCost key by the BUILD's, which a retest can change (🔬 2026-10-06:
-        1,557 of 10,000 failed presence for it, 29 of them alive on their own numbers) — is the
-        file of the same name: a name is unique inside one databank. A fact without identity
-        keeps its key, so nothing moves for a strategy whose identity held.
-    """
-    ids = set(found["identity"]) - {""}
-    who = pd.Series([i if i in ids else s for s, i in zip(pop["strategy"], pop["identity"])],
-                    index=pop.index, dtype=object)
-    theirs = found["identity"].where(found["identity"] != "", found["strategy"])
-    named = found["strategy"].map(dict(zip(pop["strategy"], who)))
-    held = found["identity"].isin(set(pop["identity"]) | {""})
-    return who, theirs.where(held | named.isna(), named)
-
-
-def fallen(project: str, pop: pd.DataFrame) -> dict[str, str]:
-    """Why the gate's cascade dropped each strategy it dropped: `who` → its first failed rule.
-
-    The gate stops computing at a strategy's first Fail, so every rule of a later level reads
-    «sin dato» for it: the reason is the one rule the scorecard names (`cayo_nivel`,
-    `cayo_regla`), which is text and so not among the facts.
-    """
-    found = [r for r in facts.sources.results(project, "gate", None) if r["path"].is_dir()]
-    if not found:
-        return {}
-    card = pd.read_parquet(found[0]["path"] / "scorecard.parquet").reset_index()
-    if "cayo_regla" not in card:        # a scorecard written before the gate ran by levels
-        return {}
-    card = card[card["strategy"].notna() & card["cayo_regla"].notna()]
-    _, who = resolve(pop, card)
-    return {w: f"fail: {rule} (nivel {level})"
-            for w, level, rule in zip(who, card["cayo_nivel"], card["cayo_regla"])}
-
-
-def largest(card: pd.DataFrame, top: int) -> pd.DataFrame:
-    """The scorecard rows of the medoids of the `top` largest groups: size (`redundancia_value`,
-    counted among the same survivors) descending, tie by `redundancia_grupo` ascending."""
-    mine = card[card["medoide"].fillna(False).astype(bool)]
-    return mine.sort_values(["redundancia_value", "redundancia_grupo"],
-                            ascending=[False, True]).head(top)
-
-
-def medoids(project: str, pop: pd.DataFrame, top: int) -> set[str]:
-    """`who` of the medoids of the `top` largest groups the gate marked in its scorecard."""
-    found = [r for r in facts.sources.results(project, "gate", None) if r["path"].is_dir()]
-    card = pd.read_parquet(found[0]["path"] / "scorecard.parquet").reset_index() if found else None
-    if card is None or "medoide" not in card:
-        sys.exit("paso con `medoids`: el scorecard de la puerta no trae la columna `medoide`")
-    _, who = resolve(pop, largest(card[card["strategy"].notna()], top))
-    return set(who)
-
-
-def siblings(pop: pd.DataFrame, is_sibling: pd.Series, judged: dict, follow: bool) -> dict:
-    """What happens to the scaled siblings of the databank being cut.
-
-    Args:
-        pop: The databank being cut, with `strategy` and `who`.
-        is_sibling: Which rows of `pop` are scaled siblings.
-        judged: The mothers' outcomes, `who` → (state, why).
-        follow: `siblings: follow` in the step's criteria — step 11.5, whose databank feeds
-            11.7 and still needs them: a sibling leaves only with its mother. Otherwise (step
-            12, as always) every sibling goes: only the mother is a candidate.
-
-    Returns:
-        `who` of every sibling → (state, why).
-    """
-    mine = pop[is_sibling]
-    if not follow:
-        return {w: ("fail", "hermana escalada: solo sigue la madre") for w in mine["who"]}
-    by_name = dict(zip(pop["strategy"], pop["who"]))
-    return {w: judged.get(by_name.get(SIBLING.sub("", name)),
-                          ("fail", "hermana sin su madre en el databank"))
-            for name, w in zip(mine["strategy"], mine["who"])}
-
-
 def per_cell(rules: list[dict], project: str) -> tuple[list[dict], dict]:
     """The rules with each per-cell line (`alpha:`) computed from B, and what to sign in the ledger.
 
@@ -178,6 +96,41 @@ def ledger_row(project: str, n: str, spec: dict, before: int, after: int, segmen
                      "n_in": before, "n_out": after, "criterion": f"criteria.yaml paso {n}",
                      "config_hash": hashlib.sha256(CRITERIA.read_bytes()).hexdigest(),
                      "thresholds": thresholds or None})
+
+
+def _full_harvest(project: str) -> set[str] | None:
+    """Identities of the newest `Results` harvest on disk; None when there is none."""
+    path = state.newest(harvest_dir(project, trim.BANK, "x").parent, "metrics.parquet")
+    return None if path is None else set(pd.read_parquet(path, columns=[]).index)
+
+
+def _seal(project: str) -> Callable[[], None]:
+    """Remember which `Results` exports are fresh; the returned call signs them fresh again after the trim.
+
+    The pre-trim export is the whole build (`studies/research/memory/sheet.py` reads it); without
+    this the next stop sees the cut files as newer and rewrites it with the survivors alone.
+    """
+    bank = trim.BANK
+    fresh = [k for k, v in state.status(project, bank).get("pieces", {}).items() if v["state"] == "fresh"]
+
+    def resign() -> None:
+        """Write the `.sources.sig` of each export that was fresh, over the files as the cut left them."""
+        top = find.install_of(project, bank)[1]
+        own = find.files(top, project, bank)
+        other = find.partner(top, project, bank)
+        marks = {"metrics": (metrics_export(project, bank) / "manifest.json", own),
+                 "trades": (state.newest(export_dir(project, bank, "x").parent, "manifest.json"), own),
+                 "harvest": (state.newest(harvest_dir(project, bank, "x").parent, "manifest.json"),
+                             own + (find.files(top, project, other) if other else []))}
+        for piece in fresh:
+            done, sources = marks[piece]
+            (done.parent / f"{done.name}.sources.sig").write_text(fingerprint(sources))
+    return resign
+
+
+def trades_fresh(project: str, bank: str) -> bool:
+    """Whether the bank's trade export matches its files now (`aftercut.refilter` needs it before a cut)."""
+    return state.status(project, bank).get("pieces", {}).get("trades", {}).get("state") == "fresh"
 
 
 def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | None = None) -> dict:
@@ -211,20 +164,20 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | 
     if pop.empty:                    # nothing to judge: zero survivors, which `run` ends cleanly
         return {"n": n, "hechos": len(found), "before": 0, "after": 0, "limbo": [], "seed": None,
                 "corte": f"{bank}: vacío, nada que juzgar"}
-    pop["who"], found["who"] = resolve(pop, found)
+    pop["who"], found["who"] = selection.resolve(pop, found)
     # A scaled sibling is a measuring device of step 11, never a candidate: it always goes,
     # and only its mother, on her own timeframe and unscaled, is judged (owner, 2026-10-01).
     sibling = pop["strategy"].map(lambda name: bool(SIBLING.search(name)))
     mothers = sorted(set(pop.loc[~sibling, "who"]))
     judged = criteria.outcomes(found[found["who"].isin(mothers)], mothers, rules)
     if "gate" in facts.BY_N[n]["studies"]:
-        judged |= {w: ("fail", why) for w, why in fallen(project, pop).items()
+        judged |= {w: ("fail", why) for w, why in selection.fallen(project, pop).items()
                    if w in judged and judged[w][0] == "fail"}
-    judged |= siblings(pop, sibling, judged, spec.get("siblings") == "follow")
+    judged |= selection.siblings(pop, sibling, judged, spec.get("siblings") == "follow")
     alive = sorted({w for w, (state, _) in judged.items() if state != "fail"})
     keep = set(alive)
     if spec.get("medoids") and not note:
-        keep &= medoids(project, pop, spec["medoids"])
+        keep &= selection.medoids(project, pop, spec["medoids"])
     pop["outcome"] = [judged[w][0] for w in pop["who"]]
     pop["reason"] = [judged[w][1] or ("no es la medoide de su grupo" if w not in keep else "")
                      for w in pop["who"]]
@@ -232,15 +185,20 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | 
     csv = out / "verdict.csv"
     pop[["strategy", "verdict", "identity", "outcome", "reason"]].to_csv(csv, index=False)
     drops = int((pop["verdict"] == apply_verdict.DROP).sum())
-    cut = apply_verdict.apply(project, bank, csv, role) if drops else \
+    fresh = trades_fresh(project, bank) if drops else False
+    cut = apply_verdict.apply(project, bank, csv, role, **({"trades_fresh": True} if fresh else {})) if drops else \
         {"before": len(pop), "after": len(pop)}
+    if fresh:
+        trades_fresh(project, bank)      # seen fresh once more: the loader signs it (`state.age`)
     ledger_row(project, n, spec, cut["before"], cut["after"], segment, signed)
     if n == "8":                     # the per-cell counter: this batch was screened on oos1
         cells.note(project, len(pop))
+        cut["results"] = trim.results(project, role, pop, population(project, trim.BANK, role), out,
+                                    lambda: _full_harvest(project), lambda: _seal(project))      # save first, then cut `Results`
     kept = (pop["outcome"] == "limbo") & (pop["verdict"] != apply_verdict.DROP) & ~sibling
     limbo = sorted(pop.loc[kept, "strategy"])
     how = "medoides" if len(keep) < len(alive) else "criterios"
     return {"n": n, "hechos": len(found), "before": cut["before"], "after": cut["after"],
             "limbo": limbo, "seed": None,
             "corte": f"{bank}: {cut['before']} → {cut['after']} por {how}" + (" (anota, no corta)" if note else "")
-                     + (f", {len(limbo)} en limbo" if limbo else "")}
+                     + (f", {len(limbo)} en limbo" if limbo else "") + (f"; {cut['results']}" if "results" in cut else "")}

@@ -146,7 +146,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
     if on_live:
         began = time.monotonic()
         try:
-            live.start(where["role"])
+            live.start(where["role"], project, presave=os.environ.get("ALGO_PRESAVE") == "1")   # ponytail: env flag only while D6 B is timed (66 §7.1)
         except BaseException as failed:   # no stop, exitapp or kill here: exitapp syncs (rule 1) and how to close it is the owner's (2026-10-13)
             status(out, entry.unstarted(where["role"], failed))
             raise
@@ -175,7 +175,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
             elif action["kind"] == "python":
                 if action.get("cut"):   # the strategies left in the databank this step cut, by name
                     action["picked"] = sorted(judge.population(project, cfg["steps"][action["n"]]["cut"], where["role"])["strategy"])
-                failed = chain.python_step(project, action, strict=True)
+                failed = chain.python_step(project, action, strict=True, tell=lambda line: status(out, line))
                 if failed:
                     sys.exit(f"paso {action['n']}: fallaron:\n  " + "\n  ".join(failed))
                 what = ", ".join(action["tests"])

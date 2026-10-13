@@ -7,10 +7,6 @@ and the same scan prices it."""
 
 import numpy as np
 
-from engines.nulls import kernel
-
-FIRST = {"pessimistic": "sl", "optimistic": "tp"}
-
 
 def vertical(entries: np.ndarray, holds: np.ndarray, leave_px: np.ndarray) -> tuple[np.ndarray, ...]:
     """Exit purely on time, with no price barrier in the way.
@@ -26,38 +22,6 @@ def vertical(entries: np.ndarray, holds: np.ndarray, leave_px: np.ndarray) -> tu
     """
     leave = entries + holds
     return leave, leave_px[leave]
-
-
-def exits(entries: np.ndarray, holds: np.ndarray, bars: dict, levels: dict,
-          intrabar: str) -> tuple[np.ndarray, ...]:
-    """Where every trade leaves, and at what price.
-
-    Args:
-        entries: Entry bar index of each trade.
-        holds: Bars until the vertical barrier.
-        bars: Keys `low`, `high`, `enter_px`, `leave_px`, one array per bar. The two
-            price arrays come from `calibrate.convention()`, never assumed.
-        levels: Keys `stop` and `target`, one price per trade, or empty when the strategy
-            carries neither -- the degenerate case this corpus is in.
-        intrabar: Which barrier wins when one bar's range touches both, a key of FIRST.
-            Unreadable from OHLC, so it is a declared convention; `calibrate.convention()`
-            is what settles it against SQX once a strategy actually carries barriers.
-
-    Returns:
-        (exit bar index, exit price). A trade that reaches neither barrier leaves on its
-        vertical one at that bar's close; one that reaches a barrier leaves **at the
-        barrier's own price**, which is what a resting order fills at.
-    """
-    if not levels:
-        return vertical(entries, holds, bars["leave_px"])
-    stop, target = levels["stop"], levels["target"]
-    offset, on_stop, on_target = kernel.touched(entries, holds, bars["low"], bars["high"],
-                                                stop, target)
-    both = on_stop & on_target
-    wins_stop = (on_stop & ~on_target) | (both & (FIRST[intrabar] == "sl"))
-    leave = np.where(offset > 0, entries + offset, entries + holds)
-    price = np.where(offset == 0, bars["leave_px"][leave], np.where(wins_stop, stop, target))
-    return leave, price
 
 
 def pnl(entries: np.ndarray, leave: np.ndarray, price: np.ndarray, sizes: np.ndarray,

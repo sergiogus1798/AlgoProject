@@ -17,15 +17,16 @@ import pandas as pd  # noqa: E402
 import ledger.study as study  # noqa: E402
 from core.barstore import source as bars_of  # noqa: E402
 from portfolio.common.construct import funded_b  # noqa: E402
-from portfolio.common.construct.equity import store  # noqa: E402
-from portfolio.common.construct.inputs import config, source  # noqa: E402
+from portfolio.common.construct.equity import store, universe as builder  # noqa: E402
+from portfolio.common.construct.inputs import config, pool, source  # noqa: E402
 from portfolio.common.construct.mc import judge, paths  # noqa: E402
 from portfolio.common.construct.search import (shortlist, stagea, stagea_data, stageb,  # noqa: E402
                                                stageb_data, stageb_run, trials)
 from portfolio.funded.rules import catalog, machine  # noqa: E402
 from test_portfolio_mc_paths import bar_world, lenient_plan  # noqa: E402
 
-ARCHIVED = "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048"
+ARCHIVED = "11278e59164e5e493095627093928bb1d8898afe6e0c2b51d0b07c8d39f00730"
+VERSION = "2026-10-06T2148"
 BUILD = (pd.Timestamp("2021-01-04"), pd.Timestamp("2021-12-31"))
 
 
@@ -117,29 +118,26 @@ def test_exact_minutes_against_blocks_and_bound() -> None:
 
 
 def test_golden_archived_strategy() -> None:
-    """The archived USDJPY strategy: exact M1 day low and high equal the universe's stored ones.
+    """The archived USDJPY strategy: stage B's exact M1 day low and high equal the universe's stored ones.
 
-    April-October 2014 only: since 2026-10-01 the bars are stamped in EETUS and the archived
-    trades still in Asia/Jerusalem; they agree on that stretch and are an hour apart in the weeks
-    the two change time apart (`knowhow/export/archived-trades-vs-reclocked-bars.md`).
+    The one-member universe is built here in a temp root from the real archive, so both paths
+    price the member with the same card and the same clock (`universe._commission`).
     """
-    folders = sorted(store.ROOT.glob("*/manifest.json")) if store.ROOT.is_dir() else []
-    folders = [f.parent for f in folders if ARCHIVED in json.loads(f.read_text())["members"]["kept"]]
-    if not folders:
-        print("     (skipped: no cached universe holds the archived strategy)")
-        return
-    universe = store.load(folders[-1])
-    s = source.load(ARCHIVED, "2026-09-28T0919")
+    with tempfile.TemporaryDirectory() as tmp:
+        pool.ROOT, store.ROOT = Path(tmp) / "pool", Path(tmp) / "universe"
+        pool.declare("uno", [{"identity": ARCHIVED, "version": VERSION}], added_by="test")
+        cfg = small_cfg()
+        universe = store.load(builder.build("uno", cfg))
+    s = source.load(ARCHIVED, VERSION)
     table = universe["days"]["ftmo"]
-    span = (pd.Timestamp("2014-04-07"), pd.Timestamp("2014-10-17"))
+    span = (table["day"].min(), table["day"].max())
     data = stageb_data.prepare({ARCHIVED: s}, {s["feed"]: bars_of(s["feed"], ["High", "Low", "Close"])},
-                               table, "Europe/Prague", span, {ARCHIVED: 1.0}, {ARCHIVED: 0.01},
-                               small_cfg())
-    stored = table[table["day"].between(*span)].set_index("day").reindex(pd.DatetimeIndex(data["days"]))
+                               table, cfg["equity"]["firm_clocks"]["ftmo"], span, {ARCHIVED: 1.0},
+                               {ARCHIVED: 0.01}, cfg)
+    stored = table.set_index("day").reindex(pd.DatetimeIndex(data["days"]))
     got = stageb_data.joint(data, [0])
     gaps = [np.abs(got[k] - stored[k].to_numpy()).max() for k in ("low", "high")]
-    print(f"     {len(stored)} server days of April-October 2014: largest gap low {gaps[0]:.4f} $, "
-          f"high {gaps[1]:.4f} $")
+    print(f"     {len(stored)} server days: largest gap low {gaps[0]:.4f} $, high {gaps[1]:.4f} $")
     assert max(gaps) < 0.05
 
 

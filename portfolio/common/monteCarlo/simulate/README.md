@@ -17,8 +17,8 @@ and every module here would produce the same arrays if the study's verdict rules
 | `engine.py` | Runs one sub-test across every core, with a live progress bar | imported | model → statistics |
 | `sweeps.py` | Which reordering and resampling runs a stream of this size gets | imported | N → runs |
 | `fan.py` | The equity envelope of the reordered paths | imported | stream → bands |
-| `stitch.py` | The adversarial path: a bad draw from every period, concatenated | imported | stream → worst path |
-| `family_d.py` | **Family D's execution.** Composition bootstrap inside every window and volatility tercile, the equity curve with its window marks, and the price/vol time series | imported | stream, bars → dict |
+| `stitch.py` | The adversarial path: a bad draw from every period, concatenated; seeded (`SEED`), drawn in strips of `STRIP_BYTES` | imported | stream → worst path |
+| `family_d.py` | **Family D's execution.** Composition bootstrap inside every window and volatility tercile, the equity curve with its window marks, and the price/vol time series; each window and tercile is one job on `engine`'s pool | imported | stream, bars → dict |
 | `degrade.py` | The IS/OOS pair of each family's headline statistic, resampled on just that scope | imported | stream → shapes |
 | `stability.py` | The same gate numbers computed again, to price the noise in them | imported | stream → spread |
 
@@ -32,7 +32,10 @@ and every module here would produce the same arrays if the study's verdict rules
   `engine` over `stress`, E is closed-form in `verdict/significance`; D bootstraps *inside* each
   window and each tercile, which is a different loop, so it gets `family_d.py`. The asymmetry is
   real, not an accident of naming.
-- **There is no seed anywhere, on purpose.** Every run draws fresh entropy, so two runs never agree
+- **There is no seed anywhere, on purpose — but for `stitch.SEED`.** The stitched worst path is the
+  one seeded draw (owner, 2026-10-13): a stress reference that moved between two runs read as a
+  finding. It is a constant in `stitch.py`, not a config key; figures stored before that date do not
+  reproduce. Everything else: every run draws fresh entropy, so two runs never agree
   to the last decimal. `stability.py` replaces reproducibility with the honest version of the same
   question: how far do the gate-driving percentiles move between independent runs? A seed would hide
   exactly that.

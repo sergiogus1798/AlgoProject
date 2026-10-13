@@ -1,7 +1,7 @@
 ---
 q: How do I continue a workflow without restarting SQX, running or editing any task live in GUI mode?
 kw: run the workflow without restarting SQX; cap a build at N strategies or T minutes whichever first; build cannot be stopped early; startOnlyTask runs the wrong task; startFromTask Task 'Build strategies' does not exist; cut a databank with the worker up; step project loadconfig; time between tasks; build to OOS gap; copy databank between projects; remove deletes folder; ServletProject.jar GUI endpoints; GUI mode headless Xvfb; browserToken; runThisTaskOnly projectXML; updateTaskXML live edit; removeReports delete by name; loadGridData metrics; CLI not ready; exitapp; databank names with spaces over HTTP
-tag: 🔬  date: 2026-10-01  see: databanks/databank-verbs, databanks/curating-a-databank, perf/autopilot-dead-time, databanks/no-spaces-in-names
+tag: 🔬  date: 2026-10-13  see: databanks/databank-verbs, databanks/curating-a-databank, perf/autopilot-dead-time, databanks/no-spaces-in-names
 ---
 # In GUI mode (`sqx-worker.sh --gui`) one SQX session runs any task, edits any task and cuts any databank live; sqcli cannot pick a task
 sqcli's `startOnlyTask task=N` runs the first task named like N's TYPE (any retest → `OOS`). GUI mode
@@ -40,6 +40,11 @@ runs only that task (without `projectXML`: nothing). `/call` says «CLI not read
   time-limit. 🔬 `databank-full` with 300 / 10 min ran 49 min (606 accepted, Results held at 300);
   `time-limit` 2 min stopped itself at 123 s (`restartCount` 5 changes nothing). The type comes
   from `databank.stop_condition` in assets/_build.yaml, now `time-limit`.
+- 🔬 2026-10-13, conductor, XAUUSD H1 Simple build (CLI and GUI): `databank-full` with MaxStrategies=50
+  DID stop by itself at exactly 50 («Build finished because databank is full», 105.6 s CLI / 110 s GUI,
+  `minutes=4` never reached) and the OOS task then ran on the 50. The older 49 min run above (300 / 10 min,
+  606 accepted) was a different build. 🤔 UNRESOLVED: encargo 66 session 2 saw `databank-full` (Max 50)
+  loop 63+ times, no «Task finished», until the session closed; D24 open. `passed-count` 30 stopped at exactly 30 (97 s).
 - 🤔 So a live build cannot be capped at «N strategies or T minutes, whichever first»: only
   `time-limit` is honoured (always T minutes), N is the databank's size (it keeps the best N), and
   `/project/stop` does not stop a build — nothing from outside ends it early; and `/main/exitapp`

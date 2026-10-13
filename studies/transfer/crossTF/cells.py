@@ -3,10 +3,11 @@
 import numpy as np
 import pandas as pd
 
-from core import tradestore
+from core import fanout, tradestore
 from core.study import draws
 from core.significance import annual_sharpe
 from engines.nulls import model, simulate, verdict
+from studies.transfer.crossTF import siblings
 
 # 2026-09-30 (feedback §5): these two speak of a run's own reconstruction, never of the
 # reading a cell is judged on -- "P saturado" fires whenever `nulls.draws` is the binding
@@ -19,9 +20,6 @@ DROP_WARNINGS = ("P SATURADO", "CONVENCION INTRABAR")
 # statistics so the window can draw it; never a key of `engines.nulls.stats`.
 TOTAL = "sharpe_total"
 NO_NULL = {"null_mean": np.nan, "null_sd": np.nan, "z": np.nan}
-# 🔬 2026-10-02 (AlgoData/scratch/calib_step12/null12.py): what two siblings of one mother add
-# beyond her is uncorrelated under the null (0.03 and 0.07), so their sum over sqrt(k) is a z.
-MOST_ALIKE = 0.95
 
 
 def _trusted(said: list[str]) -> list[str]:
@@ -83,26 +81,11 @@ def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
     p_all = {n: verdict.pvalue(seen_all[n], drawn[n], n) for n in names}
     mean, sd = float(np.mean(drawn[statistic])), float(np.std(drawn[statistic], ddof=1))
     rec = {} if cell is None else {"draws": [draws.record("crossTF.cell", n, seen_all[n], drawn[n],
-                                                           **cell) for n in names]}
+                                                           raw=False, **cell) for n in names]}
     return {**rec, "trades": len(rows), "seen": seen_all[statistic], "p": p_all[statistic],
             "null_mean": mean, "null_sd": sd, "z": (seen_all[statistic] - mean) / sd if sd else np.nan,
             "seen_all": seen_all, "p_all": p_all,
             "warnings": _trusted(verdict.distrust(kept, p_all, len(rows), nullcfg))}
-
-
-def monthly(rows: pd.DataFrame) -> pd.Series:
-    """One cell's trades as monthly P/L, indexed by calendar month.
-
-    Args:
-        rows: That cell's trades, as `tradestore.block` returned them.
-
-    Returns:
-        Empty for a cell with no trades; otherwise one value per month it closed a trade in.
-    """
-    if rows.empty:
-        return pd.Series(dtype=float)
-    month = pd.to_datetime(rows["Close time"]).dt.to_period("M")
-    return rows.groupby(month)["Profit/Loss"].sum()
 
 
 def curve(rows: pd.DataFrame, points: int = 50) -> list[float] | None:
@@ -125,6 +108,17 @@ def curve(rows: pd.DataFrame, points: int = 50) -> list[float] | None:
     return [float(v) for v in np.interp(grid, np.linspace(0.0, 1.0, len(pnl)), pnl)]
 
 
+_SHARED: dict = {}     # set by `panel` before the fork, read by `_cell` in the workers
+
+
+def _cell(i: int) -> dict:
+    """`numbers` of cell `i` of `panel`, in a worker that inherited the parent's inputs."""
+    g, row = _SHARED, _SHARED["rows"][i]
+    return numbers(tradestore.block(g["packed"], row.strategy, row.block), g["frames"][row.timeframe],
+                   g["nullcfg"], g["statistic"], g["rung"], f"{row.strategy}|{row.block}",
+                   g["min_trades"], g["where"](row))
+
+
 def panel(plan: pd.DataFrame, packed: pd.DataFrame, frames: dict, nullcfg: dict,
           cfg: dict, sink: list | None = None) -> pd.DataFrame:
     """Every cell of the matrix, measured.
@@ -145,53 +139,21 @@ def panel(plan: pd.DataFrame, packed: pd.DataFrame, frames: dict, nullcfg: dict,
     where = lambda r: None if sink is None else dict(
         strategy=r.strategy, block=r.block, timeframe=r.timeframe, role=r.role, mother=r.mother,
         seed=nullcfg["nulls"]["seed"])
-    measured = [numbers(tradestore.block(packed, row.strategy, row.block),
-                        frames[row.timeframe], nullcfg, statistic, rung,
-                        f"{row.strategy}|{row.block}", cfg["usable"]["min_trades"], where(row))
-                for row in plan.itertuples()]
+    rows = list(plan.itertuples())
+    _SHARED.update(rows=rows, packed=packed, frames=frames, nullcfg=nullcfg, statistic=statistic,
+                   rung=rung, min_trades=cfg["usable"]["min_trades"], where=where)
+    # One cell per task: the seed is `strategy|block`, so a cell draws the same on any process.
+    cost = {i: len(tradestore.block(packed, r.strategy, r.block)) for i, r in enumerate(rows)}
+    got = dict(fanout.run(_cell, cost, fanout.CORES))
+    measured = [got[i] for i in range(len(rows))]
     for m in measured:
         rows = m.pop("draws", [])
         if sink is not None:
             sink.extend(rows)
-    alike = correlations(plan, packed).rename(columns={"corr": "corr_vs_baseline"})
+    alike = siblings.correlations(plan, packed).rename(columns={"corr": "corr_vs_baseline"})
     out = pd.concat([plan.reset_index(drop=True), pd.DataFrame(measured)], axis=1)
-    return beyond(out.merge(alike[["strategy", "timeframe", "role", "corr_vs_baseline"]],
+    return siblings.beyond(out.merge(alike[["strategy", "timeframe", "role", "corr_vs_baseline"]],
                             on=["strategy", "timeframe", "role"], how="left"))
-
-
-def beyond(panel: pd.DataFrame) -> pd.DataFrame:
-    """What each scaled sibling adds to what its mother already showed, and the mother's sum.
-
-    A sibling trades the same asset over the same years, so under no edge its z follows its
-    mother's: with correlation rho, z_sibling given z_mother is N(rho z_mother, 1 - rho^2).
-    `z_new` is the sibling's z with that expectation taken out and rescaled, a standard
-    normal under no edge WHATEVER the mother's luck; rho is the pair's own
-    `corr_vs_baseline`, kept inside [0, `MOST_ALIKE`].
-
-    Args:
-        panel: The measured cells, with `corr_vs_baseline` and the fabrication's columns.
-
-    Returns:
-        The panel with `z_new` on every scaled cell (NaN where either z is), and on each
-        baseline cell, over the siblings `verdict.usable` would read: `combined_n_tested`
-        (those with a `z_new`), `combined_z_new` (their sum over sqrt(n), NaN with none)
-        and `combined_z_new_max`.
-    """
-    mother = panel[panel["role"] == "baseline"].set_index("mother")["z"]
-    scaled = panel["role"] == "scaled"
-    rho = panel.loc[scaled, "corr_vs_baseline"].clip(0.0, MOST_ALIKE).fillna(0.0)
-    theirs = panel.loc[scaled, "mother"].map(mother).to_numpy()
-    panel.loc[scaled, "z_new"] = (panel.loc[scaled, "z"] - rho * theirs) / np.sqrt(1 - rho ** 2)
-    fair = scaled & (panel["unverified"] == 0)
-    new = panel[fair].groupby("mother")["z_new"]
-    summed = pd.DataFrame({"combined_n_tested": new.count(),
-                           "combined_z_new": new.sum(min_count=1) / np.sqrt(new.count()),
-                           "combined_z_new_max": new.max()})
-    base = panel["role"] == "baseline"
-    for name in summed:
-        panel.loc[base, name] = panel.loc[base, "mother"].map(summed[name]).to_numpy()
-    panel.loc[base, "combined_n_tested"] = panel.loc[base, "combined_n_tested"].fillna(0)
-    return panel
 
 
 def matrix(panel: pd.DataFrame, statistic: str) -> pd.DataFrame:
@@ -211,34 +173,3 @@ def matrix(panel: pd.DataFrame, statistic: str) -> pd.DataFrame:
              if "seen_all" in panel else panel["seen"])
     wide = panel.assign(cell=panel["role"] + "_" + panel["timeframe"], _value=value)
     return wide.pivot_table(index="mother", columns="cell", values="_value", observed=True)
-
-
-def correlations(plan: pd.DataFrame, packed: pd.DataFrame) -> pd.DataFrame:
-    """How each cell's monthly P/L compares with its own mother's baseline (feedback §5).
-
-    Args:
-        plan: What `inputs.plan` returned.
-        packed: What `inputs.trades`/`inputs.gather` returned.
-
-    Returns:
-        One row per non-baseline cell: `mother`, `timeframe`, `role`, the Pearson correlation
-        of monthly P/L against the baseline of the same mother (months either side did not
-        trade count as 0, not as missing — a quiet month is real information), and `months`,
-        how many calendar months either side covers. NaN when fewer than two months overlap
-        or exist at all: whether the timeframes are looking at the same bets, not whether
-        each one individually made money, which `verdict.read` already judges.
-    """
-    out = []
-    close = pd.to_datetime(packed["Close time"]).dt.to_period("M")
-    span = pd.period_range(close.min(), close.max(), freq="M")
-    for mother, rows_m in plan.groupby("mother", sort=True):
-        base_row = rows_m[rows_m["role"] == "baseline"].iloc[0]
-        base = monthly(tradestore.block(packed, base_row.strategy, base_row.block))
-        for row in rows_m[rows_m["role"] != "baseline"].itertuples():
-            other = monthly(tradestore.block(packed, row.strategy, row.block))
-            joined = pd.concat([base, other], axis=1, join="outer").reindex(span).fillna(0.0)
-            n = len(joined)
-            corr = float(joined.iloc[:, 0].corr(joined.iloc[:, 1])) if n >= 2 else float("nan")
-            out.append({"mother": mother, "timeframe": row.timeframe, "role": row.role,
-                        "strategy": row.strategy, "corr": corr, "months": n})
-    return pd.DataFrame(out)

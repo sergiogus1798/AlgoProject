@@ -11,13 +11,16 @@ from studies.research.marketProfile import context, higher, inputs, series
 from studies.research.marketProfile.measure import REGISTRY, SYMMETRIC
 
 
-def evaluate(d: dict, cal: dict, specs: list[dict]) -> list[tuple]:
+def evaluate(d: dict, cal: dict, specs: list[dict],
+             directions: tuple[str, ...] = ("long", "short")) -> list[tuple]:
     """Every measure on one series: once when it has no direction, else long and short.
 
     Args:
         d: What framed() returned.
         cal: What series.calendar() returned.
         specs: The `measures` rows of the config.
+        directions: The sides to compute; a side not listed is skipped (a measure with no
+            direction is always computed).
 
     Returns:
         (name, direction, statistic, entry, exit, detail) in a fixed order, so the real
@@ -30,8 +33,9 @@ def evaluate(d: dict, cal: dict, specs: list[dict]) -> list[tuple]:
         if spec["fn"] in SYMMETRIC:
             out.append((spec["name"], "both", *fn(d, cal, **spec["args"])))
         else:
-            out.append((spec["name"], "long", *fn(d, cal, **spec["args"])))
-            out.append((spec["name"], "short", *fn(up, cal, **spec["args"])))
+            for side, x in (("long", d), ("short", up)):
+                if side in directions:
+                    out.append((spec["name"], side, *fn(x, cal, **spec["args"])))
     return out
 
 

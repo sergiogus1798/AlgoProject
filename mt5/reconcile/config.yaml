@@ -47,6 +47,6 @@ sqx:
   # Days of bars before the week's Monday, so indicators are warm and a position opened the
   # week before exists. 🤔 unmeasured: the first real run sets it.
   warmup_days: 60
-  settle_s: 8
-  sync_tries: 60
-  poll_s: 5
+  load_s: 60                          # most s to wait for «Strategies loaded» after `load` (then it fails loudly)
+  sync_tries: 600                     # polls of poll_s for the synced .sqx on disk: 300 s, then it fails loudly
+  poll_s: 0.5

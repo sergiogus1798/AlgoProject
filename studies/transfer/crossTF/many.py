@@ -9,7 +9,7 @@ import pandas as pd
 from core import tradestore
 from core.study import blocks, output, result as envelope
 from engines.nulls import inputs as nullinputs
-from studies.transfer.crossTF import cells, equity, inputs, verdict
+from studies.transfer.crossTF import cells, equity, inputs, siblings, verdict
 
 MODULE = "studies.transfer.crossTF"
 STATE = {"survives": "pass", "inherited": "watch", "fails": "fail", "no_data": "none",
@@ -100,7 +100,7 @@ def stat_grids(panel: pd.DataFrame, names: list[str]) -> list[dict]:
 
 def correlation_grid(plan: pd.DataFrame, packed: pd.DataFrame) -> dict | None:
     """The monthly-return correlation of every cell against its own mother's baseline."""
-    corr = cells.correlations(plan, packed)
+    corr = siblings.correlations(plan, packed)
     if corr.empty:
         return None
     wide = corr.assign(cell=corr["role"] + "_" + corr["timeframe"]).pivot_table(

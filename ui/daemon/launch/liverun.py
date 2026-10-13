@@ -1,5 +1,6 @@
 """«Lanzar en SQX» on a GUI session already up: configure a copy, push it, run, mirror to disk, export — no restart."""
 
+import os
 import shutil
 import signal
 import subprocess
@@ -25,21 +26,29 @@ from ui.daemon.launch.run import assets, compare, counts, record, snapshot
 # The tasks that run slow in a session hours old, and at their speed in one just opened
 # (🔬 2026-10-05, same project, SQX's own task time: WFM 1,837 s aged, 1,275 s fresh, 1,222 s on
 # the restart route; SPP IS 894 against 442). Reopening costs ~100 s. The cause is not known.
-AGED = {*stage.titles("spp"), *stage.titles("wfm")}
+AGED = set() if os.environ.get("ALGO_AGED_EMPTY") == "1" else {*stage.titles("spp"), *stage.titles("wfm")}   # ponytail: variant A of 66 §7.1 (D6), env only while timed; the loser is deleted after measuring
 
 
-def export(role: str, project: str) -> None:
+def export(role: str, project: str, banks: set[str] | None = None) -> None:
     """The export a stop would run, on the files the sync just wrote (`afterrun --live`), of this
     project alone: unmarked, it read every project of the install at each step (🔬 2026-10-05,
     ~60 s a step and another session's databanks re-exported).
 
     The trades go first, from the session's memory (`memtrades`, the AlgoTrades snippet): 4 s
-    per 1,000 strategies against orderstocsv's 274 (🔬 2026-10-12); `export_trades` takes them."""
+    per 1,000 strategies against orderstocsv's 274 (🔬 2026-10-12); `export_trades` takes them.
+
+    `banks`: the databanks the step wrote or filled -- only those are exported (and the build
+    whose retest one is, for the harvest). The project's other stale databanks wait for the
+    session's close: a load-and-resave moves their fingerprint, and each step re-exported
+    `Results` (10,000 strategies, ~155 s) that no task had touched (🔬 2026-10-12, 4 of 4 runs)."""
     with phase("export.memoria"):
-        wrote = memtrades.run(role, project, afterrun.stale_trades(role, project))
+        stale = afterrun.stale_trades(role, project)
+        wrote = memtrades.run(role, project, [b for b in stale if banks is None
+                                              or afterrun.norm(b) in {afterrun.norm(n) for n in banks}])
     print(f"operaciones desde memoria: {wrote or 'ninguna (orderstocsv)'}", flush=True)
     subprocess.run([sys.executable, "-m", "ui.daemon.loader.afterrun", "--role", role, "--live",
-                    "--project", project], cwd=ROOT, check=True)
+                    "--project", project,
+                    *[a for b in sorted(banks or ()) for a in ("--databank", b)]], cwd=ROOT, check=True)
 
 
 def close(role: str, project: str, failed: dict | None = None) -> None:
@@ -145,7 +154,7 @@ def execute(pre: dict, project: str) -> dict:
         if t["type"] == preflight.BUILD:
             print(record(pre, project, after.get(t["output"], 0)), flush=True)
             print(steprows.log_build(project, held.parent / "log", began), flush=True)
-    export(role, project)
+    export(role, project, {b for b in outputs | set(pre.get("fill", [])) if b} or None)
     moved = {t["title"]: (before.get(t["output"], 0), after.get(t["output"], 0)) for t in chosen}
     say(100, " · ".join(f"«{t}»: {n0} → {n1}" for t, (n0, n1) in moved.items()))
     return moved

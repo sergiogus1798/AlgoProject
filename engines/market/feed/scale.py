@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+from numba import njit, prange
 
 MAD_TO_SIGMA = 1.4826
 MINUTE_NS = 60_000_000_000
@@ -38,12 +39,27 @@ def returns(close: np.ndarray, at: np.ndarray) -> np.ndarray:
     return r
 
 
+@njit(cache=True)
 def _mad(values: np.ndarray) -> float:
     """MAD × 1.4826 of the finite values, NaN when there are none."""
     values = values[np.isfinite(values)]
     if not len(values):
         return np.nan
     return MAD_TO_SIGMA * np.median(np.abs(values - np.median(values)))
+
+
+@njit(parallel=True, cache=True)
+def _cells(week_s: np.ndarray, r_s: np.ndarray, edges: np.ndarray, n: int, weeks: int,
+           min_weeks: int) -> np.ndarray:
+    """by_week()'s 168 × n array; the hours are independent, so one per thread."""
+    out = np.full((168, n), np.nan)
+    for h in prange(168):
+        wk, rr = week_s[edges[h]:edges[h + 1]], r_s[edges[h]:edges[h + 1]]
+        if len(wk):
+            cut = np.searchsorted(wk, np.arange(n + 1))
+            for w in range(min_weeks, n):
+                out[h, w] = _mad(rr[cut[max(0, w - weeks)]:cut[w]])
+    return out
 
 
 def by_week(r: np.ndarray, at: np.ndarray, weeks: int, min_weeks: int) -> tuple[np.ndarray, int]:
@@ -64,17 +80,10 @@ def by_week(r: np.ndarray, at: np.ndarray, weeks: int, min_weeks: int) -> tuple[
     first = int(week[0])
     n = int(week[-1]) - first + 1
     hour = (at % WEEK) // 60
-    out = np.full((168, n), np.nan)
     order = np.lexsort((at, hour))
     hour_s, week_s, r_s = hour[order], week[order] - first, r[order]
     edges = np.searchsorted(hour_s, np.arange(169))
-    for h in range(168):
-        wk, rr = week_s[edges[h]:edges[h + 1]], r_s[edges[h]:edges[h + 1]]
-        if not len(wk):
-            continue
-        cut = np.searchsorted(wk, np.arange(n + 1))
-        for w in range(min_weeks, n):
-            out[h, w] = _mad(rr[cut[max(0, w - weeks)]:cut[w]])
+    out = _cells(week_s, r_s, edges, n, weeks, min_weeks)
     return out, first
 
 

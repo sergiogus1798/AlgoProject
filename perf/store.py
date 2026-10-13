@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     import pandas as pd
 
 HISTORY = "history.csv"
+# alloc_peak_mb is filled only by a memory run (memtop > 0); a timing run leaves it blank.
+# Figures restart on 2026-10-13: tracemalloc off in timings, PSS for memory, first touch outside the clock.
 COLUMNS = ["day", "time", "commit", "target", "area", "unit", "scale", "budget",
            "wall_s", "cpu_s",
            "rss_peak_mb", "self_rss_mb", "alloc_peak_mb", "bytes_in_mb", "wall_spread_pct",

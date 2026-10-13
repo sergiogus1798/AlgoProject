@@ -83,10 +83,9 @@ def distrust(kept: dict, found: dict, trades: int, cfg: dict) -> list[str]:
         said.append(f"P SATURADO en {', '.join(topped)}: el p mas pequeno observable es "
                     f"{floor:.1e}. Un resultado ahi abajo no esta medido, esta topado, y una "
                     f"correccion por multiplicidad no lo puede leer: sube nulls.draws.")
-    if not kept["levels"]:
-        said.append("CONVENCION INTRABAR: la estrategia no lleva stop ni objetivo, asi que "
-                    "barrier.intrabar no se puede calibrar contra SQX en esta corrida. El dia "
-                    "que lleve barreras, calibrarla es obligatorio antes de leer un p.")
+    said.append("CONVENCION INTRABAR: la estrategia no lleva stop ni objetivo, asi que "
+                "barrier.intrabar no se puede calibrar contra SQX en esta corrida. El dia "
+                "que lleve barreras, calibrarla es obligatorio antes de leer un p.")
     # The feed is what a study knows about itself; the asset behind it is what carries the
     # costs. Naming one asset in a constant made every other asset's run claim gold's.
     symbol = assetdata.symbol_for(cfg.get("feed", "")) if cfg.get("feed") else None

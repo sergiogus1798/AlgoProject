@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 
+from core import fanout
 from core.study import draws
 from studies.screening.analysis import centred
 from studies.transfer.crossTF.tf import null, rules
@@ -66,10 +67,13 @@ def measure(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: di
         got = got[(got["Open time"] >= span[0]) & (got["Open time"] < span[1])]
         grid = null.grids(bars, costs[window], params, cal, shifts, span, tf["runs"])
         by = {k: g.reset_index(drop=True) for k, g in got.groupby("strategy", observed=True)}
-        for mother, hers in made.groupby("mother"):
+        groups = dict(tuple(made.groupby("mother")))
+        _SHARED.update(groups=groups, by=by, source=source, grid=grid, cal=cal, shifts=shifts, tf=tf)
+        # One mother with her siblings per task: they share a run, nothing is shared between mothers.
+        ran = dict(fanout.run(_mother, {m: len(h) for m, h in groups.items()}, fanout.CORES))
+        for mother, hers in groups.items():
             members = {source: by.get(mother)} | {r.timeframe: by.get(r.sibling) for r in hers.itertuples()}
-            cells = null.runs({k: v for k, v in members.items() if v is not None}, grid, cal,
-                              shifts, tf["runs"])
+            cells = ran[mother]
             mum = cells.get(source)
             for r in hers.itertuples():
                 me = cells.get(r.timeframe)
@@ -95,6 +99,18 @@ def measure(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: di
         phi = _phi(trades["build"], sorted(made["mother"].unique()), cuts, tf["frequency"])
         out["phi"] = out["mother"].map(phi)
     return out
+
+
+_SHARED: dict = {}     # set by `measure` before the fork, read by `_mother` in the workers
+
+
+def _mother(mother: str) -> dict:
+    """`null.runs` of one mother and her siblings in one window, in a worker that inherited the inputs."""
+    g = _SHARED
+    members = {g["source"]: g["by"].get(mother)} | {
+        r.timeframe: g["by"].get(r.sibling) for r in g["groups"][mother].itertuples()}
+    return null.runs({k: v for k, v in members.items() if v is not None}, g["grid"], g["cal"],
+                     g["shifts"], g["tf"]["runs"])
 
 
 def blank(made: pd.DataFrame) -> pd.DataFrame:

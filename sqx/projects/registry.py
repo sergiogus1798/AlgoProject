@@ -8,7 +8,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
-from core.assetdata import expected_sign
+from core.assetmarkets import expected_sign
 from core.datapaths import project_registry
 from sqx.projects.rankings import describe
 

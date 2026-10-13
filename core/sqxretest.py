@@ -97,6 +97,13 @@ def simulations(path: Path) -> dict:
     return {"pnl": np.concatenate(vectors), "offsets": offsets, "index": index}
 
 
+def stored(path: Path) -> int:
+    """How many simulations the .sqx holds, counted from the archive's names (nothing decoded)."""
+    with zipfile.ZipFile(path) as archive:
+        prefix = _prefix(archive)
+        return len({m.group(1) for n in archive.namelist() if (m := _MEMBER.search(n)) and n.startswith(prefix)})
+
+
 def original(path: Path) -> np.ndarray:
     """The P/L of the backtest the simulations were perturbed away from.
 

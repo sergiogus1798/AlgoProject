@@ -22,7 +22,10 @@ TAIL = 25
 # and 0.2-0.7 GB — sixteen stay near 11 GB, inside the owner's 20 GB for Python
 # (knowhow/perf/ram-budget.md); two at a time left a 1,000-strategy batch queued for 15 min.
 SLOTS = fanout.CORES
-WIDE = {"crossmarket", "monkey", "gate", "mcRetest", "feedQuality", "cscv", "monteCarlo"}
+# Every study of the catalogue whose module calls `fanout.run` (`tests/test_perf66_chain.py`
+# fails on one that is missing): it takes all the cores, so the chain runs one at a time.
+WIDE = {"crossmarket", "monkey", "gate", "mcRetest", "feedQuality", "cscv", "monteCarlo",
+        "crossTF", "exposure", "blindJoint", "decay", "falsePositives", "marketSurfaces"}
 LIGHT = 3
 # A WIDE test run once per picked survivor, not once on the population, takes ~1.3 cores and
 # 1.9 GB each: this many at once. One by one, 1,352 survivors held a run 6 h 30 (2026-10-09).
@@ -224,11 +227,7 @@ def public(job: dict) -> dict:
 
 
 def listing() -> list[dict]:
-    """Every job this daemon started or queued, oldest first.
-
-    Returns:
-        The public records.
-    """
+    """Every job this daemon started or queued, oldest first, as public records."""
     pump()
     with _LOCK:
         return [public(j) for j in JOBS]

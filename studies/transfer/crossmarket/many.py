@@ -69,7 +69,7 @@ def run(inputs: dict, cfg: dict, workers: int = 0, overrides: list[str] | None =
     Args:
         inputs: What load.load() returned.
         cfg: What config.load(overrides) returned; it signs the result.
-        workers: Kept for the command line; the travel run is one process.
+        workers: Kept for the command line; the travel run fans out over every physical core.
         overrides: The same `--set` values cfg was loaded with.
 
     Returns:

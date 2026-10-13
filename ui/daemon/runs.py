@@ -1,10 +1,11 @@
 """What running one analysis module on one strategy means: the command, given what exists on disk."""
 
 import json
+from pathlib import Path
 
 from core import assetdata
 from core.paths import DATA
-from ui.daemon.runner import where
+from ui.daemon.runner import rootseed, where
 
 # Module -> the argv after `python3`, or a sentence saying why the window cannot start it.
 # Every entry reads only `ctx`, which `context()` fills from the data root and the asset file;
@@ -49,6 +50,8 @@ def context(project: str, databank: str, strategy: str, asset: str) -> dict:
             "split": f"{oos['from']}-01-01", "end": f"{oos['to']}-12-31"}
 
 
+NO_TF = ("el export no dice en qué timeframe corre la estrategia (manifest sin un único "
+         "timeframe): córrelo desde la terminal")
 NO_TRADES = "necesita un export raw de operaciones de este databank (skill /export)"
 MIXED = ("el export de este databank es cross-market, mezcla mercados: este módulo lee la "
          "estrategia en su propio mercado")
@@ -86,8 +89,12 @@ def nulls(c: dict) -> list[str] | str:
     """The entry-timing null of this one strategy."""
     if own_trades(c):
         return own_trades(c)
+    frame = where.export_timeframe(Path(c["trades"]).parent)
+    if not frame:       # never the report's M30 default: a wrong grid prices every monkey wrong
+        return NO_TF
     return ["-m", "studies.readings.monkey.report", "--project", c["project"], "--databank", c["databank"],
-            "--feed", c["feed"], "--strategy", c["strategy"]]
+            "--feed", c["feed"], "--timeframe", frame, "--strategy", c["strategy"],
+            "--seed", str(rootseed.root(c["project"], c["databank"]))]
 
 
 def exposure(c: dict) -> list[str] | str:

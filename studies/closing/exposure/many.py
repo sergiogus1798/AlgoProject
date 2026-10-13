@@ -4,6 +4,7 @@ import time
 
 import pandas as pd
 
+from core import fanout
 from core.study import blocks, result as envelope
 from studies.closing.exposure import one
 
@@ -20,6 +21,14 @@ CSV = ["strategy", "identity", "n", "exp_share", "exp_hours_per_week",
        "captured", "aligned", "notes"]
 
 
+_SHARED: dict = {}     # set by `run` before the fork, read by `_member` in the workers
+
+
+def _member(name: str) -> dict:
+    """One strategy measured, in a worker that inherited the export's trades."""
+    return one.run(name, _SHARED["inputs"], _SHARED["cfg"])
+
+
 def run(inputs: dict, cfg: dict) -> dict:
     """Every strategy measured; none is judged.
 
@@ -32,11 +41,13 @@ def run(inputs: dict, cfg: dict) -> dict:
         identity, "members": one result per strategy}.
     """
     started = time.time()
-    members = []
-    for i, name in enumerate(inputs["strategies"], 1):
-        members.append(one.run(name, inputs, cfg))
-        envelope.progress(100 * i // len(inputs["strategies"]),
-                          f"{name}: {members[-1]['summary']['n']} operaciones")
+    names = inputs["strategies"]
+    _SHARED.update(inputs=inputs, cfg=cfg)
+    done = {}
+    for name, member in fanout.run(_member, {n: 1 for n in names}, fanout.CORES):
+        done[name] = member
+        envelope.progress(100 * len(done) // len(names), f"{name}: {member['summary']['n']} operaciones")
+    members = [done[n] for n in names]
     table = pd.DataFrame([{"strategy": m["strategy"], "identity": m["identity"],
                            **m["summary"]} for m in members])
     shown = table[["strategy", "n", "exp_share", "exp_hours_per_week",

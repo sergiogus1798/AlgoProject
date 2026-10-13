@@ -6,7 +6,7 @@ import json
 import shutil
 from pathlib import Path
 
-from core import assetdata
+from core import assetdata, sqxfile
 from core.datapaths import project_registry
 from core.paths import ASSETS
 from ledger import spend, study, trials
@@ -76,3 +76,25 @@ def ledger(symbol: str, timeframe: str, family: str) -> dict:
     return {"study": sid, "searches": len(frame), "trials": trials.accumulated(frame),
             "segments": spend.virgin(frame, symbol),
             "sha256": sha256(file) if file.exists() else None}
+
+
+def feed_of(sqx: Path) -> str:
+    """The data-registry key of the feed a strategy file was built on (`USDJPY_M1`)."""
+    symbol, timeframed = sqxfile.symbol(sqx)
+    return f"{symbol}_{timeframed.split('_LOM_')[0]}"   # the `_LOM_<tf>` suffix is not part of the key
+
+
+def frozen(clock: str, symbol: str) -> dict:
+    """What a portfolio member reads for good: its feed's clock and its commission, as of now.
+
+    Both are live facts (the SQX data registry, the asset card) that change under an archived
+    member; `core.archive.read.frozen` reads these back and never the live ones.
+
+    Args:
+        clock: The feed's zone, `sqx.inspect.feeds.timezone(feed_of(sqx))` (core cannot import sqx).
+        symbol: The asset whose card holds the commission.
+
+    Returns:
+        `clock` and `commission` (the card's `costs.commission.use`, one entry per segment).
+    """
+    return {"clock": clock, "commission": assetdata.load(symbol)["costs"]["commission"]["use"]}

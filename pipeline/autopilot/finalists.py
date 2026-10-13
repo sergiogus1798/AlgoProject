@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import sqxfile
+from core.study import identity
 from pipeline.autopilot import survivors
 
 FILE = "finalistas.json"
@@ -28,7 +28,8 @@ def write(project: str, mothers: pd.DataFrame, out: Path) -> str:
         survivors.Done: The list is empty; the file is written all the same.
     """
     who = survivors.about(project)
-    rows = [{"strategy": m.strategy, "identity": sqxfile.identity(Path(m.file)),
+    known = identity.hashed(Path(m.file) for m in mothers.itertuples())
+    rows = [{"strategy": m.strategy, "identity": known[Path(m.file)],
              "mother": m.strategy, "sqx": str(Path(m.file).resolve()), "symbol": who["symbol"],
              "timeframe": who["timeframe"]} for m in mothers.itertuples()]
     (out / FILE).write_text(json.dumps(rows, indent=1, ensure_ascii=False), encoding="utf-8")

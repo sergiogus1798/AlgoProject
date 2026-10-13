@@ -11,6 +11,34 @@ from portfolio.common.monteCarlo.simulate import engine, metrics, stitch
 from portfolio.common.monteCarlo.verdict import confidence
 
 
+def _resampled(job: tuple) -> dict:
+    """One slice's stationary bootstrap, summarised where it ran so only four figures travel.
+
+    Args:
+        job: (payload of the slice, its observed net, sims, the whole config, keep the
+            histogram).
+
+    Returns:
+        `median_net`, `net_5`, `pf_5` and `shape` (None unless asked for).
+    """
+    data, net_seen, sims, cfg, want_shape = job
+    got = engine.single(data, "draw", "stationary", config.stationary_block(data["pnl"].size),
+                        sims, cfg)
+    return {"median_net": float(np.median(got["net"])),
+            "net_5": float(np.percentile(got["net"], 5)),
+            "pf_5": float(np.nanpercentile(got["pf"], 5)),
+            "shape": metrics.shape(got["net"], net_seen, cfg["global"]["report_percentile"])
+            if want_shape else None}
+
+
+def _bootstrapped(source: dict, slices: list[np.ndarray], cfg: dict,
+                  want_shape: bool) -> list[dict]:
+    """`_resampled` for every slice of trade positions, across the pool (`engine.mapped`)."""
+    jobs = [(engine.payload(source, pos), float(source["pnl"][pos].sum()),
+             cfg["family_d"]["window_sims"], cfg, want_shape) for pos in slices]
+    return engine.mapped(_resampled, jobs, cfg=cfg)
+
+
 def _slices(source: dict, spans: list[dict], cfg: dict, want_shape: bool = False) -> list[dict]:
     """Stationary bootstrap inside each calendar slice of the history.
 
@@ -30,25 +58,13 @@ def _slices(source: dict, spans: list[dict], cfg: dict, want_shape: bool = False
         is. A window with a negative median is a period in which the strategy did not work,
         which no average over windows may hide.
     """
-    sims = cfg["family_d"]["window_sims"]
-    q = cfg["global"]["report_percentile"]
-    rows = []
-    for span in spans:
-        pos = span["positions"]
-        if pos.size < confidence.MEAN_PROVISIONAL:
-            rows.append({**{k: span[k] for k in ("start", "end")}, "n": int(pos.size),
-                         "median_net": float("nan"), "net_5": float("nan"),
-                         "pf_5": float("nan"), "shape": None})
-            continue
-        got = engine.single(engine.payload(source, pos), "draw", "stationary",
-                            config.stationary_block(pos.size), sims, cfg)
-        net_seen = float(source["pnl"][pos].sum())
-        rows.append({**{k: span[k] for k in ("start", "end")}, "n": int(pos.size),
-                     "median_net": float(np.median(got["net"])),
-                     "net_5": float(np.percentile(got["net"], 5)),
-                     "pf_5": float(np.nanpercentile(got["pf"], 5)),
-                     "shape": metrics.shape(got["net"], net_seen, q) if want_shape else None})
-    return rows
+    blank = {"median_net": float("nan"), "net_5": float("nan"), "pf_5": float("nan"),
+             "shape": None}
+    enough = [s["positions"] for s in spans if s["positions"].size >= confidence.MEAN_PROVISIONAL]
+    done = iter(_bootstrapped(source, enough, cfg, want_shape))
+    return [{**{k: span[k] for k in ("start", "end")}, "n": int(span["positions"].size),
+             **(next(done) if span["positions"].size >= confidence.MEAN_PROVISIONAL else blank)}
+            for span in spans]
 
 
 def concentration(nets: list[float], total: float) -> float:
@@ -82,17 +98,11 @@ def run(source: dict, day: pd.DataFrame, cfg: dict) -> dict:
              "price": day["Close"][scored].tolist(),
              "vol": vol["vol"][scored].tolist(),
              "bucket": np.digitize(vol["vol"][scored].to_numpy(), edges).tolist()}
-    buckets = {}
-    for name, pos in tagged["positions"].items():
-        got = engine.single(engine.payload(source, pos), "draw", "stationary",
-                            config.stationary_block(pos.size), d["window_sims"], cfg)
-        net_seen = float(source["pnl"][pos].sum())
-        buckets[name] = {"n": int(pos.size), "net": net_seen,
-                         "median_net": float(np.median(got["net"])),
-                         "net_5": float(np.percentile(got["net"], 5)),
-                         "pf_5": float(np.nanpercentile(got["pf"], 5)),
-                         "shape": metrics.shape(got["net"], net_seen,
-                                                cfg["global"]["report_percentile"])}
+    names = list(tagged["positions"])
+    buckets = {name: {"n": int(tagged["positions"][name].size),
+                      "net": float(source["pnl"][tagged["positions"][name]].sum()), **got}
+               for name, got in zip(names, _bootstrapped(
+                   source, [tagged["positions"][n] for n in names], cfg, True))}
     total = float(source["pnl"].sum())
     equity0 = cfg["global"]["starting_equity"]
     return {"overlapping": over,

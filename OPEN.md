@@ -624,6 +624,8 @@ Opened by the unattended docs pass from `audit/2026-09-30.md`. None is a documen
 
 **2026-10-06.** The cause of the log storm is being removed on the owner's order: the custom columns `ParameterCount` and `DoFRatio` (they raised on every WF step). Done on the conductor and verified on two starts (`knowhow/columns/param-count.md`); Python computes both (`core.sqxview.frame`). PENDING on the custodian — it was running another session's job: with it stopped, `python3 ~/Desktop/AlgoData/snapshots/sqx-columns-2026-10-06/drop_columns.py ~/Desktop/SQX_w2 ~/Desktop/AlgoData/snapshots/sqx-columns-2026-10-06`. PENDING on the master, the owner's call: `Build-Task3.xml` of his projects AUDJPY, EURUSD and USDJPY carries a `ParameterCount` column value, which removing the class may break. Four archived storm logs over 10 MB deleted from `AlgoData/logs` (131 → 53 MB).
 
+**2026-10-13.** 2026-10-13 (owner P9=A, encargo 66): the gate's `Param Count` and `DoF Ratio` are now always Python's (`sqxfile.param_count`, `sqxview.dof_ratio`, used by `sqxview.frame` and `studies/screening/gate/collect.py`); SQX's stored value is ignored even when the export carries it; `tests/test_perf66_harvest.py`. The columns part of this issue is closed. Still open: the custodian column drop, the master's Build-Task3.xml of AUDJPY, EURUSD and USDJPY (owner's call), and the export-manifest items.
+
 ## 87. 🟠 Portfolio construction engine — M0-M2, F1 and the F2 engine built 2026-09-30; the owner's calls gate each milestone
 
 The plan is `portfolio/PLAN.md`; the order is in `portfolio/CLAUDE.md` (M0-M2 → F1-F5 funded → M3-M8

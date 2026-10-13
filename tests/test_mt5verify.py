@@ -17,7 +17,8 @@ from core import assetdata
 from core.datapaths import projects_backup
 from mt5 import compare, tester
 from mt5.verify import conditions, firms, judge, mt5side
-from sqx.projects import mt5verify
+from sqx.projects import cfxio, mt5verify
+from sqx.projects.resources import definitions, main_feed, one_task
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
 FEED = "XAUUSD_M1"
@@ -72,12 +73,13 @@ def judged(failures: list[str]) -> None:
                              ("EETUS", "EETUS"))["summary"]
     if got["state"] != "fail" or got["row_1"] != 0.0:
         failures.append(f"sin operaciones en MT5 no falla la fila 1: {got}")
-    extra = trades(63, 1).iloc[60:].assign(**{"Open time": lambda f: f["Open time"] + pd.Timedelta(days=900),
+    # row 1 is the worse of the two ways against 95 %: 60/63 = 95.2 % still passes, 60/64 does not
+    extra = trades(64, 1).iloc[60:].assign(**{"Open time": lambda f: f["Open time"] + pd.Timedelta(days=900),
                                               "Close time": lambda f: f["Close time"] + pd.Timedelta(days=900)})
     got = judge.firm_result("ftmo", sqx, pd.concat([sqx, extra], ignore_index=True), "H1", 100000,
                             cfg, "XAUUSD", INST, ("EETUS", "EETUS"))["summary"]
     if got["state"] != "fail" or not got["row_1"] < 0.95:
-        failures.append(f"3 operaciones de más en MT5 no fallan la fila 1: {got}")
+        failures.append(f"4 operaciones de más en MT5 no fallan la fila 1: {got}")
     got = judge.firm_result("ftmo", sqx.iloc[:20], sqx.iloc[:20], "H1", 100000, cfg, "XAUUSD", INST,
                             ("EETUS", "EETUS"))["summary"]
     if got["state"] != "none":
@@ -85,16 +87,21 @@ def judged(failures: list[str]) -> None:
 
 
 def priced(failures: list[str]) -> None:
-    """FTMO's gold as its server gave it on 2026-09-29, in SQX's units; Hantec refused on gold."""
+    """FTMO's gold as its server gave it on 2026-09-29, in SQX's units; Hantec at its card's
+    commission; a firm whose commission the card does not have is refused."""
     data = assetdata.load("XAUUSD")
     info = {"name": "XAUUSD", "spread": 41, "point": 0.01, "swap_mode": 1, "swap_long": -90.35,
             "swap_short": -4.2, "swap_rollover3days": 3}
     got, _ = conditions.for_sqx(data, "ftmo", info, 0)
     if got != COSTS:
         failures.append(f"los costes de FTMO en unidades de SQX: {got}")
+    # Hantec's gold commission is confirmed since 2026-10-01 (encargo 55 §1.4); the5ers' is not
+    got, _ = conditions.for_sqx(data, "hantec", {**info, "name": "XAUUSD.h"}, 0)
+    if got["commission"] != {"method": "SizeBased", "value": 5.0}:
+        failures.append(f"Hantec no lleva al oro su comisión de la ficha: {got['commission']}")
     try:
-        conditions.for_sqx(data, "hantec", {**info, "name": "XAUUSD.h"}, 0)
-        failures.append("Hantec sin comisión confirmada en el oro no se rechaza")
+        conditions.for_sqx(data, "the5ers", info, 0)
+        failures.append("una empresa sin comisión confirmada en el oro no se rechaza")
     except conditions.Refused:
         pass
     try:
@@ -111,6 +118,12 @@ def written(failures: list[str]) -> None:
     with tempfile.TemporaryDirectory() as tmp:
         cfx = Path(tmp) / "project.cfx"
         shutil.copy(DONOR, cfx)
+        # as production arrives: the builder has already pointed the clone at the current feed
+        members = cfxio.members(cfx)
+        donor_feed, blocks = main_feed(members, cfg["donor_members"][0]), definitions(None, FEED)
+        for m in cfg["donor_members"]:
+            members[m] = one_task(members[m].decode("utf-8"), donor_feed, blocks).encode("utf-8")
+        cfxio.write(cfx, members)
         done = mt5verify.configure(cfx, FEED, ("2025-01-01", "2026-09-01"),
                                    {"ftmo": COSTS, "hantec": {**COSTS, "defaultSpread": 26.0}},
                                    Path(tmp) / "mq5", cfg,
@@ -180,8 +193,8 @@ def main() -> None:
         check(failures)
     print("\n".join(failures) or
           "ok: el reloj se lee de las operaciones (+1 h) y se convierte de zona fecha a fecha, un P&L barajado falla la fila 2 y un "
-          "lado vacío la 1; FTMO se traduce a unidades de SQX y Hantec sin comisión confirmada "
-          "se rechaza; el proyecto solo enciende las dos empresas y la exportación, cada una a "
+          "lado vacío la 1; FTMO se traduce a unidades de SQX, Hantec lleva su comisión y una empresa sin "
+          "comisión confirmada se rechaza; el proyecto solo enciende las dos empresas y la exportación, cada una a "
           "sus costes, con el FixedSize de la estrategia; el ini del tester cambia de cuenta; el EA "
           "queda en el lote fijo de la estrategia")
     sys.exit(1 if failures else 0)

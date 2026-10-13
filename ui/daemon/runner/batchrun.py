@@ -77,6 +77,8 @@ def main() -> None:
         print(f"PROGRESS {100 * done / len(items):.0f} {done}/{len(items)} estrategias"
               + (f" · {len(failed)} fallaron" if failed else ""), flush=True)
     print(f"terminado: {len(items) - len(failed)} bien, {len(failed)} fallaron", flush=True)
+    if failed:      # owner 2026-10-13: some failing is exit 0 (the next step goes on with the rest), never silent
+        print(f"FALLARON {len(failed)} de {len(items)}: {', '.join(failed)}", file=sys.stderr, flush=True)
     sys.exit(1 if failed and len(failed) == len(items) else 0)
 
 

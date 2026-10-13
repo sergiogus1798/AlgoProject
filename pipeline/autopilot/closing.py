@@ -1,12 +1,15 @@
 """Step 21 for every survivor, and the batch helpers step 13 shares: the panel reading, the mothers' copies, the export, the clear."""
 
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pandas as pd
 
 from core.study import identity
 from pipeline.autopilot import call, survivors
+
+WIDTH = 4
 
 
 def reading(project: str, key: str, databank: str, mothers: pd.DataFrame) -> str:
@@ -17,8 +20,10 @@ def reading(project: str, key: str, databank: str, mothers: pd.DataFrame) -> str
     spelt = identity.spelt(project, databank, list(mothers["identity"]))
     names = [spelt.get(m.identity, m.strategy) for m in mothers.itertuples()]
     jobs = call.window(key, project, databank, who["symbol"], names)
-    for argv in jobs:
-        call.run(argv)
+    # One process per mother, each writing only `estrategias/<her name>.json` (`output.member`):
+    # no two share a file. Four at a time, because each loads the export's trades.
+    with ThreadPoolExecutor(max_workers=min(WIDTH, max(1, len(jobs)))) as pool:
+        list(pool.map(call.run, jobs))
     return f"{key} sobre {databank}: {len(jobs)} madre(s)"
 
 

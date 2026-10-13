@@ -1,7 +1,10 @@
 """The simulated distribution behind a z or a p, kept so nobody reruns a test to look at it."""
 
+import hashlib
 import json
 import os
+import threading
+import re
 from pathlib import Path
 
 import numpy as np
@@ -13,6 +16,7 @@ FILE = "distribuciones.parquet"
 BINS = 200        # over the whole range of the draws, never clipped
 EMPTY = np.array([], np.float32)
 LISTS = ("draws", "low", "high", "edges")   # float lists: byte-stream-split halves them (measured)
+SHARDS = "distribuciones"   # per-strategy files of a deferred `merge`, until `consolidate`
 TAIL = 100        # the lowest and the highest draws kept exact when the draws themselves are not
 
 
@@ -59,6 +63,15 @@ def record(test: str, metric: str, observed: float, drawn: np.ndarray, identity:
             "draws": kept if raw else EMPTY}
 
 
+def _write(path: Path, df: pd.DataFrame) -> None:
+    """The one writer of the parquet: whole or not at all (a truncated file would stop the next save)."""
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+    df.to_parquet(tmp, index=False, compression="zstd", compression_level=9,    # 19 took 24 s vs 1.6 s, file +6 %
+                  use_dictionary=[c for c in df.columns if c not in (*LISTS, "counts")],
+                  use_byte_stream_split=[f"{c}.list.element" for c in LISTS])
+    os.replace(tmp, path)
+
+
 def save(folder: Path | None, rows: list[dict]) -> None:
     """Write a study's distributions beside its report, replacing those of the same tests.
 
@@ -67,22 +80,27 @@ def save(folder: Path | None, rows: list[dict]) -> None:
         rows: What `record` returned. Nothing is written for an empty list.
 
     A study that runs in parts (the gate's levels) calls this once per part: the rows of other
-    tests already in the file stay.
+    tests already in the file stay. Read, change and rewrite happen under the folder's lock
+    (re-entrant, so `merge` and `consolidate` hold it around this call without deadlock).
     """
     if not rows or folder is None:
         return
     new, path = pd.DataFrame(rows), Path(folder) / FILE
-    if path.exists():
-        old = pd.read_parquet(path)
-        new = pd.concat([old[~old["test"].isin(set(new["test"]))], new], ignore_index=True)
-    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    new.to_parquet(tmp, index=False, compression="zstd", compression_level=19,
-                   use_dictionary=[c for c in new.columns if c not in (*LISTS, "counts")],
-                   use_byte_stream_split=[f"{c}.list.element" for c in LISTS])
-    os.replace(tmp, path)        # whole or not at all: a truncated file would stop the next save
+    with locked(Path(folder)):
+        consolidate(folder)         # deferred rows are older than this save: fold them first
+        if path.exists():
+            old = pd.read_parquet(path)
+            new = pd.concat([old[~old["test"].isin(set(new["test"]))], new], ignore_index=True)
+        _write(path, new)
 
 
-def merge(folder: Path, rows: list[dict]) -> None:
+def _replace(old: pd.DataFrame, new: pd.DataFrame) -> pd.DataFrame:
+    """`old` without the rows of `new`'s tests and strategies, then `new`: what a merge means."""
+    gone = old["test"].isin(set(new["test"])) & old["strategy"].isin(set(new["strategy"]))
+    return pd.concat([old[~gone], new], ignore_index=True)
+
+
+def merge(folder: Path, rows: list[dict], defer: bool = False) -> None:
     """`save` for a run that covers only some strategies of a shared report folder.
 
     Args:
@@ -90,13 +108,75 @@ def merge(folder: Path, rows: list[dict]) -> None:
         rows: `record` rows, each with its `strategy`: the file's rows of the same tests and
             those strategies are replaced, every other row stays — a `--strategy` run keeps
             the population's.
+        defer: True from a `--strategy` process: the rows go to their own file
+            `distribuciones/<strategy>.parquet` (no shared file, so no lock fight and no
+            rewriting of everyone's rows) and stay invisible until `consolidate(folder)` runs
+            once at the end of the phase.
     """
     if not rows:
         return
-    path, new = Path(folder) / FILE, pd.DataFrame(rows)
+    new = pd.DataFrame(rows)
+    if defer:
+        for name, part in new.groupby("strategy", sort=False, dropna=False):
+            safe = re.sub(r"[^\w.-]", "_", str(name)) or "_"
+            if safe != name:        # two names that sanitise alike (or None) must not share a file
+                safe += "-" + hashlib.sha1(repr(name).encode()).hexdigest()[:8]
+            shard = Path(folder) / SHARDS / f"{safe}.parquet"
+            with locked(shard.parent):          # two tests of one strategy at once: still one file
+                _write(shard, _replace(pd.read_parquet(shard), part) if shard.exists() else part)
+        return
+    path = Path(folder) / FILE
     with locked(Path(folder)):      # `--strategy` runs side by side read, change and rewrite one file
-        if path.exists():
-            old = pd.read_parquet(path)
-            mine = old["strategy"].isin(set(new["strategy"]))
-            rows = old[old["test"].isin(set(new["test"])) & ~mine].to_dict("records") + rows
-        save(folder, rows)
+        consolidate(folder)
+        save(folder, (_replace(pd.read_parquet(path), new) if path.exists() else new).to_dict("records"))
+
+
+def consolidate(folder: Path) -> int:
+    """Fold the deferred per-strategy files into `distribuciones.parquet`, once, and delete them.
+
+    Args:
+        folder: The study's report folder.
+
+    Returns:
+        How many strategy files were folded (0: nothing was deferred, nothing is touched).
+    """
+    folder = Path(folder)
+    if not any((folder / SHARDS).glob("*.parquet")):    # the usual case: no lock, no I/O
+        return 0
+    with locked(folder), locked(folder / SHARDS):
+        shards = sorted((folder / SHARDS).glob("*.parquet"))
+        if not shards:
+            return 0
+        path = folder / FILE
+        df = pd.read_parquet(path) if path.exists() else None
+        for shard in shards:
+            part = pd.read_parquet(shard)
+            df = part if df is None else _replace(df, part)
+        _write(path, df)
+        for shard in shards:
+            shard.unlink()
+    return len(shards)
+
+
+def read(folder: Path) -> pd.DataFrame | None:
+    """The folder's distributions, deferred strategy files folded in first (one fold per burst).
+
+    Returns:
+        The rows of `distribuciones.parquet`; None when the folder has none.
+    """
+    consolidate(folder)
+    path = Path(folder) / FILE
+    return pd.read_parquet(path) if path.exists() else None
+
+
+def reset(folder: Path) -> None:
+    """Forget the folder's distributions: the parquet and every deferred strategy file.
+
+    Whatever deletes or replaces `distribuciones.parquet` calls this, never `unlink` on `FILE`
+    alone — a pending file would come back at the next read.
+    """
+    folder = Path(folder)
+    with locked(folder), locked(folder / SHARDS):
+        (folder / FILE).unlink(missing_ok=True)
+        for shard in (folder / SHARDS).glob("*.parquet"):
+            shard.unlink()

@@ -4,11 +4,13 @@
 import argparse
 import json
 import os
+import re
 import signal
 import subprocess
 import sys
 import threading
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -17,63 +19,23 @@ import psutil
 from core.paths import ROOT
 from sqx.projects import stage
 from ui.daemon import jobs
-from ui.daemon.advance import preflight as advance
 from ui.daemon.advance.run import say
-from ui.daemon.launch import chainplan, preflight
+from ui.daemon.launch import chaincheck, preflight
 from ui.daemon.launch import run as launcher
 from ui.daemon.loader import afterrun, state as loader
+from ui.daemon.runner import batch
 from ui.daemon.workflow import api as workflow
 from ui.daemon.workflow import run as rail
 
 TAIL = 4    # lines of a failed command's output the chain's log keeps
-# The python lane's RAM rule (`jobs.FLOOR_GB`): a test starts below the floor only alone.
-_RUNNING = {"n": 0, "stop": False}
+# The python lane's rules (`jobs.FLOOR_GB`, `jobs.SLOTS`): a command starts when its weight fits
+# the cores and its RAM estimate fits above the floor, or when nothing else of the chain runs.
+# "gb" and "cores" are what the running commands reserved (a child has not eaten its RAM yet
+# when the next one measures the free figure).
+_RUNNING = {"n": 0, "stop": False, "gb": 0.0, "cores": 0}
+GB_PER_WEIGHT = 0.25    # 🔬 2026-09-27: a light study (weight 3) is 0.2-0.7 GB; ponytail: flat per unit
 CHILDREN: set[subprocess.Popen] = set()     # the tests and exports running now
 _GATE = threading.Lock()
-
-
-def check(project: str) -> dict:
-    """Whether the chain may start now, what it would run and where it would stop.
-
-    Args:
-        project: Project name.
-
-    Returns:
-        `ok`, `reasons`, `plan` (`chainplan.plan`), `install`, `role`. Refused on the master,
-        on a worker someone uses (`advance.busy`, the same preflight as every launcher),
-        with nothing to run, and when the first SQX step cannot start as it stands; a later
-        SQX step is only checked for its tasks now, and fully just before it starts.
-    """
-    plan = chainplan.plan(workflow.workflow(project))
-    where = advance.where(project)
-    if "refuse" in where:
-        return {"ok": False, "reasons": [where["refuse"]], "plan": plan}
-    reasons = advance.busy(where["role"], project)
-    if not plan["do"]:
-        reasons.append(f"nada que correr: se para ya en el paso {plan['stop']['n']} — "
-                       f"{plan['stop']['why']}" if plan["stop"]["n"] else plan["stop"]["why"])
-    filled: set[str] = set()      # outputs of the SQX steps planned before this one
-    for action in [a for a in plan["do"] if a["kind"] == "sqx"]:
-        pre = preflight.check(project, step=action["n"], filled=filled)
-        action["titles"] = [t["title"] for t in pre.get("chosen", [])]
-        filled |= {t["output"] for t in pre.get("chosen", [])}
-        reasons += [f"paso {action['n']}: {r}" for r in pre["reasons"] if r not in reasons]
-    return {"ok": not reasons, "reasons": reasons, "plan": plan, **where}
-
-
-def text(got: dict, project: str) -> str:
-    """The sentence the owner confirms: every step that runs, where, and where it stops."""
-    who = preflight.ROLES.get(got["role"], got["role"])
-    lines = [f"«Correr workflow» en {project} ({got['install']}), en este orden:"]
-    for a in got["plan"]["do"]:
-        lines.append(f"· paso {a['n']} · {a['title']} — " + (
-            f"SQX en el {who}: {', '.join(a['titles'])}; el worker arranca, corre hasta "
-            "«Project finished» y se para" if a["kind"] == "sqx" else
-            f"Python: {', '.join(a['tests'])}"))
-    stop = got["plan"]["stop"]
-    lines.append(f"Se para antes del paso {stop['n']} · {stop['title']}: {stop['why']}."
-                 if stop["n"] else f"Y termina: {stop['why']}.")
-    return "\n".join(lines + ["", chainplan.RULE])
 
 
 def feeds(n: str, ctx: dict) -> list[str]:
@@ -108,23 +70,39 @@ def cancelled(signum: int, frame: object) -> None:
     launcher.graceful(signum, frame)
 
 
-def floored(argv: list[str]) -> tuple[int, str]:
-    """`command`, started only while `jobs.FLOOR_GB` of RAM is free or nothing else of the
-    chain runs — the python lane's own rule, which the chain's tests do not pass through."""
+def floored(argv: list[str], key: str = "", picked: int | None = None) -> tuple[int, str]:
+    """`command`, started only while its weight (`jobs.weight`) fits the core budget and its RAM
+    (`GB_PER_WEIGHT` a unit) fits above `jobs.FLOOR_GB`, counting what the running ones
+    reserved; or when nothing else of the chain runs, so a heavy one is never starved.
+
+    Args:
+        argv: The command.
+        key: The test's study key; light (`jobs.LIGHT`) when empty.
+        picked: Weight of one command of a test run once per picked survivor (`jobs.PICKED`).
+    """
+    w = jobs.weight({"study": key, "weight": picked})
+    if key in jobs.WIDE and picked is None:
+        w = jobs.SLOTS       # it fans out over every core: alone, light ones wait for it
+    gb = w * GB_PER_WEIGHT
     while True:
         if _RUNNING["stop"]:
             return 1, "cancelado"
         with _GATE:
             free = psutil.virtual_memory().available / 1e9
-            if free >= jobs.FLOOR_GB or not _RUNNING["n"]:
+            if not _RUNNING["n"] or (free - _RUNNING["gb"] - gb >= jobs.FLOOR_GB
+                                     and _RUNNING["cores"] + w <= jobs.SLOTS):
                 _RUNNING["n"] += 1
+                _RUNNING["gb"] += gb
+                _RUNNING["cores"] += w
                 break
-        time.sleep(5)
+        time.sleep(1)       # psutil and a lock: cheap, so a freed slot is taken within a second
     try:
         return command(argv)
     finally:
         with _GATE:
             _RUNNING["n"] -= 1
+            _RUNNING["gb"] -= gb
+            _RUNNING["cores"] -= w
 
 
 def load(project: str, databank: str) -> list[str]:
@@ -134,17 +112,22 @@ def load(project: str, databank: str) -> list[str]:
         One line per piece that failed. The one-shot exports run as the chain's own children
         (the conductor lane is its until it ends); the MC Retest trades nobody reads are skipped.
     """
-    failed = []
+    failed, done = [], []
     for piece, (_lane, argv) in loader.commands(project, loader.status(project, databank)).items():
         if piece == "trades" and databank in afterrun.UNREAD_TRADES: continue    # owner, 2026-10-01
+        if piece == "trades" and "--exports" in done and (
+                loader.status(project, databank)["pieces"]["trades"]["state"] == "fresh"):
+            continue            # the harvest's --exports wrote them
         print(f"cargando {piece} de {databank}", flush=True)
         rc, tail = command(argv)
+        if piece == "harvest": done = argv
         if rc:
             failed.append(f"cargar {piece} de {databank}: {tail}")
     return failed
 
 
-def python_step(project: str, action: dict, strict: bool = False) -> list[str]:
+def python_step(project: str, action: dict, strict: bool = False,
+                tell: Callable[[str], None] | None = None) -> list[str]:
     """Load what the step reads, then run each of its tests.
 
     Args:
@@ -152,6 +135,9 @@ def python_step(project: str, action: dict, strict: bool = False) -> list[str]:
         action: One entry of the plan's `do`.
         strict: A refused test is a failure too: the autopilot judges on what tests wrote
             (🔬 2026-10-01, step 14 judged on 0 facts after mcRetest was refused).
+        tell: Where to say a batch that lost some strategies but exited 0 («FALLARON n de N: …»):
+            the autopilot passes the writer of its `estado.txt`; the window's chain passes none
+            and the line goes to the job's own log.
 
     Returns:
         The failures, one line each: a load or a command that ended non-zero. A test the
@@ -162,22 +148,36 @@ def python_step(project: str, action: dict, strict: bool = False) -> list[str]:
     if failed:
         return failed
     ctx = workflow.context(project)
-    # monkeyExcess reads the panel monkey writes: last, or it is refused in the same press.
-    for key in sorted(action["tests"], key=lambda k: k == "monkeyExcess"):
+
+    def one(key: str) -> list[str]:
+        """Plan one key of the step; the refusal printed, or its planned commands."""
         why = rail.refusal(action["n"], key, ctx)
         planned = why or rail.plan(rail.BY_N[action["n"]], key, ctx, "", action.get("picked", []))
         if isinstance(planned, str):
             print(f"{key}: no se corre — {planned}", flush=True)
-            if strict:
-                failed.append(f"{key}: no se corrió — {planned}")
-            continue
-        width = jobs.width(key, len(planned))
-        with launcher.phase("test", key), ThreadPoolExecutor(width) as pool:
-            done = list(pool.map(lambda p: (p["label"], *floored(p["argv"])), planned))
+            return [f"{key}: no se corrió — {planned}"] if strict else []
+        planned = batch.fold(planned)     # one process for the one-strategy plans of a light study
+        weight = jobs.PICKED.get(key) if len(planned) > 1 else None
+        with launcher.phase("test", key), ThreadPoolExecutor(jobs.width(key, len(planned))) as pool:
+            done = list(pool.map(lambda p: (p["label"], *floored(p["argv"], key,
+                                                                 p.get("weight") or weight)), planned))
+        for _, _, tail in done:
+            lost = re.search(r"FALLARON \d+ de \d+: .*", tail)
+            if lost:
+                line = f"{key}: {lost.group(0)}"
+                tell(line) if tell else print(line, flush=True)
         bad = [f"{label}: {tail}" for label, rc, tail in done if rc]
         print(f"{key}: {len(done) - len(bad)} de {len(done)} bien", flush=True)
-        failed += bad
-    return failed
+        return bad
+
+    # The tests of a step are independent and run together, each command held by `floored`'s
+    # weights — except monkeyExcess, which reads the panel monkey writes: after all the others.
+    first = [k for k in action["tests"] if k != "monkeyExcess"]
+    with ThreadPoolExecutor(max(1, len(first))) as pool:
+        results = list(pool.map(one, first))
+    if "monkeyExcess" in action["tests"]:
+        results.append(one("monkeyExcess"))
+    return failed + [f for r in results for f in r]
 
 
 def diverged(project: str, action: dict, stale: bool) -> str:
@@ -207,7 +207,7 @@ def chain(project: str, plan: dict | None = None) -> None:
             from the terminal: the plan is made here and run without a confirmation.
     """
     if plan is None:
-        got = check(project)
+        got = chaincheck.check(project)
         if not got["ok"]:
             sys.exit("no se corre:\n  " + "\n  ".join(got["reasons"]))
         plan = got["plan"]

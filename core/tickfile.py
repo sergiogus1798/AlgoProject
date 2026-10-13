@@ -200,7 +200,9 @@ def read(path: Path) -> tuple[pd.DataFrame, int]:
     start = _data_start(buf)
     first, _ = _value(np.asarray(buf[start + CHAIN + 2:start + CHAIN + 10]), 0, 3)
     capacity = int((pd.Timestamp.now().value // 1_000_000 - first) // MINUTE) + 2
-    stamp, rows, ticks = _minutes(buf, start, capacity)
+    from core import tickparallel      # imports this module's decoders: here, not at the top
+    got = tickparallel.decode(buf, start)
+    stamp, rows, ticks = got if got else _minutes(buf, start, capacity)
     frame = pd.DataFrame(rows, columns=COLUMNS, index=pd.to_datetime(stamp, unit="ms"))
     frame.index.name = "t"
     return frame.astype({"n": np.int32}), int(ticks)

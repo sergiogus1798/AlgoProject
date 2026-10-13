@@ -3,10 +3,9 @@
 from pathlib import Path
 
 from ui.daemon import runs
-from ui.daemon.runner import where
+from ui.daemon.runner import rootseed, where
 
-NO_TF = ("el export no dice en qué timeframe corre la estrategia (manifest sin un único "
-         "timeframe): córrelo desde la terminal")
+NO_TF = runs.NO_TF
 
 
 def exported(c: dict) -> list[str] | str:
@@ -28,7 +27,8 @@ def monkey(c: dict, strategy: str) -> list[str] | str:
     # A cross-market export runs every market without --feed; one strategy reads the base one.
     feed = ["--feed", c["feed"]] if strategy or not c["multimarket"] else []
     return (["-m", "studies.readings.monkey.report", "--project", c["project"], "--databank",
-             c["databank"], *feed, "--timeframe", frame]
+             c["databank"], *feed, "--timeframe", frame,
+             "--seed", str(rootseed.root(c["project"], c["databank"]))]
             + (["--strategy", strategy] if strategy else []))
 
 

@@ -2,10 +2,23 @@
 
 from collections.abc import Callable
 
+import numba
 import numpy as np
 import pandas as pd
 
+from portfolio.common.construct.mc import paths
 from portfolio.common.construct.search import greedy, shortlist
+
+
+@numba.njit(parallel=True, cache=True)
+def _fill(graph: np.ndarray, sizes: np.ndarray, seeds: np.ndarray, out: np.ndarray) -> None:
+    """Row by row, each from its own seed: a shuffled-greedy clique, then a random subset of it."""
+    for row in numba.prange(seeds.shape[0]):
+        np.random.seed(seeds[row])
+        clique = greedy.grow(graph, np.random.permutation(graph.shape[0]))
+        np.random.shuffle(clique)
+        picked = np.sort(clique[:min(sizes[row], clique.size)])
+        out[row, :picked.size] = picked
 
 
 def candidates(graph: np.ndarray, sizes: np.ndarray, n: int, rng: np.random.Generator) -> np.ndarray:
@@ -13,6 +26,9 @@ def candidates(graph: np.ndarray, sizes: np.ndarray, n: int, rng: np.random.Gene
 
     Each is a random subset of a shuffled-greedy maximal clique (any subset of a clique is
     one), its size drawn from `sizes`; a clique smaller than the size drawn is taken whole.
+    Compiled, one seed per row (`paths.path_seeds`), since 2026-10-13 (owner, encargo 66 D12):
+    the same distribution as the Python loop it replaced, other draws for the same `rng`, so a
+    null stored before that date does not reproduce draw by draw.
 
     Args:
         graph: N x N bool admissible adjacency.
@@ -24,10 +40,8 @@ def candidates(graph: np.ndarray, sizes: np.ndarray, n: int, rng: np.random.Gene
         int32 [n, max K], member indices padded with -1.
     """
     out = np.full((n, int(sizes.max())), -1, dtype=np.int32)
-    for row, k in enumerate(rng.choice(sizes, size=n)):
-        clique = greedy.seeds(graph, 1, rng)[0]
-        picked = np.sort(rng.choice(clique, size=min(int(k), clique.size), replace=False))
-        out[row, :picked.size] = picked
+    _fill(np.ascontiguousarray(graph, dtype=np.bool_), rng.choice(sizes, size=n).astype(np.int64),
+          paths.path_seeds(n, rng), out)
     return out
 
 

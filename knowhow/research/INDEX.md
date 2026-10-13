@@ -13,6 +13,7 @@
 - `cscv-always-reads-oos2` — Why must a CSCV run on a real batch never be used as a regression test?
 - `cscv-chosen-point-slope-seesaw` — Why is the CSCV chosen-point IS/OOS slope negative even when PBO is low?
 - `cscv-daily-returns` — Is a daily-returns panel in the CSCV mostly zeros, and what does it rank?
+- `cscv-four-deviations-from-the-published-statistic` — Where does our CSCV differ from the published Bailey/Lopez de Prado statistic?
 - `cscv-null-probability-of-loss-above-limbo-cut` — Does the CSCV's LIMBO rule (loss above its null's p95) ever fire on correlated variants?
 - `cusum-blind-spot` — Does a CUSUM non-rejection show a strategy is stable?
 - `daily-block-seams` — How must a daily block bootstrap treat floating equity at each block seam?
@@ -57,6 +58,7 @@
 - `regime-atr-is-lagged-one-day` — Must I shift engines.regimes.regime.atr by a day before using it?
 - `research-lessons` — What lessons apply to stop-fill simulations, range restriction and p-values at large n?
 - `robustness-monte-carlo` — How much drawdown should an account be sized for versus the backtest, and how many sims?
+- `rungs-share-random-entries` — Do the four rungs of the monkey (timing, timing_holds, timing_sizing, free) draw the same random entries?
 - `selected-null-same-pool` — Why does the funded verdict's selected null find the same portfolio as the real pool?
 - `spp-decay-metrics-zero-edge-null` — Can the SPP's IS-vs-OOS1 decay metrics (median ratio, Vargha–Delaney A, W1/IQR) tell a zero-edge family from a real one?
 - `spp-noise-gate-centred-no-floor` — How does the SPP noise gate decide, and is there a minimum trade count?

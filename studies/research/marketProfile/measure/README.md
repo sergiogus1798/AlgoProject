@@ -16,7 +16,7 @@ that is a lot. `one.py` runs the same functions on the real series and on every 
 | `session.py` | The best hour, band and weekday, each chosen inside the draw too, and the break of a band's range | imported | series + calendar → statistic, trades |
 
 Every measure is written for longs. The short side is the same function on the mirrored series
-(`higher.mirror`, on top of `series.mirror`), so a long and a short can never drift apart.
+(`higher.mirror`), so a long and a short can never drift apart.
 
 A measure must be a rule a strategy could trade: one direction, fills at the next open, and **no
 clock** — `rules.py` reads nothing of the calendar but `least`, and `tests/test_marketprofile.py`

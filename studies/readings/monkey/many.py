@@ -62,10 +62,22 @@ def run(sample: dict[tuple[str, str], pd.DataFrame], frames: dict[str, pd.DataFr
         envelope.progress(100 * i // len(keys), f"{i}/{len(keys)} {key[0]} · {key[1]}")
     panel = pd.DataFrame([{"strategy": s, "market": m, **rows[s, m]} for s, m in keys])
     panel = panel.set_index("strategy")
-    label = (lambda s, m: s) if len(frames) == 1 else (lambda s, m: f"{s} · {m}")
+    return {"population": population(panel, len(frames), cfg, started), "panel": panel, "draws": kept}
+
+
+def population(panel: pd.DataFrame, markets: int, cfg: dict, started: float) -> dict:
+    """The export's result from its panel: what the full run and a merged `--only` run both write.
+
+    Args:
+        panel: nulls.csv's frame without the identity, note and seed columns, indexed by strategy.
+        markets: How many markets the export runs; more than one labels a bar `strategy · market`.
+        cfg: What inputs.config() returned.
+        started: `time.time()` when the work began.
+    """
+    label = (lambda s, m: s) if markets == 1 else (lambda s, m: f"{s} · {m}")
     head, alpha = cfg["nulls"]["headline"], cfg["verdict"]["alpha"]
     shown = panel[[c for c in panel.columns if c.startswith(f"p_{head}_")] + ["n"]]
-    population = envelope.envelope(
+    result = envelope.envelope(
         one.MODULE, None, None, cfg, started,
         [envelope.tab("panel", "Cada estrategia contra sus monos", [
             {"kind": "bars", "title": f"p en {c[len(f'p_{head}_'):]} — peldaño {head}",
@@ -78,4 +90,4 @@ def run(sample: dict[tuple[str, str], pd.DataFrame], frames: dict[str, pd.DataFr
             note=f"{cfg['nulls']['draws']:,} monos por estrategia, mercado y peldaño, "
                  f"semilla {cfg['nulls']['seed']}. Sin veredicto: cuántas baten a sus monos "
                  f"contra cuántas daría el azar lo dice monkeyExcess, que lee este panel.")])
-    return {"population": population, "panel": panel, "draws": kept}
+    return result

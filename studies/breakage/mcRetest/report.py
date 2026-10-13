@@ -62,7 +62,7 @@ def write_one(out: Path, inputs: dict, cfg: dict, strategy: str) -> Path:
     if inputs["trades"] is not None:
         inputs = {**inputs, "trades": inputs["trades"][inputs["trades"]["strategy"] == name]}
     got = one.run(name, inputs, cfg)
-    draws.merge(out, got.pop("draws", []))
+    draws.merge(out, got.pop("draws", []), defer=True)
     return output.member(out, got, f"Monte Carlo Retest — {name}", LEDE)
 
 

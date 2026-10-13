@@ -13,7 +13,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline.autopilot import criteria, judge, run
+from pipeline.autopilot import criteria, judge, run, selection
 from sqx.projects import live
 from tests.test_autopilot_tail import patched
 
@@ -135,4 +135,4 @@ def test_largest_keeps_the_top_groups() -> None:
     """Five groups: the 4 largest keep their medoid; the size tie goes to the first group name."""
     card = pd.DataFrame({"strategy": list("abcde"), "medoide": True,
                          "redundancia_value": [3, 2, 2, 2, 2], "redundancia_grupo": list("abcde")})
-    assert list(judge.largest(card, 4)["strategy"]) == list("abcd")
+    assert list(selection.largest(card, 4)["strategy"]) == list("abcd")

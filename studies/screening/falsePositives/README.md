@@ -23,7 +23,7 @@ config.yaml ─▶ inputs ─▶ model ─▶ chain ─▶ many ─▶ report
 | `tooltips.py` | One Spanish sentence per knob, for the window's configuration drawer | imported | — |
 | `inputs.py` | The knobs; the real population's harvest (`harvest=` an explicit folder, else the newest) staged as the gate's levels read it; the gate's config with the cascade off and its three seeds set to the run's root; the null engine's config; the criteria file | imported | project + databank + feed (+ folder) → harvest, rules |
 | `model.py` | **Modelling**: a monkey as a trade list — `engines.nulls.windowed` (the hours null, 2026-10-12: entry at the donor's own clock hours) draws entries, holds and sizes under a rung and `barrier.pnl` prices them at the donor's measured point value and cost; `SIZING`, the two ways to size it (`atr`: the ATR of the bar before the entry); `planted`, the edge added to level 1a's per-trade table; the daily curve from closed trades | imported | donor trades + bars → monkey trades, curve; per-trade table + edge → planted table |
-| `chain.py` | **Execution and judging**: the monkeys dressed as a harvest; `facts8`, every level of `gate.levels.LEVELS` over everybody plus the measured columns, the edge planted right after level 1a; and `walk`, a population through every step of criteria.yaml, per rule alone and in order | imported | trades → facts → funnel, per-rule counts |
+| `chain.py` | **Execution and judging**: the monkeys dressed as a harvest; `facts_edges` (`facts8` is one pass of it), every level of `gate.levels.LEVELS` over everybody plus the measured columns, the edge planted right after level 1a. The null pass leaves for the planted ones what the edge cannot move — levels 0 and 1a, level 2's moved excess and unplanted table, `q_p`, and level 3c's monkeys, evaluated once at each edge's `mean(pnl + add)` — and nothing is recorded (`keep_draws` False) nor drawn beyond the judged rung (`z_mono_<other rung>` is empty; encargo 66 §2); and `walk`, a population through every step of criteria.yaml, per rule alone and in order | imported | trades → facts → funnel, per-rule counts |
 | `many.py` | The control over one harvest: the monkeys of the donors drawn, the chain once per edge on the same monkeys and once on the real population, the funnel and the rule tables with `nivel` in front | imported | harvest → result |
 | `report.py` | **The command**: prints the funnel and each rule's Pass and Fail share per population, writes `falsePositives.json/.html/.md`, `funnel.csv`, `reglas.csv`, `hechos_monos.parquet` and the manifest under `reports/<P>/<D>/<day>/falsePositives/`; `--ledger` writes one row per judged step, the null population's | `python3 -m studies.screening.falsePositives.report --project P --databank Results --feed USA500_M1 [--harvest <folder>] [--seed N] [--criteria file.yaml] [--ledger] [--set population.per_level=500]` | harvest → reports |
 
@@ -67,6 +67,7 @@ follow, and each moves how a rate is read:
   whole. Level 2 reprices the moved trade from the bars, so `chain._delayed` adds the plant back
   to the moved mean and takes `retraso_t_delta` from the table before the plant (exact unless a
   variant drops trades shorter than its shift).
+- **The four rungs of level 3c share their random entries** (N12 B, 2026-10-13; `knowhow/research/rungs-share-random-entries.md`): one stream per strategy, a rung differs by its treatment alone; results stored before it are not comparable draw for draw.
 - **The same monkeys make every population**, and the gate's three seeds are the run's root:
   two populations differ in the plant and in nothing else, draw for draw.
 
@@ -125,3 +126,5 @@ ceiling, not a measurement**.
 The full-scale run and its lines (encargo 44, K-m). Step 10 for the monkey. The exact delay of a
 planted trade that a variant drops (`chain._delayed`). The dev draw of criteria.yaml
 (`dev.sample`) is ignored on purpose — it is a development device, not a criterion.
+
+Two runs of this study with the same seed and a different `monkeys.rung` share their uniforms (the rung is not in the stream key, `simulate.TAG`): a comparison between them is paired, not independent, so an SE computed as if independent is overstated (conservative).

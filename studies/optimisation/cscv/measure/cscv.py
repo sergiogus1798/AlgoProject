@@ -3,6 +3,7 @@
 import itertools
 
 import numpy as np
+from numba import njit
 
 # A half whose n·Σx² − (Σx)² is under this share of n·Σx² never moved: its Sharpe reads 0.
 FLAT = 1e-12
@@ -17,7 +18,13 @@ def partitions(blocks: int) -> np.ndarray:
     Returns:
         Halves x blocks. Each row and its complement are two partitions (in and out swapped),
         so the C(16,8) = 12,870 partitions are these rows read both ways.
+
+    Raises:
+        ValueError: `blocks` is odd, which is not the published statistic (halves must be equal).
     """
+    if blocks % 2 or blocks < 2:
+        raise ValueError(f"CSCV needs an even number of blocks (at least 2), got {blocks}: "
+                         "the published statistic splits them into two equal halves")
     rest = np.array(list(itertools.combinations(range(1, blocks), blocks // 2 - 1)))
     member = np.zeros((len(rest), blocks))
     member[:, 0] = 1.0
@@ -83,6 +90,45 @@ def edges(got: dict, reach: float) -> tuple[float, float]:
     return float(whole.min() - wide), float(whole.max() + wide)
 
 
+@njit(cache=True, nogil=True)
+def _rows(train: np.ndarray, test: np.ndarray, track: int, lo: float, per_bin: float, to: int,
+          pick: np.ndarray, sr_in: np.ndarray, sr_out: np.ndarray, omega: np.ndarray,
+          own: np.ndarray, own_omega: np.ndarray, hist: np.ndarray) -> None:
+    """One pass per partition: the pick in `train`, its rank in `test`, and `test`'s histogram.
+
+    Args:
+        train, test: Partitions x variants, the Sharpes that choose and the ones that judge.
+        track: The column followed, or -1 for none (`own` and `own_omega` are then not written).
+        lo, per_bin: Left edge of the histogram and bins per unit of Sharpe.
+        to: Where this chunk starts in the per-partition outputs.
+        pick, sr_in, sr_out, omega, own, own_omega, hist: Written in place, as run() returns them.
+
+    A NaN wins the choice (the first one, as `argmax`) and, like anything beyond int64, counts in
+    bin 0: what the cast to int64 gave on x86 before this kernel.
+    """
+    width, last = train.shape[1], hist.size - 1
+    for i in range(train.shape[0]):
+        best, at = train[i, 0], 0
+        for j in range(1, width):
+            v = train[i, j]
+            if v > best or (v != v and best == best):
+                best, at = v, j
+        chosen, mine = test[i, at], test[i, max(track, 0)]
+        below = under = 0
+        for j in range(width):
+            v = test[i, j]
+            below += v < chosen
+            under += v < mine
+            x, cell = (v - lo) * per_bin, 0
+            if x >= 0.0:
+                cell = np.int64(x) if x <= last else last if x < 9.223372036854775807e18 else 0
+            hist[cell] += 1
+        pick[to + i], sr_in[to + i], sr_out[to + i] = at, best, chosen
+        omega[to + i] = (below + 1) / (width + 1)
+        if track >= 0:
+            own[to + i], own_omega[to + i] = mine, (under + 1) / (width + 1)
+
+
 def run(got: dict, member: np.ndarray, chunk: int, bins: int, reach: float,
         track: int | None = None) -> dict:
     """Choose by Sharpe in one half and score in the other, for every partition.
@@ -115,24 +161,15 @@ def run(got: dict, member: np.ndarray, chunk: int, bins: int, reach: float,
            "hist": np.zeros(bins, np.int64), "lo": lo, "hi": hi}
     if track is not None:
         out |= {"track_out": np.empty(2 * halves), "track_omega": np.empty(2 * halves)}
+    own, own_omega = out.get("track_out", out["omega"]), out.get("track_omega", out["omega"])
     for at in range(0, halves, chunk):
         take = member[at:at + chunk]
-        rows = np.arange(len(take))
         size = (take @ n)[:, None]
         a1, a2 = take @ s1, take @ s2
         b1, b2 = all1 - a1, all2 - a2
         first, second = sharpe(size, a1, a2, safe), sharpe(all_n - size, b1, b2, safe)
         for side, (train, test) in enumerate(((first, second), (second, first))):
-            to = slice(at + side * halves, at + side * halves + len(take))
-            pick = train.argmax(axis=1)
-            chosen = test[rows, pick]
-            out["pick"][to], out["sr_in"][to], out["sr_out"][to] = pick, train[rows, pick], chosen
-            out["omega"][to] = (np.count_nonzero(test < chosen[:, None], axis=1) + 1) / (width + 1)
-            if track is not None:
-                own = test[:, track]
-                out["track_out"][to] = own
-                out["track_omega"][to] = (np.count_nonzero(test < own[:, None], axis=1) + 1) / (width + 1)
-            cell = ((test - lo) * per_bin).astype(np.int64)
-            np.clip(cell, 0, bins - 1, out=cell)
-            out["hist"] += np.bincount(cell.ravel(), minlength=bins)
+            _rows(train, test, -1 if track is None else track, lo, per_bin, at + side * halves,
+                  out["pick"], out["sr_in"], out["sr_out"], out["omega"], own, own_omega,
+                  out["hist"])
     return out

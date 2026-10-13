@@ -21,7 +21,10 @@ live deeper add the root to `sys.path` in their first lines.
 | `wftrades.py` | Cut a `data=all` export into one block per matrix cell and tag every trade with its walk-forward step, checked against the counts SQX stored | CSV → frames |
 | `trades.py` | Read an `orderstocsv` export: times parsed, unfilled orders dropped, one frame per market, cost and MAE/MFE recovered | CSV → frames |
 | `bars.py` | Read an OHLC export into a frame indexed by bar open time | CSV → frame |
-| `tickfile.py` | Read SQX's own history files without SQX: a tick feed (`*_TICK.dat`, delta-coded ask/bid) folded minute by minute into spread and bid — 650 M gold ticks in 25 s, never held — and an M1 feed (`*_M1.dat`) into bars, for feeds the bar library lacks | `.dat` → frame |
+| `bankfile.py` | Reads an `.abk` (one databank written from SQX's memory by the AlgoBank snippet): the format spec, `load` with its checks, and the trades as a frame | `.abk` → dict, frame |
+| `bankframes.py` | A loaded `.abk` as frames: each strategy's XML, the stored statistics of every result and sample type, and the daily equity | dict → frame |
+| `tickparallel.py` | `tickfile.read` by jobs of 4,096 blocks at once: a pass over the record headers finds the blocks (each opens with an absolute record), a job reads on to the end of its last minute and the next skips it, so output is bit-identical. Falls back to the serial decode if a block is not absolute | `.dat` → minute table |
+| `tickfile.py` | Read SQX's own history files without SQX: a tick feed (`*_TICK.dat`, delta-coded ask/bid) folded minute by minute into spread and bid — 650 M gold ticks in 4,5 s, never held — and an M1 feed (`*_M1.dat`) into bars, for feeds the bar library lacks | `.dat` → frame |
 | `barstore.py` | The bar library: M1 is the only bar data stored, every other timeframe is resampled from it on first use and cached under the M1's fingerprint | feed, timeframe → frame |
 | `tradestore.py` | The trade library: one typed Parquet per export, carrying only the columns that cannot be derived back, and the guard that decides when `Ticket` still has to be kept | CSVs → Parquet → frames |
 | `tradepack.py` | Packs one export's CSVs into that Parquet: parsed across processes, spilled per strategy and written a strategy at a time, so 500 × 9 markets is never one frame | CSVs → Parquet |
@@ -33,6 +36,7 @@ live deeper add the root to `sys.path` in their first lines.
 | `exportdrv.py` | The exports SQX offers through the worker: trades, symbol list, bars (databank metrics are read off the `.sqx`, `sqxview.py`) | request → files |
 | `manifest.py` | Write and read the `manifest.json` every export must carry; `fresh_dir()` — a run folder made exclusively, `_2`, `_3`… when the name is taken, so two runs of one minute never share one | facts → JSON |
 | `assetdata.py` | What `assets/` declares: costs and windows resolved against the shared policy | symbol → dict |
+| `assetmarkets.py` | The retest universe `_markets.yaml` declares (`markets`, `expected_sign`) and the cross-asset notes in `assets/special/` | symbol → dict |
 | `buildfilters.py` | The Build's acceptance filters for one asset and timeframe, resolved from `assets/_study.yaml` (defaults ← class ← symbol; trade bounds = trades per year × the build segment's years); refuses on any missing value | asset dict + timeframe + mode → the conditions to write |
 | `assetranges.py` | The MC Retest spread and slippage ranges of one asset in SQX's points: a bound the asset declares as written, a null one as `_policy.yaml`'s default multiple of the cost the backtest runs at, with the source said | asset dict → {spread, slippage: {min, max, source}} |
 | `assetoverride.py` | Temporary, one-run overrides of the build doctrine `assetdata.doctrine()` reads — a run-wide precision or MC Retest count for one project, by an env var, never a `_build.yaml` edit | env var → doctrine tree |

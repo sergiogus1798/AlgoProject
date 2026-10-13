@@ -39,6 +39,8 @@ def table(daily_build: pd.DataFrame, monthly_build: pd.DataFrame, cfg: dict) -> 
         stress=daily_build.index.isin(stress.stress_days(daily_build, cfg["pairs"]["stress_quantile"])),
         monthly={c: monthly_build[c].to_numpy(dtype=float) for c in identities},
         daily={c: daily_build[c].to_numpy(dtype=float) for c in identities})
+    w = cfg["pairs"]["rolling_months"]
+    _STATE["ranks"] = {c: rolling.ranked_windows(a, w) for c, a in _STATE["monthly"].items()}
     # Workers hold only a few MB (the matrices are shared by fork), so every core is used.
     starts = range(0, len(pairs), CHUNK_PAIRS)
     frames = [got for _, got in fanout.run(_chunk, {k: 1 for k in starts}, fanout.CORES)]
@@ -52,16 +54,17 @@ def _chunk(start: int) -> pd.DataFrame:
     m, d, pcfg = _STATE["monthly"], _STATE["daily"], _STATE["pcfg"]
     rows = []
     for i, j in _STATE["pairs"][start:start + CHUNK_PAIRS]:
-        rows.extend(_pair_rows(i, j, m[i], m[j], d[i], d[j], _STATE["stress"], pcfg))
+        rows.extend(_pair_rows(i, j, m[i], m[j], d[i], d[j], _STATE["stress"], pcfg, _STATE["ranks"]))
     return pd.DataFrame(rows, columns=COLUMNS)
 
 
 def _pair_rows(i: str, j: str, am: np.ndarray, bm: np.ndarray, ad: np.ndarray, bd: np.ndarray,
-               stress_mask: np.ndarray, pcfg: dict) -> list[dict]:
+               stress_mask: np.ndarray, pcfg: dict, ranks: dict | None = None) -> list[dict]:
     """Every measure row for one pair, monthly arrays `am`/`bm` and daily arrays `ad`/`bd`."""
     n_overlap = measures.overlap(am, bm)
     roll_pearson = rolling.rolling_max(am, bm, pcfg["rolling_months"], pcfg["recent_months"], "pearson")
-    roll_spearman = rolling.rolling_max(am, bm, pcfg["rolling_months"], pcfg["recent_months"], "spearman")
+    rk = (ranks[i], ranks[j]) if ranks and ranks[i] is not None and ranks[j] is not None else None
+    roll_spearman = rolling.rolling_max(am, bm, pcfg["rolling_months"], pcfg["recent_months"], "spearman", rk)
     values = {
         "pearson_monthly": measures.pearson(am, bm, pcfg),
         "pearson_daily": measures.pearson(ad, bd, pcfg),

@@ -3,7 +3,7 @@
 # one (--set pairs.pearson=0.45) is relaxed, and says so on its first line.
 
 compute:                        # owner 2026-09-30: the portfolio engine gets the whole machine
-  max_ram_gb: 80                # every parallel stage sizes its workers to stay under this
+  max_ram_gb: 80                # the study's own budget, valid only with SQX not running (owner, 2026-10-13, D7); every parallel stage sizes its workers to stay under this
   worker_ram_gb: 1.5            # 🔬 1.15 GB per universe worker beyond the shared M1 bars (48 workers: 56 GB, 15 s)
 
 equity:

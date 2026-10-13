@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from ui.daemon import jobs  # noqa: E402
 from ui.daemon.loader import api, find, state  # noqa: E402
+from ui.daemon.loader import fingerprint as printed  # noqa: E402
 
 # A build databank with its oos1 retest, and a cross-market one, both on the custodian. Since
 # F13 (2026-09-28) the fixture is the USDJPY Donchian project; when an install no longer holds
@@ -166,18 +167,18 @@ def test_resave_is_not_a_change() -> None:
         save(sqx, b"<other rules/>", (2026, 9, 29, 11, 0, 0))
         os.utime(sqx, (time.time() + 10,) * 2)
         assert state.age(done, [sqx]) == "stale", "new content is"
-        many = [bank / f"Strategy 3.{i}.sqx" for i in range(state.POOL_FROM)]
+        many = [bank / f"Strategy 3.{i}.sqx" for i in range(printed.POOL_FROM)]
         for i, f in enumerate(many):
             save(f, f"<rules n='{i}'/>".encode(), (2026, 10, 4, 12, 0, 0))
         pooled = state.fingerprint(many)
-        state.SEEN.clear()
+        printed.SEEN.clear()
         assert pooled == state.fingerprint(many[:1] + many[1:]), "the same from the cache"
-        state.SEEN.clear()
-        state.POOL_FROM, kept = len(many) + 1, state.POOL_FROM
+        printed.SEEN.clear()
+        printed.POOL_FROM, kept = len(many) + 1, printed.POOL_FROM
         try:
             assert pooled == state.fingerprint(many), "read on every core or here: one answer"
         finally:
-            state.POOL_FROM = kept
+            printed.POOL_FROM = kept
 
 
 if __name__ == "__main__":

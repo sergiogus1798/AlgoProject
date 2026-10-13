@@ -4,13 +4,12 @@ kw: clock.reclock; golden drift; point value alone clock alone; archived strateg
 tag: 🔬  date: 2026-10-04  see: export/feed-clock-timezones, export/mae-mfe-from-m1, sqx-format/equity-reconstruction-usdjpy-gap
 ---
 # A strategy archived before 2026-10-01 no longer matches the bars on disk: trades in the old feed clock, bars in EETUS
-`inputs.source.load` reads a member's clock **live** (`core.symbols.current(feed)`): since 2026-10-01 `USDJPY_DukasM1_the5ers`
-resolves to `USDJPY_M1`, stamped in EETUS, while the archived trades are still in Asia/Jerusalem — one hour apart in the weeks
-Israel and the US change time apart, so the rebuild misses there and the universe **refuses** the member (licence < 99 %).
-🔬 The clock is the WHOLE cause: `equity.clock.reclock(bars, "EETUS", "Asia/Jerusalem")` — same instants, old labels — gives
-back 100 % of the days. The point value plays no part while it is measured off the trades. Production still reads clock and
-commission live (`inputs/source.py`, `equity/universe.py`): freezing them at archive time, or re-harvesting, is the owner's
-decision — the archive stores the old feed NAME, not its zone.
+Since 2026-10-01 `USDJPY_DukasM1_the5ers` resolves to `USDJPY_M1`, stamped in EETUS, while trades archived before are in
+Asia/Jerusalem — one hour apart in the weeks Israel and the US change time apart, so the rebuild misses and the universe refuses
+the member (licence < 99 %). 🔬 The clock is the WHOLE cause: `equity.clock.reclock(bars, "EETUS", "Asia/Jerusalem")` gives back 100 %.
+Since 2026-10-13 (owner) clock and commission are FROZEN in the manifest (`manifest.frozen`), `inputs/source.py` reads them
+(`archive_read.frozen`, raises without them, no live fallback). Older members: `python3 -m portfolio.common.construct.inputs.backfill`
+fills what the member's own `asset/card.json` proves (clock only for projects created on/after 2026-10-01) and lists the rest.
 
 ## Evidence
 - 🔬 2026-10-04, golden `4d679e…/2026-09-28T0919`, daily low vs SQX within 1 $ (`AlgoData/scratch/golden-drift-2026-10-04/d1_explain.py`):

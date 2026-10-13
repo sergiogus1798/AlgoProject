@@ -2,7 +2,7 @@
 """Delete the strategies a verdict rejected from a databank, with the install stopped, keeping a record."""
 
 import argparse
-import shutil
+import json
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -11,6 +11,8 @@ import pandas as pd
 
 from core import manifest, sqxfile, worker
 from core.paths import MASTER, WORKERS, databank_dir, metrics_export, report_dir
+from core.study.identity import hashed
+from sqx.curate import aftercut
 from sqx.projects import live
 
 DROP = "DESCARTAR"
@@ -55,8 +57,8 @@ def mismatched(source: Path, names: dict[str, str]) -> list[str]:
         source: Databank directory.
         names: Name to expected identity; "" skips the check for that name. Only reads.
     """
-    return [n for n, i in names.items()
-            if i and (source / f"{n}.sqx").exists() and sqxfile.identity(source / f"{n}.sqx") != i]
+    known = hashed(source / f"{n}.sqx" for n, i in names.items() if i and (source / f"{n}.sqx").exists())
+    return [n for n, i in names.items() if i and known.get(source / f"{n}.sqx", i) != i]
 
 
 def reasons(verdict: Path) -> dict[str, str]:
@@ -95,8 +97,9 @@ def record(source: Path, names: dict[str, str], why: dict[str, str], out: Path, 
     workflow» copies them to `AlgoData/projects/discards/` before calling (owner, Q7, 2026-09-27).
     """
     files = sorted(source.glob("*.sqx"))
+    known = hashed(files)       # the files `mismatched` hashed are read from the cache, not again
     pd.DataFrame({"strategy": [f.stem for f in files],
-                  "identity": [sqxfile.identity(f) for f in files],
+                  "identity": [known[f] for f in files],
                   "bytes": [f.stat().st_size for f in files],
                   "verdict": [DROP if f.stem in names else "MANTENER" for f in files],
                   "reason": [why.get(f.stem, "") for f in files]}
@@ -110,31 +113,6 @@ def record(source: Path, names: dict[str, str], why: dict[str, str], out: Path, 
         print(f"  metrics of the dropped kept in {out / f'rejected-{stamp}.csv'}")
     else:
         print(f"  no metrics export at {csv}: only names and identities are kept")
-
-
-def remove(source: Path, into: Path | None, names: list[str]) -> tuple[int, list[str]]:
-    """Take the named strategies' files out of a databank directory.
-
-    Args:
-        source: Databank directory holding them.
-        into: Databank directory to move them to, created when missing; None deletes them.
-        names: Strategy names, without the .sqx suffix.
-
-    Returns:
-        How many went, and the names with no file. Files are the only handle: over the HTTP
-        API a name is cut at its first space and a one-shot sqcli never loads the records.
-    """
-    if into:
-        into.mkdir(parents=True, exist_ok=True)
-    gone, absent = 0, []
-    for name in names:
-        f = source / f"{name}.sqx"
-        if not f.exists():
-            absent.append(name)
-            continue
-        shutil.move(str(f), str(into / f.name)) if into else f.unlink()
-        gone += 1
-    return gone, absent
 
 
 EMPTY = ("{source} holds no .sqx at all: a databank on `Auto-sync never` keeps its records in "
@@ -152,7 +130,7 @@ def refuse_mismatch(source: Path, names: dict[str, str]) -> None:
 
 
 def apply(project: str, databank: str, verdict_csv: Path, role: str,
-          into: str | None = None) -> dict:
+          into: str | None = None, trades_fresh: bool = False) -> dict:
     """Cut a databank by a verdict: check, record, then delete (or move) the rejected files.
 
     Args:
@@ -161,6 +139,8 @@ def apply(project: str, databank: str, verdict_csv: Path, role: str,
         verdict_csv: The verdict, as `rejected` reads it.
         role: Which install holds the project, "master" or a headless role; never defaulted.
         into: A databank of the same project to move the rejected into; None deletes them.
+        trades_fresh: The caller saw the databank's trade export fresh before the cut: the cut
+            then rewrites it as the subset it is (`aftercut.refilter`) instead of leaving it stale.
 
     Returns:
         `install`, `before`, `after`, `removed` and `out` (the folder of the records).
@@ -172,6 +152,7 @@ def apply(project: str, databank: str, verdict_csv: Path, role: str,
     on_disk = sorted(f.stem for f in source.glob("*.sqx"))
     if not on_disk:
         sys.exit(EMPTY.format(source=source))
+    known = hashed(source / f"{n}.sqx" for n in on_disk)      # every file once: here, then in `record`
     refuse_mismatch(source, names)
     on_live = role != "master" and live.mine(role)
     if is_up(role) and not (on_live and not into):
@@ -186,7 +167,7 @@ def apply(project: str, databank: str, verdict_csv: Path, role: str,
     target = databank_dir(project, into, install) if into else None
     gone, absent = ((live.cut(role, project, databank, list(names)),   # memory, then sync
                      sorted(set(names) - set(on_disk))) if on_live
-                    else remove(source, target, list(names)))
+                    else aftercut.remove(source, target, list(names)))
     after = len(list(source.glob("*.sqx")))
     print(f"{databank}: {len(on_disk)} → {after}   "
           + (f"{target}: +{gone}" if target else f"deleted {gone}"))
@@ -194,6 +175,15 @@ def apply(project: str, databank: str, verdict_csv: Path, role: str,
         sys.exit(f"{len(absent)} had no file and {len(on_disk) - after} left against {gone} "
                  f"gone. Compare the directory with {out / f'before-{stamp}.csv'} before "
                  "running anything else.")
+    if trades_fresh and not into:
+        try:
+            done = aftercut.refilter(project, databank,
+                                     {n: known[source / f"{n}.sqx"] for n in on_disk},
+                                     {f.stem for f in source.glob("*.sqx")})
+        except Exception as err:    # an optimisation: stale is the safe answer, the cut stands
+            done = ""
+            print(f"  refilter failed ({type(err).__name__}: {err})")
+        print(f"  trade export cut by name: {done}" if done else "  trade export left stale")
     manifest.write(out,
                    {"install": install.name, "project": project, "databank": databank,
                     "into": str(target), "verdict": str(verdict_csv), "stamp": stamp},
@@ -207,12 +197,11 @@ def apply(project: str, databank: str, verdict_csv: Path, role: str,
 def main() -> None:
     """Print what would move; move it only with --apply and the install stopped."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--project", required=True)
-    ap.add_argument("--databank", required=True)
+    for flag in ("--project", "--databank"):
+        ap.add_argument(flag, required=True)
     ap.add_argument("--verdict", required=True, type=Path, help="path of a verdict.csv")
-    ap.add_argument("--into", help="databank of the same project to move the rejected into "
-                                   "instead of deleting them. A databank inside the project is "
-                                   "loaded into memory on the next start, so this costs RAM")
+    ap.add_argument("--into", help="databank of the same project to move the rejected into instead "
+                                   "of deleting them; it is loaded on the next start, so it costs RAM")
     # Required since 2026-09-28 (F7): its old default, the master, made a forgotten flag cut his.
     ap.add_argument("--role", required=True, choices=["master", *sorted(WORKERS)])
     ap.add_argument("--apply", action="store_true", help="without it nothing is touched")
@@ -222,8 +211,8 @@ def main() -> None:
     source = databank_dir(a.project, a.databank, install)
     names = rejected(a.verdict)
     on_disk = sorted(f.stem for f in source.glob("*.sqx"))
-    print(f"{install.name} · {a.project}/{a.databank}: {len(on_disk)} strategies on disk")
-    print(f"  the verdict drops {len(names)}, keeping {len(on_disk) - len(names)}")
+    print(f"{install.name} · {a.project}/{a.databank}: {len(on_disk)} strategies on disk\n"
+          f"  the verdict drops {len(names)}, keeping {len(on_disk) - len(names)}")
     if not on_disk:
         sys.exit(EMPTY.format(source=source))
     held = set(on_disk)

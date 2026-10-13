@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from core import assetdata, paths
+from core import assetmarkets, fanout, paths
 from core.study import draws
 from studies.research.memory import sources
 from studies.transfer.crossmarket import load
@@ -114,6 +114,30 @@ def _clean(x: object) -> object:
     return x.item() if isinstance(x, np.generic) else x
 
 
+_SHARED: dict = {}     # set by `run` before the fork, read by `_strategy` in the workers
+
+
+def _strategy(s: str) -> tuple[dict, list[pd.DataFrame], object, list]:
+    """One strategy's verdict row, market rows, d_y and draws rows, in a worker that inherited `run`'s inputs."""
+    g = _SHARED
+    t, inputs, feeds, found, by, empty = g["t"], g["inputs"], g["feeds"], g["found"], g["by"], g["empty"]
+    mine = {f: by.get((s, f), empty).reset_index(drop=True) for f in feeds}
+    one = tensor.build(mine, g["fixed"], g["cal"], g["shifts"], t["shift_step"], t["judge_on"])
+    got = rules.evaluate(one, g["cal"], t, _e_principal(by.get((s, g["home"][0]), empty).reset_index(drop=True),
+                                                       g["home"], g["cal"], g["shifts"], t), g["role"])
+    kept = records.rows(one, rules.windows(g["cal"]), got, s, inputs["identity"].get(s) or "", t["seed"])
+    valid, listed = len(feeds), len(found)
+    verdict = {"strategy": s, "markets": listed, "markets_valid": valid,
+               "invalid_fraction": 1 - valid / listed, "fixed_distance": g["distance"][s],
+               "freq_off": g["off"][s], "freq_off_fraction": g["off"][s] / valid,
+               "net_t_pooled": _net_t(mine), **got["verdict"]}
+    rows = [got["markets"].assign(strategy=s, z_freq=g["z_freq"].loc[s].to_numpy(), valid=True,
+                                  invalid_reason=""),
+            pd.DataFrame([{"strategy": s, "market": r["market"], "valid": False,
+                           "invalid_reason": r["invalid_reason"]} for r in found if not r["valid"]])]
+    return verdict, rows, got["d_y"], kept
+
+
 def run(project: str, databank: str, asset: str, export: str, out: Path,
         overrides: list[str] | None = None) -> dict:
     """Judge an export's strategies on the other markets and write the three files.
@@ -152,24 +176,19 @@ def run(project: str, databank: str, asset: str, export: str, out: Path,
     z_freq, off, counts = _frequency(inputs, strategies, feeds, cuts, t, by)
     distance = units.fixed(project, strategies, inputs["identity"])
     home = _home(inputs, params, cal, t)
-    role = rules.roles(feeds, markets.classify(asset), sources.family_of(project), assetdata.expected_sign())
+    role = rules.roles(feeds, markets.classify(asset), sources.family_of(project), assetmarkets.expected_sign())
+    _SHARED.update(inputs=inputs, feeds=feeds, found=found, by=by, empty=empty, fixed=fixed, cal=cal,
+                   shifts=shifts, t=t, params=params, home=home, role=role, distance=distance,
+                   z_freq=z_freq, off=off)
+    # One strategy per task: the work is the tensor, and nothing is drawn but `shifts`, made above.
+    done = dict(fanout.run(_strategy, {s: len(inputs["trades"]) for s in strategies}, fanout.CORES))
     verdict, rows, series, kept = [], [], {}, []
     for s in strategies:
-        mine = {f: by.get((s, f), empty).reset_index(drop=True) for f in feeds}
-        one = tensor.build(mine, fixed, cal, shifts, t["shift_step"], t["judge_on"])
-        got = rules.evaluate(one, cal, t, _e_principal(by.get((s, home[0]), empty).reset_index(drop=True), home, cal, shifts, t), role)
-        kept += records.rows(one, rules.windows(cal), got, s, inputs["identity"].get(s) or "", t["seed"])
-        valid, listed = len(feeds), len(found)
-        verdict.append({"strategy": s, "markets": listed, "markets_valid": valid,
-                        "invalid_fraction": 1 - valid / listed, "fixed_distance": distance[s],
-                        "freq_off": off[s], "freq_off_fraction": off[s] / valid,
-                        "net_t_pooled": _net_t(mine), **got["verdict"]})
-        rows.append(got["markets"].assign(strategy=s, z_freq=z_freq.loc[s].to_numpy(), valid=True,
-                                          invalid_reason=""))
-        rows.append(pd.DataFrame([{"strategy": s, "market": r["market"], "valid": False,
-                                   "invalid_reason": r["invalid_reason"]}
-                                  for r in found if not r["valid"]]))
-        series[s] = got["d_y"]
+        v, r, d_y, k = done[s]
+        verdict.append(v)
+        rows += r
+        series[s] = d_y
+        kept += k
     out.mkdir(parents=True, exist_ok=True)
     verdict, rows = pd.DataFrame(verdict)[VERDICT], pd.concat(rows, ignore_index=True)[MARKETS]
     verdict.to_csv(out / "verdict.csv", index=False)

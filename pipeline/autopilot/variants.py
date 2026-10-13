@@ -1,5 +1,6 @@
 """Step 16.5 for the autopilot: wire the three WFC legs, then make → execute → equity → collect → every variant's trades → clear per mother, then the mothers' trades and each batch's parameter map."""
 
+import hashlib
 import json
 import shutil
 import subprocess
@@ -8,11 +9,13 @@ import tempfile
 import time
 from pathlib import Path
 
+from core import assetdata, sqxfile
 from core.datapaths import tmp_dir, variants_dir
 from core.paths import ROOT, project_dir, report_dir, worker_dir
 from core.phases import phase
 from pipeline.autopilot import call
 from sqx.projects import live, registry
+from sqx.variants import inputs
 from sqx.variants import legs as legmod
 
 
@@ -23,6 +26,24 @@ def _py(*args: str) -> None:
                              text=True)
     if got.returncode:
         raise SystemExit(f"{args[0]}: {(got.stderr or got.stdout).strip()[-1500:]}")
+
+
+def _marker(work: Path) -> Path:
+    """The file that says a mother's whole step finished, holding the hash of the brief it ran on."""
+    return work / ".done"
+
+
+def _stamp(project: str, brief: Path) -> str:
+    """Everything a mother's batch depends on: the brief, the factory's settings, the legs, the
+    asset's cost card and the mother's own `.sqx`. Change any and the step is redone."""
+    row = next((r for r in reversed(registry.rows()) if r["name"] == project), None)
+    symbol = row["symbol"] if row else None
+    design = json.loads(brief.read_text(encoding="utf-8"))
+    parent = inputs.source(design)
+    mother = sqxfile.identity(parent) if parent.is_file() else None
+    seen = json.dumps([inputs.load(), legmod.legs(symbol), assetdata.load(symbol) if symbol else None, mother],
+                      sort_keys=True, default=str)
+    return hashlib.sha256(brief.read_bytes() + seen.encode()).hexdigest()
 
 
 def briefs(project: str) -> list[Path]:
@@ -64,12 +85,16 @@ def run(project: str, role: str, only: set[str] | None = None) -> str:
     # trade count on the main market, and the 11 others were 81 s of its 86 (🔬 2026-10-05,
     # same counts on 300 of 300). The restart route is left as it was: the pilot inside `make`.
     apart = live.mine(role)
-    wire(project, role, markets=not apart)
     todo = []
     for brief in briefs(project):
         strategy = json.loads(brief.read_text(encoding="utf-8"))["strategy"]
         if only is None or strategy in only:
             todo.append((strategy, variants_dir(project, strategy), ["--brief", str(brief)]))
+    stamp = {s: _stamp(project, Path(b[1])) for s, _, b in todo}
+    finished = [t for t in todo if _marker(t[1]).is_file() and _marker(t[1]).read_text() == stamp[t[0]]]
+    todo = [t for t in todo if t not in finished]      # same inputs, already finished: not redone
+    if todo or not apart:       # live with every mother finished: the project is never touched
+        wire(project, role, markets=not apart)
 
     def make(work: Path, brief: list[str]) -> float:
         """One mother's design, pilot and batch of `.sqx`; its seconds."""
@@ -78,10 +103,12 @@ def run(project: str, role: str, only: set[str] | None = None) -> str:
                                str(work)))
         return time.monotonic() - began
 
+    for _, work, _ in todo:
+        _marker(work).unlink(missing_ok=True)      # a cut run must not keep an older brief's marker
     spent = {strategy: make(work, brief) for strategy, work, brief in todo} if apart else {}
     if apart and todo:
         wire(project, role)
-    done, works = [], []
+    done, works = [f"{t[0]} ya hecha" for t in finished], [t[1] for t in finished]
     for strategy, work, brief in todo:
         began = time.monotonic() - (spent[strategy] if apart else make(work, brief))
         call.again(lambda: _py("sqx.variants.execute", "--work", str(work), "--project",
@@ -95,6 +122,8 @@ def run(project: str, role: str, only: set[str] | None = None) -> str:
             "variants", *(x for leg in legmod.legs() for x in ("--databank", leg["databank"])))
         _py("sqx.variants.varianttrades", "--work", str(work), "--project", project)
         _py("sqx.variants.execute", "--work", str(work), "--project", project, "--clear")
+        work.mkdir(parents=True, exist_ok=True)
+        _marker(work).write_text(stamp[strategy])      # last: a cut run leaves none
         done.append(f"{strategy} {time.monotonic() - began:.0f} s")
         works.append(work)
     if not done:

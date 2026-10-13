@@ -16,18 +16,17 @@ def top(inside: np.ndarray, share: float) -> np.ndarray:
     return inside >= np.quantile(inside, 1.0 - share)
 
 
-def p_value(flipped: np.ndarray, best: np.ndarray, observed: float) -> float:
+def p_value(tops: np.ndarray, observed: float) -> float:
     """The share of null draws whose top median is at or above the observed one.
 
     Args:
-        flipped: Draws x variants, the out-of-sample excess per year under the sign-flip null.
-        best: What top() returned.
+        tops: One per draw, the median over `top()`'s variants of the out-of-sample excess
+            per year under the sign-flip null.
         observed: The out-of-sample median of the in-sample top.
 
     Returns:
         (1 + draws at or above) / (1 + draws): the observed counted among them, as `order.tails`.
     """
-    tops = np.median(flipped[:, best], axis=1)
     return float((1 + (tops >= observed).sum()) / (1 + len(tops)))
 
 

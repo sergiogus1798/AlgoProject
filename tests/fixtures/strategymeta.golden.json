@@ -143,6 +143,11 @@
         "max_drawdown": null
       }
     },
+    "problems": {
+      "value": 0,
+      "reasons": [],
+      "unknown": 0
+    },
     "asset": null,
     "notes": [
       "asset_card_sha256: ficha de costes actual, no la del backtest (no existe la histórica)"
@@ -152,7 +157,7 @@
     "file": "strategymeta_oos.sqx",
     "name": "Strategy 10.13.25",
     "identity": "c9c97f0fe71b87014f96a15dadbfc3f78140ca9695c0e44fc88cd7a57ab795c7",
-    "feed": "XAUUSD_DukasM1_Infinox",
+    "feed": "XAUUSD_M1",
     "timeframe": "M30",
     "direction": "long",
     "entries": [
@@ -263,7 +268,7 @@
           "2022.12.31"
         ]
       ],
-      "chart": "XAUUSD_DukasM1_Infinox",
+      "chart": "XAUUSD_M1",
       "timeframe": "M30",
       "precision": "2",
       "engine": "MetaTrader5 (hedged)",
@@ -477,6 +482,11 @@
         "error": "falta Retest-Task8.xml en el .cfx"
       }
     ],
+    "problems": {
+      "value": 0,
+      "reasons": [],
+      "unknown": 0
+    },
     "asset": "XAUUSD",
     "notes": [
       "asset_card_sha256: ficha de costes actual, no la del backtest (no existe la histórica)",
@@ -696,6 +706,11 @@
         "max_drawdown": null
       }
     },
+    "problems": {
+      "value": 0,
+      "reasons": [],
+      "unknown": 0
+    },
     "asset": null,
     "notes": [
       "asset_card_sha256: ficha de costes actual, no la del backtest (no existe la histórica)"
@@ -705,7 +720,7 @@
     "file": "grafted.sqx",
     "name": "Strategy 10.13.25",
     "identity": "bb5e6a724c58fa2e7ecc37e8ae85fd1717c82ae5cb374e282bd9f0689aeeda43",
-    "feed": "XAUUSD_DukasM1_Infinox",
+    "feed": "XAUUSD_M1",
     "timeframe": "M30",
     "direction": "long",
     "entries": [
@@ -820,7 +835,7 @@
           "2022.12.31"
         ]
       ],
-      "chart": "XAUUSD_DukasM1_Infinox",
+      "chart": "XAUUSD_M1",
       "timeframe": "M30",
       "precision": "2",
       "engine": "MetaTrader5 (hedged)",
@@ -856,6 +871,11 @@
         "initial_capital": "100000",
         "max_drawdown": "30"
       }
+    },
+    "problems": {
+      "value": 0,
+      "reasons": [],
+      "unknown": 0
     },
     "asset": "XAUUSD",
     "notes": [

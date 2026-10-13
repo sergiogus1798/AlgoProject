@@ -38,5 +38,13 @@ python3 -m perf.disk.report                    # inventory AlgoData: size, dupli
   steady would claim the instrument can see something it cannot.
 - **`cpu_s` is the whole process tree too** (owner, 2026-10-07): the runner adds its reaped and
   its living children to its own CPU time. Rows measured before that date count the parent only.
-- **The memory number is the whole process tree.** `ru_maxrss` of a parent that spawns 96 workers
-  reports the largest single child, not the sum, and is wrong by an order of magnitude here.
+- **The memory number is the whole process tree, as PSS** (`/proc/<pid>/smaps_rollup`). `ru_maxrss`
+  of a parent that spawns 96 workers reports the largest single child; summed RSS counts a page
+  shared by forked workers once per worker (a 200 MB array under 4 children reads ~1 GB, PSS reads 200 MB).
+- **Timings are clean.** `tracemalloc` runs only when memory is asked for (`--memtop`, i.e.
+  `--hotspots`): it inflated object-heavy code x1,83 and numpy code x0,98. `alloc_peak_mb` is blank
+  in a timing run. The scaling probe builds and touches its vectors before the clock starts.
+- **The figures restart on 2026-10-13** (owner, D8, encargo 66 §10): the three measurement fixes
+  above make every earlier row incomparable, so the old `history.csv` was moved to
+  `AlgoData/profiling/_antes-2026-10-13/` and the catalogue starts empty; the first full run
+  after that date is the new baseline.

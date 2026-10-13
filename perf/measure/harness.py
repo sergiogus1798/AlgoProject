@@ -11,22 +11,30 @@ from pathlib import Path
 from core.datapaths import tmp_dir
 from core.paths import ROOT
 
-PAGE_MB = 4096 / (1024 * 1024)
+def _pss_mb(pid: int) -> float:
+    """Proportional set size of one process: shared pages divided among their sharers."""
+    try:
+        for line in (Path("/proc") / str(pid) / "smaps_rollup").read_text(encoding="utf-8").splitlines():
+            if line.startswith("Pss:"):
+                return int(line.split()[1]) / 1024
+    except OSError:     # exited between the listing and the read, or not ours to read
+        pass
+    return 0.0
 
 
 def _tree_rss(root_pid: int) -> float:
-    """Resident memory of one process and every descendant.
+    """Memory of one process and every descendant, as PSS.
 
     Args:
         root_pid: The process at the top of the tree.
 
     Returns:
-        Megabytes. Descendants are included because the expensive modules here spawn worker
-        pools, and `ru_maxrss` of the children reports the largest single child rather than
-        their sum. A process that exits between the listing and the read is normal, not an
-        error, so it is skipped.
+        Megabytes. Summed RSS counts a page shared by forked workers once per worker (a 200 MB
+        array under 4 children reads ~1 GB); PSS counts it once in total. Descendants are
+        included because the expensive modules here spawn worker pools. Name kept: `rss_peak_mb`
+        is the stored column, now PSS (figures restart on 2026-10-13).
     """
-    rss, kids = {}, {}
+    kids = {}
     for entry in Path("/proc").iterdir():
         if not entry.name.isdigit():
             continue
@@ -34,13 +42,11 @@ def _tree_rss(root_pid: int) -> float:
             rest = (entry / "stat").read_text(encoding="utf-8").rpartition(")")[2].split()
         except OSError:
             continue
-        pid = int(entry.name)
-        kids.setdefault(int(rest[1]), []).append(pid)
-        rss[pid] = int(rest[21]) * PAGE_MB
+        kids.setdefault(int(rest[1]), []).append(int(entry.name))
     total, stack = 0.0, [root_pid]
     while stack:
         pid = stack.pop()
-        total += rss.get(pid, 0.0)
+        total += _pss_mb(pid)
         stack.extend(kids.get(pid, []))
     return total
 

@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from ui.daemon import jobs, proof, winddown, workerguard
 from ui.daemon.advance import preflight as advance
-from ui.daemon.launch import chain, preflight
+from ui.daemon.launch import chaincheck, preflight
 from ui.daemon.workflow.steps import STEPS
 
 ROUTER = APIRouter()
@@ -128,13 +128,13 @@ def run(req: Launch) -> dict[str, object]:
 def chain_check(project: str) -> dict[str, object]:
     """Whether «Correr workflow» may start now, its plan, and the sentence to confirm."""
     try:
-        got = chain.check(project)
+        got = chaincheck.check(project)
     except FAILS as e:
         return {"ok": False, "reasons": [f"no se pudo comprobar: {e}"], "text": ""}
     got["reasons"] += queued()
     got["ok"] = not got["reasons"]
     return {"ok": got["ok"], "reasons": got["reasons"], "plan": got["plan"],
-            "role": got.get("role"), "text": chain.text(got, project) if got["ok"] else ""}
+            "role": got.get("role"), "text": chaincheck.text(got, project) if got["ok"] else ""}
 
 
 @ROUTER.post("/api/launch/chain")

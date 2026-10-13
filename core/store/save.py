@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 
 from core import sqxfile
-from core.archive import collect, manifest as provenance
+from core.archive import collect, harvest, manifest as provenance
 from core.manifest import code_version
 from core.paths import DATA, ROOT
 from core.store import extra, late, verify, write
@@ -77,7 +77,36 @@ def cell_of(row: dict) -> str:
     return f"{row['symbol']}_{row['timeframe']}_{template}"
 
 
-def one(project: str, sqx: Path, steps: dict[str, dict], generated: int) -> str:
+def harvest_cut(project: str, identity: str, root: Path) -> list[tuple[str, str, Path, dict]]:
+    """One survivor's rows of every cosecha day of the project, written under `root`.
+
+    Returns:
+        (databank, day, folder, rows kept per table), days in name order.
+    """
+    out = []
+    for day in sorted((DATA / "harvest" / project).glob("*/*/metrics.parquet")):
+        databank, stamp = day.parts[-3:-1]
+        folder = root / databank / stamp
+        folder.parent.mkdir(parents=True, exist_ok=True)
+        out.append((databank, stamp, folder, harvest.harvest_rows(day.parent, identity, folder)))
+    return out
+
+
+def harvest_all(project: str, identities: list[str], root: Path) -> dict[str, list]:
+    """`harvest_cut` for every survivor with the days OUTSIDE: each cosecha parquet is read once,
+    where survivor by survivor `collect` keeps only four tables and a project has three per day."""
+    got: dict[str, list] = {i: [] for i in identities}
+    for day in sorted((DATA / "harvest" / project).glob("*/*/metrics.parquet")):
+        databank, stamp = day.parts[-3:-1]
+        for i in identities:
+            folder = root / i / databank / stamp
+            folder.parent.mkdir(parents=True, exist_ok=True)
+            got[i].append((databank, stamp, folder, harvest.harvest_rows(day.parent, i, folder)))
+    return got
+
+
+def one(project: str, sqx: Path, steps: dict[str, dict], generated: int,
+        mother: dict[str, str] | None = None, harvest: list | None = None) -> str:
     """Save one survivor: its file, every study that names it, its trades everywhere, its sisters, its
     cosecha rows and the cost card — what is the population's in a zip of its own, kept once.
 
@@ -86,6 +115,8 @@ def one(project: str, sqx: Path, steps: dict[str, dict], generated: int) -> str:
         sqx: Its strategy file.
         steps: What each step said of it (`verdicts`).
         generated: How many strategies the gate judged in that project — the denominator.
+        mother: `late.mothers(project)`, when the caller has it (it walks every lineage.csv).
+        harvest: This survivor's cosecha rows already cut by `harvest_cut`; None cuts them here.
 
     Returns:
         Its identity. Saving again adds only what is new.
@@ -98,7 +129,7 @@ def one(project: str, sqx: Path, steps: dict[str, dict], generated: int) -> str:
         "criteria_sha256_at_save": hashlib.sha256(CRITERIA.read_bytes()).hexdigest()})
     with tempfile.TemporaryDirectory() as tmp:
         entries, loose, skipped = collect.freeze(project, identity, Path(tmp) / "reports",
-                                                  late.aliases(project, identity))
+                                                  late.aliases(project, identity, mother))
         if loose:       # CSVs outside any study folder with rows of this identity
             sueltos = Path(tmp) / "sueltos"
             for rel in loose:
@@ -117,9 +148,9 @@ def one(project: str, sqx: Path, steps: dict[str, dict], generated: int) -> str:
             if any(src.rglob("*.*")):
                 write.add(identity, stem, src, about)
         for stem, src, about in (extra.trades(project, name, identity, Path(tmp) / "raw",
-                                                     late.aliases(project, identity))
+                                                     late.aliases(project, identity, mother))
                                  + extra.sisters(project, name, identity, Path(tmp) / "sisters",
-                                                      late.aliases(project, identity))
+                                                      late.aliases(project, identity, mother))
                                  + extra.metrics(project, name, Path(tmp) / "metrics")
                                  + extra.neighbours(project, name, Path(tmp) / "neighbours")
                                  + late.unpaired(
@@ -129,11 +160,9 @@ def one(project: str, sqx: Path, steps: dict[str, dict], generated: int) -> str:
                                  + late.exports(project, identity, Path(tmp) / "exports")
                                  + late.variants(project, name, identity, Path(tmp) / "variants")):
             write.add(identity, stem, src, about)
-        for day in sorted((DATA / "harvest" / project).glob("*/*/metrics.parquet")):
-            databank, stamp = day.parts[-3:-1]
-            out = Path(tmp) / "harvest" / databank / stamp
-            out.parent.mkdir(parents=True, exist_ok=True)
-            if collect.harvest_rows(day.parent, identity, out)["metrics"]:
+        for databank, stamp, out, counts in (harvest_cut(project, identity, Path(tmp) / "harvest")
+                                             if harvest is None else harvest):
+            if counts["metrics"]:
                 write.add(identity, f"cosecha.{databank}.{stamp}", out,
                           {"study": "cosecha", "databank": databank, "day": stamp})
         card = provenance.asset(row["symbol"], Path(tmp) / "asset")
@@ -157,11 +186,21 @@ def project(name: str, sqx_dirs: list[Path]) -> dict:
         never silent) and `problems` (identity -> what `verify.check` found after saving).
     """
     said = verdicts(name)
-    alive = {i: s for i, s in said.items() if GATE in s and s[GATE]["verdict"] != DEAD}
+    mother = late.mothers(name)         # once for the save, not once per survivor and call
     generated = sum(GATE in s for s in said.values())
+    try:
+        return _project(name, sqx_dirs, said, generated, mother)
+    finally:                # the daemon lives on: what the reports cost in RAM goes back
+        collect.release()
+        harvest.release()
+
+
+def _project(name: str, sqx_dirs: list[Path], said: dict, generated: int, mother: dict) -> dict:
+    """The body of `project`."""
+    alive = {i: s for i, s in said.items() if GATE in s and s[GATE]["verdict"] != DEAD}
     if not generated:       # no step-8 row at all: nothing to save, and no run number to take the max of
         return {"saved": [], "no_sqx": [], "problems": {}}
-    saved, no_sqx = [], []
+    no_sqx, whole = [], []
     for identity, steps in sorted(alive.items(), key=lambda kv: kv[1][GATE]["strategy"]):
         files = [d / f"{steps[GATE]['strategy']}.sqx" for d in sqx_dirs]
         # By identity, before anything is written: a name is reused from one build to the next.
@@ -169,7 +208,11 @@ def project(name: str, sqx_dirs: list[Path]) -> dict:
         if found is None:
             no_sqx.append(steps[GATE]["strategy"])
             continue
-        saved.append(one(name, found, steps, generated))
+        whole.append((identity, found, steps))
+    with tempfile.TemporaryDirectory() as cut:
+        cosecha = harvest_all(name, [i for i, _, _ in whole], Path(cut))
+        saved = [one(name, found, steps, generated, mother, cosecha[identity])
+                 for identity, found, steps in whole]
     write.run(cell_of(provenance.registry(name)), name, {
         "generated": generated, "survivors": len(alive), "saved": len(saved), "no_sqx": sorted(no_sqx),
         "run": max(s[GATE]["run"] for s in said.values() if GATE in s)})

@@ -9,8 +9,9 @@ from datetime import datetime
 from pathlib import Path
 
 from core import sqxfile
-from core.archive import collect, manifest
+from core.archive import collect, harvest, manifest
 from core.manifest import code_version
+from sqx.inspect import feeds
 from core.paths import archive_dir, project_dir
 from ui.daemon.loader import find
 from ui.daemon.strategy import archive_view as view
@@ -72,6 +73,16 @@ def _seal(folder: Path) -> None:
 
 def archive(project: str, databank: str, identity: str, step: str, note: str = "", *,
             family: str, sqx: Path | None = None) -> Path:
+    """`_freeze` (see it for the arguments); the parsed reports it held are dropped even when it raises (up to 2 GB)."""
+    try:
+        return _freeze(project, databank, identity, step, note, family=family, sqx=sqx)
+    finally:
+        collect.release()
+        harvest.release()
+
+
+def _freeze(project: str, databank: str, identity: str, step: str, note: str = "", *,
+            family: str, sqx: Path | None = None) -> Path:
     """Freeze one strategy with everything needed to show and judge it again without recomputing.
 
     Args:
@@ -110,12 +121,13 @@ def archive(project: str, databank: str, identity: str, step: str, note: str = "
            "code_version": code_version(), "registry": row,
            "sqx": {"from": str(source), "sha256": manifest.sha256(source), "by_hand": sqx is not None},
            "harvest": None if isinstance(tear, str) else {
-               "folder": tear["folder"], "rows": collect.harvest_rows(
+               "folder": tear["folder"], "rows": harvest.harvest_rows(
                    Path(tear["folder"]), identity, work / "harvest")},
            "studies": entries, "loose": loose, "skipped": skipped,
            "asset": manifest.asset(row["symbol"], work / "asset"),
            "ledger": manifest.ledger(row["symbol"], row["timeframe"], family),
-           "meta": "meta.json" if meta is not None else None}
+           "meta": "meta.json" if meta is not None else None,
+           **manifest.frozen(feeds.timezone(manifest.feed_of(work / "strategy.sqx")), row["symbol"])}
     (work / "manifest.json").write_text(json.dumps(doc, indent=1, default=str), encoding="utf-8")
     work.rename(final)
     _seal(final)
