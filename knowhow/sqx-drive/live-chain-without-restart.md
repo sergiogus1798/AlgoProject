@@ -10,8 +10,7 @@ in `settings.xml`); `start action=runThisTaskOnly taskName=<cfx name>` **plus `p
 runs only that task (without `projectXML`: nothing). `/call` says «CLI not ready» all session long.
 
 ## Evidence
-- 🔬 2026-10-01, custodian GUI mode, `Test_XAUUSD_GuiChain_M30` (Build, OOS, MC Trades all `active`):
-  Build alone 63 s, no other task ran; OOS alone 2.3 s; MC Trades alone 1.7 s. Start 28 s, stop 30 s
+- 🔬 2026-10-01, GUI mode, Build alone 63 s, OOS alone 2.3 s, MC Trades alone 1.7 s; start 28 s, stop 30 s
   (`exitapp` → shutdown sync), all processes gone, databanks on disk = memory (Results 30, OOS 15, MC 15).
 - `updateTaskXML projectName= taskXMLFile=Retest-Task1.xml xmlConfig=<xml>` (21 ms): changed the task in
   memory AND SQX rewrote `project.cfx` itself — the live way around hard rule 4. Rerun obeyed it.
@@ -40,22 +39,17 @@ runs only that task (without `projectXML`: nothing). `/call` says «CLI not read
   time-limit. 🔬 `databank-full` with 300 / 10 min ran 49 min (606 accepted, Results held at 300);
   `time-limit` 2 min stopped itself at 123 s (`restartCount` 5 changes nothing). The type comes
   from `databank.stop_condition` in assets/_build.yaml, now `time-limit`.
-- 🔬 2026-10-13, conductor, XAUUSD H1 Simple build (CLI and GUI): `databank-full` with MaxStrategies=50
-  DID stop by itself at exactly 50 («Build finished because databank is full», 105.6 s CLI / 110 s GUI,
-  `minutes=4` never reached) and the OOS task then ran on the 50. The older 49 min run above (300 / 10 min,
-  606 accepted) was a different build. 🤔 UNRESOLVED: encargo 66 session 2 saw `databank-full` (Max 50)
-  loop 63+ times, no «Task finished», until the session closed; D24 open. `passed-count` 30 stopped at exactly 30 (97 s).
+- 🔬 2026-10-13, conductor, XAUUSD H1 Simple build, `databank-full` MaxStrategies=50 (encargo 66 live session 3):
+  start sent 6-7 s BEFORE «APP LOADED» in SQX's log: 5/5 looped (52-104 «databank is full» lines, no
+  «Task finished», even `/project/stop` did not end it); sent >= 25 s after it: 5/5 stopped by themselves
+  at exactly 50 in 2-7 ms, OOS then ran. `passed-count` 30 stopped at 30 (3/3).
+  A start before APP LOADED makes the Build loop; `live.start` waits for that line since 2026-10-13.
 - 🤔 So a live build cannot be capped at «N strategies or T minutes, whichever first»: only
   `time-limit` is honoured (always T minutes), N is the databank's size (it keeps the best N), and
   `/project/stop` does not stop a build — nothing from outside ends it early; and `/main/exitapp`
-  does not either: 🔬 2026-10-06 SQX ran «Save all strategies before exiting SQX» over every other
-  project (7 projects, 09:03 → 09:11, one thread, `Databank 'P/bank' saved … Sync triggered by`)
-  while the build kept 100 % CPU to its 15-min `time-limit`, then ran the next active task (OOS)
-  and only then exited. The running project's own databank was saved by two threads at once
-  (2,985 files for 3,000 in memory: a race). What frees the machine in minutes is `exitapp`,
-  waiting for those save lines of every other project's databank on disk, then a kill by PID
-  (`sqx/projects/exiting.py`; owner, 2026-10-06: the running project's memory is lost). Not re-tested
-  for the campaign; evidence `assets/_build.yaml:76-84`, `sqx/projects/live.py:121`, the lines above.
+  does not either: 🔬 2026-10-06 SQX saved every other project's databanks first while the build kept 100 % CPU to its `time-limit`, then ran the next active task. What frees
+  the machine in minutes is `exitapp`, waiting for those save lines on disk, then a kill by PID
+  (`exiting.py`; the running project's memory is lost).
 - «Last generation» is held on «Auto-sync never» in memory whatever config.xml says: it never
   reaches disk, so `live.sync` skips any databank whose live `syncType` is that.
 - GUI mode uses `StrategyQuantX.config`, not `sqcli.config`: the custodian's was 8g, set to 80g

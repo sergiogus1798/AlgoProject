@@ -52,6 +52,7 @@ def test_session_cache_is_refreshed_when_truncated(monkeypatch: pytest.MonkeyPat
 def test_live_start_names_the_databanks_that_did_not_load(monkeypatch: pytest.MonkeyPatch) -> None:
     """C1: the 5-minute refusal says which databank, with its files and its records."""
     monkeypatch.setattr(live.subprocess, "run", lambda *a, **k: None)
+    monkeypatch.setattr(live.loadwait, "booted", lambda role, launch, *a: launch())
     monkeypatch.setattr(live, "call", lambda role, action: {"projects": [{"name": "Test_A"},
                                                                          {"name": "Builder"}]})
     monkeypatch.setattr(live, "records", lambda role, p: {"Results": 5, "OOS": 2})

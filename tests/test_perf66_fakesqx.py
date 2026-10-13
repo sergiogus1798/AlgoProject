@@ -86,6 +86,7 @@ class FakeSqx:
 def sqx(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[FakeSqx]:
     """A FakeSqx of project Test_X (databank B holding a, b, c) standing in for the custodian."""
     fake = FakeSqx(tmp_path, "Test_X", {"B": ["a", "b", "c"]})
+    monkeypatch.setattr(live.loadwait, "booted", lambda role, launch, *a: launch())      # the stubbed script writes no log; test_perf66_waits covers the wait
     monkeypatch.setitem(live.WORKERS, "custodian", {"path": tmp_path, "port": 0})
     yield fake
     fake.server.shutdown()

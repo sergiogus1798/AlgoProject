@@ -195,3 +195,27 @@ def test_loaded_reads_the_next_days_log_whole_and_ignores_a_line_before_the_mark
         loadwait.loaded("custodian", since, 0, 0, "B")
     new.write_text(new_text + "ProjectServlet - Strategies loaded\n")
     loadwait.loaded("custodian", since, 5, 0, "B")
+
+
+def _boot(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, written: str) -> tuple[list, list]:
+    """`live.start` over a log that already holds an «APP LOADED»; the script stub writes `written` (or nothing)."""
+    log, calls, killed = tmp_path / "log_2026_01_01.log", [], []
+    log.write_text("BrowserGUI - APP LOADED\n")                  # an earlier session's line
+    monkeypatch.setattr(live, "_log", lambda role: log)
+    monkeypatch.setattr(live.subprocess, "run", lambda *a, **k: log.open("a").write(written))
+    monkeypatch.setattr(live, "call", lambda role, action, **k: calls.append(action) or {"projects": []})
+    monkeypatch.setattr(live, "kill", killed.append)
+    monkeypatch.setattr(live.loadwait.time, "sleep", lambda s: None)
+    return calls, killed
+
+
+def test_start_returns_only_after_app_loaded_written_after_the_mark(
+        monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """The line after the start counts and the session's databanks are then asked; one before the mark does not."""
+    calls, killed = _boot(monkeypatch, tmp_path, "BrowserGUI - APP LOADED\n")
+    live.start("custodian")
+    assert calls == ["list"] and not killed
+    calls, killed = _boot(monkeypatch, tmp_path, "")
+    with pytest.raises(SystemExit, match="APP LOADED"):
+        live.start("custodian")
+    assert calls == [] and killed == ["custodian"]               # no task, no query: killed by PID

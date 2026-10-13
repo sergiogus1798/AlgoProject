@@ -15,7 +15,7 @@ from pathlib import Path
 from core import worker
 from core.datapaths import tmp_dir
 from core.paths import ROOT, WORKERS
-from sqx.projects import cfxio, presaving, taskcap
+from sqx.projects import cfxio, loadwait, presaving, taskcap
 from sqx.projects.liveapi import _setting, call, kill      # noqa: F401  (`exiting` reads the token here)
 
 SCRIPT = ROOT / "bin" / "sqx-worker.sh"
@@ -53,7 +53,7 @@ def start(role: str, project: str | None = None, presave: bool = False) -> None:
     🔬 2026-10-01: memory == disk before any sync, or it mirrors empty memory over the files (rule 1).
     With `project`, the others load in the background and `stop` waits (§7.4b); `presave` also saves them in parallel (§7.1 B).
     """
-    subprocess.run([str(SCRIPT), "--role", role, "--gui", "start"], check=True)
+    loadwait.booted(role, lambda: subprocess.run([str(SCRIPT), "--role", role, "--gui", "start"], check=True))
     own = [project] if project else [p["name"] for p in call(role, "list")["projects"] if p["name"].startswith(("Test_", "Trade_", "Research_"))]
     for _ in range(300):
         off = [f"{p}/{b}: {_files(p, role, b)} ficheros, {n} en memoria"

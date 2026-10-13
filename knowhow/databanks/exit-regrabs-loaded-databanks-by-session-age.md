@@ -8,6 +8,8 @@ Trap: a worker session younger than 1 h exits in 6-8 min (175 databanks, 33,223 
 Fix options (not applied): A, do not reopen (`AGED = set()`; costs the old-session penalty noted at `liverun.py:26`, WFM x1.44, SPP x2). B, after `live.start` save in parallel with `synchronizeDatabank`, only where memory == disk (rule 1).
 🔬 2026-10-13, conductor: an API `synchronizeDatabank` (`sqx/projects/live.py:201`) on a file-loaded databank with memory == disk DOES clear the flag — exit save lines 1, 1 → 0, stop 10.9 s → 5.8 s (17 files, one databank). The call is asynchronous; its end is the log line `Sync triggered by 'API request project/synchronizeDatabank …'`. Do not filter out `Auto-sync never` or stock projects: `Retester/Results` is both and is re-saved at exit. **NOT tested:** the parallel gain at 175 databanks (one databank costs the same by API as at exit, 5.44 s), and not reopening before SPP/WFM.
 
+🔬 2026-10-13, conductor, live session 3 (18 projects, 3,233 files): a fresh session stops in 52.4 s (63 exit save lines, x3); the same set aged 131.5 min stops in 12.0 s (1 save line) with no variant, because SQX's own hourly auto-sync saved 120 banks at 14:41. Presave (variant B) pays only on what changed since the last auto-sync: 8-9 s stop + 6.7-7.8 s background = 15.2-15.8 s net. `ALGO_AGED_EMPTY=1` never touched a stop (it only empties the reopen before aged SPP/WFM): «variant A» was not a stop variant.
+
 ## Evidence
 - 📓 Audit `AlgoData/audit/performance-2026-10-12/findings-SQXPY.md` SQXPY-1: periodic sync 03:26:49 → 04:26:49 → 04:28:05 (wf4s), 08:14:40 (leaseWeb).
 - 📓 27 sessions of 2026-10-10/11 (`exits.py`): the 7 over 1 h exit in ~4 s; the 20 under 1 h take 6-8 min, three of them having done nothing.

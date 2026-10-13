@@ -18,6 +18,7 @@
 - `maedepth-duration-cut-exit-after-x` — Why does the anomalous-duration cut of the deep-MAE screen mark nothing on a real population?
 - `off-grid-stamps-and-stop-exits` — How does SQX stamp and fill a stop-loss exit and a trade whose bar starts late, and how is each repriced?
 - `orderstocsv-no-multi-databank` — Can one orderstocsv launch export several databanks, and what does `file=A file=B` do?
+- `orderstocsv-refused-in-live-session` — Why does an export fail with «REFUSING: another sqcli already holds» inside a live GUI session?
 - `orderstocsv-schema` — What traps does `orderstocsv` have when exporting every .sqx of a folder in one JVM?
 - `orderstocsv-slow-is-datamanager` — Why does orderstocsv take minutes per databank, and what writes the same trade CSVs in seconds?
 - `sequential-opt-not-wfc` — Can a sequential optimisation's runs be paired as a walk-forward correlation (WFC)?
