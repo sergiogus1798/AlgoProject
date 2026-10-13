@@ -230,3 +230,37 @@ def test_xvfb_wait_ignores_a_stale_socket_of_a_dead_xvfb_and_accepts_a_live_one(
     none = _xvfb_fn("xvfb_wait", 'sleep 30 & P=$!; xvfb_wait :506 2 $P; rc=$?; kill $P; exit $rc', env)
     assert none.returncode == 1 and "no socket" in none.stderr
     sock.close()
+
+
+FAKE_WORKFLOW = """#!/bin/bash
+mkdir -p "$FAKE/out"
+echo "10:00:00 ${STATE:-FIN · 20 acciones}" > "$FAKE/out/estado.txt"
+printf '%b' "${RESUMEN:-| 26 | mt5verify | 9 | 3 verificadas |\\n}" > "$FAKE/out/resumen.md"
+printf '%b' "${PHASES:-1.0,2.0,accion,6 sqx,1\\n}" > "$FAKE/out/fases.csv"
+echo "resumen: $FAKE/out/resumen.md"
+exit "${RUN_RC:-0}"
+"""
+
+
+def verdict(tmp_path: Path, **env: str) -> subprocess.CompletedProcess:
+    """`workflow-test.sh` over a fake `bin/workflow.sh` whose run folder the environment shapes."""
+    root = tmp_path / "root"
+    (root / "bin").mkdir(parents=True)
+    shutil.copy(ROOT / "bin/workflow-test.sh", root / "bin/workflow-test.sh")
+    (root / "bin/workflow.sh").write_text(FAKE_WORKFLOW)
+    (root / "bin/workflow.sh").chmod(0o755)
+    return subprocess.run(["bash", str(root / "bin/workflow-test.sh"), "t1"], capture_output=True, text=True,
+                          env=os.environ | {"FAKE": str(tmp_path)} | env, timeout=60)
+
+
+def test_workflow_test_passes_only_a_whole_clean_run(tmp_path: Path) -> None:
+    """PASA needs FIN, step 26 run and no fallback; each one missing is a FALLA that names it."""
+    good = verdict(tmp_path / "a")
+    assert good.returncode == 0 and "PASA" in good.stdout, good.stdout + good.stderr
+    for case, env, said in (
+            ("b", {"PHASES": "1.0,0.0,fallback,Test_X/A: una identidad no coincide,1\\n"}, "1 caída(s) a la ruta lenta"),
+            ("c", {"RESUMEN": "| 19 | sqx | 9 | WFM |\\nSe para antes del paso 26\\n"}, "el paso 26 no corrió"),
+            ("d", {"STATE": "FALLO en el paso 11: x", "RUN_RC": "1"}, "hay un FALLO"),
+            ("e", {"RESUMEN": "| 26 | mt5verify | 0 | el paso 26 no se lanza: el conductor |\\n"}, "acabó antes del final")):
+        bad = verdict(tmp_path / case, **env)
+        assert bad.returncode == 1 and "FALLA" in bad.stdout and said in bad.stdout, (case, bad.stdout, bad.stderr)

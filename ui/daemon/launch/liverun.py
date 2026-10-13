@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 from core.datapaths import tmp_dir
-from core.phases import phase
+from core.phases import note, phase
 from core.paths import ROOT, bank_dir
 from ledger import steprows
 from sqx.export import membank
@@ -52,6 +52,7 @@ def dump(role: str, project: str, banks: set[str] | None) -> dict[str, int]:
     wrote = membank.run(role, project, want) if want else {}
     if want and not wrote:
         print(f"{sorted(want)} no vale: la instalación no tiene su proyecto de herramientas o sus snippets sin compilar", flush=True)
+        note("fallback", f"{project}/{sorted(want)}: el volcado no escribió ningún .abk (herramientas o snippets sin compilar)")
     return wrote
 
 
@@ -186,7 +187,9 @@ def execute(pre: dict, project: str) -> dict:
     with phase("sqx", " + ".join(titles)):
         live.run(role, project, config)      # returns on «Project finished» alone: `live.wait` raises on every abort line
     with phase("sync", "después"):
-        live.sync(role, project, force={t["output"] for t in chosen if t["output"]})   # rewritten at one count
+        # A filled bank is Python's bytes on disk until SQX saves it: its scaled siblings carry a
+        # `<!--variant_id-->` stamp SQX drops on load, so the dump would not match (🔬 2026-10-13).
+        live.sync(role, project, force={t["output"] for t in chosen if t["output"]} | set(pre.get("fill", [])))
     # the extra-timeframe tasks are not in `chosen` (preflight runs before the fill creates them)
     outputs = {t["output"] for t in chosen} | {f"{CROSSTF['output']}_{t.rsplit(' ', 1)[1]}" for t in solo}
     with phase("compare"):

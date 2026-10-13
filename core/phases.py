@@ -19,6 +19,11 @@ def row(name: str, detail: str, seconds: float) -> None:
                                     detail, os.getpid()])
 
 
+def note(name: str, detail: str) -> None:
+    """Append a zero-duration row: an event, not a block (`fallback`: the fast route was refused)."""
+    row(name, detail, 0.0)
+
+
 @contextlib.contextmanager
 def phase(name: str, detail: str = "") -> Iterator[None]:
     """Time the block and append one row; phases nest, and subprocesses inherit the file.

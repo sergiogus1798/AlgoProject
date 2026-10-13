@@ -97,3 +97,31 @@ def test_export_retest_refuses_a_dump_that_is_not_the_sqx_result(monkeypatch: py
         STATS["Strategy 2.1.1"][10]["NetProfit"] = 715.585
     assert len(ran) == 1 and len(ran[0]) == 6
     assert capsys.readouterr().out.count(".abk no vale: Strategy 2.1.1") == 2
+
+
+def _fallbacks(path: Path) -> list[str]:
+    """The details of the `fallback` rows of a phase log."""
+    import csv
+    return [r[3] for r in csv.reader(open(path, encoding="utf-8")) if r[2] == "fallback"] if path.exists() else []
+
+
+def test_export_retest_records_a_refused_abk_as_a_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """A `.abk` that exists and is refused leaves a `fallback` row `project/databank: reason`; the export still completes."""
+    log = tmp_path / "fases.csv"
+    monkeypatch.setenv("ALGO_PHASES", str(log))
+    STATS["Strategy 2.1.1"][10]["NetProfit"] = 700.0
+    try:
+        got, ran = _retest(monkeypatch, tmp_path, {"A": True, "B": True})
+    finally:
+        STATS["Strategy 2.1.1"][10]["NetProfit"] = 715.585
+    assert set(got) == {"A", "B"} and len(ran) == 1
+    rows = _fallbacks(log)
+    assert len(rows) == 2 and all(r.startswith(("Test_X/A: ", "Test_X/B: ")) and "Strategy 2.1.1" in r for r in rows)
+
+
+def test_export_retest_without_an_abk_records_no_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """No `.abk` at all is the restart route, not a fallback."""
+    log = tmp_path / "fases.csv"
+    monkeypatch.setenv("ALGO_PHASES", str(log))
+    _retest(monkeypatch, tmp_path, {"A": False, "B": False})
+    assert _fallbacks(log) == []

@@ -9,6 +9,7 @@ import time
 from datetime import date
 from pathlib import Path
 
+from core import phases
 from core import bankfile, bankframes, exportdrv, fanout, identities, manifest, sqxfile, sqxstats, sqxview, tradepack
 from core.paths import MASTER, bank_dir, databank_dir, export_dir, project_dir, worker_dir
 from sqx.export import membank
@@ -130,6 +131,7 @@ def held(a: argparse.Namespace, staged: Path) -> dict | None:
         why = str(err)
     if why:
         print(f"{a.project}/{a.databank}: .abk no vale: {why}")
+        phases.note("fallback", f"{a.project}/{a.databank}: {why}")
     return None if why else bank
 
 

@@ -1,6 +1,6 @@
 """Whole databanks written from a live session's memory by the AlgoBank snippet, one `.abk` each."""
 
-from core import bankfile, bankframes, sqxfile, sqxstats
+from core import bankfile, bankframes, phases, sqxfile, sqxstats
 from core.paths import bank_dir
 from sqx.projects import live
 from sqx.snippets import install, toolproject
@@ -107,5 +107,6 @@ def take(project: str, role: str, bank: str, ids: dict[str, str], data: str) -> 
         got, why = None, str(err)
     if why:
         print(f"{project}/{bank}: {path.name} no vale: {why}")
+        phases.note("fallback", f"{project}/{bank}: {why}")      # dumped and refused: the run shows it
         return None
     return got

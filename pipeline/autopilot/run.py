@@ -53,6 +53,11 @@ def summary(out: Path, project: str, done: list[dict], stop: dict, error: str = 
          f"Total {total / 60:.1f} min. {end}", ""]), encoding="utf-8")
     if (out / "fases.csv").exists():      # absent when the first action failed
         (out / "tiempos.md").write_text(timing.table(out / "fases.csv"), encoding="utf-8")
+        with open(out / "fases.csv", newline="", encoding="utf-8") as f:
+            slow = [r[3] for r in csv.reader(f) if r[2] == "fallback"]
+        if slow:
+            with open(out / "resumen.md", "a", encoding="utf-8") as f:
+                f.write(f"\nCaídas a la ruta lenta ({len(slow)}):\n" + "".join(f"- {d}\n" for d in slow))
 
 
 def sqx_step(project: str, actions: list[dict], first: bool, filled: set[str]) -> str:

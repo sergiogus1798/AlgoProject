@@ -250,11 +250,12 @@ def test_the_newest_ingest_is_the_last_written_not_the_last_by_name(
     assert afterrun.extras(P, "custodian", tmp_path) == []
 
 
-def run_live_execute(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, extra: list[str]) -> set:
-    """`liverun.execute` of step 11 on fakes; the banks handed to `export`."""
+def run_live_execute(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, extra: list[str], fill: tuple = (),
+                     forced: list | None = None) -> set:
+    """`liverun.execute` of step 11 on fakes; the banks handed to `export` (`forced` gets the sync's `force`)."""
     cfx = tmp_path / "project.cfx"
     cfx.write_bytes(b"x")
-    pre = {"role": "custodian", "cfx": cfx, "row": {"symbol": "XAUUSD"}, "fill": [],
+    pre = {"role": "custodian", "cfx": cfx, "row": {"symbol": "XAUUSD"}, "fill": list(fill),
            "chosen": [{"title": "CrossTF", "output": "CrossTF", "type": "x"}]}
     exported: list = []
     for mod, name, fake in [
@@ -264,7 +265,9 @@ def run_live_execute(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, extra: lis
             (liverun.configure, "run", lambda pre, say: []),
             (liverun.stage, "just", lambda *a: None),
             (liverun.crosstfload, "separate_titles", lambda staged: extra),
-            (liverun.live, "sync", lambda *a, **k: None), (liverun.live, "added", lambda *a: False),
+            (liverun.crosstfload, "fill", lambda *a: ""),
+            (liverun.live, "sync", lambda *a, **k: (forced if forced is not None else []).append(k.get("force"))),
+            (liverun.live, "added", lambda *a: False), (liverun.live, "load", lambda *a: 0),
             (liverun.live, "push", lambda *a: {}), (liverun.live, "run", lambda *a: None)]:
         monkeypatch.setattr(mod, name, fake)
     liverun.execute(pre, P)
@@ -278,3 +281,32 @@ def test_step_11_exports_the_extra_timeframe_crosstf_banks_too(
     assert run_live_execute(monkeypatch, tmp_path, []) == {"CrossTF"}      # the old behaviour
     assert run_live_execute(monkeypatch, tmp_path, ["CrossTF M30", "CrossTF H4"]) == {
         "CrossTF", "CrossTF_M30", "CrossTF_H4"}
+
+
+def test_step_11_syncs_the_bank_python_filled_before_its_dump(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """`CrossTF_Input` is written by Python with a `<!--variant_id-->` stamp SQX drops on load: unless
+    SQX rewrites it before the dump, memory and disk differ and the `.abk` is refused (🔬 2026-10-13)."""
+    forced: list = []
+    run_live_execute(monkeypatch, tmp_path, [], fill=("CrossTF_Input",), forced=forced)
+    assert forced[-1] == {"CrossTF", "CrossTF_Input"}
+
+
+def test_summary_lists_the_fallbacks_of_the_run(tmp_path: Path) -> None:
+    """resumen.md ends with the heading and one line per `fallback` row; no rows, no heading."""
+    from core import phases
+    done = [{"n": "6", "kind": "sqx", "s": 1.0, "what": "x"}]
+    stop = {"n": "", "why": "fin"}
+    run.summary(tmp_path, "Test_X", done, stop)
+    assert "Caídas" not in (tmp_path / "resumen.md").read_text()
+    log = tmp_path / "fases.csv"
+    log.write_text("")
+    os.environ[phases.ENV] = str(log)
+    try:
+        phases.note("fallback", "Test_X/A: una")
+        phases.note("fallback", "Test_X/B: dos")
+    finally:
+        del os.environ[phases.ENV]
+    run.summary(tmp_path, "Test_X", done, stop)
+    text = (tmp_path / "resumen.md").read_text()
+    assert "Caídas a la ruta lenta (2):" in text and "Test_X/A: una" in text and "Test_X/B: dos" in text

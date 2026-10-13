@@ -9,7 +9,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import bankfile, bankframes, exportdrv, fanout, identities, manifest, sqxstats, sqxview, tradepack
+from core import (bankfile, bankframes, exportdrv, fanout, identities, manifest, phases, sqxstats,
+                  sqxview, tradepack)
 from core.paths import MASTER, export_dir, worker_dir
 from sqx.export import membank
 from sqx.export.export_trades import SAMPLE_SEED, sign, stage
@@ -95,6 +96,7 @@ def main() -> None:
                 why = str(err)
             if why:
                 print(f"{a.project}/{db}: .abk no vale: {why}")
+                phases.note("fallback", f"{a.project}/{db}: {why}")
             else:
                 held[i] = bank
     (work / "held").mkdir()
