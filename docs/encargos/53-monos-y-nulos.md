@@ -37,6 +37,7 @@ Lee `CLAUDE.md` (reglas 1-6, 10, 11, 13-19) · `docs/AgentPDFs/WORKFLOW.md` ·
   escribe la regla de la vela en el motor; sin medir cortos ni velas doji (0,2 %).
   Ficha `knowhow/export/sl-pt-same-bar-convention.md`.
 - 2026-10-13 · 5c · B1 = A: clave `barrier.intrabar` borrada con sus citas — nadie la leía y la medida la desmiente; `kernel.touched` se queda, la usa `studies.readings.monkey.verify`; la regla medida está en `knowhow/export/sl-pt-same-bar-convention.md`.
+- 2026-10-13 — **5c a precisión de 1 minuto** (las mismas 300 estrategias, `Test_E53_5c_M1_XAUUSD_H1`, retirado): 🔬 a 1 minuto SQX sigue el camino de M1 (99,45 % de 70.201 operaciones con las dos barreras en la vela H1 de salida) y, si una sola vela de M1 contiene las dos, decide por el sentido de esa vela (268 de 268). La regla del sentido de la vela H1 cae al 78,8 %. De precisión 1 a 2 cambia la salida del 5,4 % de las operaciones y el beneficio neto baja en el 73,7 % de las estrategias (mediana −890 $). Un corpus de referencia para comportamiento intrabar se retestea a `testPrecision=2`; la precisión del workflow no se toca.
 
 ## §0 · De dónde sale
 
