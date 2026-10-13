@@ -86,6 +86,7 @@ Sale de la lectura del dossier `docs/AgentPDFs/criterios-implementados-2026-10-1
 | `67-filtro-minimo-calibrado-con-sinteticos.md` | el umbral mínimo del Build por celda (activo × TF), medido en lo que halla una hora de build sin filtros sobre series sintéticas; con su coste en estrategias rechazadas y minutos hasta 10.000 | `66` (D24 estable), `58` (generador) |
 | `68-adaptar-el-codigo-al-codestyle.md` | plan vivo: que las reglas nuevas de `CODESTYLE.md` (2026-10-13) las compruebe una máquina — 18 fases: tests al entregar, hooks, trinquete, ruff ampliado, semillas, `assert` en los lectores, comprobador de tipos, los 1.375 `-> dict` sin tipar, código muerto, README generado, lockfile, canario, gorilla, agente `reviewer` y `ruff format` | nada |
 | `69-renumerar-los-pasos-del-workflow.md` | aplazado: renumerar los pasos ahora que 22-25 no existen y el MT5 sigue siendo el 26; lo medido (77 + 82 ficheros), por qué se dejó y las tres preguntas previas | sin empezar; sólo cuando el dueño lo pida |
+| `70-redondeo-al-tick-del-repreciador-por-activo.md` | que el repreciador redondee al tick sólo donde SQX lo hace (oro y USA500 no, Nikkei sí, DAX40 mixto), con un campo en la ficha medido activo a activo; incluye el resto de 0,043 USD del oro y la clave propia de la puerta del 18.5 | sin empezar |
 
 ## Adónde fue cada encargo viejo
 
