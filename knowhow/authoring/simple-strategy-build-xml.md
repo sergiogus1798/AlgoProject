@@ -1,7 +1,7 @@
 ---
 q: Which Build task switches make a Simple Strategy build, and where is its direction set?
 kw: build a Simple Strategy project without a template; StrategyType type simple; MarketSides type long short both; EntrySymmetry; one direction without a template; templateFile with type simple; SQ3StrategyTemplateExample.sq4; random-generation twin BuildMode generationType; builder --simple --random; count what a Build task will generate; census
-tag: 📓  date: 2026-10-02  see: authoring/condition-count-simple-vs-template, authoring/builder-block-switches, sqx-drive/unselected-build-population
+tag: 📓  date: 2026-10-02  see: authoring/condition-count-simple-vs-template, authoring/builder-block-switches
 ---
 # A Simple Strategy build is three switches of the Build task; its direction is `<MarketSides type=>`
 `python3 -m sqx.projects.builder <P> --purpose "…" --simple long|short [--random] --symbol S --timeframe TF --workflow --acceptance calibration`, then a palette: without one the donor's 400 conditions, 26 values, 10 levels stay ON.

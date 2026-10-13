@@ -1,7 +1,7 @@
 ---
 q: How long do export, harvest and step 8 take for 5,000 strategies after an SQX run?
 kw: how long does the review after an SQX run take; export harvest step 8 cost for 5,000 strategies; orderstocsv run three times; harvest --exports; tradepack slow write per strategy; snoopingScreen SPA twice; spread study single thread; afterrun sign fingerprint minutes; step 8 studies in parallel; which step-8 study depends on which
-tag: 🔬  date: 2026-10-13  see: perf/autopilot-dead-time, sqx-drive/export-after-every-stop, sqx-drive/unselected-build-population, perf/python-parallelism
+tag: 🔬  date: 2026-10-13  see: perf/autopilot-dead-time, sqx-drive/export-after-every-stop, perf/python-parallelism
 ---
 # Export + harvest + step 8 of 5,000 strategies is ~3.5 min, not 13: one `orderstocsv`, studies side by side
 - `gate.harvest … --exports` writes the harvest AND both databanks' trade exports (what `export_trades`

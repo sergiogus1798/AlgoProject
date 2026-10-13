@@ -1,7 +1,7 @@
 ---
 q: Does an in-sample filter inside the Build (trade floor, PF, Ret/DD, WinningPct) breed better strategies than none?
 kw: IS filter in the build, ab1 ab3 ab5 arms, PF 1.3 Ret/DD 3, trades per year floor 35 inside the build, build box minutes, accepted per minute, MaxStrategies cap 20000, robust per 1000, purity, adaptive calibration RECIPE, long builds untested
-tag: 🔬  date: 2026-10-04  see: post-selection-bias, conditions/build-rankings-acceptance, sqx-drive/unselected-build-population
+tag: 🔬  date: 2026-10-04  see: post-selection-bias, conditions/build-rankings-acceptance
 ---
 # No IS filter breeds more robust strategies per build minute than none; the build BOX dominates
 Seven arms inside the Build (trades floor, PF/RetDD ladders 1.2/2, 1.3/3, 1.5/5, 1.8/8, WinningPct ≥ 55), one box, same

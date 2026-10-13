@@ -1,7 +1,7 @@
 ---
 q: Which element holds a Build task's acceptance conditions, Rankings or the first Conditions?
 kw: Build task acceptance filters; Rankings Conditions; filtering conditions of the builder; _study.yaml; donor NumberOfTrades 500 SortinoRatio Stagnation; first Conditions is BuildMode initial population; sampleType 10 IS in a Build; calibration filters
-tag: 🔬  date: 2026-10-04  see: conditions/condition-xml-shapes, conditions/selection-window, research/post-selection-bias, sqx-drive/unselected-build-population
+tag: 🔬  date: 2026-10-04  see: conditions/condition-xml-shapes, conditions/selection-window, research/post-selection-bias
 ---
 # A Build accepts by `<Rankings><Conditions>`; the FIRST `<Conditions>` of the task is not it
 A Build task's first `<Conditions>` is `<BuildMode>`'s (initial population): `acceptance.CONDITIONS.search(task)`

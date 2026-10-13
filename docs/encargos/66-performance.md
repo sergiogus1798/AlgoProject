@@ -275,7 +275,7 @@ los que hacen viable el millón de sorteos. 6 y 7 esperan a un hueco del conduct
   - **Queda.**
     - Sesión L1 del conductor: Build + OOS y export por `.abk` con cero `orderstocsv`; igualdad fichero a fichero con la ruta parada; frescura; banco con otros mercados; segundos por fase; fixture dorada; estrategia sin operaciones; `booted` y el recorte de `Results` en vivo; corpus del encargo 53 §5c.
     - Después: AlgoBank en el custodio (aviso previo), 7.3 «16.5 sin sync», 8.1 con su consumidor, D27 (diseño al dueño antes de construir), y el cierre (dos medidas de escala, catálogo `perf/`, manual, corrida completa contra §0).
-    - Tarjeta ajena caducada: `knowhow/sqx-drive/unselected-build-population.md` dice «nunca dejarlo llenar», y D24 lo contradice. Es de otra sesión: se corrige cuando esa sesión cierre.
+    - Tarjeta ajena caducada: la ficha `unselected-build-population` de `knowhow/sqx-drive/` (borrada el 2026-10-13 por orden del dueño) dice «nunca dejarlo llenar», y D24 lo contradice. Es de otra sesión: se corrige cuando esa sesión cierre.
 
 ## Tu oficio
 
@@ -1307,7 +1307,7 @@ plano en `funded/sim/table.py` (~1 min de un estudio raro); pasadas del control 
 
 - **D24 — el Build para al llenarse el banco: sí.** Es authoring: `python3 -m core.assets
   <SYMBOL>` antes (regla 5), y una corrida de prueba en el conductor que confirme que para solo.
-  Corrige después `knowhow/sqx-drive/unselected-build-population.md` («never let it fill»).
+  Corrige después la ficha `unselected-build-population` de `knowhow/sqx-drive/` (borrada el 2026-10-13 por orden del dueño) («never let it fill»).
 - **D27 — un ledger único para leaseWeb y gorilla: sí.** Diseño pendiente (quién escribe, cómo
   viaja); es la condición para repartir celdas entre los dos servidores.
 - **D16 — `Results` recortado a las supervivientes tras el paso 8: sí**, «lo que sea más rápido y

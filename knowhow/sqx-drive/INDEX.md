@@ -43,7 +43,6 @@
 - `study-cli-defaults-to-master` — Why does a study's CLI default to the master install, and who must resolve the real install?
 - `three-install-topology` — What are the three SQX installs (master, conductor W1, custodian W2), their ports and what each is for?
 - `transient-abort-automatic-retry` — What does the autopilot do when SQX aborts with «Error while running project», and why must the rerun undo first?
-- `unselected-build-population` — Why does a Build with only `trades >= 100, NetProfit > 0` fill with thousands of strategies, and how do I box it?
 - `variant-chain-custom-project` — What silently breaks `sqx.variants` when run in a custom project, and how are the six breakers handled?
 - `variant-route` — How do I score a parameter tuple: write it into a `.sqx` and retest the file?
 - `variants-execute-needs-worker-it-started` — Why does `sqx.variants.execute` hang after "Project finished" when I pre-started the custodian myself?
