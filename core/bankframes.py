@@ -3,12 +3,40 @@
 import numpy as np
 import pandas as pd
 
+from core import bankfile
+
 
 def texts(bank: dict) -> dict[str, str]:
     """Each strategy's XML by name; its identity is `core.sqxfile._hashed` of the text."""
     raw, ends = bank["xml"], np.cumsum(bank["index"]["xml_len"], dtype="i8")
     return {name: bytes(raw[end - size:end]).decode("utf-8")
             for name, end, size in zip(bank["names"], ends.tolist(), bank["index"]["xml_len"].tolist())}
+
+
+def unbound(bank: dict, stats: dict[str, dict], block: int) -> str:
+    """Why the bank's trades are not the result stored in the .sqx files, or "" when they are.
+
+    Args:
+        bank: What `bankfile.load` returned.
+        stats: Strategy name -> `core.sqxstats.stats` of its file on disk.
+        block: The sample block the databank filled (10 or 20; `sqxview.measured`).
+
+    Returns:
+        "" when each strategy's filled main-result orders count `NumberOfTrades` and add up to
+        `NetProfit` (🔬 2026-10-13, 1,114 strategies of four harvests: counts equal for all, net
+        within 4e-3 absolute and 6e-8 relative -- the stats are float32), else the first one
+        that does not, with both numbers. A dump of other costs or of an older run cannot pass.
+    """
+    o = bank["orders"]
+    o = o[(o["flags"] & 1 == 0) & (bank["labels"][o["res"]] == bank["strings"][bank["index"]["main"]][o["strategy"]])]
+    n = np.bincount(o["strategy"], minlength=len(bank["names"]))
+    net = np.bincount(o["strategy"], weights=bankfile.half_up(o["pl"], 2), minlength=len(bank["names"]))
+    for i, name in enumerate(bank["names"]):
+        st = stats.get(name, {}).get(block, {})
+        want = st.get("NetProfit", np.nan)
+        if n[i] != st.get("NumberOfTrades") or not abs(net[i] - want) <= 0.01 + 1e-6 * abs(want):
+            return f"{name}: el .abk lleva {n[i]} operaciones y {net[i]:.2f} de beneficio, el .sqx {st.get('NumberOfTrades')} y {st.get('NetProfit')}"
+    return ""
 
 
 def _who(bank: dict, strategy: np.ndarray, res: np.ndarray) -> dict:

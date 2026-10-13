@@ -43,8 +43,7 @@ def run(role: str, project: str, banks: dict[str, str]) -> dict[str, int]:
     Returns:
         Strategies written per databank, each file at `core.paths.bank_dir(project, role) /
         "<databank>.abk"`, opened and validated (`bankfile.load`, CRC checked). Only the named
-        banks' files are replaced; nobody deletes them after (`take` reads them, the next `run`
-        overwrites). Empty when the install has no tool project or its snippets are not compiled
+        banks' files are replaced; `take` deletes each one it reads. Empty when the install has no tool project or its snippets are not compiled
         (`sqx.snippets.install`): the caller reads the databank its next way.
     """
     if not banks or not toolproject.cfx(role).exists() or install.pending(role):
@@ -65,6 +64,8 @@ def run(role: str, project: str, banks: dict[str, str]) -> dict[str, int]:
         if not (out / "_done.tsv").exists():         # `live.run` already raised on an aborted run
             raise SystemExit(f"{project}: «AlgoBank» no escribió sus databanks: {end}")
     held = live.records(role, project)
+    if missing := [b for b in banks if b not in held]:
+        raise SystemExit(f"{project}: SQX no tiene {missing} cargado(s); tiene {sorted(held)}")
     wrote = {}
     for bank in banks:
         got = bankfile.load(out / f"{bank}.abk", check=True)
@@ -77,29 +78,32 @@ def run(role: str, project: str, banks: dict[str, str]) -> dict[str, int]:
     return wrote
 
 
-def take(project: str, role: str, bank: str, ids: dict[str, str], newest_mtime: float,
-         data: str) -> dict | None:
-    """The databank's `.abk` loaded, when it is this databank's, whole and newer than its files.
+def take(project: str, role: str, bank: str, ids: dict[str, str], data: str) -> dict | None:
+    """The databank's `.abk` loaded, when it is this databank's and whole; the file is consumed.
 
     Args:
         ids: File stem -> identity (`core.sqxfile._hashed` of the strategy's XML) of every
             strategy the databank holds on disk, exactly.
-        newest_mtime: Modification time of the databank's newest .sqx; an older dump is another run's.
         data: The data mode the caller needs, "main" or "all".
 
     Returns:
-        The loaded bank, or None after one line saying why the caller must read the databank
-        its next way.
+        The loaded bank, or None (one line saying why, none when there is no file) so the caller
+        reads the databank its next way. Names, mode and identities say «same strategies», never
+        «same backtest»: the caller binds the trades to the .sqx's own result with
+        `core.bankframes.unbound`. The file is deleted once loaded, whatever the answer: an `.abk`
+        serves one read.
     """
     path = bank_dir(project, role) / f"{bank}.abk"
+    if not path.exists():
+        return None
     try:
         got = bankfile.load(path, check=True)
+        path.unlink(missing_ok=True)         # the memory map stays valid
         why = (f"modo {got['data']}, se pide {data}" if got["data"] != data
                else f"nombres distintos ({len(set(got['names']) ^ set(ids))} de diferencia)"
                if set(got["names"]) != set(ids)
                else "una identidad no coincide" if any(
-                   sqxfile._hashed(t) != ids[n] for n, t in bankframes.texts(got).items())
-               else "más viejo que el .sqx más nuevo" if got["written_ms"] / 1000 < newest_mtime else "")
+                   sqxfile._hashed(t) != ids[n] for n, t in bankframes.texts(got).items()) else "")
     except (OSError, bankfile.Unreadable) as err:
         got, why = None, str(err)
     if why:

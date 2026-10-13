@@ -12,15 +12,19 @@ from core import sqxfile
 from sqx.export import export_retest
 
 
+STATS = {"Strategy 2.1.1": {10: {"NumberOfTrades": 2, "NetProfit": 715.585}},
+         "Strategy 10.4.7": {10: {"NumberOfTrades": 1, "NetProfit": 190.5}},
+         "Strategy 3.3.3": {10: {"NumberOfTrades": 0, "NetProfit": 0.0}}}
+
+
 def _retest(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, banks: dict) -> tuple[dict, list]:
     """Run export_retest on fake databanks A and B; `banks` maps a databank to the `.abk` to leave for it."""
-    from core import bankfile
     from tests.test_perf66_algobank import _csv, strategies, write
     bank, ran, written = strategies(), [], {}
     for db, held in banks.items():
         if held:
             (tmp_path / "abk").mkdir(parents=True, exist_ok=True)
-            write(tmp_path / "abk" / f"{db}.abk", bank)
+            write(tmp_path / "abk" / f"{db}.abk", bank, data=1)
 
     def stage(project: str, db: str, dest: Path, limit: int, install: Path, prefix: str) -> dict:
         """The databank's three strategies, as files named after them."""
@@ -39,7 +43,6 @@ def _retest(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, banks: dict) -> tup
 
     for name, val in {"export_dir": lambda p, db, day, batch="": tmp_path / "out" / db,
                       "worker_dir": lambda role: tmp_path, "stage": stage,
-                      "databank_dir": lambda p, db, install: tmp_path / "none",
                       "sign": lambda *a: 0}.items():
         monkeypatch.setattr(export_retest, name, val)
     monkeypatch.setattr(export_retest.exportdrv, "trades", trades)
@@ -48,12 +51,10 @@ def _retest(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, banks: dict) -> tup
     monkeypatch.setattr(export_retest.membank, "bank_dir", lambda p, r: tmp_path / "abk")
     monkeypatch.setattr(export_retest.manifest, "write",
                         lambda out, meta, cmd, res, since: written.__setitem__(out.name, res))
-    for db in banks:
-        (tmp_path / "out" / db).mkdir(parents=True)
+    monkeypatch.setattr(export_retest.fanout, "run", lambda fn, d, w: [(k, fn(k)) for k in d])
+    monkeypatch.setattr(export_retest.sqxstats, "stats", lambda f: STATS[f.stem.split("__", 1)[1]])
     monkeypatch.setattr(sys, "argv", ["x", "--project", "Test_X", "--role", "custodian",
                                       *[a for db in banks for a in ("--databank", db)]])
-    monkeypatch.setattr(export_retest.membank, "take", lambda p, r, db, ids, mt, data: (
-        bankfile.load(tmp_path / "abk" / f"{db}.abk") if banks[db] else None))
     export_retest.main()
     return written, ran
 
@@ -78,3 +79,15 @@ def test_export_retest_mixed_sends_only_the_untaken_to_orderstocsv(monkeypatch: 
     got, ran = _retest(monkeypatch, tmp_path, {"A": True, "B": False})
     assert len(ran) == 1 and all(n.startswith("1__") for n in ran[0]) and len(ran[0]) == 3
     assert set(got) == {"A", "B"} and all((tmp_path / "out" / db / "trades.parquet").exists() for db in "AB")
+
+
+def test_export_retest_refuses_a_dump_that_is_not_the_sqx_result(monkeypatch: pytest.MonkeyPatch,
+                                                                 tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+    """Same strategies but another net profit in the .sqx: the `.abk` is not taken, one line names the strategy."""
+    STATS["Strategy 2.1.1"][10]["NetProfit"] = 700.0
+    try:
+        _, ran = _retest(monkeypatch, tmp_path, {"A": True, "B": True})
+    finally:
+        STATS["Strategy 2.1.1"][10]["NetProfit"] = 715.585
+    assert len(ran) == 1 and len(ran[0]) == 6
+    assert capsys.readouterr().out.count(".abk no vale: Strategy 2.1.1") == 2

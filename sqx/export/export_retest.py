@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import bankfile, exportdrv, fanout, identities, manifest, tradepack
-from core.paths import MASTER, databank_dir, export_dir, worker_dir
+from core import bankfile, bankframes, exportdrv, fanout, identities, manifest, sqxstats, sqxview, tradepack
+from core.paths import MASTER, export_dir, worker_dir
 from sqx.export import membank
 from sqx.export.export_trades import SAMPLE_SEED, sign, stage
 
@@ -81,13 +81,19 @@ def main() -> None:
     held = {}
     for i, db in enumerate(a.databank):
         if not (a.role and (membank.bank_dir(a.project, a.role) / f"{db}.abk").exists()):
-            continue
+            continue         # no dump: the identities of the staged files are not worth hashing
         files = sorted((work / "strategies").glob(f"{i}__*.sqx"))
-        newest = max((f.stat().st_mtime for f in databank_dir(a.project, db, install).glob("*.sqx")),
-                     default=0.0)
         ids = {f.stem[len(f"{i}__"):]: v for f, v in identities.many(files, fanout.CORES).items()}
-        if bank := (membank.take(a.project, a.role, db, ids, newest, "all")):
-            held[i] = bank
+        if bank := membank.take(a.project, a.role, db, ids, "all"):
+            stats = {f.stem[len(f"{i}__"):]: s for f, s in fanout.run(sqxstats.stats, {f: 1 for f in files}, fanout.CORES)}
+            try:
+                why = bankframes.unbound(bank, stats, sqxview.measured(stats))
+            except SystemExit as err:       # both sample blocks filled: no single result to bind to
+                why = str(err)
+            if why:
+                print(f"{a.project}/{db}: .abk no vale: {why}")
+            else:
+                held[i] = bank
     (work / "held").mkdir()
     for i in held:      # signed from here; what stays in strategies/ is what orderstocsv reads
         for f in (work / "strategies").glob(f"{i}__*.sqx"):
@@ -101,6 +107,7 @@ def main() -> None:
         command = (f"export_retest.py --project {a.project} --databank {db}"
                    + (f" --batch {a.batch}" if a.batch else "") + (f" --limit {a.limit}" if a.limit else ""))
         out = export_dir(a.project, db, day, a.batch)
+        out.mkdir(parents=True, exist_ok=True)
         if i in held:
             record(bankfile.pack(held[i], out / "trades.parquet", per_market=True),
                    len(timeframes[i]), out, meta, command, began)

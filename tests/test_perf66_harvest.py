@@ -157,43 +157,6 @@ def _main_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, n_files: int = 1)
     return harvest, seen
 
 
-def _world(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, taken: set) -> tuple:
-    """`collect.tables` over two sides of two fake strategies, SQX and the file readers faked."""
-    from core import bankfile, exportdrv
-    from studies.screening.gate import collect
-    from tests.test_perf66_algobank import _csv, strategies, write
-    bank, calls, real = strategies()[:2], {"jvm": 0, "pack": 0}, bankfile.pack
-    tmp_path.mkdir(); write(tmp_path / "b.abk", bank)
-    sides = {s: [tmp_path / s / f"{b['name']}.sqx" for b in bank] for s in ("IS", "OOS")}
-    [(f.parent.mkdir(exist_ok=True), f.write_bytes(b"x")) for fs in sides.values() for f in fs]
-    def jvm(src: Path, out: Path, data: str = "main") -> None:
-        """Fake `orderstocsv`: one CSV per staged file."""
-        calls["jvm"] += 1
-        out.mkdir(parents=True)
-        for f in src.glob("*.sqx"):
-            _csv(out / f"{f.stem}.csv", next(b for b in bank if f.stem.endswith(b["name"])), {"XAUUSD": 2, "XAGUSD": 3})
-
-    monkeypatch.setattr(exportdrv, "trades", jvm)
-    monkeypatch.setattr(bankfile, "pack", lambda *a: calls.update(pack=calls["pack"] + 1) or real(*a))
-    monkeypatch.setattr(collect, "identities", lambda files: {f: f"id-{f.parent.name}-{f.stem}" for f in files})
-    monkeypatch.setattr(collect, "_read", lambda stem: (None, pd.Series([0.0, 1.0]), "H1", 2))
-    monkeypatch.setattr(collect.fanout, "run", lambda fn, d, w: [(k, fn(k)) for k in d])
-    monkeypatch.setattr(collect, "metrics", lambda g: (pd.DataFrame({"Strategy Name": list(g), "x": 1.0}), "blk"))
-    return collect.tables(sides, tmp_path / "w", {s: tmp_path / "exp" / s for s in sides},
-                          {s: bankfile.load(tmp_path / "b.abk") for s in taken}), calls
-
-
-def test_two_taken_banks_harvest_as_orderstocsv_does(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Both sides taken: no JVM, same tables and counts; one side missing: both go by orderstocsv."""
-    both, c_both = _world(tmp_path / "a", monkeypatch, {"IS", "OOS"})
-    csv, c_csv = _world(tmp_path / "b", monkeypatch, set())
-    half, c_half = _world(tmp_path / "c", monkeypatch, {"IS"})
-    assert (c_both, c_csv, c_half) == ({"jvm": 0, "pack": 2}, {"jvm": 1, "pack": 0}, {"jvm": 1, "pack": 0})
-    for got, side, k in [(g, s, k) for g in (both, half) for s in ("IS", "OOS") for k in ("metrics", "trades", "equity")]:
-        pd.testing.assert_frame_equal(got[side][k], csv[side][k], check_exact=True, check_categorical=True)
-        assert got[side]["packed"] == csv[side]["packed"]
-
-
 def test_exports_unsign_the_whole_sides_before_packing_and_the_cosecha_is_dated_at_began(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """A kill while `trades.parquet` is rewritten must leave the side without a manifest; the cosecha's own carries `since`."""

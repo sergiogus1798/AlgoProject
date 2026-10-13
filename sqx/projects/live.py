@@ -53,6 +53,8 @@ def start(role: str, project: str | None = None, presave: bool = False) -> None:
     🔬 2026-10-01: memory == disk before any sync, or it mirrors empty memory over the files (rule 1).
     With `project`, the others load in the background and `stop` waits (§7.4b); `presave` also saves them in parallel (§7.1 B).
     """
+    if pids := worker.holding(_top(role)):
+        raise SystemExit(f"{role} ya está arrancado (PID {pids}): no se arranca ni se mata")
     loadwait.booted(role, lambda: subprocess.run([str(SCRIPT), "--role", role, "--gui", "start"], check=True))
     own = [project] if project else [p["name"] for p in call(role, "list")["projects"] if p["name"].startswith(("Test_", "Trade_", "Research_"))]
     for _ in range(300):
@@ -87,8 +89,7 @@ def _files(project: str, role: str, bank: str) -> int:
 
 def mark(role: str) -> tuple[Path, int]:
     """Where SQX's log ends now: `wait` reads only what is written after it."""
-    log = _log(role)
-    return log, log.stat().st_size
+    return (log := _log(role)), log.stat().st_size
 
 
 def wait(role: str, since: tuple[Path, int]) -> str:
@@ -151,8 +152,7 @@ def run(role: str, project: str, config: str) -> str:
 
 def records(role: str, project: str) -> dict[str, int]:
     """Strategies in memory per databank."""
-    return {d["name"]: d["records"]
-            for d in call(role, "databankList", projectName=project)["databanks"]}
+    return {d["name"]: d["records"] for d in call(role, "databankList", projectName=project)["databanks"]}
 
 
 def _newest(project: str, role: str, bank: str) -> int:

@@ -206,6 +206,7 @@ def _boot(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, written: str) -> tupl
     monkeypatch.setattr(live, "call", lambda role, action, **k: calls.append(action) or {"projects": []})
     monkeypatch.setattr(live, "kill", killed.append)
     monkeypatch.setattr(live.loadwait.time, "sleep", lambda s: None)
+    monkeypatch.setattr(live.worker, "holding", lambda top: [])
     return calls, killed
 
 
@@ -219,3 +220,12 @@ def test_start_returns_only_after_app_loaded_written_after_the_mark(
     with pytest.raises(SystemExit, match="APP LOADED"):
         live.start("custodian")
     assert calls == [] and killed == ["custodian"]               # no task, no query: killed by PID
+
+
+def test_start_refuses_an_install_somebody_holds_and_kills_nothing(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """The script would answer «already running» and `booted` would kill that session after 300 s: refused before."""
+    calls, killed = _boot(monkeypatch, tmp_path, "")
+    monkeypatch.setattr(live.worker, "holding", lambda top: [4242])
+    with pytest.raises(SystemExit, match="ya está arrancado"):
+        live.start("custodian")
+    assert calls == [] and killed == []

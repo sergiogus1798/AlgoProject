@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import bankfile, exportdrv, fanout, sqxfile, sqxstats, tradepack, tradestore
+from core import bankfile, bankframes, exportdrv, fanout, sqxfile, sqxstats, tradepack, tradestore
 from core.identities import many as identities_many
-from core.sqxview import LABEL, VIEW, dof_ratio
+from core.sqxview import LABEL, VIEW, dof_ratio, measured
 
 PREFIX = {"IS": "IS__", "OOS": "OOS__"}   # which databank a staged file came from
 # 🔬 2026-10-01, 2 x 5,130 strategies: the identities were hashed twice in one thread (33 s)
@@ -41,38 +41,6 @@ def index(folder: Path) -> dict[str, Path]:
     files = sorted(folder.glob("*.sqx"))
     ids = identities(files)
     return {ids[f]: f for f in files}
-
-
-def measured(stats: dict[str, dict]) -> int:
-    """Which of the two sample blocks this databank actually filled.
-
-    Args:
-        stats: Staged file stem to `sqxstats.stats()` of its main result.
-
-    Returns:
-        10 or 20. SQX fills the block its task is designated as and leaves the other at
-        zero, and **which one that is cannot be assumed**: 🔬 measured 2026-09-23,
-        `XAUUSD/SPP OOS` puts its retest numbers under (IS) and `XAU_ISOOS_ejemplo/OOS`
-        puts them under (OOS). Taking the wrong one returns a column of zeros with nothing
-        failing, so it is read off the data every time — on the metrics both blocks carry,
-        since a structural one like `Param Count` holds a number whatever the task ran.
-
-    Raises:
-        SystemExit: Both blocks carry numbers, which means this databank was filled by a
-            task that ran its own in/out split. Half its numbers would be dropped on a
-            guess, so the gate refuses rather than picking.
-    """
-    paired = sorted({k for _, k in VIEW[10]} & {k for _, k in VIEW[20]})
-    weight = {n: sum(abs(float(st.get(n, {}).get(k, 0))) for st in stats.values() for k in paired)
-              for n in VIEW}
-    filled = [n for n, w in weight.items() if w > 0]
-    if len(filled) != 1:
-        raise SystemExit(
-            f"este databank llena {[LABEL[n] for n in filled] or 'ninguno'} de los dos bloques "
-            f"de muestra, sobre {len(paired)} metricas pareadas {weight}. La puerta empareja "
-            f"dos databanks de UNA ventana cada uno; uno que llena los dos corrio su propio "
-            f"corte dentro y no se puede saber cual mitad es el retesteo")
-    return filled[0]
 
 
 def _read(stem: str) -> tuple:
@@ -158,6 +126,14 @@ def tables(sides: dict[str, list[Path]], work: Path,
                 for side in sides}
         if exported:
             exported.result()
+    if direct:       # the bank must be the result the .sqx files hold, not just the same strategies
+        for side in sides:
+            block = {v: k for k, v in LABEL.items()}[read[side][1]]
+            why = bankframes.unbound(banks[side], {stem[len(PREFIX[side]):]: got[stem][0]
+                                                    for stem in ids if side_of[stem] == side}, block)
+            if why:
+                print(f"{side}: .abk no vale: {why}")
+                return tables(sides, work, exports, None)
 
     out = {}
     for side in sides:

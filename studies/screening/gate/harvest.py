@@ -77,8 +77,7 @@ def taken_banks(a: argparse.Namespace, install: Path) -> dict[str, dict]:
         files = list(databank_dir(a.project, bank, install).glob("*.sqx"))
         if a.role and files:
             ids = collect.identities(files)
-            banks[side] = membank.take(a.project, a.role, bank, {f.stem: ids[f] for f in files},
-                                       max(f.stat().st_mtime for f in files), "main")
+            banks[side] = membank.take(a.project, a.role, bank, {f.stem: ids[f] for f in files}, "main")
     return banks
 
 

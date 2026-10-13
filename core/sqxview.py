@@ -78,3 +78,35 @@ def _row(name: str) -> dict:
     # ratio is trades over the count above, for a strategy of any age.
     row["DoF Ratio (IS)"] = dof_ratio(row["# of trades (IS)"], row["Param Count (IS)"])
     return row
+
+
+def measured(stats: dict[str, dict]) -> int:
+    """Which of the two sample blocks this databank actually filled.
+
+    Args:
+        stats: Staged file stem to `sqxstats.stats()` of its main result.
+
+    Returns:
+        10 or 20. SQX fills the block its task is designated as and leaves the other at
+        zero, and **which one that is cannot be assumed**: 🔬 measured 2026-09-23,
+        `XAUUSD/SPP OOS` puts its retest numbers under (IS) and `XAU_ISOOS_ejemplo/OOS`
+        puts them under (OOS). Taking the wrong one returns a column of zeros with nothing
+        failing, so it is read off the data every time — on the metrics both blocks carry,
+        since a structural one like `Param Count` holds a number whatever the task ran.
+
+    Raises:
+        SystemExit: Both blocks carry numbers, which means this databank was filled by a
+            task that ran its own in/out split. Half its numbers would be dropped on a
+            guess, so the gate refuses rather than picking.
+    """
+    paired = sorted({k for _, k in VIEW[10]} & {k for _, k in VIEW[20]})
+    weight = {n: sum(abs(float(st.get(n, {}).get(k, 0))) for st in stats.values() for k in paired)
+              for n in VIEW}
+    filled = [n for n, w in weight.items() if w > 0]
+    if len(filled) != 1:
+        raise SystemExit(
+            f"este databank llena {[LABEL[n] for n in filled] or 'ninguno'} de los dos bloques "
+            f"de muestra, sobre {len(paired)} metricas pareadas {weight}. La puerta empareja "
+            f"dos databanks de UNA ventana cada uno; uno que llena los dos corrio su propio "
+            f"corte dentro y no se puede saber cual mitad es el retesteo")
+    return filled[0]
