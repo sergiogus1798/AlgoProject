@@ -248,3 +248,33 @@ def test_the_newest_ingest_is_the_last_written_not_the_last_by_name(
     assert [n for n, _ in afterrun.extras(P, "custodian", tmp_path)] == ["ingesta MC Retest"]
     marker(root / "2026-10-13-10/manifest.json", now)
     assert afterrun.extras(P, "custodian", tmp_path) == []
+
+
+def run_live_execute(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, extra: list[str]) -> set:
+    """`liverun.execute` of step 11 on fakes; the banks handed to `export`."""
+    cfx = tmp_path / "project.cfx"
+    cfx.write_bytes(b"x")
+    pre = {"role": "custodian", "cfx": cfx, "row": {"symbol": "XAUUSD"}, "fill": [],
+           "chosen": [{"title": "CrossTF", "output": "CrossTF", "type": "x"}]}
+    exported: list = []
+    for mod, name, fake in [
+            (liverun, "say", lambda *a: None), (liverun, "assets", lambda *a: None),
+            (liverun, "snapshot", lambda p: (None, {})), (liverun, "counts", lambda p: {}),
+            (liverun, "compare", lambda *a: ""), (liverun, "export", lambda r, p, b: exported.append(b)),
+            (liverun.configure, "run", lambda pre, say: []),
+            (liverun.stage, "just", lambda *a: None),
+            (liverun.crosstfload, "separate_titles", lambda staged: extra),
+            (liverun.live, "sync", lambda *a, **k: None), (liverun.live, "added", lambda *a: False),
+            (liverun.live, "push", lambda *a: {}), (liverun.live, "run", lambda *a: None)]:
+        monkeypatch.setattr(mod, name, fake)
+    liverun.execute(pre, P)
+    return exported[0]
+
+
+def test_step_11_exports_the_extra_timeframe_crosstf_banks_too(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Step 11 ran `CrossTF M30` and `CrossTF H4` but exported only `CrossTF`: step 11.5 then failed
+    with «CrossTF_M30 no tiene export». The tasks are not in `chosen` (they exist after the fill)."""
+    assert run_live_execute(monkeypatch, tmp_path, []) == {"CrossTF"}      # the old behaviour
+    assert run_live_execute(monkeypatch, tmp_path, ["CrossTF M30", "CrossTF H4"]) == {
+        "CrossTF", "CrossTF_M30", "CrossTF_H4"}

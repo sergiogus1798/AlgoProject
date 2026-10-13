@@ -1083,7 +1083,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_perf66_harvest.py` | 212 | Encargo 66 store loop: harvesting the days outside the loop, aliases once and the deferred distributions fold into a save. | core, sqx, studies | numpy, pandas, pytest |
 | `tests/test_perf66_kernel.py` | 230 | Encargo 66 §3.2 and §3.9: the gate's monkey read off a priced table with PCG64 in the kernel | core, engines, studies | numba, numpy, pandas, pytest |
 | `tests/test_perf66_ladder.py` | 226 | Encargo 66 §3.3, §3.5, §3.6: the ladder without `argsort` and on threads gives the bits it gave. | core, engines | numba, numpy |
-| `tests/test_perf66_launch.py` | 250 | Encargo 66, the Python↔SQX connection: one test per launcher bug fixed, on fakes — no SQX is contacted. | mt5, pipeline, sqx, ui | pytest |
+| `tests/test_perf66_launch.py` | 280 | Encargo 66, the Python↔SQX connection: one test per launcher bug fixed, on fakes — no SQX is contacted. | mt5, pipeline, sqx, ui | pytest |
 | `tests/test_perf66_live_presave.py` | 204 | Encargo 66 §7.1/7.4b: `live.start(project)` and the settle before any exit, over HTTP against the fake SQX. | core, mt5, sqx, tests | pytest, yaml |
 | `tests/test_perf66_liveexport.py` | 98 | Encargo 66, tanda E: `liverun.export` dumps the stale banks and cleans up; `export_trades` takes an `.abk`. | core, sqx, tests, ui | pandas, pytest |
 | `tests/test_perf66_market.py` | 62 | Encargo 66 §9.9: the lazy mirror and `evaluate(directions=)` give the eager mirror's numbers, bit for bit. | studies | numpy, pandas, pytest |
@@ -1307,7 +1307,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/daemon/launch/chaincheck.py` | 49 | «Correr workflow», before the press: whether the chain may start, what it would run, the sentence to confirm. | ui | — |
 | `ui/daemon/launch/chainplan.py` | 113 | What «Correr workflow» runs, in WORKFLOW.md's order, and the step it stops before — from the rail. | ui | — |
 | `ui/daemon/launch/configure.py` | 45 | Run the configurator of every chosen task still unconfigured, as its skill does, with the worker stopped. | core, sqx, ui | — |
-| `ui/daemon/launch/liverun.py` | 199 | «Lanzar en SQX» on a GUI session already up: configure a copy, push it, run, mirror to disk, export — no restart. | core, ledger, sqx, ui | — |
+| `ui/daemon/launch/liverun.py` | 202 | «Lanzar en SQX» on a GUI session already up: configure a copy, push it, run, mirror to disk, export — no restart. | core, ledger, sqx, ui | — |
 | `ui/daemon/launch/preflight.py` | 174 | Whether «Lanzar en SQX» may start one task of a project now, and every reason it may not. | core, sqx, ui | — |
 | `ui/daemon/launch/run.py` | 238 | «Lanzar en SQX»: switch on one task or one step's tasks, start the worker once, wait for SQX, stop. | core, ledger, sqx, ui | — |
 | `ui/daemon/launch/steps.py` | 127 | Which SQX tasks one workflow step launches from the window, and the SQX steps it cannot launch. | sqx, ui | — |

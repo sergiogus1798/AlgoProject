@@ -14,6 +14,7 @@ from core.paths import ROOT, bank_dir
 from ledger import steprows
 from sqx.export import membank
 from sqx.projects import crosstfload, exiting, live, stage
+from sqx.projects.workflow import CROSSTF
 from ui.daemon import progress
 from ui.daemon.advance.run import say
 from ui.daemon.launch import configure, preflight
@@ -142,7 +143,7 @@ def execute(pre: dict, project: str) -> dict:
         The output databanks' counts before and after, by title: {title: (before, after)}.
     """
     role, chosen, held = pre["role"], pre["chosen"], pre["cfx"]
-    titles = [t["title"] for t in chosen]
+    titles, solo = [t["title"] for t in chosen], []
     say(2, f"comprobando {pre['row']['symbol']} (regla 5)")
     assets(pre["row"]["symbol"])
     with phase("sync", "antes"):
@@ -170,7 +171,8 @@ def execute(pre: dict, project: str) -> dict:
                 return launcher.execute(pre, project)
             finally:
                 live.start(role)
-        titles += crosstfload.separate_titles(staged) if "CrossTF" in titles else []
+        solo = crosstfload.separate_titles(staged) if "CrossTF" in titles else []
+        titles += solo
         say(10, f"activando solo {', '.join(titles)}")
         stage.just(staged, titles)
         with phase("configure", "push"):
@@ -185,7 +187,8 @@ def execute(pre: dict, project: str) -> dict:
         live.run(role, project, config)      # returns on «Project finished» alone: `live.wait` raises on every abort line
     with phase("sync", "después"):
         live.sync(role, project, force={t["output"] for t in chosen if t["output"]})   # rewritten at one count
-    outputs = {t["output"] for t in chosen}
+    # the extra-timeframe tasks are not in `chosen` (preflight runs before the fill creates them)
+    outputs = {t["output"] for t in chosen} | {f"{CROSSTF['output']}_{t.rsplit(' ', 1)[1]}" for t in solo}
     with phase("compare"):
         after = counts(held.parent)
         print(compare(before, after, outputs, kept), flush=True)
