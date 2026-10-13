@@ -10,8 +10,10 @@ the member (licence < 99 %). 🔬 The clock is the WHOLE cause: `equity.clock.re
 Since 2026-10-13 (owner) clock and commission are FROZEN in the manifest (`manifest.frozen`), `inputs/source.py` reads them
 (`archive_read.frozen`, raises without them, no live fallback). Older members: `python3 -m portfolio.common.construct.inputs.backfill`
 fills what the member's own `asset/card.json` proves (clock only for projects created on/after 2026-10-01) and lists the rest.
+Backfill 2026-10-13: 68 filled (the 30 old-feed USDJPY got EETUS by owner order, `OLD_FEED_CLOCK` — wrong, see Evidence); 5 stay unfilled.
 
 ## Evidence
+- 🔬 2026-10-13, 3 of the 30 old-feed members: rebuild vs SQX daily lows, max_gap 0.3-3 $ with Asia/Jerusalem, 430-2000 $ with EETUS (commission charged).
 - 🔬 2026-10-04, golden `4d679e…/2026-09-28T0919`, daily low vs SQX within 1 $ (`AlgoData/scratch/golden-drift-2026-10-04/d1_explain.py`):
 
   | point value | bars as on disk (EETUS) | re-stamped to Asia/Jerusalem |

@@ -7,7 +7,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np  # noqa: E402
-import pandas as pd  # noqa: E402
+import pandas as pd
+
+from core import assetdata  # noqa: E402
 
 from portfolio.common.construct.equity import blocks, days as eq_days, matrix  # noqa: E402
 from portfolio.common.construct.equity import paths as eq_paths  # noqa: E402
@@ -57,7 +59,8 @@ def bar_world(seed: int, n_members: int, start: str, end: str, edge: float = 0.0
         feed = "FA" if clones or i % 2 == 0 else "FB"
         trades = shared if clones else make_trades(rng, bars[feed], edge)
         name = f"m{i:02d}"
-        sources[name] = {"trades": trades, "feed": feed, "timeframe": "M30", "clock": "UTC", "point_value": 100.0, "symbol": "XAUUSD"}
+        sources[name] = {"trades": trades, "feed": feed, "timeframe": "M30", "clock": "UTC", "point_value": 100.0, "symbol": "XAUUSD",
+                         "commission": assetdata.load("XAUUSD")["costs"]["commission"]["use"]}
         path = eq_paths.minute_path(trades, bars[feed], 100.0)
         table = eq_days.server_days(path, "UTC", zone)
         daily[name] = eq_days.daily_pnl(table)

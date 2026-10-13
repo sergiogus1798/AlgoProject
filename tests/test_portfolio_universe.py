@@ -12,15 +12,13 @@ from core import assetdata  # noqa: E402
 from core.datapaths import variants_dir  # noqa: E402
 from core.paths import archive_dir  # noqa: E402
 from core.barstore import source as bar_source  # noqa: E402
-from portfolio.common.construct.equity import clock, days, matrix, paths, reconcile, sqxcurve  # noqa: E402
+from portfolio.common.construct.equity import days, matrix, paths, reconcile, sqxcurve  # noqa: E402
 from portfolio.common.construct.inputs import source  # noqa: E402
 from portfolio.common.construct.inputs import calendar  # noqa: E402
 
 FAILED = []
 
-HARVEST = (archive_dir() / "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048"
-           / "2026-09-28T0919" / "harvest" / "equity.parquet")
-CLOCK_THEN = "Asia/Jerusalem"      # `USDJPY_DukasM1_the5ers` when the golden was archived
+HARVEST = (archive_dir() / "11278e59164e5e493095627093928bb1d8898afe6e0c2b51d0b07c8d39f00730" / "2026-10-06T2148" / "harvest" / "equity.parquet")
 BATCH = (variants_dir("Test_USDJPY_donchianUpperCrossUp_H1", "Strategy_10.1.79")
          / "equity.parquet")
 
@@ -153,22 +151,22 @@ def test_real_harvest_and_batch() -> None:
 
 
 def test_golden_rebuild_against_sqx_curve() -> None:
-    """The M1 rebuild's daily lowest equity equals SQX's own curve, leg by leg (🔬 max 0.16 $).
+    """The M1 rebuild's daily lowest equity equals SQX's own curve, leg by leg (🔬 max < 1 $).
 
-    On the archive's OWN clock: its trades and SQX's days are stamped in `CLOCK_THEN`, the bars
-    on disk in whatever the registry says today (EETUS since 2026-10-01), so the bars are
-    re-stamped. Without it 129 of 3,906 days miss, all in the weeks the two clocks differ.
+    A USDJPY member of 2026-10-06 (feed already on EETUS): its trades, SQX's days and the bars
+    on disk share the frozen clock, so no re-stamp; the card's commission is charged per leg.
     """
     if not HARVEST.exists():
         check("golden archive present", False, "skipped: archive not found")
         return
     s = source.load(HARVEST.parts[-4], HARVEST.parts[-3])
-    bars = clock.reclock(bar_source(s["feed"], ["High", "Low", "Close"]), s["clock"], CLOCK_THEN)
+    bars = bar_source(s["feed"], ["High", "Low", "Close"])
     sqx = sqxcurve.from_harvest(s["sqx_equity"], s["symbol"])
     for sample, segment in sqxcurve.SAMPLE_TO_SEGMENT.items():
         trades = s["trades"][s["trades"]["sample"] == sample]
-        table = days.server_days(paths.minute_path(trades, bars, s["point_value"]),
-                                 CLOCK_THEN, CLOCK_THEN)
+        fee = paths.entry_commission(trades, s["commission"][segment], s["point_value"])
+        table = days.server_days(paths.minute_path(trades, bars, s["point_value"], fee),
+                                 s["clock"], s["clock"])
         got = reconcile.curve(reconcile.low_equity(table),
                               sqx.loc[sqx["segment"] == segment, "low"], 1.0, 0.99)
         check(f"golden {segment}: rebuild == SQX daily low", got["verdict"] == "ok", f"{got}")

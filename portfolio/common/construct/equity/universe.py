@@ -72,7 +72,7 @@ def _reconcile_rows(identity: str, s: dict, bars: pd.DataFrame, feed_days: pd.Da
 
 def _commission(s: dict) -> np.ndarray:
     """Each trade's commission, at its own segment's figure of the asset card."""
-    card = assetdata.load(s["symbol"])["costs"]["commission"]["use"]
+    card = s["commission"]
     cost = np.zeros(len(s["trades"]))
     for sample, segment in SEGMENT_OF_SAMPLE.items():
         leg = (s["trades"]["sample"] == sample).to_numpy()

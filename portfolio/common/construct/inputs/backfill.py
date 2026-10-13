@@ -11,6 +11,9 @@ from core.archive import manifest, read
 from sqx.inspect import feeds
 
 FEEDS_MOVED = "2026-10-01"   # SQX feeds renamed <ASSET>_M1 on EETUS: before it the live zone is not the trades' clock
+# Owner 2026-10-13 (Q10): the 2026-10-04 USDJPY members were built on the old feed below and get the
+# clock of the current USDJPY feed (FTMO's, EETUS). Not a fallback: any other old feed stays unfilled.
+OLD_FEED_CLOCK = {"USDJPY_DukasM1_the5ers": "USDJPY_M1"}
 
 
 def plan(version: Path) -> tuple[dict | None, str]:
@@ -28,9 +31,12 @@ def plan(version: Path) -> tuple[dict | None, str]:
     use = json.loads((version / "asset" / "card.json").read_text(encoding="utf-8"))["costs"]["commission"]["use"]
     if not isinstance(use, dict):
         return None, f"comisión de la ficha sin tramos ({use!r}): formato anterior a 2026-09-29"
+    feed = manifest.feed_of(version / "strategy.sqx")
     if doc["registry"]["created"][:10] < FEEDS_MOVED:
-        return None, f"proyecto creado {doc['registry']['created'][:10]}: reloj del feed antiguo, no registrado"
-    return {"clock": feeds.timezone(manifest.feed_of(version / "strategy.sqx")), "commission": use}, ""
+        if feed not in OLD_FEED_CLOCK:
+            return None, f"proyecto creado {doc['registry']['created'][:10]}: reloj del feed antiguo {feed}, no registrado"
+        feed = OLD_FEED_CLOCK[feed]
+    return {"clock": feeds.timezone(feed), "commission": use}, ""
 
 
 def write(version: Path, fields: dict) -> None:
