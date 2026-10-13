@@ -22,6 +22,7 @@ from engines.nulls import inputs as null_inputs
 from pipeline.autopilot import judge
 from studies.screening.falsePositives import chain, inputs as fp_inputs, many, model
 from studies.screening.gate import inputs as gate_inputs
+from studies.screening.analysis import resample as RESAMPLE
 
 VALUE, COST, STEP = 100.0, 5.0, 0.01     # $ per point per lot, $ per trade, price per bar
 FREE = {"point_value": VALUE, "tick_size": 1e-6, "spread": 0.0, "slippage": 0.0,
@@ -63,6 +64,13 @@ def donor(bars: pd.DataFrame, n_oos: int = 150, longest: int = 40, seed: int = 3
             "Open price": open_px, "Close price": close_px,
             "Profit/Loss": VALUE * size * (close_px - open_px) - COST, "MAE ($)": 0.0}))
     return pd.concat(parts, ignore_index=True)
+
+
+def test_the_donor_monkeys_stream_is_not_the_resampling_stream() -> None:
+    """numpy pads [seed, k] to [seed, k, 0]: without the tag a pinned seed would hand level 3a/b's draws to the donors."""
+    from engines.nulls import simulate
+    mine = np.random.default_rng([1, simulate._stable("k"), model.TAG, 0]).random(4)
+    assert model.TAG != simulate.TAG and not np.array_equal(mine, RESAMPLE.stream(1, "k").random(4))
 
 
 def test_a_timing_monkey_on_a_straight_line_earns_what_its_donor_earned() -> None:

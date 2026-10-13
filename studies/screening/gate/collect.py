@@ -76,9 +76,10 @@ def measured(stats: dict[str, dict]) -> int:
 
 
 def _read(stem: str) -> tuple:
-    """What one staged file gives the tables -- its SQStats, curve and timeframe -- read in a fanout child."""
+    """What one staged file gives the tables -- SQStats, curve, timeframe, parameter count -- read in a fanout child."""
     f = _STAGED[stem]
-    return sqxstats.stats(f), sqxstats.equity(f, "Main"), sqxfile.symbol(f)[1].rsplit("_", 1)[-1]
+    return (sqxstats.stats(f), sqxstats.equity(f, "Main"), sqxfile.symbol(f)[1].rsplit("_", 1)[-1],
+            sqxfile.param_count(f))
 
 
 def metrics(read: dict[str, tuple]) -> tuple[pd.DataFrame, str]:
@@ -89,7 +90,7 @@ def metrics(read: dict[str, tuple]) -> tuple[pd.DataFrame, str]:
 
     Returns:
         (one row per stem with `Strategy Name`, `TimeFrame` and the filled block's columns,
-        the block's label). `Param Count` / `DoF Ratio`: always Python's (`sqxfile.param_count`,
+        the block's label). `Param Count` / `DoF Ratio`: always Python's (`sqxfile.param_count`, taken in `_read`,
         `sqxview.dof_ratio`), whatever SQX's export carries (owner, 2026-10-13). The timeframe is the feed's suffix inside the file's result name.
     """
     stats = {stem: got[0] for stem, got in read.items()}
@@ -101,7 +102,7 @@ def metrics(read: dict[str, tuple]) -> tuple[pd.DataFrame, str]:
             for stem, st in stats.items()}
     for stem, row in rows.items():       # SQX's stored value is never read: it is inflated on old strategies
         if block == 10:
-            row["Param Count"] = sqxfile.param_count(_STAGED[stem])
+            row["Param Count"] = read[stem][3]
             row["DoF Ratio"] = dof_ratio(row["# of trades"], row["Param Count"])
     return pd.DataFrame.from_dict(rows, orient="index"), LABEL[block]
 

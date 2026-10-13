@@ -5,6 +5,9 @@ import pandas as pd
 
 from engines.nulls import barrier, simulate, windowed
 
+# Keeps the donor monkeys off `resample.stream(seed, key)` (numpy pads [s, k] to [s, k, 0]) and off simulate.TAG's.
+TAG = 0x444F4E52
+
 SAMPLES = ("IS", "OOS")     # the gate's names: the asset's `build` segment and its `oos1`
 
 
@@ -63,7 +66,7 @@ def monkeys(donor: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict, knobs: dict
         own = donor[donor["sample"] == sample].sort_values("Open time").reset_index(drop=True)
         kept = simulate.fixed(own, frame, nullcfg)
         corr = min(corr, kept["checks"]["corr"])
-        rng = np.random.default_rng([nullcfg["nulls"]["seed"], simulate._stable(key), i])
+        rng = np.random.default_rng([nullcfg["nulls"]["seed"], simulate._stable(key), TAG, i])
         # The hours null (owner, 2026-10-12, encargo 65 §5.2): each monkey trade re-enters at a
         # uniform bar of the donor's window AND at the clock hour of the trade it replaces.
         at = kept["located"]

@@ -191,26 +191,22 @@ def test_any_other_missing_statistic_still_fails_loudly(monkeypatch: pytest.Monk
     del block["ProfitFactor"]
     monkeypatch.setitem(gate._STAGED, "S", Path("S.sqx"))
     with pytest.raises(KeyError, match="ProfitFactor"):
-        gate.metrics({"S": ({10: block, 20: {}}, None, "H1")})
+        gate.metrics({"S": ({10: block, 20: {}}, None, "H1", 4)})
 
 
 def test_the_gate_metrics_read_a_strategy_whose_sqx_carries_no_dof_ratio_nor_parameter_count(monkeypatch: pytest.MonkeyPatch) -> None:
     """🔬 2026-10-13: the conductor stopped storing both on 2026-10-06; `Test_Perf66_A` died on `KeyError: 'DoFRatio'`."""
-    from core import sqxfile
     from studies.screening.gate import collect as gate
     stats = {"S": {10: _full(gate, 10, {"NumberOfTrades": 30.0}), 20: {}}}      # no DoFRatio, no ParameterCount
     monkeypatch.setitem(gate._STAGED, "S", Path("S.sqx"))
-    monkeypatch.setattr(sqxfile, "param_count", lambda f: 4)
-    got, label = gate.metrics({"S": (stats["S"], None, "H1")})
+    got, label = gate.metrics({"S": (stats["S"], None, "H1", 4)})
     assert label == "(IS)" and got.loc["S", "Param Count"] == 4 and got.loc["S", "DoF Ratio"] == 7.5
 
 
 def test_the_gate_metrics_ignore_sqxs_own_param_count_and_dof_ratio_when_the_export_carries_them(monkeypatch: pytest.MonkeyPatch) -> None:
     """Owner P9=A: Python's value always wins, even when SQX's export carries a different one (OPEN #86)."""
-    from core import sqxfile
     from studies.screening.gate import collect as gate
     stats = {"S": {10: _full(gate, 10, {"NumberOfTrades": 30.0, "ParameterCount": 9.0, "DoFRatio": 3.3}), 20: {}}}
     monkeypatch.setitem(gate._STAGED, "S", Path("S.sqx"))
-    monkeypatch.setattr(sqxfile, "param_count", lambda f: 4)
-    got, _ = gate.metrics({"S": (stats["S"], None, "H1")})
+    got, _ = gate.metrics({"S": (stats["S"], None, "H1", 4)})
     assert got.loc["S", "Param Count"] == 4 and got.loc["S", "DoF Ratio"] == 7.5
