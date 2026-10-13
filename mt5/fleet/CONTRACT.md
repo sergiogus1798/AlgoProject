@@ -85,6 +85,6 @@ Every new figure reads schema 2 and shows «—» on a schema-1 beat. Times on s
     Conciliación (the newest `AlgoData/mt5/reconcile/<week>/result.json`: summary per strategy and
     pairs; none yet → say so).
 
-House rules: `CODESTYLE.md` (250 lines per file, README table, docstrings and type hints, no defensive
+House rules: `CODESTYLE.md` (500 lines per file, README table, docstrings and type hints, no defensive
 code except at the window's boundary), Spanish on screen, English in code. Own theme (`theme.py`),
 never `ui/`'s.

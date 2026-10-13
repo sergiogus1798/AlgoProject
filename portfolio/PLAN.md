@@ -34,7 +34,7 @@ tested.
 | 🔬 A study returns the contract dict (8 block kinds, 5 states); the window paints it with `ui/desktop/blocks/` | `core/study/CONTRACT.md` |
 | 🔬 Long jobs go through `ui/daemon/jobs.py`: lane `python` (core-budgeted, refuses below 20 GB free RAM) or `conductor` (SQX) | `ui/daemon/jobs.py:25-30,88` |
 | 🔬 Python's RAM reserve is 20 GB; the worst catalogue target peaks 2.5 GB | `knowhow/perf/ram-budget.md` |
-| 🔬 `checks.py`: 250 lines per file, README table per folder, docstrings + type hints, no absolute path outside `core/paths.py`, every `__main__` named by a manual chapter, pinned requirements, fresh `DEPENDENCIES.md` | `CODESTYLE.md`, `tools/checks.py` |
+| 🔬 `checks.py`: 500 lines per file, README table per folder, docstrings + type hints, no absolute path outside `core/paths.py`, every `__main__` named by a manual chapter, pinned requirements, fresh `DEPENDENCIES.md` | `CODESTYLE.md`, `tools/checks.py` |
 | 🔬 `docs/manual/` was ten PDFs, one per family (`tools/manual.py` `FAMILIES`); the eleventh, «11-cartera», added 2026-09-30 (Q17) | `tools/manual.py:26` |
 | 🔬 AlphaForge filters with `abs(corr) <= threshold` — a strongly **negative** correlation is rejected too | AlphaForge `generator/filters.py:148,161,194` |
 | 🔬 AlphaForge's HRP writes each weight at the strategy's position in the dendrogram order and then zips with the names in the original order: weights land on the wrong strategies | AlphaForge `generator/weighting.py:189-193,247` |
@@ -453,7 +453,7 @@ evaluated is counted — including those of a run the owner discards and those o
 ## 7 · AlphaForge, file by file
 
 Clone for reading only in the scratchpad; never read or use `TokenAlphaForge.txt`. "Port" means
-rewrite into this project's style (functions, ≤ 250 lines, no classes, no dataclasses); nothing is
+rewrite into this project's style (functions, ≤ 500 lines, no classes, no dataclasses); nothing is
 copied verbatim.
 
 | AF file (lines) | verdict | why / what changes |

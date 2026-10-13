@@ -138,7 +138,8 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
     `uiCritic`. A session whose task is
     mechanical and that runs on Opus says so in its first line — «tarea mecánica: `/model sonnet`» — and
     carries on; only the owner switches a session's model. Opus is for designing, deciding, statistics
-    and authoring ideas or templates.
+    and authoring ideas or templates. Significant code — a new module, more than 3 files, a contract
+    between packages — is orchestrated: Opus plans and splits, Sonnet writes (`CODESTYLE.md` §13).
 18. **Waiting on SQX happens outside the conversation: one background command, one notice.** Owner,
     2026-10-02 — it replaces the 3-minute pulse he asked for on 2026-09-25. After `action=start`, run
     ONE background command that exits when the run ends — `Project finished` in SQX's log, the `sqcli`

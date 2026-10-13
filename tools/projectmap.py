@@ -18,7 +18,7 @@ OUTSIDE = {"subprocess", "requests", "urllib", "http", "socket", "fastapi", "uvi
 CALC_ROOTS = ("engines", "studies/", "portfolio/", "ledger", "core/study", "core/surface")
 TOOLING = ("tests", "tools", "perf", ".claude/")
 COMMON = {"main()", "run()", "render()", "load()", "report()", "rows()", "build()", "read()", "write()"}
-NEAR_LIMIT = 240
+NEAR_LIMIT = 480
 
 
 def module_of(path: str) -> str:
@@ -119,7 +119,7 @@ def render(nodes: dict, s: dict) -> str:
         out.append(f"| `{mod}` | {uses} | {fan_in[mod]} | {api} |")
 
     big = sorted(((n, f) for f, n in s["lines"].items() if n >= NEAR_LIMIT), reverse=True)
-    out += ["", "## Hot spots", "", f"### Files pressed against the 250-line limit, {NEAR_LIMIT}+ ({len(big)})", ""]
+    out += ["", "## Hot spots", "", f"### Files pressed against the 500-line limit, {NEAR_LIMIT}+ ({len(big)})", ""]
     out += [f"- `{f}` — {n}" for n, f in big[:40]]
     out += ["", "### Most coupled modules (modules used + modules using it)", ""]
     coupled = sorted(per, key=lambda m: -(len(s["deps"][m]) + fan_in[m]))[:15]

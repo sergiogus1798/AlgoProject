@@ -13,7 +13,7 @@ import knowhowmap
 import knowhowrefs
 from layering import bad_layering
 
-ROOT, MAX_LINES = depmap.ROOT, 250
+ROOT, MAX_LINES = depmap.ROOT, 500
 PATHS_MODULE = ROOT / "core" / "paths.py"
 DEVELOPER_ONLY = {"tools", "tests"}
 ABSOLUTE = re.compile(r"""["'](?:/home/|/root/|~/)""")
@@ -21,7 +21,7 @@ PIP_NAME = {"yaml": "PyYAML", "sklearn": "scikit-learn", "PIL": "Pillow", "ruame
 
 
 def too_long(files: list[Path]) -> list[str]:
-    """Files above the 250-line limit.
+    """Files above the 500-line limit.
 
     Args:
         files: Project Python files.

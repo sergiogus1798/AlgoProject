@@ -84,6 +84,7 @@ Sale de la lectura del dossier `docs/AgentPDFs/criterios-implementados-2026-10-1
 | `66-performance.md` | plan vivo: la auditoría de rendimiento y errores del Python del workflow (2026-10-12) — pérdida de filas en `draws.merge`, el control de falsos positivos (37 % de la corrida), núcleos del mono para 1 M de sorteos, 48 núcleos donde hoy hay 8, el binario `AlgoBank` por databank y el almacén sin copia; cada cambio con su prueba de igualdad | evidencia en `AlgoData/audit/performance-2026-10-12/`; comparte `gate/level3c.py` y `falsePositives/` con el 65 |
 
 | `67-filtro-minimo-calibrado-con-sinteticos.md` | el umbral mínimo del Build por celda (activo × TF), medido en lo que halla una hora de build sin filtros sobre series sintéticas; con su coste en estrategias rechazadas y minutos hasta 10.000 | `66` (D24 estable), `58` (generador) |
+| `68-adaptar-el-codigo-al-codestyle.md` | plan vivo: que las reglas nuevas de `CODESTYLE.md` (2026-10-13) las compruebe una máquina — 18 fases: tests al entregar, hooks, trinquete, ruff ampliado, semillas, `assert` en los lectores, comprobador de tipos, los 1.375 `-> dict` sin tipar, código muerto, README generado, lockfile, canario, gorilla, agente `reviewer` y `ruff format` | nada |
 
 ## Adónde fue cada encargo viejo
 

@@ -9,59 +9,59 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 |---|---|---|---|---|
 | `.claude/hooks` | INFRA | 3 | 425 | A hook bug must never block work: both let the call through on any internal error, and a shell line |
 | `.claude/skills` | INFRA | 3 | 175 | — |
-| `core` | MIXED | 37 | 4476 | Everything that more than one phase needs. Import it as a package from the project root; scripts that |
-| `core/archive` | INFRA | 6 | 418 | A strategy that survived the sequence cost a lot of CPU. The archive freezes it — its `.sqx`, its |
+| `core` | MIXED | 37 | 4523 | Everything that more than one phase needs. Import it as a package from the project root; scripts that |
+| `core/archive` | INFRA | 6 | 488 | A strategy that survived the sequence cost a lot of CPU. The archive freezes it — its `.sqx`, its |
 | `core/assetwrite` | INFRA | 4 | 408 | Split into a folder on 2026-09-29 (`CODESTYLE.md` rule 1, 250 lines). Every caller still writes |
-| `core/store` | INFRA | 9 | 1099 | A strategy that passed the gate (step 8, limbo included) is irreproducible — the build is genetic — |
-| `core/study` | CALC | 18 | 1533 | A study (`studies/…`, `portfolio/common/monteCarlo`) computes; this folder only says **what shape |
+| `core/store` | INFRA | 9 | 1176 | A strategy that passed the gate (step 8, limbo included) is irreproducible — the build is genetic — |
+| `core/study` | CALC | 18 | 1623 | A study (`studies/…`, `portfolio/common/monteCarlo`) computes; this folder only says **what shape |
 | `core/surface` | CALC | 5 | 454 | A grid of parameter tuples measured in two windows. Not a databank, not a strategy: the surface |
 | `engines` | CALC | 1 | 1 | A study asks a question and ends in a verdict; an engine only computes. Every study imports |
 | `engines/inference` | CALC | 5 | 290 | Every study that tests many things at once needs the same arithmetic: how many passed against |
-| `engines/market` | CALC | 10 | 786 | One copy of what every study that re-prices trades needs: the ATR a trade is scaled by, the |
-| `engines/nulls` | CALC | 14 | 1435 | Two families of null models live here, and they are different on purpose: |
+| `engines/market` | CALC | 10 | 795 | One copy of what every study that re-prices trades needs: the ATR a trade is scaled by, the |
+| `engines/nulls` | CALC | 14 | 1512 | Two families of null models live here, and they are different on purpose: |
 | `engines/regimes` | CALC | 2 | 99 | Read by the Monte Carlo study's family D; the conditional map (encargo 14) is the next reader. |
 | `engines/resample` | CALC | 2 | 144 | Index generators: given a sequence length and a block, which positions each simulated run takes. |
 | `engines/variants` | CALC | 6 | 506 | What the studies of one mother's parameter cloud all read the same way: which points are usable, |
-| `engines/weekly` | CALC | 3 | 213 | What steps 17 (WFC), 18.5 (market surfaces) and 19 (WFM) compute the same way: trades into a |
-| `ledger` | CALC | 12 | 1634 | Every step of the chain counts its own funnel and forgets it. This module is the book that does |
-| `mt5` | MIXED | 7 | 897 | **Since 2026-09-29 the terminal's own MCP (`metatrader5`, MetaQuotes, local scope) is the main |
+| `engines/weekly` | CALC | 3 | 218 | What steps 17 (WFC), 18.5 (market surfaces) and 19 (WFM) compute the same way: trades into a |
+| `ledger` | CALC | 12 | 1641 | Every step of the chain counts its own funnel and forgets it. This module is the book that does |
+| `mt5` | MIXED | 7 | 918 | **Since 2026-09-29 the terminal's own MCP (`metatrader5`, MetaQuotes, local scope) is the main |
 | `mt5/fleet` | MIXED | 26 | 2140 | Field list of everything below: `CONTRACT.md` (FleetBeacon schema 2, the collector, what MetaTracker shows). |
 | `mt5/newsfilter` | MIXED | 11 | 974 | SQX exports an EA with no news filter. A funded account at Hantec (or FTMO) may not open or close a |
-| `mt5/reconcile` | MIXED | 8 | 702 | OPEN.md #78 (owner, 2026-09-29): each weekend, the SQX backtest of the strategies that are |
-| `mt5/verify` | INFRA | 11 | 1415 | The owner's design (2026-09-29, replacing encargo 34 §2's "translate SQX's history"): **one SQX |
+| `mt5/reconcile` | MIXED | 8 | 708 | OPEN.md #78 (owner, 2026-09-29): each weekend, the SQX backtest of the strategies that are |
+| `mt5/verify` | INFRA | 11 | 1428 | The owner's design (2026-09-29, replacing encargo 34 §2's "translate SQX's history"): **one SQX |
 | `mt5/winside` | INFRA | 1 | 134 | The `MetaTrader5` package exists only for Windows, so what talks to the terminal runs inside the |
-| `perf` | INFRA | 4 | 272 | Qué cuesta cada parte cara del proyecto, en tiempo y en memoria, medido de la misma forma cada vez |
+| `perf` | INFRA | 4 | 274 | Qué cuesta cada parte cara del proyecto, en tiempo y en memoria, medido de la misma forma cada vez |
 | `perf/disk` | INFRA | 6 | 542 | Read-only over `~/Desktop/AlgoData`. Nothing here deletes, moves or rewrites anything. |
 | `perf/inputs` | INFRA | 7 | 785 | Configuration only. Nothing here times anything; `perf/measure/` does that. |
-| `perf/measure` | INFRA | 4 | 341 | Execution only. What gets measured is `perf/inputs/`; what the number means is `perf/verdict.py`. |
+| `perf/measure` | INFRA | 4 | 370 | Execution only. What gets measured is `perf/inputs/`; what the number means is `perf/verdict.py`. |
 | `pipeline` | INFRA | 1 | 125 | > 2026-10-13: the old chain (`run.py`, `stages/`, `verify/`, `stubs/`, `recipe.yaml`) was deleted — no production caller. What runs is `auto |
-| `pipeline/autopilot` | MIXED | 20 | 2325 | The window's «Correr workflow» (`ui/daemon/launch/chain.py`) already runs every SQX step and |
+| `pipeline/autopilot` | MIXED | 20 | 2318 | The window's «Correr workflow» (`ui/daemon/launch/chain.py`) already runs every SQX step and |
 | `pipeline/campaign` | INFRA | 7 | 585 | The campaign walks cells (template × asset × timeframe, long only, M30/H1/H4) and runs the whole workflow |
 | `pipeline/ledger` | INFRA | 3 | 309 | One `state.json` per mother strategy, at `AlgoData/pipeline/<project>/<strategy>/state.json`. |
-| `portfolio/common` | MIXED | 105 | 9496 | Strategies that survive the generation and robustness pipeline are individually plausible; this folder |
+| `portfolio/common` | MIXED | 105 | 9633 | Strategies that survive the generation and robustness pipeline are individually plausible; this folder |
 | `portfolio/funded` | MIXED | 40 | 3446 | Strategies that survive the generation and robustness pipeline are individually plausible; this folder |
 | `portfolio/testroot` | CALC | 4 | 231 | A test of the portfolio module runs the **real** code — the real ledger writer, the real archive |
 | `sqx/blocks` | INFRA | 4 | 692 | **No GUI import is needed.** `customBlocks.xml` is the store itself, and `sqcli` never rewrites it |
-| `sqx/curate` | INFRA | 2 | 365 | The only folder here that **changes what a databank contains**. Nothing runs without `--apply`, |
+| `sqx/curate` | INFRA | 2 | 354 | The only folder here that **changes what a databank contains**. Nothing runs without `--apply`, |
 | `sqx/data` | INFRA | 2 | 199 | One job: run the data update the GUI's "Update all" button runs, and then make |
-| `sqx/export` | INFRA | 9 | 1017 | Every script here writes into the data root and leaves a `manifest.json` next to what it wrote. |
+| `sqx/export` | INFRA | 8 | 1010 | Every script here writes into the data root and leaves a `manifest.json` next to what it wrote. |
 | `sqx/inspect` | INFRA | 15 | 1910 | Every tool here is read-only. Opening a `project.cfx` or a `.sqx` touches no SQX state and needs no |
-| `sqx/projects` | INFRA | 43 | 6315 | **Why this exists.** A project is cloned from a donor, and the donor carries the **master's own |
-| `sqx/snippets` | INFRA | 2 | 146 | Java that SQX compiles and runs inside itself, mirrored as `user/extend/` wants it: |
+| `sqx/projects` | INFRA | 43 | 6317 | **Why this exists.** A project is cloned from a donor, and the donor carries the **master's own |
+| `sqx/snippets` | INFRA | 2 | 161 | Java that SQX compiles and runs inside itself, mirrored as `user/extend/` wants it: |
 | `sqx/structural` | INFRA | 1 | 89 | `logic.py` only: reads a strategy's entry conditions and order direction from `strategy_Portfolio.xml` |
 | `sqx/templates` | INFRA | 3 | 397 | What the owner means by "create a strategy", in his words (2026-09-22). Three steps, in order: |
 | `sqx/variants` | MIXED | 28 | 3542 | Stage 2 of the robustness protocol. A design brief comes in; **N `.sqx` files and the manifest that |
 | `studies/breakage` | MIXED | 45 | 5297 | WORKFLOW steps 13–16. |
-| `studies/closing` | CALC | 18 | 1638 | WORKFLOW steps 20–21 (`atrCalculator`, step 24, was deleted on 2026-10-11 after its pre-registered measurement read NO PASA — see git histor |
-| `studies/data` | CALC | 27 | 2608 | Studies of the inputs rather than of a strategy: `feedQuality/` (encargo 17) and `spread/`. |
-| `studies/optimisation` | CALC | 77 | 6299 | WORKFLOW steps 16.5–19. |
-| `studies/readings` | CALC | 20 | 1477 | WORKFLOW steps —. |
-| `studies/research` | MIXED | 84 | 7456 | The family that decides **what to investigate**, before any idea exists: which asset, timeframe, |
-| `studies/screening` | MIXED | 55 | 5312 | WORKFLOW steps 7–8. |
-| `studies/transfer` | CALC | 32 | 3219 | WORKFLOW steps 9–12. |
-| `tests` | INFRA | 293 | 34984 | A handful of tests, only where a silent break would go unnoticed for weeks: the parsers everything |
+| `studies/closing` | CALC | 18 | 1660 | WORKFLOW steps 20–21 (`atrCalculator`, step 24, was deleted on 2026-10-11 after its pre-registered measurement read NO PASA — see git histor |
+| `studies/data` | CALC | 27 | 2621 | Studies of the inputs rather than of a strategy: `feedQuality/` (encargo 17) and `spread/`. |
+| `studies/optimisation` | CALC | 77 | 6354 | WORKFLOW steps 16.5–19. |
+| `studies/readings` | CALC | 20 | 1574 | WORKFLOW steps —. |
+| `studies/research` | MIXED | 84 | 7498 | The family that decides **what to investigate**, before any idea exists: which asset, timeframe, |
+| `studies/screening` | MIXED | 55 | 5532 | WORKFLOW steps 7–8. |
+| `studies/transfer` | CALC | 32 | 3185 | WORKFLOW steps 9–12. |
+| `tests` | INFRA | 292 | 35123 | A handful of tests, only where a silent break would go unnoticed for weeks: the parsers everything |
 | `tools` | INFRA | 15 | 2210 | `manual.py` renders the chapters to `docs/manual/NN-<family>.pdf` through headless Chrome, whose path lives in `config/machine.yaml`. The ow |
-| `ui/daemon` | MIXED | 185 | 18979 | FastAPI on loopback. Everything the window knows, it learns here; everything it changes, it changes |
+| `ui/daemon` | MIXED | 185 | 19023 | FastAPI on loopback. Everything the window knows, it learns here; everything it changes, it changes |
 | `ui/desktop` | INFRA | 172 | 20965 | PySide6. Draws what the daemon says, and asks the daemon for every change. **No view here opens a |
 | `ui/text` | INFRA | 17 | 1522 | Pure-Python modules (no Qt, no FastAPI, no file read) that the window **and** the daemon |
 
@@ -129,64 +129,24 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 
 ## Hot spots
 
-### Files pressed against the 250-line limit, 240+ (66)
+### Files pressed against the 500-line limit, 480+ (0)
 
-- `ui/text/glossary.py` — 250
-- `ui/desktop/workspace/rail.py` — 250
-- `ui/desktop/workspace/panel.py` — 250
-- `ui/desktop/studypage/page.py` — 250
-- `ui/desktop/ops/jobsbar.py` — 250
-- `ui/desktop/blocks/result.py` — 250
-- `ui/daemon/ops/pulse.py` — 250
-- `ui/daemon/loader/state.py` — 250
-- `ui/daemon/launch/chain.py` — 250
-- `ui/daemon/jobs.py` — 250
-- `tools/uiinventory.py` — 250
-- `tools/checks.py` — 250
-- `tests/test_ui_columns.py` — 250
-- `tests/test_research_board.py` — 250
-- `tests/test_portfolio_stageb.py` — 250
-- `tests/test_portfolio_mc_paths.py` — 250
-- `tests/test_funded_rules.py` — 250
-- `tests/test_crossmarket_travel_rules.py` — 250
-- `tests/test_crossmarket_travel.py` — 250
-- `sqx/variants/scale.py` — 250
-- `sqx/variants/execute.py` — 250
-- `sqx/projects/live.py` — 250
-- `sqx/projects/buildrules.py` — 250
-- `sqx/projects/builder.py` — 250
-- `pipeline/autopilot/run.py` — 250
-- `mt5/verify/run.py` — 250
-- `core/study/blocks.py` — 250
-- `ui/desktop/detail.py` — 249
-- `ui/desktop/coverage.py` — 249
-- `ui/daemon/results/store.py` — 249
-- `tests/test_research_memory.py` — 249
-- `tests/test_portfolio_pairs.py` — 249
-- `tests/test_perf66_launch.py` — 249
-- `tests/test_autopilot_tail.py` — 249
-- `mt5/verify/judge.py` — 249
-- `ui/desktop/mt5bridge/zone.py` — 248
-- `ui/daemon/advance/run.py` — 248
-- `studies/breakage/mcRetest/ingest.py` — 248
-- `sqx/variants/harness.py` — 248
-- `sqx/blocks/palette.py` — 248
 
 ### Most coupled modules (modules used + modules using it)
 
 - `tests` — uses 46, used by 8
 - `core` — uses 2, used by 47
 - `ui/daemon` — uses 27, used by 9
-- `portfolio/common` — uses 13, used by 9
 - `core/study` — uses 2, used by 20
+- `portfolio/common` — uses 13, used by 9
 - `sqx/projects` — uses 7, used by 13
 - `studies/optimisation` — uses 11, used by 6
 - `perf/inputs` — uses 13, used by 4
-- `sqx/inspect` — uses 3, used by 12
-- `studies/screening` — uses 7, used by 8
 - `portfolio/funded` — uses 10, used by 5
-- `pipeline/autopilot` — uses 10, used by 4
+- `studies/screening` — uses 7, used by 8
+- `sqx/inspect` — uses 3, used by 12
 - `engines/market` — uses 1, used by 13
+- `pipeline/autopilot` — uses 10, used by 4
 - `studies/research` — uses 6, used by 6
 - `studies/transfer` — uses 8, used by 4
 

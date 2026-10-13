@@ -7,8 +7,8 @@ Read this before writing or changing any Python here. These rules override any d
 
 ## 1. Short files
 
-**250 lines maximum.** If the job does not fit, split it into modules inside a folder with a name of
-its own — never one giant file. A file approaching 250 lines is usually two concerns wearing one name.
+**500 lines maximum.** If the job does not fit, split it into modules inside a folder with a name of
+its own — never one giant file. A file approaching 500 lines is usually two concerns wearing one name.
 
 ## 2. Every code folder has a README
 
@@ -51,17 +51,31 @@ a non-obvious convention, a trap in the source data.
   person** — the window and its daemon (`ui/`). There a daemon that is down, a field the owner typed
   wrong or a value that is not a number is caught and shown, because one bad input must not take
   the app down. The analysis the window calls still crashes as above.
-- **No edge cases that were not asked for.** Not the empty list, not the missing column, not the
-  second date format.
+- **Check at the door, then trust.** "Let it crash" only works when it crashes, and bad market data
+  usually does not: it becomes a NaN that propagates or a join that misaligns. So where data enters
+  from outside — a reader of `.sqx`, `.cfx`, CSV or parquet, MT5, a scraped page — one `assert` on
+  shape and range goes right after the read, with a message that names the file. Past that line the
+  code trusts what it holds and carries no further guards.
+- **An error raised on purpose says what happened and what to run next** — "databank X has no OOS
+  export: run `/export` on it" — never a bare `KeyError` the owner has to decode.
+- **No edge cases that were not asked for.** Not the missing column, not the second date format.
+  An empty population is not one of them: zero survivors after a filter is a normal outcome here,
+  and a module that receives none says so instead of returning NaN.
 - **No configurability nobody requested.** No flags "for flexibility", no options with defaults nobody
   will change. Hard-code what is fixed; parameterise only what actually varies.
 - **No premature abstraction.** Two similar lines are fine. Do not build a helper, a class or a
   registry to avoid repeating yourself twice. Rule 5 is the exception, and only the exception: a
   registry earns its place when the thing it holds is a **choice the study has to expose**, never
   when it only saves typing.
-- Plain function over class. Dict over dataclass. Comprehension over loop while it stays readable.
+- Plain function over class. Comprehension over loop while it stays readable.
   Logic is a function that takes data and returns data, never an object that keeps state and changes
-  it through methods. **A class is written only when a library demands one** — a Qt widget or dialog
+  it through methods — and it does no reading or writing of its own: the caller (`main()`) loads,
+  calls and saves, which is what keeps a known-answer test three lines long.
+- **A record that crosses a module boundary declares its keys.** Inside one module a plain dict is
+  fine. What another module receives is a `TypedDict` or a `@dataclass(frozen=True)` — still data
+  without methods — because `-> dict` tells the reader nothing and a mistyped key is found only at
+  run time. A mapping whose keys come from the data says its types: `dict[str, float]`, never a
+  bare `dict`. **A class is written only when a library demands one** — a Qt widget or dialog
   is a subclass, a FastAPI request body is a pydantic `BaseModel` — and it holds the wiring that
   library asks for, not the logic, which stays in functions.
 - Order within a file: constants, then helpers, then callers, then `main()`, then the
@@ -129,7 +143,7 @@ python3 tools/depmap.py && python3 tools/checks.py
 
 The lint config is `ruff.toml` (real bugs only, no formatter); `ruff check .` must be clean for its selected rules — `checks.py` runs it as its "lint" check.
 
-`checks.py` reports: files over 250 lines, `.py` missing from its folder README, missing module
+`checks.py` reports: files over 500 lines, `.py` missing from its folder README, missing module
 docstrings, functions without a docstring or without type hints, absolute paths outside
 `core/paths.py`, imports missing from `requirements.txt`, and a stale `DEPENDENCIES.md`. It blocks
 nothing while you work — it just has to be green before the work is done.
@@ -155,10 +169,66 @@ slow — it dies halfway through a run. So speed and memory are part of the work
 ## 10. Review
 
 The owner reviews the plan and the diff, not every line. Show the plan before writing a non-trivial
-script; work that is more than a fix goes on a branch of its own, and the owner reads its diff before
-it is merged into `master`. Do not run anything destructive without asking — a skill the owner
+script (§12); everything is written on `master` and left uncommitted, and the owner reads the diff
+before he commits it (`CLAUDE.md` rule 12). Do not run anything destructive without asking — a skill the owner
 invokes that deletes by design (`curate`, `oos-gate`) is the asking. **If a rule here would make the code wrong, say so and explain why** — do
 not silently break it, and do not silently write bad code to obey it.
+
+## 11. Randomness is seeded
+
+Every random draw comes from `np.random.default_rng(seed)` — never `default_rng()` bare, never the
+legacy `np.random.*` functions. The seed is an argument of the function that draws, and it is saved
+with the result it produced. A Monte Carlo or a null that cannot be rerun to the same number cannot
+be checked, and a difference between two runs cannot be told from a bug.
+
+## 12. How a change is made
+
+1. **Plan first when it is big.** More than 3 files, or a new module: five lines before any code —
+   what, which files, what is deleted, what is reused, and the command that will prove it works.
+2. **Look before you write.** `graphify query` or a grep for a helper that already does it.
+   Re-implementing what lives three folders away is the commonest way this codebase grows.
+3. **A bug arrives with its test.** First the test that fails, seen failing; then the fix, seen
+   passing. A test that was never red proves nothing — so a new known-answer test is also seen red
+   once: break the function for a moment and it must fail.
+4. **Stay inside the task.** The diff touches what the task named. What you notice on the way goes
+   to `OPEN.md`, not into the diff.
+5. **"Done" carries its evidence**: the command that was run and the tail of its output. Never
+   "this should work". A new command is also run once for real, on a small real input, not only
+   through its test. And read your own `git diff` before reporting: a debugging `print`, a leftover
+   or a file that was not the task's is found there.
+6. **An independent review before the commit question**, for any change beyond a one-file fix.
+   Spawn a `general-purpose` subagent, `model: "sonnet"` (Opus, said in the brief, when the diff
+   touches inference or statistics), and give it three things only: `git diff -- <the task's files>`,
+   this file, and the task's goal in one line. **Never your reasoning or your summary** — a reviewer
+   handed the author's account returns it confirmed. It answers with findings as `file:line`; fix
+   or rebut each one, and tell the owner the ones left standing.
+7. **Three tries, then a report.** The same failure three times: stop and say what was tried. Green
+   is never reached by weakening the test, loosening a threshold or catching the error.
+8. **A refactor is proved by difference.** Before the old code is deleted (`CLAUDE.md` rule 21), old
+   and new are run on the same real input and their outputs compared; the comparison is the evidence.
+9. **A mistake made twice becomes a check.** What the review or the owner catches a second time is
+   added to `tools/checks.py`, so the third time is caught by a machine.
+
+## 13. Significant work is orchestrated
+
+A change that creates a module, touches more than 3 files or changes a contract between packages is
+planned by one capable agent and written by cheaper ones (`CLAUDE.md` rule 17). Below that size one
+session does it directly: writing the briefs would cost more than the change.
+
+- **The orchestrator (Opus) reads, decides and splits — it writes no code.** It also keeps out of
+  the executors' output: it receives file lists and command tails, never diffs or whole files, or
+  the work is paid for twice.
+- **Each piece is a brief with five things**: the goal in one sentence; the closed list of files it
+  may touch; the existing code it must reuse; the acceptance command; and the line "if the plan
+  looks wrong, stop and say so — do not improvise".
+- **Executors run on Sonnet**, Haiku when the piece is purely mechanical. A piece of design,
+  statistics or template authoring is not handed down. Each returns the files it changed and the
+  tail of its acceptance command, nothing else.
+- **Parallel only on disjoint files.** There is one folder and no worktree: two pieces that share a
+  file run one after the other.
+- **The orchestrator closes the loop itself**: it runs every acceptance command and `checks.py` —
+  an executor's "done" reads the same whether it is right or wrong — and then the review of §12.6
+  reads the whole diff.
 
 ## Tests
 
