@@ -41,7 +41,7 @@ With the idea, the template and the project. It writes `sqx/blocks/palettes/<tem
 applies it: `python3 -m sqx.projects.buildingblocks --project P --palette <template> --role custodian`.
 The conditions on must be inside the owner's band (90-170).
 
-## 7. The rest — `/autopilot`
+## 7. The rest — `/workflow` (way in C, `run`)
 
 From the build (step 6's task, chained with 7) to 16, then the tail 16.5 to 21 for every survivor
 (26 when its four parameters are given), unattended, reading only `resumen.md`.

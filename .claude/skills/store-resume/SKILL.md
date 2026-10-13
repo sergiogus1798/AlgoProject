@@ -32,4 +32,4 @@ run itself is `bin/workflow.sh run` (hard rule 19).
    The project is a `Test_`: retire it once saved (`/store-save` step 5).
 
 Only step 13 is a resume point: strategies cut earlier have no stored input for the step they
-would start at. A fresh idea is `/workflow-template` or `/workflow-simple`, not this.
+would start at. A fresh idea is `/workflow`, not this.

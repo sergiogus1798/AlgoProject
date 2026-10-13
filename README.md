@@ -180,7 +180,7 @@ file to open for which task. Read `CODESTYLE.md` before writing Python, and the 
 `strategies/`, …) is `docs/MAPA-DE-CARPETAS.md`.
 
 Skills (`.claude/skills/`, catalogued in `docs/SKILLS.md`) turn each chain the owner runs again
-into one command — `/workflow-simple` and `/workflow-template` for the whole workflow, `/store-save`,
+into one command — `/workflow` for the whole workflow, `/store-save`,
 `/store-open` and `/store-resume` for the strategy store, `/research-direct` and `/literature-scout`
 for the research chain, and one per step (`/oos-gate`, `/crossmarket`, `/crosstf`, `/mcretest`,
 `/spp`, `/variants`, `/wfm`, `/export`, `/curate` and others) for testing a step on its own. Scheduled agents

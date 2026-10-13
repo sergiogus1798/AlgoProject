@@ -1,4 +1,6 @@
-# Steps 5-25 as the autopilot runs them
+# Steps 5 to 21 and 26 as the autopilot runs them
+
+Steps 22 to 25 do not exist: deleted 2026-10-11.
 
 Sources: `pipeline/autopilot/{plan.py,criteria.yaml,README.md}`, `sqx/projects/{stages.yaml,workflow.py}`,
 `ui/daemon/launch/steps.py`, a real `plan.json` (`Test_NIKKEI225_M30_simpleL_fin/20261005-160743`).

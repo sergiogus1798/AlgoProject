@@ -39,7 +39,8 @@ bin/workflow.sh template <PROJECT> <SYMBOL> <TF> <TEMPLATE.sqx> <PALETTE|-> "<PU
 ```
 
 PROJECT, SYMBOL, TF, PURPOSE, STRATEGIES, MINUTES as in A. TEMPLATE is the path of the template's
-`.sqx` in the library, one side only. PALETTE fills the template's random hole; `-` ONLY when the
+`.sqx` in the library, one side only (the builder refuses a template whose long and short
+entries both open trades, hard rule 13). PALETTE fills the template's random hole; `-` ONLY when the
 template has none (two fixed conditions a side, hard rule 14) — ask the owner which. This skill
 does not author the template: that is steps 1-4, `/workflow-start`.
 
@@ -95,13 +96,17 @@ Configuración). Never edit it to get a run through. Steps 22 to 25 do not exist
    18): no polling, no `sleep`, no reading SQX's log, **nothing CPU-heavy beside it** (it doubled
    SQX's task times), and **no edit to `bin/workflow.sh` or `bin/workflow-test.sh`** (bash reads
    a script while it runs it: an edit mid-run broke a run's end on 2026-10-13).
+   A run of 1,000 strategies with 10 mothers of 500 variants took 160 min. A known SQX abort
+   (fastutil NullPointerException) is rerun once by the autopilot itself.
 3. If the owner asks how it goes, ONE line: `tail -1 ~/Desktop/AlgoData/autopilot/<PROJECT>/*/estado.txt`.
 
 ## 5. When it notifies
 
 It printed the last status line, the failure (if any) and the path of `resumen.md`. Read
 `resumen.md` (one line per step; `tiempos.md` for where the seconds went) and report in Spanish:
-per step what ran, seconds, the cut (in → out), and where it stopped.
+per step what ran, seconds, the cut (in → out), and where it stopped. A judge's numbers are in
+`paso-<n>/hechos.parquet`; the keys a rule can use: `python3 -m pipeline.autopilot.facts --project P
+--step N --grep <text>`. Do not read SQX's log or the run's stdout unless the owner asks.
 
 | last line | meaning | do |
 |---|---|---|
