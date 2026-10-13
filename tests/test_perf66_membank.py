@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core import bankfile, bankframes, sqxfile  # noqa: E402
 from sqx.export import membank  # noqa: E402
-from tests.test_perf66_algobank import strategies, write  # noqa: E402
+from tests.test_perf66_algobank import SILVER, strategies, write  # noqa: E402
 
 WRITTEN = 1_760_000_000.0          # the writer's fixed written_ms, in seconds
 
@@ -166,3 +166,28 @@ def test_two_taken_banks_harvest_as_orderstocsv_does(tmp_path: Path, monkeypatch
     for got, side, k in [(g, s, k) for g in (both, half) for s in ("IS", "OOS") for k in ("metrics", "trades", "equity")]:
         pd.testing.assert_frame_equal(got[side][k], csv[side][k], check_exact=True, check_categorical=True)
         assert got[side]["packed"] == csv[side]["packed"]
+
+
+def test_unbound_binds_every_market_of_an_all_bank(folder: Path) -> None:
+    """In "all" mode each market's count and net are bound, not only the main one's; a market the .sqx lacks is refused."""
+    write(folder / "R.abk", strategies(), data=1)
+    bank = bankfile.load(folder / "R.abk")
+    main = {"Strategy 2.1.1": {10: {"NumberOfTrades": 2, "NetProfit": 715.585}},
+            "Strategy 10.4.7": {10: {"NumberOfTrades": 1, "NetProfit": 190.5}},
+            "Strategy 3.3.3": {10: {"NumberOfTrades": 0, "NetProfit": 0.0}}}
+    silver = {10: {"NumberOfTrades": 2, "NetProfit": -27.25}}
+
+    def every(**change: dict) -> dict:
+        """`sqxstats.every` of each strategy; the silver result of 10.4.7 may be replaced."""
+        got = {n: {"Main: XAUUSD_M1/H1": s, "Portfolio": {}} for n, s in main.items()}
+        got["Strategy 10.4.7"][SILVER] = change.get("silver", silver)
+        return got
+    assert bankframes.unbound(bank, main, 10, every()) == ""
+    for case, got in {"one trade's P/L altered": every(silver={10: {"NumberOfTrades": 2, "NetProfit": -20.0}}),
+                      "one trade dropped": every(silver={10: {"NumberOfTrades": 1, "NetProfit": -50.0}})}.items():
+        why = bankframes.unbound(bank, main, 10, got)
+        assert why.startswith(f"Strategy 10.4.7 ({SILVER})"), case
+    no_silver = every()
+    del no_silver["Strategy 10.4.7"][SILVER]
+    assert "no tiene" in bankframes.unbound(bank, main, 10, no_silver)
+    assert "varios mercados" in bankframes.unbound(bank, main, 10)

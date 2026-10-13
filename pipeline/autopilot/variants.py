@@ -11,9 +11,10 @@ from pathlib import Path
 
 from core import assetdata, sqxfile
 from core.datapaths import tmp_dir, variants_dir
-from core.paths import ROOT, project_dir, report_dir, worker_dir
+from core.paths import ROOT, bank_dir, project_dir, report_dir, worker_dir
 from core.phases import phase
 from pipeline.autopilot import call
+from sqx.export import membank
 from sqx.projects import live, registry
 from sqx.variants import inputs
 from sqx.variants import legs as legmod
@@ -118,8 +119,13 @@ def run(project: str, role: str, only: set[str] | None = None) -> str:
         # Every variant's trades, the three legs and every market, before the databanks empty:
         # the shared excess of steps 14, 16.5 and 17 is computed from them (encargo 48 E/F).
         # `closing.export` is this same command; closing imports this module, so not from there.
+        if apart:       # live: the legs' trades straight from SQX's memory; without a dump it is orderstocsv
+            with phase("variants.memoria"):
+                wrote = membank.run(role, project, {leg["databank"]: "all" for leg in legmod.legs()})
+                print(f"operaciones desde memoria: {wrote or 'ninguna'}", flush=True)
         _py("sqx.export.export_retest", "--project", project, "--role", role, "--batch",
             "variants", *(x for leg in legmod.legs() for x in ("--databank", leg["databank"])))
+        shutil.rmtree(bank_dir(project, role), ignore_errors=True)
         _py("sqx.variants.varianttrades", "--work", str(work), "--project", project)
         _py("sqx.variants.execute", "--work", str(work), "--project", project, "--clear")
         work.mkdir(parents=True, exist_ok=True)

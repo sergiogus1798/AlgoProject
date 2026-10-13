@@ -52,7 +52,13 @@ def _retest(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, banks: dict) -> tup
     monkeypatch.setattr(export_retest.manifest, "write",
                         lambda out, meta, cmd, res, since: written.__setitem__(out.name, res))
     monkeypatch.setattr(export_retest.fanout, "run", lambda fn, d, w: [(k, fn(k)) for k in d])
-    monkeypatch.setattr(export_retest.sqxstats, "stats", lambda f: STATS[f.stem.split("__", 1)[1]])
+    def every(f: Path) -> dict:
+        """The .sqx's results: the main one, and for 10.4.7 its silver one (2 trades, -27.25)."""
+        name = f.stem.split("__", 1)[1]
+        return {"Main: XAUUSD_M1/H1": STATS[name], "Portfolio": {},
+                **({"AdditionalMarket: XAGUSD_M1/H1": {10: {"NumberOfTrades": 2, "NetProfit": -27.25}}}
+                   if name == "Strategy 10.4.7" else {})}
+    monkeypatch.setattr(export_retest.sqxstats, "every", every)
     monkeypatch.setattr(sys, "argv", ["x", "--project", "Test_X", "--role", "custodian",
                                       *[a for db in banks for a in ("--databank", db)]])
     export_retest.main()

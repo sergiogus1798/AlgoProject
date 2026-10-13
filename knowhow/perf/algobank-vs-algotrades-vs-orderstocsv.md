@@ -10,7 +10,7 @@ tag: 🔬  date: 2026-10-13  see: export/orderstocsv-slow-is-datamanager, export
 | 10,000 strategies, 7.27 M orders | 7.8 s (+ 1.5 s load, 4.9 s trades frame) | 38.6 s | - |
 | 17 walk-forward strategies, 472,733 orders | ~1 s | - | 168.3 s |
 
-905 MB of `/dev/shm` per 10,000 strategies; `take` consumes each `.abk` and `liverun.export` removes the folder in a `finally`. Rows equal both older routes. AlgoTrades was deleted 2026-10-13 (owner, Q14=A): its column is history.
+905 MB of `/dev/shm` per 10,000 strategies; `take` consumes each `.abk` and `liverun.export` removes the folder in a `finally`. Rows equal both older routes; since 2026-10-13 `bankframes.unbound` binds EVERY market of an "all" bank to the .sqx (count and net per market, owner V2=B). AlgoTrades was deleted 2026-10-13 (owner, Q14=A): its column is history.
 
 ## Evidence
 - 🔬 2026-10-13, encargo 66 live session 2 (`/dev/shm/tmp66/live2/notes.md`): runs 1.19, 1.16, 1.15 s; AlgoTrades 2.95 ×3; 11 live tests pass.

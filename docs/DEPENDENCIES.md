@@ -33,7 +33,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/assetwrite/markets.py` | 108 | Write one asset's Cross Market check — `_markets.yaml`'s `family`/`structural` feeds. | core | ruamel, yaml |
 | `core/assetyaml.py` | 144 | The assets/ YAML files read and written without losing a comment — the only round-trip here. | — | ruamel, yaml |
 | `core/bankfile.py` | 250 | Read an `.abk`: one databank as the AlgoBank snippet wrote it from SQX's memory. | — | numpy, pandas, pyarrow |
-| `core/bankframes.py` | 76 | An `.abk` loaded by `core.bankfile`, as the strategies' XML, statistics and daily equity. | core | numpy, pandas |
+| `core/bankframes.py` | 94 | An `.abk` loaded by `core.bankfile`, as the strategies' XML, statistics and daily equity. | core | numpy, pandas |
 | `core/bars.py` | 23 | Read an OHLC bar file exported by SQX into a frame indexed by bar open time. | — | pandas |
 | `core/barstore.py` | 108 | The bar library: M1 is the only bar data stored, every other timeframe is resampled from it. | core | pandas |
 | `core/buildfilters.py` | 83 | The Build's acceptance filters for one asset and timeframe, resolved from assets/_study.yaml. | core | yaml |
@@ -260,7 +260,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `pipeline/autopilot/tffacts.py` | 49 | Step 12's redesigned facts (encargo 47): `crossTF.tf.*`, read from the two files the study writes beside the old reading. | — | pandas |
 | `pipeline/autopilot/timing.py` | 66 | Where a run's wall clock went: `fases.csv` (`core.phases`) folded into one row per action, SQX apart from everything around it. | core | pandas |
 | `pipeline/autopilot/trim.py` | 62 | After step 8: save the survivors to the store, then cut `Results` down to them (D16, encargo 66). | core, sqx | pandas |
-| `pipeline/autopilot/variants.py` | 136 | Step 16.5 for the autopilot: wire the three WFC legs, then make → execute → equity → collect → every variant's trades → clear per mother, then the mothers' trades and each batch's parameter map. | core, pipeline, sqx | — |
+| `pipeline/autopilot/variants.py` | 142 | Step 16.5 for the autopilot: wire the three WFC legs, then make → execute → equity → collect → every variant's trades → clear per mother, then the mothers' trades and each batch's parameter map. | core, pipeline, sqx | — |
 | `pipeline/campaign/freeze.py` | 84 | Freeze a finished workflow's strategies in the archive — finalists AND their mothers — and copy the run-stamped outputs. | core | — |
 | `pipeline/campaign/keep.py` | 63 | One finished workflow kept for good: its run folder, its timings and counts, and every finalist frozen in the archive. | core, pipeline | — |
 | `pipeline/campaign/ledger.py` | 54 | The campaign's ledger: every cell ever queued, one JSON line per change of state, never rewritten. | core | — |
@@ -433,7 +433,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/data/update.py` | 130 | Run SQX's own data update on the master, guarded against the two ways it destroys work. | core | — |
 | `sqx/export/archive_logs.py` | 78 | Copy SQX's logs into the data root before it prunes them. SQX keeps only 14 days. | core | — |
 | `sqx/export/export_metrics.py` | 50 | Refresh one databank's metrics export: one row per strategy, paired IS/OOS columns. | core | — |
-| `sqx/export/export_retest.py` | 126 | Export retest databanks as one typed Parquet each, every market inside it, in one SQX start. | core, sqx | pandas |
+| `sqx/export/export_retest.py` | 129 | Export retest databanks as one typed Parquet each, every market inside it, in one SQX start. | core, sqx | pandas |
 | `sqx/export/export_spp.py` | 188 | Export a databank's Sys. Param Permutation profiles: one wide table, the histograms, the counts. | core, sqx | pandas |
 | `sqx/export/export_trades.py` | 194 | Export one databank's trades into the data root, as one typed Parquet per export. | core, sqx | — |
 | `sqx/export/export_wfm.py` | 169 | Export everything a Walk-Forward Matrix cross-check stored: cells, steps, parameters, trades. Parquet. | core, sqx | pandas |
@@ -1088,7 +1088,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_perf66_liveexport.py` | 98 | Encargo 66, tanda E: `liverun.export` dumps the stale banks and cleans up; `export_trades` takes an `.abk`. | core, sqx, tests, ui | pandas, pytest |
 | `tests/test_perf66_market.py` | 62 | Encargo 66 §9.9: the lazy mirror and `evaluate(directions=)` give the eager mirror's numbers, bit for bit. | studies | numpy, pandas, pytest |
 | `tests/test_perf66_market_tick.py` | 106 | Encargo 66 §9.8: the tick file decoded by jobs of blocks equals the serial decode (the oracle). | core, tests | numpy, pandas, pytest |
-| `tests/test_perf66_membank.py` | 168 | `membank.take` hands an `.abk` over only when it is this databank's, and whole. | core, sqx, studies, tests | pandas, pytest |
+| `tests/test_perf66_membank.py` | 193 | `membank.take` hands an `.abk` over only when it is this databank's, and whole. | core, sqx, studies, tests | pandas, pytest |
 | `tests/test_perf66_member_frozen.py` | 65 | Encargo 66: a member's clock and commission are frozen in its manifest, never read live. | core, portfolio, stat | pytest |
 | `tests/test_perf66_mono.py` | 159 | Encargo 66 §1.5 and §4.1: one root per monkey run, saved; `--only` merges under it. | core, studies, ui | numpy, pandas, pytest |
 | `tests/test_perf66_mt5core.py` | 149 | Encargo 66 §9 (C2): mt5.compare.pair, assetdata.load/symbol_for and feed scale.by_week equal their old logic. | core, engines, mt5 | numpy, pandas, pytest |
@@ -1097,7 +1097,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_perf66_portfolio.py` | 205 | Encargo 66 §9, piece C1: the faster rolling ranks, server_days and medoids equal the old logic bit for bit. | portfolio, studies | numpy, pandas, pytest, scipy |
 | `tests/test_perf66_portfolio_mc.py` | 231 | Encargo 66, the portfolio Monte Carlo: each fast or reseeded path against the code it replaced. | engines, portfolio, test_portfolio_mc_paths | numpy, pandas, pytest, scipy |
 | `tests/test_perf66_resample.py` | 242 | Encargo 66 §3.4 and §3.9c: the gate's resampling made lighter gives the numbers it gave — each oracle below is the code replaced. | studies | numpy, pytest |
-| `tests/test_perf66_retest.py` | 93 | Encargo 66, tanda E: export_retest packs a live session's `.abk` in place of one orderstocsv pass, fakes only. | core, sqx, tests | pandas, pytest |
+| `tests/test_perf66_retest.py` | 99 | Encargo 66, tanda E: export_retest packs a live session's `.abk` in place of one orderstocsv pass, fakes only. | core, sqx, tests | pandas, pytest |
 | `tests/test_perf66_review_data.py` | 198 | Encargo 66, the data reviewer's findings: each test fails on the code before the fix. | core, mt5, pipeline, portfolio, studies, ui | numpy, pandas, pytest, yaml |
 | `tests/test_perf66_scripts.py` | 56 | Encargo 66, the shell and process launchers: the clone script and the one-autopilot lock. | — | pytest |
 | `tests/test_perf66_shards.py` | 64 | Encargo 66, the data reviewer's findings on the draws shards: names, concurrency and the deferred fold. | core | numpy, pandas |

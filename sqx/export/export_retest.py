@@ -85,9 +85,12 @@ def main() -> None:
         files = sorted((work / "strategies").glob(f"{i}__*.sqx"))
         ids = {f.stem[len(f"{i}__"):]: v for f, v in identities.many(files, fanout.CORES).items()}
         if bank := membank.take(a.project, a.role, db, ids, "all"):
-            stats = {f.stem[len(f"{i}__"):]: s for f, s in fanout.run(sqxstats.stats, {f: 1 for f in files}, fanout.CORES)}
+            markets = {f.stem[len(f"{i}__"):]: e for f, e in fanout.run(sqxstats.every, {f: 1 for f in files}, fanout.CORES)}
+            lacking = sorted(n for n, e in markets.items() if not any(k.startswith("Main") for k in e))
+            assert not lacking, f"{a.project}/{db}: {lacking[:3]} sin resultado Main en su .sqx: vuelve a correr el retest"
+            stats = {n: next(v for k, v in e.items() if k.startswith("Main")) for n, e in markets.items()}
             try:
-                why = bankframes.unbound(bank, stats, sqxview.measured(stats))
+                why = bankframes.unbound(bank, stats, sqxview.measured(stats), markets)
             except SystemExit as err:       # both sample blocks filled: no single result to bind to
                 why = str(err)
             if why:

@@ -22,14 +22,16 @@ def _ran(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, live_on: bool) -> list
                         lambda p, r, markets=True: seen.append(f"wire{'' if markets else '-'}"))
     monkeypatch.setattr(variants, "_py", lambda mod, *a: seen.append(
         mod.rsplit(".", 1)[-1] + (".clear" if "--clear" in a else "")))
+    monkeypatch.setattr(variants.membank, "run", lambda role, project, banks: seen.append(f"dump{banks}") or {})
     variants.run("P", "custodian")
     return seen
 
 
 def test_live_runs_every_pilot_first_without_the_extra_markets(
         monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """Live: the legs without markets, both pilots, the legs rewired, each batch, then each map."""
-    mother = ["execute", "equity", "collect", "export_retest", "varianttrades", "execute.clear"]
+    """Live: the legs without markets, both pilots, the legs rewired, each batch (its legs' trades
+    dumped from memory in "all" mode before the export), then each map."""
+    mother = ["execute", "equity", "collect", "dump{'d': 'all'}", "export_retest", "varianttrades", "execute.clear"]
     assert _ran(monkeypatch, tmp_path, True) == [
         "wire-", "make", "make", "wire", *mother, *mother, "mothertrades", "report", "report"]
 
