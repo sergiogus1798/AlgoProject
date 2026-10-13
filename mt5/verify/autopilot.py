@@ -54,7 +54,7 @@ def uncommissioned(asset: str, chosen: list[str]) -> list[str]:
                                                       or (brokers.get(f) or {}).get("value") is None)]
 
 
-def check(project: str, finalists: list[dict], params: dict) -> dict:
+def check(project: str, finalists: list[dict], params: dict, own_log: bool = False) -> dict:
     """Whether step 26 may start now for these finalists, and the sentence the owner confirms.
 
     Args:
@@ -62,6 +62,8 @@ def check(project: str, finalists: list[dict], params: dict) -> dict:
         finalists: `{strategy, identity, mother, sqx, symbol, timeframe}`.
         params: `{start, end, model, firms}` — the owner's, each time; none has a default —
             and the optional `ticks`: a second tester pass on real ticks (`mt5.verify.ticks`).
+        own_log: The autopilot's earlier steps wrote the conductor's log: a recent write is
+            its own, not a refusal (`advance.busy`).
 
     Returns:
         {"ok", "reasons", "text"}. The reasons are the window's own (`mt5bridge.runs.check`:
@@ -80,7 +82,7 @@ def check(project: str, finalists: list[dict], params: dict) -> dict:
         ready += [] if why else [f]
     for f in ready or [None]:
         reasons += runs.check(Path(f["sqx"]) if f else None, start, end, model, chosen,
-                              bool(params.get("ticks")))["reasons"]
+                              bool(params.get("ticks")), own_log)["reasons"]
         reasons += uncommissioned(f["symbol"], chosen) if f else []
     reasons = list(dict.fromkeys(reasons))
     worker = WORKERS[ROLE]
@@ -138,7 +140,7 @@ def run(project: str, finalists: list[dict], params: dict, out: Path) -> str:
         (non-zero exit, or no finished check of that file on disk); a finalist that does
         not validate is recorded and the loop goes on.
     """
-    got = check(project, finalists, params)
+    got = check(project, finalists, params, own_log=True)
     if not got["ok"]:
         raise SystemExit("paso 26: no se lanza:\n  " + "\n  ".join(got["reasons"]))
     start = "mt5" if str(params["start"]).upper() == runs.DEEPEST else params["start"]

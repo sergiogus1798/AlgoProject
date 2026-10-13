@@ -54,7 +54,7 @@ def verify(project: str, params: dict, out: Path) -> str:
     """
     from mt5.verify import autopilot as mt5step     # step 26's agent owns it: imported late
     rows = json.loads((out / FILE).read_text(encoding="utf-8"))
-    got = mt5step.check(project, rows, params)
+    got = mt5step.check(project, rows, params, own_log=True)
     if not got["ok"]:
         raise survivors.Done("el paso 26 no se lanza: " + "; ".join(got["reasons"]))
     return mt5step.run(project, rows, params, out)

@@ -85,6 +85,8 @@ symptom in this table on code that already carries the fix is a NEW bug: report 
 | symptom in `fallo.md` | cause | fixed in |
 |---|---|---|
 | step 11.5 «CrossTF_M30 no tiene export: exporta ese databank…» | the live export after step 11 only took the databanks of the tasks preflight chose; the extra-timeframe tasks (`CrossTF M30`, `CrossTF H4`) are created later, by the fill | `0106b60` (2026-10-13), `ui/daemon/launch/liverun.py`: their banks are added to the step's outputs. A project that failed here before the fix continues with `bin/workflow.sh run <PROJECT>`: the stop exported them |
+| `bin/workflow.sh`: «opción desconocida: --mt5-from» | the script did not pass step 26's parameters on, so step 26 could not run through the one command | 2026-10-13: `--mt5-from=`, `--mt5-to=`, `--mt5-model=`, `--mt5-firms=` (one word each, with `=`) go through to the autopilot |
+| resumen: «el paso 26 no se lanza: el log de hoy de SQX_w1 se escribió hace N min (< 15)» | step 26's pre-check read the conductor's log, which the autopilot's own exports (steps 11, 16.5) had just written, as someone else's | 2026-10-13, `mt5/verify/autopilot.py`, `pipeline/autopilot/finalists.py`: the autopilot says the log is its own (`own_log`); lock, open port and live process still refuse |
 
 ## Never
 

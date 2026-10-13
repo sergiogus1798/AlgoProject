@@ -115,7 +115,7 @@ def strategy_file(source: str, identity: str, version: str = "", project: str = 
 
 
 def check(path: Path | None, start: str, end: str, model: str, chosen: list[str],
-          ticks: bool = False) -> dict:
+          ticks: bool = False, own_log: bool = False) -> dict:
     """Whether a check may start now, and the sentence the owner confirms.
 
     Returns:
@@ -149,7 +149,7 @@ def check(path: Path | None, start: str, end: str, model: str, chosen: list[str]
             why = firms.usable(asset).get(firm, {}).get("why")
             if why:
                 reasons.append(why)
-    reasons += advance.busy("conductor", "")
+    reasons += advance.busy("conductor", "", own_log)
     if wine.terminal_running():
         reasons.append("el terminal de MT5 está abierto: ciérralo; la verificación lo abre y "
                        "lo cierra ella misma, una cuenta tras otra")

@@ -205,7 +205,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `mt5/report.py` | 111 | Read a Strategy Tester HTML report: its summary figures, its deals, and the trades they make. | — | lxml, pandas |
 | `mt5/server.py` | 189 | MCP server over MetaTrader 5 under Wine: compile, backtest, compare with SQX, and read-only data. | core, mt5 | mcp, pandas |
 | `mt5/tester.py` | 127 | Run one Strategy Tester pass: write its ini, start the terminal detached, and collect the report. | core, mt5 | — |
-| `mt5/verify/autopilot.py` | 177 | Step 26 as an autopilot action: the window's preflight over a list of finalists, one check each, the pool filled. | core, mt5, ui | pandas |
+| `mt5/verify/autopilot.py` | 179 | Step 26 as an autopilot action: the window's preflight over a list of finalists, one check each, the pool filled. | core, mt5, ui | pandas |
 | `mt5/verify/conditions.py` | 91 | A prop firm's conditions for one symbol, read off its own MT5 account and put in SQX's units. | mt5 | — |
 | `mt5/verify/firms.py` | 53 | Which prop firms the bridge can verify on: their saved MT5 account and their symbol names. | core, ledger | yaml |
 | `mt5/verify/judge.py` | 249 | Compare each firm's SQX retest with its MT5 backtest on the rows of encargo 34, and judge. | core, mt5 | pandas |
@@ -1035,7 +1035,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_montecarlo_one.py` | 91 | The trade Monte Carlo's «Run solo esta estrategia»: `--strategy` runs `one.run` on that | core, portfolio | pandas |
 | `tests/test_montecarlo_oos.py` | 105 | Family E reads the out-of-sample trades alone (owner, 2026-09-29): a strategy whose IS is | portfolio, studies | numpy, pandas |
 | `tests/test_mothertrades.py` | 67 | sqx.variants.mothertrades: each batch gets its own mother's trades, tagged with her id and leg. | sqx | pandas |
-| `tests/test_mt5_autopilot.py` | 199 | Step 26 as an autopilot action: every refusal of the preflight, and the loop over a stubbed job. | core, mt5, ui | pytest |
+| `tests/test_mt5_autopilot.py` | 209 | Step 26 as an autopilot action: every refusal of the preflight, and the loop over a stubbed job. | core, mt5, ui | pytest |
 | `tests/test_mt5_pool.py` | 105 | The validated pool's register on the real checks on disk: rebuilt rows, latest verdict wins, append-only. | mt5 | pytest |
 | `tests/test_mt5_reconcile.py` | 228 | weeklyReconciler on known answers: the week's bounds, deals into trades, pairing, each gap, MAE from M1, an empty week. | core, mt5 | pandas, yaml |
 | `tests/test_mt5_server_exit.py` | 14 | A helper's SystemExit must reach FastMCP as an Exception, not kill the stdio server. | mt5 | pytest |
@@ -1067,7 +1067,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_panelsplit.py` | 57 | Known-answer test: `panel.split` cuts at a segment's own start, not a retested leg's warm-up. | core, engines | pandas |
 | `tests/test_perf66_algobank.py` | 250 | An `.abk` written to the spec comes back field by field, and a damaged one is refused. | core | numpy, pandas, pytest |
 | `tests/test_perf66_algobank_refused.py` | 121 | An `.abk` that is empty, truncated, bit-flipped, of another version or incoherent is refused and says why. | core, tests | numpy, pytest |
-| `tests/test_perf66_bin.py` | 221 | Encargo 66: what bin/workflow.sh, bin/sqx-worker.sh and runner/batchrun.py say when something fails. | sqx | pytest |
+| `tests/test_perf66_bin.py` | 232 | Encargo 66: what bin/workflow.sh, bin/sqx-worker.sh and runner/batchrun.py say when something fails. | sqx | pytest |
 | `tests/test_perf66_bugs.py` | 219 | Known answers for the audited bugs fixed in encargo 66: each test failed before its fix. | core, ledger, pipeline, portfolio, sqx, studies, tests | numpy, pandas, pytest |
 | `tests/test_perf66_catalogue.py` | 81 | Encargo 66 §10: the catalogue measures right (tracemalloc off in timings, PSS, first touch outside the clock). | perf | numpy, pytest |
 | `tests/test_perf66_chain.py` | 169 | Encargo 66, the launch chain: RAM and cores reserved by weight, a step's tests dispatched together. | core, ui | pytest |

@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT))
 FAKE_PY_WORKFLOW = """#!/bin/bash
 case "$1 $2" in
   "-c "*) echo "$FAKE/project.cfx" ;;
-  "-m pipeline.autopilot.run") mkdir -p "$FAKE/out"; echo "carpeta del run: $FAKE/out"
+  "-m pipeline.autopilot.run") mkdir -p "$FAKE/out"; echo "carpeta del run: $FAKE/out"; echo "$*" > "$FAKE/argv"
       echo "10:00:00 FIN" > "$FAKE/out/estado.txt"; exit "${RUN_RC:-0}" ;;
   "-m sqx.projects.retire") echo "retire $*" >> "$FAKE/calls"; exit "${RETIRE_RC:-0}" ;;
 esac
@@ -52,6 +52,17 @@ def test_test_project_is_stopped_then_retired_after_a_good_run(tmp_path: Path) -
     assert done.returncode == 0, done.stderr
     assert [c.split()[0] for c in calls] == ["stop", "retire"]
     assert "Test_a --role custodian --yes" in calls[1] and "--drop-unsaved" not in calls[1]
+
+
+def test_step_26_parameters_reach_the_autopilot(tmp_path: Path) -> None:
+    """The four values of step 26 (MT5) go through to the autopilot; a flag it does not know is refused."""
+    mt5 = ("--mt5-from=2024-01-01", "--mt5-to=2025-06-30", "--mt5-model=ohlc_m1", "--mt5-firms=ftmo,hantec")
+    done, _ = workflow(tmp_path, "Test_a", extra=("--smoke", *mt5))
+    assert done.returncode == 0, done.stderr
+    argv = (tmp_path / "fake/argv").read_text().split()
+    assert all(flag in argv for flag in mt5) and "--smoke" in argv
+    bad, _ = workflow(tmp_path / "b", "Test_a", extra=("--mt5-model",))
+    assert bad.returncode != 0 and "opción desconocida" in bad.stderr
 
 
 def test_retire_argv_of_the_script_passes_the_real_freshness_refusal(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

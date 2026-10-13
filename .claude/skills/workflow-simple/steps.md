@@ -43,6 +43,6 @@ Sources: `pipeline/autopilot/{plan.py,criteria.yaml,README.md}`, `sqx/projects/{
 Notes
 - Variant databanks of 16.5: `WFC_Variants` in; `WFC_Build`, `WFC_OOS1`, `WFC_OOS2` out; emptied after each mother, once its trades are in `variant_trades.parquet`.
 - Only steps 8, 10, 11.5, 12, 14, 16, 19.5, 20 have a `cut` in `criteria.yaml`; steps 17, 18, 18.5, 19 have `cut: null`; 19.5 (the single oos2 reading, rule `oos2Reading.z > 0`) is the tail's ONLY cutting step, on `SPP OOS`, and a «solo vivo» cell (exit 3) or a missing fact is limbo, never a cut (judges and records without deleting); a step with rules and no `cut` stops the run. 16.5 and 21 do not cut.
-- The run stops before step 26 (MT5) unless `--mt5-from`, `--mt5-to`, `--mt5-model`, `--mt5-firms` are all given.
+- The run stops before step 26 (MT5) unless `--mt5-from=`, `--mt5-to=`, `--mt5-model=`, `--mt5-firms=` are all given to `bin/workflow.sh` (one word each, with `=`). Step 26 needs the conductor free and the MT5 terminal closed.
 - Outputs: `AlgoData/autopilot/<P>/<stamp>/{estado.txt,resumen.md,tiempos.md,fallo.md,plan.json,paso-<n>/}`.
 - `fallo.md` exists only if the run failed; `estado.txt` last line is `FIN · …` or `FALLO en el paso N: …`.

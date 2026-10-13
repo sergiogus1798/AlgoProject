@@ -117,6 +117,16 @@ def test_a_busy_conductor_and_an_open_terminal_refuse(monkeypatch: pytest.Monkey
     assert sum("el terminal de MT5 está abierto" in r for r in got) == 1 and len(got) == 2
 
 
+def test_own_log_lets_the_autopilot_past_its_own_fresh_conductor_log(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    """Steps 11 and 16.5 write the conductor's log minutes before step 26 asks."""
+    fresh = "el log de hoy de SQX_w1 se escribió hace 1 min (< 15)"
+    monkeypatch.setattr(runs.advance, "busy", lambda role, project, own_log=False:
+                        [] if own_log else [fresh])
+    assert fresh in autopilot.check(PROJECT, FINALISTS, PARAMS)["reasons"]
+    assert autopilot.check(PROJECT, FINALISTS, PARAMS, own_log=True)["ok"]
+
+
 def test_a_missing_symbol_or_commission_is_a_reason(monkeypatch: pytest.MonkeyPatch) -> None:
     """Neither the firm's symbol nor its commission is ever guessed."""
     real = assetdata.load

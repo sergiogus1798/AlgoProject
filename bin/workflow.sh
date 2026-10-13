@@ -1,11 +1,11 @@
 #!/bin/bash
-# workflow — the whole workflow of one project, steps 5 to 25, in one command. Nothing to decide:
+# workflow — the whole workflow of one project, steps 5 to 21 and 26, in one command. Nothing to decide:
 # every choice is an argument, a missing one is an error, and the first failure ends it.
 #
 # Usage:
-#   bin/workflow.sh simple   <PROJECT> <SYMBOL> <TF> <long|short> <FAMILY> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke]
-#   bin/workflow.sh template <PROJECT> <SYMBOL> <TF> <TEMPLATE.sqx> <PALETTE|-> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke]
-#   bin/workflow.sh run      <PROJECT> [--until wfm] [--smoke] [--restart]
+#   bin/workflow.sh simple   <PROJECT> <SYMBOL> <TF> <long|short> <FAMILY> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke] [MT5]
+#   bin/workflow.sh template <PROJECT> <SYMBOL> <TF> <TEMPLATE.sqx> <PALETTE|-> "<PURPOSE>" <STRATEGIES> <MINUTES> [--until STEP] [--smoke] [MT5]
+#   bin/workflow.sh run      <PROJECT> [--until wfm] [--smoke] [--restart] [MT5]
 #   bin/workflow.sh plan     <PROJECT>
 #
 #   simple    creates a Simple Strategy project (no template, one side) on the custodian,
@@ -22,6 +22,9 @@
 #   --smoke    functional test, Test_ projects only: only the readability rules judge.
 #   --restart  the old route (SQX starts and stops at every step, slower). Only when
 #              the single session fails.
+#   MT5        step 26, run only when the four are given, each as ONE word with «=»:
+#              --mt5-from=YYYY-MM-DD|MT5 --mt5-to=YYYY-MM-DD --mt5-model=every_tick|ohlc_m1|open_prices|real_ticks
+#              --mt5-firms=ftmo,hantec  (and --mt5-real-ticks). Without them the run ends before step 26.
 #   --own-log  (run) the worker's recent log is the caller's own previous try, not
 #              someone else's run: do not wait its 15 quiet minutes.
 #
@@ -95,7 +98,7 @@ else
     [[ ! -e $(dirname "$CFX")/A_MEDIO_CREAR ]] || die "$P quedó a medio crear (sin su recorte o su paleta): retíralo y créalo de nuevo"
 fi
 for flag in "$@"; do
-    [[ $flag =~ ^--(smoke|restart|own-log)$ ]] || die "opción desconocida: $flag"
+    [[ $flag =~ ^--(smoke|restart|own-log|mt5-real-ticks)$|^--mt5-(from|to|model|firms)=.+$ ]] || die "opción desconocida: $flag"
     FLAGS+=("$flag")
 done
 
