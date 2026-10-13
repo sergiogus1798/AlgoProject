@@ -28,6 +28,14 @@ Lee `CLAUDE.md` (reglas 1-6, 10, 11, 13-19) · `docs/AgentPDFs/WORKFLOW.md` ·
 **Bitácora** (una línea por sesión: fecha · frente · qué quedó · qué sigue)
 
 - 2026-10-09 · consolidado desde los encargos 9, 30, 5 y 28; nada ejecutado todavía.
+- 2026-10-13 · 5c · **medido**: con una vela H1 que toca stop y objetivo (70.066 operaciones largas de 300
+  estrategias, `Test_E53_5c_XAUUSD_H1`, precisión «timeframe elegido»), SQX no va «al stop primero»: recorre
+  la vela Apertura→Mínimo→Máximo→Cierre si cierra al alza (sale por el **stop**: 41.894 de 41.894) y
+  Apertura→Máximo→Mínimo→Cierre si cierra a la baja (sale por el **objetivo**: 25.758 de 25.758); 61,8 % stop
+  en total. `pessimistic` falla en el 38 %. No se ha tocado código: la clave `barrier.intrabar` no la lee
+  nadie y ningún número publicado depende de ella · sigue: decide el dueño si se borra la clave y se
+  escribe la regla de la vela en el motor; sin medir cortos ni velas doji (0,2 %).
+  Ficha `knowhow/export/sl-pt-same-bar-convention.md`.
 
 ## §0 · De dónde sale
 
