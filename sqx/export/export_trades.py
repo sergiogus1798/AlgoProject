@@ -9,9 +9,9 @@ import time
 from datetime import date
 from pathlib import Path
 
-from core import exportdrv, fanout, identities, manifest, sqxfile, tradepack
-from core.paths import MASTER, databank_dir, export_dir, project_dir, worker_dir
-from sqx.export import memtrades
+from core import bankfile, bankframes, exportdrv, fanout, identities, manifest, sqxfile, sqxstats, sqxview, tradepack
+from core.paths import MASTER, bank_dir, databank_dir, export_dir, project_dir, worker_dir
+from sqx.export import membank
 
 
 SAMPLE_SEED = 20260914   # a subset export is a sample, and a sample has to be reproducible
@@ -111,6 +111,28 @@ def _mother(f: Path) -> tuple[str, str]:
     return own, own if not others else others.pop() if len(others) == 1 else ""
 
 
+def held(a: argparse.Namespace, staged: Path) -> dict | None:
+    """The databank's `.abk` from a live session, when it is this databank's and its trades are the .sqx's own result.
+
+    Only trades come from it (identity, metrics, equity stay read off the .sqx); None when there is
+    none or it does not bind, and the caller reads the databank with orderstocsv.
+    """
+    if not (a.role and (bank_dir(a.project, a.role) / f"{a.databank}.abk").exists()):
+        return None
+    files = sorted(staged.glob("*.sqx"))
+    ids = {f.stem: v for f, v in identities.many(files, fanout.CORES).items()}
+    if not (bank := membank.take(a.project, a.role, a.databank, ids, "main")):
+        return None
+    stats = {f.stem: s for f, s in fanout.run(sqxstats.stats, {f: 1 for f in files}, fanout.CORES)}
+    try:
+        why = bankframes.unbound(bank, stats, sqxview.measured(stats))
+    except SystemExit as err:       # both sample blocks filled: no single result to bind to
+        why = str(err)
+    if why:
+        print(f"{a.project}/{a.databank}: .abk no vale: {why}")
+    return None if why else bank
+
+
 def main() -> None:
     """Stage a databank, export every trade of it, and pack them into one Parquet."""
     ap = argparse.ArgumentParser()
@@ -140,16 +162,16 @@ def main() -> None:
         "strategy,timeframe\n" + "".join(f"{k},{v}\n" for k, v in timeframes.items()))
     print(f"staged {len(timeframes)} strategies from {a.project}/{a.databank}")
 
-    newest = max(f.stat().st_mtime for f in databank_dir(a.project, a.databank, install).glob("*.sqx"))
-    if memtrades.take(a.project, a.databank, set(timeframes), newest, csvs):
-        print("operaciones escritas desde la memoria de la sesión viva (AlgoTrades), sin orderstocsv")
+    bank = held(a, staged)
+    if bank:
+        packed = bankfile.pack(bank, out / "trades.parquet", per_market=False)
     else:
         exportdrv.trades(staged, csvs)
-    # The CSVs are an intermediate, not the export: nine tenths of their bytes are quoting,
-    # repeated text and four columns that are derivable back. Bars are not copied here at
-    # all — they live once in the M1 library, which covers more history than this window did.
-    packed = tradepack.pack(sorted(csvs.glob("*.csv")), out / "trades.parquet", per_market=False)
-    shutil.rmtree(csvs)
+        # The CSVs are an intermediate, not the export: nine tenths of their bytes are quoting,
+        # repeated text and four columns that are derivable back. Bars are not copied here at
+        # all — they live once in the M1 library, which covers more history than this window did.
+        packed = tradepack.pack(sorted(csvs.glob("*.csv")), out / "trades.parquet", per_market=False)
+        shutil.rmtree(csvs)
     # The staged .sqx are copies of what the databank holds; the manifest names the
     # databank, and 757 of them weighed 119 MB beside a 20 MB Parquet. Their identities
     # stay, in identity.csv.

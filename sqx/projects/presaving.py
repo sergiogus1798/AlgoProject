@@ -1,4 +1,4 @@
-"""Encargo 66 §7.1/7.4b: wait in the background for every project's databanks to load; optionally save them at once."""
+"""Encargo 66 §7.1/7.4b: wait in the background for every project's databanks to load; save them at once (always on, owner 2026-10-13: the exit goes 52 s -> 15 s)."""
 
 import re
 import sys
@@ -13,8 +13,6 @@ LOAD_S = 300        # s the databanks of every project may take to load (as `liv
 SAVE_S = 600        # s the parallel saves may take
 NEVER_S = 30        # s the presave waits for a «saved» line; a bank with files == memory that writes none is clean (nothing pending)
 JOIN_S = LOAD_S + SAVE_S + 60   # s `settle` waits for the thread at most: a hung one never blocks an exit
-# ponytail: D6 «probar ambas» (encargo 66 §7.1, rows 7.1A/7.1B): `save` is variant B, `AGED = set()` in liverun is A;
-# the loser is deleted after the conductor times both (plan/conductor-live.md), and with it this flag.
 _RUNS: dict[str, tuple[threading.Thread, dict]] = {}
 
 
@@ -34,8 +32,8 @@ def _off(role: str, project: str, files: Callable) -> bool:
     return any(files(p, role, b) != n for (p, b), n in _banks(role, project).items())
 
 
-def _work(role: str, project: str, save: bool, box: dict, _files: Callable, _log: Callable) -> None:
-    """Wait until memory == disk in every OTHER project; then `save` them in parallel, so the exit has nothing to write.
+def _work(role: str, project: str, box: dict, _files: Callable, _log: Callable) -> None:
+    """Wait until memory == disk in every OTHER project; then save them in parallel, so the exit has nothing to write.
 
     Presave = every databank of every project but the run's own, «Auto-sync never» and stock ones
     included (what makes the exit slow), each only where files == memory at that moment (rule 1); the
@@ -50,8 +48,6 @@ def _work(role: str, project: str, save: bool, box: dict, _files: Callable, _log
                 return
             time.sleep(1)
         box["loaded_s"] = time.monotonic() - began
-        if not save:
-            return
         log, offset = _log(role), _log(role).stat().st_size
         # 🔬 2026-10-13: a «never» bank with files (stock `Retester/Results`) is still loading when the others
         # are done, and skipped it kept its 5.4 s at the exit: wait while it holds fewer than its files.
@@ -84,12 +80,12 @@ def _work(role: str, project: str, save: bool, box: dict, _files: Callable, _log
         box["error"] = f"{role}: {e!r}"
 
 
-def begin(role: str, project: str, save: bool, files: Callable, log: Callable) -> None:
-    """Start the background wait (and the save when `save`) for the session `role` just opened on `project`.
+def begin(role: str, project: str, files: Callable, log: Callable) -> None:
+    """Start the background wait (and the save) for the session `role` just opened on `project`.
 
     `files(project, role, bank)` and `log(role)` are `live`'s own (it cannot be imported from here)."""
     box: dict = {"project": project, "files": files}
-    thread = threading.Thread(target=_work, args=(role, project, save, box, files, log), daemon=True)
+    thread = threading.Thread(target=_work, args=(role, project, box, files, log), daemon=True)
     _RUNS[role] = (thread, box)
     thread.start()
 

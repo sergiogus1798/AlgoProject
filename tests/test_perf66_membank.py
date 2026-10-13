@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """`membank.take` hands an `.abk` over only when it is this databank's, whole, and is consumed.
 
-Ports every case of `test_memtrades.py` (finished, same strategies, newer than the files) and adds the
+Covers (finished, same strategies, newer than the files) and adds the
 data mode, the identities, a corrupt file, and `run` replacing only the banks it names. The `.abk`
 files come from the struct writer of `test_perf66_algobank.py` (imported, not copied).
 """

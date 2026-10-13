@@ -146,7 +146,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
     if on_live:
         began = time.monotonic()
         try:
-            live.start(where["role"], project, presave=os.environ.get("ALGO_PRESAVE") == "1")   # ponytail: env flag only while D6 B is timed (66 §7.1)
+            live.start(where["role"], project)
         except BaseException as failed:   # no stop, exitapp or kill here: exitapp syncs (rule 1) and how to close it is the owner's (2026-10-13)
             status(out, entry.unstarted(where["role"], failed))
             raise

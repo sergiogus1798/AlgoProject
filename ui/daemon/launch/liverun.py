@@ -1,6 +1,5 @@
 """«Lanzar en SQX» on a GUI session already up: configure a copy, push it, run, mirror to disk, export — no restart."""
 
-import os
 import shutil
 import signal
 import subprocess
@@ -11,22 +10,46 @@ from pathlib import Path
 
 from core.datapaths import tmp_dir
 from core.phases import phase
-from core.paths import ROOT
+from core.paths import ROOT, bank_dir
 from ledger import steprows
-from sqx.export import memtrades
+from sqx.export import membank
 from sqx.projects import crosstfload, exiting, live, stage
+from ui.daemon import progress
 from ui.daemon.advance.run import say
 from ui.daemon.launch import configure, preflight
 from ui.daemon.launch import run as launcher
 from ui.daemon.launch import steps as launchsteps
-from ui.daemon.loader import afterrun
+from ui.daemon.loader import afterrun, find, state
 from ui.daemon.launch.run import assets, compare, counts, record, snapshot
 
 
 # The tasks that run slow in a session hours old, and at their speed in one just opened
 # (🔬 2026-10-05, same project, SQX's own task time: WFM 1,837 s aged, 1,275 s fresh, 1,222 s on
 # the restart route; SPP IS 894 against 442). Reopening costs ~100 s. The cause is not known.
-AGED = set() if os.environ.get("ALGO_AGED_EMPTY") == "1" else {*stage.titles("spp"), *stage.titles("wfm")}   # ponytail: variant A of 66 §7.1 (D6), env only while timed; the loser is deleted after measuring
+AGED = {*stage.titles("spp"), *stage.titles("wfm")}
+
+
+def dump(role: str, project: str, banks: set[str] | None) -> dict[str, int]:
+    """The `.abk` of every databank the step's export pieces call stale, and only those.
+
+    Same freshness as the pieces themselves (`state.commands`): a stale harvest takes its build and
+    its retest in "main"; a stale trades piece takes its bank in "all" when it carries
+    cross-check markets (`find.cross_market`), else "main". One mode per bank file: the harvest
+    never reads a cross-market bank (its retest is a single-market `OOS`), so no bank needs both.
+    Names are SQX's own (`status()["databank"]`), what `membank.take` and the consumers use.
+    """
+    top, want = progress.installs()[role], {}
+    for (p, db), full in afterrun.scope(top, project, banks).items():
+        now = state.status(p, db)
+        todo = state.commands(p, now, exports=db not in afterrun.UNREAD_TRADES)
+        if "harvest" in todo:
+            want[now["databank"]] = want[now["partner"]] = "main"
+        if full and "trades" in todo and db not in afterrun.UNREAD_TRADES:
+            want.setdefault(now["databank"], "all" if find.cross_market(find.files(top, p, now["databank"])) else "main")
+    wrote = membank.run(role, project, want) if want else {}
+    if want and not wrote:
+        print(f"sin .abk de {sorted(want)}: la instalación no tiene su proyecto de herramientas o sus snippets sin compilar", flush=True)
+    return wrote
 
 
 def export(role: str, project: str, banks: set[str] | None = None) -> None:
@@ -34,21 +57,33 @@ def export(role: str, project: str, banks: set[str] | None = None) -> None:
     project alone: unmarked, it read every project of the install at each step (🔬 2026-10-05,
     ~60 s a step and another session's databanks re-exported).
 
-    The trades go first, from the session's memory (`memtrades`, the AlgoTrades snippet): 4 s
-    per 1,000 strategies against orderstocsv's 274 (🔬 2026-10-12); `export_trades` takes them.
+    Only after the step's «Project finished» and the forced sync (`dump` starts a task in the
+    session). The trades go first, from the session's memory (`dump`: the AlgoBank snippet's
+    `.abk`); the consumers take them, and a live session has no other route (orderstocsv is
+    refused there), so a failure carries the reasons the consumers printed. The dump folder is
+    removed whatever happens: it is RAM.
 
     `banks`: the databanks the step wrote or filled -- only those are exported (and the build
     whose retest one is, for the harvest). The project's other stale databanks wait for the
     session's close: a load-and-resave moves their fingerprint, and each step re-exported
     `Results` (10,000 strategies, ~155 s) that no task had touched (🔬 2026-10-12, 4 of 4 runs)."""
-    with phase("export.memoria"):
-        stale = afterrun.stale_trades(role, project)
-        wrote = memtrades.run(role, project, [b for b in stale if banks is None
-                                              or afterrun.norm(b) in {afterrun.norm(n) for n in banks}])
-    print(f"operaciones desde memoria: {wrote or 'ninguna (orderstocsv)'}", flush=True)
-    subprocess.run([sys.executable, "-m", "ui.daemon.loader.afterrun", "--role", role, "--live",
-                    "--project", project,
-                    *[a for b in sorted(banks or ()) for a in ("--databank", b)]], cwd=ROOT, check=True)
+    why = []
+    try:
+        with phase("export.memoria"):
+            wrote = dump(role, project, banks)
+        print(f"operaciones desde memoria: {wrote or 'ninguna (orderstocsv)'}", flush=True)
+        run = subprocess.Popen([sys.executable, "-m", "ui.daemon.loader.afterrun", "--role", role, "--live",
+                                "--project", project, *[a for b in sorted(banks or ()) for a in ("--databank", b)]],
+                               cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        for line in run.stdout:
+            print(line, end="", flush=True)
+            if "no vale" in line:
+                why.append(line.strip())
+        if run.wait():
+            raise SystemExit(f"{project}: la exportación falló (código {run.returncode})"
+                             + (f"; .abk descartados: {' | '.join(why)}" if why else ""))
+    finally:
+        shutil.rmtree(bank_dir(project, role), ignore_errors=True)
 
 
 def close(role: str, project: str, failed: dict | None = None) -> None:

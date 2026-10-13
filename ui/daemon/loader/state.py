@@ -9,8 +9,8 @@ from ui.daemon.loader.fingerprint import fingerprint
 
 # The three products a databank's page reads, by what they unlock on screen.
 PIECES = {"metrics": "métricas de cada estrategia (se leen del .sqx, sin SQX)",
-          "trades": "operaciones una a una (orderstocsv en el conductor)",
-          "harvest": "cosecha IS+OOS emparejada: la Ficha y la puerta (orderstocsv en el conductor)"}
+          "trades": "operaciones una a una (el .abk de la sesión viva, o orderstocsv con SQX parado)",
+          "harvest": "cosecha IS+OOS emparejada: la Ficha y la puerta (el .abk de la sesión viva, o orderstocsv con SQX parado)"}
 
 
 def newest(folder: Path, pattern: str) -> Path | None:

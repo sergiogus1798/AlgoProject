@@ -95,12 +95,6 @@ def norm(name: str) -> str:
     return name.replace(" ", "_")
 
 
-def stale_trades(role: str, project: str) -> list[str]:
-    """The project's databanks whose trades `export` would write now, in its order."""
-    return [db for p, db in banks(progress.installs()[role], project)
-            if db not in UNREAD_TRADES and "trades" in state.commands(p, state.status(p, db))]
-
-
 def scope(top: Path, ran: str | None, names: set[str] | None) -> dict[tuple[str, str], bool]:
     """(project, databank) to export, with whether all its pieces (True) or only its harvest.
 

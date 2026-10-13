@@ -66,6 +66,10 @@ def main() -> None:
     top = worker_dir(a.role)
     if worker.holding(top):
         raise SystemExit(f"{a.role} está arrancado: los snippets se instalan con el worker parado")
+    for old in (top / "user/extend").rglob("*.*"):          # a snippet the repo dropped stays compiled otherwise
+        rel = old.relative_to(top / "user/extend")
+        if rel.parts[0] in ("Snippets", "Code") and not (SOURCES / rel).exists():
+            old.unlink()
     for rel in todo:
         (top / "user/extend" / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(SOURCES / rel, top / "user/extend" / rel)

@@ -47,11 +47,11 @@ def gui_up(role: str) -> bool:
     return _up(role) and (_top(role) / "user/log/XVFB").exists()
 
 
-def start(role: str, project: str | None = None, presave: bool = False) -> None:
+def start(role: str, project: str | None = None) -> None:
     """Start the worker in GUI mode; return once `project`'s databanks (default: every custom project's) are loaded.
 
     🔬 2026-10-01: memory == disk before any sync, or it mirrors empty memory over the files (rule 1).
-    With `project`, the others load in the background and `stop` waits (§7.4b); `presave` also saves them in parallel (§7.1 B).
+    With `project`, the others load in the background and `stop` waits and the background thread saves them in parallel (§7.1/7.4b, always on since 2026-10-13).
     """
     if pids := worker.holding(_top(role)):
         raise SystemExit(f"{role} ya está arrancado (PID {pids}): no se arranca ni se mata")
@@ -67,7 +67,7 @@ def start(role: str, project: str | None = None, presave: bool = False) -> None:
         kill(role)
         raise SystemExit(f"{role}: los databanks no cargaron en 5 min; sesión matada por PID, ficheros intactos: " + "; ".join(off))
     if project:
-        presaving.begin(role, project, presave, _files, _log)
+        presaving.begin(role, project, _files, _log)
 
 
 def stop(role: str, export: bool = True) -> None:

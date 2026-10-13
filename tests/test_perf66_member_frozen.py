@@ -54,7 +54,7 @@ def test_backfill_dry_run_writes_nothing_and_yes_fills(tmp_path: Path, monkeypat
 
 
 def test_backfill_refuses_what_it_cannot_establish(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """An older project on an unmapped feed or a scalar card is listed, not filled; the mapped old feed gets today's clock."""
+    """An older project on an unmapped feed or a scalar card is listed, not filled; the mapped old feed gets its measured clock."""
     monkeypatch.setattr(backfill.manifest, "feed_of", lambda sqx: "X_M1")
     monkeypatch.setattr(backfill.feeds, "timezone", lambda feed: "EETUS")
     old = _version(tmp_path, "2026-09-29 22:05", {"build": {"method": "SizeBased", "value": 5.0}})
@@ -62,5 +62,4 @@ def test_backfill_refuses_what_it_cannot_establish(tmp_path: Path, monkeypatch: 
     scalar = _version(tmp_path / "s", "2026-10-05 10:00", 8.0) if (tmp_path / "s").mkdir() is None else None
     assert backfill.plan(scalar)[0] is None
     monkeypatch.setattr(backfill.manifest, "feed_of", lambda sqx: "USDJPY_DukasM1_the5ers")
-    monkeypatch.setattr(backfill.feeds, "timezone", lambda feed: {"USDJPY_M1": "EETUS"}[feed])   # KeyError if not mapped
-    assert backfill.plan(old)[0]["clock"] == "EETUS"
+    assert backfill.plan(old)[0]["clock"] == "Asia/Jerusalem"

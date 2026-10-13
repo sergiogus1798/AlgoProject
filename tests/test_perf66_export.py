@@ -201,17 +201,3 @@ def test_a_step_scoped_harvest_asks_for_exports_so_the_retest_costs_no_second_pa
     monkeypatch.setattr(state, "commands", lambda p, now, exports=True: flags.append((now, exports)) or {})
     afterrun.export("custodian", names={"OOS"})
     assert ("Results", True) in flags
-
-
-def test_liverun_export_passes_each_bank_as_a_databank_flag(monkeypatch: pytest.MonkeyPatch) -> None:
-    """`liverun.export(banks)` runs afterrun once, with `--databank` per bank, `check=True`."""
-    from ui.daemon.launch import liverun
-    calls: list[tuple[list, dict]] = []
-    monkeypatch.setattr(liverun.afterrun, "stale_trades", lambda role, project: ["OOS", "Other"])
-    monkeypatch.setattr(liverun.memtrades, "run", lambda role, project, banks: calls.append(([banks], {})) or [])
-    monkeypatch.setattr(liverun.subprocess, "run", lambda cmd, **kw: calls.append((cmd, kw)))
-    liverun.export("custodian", "Test_P", {"SPP IS", "OOS"})
-    assert calls[0][0] == [["OOS"]]                         # only the stale bank in scope reads memory
-    cmd, kw = calls[1]
-    assert cmd[-4:] == ["--databank", "OOS", "--databank", "SPP IS"] and kw["check"] is True
-    assert "--project" in cmd and "--live" in cmd

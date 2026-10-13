@@ -18,7 +18,7 @@ Never add one to a workflow project: 17 places in `sqx/projects/` treat every ta
   `<Task name="Custom analysis" type="CustomAnalysis" taskXMLFile="CustomAnalysis-Task1.xml" …/>`.
 - 🔬 `AlgoKeep` returning the strategies named in a file: 1,000 → 10 in memory, and on disk after
   the sync.
-- 🔬 `AlgoTrades` run from `Trade_AlgoTools` wrote the 1,000 trade lists of
+- 🔬 `AlgoTrades` (deleted 2026-10-13; AlgoBank runs the same way) run from `Trade_AlgoTools` wrote the 1,000 trade lists of
   `Test_XAUUSD_H1_snippets/Results`, another project of the same session.
 
 ## Also

@@ -11,6 +11,6 @@ the per-day equity (962 variants in 1.5 s) cannot give. The autopilot exports th
 reunites them into `variant_trades.parquet` and deletes the per-leg exports. `mothertrades` stays for step 20.
 
 ## Evidence
-- 📓 2026-10-10/11, `fases.csv` of the recent runs: `export_retest` 92-153 s per mother (before `memtrades`, 2026-10-12, so inflated today). Not: «~90 min per batch» (2026-10-07, the reference run, not this chain).
+- 📓 2026-10-10/11, `fases.csv` of the recent runs: `export_retest` 92-153 s per mother (before the in-memory export, 2026-10-12, so inflated today). Not: «~90 min per batch» (2026-10-07, the reference run, not this chain).
 `sqx/variants/README.md` (equity line); no real batch with the file exists yet: the ~90 min is the
 reference run's export time, not a measurement of the new chain (OPEN.md, part V of encargo 48).

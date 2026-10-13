@@ -1,4 +1,4 @@
-"""Encargo 66 §7.1/7.4b: `live.start(project, presave)` and the settle before any exit, over HTTP against the fake SQX."""
+"""Encargo 66 §7.1/7.4b: `live.start(project)` and the settle before any exit, over HTTP against the fake SQX."""
 
 import threading
 import time
@@ -99,9 +99,9 @@ def test_an_auto_sync_never_bank_is_not_waited_for(two: TwoProjects, monkeypatch
 
 def test_presave_syncs_only_the_other_projects_banks_and_waits_for_their_saved_lines(
         two: TwoProjects) -> None:
-    """7.1 variant B: once `Other` has its file, ITS bank is synced and settled; the run's project is never synced."""
+    """7.1: once `Other` has its file, ITS bank is synced and settled; the run's project is never synced."""
     load_other(two)
-    live.start("custodian", "Test_X", presave=True)
+    live.start("custodian", "Test_X")
     got = presaving.settle("custodian")
     assert got["saved"]["banks"] == 1
     assert [(q["projectName"], q["databankName"]) for c, q in two.calls
@@ -115,7 +115,7 @@ def test_presave_syncs_auto_sync_never_banks_without_blocking_on_a_missing_saved
     load_other(two)
     two.silent = True
     monkeypatch.setattr(presaving, "NEVER_S", 0.2)
-    live.start("custodian", "Test_X", presave=True)
+    live.start("custodian", "Test_X")
     got = presaving.settle("custodian")
     assert got["saved"]["banks"] == 0 and "error" not in got and "sin «saved»" in capsys.readouterr().err
     assert [(q["projectName"], q["databankName"]) for c, q in two.calls
@@ -149,20 +149,12 @@ def test_a_dead_wait_with_another_project_still_unloaded_kills_by_pid(
         two: TwoProjects, monkeypatch: pytest.MonkeyPatch) -> None:
     """C1: the thread died on a hiccup; `Other` is still half-loaded at the stop -> kill by PID, never exitapp."""
     killed = []
-    monkeypatch.setattr(presaving, "_work", lambda role, project, save, box, *a: box.update(error="hiccup"))
+    monkeypatch.setattr(presaving, "_work", lambda role, project, box, *a: box.update(error="hiccup"))
     monkeypatch.setattr(presaving, "kill", killed.append)
     live.start("custodian", "Test_X")
     with pytest.raises(SystemExit, match="hiccup"):
         live.stop("custodian")
     assert killed == ["custodian"] and not [c for c, _ in two.calls if c == "exitapp"]
-
-
-def test_no_presave_means_no_sync(two: TwoProjects) -> None:
-    """With the flag off nothing is written: the wait alone."""
-    load_other(two)
-    live.start("custodian", "Test_X")
-    assert "saved" not in presaving.settle("custodian")
-    assert not [c for c, _ in two.calls if c == "synchronizeDatabank"]
 
 
 def test_step_26_takes_a_synced_file_only_when_non_empty_and_unchanged_across_two_polls(
@@ -202,11 +194,11 @@ def test_presave_takes_a_silent_clean_bank_as_saved_and_a_silent_dirty_one_as_an
     load_other(two)
     two.silent = True
     monkeypatch.setattr(presaving, "NEVER_S", 0.2)
-    live.start("custodian", "Test_X", presave=True)
+    live.start("custodian", "Test_X")
     got = presaving.settle("custodian")
     assert got["saved"]["banks"] == 0 and "error" not in got and "nada que guardar" in capsys.readouterr().err
     two.drop = True                                          # dirty: the sync leaves 1 file for 2 in memory
     load_other(two)
     monkeypatch.setattr(presaving, "SAVE_S", 0.6)
-    live.start("custodian", "Test_X", presave=True)
+    live.start("custodian", "Test_X")
     assert "sin «saved»" in presaving.settle("custodian")["error"]

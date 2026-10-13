@@ -39,8 +39,6 @@ _SETTINGS = """<Settings>
   </Databanks>
 </Settings>
 """
-# `sqx.export.memtrades` formats this one itself; it goes when AlgoTrades does (encargo 66 §6).
-SETTINGS = _SETTINGS.replace("{snippet}", "AlgoTrades")
 
 
 def settings(snippet: str, args: str) -> str:
@@ -65,5 +63,5 @@ def ensure(role: str) -> bool:
         return False
     (file.parent / "databanks/Results").mkdir(parents=True)
     cfxio.write(file, {"config.xml": CONFIG.encode("utf-8"),
-                      MEMBER: SETTINGS.format(args="").encode("utf-8")})
+                      MEMBER: settings("AlgoBank", "").encode("utf-8")})
     return True
