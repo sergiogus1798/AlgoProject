@@ -33,9 +33,6 @@ barrier:
   max_hold: 400               # bars scanned ahead before the vertical barrier is forced.
                               # Only a ceiling on the scan: a real hold longer than this
                               # makes the module refuse rather than silently truncate
-  intrabar: pessimistic       # which barrier wins when one bar's range touches both.
-                              # "pessimistic" = the stop. Calibrated by calibrate.convention()
-                              # against SQX's own P/L; with no barriers it cannot be read
 
 statistics:                   # reported for the real run and every null run, each with the
                               # side that counts as good. The choice of statistic moves the

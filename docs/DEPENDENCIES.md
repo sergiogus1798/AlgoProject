@@ -127,7 +127,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `engines/nulls/placement/trade_models.py` | 192 | How a random run's trades are drawn: the study's modelling assumptions, and its alternatives. | engines | numpy, pandas |
 | `engines/nulls/simulate.py` | 167 | The numbers, under a given rung: the real run and its thousands of imaginary ones. | core, engines | numpy, pandas |
 | `engines/nulls/stats.py` | 72 | What a run is worth, for the real one and for thousands of null ones at once. | — | numpy |
-| `engines/nulls/verdict.py` | 101 | Given those numbers, what can be claimed and what should be distrusted. | core, engines | numpy |
+| `engines/nulls/verdict.py` | 98 | Given those numbers, what can be claimed and what should be distrusted. | core, engines | numpy |
 | `engines/nulls/windowed.py` | 229 | The monkey drawn inside calendar windows, sized at its own bar and priced by the common repricer. | engines | numpy, pandas |
 | `engines/regimes/__init__.py` | 1 | The market state a trade was opened into. | — | — |
 | `engines/regimes/regime.py` | 98 | Family D in market state: the daily volatility a trade was opened into, and its tercile. | — | arch, numpy, pandas |
@@ -722,7 +722,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `studies/readings/monkey/many.py` | 93 | Every strategy of one export through every rung: the panel the population reading starts from. | core, engines, studies | pandas |
 | `studies/readings/monkey/one.py` | 164 | One strategy against its monkeys, as the contract's data: where it landed, where its edge came from. | core, engines | numpy, pandas |
 | `studies/readings/monkey/report.py` | 227 | The null study's command: every strategy of one export against its monkeys, or one alone. | core, engines, studies | pandas |
-| `studies/readings/monkey/tooltips.py` | 17 | One sentence per config.yaml knob, for the window's configuration drawer. | — | — |
+| `studies/readings/monkey/tooltips.py` | 16 | One sentence per config.yaml knob, for the window's configuration drawer. | — | — |
 | `studies/readings/monkey/verify.py` | 114 | Is this a test, or just a number? The two checks that must pass before any p is read. | engines | numpy, pandas, scipy |
 | `studies/research/board/__main__.py` | 18 | The command: prints the board's one page and writes it as board.json and board.txt. | studies | — |
 | `studies/research/board/factors.py` | 73 | The board's numbers per cell — prior, evidence, signal, coverage gap, past, brake — each 0-1. | — | scipy |
@@ -864,7 +864,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `studies/screening/maeDepth/tooltips.py` | 16 | One sentence per config.yaml knob, for the window's configuration drawer. | — | — |
 | `studies/screening/monkeyExcess/report.py` | 171 | How many strategies of a databank beat their monkeys, and how many should have by chance. | core, engines | pandas |
 | `studies/screening/replication/report.py` | 190 | Check whether one databank's conclusions hold on other, independently generated databanks. | core, studies | pandas |
-| `studies/transfer/crossTF/cells.py` | 175 | The numbers of every cell: what it earned, and where it sits among its own timeframe's nulls. | core, engines, studies | numpy, pandas |
+| `studies/transfer/crossTF/cells.py` | 173 | The numbers of every cell: what it earned, and where it sits among its own timeframe's nulls. | core, engines, studies | numpy, pandas |
 | `studies/transfer/crossTF/equity.py` | 83 | The equity charts and the per-mother tagging: one block per mother, the window's «Madre» picks it. | core, studies | numpy, pandas |
 | `studies/transfer/crossTF/inputs.py` | 172 | What the study is run on: its knobs, which cell each result block is, and the bars. | core | pandas |
 | `studies/transfer/crossTF/many.py` | 221 | Every mother across timeframes, scaled and not, read as one result: what the window paints. | core, engines, studies | numpy, pandas |

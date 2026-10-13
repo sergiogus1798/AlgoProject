@@ -103,9 +103,6 @@ of 199 oos1 trades, four rungs, 5,000 draws; about 10 MB over the process's own 
   needs the ATR period the strategy actually used, which is in its `.sqx` and is not fitted here:
   🔬 `CV(Size × ATR)` falls from 0.38 to 0.12 at ATR(50) but never to 0, so the family is
   identified and the parameters are not.
-- **`barrier.intrabar` cannot be calibrated on a corpus with no barriers.** It ships as
-  `pessimistic` and `verify.py` proves the scan is *correct*, not that the convention is SQX's.
-  The day a strategy carries a stop and a target, calibrating it against SQX comes first.
 
 ## Known defects, measured and not yet fixed
 

@@ -11,7 +11,6 @@ TIPS = {
     "barrier.atr_bars": "Periodo del ATR que usan el tamaño por volatilidad y las barreras.",
     "barrier.max_hold": "Barras que se miran hacia delante antes de forzar la barrera "
                         "vertical; una duración real más larga hace que el módulo se niegue.",
-    "barrier.intrabar": "Qué barrera gana cuando una vela toca las dos; pessimistic es el stop.",
     "statistics.report": "Los estadísticos que se miden, cada uno con su lado bueno.",
     "verdict.alpha": "Nivel, de una cola, de la p empírica.",
     "verdict.min_trades": "Por debajo de estas operaciones no se calcula p."}

@@ -36,6 +36,7 @@ Lee `CLAUDE.md` (reglas 1-6, 10, 11, 13-19) · `docs/AgentPDFs/WORKFLOW.md` ·
   nadie y ningún número publicado depende de ella · sigue: decide el dueño si se borra la clave y se
   escribe la regla de la vela en el motor; sin medir cortos ni velas doji (0,2 %).
   Ficha `knowhow/export/sl-pt-same-bar-convention.md`.
+- 2026-10-13 · 5c · B1 = A: clave `barrier.intrabar` borrada con sus citas — nadie la leía y la medida la desmiente; `kernel.touched` se queda, la usa `studies.readings.monkey.verify`; la regla medida está en `knowhow/export/sl-pt-same-bar-convention.md`.
 
 ## §0 · De dónde sale
 

@@ -91,7 +91,7 @@ def new_nulls(kept: dict, rung: str, cfg: dict, key: str, threads: int | None = 
 def config(draws: int, seed: int = 77) -> dict:
     """The nulls config of these tests."""
     return {"nulls": {"seed": seed, "chunk_trades": CHUNK, "draws": draws},
-            "statistics": {"report": NAMES}, "barrier": {"intrabar": "pessimistic"}}
+            "statistics": {"report": NAMES}, "barrier": {}}
 
 
 def kept_of(entry: np.ndarray, hold: np.ndarray, bars: int, seed: int = 1, value: float = 100.0,

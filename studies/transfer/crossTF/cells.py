@@ -9,13 +9,11 @@ from core.significance import annual_sharpe
 from engines.nulls import model, simulate, verdict
 from studies.transfer.crossTF import siblings
 
-# 2026-09-30 (feedback §5): these two speak of a run's own reconstruction, never of the
-# reading a cell is judged on -- "P saturado" fires whenever `nulls.draws` is the binding
-# constraint (a config knob, not a cell fact) and "Convención intrabar" fires on every
-# strategy carrying no stop or target, which is the whole cross-TF corpus today. Kept out of
-# this study's warnings; `engines.nulls.verdict.distrust` still raises them for whoever else
-# reads the same engine.
-DROP_WARNINGS = ("P SATURADO", "CONVENCION INTRABAR")
+# 2026-09-30 (feedback §5): "P saturado" speaks of a run's own reconstruction, never of the
+# reading a cell is judged on -- it fires whenever `nulls.draws` is the binding constraint (a
+# config knob, not a cell fact). Kept out of this study's warnings;
+# `engines.nulls.verdict.distrust` still raises it for whoever else reads the same engine.
+DROP_WARNINGS = ("P SATURADO",)
 # The owner's one Sharpe (daily P&L on trading days, x sqrt(252)), measured beside the null's
 # statistics so the window can draw it; never a key of `engines.nulls.stats`.
 TOTAL = "sharpe_total"
