@@ -922,7 +922,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_autopilot_tail.py` | 249 | The autopilot's tail, 17 → 26, on hand-built rails and a ledger in a temp folder: the order | ledger, pipeline, ui | pandas |
 | `tests/test_autopilot_tail_185.py` | 56 | 18.5 per mother, at execution time: it runs only where step 17's `descuadre_sqx` is under `wfc.sqx_gap_relative`. | ledger, pipeline, test_autopilot_tail | pandas |
 | `tests/test_autopilot_timing.py` | 40 | The autopilot's timing table: a nested phase's seconds leave its parent, and SQX stays apart. | core, pipeline | pytest |
-| `tests/test_autopilot_variants_order.py` | 43 | Step 16.5's order of work: live, every pilot first on the main market alone; restart, as it was. | pipeline | pytest |
+| `tests/test_autopilot_variants_order.py` | 45 | Step 16.5's order of work: live, every pilot first on the main market alone; restart, as it was. | pipeline | pytest |
 | `tests/test_autopilot_zero.py` | 138 | Zero survivors end the autopilot cleanly, a missing fact goes where its rule says, the judge | pipeline, sqx, tests | pandas |
 | `tests/test_batches.py` | 87 | Known answers for the batch check: a batch against itself, two fair draws, and a shifted funnel. | studies | numpy, pandas |
 | `tests/test_blindjoint.py` | 217 | Step 20 on mothers whose answer is known: noise and random traders name nobody, a planted edge is named, the pieces veto. | engines, ledger, studies | numpy, pandas |
