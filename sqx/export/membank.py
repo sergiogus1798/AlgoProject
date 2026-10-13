@@ -1,8 +1,6 @@
 """Whole databanks written from a live session's memory by the AlgoBank snippet, one `.abk` each."""
 
-import shutil
-
-from core import bankfile, sqxstats
+from core import bankfile, bankframes, sqxfile, sqxstats
 from core.paths import bank_dir
 from sqx.projects import live
 from sqx.snippets import install, toolproject
@@ -34,36 +32,38 @@ def keys() -> list[str]:
     return known + [f"{name}\t{kind}" for kind, names in NAMED.items() for name in names]
 
 
-def run(role: str, project: str, banks: list[str], data: str = "main") -> dict[str, int]:
-    """Write each databank's `.abk` from the live session's memory, all in one task run.
+def run(role: str, project: str, banks: dict[str, str]) -> dict[str, int]:
+    """Write each databank's `.abk` from the live session's memory, one task run per data mode.
 
     Args:
-        banks: Databanks of `project`. They need not be synced to disk: the snippet reads memory.
-        data: "main" for the main result's orders, "all" for every result's (a cross-market
-            or WFM databank read per market).
+        banks: Databank -> data mode, of `project`. They need not be synced to disk: the snippet
+            reads memory. "main" is the main result's orders, "all" every result's (a
+            cross-market or WFM databank read per market).
 
     Returns:
         Strategies written per databank, each file at `core.paths.bank_dir(project, role) /
-        "<databank>.abk"`, opened and validated (`bankfile.load`, CRC checked). Nobody deletes them yet: no
-        conversion step exists, and the owner's answer is «borrado al convertir» — whoever
-        converts a `.abk` deletes it once converted; the next `run` clears the folder anyway.
-        Empty when the install has no tool project
-        or its snippets are not compiled (`sqx.snippets.install`): the caller reads the
-        databank its next way.
+        "<databank>.abk"`, opened and validated (`bankfile.load`, CRC checked). Only the named
+        banks' files are replaced; nobody deletes them after (`take` reads them, the next `run`
+        overwrites). Empty when the install has no tool project or its snippets are not compiled
+        (`sqx.snippets.install`): the caller reads the databank its next way.
     """
     if not banks or not toolproject.cfx(role).exists() or install.pending(role):
         return {}
     out = bank_dir(project, role)
-    shutil.rmtree(out, ignore_errors=True)
-    out.mkdir(parents=True)
+    out.mkdir(parents=True, exist_ok=True)
+    for bank in banks:
+        (out / f"{bank}.abk").unlink(missing_ok=True)
     (out / "_keys.tsv").write_text("\n".join(keys()) + "\n", encoding="utf-8")
-    args = "|".join([project, ";".join(banks), str(out), str(out / "_keys.tsv"), data,
-                     ",".join(map(str, SAMPLES))])
-    live.call(role, "updateTaskXML", projectName=toolproject.NAME, taskXMLFile=toolproject.MEMBER,
-              xmlConfig=toolproject.settings("AlgoBank", args))
-    end = live.run(role, toolproject.NAME, toolproject.CONFIG)
-    if not (out / "_done.tsv").exists():         # `live.run` already raised on an aborted run
-        raise SystemExit(f"{project}: «AlgoBank» no escribió sus databanks: {end}")
+    for data in dict.fromkeys(banks.values()):
+        names = [b for b, d in banks.items() if d == data]
+        (out / "_done.tsv").unlink(missing_ok=True)
+        args = "|".join([project, ";".join(names), str(out), str(out / "_keys.tsv"), data,
+                         ",".join(map(str, SAMPLES))])
+        live.call(role, "updateTaskXML", projectName=toolproject.NAME, taskXMLFile=toolproject.MEMBER,
+                  xmlConfig=toolproject.settings("AlgoBank", args))
+        end = live.run(role, toolproject.NAME, toolproject.CONFIG)
+        if not (out / "_done.tsv").exists():         # `live.run` already raised on an aborted run
+            raise SystemExit(f"{project}: «AlgoBank» no escribió sus databanks: {end}")
     held = live.records(role, project)
     wrote = {}
     for bank in banks:
@@ -75,3 +75,34 @@ def run(role: str, project: str, banks: list[str], data: str = "main") -> dict[s
             raise SystemExit(f"{project}/{bank}: el .abk lleva {wrote[bank]} estrategias y la "
                              f"memoria de SQX tiene {held[bank]}")
     return wrote
+
+
+def take(project: str, role: str, bank: str, ids: dict[str, str], newest_mtime: float,
+         data: str) -> dict | None:
+    """The databank's `.abk` loaded, when it is this databank's, whole and newer than its files.
+
+    Args:
+        ids: File stem -> identity (`core.sqxfile._hashed` of the strategy's XML) of every
+            strategy the databank holds on disk, exactly.
+        newest_mtime: Modification time of the databank's newest .sqx; an older dump is another run's.
+        data: The data mode the caller needs, "main" or "all".
+
+    Returns:
+        The loaded bank, or None after one line saying why the caller must read the databank
+        its next way.
+    """
+    path = bank_dir(project, role) / f"{bank}.abk"
+    try:
+        got = bankfile.load(path, check=True)
+        why = (f"modo {got['data']}, se pide {data}" if got["data"] != data
+               else f"nombres distintos ({len(set(got['names']) ^ set(ids))} de diferencia)"
+               if set(got["names"]) != set(ids)
+               else "una identidad no coincide" if any(
+                   sqxfile._hashed(t) != ids[n] for n, t in bankframes.texts(got).items())
+               else "más viejo que el .sqx más nuevo" if got["written_ms"] / 1000 < newest_mtime else "")
+    except (OSError, bankfile.Unreadable) as err:
+        got, why = None, str(err)
+    if why:
+        print(f"{project}/{bank}: {path.name} no vale: {why}")
+        return None
+    return got

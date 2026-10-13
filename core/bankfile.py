@@ -49,20 +49,20 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 MAGIC, END, VERSION, TRAILER = b"ALGOBANK", b"KNABOGLA", 1, 204
 ORDER = np.dtype([("strategy", "<u4"), ("ticket", "<i4"), ("open_ms", "<i8"), ("close_ms", "<i8"),
-                  ("open", "<f4"), ("close", "<f4"), ("size", "<f4"), ("pl", "<f4"),
-                  ("balance", "<f4"), ("mae", "<f4"), ("mfe", "<f4"), ("sym", "<u2"), ("res", "<u2"),
-                  ("type", "<u2"), ("sample", "<u2"), ("close_type", "<u2"), ("flags", "u1"),
-                  ("_", "u1")])
+                  ("open", "<f4"), ("close", "<f4"), ("size", "<f4"), ("pl", "<f4"), ("balance", "<f4"),
+                  ("mae", "<f4"), ("mfe", "<f4"), ("sym", "<u2"), ("res", "<u2"), ("type", "<u2"),
+                  ("sample", "<u2"), ("close_type", "<u2"), ("flags", "u1"), ("_", "u1")])
 EQ = np.dtype([("day", "<i4"), ("v", "<f4")])
 INDEX = np.dtype([(c, "<u4") for c in ("name", "main", "symbol", "tf", "filter")]
                  + [("problems", "<i4"), ("n_orders", "<u4"), ("xml_len", "<u4")])
 EQRUN = np.dtype([("strategy", "<u4"), ("res", "<u4"), ("n", "<u4")])
 SYMDEC = np.dtype([("sym", "<u4"), ("dec", "<i4")])
-SECTIONS = ("orders", "equity", "stats", "xml", "index", "eqruns", "symdec", "keys", "labels",
-            "strings")
+SECTIONS = ("orders", "equity", "stats", "xml", "index", "eqruns", "symdec", "keys", "labels", "strings")
 UNLABELLED = ("", "N/A")
 PENDING = 1                                  # `flags` bit 0: an order that never filled
 CODED = ("type", "sample", "close_type")     # the three whose label must exist
@@ -79,11 +79,9 @@ def stat(k: int) -> np.dtype:
 
 
 def half_up(x: np.ndarray, decimals: int | np.ndarray) -> np.ndarray:
-    """Round float32 values the way SQX prints them: halves away from zero.
+    """Round float32 values as SQX prints them: halves away from zero.
 
-    🔬 2026-10-12: numpy's round-half-even left 48,091 balances of 4.54 M trades off by 0.01
-    against orderstocsv; this one, none.
-    """
+    🔬 2026-10-12: numpy's round-half-even left 48,091 of 4.54 M balances off by 0.01."""
     scale = 10.0 ** np.asarray(decimals, dtype="f8")
     x = np.asarray(x, dtype="f8")
     return np.sign(x) * np.floor(np.abs(x) * scale + 0.5) / scale
@@ -109,19 +107,16 @@ def load(path: Path, check: bool = False) -> dict:
 
     Args:
         path: The file.
-        check: Also verify the CRC32, ~1 s per GB: for tests and for a file that was copied.
-            The rename already protects a reader from a half-written one.
+        check: Also verify the CRC32, ~1 s per GB (the rename already protects from half a file).
 
     Returns:
-        The ten sections under their names — `orders`, `equity`, `stats`, `index`, `eqruns`
-        and `symdec` as structured arrays mapped from the file, `xml` as bytes, `keys` as
-        [(name, type)], `labels` and `strings` as object arrays — plus `data` ("main" or
-        "all"), `names` (strategy names in databank order) and `written_ms`.
+        The ten sections under their names (structured arrays mapped from the file, `xml` as
+        bytes, `keys` as [(name, type)], `labels`/`strings` as object arrays), plus `data`
+        ("main" or "all"), `names` (databank order) and `written_ms`.
 
     Raises:
         Unreadable: Truncated, not version 1, sizes that do not add up, a wrong CRC, or an
-            order whose type, sample type or close type has no label.
-    """
+            order whose type, sample type or close type has no label."""
     path = Path(path)
     size = path.stat().st_size
     if size < 16 + TRAILER:
@@ -172,33 +167,38 @@ def load(path: Path, check: bool = False) -> dict:
     return got
 
 
-def trades(bank: dict, per_market: bool = False) -> pd.DataFrame:
+def trades(bank: dict, per_market: bool = False, only: set[str] | None = None) -> pd.DataFrame:
     """Every filled trade of the databank: the frame `core.tradepack.pack` writes from the CSVs.
 
     Args:
         bank: What `load` returned.
-        per_market: True for a `data == "all"` file: `Symbol` and `block` are kept, `block`
-            by the k-th-ticket rule of `core.tradestore.blocks_of`.
+        per_market: True for a `data == "all"` file: `Symbol` and `block` (`tradestore.blocks_of`) kept.
+        only: Names to keep, filtered first: `Ticket` and the levels are those of a pack of just them.
 
     Returns:
         `core.tradestore.KEEP`, then `Symbol` and `block`, then `strategy`; strategies in the
-        order of their file names (`tradepack.pack`'s), each one's rows in SQX's own. Prices are rounded half-up to their symbol's decimals, money to 2. `Ticket`
-        is there only when some strategy's row order does not carry it
-        (`core.tradestore.ordered`), NaN for the strategies that did not need it — placed
-        and typed as `pack` does: before `strategy` when the first strategy kept it, int64
-        when all did.
+        order of their file names (`tradepack.pack`'s), each one's rows in SQX's own. Prices are
+        rounded half-up to their symbol's decimals, money to 2. `Ticket` is there only when some
+        strategy's row order does not carry it (`core.tradestore.ordered`), NaN for the others,
+        placed and typed as `pack` does.
 
     Raises:
-        Unreadable: A traded symbol SQX gave no decimals for.
-    """
+        Unreadable: A traded symbol SQX gave no decimals for."""
+    return _frame(bank, per_market, only)[0]
+
+
+def _frame(bank: dict, per_market: bool, only: set[str] | None) -> tuple:
+    """`trades`, and the names of the strategies that kept `Ticket` / came out torn, in file order."""
     o = bank["orders"]
     o = o[o["flags"] & PENDING == 0]
     labels, names = bank["labels"], bank["names"]
     # Sorted on read (owner, 2026-10-13): SQX's memory holds a databank in its own order, the
     # trade library in the order of the strategies' file names (🔬 same day, 50 + 50 strategies).
-    first = sorted(range(len(names)), key=lambda i: names[i] + ".csv")
-    rank = np.empty(len(names), "i8")
-    rank[first] = np.arange(len(names))
+    first = sorted((i for i in range(len(names)) if only is None or names[i] in only),
+                   key=lambda i: names[i] + ".csv")
+    rank = np.full(len(names), -1, "i8")
+    rank[first] = np.arange(len(first))
+    o = o[rank[o["strategy"]] >= 0]
     o = o[np.argsort(rank[o["strategy"]], kind="stable")]
     known = np.full(len(labels), -1)
     known[bank["symdec"]["sym"]] = bank["symdec"]["dec"]
@@ -221,18 +221,30 @@ def trades(bank: dict, per_market: bool = False) -> pd.DataFrame:
         "Profit/Loss": half_up(o["pl"], 2), "Balance": half_up(o["balance"], 2),
         "Sample type": cat(o["sample"]), "Close type": cat(o["close_type"]),
         "MAE ($)": half_up(o["mae"], 2), "MFE ($)": half_up(o["mfe"], 2)})
+    torn_blocks = set()
     if per_market:
         f["Symbol"] = cat(o["sym"])
         f["block"] = pd.DataFrame({"s": o["strategy"], "t": o["ticket"]}).groupby(["s", "t"]).cumcount()
+        runs = pd.DataFrame({"s": o["strategy"], "b": f["block"], "t": o["ticket"]}).groupby(["s", "b"])["t"]
+        torn_blocks = set(runs.size().index.get_level_values(0)[
+            ((runs.max() != runs.size()) | (runs.min() != 1)).to_numpy()])   # tradestore.whole
     same = o["strategy"][1:] == o["strategy"][:-1]
     op, cl = o["open_ms"] // 1000, o["close_ms"] // 1000      # whole seconds, as the CSVs `tradepack.pack` reads
     torn = same & ((op[1:] <= op[:-1]) | (op[1:] < cl[:-1]))
     kept = np.unique(o["strategy"][1:][torn])
-    if len(kept) and len(kept) == len(names):
+    if len(kept) and len(kept) == len(first):
         f["Ticket"] = o["ticket"].astype("int64")
     elif len(kept):
         f["Ticket"] = np.where(np.isin(o["strategy"], kept), o["ticket"], np.nan)
     f["strategy"] = cat(o["strategy"], names)
     if len(kept) and first[0] not in kept:
         f["Ticket"] = f.pop("Ticket")
-    return f
+    return (f, [names[i] for i in first if i in kept], [names[i] for i in first if i in torn_blocks])
+
+
+def pack(bank: dict, out: Path, per_market: bool = False, only: set[str] | None = None) -> dict:
+    """`core.tradepack.pack` from the databank (args as in `trades`): the same zstd Parquet and dict."""
+    f, kept, torn = _frame(bank, per_market, only)
+    pq.write_table(pa.Table.from_pandas(f, preserve_index=False), out, compression="zstd")
+    return {"strategies": len(bank["names"]) if only is None else len(only & set(bank["names"])),
+            "trades": len(f), "columns": list(f.columns), "kept_ticket": kept, "torn_blocks": torn}
