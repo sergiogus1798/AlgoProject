@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import re
+
 import pytest
 
 from sqx.blocks import install as inst
@@ -75,9 +77,11 @@ def test_install_writes_atomically(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("key", ["CBlock_TimeBreakoutLong", "CBlock_TimeBreakoutLong_2",
-                                 "SessionHigh", "SessionLow", "SessionOpen", "Sig.SessionLow"])
+                                 "SessionHigh", "SessionLow", "SessionOpen", "Sig.SessionLow",
+                                 "SessionClose", "VolumeProfileCustomHours",
+                                 "VolumeProfileCustomHoursMultiSession"])
 def test_clock_names(key: str) -> None:
-    """The five forbidden custom blocks are clock."""
+    """The forbidden session and custom-hours blocks are clock."""
     assert buildcensus.kind(key, ATTRS) == "clock"
 
 
@@ -94,3 +98,11 @@ def test_find_matches_category_and_help() -> None:
              "groups": {}}
     assert [r["key"] for r in vocabulary.find(vocab, "bands")] == ["A"]
     assert [r["key"] for r in vocabulary.find(vocab, "donchian")] == ["B"]
+
+
+def test_no_repo_palette_has_session_close_or_custom_hours() -> None:
+    """Owner, 2026-10-13: no repo palette lists the three new clock blocks."""
+    from core import paths
+    bad = [p.name for p in (paths.ROOT / "sqx/blocks/palettes").glob("*.yaml")
+           if re.search(r"^\s*(SessionClose|VolumeProfileCustomHours\w*):", p.read_text(), re.M)]
+    assert not bad, bad

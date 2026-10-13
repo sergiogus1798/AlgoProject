@@ -333,7 +333,7 @@ records that look — the owner decides whether to add one.
 (Q11). The WFC and the CSCV now write their own rows (one per segment read, through
 `engines/variants/look.py`), and `ledger.blind` skips a batch that recorded itself. Still open: (1),
 (2), the WFM (19) writing its own row, and `--family` — the WFC and the CSCV now require it and
-`pipeline/recipe.yaml` and `ui/daemon/runner/optimisation.py` do not pass it yet (Q9 decides where
+`ui/daemon/runner/optimisation.py` does not pass it yet (`pipeline/recipe.yaml` was deleted 2026-10-13) (Q9 decides where
 the family comes from).
 
 **2026-09-28:** (2) is moot for a human — the owner lifted the oos2 reservation and the blind door
@@ -698,9 +698,7 @@ random draw of 5 at step 8 only; not `ALGO_AUTONOMOUS`. Phase 1 = steps 7 → 16
 - **Phase 2** (16.5 → 20, mother by mother): the mothers are those left in `SPP OOS` after the
   step-16 cut, each matched to her counterpart in `SPP IS`; the variants are designed from the
   metrics of the combined backtest (owner, 2026-10-01: «no es necesario coger solo SPP OOS»).
-  Today `pipeline.run.mothers` takes every mother of the SPP export and the brief reads only IS.
-  `pipeline/recipe.yaml` also fails as written —
-  `ran` lacks `--project`, `wfc`/`cscv` lack `--family` (§50), `--chart` hard-codes XAUUSD.
+  The brief reads only IS.
 - **Phase 3** (21 → 26): the stopped version is not harvested for step 25, no pool for 26 (§89, §85).
 - **Overlapping two populations** (one in SQX, one in Python) only if the measurement shows the
   dead time is large.

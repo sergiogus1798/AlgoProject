@@ -5,6 +5,8 @@ description: Configure and run the two SPP tasks of a custom SQX project — the
 
 # /spp
 
+The workflow runs through `bin/workflow.sh` (CLAUDE.md rule 19); this skill is the manual route for testing one step's code, never for a real run.
+
 Step 15 of the workflow, the SQX half. It leaves the `SPP IS` and `SPP OOS` tasks of a custom
 project configured, and optionally runs them on the custodian. Reading what they produce is
 `studies/breakage/spp/` (step 16), which comes out of it with the variants' `design_brief.json`.
@@ -73,8 +75,9 @@ any session's work.
 
 ## What it costs, and why the silence is not a hang
 
-Measured 2026-09-22 on the custodian, a real XAUUSD mother with 22 parameters: **a good half hour**,
-and the log writes one line per parameter in the first three seconds and **nothing else** until the
+Measured 2026-09-22 on the custodian, a real XAUUSD mother with 22 parameters: **a good half hour**
+(🤔 stale: the SQX part of the whole step measured 47-121 s for 1-3 mothers in five runs of
+2026-10-10/11, 📓 `fases.csv` of `AlgoData/autopilot/<P>/<stamp>/`), and the log writes one line per parameter in the first three seconds and **nothing else** until the
 end. `-project action=status` says `Total tested 0` the whole time. The honest sign that it is
 working is the JVM's memory going up (23.6 → 36.9 GB). Flat RSS and no log is a hang; rising RSS is
 work.

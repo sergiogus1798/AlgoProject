@@ -11,7 +11,7 @@ COLUMNS = ["project", "template", "family", "archetype", "symbol", "timeframe", 
            "asset_class", "idea", "date", "custodian_hours", "runs", *STAGES, "crosstf_cells",
            "last_stage", "died_at", "survivors", "dev_cut", "failed_at", "outcome", *causes.BLANK,
            *sheet.BLANK, "verdict", "source"]
-NAME = re.compile(r"^(?:Test|Trade)_([A-Z0-9]+)_.*_(M15|M30|H1|H4|D1)$")
+NAME = re.compile(r"^(?:Test|Trade|Research)_([A-Z0-9]+)_.*_(M15|M30|H1|H4|D1)$")
 DIRECTION = {"market_long": "long", "market_short": "short"}
 
 

@@ -1,6 +1,6 @@
 # crossTF/tf — «is the edge an isolated peak on its timeframe?»: T0 to T4
 
-The step-12 redesign (encargo 47, part K; spec `criterios-paso-12-otras-temporalidades-propuesta`
+The step-12 redesign (encargo 47, part K; spec `criterios-implementados-2026-10-12`
 §2, §5, §6). A mother and all her period-rescaled siblings go through the **same** random runs —
 one whole-week shift per calendar year and run, never across the build / oos1 frontier — priced by
 the one repricer at the doctrine's size, in R. Written **beside** the old reading (`z_new`), which

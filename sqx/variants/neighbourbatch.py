@@ -12,13 +12,14 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from core import worker
+from core import fanout, worker
 from core.paths import worker_dir
 from sqx.variants import execute, inputs, legs as legmod, livexec, manifest, neighbours, tuples
 from sqx.variants.build import fabricate, rewrite
 
 MOTHER, NEIGHBOUR = "mother", "neighbour"
 RAN = "ran.json"
+_SHARED: dict = {}    # what write() hands its forked children: members, rows, folder, shape
 
 
 def plan(mothers: list[Path], cfg: dict) -> pd.DataFrame:
@@ -69,17 +70,30 @@ def write(rows: pd.DataFrame, folder: Path, shape: str) -> None:
     folder.mkdir(parents=True, exist_ok=True)
     for stale in folder.glob("*.sqx"):
         stale.unlink()
-    for path, own in rows.groupby("mother", sort=False):
-        parent = rewrite.members(Path(path))
-        for row in own.to_dict("records"):
-            # The mother's row writes nothing: `%g` would shorten a value of hers with more
-            # than six significant digits, and neighbour 0 must be her to the byte.
-            wanted = {} if row["origin"] else {name: value for name, value
-                                               in tuples.from_columns(row).items()
-                                               if value == value}     # NaN: another mother's
-            parts = rewrite.variant(parent, row["variant_id"],
-                                    fabricate.name_of(row["strategy"], row["variant_id"]), wanted)
-            rewrite.save(folder / f"{row['variant_id']}.sqx", parts, shape)
+    groups = {path: own.to_dict("records") for path, own in rows.groupby("mother", sort=False)}
+    _SHARED.update(source={path: rewrite.members(Path(path)) for path in groups}, rows=groups,
+                   folder=folder, shape=shape)
+    # Every file is independent and the time is zlib's: blocks of rows on every core, as
+    # `fabricate.batch` does for the factory's variants.
+    blocks = {(path, i): fabricate.BLOCK for path, own in groups.items()
+              for i in range(0, len(own), fabricate.BLOCK)}
+    list(fanout.run(_block, blocks, fanout.CORES))
+
+
+def _block(task: tuple[str, int]) -> int:
+    """Write one block of one mother's rows, in a worker that inherited the parent's members."""
+    path, start = task
+    got = _SHARED
+    for row in got["rows"][path][start:start + fabricate.BLOCK]:
+        # The mother's row writes nothing: `%g` would shorten a value of hers with more
+        # than six significant digits, and neighbour 0 must be her to the byte.
+        wanted = {} if row["origin"] else {name: value for name, value
+                                           in tuples.from_columns(row).items()
+                                           if value == value}     # NaN: another mother's
+        parts = rewrite.variant(got["source"][path], row["variant_id"],
+                                fabricate.name_of(row["strategy"], row["variant_id"]), wanted)
+        rewrite.save(got["folder"] / f"{row['variant_id']}.sqx", parts, got["shape"])
+    return 0
 
 
 def make(mothers: Path, out: Path) -> pd.DataFrame:

@@ -1,12 +1,23 @@
-"""Where a study's results land: one JSON and one page per strategy, and the population's three."""
+"""Where a study's results land: one JSON per strategy, and the population's JSON, page and markdown."""
 
 import json
+import os
 from pathlib import Path
 
 from core import manifest
 from core.paths import report_dir
 from core.study import identity
 from core.study.render import markdown, page
+
+
+def _write(path: Path, text: str) -> None:
+    """Whole file or nothing: a temporary beside it, renamed over it, so the window never reads half.
+
+    No fsync, unlike `core.store.write.atomic`: a population writes one pair of files per strategy.
+    """
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def folder(export: Path, module: str) -> Path:
@@ -40,13 +51,12 @@ def identify(folder: Path, names: list[str]) -> dict[str, str | None]:
 
 
 def member(out: Path, result: dict, title: str, lede: str = "") -> Path:
-    """One strategy's result as <out>/estrategias/<strategy>.json and .html.
+    """One strategy's result as <out>/estrategias/<strategy>.json (no page: the window draws it on demand).
 
     Args:
         out: The module's report folder.
         result: A validated result with its strategy named.
-        title: The page's heading.
-        lede: One paragraph under it.
+        title, lede: Unused since the per-strategy page stopped being written; kept so no caller changes.
 
     Returns:
         The JSON's path — what the window loads.
@@ -55,8 +65,7 @@ def member(out: Path, result: dict, title: str, lede: str = "") -> Path:
     folder.mkdir(parents=True, exist_ok=True)
     # Names carry dots ("Strategy 10.15.25"), so the suffix is appended, never swapped.
     stem = folder / result["strategy"]
-    Path(f"{stem}.json").write_text(json.dumps(result, ensure_ascii=False), encoding="utf-8")
-    Path(f"{stem}.html").write_text(page.page(result, title, lede), encoding="utf-8")
+    _write(Path(f"{stem}.json"), json.dumps(result, ensure_ascii=False))
     return Path(f"{stem}.json")
 
 
@@ -71,6 +80,6 @@ def population(out: Path, name: str, result: dict, title: str, lede: str = "") -
         lede: One paragraph under it.
     """
     out.mkdir(parents=True, exist_ok=True)
-    (out / f"{name}.json").write_text(json.dumps(result, ensure_ascii=False), encoding="utf-8")
-    (out / f"{name}.html").write_text(page.page(result, title, lede), encoding="utf-8")
-    (out / f"{name}.md").write_text(markdown.render(result, title), encoding="utf-8")
+    _write(out / f"{name}.json", json.dumps(result, ensure_ascii=False))
+    _write(out / f"{name}.html", page.page(result, title, lede))
+    _write(out / f"{name}.md", markdown.render(result, title))

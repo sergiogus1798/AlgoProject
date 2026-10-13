@@ -93,7 +93,12 @@ def once(cell: dict, cfg: dict) -> str:
         if code in (0, None):
             break
     state = {0: "done", None: "interrupted"}.get(code, "failed")
-    facts = keep.keep(cell, _newest(cell["project"]), state)
+    try:
+        facts = keep.keep(cell, _newest(cell["project"]), state)
+    except Exception as e:      # a cell left `running` is picked again forever: it ends failed, with the reason
+        ledger.mark(cell, "failed", tries=tries + 1, error=f"keep: {e!r}")
+        print(f"{cell['project']}: failed · no se pudo guardar: {e!r}", flush=True)
+        return "failed"
     ledger.mark(cell, state, wall_minutes=round((time.time() - started) / 60, 1), tries=tries + 1, **facts)
     print(f"{cell['project']}: {state} · {facts['steps_minutes']} min · {facts['finalists']} finalista(s) · "
           f"{facts['folder']}", flush=True)

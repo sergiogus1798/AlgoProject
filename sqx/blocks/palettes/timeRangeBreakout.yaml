@@ -181,7 +181,6 @@ overrides:
   CloseD: 2
   HighD: 2
   LowD: 2
-  SessionOpen: 2
   Number: 2
   ATRPercent: 1
   RSI: 1
@@ -194,6 +193,5 @@ overrides:
   CBlock_TimeBreakoutLong: 0
   CBlock_BreakoutDonchianLong: 0
   HighestInRange: 0
-  SessionHigh: 0
   Highest: 0
   DonchianChannels: 0

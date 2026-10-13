@@ -81,7 +81,8 @@ def results(path: Path) -> dict[str, ET.Element]:
         Result key to its `<Result>` element -- the main backtest plus one per matrix cell,
         keyed exactly as `RunResult/@resultName` names them.
     """
-    xml = zipfile.ZipFile(path).read("settings.xml").decode("utf8", errors="replace")
+    with zipfile.ZipFile(path) as archive:
+        xml = archive.read("settings.xml").decode("utf8", errors="replace")
     return {r.get("resultKey"): r for r in ET.fromstring(xml).find("ResultsMap/Results")}
 
 
@@ -94,7 +95,8 @@ def matrix(path: Path) -> ET.Element | None:
         Walk-Forward Matrix cross-check -- a databank holds both, and a stripped copy of
         a strategy carries the rules without any cross-check result.
     """
-    xml = zipfile.ZipFile(path).read("settings.xml").decode("utf8", errors="replace")
+    with zipfile.ZipFile(path) as archive:
+        xml = archive.read("settings.xml").decode("utf8", errors="replace")
     found = ET.fromstring(xml).find(".//WalkForwardResult")
     return None if found is None else found[0]
 

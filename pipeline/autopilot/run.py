@@ -15,7 +15,7 @@ from pathlib import Path
 from core import phases
 from core.assetdata import AUTONOMOUS
 from core.paths import DATA
-from pipeline.autopilot import blind, call, judge, plan, tail, tailrun, timing, variants
+from pipeline.autopilot import blind, call, entry, judge, plan, tail, tailrun, timing, variants
 from pipeline.autopilot.survivors import Done, mothers
 from ui.daemon.advance import preflight as advance, sqxlog
 from sqx.projects import live
@@ -118,11 +118,6 @@ def after_cut(actions: list[dict], cfg: dict) -> list[dict]:
     return out
 
 
-def survivors(project: str, n: str, role: str, cfg: dict) -> list[str]:
-    """The strategies left in the databank step `n` cut (`criteria.yaml`), by name."""
-    return sorted(judge.population(project, cfg["steps"][n]["cut"], role)["strategy"])
-
-
 def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = False,
               given: dict = tail.NOTHING) -> None:
     """Plan from the rail, then run every action in order; the first failure ends it.
@@ -150,14 +145,18 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
     actions = after_cut(merged(todo["do"]), cfg)
     if on_live:
         began = time.monotonic()
-        live.start(where["role"])
+        try:
+            live.start(where["role"])
+        except BaseException as failed:   # no stop, exitapp or kill here: exitapp syncs (rule 1) and how to close it is the owner's (2026-10-13)
+            status(out, entry.unstarted(where["role"], failed))
+            raise
         done.append({"n": "-", "kind": "arranque", "s": time.monotonic() - began,
                      "what": "sesión GUI del custodio"})
         phases.row("accion", "- arranque", done[-1]["s"])
     try:
         for i, action in enumerate(actions):
             status(out, f"[{i + 1}/{len(actions)}] paso {action['n']} · {action['kind']}")
-            began, empty = time.monotonic(), False
+            began, empty, t0 = time.monotonic(), False, time.time()   # t0: this action's start, what `close` sets a log aside by
             mark(out, action["n"], "empezó")
             if action["kind"] == "sqx":
                 if action["n"] == "19":     # the WFM reads oos2: the ledger's door first
@@ -174,8 +173,8 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
             elif action["kind"] in tailrun.KINDS:
                 what = tailrun.run(action, project, where["role"], out, cfg)
             elif action["kind"] == "python":
-                if action.get("cut"):
-                    action["picked"] = survivors(project, action["n"], where["role"], cfg)
+                if action.get("cut"):   # the strategies left in the databank this step cut, by name
+                    action["picked"] = sorted(judge.population(project, cfg["steps"][action["n"]]["cut"], where["role"])["strategy"])
                 failed = chain.python_step(project, action, strict=True)
                 if failed:
                     sys.exit(f"paso {action['n']}: fallaron:\n  " + "\n  ".join(failed))
@@ -211,7 +210,7 @@ def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = Fa
     finally:
         if on_live and live.mine(where["role"]):
             began = time.monotonic()
-            liverun.close(where["role"], project, bad)
+            with entry.told(lambda line: status(out, line)): liverun.close(where["role"], project, bad)
             done.append({"n": "-", "kind": "parada", "s": time.monotonic() - began,
                          "what": "parada y export final"})
             phases.row("accion", "- parada", done[-1]["s"])
@@ -237,6 +236,7 @@ def main() -> None:
     if a.plan:
         print(json.dumps(plan.plan(workflow.workflow(a.project), given), indent=1, ensure_ascii=False))
         return
+    entry.alone(w["role"]) if "role" in (w := advance.where(a.project)) else sys.exit(w["refuse"])   # before the run's folder: a refused run leaves none
     out = RUNS / a.project / f"{datetime.now():%Y%m%d-%H%M%S}"
     out.mkdir(parents=True)
     (out / judge.SMOKE_MARK).touch() if a.smoke else None   # the store stamps its verdicts as smoke

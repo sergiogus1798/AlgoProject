@@ -2,7 +2,7 @@
 
 The paper's method (Bailey, Borwein, López de Prado, Zhu, «The Probability of Backtest
 Overfitting») on one mother's variant batch, with the margin of error the paper does not bring.
-The owner's specification is `criterios-paso-18-cscv-propuesta` (2026-10-07). It can discard and
+The owner's specification is `criterios-implementados-2026-10-12` (2026-10-07). It can discard and
 never confirms: PASA means «no descarta».
 
 ```

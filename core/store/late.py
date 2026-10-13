@@ -191,7 +191,7 @@ def unpaired(project: str, identity: str, frozen: set[str], cannot: set[str],
         own, pop = tmp / rel / "own", tmp / rel / "pop"
         for path in sorted(p for p in folder.iterdir() if p.suffix in TABLES and known):
             if cut(path, known, own) == len(extra.table(path)):   # nobody else's rows: not a cut
-                (own / path.name).unlink()
+                (own / path.name).unlink(missing_ok=True)   # a header-only table cut nothing
         for page in (folder / "estrategias" / f"{n}.json" for n in sorted(known)):
             if page.exists():
                 (own / "estrategias").mkdir(parents=True, exist_ok=True)

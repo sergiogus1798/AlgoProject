@@ -5,6 +5,8 @@ description: Screen a population after its OOS retest — harvest the two databa
 
 # /oos-gate
 
+The workflow runs through `bin/workflow.sh` (CLAUDE.md rule 19); this skill is the manual route for testing one step's code, never for a real run.
+
 Build → retest → **this** → the next task. Python decides, SQX obeys.
 
 ```
@@ -86,8 +88,9 @@ the guards, the record written before anything moves, and the count back afterwa
 Two of its rules matter most here and are the ones skipped under time pressure:
 
 - **Look before `--apply`.** The dry run is also where the identity check happens.
-- **Count back after restarting.** `-databank action=count` is the only place SQX says what the
-  next task will really read.
+- **Verify with `export`, never `count`.** `-databank action=count` syncs from files and wipes what
+  lives only in memory (rules 1 and 3); `action=export` reads memory and is the safe reader
+  (`knowhow/databanks/databank-verbs.md`).
 
 ## 4 · Hand over
 

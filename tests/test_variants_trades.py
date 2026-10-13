@@ -23,7 +23,7 @@ def test_gather_joins_the_legs_and_names_the_market(monkeypatch: pytest.MonkeyPa
         folder.mkdir(parents=True)
         pd.DataFrame({"strategy": ["P00001(1)", "P00001"], "Symbol": ["XAUUSD_M1", "XAGUSD_M1"],
                       "block": [1, 0], "Size": [1.0, 2.0]}).to_parquet(folder / "trades.parquet")
-    n = varianttrades.gather(tmp_path, "P")
+    n = varianttrades.gather(tmp_path, "P", "2026-01-01")    # the fake folder has no day level to search
     got = pd.read_parquet(tmp_path / varianttrades.OUT)
     assert n == 6 and set(got["leg"]) == {"build", "oos1", "oos2"}
     assert set(got["variant_id"]) == {"P00001"} and "strategy" not in got

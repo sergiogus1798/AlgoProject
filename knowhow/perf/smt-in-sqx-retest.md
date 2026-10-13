@@ -1,7 +1,7 @@
 ---
 q: How many threads does an SQX retest scale to on this server?
 kw: SQX coreUsage how many threads for a retest, 48 vs 95 threads, SMT in SQX, idle sqcli memory, jstat jcmd AttachNotSupportedException, sqcli loads strategies lazily count Records 0, databank load folder, loadconfig name=, Retest status Total tested missing, two sessions on the custodian
-tag: 🔬  date: 2026-09-23  see: perf/server-cores-and-ram, perf/ram-budget, sqx-drive/worker-process-lifecycle
+tag: 🔬  date: 2026-10-13  see: perf/server-cores-and-ram, perf/ram-budget, sqx-drive/worker-process-lifecycle
 ---
 # An SQX retest scales to the 48 physical cores; 95 threads add only 2–10 %
 Set `coreUsage` in `user/settings/settings.xml` with the worker stopped (log confirms `Preparing thread executors: N`).
@@ -9,6 +9,7 @@ Master at `-1` (95) and custodian at 48 fight over the same 48 physical cores: c
 Before touching a worker: `ListAgents`, `ls -lt user/projects`, the log tail — `bin/sqx-worker.sh stop` kills anyone's run.
 
 ## Evidence
+- 📓 2026-10-13: the custodian no longer runs at 48 threads — `coreUsage -1`; its log says `Preparing thread executors: 95` (2026-10-12 19:41:13). The 48-vs-95 table below is the 2026-09-23 bench; the rule «set it to 48» is not what runs today (🤔 confirm: `grep coreUsage ~/Desktop/SQX_w2/user/settings/settings.xml`).
 Custodian `SQX_w2` (`-Xmx48g`), throwaway project `bench_smt`: Retest without SPP/SO, XAUUSD M1 2008-01-01..2026-08-30, MT5 hedged,
 2,886 strategies (`Retester/databanks/RetestOut` of 962 loaded three times — `action=load` does not dedupe).
 

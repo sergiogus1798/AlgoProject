@@ -34,7 +34,8 @@ def read(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: dict[
     return {"siblings": siblings, "mothers": table.mothers(siblings, tf, source, identity)}
 
 
-def write(out: Path, got: dict, cfg: dict, export: Path, directory: Path) -> dict[str, pd.DataFrame]:
+def write(out: Path, got: dict, cfg: dict, export: Path, directory: Path,
+          before: list[dict] | None = None) -> dict[str, pd.DataFrame]:
     """Read a loaded batch with T0-T4 and write the two files into the run's folder.
 
     Args:
@@ -43,6 +44,8 @@ def write(out: Path, got: dict, cfg: dict, export: Path, directory: Path) -> dic
         cfg: What `crossTF.inputs.config` returned, `run.blocks` resolved by that load.
         export: The `CrossTF` `trades.parquet` read.
         directory: The batch's folder, which holds `scaling.parquet` and `blocks.json`.
+        before: The old reading's `draws.record` rows, saved in the same single write (a second
+            save recompressed the file the first had just written).
 
     Returns:
         What read() returned; written as `tf_siblings.parquet` and `tf_mothers.csv`, plus `distribuciones.parquet`.
@@ -52,9 +55,15 @@ def write(out: Path, got: dict, cfg: dict, export: Path, directory: Path) -> dic
     trades = {"oos1": inputs.oos1(got["plan"], got["trades"]),
               "build": None if reason else inputs.build(export, directory, got["identity"], made)}
     kept = []
-    both = read(made, trades, got["frames"], costs, cuts, sizing.doctrine(), cfg["tf"],
-                cfg["run"]["blocks"][0], got["identity"], reason, kept)
-    draws.save(out, kept)
+    before = before or []
+    try:
+        both = read(made, trades, got["frames"], costs, cuts, sizing.doctrine(), cfg["tf"],
+                    cfg["run"]["blocks"][0], got["identity"], reason, kept)
+    except Exception:
+        draws.save(out, before)       # the old reading's rows are on disk even when this one raises
+        raise
+    mine = {r["test"] for r in kept}      # a test in both: the later row wins, as two saves did
+    draws.save(out, [r for r in before if r["test"] not in mine] + kept)
     both["siblings"].to_parquet(out / SIBLINGS, index=False)
     both["mothers"].to_csv(out / MOTHERS, index=False)
     return both

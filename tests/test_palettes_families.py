@@ -31,7 +31,7 @@ CLOCK = re.compile(r"^(Current|Bar)(Hour|Minute|DayOf|WeekOf|Month|Time)|^IsMont
 # A value block is one switch for two roles (`sqx/projects/buildingblocks.py`), so a price
 # the session palette needs as an indicator also turns on its stop/limit twin. These seven
 # are the only ones allowed, and only there: no condition block reads a session's prices.
-DUAL_ROLE = {"sesion_base": {"Close", "SessionHigh", "SessionLow", "SessionOpen",
+DUAL_ROLE = {"sesion_base": {"Close",
                              "OpenD", "HighD", "LowD"}}
 
 

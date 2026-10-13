@@ -22,8 +22,8 @@ Sources: `pipeline/autopilot/{plan.py,criteria.yaml,README.md}`, `sqx/projects/{
 | 12 | judge | `crossTF.combined.z_new` | facts | `paso-12/` | `CrossTF` |
 | 13 | neighbours | T1 (`pipeline.autopilot.neighbours`): each mother and her parameter neighbours through `WFC 1 IS` and `WFC 2 OOS1`, trades exported and priced; runs first, right after step 12's judge | the mothers in `CrossTF` (no scaled sibling) | `AlgoData/neighbours/<P>/<stamp>/`, `raw/<P>/T1_Neighbours/<day>/neighbours.parquet`; the WFC databanks emptied again | - |
 | 13 | sqx | `MCR 1 Bar`, `MCR 7 OHLC` (+ `MCR 4 MinDist` only for stop/limit orders); MCR 2, 3, 5, 6, 8 are not run since 2026-10-07 | `CrossTF_Mothers` (copied from `CrossTF` before the start) | `MCR 1 Bar`, `MCR 7 OHLC`; at the stop, the `MCR_All` ingest (after the harvests) | - |
-| 14 | python | mcRetest (T2 on `MCR 7`, T3 on `MCR 1`, T1 read from the neighbours' table) | the `MCR_All` ingest, `T1_Neighbours` | facts `mcRetest.fragilidad.t{1,2,3}.*` | - |
-| 14 | judge | T1 build (`t1.build.ret_med`, `t1.build.f_pos`), T1 oos1 (`t1.oos1.ret_med`), T2 (`t2.build.ret_med_aprox`), T3 (`t3.build.ret_med`, never fails); provisional thresholds, a missing fact is limbo | facts | `paso-14/` | `MCR 7 OHLC` |
+| 14 | python | mcRetest: records T1 (the parameter neighbours' table) as facts; T2 and T3 were deleted by encargo 65 | the `MCR_All` ingest, `T1_Neighbours` | facts `mcRetest.fragilidad.t1.*` (incl. `percentil_madre`, `dd_r_p99`) | - |
+| 14 | judge | nothing: `rules: []` in `criteria.yaml` (owner, 2026-10-12, encargo 65 §3d); a column for step 16.5 to show, it neither cuts nor judges | facts | `paso-14/` | `MCR 7 OHLC` (cut declared, unused) |
 | 15 | sqx | `SPP IS`, `SPP OOS` | `MCR 7 OHLC` (a project built before 2026-10-07 still reads `MCR 8 Stress`: re-point it with `sqx.projects.spp --input "MCR 7 OHLC"`) | `SPP IS`, `SPP OOS` | - |
 | 16 | python | spp | `SPP IS/OOS` | facts | - |
 | 16 | judge | no rules (`rules: []`) | facts | `paso-16/` | `SPP OOS` |

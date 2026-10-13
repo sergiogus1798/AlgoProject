@@ -31,6 +31,14 @@ set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
 die() { printf 'workflow: %s\n' "$*" >&2; exit 1; }
+# A project created and then not finished (its trim or its palette failed) is retired at once: left
+# there, a retry would find it, go to «run» and build with the donor's blocks (hard rule 15).
+# When the retire itself refuses (the worker up), a marker in its folder makes «run» refuse it.
+undo() {
+    python3 -m sqx.projects.retire "$P" --role $ROLE --yes --own >&2 \
+        || { touch "$(dirname "$CFX")/A_MEDIO_CREAR"; die "$*; y $P NO se pudo retirar: «run» lo rechaza hasta que se retire a mano"; }
+    die "$*; $P retirado: un reintento lo crea de nuevo"
+}
 MODE=${1:-}; P=${2:-}
 [[ $MODE =~ ^(simple|template|run|plan)$ && -n $P ]] || { sed -n '2,28p' "$0"; exit 2; }
 [[ $P =~ ^(Test|Trade|Research)_[A-Za-z0-9_]+$ ]] || die "nombre de proyecto no válido: $P (Test_/Trade_/Research_, solo guiones bajos)"
@@ -70,11 +78,11 @@ if [[ $MODE == simple || $MODE == template ]]; then
         FLAGS+=(--until wfm)
     elif [[ -n $UNTIL ]]; then
         python3 -c "import sys; from pathlib import Path; from sqx.projects.workflow import trim; print('sin las tareas de después de', sys.argv[2] + ':', ', '.join(trim(Path(sys.argv[1]), sys.argv[2])))" "$CFX" "$UNTIL" \
-            || die "no se recortó $P a «$UNTIL»"
+            || undo "no se recortó $P a «$UNTIL»"
     fi
     if [[ $PALETTE != - ]]; then
         python3 -m sqx.projects.buildingblocks --project "$P" --palette "$PALETTE" --role $ROLE \
-            || die "no se aplicó la paleta $PALETTE"
+            || undo "no se aplicó la paleta $PALETTE"
     fi
     FLAGS+=(--own-log)          # this script wrote the worker's recent log itself
 else
@@ -84,6 +92,7 @@ else
         FLAGS+=(--until wfm); shift 2
     fi
     [[ -e $CFX ]] || die "$P no existe en el $ROLE: créalo con «simple» o «template»"
+    [[ ! -e $(dirname "$CFX")/A_MEDIO_CREAR ]] || die "$P quedó a medio crear (sin su recorte o su paleta): retíralo y créalo de nuevo"
 fi
 for flag in "$@"; do
     [[ $flag =~ ^--(smoke|restart|own-log)$ ]] || die "opción desconocida: $flag"

@@ -21,7 +21,7 @@ from ui.daemon.advance import preflight as advance
 from ui.daemon.advance.run import say
 from ui.daemon.launch import chainplan, preflight
 from ui.daemon.launch import run as launcher
-from ui.daemon.loader import state as loader
+from ui.daemon.loader import afterrun, state as loader
 from ui.daemon.workflow import api as workflow
 from ui.daemon.workflow import run as rail
 
@@ -131,12 +131,12 @@ def load(project: str, databank: str) -> list[str]:
     """What the window loads when a databank is chosen, run here and waited for.
 
     Returns:
-        One line per piece that failed. The loader's one-shot exports go to the project's
-        worker, stopped by then; run as the chain's own children because the conductor
-        lane, where the window queues them, is the chain's until it ends.
+        One line per piece that failed. The one-shot exports run as the chain's own children
+        (the conductor lane is its until it ends); the MC Retest trades nobody reads are skipped.
     """
     failed = []
     for piece, (_lane, argv) in loader.commands(project, loader.status(project, databank)).items():
+        if piece == "trades" and databank in afterrun.UNREAD_TRADES: continue    # owner, 2026-10-01
         print(f"cargando {piece} de {databank}", flush=True)
         rc, tail = command(argv)
         if rc:

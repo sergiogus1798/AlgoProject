@@ -3,10 +3,17 @@
 import hashlib
 import json
 import zipfile
+from pathlib import Path
 
 from core import sqxfile
 from core.paths import store_dir
 from core.store.write import MANIFEST, SQX, folder, manifest
+
+
+def _damaged(path: Path) -> str | None:
+    """The first bad member of a zip, None when whole; the file is closed either way."""
+    with zipfile.ZipFile(path) as archive:
+        return archive.testzip()
 
 
 def check(identity: str) -> list[str]:
@@ -44,7 +51,7 @@ def check(identity: str) -> list[str]:
             bad.append(f"falta {name}")
         elif hashlib.sha256(path.read_bytes()).hexdigest() != about["sha256"]:
             bad.append(f"{name} no tiene la huella del manifiesto")
-        elif zipfile.ZipFile(path).testzip():
+        elif _damaged(path):
             bad.append(f"{name} está dañado por dentro")
     named = set(doc.get("files", {})) | {SQX, MANIFEST}
     bad += [f"{p.name} no está en el manifiesto" for p in sorted(here.iterdir())

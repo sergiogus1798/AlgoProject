@@ -5,6 +5,8 @@ description: Apply a Python verdict back into SQX — move the strategies a filt
 
 # /curate
 
+The workflow runs through `bin/workflow.sh` (CLAUDE.md rule 19); this skill is the manual route for testing one step's code, never for a real run.
+
 The one thing that closes the loop. Python reads a databank, judges it, and this puts the judgement
 back where SQX will act on it: the next task reads the databank, and the databank no longer holds
 what was rejected.

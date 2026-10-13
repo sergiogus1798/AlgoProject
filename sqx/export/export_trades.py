@@ -2,17 +2,20 @@
 """Export one databank's trades into the data root, as one typed Parquet per export."""
 
 import argparse
+import glob
 import random
 import shutil
+import time
 from datetime import date
 from pathlib import Path
 
-from core import exportdrv, manifest, sqxfile, tradepack
+from core import exportdrv, fanout, identities, manifest, sqxfile, tradepack
 from core.paths import MASTER, databank_dir, export_dir, project_dir, worker_dir
 from sqx.export import memtrades
 
 
 SAMPLE_SEED = 20260914   # a subset export is a sample, and a sample has to be reproducible
+_LINEAGE: tuple = ()     # (project, databank, install) lineage() hands its forked children
 
 
 def stage(project: str, databank: str, dest: Path, limit: int = 0,
@@ -61,9 +64,9 @@ def sign(staged: Path, out: Path, prefix: str = "") -> int:
         `core.study.identity.from_export` reads it once no install holds the databank.
     """
     found = sorted(staged.glob(f"{prefix}*.sqx"))
+    known = identities.many(found, fanout.CORES)
     (out / "identity.csv").write_text(
-        "strategy,identity\n" + "".join(f"{f.stem[len(prefix):]},{sqxfile.identity(f)}\n"
-                                         for f in found),
+        "strategy,identity\n" + "".join(f"{f.stem[len(prefix):]},{known[f]}\n" for f in found),
         encoding="utf-8")
     return len(found)
 
@@ -88,17 +91,24 @@ def lineage(project: str, databank: str, install: Path, staged: Path, out: Path)
     Returns:
         Rows left without a mother.
     """
-    rows, orphans = [], 0
-    for f in sorted(staged.glob("*.sqx")):
-        own = sqxfile.identity(f)
-        others = {sqxfile.identity(o)
-                  for o in project_dir(project, install).glob(f"databanks/*/{f.name}")
-                  if o.parent.name != databank} - {own}
-        mother = own if not others else others.pop() if len(others) == 1 else ""
-        orphans += not mother
-        rows.append(f"{f.stem},{own},{mother}\n")
+    global _LINEAGE
+    _LINEAGE = (project, databank, install)
+    found = sorted(staged.glob("*.sqx"))
+    got = dict(fanout.run(_mother, {f: 1 for f in found}, fanout.CORES))
+    rows = [f"{f.stem},{got[f][0]},{got[f][1]}\n" for f in found]
+    orphans = sum(not got[f][1] for f in found)
     (out / "lineage.csv").write_text("strategy,identity,mother\n" + "".join(rows), encoding="utf-8")
     return orphans
+
+
+def _mother(f: Path) -> tuple[str, str]:
+    """(identity, mother) of one staged copy, read in a fanout child off `_LINEAGE`."""
+    project, databank, install = _LINEAGE
+    own = sqxfile.identity(f)
+    others = {sqxfile.identity(o)
+              for o in project_dir(project, install).glob(f"databanks/*/{glob.escape(f.name)}")
+              if o.parent.name != databank} - {own}
+    return own, own if not others else others.pop() if len(others) == 1 else ""
 
 
 def main() -> None:
@@ -111,8 +121,10 @@ def main() -> None:
     ap.add_argument("--symbol", required=True, help="SQX symbol without the timeframe suffix")
     ap.add_argument("--role", help="headless install holding the project, e.g. custodian; "
                                    "the master if absent")
-    a = ap.parse_args()
+    a, began = ap.parse_args(), time.time()
     install = worker_dir(a.role) if a.role else MASTER
+    if not any(databank_dir(a.project, a.databank, install).glob("*.sqx")):   # before any write
+        raise SystemExit(f"{a.project}/{a.databank}: ningún .sqx en disco, no hay operaciones que exportar")
 
     out = export_dir(a.project, a.databank, date.today().isoformat())
     # Both are this command's intermediates. A run that failed half-way leaves them, and a
@@ -152,7 +164,7 @@ def main() -> None:
                     "symbol": a.symbol},
                    f"export_trades.py --project {a.project} --databank {a.databank} "
                    f"--symbol {a.symbol}",
-                   {**packed, "timeframes": sorted(set(timeframes.values()))})
+                   {**packed, "timeframes": sorted(set(timeframes.values()))}, since=began)
     print(f"wrote {out}")
 
 

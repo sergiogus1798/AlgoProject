@@ -62,6 +62,11 @@ def identity(path: Path) -> str:
     return _SEEN[key]
 
 
+def remember(path: Path, found: str, st: object) -> None:
+    """Hand identity() a hash computed elsewhere (a fanout child), under `st = path.stat()` taken before."""
+    _SEEN[(str(path), st.st_size, st.st_mtime_ns)] = found
+
+
 def mark(z: zipfile.ZipFile, entry: zipfile.ZipInfo) -> str:
     """What one non-XML zip entry is: its CRC, or for an `UNORDERED` entry the hash of how
     many times each byte value occurs, which no reordering moves."""

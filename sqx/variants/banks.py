@@ -39,6 +39,7 @@ def clear(cfg: dict) -> int:
 # SQX's own line when a run dies: 🔬 2026-09-29, a NullPointerException in ProjectGlobalLog at the
 # end of «WFC 1 IS» aborted the project and `execute.run` waited 53 min for tests never coming.
 ABORTED = b"Error while running project"
+FINISHED = b"Project finished"      # one per `action=start`, as `sqx.projects.live.wait` reads it
 TESTED = re.compile(r"Total tested\s+(\d+)")
 # A project whose tasks are all Retest reports no "Total tested" line; what moves is the
 # record count across its databanks, the loaded batch plus every leg's output so far.
@@ -54,8 +55,8 @@ def mark(logs: Path) -> dict[Path, int]:
     return {p: p.stat().st_size for p in logs.glob("log_*.log")}
 
 
-def aborted(logs: Path, seen: dict[Path, int]) -> bool:
-    """Whether SQX's log says, past `seen`, that the project died.
+def ended(logs: Path, seen: dict[Path, int]) -> bytes | None:
+    """How SQX's log says, past `seen`, that the project ended: ABORTED, FINISHED, or None yet.
 
     Args:
         logs: The install's `user/log/StrategyQuant`.
@@ -63,9 +64,11 @@ def aborted(logs: Path, seen: dict[Path, int]) -> bool:
             read, so each poll costs what was written since the last one.
 
     Returns:
-        True on the abort line. Every log is read, not one fixed at the start: SQX opens the
-        next day's at midnight, and a run that crosses it aborts in a file `mark` never saw.
+        The abort line wins over the end line. Every log is read, not one fixed at the start:
+        SQX opens the next day's at midnight, and a run that crosses it ends in a file `mark`
+        never saw.
     """
+    end = None
     for log in sorted(logs.glob("log_*.log")):
         with log.open("rb") as fh:
             fh.seek(seen.get(log, 0))
@@ -73,8 +76,15 @@ def aborted(logs: Path, seen: dict[Path, int]) -> bool:
         whole = chunk[:chunk.rfind(b"\n") + 1]      # a half-written line waits for its end
         seen[log] = seen.get(log, 0) + len(whole)
         if ABORTED in whole:
-            return True
-    return False
+            return ABORTED
+        if FINISHED in whole:
+            end = FINISHED
+    return end
+
+
+def aborted(logs: Path, seen: dict[Path, int]) -> bool:
+    """Whether SQX's log says, past `seen`, that the project died."""
+    return ended(logs, seen) == ABORTED
 
 
 def in_bank(status: str, project: str) -> int:

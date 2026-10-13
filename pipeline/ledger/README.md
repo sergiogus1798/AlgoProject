@@ -33,7 +33,7 @@ an error: 5,000 variants of one design, judged against the numbers of another.
 - **`progress` is monotonic inside a stage.** It never goes back, and a stage that reports a lower
   value raises rather than being clamped. A bar that slides backwards is indistinguishable from a
   pipeline repeating work it had already done, so the contract is only worth having if breaking it
-  fails loudly. `pipeline/verify/monotonic.py` is what turns that sentence into a test.
+  fails loudly.
 - **It is written during the stage, not at its end.**
 - **A write cannot corrupt the file.** Temporary file plus `os.replace`, which is atomic on the
   same filesystem. This is the one place in the module that guards against something going wrong,

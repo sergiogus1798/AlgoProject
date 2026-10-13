@@ -1,14 +1,14 @@
 ---
 q: How much time does the autopilot lose per SQX step starting and exporting?
 kw: autopilot run time breakdown, dead time between SQX steps, how long does the autopilot take, worker restart cost per step, export after stop cost, step 8 python cost, profitShape entryQuality slow, build never stops databank-full minutes ignored
-tag: 🔬  date: 2026-10-05  see: sqx-format/optimization-profile-byte-order, perf/workflow-step-durations, sqx-drive/live-chain-without-restart, sqx-drive/export-after-every-stop
+tag: 🔬  date: 2026-10-13  see: sqx-format/optimization-profile-byte-order, perf/workflow-step-durations, sqx-drive/live-chain-without-restart, sqx-drive/export-after-every-stop
 ---
 # Per SQX step the autopilot spends ~27 s starting and 90-230 s exporting; on a dev run that is ~30 % of 6 → 16
 First real run, XAUUSD M30, 571 built → 5 kept at step 8 (dev draw). Per SQX action: prep+JVM start
 26-29 s; stop+afterrun export 89-227 s (each databank ~15 s: a conductor JVM per export, sequential;
 `Results` re-exported at every stop). Python is cheap except step 8 (297 s), and 200 s of that are
-`profitShape` + `entryQuality` running per strategy on all 571 BEFORE the cut to 5. The build itself
-stops only at `databank-full` 10,000: `minutes=` is ignored under that type (~48 accepted/min here).
+`profitShape` + `entryQuality` running per strategy on all 571 BEFORE the cut to 5. The build stops at its
+time limit: 📓 1,800 s exactly in 5/5 runs of 2026-10-10/11 (`fases.csv`, `AlgoData/autopilot/<P>/<stamp>/`); Not: «stops only at `databank-full` 10,000, `minutes=` ignored» (2026-10-05, one run).
 Fixed after this run: XML-wide fingerprint (no `Results` re-export), no MCR trades, `buildcap`. At 10,000 strategies the fingerprint cost 13-17 min per step: fixed 2026-10-04 (per-file cache, pool).
 10 survivors, 2026-10-05: 6 → 25 = 230 min, SQX 56 %; `tiempos.md` in the run folder says where.
 

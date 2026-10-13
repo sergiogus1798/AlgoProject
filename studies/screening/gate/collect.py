@@ -7,17 +7,19 @@ from pathlib import Path
 import pandas as pd
 
 from core import exportdrv, fanout, sqxfile, sqxstats, tradepack, tradestore
+from core.identities import many as identities_many
 from core.sqxview import LABEL, VIEW
 
 PREFIX = {"IS": "IS__", "OOS": "OOS__"}   # which databank a staged file came from
 # 🔬 2026-10-01, 2 x 5,130 strategies: the identities were hashed twice in one thread (33 s)
 # and the 10,260 CSVs parsed in one (35 s) of a 204 s harvest whose JVM takes 45.
 WORKERS = 8
+_STAGED: dict[str, Path] = {}   # what tables() hands its forked children
 
 
 def identities(files: list[Path]) -> dict[Path, str]:
-    """`core.sqxfile.identity` of many files, across processes: 1.6 ms each in one."""
-    return dict(fanout.run(sqxfile.identity, {f: 1 for f in files}, WORKERS))
+    """`core.sqxfile.identity` of many files, across processes (`core.identities.many`)."""
+    return identities_many(files, WORKERS)
 
 
 def index(folder: Path) -> dict[str, Path]:
@@ -73,21 +75,26 @@ def measured(stats: dict[str, dict]) -> int:
     return filled[0]
 
 
-def metrics(staged: dict[str, Path]) -> tuple[pd.DataFrame, str]:
-    """One databank's metrics, the view's columns, read off each file with no SQX running.
+def _read(stem: str) -> tuple:
+    """What one staged file gives the tables -- its SQStats, curve and timeframe -- read in a fanout child."""
+    f = _STAGED[stem]
+    return sqxstats.stats(f), sqxstats.equity(f, "Main"), sqxfile.symbol(f)[1].rsplit("_", 1)[-1]
+
+
+def metrics(read: dict[str, tuple]) -> tuple[pd.DataFrame, str]:
+    """One databank's metrics, the view's columns, taken from what `_read` returned for each file.
 
     Args:
-        staged: File stem to the .sqx.
+        read: File stem to `_read(stem)`.
 
     Returns:
         (one row per stem with `Strategy Name`, `TimeFrame` and the filled block's columns,
         the block's label). The timeframe is the feed's suffix inside the file's result name.
     """
-    stats = {stem: sqxstats.stats(f) for stem, f in staged.items()}
+    stats = {stem: got[0] for stem, got in read.items()}
     block = measured(stats)
     rows = {stem: {"Strategy Name": stem,
-                   **({"TimeFrame": sqxfile.symbol(staged[stem])[1].rsplit("_", 1)[-1]}
-                      if block == 10 else {}),
+                   **({"TimeFrame": read[stem][2]} if block == 10 else {}),
                    **{col: st[block][key] for col, key in VIEW[block]}}
             for stem, st in stats.items()}
     return pd.DataFrame.from_dict(rows, orient="index"), LABEL[block]
@@ -131,9 +138,11 @@ def tables(sides: dict[str, list[Path]], work: Path,
     # is a subprocess, and the wait for it was ~10 s of reading left for afterwards.
     with ThreadPoolExecutor(1) as jvm:
         exported = jvm.submit(exportdrv.trades, staged, work / "csv")
-        curves = {stem: sqxstats.equity(staged / f"{stem}.sqx", "Main") for stem in sorted(ids)}
-        read = {side: metrics({stem: staged / f"{stem}.sqx" for stem in ids
-                               if side_of[stem] == side}) for side in sides}
+        _STAGED.update({stem: staged / f"{stem}.sqx" for stem in ids})
+        got = dict(fanout.run(_read, {stem: 1 for stem in ids}, WORKERS))
+        curves = {stem: got[stem][1] for stem in sorted(ids)}
+        read = {side: metrics({stem: got[stem] for stem in ids if side_of[stem] == side})
+                for side in sides}
         exported.result()
 
     out = {}

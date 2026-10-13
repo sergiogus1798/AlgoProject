@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+from numba import njit
 
 ROUND = 6       # ATRBasedValue multiplies X by SQUtils.round(atr, 6), not by the raw value
 
@@ -22,6 +23,19 @@ def true_range(frame: pd.DataFrame) -> np.ndarray:
     return out
 
 
+@njit(cache=True)
+def _wilder(tr: np.ndarray, period: int) -> np.ndarray:
+    """The recurrence of `sqx`, the same float operations in the same order."""
+    out = np.empty_like(tr)
+    value = tr[0]
+    out[0] = value
+    for i in range(1, len(tr)):
+        n = min(i + 1, period)
+        value = ((n - 1) * value + tr[i]) / n
+        out[i] = value
+    return out
+
+
 def sqx(frame: pd.DataFrame, period: int = 20) -> np.ndarray:
     """SQX's ATR on every bar, rounded as the stop formula rounds it.
 
@@ -38,11 +52,4 @@ def sqx(frame: pd.DataFrame, period: int = 20) -> np.ndarray:
         One value per bar, the ATR as it stood at that bar's close, in price.
     """
     tr = true_range(frame)
-    out = np.empty_like(tr)
-    value = tr[0]
-    out[0] = value
-    for i in range(1, len(tr)):
-        n = min(i + 1, period)
-        value = ((n - 1) * value + tr[i]) / n
-        out[i] = value
-    return np.round(out, ROUND)
+    return np.round(_wilder(tr, period), ROUND)

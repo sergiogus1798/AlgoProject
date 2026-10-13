@@ -2,24 +2,23 @@
 """Step 18.5 over one mother's variant batch: does the main market's order of variants travel to the others?"""
 
 import argparse
-import json
 import sys
 import time
 from pathlib import Path
 
 import pandas as pd
+from threadpoolctl import threadpool_limits
 
-from core import assetdata, symbols
+from core import assetdata
 from core.study import blocks, draws, output, result as envelope, verdicts
 from core.study.config import fingerprint
 from engines.variants import look
 from studies.optimisation.marketSurfaces import one
-from studies.optimisation.marketSurfaces.contract import grids, tabs, words
+from studies.optimisation.marketSurfaces.contract import tabs, words
 from studies.optimisation.marketSurfaces.inputs import batch, config, markets
 from studies.optimisation.marketSurfaces.verdict import call
 
 MODULE = "studies.optimisation.marketSurfaces"
-DETAIL = "marketSurfaces_detalle.json"      # grids; nobody loads it to decide
 
 
 def result(name: str, measured: dict, symbol: str, provisional: list[str], cfg: dict,
@@ -94,16 +93,16 @@ def main() -> None:
     years = {m: {leg: batch.years(asset, leg, since[m]) for leg in read} for m, read in legs.items()}
     envelope.progress(60, f"{len(design['ids'])} variantes x {len(legs)} mercados, exceso semanal")
 
-    measured = one.measure(data, design, table, years, cfg, a.oos2)
+    # One BLAS thread: the autopilot runs the mothers at once, and two of them with OpenBLAS's
+    # 64 threads each took 33 s apiece against 4.1 (🔬 2026-10-13). ρ, p and the verdict are the
+    # same; the saved null vectors move in the 6th decimal (owner accepted it, 2026-10-13).
+    with threadpool_limits(1):
+        measured = one.measure(data, design, table, years, cfg, a.oos2)
     provisional = [m for m in [asset["sqx_symbol"], *table["feed"]] if markets.provisional(m)]
     res = result(a.work.name, measured, symbol, provisional, cfg, started)
     out = a.out or a.work / "estudios"
     output.population(out, "marketSurfaces", res, f"Superficies por mercado — {a.work.name}",
                       res["tabs"][0]["note"])
-    names = {m: symbol if m == one.MAIN else symbols.alias(m) for m in measured["totals"]}
-    detail = envelope.envelope(MODULE, a.work.name, None, cfg, started, [grids.tab(
-        design["params"], measured["totals"], measured["ok"], design["mother"], names)])
-    (out / DETAIL).write_text(json.dumps(detail, ensure_ascii=False), encoding="utf-8")
     draws.save(out, record(a.work.name, measured, cfg["null"]["seed"]))
     measured["principal"]["mercados"].to_csv(out / "mercados.csv", index=False)
     command, said = " ".join(sys.argv), res["summary"]

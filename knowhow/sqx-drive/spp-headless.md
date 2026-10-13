@@ -6,7 +6,7 @@ tag: 🔬  date: 2026-09-22  see: sqx-drive/spp-task-type, sqx-format/optimizati
 # A headless SPP persists fine; judge progress by JVM RSS, one SPP per install
 Not: "the SPP runs headless but writes nothing" — that was `SequentialOptimization` (`sqx-drive/spp-task-type`).
 `status` shows `Total tested 0` / `0 ms` throughout; log goes silent after the first seconds.
-Climbing RSS = work; flat RSS + no log = hang. `sqx/variants/spp.py` reports elapsed vs cap, not %.
+Climbing RSS = work; flat RSS + no log = hang. `sqx/projects/spp.py` reports elapsed vs cap, not %.
 Count permutations with `len(results)`, never the `permutations` field.
 
 ## Evidence

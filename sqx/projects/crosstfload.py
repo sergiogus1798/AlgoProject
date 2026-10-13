@@ -58,13 +58,14 @@ def members_of(cfx: Path) -> dict[str, bytes]:
 
 
 def refill(folder: Path, files: list[Path]) -> int:
-    """Empty a databank folder of its .sqx and copy these in; SQX loads them on its next start
-    (`knowhow/databanks/curating-a-databank.md`: a stopped install syncs from its files)."""
+    """Make a databank folder hold these .sqx and no other; SQX loads them on its next start
+    (`knowhow/databanks/curating-a-databank.md`: a stopped install syncs from its files).
+    Copied first, the leftovers removed after: a copy that fails leaves what was there."""
     folder.mkdir(parents=True, exist_ok=True)
-    for old in folder.glob("*.sqx"):
-        old.unlink()
     for f in files:
         shutil.copy2(f, folder / f.name)
+    for old in set(folder.glob("*.sqx")) - {folder / f.name for f in files}:
+        old.unlink()
     return len(files)
 
 
@@ -110,8 +111,11 @@ def load_input(project: str, role: str, day: str, cfx: Path | None = None,
     wired = crosstf.wire(cfx, symbol, day, project, targets)
     for bank in wired["databanks"] if folder else []:   # a calibration project is reused:
         refill(databank_dir(project, bank, install), [])  # an earlier attempt's retest goes
-    loaded = refill(databank_dir(project, CROSSTF["input"], install),
-                    sorted((batch / "sqx").glob("*.sqx")))
+    siblings = sorted((batch / "sqx").glob("*.sqx"))
+    if not siblings:       # before the refill: it would empty the input and step 11 retest nothing
+        raise SystemExit(f"{project}: {batch / 'sqx'} no tiene ninguna hermana escalada de "
+                         f"{len(mothers)} madres; {CROSSTF['input']} se deja como estaba")
+    loaded = refill(databank_dir(project, CROSSTF["input"], install), siblings)
     return {"mothers": len(mothers), "siblings": len(frame), "loaded": loaded,
             "source": source, "targets": targets, "blocks": wired["blocks"], "batch": batch,
             "clamped": int(frame["clamped"].sum()), "warning": wired["warning"],

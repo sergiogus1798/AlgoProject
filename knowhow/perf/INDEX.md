@@ -5,6 +5,7 @@
 - `funded-bank-walk-cost` — How long does the funded bank walk take per configuration, on one core and on 8 threads?
 - `gallery-roster-cost` — How much does counting every project's distinct strategies cost, and how should it be cached?
 - `intraday-floating-resolution` — What resolution is enough to compute a portfolio's worst intraday floating, and what does summing members' worsts do?
+- `market-surfaces-detalle-grids-empty` — Why is marketSurfaces_detalle.json 100+ MB and 36 s to write, and does anything read it?
 - `measuring-project-cost` — How should the time, memory and disk cost of a project be measured?
 - `monte-carlo-bandwidth` — What limits Monte Carlo speed, and how should its memory use be budgeted?
 - `nulls-draws-is-disk-bound` — Does raising the monkey's `draws` reduce how many strategies pass by chance, and what does it cost?
@@ -14,11 +15,14 @@
 - `python-parallelism` — How should Python work be parallelised, and with how many processes?
 - `ram-budget` — How is the RAM split across the SQX installs and how should heaps be sized?
 - `review-path-after-sqx` — How long do export, harvest and step 8 take for 5,000 strategies after an SQX run?
+- `rng-floor-in-table-lookup-monte-carlo` — Why is numpy's rng.random the floor of a table-lookup Monte Carlo kernel, and how to beat it bit for bit?
 - `server-cores-and-ram` — How many cores does the server really have, and do SMT and oversubscription help?
+- `smoke-run-gate-is-slow` — Why does the gate take 386-447 s in a --smoke run instead of 47-88 s?
 - `smt-in-sqx-retest` — How many threads does an SQX retest scale to on this server?
 - `stage-b-monte-carlo-cost` — How long does Stage B take per 10-member combination, and what dominates its cost?
 - `step-16-5-time-split` — Where does step 16.5's wall time go on the restart route, and what does the Python side cost?
 - `steps-13-to-16-durations` — How long do autopilot steps 13 to 16 take, and what does the spp skill's "half an hour per mother" get wrong?
+- `two-study-processes-oversubscribe-blas` — Why does marketSurfaces take 30+ s per mother at step 18.5 when two mothers run side by side?
 - `variant-trades-export-cost` — What does exporting every variant's trades cost, and why is it no longer only the mother's?
 - `variants-batch-size-and-flush` — How do SQX compute, flush to disk and the pilot scale with variant batch size at step 16.5?
 - `window-waits-off-gui-thread` — Why did the desktop window freeze on reloads, and where must daemon waits happen?

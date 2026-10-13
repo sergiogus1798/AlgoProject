@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Generic task-XML edits a build applies regardless of asset: template, caps, sync."""
 
+import io
 import re
 import zipfile
 from pathlib import Path
 
+from core.store.write import atomic
 from core.symbols import current
 from sqx.projects import cfxio
 
@@ -20,13 +22,16 @@ def install_template(template: Path, target: Path) -> None:
 
     SQX resolves a template's own `lastSettings.xml` as a project resource: a feed renamed since
     the template was saved makes every later `action=start` answer «Project has unresolved
-    resources», while the build itself runs (🔬 2026-10-01, AUDJPY_TICK).
+    resources», while the build itself runs (🔬 2026-10-01, AUDJPY_TICK). Whole file or
+    nothing: a Build reading that stem never opens half a zip.
     """
     members = cfxio.members(template)
-    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as z:
+    whole = io.BytesIO()
+    with zipfile.ZipFile(whole, "w", zipfile.ZIP_DEFLATED) as z:
         for n, blob in members.items():
             z.writestr(n, current(blob.decode("utf-8")).encode("utf-8") if n.endswith(".xml")
                        else blob)
+    atomic(target, whole.getvalue(), seal=False)
 
 
 def set_template(text: str, path: Path) -> str:

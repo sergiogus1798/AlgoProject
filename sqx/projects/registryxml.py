@@ -157,7 +157,7 @@ def refresh(text: str) -> str:
         block = text.split("<Instruments>")[1].split("</Instruments>")[0]
         used = {n for n, _ in wanted} | {i for f in SYMBOL.finditer(text)
                                           if not _registry("SELECT 1 FROM DATA WHERE SYMBOL = ?", (f.group(1),))
-                                          for i in [INSTRUMENT.search(f.group(0)).group(1)]}
+                                          for m in [INSTRUMENT.search(f.group(0))] if m for i in [m.group(1)]}
         kept = [m.group(0) for m in INSTRUMENT.finditer(block) if m.group(1) in used and m.group(1) not in
                 {n for n, _ in wanted}]
         entries = [instrument_xml(n) for n, _ in sorted(wanted)] + kept

@@ -77,26 +77,8 @@ execute:
   # other command while it runs, so a sync can never delete the .sqx it is holding -- which
   # is the whole reason the role exists (knowhow/sqx-drive/three-install-topology.md).
   role: custodian
-  # Neither this stage nor the SPP reconnaissance harness reads a project name from here
-  # any more (OPEN.md §38, owner 2026-09-29): both take `--project` on the command line and
-  # both refuse a stock one (`sqx.variants.execute.STOCK`). Both now take the SAME project
-  # too -- the mother's own workflow project (hard rule 10) -- never one built just to hold
-  # a harness: `sqx.variants.spp` rewrites that project's own "SPP IS"/"SPP OOS" task by
-  # title (`sqx.variants.harness`, `sqx.projects.stage.just` leaves only that one active).
-  #
-  # ⚠️ `input`/`output` below are the reconnaissance's OWN staging databanks, not the
-  # project's real ones. A workflow project's Build task already writes its population
-  # into a databank literally named "Results" (`Build-Task3.xml` in the frozen donor) --
-  # reusing that name here would load the one mother being reconnoitred straight into the
-  # project's real build population. Picked to collide with nothing the workflow declares
-  # (`sqx/projects/stages.yaml`, `assets/_build.yaml#wfc.input`, `workflow.CROSSTF`).
-  # ⚠️ Estos dos son los del harness de una sola tarea que usa `spp.py` (el reconocimiento
-  # SPP de una madre). El RETEST DEL LOTE ya no los usa: sus databanks salen de `wfc:` en
-  # assets/_build.yaml — el de entrada y uno de salida por tramo—, que es donde se declara
-  # el estudio entero. `sqx.projects.wfc` escribe las tareas con esos nombres y
-  # `sqx.variants.legs` los lee, para que no haya dos sitios donde se llamen distinto.
-  input: SPPRecon_In
-  output: SPPRecon_Out
+  # This stage takes `--project` on the command line and refuses a stock one
+  # (`sqx.variants.execute.STOCK`): the mother's own workflow project (hard rule 10).
   # 2 s since 2026-10-05 (was 5; the caps below scaled to the same seconds): a session waits
   # on five polls -- ready, the run, one sync per leg -- and step 16.5 holds 20 sessions.
   poll_seconds: 2
@@ -110,17 +92,6 @@ execute:
   sync_tries: 150
   # ⚠️ `-project action=startOnlyTask` reports success and tests NOTHING on this install.
   # Only `action=start` runs the task. Measured 2026-09-22, knowhow/sqx-drive/running-a-task-headless.md.
-
-spp:
-  # The reconnaissance run. These are the study's own numbers, not the donor's: the donor
-  # filters a population, this maps a surface.
-  # ⚠️ The SPP is the OptProfileSysParamPermutation cross-check. SequentialOptimization
-  # sits next to it in the same block, sounds like the same thing, and writes no profile.
-  spread_pct: 35          # percent up and down from each parameter. 35 or 40; never 30
-  step_pct: 4             # how much one step moves a parameter. Steps = 2*spread/step_pct
-  max_tests: 15000        # ⚠️ SET it, never inherit: a donor can carry 1000000001, which is
-                          # SQX's sentinel for exhaustive -- every combination of everything
-  timeout_s: 3600         # an SPP reports nothing until it finishes; this is the only cap
 
 crosstf:
   # Which parameters move when the timeframe moves. OWNER'S RULE, 2026-10-07 (encargo 47; it

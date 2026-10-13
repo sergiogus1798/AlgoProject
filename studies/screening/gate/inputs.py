@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pyarrow.parquet as pq
 
 from core import assetdata
 from core.barstore import read as read_bars
@@ -134,6 +135,43 @@ def newest(project: str, databank: str) -> Path:
     return sorted(p for p in folder.iterdir() if p.is_dir() and p.name[0] != "_")[-1]
 
 
+def wide(path: Path) -> dict[str, pd.DataFrame]:
+    """The equity file as one day × identity table per sample: what `pivot` gives, without its string sort.
+
+    Identity and sample are read as dictionary codes and scattered into a NaN matrix.
+
+    Args:
+        path: An `equity.parquet` with `sample`, `day`, `identity` and `equity` columns.
+
+    Returns:
+        Sample -> frame, equal (`DataFrame.equals`) to `pivot(index="day", columns="identity",
+        values="equity")` of that sample's rows. Raises ValueError on a repeated (day, identity),
+        as `pivot` does.
+    """
+    t = pq.read_table(path, columns=["sample", "day", "identity", "equity"],
+                      read_dictionary=["identity", "sample"])
+    ident, samp = t["identity"].combine_chunks(), t["sample"].combine_chunks()
+    names = np.asarray(ident.dictionary.to_pylist(), dtype=object)
+    icode, scode = ident.indices.to_numpy(), samp.indices.to_numpy()
+    day, value = t["day"].to_numpy(), t["equity"].to_numpy()
+    out = {}
+    for k, name in enumerate(samp.dictionary.to_pylist()):
+        pick = scode == k
+        if not pick.any():
+            continue
+        days, di = np.unique(day[pick], return_inverse=True)
+        used, ii = np.unique(icode[pick], return_inverse=True)
+        grid = np.full((len(days), len(used)), np.nan, dtype=np.result_type(value.dtype, np.float32))
+        seen = np.zeros(grid.shape, dtype=bool)
+        seen[di, ii] = True
+        if seen.sum() != len(di):
+            raise ValueError("Index contains duplicate entries, cannot reshape")
+        grid[di, ii] = value[pick]
+        out[name] = pd.DataFrame(grid, index=pd.DatetimeIndex(days, name="day"),
+                                 columns=pd.Index(names[used], name="identity")).sort_index(axis=1)
+    return out
+
+
 def load(folder: Path) -> dict:
     """One joined harvest, and the window each side actually occupies.
 
@@ -155,13 +193,12 @@ def load(folder: Path) -> dict:
     metrics = pd.read_parquet(folder / "metrics.parquet")
     trades = pd.read_parquet(folder / "trades.parquet")
     equity = pd.read_parquet(folder / "equity.parquet")
-    wide = {side: block.pivot(index="day", columns="identity", values="equity")
-            for side, block in equity.groupby("sample")}
-    last = wide["IS"].index.max()
-    after = wide["OOS"].diff()[wide["OOS"].index > last]
+    curves = wide(folder / "equity.parquet")
+    last = curves["IS"].index.max()
+    after = curves["OOS"].diff()[curves["OOS"].index > last]
     split = after.index.min()
-    daily = pd.concat([wide["IS"].diff(), after])
+    daily = pd.concat([curves["IS"].diff(), after])
     return {"metrics": metrics, "trades": trades, "equity": equity,
             "curve": daily.cumsum(), "missing": pd.read_csv(folder / "missing_oos.csv"),
             "split": split.date().isoformat(),
-            "end": wide["OOS"].index.max().date().isoformat()}
+            "end": curves["OOS"].index.max().date().isoformat()}

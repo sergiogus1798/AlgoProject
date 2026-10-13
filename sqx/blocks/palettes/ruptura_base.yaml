@@ -87,8 +87,6 @@ overrides:
   Lowest: 3
   HighestInRange: 3
   LowestInRange: 3
-  SessionHigh: 3
-  SessionLow: 3
   DonchianChannels: 3
   HighD: 2
   LowD: 2

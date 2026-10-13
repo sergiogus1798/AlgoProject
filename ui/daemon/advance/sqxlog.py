@@ -4,6 +4,7 @@ import re
 from datetime import date, timedelta
 from pathlib import Path
 
+from sqx.projects import live, taskcap
 from ui.daemon import progress
 
 KEEP = 20_000       # lines held; run_state needs the start, the task lines and the last percent
@@ -34,13 +35,15 @@ def mark(top: Path) -> dict[Path, int]:
     return {f: f.stat().st_size for f in (path(top, d) for d in days()) if f.exists()}
 
 
-def grow(top: Path, offsets: dict[Path, int], kept: list[str]) -> list[str]:
+def grow(top: Path, offsets: dict[Path, int], kept: list[str],
+         fresh: list[str] | None = None) -> list[str]:
     """Add what the logs gained since the last read, and advance the offsets.
 
     Args:
         top: The install.
         offsets: What `mark` returned, updated in place; a file born after it reads from 0.
         kept: The lines so far, extended in place with the start, progress and percent lines.
+        fresh: Extended in place with EVERY line this read gained, for `police`.
 
     Returns:
         `kept`, for `progress.run_state`. A half-written last line waits for the next read.
@@ -54,11 +57,36 @@ def grow(top: Path, offsets: dict[Path, int], kept: list[str]) -> list[str]:
             data = fh.read()
         whole = data[:data.rfind(b"\n") + 1]
         offsets[f] = start + len(whole)
-        kept.extend(line for line in whole.decode("utf-8", errors="replace").splitlines()
+        lines = whole.decode("utf-8", errors="replace").splitlines()
+        if fresh is not None:
+            fresh.extend(lines)
+        kept.extend(line for line in lines
                     if progress.STARTING.search(line) or progress.PROGRESS.search(line)
                     or progress.PERCENT.search(line))
     kept[:] = progress.trim(kept, KEEP)       # the start line stays, whatever the volume
     return kept
+
+
+def police(cap: dict, fresh: list[str], project: str, role: str, top: Path, stopped: bool) -> None:
+    """End a watched run on what `live.wait` ends it on: an abort line (`live.BAD`, the one list
+    `wait.sh` mirrors) or a task past its deadline (`taskcap`), worded as the transient abort
+    `call.again` repeats once and as the step failure it does not.
+
+    Args:
+        cap: `taskcap.fresh()`, kept by the watcher across its polls.
+        fresh: The lines one `grow` gained.
+        project: The project watched.
+        role: Its worker.
+        top: The install.
+        stopped: The watcher itself sent the build's `stop` (`buildcap`): «Project stopped» is
+            then the end it asked for, not an abort.
+    """
+    for line in fresh:
+        taskcap.note(cap, line)
+        if live.BAD.search(line) and not (stopped and "Project stopped" in line):
+            raise SystemExit(f"SQX abortó {project}: {line.strip()[:200]}; la tarea no terminó, "
+                             "se para el worker")
+    taskcap.enforce(cap, role, path(top, date.today()))
 
 
 def matching(top: Path, offsets: dict[Path, int], rx: re.Pattern[str]) -> list[str]:

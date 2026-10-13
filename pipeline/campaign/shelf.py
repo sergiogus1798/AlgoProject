@@ -35,7 +35,7 @@ def place(cell: dict, strategies: list[dict], workflow: Path) -> None:
             rows.writeheader()
         for s in strategies:
             folder = base / f"{day}_{s['strategy'].replace(' ', '_')}"
-            folder.mkdir(parents=True)
+            folder.mkdir(parents=True, exist_ok=True)
             shutil.copy(s["sqx"], folder / "estrategia.sqx")
             for name, target in (("archivo", s["archive"]), ("madre", s["mother_archive"]), ("workflow", workflow)):
                 if target:

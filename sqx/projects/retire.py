@@ -93,7 +93,11 @@ def retire(name: str, role: str, keep: list[str], apply: bool, own: bool = False
         raise SystemExit(f"{name}: {len(lost)} supervivientes del paso 8 no están guardadas en el "
                          f"almacén ({', '.join(lost[:3])}…): retirarlo borraría sus .sqx. Antes: "
                          f"python3 -m core.store save {name} (o --drop-unsaved si el dueño las da por perdidas)")
-    out = retired_project(inst.name, name, date.today().isoformat())
+    out = first = retired_project(inst.name, name, date.today().isoformat())
+    n = 1
+    while out.exists():      # the same name retired twice in a day: the first archive stays
+        n += 1
+        out = first.with_name(first.name.replace(".tar.gz", f"_{n}.tar.gz"))
     line = f"{inst.name}/{name}: {d['tasks']} tareas, {d['mb']:.0f} MB → {out}"
     if not apply:
         return "would retire " + line

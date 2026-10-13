@@ -98,5 +98,3 @@ GAP = ("El P/L reconstruido no reproduce el NetProfit de SQX en más del {share}
 STRADDLE = ("El {share} % de las operaciones de los otros mercados cierra lunes o martes tras un "
             "fin de semana abierto (tope {limit} %): el nulo semanal puede salir estrecho. Con "
             "bloques de dos semanas el orden sale {again}.")
-GRID_NOTE = ("Cada celda es la mediana del puesto (0 = la peor, 100 = la mejor) que ocupan en este "
-             "mercado las variantes con esos dos niveles, por exceso bruto. La marca es la madre.")

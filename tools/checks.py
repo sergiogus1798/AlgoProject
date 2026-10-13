@@ -49,10 +49,10 @@ def undocumented(files: list[Path]) -> list[str]:
     out = []
     for f in files:
         rel = f.relative_to(ROOT)
-        tree = ast.parse(f.read_text(encoding="utf-8"))
-        if not ast.get_docstring(tree):
+        mod = depmap.tree(f)
+        if not ast.get_docstring(mod):
             out.append(f"{rel}: no module docstring")
-        for node in ast.walk(tree):
+        for node in depmap.nodes(f):
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 continue
             where = f"{rel}:{node.lineno} {node.name}"

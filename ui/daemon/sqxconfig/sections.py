@@ -58,6 +58,8 @@ def markets() -> dict:
     doc, lines = read(path), path.read_text(encoding="utf-8").splitlines()
     fields = []
     for symbol, block in doc.items():
+        if str(symbol).startswith("_"):   # `_expected_sign` is a table, not a market
+            continue
         for category, feeds in block["categories"].items():
             value = [f"{f['feed']} (datos desde {f['data_from']})" for f in feeds]
             fields.append({"path": [symbol, "categories", category], "key": f"{symbol} · {category}",

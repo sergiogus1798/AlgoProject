@@ -127,7 +127,7 @@ def from_curves(daily: pd.DataFrame) -> pd.DataFrame:
         segment saw, which is exactly the kind of thing this study exists to catch.
     """
     cum = daily.cumsum()
-    drawdown = (cum.cummax() - cum).max()
+    drawdown = (cum.cummax().clip(lower=0) - cum).max()     # the peak starts at 0, the balance before the first day
     sd = daily.std(ddof=1)
     sharpe = (daily.mean() / sd.replace(0, np.nan)) * np.sqrt(252)
     return pd.DataFrame({"variant_id": daily.columns, "Drawdown": drawdown.to_numpy(),

@@ -55,6 +55,21 @@ clear_stale_lock() {
   rm -f "$(owner_file)"
 }
 
+# lock_id — holder and PID of the lock on disk, '|' alone when there is none: what `stop`
+# captures on entry to know later whether the lock is still the one it came to remove.
+lock_id() { printf '%s|%s' "$(owner_field holder)" "$(owner_field pid)"; }
+
+# drop_lock_if_same <lock_id> — remove the lock only while it is still that one. `stop` used to
+# `rm -f` it after minutes of export, deleting the lock a concurrent `start` had just written.
+# `start` writes its lock while holding .start.lock, so a start in progress means: not ours.
+drop_lock_if_same() {
+  (
+    flock -n 8 || exit 0
+    [ "$(lock_id)" = "$1" ] && rm -f "$(owner_file)"
+  ) 8>>"$WORKER/user/log/.start.lock" 2>/dev/null
+  return 0
+}
+
 # refuse_stop_if_held — call right before a `stop` touches a running install. FORCE_STOP=1
 # (the --force flag) overrides it; no lock, or the caller's own lock, never refuses.
 refuse_stop_if_held() {

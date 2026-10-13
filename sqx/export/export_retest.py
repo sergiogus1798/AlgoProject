@@ -3,6 +3,7 @@
 
 import argparse
 import shutil
+import time
 from datetime import date
 from pathlib import Path
 
@@ -13,7 +14,7 @@ from core.paths import MASTER, export_dir, worker_dir
 from sqx.export.export_trades import SAMPLE_SEED, sign, stage
 
 
-def pack(raw: Path, staged: int, out: Path, meta: dict, command: str) -> None:
+def pack(raw: Path, staged: int, out: Path, meta: dict, command: str, since: float) -> None:
     """Pack one databank's CSVs into its export directory and record where they came from.
 
     Args:
@@ -21,6 +22,7 @@ def pack(raw: Path, staged: int, out: Path, meta: dict, command: str) -> None:
         staged: How many strategies were staged from it.
         out: Its dated export directory.
         meta: The manifest's source block.
+        since: When the export began (`manifest.write`).
         command: The command line that reproduces this export alone.
     """
     # One typed Parquet for the whole export, `Symbol` separating the markets: the same
@@ -32,7 +34,7 @@ def pack(raw: Path, staged: int, out: Path, meta: dict, command: str) -> None:
         print(f"  {feed:30} {n:>8} trades")
     manifest.write(out, meta, command, {"strategies": staged,
                                         "markets": len(counts), **counts,
-                                        "kept_ticket": packed["kept_ticket"]})
+                                        "kept_ticket": packed["kept_ticket"]}, since=since)
     print(f"wrote {out}")
 
 
@@ -50,11 +52,14 @@ def main() -> None:
                     help="step tag, e.g. structure or neighbours — several steps can retest the "
                          "same databank the same day; without a tag the later export overwrites "
                          "the earlier one's trades.parquet")
-    a = ap.parse_args()
+    a, began = ap.parse_args(), time.time()
 
     install = worker_dir(a.role) if a.role else MASTER
     day = date.today().isoformat()
     work = export_dir(a.project, "_staging", day, a.batch)
+    # A same-day run that failed leaves its copies and CSVs here, and they would be packed
+    # into this batch's trades as if they were its own (as export_trades clears its own).
+    shutil.rmtree(work, ignore_errors=True)
     # Each databank's copies carry its position as a prefix: SQX names a CSV after its file
     # (knowhow/sqx-format/loaded-name-is-filename.md), and two legs of one batch hold the
     # same strategy names. The prefix is what splits the CSVs back afterwards.
@@ -77,7 +82,7 @@ def main() -> None:
               "batch": a.batch or None, "sample_seed": SAMPLE_SEED if a.limit else None},
              f"export_retest.py --project {a.project} --databank {db}"
              + (f" --batch {a.batch}" if a.batch else "")
-             + (f" --limit {a.limit}" if a.limit else ""))
+             + (f" --limit {a.limit}" if a.limit else ""), began)
         sign(work / "strategies", export_dir(a.project, db, day, a.batch), f"{i}__")
     # The CSVs orderstocsv wrote and the .sqx copies are intermediates; only identity.csv
     # outlives them — a WFC batch of 5000 variants must not keep its .sqx three times.

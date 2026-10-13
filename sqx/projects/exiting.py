@@ -34,16 +34,21 @@ def stop(role: str, running: str) -> str:
     A databank never synced (no file on disk) is not waited for: `# ponytail:` the exit saves
     it too, and a kill while it writes leaves it partial — none of a finished project's are.
     """
-    top, log = WORKERS[role]["path"], live.mark(role)
+    top, (log, offset) = WORKERS[role]["path"], live.mark(role)
     port, token = live._setting(role, "WebServerPortUsed"), live._setting(role, "BrowserToken")
     urllib.request.urlopen(urllib.request.Request(f"http://localhost:{port}/main/exitapp",
                                                   headers={"browserToken": token}), timeout=30).read()
-    pending, began = banks(role, running), time.monotonic()
+    pending, began, seen = banks(role, running), time.monotonic(), -1
     while pending and worker.holding(top) and time.monotonic() - began < PATIENCE:
         time.sleep(2)
-        with open(log[0], "rb") as f:
-            f.seek(log[1])
-            pending -= {m.groups() for m in SAVED.finditer(f.read().decode("utf-8", "replace"))}
+        with open(log, "rb") as f:
+            f.seek(offset)
+            new = f.read()
+        pending -= {m.groups() for m in SAVED.finditer(new.decode("utf-8", "replace"))}
+        # midnight: SQX writes the next day's — left only once a read of the old one brought nothing more
+        if len(new) == seen and live._log(role) != log:
+            log, offset = live._log(role), 0
+        seen = len(new)
     pids = worker.holding(top)
     if not pids:
         return f"{role}: salió solo en {time.monotonic() - began:.0f} s"

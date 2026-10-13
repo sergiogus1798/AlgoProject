@@ -11,6 +11,7 @@
 - `exposure-and-edgecost-input-contracts` — Which databank or export name must the exposure and edge-cost readers of `export_retest` output be given?
 - `feed-clock-timezones` — In which timezone does SQX stamp a feed's timestamps, and how do I convert to UTC?
 - `fill-and-pricing` — At what prices and moments does SQX fill entries and exits for this fleet?
+- `fingerprint-lost-on-sqx-resave` — Why is the Results export redone at step 19 although the databank did not change?
 - `harvest-equity-vs-trades` — Why do a harvest's daily equity curve and its trade list end at different totals?
 - `m1-library-loads-whole` — How fast does the XAUUSD M1 bar library load, and is it OHLC-consistent?
 - `mae-mfe-from-m1` — How does SQX compute a trade's MAE and MFE from M1 bars?

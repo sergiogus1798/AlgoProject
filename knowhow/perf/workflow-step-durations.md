@@ -1,16 +1,17 @@
 ---
 q: Which SQX workflow step costs the most time, and how does WFC's per-mother cost scale?
 kw: how long does each workflow step take, MC Retest share of SQX time, MCR 7 OHLC MCR 8 Stress, crossmarket.report bottleneck, retest.ingest memory, custodian stop start cost, startOnlyTask, WFC per-mother cost, WFM duration, crossmarket.report parallel speed, export_spp slow optprofile parser, snoopingScreen M1 memory, Python side of the workflow, tree PSS vs time -v
-tag: 🔬  date: 2026-09-29  see: perf/python-parallelism, perf/smt-in-sqx-retest
+tag: 🔬  date: 2026-10-13  see: perf/python-parallelism, perf/smt-in-sqx-retest
 ---
-# MC Retest is the single biggest SQX cost; WFC's per-mother cost is FIXED (market loading) until the population is large enough to shift it
+# MC Retest was the biggest SQX cost in 2026-09 (7 tasks; today 4-20 s, see Evidence); WFC's per-mother cost is FIXED (market loading) until the population is large enough to shift it
 Full table: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 12-rendimiento). Measure `retest.ingest` memory before a big run (scales
-with runs × sims). Stop+start of the custodian costs ~39 s per stage (screening between steps pays
+with runs × sims). Stop+start of the custodian cost ~39 s per stage in 2026-09 (2026-10-10/11: start 90 s, stop ≤525 s) (screening between steps pays
 it; `startOnlyTask` runs nothing on this install). Python side: the ~17 SQX JVM launches the
 exports cost dominate — `export_retest` takes several `--databank` in one start since 2026-09-26;
 `export_spp` went 43.7 → ~10 s. The step table's memory column is `time -v`, not the tree.
 
 ## Evidence
+- 📓 2026-10-10/11, five runs (`fases.csv`): MCR 1/4/7 4-20 s; start 89-91 s; stop 494-525 s. Figures below: 2026-09, seven tasks.
 📓 Custodian log + `/usr/bin/time`. Two runs: 24-09 (steps 1→16.5, 5 of 8 MCR tasks active, 240
 variants) and 26-09 (`USDJPY_workflow_profiling_v1`, all 25 steps touched, 7 of 8 MCR tasks, WFC on
 1,093-4,999-variant batches, full WFM). The 24-09 card's "unmeasured: 17, 18, 19" is now measured.

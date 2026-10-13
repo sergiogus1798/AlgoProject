@@ -1,6 +1,6 @@
 ---
 q: Where must the SPP reconnaissance harness live: in the mother's own workflow project, found by title?
-kw: sqx.variants.spp on Retester hard rule 10 violation; which project does the SPP reconnaissance harness use; harness.write overwrites Retest-Task1.xml; can the SPP harness share the mother's workflow project; SPPRecon_In/SPPRecon_Out
+kw: sqx.variants.harness on Retester hard rule 10 violation; which project does the SPP reconnaissance harness use; harness.write overwrites Retest-Task1.xml; can the SPP harness share the mother's workflow project; SPPRecon_In/SPPRecon_Out
 tag: 🔬  date: 2026-09-29  see: sqx-drive/variant-chain-custom-project, sqx-drive/spp-task-type
 ---
 # The SPP reconnaissance harness lives in the mother's own workflow project, by title
@@ -24,8 +24,8 @@ A workflow project built with `sqx.projects.builder --workflow` already carries 
 "SPP IS" and one titled "SPP OOS" — kept straight from the frozen donor because `spp:` is a step
 in `sqx/projects/stages.yaml`. `write()` rewrites only the member that title maps to — never the
 project's real `OOS`/`CONSTRUCCION`/`WFM` member, whatever file name those happen to occupy.
-`sqx.variants.spp --project` is now the mother's own workflow project; it still refuses a stock
-one (`execute.STOCK`).
+`sqx.variants.harness --project` is the mother's own workflow project. (The old runner
+`sqx/variants/spp.py` was deleted 2026-10-13; the live SPP route is `sqx.projects.spp`.)
 
 Before `action=start`, `sqx.projects.stage.just(cfx, [TITLES[kind]])` switches on only that one
 task — the project carries every other workflow step's task too, and `action=start` runs every
@@ -44,6 +44,5 @@ three legs).
 
 ## What was removed
 
-`pipeline/config.yaml#run.spp_project` and `Trade_XAUUSD_variantesSPP` are gone.
-`pipeline/recipe.yaml`'s `spp_is`/`spp_oos`/`spp_export` rows take `{project}` — the mother's
-own — like every other stage.
+`pipeline/config.yaml#run.spp_project` and `Trade_XAUUSD_variantesSPP` are gone, and so are
+`sqx/variants/spp.py` and `pipeline/recipe.yaml` (2026-10-13).

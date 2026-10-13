@@ -1,5 +1,6 @@
 """Drive one headless GUI-mode SQX session (`bin/sqx-worker.sh --gui`) through the window's own /project servlet."""
 
+import contextlib
 import json
 import os
 import shutil
@@ -7,17 +8,15 @@ import re
 import subprocess
 import tempfile
 import time
-import urllib.parse
-import urllib.request
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
-from functools import lru_cache
 from pathlib import Path
 
 from core import worker
 from core.datapaths import tmp_dir
 from core.paths import ROOT, WORKERS
 from sqx.projects import cfxio, taskcap
+from sqx.projects.liveapi import _setting, call, kill      # noqa: F401  (`exiting` reads the token here)
 
 SCRIPT = ROOT / "bin" / "sqx-worker.sh"
 MISSES = 5          # polls in a row the port must refuse before `wait` calls the session dead
@@ -30,23 +29,6 @@ def _top(role: str) -> Path:
     return WORKERS[role]["path"]
 
 
-@lru_cache(maxsize=8)
-def _settings(role: str, mtime_ns: int) -> str:
-    """The install's settings.xml as of one modification time (SQX rewrites it at every GUI start)."""
-    return (_top(role) / "user/settings/settings.xml").read_text(encoding="utf-8")
-
-
-def _setting(role: str, key: str) -> str:
-    """One value SQX wrote to the install's settings.xml (port and token: at every GUI start)."""
-    text = _settings(role, (_top(role) / "user/settings/settings.xml").stat().st_mtime_ns)
-    return re.search(rf"<{key}>([^<]*)", text).group(1)
-
-
-def _holder() -> str:
-    """Who `bin/sqx-lock.sh` records as the holder, resolved the same way."""
-    return os.environ.get("CLAUDE_CODE_SESSION_ID") or os.environ.get("SQX_OWNER") or "owner"
-
-
 def _up(role: str) -> bool:
     """Whether something listens on that worker's port."""
     return worker.listening(WORKERS[role]["port"])
@@ -57,7 +39,7 @@ def mine(role: str) -> bool:
     top, lock = _top(role), _top(role) / "user/log/OWNER"
     if not (top / "user/log/XVFB").exists() or not lock.exists():
         return False
-    return _up(role) and json.loads(lock.read_text())["holder"] == _holder()
+    return _up(role) and json.loads(lock.read_text())["holder"] == worker.holder()
 
 
 def gui_up(role: str) -> bool:
@@ -76,29 +58,19 @@ def start(role: str) -> None:
     own = [p["name"] for p in call(role, "list")["projects"]
            if p["name"].startswith(("Test_", "Trade_", "Research_"))]
     for _ in range(300):
-        if all(_files(p, role, b) == n for p in own for b, n in records(role, p).items()):
+        off = [f"{p}/{b}: {_files(p, role, b)} ficheros, {n} en memoria"
+               for p in own for b, n in records(role, p).items() if _files(p, role, b) != n]
+        if not off:
             return
         time.sleep(1)
-    raise SystemExit(f"{role}: los databanks no terminaron de cargarse en 5 min; no se toca nada")
+    kill(role)
+    raise SystemExit(f"{role}: los databanks no cargaron en 5 min; sesión matada por PID, ficheros intactos: " + "; ".join(off))
 
 
 def stop(role: str, export: bool = True) -> None:
     """Stop it (`/main/exitapp`); the script exports after the stop unless told not to."""
     env = None if export else {**os.environ, "ALGO_NO_EXPORT": "1"}
     subprocess.run([str(SCRIPT), "--role", role, "stop"], check=True, env=env)
-
-
-def call(role: str, action: str, **params: str) -> dict:
-    """POST one /project/<action>; SystemExit with SQX's own words on an `error` answer."""
-    port, token = _setting(role, "WebServerPortUsed"), _setting(role, "BrowserToken")
-    req = urllib.request.Request(f"http://localhost:{port}/project/{action}",
-                                 data=urllib.parse.urlencode(params, doseq=True).encode(),
-                                 headers={"browserToken": token})
-    with urllib.request.urlopen(req, timeout=600) as r:
-        got = json.loads(r.read().decode("utf-8"))
-    if "error" in got:
-        raise SystemExit(f"SQX /project/{action}: {got['error']}")
-    return got
 
 
 def _log(role: str) -> Path:
@@ -186,16 +158,41 @@ def _files(project: str, role: str, bank: str) -> int:
     return len(list((_top(role) / "user/projects" / project / "databanks" / bank).glob("*.sqx")))
 
 
-def sync(role: str, project: str, banks: list[str] | None = None) -> dict[str, int]:
+def _newest(project: str, role: str, bank: str) -> int:
+    """When a databank's files were last written: what moves while SQX rewrites them at one count."""
+    stamp = 0
+    for f in (_top(role) / "user/projects" / project / "databanks" / bank).glob("*.sqx"):
+        with contextlib.suppress(FileNotFoundError):      # SQX may be replacing it this instant
+            stamp = max(stamp, f.stat().st_mtime_ns)
+    return stamp
+
+
+def _saved(role: str, since: tuple[Path, int], project: str) -> set[str]:
+    """The project's databanks whose API sync SQX's log says, past `since`, has ended (🔬 2026-10-13)."""
+    text = ""
+    for log, offset in dict([(_log(role), 0), since]).items():     # past midnight, the next day's too
+        with open(log, "rb") as f:
+            f.seek(offset)
+            text += f.read().decode("utf-8", "replace")
+    return set(re.findall(rf"Databank '{re.escape(project)}/([^']+)' saved [^\n]*API request", text))
+
+
+def sync(role: str, project: str, banks: list[str] | None = None,
+         force: frozenset[str] | set[str] = frozenset()) -> dict[str, int]:
     """Write memory onto disk (a sync mirrors it) and wait until every file count matches.
 
     A databank SQX keeps on «Auto-sync never» («Last generation», the genetic pool) never
-    reaches disk, whatever its config.xml says: it is left out (🔬 2026-10-01).
+    reaches disk, whatever its config.xml says: it is left out (🔬 2026-10-01). `force` names
+    the ones synced even when files == memory (a task rewrote a full one, and a count cannot
+    tell): their end is SQX's own «saved … API request» line. SystemExit on a name SQX does not hold.
     """
     listed = call(role, "databankList", projectName=project)["databanks"]
     mem = {d["name"]: d["records"] for d in listed if d["syncType"] != "Auto-sync never"}
-    banks = [b for b in banks or mem if b in mem]
-    stale = [b for b in banks if _files(project, role, b) != mem[b]]
+    if lost := sorted({*(banks or ()), *force} - {d["name"] for d in listed}):
+        raise SystemExit(f"{project}: SQX no tiene en memoria {lost}; tiene {sorted(d['name'] for d in listed)}")
+    forced, since = {b for b in force if mem.get(b)}, mark(role)   # an empty one writes nothing, and no «saved» line
+    banks = [b for b in mem if b in forced or b in (banks or mem)]
+    stale = [b for b in banks if b in forced or _files(project, role, b) != mem[b]]
     # At once: SQX writes ~9 MB/s per databank, and three together went at 17 (🔬 2026-10-05).
     with ThreadPoolExecutor(len(stale) or 1) as pool:
         list(pool.map(lambda b: call(role, "synchronizeDatabank", projectName=project,
@@ -203,12 +200,13 @@ def sync(role: str, project: str, banks: list[str] | None = None) -> dict[str, i
     last, idle = None, 0
     while idle < 600:       # 120 s with no new file: a 15,000-strategy flush takes longer than that
         disk = {b: _files(project, role, b) for b in banks}
-        if all(disk[b] == mem[b] for b in banks):
+        if all(disk[b] == mem[b] for b in banks) and (not forced or forced <= _saved(role, since, project)):
             return mem
-        idle, last = (0, disk) if disk != last else (idle + 1, last)
+        now = (disk, [_newest(project, role, b) for b in forced])
+        idle, last = (0, now) if now != last else (idle + 1, last)
         time.sleep(0.2)
-    raise SystemExit(f"{project}: el disco se paró 120 s sin igualar la memoria: disco {disk}, "
-                     f"memoria {({b: mem[b] for b in banks})}")
+    raise SystemExit(f"{project}: el disco se paró 120 s sin igualar la memoria: disco {disk}, memoria "
+                     f"{({b: mem[b] for b in banks})}, sin «saved» en el log {sorted(forced - _saved(role, since, project))}")
 
 
 def cut(role: str, project: str, bank: str, names: list[str]) -> int:
@@ -217,6 +215,8 @@ def cut(role: str, project: str, bank: str, names: list[str]) -> int:
     after = call(role, "removeReports", projectName=project, databankName=bank,
                  strategies=",".join(names))["records"]
     sync(role, project, [bank])
+    if before - after < len(set(names)):   # as `apply_verdict`: a name SQX did not hold stayed
+        raise SystemExit(f"{project}/{bank}: se pidió quitar {len(names)} y salieron {before - after} ({before} → {after})")
     return before - after
 
 

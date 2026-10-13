@@ -57,11 +57,12 @@ portfolio/common/monteCarlo/   el Monte Carlo de operaciones, que es una pregunt
 
 | antes | ahora |
 |---|---|
-| `nulls.kernel`, `nulls.model`, `nulls.simulate`, `nulls.stats`, `nulls.filter`, `nulls.barrier`, `nulls.verdict`, `nulls.inputs` | `engines.nulls.<lo mismo>` |
+| `nulls.kernel`, `nulls.model`, `nulls.simulate`, `nulls.stats`, `nulls.barrier`, `nulls.verdict`, `nulls.inputs` | `engines.nulls.<lo mismo>` |
+| `nulls.filter` (filtro contra quitar operaciones al azar) | borrado 2026-10-13, sin llamador |
 | `nulls/config.yaml` | `engines/nulls/config.yaml` |
 | `nulls.calibrate` | `engines.market.calibrate` (y además `atr`, `point_value` y `CONVENTIONS`, que crossmarket tenía copiados) |
 | `strategies.crossmarket.model` (colocación de operaciones sintéticas) | `engines.nulls.placement` |
-| `strategies.crossmarket.simulate.kernel` | `engines.nulls.placement.kernel` |
+| `strategies.crossmarket.simulate.kernel` | borrado 2026-10-13, sin llamador (era `engines.nulls.placement.kernel`) |
 | `strategies.monteCarlo.model.draws` | `engines.resample.draws` |
 | `strategies.monteCarlo.model.regime` | `engines.regimes.regime` |
 | `tasks.analysis.excess` | `engines.inference.excess` |

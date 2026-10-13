@@ -29,6 +29,7 @@
 - `practices-that-bit` — Which engineering practices have already caused real damage in this project?
 - `proc-cmdline-is-nul-separated` — Why does grepping /proc/<pid>/cmdline for a string with spaces never match?
 - `pyarrow-read-parquet-aborts-at-exit-under-load` — Why does a script print its result and then exit 134 with «terminate called without an active exception»?
+- `pytest-cannot-collect-tests-dir` — Why does `pytest tests` die with INTERNALERROR, and how do I run the tests?
 - `rail-resume-by-recreating-the-project` — How do I resume a retired project so the workflow continues at step 13?
 - `ruamel-yaml-instance-is-not-thread-safe` — Why does a daemon endpoint that reads an asset YAML fail now and then with a ruamel parser error?
 - `stale-signs-with-the-runners-overrides` — When is a study result considered stale, given the overrides the window's runner may apply?

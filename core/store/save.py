@@ -69,9 +69,11 @@ def unsaved(project: str) -> list[str]:
 
 
 def cell_of(row: dict) -> str:
-    """A project's cell from its registry row: asset, timeframe and the template's library name
-    (`simple` when it was built without one)."""
-    template = Path(row["template"]).parent.name if row["template"] else "simple"
+    """A project's cell from its registry row: asset, timeframe and the template's library name —
+    `simple_long` / `simple_short` for a Simple Strategy (`simple:<side>` in the registry), so the
+    two sides never share a cell (owner, 2026-10-13; cells saved before keep their old name)."""
+    said = row["template"] or "simple"
+    template = said.replace(":", "_") if said.startswith("simple") else Path(said).parent.name
     return f"{row['symbol']}_{row['timeframe']}_{template}"
 
 
@@ -157,6 +159,8 @@ def project(name: str, sqx_dirs: list[Path]) -> dict:
     said = verdicts(name)
     alive = {i: s for i, s in said.items() if GATE in s and s[GATE]["verdict"] != DEAD}
     generated = sum(GATE in s for s in said.values())
+    if not generated:       # no step-8 row at all: nothing to save, and no run number to take the max of
+        return {"saved": [], "no_sqx": [], "problems": {}}
     saved, no_sqx = [], []
     for identity, steps in sorted(alive.items(), key=lambda kv: kv[1][GATE]["strategy"]):
         files = [d / f"{steps[GATE]['strategy']}.sqx" for d in sqx_dirs]

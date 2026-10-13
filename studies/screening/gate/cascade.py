@@ -77,7 +77,9 @@ def run(data: dict, cfg: dict, rules: list[dict], start: str = "0",
         A rule is judged by `criteria.judged`, as the judge will; a strategy leaves at its
         first Fail. With `cascade.on` it is not handed to the next level, so its later
         facts stay empty; without it every level runs on everybody and the fall is only
-        recorded — same facts, same verdict.
+        recorded — NOT the same facts: level 1a leaves `data["oos"]` with the trades of
+        `alive` only and `level1b_centred` centres on it, so R5/R5d (and what reads them) are
+        centred on the survivors with the cascade on, on everybody without it.
     """
     out, order = data["out"], [level for level, _ in LEVELS]
     first, rules_at = order.index(start), placed(rules)

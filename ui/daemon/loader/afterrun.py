@@ -93,8 +93,10 @@ def extras(project: str, role: str, top: Path) -> list[tuple[str, list[str]]]:
         if not files:
             continue
         root = DATA / "raw" / project / target
-        done = sorted(root.glob(marker))
-        if state.age(done[-1] if done else None, files) == "fresh":
+        # By date, not by name: `<day>-10` sorts before `<day>-2`, and from the tenth ingest of a
+        # day on the `-9` was read for ever and the ingest repeated at every step.
+        done = max(root.glob(marker), key=lambda f: f.stat().st_mtime, default=None)
+        if state.age(done, files) == "fresh":
             continue            # the same strategies, whatever SQX's resave did to the dates
         cmd = ["-m", *argv, "--project", project, "--role", role]
         if target == "MCR_All":
@@ -155,7 +157,8 @@ def sign(top: Path, ran: str | None = None) -> None:
 
 
 def main() -> None:
-    """Export after a stop; `ALGO_NO_EXPORT=1` skips it (a cancel that must end fast)."""
+    """Export after a stop; `ALGO_NO_EXPORT=1` skips it (a cancel that must end fast). Exit 1
+    when a piece failed."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--role", required=True, help="el install que se acaba de parar")
     ap.add_argument("--live", action="store_true",
@@ -176,6 +179,8 @@ def main() -> None:
         mark.unlink(missing_ok=True)
     print(f"export tras la parada del {a.role}: " + (f"{failed} pieza(s) fallaron" if failed
                                                     else "todo al día"), flush=True)
+    if failed:      # `liverun.export` runs this with check=True: the step ends here, not on a study reading the old export
+        sys.exit(1)
 
 
 if __name__ == "__main__":

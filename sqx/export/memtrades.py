@@ -32,7 +32,7 @@ def run(role: str, project: str, banks: list[str]) -> dict[str, int]:
         live.call(role, "updateTaskXML", projectName=toolproject.NAME, taskXMLFile=toolproject.MEMBER,
                   xmlConfig=toolproject.SETTINGS.format(args=f"{project}|{bank}|{out}"))
         end = live.run(role, toolproject.NAME, toolproject.CONFIG)
-        if "Error" in end or not (out / "_done.tsv").exists():
+        if not (out / "_done.tsv").exists():     # `live.run` already raised on an aborted run
             raise SystemExit(f"{project}/{bank}: «Export trades» no escribió sus operaciones: {end}")
         wrote[bank] = len((out / "_done.tsv").read_text(encoding="utf-8").splitlines())
         on_disk = len(list(databank_dir(project, bank, worker_dir(role)).glob("*.sqx")))

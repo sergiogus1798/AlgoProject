@@ -1,6 +1,7 @@
 """The bar library: M1 is the only bar data stored, every other timeframe is resampled from it."""
 
 import hashlib
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -101,5 +102,7 @@ def read(feed: str, timeframe: str) -> pd.DataFrame:
         return pd.read_parquet(cache).set_index("t")
     frame = source(feed).resample(RULE[timeframe]).agg(AGG).dropna()
     cache.parent.mkdir(parents=True, exist_ok=True)
-    frame.reset_index(names="t").to_parquet(cache, compression="zstd", index=False)
+    tmp = cache.with_name(f".{cache.name}.{os.getpid()}.tmp")     # whole or not at all: a cut file would raise forever
+    frame.reset_index(names="t").to_parquet(tmp, compression="zstd", index=False)
+    os.replace(tmp, cache)
     return frame

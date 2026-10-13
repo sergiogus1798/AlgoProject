@@ -45,6 +45,11 @@ def run(sample: dict[tuple[str, str], pd.DataFrame], frames: dict[str, pd.DataFr
     started = time.time()
     # Too few trades and there is no p to compute; such a pair never reaches a worker.
     keys = [k for k in sorted(sample) if len(sample[k]) >= cfg["verdict"]["min_trades"]]
+    if len(keys) < len(sample):
+        print(f"{len(sample) - len(keys)} de {len(sample)} pares con menos de "
+              f"{cfg['verdict']['min_trades']} operaciones: sin mono")
+    if not keys:
+        raise SystemExit("ningún par llega al mínimo de operaciones: nada que medir")
     _SHARED.update(sample=sample, frames=frames, cfg=cfg)
     for frame in frames.values():
         simulate.warm(frame, cfg)

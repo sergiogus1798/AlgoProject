@@ -2,6 +2,7 @@
 
 import json
 import shutil
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
 
@@ -22,6 +23,15 @@ def table(path: Path) -> pd.DataFrame:
     return pd.read_csv(path, sep=";" if path.name == "metrics.csv" else ",")   # SQX's own export
 
 
+def _mask(col: pd.Series, test: Callable[[pd.Series], pd.Series]) -> pd.Series:
+    """`test` over the text of a column. A categorical is tested once per category, then read by
+    code: its `astype(str)` spells out every row, 0.49 s a million (4-5 s a survivor at 9.7 M)."""
+    if not isinstance(col.dtype, pd.CategoricalDtype):
+        return test(col.astype(str))
+    cats = pd.Series([*col.cat.categories.astype(str), "nan"])      # code -1 is a NaN, "nan" as text
+    return pd.Series(test(cats).to_numpy()[col.cat.codes.to_numpy()], index=col.index)
+
+
 def family(frame: pd.DataFrame, name: str, identity: str = "") -> pd.DataFrame:
     """The rows about one strategy or its scaled sisters.
 
@@ -37,11 +47,10 @@ def family(frame: pd.DataFrame, name: str, identity: str = "") -> pd.DataFrame:
     if identity:            # never the empty one: rows that carry no identity are nobody's by it
         hit |= frame.index == identity
         if "identity" in frame:
-            hit |= frame["identity"].astype(str).eq(identity)
+            hit |= _mask(frame["identity"], lambda said: said.eq(identity))
     for col in KEYS:
         if col in frame:
-            said = frame[col].astype(str)
-            hit |= said.eq(name) | said.str.startswith(f"{name}_Scaled")
+            hit |= _mask(frame[col], lambda said: said.eq(name) | said.str.startswith(f"{name}_Scaled"))
     return frame[hit]
 
 

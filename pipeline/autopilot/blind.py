@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 from core.datapaths import variants_dir
-from core.paths import DATA, report_dir
+from core.paths import DATA, databank_dir, report_dir, worker_dir
 from ledger import blind as rebuilt
 from ledger import gate, record, thresholds
 from ledger import study as studymod
@@ -15,6 +15,7 @@ from pipeline.autopilot import call, survivors
 from sqx.projects import stage
 from ui.daemon import jobs
 from ui.daemon.launch import chain, preflight
+from ui.daemon.loader import state as loader
 
 
 # The flag that adds a study's oos2 reading to the one that decides without it (18.5).
@@ -97,11 +98,14 @@ def bank(project: str) -> str:
 def wfm(project: str, role: str) -> str:
     """Step 19's reading, computed from the matrix SQX just ran and not read.
 
-    The export is the worker stop's own (`loader.afterrun`); it is made here only when the
-    databank has none at all (a stop with `ALGO_NO_EXPORT`).
+    The export is the worker stop's own (`loader.afterrun`); it is made here when the newest
+    one is not of the strategies the databank holds now (`loader.state.age`): none at all (a
+    stop with `ALGO_NO_EXPORT`), or an earlier matrix's after an export that failed.
     """
     name = bank(project)
-    if not list((DATA / "raw" / project / name.replace(" ", "_")).glob("*/wfm/manifest.json")):
+    done = max((DATA / "raw" / project / name.replace(" ", "_")).glob("*/wfm/manifest.json"),
+               key=lambda f: f.stat().st_mtime, default=None)
+    if loader.age(done, list(databank_dir(project, name, worker_dir(role)).glob("*.sqx"))) != "fresh":
         call.run(["-m", "sqx.export.export_wfm", "--project", project, "--databank", name,
                   "--role", role])
     call.run(["-m", "studies.optimisation.wfm.report", "--project", project, "--databank", name])

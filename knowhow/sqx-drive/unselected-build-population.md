@@ -1,7 +1,7 @@
 ---
 q: Why does a Build with only `trades >= 100, NetProfit > 0` fill with thousands of strategies, and how do I box it?
 kw: build an unselected calibration population; relaxed Rankings filters; databank full replaces by fitness; In databank status counts all databanks; passed-count stop; stop project during Build; OOS "(1)" duplicate files; worker killed mid-stop loses retest; free shell template two RandomCondition; nested AND three conditions; afterrun export minutes per stop; build and OOS in one start time-limit; calibration queue cadence; random generation acceptance
-tag: 🔬  date: 2026-10-04  see: perf/review-path-after-sqx, conditions/selection-window, research/post-selection-bias, sqx-drive/export-after-every-stop, authoring/one-item-group-can-drift
+tag: 🔬  date: 2026-10-13  see: perf/review-path-after-sqx, conditions/selection-window, research/post-selection-bias, sqx-drive/export-after-every-stop, authoring/one-item-group-can-drift
 ---
 # A Build with only `trades >= 100, NetProfit > 0` accepts 1,000-2,000 strategies a minute — box it with `time-limit`, never let it fill
 - The donor's `<Rankings><Conditions>` (trades > 500, Sortino > 0.6, Stagnation < 540, sampleType 127 = the build window, no OOS range in the task) reach every project verbatim; no module writes them. Relaxed by hand in the stopped `project.cfx`, the builder accepts 25-65 % of what it generates.
@@ -13,6 +13,7 @@ tag: 🔬  date: 2026-10-04  see: perf/review-path-after-sqx, conditions/selecti
 - 📓 Simple Strategy builds accept far faster than the free shell (10-20k accepted in 2-6 min; median acceptance 5.5 %); custodian JVM reaches 64-79 GB and its shutdown sync outlasts the script's 5 min — numbers in Evidence.
 
 ## Evidence
+- 📓 2026-10-13: «never let it fill» does not hold for the workflow build. In five runs of 2026-10-10/11 (`fases.csv`) the 10,000 databank filled at 20-62 % of the 1,800 s limit (estimate at the ledger's constant accepted rate: 362-1,119 s) and the build still ran to the limit, replacing by fitness; the stop is always the time. The owner has not decided whether to stop at full (`AlgoData/audit/performance-2026-10-13-skills.md` §4 Q1).
 - 📓 Simple Strategy builds (2026-10-02/03) accept far faster than the free-shell template: ≈ 60k generated in 3 min, 10-20k accepted at a 2-6 min box on indices. Acceptance per cell 1-34 % (median 5.5 %); M30 and yen crosses are slow (25 base cells accepted < 300 in 2 min and needed a 10-minute box). The search needs ~2 min to start producing.
 - 📓 Custodian JVM RSS reaches 64-79 GB on 4-6 min builds. Its shutdown sync of 3 databanks × 20k files exceeds `sqx-worker.sh`'s 5-minute wait: not a hang — wait up to 40 min for the port.
 - `AlgoData/scratch/calib2/synth_final/synthesis.md` (deleted 2026-10-04) (acceptance table), `STATE.md` (queue v9).

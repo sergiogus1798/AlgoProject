@@ -68,7 +68,7 @@ def main() -> None:
     draws.save(out, [d for got_one in measured.values() for d in got_one.pop("draws", [])])
     output.population(out, "wfc", found, f"WFC — {a.work.name.replace('_', ' ')}",
                       "¿Elegir por el pasado sirve fuera?")
-    # The old pipeline's own contract: pipeline/stages/verdict.py reads its scalars.
+    # The scalars the old pipeline's verdict read.
     comp = panel.columns(panel.KEYS[said["composicion"]])
     (a.work / "wfc.json").write_text(json.dumps(
         {"n": said["n"], "rho": said["rho"], "call": said["estado"], "p_mas": said["p_mas"],

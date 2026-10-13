@@ -5,6 +5,8 @@ description: Test whether a strategy's edge survives being read on a slower time
 
 # /crosstf
 
+The workflow runs through `bin/workflow.sh` (CLAUDE.md rule 19); this skill is the manual route for testing one step's code, never for a real run.
+
 The sibling of `/crossmarket`, one axis over. `/crossmarket` changes the market and keeps the clock;
 this changes the clock and keeps the market.
 

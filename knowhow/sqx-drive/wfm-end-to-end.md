@@ -1,10 +1,10 @@
 ---
 q: How long does a Walk Forward Matrix take headless in a custom project, and can its progress be seen?
 kw: how long does a Walk-Forward Matrix take on a worker, end to end? WFM progress, status, export_wfm --role, step 19 cost
-tag: 🔬  date: 2026-09-25  see: export/wfm-export, conditions/wfm-acceptance, sqx-format/wfm-in-settings-xml
+tag: 🔬  date: 2026-10-13  see: export/wfm-export, conditions/wfm-acceptance, sqx-format/wfm-in-settings-xml
 ---
-# A WFM runs headless in a custom project: ~4-5 min per mother, and no progress signal
-Budget ~4-5 min per strategy for the 30-cell matrix (JVM peak 45 GB). While it runs there is no
+# A WFM runs headless in a custom project: ~100-220 s per mother (2026-10-10/11), and no progress signal
+Budget 98-216 s per mother (📓 four runs of 2026-10-10/11, 1-3 mothers, `fases.csv`; SQX 196-648 s per run) for the 30-cell matrix, JVM peak 45 GB. Not: «~4-5 min» (2026-09-25, 3 USDJPY H1 mothers, 790 s). While it runs there is no
 progress anywhere — `action=status` and `In databank` move only when a whole mother finishes, the
 project log is empty — so watch CPU and the JVM, not the API. Export with
 `sqx.export.export_wfm --role <role>` (it used to read only the master).

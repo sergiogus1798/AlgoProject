@@ -4,6 +4,7 @@
 - `curate-verdict-identity-per-databank` — Why can applying the same `verdict.csv` to Results and OOS databanks refuse on OOS?
 - `curating-a-databank` — How do I curate a databank: move or delete .sqx files with the install stopped, since `strategies=` never works?
 - `databank-verbs` — Which `-databank` verbs move data from files to memory or the reverse, and which is a safe reader?
+- `exit-regrabs-loaded-databanks-by-session-age` — Why does a short SQX session take 6-8 min to exit while a session older than 1 h exits in 4 s?
 - `memory-vs-disk-exporter` — Why do file-based exports see an empty databank that is full in memory, even with Auto-sync every 1 hour?
 - `no-spaces-in-names` — Why is a databank with spaces in its name unreachable through the HTTP API?
 - `snapshot-before-restart` — How do I snapshot `user/projects` before a restart, and when can I delete it?

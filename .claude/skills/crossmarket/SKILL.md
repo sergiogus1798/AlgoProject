@@ -5,6 +5,8 @@ description: Retest surviving strategies on other markets with SQX's Retest on a
 
 # /crossmarket
 
+The workflow runs through `bin/workflow.sh` (CLAUDE.md rule 19); this skill is the manual route for testing one step's code, never for a real run.
+
 The task after the OOS gate. It asks one question: **does this logic survive a market it was never
 fitted to?**
 

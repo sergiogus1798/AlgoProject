@@ -6,11 +6,11 @@ tag: 🔬  date: 2026-10-10  see: sqx-drive/renaming-feeds, costs/refreshing-sqx
 # Two verbs, no GUI: `-symbol action=add … datasource=file`, then `-data action=import … format=MT4`
 - `-symbol action=add symbols=X datasource=file instrument=I datatype=M1 timeframe=M1 broker=[[FTMO]]` creates an empty feed named exactly `X` (no `_M1` postfix added).
 - `-data action=import symbol=X instrument=I timeframe=M1 format=MT4 filepath=/abs.csv` — `format` is required despite the help calling it optional («Missing parameter 'format'»). CSV: `yyyy.MM.dd,HH:mm,O,H,L,C,V`, no header.
-- The call returns at once; the import runs behind it. Done = the `-symbol action=list` row of `X` shows `M1` and its record count. 4.06 M M1 bars (221 MB CSV → 95 MB `.dat`): 14.5 s on the conductor.
-- ⚠️ The feed lands in UTC, not in the instrument's broker zone (USA500_M1 is EST+07); `timezone=` on import untested.
-- Reusing the real instrument (`instrument=USA500_ftmo`) gives the same point value, tick and default spread with nothing to clone.
-- Done on a worker: the `.dat` is written into the master's `History/` (symlink) but the registry row lives only in that worker's `data.db` — the other worker does not see it, and it is lost when the master's `data.db` is copied over again.
-- A project pointed at it: copy a `project.cfx` (a zip) replacing the feed name in every member, worker stopped; 0.06 s.
+- The call returns at once; the import runs behind it. Done = the `-symbol action=list` row of `X` shows `M1` and its record count. 4.06 M M1 bars (221 MB CSV → 95 MB `.dat`): 14.5 s on the conductor. Without `timezone=` the feed lands in UTC. `timezone=EETUS` on both verbs lands it in the real feed's zone (EST+07) — XAUUSD_SYN01, 7.97 M bars, 28 s on the custodian (🔬 2026-10-11).
+- ⚠️ A project cloned from the real feed's refuses `action=start` («unresolved resources») until the new `DATA` row equals the real one in `DECIMALS`, `BROKER_ID`, `SOURCE`, `USYMBOL`, `USYMBOLNAME` (import writes 2 / -1 / 1 / null): `UPDATE DATA` in that worker's `data.db`, worker stopped. Then the build and the oos1 retest run (🔬 2026-10-11).
+- Python needs three things for the new symbol before `bin/workflow.sh run`: `assets/symbols/<X>.yaml` (copy, `sqx_symbol` changed), its block in `assets/_policy.yaml` (`core.assets` exits 3 without it) and `AlgoData/bars/<X>/M1.parquet`. `registryxml.unresolved` and `sqx.inspect.feeds` read the MASTER's `data.db` and do not see a worker-only feed.
+- Reusing the real instrument (`instrument=USA500_ftmo`) gives the same point value, tick and spread with nothing to clone. A project pointed at the feed: copy a `project.cfx` (zip) replacing the feed name in every member, worker stopped; 0.06 s.
+- Done on a worker: the `.dat` goes to the master's `History/` (symlink) but the registry row lives only in that worker's `data.db` — the other worker does not see it, and a fresh copy of the master's `data.db` loses it.
 
 ## Evidence
 2026-10-10, conductor, `USA500_SYN01` from `AlgoData/scratch/synthetic/USA500_SYN01_M1.csv`, project `Test_USA500_SYN01_H1_carga` listed and answering `status`; no task started.

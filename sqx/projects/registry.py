@@ -16,7 +16,7 @@ from sqx.projects.rankings import describe
 # meant to bear fruit; `Research_` (owner, 2026-10-03) is what the research queue builds, kept
 # until the owner decides (sweep.py). The prefix is how a later session tells clutter from work.
 KINDS = {"Test_": "test", "Trade_": "trade", "Research_": "research"}
-NAME_OK = re.compile(r"^(Test|Trade|Research)_[A-Za-z0-9_]+$")
+NAME_OK = re.compile(r"(Test|Trade|Research)_[A-Za-z0-9_]+")   # fullmatch: `$` lets "Test_x\n" through
 COLUMNS = ("name", "kind", "install", "created", "purpose", "symbol", "timeframe",
            "template", "workflow", "retired", "archive", "acceptance", "family")
 
@@ -30,7 +30,7 @@ def check_name(name: str) -> str | None:
     Returns:
         A message for SystemExit, or None.
     """
-    if NAME_OK.match(name):
+    if NAME_OK.fullmatch(name):
         return None
     return (f"'{name}': a project name starts with Test_ (a functional test, thrown away "
             "afterwards), Trade_ (meant to bear real fruit) or Research_ (the research queue's), then letters, digits and "

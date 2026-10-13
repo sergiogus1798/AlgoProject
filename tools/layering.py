@@ -49,7 +49,7 @@ def edges(files: list[Path]) -> set[tuple[str, str, str]]:
         if len(rel.parts) < 2:
             continue
         mine = unit(rel.parts)
-        for node in ast.walk(ast.parse(f.read_text(encoding="utf-8"))):
+        for node in depmap.nodes(f):
             mods = ([a.name for a in node.names] if isinstance(node, ast.Import) else
                     [node.module] + [f"{node.module}.{a.name}" for a in node.names]
                     if isinstance(node, ast.ImportFrom) and node.module and not node.level else [])

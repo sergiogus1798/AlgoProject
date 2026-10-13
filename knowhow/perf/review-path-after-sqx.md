@@ -1,7 +1,7 @@
 ---
 q: How long do export, harvest and step 8 take for 5,000 strategies after an SQX run?
 kw: how long does the review after an SQX run take; export harvest step 8 cost for 5,000 strategies; orderstocsv run three times; harvest --exports; tradepack slow write per strategy; snoopingScreen SPA twice; spread study single thread; afterrun sign fingerprint minutes; step 8 studies in parallel; which step-8 study depends on which
-tag: 🔬  date: 2026-10-01  see: perf/autopilot-dead-time, sqx-drive/export-after-every-stop, sqx-drive/unselected-build-population, perf/python-parallelism
+tag: 🔬  date: 2026-10-13  see: perf/autopilot-dead-time, sqx-drive/export-after-every-stop, sqx-drive/unselected-build-population, perf/python-parallelism
 ---
 # Export + harvest + step 8 of 5,000 strategies is ~3.5 min, not 13: one `orderstocsv`, studies side by side
 - `gate.harvest … --exports` writes the harvest AND both databanks' trade exports (what `export_trades`
@@ -12,6 +12,7 @@ tag: 🔬  date: 2026-10-01  see: perf/autopilot-dead-time, sqx-drive/export-aft
 - The monkey's nulls are seeded from OS entropy unless `--seed N` is passed to `monkey.report` and `gate.report`: without it two runs differ there and in the gate's `mono`/`familia` (`knowhow/eng/nulls-seed-fresh-per-run.md`).
 
 ## Evidence
+- 📓 2026-10-13 caveat: the audit finds «~3.5 min for 5,000» does not match the 414-478 s export measured after steps 6+7 in the runs of 2026-10-10/11 (before `memtrades`). Not re-measured; 🤔 re-time with one run after `memtrades`.
 - `Test_Calib_USDJPY_H1_freeL` (5,059 × 2 databanks, 3.0 M trades, 96 cores), before → after, same day:
   metrics ×2 32 → 16 s (side by side) · trades ×2 + harvest 418 → 80 s · step 8 329 → 101 s (gate 31 →
   snoopingScreen 67; edgeCost 17, spread 112 → 19, monkey 32 → 17) · `pipeline.autopilot.facts` 8 s.

@@ -1,6 +1,7 @@
 """Every export writes one of these. Without it an export cannot be reproduced or trusted."""
 
 import json
+import os
 import subprocess
 from datetime import date
 from pathlib import Path
@@ -26,7 +27,8 @@ def code_version() -> str:
     return head + ("-dirty" if dirty else "")
 
 
-def write(out_dir: Path, source: dict, command: str, counts: dict) -> Path:
+def write(out_dir: Path, source: dict, command: str, counts: dict,
+          since: float | None = None) -> Path:
     """Record what produced the files in one export directory.
 
     Args:
@@ -34,6 +36,8 @@ def write(out_dir: Path, source: dict, command: str, counts: dict) -> Path:
         source: What the data came from, e.g. {"install": ..., "project": ..., "databank": ...}.
         command: The sqcli command or script invocation that produced it, verbatim.
         counts: Row or file counts per artefact, e.g. {"metrics.csv": 231}.
+        since: When the export began reading its sources (`time.time()`); the manifest is dated
+            then, so a source changed while the export ran reads as newer than it — stale.
 
     Returns:
         Path of the manifest written.
@@ -44,6 +48,8 @@ def write(out_dir: Path, source: dict, command: str, counts: dict) -> Path:
                                 "source": source,
                                 "command": command,
                                 "counts": counts}, indent=2, default=str), encoding="utf-8")
+    if since is not None:
+        os.utime(path, (since, since))
     return path
 
 

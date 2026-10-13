@@ -14,7 +14,6 @@ from core import assetdata
 from core.study import blocks
 from engines.weekly import flip
 from studies.optimisation.marketSurfaces import one, report
-from studies.optimisation.marketSurfaces.contract import grids
 from studies.optimisation.marketSurfaces.inputs import batch, config, markets
 from studies.optimisation.marketSurfaces.measure import order, reading
 from studies.optimisation.marketSurfaces.verdict import call
@@ -170,8 +169,6 @@ def check_determinism_and_states() -> None:
     assert res["verdict"]["label"] == "PASA · la zona viaja" and res["facts"]["oos2"]["perverso"] == 0 and res["facts"]["oos2"]["sin_dato"] == 0
     assert [t["name"] for t in res["tabs"]] == ["principal", "prima", "referencia", "oos2"]
     assert res["warnings"][0]["code"] == "costs_provisional" and FEEDS[0] in res["warnings"][0]["text"]
-    tab = grids.tab(design["params"], measured["totals"], measured["ok"], IDS[0], dict.fromkeys(measured["totals"], "m"))
-    assert len(tab["blocks"]) == 8 and tab["blocks"][0]["mark"]["label"] == "madre"
 
 
 def rates(rho: float, families: int = 300, feeds: int = 10) -> dict[str, float]:

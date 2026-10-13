@@ -61,7 +61,8 @@ def bars(trades: pd.DataFrame, index: pd.DatetimeIndex, timeframe: str) -> dict:
     starts = scale.minutes(index)
     k = np.searchsorted(index, trades["Open time"].to_numpy(), "right") - 1
     j = np.searchsorted(index, trades["Close time"].to_numpy(), "right") - 1
-    span = {"signal": starts[k - 1], "entry": starts[k], "exit": starts[j]}
+    span = {"signal": starts[np.maximum(k - 1, 0)],    # a first-bar trade has no bar before it
+            "entry": starts[k], "exit": starts[j]}
     out = {name: (s, s + width) for name, s in span.items()}
     out["during"] = (starts[k] + width, np.maximum(starts[k] + width, starts[j]))
     return out

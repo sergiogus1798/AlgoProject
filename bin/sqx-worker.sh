@@ -65,8 +65,9 @@ from core.paths import MASTER, WORKERS
 role = sys.argv[1]
 if role not in WORKERS:
     sys.exit(f"machine.yaml defines no worker role {role!r}; it has: " + ", ".join(WORKERS))
-print(MASTER); print(WORKERS[role]["path"]); print(WORKERS[role]["port"])' "$ROLE" 2>&1) || {
-  printf 'cannot resolve worker role "%s":\n  %s\n' "$ROLE" "$_WHERE"; exit 1; }
+print(MASTER); print(WORKERS[role]["path"]); print(WORKERS[role]["port"])' "$ROLE") || {
+  printf 'cannot resolve worker role "%s" (python said why, above)\n' "$ROLE"; exit 1; }
+# stdout only: with stderr folded in, a Python warning became line 1 and was read as MASTER.
 mapfile -t _WHERE <<< "$_WHERE"
 MASTER="${_WHERE[0]}"
 WORKER="${_WHERE[1]}"
@@ -294,10 +295,13 @@ case "${1:-}" in
   sync)  sync_bars ;;
   stop)
     clear_stale_lock
+    # The lock this stop came to remove. Every removal below compares against it: a `start`
+    # of another session can write its own while this stop waits, kills or exports.
+    LOCK0=$(lock_id)
     # "Running" is the process, not the port: a worker still booting has no port yet, and
     # calling it "not running" removed the lock of a live install.
     if ! alive; then
-      echo "$ROLE not running"; drop_xvfb; rm -f "$(owner_file)"; exit 0
+      echo "$ROLE not running"; drop_xvfb; drop_lock_if_same "$LOCK0"; exit 0
     fi
     refuse_stop_if_held || exit 1
     # GUI mode only while the XVFB file names a live Xvfb of this install. A file left by a
@@ -388,11 +392,13 @@ case "${1:-}" in
     # with check=True, and exit 0 here let it go on to read databanks still being written.
     # The owner lock stays, because the install is still held.
     [ "$STOPPED" = "1" ] || exit 1
+    # Before the export, not after it: the install is free from here on, and the export
+    # takes minutes in which another session may start it and write its own lock.
+    drop_lock_if_same "$LOCK0"
     # Owner, 2026-09-28: every SQX run is exported the moment it ends — metrics, trades and
     # the cosecha of each new or stale databank of the install's Test_/Trade_ projects.
     # ALGO_NO_EXPORT=1 skips it. A failed export never fails the stop.
     (cd "$ROOT" && python3 -m ui.daemon.loader.afterrun --role "$ROLE") || true
-    rm -f "$(owner_file)"
     ;;
   start)
     clear_stale_lock
@@ -461,6 +467,7 @@ case "${1:-}" in
     sync_bars || exit 1
     cd "$WORKER" || exit 1
     env -u ELECTRON_RUN_AS_NODE ./sqcli "$@" 2>&1 9>&- | grep -vE "DEBUG|oshi|ResponseProcessCookies|set-cookie"
+    exit "${PIPESTATUS[0]}"   # sqcli's own code: grep's is 1 whenever it filtered every line
     ;;
   *)
     sed -n '2,23p' "$0" | sed 's/^# \?//'

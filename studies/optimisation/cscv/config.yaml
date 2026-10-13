@@ -1,5 +1,5 @@
 # Every tunable of step 18 (CSCV and PBO). The proposal is the owner's
-# «criterios-paso-18-cscv-propuesta» (2026-10-07); a number written `ledger:<key>` lives in
+# «criterios-implementados-2026-10-12» (2026-10-07); a number written `ledger:<key>` lives in
 # ledger/thresholds.yaml with who set it, when and why. Override per run with
 # `--set section.key=value`.
 

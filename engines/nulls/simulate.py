@@ -124,7 +124,7 @@ def nulls(kept: dict, rung: str, cfg: dict, key: str) -> dict:
         kept: What fixed() returned.
         rung: A key of model.RUNGS.
         cfg: What inputs.config() returned.
-        key: What identifies this strategy -- its name or its identity. It enters the seed.
+        key: The strategy's name (what `monkey.one` passes). It enters the seed.
 
     Returns:
         One array per statistic, each of length nulls.draws. Block `i` draws from
@@ -132,8 +132,9 @@ def nulls(kept: dict, rung: str, cfg: dict, key: str) -> dict:
         as `inputs.config()` resolved it -- a fresh one per run by default, or the explicit
         int a caller asked to reproduce. A strategy's monkeys depend on nothing but these
         four: not on the process or the thread it ran in, not on which other strategies were
-        in the batch, and not on `nulls.draws` -- raising it appends blocks and leaves the
-        first ones as they were. The block holds `chunk_trades` trade valuations: 🔬 swept
+        in the batch, and on `nulls.draws` only through the last partial block -- raising it
+        appends blocks and leaves the full ones as they were, but `timing_holds` and `free`
+        redraw a last block that was partial, whose batch size changes what the stream yields. The block holds `chunk_trades` trade valuations: 🔬 swept
         2026-09-25, that is what keeps the kernel's working set in cache, and it is a count
         of trades rather than of runs because the cache sees bytes. Changing it changes the
         streams, which is why it is a constant of the config.

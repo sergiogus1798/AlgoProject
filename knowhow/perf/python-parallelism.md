@@ -5,7 +5,7 @@ tag: 🔬  date: 2026-09-27  see: perf/monte-carlo-bandwidth, perf/numba-divisio
 ---
 # Parallelise per (strategy, market) with fork, 48 processes after numba; the unit of cost is the trade
 - After numba: 48 processes (physical cores), never `os.cpu_count()`; more is slower. `core.fanout` caps every pool at `CORES` (psutil, physical) since 2026-09-26. A pool's RAM is workers × what ONE task holds: cap a module below 48 when its task retains a lot (`export_spp` 16, `mcRetest.report` 16, `tradepack` 8).
-- A worker's peak is draws × trades laid out at once, not the data: lay out (draws, trades) matrices by row blocks with the rng drawn up front (`engines/nulls/placement/bootstrap.block_rows`), and cap draws × trades per batch (`nulls.batch_cells`). Only `block_shift` gives the same draws whatever the batch; the other three null models do not.
+- A worker's peak is draws × trades laid out at once, not the data: lay out (draws, trades) matrices by row blocks with the rng drawn up front, and cap draws × trades per batch (`nulls.batch_cells`). Only `block_shift` gives the same draws whatever the batch; the other three null models do not.
 - `fork`: parent reads export and bars once, children inherit copy-on-write; children return only the verdict row, never the whole `analyse_strategy` record.
 - Count trades before launching anything: cost is per trade (strategies in one batch span ×900). Task = (strategy, market), not strategy (longest strategy floors the wall) — in a study's one-strategy path too, not only the batch.
 - Chunk a Monte Carlo exactly: draw whole and in the same order (`rng.random((n, k))` by consecutive row blocks = same stream; A,B,C per block ≠ all A, all B, all C).

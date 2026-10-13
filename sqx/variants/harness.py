@@ -137,7 +137,9 @@ def spp(task: str, spread: int, step_pct: float, max_tests: int) -> str:
     for tag, value in (("MaxTests", max_tests), ("DistributionUp", spread),
                        ("DistributionDown", spread),
                        ("Steps", round(2 * spread / step_pct))):
-        inner = re.sub(rf"<{tag}>\d+</{tag}>", f"<{tag}>{value}</{tag}>", inner, 1)
+        inner, hit = re.subn(rf"<{tag}>\d+</{tag}>", f"<{tag}>{value}</{tag}>", inner, 1)
+        if not hit:      # the donor's «Retest» task has no Steps: the value would stay inherited
+            raise SystemExit(f"la tarea no trae <{tag}> numérico en su SPP: no se configura a medias")
     inner = recommended(inner)
     task = task[:block.start()] + inner + task[block.end():]
     return cross_check(task, "SequentialOptimization", False)

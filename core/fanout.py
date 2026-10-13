@@ -1,5 +1,6 @@
 """Independent tasks across processes, the costliest first, each result handed back as it lands."""
 
+import sys
 from collections.abc import Callable, Iterator
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import get_context
@@ -11,6 +12,12 @@ from threadpoolctl import threadpool_limits
 # never worth using: crossmarket at 96 processes took the same 17 s as at 48 and held 1.2 GB
 # more (knowhow/perf/python-parallelism.md).
 CORES = psutil.cpu_count(logical=False)
+
+
+def _one_numba_thread() -> None:
+    """Child start-up: a parallel numba kernel called in a child would otherwise open one thread per core in each."""
+    if "numba" in sys.modules:
+        sys.modules["numba"].set_num_threads(1)
 
 
 def run(work: Callable, costs: dict, workers: int) -> Iterator[tuple]:
@@ -29,12 +36,20 @@ def run(work: Callable, costs: dict, workers: int) -> Iterator[tuple]:
         was bounded by its single largest task, 453 s alone; a task that long started late
         adds its whole length to the tail, and started first it overlaps everything else.
 
+        A task that raises cancels the queue: the exception surfaces when the tasks already
+        running end, not after all of them. 🔬 2026-10-12: 6.02 s against 0.3.
+
         One BLAS thread per process: OpenBLAS starts 64 in each, and 96 forked workers
         would otherwise contend with 6,144 of them the moment any calls into it.
     """
     order = sorted(costs, key=costs.get, reverse=True)
     with threadpool_limits(1), ProcessPoolExecutor(
-            max_workers=max(1, min(workers, CORES, len(order))), mp_context=get_context("fork")) as pool:
+            max_workers=max(1, min(workers, CORES, len(order))), mp_context=get_context("fork"),
+            initializer=_one_numba_thread) as pool:
         pending = {pool.submit(work, key): key for key in order}
-        for done in as_completed(pending):
-            yield pending[done], done.result()
+        try:
+            for done in as_completed(pending):
+                yield pending[done], done.result()
+        except BaseException:
+            pool.shutdown(wait=False, cancel_futures=True)
+            raise

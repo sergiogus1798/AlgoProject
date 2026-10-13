@@ -14,8 +14,3 @@ gives rho* exactly with no solving, which is why it was built first.
 
 The categories of `_markets.yaml` are annotated with their own joint rho and tails. Deciding per
 category would multiply the looks by the number of categories; not built until the owner asks.
-
-## The grids of the detail file
-
-`marketSurfaces_detalle.json` holds a median rank per pair of live parameters and market. It
-replaced the heatmaps of SQX metrics, whose JSON reached 299 MB. If nobody opens it, delete it.

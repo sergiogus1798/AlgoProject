@@ -3,6 +3,7 @@
 
 import argparse
 import csv
+import time
 
 from core import manifest, sqxview
 from core.paths import MASTER, databank_dir, metrics_export, worker_dir
@@ -15,7 +16,7 @@ def main() -> None:
     ap.add_argument("--databank", required=True)
     ap.add_argument("--role", help="headless install holding the project; "
                     "omit for the master")
-    a = ap.parse_args()
+    a, began = ap.parse_args(), time.time()
 
     out = metrics_export(a.project, a.databank)
     install = worker_dir(a.role) if a.role else MASTER
@@ -30,7 +31,7 @@ def main() -> None:
     # The old export goes only now, with the new table in hand: gone for the seconds the .sqx
     # took to read, the window's loader found no manifest.json and said so in red (📓 2026-09-30).
     out.mkdir(parents=True, exist_ok=True)
-    for stale in sorted(out.iterdir()):
+    for stale in sorted(f for f in out.iterdir() if f.is_file()):   # a folder is another export's
         stale.unlink()
         print(f"removed {stale.name}")
     csv_path = out / "metrics.csv"
@@ -40,7 +41,7 @@ def main() -> None:
                     "metrics": "SQStats of each .sqx, the columns of «Export Data View»"},
                    f"export_metrics.py --project {a.project} --databank {a.databank}",
                    {"metrics.csv": len(table), "columns": len(table.columns),
-                    "worker_saw": len(files)})
+                    "worker_saw": len(files)}, since=began)
     print(f"read {len(files)} strategies; wrote {csv_path} ({len(table)} rows, "
           f"{len(table.columns)} columns)")
 

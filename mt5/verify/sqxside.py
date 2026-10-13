@@ -67,8 +67,8 @@ def run(project: str, role: str, strategy: Path, work: Path, outputs: dict[str, 
         worker.start(role)
         workerguard.mark(role, project)
         advance_run.ready(project, role)
-        worker.call(f"-databank action=load project={project} name={cfg['input']} "
-                    f"folder={staged}", role)
+        load = f"-databank action=load project={project} name={cfg['input']} folder={staged}"
+        worker.checked(worker.call(load, role), load)
         time.sleep(cfg["settle_s"])
         offsets = sqxlog.mark(top)
         reply = worker.call(f"-project action=start name={project}", role)
@@ -83,6 +83,10 @@ def run(project: str, role: str, strategy: Path, work: Path, outputs: dict[str, 
                 time.sleep(cfg["poll_s"])
                 if any(folder.glob("*.sqx")):
                     break
+            else:       # a load or a sync that failed must never read as «SQX did not trade»
+                raise SystemExit(f"{bank} ({firm}): nada en disco tras el sync de {project} en "
+                                 f"{cfg['sync_tries'] * cfg['poll_s']} s: el retest no dejó su "
+                                 "estrategia; no se compara nada")
             folders[firm] = folder
     finally:
         worker.stop(role, export=False)
@@ -96,8 +100,8 @@ def firm_trades(folders: dict[str, Path], work: Path) -> dict[str, pd.DataFrame]
     """Every trade each firm's retest made, exported with the worker down.
 
     Returns:
-        {firm: trades in SQX's export shape}. An empty databank is an empty frame: the
-        comparison then says the retest traded nothing, rather than failing here.
+        {firm: trades in SQX's export shape}. An empty databank is an empty frame — one `run`
+        no longer returns: it raises when a firm's retest left nothing on disk.
     """
     out = {}
     for firm, folder in folders.items():

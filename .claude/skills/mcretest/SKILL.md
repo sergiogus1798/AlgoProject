@@ -1,11 +1,12 @@
 ---
 name: mcretest
-description: Configure the eight MC Retest tasks of a custom SQX project — one perturbation each, the asset's own ranges, acceptance silenced, and the MinDistance task only when the population trades with stop or limit orders. Use when the owner asks to set up, configure or prepare the MC Retest in SQX, the MCR tasks, or the step 13 of the workflow.
+description: Configure the MC Retest tasks of a custom SQX project (the stage runs three of the catalogue's eight: MCR 1 Bar, MCR 4 MinDist, MCR 7 OHLC) — one perturbation each, the asset's own ranges, acceptance silenced, and the MinDistance task only when the population trades with stop or limit orders. Use when the owner asks to set up, configure or prepare the MC Retest in SQX, the MCR tasks, or the step 13 of the workflow.
 ---
 
 # /mcretest
 
-Step 13 of the workflow, the SQX half. It leaves the eight MC Retest tasks of a custom project
+Step 13 of the workflow, the SQX half. It leaves the MC Retest tasks of a custom project (three in the stage — `MCR 1 Bar`,
+`MCR 4 MinDist`, `MCR 7 OHLC` — out of a catalogue of eight)
 configured and ready to run. Reading what they produce is `studies/breakage/mcRetest/`
 (step 14), and the Monte Carlo that reorders trades is OUT of the workflow on purpose.
 

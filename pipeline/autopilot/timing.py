@@ -10,7 +10,7 @@ from core.phases import COLUMNS
 # the Python of the action itself — the studies, the judge, the configurators.
 BUCKETS = {"sqx": "sqx", "start": "arranque", "ready": "arranque", "stop": "parada",
            "sync": "sync", "snapshot": "copias", "restore": "copias", "compare": "copias",
-           "fill": "copias"}
+           "fill": "copias", "execute.sqx": "sqx", "execute.sync": "sync"}
 ORDER = ["sqx", "arranque", "parada", "export", "sync", "copias", "resto"]
 SLACK = 0.05    # s: a child written by a subprocess may end a hair after its parent's clock
 

@@ -12,9 +12,10 @@ from sqx.templates.holes import conditions
 # Rule 15 (owner, 2026-10-02): nothing that reads the clock or the calendar. Every such block
 # the builder can sample is a native of SQX's «Bar And Time» category under one of these names.
 CLOCK = re.compile(r"^(Current|Bar)(Hour|Minute|DayOf|WeekOf|Month|Time)|^IsMonth")
-# Custom blocks that read the session or the clock, forbidden like the natives (owner, 2026-10-11).
+# Custom blocks that read the session or the clock, forbidden like the natives (owner, 2026-10-11; SessionClose and the custom-hours volume profiles, 2026-10-13).
 CLOCK_NAMES = frozenset({"CBlock_TimeBreakoutLong", "CBlock_TimeBreakoutLong_2",
-                         "SessionHigh", "SessionLow", "SessionOpen"})
+                         "SessionHigh", "SessionLow", "SessionOpen", "SessionClose",
+                         "VolumeProfileCustomHours", "VolumeProfileCustomHoursMultiSession"})
 # The Build's own `category` per block → what it is to a strategy. `stopLimitBlocks` is the
 # price of a stop or limit ENTRY order; whether such an order can be placed at all is
 # `<OrderTypes>` (`EnterAtStop`, `EnterAtLimit`), which `buildrules.set_order_types` governs.

@@ -9,12 +9,14 @@ with the six integers, and `batches_screened` (B) is what the step-8 rule reads.
 
 import csv
 import hashlib
+import io
 import json
 import sys
 from datetime import datetime, timezone
 from collections import defaultdict
 
 from core.paths import DATA, ROOT
+from core.store.write import atomic, locked
 from ledger import study as studymod
 from studies.research.memory import sources
 
@@ -68,22 +70,33 @@ def _judged() -> dict[str, dict]:
 
 def _save(rows: dict[str, dict]) -> None:
     """Write `projects.csv`."""
-    FOLDER.mkdir(parents=True, exist_ok=True)
-    with PROJECTS.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, FIELDS)
-        w.writeheader()
-        w.writerows(rows.values())
+    buf = io.StringIO(newline="")
+    w = csv.DictWriter(buf, FIELDS)
+    w.writeheader()
+    w.writerows(rows.values())
+    atomic(PROJECTS, buf.getvalue().encode(), seal=False)     # a reader never sees it half-written
 
 
-def note(project: str, screened: int) -> None:
-    """Upsert one project's step-8 judgement (`judge.judge`): idempotent, a re-run replaces it."""
-    _save(_judged() | {project: {"project": project, "screened": screened}})
-    new = not JUDGEMENTS.exists()      # the same sha256 `judge.ledger_row` signs its ledger row with
-    with JUDGEMENTS.open("a", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        if new:
-            w.writerow(("project", "date", "sha256"))
-        w.writerow((project, _now(), hashlib.sha256(CRITERIA.read_bytes()).hexdigest()))
+def note(project: str, screened: int) -> bool:
+    """Upsert one project's step-8 judgement (`judge.judge`): `screened` never decreases, so a
+    resume that re-judges the already-cut databank cannot understate the multiple-testing count.
+    Every judgement is still dated and hashed in `judgements.csv`, the edits-since-seal audit.
+
+    Returns:
+        False when `screened` is below the project's recorded one: the cut bank judged again,
+        which signs no second ledger row.
+    """
+    with locked(FOLDER):      # read-change-write: two processes at once lost an update
+        rows = _judged()
+        before = int(rows.get(project, {}).get("screened") or 0)
+        _save(rows | {project: {"project": project, "screened": max(before, screened)}})
+        new = not JUDGEMENTS.exists()      # the same sha256 `judge.ledger_row` signs its ledger row with
+        with JUDGEMENTS.open("a", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            if new:
+                w.writerow(("project", "date", "sha256"))
+            w.writerow((project, _now(), hashlib.sha256(CRITERIA.read_bytes()).hexdigest()))
+    return screened >= before
 
 
 def _now() -> str:
@@ -185,16 +198,16 @@ def look_oos2(project: str, max_looks: int) -> int:
     cell = key(d["symbol"], d["timeframe"], d["direction"], d["family"])
     if UNKNOWN in (d["direction"], d["family"]):
         raise PermissionError(f"celda {cell}: sin dirección o familia no hay celda a la que apuntar la mirada")
-    extras = json.loads(EXTRAS.read_text(encoding="utf-8")) if EXTRAS.exists() else {}
-    now, seen = extras.get(cell, {}).get("oos2", 0), extras.get(cell, {}).get("oos2_projects", [])
-    if project not in seen:
-        if now >= max_looks:
-            raise PermissionError(f"celda {cell}: «solo vivo», ya tiene {now} miradas a oos2 "
-                                  f"(máximo {max_looks}); no se lee")
-        now, seen = now + 1, [*seen, project]
-        extras[cell] = {**extras.get(cell, {}), "oos2": now, "oos2_projects": seen}
-        FOLDER.mkdir(parents=True, exist_ok=True)
-        EXTRAS.write_text(json.dumps(extras), encoding="utf-8")
+    with locked(FOLDER):      # read-change-write: two processes at once lost a look
+        extras = json.loads(EXTRAS.read_text(encoding="utf-8")) if EXTRAS.exists() else {}
+        now, seen = extras.get(cell, {}).get("oos2", 0), extras.get(cell, {}).get("oos2_projects", [])
+        if project not in seen:
+            if now >= max_looks:
+                raise PermissionError(f"celda {cell}: «solo vivo», ya tiene {now} miradas a oos2 "
+                                      f"(máximo {max_looks}); no se lee")
+            now, seen = now + 1, [*seen, project]
+            extras[cell] = {**extras.get(cell, {}), "oos2": now, "oos2_projects": seen}
+            atomic(EXTRAS, json.dumps(extras).encode(), seal=False)
     return now
 
 

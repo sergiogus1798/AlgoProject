@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pandas as pd
+import pyarrow as pa
 
 from core import assets, sqxfile, trades as core_trades
 from core.paths import harvest_dir
@@ -70,9 +71,12 @@ def read(project: str, harvest_databank: str, identities: dict[str, str],
         paired (dropped OOS, `studies.screening.gate`) is silently absent -- the caller has
         no window to benchmark it against either.
     """
-    frame = pd.read_parquet(newest_harvest(project, harvest_databank) / "trades.parquet")
     by_identity = {identity: strategy for strategy, identity in identities.items()}
-    got = frame[(frame["identity"].isin(by_identity)) & (frame["sample"] == sample)].copy()
+    # Only this ingest's rows and the columns `cost` and KEEP read: the harvest holds 10,000 strategies.
+    got = pd.read_parquet(newest_harvest(project, harvest_databank) / "trades.parquet",
+                          columns=["identity", "sample", "Type", "Open time", "Close time", "Size",
+                                   "Open price", "Close price", "Profit/Loss"],
+                          filters=[("identity", "in", pa.array(sorted(by_identity), pa.string())), ("sample", "==", sample)])
     got["strategy"] = got["identity"].map(by_identity)
     got["cost"] = core_trades.cost(got, point_value)
     got["pnl"] = got["Profit/Loss"]

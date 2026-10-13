@@ -3,6 +3,7 @@
 
 import ast
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -36,6 +37,18 @@ def internal_names(files: list[Path]) -> set[str]:
     return names
 
 
+@lru_cache(maxsize=None)
+def tree(path: Path) -> ast.Module:
+    """The parsed file, once per process: depmap, checks and layering all read the same 1,500."""
+    return ast.parse(path.read_text(encoding="utf-8"))
+
+
+@lru_cache(maxsize=None)
+def nodes(path: Path) -> tuple[ast.AST, ...]:
+    """Every node of the file's tree, walked once: the four checks that scan it share this."""
+    return tuple(ast.walk(tree(path)))
+
+
 def imports_of(path: Path) -> set[str]:
     """Top-level module names imported by one file.
 
@@ -46,9 +59,8 @@ def imports_of(path: Path) -> set[str]:
         First segment of every import, e.g. "numpy" for "import numpy.linalg".
         Relative imports are reported as the bare name they import.
     """
-    tree = ast.parse(path.read_text(encoding="utf-8"))
     found = set()
-    for node in ast.walk(tree):
+    for node in nodes(path):
         if isinstance(node, ast.Import):
             found |= {a.name.split(".")[0] for a in node.names}
         elif isinstance(node, ast.ImportFrom) and node.module:
@@ -65,7 +77,7 @@ def summary(path: Path) -> str:
     Returns:
         One line of prose describing the module.
     """
-    doc = ast.get_docstring(ast.parse(path.read_text(encoding="utf-8")))
+    doc = ast.get_docstring(tree(path))
     return doc.splitlines()[0] if doc else "— no module docstring —"
 
 

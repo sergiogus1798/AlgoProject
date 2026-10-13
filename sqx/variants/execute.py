@@ -14,11 +14,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core import worker
 from core.paths import worker_dir
+from core.phases import phase
 from sqx.variants import banks, inputs, legs as legmod, livexec
 
 TESTED, IN_BANK = banks.TESTED, banks.IN_BANK      # `spp` reads TESTED from here
 SETTLE = 8          # seconds SQX needs after `load` before the databank answers for them all
-
 STOCK = {"Builder", "Retester"}   # SQX's own projects: never a harness (hard rule 10)
 
 
@@ -86,8 +86,7 @@ def load(folder: Path, cfg: dict) -> None:
     time.sleep(SETTLE)
 
 
-def run(expected: int, cfg: dict,
-        progress: Callable[[int, str], None]) -> int:
+def run(expected: int, cfg: dict, progress: Callable[[int, str], None]) -> int:
     """Run the harness's retest task and wait for it.
 
     Args:
@@ -96,7 +95,8 @@ def run(expected: int, cfg: dict,
         progress: Called with a percentage and a status line as the run advances.
 
     Returns:
-        How many strategies SQX reports as tested. SystemExit when SQX aborts the project,
+        How many strategies SQX reports as tested, fewer than `expected` when its log says
+        «Project finished» first. SystemExit when SQX refuses the start or aborts the project,
         when a status reply carries no count, or past `worker.MAX_HOURS`.
 
         ⚠️ `action=startOnlyTask` is NOT used: on this install it reports the project
@@ -109,17 +109,18 @@ def run(expected: int, cfg: dict,
     base = banks.in_bank(_call(f"-project action=status name={project}", cfg), project)
     logs = worker_dir(cfg["role"]) / "user/log/StrategyQuant"
     seen, began = banks.mark(logs), time.monotonic()
-    if "Cannot start" in (reply := _call(f"-project action=start name={project}", cfg)):
-        raise SystemExit(f"SQX no arrancó {project}: {reply.strip()}")   # unresolved
-    done = 0
-    while done < expected:
+    reply = _call(f"-project action=start name={project}", cfg)
+    if "rror" in reply or "Cannot start" in reply:      # as ui/daemon/launch/run.py: unresolved
+        raise SystemExit(f"SQX no arrancó {project}: {reply.strip()}")
+    done, end = 0, None
+    while done < expected and not end:
         time.sleep(cfg["poll_seconds"])
-        if banks.aborted(logs, seen):
+        end = banks.ended(logs, seen)      # read before the status: a finished run's count is final
+        if end == banks.ABORTED:
             raise SystemExit(f"SQX abortó {project} («Error while running project», "
                              f"ver {logs}) con {done} de {expected} reteseadas")
         if time.monotonic() - began > worker.MAX_HOURS * 3600:
-            raise SystemExit(f"{project} sigue en {done} de {expected} reteseadas tras "
-                             f"{worker.MAX_HOURS} h: se deja de esperar")
+            raise SystemExit(f"{project} sigue en {done} de {expected} tras {worker.MAX_HOURS} h")
         done = banks.tested(_call(f"-project action=status name={project}", cfg), project, base)
         progress(done * 100 // expected, f"{done} de {expected} reteseadas")
     return done
@@ -165,7 +166,8 @@ def synced(expected: int, cfg: dict, databank: str) -> tuple[Path, int]:
         ⚠️ A poll, not a sleep: syncing 962 `.sqx` took 21.95 s (2026-09-23), and the cost
         grows with the batch — a fixed wait returns a folder still filling.
     """
-    _call(f'-databank action=synctofiles project={cfg["project"]} name={databank}', cfg)
+    command = f'-databank action=synctofiles project={cfg["project"]} name={databank}'
+    worker.checked(_call(command, cfg), command)
     folder = legmod.bank_dir(cfg["role"], cfg["project"], databank)
     # 🔬 2026-10-05: SQX writes ~9 MB/s — 3,952 IS variants with 11 extra markets took 166 s,
     # 24 a second; the wait grows with the batch at a quarter of that, never under the floor.
@@ -180,8 +182,7 @@ def synced(expected: int, cfg: dict, databank: str) -> tuple[Path, int]:
 def main() -> None:
     """Load one batch, retest it, and leave the raw panel beside it."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--work", type=Path,
-                    help="the batch directory: holds sqx/ and manifest.parquet")
+    ap.add_argument("--work", type=Path, help="the batch directory: sqx/ and manifest.parquet")
     ap.add_argument("--project", required=True,
                     help="the custom project holding the three WFC legs: the workflow's own "
                          "(`builder --workflow`), or one built with --tasks Retest")
@@ -199,8 +200,7 @@ def main() -> None:
         gone = (livexec.clear if be is livexec else banks.clear)(cfg)
         print(f"{gone} .sqx borrados de {cfg['project']}: entrada y los tres tramos")
         return
-    legs = legmod.legs()
-    folder = a.work / "sqx"
+    legs, folder = legmod.legs(), a.work / "sqx"
     n = len(list(folder.glob("*.sqx")))
 
     cfx = worker_dir(cfg["role"]) / "user/projects" / a.project / "project.cfx"
@@ -220,18 +220,18 @@ def main() -> None:
     # A worker left running is a worker that will auto-sync, and a sync deletes the .sqx
     # it does not hold in memory (hard rule 1).
     try:
-        print(f"PROGRESS 5 cargando {n} variantes en "
-              f"{cfg['project']}/{legmod.source()}", flush=True)
-        be.load(folder, cfg)
-        # One `action=start` runs the project's three active retest tasks in chain --
-        # build, oos1, oos2 -- so the progress counter passes `n` twice on its way. It is
-        # the last leg that has to finish, and that is what `expected` counts here.
-        done = be.run(n * len(legs), cfg, say) // len(legs)
+        print(f"PROGRESS 5 cargando {n} variantes en {cfg['project']}/{legmod.source()}", flush=True)
+        with phase("execute.sqx"):
+            be.load(folder, cfg)
+            # One `action=start` runs the project's three active retest tasks in chain --
+            # build, oos1, oos2 -- so the progress counter passes `n` twice on its way. It is
+            # the last leg that has to finish, and that is what `expected` counts here.
+            done = be.run(n * len(legs), cfg, say) // len(legs)
         harvest = []
         for leg in legs:
             print(f"PROGRESS 92 exportando {leg['databank']}", flush=True)
             csv = be.panel(a.work, cfg, leg["databank"], f"retest_{leg['segment']}")
-            bank, on_disk = be.synced(done, cfg, leg["databank"])
+            with phase("execute.sync"): bank, on_disk = be.synced(done, cfg, leg["databank"])
             harvest.append(leg | {"panel": csv.name, "databank_dir": str(bank),
                                   "n_on_disk": on_disk})
     finally:

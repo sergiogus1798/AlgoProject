@@ -7,6 +7,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from core.store.write import locked
+
 FILE = "distribuciones.parquet"
 BINS = 200        # over the whole range of the draws, never clipped
 EMPTY = np.array([], np.float32)
@@ -92,9 +94,9 @@ def merge(folder: Path, rows: list[dict]) -> None:
     if not rows:
         return
     path, new = Path(folder) / FILE, pd.DataFrame(rows)
-    if path.exists():
-        old = pd.read_parquet(path)
-        mine = old["strategy"].isin(set(new["strategy"]))
-        rows = old[old["test"].isin(set(new["test"])) & ~mine].to_dict("records") + rows
-    Path(folder).mkdir(parents=True, exist_ok=True)
-    save(folder, rows)
+    with locked(Path(folder)):      # `--strategy` runs side by side read, change and rewrite one file
+        if path.exists():
+            old = pd.read_parquet(path)
+            mine = old["strategy"].isin(set(new["strategy"]))
+            rows = old[old["test"].isin(set(new["test"])) & ~mine].to_dict("records") + rows
+        save(folder, rows)

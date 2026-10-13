@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 from core import worker
+from core.store.write import atomic
 from core.paths import WORKERS
 from core.researchpaths import autopilot_runs
 from sqx.projects import stage
@@ -21,10 +22,15 @@ def _history() -> Path:
     return autopilot_runs() / "task-durations.json"
 
 
+def _longest() -> dict:
+    """The history on disk now."""
+    f = _history()
+    return json.loads(f.read_text()) if f.exists() else {}
+
+
 def fresh() -> dict:
     """What one wait tracks: the task running now, when its start line was read, and the history."""
-    f = _history()
-    return {"task": None, "since": 0.0, "longest": json.loads(f.read_text()) if f.exists() else {}}
+    return {"task": None, "since": 0.0, "longest": _longest()}
 
 
 def note(cap: dict, line: str) -> None:
@@ -36,9 +42,14 @@ def note(cap: dict, line: str) -> None:
     if seconds is None:
         cap.update(task=task, since=time.monotonic())
         return
-    cap["longest"][task] = max(cap["longest"].get(task, 0), float(seconds))
-    cap["task"] = None
-    _history().write_text(json.dumps(cap["longest"], indent=1, sort_keys=True), encoding="utf-8")
+    # Two waits at once (conductor and custodian) each hold their own copy: the file is read
+    # again and merged by max, or the later writer lowered the other's record and `enforce`
+    # aborted a healthy long task. Whole file or nothing, for a reader in the middle.
+    known = {**cap["longest"], task: max(cap["longest"].get(task, 0), float(seconds))}
+    for title, longest in _longest().items():
+        known[title] = max(known.get(title, 0), longest)
+    cap.update(task=None, longest=known)
+    atomic(_history(), json.dumps(known, indent=1, sort_keys=True).encode("utf-8"), seal=False)
 
 
 def enforce(cap: dict, role: str, log: Path) -> None:

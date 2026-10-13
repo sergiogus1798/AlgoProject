@@ -31,7 +31,7 @@ def scanned(asset: str, do: list[dict]) -> None:
 
 def reopen(data: dict, out: Path) -> dict:
     """A step that failed halfway left partial results the rail reads as done (OPEN #111):
-    when the run before `out` (the newest stamp folder beside it) ended in `FALLO en el paso N`,
+    when the run before `out` (the newest stamp folder beside it) ended in `FALLO en el paso N` or was cut mid-step (OOM, SIGKILL: no `FIN`),
     `N` runs again. The kinds whose half-done output reads as done are the ones that write their
     own files: a python study, and 16.5, whose variant factory writes a batch per mother (the rail
     calls 16.5 an `sqx` step; the plan emits it as `variants`). A real `sqx` step is not one: its
@@ -40,12 +40,13 @@ def reopen(data: dict, out: Path) -> dict:
     📓 2026-10-11: gorilla's 16.5 died of OutOfMemoryError, the rerun skipped it as done and 18.5
     failed on the half-made batch of one mother."""
     try:
-        said = (max(d for d in out.parent.iterdir() if d.is_dir() and d != out) / "estado.txt").read_text(encoding="utf-8").splitlines()[-1]
+        said = (max(d for d in out.parent.iterdir() if d.is_dir() and d != out and (d / "estado.txt").exists())
+                / "estado.txt").read_text(encoding="utf-8").splitlines()[-1]
     except (OSError, IndexError, ValueError):
         return data
-    m = re.search(r"FALLO en el paso (\S+):", said)
+    m = re.search(r"FALLO en el paso (\S+):|\] paso (\S+) ·", said)     # a cut run's last line is "[k/n] paso N · …"
     for step in data["steps"]:
-        if m and step["n"] == m[1] and (step["kind"] == "python" or step["n"] == "16.5"):
+        if m and step["n"] == (m[1] or m[2]) and (step["kind"] == "python" or step["n"] == "16.5"):
             step["state"] = "pending"
             for t in step["tests"]:
                 t["state"] = "pending"

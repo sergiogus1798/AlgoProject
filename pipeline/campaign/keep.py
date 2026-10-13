@@ -44,7 +44,7 @@ def keep(cell: dict, run: Path | None, state: str) -> dict:
     folder = campaign_dir() / "runs" / name
     while folder.exists():                      # an interrupted cell resumed within the same second
         folder = folder.with_name(folder.name + "b")
-    folder.mkdir(parents=True)
+    folder.mkdir(parents=True, exist_ok=True)
     rows, finalists, skipped = [], [], []
     if run:
         shutil.copytree(run, folder / "run")

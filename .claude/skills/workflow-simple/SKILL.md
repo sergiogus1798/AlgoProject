@@ -19,7 +19,7 @@ values, launch, wait, and report.
 | FAMILY | the idea family of the strategy, one key of `_expected_sign` in `assets/_markets.yaml` (`python3 -c "from core.assetdata import expected_sign; print(list(expected_sign()))"`): `breakout`, `trendFollowing`, `meanReversion`, `momentum`, `volatility`, `pattern`, `session`. Recorded in `projects/registry.csv`; step 10 reads it. **Missing or unclear: ask the owner (rule 11), never default** | `breakout` |
 | PALETTE | one idea family: a file name of `sqx/blocks/palettes/` without `.yaml` (hard rule 15) | `tendencia_base_v3` |
 | PURPOSE | one sentence, what the project is for | `"Tendencia en Nikkei M30, largos"` |
-| STRATEGIES | how many the build stops at | `1000` |
+| STRATEGIES | the databank's capacity; the build stops at its time limit (MINUTES), not when this fills (5/5 runs of 2026-10-10/11 stopped at exactly 1,800 s; `assets/_build.yaml:75-80`) | `1000` |
 | MINUTES | the build's time cap | `20` |
 
 If the owner did not give one of them, ask for it. `--smoke` only when he says it is a functional
@@ -65,7 +65,7 @@ what ran, seconds, the cut (in → out), and where it stopped. Then, by the last
 | `FALLO en el paso N: …` | failed | report N and the first lines of `fallo.md`; then §4 |
 | `workflow: …` (no status line) | refused before starting | report the sentence as it is; do not work around it |
 
-Refusal «custodian: los databanks no terminaron de cargarse en 5 min; no se toca nada»: a `stop` killed SQX mid-save and left a truncated `.sqx`. Do not retry; report it (`knowhow/sqx-drive/stop-killed-mid-save-truncated-sqx.md`).
+Refusal «custodian: los databanks no terminaron de cargaron en 5 min; sesión matada por PID, ficheros intactos»: an earlier `stop` killed SQX mid-save and left a truncated `.sqx`. Do not retry; report it (`knowhow/sqx-drive/stop-killed-mid-save-truncated-sqx.md`).
 
 ## 4. After a failure — exactly this, nothing else
 
@@ -82,7 +82,8 @@ Refusal «custodian: los databanks no terminaron de cargarse en 5 min; no se toc
 - Run workflow steps by hand, one by one, or call SQX directly: this command is the only way
   (CLAUDE.md hard rule 19).
 - Use the master install, `pkill`, or a project that is not the one named here.
-- Delete or retire the project when it ends unless the owner says so (a `Test_` project is
-  retired with `python3 -m sqx.projects.retire <P> --role custodian --yes`, worker stopped).
+- Leave a `Test_` project behind: whoever creates it retires it when the run has answered
+  (CLAUDE.md rule 6; owner, 2026-10-13) — `python3 -m sqx.projects.retire <P> --role custodian
+  --yes`, worker stopped. A `Trade_` or `Research_` project is never retired here.
 - Change `pipeline/autopilot/criteria.yaml`. Its rules are the owner's.
 - Guess a missing argument. Ask (hard rule 11).

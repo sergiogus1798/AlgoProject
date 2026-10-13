@@ -105,6 +105,7 @@ def distribution(title: str, unit: str, values: np.ndarray, real: float | None, 
     """
     v = np.asarray(values, dtype=float)
     v = v[np.isfinite(v)]
+    if not v.size: raise ValueError(f"{title}: no finite draw to build a distribution from")
     inside, lo, hi = clip.clip(v)
     edges = np.histogram_bin_edges(inside, bins=bins, range=(lo, hi if hi > lo else lo + 1))
     counts = np.histogram(inside, bins=edges)[0]

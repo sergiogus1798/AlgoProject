@@ -73,8 +73,9 @@ def close(role: str, project: str, failed: dict | None = None) -> None:
         if task["title"] in titles:
             for f in (held["cfx"].parent / "databanks" / task["output"]).glob("*.sqx"):
                 f.unlink()
-    newest = max((held["cfx"].parent / "log").glob("global_log_*.log"), key=lambda f: f.stat().st_mtime)
-    if newest.stat().st_mtime < failed["since"]:        # the step never started: that log is an earlier step's
+    newest = max((held["cfx"].parent / "log").glob("global_log_*.log"), key=lambda f: f.stat().st_mtime,
+                 default=None)      # no log yet: a ValueError here hid the real failure (📓 2026-10-11)
+    if newest is None or newest.stat().st_mtime < failed["since"]:   # the step never started: that log is an earlier step's
         newest = None
     else:
         newest.rename(newest.with_suffix(".log.descartado"))
@@ -133,11 +134,9 @@ def execute(pre: dict, project: str) -> dict:
     say(60, f"{', '.join(titles)} lanzada(s)")
     began = time.time()
     with phase("sqx", " + ".join(titles)):
-        end = live.run(role, project, config)
-    if "Error" in end:
-        sys.exit(f"SQX: {end}")
+        live.run(role, project, config)      # returns on «Project finished» alone: `live.wait` raises on every abort line
     with phase("sync", "después"):
-        live.sync(role, project)
+        live.sync(role, project, force={t["output"] for t in chosen if t["output"]})   # rewritten at one count
     outputs = {t["output"] for t in chosen}
     with phase("compare"):
         after = counts(held.parent)

@@ -4,7 +4,6 @@
 import argparse
 import shutil
 import sys
-from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -30,9 +29,9 @@ def gather(work: Path, project: str, day: str | None = None) -> int:
     """Reunite the three legs' exports of one batch and delete them.
 
     Args:
-        work: The batch folder.
+        work: The batch folder; its `ran.json` is when `execute` retested the batch.
         project: The project whose three leg databanks `export_retest` just exported.
-        day: The export's date; today when absent, as `export_retest` writes it.
+        day: The export's date; the newest export of this batch when absent.
 
     Returns:
         The trades written. Schema: `core.tradestore.KEEP` (schema T) plus `variant_id` (the
@@ -41,8 +40,21 @@ def gather(work: Path, project: str, day: str | None = None) -> int:
         which is NOT the market (knowhow/export/data-all-blocks.md). The
         controls are in it, tagged in `manifest.parquet`; nobody analyses them.
         The per-leg export folders are removed: this file is their only keeper.
+        SystemExit, with `day` absent, when no export of the batch exists or the newest one
+        is older than the batch's retest: another day's leftover, never read as this batch.
     """
-    day = day or date.today().isoformat()
+    # the export just ran: its day is the newest one with this tag, not "today", which can be
+    # the next day when the export started before midnight
+    if not day:
+        first = export_dir(project, legmod.legs()[0]["databank"], "")
+        days = [d.name for d in first.glob("*") if (d / TAG / "trades.parquet").exists()]
+        if not days:
+            raise SystemExit(f"{project}: ningún export «{TAG}» en {first}; corre antes "
+                             f"`sqx.export.export_retest --project {project} --batch {TAG}`")
+        day, ran = max(days), work / "ran.json"
+        if ran.exists() and (first / day / TAG / "trades.parquet").stat().st_mtime < ran.stat().st_mtime:
+            raise SystemExit(f"{project}: el export «{TAG}» más nuevo ({day}) es anterior al retest "
+                             f"de {work.name}: es de otro lote, y el de este no escribió nada")
     parts, folders, own = [], [], main_feed(project)
     for leg in legmod.legs():
         folder = export_dir(project, leg["databank"], day, TAG)
@@ -67,7 +79,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--work", required=True, type=Path)
     ap.add_argument("--project", required=True)
-    ap.add_argument("--day", help="export date; today when absent")
+    ap.add_argument("--day", help="export date; the newest export of the batch when absent")
     a = ap.parse_args()
     print(f"{a.work.name}: {gather(a.work, a.project, a.day)} operaciones en {OUT}")
 

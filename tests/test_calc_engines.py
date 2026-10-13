@@ -20,7 +20,6 @@ from engines.inference import excess, fdr
 from engines.inference.snooping import superior
 from engines.market import calibrate
 from engines.nulls import inputs, kernel, model, stats, verdict
-from engines.nulls.placement import kernel as pkernel
 from engines.regimes import regime
 from ledger import trials
 
@@ -81,27 +80,8 @@ def test_drawdown_from_start(pnl: tuple, dd: float) -> None:
         assert out[3] == pytest.approx(-0.4, abs=1e-12)
 
 
-def _placement(entries: list, holds: list, leave: list) -> np.ndarray:
-    """One run of the placement kernel; returns its stats row."""
-    n = len(entries)
-    st, cv = np.zeros((1, 10)), np.zeros((1, 4))
-    pkernel.batch(np.array([entries]), np.array([holds]), np.asarray(leave, float), np.zeros(len(leave)),
-                  1.0, np.ones(n), np.zeros(n), 0.0, 1.0, 10000.0, len(leave), st, cv)
-    return st[0]
-
-
-def test_placement_drawdown_from_start() -> None:
-    """Placement kernel: a run opening with a loss counts it."""
-    st = _placement([0, 0, 0], [1, 2, 3], [0.0, -100.0, 50.0, 60.0, 0.0])
-    assert st[2] == pytest.approx(100.0, abs=1e-12)
-    assert st[3] == pytest.approx(0.01, abs=1e-12)
-    assert st[4] == pytest.approx(0.1, abs=1e-12)
-
-
 def test_drawdown_reads_exit_order() -> None:
     """Columns P/L (-60, +100, -60) but exits fall in time as +100, -60, -60: dd 120, run 2."""
-    st = _placement([1, 0, 2], [1, 1, 1], [0.0, 100.0, -60.0, -60.0, 0.0])
-    assert (st[2], st[7]) == (pytest.approx(120.0, abs=1e-12), 2.0)
     out = np.empty((1, 5))
     kernel.runs(np.array([[1, 0, 2]]), np.ones((1, 3), np.int64), np.ones((1, 3)), np.zeros(4),
                 np.array([0.0, 100.0, -60.0, -60.0]), np.zeros(3), 1.0, out)
@@ -210,14 +190,6 @@ def test_touched_reads_the_last_bar() -> None:
     offset, on_stop, on_target = kernel.touched(np.array([0]), np.array([3]), low, high,
                                                 np.array([5.0]), np.array([20.0]))
     assert (offset[0], bool(on_stop[0]), bool(on_target[0])) == (3, True, False)
-
-
-def test_placement_log_return_pays_the_cost() -> None:
-    """A flat price leaves the mean log return at minus the cost rate."""
-    st, cv = np.zeros((1, 10)), np.zeros((1, 4))
-    pkernel.batch(np.array([[0, 1]]), np.array([[1, 1]]), np.ones(5), np.ones(5), 1.0, np.ones(2),
-                  np.zeros(2), 0.01, 1.0, 10000.0, 5, st, cv)
-    assert st[0, 9] == pytest.approx(-0.01, abs=1e-12)
 
 
 def test_distrust_flags_a_p_on_the_floor() -> None:

@@ -116,7 +116,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
     exits. The same condition twice on two periods (double ROC, double Vortex) counts as one
     fixed (owner, 2026-10-05). → `knowhow/authoring/condition-count-simple-vs-template.md`
 15. **What the builder may draw** (owner, 2026-10-02): **no time blocks** — BarTime, CurrentTime, day
-    of week / of month, any block that reads the clock or the calendar — in any study or generation;
+    of week / of month, any block that reads the clock or the calendar, session close and custom-hours volume profile included (owner, 2026-10-13) — in any study or generation;
     **no stop/limit entry blocks** while orders are at market (they only work with stop or limit
     orders); and **never the whole palette**: one run per idea family (trend following, breakout,
     mean reversion…), each with the conditions and indicators that suit it.
@@ -169,6 +169,13 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
     opens one. And **one task per session, `/clear` between tasks**: a session's cost grows with the
     SQUARE of its length, and the 15 longest were 53 % of everything.
     → `knowhow/eng/token-spend-is-context-reread.md`
+
+21. **Old code is deleted, never kept.** Owner, 2026-10-13, «regla dura de programación: todo código
+    viejo se elimina». A route, module, script, config key or test that a newer one replaced, or that
+    no production caller reaches, goes in the same task that replaces or finds it — with its
+    citations (README, manual row, knowhow card, `OPEN.md`). No «old route kept for reference», no
+    commented-out block, no compatibility shim: git is the archive. Before deleting, grep every
+    caller; a live one means it is not old.
 
 ## ROUTER — read only what the task needs
 

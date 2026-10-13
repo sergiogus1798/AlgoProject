@@ -38,7 +38,7 @@ became is `docs/MAPA-DE-CARPETAS.md`.
   five state words, the config's hash, JSON-safe. The window paints that dict; the batch page and
   the `.md` are drawn from the same dict by `core/study/render`, so they cannot disagree.
 - **Results land in `reports/<P>/<D>/<day>/<study>/`** — `<study>.json/.html/.md` for the
-  population, `estrategias/<name>.json/.html` per strategy, `verdict.csv` with `strategy`,
+  population, `estrategias/<name>.json` per strategy (its page is drawn on demand), `verdict.csv` with `strategy`,
   `identity` and `verdict` for `/curate`, and a manifest naming the absolute input judged.
   Studies that read a variant batch write into the batch's `estudios/` instead.
 - **Progress is a `PROGRESS <0..100> <state>` line on stdout.** The window and the pipeline move

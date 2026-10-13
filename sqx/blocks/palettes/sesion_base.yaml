@@ -30,9 +30,6 @@ note: 'Paleta PURA de familia, sin CurrentHour, sin día del mes y sin ningún b
   mes, y el perfil de volumen y TPO.'
 unlabelled: 'off'
 overrides:
-  SessionHigh: 3
-  SessionLow: 3
-  SessionOpen: 2
   OpenD: 2
   HighD: 2
   LowD: 2

@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import manifest, sqxfile
+from core import fanout, manifest, sqxfile
 from core.paths import MASTER, databank_dir, export_dir, harvest_dir, worker_dir
 from studies.screening.gate import collect, pairing
 
@@ -138,7 +138,8 @@ def main() -> None:
     # Aligned on the index, never positionally: `metrics` comes back in SQX's own export
     # order and `matched` is sorted, so a list here would attach each shape to the wrong
     # strategy without anything failing.
-    metrics["structure"] = pd.Series({i: sqxfile.structure(pairs[i][1]) for i in matched})
+    shapes = dict(fanout.run(sqxfile.structure, {pairs[i][1]: 1 for i in matched}, collect.WORKERS))
+    metrics["structure"] = pd.Series({i: shapes[pairs[i][1]] for i in matched})
     metrics.to_parquet(out / "metrics.parquet", compression="zstd")
     trades = pd.concat([f["trades"].assign(sample=side) for side, f in sides.items()])
     trades.to_parquet(out / "trades.parquet", compression="zstd", index=False)

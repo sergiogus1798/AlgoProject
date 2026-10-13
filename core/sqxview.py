@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import sqxfile, sqxstats
+from core import fanout, sqxfile, sqxstats
 
 # The owner's «Export Data View», column for column, in its order, as SQStats keys: the
 # metrics are read off each .sqx instead of exported through a conductor cycle. 🔬 2026-09-27,
@@ -28,6 +28,7 @@ VIEW = {10: [("Net profit", "NetProfit"), ("# of trades", "NumberOfTrades"),
              ("Sortino Ratio", "SortinoRatio"), ("Winning Percent", "WinningPct"),
              ("Ulcer Index %", "UlcerIndex"), ("ZScore", "ZScore")]}
 LABEL = {10: "(IS)", 20: "(OOS)"}
+_FILES: dict[str, Path] = {}    # what frame() hands its forked children
 
 
 def frame(files: dict[str, Path]) -> pd.DataFrame:
@@ -46,24 +47,30 @@ def frame(files: dict[str, Path]) -> pd.DataFrame:
         `Param Count source` names where it came from; `DoF Ratio (IS)` is the IS trades
         over that count. SQX no longer carries either column.
     """
-    rows = []
-    for name, f in files.items():
-        st = sqxstats.stats(f)
-        row = {"Strategy Name": name, "Filters result": sqxfile.sqx_filter(f) or "",
-               "TimeFrame (IS)": sqxfile.symbol(f)[1].rsplit("_", 1)[-1]}
-        for block, cols in VIEW.items():
-            row.update({f"{col} {LABEL[block]}": st.get(block, {}).get(key, 0) for col, key in cols})
-        # SQX freezes ParameterCount into the result it was computed under and never
-        # recomputes it (OPEN #17): every strategy built before 2026-09-06 still carries the
-        # old, inflated count. Replaced with the Python mirror off the definition itself
-        # (core.sqxfile.param_count), right for a strategy of any age; `Param Count source`
-        # says so rather than passing the number off as SQX's own.
-        row["Param Count (IS)"] = sqxfile.param_count(f)
-        row["Param Count source"] = "python (core.sqxfile.param_count)"
-        # Both snippets were removed from the three installs on 2026-10-06 (they raised on
-        # every WFM step and flooded the log), so a new strategy stores neither key: the
-        # ratio is trades over the count above, for a strategy of any age.
-        row["DoF Ratio (IS)"] = (round(row["# of trades (IS)"] / row["Param Count (IS)"], 2)
-                                 if row["Param Count (IS)"] else 0)
-        rows.append(row)
-    return pd.DataFrame(rows)
+    global _FILES
+    _FILES = files
+    got = dict(fanout.run(_row, {name: 1 for name in files}, fanout.CORES))
+    return pd.DataFrame([got[name] for name in files])
+
+
+def _row(name: str) -> dict:
+    """One strategy's row of frame(), read in a fanout child off the module's `_FILES`."""
+    f = _FILES[name]
+    st = sqxstats.stats(f)
+    row = {"Strategy Name": name, "Filters result": sqxfile.sqx_filter(f) or "",
+           "TimeFrame (IS)": sqxfile.symbol(f)[1].rsplit("_", 1)[-1]}
+    for block, cols in VIEW.items():
+        row.update({f"{col} {LABEL[block]}": st.get(block, {}).get(key, 0) for col, key in cols})
+    # SQX freezes ParameterCount into the result it was computed under and never
+    # recomputes it (OPEN #17): every strategy built before 2026-09-06 still carries the
+    # old, inflated count. Replaced with the Python mirror off the definition itself
+    # (core.sqxfile.param_count), right for a strategy of any age; `Param Count source`
+    # says so rather than passing the number off as SQX's own.
+    row["Param Count (IS)"] = sqxfile.param_count(f)
+    row["Param Count source"] = "python (core.sqxfile.param_count)"
+    # Both snippets were removed from the three installs on 2026-10-06 (they raised on
+    # every WFM step and flooded the log), so a new strategy stores neither key: the
+    # ratio is trades over the count above, for a strategy of any age.
+    row["DoF Ratio (IS)"] = (round(row["# of trades (IS)"] / row["Param Count (IS)"], 2)
+                             if row["Param Count (IS)"] else 0)
+    return row

@@ -5,6 +5,8 @@ description: Build an existing strategy template on a market — set up the proj
 
 # /template-run
 
+The workflow runs through `bin/workflow.sh` (CLAUDE.md rule 19); this skill is the manual route for testing one step's code, never for a real run.
+
 This one starts SQX and spends cores. Everything here has a cost; the authoring half is
 `/sqx-strategy-template`. Defaults and the owner's contract: `sqx/templates/README.md`.
 

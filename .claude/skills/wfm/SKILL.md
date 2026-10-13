@@ -5,6 +5,8 @@ description: Configure and run the Walk Forward Matrix task of a custom SQX proj
 
 # /wfm
 
+The workflow runs through `bin/workflow.sh` (CLAUDE.md rule 19); this skill is the manual route for testing one step's code, never for a real run.
+
 Step 19 of the workflow, and **the last step that looks at data**. It leaves the `WFM` task of a
 custom project configured and ready to run. Reading it is `studies/optimisation/wfm/`, which judges
 on the trades that close in `oos2` only (L1, the median cell's net excess against a weekly sign-flip
@@ -120,7 +122,7 @@ up, which is correct.
 Export from a worker: `python3 -m sqx.export.export_wfm --project <P> --databank WFM --role custodian`.
 
 Measured 2026-09-25 on 3 USDJPY H1 mothers (`knowhow/sqx-drive/wfm-end-to-end.md`): the matrix, ~4-5
-min per mother and a 45 GB JVM; export 20 s. Analysis (2026-10-07, 10 NIKKEI225 M30 mothers): 3 s per mother. **SQX gives no progress signal** while it
+min per mother (📓 98-216 s per mother in five runs of 2026-10-10/11) and a 45 GB JVM; export 20 s. Analysis (2026-10-07, 10 NIKKEI225 M30 mothers): 3 s per mother. **SQX gives no progress signal** while it
 runs: `Running time 0 ms` and the databank still until each mother finishes.
 
 Manual: `docs/manual/09-optimizacion.pdf` (cap. 34-wfm). Exporting: `docs/manual/09-optimizacion.pdf`

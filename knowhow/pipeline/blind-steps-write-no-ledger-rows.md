@@ -21,7 +21,7 @@ exist (note opens `lote <batch>`). ⚠️ Since 2026-09-28 the door binds only u
   results existed; 15 backfilled rows opened it.
 - ⚠️ The family is part of the study id: atrCalculator [deleted 2026-10-11, step 24] logged USDJPY under
   `USDJPY_H1_USDJPY_workflow_profiling_v1` (project as family), the rest under `…_crossAboveHMA_v1`.
-- `pipeline/recipe.yaml` still calls both reports without `--family`. The window's runner passes it
+- The window's runner passes `--family`
   since 2026-09-28: the template folder from `projects/registry.csv` (`ui/daemon/runner/where.family`).
 
 ## Step 6 (2026-10-04) 🔬

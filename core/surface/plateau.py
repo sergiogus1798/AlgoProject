@@ -35,7 +35,8 @@ def above_half_max(values: np.ndarray) -> float:
         OOS numbers comparable when the whole surface dropped: it asks about shape, not
         level.
     """
-    return float((values > values.max() / 2).mean())
+    best = values.max()      # |best|, as `plateau_fraction`: on a negative best `best / 2` sits above it
+    return float((values > best - abs(best) / 2).mean())
 
 
 def expected_max(sigma: float, n_eff: int) -> float:

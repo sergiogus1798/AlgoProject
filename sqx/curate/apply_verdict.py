@@ -226,7 +226,8 @@ def main() -> None:
     print(f"  the verdict drops {len(names)}, keeping {len(on_disk) - len(names)}")
     if not on_disk:
         sys.exit(EMPTY.format(source=source))
-    unknown = [n for n in names if n not in set(on_disk)]
+    held = set(on_disk)
+    unknown = [n for n in names if n not in held]
     if unknown:
         print(f"  ⚠️ {len(unknown)} named by the verdict are not here: {', '.join(unknown[:5])}")
     print(f"  identity checked on {sum(1 for i in names.values() if i)} of {len(names)}")

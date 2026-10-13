@@ -22,11 +22,10 @@ not merged: they answer different questions and merging them would move every p.
 | `stats.py` | What a run is worth, for the real one and for thousands at once, each with its good side | imported | P/L matrix → statistics |
 | `simulate.py` | The real run and its null runs, priced identically, in batches | imported | trades + bars + rung → statistics |
 | `verdict.py` | The empirical p, the attribution across the ladder, and every reason to distrust them | imported | statistics → p, channels, warnings |
-| `filter.py` | The random-filter benchmark: a filter against dropping the same share of trades at random | imported | two trade lists → p |
 | `windowed.py` | The gate's monkey (level 3c): every trade re-entered at a uniform bar of the calendar window it opened in AND of the clock hour it opened at, sized `c / ATR` at the drawn bar and priced by `engines.market.reprice` at the declared costs — spread and slippage charged, which the ladder never does; `z()` is the real run among its monkeys in their standard deviations | imported | located trades + bars + costs → mean P/L per trade of every monkey |
 | `footprint.py` | A mother's footprint at random entries, same clock hours: the MEAN daily P&L (and its Monte Carlo error) of `draws` hours-null traders priced by the repricer; shared by step 20's benchmark (`studies/closing/blindJoint`) and the oos2 reading (`studies/optimisation/oos2Reading`) | imported | trades + bars + costs → daily series |
 | `config.yaml` | The engine's knobs: draws, rungs, barriers, statistics, the p floor | edited, or `--set section.key=value` through the study | — |
-| `placement/` | The cross-market placement models and their compiled kernel | imported | envelope → entries, holds |
+| `placement/` | The cross-market placement models | imported | envelope → entries, holds |
 
 
 Manual page, in Spanish, for whoever runs it: `docs/manual/06-lecturas.pdf` (cap. 26-nulos).
@@ -61,19 +60,6 @@ from the bars and compares against the P/L SQX reported, because a null run is p
 two lines. 🔬 On this corpus `open-open` reconciles at **0.999985** and the runner-up at 0.9629 —
 100 % of reported entry and exit prices are the open of their own bar. The fill is measured per
 strategy, never assumed, and `verdict.distrust()` says so out loud when it fails.
-
-## The filter benchmark is the same question asked of a rule
-
-`filter.py` does not place any trade. It takes the trades of a strategy **without** one condition
-and the trades of the same strategy **with** it, and asks whether the condition beat removing the
-same number of trades at random — the cheap half of the ablation test (`D1` of
-`sqx/structural/` + `studies/readings/structure/`), which needs no SQX run at all. The statistics are per
-trade, never total profit: a filter changes the trade count, and totals always flatter whichever
-version traded more.
-
-Its input today is a pair of exports that differ by a parameter hardened far enough to act as a
-filter. The pair that would answer the question properly — the same strategy with a condition
-replaced by TRUE — needs the strategy's logic edited, which is that encargo.
 
 ## The windowed monkey is a third family, and it leaves the ladder alone
 
@@ -124,8 +110,8 @@ order** (done, below); its swap follows **its own drawn hold** (for gold and ind
 per night, with the asset's weekday multiplier; not yet); random entries are **restricted to the hours the
 strategy trades** (**implemented 2026-10-12 in the gate's monkey only**, `windowed.draw`: encargo 65 §5.0; the ladder, placement and `falsePositives` still draw uniformly); and the test stays **per strategy**, with no population-wide null.
 
-- 🔬 **A null run's drawdown is read in exit order** (fixed 2026-10-04, in `kernel.runs()` and
-  in `placement/kernel.py`; the peak also starts at the starting balance, 0 cumulative P/L, so
+- 🔬 **A null run's drawdown is read in exit order** (fixed 2026-10-04, in `kernel.runs()`
+  (and in the placement kernel, deleted 2026-10-13); the peak also starts at the starting balance, 0 cumulative P/L, so
   a run that opens with a loss counts it). Before, it accumulated each run's P/L in trade-index
   order, so `dd` and `retdd` read a shuffled sequence and lost the market's
   clustering; stored `dd`/`retdd` p-values from before are stale. On one strategy of `XAUUSD/MC_Trades` (632 trades, 2026-09-25), sorting each run

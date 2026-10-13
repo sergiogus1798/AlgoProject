@@ -15,7 +15,7 @@ import pandas as pd
 from core import worker
 from ledger import record
 from sqx.curate import apply_verdict
-from sqx.projects import crosstfload, stage
+from sqx.projects import crosstfload, stage, taskcap
 from ui.daemon import progress, workerguard
 from ui.daemon.advance import buildcap, preflight, sqxlog
 from ui.daemon.filters import discards, ledgerrow
@@ -139,9 +139,9 @@ def watch(project: str, role: str, offsets: dict[Path, int]) -> dict:
         The last `run` read. Each poll sends `-project action=status` (`progress.state`), and
         `stop` once a build passes its minutes (`buildcap`); the log is read across midnight.
         SystemExit when the start never reaches the log within START_WITHIN, when the worker
-        dies, or past MAX_HOURS.
+        dies, on an abort line or a task past its deadline (`sqxlog.police`), or past MAX_HOURS.
     """
-    top, kept, began = preflight.WORKERS[role]["path"], [], time.monotonic()
+    top, kept, began, cap = preflight.WORKERS[role]["path"], [], time.monotonic(), taskcap.fresh()
     seen = stopped = False   # once the start was read, losing it is never «did not start»
     while True:
         time.sleep(POLL)
@@ -156,23 +156,21 @@ def watch(project: str, role: str, offsets: dict[Path, int]) -> dict:
             # never end the run: this loop's `finally` stops the worker (2026-09-28, a build).
             print(f"estado no legible ahora ({failed}); se sigue esperando", flush=True)
             live = now = None
-        run = progress.run_state(sqxlog.grow(top, offsets, kept))
+        run = progress.run_state(sqxlog.grow(top, offsets, kept, fresh := []))
+        sqxlog.police(cap, fresh, project, role, top, stopped)
         waited = time.monotonic() - began
         seen = seen or run["project"] == project
+        if waited > MAX_HOURS * 3600:       # before the `continue`: another project's start waited for ever
+            sys.exit(f"{project} sigue sin «Project finished» tras {MAX_HOURS} h: se para el "
+                     "worker para liberar el carril")
         if run["project"] != project:
             if not seen and waited > START_WITHIN:
                 sys.exit(f"SQX no escribió «Starting project '{project}'» en {START_WITHIN} s "
                          "tras `action=start`: no arrancó; se para el worker")
             continue
         if run["finished"]:
-            if run["events"].get("error"):
-                sys.exit(f"SQX abortó {project} («Error while running project» en su log): "
-                         "la tarea no terminó; se para el worker")
             return run
         stopped = stopped or buildcap.enforce(project, role, now, top)
-        if waited > MAX_HOURS * 3600:
-            sys.exit(f"{project} sigue sin «Project finished» tras {MAX_HOURS} h: se para el "
-                     "worker para liberar el carril")
         # A retest's log carries no compute-thread figure: its share is done over its input
         # (📓 2026-09-29, «MCR 1 Bar 0 % · 122 probadas» with 122 of 200 done).
         percent = run["percent"]
