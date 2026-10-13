@@ -77,6 +77,15 @@ Refusal «custodian: los databanks no terminaron de cargaron en 5 min; sesión m
 4. If that fails too: stop. Report the step and `fallo.md` to the owner. Do not edit code,
    `criteria.yaml` or the project to get past it.
 
+## 5. Failures already seen — recognise them before retrying
+
+One row per failure a real run hit (owner, 2026-10-13: every error is fixed and noted here). A
+symptom in this table on code that already carries the fix is a NEW bug: report it, do not retry.
+
+| symptom in `fallo.md` | cause | fixed in |
+|---|---|---|
+| step 11.5 «CrossTF_M30 no tiene export: exporta ese databank…» | the live export after step 11 only took the databanks of the tasks preflight chose; the extra-timeframe tasks (`CrossTF M30`, `CrossTF H4`) are created later, by the fill | `0106b60` (2026-10-13), `ui/daemon/launch/liverun.py`: their banks are added to the step's outputs. A project that failed here before the fix continues with `bin/workflow.sh run <PROJECT>`: the stop exported them |
+
 ## Never
 
 - Run workflow steps by hand, one by one, or call SQX directly: this command is the only way

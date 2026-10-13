@@ -76,6 +76,9 @@ what ran, seconds, the cut (in → out), and where it stopped. Then, by the last
 4. If that fails too: stop. Report the step and `fallo.md` to the owner. Do not edit code,
    `criteria.yaml` or the project to get past it.
 
+Failures a real run already hit, with cause and fix: `.claude/skills/workflow-simple/SKILL.md` §5 —
+read it before retrying, and add a row there for every new one (owner, 2026-10-13).
+
 ## Never
 
 - Run workflow steps by hand, one by one, or call SQX directly: this command is the only way
