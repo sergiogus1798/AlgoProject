@@ -23,7 +23,8 @@ values, launch, wait, and report.
 | MINUTES | the build's time cap | `20` |
 
 If the owner did not give one of them, ask for it. `--smoke` only when he says it is a functional
-test (a `Test_` project): then only the readability rules judge.
+test (a `Test_` project): then only the readability rules judge and at most
+3 strategies go on after step 8.
 
 `--until <step>` (`oos`, `crossmarket`, `crosstf`, `mcretest`, `spp`, `wfm` — `wfm` keeps every task, stops before step 20 and is repeated on `run`) only when the owner asks for a
 run that ends at that step: the project is created without the later steps' tasks and the run

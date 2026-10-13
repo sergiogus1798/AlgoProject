@@ -30,6 +30,7 @@ SMOKE_MARK = "smoke"     # an empty file in the run's folder: the run judged in 
 READABLE = {"gate.scorecard." + fact for fact in (     # the gate's level 0
     "presencia_passed", "sanidad_passed", "sanidad_value", "estaticas_value",
     "is_trades_per_year")}
+SMOKE_AT, SMOKE_KEEP = "8", 3      # a functional test carries this many past step 8 (owner, 2026-10-13)
 
 
 def settings() -> dict:
@@ -48,6 +49,14 @@ def smoke(project: str, on: bool) -> None:
     if not project.startswith("Test_"):
         sys.exit("--smoke es solo para proyectos Test_: en los demás juzgan todas las reglas")
     os.environ[SMOKE] = "1"
+
+
+def capped(keep: set, n: str) -> set:
+    """`keep`, or in smoke mode at step `SMOKE_AT` its first `SMOKE_KEEP` in sorted order: the
+    test proves every later step runs, and each strategy more is minutes of SQX and of MT5."""
+    if os.environ.get(SMOKE) != "1" or n != SMOKE_AT:
+        return keep
+    return set(sorted(keep)[:SMOKE_KEEP])
 
 
 def tags(project: str) -> set[str]:
@@ -178,8 +187,10 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | 
     keep = set(alive)
     if spec.get("medoids") and not note:
         keep &= selection.medoids(project, pop, spec["medoids"])
+    medoid, keep = keep, keep if note else capped(keep, n)
     pop["outcome"] = [judged[w][0] for w in pop["who"]]
-    pop["reason"] = [judged[w][1] or ("no es la medoide de su grupo" if w not in keep else "")
+    pop["reason"] = [judged[w][1] or ("no es la medoide de su grupo" if w not in medoid else
+                                    "" if w in keep else f"prueba funcional: sólo siguen {SMOKE_KEEP}")
                      for w in pop["who"]]
     pop["verdict"] = [KEEP if note or w in keep else apply_verdict.DROP for w in pop["who"]]
     csv = out / "verdict.csv"
@@ -197,7 +208,8 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | 
                                     lambda: _full_harvest(project), lambda: _seal(project))      # save first, then cut `Results`
     kept = (pop["outcome"] == "limbo") & (pop["verdict"] != apply_verdict.DROP) & ~sibling
     limbo = sorted(pop.loc[kept, "strategy"])
-    how = "medoides" if len(keep) < len(alive) else "criterios"
+    how = ("el tope de la prueba funcional" if len(keep) < len(medoid) else
+           "medoides" if len(keep) < len(alive) else "criterios")
     return {"n": n, "hechos": len(found), "before": cut["before"], "after": cut["after"],
             "limbo": limbo, "seed": None,
             "corte": f"{bank}: {cut['before']} → {cut['after']} por {how}" + (" (anota, no corta)" if note else "")

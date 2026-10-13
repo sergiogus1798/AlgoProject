@@ -247,7 +247,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `pipeline/autopilot/entry.py` | 61 | What a new autopilot run settles before it starts: alone on its worker, on a session of its own. | core, sqx | — |
 | `pipeline/autopilot/facts.py` | 242 | Every number a judging step's studies wrote, one row per strategy and key. | pipeline, studies, ui | pandas |
 | `pipeline/autopilot/finalists.py` | 60 | The list step 26 verifies: each survivor's own file, written for its agent and handed to it. | core, mt5, pipeline | pandas |
-| `pipeline/autopilot/judge.py` | 204 | One judging step: its facts, the criteria, the medoid cut, the verdict.csv and the cut in SQX. | core, ledger, pipeline, sqx, ui | pandas, yaml |
+| `pipeline/autopilot/judge.py` | 216 | One judging step: its facts, the criteria, the medoid cut, the verdict.csv and the cut in SQX. | core, ledger, pipeline, sqx, ui | pandas, yaml |
 | `pipeline/autopilot/kept.py` | 70 | What the funding module keeps of each strategy that passed the WFM: its oos1 floating curve and risk numbers. | core, pipeline, studies | pandas |
 | `pipeline/autopilot/neighbours.py` | 106 | Step 13's T1 batch for the autopilot: wire two WFC legs, then make → retest → export trades → measure → clear. | core, pipeline, sqx, ui | pandas |
 | `pipeline/autopilot/plan.py` | 146 | What the autopilot runs, in WORKFLOW.md's order: the window's chain without its stops at the judging steps. | core, pipeline, ui | — |
@@ -915,7 +915,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_autopilot_kept.py` | 43 | `kept.rows` on a hand-built scorecard and harvest: the name link, the oos1 cut, the R scale. | pipeline | pandas |
 | `tests/test_autopilot_policy.py` | 59 | Owner's 2026-10-04 decisions on the autopilot: a missing fact fails only in the two sanity rules, | core, ledger, pipeline | pytest |
 | `tests/test_autopilot_segment.py` | 24 | 18.5's second judgement is signed with oos2: the plan's judge action and the ledger row it writes. | pipeline, test_autopilot_tail | — |
-| `tests/test_autopilot_smoke.py` | 34 | The autopilot's smoke mode: only the readability rules judge, and only on a Test_ project. | pipeline | pytest |
+| `tests/test_autopilot_smoke.py` | 45 | The autopilot's smoke mode: only the readability rules judge, and only on a Test_ project. | pipeline | pytest |
 | `tests/test_autopilot_step13.py` | 139 | Step 13 since 2026-10-07: the autopilot plans T1's neighbour batch right before the MC Retest | pipeline, sqx, ui | pytest, yaml |
 | `tests/test_autopilot_step14_rules.py` | 38 | Step 14 in criteria.yaml is a column (encargo 65 §3d, owner 2026-10-12): `rules: []`, so the | pipeline, studies | yaml |
 | `tests/test_autopilot_step20.py` | 28 | Step 20's rule: its cut is the bank 21 and 24 read from, and only the study's DESCARTAR fails. | pipeline | pandas |

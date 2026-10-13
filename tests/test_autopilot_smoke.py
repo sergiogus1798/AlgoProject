@@ -32,3 +32,14 @@ def test_smoke_refuses_a_trade_project() -> None:
                           "Trade_X_Y_M30", "--smoke", "--plan"], capture_output=True, text=True,
                          cwd=Path(__file__).resolve().parents[1])
     assert got.returncode and "solo para proyectos Test_" in got.stderr
+
+
+def test_smoke_caps_who_goes_on_after_step_8_and_only_there(monkeypatch: pytest.MonkeyPatch) -> None:
+    """In smoke the first SMOKE_KEEP in sorted order pass step 8; other steps and real runs keep all."""
+    everyone = {"d", "b", "a", "c", "e"}
+    monkeypatch.delenv(judge.SMOKE, raising=False)
+    assert judge.capped(everyone, "8") == everyone
+    monkeypatch.setenv(judge.SMOKE, "1")
+    assert judge.capped(everyone, "8") == {"a", "b", "c"}
+    assert judge.capped(everyone, "12") == everyone
+    assert judge.capped({"z"}, "8") == {"z"}

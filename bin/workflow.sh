@@ -19,7 +19,8 @@
 #   --until    (simple, template) the project carries no task after this step, and the run ends
 #              at its judge: oos (7), crossmarket (10), crosstf (12), mcretest (14), spp (16), wfm (19: the
 #              project keeps every task and the run stops before step 20; repeat it on «run»).
-#   --smoke    functional test, Test_ projects only: only the readability rules judge.
+#   --smoke    functional test, Test_ projects only: only the readability rules judge, and at most 3
+#              strategies go on after step 8 (`judge.SMOKE_KEEP`): it proves the steps run, nothing else.
 #   --restart  the old route (SQX starts and stops at every step, slower). Only when
 #              the single session fails.
 #   MT5        step 26, run only when the four are given, each as ONE word with «=»:
