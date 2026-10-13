@@ -12,7 +12,7 @@ from pathlib import Path
 from core import assetdata, sqxfile
 from core.paths import MT5_DATA
 from core.study import result as study_result
-from ledger import record, study as ledger_study
+from ledger import gate, record, study as ledger_study
 from mt5 import compare, tester, wine
 from mt5.verify import conditions, firms, judge, mt5side, report, sqxside, ticks
 from sqx.inspect import feeds
@@ -170,6 +170,7 @@ def main() -> None:
         raise SystemExit("ninguna empresa se pudo preparar: " + " | ".join(refused.values()))
 
     window = (earliest(a.start, a.end, depth, data), latest(a.end, data))
+    gate.allow(26, segments(data, window), asset)    # the door before the CPU: the ledger row asks it again at the end
     meta["from"], meta["to"] = window
     project = f"Test_MT5Verify_{asset}_{timeframe}_{stamp[9:]}"
     role = cfg["role"]

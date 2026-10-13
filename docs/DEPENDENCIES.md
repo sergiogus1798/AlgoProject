@@ -212,7 +212,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `mt5/verify/mt5side.py` | 90 | The MT5 half of a check: compile the EA SQX exported, and backtest it on each firm's account. | mt5 | pandas |
 | `mt5/verify/pool.py` | 143 | The validated pool of step 26: an append-only register per prop firm, the first verdict per check counts. | core, ledger | pandas |
 | `mt5/verify/report.py` | 77 | Write mt5.verify.run's result.json (the study contract) and its run.json, and mark a crash. | core, mt5 | pandas |
-| `mt5/verify/run.py` | 250 | Step 26: one strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account. | core, ledger, mt5, sqx, ui | — |
+| `mt5/verify/run.py` | 251 | Step 26: one strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account. | core, ledger, mt5, sqx, ui | — |
 | `mt5/verify/sidebyside.py` | 54 | Every SQX entry beside the MT5 trade each firm's EA opened for it: one row per entry, one set of columns per firm. | core, mt5 | pandas |
 | `mt5/verify/sqxside.py` | 145 | The SQX half of a check: a Test_ project on the conductor, one retest per firm, the EA exported. | core, sqx, ui | pandas |
 | `mt5/verify/ticks.py` | 99 | The optional second MT5 pass on real ticks: its backtest, its verdict beside the chosen model's, and the merged tab with three curves per firm. | core, mt5 | pandas |
@@ -1071,7 +1071,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_perf66_bugs.py` | 219 | Known answers for the audited bugs fixed in encargo 66: each test failed before its fix. | core, ledger, pipeline, portfolio, sqx, studies, tests | numpy, pandas, pytest |
 | `tests/test_perf66_catalogue.py` | 81 | Encargo 66 §10: the catalogue measures right (tracemalloc off in timings, PSS, first touch outside the clock). | perf | numpy, pytest |
 | `tests/test_perf66_chain.py` | 169 | Encargo 66, the launch chain: RAM and cores reserved by weight, a step's tests dispatched together. | core, ui | pytest |
-| `tests/test_perf66_cruce.py` | 245 | Encargo 66, the SQX crossing made faster: each fast path equal to the serial one it replaced. | core, pipeline, sqx, ui | pandas, pytest |
+| `tests/test_perf66_cruce.py` | 252 | Encargo 66, the SQX crossing made faster: each fast path equal to the serial one it replaced. | core, pipeline, sqx, ui | pandas, pytest |
 | `tests/test_perf66_cscv.py` | 138 | Encargo 66 §9.23: the fused row kernel of the CSCV returns what the numpy passes it replaced did. | studies | numpy, pytest |
 | `tests/test_perf66_cut.py` | 245 | Encargo 66 §5.4, §5.5, §7.2b and §9.2: the cut's faster paths give today's answers. | core, pipeline, sqx | numpy, pandas, pyarrow, pytest |
 | `tests/test_perf66_draws.py` | 131 | Encargo 66 §1.1: concurrent `--strategy` merges keep every row, consolidate == serial merge, save is fast. | core | numpy, pandas, pytest |
@@ -1313,7 +1313,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/daemon/launch/steps.py` | 127 | Which SQX tasks one workflow step launches from the window, and the SQX steps it cannot launch. | sqx, ui | — |
 | `ui/daemon/library.py` | 120 | What the template library holds, read off disk into one answer per template. | core, sqx | — |
 | `ui/daemon/loader/__init__.py` | 1 | Loads a databank the window selects: what it lacks, what is stale, and the jobs that fetch it. | — | — |
-| `ui/daemon/loader/afterrun.py` | 230 | Export every new or stale databank of an install's custom projects, right after it stops. | core, sqx, studies, ui | — |
+| `ui/daemon/loader/afterrun.py` | 233 | Export every new or stale databank of an install's custom projects, right after it stops. | core, sqx, studies, ui | — |
 | `ui/daemon/loader/api.py` | 34 | The routes that load a databank's data when the window selects it. | ui | fastapi, pydantic |
 | `ui/daemon/loader/extrasdef.py` | 26 | The exports an analysis reads that are not loader pieces: which databanks feed each, and the command. | studies | — |
 | `ui/daemon/loader/find.py` | 213 | Where a databank's files live, which retest pairs with it, and whether SQX is writing it now. | core, ui | — |

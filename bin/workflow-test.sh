@@ -11,7 +11,8 @@
 # What it runs — fixed, so two runs are comparable (owner, 2026-10-13, E2 and P26):
 #   bin/workflow.sh simple Test_XAUUSD_H1_ruptura_wt<TAG> XAUUSD H1 long breakout ruptura_base_v3
 #       10000 strategies, 30 minutes of Build, --smoke (only readability judges, 3 go on after step 8)
-#       step 26 on FTMO and Hantec, 2024-01-01 to 2025-06-30, model ohlc_m1
+#       step 26 on FTMO and Hantec, 2021-07-01 to 2022-12-31, model ohlc_m1 — a window inside
+#       oos1: the autopilot's step 26 is refused on oos2 (ledger.gate, assets/_policy.yaml)
 #
 # PASA only when ALL of these hold:
 #   - bin/workflow.sh exits 0 and the last status line is FIN, with no FALLO anywhere;
@@ -32,7 +33,7 @@ P=Test_XAUUSD_H1_ruptura_wt$TAG
 SAID=$(mktemp)
 bin/workflow.sh simple "$P" XAUUSD H1 long breakout ruptura_base_v3 \
     "Prueba funcional del workflow entero, del builder al paso 26" 10000 30 --smoke \
-    --mt5-from=2024-01-01 --mt5-to=2025-06-30 --mt5-model=ohlc_m1 --mt5-firms=ftmo,hantec 2>&1 | tee "$SAID"
+    --mt5-from=2021-07-01 --mt5-to=2022-12-31 --mt5-model=ohlc_m1 --mt5-firms=ftmo,hantec 2>&1 | tee "$SAID"
 CODE=${PIPESTATUS[0]}
 OUT=$(sed -n 's|^resumen: \(.*\)/resumen.md$|\1|p' "$SAID" | tail -1)
 rm -f "$SAID"

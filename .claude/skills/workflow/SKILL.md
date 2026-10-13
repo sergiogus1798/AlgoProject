@@ -61,7 +61,7 @@ bin/workflow-test.sh [TAG]
 ```
 
 No values to ask: it is fixed (XAUUSD H1 long breakout, 10,000 strategies, 30 minutes of Build,
-`--smoke`, step 26 on FTMO and Hantec, 2024-01-01 to 2025-06-30, `ohlc_m1`) and it prints its own
+`--smoke`, step 26 on FTMO and Hantec, 2021-07-01 to 2022-12-31 — inside oos1 —, `ohlc_m1`) and it prints its own
 verdict. **PASA only for one whole run with no failure, no retry, step 26 run and no fallback to
 the slow export.** A FALLA is fixed in code (with its test and a row in §7), and then this is run
 AGAIN from scratch: a run that needed a fix or a `run` to continue never counts (owner,
@@ -143,6 +143,8 @@ symptom in this table on code that already carries the fix is a NEW bug: report 
 | `bin/workflow.sh: line N: syntax error` right after the autopilot's `FIN`; the `Test_` project not retired | the script was edited while it ran | not a code bug: §4.2. Stop the custodian and retire the project by hand |
 | refusal «los databanks no terminaron de cargar en 5 min; sesión matada por PID, ficheros intactos» | an earlier `stop` killed SQX mid-save and left a truncated `.sqx` | do not retry; report (`knowhow/sqx-drive/stop-killed-mid-save-truncated-sqx.md`) |
 | resumen: «Caídas a la ruta lenta: …CrossTF_Input: una identidad no coincide» | the identity counted the `<!--variant_id:…-->` comment Python stamps on the scaled siblings and SQX drops on load | 2026-10-13, `ui/daemon/launch/liverun.py`: the filled bank is synced (SQX rewrites it) before the dump |
+| step 26: «PermissionError: ledger: el paso 26 no puede mirar `oos2` de <SYMBOL>: está reservado para…» | the autopilot is an autonomous agent and step 26 is not in `reserved_for` of `assets/_policy.yaml`: a window that touches the asset's oos2 is refused | not a code bug, the owner's policy: report it, never edit the policy. The refusal now comes before the backtests (`mt5/verify/run.py`), and D's window lies in oos1 |
+| resumen: «Caídas a la ruta lenta: …CrossTF_Input: …_ScaledH4: el .abk lleva 0 operaciones…, el .sqx 301» | Python fills `CrossTF_Input` and no task backtests it there: a scaled sibling's `.sqx` carries its mother's stored result, SQX's memory none; and no step reads that bank's trades | 2026-10-13, `ui/daemon/loader/afterrun.py`: `CrossTF_Input` is in `UNREAD_TRADES`, its trades are not exported |
 
 ## Never
 

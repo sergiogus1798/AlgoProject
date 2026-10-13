@@ -25,6 +25,7 @@ from core.paths import DATA, ROOT
 from core.phases import phase
 from studies.breakage.mcRetest.inputs.tasks import DATABANK as MCR
 from sqx.projects import live
+from sqx.projects.workflow import CROSSTF
 from ui.daemon import progress, workerguard
 from ui.daemon.loader import find, state
 from ui.daemon.loader.extrasdef import EXTRA, SMOKE_SHARE
@@ -34,8 +35,10 @@ OWN = ("Test_", "Trade_", "Research_")   # hard rule 6: every custom project, ne
 # The eight MC Retest databanks' trades: no study reads them (step 14 reads the MCR_All ingest
 # and the build's harvest), and each cost a ~14 s orderstocsv JVM at every stop (📓 2026-10-01,
 # 7 × 14 s of step 13's export). Owner, 2026-10-01: «deja de exportarlos innecesariamente».
-# The window still exports them on demand when one is opened.
-UNREAD_TRADES = set(MCR.values())
+# The window still exports them on demand when one is opened. `CrossTF_Input` too (2026-10-13):
+# Python fills it and no task backtests it there, so a scaled sibling's `.sqx` carries its
+# mother's stored result and SQX's memory none -- its `.abk` never matched, and nothing reads it.
+UNREAD_TRADES = set(MCR.values()) | {CROSSTF["input"]}
 
 
 def skipped() -> set[str]:

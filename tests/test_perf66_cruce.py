@@ -110,6 +110,13 @@ def test_the_chain_loads_no_trades_of_an_unread_databank(monkeypatch: pytest.Mon
     assert {a for a in asked if a[0] == "trades"} == {("trades", "Results")}
 
 
+def test_the_cross_tf_input_bank_exports_no_trades() -> None:
+    """Python fills `CrossTF_Input` and no task backtests it there: a scaled sibling's `.sqx`
+    carries its mother's stored result and SQX's memory none, so its `.abk` never matched."""
+    from ui.daemon.loader import afterrun
+    assert "CrossTF_Input" in afterrun.UNREAD_TRADES and "CrossTF_Mothers" not in afterrun.UNREAD_TRADES
+
+
 def test_the_execute_phases_land_in_their_buckets(tmp_path: Path) -> None:
     """`execute.sqx` is SQX computing and `execute.sync` its sync; what is left of `execute` stays `resto`."""
     from pipeline.autopilot import timing
