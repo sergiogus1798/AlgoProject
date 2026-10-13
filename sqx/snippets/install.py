@@ -13,10 +13,12 @@ from sqx.snippets import toolproject
 SOURCES = Path(__file__).parent
 READY = "SQX CLI is now ready"
 FAILED = "Compilation FAILED"
+# what this repo once installed and no longer ships; nothing else under user/extend is ours to delete
+DROPPED = ("Snippets/SQ/CustomAnalysis/AlgoTrades.java",)
 
 
 def pending(role: str) -> list[str]:
-    """The snippets this install does not run yet: not copied, changed since, or not compiled.
+    """The snippets this install does not run yet (not copied, changed since, not compiled) and the dropped ones it still holds.
 
     Returns:
         Paths relative to `user/extend/`. SQX compiles on start and loads what the PREVIOUS
@@ -26,7 +28,7 @@ def pending(role: str) -> list[str]:
     top = worker_dir(role)
     jar = top / "internal/libs/Snippets.jar"
     classes = set(zipfile.ZipFile(jar).namelist())
-    out = []
+    out = [rel for rel in DROPPED if (top / "user/extend" / rel).exists()]
     for src in sorted(SOURCES.rglob("*.*")):
         rel = src.relative_to(SOURCES)
         if rel.parts[0] not in ("Snippets", "Code"):
@@ -66,11 +68,9 @@ def main() -> None:
     top = worker_dir(a.role)
     if worker.holding(top):
         raise SystemExit(f"{a.role} está arrancado: los snippets se instalan con el worker parado")
-    for old in (top / "user/extend").rglob("*.*"):          # a snippet the repo dropped stays compiled otherwise
-        rel = old.relative_to(top / "user/extend")
-        if rel.parts[0] in ("Snippets", "Code") and not (SOURCES / rel).exists():
-            old.unlink()
-    for rel in todo:
+    for rel in DROPPED:                                     # a dropped snippet stays compiled otherwise
+        (top / "user/extend" / rel).unlink(missing_ok=True)
+    for rel in set(todo) - set(DROPPED):
         (top / "user/extend" / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(SOURCES / rel, top / "user/extend" / rel)
     worker.start(a.role)

@@ -14,7 +14,7 @@ loudly; `--check` names what an install does not run yet.
 ## Evidence
 - 🔬 conductor, 2026-10-12: `AlgoKeep.java` copied, worker started, `action=start` on a task naming
   it → «Class with name 'AlgoKeep' doesn't exist»; stopped, started again → the task ran.
-- 🔬 same day: `AlgoTrades.java` (deleted 2026-10-13; `install` now prunes installed snippets the repo dropped) edited to cache `DataManager.getDataInfo` without its import →
+- 🔬 same day: `AlgoTrades.java` (deleted 2026-10-13; `install` unlinks only the paths named in `install.DROPPED` — never anything else under `user/extend`, 800 files there are SQX's and the owner's) edited to cache `DataManager.getDataInfo` without its import →
   `cannot find symbol DataManager`, `Compilation FAILED`; the next run timed exactly as the old
   class (245 s) and produced the old output. With the import: 3.9 s.
 - 🔬 `SeededRandomEntry.java` plus its `Code/PseudoCode/blocks/SeededRandomEntry.tpl` compiled the

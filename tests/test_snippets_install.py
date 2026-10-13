@@ -38,3 +38,11 @@ def test_pending(tmp_path: Path) -> None:
     old = jar.stat().st_mtime - 60
     os.utime(jar, (old, old))
     assert install.pending("x") == java                   # the jar predates the source: a failed compile
+
+    os.utime(jar)
+    foreign = top / "user/extend/Snippets/SQ/Blocks/Owner.java"      # not ours: never listed, never deleted
+    gone = top / "user/extend" / install.DROPPED[0]
+    for f in (foreign, gone):
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text("x")
+    assert install.pending("x") == list(install.DROPPED)  # only what this repo dropped

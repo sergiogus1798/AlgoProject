@@ -43,15 +43,15 @@ def run(role: str, project: str, banks: dict[str, str]) -> dict[str, int]:
     Returns:
         Strategies written per databank, each file at `core.paths.bank_dir(project, role) /
         "<databank>.abk"`, opened and validated (`bankfile.load`, CRC checked). Only the named
-        banks' files are replaced; `take` deletes each one it reads. Empty when the install has no tool project or its snippets are not compiled
+        banks' files are replaced, before anything else. Empty when the install has no tool project or its snippets are not compiled
         (`sqx.snippets.install`): the caller reads the databank its next way.
     """
-    if not banks or not toolproject.cfx(role).exists() or install.pending(role):
-        return {}
     out = bank_dir(project, role)
-    out.mkdir(parents=True, exist_ok=True)
     for bank in banks:
         (out / f"{bank}.abk").unlink(missing_ok=True)
+    if not banks or not toolproject.cfx(role).exists() or install.pending(role):
+        return {}
+    out.mkdir(parents=True, exist_ok=True)
     (out / "_keys.tsv").write_text("\n".join(keys()) + "\n", encoding="utf-8")
     for data in dict.fromkeys(banks.values()):
         names = [b for b, d in banks.items() if d == data]
@@ -79,7 +79,7 @@ def run(role: str, project: str, banks: dict[str, str]) -> dict[str, int]:
 
 
 def take(project: str, role: str, bank: str, ids: dict[str, str], data: str) -> dict | None:
-    """The databank's `.abk` loaded, when it is this databank's and whole; the file is consumed.
+    """The databank's `.abk` loaded, when it is this databank's and whole.
 
     Args:
         ids: File stem -> identity (`core.sqxfile._hashed` of the strategy's XML) of every
@@ -90,15 +90,14 @@ def take(project: str, role: str, bank: str, ids: dict[str, str], data: str) -> 
         The loaded bank, or None (one line saying why, none when there is no file) so the caller
         reads the databank its next way. Names, mode and identities say «same strategies», never
         «same backtest»: the caller binds the trades to the .sqx's own result with
-        `core.bankframes.unbound`. The file is deleted once loaded, whatever the answer: an `.abk`
-        serves one read.
+        `core.bankframes.unbound`. The file stays for the bank's other reader (harvest, then trades):
+        `run` replaces it and the session's export or the worker's stop removes the folder.
     """
     path = bank_dir(project, role) / f"{bank}.abk"
     if not path.exists():
         return None
     try:
         got = bankfile.load(path, check=True)
-        path.unlink(missing_ok=True)         # the memory map stays valid
         why = (f"modo {got['data']}, se pide {data}" if got["data"] != data
                else f"nombres distintos ({len(set(got['names']) ^ set(ids))} de diferencia)"
                if set(got["names"]) != set(ids)

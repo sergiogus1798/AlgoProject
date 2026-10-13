@@ -437,7 +437,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `sqx/export/export_spp.py` | 188 | Export a databank's Sys. Param Permutation profiles: one wide table, the histograms, the counts. | core, sqx | pandas |
 | `sqx/export/export_trades.py` | 194 | Export one databank's trades into the data root, as one typed Parquet per export. | core, sqx | — |
 | `sqx/export/export_wfm.py` | 169 | Export everything a Walk-Forward Matrix cross-check stored: cells, steps, parameters, trades. Parquet. | core, sqx | pandas |
-| `sqx/export/membank.py` | 112 | Whole databanks written from a live session's memory by the AlgoBank snippet, one `.abk` each. | core, sqx | — |
+| `sqx/export/membank.py` | 111 | Whole databanks written from a live session's memory by the AlgoBank snippet, one `.abk` each. | core, sqx | — |
 | `sqx/export/spp_table.py` | 90 | The SPP permutation table: one row per permutation, streamed to Parquet a strategy at a time. | — | pandas, pyarrow |
 | `sqx/export/sync_bars.py` | 115 | Keep the M1 bar library in step with SQX: pull what is missing, refresh what SQX has grown. | core | — |
 | `sqx/inspect/dump_project.py` | 63 | Render a project.cfx as a readable Markdown pipeline map. Reading never touches SQX state. | core, sqx | — |
@@ -1088,7 +1088,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_perf66_liveexport.py` | 98 | Encargo 66, tanda E: `liverun.export` dumps the stale banks and cleans up; `export_trades` takes an `.abk`. | core, sqx, tests, ui | pandas, pytest |
 | `tests/test_perf66_market.py` | 62 | Encargo 66 §9.9: the lazy mirror and `evaluate(directions=)` give the eager mirror's numbers, bit for bit. | studies | numpy, pandas, pytest |
 | `tests/test_perf66_market_tick.py` | 106 | Encargo 66 §9.8: the tick file decoded by jobs of blocks equals the serial decode (the oracle). | core, tests | numpy, pandas, pytest |
-| `tests/test_perf66_membank.py` | 168 | `membank.take` hands an `.abk` over only when it is this databank's, whole, and is consumed. | core, sqx, studies, tests | pandas, pytest |
+| `tests/test_perf66_membank.py` | 168 | `membank.take` hands an `.abk` over only when it is this databank's, and whole. | core, sqx, studies, tests | pandas, pytest |
 | `tests/test_perf66_member_frozen.py` | 65 | Encargo 66: a member's clock and commission are frozen in its manifest, never read live. | core, portfolio, stat | pytest |
 | `tests/test_perf66_mono.py` | 159 | Encargo 66 §1.5 and §4.1: one root per monkey run, saved; `--only` merges under it. | core, studies, ui | numpy, pandas, pytest |
 | `tests/test_perf66_mt5core.py` | 149 | Encargo 66 §9 (C2): mt5.compare.pair, assetdata.load/symbol_for and feed scale.by_week equal their old logic. | core, engines, mt5 | numpy, pandas, pytest |
@@ -1154,7 +1154,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_scale_ranges.py` | 148 | Cross TF coefficients (encargo 47 part F, owner 2026-10-07): a coefficient that multiplies a | core, sqx | numpy, pandas |
 | `tests/test_session_from_db.py` | 99 | Known-answer test: a session no project defines is built from SQX's Data Manager database. | sqx | — |
 | `tests/test_significance.py` | 177 | core.significance's benchmark argument (OPEN.md #71): psr() and min_track_record() must | core | numpy, pandas |
-| `tests/test_snippets_install.py` | 40 | `install.pending` names a snippet whose class is missing or older than its source: SQX keeps the old class when a compile fails. | sqx | — |
+| `tests/test_snippets_install.py` | 48 | `install.pending` names a snippet whose class is missing or older than its source: SQX keeps the old class when a compile fails. | sqx | — |
 | `tests/test_spp_combine.py` | 80 | Known-answer test for studies.breakage.spp.model.combine (feedback §7, 2026-09-30): | studies | numpy, pandas |
 | `tests/test_spp_decay.py` | 72 | Known-answer test for studies.breakage.spp.model.decay: the SPP's criteria metrics, from | studies | numpy, pandas |
 | `tests/test_spp_mapa.py` | 90 | Known-answer test for studies.breakage.spp.model.mapa: the floored grid, d / d_DD / puesto, | studies | numpy, pandas |
@@ -1307,7 +1307,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/daemon/launch/chaincheck.py` | 49 | «Correr workflow», before the press: whether the chain may start, what it would run, the sentence to confirm. | ui | — |
 | `ui/daemon/launch/chainplan.py` | 113 | What «Correr workflow» runs, in WORKFLOW.md's order, and the step it stops before — from the rail. | ui | — |
 | `ui/daemon/launch/configure.py` | 45 | Run the configurator of every chosen task still unconfigured, as its skill does, with the worker stopped. | core, sqx, ui | — |
-| `ui/daemon/launch/liverun.py` | 195 | «Lanzar en SQX» on a GUI session already up: configure a copy, push it, run, mirror to disk, export — no restart. | core, ledger, sqx, ui | — |
+| `ui/daemon/launch/liverun.py` | 199 | «Lanzar en SQX» on a GUI session already up: configure a copy, push it, run, mirror to disk, export — no restart. | core, ledger, sqx, ui | — |
 | `ui/daemon/launch/preflight.py` | 174 | Whether «Lanzar en SQX» may start one task of a project now, and every reason it may not. | core, sqx, ui | — |
 | `ui/daemon/launch/run.py` | 238 | «Lanzar en SQX»: switch on one task or one step's tasks, start the worker once, wait for SQX, stop. | core, ledger, sqx, ui | — |
 | `ui/daemon/launch/steps.py` | 127 | Which SQX tasks one workflow step launches from the window, and the SQX steps it cannot launch. | sqx, ui | — |

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""`membank.take` hands an `.abk` over only when it is this databank's, whole, and is consumed.
+"""`membank.take` hands an `.abk` over only when it is this databank's, and whole.
 
 Covers (finished, same strategies, newer than the files) and adds the
 data mode, the identities, a corrupt file, and `run` replacing only the banks it names. The `.abk`
@@ -35,14 +35,14 @@ def _ids(bank: list[dict]) -> dict[str, str]:
 
 
 def test_take(folder: Path, capsys: pytest.CaptureFixture) -> None:
-    """A dump is taken once (the file is consumed); every way of not being this databank's gives None and one line."""
+    """A dump is taken and stays for the next reader; every way of not being this databank's gives None and one line."""
     bank = strategies()
     write(folder / "R.abk", bank)
     ids = _ids(bank)
     ok = membank.take("P", "x", "R", ids, "main")
     assert ok is not None and sorted(ok["names"]) == sorted(ids)
-    assert capsys.readouterr().out == "" and not (folder / "R.abk").exists()
-    assert membank.take("P", "x", "R", ids, "main") is None and capsys.readouterr().out == ""
+    assert capsys.readouterr().out == "" and (folder / "R.abk").exists()     # stays for the bank's other reader
+    assert membank.take("P", "x", "R", ids, "main") is not None
     bad = {"wrong data mode": (ids, "all"),
            "name missing in the file": ({**ids, "Strategy 9": "z"}, "main"),
            "name extra in the file": ({k: v for k, v in ids.items() if k != "Strategy 3.3.3"}, "main"),
@@ -50,7 +50,7 @@ def test_take(folder: Path, capsys: pytest.CaptureFixture) -> None:
     for case, (i, data) in bad.items():
         write(folder / "R.abk", bank)
         assert membank.take("P", "x", "R", i, data) is None, case
-        assert len(capsys.readouterr().out.splitlines()) == 1 and not (folder / "R.abk").exists(), case
+        assert len(capsys.readouterr().out.splitlines()) == 1, case
 
 
 def test_take_refuses_missing_and_corrupt(folder: Path) -> None:

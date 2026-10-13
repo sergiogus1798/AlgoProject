@@ -34,21 +34,23 @@ def dump(role: str, project: str, banks: set[str] | None) -> dict[str, int]:
 
     Same freshness as the pieces themselves (`state.commands`): a stale harvest takes its build and
     its retest in "main"; a stale trades piece takes its bank in "all" when it carries
-    cross-check markets (`find.cross_market`), else "main". One mode per bank file: the harvest
-    never reads a cross-market bank (its retest is a single-market `OOS`), so no bank needs both.
+    cross-check markets (`find.cross_market`), else "main". One mode per bank file: a bank
+    asked in both is refused by name.
     Names are SQX's own (`status()["databank"]`), what `membank.take` and the consumers use.
     """
     top, want = progress.installs()[role], {}
     for (p, db), full in afterrun.scope(top, project, banks).items():
         now = state.status(p, db)
         todo = state.commands(p, now, exports=db not in afterrun.UNREAD_TRADES)
-        if "harvest" in todo:
-            want[now["databank"]] = want[now["partner"]] = "main"
+        asks = [(b, "main") for b in (now["databank"], now["partner"]) if "harvest" in todo]
         if full and "trades" in todo and db not in afterrun.UNREAD_TRADES:
-            want.setdefault(now["databank"], "all" if find.cross_market(find.files(top, p, now["databank"])) else "main")
+            asks.append((now["databank"], "all" if find.cross_market(find.files(top, p, now["databank"])) else "main"))
+        for bank, mode in asks:
+            if want.setdefault(bank, mode) != mode:      # one file per bank: the second reader would find the wrong mode
+                raise SystemExit(f"{project}: el databank {bank} se pide en modo main (cosecha) y all (otros mercados) a la vez")
     wrote = membank.run(role, project, want) if want else {}
     if want and not wrote:
-        print(f"sin .abk de {sorted(want)}: la instalación no tiene su proyecto de herramientas o sus snippets sin compilar", flush=True)
+        print(f"{sorted(want)} no vale: la instalación no tiene su proyecto de herramientas o sus snippets sin compilar", flush=True)
     return wrote
 
 
@@ -71,7 +73,9 @@ def export(role: str, project: str, banks: set[str] | None = None) -> None:
     try:
         with phase("export.memoria"):
             wrote = dump(role, project, banks)
-        print(f"operaciones desde memoria: {wrote or 'ninguna (orderstocsv)'}", flush=True)
+        print(f"operaciones desde memoria: {wrote or 'ninguna'}", flush=True)
+        if not wrote:
+            why.append("AlgoBank no escribió ninguno")
         run = subprocess.Popen([sys.executable, "-m", "ui.daemon.loader.afterrun", "--role", role, "--live",
                                 "--project", project, *[a for b in sorted(banks or ()) for a in ("--databank", b)]],
                                cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
