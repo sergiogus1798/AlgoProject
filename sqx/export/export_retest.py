@@ -9,8 +9,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import exportdrv, manifest, tradepack
-from core.paths import MASTER, export_dir, worker_dir
+from core import bankfile, exportdrv, fanout, identities, manifest, tradepack
+from core.paths import MASTER, databank_dir, export_dir, worker_dir
+from sqx.export import membank
 from sqx.export.export_trades import SAMPLE_SEED, sign, stage
 
 
@@ -27,7 +28,12 @@ def pack(raw: Path, staged: int, out: Path, meta: dict, command: str, since: flo
     """
     # One typed Parquet for the whole export, `Symbol` separating the markets: the same
     # store export_trades uses, read back with core.tradestore.market().
-    packed = tradepack.pack(sorted(raw.glob("*.csv")), out / "trades.parquet", per_market=True)
+    record(tradepack.pack(sorted(raw.glob("*.csv")), out / "trades.parquet", per_market=True),
+           staged, out, meta, command, since)
+
+
+def record(packed: dict, staged: int, out: Path, meta: dict, command: str, since: float) -> None:
+    """Write the manifest of a databank whose `trades.parquet` is in `out` (`packed`: the pack's dict)."""
     symbols = pd.read_parquet(out / "trades.parquet", columns=["Symbol"])["Symbol"]
     counts = {str(k): int(v) for k, v in symbols.value_counts().items()}
     for feed, n in sorted(counts.items()):
@@ -70,22 +76,42 @@ def main() -> None:
 
     # 📓 2026-09-26: a small export was ~17 s, most of it SQX starting, and steps 23 to 25
     # paid that once per WFC leg.
-    exportdrv.trades(work / "strategies", work / "raw", data="all")
+    # A live session's `.abk` (sqx.export.membank) serves the trades of a databank it holds whole;
+    # only the others go through orderstocsv (refused while a GUI session holds the install).
+    held = {}
     for i, db in enumerate(a.databank):
+        if not (a.role and (membank.bank_dir(a.project, a.role) / f"{db}.abk").exists()):
+            continue
+        files = sorted((work / "strategies").glob(f"{i}__*.sqx"))
+        newest = max((f.stat().st_mtime for f in databank_dir(a.project, db, install).glob("*.sqx")),
+                     default=0.0)
+        ids = {f.stem[len(f"{i}__"):]: v for f, v in identities.many(files, fanout.CORES).items()}
+        if bank := (membank.take(a.project, a.role, db, ids, newest, "all")):
+            held[i] = bank
+    (work / "held").mkdir()
+    for i in held:      # signed from here; what stays in strategies/ is what orderstocsv reads
+        for f in (work / "strategies").glob(f"{i}__*.sqx"):
+            f.rename(work / "held" / f.name)
+    if len(held) < len(a.databank):
+        exportdrv.trades(work / "strategies", work / "raw", data="all")
+    for i, db in enumerate(a.databank):
+        meta = {"install": str(install), "project": a.project, "databank": db, "data": "all",
+                "timeframes": sorted(set(timeframes[i].values())), "limit": a.limit,
+                "batch": a.batch or None, "sample_seed": SAMPLE_SEED if a.limit else None}
+        command = (f"export_retest.py --project {a.project} --databank {db}"
+                   + (f" --batch {a.batch}" if a.batch else "") + (f" --limit {a.limit}" if a.limit else ""))
+        out = export_dir(a.project, db, day, a.batch)
+        if i in held:
+            record(bankfile.pack(held[i], out / "trades.parquet", per_market=True),
+                   len(timeframes[i]), out, meta, command, began)
+            sign(work / "held", out, f"{i}__")
+            continue
         mine = work / str(i)
         mine.mkdir()
         for csv in (work / "raw").glob(f"{i}__*.csv"):
             csv.rename(mine / csv.name[len(f"{i}__"):])
-        pack(mine, len(timeframes[i]), export_dir(a.project, db, day, a.batch),
-             {"install": str(install), "project": a.project, "databank": db, "data": "all",
-              "timeframes": sorted(set(timeframes[i].values())), "limit": a.limit,
-              "batch": a.batch or None, "sample_seed": SAMPLE_SEED if a.limit else None},
-             f"export_retest.py --project {a.project} --databank {db}"
-             + (f" --batch {a.batch}" if a.batch else "")
-             + (f" --limit {a.limit}" if a.limit else ""), began)
-        sign(work / "strategies", export_dir(a.project, db, day, a.batch), f"{i}__")
-    # The CSVs orderstocsv wrote and the .sqx copies are intermediates; only identity.csv
-    # outlives them — a WFC batch of 5000 variants must not keep its .sqx three times.
+        pack(mine, len(timeframes[i]), out, meta, command, began)
+        sign(work / "strategies", out, f"{i}__")
     shutil.rmtree(work)
 
 

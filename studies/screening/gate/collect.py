@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import exportdrv, fanout, sqxfile, sqxstats, tradepack, tradestore
+from core import bankfile, exportdrv, fanout, sqxfile, sqxstats, tradepack, tradestore
 from core.identities import many as identities_many
 from core.sqxview import LABEL, VIEW, dof_ratio
 
@@ -108,7 +108,7 @@ def metrics(read: dict[str, tuple]) -> tuple[pd.DataFrame, str]:
 
 
 def tables(sides: dict[str, list[Path]], work: Path,
-           exports: dict[str, Path] | None = None) -> dict:
+           exports: dict[str, Path] | None = None, banks: dict[str, dict] | None = None) -> dict:
     """Stage both databanks' strategies once, and take everything they hold in one pass.
 
     Args:
@@ -117,6 +117,9 @@ def tables(sides: dict[str, list[Path]], work: Path,
         exports: Side to a folder that receives that side's `trades.parquet` as
             `sqx.export.export_trades` packs it, with what its manifest counts beside it in
             `packed` -- the same `orderstocsv` then serves the databank's own trade export.
+        banks: Side to its taken `.abk` (`sqx.export.membank.take`). With BOTH sides taken the
+            trades come from `bankfile.pack` and no JVM runs; with either missing, both sides
+            go through `orderstocsv` -- one rule, never a mix.
 
     Returns:
         Per side: `metrics` (one row per identity, the view's columns of the block it filled,
@@ -134,35 +137,42 @@ def tables(sides: dict[str, list[Path]], work: Path,
     staged = work / "sqx"
     staged.mkdir(parents=True, exist_ok=True)
     known = identities([f for files in sides.values() for f in files])
-    ids, side_of = {}, {}
+    direct = all((banks or {}).get(side) for side in sides)
+    ids, side_of, src = {}, {}, {}
     for side, files in sides.items():
         for f in files:
             stem = PREFIX[side] + f.stem
-            shutil.copy(f, staged / f"{stem}.sqx")
+            src[stem] = f if direct else staged / f"{stem}.sqx"
+            if not direct:
+                shutil.copy(f, src[stem])
             ids[stem], side_of[stem] = known[f], side
 
     # The curves and the metrics are read off the files while the JVM writes the trades: it
     # is a subprocess, and the wait for it was ~10 s of reading left for afterwards.
     with ThreadPoolExecutor(1) as jvm:
-        exported = jvm.submit(exportdrv.trades, staged, work / "csv")
-        _STAGED.update({stem: staged / f"{stem}.sqx" for stem in ids})
+        exported = None if direct else jvm.submit(exportdrv.trades, staged, work / "csv")
+        _STAGED.update(src)
         got = dict(fanout.run(_read, {stem: 1 for stem in ids}, WORKERS))
         curves = {stem: got[stem][1] for stem in sorted(ids)}
         read = {side: metrics({stem: got[stem] for stem in ids if side_of[stem] == side})
                 for side in sides}
-        exported.result()
+        if exported:
+            exported.result()
 
     out = {}
     for side in sides:
         # Each side's CSVs under the strategies' own names, so the pack names its rows as
         # the databank's export does: the prefix is constant, the order is the same.
-        csvs = work / f"csv_{side}"
-        csvs.mkdir()
-        for f in sorted((work / "csv").glob(f"{PREFIX[side]}*.csv")):
-            f.rename(csvs / f.name[len(PREFIX[side]):])
         packed = (exports or {}).get(side, work / side) / "trades.parquet"
         packed.parent.mkdir(parents=True, exist_ok=True)
-        counts = tradepack.pack(sorted(csvs.glob("*.csv")), packed, per_market=False)
+        if direct:
+            counts = bankfile.pack(banks[side], packed, False, {f.stem for f in sides[side]})
+        else:
+            csvs = work / f"csv_{side}"
+            csvs.mkdir()
+            for f in sorted((work / "csv").glob(f"{PREFIX[side]}*.csv")):
+                f.rename(csvs / f.name[len(PREFIX[side]):])
+            counts = tradepack.pack(sorted(csvs.glob("*.csv")), packed, per_market=False)
         drawn = pd.read_parquet(packed)
         mine, label = read[side]
         mine = mine.assign(identity=mine["Strategy Name"].map(ids),

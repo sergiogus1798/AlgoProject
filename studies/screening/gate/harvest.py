@@ -13,7 +13,7 @@ import pandas as pd
 
 from core import fanout, manifest, sqxfile
 from core.paths import MASTER, databank_dir, export_dir, harvest_dir, worker_dir
-from sqx.export import export_trades
+from sqx.export import export_trades, membank
 from studies.screening.gate import collect, pairing
 
 SAMPLE_SEED = 20260923      # a subset harvest is a sample, and a sample has to reproduce
@@ -65,6 +65,21 @@ def whole_sides(a: argparse.Namespace, taken: dict[str, list[Path]], install: Pa
             for side, bank in (("IS", a.databank), ("OOS", a.oos_databank))
             if a.exports and taken[side] and len(taken[side]) == len(list(
                 databank_dir(a.project, bank, install).glob("*.sqx")))}
+
+
+def taken_banks(a: argparse.Namespace, install: Path) -> dict[str, dict]:
+    """Side to its `.abk` when a live worker dumped it and it matches the databank's files, else nothing.
+
+    Only trades come from it: identity, metrics, curves and structure stay read off the .sqx.
+    """
+    banks = {}
+    for side, bank in (("IS", a.databank), ("OOS", a.oos_databank)):
+        files = list(databank_dir(a.project, bank, install).glob("*.sqx"))
+        if a.role and files:
+            ids = collect.identities(files)
+            banks[side] = membank.take(a.project, a.role, bank, {f.stem: ids[f] for f in files},
+                                       max(f.stat().st_mtime for f in files), "main")
+    return banks
 
 
 def set_aside(out: Path, identities: set) -> Path | None:
@@ -140,7 +155,8 @@ def main() -> None:
     whole = whole_sides(a, taken, install)
     for folder in whole.values():       # packed in place below: a kill mid-write must read stale, not fresh
         (folder / "manifest.json").unlink(missing_ok=True)
-    sides = collect.tables(taken, out / "_work", whole)
+    banks = taken_banks(a, install)
+    sides = collect.tables(taken, out / "_work", whole, banks)
     for side, folder in whole.items():
         export(folder, a, a.databank if side == "IS" else a.oos_databank, taken[side],
                sides[side]["packed"], install, began)
