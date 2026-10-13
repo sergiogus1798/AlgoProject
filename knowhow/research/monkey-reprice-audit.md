@@ -1,17 +1,16 @@
 ---
 q: Why does the monkey's repriced net exceed SQX's P/L, and what convention reproduces SQX from bars?
 kw: monkey real_net higher than SQX; 45464 vs 38465; 6999 USD gap; repricing audit; calibrate.charged; open-open convention; fill offset; swap per night; triple swap Friday 23:00; rollover boundary; reprice.py tolerance; half-tick rounding
-tag: 🔬  date: 2026-10-12  see: export/fill-and-pricing, costs/per-task-costs, costs/where-the-spread-is
+tag: 🔬  date: 2026-10-13  see: export/fill-and-pricing, costs/per-task-costs, costs/where-the-spread-is
 ---
 # The monkey never charges spread or slippage: they sit in SQX's fill prices, not in its residual "cost"
 - `calibrate.charged()` = `v·size·(Close price − Open price) − P/L` is taken from SQX's **fills**, so it holds only swap (+ commission). `kernel.runs` then moves **bar open to bar open**. Gap = `v·size·(spread + 2·slippage)` per trade, exactly; the real run and every null are under-charged alike. Closed for the gate only (`engines/nulls/windowed.py`); the `engines/nulls` simulate path and its ~35 importers still charge none.
 - SQX, long, market orders, reproduced from bars + the task's declared costs alone:
-  `entry = round(Open[entry bar] + spread + slippage, tick)` · `exit = round(Open[exit bar] − slippage, tick)` ·
+  `entry = Open[entry bar] + spread + slippage` · `exit = Open[exit bar] − slippage`, each rounded to the tick **only where SQX rounds (NIKKEI225 yes; XAUUSD, USA500 no; DAX40 mixed)** ·
   `swap = PV·size·entry_fill·(pct/100/360)·nights` · `P/L = round(PV·size·(exit − entry) − swap, 0.01)`.
 - `nights` = rollovers T (declared hour, Mon–Fri) with `open ≤ T < close`; the triple night counts 3. Card values, not fitted: 23:00, FRIDAY, PV 0.063137.
 - Tolerance per trade: `0.02 USD + 2·tick·PV·size` (cents + one tick per fill); the tick term is spent only when a declared cost falls within ~0.1 tick of a half tick (build: 304.11+106.44 → x.55, 106.44 → x.44); SQX lands on either side.
-- 🔬 Verified 2026-10-12: shorts, swap in points, SizeBased commission, EndTest (a bug, fixed: fills at SQX's price). Unverified: short SL, PT, PercentageBased commission. Non-repricer gaps: see Evidence.
-
+- 🔬 Verified 2026-10-12: shorts, swap in points, SizeBased commission, EndTest (a bug, fixed: fills at SQX's price). Unverified: short SL, PT, PercentageBased commission. Not: «SQX always rounds» (gold costs −0.237 USD/trade, `OPEN.md` #121). Other gaps: Evidence.
 
 ## Evidence
 

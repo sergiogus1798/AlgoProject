@@ -135,6 +135,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 118 | 🟠 | Deferred builder gates: task windows vs segment, second chart in a template | OPEN.md |
 | 119 | 🟡 | `MonteCarloManipulation` removed (owner 2026-10-11: never again) — custodian and gorilla still ON | OPEN.md |
 | 120 | 🟠 | El repreciador no reproduce a SQX en XAUUSD y USA500 (oos1) ni en DAX40 por décimas | OPEN.md |
+| 121 | 🟠 | Step 18.5 skips every XAUUSD mother: the repricer's tick rounding matches SQX on some assets and not on others | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -1014,3 +1015,35 @@ El código ya lo rechaza; apagado en el proyecto del conductor. Los 12 proyectos
 ## 120. 🟠 El repreciador no reproduce a SQX en XAUUSD y USA500 (oos1) ni en DAX40 por décimas
 
 Origen: encargo 65 fila 8, 2026-10-12. Hechos en `knowhow/research/monkey-reprice-audit.md`. SQX reparte cada fill entre los dos ticks que rodean al coste declarado y las barras guardadas no pueden reproducirlo (ruido sin sesgo). Descuadre medido: XAUUSD oos1 0,28-0,46, USA500 oos1 0,15, DAX40 0,011, 0-0,002 en el resto. Consecuencia: el paso 18.5 corre por madre sólo donde el descuadre es < `wfc.sqx_gap_relative` (`pipeline/autopilot/blind.py`, `skipped`). Sin verificar contra SQX: stop-loss corto, salidas por profit target, comisión PercentageBased (el builder simple corto en USDJPY no activa SL/PT, así que `Test_USDJPY_M30_cortosReprice_leaseWeb` se retiró sin correr). El `variant_trades.parquet` de 10k de USDJPY es anterior al commit c443f1d y mezcla 16 símbolos bajo `Main`: regenerar.
+
+## 121. 🟠 Step 18.5 skips every XAUUSD mother: the repricer's tick rounding matches SQX on some assets and not on others
+
+Found 2026-10-13. Refines the cause of #120 for gold (🔬 measured; scratch scripts `/dev/shm/tmp66/d185/{b,c,d,e,g,h,i}.py`, `/dev/shm/tmp66/s0.py`). **Trap:** `engines/market/reprice.py:110-113` rounds entry and exit prices to the tick; SQX does that on NIKKEI225 but **not** on XAUUSD or USA500, so the gate skips them.
+
+- **Symptom.** Workflow runs of `Test_XAUUSD_H1_ruptura_perf66`: step 18.5 (marketSurfaces) skipped 4 of 4 mothers, «descuadre con SQX 0,49 ≥ 0,01 — el repreciador no reproduce a SQX en esta madre». Not a regression of encargo 66: the gate `blind.skipped` arrived with commit `ccaf226` (2026-10-12); the run of 2026-10-11 (`Test_XAUUSD_H1_ruptura_wf4s`) already had 0.59 and nobody read it.
+- **What the number is.** `engines/weekly/panel.py:119-122` flags a variant when |Σ repriced − SQX NetProfit| > max(1.0, 0.01·|NetProfit|) and returns the SHARE of variants flagged; `studies/optimisation/wfc/one.py:144-148` takes the max over segments (`descuadre_sqx`); `pipeline/autopilot/blind.py:47-48` compares that share with `wfc.sqx_gap_relative` = 0.01 (`ledger/thresholds.yaml:1334`). One ledger key, two meanings: a fraction of NetProfit in panel.py, a share of variants in blind.py.
+- **Cause on gold.** The card's slippage (4.67 points in build) is not a tick multiple: SQX pays 0.0467, the repricer 0.05 → −0.237 USD per trade in build, −0.195 in oos1 (p10/p90 −0.26…−0.17). 34.5 % of build trades exit 0.01 below SQX and carry 469.9 of the 470.2 USD gap. Commission, swap, duplicated spread/slippage and lot rounding were ruled out with numbers. Build: 0.26 % of net, passes; oos1: net is only 378 USD, so ~10 % of it → 48.5 % of variants off.
+- **Without rounding on gold:** off-share build 0.5 % → 0.0 %, oos1 48.5 % → 12.75 % (a residual −0.043 USD/trade in oos1, cause not identified; SQX's round-trip price cost averages 0.2873 vs 0.2879 declared).
+- **Second-asset check (owner's condition before any fix): the behaviour is PER ASSET, so no global fix was applied.**
+
+  | asset (mother) | segment | off-share with rounding | without |
+  |---|---|---|---|
+  | NIKKEI225 M30 (17.13.284) | oos1 | 0.0000 | 0.0010 |
+  | NIKKEI225 M30 (20.11.454) | oos1 | 0.0000 | 0.0100 |
+  | USA500 H1 (20.17.293) | oos1 | 0.1544 | 0.0060 |
+  | DAX40 M30 (12.3.344) | build | 0.0085 | 0.0128 |
+  | DAX40 M30 (12.3.344) | oos1 | 0.0701 | 0.0138 |
+
+  Builds of NIKKEI and USA500: 0.0000 both ways. NIKKEI: SQX rounds. USA500 and gold: it does not. DAX40: mixed. USDJPY keeps its `tick_step` rounding (77.73 → 0.01 when it was added).
+- **Why no global switch.** «Round only with `tick_step`» would break `tests/test_reprice.py::test_cost_off_the_tick_rounds_the_fill` and the audited NIKKEI fixture `tests/fixtures/reprice_audited.csv`.
+- **Owner already decided (2026-10-13):** this is its own matter, not chased inside encargo 66 (R18b = A); in the workflow's functional test «18.5 saltado por descuadre» counts as a result, not an error (R18c = A).
+
+**Open questions for the owner**
+
+| # | decision | options |
+|---|---|---|
+| 1 | Rounding | A: per-asset field on the cost card (`rounds_to_tick`), measured per asset · B: leave it, gold and USA500 stay skipped |
+| 2 | Gate measure | A: its own threshold key and a measure of its own, not `wfc.sqx_gap_relative` · B: keep the shared key |
+| 3 | Residual 0.043 USD/trade on gold oos1 | A: investigate · B: accept |
+
+Fix of 1 would also close the gold and USA500 part of #120. Written in English because it was recorded from a scratch measurement log; #120 is in Spanish.
