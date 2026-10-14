@@ -1,6 +1,7 @@
 """Every knob, and the harvest this study reads: gate's harvest (step 8) or a strategy export."""
 
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -11,7 +12,7 @@ from ledger import thresholds
 CONFIG = Path(__file__).with_name("config.yaml")
 
 
-def config(overrides: list[str]) -> dict:
+def config(overrides: list[str]) -> dict[str, Any]:
     """Every knob, with command-line overrides applied.
 
     Args:
@@ -62,7 +63,7 @@ def names(folder: Path) -> pd.Series:
     Returns:
         Series indexed by identity; the retest (OOS) databank's own name for it.
     """
-    return pd.read_parquet(folder / "metrics.parquet", columns=["strategy"])["strategy"]
+    return pd.Series(pd.read_parquet(folder / "metrics.parquet", columns=["strategy"])["strategy"])
 
 
 def timeframe(folder: Path) -> str:

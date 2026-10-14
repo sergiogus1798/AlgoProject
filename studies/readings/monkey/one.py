@@ -1,12 +1,14 @@
 """One strategy against its monkeys, as the contract's data: where it landed, where its edge came from."""
 
 import time
+from typing import Any, TypedDict
 
 import numpy as np
 import pandas as pd
 
 from core.study import blocks, draws, identity, output, result as envelope
 from engines.nulls import simulate, verdict
+from engines.nulls.inputs import Fixed
 
 MODULE = "nulls"
 RUNGS_ES = {"timing": "cuándo entra",
@@ -23,7 +25,16 @@ GLOSSARY = [
      "El más pequeño observable es 1/(monos+1)."}]
 
 
-def measure(trades: pd.DataFrame, frame: pd.DataFrame, cfg: dict, name: str) -> dict:
+class Measured(TypedDict):
+    """The real run and the null runs: calibrated trades, real statistics, statistics per rung, headline p per statistic."""
+
+    kept: Fixed
+    seen: dict[str, float]
+    per_rung: dict[str, dict[str, np.ndarray]]
+    found: dict[str, float]
+
+
+def measure(trades: pd.DataFrame, frame: pd.DataFrame, cfg: dict, name: str) -> Measured:
     """The real run and every rung's null runs, priced identically.
 
     Args:
@@ -45,7 +56,7 @@ def measure(trades: pd.DataFrame, frame: pd.DataFrame, cfg: dict, name: str) -> 
             "found": {n: verdict.pvalue(seen[n], per_rung[head][n], n) for n in names}}
 
 
-def tabs(got: dict, cfg: dict, statistic: str) -> list[dict]:
+def tabs(got: Measured, cfg: dict, statistic: str) -> list[dict]:
     """The three readings: where it landed, the ladder of rungs, where its edge came from."""
     seen, per_rung, names = got["seen"], got["per_rung"], cfg["statistics"]["report"]
     head = per_rung[cfg["nulls"]["headline"]]
@@ -53,8 +64,8 @@ def tabs(got: dict, cfg: dict, statistic: str) -> list[dict]:
     landed = [blocks.table("Tu estrategia contra el mono del peldaño titular", pd.DataFrame(
         [[n, seen[n], head[n].mean(), np.percentile(head[n], 95),
           (head[n] < seen[n]).mean(), got["found"][n]] for n in names],
-        columns=["estadístico", "tu estrategia", "mono medio", "mono p95", "percentil",
-                 "p"]),
+        columns=pd.Index(["estadístico", "tu estrategia", "mono medio", "mono p95",
+                          "percentil", "p"])),
         "Cinco estadísticos y ningún compuesto: cuál importa lo decide el dueño, y discrepan "
         "hasta en 45 puntos de la población.")]
     landed += [{**blocks.distribution(f"{n} — {draws:,} monos, peldaño {rung}", "", values[n],
@@ -91,7 +102,7 @@ def tabs(got: dict, cfg: dict, statistic: str) -> list[dict]:
             envelope.tab("channels", "De dónde sale la ventaja", [channels])]
 
 
-def records(got: dict, name: str, cfg: dict, market: str = "") -> list[dict]:
+def records(got: Measured, name: str, cfg: dict, market: str = "") -> list[dict]:
     """Every rung's null distribution of every statistic, as `core.study.draws` rows.
 
     Args:
@@ -111,7 +122,7 @@ def records(got: dict, name: str, cfg: dict, market: str = "") -> list[dict]:
 
 
 def run(strategy: str, given: dict, cfg: dict, statistic: str = "net",
-        keep: list | None = None) -> dict:
+        keep: list | None = None) -> dict[str, Any]:
     """One strategy against its monkeys.
 
     Args:
@@ -150,7 +161,7 @@ def run(strategy: str, given: dict, cfg: dict, statistic: str = "net",
                  **{f"p_{n}": v for n, v in got["found"].items()}})
 
 
-def row(got: dict, trades: int, cfg: dict) -> dict:
+def row(got: Measured, trades: int, cfg: dict) -> dict[str, Any]:
     """One strategy's line of nulls.csv: real statistics, p per rung, attribution, distrust."""
     names = cfg["statistics"]["report"]
     out = {"n": trades, "reconcile": got["kept"]["checks"]["corr"]}

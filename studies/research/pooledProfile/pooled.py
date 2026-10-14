@@ -1,6 +1,17 @@
 """The group statistic: every asset's standardised measure added up, real and under the null."""
 
+from typing import TypedDict
+
 import numpy as np
+
+
+class Against(TypedDict):
+    """The pooled statistic against its null: statistic, p, assets counted per test, placebo p-values."""
+
+    stat: np.ndarray
+    p: np.ndarray
+    assets: np.ndarray
+    placebo_p: np.ndarray
 
 
 def standardised(sims: np.ndarray) -> np.ndarray:
@@ -33,7 +44,7 @@ def combined(z: np.ndarray, tested: np.ndarray) -> np.ndarray:
 
 
 def against_null(z_real: np.ndarray, sims: np.ndarray, tested: np.ndarray,
-                 placebos: int) -> dict:
+                 placebos: int) -> Against:
     """The group's statistic, its p, and the p of null draws judged as if they were real.
 
     Args:

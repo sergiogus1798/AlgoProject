@@ -53,7 +53,7 @@ def cell_text(rows: list[dict], idea_rows: list[dict], cell: list[str]) -> str:
     """One cell's memory as the page the ideaExpert and the ideaReviewer read, in Spanish: its
     closed failures with cause, what each rules out and what to try, the runs that are not
     evidence, and every idea already proposed on that asset, timeframe and direction."""
-    failed = queries.failures(rows, *cell)
+    failed = queries.failures(rows, cell[0], cell[1], cell[2], cell[3])
     other = [r for r in rows if queries.cell(r) == tuple(cell) and r not in failed]
     spent = [i for i in idea_rows if (i["symbol"], i["timeframe"], i["direction"]) == tuple(cell[:3])]
     lines = [f"MEMORIA DE LA CELDA {' '.join(cell)}",

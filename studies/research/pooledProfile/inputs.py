@@ -1,6 +1,7 @@
 """What the pooled profile is run on: its config, the groups, and each group's shared bars."""
 
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -12,7 +13,7 @@ from studies.research.memory.sources import CONFIG as MEMORY
 CONFIG = Path(__file__).with_name("config.yaml")
 
 
-def config(overrides: list[str] | None = None) -> dict:
+def config(overrides: list[str] | None = None) -> dict[str, Any]:
     """The parsed config.yaml with its overrides, the profile's own config under `profile`.
 
     Returns:
@@ -21,7 +22,7 @@ def config(overrides: list[str] | None = None) -> dict:
     """
     cfg = study_config.load(CONFIG, overrides or [])
     if cfg["run"]["seed"] is None:
-        cfg["run"]["seed"] = int(np.random.SeedSequence().entropy % 2 ** 32)
+        cfg["run"]["seed"] = int(cast("int", np.random.SeedSequence().entropy) % 2 ** 32)
     cfg["profile"] = profile.config([f"nulls.seed={cfg['run']['seed']}"])
     if not cfg["judge"]["clock"]:
         cfg["profile"]["measures"] = [m for m in cfg["profile"]["measures"]

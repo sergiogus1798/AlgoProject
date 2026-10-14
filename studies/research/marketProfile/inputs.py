@@ -2,6 +2,7 @@
 
 import time
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -16,11 +17,11 @@ SEGMENT = "build"      # the only segment the profile may read
 PRICES = ["Open", "High", "Low", "Close"]
 
 
-def config(overrides: list[str] | None = None) -> dict:
+def config(overrides: list[str] | None = None) -> dict[str, Any]:
     """The parsed config.yaml with its overrides; a null seed becomes a fresh, recorded root."""
     cfg = study_config.load(CONFIG, overrides or [])
     if cfg["nulls"]["seed"] is None:
-        cfg["nulls"]["seed"] = int(np.random.SeedSequence().entropy % 2 ** 32)
+        cfg["nulls"]["seed"] = int(cast("int", np.random.SeedSequence().entropy) % 2 ** 32)
     return cfg
 
 
@@ -30,7 +31,7 @@ def span(symbol: str) -> tuple[pd.Timestamp, pd.Timestamp]:
     Raises ValueError when the asset has no build dates: a window is never invented.
     """
     lo, hi = assetdata.window(assetdata.load(symbol), SEGMENT)
-    return pd.Timestamp(lo, unit="ms"), pd.Timestamp(hi, unit="ms")
+    return cast("pd.Timestamp", pd.Timestamp(lo, unit="ms")), cast("pd.Timestamp", pd.Timestamp(hi, unit="ms"))
 
 
 def cut(m1: pd.DataFrame, symbol: str) -> pd.DataFrame:
@@ -45,7 +46,7 @@ def cut(m1: pd.DataFrame, symbol: str) -> pd.DataFrame:
         comes after the build end is dropped here, before any resampling or measure.
     """
     lo, hi = span(symbol)
-    return m1[(m1.index >= lo) & (m1.index < hi)]
+    return pd.DataFrame(m1[(m1.index >= lo) & (m1.index < hi)])
 
 
 def minute_bars(symbol: str, fresh_minutes: int) -> pd.DataFrame | None:
@@ -64,10 +65,15 @@ def minute_bars(symbol: str, fresh_minutes: int) -> pd.DataFrame | None:
     return m1 if path.stat().st_mtime == stamp else None
 
 
-def bars(m1: pd.DataFrame, timeframe: str) -> pd.DataFrame:
-    """M1 bars resampled the way core.barstore does, without touching its cache."""
+def bars(m1: pd.DataFrame | None, timeframe: str) -> pd.DataFrame:
+    """M1 bars resampled the way core.barstore does, without touching its cache.
+
+    Raises ValueError when `m1` is None, i.e. `minute_bars` found the feed being rewritten.
+    """
+    if m1 is None:
+        raise ValueError("the M1 feed was being rewritten; rerun")
     agg = {k: barstore.AGG[k] for k in PRICES}
-    return m1.resample(barstore.RULE[timeframe]).agg(agg).dropna()
+    return pd.DataFrame(m1.resample(barstore.RULE[timeframe]).agg(agg).dropna())
 
 
 def cost(asset: dict, price: np.ndarray) -> np.ndarray:

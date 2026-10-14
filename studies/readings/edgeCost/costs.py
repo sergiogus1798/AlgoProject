@@ -6,6 +6,8 @@ by night) from raw bar opens — a stop-loss exit from SQX's own price — and t
 is the denominator.
 """
 
+from typing import Any
+
 import pandas as pd
 
 from core import assetcheck, assetdata
@@ -13,7 +15,7 @@ from core.barstore import read as read_bars
 from engines.market import reprice
 
 
-def asset_for(feed: str) -> dict:
+def asset_for(feed: str) -> dict[str, Any]:
     """The asset file that prices this feed's costs.
 
     Args:
@@ -28,7 +30,7 @@ def asset_for(feed: str) -> dict:
     return assetdata.load(symbol)
 
 
-def price(trades: pd.DataFrame, bars: pd.DataFrame, declared: dict,
+def price(trades: pd.DataFrame, bars: pd.DataFrame, declared: reprice.Costs,
           feed: str | None = None) -> pd.DataFrame:
     """Every trade repriced by the common repricer.
 
@@ -61,7 +63,7 @@ def per_trade(trades: pd.DataFrame, feed: str, timeframe: str) -> pd.DataFrame:
     Returns:
         `price()`'s table over the OOS rows.
     """
-    oos = trades[trades["sample"] == "OOS"]
+    oos = pd.DataFrame(trades[trades["sample"] == "OOS"])
     return price(oos, read_bars(feed, timeframe), reprice.costs(feed, "oos1"), feed)
 
 

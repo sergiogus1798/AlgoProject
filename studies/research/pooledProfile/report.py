@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import time
+from typing import Any
 
 import pandas as pd
 
@@ -14,6 +15,7 @@ from core.study.config import fingerprint
 from studies.research.board import store as board_store
 from studies.research.marketProfile import ledgerrows as profile_ledger
 from studies.research.pooledProfile import contract, inputs, ledgerrows, many, one, store
+from studies.research.pooledProfile.many import Judged
 
 STATE = {}
 TITLE = "Perfil agrupado"
@@ -22,7 +24,7 @@ LEDE = ("Las medidas del perfil de mercado juzgadas por grupo (clase de activo, 
         "activos a la vez en el tiempo, y el efecto de cada activo encogido hacia su grupo.")
 
 
-def asset(key: tuple) -> dict:
+def asset(key: tuple) -> dict[str, Any]:
     """One asset of one group on one timeframe, measured and written to its own files."""
     group, timeframe, symbol = key
     got = one.run(symbol, group, timeframe, STATE["bars"][group][timeframe][symbol],
@@ -43,7 +45,7 @@ def measure(cfg: dict, force: bool) -> int:
     return len(costs)
 
 
-def judge(cfg: dict) -> tuple[dict, dict]:
+def judge(cfg: dict) -> tuple[Judged, dict]:
     """Every group's cell judged together; also each cell's shared window, for the ledger."""
     cells, windows = [], {}
     for group, symbols in inputs.groups(cfg).items():
@@ -87,7 +89,7 @@ def main() -> None:
         "wall_s": round(time.time() - started, 1)}, indent=1), encoding="utf-8")
     result.progress(100, "hecho")
     pd.set_option("display.width", 220)
-    named = tests[tests["significant"]].sort_values("q")
+    named = pd.DataFrame(tests[tests["significant"]]).sort_values("q")
     print(f"\n{len(named)} de {len(tests)} pruebas de grupo pasan (BH al "
           f"{cfg['judge']['alpha']:.0%}); en mundos sin nada el procedimiento nombra algo el "
           f"{fake['any_named']:.1%} de las veces ({fake['worlds']} placebos)\n")

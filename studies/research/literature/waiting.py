@@ -27,7 +27,7 @@ def state(entry: dict, measured: set[str]) -> str:
 
 def reading(rows: pd.DataFrame) -> str:
     """What the profile measured for one entry on `build`, in one Spanish phrase."""
-    ran = rows[rows["n_trades"] >= 30]
+    ran = pd.DataFrame(rows[rows["n_trades"] >= 30])
     if ran.empty:
         return f"{len(rows)} celdas, ninguna llega a 30 operaciones en build"
     best = ran.sort_values(["passes", "q", "multiple"], ascending=[False, True, False]).iloc[0]
@@ -60,7 +60,7 @@ def table(entries: list[dict], measures: pd.DataFrame, classes: dict) -> list[di
         rows = measures[measures["measure"].isin(names) & measures["symbol"].isin(where)]
         passing = rows[rows["passes"]]
         out.append({"id": e["id"], "family": e["family"], "state": got, "measures": names,
-                    "symbols": where, "reading": reading(rows) if got == MEASURED else "—",
+                    "symbols": where, "reading": reading(pd.DataFrame(rows)) if got == MEASURED else "—",
                     "passing": list(zip(passing["symbol"], passing["timeframe"],
                                         passing["direction"], passing["measure"]))})
     return out

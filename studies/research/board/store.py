@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 from core.researchpaths import research_memory_dir
 
@@ -28,6 +29,6 @@ def write(path: Path, data: dict) -> Path:
     return path
 
 
-def read(path: Path) -> dict:
+def read(path: Path) -> dict[str, Any]:
     """A JSON file as a dict."""
     return json.loads(path.read_text(encoding="utf-8"))

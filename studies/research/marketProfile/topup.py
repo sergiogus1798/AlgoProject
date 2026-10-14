@@ -1,6 +1,7 @@
 """Measure on an asset only the measures its stored cells lack, and add them to what is stored."""
 
 from datetime import datetime
+from typing import Any
 
 import pandas as pd
 
@@ -14,7 +15,7 @@ def missing(symbol: str, cfg: dict) -> list[dict]:
     return [s for s in cfg["measures"] if s["name"] not in have]
 
 
-def run(symbol: str, cfg: dict) -> dict:
+def run(symbol: str, cfg: dict) -> dict[str, Any]:
     """One asset's missing measures on every timeframe, against their own null draws.
 
     Each measure's p is the share of its own draws at or above it, so measures added later are

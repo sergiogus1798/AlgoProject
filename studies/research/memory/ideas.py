@@ -1,6 +1,7 @@
 """The ideas index: every idea the ideaExpert proposed, chosen or not, and what finding it cost."""
 
 import re
+from collections.abc import Sequence
 
 from core.researchpaths import ideas_dir
 from studies.research.memory import sources
@@ -51,7 +52,7 @@ def parse(text: str, symbol: str, name: str) -> list[dict]:
     return rows
 
 
-def index(attempts: list[dict] = ()) -> list[dict]:
+def index(attempts: Sequence[dict] = ()) -> list[dict]:
     """Every idea ever proposed, oldest first, with whether a template of that name exists.
 
     Args:

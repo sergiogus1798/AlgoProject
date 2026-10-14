@@ -1,5 +1,6 @@
 """The literature scout's entries as measures of the profile: their `translation.measures`, checked."""
 
+from typing import Any
 import yaml
 
 from core.researchpaths import research_literature_dir
@@ -48,7 +49,7 @@ def specs(entries: list[dict], taken: set[str]) -> tuple[list[dict], list[str]]:
     return out, skipped
 
 
-def extend(cfg: dict) -> dict:
+def extend(cfg: dict) -> dict[str, Any]:
     """The config with the scout's measures after its own; what was left out goes to `skipped`."""
     more, skipped = specs(scouted(), {m["name"] for m in cfg["measures"]})
     return {**cfg, "measures": cfg["measures"] + more, "literature_skipped": skipped}

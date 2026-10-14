@@ -3,6 +3,7 @@
 import json
 import time
 import zlib
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -39,13 +40,13 @@ def evaluate(d: dict, cal: dict, specs: list[dict],
     return out
 
 
-def framed(x: dict, cal: dict, cfg: dict) -> dict:
+def framed(x: dict, cal: dict, cfg: dict) -> dict[str, Any]:
     """A log series with everything a measure reads: the shared indicators and the wider frame."""
     return higher.context(series.derive(x, cfg["derive"]), cal, cfg["higher"])
 
 
 def money(bars: pd.DataFrame, asset: dict, direction: str, entry: np.ndarray,
-          leave: np.ndarray) -> dict:
+          leave: np.ndarray) -> dict[str, Any]:
     """What a measure's trades earned on the real bars, in price units, against their cost.
 
     Returns:
@@ -58,11 +59,11 @@ def money(bars: pd.DataFrame, asset: dict, direction: str, entry: np.ndarray,
     sign = 1 if direction == "long" else -1
     pnl = sign * (opens[leave] - opens[entry])
     paid = inputs.cost(asset, opens[entry])
-    yearly = pd.Series(pnl).groupby(bars.index.year[entry]).mean()
+    yearly = pd.Series(pnl).groupby(cast("Any", bars.index).year[entry]).mean()
     return {"n_trades": int(entry.size), "effect": pnl.mean(), "cost": paid.mean(),
             "multiple": pnl.mean() / paid.mean(), "years": int(yearly.size),
-            "years_with_sign": int((yearly > 0).sum()),
-            "per_year": json.dumps({int(y): float(v) for y, v in yearly.items()})}
+            "years_with_sign": int((yearly.to_numpy() > 0).sum()),
+            "per_year": json.dumps({int(y): float(v) for y, v in cast("Any", yearly.items())})}
 
 
 def against_null(x: dict, cal: dict, cfg: dict, block: int,
@@ -122,7 +123,7 @@ def overlap(real: list[tuple], family: dict, n: int) -> list[dict]:
     return rows
 
 
-def run(symbol: str, timeframe: str, bars: pd.DataFrame, asset: dict, cfg: dict) -> dict:
+def run(symbol: str, timeframe: str, bars: pd.DataFrame, asset: dict, cfg: dict) -> dict[str, Any]:
     """The profile of one asset on one timeframe.
 
     Args:

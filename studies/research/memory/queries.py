@@ -1,6 +1,7 @@
 """The questions the board asks of the memory: untouched cells, what survived, what was spent."""
 
 from collections import Counter
+from collections.abc import Sequence
 from itertools import product
 
 from studies.research.memory import sources
@@ -33,7 +34,7 @@ def conclusive(row: dict, include_dev: bool) -> bool:
     return row["outcome"].startswith(CONCLUSIVE) and (include_dev or not row["dev_cut"])
 
 
-def failures(attempts: list[dict], symbol: str, timeframe: str, direction: str, family: str,
+def failures(attempts: Sequence[dict], symbol: str, timeframe: str, direction: str, family: str,
              include_dev: bool = False) -> list[dict]:
     """The closed runs of one cell that carry a cause: what whoever proposes there next must
     adopt or reject, one by one. A failed run (`infrastructure`) is not closed and not here."""

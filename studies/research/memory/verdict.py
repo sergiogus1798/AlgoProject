@@ -3,6 +3,7 @@
 import csv
 import os
 from pathlib import Path
+from typing import Any
 
 from core.datapaths import DATA, template_runs
 from studies.research.memory import attempts, sources
@@ -50,7 +51,7 @@ def write(path: Path, rows: list[dict], fields: list[str]) -> None:
     os.replace(tmp, path)
 
 
-def close_run(run_dir: Path, runs_csv: Path | None = None, registry_row: dict | None = None) -> dict:
+def close_run(run_dir: Path, runs_csv: Path | None = None, registry_row: dict | None = None) -> dict[str, Any]:
     """Close the attempt of a finished autopilot run: counts per stage and the verdict.
 
     Fills `strategies_built`, `strategies_kept` and `verdict` of the project's row in runs.csv,

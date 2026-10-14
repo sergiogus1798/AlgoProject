@@ -1,6 +1,7 @@
 """`assets/FAMILIAS.md` assembled: the owner's prior leads, what was measured annotates it."""
 
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import yaml
@@ -150,7 +151,7 @@ def asset(data: dict, symbol: str, cfg: dict) -> list[str]:
     return [*lines, ""]
 
 
-def load(folder: Path, cfg: dict) -> dict:
+def load(folder: Path, cfg: dict) -> dict[str, Any]:
     """Everything the document reads: the judged map, the sweep, the variance ratios, the file."""
     scores, measures = pd.read_csv(folder / "scores.csv"), pd.read_csv(folder / "measures.csv")
     return {"scores": scores, "measures": measures, "symbols": sorted(scores["symbol"].unique()),

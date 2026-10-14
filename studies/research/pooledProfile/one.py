@@ -2,6 +2,7 @@
 
 import time
 import zlib
+from typing import TypedDict
 
 import numpy as np
 import pandas as pd
@@ -13,8 +14,16 @@ from studies.research.marketProfile import one as profile_one, series
 HIT = ("inside", "engulfing", "run")
 
 
+class Run(TypedDict):
+    """One asset's measure rows, its null statistics (float32) and the seconds it took."""
+
+    rows: pd.DataFrame
+    sims: np.ndarray
+    wall_s: float
+
+
 def run(symbol: str, group: str, timeframe: str, bars: pd.DataFrame, asset: dict,
-        cfg: dict) -> dict:
+        cfg: dict) -> Run:
     """The asset's measures against a null whose draws are the group's.
 
     Args:

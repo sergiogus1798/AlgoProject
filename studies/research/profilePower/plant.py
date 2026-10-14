@@ -35,7 +35,7 @@ HOLDS = {
 
 
 def planted(base: dict, entry: np.ndarray, leave: np.ndarray, sign: int, effect: float,
-            cost: np.ndarray, how: str, rng: np.random.Generator) -> dict:
+            cost: np.ndarray, how: str, rng: np.random.Generator) -> dict[str, np.ndarray]:
     """A series with an edge of known size added to the returns of the chosen bars.
 
     Args:

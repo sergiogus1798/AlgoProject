@@ -4,12 +4,25 @@ import csv
 from collections import Counter
 from fnmatch import fnmatchcase
 from pathlib import Path
+from typing import TypedDict
 
 from studies.research.memory.sources import CONFIG
 
 CAUSES = CONFIG["causes"]
 VOCABULARY = CAUSES["vocabulary"]
-BLANK = {"cause": "", "cause_share": "", "causes": "", "rules_out": "", "try_next": ""}
+
+
+class Cause(TypedDict):
+    """A cause with its share among the failed strategies, the other causes, what it rules out and what to try."""
+
+    cause: str
+    cause_share: str
+    causes: str
+    rules_out: str
+    try_next: str
+
+
+BLANK = Cause(cause="", cause_share="", causes="", rules_out="", try_next="")
 
 
 def of_fact(fact: str, value: str) -> str:
@@ -63,16 +76,17 @@ def ranked(seen: dict) -> list[str]:
     return sorted((c for c in seen if c), key=lambda c: (-seen[c], order.index(c)))
 
 
-def named(cause: str, seen: Counter | None = None) -> dict:
+def named(cause: str, seen: Counter | None = None) -> Cause:
     """A cause with its two texts and, when it was counted, its share and the other causes."""
-    others = [c for c in ranked(seen or {})]
+    counts = seen or Counter()
+    others = [c for c in ranked(counts)]
     return {"cause": cause,
-            "cause_share": f"{seen[cause]}/{seen['']}" if others else "",
-            "causes": ";".join(f"{c}:{seen[c]}" for c in others),
+            "cause_share": f"{counts[cause]}/{counts['']}" if others else "",
+            "causes": ";".join(f"{c}:{counts[c]}" for c in others),
             "rules_out": VOCABULARY[cause]["rules_out"], "try_next": VOCABULARY[cause]["try_next"]}
 
 
-def typed(row: dict, folder: Path) -> dict:
+def typed(row: dict, folder: Path) -> Cause:
     """The cause of one attempt.
 
     Args:
@@ -94,7 +108,7 @@ def typed(row: dict, folder: Path) -> dict:
     if kind == "failed":
         return named("infrastructure")
     if kind != "died":
-        return named("hypothesis_mismatch") if mismatch and kind == "survivors" else dict(BLANK)
+        return named("hypothesis_mismatch") if mismatch and kind == "survivors" else BLANK.copy()
     seen = of_verdicts(verdicts(folder, row["died_at"]))
     first = ranked(seen)
     got = named(first[0], seen) if first else named(CAUSES["stage"][row["died_at"]])

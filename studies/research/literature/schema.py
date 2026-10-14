@@ -1,6 +1,7 @@
 """The shape of a literature entry, and what a draft must satisfy before it is stored."""
 
 import re
+from typing import cast
 
 from studies.research.literature import anchors
 
@@ -75,7 +76,7 @@ def rules(draft: dict) -> list[str]:
     tr, out = draft["translation"], []
     read = " ".join(str(tr[k]) for k in ("entry", "hold", "context"))
     if CLOCK.search(read):
-        out.append(f"translation: reads the clock («{CLOCK.search(read)[0]}») — hard rule 15")
+        out.append(f"translation: reads the clock («{cast('re.Match[str]', CLOCK.search(read))[0]}») — hard rule 15")
     if tr["conditions"] not in (1, 2):
         out.append("translation.conditions: 1 or 2 entry conditions (hard rule 14)")
     question = draft.get("question")

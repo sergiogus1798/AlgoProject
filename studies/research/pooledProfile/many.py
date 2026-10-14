@@ -1,5 +1,7 @@
 """Every group judged together: the correction, the shrunk effects, the placebos, the board."""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
@@ -11,7 +13,33 @@ TEST = ["group", "timeframe", "direction", "measure"]
 CELL = ["symbol", "timeframe", "direction", "family"]
 
 
-def cell(rows: list[pd.DataFrame], sims: np.ndarray, cfg: dict) -> dict:
+class Cell(TypedDict):
+    """One group on one timeframe: its tests, its assets' effects and its placebo p-values."""
+
+    tests: pd.DataFrame
+    assets: pd.DataFrame
+    placebo_p: np.ndarray
+
+
+class Placebo(TypedDict):
+    """What the procedure names on null draws: worlds, share with any named, mean and max named."""
+
+    worlds: int
+    any_named: float
+    mean_named: float
+    max_named: int
+
+
+class Judged(TypedDict):
+    """The whole study: group tests, asset effects, the board cells it would bring, the placebo."""
+
+    tests: pd.DataFrame
+    assets: pd.DataFrame
+    board: pd.DataFrame
+    placebo: Placebo
+
+
+def cell(rows: list[pd.DataFrame], sims: np.ndarray, cfg: dict) -> Cell:
     """One group on one timeframe: its tests, its assets' effects, its placebo p-values.
 
     Args:
@@ -67,12 +95,12 @@ def filtered(assets: pd.DataFrame, filters: dict) -> pd.DataFrame:
     out["pays_shrunk"] = out["shrunk_multiple"].fillna(-np.inf) >= filters["cost_multiple"]
     out["stable"] = (out["years_with_sign"] / out["years"]).fillna(0) > filters["stable_share"]
     out["frequent"] = out["trades_per_year"].fillna(0) >= profile_many.min_trades(
-        out["symbol"], filters)
+        pd.Series(out["symbol"]), filters)
     out["strict"] = out["pays_shrunk"] & out["stable"] & out["frequent"]
     return out
 
 
-def placebo(cells: list[dict], alpha: float) -> dict:
+def placebo(cells: list[Cell], alpha: float) -> Placebo:
     """What the procedure names when there is nothing: null draws judged as the real series.
 
     Args:
@@ -105,10 +133,10 @@ def board(tests: pd.DataFrame, assets: pd.DataFrame, inside: set) -> pd.DataFram
         `alone` (the asset passes that test by itself) and `new` (not on the board today).
         Nothing here changes the board's gate: it only counts.
     """
-    named = tests[tests["significant"] & tests["trade"]]
+    named = pd.DataFrame(tests[tests["significant"] & tests["trade"]])
     rows = assets.merge(named[TEST], on=TEST)
     if rows.empty:
-        return pd.DataFrame(columns=[*CELL, "group", "measures", "strict", "alone", "new"])
+        return pd.DataFrame(columns=pd.Index([*CELL, "group", "measures", "strict", "alone", "new"]))
     out = rows.groupby(CELL, sort=True).agg(
         group=("group", "first"), measures=("measure", lambda m: " ".join(sorted(set(m)))),
         strict=("strict", "any"), alone=("significant_alone", "any"),
@@ -117,7 +145,7 @@ def board(tests: pd.DataFrame, assets: pd.DataFrame, inside: set) -> pd.DataFram
     return out
 
 
-def run(cells: list[dict], cfg: dict, inside: set) -> dict:
+def run(cells: list[Cell], cfg: dict, inside: set) -> Judged:
     """The whole study from every group's cell.
 
     Returns:

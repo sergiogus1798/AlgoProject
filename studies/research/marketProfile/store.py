@@ -2,10 +2,12 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
 from core.researchpaths import research_profiles_dir
+from studies.research.marketProfile.many import Map
 
 
 def cells() -> Path:
@@ -53,7 +55,7 @@ def extend(symbol: str, rows: list[dict], meta: dict) -> None:
     side.write_text(json.dumps(held, default=float, indent=1), encoding="utf-8")
 
 
-def load() -> dict:
+def load() -> dict[str, Any]:
     """Everything measured so far.
 
     Returns:
@@ -69,7 +71,7 @@ def load() -> dict:
             "meta": meta}
 
 
-def write(judged: dict, stored: dict) -> Path:
+def write(judged: Map, stored: dict) -> Path:
     """The judged map as CSV tables the board reads.
 
     Args:

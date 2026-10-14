@@ -1,5 +1,7 @@
 """The sweep judged: its own correction, each variant's plateau, the best variant per cell-family."""
 
+from typing import Any, cast
+
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
@@ -38,7 +40,7 @@ def judged(rows: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     out["_p"] = [rank[(e, p)] for e, p in zip(out["entry"], out["param"])]
     ladder = {f"hold{m:g}x": i for i, m in enumerate(knobs["holds"])}
     ladder |= {f"trail{w:g}": 100 + i for i, w in enumerate(knobs["trails"])}
-    out["_e"] = out["exit"].map(ladder).fillna(-10)
+    out["_e"] = out["exit"].map(cast("Any", ladder)).fillna(-10)
     key = ["symbol", "timeframe", "direction", "entry"]
     good = out.set_index([*key, "_p", "exit"])["good"].to_dict()
     step = out.set_index([*key, "_p", "_e"])["good"].to_dict()
@@ -86,12 +88,12 @@ def counts(top: pd.DataFrame, scores: pd.DataFrame) -> pd.DataFrame:
         top: What best() returned.
         scores: The main map's `scores.csv`, for the naked verdict of the same cell-families.
     """
-    naked = scores[~scores["needs_clock"]].set_index(CELL)["passes"]
+    naked = pd.Series(scores[~scores["needs_clock"]].set_index(CELL)["passes"])
     joined = top.join(naked.rename("naked"), on=CELL)
-    return joined.groupby("timeframe").agg(
+    return cast("pd.DataFrame", joined.groupby("timeframe").agg(
         cell_families=("naked", "size"), naked=("naked", "sum"), any_variant=("pass_any", "sum"),
         on_plateau=("plateau_any", "sum"),
-        never_pays=("pays_any", lambda s: int((~s).sum()))).reindex(["M15", "M30", "H1", "H4"])
+        never_pays=("pays_any", lambda s: int((~s).sum()))).reindex(["M15", "M30", "H1", "H4"]))
 
 
 def summary(variants: pd.DataFrame) -> str:

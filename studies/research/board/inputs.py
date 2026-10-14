@@ -1,6 +1,7 @@
 """What the board reads: its config, the profile's scores, the sweep's best variants, the memory."""
 
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import yaml
@@ -21,10 +22,10 @@ def scores() -> pd.DataFrame:
 def sweep() -> pd.DataFrame:
     """The sweep's `best.csv`: the best exit/parameter variant per cell-family; empty if not run."""
     path = research_profiles_dir() / "sweep" / "best.csv"
-    return pd.read_csv(path) if path.exists() else pd.DataFrame(columns=CELL)
+    return pd.read_csv(path) if path.exists() else pd.DataFrame(columns=pd.Index(CELL))
 
 
-def memory(own_files: tuple = ()) -> dict:
+def memory(own_files: tuple = ()) -> dict[str, Any]:
     """The memory, recomputed from its sources (50 ms): nothing stale is ever read.
 
     Returns:

@@ -4,8 +4,10 @@
 import argparse
 import copy
 import sys
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from studies.research.board import inputs, many, proposalmd, store
 from studies.research.board.inputs import CELL
@@ -34,7 +36,7 @@ def reviewed(idea: dict) -> list[str]:
     return out + [f"la revisión no dice nada de «{k}»" for k in AXES if not str(got.get(k, "")).strip()]
 
 
-def stances(p: dict, attempts: list[dict]) -> list[str]:
+def stances(p: dict, attempts: Sequence[dict]) -> list[str]:
     """The cell's closed failures the draft neither adopts nor rejects with a reason."""
     said = {f.get("project"): f for f in p["prior_failures"]}
     owed = queries.failures(attempts, *(p["cell"][c] for c in CELL))
@@ -43,7 +45,7 @@ def stances(p: dict, attempts: list[dict]) -> list[str]:
             or not str(said[a["project"]].get("why", "")).strip()]
 
 
-def check(p: dict, attempts: list[dict] = ()) -> list[str]:
+def check(p: dict, attempts: Sequence[dict] = ()) -> list[str]:
     """Why a proposal cannot be accepted as written; empty when it can.
 
     Args:
@@ -106,7 +108,7 @@ def launchable(idea: dict) -> tuple[bool, str]:
     return (False, f"{waiting} pregunta(s) sin contestar") if waiting else (True, "")
 
 
-def stamp(p: dict, board: dict, now: datetime) -> dict:
+def stamp(p: dict, board: dict, now: datetime) -> dict[str, Any]:
     """Add what Python knows and the agent must not invent: the id, the cell's place on the
     board, the ideas already spent there, the provisional-costs mark, the two standing costs,
     each sheet's seal and whether the reviewer's verdict removes an idea or only annotates it."""
@@ -136,7 +138,7 @@ def listing() -> list[str]:
                    if f.stem[:8].isdigit()), reverse=True)
 
 
-def load(proposal_id: str) -> dict:
+def load(proposal_id: str) -> dict[str, Any]:
     """One saved proposal."""
     return store.read(store.proposals_dir() / f"{proposal_id}.json")
 

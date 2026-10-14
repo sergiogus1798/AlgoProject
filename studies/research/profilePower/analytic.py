@@ -1,5 +1,8 @@
 """The normal approximation of the profile's power: what a t statistic can see, from its error."""
 
+from collections.abc import Sequence
+from typing import Any, cast
+
 import pandas as pd
 from scipy.stats import norm
 
@@ -27,7 +30,7 @@ def power(effect: pd.Series | float, se: pd.Series, cut: float) -> pd.Series:
 
 def detectable(se: pd.Series, cut: float, target: float) -> pd.Series:
     """The smallest excess, in costs, named with probability `target` at raw p `cut`."""
-    return (norm.isf(cut) + norm.ppf(target)) * se
+    return cast("pd.Series", (norm.isf(cut) + norm.ppf(target)) * se)
 
 
 def calibrated(runs: pd.DataFrame, cut: float, hit: list[str]) -> pd.DataFrame:
@@ -42,8 +45,8 @@ def calibrated(runs: pd.DataFrame, cut: float, hit: list[str]) -> pd.DataFrame:
         `detected` (simulated rate) beside `predicted` (mean of power() over the same
         replications, each at its own realised error), and their difference.
     """
-    rows = runs[~runs["measure"].isin(hit)]
-    rows = rows.assign(predicted=power(rows["effect_planted"], error(rows), cut))
+    rows = pd.DataFrame(runs[~runs["measure"].isin(hit)])
+    rows = rows.assign(predicted=power(pd.Series(rows["effect_planted"]), error(rows), cut))
     out = rows.groupby(["measure", "timeframe", "effect_planted"], sort=False).agg(
         runs=("significant", "size"), detected=("significant", "mean"),
         predicted=("predicted", "mean")).reset_index()
@@ -67,17 +70,17 @@ def widened(measures: pd.DataFrame, context: pd.DataFrame, classes: dict, cut: f
         costs, excess over what the null's drift already gives) and `mde_atr` (the same in
         ATRs of the cell's bar).
     """
-    rows = measures[measures["n_trades"].notna() & ~measures["needs_clock"]
-                    & (measures["stat"] != 0) & ~measures["measure"].isin(hit)].copy()
-    rows["asset_class"] = rows["symbol"].map(classes)
+    rows = pd.DataFrame(measures[measures["n_trades"].notna() & ~measures["needs_clock"]
+                                 & (measures["stat"] != 0) & ~measures["measure"].isin(hit)]).copy()
+    rows["asset_class"] = rows["symbol"].map(cast("Any", classes))
     rows["mde"] = detectable(error(rows), cut, target)
     ratio = context.set_index(["symbol", "timeframe"])["cost_over_atr"]
     rows["mde_atr"] = rows["mde"] * ratio.reindex(
-        pd.MultiIndex.from_frame(rows[["symbol", "timeframe"]])).to_numpy()
+        pd.MultiIndex.from_frame(pd.DataFrame(rows[["symbol", "timeframe"]]))).to_numpy()
     return rows
 
 
-def reachable(rows: pd.DataFrame, by: list[str], levels: list[float]) -> pd.DataFrame:
+def reachable(rows: pd.DataFrame, by: list[str], levels: Sequence[float]) -> pd.DataFrame:
     """Per group, the median detectable excess and the share of tests that can see each level.
 
     Args:

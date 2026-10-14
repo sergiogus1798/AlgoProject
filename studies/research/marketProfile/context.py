@@ -1,5 +1,7 @@
 """The context block of a cell: drift, volatility clustering and cost against the bar's ATR."""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
@@ -21,7 +23,19 @@ def efficiency(close: pd.Series, window: int) -> pd.Series:
     return (net / path).replace([np.inf, -np.inf], np.nan)
 
 
-def block(bars: pd.DataFrame, asset: dict) -> dict:
+class Block(TypedDict):
+    """What says whether a timeframe is tradable: drift, volatility clustering, cost against ATR, trendiness."""
+
+    drift_per_year: float
+    abs_acf_1: float
+    abs_acf_1_20: float
+    cost: float
+    atr: float
+    cost_over_atr: float
+    kaufman_daily: float
+
+
+def block(bars: pd.DataFrame, asset: dict) -> Block:
     """What says whether a timeframe can be traded at all; it proposes nothing.
 
     Args:
@@ -39,7 +53,8 @@ def block(bars: pd.DataFrame, asset: dict) -> dict:
     acf = [a[k:] @ a[:-k] / (a @ a) for k in range(1, 21)]
     atr = regime.atr(bars, {"atr_period": ATR_PERIOD})["vol"].mean()
     paid = inputs.cost(asset, bars["Open"].to_numpy()).mean()
-    daily = regime.daily(bars)["Close"]
-    return {"drift_per_year": r.sum() / years, "abs_acf_1": acf[0], "abs_acf_1_20": np.mean(acf),
-            "cost": paid, "atr": atr, "cost_over_atr": paid / atr,
-            "kaufman_daily": efficiency(daily, KAUFMAN_DAYS).mean()}
+    daily = pd.Series(regime.daily(bars)["Close"])
+    return {"drift_per_year": float(r.sum() / years), "abs_acf_1": float(acf[0]),
+            "abs_acf_1_20": float(np.mean(acf)), "cost": float(paid), "atr": float(atr),
+            "cost_over_atr": float(paid / atr),
+            "kaufman_daily": float(efficiency(daily, KAUFMAN_DAYS).mean())}

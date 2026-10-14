@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from core.researchpaths import research_profiles_dir
+from studies.research.pooledProfile.one import Run
 
 
 def folder() -> Path:
@@ -33,7 +34,7 @@ def seed(fresh: int, force: bool) -> int:
     return json.loads(path.read_text(encoding="utf-8"))["seed"]
 
 
-def save(group: str, timeframe: str, symbol: str, got: dict) -> None:
+def save(group: str, timeframe: str, symbol: str, got: Run) -> None:
     """Write one asset's rows (parquet) and its null statistics (npy)."""
     np.save(stem(group, timeframe, symbol).with_suffix(".npy"), got["sims"])
     got["rows"].to_parquet(stem(group, timeframe, symbol).with_suffix(".parquet"), index=False)

@@ -1,8 +1,10 @@
 """The pooled profile as the study contract: what the window and the page draw."""
 
+from typing import Any
 import pandas as pd
 
 from core.study import blocks, result
+from studies.research.pooledProfile.many import Judged
 
 TESTS = ["group", "timeframe", "direction", "family", "measure", "assets", "stat", "p", "q",
          "mean_excess", "tau", "i2"]
@@ -26,7 +28,7 @@ GLOSSARY = [
     {"term": "new", "text": "La celda-familia no está hoy en el tablero."}]
 
 
-def build(judged: dict, cfg: dict, started: float) -> dict:
+def build(judged: Judged, cfg: dict, started: float) -> dict[str, Any]:
     """The contract dict of the study.
 
     Args:
@@ -37,8 +39,9 @@ def build(judged: dict, cfg: dict, started: float) -> dict:
     Returns:
         A validated result; its summary carries the counts the decision reads.
     """
-    tests, assets, cells, fake = (judged[k] for k in ("tests", "assets", "board", "placebo"))
-    named = tests[tests["significant"]].sort_values("q")
+    tests, assets, cells = judged["tests"], judged["assets"], judged["board"]
+    fake = judged["placebo"]
+    named = pd.DataFrame(tests[tests["significant"]]).sort_values("q")
     shown = assets.merge(named[["group", "timeframe", "direction", "measure"]])
     counts = {"group_tests": len(tests), "named": len(named), "cells": len(cells),
               "cells_strict": int(cells["strict"].sum()), "cells_new": int(cells["new"].sum()),
@@ -46,11 +49,11 @@ def build(judged: dict, cfg: dict, started: float) -> dict:
               "cells_alone": int(cells["alone"].sum())}
     tabs = [
         result.tab("grupos", "Grupos que pasan", [blocks.table(
-            "Pruebas de grupo significativas", named[TESTS],
+            "Pruebas de grupo significativas", pd.DataFrame(named[TESTS]),
             f"{len(named)} de {len(tests)} pruebas de grupo, corregidas juntas al "
             f"{cfg['judge']['alpha']:.0%}.", 3)]),
         result.tab("activos", "Cada activo, en bruto y encogido", [blocks.table(
-            "Los activos de los grupos que pasan", shown[ASSETS],
+            "Los activos de los grupos que pasan", pd.DataFrame(shown[ASSETS]),
             "multiple es el efecto del activo solo; shrunk_multiple, encogido hacia su grupo.",
             3)]),
         result.tab("tablero", "Celdas que entrarían al tablero", [blocks.table(

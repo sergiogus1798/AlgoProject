@@ -2,6 +2,7 @@
 
 import time
 import zlib
+from typing import Any, cast, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -23,8 +24,17 @@ def trades(x: dict, cal: dict, pcfg: dict, spec: dict, direction: str) -> tuple:
     return row[2], row[3], row[4]
 
 
+class Earned(TypedDict):
+    """A measure's trades on a series: count, effect in round-trip costs, years, years with the sign."""
+
+    n_trades: int
+    multiple: float
+    years: int
+    years_with_sign: int
+
+
 def earned(x: dict, cost: np.ndarray, year: np.ndarray, sign: int, entry: np.ndarray,
-           leave: np.ndarray) -> dict:
+           leave: np.ndarray) -> Earned:
     """What the measure's trades earned on a series, in round-trip costs, and per year.
 
     The numbers marketProfile.one.money gives, read in logs: a planted series can drift far
@@ -33,11 +43,11 @@ def earned(x: dict, cost: np.ndarray, year: np.ndarray, sign: int, entry: np.nda
     pnl = sign * (x["o"][leave] - x["o"][entry])
     yearly = pd.Series(pnl).groupby(year[entry]).mean()
     return {"n_trades": int(entry.size), "multiple": pnl.mean() / cost[entry].mean(),
-            "years": int(yearly.size), "years_with_sign": int((yearly > 0).sum())}
+            "years": int(yearly.size), "years_with_sign": int((yearly.to_numpy() > 0).sum())}
 
 
 def tested(x: dict, cal: dict, pcfg: dict, spec: dict, direction: str, judge: dict,
-           block: int, rng: np.random.Generator) -> dict:
+           block: int, rng: np.random.Generator) -> dict[str, Any]:
     """The profile's own test of one measure on one series, stopped once the cut is out of reach.
 
     Args:
@@ -59,7 +69,8 @@ def tested(x: dict, cal: dict, pcfg: dict, spec: dict, direction: str, judge: di
     """
     draws, most = pcfg["nulls"]["draws"], reach(judge["cut"], pcfg["nulls"]["draws"])
     part = {**pcfg, "measures": [spec], "nulls": {**pcfg["nulls"], "draws": judge["chunk"]}}
-    exceed, drawn, first = 0, 0, None
+    exceed, drawn = 0, 0
+    first: dict | None = None
     while drawn < draws and exceed <= most:
         real, sims = profile_one.against_null(x, cal, part, block, rng)
         k = SIDE[direction]
@@ -68,10 +79,10 @@ def tested(x: dict, cal: dict, pcfg: dict, spec: dict, direction: str, judge: di
         first = first or {"p_first": (1 + exceed) / (drawn + 1), "stat": real[k][2],
                           "null_mean": sims[:, k].mean(), "null_sd": sims[:, k].std(ddof=1),
                           "entry": real[k][3], "leave": real[k][4]}
-    return {**first, "exceed": exceed, "drawn": drawn, "draws": draws}
+    return {**cast("dict", first), "exceed": exceed, "drawn": drawn, "draws": draws}
 
 
-def run(key: tuple, bars: pd.DataFrame, asset: dict, cfg: dict) -> dict:
+def run(key: tuple, bars: pd.DataFrame, asset: dict, cfg: dict) -> dict[str, Any]:
     """One planted edge, tested.
 
     Args:
@@ -100,7 +111,7 @@ def run(key: tuple, bars: pd.DataFrame, asset: dict, cfg: dict) -> dict:
     grown = plant.planted(base, entry, leave, sign, effect, cost, cfg["plant"]["how"], rng)
     got = tested(grown, cal, pcfg, spec, direction, cfg["judge"],
                  pcfg["nulls"]["block"][timeframe], rng)
-    paid = earned(grown, cost, bars.index.year.to_numpy(), sign, got.pop("entry"),
+    paid = earned(grown, cost, cast("Any", bars.index).year.to_numpy(), sign, got.pop("entry"),
                   got.pop("leave"))
     years = (bars.index[-1] - bars.index[0]).days / 365.25
     return {"symbol": symbol, "timeframe": timeframe, "family": spec["family"],

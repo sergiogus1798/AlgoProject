@@ -2,8 +2,9 @@
 
 import json
 import re
-from datetime import date
 import xml.etree.ElementTree as ET
+from datetime import date
+from typing import TypedDict
 
 import httpx
 from lxml import html
@@ -16,6 +17,25 @@ KINDS = {"stocksharp": (r"^API/[^/]+/(\d{4}_[^/]+)/README\.md$", "PY"),
          "notebooks": (r"^([^/]+)\.ipynb$", "")}
 ATOM = {"a": "http://www.w3.org/2005/Atom"}
 AGENT = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AlgoProject-literatureScout/1.0"}
+
+
+class Paper(TypedDict):
+    """A found paper as the register keeps it: identifiers, citation, link, abstract and text pages."""
+
+    key: str
+    source: str
+    arxiv: str
+    doi: str
+    title: str
+    authors: list[str]
+    year: int
+    venue: str
+    url: str
+    pdf: str
+    abstract: str
+    pages: list[str]
+
+
 CHUNK = 6000    # characters of a web page that count as one `[page N]`
 
 
@@ -122,7 +142,7 @@ def _notebook(raw: str) -> tuple[str, str]:
     return (texts[0] if texts else ""), "\n".join(body)
 
 
-def item(found: dict) -> dict:
+def item(found: dict) -> Paper:
     """One strategy of a collection as a paper row: its description is the abstract, its code the text."""
     base = f"{RAW}/{found['repo']}/HEAD/"
     text = httpx.get(base + found["path"], headers=AGENT, timeout=60).text
@@ -156,7 +176,7 @@ def site(name: str, index: str, link: str) -> list[dict]:
             for u in urls]
 
 
-def article(found: dict) -> dict:
+def article(found: dict) -> Paper:
     """One article of a site as a paper row: its text cut into pages, its start as the abstract."""
     reply = httpx.get(found["url"], headers=AGENT, timeout=60, follow_redirects=True)
     reply.raise_for_status()

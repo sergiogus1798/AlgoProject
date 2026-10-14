@@ -1,6 +1,7 @@
 """Every strategy of one harvest against its own edge-per-cost bar, as one result and one panel."""
 
 import time
+from typing import Any, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -11,7 +12,14 @@ from studies.readings.edgeCost import costs, one
 MODULE = one.MODULE
 
 
-def run(priced: pd.DataFrame, names: pd.Series, cfg: dict, asset: dict) -> dict:
+class Population(TypedDict):
+    """The population run: the export's contract result and the per-strategy panel."""
+
+    population: dict[str, Any]
+    panel: pd.DataFrame
+
+
+def run(priced: pd.DataFrame, names: pd.Series, cfg: dict, asset: dict) -> Population:
     """Every strategy in one priced harvest, judged against the same bar.
 
     Args:

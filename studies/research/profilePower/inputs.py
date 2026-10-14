@@ -1,6 +1,7 @@
 """What the power study is run on: its config, the profile's, the cut-off, and a cell's bars."""
 
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -14,11 +15,11 @@ CONFIG = Path(__file__).with_name("config.yaml")
 
 def map_cut() -> float:
     """The raw p the full map's correction demands today: the largest p it named significant."""
-    measures = pd.read_csv(research_profiles_dir() / "measures.csv", usecols=["p", "significant"])
+    measures = pd.read_csv(research_profiles_dir() / "measures.csv", usecols=pd.Index(["p", "significant"]))
     return float(measures.loc[measures["significant"], "p"].max())
 
 
-def config(overrides: list[str] | None = None) -> dict:
+def config(overrides: list[str] | None = None) -> dict[str, Any]:
     """The parsed config.yaml with its overrides, the profile's own config under `profile`.
 
     Returns:
@@ -28,7 +29,7 @@ def config(overrides: list[str] | None = None) -> dict:
     """
     cfg = study_config.load(CONFIG, overrides or [])
     if cfg["run"]["seed"] is None:
-        cfg["run"]["seed"] = int(np.random.SeedSequence().entropy % 2 ** 32)
+        cfg["run"]["seed"] = int(cast("int", np.random.SeedSequence().entropy) % 2 ** 32)
     if cfg["judge"]["cut"] is None:
         cfg["judge"]["cut"] = map_cut()
     cfg["profile"] = profile.config([f"nulls.seed={cfg['run']['seed']}"])

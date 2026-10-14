@@ -3,6 +3,7 @@
 import csv
 import re
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -65,7 +66,7 @@ def stage_of(step: str, title: str) -> str:
     return next((s for t, s in TITLE_STAGE.items() if title.startswith(t)), "")
 
 
-def parse_resumen(text: str) -> dict:
+def parse_resumen(text: str) -> dict[str, Any]:
     """What one run's resumen.md says.
 
     Returns:
@@ -91,7 +92,7 @@ def parse_resumen(text: str) -> dict:
     return out
 
 
-def autopilot_project(project: str, root: Path | None = None) -> dict:
+def autopilot_project(project: str, root: Path | None = None) -> dict[str, Any]:
     """Every autopilot run of a project folded into one record, the newest run winning per stage.
 
     Args:

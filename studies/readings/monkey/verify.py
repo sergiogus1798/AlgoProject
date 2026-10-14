@@ -1,11 +1,29 @@
 """Is this a test, or just a number? The two checks that must pass before any p is read."""
 
 import argparse
+from typing import TypedDict
 
 import numpy as np
 from scipy import stats
 
 from engines.nulls import inputs, kernel, simulate
+
+
+class Barriers(TypedDict):
+    """What `barriers()` counts: trades, disagreements between the two scans, touches."""
+
+    trades: int
+    disagree: int
+    touched: int
+
+
+class Uniformity(TypedDict):
+    """What `uniformity()` reports: trials, KS statistic, its p and the mean p-value."""
+
+    trials: int
+    ks: float
+    p: float
+    mean: float
 
 
 def slow_exits(entries: np.ndarray, holds: np.ndarray, low: np.ndarray, high: np.ndarray,
@@ -32,7 +50,7 @@ def slow_exits(entries: np.ndarray, holds: np.ndarray, low: np.ndarray, high: np
     return found
 
 
-def barriers(kept: dict, atr_mult: float = 1.5) -> dict:
+def barriers(kept: inputs.Fixed, atr_mult: float = 1.5) -> Barriers:
     """The vectorised barrier scan against the slow one, on barriers this corpus lacks.
 
     Args:
@@ -57,7 +75,7 @@ def barriers(kept: dict, atr_mult: float = 1.5) -> dict:
             "touched": int((fast > 0).sum())}
 
 
-def uniformity(kept: dict, cfg: dict, trials: int) -> dict:
+def uniformity(kept: inputs.Fixed, cfg: dict, trials: int) -> Uniformity:
     """Treat null runs as if they were real and check their p-values are uniform.
 
     Args:

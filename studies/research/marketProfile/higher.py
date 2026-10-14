@@ -1,6 +1,7 @@
 """The wider frame of every bar: the D1 context as the day BEFORE left it, and the long averages."""
 
 from collections.abc import Iterator, Mapping
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -25,7 +26,7 @@ def _sma(close: np.ndarray, n: int) -> np.ndarray:
     return series._mean(close - close[0], n) + close[0]
 
 
-def days(x: dict, cal: dict) -> dict:
+def days(x: dict, cal: dict) -> dict[str, np.ndarray]:
     """The series as D1 bars, built from the cell's own bars.
 
     Args:
@@ -44,7 +45,7 @@ def days(x: dict, cal: dict) -> dict:
 def _streak(close: np.ndarray, k: int) -> np.ndarray:
     """+1 after k higher closes in a row, -1 after k lower ones, else 0."""
     step = np.sign(np.diff(close, prepend=close[0]))
-    total = pd.Series(step).rolling(k).sum().to_numpy()
+    total = np.asarray(pd.Series(step).rolling(k).sum())
     return np.where(total == k, 1.0, np.where(total == -k, -1.0, 0.0))
 
 
@@ -56,7 +57,7 @@ def _outside(close: np.ndarray, n: int) -> np.ndarray:
         return np.where(close > top, 1.0, np.where(close < bottom, -1.0, 0.0))
 
 
-def daily(day: dict, cfg: dict) -> dict:
+def daily(day: dict, cfg: dict) -> dict[str, Any]:
     """The D1 indicators, one value per day, each computed with that day included.
 
     Args:
@@ -119,7 +120,7 @@ def closed(values: np.ndarray, cal: dict) -> np.ndarray:
     return np.concatenate([[np.nan], values[:-1]])[cal["day"]]
 
 
-def context(d: dict, cal: dict, cfg: dict) -> dict:
+def context(d: dict, cal: dict, cfg: dict) -> dict[str, Any]:
     """The derived series plus its wider frame.
 
     Args:

@@ -1,5 +1,7 @@
 """The power study's looks at the data, as rows of the ledger's contract L1."""
 
+from typing import Any, cast
+
 import pandas as pd
 
 from core.study.config import fingerprint
@@ -23,8 +25,8 @@ def rows(runs: pd.DataFrame, cfg: dict) -> list[dict]:
         real direction was looked at; the row says so.
     """
     out = []
-    for (symbol, timeframe, measure, direction), part in runs.groupby(
-            ["symbol", "timeframe", "measure", "direction"], sort=False):
+    for (symbol, timeframe, measure, direction), part in cast("Any", runs.groupby(
+            ["symbol", "timeframe", "measure", "direction"], sort=False)):
         lo, hi = profile.span(symbol)
         out.append(record.search(
             study.study_id(symbol, timeframe, "profilePower"),

@@ -1,6 +1,7 @@
 """What the research spent on one ledger study: the hypotheses measured before any search row."""
 
 import json
+from typing import TypedDict
 
 from core.researchpaths import research_profiles_dir
 from studies.research.memory.sources import CONFIG
@@ -15,8 +16,17 @@ def directions(family: str, templates: dict[str, dict]) -> tuple:
     return tuple(d for d in DIRECTIONS if d in shape) or DIRECTIONS
 
 
+class Spent(TypedDict):
+    """The looks taken at one study: hypotheses measured, ideas, idea files, directions counted."""
+
+    hypotheses: int
+    ideas: int
+    files: int
+    directions: tuple[str, ...]
+
+
 def spent(ideas: list[dict], templates: dict[str, dict], symbol: str, timeframe: str,
-          family: str) -> dict:
+          family: str) -> Spent:
     """The looks the ideaExpert took at the data of one ledger study (owner, 2026-10-02).
 
     Args:

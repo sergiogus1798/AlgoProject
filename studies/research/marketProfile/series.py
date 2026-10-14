@@ -1,5 +1,7 @@
 """A cell's bars as log arrays with their shared indicators, mirrored for shorts, and resampled."""
 
+from typing import Any, cast
+
 import numpy as np
 import pandas as pd
 
@@ -8,7 +10,7 @@ from engines.resample import draws
 MINUTES = {"M15": 15, "M30": 30, "H1": 60, "H4": 240}
 
 
-def logs(bars: pd.DataFrame) -> dict:
+def logs(bars: pd.DataFrame) -> dict[str, np.ndarray]:
     """The four prices of every bar, in logs.
 
     Args:
@@ -22,11 +24,11 @@ def logs(bars: pd.DataFrame) -> dict:
     return {"o": o, "h": h, "l": l, "c": c}
 
 
-def calendar(index: pd.DatetimeIndex, timeframe: str, cfg: dict) -> dict:
+def calendar(bar_index: pd.Index, timeframe: str, cfg: dict) -> dict[str, Any]:
     """What stays in place when the prices are resampled: the clock of every bar.
 
     Args:
-        index: Bar open times, in the feed's clock.
+        bar_index: Bar open times (a DatetimeIndex), in the feed's clock.
         timeframe: A key of MINUTES.
         cfg: The parsed config.
 
@@ -36,6 +38,7 @@ def calendar(index: pd.DatetimeIndex, timeframe: str, cfg: dict) -> dict:
         it and the same-day bars after it. A null draw moves returns under this calendar, so
         under the null no hour, band or weekday owns a return.
     """
+    index = cast("Any", pd.DatetimeIndex(bar_index))   # the pandas stub lacks hour/year/normalize
     hour = index.hour.to_numpy()
     day = pd.factorize(index.normalize())[0]
     first = np.flatnonzero(np.diff(day, prepend=-1))
@@ -72,7 +75,7 @@ def _lag(a: np.ndarray) -> np.ndarray:
     return np.concatenate([[np.nan], a[:-1]])
 
 
-def derive(x: dict, cfg: dict) -> dict:
+def derive(x: dict, cfg: dict) -> dict[str, Any]:
     """The indicators the measures share, computed once per series.
 
     Args:
@@ -104,20 +107,20 @@ def derive(x: dict, cfg: dict) -> dict:
             "clo": {n: _lag(cs.rolling(n).min().to_numpy()) for n in cfg["close_channels"]}}
 
 
-def gaps(x: dict) -> dict:
+def gaps(x: dict) -> dict[str, np.ndarray]:
     """Each bar as four distances from the previous close: what a null draw reorders."""
     before = np.concatenate([[x["o"][0]], x["c"][:-1]])
     return {k: x[k] - before for k in "ohlc"}
 
 
-def path(g: dict, start: float) -> dict:
+def path(g: dict, start: float) -> dict[str, np.ndarray]:
     """A log series rebuilt from per-bar gaps: what logs() returns."""
     c = start + np.cumsum(g["c"])
     before = np.concatenate([[start], c[:-1]])
     return {"o": before + g["o"], "h": before + g["h"], "l": before + g["l"], "c": c}
 
 
-def draw(g: dict, start: float, model: str, block: int, rng: np.random.Generator) -> dict:
+def draw(g: dict, start: float, model: str, block: int, rng: np.random.Generator) -> dict[str, np.ndarray]:
     """One null series: the same bars, in blocks, in another order.
 
     Args:
@@ -135,7 +138,7 @@ def draw(g: dict, start: float, model: str, block: int, rng: np.random.Generator
     return path({k: v[pos] for k, v in g.items()}, start)
 
 
-def flipped(x: dict, rng: np.random.Generator) -> dict:
+def flipped(x: dict, rng: np.random.Generator) -> dict[str, np.ndarray]:
     """The series with every bar turned upside down or not, at the toss of a coin.
 
     Returns:

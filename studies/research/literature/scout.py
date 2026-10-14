@@ -6,6 +6,7 @@ import json
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -107,7 +108,7 @@ def reject(a: argparse.Namespace) -> None:
     print(f"rejected {a.key}: {a.filter}")
 
 
-def stamp(draft: dict, paper: dict, cfg: dict, similar: list[str]) -> dict:
+def stamp(draft: dict, paper: dict, cfg: dict, similar: list[str]) -> dict[str, Any]:
     """A validated draft as a stored entry: its id, source, how it was read, the build overlap."""
     names = ", ".join(paper["authors"][:3]) + (" et al." if len(paper["authors"]) > 3 else "")
     chosen = draft["selection"]

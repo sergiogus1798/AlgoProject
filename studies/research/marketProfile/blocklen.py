@@ -3,6 +3,7 @@
 
 import argparse
 import zlib
+from typing import TypedDict
 
 import numpy as np
 import pandas as pd
@@ -24,7 +25,23 @@ def _cell(symbol: str, timeframe: str) -> tuple[dict, dict]:
     return series.logs(bars), series.calendar(bars.index, timeframe, STATE["cfg"])
 
 
-def memory(symbol: str, timeframe: str) -> dict:
+# How long a cell's series remembers: Politis-White blocks and the |returns| decay lag.
+Memory = TypedDict("Memory", {"symbol": str, "timeframe": str, "pw_returns": float,
+                              "pw_abs_returns": float, "abs_acf_1": float,
+                              "lag_abs_acf_below_0.05": int})
+
+
+class Trial(TypedDict):
+    """One block length on one cell: real p-values, their null spread, false-alarm size, test count."""
+
+    p: np.ndarray
+    null_sd: np.ndarray
+    size: float
+    tests: int
+    trade: np.ndarray
+
+
+def memory(symbol: str, timeframe: str) -> Memory:
     """How long the series remembers: Politis-White's block and the decay of |returns|.
 
     Returns:
@@ -41,7 +58,7 @@ def memory(symbol: str, timeframe: str) -> dict:
             "abs_acf_1": acf[0], "lag_abs_acf_below_0.05": int(np.argmax(acf < LEVEL)) + 1}
 
 
-def trial(key: tuple) -> dict:
+def trial(key: tuple) -> Trial:
     """One block length on one cell: the real p-values, and the false alarms on flipped series.
 
     Args:

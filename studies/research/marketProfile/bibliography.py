@@ -1,5 +1,7 @@
 """What the literature says beside what the profile measured: the bibliography view of `assets/FAMILIAS.md`."""
 
+from typing import Any
+
 import pandas as pd
 import yaml
 
@@ -88,7 +90,7 @@ def reading(rows: pd.DataFrame) -> str:
     """What the profile measured for one entry: the counts over its cells and the best one."""
     if rows.empty:
         return "—"
-    ran = rows[rows["n_trades"] >= 30]
+    ran = pd.DataFrame(rows[rows["n_trades"] >= 30])
     if ran.empty:
         return f"{len(rows)} celdas, ninguna llega a 30 operaciones en build: sin contraste"
     return (f"{len(ran)} celdas con contraste: {int((ran['p'] <= 0.05).sum())} con p cruda ≤ 0,05, "
@@ -111,8 +113,8 @@ def table(measures: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     for e in entries():
         names = links.get(e["id"].split("-")[0] + "-" + e["id"].split("-")[1], [])
         where, named = symbols(e)
-        own = measures[measures["measure"].isin(names) & measures["symbol"].isin(where)
-                       & measures["direction"].isin(directions(e))]
+        own = pd.DataFrame(measures[measures["measure"].isin(names) & measures["symbol"].isin(where)
+                                    & measures["direction"].isin(directions(e))])
         state = flag(e, names)
         rows.append({"id": e["id"], "family": e["family"], "assets": str(e["assets"]),
                      "named": named, "symbols": where, "directions": directions(e),
@@ -125,7 +127,7 @@ def table(measures: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _line(r: pd.Series, reading_: str) -> str:
+def _line(r: Any, reading_: str) -> str:
     """One Markdown row; a source the file does not mark verified carries its caveat in bold."""
     sure = r["verified"] if r["verified"].startswith("yes") else f"**⚠️ {r['verified']}**"
     return (f"| `{r['id']}` | `{r['family']}` | {r['claim']} | {r['source']} | {sure} · "
@@ -139,7 +141,8 @@ def markdown(measures: pd.DataFrame, cfg: dict) -> str:
             "estado | lo medido aquí |", "|---|---|---|---|---|---|---|"]
     counts = got["flag"].value_counts()
     parts = [", ".join(f"{n} «{k}»" for k, n in counts.items()) + f" — {len(got)} entradas.", ""]
-    parts += head + [_line(r, r["reading"]) for _, r in got.iterrows()]
+    r: Any
+    parts += head + [_line(r, str(r["reading"])) for _, r in got.iterrows()]
     for symbol in sorted(s for group in CLASSES.values() for s in group):
         mine = got[got["named"] & got["symbols"].map(lambda v: symbol in v)]  # noqa: B023 map runs immediately
         parts += ["", f"#### `{symbol}` — lo que la bibliografía dice nombrándolo", ""]
@@ -148,7 +151,8 @@ def markdown(measures: pd.DataFrame, cfg: dict) -> str:
             continue
         parts += head
         for _, r in mine.iterrows():
-            own = measures[measures["measure"].isin(r["measures"]) & (measures["symbol"] == symbol)
-                           & measures["direction"].isin(r["directions"])]
-            parts.append(_line(r, reading(own) if r["flag"] == MEASURED else r["reading"]))
+            own = pd.DataFrame(measures[measures["measure"].isin(r["measures"])
+                                        & (measures["symbol"] == symbol)
+                                        & measures["direction"].isin(r["directions"])])
+            parts.append(_line(r, reading(own) if r["flag"] == MEASURED else str(r["reading"])))
     return "\n".join(parts) + "\n"

@@ -1,6 +1,7 @@
 """One strategy's oos1 edge against the cost it paid, as the contract's data."""
 
 import time
+from typing import Any, cast, TypedDict
 
 import pandas as pd
 
@@ -21,7 +22,17 @@ HOURS_ES = "hora de entrada (reloj del feed)"
 DOW_ES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 
 
-def measure(priced: pd.DataFrame) -> dict:
+class Measured(TypedDict):
+    """One strategy's edge over its cost: mean gross, mean cost, their ratio, gross by hour and weekday."""
+
+    mean_gross: float
+    mean_cost: float
+    edge_mean: float
+    by_hour: pd.Series
+    by_dow: pd.Series
+
+
+def measure(priced: pd.DataFrame) -> Measured:
     """The edge over the cost paid, and the gross by entry hour and weekday.
 
     Args:
@@ -32,18 +43,19 @@ def measure(priced: pd.DataFrame) -> dict:
         `edge_mean_oos` on the same trades — and `by_hour`, `by_dow`.
     """
     gross = priced["pnl"] + priced["cost"]
-    mean_cost = priced["cost"].mean()
+    mean_cost = float(priced["cost"].mean())
     when = priced["open_time"]
-    return {"mean_gross": gross.mean(), "mean_cost": mean_cost, "edge_mean": gross.mean() / mean_cost,
+    return {"mean_gross": float(gross.mean()), "mean_cost": mean_cost,
+            "edge_mean": float(gross.mean()) / mean_cost,
             "by_hour": gross.groupby(when.dt.hour).mean(), "by_dow": gross.groupby(when.dt.dayofweek).mean()}
 
 
-def tabs(got: dict) -> list[dict]:
+def tabs(got: Measured) -> list[dict]:
     """The headline numbers and the breakdown by session."""
     headline = blocks.table(
         "Edge sobre el coste pagado (oos1)", pd.DataFrame([[
             got["mean_gross"], got["mean_cost"], got["edge_mean"]]],
-            columns=["bruto medio", "coste pagado (medio)", "edge medio (× coste)"]),
+            columns=pd.Index(["bruto medio", "coste pagado (medio)", "edge medio (× coste)"])),
         "Sólo oos1, cada operación repreciada con los costes de la tarea. El edge es bruto "
         "medio / coste medio: 1 es el punto muerto, y es también el múltiplo del coste al que "
         "la ventaja neta llegaría a 0.")
@@ -55,14 +67,14 @@ def tabs(got: dict) -> list[dict]:
     by_dow = {"kind": "bars", "title": "Bruto medio por día de la semana", "unit": "USD",
               "reference": 0.0,
               "items": [{"label": DOW_ES[d], "value": float(v), "error": None, "state": "info"}
-                        for d, v in got["by_dow"].items()],
+                        for d, v in cast("Any", got["by_dow"].items())],
               "note": ""}
     return [envelope.tab("headline", "Edge y coste", [headline]),
             envelope.tab("sessions", "Por sesión y hora", [by_hour, by_dow])]
 
 
 def run(strategy: str, priced: pd.DataFrame, cfg: dict, asset: dict,
-        identity: str | None = None) -> dict:
+        identity: str | None = None) -> dict[str, Any]:
     """One strategy against its own edge-per-cost bar.
 
     Args:

@@ -1,11 +1,20 @@
 """The forward path: how far price ran for and against each entry, bar by bar."""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
 
+class Walk(TypedDict):
+    """Per-trade excursions by horizon: `mfe` and `mae`, both (trades x horizon)."""
+
+    mfe: np.ndarray
+    mae: np.ndarray
+
+
 def paths(frame: pd.DataFrame, entry: np.ndarray, side: np.ndarray,
-          price: np.ndarray, horizon: int) -> dict:
+          price: np.ndarray, horizon: int) -> Walk:
     """MFE and MAE at every horizon from 1 to `horizon`, one row per trade.
 
     Args:
@@ -34,7 +43,7 @@ def paths(frame: pd.DataFrame, entry: np.ndarray, side: np.ndarray,
     return {"mfe": np.where(long, up, down), "mae": np.where(long, down, up)}
 
 
-def normalised(walk: dict, atr: np.ndarray) -> dict:
+def normalised(walk: Walk, atr: np.ndarray) -> Walk:
     """The same excursions in units of each entry's own volatility.
 
     Args:

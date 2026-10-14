@@ -1,6 +1,7 @@
 """The board: the cells the prior or the measurements let in, ordered, each factor beside its rank."""
 
 from datetime import datetime
+from typing import Any, cast
 
 import pandas as pd
 
@@ -8,7 +9,7 @@ from studies.research.board import factors, inputs, prior
 from studies.research.board.inputs import CELL
 
 
-def run(scores: pd.DataFrame, memory: dict, cfg: dict, sweep: pd.DataFrame | None = None) -> dict:
+def run(scores: pd.DataFrame, memory: dict, cfg: dict, sweep: pd.DataFrame | None = None) -> dict[str, Any]:
     """Gate and order the cells.
 
     Args:
@@ -28,10 +29,10 @@ def run(scores: pd.DataFrame, memory: dict, cfg: dict, sweep: pd.DataFrame | Non
     marks, values = cfg["marks"], cfg["evidence"]["values"]
     found = {} if sweep is None else {tuple(r[c] for c in CELL): r for r in sweep.to_dict("records")}
     cells = []
-    for r in scores[~scores["needs_clock"]].to_dict("records"):
-        key = tuple(r[c] for c in CELL)
+    for r in pd.DataFrame(scores[~scores["needs_clock"]]).to_dict("records"):
+        key = cast("tuple[str, str, str, str]", tuple(r[c] for c in CELL))
         said = prior.of(*key, cfg["prior"]["pullback_as"])
-        swept = found.get(key)
+        swept: Any = found.get(key)
         seen = factors.evidence(r, swept)
         entered = [name for name, ok in (("prior", said["level"] == "Alta"), ("desnudo", seen == "naked"),
                                          ("barrido", bool(swept and swept["plateau_any"]))) if ok]

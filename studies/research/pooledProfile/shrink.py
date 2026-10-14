@@ -1,9 +1,20 @@
 """Random effects: each asset's effect pulled towards its group's mean by how noisy it is."""
 
+from typing import TypedDict
+
 import numpy as np
 
 
-def random_effects(effect: np.ndarray, se: np.ndarray) -> dict:
+class Shrunk(TypedDict):
+    """The random-effects fit: group mean, between-asset spread, I-squared and each asset's shrunk effect."""
+
+    mean: float
+    tau: float
+    i2: float
+    shrunk: np.ndarray
+
+
+def random_effects(effect: np.ndarray, se: np.ndarray) -> Shrunk:
     """DerSimonian-Laird's random-effects mean and the empirical-Bayes estimate of each asset.
 
     Args:

@@ -3,6 +3,8 @@
 import numpy as np
 import pandas as pd
 
+from studies.readings.entryQuality.eratio import Band
+
 MEANS = {
     "signal": "la entrada predice movimiento favorable por encima del azar con su mismo horario",
     "no_signal": "la entrada no se distingue de entrar al azar a las mismas horas: lo que gana "
@@ -13,7 +15,7 @@ MEANS = {
 }
 
 
-def signal(real: np.ndarray, bands: dict) -> str:
+def signal(real: np.ndarray, bands: Band) -> str:
     """Whether the real e-ratio curve sits above its random band.
 
     Args:

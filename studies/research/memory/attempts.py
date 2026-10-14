@@ -1,7 +1,9 @@
 """The attempts table: one row per project run of a template on an asset, timeframe and direction."""
 
 import re
+from collections.abc import Set as AbstractSet
 from pathlib import Path
+from typing import Any, TypedDict
 
 from studies.research.memory import causes, sheet, sources
 from studies.research.memory.sources import CONFIG
@@ -15,7 +17,16 @@ NAME = re.compile(r"^(?:Test|Trade|Research)_([A-Z0-9]+)_.*_(M15|M30|H1|H4|D1)$"
 DIRECTION = {"market_long": "long", "market_short": "short"}
 
 
-def funnel(stages: dict, failed: str) -> dict:
+class Funnel(TypedDict):
+    """Where a population stopped: last stage, first stage with none, survivors, outcome."""
+
+    last_stage: str
+    died_at: str
+    survivors: int | str
+    outcome: str
+
+
+def funnel(stages: dict, failed: str) -> Funnel:
     """Where a population stopped.
 
     Args:
@@ -41,7 +52,7 @@ def funnel(stages: dict, failed: str) -> dict:
             "outcome": outcome}
 
 
-def one(project: str, reg: dict, runs: dict, tpl: dict, ideas: set, root: Path | None = None) -> dict:
+def one(project: str, reg: dict, runs: dict, tpl: dict, ideas: AbstractSet, root: Path | None = None) -> dict[str, Any]:
     """The row of one project from every source that knows it; what none knows stays ''.
     Its sheet is read before its cause: a build that contradicts the sheet is a cause too."""
     name = sources.template_of(reg) or runs.get("template", "")
@@ -72,7 +83,7 @@ def one(project: str, reg: dict, runs: dict, tpl: dict, ideas: set, root: Path |
     return row | causes.typed(row, (root or sources.autopilot_runs()) / project)
 
 
-def table(ideas: set = frozenset()) -> list[dict]:
+def table(ideas: AbstractSet = frozenset()) -> list[dict]:
     """Every attempt known today, oldest first.
 
     Args:

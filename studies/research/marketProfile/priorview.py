@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 import yaml
@@ -51,10 +53,10 @@ def naked(rows: pd.DataFrame, symbol: str, timeframe: str, family: str) -> pd.Da
     """The graded measures that speak for a prior family in one cell, best first."""
     own = rows["measure"].isin(PULL) if family == "pullback" else (
         (rows["family"] == family) & ~rows["measure"].isin(PULL))
-    got = rows[(rows["symbol"] == symbol) & (rows["timeframe"] == timeframe) & own]
+    got = pd.DataFrame(rows[(rows["symbol"] == symbol) & (rows["timeframe"] == timeframe) & own])
     if long_only(symbol, family):
-        got = got[got["direction"] == "long"]
-    return got.assign(_g=got["grade"].map(favourable.ORDER).fillna(9)).sort_values(
+        got = pd.DataFrame(got[got["direction"] == "long"])
+    return got.assign(_g=favourable.order(got["grade"]).fillna(9)).sort_values(
         ["_g", "p", "multiple"], ascending=[True, True, False])
 
 
@@ -62,15 +64,24 @@ def swept(variants: pd.DataFrame, symbol: str, timeframe: str, family: str) -> p
     """The sweep's variants that speak for a prior family in one cell, best first."""
     own = variants["entry"].isin(PULL_SWEEP) if family == "pullback" else (
         (variants["family"] == family) & ~variants["entry"].isin(PULL_SWEEP))
-    got = variants[(variants["symbol"] == symbol) & (variants["timeframe"] == timeframe) & own]
+    got = pd.DataFrame(variants[(variants["symbol"] == symbol) & (variants["timeframe"] == timeframe) & own])
     if long_only(symbol, family):
-        got = got[got["direction"] == "long"]
+        got = pd.DataFrame(got[got["direction"] == "long"])
     return got.sort_values(["on_plateau", "passes", "plateau", "q", "multiple"],
                            ascending=[False, False, False, True, False])
 
 
+class State(TypedDict):
+    """What was measured for one prior family in a cell: its flag, how, the naked reading and the swept one."""
+
+    flag: str
+    how: list[str]
+    naked: str
+    swept: str
+
+
 def state(rows: pd.DataFrame, variants: pd.DataFrame, symbol: str, timeframe: str,
-          family: str) -> dict:
+          family: str) -> State:
     """What was measured for one prior family in one cell.
 
     Returns:
@@ -104,7 +115,7 @@ def state(rows: pd.DataFrame, variants: pd.DataFrame, symbol: str, timeframe: st
 
 def variance_cell(ratios: pd.DataFrame, symbol: str, timeframe: str, main: str) -> str:
     """The variance ratio of a cell against the sign its prior's main family bets on."""
-    here = ratios[(ratios["symbol"] == symbol) & (ratios["timeframe"] == timeframe)]
+    here = pd.DataFrame(ratios[(ratios["symbol"] == symbol) & (ratios["timeframe"] == timeframe)])
     short, far = here[here["q"] == 8].iloc[0], here[here["q"] == 32].iloc[0]
     share = short["years_below_1"] / short["years"]
     sign = "below" if short["vr"] < 1 and share >= 0.6 else (

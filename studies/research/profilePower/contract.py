@@ -1,5 +1,6 @@
 """The power study as the study contract: what the window and the page draw."""
 
+from typing import Any
 import pandas as pd
 
 from core.study import blocks, result
@@ -19,7 +20,7 @@ GLOSSARY = [
                                 "es de 2 costes o menos."}]
 
 
-def build(tables: dict[str, pd.DataFrame], cfg: dict, started: float) -> dict:
+def build(tables: dict[str, pd.DataFrame], cfg: dict, started: float) -> dict[str, Any]:
     """The contract dict of the study.
 
     Args:

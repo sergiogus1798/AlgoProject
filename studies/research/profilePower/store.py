@@ -20,9 +20,9 @@ def runs(cut: float, draws: int) -> pd.DataFrame:
     """The replications stored so far that were stopped against this cut and this count."""
     path = folder() / "runs.parquet"
     if not path.exists():
-        return pd.DataFrame(columns=KEY)
+        return pd.DataFrame(columns=pd.Index(KEY))
     old = pd.read_parquet(path)
-    return old[(old["cut"] == cut) & (old["draws"] == draws)]
+    return pd.DataFrame(old[(old["cut"] == cut) & (old["draws"] == draws)])
 
 
 def save(rows: pd.DataFrame) -> None:

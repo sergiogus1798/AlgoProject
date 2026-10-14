@@ -3,6 +3,7 @@
 import json
 import re
 from pathlib import Path
+from typing import Any, cast
 
 import yaml
 
@@ -13,7 +14,7 @@ CONFIG = Path(__file__).with_name("config.yaml")
 NUMBER = re.compile(r"^[A-Z]+-(\d+)")
 
 
-def config() -> dict:
+def config() -> dict[str, Any]:
     """The parsed config.yaml."""
     return study_config.load(CONFIG, [])
 
@@ -27,7 +28,7 @@ def entries() -> list[dict]:
 
 def next_number() -> int:
     """One more than the largest number any entry id carries."""
-    return 1 + max(int(NUMBER.match(e["id"])[1]) for e in entries())
+    return 1 + max(int(cast("re.Match[str]", NUMBER.match(e["id"]))[1]) for e in entries())
 
 
 def add(entry: dict, day: str) -> Path:

@@ -9,6 +9,8 @@ the workflow named in `docs/AgentPDFs/WORKFLOW.md`.
 import argparse
 from datetime import date
 
+import pandas as pd
+
 from core.manifest import write as write_manifest
 from core.paths import report_dir
 from core.study import output
@@ -35,8 +37,8 @@ def main() -> None:
 
     if a.strategy:
         names = inputs.names(folder)
-        identity = names[names == a.strategy].index[0]
-        mine = priced[priced["identity"] == identity]
+        identity = str(names.loc[names == a.strategy].index[0])
+        mine = pd.DataFrame(priced[priced["identity"] == identity])
         got = one.run(a.strategy, mine, cfg, asset, identity)
         title = f"Edge por coste — {a.strategy}"
         lede = f"{asset['symbol']}, feed {a.feed}."

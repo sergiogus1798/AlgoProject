@@ -1,12 +1,26 @@
 """Item 3: does the entry itself predict favourable movement, or would any entry do?"""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
 from studies.readings.entryQuality import excursion
+from studies.readings.entryQuality.excursion import Walk
+from studies.readings.entryQuality.inputs import Located
 
 
-def curve(walk: dict) -> np.ndarray:
+class Band(TypedDict):
+    """The e(k) band of random entries: 5th/50th/95th percentile curves, the draws and every curve."""
+
+    low: np.ndarray
+    median: np.ndarray
+    high: np.ndarray
+    draws: int
+    stacked: np.ndarray
+
+
+def curve(walk: Walk) -> np.ndarray:
     """e(k): mean favourable excursion over mean adverse excursion, horizon by horizon.
 
     Args:
@@ -38,7 +52,7 @@ def eligible(index: pd.DatetimeIndex, entry: np.ndarray, horizon: int) -> np.nda
 
 
 def matched(index: pd.DatetimeIndex, pool: np.ndarray, entry: np.ndarray,
-            rng: np.random.Generator, split: tuple | None = None) -> np.ndarray:
+            rng: np.random.Generator, split: list | None = None) -> np.ndarray:
     """Random entry bars with the same time-of-day profile as the real ones.
 
     Args:
@@ -63,13 +77,13 @@ def matched(index: pd.DatetimeIndex, pool: np.ndarray, entry: np.ndarray,
 
 def by_hour(index: pd.DatetimeIndex, pool: np.ndarray, entry: np.ndarray) -> list:
     """The draw's fixed part: per hour of the real entries, the pool bars of that hour and the count."""
-    hours = index.hour.to_numpy()
+    hours = index.hour.to_numpy()  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.hour
     return [(pool[hours[pool] == hour], count)
             for hour, count in zip(*np.unique(hours[entry], return_counts=True))]
 
 
-def band(frame: pd.DataFrame, found: dict, keep: np.ndarray, scale: np.ndarray,
-         cfg: dict) -> dict:
+def band(frame: pd.DataFrame, found: Located, keep: np.ndarray, scale: np.ndarray,
+         cfg: dict) -> Band:
     """The e-ratio curve of random entries matched to the real ones.
 
     Args:
@@ -90,12 +104,13 @@ def band(frame: pd.DataFrame, found: dict, keep: np.ndarray, scale: np.ndarray,
         rising market.
     """
     entry, side = found["entry"][keep], found["side"][keep]
-    pool = eligible(frame.index, entry, cfg["horizon"])
+    stamps = pd.DatetimeIndex(frame.index)
+    pool = eligible(stamps, entry, cfg["horizon"])
     rng = np.random.default_rng(cfg["seed"])
     opens = frame["Open"].to_numpy()
-    drawn, split = [], by_hour(frame.index, pool, entry)
+    drawn, split = [], by_hour(stamps, pool, entry)
     for _ in range(cfg["draws"]):
-        picks = matched(frame.index, pool, entry, rng, split)
+        picks = matched(stamps, pool, entry, rng, split)
         walk = excursion.paths(frame, picks, rng.permutation(side), opens[picks],
                                cfg["horizon"])
         drawn.append(curve(excursion.normalised(walk, scale[picks - 1])))
@@ -106,7 +121,7 @@ def band(frame: pd.DataFrame, found: dict, keep: np.ndarray, scale: np.ndarray,
             "stacked": stacked}
 
 
-def table(real: np.ndarray, bands: dict, marks: list[int]) -> pd.DataFrame:
+def table(real: np.ndarray, bands: Band, marks: list[int]) -> pd.DataFrame:
     """The real curve against its band, at a few horizons.
 
     Args:

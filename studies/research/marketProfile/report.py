@@ -5,6 +5,7 @@ import argparse
 import json
 import time
 from datetime import datetime
+from typing import Any
 
 import pandas as pd
 
@@ -22,7 +23,7 @@ LEDE = ("Qué familia de comportamiento hay en cada activo, marco y dirección, 
         "el tramo build y contra la misma serie remuestreada por bloques.")
 
 
-def measure(symbol: str) -> dict:
+def measure(symbol: str) -> dict[str, Any]:
     """One asset on every timeframe, written to its own file.
 
     Returns:
@@ -52,12 +53,12 @@ def measure(symbol: str) -> dict:
             "to": str(m1.index[-1])}
 
 
-def top_up(symbol: str) -> dict:
+def top_up(symbol: str) -> dict[str, Any]:
     """One measured asset's missing measures, added to its stored cells."""
     return topup.run(symbol, STATE["cfg"])
 
 
-def config(overrides: list[str]) -> dict:
+def config(overrides: list[str]) -> dict[str, Any]:
     """The config with its overrides, and the literature scout's measures after its own."""
     cfg = literature.extend(inputs.config(overrides))
     for line in cfg["literature_skipped"]:
@@ -181,10 +182,10 @@ def main() -> None:
     judged = many.run(stored["rows"], cfg)
     out = store.write(judged, stored)
     measured = [s for s, g in status.items() if g["status"] == "ok"]
-    fresh = judged["measures"][judged["measures"]["symbol"].isin(measured)]
+    fresh = pd.DataFrame(judged["measures"][judged["measures"]["symbol"].isin(measured)])
     if a.top_up:
         added = {n for g in status.values() for n in g.get("measures", [])}
-        fresh = fresh[fresh["measure"].isin(added)]
+        fresh = pd.DataFrame(fresh[fresh["measure"].isin(list(added))])
     ledgerrows.append(out / "ledger.jsonl", ledgerrows.rows(fresh, cfg))
     got = contract.build(judged, stored["context"], cfg, started)
     output.population(out, "profile", got, TITLE, LEDE)
@@ -195,7 +196,7 @@ def main() -> None:
         "wall_s": round(time.time() - started, 1)}, indent=1), encoding="utf-8")
     result.progress(100, "hecho")
     table = judged["scores"]
-    shown = table[table["passes"] | table["fragile"]].sort_values("multiple", ascending=False)
+    shown = pd.DataFrame(table[table["passes"] | table["fragile"]]).sort_values("multiple", ascending=False)
     pd.set_option("display.width", 220)
     print(f"\n{len(store.done())} activos, {len(judged['measures'])} pruebas, "
           f"{int(table['passes'].sum())} de {len(table)} celdas-familia pasan los cuatro filtros, "

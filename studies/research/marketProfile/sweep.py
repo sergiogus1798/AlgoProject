@@ -3,6 +3,7 @@
 import copy
 import time
 import zlib
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -33,7 +34,7 @@ LEAVES = {"fade": [("mean20", lambda x: x["c"] > x["sma"]), ("mean5", lambda x: 
           "follow": [("low20", lambda x: x["c"] < x["lo"][20]), ("under20", lambda x: x["c"] < x["sma"])]}
 
 
-def frame_cfg(cfg: dict) -> dict:
+def frame_cfg(cfg: dict) -> dict[str, Any]:
     """The config whose frame carries the channels and D1 means the sweep's entries read."""
     out = copy.deepcopy(cfg)
     out["derive"]["channels"] = cfg["sweep"]["channels"]

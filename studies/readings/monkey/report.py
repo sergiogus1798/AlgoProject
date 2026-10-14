@@ -6,7 +6,9 @@ import json
 import time
 from datetime import date
 from pathlib import Path
+from typing import Any
 
+import numpy as np
 import pandas as pd
 
 from core import assetdata, fanout
@@ -59,11 +61,11 @@ def sign(rows: list[dict], signed: dict) -> None:
 def stamp(panel: pd.DataFrame, signed: dict, cfg: dict) -> None:
     """Add nulls.csv's identity, note and seed columns to the panel, in place."""
     panel.insert(0, "identity", panel.index.map(signed))
-    panel.insert(1, "note", panel["identity"].isna().map({True: identity.NOTE, False: ""}))
+    panel.insert(1, "note", np.where(panel["identity"].isna(), identity.NOTE, ""))
     panel["seed"] = cfg["nulls"]["seed"]
 
 
-def saved_source(out: Path) -> dict:
+def saved_source(out: Path) -> dict[str, Any]:
     """What the previous population run's manifest recorded, which `--only` must keep.
 
     Raises:

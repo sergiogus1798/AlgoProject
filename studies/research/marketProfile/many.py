@@ -1,5 +1,7 @@
 """Every cell judged together: the correction, the four filters, the scores, the overlap."""
 
+from typing import Any, cast, TypedDict
+
 import numpy as np
 import pandas as pd
 
@@ -73,7 +75,7 @@ def judged(rows: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     out["pays"] = out["multiple"].fillna(-np.inf) >= cfg["cost_multiple"]
     out["stability"] = out["years_with_sign"] / out["years"]
     out["stable"] = out["stability"].fillna(0) > cfg["stable_share"]
-    out["frequent"] = out["trades_per_year"].fillna(0) >= min_trades(out["symbol"], cfg)
+    out["frequent"] = out["trades_per_year"].fillna(0) >= min_trades(pd.Series(out["symbol"]), cfg)
     rest = out["pays"] & out["stable"] & out["frequent"]
     out["passes"], out["passes_family"] = out["significant"] & rest, out["significant_family"] & rest
     return out
@@ -82,7 +84,7 @@ def judged(rows: pd.DataFrame, cfg: dict) -> pd.DataFrame:
 def _lead(trades: pd.DataFrame) -> pd.Series:
     """The trade measure that speaks for a family: the best payer among those that pass,
     else the one with the smallest corrected p."""
-    passing = trades[trades["passes"]]
+    passing = pd.DataFrame(trades[trades["passes"]])
     if not passing.empty:
         return passing.sort_values("multiple", ascending=False).iloc[0]
     return trades.sort_values(["q", "multiple"], ascending=[True, False]).iloc[0]
@@ -90,8 +92,8 @@ def _lead(trades: pd.DataFrame) -> pd.Series:
 
 def _tradable(members: pd.DataFrame) -> pd.DataFrame:
     """A family's trade measures that need no clock; the clock ones only when it has no other."""
-    trades = members[members["n_trades"].notna()]
-    free = trades[~trades["needs_clock"]]
+    trades = pd.DataFrame(members[members["n_trades"].notna()])
+    free = pd.DataFrame(trades[~trades["needs_clock"]])
     return trades if free.empty else free
 
 
@@ -114,14 +116,14 @@ def scores(measures: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     """
     cap = cfg["score"]["z_cap"]
     families = list(dict.fromkeys(m["family"] for m in cfg["measures"]))
-    both = measures[measures["direction"] == "both"]
+    both = pd.DataFrame(measures[measures["direction"] == "both"])
     rows = []
-    for (symbol, timeframe, direction), own in measures[measures["direction"] != "both"].groupby(
-            CELL, sort=False):
-        shared = both[(both["symbol"] == symbol) & (both["timeframe"] == timeframe)]
+    for (symbol, timeframe, direction), own in cast("Any", measures[measures["direction"] != "both"].groupby(
+            CELL, sort=False)):
+        shared = pd.DataFrame(both[(both["symbol"] == symbol) & (both["timeframe"] == timeframe)])
         cell = pd.concat([own, shared])
         for family in families:
-            members = cell[cell["family"] == family]
+            members = pd.DataFrame(cell[cell["family"] == family])
             trades = _tradable(members)
             lead = _lead(trades)
             rows.append({
@@ -135,7 +137,7 @@ def scores(measures: pd.DataFrame, cfg: dict) -> pd.DataFrame:
                 "stable": bool(lead["stable"]), "frequent": bool(lead["frequent"]),
                 "passes": bool(trades["passes"].any()),
                 "fragile": bool((trades["significant"] & trades["pays"]
-                                 & ~trades["stable"]).any() and not trades["passes"].any()),
+                                 & ~trades["stable"]).any()) and not bool(trades["passes"].any()),
                 "needs_clock": bool(lead["needs_clock"]), "p_family": lead["q_family"],
                 "significant_family": bool(lead["significant_family"]),
                 "passes_family": bool(trades["passes_family"].any()),
@@ -163,7 +165,15 @@ def correlation(table: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def run(rows: pd.DataFrame, cfg: dict) -> dict:
+class Map(TypedDict):
+    """The whole map: judged measures, the family scores and their correlation."""
+
+    measures: pd.DataFrame
+    scores: pd.DataFrame
+    correlation: pd.DataFrame
+
+
+def run(rows: pd.DataFrame, cfg: dict) -> Map:
     """The whole map from every cell's rows.
 
     Returns:

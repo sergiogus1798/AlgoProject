@@ -1,8 +1,9 @@
 """What a run registers: a page of a query's papers, a code collection's and a site's next items."""
 
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from itertools import zip_longest
+from typing import Any
 
 import httpx
 
@@ -12,7 +13,7 @@ from studies.research.literature import dedupe, search, store
 DOWN: set[str] = set()    # sources that refused a request in this run: not asked again
 
 
-def asked(name: str, fn: Callable, *args: object) -> list[dict]:
+def asked(name: str, fn: Callable, *args: object) -> Any:
     """A source's answer, or nothing once it has refused in this run.
 
     A search service that is down or out of its free daily budget (OpenAlex answers 429 once an
@@ -28,7 +29,7 @@ def asked(name: str, fn: Callable, *args: object) -> list[dict]:
         return []
 
 
-def row(paper: dict, query: str, family: str, run: str, twin: str) -> dict:
+def row(paper: Mapping[str, Any], query: str, family: str, run: str, twin: str) -> dict[str, Any]:
     """A found paper as its row of the register: undecided, or the duplicate of `twin`."""
     return {**paper, "query": query, "family": family, "run": run, "found": run[:8], "read": "",
             "entries": [], "status": "duplicate" if twin else "inbox", "filter": "", "quote": "",
@@ -70,7 +71,7 @@ def page(query: dict, page: int, run: str, most: int, room: int, held: dict, ent
 
 
 
-def collections(cfg: dict, run: str, held: dict, new: list[dict]) -> None:
+def collections(cfg: dict, run: str, held: dict, new: list[Any]) -> None:
     """Register the next unseen items of each strategy collection (owner, 2026-10-02).
 
     Args:
@@ -88,7 +89,7 @@ def collections(cfg: dict, run: str, held: dict, new: list[dict]) -> None:
             new.append(paper)
 
 
-def sites(cfg: dict, run: str, held: dict, new: list[dict]) -> None:
+def sites(cfg: dict, run: str, held: dict, new: list[Any]) -> None:
     """Register the next unseen articles of each practitioner site (owner, 2026-10-02).
 
     Args:

@@ -1,8 +1,10 @@
 """The judged map as the study contract: what the window and the page draw."""
 
+from typing import Any
 import pandas as pd
 
 from core.study import blocks, result
+from studies.research.marketProfile.many import Map
 
 SHOWN = ["symbol", "timeframe", "direction", "family", "score", "p", "multiple", "stability",
          "trades_per_year", "lead", "significant", "pays", "stable", "frequent", "passes",
@@ -21,7 +23,7 @@ GLOSSARY = [
                                "con suficientes operaciones al año."}]
 
 
-def _grid(table: pd.DataFrame, direction: str) -> dict:
+def _grid(table: pd.DataFrame, direction: str) -> dict[str, Any]:
     """The scores of one direction as a heat map: cells in rows, families in columns."""
     part = table[table["direction"] == direction]
     wide = part.pivot_table(index=["symbol", "timeframe"], columns="family", values="score",
@@ -32,7 +34,7 @@ def _grid(table: pd.DataFrame, direction: str) -> dict:
             "levels": [20, 40, 60, 80], "labels": None, "select": {"direccion": direction}}
 
 
-def build(judged: dict, context: pd.DataFrame, cfg: dict, started: float) -> dict:
+def build(judged: Map, context: pd.DataFrame, cfg: dict, started: float) -> dict[str, Any]:
     """The contract dict of the whole map.
 
     Args:
@@ -46,13 +48,14 @@ def build(judged: dict, context: pd.DataFrame, cfg: dict, started: float) -> dic
         and the context of every cell.
     """
     table, corr = judged["scores"], judged["correlation"]
-    good = table[table["passes"] | table["fragile"]].sort_values("multiple", ascending=False)
-    whole = corr[corr["scope"] == "ALL"].sort_values("spearman", ascending=False)
+    good = pd.DataFrame(table[table["passes"] | table["fragile"]]).sort_values(
+        "multiple", ascending=False)
+    whole = pd.DataFrame(corr[corr["scope"] == "ALL"]).sort_values("spearman", ascending=False)
     tests = len(judged["measures"])
     tabs = [
         result.tab("pasan", "Celdas que pasan", [blocks.table(
             "Familias que pasan los cuatro filtros, o que sólo fallan el de estabilidad",
-            good[SHOWN], f"{int(table['passes'].sum())} de {len(table)} celdas-familia pasan; "
+            pd.DataFrame(good[SHOWN]), f"{int(table['passes'].sum())} de {len(table)} celdas-familia pasan; "
             f"{int(table['fragile'].sum())} frágiles. {tests} pruebas corregidas juntas.", 4)]),
         result.tab("mapa", "Puntuaciones", [_grid(table, d) for d in ("long", "short")],
                    [{"key": "direccion", "label": "Dirección", "options": ["long", "short"],

@@ -25,7 +25,7 @@ def judged(runs: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     out["single"] = out["p_first"] <= judge["single_level"]
     out["pays"] = out["multiple"].fillna(-np.inf) >= filters["cost_multiple"]
     out["stable"] = (out["years_with_sign"] / out["years"]).fillna(0) > filters["stable_share"]
-    out["frequent"] = out["trades_per_year"] >= profile_many.min_trades(out["symbol"], filters)
+    out["frequent"] = out["trades_per_year"] >= profile_many.min_trades(pd.Series(out["symbol"]), filters)
     out["passes"] = out["significant"] & out["pays"] & out["stable"] & out["frequent"]
     return out
 

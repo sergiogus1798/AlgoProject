@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """The profile examines itself: did high-score cells give more survivors than low-score ones?"""
 
+from typing import Any
 import pandas as pd
 from scipy.stats import fisher_exact
 
@@ -19,11 +20,11 @@ def closed_runs(attempts: list[dict], scores: pd.DataFrame) -> pd.DataFrame:
     rows = [{"project": a["project"], **dict(zip(CELL, queries.cell(a))),
              "survived": a["outcome"] == "survivors"}
             for a in attempts if queries.conclusive(a, include_dev=False)]
-    frame = pd.DataFrame(rows, columns=["project", *CELL, "survived"])
+    frame = pd.DataFrame(rows, columns=pd.Index(["project", *CELL, "survived"]))
     return frame.merge(scores[[*CELL, "score"]], on=CELL)
 
 
-def judge(runs: pd.DataFrame, cfg: dict) -> dict:
+def judge(runs: pd.DataFrame, cfg: dict) -> dict[str, Any]:
     """The decision: keep the profile's weight on the board, or reduce it.
 
     High and low are the two halves of the closed runs around their median score. The profile
@@ -46,7 +47,7 @@ def judge(runs: pd.DataFrame, cfg: dict) -> dict:
              [int((~high & runs["survived"]).sum()), int((~high & ~runs["survived"]).sum())]]
     rate_high = table[0][0] / max(sum(table[0]), 1)
     rate_low = table[1][0] / max(sum(table[1]), 1)
-    p = float(fisher_exact(table, alternative="greater")[1])
+    p = float(fisher_exact(table, alternative="greater")[1])  # pyright: ignore[reportArgumentType]  # scipy result tuple is typed generically
     return {"enough": True, "closed": int(len(runs)), "median_score": float(runs["score"].median()),
             "high": {"runs": sum(table[0]), "with_survivors": table[0][0], "rate": rate_high},
             "low": {"runs": sum(table[1]), "with_survivors": table[1][0], "rate": rate_low},

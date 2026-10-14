@@ -1,11 +1,19 @@
 """The owner's prior per asset, timeframe, direction and family: Alta, Media or nothing."""
 
 from pathlib import Path
+from typing import TypedDict
 
 import yaml
 
 PRIOR = yaml.safe_load((Path(__file__).parent / "prior.yaml").read_text(encoding="utf-8"))
 LEVEL = {"A": "Alta", "M": "Media", "B": "Baja"}
+
+
+class Prior(TypedDict):
+    """A cell's prior: its level and whether it came from the pullback entry."""
+
+    level: str
+    pullback: bool
 
 
 def level(symbol: str, timeframe: str, direction: str, family: str) -> str:
@@ -25,7 +33,7 @@ def level(symbol: str, timeframe: str, direction: str, family: str) -> str:
     return LEVEL[PRIOR["matrix"][symbol][PRIOR["families"].index(family)]]
 
 
-def of(symbol: str, timeframe: str, direction: str, family: str, pullback_as: str) -> dict:
+def of(symbol: str, timeframe: str, direction: str, family: str, pullback_as: str) -> Prior:
     """The prior of a cell of the board, whose families are the profile's seven.
 
     Args:

@@ -1,6 +1,19 @@
 """The board's numbers per cell — prior, evidence, signal, coverage gap, past, brake — each 0-1."""
 
+from typing import TypedDict
+
 from scipy.stats import beta
+
+
+class Past(TypedDict):
+    """A family's closed runs in an asset class and its shrunk survival rate with its credible interval."""
+
+    closed: int
+    with_survivors: int
+    rate: float
+    low: float
+    high: float
+    pooled: float
 
 
 def signal(multiple: float, cap: float) -> float:
@@ -19,7 +32,7 @@ def brake(ideas: int, half: float) -> float:
 
 
 def past(by_family: list[dict], family: str, asset_class: str, strength: float,
-         interval: float) -> dict:
+         interval: float) -> Past:
     """Survival rate of a family in an asset class, shrunk towards the pooled rate.
 
     A Beta posterior whose prior is `strength` pseudo-attempts at the rate pooled over every

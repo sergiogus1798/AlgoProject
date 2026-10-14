@@ -1,7 +1,31 @@
 """The two readings as the contract's tabs: the entry against random entries, and the delay."""
 
+from typing import Any, TypedDict
+
+import numpy as np
+import pandas as pd
+
 from core.study import blocks, result as envelope
 from studies.readings.entryQuality import eratio, verdict
+from studies.readings.entryQuality.eratio import Band
+from studies.readings.entryQuality.excursion import Walk
+from studies.readings.entryQuality.inputs import Located
+
+
+class Reading(TypedDict):
+    """What `one.read` measures: located trades, usable mask, e-ratio curve and band, excursions, delay tables, curves by side."""
+
+    found: Located
+    keep: np.ndarray
+    real: np.ndarray
+    bands: Band
+    walk: Walk
+    on_tf: pd.DataFrame
+    on_m1: pd.DataFrame
+    peak: int
+    hold: Any
+    sides: dict[str, np.ndarray]
+
 
 STATE = {"signal": "pass", "no_signal": "watch", "latency_fragile": "watch",
          "latency_robust": "pass"}
@@ -15,12 +39,12 @@ GLOSSARY = [
      "tarde."}]
 
 
-def reading(label: str) -> dict:
+def reading(label: str) -> dict[str, Any]:
     """One reading's label and what it means, as a verdict block."""
     return blocks.verdict(label, STATE[label], verdict.MEANS[label])
 
 
-def eratio_tab(found: dict, cfg: dict) -> dict:
+def eratio_tab(found: Reading, cfg: dict) -> dict[str, Any]:
     """Did price run further in favour than against, more than a random entry would have?"""
     real, bands = found["real"], found["bands"]
     k = list(range(1, len(real) + 1))
@@ -46,7 +70,7 @@ def eratio_tab(found: dict, cfg: dict) -> dict:
              "toca las salidas de la estrategia.")
 
 
-def delay_tab(found: dict, cfg: dict) -> dict:
+def delay_tab(found: Reading, cfg: dict) -> dict[str, Any]:
     """How much of the edge entering d bars late gives up, with the exits left where they were."""
     tf = cfg["run"]["timeframe"]
     return envelope.tab("delay", "4 · Lo que cuesta llegar tarde", [

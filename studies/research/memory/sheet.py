@@ -3,6 +3,7 @@
 import hashlib
 import json
 from pathlib import Path
+from typing import Any, TypedDict
 
 import pandas as pd
 
@@ -55,7 +56,14 @@ def sealed(idea: str) -> dict | None:
     return None
 
 
-def built(trades: pd.DataFrame) -> dict:
+class Built(TypedDict):
+    """What the build produced: trades per year and holding hours of the median strategy."""
+
+    trades_per_year: float
+    holding_hours: float
+
+
+def built(trades: pd.DataFrame) -> Built:
     """What a build produced, as the sheet's two numbers.
 
     Args:
@@ -67,7 +75,7 @@ def built(trades: pd.DataFrame) -> dict:
         trades. The years are the span from the population's first in-sample entry to its
         last exit, a little under the build window; the hours are by the clock, weekends in.
     """
-    mine = trades[trades["Sample type"].astype(str).str.startswith("IS")]
+    mine = pd.DataFrame(trades[trades["Sample type"].astype(str).str.startswith("IS")])
     years = (mine["Close time"].max() - mine["Open time"].min()).total_seconds() / (365.25 * 86400)
     hours = (mine["Close time"] - mine["Open time"]).dt.total_seconds() / 3600
     by = mine["strategy"].astype(str)
@@ -75,7 +83,7 @@ def built(trades: pd.DataFrame) -> dict:
             "holding_hours": float(hours.groupby(by).median().median())}
 
 
-def compare(sheet: dict, got: dict, tolerance: float | str) -> dict:
+def compare(sheet: dict, got: Built, tolerance: float | str) -> dict[str, Any]:
     """The sheet against the build.
 
     Args:
@@ -89,7 +97,7 @@ def compare(sheet: dict, got: dict, tolerance: float | str) -> dict:
         (built ÷ predicted) and `hypothesis`: pending, match or mismatch.
     """
     ratio = {k: got[k] / sheet[k] for k in NUMBERS}
-    off = tolerance != "pending" and any(r > tolerance or r < 1 / tolerance for r in ratio.values())
+    off = tolerance != "pending" and any(r > float(tolerance) or r < 1 / float(tolerance) for r in ratio.values())
     return {"sheet_trades_per_year": sheet["trades_per_year"],
             "built_trades_per_year": round(got["trades_per_year"], 1),
             "trades_ratio": round(ratio["trades_per_year"], 2),
@@ -99,7 +107,7 @@ def compare(sheet: dict, got: dict, tolerance: float | str) -> dict:
             "hypothesis": "pending" if tolerance == "pending" else "mismatch" if off else "match"}
 
 
-def reading(idea: str, project: str) -> dict:
+def reading(idea: str, project: str) -> dict[str, Any]:
     """An attempt's sheet columns: `compare` for an idea with a sealed sheet whose build was
     exported; `hypothesis` is `altered` when the sheet no longer matches its seal, `no_data`
     when the build's trades were never exported, '' when the idea has no sheet."""

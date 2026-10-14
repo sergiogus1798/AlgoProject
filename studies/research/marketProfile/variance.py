@@ -1,5 +1,7 @@
 """Lo-MacKinlay's variance ratio per asset and timeframe on build, with its sign year by year."""
 
+from typing import Any, cast
+
 import numpy as np
 import pandas as pd
 
@@ -29,7 +31,7 @@ def table(symbols: list[str], timeframes: list[str]) -> pd.DataFrame:
         m1 = inputs.minute_bars(symbol, 0)
         for timeframe in timeframes:
             bars = inputs.bars(m1, timeframe)
-            close, year = np.log(bars["Close"].to_numpy()), bars.index.year.to_numpy()
+            close, year = np.log(bars["Close"].to_numpy()), cast("Any", bars.index).year.to_numpy()
             for q in HORIZONS:
                 per = [v for v in (ratio(close[year == y], q) for y in np.unique(year))
                        if np.isfinite(v)]

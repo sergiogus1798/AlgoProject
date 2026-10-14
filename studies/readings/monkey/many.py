@@ -1,6 +1,7 @@
 """Every strategy of one export through every rung: the panel the population reading starts from."""
 
 import time
+from typing import Any, TypedDict
 
 import pandas as pd
 
@@ -15,7 +16,7 @@ _SHARED: dict = {}
 DRAWS = "_draws"        # the key a worker hands its distributions back under; no panel column
 
 
-def _one(key: tuple[str, str]) -> dict:
+def _one(key: tuple[str, str]) -> dict[str, Any]:
     """One strategy on one market, in a worker that inherited the sample by fork."""
     trades = _SHARED["sample"][key]
     # The feed is what names the asset whose costs the distrust lines check.
@@ -26,8 +27,16 @@ def _one(key: tuple[str, str]) -> dict:
     return one.row(got, len(trades), cfg) | {DRAWS: one.records(got, key[0], cfg, key[1])}
 
 
+class Run(TypedDict):
+    """The population run: the contract result, the per-pair panel and the kept null distributions."""
+
+    population: dict[str, Any]
+    panel: pd.DataFrame
+    draws: list[dict]
+
+
 def run(sample: dict[tuple[str, str], pd.DataFrame], frames: dict[str, pd.DataFrame],
-        cfg: dict, workers: int) -> dict:
+        cfg: dict, workers: int) -> Run:
     """Every (strategy, market) with enough trades, one process each, the longest first.
 
     Args:
@@ -65,7 +74,7 @@ def run(sample: dict[tuple[str, str], pd.DataFrame], frames: dict[str, pd.DataFr
     return {"population": population(panel, len(frames), cfg, started), "panel": panel, "draws": kept}
 
 
-def population(panel: pd.DataFrame, markets: int, cfg: dict, started: float) -> dict:
+def population(panel: pd.DataFrame, markets: int, cfg: dict, started: float) -> dict[str, Any]:
     """The export's result from its panel: what the full run and a merged `--only` run both write.
 
     Args:

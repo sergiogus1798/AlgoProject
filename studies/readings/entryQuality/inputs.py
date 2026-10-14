@@ -1,6 +1,7 @@
 """What the study is run on: its knobs, one strategy's trades, and the bars under them."""
 
 from pathlib import Path
+from typing import Any, cast, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ from engines.nulls import inputs as nullinputs
 CONFIG = Path(__file__).with_name("config.yaml")
 
 
-def config(overrides: list[str]) -> dict:
+def config(overrides: list[str]) -> dict[str, Any]:
     """The study's knobs, with command-line overrides applied.
 
     Args:
@@ -28,7 +29,19 @@ def config(overrides: list[str]) -> dict:
     return study_config.apply(thresholds.fill(study_config.load(CONFIG, [])), overrides)
 
 
-def located(packed: Path, strategy: str, cfg: dict, frame: pd.DataFrame) -> dict:
+class Located(TypedDict):
+    """One strategy's trades on the bar grid: the frame, entry bar, side, ATR, size and cost bases."""
+
+    trades: pd.DataFrame
+    entry: np.ndarray
+    side: np.ndarray
+    atr: np.ndarray
+    point_value: float
+    charged: np.ndarray
+    size: np.ndarray
+
+
+def located(packed: Path, strategy: str, cfg: dict, frame: pd.DataFrame) -> Located:
     """One strategy's trades placed on the bar grid, with everything priced off it.
 
     Args:
@@ -51,13 +64,13 @@ def located(packed: Path, strategy: str, cfg: dict, frame: pd.DataFrame) -> dict
     value = calibrate.point_value(trades)
     scale = calibrate.atr(frame, cfg["atr"])
     return {"trades": trades, "entry": entry,
-            "side": trades["Type"].map(SIDE).to_numpy(np.float64),
+            "side": trades["Type"].map(cast("Any", SIDE)).to_numpy(np.float64),
             "atr": scale[entry - 1], "point_value": value,
             "charged": calibrate.charged(trades, value),
             "size": trades["Size"].to_numpy(np.float64)}
 
 
-def usable(found: dict, horizon: int, bars: int) -> np.ndarray:
+def usable(found: Located, horizon: int, bars: int) -> np.ndarray:
     """Which trades have a full forward path inside the data and a defined ATR.
 
     Args:

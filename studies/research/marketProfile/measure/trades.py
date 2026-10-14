@@ -1,5 +1,7 @@
 """What a signal becomes: its entry and exit bars, and the statistic its returns are judged by."""
 
+from collections.abc import Mapping
+
 import numpy as np
 
 
@@ -23,7 +25,7 @@ def after(mask: np.ndarray, hold: int) -> tuple[np.ndarray, np.ndarray]:
     return idx + 1, idx + 1 + hold
 
 
-def tstat(x: dict, entry: np.ndarray, leave: np.ndarray, least: int) -> float:
+def tstat(x: Mapping, entry: np.ndarray, leave: np.ndarray, least: int) -> float:
     """The t statistic of the trades' log returns; 0 when there are fewer than `least`.
 
     Studentised on purpose: the null moves returns across hours and regimes of different

@@ -2,19 +2,24 @@
 
 import time
 from pathlib import Path
+from typing import Any
 
 import numpy as np
+import pandas as pd
 
 from core import barstore
 from core.barstore import read as read_bars
 from core.study import draws, output, result as envelope
 from engines.market import calibrate
 from studies.readings.entryQuality import contract, delay, eratio, excursion, inputs
+from studies.readings.entryQuality.excursion import Walk
+from studies.readings.entryQuality.contract import Reading
+from studies.readings.entryQuality.inputs import Located
 
 MODULE = "studies.readings.entryQuality"
 
 
-def read(packed: Path, strategy: str, cfg: dict) -> dict:
+def read(packed: Path, strategy: str, cfg: dict) -> Reading:
     """Every measurement for one strategy, with nothing judged and nothing printed.
 
     Args:
@@ -55,10 +60,11 @@ def read(packed: Path, strategy: str, cfg: dict) -> dict:
     hold = (found["trades"]["Close time"] - found["trades"]["Open time"])
     return {"found": found, "keep": keep, "real": real, "bands": bands,
             "walk": normal, "on_tf": on_tf, "on_m1": on_m1,
-            "peak": int(np.argmax(real)) + 1, "hold": hold.median()}
+            "peak": int(np.argmax(real)) + 1, "hold": hold.median(),
+            "sides": by_side(found, normal, keep)}
 
 
-def by_side(found: dict, normal: dict, keep: np.ndarray) -> dict[str, np.ndarray]:
+def by_side(found: Located, normal: Walk, keep: np.ndarray) -> dict[str, np.ndarray]:
     """The e-ratio curve of the longs and of the shorts, which can hide a dead half.
 
     Args:
@@ -75,12 +81,12 @@ def by_side(found: dict, normal: dict, keep: np.ndarray) -> dict[str, np.ndarray
     for name, want in (("largos", 1.0), ("cortos", -1.0)):
         mask = found["side"][keep] == want
         if mask.any():
-            out[name] = eratio.curve({k: v[mask] for k, v in normal.items()})
+            out[name] = eratio.curve(Walk(mfe=normal["mfe"][mask], mae=normal["mae"][mask]))
             out[f"n_{name}"] = int(mask.sum())
     return out
 
 
-def records(strategy: str, found: dict, cfg: dict) -> list[dict]:
+def records(strategy: str, found: Reading, cfg: dict) -> list[dict]:
     """The random e-ratio at every horizon, as `core.study.draws` rows.
 
     Args:
@@ -98,7 +104,7 @@ def records(strategy: str, found: dict, cfg: dict) -> list[dict]:
             for k in range(found["real"].size)]
 
 
-def run(strategy: str, export: Path, cfg: dict, keep: list | None = None) -> dict:
+def run(strategy: str, export: Path, cfg: dict, keep: list | None = None) -> dict[str, Any]:
     """Whether one strategy's entry carries information, and what arriving late costs.
 
     Args:
@@ -115,7 +121,6 @@ def run(strategy: str, export: Path, cfg: dict, keep: list | None = None) -> dic
     found = read(export, strategy, cfg)
     if keep is not None:
         keep.extend(records(strategy, found, cfg))
-    found["sides"] = by_side(found["found"], found["walk"], found["keep"])
     kept, total = int(found["keep"].sum()), int(found["keep"].size)
     return envelope.envelope(
         MODULE, strategy, output.identify(export.parent, [strategy])[strategy], cfg, started,

@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import time
+from typing import Any
 
 import pandas as pd
 
@@ -27,7 +28,7 @@ HIT = ("inside", "engulfing", "run")    # the profile's measures judged by a hit
 EVERY = 100     # replications between two writes of runs.parquet
 
 
-def replication(key: tuple) -> dict:
+def replication(key: tuple) -> dict[str, Any]:
     """One replication, from the bars the parent loaded before forking."""
     cell = key[:2]
     return one.run(key, STATE["bars"][cell], assetdata.load(key[0]), STATE["cfg"])
@@ -61,7 +62,7 @@ def measure(cfg: dict, force: bool) -> tuple[pd.DataFrame, int]:
 def judge(runs: pd.DataFrame, cfg: dict) -> dict[str, pd.DataFrame]:
     """Every table of the study from the replications and the map on disk."""
     classes, cut, target = MEMORY["asset_class"], cfg["judge"]["cut"], cfg["judge"]["power"]
-    judged = many.judged(runs[runs["how"] == cfg["plant"]["how"]], cfg)
+    judged = many.judged(pd.DataFrame(runs[runs["how"] == cfg["plant"]["how"]]), cfg)
     judged["asset_class"] = judged["symbol"].map(classes)
     by, by_class = ["family", "measure", "timeframe"], ["asset_class", "measure", "timeframe"]
     curve = many.curve(judged, by)
@@ -97,7 +98,7 @@ def main() -> None:
     out = store.write(tables)
     if fresh:
         new = judged[judged["seed"] == cfg["run"]["seed"]]
-        profile_ledger.append(out / "ledger.jsonl", ledgerrows.rows(new, cfg))
+        profile_ledger.append(out / "ledger.jsonl", ledgerrows.rows(pd.DataFrame(new), cfg))
     output.population(out, "power", contract.build(tables, cfg, started), TITLE, LEDE)
     (out / "run.json").write_text(json.dumps({
         "code_version": manifest.code_version(), "config_hash": fingerprint(cfg),
