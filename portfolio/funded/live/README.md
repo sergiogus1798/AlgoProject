@@ -8,11 +8,11 @@ places no order and touches no terminal: the accounts are opened by the owner.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `real.py` | The real trades of one strategy, from the fleet's history, a CSV override, and their R. | imported | strategy, firm → trades, .sqx, timeframe |
+| `run.py` | THE COMMAND: stage A and the funded account's SPRT for one strategy, ending in a decision line. | `python3 -m portfolio.funded.live.run --asset A --strategy S --firm F --sqx a.csv --deposit 10000 [--real b.csv --timeframe H1] [--r r.csv] [--anotar]` | CSV + fleet → stdout |
+| `sprt.py` | Wald's sequential test on a funded account's per-trade results in R. | imported | list of R → `raise` / `retire` / `continue` and the n where it crossed |
+| `stage_a.py` | Stage A: the first real trades of a strategy against its SQX backtest, on rows 1, 2, 3a and 5 of step 26. | imported | two trade frames → rows, `failed`, `warning`, `out` |
 | `config.yaml` | `ledger:` placeholders for every number | edit the ledger, not this | — |
-| `real.py` | the strategy's closed trades from the fleet's history (`<login>.history.json`) split by magic through the reconciler's register; R of each trade | imported | strategy, firm → trades, .sqx, timeframe |
-| `stage_a.py` | the first 30 real trades against the SQX backtest: row 1 (matched) only warns, rows 2, 3a, 5 take the strategy out; under 30 trades there is no verdict | imported | two trade frames → rows, `failed`, `warning`, `out` |
-| `sprt.py` | Wald's SPRT on R per trade: limits `ln·σ²/(μ1−μ0)` on `S_n − 0.05·n` (14.4 / −11.2), derived, never typed | imported | list of R → `raise` / `retire` / `continue` and the n where it crossed |
-| `run.py` | **THE COMMAND**; prints both readings and `DECISIÓN:`; `--anotar` writes each failed row with `core.assetwrite.add_live_failure` into the card's `live_failures` | `python3 -m portfolio.funded.live.run --asset A --strategy S --firm F --sqx a.csv --deposit 10000 [--real b.csv --timeframe H1] [--r r.csv] [--anotar]` | CSV + fleet → stdout |
 
 Behaviour (owner, 2026-10-12):
 - **Source.** The fleet history; `--real` (CSV in SQX's export shape) overrides it and is what the tests use.

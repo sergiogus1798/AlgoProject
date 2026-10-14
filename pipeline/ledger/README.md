@@ -7,9 +7,8 @@ serves `stages.<name>.progress` straight to its progress bar.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `state.py` | reads and replaces the ledger, atomically | imported | work directory ↔ `state.json` |
-| `progress.py` | records how far a running stage has got, while it runs | imported | percentage and status → ledger |
-| `cost.py` | what a stage cost: wall time, the peak RSS of **both** process trees (this one and SQX's JVM) and the bytes it left behind | imported | a stage run → wall, RSS, bytes |
+| `progress.py` | How far a running stage has got, written into the ledger while it runs, never after. | imported | percentage and status → ledger |
+| `state.py` | The C5 ledger: one state.json per mother strategy, written atomically while stages run. | imported | work directory ↔ `state.json` |
 
 ## The contract
 

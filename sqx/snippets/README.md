@@ -7,8 +7,8 @@ the extension the vendor offers; nothing here reads or decompiles SQX's own clas
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `install.py` | Copy the snippets into a stopped worker, start it once so SQX compiles them, stop it, and verify — `pending()` names what an install does not run yet; also creates the tool project | `python3 -m sqx.snippets.install --role conductor\|custodian [--check]` | this folder → the install's `user/extend/` and `Snippets.jar` |
-| `toolproject.py` | `Trade_AlgoTools`, the one-task project a CustomAnalysis snippet is run from: it reads any other project's databank, so no workflow project carries a task that is not a backtest | imported | a role → its `project.cfx` |
+| `install.py` | Copy the project's Java snippets into a worker and make SQX compile them. | `python3 -m sqx.snippets.install --role conductor\|custodian [--check]` | this folder → the install's `user/extend/` and `Snippets.jar` |
+| `toolproject.py` | The one-task project every worker carries to run the project's CustomAnalysis snippets from. | imported | a role → its `project.cfx` |
 | `Snippets/SQ/CustomAnalysis/AlgoBank.java` | Whole databanks from memory: every strategy's orders, statistics, equity and XML in one `.abk` per databank (format: `core/bankfile.py`) | `sqx.export.membank` in a live session | `project\|databank` → `.abk` under `core.paths.bank_dir` |
 | `Snippets/SQ/Blocks/RandomEntry/SeededRandomEntry.java` | A random entry that reproduces: true on a bar when a hash of (bar time, `Seed`) falls under `Probability` | a template or a strategy that names the block | — |
 

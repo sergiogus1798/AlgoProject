@@ -6,11 +6,11 @@ without fabricating anything, with `make.py --design-only`.
 
 | file | what it does | in → out |
 |---|---|---|
-| `levels.py` | The values each parameter may take: the plateau `[from, to]` for the live ones (class `live`), a rebuilt range for the frozen ones (inert pairs only); shifts and frozen stay at the mother's value | brief → levels |
-| `lhs.py` | The design: a Latin hypercube (`scipy.stats.qmc`, seeded) over the live parameters inside their in-sample plateau; integers to the nearest integer, decimals to 3 places, a level the pilot dropped moves to the nearest kept one | box, n, seed → tuples |
-| `canaries.py` | The controls: the origin, the known-result canaries, the inert pairs | brief, known results → rows |
-| `plan.py` | Sizes the batch (`size`), draws the hypercube, adds the controls and assigns the identifiers; drops a pilot's banned levels first | brief, banned levels → the plan |
-| `pilot.py` | Which few hundred tuples the pilot samples (live parameters only, Sobol), and which levels its trade counts say do not trade enough (OPEN.md #41) | imported by `sqx.variants.pilot` | live levels, trade counts → banned levels |
+| `canaries.py` | The controls: tuples whose result is known before the retest runs, and the pairs that must tie. | brief, known results → rows |
+| `levels.py` | The values each parameter may take: the plateau for the live ones, a rebuilt range for the frozen. | brief → levels |
+| `lhs.py` | The design: a Latin hypercube over the live parameters, inside their in-sample plateau. | box, n, seed → tuples |
+| `pilot.py` | Which few hundred tuples the pilot samples, and which levels its trade counts drop. Pure maths. | live levels, trade counts → banned levels |
+| `plan.py` | Turn one design brief into the list of tuples to fabricate. Pure maths; touches no file. | brief, banned levels → the plan |
 
 ## The pilot, before any of it (OPEN.md #41, owner 2026-09-29)
 

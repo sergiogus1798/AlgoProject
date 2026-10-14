@@ -12,17 +12,17 @@ runner; the thresholds that cut Pasa / Limbo / Falla still live in `criteria.yam
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `cells.py` | The calendar cells: natural years (or semesters), split where a segment of the MAIN asset starts, each labelled V0 / V1 / V2 / after; and `occupancy`, which locates every trade on the bar grid | imported | first and last bar, the main's cuts → cells table |
-| `sizing.py` | The doctrine's lots at any bar (`Amount / (ATRMult × ATR(ATRPeriod) × point value)`, ATR of the bar closed before the entry) and where an entry on a defective bar moves to | imported | bars, card point value → lots per bar |
-| `shift.py` | The joint draw — one whole-week (or business-day) shift per cell and run, keyed by the cell's date and not by the market — and where each real entry lands under it | imported | cells, seed → shifts; bar times, entries → moved entries |
-| `tensor.py` | Per market what pricing needs (once), and per strategy the tensor: real `(markets, cells)`, random `(runs, markets, cells)`, trade counts; and the validity probe `displaced_share` / `exclude` (below) | imported | trades, bars, costs → tensor |
-| `stat.py` | A total in R over any markets and cells that keeps «no data» apart from 0, and its z and empirical p against the runs; the weekly pooled t that annotates `net_t_pooled` | imported | tensor → z, p |
-| `validity.py` | §7.1 per market, once, from every strategy's trades pooled: fill mismatch, card point value against the regression, share of defective bars, a complete cost card | imported | trades, bars, card → valid / reason |
-| `frequency.py` | P2: z_freq of every strategy in every market, centred on the population's median log-rate | imported | counts, main trades → z_freq |
-| `units.py` | P1 for an export: finds each strategy's `.sqx` under `raw/<project>/` (identity must match) and counts `fixed_distances` | imported | names, identities → count or NaN |
-| `rules.py` | P3-P9 from one strategy's tensor: z_conj and windows (V0 + V2 pooled = `z_conj_v0v2`, what P3 reads); `z_conj_v0v2` pools only the `free` markets when the idea family is known (negative controls and no-sign markets out; unknown family: all markets); the legacy `z_conj`, `z_conj_v0/v1/v2` keep every market, leave-one-market-out, breadth, tau_half, N_peor (`worse(role)`, `roles()`: negative controls from `core.assetdata.expected_sign`), degradation | imported | tensor → verdict columns |
-| `records.py` | `records.rows`: the `core.study.draws` rows of one strategy (z_conj, z_conj_v0/v1/v2, z_minus_market, p_breadth, z_beta raw; per-market `z` histogram only) | imported by run.py | tensor → distribuciones.parquet |
-| `run.py` | `run.run(project, databank, asset, export, out)`: loads the export, checks the markets, builds the tensors, writes `verdict.csv`, `markets.parquet`, `crossmarket.json` and `distribuciones.parquet` (the random runs behind each z, via `records.py`) into `out` | imported (no `__main__`: part E wires it) | export → four files |
+| `cells.py` | The calendar cells of the travel test: the pieces of year one joint shift stays inside, and the window each belongs to. | imported | first and last bar, the main's cuts → cells table |
+| `frequency.py` | P2: the frequency of each strategy in each market against its own on the main asset, centred on what the population does there. | imported | counts, main trades → z_freq |
+| `records.py` | The simulated distributions behind a strategy's travel columns, as `core.study.draws` rows. | imported by run.py | tensor → distribuciones.parquet |
+| `rules.py` | P3-P9 of the travel test: every number is read from one strategy's tensor, nothing is simulated again. | imported | tensor → verdict columns |
+| `run.py` | The runner of the travel test: one export in, verdict.csv, markets.parquet, crossmarket.json and distribuciones.parquet out, in a folder it is given. | imported (no `__main__`: part E wires it) | export → four files |
+| `shift.py` | The joint draw: one whole-step displacement per calendar cell and run, the same in every market. | imported | cells, seed → shifts; bar times, entries → moved entries |
+| `sizing.py` | The doctrine's position size at any bar: fixed risk over a multiple of the ATR, at the card's point value. | imported | bars, card point value → lots per bar |
+| `stat.py` | The statistic of the travel test: a total in R over any markets and cells, and its z against the random runs. | imported | tensor → z, p |
+| `tensor.py` | The tensor of the travel test: every run's P/L in R per market and calendar cell, and the real run's beside it. | imported | trades, bars, costs → tensor |
+| `units.py` | P1 for an export: find each strategy's .sqx among the project's exports and count its fixed distances. | imported | names, identities → count or NaN |
+| `validity.py` | The per-market controls of §7.1: aligned prices, the point value against the card, defective bars, a complete cost card. | imported | trades, bars, card → valid / reason |
 
 ## Gross or net: `travel.judge_on` (encargo 46, decision 10, part G)
 

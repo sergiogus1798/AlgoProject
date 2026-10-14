@@ -6,10 +6,10 @@ install):
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Package marker | — | — |
-| `api.py` | `GET /api/create/options` (templates with a `.sqx`, assets, timeframes, the form's defaults: 500 strategies, 180 min), `POST /api/create/template` (the chat's draft → `author`), `POST /api/create/project` (the form → `project`; a name `registry.check_name` refuses is answered, not queued) | imported | request → job |
-| `author.py` | «Crear la plantilla con Claude»: the chat's prompt (`brief.prompt`) plus an unattended note, to `CLAUDE_BIN -p --permission-mode auto` in the repository; exit 2 when the answer carries `PREGUNTA:` (hard rule 11: a question, never a guess) | `python3 -m ui.daemon.create.author --name N` | draft → template in the library |
-| `project.py` | «+ Nuevo proyecto»: `core.assets` (hard rule 5, stops on non-zero), then `sqx.projects.builder --workflow --role custodian` | `python3 -m ui.daemon.create.project NAME --template T --symbol S --timeframe TF --max-strategies N --minutes M --purpose P` | template + asset → project on the custodian |
+| `__init__.py` | The window's two creations: a template from the chat's brief, a project from a template. | — | — |
+| `api.py` | The creations' routes: what can be chosen, and the two jobs on the conductor lane. | imported | request → job |
+| `author.py` | «Crear la plantilla con Claude»: run /sqx-strategy-template headless on the chat's draft brief. | `python3 -m ui.daemon.create.author --name N` | draft → template in the library |
+| `project.py` | «+ Nuevo proyecto»: hard rule 5, then `sqx.projects.builder --workflow` on the custodian. | `python3 -m ui.daemon.create.project NAME --template T --symbol S --timeframe TF --max-strategies N --minutes M --purpose P` | template + asset → project on the custodian |
 
 **Imports from:** `core/`, `sqx/projects/registry`, `ui/daemon/jobs`, `ui/daemon/brief` ·
 **Consumed by:** `ui/desktop/chat.py`, `ui/desktop/workspace/newproject.py` (over HTTP)

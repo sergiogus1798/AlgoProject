@@ -20,15 +20,15 @@ config.yaml ─▶ inputs ─▶ occupancy ─▶ benchmark ─▶ compare ─�
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `inputs.py` | The knobs, one export's trades on one sample, its bars and the window from policy | imported | export + feed → trades, bars, span |
-| `occupancy.py` | Lots held at every bar, the share of open hours that is, and how much of the market's movement happened while it was holding | imported | trades + bars → exposure, presence |
-| `benchmark.py` | The three sizing conventions of "buy and hold", and what each earned per day | imported | bars + trades → lots, daily P&L |
-| `compare.py` | What each side earned and risked, and what one hour of exposure bought | imported | daily P&L → statistics, trade-off |
-| `load.py` | The window from policy, its bars, the point value, the newest export on the configured sample, and each strategy's identity | imported | export + feed → inputs |
-| `one.py` | One strategy measured — occupancy, the three buy and hold conventions, the trade-off, presence — with its `notes`, as the contract's data the window paints | imported — the window calls it | inputs → result |
-| `many.py` | Every strategy, and the population read as one result | imported | inputs → results |
-| `report.py` | **The command**: every strategy to `reports/<P>/<D>/<day>/exposure/` (`verdict.csv`, a page and a JSON each, the population's page), or `--strategy` for one alone | `python3 -m studies.closing.exposure.report --project XAUUSD --databank "MC Trades" --feed XAUUSD_M1 --symbol XAUUSD [--strategy S]` | export → reports |
-| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
+| `benchmark.py` | What "buy and hold" means here: three sizing conventions, and the P&L each one earns. | imported | bars + trades → lots, daily P&L |
+| `compare.py` | The numbers: what each side earned, what it risked, and what an hour of exposure bought. | imported | daily P&L → statistics, trade-off |
+| `inputs.py` | What the study is run on: its knobs, one strategy's trades, its bars and its window. | imported | export + feed → trades, bars, span |
+| `load.py` | Everything one run of the exposure study reads, assembled once: window, bars, trades. | imported | export + feed → inputs |
+| `many.py` | Every strategy of one export against buy & hold, and the population read as one result. | imported | inputs → results |
+| `occupancy.py` | How much of the market's open time the strategy actually held a position, and how big. | imported | trades + bars → exposure, presence |
+| `one.py` | One strategy against buy & hold, priced in market time, as the contract's data. | imported — the window calls it | inputs → result |
+| `report.py` | Every strategy of one export against buy and hold, priced in the market time it spent. | `python3 -m studies.closing.exposure.report --project XAUUSD --databank "MC Trades" --feed XAUUSD_M1 --symbol XAUUSD [--strategy S]` | export → reports |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported | — |
 | `config.yaml` | The sample, the segment, the three conventions and when to warn | edited | — |
 
 Manual page, in Spanish, for whoever runs it: `docs/manual/10-cierre.pdf` (cap. 38-exposicion).

@@ -18,15 +18,15 @@ config.yaml ─▶ inputs ──────▶ pieces ─▶ measure ───�
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `inputs.py` | The knobs, the blind door (`ledger.gate.allow_read`), the oos2 door (`gate.allow(20, "oos2")`), the trades door (each batch must hold the mother's `trades.parquet`), the mothers' own oos2 days rebuilt close to close from those trades and M1 — refused unless their daily lows reproduce the batch's SQX curve — and each mother's random traders (`random_traders`) | imported | ledger + batches + feed → frame, panel, benchmark |
-| `pieces.py` | Which mothers reached step 20, and what WFC, CSCV and WFM said of each — their own state, never re-derived; a mother missing one is listed and never read | imported | batches + WFM report → population |
-| `readings.py` | **The open decisions as a registry**: how the three pieces combine, and over whom the StepM counts its search (`unanimidad`, `sin_fallo`, `ninguna`) | imported | states, named → calls |
-| `measure.py` | The excess panel (mother − her random traders' mean) through the SPA and a StepM per reading, one row per mother | imported | inputs → p-values, named, calls |
-| `one.py` | One mother as the contract's data: her three pieces as parts, her call under every reading | imported — the window calls it | row → result |
-| `many.py` | The population: the pieces grid, the readings grid, the SPA tab | imported | inputs → results |
-| `report.py` | **The command**: writes `reports/<P>/<WFM>/<day>/blindJoint/` a `distribuciones.parquet` (the SPA's bootstrap: `blindJoint`, `spa_lower|consistent|upper`) and, when it read oos2, a step-20 ledger row | `python3 -m studies.closing.blindJoint.report --project USDJPY_workflow_profiling_v1 --wfm-databank WFM --feed USDJPY_M1 --symbol USDJPY --timeframe H1 --family crossAboveHMA_v1` | pieces + oos2 → reports + ledger row |
-| `words.py` | Another study's call in Spanish: states, `blind`, `rho 0.45` → `ρ = 0,45` | imported by `one.py` | — |
-| `tooltips.py` | One Spanish sentence per `config.yaml` knob | imported | — |
+| `inputs.py` | What step 20 reads: its knobs, the ledger's two doors, the mothers' oos2 days and their random traders'. | imported | ledger + batches + feed → frame, panel, benchmark |
+| `many.py` | Every mother that reached step 20, read as one result: the three pieces, the readings, the SPA. | imported | inputs → results |
+| `measure.py` | The numbers of step 20: each mother against her random trader on oos2, the SPA, and the StepM per reading. | imported | inputs → p-values, named, calls |
+| `one.py` | One mother at step 20: her three withheld results side by side, and her call under each reading. | imported — the window calls it | row → result |
+| `pieces.py` | The three withheld results of each mother — 17, 18 and 19 — as their own studies said them. | imported | batches + WFM report → population |
+| `readings.py` | The readings of "passes step 20" the spec leaves open, one entry each, for the owner to choose. | imported | states, named → calls |
+| `report.py` | Step 20: the blind joint reading of 17, 18 and 19, with SPA and StepM on oos2, and its ledger row. | `python3 -m studies.closing.blindJoint.report --project USDJPY_workflow_profiling_v1 --wfm-databank WFM --feed USDJPY_M1 --symbol USDJPY --timeframe H1 --family crossAboveHMA_v1` | pieces + oos2 → reports + ledger row |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported | — |
+| `words.py` | The words of another study's call, as the owner reads them: Spanish, sentence case, decimal comma. | imported by `one.py` | — |
 | `config.yaml` | The benchmark's rung, draws and seed, the FWER (the ledger row part A reads), the two open decisions (`joint`), the bootstrap | edited | — |
 
 Manual page, in Spanish: `docs/manual/10-cierre.pdf` (cap. 56-paso-20). Known-answer test:

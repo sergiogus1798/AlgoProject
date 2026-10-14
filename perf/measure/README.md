@@ -4,10 +4,10 @@ Execution only. What gets measured is `perf/inputs/`; what the number means is `
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `harness.py` | spawns the target, samples the whole tree's RSS, keeps the median of N runs | imported | target name → one measurement |
-| `runner.py` | the subprocess that actually calls the target, with tracemalloc watching | internal to the harness | target name → JSON |
-| `hotspots.py` | `cProfile` and the allocation sites alive at the peak, for one target | imported | target name → two rankings |
-| `scaling.py` | a STREAM triad at 1…96 processes, cache-resident and DRAM-resident | imported | config → two curves |
+| `harness.py` | Run a target in its own process, watch the whole tree's memory, and keep the median run. | imported | target name → one measurement |
+| `hotspots.py` | Where one target's time and memory actually go: the functions and the allocation sites. | imported | target name → two rankings |
+| `runner.py` | Run one target inside its own process and report what it cost. Internal to the harness. | internal to the harness | target name → JSON |
+| `scaling.py` | What this machine gives when every core asks for memory at once, which is the real ceiling. | imported | config → two curves |
 
 ## Two traps this code exists to avoid
 

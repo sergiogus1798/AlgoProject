@@ -34,13 +34,13 @@ config.yaml ─▶ inputs ─▶ model ─▶ verdict ─▶ contract
 
 | file | what it does | run it |
 |---|---|---|
-| `run.py` | One strategy's whole reading (eta², duplicate test, plateaus, noise verdict), and the design brief derived from it — internal now, feeds `sqx/variants` and the noise verdict, not drawn tab by tab | imported |
-| `contract.py` | The reading as the contract's tabs: the noise verdict, panel 1 (histograms per period) and panel 2 (IS/OOS1 overlaid, time-free metrics) | imported |
-| `one.py` | **One strategy as the contract's data**: finds the strategy's IS/OOS pair on disk, builds both panels, still carries the brief in the summary | imported — the window calls it |
-| `report.py` | The command: every strategy of one export to `reports/<P>/<D>/<day>/spp/` — a page and a JSON each, and the `design_brief_<strategy>.json` the fabrication reads — plus `distribuciones.parquet` (each window's permutation grid against the real tuple, per criteria metric; merged by strategy) and `verdict.csv` (`strategy, identity, verdict` = the noise call, then one column per criteria metric: the databank table's columns and the autopilot's `spp.verdict_csv.*` facts) and `strategies.csv` (`strategy, identity, brief, note`), what pairs the folder by identity (the archive, the matrix); a `--strategy` run rewrites it with those strategies only | `python3 -m studies.breakage.spp.report --project XAUUSD --databank SPP_IS` |
+| `contract.py` | One strategy's SPP reconnaissance as the contract's tabs: the noise call, and the two performance panels. | imported |
+| `criteria.py` | The SPP's criteria metrics as the window's tab and as the columns of verdict.csv. | imported |
+| `one.py` | One strategy's SPP reconnaissance and its design brief, as the contract's data. | imported — the window calls it |
+| `report.py` | The command: read one project's SPP export and write the report plus each design brief. | `python3 -m studies.breakage.spp.report --project XAUUSD --databank SPP_IS` |
+| `run.py` | One strategy's whole SPP reading: what moves it, what is dead, and whether it is worth more. | imported |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported |
 | `contract.py` map tabs | Step 16 (owner, 2026-10-07): tabs `build`, `oos1` (tables `mapa`, `cola`, `rejilla`, `sobresale`) and `ventanas` (`decaimiento` + Sharpe and PF overlaid), built from `model/mapa.py`. The tab and table names are the fact keys: `spp.build.mapa.sharpe.d`. It emits numbers only; the judge's cuts (H1–H3) live in `pipeline/autopilot/criteria.yaml`. The grid every statistic reads leaves out the mother, duplicates, shift rows (`grid.fixed`) and permutations under `grid.min_trades` | imported |
-| `criteria.py` | The criteria metrics of `model/decay.py` as the tab «Métricas para criterios» (two text tables, each column with its «?», each value beside what a zero-edge family or a random member of the grid would read) and as the flat row `report.py` writes to `verdict.csv` — owner, 2026-10-04: computed and shown, no threshold, judging nothing; none is offered as a criterion (`knowhow/research/spp-decay-metrics-zero-edge-null.md`) | imported |
-| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 | `config.yaml` | Every tunable, grouped by the layer that reads it | edited, or `--set section.key=value` |
 
 ## The panels read IS and OOS1 as two separate exports, not one databank

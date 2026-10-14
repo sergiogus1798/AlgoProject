@@ -19,7 +19,7 @@ why resumability and disk hygiene are the requirement here rather than a quality
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `cleanup.py` | deletes a finished mother's variant data, only what the ledger proves is recoverable | `python3 -m pipeline.cleanup --project XAUUSD --strategy "Strategy 17.9.39" [--apply]` | ledger → freed bytes |
+| `cleanup.py` | Delete a finished mother's variant data, but only what the ledger proves is recoverable. | `python3 -m pipeline.cleanup --project XAUUSD --strategy "Strategy 17.9.39" [--apply]` | ledger → freed bytes |
 
 Manual page, in Spanish, for whoever runs it: `docs/manual/04-sqx-plantillas-y-proyectos.pdf` (cap. 17-pipeline).
 

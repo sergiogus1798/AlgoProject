@@ -10,29 +10,29 @@ every 30 s) and repaints every `refresh_s`. It never reaches the VPS and writes 
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `launch.py` | Opens the window, or saves a capture of it | `python3 -m mt5.fleet.app.launch [--root DIR] [--tab NAME] [--account LOGIN] [--shot PNG] [--at EPOCH]` | beats → window, PNG |
-| `window.py` | The tab shell (Flota · Estrategias · Despliegue · Salud · Conciliación), the refresh timer, the desktop notification when a light turns red or silent | imported | rows → widgets |
-| `tab_fleet.py` | Flota: totals strip, one row per account, and the chosen account's curve, reasons, progress, positions and deals | imported | rows → widgets |
-| `tab_strategies.py` | Estrategias: every live magic over all accounts, and its entries paired across accounts | imported | histories → tables |
-| `tab_deploy.py` | Despliegue: EAs expected by the workbook against the charts mounted, and the magics that trade | imported | sheet, charts → table |
-| `tab_health.py` | Salud: each terminal's connection, ping, build, errors; the VPS's RAM, CPU, disk | imported | beats, vps.json → tables |
-| `tab_reconcile.py` | Conciliación: the newest reconciled week, summary per strategy and paired trades | imported | result.json → tables |
-| `widgets.py` | The Qt pieces: cells, tables, cards, legend, scrolling pages | imported | — |
-| `chart.py` | The matplotlib canvas (`FigureCanvasQTAgg`) of the day's curve | imported | curve → canvas |
-| `curve.py` | The day's equity curve: minute rows, hourly extremes of `hours[]`, the two floors | imported | history → series |
-| `equity.py` | One strategy's cumulative net per account (and the combined sum), win rate, max drawdown in % of size; no Qt (`tests/test_fleet_equity.py`) | imported | trades → series |
-| `state.py` | One row per account (beat, stage, floors, risk, deals, progress) and its light; all reasons listed worst first: silent, red, yellow, green | imported | beats → rows |
-| `floors.py` | The firm's day start, the day's starting balance, the daily and total floors through `portfolio.funded.rules.floors`, the day's worst equity, and why a figure is approximate | imported | beat + stage → distances |
-| `risk.py` | Each position's loss at its SL, the equity if every stop hits, positions with no SL | imported | positions → loss |
-| `rules.py` | Weekend and news prohibitions against the open positions, through `mt5.newsfilter` | imported | beat + stage → reasons |
-| `progress.py` | Profit against target, trading and profitable days on the firm's clock, consistency, payout | imported | deals + stage → reading |
-| `eas.py` | EAs expected against mounted and the flags on each | imported | sheet, charts, trades → rows |
-| `strategies.py` | Per-magic record over all accounts and the cross-account pairing | imported | trades → rows |
-| `health.py` | Disconnections today, terminal and VPS readings | imported | minutes, vps.json → rows |
-| `history.py` | The collector's per-account files: deals, minute rows, excursions; deals grouped into trades | imported | disk → frames |
-| `fmt.py` | How a figure is written (Spanish separators, «—» where there is none) | imported | — |
-| `read.py` | Beats, each account's stage and terms from the funding catalogue, the clocks, the register, the workbook, `vps.json`, the reconciliation | imported | disk → dicts |
-| `theme.py` | The palette, the lights' colours, the stylesheet | imported | — |
+| `chart.py` | The matplotlib canvas that draws the day's equity curve in MetaTracker's colours. | imported | curve → canvas |
+| `curve.py` | The day's equity curve of one account: minute rows, the service's hourly extremes, the two floors. | imported | history → series |
+| `eas.py` | The EAs an account should carry against the ones mounted and the magics that actually trade. | imported | sheet, charts, trades → rows |
+| `equity.py` | One strategy's cumulative net result per account, from the closed trades of `history.trades()`; no Qt. | imported | trades → series |
+| `floors.py` | One account's distance to its daily and total floors, from one beat and its stage's rules. | imported | beat + stage → distances |
+| `fmt.py` | How a figure is written on MetaTracker's screens: the Spanish way, and «—» where there is none. | imported | — |
+| `health.py` | The health of each terminal and of the VPS they run on, from the beats, the minute history and `vps.json`. | imported | minutes, vps.json → rows |
+| `history.py` | What the collector keeps per account: every deal since it opened, the minute curve, the floating excursions. | imported | disk → frames |
+| `launch.py` | Open MetaTracker, the window over the live MT5 fleet, or save a capture of it. | `python3 -m mt5.fleet.app.launch [--root DIR] [--tab NAME] [--account LOGIN] [--shot PNG] [--at EPOCH]` | beats → window, PNG |
+| `progress.py` | How far an account is through its stage: profit against the target, the days counted on the firm's clock, the payout. | imported | deals + stage → reading |
+| `read.py` | What MetaTracker reads from disk: the fleet's beats, each account's plan, the firms' clocks, the magics, the VPS, the reconciliation. | imported | disk → dicts |
+| `risk.py` | What the open stops would cost: each position's loss at its SL and the equity if all of them hit. | imported | positions → loss |
+| `rules.py` | The rules a funded stage forbids — holding over the weekend, trading around news — against the open positions. | imported | beat + stage → reasons |
+| `state.py` | The fleet as rows: each account's beat, its floors and the light the window paints. | imported | beats → rows |
+| `strategies.py` | Live strategies across the whole fleet: each magic's record, and whether the same magic entered together on every account. | imported | trades → rows |
+| `tab_deploy.py` | The Despliegue tab: per account, the EAs the workbook expects against the charts that carry one, and the magics that trade. | imported | sheet, charts → table |
+| `tab_fleet.py` | The Flota tab: totals, one row per account, and the chosen account's curve, reasons, progress, positions and deals. | imported | rows → widgets |
+| `tab_health.py` | The Salud tab: each terminal's connection, ping, build and errors, and the VPS they share. | imported | beats, vps.json → tables |
+| `tab_reconcile.py` | The Conciliación tab: the newest reconciled week — each live strategy against its SQX backtest, and the paired trades. | imported | result.json → tables |
+| `tab_strategies.py` | The Estrategias tab: every live magic over all accounts, and the same magic's entries paired across accounts. | imported | histories → tables |
+| `theme.py` | MetaTracker's own look: the palette, the lights' colours and the stylesheet. | imported | — |
+| `widgets.py` | The Qt pieces every tab of MetaTracker is made of: cells, tables, cards, legends, scrolling pages. | imported | — |
+| `window.py` | MetaTracker's window: the five tabs over the fleet, the refresh timer and the desktop notifications. | imported | rows → widgets |
 | `config.yaml` | The owner's thresholds (see below) | edited | — |
 
 Schema 2 figures (stop risk, weekend, news, EAs mounted, `hours[]`) show «—» on a schema-1 beat, and

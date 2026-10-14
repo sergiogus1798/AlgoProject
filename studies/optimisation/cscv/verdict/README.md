@@ -2,7 +2,7 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `state.py` | The facts of the plan's contract for step 18 (real against the null's tails, power, dominance, the mother) and the state | readings, draws, counts, cfg → facts |
+| `state.py` | Step 18's facts and its state: the real CSCV read against its null, and the cut of the proposal. | readings, draws, counts, cfg → facts |
 
 `cscv.p_perdida`, `cscv.pbo_sobre_p95` and `cscv.p_perdida_sobre_p95` decide (the autopilot's
 `criteria.yaml` reads the first and the last by these names); everything else is annotated. The

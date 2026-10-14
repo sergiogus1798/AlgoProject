@@ -16,18 +16,18 @@ not merged: they answer different questions and merging them would move every p.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Names what the package is; holds no code | — | — |
-| `inputs.py` | The knobs — `config()` draws a fresh 32-bit `nulls.seed` root from OS entropy when it is `null` (the default), and keeps an explicit one; `seeded()` turns a command's `--seed` into that override — the markets an export holds, the trades of one sample and market (read filtered; an export of several markets refuses without its feed), the bars, and where each trade sits on the bar grid | imported | export + feed → trades, bars, indices |
-| `barrier.py` | The triple-barrier exit: stop, target and time limit, vectorised over thousands of runs at once | imported | entries → exit bar, exit price |
-| `kernel.py` | The null runs priced and measured in one compiled numba pass — `ladder` places each trade from its uniform as it prices it, and exits are ordered by a stable bucket count, not a sort (encargo 66 §3.3, `tests/test_perf66_ladder.py`) — and the first-touch barrier scan that stops at the first touch; checked against the numpy definitions to 1e-12 | imported | draws + bars → five statistics per run |
-| `model.py` | The ladder of nulls — what each rung holds fixed and what it hands to chance | imported | located trades → entries (or, `placed=False`, their uniforms), holds, sizes |
-| `stats.py` | What a run is worth, for the real one and for thousands at once, each with its good side | imported | P/L matrix → statistics |
-| `simulate.py` | The real run and its null runs, priced identically, in batches — the batches on threads when not inside a fanout worker, same numbers | imported | trades + bars + rung → statistics |
-| `verdict.py` | The empirical p, the attribution across the ladder, and every reason to distrust them | imported | statistics → p, channels, warnings |
-| `windowed.py` | The gate's monkey (level 3c): every trade re-entered at a uniform bar of the calendar window it opened in AND of the clock hour it opened at, sized `c / ATR` at the drawn bar and priced by `engines.market.reprice` at the declared costs — spread and slippage charged, which the ladder never does; `z()` is the real run among its monkeys in their standard deviations | imported | located trades + bars + costs → mean P/L per trade of every monkey |
-| `lookup.py` | The windowed monkey as a table (encargo 66 §3.2, §3.9): `layout()` lists once every trade a draw can produce — an eligible bar of a (window, hour, side) at one clipped hold, shared by all the trades of that window and hour — `windowed.priced()` prices them, and `means()` reads `draws` monkeys off it with PCG64 in the compiled loop: the vector `draw()` + `price()` gave, bit for bit (`tests/test_perf66_kernel.py`) | imported, through `windowed.means` | located trades + priced table + generator → one mean per monkey |
-| `pcg.py` | numpy's PCG64 inside numba: `load()` / `store()` read and write a `Generator`'s state, `step` / `word` / `uniform` are `rng.random` — same numbers, same state afterwards. The two kernels that inline it (`lookup._fill`, `permuted._shuffled`) are not `cache=True`: numba does not see a change to `pcg.py`; each is compiled once in the parent (`lookup.warm()`, `resample.warm()`) before a fork | imported | generator state → the draws numpy would give |
-| `footprint.py` | A mother's footprint at random entries, same clock hours: the MEAN daily P&L (and its Monte Carlo error) of `draws` hours-null traders priced by the repricer; shared by step 20's benchmark (`studies/closing/blindJoint`) and the oos2 reading (`studies/optimisation/oos2Reading`) | imported | trades + bars + costs → daily series |
+| `__init__.py` | The null engine: random traders with the same opportunity set. | — | — |
+| `barrier.py` | The triple-barrier exit: where a trade leaves, given a stop, a target and a time limit. | imported | entries → exit bar, exit price |
+| `footprint.py` | What a random trader with a mother's own footprint and clock hours earns per day: step 20's benchmark and the oos2 reading's monkey. | imported | trades + bars + costs → daily series |
+| `inputs.py` | What the study is run on: its knobs, one strategy's trades, and the bars they sat on. | imported | export + feed → trades, bars, indices |
+| `kernel.py` | The null runs priced and measured in one compiled pass: no (runs x trades) temporaries. | imported | draws + bars → five statistics per run |
+| `lookup.py` | The windowed monkey as a table: where every candidate trade sits in it, and the draws that index it. | imported, through `windowed.means` | located trades + priced table + generator → one mean per monkey |
+| `model.py` | What could have happened instead: the ladder of nulls, and what each rung hands to chance. | imported | located trades → entries (or, `placed=False`, their uniforms), holds, sizes |
+| `pcg.py` | numpy's PCG64 stream reproduced inside numba: the same numbers, generated where a kernel uses them. | imported | generator state → the draws numpy would give |
+| `simulate.py` | The numbers, under a given rung: the real run and its thousands of imaginary ones. | imported | trades + bars + rung → statistics |
+| `stats.py` | What a run is worth, for the real one and for thousands of null ones at once. | imported | P/L matrix → statistics |
+| `verdict.py` | Given those numbers, what can be claimed and what should be distrusted. | imported | statistics → p, channels, warnings |
+| `windowed.py` | The monkey drawn inside calendar windows, sized at its own bar and priced by the common repricer. | imported | located trades + bars + costs → mean P/L per trade of every monkey |
 | `config.yaml` | The engine's knobs: draws, rungs, barriers, statistics, the p floor | edited, or `--set section.key=value` through the study | — |
 | `placement/` | The cross-market placement models | imported | envelope → entries, holds |
 

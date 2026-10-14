@@ -2,7 +2,7 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `noise.py` | The grid's best point, centred on the grid mean (max − mean), against the best excess a null grid would reach (σ·√(2 ln N); no trade floor), plus how peaked the surface is | grid → threshold, call, shape |
+| `noise.py` | Does the best point of this grid beat what searching pure noise would have produced? | grid → threshold, call, shape |
 
 One question: under the hypothesis that **no parameter does anything**, the best of N draws with
 dispersion sigma still lands near `sigma * sqrt(2 ln N)`. A grid whose maximum does not clear that

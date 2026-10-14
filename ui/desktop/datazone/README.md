@@ -17,12 +17,12 @@ DataZone ─▶ asset picker (data/assets) · tabs, each fetched on first openin
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Package marker, one docstring | imported | — |
-| `zone.py` | `DataZone(QFrame term)`: the kicker, the root's total, the asset picker with its one-line facts, the five tabs; `open(symbol, tab)` for a launcher | imported | routes → zone |
-| `tree.py` | The catalogue as a tree nested by path, biggest first at each level; sizes in B/KB/MB/GB; a stale date in amber; the command of a branch's own manifest on hover | imported | catalogue → QTreeWidget |
-| `pages.py` | `BarsPage` (timeframe and period pickers, the head line, the chart and its key) and `StudyPage` (one step-4 report in a `ResultView`) | imported | asset → page |
-| `candles.py` | The price painter: candles (blue up, orange down) when every bar gets 3 px, otherwise each pixel column's high–low range and its last close; hover per candle or column | imported | bars → Canvas |
-| `preview.py` | The zone alone in a window (standalone viewer; the zone is wired in `shell.py`); `--shot DIR` saves every tab as a PNG | `python3 -m ui.desktop.datazone.preview [--asset S] [--tab T] [--shot DIR]` | daemon → window · PNGs |
+| `__init__.py` | «Datos»: the catalogue of the data root, each asset's bars, and its spread and feed-quality studies. | imported | — |
+| `candles.py` | The price painter of one asset: candles when they fit, each pixel column's range and close when they do not. | imported | bars → Canvas |
+| `pages.py` | The Datos zone's pages that depend on the asset: its bars, and one step-4 study read back as a ResultView. | imported | asset → page |
+| `preview.py` | The Datos zone alone in a window, until the sidebar wires it; `--shot` saves each tab as a PNG and exits. | `python3 -m ui.desktop.datazone.preview [--asset S] [--tab T] [--shot DIR]` | daemon → window · PNGs |
+| `tree.py` | The catalogue of the data root as a tree: each branch's files, formats, newest write and signed exports. | imported | catalogue → QTreeWidget |
+| `zone.py` | The «Datos» zone: the catalogue of AlgoData, and per asset its bars, its real spread and its feed quality. | imported | routes → zone |
 
 ## Contracts and traps
 

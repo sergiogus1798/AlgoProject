@@ -10,9 +10,9 @@ to choose a funded portfolio; the bank simulation (F5) will call it too.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `catalog.py` | One plan's stages and rules, normalised (`time_limit` in path days: the catalogue's calendar days × `days_per_year` / 365, refused without it), with every unconfirmed or conflicting rule it used named in `flags` | imported | plan key → dict |
-| `floors.py` | One function per rule: the daily floor, the max-loss floor, the target, minimum days, consistency | imported | state → number, bool |
-| `machine.py` | The challenge from one start day (reference) and from many start days at once (numba, identical), with an optional horizon: not passed by start + horizon − 1 reads «open» | imported | day arrays, plan, risk → outcome |
+| `catalog.py` | One plan's stages and rules, read from the funding catalogue and normalised for the machine. | imported | plan key → dict |
+| `floors.py` | One pure function per prop-firm rule: the daily floor, the max-loss floor, target, days, consistency. | imported | state → number, bool |
+| `machine.py` | A prop-firm challenge as a state machine over server-day equity: pass, fail (and on which rule), or open. | imported | day arrays, plan, risk → outcome |
 
 ## Semantics (owner, 2026-09-30 — `PLAN.md` §12 «Answered»)
 - **Breach is strictly below a floor**, checked on the day's worst equity (floating included).

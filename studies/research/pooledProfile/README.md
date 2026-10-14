@@ -13,17 +13,17 @@ a group is judged on the bar times all its assets share (`inputs.shared`);
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `contract.py` | The pooled profile as the study contract: what the window and the page draw. | imported | judged → result dict |
+| `inputs.py` | What the pooled profile is run on: its config, the groups, and each group's shared bars. | imported | group → bars |
+| `ledgerrows.py` | The pooled profile's looks at the data, as rows of the ledger's contract L1. | imported | tests → ledger rows |
+| `many.py` | Every group judged together: the correction, the shrunk effects, the placebos, the board. | imported | cells → tests, assets, board, placebo |
+| `one.py` | One asset of a group: every measure on its bars and on the group's joint null draws. | imported | bars → rows, draws |
+| `pooled.py` | The group statistic: every asset's standardised measure added up, real and under the null. | imported | z, draws → statistic, p |
+| `report.py` | The command: the market profile's measures judged per group of assets, jointly resampled. | `python3 -m studies.research.pooledProfile.report [--judge-only] [--force]` | bars → tables |
+| `shrink.py` | Random effects: each asset's effect pulled towards its group's mean by how noisy it is. | imported | effects, errors → shrunk |
+| `store.py` | Where the pooled profile lives on disk: one file pair per asset of a group, and the tables. | imported | — |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported | — |
 | `config.yaml` | Every knob: timeframes, workers, the memory budget in bytes, how assets are grouped, the least assets per test, the FDR, the placebos | edited, or `--set section.key=value` | — |
-| `tooltips.py` | One Spanish sentence per knob | imported | — |
-| `inputs.py` | **Configuration.** The config with the profile's own under `profile` (clock measures left out); the groups; a group's build bars on their shared instants | imported | group → bars |
-| `pooled.py` | **Modelling.** The group statistic: each asset's z against its own draws, summed over the root of the count (Stouffer), on the real series and on every joint draw; the p; the placebo p-values | imported | z, draws → statistic, p |
-| `shrink.py` | **Modelling.** Random effects (DerSimonian-Laird): the group's mean, the spread between assets, each asset's effect shrunk by its own error | imported | effects, errors → shrunk |
-| `one.py` | **Execution.** One asset of a group: `marketProfile.one.against_null` with a generator seeded by group and timeframe, so every asset draws the same positions; the money and the error of each measure | imported | bars → rows, draws |
-| `many.py` | **Inference.** A group's tests; Benjamini-Hochberg over every group test; the profile's other three filters on the shrunk effect; the placebos; the board cells a passing group would bring | imported | cells → tests, assets, board, placebo |
-| `store.py` | `AlgoData/research/pooled/`: per asset its rows and null draws, the seed, the tables | imported | — |
-| `ledgerrows.py` | One ledger row per group test, contract L1, into the study's own `ledger.jsonl` | imported | tests → ledger rows |
-| `contract.py` | The result as the study contract | imported | judged → result dict |
-| `report.py` | **The command**: measures the assets not stored yet, judges every group, counts the board cells | `python3 -m studies.research.pooledProfile.report [--judge-only] [--force]` | bars → tables |
 
 Manual page, in Spanish: chapter `92-perfil-agrupado` of `AlgoData/manual-fuentes/`.
 

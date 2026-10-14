@@ -8,15 +8,15 @@ the hypothesis sheet's tolerance, the reviewer's switch): `config.yaml`.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `sources.py` | Readers: `projects/registry.csv`, `templates/registry.csv`, `templates/runs.csv`, and every autopilot run's `resumen.md` (+ `fallo.md`) folded per project | imported | files → dicts |
-| `attempts.py` | One row per project run (template × asset × timeframe × direction): the funnel per stage, where it died, survivors, outcome, hours, then its sheet's reading and its cause | imported | sources → `COLUMNS` rows |
-| `causes.py` | Why a run died: `of_reason` (the judge's `fail: <fact>=<value>` parts → causes), `typed(row, folder)` → `cause`, `cause_share`, `causes`, `rules_out`, `try_next` | imported | `paso-<n>/verdict.csv` + the outcome → one cause of `config.yaml` › `causes.vocabulary` |
-| `sheet.py` | The hypothesis sheet: `problems` (is it one), `seal` (its fingerprint), `sealed(idea)` (the newest proposal's), `built(trades)` (the median built strategy's in-sample trades a year and holding hours), `compare`, `reading(idea, project)` | imported | proposals + `raw/<P>/Results/<day>/trades.parquet` → ratios and `hypothesis` |
-| `ideas.py` | Every `### Idea N` of `AlgoData/ideas/<SYMBOL>/*.md` with the hypotheses its file measured and whether it came from a book | imported | idea files → `COLUMNS` rows |
-| `queries.py` | `untouched_cells`, `failures` (a cell's closed runs that carry a cause), `survivors_by_family`, `ideas_spent`, `grid` | imported | tables → rows |
-| `trials.py` | `spent(ideas, templates, symbol, timeframe, family)`: the hypotheses measured that count as trials of one **ledger study** (each idea file once, the study's direction only), and `profile_looks(…)`, the market profile's distinct measures there, shown and never added | imported by `ledger.report` | ideas index + template registry → K |
-| `verdict.py` | `close_run(run_dir)`: closes the project's row in `runs.csv` with its funnel and a verdict sentence — the cause, what it rules out, what to try, and the sheet against the build | `python3 -m studies.research.memory.report --close <run_dir> [--runs-csv X]` | a finished run → runs.csv row |
-| `report.py` | The command: rebuilds the six CSVs, prints the summary; `--cell` prints one cell's memory (what the `ideaExpert` and the `ideaReviewer` read) | `python3 -m studies.research.memory.report [--out DIR]` · `--cell XAUUSD H1 long ruptura` | sources → `attempts.csv`, `ideas.csv`, `ideas_spent.csv`, `survivors_by_family.csv`, `untouched_cells.csv`, `failures.csv` |
+| `attempts.py` | The attempts table: one row per project run of a template on an asset, timeframe and direction. | imported | sources → `COLUMNS` rows |
+| `causes.py` | Why a run died: one cause of a closed vocabulary, from the reasons the autopilot's judge wrote. | imported | `paso-<n>/verdict.csv` + the outcome → one cause of `config.yaml` › `causes.vocabulary` |
+| `ideas.py` | The ideas index: every idea the ideaExpert proposed, chosen or not, and what finding it cost. | imported | idea files → `COLUMNS` rows |
+| `queries.py` | The questions the board asks of the memory: untouched cells, what survived, what was spent. | imported | tables → rows |
+| `report.py` | The command: rebuilds the attempts table and the ideas index, writes them, prints a summary. | `python3 -m studies.research.memory.report [--out DIR]` · `--cell XAUUSD H1 long ruptura` | sources → `attempts.csv`, `ideas.csv`, `ideas_spent.csv`, `survivors_by_family.csv`, `untouched_cells.csv`, `failures.csv` |
+| `sheet.py` | The hypothesis sheet: what an idea predicts before its build, its seal, and what the build did. | imported | proposals + `raw/<P>/Results/<day>/trades.parquet` → ratios and `hypothesis` |
+| `sources.py` | Readers of the memory's sources: the two registries, runs.csv and the autopilot's resumen.md. | imported | files → dicts |
+| `trials.py` | What the research spent on one ledger study: the hypotheses measured before any search row. | imported by `ledger.report` | ideas index + template registry → K |
+| `verdict.py` | The verdict writer: closes a finished autopilot run's row in templates/runs.csv. | `python3 -m studies.research.memory.report --close <run_dir> [--runs-csv X]` | a finished run → runs.csv row |
 
 ## Why a run died (encargo 42, front B)
 

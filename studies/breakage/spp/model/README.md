@@ -2,11 +2,11 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `influence.py` | Which parameters move the result: variance explained per metric, and the exact-duplicate test that sees what variance cannot | grid → eta² table, inert calls |
-| `profile.py` | The shape of one parameter's curve: its marginal, its contiguous plateau, its centre, and where to place the variant grid's levels | grid → curve, plateau, levels |
-| `combine.py` | IS and OOS1 side by side for the window's two panels: which metrics grow with the window and which do not, the real strategy's additive metrics rebuilt from a concatenated window, an approximate combined permutation population, and Sharpe/Sortino from real concatenated trades | two grids (+ trades) → combined values |
-| `mapa.py` | The map: one window's floored grid (no mother, duplicates, shift rows, thin permutations), the mother against it on benefit/year, Sharpe, PF and drawdown (`real`, `median`, `iqr`, `d`, `puesto`; `s`, `p10`, `p5`, `m_dd`), and the two windows' Sharpe side by side (`r_s`, `z_decay`, `a`) | grid → readings |
-| `decay.py` | The criteria metrics, pure functions on arrays: the original's distance to its grid's median (in % of the median, above a floor, and in IQRs, beside the grid's own 5–95 range), and IS against OOS1 as two unpaired samples on the time-free metrics — ratio of medians (above an IS floor), Vargha–Delaney A, W₁/IQR(IS) — each beside its value under a zero-edge OOS1 grid whose centre is drawn with one path's noise. No p-value anywhere: permutations share one price path | two grids + originals → metrics and their nulls |
+| `combine.py` | IS and OOS1 side by side: the six across-time metrics, the time-free ones, and what "combined" can honestly mean. | two grids (+ trades) → combined values |
+| `decay.py` | The criteria metrics of an SPP: the original against its own grid, and IS against OOS1 as two unpaired samples. | two grids + originals → metrics and their nulls |
+| `influence.py` | Which parameters move the result: variance explained, and the duplicate test it cannot see. | grid → eta² table, inert calls |
+| `mapa.py` | The SPP as a map: one window's floored grid, its four readings, and the two windows side by side. | grid → readings |
+| `profile.py` | The shape of one parameter's curve: where it peaks, how wide the flat part is, where to centre. | grid → curve, plateau, levels |
 
 ## The two measurements do different jobs, and only one of them is proof
 

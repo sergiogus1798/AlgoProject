@@ -5,10 +5,10 @@ how many chance gives, and which of them can be named. It lives here once.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Names what the package is; holds no code | — | — |
-| `fdr.py` | Benjamini-Hochberg over a family of tests: which may be named | imported | p-values → names |
-| `localfdr.py` | Local FDR of one lot of z against the lot's own empirical null (truncated-normal MLE on the central 50 %, pi0 capped at 1, smoothed-histogram density, fdr made monotone by a cumulative maximum from the right so a light tail gets p = 0, one-sided): p = P(not null) per strategy; fewer than 500 z → no p | imported | z → p, delta0, sigma0, pi0 |
-| `excess.py` | Observed against chance over a family: the excess, Storey's share of nulls, and whether the p-values are fine-grained enough to name anyone | imported | p-values → excess, resolution |
+| `__init__.py` | Correcting for the search. | — | — |
+| `excess.py` | Observed against chance: how many of a family of tests passed, and how many should have. | imported | p-values → excess, resolution |
+| `fdr.py` | Benjamini-Hochberg over a family of tests: which of them may be named as discoveries. | imported | p-values → names |
+| `localfdr.py` | Local false discovery rate of one lot of z, against the lot's own empirical null. | imported | z → p, delta0, sigma0, pi0 |
 | `snooping/` | Hansen's SPA and Romano–Wolf's StepM over a panel of daily excess returns: does any beat its benchmark, and which | imported | T×K excess → p-values, names |
 
 Three related pieces stay where the ledger and the surfaces already read them: the PSR and the

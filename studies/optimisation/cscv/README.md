@@ -16,12 +16,12 @@ per draw). A batch without `variant_trades.parquet` stops the command with what 
 
 | file | what it does | in → out |
 |---|---|---|
+| `contract.py` | Step 18 as the contract's blocks: the outputs against their null, the cloud, the curves, who is chosen. | one mother → tabs |
+| `many.py` | Step 18 over one or several mothers' batches: the panels, the one queue, and each mother's facts. | batches, cfg → per-mother dict, perf |
+| `report.py` | Step 18 over variant batches: the CSCV's four outputs against their null, the state, the ledger's looks. | folders → `estudios/cscv.*` |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | — |
+| `words.py` | The words step 18 is read with: the state's labels and meanings, one line per statistic, the glossary. | — |
 | `config.yaml` | Every knob, commented; the cuts are `ledger:` rows | — |
-| `tooltips.py` | One Spanish sentence per knob, for the window | — |
-| `words.py` | The Spanish the page is read with: labels, meanings, one line per statistic, glossary | — |
-| `many.py` | Screens each batch's panel, runs the one queue, reads the facts and the warnings | batches, cfg → per-mother dict, perf |
-| `contract.py` | The four tabs and the verdict as contract blocks | one mother → tabs |
-| `report.py` | The command: door, panels, queue, files, ledger look | folders → `estudios/cscv.*` |
 | `inputs/` | Config, and trades → weekly cells → screened panel | [README](inputs/README.md) |
 | `measure/` | The CSCV, its outputs, the null, the queue | [README](measure/README.md) |
 | `verdict/` | The facts and the state | [README](verdict/README.md) |

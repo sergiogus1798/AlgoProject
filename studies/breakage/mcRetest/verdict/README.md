@@ -9,12 +9,12 @@ not added however standard it is.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `fragility.py` | **Question 1 — how much does it hurt?** Tail quantiles with exact intervals, the conditional drawdown the gate reads, the equity envelope, and the share of trades spent under water | imported | metrics + P/L → tail, fan |
-| `modes.py` | **Question 2 — does it decay, or collapse?** Whether the outcome is one regime or two, how far from normal it is, and whether the strategy still traded | imported | metrics → shape, collapse |
-| `attribution.py` | **Question 3 — what breaks it?** Which task's damage is real against the `bar` control, and Benjamini-Yekutieli across the pool | imported | metrics → attribution |
-| `evidence.py` | **Question 4 — do I believe it?** The retest sims' own Sharpe against a benchmark, the analytic PSR of the original P/L against the same benchmark — a same-footprint random trader's own Sharpe, priced from the strategy's harvested **out-of-sample** trades and `core.barstore`'s bars (OPEN.md #71; never the build, owner 2026-09-29 — `measure/originals.py` keeps only `sample == "OOS"`) — effective bets, the corrected p-values and rank stability | imported | metrics + P/L → evidence |
-| `gates.py` | Every threshold in the study, and what only warns. Without the production task (`stress`, off the chain since 2026-10-07) `production()` raises the one data veto `sin_tarea_de_produccion`, so the verdict reads INCONCLUSIVE, never FAIL; `scoring` gives that role 0 | imported | body → flags |
-| `scoring.py` | Sub-scores, composite and verdict tier | imported | body + flags → verdict |
+| `attribution.py` | Question 3 — what breaks it? Effect sizes between tasks, measured in units of the control. | imported | metrics → attribution |
+| `evidence.py` | Question 4 — do I believe it? What survives once shape, dependence and multiplicity are paid for. | imported | metrics + P/L → evidence |
+| `fragility.py` | Question 1 — how much does it hurt? The tail, how well it is known, and the fall behind it. | imported | metrics + P/L → tail, fan |
+| `gates.py` | What disqualifies a strategy. Every threshold in the study lives here and nowhere else. | imported | body → flags |
+| `modes.py` | Question 2 — does it decay, or collapse? Whether the outcome is one regime or two. | imported | metrics → shape, collapse |
+| `scoring.py` | How good a strategy is once nothing has vetoed it: four sub-scores, then one composite. | imported | body + flags → verdict |
 
 ## Two guards that decide whether a test may run at all
 
@@ -50,7 +50,6 @@ smooth statistic, and a quantile can only land on a handful of neighbouring samp
 bootstrap replicates are heavily tied, the bias-correction term reads a replicate fraction of 0 or
 1, and z0 goes infinite. The count of points below a true quantile is binomial, so its bounds give
 the bracketing ranks directly — exact coverage, no resampling, and it cannot fail.
-`fragility.bootstrap_mean()` keeps BCa for the smooth statistics it suits.
 
 ## Contracts and traps
 

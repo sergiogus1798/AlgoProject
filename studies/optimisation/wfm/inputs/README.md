@@ -2,9 +2,9 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `config.py` | Reads `config.yaml`, fills its `ledger:` references and locates one WFM export under the data root | project, databank → settings, path |
-| `export.py` | Reads a WFM export: cells, steps, chosen parameters, every trade tagged by cell and sample, each cell against each condition, the mother's own trades (`main.parquet`), the objectives, and the area rule each strategy ran with | export folder → frames |
-| `asset.py` | The asset behind the export's feed: bars, the three segments' days, the costs the export was charged with and oos2's, and the gate's drift block | feed, timeframe, charged segment → dict |
+| `asset.py` | The asset a WFM export traded: its bars, its three segments, the two cost cards and the drift term. | feed, timeframe, charged segment → dict |
+| `config.py` | Read config.yaml and find the WFM export on disk. | project, databank → settings, path |
+| `export.py` | Read a WFM export: the 30 cells, their steps, and the parameters the optimiser chose. | export folder → frames |
 
 Holds nothing computed.
 

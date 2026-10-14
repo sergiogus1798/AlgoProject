@@ -13,9 +13,9 @@ numbers the study starts from*, `model/` says *what we are pretending could have
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `config.py` | Reads `config.yaml`, applies `--set` overrides, and scales the block sweep to the trade count | imported | overrides → config |
-| `costs.py` | The asset's cost facts, the cost SQX really charged per trade, and the cross-check between them | imported | symbol + trades → USD |
-| `stream.py` | **The input contract.** Any time-ordered trade list — one strategy or a portfolio — as the arrays every family runs on | imported | frame → arrays |
+| `config.py` | The single source of truth for every tunable of the study, and what N makes of it. | imported | overrides → config |
+| `costs.py` | What the broker charged and what a worse broker would charge, per asset and per trade. | imported | symbol + trades → USD |
+| `stream.py` | The input contract: any time-ordered trade list, reduced to what every family needs. | imported | frame → arrays |
 
 ## Contracts and traps
 

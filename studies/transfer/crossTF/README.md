@@ -115,14 +115,14 @@ stop or target (`assets/_build.yaml` `stop_loss`/`profit_target` false; the stop
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `inputs.py` | The knobs, which timeframe each block is (a sibling's cells also carry what the fabrication did to it: `ratio`, `n_scaled`, `rounding_shift`, `clamped`, `unverified`), and `oos`: the cut to oos1 and which databank holds it (`blocks.json` first, today's doctrine only as a fallback for a run without one; `gather` reads one export per timeframe), and the bars of each timeframe | imported | config + manifests → cells, bars |
-| `cells.py` | What each cell earned in oos1 and where it sits among its own timeframe's nulls: the statistic, its p, the null's mean and sd, `z`; `corr_vs_baseline`; and `beyond`: each sibling's `z_new` and the mother's `combined_*` | imported | trades + bars → statistic, p, z |
-| `siblings.py` | What a scaled sibling adds to its mother, split out of `cells.py`: `monthly`, `correlations` (monthly P/L against the baseline) and `beyond` (`z_new`, the Stouffer sum and its max; `MOST_ALIKE`) | imported by `cells` | `plan` + `packed` → `corr_vs_baseline`, `z_new`, `combined_*` |
-| `verdict.py` | What a scaled cell means on oos1, beyond what its mother explains (the proposal above) | imported | panel → one of six readings |
-| `many.py` | What the study reads, every cell measured and every scaled cell read, as one result the window paints | imported | export + scaling → result |
-| `equity.py` | The two equity charts per mother (unscaled, scaled; Net Profit in every legend entry) and `per_mother`, the one mechanism that tags a block `select: mother` so the window's «Madre» picks it. Grids and the outcome bars are about all mothers and say so in their title | imported | plan + trades → blocks |
-| `report.py` | **The command**: prints the result and writes it to `reports/<P>/<D>/<export day>/crossTF/` — the page, `verdict.csv` (one row per scaled sibling, its reading as `verdict`), `cells.parquet` and `distribuciones.parquet` (the null draws behind each cell statistic, `crossTF.cell`, and behind `z_build` and `z_delta`, `crossTF.tf`). `--strategy MOTHER` reads that one mother alone (feedback 2026-09-30 §5: "Run solo esta estrategia" is a real, cheaper run, not just a hidden button) and writes only `estrategias/<mother>.json` — never `verdict.csv`, `cells.parquet` or the population page, which until 2026-10-01 it overwrote with that one mother and the databank tab lost the other 14 (same rule as crossmarket's `--strategy`) | `python3 -m studies.transfer.crossTF.report --project P --asset USDJPY [--databank CrossTF] [--day DAY] [--fabricated DAY] [--strategy MOTHER] [--seed N]` | export → reports |
-| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
+| `cells.py` | The numbers of every cell: what it earned, and where it sits among its own timeframe's nulls. | imported | trades + bars → statistic, p, z |
+| `equity.py` | The equity charts and the per-mother tagging: one block per mother, the window's «Madre» picks it. | imported | plan + trades → blocks |
+| `inputs.py` | What the study is run on: its knobs, which cell each result block is, and the bars. | imported | config + manifests → cells, bars |
+| `many.py` | Every mother across timeframes, scaled and not, read as one result: what the window paints. | imported | export + scaling → result |
+| `report.py` | The command: every mother across timeframes, scaled and not, with what each cell means. | `python3 -m studies.transfer.crossTF.report --project P --asset USDJPY [--databank CrossTF] [--day DAY] [--fabricated DAY] [--strategy MOTHER] [--seed N]` | export → reports |
+| `siblings.py` | What a scaled sibling adds to its mother: the monthly P/L correlation and the z beyond hers. | imported by `cells` | `plan` + `packed` → `corr_vs_baseline`, `z_new`, `combined_*` |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported | — |
+| `verdict.py` | What each scaled cell means on oos1, beyond what its mother's own result already explains. | imported | panel → one of six readings |
 | `config.yaml` | Every tunable, grouped by section | edited, or `--set section.key=value` | — |
 
 Dependencies point one way: `inputs` → `core`; `cells` → `core`, `nulls`; `verdict` →

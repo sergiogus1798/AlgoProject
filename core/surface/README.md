@@ -7,11 +7,11 @@ statistics, which is the bar `core/README.md` sets for anything statistical livi
 
 | file | what it does | in → out |
 |---|---|---|
-| `__init__.py` | Names what the package is; holds no code | — |
-| `dedupe.py` | How many independent observations the grid really holds: sentinel removal, distinct tuples, the effective n, a bootstrap that resamples tuples instead of rows, and the same identity test applied to a trade export or a set of daily equity curves, for a population that is not a grid at all | grid, trades or curves → counts, intervals |
-| `shift.py` | How far the surface moved between two windows: Hodges-Lehmann in units, Cliff's delta in rank, the quantile-quantile curve, the tail excess, and the dispersion ratio adjusted for sample size | two windows → displacement |
-| `trials.py` | How many independent things were really tried: the correlation distance between result streams, the silhouette that picks a cluster count, and the count itself | daily or per-period streams → n_eff |
-| `plateau.py` | How much of the grid works, whether its best point beats what searching noise would have produced anyway, and where one chosen point sits in it: plateau area, half-max area, the noise maximum, the deflated Sharpe, and the rank / plateau fraction / shrunk expectation of a named tuple | grid → probabilities, thresholds |
+| `__init__.py` | The maths of a parameter grid: how many observations it holds, how it moved, how flat it is. | — |
+| `dedupe.py` | How many independent observations a parameter grid really holds, and how to resample it; plus the one exact test for two strategies sharing one trade list under different names. | grid, trades or curves → counts, intervals |
+| `plateau.py` | How much of a grid works, and whether its best point beats what pure search would give. | grid → probabilities, thresholds |
+| `shift.py` | How far a surface moved between two windows, in units and in rank. | two windows → displacement |
+| `trials.py` | How many independent things were really tried, whatever produced them. | daily or per-period streams → n_eff |
 
 **`rank_of`, `plateau_fraction` and `shrunk` describe one chosen point against its grid**, which
 the other three do not: they describe the grid. Read the first two together — a rank near 1 is only

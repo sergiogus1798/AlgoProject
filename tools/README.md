@@ -2,22 +2,24 @@
 
 | file | what it does | run it |
 |---|---|---|
-| `checks.py` | Verify every mechanical rule in `CODESTYLE.md` and list what breaks them | `python3 tools/checks.py` |
-| `depmap.py` | Read the real imports and regenerate `docs/DEPENDENCIES.md` | `python3 tools/depmap.py` |
-| `projectmap.py` | Read Graphify's graph and regenerate `PROJECT_MAP.md`: modules, interfaces, infra vs calculation, hot spots | `python3 tools/projectmap.py` |
-| `skillmap.py` | Read every installed skill and regenerate `docs/SKILLS.md` — what exists, what it costs to invoke, what is stale | `python3 tools/skillmap.py` |
-| `ratchet.py` | The debt ratchet `checks.py` runs: `-> dict` public functions per package, broad `except`, unseeded `default_rng()`, legacy `np.random`, `layering.ALLOW` size and ruff's B905/C901/PLR0913 may not rise above `ratchet.json`; a fall rewrites that file (commit it). Run bare it prints counts vs baseline | `python3 tools/ratchet.py` |
-| `layering.py` | The import-direction check `checks.py` runs (core, engines, sqx, ui, tools); its ALLOW list is debt | imported, not run |
-| `knowhowmap.py` | Regenerate each `knowhow/<domain>/INDEX.md` from its cards' `q:` lines; `checks.py` uses it to check the cards, the `knowhow/` links and the indexes | `python3 tools/knowhowmap.py` |
-| `knowhowrefs.py` | The knowhow check `checks.py` runs: a card's header (above `## Evidence`) must not cite a repo path that no longer exists | imported, not run |
-| `knowhowq.py` | The knowhow check on `q:`: one question, ≤ 120 chars, ending in `?`; cards not yet rewritten are listed in `knowhow_pending_q.txt` (must end empty) | imported, not run |
-| `commit_apply.py` | Apply the night's commit proposal (`AlgoData/audit/<date>-commit.json`, written by `bin/nightly-commit-proposal.sh`) on the owner's «sí»: per group `git add -- paths` + `git commit -- paths`, one push with the gh credential helper; refuses a stale proposal and groups whose files moved; `--facts` lists the uncommitted files with their age. No model | `python3 -m tools.commit_apply [date] [--dry-run] [--only N,M] [--no-push] [--force]` |
-| `manual.py` | Build the user manual as one PDF per workflow family, from the chapters in `AlgoData/manual-fuentes/` | `python3 tools/manual.py` |
-| `daily_audit.py` | The half of the audit a machine can do alone: checks, every `tests/test_*.py`, corrupt projects, missing manifests, undecided asset costs | `python3 tools/daily_audit.py` |
-| `audit_tests.py` | The audit's test runner: every `tests/test_*.py` six at a time (pytest for a file with no `__main__`, offscreen Qt, 300 s each), and `ASIDE`, the explicit list of tests set aside with reason and date, printed by the report as «apartadas»; `--changed [FILE ...]` runs only the tests that touch the changed files (default: `.py` in `git status`); exit 1 on a failure outside `ASIDE` | `python3 tools/audit_tests.py` · `python3 tools/audit_tests.py --changed`; imported by `daily_audit.py` |
-| `uiwalk.py` | Dev-only: open every zone of the window offscreen against a running daemon, drive its combos, tabs and tables with every write refused (POSTs answered here, `/api/load` read as its GET, modals «No»), and report each exception by zone; exits 1 when anything raised | `QT_QPA_PLATFORM=offscreen python3 tools/uiwalk.py --port P` |
-| `uiinventory.py` | Dev-only: ONE zone, counted. Lists by introspection every button, combo item, tab, text or spin input and table row, header and cell — per module of the zone's rail — drives each and records `ok` / `excepción` / `negativa esperada` / `no ejercido`, re-inventorying after every action; windows an action opens are swept and closed, modals answer `ANSWER`. Read-only unless `--write`, which only a daemon on a test root accepts and where each «Calcular» really runs | `QT_QPA_PLATFORM=offscreen ALGO_DATA_ROOT=<test root> python3 tools/uiinventory.py --port 8771 --zone Portfolios [--write] [--shots DIR] [--out FILE.md] [--daemon-log FILE]` |
-| `uiparts.py` | The introspection `uiinventory.py` drives: what a person can do to the widgets under one root, as `Item`s whose key survives a repaint | imported, not run |
+| `audit_tests.py` | Runs tests/test_*.py in parallel and names the ones set aside. | `python3 tools/audit_tests.py` · `python3 tools/audit_tests.py --changed`; imported by `daily_audit.py` |
+| `checks.py` | Verify every mechanical rule in CODESTYLE.md and list what breaks them. | `python3 tools/checks.py` |
+| `commit_apply.py` | Apply the night's commit proposal: per group `git add -- paths` + `git commit -- paths`, then one push. No model. | `python3 -m tools.commit_apply [date] [--dry-run] [--only N,M] [--no-push] [--force]` |
+| `daily_audit.py` | The half of the daily audit a machine can do alone. Judgement stays with the /audit agent. | `python3 tools/daily_audit.py` |
+| `depmap.py` | Generate docs/DEPENDENCIES.md from the imports actually present in the project's Python files. | `python3 tools/depmap.py` |
+| `knowhowmap.py` | Regenerate each knowhow/<domain>/INDEX.md from its cards' q: lines, and check the cards. | `python3 tools/knowhowmap.py` |
+| `knowhowq.py` | The q: rule of a knowhow card: one question, at most 120 characters, ending in '?'. | imported, not run |
+| `knowhowrefs.py` | Knowhow check: a card's header must not cite a repo path that no longer exists. | imported, not run |
+| `layering.py` | Layering check: which project package may import which, with today's violations as debt. | imported, not run |
+| `manual.py` | Build the user manual as one PDF per workflow family, from the markdown in AlgoData. | `python3 tools/manual.py` |
+| `projectmap.py` | Generate PROJECT_MAP.md from Graphify's graph: modules, who talks to whom, infra vs calculation, hot spots. | `python3 tools/projectmap.py` |
+| `ratchet.py` | Ratchet: debt counts that may fall but never rise (CODESTYLE.md §8), baseline in ratchet.json. | `python3 tools/ratchet.py` |
+| `readmetable.py` | Generate the «file» and «what it does» columns of every code folder's README table from the modules' docstrings. | `python3 tools/readmetable.py` |
+| `skillmap.py` | Read every installed skill and rewrite docs/SKILLS.md: what exists, what it costs, where. | `python3 tools/skillmap.py` |
+| `uiinventory.py` | Inventory every actionable widget of one zone of the window, drive each one, and say what happened. | `QT_QPA_PLATFORM=offscreen ALGO_DATA_ROOT=<test root> python3 tools/uiinventory.py --port 8771 --zone Portfolios [--write] [--shots DIR] [--out FILE.md] [--daemon-log FILE]` |
+| `uiparts.py` | What a person can do to the widgets under one root: the inventory `uiinventory` drives. | imported, not run |
+| `uiwalk.py` | Walk every zone of the window offscreen against a running daemon and report every exception. | `QT_QPA_PLATFORM=offscreen python3 tools/uiwalk.py --port P` |
+| `vulture_whitelist.py` | Names vulture cannot see a caller for, and why each stays. | — |
 
 `manual.py` renders the chapters to `docs/manual/NN-<family>.pdf` through headless Chrome, whose path lives in `config/machine.yaml`. The owner reads only PDFs (2026-09-26): the PDFs are in git and are the only thing in `docs/manual/`; the `.md` chapters and their `assets/` are the original and live in `AlgoData/manual-fuentes/`, out of the repo. `FAMILIES` decides which chapter goes in which PDF, and a chapter in no family stops the build. A family is rendered again only when its HTML or a picture it shows changed (`AlgoData/manual-fuentes/.rendered.json`; delete it to force a full rebuild) — `knowhow/eng/manual-pdf-rebuild-is-input-keyed.md`.
 

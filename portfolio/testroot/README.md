@@ -13,10 +13,10 @@ The root is `<real data root>/portfolio/_test/root/`. The test pool `Test_nikkei
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Names the package; holds no code | — | — |
-| `build.py` | Creates the test root: real, empty folders for what a run writes (`ledger`, `archive`, `portfolio`, `reports`, `harvest`, `barsDerived`, `projects`, `tmp`) and symlinks for what it only reads (`bars`, `atrCalculator`, `funding`, `projects/registry.csv`); `required()` refuses a command on the real root; `PSEUDO_OOS2_FROM`, the date of the test calendar's pseudo oos2. `--root PATH` builds a second, disposable root there (its own empty ledger; refused on the real root or a parent of it) — for what can be done once, like opening a pool's oos2 | `python3 -m portfolio.testroot.build [--root PATH]` | → the root, and the line that runs a command under it |
-| `guard.py` | Proof a run left a folder alone: `fingerprint` (path, size, mtime of the files matching a glob), `untouched` (raises when it moved), `readonly` (chmod the tree for the block, restore after) | imported | folder → hash, or an error |
-| `harvest.py` | The traded (stop) versions' cosecha rewritten under the test root, keyed by the **grafted file's own identity**, with a stand-in daily curve; prints the `core.archive archive` command of each strategy. Test roots only | `ALGO_DATA_ROOT=<root> python3 -m portfolio.testroot.harvest --project P --databank Stop_p90 --family simple:long` | real `harvest/<P>/<D>/` → the test root's |
+| `__init__.py` | The portfolio module's test root: where a test run of the real code writes. | — | — |
+| `build.py` | Build the portfolio test root: a second data root for test runs of the real code. | `python3 -m portfolio.testroot.build [--root PATH]` | → the root, and the line that runs a command under it |
+| `guard.py` | Proof that a run left a folder alone: a fingerprint before and after, or the folder made read-only. | imported | folder → hash, or an error |
+| `harvest.py` | The traded (stop) versions' cosecha for the test root, keyed by the grafted file's own identity. | `ALGO_DATA_ROOT=<root> python3 -m portfolio.testroot.harvest --project P --databank Stop_p90 --family simple:long` | real `harvest/<P>/<D>/` → the test root's |
 
 ## Traps
 - **A symlink is read-only by convention only.** A write through `bars/` or `funding/` lands in

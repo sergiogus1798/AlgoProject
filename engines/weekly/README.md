@@ -5,9 +5,9 @@ weeks × units matrix of excess, and a null that flips whole weeks with one sign
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Names what the package is; holds no code | — | — |
-| `panel.py` | `per_trade` (`engines.variants.excess.per_trade` plus `net`, `gross` = net + the cost `reprice.real` charged, and the stamps), `weekly` (weeks × units, `net` and `gross`, each trade whole in the Monday-to-Sunday week it closes in, one index of every week touching the window, zeros where nothing closed), `per_year`, `years`, `monday`, `sqx_gap` (share of units whose repriced P/L misses SQX's `NetProfit` by more than a tolerance) and `straddle` (share of trades closed on a Monday or Tuesday after a weekend) | imported | trades of one leg + bars + costs → per-trade frame → weekly panels |
-| `flip.py` | `signs` (B × W of ±1 from one seed, blocks of 1 or 2 weeks sharing a sign), `chunks` (the same matrix a few draws at a time), `tails` (`p_mas`, `p_menos` as (1 + #) / (1 + B), `nulo_p5`, `nulo_p95`) and `spearman` (one fixed vector against B redrawn ones, average ranks) | imported | seed + weekly panel → draws × units by `signs @ panel` |
+| `__init__.py` | The weekly excess panel and the shared-sign flip null the optimisation steps read alike. | — | — |
+| `flip.py` | The weekly shared-sign flip null: one sign per week for every unit, and where a statistic falls in it. | imported | seed + weekly panel → draws × units by `signs @ panel` |
+| `panel.py` | Trades into weeks x units of excess, gross and net: each trade whole in the week it closes in. | imported | trades of one leg + bars + costs → per-trade frame → weekly panels |
 
 **The drift is the project's, decided (owner, 2026-10-08).** The WFC proposal's formula («the mean per bar of
 the calendar year, summed bar by bar over the bars held») is NOT what is used. Steps 17-19 subtract the same

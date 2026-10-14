@@ -4,5 +4,5 @@ What the window paints (`core/study/CONTRACT.md`), as data. Nothing here compute
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Names the package; no code | — | — |
-| `tabs.py` | The travel test's tabs for one strategy (numbers by test, each market, the yearly edge), its warnings and glossary; what `one.run` paints | imported | `travel.run` rows → tabs |
+| `__init__.py` | The cross-market result read as the contract's blocks. | — | — |
+| `tabs.py` | The tabs of the travel test: what `travel.run` measured, as the contract's blocks. | imported | `travel.run` rows → tabs |

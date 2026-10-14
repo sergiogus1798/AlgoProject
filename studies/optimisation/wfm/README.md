@@ -22,14 +22,14 @@ config.yaml ─▶ inputs ─▶ measure ─────────────
 
 | file | what it does | run it |
 |---|---|---|
-| `run.py` | One export's whole reading: per mother `one()` (weekly panel, L1, L2, redundancy, per-segment excess, what was re-charged), `area()` (SQX's rule on the corrected score), `facts()` (the frozen fact names) and `read()` | imported |
-| `many.py` | `one()`: one mother alone, the same member the whole run gives it (its seed is its place among the export's names). `run()`: the export as one result and each mother's own. A member carries `facts` beside the contract's keys | imported — the window reads it |
-| `tabs.py` | The tabs of one mother: L1 against its null band with the cells' heat map and the annotations, L2, the drift, the per-segment table | imported |
-| `contract.py` | SQX's pass/fail matrix on the corrected score with the fixed «67–79 % seen» warning, the cells' equity, and one chart per cell against the original (`celda` selector) | imported |
-| `objectives.py` | The «Los objetivos» tab: one matrix per condition against its threshold, then stability, the WF specials and SQX's parameter stability | imported |
-| `labels.py` | The Spanish name and one-sentence meaning of every objective | imported |
-| `report.py` | The command: `reports/<P>/<D>/<day>/wfm/` with `verdict.csv`, `cell_excess.csv`, `distribuciones.parquet` (the L1 and L2 nulls; a `--strategy` run merges its mother's rows in), the page and one per mother. `--strategy` writes only that mother's `estrategias/` files | `python3 -m studies.optimisation.wfm.report --project <P> --databank WFM [--strategy "Strategy 1.19.29"]` |
-| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
+| `contract.py` | SQX's pass/fail matrix on the corrected conditions and the cells' equity, as the contract's blocks. | imported |
+| `labels.py` | The Spanish name and the one-sentence meaning of every WFM objective the window shows. | imported |
+| `many.py` | One WFM export read as one result, and each mother's own reading: what the window paints. | imported — the window reads it |
+| `objectives.py` | One matrix per WFM objective — each condition against its threshold, and the WF metrics SQX shows. | imported |
+| `report.py` | The command: read one project's Walk-Forward Matrix export and write the report. | `python3 -m studies.optimisation.wfm.report --project <P> --databank WFM [--strategy "Strategy 1.19.29"]` |
+| `run.py` | One WFM export's whole reading: each mother's L1, L2, redundancy, corrected area and drift. | imported |
+| `tabs.py` | The tabs of one mother's reading in oos2: L1, the cells, L2, the drift and the segments. | imported |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported |
 | `config.yaml` | Every tunable; the thresholds are `ledger:` rows under `wfm.` | edited, or `--set section.key=value` |
 
 ## What decides, and what is only written down

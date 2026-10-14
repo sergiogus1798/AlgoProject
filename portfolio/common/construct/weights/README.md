@@ -12,11 +12,11 @@ and diversification multiplier are nobody's decision yet.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | `REGISTRY` {name: method}; `matrix` — every combination's weights by `weights.method` as one [P, N] array | imported | build daily frame, membership → weights |
-| `equal.py` | 1/K to every member | imported | a combination's build daily frame → {member: weight} |
-| `risk_parity.py` | 1 / daily volatility, normalised (AlphaForge's «risk parity») | imported | same |
-| `min_variance.py` | Long-only minimum variance (SLSQP) on a Ledoit-Wolf covariance shrunk towards a scaled identity; `shrunk`, `solve` | imported | same |
-| `hrp.py` | Hierarchical risk parity: Ward tree on the correlation distance, recursive bisection by cluster variance; each weight written at its member's own column (AlphaForge's bug) | imported | same |
+| `__init__.py` | The weight methods (PLAN §5.4): chosen on build, fixed for good (never rebalanced). | imported | build daily frame, membership → weights |
+| `equal.py` | Equal weight: 1/K to every member -- the baseline every later method must beat. | imported | a combination's build daily frame → {member: weight} |
+| `hrp.py` | Hierarchical risk parity (López de Prado), with AlphaForge's label bug fixed. | imported | same |
+| `min_variance.py` | Minimum variance, long only, on a Ledoit-Wolf shrunk covariance (AlphaForge's had no shrinkage). | imported | same |
+| `risk_parity.py` | Risk parity as AlphaForge defines it: each member weighted by 1 / its daily volatility. | imported | same |
 
 A method is `fn(build_daily: DataFrame, cfg: dict) -> {column label: weight}`: non-negative, summing
 to 1, one entry per column given (`tests/test_portfolio_weights.py` checks every registry entry).

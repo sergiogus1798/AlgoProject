@@ -5,8 +5,8 @@ window paints and `core/study/render` draws into the batch's `estudios/` folder.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Names what the package is; holds no code | — | — |
-| `wfc.py` | The tab `orden`: the table of the three compositions, the cloud of each under one selector (quadrants, the mother, the in-sample top, the Spearman line), what is annotated without deciding, and the count of variants per filter | imported | facts → tab, verdict |
-| `words.py` | Every Spanish word of the tab: state and order labels, the sentence of each cell of the owner's table, column help, notes, glossary | imported | — |
+| `__init__.py` | The walk forward correlation and the CSCV read as the contract's blocks. | — | — |
+| `wfc.py` | Step 17 as the contract's blocks: the call, the three compositions, the cloud and the filters. | imported | facts → tab, verdict |
+| `words.py` | The words step 17 is read with: labels, the sentence of each cell of the table, column help. | imported | — |
 
 A coefficient is never written as a percentage here.

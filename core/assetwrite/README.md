@@ -1,12 +1,12 @@
 # core/assetwrite — the only writer of assets/
 
-Split into a folder on 2026-09-29 (`CODESTYLE.md` rule 1, 250 lines). Every caller still writes
+Split into a folder on 2026-09-29 (`CODESTYLE.md` rule 1, file length cap). Every caller still writes
 `from core import assetwrite` or `from core.assetwrite import <name>`: `__init__.py` re-exports
 `brokers.py` and `markets.py`'s functions, so this remains one writer surface, not three.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | One value, one cost with its `why`, one segment's end (`set_segment_end`, the monthly oos2 roll), or a whole asset into the library or onto the retired shelf | — | change → file |
-| `brokers.py` | Replace one asset's `costs.commission.brokers` table — the per-broker figures `commission.use` is picked from | — | brokers dict → file |
-| `markets.py` | `declare_main` gives an asset its own empty Cross Market block; `set_market` fills one category of it (`_markets.yaml`'s `family`/`structural` feeds) | — | feeds → file |
-| `failures.py` | Append one entry (`date`, `strategy`, `row`, `value`) to an asset's `live_failures` list — why the live protocol's stage A took a strategy out (owner, 2026-10-12) | — | failure → file |
+| `__init__.py` | The only writer of assets/: one value, one cost, or a whole asset in or out of the library. | — | change → file |
+| `brokers.py` | Write one asset's `costs.commission.brokers` table — the per-broker figures `use` is picked from. | — | brokers dict → file |
+| `failures.py` | Write one entry of an asset's `live_failures` list — why a strategy of it left the live protocol. | — | failure → file |
+| `markets.py` | Write one asset's Cross Market check — `_markets.yaml`'s `family`/`structural` feeds. | — | feeds → file |

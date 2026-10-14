@@ -17,9 +17,9 @@ places that each know part of a project:
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | The package's one-line purpose | imported | — |
-| `sources.py` | The merge: one card per project on an install or with reports (SQX's five stock projects left out), running first; and `locate`, the databank and name of one identity | imported | disk → cards |
-| `api.py` | `GET /api/projects/all`, `GET /api/projects/one?name` (symbol, timeframe, template from `registry.csv` alone — a zone's title before the gallery arrives) and `GET /api/projects/find?project&identity[&databank]` | imported | request → JSON |
+| `__init__.py` | The gallery's projects: every project the window can open, merged from the four sources. | imported | — |
+| `api.py` | The gallery's routes: every project on one list, and where one strategy of a project lives. | imported | request → JSON |
+| `sources.py` | Every project the window can open, merged from the four places that each know part of it. | imported | disk → cards |
 
 ## Traps
 

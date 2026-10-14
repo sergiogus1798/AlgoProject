@@ -17,18 +17,18 @@ GET /preflight ─▶ commands.plan ─▶ {ok, reasons, text, confirm}      POS
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Package marker, one docstring | imported | — |
-| `parts.py` | The small block builders every reader shares: Spanish state words, one-decimal percentages, a contract table, a callout, a tab, the verdict's headline, the «AJUSTADO» banner and the empty state | imported | values → contract blocks |
-| `shelf.py` | What exists on disk: declared pools, universes (pool hash + config fingerprint + builder's code), runs with their kind, plan and verdict; whether the daemon runs on a test root | imported | `AlgoData/portfolio/` → dicts |
-| `correlation.py` | Correlación: the pair matrix of one measure at one frequency with a discrete state per cell against the threshold in force, the pairs list with the filter that rejects each, one pair's detail | imported | `universe/<key>/pairs*.parquet`, `screen.json` → tabs |
-| `construct.py` | Constructor: the chosen portfolio, every scored combination, the null and the verdict with the oos2 line; `spent(pool, members)`, the sentence of a pool whose oos2 is read — for a launcher it says whether that portfolio gets its stored reading back or is refused | imported | `runs/<run>/` → tabs |
-| `analyse.py` | Analizar: the selected run's figures per segment each with its one-line explanation, its curve with the members named, the monthly table | imported | a run's `cartera.json` → tabs |
-| `funded.py` | Fondeo: stage A (P(pass) per combination and risk), stage B (D, T1, T2) and the verdict; the plans of the catalogue; what blocks a launch | imported | `runs/<run>/` → tabs |
-| `bank.py` | Banco: the decision sentence, the EV table per plan and rebuy policy against the filters, EV(h) with the monkey line and the Monte Carlo error; the owner inputs still unanswered | imported | `bank/` tables and decisions → tabs |
-| `weights.py` | Pesos (the walk-forward table and its sentence) and Incubación (its rows, or the plain statement that it is not running) | imported | `weights_wf/`, `incubation/` → tabs |
-| `commands.py` | One action → its argv, its Spanish refusals and, for the two verdicts, the confirmation sentence that names the pool and says oos2 is read once | imported | action + params → `{ok, reasons, text, confirm, argv, about}` |
-| `bankjob.py` | The bank's three steps as ONE job: `frompool` (the portfolio's paths) → `sim.run` (the bank per plan) → `decide.run` (the decision); stops at the first that fails | `python3 -m ui.daemon.portfolios.bankjob --run <run> --horizon H --n-paths N --edge-from oos1[,oos2]` | a funded run → `bank/` table + decision |
-| `api.py` | The router: `/api/portfolios/state`, `/module`, `/pair`, `/preflight`, `POST /run`, `POST /pool` | mounted by `ui/daemon/routers.py` | HTTP → the above |
+| `__init__.py` | The PORTFOLIOS zone's daemon side: what the portfolio commands wrote, as blocks, and their launchers. | imported | — |
+| `analyse.py` | «Analizar»: the selected portfolio (a judged run's contract) or one strategy (its universe column). | imported | a run's `cartera.json` → tabs |
+| `api.py` | The routes of the PORTFOLIOS zone: what exists, each module's tabs, and the «Calcular» launchers. | mounted by `ui/daemon/routers.py` | HTTP → the above |
+| `bank.py` | «Banco» (encargo 33 §7.5): the bank's expected value per plan, re-buy policy and haircut, and the decision. | imported | `bank/` tables and decisions → tabs |
+| `bankjob.py` | «Calcular la caja» as one job: the portfolio's paths, the bank table on them, then the decision. | `python3 -m ui.daemon.portfolios.bankjob --run <run> --horizon H --n-paths N --edge-from oos1[,oos2]` | a funded run → `bank/` table + decision |
+| `commands.py` | What each «Calcular» of the zone launches: its command, what it still lacks, and the sentence to confirm. | imported | action + params → `{ok, reasons, text, confirm, argv, about}` |
+| `construct.py` | «Constructor»: one real-path run — the portfolio chosen in build, every combination scored, its verdict. | imported | `runs/<run>/` → tabs |
+| `correlation.py` | «Correlación»: a pool's pair measures as a matrix judged against the threshold, and its admissible graph. | imported | `universe/<key>/pairs*.parquet`, `screen.json` → tabs |
+| `funded.py` | «Fondeo»: one funded run — stage A's P(pass) per combination and risk, stage B's three Monte Carlos, its verdict. | imported | `runs/<run>/` → tabs |
+| `parts.py` | The pieces every portfolio reader answers with: contract blocks, tabs, the relaxed line, the words. | imported | values → contract blocks |
+| `shelf.py` | What exists under the portfolio folder: pools, runs, universes, bank tables — listed, never computed. | imported | `AlgoData/portfolio/` → dicts |
+| `weights.py` | «Pesos» and «Incubación»: the weight walk-forward's decision, and the incubation reading if one exists. | imported | `weights_wf/`, `incubation/` → tabs |
 
 ## Contracts and traps
 

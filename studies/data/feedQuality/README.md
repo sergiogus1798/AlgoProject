@@ -23,22 +23,22 @@ inputs ─▶ detect (engines/market/feed) ─▶ calendar ─▶ summary ─▶
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `alarm.py` | Whether the flagged trades earn more than any subset of the same size: the owner's test (2.12). | imported | marked trades → p, verdict |
+| `calendar.py` | The library's calendar deduced from one provider's feeds: holidays, partial closes, outages. | imported | bar minutes → silences, gap classes |
+| `calibrate.py` | Per-feed K*, session and stable year, measured once when a feed enters the library. | `python3 -m studies.data.feedQuality.calibrate` | bar library → `feedQuality/calibration.json` + ledger rows printed |
+| `detect.py` | One feed's anomalies under a given K and session: spikes on close and wick, frozen runs, gaps. | imported | bars → events |
+| `feed.py` | One feed's quality report as the contract's data: counts by year and month, episodes, extremes. | imported | events → result |
+| `inject.py` | Synthetic anomalies of known size planted in a copy of a real feed: what the detector finds. | `python3 -m studies.data.feedQuality.inject [--feed F]` | bar library → `feedQuality/injection.json` |
+| `inputs.py` | Every knob, and what the detector reads: a feed's M1 bars, its tick, its frozen K and session. | imported | files → arrays, frames |
+| `many.py` | Every strategy of one harvest against its feed's anomalies, as one result and one panel. | imported | results → panel |
+| `one.py` | One strategy against its feed's anomalies, as the contract's data: the alarm and what it touched. | imported | marked trades → result |
+| `report.py` | Step 8's feed-quality attribution: how much of each strategy's profit sits on anomalous minutes. | `python3 -m studies.data.feedQuality.report --project P --databank Results --feed F [--strategy S]` | harvest + events → `reports/<P>/<D>/<day>/feedQuality/` + `verdict.csv` |
+| `scan.py` | Step 4's feed-quality scan: every feed of the bar library under its frozen K and session. | `python3 -m studies.data.feedQuality.scan [--feed F]` | bar library → `feedQuality/<feed>/{events.parquet,summary.json,feedQuality.*}` |
+| `summary.py` | What one feed's anomalies add up to: counts by year and month, K*, the stable year, episodes. | imported | events → tables |
+| `template.py` | What a strategy's own rules say about which bars it can be filled on: its orders and its stop. | imported | .sqx → rules |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported | — |
+| `touch.py` | Which trades touch an anomaly: in the bar of their signal, entry or exit, or while open. | imported | trades + events → marked trades |
 | `config.yaml` | Every knob, each a `ledger:` placeholder | — | — |
-| `tooltips.py` | One Spanish sentence per knob, for the window's drawer | imported | — |
-| `inputs.py` | The knobs, a feed's M1 bars as arrays, its own tick (not SQX's), its frozen session; the harvest, its strategies and trades; a feed's scanned events, refused if scanned under another K | imported | files → arrays, frames |
-| `detect.py` | One feed's anomalies under a K and a session: close and wick spikes with their return at m and at the sensitivity m's, frozen runs and gaps in session and apart in the rollover | imported | bars → events |
-| `calendar.py` | The library's calendar from Dukascopy's feeds: holidays, partial closes, provider outages; which of a feed's gaps are the whole library's silence | imported | bar minutes → silences, gap classes |
-| `summary.py` | Counts by year and month, K*, the stable year and the year grades, the provider's episodes, the residual gaps | imported | events → tables |
-| `calibrate.py` | **K\*, session and stable year per feed**, the evidence the ledger rows are written from; proposes, never writes the ledger | `python3 -m studies.data.feedQuality.calibrate` | bar library → `feedQuality/calibration.json` + ledger rows printed |
-| `inject.py` | **Synthetic anomalies of known size planted in a copy of each feed** (owner's grid, 2.16): recall, classification, new marks, change of the real count | `python3 -m studies.data.feedQuality.inject [--feed F]` | bar library → `feedQuality/injection.json` |
-| `feed.py` | One feed's report as the contract's data | imported | events → result |
-| `scan.py` | **Step 4's command**: every feed under its frozen K and session, written for the preflight, the report and INDEX.md | `python3 -m studies.data.feedQuality.scan [--feed F]` | bar library → `feedQuality/<feed>/{events.parquet,summary.json,feedQuality.*}` |
-| `template.py` | Where a strategy's .sqx is, and what its rules say: pending entries, live exit orders, a stop — and so which column decides | imported | .sqx → rules |
-| `touch.py` | Which trades touch an anomaly in their signal, entry or exit bar, or while open | imported | trades + events → marked trades |
-| `alarm.py` | The permutation test on the flagged trades' net P/L and the share of profit at risk | imported | marked trades → p, verdict |
-| `one.py` | One strategy's attribution as the contract's data | imported | marked trades → result |
-| `many.py` | The population panel and the verdict per strategy (MANTENER, or DESCARTAR only on `action: drop`) | imported | results → panel |
-| `report.py` | **Step 8's command**, after `gate.report` on the same harvest | `python3 -m studies.data.feedQuality.report --project P --databank Results --feed F [--strategy S]` | harvest + events → `reports/<P>/<D>/<day>/feedQuality/` + `verdict.csv` |
 
 ## Decisions the code carries, and whose they are
 

@@ -28,7 +28,7 @@ Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los 
 | F9 | **los `-> dict` sin tipar, todos**, paquete a paquete | Opus orquesta, Sonnet escribe | F8, D8, D9 | sin empezar |
 | F10 | límites por función (complejidad, argumentos) en el trinquete | Sonnet | F3 | hecho con F3 |
 | F11 | código muerto: `vulture` de noche, y borrado de lo que halle | Sonnet | — | sin empezar |
-| F12 | tabla del README generada del docstring | Sonnet | D10 | sin empezar |
+| F12 | tabla del README generada del docstring | Sonnet | D10 | hecho 2026-10-14 |
 | F13 | lockfile y versión de Python | Sonnet | — | hecho 2026-10-14 |
 | F14 | canario nocturno de extremo a extremo | Opus diseña, Sonnet escribe | D11 | sin empezar |
 | F15 | gorilla comprueba cada push | Sonnet | F1 | hecho 2026-10-14 |

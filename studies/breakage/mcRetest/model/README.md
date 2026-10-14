@@ -13,12 +13,12 @@ metric is*, `measure/` says *what its value was on these runs, and whether that 
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `recon.py` | **The registry.** The 30 reconstructible metrics, which way each one ranks, and the declaration of what the other 118 are | imported | P/L + offsets → one value per simulation |
-| `counts.py` | The metrics that are reductions over the trades: totals, counts, averages and their ratios | imported | parts → arrays |
-| `drawdown.py` | Every drawdown metric, and the account-capital denominator the four of them share | imported | parts → arrays |
-| `runs.py` | Streaks of wins and losses, and the runs test SQX scores their randomness with | imported | parts → arrays |
-| `place.py` | The criteria metrics (owner, 2026-10-04: computed and shown, no threshold): where the original backtest sits among a task's re-runs — its percentile, the median's gap as a share of the original (missing when the original is near zero) and the same distance in IQRs of the re-runs | imported | re-runs + original → percentile, gaps |
-| `retention.py` | **The measure steps 13-14 judge with**, shared with `neighbours/` (T1): `retention(runs, original)` → `ret_med`, `ret_p5`, `f_pos`, `n` — what the re-runs keep of the original's total, NaN when the original is not positive | imported | totals → shares |
+| `counts.py` | The metrics that are reductions over the trades of a simulation, with SQX's own conventions. | imported | parts → arrays |
+| `drawdown.py` | Every drawdown metric, and the account-capital convention the four of them share. | imported | parts → arrays |
+| `place.py` | Where the original backtest sits among its own re-runs: its percentile and the median's gap. | imported | re-runs + original → percentile, gaps |
+| `recon.py` | The 30 metrics reconstructible from a P/L vector, and the declaration of what the rest are. | imported | P/L + offsets → one value per simulation |
+| `retention.py` | What the re-runs keep of the original's total: retention at the median and the 5th percentile. | imported | totals → shares |
+| `runs.py` | Streaks of wins and losses, and the runs test SQX scores their randomness with. | imported | parts → arrays |
 
 ## The calibration, and why it is not optional
 

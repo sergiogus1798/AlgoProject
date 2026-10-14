@@ -8,12 +8,12 @@ counted in `ledger.cells.look_oos2`; a cell with 3 looks is «solo vivo» and th
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `inputs.py` | What the reading opens: the mothers' variant batches, their oos2 trades, the oos2 dates and her daily P&L. | imported | batch → trades, P&L |
+| `measure.py` | The inference: a mother's weekly excess over her monkey, summed, against a centred sign-flip null. | imported | daily series → facts |
+| `report.py` | The single reading of oos2: every mother of a project, one look in her cell, cut by sign only. | `python3 -m studies.optimisation.oos2Reading.report --project <P>` | project → facts |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported | — |
 | `config.yaml` | Every knob: 100,000 flips (5,000 is the floor), alpha 0.05, seed, the monkey's draws, `max_looks` 3 | edited, or `--set` | — |
-| `tooltips.py` | One Spanish sentence per knob | imported | — |
-| `inputs.py` | The project's mother batches, their oos2 trades (`trades.parquet`, the variant the manifest flags `origin`), the oos2 dates, the mother's daily P&L (`closecurve`) | imported | batch → trades, P&L |
 | (monkey) | The monkey's mean daily P&L comes from `engines/nulls/footprint.py`, shared with step 20 | — | — |
-| `measure.py` | Weekly excess (mother − monkey, summed) and its centred sign-flip null (`engines.weekly.flip`), `z`, one-sided `p` and its Monte Carlo error | imported | daily series → facts |
-| `report.py` | **The command**: door and seal (as step 19), the cell's look, each mother's `<batch>/estudios/oos2Reading.json` | `python3 -m studies.optimisation.oos2Reading.report --project <P>` | project → facts |
 
 Test: `tests/test_oos2_reading.py`. Manual: cap. 110 (PDF `09-optimizacion`).
 

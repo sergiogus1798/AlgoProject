@@ -11,16 +11,16 @@ and every module here would produce the same arrays if the study's verdict rules
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `tiles.py` | One worker's batch, in strips of rows sized in bytes so memory does not grow with N | imported | batch → statistics |
-| `kernel.py` | The core statistics of many equity paths in one compiled numba pass, read straight out of `source[idx]` without building the path matrix; checked against `metrics.paths` to 2.5e-15 | imported | positions or P&L → statistics |
-| `metrics.py` | Net, drawdown, Ret/DD, Sharpe, profit factor and the longest losing run, on thousands of paths at once | imported | paths → statistics |
-| `engine.py` | Runs one sub-test across every core, with a live progress bar | imported | model → statistics |
-| `sweeps.py` | Which reordering and resampling runs a stream of this size gets | imported | N → runs |
-| `fan.py` | The equity envelope of the reordered paths | imported | stream → bands |
-| `stitch.py` | The adversarial path: a bad draw from every period, concatenated; seeded (`SEED`), drawn in strips of `STRIP_BYTES` | imported | stream → worst path |
-| `family_d.py` | **Family D's execution.** Composition bootstrap inside every window and volatility tercile, the equity curve with its window marks, and the price/vol time series; each window and tercile is one job on `engine`'s pool | imported | stream, bars → dict |
-| `degrade.py` | The IS/OOS pair of each family's headline statistic, resampled on just that scope | imported | stream → shapes |
-| `stability.py` | The same gate numbers computed again, to price the noise in them | imported | stream → spread |
+| `degrade.py` | Whether each family's headline statistic degrades from in-sample to out-of-sample. | imported | stream → shapes |
+| `engine.py` | Run one simulated sub-test across every core, and say how far along it is while it does. | imported | model → statistics |
+| `family_d.py` | Family D's execution: stationary bootstrap inside every calendar window and volatility tercile, plus the two time series its page draws. | imported | stream, bars → dict |
+| `fan.py` | The equity envelope: where the simulated paths ran, trade by trade, around the real one. | imported | stream → bands |
+| `kernel.py` | The core statistics of many equity paths in one compiled pass, without the path matrix. | imported | positions or P&L → statistics |
+| `metrics.py` | The core statistics of an equity path, computed on thousands of paths at once. | imported | paths → statistics |
+| `stability.py` | Whether the simulation count is high enough: the same gate numbers, computed again. | imported | stream → spread |
+| `stitch.py` | The adversarial path: a bad draw from every period of the history, one after another. | imported | stream → worst path |
+| `sweeps.py` | Which reordering and resampling runs a stream of this size gets, and the numbers they give. | imported | N → runs |
+| `tiles.py` | One worker's batch, computed in strips of rows small enough to stay in cache. | imported | batch → statistics |
 
 ## Contracts and traps
 

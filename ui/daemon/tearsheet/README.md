@@ -21,17 +21,17 @@ api ─▶ harvest.read (newest harvest/<P>/<D>/<day>/, pyarrow filter on identi
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Names the package; holds no code | — | — |
-| `api.py` | `ROUTER`: `GET /api/tearsheet` (`&top=0-50&dd=%\|$`) and `GET /api/tearsheet/exits`, `?project&databank&identity&sample=&source=live\|archive&version=`; `sample` IS, OOS1 (or OOS) keeps one tab, OOS2 goes through `oos2`; a refusal is `{"error"}`, never a 500 | imported | request → contract dict |
-| `harvest.py` | The newest cosecha of (P, D), one identity's equity, trades and metrics row; refuses a sample outside IS/OOS; the sentence naming the harvest command when there is none | imported | disk → dict · sentence |
-| `borrow.py` | A databank with no cosecha of its own (Cross Market, Cross TF, MCR, SPP, WFM…) reads a cosecha of the project: the **same identity** first (the MCR_All ingest keeps the build's), else **by name** (the databank's roster, else the `strategy` the page passes, in either spelling) — and the Ficha carries a warning saying which; cut or doubled names answer a grey sentence | imported by `harvest.read` | roster + cosecha → (databank, identity, note) |
-| `pnl.py` | One sample's curves on one daily index: SQX's, and without its best `top` % of trades | imported | curve, trades → series |
-| `drawdowns.py` | Underwater in money and in % of the account's peak | imported | daily curve → series |
-| `months.py` | Monthly P&L exact to the cent, and the years they add up to | imported | daily curve → months, years |
-| `tradestats.py` | Starting capital, the per-exit table and one cumulative path per exit type; per-trade returns in USD per lot or per trade (`SHORT`: «$/lote», «$/trade») and their shape (mean, std, skew, excess kurtosis) | imported | trades → numbers |
-| `sheet.py` | The Ficha: one tab per sample — «P&L acumulado», «Drawdown», «P&L por año», each series and column carrying its sample's `ink` (`blocks.states.CURVE`) | imported | harvest rows → result |
-| `oos2.py` | The step-20 door (`ledgerview.door`) and, once open, one strategy's OOS2 rows from the newest cosecha of the project that carries them — or the sentence «OOS2 abierto, sin export» | imported | project, identity → dict · sentence |
-| `exits.py` | «Salidas» (read by PORTFOLIOS only since 2026-09-28): one tab per sample — the per-exit table and the cumulative line per exit type | imported | harvest rows → result |
+| `__init__.py` | The Ficha of one strategy: its tear sheet and its exits, read from the newest cosecha. | — | — |
+| `api.py` | The Ficha's routes: one strategy's tear sheet, and its P&L by exit reason, from the newest cosecha or the archive. | imported | request → contract dict |
+| `borrow.py` | A test databank's strategy read from a cosecha of the project — same XML first, else by name — and said so. | imported by `harvest.read` | roster + cosecha → (databank, identity, note) |
+| `drawdowns.py` | Drawdown arithmetic on one sample's daily cumulative P&L: the distance below the running peak. | imported | daily curve → series |
+| `exits.py` | P&L and expectancy by exit reason as a contract result: tabs «IS» and «OOS», each on its own. | imported | harvest rows → result |
+| `harvest.py` | One strategy of a databank's newest cosecha: its daily curve, its trades and its SQX metrics. | imported | disk → dict · sentence |
+| `months.py` | Calendar arithmetic on one sample's daily cumulative P&L: months and years. | imported | daily curve → months, years |
+| `oos2.py` | OOS2 for the Ficha, read from a cosecha that carries it — sealed until 17-19 only for an autonomous agent (`ledger.gate.enforced`). | imported | project, identity → dict · sentence |
+| `pnl.py` | One sample's cumulative P&L: SQX's daily curve, with or without its best trades. | imported | curve, trades → series |
+| `sheet.py` | The Ficha of one strategy as a contract result: tabs «IS» and «OOS», each computed on its own. | imported | harvest rows → result |
+| `tradestats.py` | Trade arithmetic on one sample: starting capital, exits, and the per-trade return and its shape. | imported | trades → numbers |
 
 Test: `python3 tests/test_ui_tearsheet.py` — both routes on
 `harvest/Test_USDJPY_donchianUpperCrossUp_M30/Results/2026-09-28/` (≈0.3 s warm): the three

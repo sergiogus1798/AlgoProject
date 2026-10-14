@@ -11,15 +11,15 @@ snapshots written by hand) stays as the reader of what was archived before.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Names the package; holds no code | — | — |
-| `__main__.py` | Makes `python3 -m core.store` run `cli.main` | `python3 -m core.store …` | — |
-| `cli.py` | The command: `save <project> [--sqx-dir DIR]`, `verify [identity…]`, `audit <project>`, `list`, `open <identity start or strategy name> --out DIR` (the folder unpacked as plain folders, its `.sqx` under the strategy's name; refused when damaged; several hits are listed, never guessed); exit 1 on a survivor without file or a damaged folder | `python3 -m core.store save Test_X` | args → printed |
-| `write.py` | The only writer: `atomic` (temporary, fsync, sealed, rename), `locked` (one writer per cell: every manifest change is read-change-rewrite), `put_sqx`, `add` (one zip per set of tests, never overwritten), `pooled` (equal bytes once per cell, hard-linked into each folder), `step`, `run` | imported | files → `store/<cell>/<name> <identity8>/` |
-| `verify.py` | `check(identity)`: the `.sqx` carries the folder's identity, every file its recorded sha256, nothing unnamed; `stored()` | imported | folder → problems |
-| `extra.py` | What the report folders do not hand over: `population` (the files that are the same for every strategy, split into a zip of their own), `trades` (the strategy's and its sisters' trades in every exported databank — other markets, other timeframes — a databank repeating another's trades named in `also`), `sisters` (step 12's `scaling.parquet` rows with each file's identity, and the sisters' rows of every report table), `neighbours` (step 13's T1 table cut to the strategy) | imported | raw, crosstf, reports → folders to zip |
-| `late.py` | What steps 13-20 leave outside the report folders: `mothers` (identity a task gave a strategy -> the one it is stored under, from every export's `lineage.csv`), `names`, `cut`, `exports` (an export's sub-folders: MC simulations, SPP runs, WFM cells), `variants` (step 16.5's batch and the studies read on it), `leftovers`, `unpaired` | imported | raw, reports, variants → folders to zip |
-| `audit.py` | `held` / `missing(project)`: what a project left on disk that no stored strategy's zip holds (`FALTA`, exit 1) and what vouches for no stored strategy (`ajeno`) | `python3 -m core.store audit Test_X` | project folders → printed |
-| `save.py` | `project(name, sqx_dirs)`: every gate survivor of a project with its studies, trades everywhere, sisters, cosecha rows, cost card and each step's verdict; `unsaved(name)` for the retire guard | imported | reports, harvest, autopilot → store |
+| `__init__.py` | The strategy store: one folder per strategy that passed the gate, one file per set of tests. | — | — |
+| `__main__.py` | Makes `python3 -m core.store` run `cli.main`. | `python3 -m core.store …` | — |
+| `audit.py` | Whether everything a project left on disk is in the store: each folder in some zip, or ignored by name. | `python3 -m core.store audit Test_X` | project folders → printed |
+| `cli.py` | The store's command: save a project's survivors, verify what is stored, list it, open one. | `python3 -m core.store save Test_X` | args → printed |
+| `extra.py` | What the report folders do not hand a stored strategy: its trades everywhere, its scaled sisters, and which files are the population's. | imported | raw, crosstf, reports → folders to zip |
+| `late.py` | What steps 13 to 20 leave outside the report folders: the rest of each export, and the variant batch. | imported | raw, reports, variants → folders to zip |
+| `save.py` | Save a project's gate survivors into the store: the .sqx once, then one file per set of tests. | imported | reports, harvest, autopilot → store |
+| `verify.py` | Whether a stored strategy is whole: its file carries its identity and every file its recorded hash. | imported | folder → problems |
+| `write.py` | Write into a strategy's folder so that a cut leaves it as it was or as it will be, never half. | imported | files → `store/<cell>/<name> <identity8>/` |
 
 ## On disk
 

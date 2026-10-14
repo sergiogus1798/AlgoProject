@@ -9,18 +9,18 @@ and reconciles the rebuild against SQX's own numbers before anything uses it. Co
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `clock.py` | Naive feed-clock times to UTC; the server day an instant falls in; when a server day ends. `EETUS` = New York + 7 h; `reclock` re-stamps bars from one feed clock to another | imported | times, zone → UTC, day labels |
-| `paths.py` | One strategy's equity minute by minute: realised plus each open position at the minute's worst wick, best wick and close, its round-turn commission charged from the entry (`entry_commission` reads it off the asset card) | imported | trades + M1 → arrays |
-| `closecurve.py` | A whole population of one feed and one segment: point value and commission measured from its own same-day trades, every strategy's close-to-close daily P&L on the feed's days and its lowest-equity curve to reconcile, in parallel; the asset's day closes. What `studies/screening/snoopingScreen` and `studies/closing/blindJoint` read | imported | trades + M1 → days × N |
-| `days.py` | The minute path cut into server days: closed P&L, floating at the day's end, the day's low and high against its opening equity, and `low_open` — the low over the minutes a position was open, the only low SQX's curve samples | imported | path, zones → day table |
-| `blocks.py` | The same low and high per 5-minute block on a UTC grid, and a combination's joint daily low and high from them | imported | path → float32 arrays |
-| `excursions.py` | Each trade's MAE and MFE rebuilt from the wicks, and the licence: does the rebuild match SQX's own columns | imported | trades + M1 → per trade, verdict |
-| `stopexit.py` | A stop-loss exit as it happened: `retime` moves it from the bar's open, where SQX stamps it, to the M1 minute that reached its price; `fills` puts each trade's own exit price into its rebuilt MAE/MFE | imported | trades + M1 → trades, excursions |
-| `sqxcurve.py` | SQX's daily curve — each day's **lowest** equity — per segment, legs and warm-up handled; a known answer, never P&L | imported | `equity.parquet` → frame |
-| `matrix.py` | Per-strategy series stacked to days × N (0 inside history, NaN outside), monthly sums, a segment slice (days only: a segment's months are summed from its own days, a month-indexed frame is refused) | imported | series → frames |
-| `reconcile.py` | The rebuild's daily lowest equity against SQX's own curve, day by day: exact share, largest gap, verdict | imported | two series → dict |
-| `universe.py` | A pool's universe: sources, one M1 read per feed, rebuild, reconciliation (a member that fails is excluded, never kept silently), daily and monthly matrices in EET, server-day tables and M5 blocks per firm clock | imported by the command | pool → cache folder |
-| `store.py` | The universe cache: folder named by pool hash, config fingerprint **and** `code()` — eight hex characters over the bytes of every `.py` of `equity/` and `inputs/` — write and load. A change to the builder's source gets a new folder (OPEN #104-1; 🔬 2026-10-05: a stale universe had moved a stage-A P(pass) from 0.338 to 0.340). ⚠ what those files import from outside (`core.assetdata`, `core.barstore`, the bars) is not in the key | imported | frames → files |
+| `blocks.py` | M5 floating-equity blocks per member, and a combination's joint day extremes (contract M). | imported | path → float32 arrays |
+| `clock.py` | Naive feed-clock times to UTC, and the day a UTC instant belongs to in any server clock. | imported | times, zone → UTC, day labels |
+| `closecurve.py` | A population's close-to-close daily P&L on its feed's own days, rebuilt from trades and M1. | imported | trades + M1 → days × N |
+| `days.py` | One row per server day from a minute path, and the daily P&L it implies (contract D). | imported | path, zones → day table |
+| `excursions.py` | Per-trade MAE/MFE rebuilt from M1 wicks, and the check that licenses the rebuild (§14.2). | imported | trades + M1 → per trade, verdict |
+| `matrix.py` | Per-strategy daily P&L series stacked into day and month matrices, and a calendar segment slice. | imported | series → frames |
+| `paths.py` | Minute-by-minute floating and realised equity from trades and M1 bars (contract P). | imported | trades + M1 → arrays |
+| `reconcile.py` | The rebuild checked against SQX's own daily curve: each day's lowest equity, day by day. | imported | two series → dict |
+| `sqxcurve.py` | SQX's own daily curve — each day's LOWEST equity, floating included — per policy segment. | imported | `equity.parquet` → frame |
+| `stopexit.py` | A stopped trade's real exit minute: SQX stamps a stop-loss exit at the OPEN of the bar it was hit in. | imported | trades + M1 → trades, excursions |
+| `store.py` | Where a built universe lives on disk, and reading a finished one back. | imported | frames → files |
+| `universe.py` | Pool -> per-member equity, reconciled against SQX, cached under its pool hash and config fingerprint. | imported by the command | pool → cache folder |
 
 ## Traps
 - **SQX's daily curve is each day's LOWEST equity, not a mark to market** (🔬 2026-09-30, 100 % of

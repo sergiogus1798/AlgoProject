@@ -18,7 +18,10 @@ Each folder containing `.py` files carries a `README.md` with one table:
 |---|---|---|---|
 
 Every `.py` also opens with a **one-line module docstring**. A future session reads a twenty-line
-README instead of opening five files. `checks.py` fails if a `.py` is missing from its folder's table.
+README instead of opening five files. The columns «file» and «what it does» are **generated** by
+`tools/readmetable.py` from each module's docstring (its first paragraph, so keep it one line): edit the
+docstring, never the cell. «run it» and «in → out» stay hand-written and are kept as they are. `checks.py`
+fails ("readme tables") if the table differs from what the generator writes.
 
 ## 3. Google-style docstrings and type hints
 

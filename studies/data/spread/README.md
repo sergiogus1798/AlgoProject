@@ -16,19 +16,19 @@ core.tickfile ─▶ inputs ─▶ measure ─▶ verdict (constancy, model ◀�
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `asset.py` | One asset's spread report as the contract's data: the proposal, by year, by hour, the model, the tail. | imported | tables → result |
+| `band.py` | The daily spread as a curve of price: its mean and its quantile band, for the MC Retest's spread range. | imported | days → curves |
+| `bands.py` | The spread band of each asset: its daily mean spread as a curve of price, with a 2.5–97.5 % band for the MC Retest. | `python3 -m studies.data.spread.bands [--symbol S]` | ticks → `spread/<tick feed>/band.{json,html,md}`, `band_days.parquet`, `band_summary.json` |
+| `fundedswap.py` | The worst swap of the funded accounts, side by side, read live from each firm's MT5 server. | imported | asset → {long, short} |
+| `inputs.py` | What the spread study reads: its knobs, a tick feed's minutes, Dukascopy's daily volatility. | imported | files → frames |
+| `measure.py` | The spread as measured: per minute, per day beside Dukascopy's volatility, per year, per hour. | imported | minutes → tables |
+| `model.py` | The ways the daily relative spread can be reconstructed where Darwinex has no ticks. | imported | days → params → days |
+| `onboard.py` | Onboard an asset: its segments, spreads, slippage, commission, swap and MC Retest range, by the owner's rules. | `python3 -m studies.data.spread.onboard --symbol S --kind index\|metal\|forex [--write] [--spread-only]` | symbol → `assets/symbols/<S>.yaml` |
+| `registry.py` | What SQX's own data registry says about a symbol: its feeds, its instrument, its range, every broker's swap. | imported | symbol → facts |
+| `scan.py` | Step 4's spread study: each asset's real Darwinex spread, whether it is constant, and what SQX should carry. | `python3 -m studies.data.spread.scan [--symbol S]` | ticks + bars → `spread/<tick feed>/{daily,hours,minutes}.parquet, summary.json, spread.*` |
+| `tooltips.py` | One sentence per config.yaml knob of the spread study, for the window's configuration drawer. | imported | — |
+| `verdict.py` | Whether the relative spread is constant, which model reconstructs it best, and what to declare in SQX. | imported | tables → decision |
 | `config.yaml` | Every knob; the owner's two numbers are `ledger:` placeholders | — | — |
-| `tooltips.py` | One Spanish sentence per knob, for the window's drawer | imported | — |
-| `inputs.py` | The knobs, a tick feed's minute table cached against the `.dat`'s stamp, Dukascopy's daily volatility | imported | files → frames |
-| `measure.py` | The spread per day beside the volatility, per year, per hour, per weekday × hour | imported | minutes → tables |
-| `model.py` | **The four models** of the daily relative spread, one contract and one registry | imported | days → params → days |
-| `verdict.py` | Constancy against the tolerance, the two-way validation, the model chosen, the reconstruction and the proposal per segment | imported | tables → decision |
-| `asset.py` | One asset's report as the contract's data | imported | tables → result |
-| `scan.py` | **Step 4's command** | `python3 -m studies.data.spread.scan [--symbol S]` | ticks + bars → `spread/<tick feed>/{daily,hours,minutes}.parquet, summary.json, spread.*` |
-| `fundedswap.py` | The worst swap of FTMO and Hantec per side, read live from each firm's MT5 server (`mt5.live`), in SQX points (forex, through the SQX instrument's pointValue × tickStep) or % annual on each firm's own notional — the onboard's `swap: funded_worst` (owner, 2026-10-01) | imported | asset → {long, short} |
-| `band.py` | The daily mean spread as a power law of price, `a · price^b`, for the mean (least squares) and each quantile (quantile regression, rearranged so they never cross); the band's calibration by year | imported | days → curves |
-| `bands.py` | **The band's command**, one report per asset; the extreme quantiles are the MC Retest's RandomizeSpread Min and Max | `python3 -m studies.data.spread.bands [--symbol S]` | ticks → `spread/<tick feed>/band.{json,html,md}`, `band_days.parquet`, `band_summary.json` |
-| `registry.py` | What SQX's own `data.db` says of a symbol, read-only: its DukasM1 and DarwTick feeds, instrument, data range, and the mean swap of every broker's variant | imported | symbol → facts |
-| `onboard.py` | **The asset onboarding command** (`/asset-onboard`): plans segments, spreads, slippage, commission, swap and triple swap by the owner's rules (the MC Retest range is not written: null bounds resolve in `core.assetranges`) in `onboard:`; with `--write`, the one module here that writes `assets/`, through `core.assetwrite` | `python3 -m studies.data.spread.onboard --symbol S --kind index\|metal\|forex [--write] [--spread-only]` | symbol → `assets/symbols/<S>.yaml` |
 
 ## Decisions the code carries, and whose they are
 

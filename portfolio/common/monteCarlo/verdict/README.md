@@ -12,10 +12,10 @@ be cross-examined.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `confidence.py` | Whether the sample can hold up a number | imported | N, q → tier |
-| `significance.py` | **Family E.** Probabilistic Sharpe Ratio against the same-footprint random trader's own Sharpe, not zero (OPEN.md #71), and its cross-check against the bootstrap — computed by `run._family_e()` on the out-of-sample trades alone, never the build (owner, 2026-09-29): NaN and a `data`/`oos_thin` veto below `confidence.MEAN_PROVISIONAL` OOS trades, never a number borrowed from IS | imported | P&L (OOS only) → PSR |
-| `gates.py` | **Every threshold in the study.** What vetoes, what only warns | imported | result → flags |
-| `scoring.py` | Sub-scores, composite, verdict tier and the binding constraint | imported | result → verdict |
+| `confidence.py` | Whether the sample can hold up a number. Every statistic in the report carries one of these. | imported | N, q → tier |
+| `gates.py` | What disqualifies a strategy. Every threshold in the study lives here and nowhere else. | imported | result → flags |
+| `scoring.py` | How good a strategy is once nothing has vetoed it: five sub-scores, then one composite. | imported | result → verdict |
+| `significance.py` | Family E: could this edge be zero, given how many trades there are and how they are shaped? | imported | P&L (OOS only) → PSR |
 
 ## Contracts and traps
 

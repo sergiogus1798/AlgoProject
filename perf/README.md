@@ -5,10 +5,10 @@ para que dos fechas se puedan comparar.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | makes `perf` a regular package, so it beats the system `perf` module Ubuntu's linux-tools puts on the path (gorilla) | — | — |
-| `catalogue.py` | measures every target, appends it, judges it against last time | `python3 -m perf.catalogue` | registry → rows in `history.csv` |
-| `store.py` | the catalogue files, the commit and the machine's load at the time | imported | rows → CSV under the data root |
-| `verdict.py` | what counts as a regression, and what is only noise | imported | history → one verdict per target |
+| `__init__.py` | The cost catalogue: what the project costs in time, memory and disk. | — | — |
+| `catalogue.py` | Measure every target, append it to the catalogue, and say what got worse since last time. | `python3 -m perf.catalogue` | registry → rows in `history.csv` |
+| `store.py` | The catalogue itself: one appended row per measurement, and the only way anything reads it. | imported | rows → CSV under the data root |
+| `verdict.py` | What counts as a regression. Reads the catalogue, judges it, and computes nothing itself. | imported | history → one verdict per target |
 | `config.yaml` | every tunable: repeats, thresholds, worker counts, sample data | read | — |
 
 Subfolders: `inputs/` what is measured · `measure/` how it is measured · `disk/` what the data root

@@ -27,16 +27,16 @@ It applies to projects created from then on: nothing here touches an existing `p
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | The package's one-line purpose | imported | — |
-| `lists.py` | The fixed vocabularies themselves — precisions, engines, order types, cross-checks, money-management methods, commissions, swap types, weekdays, spreads — hand-copied from the donor and SQX's own settings page | imported | — → constant lists |
-| `options.py` | Per value: its type, its fixed options (SQX's precisions and engines, the donor's order types and cross-checks, `sqx.variants.scale.MINUTES` for CrossTF, the spans a section may run on, the WFM enums) or why it is locked | imported | file, path, value → spec |
-| `sections.py` | The four files as sections: every leaf with its spec and its comment, and each branch's comment (`groups`) | imported | assets/ → sections |
-| `write.py` | One value checked against its spec and coerced to the form the file holds, then `assetwrite.set_value` | imported | file, path, value → written |
-| `studyhelp.py` | The Spanish sentence under each study section (WFC aside: CSCV, gate, false positives, surfaces, WFM) | imported | — → text |
-| `studies.py` | The study values of WFC and CSCV: which file and branch each section shows (`PARTS`), their spec (ranges, CSCV's rules/score/period, the split names from `engines.variants.panel`), and a `ledger:` placeholder turned into the threshold row's value and `why` | imported | study files → fields |
-| `ranges.py` | The open range of every number the window edits in a study file, the ledger rows of encargo 48 §2 included | imported | file, key → (min, max) |
-| `studywrite.py` | One study value written with `assetyaml` (comments kept, byte-identical round trip checked 2026-09-28); a number keeps its file's type (a count int, a share float), odd CSCV blocks and `min_levels > max_levels` refused, strata not summing 1 and a variants minimum over its cap (or the cap under it) only warned; a changed threshold stamped `set_by: dueño`, `set_on` today and a proposed `why` naming the old value (not nesting the old why); a `why` is written as typed text, never through YAML; `reload` asks the window to re-read after a stamp or a `batch` value, which both sections show | imported | file, path, value → written |
-| `api.py` | `GET /api/sqxconfig`, `POST /api/sqxconfig/value` (422 with the reason on a bad value) | imported | request → JSON |
+| `__init__.py` | Configuración SQX: the settings every new project is built and tested with, read and written. | imported | — |
+| `api.py` | The routes of the Configuración SQX zone: every setting a new project is built with, and its one write. | imported | request → JSON |
+| `lists.py` | The fixed vocabularies of the SQX settings, the ranges a number may take, and why a value is locked. | imported | — → constant lists |
+| `options.py` | What each value of the SQX settings files may hold: its type, its options or range, or why it is locked. | imported | file, path, value → spec |
+| `ranges.py` | (file, last key) -> (min, max) of every number the window edits in a study file; any other is open. | imported | file, key → (min, max) |
+| `sections.py` | The SQX settings as the zone draws them: one section per test or topic, every value typed. | imported | assets/ → sections |
+| `studies.py` | The study files behind the WFC and the CSCV, shown beside _build.yaml's `wfc` and in a CSCV section. | imported | study files → fields |
+| `studyhelp.py` | The Spanish sentence under each study section of the Configuración SQX zone. | imported | — → text |
+| `studywrite.py` | One value of a WFC or CSCV study file written from the window, comments kept, the ledger stamped. | imported | file, path, value → written |
+| `write.py` | One value of the SQX settings written from the window, checked against its spec, comments kept. | imported | file, path, value → written |
 
 ## Contracts and traps
 

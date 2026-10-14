@@ -35,12 +35,12 @@ dict, so the two cannot disagree.
 
 | file | what it does | run it |
 |---|---|---|
-| `run.py` | Puts one stream through all five families and returns the raw result the verdict reads | imported |
-| `load.py` | Everything one run reads, assembled once: the streams, the daily bars, the costs, each strategy's identity, and the stability check | imported |
-| `one.py` | **One strategy as the contract's data**: verdict, seven tabs, warnings, glossary, summary row; `only=` re-runs one sub-test | imported — the window calls it |
-| `many.py` | Every strategy, one process each, and the databank read as one result | imported |
-| `report.py` | The command: every strategy of one databank, to `verdict.csv`, one JSON and one page per strategy, and the databank page. `--strategy` runs `one.run` on that strategy alone and writes only its `estrategias/` JSON and page — never `verdict.csv`, `flags.csv`, `monteCarlo.json` or the manifest; its stability section is still measured on the export's longest strategy, as the population run does | `python3 -m portfolio.common.monteCarlo.report --project XAUUSD --databank Results --asset XAUUSD --day 2026-09-03 [--strategy "Strategy 1.2.3"]` |
-| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
+| `load.py` | Everything one run of the study reads, assembled once: streams, daily bars, costs, identity. | imported |
+| `many.py` | Every strategy of one export through one.run, and the databank read as one result. | imported |
+| `one.py` | One strategy through every family, returned as the contract's data: what the window paints. | imported — the window calls it |
+| `report.py` | Run the Monte Carlo study over every strategy of one databank and write its report. | `python3 -m portfolio.common.monteCarlo.report --project XAUUSD --databank Results --asset XAUUSD --day 2026-09-03 [--strategy "Strategy 1.2.3"]` |
+| `run.py` | Everything one strategy is put through, assembled into the single result the report reads. | imported |
+| `tooltips.py` | One sentence per config.yaml and asset knob, for the config drawer's hover text. | imported |
 | `config.yaml` | Every tunable of the study, grouped by family | edited, or `--set section.key=value` |
 
 `run.py` is the one module allowed to cross every layer — that is what an orchestrator is. Everyone

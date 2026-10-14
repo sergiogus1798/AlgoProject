@@ -16,10 +16,10 @@ about this layer and should be read before changing anything in it.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Names what the package is; holds no code | — | — |
-| `trade_models.py` | **How random trades are drawn.** The registry, the Friday truncation every model gets, the re-cut at the next trade, and the two that randomise placement only — `block_shift` and `regime_strata` | imported | envelope → entries, holds |
-| `free_models.py` | The free-placement family: the three that re-lay the whole run anywhere in the window | imported | envelope → entries, holds |
-| `holdfit.py` | Fits a discrete distribution to the real holds and gaps, and says whether it fits | imported | counts → sampler, goodness |
+| `__init__.py` | Trades re-laid on another market's bars. | — | — |
+| `free_models.py` | The free-placement family: models that lift the whole run and lay it down anywhere in the backtest window. They destroy the regime a trade landed in, its calendar and its clustering all at once, so a low p under any of them cannot be attributed to one of the three — which is why the registry keeps them beside `block_shift` rather than instead of it. | imported | envelope → entries, holds |
+| `holdfit.py` | Fit a discrete distribution to observed holds and gaps, and say whether it fits. | imported | counts → sampler |
+| `trade_models.py` | How a random run's trades are drawn: the study's modelling assumptions, and its alternatives. | imported | envelope → entries, holds |
 
 ## Adding a placement model — three things, and nothing else
 
@@ -103,5 +103,5 @@ which a null can reproduce exactly. `Exit Signal` — 16.6% of trades — is not
     **on purpose** — the owner fixed it as the reference the window sweep is read against — and
     recorded rather than changed.
 - **`holdfit.MIN_HOLD` is 1**: a trade that opens and closes on the same bar is not a trade. Both the
-  sampler and the goodness-of-fit check read their two moments from `holdfit.moments()`, so they
+  sampler and the other callers read their two moments from `holdfit.moments()`, so they
   cannot disagree about which distribution was fitted.

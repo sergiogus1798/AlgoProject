@@ -5,16 +5,16 @@ running instance, so these are safe at any time, including while the owner's GUI
 
 | file | what it does | run it |
 |---|---|---|
-| `dump_project.py` | Render one project as a Markdown pipeline map | `python3 -m sqx.inspect.dump_project <PROJECT> -o /tmp/<PROJECT>.md` |
-| `project_map.py` | Builds each section of that map: databanks, TL;DR, flow, task order, task detail | imported |
-| `project_parts.py` | Reads one task's XML: databanks, conditions, rankings, cross-checks | imported |
-| `index_sqx.py` | Index every `.sqx` in the configured pools by inner-XML hash | `python3 -m sqx.inspect.index_sqx out.json` |
-| `keep_tasks.py` | Emit a variant of a `.cfx` keeping only the chosen task types | imported by `sqx.projects.builder` (`keep`) |
-| `feeds.py` | The clock SQX stamps a feed's bars and trades in (`EET`, `Asia/Jerusalem`, `EETUS`…), read-only from its data registry | imported (`sqx.inspect.feeds.timezone(feed)`) |
-| `instruments.py` | List the spread, commission, point value and swap every project has configured | `python3 -m sqx.inspect.instruments [--json]` |
-| `project_health.py` | Every project's broken task references, version drift and mangled text fields | `python3 -m sqx.inspect.project_health [--json]` |
-| `vocabulary.py` | What one install can express: its blocks, its random groups, and what each pools | `python3 -m sqx.inspect.vocabulary [TERM] [--role ROLE] [--diff ROLE] [--snapshot]` |
-| `template_check.py` | Whether the strategies a project built really carry the blocks its template fixes | `python3 -m sqx.inspect.template_check [PROJECT ...]` |
+| `dump_project.py` | Render a project.cfx as a readable Markdown pipeline map. Reading never touches SQX state. | `python3 -m sqx.inspect.dump_project <PROJECT> -o /tmp/<PROJECT>.md` |
+| `feeds.py` | The clock a feed's bars and trades are stamped in, as SQX's own data registry declares it. | imported (`sqx.inspect.feeds.timezone(feed)`) |
+| `index_sqx.py` | Index every .sqx on this machine by the hash of its inner strategy XML. | `python3 -m sqx.inspect.index_sqx out.json` |
+| `instruments.py` | List the trading costs every project has configured, per instrument. | `python3 -m sqx.inspect.instruments [--json]` |
+| `keep_tasks.py` | Produce a variant of a project.cfx keeping only tasks of the given types. | imported by `sqx.projects.builder` (`keep`) |
+| `project_health.py` | Report what is wrong with every project on an install: broken archives, drift, mojibake. | `python3 -m sqx.inspect.project_health [--json]` |
+| `project_map.py` | Turn a parsed project.cfx into the sections of its Markdown pipeline map. | imported |
+| `project_parts.py` | Read the pieces of one task's XML: databanks, conditions, rankings, cross-checks. | imported |
+| `template_check.py` | Check whether the strategies a project built really use the blocks its template declares. | `python3 -m sqx.inspect.template_check [PROJECT ...]` |
+| `vocabulary.py` | What one SQX install can express: its blocks, its random groups, and what each pools. | `python3 -m sqx.inspect.vocabulary [TERM] [--role ROLE] [--diff ROLE] [--snapshot]` |
 | `strategymeta/` | One strategy's metadata as fields — direction, entry/exit conditions with values, orders and stops, money management, Friday close, the last test's and the task's costs, today's asset card hash | `python3 -m sqx.inspect.strategymeta <file.sqx> [--cfx <project.cfx>]` |
 
 `instruments.py` is what keeps `assets/symbols/*.yaml` honest: it reports what SQX carries today,

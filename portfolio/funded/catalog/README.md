@@ -7,7 +7,7 @@ Which firms: the register `AlgoData/funding/firms.yaml` (`firms.py`) — active 
 buying universe and the studies; candidates are followed while the `/firm-onboard` protocol runs.
 Today Hantec Trader and FTMO active, FundedNext and FundingPips candidates. Encargo 33 reads it.
 
-Where it lives (`core.datapaths.funding_dir()`, never in the repo):
+Where it lives (`core.paths.funding_dir()`, never in the repo):
 
 | path | what |
 |---|---|
@@ -40,17 +40,17 @@ value; a trailing `?` says it is unconfirmed. Discounts are ignored: prices are 
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `schema.py` | the tables, their keys, the connection | — | → `funding.sqlite` |
-| `hantec.py` | Hantec's catalogue from `purchasechallenge?handler=InitState` | — | JSON → rows |
-| `ftmo.py` | FTMO's catalogue from the `ftmoPricingTable` inline in its home page | — | HTML → rows |
-| `fundednext.py` | FundedNext's CFD catalogue from the `packages` in its home page's Next.js payload; EAs only below 50k | — | HTML → rows |
-| `manual.py` | a firm's typed catalogue (`manual/<firm>.yaml`), for sites that block reading | — | YAML → rows |
-| `firms.py` | the register: which firms are followed and which are active | — | YAML → ids |
-| `overlay.py` | loads a firm's rules file and writes its known values over the scraped rows | — | YAML → rows |
-| `combos.py` | every add-on subset of every plan, priced, with its effect on the rules (`EFFECTS`) | — | rows → combos |
-| `store.py` | versioned write with change log | — | rows → tables |
-| `refresh.py` | the whole refresh, per firm, printing what changed, then the CSV export | `python3 -m portfolio.funded.catalog.refresh [firm…]` | sites + rules → db |
-| `show.py` | a firm's plans, or one plan with add-ons: price, rules, stages, compendium | `python3 -m portfolio.funded.catalog.show hantec:express:25000:USD MAX_DRAWDOWN PROFIT_TARGET` | db → stdout |
+| `combos.py` | Every add-on combination of every plan, priced, with the rules it leaves in force. | — | rows → combos |
+| `firms.py` | The firms register: which prop firms the project follows, and whether each is in the studies (`AlgoData/funding/firms.yaml`). | — | YAML → ids |
+| `ftmo.py` | FTMO's catalogue, read from the pricing table embedded in its home page, as normalised rows. | — | HTML → rows |
+| `fundednext.py` | FundedNext's CFD catalogue, read from the `packages` its home page carries in the Next.js payload. | — | HTML → rows |
+| `hantec.py` | Hantec Trader's catalogue, read from the public JSON its purchase page loads, as normalised rows. | — | JSON → rows |
+| `manual.py` | A firm whose site cannot be read by code: its catalogue typed in `AlgoData/funding/manual/<firm>.yaml`, as normalised rows. | — | YAML → rows |
+| `overlay.py` | The curated rules file of a firm: loaded as compendium rows and laid over the scraped rows. | — | YAML → rows |
+| `refresh.py` | Re-read every firm's site and rules file into the funding database and print what changed. | `python3 -m portfolio.funded.catalog.refresh [firm…]` | sites + rules → db |
+| `schema.py` | The funding database's tables, keys and connection — one SQLite file under the data root. | — | → `funding.sqlite` |
+| `show.py` | Print a firm's plans, or one plan with chosen add-ons: its price and every rule in force. | `python3 -m portfolio.funded.catalog.show hantec:express:25000:USD MAX_DRAWDOWN PROFIT_TARGET` | db → stdout |
+| `store.py` | Write one firm's rows into the versioned tables, logging every added, removed or changed value. | — | rows → tables |
 
 ## Adding a firm
 

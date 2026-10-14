@@ -15,9 +15,9 @@ AlgoData/portfolio/bank/<stamp>_<label>/ ─▶ tables ─▶ choose ─▶ run 
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `tables.py` | The bank runs on disk, newest first, synthetic ones left out; per plan, the table to use: the one of the plan's **own** portfolio (`manifest.paths.source.plan`) beats a newer one drawn from another plan's | imported | bank folders → plan → rows |
-| `choose.py` | `GATES`, in order: own portfolio → verdict favourable → OOS edge > 0 → cash outlay p90 within the budget → EV(h decides) > 0 → EV above the monkey. The choice is the highest EV among the rows that pass all; `tie` when the runner-up is inside 2 standard errors; `ranks` gives each row's rank at every `h` | imported | rows, owner → decision |
-| `run.py` | **THE COMMAND**. Refuses when the tables were made under different owner inputs or gaps, or under knobs that are not the committed ones; prints AJUSTADO when the verdict was ignored or the source run was relaxed; lists the readings it did not choose (`OPEN`) | `python3 -m portfolio.funded.decide.run [--bank <folder> …] [--ignore-verdict]` | bank tables → stdout, `AlgoData/portfolio/bank/decisions/<stamp>.json` |
+| `choose.py` | Encargo 33 §3.5 as a rule: which rows of the bank tables may be bought, why the others may not, and the one chosen. | imported | rows, owner → decision |
+| `run.py` | THE COMMAND: which challenge to buy — the bank tables read by encargo 33 §3.5, the decision in Spanish with its cost beside its gain. | `python3 -m portfolio.funded.decide.run [--bank <folder> …] [--ignore-verdict]` | bank tables → stdout, `AlgoData/portfolio/bank/decisions/<stamp>.json` |
+| `tables.py` | The bank tables on disk: every run of `funded.sim.run`, and per plan the latest one — its own portfolio's first. | imported | bank folders → plan → rows |
 
 ## What it does not decide (listed in every output, never defaulted)
 

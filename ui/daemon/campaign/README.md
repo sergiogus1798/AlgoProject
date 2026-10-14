@@ -13,9 +13,9 @@ api ─▶ shelf ─▶ workflow.json, madres/, WFM/, structural/, atrCalculator
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Package marker, one docstring | imported | — |
-| `api.py` | `GET /api/campaign/list`, `show?workflow`, `open?workflow&strategy`, `extra?workflow&key`; a failure is a Spanish sentence, never a 500 | imported | request → JSON |
-| `shelf.py` | `workflows()` (newest first), `show(name)` (funnel, steps with seconds, strategies, `not_kept`), `opened(name, strategy)` (the MOTHER's archived version plus `label`, `banner`, `extras`), `extra(name, key)` (a kept contract JSON as `/api/result` serves it) | imported | folders → dicts |
+| `__init__.py` | The campaign's saved workflows: listed, described, and one strategy opened with all its results. | imported | — |
+| `api.py` | The campaign's four routes: `/api/campaign/list`, `show`, `open` and `extra` — files read, nothing run. | imported | request → JSON |
+| `shelf.py` | The campaign's folders as the window reads them: workflows, their strategies and the results the archive cannot pair. | imported | folders → dicts |
 
 ## Contracts and traps
 

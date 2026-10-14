@@ -25,20 +25,20 @@ by it and by `run.py --days`.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `account.py` | One purchased account from its first day to its end: the challenge, then the funded stage and its payouts — the readable reference. | imported | one path, start → life |
+| `bank.py` | The bank's cash over one path set: accounts one after another per draw — the reference walk, and the numba run. | imported | paths, plan, risk, terms → matrix |
+| `frompool.py` | The path set of a funded run's chosen portfolio: its verdict's members, the Monte Carlo that decided stage B, the edge recentred on OOS. | `python3 -m portfolio.funded.sim.frompool --run <run> --horizon N --n-paths N --edge-from oos1,oos2 --set …` | funded run → `AlgoData/portfolio/bank/paths/<run>_s<seed>.npz` |
+| `haircut.py` | The haircut h: a path set with a fraction of its edge taken away, and the h at which the bank breaks even. | imported | paths, h → paths |
+| `inputs.py` | What a bank run is given: the config with the owner's inputs checked, and the path set. | imported | file → arrays, meta |
+| `kernel.py` | The bank walk in numba: accounts bought one after another on each draw's path, cash flows per draw. | imported | arrays → matrix |
+| `measures.py` | What a batch of bank draws says: the EV three ways with its interval, the odds per phase, the cash drawdown, the rule that fails most. | imported | matrix → row |
+| `monkey.py` | The monkey's path set: the same days, frequency, holding and risk with no edge — what the plan is worth as a lottery. | imported | paths → paths |
+| `plans.py` | A plan as the bank simulation reads it: the rule machine's plan, an add-on set applied, and the funded stage's cash terms. | imported | plan key, options → plan, terms |
+| `report.py` | The bank table as the owner reads it: the Spanish text the command prints and the study-contract result. | imported | rows → text, dict |
+| `run.py` | THE COMMAND: the bank table of every universe plan on one path set, against the monkey, with the curve EV(h). | `python3 -m portfolio.funded.sim.run --paths <set.npz> --study <id> --symbol <A+B> --segment <seg> --set owner.eurusd=… …` | path set → `AlgoData/portfolio/bank/<stamp>_<label>/` |
+| `table.py` | Encargo 33 §4 as data: per plan and re-buy policy the best risk per phase at the deciding haircut, the monkey, the curve EV(h), and each add-on set's ΔEV. | imported | paths, cfg → rows |
+| `trials.py` | The bank search's ledger row: every plan × add-on set × risk-per-phase combination it scored. | imported | search → row |
 | `config.yaml` | Every knob. A `null` under `owner:` or `gaps:` is the owner's decision: the command refuses until it is given | — | — |
-| `inputs.py` | The config with `--set` applied, the list of owner inputs still missing (Spanish), and the path set read from its `.npz` (its `source` included) | imported | file → arrays, meta |
-| `plans.py` | A plan as the simulation reads it: `catalog.plan()` + one add-on set from the `combos` table + the funded stage's cash terms (split, payout days, refund) with every unconfirmed reading flagged; `Gap` names what the catalogue lacks; the risk-per-phase grid | imported | plan key, options → plan, terms |
-| `frompool.py` | **The real path set**: the members and risk of a funded run's `verdict.json`, stage B's deciding flavour and block length at the bank's horizon, the edge moved to the pooled edge of `--edge-from`; `source` in the `.npz` says all of it | `python3 -m portfolio.funded.sim.frompool --run <run> --horizon N --n-paths N --edge-from oos1,oos2 --set …` | funded run → `AlgoData/portfolio/bank/paths/<run>_s<seed>.npz` |
-| `haircut.py` | `h` of the edge taken off every closing day; the break-even `h` of a curve | imported | paths, h → paths |
-| `monkey.py` | The zero-edge twin of a path set (`MODELS`: `demean`) | imported | paths → paths |
-| `account.py` | **The reference**: one account from purchase to end — `machine.challenge`, then the funded stage and its payouts — in plain Python | imported | one path, start → life |
-| `kernel.py` | The same walk in numba over every draw (`prange`), one row of `COLS` per draw | imported | arrays → matrix |
-| `bank.py` | The reference walk of one draw (`walk`), the numba run (`simulate`), the denied-payout and firm-closure draws (`hazards`) | imported | paths, plan, risk, terms → matrix |
-| `measures.py` | A matrix of draws as one flat row: EV with its Monte Carlo standard error (`ev_se`) and 90 % interval, per purchase / dollar / month, fees paid, payouts received, refunds, the worst draw (`net_min`), P per phase, P(first payout), purchases to it, payouts and life per funded account, cash drawdown p50/p90/p99, the rule that fails most | imported | matrix → row |
-| `table.py` | Every universe plan × add-on set × re-buy policy: the risk per phase searched at the deciding `h`, the monkey at its best risk, the curve EV(h), each add-on's ΔEV | imported | paths, cfg → rows |
-| `report.py` | The Spanish printed tables, the two re-buy policies side by side with their error, the decision-shaped sentence, the study-contract result | imported | rows → text, dict |
-| `trials.py` | The ledger row: every configuration scored, `score_unit: ev_bank_usd` | imported | search → row |
-| `run.py` | **THE COMMAND** | `python3 -m portfolio.funded.sim.run --paths <set.npz> --study <id> --symbol <A+B> --segment <seg> --set owner.eurusd=… …` | path set → `AlgoData/portfolio/bank/<stamp>_<label>/` |
 
 ## The path set (`inputs.paths`)
 

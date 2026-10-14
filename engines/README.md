@@ -15,6 +15,6 @@ engines and never another study — that is the rule this folder exists to keep.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Names what the package is; holds no code | — | — |
+| `__init__.py` | How things are computed, shared by the studies. | — | — |
 
 Nothing here says whether a strategy is good. What a number means is the study's job.

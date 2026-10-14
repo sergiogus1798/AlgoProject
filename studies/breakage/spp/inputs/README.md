@@ -2,8 +2,8 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `config.py` | Reads `config.yaml`, locates one SPP export under the data root, and finds its IS/OOS pair | project, databank → settings, path |
-| `export.py` | Reads the wide `spp.parquet` of an SPP export: one strategy's grid, the parameters it permuted, the original tuple, the grid with θ₀ left out for aggregates, and its own `trades.parquet` when one was exported | export folder → frame, names, original tuple, trades |
+| `config.py` | Read config.yaml and find the SPP export on disk. | project, databank → settings, path |
+| `export.py` | Read an SPP export: the wide permutation table, the parameters it permuted, and the origin. | export folder → frame, names, original tuple, trades |
 
 Holds nothing computed. Every number in this study comes from `model/` or `verdict/`.
 

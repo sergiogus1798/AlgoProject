@@ -6,13 +6,13 @@ nothing — the gates and the score are `verdict/` — and computes nothing but 
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Names what the package is; holds no code | — | — |
-| `words.py` | Every fired check as a sentence with its number, the metric labels and units, and why the verdict is what it is | imported | flag → text |
-| `shapes.py` | A stored histogram and its percentile table as a `distribution`, a model table, an IS/OOS pair, a cone; shares read in percent | imported | result parts → blocks |
-| `headline.py` | The verdict block, the verdict tab (what failed, at a glance, sub-scores) and the summary row verdict.csv carries | imported | result + verdict → tab |
-| `order.py` | Families A and B: order and composition luck | imported | result → tab |
-| `regime.py` | Families C, D and E: execution, regime, significance | imported | result → tab |
-| `explorer.py` | The explorer tab — every sub-test × statistic behind two selectors, each sub-test's cone — the method tab and the glossary | imported | result → tab |
+| `__init__.py` | The Monte Carlo result read as the contract's blocks. | — | — |
+| `explorer.py` | The explorer tab: any sub-test's distribution of any statistic, chosen by two selectors. | imported | result → tab |
+| `headline.py` | The verdict tab: the call and why, what failed, the backtest at a glance, and the sub-scores. | imported | result + verdict → tab |
+| `order.py` | Families A and B as tabs: order luck (the same trades reordered) and composition luck. | imported | result → tab |
+| `regime.py` | Families C, D and E as tabs: execution, regime, and whether the edge could be zero. | imported | result → tab |
+| `shapes.py` | This study's histograms and percentile tables turned into contract blocks, in reading units. | imported | result parts → blocks |
+| `words.py` | The words the owner reads: every fired check as a sentence, and why the verdict is what it is. | imported | flag → text |
 
 The explorer tab carries every combination; a static page draws only the selectors' defaults
 (`core/study/render/page.shown`), which keeps a strategy's page near the old 0.6 MB.

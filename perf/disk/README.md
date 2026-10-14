@@ -4,12 +4,12 @@ Read-only over `~/Desktop/AlgoData`. Nothing here deletes, moves or rewrites any
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `report.py` | runs the four below, appends them, and **exits non-zero when a budget broke** | `python3 -m perf.disk.report` | data root → `disk.csv`, `budgets.csv`, `duplicates.csv`, `formats.csv`, `reclaimable.csv` |
-| `budget.py` | each branch against its ceiling from `config.yaml`, the whole root against its own, and the system temp partition (`/tmp`) against `disk.tmp_max_share` | imported | branch rows → verdicts |
-| `retention.py` | what could be deleted and how much it would free, by four rules | imported | branch rows → candidates |
-| `inventory.py` | one row per branch: bytes, files, formats, days since last write | imported | data root → branch rows |
-| `duplicates.py` | files that look like copies of each other, by size and head/tail digest | imported | data root → candidate groups |
-| `formats.py` | the same real table as CSV, parquet (snappy and zstd) and feather | imported | sample tables → size and read time |
+| `budget.py` | Is the data root bigger than it is allowed to be? One verdict per branch, and an exit code. | imported | branch rows → verdicts |
+| `duplicates.py` | The same bytes stored twice: what could be deleted without losing anything. | imported | data root → candidate groups |
+| `formats.py` | What the stored format costs: the same real table written four ways, read back timed. | imported | sample tables → size and read time |
+| `inventory.py` | What the data root actually holds: where the bytes are, in what format, and how old. | imported | data root → branch rows |
+| `report.py` | Inventory the data root: where the bytes are, what is over budget, and what could go. | `python3 -m perf.disk.report` | data root → `disk.csv`, `budgets.csv`, `duplicates.csv`, `formats.csv`, `reclaimable.csv` |
+| `retention.py` | What could be deleted and how much it would free. Proposes; never deletes, never moves. | imported | branch rows → candidates |
 
 A duplicate group is a **candidate**, not a verdict: two files matching on size and 64 KB from each
 end are almost certainly the same file, but nothing here confirms it and nothing here deletes it.

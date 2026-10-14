@@ -23,20 +23,20 @@ zone (PortfoliosZone) ─▶ /api/archive/list · /api/archive/show ─▶ detai
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Package marker, one docstring | imported | — |
-| `zone.py` | `PortfoliosZone`: the table of archived strategies (identity only in the tooltip), the chosen one's versions newest first, what the chosen version holds, and «Importar esta versión» emitting `import_requested(identity, version)`; `pick(identity, version)` for a launcher, `reload()` for «Recargar» | imported | archive → table · click → signal |
-| `detail.py` | One version in words: head facts, the studies held by databank, what was not archived and why, the ledger count and the provenance | imported | `/api/archive/show` → HTML |
-| `imported.py` | `ImportedFicha`: F4's ficha subclassed — `open_series(workflow, names, index)` opens a finalist from `/api/campaign/open` (the mother's version, with its «de la madre» banner and `SeriesBar`); — its three reads carry `source=archive` and the version, «Archivar» hidden, every «calcular» answers that nothing is computed, the frozen studies below | imported | a version → the page |
-| `campaign.py` | `CampaignPage`, the rail's «Campaña»: the saved workflows (filter by asset, template or timeframe), the chosen one's funnel and time per step, its strategies; «Abrir en Estrategia» emits `campaign_requested(workflow, names, index)` — one chosen walks the whole workflow from it, several walk those | imported | `/api/campaign/list`, `show` → tables |
-| `series.py` | `SeriesBar`: «◀ anterior · siguiente ▶ · estrategia i de n» over the imported page | imported | index → `step(i)` |
-| `studies.py` | `ArchivedStudies`: the Ficha's IS/OOS, exits and «Contra el subyacente» sheets, «Operaciones» (the trade gallery, every call carrying `source=archive` and the version) and every frozen study and, for a campaign finalist, the «Campaña · paso N» results kept in the workflow folder (steps 17-24), drawn with `ResultView`; a study with no per-strategy result shows the databank's, archived beside it; «Informe de lo que ves» hidden | imported | a version → drawings |
-| `board.py` | `PortfoliosBoard`, what the shell mounts: the module rail (Analizar … Incubación, Archivo), the module page, the databank fixed below in a splitter, the «RAÍZ DE PRUEBA» banner on a test root; `open(module, tab, run)` for `--zone "Portfolios · <Módulo> · <Pestaña> · <run>"` | imported | `/api/portfolios/state` → the zone |
-| `strips.py` | Each module's spec as data: its one-line intro, its selectors and its launchers | imported | — |
-| `modulepage.py` | `ModulePage`: one module — the settings strip, its «Calcular» buttons, the job line and the contract tabs the daemon returns; more than one missing knob goes to its own tab; after a «Calcular la caja» that ended well the bank shows its newest table; a strip of more than three selectors (the bank's five) puts the typed ones on a second row, so the combos read whole and the launcher is not cut | imported | `/api/portfolios/module` → widgets |
-| `calc.py` | `CalcButton`: preflight → (confirmation dialog, default «No») → run → poll the job → repaint; `question()` is that dialog | imported | `/api/portfolios/preflight`, `/run` → a job |
-| `matrix.py` | `Matrix`: the correlation matrix, the number in each cell on one of three discrete colours (plain light-on-dark when no threshold was read); `PairDialog`: one pair's series and measures | imported | a matrix dict → widget |
-| `databank.py` | `Databank`: tabs «Estrategias» (a checkbox per row, mark all / none, «Declarar pool con las marcadas…») and «Carteras» (pools and runs; the chosen row feeds every module), collapsible; a reload keeps the marks and the last thing said | imported | `/api/archive/list`, `/state` → `chosen`, `declared` |
-| `preview.py` | The zone alone in a window, «Importar» opening a standalone ImportedFicha; `--shot DIR` saves the list and the imported page; `--port` points it at a daemon other than `UI_PORT` | `python3 -m ui.desktop.portfolios.preview [--shot DIR] [--identity I] [--version V] [--port N]` | daemon → window / PNGs |
+| `__init__.py` | PORTFOLIOS: the archived strategies, and «Importar» opening one as the Estrategia page shows it. | imported | — |
+| `board.py` | PORTFOLIOS: a rail of modules, each with its strip and result tabs, over one databank that feeds them all. | imported | `/api/portfolios/state` → the zone |
+| `calc.py` | «Calcular»: ask the daemon whether the command may start, confirm when it must, queue it, follow it. | imported | `/api/portfolios/preflight`, `/run` → a job |
+| `campaign.py` | PORTFOLIOS › Campaña: the workflows the campaign saved, each one's funnel, time per phase and strategies. | imported | `/api/campaign/list`, `show` → tables |
+| `databank.py` | The databank at the bottom of PORTFOLIOS: «Estrategias» to tick and «Carteras» to choose — one selection for every module. | imported | `/api/archive/list`, `/state` → `chosen`, `declared` |
+| `detail.py` | What one archived version holds, in words: its studies by databank, what it left out, its provenance. | imported | `/api/archive/show` → HTML |
+| `imported.py` | The Estrategia page of an archived version: F4's ficha, every read on `source=archive`, nothing run. | imported | a version → the page |
+| `matrix.py` | The correlation matrix: one cell per pair, coloured in discrete steps against the threshold in force. | imported | a matrix dict → widget |
+| `modulepage.py` | One rail module of PORTFOLIOS: its settings strip with «Calcular», and below it the result's tabs. | imported | `/api/portfolios/module` → widgets |
+| `preview.py` | PORTFOLIOS alone in a window, «Importar» opening the archived ficha beside it — until the sidebar wires it. | `python3 -m ui.desktop.portfolios.preview [--shot DIR] [--identity I] [--version V] [--port N]` | daemon → window / PNGs |
+| `series.py` | The bar that walks a saved workflow's strategies one by one: «anterior», where you are, «siguiente». | imported | index → `step(i)` |
+| `strips.py` | What each rail module of PORTFOLIOS puts in its settings strip: one line of what it is, selectors, launchers. | imported | — |
+| `studies.py` | Below the imported ficha: the backtest sheet and every study the version froze, each read from the archive. | imported | a version → drawings |
+| `zone.py` | PORTFOLIOS: every archived strategy, its versions, and «Importar» — only from the archive for now. | imported | archive → table · click → signal |
 
 ## Contracts and traps
 

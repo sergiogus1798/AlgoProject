@@ -4,9 +4,9 @@ Mechanics. Nothing here decides anything: it is handed a tuple and it writes it.
 
 | file | what it does | in → out |
 |---|---|---|
-| `rewrite.py` | One `.sqx` into another: new values, new name, identifier stamped inside, inherited fingerprint gone | members, tuple → members |
-| `fabricate.py` | Every row of a plan, written to a folder | plan → files |
-| `stoploss.py` | Adds `SL = X · ATR(20)` to a strategy built without a stop: the entry's `SLPT.None` becomes `ATRBasedValue` and `StopLossCoef1` is declared, so the factory can then move X like any parameter — kept for portfolio sizing (`portfolio/common/construct/inputs/risk.py`); the workflow step that grafted it (24) was deleted 2026-10-11 | portfolio text, X → portfolio text |
+| `fabricate.py` | Write the plan to disk as one .sqx per row. Mechanical; decides nothing and reads nothing back. | plan → files |
+| `rewrite.py` | Write one .sqx into another: new values, new name, no inherited fingerprint. Decides nothing. | members, tuple → members |
+| `stoploss.py` | Add an ATR stop loss to a strategy that has none, as a declared parameter the factory can move. | portfolio text, X → portfolio text |
 
 ## What a rewrite changes, and nothing else
 

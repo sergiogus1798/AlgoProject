@@ -21,15 +21,15 @@ api ─▶ meta.live ─▶ locate.sqx (install → raw/ export → archive) · 
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Names the package; holds no code | — | — |
-| `api.py` | `ROUTER`: `GET /api/strategy/meta`, `/costcurve`, `/stats` (both with an optional `strategy` name, and a `note` saying whose cosecha was borrowed — `tearsheet.borrow`), `POST /api/strategy/archive`; a refusal is `{"error"}`, never a 500 | imported | request → JSON |
-| `locate.py` | The strategy's `.sqx` — the install holding the databank, else an export's copy under `raw/<P>/*/*/strategies/`, else the newest archived version — by identity; the project's `project.cfx` | imported | identity → path, sentence |
-| `meta.py` | E2's fields of the located file (a copy outside the databank folder is read from a temporary folder named as the databank) or of the archived version | imported | path → dict |
-| `costcurve.py` | SQX's daily curve, IS then OOS1 on one axis, with `days` for the year ticks; nets and DD | imported | cosecha rows + trades → curves |
-| `stats.py` | Per sample (IS, OOS1, IS+OOS1 — OOS's curve continued from IS's end, no SQX Sharpe —, OOS2): trades, net, Profit Factor, win rate, DD, Sharpe; the return's mean, std, skew and excess kurtosis in «$/lote» or «$/trade»; and its distribution per unit (USD por lote by default) as a `distribution` block whose percentile row reads «1%»… in $ (`row_unit`) | imported | cosecha rows → dict |
-| `archived.py` | The `source=archive` answers: `load`, `tearsheet`, `harvest_folder`, and `/api/result`, `/api/history`, `/api/matrix` from the frozen view | imported | archive → the live shapes |
-| `archive_write.py` | `archive(project, databank, identity, step, note, *, family, sqx=None) -> Path`: locates the `.sqx` on the install by file read (refusing while SQX runs the project), freezes everything, seals it; moved here from `core/archive/` (D4, 2026-10-04) | imported | a live strategy → `archive/<identity>/<stamp>/` |
-| `archive_view.py` | Captures what the daemon serves today: `runs.result` per study and its population, the matrix row, `harvest.read`, the gate report and sheet | imported | live daemon reads → `view.json` + parquet |
+| `__init__.py` | One strategy as the Estrategia page reads it: metadata, stats, cost curve, archive. | — | — |
+| `api.py` | The Estrategia page's routes: metadata, basic stats, the curve, and «Archivar». | imported | request → JSON |
+| `archive_view.py` | What the window is served today for one live strategy, captured so the archive can serve it again. | imported | live daemon reads → `view.json` + parquet |
+| `archive_write.py` | Freeze one strategy into the archive: its .sqx, its cosecha rows, every study result, its provenance. | imported | a live strategy → `archive/<identity>/<stamp>/` |
+| `archived.py` | The `source=archive` side of every Ficha route: an archived version read back, nothing computed. | imported | archive → the live shapes |
+| `costcurve.py` | One strategy's equity curve: SQX's daily one, IS then OOS1 on one axis. | imported | cosecha rows + trades → curves |
+| `locate.py` | Where one strategy's .sqx and its project.cfx are, by reading files only — never asking SQX. | imported | identity → path, sentence |
+| `meta.py` | The metadata panel's data: `sqx.inspect.strategymeta.read` on the located .sqx, or the archived one. | imported | path → dict |
+| `stats.py` | The basic statistics of one strategy per sample — IS, OOS1, both joined, and OOS2 behind its door. | imported | cosecha rows → dict |
 
 ## Contracts and traps
 

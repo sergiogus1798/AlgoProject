@@ -2,9 +2,9 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `space.py` | Which parameters still vary (the live ones), and the unit cube they span | cloud → varying, unit |
-| `surrogate.py` | The full quadratic over the live parameters: its design matrix, the least-squares fit and its adjusted R² (for one metric or many columns at once), its prediction | cloud → fit |
-| `sensitivity.py` | First-order and total Sobol indices, computed on the fitted surface | fit → indices |
+| `sensitivity.py` | How the surface's variance splits between parameters: first-order and total Sobol indices. | fit → indices |
+| `space.py` | The geometry of the cloud: which parameters still vary, and the unit cube they span. | cloud → varying, unit |
+| `surrogate.py` | The smooth model of the surface: a full quadratic over the live parameters, and how much it explains. | cloud → fit |
 
 Decides nothing and reads no file.
 

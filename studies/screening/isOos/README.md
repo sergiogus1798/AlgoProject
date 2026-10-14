@@ -2,11 +2,11 @@
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `report.py` | The command: whichever halves this databank has input for, into one dated folder and one manifest naming both inputs | `python3 -m studies.screening.isOos.report --project XAUUSD --databank OOS [--set trades.bins=60]` | `metrics/<P>/<D>/metrics.csv` and/or the newest `harvest/<P>/<D>/<day>/` → `reports/<P>/<D>/<date>/isOos/` |
-| `many.py` | The population half — the IS × OOS correlation map, persistence, one predictor ranking per outcome with the Benjamini-Hochberg survivors marked | imported | metrics columns → contract result |
-| `one.py` | The per-trade half, one strategy: return, MAE and MFE, IS and OOS overlaid as densities on shared bins, with the median shift and the two-sample KS p (encargo 24 E3, owner Q14; the duration distribution left 2026-09-29) | imported | its harvest trades → contract result |
+| `many.py` | What the IS metrics of a whole population say about its OOS outcomes, as one contract result. | imported | metrics columns → contract result |
+| `one.py` | One strategy's trades, IS against OOS: return, MAE and MFE as two overlaid densities. | imported | its harvest trades → contract result |
+| `report.py` | The IS/OOS study of one databank: the population's correlation map (with its explorer) from the metrics export, and each strategy's per-trade distributions IS against OOS from the newest harvest. | `python3 -m studies.screening.isOos.report --project XAUUSD --databank OOS [--set trades.bins=60]` | `metrics/<P>/<D>/metrics.csv` and/or the newest `harvest/<P>/<D>/<day>/` → `reports/<P>/<D>/<date>/isOos/` |
+| `tooltips.py` | One sentence per config.yaml knob of the IS/OOS study, for the window's configuration drawer. | imported | — |
 | `config.yaml` | The per-trade knobs: bins, and the tail share folded into the end bins | — | — |
-| `tooltips.py` | One Spanish sentence per knob, for the window's drawer | imported | — |
 | `panel.html` | Template for the interactive explorer. `__PAYLOAD__` is replaced with the embedded data | — | — |
 
 ## The per-trade half (encargo 24 E3)

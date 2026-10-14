@@ -2,7 +2,7 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `windows.py` | Per cell: its steps, the length of its windows and the dates its out-of-sample runs cover | steps → one row per (strategy, cell) |
+| `windows.py` | The shape of each cell's windows: their lengths, their overlap and the dates its runs cover. | steps → one row per (strategy, cell) |
 
 `run.covered` turns `covers_from`/`covers_to` into the years of each segment a cell's runs reach:
 a cell's first out-of-sample run starts years into `build`, so its excess per year in `build` is

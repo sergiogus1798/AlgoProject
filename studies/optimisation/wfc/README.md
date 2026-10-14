@@ -43,10 +43,10 @@ config.yaml ─▶ inputs ─▶ measure ─▶ verdict ─▶ contract
 
 | file | what it does | run it |
 |---|---|---|
-| `report.py` | Step 17 over one batch: asks the door and the seal, measures the three compositions, writes `estudios/wfc.{json,html,md}` with its `facts` (`c1`, `c2`, `c3`; `estado` only in the deciding one) and one ledger row per segment | `python3 -m studies.optimisation.wfc.report --work <dir> --family <F>` |
-| `one.py` | One composition from the batch's trades to its facts (`composition`: net and gross excess per year, the filters with exact duplicates told by trade-list fingerprint, the outside weekly panel, the weekend-straddle share), and the three of them plus the check that the repriced net reproduces SQX's `NetProfit` (`run`, fact `descuadre_sqx`); takes any composition, `build → oos1` included, which is how the calibration drives it | imported |
+| `one.py` | One mother's batch through step 17's three compositions: values, filters, numbers and the call. | imported |
+| `report.py` | Step 17 over one mother's variant batch: the three compositions, the state, the ledger's looks. | `python3 -m studies.optimisation.wfc.report --work <dir> --family <F>` |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported |
 | `config.yaml` | The deciding composition, the null (draws, weeks per block, the straddle warning), the «fuerte» label, the top's share, the tolerance of the SQX check; every number is a `ledger:` key, the floors are in `engines/variants/config.yaml` | edited, or `--set section.key=value` |
-| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
 | `calibrate/` | How often the table says PASA of a family with no edge and NO PASA of one with a planted edge; writes the record that opens (or keeps shut) oos2 | `python3 -m studies.optimisation.wfc.calibrate` |
 | `POSSIBLE_IMPROVEMENTS.md` | The modelling choices that had real alternatives, and what is still the owner's to decide | read before changing one |
 

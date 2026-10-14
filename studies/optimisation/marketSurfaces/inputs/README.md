@@ -2,9 +2,9 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `config.py` | Reads `config.yaml`, fills the `ledger:` thresholds and adds the trade floors shared with the WFC and the CSCV (`panel`) | — → settings |
-| `markets.py` | The markets `assets/_markets.yaml` declares for the asset — feed, category, `data_from`, `near_identical` group — and whether a market's cost card is provisional | `assets/` → table |
-| `batch.py` | The batch's design (`variants`), each market's trades repriced into weekly gross and net excess per leg (`one`, fanned out by `read`), the legs' bounds and lengths, and consecutive legs as one panel (`stacked`) | `metrics.parquet`, `variant_trades.parquet`, `segments.parquet`, bars → panels |
+| `batch.py` | A variant batch's trades on every market as weekly excess, gross and net, one leg at a time. | `metrics.parquet`, `variant_trades.parquet`, `segments.parquet`, bars → panels |
+| `config.py` | Read this study's config.yaml, beside the panel floors it shares with the WFC and the CSCV. | — → settings |
+| `markets.py` | The markets `assets/_markets.yaml` declares for an asset: category, first date, group and weight. | `assets/` → table |
 
 Holds nothing computed beyond the repricing, which is `engines.weekly.panel`'s.
 

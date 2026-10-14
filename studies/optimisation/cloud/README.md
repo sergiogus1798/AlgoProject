@@ -22,11 +22,11 @@ config.yaml ─▶ inputs ─▶ model ─▶ measure ─▶ contract
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `one.py` | `read`: the surface, its Sobol indices and its shuffled reference on build and on oos1; `run`: that as the contract's data plus the `facts` of step 16.5 | imported — the window and the autopilot call it | batch → result |
-| `contract.py` | The tabs (build's map with its heat maps, oos1 as a secondary reading, the filter counts), the warnings («Sin estructura distinguible del ruido», thin fit, floor not applied) and the facts | imported | numbers → tabs |
-| `heatmaps.py` | The median excess per cell over every pair of the `heatmap_pairs` parameters with the highest Sobol total, 6 equal-width bins per axis, the mother marked, one shared colour range | imported | numbers → grids |
-| `report.py` | **The command**: prints the result and writes `cloud.json`, `cloud.html` and `cloud.md` into the batch's `estudios/`, plus `distribuciones.parquet` (the shuffled R² per leg behind `r2_barajado`); `--out` also writes the summary alone | `python3 -m studies.optimisation.cloud.report --work <dir>` | batch → map |
-| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
+| `contract.py` | The map as the contract's tabs, its warnings, and the facts the report carries. | imported | numbers → tabs |
+| `heatmaps.py` | The heat maps: the metric over every pair of the most sensitive parameters, the mother marked. | imported | numbers → grids |
+| `one.py` | One batch read as a map of who moves the result, returned as the contract's data. | imported — the window and the autopilot call it | batch → result |
+| `report.py` | The command: which parameters move a mother's excess across her variant batch, and whether the ranking can be read. | `python3 -m studies.optimisation.cloud.report --work <dir>` | batch → map |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported | — |
 | `config.yaml` | Every tunable; a `ledger:<key>` value is a number that lives in `ledger/thresholds.yaml` | edited, or `--set key=value` | — |
 
 Manual page, in Spanish: `docs/manual/09-optimizacion.pdf` (cap. 39-nube-de-parametros).

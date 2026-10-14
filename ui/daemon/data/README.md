@@ -14,10 +14,10 @@ api ─▶ catalogue ─▶ one os.walk of the data root (files, formats, age) +
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Package marker, one docstring | imported | — |
-| `api.py` | The five routes: `/api/data/catalogue`, `/api/data/assets`, `/api/data/bars?feed&tf&since`, `/api/data/spread?feed&part`, `/api/data/feedquality?feed`; a feed is checked against the listing of its tree, and a failure is a sentence, never a 500 | imported | request → JSON |
-| `catalogue.py` | Every branch of AlgoData down to three levels with files, formats (no size: it was what made the zone take minutes),  the date of its newest write, whether it is stale, and how many `manifest.json` sign it and the newest date one of them carries | imported | disk → rows |
-| `market.py` | The assets the three trees know (symbol = feed up to its first `_`) with their bar, tick and quality feeds; one feed's OHLC at D1/H4/H1, columnar; one feed's step-4 report read back as the contract dict its study wrote | imported | disk → JSON |
+| `__init__.py` | The Datos zone's routes: what the data root holds, the bar library, and the two step-4 studies. | imported | — |
+| `api.py` | The Datos zone's routes: the catalogue of the data root, the assets, their bars and their step-4 studies. | imported | request → JSON |
+| `catalogue.py` | What the data root holds, tree by tree: files, formats, newest write, and the manifests that sign it. | imported | disk → rows |
+| `market.py` | One asset's data as the Datos zone shows it: its feeds, its bars, and its step-4 studies off the disk. | imported | disk → JSON |
 
 ## Contracts and traps
 

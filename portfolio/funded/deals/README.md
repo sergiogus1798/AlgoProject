@@ -29,9 +29,9 @@ fails for lack of one, so the daily flow is untouched. FTMO's euros are converte
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `sources.py` | the firms' offer surfaces: FTMO's table, Hantec's banner, Hantec's code check (discount box, then affiliate box) | — | sites → deal rows |
-| `book.py` | record what was seen today (new or better is returned), expire what was not; the owner's universe | — | rows → `deals` |
-| `scan.py` | stage 1 | `python3 -m portfolio.funded.deals.scan` | sites → `deals` |
-| `add.py` | put a found code on the books, checked with the firm where it can be | `python3 -m portfolio.funded.deals.add hantec DROP50 --source <url>` | code → `deals` |
-| `notify.py` | stage 3: one desktop notification per new deal in the universe | `python3 -m portfolio.funded.deals.notify` | `deals` → notification |
-| `worth.py` | the universe ranked per funded $1,000 at the zero-edge floor, list vs today, then each plan's bank EV at both prices when a bank table exists | `python3 -m portfolio.funded.deals.worth [deal_id]` | `deals` + catalogue + bank tables → stdout |
+| `add.py` | Put a discount code found somewhere on the books — verified with the firm itself where it can be. | `python3 -m portfolio.funded.deals.add hantec DROP50 --source <url>` | code → `deals` |
+| `book.py` | The deals table: record what was seen today, expire what was not, and the universe the owner buys from. | — | rows → `deals` |
+| `notify.py` | Tell the owner, with a desktop notification, about every deal in his universe he has not heard of yet. | `python3 -m portfolio.funded.deals.notify` | `deals` → notification |
+| `scan.py` | Look at every place a firm shows offers, record what is on today, expire what is gone. | `python3 -m portfolio.funded.deals.scan` | sites → `deals` |
+| `sources.py` | Where each firm shows its offers: Hantec's banner and code check, FTMO's pricing table, FundedNext's catalogue. | — | sites → deal rows |
+| `worth.py` | Is a deal worth it? Every universe plan at the zero-edge floor and, where a bank table exists, at the bank's expected value — list price against today's. | `python3 -m portfolio.funded.deals.worth [deal_id]` | `deals` + catalogue + bank tables → stdout |

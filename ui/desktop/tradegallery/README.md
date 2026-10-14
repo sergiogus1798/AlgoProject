@@ -12,10 +12,10 @@ tile ─▶ price.canvas (blocks.chart.Canvas + blocks.axis) · figures with hov
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Exports `TradeGallery` | imported | — |
-| `gallery.py` | `TradeGallery(QWidget)`: IS/OOS switch, «cuantiles» and «otra muestra» (random, seed shown), the head line, five tiles in a scroll | imported | route → widget |
-| `tile.py` | One tile: the pick's label, the price window, P&L · MAE · MFE · velas · entrada · salida · cierre · tamaño, each with its hover sentence | imported | tile dict → QFrame |
-| `price.py` | The painter: each bar's high–low range, the close line, the time in market shaded, entry (blue ▲) and exit (orange ▼) at their fill prices, hover per bar | imported | tile dict → Canvas |
+| `__init__.py` | The trade gallery of the Ficha: five trades by P&L quantile, or five at random with the seed shown. | imported | — |
+| `gallery.py` | `TradeGallery`: five trades of one sample, by P&L quantile or drawn with a shown seed — never the best alone. | imported | route → widget |
+| `price.py` | The price painter of one trade: bar ranges, the close line, the entry and exit marked, on `chart.Canvas`. | imported | tile dict → Canvas |
+| `tile.py` | One tile of the gallery: the trade's price window and its figures, each with the sentence of what it counts. | imported | tile dict → QFrame |
 
 Test: `python3 tests/test_ui_tearmarket.py` (routes in-process, gallery offscreen, grabs in
 `scratch/ui-plan/shots/H2-*.png`).

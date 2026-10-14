@@ -2,7 +2,7 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `reference.py` | The adjusted R² of the same surface refitted on the metric shuffled among the variants, and `legible`: the real one against a percentile of those | cloud, fit → r2_adj, r2_ref, legible |
+| `reference.py` | Whether the surface says anything: its adjusted R² against the same fit on a shuffled metric. | cloud, fit → r2_adj, r2_ref, legible |
 
 Produces the one comparison the ranking is read by; fits through `model/`, never its own surface.
 

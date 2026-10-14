@@ -12,15 +12,15 @@ They share one kernel — the forward path from an entry — which is why they a
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `report.py` | **The command**: one strategy's two readings, printed and written to `reports/<P>/<D>/<export day>/entryQuality/estrategias/`, and the random e-ratio per horizon (one row per strategy and horizon, histogram + tails, no raw draws) into `entryQuality/distribuciones.parquet` (`core/study/draws.py`) | `python3 -m studies.readings.entryQuality.report --export <trades.parquet> --strategy "Strategy 35.44.31"` | trades + bars → two readings |
-| `one.py` | The measurements — the e-ratio against its band, per side, and the two delay tables — as the contract's data the window paints | imported — the window calls it | trades + bars → result |
-| `contract.py` | The two tabs, each with its reading, and the glossary | imported | numbers → tabs |
-| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
-| `inputs.py` | The knobs, the trades placed on the bar grid, the ATR, the cost and which trades have a full path | imported | export → located trades |
-| `excursion.py` | MFE and MAE at every horizon, and the same in units of the entry's own volatility | imported | bars → paths |
-| `eratio.py` | e(k), the matched random benchmark and its 5-95% band | imported | paths → curve, band |
-| `delay.py` | The price given up by a late entry, and what it is worth against the edge and the costs | imported | bars → delay tables |
-| `verdict.py` | What the two curves mean | imported | numbers → readings |
+| `contract.py` | The two readings as the contract's tabs: the entry against random entries, and the delay. | imported | numbers → tabs |
+| `delay.py` | Item 4, tier 1: how much of the edge is given up by entering a few bars late. | imported | bars → delay tables |
+| `eratio.py` | Item 3: does the entry itself predict favourable movement, or would any entry do? | imported | paths → curve, band |
+| `excursion.py` | The forward path: how far price ran for and against each entry, bar by bar. | imported | bars → paths |
+| `inputs.py` | What the study is run on: its knobs, one strategy's trades, and the bars under them. | imported | export → located trades |
+| `one.py` | One strategy's entry quality, returned as the contract's data: what the window paints. | imported — the window calls it | trades + bars → result |
+| `report.py` | The command: whether one strategy's entry carries information, and what arriving late costs. | `python3 -m studies.readings.entryQuality.report --export <trades.parquet> --strategy "Strategy 35.44.31"` | trades + bars → two readings |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported | — |
+| `verdict.py` | What the two curves mean, against thresholds fixed before the trades are read. | imported | numbers → readings |
 | `config.yaml` | Every tunable, grouped by the layer that reads it; a `ledger:<key>` value is a threshold whose number lives in `ledger/thresholds.yaml` | edited, or `--set section.key=value` | — |
 
 Manual page, in Spanish: `docs/manual/06-lecturas.pdf` (cap. 42-calidad-de-la-entrada).

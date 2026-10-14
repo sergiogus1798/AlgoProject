@@ -2,7 +2,7 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `call.py` | The state from the facts, the rules that fired, and the paragraph a human reads first | facts, mode, alpha → verdict, label, why; sentence |
+| `call.py` | Step 19's state from its facts: L1 always, the centre cell and L2 only when re-optimising live. | facts, mode, alpha → verdict, label, why; sentence |
 
 | rule | fires when | gives | active in |
 |---|---|---|---|

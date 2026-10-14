@@ -2,10 +2,10 @@
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `install.py` | Add or replace custom blocks in a stopped install's `customBlocks.xml` | `python3 -m sqx.blocks.install <blocks.xml> [--role conductor]` | an XML of `<Item key="CBlock_…">` → the install's store, plus a dated backup. Since 2026-10-11 it validates (parse, element tag, `CBlock_` key), writes atomically and refreshes the taxonomy itself (`taxonomy.refresh`) |
-| `taxonomy.py` | Refresh `taxonomy.yaml` — every block the builder can sample, ready to label by archetype — keeping every label already written | `python3 -m sqx.blocks.taxonomy [--role master]` | the install's three XML files + a donor's Build task → 767 rows in 83 categories |
-| `taxonomy_discover.py` | Read the builder's reachable blocks off an install and a donor's Build task — used by `taxonomy.py`, not run on its own | — | a donor's Build task + a `vocabulary()` → block keys, roles and rows |
-| `palette.py` | The palette library: named block selections, each a family plus what it changes, resolved against the taxonomy | `python3 -m sqx.blocks.palette [NAME]` | a palette + the taxonomy → a switch per block |
+| `install.py` | Install authored custom blocks or random groups into a stopped SQX install's settings. | `python3 -m sqx.blocks.install <blocks.xml> [--role conductor]` | an XML of `<Item key="CBlock_…">` → the install's store, plus a dated backup. Since 2026-10-11 it validates (parse, element tag, `CBlock_` key), writes atomically and refreshes the taxonomy itself (`taxonomy.refresh`) |
+| `palette.py` | The palette library: named block selections, each one a family plus what it changes. | `python3 -m sqx.blocks.palette [NAME]` | a palette + the taxonomy → a switch per block |
+| `taxonomy.py` | The block taxonomy: every block the builder can sample, grouped and ready to be labelled. | `python3 -m sqx.blocks.taxonomy [--role master]` | the install's three XML files + a donor's Build task → 767 rows in 83 categories |
+| `taxonomy_discover.py` | Read the builder's reachable blocks off an install and a donor's Build task. | — | a donor's Build task + a `vocabulary()` → block keys, roles and rows |
 
 **No GUI import is needed.** `customBlocks.xml` is the store itself, and `sqcli` never rewrites it
 (measured: `knowhow/authoring/headless-authoring-chain.md`). The GUI does, so the tool refuses to write while the

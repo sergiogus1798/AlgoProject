@@ -4,19 +4,19 @@ Libraries, not commands. The entry points that use them live in `../reports/`.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `metrics.py` | Reads a metrics export, works out which columns are IS, which are OOS, and which pair up, and drops rows that agree on every OOS metric -- the same backtest exported under a different strategy name | imported | `metrics.csv` → numeric columns + metric name lists |
-| `correlations.py` | Pearson/Spearman, the single-test significance floor, and Benjamini-Hochberg over a family of tests | imported | two columns → correlation rows |
-| `improvement.py` | Sweeps candidate IS filters: what each one does to an OOS outcome, with a bootstrap interval on the difference | imported | columns + one target → one row per filter |
-| `permuted.py` | numpy's `Generator.permuted` and its pairwise sums in one numba kernel: q_null's statistic per shuffle, no matrix held | imported | centred trades, period starts/sizes, PCG64 rng → one value per shuffle |
-| `replication.py` | Whether a conclusion drawn on one sample holds on another independently generated one: outcome gaps, filter thresholds carried across, rank stability | imported | two samples' columns → gaps and agreement |
-| `decay.py` | How much of each strategy's in-sample edge survived, whether what is left beats its own error bar (Lo 2002 on the daily curve, annualised at 252 days, SQX's own convention: `sqrt((1 + SR_annual² / 2 / 252) / years)` — fixed 2026-10-02, `knowhow/research/gate-t-scales.md`), and the keep/doubt/discard call | imported | daily equity → one row per strategy |
-| `tradelevel.py` | The t of a strategy's mean trade, iid and at the AR(1) effective n, and each trade's P&L from the market's own drift over its hold — what the gate's `trade_t` and `drift_excess_t` are made of; `drift_term`, the four drift terms of R3 (a today's, b per calendar window, c the blind trade of the same hold sized 1/ATR, d both), and `t_skew_kurt`, the same t with the PSR's skewness-kurtosis standard error | imported | trades + bars → t per strategy |
-| `centred.py` | The maths the gate centres on its population: yearly-count overdispersion with part-year exposure, the log rate ratio and its error, the capped population median, and the per-strategy slope and mean of a per-trade column in time at the AR(1) effective n | imported | counts, per-trade table → z, slope |
-| `onepass.py` | `edge_mean`, `t_cost`, `t_without` and `mae_pct`: the edge over the cost charged, R3's t under a cost stress and without the best quarter or trades, the MAE percentile in R. They reuse the t of `tradelevel` | imported | per-trade table → facts |
-| `dataquality.py` | `mark()` flags the oos1 trades that touch an anomaly of the feed's inventory between their entry and exit bars; `facts()` gives `ret_datos`, the Welch `t_a` and `n_afectadas` | imported | per-trade table + events → facts |
-| `delay.py` | The one-bar delay: `excess()` reprices trades with their fills moved (`SHIFTS`: E+1, S+1, ES+1, E-1) at the original lots, minus the drift term over the moved hold — NaN for a trade whose entry would land on or past its exit, and an exit with a `stop` price stays at that price and bar under every shift; `measure()` gives per strategy and variant the retention, the paired t of original minus moved and level 1a's t on the moved excess, over the trades that exist under the variant; `worst()` picks the variant that keeps least | imported | per-trade table + bars + costs → ret, t_delta, t per variant |
-| `resample.py` | The gate's two resampling tests on a strategy's own trades: `homogeneity`, the permutation p of Q across periods; `drawdowns`, maximum drawdowns of block-bootstrapped build trades at another mean; `root` / `stream`, a fresh-or-given root seed and one stream per identity | imported | per-trade arrays + rng → p, simulated drawdowns |
-| `floating.py` | Max drawdown and worst day of the marked-to-market daily equity, worst trade MAE and net per year, all in R | imported | daily equity + trades → one row per strategy |
+| `centred.py` | What the gate reads against its own population's centre: the change of trading rate from the build to oos1, the slope of a per-trade column in time. | imported | counts, per-trade table → z, slope |
+| `correlations.py` | Correlate in-sample metrics against out-of-sample outcomes, and say which results survive. | imported | two columns → correlation rows |
+| `dataquality.py` | Data quality (spec 6.6): how much of the edge lives in trades that touch a feed anomaly. | imported | per-trade table + events → facts |
+| `decay.py` | Per-strategy decay: how much of the in-sample edge survives, and whether what is left is real. | imported | daily equity → one row per strategy |
+| `delay.py` | What a strategy's per-trade excess keeps when its entry, its exit or both fill one bar off. | imported | per-trade table + bars + costs → ret, t_delta, t per variant |
+| `floating.py` | What a strategy's worst stretches cost, in units of its risk per trade (R). | imported | daily equity + trades → one row per strategy |
+| `improvement.py` | What an in-sample filter buys out of sample, and how many strategies it costs to get it. | imported | columns + one target → one row per filter |
+| `metrics.py` | Load a metrics export and work out which of its columns pair in-sample against out-of-sample. | imported | `metrics.csv` → numeric columns + metric name lists |
+| `onepass.py` | R5c, R8 and R9b: edge against cost, the t without the best, and the typical bad MAE. | imported | per-trade table → facts |
+| `permuted.py` | numpy's `Generator.permuted` and its sums inside one numba kernel: the gate's Q under shuffles, no matrix held. | imported | centred trades, period starts/sizes, PCG64 rng → one value per shuffle |
+| `replication.py` | Does a conclusion drawn on one sample of strategies hold on another, independently generated one. | imported | two samples' columns → gaps and agreement |
+| `resample.py` | The gate's two resampling tests on a strategy's own trades: homogeneity across periods, and the drawdown its build makes expectable. | imported | per-trade arrays + rng → p, simulated drawdowns |
+| `tradelevel.py` | The t of a strategy's mean trade, plain or net of the market's own drift over each hold. | imported | trades + bars → t per strategy |
 
 The excess over chance and Benjamini-Hochberg moved to `engines/inference/` (2026-09-25): the
 gate and the monkey reading need them as much as these do.

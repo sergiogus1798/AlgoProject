@@ -11,17 +11,17 @@ the full map's Benjamini-Hochberg imposes today. Idea 2 of
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `analytic.py` | The normal approximation of the profile's power: what a t statistic can see, from its error. | imported | measure rows → error, power, mde |
+| `contract.py` | The power study as the study contract: what the window and the page draw. | imported | tables → result dict |
+| `inputs.py` | What the power study is run on: its config, the profile's, the cut-off, and a cell's bars. | imported | cell → bars, cost |
+| `ledgerrows.py` | The power study's looks at the data, as rows of the ledger's contract L1. | imported | rows → ledger rows |
+| `many.py` | The replications judged: detection per planted effect, and the minimum detectable effect. | imported | rows → curve, mde |
+| `one.py` | One replication: a directionless copy of a cell, an edge planted in it, the profile's test. | imported | key + bars → one row |
+| `plant.py` | The planted edge: which bars carry it, and the series with it added. | imported | series + trades → series |
+| `report.py` | The command: how small an edge the market profile can see — planted, tested, and widened. | `python3 -m studies.research.profilePower.report [--set run.cells=[USOIL/H1]] [--judge-only] [--force]` | bars + the map → tables |
+| `store.py` | Where the power study lives on disk: the replications, and the judged tables. | imported | — |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported | — |
 | `config.yaml` | Every knob: the cells, the plant (how, effects, replications, measures), the judge (cut, chunk, single level, power) and the memory budget in bytes | edited, or `--set section.key=value` | — |
-| `tooltips.py` | One Spanish sentence per knob | imported | — |
-| `inputs.py` | **Configuration.** The config with the profile's own under `profile`; the cut-off read from the map on disk; a cell's build bars; the round-trip cost as a log return | imported | cell → bars, cost |
-| `plant.py` | **Modelling.** `PLANTS`: where the edge goes (`condition`: the bars the measure's trades hold; `random`: as many bars anywhere — the control); the planted series | imported | series + trades → series |
-| `analytic.py` | **Modelling.** The normal approximation of the same test: a measure's error in costs from its t and its null spread, the power at an effect, the minimum detectable effect; applied to every trade measure of the map | imported | measure rows → error, power, mde |
-| `one.py` | **Execution.** One replication: a sign-flipped copy of the cell, the edge planted in the measure's own trades, the profile's test in chunks until the cut is out of reach, and what the trades earned | imported | key + bars → one row |
-| `many.py` | **Inference.** Each replication's verdicts (significant at the cut, the profile's other three filters, the single uncorrected test), the power curve, the minimum detectable effect | imported | rows → curve, mde |
-| `store.py` | `AlgoData/research/power/`: the replications (kept per cut and draws, so a run resumes), the tables | imported | — |
-| `ledgerrows.py` | One ledger row per cell, measure and direction, contract L1, into the study's own `ledger.jsonl` | imported | rows → ledger rows |
-| `contract.py` | The result as the study contract | imported | tables → result dict |
-| `report.py` | **The command**: runs the replications not stored yet, judges all, widens to the whole map with the approximation | `python3 -m studies.research.profilePower.report [--set run.cells=[USOIL/H1]] [--judge-only] [--force]` | bars + the map → tables |
 
 Manual page, in Spanish: chapter `91-potencia-del-perfil` of `AlgoData/manual-fuentes/`.
 

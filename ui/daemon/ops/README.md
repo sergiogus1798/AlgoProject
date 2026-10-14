@@ -13,11 +13,11 @@ project is running — the one command the custodian may receive between start a
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `api.py` | `ROUTER`: `GET /api/pulse`, `GET /api/ops/sqx`, `GET /api/ops/steps?install=&project=`, `GET /api/ledger?study=` | imported | request → JSON |
-| `pulse.py` | One reading of the custodian: `n de N` from the newest job log's `PROGRESS` line — or, for a run started outside the window, the running task's count from the worker's status line (`runs.count`) — rate since the project started, JVM PSS against `-Xmx`, CPU over 0.5 s, `MemAvailable`, how many more backtests fit at the measured (or assumed 10 MB) slope, and the warnings | imported | /proc + logs → dict |
-| `runs.py` | What each worker runs now: project and task from its log, done/total from `progress.state`, the percent SQX's log gives or done ÷ total. Nothing when the worker is down or its last start finished | imported | logs + status → list |
-| `steps.py` | `GET /api/ops/steps`: `progress.state` plus `rows` — SQX tasks sorted by the workflow step their stage belongs to (`sqx/projects/stages.yaml`; the project file lists WFM before CrossTF and the WFC), the Python steps (`kind: python`) from the workflow rail's readers with the newest autopilot run's `pasos.csv` and failed window jobs laid over, and `mother` (n of SPP OOS) on the running WFC leg | imported | project → dict |
-| `ledgerview.py` | One study's ledger as JSON: its searches, funnel, segments read, virgin map, blind door of step 20 and pooled N/σ | imported | ledger jsonl → dict |
+| `api.py` | The operation routes: the custodian's pulse, what each worker runs, and the search ledger. | imported | request → JSON |
+| `ledgerview.py` | The search ledger as the window reads it: searches, funnel and history spent, one study at a time. | imported | ledger jsonl → dict |
+| `pulse.py` | The custodian's pulse: backtests done of total, JVM against its ceiling, CPU, free RAM — files only. | imported | /proc + logs → dict |
+| `runs.py` | What each SQX worker runs right now and how far its task is: the SQX bars of the jobs strip. | imported | logs + status → list |
+| `steps.py` | «En marcha» in the workflow's order: SQX tasks and Python steps in one list, WFC counted by mother. | imported | project → dict |
 
 SQX's own log carries no backtest count. A daemon job that prints `PROGRESS <pct> <n> de <N>`
 (`sqx.variants.execute`) gives the whole run's count; a run launched from a terminal gives the

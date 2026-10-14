@@ -2,8 +2,8 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `config.py` | The module's `config.yaml` with its ledger numbers, plus the WFC's inside trade floor | — → settings |
-| `cloud.py` | `measured`: every returned variant with its parameters and its excess per year, profit and trades on build and on oos1. `screen`: controls out, the inside floor, exact duplicates out, each counted | `manifest.parquet`, `variant_trades.parquet` (legs build and oos1 only), `metrics.parquet` (`variant_id` only) → cloud, counts |
+| `cloud.py` | The cloud this study reads: each variant's parameters and its excess per year, on build and on oos1. | `manifest.parquet`, `variant_trades.parquet` (legs build and oos1 only), `metrics.parquet` (`variant_id` only) → cloud, counts |
+| `config.py` | The study's knobs. | — → settings |
 
 Fits nothing and judges nothing.
 

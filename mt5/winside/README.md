@@ -6,4 +6,4 @@ prefix (`bin/mt5-install.sh` installs Python 3.12 at `C:\Python`). Standard libr
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `query.py` | Read-only verbs against the running terminal: account, terminal, symbols, symbol, bars, ticks, positions, orders, history. Never calls a trading function | `mt5/live.py` runs it as `wine C:\Python\python.exe query.py <verb> <json>` | verb + args → one JSON line, or a CSV |
+| `query.py` | Read-only queries to the running MT5 terminal; runs under the Windows Python inside the Wine prefix. | `mt5/live.py` runs it as `wine C:\Python\python.exe query.py <verb> <json>` | verb + args → one JSON line, or a CSV |

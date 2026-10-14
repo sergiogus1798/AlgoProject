@@ -7,18 +7,18 @@ disagree. It analyses nothing. The contract itself is `CONTRACT.md`
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `__init__.py` | The contract every study module speaks: its config, its blocks, its result and its page. | — | — |
+| `bands.py` | N curves drawn as percentile bands (5-95, 25-75), the median and the original — a `cone` block. | imported | curves → block |
+| `blockcheck.py` | The optional keys of a block: a distribution's series and shift, a grid's mark and scale. | imported | block → raises or passes |
+| `blocks.py` | The kinds of block a study result is made of, built from raw numbers and checked. | imported | numbers → blocks |
+| `clip.py` | The one rule every histogram of the window follows: the axis spans percentiles 0.5-99.5, outliers are not drawn. | imported | draws → inside values, span |
+| `config.py` | A study's knobs: its config.yaml read, overridden from the command line, and fingerprinted. | imported | YAML + overrides → dict, hash |
+| `draws.py` | The simulated distribution behind a z or a p, kept so nobody reruns a test to look at it. | imported | draws → rows → parquet |
+| `identity.py` | The identity of a strategy named in an export: from an install, the cosecha, or the export's .sqx. | imported | names → hashes |
+| `output.py` | Where a study's results land: one JSON per strategy, and the population's JSON, page and markdown. | imported | results → files |
+| `result.py` | The envelope every study result travels in, and the progress line the window reads. | imported | tabs → result dict |
+| `verdicts.py` | A population verdict written where the window and /curate find it: verdict.csv plus its manifest. | imported | frame → CSV + manifest |
 | `CONTRACT.md` | The result dict and the eight block kinds, field by field | — | — |
-| `__init__.py` | Names what the package is; holds no code | — | — |
-| `config.py` | A module's `config.yaml` read, `--set section.key=value` applied with the type of the value it replaces, and the config's fingerprint | imported | YAML + overrides → dict, hash |
-| `clip.py` | The one histogram rule: the axis spans percentiles 0.5-99.5, outliers are not drawn, and the caption counts them; `blocks.distribution` and the crossmarket and Monte Carlo `shape()` all go through it | imported | draws → inside values, span |
-| `blockcheck.py` | The check of a block's optional keys (a distribution's series and shift, a grid's mark and scale), called by `blocks.validate` | imported | block → raises or passes |
-| `bands.py` | `bands(title, unit, x, curves[n, len(x)], original)`: N curves as a `cone` block of 5-95 / 25-75 bands, median and original | imported | curves → block |
-| `blocks.py` | The eight block kinds, the five state words, builders for the two that aggregate raw draws (`distribution`, `cone`) plus `table` and `verdict`, and the validator that refuses anything else | imported | numbers → blocks |
-| `result.py` | The envelope of one result — module, strategy, identity, config hash, tabs, warnings, glossary — validated on the way out, and the `PROGRESS` line | imported | tabs → result dict |
-| `verdicts.py` | A population verdict: `verdict.csv` with `strategy`, `identity`, `verdict`, and the manifest naming the absolute input it judged | imported | frame → CSV + manifest |
-| `draws.py` | The simulated distribution behind a z or a p, kept so nobody reruns a test to look at it (owner, 2026-10-08): `record` turns the observed value and the draws into a row — 200 bins over the whole range, the 100 extremes of each side, `n_ge`/`n_le`, and the sorted float32 draws unless `raw=False` — `save` writes a study's rows as `distribuciones.parquet` beside its report, `merge` replaces only the given strategy's rows in a file other strategies share (`defer=True` from a `--strategy` process writes `distribuciones/<strategy>.parquet` instead, no shared file), `read` returns the rows after folding any such files in under the folder lock (`save`, `merge` and `consolidate` fold first too, one fold per burst, no-op when none pending), and `reset` clears the parquet and the pending files — use it, never `unlink(FILE)` alone | imported | draws → rows → parquet |
-| `output.py` | Where results land: `estrategias/<strategy>.json` per strategy (no page: the window draws it on demand), and the population's `.json`, `.html` and `.md`; `identify` resolves an export's names through `identity.resolve` | imported | results → files |
-| `identity.py` | The identity of a strategy an export only names: its `.sqx` on the master or a worker, else the newest cosecha that paired that databank (not newer than the export), else what the export kept (`identity.csv` from export_trades and export_retest, `strategies/*.sqx` from export_spp); never a name read in another databank. `note`/`warning` say what stayed unsigned | imported | names → hashes |
 | `render/` | The result dict drawn as a self-contained HTML page, one drawer per kind | imported | result → HTML |
 
 ## Three rules the validator enforces

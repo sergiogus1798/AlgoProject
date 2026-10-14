@@ -2,10 +2,10 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `cscv.py` | Block sums, the 6,435 halves and their complements, the best Sharpe inside scored outside, the histogram of every variant's Sharpe outside | panel → one record per partition |
-| `outputs.py` | PBO, degradation line, probability of loss, haircut, dominance, selection frequency, the mother's reading | records → numbers |
-| `null.py` | The equalised panel, one stationary-bootstrap draw of it (planted or not) and its CSCV | shared panel, seed, draw → summary |
-| `queue.py` | The one work queue over mothers × kinds × chunks of draws, through `core.fanout` | panels, cfg → records, draws, perf |
+| `cscv.py` | Combinatorially symmetric cross-validation off block sums: each half of the blocks chooses, the other judges. | panel → one record per partition |
+| `null.py` | The panel with nothing to choose: every column at one Sharpe, its weeks redrawn with replacement. | shared panel, seed, draw → summary |
+| `outputs.py` | What the partitions of one CSCV say: the paper's four outputs, the haircut and who gets chosen. | records → numbers |
+| `queue.py` | One queue for every CSCV of a run: mothers x (real, null on net and on gross, each planted Sharpe) x draws. | panels, cfg → records, draws, perf |
 
 **No row is ever concatenated.** A partition's Sharpe comes from the sums of its blocks (count,
 sum, sum of squares); the complement comes from the totals. A redrawn panel's block sums are a

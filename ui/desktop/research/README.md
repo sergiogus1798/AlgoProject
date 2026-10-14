@@ -5,13 +5,13 @@ the terminal look (`QFrame#term`). Draws what `ui/daemon/research/` says; opens 
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | The package's one-line purpose | imported | — |
-| `zone.py` | `ResearchZone`: the four tabs; `fetch`/`send` injectable (a fake makes every call synchronous) | imported by `shell.py` | — |
-| `parts.py` | The seven family colours at three discrete intensities, the read-only table with explained headers, `esc` (agent text is escaped: a rule holds `<`), `call` (off the GUI thread) | imported | — |
-| `mapview.py` | Mapa: assets × timeframes as buttons — family, ▲/▼ and effect in words as well as colour, grey when nothing passes; a click fills the families and the measures, each with what it measures | imported | `/api/research/map`, `/cell` |
-| `memoryview.py` | Memoria: coverage in one sentence, every attempt's funnel, survivors per family and asset class | imported | `/api/research/memory` |
-| `directview.py` | Tablero: the board with each factor explained, read-only (the «Proponer investigación» button was removed, encargo 65 §2) | imported | `/api/research/board` |
-| `proposalview.py` | Propuesta: diagnosis, three ideas side by side with a veto each and their open questions, the fixed `Research_` prefix (no choice), «Crear plantillas y lanzar en SQX» with the preflight's sentence, and the queue | imported | `/api/research/proposal`, `/veto`, `/answer`, `/launch`, `/queue` |
+| `__init__.py` | BIBLIOTECA › Investigar: the map, the memory, the director and its proposal. | imported | — |
+| `directview.py` | «Tablero»: the board the director reads, one row per cell-family. No launcher: the director has none. | imported | `/api/research/board` |
+| `mapview.py` | The map: assets × timeframes, colour = dominant family, intensity = effect; click for the measures. | imported | `/api/research/map`, `/cell` |
+| `memoryview.py` | The memory: today's coverage, the funnel of every attempt, and what each family has given. | imported | `/api/research/memory` |
+| `parts.py` | What the four views of «Investigar» share: family colours, a filled table, a daemon call. | imported | — |
+| `proposalview.py` | The proposal: three ideas side by side, a veto each, their open questions, the launch and the queue. | imported | `/api/research/proposal`, `/veto`, `/answer`, `/launch`, `/queue` |
+| `zone.py` | BIBLIOTECA › Investigar: the four views of the research board in one terminal frame. | imported by `shell.py` | — |
 
 **Imports from:** `ui/desktop` (theme, background, blocks.card, studypage.net) · **Consumed by:** `shell.py`
 

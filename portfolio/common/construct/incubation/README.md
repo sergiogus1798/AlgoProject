@@ -14,10 +14,10 @@ built and tested is the record, the row contract, its validator and the reading 
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Package marker | — | — |
-| `record.py` | `register`: freeze a judged run's hand-off portfolio, its fixed-risk scale and the comparison (`figure`, `history`, `band`) under `portfolio/incubation/<hash12>/`, once; `missing`: the unanswered knobs; `validate`: every way a file of fresh rows breaks the contract, in Spanish; `path`: the portfolio's daily P&L per unit of risk from long rows at the frozen weights; `load` | imported | run folder → record.json, history.parquet |
-| `band.py` | `read`: the fresh stretch's figure (`pnl` sum or daily `sharpe`) among every window of its length in the history — inside, below or above the band's two percentiles, its percentile, and how many windows share no day | imported | history path, fresh path → reading |
-| `run.py` | THE COMMAND: `register` (refuses while any `incubation.*` knob is null) and `read` (validates the rows, asks the gate, reads, appends `readings.jsonl` and one step-27 ledger row on segment `incubation`; without `--rows`, the state). Prints «LA INCUBACIÓN NO ESTÁ EN MARCHA» first, every time | `python3 -m portfolio.common.construct.incubation.run register --run <run> --set incubation.figure=… --set "incubation.history=[…]" --set "incubation.band=[lo, hi]"` · `… run read --portfolio <hash prefix> [--rows <file>]` | a judged run; a rows file → record, reading, ledger row |
+| `__init__.py` | Live incubation of a chosen portfolio (M9, PLAN §14.5): the record, its rows and the reading. | — | — |
+| `band.py` | The reading of M9: a fresh stretch against the band of equal-length windows of the portfolio's own history. | imported | history path, fresh path → reading |
+| `record.py` | The incubation record (M9): the frozen portfolio and comparison, and the contract of the fresh rows. | imported | run folder → record.json, history.parquet |
+| `run.py` | THE COMMAND of M9: register a judged portfolio for incubation, or read a file of its fresh days against the band. | `python3 -m portfolio.common.construct.incubation.run register --run <run> --set incubation.figure=… --set "incubation.history=[…]" --set "incubation.band=[lo, hi]"` · `… run read --portfolio <hash prefix> [--rows <file>]` | a judged run; a rows file → record, reading, ledger row |
 
 ## The row contract — the hand-off's `daily.parquet`, nothing new
 

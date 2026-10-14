@@ -10,8 +10,8 @@ dates, side or size to compute a drift from (`knowhow/sqx-format/mc-retest-stora
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `excess.py` | One window's totals per variant: profit (`engines.market.reprice.real`), the drift collected (`studies.screening.analysis.tradelevel.drift_term`), excess = profit − drift, trades | imported | trades + bars + costs → per-variant totals |
-| `t1.py` | `measure` prices a retested batch's exported trades and stores the per-neighbour table; `table` reads one mother's rows back; `facts` gives her T1 facts, or None without a batch; `summary` is the arithmetic | `python3 -m studies.breakage.mcRetest.neighbours.t1 --project <P> --work <batch> --symbol <SYM> --timeframe <TF>` | `raw/<P>/<leg>/<day>/neighbours/trades.parquet` + `manifest.parquet` → `raw/<P>/T1_Neighbours/<day>/neighbours.parquet` |
+| `excess.py` | Each neighbour's totals in one window: repriced profit, the drift it collected, and the excess. | imported | trades + bars + costs → per-variant totals |
+| `t1.py` | T1 of step 14: how much of a mother's excess her parameter neighbours keep, on build and on oos1. | `python3 -m studies.breakage.mcRetest.neighbours.t1 --project <P> --work <batch> --symbol <SYM> --timeframe <TF>` | `raw/<P>/<leg>/<day>/neighbours/trades.parquet` + `manifest.parquet` → `raw/<P>/T1_Neighbours/<day>/neighbours.parquet` |
 
 ## What it emits
 

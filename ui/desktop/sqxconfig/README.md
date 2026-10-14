@@ -13,8 +13,8 @@ SqxConfigZone (zone) ── index of sections │ scroll of Section (section) �
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | The package's one-line purpose | imported | — |
-| `zone.py` | `SqxConfigZone`: the warning «se aplica a los proyectos que se creen a partir de ahora», the index, the sections grouped by file; reads `/api/sqxconfig` on first show | imported | daemon → zone |
-| `section.py` | One section: folded header, the file's comment (long ones behind «seguir leyendo»), sub-headings where the path deepens (a list item named by its `title`), one row per value | imported | section → rows |
-| `field.py` | One editor: a dropdown for a fixed value, one dropdown per item plus + and − for an ordered list, a box for a number or a text, a dim line for a locked value; posts to `/api/sqxconfig/value` | imported | value → write |
-| `preview.py` | The zone alone in a window; `--shot DIR` saves four PNGs (folded, CrossTF, MC Retest, WFM) | `python3 -m ui.desktop.sqxconfig.preview [--shot DIR]` | daemon → window · PNGs |
+| `__init__.py` | Configuración SQX: the zone that shows and edits the settings new SQX projects are built with. | imported | — |
+| `field.py` | One value of the SQX settings as an editor: a dropdown where the values are fixed, a box otherwise. | imported | value → write |
+| `preview.py` | The Configuración SQX zone alone in a window, over the running daemon — until the sidebar carries it. | `python3 -m ui.desktop.sqxconfig.preview [--shot DIR]` | daemon → window · PNGs |
+| `section.py` | One test or topic of the SQX settings: a header that folds, the file's own words, one row per value. | imported | section → rows |
+| `zone.py` | Configuración SQX: every setting a new project is built and tested with, one section per test. | imported | daemon → zone |

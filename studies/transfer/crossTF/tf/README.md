@@ -15,11 +15,11 @@ travel is copied or edited.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `null.py` | The joint runs of one mother and her siblings in one window (`calendar`, `grids`, `runs`) and the three measures read off them: `edge` (e, net R per trade over chance), `z_total` (z_build), `z_delta` | imported | trades per timeframe, bars, costs → cells, e, z |
-| `rules.py` | T0's reason, `z_frec`, the per-sibling states of T1 / T2a / T2b, T4's `overlap`, the population `centre` and `percentile`, and `mother`: §6 with T3's brake | imported | measured columns → pass / limbo / fail, why |
-| `table.py` | `measure` (every sibling in each window), `judge` (the siblings table, `SIBLINGS`), `mothers` (one row per mother, `MOTHERS`) | imported | made, trades, bars → the two tables |
-| `inputs.py` | What it is run on: the siblings made and the oos1 trades from what the study loaded, the asset's costs and cuts, and **the seam of phase 2**: `build_banks` / `build` | imported | plan, packed trades, batch folder → frames |
-| `run.py` | `read` (plain data in, both tables out — what the tests call) and `write` (a loaded batch → the two files); `report.py` calls `write` after the old reading is on disk | imported | `many.load` → `tf_siblings.parquet`, `tf_mothers.csv`, `distribuciones.parquet` |
+| `inputs.py` | What the T0-T4 reading is run on: the siblings made, the oos1 trades the study already loaded, and the build trades when phase 2 ran. | imported | plan, packed trades, batch folder → frames |
+| `null.py` | The joint random runs of one mother and her siblings in one window, and the three measures read off them: e, z of a total, z of the difference. | imported | trades per timeframe, bars, costs → cells, e, z |
+| `rules.py` | T0 to T4 and the verdict per mother: from measured siblings to pass, limbo or fail, with why. | imported | measured columns → pass / limbo / fail, why |
+| `run.py` | The runner of the T0-T4 reading: what the study loaded in, `tf_siblings.parquet` and `tf_mothers.csv` out, beside the old reading. | imported | `many.load` → `tf_siblings.parquet`, `tf_mothers.csv`, `distribuciones.parquet` |
+| `table.py` | The siblings table and the mothers table: every sibling measured in each window, then judged. | imported | made, trades, bars → the two tables |
 
 ## What is measured where
 

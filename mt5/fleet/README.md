@@ -6,11 +6,11 @@ The beacon is read-only: it sends, modifies and closes nothing. The VPS is reach
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `collect.py` | Pull the VPS's FleetBeacon files and keep the fleet's live copy, minute history, excursions and health. | `python3 -m mt5.fleet.collect` (cron: `bin/fleet-collect.sh`, every minute) | VPS → `AlgoData/fleet/` |
+| `remote.py` | The two calls to the VPS over `ssh vps`: pull the beacon's files, run the health probe. | imported | VPS → files, dict |
+| `rows.py` | The collector's pure parts: a beat's history row, the skip test, and the floating MAE/MFE ledger. | imported | beat → row |
 | `vps/FleetBeacon.mq5` | MQL5 service in each VPS terminal: every 30 s `<login>.json` (schema 2: positions with tick size and value and Friday close, 48 server hours of equity low/high, charts with an EA, MODERATE/HIGH calendar news), and `<login>.history.json` when the deal count changes | compile with `mt5/metaeditor.py`; the owner starts it in each terminal | terminal → `Common\Files\fleet\` |
 | `vps/probe.ps1` | The VPS's RAM, CPU, disk, uptime and, per running terminal, its process and last log lines, as one JSON | piped by `remote.py` | VPS → JSON |
-| `collect.py` | One cron pass: pull the beacons, append a row to the account's day parquet (skipped on an unchanged `written_gmt`), update `excursions.json`, refresh `vps.json` every 5 min | `python3 -m mt5.fleet.collect` (cron: `bin/fleet-collect.sh`, every minute) | VPS → `AlgoData/fleet/` |
-| `rows.py` | The pure parts: the history row, the skip test, the server day, the floating min/max per ticket | imported | beat → row |
-| `remote.py` | The two calls to the VPS: `scp` of the beacon files, the `ssh` probe | imported | VPS → files, dict |
 | `app/` | MetaTracker, the window over all of this | `bin/metatracker` | `AlgoData/fleet/` → window |
 
 The collector writes, under `AlgoData/fleet/` (`core/fleetpaths.py`): `live/<login>.json` and

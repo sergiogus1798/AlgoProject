@@ -12,6 +12,7 @@ import depmap
 import knowhowmap
 import knowhowrefs
 import ratchet
+import readmetable
 from layering import bad_layering
 
 ROOT, MAX_LINES = depmap.ROOT, 500
@@ -114,26 +115,26 @@ def missing_requirements(files: list[Path]) -> list[str]:
 
 
 def unlisted_in_readme(files: list[Path]) -> list[str]:
-    """Python files their folder's README.md does not mention, and table rows naming a file that is gone.
+    """Folders with no README.md, and skill scripts their SKILL.md does not mention.
+
+    The file tables of README.md folders are `readmetable.stale`'s (generated, so never unlisted).
 
     Args:
         files: Project Python files.
 
     Returns:
-        One message per missing README, unlisted file or row without its file (OPEN.md #22).
+        One message per folder without a README or per skill script not named in its SKILL.md.
     """
     out = []
     for folder in sorted({f.parent for f in files}):
-        # A skill's folder is documented by its SKILL.md, which names its scripts.
-        readme = folder / ("SKILL.md" if (folder / "SKILL.md").exists() else "README.md")
+        skill = folder / "SKILL.md"
+        readme = skill if skill.exists() else folder / "README.md"
         if not readme.exists():
             out.append(f"{folder.relative_to(ROOT)}/: no README.md")
-            continue
-        text = readme.read_text(encoding="utf-8")
-        out += [f"{folder.relative_to(ROOT)}/README.md: {f.name} not listed"
-                for f in sorted(folder.glob("*.py")) if f.name not in text]
-        out += [f"{folder.relative_to(ROOT)}/README.md: lists {n}, which is not there"     # a table row's own file
-                for n in re.findall(r"^\|\s*`([\w/]+\.py)`", text, re.M) if not (folder / n).exists()]
+        elif skill.exists():
+            text = readme.read_text(encoding="utf-8")
+            out += [f"{folder.relative_to(ROOT)}/SKILL.md: {f.name} not listed"
+                    for f in sorted(folder.glob("*.py")) if f.name not in text]
     return out
 
 
@@ -231,7 +232,7 @@ def main() -> None:
     """Run every check and exit non-zero if anything fails."""
     files = depmap.py_files()
     checks = [("file length", too_long), ("documentation", undocumented), ("hardcoded paths", hardcoded_paths),
-              ("requirements", missing_requirements), ("folder READMEs", unlisted_in_readme),
+              ("requirements", missing_requirements), ("folder READMEs", unlisted_in_readme), ("readme tables", readmetable.stale),
               ("manual pages", no_manual_page), ("lint", lint_bugs), ("dependency map", stale_depmap),
               ("knowhow cards", knowhowmap.bad_cards), ("knowhow links", knowhowmap.broken_links),
               ("knowhow header paths", knowhowrefs.dead_header_paths), ("knowhow indexes", knowhowmap.stale_indexes),

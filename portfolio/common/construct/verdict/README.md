@@ -9,12 +9,12 @@ The rule is Q11 (d), Council 2026-10-04: **oos1 first, oos2 only if oos1 passed,
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `metrics.py` | RAR, R-cubed, gain-to-pain, P(losing year) and the daily Sharpe of daily P&L paths, and their drawdown episodes — pure; `search/objective.py` ranks them on build, the real verdict on oos1 | imported | paths, dates → metrics |
-| `null.py` | `percentile`/`read` — the mid-rank of the chosen figure among the null's, per measure (funded); `bar` — the real path's oos1 reading: the chosen figure against a percentile of the draws, or `no_discrimina` when the chosen one alone is at least the share of draws that percentile leaves free | imported | chosen figures, null figures → reading |
-| `deflate.py` | The oos2 reading: daily Sharpe minus the expected maximum of N trials of spread σ, by `ledger.trials.deflated` (no second formula); `excess` > 0 passes, the DSR is kept beside it | imported | daily P&L, σ, N → reading |
-| `hold.py` | «Did the diversification hold»: the chosen members' pair measures on the segments opened against the thresholds they were admitted under — reported, removes nothing, decides nothing | imported | pairs table → pairs over threshold, effective N |
-| `decide.py` | `funded_oos1` (the named measure's percentile against `verdict.pass_percentile`; unset → `sin_criterio` naming the knob), `combine` (what oos1 and oos2 decide together: `pass` and a Spanish `label`, a None always with its reason), the verdict dict of either path and the funded sentence; `grouped`, a count as every sentence prints it («10 000», never «10,000») | imported | readings, hold, cost → verdict, sentence |
-| `decide_real.py` | The real path's Spanish sentence: cost next to gain, the null's size against its draws | imported | verdict → text |
+| `decide.py` | The verdict of both paths (Q11 d): oos1 first, oos2 only if it passed, and the funded sentence. | imported | readings, hold, cost → verdict, sentence |
+| `decide_real.py` | The real path's decision sentence (PLAN §5.5): the cost next to the gain. | imported | verdict → text |
+| `deflate.py` | The oos2 reading (Q11 d): the chosen portfolio's daily Sharpe against the best that luck gives N trials. | imported | daily P&L, σ, N → reading |
+| `hold.py` | Did the diversification hold: the chosen members' pair measures re-read on the judging stretch. | imported | pairs table → pairs over threshold, effective N |
+| `metrics.py` | Window-robust metrics of daily P&L paths: RAR, R-cubed, gain-to-pain, P(losing year), Sharpe. | imported | paths, dates → metrics |
+| `null.py` | Where the chosen combination sits among the selected null's winners. | imported | chosen figures, null figures → reading |
 
 ## Traps
 - **The funded bar is not set.** `verdict.pass_measure: mc_p` (owner, 2026-10-05); nobody has set

@@ -5,14 +5,14 @@ Reads that cost nothing, and one confirmation-gated job: the queue (the fourth l
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | The package's one-line purpose | imported | — |
-| `explain.py` | One Spanish sentence per profile measure, per column and per context figure; the three discrete intensity levels of the map | imported | — |
-| `views.py` | `profile_map()`, `cell(symbol, timeframe)`, `memory()`, `board()` — JSON-safe | imported | profile + memory → dicts |
-| `proposals.py` | `latest(id)` with `launchable` per idea, `veto`, `answer` (both rewrite the `.json` and `.md`), `state()` the director's step | imported | proposals folder → dict |
-| `preflight.py` | `check(id)`: a launchable idea, no project of that name alive, Claude present, `advance.busy("custodian")`, `launch.api.queued()`; `text`, the sentence to confirm | imported | proposal → `{ok, reasons, ideas, projects, text}` |
-| `steps.py` | The five real steps on one idea — `core.assets`, `templateArchitect`, `sqx.projects.builder --workflow`, `buildingBlocksExpert`, `pipeline.autopilot.run` then `memory.report --close` — and `Failed` / `Question` | imported | idea → template, project, run |
-| `queue.py` | `run(p, runners, save)`: launchable ideas one after another, state saved after every step; a `Question` sets its idea aside, a `Failed` halts the queue | `python3 -m ui.daemon.research.queue --proposal ID` (every project is `Research_<SYMBOL>_<template>_<TF>`) (the window queues it) | proposal → `queues/<id>.json` |
-| `api.py` | `GET /api/research/map`, `/cell`, `/memory`, `/board`, `/proposal`, `/launch`, `/queue`; `POST /veto`, `/answer`, `/launch` | imported | request → JSON |
+| `__init__.py` | «Investigar»: the profile's map, the memory, the director's proposal and the queue of its ideas. | imported | — |
+| `api.py` | The routes of «Investigar»: the map, the memory, the board, the proposal and the queue. | imported | request → JSON |
+| `explain.py` | What each profile measure and each of its columns means, one Spanish sentence each. | imported | — |
+| `preflight.py` | Whether a proposal's queue may be launched now, and the sentence the owner confirms. | imported | proposal → `{ok, reasons, ideas, projects, text}` |
+| `proposals.py` | The saved proposals as the window reads and changes them: the veto and the owner's answers. | imported | proposals folder → dict |
+| `queue.py` | The queue of a proposal's ideas: one after another on the custodian, each through five steps. | `python3 -m ui.daemon.research.queue --proposal ID` (every project is `Research_<SYMBOL>_<template>_<TF>`) (the window queues it) | proposal → `queues/<id>.json` |
+| `steps.py` | The five real steps one idea goes through: rule 5, the template, the project, the palette, the autopilot. | imported | idea → template, project, run |
+| `views.py` | What the «Investigar» panel reads: the profile's map, one cell's measures, the memory, the board. | imported | profile + memory → dicts |
 
 **Imports from:** `studies/research/board`, `studies/research/memory`, `ui/daemon/jobs`,
 `ui/daemon/advance/preflight`, `ui/daemon/launch/api` · **Consumed by:** `ui/desktop/research/`

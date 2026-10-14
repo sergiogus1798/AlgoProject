@@ -41,47 +41,47 @@ and the study tabs). The mock on invented data (`workspace/mock.py`, `fake.py`) 
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `launch.py` | Start the daemon if absent (replacing an idle one on older code), then open the window; `--zone Z` opens on a zone, `--shot DIR` saves `DIR/<zone>.png` and exits, `--port P` talks to (or starts) the daemon on another port so a shot never touches the owner's | `bin/algoui` | — |
-| `shellopen.py` | The `Opens` mixin of `Shell`: how a palette row, a card or a coverage cell hands on to another zone | imported | click → zone |
-| `shell.py` | The single window: every zone built by name, read from the daemon the FIRST time it is opened (`stale`; «Recargar» re-reads the open one and marks the rest), the library's strip of pages above its five views (`open_library`: what a cell of Cobertura opens), and wired (gallery → Proyecto, drawer's «→ ver en Databanks» → Databanks, panel → Estrategia, PORTFOLIOS' «Importar» → the archived ficha), the context bar, the stack, the read-only banner, the status line with the jobs strip; `open_zone(name)` for the launchers, `go_to(item)` for Ctrl+K | imported | — |
-| `nav.py` | The sidebar: the five groups (Biblioteca, Proyecto, Operación, MT5 Bridge, Portfolios — the owner's order of 2026-10-03), and `LIBRARY`, the five template views that are ONE sidebar entry («Cobertura y plantillas») and a strip of pages in the shell (to undo: put the four names back in `GROUPS` and set `LIBRARY = []`); one checkable button per zone with its tooltip; «Recargar» at the foot, its tooltip naming what it reloads (`reload_tip`) | imported | — |
-| `contextbar.py` | The fixed bar on top: `Proyectos › proyecto › estrategia` from `SELECTION`, each crumb opening its zone (the gallery when no project is chosen); databank and asset beside them; the identity only in the strategy crumb's tooltip | imported | selection → crumbs |
-| `loadbar.py` | Beside the crumbs: the selected databank's metrics, trades and cosecha as three chips. Choosing a databank loads what it lacks; polls while loading; `loaded(piece)` makes the shell redraw; ↻ retries what failed | imported | selection → `/api/load` |
-| `selection.py` | `SELECTION`: the one global project/databank/strategy/identity/asset, signal `changed(dict)`; a new project clears what hangs below it | imported | choose → signal |
-| `projectflow.py` | Proyectos → Proyecto → Estrategia: `StrategyZone` (the live ficha, or `portfolios.ImportedFicha` for the version PORTFOLIOS imported: `show_archived(identity, version)` after `/api/archive/show`), a strategy found by identity (`/api/projects/find`, else the row the panel shows), and the two zones refilled when SELECTION moved on | imported | — |
-| `cmdpalette.py` | The command palette on **Ctrl+K**, bound in `shell.py`: zones (with aliases: «ledger» finds Registro de búsquedas), projects and databanks from the gallery, the chosen databank's strategies, and — with a strategy chosen — the studies that speak per strategy, opened on its ficha; Enter goes through `Shell.go_to`. A focused text field keeps Ctrl+K | Ctrl+K | gallery/matrix/catalogue → navigation |
-| `cmdrank.py` | What Ctrl+K lists and in which order: the accent-blind fuzzy match, the zones' `ALIASES`, and the last ten choices in `QSettings` (per viewer, never AlgoData) | imported | query → ranked items |
-| `theme.py` | The one design system: the palette `C`, the terminal look `T`, the stylesheet, and the two smallest pieces every zone draws with (`rule()`, `kicker(text)`) | imported | — |
-| `buttonstyle.py` | How a button looks in both looks (`qss(C, T, mono)`, appended by `theme`): lit when it can be pressed — accent edge over a fill brighter on top, a brighter edge and fill on hover, darker when pressed, accent fill when checked — and inert when it cannot (dim text, dashed dark edge); `#nav`, `#primary` and the «?» mark (`QLabel#helpmark`) | imported | — |
-| `helpmark.py` | The «?» beside every button (owner, 2026-09-28): `install(app)` puts one application-wide event filter that, on a button's first show, sets the hand cursor and places a round mark whose tooltip is the button's `help` property or the registry sentence (`ui/text/buttonhelp`), merged with the button's own tooltip (a near-copy is said once). In a horizontal box the mark is inserted right after the button; anywhere else it floats (child of the button's parent, in no layout) right of the button when that strip is free, else over the button's spare right edge, else it hides — it never widens a button and never takes a grid cell. Each mark filters its own button: visibility, move, resize, reparent (re-placed in the new parent), destruction (it forgets the button at once). No mark for `#nav`, flat section heads, the breadcrumbs, Qt's internal buttons (tab bars, combos, dialog boxes, calendars) or `helpmark=False` | imported | — |
-| `combofix.py` | Every `QComboBox` popup grows to every option the screen can hold, upwards when the space below runs out, and scrolls beyond (2026-10-01, §1): one application-wide event filter, `install(app)`. The «2 of 4» was Qt's menu-style popup reserving two scroll-arrow strips inside the rows' height; the theme now uses the plain list popup | imported | — |
-| `background.py` | Daemon calls off the GUI thread: `run(work, done, key, owner)`, `get`, `post` on a 4-thread `QThreadPool`; the answer lands in `done` on the GUI thread through one relay object; `key` keeps only the newest answer per stream; a deleted `owner` drops it. Every poll and every reload uses it (owner, 2026-09-28: «la UI se congela») | imported | work → callback |
-| `client.py` | The only way out to the daemon: `send` is the one place a request leaves, with the daemon's session token (`core.uitoken.read`) on it; `aim(port)` points it at another port (`launch --port`, `tools/uiwalk.py`) | imported | path → JSON |
-| `coveragecells.py` | The coverage matrix's scale, legend, action list and headline tiles | imported | totals → tiles |
-| `coverage.py` | The library's front page: family × timeframe (or asset, or template) on a four-step scale of runs, the director's board count per cell and its newest proposal, and the chosen cell's four actions (`go`: its templates, its family's palette, a new template, the research map) | imported | — |
-| `names.py` | The one table of family names: every stored spelling (registry, taxonomy, research memory, Spanish label) to the English name the window shows, its short form, and a palette's label | imported | — |
-| `catalogue.py` | The list of templates and drafts, filtered by text, family and status (`show_family`: where a family of Cobertura lands) | imported | — |
-| `detail.py` | One template's page, and the two writes it makes | imported | — |
-| `shape.py` | The panel saying which of a template's holes are free, which are bound to a group, and what it fixes | imported | — |
-| `chatparts.py` | The interview's two helpers: empty a layout and draw one message bubble | imported | text → widget |
-| `chat.py` | The interview that ends in a draft brief, a prompt and «▶ Crear la plantilla con Claude» (`jobbutton`, `POST /api/create/template`) | imported | — |
-| `jobbutton.py` | `JobButton(text, path, body, confirm, ended)`: a confirmation, one POST that queues a daemon job, then `/api/jobs` every 4 s with the job's state and its log's last lines (the author's `PREGUNTA:`/`YA EXISTE:`/`PLANTILLA:` lifted out) under the button | imported | press → job |
-| `jobsfeed.py` | `read(done, key, owner, ttl)`: `GET /api/jobs` for every poller of the window — the status bar's 2 s poll `store`s its answer and the rest reuse it while it is younger than `ttl` (0 forces a GET) | imported | `/api/jobs` → pollers |
-| `palettetext.py` | The line under the palette bar: what the open palette is and whether it does anything | imported | palette → rich text |
-| `palettes.py` | The palette library: the open palette, its blocks by category, and the writes | imported | — |
-| `palettebar.py` | The palette view's top bar: the picker, the policy, the search and the library actions | imported | — |
-| `blocktable.py` | The table of blocks under one palette, and the override picker on each row | imported | — |
-| `assets.py` | The asset zone: the index and the scroll of pages; a page is read from the daemon only when it scrolls into view (28 GETs at once cost 2 s), on `showEvent`, on scroll and on a click in the index | imported | `/api/assets` → pages |
-| `assetpage.py` | `AssetPage`: one instrument's page, in three columns each as narrow as what it holds (owner, 2026-10-02) and Características on the width left to them; `refresh()` reads `/api/asset/<S>` (the first read is the page's first showing) | imported | `/api/asset/<S>` → page |
-| `assetlist.py` | The index down the left: the instruments coloured by what they still need | imported | — |
-| `assetcard.py` | One asset's costs, its chips and everything the preflight would complain about — its cost table is just field/use/unit now (owner, 2026-10-01: the live-SQX column is gone from every asset table) | imported | — |
-| `assetspans.py` | The same asset's windows: a tramo card per segment, stacked (its spread note, «Aplicar» and its two date selectors) under what SQX actually has; the MC Retest ranges are its `ranges` widget and the Cross Market check its `markets`, both placed by the page | imported | — |
-| `assetmarkets.py` | `CrossMarketCheck`: «Declarar como main» for an asset that is not one yet, «Añadir»/«Quitar» a market once it is, one coloured group per category, a compact row per market (name, first date, ×) | imported | — |
-| `assetforms.py` | The boxes the zone opens: a text, a cost with its `why`, a Cross Market row, a new asset | imported | — |
-| `assettable.py` | The read-only table helpers shared by `assetcard.py` and `assetspans.py`: `grid`, `cell`, `val`, `derived`, `fit`, `clear`, `send` — `grid` stretches no column and `fit` gives a table the width and height of its content | imported | — |
-| `assettraits.py` | `traits_table`/`trait_line`: the Características tile as a table, one family per row — green «Va bien» (measured for), amber «Sin confirmar», grey «Sin medir» (prior Baja, nothing measured), red «Va mal» (measured against) — and its `LEGEND` — from the daemon's `prior` rows (owner, 2026-10-04); and `TRAITS`: a one-paragraph, non-exhaustive note per symbol on how it tends to trade (trend, rango, carry) — a starting point for the `Características` tile, not a study | imported | — |
-| `yamltree.py` | Any `assets/` file as a table of its values, each one beside its own comment | imported | — |
-| `durations.py` | How «En marcha» prints a duration, a processed-over-total, a time per strategy, and the 0-100 share a task's bar shows (`share`) | imported | — |
+| `assetcard.py` | One asset's costs: what it applies, what SQX carries, and what leaving it undecided costs. | imported | — |
+| `assetforms.py` | The boxes the asset zone opens to change something: a text, a cost, a market, a new asset. | imported | — |
+| `assetlist.py` | The column down the left of the asset zone: every instrument, coloured by what it still needs. | imported | — |
+| `assetmarkets.py` | One asset's Cross Market check: declare it a main, then add or drop the markets it retests on. | imported | — |
+| `assetpage.py` | One instrument's page of the asset zone: costs, windows, Cross Market check, traits, raw file. | imported | `/api/asset/<S>` → page |
+| `assets.py` | The asset zone: every instrument as a page of its own, one per row, full width. | imported | `/api/assets` → pages |
+| `assetspans.py` | One asset's windows: its data, the three segments and the MC Retest ranges. | imported | — |
+| `assettable.py` | The read-only tables the asset zone draws from — cells, formatting, the shared grid. | imported | — |
+| `assettraits.py` | A starting-point note per asset on how it tends to trade — trend, rango, carry, volatilidad. | imported | — |
+| `background.py` | Daemon calls off the window's thread: the answer lands in a callback on the GUI thread. | imported | work → callback |
+| `blocktable.py` | The table of blocks under one palette: what each one is, and the override the reader may set. | imported | — |
+| `buttonstyle.py` | How a button looks: lit and clickable when it can be pressed, inert when it cannot, in both looks of the window, and the round «?» mark `helpmark` puts beside it. | imported | — |
+| `catalogue.py` | The catalogue: the list of templates and drafts on the left, one page of detail on the right. | imported | — |
+| `chat.py` | The chat that turns an idea into a draft brief and the command that authors it. | imported | — |
+| `chatparts.py` | Two helpers of the interview: empty a layout, and one message bubble. | imported | text → widget |
+| `client.py` | The window's only way to reach the daemon. No view opens a file or a CSV itself. | imported | path → JSON |
+| `cmdpalette.py` | Ctrl+K: type a few letters, Enter opens that zone, project, databank, strategy or study. | Ctrl+K | gallery/matrix/catalogue → navigation |
+| `cmdrank.py` | What Ctrl+K lists and in which order: the fuzzy match, the aliases and the recent choices. | imported | query → ranked items |
+| `combofix.py` | Every QComboBox in the app shows all the options that fit on screen, application-wide, one filter. | imported | — |
+| `contextbar.py` | The bar on top: Proyectos › proyecto › estrategia, bound to SELECTION; each crumb goes back. | imported | selection → crumbs |
+| `coverage.py` | The library's front page: what has been tried by family and timeframe, and where to go from a cell. | imported | — |
+| `coveragecells.py` | The coverage matrix's parts that need no table: its scale and legend, the headline tiles. | imported | totals → tiles |
+| `detail.py` | One template's page: what it is, what is on disk, where it ran, and the two writes. | imported | — |
+| `durations.py` | How «En marcha» prints a duration, a processed-over-total and a time per strategy. | imported | — |
+| `helpmark.py` | The «?» beside every button: one application-wide event filter that, the first time a button is shown, puts a small round mark after it whose tooltip says what the button does. | imported | — |
+| `jobbutton.py` | A button that queues one daemon job after a confirmation, and follows it to its end. | imported | press → job |
+| `jobsfeed.py` | GET /api/jobs shared by every poller of the window: the answer one of them just got serves the rest. | imported | `/api/jobs` → pollers |
+| `launch.py` | Start the app: bring the daemon up if it is not, then open the window. | `bin/algoui` | — |
+| `loadbar.py` | The data of the selected databank: loaded the moment it is chosen, and how far it has got. | imported | selection → `/api/load` |
+| `names.py` | The one table of family names the window shows: every stored spelling in, one English name out. | imported | — |
+| `nav.py` | The sidebar: every zone in its group, one checkable button each. | imported | — |
+| `palettebar.py` | The palette view's top bar: which palette is open, what it is, and the library actions. | imported | — |
+| `palettes.py` | The palette view: the library of block selections, and what the open one lets the builder draw. | imported | — |
+| `palettetext.py` | The line under the palette bar: what the open palette is, and whether it does anything. | imported | palette → rich text |
+| `projectflow.py` | Proyectos → Proyecto → Estrategia in the shell: the Estrategia zone (a live ficha, or an archived version PORTFOLIOS imported), a strategy found by its identity, and the two zones kept on the global selection. | imported | — |
+| `selection.py` | The one global selection: project, databank and strategy, shared by every zone. | imported | choose → signal |
+| `shape.py` | The panel that says which parts of a template the builder fills, and which a palette reaches. | imported | — |
+| `shell.py` | The window itself: grouped side navigation, the context bar, one zone inside, one status bar. | imported | — |
+| `shellopen.py` | How the window hops between zones: what a palette row, a card or a cell hands on and where it lands. | imported | click → zone |
+| `theme.py` | The one design system: the palette every view reads, the stylesheet it becomes, and the two smallest pieces every zone draws with (a rule, a kicker). | imported | — |
+| `yamltree.py` | Any assets/ file as a table of its values, each one beside what the file says about it. | imported | — |
 
 The zones' packages, each with its own README:
 

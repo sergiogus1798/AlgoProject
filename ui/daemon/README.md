@@ -25,33 +25,33 @@ only, each one job on the conductor lane.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `app.py` | The app: puts the gate of `gate.py` in front of everything, includes every router of `routers.py` and serves `/api/health` (code fingerprint, pid, busy jobs, which installs exist — the read-only mode) | imported | request → JSON |
-| `routers.py` | `ROUTERS`, every router the daemon serves in the order `app.py` includes them; a new surface is one line appended at the end | imported | — |
-| `templates.py` | The library's routes as a router: `/api/templates`, `/api/template/{name}` (+ `/status`), `/api/coverage`, `/api/verdict`, `/api/palettes`, `/api/palette/{name}` (+ `/delete`), `/api/palettes/new`, `/api/interview/step`, `/api/interview/finish` | imported | request → JSON |
-| `jobsapi.py` | The routes every zone shares: `/api/jobs` (the daemon's job list), `/api/progress/installs` and `/api/progress` (where an SQX project stands, from files) | imported | request → JSON |
-| `version.py` | Fingerprint of the daemon's own code, served by `/api/health` so the launcher replaces an idle daemon left over from older code | imported | files → 16 hex |
-| `diskmemo.py` | `load(name)` / `save(name, memo)`: a dict the daemon computed once (the strategies' identities of `loader/find.py`, the parsed results of `results/store.py`) pickled under `AlgoData/ui/memo/`, in a file named after the code's fingerprint and `core/sqxfile.py`'s version, so a daemon just started does not hash 10,000 strategies nor parse the megabyte JSONs again and older code's memo is never served | imported | dict ↔ AlgoData/ui/memo/ |
-| `serve.py` | Bind 127.0.0.1 itself, and only then mint the session token (`core.uitoken.mint`) and serve on that socket — a second daemon that finds the port taken exits before touching the token | `python3 -m ui.daemon.serve [--port P]` | — |
-| `gate.py` | The middleware: `refusal(method, path, headers)` answers `host`, `origin`, `token` or None — 403 before any route; armed by `serve` through `ALGO_UI_PORT` | imported by `app.py` | request → 403 · the route |
-| `proof.py` | The launchers' proof of confirmation: `issue(kind, plan)` gives a one-use nonce bound to the hash of what was asked and the sentence shown, `refusal(kind, nonce, plan)` spends it — unknown, used, older than 10 min or bound to another plan is a sentence for the owner | imported by `launch/api.py`, `advance/api.py`, `mt5bridge/api.py` | plan → nonce · refusal |
-| `library.py` | What the library holds: registry rows, runs, and what is really on disk | imported | disk → dicts |
-| `coverage.py` | The matrix of runs and the headline counts | imported | catalogue → grid |
-| `writes.py` | The three writes: status, notes, verdict | imported | change → row |
-| `palettes.py` | The palette library resolved against the taxonomy, and its four writes: save, create, clone, delete | imported | disk → JSON · a palette → its file |
-| `assets.py` | What the asset zone draws: every instrument with what blocks it, one asset in full, and the writes it may make | imported | disk → JSON |
-| `assetprior.py` | The Características panel's rows: each family's level in the owner's prior with what the market profile measured for it by timeframe (a favor / en contra), and the verdict the window colours — `bien`, `sin_confirmar`, `mal`. The profile's two files are read once per version (`measured`, ~2 s the first time) | imported by `assets.py` | prior.yaml + `research/profiles/` → rows |
-| `assetapi.py` | The asset library's routes, as a router | imported | request → JSON |
-| `runs.py` | What running one module on one strategy means: the argv, given the asset's feed and what `raw/` and `harvest/` hold — or the sentence saying why it cannot run here; `guess_asset` reads a project's asset off its name | imported | context → argv · reason |
-| `jobs.py` | The daemon's job list: commands started from the window as its own children, each logged under `AlgoData/logs/ui/`; the python lane and the one-at-a-time conductor lane; cancelling a `launch`/`advance` job sends SIGTERM and waits `GRACE_S` for its `finally` to stop the worker before SIGKILL, stops the worker itself only when the job's own `workerguard` marker says it started it, keeps the lane busy until that stop ends, and says «sigue arrancado» in the job's state when even that failed (`winddown.py`) | imported | argv → job record |
-| `winddown.py` | Cancelling a `launch`/`advance` job: SIGTERM, `GRACE_S` (360 s) for its `finally` to stop the worker, SIGKILL; then `worker.stop` only for a worker whose `workerguard` marker carries that job's PID — never anyone else's | imported by `jobs.py` | job → worker stopped |
-| `workerguard.py` | `up(top, port)` (an SQX process of the install or its port), `refuse_if_up` right before a start (`sqx-worker.sh start` answers 0 on «already running»), `mark` right after the start, `stopped` after the stop (answers 0 on «STILL RUNNING»: the marker stays and a line is printed), `orphans(own)`: markers a closed window's job left, said on the rail | imported by `launch/run.py`, `advance/run.py`, `winddown.py`, `launch/api.py` | install → sign, marker |
-| `gateview.py` | A gate report read off disk: its funnel and scorecard (`gate`), one strategy's paired metrics and daily curve (`strategy`), which report judged a cosecha (`judged`), the screens as configured (`screens`) — for the databank panel's funnel and `core.archive.view` | imported | disk → JSON |
-| `daylog.py` | Today's SQX log of an install as the lines `progress.run_state` reads — read whole once, then only what it gained; `trim` keeps the last «Starting project», a bounded tail and only the newest percentage | imported | log → lines |
-| `projdisk.py` | What a project's folder says: the installs and their projects, a project's tasks from `project.cfx`, databank counts, the genetic settings (`progress` re-exports them) | imported | disk → dicts |
-| `progress.py` | Where a running SQX project is: its tasks from `project.cfx`, which one runs and how far from the tail of today's log, and each databank's count on disk. Files, plus the worker's status line through `tasklog` | imported | disk → JSON |
-| `tasklog.py` | A project's own task log — each task's start, finish, input counts and time per strategy — and the worker's `-project action=status` line while it runs | imported | disk · HTTP → dicts |
-| `interview.py` | The questions the chat asks, and which is next | imported | answers → question |
-| `brief.py` | A finished interview into a draft brief, a prompt and the commands | imported | answers → files |
+| `app.py` | The daemon's HTTP surface: everything the window knows, it asks for here. | imported | request → JSON |
+| `assetapi.py` | The routes of the asset library: every question the assets zone asks, and its writes. | imported | request → JSON |
+| `assetprior.py` | How each strategy family suits an asset: the owner's prior judged by the market profile. | imported by `assets.py` | prior.yaml + `research/profiles/` → rows |
+| `assets.py` | What the window needs to draw assets/, and the writes it may make on it. | imported | disk → JSON |
+| `brief.py` | Turn a finished interview into a draft brief on disk and the command that authors it. | imported | answers → files |
+| `coverage.py` | The coverage matrix: what has been tried, where, and what came of it. | imported | catalogue → grid |
+| `daylog.py` | Today's SQX log of an install, as the lines that say which project runs and how far. | imported | log → lines |
+| `diskmemo.py` | What the daemon computed once, kept across restarts: one pickled dict per name in AlgoData/ui/memo/. | imported | dict ↔ AlgoData/ui/memo/ |
+| `gate.py` | The gate every request to the daemon passes: its own Host, no foreign Origin, the session token. | imported by `app.py` | request → 403 · the route |
+| `gateview.py` | A gate report read off disk — its funnel and scorecard, one strategy's paired metrics and curve — for the databank panel's funnel and the archive (`ui.daemon.strategy.archive_view`). | imported | disk → JSON |
+| `interview.py` | The questions the chat asks before a template idea is written down, and which is next. | imported | answers → question |
+| `jobs.py` | The daemon's job list: analysis commands started from the window, queued, and how each one ended. | imported | argv → job record |
+| `jobsapi.py` | The routes every zone shares: the daemon's job list, and where an SQX project stands on disk. | imported | request → JSON |
+| `library.py` | What the template library holds, read off disk into one answer per template. | imported | disk → dicts |
+| `palettes.py` | What the window needs to draw the palette library, and the four writes it may do. | imported | disk → JSON · a palette → its file |
+| `progress.py` | Where a running SQX project is: its tasks, which one runs, how far, read from disk only. | imported | disk → JSON |
+| `projdisk.py` | What a project's folder on disk says: the installs, their projects, a project's tasks, databank counts, genetic settings. | imported | disk → dicts |
+| `proof.py` | One-use proof that a launcher's confirmation was computed: a nonce bound to the plan it was shown with. | imported by `launch/api.py`, `advance/api.py`, `mt5bridge/api.py` | plan → nonce · refusal |
+| `routers.py` | Every router the daemon serves, in the order `app.py` includes them. | imported | — |
+| `runs.py` | What running one analysis module on one strategy means: the command, given what exists on disk. | imported | context → argv · reason |
+| `serve.py` | Run the daemon on loopback. The window starts it; this is also how to run it by hand. | `python3 -m ui.daemon.serve [--port P]` | — |
+| `tasklog.py` | A project's own task log and the worker's status line: counts, times and the running total. | imported | disk · HTTP → dicts |
+| `templates.py` | The library's routes: the template catalogue, its coverage and writes, the palettes, the chat. | imported | request → JSON |
+| `version.py` | Which code a daemon serves: a fingerprint of `ui/daemon/`, so a window can spot a stale one. | imported | files → 16 hex |
+| `winddown.py` | Cancelling a launcher job: let it stop the worker it started, and stop only that worker. | imported by `jobs.py` | job → worker stopped |
+| `workerguard.py` | Whether a worker is up, and the marker a launcher job leaves while the worker it started runs. | imported by `launch/run.py`, `advance/run.py`, `winddown.py`, `launch/api.py` | install → sign, marker |
+| `writes.py` | The three things the window may change: a template's status, its notes, a run's verdict. | imported | change → row |
 
 Retired by F13 of plan 24 (2026-09-28) with the zones that alone used them: `studyapi.py` (the
 first strategies zone's `/api/databanks`, `/api/databank`, `/api/results`, `/api/run` and the gate

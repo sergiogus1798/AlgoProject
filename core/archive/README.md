@@ -15,13 +15,13 @@ daemon, so `core` must not hold them.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Names the package; holds no code | — | — |
-| `__main__.py` | Makes `python3 -m core.archive` run `cli.main` | `python3 -m core.archive …` | — |
-| `cli.py` | The command: `list`, `archive` (through `ui.daemon.strategy.archive_write`), `show` | `python3 -m core.archive archive --project P --databank Results --identity <sha> --step 16 --family <template>` | args → printed |
-| `collect.py` | Finds every folder under `reports/<P>/` that names the identity (through any CSV with `strategy`+`identity`, or a JSON's own identity) and copies its JSONs, manifest and the strategy's rows of every table; the loose CSVs outside a study folder cut to the identity; and `skipped`, what could not be paired and why | imported | reports, harvest → frozen files |
-| `harvest.py` | The cosecha's metrics, equity and trades parquets cut to one identity (`harvest_rows`), the file read once and kept in a small cache | imported | harvest day folder → `<version>/harvest/` |
-| `manifest.py` | The provenance: the project's registry row, the asset YAML with its sha256 and the resolved card, the ledger study's `trials.accumulated` and `spend.virgin`; `frozen` — the feed's clock and the card's per-segment commission, written into the manifest as `clock`/`commission` | imported | project, symbol → dicts |
-| `read.py` | `load(identity, version=None) -> dict`, `versions(identity)`, `listing()`, `frozen(manifest, identity)` (clock and commission of a member; raises on a manifest without them, never reads live) — files only | imported | archive → the live shapes |
+| `__init__.py` | The strategy archive: one strategy frozen with every result, read back without recomputing. | — | — |
+| `__main__.py` | `python3 -m core.archive` runs the archive's command. | `python3 -m core.archive …` | — |
+| `cli.py` | The archive's command: list what is archived, archive one strategy, show one. | `python3 -m core.archive archive --project P --databank Results --identity <sha> --step 16 --family <template>` | args → printed |
+| `collect.py` | Find every report file of one identity across a project's databanks and freeze a copy of it. | imported | reports, harvest → frozen files |
+| `harvest.py` | The cosecha's three tables (metrics, equity, trades) cut to one identity and frozen. | imported | harvest day folder → `<version>/harvest/` |
+| `manifest.py` | What the archive freezes beside the results: the project's registry row, the asset card, the ledger count. | imported | project, symbol → dicts |
+| `read.py` | Read an archived strategy back in the shapes the daemon serves a live one — files only, nothing run. | imported | archive → the live shapes |
 
 ## One version on disk
 

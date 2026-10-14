@@ -5,8 +5,8 @@ One job: run the data update the GUI's "Update all" button runs, and then make
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `update.py` | Download fresh bars on the master, guarded, and refresh every asset's data range | `python3 -m sqx.data.update [--apply] [--symbol SYM]` | — → bars, `_policy.yaml` |
-| `roll_oos2.py` | Move every decided oos2 to end on the last day of the previous month, asset by asset and only where the data reaches it; cron runs it every Saturday after the update (`bin/monthly-oos2-roll.sh`) — the month's first one moves the windows, the later ones only the assets a stale feed left behind | `python3 -m sqx.data.roll_oos2 [--apply]` | `_policy.yaml` → `_policy.yaml` |
+| `roll_oos2.py` | Move every asset's oos2 to end on the last day of the previous month, once the data covers it. | `python3 -m sqx.data.roll_oos2 [--apply]` | `_policy.yaml` → `_policy.yaml` |
+| `update.py` | Run SQX's own data update on the master, guarded against the two ways it destroys work. | `python3 -m sqx.data.update [--apply] [--symbol SYM]` | — → bars, `_policy.yaml` |
 
 **It must run on the master, and only with its GUI closed.** Both halves of that matter:
 

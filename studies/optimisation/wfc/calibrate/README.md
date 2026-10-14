@@ -14,14 +14,14 @@ config.yaml ─▶ families ─▶ rates ─▶ record ─▶ page
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__main__.py` | The command: the synthetic grid, the rehearsal, the report, the register. With `--set` the register is **not** written | `python3 -m studies.optimisation.wfc.calibrate [--workers 16]` | `config.yaml`, `../config.yaml`, batches with `variant_trades.parquet` → stdout, `AlgoData/ledger/wfc_calibration.{json,md}` |
+| `__main__.py` | The command: calibrate step 17's criterion and write the register that opens the blind block. | `python3 -m studies.optimisation.wfc.calibrate [--workers 16]` | `config.yaml`, `../config.yaml`, batches with `variant_trades.parquet` → stdout, `AlgoData/ledger/wfc_calibration.{json,md}` |
+| `families.py` | Synthetic families of variants whose answer is known: one common factor, own noise, a planted edge. | imported | config → `(e_is, e_oos, weeks)` |
+| `page.py` | The calibration's report in Spanish: the verdict on top, then the criterion beside the one without a null on the level. | imported | table → markdown text |
+| `rates.py` | Where families land in the owner's table: the criterion, and the one without a null on the level beside it. | imported | arrays → one row per scenario |
+| `record.py` | The register that opens the blind block, or does not: the two reference rates against their caps. | imported | table → `wfc_calibration.json` |
+| `rehearsal.py` | The criterion rehearsed on real batches with build inside and oos1 outside: legs already spent. | imported | `strategyPermutations/<P>/<S>/` → one row per batch |
+| `tooltips.py` | One sentence per config.yaml knob of the calibration, for the window's configuration drawer. | imported | — |
 | `config.yaml` | Families per scenario and the two caps (`ledger:` keys), the family's shape, the grid of edge sizes, costs and out-of-sample lengths, the reference cells of `abre`, the dependence sensitivity | edited, or `--set section.key=value` | — |
-| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported | — |
-| `families.py` | **Modelling.** `family()` — drawn week by week, the unit the null flips: one common factor, own noise, a planted mean and its spread, no cost (the generator `tests/test_wfc_families.py` uses too); `weekly()` Sharpe → weekly mean; `specs()` the scenarios; `draw()` one family of a scenario | imported | config → `(e_is, e_oos, weeks)` |
-| `rates.py` | **Execution.** One family under the criterion (`landed`: the top wins when its median is above zero and `p_nivel` ≤ `level.alpha`) and without the null on the level beside it (`without_level_null`, columns `_sin`), plus the deviation of rho in the null (`sd_rho`); `shares` the rate of each cell; `table` every scenario across processes | imported | arrays → one row per scenario |
-| `rehearsal.py` | The criterion on real batches with `build` inside and `oos1` outside: only folders holding `variant_trades.parquet`, `metrics.parquet` read without its `oos2` columns | imported | `strategyPermutations/<P>/<S>/` → one row per batch |
-| `record.py` | **Decision.** `decide` the false PASA and the false NO PASA of the criterion against their caps (and the same two without a null on the level, `_sin`); `build` and `write` the register | imported | table → `wfc_calibration.json` |
-| `page.py` | The report in Spanish: the verdict, PASA / LIMBO / NO PASA of the criterion and without a null on the level for every scenario, the cells, the dependence check, the rehearsal | imported | table → markdown text |
 
 **It must never hold** a change to the criterion, a read of `oos2`, or a second generator of
 families.

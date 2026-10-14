@@ -11,17 +11,17 @@ install over HTTP or starts one.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `api.py` | The routes: `POST /api/study/run` (with `only`: the `ui.daemon.results.rerun` jobs), `GET /api/study/only`, `GET /api/study/offer`, `POST /api/study/screen` (the screen as a page in `<study>/pantalla/`), `POST /api/jobs/{id}/cancel` | imported | request → JSON |
-| `batch.py` | `fold(planned)`: two or more one-strategy plans of one study that does not fan out itself (`jobs.WIDE`) become ONE plan running `batchrun`, its JSON under `AlgoData/logs/ui/batches/`, `weight` = `workers(n)` — physical cores − RESERVE (4), fewer when the free RAM above `jobs.FLOOR_GB` does not hold 0.6 GB each | imported | plans → plans |
-| `batchrun.py` | The batch itself: `nice 10`, one BLAS thread, imports each study once, forks `workers` processes (`core.fanout`), runs each strategy's `-m` command in one of them through `runpy` into `batches/<plan>/NNNN.log`, prints `PROGRESS` per strategy and the tail of each failure; exit 1 only when every strategy failed | `python3 -m ui.daemon.runner.batchrun --plan P --workers N` (the daemon starts it) | plan → per-strategy results + log |
-| `offer.py` | `offer(project, databank, strategy, asset)`: every study the runner refuses here for this strategy, its sentence, and `go` — the databank its Databanks tab reads (`layout.TABS`) when that one holds exactly one strategy of the same name, else why not (absent, a name collision, or the databank unreadable: on no install or SQX writing it). ~1.2 s, so the window asks it off the GUI thread | imported | place → `{study: {why, go}}` |
-| `table.py` | Every study's entry, merged; one request into its jobs, or the reason none can start | imported | request → argv list · sentence |
-| `screening.py` | The command lines of steps 4-8: gate, isOos, filters, decay, monkeyExcess, feedQuality, spread, and why the rest cannot start | imported | context → argv · sentence |
-| `transfer.py` | The command lines of steps 9-16: crossmarket, crossTF, mcRetest, spp; crossmarket's per-market sub-tests | imported | context → argv · sentence |
-| `optimisation.py` | The command lines of steps 16.5-19: cloud, wfc, cscv, marketSurfaces over a mother's batch, and wfm | imported | context → argv · sentence |
-| `readings.py` | The command lines of readings, closing (blindJoint included) and the trade Monte Carlo | imported | context → argv · sentence |
-| `rootseed.py` | The one root a monkey run draws from: the folder manifest's `seed`, else a saved `.seed`, else a fresh one | imported | databank → seed |
-| `where.py` | Where an input lives: newest dated folder, an export's markets and timeframe, a mother's batch, the crossTF fabrication, the project's registry row and template family | imported | data root → paths |
+| `api.py` | The run routes of the study viewer: start a study, one sub-test beside the stored result, the screen as a page, cancel. | imported | request → JSON |
+| `batch.py` | Fold N one-strategy jobs of one study into a single batch job that forks over the cores. | imported | plans → plans |
+| `batchrun.py` | Run one study's per-strategy commands in one process: import once, fork a worker per core. | `python3 -m ui.daemon.runner.batchrun --plan P --workers N` (the daemon starts it) | plan → per-strategy results + log |
+| `offer.py` | Which studies a strategy page can use in its own databank, and where the others live. | imported | place → `{study: {why, go}}` |
+| `optimisation.py` | The command lines of the optimisation family (steps 16.5-19), or why the window cannot start one. | imported | context → argv · sentence |
+| `readings.py` | The command lines of the readings and closing families and the trade Monte Carlo, or why not. | imported | context → argv · sentence |
+| `rootseed.py` | The one root of a monkey run: every subprocess of it is handed the same `--seed` (encargo 66 §1.5, D2). | imported | databank → seed |
+| `screening.py` | The command lines of the screening and data families (steps 4-8), or why the window cannot start one. | imported | context → argv · sentence |
+| `table.py` | One press of a run button into the commands to start, or the Spanish sentence why none can start. | imported | request → argv list · sentence |
+| `transfer.py` | The command lines of the transfer and breakage families (steps 9-16), or why the window cannot start one. | imported | context → argv · sentence |
+| `where.py` | Where a study's input lives on the data root, found before a run is offered — never computed. | imported | data root → paths |
 
 ## Contracts and traps
 

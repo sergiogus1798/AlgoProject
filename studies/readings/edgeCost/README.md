@@ -21,12 +21,12 @@ inputs ─▶ costs ─▶ one / many ─▶ report
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `inputs.py` | The knobs, and the harvest this study reads (trades, the timeframe, identity → name) | imported | folder → frames |
-| `costs.py` | Prices the OOS rows with `reprice.real` (`price`, `per_trade`) — the gate's rule: a stop-loss exit at SQX's price, a late stamp at its bar's open — and carries the provisional-cost warning | imported | trades + bars + costs → `identity, open_time, pnl, cost` |
-| `one.py` | One strategy against the bar, as the contract's data: the headline and the gross by entry hour and weekday | imported — the window calls it | priced trades → result |
-| `many.py` | Every strategy of one harvest against the same bar, as one panel | imported | priced trades → panel |
-| `report.py` | **The command**: `verdict.csv` (`identity, edge_mean, verdict`) and the page, or `--strategy` for one read in full | `python3 -m studies.readings.edgeCost.report --project P --databank D --feed XAUUSD_M1 [--strategy "Strategy 10.9.51"]` | harvest → reports |
-| `tooltips.py` | One sentence per `config.yaml` knob | imported | — |
+| `costs.py` | Price oos1's trades at the common repricer, so the edge is read against the cost PAID. | imported | trades + bars + costs → `identity, open_time, pnl, cost` |
+| `inputs.py` | Every knob, and the harvest this study reads: gate's harvest (step 8) or a strategy export. | imported | folder → frames |
+| `many.py` | Every strategy of one harvest against its own edge-per-cost bar, as one result and one panel. | imported | priced trades → panel |
+| `one.py` | One strategy's oos1 edge against the cost it paid, as the contract's data. | imported — the window calls it | priced trades → result |
+| `report.py` | Edge per operation over the cost paid, oos1 only — encargo 11, redefined by encargo 44. Step 8 or step 25. | `python3 -m studies.readings.edgeCost.report --project P --databank D --feed XAUUSD_M1 [--strategy "Strategy 10.9.51"]` | harvest → reports |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported | — |
 
 ## What is the owner's
 

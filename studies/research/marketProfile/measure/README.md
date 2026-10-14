@@ -6,14 +6,14 @@ that is a lot. `one.py` runs the same functions on the real series and on every 
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | `REGISTRY` — every function `config.yaml` may name — and `SYMMETRIC`, the ones with no direction | imported | — |
-| `trades.py` | A signal's entry and exit bars (open to open), the t of its returns, the hit rate against the base rate | imported | mask → entry, exit, statistic |
-| `structure.py` | Directionless: variance ratio, Hurst, Dickey-Fuller on the level and on the distance to the mean, autocorrelation of the range, narrow-against-wide | imported | series → statistic |
-| `price.py` | Trend (lookback × hold, Fitschen's band), breakout (channel, false breaks), reversion (extreme in ATR), momentum (big bar), the break of a narrow bar | imported | series → statistic, trades |
-| `pattern.py` | Bar states: inside bar, engulfing, k closes in a row followed or faded | imported | series → statistic, trades |
-| `position.py` | One position at a time (numba): entry at the open after the signal, exit at the open after the exit signal, a cap in bars or a trailing distance | imported | masks → entry, exit |
-| `rules.py` | `CONDITIONS` — every named entry, filter and exit, read from prices alone — and `rule`: an entry, its filters, an exit; what the long-horizon trend, the daily channel, the conditioned reversion and the pullback are built from in `config.yaml` | imported | series + frame → statistic, trades |
-| `session.py` | The best hour, band and weekday, each chosen inside the draw too, and the break of a band's range | imported | series + calendar → statistic, trades |
+| `__init__.py` | The registry of measures: every function a row of config.yaml's `measures` may name. | imported | — |
+| `pattern.py` | Bar states, written for longs: does the state shift the odds of the next bar closing up. | imported | series → statistic, trades |
+| `position.py` | One position at a time: a rule's entry and exit bars when the exit is a condition, not a count. | imported | masks → entry, exit |
+| `price.py` | Measures that trade a price event, written for longs: trend, breakout, reversion, momentum. | imported | series → statistic, trades |
+| `rules.py` | A rule a strategy could trade, written for longs: an entry, its filters, an exit — no clock. | imported | series + frame → statistic, trades |
+| `session.py` | Measures of the clock, written for longs: the best hour, band and weekday, and a band's range. | imported | series + calendar → statistic, trades |
+| `structure.py` | Measures of the series as a whole: no trade, no direction, only a statistic. | imported | series → statistic |
+| `trades.py` | What a signal becomes: its entry and exit bars, and the statistic its returns are judged by. | imported | mask → entry, exit, statistic |
 
 Every measure is written for longs. The short side is the same function on the mirrored series
 (`higher.mirror`), so a long and a short can never drift apart.

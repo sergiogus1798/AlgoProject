@@ -12,9 +12,9 @@ can have no batch)
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `tab.py` | `BatchTab(QFrame "term")`: `load(project, strategy) -> has_batch`, `show_batch(data)`; the note, the colour selector, the chart and its key. `has_batch(project, strategy)` for the page to decide whether to show the tab | imported | /api/batch → page |
-| `parallel.py` | `Parallel`: the painted chart — lines cached in a pixmap, the one under the pointer lit and explained on hover | imported | batch dict → QWidget |
-| `scale.py` | The discrete outcome scale: nine round, equal steps symmetric about zero (`blocks.states.DIVERGING`), and its key with counts | imported | values → colours |
+| `parallel.py` | The parallel-coordinates canvas: one axis per parameter plus the outcome, one line per variant. | imported | batch dict → QWidget |
+| `scale.py` | The discrete colour scale of an outcome: nine round, equal steps symmetric about zero, and its key. | imported | values → colours |
+| `tab.py` | «Lote»: one mother's variant batch in parallel coordinates, coloured by NetProfit build, oos1 or oos2. | imported | /api/batch → page |
 
 Test: `python3 tests/test_ui_batch.py` (route in-process, view offscreen, writes
 `scratch/ui-plan/shots/K-batch.png`).

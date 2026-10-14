@@ -2,7 +2,7 @@
 
 | file | what it does | in → out |
 |---|---|---|
-| `call.py` | The class of a joint order (`positivo`, `neutro`, `perverso`, `sin_dato`) from its two tails and its weight, and the step's state from the deciding order, the premium and the oos2 order | numbers → words |
+| `call.py` | The call of step 18.5: the class of the joint order, and PASA / LIMBO / NO PASA from the three readings. | numbers → words |
 
 Must never compute a statistic.
 

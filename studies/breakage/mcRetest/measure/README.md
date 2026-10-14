@@ -14,9 +14,9 @@ exactly the trap these READMEs exist to prevent.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `integrity.py` | Rebuilds the confidence table from the simulations and checks it against the one SQX stored, and proves every metric is accounted for | imported | metrics + stored → agreement |
-| `store.py` | Where the parquet lives, how it is partitioned, and the only way anything reads it back | imported | keys → frames |
-| `originals.py` | The unperturbed trade list each strategy actually produced, joined in from its own harvest by identity: `sample == "OOS"` for `footprint()` (the default; owner, 2026-09-29) and `sample == "IS"` — the build, the backtest `bar` and `ohlc` perturb — for the dates T2 and T3 need, each its own dataset (`trades`, `build`); `sample == "OOS"` only reaches the benchmark, with `core.trades.cost()` already added | imported | project + identities + point value → trades |
+| `integrity.py` | Recomputed order statistics against the table SQX stored: the check everything else rests on. | imported | metrics + stored → agreement |
+| `originals.py` | The unperturbed trade list each strategy actually produced, read from its own harvest. | imported | project + identities + point value → trades |
+| `store.py` | Where the parquet lives, how it is partitioned, and the only way anything reads it back. | imported | keys → frames |
 
 The command that drives them is `../ingest.py`, in the module root with the other entry points.
 

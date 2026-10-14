@@ -16,14 +16,14 @@ report: result.json (study contract, no verdict) + Spanish lines on stdout      
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `run.py` | The command: owner's keys checked, the register read, each side read from the terminal / the conductor or from a parquet, one reconciliation per live EA, the week's folder written | `python3 -m mt5.reconcile.run --week YYYY-Www [--live-trades P] [--sqx-trades P] [--register CSV] [--out DIR] [--set k=v]` | a week → `AlgoData/mt5/reconcile/<week>/` |
-| `week.py` | An ISO week's Monday 00:00 → next Monday 00:00 on the server's clock, and the trades OPENED inside it | imported | "2026-W38" → bounds, cut frame |
-| `register.py` | The register of live EAs (`magic,strategy,identity,sqx,firm,since`), refused when absent or when a magic repeats on a firm; a strategy's asset and timeframe from its `.sqx` | imported | CSV → rows |
-| `live.py` | `history_deals_get` rows (the `history` verb of `mt5/winside/query.py`, through `mt5.live.ask`) grouped by `position_id` into schema-T trades — net P&L, entry deal's magic, server clock, open positions kept with `Close time` NaT — and split by magic into the register's strategies; unregistered magics returned apart | imported | deals → {strategy: trades}, strays |
-| `sqxside.py` | The SQX job, **unrun**: rule 5, a `Test_Reconcile_…` project per asset × timeframe cloned by the builder, the donor's retest rewritten by `sqx.projects.mt5verify.write_task` (asset's own costs, warm-up + week, fixed lot), run/stop/retire through `mt5.verify.sqxside` | imported | register rows + week → trades per strategy |
-| `floating.py` | `portfolio…equity.excursions.rebuild` applied only to trades the M1 bars cover; NaN otherwise | imported | trades + M1 → `mae`, `mfe` |
-| `judge.py` | One EA's week: `mt5.compare.to_zone`, `mt5.verify.judge.clock`/`shifted`, `mt5.compare.pair`, `in_points`; the pairs table, the trades with no twin on each side, the summary; `totals` over EAs | imported | two trade frames → pairs, lonely, summary |
-| `report.py` | `result.json` in the study contract (verdict None; tabs «Resumen» and «Operaciones»), `pairs.parquet`, and the Spanish summary; step 26's ledger bars quoted as reference, never applied | imported | pieces → files, text |
+| `floating.py` | Live trades' MAE and MFE rebuilt from M1 wicks (PLAN §14.2), only where the bars cover the trade. | imported | trades + M1 → `mae`, `mfe` |
+| `judge.py` | One strategy's week: live trades paired with the SQX backtest's, and every gap as a number — no pass bar. | imported | two trade frames → pairs, lonely, summary |
+| `live.py` | The live side: an account's deals of one week as trades in the project's trade frame, per strategy. | imported | deals → {strategy: trades}, strays |
+| `register.py` | The register of live EAs: which magic number on which firm's account is which strategy. | imported | CSV → rows |
+| `report.py` | Write a week's reconciliation as result.json (the study contract) and say it in Spanish. | imported | pieces → files, text |
+| `run.py` | weeklyReconciler: one ISO week of the live accounts against the SQX backtest of the same strategies. | `python3 -m mt5.reconcile.run --week YYYY-Www [--live-trades P] [--sqx-trades P] [--register CSV] [--out DIR] [--set k=v]` | a week → `AlgoData/mt5/reconcile/<week>/` |
+| `sqxside.py` | The SQX side: the live strategies retested over one week in a Test_Reconcile project on the conductor. UNRUN. | imported | register rows + week → trades per strategy |
+| `week.py` | One ISO week on the server's clock: its bounds, and the trades that belong to it. | imported | "2026-W38" → bounds, cut frame |
 | `config.yaml` | The owner's keys (empty = refused), the register's place, the clock, the SQX job's knobs | edited | — |
 
 ## What it writes — `AlgoData/mt5/reconcile/<week>/` (`core.paths.MT5_DATA`)

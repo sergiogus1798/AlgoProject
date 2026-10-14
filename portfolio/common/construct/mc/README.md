@@ -9,11 +9,11 @@ does not return. The bank simulation (`portfolio/funded/sim/`, F5) codes against
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `paths.py` | The three generators, one contract: `daily_blocks` (D, stationary bootstrap of the joint day table), `trade_bootstrap` (T1, each member's whole trades with replacement, a drawn gap after each, members independent), `trade_blocks` (T2, windows of history with every member's trades that opened in them); `history` replays the units where they really were; `path_gens` gives T1 and T2 `CHUNKS` generators spawned from the caller's `rng` (one per strided slice of the paths, so the result never depends on the thread count; since 2026-10-14 the kernels use numpy Generators, paths stored before do not reproduce) | imported | day arrays or member units → `closed`, `float_end`, `low`, `high`, `opened` [n_paths, horizon] |
-| `units.py` | A member's trades as whole units: per trade its worst, best and last floating per 5-minute block since entry (M1 wicks, the exit block holds the realised P&L), the day and block it opened in, the gaps between trades | imported | trades + M1 → unit dict |
-| `lay.py` | The numba kernels that lay whole trades on a synthetic calendar and fold each day's blocks into its joint low and high | imported | units → day arrays |
-| `judge.py` | Every path through every risk setting from its day 0: pass, fail or open, stages passed, the day, the rule; and the figures per setting — P(pass), P per phase, time to pass, which rule fails | imported | paths, plan, risk [C, phases] → codes, figures |
-| `blocklen.py` | The block lengths a combination is read at: Politis and White's on its own daily P&L, plus the sweep | imported | day table → lengths |
+| `blocklen.py` | How long the resampled blocks are: measured on the combination's own daily P&L, plus a sweep. | imported | day table → lengths |
+| `judge.py` | The rule machine over Monte Carlo paths and risk settings: who passes, when, and which rule fails. | imported | paths, plan, risk [C, phases] → codes, figures |
+| `lay.py` | Whole trades laid on a synthetic calendar of server days: the kernels behind T1 and T2. | imported | units → day arrays |
+| `paths.py` | Monte Carlo paths of a combination's server days: joint-daily blocks (D), trade bootstrap (T1, T2). | imported | day arrays or member units → `closed`, `float_end`, `low`, `high`, `opened` [n_paths, horizon] |
+| `units.py` | A member's trades as whole units: each one's floating path per block since entry, at unit risk. | imported | trades + M1 → unit dict |
 
 ## The registry: what each flavour holds fixed
 

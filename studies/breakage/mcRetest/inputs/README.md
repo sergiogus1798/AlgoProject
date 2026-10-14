@@ -14,8 +14,8 @@ one of those runs actually means*.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `config.py` | Reads `config.yaml`, applies `--set` overrides, and flattens it to dotted keys for the drawer and the manifest | imported | overrides → config |
-| `tasks.py` | **The provenance contract.** The eight tasks, what each perturbs and holds fixed, and the check that a databank really holds the task it claims | imported | `.sqx` → provenance, mismatches |
+| `config.py` | The single source of truth for every tunable of the study; it computes nothing. | imported | overrides → config |
+| `tasks.py` | The eight tasks: what each perturbs, what it holds fixed, and the check against what SQX ran. | imported | `.sqx` → provenance, mismatches |
 
 ## Contracts and traps
 

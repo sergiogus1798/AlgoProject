@@ -47,13 +47,13 @@ Only the entry points sit in the root, because they are the only things that get
 
 | file | what it does | run it |
 |---|---|---|
-| `ingest.py` | Reads the task databanks that ran once (only `bar` is required; since 2026-10-07 the chain runs `bar` and `ohlc`), reconciles every reconstructed metric against SQX, and writes one dated immutable export — with the original's P/L vector per task (`original_pnl`) and its dated build trades (`build`), which T2 and T3 read | `python3 -m studies.breakage.mcRetest.ingest --project XAUUSD` |
-| `run.py` | Puts one strategy through the four questions and returns the raw result the verdict reads; a task that did not run is a key that is not there | imported |
-| `load.py` | Everything one report reads from one ingest, once: simulations, originals, the confidence table, provenance and identity | imported |
-| `one.py` | **One strategy as the contract's data**: verdict, the tabs of what ran (the tab «Fragilidad» carries T1, the facts step 14 records, incl. `percentil_madre` and `dd_r_p99`; it judges nothing), glossary, summary row | imported — the window calls it |
-| `many.py` | Every strategy, and what can only be said across them, as one result | imported |
-| `report.py` | The command: every strategy of one ingest, to `verdict.csv`, `distribuciones.parquet` (each task's SQX re-executions against the original; `--strategy` merges its rows in), one JSON and one page per strategy, and the ingest's page. `--strategy` («1.26.46» or «Strategy 1.26.46») runs `one.run` on that strategy alone and rewrites only its `estrategias/` JSON and page — `verdict.csv`, `mcRetest.json` and the battery's cross-strategy facts are the population's | `python3 -m studies.breakage.mcRetest.report --project XAUUSD [--strategy "Strategy 1.26.46"]` |
-| `tooltips.py` | One sentence per `config.yaml` knob, for the window's configuration drawer | imported |
+| `ingest.py` | The command: read each .sqx once, reconcile it against SQX, and write the study's parquet. | `python3 -m studies.breakage.mcRetest.ingest --project XAUUSD` |
+| `load.py` | Everything one run of the retest study reads from one ingest, assembled once. | imported |
+| `many.py` | Every strategy of one ingest, and what can only be said across them, as one result. | imported |
+| `one.py` | One strategy's Monte Carlo Retest, returned as the contract's data: what the window paints. | imported — the window calls it |
+| `report.py` | The command: every strategy of one ingest, from parquet to a report and a verdict table. | `python3 -m studies.breakage.mcRetest.report --project XAUUSD [--strategy "Strategy 1.26.46"]` |
+| `run.py` | Puts one strategy through the four questions and returns the single result everything reads. | imported |
+| `tooltips.py` | One sentence per config.yaml knob, for the drawer's hover text. | imported |
 | `config.yaml` | Every tunable of the study, grouped by the layer that reads it | edited, or `--set section.key=value` |
 
 The browser panel is gone (2026-09-25, `core/study/CONTRACT.md`); the window paints `one.run()`'s dict,

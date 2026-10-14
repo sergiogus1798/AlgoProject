@@ -14,9 +14,9 @@ api ─▶ shelf ─▶ core.archive.read (listing, load) + each version's manif
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Package marker, one docstring | imported | — |
-| `api.py` | `GET /api/archive/list` and `GET /api/archive/show?identity&version`; a failure is a Spanish sentence, never a 500 | imported | request → JSON |
-| `shelf.py` | `strategies()`: one row per identity (name, project, symbol, timeframe, newest step, `archived_at`, the ledger count, versions oldest first); `show(identity, version)`: one version with the studies it froze per databank, what it skipped and why, and its provenance | imported | archive → dicts |
+| `__init__.py` | PORTFOLIOS' routes: the strategy archive listed and one version described, from files only. | imported | — |
+| `api.py` | PORTFOLIOS' two routes: `/api/archive/list` and `/api/archive/show` — files read, nothing run. | imported | request → JSON |
+| `shelf.py` | The archive as PORTFOLIOS lists it: one row per strategy with its versions, one version in full. | imported | archive → dicts |
 
 ## Contracts and traps
 

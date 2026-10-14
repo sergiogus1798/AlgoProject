@@ -7,20 +7,20 @@ the director read it. Outputs: `AlgoData/research/board/` and `AlgoData/research
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
+| `__main__.py` | The command: prints the board's one page and writes it as board.json and board.txt. | `python3 -m studies.research.board` | profile + memory → the page |
+| `factors.py` | The board's numbers per cell — prior, evidence, signal, coverage gap, past, brake — each 0-1. | imported | numbers → 0-1 |
+| `inputs.py` | What the board reads: its config, the profile's scores, the sweep's best variants, the memory. | imported | files → tables |
+| `many.py` | The board: the cells the prior or the measurements let in, ordered, each factor beside its rank. | imported | tables → the board dict |
+| `page.py` | The board as one page of Spanish text: what the director and the owner read. | imported | board → text |
+| `palette.py` | The free hole's block families for an idea of one family, by the two rules of the dossier's §5. | `python3 -m studies.research.board.palette momentum` | idea family → families, blocks |
+| `prior.py` | The owner's prior per asset, timeframe, direction and family: Alta, Media or nothing. | imported | cell → level |
+| `proposal.py` | A director's proposal: checked, stamped with the board's facts, saved as JSON and Markdown. | `python3 -m studies.research.board.proposal DRAFT.json` · `--step N --note "…"` | the director's draft → `<id>.json`, `<id>.md` |
+| `proposalmd.py` | A proposal as the Markdown the owner reads. | imported | proposal → text |
+| `selfcheck.py` | The profile examines itself: did high-score cells give more survivors than low-score ones? | `python3 -m studies.research.board.selfcheck` | attempts + scores → decision |
+| `store.py` | Where the board and the proposals live under the data root. | imported | — |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. | imported | — |
 | `config.yaml` | The weights of the three factors, the signal's cap, the prior of the past factor, the brake, the provisional-costs mark, **the one Spanish ↔ taxonomy family mapping**, the hole rules, the self-check's thresholds | edited | — |
-| `tooltips.py` | One Spanish sentence per knob | imported | — |
-| `inputs.py` | The config; `scores.csv`; the memory recomputed from its sources; `ideas_spent(…)` and `attempts_in(…)` per cell | imported | files → tables |
 | `prior.yaml` | The owner's prior transcribed: matrix asset × family (Alta/Media/Baja), main and secondary family per timeframe, and where it holds for longs only | edited | — |
-| `prior.py` | `level(…)` of one of the prior's families in a cell; `of(…)` for a board cell, with the prior's `pullback` filed under `prior.pullback_as` | imported | cell → level |
-| `factors.py` | `evidence` (naked, plateau, weak, none, against), `signal`, `gap`, `brake`, `past` (Beta posterior shrunk to the pooled rate, with its interval), `points` | imported | numbers → 0-1 |
-| `many.py` | `run(scores, memory, cfg, sweep)`: the gate — the prior rates the cell Alta, OR it passes the four filters naked, OR a sweep variant passes on a plateau; never a family whose lead needs the clock — the factors per cell, the order | imported | tables → the board dict |
-| `page.py` | The board as one page of Spanish text, every factor's raw value beside its 0-1, and the legend | imported | board → text |
-| `store.py` | `board_dir()`, `proposals_dir()`, JSON read/write | imported | — |
-| `__main__.py` | **The command**: prints the page, writes `board.json` and `board.txt` | `python3 -m studies.research.board` | profile + memory → the page |
-| `palette.py` | `hole(family)`: the block families the free hole may draw from and their weight, by orthogonality and «trend with counter-trend, never two alike», with `family_blocks` | `python3 -m studies.research.board.palette momentum` | idea family → families, blocks |
-| `proposal.py` | `check` (three ideas, one direction, no palette alike, questions with readings, each idea's hypothesis sheet and review, a reviewer that is not the proposer, every closed failure of the cell adopted or rejected), `launchable` (no veto, no open question, not «tumbada» when `review.removes` is on), `stamp` (id, board row, ideas spent, provisional costs, the two standing costs, each sheet's seal), `save`/`load`/`listing`, `step` | `python3 -m studies.research.board.proposal DRAFT.json` · `--step N --note "…"` | the director's draft → `<id>.json`, `<id>.md` |
-| `proposalmd.py` | A stamped proposal as the Markdown the owner reads, with each idea's sealed sheet and review and the stance on the cell's previous failures | imported | proposal → text |
-| `selfcheck.py` | The profile examines itself: closed runs split at their median score, survival rate of each half, Fisher's p, the decision (keep or halve `weights.signal`) and its cost in runs | `python3 -m studies.research.board.selfcheck` | attempts + scores → decision |
 
 ## The gate and the order (owner, 2026-10-02) — supersedes the dossier's «celdas grises no entran»
 

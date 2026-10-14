@@ -11,8 +11,8 @@ anything that reads bars
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `config.py` | Reads `config.yaml`: every tunable of the study, in one place | imported | overrides → config |
-| `markets.py` | Reconciles what the export really carries against what `assets/_markets.yaml` declares, and reads the main backtest's declared out-of-sample stretch | imported | asset + export → universe, OOS span |
+| `config.py` | The single source of truth for every tunable of the study; it computes nothing. | imported | overrides → config |
+| `markets.py` | What the study runs on: the export says which markets exist, assets/ says what they are. | imported | asset + export → universe, OOS span |
 
 ## Where a threshold is changed
 

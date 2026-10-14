@@ -15,11 +15,11 @@ api ─▶ source.newest · described · rows (equity | trades, filtered) · mar
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | Package marker | imported | — |
-| `api.py` | `ROUTER`: `GET /api/tearsheet/market?project&databank&identity&asset=` and `GET /api/tearsheet/trades?project&databank&identity&sample=IS\|OOS&pick=quantile\|random&seed=&asset=`; both take `source=live\|archive&version=` — archive reads the version's frozen `harvest/` rows, the bars stay the library's | imported | request → JSON or `{"error"}` |
-| `source.py` | Newest harvest, one strategy's rows, its name and timeframe, the asset and feed as the run buttons find them, bars cut after the last day of oos1 | imported | disk → frames |
-| `months.py` | Monthly P&L of the strategy and month return of the market, counted into four cells, a flat line and a no-market line, per sample | imported | frames → contract dict |
-| `trades.py` | Picks at P&L quantiles 0/25/50/75/100 % (or seeded random), and each trade's bar window | imported | frames → tiles |
+| `__init__.py` | The tear sheet's market side: month signs against the underlying and the trade gallery. | imported | — |
+| `api.py` | The tear sheet's market routes: month signs against the underlying, and the trade gallery. | imported | request → JSON or `{"error"}` |
+| `months.py` | Item 5: the month-sign count of a strategy against its market, IS and OOS apart, as a contract dict. | imported | frames → contract dict |
+| `source.py` | What the two routes read: one strategy's rows of the newest harvest, and its asset's bars cut at oos1. | imported | disk → frames |
+| `trades.py` | Item 6: five trades of one sample, at P&L quantiles or drawn with a seed, each with its bar window. | imported | frames → tiles |
 
 ## Contracts and traps
 

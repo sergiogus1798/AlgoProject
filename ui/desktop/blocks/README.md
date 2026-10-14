@@ -18,31 +18,31 @@ tools.report ─▶ screen.screen(result, memory) ─▶ POST /api/study/screen 
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `states.py` | Every colour a block is painted in: the contract states, the series, the heat scales and `CURVE`, a strategy's IS/OOS tones (SQX violet, real orange → red) that a series or column names as `ink` | imported | state → hex, label |
-| `kinds.py` | `WIDGETS = {kind: widget}` and `draw(block)`, which turns an unknown or broken block into a red line | imported | block → QWidget |
-| `result.py` | `ResultView`: `show(result, meta)` and `compare(left, right, titles)` — verdict, stale banner, tabs, warnings, glossary | imported | result dict(s) → page |
-| `tabpage.py` | One tab: its note, its selector combos (the market picker on a grouped tab), its blocks in one column or beside their counterparts | imported | tab(s) → page |
-| `pick.py` | Pure: a tab's selectors (derived from the tags when a partial re-run writes none), the values picked, the blocks shown, the pairs of a comparison | imported | tab, chosen → blocks |
-| `markets.py` | Grids differing only in `select.market`: 2-3 side by side (a toggle per market, a fourth lets go of the oldest) and the consensus grid of the same other picks under them | imported | tab, chosen, pool → row |
-| `head.py` | A result's top: verdict, the stamp line, the red stale banner | imported | result, meta → QWidget |
-| `tools.py` | The «Informe de lo que ves» button's call, and the strip of partial re-runs (al lado · fusionado · volver) | imported | results → sentence · strip |
-| `screen.py` | Pure: a result cut down to what is drawn, selectors removed and the choices written in each tab's note | imported | result, memory → result |
-| `fuse.py` | Pure: a partial re-run merged into its stored result — tagged blocks replace their twins, selectors gain the new values, verdict kept | imported | stored, partial → result |
-| `card.py` | The frame of a block: its own title and note above the drawing | imported | block, widgets → QFrame |
-| `chart.py` | The painting ground: `Canvas` (paint + hover tooltip), axes, number format, the key under a chart | imported | — |
-| `axis.py` | Round ticks, data-to-pixel maps, x placement of numbers vs labels, paths broken at gaps | imported | — |
-| `distribution.py` | Histogram, red/green sign shade, «X % rentables» caption, band shaded, median dashed, real value marked, headline figures, percentile row (numeric order; with `row_unit`, heads «1%»… and each cell in that unit); hands a block with `series` to `density` | imported | block → QWidget |
-| `density.py` | Several samples (IS, OOS) as densities on the same bins, a toggle per sample, n/median per sample and the median shift + KS p beside, the union's percentiles under | imported | block → QWidget |
-| `shade.py` | The faint red/green background behind the negative/positive side of a histogram's x axis (`sign_shade`) | imported | painter, box, x map → paint |
-| `cone.py` | Percentile bands filled (levels read from the block's `bands` keys: 2,5-97,5 or 5-95), median dashed, real curve on top, the OOS split | imported | block → QWidget |
-| `grid.py` | Heat map on a discrete scale (`levels`, else eight steps of `scale_range` or of its own range), θ₀ `mark` outlined, every cell labelled when it fits, the scale's key beneath | imported | block → QWidget |
-| `scatter.py` | Points by group (at most 400, seeded sample; the fit uses all), quadrants through zero, fitted line with its r | imported | block → QWidget |
-| `bars.py` | Horizontal bars coloured by state, error whiskers, reference line, value past the whisker; with `vertical`, columns over their labels, each in its item's `ink` when it names one | imported | block → QWidget |
-| `lines.py` | Series over one x axis (optional `x_label`/`y_label` name the axes): a series naming an `ink` in that tone (dashed with `dash`), a lone real series in the real ink, references dashed | imported | block → QWidget |
-| `table.py` | Sortable table in the study's own order, numbers the window's way, full cell on hover; columns are measured again on first show, in the frame's own font, and a compact table leaves room for its scrollbar | imported | block → QWidget |
-| `verdict.py` | The label in its state's colour, never without its meaning, and its parts as tiles | imported | block → QWidget |
-| `callout.py` | The `callout` kind (2026-09-30): one coloured, bold sentence the study wants seen ahead of the rest | imported | block → QWidget |
-| `desclist.py` | The `list` kind (2026-09-30): a title in bold and a short description under it, one item after another | imported | block → QWidget |
+| `axis.py` | The geometry of a chart: round ticks, data-to-pixel maps and paths through the points. | imported | — |
+| `bars.py` | The bars block: one bar per item, coloured by its state, with its error and a reference — horizontal, or columns over their labels. | imported | block → QWidget |
+| `callout.py` | The callout block: one coloured sentence the study wants seen, not read past. | imported | block → QWidget |
+| `card.py` | The frame every block sits in: its title, its explanation, then what it draws. | imported | block, widgets → QFrame |
+| `chart.py` | The painting ground every chart block shares: the canvas, its axes, its numbers and its key. | imported | — |
+| `cone.py` | The cone block: the simulated equity bands, the real curve on top and where the OOS starts. | imported | block → QWidget |
+| `density.py` | A distribution with several samples: each one a density on the same bins, a toggle per sample, the shift beside. | imported | block → QWidget |
+| `desclist.py` | The list block: a title in bold and a short description under it, one item after another. | imported | block → QWidget |
+| `distribution.py` | The distribution block: the null's histogram, its band, its median and the real value marked — or several samples as densities. | imported | block → QWidget |
+| `fuse.py` | A partial re-run laid into the stored result it belongs to: its tagged blocks replace their twins, the rest stays. | imported | stored, partial → result |
+| `grid.py` | The grid block: a heat map on a discrete scale, every cell labelled, θ₀ marked, the scale's key beneath. | imported | block → QWidget |
+| `head.py` | The top of a result: its verdict, the line saying when and under what it was computed, the stale banner. | imported | result, meta → QWidget |
+| `kinds.py` | Which widget draws which block kind, and the one call every view makes to draw a block. | imported | block → QWidget |
+| `lines.py` | The lines block: several series over one x axis, each in the colour of its role. | imported | block → QWidget |
+| `markets.py` | Grids that differ only in their market, laid side by side (2-3 chosen), with the consensus grid under them. | imported | tab, chosen, pool → row |
+| `pick.py` | Which stored blocks the chosen selector values pick, and which block sits beside which: filters, never recomputes. | imported | tab, chosen → blocks |
+| `result.py` | The whole of one study result, or two side by side: verdict, staleness, tabs, warnings, glossary. | imported | result dict(s) → page |
+| `scatter.py` | The scatter block: points by group, the quadrants through zero and the fitted line if any. | imported | block → QWidget |
+| `screen.py` | The result as it stands on screen: each tab reduced to the blocks drawn, its choices written in its note. | imported | result, memory → result |
+| `shade.py` | The sign shade of a histogram: faint red behind the negative side of the x axis, faint green behind the positive. | imported | painter, box, x map → paint |
+| `states.py` | Every colour a block is painted in: the contract states, the series and the heat scales. | imported | state → hex, label |
+| `table.py` | The table block: sortable, numbers printed the window's way, every cell's full text on hover. | imported | block → QWidget |
+| `tabpage.py` | One contract tab, in one column or beside its counterpart: its note, its selectors, its blocks. | imported | tab(s) → page |
+| `tools.py` | Above a result: the report of what is on screen, and the partial re-runs kept beside the stored result. | imported | results → sentence · strip |
+| `verdict.py` | The verdict block: the label in its state's colour, never alone, with its meaning and its parts. | imported | block → QWidget |
 
 Test: `python3 tests/test_ui_blocks.py` draws every population result and three strategy results
 per study under `AlgoData/reports/`, offscreen, in ~3 s.

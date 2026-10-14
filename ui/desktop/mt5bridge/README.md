@@ -5,7 +5,7 @@ Today one zone, «Verificar»: step 26 for one strategy.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | The package's one-line purpose | imported | — |
-| `zone.py` | `VerifyZone`: the form (the strategy chosen in Proyecto, an archived one, or one from the BanquilloEstrategias pool; Desde/Hasta pre-filled from `/api/mt5bridge/dates` and editable; the tester's model; the firms' lights), «▶ Verificar en SQX y en MT5» as a `JobButton` confirmed by `/api/mt5bridge/preflight`, a `ForceClose` for a wedged-open terminal, the list of past checks and the chosen one's result in `blocks.result.ResultView`, filtered by the active firms | imported by `shell.py` | daemon → form, list, result |
-| `render.py` | `TICKS_HELP` (the tooltip of the form's «Segunda pasada · Repetir con Real ticks» box, owner 2026-10-04), `runs_table`/`fill_runs`/`short` (the past-runs table: a failed run reads «Falló» in red, its state cut to one line), `LEGEND`, `no_result` (what stands where a failed or running check's result would be), `FirmLight` (the square-with-a-light firm toggle, spelled `FTMO`/`Hantec`), the past-runs table's header and rows, and `filtered()` — the pure function that drops an inactive firm's chart series, verdict, unpaired-trades table and parameter column from a loaded result before it is drawn | imported | result + active firms → the result to draw |
-| `forceclose.py` | `ForceClose`: one button for a terminal neither the window nor the owner can close by hand — posts to `/api/mt5bridge/close-terminal` off the GUI thread, says whether it was closed cleanly or killed outright | imported | click → daemon call, status text |
+| `__init__.py` | MT5 BRIDGE: the window's zones over MetaTrader 5 — today «Verificar», step 26. | imported | — |
+| `forceclose.py` | The button for a wedged-open MT5 terminal: close it well if possible, kill it if not. | imported | click → daemon call, status text |
+| `render.py` | Drawing helpers for Verificar: the firm's light widget, the past-runs table, result filtering. | imported | result + active firms → the result to draw |
+| `zone.py` | MT5 BRIDGE › Verificar: one strategy in SQX at each prop firm's conditions against its MT5 backtest. | imported by `shell.py` | daemon → form, list, result |

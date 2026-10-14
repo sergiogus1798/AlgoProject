@@ -15,8 +15,8 @@ which is the only way to find out whether a verdict depended on it.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `stress.py` | **Family C.** Missed entries, worse costs, degraded fills toward each trade's own MAE, wider spread | imported | stream → P&L matrix |
-| `windows.py` | The calendar slices: rolling windows, non-overlapping blocks, and the calendar split | imported | times → positions |
+| `stress.py` | Family C: what the same trades are worth under worse fills, worse costs and missed entries. | imported | stream → P&L matrix |
+| `windows.py` | Family D in time: the calendar slices of a trade stream, defined in months, never in trades. | imported | times → positions |
 
 ## Contracts and traps
 

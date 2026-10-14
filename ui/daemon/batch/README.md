@@ -9,8 +9,8 @@ optimisation runner would pick (`runner/where.batch`), nothing else.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `api.py` | `ROUTER`: `GET /api/batch?project&strategy` (the panel, or `{"has_batch", "error"}`), `GET /api/batch/has?project&strategy` (whether a batch folder exists, without opening it) | imported | request → JSON |
-| `panel.py` | Finds the batch (`strategyPermutations/<P>/<Strategy_x.y.z>/` or `pipeline/<P>/<Strategy_x-y-z>/`) and reads only the columns the view needs: labels, `param_*`, the two NetProfits | imported | metrics.parquet → dict |
+| `api.py` | The variant-batch routes: one mother's batch for the parallel coordinates, and whether it has one. | imported | request → JSON |
+| `panel.py` | One mother's variant batch as the parallel-coordinates view draws it: build, oos1 and, when the batch has it, oos2. | imported | metrics.parquet → dict |
 
 ## Contracts and traps
 

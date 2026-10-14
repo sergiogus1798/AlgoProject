@@ -19,10 +19,10 @@ rho_bar = sum(w_m rho_m) / sum(w_m)                                       what d
 
 | file | what it does |
 |---|---|
+| `one.py` | One variant batch through step 18.5: the common sets, the readings, the reference and the facts. |
+| `report.py` | Step 18.5 over one mother's variant batch: does the main market's order of variants travel to the others? |
+| `tooltips.py` | One sentence per config.yaml knob, for the window's configuration drawer. |
 | `config.yaml` | every knob; the tuned ones point at `ledger/thresholds.yaml` (`marketSurfaces.*`) |
-| `tooltips.py` | one Spanish sentence per knob, for the window's drawer |
-| `one.py` | `legs` (which legs are read where), `measure` (the common sets, the readings, the reference) and `facts` (what the judge and step 20 read, and the state) |
-| `report.py` | the command: asks the ledger's door, reads, measures, writes, logs the look |
 
 | folder | the question it answers |
 |---|---|

@@ -8,8 +8,8 @@ the verdict did not: it only draws.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `tabs.py` | Five tabs — Veredicto (the oos1 null with the chosen one marked, or a callout when the null cannot discriminate; the chosen metrics; the oos2 reading), Universo (members, floor risk, days per segment, exclusions), Parejas (pairs rejected per filter on build; the chosen pairs over a threshold out of sample), Búsqueda (the funnel, every build score), Cartera (cumulative P&L per segment with each member's own share as a reference line, members and weights, P&L per month) — and the envelope with the verdict block on top | imported | inputs, verdict → contract dict |
-| `words.py` | The Spanish titles and notes of those blocks | imported | — |
+| `tabs.py` | The portfolio run as the contract's blocks (PLAN §5.6): Veredicto, Universo, Parejas, Búsqueda, Cartera. | imported | inputs, verdict → contract dict |
+| `words.py` | The Spanish words of the portfolio result: tab titles, the notes each block opens with. | imported | — |
 
 ## Traps
 - **oos2 is drawn only when the verdict read it**: the Cartera tab plots `build` plus the segments
