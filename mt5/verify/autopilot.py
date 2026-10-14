@@ -122,10 +122,10 @@ def job(argv: list[str], log: Path) -> int:
                                 stderr=subprocess.STDOUT)
         try:
             return proc.wait()
-        except BaseException:
-            proc.terminate()
-            proc.wait()
-            raise
+        finally:
+            if proc.poll() is None:     # cancelled from above: give the job the signal, wait for its `finally`
+                proc.terminate()
+                proc.wait()
 
 
 def run(project: str, finalists: list[dict], params: dict, out: Path) -> str:

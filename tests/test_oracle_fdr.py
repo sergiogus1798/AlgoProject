@@ -36,18 +36,13 @@ def rep(ok: bool, name: str, msg: str = "") -> None:
 
 
 def run(name: str, f: Callable[[], None]) -> None:
-    """Run one check, counting an exception as an ERROR.
+    """Run one check; an exception ends the script with its traceback.
 
     Args:
         name: Check label.
         f: The check, called with no arguments.
     """
-    global bad
-    try:
-        f()
-    except Exception as e:
-        bad += 1
-        print(f"ERROR {name}: {type(e).__name__}: {e}")
+    f()
 
 
 def rows_of(p: Iterable[float]) -> list[dict]:
@@ -183,12 +178,12 @@ def g() -> None:
     try:
         d = fdr.discoveries(r, 0.05)
         print(f"INFO g_nan discoveries={sorted(d)} nan_named={'nan' in d}")
-    except Exception as e:
+    except ValueError as e:
         print(f"INFO g_nan discoveries raises {type(e).__name__}: {e}")
     try:
         q = fdr.adjusted(r)
         print(f"INFO g_nan adjusted={q}")
-    except Exception as e:
+    except ValueError as e:
         print(f"INFO g_nan adjusted raises {type(e).__name__}: {e}")
 
 

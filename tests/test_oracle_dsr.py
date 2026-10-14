@@ -168,11 +168,7 @@ def t_plateau() -> None:
 def main() -> None:
     """Run every check; exit 1 on any FAIL or ERROR."""
     for fn in (t_moments, t_psr, t_mintrl, t_expmax, t_dsr, t_plateau):
-        try:
-            fn()
-        except Exception as ex:  # noqa: BLE001
-            print(f"ERROR {fn.__name__}: {ex!r}")
-            BAD.append(fn.__name__)
+        fn()
     sys.exit(1 if BAD else 0)
 
 

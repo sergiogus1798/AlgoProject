@@ -178,18 +178,14 @@ def t_tag() -> None:
     try:
         rg.tag(np.array(["2030-01-01T10:00"], dtype="datetime64[ns]"), vol)
         ok("tag.missing_day_raises", False, "no exception for a day absent from the series")
-    except Exception as e:  # noqa: BLE001
+    except ValueError as e:
         ok("tag.missing_day_raises", True, repr(e))
 
 
 def main() -> None:
     """Run every check; exit 1 on any FAIL or ERROR."""
     for fn in (t_daily, t_atr, t_garch, t_tag):
-        try:
-            fn()
-        except Exception as e:  # noqa: BLE001
-            print(f"ERROR {fn.__name__}: {e!r}")
-            BAD.append(fn.__name__)
+        fn()
     sys.exit(1 if BAD else 0)
 
 

@@ -36,18 +36,13 @@ def rep(ok: bool, name: str, msg: str = "") -> None:
 
 
 def run(name: str, f: Callable[[], None]) -> None:
-    """Run one check, counting an exception as an ERROR.
+    """Run one check; an exception ends the script with its traceback.
 
     Args:
         name: Check label.
         f: The check, called with no arguments.
     """
-    global bad
-    try:
-        f()
-    except Exception as e:
-        bad += 1
-        print(f"ERROR {name}: {type(e).__name__}: {e}")
+    f()
 
 
 def frame(groups: list, units: list[str] | None = None) -> pd.DataFrame:
@@ -164,12 +159,9 @@ def e() -> None:
     units = ["annualised"]*2 + ["per_period"]*2
     gs = [gd[i]*sc if units[i] == "annualised" else gd[i] for i in range(4)]
     truth = np.std(np.concatenate(gd), ddof=1)
-    try:
-        r = acc(frame(gs, units))
-        print(f"INFO e_units sigma={r['sigma']} unit={r.get('unit')} daily_truth={truth} "
-              f"match={abs(r['sigma']-truth)<1e-9} mean={r['mean']} n={r['n']}")
-    except Exception as ex:
-        print(f"INFO e_units raises {type(ex).__name__}: {ex}")
+    r = acc(frame(gs, units))
+    print(f"INFO e_units sigma={r['sigma']} unit={r.get('unit')} daily_truth={truth} "
+          f"match={abs(r['sigma']-truth)<1e-9} mean={r['mean']} n={r['n']}")
 
 
 run("e", e)
@@ -182,13 +174,10 @@ def f() -> None:
     u = np.concatenate(g)
     fr = frame(g)
     fr.loc[len(fr)] = [50, 0.3, 0.01, "p_pass"]
-    try:
-        r = acc(fr)
-        print(f"INFO f_ppass n={r['n']} (sharpe-only n={len(u)}, +50={len(u)+50}) sigma={r['sigma']} "
-              f"truth={np.std(u, ddof=1)} sigma_matches_truth={abs(r['sigma']-np.std(u,ddof=1))<1e-9} "
-              f"mean={r['mean']} true_mean={u.mean()} unit={r.get('unit')} keys={sorted(r)}")
-    except Exception as ex:
-        print(f"INFO f_ppass raises {type(ex).__name__}: {ex}")
+    r = acc(fr)
+    print(f"INFO f_ppass n={r['n']} (sharpe-only n={len(u)}, +50={len(u)+50}) sigma={r['sigma']} "
+          f"truth={np.std(u, ddof=1)} sigma_matches_truth={abs(r['sigma']-np.std(u,ddof=1))<1e-9} "
+          f"mean={r['mean']} true_mean={u.mean()} unit={r.get('unit')} keys={sorted(r)}")
 
 
 run("f", f)

@@ -98,9 +98,8 @@ def _write(all_rows: list[dict]) -> None:
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp, path)
-    except BaseException:
-        tmp.unlink(missing_ok=True)
-        raise
+    finally:
+        tmp.unlink(missing_ok=True)     # gone already after the replace
 
 
 def record(done: dict, purpose: str, symbol: str, template: str, family: str = "") -> None:

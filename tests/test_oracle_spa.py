@@ -49,11 +49,7 @@ def guard(fn: Callable) -> Callable:
 
     def run(*a: Any, **k: Any) -> None:
         """Call `fn`, reporting any exception."""
-        try:
-            fn(*a, **k)
-        except Exception as exc:
-            RES["bad"] += 1
-            print(f"ERROR {fn.__name__}: {type(exc).__name__}: {exc}")
+        fn(*a, **k)
     return run
 
 
@@ -156,19 +152,16 @@ def agree_stepm() -> None:
     """StepM names the same sets as the arch library."""
     if ASPA is None:
         print("INFO skipped (no arch)"); return
-    reps, same, raised = 1000, 0, 0
+    reps, same = 1000, 0
     for i, x in enumerate(ref_panels()):
         mine = set(S.stepm(x, 0.05, BLOCK, reps, i))
-        try:
-            a = ASTEPM(np.zeros(len(x)), -x, size=0.05, block_size=BLOCK, reps=reps, bootstrap="stationary", seed=i)
-            a.compute()
-            ref = set(a.superior_models)
-        except Exception as exc:
-            raised += 1; print(f"INFO arch StepM raised on panel {i}: {exc}"); continue
+        a = ASTEPM(np.zeros(len(x)), -x, size=0.05, block_size=BLOCK, reps=reps, bootstrap="stationary", seed=i)
+        a.compute()
+        ref = set(a.superior_models)
         same += mine == ref
         if mine != ref:
             print(f"INFO stepm differ panel {i}: project={sorted(mine)} arch={sorted(ref)}")
-    report("StepM vs arch: identical sets in >=27/30", same >= 27, f"observed={same}/30 (arch raised {raised})")
+    report("StepM vs arch: identical sets in >=27/30", same >= 27, f"observed={same}/30")
 
 
 @guard

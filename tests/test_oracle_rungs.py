@@ -203,11 +203,7 @@ def t_attribute() -> None:
 def main() -> None:
     """Run every check; exit 1 on any FAIL or ERROR."""
     for fn in (t_rungs, t_uniform, t_stats, t_attribute):
-        try:
-            fn()
-        except Exception as e:  # noqa: BLE001
-            print(f"ERROR {fn.__name__}: {e!r}")
-            BAD.append(fn.__name__)
+        fn()
     sys.exit(1 if BAD else 0)
 
 

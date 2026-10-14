@@ -42,7 +42,7 @@ def test_round_trip_and_crash() -> None:
             bad = {"x.xml": b"1", "y.xml": object()}            # writestr raises on the second
             try:
                 cfxio.write(cfx, bad)
-            except Exception:
+            except TypeError:
                 pass
             else:
                 raise AssertionError("the crash did not happen")

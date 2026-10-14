@@ -29,11 +29,7 @@ def guard(name: str) -> Callable:
         """Wrap `fn` in the error guard."""
         def run(*a: Any, **k: Any) -> None:
             """Call `fn`, reporting any exception."""
-            try:
-                fn(*a, **k)
-            except Exception as exc:  # the script continues
-                RES["bad"] += 1
-                print(f"ERROR {name}: {type(exc).__name__}: {exc}")
+            fn(*a, **k)
         return run
     return deco
 

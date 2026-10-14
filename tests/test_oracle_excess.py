@@ -116,11 +116,7 @@ def t_resolution() -> None:
 def main() -> None:
     """Run every check; exit 1 on any FAIL or ERROR."""
     for fn in (t_excess, t_share_null, t_resolution):
-        try:
-            fn()
-        except Exception as e:  # noqa: BLE001
-            print(f"ERROR {fn.__name__}: {e!r}")
-            BAD.append(fn.__name__)
+        fn()
     sys.exit(1 if BAD else 0)
 
 

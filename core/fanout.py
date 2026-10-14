@@ -51,6 +51,5 @@ def run(work: Callable, costs: dict, workers: int) -> Iterator[tuple]:
         try:
             for done in as_completed(pending):
                 yield pending[done], done.result()
-        except BaseException:
+        finally:        # a no-op once every future is done; on a raise or a closed generator, drop the queue
             pool.shutdown(wait=False, cancel_futures=True)
-            raise

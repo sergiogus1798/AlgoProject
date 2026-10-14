@@ -34,18 +34,13 @@ def rep(ok: bool, name: str, msg: str = "") -> None:
 
 
 def run(name: str, f: Callable[[], None]) -> None:
-    """Run one check, counting an exception as an ERROR.
+    """Run one check; an exception ends the script with its traceback.
 
     Args:
         name: Check label.
         f: The check, called with no arguments.
     """
-    global bad
-    try:
-        f()
-    except Exception as e:
-        bad += 1
-        print(f"ERROR {name}: {type(e).__name__}: {e}")
+    f()
 
 
 G = verdict.GOOD_HIGH
@@ -134,10 +129,7 @@ def e() -> None:
     name = hi
     d = np.arange(1., 100.)
     for lab, s, dr in (("seen_nan", float("nan"), d), ):
-        try:
-            print(f"INFO e_{lab} -> {verdict.pvalue(s, dr, name)}")
-        except Exception as ex:
-            print(f"INFO e_{lab} raises {type(ex).__name__}: {ex}")
+        print(f"INFO e_{lab} -> {verdict.pvalue(s, dr, name)}")
     dn = d.copy()
     dn[:10] = np.nan
     seen = 50.
@@ -145,11 +137,8 @@ def e() -> None:
     fin = d[10:]
     only = (1 + c) / (len(fin) + 1)
     den = (1 + c) / (len(dn) + 1)
-    try:
-        got = verdict.pvalue(seen, dn, name)
-        print(f"INFO e_draws_nan got={got} nonNaN_only={only} NaN_in_denominator={den}")
-    except Exception as ex:
-        print(f"INFO e_draws_nan raises {type(ex).__name__}: {ex}")
+    got = verdict.pvalue(seen, dn, name)
+    print(f"INFO e_draws_nan got={got} nonNaN_only={only} NaN_in_denominator={den}")
 
 
 run("e", e)

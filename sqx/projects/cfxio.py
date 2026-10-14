@@ -68,6 +68,5 @@ def write(cfx: Path, members: dict[str, bytes], *, force: bool = False) -> None:
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp, cfx)
-    except BaseException:
-        tmp.unlink(missing_ok=True)
-        raise
+    finally:
+        tmp.unlink(missing_ok=True)     # gone already after the replace
