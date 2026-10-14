@@ -1,5 +1,6 @@
 """Every number of one in-sample / out-of-sample composition: the order on gross excess, the level on net."""
 
+from typing import Any, cast
 import numpy as np
 
 from core.study import draws
@@ -17,7 +18,7 @@ def _spearman(fixed: np.ndarray, flips: np.ndarray, panel: np.ndarray) -> np.nda
 
 def measure(e_is: dict, e_oos: dict, weeks: dict, years: float, cfg: dict,
             straddle: float = 0.0, name: str = "", comp: str = "",
-            record: list | None = None) -> dict:
+            record: list | None = None) -> dict[str, Any]:
     """The order, the level and what is annotated beside them, for one composition.
 
     The order is read before costs: the variants that trade more pay more on both sides, which
@@ -95,8 +96,8 @@ def measure(e_is: dict, e_oos: dict, weeks: dict, years: float, cfg: dict,
         "nivel_top_dentro": float(np.median(inside[best])),
         "nivel_todas_dentro": float(np.median(inside)),
         "r_sel": None if kept is None else float(kept),
-        "r_sel_p5": None if kept is None else float(low),
-        "r_sel_p95": None if kept is None else float(high),
+        "r_sel_p5": None if kept is None else float(cast(float, low)),
+        "r_sel_p95": None if kept is None else float(cast(float, high)),
         "cuadrante_pp": int((win_in & win_out).sum()),
         "cuadrante_pn": int((win_in & ~win_out).sum()),
         "cuadrante_np": int((~win_in & win_out).sum()),

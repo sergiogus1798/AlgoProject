@@ -6,6 +6,8 @@ import hashlib
 from datetime import date
 from pathlib import Path
 
+import pandas as pd
+
 from core.manifest import write as write_manifest
 from core.paths import report_dir
 from core.study import output
@@ -16,7 +18,7 @@ from studies.screening.falsePositives import inputs, many
 SHOWN = ["nivel", "step", "estado", "n_in", "pass", "limbo", "n_out"]
 
 
-def to_ledger(project: str, funnel: object, source: dict) -> str:
+def to_ledger(project: str, funnel: pd.DataFrame, source: dict) -> str:
     """One ledger row per step a rule was applied at, in the real population's own study.
 
     Args:
@@ -34,13 +36,13 @@ def to_ledger(project: str, funnel: object, source: dict) -> str:
         return "Ledger: el proyecto no tiene plantilla en registry.csv: no se apunta"
     sid, row = signed
     sha = hashlib.sha256(Path(source["criteria"]).read_bytes()).hexdigest()
-    done = funnel[(funnel["applied"] > 0) & (funnel["nivel"] == many.NULL)]
-    for r in done.itertuples():
-        record.log(sid, {"step": float(r.step), "launched_by": "falsePositives",
+    done = pd.DataFrame(funnel[(funnel["applied"] > 0) & (funnel["nivel"] == many.NULL)])
+    for r in done.to_dict("records"):
+        record.log(sid, {"step": float(r["step"]), "launched_by": "falsePositives",
                          "symbol": row["symbol"], "timeframe": row["timeframe"],
-                         "segment": r.segment, "n_in": int(r.n_in),
-                         "n_out": int(r.n_out), "seeds": source["seed"],
-                         "criterion": f"monos: criteria.yaml paso {r.step} ({r.estado})",
+                         "segment": r["segment"], "n_in": int(r["n_in"]),
+                         "n_out": int(r["n_out"]), "seeds": source["seed"],
+                         "criterion": f"monos: criteria.yaml paso {r['step']} ({r['estado']})",
                          "config_hash": sha, "note": f"monos · {source['harvest']}"})
     return f"Ledger: {len(done)} filas de monos en {sid}"
 
@@ -81,9 +83,9 @@ def main() -> None:
                    got["money"] | {"donantes_fuera": len(got["skipped"])})
 
     print(got["funnel"][SHOWN].to_string(index=False))
-    for r in got["funnel"][got["funnel"]["nivel"] == many.NULL].itertuples():
-        if r.no_aplicado:
-            print(f"paso {r.step} · {r.estado}: {r.no_aplicado}")
+    for r in pd.DataFrame(got["funnel"][got["funnel"]["nivel"] == many.NULL]).to_dict("records"):
+        if r["no_aplicado"]:
+            print(f"paso {r['step']} · {r['estado']}: {r['no_aplicado']}")
     for state in ("pass", "fail"):
         print(f"\n{state}, cada regla sola:")
         print(many.shares(got["rules"], list(dict.fromkeys(got["rules"]["nivel"])), state)

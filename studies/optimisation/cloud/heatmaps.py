@@ -1,5 +1,6 @@
 """The heat maps: the metric over every pair of the most sensitive parameters, the mother marked."""
 
+from typing import cast
 from itertools import combinations
 
 import numpy as np
@@ -19,11 +20,11 @@ def _axis(values: pd.Series, origin: float) -> tuple[pd.Series, list[str], str]:
         The cell label of every variant, the labels in ascending order, and the label of the
         cell holding theta-zero.
     """
-    cut = values if values.nunique() <= BINS else pd.cut(values, BINS)
+    cut = cast(pd.Series, values if values.nunique() <= BINS else pd.cut(values, BINS))
     text = lambda v: f"{v.left:.3g}–{v.right:.3g}" if isinstance(v, pd.Interval) else f"{v:g}"
     labels = [text(v) for v in sorted(cut.unique())]
     out = cut.map(text).astype(str)
-    return out, labels, text(cut[values == origin].iloc[0])
+    return out, labels, text(cast(pd.Series, cut[values == origin]).iloc[0])
 
 
 def pairs(frame: pd.DataFrame, params: list[str], values: np.ndarray, total: np.ndarray,
@@ -42,13 +43,13 @@ def pairs(frame: pd.DataFrame, params: list[str], values: np.ndarray, total: np.
         `grid` blocks, red to green, sharing one colour range so they compare; each cell is
         the median of the variants that fall in it and the mother is marked θ₀.
     """
-    top = [params[i] for i in np.argsort(total)[::-1][:top]]
-    if len(top) < 2:
+    chosen = [params[i] for i in np.argsort(total)[::-1][:top]]
+    if len(chosen) < 2:
         return []
     origin = frame[frame["origin"]].iloc[0]
-    axes = {p: _axis(frame[p], origin[p]) for p in top}
+    axes = {p: _axis(cast(pd.Series, frame[p]), origin[p]) for p in chosen}
     cells = {}
-    for x, y in combinations(top, 2):
+    for x, y in combinations(chosen, 2):
         both = pd.DataFrame({"x": axes[x][0], "y": axes[y][0], "v": values})
         cells[x, y] = both.pivot_table(index="y", columns="x", values="v", aggfunc="median") \
             .reindex(index=axes[y][1], columns=axes[x][1])

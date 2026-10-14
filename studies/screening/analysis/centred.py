@@ -1,5 +1,7 @@
 """What the gate reads against its own population's centre: the change of trading rate from the build to oos1, the slope of a per-trade column in time."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -14,8 +16,9 @@ def calendar_exposure(first: pd.Timestamp, last: pd.Timestamp) -> pd.Series:
         (1.0 for a whole one, less for the two at the edges).
     """
     years = range(first.year, last.year + 1)
-    return pd.Series([(min(last, pd.Timestamp(year + 1, 1, 1)) - max(first, pd.Timestamp(year, 1, 1)))
-                      / pd.Timedelta(days=YEAR) for year in years], index=list(years))
+    year = cast(pd.Timedelta, pd.Timedelta(days=YEAR))
+    return pd.Series([cast(pd.Timedelta, min(last, pd.Timestamp(y + 1, 1, 1)) - max(first, pd.Timestamp(y, 1, 1)))
+                      / year for y in years], index=list(years))
 
 
 def dispersion(counts: pd.DataFrame, exposure: pd.Series, low: float, high: float) -> pd.Series:
@@ -73,10 +76,10 @@ def centre(values: pd.Series, group: pd.Series, min_strategies: int,
         Per strategy, the median of its population's values, capped.
     """
     by = values.groupby(group.reindex(values.index))
-    median = by.transform("median")
+    median = pd.Series(by.transform("median"))
     if cap is not None:
         median = median.clip(-cap, cap)
-    return median.where(by.transform("count") >= min_strategies, 0.0)
+    return median.where(pd.Series(by.transform("count")) >= min_strategies, 0.0)
 
 
 def slope(trades: pd.DataFrame, value: str, years: np.ndarray) -> pd.DataFrame:
@@ -99,12 +102,12 @@ def slope(trades: pd.DataFrame, value: str, years: np.ndarray) -> pd.DataFrame:
     n, mean = by.size(), by.mean()
     d = frame - by.transform("mean")
     moments = pd.DataFrame({"xx": d["x"] ** 2, "xy": d["x"] * d["y"]}).groupby(key, sort=False)
-    b = moments["xy"].sum() / moments["xx"].sum()
-    r = (d["y"] - moments["xy"].transform("sum") / moments["xx"].transform("sum") * d["x"]).to_numpy()
+    b = pd.Series(moments["xy"].sum()) / pd.Series(moments["xx"].sum())
+    r = (d["y"] - pd.Series(moments["xy"].transform("sum")) / pd.Series(moments["xx"].transform("sum")) * d["x"]).to_numpy()
     lagged = np.where(np.r_[False, key[1:] == key[:-1]], r * np.r_[0.0, r[:-1]], 0.0)
     sums = pd.DataFrame({"g0": r * r, "g1": lagged}).groupby(key, sort=False).sum()
     rho = sums["g1"] / sums["g0"]
-    effective = np.minimum(n * (1 - rho) / (1 + rho), n).clip(lower=2)
-    variance = (sums["g0"] / (n - 2) / moments["xx"].sum()).where(n > 2)
+    effective = pd.Series(np.minimum(n * (1 - rho) / (1 + rho), n)).clip(lower=2)
+    variance = pd.Series(sums["g0"] / (n - 2) / moments["xx"].sum()).where(n > 2)
     return pd.DataFrame({"n": n, "b": b, "se": np.sqrt(variance * n / effective),
                          "mean": mean["y"]})

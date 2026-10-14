@@ -28,8 +28,8 @@ def table(daily: pd.DataFrame, trades: pd.DataFrame, risk: float, years: float) 
     by = trades.groupby("identity", sort=False)
     table = pd.DataFrame({"max_dd_r": (equity.cummax().clip(lower=0.0) - equity).max() / risk,
                           "worst_day_r": daily.min() / risk,
-                          "worst_trade_mae_r": by["MAE ($)"].min() / risk,
-                          "net_per_year_r": by["Profit/Loss"].sum() / years / risk})
+                          "worst_trade_mae_r": pd.Series(by["MAE ($)"].min()) / risk,
+                          "net_per_year_r": pd.Series(by["Profit/Loss"].sum()) / years / risk})
     net = table["net_per_year_r"]
     ratio = (table["max_dd_r"] / net.where(net > 0)).where(net > 0, np.inf)
     return table.assign(dd_over_net_year=ratio.where(net.notna() & table["max_dd_r"].notna()))

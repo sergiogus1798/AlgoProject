@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
 import numpy as np
 import pandas as pd
@@ -31,7 +32,16 @@ def _free(out: Path, project: str, databank: str, export: str) -> None:
         raise FileExistsError(f"{out} holds a result or is the live study's folder; pass a new one")
 
 
-def _checks(inputs: dict, cfg: dict, params: dict) -> tuple[list[dict], dict]:
+class Travelled(TypedDict):
+    """The export judged on the other markets: the verdict and markets frames, §7.1's row per market and the draws rows."""
+
+    verdict: pd.DataFrame
+    markets: pd.DataFrame
+    checks: list[dict[str, Any]]
+    draws: list[dict[str, Any]]
+
+
+def _checks(inputs: load.Inputs, cfg: dict, params: dict) -> tuple[list[dict], dict]:
     """§7.1 for every market of the list: its row, and what the valid ones are priced with."""
     t, found, ready = cfg["travel"], [], {}
     for m in inputs["universe"]["markets"]:
@@ -40,9 +50,9 @@ def _checks(inputs: dict, cfg: dict, params: dict) -> tuple[list[dict], dict]:
         span = markets.own_window(feed)
         if costs and span:
             bars = inputs["bars"][feed]
-            bars = bars[(bars.index >= span["from"])
-                        & (bars.index < pd.Timestamp(span["to"]) + pd.Timedelta(days=1))]
-            mine = inputs["trades"][inputs["trades"]["Symbol"] == feed].reset_index(drop=True)
+            bars = cast(pd.DataFrame, bars[(bars.index >= span["from"])
+                                           & (bars.index < pd.Timestamp(span["to"]) + pd.Timedelta(days=1))])
+            mine = cast(pd.DataFrame, inputs["trades"][inputs["trades"]["Symbol"] == feed]).reset_index(drop=True)
             row = validity.check(feed, mine, bars, costs, t["validity"]["point_value_margin"],
                                  t["validity"]["flat_atr_fraction"],
                                  t["validity"]["max_fill_error"], params["ATRPeriod"])
@@ -55,38 +65,38 @@ def _checks(inputs: dict, cfg: dict, params: dict) -> tuple[list[dict], dict]:
     return found, {r["market"]: ready[r["market"]] for r in found if r["valid"]}
 
 
-def _frequency(inputs: dict, strategies: list[str], feeds: list[str], cuts: dict, t: dict,
+def _frequency(inputs: load.Inputs, strategies: list[str], feeds: list[str], cuts: dict, t: dict,
                by: dict) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
     """P2: z_freq per strategy and valid market, how many strategies' markets it flags, counts."""
     counts = pd.DataFrame({f: [len(by.get((s, f), ())) for s in strategies] for f in feeds},
-                          index=strategies)
-    years = pd.Series({f: (pd.Timestamp(markets.own_window(f)["to"]) + pd.Timedelta(days=1)
-                           - pd.Timestamp(markets.own_window(f)["from"])) / pd.Timedelta(days=365.25)
+                          index=pd.Index(strategies))
+    years = pd.Series({f: cast(pd.Timedelta, pd.Timestamp(cast(dict, markets.own_window(f))["to"]) + pd.Timedelta(days=1)
+                           - pd.Timestamp(cast(dict, markets.own_window(f))["from"])) / cast(pd.Timedelta, pd.Timedelta(days=365.25))
                        for f in feeds})
     folder = paths.harvest_dir(inputs["project"], MAIN_DATABANK, inputs["export"])
-    nan = pd.DataFrame(np.nan, index=strategies, columns=feeds)
+    nan = pd.DataFrame(np.nan, index=pd.Index(strategies), columns=pd.Index(feeds))
     if not (folder / "trades.parquet").is_file():
         return nan, pd.Series(np.nan, index=strategies), counts
     main = pd.read_parquet(folder / "trades.parquet", columns=["identity", "Open time"])
     name = {i: s for s, i in inputs["identity"].items() if i}
-    main = main.assign(strategy=main["identity"].map(name)).dropna(subset=["strategy"])
+    main = main.assign(strategy=main["identity"].map(name)).dropna(subset=["strategy"])  # pyright: ignore[reportArgumentType]  # pandas stubs reject a dict mapper
     z = frequency.z_freq(counts, years, main, cuts, t["frequency"])
     off = ((z.abs() > t["frequency"]["z"]) | (counts == 0)).sum(axis=1).astype(float)
     return z, off.where(main.groupby("strategy").size().reindex(strategies).gt(0)), counts
 
 
-def _home(inputs: dict, params: dict, cal: pd.DataFrame, t: dict) -> tuple[str, dict | None]:
+def _home(inputs: load.Inputs, params: dict, cal: pd.DataFrame, t: dict) -> tuple[str, tensor.Market | None]:
     """The main market on its own window, priced like any other: (feed, `tensor.market`'s or None)."""
     feed = inputs["universe"]["main"]
     (costs, _), span, bars = validity.card(feed, SEGMENT), markets.own_window(feed), inputs["bars"][feed]
     if not costs or not span:
         return feed, None
-    bars = bars[(bars.index >= span["from"]) & (bars.index < pd.Timestamp(span["to"]) + pd.Timedelta(days=1))]
+    bars = cast(pd.DataFrame, bars[(bars.index >= span["from"]) & (bars.index < pd.Timestamp(span["to"]) + pd.Timedelta(days=1))])
     with np.errstate(divide="ignore"):
         return feed, tensor.market(bars, costs, params, cal, t["validity"]["flat_atr_fraction"])
 
 
-def _e_principal(trades: pd.DataFrame, home: tuple[str, dict | None], cal: pd.DataFrame,
+def _e_principal(trades: pd.DataFrame, home: tuple[str, tensor.Market | None], cal: pd.DataFrame,
                  shifts: np.ndarray, t: dict) -> float:
     """P7's denominator, §4.3: the main's e on oos1 (V2), the same `rules.per_market` e as every e_j."""
     feed, priced = home
@@ -139,7 +149,7 @@ def _strategy(s: str) -> tuple[dict, list[pd.DataFrame], object, list]:
 
 
 def run(project: str, databank: str, asset: str, export: str, out: Path,
-        overrides: list[str] | None = None) -> dict:
+        overrides: list[str] | None = None) -> Travelled:
     """Judge an export's strategies on the other markets and write the three files.
 
     Args:
@@ -170,7 +180,7 @@ def run(project: str, databank: str, asset: str, export: str, out: Path,
     for f, m in fixed.items():
         gone = tensor.exclude(m, cal, shifts, t["shift_step"], t["validity"]["max_displaced_share"])
         left += [{"market": f, "cell": f"{cal['start'][i]:%Y-%m-%d} {cal['window'][i]}",
-                  "displaced_share": float(m["share"][i])} for i in np.flatnonzero(gone)]
+                  "displaced_share": float(m["share"][i])} for i in np.flatnonzero(gone)]  # pyright: ignore[reportTypedDictNotRequiredAccess]  # tensor.exclude sets it in this loop
     by = {k: g for k, g in inputs["trades"].groupby(["strategy", "Symbol"], observed=True)}
     empty = inputs["trades"].iloc[:0]
     z_freq, off, counts = _frequency(inputs, strategies, feeds, cuts, t, by)
@@ -190,7 +200,7 @@ def run(project: str, databank: str, asset: str, export: str, out: Path,
         series[s] = d_y
         kept += k
     out.mkdir(parents=True, exist_ok=True)
-    verdict, rows = pd.DataFrame(verdict)[VERDICT], pd.concat(rows, ignore_index=True)[MARKETS]
+    verdict, rows = cast(pd.DataFrame, pd.DataFrame(verdict)[VERDICT]), cast(pd.DataFrame, pd.concat(rows, ignore_index=True)[MARKETS])
     verdict.to_csv(out / "verdict.csv", index=False)
     rows.to_parquet(out / "markets.parquet", index=False)
     draws.save(out, kept)
@@ -198,4 +208,4 @@ def run(project: str, databank: str, asset: str, export: str, out: Path,
         "config": t, "cuts": {k: str(v) for k, v in cuts.items()}, "cells": len(cal),
         "checks": found, "excluded": left, "d_y": series, "project": project, "databank": databank,
         "export": export, "asset": asset}), indent=1), encoding="utf-8")
-    return {"verdict": verdict, "markets": rows, "checks": found, "draws": kept}
+    return Travelled(verdict=verdict, markets=rows, checks=found, draws=kept)

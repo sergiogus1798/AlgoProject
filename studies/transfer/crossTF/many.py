@@ -2,6 +2,7 @@
 
 import time
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
 import pandas as pd
 
@@ -49,7 +50,29 @@ SCOPE = {"escalado": "Escalado", "sin_escalar": "Sin escalar"}
 CURVE_POINTS = 50
 
 
-def load(export: Path, scaling: Path, feed: str, cfg: dict, strategy: str | None = None) -> dict:
+class Loaded(TypedDict):
+    """What the study reads: the plan of cells, the trades, each timeframe's bars, the null config and identities."""
+
+    plan: pd.DataFrame
+    trades: pd.DataFrame
+    scaling: pd.DataFrame
+    frames: dict[str, pd.DataFrame]
+    nullcfg: dict[str, Any]
+    feed: str
+    identity: dict[str, str | None]
+
+
+class Ran(TypedDict):
+    """The population's result, every cell, one row per scaled sibling, the nulls' seed and the draws rows."""
+
+    population: dict[str, Any]
+    panel: pd.DataFrame
+    table: pd.DataFrame
+    nulls_seed: int
+    draws: list[dict[str, Any]]
+
+
+def load(export: Path, scaling: Path, feed: str, cfg: dict, strategy: str | None = None) -> Loaded:
     """What the study reads: the plan of cells, the trades, each timeframe's bars, identity.
 
     Args:
@@ -65,7 +88,7 @@ def load(export: Path, scaling: Path, feed: str, cfg: dict, strategy: str | None
     """
     table = pd.read_parquet(scaling)
     if strategy:
-        table = table[table["mother"] == strategy].reset_index(drop=True)
+        table = cast(pd.DataFrame, table[table["mother"] == strategy]).reset_index(drop=True)
         if table.empty:
             raise SystemExit(f"{strategy!r} no es una madre de {scaling}: nada que fabricar")
     cfg["run"]["blocks"] = inputs.blocks(table, cfg["run"]["blocks"], scaling.parent)
@@ -76,9 +99,9 @@ def load(export: Path, scaling: Path, feed: str, cfg: dict, strategy: str | None
     # that says whose: a property of this run, not of the null machinery.
     nullcfg["feed"] = feed
     mothers = sorted(plan["mother"].unique())
-    return {"plan": plan, "trades": packed, "scaling": table,
-            "frames": inputs.bars(feed, cfg["run"]["blocks"]), "nullcfg": nullcfg,
-            "feed": feed, "identity": output.identify(export.parent, mothers)}
+    return Loaded(plan=plan, trades=packed, scaling=table,
+                  frames=inputs.bars(feed, cfg["run"]["blocks"]), nullcfg=nullcfg,
+                  feed=feed, identity=output.identify(export.parent, mothers))
 
 
 def stat_grids(panel: pd.DataFrame, names: list[str]) -> list[dict]:
@@ -115,7 +138,7 @@ def correlation_grid(plan: pd.DataFrame, packed: pd.DataFrame) -> dict | None:
            "note": "Sin celda cuando una de las dos partes no cubre al menos dos meses."}
 
 
-def run(got: dict, cfg: dict) -> dict:
+def run(got: Loaded, cfg: dict) -> Ran:
     """Every cell measured, every scaled cell read.
 
     Args:
@@ -137,13 +160,15 @@ def run(got: dict, cfg: dict) -> dict:
     pairs = ", ".join(f"bloque {i} = {tf}" for i, tf in enumerate(cfg["run"]["blocks"]))
     tfs = sorted(readings["timeframe"].unique())
     mothers = sorted(got["plan"]["mother"].unique())
-    stat_names = [SHOWN.get(n, n) for n in got["nullcfg"]["statistics"]["report"]]
+    stat_names = [SHOWN.get(n, n) for n in cast(list[str], got["nullcfg"]["statistics"]["report"])]
+    stat = cast(str, v["statistic"])
     judged = VERDICT_STAT.get(v["statistic"], STAT_LABELS.get(v["statistic"], v["statistic"]))
     scaled_table = readings.drop(columns=["warnings"]).assign(
-        significa=readings["reading"].map(MEANS_ES))
+        significa=readings["reading"].map(MEANS_ES))  # pyright: ignore[reportArgumentType]  # pandas stubs reject a dict mapper
     unscaled_table = verdict.unscaled(panel)
     table = readings.drop(columns=["warnings"]).assign(
-        strategy=readings["mother"], identity=readings["mother"].map(got["identity"]),
+        strategy=readings["mother"],
+        identity=readings["mother"].map(got["identity"]),  # pyright: ignore[reportArgumentType]  # pandas stubs reject a dict mapper
         verdict=readings["reading"])
 
     null_note = (f"Las {len(panel)} celdas —baseline, control, escaladas y sin escalar— se "
@@ -152,7 +177,7 @@ def run(got: dict, cfg: dict) -> dict:
                 f"fijos), sobre {judged} y SOLO en oos1. Lo único "
                 f"que cambia celda a celda es sobre qué barras se dibuja ese nulo: las de su "
                 f"propio timeframe. Bloques de resultado leídos como {pairs}.")
-    def scaled_one(rows: pd.DataFrame) -> dict:
+    def scaled_one(rows: pd.DataFrame) -> dict[str, Any]:
         """The scaled siblings' table of one mother."""
         tbl = blocks.table("Cada hermana escalada, juzgada", rows)
         tbl["select"] = {"scope": SCOPE["escalado"]}
@@ -160,7 +185,7 @@ def run(got: dict, cfg: dict) -> dict:
                        TERMS_ES["Baseline"], TERMS_ES["Control"], None, None]
         return tbl
 
-    def unscaled_one(rows: pd.DataFrame) -> dict:
+    def unscaled_one(rows: pd.DataFrame) -> dict[str, Any]:
         """The unscaled table of one mother."""
         tbl = blocks.table("La madre en cada timeframe, sin escalar", rows,
                            "Sin veredicto: pregunta si el mercado es autosimilar a esa "
@@ -197,15 +222,15 @@ def run(got: dict, cfg: dict) -> dict:
          "P&L de cada día hábil del backtest de la celda (los días sin cierres cuentan como "
          "0), media / desv. × √252.",
          "options": [STAT_LABELS.get(n, n) for n in stat_names],
-         "default": STAT_LABELS.get(SHOWN.get(v["statistic"], v["statistic"]), v["statistic"])},
+         "default": STAT_LABELS.get(SHOWN.get(stat, stat), stat)},
         {"key": "scope", "label": "Ámbito", "help": "Escalado: la pregunta de robustez, con "
          "veredicto. Sin escalar: si el mercado es autosimilar a esa escala, sin veredicto.",
          "options": list(SCOPE.values()), "default": SCOPE["escalado"]}])]
     warn = [{"code": f"{r.mother}:{r.timeframe}", "state": "watch", "text": w}
-            for r in readings.itertuples() for w in r.warnings]
+            for r in cast(Any, readings.itertuples()) for w in r.warnings]
     counts = readings["reading"].value_counts()
     said = blocks.verdict(
-        f"{int(counts.get('survives', 0))} de {len(readings)} sobreviven",
+        f"{int(cast(Any, counts).get('survives', 0))} de {len(readings)} sobreviven",
         "pass" if counts.get("survives", 0) else "fail",
         "Una hermana escalada sobrevive si bate al nulo de timing de su timeframe en oos1 más "
         "allá de lo que explica su madre. " + " ".join(f"{tf}: " + ", ".join(
@@ -215,5 +240,5 @@ def run(got: dict, cfg: dict) -> dict:
         + [{"term": k, "text": t} for k, t in TERMS_ES.items()]
     population = envelope.envelope(MODULE, None, None, cfg, started, tabs, said, warn, glossary)
     envelope.progress(100, f"{len(readings)} hermanas en {len(tfs)} timeframes")
-    return {"population": population, "panel": panel, "table": table,
-            "nulls_seed": got["nullcfg"]["nulls"]["seed"], "draws": kept}
+    return Ran(population=population, panel=panel, table=table,
+               nulls_seed=got["nullcfg"]["nulls"]["seed"], draws=kept)

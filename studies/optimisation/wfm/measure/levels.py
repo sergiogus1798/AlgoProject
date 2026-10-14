@@ -1,5 +1,6 @@
 """L1 and L2 on the weekly oos2 panel against the shared-sign flip null, and the cells' redundancy."""
 
+from typing import Any, cast
 import numpy as np
 import pandas as pd
 from scipy.stats import skew
@@ -7,7 +8,7 @@ from scipy.stats import skew
 from engines.weekly import flip
 
 
-def l1(cells: pd.DataFrame, signs: np.ndarray, years: float) -> dict:
+def l1(cells: pd.DataFrame, signs: np.ndarray, years: float) -> dict[str, Any]:
     """The median cell's excess per year in oos2, and where it falls in the null.
 
     Args:
@@ -38,10 +39,10 @@ def reference(cells: pd.DataFrame, mode: str, centre: str) -> pd.Series:
         `fijo`: the median across cells of each WEEK (a series; its sum is not the median of
         the cells' sums that L1 reads). `reoptimizado`: the centre cell's column.
     """
-    return cells[centre] if mode == "reoptimizado" else cells.median(axis=1)
+    return cast(pd.Series, cells[centre] if mode == "reoptimizado" else cells.median(axis=1))
 
 
-def l2(ref: pd.Series, mother: pd.Series, signs: np.ndarray, years: float) -> dict:
+def l2(ref: pd.Series, mother: pd.Series, signs: np.ndarray, years: float) -> dict[str, Any]:
     """Re-optimising against freezing: the weekly difference, under the same sign sets.
 
     Args:
@@ -76,4 +77,4 @@ def effective(cells: pd.DataFrame) -> float:
 
 def skewness(cells: pd.DataFrame) -> float:
     """Skewness of the weekly median-of-cells series: what the null's symmetry assumes is zero."""
-    return float(skew(cells.median(axis=1).to_numpy()))
+    return float(skew(cast(pd.Series, cells.median(axis=1)).to_numpy()))

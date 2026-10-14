@@ -1,5 +1,6 @@
 """The call of step 17: the order's class, the «strong» label and PASA / LIMBO / NO PASA."""
 
+from typing import Any
 import numpy as np
 
 # The owner's table (proposal of step 17, section 6, with the level's null of encargo 48,
@@ -56,7 +57,7 @@ def state(order: str, level: float, n: int, min_variants: int, p_nivel: float,
     return "limbo" if order == "perverso" or p_nivel > level_alpha else "pasa"
 
 
-def judge(measured: dict, cfg: dict) -> dict:
+def judge(measured: dict, cfg: dict) -> dict[str, Any]:
     """The words of one composition from its measured numbers.
 
     Args:

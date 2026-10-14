@@ -1,5 +1,7 @@
 """The shape of each cell's windows: their lengths, their overlap and the dates its runs cover."""
 
+from typing import Any, cast
+
 import numpy as np
 import pandas as pd
 
@@ -23,7 +25,7 @@ def shape(steps: pd.DataFrame) -> pd.DataFrame:
         windows are disjoint and consecutive.
     """
     rows = []
-    for key, cell in steps.groupby(["strategy", "result", "runs", "oos_pct"], observed=True):
+    for key, cell in cast(Any, steps.groupby(["strategy", "result", "runs", "oos_pct"], observed=True)):
         cell = cell.sort_values("index")
         opt = (cell["optimize_to"] - cell["optimize_from"]).dt.total_seconds()
         run = (cell["run_to"] - cell["run_from"]).dt.total_seconds()

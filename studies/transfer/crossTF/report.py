@@ -15,7 +15,7 @@ from studies.transfer.crossTF import inputs, many
 from studies.transfer.crossTF.tf import run as tf_run
 
 
-def write(out: Path, got: dict, identity: str | None, strategy: str | None, title: str,
+def write(out: Path, got: many.Ran, identity: str | None, strategy: str | None, title: str,
           export: Path, command: str, overrides: list[str]) -> None:
     """Write a run where the window reads it.
 

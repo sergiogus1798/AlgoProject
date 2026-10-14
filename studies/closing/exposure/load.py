@@ -1,10 +1,31 @@
 """Everything one run of the exposure study reads, assembled once: window, bars, trades."""
 
+from pathlib import Path
+from typing import TypedDict
+
+import pandas as pd
+
 from core.study import identity
 from studies.closing.exposure import inputs
 
 
-def load(project: str, databank: str, feed: str, symbol: str, cfg: dict) -> dict:
+class Loaded(TypedDict):
+    """What the study reads: the export's trades, the window's bars, point value, names, identity."""
+
+    project: str
+    databank: str
+    feed: str
+    symbol: str
+    span: tuple[pd.Timestamp, pd.Timestamp]
+    bars: pd.DataFrame
+    point_value: float
+    packed: Path
+    frame: pd.DataFrame
+    strategies: list[str]
+    identity: dict[str, str | None]
+
+
+def load(project: str, databank: str, feed: str, symbol: str, cfg: dict) -> Loaded:
     """The inputs one.run() and many.run() read.
 
     Args:

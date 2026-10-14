@@ -1,5 +1,6 @@
 """What the reading opens: the mothers' variant batches, their oos2 trades, the oos2 dates and her daily P&L."""
 
+from typing import Any, cast
 from pathlib import Path
 
 import numpy as np
@@ -17,7 +18,7 @@ SEGMENT = "oos2"
 TRADES = "trades.parquet"   # per variant, in the batch folder: step 16.5's harvest writes it
 
 
-def config(overrides: list[str]) -> dict:
+def config(overrides: list[str]) -> dict[str, Any]:
     """The reading's knobs, with command-line `section.key=value` overrides applied."""
     return study_config.apply(thresholds.fill(study_config.load(CONFIG, [])), overrides)
 
@@ -31,7 +32,8 @@ def batches(project: str) -> dict[str, Path]:
 def window(symbol: str) -> tuple[pd.Timestamp, pd.Timestamp]:
     """The oos2 dates as the policy declares them: first instant, instant after the last."""
     start, end = asset_window(load_asset(symbol), SEGMENT)
-    return pd.Timestamp(start, unit="ms"), pd.Timestamp(end, unit="ms")
+    first, last = pd.Timestamp(start, unit="ms"), pd.Timestamp(end, unit="ms")
+    return cast(pd.Timestamp, first), cast(pd.Timestamp, last)
 
 
 def mother_trades(batch: Path, span: tuple[pd.Timestamp, pd.Timestamp]) -> pd.DataFrame:
@@ -42,12 +44,12 @@ def mother_trades(batch: Path, span: tuple[pd.Timestamp, pd.Timestamp]) -> pd.Da
     if isinstance(trades.index, pd.RangeIndex):      # the filtered read renumbers; the labels are the file's rows
         ids = pd.read_parquet(batch / TRADES, columns=["variant_id"])["variant_id"].to_numpy()
         trades.index = np.flatnonzero(ids == mine)
-    return trades[(trades["Open time"] >= span[0]) & (trades["Close time"] < span[1])]
+    return cast(pd.DataFrame, trades[(trades["Open time"] >= span[0]) & (trades["Close time"] < span[1])])
 
 
 def daily(trades: pd.DataFrame, bars: pd.DataFrame) -> pd.Series:
     """The mother's mark-to-market P&L per feed day, flat days 0 (`closecurve`): sums to her trades' Profit/Loss."""
     if trades.empty:
-        return pd.Series(0.0, index=bars.index.normalize().unique())
+        return pd.Series(0.0, index=pd.DatetimeIndex(bars.index).normalize().unique())  # pyright: ignore[reportAttributeAccessIssue]  # pandas stub lacks DatetimeIndex.normalize
     profit, _ = closecurve.panel(trades.assign(identity="m"), bars, *closecurve.measured(trades))
-    return profit["m"]
+    return cast(pd.Series, profit["m"])

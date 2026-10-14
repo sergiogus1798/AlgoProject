@@ -1,5 +1,6 @@
 """One batch read as a map of who moves the result, returned as the contract's data."""
 
+from typing import Any
 import time
 from pathlib import Path
 
@@ -14,7 +15,7 @@ from studies.optimisation.cloud.model import sensitivity, space, surrogate
 MODULE = "studies.optimisation.cloud"
 
 
-def read(frame: pd.DataFrame, cfg: dict, name: str = "") -> dict:
+def read(frame: pd.DataFrame, cfg: dict, name: str = "") -> dict[str, Any]:
     """The surface, its indices and its shuffled reference on each leg, nothing rendered.
 
     Args:
@@ -49,7 +50,7 @@ def read(frame: pd.DataFrame, cfg: dict, name: str = "") -> dict:
     return found
 
 
-def run(work: Path, cfg: dict) -> dict:
+def run(work: Path, cfg: dict) -> dict[str, Any]:
     """Which parameters move a mother's excess, and whether that ranking can be read.
 
     Args:

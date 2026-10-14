@@ -2,6 +2,7 @@
 
 import tempfile
 from pathlib import Path
+from typing import Any, TypedDict
 
 import yaml
 
@@ -14,13 +15,24 @@ from studies.screening.gate import inputs as gate_inputs
 CONFIG = Path(__file__).with_name("config.yaml")
 
 
-def config(overrides: list[str]) -> dict:
+class Loaded(TypedDict):
+    """The real population and what the monkeys share with it, as `load` returns it."""
+    real: dict[str, Any]
+    gate_cfg: dict[str, Any]
+    nullcfg: dict[str, Any]
+    steps: dict[str, Any]
+    tags: set[str]
+    batches: int
+    source: dict[str, Any]
+
+
+def config(overrides: list[str]) -> dict[str, Any]:
     """The study's knobs, with `--set section.key=value` overrides applied."""
     return study_config.load(CONFIG, overrides)
 
 
 def load(project: str, databank: str, feed: str, seed: int | None, rules: Path,
-         harvest: Path | None = None) -> dict:
+         harvest: Path | None = None) -> Loaded:
     """The real population and everything the monkeys share with it.
 
     Args:
@@ -53,9 +65,9 @@ def load(project: str, databank: str, feed: str, seed: int | None, rules: Path,
     for block in ("monkey", "homogeneity", "drawdown"):
         gate_cfg[block]["seed"] = root
     parsed = yaml.safe_load(rules.read_text(encoding="utf-8"))
-    return {"real": real, "gate_cfg": gate_cfg, "nullcfg": nullcfg, "steps": parsed["steps"],
-            "tags": judge.tags(project) | {timeframe}, "batches": cells.batches_for(project),
-            "source": {"project": project, "databank": databank, "feed": feed,
-                       "timeframe": timeframe, "harvest": str(folder), "split": real["split"],
-                       "end": real["end"], "criteria": str(rules),
-                       "frozen": bool(parsed.get("frozen")), "seed": root}}
+    return Loaded(real=real, gate_cfg=gate_cfg, nullcfg=nullcfg, steps=parsed["steps"],
+                  tags=judge.tags(project) | {timeframe}, batches=cells.batches_for(project),
+                  source={"project": project, "databank": databank, "feed": feed,
+                          "timeframe": timeframe, "harvest": str(folder), "split": real["split"],
+                          "end": real["end"], "criteria": str(rules),
+                          "frozen": bool(parsed.get("frozen")), "seed": root})

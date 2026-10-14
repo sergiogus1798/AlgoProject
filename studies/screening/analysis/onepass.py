@@ -17,7 +17,7 @@ def edge_mean(oos: pd.DataFrame) -> pd.Series:
         Mean (pnl + cost) / mean cost; inf or NaN where a strategy paid no cost.
     """
     by = oos.assign(gross=oos["pnl"] + oos["cost"]).groupby("identity", sort=False)
-    return by["gross"].mean() / by["cost"].mean()
+    return pd.Series(by["gross"].mean()) / pd.Series(by["cost"].mean())
 
 
 def t_cost(oos: pd.DataFrame, k: float, t: Callable) -> pd.Series:
@@ -48,12 +48,12 @@ def t_without(oos: pd.DataFrame, t: Callable, drop_trades: int, period: str) -> 
         defaults); NaN where nothing is left to measure.
     """
     ident = oos["identity"]
-    label = pd.Series(tradelevel.calendar(oos["open_time"], period), index=oos.index)
+    label = pd.Series(tradelevel.calendar(pd.Series(oos["open_time"]), period), index=oos.index)
     total = oos.groupby([ident, label])["excess"].sum()
-    best = total.groupby(level=0).idxmax().map(lambda i: i[1])
+    best = pd.Series(total.groupby(level=0).idxmax()).map(lambda i: i[1])
     rank = oos.groupby("identity", sort=False)["excess"].rank(method="first", ascending=False)
     return pd.DataFrame({
-        "t_sin_mejor_trimestre": t(oos[label.to_numpy() != ident.map(best).to_numpy()],
+        "t_sin_mejor_trimestre": t(oos[label.to_numpy() != pd.Series(ident).map(best).to_numpy()],
                                    "excess")["ar1"],
         "t_sin_3_mejores": t(oos[rank > drop_trades], "excess")["ar1"]})
 

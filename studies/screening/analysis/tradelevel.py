@@ -13,7 +13,7 @@ NONE = np.empty(0, dtype=np.intp)  # a window the span holds no bar of
 VARIANTS = {"a": (False, False), "b": (True, False), "c": (False, True), "d": (True, True)}
 
 
-def mean_move(bars: pd.DataFrame, windows: dict) -> dict:
+def mean_move(bars: pd.DataFrame, windows: dict) -> dict[str, float]:
     """The market's mean bar-to-bar close change over each sample's window.
 
     Args:
@@ -45,7 +45,7 @@ def drift(trades: pd.DataFrame, bars: pd.DataFrame, move: dict, point_value: flo
     held = (np.searchsorted(grid, trades["Close time"].to_numpy(), side="right")
             - np.searchsorted(grid, trades["Open time"].to_numpy(), side="right"))
     side = np.where(trades["Type"].astype(str) == "Sell", -1.0, 1.0)
-    return side * trades["sample"].map(move).to_numpy() * held * trades["Size"].to_numpy() \
+    return side * pd.Series(trades["sample"]).map(move).to_numpy() * held * trades["Size"].to_numpy() \
         * point_value
 
 
@@ -68,7 +68,7 @@ def t(trades: pd.DataFrame, value: str) -> pd.DataFrame:
     lagged = np.where(np.r_[False, keys[1:] == keys[:-1]], x * np.r_[0.0, x[:-1]], 0.0)
     sums = pd.DataFrame({"g0": x * x, "g1": lagged}).groupby(keys, sort=False).sum().reindex(n.index)
     rho = sums["g1"] / sums["g0"]
-    effective = np.minimum(n * (1 - rho) / (1 + rho), n).clip(lower=2)
+    effective = pd.Series(np.minimum(n * (1 - rho) / (1 + rho), n)).clip(lower=2)
     iid = by.mean() / by.std(ddof=1) * np.sqrt(n)
     return pd.DataFrame({"n": n, "iid": iid, "ar1": iid * np.sqrt(effective / n)})
 
@@ -85,7 +85,7 @@ def calendar(time: pd.Series | pd.DatetimeIndex, window: str) -> np.ndarray:
     """
     assert window in WINDOWS, f"drift window {window!r}: year, semester or quarter, nothing shorter"
     months, letter = WINDOWS[window]
-    stamps = pd.DatetimeIndex(time)
+    stamps = pd.Series(pd.DatetimeIndex(time)).dt
     year = stamps.year.astype(str)
     part = ((stamps.month - 1) // months + 1).astype(str)
     return np.asarray(year + letter + part if letter else year)
@@ -114,9 +114,9 @@ def drift_term(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str], 
         remainder of opposite sign for longs and shorts; `c` and `d` do not.
     """
     per_window, blind = VARIANTS[variant]
-    label = calendar(trades["Open time"], window)
+    label = calendar(pd.Series(trades["Open time"]), window)
     inside = np.arange(len(bars))[bars.index.slice_indexer(*span)]
-    pool = calendar(bars.index[inside], window) if per_window else np.full(len(inside), "")
+    pool = calendar(pd.DatetimeIndex(bars.index[inside]), window) if per_window else np.full(len(inside), "")
     mine = trades.assign(sample=label if per_window else "")
     if not blind:
         move = bars["Close"].diff().iloc[inside].groupby(pool).mean().to_dict()
@@ -171,6 +171,6 @@ def t_skew_kurt(trades: pd.DataFrame, value: str) -> pd.DataFrame:
     x = trades[value] - by.transform("mean")
     m = (pd.DataFrame({k: x ** k for k in (2, 3, 4)})
          .groupby(trades["identity"].to_numpy(), sort=False).mean().reindex(plain.index))
-    iid = skew_kurt_t(by.mean() / np.sqrt(m[2]), plain["n"], m[3] / m[2] ** 1.5,
+    iid = skew_kurt_t(by.mean() / np.sqrt(m[2]), plain["n"].to_numpy(), m[3] / m[2] ** 1.5,
                       m[4] / m[2] ** 2)
     return plain.assign(iid=iid, ar1=iid * plain["ar1"] / plain["iid"])

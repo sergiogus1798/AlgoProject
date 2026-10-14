@@ -1,5 +1,7 @@
 """The per-market controls of §7.1: aligned prices, the point value against the card, defective bars, a complete cost card."""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
@@ -27,8 +29,21 @@ def card(feed: str, segment: str) -> tuple[reprice.Costs | None, str]:
     return (None, "cost_card_pending: " + ", ".join(late)) if late else (reprice.costs(feed, segment), "")
 
 
+class Check(TypedDict):
+    """§7.1 on one market: validity and why not, the fill error, the point value on the card and fitted, and the flat-bar share."""
+
+    market: str
+    valid: bool
+    invalid_reason: str
+    fill_error: float
+    point_value_card: float
+    point_value_fit: float
+    point_value_gap: float
+    flat_bars: float
+
+
 def check(feed: str, trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
-          margin: float, flat_fraction: float, max_fill_error: float, period: int) -> dict:
+          margin: float, flat_fraction: float, max_fill_error: float, period: int) -> Check:
     """§7.1 on one market, from the trades of EVERY strategy pooled and none judged alone.
 
     Args:
@@ -64,7 +79,7 @@ def check(feed: str, trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Co
     atr_ = sizing.entry_atr(bars, period)
     why = ([f"fill_mismatch {error:.3g} ATR"] if error > max_fill_error else []) \
         + ([f"point_value {gap:+.1%}"] if abs(gap) > margin else [])
-    return {"market": feed, "valid": not why, "invalid_reason": "; ".join(why),
-            "fill_error": error, "point_value_card": costs["point_value"],
-            "point_value_fit": fit, "point_value_gap": gap,
-            "flat_bars": float(np.mean(atr_ <= flat_fraction * np.nanmedian(atr_)))}
+    return Check(market=feed, valid=not why, invalid_reason="; ".join(why),
+                 fill_error=error, point_value_card=costs["point_value"],
+                 point_value_fit=fit, point_value_gap=gap,
+                 flat_bars=float(np.mean(atr_ <= flat_fraction * np.nanmedian(atr_))))

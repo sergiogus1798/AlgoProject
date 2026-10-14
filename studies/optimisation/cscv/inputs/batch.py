@@ -1,5 +1,6 @@
 """A variant batch as the CSCV's cells: weekly excess per variant, net and gross, cached beside the batch."""
 
+from typing import Any, TypedDict, cast
 import time
 from pathlib import Path
 
@@ -26,7 +27,7 @@ GATE = Path(__file__).resolve().parents[3] / "screening" / "gate" / "config.yaml
 _SHARED: dict = {}
 
 
-def drift() -> dict:
+def drift() -> dict[str, Any]:
     """The gate's `drift` block: the window and the variant of the drift term."""
     return yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"]
 
@@ -47,7 +48,7 @@ def _priced(key: tuple[str, int]) -> pd.DataFrame:
     bounds = got["asset"]["segments"][leg]
     per = panel.per_trade(trades, got["bars"], got["costs"][leg],
                           (str(bounds["from"]), str(bounds["to"])), got["drift"], got["feed"])
-    return per[["variant_id", "close", "net", "gross"]]
+    return cast(pd.DataFrame, per[["variant_id", "close", "net", "gross"]])
 
 
 def build(trades: pd.DataFrame, bars: pd.DataFrame, asset: dict, costs: dict, term: dict,
@@ -66,7 +67,7 @@ def build(trades: pd.DataFrame, bars: pd.DataFrame, asset: dict, costs: dict, te
         (weeks x (`net` | `gross`, variant): each trade whole in the week it closes in, over
         the whole history; per variant, `trades` and `print`, its trade list's fingerprint).
     """
-    ids = np.sort(trades["variant_id"].unique())
+    ids = np.sort(np.asarray(trades["variant_id"].unique()))
     _SHARED.update(trades={leg: trades[trades["leg"] == leg] for leg in SEGMENTS}, bars=bars,
                    asset=asset, costs=costs, drift=term, feed=asset["sqx_symbol"],
                    pieces=np.array_split(ids, min(PIECES, len(ids))))
@@ -75,13 +76,24 @@ def build(trades: pd.DataFrame, bars: pd.DataFrame, asset: dict, costs: dict, te
     per = pd.concat([got for _, got in fanout.run(
         _priced, {key: rows for key, rows in load.items() if rows}, workers)])
     _SHARED.clear()
-    wide = panel.weekly(per, window(asset), units=ids)
+    wide = panel.weekly(per, window(asset), units=cast(Any, ids))
     info = pd.DataFrame({"trades": trades.groupby("variant_id").size(),
                          "print": fingerprint.prints(trades)})
     return pd.concat(wide, axis=1), info
 
 
-def read(work: Path, symbol: str, timeframe: str, workers: int) -> dict:
+class Weekly(TypedDict):
+    """A batch's weekly cells: net and gross excess, per-variant info, years, cache flag, seconds."""
+
+    net: pd.DataFrame
+    gross: pd.DataFrame
+    info: pd.DataFrame
+    years: float
+    cached: bool
+    wall_s: float
+
+
+def read(work: Path, symbol: str, timeframe: str, workers: int) -> Weekly:
     """The batch's weekly cells, from the cache when it is this batch's under these costs.
 
     Args:
@@ -109,7 +121,8 @@ def read(work: Path, symbol: str, timeframe: str, workers: int) -> dict:
         wide.attrs["key"] = key
         wide.to_parquet(work / WEEKLY)
         info.to_parquet(work / VARIANTS)
-    return {"net": wide["net"], "gross": wide["gross"],
+    assert wide is not None   # cached implies it was read; otherwise it was just built
+    return {"net": cast(pd.DataFrame, wide["net"]), "gross": cast(pd.DataFrame, wide["gross"]),
             "info": pd.read_parquet(work / VARIANTS), "years": panel.years(window(asset)),
             "cached": bool(cached), "wall_s": time.time() - began}
 
@@ -140,9 +153,9 @@ def screen(metrics: pd.DataFrame, info: pd.DataFrame, years: float,
         copies), `suelo_parametros`, `suelo_anual`, `quedan`, `vivos`, `madre` and `avisos`).
     """
     ids = metrics["variant_id"].astype(str)
-    design = ids[~metrics["stratum"].isin(filters.CONTROLS)]
-    traded = design[design.isin(info.index)]
-    mother = ids[metrics["stratum"] == filters.ORIGIN].iloc[0]
+    design = cast(pd.Series, ids[~metrics["stratum"].isin(filters.CONTROLS)])
+    traded = cast(pd.Series, design[design.isin(cast(Any, info.index))])
+    mother = cast(pd.Series, ids[metrics["stratum"] == filters.ORIGIN]).iloc[0]
     kept, share = fingerprint.keep(info.loc[traded, "print"], first=[mother])
     counts = {"lote": len(ids), "controles": len(ids) - len(design),
               "sin_operaciones": len(design) - len(traded),

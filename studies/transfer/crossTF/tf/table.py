@@ -1,10 +1,13 @@
 """The siblings table and the mothers table: every sibling measured in each window, then judged."""
 
+from typing import Any, cast
+
 import numpy as np
 import pandas as pd
 
 from core import fanout
 from core.study import draws
+from engines.market import reprice
 from studies.screening.analysis import centred
 from studies.transfer.crossTF.tf import null, rules
 
@@ -29,13 +32,13 @@ def _phi(build: pd.DataFrame, mothers: list[str], cuts: dict, f: dict) -> pd.Ser
     """The bounded overdispersion of each mother's yearly trade counts in the build."""
     exposure = centred.calendar_exposure(cuts["build"], cuts["oos1"] - pd.Timedelta(seconds=1))
     mine = build[build["strategy"].isin(mothers)]
-    by_year = pd.crosstab(mine["strategy"].astype(str), mine["Open time"].dt.year).reindex(
+    by_year = pd.crosstab(mine["strategy"].astype(str), cast(pd.Series, mine["Open time"]).dt.year).reindex(
         index=mothers, columns=exposure.index, fill_value=0)
     return centred.dispersion(by_year, exposure, f["phi_min"], f["phi_max"]).where(by_year.sum(axis=1) > 0)
 
 
 def measure(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: dict[str, pd.DataFrame],
-            costs: dict[str, dict], cuts: dict, params: dict, tf: dict, source: str, sink: list | None = None) -> pd.DataFrame:
+            costs: dict[str, reprice.Costs], cuts: dict, params: dict, tf: dict, source: str, sink: list | None = None) -> pd.DataFrame:
     """Every sibling against her mother through the joint random runs, window by window.
 
     Args:
@@ -57,8 +60,8 @@ def measure(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: di
         `made` plus MEASURED. A strategy with no row in a window's frame has no data there
         (NaN), never 0 trades.
     """
-    cal, shifts = null.calendar(min(b.index[0] for b in bars.values()),
-                                max(b.index[-1] for b in bars.values()), cuts, tf["runs"])
+    cal, shifts = null.calendar(cast(pd.Timestamp, min(b.index[0] for b in bars.values())),
+                                cast(pd.Timestamp, max(b.index[-1] for b in bars.values())), cuts, tf["runs"])
     out = made.reindex(columns=[*made.columns, *MEASURED]).astype({k: float for k in MEASURED})
     for window, span in windows(cuts).items():
         got = trades.get(window)
@@ -72,16 +75,16 @@ def measure(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: di
         # One mother with her siblings per task: they share a run, nothing is shared between mothers.
         ran = dict(fanout.run(_mother, {m: len(h) for m, h in groups.items()}, fanout.CORES))
         for mother, hers in groups.items():
-            members = {source: by.get(mother)} | {r.timeframe: by.get(r.sibling) for r in hers.itertuples()}
+            members = {source: by.get(mother)} | {r.timeframe: by.get(r.sibling) for r in cast(Any, hers.itertuples())}
             cells = ran[mother]
             mum = cells.get(source)
-            for r in hers.itertuples():
+            for r in cast(Any, hers.itertuples()):
                 me = cells.get(r.timeframe)
                 if mum:
                     out.loc[r.Index, [f"n_mother_{window}", f"e_mother_{window}"]] = mum["n"], null.edge(mum)
                 if me:
                     out.loc[r.Index, [f"n_{window}", f"e_{window}"]] = me["n"], null.edge(me)
-                where = dict(strategy=r.sibling, mother=mother, sibling=r.sibling,
+                where: dict[str, Any] = dict(strategy=r.sibling, mother=mother, sibling=r.sibling,
                              timeframe=r.timeframe, window=window, seed=tf["runs"]["seed"])
                 if window == "build" and me:
                     out.loc[r.Index, "z_build"] = null.z_total(me)
@@ -89,15 +92,18 @@ def measure(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: di
                         sink.append(draws.record(TEST, "z_build", float(me["real"]), me["null"], **where))
                 if mum and me:
                     out.loc[r.Index, f"overlap_{window}"] = rules.overlap(
-                        members[source]["Open time"].to_numpy(), members[r.timeframe]["Open time"].to_numpy(),
+                        cast(pd.DataFrame, members[source])["Open time"].to_numpy(),
+                        cast(pd.DataFrame, members[r.timeframe])["Open time"].to_numpy(),
                         BAR[source])
                     if window == "oos1":
                         out.loc[r.Index, "z_delta"] = null.z_delta(mum, me)
-                        if sink is not None and null.delta(mum, me) is not None:
-                            sink.append(draws.record(TEST, "z_delta", *null.delta(mum, me), **where))
-    if trades.get("build") is not None:
-        phi = _phi(trades["build"], sorted(made["mother"].unique()), cuts, tf["frequency"])
-        out["phi"] = out["mother"].map(phi)
+                        diff = null.delta(mum, me)
+                        if sink is not None and diff is not None:
+                            sink.append(draws.record(TEST, "z_delta", *diff, **where))
+    built = trades.get("build")
+    if built is not None:
+        phi = _phi(built, sorted(made["mother"].unique()), cuts, tf["frequency"])
+        out["phi"] = out["mother"].map(phi)  # pyright: ignore[reportArgumentType]  # pandas stubs reject a Series mapper
     return out
 
 
@@ -108,7 +114,7 @@ def _mother(mother: str) -> dict:
     """`null.runs` of one mother and her siblings in one window, in a worker that inherited the inputs."""
     g = _SHARED
     members = {g["source"]: g["by"].get(mother)} | {
-        r.timeframe: g["by"].get(r.sibling) for r in g["groups"][mother].itertuples()}
+        r.timeframe: g["by"].get(r.sibling) for r in cast(Any, g["groups"][mother].itertuples())}
     return null.runs({k: v for k, v in members.items() if v is not None}, g["grid"], g["cal"],
                      g["shifts"], g["tf"]["runs"])
 
@@ -132,7 +138,7 @@ def judge(table: pd.DataFrame, tf: dict, source: str, reason: str = "") -> pd.Da
         `_why` means the state was measured. The population of T1's centre and of the build
         retention's percentile is this batch's comparable siblings of the same timeframe.
     """
-    t, c, f = table.copy(), tf["comparable"], tf["frequency"]
+    t, c, f = cast(Any, table.copy()), tf["comparable"], tf["frequency"]
     t["role"] = np.select([t["timeframe"].isin(tf["neighbours"].get(source, [])),
                            t["timeframe"] == tf["far"].get(source)], ["neighbour", "far"], "note")
     t["t0"] = rules.comparable(t, c["rounding_shift"])
@@ -182,4 +188,4 @@ def mothers(siblings: pd.DataFrame, tf: dict, source: str, identity: dict) -> pd
     rows = [{"strategy": m, "identity": identity.get(m), "source_tf": source,
              **rules.mother(g, expected, low), "seed": tf["runs"]["seed"], "draws": tf["runs"]["draws"]}
             for m, g in siblings.groupby("mother")]
-    return pd.DataFrame(rows, columns=MOTHERS)
+    return pd.DataFrame(rows, columns=pd.Index(MOTHERS))

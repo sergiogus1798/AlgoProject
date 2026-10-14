@@ -1,5 +1,6 @@
 """The study's knobs."""
 
+from typing import Any
 from pathlib import Path
 
 from core.study import config as study_config
@@ -9,7 +10,7 @@ from ledger import thresholds
 CONFIG = Path(__file__).parents[1] / "config.yaml"
 
 
-def config(overrides: list[str]) -> dict:
+def config(overrides: list[str]) -> dict[str, Any]:
     """The study's knobs, with command-line overrides applied.
 
     Args:

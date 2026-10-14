@@ -1,7 +1,9 @@
 """Every knob, and what one run reads: the gate's harvest, the bars and the ATR of the feed."""
 
 from pathlib import Path
+from typing import Any, TypedDict
 
+import numpy as np
 import pandas as pd
 
 from core import assetdata
@@ -12,10 +14,23 @@ from engines.market import atr as sqx_atr
 from ledger import thresholds
 
 CONFIG = Path(__file__).with_name("config.yaml")
+
+
+class Inputs(TypedDict):
+    """What one run reads: the harvest's trades, the bars' index and ATR, the market."""
+    trades: pd.DataFrame
+    names: pd.Series
+    timeframe: str
+    index: pd.DatetimeIndex
+    atr: np.ndarray
+    point_value: float
+    symbol: str
+
+
 SEGMENTS = {"IS": "build", "OOS": "oos1"}     # the harvest's `sample` -> the ledger's segment
 
 
-def config(overrides: list[str]) -> dict:
+def config(overrides: list[str]) -> dict[str, Any]:
     """Every knob, with command-line overrides applied.
 
     Args:
@@ -33,7 +48,7 @@ def newest(project: str, databank: str) -> Path:
     return sorted(p for p in folder.iterdir() if p.is_dir() and p.name[0] != "_")[-1]
 
 
-def load(folder: Path, feed: str, cfg: dict) -> dict:
+def load(folder: Path, feed: str, cfg: dict) -> Inputs:
     """What `many.run` reads.
 
     Args:
@@ -48,15 +63,16 @@ def load(folder: Path, feed: str, cfg: dict) -> dict:
     metrics = pd.read_parquet(folder / "metrics.parquet", columns=["strategy", "TimeFrame [IS]"])
     timeframe = metrics["TimeFrame [IS]"].iloc[0]
     trades = pd.read_parquet(folder / "trades.parquet")
-    trades = trades[trades["Close price"].notna()].reset_index(drop=True)
+    trades = pd.DataFrame(trades[trades["Close price"].notna()]).reset_index(drop=True)
     bars = read_bars(feed, timeframe)
     symbol = assetdata.symbol_for(feed)
     if symbol is None:
         raise SystemExit(f"ningún fichero de assets/symbols/ declara el feed {feed!r}")
-    return {"trades": trades, "names": metrics["strategy"], "timeframe": timeframe,
-            "index": bars.index, "atr": sqx_atr.sqx(bars, cfg["depth"]["atr_period"]),
-            "point_value": float(assetdata.load(symbol)["instrument"]["point_value"]),
-            "symbol": symbol}
+    return Inputs(trades=trades, names=pd.Series(metrics["strategy"]), timeframe=timeframe,
+                  index=pd.DatetimeIndex(bars.index),
+                  atr=sqx_atr.sqx(bars, cfg["depth"]["atr_period"]),
+                  point_value=float(assetdata.load(symbol)["instrument"]["point_value"]),
+                  symbol=symbol)
 
 
 def window(trades: pd.DataFrame) -> tuple[str, str]:

@@ -6,6 +6,7 @@ import json
 import sys
 from datetime import date
 from pathlib import Path
+from typing import TypedDict
 
 import pandas as pd
 
@@ -16,7 +17,15 @@ from studies.screening.batches import measure
 DATABANK = "Results"     # the gate judges the build's databank
 
 
-def read(project: str) -> dict:
+class Batch(TypedDict):
+    """One batch as the gate left it."""
+    parts: pd.DataFrame
+    funnel: pd.DataFrame
+    print: dict[str, str | list[str]]
+    gate: str
+
+
+def read(project: str) -> Batch:
     """One batch as the gate left it: who went where, the funnel, and the setup it ran under.
 
     Args:
@@ -30,11 +39,12 @@ def read(project: str) -> dict:
     source = json.loads((gate / "manifest.json").read_text(encoding="utf-8"))["source"]
     with project_registry().open(encoding="utf-8", newline="") as f:
         row = [r for r in csv.DictReader(f) if r["name"] == project][-1]
-    return {"parts": measure.parts(pd.read_csv(gate / "verdict.csv")), "funnel": funnel,
-            "print": measure.fingerprint(source, list(funnel["screen"]), row), "gate": str(gate)}
+    return Batch(parts=measure.parts(pd.read_csv(gate / "verdict.csv")), funnel=funnel,
+                 print=measure.fingerprint(source, list(funnel["screen"]), row), gate=str(gate))
 
 
-def text(lots: dict[str, dict], fields: list[str], same: dict | None, dup: list[dict],
+def text(lots: dict[str, Batch], fields: list[str], same: measure.Homogeneity | None,
+         dup: list[measure.Repeat],
          verdict: tuple[str, str]) -> str:
     """The report, in the owner's language."""
     names = list(lots)
@@ -45,6 +55,7 @@ def text(lots: dict[str, dict], fields: list[str], same: dict | None, dup: list[
         out += ["## Configuración distinta", ""] + [
             f"- `{k}`: " + " · ".join(f"{n} = {lots[n]['print'][k]}" for n in names) for k in fields]
         return "\n".join(out) + "\n"
+    assert same is not None
     out += ["## ¿Se comportan igual los lotes?", "",
             f"Ji-cuadrado entre lotes {same['chi2']:.1f}; p = {same['p']:.4f} barajando islas "
             f"enteras ({measure.DRAWS:,} veces), alarma por debajo de {measure.ALARM}. Las islas "

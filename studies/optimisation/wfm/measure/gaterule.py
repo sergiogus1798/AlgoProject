@@ -9,6 +9,8 @@ judge: the cells are near copies of each other and most of their out-of-sample i
 selection already saw (`oos_only` removes the part that is plainly in-sample).
 """
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
@@ -58,8 +60,17 @@ def oos_only(conditions: pd.DataFrame, cells: pd.DataFrame) -> pd.DataFrame:
     return conditions.assign(value=value, met=met)
 
 
+class Area(TypedDict):
+    """The best rectangle of passed cells: whether it holds enough, how many, corner and centre."""
+
+    passed: bool
+    count: int
+    corner: tuple[int, int] | None
+    centre: tuple[int, int]
+
+
 def area(passed: np.ndarray, scores: np.ndarray, rows: int, cols: int,
-         min_squares: int) -> dict:
+         min_squares: int) -> Area:
     """SQX's `findBestGroupOfPassedCombinations`, its tie-break and its centre included.
 
     Args:

@@ -1,5 +1,7 @@
 """One mother's batch through step 17's three compositions: values, filters, numbers and the call."""
 
+from typing import Any, TypedDict, cast
+
 import numpy as np
 import pandas as pd
 
@@ -41,7 +43,7 @@ def values(comp: tuple[tuple, tuple], metrics: pd.DataFrame, got: dict,
     sides = {}
     for side, legs in (("is", comp[0]), ("oos", comp[1])):
         per = pd.concat([got["per"][leg] for leg in legs])
-        total = (per.groupby("variant_id")[["net", "gross"]].sum()
+        total = (cast(pd.DataFrame, per.groupby("variant_id")[["net", "gross"]].sum())
                  / batch.years(asset, legs)).reindex(counted.index)
         idle = (counted[cols[f"trades_{side}"]] == 0).to_numpy()[:, None]
         total = total.mask(total.isna() & idle, 0.0)
@@ -49,8 +51,22 @@ def values(comp: tuple[tuple, tuple], metrics: pd.DataFrame, got: dict,
     return pd.DataFrame(sides)
 
 
+class Measured(TypedDict):
+    """One composition measured: its facts, the variants kept and the notes."""
+
+    facts: dict[str, Any]
+    kept: pd.DataFrame
+    notes: list[str]
+
+
+class Composition(Measured, total=False):
+    """A composition measured; the one that records its draws carries them under `draws`."""
+
+    draws: list[Any]
+
+
 def composition(comp: tuple[tuple, tuple], metrics: pd.DataFrame, got: dict, symbol: str,
-                k: int, cfg: dict, deciding: bool, name: str = "") -> dict:
+                k: int, cfg: dict, deciding: bool, name: str = "") -> Composition:
     """One composition, from the batch to its facts.
 
     Args:
@@ -89,13 +105,13 @@ def composition(comp: tuple[tuple, tuple], metrics: pd.DataFrame, got: dict, sym
         return {"facts": facts, "kept": kept.assign(top=False), "notes": notes}
     ids = kept["variant_id"]
     per = pd.concat([got["per"][leg] for leg in comp[1]])
-    per = per[per["variant_id"].isin(ids)]
-    weeks = weekly.weekly(per, batch.window(asset, comp[1]), units=ids)
+    per = cast(pd.DataFrame, per[per["variant_id"].isin(ids)])
+    weeks = weekly.weekly(per, batch.window(asset, comp[1]), units=cast(Any, ids))
     inside = {"net": kept["e_is"].to_numpy(float), "gross": e.loc[ids, "g_is"].to_numpy(float)}
     outside = {"net": kept["e_oos"].to_numpy(float), "gross": e.loc[ids, "g_oos"].to_numpy(float)}
     rows = []
     found = reading.measure(inside, outside, {name: w.to_numpy() for name, w in weeks.items()},
-                            span, cfg, weekly.straddle(per["open"], per["close"]), name,
+                            span, cfg, weekly.straddle(cast(pd.Series, per["open"]), cast(pd.Series, per["close"])), name,
                             panel.label(comp), rows)
     said = state.judge(found, cfg)
     best = level.top(inside["net"], cfg["level"]["top_share"])
@@ -121,7 +137,7 @@ def composition(comp: tuple[tuple, tuple], metrics: pd.DataFrame, got: dict, sym
 
 
 def run(metrics: pd.DataFrame, got: dict, symbol: str, cfg: dict,
-        name: str = "") -> dict[str, dict]:
+        name: str = "") -> dict[str, Composition]:
     """The three compositions of one batch, and whether the trades add up to SQX's figures.
 
     Args:
@@ -141,7 +157,7 @@ def run(metrics: pd.DataFrame, got: dict, symbol: str, cfg: dict,
                                  panel.label(comp) == cfg["deciding"], name)
                 for key, comp in panel.KEYS.items()}        # the seal is asked in here
     sqx = metrics.set_index("variant_id")
-    off = max(weekly.sqx_gap(per, sqx[f"NetProfit ({leg})"], tolerance=check["sqx_tolerance"],
+    off = max(weekly.sqx_gap(per, cast(pd.Series, sqx[f"NetProfit ({leg})"]), tolerance=check["sqx_tolerance"],
                              relative=check["sqx_relative"])[0]
               for leg, per in got["per"].items())
     for got_one in measured.values():

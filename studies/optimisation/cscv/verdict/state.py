@@ -1,5 +1,6 @@
 """Step 18's facts and its state: the real CSCV read against its null, and the cut of the proposal."""
 
+from typing import Any, TypedDict
 from engines.weekly import flip
 
 NULLS = ("nulo", "nulo_bruto")      # the kinds of draw that plant nothing
@@ -27,7 +28,7 @@ def state(facts: dict, cfg: dict) -> str:
     return LIMBO if facts["p_perdida_sobre_p95"] else PASS
 
 
-def facts(read: dict, draws: dict, counts: dict, cfg: dict) -> dict:
+def facts(read: dict, draws: dict, counts: dict, cfg: dict) -> dict[str, Any]:
     """Everything step 18 annotates of one mother, as numbers and one word.
 
     Args:
@@ -87,6 +88,14 @@ def facts(read: dict, draws: dict, counts: dict, cfg: dict) -> dict:
     return out | {"estado": state(out, cfg)}
 
 
-def no_data(counts: dict) -> dict:
+class NoData(TypedDict):
+    """The facts of a batch with too few variants: how many remain, the share of copies, LIMBO."""
+
+    n: int
+    duplicados_pct: float
+    estado: str
+
+
+def no_data(counts: dict) -> NoData:
     """The facts of a batch with too few variants left: nothing measured, LIMBO."""
     return {"n": counts["quedan"], "duplicados_pct": counts["duplicados_pct"], "estado": LIMBO}

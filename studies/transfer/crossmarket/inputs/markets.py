@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any, TypedDict
 
 import pandas as pd
 
@@ -10,7 +11,16 @@ from core import assetdata, assets
 UNCLASSIFIED = "sin clasificar"
 
 
-def load(symbol: str) -> dict:
+class Universe(TypedDict):
+    """The export's market universe: the base feed, the timeframe it ran on, each market with its window, and the declared feeds it lacks."""
+
+    main: str
+    timeframe: str
+    markets: list[dict[str, Any]]
+    absent: list[str]
+
+
+def load(symbol: str) -> dict[str, Any]:
     """One base asset's declared retest universe.
 
     Args:
@@ -104,7 +114,7 @@ def own_window(feed: str) -> dict[str, str] | None:
             "to": f"{last}-12-31" if isinstance(last, int) else str(last)}
 
 
-def universe(symbol: str, trades: Path) -> dict:
+def universe(symbol: str, trades: Path) -> Universe:
     """Reconcile what the export carries against what assets/_markets.yaml declares.
 
     Args:
@@ -129,15 +139,15 @@ def universe(symbol: str, trades: Path) -> dict:
     present = [f for f in discovered(trades) if f != spec["main"]]
     (timeframe,) = json.loads((trades.parent / "manifest.json").read_text(
         encoding="utf-8"))["source"]["timeframes"]
-    return {"main": spec["main"], "timeframe": timeframe,
-            "markets": [{"feed": f, "category": known.get(f, UNCLASSIFIED),
-                         "data_from": first.get(f, "unknown"),
-                         "window_from": (own_window(f) or {}).get("from"),
-                         "window_to": (own_window(f) or {}).get("to")} for f in present],
-            "absent": sorted(set(known) - set(present))}
+    return Universe(main=spec["main"], timeframe=timeframe,
+                    markets=[{"feed": f, "category": known.get(f, UNCLASSIFIED),
+                              "data_from": first.get(f, "unknown"),
+                              "window_from": (own_window(f) or {}).get("from"),
+                              "window_to": (own_window(f) or {}).get("to")} for f in present],
+                    absent=sorted(set(known) - set(present)))
 
 
-def feeds(universe_: dict) -> list[str]:
+def feeds(universe_: Universe) -> list[str]:
     """Every SQX symbol the study needs bars for, base asset first.
 
     Args:

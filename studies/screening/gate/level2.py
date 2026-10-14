@@ -28,7 +28,7 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         with `delay.on_build`, the build's as `retraso_build.parquet`, which no fact reads.
     """
     if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
-        return pd.DataFrame(index=alive, columns=list(FACTS), dtype=float)
+        return pd.DataFrame(index=alive, columns=pd.Index(FACTS), dtype=float)
     bars, windows, drift = data["bars"], data["market"]["windows"], cfg["drift"]
     variants = cfg["delay"]["variants"]
     oos = data["oos"][data["oos"]["identity"].isin(alive)]
@@ -47,5 +47,5 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         build["excess"] = delay.excess(build, bars, windows["IS"], data["costs_build"], drift)
         delay.measure(build, bars, windows["IS"], data["costs_build"], drift, variants) \
             .to_parquet(data["out"] / "retraso_build.parquet", index=False)
-    return (delay.worst(table)[["ret", "t_delta"]].set_axis(list(FACTS), axis=1)
-            .reindex(alive))
+    return pd.DataFrame(delay.worst(table)[["ret", "t_delta"]].set_axis(list(FACTS), axis=1)
+                        ).reindex(alive)

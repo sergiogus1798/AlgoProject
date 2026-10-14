@@ -1,5 +1,6 @@
 """A variant batch's trades on every market as weekly excess, gross and net, one leg at a time."""
 
+from typing import Any, TypedDict, cast
 from pathlib import Path
 
 import numpy as np
@@ -21,7 +22,7 @@ EMPTY = pd.DataFrame({"variant_id": pd.Series(dtype=str), "net": [], "gross": []
 _JOB: dict = {}                         # what a forked worker reads: set by read()
 
 
-def drift() -> dict:
+def drift() -> dict[str, Any]:
     """The gate's `drift` block: the window and the variant of the drift term."""
     return yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"]
 
@@ -44,7 +45,16 @@ def years(asset: dict, leg: str, data_from: str | None = None) -> float:
     return max(0.0, panel.years((max(first, data_from or first), last)))
 
 
-def variants(work: Path) -> dict:
+class Design(TypedDict):
+    """A batch's design: its non-control variants, the mother, the live parameters, the grid."""
+
+    ids: list[str]
+    params: pd.DataFrame
+    k: int
+    mother: str
+
+
+def variants(work: Path) -> Design:
     """The batch's design: which variants are read, which is the mother, how many parameters move.
 
     Args:
@@ -62,7 +72,7 @@ def variants(work: Path) -> dict:
             "mother": str(kept.loc[kept["stratum"] == filters.ORIGIN, "variant_id"].iloc[0])}
 
 
-def one(market: str) -> dict:
+def one(market: str) -> dict[str, Any]:
     """One market's legs, repriced: what a worker of read() returns.
 
     Args:
@@ -80,21 +90,21 @@ def one(market: str) -> dict:
     for leg in job["legs"][market]:
         got = pd.read_parquet(job["work"] / TRADES, filters=[("leg", "==", leg), ("market", "==", market)])
         got = got.assign(variant_id=got["variant_id"].astype(str))
-        got = got[got["variant_id"].isin(ids)]
+        got = cast(pd.DataFrame, got[got["variant_id"].isin(ids)])
         per, gap = EMPTY, None
         if len(got):
             per = panel.per_trade(got, bars, reprice.costs(feed, leg), span(job["asset"], leg),
                                   job["drift"], feed)
             sqx = pd.read_parquet(job["work"] / "segments.parquet", columns=["variant_id", "NetProfit"],
                                   filters=[("segment", "==", leg), ("market", "==", market)])
-            sqx = sqx.set_index(sqx["variant_id"].astype(str))["NetProfit"].reindex(ids).dropna()
+            sqx = cast(pd.Series, sqx.set_index(sqx["variant_id"].astype(str))["NetProfit"].reindex(ids).dropna())
             gap = panel.sqx_gap(per, sqx, tolerance=job["costs"]["tolerance"],
                                 relative=job["costs"]["relative"])[0]
         weekly = panel.weekly(per, window(job["asset"], leg), units=ids)
         legs[leg] = weekly | {
             "n": per["variant_id"].value_counts().reindex(ids, fill_value=0).to_numpy(),
             "trades": len(per), "gap": gap,
-            "straddle": panel.straddle(per["open"], per["close"]) if len(per) else 0.0}
+            "straddle": panel.straddle(cast(pd.Series, per["open"]), cast(pd.Series, per["close"])) if len(per) else 0.0}
         raw.append(got)
     return {"legs": legs} | ({"prints": fingerprint.prints(pd.concat(raw))} if market == MAIN else {})
 

@@ -1,5 +1,6 @@
 """Step 18 as the contract's blocks: the outputs against their null, the cloud, the curves, who is chosen."""
 
+from typing import Any
 import numpy as np
 import pandas as pd
 
@@ -21,7 +22,7 @@ def dec(x: float | None) -> str:
     return DASH if x is None or x != x else f"{x:+.2f}".replace(".", ",").replace("-", "−")
 
 
-def verdict(facts: dict, cfg: dict) -> dict:
+def verdict(facts: dict, cfg: dict) -> dict[str, Any]:
     """The state with its sentence; the numbers that decided go as parts."""
     said, cuts = facts["estado"], cfg["state"]
     if "p_perdida" not in facts:
@@ -48,18 +49,18 @@ def verdict(facts: dict, cfg: dict) -> dict:
                           words.STATE[said], meaning, f"P pérdida {pct(lost)}", parts)
 
 
-def filters(counts: dict) -> dict:
+def filters(counts: dict) -> dict[str, Any]:
     """What each filter of the panel removed."""
     rows = [("Variantes del lote", counts["lote"]), ("Controles (canarios, pares inertes)", counts["controles"]),
             ("Sin operaciones", counts["sin_operaciones"]),
             (f"Duplicados exactos ({pct(counts['duplicados_pct'])})", counts["duplicados"]),
             (f"Bajo el suelo por parámetro vivo ({counts['vivos']} vivos)", counts["suelo_parametros"]),
             ("Bajo el suelo por año", counts["suelo_anual"]), ("Entran en el panel", counts["quedan"])]
-    return blocks.table("El panel: qué variantes entran", pd.DataFrame(rows, columns=["Filtro", "Variantes"]),
+    return blocks.table("El panel: qué variantes entran", pd.DataFrame(rows, columns=pd.Index(["Filtro", "Variantes"])),
                         words.WHAT["duplicados"])
 
 
-def reading(facts: dict) -> dict:
+def reading(facts: dict) -> dict[str, Any]:
     """The outputs of the method, each beside its null and with what it is."""
     null, gross = facts["nulo"], facts["bruto"]
     rows = [("PBO (neto)", pct(facts["pbo"]), pct(null["pbo_p5"]), pct(null["pbo_mediana"]),
@@ -75,13 +76,13 @@ def reading(facts: dict) -> dict:
              words.WHAT["p_perdida"]),
             ("Recorte del Sharpe (HC)", pct(facts["hc"]), DASH, pct(null["hc_mediana"]), DASH, DASH,
              words.WHAT["hc"])]
-    table = blocks.table("Las salidas del método, contra su nulo", pd.DataFrame(rows, columns=[
-        "Salida", "Real", "Nulo p5", "Nulo mediana", "Nulo p95", "p", "Qué es"]),
+    table = blocks.table("Las salidas del método, contra su nulo", pd.DataFrame(rows, columns=pd.Index([
+        "Salida", "Real", "Nulo p5", "Nulo mediana", "Nulo p95", "p", "Qué es"])),
         f"{null['sorteos']} sorteos del nulo. " + words.WHAT["p"])
     return table | {"align": ["left"] + ["right"] * 5 + ["left"]}
 
 
-def curves(got: dict) -> dict:
+def curves(got: dict) -> dict[str, Any]:
     """The three distribution functions of the out-of-sample Sharpe, on the histogram's bins."""
     found = got["found"]
     edge = np.linspace(found["lo"], found["hi"], len(found["hist"]) + 1)[1:] * YEAR
@@ -96,7 +97,7 @@ def curves(got: dict) -> dict:
                         "role": "reference" if "azar" in name else "real"} for name, v in lines.items()]}
 
 
-def dominance(facts: dict) -> dict:
+def dominance(facts: dict) -> dict[str, Any]:
     """First and second order, the gap, and how often the null shows each."""
     dom, mother = facts["dominancia"], facts.get("madre")
     word = {1: "sí", 0: "no"}
@@ -105,12 +106,12 @@ def dominance(facts: dict) -> dict:
     if mother:
         rows.insert(1, ("La madre, contra el azar", word[mother["primer_orden"]],
                         word[mother["segundo_orden"]], dec(mother["brecha"])))
-    return blocks.table("Dominancia estocástica", pd.DataFrame(rows, columns=[
-        "Lista", "Primer orden", "Segundo orden", "Brecha máxima"]), "") | {
+    return blocks.table("Dominancia estocástica", pd.DataFrame(rows, columns=pd.Index([
+        "Lista", "Primer orden", "Segundo orden", "Brecha máxima"])), "") | {
         "help": [None, words.WHAT["primer_orden"], words.WHAT["segundo_orden"], words.WHAT["brecha"]]}
 
 
-def cloud(got: dict) -> dict:
+def cloud(got: dict) -> dict[str, Any]:
     """The paper's degradation cloud, thinned for the page; the line is fitted on every partition."""
     found, real = got["found"], got["read"]["real"]
     keep = blocks.thin(len(found["sr_in"]), SHOWN)
@@ -165,7 +166,7 @@ def tabs(got: dict, perf: dict, cfg: dict) -> list[dict]:
             ("Puesto mediano fuera", dec(m["puesto_mediano"]), words.WHAT["puesto_mediano"]),
             ("Por encima de la mitad", pct(m["sobre_mediana"]), words.WHAT["sobre_mediana"]),
             ("P de pérdida", pct(m["p_perdida"]), words.WHAT["madre_perdida"])],
-            columns=["Lectura", "Valor", "Qué es"]), words.NOTE["madre"]))
+            columns=pd.Index(["Lectura", "Valor", "Qué es"])), words.NOTE["madre"]))
     cpu = got["cpu_s"]
     cost = [("Reloj de la cola", f"{perf['wall_s']:.1f} s"), ("Procesos", str(perf["procesos"])),
             ("Sorteos por tipo", str(perf["sorteos"])), ("Tareas en la cola", str(perf["tareas"])),
@@ -177,7 +178,7 @@ def tabs(got: dict, perf: dict, cfg: dict) -> list[dict]:
                "items": [{"label": f"δ = {d}".replace(".", ","), "value": facts["potencia"][key] * 100,
                           "error": None, "state": "info"}
                          for d, key in zip(cfg["power"]["deltas"], facts["potencia"])]},
-              blocks.table("Coste de la corrida", pd.DataFrame(cost, columns=["Qué", "Cuánto"]),
+              blocks.table("Coste de la corrida", pd.DataFrame(cost, columns=pd.Index(["Qué", "Cuánto"])),
                            words.NOTE["coste"])]
     return [envelope.tab("lectura", "Lectura", first),
             envelope.tab("degradacion", "Degradación y dominancia", second),

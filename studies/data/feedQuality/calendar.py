@@ -1,5 +1,7 @@
 """The library's calendar deduced from one provider's feeds: holidays, partial closes, outages."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -45,7 +47,7 @@ def silences(feeds: dict[str, tuple[np.ndarray, np.ndarray]], cfg: dict) -> pd.D
     runs["cls"] = np.where(held, HOLIDAY, np.where(
         runs["minutes"] >= cfg["gap"]["partial_close_minutes"], PARTIAL, OUTAGE))
     runs["t"] = pd.to_datetime((runs["start_min"] + scale.ORIGIN) * scale.MINUTE_NS)
-    return runs
+    return cast(pd.DataFrame, runs)
 
 
 def classify(holes: pd.DataFrame, runs: pd.DataFrame) -> pd.Series:

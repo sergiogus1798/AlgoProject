@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Step 20: the blind joint reading of 17, 18 and 19, with SPA and StepM on oos2, and its ledger row."""
 
+from typing import Any, cast
 import argparse
 import shlex
 import sys
@@ -22,7 +23,7 @@ from studies.closing.blindJoint import inputs, many, one, pieces, readings
 VERDICT = {"fail": "DESCARTAR", "watch": "REVISAR"}
 
 
-def ledger_row(a: argparse.Namespace, cfg: dict, got: dict, span: tuple) -> dict:
+def ledger_row(a: argparse.Namespace, cfg: dict, got: dict, span: tuple) -> dict[str, Any]:
     """Record step 20's look at oos2 in the study's ledger.
 
     Args:
@@ -62,15 +63,16 @@ def verdict_table(population: pd.DataFrame, got: dict, cfg: dict) -> pd.DataFram
     reading = one.chosen(cfg)
     rows = []
     for mother, row in population.iterrows():
-        call = got["calls"].loc[mother, readings.label(reading)] \
-            if reading and row["complete"] else None
-        reason = ("incompleta: no leída" if not row["complete"] else
-                  f"lectura {readings.label(reading)}: {one.CALL[call]}" if reading else
+        complete = bool(row["complete"])
+        call = cast(str | None, got["calls"].loc[mother, readings.label(reading)]
+                    if reading and complete else None)
+        reason = ("incompleta: no leída" if not complete else
+                  f"lectura {readings.label(reading)}: {one.CALL[cast(str, call)]}" if reading else
                   "sin regla del dueño: anota y no corta")
         rows.append({"strategy": mother, "identity": row["identity"],
-                     "verdict": VERDICT.get(call, "MANTENER"),
+                     "verdict": VERDICT.get(call or "", "MANTENER"),
                      "reason": reason,
-                     **{p: row[p]["state"] if row["complete"] else None for p in pieces.PIECES}})
+                     **{p: row[p]["state"] if complete else None for p in pieces.PIECES}})
     return pd.DataFrame(rows)
 
 
@@ -98,7 +100,7 @@ def main() -> None:
     inputs.blind_door(study)
     population = pieces.population(a.project, a.wfm_databank)
     refused = inputs.segment_door(a.symbol)
-    if not refused and not population["complete"].any():
+    if not refused and not bool(population["complete"].any()):
         # 🔬 2026-09-29: with no mother holding all three pieces the panel came out empty, with
         # an integer index, and the oos2 prices raised TypeError. There is nothing to read:
         # the pieces are reported, oos2 stays closed and no ledger row is written.

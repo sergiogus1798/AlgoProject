@@ -1246,7 +1246,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tools/layering.py` | 73 | Layering check: which project package may import which, with today's violations as debt. | depmap | — |
 | `tools/manual.py` | 239 | Build the user manual as one PDF per workflow family, from the markdown in AlgoData. | core, markdown | — |
 | `tools/projectmap.py` | 153 | Generate PROJECT_MAP.md from Graphify's graph: modules, who talks to whom, infra vs calculation, hot spots. | — | — |
-| `tools/ratchet.py` | 115 | Ratchet: debt counts that may fall but never rise (CODESTYLE.md §8), baseline in ratchet.json. | depmap, layering | — |
+| `tools/ratchet.py` | 115 | Ratchet: debt counts that may fall but never rise (CODESTYLE.md §12), baseline in ratchet.json. | depmap, layering | — |
 | `tools/readmetable.py` | 100 | Generate the «file» and «what it does» columns of every code folder's README table from the modules' docstrings. | depmap | — |
 | `tools/skillmap.py` | 97 | Read every installed skill and rewrite docs/SKILLS.md: what exists, what it costs, where. | — | — |
 | `tools/uiinventory.py` | 270 | Inventory every actionable widget of one zone of the window, drive each one, and say what happened. | ui, uiparts, uiwalk | PySide6, httpx, shiboken6 |

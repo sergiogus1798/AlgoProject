@@ -1,10 +1,25 @@
 """Whether the flagged trades earn more than any subset of the same size: the owner's test (2.12)."""
 
 import hashlib
+from typing import TypedDict
 
 import numpy as np
 
 CHUNK = 1000
+
+
+class Alarm(TypedDict):
+    """The alarm's reading of one strategy: counts, profit at risk, p, the null draws and the verdict word."""
+
+    n: int
+    flagged: int
+    observed: float
+    flagged_pnl: float
+    at_risk: float | None
+    p: float | None
+    draws: np.ndarray | None
+    verdict: str
+
 ALARM, QUIET, SHORT = "alarma", "sin alarma", "insuficiente"
 
 
@@ -29,7 +44,7 @@ def draws(pnl: np.ndarray, size: int, shuffles: int, seed: str) -> np.ndarray:
     return np.concatenate(out)
 
 
-def test(pnl: np.ndarray, flagged: np.ndarray, cfg: dict, seed: str) -> dict:
+def test(pnl: np.ndarray, flagged: np.ndarray, cfg: dict, seed: str) -> Alarm:
     """The alarm on one strategy's trades.
 
     Args:
@@ -46,14 +61,14 @@ def test(pnl: np.ndarray, flagged: np.ndarray, cfg: dict, seed: str) -> dict:
     """
     al = cfg["alarm"]
     m, total, observed = int(flagged.sum()), float(pnl.sum()), float(pnl[flagged].sum())
-    got = {"n": len(pnl), "flagged": m, "observed": observed, "flagged_pnl": observed,
-           "at_risk": observed / total if total > 0 else None, "p": None, "draws": None,
-           "verdict": SHORT}
+    got = Alarm(n=len(pnl), flagged=m, observed=observed, flagged_pnl=observed,
+                at_risk=observed / total if total > 0 else None, p=None, draws=None,
+                verdict=SHORT)
     if m < al["min_flagged"]:
         return got
-    got["draws"] = draws(pnl, m, al["shuffles"], seed)
+    drawn = got["draws"] = draws(pnl, m, al["shuffles"], seed)
     # A tie is a tie: the same trades summed in another order differ in the last float bits.
     tie = 1e-9 * np.abs(pnl).sum()
-    got["p"] = float((1 + np.sum(got["draws"] >= observed - tie)) / (al["shuffles"] + 1))
+    got["p"] = float((1 + np.sum(drawn >= observed - tie)) / (al["shuffles"] + 1))
     got["verdict"] = ALARM if got["p"] < al["p_max"] else QUIET
     return got

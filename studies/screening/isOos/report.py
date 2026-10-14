@@ -6,6 +6,7 @@ import argparse
 import json
 from datetime import date
 from pathlib import Path
+from typing import Any, TypedDict
 
 import pandas as pd
 
@@ -24,8 +25,32 @@ TRADES = ["identity", "sample", "Open time", "Close time", "Profit/Loss", "Balan
           "MAE ($)", "MFE ($)"]
 
 
+class Counts(TypedDict):
+    """How many strategies, IS and OOS metrics and duplicates the population half saw."""
+    strategies: int
+    is_metrics: int
+    oos_metrics: int
+    duplicates_dropped: int
+
+
+class Population(TypedDict):
+    """The population half: its page, source, explorer, input file and counts."""
+    result: dict[str, Any]
+    source: dict[str, Any]
+    explorer: str
+    input: str
+    counts: Counts
+
+
+class TradeCounts(TypedDict):
+    """How many strategies the per-trade half wrote, skipped and dropped."""
+    trade_strategies: int
+    trade_skipped_one_sample: int
+    trade_duplicates_dropped: int
+
+
 def payload(columns: dict, names: list[str], source: dict,
-            is_metrics: list[str], oos_metrics: list[str]) -> dict:
+            is_metrics: list[str], oos_metrics: list[str]) -> dict[str, Any]:
     """Everything the interactive explorer needs, ready to embed.
 
     Args:
@@ -42,12 +67,12 @@ def payload(columns: dict, names: list[str], source: dict,
             "data": {k: [round(float(v), 5) for v in col] for k, col in columns.items()}}
 
 
-def config(overrides: list[str]) -> dict:
+def config(overrides: list[str]) -> dict[str, Any]:
     """Every knob of config.yaml, with `--set section.key=value` applied."""
     return study_config.load(CONFIG, overrides)
 
 
-def population(project: str, databank: str, cfg: dict) -> dict:
+def population(project: str, databank: str, cfg: dict) -> Population:
     """The population half: the correlation map over the metrics export, and the explorer.
 
     Args:
@@ -74,13 +99,12 @@ def population(project: str, databank: str, cfg: dict) -> dict:
                     "oos": oos_metrics}, cfg)
     explorer = TEMPLATE.read_text(encoding="utf-8").replace(
         "__PAYLOAD__", json.dumps(payload(columns, names, source, is_metrics, oos_metrics)))
-    return {"result": got, "source": source, "explorer": explorer,
-            "input": str(read.resolve()),
-            "counts": {"strategies": len(names), "is_metrics": len(is_metrics),
-                       "oos_metrics": len(oos_metrics), "duplicates_dropped": dropped}}
+    return Population(result=got, source=source, explorer=explorer, input=str(read.resolve()),
+                      counts=Counts(strategies=len(names), is_metrics=len(is_metrics),
+                                    oos_metrics=len(oos_metrics), duplicates_dropped=dropped))
 
 
-def per_trade(folder: Path, out: Path, title: str, cfg: dict) -> dict:
+def per_trade(folder: Path, out: Path, title: str, cfg: dict) -> TradeCounts:
     """The per-trade half: every strategy of a harvest, IS against OOS, one page each.
 
     Args:
@@ -103,14 +127,16 @@ def per_trade(folder: Path, out: Path, title: str, cfg: dict) -> dict:
                          f"OOS2 is not read here")
     groups = dict(tuple(trades.groupby("identity")))
     full = [i for i, g in groups.items() if g["sample"].nunique() == 2]
-    clone = dedupe.trade_duplicates(trades[trades["sample"] == "OOS"], by="identity")
+    clone = dedupe.trade_duplicates(pd.DataFrame(trades[trades["sample"] == "OOS"]), by="identity")
     deduped = [i for i in full if not clone.get(i, False)]
     for n, identity in enumerate(deduped):
-        got = one.run(names[identity], {"identity": identity, "trades": groups[identity]}, cfg)
-        output.member(out, got, f"{title} — {names[identity]}")
-        progress(5 + 95 * (n + 1) // len(deduped), names[identity])
-    return {"trade_strategies": len(deduped), "trade_skipped_one_sample": len(groups) - len(full),
-            "trade_duplicates_dropped": len(full) - len(deduped)}
+        name = str(names[identity])
+        got = one.run(name, {"identity": identity, "trades": groups[identity]}, cfg)
+        output.member(out, got, f"{title} — {name}")
+        progress(5 + 95 * (n + 1) // len(deduped), name)
+    return TradeCounts(trade_strategies=len(deduped),
+                       trade_skipped_one_sample=len(groups) - len(full),
+                       trade_duplicates_dropped=len(full) - len(deduped))
 
 
 def main() -> None:
@@ -129,9 +155,10 @@ def main() -> None:
                          f"ni cosecha (studies.screening.gate.harvest, skill /oos-gate)")
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "isOos"
     title = f"{a.project} / {a.databank} — dentro de muestra contra fuera"
-    source, counts, inputs = {"project": a.project, "databank": a.databank,
+    counts: dict[str, Any] = {}
+    source, inputs = {"project": a.project, "databank": a.databank,
                               "reported": date.today().isoformat(),
-                              "code_version": manifest.code_version()}, {}, []
+                              "code_version": manifest.code_version()}, []
     progress(1, "leyendo")
     if has_metrics:
         pop = population(a.project, a.databank, cfg)

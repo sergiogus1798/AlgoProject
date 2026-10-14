@@ -1,13 +1,16 @@
 """Benjamini-Hochberg over a family of tests: which of them may be named as discoveries."""
 
+from collections.abc import Mapping, Sequence
+from typing import Any
 
-def _refuse_nan(rows: list[dict]) -> None:
+
+def _refuse_nan(rows: Sequence[Mapping[str, Any]]) -> None:
     """Raise on a NaN p: it sorts nowhere, so it would be named a discovery and misorder the rest."""
     if any(r["p"] != r["p"] for r in rows):
         raise ValueError("fdr: NaN p-value in the family; drop untestable rows first")
 
 
-def discoveries(rows: list[dict], alpha: float = 0.05) -> set[str]:
+def discoveries(rows: Sequence[Mapping[str, Any]], alpha: float = 0.05) -> set[str]:
     """Which of a family of tests survive Benjamini-Hochberg control of the FDR.
 
     Args:
@@ -25,7 +28,7 @@ def discoveries(rows: list[dict], alpha: float = 0.05) -> set[str]:
     return {r["metric"] for r in ordered[: max(below, default=0)]}
 
 
-def adjusted(rows: list[dict]) -> dict[str, float]:
+def adjusted(rows: Sequence[Mapping[str, Any]]) -> dict[str, float]:
     """The Benjamini-Hochberg adjusted p of every test of a family.
 
     Args:

@@ -3,6 +3,8 @@
 
 import argparse
 import time
+from collections.abc import Mapping
+from typing import Any
 from datetime import date
 
 import pandas as pd
@@ -18,7 +20,8 @@ TARGETS = ["Sharpe Ratio (OOS)", "Ret/DD Ratio (OOS)"]
 MODULE = "studies.screening.filters.report"
 
 
-def tab(target: str, base: dict, rows: list[dict], found: set[str], top: int) -> dict:
+def tab(target: str, base: Mapping[str, Any], rows: list[dict], found: set[str],
+        top: int) -> dict[str, Any]:
     """What each candidate filter buys on one out-of-sample outcome.
 
     Args:
@@ -49,8 +52,8 @@ def tab(target: str, base: dict, rows: list[dict], found: set[str], top: int) ->
             [[r["metric"], r["n"], r["median"], r["d_median"], r["d_median_lo"],
               r["d_median_hi"], 100 * r["hit"], 100 * r["d_hit"], r["p"],
               r["metric"] in found] for r in shown],
-            columns=["filtro", "quedan", "mediana", "Δ mediana", "Δ IC desde", "Δ IC hasta",
-                     "% por encima", "Δ pp", "p", "BH"]),
+            columns=pd.Index(["filtro", "quedan", "mediana", "Δ mediana", "Δ IC desde",
+                               "Δ IC hasta", "% por encima", "Δ pp", "p", "BH"])),
             f"Mejor filtro superviviente: {best['metric']}, deja {best['n']:,} con mediana "
             f"{best['median']:.3f} ({best['d_median']:+.3f})." if best else
             "Ningún filtro mejora la mediana y sobrevive la corrección.")],

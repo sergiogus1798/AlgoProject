@@ -1,17 +1,20 @@
 """One strategy across every market, returned as the contract's data: what the window paints."""
 
 import time
+from typing import Any, cast
+
+import pandas as pd
 
 from core.study import result as envelope
 from core.symbols import alias
-from studies.transfer.crossmarket import many
+from studies.transfer.crossmarket import load, many
 from studies.transfer.crossmarket.contract import tabs
 
 MODULE = "studies.transfer.crossmarket"
 
 
-def run(name: str, inputs: dict, cfg: dict, only: str | None = None,
-        overrides: list[str] | None = None) -> dict:
+def run(name: str, inputs: load.Inputs, cfg: dict, only: str | None = None,
+        overrides: list[str] | None = None) -> dict[str, Any]:
     """Everything the study measures for one strategy.
 
     The joint random runs belong to the whole export (one draw moves every market and every
@@ -33,11 +36,11 @@ def run(name: str, inputs: dict, cfg: dict, only: str | None = None,
     if mine.empty:
         raise ValueError(f"{name}: no es una estrategia del export")
     row = mine.iloc[0]
-    markets = got["markets"][got["markets"]["strategy"] == name]
+    markets = cast(pd.DataFrame, got["markets"][got["markets"]["strategy"] == name])
     ident = inputs["identity"].get(name)
     warn = tabs.warnings(markets, ident)
     if only:
-        markets = markets[markets["market"] == only]
+        markets = cast(pd.DataFrame, markets[markets["market"] == only])
         warn.append({"code": "parcial", "state": "info",
                      "text": f"Sólo se enseña {alias(only)}; la z conjunta sale de todos los "
                              f"mercados a la vez."})

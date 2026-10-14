@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from core.barstore import RULE
+from studies.data.feedQuality import template
 from engines.market.feed import scale
 
 FAMILIES = ("cierre", "mecha", "extremo", "congelado", "hueco")
@@ -44,7 +45,7 @@ def hits(spans: tuple[np.ndarray, np.ndarray], a: np.ndarray, b: np.ndarray) -> 
     return np.searchsorted(starts, b, "left") - np.searchsorted(ends, a, "right")
 
 
-def bars(trades: pd.DataFrame, index: pd.DatetimeIndex, timeframe: str) -> dict:
+def bars(trades: pd.DataFrame, index: pd.DatetimeIndex, timeframe: str) -> dict[str, tuple[np.ndarray, np.ndarray]]:
     """Each trade's signal, entry and exit bars, and the time between, as minute windows.
 
     Args:
@@ -69,7 +70,7 @@ def bars(trades: pd.DataFrame, index: pd.DatetimeIndex, timeframe: str) -> dict:
 
 
 def mark(trades: pd.DataFrame, ev: pd.DataFrame, index: pd.DatetimeIndex, timeframe: str,
-         rules: dict, include_non_reverting: bool) -> pd.DataFrame:
+         rules: template.Rules, include_non_reverting: bool) -> pd.DataFrame:
     """Every trade of one strategy, with what it touched and whether it is flagged.
 
     Args:

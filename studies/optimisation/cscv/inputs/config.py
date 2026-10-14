@@ -1,5 +1,6 @@
 """Read this study's config.yaml, its `ledger:` references filled."""
 
+from typing import Any
 from pathlib import Path
 
 from core.study import config as study_config
@@ -8,7 +9,7 @@ from ledger import thresholds
 HERE = Path(__file__).resolve().parent.parent
 
 
-def load(overrides: list[str] | None = None) -> dict:
+def load(overrides: list[str] | None = None) -> dict[str, Any]:
     """The study's tunables.
 
     Args:

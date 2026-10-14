@@ -1,5 +1,7 @@
 """The numbers of every cell: what it earned, and where it sits among its own timeframe's nulls."""
 
+from typing import Any, TypedDict, cast
+
 import numpy as np
 import pandas as pd
 
@@ -17,7 +19,26 @@ DROP_WARNINGS = ("P SATURADO",)
 # The owner's one Sharpe (daily P&L on trading days, x sqrt(252)), measured beside the null's
 # statistics so the window can draw it; never a key of `engines.nulls.stats`.
 TOTAL = "sharpe_total"
-NO_NULL = {"null_mean": np.nan, "null_sd": np.nan, "z": np.nan}
+
+
+class _Cell(TypedDict):
+    """One cell's statistics, their empirical p, the nulls' mean and sd, and what there is to distrust."""
+
+    trades: int
+    seen: float
+    p: float
+    null_mean: float
+    null_sd: float
+    z: float
+    seen_all: dict[str, float]
+    p_all: dict[str, float]
+    warnings: list[str]
+
+
+class CellNumbers(_Cell, total=False):
+    """A cell's numbers; `draws` (the `core.study.draws` rows of every statistic) only when the caller asked for them."""
+
+    draws: list[dict[str, Any]]
 
 
 def _trusted(said: list[str]) -> list[str]:
@@ -26,7 +47,7 @@ def _trusted(said: list[str]) -> list[str]:
 
 
 def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
-            statistic: str, rung: str, key: str, min_trades: int, cell: dict | None = None) -> dict:
+            statistic: str, rung: str, key: str, min_trades: int, cell: dict | None = None) -> CellNumbers:
     """One cell's statistics, their empirical p, and what there is to distrust about them.
 
     The statistics are priced from the bars by `engines.nulls.simulate`, never read off SQX,
@@ -65,25 +86,26 @@ def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
     names = nullcfg["statistics"]["report"]
     if rows.empty:
         empty = {n: np.nan for n in names}
-        return {"trades": 0, "seen": np.nan, "p": np.nan, **NO_NULL,
-                "seen_all": {**empty, TOTAL: np.nan}, "p_all": empty,
-                "warnings": ["La estrategia no operó en este timeframe: no hay nada que juzgar."]}
+        return CellNumbers(trades=0, seen=np.nan, p=np.nan, null_mean=np.nan, null_sd=np.nan, z=np.nan,
+                           seen_all={**empty, TOTAL: np.nan}, p_all=empty,
+                           warnings=["La estrategia no operó en este timeframe: no hay nada que juzgar."])
     kept = simulate.fixed(rows, frame, nullcfg)
     seen_all = {**simulate.real(kept, names),
-                TOTAL: annual_sharpe(rows["Profit/Loss"].to_numpy(dtype=float), rows["Close time"])}
+                TOTAL: annual_sharpe(rows["Profit/Loss"].to_numpy(dtype=float), cast(np.ndarray, rows["Close time"]))}
     if len(rows) < min_trades:
         p_all = {n: np.nan for n in names}
-        return {"trades": len(rows), "seen": seen_all[statistic], "p": np.nan, **NO_NULL,
-                "seen_all": seen_all, "p_all": p_all, "warnings": [f"Solo {len(rows)} operaciones en oos1, menos de las {min_trades} que hacen falta para calcular un p."]}
+        return CellNumbers(trades=len(rows), seen=seen_all[statistic], p=np.nan, null_mean=np.nan,
+                           null_sd=np.nan, z=np.nan, seen_all=seen_all, p_all=p_all,
+                           warnings=[f"Solo {len(rows)} operaciones en oos1, menos de las {min_trades} que hacen falta para calcular un p."])
     drawn = simulate.nulls(kept, rung, nullcfg, key)
     p_all = {n: verdict.pvalue(seen_all[n], drawn[n], n) for n in names}
     mean, sd = float(np.mean(drawn[statistic])), float(np.std(drawn[statistic], ddof=1))
     rec = {} if cell is None else {"draws": [draws.record("crossTF.cell", n, seen_all[n], drawn[n],
                                                            raw=False, **cell) for n in names]}
-    return {**rec, "trades": len(rows), "seen": seen_all[statistic], "p": p_all[statistic],
-            "null_mean": mean, "null_sd": sd, "z": (seen_all[statistic] - mean) / sd if sd else np.nan,
-            "seen_all": seen_all, "p_all": p_all,
-            "warnings": _trusted(verdict.distrust(kept, p_all, len(rows), nullcfg))}
+    return cast(CellNumbers, {**rec, "trades": len(rows), "seen": seen_all[statistic], "p": p_all[statistic],
+                              "null_mean": mean, "null_sd": sd, "z": (seen_all[statistic] - mean) / sd if sd else np.nan,
+                              "seen_all": seen_all, "p_all": p_all,
+                              "warnings": _trusted(verdict.distrust(kept, p_all, len(rows), nullcfg))})
 
 
 def curve(rows: pd.DataFrame, points: int = 50) -> list[float] | None:
@@ -109,7 +131,7 @@ def curve(rows: pd.DataFrame, points: int = 50) -> list[float] | None:
 _SHARED: dict = {}     # set by `panel` before the fork, read by `_cell` in the workers
 
 
-def _cell(i: int) -> dict:
+def _cell(i: int) -> CellNumbers:
     """`numbers` of cell `i` of `panel`, in a worker that inherited the parent's inputs."""
     g, row = _SHARED, _SHARED["rows"][i]
     return numbers(tradestore.block(g["packed"], row.strategy, row.block), g["frames"][row.timeframe],
@@ -137,7 +159,7 @@ def panel(plan: pd.DataFrame, packed: pd.DataFrame, frames: dict, nullcfg: dict,
     where = lambda r: None if sink is None else dict(
         strategy=r.strategy, block=r.block, timeframe=r.timeframe, role=r.role, mother=r.mother,
         seed=nullcfg["nulls"]["seed"])
-    rows = list(plan.itertuples())
+    rows = list(cast(Any, plan.itertuples()))
     _SHARED.update(rows=rows, packed=packed, frames=frames, nullcfg=nullcfg, statistic=statistic,
                    rung=rung, min_trades=cfg["usable"]["min_trades"], where=where)
     # One cell per task: the seed is `strategy|block`, so a cell draws the same on any process.

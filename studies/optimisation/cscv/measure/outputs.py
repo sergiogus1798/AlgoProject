@@ -1,12 +1,38 @@
 """What the partitions of one CSCV say: the paper's four outputs, the haircut and who gets chosen."""
 
+from typing import Any, TypedDict
 import numpy as np
+
+class Line(TypedDict):
+    """The degradation line: slope, intercept and adjusted R-squared."""
+
+    beta: float
+    alfa: float
+    r2: float
+
+
+class Dominance(TypedDict):
+    """First- and second-order stochastic dominance of a list over all variants, and the gap."""
+
+    primer_orden: bool
+    segundo_orden: bool
+    brecha: float
+
+
+class Selection(TypedDict):
+    """Who gets chosen across the partitions: how many, the favourite, its weight, the table."""
+
+    distintas: int
+    mas_elegida: str
+    peso: float
+    tabla: list[tuple[str, float]]
+
 
 HALF = 0.5          # omega at or under it is lambda <= 0: the pick landed in the worse half
 EPS = 1e-12
 
 
-def line(inside: np.ndarray, outside: np.ndarray) -> dict:
+def line(inside: np.ndarray, outside: np.ndarray) -> Line:
     """The paper's degradation line: the pick's Sharpe out on its Sharpe in, a point per partition.
 
     Returns:
@@ -30,7 +56,7 @@ def cdf(values: np.ndarray, found: dict) -> np.ndarray:
     return np.bincount(np.clip(cell, 0, bins - 1), minlength=bins).cumsum() / len(values)
 
 
-def dominance(values: np.ndarray, found: dict, tolerance: float) -> dict:
+def dominance(values: np.ndarray, found: dict, tolerance: float) -> Dominance:
     """Whether a list of out-of-sample Sharpes dominates every variant's, picked at random.
 
     Args:
@@ -50,7 +76,7 @@ def dominance(values: np.ndarray, found: dict, tolerance: float) -> dict:
             "brecha": float(gap.max())}
 
 
-def summary(found: dict, tolerance: float) -> dict:
+def summary(found: dict, tolerance: float) -> dict[str, Any]:
     """The four outputs of one CSCV and the Sharpe haircut, as plain numbers.
 
     Args:
@@ -72,7 +98,7 @@ def summary(found: dict, tolerance: float) -> dict:
             **dominance(outside, found, tolerance)}
 
 
-def selection(pick: np.ndarray, names: np.ndarray) -> dict:
+def selection(pick: np.ndarray, names: np.ndarray) -> Selection:
     """Who gets chosen across the partitions.
 
     Args:
@@ -92,7 +118,7 @@ def selection(pick: np.ndarray, names: np.ndarray) -> dict:
             "tabla": [(str(names[i]), float(count[i] / len(pick))) for i in order]}
 
 
-def mother(found: dict, tolerance: float) -> dict:
+def mother(found: dict, tolerance: float) -> dict[str, Any]:
     """The mother's own list: what she scored out of sample in every partition, against all.
 
     Returns:

@@ -2,6 +2,7 @@
 
 import hashlib
 from pathlib import Path
+from typing import TypedDict, cast
 
 import numpy as np
 import pandas as pd
@@ -32,7 +33,7 @@ def parts(verdict: pd.DataFrame) -> pd.DataFrame:
         .where(verdict["verdict"] == "DESCARTAR", ALIVE)})
 
 
-def fingerprint(source: dict, screens: list[str], row: dict) -> dict:
+def fingerprint(source: dict, screens: list[str], row: dict) -> dict[str, str | list[str]]:
     """What has to be equal for two batches to be the same draw.
 
     Args:
@@ -64,7 +65,7 @@ def table(batches: dict[str, pd.DataFrame]) -> pd.DataFrame:
     both = pd.concat([b.assign(batch=name) for name, b in batches.items()])
     share = both["dest"].value_counts(normalize=True)
     least = min(len(b) for b in batches.values())
-    pooled = both["dest"].where(both["dest"].map(share) * least >= MIN_EXPECTED, SMALL)
+    pooled = both["dest"].where(pd.Series(both["dest"]).map(share) * least >= MIN_EXPECTED, SMALL)
     return pd.crosstab([both["batch"], both["island"]], pooled)
 
 
@@ -75,7 +76,36 @@ def chi2(counts: np.ndarray) -> float:
     return float(((counts - expected) ** 2 / expected).sum())
 
 
-def homogeneity(islands: pd.DataFrame, seed: int = 0) -> dict:
+class Homogeneity(TypedDict):
+    """Whether the batches' funnels differ more than chance: statistic, p, alarm and dispersion."""
+    chi2: float
+    p: float
+    alarm: bool
+    phi: float
+
+
+class Repeat(TypedDict):
+    """How much of one batch the earlier ones had already generated."""
+    batch: str
+    generated: int
+    repeated: int
+    share: float
+    alive: int
+    alive_repeated: int
+    space: float
+    state: str
+
+
+class Spread(TypedDict):
+    """How concentrated a batch's survivors are among its islands."""
+    alive: int
+    islands: int
+    of: int
+    top: int
+    top_n: int
+
+
+def homogeneity(islands: pd.DataFrame, seed: int = 0) -> Homogeneity:
     """Whether the batches' funnels differ more than batches of related strategies do by chance.
 
     Args:
@@ -102,8 +132,8 @@ def homogeneity(islands: pd.DataFrame, seed: int = 0) -> dict:
     within = [(chi2(counts[label == k]), (np.sum(label == k) - 1) * (counts.shape[1] - 1))
               for k in range(label.max() + 1)]
     p = float((1 + np.sum(drawn >= seen)) / (1 + DRAWS))
-    return {"chi2": seen, "p": p, "alarm": p < ALARM,
-            "phi": float(sum(c for c, _ in within) / sum(d for _, d in within))}
+    return Homogeneity(chi2=seen, p=p, alarm=p < ALARM,
+                       phi=float(sum(c for c, _ in within) / sum(d for _, d in within)))
 
 
 def by_rule(funnels: dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -129,10 +159,10 @@ def by_rule(funnels: dict[str, pd.DataFrame]) -> pd.DataFrame:
         pooled = (first["died"] + funnels[name]["died"]) / (n1 + n2)
         out[f"z {name}"] = ((out[f"rate {name}"] - out[f"rate {names[0]}"])
                             / np.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2)))
-    return out[sum(out[f"died {n}"] for n in names) > 0].reset_index(drop=True)
+    return pd.DataFrame(out[sum(out[f"died {n}"] for n in names) > 0]).reset_index(drop=True)
 
 
-def repeats(batches: dict[str, pd.DataFrame]) -> list[dict]:
+def repeats(batches: dict[str, pd.DataFrame]) -> list[Repeat]:
     """How much of each batch the earlier ones had already generated.
 
     Args:
@@ -144,35 +174,38 @@ def repeats(batches: dict[str, pd.DataFrame]) -> list[dict]:
         many distinct strategies the cell holds, a floor when the build is genetic and `> n1·n2`
         with no repeat — and `state`: ok, aviso (WARN) or parar (STOP).
     """
-    names, seen, out = list(batches), set(), []
+    names, out = list(batches), []
+    seen: set[str] = set()
     for name in names:
         b = batches[name]
         if seen:
-            hit = b["identity"].isin(seen)
+            hit = b["identity"].isin(list(seen))
             share = float(hit.mean())
-            out.append({"batch": name, "generated": len(b), "repeated": int(hit.sum()),
-                        "share": share, "alive": int((b["dest"] == ALIVE).sum()),
-                        "alive_repeated": int((hit & (b["dest"] == ALIVE)).sum()),
-                        "space": len(seen) * len(b) / max(int(hit.sum()), 1),
-                        "state": "parar" if share >= STOP else "aviso" if share >= WARN else "ok"})
+            out.append(Repeat(
+                batch=name, generated=len(b), repeated=int(hit.sum()), share=share,
+                alive=int((b["dest"] == ALIVE).sum()),
+                alive_repeated=int((hit & (b["dest"] == ALIVE)).sum()),
+                space=len(seen) * len(b) / max(int(hit.sum()), 1),
+                state="parar" if share >= STOP else "aviso" if share >= WARN else "ok"))
         seen |= set(b["identity"])
     return out
 
 
-def spread(b: pd.DataFrame) -> dict:
+def spread(b: pd.DataFrame) -> Spread:
     """How concentrated a batch's survivors are: of how many islands, and the largest one's."""
-    alive = b[b["dest"] == ALIVE]["island"].value_counts()
-    return {"alive": int(alive.sum()), "islands": int(len(alive)), "of": int(b["island"].nunique()),
-            "top": int(alive.index[0]) if len(alive) else 0, "top_n": int(alive.max()) if len(alive) else 0}
+    alive = pd.Series(b[b["dest"] == ALIVE]["island"]).value_counts()
+    return Spread(alive=int(alive.sum()), islands=int(len(alive)), of=int(b["island"].nunique()),
+                  top=int(cast(int, alive.index[0])) if len(alive) else 0,
+                  top_n=int(alive.max()) if len(alive) else 0)
 
 
-def differing(prints: dict[str, dict]) -> list[str]:
+def differing(prints: dict[str, dict[str, str | list[str]]]) -> list[str]:
     """The fingerprint fields that are not equal across batches."""
     first = next(iter(prints.values()))
     return [k for k in first if any(p[k] != first[k] for p in prints.values())]
 
 
-def decision(fields: list[str], same: dict, dup: list[dict]) -> tuple[str, str]:
+def decision(fields: list[str], same: Homogeneity | None, dup: list[Repeat]) -> tuple[str, str]:
     """The one line the owner acts on.
 
     Args:
@@ -186,6 +219,7 @@ def decision(fields: list[str], same: dict, dup: list[dict]) -> tuple[str, str]:
     """
     if fields:
         return "NO SUMAR", "la configuración difiere entre lotes: " + ", ".join(fields)
+    assert same is not None     # only `fields` makes the caller skip homogeneity
     if same["alarm"]:
         return "NO SUMAR", (f"el embudo difiere entre lotes más que el azar (p={same['p']:.4f}): "
                             "mirar qué cambió antes de juntarlos")

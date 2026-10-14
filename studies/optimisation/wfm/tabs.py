@@ -1,5 +1,6 @@
 """The tabs of one mother's reading in oos2: L1, the cells, L2, the drift and the segments."""
 
+from typing import Any
 import re
 
 import numpy as np
@@ -21,7 +22,7 @@ def _axes(names: list[str]) -> tuple[list[int], list[int], dict]:
     return sorted({k[0] for k in at}), sorted({k[1] for k in at}), at
 
 
-def heat(per_year: pd.Series, centre: str) -> dict:
+def heat(per_year: pd.Series, centre: str) -> dict[str, Any]:
     """Each cell's net excess per year in oos2, runs down and % OOS across, the centre marked."""
     rows, cols, at = _axes(list(per_year.index))
     values = [[float(per_year[at[r, c]]) for c in cols] for r in rows]
@@ -40,7 +41,7 @@ def heat(per_year: pd.Series, centre: str) -> dict:
                     "reoptimizando."}
 
 
-def readings(got: dict, said: dict, cfg: dict) -> dict:
+def readings(got: dict, said: dict, cfg: dict) -> dict[str, Any]:
     """The annotations beside L1, each with the sentence that says what it is."""
     null, charged = cfg["null"], got["recharged"]
     rows = [
@@ -70,10 +71,10 @@ def readings(got: dict, said: dict, cfg: dict) -> dict:
         rows.append(["Nulo en bloques de dos semanas",
                      f"p+ {num(two['p_mas'], 3)} · p− {num(two['p_menos'], 3)}",
                      "L1 otra vez con las semanas volteadas de dos en dos. No cambia el estado."])
-    return blocks.table("Lo que se anota", pd.DataFrame(rows, columns=["lectura", "valor", "qué es"]))
+    return blocks.table("Lo que se anota", pd.DataFrame(rows, columns=pd.Index(["lectura", "valor", "qué es"])))
 
 
-def l1(got: dict, said: dict, cfg: dict) -> dict:
+def l1(got: dict, said: dict, cfg: dict) -> dict[str, Any]:
     """L1 against its null band, the cells' heat map and the annotations."""
     one = said["l1"]
     return envelope.tab("l1", "L1 · reoptimizar en dato limpio", [
@@ -91,7 +92,7 @@ def l1(got: dict, said: dict, cfg: dict) -> dict:
              "que cierran en oos2 y cobradas al coste de oos2. Es lo único que decide.")
 
 
-def l2(got: dict, said: dict, mode: str) -> dict:
+def l2(got: dict, said: dict, mode: str) -> dict[str, Any]:
     """L2: the reference against the mother with fixed parameters, week by week."""
     two = said["l2"]
     what = ("la celda del centro" if mode == "reoptimizado" else
@@ -117,7 +118,7 @@ def l2(got: dict, said: dict, mode: str) -> dict:
                 if mode == "reoptimizado" else "En modo fijo se anota y no decide."))
 
 
-def drift(row: dict, stability: pd.DataFrame) -> dict:
+def drift(row: dict, stability: pd.DataFrame) -> dict[str, Any]:
     """How much the optimiser re-decides at every step, over the mother's own parameters."""
     table = pd.DataFrame(
         [["Parámetros de la madre", row["parameters"], "Los que la reoptimización puede mover."],
@@ -127,7 +128,7 @@ def drift(row: dict, stability: pd.DataFrame) -> dict:
           "siguiente. Cerca del 100 %: cada reoptimización elige casi otra estrategia."],
          ["Movimiento medio (mediana)", num(row["move_median"]),
           "Cuánto se mueve cada parámetro por salto, en desviaciones típicas de ese parámetro."]],
-        columns=["lectura", "valor", "qué es"])
+        columns=pd.Index(["lectura", "valor", "qué es"]))
     return envelope.tab("drift", "Deriva de parámetros", [
         blocks.table("Cuánto re-decide el optimizador", table),
         blocks.table("Los parámetros sobre los que más se repite",
@@ -138,11 +139,11 @@ def drift(row: dict, stability: pd.DataFrame) -> dict:
         note="Si se va a reoptimizar en real, esto dice cuánto cambiará la estrategia cada vez.")
 
 
-def segments(table: pd.DataFrame) -> dict:
+def segments(table: pd.DataFrame) -> dict[str, Any]:
     """Each cell's net excess per year in build, oos1 and oos2."""
     rows, cols, at = _axes(list(table.index))
     out = pd.DataFrame([[r, f"{c}%", *table.loc[at[r, c]].round(2)] for r in rows for c in cols],
-                       columns=["pasadas", "% OOS", *table.columns])
+                       columns=pd.Index(["pasadas", "% OOS", *table.columns]))
     return envelope.tab("segments", "Exceso por tramo", [blocks.table(
         "Exceso neto por año de cada celda, por tramo", out,
         "USD por año de los que las pasadas de la celda cubren de cada tramo; vacío donde no "

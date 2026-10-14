@@ -1,12 +1,22 @@
 """Step 19's state from its facts: L1 always, the centre cell and L2 only when re-optimising live."""
 
+from typing import TypedDict
+
 PASA, LIMBO, NO_PASA = "pasa", "limbo", "no_pasa"
 STATE = {PASA: "pass", LIMBO: "watch", NO_PASA: "fail"}
 FIJO, REOPT = "fijo", "reoptimizado"
 WINS, HOLDS = "reoptimizar gana", "no descarta"
 
 
-def call(facts: dict, mode: str, alpha: float) -> dict:
+class Call(TypedDict):
+    """The step's call: pasa | limbo | no_pasa, its label and the rules that fired."""
+
+    verdict: str
+    label: str
+    why: list[str]
+
+
+def call(facts: dict, mode: str, alpha: float) -> Call:
     """The owner's table (proposal of step 19, section 5), the worst active rule winning.
 
     Args:
@@ -22,7 +32,7 @@ def call(facts: dict, mode: str, alpha: float) -> dict:
         `reoptimizado` can only add LIMBO, and a fact that does not exist fires nothing.
     """
     one = facts["l1"]
-    why = []
+    why: list[str] = []
     if one["p_menos"] <= alpha:
         return {"verdict": NO_PASA, "label": "NO PASA", "why": ["l1_pierde"]}
     if one["mediana_exceso"] <= 0:

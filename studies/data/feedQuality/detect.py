@@ -1,5 +1,7 @@
 """One feed's anomalies under a given K and session: spikes on close and wick, frozen runs, gaps."""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
@@ -9,7 +11,19 @@ COLUMNS = ["kind", "cls", "start_min", "end_min", "size", "rev_m1", "rev_m5", "b
 ROLLOVER = "rollover"
 
 
-def measure(b: dict, tick: float, cfg: dict) -> dict:
+class Measured(TypedDict):
+    """Each bar's scale and its move on the close and on the wick, in multiples of that scale."""
+
+    r: np.ndarray
+    sigma: np.ndarray
+    raw: np.ndarray
+    z_close: np.ndarray
+    z_wick: np.ndarray
+    reach_close: np.ndarray
+    reach_wick: np.ndarray
+
+
+def measure(b: dict, tick: float, cfg: dict) -> Measured:
     """Each bar's scale and its move on the close and on the wick in multiples of it.
 
     Args:
@@ -28,13 +42,13 @@ def measure(b: dict, tick: float, cfg: dict) -> dict:
     sigma = scale.sigma(b["c"], b["at"], cells, first, tick, s["floor_ticks"], s["floor_rel"])
     got = spikes.spikes(b["o"], b["h"], b["l"], b["c"], b["at"], r, sigma)
     prev = np.r_[b["c"][0], b["c"][:-1]]
-    return {"r": r, "sigma": sigma, "raw": scale.own(b["at"], cells, first),
-            "z_close": got["z_close"], "z_wick": got["z_wick"],
-            "reach_close": np.nan_to_num(np.abs(r)),
-            "reach_wick": np.abs(np.log(got["wick_price"] / prev))}
+    return Measured(r=r, sigma=sigma, raw=scale.own(b["at"], cells, first),
+                    z_close=got["z_close"], z_wick=got["z_wick"],
+                    reach_close=np.nan_to_num(np.abs(r)),
+                    reach_wick=np.abs(np.log(got["wick_price"] / prev)))
 
 
-def _spikes(b: dict, got: dict, column: str, k: float, cfg: dict) -> pd.DataFrame:
+def _spikes(b: dict, got: Measured, column: str, k: float, cfg: dict) -> pd.DataFrame:
     """One column's bars over K, classified by their return at m and at the sensitivity m's."""
     sp = cfg["spike"]
     z, reach = got[f"z_{column}"], got[f"reach_{column}"]
@@ -64,7 +78,7 @@ def _holes(at: np.ndarray, band: np.ndarray, cls: str, cfg: dict) -> pd.DataFram
                          "end_min": gp["to_min"], "size": gp["minutes"]})
 
 
-def events(b: dict, got: dict, k: float, week_mask: np.ndarray, cfg: dict) -> pd.DataFrame:
+def events(b: dict, got: Measured, k: float, week_mask: np.ndarray, cfg: dict) -> pd.DataFrame:
     """Every anomaly of one feed, one row each.
 
     Args:
@@ -91,10 +105,10 @@ def events(b: dict, got: dict, k: float, week_mask: np.ndarray, cfg: dict) -> pd
     out = pd.concat([_spikes(b, got, "close", k, cfg), _spikes(b, got, "wick", k, cfg),
                      frozen, holes], ignore_index=True)[COLUMNS]
     out["t"] = pd.to_datetime((out["start_min"] + scale.ORIGIN) * scale.MINUTE_NS)
-    return out.sort_values(["start_min", "kind"], ignore_index=True)
+    return out.sort_values(["start_min", "kind"], ignore_index=True)  # pyright: ignore[reportCallIssue]  # pandas stubs reject a plain list of keys here
 
 
-def yearly_counts(b: dict, got: dict, ks: list[int]) -> pd.DataFrame:
+def yearly_counts(b: dict, got: Measured, ks: list[int]) -> pd.DataFrame:
     """Close spikes per calendar year at each candidate K, the table K* is chosen from.
 
     Args:

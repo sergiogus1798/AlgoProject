@@ -10,8 +10,10 @@ creates or updates the asset through `core.assetwrite` — the only module of th
 """
 
 import argparse
+from collections.abc import Mapping
 from datetime import date
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
 import pandas as pd
 
@@ -25,7 +27,15 @@ CONFIG = Path(__file__).with_name("config.yaml")
 HALVES = {"build": "is", "oos1": "oos", "oos2": "oos2"}
 
 
-def segments(rules: dict, start: date) -> dict:
+Plan = TypedDict("Plan", {
+    "symbol": str, "kind": str, "class": str, "bars": str, "ticks": str, "broker": str,
+    "instrument": registry.Instrument, "segments": dict[str, dict[str, Any]], "data": tuple[date, date],
+    "model": str, "per_segment": dict[str, float], "spreads": dict[str, float],
+    "slippage": dict[str, float], "commission": float, "price": float, "swap": Mapping[str, Any],
+    "triple_swap_on": Any, "factor": float, "slippage_share": float})   # "class" is a keyword: functional form
+
+
+def segments(rules: dict, start: date) -> dict[str, dict[str, Any]]:
     """The kind's segments as `_policy.yaml` writes them; `build: data` starts with the data."""
     s = rules["segments"]
     first = start if s["build"] == "data" else max(pd.Timestamp(f"{s['build']}-01-01").date(), start)
@@ -48,11 +58,11 @@ def _oos1_price(m: pd.DataFrame, oos1_window: tuple) -> float:
         reach that far back (a brand-new onboard with no OOS1 ticks yet).
     """
     a, b = pd.Timestamp(oos1_window[0], unit="ms"), pd.Timestamp(oos1_window[1], unit="ms")
-    part = m["bid_close"][(m.index >= a) & (m.index < b)]
+    part = cast(pd.Series, m["bid_close"][(m.index >= a) & (m.index < b)])
     return float(part.median()) if len(part) else float(m["bid_close"].iloc[-1])
 
 
-def plan(symbol: str, kind: str, bars: str, ticks: str, cfg: dict) -> dict:
+def plan(symbol: str, kind: str, bars: str, ticks: str, cfg: dict) -> Plan:
     """Everything the asset should carry, computed and not written."""
     rules, factor = cfg["onboard"][kind], cfg["safety"]["factor"]
     inst = registry.instrument(bars)
@@ -66,8 +76,8 @@ def plan(symbol: str, kind: str, bars: str, ticks: str, cfg: dict) -> dict:
     name = rules["model"] or verdict.choose(
         verdict.constancy(yearly, "pb media", cfg["constancy"]["tolerance"]), errors)
     daily = verdict.reconstruct(days, vol, name)
-    per = {k: round(verdict.points(daily[(daily.index >= pd.Timestamp(a, unit="ms"))
-                                         & (daily.index < pd.Timestamp(b, unit="ms"))], tick, factor), 2)
+    per = {k: round(verdict.points(cast(pd.DataFrame, daily[(daily.index >= pd.Timestamp(a, unit="ms"))
+                                         & (daily.index < pd.Timestamp(b, unit="ms"))]), tick, factor), 2)
            for k, (a, b) in windows.items()}
     forex = kind == "forex"
     # One per segment for every kind (owner, 2026-09-30): forex used to get one mean.
@@ -84,15 +94,16 @@ def plan(symbol: str, kind: str, bars: str, ticks: str, cfg: dict) -> dict:
         swaps = registry.broker_swaps(symbol, tick)
     else:
         swaps = {"long": float(rules["swap"][0]), "short": float(rules["swap"][1])}
-    return {"symbol": symbol, "kind": kind, "class": "forex" if forex else "no_forex", "bars": bars,
-            "ticks": ticks, "broker": registry.broker(bars), "instrument": inst, "segments": segs,
-            "data": registry.data_range(bars), "model": name, "per_segment": per, "spreads": spreads,
-            "slippage": slips, "commission": commission, "price": price, "swap": swaps,
-            "triple_swap_on": rules["triple_swap_on"], "factor": factor,
-            "slippage_share": cfg["safety"]["slippage_share"]}
+    out: Plan = {"symbol": symbol, "kind": kind, "class": "forex" if forex else "no_forex", "bars": bars,
+                 "ticks": ticks, "broker": registry.broker(bars), "instrument": inst, "segments": segs,
+                 "data": registry.data_range(bars), "model": name, "per_segment": per, "spreads": spreads,
+                 "slippage": slips, "commission": commission, "price": price, "swap": swaps,
+                 "triple_swap_on": rules["triple_swap_on"], "factor": factor,
+                 "slippage_share": cfg["safety"]["slippage_share"]}
+    return out
 
 
-def apply(p: dict, cfg: dict, spread_only: bool) -> None:
+def apply(p: Plan, cfg: dict, spread_only: bool) -> None:
     """Write the plan into `assets/` and teach the study the new asset's feeds.
 
     Args:
@@ -137,7 +148,7 @@ def apply(p: dict, cfg: dict, spread_only: bool) -> None:
     write(CONFIG, doc)
 
 
-def _commission_and_swap(p: dict, cfg: dict, day: str) -> None:
+def _commission_and_swap(p: Plan, cfg: dict, day: str) -> None:
     """The owner's default commission, swap and triple-swap night for the kind of asset."""
     s = p["symbol"]
     assetwrite.set_cost(s, "commission", p["commission"], f"{day} — default del dueño para `{p['kind']}`: "

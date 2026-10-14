@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -22,9 +23,9 @@ def made(plan: pd.DataFrame) -> pd.DataFrame:
     Returns:
         `mother`, `sibling`, `timeframe`, `ratio`, `rounding_shift`, `clamped`, `unverified`.
     """
-    rows = plan[plan["role"] == "scaled"].rename(columns={"strategy": "sibling"})
-    return rows[["mother", "sibling", "timeframe", "ratio", "rounding_shift", "clamped",
-                 "unverified"]].reset_index(drop=True)
+    rows = cast(pd.DataFrame, plan[plan["role"] == "scaled"]).rename(columns={"strategy": "sibling"})
+    return cast(pd.DataFrame, rows[["mother", "sibling", "timeframe", "ratio", "rounding_shift", "clamped",
+                 "unverified"]]).reset_index(drop=True)
 
 
 def oos1(plan: pd.DataFrame, packed: pd.DataFrame) -> pd.DataFrame:
@@ -38,7 +39,7 @@ def oos1(plan: pd.DataFrame, packed: pd.DataFrame) -> pd.DataFrame:
         KEEP; the control and unscaled cells of the old reading are left out.
     """
     cell = plan.loc[plan["role"].isin(["baseline", "scaled"]), ["strategy", "block"]]
-    return packed.astype({"strategy": str}).merge(cell, on=["strategy", "block"])[KEEP]
+    return cast(pd.DataFrame, packed.astype({"strategy": str}).merge(cell, on=["strategy", "block"])[KEEP])
 
 
 def cards(feed: str) -> tuple[dict | None, dict | None, str]:
@@ -55,7 +56,7 @@ def cards(feed: str) -> tuple[dict | None, dict | None, str]:
     bad = next((reason for _, reason in got.values() if reason), "")
     if bad:
         return None, None, bad
-    return {k: v[0] for k, v in got.items()}, cells.cuts(assetdata.symbol_for(feed)), ""
+    return {k: v[0] for k, v in got.items()}, cells.cuts(cast(str, assetdata.symbol_for(feed))), ""
 
 
 def _day(days: Path, day: str) -> Path | None:
@@ -110,12 +111,12 @@ def build(export: Path, directory: Path, identity: dict, made: pd.DataFrame) -> 
         day = _day(export.parents[2] / bank.replace(" ", "_"), export.parent.name)
         if day:
             got = pd.read_parquet(day / "trades.parquet").astype({"strategy": str})[KEEP]
-            frames.append(got[got["strategy"].isin(made.loc[made["timeframe"] == tf, "sibling"])])
+            frames.append(got[cast(pd.Series, got["strategy"]).isin(made.loc[made["timeframe"] == tf, "sibling"])])
     if not frames:
         return None
     harvest = _day(paths.harvest_dir(export.parents[2].name, MAIN_DATABANK, "x").parent, export.parent.name)
     if harvest and (harvest / "trades.parquet").is_file():
         name = {i: m for m, i in identity.items() if i}
         main = pd.read_parquet(harvest / "trades.parquet", columns=["identity", *KEEP[1:]])
-        frames.append(main.assign(strategy=main["identity"].map(name)).dropna(subset=["strategy"])[KEEP])
+        frames.append(main.assign(strategy=main["identity"].map(name)).dropna(subset=["strategy"])[KEEP])  # pyright: ignore[reportArgumentType]  # pandas stubs reject a dict mapper
     return pd.concat(frames, ignore_index=True)

@@ -1,5 +1,6 @@
 """The numbers of step 20: each mother against her random trader on oos2, the SPA, and the StepM per reading."""
 
+from typing import Any, cast
 import numpy as np
 import pandas as pd
 
@@ -19,7 +20,7 @@ def states(population: pd.DataFrame) -> pd.DataFrame:
     Returns:
         Complete mothers down, pieces across.
     """
-    complete = population[population["complete"]]
+    complete = cast(pd.DataFrame, population[population["complete"]])
     return pd.DataFrame({p: complete[p].map(lambda s: s["state"])
                          for p in PIECES})
 
@@ -39,11 +40,11 @@ def stepm(excess: pd.DataFrame, columns: list[str], cfg: dict, block: int) -> li
     if not columns:
         return []
     boot = cfg["bootstrap"]
-    return superior.stepm(excess[columns], cfg["stepm"]["fwer"], block, boot["reps"],
+    return superior.stepm(cast(pd.DataFrame, excess[columns]), cfg["stepm"]["fwer"], block, boot["reps"],
                           boot["seed"])
 
 
-def run(data: dict, cfg: dict) -> dict:
+def run(data: dict, cfg: dict) -> dict[str, Any]:
     """Everything step 20 measures.
 
     Args:
@@ -68,16 +69,16 @@ def run(data: dict, cfg: dict) -> dict:
         is not bootstrapped: at `benchmark.draws` it is `mc_day`, about 1/sqrt(draws) of
         the mother's own standard error (config.yaml).
     """
-    got = {"states": states(data["population"]), "refused": data.get("refused")}
+    got: dict[str, Any] = {"states": states(data["population"]), "refused": data.get("refused")}
     if got["refused"]:
         got["named"] = {readings.label(r): None for r in readings.names()}
         got["calls"] = readings.verdicts(got["states"], got["named"])
         return got
 
     days, random = data["panel"], data["benchmark"]
-    excess = days - random
+    excess = cast(pd.DataFrame, days - random)
     flat = list(excess.columns[excess.std(ddof=1) == 0])
-    tested = excess.drop(columns=flat)
+    tested = cast(pd.DataFrame, excess.drop(columns=flat))
     boot = cfg["bootstrap"]
     block = superior.block_length(tested)
     named = {}

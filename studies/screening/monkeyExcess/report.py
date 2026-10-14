@@ -2,6 +2,7 @@
 
 import argparse
 import time
+from typing import Any
 from datetime import date
 
 import pandas as pd
@@ -50,8 +51,8 @@ def rows(panel: pd.DataFrame, rung: str, alpha: float, draws: int) -> list[dict]
     out = []
     for name in [c[len("real_"):] for c in panel.columns if c.startswith("real_")]:
         tested = panel[panel[f"p_{rung}_{name}"].notna()]    # no statistic, no p: not a test
-        p = tested[f"p_{rung}_{name}"].to_numpy()
-        got = measure.excess(p, alpha) | measure.resolution(p, alpha, draws)
+        p = pd.Series(tested[f"p_{rung}_{name}"]).to_numpy()
+        got = {**measure.excess(p, alpha), **measure.resolution(p, alpha, draws)}
         tests = [{"metric": s, "p": v} for s, v in zip(tested["strategy"], p)]
         out.append({"statistic": name, "named": len(discoveries(tests, alpha))} | got)
     return out
@@ -80,7 +81,8 @@ def contamination(panel: pd.DataFrame) -> str:
             f"condiciones de aceptacion sobre esta muestra.")
 
 
-def result(panel: pd.DataFrame, made: dict, rung: str, alpha: float, started: float) -> dict:
+def result(panel: pd.DataFrame, made: dict, rung: str, alpha: float,
+           started: float) -> dict[str, Any]:
     """The databank's excess over chance as one result, with every reason to read it warily.
 
     Args:
@@ -117,9 +119,9 @@ def result(panel: pd.DataFrame, made: dict, rung: str, alpha: float, started: fl
                                  f"{r['floor']:.1e}: no están medidos, tocan el suelo."})
     table = pd.DataFrame([[r["statistic"], r["observed"], r["expected_all_null"], r["excess"],
                            r["fdr"], r["named"], r["share_null"]] for r in found],
-                         columns=["estadístico", "pasan", "si ninguna tuviera edge", "exceso",
-                                  "de las pasadas, suerte", "nombrables",
-                                  "sin edge (Storey)"])
+                         columns=pd.Index(["estadístico", "pasan", "si ninguna tuviera edge", "exceso",
+                                           "de las pasadas, suerte", "nombrables",
+                                           "sin edge (Storey)"]))
     return envelope.envelope(
         MODULE, None, None, {"alpha": alpha, "rung": rung}, started,
         [envelope.tab("excess", "Cuántas baten al mono, y cuántas deberían", [

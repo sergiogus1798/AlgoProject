@@ -33,7 +33,7 @@ def redundancia(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         ideas before a portfolio is built on them.
     """
     if not len(alive):  # nobody standing: nothing to group
-        return pd.DataFrame(columns=["value", "passed", "note"])
+        return pd.DataFrame(columns=pd.Index(["value", "passed", "note"]))
     shape = data["metrics"].loc[alive, "structure"]
     size = shape.map(shape.value_counts())
     first = shape.map(data["metrics"].loc[alive].groupby("structure")["strategy"].first())
@@ -61,7 +61,7 @@ def medoides(metrics: pd.DataFrame, oos: pd.DataFrame, alive: pd.Index) -> pd.Da
     names = metrics.loc[alive, "strategy"]
     groups = {s: sorted(g.index, key=names.get) for s, g in metrics.loc[alive].groupby("structure")}
     out["grupo"] = [names[groups[metrics.at[i, "structure"]][0]] for i in alive]
-    bars = {i: set(g) for i, g in oos[oos["identity"].isin(alive)].groupby("identity")["open_time"]}
+    bars = {i: set(g) for i, g in oos[oos["identity"].isin(list(alive))].groupby("identity")["open_time"]}
 
     def jaccard(a: str, b: str) -> float:
         """Share of entry bars the two strategies have in common."""

@@ -22,7 +22,7 @@ def ledger_rows(a: argparse.Namespace, cfg: dict, timeframe: str, symbol: str,
     """One row per segment read. It is a soft screen: n_out equals n_in (the marked are noted)."""
     rows = []
     for segment in sorted(measured["segment"].unique()):
-        mine = measured[measured["segment"] == segment]
+        mine = pd.DataFrame(measured[measured["segment"] == segment])
         start, end = inputs.window(mine)
         rows.append(record.log(studymod.study_id(symbol, timeframe, a.family), {
             "step": 8, "launched_by": "studies.screening.maeDepth.report",
@@ -78,9 +78,9 @@ def main() -> None:
                       f"Criba del MAE profundo — {a.project} / {a.databank}")
     shutil.rmtree(out / "estrategias", ignore_errors=True)
     for identity, name in data["names"].items():
-        mine = measured[measured["identity"] == identity]
+        mine = pd.DataFrame(measured[measured["identity"] == identity])
         if len(mine):
-            output.member(out, one.run(name, identity, mine, cfg), f"Criba del MAE profundo — {name}")
+            output.member(out, one.run(str(name), str(identity), mine, cfg), f"Criba del MAE profundo — {name}")
     p.to_parquet(out / "panel.parquet", compression="zstd")
     p.reset_index().to_csv(out / "verdict.csv", columns=["strategy", "identity", "verdict"],
                            index=False)

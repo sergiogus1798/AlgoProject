@@ -1,5 +1,7 @@
 """Level 1b of the gate, the facts centred on the population: frequency stability and decay inside oos1."""
 
+from typing import cast
+
 import pandas as pd
 
 from studies.screening.analysis import centred
@@ -29,12 +31,13 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         population is the side.
     """
     if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
-        return pd.DataFrame(index=alive, columns=list(FACTS), dtype=float)
+        return pd.DataFrame(index=alive, columns=pd.Index(FACTS), dtype=float)
     oos, market, own = data["oos"], data["market"], cfg["centring"]
     by = oos.groupby("identity", sort=False)
     side = by["side"].min().where(by["side"].min() == by["side"].max(), 0.0)   # 0 = both
     build = data["trades"][data["trades"]["sample"] == "IS"]
-    exposure = centred.calendar_exposure(*(pd.Timestamp(edge) for edge in market["windows"]["IS"]))
+    first, last = (cast(pd.Timestamp, pd.Timestamp(edge)) for edge in market["windows"]["IS"])
+    exposure = centred.calendar_exposure(first, last)
     counts = (pd.crosstab(build["identity"], build["Open time"].dt.year)
               .reindex(index=side.index, columns=exposure.index, fill_value=0))
     phi = centred.dispersion(counts, exposure, cfg["frequency"]["phi_min"],
@@ -43,11 +46,11 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
                                market["years"]["OOS"], phi)
     fit = centred.slope(oos, "excess", (oos["close_time"] - oos["close_time"].min())
                         / pd.Timedelta(days=centred.YEAR))
-    middle = {"log_rate": centred.centre(rate["log_rate"], side, own["min_strategies"],
+    middle = {"log_rate": centred.centre(pd.Series(rate["log_rate"]), side, own["min_strategies"],
                                          own["cap_log_rate"]),
-              "b": centred.centre(fit["b"], side, own["min_strategies"], own["cap_slope"])}
+              "b": centred.centre(pd.Series(fit["b"]), side, own["min_strategies"], own["cap_slope"])}
     b = fit["b"] - middle["b"]
     return pd.DataFrame({"z_frec": (rate["log_rate"] - middle["log_rate"]) / rate["se"],
                          "t_b": b / fit["se"],
                          "e_fin": fit["mean"] + b * market["years"]["OOS"] / 2},
-                        columns=list(FACTS)).reindex(side.index.union(alive, sort=False))
+                        columns=pd.Index(FACTS)).reindex(side.index.union(alive, sort=False))

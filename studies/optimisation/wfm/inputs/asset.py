@@ -1,7 +1,9 @@
 """The asset a WFM export traded: its bars, its three segments, the two cost cards and the drift term."""
 
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
+import pandas as pd
 import yaml
 
 from core import assetdata, barstore
@@ -13,7 +15,20 @@ CLEAN = "oos2"          # the only segment nobody used to choose anything
 GATE = Path(__file__).resolve().parents[3] / "screening" / "gate" / "config.yaml"
 
 
-def of(feed: str, timeframe: str, charged: str) -> dict:
+class Asset(TypedDict):
+    """The asset behind one feed: bars, segment windows, the span, two cost cards and the drift."""
+
+    name: str | None
+    feed: str
+    bars: pd.DataFrame
+    windows: dict[str, tuple[str, str]]
+    span: tuple[str, str]
+    charged: reprice.Costs
+    real: reprice.Costs
+    drift: Any
+
+
+def of(feed: str, timeframe: str, charged: str) -> Asset:
     """Everything the measures need about the asset behind one SQX feed.
 
     Args:
@@ -27,8 +42,8 @@ def of(feed: str, timeframe: str, charged: str) -> dict:
         the bars the drift is measured on), `charged` and `real` (`reprice.costs` of the
         charged segment and of `oos2`) and `drift`, the gate's block.
     """
-    data = assetdata.load(assetdata.symbol_for(feed))
-    windows = {}
+    data = assetdata.load(cast(str, assetdata.symbol_for(feed)))
+    windows: dict[str, tuple[str, str]] = {}
     for name in SEGMENTS:
         last = data["segments"][name]["to"]
         windows[name] = (assetdata.segment_start(data, name),

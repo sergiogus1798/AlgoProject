@@ -1,5 +1,7 @@
 """Every cell's own out-of-sample equity on one comparable axis, and its statistics as a population."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -22,7 +24,7 @@ def oos_curves(trades: pd.DataFrame, strategy: str) -> tuple[list[str], np.ndarr
         them up by date would mean nothing — the walk-forward runs of a 6-run cell and a
         16-run cell do not share a single one of their real dates.
     """
-    mine = trades[(trades["strategy"] == strategy) & (trades["sample"] == "OOS")]
+    mine = cast(pd.DataFrame, trades[(trades["strategy"] == strategy) & (trades["sample"] == "OOS")])
     grid = np.linspace(0, 100, POINTS)
     names, curves = [], []
     for cell, g in mine.sort_values("Close time").groupby("result", observed=True):
@@ -47,7 +49,7 @@ def per_cell(trades: pd.DataFrame, strategy: str) -> pd.DataFrame:
         business days, idle days 0, a weekend close on Monday, mean/std ×√252), `max_dd` (closed
         trades, in money) and `trades`.
     """
-    mine = trades[(trades["strategy"] == strategy) & (trades["sample"] == "OOS")]
+    mine = cast(pd.DataFrame, trades[(trades["strategy"] == strategy) & (trades["sample"] == "OOS")])
     rows = []
     for cell, g in mine.sort_values("Close time").groupby("result", observed=True):
         pl = g["Profit/Loss"].to_numpy(dtype=float)
@@ -104,17 +106,17 @@ def versus_original(trades: pd.DataFrame, main: pd.DataFrame, steps: pd.DataFram
         trades that closed inside a window of that cell's out-of-sample runs, so both curves
         earn over the same days; the gaps between windows count for neither.
     """
-    mine = trades[(trades["strategy"] == strategy) & (trades["sample"] == "OOS")]
-    orig = main[main["strategy"] == strategy].sort_values("Close time")
+    mine = cast(pd.DataFrame, trades[(trades["strategy"] == strategy) & (trades["sample"] == "OOS")])
+    orig = cast(pd.DataFrame, main[main["strategy"] == strategy]).sort_values("Close time")
     out = {}
     for cell, g in mine.sort_values("Close time").groupby("result", observed=True):
-        win = steps[(steps["strategy"] == strategy) & (steps["result"] == cell)].sort_values("run_from")
+        win = cast(pd.DataFrame, steps[(steps["strategy"] == strategy) & (steps["result"] == cell)]).sort_values("run_from")
         if len(g) < 2 or win.empty:
             continue
         start, end = (win[c].to_numpy("datetime64[ns]") for c in ("run_from", "run_to"))
         t = orig["Close time"].to_numpy("datetime64[ns]")
         k = np.searchsorted(start, t, side="right") - 1
-        kept = orig[(k >= 0) & (t < end[np.clip(k, 0, None)])]
+        kept = cast(pd.DataFrame, orig[(k >= 0) & (t < end[np.clip(k, 0, None)])])
         grid = pd.date_range(start[0], min(end[-1], g["Close time"].max()), periods=points)
 
         def at(frame: pd.DataFrame) -> list[float]:

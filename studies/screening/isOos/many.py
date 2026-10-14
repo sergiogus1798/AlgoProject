@@ -1,6 +1,7 @@
 """What the IS metrics of a whole population say about its OOS outcomes, as one contract result."""
 
 import time
+from typing import Any
 
 import pandas as pd
 
@@ -12,7 +13,7 @@ MODULE = "studies.screening.isOos.report"
 TARGETS = ["Profit factor (OOS)", "Sharpe Ratio (OOS)", "Ret/DD Ratio (OOS)", "Net profit (OOS)"]
 
 
-def run(inputs: dict, cfg: dict) -> dict:
+def run(inputs: dict, cfg: dict) -> dict[str, Any]:
     """The IS × OOS correlation map, persistence, and one predictor ranking per outcome.
 
     Args:
@@ -50,7 +51,7 @@ def run(inputs: dict, cfg: dict) -> dict:
     tabs += [envelope.tab(t, f"¿Qué métrica IS predice {t}?", [
         blocks.table("Ranking de predictores", pd.DataFrame(
             [[r["metric"], r["spearman"], r["pearson"], r["p"], r["metric"] in found[t]]
-             for r in rows], columns=["métrica IS", "ρ", "r", "p", "BH"]),
+             for r in rows], columns=pd.Index(["métrica IS", "ρ", "r", "p", "BH"])),
             f"{len(found[t])} de {len(rows)} sobreviven. Un ρ en torno a 0,2 mueve las "
             f"probabilidades, no decide el resultado.")]) for t, rows in ranked.items()]
     return envelope.envelope(

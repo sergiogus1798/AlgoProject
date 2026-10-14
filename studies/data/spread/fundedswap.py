@@ -1,6 +1,7 @@
 """The worst swap of the funded accounts, side by side, read live from each firm's MT5 server."""
 
 import sqlite3
+from typing import Any, TypedDict, cast
 
 from core.assetdata import load
 from core.paths import MASTER, MT5_ACCOUNTS
@@ -25,8 +26,11 @@ def _tick_step(feed: str) -> tuple[float, float]:
         return db.execute("SELECT I.POINTVALUE, I.TICKSTEP FROM DATA D JOIN INSTRUMENTS I "
                           "ON I.INSTRUMENT = D.INSTRUMENT WHERE D.SYMBOL = ?", (feed,)).fetchone()
 
+Swap = TypedDict("Swap", {"long": float, "short": float, "from": dict[str, str],
+                          "raw": dict[str, tuple[float, float]]})   # "from" is a keyword: functional form
 
-def worst(symbol: str, firms: tuple = ("ftmo", "hantec")) -> dict:
+
+def worst(symbol: str, firms: tuple = ("ftmo", "hantec")) -> Swap:
     """The most expensive swap of the firms, per side, in the unit the asset's class declares.
 
     Owner, 2026-10-01: «el peor caso de ambos brokers, para todo». Each side is taken from
@@ -53,18 +57,18 @@ def worst(symbol: str, firms: tuple = ("ftmo", "hantec")) -> dict:
         if not name:
             raise SystemExit(f"{symbol}: no MT5 symbol for {firm} in its `mt5:` block")
         specs[firm] = live.ask("symbol", {"symbol": name}, MT5_ACCOUNTS[firm])
-    out = {"from": {}, "raw": {f: (s["swap_long"], s["swap_short"]) for f, s in specs.items()}}
+    out: dict[str, Any] = {"from": {}, "raw": {f: (s["swap_long"], s["swap_short"]) for f, s in specs.items()}}
     pv, step = _tick_step(asset["sqx_symbol"]) if asset["class"] == "forex" else (None, None)
     for side in ("long", "short"):
-        cost = {}
+        cost: dict[str, float] = {}
         for firm, s in specs.items():
             if asset["class"] == "forex":
-                cost[firm] = _usd(s, s[f"swap_{side}"]) / (pv * step)
+                cost[firm] = _usd(s, s[f"swap_{side}"]) / (cast(float, pv) * cast(float, step))
             else:
                 price = s["bid"] or s["session_close"]
                 if not price:
                     raise SystemExit(f"{symbol}: {firm} quotes no price now — retry with the market open")
                 cost[firm] = _pct(s, s[f"swap_{side}"], price)
-        firm = min(cost, key=cost.get)
+        firm = min(cost, key=lambda f: cost[f])
         out[side], out["from"][side] = round(cost[firm], 2), firm
-    return out
+    return cast(Swap, out)

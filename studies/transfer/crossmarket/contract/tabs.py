@@ -1,5 +1,7 @@
 """The tabs of the travel test: what `travel.run` measured, as the contract's blocks."""
 
+from typing import Any, cast
+
 import pandas as pd
 
 from core.study import blocks, identity
@@ -55,19 +57,19 @@ def strategy_tabs(row: pd.Series, markets: pd.DataFrame, d_y: list[dict], cfg: d
     look = markets.assign(market=markets["market"].map(mercado))
     seen = look[look["valid"]]
     summary = pd.DataFrame([[label, row[col], text] for col, label, text in MEASURES],
-                           columns=["Prueba", "Valor", "Qué mide"])
+                           columns=pd.Index(["Prueba", "Valor", "Qué mide"]))
     counted = look.drop(columns=["strategy", "identity"], errors="ignore").rename(columns={
         "market": "Mercado", "z": "z", "p": "p", "e": "Ventaja (R/op.)", "trades": "Operaciones",
         "z_freq": "z de frecuencia", "valid": "Válido", "invalid_reason": "Motivo no válido"})
     years = pd.DataFrame(
         [[f"{d['years'][0]}–{d['years'][-1]}" if len(d["years"]) > 1 else str(d["years"][0]),
           d["trades"], d["d"]] for d in d_y],
-        columns=["Años", "Operaciones", "Ventaja frente al azar (R/op.)"])
+        columns=pd.Index(["Años", "Operaciones", "Ventaja frente al azar (R/op.)"]))
     bars = {"kind": "bars", "title": "z de cada mercado frente al azar", "unit": "z",
             "reference": cfg["travel"]["worse_z"],
             "items": [{"label": r.market, "value": r.z, "error": None,
                        "state": "fail" if r.z <= cfg["travel"]["worse_z"] else "info"}
-                      for r in seen.itertuples() if r.z == r.z]}
+                      for r in cast(Any, seen.itertuples()) if r.z == r.z]}
     return [
         envelope.tab("resumen", "Resumen", [blocks.table("Lo medido, prueba a prueba", summary,
                      "Sin dato: celda vacía, nunca 0. El juez de criteria.yaml decide.")]),
@@ -84,5 +86,5 @@ def warnings(markets: pd.DataFrame, ident: str | None) -> list[dict]:
     """What to read first: the markets left out of the test, and a strategy with no identity."""
     out = [{"code": f"{mercado(r.market)}:{r.invalid_reason}", "state": "watch",
             "text": f"{mercado(r.market)} queda fuera de la prueba ({r.invalid_reason})."}
-           for r in markets.itertuples() if not r.valid]
+           for r in cast(Any, markets.itertuples()) if not r.valid]
     return out + identity.warning(ident)

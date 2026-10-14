@@ -12,6 +12,7 @@ best-validated one.
 import argparse
 import json
 from datetime import date
+from typing import Any, cast
 
 import pandas as pd
 
@@ -36,7 +37,7 @@ def declared(data: dict) -> str:
     return ", ".join(spreads + [f"comisión {fees}"])
 
 
-def one(symbol: str, cfg: dict) -> dict:
+def one(symbol: str, cfg: dict) -> asset.Facts:
     """Measure, test, model, propose and write one asset."""
     feeds, data = cfg["assets"][symbol], inputs.asset(symbol)
     tick = data["instrument"]["tick_size"]
@@ -52,15 +53,16 @@ def one(symbol: str, cfg: dict) -> dict:
     windows = {s: assetdata.window(data, s) for s in SEGMENTS}
     proposal = verdict.propose(daily, windows, tick, cfg["safety"]["factor"])
     hours = measure.hours(m)
-    tail_year = int(verdict.full_years(yearly).index[-1])
-    tail = (measure.relative(m) * measure.BPS)[m.index.year == tail_year].to_numpy()
-    back = errors[(errors["modelo"] == chosen) & (errors["sentido"] == "hacia atrás")]["error"]
-    facts = {"symbol": symbol, "ticks": feeds["ticks"], "bars": feeds["bars"], "model": chosen, "tick": tick,
-             "relative": rel, "points": pts, "error_backwards": float(back.abs().mean()),
-             "declared": declared(data), "tail_year": tail_year,
-             "mc_multiples": verdict.mc_multiples(days, chosen, [cfg["band"]["quantiles"][0], cfg["band"]["quantiles"][-1]]),
-             "proposal": proposal.to_dict("records"), "scanned_on": date.today().isoformat(),
-             "ticks_from": str(m.index[0]), "ticks_to": str(m.index[-1])}
+    tail_year = int(cast(Any, verdict.full_years(yearly).index[-1]))
+    tail = (measure.relative(m) * measure.BPS)[cast(Any, m.index).year == tail_year].to_numpy()
+    back = cast(pd.DataFrame, errors[(errors["modelo"] == chosen) & (errors["sentido"] == "hacia atrás")])["error"]
+    facts = asset.Facts(
+        symbol=symbol, ticks=feeds["ticks"], bars=feeds["bars"], model=chosen, tick=tick,
+        relative=rel, points=pts, error_backwards=float(back.abs().mean()),
+        declared=declared(data), tail_year=tail_year,
+        mc_multiples=verdict.mc_multiples(days, chosen, [cfg["band"]["quantiles"][0], cfg["band"]["quantiles"][-1]]),
+        proposal=proposal.to_dict("records"), scanned_on=date.today().isoformat(),
+        ticks_from=str(m.index[0]), ticks_to=str(m.index[-1]))
     out = spread_dir(feeds["ticks"])
     daily.to_parquet(out / "daily.parquet")
     hours.rename("multiplier").to_frame().to_parquet(out / "hours.parquet")
@@ -71,7 +73,7 @@ def one(symbol: str, cfg: dict) -> dict:
     return facts
 
 
-def _asset(symbol: str) -> dict:
+def _asset(symbol: str) -> asset.Facts:
     """`one` in a worker that inherited the config."""
     return one(symbol, _SHARED["cfg"])
 

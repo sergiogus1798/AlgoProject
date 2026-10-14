@@ -23,7 +23,7 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         One row per identity, one column per fact of `FACTS`. `mae_p95_r` is positive.
     """
     if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
-        return pd.DataFrame(index=alive, columns=list(FACTS), dtype=float)
+        return pd.DataFrame(index=alive, columns=pd.Index(FACTS), dtype=float)
     oos = data["oos"]
     t = tradelevel.t_skew_kurt if cfg["drift"]["se_skew_kurt"] else tradelevel.t
     conc, trades = cfg["concentration"], data["trades"]
@@ -33,4 +33,4 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         "edge_mean_oos": onepass.edge_mean(oos),
         "t_exceso_k": onepass.t_cost(oos, cfg["cost_stress"]["k"], t),
         **onepass.t_without(oos, t, conc["drop_trades"], conc["drop_period"]),
-        "mae_p95_r": mae}).reindex(index=alive, columns=list(FACTS))
+        "mae_p95_r": mae}).reindex(index=alive, columns=pd.Index(FACTS))

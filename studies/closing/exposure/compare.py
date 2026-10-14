@@ -1,13 +1,39 @@
 """The numbers: what each side earned, what it risked, and what an hour of exposure bought."""
 
+from typing import TypedDict, cast
+
 import numpy as np
 import pandas as pd
 
+from studies.closing.exposure.occupancy import Occupancy
+
 YEAR = 365.25
+
+
+class Stats(TypedDict):
+    """What one daily series is worth: net, return, CAGR, drawdown, volatility, Sharpe."""
+
+    net: float
+    return_pct: float
+    cagr_pct: float
+    maxdd_pct: float
+    vol: float
+    sharpe: float
+
+
+class Dichotomy(TypedDict):
+    """Return against the market time it took: per hour exposed, efficiency, ratios, hours off."""
+
+    return_per_exposure_pct: float
+    efficiency: float
+    return_ratio: float
+    dd_ratio: float
+    hours_off: float
+
 TRADING_DAYS = 252   # SQX's own convention for its Sharpe
 
 
-def stats(daily: pd.Series, equity: float) -> dict:
+def stats(daily: pd.Series, equity: float) -> Stats:
     """What one daily profit-and-loss series is worth.
 
     Args:
@@ -24,7 +50,8 @@ def stats(daily: pd.Series, equity: float) -> dict:
         per-hour-exposed rate separately instead of quietly swapping one for the other.
     """
     path = equity + daily.cumsum()
-    years = (daily.index[-1] - daily.index[0]).days / YEAR
+    index = cast(pd.DatetimeIndex, daily.index)
+    years = (index[-1] - index[0]).days / YEAR
     return {"net": float(daily.sum()),
             "return_pct": float(daily.sum() / equity * 100),
             "cagr_pct": float(((path.iloc[-1] / equity) ** (1 / years) - 1) * 100),
@@ -48,7 +75,7 @@ def equity_start(trades: pd.DataFrame) -> float:
     return float(first["Balance"] - first["Profit/Loss"])
 
 
-def dichotomy(strategy: dict, bench: dict, exposure: dict) -> dict:
+def dichotomy(strategy: Stats, bench: Stats, exposure: Occupancy) -> Dichotomy:
     """The trade-off itself: return against the market time it took to get it.
 
     Args:

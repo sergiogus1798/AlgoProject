@@ -1,6 +1,7 @@
 """One strategy's dependence on deep trades, build and oos1 side by side, as the contract's data."""
 
 import time
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -42,7 +43,7 @@ def table_rows(got: dict, cfg: dict) -> pd.DataFrame:
                             if s in got}}).astype(object)
 
 
-def run(strategy: str, identity: str, measured: pd.DataFrame, cfg: dict) -> dict:
+def run(strategy: str, identity: str, measured: pd.DataFrame, cfg: dict) -> dict[str, Any]:
     """The strategy's deep-trade reading.
 
     Args:

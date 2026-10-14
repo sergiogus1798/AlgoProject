@@ -11,6 +11,7 @@ fall outside the band. Reads only ticks; proposes and never writes `assets/`.
 import argparse
 import json
 import time
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -35,14 +36,14 @@ GLOSSARY = [
 
 def at_prices(d: pd.DataFrame, curves: dict) -> pd.DataFrame:
     """The curves at the price of every year and at the last price: the ranges to pick from."""
-    year = d.groupby(d.index.year)["price"].median()
+    year = d.groupby(cast(Any, d.index).year)["price"].median()
     prices = np.append(year.to_numpy(), d["price"].iloc[-1])
     table = band.predict(curves, prices).reset_index()
-    table.insert(0, "a precio de", [str(y) for y in year.index] + ["último día"])
+    table.insert(0, "a precio de", pd.Index([str(y) for y in year.index] + ["último día"]))
     return table
 
 
-def report(symbol: str, d: pd.DataFrame, curves: dict, cfg: dict) -> dict:
+def report(symbol: str, d: pd.DataFrame, curves: dict, cfg: dict) -> dict[str, Any]:
     """One asset's band as the contract's data."""
     started = time.time()
     qs = [str(q) for q in cfg["band"]["quantiles"]]
@@ -60,7 +61,7 @@ def report(symbol: str, d: pd.DataFrame, curves: dict, cfg: dict) -> dict:
              "series": [{"label": "media" if k == "media" else f"cuantil {float(k):.1%}",
                          "values": lines[k].tolist(), "role": "real" if k == "media" else "reference"}
                         for k in lines.columns]}
-    now = band.predict(curves, [d["price"].iloc[-1]]).iloc[0]
+    now = band.predict(curves, np.array([d["price"].iloc[-1]])).iloc[0]
     cover = band.coverage(d, curves, low, high)
     worst = float(cover[["% por debajo", "% por encima"]].max().max())
     said = blocks.verdict(

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Step 17 over one mother's variant batch: the three compositions, the state, the ledger's looks."""
 
+from typing import Any
 import argparse
 import json
 import time
@@ -19,7 +20,7 @@ MODULE = "studies.optimisation.wfc"
 SUMMARY = ("estado", "orden", "fuerte", "n", "rho", "p_mas", "p_menos", "nivel_top", "p_nivel", "r_sel")
 
 
-def result(name: str, measured: dict[str, dict], cfg: dict, started: float) -> dict:
+def result(name: str, measured: dict[str, one.Composition], cfg: dict, started: float) -> dict[str, Any]:
     """The contract's result of one batch, with the facts the autopilot judges.
 
     Args:

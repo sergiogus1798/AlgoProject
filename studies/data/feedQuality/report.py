@@ -10,6 +10,9 @@ verdict.csv for /curate. Never recomputes a metric without the flagged trades.
 import argparse
 from datetime import date
 from pathlib import Path
+from typing import cast
+
+import pandas as pd
 
 from core import fanout, manifest
 from core.barstore import read
@@ -52,10 +55,10 @@ def main() -> None:
     ev = inputs.events(a.feed, cfg)
     meta = inputs.strategies(folder)
     timeframe = meta["TimeFrame [IS]"].iloc[0]
-    index = read(a.feed, timeframe).index
+    index = cast(pd.DataFrame, read(a.feed, timeframe)).index
     trades = inputs.trades(folder)
-    names = meta["strategy"]
-    wanted = names[names == a.strategy].index if a.strategy else names.index
+    names = cast(pd.Series, meta["strategy"])
+    wanted = cast(pd.Index, cast(pd.Series, names[names == a.strategy]).index if a.strategy else names.index)
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "feedQuality"
 
     # One process per core: 10,000 strategies one after another were 42 min of step 8
@@ -67,12 +70,12 @@ def main() -> None:
     for identity, got in fanout.run(attribute, {i: len(rows.get(i, [])) for i in wanted},
                                     fanout.CORES):
         found[identity], done = got, done + 1
-        progress(100 * done // len(wanted), names[identity])
-    results = {i: found[i] for i in wanted if found[i] is not None}
-    unread = [names[i] for i in wanted if found[i] is None]
+        progress(100 * done // len(wanted), cast(str, names[identity]))
+    results: dict[str, dict] = {i: found[i] for i in wanted if found[i] is not None}
+    unread = [cast(str, names[i]) for i in wanted if found[i] is None]
 
     if a.strategy:
-        got = results[wanted[0]]
+        got = results[cast(str, wanted[0])]
         title = f"Calidad del feed — {a.strategy}"
         print(markdown.render(got, title))
         print(f"-> {output.member(out, got, title, f'{a.feed}, velas {timeframe}.')}")

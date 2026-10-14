@@ -1,6 +1,7 @@
 """Read a WFM export: the 30 cells, their steps, and the parameters the optimiser chose."""
 
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -41,7 +42,7 @@ def steps(directory: Path, drop_future: bool = True) -> pd.DataFrame:
         frame = frame[~frame["future"]]
     for column in WINDOW:
         frame[column] = pd.to_datetime(frame[column], unit="s")
-    return frame.reset_index(drop=True)
+    return cast(pd.DataFrame, frame.reset_index(drop=True))
 
 
 def trades(directory: Path) -> pd.DataFrame:

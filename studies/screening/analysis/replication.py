@@ -1,5 +1,7 @@
 """Does a conclusion drawn on one sample of strategies hold on another, independently generated one."""
 
+from typing import TypedDict
+
 import numpy as np
 
 from studies.screening.analysis import correlations, improvement
@@ -8,8 +10,25 @@ DRAWS = 2000
 SEED = 20260904
 
 
+class Gap(TypedDict):
+    """A hit-rate gap between two samples and its 95 % interval."""
+    gap: float
+    lo: float
+    hi: float
+
+
+class Carried(TypedDict):
+    """What a filter chosen on one sample delivers on another."""
+    predicted: float
+    share: float
+    n: int
+    observed: float
+    lo: float
+    hi: float
+
+
 def hit_gap(reference: np.ndarray, sample: np.ndarray, level: float,
-            draws: int = DRAWS) -> dict:
+            draws: int = DRAWS) -> Gap:
     """Difference in out-of-sample hit rate between two independent samples.
 
     Args:
@@ -26,16 +45,16 @@ def hit_gap(reference: np.ndarray, sample: np.ndarray, level: float,
         there is no hit rate to compare.
     """
     if not (reference.size and sample.size):
-        return {"gap": float("nan"), "lo": float("nan"), "hi": float("nan")}
+        return Gap(gap=float("nan"), lo=float("nan"), hi=float("nan"))
     rng = np.random.default_rng(SEED)
     a = (sample[rng.integers(0, sample.size, (draws, sample.size))] > level).mean(axis=1)
     b = (reference[rng.integers(0, reference.size, (draws, reference.size))] > level).mean(axis=1)
-    return {"gap": float((sample > level).mean() - (reference > level).mean()),
-            "lo": float(np.quantile(a - b, 0.025)), "hi": float(np.quantile(a - b, 0.975))}
+    return Gap(gap=float((sample > level).mean() - (reference > level).mean()),
+               lo=float(np.quantile(a - b, 0.025)), hi=float(np.quantile(a - b, 0.975)))
 
 
 def carried(reference: dict[str, np.ndarray], sample: dict[str, np.ndarray],
-            candidate: dict, target: str) -> dict:
+            candidate: dict, target: str) -> Carried:
     """Apply one sample's filter threshold to another sample and see what it delivers there.
 
     Args:
@@ -62,11 +81,11 @@ def carried(reference: dict[str, np.ndarray], sample: dict[str, np.ndarray],
               else sample[column] <= edge)
     y, base = sample[target][passes], reference[target][kept]
     gap = hit_gap(base, y, level)
-    return {"predicted": float((base > level).mean()),
-            "share": float(passes.mean()),
-            "n": int(passes.sum()),
-            "observed": float((y > level).mean()) if y.size else float("nan"),
-            "lo": gap["lo"], "hi": gap["hi"]}
+    return Carried(predicted=float((base > level).mean()),
+                   share=float(passes.mean()),
+                   n=int(passes.sum()),
+                   observed=float((y > level).mean()) if y.size else float("nan"),
+                   lo=gap["lo"], hi=gap["hi"])
 
 
 def restriction(reference: np.ndarray, sample: np.ndarray) -> float:
@@ -83,7 +102,7 @@ def restriction(reference: np.ndarray, sample: np.ndarray) -> float:
     return float(sample.std() / reference.std())
 
 
-def predictors(columns: dict[str, np.ndarray], target: str, is_metrics: list[str]) -> dict:
+def predictors(columns: dict[str, np.ndarray], target: str, is_metrics: list[str]) -> dict[str, float]:
     """Spearman of every in-sample metric against one outcome, keyed by metric.
 
     Args:

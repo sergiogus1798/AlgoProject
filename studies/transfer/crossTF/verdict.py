@@ -1,6 +1,7 @@
 """What each scaled cell means on oos1, beyond what its mother's own result already explains."""
 
 from statistics import NormalDist
+from typing import cast
 
 import pandas as pd
 
@@ -94,10 +95,10 @@ def unscaled(panel: pd.DataFrame) -> pd.DataFrame:
         The baseline and unscaled cells, with their statistic, p and trade count.
     """
     rows = panel[panel["role"].isin(["baseline", "unscaled"])]
-    return rows[["mother", "timeframe", "role", "trades", "seen", "p"]].reset_index(drop=True)
+    return cast(pd.DataFrame, rows[["mother", "timeframe", "role", "trades", "seen", "p"]]).reset_index(drop=True)
 
 
-def counts(readings: pd.DataFrame) -> dict:
+def counts(readings: pd.DataFrame) -> dict[str, dict[str, int]]:
     """How the population fell across the readings, per timeframe.
 
     Args:
@@ -108,4 +109,4 @@ def counts(readings: pd.DataFrame) -> dict:
     """
     table = readings.pivot_table(index="timeframe", columns="reading", values="mother",
                                 aggfunc="count", observed=True).fillna(0).astype(int)
-    return {tf: dict(row) for tf, row in table.iterrows()}
+    return {str(tf): {str(k): int(v) for k, v in row.items()} for tf, row in table.iterrows()}

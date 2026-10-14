@@ -1,7 +1,11 @@
 """The statistic of the travel test: a total in R over any markets and cells, and its z against the random runs."""
 
+from typing import TypedDict, cast
+
 import numpy as np
 import pandas as pd
+
+from studies.transfer.crossmarket.travel import tensor
 
 
 def total(values: np.ndarray, markets: np.ndarray | list | None = None,
@@ -21,7 +25,17 @@ def total(values: np.ndarray, markets: np.ndarray | list | None = None,
     return np.where(np.isnan(part).all((-2, -1)), np.nan, np.nansum(part, (-2, -1)))
 
 
-def z(real: float, null: np.ndarray) -> dict:
+class Z(TypedDict):
+    """A real total against the random totals: z, one-sided p, and the real, mean and sd."""
+
+    z: float
+    p: float
+    real: float
+    mean: float
+    sd: float
+
+
+def z(real: float, null: np.ndarray) -> Z:
     """The real total against the random runs' totals.
 
     Args:
@@ -35,13 +49,13 @@ def z(real: float, null: np.ndarray) -> dict:
     """
     mean, sd = float(np.mean(null)), float(np.std(null, ddof=1))
     live = bool(np.isfinite(real)) and sd > 0
-    return {"z": (real - mean) / sd if live else np.nan,
-            "p": (1 + int((null >= real).sum())) / (null.size + 1) if live else np.nan,
-            "real": float(real), "mean": mean, "sd": sd}
+    return Z(z=(real - mean) / sd if live else np.nan,
+             p=(1 + int((null >= real).sum())) / (null.size + 1) if live else np.nan,
+             real=float(real), mean=mean, sd=sd)
 
 
-def joint(tensor: dict, markets: np.ndarray | list | None = None,
-          cells: np.ndarray | list | None = None) -> dict:
+def joint(tensor: tensor.Built, markets: np.ndarray | list | None = None,
+          cells: np.ndarray | list | None = None) -> Z:
     """z of one strategy over any markets and cells, from its tensor and nothing else.
 
     Args:
@@ -52,7 +66,7 @@ def joint(tensor: dict, markets: np.ndarray | list | None = None,
     Returns:
         As z() returns it.
     """
-    return z(total(tensor["real"], markets, cells), total(tensor["null"], markets, cells))
+    return z(cast(float, total(tensor["real"], markets, cells)), total(tensor["null"], markets, cells))
 
 
 def t(values: np.ndarray) -> float:

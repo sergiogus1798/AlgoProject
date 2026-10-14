@@ -1,6 +1,7 @@
 """One strategy through the gate, as the contract's data: where it fell, and every fact of every level."""
 
 import time
+from typing import Any
 
 import pandas as pd
 
@@ -10,7 +11,7 @@ from studies.screening.gate.levels import LEVELS
 MODULE = "gate"
 
 
-def run(identity: str, scores: pd.DataFrame, cfg: dict) -> dict:
+def run(identity: str, scores: pd.DataFrame, cfg: dict) -> dict[str, Any]:
     """What every level measured on one strategy, read off the scorecard.
 
     Args:
@@ -37,7 +38,7 @@ def run(identity: str, scores: pd.DataFrame, cfg: dict) -> dict:
     table = blocks.table("Cada hecho", pd.DataFrame(
         [[fact, level, None if pd.isna(r[fact]) else float(r[fact])]
          for level, module in LEVELS for fact in module.FACTS],
-        columns=["hecho", "nivel", "valor"]),
+        columns=pd.Index(["hecho", "nivel", "valor"])),
         "Un hecho sin valor es de un nivel al que la estrategia no llegó, o no se pudo medir.")
     name = r["strategy"] if isinstance(r["strategy"], str) else r["strategy_build"]
     return envelope.envelope(MODULE, name, identity, cfg, started,

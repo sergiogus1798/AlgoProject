@@ -1,5 +1,6 @@
 """What the study is run on: its knobs, one strategy's trades, its bars and its window."""
 
+from typing import Any, cast
 from pathlib import Path
 
 import pandas as pd
@@ -12,7 +13,7 @@ from core.study import config as study_config
 CONFIG = Path(__file__).with_name("config.yaml")
 
 
-def config(overrides: list[str]) -> dict:
+def config(overrides: list[str]) -> dict[str, Any]:
     """The study's knobs, with command-line overrides applied.
 
     Args:
@@ -62,7 +63,7 @@ def sample(packed: Path, which: str) -> pd.DataFrame:
         raise SystemExit(f"{packed} no tiene ni una operación de la muestra {which}, sólo "
                          f"{sorted(frame['Sample type'].astype(str).unique())}: exporta el "
                          f"databank que la corrió (para OOS1, `OOS`, no `Results`)")
-    return frame[frame["Sample type"] == which]
+    return cast(pd.DataFrame, frame[frame["Sample type"] == which])
 
 
 def bars(feed: str, timeframe: str, span: tuple[pd.Timestamp, pd.Timestamp]) -> pd.DataFrame:
@@ -78,7 +79,7 @@ def bars(feed: str, timeframe: str, span: tuple[pd.Timestamp, pd.Timestamp]) -> 
         occupancy a share of the market's open hours rather than of wall-clock time.
     """
     frame = read_bars(feed, timeframe)
-    return frame[(frame.index >= span[0]) & (frame.index < span[1])]
+    return cast(pd.DataFrame, frame[(frame.index >= span[0]) & (frame.index < span[1])])
 
 
 def window(symbol: str, segment: str) -> tuple[pd.Timestamp, pd.Timestamp]:
@@ -95,7 +96,8 @@ def window(symbol: str, segment: str) -> tuple[pd.Timestamp, pd.Timestamp]:
         credited with a shorter window and a higher occupancy than it had.
     """
     start, end = asset_window(load_asset(symbol), segment)
-    return (pd.Timestamp(start, unit="ms"), pd.Timestamp(end, unit="ms"))
+    return (cast(pd.Timestamp, pd.Timestamp(start, unit="ms")),
+            cast(pd.Timestamp, pd.Timestamp(end, unit="ms")))
 
 
 def point_value(symbol: str) -> float:

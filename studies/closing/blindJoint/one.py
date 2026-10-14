@@ -1,5 +1,6 @@
 """One mother at step 20: her three withheld results side by side, and her call under each reading."""
 
+from typing import Any, cast
 import time
 
 import pandas as pd
@@ -19,10 +20,15 @@ def chosen(cfg: dict) -> tuple[str, str] | None:
         if joint["pieces"] and joint["population"] else None
 
 
+def _piece(row: pd.Series, p: str) -> dict[str, Any]:
+    """One piece's cell of a population row: its state, score, label and meaning."""
+    return cast(dict[str, Any], row[p])
+
+
 def parts(row: pd.Series, got: dict) -> list[dict]:
     """The three pieces, each with its own study's state, and the StepM over every entrant."""
-    said = [{"label": f"{PIECES[p]} {NAMES[p]}", "state": row[p]["state"],
-             "value": row[p]["score"], "note": words.call(row[p]["label"])} for p in PIECES]
+    said = [{"label": f"{PIECES[p]} {NAMES[p]}", "state": _piece(row, p)["state"],
+             "value": _piece(row, p)["score"], "note": words.call(_piece(row, p)["label"])} for p in PIECES]
     if got["refused"]:
         return said + [{"label": "20 SPA/StepM", "state": "none", "value": None,
                         "note": "sin leer: la política no deja al paso 20 mirar oos2"}]
@@ -33,7 +39,7 @@ def parts(row: pd.Series, got: dict) -> list[dict]:
                             if named else "no nombrada: no se distingue de entrar al azar"}]
 
 
-def equity_chart(mother: str, got: dict) -> dict:
+def equity_chart(mother: str, got: dict) -> dict[str, Any]:
     """The mother's own oos2 equity next to what her random trader earns on average.
 
     Args:
@@ -59,7 +65,7 @@ def equity_chart(mother: str, got: dict) -> dict:
                     "por encima es lo que vale su entrada."}
 
 
-def run(row: pd.Series, got: dict, cfg: dict) -> dict:
+def run(row: pd.Series, got: dict, cfg: dict) -> dict[str, Any]:
     """What step 20 says about one mother.
 
     Args:
@@ -73,12 +79,12 @@ def run(row: pd.Series, got: dict, cfg: dict) -> dict:
         or — while the owner has not chosen — `Sin regla` with every reading in a table.
     """
     started = time.time()
-    if not row["complete"]:
+    if not bool(row["complete"]):
         missing = ", ".join(f"{PIECES[p]} ({NAMES[p]})" for p in row["missing"])
         said = blocks.verdict("Incompleta", "none",
                               f"Le falta {missing}. El paso 20 es ciego hasta tener las "
                               f"tres piezas, así que no se lee ninguna de las que tiene.")
-        return envelope.envelope(MODULE, row.name, row["identity"], cfg, started, [], said,
+        return envelope.envelope(MODULE, str(row.name), cast(str | None, row["identity"]), cfg, started, [], said,
                                  summary={"complete": False, "call": "none"})
     calls = got["calls"].loc[row.name]
     reading = chosen(cfg)
@@ -93,12 +99,12 @@ def run(row: pd.Series, got: dict, cfg: dict) -> dict:
                           parts(row, got))
     # The sentences go in a list block, which wraps; a table cell would cut them with «…».
     pieces = blocks.table("Las tres piezas, como las dijo su estudio", pd.DataFrame(
-        [[f"{PIECES[p]} {NAMES[p]}", words.call(row[p]["label"]), words.STATE[row[p]["state"]]]
-         for p in PIECES], columns=["paso", "llamada", "estado"]))
-    pieces["states"] = [[None, None, row[p]["state"]] for p in PIECES]
+        [[f"{PIECES[p]} {NAMES[p]}", words.call(_piece(row, p)["label"]), words.STATE[_piece(row, p)["state"]]]
+         for p in PIECES], columns=pd.Index(["paso", "llamada", "estado"])))
+    pieces["states"] = [[None, None, _piece(row, p)["state"]] for p in PIECES]
     says = {"kind": "list", "title": "Qué quiere decir cada una", "note": None,
-            "items": [{"title": f"{PIECES[p]} {NAMES[p]} · {words.call(row[p]['label'])}",
-                       "text": words.sentence(row[p]["meaning"])} for p in PIECES]}
+            "items": [{"title": f"{PIECES[p]} {NAMES[p]} · {words.call(_piece(row, p)['label'])}",
+                       "text": words.sentence(_piece(row, p)["meaning"])} for p in PIECES]}
     tabs = [envelope.tab("pieces", "Las tres piezas", [pieces, says])]
     if not got["refused"]:
         r = got["table"].loc[row.name]
@@ -108,13 +114,13 @@ def run(row: pd.Series, got: dict, cfg: dict) -> dict:
                  ["Operador al azar, media diaria (USD)", r["random_day"]],
                  ["Exceso medio diario de la madre (USD)", r["excess_day"]],
                  ["Error de simulación del operador al azar (USD/día)", r["mc_day"]]],
-                columns=["qué", "valor"]),
+                columns=pd.Index(["qué", "valor"])),
                 "Exceso positivo = la madre gana más que sus mismas operaciones entradas al "
                 "azar. Batirlo es que ese exceso no se explique por suerte, contadas todas las "
                 "madres que llegaron (SPA y StepM). El error de simulación es lo que se mueve "
                 "la media del azar por haber simulado un número finito de operadores."),
-            equity_chart(row.name, got)]))
-    return envelope.envelope(MODULE, row.name, row["identity"], cfg, started, tabs, said,
+            equity_chart(str(row.name), got)]))
+    return envelope.envelope(MODULE, str(row.name), cast(str | None, row["identity"]), cfg, started, tabs, said,
                              summary={"complete": True, "call": state,
-                                      **{p: row[p]["state"] for p in PIECES},
+                                      **{p: _piece(row, p)["state"] for p in PIECES},
                                       **{r: calls[r] for r in calls.index}})

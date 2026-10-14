@@ -1,5 +1,8 @@
 """Per-strategy decay: how much of the in-sample edge survives, and whether what is left is real."""
 
+from collections.abc import Mapping
+from typing import Any, TypedDict
+
 import numpy as np
 import pandas as pd
 
@@ -14,6 +17,19 @@ MAX_CONCENTRATION = 0.40    # share of OOS profit allowed to come from one quart
 SIGNIFICANT_T = 1.65
 
 
+class Diagnosis(TypedDict):
+    """One strategy's decay diagnosis, as `diagnose` returns it."""
+    sharpe_is: float
+    sharpe_oos: float
+    retention: float
+    t: float
+    years_positive: int
+    years: int
+    worst_year: float
+    concentration: float
+    net_profit_oos: float
+
+
 def sharpe(returns: pd.Series) -> float:
     """Annualised Sharpe of a daily P&L series, with no risk-free adjustment.
 
@@ -26,7 +42,7 @@ def sharpe(returns: pd.Series) -> float:
     return returns.mean() / returns.std(ddof=1) * np.sqrt(YEAR)
 
 
-def diagnose(curve: pd.Series, split: str, end: str) -> dict:
+def diagnose(curve: pd.Series, split: str, end: str) -> Diagnosis:
     """Everything the verdict needs about one strategy, from its daily equity.
 
     Args:
@@ -41,25 +57,27 @@ def diagnose(curve: pd.Series, split: str, end: str) -> dict:
         strategy loses money outside that quarter. Retention is NaN when the in-sample
         Sharpe is not positive, concentration when the out-of-sample total is not.
     """
-    daily = curve.diff().dropna()
-    before, after = daily[daily.index < split], daily[split:end]
-    quarters = after.groupby([after.index.year, after.index.quarter]).sum()
-    years = after.groupby(after.index.year).sum()
+    daily = pd.Series(curve.diff().dropna())
+    before, after = pd.Series(daily[daily.index < split]), pd.Series(daily[split:end])
+    when = pd.Series(after.index).dt
+    quarters = pd.Series(after.groupby([when.year.to_numpy(), when.quarter.to_numpy()]).sum())
+    years = pd.Series(after.groupby(when.year.to_numpy()).sum())
     edge = sharpe(after)
-    total = after.sum()
+    total = float(after.sum())
 
     # Lo (2002), iid: SE of a per-day Sharpe over T days is sqrt((1 + SR_day**2 / 2) / T);
     # annualised, the squared term is the annual Sharpe's over the days in a year.
     error = np.sqrt((1 + 0.5 * edge ** 2 / YEAR) / (len(after) / YEAR))
     base = sharpe(before)   # a ratio on a losing denominator flips sign: undefined, not a survival
-    return {"sharpe_is": base, "sharpe_oos": edge,
-            "retention": edge / base if base > 0 else np.nan, "t": edge / error,
-            "years_positive": int((years > 0).sum()), "years": len(years),
-            "worst_year": years.min(), "concentration": quarters.max() / total if total > 0 else np.nan,
-            "net_profit_oos": total}
+    return Diagnosis(sharpe_is=base, sharpe_oos=edge,
+                     retention=edge / base if base > 0 else np.nan, t=edge / error,
+                     years_positive=int((years > 0).sum()), years=len(years),
+                     worst_year=float(years.min()),
+                     concentration=float(quarters.max()) / total if total > 0 else np.nan,
+                     net_profit_oos=total)
 
 
-def verdict(row: dict) -> str:
+def verdict(row: Mapping[str, Any]) -> str:
     """Keep, doubt or discard one strategy.
 
     Args:
@@ -92,7 +110,7 @@ def table(curves: dict, split: str, end: str) -> pd.DataFrame:
         One row per strategy, sorted by t descending, with a "verdict" column. Rows are
         never aggregated: strategies from different templates do not pool.
     """
-    rows = [dict(name=name, **diagnose(curve, split, end)) for name, curve in curves.items()]
+    rows: list[dict] = [dict(name=name, **diagnose(curve, split, end)) for name, curve in curves.items()]
     for row in rows:
         row["verdict"] = verdict(row)
     return pd.DataFrame(rows).sort_values("t", ascending=False).reset_index(drop=True)

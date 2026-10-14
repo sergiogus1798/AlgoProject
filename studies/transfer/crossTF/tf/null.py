@@ -1,5 +1,7 @@
 """The joint random runs of one mother and her siblings in one window, and the three measures read off them: e, z of a total, z of the difference."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -26,7 +28,7 @@ def calendar(first: pd.Timestamp, last: pd.Timestamp, cuts: dict, null: dict) ->
 
 
 def grids(bars: dict[str, pd.DataFrame], costs: reprice.Costs, params: dict, cal: pd.DataFrame,
-          shifts: np.ndarray, span: tuple[pd.Timestamp, pd.Timestamp], null: dict) -> dict[str, dict]:
+          shifts: np.ndarray, span: tuple[pd.Timestamp, pd.Timestamp], null: dict) -> dict[str, tensor.Market]:
     """What pricing needs of every timeframe inside one window, shared by every mother.
 
     Args:
@@ -44,7 +46,7 @@ def grids(bars: dict[str, pd.DataFrame], costs: reprice.Costs, params: dict, cal
         compared over the same years.
     """
     with np.errstate(divide="ignore"):       # lots on a flat bar are inf: `usable` never sizes there
-        out = {tf: tensor.market(b[(b.index >= span[0]) & (b.index < span[1])], costs, params, cal,
+        out = {tf: tensor.market(cast(pd.DataFrame, b[(b.index >= span[0]) & (b.index < span[1])]), costs, params, cal,
                                  null["flat_atr_fraction"]) for tf, b in bars.items()}
     gone = np.any([tensor.exclude(m, cal, shifts, null["shift_step"], null["max_displaced_share"])
                    for m in out.values()], axis=0)
@@ -53,7 +55,7 @@ def grids(bars: dict[str, pd.DataFrame], costs: reprice.Costs, params: dict, cal
     return out
 
 
-def runs(trades: dict[str, pd.DataFrame], grid: dict[str, dict], cal: pd.DataFrame,
+def runs(trades: dict[str, pd.DataFrame], grid: dict[str, tensor.Market], cal: pd.DataFrame,
          shifts: np.ndarray, null: dict) -> dict[str, dict]:
     """One mother and her siblings through the same random runs, in one window.
 

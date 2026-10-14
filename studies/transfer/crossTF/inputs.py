@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 
@@ -13,7 +14,7 @@ from core.study import config as study_config
 CONFIG = Path(__file__).with_name("config.yaml")
 
 
-def config(overrides: list[str]) -> dict:
+def config(overrides: list[str]) -> dict[str, Any]:
     """The study's knobs, with command-line overrides applied.
 
     Args:
@@ -105,10 +106,10 @@ def oos(packed: pd.DataFrame, feed: str) -> pd.DataFrame:
         packed: What `gather` returned.
         feed: SQX symbol the cells ran on; the asset that declares it owns the segments.
     """
-    data = assetdata.load(assetdata.symbol_for(feed))
+    data = assetdata.load(cast(str, assetdata.symbol_for(feed)))  # symbol_for may return None: unchanged
     start, end = (pd.Timestamp(ms, unit="ms") for ms in assetdata.window(data, "oos1"))
     opened = pd.to_datetime(packed["Open time"])
-    return packed[(opened >= start) & (opened < end)].reset_index(drop=True)
+    return cast(pd.DataFrame, packed[(opened >= start) & (opened < end)]).reset_index(drop=True)
 
 
 def plan(scaling: pd.DataFrame, blocks: list[str]) -> pd.DataFrame:
@@ -135,7 +136,7 @@ def plan(scaling: pd.DataFrame, blocks: list[str]) -> pd.DataFrame:
             rows.append({"strategy": mother, "block": index, "timeframe": timeframe,
                          "role": "baseline" if index == 0 else "unscaled",
                          "mother": mother})
-    for row in scaling.itertuples():
+    for row in cast(Any, scaling.itertuples()):
         made = {"mother": row.mother, "ratio": row.ratio, "n_scaled": row.n_scaled,
                 "rounding_shift": row.max_rounding_shift, "clamped": float(row.clamped),
                 "unverified": float(bool(getattr(row, "unverified", "")))}

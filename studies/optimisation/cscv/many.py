@@ -1,12 +1,15 @@
 """Step 18 over one or several mothers' batches: the panels, the one queue, and each mother's facts."""
 
 from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from studies.optimisation.cscv.inputs import batch
+from studies.optimisation.cscv.inputs.batch import Weekly
 from studies.optimisation.cscv.measure import outputs, queue
+from studies.optimisation.cscv.measure.queue import Mother, Panel
 from studies.optimisation.cscv.verdict import state
 
 FEW = "quedan {n} variantes tras los filtros, menos de {need}: sin dato"
@@ -15,7 +18,7 @@ BAND = ("la mediana del PBO del nulo es {got:.2f}, fuera de {low}–{high}: el r
 BUDGET = "la cola tardó {got:.0f} s, por encima del presupuesto de {budget:.0f} s"
 
 
-def panel(metrics: pd.DataFrame, cells: dict, cfg: dict) -> dict:
+def panel(metrics: pd.DataFrame, cells: Weekly, cfg: dict) -> Panel:
     """One mother's panel: the variants that enter and their weekly cells.
 
     Args:
@@ -35,8 +38,8 @@ def panel(metrics: pd.DataFrame, cells: dict, cfg: dict) -> dict:
             "gross": cells["gross"][kept].to_numpy(np.float64)}
 
 
-def run(batches: dict[str, tuple[pd.DataFrame, dict]], cfg: dict,
-        progress: Callable[[float], None] | None = None) -> tuple[dict[str, dict], dict]:
+def run(batches: dict[Mother, tuple[pd.DataFrame, Weekly]], cfg: dict,
+        progress: Callable[[float], None] | None = None) -> tuple[dict[Mother, dict], dict]:
     """Every mother's CSCV, null and power curve through one queue, and what each says.
 
     Args:

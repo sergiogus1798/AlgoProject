@@ -1,5 +1,7 @@
 """The inference: a mother's weekly excess over her monkey, summed, against a centred sign-flip null."""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
@@ -21,7 +23,19 @@ def weekly(mother: pd.Series, monkey: pd.Series) -> np.ndarray:
     return excess.groupby(pd.DatetimeIndex(excess.index).to_period("W")).sum().to_numpy()
 
 
-def read(excess: np.ndarray, cfg: dict, seed: np.random.SeedSequence) -> dict:
+class Reading(TypedDict):
+    """The sum of the weekly excess, its z, one-sided p and error, the weeks and the two flags."""
+
+    suma: float
+    z: float
+    p: float
+    p_error_mc: float
+    semanas: int
+    bajo_alfa: int
+    corta: int
+
+
+def read(excess: np.ndarray, cfg: dict, seed: np.random.SeedSequence) -> Reading:
     """The sum of the weekly excess and where it falls among centred sign flips of itself.
 
     Args:

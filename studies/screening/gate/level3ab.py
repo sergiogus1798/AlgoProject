@@ -1,6 +1,7 @@
 """Level 3a and 3b of the gate: homogeneity of the excess across quarters, and the drawdown against its resampled own."""
 
 import os
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -17,7 +18,7 @@ DRAWS = "_draws"        # the key a worker hands its distributions back under; n
 _SHARED: dict = {}
 
 
-def _one(identity: str) -> dict:
+def _one(identity: str) -> dict[str, Any]:
     """One strategy's two resamplings, in a worker that inherited its inputs by fork.
 
     Args:
@@ -48,7 +49,7 @@ def _one(identity: str) -> dict:
         pnl, fall = mine["pnl"].to_numpy(float), s["fall"]
         simulated = resample.drawdowns(s["build"][identity], pnl.mean(), len(pnl), fall["block"],
                                        fall["sequences"], resample.stream(s["dd_seed"], str(identity)))
-        row["dd_p"] = resample.p_upper(simulated, resample.max_drawdown(pnl))
+        row["dd_p"] = resample.p_upper(simulated, float(resample.max_drawdown(pnl)))
         row["dd_esperado_r"] = np.percentile(simulated, fall["percentile"]) / s["risk"]
         if s["keep"]:
             kept.append(draws.record("gate.3a", "dd_p", float(resample.max_drawdown(pnl)), simulated,
@@ -81,7 +82,7 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         A strategy with no build trades has no `dd_*`; one with a single period, no `q_p`.
     """
     if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
-        return pd.DataFrame(index=alive, columns=list(FACTS), dtype=float)
+        return pd.DataFrame(index=alive, columns=pd.Index(FACTS), dtype=float)
     spread, fall, risk = cfg["homogeneity"], cfg["drawdown"], data["market"]["risk"]
     q_seed, dd_seed = resample.root(spread["seed"]), resample.root(fall["seed"])   # once, here: a worker never draws its own
     oos = data["oos"][data["oos"]["identity"].isin(alive)]
@@ -93,7 +94,7 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         spread=spread, fall=fall, risk=risk, q_seed=q_seed, dd_seed=dd_seed, keep=data.get("keep_draws", True),
         q_p=None if cached is None else cached.to_dict())
     resample.warm()
-    rows = dict(fanout.run(_one, {identity: len(own) for identity, own in mine.items()}, os.cpu_count()))
+    rows = dict(fanout.run(_one, {identity: len(own) for identity, own in mine.items()}, os.cpu_count() or 1))
     draws.save(data.get("out"), [d for identity in sorted(rows) for d in rows[identity].pop(DRAWS)])
-    facts = pd.DataFrame.from_dict(rows, orient="index").reindex(index=alive, columns=list(FACTS))
+    facts = pd.DataFrame.from_dict(rows, orient="index").reindex(index=alive, columns=pd.Index(FACTS))
     return facts.assign(q_seed=float(q_seed), dd_seed=float(dd_seed))

@@ -1,5 +1,6 @@
 """One matrix per WFM objective — each condition against its threshold, and the WF metrics SQX shows."""
 
+from typing import Any, cast
 import pandas as pd
 
 from core.study import blocks, result as envelope
@@ -19,7 +20,7 @@ def _grid(frame: pd.DataFrame, column: str) -> pd.DataFrame:
 def _conditions(cond: pd.DataFrame) -> list[tuple[str, dict]]:
     """One table per condition, each cell green where it holds."""
     out = []
-    for i, g in cond.groupby("condition"):
+    for i, g in cast(Any, cond.groupby("condition")):
         first = g.iloc[0]
         label = f"C{i + 1} · {labels.condition(first.to_dict())}"
         states = [[None] + ["pass" if m else "fail" for m in row]
@@ -38,7 +39,7 @@ def _shown(objectives: pd.DataFrame, taken: set[tuple[str, str]]) -> list[tuple[
     for column in objectives.columns.drop(["strategy", "result", "oos_pct", "runs"]):
         family, _, metric = column.partition("_")
         # SQX's scores count the first optimisation window: only the corrected condition shows.
-        if family == "score" or (family, metric) in taken or objectives[column].isna().all():
+        if family == "score" or (family, metric) in taken or bool(objectives[column].isna().all()):
             continue
         own = column == "param_stability"
         label = "Estabilidad de parámetros (SQX)" if own else labels.name(family, metric)
@@ -48,7 +49,7 @@ def _shown(objectives: pd.DataFrame, taken: set[tuple[str, str]]) -> list[tuple[
     return out
 
 
-def tab(checked: pd.DataFrame, objectives: pd.DataFrame | None, strategy: str) -> dict:
+def tab(checked: pd.DataFrame, objectives: pd.DataFrame | None, strategy: str) -> dict[str, Any]:
     """The «Objetivos» tab for one strategy.
 
     Args:
@@ -59,10 +60,10 @@ def tab(checked: pd.DataFrame, objectives: pd.DataFrame | None, strategy: str) -
     Returns:
         A tab with one selector over the conditions first, then the other WF metrics.
     """
-    cond = checked[checked["strategy"] == strategy]
+    cond = cast(pd.DataFrame, checked[checked["strategy"] == strategy])
     pairs = _conditions(cond)
     if objectives is not None:
-        pairs += _shown(objectives[objectives["strategy"] == strategy],
+        pairs += _shown(cast(pd.DataFrame, objectives[objectives["strategy"] == strategy]),
                         set(zip(cond["family"], cond["metric"])))
     names = [name for name, _ in pairs]
     return envelope.tab(

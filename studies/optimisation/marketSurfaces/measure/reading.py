@@ -1,5 +1,6 @@
 """One reading across markets: each market's rho and premium, the joint ones, their null and the power."""
 
+from typing import Any
 import numpy as np
 import pandas as pd
 
@@ -11,7 +12,7 @@ BLANK = {"rho": NAN, "p_mas": NAN, "p_menos": NAN, "ties": NAN, "prima": NAN, "m
          "included": False}
 
 
-def tails(observed: float, null: np.ndarray) -> dict:
+def tails(observed: float, null: np.ndarray) -> flip.Tails:
     """`flip.tails`, or four NaN when there is no statistic to place."""
     if not np.isfinite(observed) or not len(null):
         return {"p_mas": NAN, "p_menos": NAN, "nulo_p5": NAN, "nulo_p95": NAN}
@@ -25,7 +26,7 @@ def key(rho: float) -> str:
 
 def measure(main: np.ndarray, best: np.ndarray, markets: dict[str, dict], table: pd.DataFrame,
             mother: int | None, cfg: dict, seed: np.random.SeedSequence,
-            block_weeks: int | None = None, planted: bool = True) -> dict:
+            block_weeks: int | None = None, planted: bool = True) -> dict[str, Any]:
     """Every number of one reading: the main market's window against one window of the others.
 
     The null draws one sign per week (or per block of weeks) and applies it to every variant
@@ -94,7 +95,7 @@ def measure(main: np.ndarray, best: np.ndarray, markets: dict[str, dict], table:
         return (float(order.joint(frame.loc[mask, values].to_numpy(float), weight)),
                 order.joint(draws, weight), weight)
 
-    def said(mask: np.ndarray) -> dict:
+    def said(mask: np.ndarray) -> dict[str, Any]:
         """The joint rho of the masked markets with its tails, its weight and its count."""
         rho, null, weight = together(mask, "rho", rho_null)
         return {"rho": rho, **tails(rho, null), "peso": float(weight.sum()),

@@ -1,5 +1,6 @@
 """One WFM export read as one result, and each mother's own reading: what the window paints."""
 
+from typing import Any, TypedDict, cast
 import time
 from pathlib import Path
 
@@ -68,7 +69,7 @@ def recorded(strategy: str, identity: str | None, got: dict, seed: int) -> list[
 
 
 def member(strategy: str, result: dict, cfg: dict, started: float, failed: str | None,
-           identity: str | None = None) -> dict:
+           identity: str | None = None) -> dict[str, Any]:
     """One mother's state and its tabs; `facts` rides on the result for the autopilot."""
     got, said = result["measured"][strategy], result["facts"][strategy]
     verdict, found, mode = result["verdicts"][strategy], result["area"][strategy], cfg["modo_real"]
@@ -107,7 +108,7 @@ def member(strategy: str, result: dict, cfg: dict, started: float, failed: str |
              "note": "La regla de SQX con la nota recalculada sobre el tramo fuera de muestra. "
              "Anotada; no decide."}]),
         warnings(got, cfg, failed), GLOSSARY,
-        summary=blocks.plain({
+        summary=cast(dict, blocks.plain({
             "verdict": verdict["verdict"], "why": ", ".join(verdict["why"]), "modo_real": mode,
             "l1_mediana_exceso": one["mediana_exceso"], "l1_p_mas": one["p_mas"],
             "l1_p_menos": one["p_menos"], "l2_delta": two["delta"], "l2_p_menos": two["p_menos"],
@@ -116,7 +117,7 @@ def member(strategy: str, result: dict, cfg: dict, started: float, failed: str |
             "frac_celdas_positivas": said["frac_celdas_positivas"], "deriva": said["deriva"],
             "area_celdas": found["cells"], "area_pasa": bool(found["passed"]),
             "asimetria": got["skew"], "recobro_oos2": got["recharged"]["money"],
-            "sqx_failed": bool(failed)}))
+            "sqx_failed": bool(failed)})))
     return out | {"facts": blocks.plain(said),
                   "draws": recorded(strategy, identity, got, cfg["null"]["seed"])}
 
@@ -129,7 +130,7 @@ def failures(directory: Path) -> dict[str, str]:
             .to_dict())
 
 
-def one(directory: Path, cfg: dict, strategy: str) -> dict:
+def one(directory: Path, cfg: dict, strategy: str) -> dict[str, Any]:
     """One mother of the export alone, the same result the whole export gives it.
 
     Args:
@@ -146,7 +147,17 @@ def one(directory: Path, cfg: dict, strategy: str) -> dict:
                   output.identify(directory, [strategy]).get(strategy))
 
 
-def run(directory: Path, cfg: dict) -> dict:
+class Population(TypedDict):
+    """The export judged: the population's result, each mother's, the table, cells and draws."""
+
+    population: dict[str, Any]
+    members: list[dict[str, Any]]
+    table: pd.DataFrame
+    cells: pd.DataFrame
+    draws: list[Any]
+
+
+def run(directory: Path, cfg: dict) -> Population:
     """The whole export, and each mother.
 
     Args:
@@ -166,9 +177,9 @@ def run(directory: Path, cfg: dict) -> dict:
     kept = [d for m in members for d in m.pop("draws")]
     table = pd.DataFrame([{"strategy": m["strategy"], "identity": ident.get(m["strategy"]),
                            **m["summary"]} for m in members])
-    table = table[["strategy", "identity", "verdict"]
-                  + [c for c in table.columns if c not in ("strategy", "identity", "verdict")]]
-    counts = table["verdict"].value_counts()
+    table = cast(pd.DataFrame, table[["strategy", "identity", "verdict"]
+                  + [c for c in table.columns if c not in ("strategy", "identity", "verdict")]])
+    counts = cast(pd.Series, table["verdict"]).value_counts()
     cells = pd.concat([result["measured"][s]["segments"].rename_axis("cell").reset_index()
                        .assign(strategy=s) for s in names], ignore_index=True)
     shown = table.drop(columns=["identity", "why", "modo_real"]).rename(columns={
@@ -186,7 +197,7 @@ def run(directory: Path, cfg: dict) -> dict:
                         "default": names[0]}],
             note=f"Juzgado en modo «{cfg['modo_real']}». Los costes de oos2 se han cobrado "
                  f"sobre un export corrido a los de {cfg['recharge']['charged']}.")],
-        blocks.verdict(f"{int(counts.get(call.PASA, 0))} de {len(table)} pasan",
+        blocks.verdict(f"{int(cast(int, counts.get(call.PASA, 0)))} de {len(table)} pasan",
                        "pass" if counts.get(call.PASA, 0) else "watch",
                        "; ".join(f"{k} {v}" for k, v in counts.items()) + "."),
         [], GLOSSARY)

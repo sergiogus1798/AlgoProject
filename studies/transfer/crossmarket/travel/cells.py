@@ -1,5 +1,7 @@
 """The calendar cells of the travel test: the pieces of year one joint shift stays inside, and the window each belongs to."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -20,7 +22,7 @@ def cuts(asset: str) -> dict[str, pd.Timestamp]:
     """
     data = assetdata.load(asset)
     (build, _), (oos1, end) = assetdata.window(data, "build"), assetdata.window(data, "oos1")
-    return {k: pd.Timestamp(v, unit="ms") for k, v in (("build", build), ("oos1", oos1), ("end", end))}
+    return {k: cast(pd.Timestamp, pd.Timestamp(v, unit="ms")) for k, v in (("build", build), ("oos1", oos1), ("end", end))}
 
 
 def table(first: pd.Timestamp, last: pd.Timestamp, cuts: dict[str, pd.Timestamp], unit: str,
@@ -39,7 +41,8 @@ def table(first: pd.Timestamp, last: pd.Timestamp, cuts: dict[str, pd.Timestamp]
         `window` ("V0", "V1", "V2", or "after" past the main's oos1) and `steps`, how many
         whole steps fit in it — the shift of a run is drawn in 0..steps-1.
     """
-    lo, hi = pd.Timestamp(first.year, 1, 1), pd.Timestamp(last.year + 1, 1, 1)
+    lo, hi = (cast(pd.Timestamp, pd.Timestamp(first.year, 1, 1)),
+              cast(pd.Timestamp, pd.Timestamp(last.year + 1, 1, 1)))
     regular = [pd.Timestamp(y, m, 1) for y in range(lo.year, hi.year + 1) for m in MONTHS[unit]]
     edges = np.array(sorted({e for e in [*regular, *cuts.values()] if lo <= e <= hi}),
                      "datetime64[s]")

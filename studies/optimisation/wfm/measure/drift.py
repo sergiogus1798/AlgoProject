@@ -1,5 +1,7 @@
 """How far the optimiser's chosen tuple moves from one step to the next."""
 
+from typing import Any, cast
+
 import numpy as np
 import pandas as pd
 
@@ -23,9 +25,9 @@ def per_step(chosen: pd.DataFrame) -> pd.DataFrame:
         is True and leaving them in counts a parameter the strategy does not have as
         changed at every single step.
     """
-    spread = chosen.std().replace(0, np.nan)
+    spread = cast(pd.Series, chosen.std()).replace(0, np.nan)
     rows = []
-    for (strategy, result), block in chosen.groupby(level=[0, 1]):
+    for (strategy, result), block in cast(Any, chosen.groupby(level=[0, 1])):
         ordered = block.droplevel([0, 1]).sort_index().dropna(axis=1, how="all")
         step = ordered.diff().iloc[1:]
         for index, values in step.iterrows():

@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any, TypedDict
 
 import pandas as pd
 
@@ -46,7 +47,18 @@ def wfm_report(project: str, databank: str) -> Path:
     return sorted(parent.glob("*/wfm/verdict.csv"))[-1].parent
 
 
-def said(file: Path) -> dict:
+class Piece(TypedDict):
+    """One piece's call as its study wrote it: label, state, score, meaning, when, summary."""
+
+    label: str
+    state: str
+    score: float | None
+    meaning: str
+    computed_at: str
+    summary: dict[str, Any]
+
+
+def said(file: Path) -> Piece:
     """One piece's call, as the study that computed it wrote it.
 
     Args:

@@ -10,7 +10,7 @@ FACTS = ("presencia_passed", "sanidad_passed", "sanidad_value", "estaticas_value
 NET = "Net profit [OOS]"     # `estaticas_value`: the retest databank's own net of oos1
 
 
-def result(value: pd.Series, passed: pd.Series, note: pd.Series = None) -> pd.DataFrame:
+def result(value: pd.Series, passed: pd.Series, note: pd.Series | None = None) -> pd.DataFrame:
     """One screen's answer, in the shape the cascade expects.
 
     Args:
@@ -66,7 +66,7 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         else but its build's `is_trades_per_year`; every paired one has all five, whatever it
         fails, so `sanidad_value` (the oos1 trade count) is there for everybody.
     """
-    facts = pd.DataFrame(index=alive, columns=list(FACTS), dtype=float)
+    facts = pd.DataFrame(index=alive, columns=pd.Index(FACTS), dtype=float)
     if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
         return facts
     row = {s["name"]: s for s in cfg["screens"]}

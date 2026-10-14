@@ -1,5 +1,6 @@
 """The map as the contract's tabs, its warnings, and the facts the report carries."""
 
+from typing import Any
 import numpy as np
 import pandas as pd
 
@@ -52,7 +53,7 @@ def reading(found: dict, leg: str, cfg: dict) -> list[dict]:
          ["Variantes", n], ["Parámetros vivos", len(found["live"])], ["Coeficientes", p],
          ["Variantes por coeficiente", n / p],
          ["Suma de los índices de primer orden", table["Primer orden"].sum()],
-         ["Suma de los índices totales", table["Total"].sum()]], columns=["", "Valor"])
+         ["Suma de los índices totales", table["Total"].sum()]], columns=pd.Index(["", "Valor"]))
     return [call,
             blocks.table("¿Se puede leer?", numbers,
                          "El ranking sólo se lee si el R² ajustado supera su referencia "
@@ -70,7 +71,7 @@ def reading(found: dict, leg: str, cfg: dict) -> list[dict]:
                       "Total: solo más sus combinaciones con los demás."]}]
 
 
-def counted(found: dict) -> dict:
+def counted(found: dict) -> dict[str, Any]:
     """How many variants each filter removed, as a table."""
     c = found["counts"]
     rows = [["Variantes que volvieron del retest", c["lote"]],
@@ -80,7 +81,7 @@ def counted(found: dict) -> dict:
             ["Quedan en el mapa", c["quedan"]],
             ["… de ellas, con alguna operación en oos1",
              int((found["cloud"]["oos1_trades"] > 0).sum())]]
-    return blocks.table("Qué variantes entran", pd.DataFrame(rows, columns=["", "Variantes"]),
+    return blocks.table("Qué variantes entran", pd.DataFrame(rows, columns=pd.Index(["", "Variantes"])),
                         f"El suelo son {c['suelo']:g} operaciones en build, por los "
                         f"{c['vivos']} parámetros vivos del lote. El mapa no lee oos2.")
 
@@ -125,7 +126,7 @@ def warnings(found: dict, cfg: dict) -> list[dict]:
     return out
 
 
-def facts(found: dict) -> dict:
+def facts(found: dict) -> dict[str, Any]:
     """What the report carries of step 16.5 (proposal §4), nested as `pipeline.autopilot.facts` flattens it."""
     cloud, names = found["cloud"], [n[6:] for n in found["live"]]
     out = {"vivos": len(names), "coeficientes": found["coefficients"],

@@ -1,5 +1,7 @@
 """Where families land in the owner's table: the criterion, and the one without a null on the level beside it."""
 
+from collections.abc import Mapping, Sequence
+from typing import Any, TypedDict, cast
 import numpy as np
 import pandas as pd
 
@@ -16,7 +18,7 @@ STATES = ("pasa", "limbo", "no_pasa")
 JOB: dict = {}        # what _scenario reads; set by table() before the fork
 
 
-def both(values: np.ndarray) -> dict:
+def both(values: np.ndarray) -> dict[str, np.ndarray]:
     """A synthetic family's excess as `reading.measure` takes it: it has no cost, gross is net."""
     return {"gross": values, "net": values}
 
@@ -51,8 +53,18 @@ def cell(found: str, top_level: float) -> str:
     return found if found == state.NO_DATA else f"{found}/{'gana' if top_level > 0 else 'no_gana'}"
 
 
+class Landed(TypedDict):
+    """A family's cell, state with and without the level null, level p and null spread."""
+
+    casilla: str
+    estado: str
+    estado_sin: str
+    p_nivel: float
+    sd_rho_nulo: float
+
+
 def landed(e_is: np.ndarray, e_oos: np.ndarray, weeks: np.ndarray, years: float,
-           cfg: dict) -> dict:
+           cfg: dict) -> Landed:
     """One family under the criterion and under the one without a null on the level.
 
     Returns:
@@ -67,7 +79,7 @@ def landed(e_is: np.ndarray, e_oos: np.ndarray, weeks: np.ndarray, years: float,
             "p_nivel": found["p_nivel"], "sd_rho_nulo": sd_rho(e_is, weeks, years, cfg)}
 
 
-def shares(rows: list[dict]) -> dict:
+def shares(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     """The rate of every cell and state over the families of landed(), and their dependence.
 
     Returns:
@@ -76,7 +88,7 @@ def shares(rows: list[dict]) -> dict:
         95th percentiles across families of `sd_rho_nulo` (None when no family was measured).
     """
     got = pd.DataFrame(rows)
-    spread = pd.to_numeric(got["sd_rho_nulo"]).dropna()
+    spread = cast(pd.Series, pd.to_numeric(got["sd_rho_nulo"])).dropna()
     low, mid, high = np.percentile(spread, [5, 50, 95]) if len(spread) else (None, None, None)
     return ({name: float((got["casilla"] == name).mean()) for name in CELLS}
             | {name: float((got["estado"] == name).mean()) for name in STATES}

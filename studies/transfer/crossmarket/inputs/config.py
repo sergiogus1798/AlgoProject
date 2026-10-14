@@ -1,6 +1,7 @@
 """The single source of truth for every tunable of the study; it computes nothing."""
 
 from pathlib import Path
+from typing import Any
 
 from core.study import config as study_config
 
@@ -8,7 +9,7 @@ from core.study import config as study_config
 FILE = Path(__file__).parents[1] / "config.yaml"
 
 
-def load(overrides: list[str] | None = None) -> dict:
+def load(overrides: list[str] | None = None) -> dict[str, Any]:
     """Read config.yaml and apply dotted-key overrides.
 
     Args:

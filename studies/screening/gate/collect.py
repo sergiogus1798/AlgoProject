@@ -3,18 +3,30 @@
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import TypedDict
 
 import pandas as pd
 
 from core import bankfile, bankframes, exportdrv, fanout, sqxfile, sqxstats, tradepack, tradestore
 from core.identities import many as identities_many
 from core.sqxview import LABEL, VIEW, dof_ratio, measured
+from core.tradepack import Pack
 
 PREFIX = {"IS": "IS__", "OOS": "OOS__"}   # which databank a staged file came from
 # 🔬 2026-10-01, 2 x 5,130 strategies: the identities were hashed twice in one thread (33 s)
 # and the 10,260 CSVs parsed in one (35 s) of a 204 s harvest whose JVM takes 45.
 WORKERS = 8
 _STAGED: dict[str, Path] = {}   # what tables() hands its forked children
+
+
+class SideTables(TypedDict):
+    """One databank's tables, as `tables` returns them."""
+    metrics: pd.DataFrame
+    trades: pd.DataFrame
+    equity: pd.DataFrame
+    seen: int
+    sample: str
+    packed: Pack
 
 
 def identities(files: list[Path]) -> dict[Path, str]:
@@ -76,7 +88,7 @@ def metrics(read: dict[str, tuple]) -> tuple[pd.DataFrame, str]:
 
 
 def tables(sides: dict[str, list[Path]], work: Path,
-           exports: dict[str, Path] | None = None, banks: dict[str, dict] | None = None) -> dict:
+           exports: dict[str, Path] | None = None, banks: dict[str, dict] | None = None) -> dict[str, SideTables]:
     """Stage both databanks' strategies once, and take everything they hold in one pass.
 
     Args:
@@ -106,7 +118,9 @@ def tables(sides: dict[str, list[Path]], work: Path,
     staged.mkdir(parents=True, exist_ok=True)
     known = identities([f for files in sides.values() for f in files])
     direct = all((banks or {}).get(side) for side in sides)
-    ids, side_of, src = {}, {}, {}
+    ids: dict[str, str] = {}
+    side_of: dict[str, str] = {}
+    src: dict[str, Path] = {}
     for side, files in sides.items():
         for f in files:
             stem = PREFIX[side] + f.stem
@@ -128,6 +142,7 @@ def tables(sides: dict[str, list[Path]], work: Path,
             exported.result()
     if direct:       # the bank must be the result the .sqx files hold, not just the same strategies
         for side in sides:
+            assert banks is not None    # `direct` with a side to read means every side has a bank
             block = {v: k for k, v in LABEL.items()}[read[side][1]]
             why = bankframes.unbound(banks[side], {stem[len(PREFIX[side]):]: got[stem][0]
                                                     for stem in ids if side_of[stem] == side}, block)
@@ -135,13 +150,14 @@ def tables(sides: dict[str, list[Path]], work: Path,
                 print(f"{side}: .abk no vale: {why}")
                 return tables(sides, work, exports, None)
 
-    out = {}
+    out: dict[str, SideTables] = {}
     for side in sides:
         # Each side's CSVs under the strategies' own names, so the pack names its rows as
         # the databank's export does: the prefix is constant, the order is the same.
         packed = (exports or {}).get(side, work / side) / "trades.parquet"
         packed.parent.mkdir(parents=True, exist_ok=True)
         if direct:
+            assert banks is not None
             counts = bankfile.pack(banks[side], packed, False, {f.stem for f in sides[side]})
         else:
             csvs = work / f"csv_{side}"
@@ -151,17 +167,17 @@ def tables(sides: dict[str, list[Path]], work: Path,
             counts = tradepack.pack(sorted(csvs.glob("*.csv")), packed, per_market=False)
         drawn = pd.read_parquet(packed)
         mine, label = read[side]
-        mine = mine.assign(identity=mine["Strategy Name"].map(ids),
+        mine = mine.assign(identity=pd.Series(mine["Strategy Name"]).map(ids),
                            **{"Strategy Name": mine["Strategy Name"].str[len(PREFIX[side]):]})
         own = {stem[len(PREFIX[side]):]: i for stem, i in ids.items() if side_of[stem] == side}
         equity = pd.DataFrame({ids[s]: c for s, c in curves.items() if side_of[s] == side})
-        out[side] = {
-            "metrics": mine.set_index("identity"),
-            "trades": drawn.assign(identity=drawn["strategy"].astype(str).map(own)).drop(
+        out[side] = SideTables(
+            metrics=mine.set_index("identity"),
+            trades=drawn.assign(identity=pd.Series(drawn["strategy"]).astype(str).map(own)).drop(
                 columns=["strategy"]),
-            "equity": equity.rename_axis("day").reset_index().melt(
+            equity=equity.rename_axis("day").reset_index().melt(
                 id_vars="day", var_name="identity", value_name="equity").dropna(),
-            "seen": len(mine), "sample": label, "packed": counts}
+            seen=len(mine), sample=label, packed=counts)
     # One set of categories over both sides, as one frame of both had: two sides that differ
     # in a text column would otherwise come out of their concat as plain text.
     for c in tradestore.CATEGORICAL:

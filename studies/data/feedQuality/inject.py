@@ -7,6 +7,7 @@ The design is the owner's (answer 2.16): amplitudes {0.5..3}·K, 500 per cell fo
 
 import argparse
 import json
+from typing import Any, TypedDict, cast
 
 import numpy as np
 import pandas as pd
@@ -26,7 +27,7 @@ CFG: dict = {}
 SHARE = [1.0]
 
 
-def positions(b: dict, got: dict, counted: np.ndarray, n: int, rng: np.random.Generator
+def positions(b: dict, got: detect.Measured, counted: np.ndarray, n: int, rng: np.random.Generator
               ) -> np.ndarray:
     """Bars where an event can be planted without touching the session edge or a real spike."""
     at = b["at"]
@@ -44,14 +45,27 @@ def positions(b: dict, got: dict, counted: np.ndarray, n: int, rng: np.random.Ge
     return rng.permutation(np.array(spaced))[:n]
 
 
-def plant(b: dict, got: dict, k: float, plan: pd.DataFrame, rng: np.random.Generator) -> dict:
+class FeedRun(TypedDict):
+    """The detector's score on one feed with the whole grid planted: recall table, false marks and event counts."""
+
+    feed: str
+    K: float
+    table: list[dict[str, Any]]
+    merged_excluded: int
+    false_marks: int
+    false_marks_near_k: int
+    real_before: int
+    real_after: int
+
+
+def plant(b: dict, got: detect.Measured, k: float, plan: pd.DataFrame, rng: np.random.Generator) -> dict[str, Any]:
     """A copy of the bars with every planned event written in."""
     o, h, low, c = (b[x].copy() for x in "ohlc")
     shift, keep, sig = np.zeros(len(c)), np.ones(len(c), bool), got["sigma"]
     # Jumps that stay come in pairs, in time order, of equal size and opposite sign — each
     # 1.5 K times the larger of the two scales — so the price level comes back exactly: the
     # tick floor moves with the price, and unpaired jumps walked it 14 % off on silver.
-    stay = plan[plan["cls"] == "sin vuelta"].sort_values("i")
+    stay = cast(pd.DataFrame, plan[plan["cls"] == "sin vuelta"]).sort_values("i")
     size = {}
     for a, b_ in zip(stay.index[::2], stay.index[1::2]):
         x = rng.choice([-1.0, 1.0]) * stay.loc[[a, b_], "param"].max() * k * max(
@@ -111,7 +125,7 @@ def found(ev: pd.DataFrame, cls: str, at_i: int, p: float) -> tuple[bool, bool]:
     return len(hit) > 0, bool((hit["cls"] == "vuelta").any())
 
 
-def run_feed(feed: str) -> dict:
+def run_feed(feed: str) -> FeedRun:
     """Plant the whole grid in one feed and score the detector on it."""
     rng = np.random.default_rng(17)
     cal = json.loads((feed_quality_dir() / "calibration.json").read_text())[feed]
@@ -122,7 +136,7 @@ def run_feed(feed: str) -> dict:
     counted = session.without_hours(mask, CFG["rollover_hours"])
     cells = [(cls, p, max(1, int(n * SHARE[0]))) for cls, p, n in GRID]
     where = positions(b, got, counted, sum(n for *_, n in cells), rng)
-    plan = pd.DataFrame([(cls, p) for cls, p, n in cells for _ in range(n)], columns=["cls", "param"])
+    plan = pd.DataFrame([(cls, p) for cls, p, n in cells for _ in range(n)], columns=pd.Index(["cls", "param"]))
     plan["i"] = where[:len(plan)]
     plan["at"] = b["at"][plan["i"]]
     plan["merged"] = [merged(b, c, p, i) for c, p, i in plan[["cls", "param", "i"]].itertuples(index=False)]
@@ -137,23 +151,24 @@ def run_feed(feed: str) -> dict:
     def outside(ev: pd.DataFrame) -> pd.DataFrame:
         """The events that start outside every planted event's footprint."""
         at = ev["start_min"].to_numpy()
-        return ev[np.searchsorted(lo_s, at, "right") - np.searchsorted(hi_s, at, "right") == 0]
+        return cast(pd.DataFrame, ev[np.searchsorted(lo_s, at, "right") - np.searchsorted(hi_s, at, "right") == 0])
 
     key = ["kind", "start_min"]
     real_b, real_a = outside(before), outside(after)
     new = real_a.merge(real_b[key], on=key, how="left", indicator=True)
     new = new[new["_merge"] == "left_only"]
-    j = np.searchsorted(b["at"], new["start_min"].to_numpy())
+    j = np.searchsorted(b["at"], cast(pd.Series, new["start_min"]).to_numpy())
     was = np.where(new["kind"] == "mecha", got["z_wick"][j], got["z_close"][j])
     scored = plan[~plan["merged"]]
     table = scored.groupby(["cls", "param"], sort=False).agg(
         n=("found", "size"), recall=("found", "mean"), as_revert=("as_revert", "mean")).reset_index()
-    return {"feed": feed, "K": k, "table": table.to_dict("records"),
-            "merged_excluded": int(plan["merged"].sum()), "false_marks": len(new), "false_marks_near_k": int(np.sum(was >= 0.95 * k)),
-            "real_before": len(real_b), "real_after": len(real_a)}
+    return FeedRun(feed=feed, K=k, table=table.to_dict("records"),
+                   merged_excluded=int(plan["merged"].sum()), false_marks=len(new),
+                   false_marks_near_k=int(np.sum(was >= 0.95 * k)),
+                   real_before=len(real_b), real_after=len(real_a))
 
 
-def accept(res: dict) -> dict:
+def accept(res: FeedRun) -> dict[str, bool]:
     """The owner's acceptance criteria (2.16), each a bool."""
     t = pd.DataFrame(res["table"]).set_index(["cls", "param"])
     r = t["recall"]
@@ -183,9 +198,9 @@ def main() -> None:
     feeds = a.feed or inputs.feeds()
     out = {}
     for feed, res in fanout.run(run_feed, {f: 1 for f in feeds}, a.workers):
-        res["accept"] = accept(res)
-        out[feed] = res
-        failed = [k for k, v in res["accept"].items() if not v]
+        ok = accept(res)
+        out[feed] = {**res, "accept": ok}
+        failed = [k for k, v in ok.items() if not v]
         print(f"{feed:26s} K={res['K']}  nuevas {res['false_marks']} (a < 5 % de K: "
               f"{res['false_marks_near_k']})  real {res['real_before']}"
               f"→{res['real_after']}  {'ACEPTA' if not failed else 'FALLA: ' + '; '.join(failed)}")

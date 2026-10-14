@@ -5,8 +5,10 @@ import argparse
 import json
 import sys
 import zlib
+from typing import cast
 
 import numpy as np
+import pandas as pd
 
 from core import assetdata
 from core.barstore import source as read_bars
@@ -36,8 +38,8 @@ def main() -> None:
         sys.exit(REFUSED)
     feed = assetdata.load(symbol)["sqx_symbol"]
     span = inputs.window(symbol)
-    bars = read_bars(feed, ["Open", "High", "Low", "Close"])
-    bars = bars[(bars.index >= span[0]) & (bars.index < span[1])]
+    bars = cast(pd.DataFrame, read_bars(feed, ["Open", "High", "Low", "Close"]))
+    bars = cast(pd.DataFrame, bars[(bars.index >= span[0]) & (bars.index < span[1])])
     costs = reprice.costs(feed, inputs.SEGMENT)
     for i, (name, batch) in enumerate(mothers.items()):
         print(f"PROGRESS {100 * i // len(mothers)} {name}", flush=True)

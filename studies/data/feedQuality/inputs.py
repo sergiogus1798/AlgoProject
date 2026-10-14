@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -16,7 +17,7 @@ CONFIG = Path(__file__).with_name("config.yaml")
 PRICES = ["Open", "High", "Low", "Close"]
 
 
-def config(overrides: list[str]) -> dict:
+def config(overrides: list[str]) -> dict[str, Any]:
     """Every knob, with command-line overrides applied.
 
     Args:
@@ -67,7 +68,7 @@ def tick(b: dict, years: list[int]) -> float:
     return float(moves[moves > 0].min())
 
 
-def bars(feed: str) -> dict:
+def bars(feed: str) -> dict[str, Any]:
     """One feed's M1 bars as plain arrays.
 
     Args:
@@ -78,7 +79,7 @@ def bars(feed: str) -> dict:
         "o", "h", "l", "c"}.
     """
     frame = source(feed, PRICES)
-    return {"t": frame.index, "at": scale.minutes(frame.index),
+    return {"t": frame.index, "at": scale.minutes(cast(pd.DatetimeIndex, frame.index)),
             **{k: frame[col].to_numpy() for k, col in zip("ohlc", PRICES)}}
 
 

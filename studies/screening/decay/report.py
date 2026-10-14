@@ -25,7 +25,7 @@ COLUMNS = ["name", "sharpe_is", "sharpe_oos", "retention", "t", "years_positive"
 STATE = {"MANTENER": "pass", "DUDOSA": "watch", "DESCARTAR": "fail"}
 
 
-def result(rows: pd.DataFrame, source: dict, started: float) -> dict:
+def result(rows: pd.DataFrame, source: dict, started: float) -> dict[str, Any]:
     """The databank's decay as one result: the counts, retention, templates, the keepers.
 
     Args:
@@ -40,11 +40,11 @@ def result(rows: pd.DataFrame, source: dict, started: float) -> dict:
     """
     counts = rows.verdict.value_counts()
     kept = rows[rows.verdict == "MANTENER"]
-    by = rows.assign(plantilla=rows.name.str.split(".").str[0]).groupby("plantilla")
-    per_template = pd.DataFrame({"n": by.size(),
+    by = pd.DataFrame(rows.assign(plantilla=rows.name.str.split(".").str[0])).groupby("plantilla")
+    per_template = pd.DataFrame(pd.DataFrame({"n": by.size(),
                                  "mantener": by.verdict.apply(lambda v: (v == "MANTENER").sum()),
                                  "descartar": by.verdict.apply(lambda v: (v == "DESCARTAR").sum())}
-                                ).reset_index()
+                                ).reset_index())
     return envelope.envelope(
         MODULE, None, None, {"split": source["split"], "end": source["end"]}, started,
         [envelope.tab("verdicts", "Veredicto", [
@@ -55,10 +55,10 @@ def result(rows: pd.DataFrame, source: dict, started: float) -> dict:
             blocks.table("Retención del Sharpe", pd.DataFrame(
                 [["mediana", rows.retention.median()], ["p90", rows.retention.quantile(.9)],
                  ["máximo", rows.retention.max()], ["t máximo", rows.t.max()]],
-                columns=["", "valor"]),
+                columns=pd.Index(["", "valor"])),
                 "Con t por debajo de 2 el Sharpe fuera de muestra no se distingue de cero."),
             blocks.table("Por plantilla", per_template),
-            blocks.table("Las que pasan todo", kept[COLUMNS])],
+            blocks.table("Las que pasan todo", pd.DataFrame(kept[COLUMNS]))],
             note=f"IS hasta {source['split']} · OOS {source['split']} → {source['end']} · "
                  f"{source['duplicates_dropped']} duplicadas (misma curva diaria de P&L bajo "
                  f"otro nombre) descartadas antes de contar.")],
@@ -81,8 +81,8 @@ def joined(before: pd.Series, after: pd.Series, split: str) -> pd.Series:
         `diff()`, so two curves that each restart at the capital must not meet as a jump.
     """
     cut = pd.Timestamp(split)
-    daily = pd.concat([before.diff().dropna()[lambda s: s.index < cut],
-                       after.diff().dropna()[lambda s: s.index >= cut]])
+    daily = pd.concat([pd.Series(before.diff().dropna()[lambda s: s.index < cut]),
+                       pd.Series(after.diff().dropna()[lambda s: s.index >= cut])])
     return daily.cumsum()
 
 
@@ -103,7 +103,8 @@ def read_all(fn: Callable[[Any], Any], files: list) -> list:
     return [x for i in sorted(done) for x in done[i]]
 
 
-def curves(folder: Path, built: Path | None, split: str, strategy: str | None) -> dict:
+def curves(folder: Path, built: Path | None, split: str,
+           strategy: str | None) -> dict[str, pd.Series]:
     """Each strategy's daily equity, read from its .sqx, with its build's IS when given.
 
     Args:
@@ -174,15 +175,15 @@ def main() -> None:
         return
     clone = dedupe.curve_duplicates(found)
     dropped = int(clone.sum())
-    kept = {name: c for name, c in found.items() if not clone[name]}
+    kept = {name: c for name, c in found.items() if not bool(clone[name])}
     rows = decay.table(kept, a.split, a.end)
     identity = dict(zip(found, read_all(sqxfile.identity, [folder / f"{n}.sqx" for n in found])))
     source = {"split": a.split, "end": a.end, "duplicates_dropped": dropped}
     got = result(rows, source, started)
     title = f"Decaimiento — {a.project} / {a.databank}"
     output.population(out, "decay", got, title)
-    table = rows[COLUMNS].rename(columns={"name": "strategy"})
-    table.insert(1, "identity", table["strategy"].map(identity))
+    table = pd.DataFrame(rows[COLUMNS]).rename(columns={"name": "strategy"})
+    table.insert(1, "identity", pd.Series(table["strategy"]).map(identity))
     verdicts.write(out, table, folder, " ".join(sys.argv), [])
     print(markdown.render(got, title))
     print(f"{len(rows)} estrategias ({dropped} duplicadas de trades idénticos descartadas "

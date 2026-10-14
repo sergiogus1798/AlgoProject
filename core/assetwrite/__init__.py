@@ -4,6 +4,7 @@ A folder since 2026-09-29 (rule 1): `brokers.py` holds `set_brokers()`, re-expor
 """
 
 import shutil
+from collections.abc import Mapping
 from datetime import date
 from pathlib import Path
 from typing import Any, TypedDict
@@ -134,8 +135,8 @@ def rename_cost(symbol: str, old: str, new: str) -> None:
         reindex()
 
 
-def create(symbol: str, cls: str, broker: str, sqx_symbol: str, session: str,
-           instrument: dict) -> dict[str, str]:
+def create(symbol: str, cls: str, broker: str, sqx_symbol: str, session: str | None,
+           instrument: Mapping[str, Any]) -> dict[str, str]:
     """Add an asset to the library, with every decision still open.
 
     Args:

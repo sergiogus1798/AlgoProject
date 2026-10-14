@@ -1,5 +1,7 @@
 """The readings of "passes step 20" the spec leaves open, one entry each, for the owner to choose."""
 
+from collections.abc import Mapping
+
 import pandas as pd
 
 from studies.closing.blindJoint.pieces import PIECES
@@ -54,10 +56,10 @@ def kept(states: pd.DataFrame, combine: str) -> list[str]:
     Returns:
         Their names, in the frame's order.
     """
-    return [m for m, row in states.iterrows() if COMBINE[combine](row[list(PIECES)].tolist())]
+    return [str(m) for m, row in states.iterrows() if COMBINE[combine](row[list(PIECES)].tolist())]
 
 
-def verdicts(states: pd.DataFrame, named: dict[str, list[str]]) -> pd.DataFrame:
+def verdicts(states: pd.DataFrame, named: Mapping[str, list[str] | None]) -> pd.DataFrame:
     """Every complete mother's call under every reading.
 
     Args:

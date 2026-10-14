@@ -1,5 +1,8 @@
 """Everything one run of the cross-market study reads, assembled once for the whole export."""
 
+from pathlib import Path
+from typing import TypedDict, cast
+
 import pandas as pd
 
 from core import barstore, tradestore
@@ -30,10 +33,26 @@ def within(trades: pd.DataFrame, feeds: list[str]) -> pd.DataFrame:
             end = pd.Timestamp(span["to"]) + pd.Timedelta(days=1)
             keep &= (trades["Symbol"] != feed) | ((trades["Open time"] >= span["from"])
                                                   & (trades["Close time"] < end))
-    return trades[keep]
+    return cast(pd.DataFrame, trades[keep])
 
 
-def load(project: str, databank: str, asset: str, export: str) -> dict:
+class Inputs(TypedDict):
+    """What one.run() and many.run() read: the export, its universe, every feed's bars, names and identities."""
+
+    project: str
+    databank: str
+    export: str
+    asset: str
+    path: Path
+    universe: markets.Universe
+    trades: pd.DataFrame
+    strategies: list[str]
+    outside: int
+    identity: dict[str, str | None]
+    bars: dict[str, pd.DataFrame]
+
+
+def load(project: str, databank: str, asset: str, export: str) -> Inputs:
     """The inputs one.run() and many.run() read.
 
     Args:
@@ -54,9 +73,9 @@ def load(project: str, databank: str, asset: str, export: str) -> dict:
     whole = tradestore.read(packed)
     trades = within(whole, markets.feeds(universe))
     names = sorted(trades.loc[trades["Symbol"] == universe["main"], "strategy"].unique())
-    return {"project": project, "databank": databank, "export": export, "asset": asset,
-            "path": packed, "universe": universe, "trades": trades, "strategies": names,
-            "outside": len(whole) - len(trades),
-            "identity": identity.resolve(project, databank, names, packed.parent, export),
-            "bars": {feed: barstore.read(feed, universe["timeframe"])
-                     for feed in markets.feeds(universe)}}
+    return Inputs(project=project, databank=databank, export=export, asset=asset,
+                  path=packed, universe=universe, trades=trades, strategies=names,
+                  outside=len(whole) - len(trades),
+                  identity=identity.resolve(project, databank, names, packed.parent, export),
+                  bars={feed: barstore.read(feed, universe["timeframe"])
+                        for feed in markets.feeds(universe)})

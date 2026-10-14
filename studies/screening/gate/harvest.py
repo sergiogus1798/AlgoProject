@@ -13,6 +13,7 @@ import pandas as pd
 
 from core import fanout, manifest, sqxfile
 from core.paths import MASTER, databank_dir, export_dir, harvest_dir, worker_dir
+from core.tradepack import Pack
 from sqx.export import export_trades, membank
 from studies.screening.gate import collect, pairing
 
@@ -20,7 +21,7 @@ SAMPLE_SEED = 20260923      # a subset harvest is a sample, and a sample has to 
 
 
 def export(folder: Path, a: argparse.Namespace, databank: str, files: list[Path],
-           packed: dict, install: Path, began: float) -> None:
+           packed: Pack, install: Path, began: float) -> None:
     """Finish one databank's trade export beside the `trades.parquet` the harvest packed.
 
     Args:

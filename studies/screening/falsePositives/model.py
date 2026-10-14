@@ -63,7 +63,7 @@ def monkeys(donor: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict, knobs: dict
     """
     parts, corr, rung, draws = [], 1.0, knobs["rung"], knobs["per_donor"]
     for i, sample in enumerate(SAMPLES):
-        own = donor[donor["sample"] == sample].sort_values("Open time").reset_index(drop=True)
+        own = pd.DataFrame(donor[donor["sample"] == sample]).sort_values("Open time").reset_index(drop=True)
         kept = simulate.fixed(own, frame, nullcfg)
         corr = min(corr, kept["checks"]["corr"])
         rng = np.random.default_rng([nullcfg["nulls"]["seed"], simulate._stable(key), TAG, i])
@@ -138,6 +138,6 @@ def planted(oos: pd.DataFrame, edge: float) -> tuple[pd.DataFrame, pd.Series]:
         keeps paying.
     """
     by = oos.groupby("identity", sort=False)
-    add = edge * by["excess"].transform("std") + by["cost"].transform("mean")
+    add = edge * pd.Series(by["excess"].transform("std")) + pd.Series(by["cost"].transform("mean"))
     return (oos.assign(pnl=oos["pnl"] + add, excess=oos["excess"] + add),
             add.groupby(oos["identity"], sort=False).first())

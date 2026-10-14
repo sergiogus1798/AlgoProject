@@ -1,6 +1,7 @@
 """One strategy's decay as the contract's data: its verdict, its numbers and its OOS years."""
 
 import time
+from typing import Any
 
 import pandas as pd
 
@@ -17,7 +18,7 @@ MEANING = {"MANTENER": "El Sharpe fuera de muestra es significativo, la mayoría
                         "debe su beneficio a un solo trimestre."}
 
 
-def run(strategy: str, inputs: dict, cfg: dict) -> dict:
+def run(strategy: str, inputs: dict, cfg: dict) -> dict[str, Any]:
     """The decay of one strategy, the same row the population run gives it.
 
     Args:
@@ -40,7 +41,7 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
          ["años OOS positivos", f"{row['years_positive']} de {row['years']}"],
          ["peor año OOS", row["worst_year"]],
          ["concentración en el mejor trimestre", row["concentration"]],
-         ["beneficio neto OOS", row["net_profit_oos"]]], columns=["", "valor"])
+         ["beneficio neto OOS", row["net_profit_oos"]]], columns=pd.Index(["", "valor"]))
     return envelope.envelope(
         MODULE, strategy, inputs["identity"], cfg, started,
         [envelope.tab("decay", "Decaimiento", [

@@ -1,6 +1,7 @@
 """Level 3c of the gate: the strategy against monkeys drawn inside R3's drift window."""
 
 import os
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -21,7 +22,7 @@ HEADLINE = "timing"    # the rung `z_mono` is: same trades, sides and holds, dra
 _SHARED: dict = {}
 
 
-def _one(identity: str) -> dict:
+def _one(identity: str) -> dict[str, Any]:
     """One strategy's monkeys, in a worker that inherited its inputs by fork.
 
     Args:
@@ -87,7 +88,7 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         back as `monkey.seed` it replays the run bit for bit. Only `z_mono` is judged.
     """
     if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
-        return pd.DataFrame(index=alive, columns=list(FACTS), dtype=float)
+        return pd.DataFrame(index=alive, columns=pd.Index(FACTS), dtype=float)
     bars, knobs = data["bars"], cfg["monkey"]
     seed = resample.root(knobs["seed"])
     inside = np.arange(len(bars))[bars.index.slice_indexer(*data["market"]["windows"]["OOS"])]
@@ -99,11 +100,11 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
                    adds={edge: add.to_dict() for edge, add in data.get("shifts", {}).items()})
     lookup.warm()
     sizes = {identity: len(own) for identity, own in _SHARED["oos"].items()}
-    rows = dict(fanout.run(_one, sizes, os.cpu_count()))
+    rows = dict(fanout.run(_one, sizes, os.cpu_count() or 1))
     draws.save(data.get("out"), [d for identity in sorted(rows) for d in rows[identity].pop(DRAWS)])
     shifted = {identity: row.pop(SHIFTED) for identity, row in rows.items()}
     for edge in _SHARED["adds"]:
         data["shifted"][edge] = (pd.DataFrame.from_dict({i: got[edge] for i, got in shifted.items()}, orient="index")
-                                 .reindex(index=alive, columns=list(FACTS)).assign(mono_seed=float(seed)))
-    facts = pd.DataFrame.from_dict(rows, orient="index").reindex(index=alive, columns=list(FACTS))
+                                 .reindex(index=alive, columns=pd.Index(FACTS)).assign(mono_seed=float(seed)))
+    facts = pd.DataFrame.from_dict(rows, orient="index").reindex(index=alive, columns=pd.Index(FACTS))
     return facts.assign(mono_seed=float(seed))

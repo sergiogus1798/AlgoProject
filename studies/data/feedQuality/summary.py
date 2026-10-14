@@ -1,5 +1,7 @@
 """What one feed's anomalies add up to: counts by year and month, K*, the stable year, episodes."""
 
+from typing import Any, TypedDict, cast
+
 import numpy as np
 import pandas as pd
 
@@ -28,6 +30,24 @@ def _columns(ev: pd.DataFrame) -> dict[str, pd.Series]:
         "hueco en rollover": (ev["kind"] == "hueco") & (ev["cls"] == "rollover"),
         "caída del proveedor": ev["cls"] == OUTAGE,
         "cierre parcial": ev["cls"] == PARTIAL, "festivo": ev["cls"] == HOLIDAY}
+
+
+class Facts(TypedDict):
+    """The flat numbers of one feed that the preflight, the report and INDEX.md print."""
+
+    feed: str
+    K: Any
+    tick: float
+    session: Any
+    stable_from: int | None
+    grade: dict[str, str]
+    marked_per_year: float
+    per_year_median: dict[str, float]
+    residual_gaps_per_year: float
+    episodes: list[dict[str, Any]]
+    quiet_medians: dict[str, Any]
+    scanned_on: str
+    bars_to: str
 
 
 def counts(ev: pd.DataFrame, period: str) -> pd.DataFrame:
@@ -106,9 +126,9 @@ def episodes(monthly: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     for col in ("congelado", "hueco", "congelado en rollover", "hueco en rollover"):
         past = full[col].shift(1).rolling(ep["months"], min_periods=ep["months"]).median()
         hit = (full[col] > ep["factor"] * past) & (full[col] >= ep["min_events"])
-        rows += [{"mes": str(m), "columna": col, "sucesos": int(full[col][m]),
-                  "mediana previa": float(past[m])} for m in full.index[hit]]
-    return pd.DataFrame(rows, columns=["mes", "columna", "sucesos", "mediana previa"])
+        rows += [{"mes": str(m), "columna": col, "sucesos": int(cast(Any, full[col])[m]),
+                  "mediana previa": float(cast(Any, past)[m])} for m in full.index[hit]]
+    return pd.DataFrame(rows, columns=pd.Index(["mes", "columna", "sucesos", "mediana previa"]))
 
 
 def residual_gaps(yearly: pd.DataFrame, cfg: dict, last_full_year: int) -> float:

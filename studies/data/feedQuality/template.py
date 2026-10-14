@@ -3,6 +3,7 @@
 import re
 import zipfile
 from pathlib import Path
+from typing import TypedDict
 
 from core.paths import MASTER, WORKERS, databank_dir
 from sqx.projects.orders import PENDING, PORTFOLIO, carried
@@ -11,6 +12,15 @@ from sqx.projects.orders import PENDING, PORTFOLIO, carried
 # attributes in no fixed order, so `key=` is not always the first one.
 EXIT = re.compile(r'<Param\b[^>]*\bkey="#(StopLoss\.StopLoss|ProfitTarget\.ProfitTarget|'
                   r'TrailingStop\.TrailingStop)#"[^>]*>\s*<Formula key="SQ\.Formulas\.[\w.]*?(\.None)?"')
+
+
+class Rules(TypedDict):
+    """What a strategy's own orders say about the bars it fills on: pending entries, live exit orders, stop, deciding column."""
+
+    pending: bool
+    exit_orders: bool
+    stop: bool
+    column: str
 
 
 def find(install: Path, project: str, databank: str, name: str) -> Path | None:
@@ -27,7 +37,7 @@ def find(install: Path, project: str, databank: str, name: str) -> Path | None:
     return None
 
 
-def rules(strategy: Path) -> dict:
+def rules(strategy: Path) -> Rules:
     """Which of the feed's columns decides whether this strategy's trades touch an anomaly.
 
     Args:
@@ -44,6 +54,6 @@ def rules(strategy: Path) -> dict:
     live = {key for key, none in EXIT.findall(text) if not none}
     pending = bool(carried(strategy) & set(PENDING))
     exit_orders = bool(live)
-    return {"pending": pending, "exit_orders": exit_orders,
-            "stop": bool(live & {"StopLoss.StopLoss", "TrailingStop.TrailingStop"}),
-            "column": "mecha" if pending or exit_orders else "cierre"}
+    return Rules(pending=pending, exit_orders=exit_orders,
+                 stop=bool(live & {"StopLoss.StopLoss", "TrailingStop.TrailingStop"}),
+                 column="mecha" if pending or exit_orders else "cierre")

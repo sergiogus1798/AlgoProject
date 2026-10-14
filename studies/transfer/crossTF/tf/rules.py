@@ -1,5 +1,7 @@
 """T0 to T4 and the verdict per mother: from measured siblings to pass, limbo or fail, with why."""
 
+from typing import Any, TypedDict, cast
+
 import numpy as np
 import pandas as pd
 
@@ -39,13 +41,13 @@ def few(n: pd.Series, least: int, reason: str = "few_trades") -> pd.Series:
 def centre(values: pd.Series, pair: pd.Series, least: int) -> pd.Series:
     """The median of each timeframe pair's population, NaN for one of fewer than `least`."""
     by = values.groupby(pair)
-    return by.transform("median").where(by.transform("count") >= least)
+    return by.transform("median").where(cast(pd.Series, by.transform("count")) >= least)
 
 
 def percentile(values: pd.Series, pair: pd.Series, least: int) -> pd.Series:
     """Where each value stands in its pair's population, 0..1; NaN for one of fewer than `least`."""
     by = values.groupby(pair)
-    return by.rank(pct=True).where(by.transform("count") >= least)
+    return by.rank(pct=True).where(cast(pd.Series, by.transform("count")) >= least)
 
 
 def z_frec(n_mother: pd.Series, n_sibling: pd.Series, phi: pd.Series, m_pop: pd.Series) -> pd.Series:
@@ -85,7 +87,19 @@ def _both(states: pd.Series, expected: int) -> str:
     return "pass" if full and (states == "pass").all() else "limbo"
 
 
-def mother(rows: pd.DataFrame, expected: int, low_ret: float) -> dict:
+class Mother(TypedDict):
+    """§6 for one mother: her three tests, the far-sibling brake, the phase-1 state, the final state and why."""
+
+    t1: str
+    t2a: str
+    t2b: str
+    t3: str
+    phase1: str
+    state: str
+    why: str
+
+
+def mother(rows: pd.DataFrame, expected: int, low_ret: float) -> Mother:
     """§6 for one mother, from her siblings' rows.
 
     Args:
@@ -117,18 +131,18 @@ def mother(rows: pd.DataFrame, expected: int, low_ret: float) -> dict:
     s2b = _both(b, expected)
     brakes = bool(((far["t2a_why"] == "") & (far["t2a"] == "fail")).any())
     phase1 = "limbo" if s2a == "pass" and brakes else s2a
-    worst = max((s1, s2a, s2b), key=RANK.get)
+    worst = max((s1, s2a, s2b), key=lambda s: RANK[s])
     state = "limbo" if worst == "pass" and brakes else worst
     lone = lambda s: len(s) < expected and len(s) > 0 and bool((s == "fail").all())
     said = [w for w, hit in (("frequency", s1 == "fail"), ("isolated_peak_oos1", s2a == "fail"),
                              ("isolated_peak_build", s2b == "fail"), ("far_brakes", brakes),
                              ("t2a_lone_fail", lone(a)), ("t2b_lone_fail", lone(b))) if hit]
     if state == "limbo":
-        said += sorted({f"{r.timeframe}:{w}" for r in near.itertuples()
+        said += sorted({f"{r.timeframe}:{w}" for r in cast(Any, near.itertuples())
                         for w in (r.t2a_why, r.t2b_why, r.t1_why) if w})
         said += [f"neighbours={len(near)}/{expected}"] if len(near) < expected else []
-    return {"t1": s1, "t2a": s2a, "t2b": s2b, "t3": "limbo" if brakes else "pass",
-            "phase1": phase1, "state": state, "why": ";".join(said)}
+    return Mother(t1=s1, t2a=s2a, t2b=s2b, t3="limbo" if brakes else "pass",
+                  phase1=phase1, state=state, why=";".join(said))
 
 
 def overlap(mother_open: np.ndarray, sibling_open: np.ndarray, bar_seconds: float) -> float:

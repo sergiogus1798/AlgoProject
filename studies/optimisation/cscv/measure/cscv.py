@@ -1,5 +1,6 @@
 """Combinatorially symmetric cross-validation off block sums: each half of the blocks chooses, the other judges."""
 
+from typing import Any, TypedDict
 import itertools
 
 import numpy as np
@@ -32,7 +33,15 @@ def partitions(blocks: int) -> np.ndarray:
     return member
 
 
-def sums(values: np.ndarray, blocks: int) -> dict:
+class Sums(TypedDict):
+    """Block sums of a panel: the weeks in each block, the sums and the sums of squares."""
+
+    n: np.ndarray
+    s1: np.ndarray
+    s2: np.ndarray
+
+
+def sums(values: np.ndarray, blocks: int) -> Sums:
     """Each block's rows, column sums and sums of squares: all a partition ever reads.
 
     Args:
@@ -76,7 +85,7 @@ def sharpe(n: np.ndarray, s1: np.ndarray, s2: np.ndarray, safe: bool) -> np.ndar
     return out
 
 
-def edges(got: dict, reach: float) -> tuple[float, float]:
+def edges(got: Sums, reach: float) -> tuple[float, float]:
     """The range of half-sample Sharpes worth a bin: the full-sample ones, widened.
 
     Args:
@@ -129,8 +138,8 @@ def _rows(train: np.ndarray, test: np.ndarray, track: int, lo: float, per_bin: f
             own[to + i], own_omega[to + i] = mine, (under + 1) / (width + 1)
 
 
-def run(got: dict, member: np.ndarray, chunk: int, bins: int, reach: float,
-        track: int | None = None) -> dict:
+def run(got: Sums, member: np.ndarray, chunk: int, bins: int, reach: float,
+        track: int | None = None) -> dict[str, Any]:
     """Choose by Sharpe in one half and score in the other, for every partition.
 
     Args:

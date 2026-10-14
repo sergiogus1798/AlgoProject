@@ -1,5 +1,7 @@
 """The spread as measured: per minute, per day beside Dukascopy's volatility, per year, per hour."""
 
+from typing import Any, cast
+
 import pandas as pd
 
 BPS = 1e4
@@ -23,18 +25,18 @@ def days(m: pd.DataFrame, vol: pd.DataFrame, min_minutes: int) -> pd.DataFrame:
         Indexed by day: `rel` the mean relative spread over the day's minutes, `spread` the
         mean spread in price, `minutes`, and `rv`, `price` from Dukascopy.
     """
-    day = m.index.normalize()
+    day = cast(Any, m.index).normalize()
     got = pd.DataFrame({"rel": relative(m).groupby(day).mean(),
                         "spread": m["spread_open"].groupby(day).mean(),
                         "minutes": m["n"].groupby(day).size()})
-    got = got[got["minutes"] >= min_minutes].join(vol, how="inner")
-    return got[got["rv"] > 0]
+    got = cast(pd.DataFrame, got[got["minutes"] >= min_minutes]).join(vol, how="inner")
+    return cast(pd.DataFrame, got[got["rv"] > 0])
 
 
 def yearly(m: pd.DataFrame, tick: float) -> pd.DataFrame:
     """The spread by calendar year, in points of `assets/`'s tick and in basis points of price."""
     rel, pts = relative(m) * BPS, m["spread_open"] / tick
-    year = m.index.year
+    year = cast(Any, m.index).year
     return pd.DataFrame({"puntos mediana": pts.groupby(year).median(),
                          "puntos media": pts.groupby(year).mean(),
                          "pb mediana": rel.groupby(year).median(),
@@ -51,16 +53,16 @@ def hours(m: pd.DataFrame) -> pd.Series:
         hours with them, so a trade at the rollover is charged the rollover's spread.
     """
     rel = relative(m)
-    return rel.groupby(m.index.hour).mean() / rel.mean()
+    return cast(pd.Series, rel.groupby(cast(Any, m.index).hour).mean()) / rel.mean()
 
 
 def week_grid(m: pd.DataFrame) -> pd.DataFrame:
     """Mean relative spread in basis points by weekday (rows) and hour (columns)."""
     rel = relative(m) * BPS
-    return rel.groupby([m.index.dayofweek, m.index.hour]).mean().unstack()
+    return rel.groupby([cast(Any, m.index).dayofweek, cast(Any, m.index).hour]).mean().unstack()
 
 
-def quantiles(values: pd.Series) -> dict:
+def quantiles(values: pd.Series) -> dict[str, float]:
     """The median to the 99th percentile and the mean, one entry each."""
     got = {f"p{int(q * 100)}": float(values.quantile(q)) for q in QUANTILES}
     return {**got, "media": float(values.mean())}

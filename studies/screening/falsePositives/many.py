@@ -2,6 +2,7 @@
 
 import json
 import time
+from typing import Any, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,7 @@ from engines.nulls import lookup, verdict
 from pipeline.autopilot import criteria
 from studies.screening.analysis import resample
 from studies.screening.falsePositives import chain, model
+from studies.screening.falsePositives.inputs import Loaded
 from studies.screening.gate.cascade import PREFIX
 
 MODULE = "studies.screening.falsePositives"
@@ -44,7 +46,7 @@ def _donor(key: str) -> pd.DataFrame | str:
     return drawn if corr >= verdict.RECONCILE_FLOOR else f"no reconcilia ({corr:.4f})"
 
 
-def population(inputs: dict, cfg: dict) -> tuple[pd.DataFrame, list[dict]]:
+def population(inputs: Loaded, cfg: dict) -> tuple[pd.DataFrame, list[dict]]:
     """The monkeys every population is made of, donor by donor.
 
     Args:
@@ -82,12 +84,31 @@ def population(inputs: dict, cfg: dict) -> tuple[pd.DataFrame, list[dict]]:
 def shares(rules: pd.DataFrame, order: list[str], state: str) -> pd.DataFrame:
     """Rule x population: the share of a step's entrants the rule alone leaves in `state`."""
     done = rules[rules["applied"]]
-    wide = (done[state] / done["n_in"]).groupby([done["label"], done["nivel"]]).first().unstack()
+    wide = pd.Series(done[state] / done["n_in"]).groupby([done["label"], done["nivel"]]).first().unstack()
     return (wide.reindex(index=list(dict.fromkeys(done["label"])), columns=order)
             .rename_axis("regla").reset_index())
 
 
-def run(inputs: dict, cfg: dict) -> dict:
+class Money(TypedDict):
+    """What the null monkeys earn per year in R: they must lose."""
+    monos: int
+    donantes: int
+    neto_medio_is_R_año: float
+    neto_medio_oos_R_año: float
+    con_neto_oos_positivo: float
+
+
+class Control(TypedDict):
+    """The control's result: the page, both rule tables, the donors left out, the facts."""
+    population: dict[str, Any]
+    funnel: pd.DataFrame
+    rules: pd.DataFrame
+    skipped: list[dict]
+    facts: pd.DataFrame
+    money: Money
+
+
+def run(inputs: Loaded, cfg: dict) -> Control:
     """Every population's funnel and what each rule alone does to each.
 
     Args:
@@ -108,7 +129,7 @@ def run(inputs: dict, cfg: dict) -> dict:
     edges = {NULL: 0.0} | {f"{edge:.2f}": edge for edge in cfg["population"]["edges"]}
     names, done = {edge: name for name, edge in edges.items()}, []
     got = chain.facts_edges(harvest, gate_cfg, tuple(edges.values()), lambda edge: (done.append(edge), envelope.progress(
-        40 + 45 * len(done) // len(edges), f"cadena, ventaja {names[edge]}")))
+        40 + 45 * len(done) // len(edges), f"cadena, ventaja {names[edge]}"))[1])
     facts = {name: got[edge] for name, edge in edges.items()}
     facts[REAL] = chain.facts8(inputs["real"], gate_cfg)
     walked = {name: chain.walk({"8": f}, list(f.index), steps, tags, inputs["batches"])
@@ -125,10 +146,10 @@ def run(inputs: dict, cfg: dict) -> dict:
     funnel["no_aplicado"] = [NOT_APPLIED.get(s, "") if a < r else ""
                              for s, r, a in zip(funnel["step"], funnel["rules"], funnel["applied"])]
     net = facts[NULL][[PREFIX + "is_net_per_year_r", PREFIX + "oos_net_per_year_r"]]
-    money = {"monos": len(net), "donantes": facts[NULL].index.str.split("#").str[0].nunique(),
-             "neto_medio_is_R_año": float(net.iloc[:, 0].mean()),
-             "neto_medio_oos_R_año": float(net.iloc[:, 1].mean()),
-             "con_neto_oos_positivo": float((net.iloc[:, 1] > 0).mean())}
+    money = Money(monos=len(net), donantes=facts[NULL].index.str.split("#").str[0].nunique(),
+                  neto_medio_is_R_año=float(net.iloc[:, 0].mean()),
+                  neto_medio_oos_R_año=float(net.iloc[:, 1].mean()),
+                  con_neto_oos_positivo=float((net.iloc[:, 1] > 0).mean()))
     first = funnel[funnel["step"] == funnel["step"].iloc[0]].set_index("nivel")
     warnings = [] if inputs["source"]["frozen"] else [
         {"code": "provisional", "state": "watch", "highlight": True,
@@ -145,7 +166,7 @@ def run(inputs: dict, cfg: dict) -> dict:
                          "Población nula, neto medio por año en R. Si gana de media es la "
                          "deriva del activo (largos sobre un índice), que R3 descuenta, o se "
                          "le ha regalado algo (encargo 9 §5.1)."),
-            blocks.table("Donantes fuera", pd.DataFrame(skipped, columns=["donante", "motivo"]))]),
+            blocks.table("Donantes fuera", pd.DataFrame(skipped, columns=pd.Index(["donante", "motivo"])))]),
          envelope.tab("reglas", "Regla a regla", [
              blocks.table("Pasa: lo que cada regla, sola, da por bueno", shares(rules, list(facts), "pass"),
                           "Proporción de las que entran al paso. En «nula» es lo que se cuela; "
@@ -162,5 +183,5 @@ def run(inputs: dict, cfg: dict) -> dict:
             "plantada conserva. Mide los filtros, no el generador de SQX."),
         warnings=warnings)
     envelope.progress(100, f"{len(net)} monos por población")
-    return {"population": result, "funnel": funnel, "rules": rules, "skipped": skipped,
-            "facts": pd.concat(facts, names=["nivel", "identity"]), "money": money}
+    return Control(population=result, funnel=funnel, rules=rules, skipped=skipped,
+                   facts=pd.concat(facts, names=["nivel", "identity"]), money=money)

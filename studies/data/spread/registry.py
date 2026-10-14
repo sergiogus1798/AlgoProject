@@ -2,6 +2,7 @@
 
 import re
 import sqlite3
+from typing import TypedDict
 
 import pandas as pd
 
@@ -18,7 +19,32 @@ def _query(sql: str, args: tuple = ()) -> list[tuple]:
         return db.execute(sql, args).fetchall()
 
 
-def feeds(symbol: str) -> dict:
+class Feeds(TypedDict):
+    """A symbol's feeds in SQX's registry: Dukascopy M1 bar feeds and Darwinex tick feeds."""
+
+    bars: list[str]
+    ticks: list[str]
+
+
+class Instrument(TypedDict):
+    """A feed's instrument as SQX defines it: tick size, point value and minimum distance."""
+
+    tick_size: float
+    point_value: float
+    min_distance: int
+
+
+class BrokerSwaps(TypedDict):
+    """The mean swap in points per night over the brokers with an active swap, and which were used or skipped."""
+
+    long: float
+    short: float
+    n: int
+    brokers: list[str]
+    skipped: list[str]
+
+
+def feeds(symbol: str) -> Feeds:
     """Every feed of a symbol, split by kind.
 
     Returns:
@@ -28,8 +54,8 @@ def feeds(symbol: str) -> dict:
         is a question for the owner.
     """
     rows = [r for r in _query("SELECT SYMBOL, TIMEFRAME, SOURCE FROM DATA") if alias(r[0]) == symbol]
-    return {"bars": sorted(n for n, tf, src in rows if tf == "M1" and src == DUKASCOPY),
-            "ticks": sorted(n for n, tf, src in rows if tf == "TICK" and src == DARWINEX)}
+    return Feeds(bars=sorted(n for n, tf, src in rows if tf == "M1" and src == DUKASCOPY),
+                 ticks=sorted(n for n, tf, src in rows if tf == "TICK" and src == DARWINEX))
 
 
 def broker(feed: str) -> str:
@@ -43,7 +69,7 @@ def broker(feed: str) -> str:
                   "WHERE D.SYMBOL = ?", (feed,))[0][0].lstrip("_")
 
 
-def instrument(feed: str) -> dict:
+def instrument(feed: str) -> Instrument:
     """The feed's instrument: tick size and point value, as SQX defines them.
 
     Returns:
@@ -52,7 +78,7 @@ def instrument(feed: str) -> dict:
     """
     name = _query("SELECT INSTRUMENT FROM DATA WHERE SYMBOL = ?", (feed,))[0][0]
     pv, tick = _query("SELECT POINTVALUE, TICKSIZE FROM INSTRUMENTS WHERE INSTRUMENT = ?", (name,))[0]
-    return {"tick_size": float(tick), "point_value": float(pv), "min_distance": 0}
+    return Instrument(tick_size=float(tick), point_value=float(pv), min_distance=0)
 
 
 def data_range(feed: str) -> tuple:
@@ -61,7 +87,7 @@ def data_range(feed: str) -> tuple:
     return pd.Timestamp(start, unit="ms").date(), pd.Timestamp(end, unit="ms").date()
 
 
-def broker_swaps(symbol: str, tick: float) -> dict:
+def broker_swaps(symbol: str, tick: float) -> BrokerSwaps:
     """The mean swap, in points per night, of every variant of the symbol with an active swap.
 
     Args:
@@ -82,6 +108,6 @@ def broker_swaps(symbol: str, tick: float) -> dict:
             skipped.append(f"{name} ({'off' if at.get('use') != 'true' else at['type']})")
             continue
         got.append((name, float(at["long"]) * tk / tick, float(at["short"]) * tk / tick))
-    frame = pd.DataFrame(got, columns=["broker", "long", "short"])
-    return {"long": round(float(frame["long"].mean()), 2), "short": round(float(frame["short"].mean()), 2),
-            "n": len(frame), "brokers": frame["broker"].tolist(), "skipped": skipped}
+    frame = pd.DataFrame(got, columns=pd.Index(["broker", "long", "short"]))
+    return BrokerSwaps(long=round(float(frame["long"].mean()), 2), short=round(float(frame["short"].mean()), 2),
+                       n=len(frame), brokers=frame["broker"].tolist(), skipped=skipped)

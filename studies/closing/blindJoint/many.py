@@ -1,5 +1,6 @@
 """Every mother that reached step 20, read as one result: the three pieces, the readings, the SPA."""
 
+from typing import Any, TypedDict, cast
 import time
 
 import pandas as pd
@@ -23,7 +24,7 @@ def _member(i: int) -> dict:
     return one.run(_SHARED["rows"][i], _SHARED["got"], _SHARED["cfg"])
 
 
-def grid(title: str, frame: pd.DataFrame, labels: pd.DataFrame, note: str) -> dict:
+def grid(title: str, frame: pd.DataFrame, labels: pd.DataFrame, note: str) -> dict[str, Any]:
     """States as a three-step grid: no pasa −1, a medias 0, pasa 1, each cell its own word.
 
     The cuts send the three steps to the two ends and the middle of the nine-step scale, so
@@ -36,7 +37,7 @@ def grid(title: str, frame: pd.DataFrame, labels: pd.DataFrame, note: str) -> di
             "labels": [list(row) for row in labels.itertuples(index=False)], "note": note}
 
 
-def spa_tab(got: dict, cfg: dict) -> dict:
+def spa_tab(got: dict, cfg: dict) -> dict[str, Any]:
     """The SPA's three p-values and each mother against her random trader, or why they are missing."""
     if got["refused"]:
         return envelope.tab("spa", "SPA y StepM sobre oos2", [], note=(
@@ -47,7 +48,7 @@ def spa_tab(got: dict, cfg: dict) -> dict:
     return envelope.tab("spa", "SPA y StepM sobre oos2", [
         blocks.table("Las tres p del SPA de Hansen", pd.DataFrame(
             [[k, spa[k], MEANING[k]] for k in ("lower", "consistent", "upper")],
-            columns=["p", "valor", "qué supone"]),
+            columns=pd.Index(["p", "valor", "qué supone"])),
             f"Nula: ninguna de las {got['K']} madres gana más que un operador al azar con su "
             f"misma huella (mismas operaciones, lado, lotes, duración y coste; entrada al azar)."),
         blocks.table("Cada madre contra su operador al azar", t.reset_index(names="madre")[
@@ -61,7 +62,7 @@ def spa_tab(got: dict, cfg: dict) -> dict:
              "cierre, reconstruido con las operaciones de su retest en oos2 y las barras M1.")
 
 
-def headline(got: dict, cfg: dict, complete: int) -> dict:
+def headline(got: dict, cfg: dict, complete: int) -> dict[str, Any]:
     """The population's verdict: under the chosen reading, or every reading's count."""
     reading = one.chosen(cfg)
     counts = {r: int((got["calls"][r] == "pass").sum()) for r in got["calls"].columns}
@@ -84,11 +85,19 @@ def headline(got: dict, cfg: dict, complete: int) -> dict:
     return blocks.verdict(
         "Sin regla", "info",
         "El dueño no ha elegido cómo se combinan las piezas ni sobre quién cuenta el StepM. "
-        f"Descartan a todas por las piezas, sin llegar al StepM: {', '.join(words.reading(tuple(r.split('+'))) for r in sure) or 'ninguna'}.",
+        f"Descartan a todas por las piezas, sin llegar al StepM: {', '.join(words.reading(cast(tuple[str, str], tuple(r.split('+')))) for r in sure) or 'ninguna'}.",
         None, parts)
 
 
-def run(data: dict, cfg: dict) -> dict:
+class Measured(TypedDict):
+    """Step 20's result: the population's, each mother's, and what measure.run() returned."""
+
+    population: dict[str, Any]
+    members: list[dict[str, Any]]
+    measured: dict[str, Any]
+
+
+def run(data: dict, cfg: dict) -> Measured:
     """Step 20 over every mother that reached it.
 
     Args:

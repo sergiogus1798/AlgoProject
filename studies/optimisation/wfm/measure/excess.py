@@ -1,12 +1,14 @@
 """Each trade's net excess with oos2 re-charged at its own costs, and the weekly oos2 panel."""
 
 from collections.abc import Sequence
+from typing import cast
 
 import numpy as np
 import pandas as pd
 
 from engines.market import reprice
 from engines.weekly import panel
+from studies.optimisation.wfm.inputs.asset import Asset
 from studies.screening.analysis import tradelevel
 
 CLEAN = "oos2"
@@ -38,7 +40,7 @@ def recharge(trades: pd.DataFrame, charged: reprice.Costs, real: reprice.Costs) 
                      + 2 * (real["slippage"] - charged["slippage"])) + fee(real) - fee(charged))
 
 
-def per_trade(trades: pd.DataFrame, the: dict, unit: str) -> pd.DataFrame:
+def per_trade(trades: pd.DataFrame, the: Asset, unit: str) -> pd.DataFrame:
     """Trades as net excess, each tagged with the segment it closes in.
 
     Args:
@@ -81,7 +83,7 @@ def weekly(per: pd.DataFrame, window: tuple[str, str], unit: str,
     Returns:
         `engines.weekly.panel.weekly`'s `net` frame, over the trades that CLOSE in oos2 only.
     """
-    return panel.weekly(per[per["segment"] == CLEAN], window, unit, units)["net"]
+    return panel.weekly(cast(pd.DataFrame, per[per["segment"] == CLEAN]), window, unit, units)["net"]
 
 
 def by_segment(per: pd.DataFrame, unit: str, covered: pd.DataFrame) -> pd.DataFrame:

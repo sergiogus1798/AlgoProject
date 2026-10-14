@@ -1,5 +1,6 @@
 """One variant batch through step 18.5: the common sets, the readings, the reference and the facts."""
 
+from typing import Any, cast
 import numpy as np
 import pandas as pd
 
@@ -19,8 +20,8 @@ def legs(feeds: list[str], oos2: bool) -> dict[str, tuple]:
     return {MAIN: INSIDE} | {feed: INSIDE + OOS2 * oos2 for feed in feeds}
 
 
-def measure(data: dict, design: dict, table: pd.DataFrame, years: dict, cfg: dict,
-            oos2: bool) -> dict:
+def measure(data: dict, design: batch.Design, table: pd.DataFrame, years: dict, cfg: dict,
+            oos2: bool) -> dict[str, Any]:
     """Every number of one batch, nothing judged.
 
     Args:
@@ -49,13 +50,13 @@ def measure(data: dict, design: dict, table: pd.DataFrame, years: dict, cfg: dic
               & (traded >= floors["floor_is_per_param"] * design["k"]))
     gross = {leg: main[leg]["gross"].to_numpy().sum(axis=0) for leg in INSIDE}
     x = gross["build"] + gross["oos1"]
-    net = sum(main[leg]["net"].to_numpy().sum(axis=0) for leg in INSIDE)
+    net = cast(np.ndarray, sum(main[leg]["net"].to_numpy().sum(axis=0) for leg in INSIDE))
     best = (premium.top(net, usable, cfg["premium"]["top_share"]) if usable.any()
             else np.zeros(len(ids), bool))
     mother = ids.index(design["mother"])
     seeds = np.random.SeedSequence(cfg["null"]["seed"]).spawn(3)
 
-    def markets(window: tuple) -> dict:
+    def markets(window: tuple) -> dict[str, Any]:
         """Each feed's panels over one window and its common set with the main market."""
         out = {}
         for feed in table["feed"]:

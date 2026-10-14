@@ -1,5 +1,6 @@
 """A variant batch's trades on the main market as excess, net and gross, trade by trade and leg by leg."""
 
+from typing import Any
 from pathlib import Path
 
 import pandas as pd
@@ -22,7 +23,7 @@ PRIOR = {"window": "year", "variant": "c"}
 COLUMNS = ["variant_id", "profit", "net", "gross", "open", "close"]
 
 
-def drift() -> dict:
+def drift() -> dict[str, Any]:
     """The gate's `drift` block: the window and the variant of the drift term."""
     return yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"]
 
@@ -73,7 +74,7 @@ def priced(raw: pd.DataFrame, symbol: str, bars: pd.DataFrame, leg: str,
                             term or drift(), feed, drift_span)
 
 
-def read(work: Path, symbol: str, timeframe: str, legs: tuple = panel.SEGMENTS) -> dict:
+def read(work: Path, symbol: str, timeframe: str, legs: tuple = panel.SEGMENTS) -> dict[str, Any]:
     """Everything the compositions over `legs` are measured on, the door asked first.
 
     Args:

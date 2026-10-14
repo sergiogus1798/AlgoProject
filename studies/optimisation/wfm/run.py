@@ -1,5 +1,6 @@
 """One WFM export's whole reading: each mother's L1, L2, redundancy, corrected area and drift."""
 
+from typing import Any, TypedDict, cast
 from pathlib import Path
 
 import numpy as np
@@ -33,8 +34,33 @@ def covered(shapes: pd.DataFrame, spans: dict) -> pd.DataFrame:
     return pd.DataFrame(out).set_index(shapes["result"].astype(str).to_numpy())
 
 
-def one(trades: pd.DataFrame, mother: pd.DataFrame, shapes: pd.DataFrame, the: dict,
-        cfg: dict, seed: np.random.SeedSequence) -> dict:
+class Measured(TypedDict):
+    """One mother's oos2 measures: the cells' weekly excess, both levels, shape and recharge."""
+
+    cells: pd.DataFrame
+    mother: pd.Series
+    ref: pd.Series
+    per_year: pd.Series
+    l1: dict[str, Any]
+    l2: dict[str, Any]
+    l1_blocks: dict[str, Any] | None
+    straddle: float
+    skew: float
+    effective: float
+    positive: float
+    segments: Any
+    recharged: dict[str, float]
+    centre: str
+
+
+class Found(gaterule.Area):
+    """SQX's area rule on corrected scores: the best rectangle plus the cells passing."""
+
+    cells: int
+
+
+def one(trades: pd.DataFrame, mother: pd.DataFrame, shapes: pd.DataFrame, the: asset.Asset,
+        cfg: dict, seed: np.random.SeedSequence) -> Measured:
     """Everything measured on one mother's cells in oos2.
 
     Args:
@@ -58,12 +84,12 @@ def one(trades: pd.DataFrame, mother: pd.DataFrame, shapes: pd.DataFrame, the: d
     per = excess.per_trade(trades, the, "result")
     cells = excess.weekly(per, window, "result", names)
     fixed = excess.per_trade(mother, the, "strategy")
-    alone = excess.weekly(fixed, window, "strategy", fixed["strategy"].unique())
+    alone = excess.weekly(fixed, window, "strategy", cast(Any, fixed["strategy"].unique()))
     signs = flip.signs(seed, null["draws"], len(cells))
     centre = CELL.format(**cfg["centre"])
     ref = levels.reference(cells, cfg["modo_real"], centre)
-    clean = per[per["segment"] == asset.CLEAN]
-    straddle = panel.straddle(clean["open"], clean["close"])
+    clean = cast(pd.DataFrame, per[per["segment"] == asset.CLEAN])
+    straddle = panel.straddle(cast(pd.Series, clean["open"]), cast(pd.Series, clean["close"]))
     per_year = cells.sum() / years
     return {"cells": cells, "mother": alone.iloc[:, 0], "ref": ref, "per_year": per_year,
             "l1": levels.l1(cells, signs, years),
@@ -78,15 +104,15 @@ def one(trades: pd.DataFrame, mother: pd.DataFrame, shapes: pd.DataFrame, the: d
             "centre": centre}
 
 
-def area(scored: pd.DataFrame, rule: dict) -> dict:
+def area(scored: pd.DataFrame, rule: dict) -> Found:
     """SQX's area rule on one strategy's corrected scores: cells passing, best rectangle."""
     score = scored.pivot(index="runs", columns="oos_pct", values="score_pct").to_numpy()
     passed = score >= rule["threshold_pct"]
-    return gaterule.area(passed, score, rule["rows"], rule["cols"], rule["min_squares"]) | {
-        "cells": int(passed.sum())}
+    return {**gaterule.area(passed, score, rule["rows"], rule["cols"], rule["min_squares"]),
+            "cells": int(passed.sum())}
 
 
-def facts(got: dict, drifted: float, found: dict, mode: str) -> dict:
+def facts(got: Measured, drifted: float, found: Found, mode: str) -> dict[str, Any]:
     """The numbers the autopilot's rules and step 20 read, named as the plan froze them.
 
     Args:
@@ -99,7 +125,7 @@ def facts(got: dict, drifted: float, found: dict, mode: str) -> dict:
         `l1`, `l2`, `centro`, `celdas_efectivas`, `frac_celdas_positivas`, `deriva`, `area`;
         and `reopt` ONLY in `reoptimizado`, so its rules do not exist in `fijo`.
     """
-    def tails(level: dict, first: str) -> dict:
+    def tails(level: dict, first: str) -> dict[str, Any]:
         """One level's own number and its place in the null, without the draws."""
         return {k: level[k] for k in (first, "p_mas", "p_menos", "nulo_p5", "nulo_p95")}
     centre = float(got["per_year"][got["centre"]])
@@ -112,7 +138,7 @@ def facts(got: dict, drifted: float, found: dict, mode: str) -> dict:
     return out
 
 
-def read(directory: Path, cfg: dict, only: str | None = None) -> dict:
+def read(directory: Path, cfg: dict, only: str | None = None) -> dict[str, Any]:
     """Everything the study concludes about one export.
 
     Args:
@@ -144,10 +170,10 @@ def read(directory: Path, cfg: dict, only: str | None = None) -> dict:
     shapes = windows.shape(everything).sort_values(["runs", "oos_pct"])
     out = {"measured": {}, "facts": {}, "verdicts": {}, "area": {}}
     for name in [only] if only else names:
-        mine = trades[(trades["strategy"] == name) & (trades["sample"] == "OOS")]
-        got = one(mine, original[original["strategy"] == name],
-                  shapes[shapes["strategy"] == name], the, cfg, seeds[name])
-        found = area(scored[scored["strategy"] == name], rules.loc[name].to_dict())
+        mine = cast(pd.DataFrame, trades[(trades["strategy"] == name) & (trades["sample"] == "OOS")])
+        got = one(mine, cast(pd.DataFrame, original[original["strategy"] == name]),
+                  cast(pd.DataFrame, shapes[shapes["strategy"] == name]), the, cfg, seeds[name])
+        found = area(cast(pd.DataFrame, scored[scored["strategy"] == name]), rules.loc[name].to_dict())
         said = facts(got, float(drifted.loc[name, "share_changed_median"]), found,
                      cfg["modo_real"])
         out["measured"][name], out["area"][name], out["facts"][name] = got, found, said

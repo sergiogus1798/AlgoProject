@@ -1,6 +1,7 @@
 """The equity charts and the per-mother tagging: one block per mother, the window's «Madre» picks it."""
 
 from collections.abc import Callable
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -31,7 +32,7 @@ def per_mother(make: Callable[[pd.DataFrame], dict], table: pd.DataFrame, mother
     for m in mothers:
         rows = table[table["mother"] == m]
         if len(rows):
-            block = make(rows.reset_index(drop=True))
+            block = make(cast(pd.DataFrame, rows).reset_index(drop=True))
             out.append({**block, "select": {**block.get("select", {}), "mother": m}})
     return out
 
@@ -60,13 +61,13 @@ def blocks(plan: pd.DataFrame, packed: pd.DataFrame) -> list[dict]:
         for role, label, extra in (("unscaled", "sin escalar", []),
                                    ("scaled", "escaladas", [("control", "Control", "reference")])):
             series = [{"label": _np(f"Baseline {base_row.timeframe}", base), "values": base, "role": "real"}]
-            for row in rows_m[rows_m["role"] == role].itertuples():
+            for row in cast(Any, rows_m[rows_m["role"] == role].itertuples()):
                 c = cells.curve(tradestore.block(packed, row.strategy, row.block), CURVE_POINTS)
                 if c is not None:
                     series.append({"label": _np(row.timeframe, c), "values": c, "role": "sim"})
             target = rows_m[rows_m["role"] == "scaled"].set_index("strategy")["timeframe"]
             for extra_role, extra_label, extra_kind in extra:
-                for row in rows_m[rows_m["role"] == extra_role].itertuples():
+                for row in cast(Any, rows_m[rows_m["role"] == extra_role].itertuples()):
                     c = cells.curve(tradestore.block(packed, row.strategy, row.block),
                                     CURVE_POINTS)
                     if c is not None:

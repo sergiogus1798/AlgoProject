@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Step 18.5 over one mother's variant batch: does the main market's order of variants travel to the others?"""
 
+from typing import Any
 import argparse
 import sys
 import time
@@ -22,7 +23,7 @@ MODULE = "studies.optimisation.marketSurfaces"
 
 
 def result(name: str, measured: dict, symbol: str, provisional: list[str], cfg: dict,
-           started: float) -> dict:
+           started: float) -> dict[str, Any]:
     """The small result the judge and step 20 read: envelope, summary, facts and light tabs.
 
     Args:

@@ -6,6 +6,8 @@ quantile regression (the check loss solved as a linear programme), so the band m
 narrow with price on its own slope instead of being the mean's shifted by a constant.
 """
 
+from typing import Any, cast
+
 import numpy as np
 import pandas as pd
 from scipy.optimize import linprog
@@ -19,11 +21,11 @@ def days(m: pd.DataFrame, tick: float, min_minutes: int) -> pd.DataFrame:
         tick: `assets/`'s tick size, the unit SQX's spread is in.
         min_minutes: Holidays and half days below this are dropped.
     """
-    day = m.index.normalize()
-    got = pd.DataFrame({"spread": m["spread_open"].groupby(day).mean() / tick,
+    day = cast(Any, m.index).normalize()
+    got = pd.DataFrame({"spread": cast(pd.Series, m["spread_open"].groupby(day).mean()) / tick,
                         "price": m["bid_open"].groupby(day).median(),
                         "minutes": m["n"].groupby(day).size()})
-    return got[(got["minutes"] >= min_minutes) & (got["spread"] > 0)]
+    return cast(pd.DataFrame, got[(got["minutes"] >= min_minutes) & (got["spread"] > 0)])
 
 
 def _quantile(x: np.ndarray, y: np.ndarray, q: float) -> np.ndarray:
@@ -36,7 +38,7 @@ def _quantile(x: np.ndarray, y: np.ndarray, q: float) -> np.ndarray:
     return linprog(cost, A_eq=equal, b_eq=y, bounds=bounds, method="highs").x[:2]
 
 
-def fit(d: pd.DataFrame, quantiles: list[float]) -> dict:
+def fit(d: pd.DataFrame, quantiles: list[float]) -> dict[str, dict[str, float]]:
     """The mean curve and one curve per quantile, all in log-log.
 
     Returns:
@@ -44,7 +46,7 @@ def fit(d: pd.DataFrame, quantiles: list[float]) -> dict:
     """
     x, y = np.log(d["price"].to_numpy()), np.log(d["spread"].to_numpy())
     b, a = np.polyfit(x, y, 1)
-    out = {"media": {"a": float(np.exp(a)), "b": float(b),
+    out: dict[str, dict[str, float]] = {"media": {"a": float(np.exp(a)), "b": float(b),
                      "smear": float(np.exp(np.var(y - (a + b * x)) / 2))}}
     for q in quantiles:
         a_q, b_q = _quantile(x, y, q)
@@ -71,7 +73,7 @@ def coverage(d: pd.DataFrame, curves: dict, low: str, high: str) -> pd.DataFrame
     band = predict(curves, d["price"].to_numpy())
     below = pd.Series(d["spread"].to_numpy() < band[low].to_numpy(), d.index)
     above = pd.Series(d["spread"].to_numpy() > band[high].to_numpy(), d.index)
-    year = d.index.year
+    year = cast(Any, d.index).year
     return pd.DataFrame({"días": below.groupby(year).size(),
-                         "% por debajo": below.groupby(year).mean() * 100,
-                         "% por encima": above.groupby(year).mean() * 100})
+                         "% por debajo": cast(pd.Series, below.groupby(year).mean()) * 100,
+                         "% por encima": cast(pd.Series, above.groupby(year).mean()) * 100})

@@ -1,6 +1,7 @@
 """One strategy's trades, IS against OOS: return, MAE and MFE as two overlaid densities."""
 
 import time
+from typing import Any, cast
 
 import numpy as np
 from scipy.stats import ks_2samp
@@ -38,7 +39,7 @@ GLOSSARY = [
 ]
 
 
-def compare(title: str, unit: str, is_: np.ndarray, oos: np.ndarray, cfg: dict) -> dict:
+def compare(title: str, unit: str, is_: np.ndarray, oos: np.ndarray, cfg: dict) -> dict[str, Any]:
     """One per-trade metric of both samples on shared bins, with the shift between them.
 
     Args:
@@ -51,13 +52,13 @@ def compare(title: str, unit: str, is_: np.ndarray, oos: np.ndarray, cfg: dict) 
         A distribution block with two series and its `shift`; `p` repeats the KS p.
     """
     both = np.concatenate([is_, oos])
-    ks = ks_2samp(is_, oos).pvalue
+    ks = cast(Any, ks_2samp(is_, oos)).pvalue    # scipy stubs lack .pvalue
     return blocks.distribution(title, unit, both, None, NOTE, p=ks, bins=cfg["bins"],
                                series={"IS": is_, "OOS": oos},
                                shift={"median": np.median(oos) - np.median(is_), "ks_p": ks})
 
 
-def run(strategy: str, inputs: dict, cfg: dict) -> dict:
+def run(strategy: str, inputs: dict, cfg: dict) -> dict[str, Any]:
     """The per-trade distributions of one strategy, IS against OOS.
 
     Args:

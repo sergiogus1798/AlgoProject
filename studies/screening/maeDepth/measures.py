@@ -24,8 +24,8 @@ def per_trade(trades: pd.DataFrame, index: pd.DatetimeIndex, atr: np.ndarray,
         currency one ATR is worth at this trade's size). A trade opened before the third bar
         has no ATR before it and is dropped.
     """
-    kept = trades[trades["Open time"] >= index[2]]
-    out = excursion.measure(kept, index, atr, point_value)
+    kept = pd.DataFrame(trades[trades["Open time"] >= index[2]])
+    out = pd.DataFrame(excursion.measure(kept, index, atr, point_value))
     held = (index.searchsorted(kept["Close time"].to_numpy(), side="right")
             - index.searchsorted(kept["Open time"].to_numpy(), side="right"))
     out["bars"] = held
@@ -33,7 +33,7 @@ def per_trade(trades: pd.DataFrame, index: pd.DatetimeIndex, atr: np.ndarray,
     return out
 
 
-def one_segment(t: pd.DataFrame, cfg: dict) -> dict:
+def one_segment(t: pd.DataFrame, cfg: dict) -> dict[str, float | str]:
     """What one strategy's trades of one segment say about its dependence on deep trades.
 
     Args:
@@ -55,7 +55,7 @@ def one_segment(t: pd.DataFrame, cfg: dict) -> dict:
     mean, std = (float(held.mean()), float(held.std(ddof=1))) if n > 1 else (np.nan, np.nan)
     cut = mean + cfg["anomaly"]["sigma"] * std
     long_ = held >= cut
-    out = {"n": n, "net": net, "dur_mean": mean, "dur_std": std, "dur_cut": cut,
+    out: dict[str, float | str] = {"n": n, "net": net, "dur_mean": mean, "dur_std": std, "dur_cut": cut,
            "n_long": int(long_.sum())}
     worst = int(np.argmax(mae)) if n else 0
     out["peor_mae"] = float(mae[worst]) if n else np.nan
@@ -69,8 +69,8 @@ def one_segment(t: pd.DataFrame, cfg: dict) -> dict:
             out[p + "n"], out[p + "n_rec"] = int(hit.sum()), int(rec.sum())
             out[p + "frac"] = float(hit.mean()) if n else np.nan
             out[p + "frac_rec"] = float(rec.sum() / hit.sum()) if hit.any() else np.nan
-            out[p + "pnl_rec"] = float(pnl[rec].sum())
-            out[p + "cuota_rec"] = out[p + "pnl_rec"] / net if net > 0 else np.nan
+            pnl_rec = out[p + "pnl_rec"] = float(pnl[rec].sum())
+            out[p + "cuota_rec"] = pnl_rec / net if net > 0 else np.nan
             for s in slips:
                 out[f"{p}cortado_{s:g}"] = float(np.where(hit, -(k + s) * unit, pnl).sum())
     return out

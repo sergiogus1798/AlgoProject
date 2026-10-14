@@ -4,6 +4,7 @@ import json
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -15,7 +16,7 @@ from studies.screening.gate import (cascade, inputs as gate_inputs, level0, leve
 from studies.screening.gate.levels import LEVELS
 
 
-def as_harvest(trades: pd.DataFrame, real: dict) -> dict:
+def as_harvest(trades: pd.DataFrame, real: dict) -> dict[str, Any]:
     """Monkey trade lists dressed as the harvest the gate reads.
 
     Args:
@@ -34,7 +35,7 @@ def as_harvest(trades: pd.DataFrame, real: dict) -> dict:
                             "Net profit [OOS]": net.reindex(ids, fill_value=0.0).to_numpy()},
                            index=pd.Index(ids, name="identity"))
     return {**real, "metrics": metrics, "trades": trades,
-            "missing": pd.DataFrame(columns=["identity", "strategy_build"]),
+            "missing": pd.DataFrame(columns=pd.Index(["identity", "strategy_build"])),
             "curve": model.curve(trades, real["market"]["windows"]["IS"][0], real["end"])}
 
 
@@ -61,7 +62,8 @@ def _plant(data: dict, scores: pd.DataFrame, edge: float, cfg: dict) -> tuple[pd
     by = data["oos"].groupby("identity", sort=False)["excess"]
     scores["estaticas_value"] += (add * by.size()).reindex(scores.index)
     t = tradelevel.t_skew_kurt if cfg["drift"]["se_skew_kurt"] else tradelevel.t
-    return t(data["oos"], "excess")[["ar1"]].set_axis(list(level1a.FACTS), axis=1), add / by.mean()
+    facts = pd.DataFrame(t(data["oos"], "excess")[["ar1"]].set_axis(list(level1a.FACTS), axis=1))
+    return facts, pd.Series(add / by.mean())
 
 
 def _delayed(data: dict, got: pd.DataFrame, everyone: pd.Index, cfg: dict, share: pd.Series,
@@ -205,7 +207,8 @@ def walk(facts: dict[str, pd.DataFrame], who: list[str], steps: dict,
     for n, spec in steps.items():
         rules = criteria.thresholded(criteria.resolved(spec.get("rules") or [], tags), batches)
         have = facts[n] if n in facts else pd.DataFrame()
-        cols, medians = {key: have[key] for key in have}, have.reindex(alive).median()
+        cols: dict[str, pd.Series] = {key: pd.Series(have[key]) for key in have}
+        medians = pd.Series(have.reindex(alive).median())
         standing, doubt, applied = set(alive), set(), 0
         for rule in rules:
             row = {"step": n, "rule": json.dumps(rule, ensure_ascii=False),
@@ -214,11 +217,11 @@ def walk(facts: dict[str, pd.DataFrame], who: list[str], steps: dict,
             if row["applied"]:
                 said = pd.Series({w: criteria.judged(rule, cols, w, medians)[0] for w in alive},
                                  dtype=object)
-                fell = set(said.index[said == "fail"])
+                fell = set(pd.Index(said.index[(said == "fail").to_numpy()]))
                 row |= {s: int((said == s).sum()) for s in criteria.RANK}
                 row["died"] = len(standing & fell)
                 standing -= fell
-                doubt |= set(said.index[said == "limbo"])
+                doubt |= set(pd.Index(said.index[(said == "limbo").to_numpy()]))
                 applied += 1
             per_rule.append(row)
         limbo = len(standing & doubt)

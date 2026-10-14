@@ -37,8 +37,8 @@ def main() -> None:
     cfg = inputs.config(sets)
     folder = inputs.newest(a.project, a.databank)
     out = report_dir(a.project, a.databank, date.today().isoformat()) / "gate"
-    data = inputs.load(folder)
-    data = inputs.staged(data, a.feed, inputs.timeframe(data["metrics"], cfg, a.set), out)
+    harvest = inputs.load(folder)
+    data = inputs.staged(harvest, a.feed, inputs.timeframe(harvest["metrics"], cfg, a.set), out)
     # The judge's own rules, read as the judge reads them (smoke mode included): the cascade
     # and the cut cannot disagree.
     rules, _ = judge.per_cell(criteria.resolved(judge.settings()["steps"]["8"].get("rules") or [],
@@ -57,7 +57,7 @@ def main() -> None:
     got = many.run(data, cfg, rules, source, a.from_level)
     scores, funnel = got["scores"], got["funnel"]
     used = {knob: int(scores[column].dropna().iloc[0]) for knob, column in SEEDS.items()
-            if scores[column].notna().any()}
+            if bool(scores[column].notna().any())}
     source["seeds"] = used
 
     title = f"Puerta OOS — {a.project} / {a.databank}"

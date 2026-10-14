@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """The command: calibrate step 17's criterion and write the register that opens the blind block."""
 
+from typing import Any
 import argparse
 from pathlib import Path
 
@@ -14,7 +15,7 @@ from studies.optimisation.wfc.inputs import config as wfc_config
 HERE = Path(__file__).resolve().parent
 
 
-def load(overrides: list[str]) -> dict:
+def load(overrides: list[str]) -> dict[str, Any]:
     """The calibration's config.yaml, `ledger:` keys filled, then the overrides."""
     return study_config.apply(thresholds.fill(study_config.load(HERE / "config.yaml", [])),
                               overrides)

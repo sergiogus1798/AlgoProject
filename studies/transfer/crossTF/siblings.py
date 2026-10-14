@@ -1,5 +1,7 @@
 """What a scaled sibling adds to its mother: the monthly P/L correlation and the z beyond hers."""
 
+from typing import Any, cast
+
 import numpy as np
 import pandas as pd
 
@@ -22,7 +24,7 @@ def monthly(rows: pd.DataFrame) -> pd.Series:
     if rows.empty:
         return pd.Series(dtype=float)
     month = pd.to_datetime(rows["Close time"]).dt.to_period("M")
-    return rows.groupby(month)["Profit/Loss"].sum()
+    return cast(pd.Series, rows.groupby(month)["Profit/Loss"].sum())
 
 
 def beyond(panel: pd.DataFrame) -> pd.DataFrame:
@@ -81,7 +83,7 @@ def correlations(plan: pd.DataFrame, packed: pd.DataFrame) -> pd.DataFrame:
     for mother, rows_m in plan.groupby("mother", sort=True):
         base_row = rows_m[rows_m["role"] == "baseline"].iloc[0]
         base = monthly(tradestore.block(packed, base_row.strategy, base_row.block))
-        for row in rows_m[rows_m["role"] != "baseline"].itertuples():
+        for row in cast(Any, rows_m[rows_m["role"] != "baseline"].itertuples()):
             other = monthly(tradestore.block(packed, row.strategy, row.block))
             joined = pd.concat([base, other], axis=1, join="outer").reindex(span).fillna(0.0)
             n = len(joined)

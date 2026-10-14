@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -16,12 +17,12 @@ from ledger import thresholds
 CONFIG = Path(__file__).with_name("config.yaml")
 
 
-def config(overrides: list[str]) -> dict:
+def config(overrides: list[str]) -> dict[str, Any]:
     """Every knob, `ledger:` placeholders filled, command-line overrides applied."""
     return study_config.apply(thresholds.fill(study_config.load(CONFIG, [])), overrides)
 
 
-def asset(symbol: str) -> dict:
+def asset(symbol: str) -> dict[str, Any]:
     """The asset as `assets/` declares it (tick size, point value, segments, costs)."""
     return assetdata.load(symbol)
 
@@ -61,8 +62,8 @@ def volatility(feed: str) -> pd.DataFrame:
         The one thing known in every year, Darwinex's or not, that the spread may follow.
         From the bar library, or straight from SQX's own M1 file for a feed it lacks.
     """
-    close = (source(feed, ["Close"]) if bar_source(feed).exists() else tickfile.bars(feed))["Close"]
-    moves = np.log(close).diff().abs()
-    day = close.index.normalize()
+    close = cast(pd.Series, (source(feed, ["Close"]) if bar_source(feed).exists() else tickfile.bars(feed))["Close"])
+    moves = cast(pd.Series, np.log(close)).diff().abs()
+    day = cast(Any, close.index).normalize()
     got = pd.DataFrame({"rv": moves.groupby(day).mean(), "price": close.groupby(day).median()})
-    return got[got["rv"] > 0]   # a day without a single move is no trading day
+    return cast(pd.DataFrame, got[got["rv"] > 0])   # a day without a single move is no trading day

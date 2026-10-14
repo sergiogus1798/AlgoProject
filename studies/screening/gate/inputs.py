@@ -1,6 +1,8 @@
 """The knobs, one harvest read back, and the out-of-sample window read from the trades."""
 
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
 import numpy as np
 import pandas as pd
@@ -17,7 +19,26 @@ from ledger import thresholds
 CONFIG = Path(__file__).with_name("config.yaml")
 
 
-def config(overrides: list[str]) -> dict:
+class Market(TypedDict):
+    """What the measured columns need of the asset behind a feed."""
+    point_value: float
+    risk: float
+    windows: dict[str, tuple[str, str]]
+    years: dict[str, float]
+
+
+class Harvest(TypedDict):
+    """One joined harvest, as `load` returns it."""
+    metrics: pd.DataFrame
+    trades: pd.DataFrame
+    equity: pd.DataFrame
+    curve: pd.Series
+    missing: pd.DataFrame
+    split: str
+    end: str
+
+
+def config(overrides: list[str]) -> dict[str, Any]:
     """Every knob, with command-line overrides applied.
 
     Args:
@@ -58,7 +79,7 @@ def timeframe(metrics: pd.DataFrame, cfg: dict, overrides: list[str]) -> str:
     return found[0] if len(found) == 1 else cfg["monkey"]["timeframe"]
 
 
-def market(feed: str) -> dict:
+def market(feed: str) -> Market:
     """What the measured columns need to know about the asset behind a feed.
 
     Args:
@@ -69,7 +90,10 @@ def market(feed: str) -> dict:
         and per sample ("IS" the asset's build segment, "OOS" its oos1) `windows`, as the
         pair of strings a DatetimeIndex slices by, and `years`, the segment's length.
     """
-    asset = assetdata.load(assetdata.symbol_for(current(feed)))
+    symbol = assetdata.symbol_for(current(feed))
+    if symbol is None:
+        raise SystemExit(f"gate: no asset file declares the feed {feed}")
+    asset = assetdata.load(symbol)
     segment = {"IS": "build", "OOS": "oos1"}
     edges = {s: assetdata.window(asset, k) for s, k in segment.items()}
     return {"point_value": asset["instrument"]["point_value"],
@@ -80,7 +104,7 @@ def market(feed: str) -> dict:
                       for s, (a, b) in edges.items()}}
 
 
-def staged(data: dict, feed: str, frame: str, out: Path) -> dict:
+def staged(data: Mapping[str, Any], feed: str, frame: str, out: Path) -> dict[str, Any]:
     """A harvest with everything the levels read beside it (the `data` contract of levels.py).
 
     Args:
@@ -95,11 +119,12 @@ def staged(data: dict, feed: str, frame: str, out: Path) -> dict:
         `out`, `feed`, and `quality`, the feed's anomaly inventory, left out when it has none.
     """
     out.mkdir(parents=True, exist_ok=True)
-    data.update(bars=read_bars(feed, frame), market=market(feed), out=out, feed=feed,
-                costs=reprice.costs(feed, "oos1"), costs_build=reprice.costs(feed, "build"))
+    staged_data: dict[str, Any] = {
+        **data, "bars": read_bars(feed, frame), "market": market(feed), "out": out, "feed": feed,
+        "costs": reprice.costs(feed, "oos1"), "costs_build": reprice.costs(feed, "build")}
     if (feed_quality_dir(current(feed)) / "events.parquet").exists():
-        data["quality"] = feed_quality_dir(current(feed))
-    return data
+        staged_data["quality"] = feed_quality_dir(current(feed))
+    return staged_data
 
 
 def build_pnl(data: dict, alive: pd.Index) -> pd.DataFrame:
@@ -113,8 +138,8 @@ def build_pnl(data: dict, alive: pd.Index) -> pd.DataFrame:
         `identity` and `pnl` (reprice.real at the build segment's costs), in close-time order
         within each identity.
     """
-    bars, raw = data["bars"], data["trades"]
-    raw = (raw[(raw["sample"] == "IS") & raw["identity"].isin(alive)]
+    bars, raw = data["bars"], pd.DataFrame(data["trades"])
+    raw = (pd.DataFrame(raw[(raw["sample"] == "IS") & raw["identity"].isin(list(alive))])
            .sort_values(["identity", "Close time"]))
     priced = reprice.real(raw, bars, data["costs_build"], data.get("feed"))
     return pd.DataFrame({"identity": raw["identity"].to_numpy(), "pnl": priced["pnl"].to_numpy()})
@@ -172,7 +197,7 @@ def wide(path: Path) -> dict[str, pd.DataFrame]:
     return out
 
 
-def load(folder: Path) -> dict:
+def load(folder: Path) -> Harvest:
     """One joined harvest, and the window each side actually occupies.
 
     Args:
@@ -196,9 +221,9 @@ def load(folder: Path) -> dict:
     curves = wide(folder / "equity.parquet")
     last = curves["IS"].index.max()
     after = curves["OOS"].diff()[curves["OOS"].index > last]
-    split = after.index.min()
+    split = cast(pd.Timestamp, after.index.min())
     daily = pd.concat([curves["IS"].diff(), after])
-    return {"metrics": metrics, "trades": trades, "equity": equity,
-            "curve": daily.cumsum(), "missing": pd.read_csv(folder / "missing_oos.csv"),
-            "split": split.date().isoformat(),
-            "end": curves["OOS"].index.max().date().isoformat()}
+    return Harvest(metrics=metrics, trades=trades, equity=equity, curve=daily.cumsum(),
+                   missing=pd.read_csv(folder / "missing_oos.csv"),
+                   split=split.date().isoformat(),
+                   end=cast(pd.Timestamp, curves["OOS"].index.max()).date().isoformat())

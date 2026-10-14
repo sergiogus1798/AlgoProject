@@ -1,12 +1,13 @@
 """How much of the market's open time the strategy actually held a position, and how big."""
 
+from typing import Any, TypedDict, cast
 import numpy as np
 import pandas as pd
 
 WEEK = pd.Timedelta(days=7)
 
 
-def held(trades: pd.DataFrame, index: pd.DatetimeIndex) -> dict:
+def held(trades: pd.DataFrame, index: pd.DatetimeIndex) -> dict[str, Any]:
     """Lots held at every bar of the window, gross and signed.
 
     Args:
@@ -46,11 +47,29 @@ def bar_minutes(index: pd.DatetimeIndex) -> float:
         The median gap between consecutive bars. The median and not the mean because a
         weekend is a gap of two days and would otherwise stretch every bar.
     """
-    return float(np.median(np.diff(index.to_numpy())) / np.timedelta64(1, "m"))
+    gap = np.median(np.diff(index.to_numpy()))
+    return float(gap / np.timedelta64(1, "m"))  # pyright: ignore[reportOperatorIssue]  # numpy stub: timedelta64 division
+
+
+class Occupancy(TypedDict):
+    """Market time held: share of bars, hours a week, account committed, and the tilt."""
+
+    share: float
+    hours_per_week: float
+    avg_notional_pct: float
+    notional_when_in_pct: float
+    tilt: float
+
+
+class Presence(TypedDict):
+    """Share of the market's movement seen while holding, and the share pointed the right way."""
+
+    captured: float
+    aligned: float
 
 
 def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float,
-            equity: float) -> dict:
+            equity: float) -> Occupancy:
     """Everything about how much market the strategy was standing in.
 
     Args:
@@ -66,19 +85,21 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float,
         signed lots as a fraction of the gross — +1 always long, -1 always short, 0 a
         book that is as often one way as the other.
     """
-    lots = held(trades, bars.index)
+    stamps = cast(pd.DatetimeIndex, bars.index)
+    lots = held(trades, stamps)
     inside = lots["gross"] > 1e-9   # a float cumsum of overlapping lots leaves a residue
     notional = lots["gross"] * bars["Close"].to_numpy() * point_value
-    span = (bars.index[-1] - bars.index[0]) + pd.Timedelta(minutes=bar_minutes(bars.index))
+    minutes = bar_minutes(stamps)
+    span = (stamps[-1] - stamps[0]) + pd.Timedelta(minutes=minutes)
     return {"share": float(inside.mean()),
-            "hours_per_week": float(inside.sum() * bar_minutes(bars.index) / 60
+            "hours_per_week": float(inside.sum() * minutes / 60
                                     / (span / WEEK)),
             "avg_notional_pct": float(notional.mean() / equity * 100),
             "notional_when_in_pct": float(notional[inside].mean() / equity * 100),
             "tilt": float(lots["signed"].sum() / lots["gross"].sum())}
 
 
-def presence(lots: np.ndarray, moves: np.ndarray) -> dict:
+def presence(lots: np.ndarray, moves: np.ndarray) -> Presence:
     """How much of the market's own movement happened while the strategy was in it.
 
     Args:

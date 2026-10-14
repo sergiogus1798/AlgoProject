@@ -1,18 +1,21 @@
 """The runner of the T0-T4 reading: what the study loaded in, `tf_siblings.parquet` and `tf_mothers.csv` out, beside the old reading."""
 
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
 from core.study import draws
+from engines.market import reprice
 from studies.transfer.crossmarket.travel import sizing
+from studies.transfer.crossTF import many
 from studies.transfer.crossTF.tf import inputs, table
 
 SIBLINGS, MOTHERS = "tf_siblings.parquet", "tf_mothers.csv"
 
 
 def read(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: dict[str, pd.DataFrame],
-         costs: dict | None, cuts: dict | None, params: dict, tf: dict, source: str,
+         costs: dict[str, reprice.Costs] | None, cuts: dict | None, params: dict, tf: dict, source: str,
          identity: dict, reason: str = "", sink: list | None = None) -> dict[str, pd.DataFrame]:
     """Both tables from plain data: no file, no asset card, no SQX.
 
@@ -28,13 +31,13 @@ def read(made: pd.DataFrame, trades: dict[str, pd.DataFrame | None], bars: dict[
         (`table.MOTHERS`, one row per mother). With `trades["build"]` None the frame is the
         phase-1 reading: T1 and T2b are limbo with `no_build_data`, `phase1` is final.
     """
-    measured = table.blank(made) if reason else table.measure(made, trades, bars, costs, cuts,
+    measured = table.blank(made) if reason else table.measure(made, trades, bars, cast(dict, costs), cast(dict, cuts),
                                                                params, tf, source, sink)
     siblings = table.judge(measured, tf, source, reason)
     return {"siblings": siblings, "mothers": table.mothers(siblings, tf, source, identity)}
 
 
-def write(out: Path, got: dict, cfg: dict, export: Path, directory: Path,
+def write(out: Path, got: many.Loaded, cfg: dict, export: Path, directory: Path,
           before: list[dict] | None = None) -> dict[str, pd.DataFrame]:
     """Read a loaded batch with T0-T4 and write the two files into the run's folder.
 

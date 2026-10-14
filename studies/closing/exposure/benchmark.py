@@ -1,5 +1,7 @@
 """What "buy and hold" means here: three sizing conventions, and the P&L each one earns."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -103,7 +105,7 @@ def daily(trades: pd.DataFrame, index: pd.DatetimeIndex) -> pd.Series:
     """
     closed = trades.groupby(trades["Close time"].dt.floor("D"))["Profit/Loss"].sum()
     slot = index[np.minimum(index.searchsorted(closed.index), len(index) - 1)]
-    return closed.groupby(slot).sum().reindex(index, fill_value=0.0)
+    return cast(pd.Series, closed.groupby(slot).sum().reindex(index, fill_value=0.0))
 
 
 def profit(lots: float, moves: pd.Series, point_value: float) -> pd.Series:

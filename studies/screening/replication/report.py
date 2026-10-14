@@ -4,7 +4,9 @@
 import argparse
 import time
 from datetime import date
+from typing import Any, TypedDict
 
+import numpy as np
 import pandas as pd
 
 from core import manifest
@@ -19,7 +21,15 @@ FILTERS = 6
 RESTRICTED = 0.7
 
 
-def load(project: str, databanks: list[str]) -> dict:
+class Sample(TypedDict):
+    """One databank's current metrics export: columns, strategy count, duplicates, date."""
+    columns: dict[str, np.ndarray]
+    n: int
+    duplicates_dropped: int
+    exported: str
+
+
+def load(project: str, databanks: list[str]) -> dict[str, Sample]:
     """Read the current metrics export of every databank being compared.
 
     Args:
@@ -29,13 +39,13 @@ def load(project: str, databanks: list[str]) -> dict:
     Returns:
         One entry per databank with its columns, strategy count and export date.
     """
-    out = {}
+    out: dict[str, Sample] = {}
     for databank in databanks:
         src = metrics_export(project, databank)
         columns, names = metrics.load(src / "metrics.csv")
         columns, names, dropped = metrics.deduplicated(columns, names)
-        out[databank] = {"columns": columns, "n": len(names), "duplicates_dropped": dropped,
-                         "exported": manifest.read(src)["date"]}
+        out[databank] = Sample(columns=columns, n=len(names), duplicates_dropped=dropped,
+                               exported=manifest.read(src)["date"])
     return out
 
 
@@ -61,8 +71,8 @@ def outcomes(samples: dict, reference: str, target: str) -> pd.DataFrame:
         rows.append([name, got["n"], got["median"], 100 * got["hit"],
                      None if own else 100 * gap["gap"], None if own else 100 * gap["lo"],
                      None if own else 100 * gap["hi"]])
-    return pd.DataFrame(rows, columns=["databank", "estrategias", "mediana", "% por encima",
-                                       "Δ pp", "Δ IC desde", "Δ IC hasta"])
+    return pd.DataFrame(rows, columns=pd.Index(["databank", "estrategias", "mediana", "% por encima",
+                                                "Δ pp", "Δ IC desde", "Δ IC hasta"]))
 
 
 def best_filters(ref: dict, target: str, is_metrics: list[str]) -> list[dict]:
@@ -111,8 +121,8 @@ def replicated(samples: dict, reference: str, target: str, is_metrics: list[str]
                          100 * (got["observed"] - got["predicted"]), 100 * got["lo"],
                          100 * got["hi"]])
         out.append(blocks.table(f"{name}: los umbrales de la referencia aplicados", pd.DataFrame(
-            rows, columns=["filtro", "% previsto", "% de la muestra que pasa", "n",
-                           "% observado", "Δ", "Δ IC desde", "Δ IC hasta"]),
+            rows, columns=pd.Index(["filtro", "% previsto", "% de la muestra que pasa", "n",
+                                    "% observado", "Δ", "Δ IC desde", "Δ IC hasta"])),
             "Previsto es lo que el filtro dio en la referencia. Si casi toda la muestra ya "
             "pasa el umbral, esa muestra se construyó para cumplirlo." if best else
             f"Ningún filtro deja al menos {improvement.MIN_SURVIVORS} estrategias en la "
@@ -120,7 +130,7 @@ def replicated(samples: dict, reference: str, target: str, is_metrics: list[str]
     return out
 
 
-def agreement(samples: dict, reference: str, target: str, is_metrics: list[str]) -> dict:
+def agreement(samples: dict, reference: str, target: str, is_metrics: list[str]) -> dict[str, Any]:
     """Whether the samples rank the in-sample predictors the same way, as one table."""
     ref = replication.predictors(samples[reference]["columns"], target, is_metrics)
     rows = []
@@ -133,8 +143,8 @@ def agreement(samples: dict, reference: str, target: str, is_metrics: list[str])
                                                s["columns"][m]) < RESTRICTED]
         rows.append([name, replication.stability(ref, here), ", ".join(narrowed[:4])])
     return blocks.table("¿Coinciden en qué lo predice?", pd.DataFrame(
-        rows, columns=["databank", "ρ del ranking con la referencia",
-                       "seleccionada sobre (correlación atenuada por construcción)"]))
+        rows, columns=pd.Index(["databank", "ρ del ranking con la referencia",
+                                "seleccionada sobre (correlación atenuada por construcción)"])))
 
 
 def main() -> None:

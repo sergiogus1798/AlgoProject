@@ -47,8 +47,9 @@ def label(rule: dict) -> str:
 
 def said(scores: pd.DataFrame, rule: dict, who: pd.Index) -> dict[str, tuple[str, str]]:
     """One rule over the strategies `who`, by `criteria.judged`: id → (state, `fact=value`)."""
-    cols = {f: scores[f.removeprefix(PREFIX)] for f in criteria.reads([rule])}
-    medians = pd.Series({f: col[who].median() for f, col in cols.items()})
+    cols: dict[str, pd.Series] = {f: pd.Series(scores[f.removeprefix(PREFIX)])
+                                  for f in criteria.reads([rule])}
+    medians = pd.Series({f: pd.Series(col[who]).median() for f, col in cols.items()})
     return {w: criteria.judged(rule, cols, w, medians) for w in who}
 
 
@@ -83,17 +84,19 @@ def run(data: dict, cfg: dict, rules: list[dict], start: str = "0",
     """
     out, order = data["out"], [level for level, _ in LEVELS]
     first, rules_at = order.index(start), placed(rules)
+    scores: pd.DataFrame
+    funnel: list[dict]
     if first:
         kept = [fact for _, module in LEVELS[:first] for fact in module.FACTS]
-        scores = pd.read_parquet(out / "scorecard.parquet")[
-            ["strategy", "strategy_build", "cayo_nivel", "cayo_regla", *kept]]
+        scores = pd.DataFrame(pd.read_parquet(out / "scorecard.parquet")[
+            ["strategy", "strategy_build", "cayo_nivel", "cayo_regla", *kept]])
         scores.loc[scores["cayo_nivel"].isin(order[first:]), ["cayo_nivel", "cayo_regla"]] = None
-        funnel = pd.read_csv(out / "funnel.csv")
-        funnel = funnel[funnel["level"].astype(str).isin(order[:first])].to_dict("records")
+        shown = pd.read_csv(out / "funnel.csv")
+        funnel = pd.DataFrame(shown[shown["level"].astype(str).isin(order[:first])]).to_dict("records")
         data["oos"] = pd.read_parquet(out / "operaciones.parquet")
     else:
         scores, funnel = population(data).assign(cayo_nivel=None, cayo_regla=None), []
-    standing = scores.index[scores["cayo_nivel"].isna()]
+    standing = pd.Index(scores.index[scores["cayo_nivel"].isna().to_numpy()])
     for i, (level, module) in enumerate(LEVELS[first:], first):
         alive = standing if cfg["cascade"]["on"] else scores.index
         if module is level3ab:      # R6's build P/L, repriced only for who got this far
@@ -141,10 +144,10 @@ def verdict(scores: pd.DataFrame, side: str) -> pd.DataFrame:
         MANTENER for the rest, limbo included; the reason names the level and the rule with
         the number that failed it, so a cut can be read a month later without rerunning.
     """
-    named = scores[scores[side].notna()]
+    named = pd.DataFrame(scores[scores[side].notna()])
     reason = ["" if alive else f"nivel {level}: {rule}" for alive, level, rule in
               zip(named["survives"], named["cayo_nivel"], named["cayo_regla"])]
-    return pd.DataFrame({"strategy": named[side].values,
-                         "verdict": named["survives"].map({True: "MANTENER",
-                                                           False: "DESCARTAR"}).values,
+    return pd.DataFrame({"strategy": named[side].to_numpy(),
+                         "verdict": pd.Series(named["survives"]).map(
+                             {True: "MANTENER", False: "DESCARTAR"}).to_numpy(),
                          "identity": named.index, "reason": reason})

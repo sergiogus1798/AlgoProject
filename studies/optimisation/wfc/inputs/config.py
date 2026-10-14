@@ -1,5 +1,6 @@
 """Read this study's config.yaml, beside the batch-reading knobs it shares with the CSCV."""
 
+from typing import Any
 from pathlib import Path
 
 from core.study import config as study_config
@@ -9,7 +10,7 @@ HERE = Path(__file__).resolve().parent.parent
 SHARED = HERE.parents[2] / "engines" / "variants" / "config.yaml"
 
 
-def load(overrides: list[str] | None = None) -> dict:
+def load(overrides: list[str] | None = None) -> dict[str, Any]:
     """The study's tunables, the panel's floors included.
 
     Args:

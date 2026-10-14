@@ -1,5 +1,7 @@
 """Whether the surface says anything: its adjusted R² against the same fit on a shuffled metric."""
 
+from typing import TypedDict, cast
+
 import numpy as np
 
 from studies.optimisation.cloud.model import surrogate
@@ -21,10 +23,18 @@ def shuffled(unit: np.ndarray, y: np.ndarray, draws: int, seed: int) -> np.ndarr
     """
     rng = np.random.default_rng(seed)
     dealt = np.column_stack([rng.permutation(y) for _ in range(draws)])
-    return surrogate.solve(surrogate.terms(unit), dealt)[1]
+    return cast(np.ndarray, surrogate.solve(surrogate.terms(unit), dealt)[1])
 
 
-def legible(r2_adj: float, reference: np.ndarray, percentile: float) -> dict:
+class Legible(TypedDict):
+    """The surface's adjusted R², the reference's percentile it must beat, and whether it does."""
+
+    r2_adj: float
+    r2_ref: float
+    legible: bool
+
+
+def legible(r2_adj: float, reference: np.ndarray, percentile: float) -> Legible:
     """The surface's adjusted R² beside its shuffled reference.
 
     Args:

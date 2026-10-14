@@ -1,5 +1,7 @@
 """The tensor of the travel test: every run's P/L in R per market and calendar cell, and the real run's beside it."""
 
+from typing import Any, TypedDict
+
 import numpy as np
 import pandas as pd
 
@@ -7,11 +9,42 @@ from engines.market import reprice
 from studies.transfer.crossmarket.travel import shift, sizing
 from studies.transfer.crossmarket.travel.cells import occupancy
 
+class _Market(TypedDict):
+    """What pricing needs of one market: bars, times, cell of each bar, costs, risk, lots, move-on bar, data per cell."""
+
+    bars: pd.DataFrame
+    seconds: np.ndarray
+    time: np.ndarray
+    cell: np.ndarray
+    costs: reprice.Costs
+    risk: float
+    lots: np.ndarray
+    next: np.ndarray
+    data: np.ndarray
+
+
+class Market(_Market, total=False):
+    """`_Market` plus `share`, the displaced share per cell that `exclude` sets."""
+
+    share: np.ndarray
+
+
+class Built(TypedDict):
+    """One strategy's tensor: markets, real and null R (judged and net), and the trades closed per market and cell."""
+
+    markets: list[str]
+    real: np.ndarray
+    null: np.ndarray
+    real_net: np.ndarray
+    null_net: np.ndarray
+    trades: np.ndarray
+
+
 CELLS = 2_000_000      # runs x trades priced at once: 16 MB per array, a dozen arrays alive
 
 
-def market(bars: pd.DataFrame, costs: reprice.Costs, params: dict, cells: pd.DataFrame,
-           flat_fraction: float = 0.0) -> dict:
+def market(bars: pd.DataFrame, costs: reprice.Costs, params: dict[str, Any], cells: pd.DataFrame,
+           flat_fraction: float = 0.0) -> Market:
     """What pricing needs of one market, computed once and shared by every strategy.
 
     Args:
@@ -32,17 +65,17 @@ def market(bars: pd.DataFrame, costs: reprice.Costs, params: dict, cells: pd.Dat
     start = cells["start"].to_numpy("datetime64[s]").astype(np.int64)
     cell = np.searchsorted(start, seconds, side="right") - 1
     atr_ = sizing.entry_atr(bars, params["ATRPeriod"])
-    return {"bars": bars, "seconds": seconds, "time": bars.index.to_numpy(), "cell": cell,
-            "costs": costs, "risk": params["Amount"],
-            "lots": sizing.lots(atr_, costs["point_value"], params),
-            "next": sizing.usable(atr_, flat_fraction),
-            "data": np.bincount(cell, minlength=len(cells)) > 0}
+    return Market(bars=bars, seconds=seconds, time=bars.index.to_numpy(), cell=cell,
+                  costs=costs, risk=params["Amount"],
+                  lots=sizing.lots(atr_, costs["point_value"], params),
+                  next=sizing.usable(atr_, flat_fraction),
+                  data=np.bincount(cell, minlength=len(cells)) > 0)
 
 
 PROBE_ENTRIES, PROBE_DRAWS = 20_000, 300     # the validity probe: entries per market, shifts per entry
 
 
-def displaced_share(mkt: dict, cells: pd.DataFrame, shifts: np.ndarray, step: str) -> np.ndarray:
+def displaced_share(mkt: Market, cells: pd.DataFrame, shifts: np.ndarray, step: str) -> np.ndarray:
     """Per cell, the share of uniformly placed entries a shift displaces to a LATER bar.
 
     A moved stamp with no bar takes the next bar, so after a hole of the data every run piles on
@@ -68,7 +101,7 @@ def displaced_share(mkt: dict, cells: pd.DataFrame, shifts: np.ndarray, step: st
     return share.reindex(range(len(cells))).to_numpy()
 
 
-def exclude(mkt: dict, cells: pd.DataFrame, shifts: np.ndarray, step: str, limit: float) -> np.ndarray:
+def exclude(mkt: Market, cells: pd.DataFrame, shifts: np.ndarray, step: str, limit: float) -> np.ndarray:
     """Leave out of the tensor every cell of this market whose displaced share exceeds `limit`.
 
     Sets `mkt["share"]` and clears `mkt["data"]` there, so `build` writes NaN (never 0) for the
@@ -83,7 +116,7 @@ def exclude(mkt: dict, cells: pd.DataFrame, shifts: np.ndarray, step: str, limit
     return out
 
 
-def _runs(mkt: dict, held: pd.DataFrame, side: np.ndarray, shifts: np.ndarray,
+def _runs(mkt: Market, held: pd.DataFrame, side: np.ndarray, shifts: np.ndarray,
           cells: pd.DataFrame, step: str) -> tuple[np.ndarray, np.ndarray]:
     """(runs, cells) NET and GROSS (net + cost) P/L in R of one market's trades under each row of
     shifts, summed by the cell each trade CLOSES in. Sized by the doctrine at the bar it lands on, priced by the one
@@ -102,8 +135,8 @@ def _runs(mkt: dict, held: pd.DataFrame, side: np.ndarray, shifts: np.ndarray,
     return by(net), by(net + cost)
 
 
-def build(trades: dict[str, pd.DataFrame], markets: dict[str, dict], cells: pd.DataFrame,
-          shifts: np.ndarray, step: str, judge: str = "net") -> dict:
+def build(trades: dict[str, pd.DataFrame], markets: dict[str, Market], cells: pd.DataFrame,
+          shifts: np.ndarray, step: str, judge: str = "net") -> Built:
     """One strategy's tensor: the real run and every random run, per market and cell.
 
     Args:
@@ -143,5 +176,5 @@ def build(trades: dict[str, pd.DataFrame], markets: dict[str, dict], cells: pd.D
             got = _runs(mkt, held, side, shifts[at:at + chunk], cells, step)
             null_net[at:at + chunk, j] = np.where(mkt["data"], got[0], np.nan)
             null[at:at + chunk, j] = np.where(mkt["data"], got[g], np.nan)
-    return {"markets": names, "real": real, "null": null, "real_net": real_net,
-            "null_net": null_net, "trades": count}
+    return Built(markets=names, real=real, null=null, real_net=real_net,
+                 null_net=null_net, trades=count)

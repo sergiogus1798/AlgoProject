@@ -1,5 +1,7 @@
 """SQX's pass/fail matrix on the corrected conditions and the cells' equity, as the contract's blocks."""
 
+from collections.abc import Iterable
+from typing import Any, cast
 import re
 
 import numpy as np
@@ -22,7 +24,7 @@ def _axes(mine: pd.DataFrame) -> tuple[list[int], list[int]]:
 def _tip(cell: pd.DataFrame, head: str) -> str:
     """One cell's hover: every condition with its value, threshold and ✓/✗."""
     lines = [f"{'✓' if r.met else '✗'} {labels.condition(r._asdict())}: {r.value:,.2f}"
-             for r in cell.sort_values("condition").itertuples()]
+             for r in cast(Iterable[Any], cell.sort_values("condition").itertuples())]
     return "\n".join([head, *lines])
 
 
@@ -45,10 +47,11 @@ def matrix(checked: pd.DataFrame, scored: pd.DataFrame, rule: dict, strategy: st
         itself marked, and a table of how many cells meet each condition. No recommended
         cell: its parameters are optimised on oos2.
     """
-    mine, cond = scored[scored["strategy"] == strategy], checked[checked["strategy"] == strategy]
+    mine = cast(pd.DataFrame, scored[scored["strategy"] == strategy])
+    cond = cast(pd.DataFrame, checked[checked["strategy"] == strategy])
     rows, cols = _axes(mine)
     at = mine.set_index(["runs", "oos_pct"])
-    score = at["score_pct"].unstack().reindex(index=rows, columns=cols).to_numpy()
+    score = cast(pd.DataFrame, at["score_pct"].unstack()).reindex(index=rows, columns=cols).to_numpy()
     passed = score >= rule["threshold_pct"]
     inside = np.zeros_like(passed)
     if found["corner"] is not None:
@@ -56,19 +59,21 @@ def matrix(checked: pd.DataFrame, scored: pd.DataFrame, rule: dict, strategy: st
         inside[i:i + rule["rows"], j:j + rule["cols"]] = True
     text, tips, states = [], [], []
     for i, r in enumerate(rows):
-        line, tip, state = [str(r)], [None], [None]
+        line: list[str] = [str(r)]
+        tip: list[str | None] = [None]
+        state: list[str | None] = [None]
         for j, c in enumerate(cols):
             met, active = at.loc[(r, c), "met"], at.loc[(r, c), "active"]
             line.append(f"{'▣ ' if inside[i, j] else ''}{met}/{active}")
             state.append("pass" if passed[i, j] else "fail")
-            tip.append(_tip(cond[(cond["runs"] == r) & (cond["oos_pct"] == c)],
+            tip.append(_tip(cast(pd.DataFrame, cond[(cond["runs"] == r) & (cond["oos_pct"] == c)]),
                             f"{r} pasadas · {c} % de la ventana de optimización fuera de "
                             f"muestra — {met}/{active} = {score[i, j]} % "
                             f"({'aprobada' if passed[i, j] else 'suspendida'})"))
         text.append(line)
         tips.append(tip)
         states.append(state)
-    grid = pd.DataFrame(text, columns=["pasadas \\ % OOS"] + [f"{c}%" for c in cols])
+    grid = pd.DataFrame(text, columns=pd.Index(["pasadas \\ % OOS"] + [f"{c}%" for c in cols]))
     where = ("" if found["corner"] is None else
              f" Mejor rectángulo {rule['rows']}×{rule['cols']} (▣): pasadas {rows[found['corner'][0]]}"
              f"-{rows[found['corner'][0] + rule['rows'] - 1]}, % OOS {cols[found['corner'][1]]}"
@@ -78,7 +83,7 @@ def matrix(checked: pd.DataFrame, scored: pd.DataFrame, rule: dict, strategy: st
            f"{'fallida' if sqx_failed else 'aprobada'}.")
     counts = (cond.groupby("condition").agg(met=("met", "sum"), cells=("met", "size"),
                                              median=("value", "median"))
-              .join(cond.drop_duplicates("condition").set_index("condition")
+              .join(cast(pd.DataFrame, cond.drop_duplicates("condition")).set_index("condition")
                     [["family", "metric", "op", "threshold"]]))
     summary = pd.DataFrame({
         "condición": [labels.condition(r) for r in counts.reset_index().to_dict("records")],

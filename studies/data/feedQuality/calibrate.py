@@ -9,6 +9,7 @@ any strategy is looked at (owner's answer 2.15).
 import argparse
 import json
 from datetime import date
+from typing import Any, TypedDict, cast
 
 import numpy as np
 
@@ -20,10 +21,18 @@ from studies.data.feedQuality import calendar, detect, inputs, summary
 
 CFG: dict = {}
 MASKS: dict = {}
-RUNS = None
+RUNS: Any = None      # the calendar of silences, set by `main`
 
 
-def quantisation(b: dict, got: dict, tick: float) -> dict:
+class Quantisation(TypedDict):
+    """How far the scale collapses to a tick: shares of one-tick moves and of floored bars, and the raw sigma's 1st percentile."""
+
+    one_tick_share: float
+    raw_sigma_p1_ticks: float
+    floored_share: float
+
+
+def quantisation(b: dict, got: detect.Measured, tick: float) -> Quantisation:
     """Whether the scale collapses to a tick or two: the silver and CADJPY question (3.3).
 
     Returns:
@@ -34,13 +43,31 @@ def quantisation(b: dict, got: dict, tick: float) -> dict:
     fin = np.isfinite(got["r"])
     moves = np.rint(np.abs(b["c"] - prev)[fin] / tick)
     raw_ticks = (got["raw"] * prev / tick)[np.isfinite(got["raw"])]
-    return {"one_tick_share": float(np.mean(moves == 1)),
-            "raw_sigma_p1_ticks": float(np.percentile(raw_ticks, 1)),
-            "floored_share": float(np.mean(got["sigma"][np.isfinite(got["raw"])]
-                                           > got["raw"][np.isfinite(got["raw"])]))}
+    return Quantisation(one_tick_share=float(np.mean(moves == 1)),
+                        raw_sigma_p1_ticks=float(np.percentile(raw_ticks, 1)),
+                        floored_share=float(np.mean(got["sigma"][np.isfinite(got["raw"])]
+                                                    > got["raw"][np.isfinite(got["raw"])])))
 
 
-def one_feed(feed: str) -> dict:
+class FeedCalibration(TypedDict):
+    """Everything the ledger rows of one feed are written from: K, session, stable year and the quiet medians."""
+
+    feed: str
+    tick: float
+    K: int | None
+    quiet_medians: dict[str, Any]
+    per_year_by_K: dict[int, dict[int, int]]
+    session: str
+    stable_from: int | None
+    grade: dict[int, str]
+    residual_gaps_per_year: float
+    spike_revert_quiet_median: float
+    wick_revert_quiet_median: float
+    frozen_quiet_median: float
+    quantisation: Quantisation
+
+
+def one_feed(feed: str) -> FeedCalibration:
     """Everything the ledger rows of one feed are written from."""
     b = inputs.bars(feed)
     tick = inputs.tick(b, CFG["session"]["years"])
@@ -49,22 +76,22 @@ def one_feed(feed: str) -> dict:
     k, medians = summary.k_star(yearly_k, CFG)
     ev = detect.events(b, got, k or max(CFG["k"]["candidates"]), MASKS[feed], CFG)
     holes = (ev["kind"] == "hueco") & (ev["cls"] == calendar.OWN)
-    ev.loc[holes, "cls"] = calendar.classify(ev[holes], RUNS)
+    ev.loc[holes, "cls"] = calendar.classify(cast(Any, ev[holes]), RUNS)
     yearly = summary.counts(ev, "Y")
     stable, grade = summary.stability(yearly, CFG)
     last_full = int(b["t"][-1].year) - 1
     lo, hi = CFG["k"]["quiet_years"]
-    quiet = yearly[(yearly.index >= lo) & (yearly.index <= hi)]
-    return {"feed": feed, "tick": tick, "K": k, "quiet_medians": medians,
-            "per_year_by_K": {int(y): {int(c): int(v) for c, v in row.items()}
-                              for y, row in yearly_k.iterrows()},
-            "session": session.text(MASKS[feed]),
-            "stable_from": stable, "grade": grade,
-            "residual_gaps_per_year": summary.residual_gaps(yearly, CFG, last_full),
-            "spike_revert_quiet_median": float(quiet["cierre y vuelta"].median()),
-            "wick_revert_quiet_median": float(quiet["mecha y vuelta"].median()),
-            "frozen_quiet_median": float(quiet["congelado"].median()),
-            "quantisation": quantisation(b, got, tick)}
+    quiet = cast(Any, yearly[(yearly.index >= lo) & (yearly.index <= hi)])
+    return FeedCalibration(feed=feed, tick=tick, K=k, quiet_medians=medians,
+            per_year_by_K={int(cast(Any, y)): {int(cast(Any, c)): int(v) for c, v in row.items()}
+                           for y, row in yearly_k.iterrows()},
+            session=session.text(MASKS[feed]),
+            stable_from=stable, grade=grade,
+            residual_gaps_per_year=summary.residual_gaps(yearly, CFG, last_full),
+            spike_revert_quiet_median=float(quiet["cierre y vuelta"].median()),
+            wick_revert_quiet_median=float(quiet["mecha y vuelta"].median()),
+            frozen_quiet_median=float(quiet["congelado"].median()),
+            quantisation=quantisation(b, got, tick))
 
 
 def ledger_rows(found: dict, today: str) -> str:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Step 18 over variant batches: the CSCV's four outputs against their null, the state, the ledger's looks."""
 
+from typing import Any
 import argparse
 import time
 from pathlib import Path
@@ -27,7 +28,7 @@ NO_TRADES = ("{work}: no hay variant_trades.parquet. El paso 18 lee el exceso se
              "operaciones de cada variante; vuelve a recoger el lote con /variants (paso 16.5).")
 
 
-def result(name: str, got: dict, perf: dict, cells: dict, cfg: dict, started: float) -> dict:
+def result(name: str, got: dict, perf: dict, cells: batch.Weekly, cfg: dict, started: float) -> dict[str, Any]:
     """The contract's result of one mother, with the facts the autopilot judges.
 
     Args:
@@ -97,7 +98,7 @@ def main() -> None:
     a = ap.parse_args()
     started = time.time()
     cfg = config.load(a.overrides)
-    batches = {}
+    batches: dict[Path, tuple[pd.DataFrame, batch.Weekly]] = {}
     for work in a.work:
         if not (work / batch.TRADES).exists():
             raise SystemExit(NO_TRADES.format(work=work))

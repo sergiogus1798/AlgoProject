@@ -1,6 +1,7 @@
 """Every strategy of one harvest against its feed's anomalies, as one result and one panel."""
 
 import time
+from typing import Any, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -11,7 +12,14 @@ from studies.data.feedQuality import alarm, one
 MODULE = one.MODULE
 
 
-def run(results: dict[str, dict], names: pd.Series, unread: list[str], cfg: dict) -> dict:
+class Population(TypedDict):
+    """The population's contract result and the per-strategy panel it was drawn from."""
+
+    population: dict[str, Any]
+    panel: pd.DataFrame
+
+
+def run(results: dict[str, dict], names: pd.Series, unread: list[str], cfg: dict) -> Population:
     """The population panel, from each strategy's one.run() summary.
 
     Args:
@@ -48,4 +56,4 @@ def run(results: dict[str, dict], names: pd.Series, unread: list[str], cfg: dict
                                    [envelope.tab("panel", "Cada estrategia contra su feed",
                                                  [bars, table], note=note)],
                                    glossary=one.GLOSSARY)
-    return {"population": population, "panel": panel}
+    return Population(population=population, panel=panel)

@@ -1,5 +1,7 @@
 """The doctrine's position size at any bar: fixed risk over a multiple of the ATR, at the card's point value."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
@@ -7,7 +9,7 @@ from core import assetdata
 from engines.market import atr
 
 
-def doctrine() -> dict:
+def doctrine() -> dict[str, Any]:
     """The sizing rule every project carries: `Amount` (1R, account currency), `ATRPeriod`,
     `ATRMult`. Read from assets/_build.yaml, never copied."""
     return assetdata.doctrine()["money_management"]["params"]

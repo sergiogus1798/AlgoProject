@@ -1,5 +1,7 @@
 """Whether the relative spread is constant, which model reconstructs it best, and what to declare in SQX."""
 
+from typing import Any, TypedDict, cast
+
 import numpy as np
 import pandas as pd
 
@@ -8,12 +10,27 @@ from studies.data.spread import model
 BPS = 1e4
 
 
+class Constancy(TypedDict):
+    """Whether a column is constant across the full years: the verdict, each year's ratio to the median and the worst."""
+
+    constant: bool
+    ratios: dict[int, float]
+    worst: float
+
+
+class McMultiples(TypedDict):
+    """The MC Retest range as multiples of the model's mean spread."""
+
+    min: float
+    max: float
+
+
 def full_years(yearly: pd.DataFrame) -> pd.DataFrame:
     """The yearly table without its first and last year, which the feed covers only in part."""
     return yearly.iloc[1:-1]
 
 
-def constancy(yearly: pd.DataFrame, column: str, tolerance: float) -> dict:
+def constancy(yearly: pd.DataFrame, column: str, tolerance: float) -> Constancy:
     """Whether every full year's mean stays within ±tolerance of the median of the years.
 
     Args:
@@ -27,8 +44,8 @@ def constancy(yearly: pd.DataFrame, column: str, tolerance: float) -> dict:
     values = full_years(yearly)[column]
     ratios = values / values.median()
     worst = float(ratios.iloc[np.argmax(np.abs(ratios.to_numpy() - 1))])
-    return {"constant": bool((np.abs(ratios - 1) <= tolerance).all()),
-            "ratios": {int(y): float(r) for y, r in ratios.items()}, "worst": worst}
+    return Constancy(constant=bool((np.abs(ratios - 1) <= tolerance).all()),
+                     ratios={int(y): float(r) for y, r in ratios.items()}, worst=worst)
 
 
 def validate(days: pd.DataFrame, candidates: list[str], split: int) -> pd.DataFrame:
@@ -38,23 +55,23 @@ def validate(days: pd.DataFrame, candidates: list[str], split: int) -> pd.DataFr
         One row per model and predicted year: `error` = predicted mean / measured mean − 1.
         Backwards (fitted on the later years) is the direction the Dukascopy years need.
     """
-    year = days.index.year
+    year = cast(Any, days.index).year
     folds = (("hacia atrás", year >= split, year < split), ("hacia delante", year < split, year >= split))
     rows = []
     for name in candidates:
         for direction, train, test in folds:
-            got = model.predict(name, model.fit(name, days[train]), days[test])
-            by_year = got.groupby(year[test]).mean() / days["rel"][test].groupby(year[test]).mean()
+            got = model.predict(name, model.fit(name, cast(pd.DataFrame, days[train])), cast(pd.DataFrame, days[test]))
+            by_year = cast(pd.Series, got.groupby(year[test]).mean()) / cast(pd.Series, cast(pd.Series, days["rel"][test]).groupby(year[test]).mean())
             rows += [{"modelo": name, "sentido": direction, "año": int(y), "error": float(e - 1)}
                      for y, e in by_year.items()]
     return pd.DataFrame(rows)
 
 
-def choose(relative: dict, errors: pd.DataFrame) -> str:
+def choose(relative: Constancy, errors: pd.DataFrame) -> str:
     """`relativo` when the relative spread is constant; otherwise the smallest mean |error|."""
     if relative["constant"]:
         return "relativo"
-    return errors.assign(e=errors["error"].abs()).groupby("modelo")["e"].mean().idxmin()
+    return cast(str, errors.assign(e=errors["error"].abs()).groupby("modelo")["e"].mean().idxmin())
 
 
 def reconstruct(days: pd.DataFrame, vol: pd.DataFrame, name: str) -> pd.DataFrame:
@@ -103,7 +120,7 @@ def propose(daily: pd.DataFrame, windows: dict, tick: float, factor: float) -> p
     """
     rows = []
     for segment, (start, end) in windows.items():
-        part = daily[(daily.index >= pd.Timestamp(start, unit="ms")) & (daily.index < pd.Timestamp(end, unit="ms"))]
+        part = cast(pd.DataFrame, daily[(daily.index >= pd.Timestamp(start, unit="ms")) & (daily.index < pd.Timestamp(end, unit="ms"))])
         rel = float(part["rel"].mean())
         price = float(part["price"].mean())
         rows.append({"tramo": segment, "desde": f"{part.index[0]:%Y-%m-%d}", "hasta": f"{part.index[-1]:%Y-%m-%d}",
@@ -113,7 +130,7 @@ def propose(daily: pd.DataFrame, windows: dict, tick: float, factor: float) -> p
     return pd.DataFrame(rows)
 
 
-def mc_multiples(days: pd.DataFrame, name: str, quantiles: list[float]) -> dict:
+def mc_multiples(days: pd.DataFrame, name: str, quantiles: list[float]) -> McMultiples:
     """How far a day's spread strays from the model's mean, as the MC Retest's range in multiples.
 
     Args:
@@ -130,4 +147,4 @@ def mc_multiples(days: pd.DataFrame, name: str, quantiles: list[float]) -> dict:
     """
     ratios = days["rel"] / model.predict(name, model.fit(name, days), days)
     low, high = ratios.quantile(quantiles)
-    return {"min": float(low), "max": float(high)}
+    return McMultiples(min=float(low), max=float(high))

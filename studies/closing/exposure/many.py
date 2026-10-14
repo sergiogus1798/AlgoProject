@@ -1,12 +1,14 @@
 """Every strategy of one export against buy & hold, and the population read as one result."""
 
 import time
+from typing import Any, TypedDict
 
 import pandas as pd
 
 from core import fanout
 from core.study import blocks, result as envelope
 from studies.closing.exposure import one
+from studies.closing.exposure.load import Loaded
 
 SHOWN = {"strategy": "Estrategia", "n": "Operaciones",
          "exp_share": "Barras con posición (%)", "exp_hours_per_week": "Horas por semana",
@@ -29,7 +31,15 @@ def _member(name: str) -> dict:
     return one.run(name, _SHARED["inputs"], _SHARED["cfg"])
 
 
-def run(inputs: dict, cfg: dict) -> dict:
+class Measured(TypedDict):
+    """The population's result, one row per strategy, and each strategy's own result."""
+
+    population: dict[str, Any]
+    table: pd.DataFrame
+    members: list[dict[str, Any]]
+
+
+def run(inputs: Loaded, cfg: dict) -> Measured:
     """Every strategy measured; none is judged.
 
     Args:
@@ -60,9 +70,9 @@ def run(inputs: dict, cfg: dict) -> dict:
         [envelope.tab("summary", "Rendimiento contra exposición", [
             {"kind": "bars", "title": "Eficiencia por hora expuesta, frente al buy & hold",
              "unit": "×", "reference": 1.0,
-             "items": [{"label": r.strategy, "value": r.efficiency, "error": None,
+             "items": [{"label": label, "value": value, "error": None,
                         "state": "none"}
-                       for r in table.itertuples()]},
+                       for label, value in zip(table["strategy"], table["efficiency"], strict=True)]},
             blocks.table("Estrategia a estrategia", shown, "Tiempo en el mercado en %; rendimientos en %.")])],
         None)
     return {"population": population, "table": table, "members": members}

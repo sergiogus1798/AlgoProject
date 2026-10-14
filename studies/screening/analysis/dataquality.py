@@ -24,7 +24,7 @@ def mark(oos: pd.DataFrame, index: pd.DatetimeIndex, width: int, ev: pd.DataFram
         of their ends, so a trade is hit when the latest-starting event before its window's
         end reaches into the window.
     """
-    ev = ev[~ev["cls"].isin(skip_cls)].sort_values("start_min")
+    ev = pd.DataFrame(ev[~ev["cls"].isin(list(skip_cls))]).sort_values("start_min")
     starts, ends = ev["start_min"].to_numpy(), np.maximum.accumulate(ev["end_min"].to_numpy())
     at = scale.minutes(index)
     k = np.clip(np.searchsorted(index, oos["open_time"].to_numpy(), "right") - 1, 0, None)
@@ -50,10 +50,12 @@ def facts(oos: pd.DataFrame, affected: np.ndarray) -> pd.DataFrame:
                       "a": affected})
     d["e_a"], d["e_r"] = d["e"].where(d["a"]), d["e"].where(~d["a"])
     g = d.groupby("identity", sort=False)
-    n_a, n_r = g["a"].sum(), g["a"].count() - g["a"].sum()
-    mean = g["e"].mean()
-    ret = (g["e_r"].mean() / mean).where(mean > 0)
+    n_a = pd.Series(g["a"].sum())
+    n_r = pd.Series(g["a"].count()) - n_a
+    mean = pd.Series(g["e"].mean())
+    e_a, e_r = pd.Series(g["e_a"].mean()), pd.Series(g["e_r"].mean())
+    ret = (e_r / mean).where(mean > 0)
     ret[n_a == 0] = np.where(mean[n_a == 0] > 0, 1.0, np.nan)   # nothing removed: all of it kept
-    se = np.sqrt(g["e_a"].var() / n_a + g["e_r"].var() / n_r)
-    t = ((g["e_a"].mean() - g["e_r"].mean()) / se).where((n_a >= 2) & (n_r >= 2))
+    se = np.sqrt(pd.Series(g["e_a"].var()) / n_a + pd.Series(g["e_r"].var()) / n_r)
+    t = ((e_a - e_r) / se).where((n_a >= 2) & (n_r >= 2))
     return pd.DataFrame({"ret_datos": ret, "t_a": t, "n_afectadas": n_a.astype(float)})

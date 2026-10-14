@@ -1,6 +1,7 @@
 """What an in-sample filter buys out of sample, and how many strategies it costs to get it."""
 
 import os
+from typing import TypedDict
 
 import numpy as np
 
@@ -73,7 +74,29 @@ def survivors(column: np.ndarray, candidate: dict) -> np.ndarray:
     return column <= np.quantile(column, candidate["cut"] / 100)
 
 
-def outcome(y: np.ndarray, level: float) -> dict:
+class Outcome(TypedDict):
+    """How one set of strategies did out of sample: size, median and share above break-even."""
+    n: int
+    median: float
+    hit: float
+
+
+class Lift(TypedDict):
+    """The bootstrapped improvement of the survivors over the population."""
+    d_median: float
+    d_median_lo: float
+    d_median_hi: float
+    d_hit: float
+    d_hit_lo: float
+    d_hit_hi: float
+    p: float
+
+
+class Judged(Outcome, Lift):
+    """One candidate's outcome and lift."""
+
+
+def outcome(y: np.ndarray, level: float) -> Outcome:
     """How one set of strategies did out of sample.
 
     Args:
@@ -83,7 +106,7 @@ def outcome(y: np.ndarray, level: float) -> dict:
     Returns:
         Keys n, median and hit, the share of the set strictly above break-even.
     """
-    return {"n": int(y.size), "median": float(np.median(y)), "hit": float((y > level).mean())}
+    return Outcome(n=int(y.size), median=float(np.median(y)), hit=float((y > level).mean()))
 
 
 def reach(tests: int) -> int:
@@ -119,7 +142,7 @@ def _resampled(rng: np.random.Generator, kept: np.ndarray, level: float,
 
 
 def lift(y: np.ndarray, mask: np.ndarray, level: float, draws: int = DRAWS,
-         reach: int = DRAWS) -> dict:
+         reach: int = DRAWS) -> Lift:
     """Bootstrap the improvement of the survivors over the whole population.
 
     Args:
@@ -151,16 +174,16 @@ def lift(y: np.ndarray, mask: np.ndarray, level: float, draws: int = DRAWS,
     d_median = np.concatenate([b[0] for b in blocks]) - base["median"]
     d_hit = np.concatenate([b[1] for b in blocks]) - base["hit"]
     tail = min(float((d_median <= 0).mean()), float((d_median >= 0).mean()))
-    return {"d_median": float(np.median(kept) - base["median"]),
-            "d_median_lo": float(np.quantile(d_median, 0.025)),
-            "d_median_hi": float(np.quantile(d_median, 0.975)),
-            "d_hit": float((kept > level).mean() - base["hit"]),
-            "d_hit_lo": float(np.quantile(d_hit, 0.025)),
-            "d_hit_hi": float(np.quantile(d_hit, 0.975)),
-            "p": max(2 * tail, 1 / d_median.size)}
+    return Lift(d_median=float(np.median(kept) - base["median"]),
+                d_median_lo=float(np.quantile(d_median, 0.025)),
+                d_median_hi=float(np.quantile(d_median, 0.975)),
+                d_hit=float((kept > level).mean() - base["hit"]),
+                d_hit_lo=float(np.quantile(d_hit, 0.025)),
+                d_hit_hi=float(np.quantile(d_hit, 0.975)),
+                p=max(2 * tail, 1 / d_median.size))
 
 
-def _judged(i: int) -> dict:
+def _judged(i: int) -> Judged:
     """One candidate's outcome and lift, in a worker that inherited the columns by fork.
 
     Args:
@@ -172,7 +195,7 @@ def _judged(i: int) -> dict:
     columns, y, level = _SHARED["columns"], _SHARED["y"], _SHARED["level"]
     candidate = _SHARED["judged"][i]
     mask = survivors(columns[candidate["metric"]], candidate)
-    return outcome(y[mask], level) | lift(y, mask, level, reach=reach(len(_SHARED["judged"])))
+    return Judged(**outcome(y[mask], level), **lift(y, mask, level, reach=reach(len(_SHARED["judged"]))))
 
 
 def sweep(columns: dict[str, np.ndarray], is_metrics: list[str], target: str,
@@ -200,7 +223,7 @@ def sweep(columns: dict[str, np.ndarray], is_metrics: list[str], target: str,
     # Every lift() reseeds its own generator, so a candidate's numbers do not depend on
     # which process ran it: the parallel sweep returns exactly the serial one's rows.
     got = dict(fanout.run(_judged, {i: int(survivors(columns[c["metric"]], c).sum())
-                                    for i, c in enumerate(judged)}, os.cpu_count()))
+                                    for i, c in enumerate(judged)}, os.cpu_count() or 1))
     for i, c in enumerate(judged):
         got[i] = {"metric": label(c), "column": c["metric"], "side": c["side"],
                   "cut": c["cut"], **got[i]}

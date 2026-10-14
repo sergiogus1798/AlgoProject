@@ -2,6 +2,7 @@
 
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -24,7 +25,7 @@ def _gate_sample(cfg: dict) -> tuple[dict, Path]:
     """
     project, databank, day = cfg["sample"]["gate"]["harvest"]
     folder = harvest_dir(project, databank, day)
-    data = gate_inputs.load(folder)
+    data: dict[str, Any] = dict(gate_inputs.load(folder))
     ids = data["metrics"].index[:cfg["sample"]["gate"]["strategies"] or None]
     data["metrics"] = data["metrics"].loc[ids]
     for key in ("trades", "equity", "missing"):

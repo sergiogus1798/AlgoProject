@@ -1,13 +1,35 @@
 """One asset's spread report as the contract's data: the proposal, by year, by hour, the model, the tail."""
 
 import time
+from typing import Any, TypedDict, cast
 
 import numpy as np
 import pandas as pd
 
 from core.study import blocks, result as envelope
+from studies.data.spread import verdict
 
 MODULE = "spread"
+
+
+class Facts(TypedDict):
+    """The flat numbers of one asset's scan: what the summary, the report and the ledger read."""
+
+    symbol: str
+    ticks: str
+    bars: str
+    model: str
+    tick: float
+    relative: verdict.Constancy
+    points: verdict.Constancy
+    error_backwards: float
+    declared: str
+    tail_year: int
+    mc_multiples: verdict.McMultiples
+    proposal: list[dict[str, Any]]
+    scanned_on: str
+    ticks_from: str
+    ticks_to: str
 BPS = 1e4
 GLOSSARY = [
     {"term": "Spread de apertura", "text": "El del primer tick de Darwinex de cada minuto: lo que "
@@ -33,7 +55,7 @@ def _monthly(daily: pd.DataFrame, tick: float | None = None) -> dict:
         daily: `verdict.reconstruct()`.
         tick: None for basis points of price; the tick size for points, SQX's unit.
     """
-    month = daily.index.to_period("M")
+    month = cast(pd.DatetimeIndex, daily.index).to_period("M")
     value = daily["rel"] * (BPS if tick is None else daily["price"] / tick)
     got = value.groupby([month, daily["source"]]).mean().unstack()
     x = [str(m) for m in got.index]
@@ -48,7 +70,7 @@ def _model_tab(errors: pd.DataFrame, chosen: str) -> dict:
     e = errors.assign(abs_error=errors["error"].abs())
     summary = e.groupby(["modelo", "sentido"]).agg(
         **{"error medio |%|": ("abs_error", "mean"), "peor año %": ("error", lambda s: s.iloc[np.argmax(np.abs(s))])})
-    summary = (summary * 100).reset_index()
+    summary = (cast(pd.DataFrame, summary) * 100).reset_index()
     wide = (errors.pivot_table(index=["modelo", "sentido"], columns="año", values="error") * 100).reset_index()
     wide.columns = [str(c) for c in wide.columns]
     for frame in (summary, wide):       # «volatilidad_precio» → «Volatilidad y precio»
@@ -62,9 +84,9 @@ def _model_tab(errors: pd.DataFrame, chosen: str) -> dict:
              "no se puede medir. El de «hacia atrás» es la mejor pista que hay.")
 
 
-def run(symbol: str, facts: dict, yearly: pd.DataFrame, daily: pd.DataFrame, errors: pd.DataFrame,
+def run(symbol: str, facts: Facts, yearly: pd.DataFrame, daily: pd.DataFrame, errors: pd.DataFrame,
         proposal: pd.DataFrame, grid: pd.DataFrame, hours: pd.Series, tail: np.ndarray,
-        cfg: dict) -> dict:
+        cfg: dict) -> dict[str, Any]:
     """One asset's report.
 
     Args:

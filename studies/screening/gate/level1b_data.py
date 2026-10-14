@@ -2,6 +2,8 @@
 
 import json
 import logging
+from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -26,10 +28,10 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         the reason logged) when the feed has no inventory or it ends before the population's last
         trade; `ret_datos` is NaN when the mean excess is not positive.
     """
-    empty = pd.DataFrame(index=alive, columns=list(FACTS), dtype=float)
+    empty = pd.DataFrame(index=alive, columns=pd.Index(FACTS), dtype=float)
     if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
         return empty
-    folder = data.get("quality")
+    folder = cast(Path, data.get("quality"))     # absent -> TypeError below, caught: no inventory
     try:
         ev = pd.read_parquet(folder / "events.parquet")
         scanned_to = pd.Timestamp(json.loads((folder / "summary.json").read_text("utf-8"))["bars_to"])
@@ -42,5 +44,5 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         log.warning("calidad de datos: el inventario acaba en %s, antes de la ultima operacion (%s); "
                     "hechos ausentes", scanned_to, oos["close_time"].max())
         return empty
-    width = int(pd.Series(index[:1000]).diff().mode()[0].total_seconds() // 60)
+    width = int(cast(pd.Timedelta, pd.Series(index[:1000]).diff().mode()[0]).total_seconds() // 60)
     return dataquality.facts(oos, dataquality.mark(oos, index, width, ev)).reindex(alive)

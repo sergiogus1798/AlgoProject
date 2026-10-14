@@ -1,5 +1,6 @@
 """The register that opens the blind block, or does not: the two reference rates against their caps."""
 
+from typing import Any, cast
 import json
 from datetime import date
 from pathlib import Path
@@ -10,6 +11,7 @@ import yaml
 from core.study.config import fingerprint
 from ledger import gate
 from studies.optimisation.wfc.calibrate import families
+from studies.optimisation.wfc.calibrate.rehearsal import Rehearsal
 
 STEP = "17"
 
@@ -19,7 +21,7 @@ def comma(value: float) -> str:
     return f"{value:.2f}".replace(".", ",")
 
 
-def decide(table: pd.DataFrame, cfg: dict) -> dict:
+def decide(table: pd.DataFrame, cfg: dict) -> dict[str, Any]:
     """Whether the criterion stays under the two caps at the reference cells.
 
     Args:
@@ -33,9 +35,9 @@ def decide(table: pd.DataFrame, cfg: dict) -> dict:
         true when neither exceeds its cap; and `motivo`, in Spanish.
     """
     ref = cfg["reference"]
-    at = table[(table["bloque"] == "rejilla") & (table["anos_fuera"] == ref["years_out"])]
-    none = at[(at["tipo"] == families.NONE) & (at["sharpe"] == 0)]
-    edge = at[(at["tipo"] != families.NONE) & (at["sharpe"] == ref["edge"])]
+    at = cast(pd.DataFrame, table[(table["bloque"] == "rejilla") & (table["anos_fuera"] == ref["years_out"])])
+    none = cast(pd.DataFrame, at[(at["tipo"] == families.NONE) & (at["sharpe"] == 0)])
+    edge = cast(pd.DataFrame, at[(at["tipo"] != families.NONE) & (at["sharpe"] == ref["edge"])])
     got = {"falso_pasa": float(none["pasa"].iloc[0]), "falso_no_pasa": float(edge["no_pasa"].max()),
            "falso_pasa_sin": float(none["pasa_sin"].iloc[0]),
            "falso_no_pasa_sin": float(edge["no_pasa_sin"].max())}
@@ -48,7 +50,7 @@ def decide(table: pd.DataFrame, cfg: dict) -> dict:
                   "motivo": "; ".join(over) or "las dos tasas de referencia están bajo su tope"}
 
 
-def build(decision: dict, table: pd.DataFrame, rehearsed: dict, cfg: dict, wfc: dict) -> dict:
+def build(decision: dict, table: pd.DataFrame, rehearsed: Rehearsal, cfg: dict, wfc: dict) -> dict[str, Any]:
     """The register as `ledger.gate.seal` reads it.
 
     Returns:

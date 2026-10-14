@@ -13,6 +13,8 @@ brought back with the smearing factor exp(σ²/2), so they predict the mean, not
 | `volatilidad_precio` | the elasticities to volatility and price level | both |
 """
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
@@ -45,7 +47,7 @@ MODELS = {
 }
 
 
-def fit(name: str, days: pd.DataFrame) -> dict:
+def fit(name: str, days: pd.DataFrame) -> dict[str, Any]:
     """One model's parameters on the given days."""
     return MODELS[name][0](days)
 

@@ -2,7 +2,8 @@
 
 import resource
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
+from typing import Any, TypedDict, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,7 @@ import pandas as pd
 from core import fanout
 from studies.optimisation.cscv.measure import cscv, null, outputs
 
+Mother = TypeVar("Mother", bound=Hashable)   # the batch folder (Path) in the report, a name in the tests
 REAL = -1
 TASKS_PER_WORKER = 4        # pieces each kind's draws are cut into per process: evens the tail
 MB = 1024.0                 # ru_maxrss is in kilobytes on Linux
@@ -43,7 +45,7 @@ def _work(key: tuple) -> tuple:
     got, knobs, member = _SHARED["panels"][name], _SHARED["knobs"], _SHARED["member"]
     began = time.process_time()
     if kind == REAL:
-        def real(side: str, track: int | None) -> dict:
+        def real(side: str, track: int | None) -> dict[str, Any]:
             """The CSCV on the real cells of one side."""
             return cscv.run(cscv.sums(got[side], knobs["blocks"]), member, knobs["chunk"],
                             knobs["bins"], knobs["reach"], track)
@@ -57,7 +59,31 @@ def _work(key: tuple) -> tuple:
     return out, time.process_time() - began, resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / MB
 
 
-def knobs_of(cfg: dict) -> dict:
+class Panel(TypedDict):
+    """One mother's panel: the kept variants, the screen's counts, the track and the cells."""
+
+    names: np.ndarray
+    counts: dict[str, Any]
+    track: int | None
+    net: np.ndarray
+    gross: np.ndarray
+
+
+class Knobs(TypedDict):
+    """The study's config flattened to what a worker reads."""
+
+    blocks: int
+    seed: int
+    block_weeks: int
+    deltas: list[float]
+    share: float
+    chunk: int
+    bins: int
+    reach: int
+    tolerance: float
+
+
+def knobs_of(cfg: dict) -> Knobs:
     """The study's config flattened to what a worker reads."""
     return {"blocks": cfg["cscv"]["blocks"], "seed": cfg["cscv"]["seed"],
             "block_weeks": cfg["null"]["block_weeks"], "deltas": list(cfg["power"]["deltas"]),
@@ -66,8 +92,8 @@ def knobs_of(cfg: dict) -> dict:
             "tolerance": cfg["dominance"]["tolerance"]}
 
 
-def run(panels: dict[str, dict], cfg: dict,
-        progress: Callable[[float], None] | None = None) -> tuple[dict[str, dict], dict]:
+def run(panels: dict[Mother, Panel], cfg: dict,
+        progress: Callable[[float], None] | None = None) -> tuple[dict[Mother, dict], dict]:
     """Every mother's real CSCV, null and power draws, through one queue of processes.
 
     Args:

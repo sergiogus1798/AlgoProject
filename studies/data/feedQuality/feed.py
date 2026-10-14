@@ -1,5 +1,6 @@
 """One feed's quality report as the contract's data: counts by year and month, episodes, extremes."""
 
+from typing import Any, cast
 import time
 
 import pandas as pd
@@ -35,7 +36,7 @@ def _extremes(ev: pd.DataFrame, n: int) -> list[dict]:
     for kind, title, cols in (("cierre", "cierre", SPIKE_COLUMNS), ("mecha", "mecha", SPIKE_COLUMNS),
                               ("congelado", "congelados", ["t", "size"]),
                               ("hueco", "huecos", ["t", "size", "cls"])):
-        top = ev[ev["kind"] == kind].nlargest(n, "size")[cols].copy()
+        top = cast(pd.DataFrame, cast(pd.DataFrame, ev[ev["kind"] == kind]).nlargest(n, "size")[cols]).copy()
         top["t"] = top["t"].dt.strftime("%Y-%m-%d %H:%M")
         top = top.rename(columns={"t": "minuto (hora del feed)", "size": "tamaño",
                                   "cls": "clase", "both": "también en la otra columna"})
@@ -45,7 +46,7 @@ def _extremes(ev: pd.DataFrame, n: int) -> list[dict]:
     return out
 
 
-def run(feed: str, ev: pd.DataFrame, facts: dict, cfg: dict) -> dict:
+def run(feed: str, ev: pd.DataFrame, facts: summary.Facts, cfg: dict) -> dict[str, Any]:
     """One feed's report.
 
     Args:
@@ -74,7 +75,7 @@ def run(feed: str, ev: pd.DataFrame, facts: dict, cfg: dict) -> dict:
         facts["marked_per_year"])
     per_year = yearly.reset_index(names="año")
     per_year["año"] = per_year["año"].astype(str)
-    per_year["calidad"] = per_year["año"].map(facts["grade"])
+    per_year["calidad"] = per_year["año"].map(facts["grade"])  # pyright: ignore[reportArgumentType]  # pandas stubs reject a dict mapper
     lines = {"kind": "lines", "title": "Anomalías marcadas por mes", "unit": "sucesos",
               "x": [str(m) for m in monthly.index],
               "series": [{"label": col, "values": monthly[col].tolist(), "role": "real"}

@@ -2,6 +2,7 @@
 
 import math
 import time
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -25,8 +26,9 @@ def panel(measured: pd.DataFrame, names: pd.Series, cfg: dict) -> pd.DataFrame:
         `decil_profundas` (the decile of the build's deep-trade share among the strategies,
         informative only). `marcada` needs `verdict.min_cuota_rec`; unset, nobody is marked.
     """
-    rows = {}
-    for (identity, segment), g in measured.groupby(["identity", "segment"], observed=True):
+    rows: dict[Any, dict[str, Any]] = {}
+    for key, g in measured.groupby(["identity", "segment"], observed=True):
+        identity, segment = cast(tuple, key)
         rows.setdefault(identity, {"identity": identity}).update(
             {f"{k}_{segment}": v for k, v in measures.one_segment(g, cfg).items()})
     out = pd.DataFrame(rows).T
@@ -46,7 +48,7 @@ def panel(measured: pd.DataFrame, names: pd.Series, cfg: dict) -> pd.DataFrame:
     return out
 
 
-def run(measured: pd.DataFrame, names: pd.Series, cfg: dict) -> dict:
+def run(measured: pd.DataFrame, names: pd.Series, cfg: dict) -> dict[str, Any]:
     """The population's reading.
 
     Returns:

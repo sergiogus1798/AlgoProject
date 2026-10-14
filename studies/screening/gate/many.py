@@ -1,6 +1,7 @@
 """The gate over one harvest: every level in order, and the population read as one result."""
 
 import time
+from typing import Any, TypedDict
 
 import pandas as pd
 
@@ -10,7 +11,16 @@ from studies.screening.gate import cascade, measures, one
 from studies.screening.gate.redundancy import medoides, redundancia
 
 
-def run(data: dict, cfg: dict, rules: list[dict], source: dict, start: str = "0") -> dict:
+class Gate(TypedDict):
+    """The gate's result: the population page, each member, the scorecard, the funnel, the null."""
+    population: dict[str, Any]
+    members: list[dict[str, Any]]
+    scores: pd.DataFrame
+    funnel: pd.DataFrame
+    fdr: dict[str, float | None]
+
+
+def run(data: dict, cfg: dict, rules: list[dict], source: dict, start: str = "0") -> Gate:
     """The cascade, the funnel, and every strategy's own reading.
 
     Args:
@@ -47,6 +57,7 @@ def run(data: dict, cfg: dict, rules: list[dict], source: dict, start: str = "0"
         scores[["redundancia_value", "redundancia_note"]] = same[["value", "note"]]
         medoid = medoides(data["metrics"], data["oos"], alive)
         scores["redundancia_grupo"], scores["medoide"] = medoid["grupo"], medoid["medoide"].reindex(scores.index, fill_value=False)
+    rows = funnel.to_dict("records")
     stand = int(scores["survives"].sum())
     doubt = int((scores["limbo"].fillna("") != "").sum())
     population = envelope.envelope(
@@ -54,11 +65,11 @@ def run(data: dict, cfg: dict, rules: list[dict], source: dict, start: str = "0"
         [envelope.tab("funnel", "El embudo", [
             {"kind": "bars", "title": "Cuántas caen en cada regla", "unit": "estrategias",
              "reference": None, "items": [
-                 {"label": f"{r.level} · {r.screen}", "value": int(r.died), "error": None,
-                  "state": "fail"} for r in funnel.itertuples()]},
+                 {"label": f"{r['level']} · {r['screen']}", "value": int(r["died"]), "error": None,
+                  "state": "fail"} for r in rows]},
             blocks.table("Nivel a nivel, regla a regla", pd.DataFrame(
-                [[r.level, r.screen, r.entered, r.limbo, r.died] for r in funnel.itertuples()],
-                columns=["nivel", "regla", "entran", "limbo", "caen"]))],
+                [[r["level"], r["screen"], r["entered"], r["limbo"], r["died"]] for r in rows],
+                columns=pd.Index(["nivel", "regla", "entran", "limbo", "caen"])))],
             note=f"Cosecha {source['harvest']} · fuera de muestra {source['split']} → "
                  f"{source['end']} · {len(scores)} entran ({source['missing_oos']} sin "
                  f"resultado OOS). Las reglas son las del paso 8 de criteria.yaml; cada "
@@ -71,5 +82,7 @@ def run(data: dict, cfg: dict, rules: list[dict], source: dict, start: str = "0"
                        "nivel, cada uno sobre lo que dejó el anterior."))
     members = [one.run(identity, scores, cfg) for identity in scores.index]
     envelope.progress(100, f"{stand} de {len(scores)} siguen")
-    return {"population": population, "members": members, "scores": scores, "funnel": funnel,
-            "fdr": {k: fdr[k] for k in ("delta0", "sigma0", "pi0")} | {"z": len(z)}}
+    null: dict[str, float | None] = {k: fdr[k] for k in ("delta0", "sigma0", "pi0")}
+    null["z"] = len(z)
+    return Gate(population=population, members=members, scores=scores, funnel=funnel,
+                fdr=null)

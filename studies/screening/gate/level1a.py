@@ -31,7 +31,7 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         its bar (a stop-loss), NaN on an exit at a bar open. Raises as reprice.real does.
     """
     if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
-        return pd.DataFrame(index=alive, columns=list(FACTS), dtype=float)
+        return pd.DataFrame(index=alive, columns=pd.Index(FACTS), dtype=float)
     bars, drift = data["bars"], cfg["drift"]
     trades = data["trades"]
     oos = (trades[(trades["sample"] == "OOS") & trades["identity"].isin(alive)]
@@ -49,4 +49,4 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         "stop": priced["stop"].to_numpy()})
     data["oos"].to_parquet(data["out"] / "operaciones.parquet", index=False)
     t = tradelevel.t_skew_kurt if drift["se_skew_kurt"] else tradelevel.t
-    return t(data["oos"], "excess")[["ar1"]].set_axis(list(FACTS), axis=1).reindex(alive)
+    return pd.DataFrame(t(data["oos"], "excess")[["ar1"]].set_axis(list(FACTS), axis=1)).reindex(alive)

@@ -1,5 +1,6 @@
 """The panel with nothing to choose: every column at one Sharpe, its weeks redrawn with replacement."""
 
+from typing import Any, TypedDict
 import numpy as np
 
 from engines.resample import draws
@@ -11,7 +12,15 @@ WEEKS = 52          # a year, to turn an annual Sharpe into a weekly one
 NET, GROSS, PLANTED = 0, 1, 2
 
 
-def standard(values: np.ndarray) -> dict:
+class Standard(TypedDict):
+    """The panel standardised per column: the scores, their squares and the median Sharpe."""
+
+    u: np.ndarray
+    u2: np.ndarray
+    m: float
+
+
+def standard(values: np.ndarray) -> Standard:
     """The panel with each column's own mean and deviation taken out.
 
     Args:
@@ -26,7 +35,7 @@ def standard(values: np.ndarray) -> dict:
     return {"u": u, "u2": u * u, "m": float(np.median(mean / spread))}
 
 
-def redrawn(shared: dict, rows: np.ndarray, mean: np.ndarray, blocks: int) -> dict:
+def redrawn(shared: Standard, rows: np.ndarray, mean: np.ndarray, blocks: int) -> cscv.Sums:
     """Block sums of the equalised panel at redrawn weeks, without building the panel.
 
     Every column is `u + mean`: deviation 1 and Sharpe `mean`, so the common deviation of
@@ -50,8 +59,8 @@ def redrawn(shared: dict, rows: np.ndarray, mean: np.ndarray, blocks: int) -> di
             "s2": s2 + 2 * mean * s1 + n[:, None] * mean * mean}
 
 
-def draw(shared: dict, member: np.ndarray, seed: int, kind: int, index: int, delta: float,
-         knobs: dict) -> dict:
+def draw(shared: Standard, member: np.ndarray, seed: int, kind: int, index: int, delta: float,
+         knobs: dict) -> dict[str, Any]:
     """One CSCV on one bootstrap sample of the equalised panel.
 
     Args:

@@ -3,7 +3,9 @@
 
 import argparse
 import sys
+from collections.abc import Iterable
 from datetime import date
+from typing import Any, cast
 
 from core.paths import report_dir
 from core.study import draws, output, verdicts
@@ -44,7 +46,7 @@ def main() -> None:
     draws.save(out, got.get("draws", []))
     got["cells"].to_csv(out / "cell_excess.csv", index=False)
     verdicts.write(out, got["table"], directory, " ".join(sys.argv), args.overrides)
-    for r in got["table"].itertuples():
+    for r in cast(Iterable[Any], got["table"].itertuples()):
         print(f"{r.strategy:22s} {r.verdict:8s} L1={r.l1_mediana_exceso:+10.2f}/año  "
               f"p+={r.l1_p_mas:.3f} p-={r.l1_p_menos:.3f}  L2={r.l2_delta:+10.2f}  "
               f"efectivas={r.celdas_efectivas:4.1f}  area={r.area_celdas:2d}")

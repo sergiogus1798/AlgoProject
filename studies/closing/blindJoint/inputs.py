@@ -1,5 +1,6 @@
 """What step 20 reads: its knobs, the ledger's two doors, the mothers' oos2 days and their random traders'."""
 
+from typing import Any, cast
 from pathlib import Path
 
 import pandas as pd
@@ -21,7 +22,7 @@ TRADES = "trades.parquet"   # per variant, in the batch folder: step 16.5's harv
 TOLERANCE, RECONCILED = 1.0, 0.99
 
 
-def config(overrides: list[str]) -> dict:
+def config(overrides: list[str]) -> dict[str, Any]:
     """Step 20's knobs, with command-line overrides applied.
 
     Args:
@@ -78,7 +79,8 @@ def window(symbol: str) -> tuple[pd.Timestamp, pd.Timestamp]:
         First instant and the instant after the last, UTC-naive like the bars.
     """
     start, end = asset_window(load_asset(symbol), SEGMENT)
-    return pd.Timestamp(start, unit="ms"), pd.Timestamp(end, unit="ms")
+    first, last = pd.Timestamp(start, unit="ms"), pd.Timestamp(end, unit="ms")
+    return cast(pd.Timestamp, first), cast(pd.Timestamp, last)
 
 
 def mother_low(batch: Path, span: tuple[pd.Timestamp, pd.Timestamp]) -> pd.Series:
@@ -101,11 +103,11 @@ def mother_low(batch: Path, span: tuple[pd.Timestamp, pd.Timestamp]) -> pd.Serie
     """
     origin = pd.read_parquet(batch / "manifest.parquet", columns=["variant_id", "origin"])
     column = origin.loc[origin["origin"], "variant_id"].item()
-    days = pd.read_parquet(batch / "equity.parquet", columns=[column])[column]
-    days = days[(days.index >= span[0]) & (days.index < span[1])]
+    days = cast(pd.Series, pd.read_parquet(batch / "equity.parquet", columns=[column])[column])
+    days = cast(pd.Series, days[(days.index >= span[0]) & (days.index < span[1])])
     if days.index.duplicated().any():
         raise ValueError(f"{batch}: el tramo {span} cruza el solape de dos patas del retest")
-    return days.cumsum()
+    return cast(pd.Series, days.cumsum())
 
 
 def trades_door(batches: dict[str, Path]) -> str | None:
@@ -128,7 +130,7 @@ def mother_trades(batch: Path, span: tuple[pd.Timestamp, pd.Timestamp]) -> pd.Da
     origin = pd.read_parquet(batch / "manifest.parquet", columns=["variant_id", "origin"])
     trades = pd.read_parquet(batch / TRADES)
     trades = trades[trades["variant_id"] == origin.loc[origin["origin"], "variant_id"].item()]
-    return trades[(trades["Open time"] >= span[0]) & (trades["Close time"] < span[1])]
+    return cast(pd.DataFrame, trades[(trades["Open time"] >= span[0]) & (trades["Close time"] < span[1])])
 
 
 def panel(batches: dict[str, Path], span: tuple[pd.Timestamp, pd.Timestamp],
@@ -147,15 +149,15 @@ def panel(batches: dict[str, Path], span: tuple[pd.Timestamp, pd.Timestamp],
         daily lows must match `mother_low`, or the panel is refused — as part A does.
     """
     trades = pd.concat([mother_trades(b, span).assign(identity=m) for m, b in batches.items()])
-    bars = read_bars(feed, ["High", "Low", "Close"])
-    bars = bars[(bars.index >= span[0]) & (bars.index < span[1])]
+    bars = cast(pd.DataFrame, read_bars(feed, ["High", "Low", "Close"]))
+    bars = cast(pd.DataFrame, bars[(bars.index >= span[0]) & (bars.index < span[1])])
     profit, low = closecurve.panel(trades, bars, *closecurve.measured(trades))
     gap = (low - pd.DataFrame({m: mother_low(b, span) for m, b in batches.items()})).abs()
     exact = ((gap <= TOLERANCE).sum() / gap.notna().sum()).median()
     if exact < RECONCILED:
         raise ValueError(f"la curva reconstruida de las madres no reproduce la de SQX "
                          f"({exact:.2%} de los días, hace falta {RECONCILED:.0%})")
-    return profit.reindex(columns=list(batches)).fillna(0.0)
+    return cast(pd.DataFrame, profit.reindex(columns=list(batches)).fillna(0.0))
 
 
 def random_traders(batches: dict[str, Path], span: tuple[pd.Timestamp, pd.Timestamp],
@@ -174,8 +176,8 @@ def random_traders(batches: dict[str, Path], span: tuple[pd.Timestamp, pd.Timest
         mothers' oos2 trades and the feed's M1 bars are what `panel` already read, behind
         the same door, and the costs are the asset card's.
     """
-    bars = read_bars(feed, ["Open", "High", "Low", "Close"])
-    bars = bars[(bars.index >= span[0]) & (bars.index < span[1])]
+    bars = cast(pd.DataFrame, read_bars(feed, ["Open", "High", "Low", "Close"]))
+    bars = cast(pd.DataFrame, bars[(bars.index >= span[0]) & (bars.index < span[1])])
     costs = reprice.costs(feed, SEGMENT)
     got = {m: footprint.footprint(mother_trades(b, span), bars, costs, cfg["benchmark"])
            for m, b in batches.items()}

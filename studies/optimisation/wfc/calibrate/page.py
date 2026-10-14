@@ -1,9 +1,12 @@
 """The calibration's report in Spanish: the verdict on top, then the criterion beside the one without a null on the level."""
 
+from typing import Any, cast
+
 import numpy as np
 import pandas as pd
 
 from studies.optimisation.wfc.calibrate import families, rates
+from studies.optimisation.wfc.calibrate.rehearsal import Rehearsal
 
 KIND = {families.NONE: "sin ventaja", families.FLAT: "ventaja, sin orden",
         families.ORDER: "ventaja, con orden"}
@@ -32,7 +35,7 @@ LEGEND = """## Cómo se lee
 """
 
 
-def num(value: float | None, digits: int = 2) -> str:
+def num(value: Any, digits: int = 2) -> str:
     """A number the Spanish way, or a dash."""
     return "—" if value is None or pd.isna(value) else f"{value:.{digits}f}".replace(".", ",")
 
@@ -78,7 +81,7 @@ def cells(table: pd.DataFrame) -> str:
                        "PASA", "LIMBO", "NO PASA"])
 
 
-def rehearsal(found: dict) -> str:
+def rehearsal(found: Rehearsal) -> str:
     """The real batches rehearsed in build -> oos1, or the plain statement that there is none."""
     if not found["lotes"]:
         return ("0 lotes: ningún lote tiene `variant_trades.parquet` todavía (lo escribe la "
@@ -86,7 +89,7 @@ def rehearsal(found: dict) -> str:
     rows = [[r["lote"], r["n"], r["casilla"].replace("_", " "), r["estado"].replace("_", " "),
              r["estado_sin"].replace("_", " "), num(r["rho"]), num(r["nivel_top"]),
              num(r["p_nivel"], 3), num(r["sd_rho_nulo"])] for r in found["lotes"]]
-    said = found["tasas"]
+    said = cast(dict[str, Any], found["tasas"])   # None only when there are no batches (returned above)
     return (f"{len(rows)} lotes. PASA {num(said['pasa'])} (sin nulo {num(said['pasa_sin'])}) · "
             f"LIMBO {num(said['limbo'])} · NO PASA {num(said['no_pasa'])}. La verdad de un lote "
             "real no se conoce: son tasas de casilla, no falsos ni perdidos.\n\n"
@@ -94,7 +97,7 @@ def rehearsal(found: dict) -> str:
                           "nivel del top", "p del nivel", "sd de ρ en el nulo"]))
 
 
-def text(table: pd.DataFrame, decision: dict, rehearsed: dict, cfg: dict, wfc: dict,
+def text(table: pd.DataFrame, decision: dict, rehearsed: Rehearsal, cfg: dict, wfc: dict,
          written: bool) -> str:
     """The whole report.
 
@@ -105,10 +108,10 @@ def text(table: pd.DataFrame, decision: dict, rehearsed: dict, cfg: dict, wfc: d
         cfg, wfc: The calibration's config and the WFC's.
         written: Whether the register was written by this run.
     """
-    main, side = (table[table["bloque"] == b] for b in ("rejilla", "sensibilidad"))
+    main, side = (cast(pd.DataFrame, table[table["bloque"] == b]) for b in ("rejilla", "sensibilidad"))
     ref, n = cfg["reference"], cfg["families"]
     error = np.sqrt(decision["falso_pasa"] * (1 - decision["falso_pasa"]) / n)
-    base = main[(main["tipo"] == families.NONE) & (main["sharpe"] == 0)]
+    base = cast(pd.DataFrame, main[(main["tipo"] == families.NONE) & (main["sharpe"] == 0)])
     return "\n\n".join([
         "# Calibración del paso 17 (WFC)",
         f"**El registro {'ABRE' if decision['abre'] else 'NO ABRE'} el bloque ciego** "

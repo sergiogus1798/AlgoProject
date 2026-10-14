@@ -1,5 +1,6 @@
 """Read config.yaml and find the WFM export on disk."""
 
+from typing import Any
 from pathlib import Path
 
 from core.paths import DATA
@@ -9,7 +10,7 @@ from ledger import thresholds
 HERE = Path(__file__).resolve().parent.parent
 
 
-def load(overrides: list[str] | None = None) -> dict:
+def load(overrides: list[str] | None = None) -> dict[str, Any]:
     """The study's settings.
 
     Args:

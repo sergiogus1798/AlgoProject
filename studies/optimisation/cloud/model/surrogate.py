@@ -1,5 +1,7 @@
 """The smooth model of the surface: a full quadratic over the live parameters, and how much it explains."""
 
+from typing import TypedDict
+
 import numpy as np
 
 
@@ -42,7 +44,16 @@ def solve(matrix: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray | f
     return coef, 1.0 - (1.0 - r2) * (n - 1) / (n - rank)
 
 
-def fit(unit: np.ndarray, y: np.ndarray) -> dict:
+class Fit(TypedDict):
+    """A fitted smooth surface: its coefficients, parameter count, points and adjusted R²."""
+
+    coef: np.ndarray
+    k: int
+    n: int
+    r2_adj: float
+
+
+def fit(unit: np.ndarray, y: np.ndarray) -> Fit:
     """The surface fitted to one metric.
 
     Args:
@@ -57,7 +68,7 @@ def fit(unit: np.ndarray, y: np.ndarray) -> dict:
     return {"coef": coef, "k": unit.shape[1], "n": int(y.size), "r2_adj": float(r2_adj)}
 
 
-def predict(model: dict, unit: np.ndarray) -> np.ndarray:
+def predict(model: Fit, unit: np.ndarray) -> np.ndarray:
     """The smooth model's value at any set of tuples.
 
     Args:

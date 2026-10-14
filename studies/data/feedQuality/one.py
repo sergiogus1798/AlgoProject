@@ -1,11 +1,12 @@
 """One strategy against its feed's anomalies, as the contract's data: the alarm and what it touched."""
 
 import time
+from typing import Any, cast
 
 import pandas as pd
 
 from core.study import blocks, result as envelope
-from studies.data.feedQuality import alarm
+from studies.data.feedQuality import alarm, template
 
 MODULE = "feedQuality"
 STATE = {alarm.ALARM: "fail", alarm.QUIET: "pass", alarm.SHORT: "none"}
@@ -24,7 +25,7 @@ GLOSSARY = [
 TOUCHED = ["cierre", "mecha", "extremo", "congelado", "hueco", "durante"]
 
 
-def run(strategy: str, identity: str, marked: pd.DataFrame, rules: dict, cfg: dict) -> dict:
+def run(strategy: str, identity: str, marked: pd.DataFrame, rules: template.Rules, cfg: dict) -> dict[str, Any]:
     """One strategy's attribution.
 
     Args:
@@ -62,9 +63,9 @@ def run(strategy: str, identity: str, marked: pd.DataFrame, rules: dict, cfg: di
             "unit": "operaciones", "reference": None,
             "items": [{"label": c, "value": float(marked[c].sum()), "error": None,
                        "state": "info"} for c in TOUCHED]}
-    split = marked.groupby("sample").agg(operaciones=("marcada", "size"),
-                                          marcadas=("marcada", "sum"))
-    split["neto de las marcadas"] = marked[flagged].groupby("sample")["Profit/Loss"].sum()
+    split = cast(pd.DataFrame, marked.groupby("sample").agg(operaciones=("marcada", "size"),
+                                                           marcadas=("marcada", "sum")))
+    split["neto de las marcadas"] = cast(pd.DataFrame, marked[flagged]).groupby("sample")["Profit/Loss"].sum()
     tabs = [envelope.tab("alarm", "Alarma", [blocks.table("Resumen", head,
                          "Nunca se recalculan las métricas sin las marcadas: sería limpiar "
                          "el backtest con otro nombre (decisión 13).")]),
@@ -75,9 +76,9 @@ def run(strategy: str, identity: str, marked: pd.DataFrame, rules: dict, cfg: di
         tabs[0]["blocks"].append(blocks.distribution(
             "Beneficio de grupos al azar del mismo tamaño", "USD", got["draws"],
             got["observed"], "La línea es el beneficio neto de las marcadas.", p=got["p"]))
-    listed = marked[flagged][["Open time", "Close time", "sample", "Profit/Loss", *TOUCHED]]
+    listed = cast(pd.DataFrame, marked[flagged])[["Open time", "Close time", "sample", "Profit/Loss", *TOUCHED]]
     tabs.append(envelope.tab("list", "Operaciones marcadas", [blocks.table(
-        "Operaciones marcadas", listed.head(500).astype({"Open time": str, "Close time": str}))]))
+        "Operaciones marcadas", cast(pd.DataFrame, listed.head(500).astype({"Open time": str, "Close time": str})))]))
     return envelope.envelope(MODULE, strategy, identity, cfg, started, tabs, said,
                              glossary=GLOSSARY,
                              summary={"n": got["n"], "flagged": got["flagged"], "p": got["p"],

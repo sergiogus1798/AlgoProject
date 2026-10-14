@@ -1,5 +1,6 @@
 """Step 18.5 as the contract's blocks: the call, the joint rho against its null, the markets, the premium, the power."""
 
+from typing import Any
 import numpy as np
 import pandas as pd
 
@@ -14,7 +15,7 @@ def es(value: float | None, pattern: str = "{:.2f}") -> str:
     return "sin dato" if value is None or not np.isfinite(value) else pattern.format(value).replace(".", ",")
 
 
-def verdict(facts: dict, state: str, main: str, cfg: dict) -> dict:
+def verdict(facts: dict, state: str, main: str, cfg: dict) -> dict[str, Any]:
     """The step's state, its label and the sentence of each reading that made it."""
     order, premium = facts["orden"], facts["prima"]
     said = order.get("estado", "sin_dato")
@@ -50,7 +51,7 @@ def joint(found: dict, title: str, note: str) -> list[dict]:
                                 p=found["orden"]["p_mas"], sign_shade=False)]
 
 
-def per_market(found: dict, cfg: dict) -> dict:
+def per_market(found: dict, cfg: dict) -> dict[str, Any]:
     """One row per declared market: its rho, its tails, its common set, its weight. Decides nothing."""
     m = found["mercados"]
     frame = pd.DataFrame({
@@ -64,16 +65,16 @@ def per_market(found: dict, cfg: dict) -> dict:
         "compact": True, "help": [w.MARKETS[c] for c in frame.columns]}
 
 
-def categories(found: dict) -> dict:
+def categories(found: dict) -> dict[str, Any]:
     """The joint rho of each category of `_markets.yaml` on its own."""
     rows = [[w.CATEGORY.get(c, c), got["rho"], got["p_mas"], got["p_menos"], got["peso"],
              got["mercados"]] for c, got in found["categorias"].items()]
-    frame = pd.DataFrame(rows, columns=["Categoría", "ρ conjunta", "p+", "p−", "Peso", "Mercados"])
+    frame = pd.DataFrame(rows, columns=pd.Index(["Categoría", "ρ conjunta", "p+", "p−", "Peso", "Mercados"]))
     return blocks.table(w.CATEGORIES_TITLE, frame.astype({"ρ conjunta": float, "p+": float, "p−": float}),
                         w.CATEGORIES_NOTE, digits=3) | {"compact": True, "help": w.CATEGORIES}
 
 
-def order(found: dict, name: str, main: str, lede: str, cfg: dict) -> dict:
+def order(found: dict, name: str, main: str, lede: str, cfg: dict) -> dict[str, Any]:
     """One reading's tab: the joint rho on its null, the markets, the categories."""
     note = w.JOINT_NOTE.format(main=main, draws=cfg["null"]["draws"])
     return envelope.tab(
@@ -82,7 +83,7 @@ def order(found: dict, name: str, main: str, lede: str, cfg: dict) -> dict:
          categories(found)], note=lede)
 
 
-def premium(found: dict, main: str, cfg: dict) -> dict:
+def premium(found: dict, main: str, cfg: dict) -> dict[str, Any]:
     """The premium tab: the joint premium marked on its own null."""
     share, pct = (es(v, "{:g}") for v in (100 * cfg["premium"]["top_share"], cfg["premium"]["percentile"]))
     note = w.PREMIUM_NOTE.format(share=share, main=main, pct=pct, cut=es(found["prima"]["nulo_p"]))
@@ -92,12 +93,12 @@ def premium(found: dict, main: str, cfg: dict) -> dict:
     return envelope.tab("prima", f"La prima del {share} % mejor, en dinero", shown, note=note)
 
 
-def reference(facts: dict, main: str, cfg: dict) -> dict:
+def reference(facts: dict, main: str, cfg: dict) -> dict[str, Any]:
     """The reference tab: the main market against itself, and the power curve."""
     auto, alpha = facts["auto"], cfg["null"]["alpha"]
     frame = pd.DataFrame([[auto["rho"], facts["orden"]["rho"], auto.get("cociente")]],
-                         columns=["ρ propia (build → oos1)", "ρ conjunta entre mercados",
-                                  "Cociente"]).astype(float)
+                         columns=pd.Index(["ρ propia (build → oos1)", "ρ conjunta entre mercados",
+                                  "Cociente"])).astype(float)
     table = blocks.table(w.REFERENCE_TITLE.format(main=main), frame, w.REFERENCE_NOTE.format(
         main=main, floor=es(cfg["reference"]["min_rho"], "{:g}")), digits=3) | {
         "compact": True, "help": w.REFERENCE}

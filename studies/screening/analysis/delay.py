@@ -80,7 +80,7 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str],
         pair = trades.assign(moved=cache[name], delta=trades["excess"] - cache[name]).dropna(subset=["delta"])
         mean = pair.groupby("identity", sort=False)[["excess", "moved"]].mean()
         rows.append(pd.DataFrame({
-            "variant": name, "ret": (mean["moved"] / mean["excess"]).where(mean["excess"] > 0),
+            "variant": name, "ret": pd.Series(mean["moved"] / mean["excess"]).where(mean["excess"] > 0),
             "t_delta": tradelevel.t(pair, "delta")["iid"], "t": t(pair, "moved")["ar1"]}))
     return pd.concat(rows).rename_axis("identity").reset_index()
 

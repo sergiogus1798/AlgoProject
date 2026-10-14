@@ -1,5 +1,7 @@
 """P2: the frequency of each strategy in each market against its own on the main asset, centred on what the population does there."""
 
+from typing import cast
+
 import pandas as pd
 
 from studies.screening.analysis import centred
@@ -25,14 +27,14 @@ def z_freq(counts: pd.DataFrame, years: pd.Series, main: pd.DataFrame, cuts: dic
     """
     exposure = centred.calendar_exposure(cuts["build"], cuts["oos1"])
     build = main[main["Open time"] < cuts["oos1"]]
-    by_year = pd.crosstab(build["strategy"], build["Open time"].dt.year).reindex(
+    by_year = pd.crosstab(build["strategy"], cast(pd.Series, build["Open time"]).dt.year).reindex(
         index=counts.index, columns=exposure.index, fill_value=0)
     phi = centred.dispersion(by_year, exposure, frequency["phi_min"], frequency["phi_max"])
-    n_main = main.groupby("strategy").size().reindex(counts.index, fill_value=0)
+    n_main = cast(pd.Series, main.groupby("strategy").size().reindex(counts.index, fill_value=0))
     span = (cuts["end"] - cuts["build"]) / pd.Timedelta(days=centred.YEAR)
     group = pd.Series("population", index=counts.index)
     out = {}
     for feed in counts.columns:
-        rate = centred.rate_change(n_main, span, counts[feed], years[feed], phi)
-        out[feed] = (rate["log_rate"] - centred.centre(rate["log_rate"], group, 2, None)) / rate["se"]
+        rate = centred.rate_change(n_main, span, cast(pd.Series, counts[feed]), cast(float, years[feed]), phi)
+        out[feed] = (rate["log_rate"] - centred.centre(cast(pd.Series, rate["log_rate"]), group, 2, None)) / rate["se"]
     return pd.DataFrame(out)

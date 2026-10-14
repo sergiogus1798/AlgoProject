@@ -1,11 +1,13 @@
 """One strategy against buy & hold, priced in market time, as the contract's data."""
 
+from typing import Any, cast
 import time
 
 import numpy as np
 import pandas as pd
 
 from core.study import blocks, result as envelope
+from studies.closing.exposure.load import Loaded
 from studies.closing.exposure import benchmark, compare, occupancy
 
 MODULE = "studies.closing.exposure"
@@ -22,8 +24,8 @@ NOTES = {
               "presente en los tramos buenos que a una ventaja propia"}
 
 
-def notes(strategy: dict, bench: dict, exposure: dict, presence: dict, n: int, days: int,
-          cfg: dict) -> list[str]:
+def notes(strategy: compare.Stats, bench: compare.Stats, exposure: occupancy.Occupancy, presence: occupancy.Presence, n: int,
+          days: int, cfg: dict) -> list[str]:
     """The reasons not to trust the numbers; nothing is passed or failed."""
     lim = cfg["notes"]
     out = []
@@ -64,7 +66,7 @@ GLOSSARY = [
      "habla del edge y no del tamaño."}]
 
 
-def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float, cfg: dict) -> dict:
+def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float, cfg: dict) -> dict[str, Any]:
     """Everything this study measures about one strategy.
 
     Args:
@@ -80,9 +82,10 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float, cfg: d
     """
     equity = compare.equity_start(trades)
     moves = benchmark.moves(bars)
-    mine = benchmark.daily(trades, moves.index)
+    days_index = cast(pd.DatetimeIndex, moves.index)
+    mine = benchmark.daily(trades, days_index)
     exposure = occupancy.measure(trades, bars, point_value, equity)
-    held = occupancy.held(trades, bars.index)["signed"]
+    held = occupancy.held(trades, cast(pd.DatetimeIndex, bars.index))["signed"]
     closes = bars["Close"].to_numpy()
     presence = occupancy.presence(held, np.diff(closes, prepend=closes[0]))
 
@@ -93,21 +96,21 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float, cfg: d
              for name, size in lots.items()}
     head = cfg["benchmark"]["headline"]
     trade_off = compare.dichotomy(strategy, bench[head], exposure)
-    days = (moves.index[-1] - moves.index[0]).days
+    days = (days_index[-1] - days_index[0]).days
     said = notes(strategy, bench[head], exposure, presence, len(trades), days, cfg)
 
-    out = {"n": len(trades), "days": days, "equity_start": equity}
+    out: dict[str, Any] = {"n": len(trades), "days": days, "equity_start": equity}
     out |= {f"exp_{key}": value for key, value in exposure.items()}
     out |= {f"strat_{key}": value for key, value in strategy.items()}
     out |= {f"bench_{name}_{key}": value
             for name, found in bench.items() for key, value in found.items()}
     out |= {f"lots_{name}": size for name, size in lots.items()}
-    out |= trade_off | presence
+    out |= {**trade_off, **presence}
     out["notes"] = " | ".join(said)
     return out
 
 
-def run(strategy: str, inputs: dict, cfg: dict) -> dict:
+def run(strategy: str, inputs: Loaded, cfg: dict) -> dict[str, Any]:
     """What one strategy's return cost in market time, against buy & hold.
 
     Args:
@@ -121,7 +124,7 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
     """
     started = time.time()
     frame = inputs["frame"]
-    found = measure(frame[frame["strategy"] == strategy], inputs["bars"],
+    found = measure(cast(pd.DataFrame, frame[frame["strategy"] == strategy]), inputs["bars"],
                     inputs["point_value"], cfg)
     head = cfg["benchmark"]["headline"]
     warnings = [{"code": "nota", "state": "watch", "text": r}
@@ -136,7 +139,7 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
          ["Eficiencia frente al buy & hold", fmt(found["efficiency"]) + "x"],
          ["Retorno total frente al buy & hold", fmt(found["return_ratio"]) + "x"],
          ["Drawdown frente al del buy & hold", fmt(found["dd_ratio"]) + "x"]],
-        columns=["Medida", "Valor"]),
+        columns=pd.Index(["Medida", "Valor"])),
         "Rendir menos que el buy & hold en total no es un fallo aquí: es la pregunta.")
     trade["align"] = ["left", "right"]
     sides = blocks.table("La estrategia y el buy & hold", pd.DataFrame(
@@ -147,13 +150,13 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict:
             fmt(found[f"bench_{c}_return_pct"], 1, "%"), fmt(found[f"bench_{c}_cagr_pct"], 1, "%"),
             fmt(found[f"bench_{c}_maxdd_pct"], 1, "%"), fmt(found[f"bench_{c}_sharpe"])]
            for c in cfg["benchmark"]["report"]],
-        columns=["", "Lotes", "Net Profit (USD)", "Retorno", "CAGR", "Drawdown", "Sharpe"]),
+        columns=pd.Index(["", "Lotes", "Net Profit (USD)", "Retorno", "CAGR", "Drawdown", "Sharpe"])),
         f"Se muestra frente a la convención {CONVENTIONS[head]}.")
     sides["align"] = ["left"] + ["right"] * 6
     presence = blocks.table("Dónde estaba cuando el mercado se movió", pd.DataFrame(
         [["Movimiento del mercado con posición", fmt(found["captured"] * 100, 2, "%")],
          ["Parte alineada con su dirección", fmt(found["aligned"] * 100, 2, "%")]],
-        columns=["Medida", "Valor"]),
+        columns=pd.Index(["Medida", "Valor"])),
         "Capturar mucho movimiento estando poco tiempo y poco alineada se parece más a estar "
         "presente en los tramos buenos que a una ventaja propia.")
     presence["align"] = ["left", "right"]

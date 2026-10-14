@@ -1,5 +1,6 @@
 """The criterion rehearsed on real batches with build inside and oos1 outside: legs already spent."""
 
+from typing import Any, TypedDict, cast
 from pathlib import Path
 
 import pandas as pd
@@ -34,7 +35,7 @@ def metrics(work: Path) -> pd.DataFrame:
     return pd.read_parquet(file, columns=names)
 
 
-def one_batch(work: Path, cfg: dict) -> dict:
+def one_batch(work: Path, cfg: dict) -> dict[str, Any]:
     """One batch through the criterion, both ways.
 
     Args:
@@ -59,7 +60,7 @@ def one_batch(work: Path, cfg: dict) -> dict:
     asset, ids = assetdata.load(symbol), kept["variant_id"]
     per = got["per"][LEGS[1]]
     weeks = weekly.weekly(per[per["variant_id"].isin(ids)], batch.window(asset, COMP[1]),
-                          units=ids)["gross"].to_numpy()
+                          units=cast(Any, ids))["gross"].to_numpy()
     inside = one.values(COMP, table, got, asset).loc[ids, "g_is"].to_numpy(float)
     return row | {
         "casilla": rates.cell(facts["orden"], facts["nivel_top"]), "rho": facts["rho"],
@@ -68,7 +69,14 @@ def one_batch(work: Path, cfg: dict) -> dict:
         "sd_rho_nulo": rates.sd_rho(inside, weeks, batch.years(asset, COMP[1]), cfg)}
 
 
-def run(root: Path, cfg: dict) -> dict:
+class Rehearsal(TypedDict):
+    """The rehearsal: one row per real batch, and the rate of each cell over them."""
+
+    lotes: list[dict[str, Any]]
+    tasas: dict[str, Any] | None
+
+
+def run(root: Path, cfg: dict) -> Rehearsal:
     """Every batch under `root` that can be rehearsed.
 
     Returns:
