@@ -32,6 +32,7 @@ STRATEGIES = (
     ("Versiones", "Cuántas veces se archivó."),
     ("Última versión", "Cuándo se archivó la más nueva."),
     ("Pools", "Los pools declarados que la llevan."),
+    ("MT5", "Las empresas en cuya cuenta de MT5 la validó el paso 26; «—» si ninguna."),
     ("Identidad", "Los ocho primeros caracteres."),
 )
 PORTFOLIOS = (
@@ -155,6 +156,7 @@ class Databank(QFrame):
                 num(len(r["versions"])),
                 detail.when(r["archived_at"]),
                 ", ".join(holds.get(r["identity"], [])) or "—",
+                ", ".join(r.get("mt5", [])) or "—",
                 r["identity"][:8],
             )
             for j, value in enumerate(cells):

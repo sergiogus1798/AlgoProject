@@ -8,7 +8,7 @@ Trap: green on leaseWeb means nothing for GitHub's master. Run `bin/remote.sh go
 | cause | fix |
 |---|---|
 | Ubuntu linux-tools puts `/usr/lib/linux-tools/<kernel>/lib/perf.cpython-312-*.so` on `sys.path`; `perf/` had no `__init__.py` (namespace package) and lost: `import perf.…` died «'perf' is not a package» (pipeline.stages.gates, pipeline.cleanup, window catalogue, 4 ui tests) | `perf/__init__.py`. Rule: a top-level folder whose name can collide with a system module needs an `__init__.py` (`perf` was the only one shadowed) |
-| `.gitignore` blanket `*.csv`, `*.parquet`, `*.sqx` hid needed files: 17 skeletons `tools/sqx-lab/plugins/sqx-lab/skills/sqx-strategy-template/engine/skeletons/*.sqx` (read by `sqx/templates/build.py`, `holes.py`, `ui/daemon/interview.py`), `mt5/symbols.csv` (`mt5/verify/firms.py`), `tests/fixtures/fleet/**`. Symptom: `test_condition_count`, `test_builder_feedswap` fail; authoring a template there fails | `!` exceptions in `.gitignore` |
+| `.gitignore` blanket `*.csv`, `*.parquet`, `*.sqx` hid needed files: 17 skeletons `tools/sqx-lab/plugins/sqx-lab/skills/sqx-strategy-template/engine/skeletons/*.sqx` (read by `sqx/templates/build.py`, `holes.py`, `ui/daemon/interview.py`), `tests/fixtures/fleet/**`. Symptom: `test_condition_count`, `test_builder_feedswap` fail; authoring a template there fails | `!` exceptions in `.gitignore` |
 | Sessions leave test fixes or knowhow cards uncommitted: gorilla showed 7 `checks.py` problems and 51 failing tests (8 here) | commit them (owner decides) |
 | `tests/test_marketsurfaces.py` compared a chunked null exactly across chunk sizes; the 7950X's BLAS rounds the last bit differently (-0.6231758175072347 vs …346) 🔬 | compare to 9 digits, `blocks.plain(x, 9)` |
 

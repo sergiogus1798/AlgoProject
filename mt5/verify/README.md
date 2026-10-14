@@ -20,7 +20,7 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
 | `firms.py` | Which prop firms the bridge can verify on: their saved MT5 account and their symbol names. | imported | asset → firms usable, or why not |
 | `judge.py` | Compare each firm's SQX retest with its MT5 backtest on the rows of encargo 34, and judge. | imported | trade lists + costs → verdict, tables, chart |
 | `mt5side.py` | The MT5 half of a check: compile the EA SQX exported, and backtest it on each firm's account. | imported | `.mq5` → trades per firm |
-| `pool.py` | The validated pool of step 26: an append-only register per prop firm, the first verdict per check counts. | `python3 -m mt5.verify.pool [--rebuild]` | `AlgoData/mt5/verify/<run>/` → `AlgoData/pool/<firm>.csv` |
+| `pool.py` | The validated pool of step 26: an append-only SQLite register of verdicts, the first verdict per check counts. | `python3 -m mt5.verify.pool [--rebuild]` | `AlgoData/mt5/verify/<run>/` → `AlgoData/pool/pool.sqlite` |
 | `report.py` | Write mt5.verify.run's result.json (the study contract) and its run.json, and mark a crash. | imported | summaries + tabs → the two files |
 | `run.py` | Step 26: one strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account. | `python3 -m mt5.verify.run --strategy <sqx> --from YYYY-MM-DD --to YYYY-MM-DD --model ohlc_m1 [--firms ftmo,hantec] [--set k=v]` | a `.sqx` → a verdict per firm |
 | `sidebyside.py` | Every SQX entry beside the MT5 trade each firm's EA opened for it: one row per entry, one set of columns per firm. | imported | `firm_result`'s pairs → one table block |

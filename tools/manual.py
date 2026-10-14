@@ -117,7 +117,7 @@ FAMILIES = {
     ),
     "06-lecturas": (
         "Lecturas de una estrategia",
-        ["26-nulos", "50-edge-por-coste", "42-calidad-de-la-entrada"],
+        ["26-nulos", "50-edge-por-coste", "51-estacionalidad", "42-calidad-de-la-entrada"],
     ),
     "07-otros-mercados-y-timeframes": (
         "Otros mercados y otros timeframes",
@@ -159,6 +159,7 @@ FAMILIES = {
             "75-filtro-noticias",
             "93-metatracker",
             "94-flota-colector",
+            "113-flota-despliegue",
         ],
     ),
     "11-cartera": (

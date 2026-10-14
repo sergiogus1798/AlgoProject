@@ -32,7 +32,7 @@ def config(overrides: Sequence[str] = ()) -> dict[str, Any]:
 def names(asset: str) -> dict[str, str]:
     """The asset's symbol at each firm, `mt5:` of `assets/symbols/<asset>.yaml` — versioned
     with the asset and edited in the Activos zone (owner, 2026-09-30; it was a git-ignored
-    `mt5/symbols.csv`). The owner's rule (encargo 35 §1 #3): a firm the asset does not name
+    the retired `mt5/symbols.csv`). The owner's rule (encargo 35 §1 #3): a firm the asset does not name
     stops the job for that firm — never guessed.
     """
     return dict(assetdata.load(asset).get("mt5") or {})

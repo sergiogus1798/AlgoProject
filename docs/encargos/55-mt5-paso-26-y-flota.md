@@ -22,17 +22,16 @@ OPEN.md`) · `knowhow/mt5/INDEX.md` · `knowhow/locations/vps-fleet-access.md` �
 
 | frente | qué | modelo | depende de | estado |
 |---|---|---|---|---|
-| A | Paso 26: poner `tests/test_mt5verify.py` en verde (hoy sale 1) | Sonnet | — | pendiente |
-| B | Paso 26: lo que falta de la verificación (fila 5 flotante, lectura de «R», símbolos) | Opus (fila 5, R) / Sonnet | A, decisión del dueño | pendiente |
+| B | Paso 26: queda la fila 5 con flotante (M1 del terminal de cada firma, K-2; sin decidir si cambia `dd_rel_gap_max`) y «R» = distancia al stop donde haya stop (K-1b); ninguna superviviente con stop para probarlo | Opus / Sonnet | una corrida real en MT5 | parcial: símbolos y `mt5/README.md` hechos |
 | C | Paso 26: «Hecho es» — una superviviente real, su veredicto y su fila en el pool | Sonnet (la corrida es mecánica) | A, B, #78, una superviviente real | bloqueado |
-| D | El pool: formato, y quién lo lee (cartera, zona PORTFOLIOS) | Opus (diseño) | decisión del dueño | pendiente |
-| E | Flota — pieza B: paquete `.ex5` + `.set` + perfil `.chr`, validado en demo bajo Wine | Sonnet | magics (G) | pendiente |
-| F | Flota — pieza C: acciones desde la app (reabrir un terminal, tarea programada) | Sonnet | decisión del dueño | pendiente |
-| G | Registro de magics (secuencial desde 1001, nunca reutilizado) | Sonnet | decisión del dueño | pendiente |
+| E | Flota — pieza B: hecho `mt5/fleet/package.py` + `deploy.py` + `vps/*.ps1`; falta validar el `.chr` en una cuenta DEMO del terminal de Wine (la cuenta que tiene hoy es Hantec 8063673, no se sabe si demo) y probar contra la VPS | Sonnet | demo en Wine, visto bueno del dueño | parcial |
+| F | Flota — pieza C: hecho el reinicio con tarea programada (`deploy.py --install-watchdog`, sin probar en la VPS); falta pausar una cuenta (K-8c, fichero de control: exige que el EA o la baliza lo lean) | Sonnet | el dueño ve el diseño | parcial |
 | H | Exportador de carteras (§3 de 35): magic, riesgo en USD, noticias, comentario, nombre | Opus (diseño) → Sonnet | G, E, encargo 54 (riesgo por tamaño) | pendiente |
 | I | Flota — pieza D: la conciliación alimentada por las cuentas de la flota | Sonnet | decisión del dueño | pendiente |
 
 ## Bitácora
+
+- 2026-10-14 — frentes A (ya estaba en verde: `tests/test_mt5verify.py` sale 0), D (pool en SQLite, `AlgoData/pool/pool.sqlite`; columna MT5 en PORTFOLIOS › Estrategias: lista todo y marca lo validado, K-3/K-4) y G (`mt5/fleet/magics.py`, desde 1001, K-5) hechos; K-6 hecho (`mt5/symbols.csv` borrado). E y F parciales, B parcial: ver la tabla. Manual: capítulo 113 y 86. Hoy el pool trae 22 filas y una `pass` (FTMO, Strategy 16.18.388, XAUUSD H1): no la he verificado como superviviente real.
 
 - 2026-10-09 — consolidado de los encargos 34 (validación en MT5 y pool) y 35 (flota de MT5 en la VPS).
   Lo hecho de ambos se resume en «Ya construido»; los originales se leen con `git show

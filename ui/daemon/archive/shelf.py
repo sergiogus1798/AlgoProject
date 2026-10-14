@@ -6,6 +6,7 @@ from typing import Any, TypedDict
 
 from core.archive import read
 from core.paths import archive_dir
+from mt5.verify import pool
 from ui.daemon.results import catalogue
 
 
@@ -69,13 +70,15 @@ def strategies() -> list[dict[str, Any]]:
     Returns:
         One dict per identity: `identity`, `strategy` (its name in the databank), `project`,
         `symbol`, `timeframe` (the project's registry row), `step`, `archived_at` and
-        `ledger` of its newest version, and `versions` oldest first.
+        `ledger` of its newest version, `mt5` (the firms whose step-26 pool validates it) and
+        `versions` oldest first.
     """
     by_id: dict[str, list[tuple[dict[str, Any], dict[str, Any]]]] = {}
     for row in read.listing():
         by_id.setdefault(row["identity"], []).append(
             (row, _manifest(row["identity"], row["version"]))
         )
+    ok = pool.validated()
     out = []
     for identity, held in by_id.items():
         row, doc = held[-1]
@@ -90,6 +93,7 @@ def strategies() -> list[dict[str, Any]]:
                 "step": row["step"],
                 "archived_at": row["archived_at"],
                 "ledger": _ledger(doc),
+                "mt5": ok.get(identity, []),
                 "versions": [_version(r, d) for r, d in held],
             }
         )

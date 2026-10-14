@@ -1,11 +1,12 @@
 ---
 q: How does the validated pool register store verdicts, and which verdict per identity wins?
-kw: validated pool register step 26; AlgoData/pool/<firm>.csv; which strategies are validated for FTMO Hantec; mt5.verify.pool read record rebuild; thresholds a past Verificar run was judged under; step 26 from the autopilot; refused firm no row
+kw: validated pool register step 26; AlgoData/pool/pool.sqlite; which strategies are validated for FTMO Hantec; mt5.verify.pool read record rebuild; thresholds a past Verificar run was judged under; step 26 from the autopilot; refused firm no row
 tag: 🔬  date: 2026-10-02  see: mt5-verify-clock-zones, thresholds-live-in-the-ledger
 ---
-# The validated pool is one append-only CSV per firm; the latest verdict per identity wins
-- Only through `mt5.verify.pool`: `record(rows)` appends; `read(firm)` = identities whose LATEST
-  row by `verified_on` (not line order) is `pass`; `history(firm)` = every row. Never edit the CSVs.
+# The validated pool is one append-only SQLite table; the FIRST verdict per check wins
+- Only through `mt5.verify.pool`: `record(rows)` appends to `AlgoData/pool/pool.sqlite`; `read(firm)` = the
+  FIRST verdict per (identity, window, model), by `verified_on`, being `pass`; `history(firm)` = every row;
+  `validated()` = identity -> firms (the archive list's MT5 column).
 - A firm the check REFUSED, or a crashed check, is not a verdict: no row, an earlier `pass` stands.
 - A past check's thresholds are only in its ledger row (`<ASSET>_<TF>_mt5verify.jsonl`: `note` ends
   with the run, `criterion` names the firm) — `thresholds_hash` comes from there; `result.json`
@@ -22,3 +23,4 @@ tag: 🔬  date: 2026-10-02  see: mt5-verify-clock-zones, thresholds-live-in-the
   `advance.busy("conductor", "")` with no `own_log`: an autopilot that itself ran SQX on the
   conductor would be refused until that log is 15 min old (`QUIET_MIN`). Read in the code, not
   run; a real autopilot run on a conductor project confirms it.
+- 🔬 2026-10-14: owner chose SQLite (table `verdicts`, all text); the old per-firm CSVs moved to `pool/csv-retirados/`, 22 rows migrated.

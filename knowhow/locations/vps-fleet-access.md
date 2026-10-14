@@ -18,3 +18,5 @@ Three `terminal64.exe` running: FTMO 390 MB, Hantec 588 MB, MetaQuotes 391 MB; 5
 `tailscale ping 100.112.93.53` → direct, 98 ms. From this server, public IP: 22 closed, 3389 open, 5986 open, 5985 and 445 closed.
 2026-10-02 (late), listing: terminal builds Hantec 6230, MetaQuotes 6230, FTMO 5833; the three run in session 2 (the RDP desktop), started 2026-10-02 23:53-23:55. A heredoc with a multi-line `ForEach-Object { }` under `-Command -` printed its first section and nothing else.
 2026-10-02 23:54, after the update and reboot: build `20348.5622`, 0 updates pending, `sshd` and `Tailscale` running with automatic start, SSH rule still `100.64.0.0/10`.
+
+- 🤔 2026-10-14: `mt5/fleet/vps/{deploy,watchdog,register}.ps1` (driven by `mt5.fleet.deploy`, dry-run unless `--yes`) find a terminal's data folder by `origin.txt` and relaunch it; written, never run on the VPS. The owner decided to close 3389 and 5986 once real money arrives.

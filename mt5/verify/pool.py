@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""The validated pool of step 26: an append-only register per prop firm, the first verdict per check counts."""
+"""The validated pool of step 26: an append-only SQLite register of verdicts, the first verdict per check counts."""
 
 import argparse
 import hashlib
 import json
+import sqlite3
+from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 
@@ -12,7 +14,9 @@ import pandas as pd
 from core.paths import DATA, MT5_DATA
 from ledger import study as ledger_study
 
-ROOT = DATA / "pool"  # one <firm>.csv each; the format lives behind this module only
+ROOT = (
+    DATA / "pool"
+)  # holds `pool.sqlite` (owner, 2026-10-14: SQLite); the format lives behind this module only
 RUNS = MT5_DATA / "verify"  # mt5.verify.run's folders, one per check
 VALID = "pass"  # judge.firm_result's word for «Validada»
 # judge.firm_result's summary: the trade counts, the clock shift and encargo 34's five rows
@@ -44,16 +48,24 @@ COLUMNS = (
     "thresholds_hash",
     "config_hash",
     *FIGURES,
-    "stop_percentile",
-    "stop_x",
     "file",
     "recorded_on",
 )
 
 
-def path(firm: str) -> Path:
-    """One firm's register file."""
-    return ROOT / f"{firm}.csv"
+def path() -> Path:
+    """The register's database file."""
+    return ROOT / "pool.sqlite"
+
+
+def connect() -> sqlite3.Connection:
+    """The register, created with its one table on first use."""
+    path().parent.mkdir(parents=True, exist_ok=True)
+    db = sqlite3.connect(path())
+    db.execute(
+        f"CREATE TABLE IF NOT EXISTS verdicts ({', '.join(c + ' TEXT' for c in COLUMNS)})"
+    )
+    return db
 
 
 def thresholds_hash(meta: dict, firm: str) -> str:
@@ -116,8 +128,6 @@ def rows_of(run: Path, project: str = "", finalist: dict | None = None) -> list[
             "thresholds_hash": thresholds_hash(meta, firm),
             "config_hash": result["config_hash"],
             **{k: s[k] for k in FIGURES},
-            "stop_percentile": "",
-            "stop_x": "",  # legacy columns of the append-only registers (step 24 is gone)
             "file": meta["file"],
             "recorded_on": now,
         }
@@ -127,22 +137,43 @@ def rows_of(run: Path, project: str = "", finalist: dict | None = None) -> list[
 
 
 def record(rows: list[dict]) -> None:
-    """Append rows to their firms' registers. Nothing is ever rewritten: a second verdict
-    for the same strategy is a new line, and `read` keeps the first."""
-    for firm, mine in pd.DataFrame(rows, columns=list(COLUMNS)).groupby(  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
-        "firm", sort=False
-    ):
-        out = path(firm)  # pyright: ignore[reportArgumentType]  # pandas stubs: groupby key/index is Hashable
-        out.parent.mkdir(parents=True, exist_ok=True)
-        mine.to_csv(out, mode="a", header=not out.exists(), index=False)
+    """Append rows to the register. Nothing is ever rewritten: a second verdict for the same
+    strategy is a new line, and `read` keeps the first."""
+    with closing(connect()) as db, db:
+        db.executemany(
+            f"INSERT INTO verdicts VALUES ({','.join('?' * len(COLUMNS))})",
+            [[str(r[c]) for c in COLUMNS] for r in rows],
+        )
 
 
 def history(firm: str) -> pd.DataFrame:
     """Every verdict ever recorded for one firm, in the order written; text columns.
     An empty frame for a firm nobody has verified on yet."""
-    if not path(firm).exists():
-        return pd.DataFrame(columns=list(COLUMNS), dtype=str)  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
-    return pd.read_csv(path(firm), dtype=str, keep_default_na=False)
+    if not path().exists():
+        return pd.DataFrame(columns=list(COLUMNS), dtype=str)  # pyright: ignore[reportArgumentType]  # pandas stubs
+    with closing(connect()) as db:
+        return pd.read_sql_query(
+            "SELECT * FROM verdicts WHERE firm = ? ORDER BY rowid", db, params=[firm]
+        )
+
+
+def firms() -> list[str]:
+    """The firms with at least one verdict, sorted; none (and no file made) before the first."""
+    if not path().exists():
+        return []
+    with closing(connect()) as db:
+        return [
+            r[0] for r in db.execute("SELECT DISTINCT firm FROM verdicts ORDER BY firm")
+        ]
+
+
+def validated() -> dict[str, list[str]]:
+    """Identity -> the firms it is validated for (`read` of each): what the portfolio side marks."""
+    out: dict[str, list[str]] = {}
+    for firm in firms():
+        for identity in read(firm)["identity"]:
+            out.setdefault(identity, []).append(firm)
+    return out
 
 
 def read(firm: str) -> pd.DataFrame:
@@ -196,11 +227,11 @@ def main() -> None:
         "model",
         "run",
     ]
-    for file in sorted(ROOT.glob("*.csv")):
-        valid = read(file.stem)
+    for firm in firms():
+        valid = read(firm)
         print(
-            f"\n{file.stem}: {len(valid)} validadas de "
-            f"{history(file.stem)['identity'].nunique()} verificadas"
+            f"\n{firm}: {len(valid)} validadas de "
+            f"{history(firm)['identity'].nunique()} verificadas"
         )
         if len(valid):
             print(valid[show].to_string(index=False))

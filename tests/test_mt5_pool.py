@@ -1,4 +1,4 @@
-"""The validated pool's register on the real checks on disk: rebuilt rows, latest verdict wins, append-only."""
+"""The validated pool's register on the real checks on disk: rebuilt rows, first verdict per check wins, append-only."""
 
 import sys
 from pathlib import Path
@@ -7,6 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from live_only import require  # noqa: E402
 from mt5.verify import pool  # noqa: E402
 
 # Real checks of 2026-09-30 (USDJPY H1, ohlc_m1): 16.9.76 and 10.9.72 validate on FTMO and
@@ -15,6 +16,11 @@ PASSED = "20260930-142145_Strategy_10_9_72"
 FAILED = "20260930-141929_Strategy_21_9_59"
 CRASHED = "20260929-194218_Strategy_3_48_75"
 ID_PASSED = "746c8da7383ed634aa93bebeb8b02b973d23d08b429e191e77a82e847c03066b"
+
+require(
+    pool.RUNS / PASSED,
+    "valida el registro sobre las verificaciones reales de MT5 de esta máquina, que gorilla no tiene",
+)
 
 
 @pytest.fixture
@@ -128,9 +134,7 @@ def test_first_verdict_counts_and_nothing_is_rewritten(register: Path) -> None:
         and len(pool.read("ftmo")) == 2
     )
     assert pool.pending(good + bad) == []
-    assert (
-        register.joinpath("ftmo.csv").read_text(encoding="utf-8").count("\n") == 6
-    )  # header + 5
+    assert len(pool.history("ftmo")) == 5 and register.joinpath("pool.sqlite").exists()
 
 
 def test_another_version_of_the_strategy_does_not_inherit(register: Path) -> None:

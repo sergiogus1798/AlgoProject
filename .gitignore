@@ -13,7 +13,6 @@ config/machine.yaml
 !tests/fixtures/**/*.csv
 !tests/fixtures/**/*.parquet
 !tools/sqx-lab/**/skeletons/*.sqx
-!mt5/symbols.csv
 *.cfx.bak
 
 # Throwaway work.
