@@ -117,23 +117,3 @@ band:                           # la curva spread = a · precio^b y sus límites
     AUS200: AUS200_TICK
   quantiles: [0.025, 0.5, 0.975]   # los extremos son el Min y el Max del MC Retest de spread
   min_minutes: 300              # un día con menos minutos cotizados no entra
-onboard:                        # alta de un activo nuevo: las reglas por defecto del dueño (2026-09-27), por tipo
-  commission_usd_per_lot: 8     # ida y vuelta por lote; en no_forex se pasa a % del nocional al último precio de Darwinex
-  index:
-    segments: {build: data, build_to: 2019, oos1: [2020, 2023], oos2: [2024, 2026-08-31]}
-    commission: 0               # cuenta raw: los índices no pagan comisión
-    swap: funded_worst          # dueño 2026-10-01: el peor de FTMO y Hantec, lado a lado, leído en vivo de MT5 (antes [-8, -8])
-    triple_swap_on: FRIDAY
-    model: relativo             # spread proporcional al precio en el build (opción A)
-  metal:
-    segments: {build: 2008, build_to: 2017, oos1: [2018, 2022], oos2: [2023, 2026-08-30]}
-    commission: usd_per_lot
-    swap: funded_worst          # antes [-7, -7]
-    triple_swap_on: WEDNESDAY
-    model: null                 # null = el que mejor valida
-  forex:
-    segments: {build: 2008, build_to: 2017, oos1: [2018, 2022], oos2: [2023, 2026-08-30]}
-    commission: usd_per_lot
-    swap: funded_worst          # antes `brokers`, la media del registro de SQX
-    triple_swap_on: WEDNESDAY
-    model: null

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The funded-firms spread method on toy ticks and a toy card, and the lock that keeps `onboard` off it."""
+"""The funded-firms spread method on toy ticks and a toy card."""
 
 import sys
 from pathlib import Path
@@ -9,7 +9,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from studies.data.spread import funded, onboard
+from studies.data.spread import funded
 
 
 def day(folder: Path, name: str, spread: float) -> None:
@@ -35,21 +35,6 @@ def test_widest_firm_takes_the_larger_of_last12_and_last3(
     assert abs(per["hantec"] - 0.0002) < 1e-9, per
     with pytest.raises(ValueError):
         funded.widest("NOPE")
-
-
-def test_darwinex_onboard_refuses_a_card_of_the_funded_method(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """The Darwinex path stops before writing over a card marked «sin factor»."""
-    (tmp_path / "TOY.yaml").write_text("symbol: TOY\n")
-    monkeypatch.setattr(onboard, "SYMBOLS", tmp_path)
-    monkeypatch.setattr(
-        onboard,
-        "load",
-        lambda s: {"costs": {"spread_is": {"why": "recalibrado — sin factor."}}},
-    )
-    with pytest.raises(SystemExit, match="NO escrito"):
-        onboard.apply({"symbol": "TOY", "spreads": {"spread_is": 1.0}}, {}, True)  # type: ignore[arg-type]
 
 
 def test_plan_converts_pct_to_points_and_whys_carry_the_marker(

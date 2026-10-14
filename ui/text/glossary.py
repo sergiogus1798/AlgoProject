@@ -279,7 +279,6 @@ LABELS = {
     "knob.safety": "Margen de seguridad",
     "knob.reprice": "Reajuste",
     "knob.band": "Banda",
-    "knob.onboard": "Alta de un activo",
     "knob.segments": "Tramos",
     "knob.segment": "Tramo",
     "knob.levels": "Niveles",

@@ -24,8 +24,7 @@ core.tickfile ─▶ inputs ─▶ measure ─▶ verdict (constancy, model ◀�
 | `inputs.py` | What the spread study reads: its knobs, a tick feed's minutes, Dukascopy's daily volatility. | imported | files → frames |
 | `measure.py` | The spread as measured: per minute, per day beside Dukascopy's volatility, per year, per hour. | imported | minutes → tables |
 | `model.py` | The ways the daily relative spread can be reconstructed where Darwinex has no ticks. | imported | days → params → days |
-| `onboard.py` | Onboard an asset: its segments, spreads, slippage, commission, swap and MC Retest range, by the owner's rules. | `python3 -m studies.data.spread.onboard --symbol S --kind index\|metal\|forex [--write] [--spread-only]`, or `--funded [--symbol S] [--write]` for the funded-firms method (existing cards) | symbol → `assets/symbols/<S>.yaml` |
-| `registry.py` | What SQX's own data registry says about a symbol: its feeds, its instrument, its range, every broker's swap. | imported | symbol → facts |
+| `onboard.py` | Recompute the spreads and slippage of existing cards by the funded-firms method. | `python3 -m studies.data.spread.onboard [--symbol S] [--write]` | ticks_hist → `assets/` |
 | `scan.py` | Step 4's spread study: each asset's real Darwinex spread, whether it is constant, and what SQX should carry. | `python3 -m studies.data.spread.scan [--symbol S]` | ticks + bars → `spread/<tick feed>/{daily,hours,minutes}.parquet, summary.json, spread.*` |
 | `tooltips.py` | One sentence per config.yaml knob of the spread study, for the window's configuration drawer. | imported | — |
 | `verdict.py` | Whether the relative spread is constant, which model reconstructs it best, and what to declare in SQX. | imported | tables → decision |
@@ -56,8 +55,6 @@ core.tickfile ─▶ inputs ─▶ measure ─▶ verdict (constancy, model ◀�
   points across a window: SQX draws one spread per run, and 2012's price is not 2023's.
 - **It proposes and never writes `assets/`** — except `onboard.py --write`, which the owner
   invokes (`/asset-onboard`) and which writes only through `core.assetwrite`.
-- **Onboarding rules are data** (`onboard:` in `config.yaml`, owner 2026-09-27): per kind the
-  segments, commission, swap, triple-swap night and the build model; the factor is the ledger's.
 
 - **The band models the daily MEAN spread** (owner, 2026-09-27: «el spread medio diario … y su
   desviación»): SQX's MC Retest draws ONE spread per simulation for the whole backtest

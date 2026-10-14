@@ -105,8 +105,7 @@ def plan(symbol: str, factor: float, share: float) -> dict[str, Any]:
 
 
 def whys(p: dict[str, Any], day: str, share: float) -> dict[str, str]:
-    """The `why` of every field the plan writes; the spread's carries «sin factor», the marker
-    `onboard.apply` refuses to overwrite."""
+    """The `why` of every field the plan writes; the spread's carries «sin factor»."""
     seg = {"is": "build", "oos": "oos1", "oos2": "oos2"}
     out = {}
     for field in p["spreads"]:

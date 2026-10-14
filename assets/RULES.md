@@ -238,7 +238,7 @@ read from the MT5 terminal (`mt5.live`), and this section overrides what the two
 they differ:
 
 - **Swap, every asset:** each side is the worse of the two firms **today** —
-  `studies.data.spread.fundedswap.worst(symbol)`, the onboard's `swap: funded_worst`. Forex in SQX
+  `studies.data.spread.fundedswap.worst(symbol)`, no command calls it since the Darwinex onboard path was deleted (2026-10-14), kept until the owner decides. Forex in SQX
   points (the firm's USD per lot per night ÷ the SQX instrument's pointValue × tickStep);
   everything else in % annual on each firm's own notional. It is a figure of the day — brokers moved
   several of them between the morning and the evening of 2026-10-01 — so rerun it before a build.

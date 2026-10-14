@@ -1,84 +1,48 @@
 ---
 name: asset-onboard
-description: Add a new asset to assets/ with its whole cost card worked out from data — Darwinex's real spread per segment (measured, modelled back where there are no ticks), slippage at 35 % of it, the owner's default commission and swap for its kind, the triple-swap night, and the MC Retest spread range from the real dispersion. Also refreshes the spreads of an existing asset. Use when the owner says "haz lo mismo para el cruce/índice/metal XXX", asks to add, create or onboard an asset, or asks to compute an asset's spread, slippage, commission or swap.
+description: Refresh the spread and slippage of existing assets by the funded-firms method (owner, 2026-10-14) — the widest funded firm's time-weighted % of price times each segment's mean price, slippage at 35 % of it, written through core.assetwrite. Darwinex is no longer read. Use when the owner asks to compute or refresh an asset's spread or slippage.
 ---
 
 # /asset-onboard
 
-The cost «mini-study» of 2026-09-27 (`docs/AgentPDFs/spread-real-2026-09-27.pdf`), as one run.
-Everything the conversation decided is data in `studies/data/spread/config.yaml`, under
-`onboard:` and `safety:`. **Never re-derive a rule here; if the owner changes one, change the
-config.**
+The method is `studies/data/spread/funded.py`, the rules `assets/RULES.md` (lines 95-103). Everything
+the owner decided is data in `studies/data/spread/config.yaml` under `safety:`. **Never re-derive a
+rule here; if the owner changes one, change the config.**
 
-## The owner's rules it applies (2026-09-27)
-
-| | index | metal | forex |
-|---|---|---|---|
-| segments | build from the first day of data to 2019, oos1 2020–2023, oos2 2024–31/08/2026 | build 2008–2017, oos1 2018–2022, oos2 2023–30/08/2026 ⚠️ | same as metal |
-| spread | mean Darwinex spread of each segment × `safety.factor` (1.0, no margin; ledger `spread.safety.factor`), one per segment (`spread_oos2` its own) | same | same — one per segment since 2026-09-30 (owner) |
-| build without ticks | **proportional to price** (`relativo`) | the best-validated model | best-validated |
-| slippage | 35 % of the spread of its segment (`slippage_share`, `studies/data/spread/config.yaml`) | same | same |
-| commission | 0 | 8 USD/lot round trip → % of notional at Darwinex's last price | 8 USD/lot |
-| swap | worst of FTMO and Hantec per side, live from MT5 (`fundedswap`, owner 2026-10-01): % annual | same | same, in SQX points |
-| triple swap | FRIDAY | WEDNESDAY | WEDNESDAY |
-| MC Retest spread | not written: null bounds resolve to 0.5×–2× of each segment's cost (`core.assetranges.mc_retest`, owner 2026-10-04) | same | same |
-
-⚠️ The metal/forex segments are gold's and the pairs' as they were; the owner did not restate them.
+The Darwinex path (segments, commission, swap and spread from Darwinex ticks, new-card creation) was
+deleted on 2026-10-14 (owner, encargo 59, rule 21). Consequence: **this command only recomputes
+spreads and slippage of cards that already exist, from the firms' ticks.** A new asset's card
+(class, broker, instrument, segments, commission, swap, triple swap) has no command today — ask the
+owner how to create it before doing anything (hard rule 11), then run the steps below.
 
 ## Ask first — hard rule 11
 
 Stop and ask, never pick, when:
 
-- **The kind is not obvious.** A commodity (Brent, gas) or a stock is none of the three: its
-  commission and swap are the owner's to name. Add a kind to the config only after he answers.
-- **There are several feeds.** `registry.feeds()` lists every `<SYMBOL>_DukasM1_*` and
-  `<SYMBOL>_DarwTick_*` in SQX (AUDJPY has the5ers and icmarkets). Ask which broker.
-- **There is no DarwTick feed.** Without ticks there is no spread to measure; say so and stop.
-- **The asset already exists.** Its spread follows the funded-firms method (owner, 2026-10-14):
-  `python3 -m studies.data.spread.onboard --funded [--symbol S] [--write]` recomputes spreads and
-  slippage from the firms' ticks (`studies/data/spread/funded.py`), no Darwinex read; without
-  `--symbol` it does every card. The Darwinex path below refuses to overwrite a card whose `why`
-  says «sin factor», so `--spread-only` is for a card still on the old method.
+- **The asset has no card.** Say so; creating it by hand is the owner's call.
+- **The asset has no firm ticks** (`AlgoData/INDEX.md`). `funded.plan` prints why and skips it.
+- **The kind is not obvious** for a new card: a commodity or a stock has no default commission or swap.
 
 ## Run it
 
 ```bash
-python3 -m studies.data.spread.onboard --symbol EURGBP --kind forex            # 1 · plan, writes nothing
-python3 -m studies.data.spread.onboard --symbol EURGBP --kind forex --write    # 2 · after the owner says yes
-python3 -m studies.data.spread.scan --symbol EURGBP                             # 3 · the asset's report
-python3 -m studies.data.spread.bands --symbol EURGBP                            # 4 · the spread band vs price
-python3 -m core.assets EURGBP                                                   # 5 · preflight, hard rule 5
+python3 -m studies.data.spread.onboard --symbol EURGBP           # 1 · plan, writes nothing
+python3 -m studies.data.spread.onboard --symbol EURGBP --write   # 2 · after the owner says yes
+python3 -m studies.data.spread.scan --symbol EURGBP              # 3 · the asset's report
+python3 -m core.assets EURGBP                                    # 4 · preflight, hard rule 5
 ```
 
-- **Step 1** takes 15–40 s the first time (it decodes the tick file) and prints the whole card.
-  **Show it to the owner and wait for a yes** before step 2.
-- **Step 2** creates `assets/symbols/<SYMBOL>.yaml` through `core.assetwrite` and its
-  `_policy.yaml` block, and registers the feeds in the study's `config.yaml`.
-- **Step 5** has to pass. What it can still block on:
-  - **session: null.** The builder borrows the session from a project that holds it
-    (`knowhow/costs/sessions-per-asset.md`), and refuses when none does.
-  - A market missing from `_markets.yaml`.
-- **Then its `mt5:`** — the asset's symbol at each prop firm (`ftmo`, `hantec`), read from each
-  terminal (`mcp__mt5__mt5_symbols`), never guessed: `core.assetwrite.set_value(<S>, ["mt5"],
-  {...})`. Without it MT5 Bridge › Verificar refuses that firm (owner, 2026-09-30: it moved here
-  from the git-ignored `mt5/symbols.csv`).
-
-Say both in the report.
+Without `--symbol` it does every card. **Show the plan to the owner and wait for a yes** before step 2.
+Step 4 has to pass; it can still block on `session: null` (`knowhow/costs/sessions-per-asset.md`) or
+a market missing from `_markets.yaml`. A card also needs its `mt5:` — the symbol at each firm, read
+from each terminal (`mcp__mt5__mt5_symbols`), never guessed (`core.assetwrite.set_value(<S>, ["mt5"], {...})`).
 
 ## What to report
 
-The card, in Spanish, as a table: the spread per segment and what was declared, slippage,
-commission, swap, triple swap, and the model used for
-the build with its validation error. Then:
-
-- **Every value that was a default, not a measurement:** commission, swap, the metal/forex windows.
-- **The MC Retest range is not written** (owner, 2026-10-04): the card's bounds stay null and
-  resolve to multiples of each segment's cost (`python3 -m core.assets <SYMBOL>` shows them).
-
-End as every task ends: the files changed, then **¿Quieres hacer el commit?**
+The card in Spanish, as a table: spread per segment, slippage, the firm that was widest. Then
+the files changed and **¿Quieres hacer el commit?**
 
 ## What it never does
 
 - Write `assets/` without `--write`, or without the owner having seen the plan.
-- Touch SQX: it reads `data.db` and the History `.dat` files read-only, with the master up or down.
-- Invent a commission or swap for a kind the config does not know.
+- Touch SQX, or write a commission, swap or segment: they are not this command's any more.
