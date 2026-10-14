@@ -3,6 +3,8 @@
 
 import json
 import sys
+import tempfile
+import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -29,6 +31,17 @@ def parse() -> dict:
 
 def main() -> None:
     """Compare against the golden file, or write it when run with --bless."""
+    # A door check refuses with ValueError (never AssertionError, which `python -O` strips).
+    with tempfile.TemporaryDirectory() as tmp:
+        bad = Path(tmp) / "bad.cfx"
+        with zipfile.ZipFile(bad, "w") as z:
+            z.writestr("config.xml", "<Nope/>")
+        try:
+            cfx.config(str(bad))
+        except ValueError:
+            pass
+        else:
+            sys.exit("test_cfx: FAILED — a broken input did not raise ValueError")
     result = parse()
     if "--bless" in sys.argv:
         GOLDEN.write_text(json.dumps(result, indent=2), encoding="utf-8")

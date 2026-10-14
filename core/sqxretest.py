@@ -36,8 +36,8 @@ def _orders(raw: bytes, member: str) -> np.ndarray:
         record -- there is no date, price, size or excursion in this file.
     """
     count = struct.unpack_from(">i", raw, 0)[0]
-    assert len(raw) == HEADER + 4 * count, (
-        f"{member}: {len(raw)} bytes but {count} trades needs {HEADER + 4 * count}")
+    if len(raw) != HEADER + 4 * count:
+        raise ValueError(f"{member}: {len(raw)} bytes but {count} trades needs {HEADER + 4 * count}")
     return np.frombuffer(raw, dtype=">i4", count=count, offset=HEADER).astype(np.int32)
 
 
@@ -56,7 +56,8 @@ def _prefix(archive: zipfile.ZipFile) -> str:
         be read from two different result folders.
     """
     found = {n.rsplit("/", 1)[0] for n in archive.namelist() if n.endswith(RESULTS)}
-    assert len(found) == 1, f"{archive.filename}: {len(found)} retest results, expected one"
+    if len(found) != 1:
+        raise ValueError(f"{archive.filename}: {len(found)} retest results, expected one")
     return found.pop()
 
 
@@ -72,10 +73,10 @@ def _results(path: Path) -> str:
     with zipfile.ZipFile(path) as archive:
         xml = archive.read(f"{_prefix(archive)}/{RESULTS}").decode("utf8", errors="replace")
     levels = sorted(int(n) for n in re.findall(r'<LevelStat level="(\d+)"', xml))
-    assert levels == list(CONFIDENCE) and "<RobustnessOriginalResults>" in xml, (
-        f"{path}: retest levels {levels}, expected {CONFIDENCE} plus the original results")
-    assert all(t in xml for t in ("<NumberOfSimulations>", "<Symbol>", "<TimeFrame>", "<DateRange>")), (
-        f"{path}: retest result lacks its header tags")
+    if not (levels == list(CONFIDENCE) and "<RobustnessOriginalResults>" in xml):
+        raise ValueError(f"{path}: retest levels {levels}, expected {CONFIDENCE} plus the original results")
+    if not all(t in xml for t in ("<NumberOfSimulations>", "<Symbol>", "<TimeFrame>", "<DateRange>")):
+        raise ValueError(f"{path}: retest result lacks its header tags")
     return xml
 
 
@@ -125,7 +126,8 @@ def simulations(path: Path) -> Simulations:
             found = _MEMBER.search(name)
             if found and name.startswith(prefix):
                 members[int(found.group(1))] = name
-        assert members, f"{path}: retest stores no simulation orders"
+        if not members:
+            raise ValueError(f"{path}: retest stores no simulation orders")
         index = np.array(sorted(members), dtype=np.int32)
         vectors = [_orders(archive.read(members[i]), members[i]) for i in index]
     offsets = np.zeros(len(vectors) + 1, dtype=np.int64)
@@ -232,9 +234,10 @@ def settings(path: Path) -> Settings:
     with zipfile.ZipFile(path) as archive:
         root = ElementTree.fromstring(archive.read("lastSettings.xml"))
     retest = root.find(".//MonteCarloRetest")
-    assert retest is not None and retest.find("Settings") is not None, (
-        f"{path}: lastSettings.xml has no MonteCarloRetest/Settings")
-    assert retest.get("use") == "true", f"{path}: lastSettings.xml says no retest ran"
+    if not (retest is not None and retest.find("Settings") is not None):
+        raise ValueError(f"{path}: lastSettings.xml has no MonteCarloRetest/Settings")
+    if retest.get("use") != "true":
+        raise ValueError(f"{path}: lastSettings.xml says no retest ran")
     block = el(retest.find("Settings"))
     methods = {cast(str, m.get("type")): {cast(str, p.get("key")): (p.text or "").strip()
                                           for p in m.findall("./Params/Param")}

@@ -45,8 +45,8 @@ def config(project: str) -> ElementTree.Element:
     """
     with zipfile.ZipFile(resolve(project)) as z:
         root = ElementTree.fromstring(z.read("config.xml"))
-        assert root.tag == "Project" and root.find("Tasks") is not None, (
-            f"{z.filename}: config.xml root is {root.tag}, expected Project/Tasks")
+        if not (root.tag == "Project" and root.find("Tasks") is not None):
+            raise ValueError(f"{z.filename}: config.xml root is {root.tag}, expected Project/Tasks")
         return root
 
 
@@ -80,9 +80,11 @@ def task_xml(project: str, member: str) -> ElementTree.Element:
     with zipfile.ZipFile(resolve(project)) as z:
         # Not checked in config(): a .cfx missing a task member is a known corruption (OPEN.md
         # #3) that callers report per task (strategymeta.settings.producers).
-        assert member in z.namelist(), f"{z.filename}: no {member} in the zip (caught mid-save?)"
+        if member not in z.namelist():
+            raise ValueError(f"{z.filename}: no {member} in the zip (caught mid-save?)")
         root = ElementTree.fromstring(z.read(member))
-        assert root.tag == "Settings", f"{z.filename}:{member}: root is {root.tag}, expected Settings"
+        if root.tag != "Settings":
+            raise ValueError(f"{z.filename}:{member}: root is {root.tag}, expected Settings")
         return root
 
 

@@ -3,6 +3,8 @@
 
 import json
 import sys
+import tempfile
+import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -82,6 +84,17 @@ def invariants(result: dict) -> list[str]:
 
 def main() -> None:
     """Compare against the golden file, or write it when run with --bless."""
+    # A door check refuses with ValueError (never AssertionError, which `python -O` strips).
+    with tempfile.TemporaryDirectory() as tmp:
+        bad = Path(tmp) / "bad.sqx"
+        with zipfile.ZipFile(bad, "w") as z:
+            z.writestr("lastSettings.xml", "<Nope/>")
+        try:
+            sqxretest.settings(bad)
+        except ValueError:
+            pass
+        else:
+            sys.exit("test_sqxretest: FAILED — a broken input did not raise ValueError")
     result = parse()
     broken = invariants(result)
     if "--bless" in sys.argv:

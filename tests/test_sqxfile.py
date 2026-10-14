@@ -6,6 +6,8 @@ import hashlib
 import json
 import re
 import sys
+import tempfile
+import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -63,6 +65,17 @@ def main() -> None:
         GOLDEN.write_text(json.dumps(result, indent=2), encoding="utf-8")
         print(f"blessed {GOLDEN}")
         return
+    # A door check refuses with ValueError (never AssertionError, which `python -O` strips).
+    with tempfile.TemporaryDirectory() as tmp:
+        bad = Path(tmp) / "bad.sqx"
+        with zipfile.ZipFile(bad, "w") as z:
+            z.writestr("other.txt", "<Nope/>")
+        try:
+            sqxfile.rules(bad)
+        except ValueError:
+            pass
+        else:
+            sys.exit("test_sqxfile: FAILED — a broken input did not raise ValueError")
     expected = json.loads(GOLDEN.read_text(encoding="utf-8"))
     if result == expected:
         print("test_sqxfile: ok")

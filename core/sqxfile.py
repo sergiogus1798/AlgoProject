@@ -103,9 +103,11 @@ def describe(path: Path) -> tuple[str, str, str]:
     """
     with zipfile.ZipFile(path) as z:
         names = z.namelist()
-        assert INNER in names, f"{path}: no {INNER} — not a strategy .sqx"
+        if INNER not in names:
+            raise ValueError(f"{path}: no {INNER} — not a strategy .sqx")
         text = z.read(INNER).decode("utf-8", "replace")
-    assert text.rstrip().endswith("</StrategyFile>"), f"{path}: {INNER} is not a whole StrategyFile"
+    if not text.rstrip().endswith("</StrategyFile>"):
+        raise ValueError(f"{path}: {INNER} is not a whole StrategyFile")
     found = next((m for m in map(RESULTS_RE.search, names) if m), None)
     symbol, feed = (found.group(1), found.group(2)) if found else ("", "")
     return _hashed(text), symbol, feed
@@ -122,9 +124,11 @@ def rules(path: Path) -> str:
         DOES is in here; the rest of the archive is results.
     """
     with zipfile.ZipFile(path) as z:
-        assert INNER in z.namelist(), f"{path}: no {INNER} — not a strategy .sqx"
+        if INNER not in z.namelist():
+            raise ValueError(f"{path}: no {INNER} — not a strategy .sqx")
         text = z.read(INNER).decode("utf-8", "replace")
-    assert text.rstrip().endswith("</StrategyFile>"), f"{path}: {INNER} is not a whole StrategyFile"
+    if not text.rstrip().endswith("</StrategyFile>"):
+        raise ValueError(f"{path}: {INNER} is not a whole StrategyFile")
     return text
 
 
@@ -172,10 +176,11 @@ def xml(path: Path) -> ElementTree.Element:
         Root element of strategy_Portfolio.xml — the rules, parameters and orders.
     """
     with zipfile.ZipFile(path) as z:
-        assert INNER in z.namelist(), f"{path}: no {INNER} — not a strategy .sqx"
+        if INNER not in z.namelist():
+            raise ValueError(f"{path}: no {INNER} — not a strategy .sqx")
         root = ElementTree.fromstring(z.read(INNER))
-    assert root.tag == "StrategyFile" and root.find("Strategy") is not None, (
-        f"{path}: {INNER} root is {root.tag}, expected StrategyFile/Strategy")
+    if not (root.tag == "StrategyFile" and root.find("Strategy") is not None):
+        raise ValueError(f"{path}: {INNER} root is {root.tag}, expected StrategyFile/Strategy")
     return root
 
 
