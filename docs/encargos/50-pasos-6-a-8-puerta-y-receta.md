@@ -39,7 +39,7 @@ Orden que se mantiene (es el del encargo 44): 1 → 2 → 3 → 4 → 5 → 6. E
 
 - **Dueño, 2026-10-06:** revisó el paso 8 regla a regla; «deja la mayoría de cosas como parámetros
   configurables», editables **en la ventana**, y las pruebas con repeticiones llevan **al menos 5.000**
-  por defecto. Sus seis propuestas y su índice: `docs/AgentPDFs/criterios-paso-08-*-2026-10-06.md`
+  por defecto. Sus seis propuestas y su índice: `docs/AgentPDFs/criterios-implementados-2026-10-12*-2026-10-06.md`
   (abrirlas por tramo, regla 16). El diseño completo, con fórmulas: la especificación
   `docs/AgentPDFs/puerta-is-oos-paso-08-especificacion-2026-10-06.md`. **Cuando especificación y este
   encargo no coincidan, manda este encargo**; el paso 8 se rige por `WORKFLOW.md` en el orden.
@@ -51,8 +51,8 @@ Orden que se mantiene (es el del encargo 44): 1 → 2 → 3 → 4 → 5 → 6. E
 - **Por qué la receta del IS está sin medir.** La primera calibración (2026-10-01/02) rompía las reglas
   14 y 15; la segunda (2026-10-04, 203 poblaciones) corrió con el spread mal y el dueño la borró entera
   (`OPEN.md:764`). No queda nada reutilizable en disco. Las cifras de los pasos 6 y 8 de
-  `assets/_study.yaml` y de los dossiers `criterios-pasos-6-y-8-2026-10-02.md` y
-  `criterios-pasos-6-a-12-2026-10-04.md` **no valen** (ambos llevan ya la cabecera «cifras no valen»,
+  `assets/_study.yaml` y de los dossiers `criterios-implementados-2026-10-12.md` y
+  `criterios-implementados-2026-10-12.md` **no valen** (ambos llevan ya la cabecera «cifras no valen»,
   2026-10-09); se leen por su método. `OPEN.md` §93 (`grep -n '^## 93' OPEN.md`) es el expediente vivo.
 - **Ya decidido por el dueño, no se reabre:** suelo de construcción de 35 operaciones al año en M15,
   M30 y H1 y 20 en H4, sin techo (2026-10-09, commit `445d29a`). Reglas 14 y 15 (condiciones y paleta).
@@ -181,7 +181,7 @@ Re-verifica cada punto antes de editar (algunos pueden haberse arreglado ya):
 | qué | estado verificado el 2026-10-09 |
 |---|---|
 | `docs/AgentPDFs/puerta-is-oos-paso-08-especificacion-2026-10-06.md` + PDF (`/dossier-pdf`) | sigue diciendo `dd_esperado_p95_r` en `:945` y `:1219`; el dato se llama `dd_esperado_r` y el percentil es el parámetro `drawdown.percentile` (95). Meter las líneas congeladas y lo que K-m cambie |
-| `docs/AgentPDFs/criterios-pasos-6-a-19-explicados-2026-10-06.md` (+ PDF) | su parte del paso 8 describe reglas viejas: reescribirla para que apunte a la especificación |
+| `docs/AgentPDFs/criterios-implementados-2026-10-12.md` (+ PDF) | su parte del paso 8 describe reglas viejas: reescribirla para que apunte a la especificación |
 | `~/Desktop/AlgoData/manual-fuentes/29-puerta.md` (`/manual-chapter`, después `python3 tools/manual.py`) | describe la puerta vieja (`degradacion`, `familia`, `mono.max_p`, `--set degradacion.min_t`, embudo `degradacion … familia`) |
 | `studies/screening/gate/README.md` | a medias: aún habla de «screens» y `config.yaml` como cribas (`:4`, `:42`, `:71`) |
 | `.claude/skills/workflow-simple/steps.md` (paso 8) | la fila lista `gate, edgeCost, feedQuality, spread, isOos, …, profitShape` y dice «rules R1-R9»: ya no es así |

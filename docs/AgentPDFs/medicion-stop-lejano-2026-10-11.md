@@ -60,7 +60,7 @@ Lectura honesta: al tamaño exportado **entre la mitad y las tres cuartas partes
 
 **Decide:** no hay stop por operación; el p90 sale; el riesgo se controla en la cuenta.
 
-**Ganancia:** lo que opera es lo que validó la cadena. Según el dossier anterior (`criterios-paso-24-stop-atr-2026-10-08`), el p90 injertado al final se activa en 23–41 % de las operaciones y cuesta ~32 % del neto de `oos1`; quitarlo devuelve ese ~+32 %.
+**Ganancia:** lo que opera es lo que validó la cadena. Según el dossier anterior (`criterios-implementados-2026-10-12`), el p90 injertado al final se activa en 23–41 % de las operaciones y cuesta ~32 % del neto de `oos1`; quitarlo devuelve ese ~+32 %.
 
 **Coste:** sin stop en el broker, si el EA o el VPS caen con una posición abierta, nada la protege. Es el único argumento a favor de un stop que esta medición no puede responder.
 

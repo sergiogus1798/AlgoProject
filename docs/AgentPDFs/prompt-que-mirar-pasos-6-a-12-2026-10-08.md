@@ -132,7 +132,7 @@ Transversales que condicionan 6-12
 
 ### No tocar / no decidir
 
-P6-1 a P6-11 (arriba); no cambiar `assets/_study.yaml` ni la paleta de ninguna familia; no correr la familia «sesión» (P6-5) ni las 7 celdas «medido en contra» (P6-6). Los dossiers `criterios-pasos-6-y-8-2026-10-02.md` y `criterios-pasos-6-a-12-2026-10-04.md` no valen como fuente de cifras.
+P6-1 a P6-11 (arriba); no cambiar `assets/_study.yaml` ni la paleta de ninguna familia; no correr la familia «sesión» (P6-5) ni las 7 celdas «medido en contra» (P6-6). Los dossiers `criterios-implementados-2026-10-12.md` y `criterios-implementados-2026-10-12.md` no valen como fuente de cifras.
 
 ## Paso 8 — Puerta IS/OOS
 
@@ -352,7 +352,7 @@ P12-1 a P12-8; no dar «corta» ni sustituir `z_new` por T0-T4; no tocar `ranges
 - Suelo de operaciones: 10 (Build) / 35-20 (puerta) / memoria 35 / OPEN #93 «40-50».
 - Fila 6 de `WORKFLOW.md:245`: «PF ≥ 1,20» y cita `calib_final/ab_build.md` borrado (verdad: `_study.yaml:44-45` PF 1,0).
 - Fila 8 de `WORKFLOW.md`: «umbrales laxos» (verdad: 16 reglas del encargo 44, P.5 bis; el dossier 10-04 no las recoge).
-- Dossieres de criterios 6-8 (`criterios-pasos-6-y-8-2026-10-02.md`, `criterios-pasos-6-a-12-2026-10-04.md`) sin aviso de que sus cifras no valen (enc. 42:139-142); el del 10-04 tiene secciones «PENDIENTE» (decisión 6 pasos 10 y 12, §7, §8, §9, §12).
+- Dossieres de criterios 6-8 (`criterios-implementados-2026-10-12.md`, `criterios-implementados-2026-10-12.md`) sin aviso de que sus cifras no valen (enc. 42:139-142); el del 10-04 tiene secciones «PENDIENTE» (decisión 6 pasos 10 y 12, §7, §8, §9, §12).
 - Estudios del paso 10: README y `config.yaml` de `crossmarket` dicen que no emite veredicto (verdad: emite `verdict.csv`); el README lista un `POSSIBLE_IMPROVEMENTS.md` borrado.
 - README de `falsePositives`: dice que de los pasos 17-20 «no rule exists» (falso) y que los pasos 10, 12 y 14 «no se aplican» al mono (cierto: no hay modelo).
 - Estado de la recomendación D2 del encargo 41 (Limbo ≥ 1,65, Pasa ≥ 2,33): superada por el encargo 44 (R3 ≥ 1,65 sin Limbo).

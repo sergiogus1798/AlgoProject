@@ -54,7 +54,7 @@ nunca la raíz real (`portfolio/testroot/README.md`).
 - Dueño, 2026-10-06 (45): R9a (peor día) y R9c (drawdown sobre neto anual) del paso 8 «no dicen si hay
   ventaja, sino cuánto riesgo se le puede poner: es dimensionado, no validación». Desde que el encargo 50
   ejecute la nueva puerta y hasta que exista el frente E, **nada en la cadena juzga el peor día ni el
-  drawdown**; el dueño aceptó el hueco. Propuesta con las fórmulas: `docs/AgentPDFs/criterios-paso-08-R9-propuesta-2026-10-06.md`
+  drawdown**; el dueño aceptó el hueco. Propuesta con las fórmulas: `docs/AgentPDFs/criterios-implementados-2026-10-12.md`
   (el diseño está en `:65-142` del encargo de origen; si ese rango se movió, `grep -n 'R9' ` el fichero).
 - Fondeo antes que la cuenta real en Darwinex; en fondeo manda el flotante (dueño, memoria).
 
@@ -208,7 +208,7 @@ repeticiones (≥ 5.000), semilla y niveles del veredicto. Los límites, del cat
 ## 6 · Frente F — la prueba del retraso con el feed de la firma (45 parte 5)
 
 La puerta mide si la ventaja sobrevive a entrar una barra tarde sobre el histórico propio. La versión real
-(`docs/AgentPDFs/criterios-paso-08-estudios-4.2-4.3-4.4-propuesta-2026-10-06.md:141`): con las barras de la
+(`docs/AgentPDFs/criterios-implementados-2026-10-12.md:141`): con las barras de la
 propia firma, ¿la estrategia se dispara en los mismos momentos? **Primero mira qué da ya el paso 26**
 (`mt5/verify/README.md`: `run.py`, `judge.py`, `sidebyside.py` emparejan por hora de entrada las
 operaciones de SQX y de MT5 en la cuenta de cada firma). Con eso decide —y pregunta al dueño— si es parte

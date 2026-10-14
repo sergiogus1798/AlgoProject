@@ -1,9 +1,9 @@
 # 49 · Plan vivo de las fases 0 y 1, y criterios de los pasos 10 a 20
 
 **Qué es.** Sustituye a `41-fases-0-y-1.md` (plan vivo; su tabla de estado, con la misma
-numeración 0.1-1.9) y a `43-criterios-pasos-10-a-20.md` (que era el punto 1.6). Los dos se
+numeración 0.1-1.9) y a `43-criterios-implementados-2026-10-12.md` (que era el punto 1.6). Los dos se
 borran al consolidar; siguen legibles con `git show c923d10:docs/encargos/41-fases-0-y-1.md` y
-`...43-criterios-pasos-10-a-20.md`. **Quien retome las fases 0 y 1 empieza aquí**: la memoria del
+`...43-criterios-implementados-2026-10-12.md`. **Quien retome las fases 0 y 1 empieza aquí**: la memoria del
 dueño apunta a «leer la tabla de estado antes de continuar» y esa tabla es la de abajo.
 Es un plan **vivo**: cada sesión que avance un punto actualiza su fila y una línea de la
 Bitácora, y no reescribe el resto. Cuando las dos fases estén cerradas, este fichero se borra
@@ -165,14 +165,14 @@ umbral es una fila en el registro. Los primeros proyectos `Trade_`, solo despué
 
 **Lo que ya existe y no se rehace** (se ve en `pipeline/autopilot/criteria.yaml`):
 - Paso 10: reglas P1-P9, provisionales y sin calibrar (`criteria.yaml:127`, ex 46 → encargo 51;
-  dossier `criterios-paso-10-otros-mercados-2026-10-06.md`).
+  dossier `criterios-implementados-2026-10-12.md`).
 - Paso 11.5/12: la criba T0-T4 existe en el estudio (ex 47 → encargo 51), pero `"11.5"` tiene
   `rules: []` a la espera del «corta» del dueño (`criteria.yaml:185-194`) y `"12"` sigue con la
   única regla del Council `crossTF.combined.z_new >= 2.33` (`:195`).
 - Paso 14: T1, T2 y T3 sobre el exceso (`criteria.yaml:201`), provisionales (dueño, 2026-10-07).
 - Paso 17: umbrales de WFC ya en el ledger (ex 48 → encargo 52). Pasos 17-19 con reglas propias
   (`criteria.yaml:234-296`).
-- Dossier por paso: `docs/AgentPDFs/criterios-paso-{10,12,14,16,20}-*.md` (cada uno cierra con
+- Dossier por paso: `docs/AgentPDFs/criterios-implementados-2026-10-12{10,12,14,16,20}-*.md` (cada uno cierra con
   «las decisiones que te quedan», con coste en estrategias).
 
 **Lo que queda, y es exclusivo de este punto:**
@@ -256,7 +256,7 @@ línea de cada una es el de ese fichero) y las lecturas ya escritas allí y en e
   por 10). Dependen: `P16-2` (build u `oos1`) y `P16-3` (`spp.verdict.pass`, `area_de_meseta`, marca
   de pico).
 - **(ex 43, D2; ex 41, D3) Qué es pasar el paso 20** → `P20-1` (línea 872): decisiones 1-7 del
-  dossier `criterios-paso-20-analisis-conjunto-2026-10-08.md` §6 (aplicar DESCARTAR; qué es
+  dossier `criterios-implementados-2026-10-12.md` §6 (aplicar DESCARTAR; qué es
   REVISAR —hoy «se queda»—; «peor» provisional; SPA/StepM; estandarización del SPA). El Council del
   2026-10-08 propuso mantener «peor» y elegir al final; solo Aurelio pide revisión predeclarada a
   `sin_fallo`. También `P20-2` (¿un agente autónomo lee `oos2` para BlindJoint?).

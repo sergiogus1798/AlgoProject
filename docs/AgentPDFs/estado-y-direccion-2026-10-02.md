@@ -175,7 +175,7 @@ Ordenado por lo que puede costar si no se toca.
 - `CLAUDE.md` habla de «los 20 pasos», los encargos de 25 y `WORKFLOW.md` de 26.
 - `WORKFLOW.md` da por bloqueados el paso 9 y las horas de sesión, y por pendientes los building
   blocks, cuando OPEN los cerró o ya hay agente. También cita un dossier
-  (`criterios-pasos-6-y-8-2026-10-02.md`) que no está en la carpeta.
+  (`criterios-implementados-2026-10-12.md`) que no está en la carpeta.
 - OPEN #87 dice en el título «no construido» y en el cuerpo lista M0-F2 como construidos.
 - El README de esta carpeta dice del director de investigación «nada construido»; el agente y el
   skill existen.

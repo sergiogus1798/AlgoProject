@@ -29,9 +29,9 @@ aplicar; (c) la pestaña Cross Market vista y documentada. Una línea que «apen
 **Lee, en este orden:** `CLAUDE.md` · `CODESTYLE.md` · `studies/CLAUDE.md` ·
 `studies/transfer/crossmarket/README.md` y `travel/README.md` · `studies/transfer/crossTF/README.md`
 y `tf/README.md` · las especificaciones **solo por secciones**: paso 10,
-`docs/AgentPDFs/criterios-paso-10-otros-mercados-2026-10-06.md` (la copia de `~/Desktop/` fue a la
-papelera); paso 12, `/home/sergioguslw/Downloads/criterios-paso-12-otras-temporalidades-propuesta.md`
-(copia en `docs/AgentPDFs/criterios-paso-12-otras-temporalidades-2026-10-06.md`). Cuando una
+`docs/AgentPDFs/criterios-implementados-2026-10-12.md` (la copia de `~/Desktop/` fue a la
+papelera); paso 12, `/home/sergioguslw/Downloads/criterios-implementados-2026-10-12.md`
+(copia en `docs/AgentPDFs/criterios-implementados-2026-10-12.md`). Cuando una
 especificación y este encargo no coincidan, manda este encargo.
 
 ## §0 De dónde sale

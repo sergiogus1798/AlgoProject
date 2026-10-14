@@ -1,6 +1,6 @@
 # Paso 8 — La puerta IS/OOS: especificación completa del rediseño
 
-**Fecha:** 2026-10-06 · **Para:** el dueño · **Alcance:** sólo el paso 8 · **Sustituye a:** `criterios-paso-08-puerta-oos-2026-10-06`, que describía las 16 reglas anteriores.
+**Fecha:** 2026-10-06 · **Para:** el dueño · **Alcance:** sólo el paso 8 · **Sustituye a:** `criterios-implementados-2026-10-12`, que describía las 16 reglas anteriores.
 
 **Qué es:** el documento de referencia de la puerta tal como quedó decidida en tu revisión del 2026-10-06. De cada regla dice qué pregunta contesta, cómo se calcula paso a paso, qué significa cada estadístico, un ejemplo, sus líneas de Pasa / Limbo / Falla, sus parámetros, lo que cuesta calcularla y lo que falta por medir antes de congelar su línea. Después explica el orden de cálculo (la cascada), las dos poblaciones de prueba, la tabla de parámetros, lo que se quita, lo que pasa al módulo de fondeo y lo que queda por decidir.
 

@@ -33,9 +33,9 @@ estrategias y su decisión, o bien «esto no ayuda» dicho sin rodeos.
 ## §0 De dónde sale
 
 - **El 16.5 y el 17 (ex 48).** Las dos propuestas del dueño, 2026-10-07:
-  `docs/AgentPDFs/criterios-paso-16.5-nube-propuesta.md` y
-  `docs/AgentPDFs/criterios-paso-17-wfc-propuesta.md`, y sus PDF de criterios
-  `criterios-paso-16.5-nube-de-parametros-2026-10-07.pdf`, `criterios-paso-17-wfc-2026-10-07.pdf`. El
+  `docs/AgentPDFs/criterios-implementados-2026-10-12.md` y
+  `docs/AgentPDFs/criterios-implementados-2026-10-12.md`, y sus PDF de criterios
+  `criterios-implementados-2026-10-12.pdf`, `criterios-implementados-2026-10-12.pdf`. El
   Council (Feynman, Sócrates, Ada; 2026-10-07): «construir como está escrito, calibrar antes de oos2».
 - **Decisiones del dueño ya tomadas (2026-10-07), no se vuelven a preguntar:**
   1. Los cambios de `sqx/variants/` son base buena.
@@ -303,8 +303,8 @@ Cada una lleva su origen. Ninguna lleva valor por defecto.
 ## Lo que sólo vivía en los encargos de origen
 
 - **Dossier de la nube y del WFC**, por si hay que releer el porqué de un número: los PDF
-  `criterios-paso-16.5-nube-de-parametros-2026-10-07`, `criterios-paso-17-wfc-2026-10-07` y
-  `criterios-paso-18.5-superficies-por-mercado-2026-10-07` en `docs/AgentPDFs/`.
+  `criterios-implementados-2026-10-12`, `criterios-implementados-2026-10-12` y
+  `criterios-implementados-2026-10-12` en `docs/AgentPDFs/`.
 - **Acuerdos con la sesión de los pasos 14 y 16 (`algoproject-ff`), siguen valiendo:** no se cambian las
   firmas de `engines/market/reprice.real`, `studies/screening/analysis/tradelevel.drift_term`,
   `pipeline/autopilot/closing.export` ni `sqx.variants.execute` (parámetros opcionales nuevos, sí);
