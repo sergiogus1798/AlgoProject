@@ -27,12 +27,12 @@ from studies.screening.falsePositives.tooltips import TIPS as FP_TIPS
 from studies.screening.gate.tooltips import TIPS as GATE_TIPS
 from ui.daemon.sqxconfig.options import choice
 from ui.daemon.sqxconfig.studyhelp import (
-    CSCV_HELP,
-    FP_HELP,
-    GATE_HELP,
-    SURF_HELP,
-    WFM_HELP,
-)  # noqa: F401
+    CSCV_HELP as CSCV_HELP,
+    FP_HELP as FP_HELP,
+    GATE_HELP as GATE_HELP,
+    SURF_HELP as SURF_HELP,
+    WFM_HELP as WFM_HELP,
+)
 
 # Short names the window sends back, so it never sends a path; REL is what the window prints.
 REL = {

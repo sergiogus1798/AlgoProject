@@ -5,7 +5,7 @@ on the global selection."""
 from typing import TYPE_CHECKING
 
 import httpx
-from PySide6.QtWidgets import QStackedWidget, QWidget
+from PySide6.QtWidgets import QStackedWidget
 
 from ui.desktop import client
 from ui.desktop.portfolios.imported import ImportedFicha

@@ -99,6 +99,6 @@ same dict), `mercados.csv`,
 6. **An oos2 reading without data** writes `oos2.sin_dato = 1` and NO `oos2.perverso` (owner, 2026-10-08): it was run and could not be read, which is LIMBO, not a pass. With data: `sin_dato = 0` and `perverso`.
 7. The proposal's per-year scaling is not applied: a rho and an IQR-scaled premium do not move with it.
 
-Not run on a real batch: on 2026-10-07 no `variant_trades.parquet` existed under the data root. The
-code is checked on synthetic panels only (`tests/test_marketsurfaces.py`); measured there, 500
+Run on the three real USDJPY batches (2026-10-08, see `estudios/marketSurfaces.json` in each); the code is
+also checked on synthetic panels (`tests/test_marketsurfaces.py`); measured there, 500
 variants × 11 markets × 620 weeks × 2,000 draws take 18 s (28 s with `--oos2`), reading excluded.

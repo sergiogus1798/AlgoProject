@@ -16,3 +16,5 @@ different number (`StopLossCoef1`), read from the strategy itself.
   `lastSettings.xml` has `use="false"`; `settings.xml` `MoneyManagement.UseFromStrategy` false,
   `InitialCapital` 100000; its 2,094 trades' `Size` runs 0.68-15.37 (median 3.67).
 - `tests/test_portfolio_search.py`: the mapping read back, and X read from a stop grafted in memory.
+- 2026-10-14, encargo 61: `AlgoData/audit/money-management/por-stop-2026-10-14.md` (NIKKEI M30 `Stop_p90`, `scratch/mm_por_stop.py`).
+- 🔬 Stock `FixedAmount` (`RiskedMoney`, `Decimals`, `LotsIfNoMM`, `MaxLots`) sizes by the order's own `sl` (none: `LotsIfNoMM`) and has MT5 templates; swapping to it scales sizes by `ATRMult/X`, ratios unchanged unless `MaxLots` bites.

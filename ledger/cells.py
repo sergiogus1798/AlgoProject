@@ -4,9 +4,10 @@ Owner, 2026-10-12 (encargo 65 §5.1). The ledger's study (`study.py`) carries no
 does. The builds are
 read from the project registry, the step-8 judgements from `projects.csv` (one row per
 project, upserted, so a re-run never double-counts); `table()` groups them into one row per cell
-with the six integers, and `batches_screened` (B) is what the step-8 rule reads. A `Test_` project counts the same as a `Trade_`.
+with the six integers, and `batches_screened` (B) is what the step-8 rule reads. `table()` counts a `Test_` like a `Trade_`; `ask()` reports them apart.
 """
 
+import argparse
 import csv
 import hashlib
 import io
@@ -16,6 +17,9 @@ from datetime import datetime, timezone
 from collections import defaultdict
 from typing import Any
 
+import pandas as pd
+
+from core.datapaths import campaign_dir
 from core.paths import DATA, ROOT
 from core.store.write import atomic, locked
 from ledger import study as studymod
@@ -295,7 +299,135 @@ def backfill() -> dict[str, int]:
     }
 
 
+def ask(
+    symbol: str, timeframe: str, template: str = "", direction: str = ""
+) -> dict[str, Any]:
+    """Read-only: was this cell tried? The three registries, side by side (encargo 62, part 1).
+
+    Owner, 2026-10-14: a `Test_` spends segments, not the cell; a price series is the whole symbol.
+    A "screening" is a step-8 row on oos1 (one per `criteria.yaml` run); "rows" is every book row.
+
+    Args:
+        symbol: Asset, e.g. "USDJPY".
+        timeframe: Grid, e.g. "M30".
+        template: Library template; "" asks for the whole symbol x timeframe.
+        direction: "long", "short" or "" for both.
+
+    Returns:
+        `projects` (kind -> names), `campaign` (state or None), `cell` and `series_tf` and `series`
+        (segment -> rows, screenings, days, criteria), and `verdict`.
+    """
+    tpl = sources.templates()
+    mine = {
+        n: r
+        for n, r in sources.registry_projects().items()
+        if r["symbol"] == symbol and r["timeframe"] == timeframe
+    }
+    chosen = {
+        n: r
+        for n, r in mine.items()
+        if (not template or describe(r, tpl)["template"] == template)
+        and (not direction or describe(r, tpl)["direction"] == direction)
+    }
+    projects: dict[str, list[str]] = defaultdict(list)
+    for n, r in chosen.items():
+        projects[r.get("kind", "")].append(
+            n + (" (retirado)" if r.get("retired") == "yes" else "")
+        )
+    camp_file = campaign_dir() / "ledger.jsonl"
+    latest: dict[
+        str, dict
+    ] = {}  # a cell's lines merged oldest to newest, as the campaign does
+    for line in (
+        camp_file.read_text(encoding="utf-8").splitlines() if camp_file.exists() else []
+    ):
+        c = json.loads(line)
+        k = "|".join(
+            str(c.get(f)) for f in ("template", "symbol", "timeframe", "direction")
+        )
+        latest[k] = {**latest.get(k, {}), **c}
+    camp = [
+        c
+        for c in latest.values()
+        if c["symbol"] == symbol
+        and c["timeframe"] == timeframe
+        and (not template or c["template"] == template)
+        and (not direction or c["direction"] == direction)
+    ]
+    frames = {
+        s: studymod.read(s) for s in studymod.studies() if s.startswith(f"{symbol}_")
+    }
+
+    def spent(select: Any) -> dict[str, dict[str, int]]:
+        """Rows, screenings, days and criteria per segment, over the studies `select` keeps."""
+        out = {}
+        for seg in ("build", "oos1", "oos2"):
+            rows = [
+                x
+                for s, f in frames.items()
+                if select(s)
+                and len(x := f.loc[f["segment"] == seg, ["step", "ts", "criterion"]])
+            ]
+            f = (
+                pd.concat(rows)
+                if rows
+                else pd.DataFrame(columns=pd.Index(["step", "ts", "criterion"]))
+            )
+            out[seg] = {
+                "rows": len(f),
+                "screenings": int((f["step"] == 8).sum()),
+                "days": int(f["ts"].astype(str).str[:10].nunique()),
+                "criteria": int(f["criterion"].nunique()),
+            }
+        return out
+
+    tf = f"{symbol}_{timeframe}_"
+    mine_ = f"{tf}{studymod.SAFE.sub('_', template).strip('_')}" if template else ""
+    # ponytail: the book has no direction; without a template it is read off the study's suffix
+    cell = spent(
+        lambda s: (
+            s == mine_
+            if template
+            else s.startswith(tf) and (not direction or s.lower().endswith(direction))
+        )
+    )
+    n1, o2 = cell["oos1"]["screenings"], cell["oos2"]["rows"]
+    verdict = (
+        f"oos2 abierto ({o2} filas)"
+        if o2
+        else f"oos1 gastado {n1} veces"
+        if n1
+        else "construida, sin juzgar"
+        if chosen or camp
+        else "sin probar"
+    )
+    return {
+        "projects": dict(projects),
+        "campaign": [c.get("state") for c in camp],
+        "cell": cell,
+        "series_tf": spent(lambda s: s.startswith(tf)),
+        "series": spent(lambda s: True),
+        "verdict": verdict,
+    }
+
+
 if __name__ == "__main__":
+    if "--ask" in sys.argv:
+        ap = argparse.ArgumentParser(prog="ledger.cells --ask")
+        ap.add_argument("--ask", action="store_true")
+        ap.add_argument("symbol")
+        ap.add_argument("timeframe")
+        ap.add_argument("--template", default="")
+        ap.add_argument("--direction", default="", choices=("", "long", "short"))
+        ap.add_argument("--json", action="store_true")
+        a = ap.parse_args()
+        out = ask(a.symbol, a.timeframe, a.template, a.direction)
+        print(
+            json.dumps(out, ensure_ascii=False, indent=1)
+            if a.json
+            else "\n".join(f"{k}: {v}" for k, v in out.items())
+        )
+        sys.exit()
     if "--seal" in sys.argv:
         print(seal())
         sys.exit()

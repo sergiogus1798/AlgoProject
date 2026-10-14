@@ -12,9 +12,11 @@ select = [
     "F821", # undefined name
     "F823", # local variable referenced before assignment
     "F841", # unused local variable
+    "F401", # unused import
     "B006", # mutable default argument
     "B008", # function call in default argument
     "B007", # unused loop variable
     "B023", # closure over a loop variable
+    "B904", # raise without from inside except
     "B034", # re.sub/split count or flags passed positionally
 ]

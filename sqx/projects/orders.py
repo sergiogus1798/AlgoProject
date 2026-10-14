@@ -5,7 +5,7 @@ import re
 import zipfile
 from pathlib import Path
 from core.xmlget import rx
-from typing import Any, TypedDict
+from typing import TypedDict
 
 # A pending order is one that sits in the book waiting for price. Those are the only ones a
 # broker can refuse for being too close to the market, which is what RandomizeMinDistance

@@ -1,7 +1,6 @@
 """Step 18 over one or several mothers' batches: the panels, the one queue, and each mother's facts."""
 
 from collections.abc import Callable
-from typing import Any
 
 import numpy as np
 import pandas as pd

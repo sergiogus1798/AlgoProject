@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QSizePolicy,
     QVBoxLayout,
-    QWidget,
 )
 
 from ui.desktop.workspace.filters import FiltersStrip

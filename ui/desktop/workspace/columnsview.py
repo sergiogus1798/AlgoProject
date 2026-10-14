@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 
 import httpx
 from PySide6.QtCore import QObject
-from PySide6.QtWidgets import QWidget
 
 from ui.desktop import background, client
 from ui.desktop.workspace.columns import (

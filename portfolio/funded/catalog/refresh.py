@@ -19,7 +19,7 @@ from portfolio.funded.catalog import (
     overlay,
     store,
 )
-from portfolio.funded.catalog.schema import Catalogue, connect
+from portfolio.funded.catalog.schema import connect
 
 
 class Refreshed(TypedDict):

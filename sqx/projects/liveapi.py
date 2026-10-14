@@ -3,7 +3,6 @@
 import contextlib
 import json
 import os
-import re
 import signal
 import time
 import urllib.parse

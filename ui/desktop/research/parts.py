@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QTableWidget,
     QTableWidgetItem,
-    QWidget,
 )
 
 from ui.desktop import background

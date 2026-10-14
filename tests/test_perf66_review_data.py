@@ -1,7 +1,6 @@
 """Encargo 66, the data reviewer's findings: each test fails on the code before the fix."""
 
 import concurrent.futures as cf
-import hashlib
 import json
 import types
 import zipfile

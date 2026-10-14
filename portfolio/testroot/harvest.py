@@ -148,7 +148,7 @@ def main() -> None:
     except FileExistsError as exists:
         raise SystemExit(
             f"la cosecha de prueba de hoy ya existe, bórrala para rehacerla: {exists.filename}"
-        )
+        ) from None
     for row in rows:
         print(
             f"python3 -m core.archive archive --project {args.project} --databank {args.databank} "

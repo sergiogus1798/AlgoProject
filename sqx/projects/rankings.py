@@ -12,7 +12,6 @@ from sqx.projects import cfxio
 from sqx.projects import buildrules as rules
 from sqx.projects.acceptance import CONDITIONS, condition
 from sqx.projects.crosschecks import MC_MANIPULATION
-from typing import Any
 
 RANKINGS = re.compile(r"<Rankings\b.*?</Rankings>", re.S)
 

@@ -12,7 +12,7 @@ family: the unit the multiple-testing correction is owed to.
 |---|---|---|---|
 | `backfill.py` | Rebuild a study's ledger backwards from the artefacts a run already left on disk. | `python3 -m ledger.backfill --gate <dir> --symbol XAUUSD --timeframe M30 --family <name>` · `python3 -m ledger.backfill --blind <project> --symbol USDJPY --timeframe H1 --family <name>` | a gate report, or WFC/CSCV/WFM results → rows |
 | `blind.py` | The rows steps 17, 18 and 19 did not write, rebuilt from the results they left on disk. | imported by `backfill` | results → rows |
-| `cells.py` | The per-cell counter: how much was tried in each asset x timeframe x direction x idea family. | imported / `__main__` | project registry, gate funnels → table |
+| `cells.py` | The per-cell counter: how much was tried in each asset x timeframe x direction x idea family. | imported / `__main__` | project registry, campaign ledger, book, gate funnels → table |
 | `gate.py` | The one-way door: who may look at a reserved segment, and when 17-19 may be read. | imported | step, segment → pass or raise |
 | `record.py` | Contract L1: one appended line per search that looked at data and reduced a population. | imported | a search → a line |
 | `report.py` | The study's whole search, read back: the funnel, what was spent, and what it costs the Sharpe. | `python3 -m ledger.report --study XAUUSD_M30_DirectionalMomentum` | ledger → the panel |

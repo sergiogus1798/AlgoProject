@@ -1,5 +1,7 @@
 """Known-answer tests: the per-cell counter and accumulated(extra=None)."""
 
+import json
+
 import pandas as pd
 
 from ledger import cells, trials
@@ -111,3 +113,59 @@ def test_batches_for_counts_the_current_batch_once(
     assert cells.batches_for("Trade_A_2") == 2 and cells.batches_for("Test_A_1") == 1
     cells.note("Trade_A_2", 40)
     assert cells.batches_for("Trade_A_2") == 2 and cells.batches_for("nobody") == 1
+
+
+def test_ask_test_only_is_built_and_oos2_is_open(
+    monkeypatch: object, tmp_path: object
+) -> None:
+    """A cell with only `Test_` projects is «construida»; one with oos2 rows is «oos2 abierto»."""
+    setup(monkeypatch, tmp_path)
+    monkeypatch.setattr(cells, "campaign_dir", lambda: tmp_path)
+    book = {
+        "XAUUSD_H1_simple_long": pd.DataFrame(
+            {
+                "segment": ["oos1", "oos1", "oos2"],
+                "step": [8, 8, 17],
+                "ts": ["2026-10-01T00"] * 3,
+                "criterion": ["a", "b", "c"],
+            }
+        )
+    }
+    monkeypatch.setattr(cells.studymod, "studies", lambda: list(book))
+    monkeypatch.setattr(cells.studymod, "read", lambda s: book[s])
+    out = cells.ask("XAUUSD", "H1", direction="long")
+    assert out["cell"]["oos1"]["screenings"] == 2 and out["verdict"].startswith(
+        "oos2 abierto"
+    )
+    monkeypatch.setattr(cells.studymod, "studies", lambda: [])
+    assert cells.ask("XAUUSD", "H1")["verdict"] == "construida, sin juzgar"
+    assert cells.ask("EURUSD", "H1")["verdict"] == "sin probar"
+
+
+def test_ask_direction_campaign_and_kinds(
+    monkeypatch: object, tmp_path: object
+) -> None:
+    """The book is read off the study suffix for a direction; the campaign state is the cell's latest."""
+    setup(monkeypatch, tmp_path)
+    monkeypatch.setattr(cells, "campaign_dir", lambda: tmp_path)
+    reg = {
+        k: {**v, "kind": "test" if k.startswith("Test") else "trade"}
+        for k, v in REG.items()
+    }
+    monkeypatch.setattr(cells.sources, "registry_projects", lambda: reg)
+    row = {"template": "t", "symbol": "XAUUSD", "timeframe": "H1", "direction": "long"}
+    (tmp_path / "ledger.jsonl").write_text(
+        "\n".join(json.dumps({**row, "state": s}) for s in ("pending", "done")),
+        encoding="utf-8",
+    )
+    frame = pd.DataFrame(
+        {"segment": ["oos2"], "step": [17], "ts": ["2026-10-01"], "criterion": ["c"]}
+    )
+    monkeypatch.setattr(cells.studymod, "studies", lambda: ["XAUUSD_H1_simple_long"])
+    monkeypatch.setattr(cells.studymod, "read", lambda s: frame)
+    assert (
+        cells.ask("XAUUSD", "H1", direction="short")["verdict"]
+        != "oos2 abierto (1 filas)"
+    )
+    out = cells.ask("XAUUSD", "H1", direction="long")
+    assert out["campaign"] == ["done"] and sorted(out["projects"]) == ["test", "trade"]

@@ -10,7 +10,7 @@ from core import fanout
 from sqx.variants import tuples
 from sqx.variants.build import rewrite
 from core.xmlget import hit
-from typing import Any, TypedDict
+from typing import TypedDict
 
 FILE = "manifest.parquet"
 NUMERIC = ("int", "double")
