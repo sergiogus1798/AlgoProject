@@ -21,12 +21,12 @@ class YamlTree(QTableWidget):
         self.name, self.leaves, self.filling = "", [], False
         self.setHorizontalHeaderLabels(["campo", "valor", "qué dice el fichero"])
         self.verticalHeader().setVisible(False)
-        self.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.setWordWrap(True)
         head = self.horizontalHeader()
-        head.setSectionResizeMode(0, QHeaderView.Interactive)
-        head.setSectionResizeMode(1, QHeaderView.Interactive)
-        head.setSectionResizeMode(2, QHeaderView.Stretch)
+        head.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        head.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
+        head.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         # Fixed and not sized to content: a path like `money_management / params / ATRMult`
         # would take half the width and squeeze out the explanation, which is the column
         # that makes this table worth reading.
@@ -47,14 +47,14 @@ class YamlTree(QTableWidget):
         self.setRowCount(len(leaves))
         for i, leaf in enumerate(leaves):
             where = QTableWidgetItem(" / ".join(leaf["path"]))
-            where.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+            where.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
             where.setForeground(Qt.GlobalColor.gray if len(leaf["path"]) > 1 else
                                 where.foreground())
             self.setItem(i, 0, where)
 
             value = QTableWidgetItem(shown(leaf))
             if not editable(leaf):
-                value.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+                value.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
                 value.setToolTip("Doble clic para editarlo en una caja: es una lista o un texto "
                                  "largo, y una celda lo escondería.")
             if leaf["value"] is None:
@@ -62,7 +62,7 @@ class YamlTree(QTableWidget):
             self.setItem(i, 1, value)
 
             hint = QTableWidgetItem(leaf["hint"])
-            hint.setFlags(Qt.ItemIsEnabled)
+            hint.setFlags(Qt.ItemFlag.ItemIsEnabled)
             hint.setForeground(Qt.GlobalColor.gray)
             hint.setToolTip(leaf["hint"])
             self.setItem(i, 2, hint)

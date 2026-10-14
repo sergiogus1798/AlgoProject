@@ -13,7 +13,7 @@
   "pyright.portfolio": 10,
   "pyright.sqx": 0,
   "pyright.tools": 0,
-  "pyright.ui": 56,
+  "pyright.ui": 0,
   "untyped_dict..claude": 0,
   "untyped_dict.core": 0,
   "untyped_dict.engines": 0,
@@ -26,5 +26,5 @@
   "untyped_dict.studies": 0,
   "untyped_dict.tests": 185,
   "untyped_dict.tools": 0,
-  "untyped_dict.ui": 9
+  "untyped_dict.ui": 0
 }

@@ -5,9 +5,11 @@ databank selects it and opens Proyecto, a strategy opens its ficha and a study o
 ficha of the strategy chosen.
 """
 
+from typing import TYPE_CHECKING
+
 import httpx
 from PySide6.QtCore import QEvent, QPoint, Qt
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QKeyEvent
 from PySide6.QtWidgets import (QApplication, QFrame, QLabel, QLineEdit, QListWidget,
                                QListWidgetItem, QPlainTextEdit, QTextEdit, QVBoxLayout)
 
@@ -18,17 +20,20 @@ from ui.desktop.selection import SELECTION
 from ui.desktop.theme import MONO, T
 from ui.text.numbers import num
 
+if TYPE_CHECKING:
+    from ui.desktop.shell import Shell
+
 
 class CmdPalette(QFrame):
     """The popup. Built once by the shell, filled from the daemon each time it opens."""
 
-    def __init__(self, shell: object) -> None:
+    def __init__(self, shell: "Shell") -> None:
         """Build the box; nothing is read until `open`.
 
         Args:
             shell: The `Shell`; every choice goes through its `go_to`.
         """
-        super().__init__(shell, Qt.Popup)
+        super().__init__(shell, Qt.WindowType.Popup)
         self.setObjectName("term")
         self.shell = shell
         self.catalogue: list[dict] = []
@@ -144,15 +149,15 @@ class CmdPalette(QFrame):
 
     def eventFilter(self, obj: object, ev: QEvent) -> bool:
         """Arrows move the list, Enter goes, Esc closes, while the focus stays in the field."""
-        if ev.type() != QEvent.KeyPress:
+        if not isinstance(ev, QKeyEvent) or ev.type() != QEvent.Type.KeyPress:
             return False
         key = ev.key()
-        if key in (Qt.Key_Down, Qt.Key_Up) and self.shown:
-            step = 1 if key == Qt.Key_Down else -1
+        if key in (Qt.Key.Key_Down, Qt.Key.Key_Up) and self.shown:
+            step = 1 if key == Qt.Key.Key_Down else -1
             self.list.setCurrentRow((self.list.currentRow() + step) % len(self.shown))
-        elif key in (Qt.Key_Return, Qt.Key_Enter):
+        elif key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self.choose(self.list.currentRow())
-        elif key == Qt.Key_Escape:
+        elif key == Qt.Key.Key_Escape:
             self.close()
         else:
             return False

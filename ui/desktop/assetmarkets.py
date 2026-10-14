@@ -25,7 +25,7 @@ class CrossMarketCheck(QWidget):
         self.lay.setContentsMargins(0, 0, 0, 0)
         self.lay.setSpacing(6)
         head = QHBoxLayout()
-        self.markets_head = QLabel(objectName="h2")
+        self.markets_head = QLabel(objectName="h2")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.markets_head.setWordWrap(True)
         self.declare = QPushButton("Declarar como main")
         self.declare.setToolTip("Le da un bloque vacío en _markets.yaml: todo activo con ficha "
@@ -62,7 +62,7 @@ class CrossMarketCheck(QWidget):
             "Check de Cross Market" if declared else
             "Check de Cross Market — todavía sin declarar como main")
         for name, rows in cats.items():
-            box = QFrame(objectName="market")
+            box = QFrame(objectName="market")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             tint = QColor(TINT.get(name, C["muted"]))
             box.setStyleSheet(f"QFrame#market {{ background: rgba({tint.red()},{tint.green()},"
                               f"{tint.blue()},0.14); border-radius: 6px; }}")
@@ -75,7 +75,7 @@ class CrossMarketCheck(QWidget):
             for i, row in enumerate(rows, 1):
                 asset = QLabel(row["asset"])
                 asset.setToolTip(row["feed"])
-                since = QLabel(f"desde {row['data_from']}", objectName="muted")
+                since = QLabel(f"desde {row['data_from']}", objectName="muted")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                 drop = QPushButton("×")
                 drop.setToolTip(f"Quitar {row['asset']} de {word(name)}.")
                 drop.setFixedSize(22, 20)
@@ -108,8 +108,8 @@ class CrossMarketCheck(QWidget):
         """
         rows = self.data["markets"]["categories"][category]
         asset = next(r["asset"] for r in rows if r["feed"] == feed)
-        if QMessageBox.question(self, f"Quitar {asset}", f"{FIXED_FIRST} ¿Lo quito de "
-                                f"{word(category)}?") == QMessageBox.Yes:
+        if QMessageBox.question(self, f"Quitar {asset}", f"{FIXED_FIRST} ¿Lo quito de "  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
+                                f"{word(category)}?") == QMessageBox.StandardButton.Yes:
             self.write(category, [r for r in rows if r["feed"] != feed])
 
     def write(self, category: str, rows: list[dict]) -> None:

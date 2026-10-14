@@ -38,8 +38,8 @@ class Said(QLabel):
 
     def __init__(self) -> None:
         """An empty faint label that may shrink to nothing."""
-        super().__init__("", objectName="faint")
-        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        super().__init__("", objectName="faint")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
 
     def setText(self, text: str) -> None:
         """Show the sentence and keep all of it in the tooltip."""
@@ -82,7 +82,7 @@ class Shell(Opens, QWidget):
         right = QVBoxLayout()
         right.setContentsMargins(0, 0, 0, 0)
         right.setSpacing(0)
-        self.readonly = QLabel("Esta máquina no tiene SQX: modo lectura", objectName="readonly")
+        self.readonly = QLabel("Esta máquina no tiene SQX: modo lectura", objectName="readonly")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.readonly.hide()
         right.addWidget(self.readonly)
         self.context = ContextBar()
@@ -129,7 +129,7 @@ class Shell(Opens, QWidget):
         self.gallery.load()
         self.open_zone(ZONES[0])
         self.restate()
-        background.get("health", lambda h: "sqx" in h and self.guard(h["sqx"]["installs"]),
+        background.get("health", lambda h: self.guard(h["sqx"]["installs"]) if "sqx" in h else None,
                        owner=self)
         # The app's only shortcut. A text field that has the focus keeps Ctrl+K (Qt's «delete
         # to end of line»), the chat's answer box included: the palette never eats typing.

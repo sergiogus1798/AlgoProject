@@ -1,5 +1,8 @@
 """The window's only way to reach the daemon. No view opens a file or a CSV itself."""
 
+from collections.abc import Mapping
+from typing import Any
+
 import httpx
 
 from core import uitoken
@@ -22,7 +25,7 @@ def aim(port: int) -> None:
     _HTTP = httpx.Client(base_url=BASE, timeout=20.0)
 
 
-def send(method: str, path: str, **how: object) -> dict:
+def send(method: str, path: str, **how: Any) -> dict[str, Any]:
     """The one place a request leaves the window, with the daemon's session token on it.
 
     Args:
@@ -40,7 +43,7 @@ def send(method: str, path: str, **how: object) -> dict:
     return r.json()
 
 
-def get(path: str, wait: float | None = None, **params: str) -> dict:
+def get(path: str, wait: float | None = None, **params: Any) -> dict[str, Any]:
     """Read something from the daemon.
 
     Args:
@@ -56,7 +59,7 @@ def get(path: str, wait: float | None = None, **params: str) -> dict:
     return send("GET", path, params=params, **({"timeout": wait} if wait is not None else {}))
 
 
-def post(path: str, body: dict) -> dict:
+def post(path: str, body: Mapping[str, Any]) -> dict[str, Any]:
     """Change something through the daemon.
 
     Args:

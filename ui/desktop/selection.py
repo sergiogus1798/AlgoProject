@@ -15,7 +15,7 @@ class Selection(QObject):
     def __init__(self) -> None:
         """Start with nothing chosen."""
         super().__init__()
-        self.now = dict.fromkeys(KEYS)
+        self.now: dict[str, str | None] = dict.fromkeys(KEYS)
 
     def choose(self, **fields: str | None) -> None:
         """Change some fields and tell every listener, clearing what hangs below them.

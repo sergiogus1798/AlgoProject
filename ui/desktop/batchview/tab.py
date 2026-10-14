@@ -57,7 +57,7 @@ class BatchTab(QFrame):
         self.colour_by = QComboBox()
         for m in METRICS:
             self.colour_by.addItem(m)
-            self.colour_by.setItemData(self.colour_by.count() - 1, TIP[m], Qt.ToolTipRole)
+            self.colour_by.setItemData(self.colour_by.count() - 1, TIP[m], Qt.ItemDataRole.ToolTipRole)
         self.colour_by.currentTextChanged.connect(self.redraw)
         row.addWidget(self.pick)
         row.addWidget(self.colour_by)
@@ -65,7 +65,9 @@ class BatchTab(QFrame):
         self.chart = Parallel()
         self.keys = QWidget()
         self.keys.setLayout(QVBoxLayout())
-        self.keys.layout().setContentsMargins(0, 0, 0, 0)
+        keys_lay = self.keys.layout()
+        assert keys_lay is not None
+        keys_lay.setContentsMargins(0, 0, 0, 0)
         for w in (head, self.note):
             lay.addWidget(w)
         lay.addLayout(row)
@@ -104,7 +106,7 @@ class BatchTab(QFrame):
             self.colour_by.clear()
             for m in (m for m in METRICS if m in self.batch["outcomes"]):
                 self.colour_by.addItem(m)
-                self.colour_by.setItemData(self.colour_by.count() - 1, TIP[m], Qt.ToolTipRole)
+                self.colour_by.setItemData(self.colour_by.count() - 1, TIP[m], Qt.ItemDataRole.ToolTipRole)
             self.colour_by.setCurrentText(chosen if chosen in self.batch["outcomes"] else METRICS[0])
             self.colour_by.blockSignals(False)
         for w in (self.pick, self.colour_by, self.chart, self.keys):
@@ -126,6 +128,7 @@ class BatchTab(QFrame):
         if self.batch["mother"] is not None:
             items.append(("dash", REAL, f"la madre, {self.batch['variants'][self.batch['mother']]}"))
         lay = self.keys.layout()
+        assert lay is not None
         while lay.count():
             gone = lay.takeAt(0).widget()
             gone.hide()          # deleteLater waits for the event loop; until then it paints

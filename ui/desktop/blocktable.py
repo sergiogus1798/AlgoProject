@@ -1,5 +1,8 @@
 """The table of blocks under one palette: what each one is, and the override the reader may set."""
 
+from collections.abc import Mapping, Sequence
+from typing import Any
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QComboBox, QHeaderView, QTableWidget, QTableWidgetItem
 
@@ -9,8 +12,8 @@ ROLE_ES = {"signal": "señal", "indicator": "indicador", "level": "nivel"}
 # follows whatever the taxonomy says and a later relabelling moves it without a second edit.
 WEIGHTS = [("—  taxonomía", None), ("0  fuera", 0), ("1  neutro", 1), ("2  encaja", 2),
            ("3  característico", 3)]
-SIZING = (QHeaderView.ResizeToContents, QHeaderView.Stretch, QHeaderView.ResizeToContents,
-          QHeaderView.ResizeToContents, QHeaderView.ResizeToContents, QHeaderView.ResizeToContents)
+SIZING = (QHeaderView.ResizeMode.ResizeToContents, QHeaderView.ResizeMode.Stretch, QHeaderView.ResizeMode.ResizeToContents,
+          QHeaderView.ResizeMode.ResizeToContents, QHeaderView.ResizeMode.ResizeToContents, QHeaderView.ResizeMode.ResizeToContents)
 # What the taxonomy says about this block for the family on screen. It is the column that
 # makes switching family visible: without it the table looks identical across the three,
 # because the vocabulary is the same and only the verdict on each block differs.
@@ -31,7 +34,7 @@ class BlockTable(QTableWidget):
         for i, mode in enumerate(SIZING):
             self.horizontalHeader().setSectionResizeMode(i, mode)
 
-    def show_blocks(self, rows: list[tuple[str, dict, dict, object, object]]) -> None:
+    def show_blocks(self, rows: Sequence[tuple[str, dict, Mapping[str, Any], object, object]]) -> None:
         """Redraw the whole table.
 
         Args:

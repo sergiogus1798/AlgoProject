@@ -60,7 +60,7 @@ class BarsPage(QWidget):
         self.span.addItems([t for t, _ in RANGES])
         self.span.setCurrentIndex(DEFAULT_RANGE)
         for name, combo in (("timeframe", self.tf), ("periodo", self.span)):
-            row.addWidget(QLabel(label(name), objectName="dim"))
+            row.addWidget(QLabel(label(name), objectName="dim"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             row.addWidget(combo)
             combo.currentIndexChanged.connect(lambda _: self.load(self.asset))
         row.addStretch(1)
@@ -99,7 +99,7 @@ class BarsPage(QWidget):
         inner = QVBoxLayout(box)
         inner.setContentsMargins(0, 0, 0, 0)
         keys = {m: chart.key(items) for m, items in KEYS.items()}
-        state = {"mode": None}
+        state: dict[str, bool | None] = {"mode": None}
 
         def mode(fits: bool) -> None:
             """Show the key of what was just painted; the width can switch it on a resize."""

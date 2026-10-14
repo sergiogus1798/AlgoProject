@@ -1,5 +1,7 @@
 """The parallel-coordinates canvas: one axis per parameter plus the outcome, one line per variant."""
 
+from typing import Any
+
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import (QColor, QMouseEvent, QPainter, QPaintEvent, QPen, QPixmap,
                            QResizeEvent)
@@ -46,7 +48,10 @@ class Parallel(QWidget):
     def __init__(self) -> None:
         """An empty canvas; `set_batch` fills it."""
         super().__init__()
-        self.batch, self.outcome, self.cache, self.hot = None, "", None, None
+        self.batch: dict[str, Any] | None = None
+        self.outcome = ""
+        self.cache: QPixmap | None = None
+        self.hot: int | None = None
         self.setFixedHeight(HEIGHT)
         self.setMinimumWidth(520)
         self.setMouseTracking(True)
@@ -82,9 +87,11 @@ class Parallel(QWidget):
         pix.setDevicePixelRatio(ratio)
         pix.fill(QColor(T["bg"]))
         p = QPainter(pix)
-        p.setRenderHint(QPainter.Antialiasing)
-        box, vals = self.box(), self.batch["outcomes"][self.outcome]
-        xs, cols = layout(self.batch, self.outcome, box)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        batch = self.batch
+        assert batch is not None   # `paintEvent` returns early without a batch
+        box, vals = self.box(), batch["outcomes"][self.outcome]
+        xs, cols = layout(batch, self.outcome, box)
         cuts = scale.edges(vals)
         n = len(vals)
         alpha, width = (0.9, 1.6) if n <= 150 else (max(0.18, min(0.7, 150 / n)), 1.0)
@@ -95,12 +102,12 @@ class Parallel(QWidget):
             p.setPen(QPen(c, width))
             self.polyline(p, self.points(i, xs, cols))
         self.paint_axes(p, xs, cols)
-        if self.batch["mother"] is not None:
-            pts = self.points(self.batch["mother"], xs, cols)
+        if batch["mother"] is not None:
+            pts = self.points(batch["mother"], xs, cols)
             p.setPen(QPen(QColor(T["bg"]), 6))
             self.polyline(p, pts)
             pen = QPen(QColor(REAL), 3)
-            pen.setStyle(Qt.DashLine)
+            pen.setStyle(Qt.PenStyle.DashLine)
             p.setPen(pen)
             self.polyline(p, pts)
             p.setBrush(QColor(REAL))
@@ -118,8 +125,8 @@ class Parallel(QWidget):
             p.drawLine(QPointF(x, box.top()), QPointF(x, box.bottom()))
             p.setFont(font(10, bold=True))
             p.setPen(QColor(T["text"]))
-            p.drawText(QRectF(x - 80, 4, 160, 34), Qt.AlignHCenter | Qt.AlignBottom
-                       | Qt.TextWordWrap, label)
+            p.drawText(QRectF(x - 80, 4, 160, 34), Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom
+                       | Qt.TextFlag.TextWordWrap, label)
             p.setFont(font(9))
             p.setPen(QColor(T["muted"]))
             for v in tk:
@@ -127,7 +134,7 @@ class Parallel(QWidget):
                      else QRectF(x - 66, y(v) - 8, 60, 16))
                 p.fillRect(r.adjusted(2, 1, -2, -1) if last else
                            r.adjusted(60 - 7 * len(num(v)), 1, 0, -1), QColor(T["bg"]))
-                p.drawText(r, (Qt.AlignLeft if last else Qt.AlignRight) | Qt.AlignVCenter, num(v))
+                p.drawText(r, (Qt.AlignmentFlag.AlignLeft if last else Qt.AlignmentFlag.AlignRight) | Qt.AlignmentFlag.AlignVCenter, num(v))
 
     def paintEvent(self, event: QPaintEvent) -> None:  # noqa: N802 — Qt's name
         """The cached lines, and the hovered variant on top in the brightest ink."""
@@ -139,7 +146,7 @@ class Parallel(QWidget):
             self.cache = self.paint_lines()
         p.drawPixmap(0, 0, self.cache)
         if self.hot is not None:
-            p.setRenderHint(QPainter.Antialiasing)
+            p.setRenderHint(QPainter.RenderHint.Antialiasing)
             xs, cols = layout(self.batch, self.outcome, self.box())
             p.setPen(QPen(QColor(REAL), 2.5))
             self.polyline(p, self.points(self.hot, xs, cols))
@@ -151,13 +158,15 @@ class Parallel(QWidget):
 
     def nearest(self, at: QPointF) -> int | None:
         """The variant whose line passes closest to the pointer, within `NEAR` pixels."""
-        xs, cols = layout(self.batch, self.outcome, self.box())
+        batch = self.batch
+        assert batch is not None   # `mouseMoveEvent` returns early without a batch
+        xs, cols = layout(batch, self.outcome, self.box())
         if not xs[0] <= at.x() <= xs[-1]:
             return None
         k = min(len(xs) - 2, max(0, int((at.x() - xs[0]) / (xs[1] - xs[0])))) if len(xs) > 1 else 0
         t = (at.x() - xs[k]) / (xs[k + 1] - xs[k]) if len(xs) > 1 else 0
         best, gap = None, NEAR
-        for i in range(len(self.batch["variants"])):
+        for i in range(len(batch["variants"])):
             a, b = cols[k][1][i], cols[min(k + 1, len(cols) - 1)][1][i]
             if a is None or b is None:
                 continue
@@ -169,6 +178,7 @@ class Parallel(QWidget):
     def sentence(self, i: int) -> str:
         """What one variant is: its name, stratum, every parameter and both outcomes."""
         b = self.batch
+        assert b is not None   # only asked for a variant found in the batch
         mother = " — la madre" if i == b["mother"] else ""
         rows = [f"{b['variants'][i]} ({b['stratum'][i]}){mother}"]
         rows += [f"{a['label']} = {num(a['values'][i])}" for a in b["axes"]]

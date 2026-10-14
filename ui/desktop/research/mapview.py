@@ -47,16 +47,16 @@ class MapView(QWidget):
         left.addLayout(self.grid)
         left.addWidget(self.legend)
         left.addStretch(1)
-        self.title = QLabel("Pulsa una casilla", objectName="h2")
+        self.title = QLabel("Pulsa una casilla", objectName="h2")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.context = text("", T["muted"], 13)
         self.families = parts.table(FAMILIES)
         self.measures = parts.table(MEASURES)
         right = QVBoxLayout()
         right.addWidget(self.title)
         right.addWidget(self.context)
-        right.addWidget(QLabel("Familias", objectName="kicker"))
+        right.addWidget(QLabel("Familias", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         right.addWidget(self.families, 2)
-        right.addWidget(QLabel("Medidas, cada una con lo que mide", objectName="kicker"))
+        right.addWidget(QLabel("Medidas, cada una con lo que mide", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         right.addWidget(self.measures, 3)
         lay = QHBoxLayout(self)
         lay.addLayout(left, 2)
@@ -74,10 +74,10 @@ class MapView(QWidget):
         while self.grid.count():
             self.grid.takeAt(0).widget().deleteLater()
         for c, tf in enumerate(got["timeframes"], 1):
-            self.grid.addWidget(QLabel(tf, objectName="kicker"), 0, c)
+            self.grid.addWidget(QLabel(tf, objectName="kicker"), 0, c)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         for r, symbol in enumerate(got["symbols"], 1):
             mark = " *" if symbol in got["provisional"] else ""
-            self.grid.addWidget(QLabel(symbol + mark, objectName="mono"), r, 0)
+            self.grid.addWidget(QLabel(symbol + mark, objectName="mono"), r, 0)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             for c, tf in enumerate(got["timeframes"], 1):
                 self.grid.addWidget(self.button(symbol, tf, got["cells"].get(f"{symbol}|{tf}")),
                                     r, c)

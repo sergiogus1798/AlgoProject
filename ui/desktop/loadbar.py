@@ -1,5 +1,7 @@
 """The data of the selected databank: loaded the moment it is chosen, and how far it has got."""
 
+from typing import Any
+
 from PySide6.QtCore import QTimer, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
@@ -83,7 +85,7 @@ class LoadBar(QWidget):
                        lambda got: self.show_state(got) if where == self.where else None,
                        key=f"loadbar:{id(self)}", owner=self)
 
-    def ask(self, verb: str, retry: bool = False, where: tuple | None = None) -> dict:
+    def ask(self, verb: str, retry: bool = False, where: tuple | None = None) -> dict[str, Any]:
         """POST to load (queues what is missing) or GET the state; a daemon error is shown.
 
         Args:

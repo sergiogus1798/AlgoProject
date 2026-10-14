@@ -1,11 +1,34 @@
 """How the window hops between zones: what a palette row, a card or a cell hands on and where it lands."""
 
+from collections.abc import Callable
+from typing import Any
+
+from PySide6.QtWidgets import QLabel, QWidget
+
 from ui.desktop import projectflow as flow
+from ui.desktop.catalogue import Catalogue
+from ui.desktop.chat import Chat
+from ui.desktop.palettes import Palettes
 from ui.desktop.selection import SELECTION
+from ui.desktop.workspace.ficha import Ficha
+from ui.desktop.workspace.gallery import Gallery
+from ui.desktop.workspace.zone import WorkspaceZone
 
 
-class Opens:
+class Opens(QWidget):
     """The `Shell` methods that open one zone from another; they use the shell's zones and status."""
+
+    # What `Shell.__init__` sets and these methods read (annotations only: no runtime effect).
+    catalogue: Catalogue
+    chat: Chat
+    palettes: Palettes
+    gallery: Gallery
+    workspace: WorkspaceZone
+    estrategia: flow.StrategyZone
+    ficha: Ficha
+    zones: dict[str, Any]   # each zone has its own API (`open`, `reload`, signals): not one type
+    status: QLabel
+    open_zone: Callable[[str], None]
 
     def go_to(self, item: dict) -> None:
         """Open what one palette row points at: by zone name and SELECTION, never by stack index.

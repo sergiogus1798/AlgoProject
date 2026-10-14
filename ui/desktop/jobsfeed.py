@@ -2,6 +2,7 @@
 
 import time
 from collections.abc import Callable
+from typing import Any
 
 from PySide6.QtCore import QObject
 
@@ -36,4 +37,10 @@ def read(done: Callable[[dict], None], key: str = "", owner: QObject | None = No
     if time.monotonic() - _LAST["at"] < ttl:
         return done(_LAST["got"])
     at = time.monotonic()
-    background.get("jobs", lambda got: (store(got, at), done(got)), key, owner)
+
+    def landed(got: dict[str, Any]) -> None:
+        """Remember the answer, then hand it on."""
+        store(got, at)
+        done(got)
+
+    background.get("jobs", landed, key, owner)

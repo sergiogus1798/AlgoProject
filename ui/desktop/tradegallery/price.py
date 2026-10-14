@@ -61,14 +61,14 @@ def draw_for(tile: dict) -> Callable:
         for x, h, l in zip(px, w["h"], w["l"]):
             p.drawLine(QPointF(x, y(h)), QPointF(x, y(l)))
         p.setPen(QPen(QColor(REAL), 2.2))
-        p.setBrush(Qt.NoBrush)
+        p.setBrush(Qt.BrushStyle.NoBrush)
         p.drawPath(axis.curve(px, w["c"], y))
         for k, price, colour, up in ((w["entry"], tile["open_price"], ENTRY, True),
                                      (w["exit"], tile["close_price"], EXIT, False)):
-            chart.vline(p, px[k], box, colour, 1.2, Qt.DashLine)
+            chart.vline(p, px[k], box, colour, 1.2, Qt.PenStyle.DashLine)
             _marker(p, px[k], y(price), colour, up)
         if hover is not None and box.contains(hover):
-            chart.vline(p, px[axis.nearest(px, hover.x())], box, T["muted"], 1, Qt.DotLine)
+            chart.vline(p, px[axis.nearest(px, hover.x())], box, T["muted"], 1, Qt.PenStyle.DotLine)
 
     return draw
 

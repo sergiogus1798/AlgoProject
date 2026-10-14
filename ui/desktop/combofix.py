@@ -42,12 +42,14 @@ class ComboFix(QObject):
         Returns:
             False always: this only sizes widgets, it never consumes the event.
         """
-        if e.type() != QEvent.Show:
+        if e.type() != QEvent.Type.Show:
             return False
         if isinstance(obj, QComboBox) and obj.maxVisibleItems() < MAX_VISIBLE:
             obj.setMaxVisibleItems(MAX_VISIBLE)
-        elif isinstance(obj, QWidget) and obj.isWindow() and isinstance(obj.parent(), QComboBox):
-            _fit(obj, obj.parent())
+        elif isinstance(obj, QWidget) and obj.isWindow():
+            combo = obj.parent()
+            if isinstance(combo, QComboBox):
+                _fit(obj, combo)
         return False
 
 
@@ -57,6 +59,5 @@ def install(app: QApplication) -> None:
     Args:
         app: The Qt application.
     """
-    if getattr(app, "combofix", None) is None:
-        app.combofix = ComboFix(app)
-        app.installEventFilter(app.combofix)
+    if app.findChild(ComboFix) is None:    # the filter is a child of the app: alive as long as it
+        app.installEventFilter(ComboFix(app))

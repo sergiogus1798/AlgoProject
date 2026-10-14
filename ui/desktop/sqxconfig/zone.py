@@ -2,6 +2,7 @@
 
 import httpx
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
                                QPushButton, QScrollArea, QVBoxLayout, QWidget)
 
@@ -50,13 +51,13 @@ class SqxConfigZone(QFrame):
         self.column.setSpacing(2)
         inner = QWidget()
         inner.setLayout(self.column)
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(QFrame.NoFrame)
-        self.scroll.setWidget(inner)
+        self.pane = QScrollArea()
+        self.pane.setWidgetResizable(True)
+        self.pane.setFrameShape(QFrame.Shape.NoFrame)
+        self.pane.setWidget(inner)
         split = QHBoxLayout()
         split.addWidget(self.index)
-        split.addWidget(self.scroll, 1)
+        split.addWidget(self.pane, 1)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(16, 10, 16, 10)
         lay.setSpacing(6)
@@ -66,7 +67,7 @@ class SqxConfigZone(QFrame):
         lay.addWidget(self.status)
         lay.addLayout(split, 1)
 
-    def showEvent(self, event: object) -> None:
+    def showEvent(self, event: QShowEvent) -> None:
         """Read the daemon the first time the zone is shown, not when the window starts."""
         super().showEvent(event)
         if not self.sections:
@@ -104,7 +105,7 @@ class SqxConfigZone(QFrame):
             section.stale.connect(lambda: QTimer.singleShot(0, self.refresh))
             self.column.addWidget(section)
             item = QListWidgetItem(f"  {words(sec['key'])}")
-            item.setData(Qt.UserRole, len(self.sections))
+            item.setData(Qt.ItemDataRole.UserRole, len(self.sections))
             self.index.addItem(item)
             self.sections.append(section)
         self.column.addStretch(1)
@@ -115,19 +116,19 @@ class SqxConfigZone(QFrame):
         the status line that said what was written."""
         opened = [s.section["key"] for s in self.sections if s.head.isChecked()]
         said, style = self.status.text(), self.status.styleSheet()
-        at = self.scroll.verticalScrollBar().value()
+        at = self.pane.verticalScrollBar().value()
         self.load()
         for s in self.sections:
             if s.section["key"] in opened:
                 s.head.setChecked(True)
         self.status.setText(said)
         self.status.setStyleSheet(style)
-        QTimer.singleShot(0, lambda: self.scroll.verticalScrollBar().setValue(at))
+        QTimer.singleShot(0, lambda: self.pane.verticalScrollBar().setValue(at))
 
     def header(self, text: str) -> None:
         """A file's heading, in the index and above its sections."""
         head = QListWidgetItem(text)
-        head.setFlags(Qt.NoItemFlags)
+        head.setFlags(Qt.ItemFlag.NoItemFlags)
         self.index.addItem(head)
         label = QLabel(text)
         label.setObjectName("kicker")
@@ -137,7 +138,7 @@ class SqxConfigZone(QFrame):
 
     def jump(self, item: QListWidgetItem) -> None:
         """Open the chosen section and scroll it to the top."""
-        at = item.data(Qt.UserRole)
+        at = item.data(Qt.ItemDataRole.UserRole)
         if at is None:
             return
         self.open(at)
@@ -162,7 +163,7 @@ class SqxConfigZone(QFrame):
         Near the end the bar cannot reach the section's y; stopping at its maximum would cut
         the first visible row in half, so it stops at the last section top above that.
         """
-        bar = self.scroll.verticalScrollBar()
+        bar = self.pane.verticalScrollBar()
         target = min(section.y(), bar.maximum())
         bar.setValue(max([s.y() for s in self.sections if s.y() <= target], default=0))
 

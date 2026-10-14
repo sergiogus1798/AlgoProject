@@ -62,20 +62,20 @@ class AssetSpans(QWidget):
         self.lay = QVBoxLayout(self)
         self.lay.setContentsMargins(0, 0, 0, 0)
         self.lay.setSpacing(6)
-        self.lay.addWidget(QLabel("Tramos", objectName="h2"))
-        self.feed = QLabel(objectName="muted")
+        self.lay.addWidget(QLabel("Tramos", objectName="h2"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.feed = QLabel(objectName="muted")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.feed.setWordWrap(True)
         self.lay.addWidget(self.feed)
         self.dates = QVBoxLayout()
         self.dates.setSpacing(6)
         self.lay.addLayout(self.dates)
 
-        self.ranges = QWidget(objectName="bare")     # else it paints a darker box behind the table
+        self.ranges = QWidget(objectName="bare")     # else it paints a darker box behind the table  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.ranges.setStyleSheet("#bare { background: transparent; }")
         box = QVBoxLayout(self.ranges)
         box.setContentsMargins(0, 0, 0, 0)
         box.setSpacing(6)
-        box.addWidget(QLabel("MC Retest — rangos en puntos", objectName="h2"))
+        box.addWidget(QLabel("MC Retest — rangos en puntos", objectName="h2"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.mc = grid(["range", "min", "max"])
         self.mc.cellDoubleClicked.connect(self.on_mc)
         box.addWidget(self.mc)
@@ -114,15 +114,15 @@ class AssetSpans(QWidget):
         Returns:
             A `tile` frame, done growing: changing a date only enables its own «Aplicar».
         """
-        tile = QFrame(objectName="tile")
+        tile = QFrame(objectName="tile")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay = QVBoxLayout(tile)
         lay.setContentsMargins(10, 6, 10, 8)
         lay.setSpacing(4)
 
-        name = QLabel(word(seg["name"]), objectName="h2")
+        name = QLabel(word(seg["name"]), objectName="h2")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         name.setToolTip(seg["purpose"])
         kept = seg["reserved_for"]
-        note = QLabel(f"Spread {word(seg['spread'])}", objectName="muted")
+        note = QLabel(f"Spread {word(seg['spread'])}", objectName="muted")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         note.setToolTip(seg["purpose"] + (f"\nReservado para {', '.join(kept)} (solo ata a "
                                           "un agente autónomo)." if kept else ""))
         go = QPushButton("Aplicar")

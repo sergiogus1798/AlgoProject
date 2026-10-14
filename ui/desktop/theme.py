@@ -219,7 +219,7 @@ def clear(layout: QLayout) -> None:
 
 def rule() -> QFrame:
     """A one-pixel horizontal line, which the stylesheet paints as a rule."""
-    return QFrame(objectName="rule")
+    return QFrame(objectName="rule")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
 
 
 def kicker(text: str) -> QLabel:
@@ -228,4 +228,4 @@ def kicker(text: str) -> QLabel:
     Args:
         text: The heading.
     """
-    return QLabel(text[:1].upper() + text[1:], objectName="kicker")
+    return QLabel(text[:1].upper() + text[1:], objectName="kicker")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs

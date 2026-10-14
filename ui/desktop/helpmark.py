@@ -12,7 +12,10 @@ moved, resized, reparented, destroyed — through its own event filter on it.
 """
 
 import sys
+from collections.abc import Callable
+from typing import Any, TypeVar, cast
 
+from PySide6.QtGui import QMouseEvent
 from PySide6.QtCore import QEvent, QObject, QRect, Qt
 from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QBoxLayout, QCalendarWidget,
                                QComboBox, QDialogButtonBox, QLabel, QLayout, QLineEdit,
@@ -27,22 +30,25 @@ SKIP_NAMES = {"nav", "helpmark"}  # the sidebar's zone buttons are navigation, n
 SKIP_PARENTS = (QTabBar, QComboBox, QDialogButtonBox, QAbstractSpinBox, QLineEdit, QScrollBar,
                 QCalendarWidget)
 SKIP_CLASSES = {"ContextBar"}
-SHOWN = {QEvent.Show, QEvent.ShowToParent}
-FOLLOWED = {QEvent.ShowToParent, QEvent.HideToParent, QEvent.Move, QEvent.Resize,
-            QEvent.ParentChange}
+SHOWN = {QEvent.Type.Show, QEvent.Type.ShowToParent}
+FOLLOWED = {QEvent.Type.ShowToParent, QEvent.Type.HideToParent, QEvent.Type.Move, QEvent.Type.Resize,
+            QEvent.Type.ParentChange}
 
 
-def guarded(method: object) -> object:
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def guarded(method: F) -> F:
     """Wrap a Python override of a Qt virtual: an exception is reported, never let into Qt."""
     def run(*args: object) -> object:
         """Call the override; on an exception report it and answer «not handled»."""
         try:
             return method(*args)
         except Exception:  # noqa: BLE001 — the window's boundary: a «?» must not take it down
-            sys.excepthook(*sys.exc_info())
+            sys.excepthook(*cast(tuple[type[BaseException], BaseException, Any], sys.exc_info()))
             return False
     run.__doc__ = method.__doc__
-    return run
+    return cast(F, run)
 
 
 def scopes(button: QWidget) -> list[str]:
@@ -53,7 +59,7 @@ def scopes(button: QWidget) -> list[str]:
 def text_of(button: QWidget) -> str:
     """What the mark says: the button's `help` property, else the registry by its text, merged
     with the button's own tooltip (which often says why it is off now)."""
-    said = button.property("help") or help_for(button.text(), scopes(button))
+    said = button.property("help") or help_for(getattr(button, "text")(), scopes(button))
     return merge(said, button.toolTip())
 
 
@@ -84,7 +90,8 @@ def holder(layout: QLayout | None, widget: QWidget) -> QLayout | None:
     if layout.indexOf(widget) >= 0:
         return layout
     for i in range(layout.count()):
-        found = holder(layout.itemAt(i).layout(), widget)
+        item = layout.itemAt(i)
+        found = holder(item.layout() if item is not None else None, widget)
         if found is not None:
             return found
     return None
@@ -97,12 +104,13 @@ class Mark(QLabel):
 
     def __init__(self, button: QWidget, floating: bool) -> None:
         """Build the mark for `button`, as a child of the button's parent."""
-        super().__init__("?", button.parentWidget(), objectName="helpmark")
-        self.button, self.floating = button, floating
+        super().__init__("?", button.parentWidget(), objectName="helpmark")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.button: QWidget | None = button
+        self.floating = floating
         self.setFixedSize(SIZE, SIZE)
-        self.setAlignment(Qt.AlignCenter)
-        self.setAttribute(Qt.WA_Hover)
-        self.setCursor(Qt.WhatsThisCursor)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover)
+        self.setCursor(Qt.CursorShape.WhatsThisCursor)
         self.setToolTip(text_of(button))
         button.installEventFilter(self)
         button.destroyed.connect(self.orphan)   # a bound slot: Qt drops it if the mark dies first
@@ -115,18 +123,18 @@ class Mark(QLabel):
     @guarded
     def event(self, e: QEvent) -> bool:
         """Refresh the tooltip from the button right before Qt shows it."""
-        if e.type() == QEvent.ToolTip and self.button is not None:
+        if e.type() == QEvent.Type.ToolTip and self.button is not None:
             self.setToolTip(text_of(self.button))
         return super().event(e)
 
     @guarded
-    def mousePressEvent(self, e: object) -> None:
+    def mousePressEvent(self, e: QMouseEvent) -> None:
         """Show the sentence on a click as well, and keep the click from the button."""
         QToolTip.showText(e.globalPosition().toPoint(), self.toolTip(), self)
         e.accept()
 
     @guarded
-    def mouseReleaseEvent(self, e: object) -> None:
+    def mouseReleaseEvent(self, e: QMouseEvent) -> None:
         """Swallow the release."""
         e.accept()
 
@@ -135,27 +143,29 @@ class Mark(QLabel):
         """Follow the button: its visibility, its place, and a move to another parent."""
         if self.button is None or e.type() not in FOLLOWED:
             return False
-        if e.type() == QEvent.ParentChange:
+        if e.type() == QEvent.Type.ParentChange:
             obj.removeEventFilter(self)
             obj.setProperty("helpmarked", False)   # the Watcher places a new one on next show
             self.orphan()
-            if obj.parentWidget() is not None and obj.isVisible():
+            if isinstance(obj, QWidget) and obj.parentWidget() is not None and obj.isVisible():
                 attach(obj)
         elif self.floating:
             self.seat()
         else:
-            self.setVisible(not obj.isHidden())
+            self.setVisible(isinstance(obj, QWidget) and not obj.isHidden())
         return False
 
     def seat(self) -> None:
         """Put a floating mark right of its button, or over its spare right edge, or hide it."""
         b, parent = self.button, self.parentWidget()
+        if b is None or parent is None:
+            return
         g = b.geometry()
         top = g.top() + (g.height() - SIZE) // 2
         beside = QRect(g.right() + 1 + GAP, top, SIZE, SIZE)
         inside = QRect(g.right() - GAP - SIZE, top, SIZE, SIZE)
         others = [w.geometry() for w in parent.findChildren(QWidget,
-                                                            options=Qt.FindDirectChildrenOnly)
+                                                            options=Qt.FindChildOption.FindDirectChildrenOnly)
                   if not w.isHidden() and w is not b and not isinstance(w, Mark)]
         free = parent.rect().contains(beside) and not any(o.intersects(beside) for o in others)
         spare = b.width() - b.sizeHint().width() >= 2 * (SIZE + GAP)
@@ -168,13 +178,14 @@ class Mark(QLabel):
 
 def attach(button: QWidget) -> None:
     """Mark a button: in its row when a horizontal box holds it, floating anywhere else."""
-    box = holder(button.parentWidget().layout(), button)
-    boxed = isinstance(box, QBoxLayout) and box.direction() in (QBoxLayout.LeftToRight,
-                                                                QBoxLayout.RightToLeft)
+    parent = button.parentWidget()
+    box = holder(parent.layout() if parent is not None else None, button)
+    boxed = isinstance(box, QBoxLayout) and box.direction() in (QBoxLayout.Direction.LeftToRight,
+                                                                QBoxLayout.Direction.RightToLeft)
     mark = Mark(button, floating=not boxed)
     button.setProperty("helpmarked", True)
-    if boxed:
-        box.insertWidget(box.indexOf(button) + 1, mark, 0, Qt.AlignVCenter)
+    if isinstance(box, QBoxLayout) and boxed:
+        box.insertWidget(box.indexOf(button) + 1, mark, 0, Qt.AlignmentFlag.AlignVCenter)
         mark.setVisible(not button.isHidden())
     else:
         mark.seat()
@@ -182,7 +193,7 @@ def attach(button: QWidget) -> None:
 
 def cursor(button: QWidget) -> None:
     """The hand over a button that can be pressed, the arrow over one that cannot."""
-    button.setCursor(Qt.PointingHandCursor if button.isEnabled() else Qt.ArrowCursor)
+    button.setCursor(Qt.CursorShape.PointingHandCursor if button.isEnabled() else Qt.CursorShape.ArrowCursor)
 
 
 class Watcher(QObject):
@@ -192,7 +203,7 @@ class Watcher(QObject):
     def eventFilter(self, obj: QObject, e: QEvent) -> bool:
         """Mark a button on its first show; keep its cursor in step with its state."""
         kind = e.type()
-        if kind not in SHOWN and kind != QEvent.EnabledChange:
+        if kind not in SHOWN and kind != QEvent.Type.EnabledChange:
             return False
         if not isinstance(obj, (QPushButton, QToolButton)):
             return False
@@ -205,6 +216,5 @@ class Watcher(QObject):
 
 def install(app: QApplication) -> None:
     """Install the filter once on the application; a second call does nothing."""
-    if getattr(app, "helpmark", None) is None:
-        app.helpmark = Watcher(app)
-        app.installEventFilter(app.helpmark)
+    if app.findChild(Watcher) is None:     # the filter is a child of the app: alive as long as it
+        app.installEventFilter(Watcher(app))

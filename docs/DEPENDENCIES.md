@@ -1444,7 +1444,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/daemon/workflow/tests.py` | 137 | The tests of each step: which studies, their state on this project, their configuration in one line. | ui | — |
 | `ui/daemon/writes.py` | 47 | The three things the window may change: a template's status, its notes, a run's verdict. | core, sqx, ui | — |
 | `ui/desktop/assetcard.py` | 144 | One asset's costs: what it applies, what SQX carries, and what leaving it undecided costs. | ui | PySide6 |
-| `ui/desktop/assetforms.py` | 245 | The boxes the asset zone opens to change something: a text, a cost, a market, a new asset. | ui | PySide6 |
+| `ui/desktop/assetforms.py` | 255 | The boxes the asset zone opens to change something: a text, a cost, a market, a new asset. | ui | PySide6 |
 | `ui/desktop/assetlist.py` | 100 | The column down the left of the asset zone: every instrument, coloured by what it still needs. | ui | PySide6 |
 | `ui/desktop/assetmarkets.py` | 120 | One asset's Cross Market check: declare it a main, then add or drop the markets it retests on. | ui | PySide6 |
 | `ui/desktop/assetpage.py` | 138 | One instrument's page of the asset zone: costs, windows, Cross Market check, traits, raw file. | ui | PySide6 |
@@ -1453,9 +1453,9 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/desktop/assettable.py` | 115 | The read-only tables the asset zone draws from — cells, formatting, the shared grid. | ui | PySide6 |
 | `ui/desktop/assettraits.py` | 141 | A starting-point note per asset on how it tends to trade — trend, rango, carry, volatilidad. | ui | — |
 | `ui/desktop/background.py` | 90 | Daemon calls off the window's thread: the answer lands in a callback on the GUI thread. | ui | PySide6, httpx, shiboken6 |
-| `ui/desktop/batchview/parallel.py` | 194 | The parallel-coordinates canvas: one axis per parameter plus the outcome, one line per variant. | ui | PySide6 |
-| `ui/desktop/batchview/scale.py` | 76 | The discrete colour scale of an outcome: nine round, equal steps symmetric about zero, and its key. | ui | — |
-| `ui/desktop/batchview/tab.py` | 140 | «Lote»: one mother's variant batch in parallel coordinates, coloured by NetProfit build, oos1 or oos2. | ui | PySide6, httpx |
+| `ui/desktop/batchview/parallel.py` | 204 | The parallel-coordinates canvas: one axis per parameter plus the outcome, one line per variant. | ui | PySide6 |
+| `ui/desktop/batchview/scale.py` | 77 | The discrete colour scale of an outcome: nine round, equal steps symmetric about zero, and its key. | ui | — |
+| `ui/desktop/batchview/tab.py` | 143 | «Lote»: one mother's variant batch in parallel coordinates, coloured by NetProfit build, oos1 or oos2. | ui | PySide6, httpx |
 | `ui/desktop/blocks/axis.py` | 98 | The geometry of a chart: round ticks, data-to-pixel maps and paths through the points. | ui | PySide6 |
 | `ui/desktop/blocks/bars.py` | 174 | The bars block: one bar per item, coloured by its state, with its error and a reference — horizontal, or columns over their labels. | ui | PySide6 |
 | `ui/desktop/blocks/callout.py` | 24 | The callout block: one coloured sentence the study wants seen, not read past. | ui | PySide6 |
@@ -1481,40 +1481,40 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/desktop/blocks/tabpage.py` | 145 | One contract tab, in one column or beside its counterpart: its note, its selectors, its blocks. | ui | PySide6 |
 | `ui/desktop/blocks/tools.py` | 80 | Above a result: the report of what is on screen, and the partial re-runs kept beside the stored result. | ui | PySide6, httpx |
 | `ui/desktop/blocks/verdict.py` | 67 | The verdict block: the label in its state's colour, never alone, with its meaning and its parts. | ui | PySide6 |
-| `ui/desktop/blocktable.py` | 92 | The table of blocks under one palette: what each one is, and the override the reader may set. | — | PySide6 |
+| `ui/desktop/blocktable.py` | 95 | The table of blocks under one palette: what each one is, and the override the reader may set. | — | PySide6 |
 | `ui/desktop/buttonstyle.py` | 77 | How a button looks: lit and clickable when it can be pressed, inert when it cannot, in both | — | — |
 | `ui/desktop/catalogue.py` | 172 | The catalogue: the list of templates and drafts on the left, one page of detail on the right. | ui | PySide6 |
 | `ui/desktop/chat.py` | 222 | The chat that turns an idea into a draft brief and the command that authors it. | ui | PySide6 |
 | `ui/desktop/chatparts.py` | 39 | Two helpers of the interview: empty a layout, and one message bubble. | ui | PySide6 |
-| `ui/desktop/client.py` | 103 | The window's only way to reach the daemon. No view opens a file or a CSV itself. | core | httpx |
-| `ui/desktop/cmdpalette.py` | 171 | Ctrl+K: type a few letters, Enter opens that zone, project, databank, strategy or study. | ui | PySide6, httpx |
-| `ui/desktop/cmdrank.py` | 99 | What Ctrl+K lists and in which order: the fuzzy match, the aliases and the recent choices. | — | PySide6 |
-| `ui/desktop/combofix.py` | 62 | Every QComboBox in the app shows all the options that fit on screen, application-wide, one filter. | — | PySide6 |
+| `ui/desktop/client.py` | 104 | The window's only way to reach the daemon. No view opens a file or a CSV itself. | core | httpx |
+| `ui/desktop/cmdpalette.py` | 176 | Ctrl+K: type a few letters, Enter opens that zone, project, databank, strategy or study. | ui | PySide6, httpx |
+| `ui/desktop/cmdrank.py` | 100 | What Ctrl+K lists and in which order: the fuzzy match, the aliases and the recent choices. | — | PySide6 |
+| `ui/desktop/combofix.py` | 63 | Every QComboBox in the app shows all the options that fit on screen, application-wide, one filter. | — | PySide6 |
 | `ui/desktop/contextbar.py` | 79 | The bar on top: Proyectos › proyecto › estrategia, bound to SELECTION; each crumb goes back. | ui | PySide6 |
 | `ui/desktop/coverage.py` | 249 | The library's front page: what has been tried by family and timeframe, and where to go from a cell. | ui | PySide6 |
 | `ui/desktop/coveragecells.py` | 98 | The coverage matrix's parts that need no table: its scale and legend, the headline tiles. | ui | PySide6 |
 | `ui/desktop/criteria/__init__.py` | 1 | The Criterios zone: every step's pass criteria seen and edited. | — | — |
-| `ui/desktop/criteria/dialog.py` | 244 | The dialog that adds or changes one criterion: a number, a verdict or a compound of them. | ui | PySide6 |
-| `ui/desktop/criteria/overrides.py` | 81 | A rule's per-timeframe / per-asset overrides (`by`) as editable rows and back, and the dialog's help texts and one-line wording. | ui | PySide6 |
-| `ui/desktop/criteria/parts.py` | 84 | What the Criterios zone is made of: its sentences, the «?» mark and the table of rules. | ui | PySide6 |
-| `ui/desktop/criteria/zone.py` | 196 | Criterios: what a strategy has to meet at each workflow step to go on, seen and edited. | ui | PySide6, httpx |
+| `ui/desktop/criteria/dialog.py` | 247 | The dialog that adds or changes one criterion: a number, a verdict or a compound of them. | ui | PySide6 |
+| `ui/desktop/criteria/overrides.py` | 83 | A rule's per-timeframe / per-asset overrides (`by`) as editable rows and back, and the dialog's help texts and one-line wording. | ui | PySide6 |
+| `ui/desktop/criteria/parts.py` | 86 | What the Criterios zone is made of: its sentences, the «?» mark and the table of rules. | ui | PySide6 |
+| `ui/desktop/criteria/zone.py` | 200 | Criterios: what a strategy has to meet at each workflow step to go on, seen and edited. | ui | PySide6, httpx |
 | `ui/desktop/datazone/__init__.py` | 1 | «Datos»: the catalogue of the data root, each asset's bars, and its spread and feed-quality studies. | — | — |
 | `ui/desktop/datazone/candles.py` | 121 | The price painter of one asset: candles when they fit, each pixel column's range and close when they do not. | ui | PySide6 |
 | `ui/desktop/datazone/pages.py` | 156 | The Datos zone's pages that depend on the asset: its bars, and one step-4 study read back as a ResultView. | ui | PySide6 |
 | `ui/desktop/datazone/preview.py` | 56 | The Datos zone alone in a window, until the sidebar wires it; `--shot` saves each tab as a PNG and exits. | ui | PySide6 |
 | `ui/desktop/datazone/tree.py` | 70 | The catalogue of the data root as a tree: each branch's files, formats, newest write and signed exports. | ui | PySide6 |
-| `ui/desktop/datazone/zone.py` | 159 | The «Datos» zone: the catalogue of AlgoData, and per asset its bars, its real spread and its feed quality. | ui | PySide6 |
+| `ui/desktop/datazone/zone.py` | 161 | The «Datos» zone: the catalogue of AlgoData, and per asset its bars, its real spread and its feed quality. | ui | PySide6 |
 | `ui/desktop/detail.py` | 249 | One template's page: what it is, what is on disk, where it ran, and the two writes. | ui | PySide6 |
 | `ui/desktop/durations.py` | 73 | How «En marcha» prints a duration, a processed-over-total and a time per strategy. | ui | — |
 | `ui/desktop/helpmark.py` | 220 | The «?» beside every button: one application-wide event filter that, the first time a button | ui | PySide6 |
 | `ui/desktop/jobbutton.py` | 85 | A button that queues one daemon job after a confirmation, and follows it to its end. | ui | PySide6 |
-| `ui/desktop/jobsfeed.py` | 39 | GET /api/jobs shared by every poller of the window: the answer one of them just got serves the rest. | ui | PySide6 |
+| `ui/desktop/jobsfeed.py` | 46 | GET /api/jobs shared by every poller of the window: the answer one of them just got serves the rest. | ui | PySide6 |
 | `ui/desktop/launch.py` | 150 | Start the app: bring the daemon up if it is not, then open the window. | core, ui | PySide6 |
-| `ui/desktop/loadbar.py` | 139 | The data of the selected databank: loaded the moment it is chosen, and how far it has got. | ui | PySide6 |
+| `ui/desktop/loadbar.py` | 141 | The data of the selected databank: loaded the moment it is chosen, and how far it has got. | ui | PySide6 |
 | `ui/desktop/mt5bridge/__init__.py` | 1 | MT5 BRIDGE: the window's zones over MetaTrader 5 — today «Verificar», step 26. | — | — |
 | `ui/desktop/mt5bridge/forceclose.py` | 50 | The button for a wedged-open MT5 terminal: close it well if possible, kill it if not. | ui | PySide6 |
-| `ui/desktop/mt5bridge/render.py` | 149 | Drawing helpers for Verificar: the firm's light widget, the past-runs table, result filtering. | ui | PySide6 |
-| `ui/desktop/mt5bridge/zone.py` | 248 | MT5 BRIDGE › Verificar: one strategy in SQX at each prop firm's conditions against its MT5 backtest. | ui | PySide6 |
+| `ui/desktop/mt5bridge/render.py` | 150 | Drawing helpers for Verificar: the firm's light widget, the past-runs table, result filtering. | ui | PySide6 |
+| `ui/desktop/mt5bridge/zone.py` | 250 | MT5 BRIDGE › Verificar: one strategy in SQX at each prop firm's conditions against its MT5 backtest. | ui | PySide6 |
 | `ui/desktop/names.py` | 82 | The one table of family names the window shows: every stored spelling in, one English name out. | — | — |
 | `ui/desktop/nav.py` | 128 | The sidebar: every zone in its group, one checkable button each. | ui | PySide6 |
 | `ui/desktop/ops/jobsbar.py` | 252 | The status-bar strip of jobs: what runs, a 0-100 % bar for each, what waits, and a cancel. | ui | PySide6, httpx |
@@ -1524,7 +1524,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/desktop/ops/running.py` | 209 | «En marcha»: the custodian's pulse and one project's tasks — the same project, one screen. | ui | PySide6 |
 | `ui/desktop/ops/tasks.py` | 250 | One SQX project task by task, read from its install: the lower half of «En marcha». | ui | PySide6 |
 | `ui/desktop/palettebar.py` | 110 | The palette view's top bar: which palette is open, what it is, and the library actions. | ui | PySide6 |
-| `ui/desktop/palettes.py` | 233 | The palette view: the library of block selections, and what the open one lets the builder draw. | ui | PySide6 |
+| `ui/desktop/palettes.py` | 243 | The palette view: the library of block selections, and what the open one lets the builder draw. | ui | PySide6 |
 | `ui/desktop/palettetext.py` | 36 | The line under the palette bar: what the open palette is, and whether it does anything. | ui | — |
 | `ui/desktop/portfolios/__init__.py` | 1 | PORTFOLIOS: the archived strategies, and «Importar» opening one as the Estrategia page shows it. | — | — |
 | `ui/desktop/portfolios/board.py` | 160 | PORTFOLIOS: a rail of modules, each with its strip and result tabs, over one databank that feeds them all. | ui | PySide6 |
@@ -1540,23 +1540,23 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/desktop/portfolios/strips.py` | 63 | What each rail module of PORTFOLIOS puts in its settings strip: one line of what it is, selectors, launchers. | — | — |
 | `ui/desktop/portfolios/studies.py` | 156 | Below the imported ficha: the backtest sheet and every study the version froze, each read from the archive. | ui | PySide6 |
 | `ui/desktop/portfolios/zone.py` | 194 | PORTFOLIOS: every archived strategy, its versions, and «Importar» — only from the archive for now. | ui | PySide6 |
-| `ui/desktop/projectflow.py` | 150 | Proyectos → Proyecto → Estrategia in the shell: the Estrategia zone (a live ficha, or an | ui | PySide6, httpx |
+| `ui/desktop/projectflow.py` | 157 | Proyectos → Proyecto → Estrategia in the shell: the Estrategia zone (a live ficha, or an | ui | PySide6, httpx |
 | `ui/desktop/research/__init__.py` | 1 | BIBLIOTECA › Investigar: the map, the memory, the director and its proposal. | — | — |
 | `ui/desktop/research/directview.py` | 65 | «Tablero»: the board the director reads, one row per cell-family. No launcher: the director has none. | ui | PySide6 |
 | `ui/desktop/research/mapview.py` | 143 | The map: assets × timeframes, colour = dominant family, intensity = effect; click for the measures. | ui | PySide6 |
 | `ui/desktop/research/memoryview.py` | 69 | The memory: today's coverage, the funnel of every attempt, and what each family has given. | ui | PySide6 |
-| `ui/desktop/research/parts.py` | 80 | What the four views of «Investigar» share: family colours, a filled table, a daemon call. | ui | PySide6 |
+| `ui/desktop/research/parts.py` | 82 | What the four views of «Investigar» share: family colours, a filled table, a daemon call. | ui | PySide6 |
 | `ui/desktop/research/proposalview.py` | 171 | The proposal: three ideas side by side, a veto each, their open questions, the launch and the queue. | ui | PySide6 |
-| `ui/desktop/research/zone.py` | 78 | BIBLIOTECA › Investigar: the four views of the research board in one terminal frame. | ui | PySide6 |
+| `ui/desktop/research/zone.py` | 79 | BIBLIOTECA › Investigar: the four views of the research board in one terminal frame. | ui | PySide6 |
 | `ui/desktop/selection.py` | 38 | The one global selection: project, databank and strategy, shared by every zone. | — | PySide6 |
 | `ui/desktop/shape.py` | 40 | The panel that says which parts of a template the builder fills, and which a palette reaches. | ui | PySide6 |
 | `ui/desktop/shell.py` | 230 | The window itself: grouped side navigation, the context bar, one zone inside, one status bar. | ui | PySide6 |
 | `ui/desktop/shellopen.py` | 127 | How the window hops between zones: what a palette row, a card or a cell hands on and where it lands. | ui | PySide6 |
 | `ui/desktop/sqxconfig/__init__.py` | 1 | Configuración SQX: the zone that shows and edits the settings new SQX projects are built with. | — | — |
-| `ui/desktop/sqxconfig/field.py` | 167 | One value of the SQX settings as an editor: a dropdown where the values are fixed, a box otherwise. | ui | PySide6, httpx |
+| `ui/desktop/sqxconfig/field.py` | 169 | One value of the SQX settings as an editor: a dropdown where the values are fixed, a box otherwise. | ui | PySide6, httpx |
 | `ui/desktop/sqxconfig/preview.py` | 70 | The Configuración SQX zone alone in a window, over the running daemon — until the sidebar carries it. | core, ui | PySide6 |
 | `ui/desktop/sqxconfig/section.py` | 183 | One test or topic of the SQX settings: a header that folds, the file's own words, one row per value. | ui | PySide6 |
-| `ui/desktop/sqxconfig/zone.py` | 172 | Configuración SQX: every setting a new project is built and tested with, one section per test. | ui | PySide6, httpx |
+| `ui/desktop/sqxconfig/zone.py` | 173 | Configuración SQX: every setting a new project is built and tested with, one section per test. | ui | PySide6, httpx |
 | `ui/desktop/studypage/__init__.py` | 1 | The study page: one study of one strategy or of the population, its drawer, its runs and its history. | — | — |
 | `ui/desktop/studypage/compare.py` | 92 | The two results a comparison puts side by side: two runs of one strategy, or two strategies. | ui | — |
 | `ui/desktop/studypage/dots.py` | 98 | The state dot on each study tab, and where the page reads those states from. | ui | PySide6 |
@@ -1574,7 +1574,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/desktop/studypage/wfclote.py` | 28 | «Lote» beside the drawer: the mother's variant batch, only while the WFC study is open. | ui | — |
 | `ui/desktop/theme.py` | 231 | The one design system: the palette every view reads, the stylesheet it becomes, and the two | ui | PySide6 |
 | `ui/desktop/tradegallery/__init__.py` | 5 | The trade gallery of the Ficha: five trades by P&L quantile, or five at random with the seed shown. | ui | — |
-| `ui/desktop/tradegallery/gallery.py` | 129 | `TradeGallery`: five trades of one sample, by P&L quantile or drawn with a shown seed — never the best alone. | ui | PySide6 |
+| `ui/desktop/tradegallery/gallery.py` | 131 | `TradeGallery`: five trades of one sample, by P&L quantile or drawn with a shown seed — never the best alone. | ui | PySide6 |
 | `ui/desktop/tradegallery/price.py` | 113 | The price painter of one trade: bar ranges, the close line, the entry and exit marked, on `chart.Canvas`. | ui | PySide6 |
 | `ui/desktop/tradegallery/tile.py` | 84 | One tile of the gallery: the trade's price window and its figures, each with the sentence of what it counts. | ui | PySide6 |
 | `ui/desktop/workspace/__init__.py` | 1 | The project workspace: the gallery, one project's three strips and one strategy's page. | — | — |

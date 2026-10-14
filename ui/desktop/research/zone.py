@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import QFrame, QLabel, QTabWidget, QVBoxLayout
 
 from ui.desktop.blocks.card import text
@@ -43,13 +44,13 @@ class ResearchZone(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(20, 16, 20, 16)
         lay.setSpacing(8)
-        lay.addWidget(QLabel("Biblioteca", objectName="kicker"))
-        lay.addWidget(QLabel("Investigar", objectName="h1"))
+        lay.addWidget(QLabel("Biblioteca", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        lay.addWidget(QLabel("Investigar", objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(text(INTRO, T["muted"], 13))
-        lay.addWidget(QFrame(objectName="rule"))
+        lay.addWidget(QFrame(objectName="rule"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(self.tabs, 1)
 
-    def showEvent(self, event: object) -> None:
+    def showEvent(self, event: QShowEvent) -> None:
         """Load the four views the first time the zone is shown."""
         super().showEvent(event)
         if not self.loaded:

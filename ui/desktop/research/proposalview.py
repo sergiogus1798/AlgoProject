@@ -35,7 +35,7 @@ class ProposalView(QWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(holder)
-        self.button = QPushButton("▶ Crear plantillas y lanzar en SQX", objectName="primary")
+        self.button = QPushButton("▶ Crear plantillas y lanzar en SQX", objectName="primary")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.button.setProperty("help", "Encadena, idea a idea en el custodio: core.assets, "
                                         "templateArchitect, proyecto, buildingBlocksExpert y "
                                         "autopilot. Pide confirmación.")
@@ -50,7 +50,7 @@ class ProposalView(QWidget):
         lay.addWidget(self.head)
         lay.addWidget(scroll, 1)
         lay.addLayout(row)
-        lay.addWidget(QLabel("La cola: qué idea está en el custodio y cuáles esperan",
+        lay.addWidget(QLabel("La cola: qué idea está en el custodio y cuáles esperan",  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                              objectName="kicker"))
         lay.addWidget(self.queue)
         self.timer = QTimer(self)
@@ -89,9 +89,9 @@ class ProposalView(QWidget):
 
     def column(self, i: dict) -> QFrame:
         """One idea: veto, rule, mechanism, palette, custom blocks, cost, failure, questions."""
-        box = QFrame(objectName="panel")
+        box = QFrame(objectName="panel")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay = QVBoxLayout(box)
-        lay.addWidget(QLabel(i["name"], objectName="h2"))
+        lay.addWidget(QLabel(i["name"], objectName="h2"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         veto = QCheckBox("Vetar esta idea")
         veto.setChecked(bool(i.get("vetoed")))
         veto.toggled.connect(lambda on, name=i["name"]: self.change(
@@ -111,7 +111,7 @@ class ProposalView(QWidget):
         for n, q in enumerate(i["questions"]):
             lay.addWidget(text(f"<b>PREGUNTA</b>: {e(q['question'])}<br>" + "<br>".join(
                 f"&nbsp;&nbsp;{k}) {e(r)}" for k, r in enumerate(q["readings"], 1)), C["weak"], 13))
-            field = QLineEdit(q.get("answer") or "", placeholderText="Tu respuesta, y Enter")
+            field = QLineEdit(q.get("answer") or "", placeholderText="Tu respuesta, y Enter")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             field.editingFinished.connect(lambda f=field, name=i["name"], n=n: f.text().strip()
                                           and self.change("research/answer", {
                                               "id": self.p["id"], "idea": name, "question": n,
@@ -145,8 +145,8 @@ class ProposalView(QWidget):
         if not got.get("ok"):
             return
         if QMessageBox.question(self, "Crear plantillas y lanzar en SQX",
-                                got["text"] + "\n\n¿Confirmas?", QMessageBox.Yes | QMessageBox.No,
-                                QMessageBox.No) != QMessageBox.Yes:
+                                got["text"] + "\n\n¿Confirmas?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
             return
         sent = self.send("research/launch", {"id": self.p["id"], "ideas": got["ideas"]})
         self.checked(sent if not sent.get("job") else {"ok": False, "reasons": [

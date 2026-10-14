@@ -1,5 +1,7 @@
 """One value of the SQX settings as an editor: a dropdown where the values are fixed, a box otherwise."""
 
+from typing import Any, cast
+
 import httpx
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QWidget
@@ -17,11 +19,11 @@ def shown(value: object) -> str:
 
 
 # What a fixed option says on screen; the value the file keeps is untouched.
-DISPLAY = {"D": "Day", "W": "Week", "ME": "Month", "sharpe": "Sharpe", "sortino": "Sortino",
+DISPLAY: dict[str, str] = {"D": "Day", "W": "Week", "ME": "Month", "sharpe": "Sharpe", "sortino": "Sortino",
            "year": "año · year", "semester": "semestre · semester", "quarter": "trimestre · quarter"}
 
 
-def combo(options: list[dict], current: object) -> QComboBox:
+def combo(options: list[dict[str, Any]], current: object) -> QComboBox:
     """A dropdown over the fixed options, on the current value.
 
     Args:
@@ -34,7 +36,7 @@ def combo(options: list[dict], current: object) -> QComboBox:
     """
     box = QComboBox()
     for o in options:
-        box.addItem(DISPLAY.get(o["text"], o["text"]), o["value"])
+        box.addItem(cast(str, DISPLAY.get(o["text"], o["text"])), o["value"])
     if current not in [o["value"] for o in options]:
         box.addItem(f"{current} (el del fichero, fuera de la lista)", current)
     box.setCurrentIndex(box.findData(current))

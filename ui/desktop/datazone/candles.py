@@ -78,10 +78,10 @@ def draw_for(b: dict, mode: Callable[[bool], None]) -> Callable:
             for x, (i, j) in zip(px, cols):
                 p.drawLine(QPointF(x, y(max(b["h"][i:j + 1]))), QPointF(x, y(min(b["l"][i:j + 1]))))
             p.setPen(QPen(QColor(REAL), 1.6))
-            p.setBrush(Qt.NoBrush)
+            p.setBrush(Qt.BrushStyle.NoBrush)
             p.drawPath(axis.curve(px, [b["c"][j] for _, j in cols], y))
         if hover is not None and box.contains(hover):
-            chart.vline(p, px[axis.nearest(px, hover.x())], box, T["muted"], 1, Qt.DotLine)
+            chart.vline(p, px[axis.nearest(px, hover.x())], box, T["muted"], 1, Qt.PenStyle.DotLine)
 
     return draw
 

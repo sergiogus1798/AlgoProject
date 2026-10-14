@@ -1,11 +1,11 @@
 """Two helpers of the interview: empty a layout, and one message bubble."""
 
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QFrame, QLabel, QLayout, QVBoxLayout
 
 from ui.desktop.theme import C
 
 
-def drop(layout: QVBoxLayout | QHBoxLayout) -> None:
+def drop(layout: QLayout) -> None:
     """Delete everything in a layout, however deeply nested.
 
     Args:

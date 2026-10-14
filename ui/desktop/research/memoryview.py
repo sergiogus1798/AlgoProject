@@ -37,9 +37,9 @@ class MemoryView(QWidget):
         self.family = parts.table(FAMILY)
         lay = QVBoxLayout(self)
         lay.addWidget(self.cover)
-        lay.addWidget(QLabel("El embudo de cada intento", objectName="kicker"))
+        lay.addWidget(QLabel("El embudo de cada intento", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(self.attempts, 3)
-        lay.addWidget(QLabel("Lo que ha dado cada familia, por clase de activo", objectName="kicker"))
+        lay.addWidget(QLabel("Lo que ha dado cada familia, por clase de activo", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(self.family, 1)
 
     def reload(self) -> None:

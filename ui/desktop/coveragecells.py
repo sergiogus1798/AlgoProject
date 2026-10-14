@@ -49,7 +49,7 @@ def tile(title: str, value: str, help_key: str) -> QFrame:
         A framed widget. Every number in this window explains itself on hover; a count
         nobody can define is a count nobody should act on.
     """
-    f = QFrame(objectName="tile")
+    f = QFrame(objectName="tile")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
     f.setToolTip(TILE_HELP[help_key])
     lay = QVBoxLayout(f)
     lay.setContentsMargins(14, 10, 14, 10)
@@ -57,7 +57,7 @@ def tile(title: str, value: str, help_key: str) -> QFrame:
     big = QLabel(value)
     big.setStyleSheet("font-size:22px; font-weight:600;")
     lay.addWidget(big)
-    lay.addWidget(QLabel(title, objectName="faint"))
+    lay.addWidget(QLabel(title, objectName="faint"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
     return f
 
 

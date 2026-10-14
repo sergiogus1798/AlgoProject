@@ -34,7 +34,7 @@ class ContextBar(QFrame):
 
     def __init__(self) -> None:
         """Build the three crumbs and follow the global selection."""
-        super().__init__(objectName="term")
+        super().__init__(objectName="term")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay = QHBoxLayout(self)
         lay.setContentsMargins(12, 6, 12, 6)
         lay.setSpacing(6)

@@ -22,7 +22,7 @@ class PaletteBar(QFrame):
 
     def __init__(self) -> None:
         """Build the two rows of the bar."""
-        super().__init__(objectName="panel")
+        super().__init__(objectName="panel")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         outer = QVBoxLayout(self)
         outer.setContentsMargins(14, 10, 14, 10)
         outer.setSpacing(8)
@@ -46,11 +46,11 @@ class PaletteBar(QFrame):
             self.policy.addItem(text, key)
         self.policy.currentIndexChanged.connect(lambda _: self.restated.emit())
         row.addWidget(self.policy)
-        self.search = QLineEdit(placeholderText="Buscar bloque o forma en las 83 categorías")
+        self.search = QLineEdit(placeholderText="Buscar bloque o forma en las 83 categorías")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.search.setMinimumWidth(240)
         self.search.textChanged.connect(lambda _: self.searched.emit())
         row.addWidget(self.search, 1)
-        self.save = QPushButton("Guardar", objectName="primary")
+        self.save = QPushButton("Guardar", objectName="primary")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.save.clicked.connect(lambda: self.saved.emit())
         row.addWidget(self.save)
         outer.addLayout(row)
@@ -58,7 +58,7 @@ class PaletteBar(QFrame):
         # The counts get a line of their own: squeezed onto the row above they elided to
         # three characters, and they are the only thing that shows a palette has stopped
         # narrowing anything.
-        self.counts = QLabel(objectName="muted")
+        self.counts = QLabel(objectName="muted")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         outer.addWidget(self.counts)
 
     def fill(self, palettes: dict, labels: dict[str, str], keep: str | None) -> str:
@@ -105,6 +105,6 @@ class PaletteBar(QFrame):
         """Say `removed` once the owner confirms: it deleted on the click (📓 2026-09-29), and
         a palette is an edited list of weights whose only undo was git."""
         name = self.picker.currentText()
-        if QMessageBox.question(self, "Borrar paleta", f"¿Borrar la paleta «{name}»? Su fichero "
-                                "se elimina de sqx/blocks/palettes/.") == QMessageBox.Yes:
+        if QMessageBox.question(self, "Borrar paleta", f"¿Borrar la paleta «{name}»? Su fichero "  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
+                                "se elimina de sqx/blocks/palettes/.") == QMessageBox.StandardButton.Yes:
             self.removed.emit()

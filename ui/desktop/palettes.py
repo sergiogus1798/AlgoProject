@@ -1,5 +1,7 @@
 """The palette view: the library of block selections, and what the open one lets the builder draw."""
 
+from typing import Any, TypedDict
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QLabel, QListWidget, QListWidgetItem, QSplitter, QVBoxLayout,
                                QWidget)
@@ -9,6 +11,14 @@ from ui.desktop.blocktable import BlockTable
 from ui.desktop.palettebar import PaletteBar
 from ui.desktop.palettetext import describe
 from ui.desktop.theme import C, chip
+
+
+class Resolved(TypedDict):
+    """One block's switch as the daemon resolves it: on or off, its weight and why."""
+
+    use: bool
+    weight: int
+    why: str
 
 
 class Palettes(QWidget):
@@ -24,7 +34,7 @@ class Palettes(QWidget):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(12)
-        lay.addWidget(QLabel("Paletas de bloques", objectName="h1"))
+        lay.addWidget(QLabel("Paletas de bloques", objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.bar = PaletteBar()
         self.bar.opened.connect(self.on_open)
         self.bar.searched.connect(self.fill_table)
@@ -37,11 +47,11 @@ class Palettes(QWidget):
         self.about = QLabel()
         self.about.setWordWrap(True)
         lay.addWidget(self.about)
-        self.caveat = QLabel(objectName="faint")
+        self.caveat = QLabel(objectName="faint")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.caveat.setWordWrap(True)
         lay.addWidget(self.caveat)
 
-        split = QSplitter(Qt.Horizontal)
+        split = QSplitter(Qt.Orientation.Horizontal)
         self.categories = QListWidget()
         self.categories.setMinimumWidth(260)
         self.categories.currentItemChanged.connect(lambda *_: self.fill_table())
@@ -52,7 +62,7 @@ class Palettes(QWidget):
         split.setSizes([280, 880])
         lay.addWidget(split, 1)
 
-    def entry(self) -> dict:
+    def entry(self) -> dict[str, Any]:
         """The open palette's whole entry — its file, its resolution and its summary."""
         return self.data["palettes"][self.open]
 
@@ -98,7 +108,7 @@ class Palettes(QWidget):
         self.fill_categories()
         self.fill_table()
 
-    def resolved(self, key: str) -> dict:
+    def resolved(self, key: str) -> Resolved:
         """One block's switch under the open palette, pending edits included.
 
         Args:
@@ -117,7 +127,7 @@ class Palettes(QWidget):
     def fill_categories(self) -> None:
         """Rebuild the left list, each category with how many of its blocks are on."""
         current = self.categories.currentItem()
-        keep = current.data(Qt.UserRole) if current else None
+        keep = current.data(Qt.ItemDataRole.UserRole) if current else None
         self.categories.clear()
         by: dict[str, list[str]] = {}
         for key, block in self.data["blocks"].items():
@@ -125,13 +135,13 @@ class Palettes(QWidget):
         for category in sorted(by):
             on = sum(1 for k in by[category] if self.resolved(k)["use"])
             item = QListWidgetItem(f"{category}    {on}/{len(by[category])}")
-            item.setData(Qt.UserRole, category)
+            item.setData(Qt.ItemDataRole.UserRole, category)
             if on == 0:
                 item.setForeground(Qt.GlobalColor.gray)
             self.categories.addItem(item)
         self.categories.setCurrentRow(
             next((i for i in range(self.categories.count())
-                  if self.categories.item(i).data(Qt.UserRole) == keep), 0))
+                  if self.categories.item(i).data(Qt.ItemDataRole.UserRole) == keep), 0))
 
     def rows(self) -> list[tuple[str, dict]]:
         """The blocks the table should show, under the category and the search box.
@@ -142,7 +152,7 @@ class Palettes(QWidget):
         """
         term = self.bar.search.text().lower()
         item = self.categories.currentItem()
-        category = item.data(Qt.UserRole) if item else None
+        category = item.data(Qt.ItemDataRole.UserRole) if item else None
         out = []
         for key, block in sorted(self.data["blocks"].items()):
             if term:

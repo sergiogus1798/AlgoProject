@@ -96,7 +96,7 @@ def sidebar(go: Callable[[str], None], reload: Callable[[], None],
     Returns:
         The framed column, and `{zone name: its button}` so the shell can mark the open one.
     """
-    f = QFrame(objectName="sidebar")
+    f = QFrame(objectName="sidebar")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
     f.setFixedWidth(224)             # «Registro de búsquedas» in bold fits
     lay = QVBoxLayout(f)
     lay.setContentsMargins(0, 18, 0, 14)
@@ -112,14 +112,14 @@ def sidebar(go: Callable[[str], None], reload: Callable[[], None],
                            "padding:16px 16px 5px 16px;")
         lay.addWidget(head)
         for name in names:
-            b = QPushButton(LABEL.get(name, name), objectName="nav")
+            b = QPushButton(LABEL.get(name, name), objectName="nav")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             b.setCheckable(True)
             b.setToolTip(TIPS[name])
             b.clicked.connect(lambda _, n=name: go(n))
             lay.addWidget(b)
             buttons[name] = b
     lay.addStretch()
-    reload_btn = QPushButton("Recargar", toolTip=reload_tip(reloads))
+    reload_btn = QPushButton("Recargar", toolTip=reload_tip(reloads))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
     reload_btn.clicked.connect(reload)
     holder = QVBoxLayout()
     holder.setContentsMargins(12, 0, 12, 0)

@@ -1,5 +1,7 @@
 """The boxes the asset zone opens to change something: a text, a cost, a market, a new asset."""
 
+from typing import TypedDict
+
 from PySide6.QtWidgets import (QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel,
                                QLineEdit, QPlainTextEdit, QVBoxLayout)
 
@@ -7,6 +9,14 @@ from ui.desktop import client
 from ui.text.glossary import LABELS, label
 from ui.text.numbers import num
 from ui.desktop.theme import C
+
+class Write(TypedDict):
+    """A text edit as the daemon takes it: which field, its new text, and why."""
+
+    field: str
+    text: str
+    why: str
+
 
 WIDE = 560   # the width every paragraph in this zone wraps against
 
@@ -71,9 +81,9 @@ def buttons(dialog: QDialog) -> QDialogButtonBox:
     Returns:
         A button box already connected.
     """
-    box = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
-    box.button(QDialogButtonBox.Save).setText("Guardar")
-    box.button(QDialogButtonBox.Cancel).setText("Cancelar")
+    box = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+    box.button(QDialogButtonBox.StandardButton.Save).setText("Guardar")
+    box.button(QDialogButtonBox.StandardButton.Cancel).setText("Cancelar")
     box.accepted.connect(dialog.accept)
     box.rejected.connect(dialog.reject)
     return box
@@ -94,7 +104,7 @@ class TextBox(QDialog):
         super().__init__()
         self.setWindowTitle(title)
         lay = QVBoxLayout(self)
-        lay.addWidget(QLabel(title, objectName="h2"))
+        lay.addWidget(QLabel(title, objectName="h2"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         if hint:
             lay.addWidget(explain(hint))
         if lines:
@@ -124,7 +134,7 @@ class MarketBox(QDialog):
         self.candidates = candidates
         self.setWindowTitle(f"{symbol} · Check de Cross Market")
         lay = QVBoxLayout(self)
-        lay.addWidget(QLabel(f"{symbol} · Añadir un mercado", objectName="h2"))
+        lay.addWidget(QLabel(f"{symbol} · Añadir un mercado", objectName="h2"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(explain(
             "Family: mismo motor económico que el activo, la prueba fácil. Structural: misma "
             f"estructura y ningún motor compartido, la prueba dura. {FIXED_FIRST}"))
@@ -161,7 +171,7 @@ class CostBox(QDialog):
         self.symbol, self.field = symbol, cost["field"]
         self.setWindowTitle(f"{symbol} · {word(cost['field'])}")
         lay = QVBoxLayout(self)
-        lay.addWidget(QLabel(f"{symbol} · {word(cost['field'])}", objectName="h2"))
+        lay.addWidget(QLabel(f"{symbol} · {word(cost['field'])}", objectName="h2"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(explain(
             f"Unidad: {word(cost['unit'])}. SQX lleva hoy {now(cost['sqx_now'])}, que no "
             f"siempre está en la misma unidad. {BLOCKING if cost['required'] else ''}"))
@@ -173,7 +183,7 @@ class CostBox(QDialog):
         form.addRow(f"Usar ({word(cost['unit'])})", self.value)
         lay.addLayout(form)
 
-        lay.addWidget(QLabel("Por qué", objectName="h2"))
+        lay.addWidget(QLabel("Por qué", objectName="h2"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(explain(
             "La app propone una línea con la fecha y el valor que sustituye; acábala. No "
             "escribe PROVISIONAL por ti: esa palabra es la que lee `assetcheck.provisional` "
@@ -191,7 +201,7 @@ class CostBox(QDialog):
                               text=self.value.text())["why"]
         self.why.setPlainText(proposed)
 
-    def payload(self) -> dict:
+    def payload(self) -> Write:
         """The write, as the daemon takes it."""
         return {"field": self.field, "text": self.value.text(),
                 "why": self.why.toPlainText().strip()}
@@ -212,7 +222,7 @@ class NewAssetBox(QDialog):
         super().__init__()
         self.setWindowTitle("Nuevo activo")
         lay = QVBoxLayout(self)
-        lay.addWidget(QLabel("Nuevo activo", objectName="h2"))
+        lay.addWidget(QLabel("Nuevo activo", objectName="h2"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(explain(
             "La clase decide QUÉ CAMPOS de coste tendrá el fichero: " +
             " · ".join(f"`{k}` {v['what']}" for k, v in classes.items())))
@@ -239,7 +249,7 @@ class NewAssetBox(QDialog):
             "queda bloqueado hasta que los pactes."))
         lay.addWidget(buttons(self))
 
-    def payload(self) -> dict:
+    def payload(self) -> dict[str, str]:
         """The new asset, as the daemon takes it."""
         return {**{k: f.text().strip() for k, f in self.fields.items()},
                 "cls": self.cls.currentText()}

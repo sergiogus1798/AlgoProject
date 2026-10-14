@@ -35,7 +35,7 @@ def _item(r: dict, stale_days: int) -> QTreeWidgetItem:
              r["newest"], num(r["exports"]) if r["exports"] else "—", r["signed"] or "—")
     item = QTreeWidgetItem(list(cells))
     for k in (1, 4):
-        item.setTextAlignment(k, Qt.AlignRight | Qt.AlignVCenter)
+        item.setTextAlignment(k, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
     if r["stale"]:
         item.setForeground(3, QBrush(QColor(C["weak"])))
         item.setToolTip(3, f"Nada escrito en {num(round(r['age_days']))} días: más de "
@@ -59,7 +59,7 @@ def build(body: dict) -> QTreeWidget:
     tree.setHeaderLabels([label(c) for c in COLUMNS])
     for k, h in enumerate(HELP):
         tree.headerItem().setToolTip(k, h)
-    tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
+    tree.header().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
     tree.setUniformRowHeights(True)
     items: dict[str, QTreeWidgetItem] = {}
     for r in sorted(body["rows"], key=lambda r: (r["depth"], -r["files"])):

@@ -27,8 +27,8 @@ class AssetList(QListWidget):
     def announce(self) -> None:
         """Say what is now selected, ignoring the headings, which select nothing."""
         item = self.currentItem()
-        if item and item.data(Qt.UserRole):
-            self.opened.emit(item.data(Qt.UserRole))
+        if item and item.data(Qt.ItemDataRole.UserRole):
+            self.opened.emit(item.data(Qt.ItemDataRole.UserRole))
 
     def fill(self, assets: list[dict], keep: str | None) -> None:
         """Rebuild the whole column.
@@ -61,7 +61,7 @@ class AssetList(QListWidget):
             title: What the section holds.
         """
         item = QListWidgetItem(title)
-        item.setFlags(Qt.NoItemFlags)
+        item.setFlags(Qt.ItemFlag.NoItemFlags)
         item.setForeground(Qt.GlobalColor.gray)
         self.addItem(item)
 
@@ -75,7 +75,7 @@ class AssetList(QListWidget):
                 means it works but every figure it produces is provisional.
         """
         item = QListWidgetItem(f"  {label}")
-        item.setData(Qt.UserRole, label)
+        item.setData(Qt.ItemDataRole.UserRole, label)
         item.setToolTip(tip)
         if colour:
             item.setForeground(QColor(colour))
@@ -89,7 +89,7 @@ class AssetList(QListWidget):
                 heading above it, and a heading cannot be current.
         """
         for i in range(self.count()):
-            if self.item(i).data(Qt.UserRole) == keep:
+            if self.item(i).data(Qt.ItemDataRole.UserRole) == keep:
                 self.setCurrentRow(i)
                 return
         self.setCurrentRow(1)
@@ -97,4 +97,4 @@ class AssetList(QListWidget):
     def selected(self) -> str | None:
         """The name of whatever is open, or None before anything is."""
         item = self.currentItem()
-        return item.data(Qt.UserRole) if item else None
+        return item.data(Qt.ItemDataRole.UserRole) if item else None

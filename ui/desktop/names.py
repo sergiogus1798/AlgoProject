@@ -42,7 +42,7 @@ def spelt(key: str, column: int) -> str | None:
     return row[column] if row else None
 
 
-def family(key: str) -> str:
+def family(key: str | None) -> str:
     """The name of a family as the window shows it.
 
     Args:

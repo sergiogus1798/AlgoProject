@@ -1,6 +1,7 @@
 """Criterios: what a strategy has to meet at each workflow step to go on, seen and edited."""
 
 import httpx
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMessageBox, QPushButton,
                                QScrollArea, QVBoxLayout, QWidget)
 
@@ -19,8 +20,8 @@ class CriteriaZone(QFrame):
         super().__init__()
         self.setObjectName("term")
         self.state: dict | None = None
-        kicker = QLabel("Proyecto · Criterios", objectName="kicker")
-        title = QLabel("Criterios de paso", objectName="h1")
+        kicker = QLabel("Proyecto · Criterios", objectName="kicker")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        title = QLabel("Criterios de paso", objectName="h1")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.freeze = QPushButton("Congelar")
         self.freeze.setToolTip(FREEZE)
         self.freeze.clicked.connect(self.ask_freeze)
@@ -37,7 +38,7 @@ class CriteriaZone(QFrame):
         head = QHBoxLayout()
         head.addWidget(intro, 1)
         head.addWidget(mark(OUTCOMES))
-        self.frozen, self.status = QLabel(""), QLabel("", objectName="dim")
+        self.frozen, self.status = QLabel(""), QLabel("", objectName="dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         for banner in (self.frozen,):
             banner.setWordWrap(True)
             banner.hide()
@@ -47,7 +48,7 @@ class CriteriaZone(QFrame):
         inner.setLayout(self.column)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setWidget(inner)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(16, 10, 16, 10)
@@ -59,7 +60,7 @@ class CriteriaZone(QFrame):
         lay.addWidget(self.status)
         lay.addWidget(scroll, 1)
 
-    def showEvent(self, event: object) -> None:
+    def showEvent(self, event: QShowEvent) -> None:
         """Read the daemon the first time the zone is shown, not when the window starts."""
         super().showEvent(event)
         if self.state is None:
@@ -88,13 +89,14 @@ class CriteriaZone(QFrame):
         rows = [[(h["at"].replace("T", " "), ""), (h["step"] or "—", ""), (h["what"], ""),
                  (h["was"], h["was"]), (h["now"], h["now"])] for h in self.state["history"]]
         self.column.addWidget(table(("Cuándo", "Paso", "Qué", "Antes", "Después"), rows, {})
-                              if rows else QLabel("Sin cambios todavía.", objectName="dim"))
+                              if rows else QLabel("Sin cambios todavía.", objectName="dim"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.column.addStretch(1)
         self.say(f"{sum(len(s['rows']) for s in self.state['steps'])} criterios en "
                  f"{len(self.state['steps'])} pasos", T["muted"])
 
     def banners(self) -> None:
         """Say that the criteria are frozen, when they are."""
+        assert self.state is not None   # `banners` runs after `reload` has read it
         frozen = self.state["frozen"]
         self.frozen.setVisible(bool(frozen))
         self.freeze.setEnabled(not frozen)
@@ -118,13 +120,13 @@ class CriteriaZone(QFrame):
         holder = QWidget()
         row = QHBoxLayout(holder)
         row.setContentsMargins(0, 16, 0, 0)
-        name = QLabel(f"Paso {n} · {title}" if n else title, objectName="kicker")
+        name = QLabel(f"Paso {n} · {title}" if n else title, objectName="kicker")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         name.setStyleSheet("font-size: 15px; letter-spacing: 0.5px;")
         row.addWidget(name)
         row.addStretch(1)
         self.column.addWidget(holder)
         if said:
-            label = QLabel(said, objectName="dim")
+            label = QLabel(said, objectName="dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             label.setWordWrap(True)
             self.column.addWidget(label)
         return row
@@ -132,9 +134,10 @@ class CriteriaZone(QFrame):
     def section(self, step: dict) -> None:
         """One step: its cut, its rules or «Sin criterios», and «Añadir criterio»."""
         row = self.heading(step["n"], step["title"], "")
-        row.insertWidget(1, QLabel(f"Corta: {step['cut']}" if step["cut"] else
+        row.insertWidget(1, QLabel(f"Corta: {step['cut']}" if step["cut"] else  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                                    "Sin databank de corte", objectName="dim"))
         row.insertWidget(2, mark(CUT))
+        assert self.state is not None
         add = QPushButton("Añadir criterio")
         add.setEnabled(bool(step["cut"]) and not self.state["frozen"])
         add.setToolTip("Añade un criterio a este paso: una métrica de SQX, un número de un "
@@ -151,7 +154,7 @@ class CriteriaZone(QFrame):
         else:
             self.column.addWidget(QLabel("Sin criterios: pasan todas."))
         if step["offered"]:
-            self.column.addWidget(QLabel(
+            self.column.addWidget(QLabel(  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                 "Disponibles, sin umbral todavía — calculados y visibles, no juzgan:",
                 objectName="dim"))
             self.column.addWidget(table(COLUMNS, [cells(r) for r in step["offered"]], TIPS))
@@ -163,6 +166,7 @@ class CriteriaZone(QFrame):
             step: The step, as the state holds it.
             at: The rule's position; None adds one.
         """
+        assert self.state is not None
         if self.state["frozen"]:
             self.say("Los criterios están congelados: no se cambian.", C["weak"])
             return
@@ -176,8 +180,8 @@ class CriteriaZone(QFrame):
 
     def ask_freeze(self) -> None:
         """Confirm, then freeze: it cannot be undone from the window."""
-        if QMessageBox.question(self, "Congelar criterios", FREEZE + "\n\n¿Congelar ahora?") \
-                == QMessageBox.Yes:
+        if QMessageBox.question(self, "Congelar criterios", FREEZE + "\n\n¿Congelar ahora?"  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
+                                ) == QMessageBox.StandardButton.Yes:
             self.send("criteria/freeze", {})
 
     def send(self, path: str, body: dict) -> None:

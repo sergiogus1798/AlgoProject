@@ -23,10 +23,10 @@ class Detail(QWidget):
         super().__init__()
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(QFrame.NoFrame)
-        outer.addWidget(self.scroll)
+        self.pane = QScrollArea()
+        self.pane.setWidgetResizable(True)
+        self.pane.setFrameShape(QFrame.Shape.NoFrame)
+        outer.addWidget(self.pane)
         self.name = ""
         self.show_empty()
 
@@ -41,16 +41,16 @@ class Detail(QWidget):
         lay = QVBoxLayout(body)
         lay.setContentsMargins(22, 18, 22, 22)
         lay.setSpacing(14)
-        self.scroll.setWidget(body)
+        self.pane.setWidget(body)
         return lay
 
     def show_empty(self, text: str = "Elige una plantilla a la izquierda, o una celda de la "
                                       "matriz.") -> None:
         """The placeholder before anything is selected, or `text` instead of a draft's page."""
         lay = self.page()
-        msg = QLabel(text, objectName="muted")
+        msg = QLabel(text, objectName="muted")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         msg.setWordWrap(True)
-        msg.setAlignment(Qt.AlignCenter)
+        msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lay.addStretch()
         lay.addWidget(msg)
         lay.addStretch()
@@ -64,7 +64,7 @@ class Detail(QWidget):
         self.name = name
         t = client.get(f"template/{name}")
         lay = self.page()
-        lay.addWidget(QLabel(name, objectName="h1"))
+        lay.addWidget(QLabel(name, objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(self.chips(t))
         lay.addWidget(self.disk(t))
         if t.get("entry"):
@@ -73,12 +73,12 @@ class Detail(QWidget):
             lay.addWidget(entry)
         lay.addWidget(self.controls(t))
         if t.get("reach"):
-            lay.addWidget(QLabel("Qué rellena el builder", objectName="h2"))
+            lay.addWidget(QLabel("Qué rellena el builder", objectName="h2"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             lay.addWidget(shape_panel(t))
-        lay.addWidget(QLabel("Runs", objectName="h2"))
+        lay.addWidget(QLabel("Runs", objectName="h2"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(self.runs(t))
         if t["brief_md"]:
-            lay.addWidget(QLabel("Brief", objectName="h2"))
+            lay.addWidget(QLabel("Brief", objectName="h2"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             lay.addWidget(self.brief(t["brief_md"]))
         lay.addStretch()
 
@@ -134,11 +134,11 @@ class Detail(QWidget):
         Returns:
             A framed row of controls wired to the daemon.
         """
-        f = QFrame(objectName="panel")
+        f = QFrame(objectName="panel")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay = QHBoxLayout(f)
         lay.setContentsMargins(14, 12, 14, 12)
         lay.setSpacing(10)
-        lay.addWidget(QLabel("Estado:", objectName="muted"))
+        lay.addWidget(QLabel("Estado:", objectName="muted"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         box = QComboBox()
         statuses = list(STATUS_HELP)       # the library's STATUSES, which the zone already read
         box.addItems(statuses)
@@ -149,7 +149,7 @@ class Detail(QWidget):
         note.setFixedHeight(38)
         note.setPlaceholderText("Nota — por qué está en este estado, qué falta")
         lay.addWidget(note, 1)
-        save = QPushButton("Guardar", objectName="primary")
+        save = QPushButton("Guardar", objectName="primary")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         save.clicked.connect(lambda: self.save_status(box.currentText(), note.toPlainText()))
         lay.addWidget(save)
         return f
@@ -177,8 +177,8 @@ class Detail(QWidget):
         table.setHorizontalHeaderLabels(RUN_COLUMNS)
         table.verticalHeader().hide()
         header = table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Stretch)
-        header.setSectionResizeMode(6, QHeaderView.Fixed)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)
         table.setColumnWidth(6, 170)
         table.setFixedHeight(46 + 40 * max(len(t["runs"]), 1))
         table.verticalHeader().setDefaultSectionSize(40)
@@ -186,7 +186,7 @@ class Detail(QWidget):
             for c, key in enumerate(("symbol", "timeframe", "date", "project",
                                      "strategies_built", "strategies_kept")):
                 item = QTableWidgetItem(run.get(key, ""))
-                item.setFlags(Qt.ItemIsEnabled)
+                item.setFlags(Qt.ItemFlag.ItemIsEnabled)
                 item.setToolTip(run.get("report", ""))
                 table.setItem(r, c, item)
             table.setCellWidget(r, 6, self.verdict_box(run))

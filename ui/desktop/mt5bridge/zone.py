@@ -1,7 +1,9 @@
 """MT5 BRIDGE › Verificar: one strategy in SQX at each prop firm's conditions against its MT5 backtest."""
 from collections.abc import Callable
+from typing import Any
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (QComboBox, QFormLayout, QFrame, QHBoxLayout, QLabel, QLineEdit,
                                QSplitter, QVBoxLayout, QWidget)
 
@@ -45,20 +47,20 @@ class VerifyZone(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(20, 16, 20, 16)
         lay.setSpacing(8)
-        lay.addWidget(QLabel("MT5 Bridge", objectName="kicker"))
-        lay.addWidget(QLabel("Verificar en SQX y en MT5", objectName="h1"))
+        lay.addWidget(QLabel("MT5 Bridge", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        lay.addWidget(QLabel("Verificar en SQX y en MT5", objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(text(INTRO, T["muted"], 13))
-        lay.addWidget(QFrame(objectName="rule"))
+        lay.addWidget(QFrame(objectName="rule"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
 
         form = QFormLayout()
         self.source = QComboBox()
         self.source.currentIndexChanged.connect(lambda *_: self._chosen())
         self.chosen = text("", T["muted"], 12)
-        self.start = QLineEdit(placeholderText="AAAA-MM-DD o MT5")
+        self.start = QLineEdit(placeholderText="AAAA-MM-DD o MT5")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.start.setToolTip("MT5 = lo más antiguo que tengan a la vez los servidores de las "
                               "empresas marcadas y SQX: se lee al abrir cada cuenta, dentro de "
                               "la verificación. Si ningún servidor lo dice, 4 años antes de Hasta.")
-        self.end = QLineEdit(placeholderText="AAAA-MM-DD")
+        self.end = QLineEdit(placeholderText="AAAA-MM-DD")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.model = QComboBox()
         self.firms = QWidget()
         self.firm_row = QHBoxLayout(self.firms)
@@ -96,7 +98,7 @@ class VerifyZone(QFrame):
         rlay.setContentsMargins(0, 0, 0, 0)
         rlay.addWidget(self.table, 1)
         rlay.addWidget(text(LEGEND, T["muted"], 13))
-        top = QSplitter(Qt.Horizontal)
+        top = QSplitter(Qt.Orientation.Horizontal)
         top.addWidget(left)
         top.addWidget(right)
         top.setStretchFactor(1, 1)
@@ -108,7 +110,7 @@ class VerifyZone(QFrame):
         blay.setContentsMargins(0, 8, 0, 0)
         blay.addWidget(self.said)
         blay.addWidget(self.view, 1)
-        split = QSplitter(Qt.Vertical)
+        split = QSplitter(Qt.Orientation.Vertical)
         split.addWidget(top)
         split.addWidget(below)
         split.setStretchFactor(1, 1)
@@ -116,7 +118,7 @@ class VerifyZone(QFrame):
         lay.addWidget(split, 1)
         SELECTION.changed.connect(lambda _now: self._chosen())
 
-    def showEvent(self, event: object) -> None:
+    def showEvent(self, event: QShowEvent) -> None:
         """Read the options and the past checks the first time the zone is shown."""
         super().showEvent(event)
         if not self.loaded:
@@ -193,7 +195,7 @@ class VerifyZone(QFrame):
             self.start.setText(got.get("desde", ""))
             self.end.setText(got["hasta"])
 
-    def body(self) -> dict:
+    def body(self) -> dict[str, Any]:
         """What the form asks for, as the daemon's `Verify`."""
         where = self._where() or {"source": "databank", "identity": ""}
         model = self.model.currentText()

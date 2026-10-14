@@ -2,7 +2,7 @@
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QHeaderView, QLabel, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QLabel, QTableWidget, QTableWidgetItem
 
 from ui.desktop.criteria.overrides import HELP
 from ui.desktop.theme import C
@@ -35,10 +35,10 @@ FREEZE = ("Bloquea los criterios: a partir de ahí esta pestaña solo se lee y d
 
 def mark(text: str) -> QLabel:
     """A round «?» whose tooltip explains what stands beside it."""
-    label = QLabel("?", objectName="helpmark")
+    label = QLabel("?", objectName="helpmark")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
     label.setFixedSize(17, 17)
-    label.setAlignment(Qt.AlignCenter)
-    label.setCursor(Qt.WhatsThisCursor)
+    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    label.setCursor(Qt.CursorShape.WhatsThisCursor)
     label.setToolTip(text)
     return label
 
@@ -54,15 +54,17 @@ def table(columns: tuple, rows: list[list[tuple[str, str]]], tips: dict) -> QTab
     t = QTableWidget(len(rows), len(columns))
     t.setHorizontalHeaderLabels(columns)
     t.verticalHeader().setVisible(False)
-    t.setEditTriggers(QTableWidget.NoEditTriggers)
-    t.setSelectionBehavior(QTableWidget.SelectRows)
-    t.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-    t.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    t.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+    t.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+    t.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    t.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
     t.setWordWrap(False)          # a long cell is cut with «…»; its tooltip says all of it
     colours = {"Condición": C["promising"], "Limbo": C["weak"]}
     for c, name in enumerate(columns):
-        t.horizontalHeaderItem(c).setToolTip(tips.get(name, ""))
-        t.horizontalHeader().setSectionResizeMode(c, QHeaderView.ResizeToContents)
+        head = t.horizontalHeaderItem(c)
+        if head is not None:
+            head.setToolTip(tips.get(name, ""))
+        t.horizontalHeader().setSectionResizeMode(c, QHeaderView.ResizeMode.ResizeToContents)
         for r, row in enumerate(rows):
             item = QTableWidgetItem(row[c][0])
             item.setToolTip(row[c][1])

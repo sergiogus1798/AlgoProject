@@ -1,6 +1,7 @@
 """Drawing helpers for Verificar: the firm's light widget, the past-runs table, result filtering."""
 import copy
 from html import escape
+from typing import Any
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
@@ -58,9 +59,9 @@ class FirmLight(QCheckBox):
 def runs_table() -> QTableWidget:
     """The past-runs table, empty: one selectable row per check, headers with their tooltips."""
     table = QTableWidget(0, len(COLUMNS))
-    table.setSelectionBehavior(QAbstractItemView.SelectRows)
-    table.setSelectionMode(QAbstractItemView.SingleSelection)
-    table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+    table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+    table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+    table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
     table.verticalHeader().hide()
     for i, (head, tip) in enumerate(COLUMNS):
         item = QTableWidgetItem(head)
@@ -94,8 +95,8 @@ def fill_runs(table: QTableWidget, runs: list[dict]) -> None:
     for r, run in enumerate(runs):
         firms = [f"{name(f)} {MARKS.get(s, '?')}" for f, s in (run.get("firms") or {}).items()]
         firms += [f"{name(f)} —" for f in run.get("refused") or {}]
-        state = {"running": "en marcha", "done": "hecha", "failed": "fallida"}.get(
-            run.get("state"), run.get("state") or "")
+        said = run.get("state") or ""
+        state = {"running": "en marcha", "done": "hecha", "failed": "fallida"}.get(said, said)
         failed = run.get("state") == "failed"
         why = state + (f": {run['error']}" if run.get("error") else "")
         cells = [run.get("started", "")[:16].replace("T", " "),
@@ -115,7 +116,7 @@ def fill_runs(table: QTableWidget, runs: list[dict]) -> None:
     table.resizeColumnsToContents()
 
 
-def filtered(result: dict, active: set[str]) -> dict:
+def filtered(result: dict[str, Any], active: set[str]) -> dict[str, Any]:
     """A copy of a study result with every other firm's blocks, series and columns dropped.
 
     Args:

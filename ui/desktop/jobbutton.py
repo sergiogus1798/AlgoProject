@@ -23,7 +23,7 @@ class JobButton(QWidget):
         super().__init__()
         self.path, self.body, self.confirm, self.ended = path, body, confirm, ended
         self.job = ""
-        self.button = QPushButton(f"▶ {text}", objectName="primary")
+        self.button = QPushButton(f"▶ {text}", objectName="primary")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.button.clicked.connect(self.press)
         self.state = QLabel("")
         self.state.setObjectName("mono")
@@ -43,7 +43,7 @@ class JobButton(QWidget):
         sentence = self.confirm()
         if sentence is None:
             return
-        if QMessageBox.question(self, "Confirmar", sentence) != QMessageBox.Yes:
+        if QMessageBox.question(self, "Confirmar", sentence) != QMessageBox.StandardButton.Yes:  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
             return
         self.button.setEnabled(False)
         self.state.setText("enviando…")

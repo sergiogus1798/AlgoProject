@@ -66,8 +66,9 @@ def key(values: list, cuts: list[float]) -> list[tuple[str, str, str]]:
     """
     counts = [0] * len(DIVERGING)
     for v in values:
-        if v is not None:
-            counts[step(v, cuts)] += 1
+        at = None if v is None else step(v, cuts)
+        if at is not None:
+            counts[at] += 1
     # No-break spaces: a range split across two lines of the key reads as two ranges.
     items = [("line", DIVERGING[i],
               f"{num(cuts[i])} a {num(cuts[i + 1])}: {counts[i]}".replace(" ", "\u00a0"))

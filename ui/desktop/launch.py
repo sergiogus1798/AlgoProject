@@ -54,7 +54,7 @@ def refuse(text: str) -> None:
     Args:
         text: The sentence for the owner.
     """
-    QMessageBox.critical(None, "AlgoProject", text)
+    QMessageBox.critical(None, "AlgoProject", text)  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
     raise SystemExit(text)
 
 

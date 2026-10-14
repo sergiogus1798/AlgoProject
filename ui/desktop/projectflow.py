@@ -2,6 +2,8 @@
 archived version PORTFOLIOS imported), a strategy found by its identity, and the two zones kept
 on the global selection."""
 
+from typing import TYPE_CHECKING
+
 import httpx
 from PySide6.QtWidgets import QStackedWidget, QWidget
 
@@ -11,6 +13,9 @@ from ui.desktop.selection import SELECTION
 from ui.desktop.studypage.net import fetch
 from ui.desktop.workspace import ficha as ficha_module
 from ui.desktop.workspace.ficha import Ficha
+
+if TYPE_CHECKING:
+    from ui.desktop.shellopen import Opens
 
 # What Proyecto and Estrategia show now, so a zone is refilled only when SELECTION moved on.
 SHOWN: dict[str, object] = {"Proyecto": None, "Estrategia": None}
@@ -78,7 +83,7 @@ class StrategyZone(QStackedWidget):
         return said
 
 
-def origin(shell: QWidget) -> tuple[str, str]:
+def origin(shell: "Opens") -> tuple[str, str]:
     """The databank panel's tab (and its open sub-panel) the ficha was opened from.
 
     Returns:
@@ -94,7 +99,7 @@ def origin(shell: QWidget) -> tuple[str, str]:
     return (tab, sub) if tab in ficha_module.ORIGIN_FAMILY else (FIRST_PANEL, "")
 
 
-def catch_up(shell: QWidget, zone: str) -> None:
+def catch_up(shell: "Opens", zone: str) -> None:
     """Refill Proyecto or Estrategia when SELECTION holds something they do not show yet.
 
     Args:
@@ -102,17 +107,19 @@ def catch_up(shell: QWidget, zone: str) -> None:
         zone: The zone about to open; any other zone is left alone.
     """
     now = SELECTION.now
-    if zone == "Proyecto" and now["project"] and SHOWN[zone] != now["project"]:
-        shell.workspace.fill(now["project"])
-        SHOWN[zone] = now["project"]
+    project = now["project"]
+    if zone == "Proyecto" and project and SHOWN[zone] != project:
+        shell.workspace.fill(project)
+        SHOWN[zone] = project
     wanted = (now["project"], now["databank"], now["strategy"])
-    if zone == "Estrategia" and now["strategy"] and SHOWN[zone] != wanted:
-        shell.estrategia.ficha.fill(now["project"], now["strategy"], *origin(shell))
+    strategy = now["strategy"]
+    if zone == "Estrategia" and project and strategy and SHOWN[zone] != wanted:
+        shell.estrategia.ficha.fill(project, strategy, *origin(shell))
         shell.estrategia.show_live()
         SHOWN[zone] = wanted
 
 
-def in_panel(shell: QWidget, identity: str) -> tuple[str, str] | None:
+def in_panel(shell: "Opens", identity: str) -> tuple[str, str] | None:
     """The databank and name Proyecto's panel shows for one identity, or None."""
     panel = shell.workspace.panel
     row = next((r for r in panel.table.rows if r["identity"] == identity), None)

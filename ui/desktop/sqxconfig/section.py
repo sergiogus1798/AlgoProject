@@ -71,7 +71,7 @@ def note(text: str, width: int = 0, short: int = 0) -> QWidget:
     words_ = QLabel(text if len(text) <= short else text[:short].rsplit(" ", 1)[0] + " …")
     words_.setWordWrap(True)
     words_.setObjectName("dim")
-    words_.setTextInteractionFlags(Qt.TextSelectableByMouse)
+    words_.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
     lay.addWidget(words_)
     if len(text) > short:
         more = QPushButton("seguir leyendo")
@@ -174,10 +174,10 @@ class Section(QFrame):
             field.written.connect(self.written)
             field.refused.connect(self.refused)
             field.stale.connect(self.stale)
-            grid.addWidget(name, r, 0, Qt.AlignTop)
-            grid.addWidget(field, r, 1, Qt.AlignTop)
+            grid.addWidget(name, r, 0, Qt.AlignmentFlag.AlignTop)
+            grid.addWidget(field, r, 1, Qt.AlignmentFlag.AlignTop)
             if spec["help"] and spec["help"] not in told:
-                grid.addWidget(note(spec["help"], HELP_WIDTH, SHORT // 2), r, 2, Qt.AlignTop)
+                grid.addWidget(note(spec["help"], HELP_WIDTH, SHORT // 2), r, 2, Qt.AlignmentFlag.AlignTop)
             r += 1
         grid.setColumnStretch(1, 1)
         return body

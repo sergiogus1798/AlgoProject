@@ -2,7 +2,7 @@
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QMessageBox, QPushButton,
+from PySide6.QtWidgets import (QFrame, QGridLayout, QHBoxLayout, QLabel, QMessageBox, QPushButton,
                                QScrollArea, QSplitter, QVBoxLayout, QWidget)
 
 from ui.desktop import client
@@ -22,9 +22,9 @@ class Assets(QWidget):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(10)
-        lay.addWidget(QLabel("Activos", objectName="h1"))
+        lay.addWidget(QLabel("Activos", objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         row = QHBoxLayout()
-        self.counts = QLabel(objectName="muted")
+        self.counts = QLabel(objectName="muted")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.counts.setToolTip(
             "Bloqueado = algún coste obligatorio sin pactar o el esquema roto: la preflight "
             "sale distinta de 0 y no se autoriza nada. Provisional = hay cifra, se puede "
@@ -36,13 +36,13 @@ class Assets(QWidget):
         row.addWidget(new)
         lay.addLayout(row)
 
-        split = QSplitter(Qt.Horizontal)
+        split = QSplitter(Qt.Orientation.Horizontal)
         self.list = AssetList()
         self.list.opened.connect(self.show_page)
         split.addWidget(self.list)
         self.grid = QGridLayout()
         self.grid.setSpacing(10)
-        self.grid.setAlignment(Qt.AlignTop)
+        self.grid.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.grid.setColumnStretch(0, 1)
         holder = QWidget()
         holder.setLayout(self.grid)
@@ -51,7 +51,7 @@ class Assets(QWidget):
         self.area.setWidgetResizable(True)
         self.area.verticalScrollBar().valueChanged.connect(self.read_visible)
         self.area.verticalScrollBar().rangeChanged.connect(lambda *_: self.read_visible())
-        self.area.setFrameShape(QScrollArea.NoFrame)
+        self.area.setFrameShape(QFrame.Shape.NoFrame)
         split.addWidget(self.area)
         split.setStretchFactor(1, 1)
         split.setSizes([170, 1200])
@@ -130,6 +130,6 @@ class Assets(QWidget):
             return
         answer = client.post("assets/new", box.payload())
         if "error" in answer:
-            QMessageBox.warning(self, "Ese nombre ya existe", answer["error"])
+            QMessageBox.warning(self, "Ese nombre ya existe", answer["error"])  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
             return
         self.reload(answer["created"])

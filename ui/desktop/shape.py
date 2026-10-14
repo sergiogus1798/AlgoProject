@@ -16,7 +16,7 @@ def shape_panel(t: dict) -> QFrame:
         lie: a palette narrows a free hole and nothing else, so a template whose holes are
         all bound to groups has to say so here instead of looking configurable.
     """
-    f = QFrame(objectName="panel")
+    f = QFrame(objectName="panel")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
     lay = QVBoxLayout(f)
     lay.setContentsMargins(14, 12, 14, 12)
     lay.setSpacing(6)

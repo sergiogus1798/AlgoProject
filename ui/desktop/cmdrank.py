@@ -2,6 +2,7 @@
 
 import json
 import unicodedata
+from typing import cast
 
 from PySide6.QtCore import QSettings
 
@@ -80,7 +81,7 @@ def rank(query: str, items: list[dict], recent: list[dict]) -> list[dict]:
 def load_recent() -> list[dict]:
     """The last choices, newest first; a broken store reads as none."""
     try:
-        got = json.loads(QSettings(*STORE).value(RECENT_KEY, "[]") or "[]")
+        got = json.loads(cast(str, QSettings(*STORE).value(RECENT_KEY, "[]")) or "[]")
         return [r for r in got if r.get("kind") in TAG and r.get("label")][:RECENT_MAX]
     except Exception:  # noqa: BLE001 — a per-viewer convenience must never break the window
         return []

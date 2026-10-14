@@ -29,7 +29,7 @@ class DirectView(QWidget):
         self.head = text("", T["muted"], 13)
         self.board = parts.table(BOARD)
         lay = QVBoxLayout(self)
-        lay.addWidget(QLabel("El tablero que lee el director", objectName="kicker"))
+        lay.addWidget(QLabel("El tablero que lee el director", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(self.head)
         lay.addWidget(self.board, 1)
 

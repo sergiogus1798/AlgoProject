@@ -1,5 +1,7 @@
 """A rule's per-timeframe / per-asset overrides (`by`) as editable rows and back, and the dialog's help texts and one-line wording."""
 
+from typing import Any
+
 from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton, QWidget
 
 from ui.text.glossary import LABELS, label
@@ -26,7 +28,7 @@ def by_rows(by: dict | None) -> list[tuple[str, str, str]]:
     return [(k, str(v.get("pass", "")), str(v.get("limbo", ""))) for k, v in (by or {}).items()]
 
 
-def by_built(rows: list[tuple[str, str, str]], old: dict | None) -> dict:
+def by_built(rows: list[tuple[str, str, str]], old: dict | None) -> dict[str, dict[str, Any]]:
     """The rows back into `by`: no key, no row; no text, no field; other fields of an override
     survive while its key does."""
     out = {}

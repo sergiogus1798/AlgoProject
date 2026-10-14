@@ -2,7 +2,7 @@
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QBrush, QColor
-from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QHeaderView, QLabel, QPushButton,
+from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QFrame, QHBoxLayout, QHeaderView, QLabel, QPushButton,
                                QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 
 from ui.desktop import background, client, names
@@ -28,9 +28,9 @@ class Matrix(QWidget):
         lay.setSpacing(12)
 
         head = QHBoxLayout()
-        head.addWidget(QLabel("Cobertura", objectName="h1"))
+        head.addWidget(QLabel("Cobertura", objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         head.addStretch()
-        head.addWidget(QLabel("Filas:", objectName="muted"))
+        head.addWidget(QLabel("Filas:", objectName="muted"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.axis = QComboBox()
         for key, label in AXIS_LABEL.items():
             self.axis.addItem(label, key)
@@ -42,13 +42,13 @@ class Matrix(QWidget):
         self.tiles.setSpacing(10)
         lay.addLayout(self.tiles)
 
-        box = QFrame(objectName="panel")
+        box = QFrame(objectName="panel")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         row = QHBoxLayout(box)
         row.setContentsMargins(14, 8, 14, 8)
         self.proposal = QLabel()
         self.proposal.setStyleSheet("font-size:15px;")
         row.addWidget(self.proposal, 1)
-        self.see = QPushButton("Ver propuesta", objectName="primary")
+        self.see = QPushButton("Ver propuesta", objectName="primary")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.see.setToolTip("Abre Investigar en la propuesta del director: sus tres ideas, que "
                             "sólo tienes que vetar, o el tablero para pedirle una.")
         self.see.clicked.connect(lambda: self.go.emit("proposal", {}))
@@ -58,9 +58,9 @@ class Matrix(QWidget):
         self.table = QTableWidget()
         self.table.setShowGrid(True)
         self.table.verticalHeader().setDefaultSectionSize(ROW_PX)
-        self.table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)   # it is as tall as its rows
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.setSelectionMode(QTableWidget.SingleSelection)
+        self.table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)   # it is as tall as its rows
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.table.setStyleSheet(f"QTableWidget {{ font-size:14px; }} QHeaderView::section "
                                  f"{{ font-size:15px; font-weight:700; color:{C['text']}; }}")
         self.table.cellClicked.connect(self.on_click)
@@ -68,7 +68,7 @@ class Matrix(QWidget):
         self.table.verticalHeader().sectionClicked.connect(self.on_row)
         lay.addWidget(self.table)
 
-        self.legend = QLabel(wordWrap=True)      # a one-line legend set the window's width
+        self.legend = QLabel(wordWrap=True)      # a one-line legend set the window's width  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.legend.setToolTip("El fondo dice cuánto se ha probado en la celda, en cuatro "
                                "escalones. La marca es el MEJOR veredicto que hay dentro: "
                                "✔ algún run prometedor, ~ el mejor quedó flojo, ✘ todos "
@@ -77,18 +77,18 @@ class Matrix(QWidget):
                                "medida que pasa los filtros); sólo trabaja de M15 a H4.")
         lay.addWidget(self.legend)
 
-        box = QFrame(objectName="panel")
+        box = QFrame(objectName="panel")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         low = QVBoxLayout(box)
         low.setContentsMargins(14, 10, 14, 12)
         low.setSpacing(6)
-        self.cell_title = QLabel(objectName="h2")
+        self.cell_title = QLabel(objectName="h2")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         low.addWidget(self.cell_title)
-        self.cell_text = QLabel(wordWrap=True)
+        self.cell_text = QLabel(wordWrap=True)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         low.addWidget(self.cell_text)
         buttons = QHBoxLayout()
         self.buttons = {}
         for key, label, tip in ACTIONS:
-            b = QPushButton(label, toolTip=tip)
+            b = QPushButton(label, toolTip=tip)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             b.clicked.connect(lambda _, k=key: self.act(k))
             buttons.addWidget(b)
             self.buttons[key] = b
@@ -170,7 +170,7 @@ class Matrix(QWidget):
                 if wide:
                     lines.append(f"tablero {wide}")
                 item = QTableWidgetItem("\n".join(lines))
-                item.setTextAlignment(Qt.AlignCenter)
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 item.setForeground(QBrush(QColor(ink)))
                 item.setBackground(QBrush(QColor(ground)))
                 item.setToolTip("\n".join(

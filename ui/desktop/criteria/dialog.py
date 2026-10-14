@@ -1,8 +1,10 @@
 """The dialog that adds or changes one criterion: a number, a verdict or a compound of them."""
 
+from typing import Any
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QComboBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
-                               QListWidget, QPushButton, QVBoxLayout)
+                               QListWidget, QPushButton, QVBoxLayout, QWidget)
 
 from ui.desktop.criteria.overrides import HELP, KNOWN, by_built, by_line, by_rows, told
 from ui.desktop.theme import C
@@ -13,7 +15,7 @@ OPS = (">=", ">", "<=", "<", "==")
 class RuleDialog(QDialog):
     """One rule edited. `rule` holds what «Guardar» built; `deleted` says «Borrar» was pressed."""
 
-    def __init__(self, parent: object, title: str, facts: list[dict], rule: dict | None = None,
+    def __init__(self, parent: QWidget | None, title: str, facts: list[dict], rule: dict | None = None,
                  nested: bool = False, why: str = "") -> None:
         """Build the form and fill it.
 
@@ -36,7 +38,7 @@ class RuleDialog(QDialog):
         self.parts: list[dict] = list((rule or {}).get("all") or (rule or {}).get("any") or [])
         self.kind = QComboBox()
         self.kind.addItems(KINDS[:COMPOUND] if nested else KINDS)
-        self.fact = QComboBox(editable=True)
+        self.fact = QComboBox(editable=True)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.shape, self.op, self.lop = QComboBox(), QComboBox(), QComboBox()
         self.shape.addItems(["Umbral", "Cerca de la mediana"])
         self.op.addItems(OPS)
@@ -56,8 +58,8 @@ class RuleDialog(QDialog):
         add.clicked.connect(self.add_part)
         drop.clicked.connect(self.drop_part)
         self.by_box, self.by_lines = QVBoxLayout(), []
-        grow = QPushButton("+", clicked=lambda: self.add_by("", "", ""), maximumWidth=40)
-        self.by_box.addWidget(grow, alignment=Qt.AlignLeft)
+        grow = QPushButton("+", clicked=lambda: self.add_by("", "", ""), maximumWidth=40)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.by_box.addWidget(grow, alignment=Qt.AlignmentFlag.AlignLeft)
         self.buttons = QHBoxLayout()
         for w in (add, drop):
             self.buttons.addWidget(w)
@@ -71,7 +73,7 @@ class RuleDialog(QDialog):
                   "pass": "Pasa si", "want": "Tiene que decir", "limbo": "Limbo si",
                   "miss": "Si no cumple", "absent": "Si falta el dato", "by": "Ajustes por activo o temporalidad", "join": "Unir con", "parts": "Condiciones", "edit": ""}
         for key, field in self.rows.items():
-            label = QLabel(labels[key], toolTip=HELP.get(key, ""))
+            label = QLabel(labels[key], toolTip=HELP.get(key, ""))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             if hasattr(field, "setToolTip"):
                 field.setToolTip(HELP.get(key, ""))
             self.form.addRow(label, field)
@@ -195,7 +197,7 @@ class RuleDialog(QDialog):
             self.list.takeItem(at)
             del self.parts[at]
 
-    def built(self) -> dict:
+    def built(self) -> dict[str, Any]:
         """The rule the form says, in criteria.yaml's shape. A box that is not a number raises
         ValueError; everything else is the daemon's to refuse."""
         if self.cell is not None:
@@ -215,7 +217,8 @@ class RuleDialog(QDialog):
             if limbo:
                 rule["limbo_near_median"] = float(limbo) / 100
         else:
-            float(value), float(limbo or 0)
+            float(value)
+            float(limbo or 0)
             rule["pass"] = f"{self.op.currentText()} {value}"
             if limbo:
                 rule["limbo"] = f"{self.lop.currentText()} {limbo}"

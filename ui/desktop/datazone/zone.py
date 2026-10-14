@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QLabel, QTabWidget, QVBoxLayout,
                                QWidget)
 
@@ -42,20 +43,20 @@ class DataZone(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(20, 16, 20, 16)
         lay.setSpacing(8)
-        lay.addWidget(QLabel("Biblioteca · datos", objectName="kicker"))
-        lay.addWidget(QLabel("Datos", objectName="h1"))
+        lay.addWidget(QLabel("Biblioteca · datos", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        lay.addWidget(QLabel("Datos", objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.total = text("", T["muted"], 13)
         lay.addWidget(self.total)
-        rule = QFrame(objectName="rule")
+        rule = QFrame(objectName="rule")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(rule)
 
         row = QHBoxLayout()
-        row.addWidget(QLabel(label("activo"), objectName="dim"))
+        row.addWidget(QLabel(label("activo"), objectName="dim"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.picker = QComboBox()
         self.picker.setMinimumWidth(160)
         self.picker.currentIndexChanged.connect(self._asset_changed)
         row.addWidget(self.picker)
-        self.facts = QLabel("", objectName="dim")
+        self.facts = QLabel("", objectName="dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         row.addWidget(self.facts, 1)
         lay.addLayout(row)
 
@@ -73,7 +74,7 @@ class DataZone(QFrame):
         self.tabs.currentChanged.connect(lambda _: self._refresh())
         lay.addWidget(self.tabs, 1)
 
-    def showEvent(self, event: object) -> None:  # noqa: N802 — Qt's name
+    def showEvent(self, event: QShowEvent) -> None:  # noqa: N802 — Qt's name
         """Ask the daemon for the asset list the first time the zone is shown.
 
         Args:
@@ -146,6 +147,7 @@ class DataZone(QFrame):
     def _paint_catalogue(self, body: dict) -> None:
         """The tree of AlgoData, and the total above the tabs."""
         lay = self.catalogue.layout()
+        assert lay is not None   # built with its layout in `__init__`
         while lay.count():
             old = lay.takeAt(0).widget()
             old.hide()

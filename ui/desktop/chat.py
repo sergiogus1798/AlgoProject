@@ -31,19 +31,19 @@ class Chat(QWidget):
         lay.setSpacing(12)
 
         head = QHBoxLayout()
-        head.addWidget(QLabel("Nueva plantilla", objectName="h1"))
+        head.addWidget(QLabel("Nueva plantilla", objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         head.addStretch()
         restart = QPushButton("Empezar de nuevo")
         restart.clicked.connect(lambda: self.start())
         head.addWidget(restart)
         lay.addLayout(head)
 
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(QFrame.NoFrame)
-        lay.addWidget(self.scroll, 1)
+        self.pane = QScrollArea()
+        self.pane.setWidgetResizable(True)
+        self.pane.setFrameShape(QFrame.Shape.NoFrame)
+        lay.addWidget(self.pane, 1)
 
-        self.answer_area = QFrame(objectName="panel")
+        self.answer_area = QFrame(objectName="panel")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.answer_lay = QVBoxLayout(self.answer_area)
         self.answer_lay.setContentsMargins(14, 12, 14, 12)
         self.answer_lay.setSpacing(8)
@@ -64,11 +64,11 @@ class Chat(QWidget):
         key = names.spelt(family, names.REGISTRY)
         self.answers = {"archetype": key} if key else {}
         body = QWidget()
-        self.thread = QVBoxLayout(body)
-        self.thread.setContentsMargins(4, 4, 4, 4)
-        self.thread.setSpacing(10)
-        self.thread.addStretch()
-        self.scroll.setWidget(body)
+        self.turns = QVBoxLayout(body)
+        self.turns.setContentsMargins(4, 4, 4, 4)
+        self.turns.setSpacing(10)
+        self.turns.addStretch()
+        self.pane.setWidget(body)
         self.say(OPENING, mine=False)
         if key:
             self.say(f"Familia ya elegida en Cobertura: {names.family(key)}"
@@ -91,8 +91,8 @@ class Chat(QWidget):
         row.addWidget(b)
         if not mine:
             row.addStretch()
-        self.thread.insertLayout(self.thread.count() - 1, row)
-        bar = self.scroll.verticalScrollBar()
+        self.turns.insertLayout(self.turns.count() - 1, row)
+        bar = self.pane.verticalScrollBar()
         bar.setValue(bar.maximum())
 
     def attach(self, widget: QWidget) -> None:
@@ -106,7 +106,7 @@ class Chat(QWidget):
         row = QHBoxLayout()
         row.addWidget(widget)
         row.addStretch()
-        self.thread.insertLayout(self.thread.count() - 1, row)
+        self.turns.insertLayout(self.turns.count() - 1, row)
 
     def clear_answer_area(self) -> None:
         """Empty the controls under the transcript before drawing the next ones."""
@@ -122,7 +122,7 @@ class Chat(QWidget):
         q = step["question"]
         n, total = step["progress"]
         self.say(f"{q['ask']}\n\n{q['why']}", mine=False)
-        self.answer_lay.addWidget(QLabel(f"Pregunta {n} de {total}", objectName="faint"))
+        self.answer_lay.addWidget(QLabel(f"Pregunta {n} de {total}", objectName="faint"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         if q["kind"] == "choice":
             self.draw_options(q)
         else:
@@ -157,7 +157,7 @@ class Chat(QWidget):
         row = QHBoxLayout()
         field = QLineEdit()
         field.setPlaceholderText("Escribe y pulsa Enter")
-        send = QPushButton("Enviar", objectName="primary")
+        send = QPushButton("Enviar", objectName="primary")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         act = lambda: self.answer(q["id"], field.text().strip(), field.text().strip())
         field.returnPressed.connect(act)
         send.clicked.connect(act)
@@ -186,28 +186,28 @@ class Chat(QWidget):
                  + (f"\n\nDefaults aplicados: {', '.join(applied)}." if applied else ""),
                  mine=False)
 
-        panel = QFrame(objectName="panel")
+        panel = QFrame(objectName="panel")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay = QVBoxLayout(panel)
         lay.setContentsMargins(14, 12, 14, 12)
         lay.setSpacing(8)
         panel.setFixedWidth(780)
-        lay.addWidget(QLabel("Pega esto en Claude Code", objectName="h2"))
+        lay.addWidget(QLabel("Pega esto en Claude Code", objectName="h2"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         box = QPlainTextEdit(result["prompt"])
         box.setReadOnly(True)
         box.setFixedHeight(170)
         lay.addWidget(box)
-        lay.addWidget(QLabel("Y esto es lo que la skill ejecutará:", objectName="muted"))
+        lay.addWidget(QLabel("Y esto es lo que la skill ejecutará:", objectName="muted"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         cmds = QLabel("\n".join(f"·  {c['what']}\n    {c['cmd']}" for c in result["commands"]))
         cmds.setObjectName("faint")
         cmds.setWordWrap(True)
-        cmds.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        cmds.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         cmds.setToolTip("Esta ventana no los corre: instalar un bloque escribe en una instalación "
                         "de SQX de verdad, y eso es el carril del conductor.")
         lay.addWidget(cmds)
         self.attach(panel)
 
         row = QHBoxLayout()
-        copy = QPushButton("Copiar el prompt", objectName="primary")
+        copy = QPushButton("Copiar el prompt", objectName="primary")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         copy.clicked.connect(lambda: QGuiApplication.clipboard().setText(result["prompt"]))
         row.addWidget(copy)
         as_json = QPushButton("Copiar el brief en JSON")

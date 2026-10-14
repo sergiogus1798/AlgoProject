@@ -24,16 +24,16 @@ def grid(headers: list[str]) -> QTableWidget:
         stray keystroke cannot change what an instrument costs. No column stretches (owner,
         2026-10-02): `fit` gives the table the width and height of its content.
     """
-    t = QTableWidget(0, len(headers), objectName="compact")
+    t = QTableWidget(0, len(headers), objectName="compact")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
     t.setHorizontalHeaderLabels([word(h) for h in headers])
     t.verticalHeader().setVisible(False)
     t.verticalHeader().setMinimumSectionSize(ROW)
     t.verticalHeader().setDefaultSectionSize(ROW)
-    t.setSelectionBehavior(QAbstractItemView.SelectRows)
-    t.setEditTriggers(QAbstractItemView.NoEditTriggers)
-    t.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-    t.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-    t.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    t.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+    t.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+    t.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+    t.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    t.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
     return t
 
 

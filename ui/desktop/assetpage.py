@@ -27,7 +27,7 @@ class AssetPage(QFrame):
         Args:
             symbol: Asset name.
         """
-        super().__init__(objectName="panel")
+        super().__init__(objectName="panel")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.symbol = symbol
         lay = QVBoxLayout(self)
         lay.setContentsMargins(12, 8, 12, 10)
@@ -41,8 +41,8 @@ class AssetPage(QFrame):
         drop.setToolTip("Mueve el fichero a assets/symbols/_retired/. Deja de contar para "
                         "`core.assets`, pero no se pierde.")
         drop.clicked.connect(self.on_retire)
-        self.card.actions.addWidget(self.raw)
-        self.card.actions.addWidget(drop)
+        self.card.bar.addWidget(self.raw)
+        self.card.bar.addWidget(drop)
         self.tree.setVisible(False)
         self.tree.setMinimumHeight(420)
         self.card.changed.connect(lambda: self.changed.emit(symbol))
@@ -57,7 +57,7 @@ class AssetPage(QFrame):
         for col, parts in ((costs, (self.card, self.spans.ranges)), (side, (self.spans,))):
             col.setSpacing(10)
             for w in parts:
-                col.addWidget(w, 0, Qt.AlignLeft)
+                col.addWidget(w, 0, Qt.AlignmentFlag.AlignLeft)
             col.addStretch()
         self.spans.markets.setFixedWidth(MARKETS_WIDTH)
         self.spans.setFixedWidth(SIDE_WIDTH)
@@ -65,7 +65,7 @@ class AssetPage(QFrame):
         body.addWidget(self.spans.markets)
         body.addLayout(side)
         # To the right of Tramos, on the width that was left empty (owner, 2026-10-04).
-        body.addWidget(self.traits_panel(), 1, Qt.AlignTop)
+        body.addWidget(self.traits_panel(), 1, Qt.AlignmentFlag.AlignTop)
         lay.addLayout(body)
         lay.addWidget(self.tree)
         self.loaded = False
@@ -78,19 +78,19 @@ class AssetPage(QFrame):
             The tile, already filled: the note never changes while the page is open, unlike
             the costs and the windows beside it.
         """
-        tile = QFrame(objectName="tile")
+        tile = QFrame(objectName="tile")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         tlay = QVBoxLayout(tile)
         tlay.setContentsMargins(10, 8, 10, 8)
         tlay.setSpacing(4)
-        title = QLabel("Características (?)", objectName="h2")
+        title = QLabel("Características (?)", objectName="h2")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         title.setToolTip(TRAITS_HELP)
         tlay.addWidget(title)
-        tlay.addWidget(QLabel(LEGEND, objectName="muted"))
+        tlay.addWidget(QLabel(LEGEND, objectName="muted"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.prior = QLabel()
         self.prior.setStyleSheet("font-size: 16px;")
         self.prior.setWordWrap(True)
         self.prior.setToolTip(TRAITS_HELP)
-        text = QLabel(trait(self.symbol), objectName="muted")
+        text = QLabel(trait(self.symbol), objectName="muted")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         text.setWordWrap(True)
         tlay.addWidget(self.prior)
         tlay.addWidget(text)
@@ -128,11 +128,11 @@ class AssetPage(QFrame):
 
     def on_retire(self) -> None:
         """Withdraw this asset after saying what that does."""
-        ok = QMessageBox.question(
+        ok = QMessageBox.question(  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
             self, f"Retirar {self.symbol}",
             f"El fichero se mueve a assets/symbols/_retired/{self.symbol}.yaml. Deja de existir "
             "para `core.assets` y para el índice, y ninguna tarea nueva podrá usarlo. Sus tramos "
             "se quedan en _policy.yaml. ¿Lo retiro?")
-        if ok == QMessageBox.Yes:
+        if ok == QMessageBox.StandardButton.Yes:
             client.post(f"asset/{self.symbol}/retire", {})
             self.retired.emit(self.symbol)

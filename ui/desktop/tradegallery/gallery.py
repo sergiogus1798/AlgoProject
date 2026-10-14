@@ -28,7 +28,8 @@ class TradeGallery(QWidget):
             fetch: `fetch(path, **params) -> dict`, the daemon call; a test hands in its own.
         """
         super().__init__()
-        self.fetch, self.where, self.pick, self.seed = fetch, None, "quantile", ""
+        self.fetch, self.pick, self.seed = fetch, "quantile", ""
+        self.where: dict[str, str] | None = None
         frame = QFrame()
         frame.setObjectName("term")
         frame.setStyleSheet(f"QFrame#term QPushButton:checked {{ background: {T['text']};"
@@ -101,6 +102,7 @@ class TradeGallery(QWidget):
 
     def _refresh(self) -> None:
         """Ask the daemon and redraw the tiles."""
+        assert self.where is not None   # `show` sets it before the first refresh
         for b in self.samples.buttons():
             b.setChecked(b.text() == self.where["sample"])
         self.quant.setChecked(self.pick == "quantile")

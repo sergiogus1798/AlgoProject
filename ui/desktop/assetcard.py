@@ -47,11 +47,11 @@ class AssetCard(QWidget):
         top = QVBoxLayout(self.top)
         top.setContentsMargins(0, 0, 0, 0)
         top.setSpacing(4)
-        self.title = QLabel(objectName="h1")
-        self.actions = QHBoxLayout()   # the page puts its buttons here, beside the name
-        self.actions.addWidget(self.title)
-        self.actions.addStretch()
-        top.addLayout(self.actions)
+        self.title = QLabel(objectName="h1")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.bar = QHBoxLayout()   # the page puts its buttons here, beside the name
+        self.bar.addWidget(self.title)
+        self.bar.addStretch()
+        top.addLayout(self.bar)
         self.chips = QLabel()
         self.chips.setWordWrap(True)
         self.trouble = QLabel()
@@ -63,7 +63,7 @@ class AssetCard(QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(6)
 
-        head = QLabel("Costes (doble clic para cambiar)", objectName="h2")
+        head = QLabel("Costes (doble clic para cambiar)", objectName="h2")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         head.setToolTip("El ratón encima de una fila dice por qué vale lo que vale.")
         lay.addWidget(head)
         # The `why` is a paragraph: a column for it would take half a page that sits beside
@@ -71,7 +71,7 @@ class AssetCard(QWidget):
         self.costs = grid(["field", "use", "unit"])
         self.costs.cellDoubleClicked.connect(self.on_cost)
         lay.addWidget(self.costs)
-        self.footer = QLabel(objectName="muted")
+        self.footer = QLabel(objectName="muted")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.footer.setWordWrap(True)
         lay.addWidget(self.footer)
 

@@ -34,14 +34,14 @@ class Catalogue(QWidget):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(14)
-        lay.addWidget(QLabel("Plantillas", objectName="h1"))
+        lay.addWidget(QLabel("Plantillas", objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
 
         filters = QHBoxLayout()
-        self.search = QLineEdit(placeholderText="Buscar por nombre, familia o activo")
+        self.search = QLineEdit(placeholderText="Buscar por nombre, familia o activo")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.search.textChanged.connect(self.fill)
         filters.addWidget(self.search, 1)
         # The family the library's front page sent here, and the way back to all of them.
-        self.family = QComboBox(toolTip="Sólo las plantillas de una familia. Cobertura abre "
+        self.family = QComboBox(toolTip="Sólo las plantillas de una familia. Cobertura abre "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                                         "esta lista ya filtrada al pulsar una familia.")
         self.family.addItem("Todas las familias", "")
         for row in names.TABLE:
@@ -54,7 +54,7 @@ class Catalogue(QWidget):
         filters.addWidget(self.status)
         lay.addLayout(filters)
 
-        split = QSplitter(Qt.Horizontal)
+        split = QSplitter(Qt.Orientation.Horizontal)
         self.list = QListWidget()
         self.list.setMinimumWidth(300)
         self.list.currentItemChanged.connect(self.on_select)
@@ -69,7 +69,7 @@ class Catalogue(QWidget):
 
     def reload(self) -> None:
         """Fetch the catalogue and redraw the list, keeping the current selection."""
-        keep = self.list.currentItem().data(Qt.UserRole) if self.list.currentItem() else None
+        keep = self.list.currentItem().data(Qt.ItemDataRole.UserRole) if self.list.currentItem() else None
         self.data = client.get("templates")
         if self.status.count() == 1:
             for s in self.data["statuses"]:
@@ -116,7 +116,7 @@ class Catalogue(QWidget):
                 because there is nothing authored to show yet.
         """
         item = QListWidgetItem()
-        item.setData(Qt.UserRole, name)
+        item.setData(Qt.ItemDataRole.UserRole, name)
         widget = QWidget()
         lay = QVBoxLayout(widget)
         lay.setContentsMargins(10, 4, 6, 4)
@@ -124,7 +124,7 @@ class Catalogue(QWidget):
         head = QLabel(title)
         head.setStyleSheet(f"font-weight:600; border-left:3px solid {colour}; padding-left:8px;")
         lay.addWidget(head)
-        sub = QLabel(subtitle, objectName="faint")
+        sub = QLabel(subtitle, objectName="faint")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         sub.setStyleSheet(f"color:{C['faint']}; padding-left:11px;")
         lay.addWidget(sub)
         # A fixed height rather than sizeHint(): the row is measured before it is laid
@@ -139,7 +139,7 @@ class Catalogue(QWidget):
         Args:
             item: The row now current, or None when the list was cleared.
         """
-        name = item.data(Qt.UserRole) if item else None
+        name = item.data(Qt.ItemDataRole.UserRole) if item else None
         if name:
             self.detail.load(name)
         elif item:
@@ -156,7 +156,7 @@ class Catalogue(QWidget):
             name: Template name; ignored when the filters hide it.
         """
         for i in range(self.list.count()):
-            if self.list.item(i).data(Qt.UserRole) == name:
+            if self.list.item(i).data(Qt.ItemDataRole.UserRole) == name:
                 self.list.setCurrentRow(i)
                 return
 

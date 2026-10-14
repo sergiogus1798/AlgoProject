@@ -2,6 +2,7 @@
 
 import html
 from collections.abc import Callable
+from typing import Any
 
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem, QWidget
@@ -22,8 +23,9 @@ GREY = "#2a2a2e"
 def shade(family: str, level: int) -> str:
     """A family's colour at one of the three intensities: mixed with the terminal's black."""
     ink, ground, k = QColor(FAMILY[family]), QColor(T["bg"]), SHARE[level]
-    return QColor(*(round(ground.getRgb()[i] + k * (ink.getRgb()[i] - ground.getRgb()[i]))
-                    for i in range(3))).name()
+    mix = [round(g + k * (i - g)) for g, i in zip((ground.red(), ground.green(), ground.blue()),
+                                                  (ink.red(), ink.green(), ink.blue()), strict=True)]
+    return QColor(*mix).name()
 
 
 def ink_on(level: int) -> str:
@@ -34,8 +36,8 @@ def ink_on(level: int) -> str:
 def table(heads: list[tuple[str, str]]) -> QTableWidget:
     """A read-only table whose header cells carry their explanation as a tooltip."""
     t = QTableWidget(0, len(heads))
-    t.setSelectionBehavior(QAbstractItemView.SelectRows)
-    t.setEditTriggers(QAbstractItemView.NoEditTriggers)
+    t.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+    t.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
     t.verticalHeader().hide()
     t.setWordWrap(True)
     for i, (head, tip) in enumerate(heads):
@@ -43,7 +45,7 @@ def table(heads: list[tuple[str, str]]) -> QTableWidget:
         item.setToolTip(tip)
         t.setHorizontalHeaderItem(i, item)
     for i in range(len(heads) - 1):          # the last column takes the rest and wraps
-        t.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
+        t.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
     t.horizontalHeader().setStretchLastSection(True)
     return t
 
@@ -71,7 +73,7 @@ def num(value: object, digits: int = 2) -> str:
     return "—" if value is None else f"{value:.{digits}f}"
 
 
-def call(owner: QWidget, work: Callable[[], dict], done: Callable[[dict], None],
+def call(owner: Any, work: Callable[[], dict], done: Callable[[dict], None],
          key: str) -> None:
     """Ask the daemon off the GUI thread; straight away when the view was given a fake."""
     if owner.sync:

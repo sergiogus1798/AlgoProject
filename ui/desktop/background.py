@@ -1,7 +1,8 @@
 """Daemon calls off the window's thread: the answer lands in a callback on the GUI thread."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from itertools import count
+from typing import Any
 
 import httpx
 import shiboken6
@@ -78,12 +79,12 @@ def run(work: Callable[[], dict], done: Callable[[dict], None], key: str = "",
 
 
 def get(path: str, done: Callable[[dict], None], key: str = "", owner: QObject | None = None,
-        **params: str) -> None:
+        **params: Any) -> None:
     """`client.get` off the GUI thread; see `run`."""
     run(lambda: client.get(path, **params), done, key, owner)
 
 
-def post(path: str, body: dict, done: Callable[[dict], None], key: str = "",
+def post(path: str, body: Mapping[str, Any], done: Callable[[dict], None], key: str = "",
          owner: QObject | None = None) -> None:
     """`client.post` off the GUI thread; see `run`."""
     run(lambda: client.post(path, body), done, key, owner)
