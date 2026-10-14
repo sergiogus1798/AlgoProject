@@ -1,197 +1,223 @@
 # AlgoProject
 
-A research pipeline for systematic trading strategies: from a rule in a published paper to a
-strategy validated in MetaTrader 5 on prop-firm and real accounts. StrategyQuant X searches the
-strategy space and re-runs backtests; Python does the inference that decides which results are
-real; a desktop window drives the chain and shows every verdict.
+**Most backtests are search results, and most search results are selection artefacts.
+This pipeline is built to reject them.**
 
-The premise is that **a backtest is a search result, and most search results are selection
-artefacts**. So the pipeline is built to reject: every candidate is judged against a null generated
-for that question, every search that narrowed a population is counted, and the last data window is
-opened once.
+AlgoProject takes a trading idea from a published paper, or from a measured market anomaly, to a
+strategy verified trade by trade in MetaTrader 5. Every step in between is a hypothesis test against
+a null model built for that question. StrategyQuant X generates and re-runs the backtests, Python does
+the inference, and a team of Claude Code agents runs the chain unattended. They work under guardrails
+written in code, so automation cannot quietly weaken the statistics.
 
-## Design principles
+```
+266,530 strategies generated  →  655 survive the out-of-sample gate  (0.25 %)
+5,000 strategies with no edge →  0.3–1.5 % pass the same gate         (measured false-positive rate)
+```
 
-- **A null per question, not a threshold on a metric.** "Profit factor above 1.3" says nothing
-  about what chance produces on the same market with the same costs. Each judging step states its
-  null and reads a z or a p against it.
-- **Three windows.** The builder sees only `build`. The out-of-sample retest and the robustness
-  steps read `oos1`. `oos2` is reserved by name for the six studies of the final stage
-  (`assets/_policy.yaml`) and rolls forward monthly. For gold: 2008–2017 · 2018–2022 · 2023–today.
-- **Thresholds are data with an author and a date.** They live in `pipeline/autopilot/criteria.yaml`
-  and `ledger/thresholds.yaml`, every change is appended to a history file, and each rule returns
-  *pass*, *limbo* or *fail* — a missing fact is limbo, never a pass.
-- **The search is counted.** `ledger/` holds one line per search that reduced a population; the
-  trial count N and the cross-trial dispersion pooled from it feed the deflated Sharpe ratio.
-- **Costs are pessimistic and per task.** Spread is the widest broker's time-weighted mean as a
-  percentage of price, slippage 35 % of it, commission and swap the worse of the firms traded
-  (`assets/RULES.md`). The nulls pay the same costs as the strategy.
-- **Excess, not return.** Results are read as excess over the market's own drift rather than as
-  raw return.
+---
+
+## What is different
+
+| the usual way | here |
+|---|---|
+| "Profit factor > 1.3, Sharpe > 1" | **A null per question.** Each step states what chance produces on the same market, at the same costs, with the same trade footprint, and reads a z or a p against it |
+| Random-entry "monkey" = shuffle the trades | **A ladder of four monkeys** sharing one random stream: timing → +holds → +sizing → free. The gap between two rungs tells *which channel* the edge lives in |
+| Cross-market test = run it elsewhere, count wins | **Trades shifted by whole weeks within each year, one shift shared by every market**, so the null keeps cross-market dependence instead of pretending markets are independent |
+| Try 10,000 variants, report the best | **Every search is counted** in a global ledger. The trial count N feeds the deflated Sharpe, so 9 survivors out of 10,000 are not read as 9 out of 50 |
+| One out-of-sample split, looked at repeatedly | **Three windows, opened in order.** `build` for the search, `oos1` for robustness, and `oos2` locked in code for the final blind test, rolling forward monthly |
+| Thresholds tuned until something passes | **Thresholds are data with an author and a date.** They are calibrated on no-edge monkeys pushed through the real criteria. A missing fact returns *limbo*, never *pass* |
+| Broker's typical spread | **Pessimistic costs per task.** The widest broker's time-weighted spread, slippage at 35 % of it, and the worse commission and swap of the firms traded. The nulls pay exactly the same costs |
+| Optimise first, ask questions later | **Test where to look first.** A market profile runs 14,364 tests before any strategy exists, BH-corrected, with a planted-edge power curve that says what an empty cell does *not* rule out |
+
+## Null models
+
+All nulls live in `engines/` and are shared by every study.
+
+| null | randomises | preserves | draws |
+|---|---|---|---|
+| `timing` monkey | entry bar | hold length, sizing, trade count, costs | 100,000 |
+| `timing_holds` | entry bar, hold length | sizing, count, costs | 100,000 |
+| `timing_sizing` | entry, hold, volatility sizing | count, costs | 100,000 |
+| `free` | when, how long, how big | trade count and costs only | 100,000 |
+| windowed monkey | entry within each trade's own calendar window | regime exposure, ATR sizing, spread + slippage | 100,000 |
+| footprint monkey | entries, with the strategy's own footprint and clock hours | trading-hours profile; the benchmark of the final stage | 100,000 |
+| `block_shift` | whole-week displacement inside regime blocks | weekday-hour slot; the same shift across all markets | 100,000 |
+| `regime_strata` | bar within the same volatility quantile and trend sign | the regime | 100,000 |
+| `segment_permute` | where the whole run sits | nothing about calendar, order or clustering | 100,000 |
+| stationary bootstrap | trade sequence (Politis–Romano) | dependence up to the block length | 100,000 |
+| block bootstrap / shuffle | blocks of trades | runs of consecutive trades | 100,000 |
+| shared-sign weekly flip | one sign per week, shared by every unit | cross-sectional dependence | 100,000 |
+| market-profile null | block-resampled price series | marginal distribution | 100,000 |
+
+The nulls are themselves tested. The weekly flip null has a measured size of 5.1 % and 5.0 % on no-edge
+panels. The market-profile block length was chosen by measuring rejection on sign-flipped series
+(4.9 % at the 5 % level). Where a null is miscalibrated, the README of its folder says so: the median
+statistic over-rejects (13.3 %) on skewed excess.
+
+## Overfitting and multiple testing
+
+| test | used for | where |
+|---|---|---|
+| **CSCV / PBO** (Bailey, Borwein, López de Prado, Zhu) | probability of backtest overfitting: 16 blocks, 12,870 partitions, read against its own null's 95th percentile | `studies/optimisation/cscv/` |
+| **Deflated Sharpe**, expected max-Sharpe over N trials | Sharpe corrected for the counted search | `core/surface/plateau.py` |
+| **PSR, MinTRL** | is the track record long enough to tell skill from noise | `core/significance.py` |
+| **Hansen SPA**, **Romano–Wolf StepM** | the final joint blind test on `oos2` against buy-and-hold, Politis–White block length | `engines/inference/snooping/` |
+| **Benjamini–Hochberg**, **Storey π₀** | FDR over the 14,364-test market profile and over populations | `engines/inference/` |
+| **Benjamini–Yekutieli** | attribution of what breaks a strategy under correlated perturbations | `studies/breakage/mcRetest/` |
+| **Local FDR**, empirical null (Efron) | how many survivors a population of no-edge strategies would leave | `engines/inference/localfdr.py` |
+| **WFC**, walk-forward correlation | does in-sample rank predict out-of-sample rank? Spearman ρ against a weekly flip null | `studies/optimisation/wfc/` |
+| **WFM**, walk-forward matrix | does re-optimising pay? 30 cells, median `oos2` excess against a shared-sign flip null | `studies/optimisation/wfm/` |
+| **Parameter surface** | plateau or spike? Latin-hypercube variants, Sobol indices of a fitted quadratic against a shuffled-metric R² | `studies/optimisation/cloud/` |
+| **Market surfaces** | is the variant order stable across markets? | `studies/optimisation/marketSurfaces/` |
+| **MC Retest, SPP** | about 1,000 full re-runs per perturbed input; System Parameter Permutation as a map, never a filter | `studies/breakage/` |
+| **Negative control** | no-edge monkeys pushed through the real `criteria.yaml` give the false-positive rate of the whole gate | `studies/screening/falsePositives/` |
+| **Planted-edge power** | an edge of known size pushed through the same test gives the power curve and the minimum detectable effect | `studies/research/profilePower/` |
 
 ## The sequence
 
-`docs/AgentPDFs/WORKFLOW.md` is the one ordering of the work — 26 steps (plus 10.5, 11.5, 11.7,
-16.5 and 18.5). What each stage asks, and against what:
+`docs/AgentPDFs/WORKFLOW.md` is the single ordering of the work: 26 steps plus six half-steps.
 
-| steps | question | statistic and null | where |
+```mermaid
+flowchart LR
+  L[Literature scout<br/>arXiv · OpenAlex] --> B[Research board]
+  P[Market profile<br/>14,364 tests, BH] --> B
+  B --> I[3 ideas<br/>+ adversarial review] --> O{Human veto}
+  O --> S[SQX build<br/>build window] --> G[OOS gate<br/>4 monkeys · oos1]
+  G --> X[Cross-market<br/>cross-TF] --> K[MC Retest<br/>SPP] --> C[WFC · CSCV<br/>surfaces · WFM]
+  C --> J[SPA · StepM<br/>blind oos2] --> M[MT5 verification<br/>per prop firm] --> F[Portfolio<br/>funded accounts]
+```
+
+| steps | test | question |
+|---|---|---|
+| 1–6 | **idea generation and build** | what to build |
+| 7–8 | **OOS gate** | does a build-selected strategy survive `oos1`? A 16-rule cascade: excess over drift, random-entry nulls, homogeneity permutation, block-bootstrap drawdown |
+| 9–12 | **cross-market, cross-timeframe** | does the logic travel? |
+| 13–16 | **MC Retest, SPP** | what breaks it? |
+| 16.5–19 | **parameter surface, WFC, CSCV, market surfaces, WFM** | is it a plateau, does IS rank predict OOS rank, is the selection overfit, does re-optimising pay? |
+| 20 | **SPA + StepM on `oos2`** | does it beat buy-and-hold on data nobody has seen? |
+| 21–25 | **closing readings** | what is it made of? Ablation and inversion of each condition, a volatility × trend map, a stop from the MAE of winners, edge per unit of cost. Descriptive only: none of these selects |
+| 26 | **MT5 verification** | does MetaTrader 5 agree, trade by trade, on each prop firm's own account? |
+| after | **portfolio** | prop-firm rules on floating equity rebuilt from M1 wicks, a trade-level Monte Carlo, and the expected value of a bank of funded accounts |
+
+## Portfolio: 4D Chess
+
+A prop-firm funded account is not capital. **It is an option bought for a fee:** the loss is capped
+at the fee, and the gain is a tail of payouts. A strategy that is excellent with real money can still
+have negative expected value here, because a single 5 % day in a year fails the account. So the
+portfolio layer does not optimise Sharpe or mean–variance. **It optimises the cash flow of a bank of
+accounts:** expected payouts minus expected fees, re-buys included. It is built in four levels, each
+standing on the one below:
+
+| level | the board | output |
+|---|---|---|
+| 0 · material | per-trade floating P&L rebuilt from M1 wicks, reduced to tables of closed P&L, floating P&L, day low and day high, one row per firm-server day | the equity the firm actually sees |
+| 1 · one game | one account as a numba state machine over those days, running the firm's exact rules from its catalogue (static, trailing and end-of-day trailing floors, daily loss, minimum days) | P(pass), time to pass, *which* rule kills it |
+| 2 · the bank | accounts bought one after another along **one long market path**. The next account is bought the day after the last one fails | the bank's EV and its cash drawdown (median, p90, p99) |
+| 3 · the choice | plan × add-ons × risk per phase × re-buy policy × portfolio | the plan to buy, or **"none"** |
+
+What makes it non-trivial:
+- **Firms test floating equity at specific times.** SQX reports how deep an adverse excursion went,
+  not when it happened. The floating path is therefore rebuilt from M1 wicks. On real trades it
+  matches SQX's MAE on 100 % of 2,094 trades and its MFE on 99.9 %.
+- **A portfolio's worst moment is not the sum of its members' worst moments.** Day loss is measured
+  on the combined floating equity, minute by minute, so drawdowns that do not coincide are not
+  double-counted.
+- **Accounts fail together.** Multiplying failure rates assumes independent accounts. Walking one
+  shared path keeps the correlation that real accounts on the same portfolio have.
+- **Risk per trade is searched, not fixed.** P(pass) rises with risk, flattens, then falls: an
+  inverted U. Risk is searched separately for the challenge phase and the funded phase.
+- **Three Monte Carlos, and the most pessimistic one decides.** The first resamples trades
+  independently. The second resamples blocks of trades synchronised across strategies. The third
+  resamples blocks of days. The block length is estimated with Politis–White, then swept over 5, 10,
+  20 and 40 days.
+- **The edge is cut, and compared with a monkey.** The edge is cut to 100, 75, 50, 25 and 0 %, and the
+  breakeven cut is searched. At 0 % the strategies trade random entries. What gets reported is the
+  portfolio's EV minus the monkey's EV.
+- **Selection is honest by construction.** The search reads only `build`. A genetic search runs over
+  cliques of a correlation graph, about 1,500 to 1,860 combinations per second on 48 cores. Every trial
+  is a ledger row, and the risk dimensions count as trials. The winner is judged as a percentile
+  against the same selection run on random combinations, and its Sharpe is deflated by the ledger's N.
+- **Coarse to fine.** The search runs on M5 blocks, 20 ms per 10-strategy portfolio. The finalists are
+  re-run on M1, 224 ms each. The bank simulation evaluates 2,610 configurations over
+  10,000 paths × 504 days in 86 s.
+
+Code: `portfolio/common/construct/` covers equity, search, Monte Carlo, weights and verdict.
+`portfolio/funded/` covers the firms' rules, the bank simulation and the decision. A separate
+trade-level Monte Carlo, `portfolio/common/monteCarlo/`, stress-tests order, composition, execution,
+calendar regimes and PSR against a random trader of the same footprint.
+
+## Latest performance upgrade
+
+Statistics this heavy are only worth running if they are fast. Each speed-up below was measured on the
+same machine and the same data, before and after.
+`perf/` holds the catalogue, which exits non-zero on a regression.
+
+| workload | before | after | speed-up |
 |---|---|---|---|
-| 1–6 | what to build | an idea becomes block vocabulary, a template, a cost preflight and a custom SQX project; at most two entry and two exit conditions, one direction, no clock blocks | `sqx/`, `core/assets.py` |
-| 7–8 | does a build-selected strategy survive `oos1`? | a 16-rule cascade: t of the excess over drift, z against a **windowed random-entry null** (each trade re-entered at a uniform bar of the calendar window it opened in, ATR-sized, costs charged; 5,000 draws), a homogeneity permutation test, a block-bootstrap drawdown test | `studies/screening/gate/`, `engines/nulls/` |
-| 9–12 | does the logic travel to other markets and timeframes? | z of the real run against 5,000 runs of the same trades **shifted by whole weeks inside each calendar year**, one shift per year shared across markets, so cross-market dependence is kept in the null | `studies/transfer/` |
-| 13–16 | what breaks it? | ~1,000 SQX re-runs of the whole backtest per perturbed input; retention of the excess, attribution under Benjamini–Yekutieli; System Parameter Permutation as a map, never a filter | `studies/breakage/` |
-| 16.5 | is the parameter surface a plateau or a spike? | variants from a Latin-hypercube design; Sobol indices of a fitted quadratic surface against a shuffled-metric R² | `sqx/variants/`, `studies/optimisation/cloud/` |
-| 17 | does in-sample rank predict out-of-sample rank? | Spearman ρ of IS against OOS excess over the variants, against a weekly sign-flip null | `studies/optimisation/wfc/` |
-| 18 | how likely is the selection to be overfit? | **CSCV** (Bailey, Borwein, López de Prado, Zhu): 16 blocks, 12,870 partitions; PBO and P(loss) read against their own null's 95th percentile (stationary bootstrap of weeks). It can discard and never confirms | `studies/optimisation/cscv/` |
-| 18.5–19 | is the variant order stable across markets, and does re-optimising pay? | Spearman ρ of variant order across markets; a 30-cell walk-forward matrix, median net `oos2` excess against a shared-sign weekly flip null | `studies/optimisation/` |
-| 20 | the joint blind verdict on `oos2` | Hansen's **SPA** and Romano–Wolf's **StepM** against buy-and-hold, Politis–White block length | `studies/closing/blindJoint/`, `engines/inference/snooping/` |
-| 21–25 | what is the survivor made of? | return per unit of market time at equal risk; a conditional map over volatility × trend terciles; ablation and inversion of each entry condition; the stop from the MAE distribution of in-sample winners; edge per unit of cost. Descriptive — none of these selects | `studies/closing/`, `studies/readings/` |
-| 26 | does MetaTrader 5 agree? | the strategy priced in SQX at each prop firm's conditions against its MT5 tester run on that firm's account, trades paired by entry time | `mt5/verify/` |
-| after | combining survivors | prop-firm rules simulated on floating equity rebuilt from M1 wicks (MAE/MFE), a trade-level Monte Carlo, and the expected value of a bank of funded accounts | `portfolio/` |
+| Monkey report: 757 strategies × 4 rungs × 2,500 draws | 569 s | 11 s | **51×** |
+| Strategy-path Monte Carlo: 36 strategies × 20,000 paths | 477 s | 27 s | **18×** |
+| IS/OOS filter report, 10,000 strategies | 38.7 s | 3.2 s | **12×** |
+| Cross-market null, 96 × 9 markets (`verdict.csv` byte-identical) | 755 s | 52 s | **14×** |
+| Null kernel, cost per valuation on real trades | 64.4 ns | 3.1 ns | **21×** |
+| Reading a databank: 10,000 strategies, 7.27 M orders | 38.6 s | 7.8 s | **5×** |
+| Post-build review: 3.0 M trades, export and harvest | 418 s | 80 s | **5×** |
 
-Shared machinery lives in `engines/`: i.i.d. and stationary bootstraps and block shuffles
-(`resample/`), the random-entry nulls (`nulls/`), weekly sign-flip nulls (`weekly/`), volatility
-regimes by ATR or GARCH(1,1) terciles (`regimes/`), and Benjamini–Hochberg, Storey's null share,
-SPA and StepM (`inference/`). PSR, MinTRL and the deflated Sharpe follow Bailey–López de Prado.
+How the speed-ups were made:
+- **Null kernel.** The random-entry null runs as a single-pass numba kernel. PCG64 is re-implemented
+  inside numba and produces the identical stream (2.24 ns against 3.15 ns per uniform). Branches are
+  rewritten as selects, bit-identical.
+- **Load balancing.** Work is spread with longest-processing-time load balancing. On 48 cores,
+  200 strategies × 9 markets at 10,000 draws take 135 s of wall time for 6,121 s of CPU.
+- **Databank reader.** A custom binary reader, the `.abk` format, replaces SQX's CSV exports.
 
-### What is not settled
+A full null now costs about 1/90 of one SQX robustness step. Funded-account simulation evaluates
+1,305 configurations on 2,000 × 1,250 paths in 4.4 s.
 
-Stated here because it is the first thing a reader should ask:
+## Run by agents, under guardrails written in code
 
-- The thresholds of steps 10 and 14 are marked provisional and uncalibrated in `criteria.yaml`.
-- Under the current provisional rule, step 20's verdict is the worst state of steps 17–19; SPA and
-  StepM are computed and shown, and decide nothing yet.
-- The deflated Sharpe is fed the dispersion inside one mother's variants, which is narrower than
-  the whole study's and errs in the flattering direction (`ledger/README.md`).
-- The `oos2` reservation is enforced in code for autonomous agents; a person can still read it.
+One person owns the decisions. Fourteen specialist agents run the work, each with a written contract
+in `.claude/agents/` and the cheapest model that can do it:
+- **Opus** designs: ideas, templates, block palettes, research direction.
+- **Sonnet** executes and audits.
+- **Haiku** sweeps.
 
-## Research before the search
+What keeps them honest is enforced, not requested:
+- **A pre-execution hook parses every shell command an agent issues.** The hook is `.claude/hooks/guard.py`.
+  It parses pipes, subshells, heredocs and `bash -c`. It blocks the commands that destroy work, and
+  it blocks any commit or branch the human has not approved. It has its own known-answer test.
+- **Lint and test gates.** Lint runs after every edit. An agent cannot end its session while the
+  tests of the files it touched are red.
+- **The holdout is locked in code.** Autonomous agents cannot read `oos2` before the final stage.
+- **Ambiguity is a hard stop.** "Crosses above the Keltner": the upper band or the middle line? The
+  agent lists the readings and asks. A silent assumption burns CPU that does not come back.
+- **No forcing past a failure.** A failing step gets three tries, then a report. An agent never edits
+  a threshold to get past one.
+- **Adversarial roles.** An `ideaReviewer` attacks each idea before any compute is spent. A `reviewer`
+  reads only the diff, never the author's reasoning. A nightly audit → document → fix loop leaves its
+  fixes uncommitted for human review.
+- **Literature extraction is anchored.** Every field of a rule taken from a paper must quote the
+  source, and the quote is verified verbatim against the stored text.
+- **Institutional memory.** `knowhow/` holds about 430 single-fact cards. Each claim is tagged
+  🔬 tested, 📓 from logs or 🤔 inferred, and is written in the same task that found it.
 
-Where to point the builder is itself a multiple-testing problem, handled before any strategy
-exists (`studies/research/`):
+## Running it
 
-- **Literature** — a daily scout reads arXiv q-fin and OpenAlex, rejects each paper by nine hard
-  filters with the sentence that shows why, and extracts each surviving rule as an entry whose
-  fields are anchored to quotes verified verbatim against the stored source.
-- **Market profile** — 19 assets × four timeframes × long/short × seven idea families: 14,364
-  tests on `build` only, each against block-resampled series, Benjamini–Hochberg over all of them.
-  A cell must be significant, pay twice its cost, be stable across the build years and trade
-  enough.
-- **Power** — an edge of known size is planted and put through the profile's own test, which gives
-  the power curve and the minimum detectable effect: what an empty cell does and does not rule out.
-- **Pooling** — per asset group, a Stouffer sum of each asset's z against a joint resampling null,
-  with DerSimonian–Laird shrinkage.
-- **Board** — cells ranked by prior, evidence, signal, gap and past results; a director agent picks
-  one and brings three ideas, each attacked by a reviewer agent before any CPU is spent.
+The whole workflow, steps 5 to 26, is one unattended command: `bin/workflow.sh`, run through the
+`/workflow` skill.
+- **SQX setup:** one GUI and two headless workers with their own ports, heaps and owner locks
+  (`docs/SETUP-NEW-MACHINE.md`).
+- **MetaTrader 5:** runs under Wine (`mt5/README.md`).
 
-## Automated, supervised
-
-Steps 5 to 25 run through one command, in one SQX session:
-
-```bash
-bin/workflow.sh simple   <PROJECT> <SYMBOL> <TF> <long|short> <FAMILY> <PALETTE> "<PURPOSE>" <STRATEGIES> <MINUTES>
-bin/workflow.sh template <PROJECT> <SYMBOL> <TF> <TEMPLATE.sqx> <PALETTE|-> "<PURPOSE>" <STRATEGIES> <MINUTES>
-bin/workflow.sh run      <PROJECT>      # an existing project, from where its rail is
-bin/workflow.sh plan     <PROJECT>      # prints what `run` would do, runs nothing
-```
-
-The autopilot (`pipeline/autopilot/`) runs every SQX task and Python study, judges each step by
-the criteria file and cuts the population in SQX itself; the campaign (`pipeline/campaign/`) loops
-it over template × asset × timeframe. A strategy that passes step 8 is saved at once in the
-strategy store (`core/store/`) with every later test's results and trades — a genetic build cannot
-be reproduced.
-
-A person decides wherever a decision spends compute or commits to a result:
-
-| stage | runs by itself | the owner decides |
-|---|---|---|
-| research | scout, profile, board, the director's proposal and its adversarial review | which proposal to run; an ambiguous rule is a question, never a silent default |
-| workflow | project creation, every task and study, every cut | every argument of the run; each launch from the window is confirmation-gated |
-| upkeep | nightly audit, documentation and fix agents; a daily commit proposal | the commit — agents propose, they never commit or push |
-
-## After the survivors: the funded path
-
-A prop-firm account is an option bought for a fee, so the objective is the cash flow between the
-owner's bank and the firm, not the account's return. `portfolio/` values it on four levels, each
-built on the one below — "4D chess": every trade's floating equity rebuilt minute by minute from M1
-wicks; one account as a state machine over the firm's server days; a bank buying accounts one after
-another, re-buys and refunds included; and the choice over firm × plan × add-ons × portfolio × risk,
-which answers «none» when nothing beats a random-entry baseline. → `portfolio/README.md`
-
-## Tested against known answers
-
-Known-answer and golden tests (`tests/`, 270+ files) pin the statistics: planted edges that must be
-found, no-edge panels that must reject at the nominal rate, and SQX file formats read back exactly.
-
-## The folders
-
-| folder | what it is |
+| folder | holds |
 |---|---|
-| `ui/` | The desktop app — a PySide6 window over a local FastAPI daemon. Template library, projects and their databanks, one strategy's ficha, the running jobs, the search ledger, portfolios and the MT5 bridge. Open it with `bin/algoui` |
-| `sqx/` | Everything touching StrategyQuant X: authoring blocks, groups, templates and projects, configuring each workflow task, variants, exports and curation of databanks |
-| `studies/` | Every question asked of a strategy or a population, one folder each, grouped by workflow family. Each returns the contract of `core/study/`, and the window paints it |
-| `engines/` | What the studies compute with: trade pricing, null models, resampling, regimes, multiple-testing inference, variants |
-| `ledger/` | The global search ledger — one line per search that reduced a population — and the thresholds frozen before looking |
-| `pipeline/` | The workflow unattended: the autopilot behind `bin/workflow.sh`, the campaign over template × asset × timeframe, and one mother strategy in, one verdict out, resumable |
-| `portfolio/` | Combining strategies, separately for funded accounts and real capital; the prop-firm catalogue and discounts |
-| `mt5/` | MetaTrader 5 under Wine: backtesting SQX's EAs in its tester, the MCP server over the terminal (no order tools), step 26, the weekly reconciliation against live accounts and the fleet on the VPS |
-| `core/` | The shared library: paths, assets and costs, SQX readers, the study contract, the strategy store |
-| `assets/` | Per-asset costs, segments and ranges. Read with `python3 -m core.assets <SYMBOL>` before authoring anything |
-| `knowhow/` | The facts that cost time to discover, one card each, tagged tested / from logs / inferred |
-| `perf/` | The cost catalogue — what each expensive part takes in time, memory and disk |
-| `docs/` | The owner's manual (twelve PDFs in `docs/manual/`), dossiers and encargos, the folder map and the generated dependency map |
-| `tests/` · `tools/` · `bin/` · `config/` | Golden and known-answer tests · checks and generators · worker and scheduled-agent scripts · machine settings |
+| `engines/` | resampling, null models, regimes, inference |
+| `studies/` | every question asked of a strategy or a population, by workflow family |
+| `ledger/` | the global search ledger and the frozen thresholds |
+| `pipeline/` | one candidate in, one verdict out, unattended |
+| `sqx/` · `mt5/` | driving StrategyQuant X · MetaTrader 5 under Wine and its verification |
+| `portfolio/` | portfolios, trade-level Monte Carlo, prop-firm simulation |
+| `perf/` | the performance catalogue and its regression check |
+| `ui/` | the desktop window over a local FastAPI daemon |
+| `.claude/` · `knowhow/` | agents, skills and hooks · their institutional memory |
 
-Data never goes in this repository. It lives in the data root, `~/Desktop/AlgoData`, indexed by its
-`INDEX.md` — exports, study reports, the ledger, the manual's sources and the agents' reports.
-
-## StrategyQuant X: three installs
-
-| install | port | role |
-|---|---|---|
-| master `SQX` | 5050 | the owner's GUI; never built on or driven while open |
-| conductor `SQX_w1` | 5060 | headless: authoring, queries, exports, short jobs |
-| custodian `SQX_w2` | 5070 | headless: one long job at a time, all cores |
-
-Workers are started and stopped only through `bin/sqx-worker.sh`, which holds a per-install owner
-lock so that concurrent sessions do not collide. The rules that keep this safe are in `CLAUDE.md`.
-
-## Setting up on a new machine
-
-```bash
-cp config/machine.example.yaml config/machine.yaml   # edit the paths for that machine
-python3 -m pip install -r requirements.txt
-python3 tools/checks.py                              # should be green
-```
-
-Nothing else is machine-specific: `core/paths.py` is the only module that knows where anything lives.
-Python 3.10 to 3.13; numpy, scipy and arch have no wheels for 3.14 yet.
-
-That covers a machine that only analyses already-exported data. Setting up **StrategyQuant X itself**
-— how many installs, cloning the headless workers, the port triples, and the check that stops a
-worker being a silent alias of the master — is `docs/SETUP-NEW-MACHINE.md`. MetaTrader 5 under Wine
-is `bin/mt5-install.sh` and `mt5/README.md`.
-
-## Working here
-
-Read `CLAUDE.md` — it holds the rules that prevent irreversible damage, and a router that says which
-file to open for which task. Read `CODESTYLE.md` before writing Python, and the folder's own
-`README.md`. What is broken or pending is `OPEN.md`; where an old path went (`tasks/`,
-`strategies/`, …) is `docs/MAPA-DE-CARPETAS.md`.
-
-Skills (`.claude/skills/`, catalogued in `docs/SKILLS.md`) turn each chain the owner runs again
-into one command — `/workflow` for the whole workflow, `/store-save`,
-`/store-open` and `/store-resume` for the strategy store, `/research-direct` and `/literature-scout`
-for the research chain, and one per step (`/oos-gate`, `/crossmarket`, `/crosstf`, `/mcretest`,
-`/spp`, `/variants`, `/wfm`, `/export`, `/curate` and others) for testing a step on its own. Scheduled agents
-(`.claude/agents/`, launched by `bin/`) keep the project honest unattended: a nightly audit,
-documenter and fixer, a daily commit proposal at 05:45 (propose only: the owner commits, with one «sí» to `python3 -m tools.commit_apply`), a weekly project janitor, the prop-firm catalogue watcher and daily deal
-hunter, the daily literature scout and the weekly MT5 reconciliation. Their reports go to `AlgoData/audit/`. `/sync` keeps this GitHub copy equal to the machine —
-see `docs/manual/01-empezar.pdf`.
-
-Two scheduled jobs need no model and so are plain cron scripts, not agents:
-`bin/weekly-data-update.sh` (Saturday 02:00) snapshots the master's projects, runs the GUI's
-"Update all" on SQX's data headless, refreshes each asset's data range in `assets/_policy.yaml` and
-the brokers' commissions; `bin/monthly-oos2-roll.sh` (Saturday 02:05, acts only on the month's
-first Saturday) waits for that update and moves every decided `oos2` to end on the last day of the
-previous month. Both log to `AlgoData/logs/`.
+Contributing, human or agent, starts at `CLAUDE.md`, then `CODESTYLE.md` and `CONTRIBUTING.md`.
