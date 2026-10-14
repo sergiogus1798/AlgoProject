@@ -126,6 +126,11 @@ rule 1 still decides when to split, and rule 4 still decides how much to build.
   ports, where the data goes — live in `config/machine.yaml`, which is not in git.
   `config/machine.example.yaml` is the versioned template.
 - Paths are `pathlib.Path`, never strings joined with `/`.
+- **Output is `print`**, unattended code included (owner, 2026-10-13): a cron script's log is its
+  redirected stdout. No `logging` configuration, no logger per module.
+- **A timestamp inside the code lives on the feed's clock, EETUS, without tzinfo** (owner, 2026-10-13):
+  bars, trades and SQX's own dates all come stamped that way, so they compare directly. A wall-clock
+  time from `datetime.now()` that is ever compared with them is converted once, where it is read.
 - On a fresh machine: copy the example to `config/machine.yaml`, edit it, `pip install -r
   requirements.txt`, done.
 

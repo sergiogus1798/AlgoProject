@@ -33,7 +33,7 @@ Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los 
 | F14 | canario nocturno de extremo a extremo | Opus diseña, Sonnet escribe | D11 | sin empezar |
 | F15 | gorilla comprueba cada push | Sonnet | F1 | sin empezar |
 | F16 | agente `reviewer` propio | Opus | — | sin empezar |
-| F17 | convenciones que faltan en `CODESTYLE.md` | Sonnet | D12, D13 | sin empezar |
+| F17 | convenciones que faltan en `CODESTYLE.md` | Sonnet | D12, D13 | hecho 2026-10-14 (§6) |
 | F18 | `ruff format`, lo último | Sonnet | todo lo anterior | sin empezar |
 
 ### Bitácora
