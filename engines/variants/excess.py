@@ -1,5 +1,7 @@
 """A batch's trades net of the market's drift: per trade, per variant and year, and per day."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -55,7 +57,8 @@ def per_year(excess: pd.DataFrame, window: tuple[str, str]) -> pd.Series:
         a trade in the window has no row.
     """
     first, last = (pd.Timestamp(day) for day in window)
-    return excess.groupby("variant_id")["excess"].sum() / (((last - first).days + 1) / 365.25)
+    total = cast(pd.Series, excess.groupby("variant_id")["excess"].sum())
+    return total / (((last - first).days + 1) / 365.25)
 
 
 def daily(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
@@ -76,8 +79,9 @@ def daily(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
         column per calendar day with a bar in `span`.
     """
     per = per_trade(trades, bars, costs, span, drift, feed, drift_span)
-    days = bars.index[bars.index.slice_indexer(*span)].normalize().unique()
-    day, opened = days.get_indexer(bars.index.normalize()), bars["Open"].to_numpy()
+    stamps = cast(pd.DatetimeIndex, bars.index)
+    days = stamps[stamps.slice_indexer(*span)].normalize().unique()  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.normalize
+    day, opened = days.get_indexer(stamps.normalize()), bars["Open"].to_numpy()  # pyright: ignore[reportAttributeAccessIssue]  # same
     enter, leave, term = (per[k].to_numpy() for k in ("enter", "leave", "drift"))
     assert (day[enter] >= 0).all() and (day[leave] >= 0).all(), f"a trade outside {span}"
     code, ids = pd.factorize(per["variant_id"])

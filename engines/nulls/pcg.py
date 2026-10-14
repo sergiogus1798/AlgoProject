@@ -1,5 +1,7 @@
 """numpy's PCG64 stream reproduced inside numba: the same numbers, generated where a kernel uses them."""
 
+from typing import Any, cast
+
 import numpy as np
 from numba import njit
 
@@ -53,7 +55,7 @@ def store(rng: np.random.Generator, state: np.ndarray) -> None:
         rng: The generator load() read.
         state: What load() returned, after the kernel moved it.
     """
-    seen = rng.bit_generator.state
+    seen = cast(dict[str, Any], rng.bit_generator.state)
     seen["state"]["state"] = (int(state[0]) << 64) | int(state[1])
     seen["has_uint32"], seen["uinteger"] = int(state[2]), int(state[3])
     rng.bit_generator.state = seen

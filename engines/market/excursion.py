@@ -3,6 +3,8 @@
 Used by `studies.screening.maeDepth` (step 8), so
 the two steps measure the same MAE in ATR, trade for trade."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -39,7 +41,7 @@ def measure(trades: pd.DataFrame, index: pd.DatetimeIndex, atr: np.ndarray,
         measured by SQX on the M1 path in dollars, and is converted with each trade's size.
     """
     out = trades.copy()
-    out["atr"] = atr[before_entry(index, trades["Open time"])]
+    out["atr"] = atr[before_entry(index, cast(pd.Series, trades["Open time"]))]
     scale = trades["Size"].to_numpy() * point_value
     out["mae_atr"] = excursions(trades, point_value)["mae"].to_numpy() / out["atr"]
     out["result_atr"] = trades["Profit/Loss"].to_numpy() / scale / out["atr"]

@@ -9,13 +9,15 @@ signature `(located, draws, rng)` in and entries, holds and sizes out -- or, ask
 
 import numpy as np
 
+from engines.market.calibrate import OnGrid
+
 # Random placement can overlap, where the real trades never do. At the occupancy this corpus
 # runs at -- 7.4% of bars held, measured 2026-09-22 -- that is rare, and dropping the
 # overlaps would change n and make the statistic incomparable to the real run. It is a
 # declared simplification, not an oversight.
 
 
-def _place(located: dict, holds: np.ndarray, u: np.ndarray) -> np.ndarray:
+def _place(located: OnGrid, holds: np.ndarray, u: np.ndarray) -> np.ndarray:
     """Uniform entry bars, each late enough that its own hold still fits the window.
 
     Args:
@@ -33,8 +35,8 @@ def _place(located: dict, holds: np.ndarray, u: np.ndarray) -> np.ndarray:
     return (lo + u * (hi - holds - lo + 1)).astype(np.int64)
 
 
-def _rung(located: dict, draws: int, rng: np.random.Generator, placed: bool, redraw: bool,
-          flat: bool) -> dict:
+def _rung(located: OnGrid, draws: int, rng: np.random.Generator, placed: bool, redraw: bool,
+          flat: bool) -> dict[str, np.ndarray]:
     """The draw every rung is, differing only in what it hands to chance beyond the entry.
 
     Args:
@@ -67,20 +69,20 @@ def _rung(located: dict, draws: int, rng: np.random.Generator, placed: bool, red
     return {"u": u, "holds": holds, "sizes": sizes}
 
 
-def timing(located: dict, draws: int, rng: np.random.Generator,
-           placed: bool = True) -> dict:
+def timing(located: OnGrid, draws: int, rng: np.random.Generator,
+           placed: bool = True) -> dict[str, np.ndarray]:
     """Move every trade, keeping its own holding time and its own size (see `_rung`)."""
     return _rung(located, draws, rng, placed, False, False)
 
 
-def timing_holds(located: dict, draws: int, rng: np.random.Generator,
-                 placed: bool = True) -> dict:
+def timing_holds(located: OnGrid, draws: int, rng: np.random.Generator,
+                 placed: bool = True) -> dict[str, np.ndarray]:
     """Move every trade and redraw how long it is held, keeping its size (see `_rung`)."""
     return _rung(located, draws, rng, placed, True, False)
 
 
-def timing_sizing(located: dict, draws: int, rng: np.random.Generator,
-                  placed: bool = True) -> dict:
+def timing_sizing(located: OnGrid, draws: int, rng: np.random.Generator,
+                  placed: bool = True) -> dict[str, np.ndarray]:
     """Move every trade and strip the volatility normalisation from its size (see `_rung`).
 
     Against `timing`, the gap is what sizing by ATR was worth -- through the variance, not the
@@ -89,8 +91,8 @@ def timing_sizing(located: dict, draws: int, rng: np.random.Generator,
     return _rung(located, draws, rng, placed, False, True)
 
 
-def free(located: dict, draws: int, rng: np.random.Generator,
-         placed: bool = True) -> dict:
+def free(located: OnGrid, draws: int, rng: np.random.Generator,
+         placed: bool = True) -> dict[str, np.ndarray]:
     """Move every trade, redraw its holding time and strip its sizing (see `_rung`).
 
     The bottom of the ladder: only the trade count and the cost survive, so this is the

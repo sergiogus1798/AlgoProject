@@ -26,7 +26,9 @@ def market(work: Path) -> tuple[str, str]:
     key = pq.read_table(work / "segments.parquet", columns=["result_key"],
                         filters=[("market", "=", MAIN), ("segment", "=", "build")])
     feed, timeframe = key.column(0)[0].as_py().split(": ", 1)[1].split("/")
-    return assetdata.symbol_for(feed), timeframe
+    symbol = assetdata.symbol_for(feed)
+    assert symbol, f"no asset file declares the feed {feed}"
+    return symbol, timeframe
 
 
 def admit(step: float, segments: tuple, symbol: str) -> None:
@@ -42,7 +44,7 @@ def admit(step: float, segments: tuple, symbol: str) -> None:
             not have happened, so the refusal comes before the parquet is read.
     """
     for segment in segments:
-        gate.allow(step, segment, symbol)
+        gate.allow(step, segment, symbol)  # pyright: ignore[reportArgumentType]  # ledger.gate.allow annotates step: int, the steps include 16.5
         gate.seal(step, segment, symbol)
 
 

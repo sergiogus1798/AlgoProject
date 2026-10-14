@@ -40,7 +40,9 @@ def costs(feed: str, segment: str) -> Costs:
         The card's costs for that segment. A `points` swap (every forex card) is in tickStep,
         which the card does not carry: taken as tick_size / 10 (owner, 2026-10-06).
     """
-    data = load(symbol_for(feed))
+    symbol = symbol_for(feed)
+    assert symbol, f"no asset file declares the feed {feed}"
+    data = load(symbol)
     s, tick = sqx_settings(data, segment), data["instrument"]["tick_size"]
     points = schema(data)["swap"]["sqx_type"] == "points"
     return {"point_value": data["instrument"]["point_value"], "tick_size": tick,
@@ -186,8 +188,8 @@ def real(trades: pd.DataFrame, bars: pd.DataFrame, costs: Costs,
         bar's range by more than spread + slippage, naming the strategies: dropping them
         would drop the stopped trades and inflate every t.
     """
-    time = [trades[k].to_numpy() for k in ("Open time", "Close time")]
-    enter, leave = (located(bars, t, feed) for t in time)
+    opened, closed = (trades[k].to_numpy() for k in ("Open time", "Close time"))
+    enter, leave = (located(bars, t, feed) for t in (opened, closed))
     side = np.where(trades["Type"].astype(str) == "Sell", -1.0, 1.0)
     stop, known = np.full(len(trades), np.nan), np.ones(len(trades), bool)
     if "Close type" in trades:
@@ -207,6 +209,6 @@ def real(trades: pd.DataFrame, bars: pd.DataFrame, costs: Costs,
             f"{trades.loc[bad, 'Close time'].min()}; the bars end at {bars.index[-1]} "
             f"(behind the trades: python3 -m sqx.export.sync_bars)")
     net, cost = pnl(fills(bars, enter), np.where(np.isnan(stop), fills(bars, leave), stop),
-                    *time, side, trades["Size"].to_numpy(), costs)
+                    opened, closed, side, trades["Size"].to_numpy(), costs)
     return pd.DataFrame({"enter": enter, "leave": leave, "side": side, "stop": stop,
                          "pnl": net, "cost": cost}, index=trades.index)

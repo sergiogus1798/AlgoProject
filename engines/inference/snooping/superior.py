@@ -1,5 +1,7 @@
 """Which strategies beat their benchmark once every strategy tried is paid for: SPA and StepM."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 from arch.bootstrap import SPA, optimal_block_length
@@ -23,7 +25,7 @@ def block_length(excess: pd.DataFrame) -> int:
 
 
 def spa(excess: pd.DataFrame, block: int, reps: int, seed: int,
-        drawn: dict | None = None) -> dict:
+        drawn: dict[str, Any] | None = None) -> dict[str, float]:
     """Hansen's test of superior predictive ability over the whole panel.
 
     Args:
@@ -46,10 +48,12 @@ def spa(excess: pd.DataFrame, block: int, reps: int, seed: int,
     test.compute()
     if drawn is not None:       # arch keeps them private; the p is (simulated > observed).mean()
         keep = test._selector
+        assert keep is not None and test._simulated_vals is not None, "SPA.compute() sets them"
         simulated = np.max(test._simulated_vals[keep, :, :], axis=0)
         drawn["observed"] = float(np.max(test._loss_diff[:, keep].mean(axis=0)))
         drawn.update({k: simulated[:, i] for i, k in enumerate(("lower", "consistent", "upper"))})
-    return {k: float(v) for k, v in test.pvalues.items()}
+    assert test.pvalues is not None, "SPA.compute() sets the p-values"
+    return {str(k): float(v) for k, v in test.pvalues.items()}
 
 
 def stepm(excess: pd.DataFrame, fwer: float, block: int, reps: int, seed: int) -> list:

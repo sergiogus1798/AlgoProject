@@ -1,6 +1,9 @@
 """The windowed monkey as a table: where every candidate trade sits in it, and the draws that index it."""
 
+from typing import TypedDict
+
 import numpy as np
+import pandas as pd
 from numba import njit
 
 from engines.nulls import pcg
@@ -10,7 +13,53 @@ from engines.nulls import pcg
 PASS = 65_536
 
 
-def layout(shared: dict, mine: dict, redraw: bool) -> dict:
+class Grid(TypedDict):
+    """What windowed.grid() shares across a run."""
+
+    bars: pd.DataFrame
+    time: np.ndarray
+    atr: np.ndarray
+    eligible: np.ndarray
+    hour: np.ndarray
+    by_hour: dict[int, np.ndarray]
+    bounds: dict[object, tuple[int, int]]
+    last: int
+
+
+class Located(TypedDict):
+    """One strategy's trades on the grid (windowed.located)."""
+
+    entry: np.ndarray
+    hold: np.ndarray
+    size: np.ndarray
+    side: np.ndarray
+    hour: np.ndarray
+    lo: np.ndarray
+    hi: np.ndarray
+
+
+class Table(TypedDict):
+    """windowed.priced()'s table of candidate P/L values."""
+
+    value: np.ndarray
+    redraw: bool
+    off: np.ndarray
+    room: np.ndarray
+    hid: np.ndarray
+
+
+class Layout(TypedDict):
+    """layout() — every candidate trade a draw can produce."""
+
+    enter: np.ndarray
+    leave: np.ndarray
+    side: np.ndarray
+    off: np.ndarray
+    room: np.ndarray
+    hid: np.ndarray
+
+
+def layout(shared: Grid, mine: Located, redraw: bool) -> Layout:
     """Every trade a draw of one strategy can produce, each listed once.
 
     Args:
@@ -28,7 +77,7 @@ def layout(shared: dict, mine: dict, redraw: bool) -> dict:
     """
     n, last = mine["entry"].size, shared["last"]
     pool, hid = (np.unique(mine["hold"], return_inverse=True) if redraw
-                 else (None, np.zeros(n, np.int64)))
+                 else (np.empty(0, np.int64), np.zeros(n, np.int64)))
     off, room = (np.empty((n, pool.size if redraw else 1), np.int64) for _ in range(2))
     enter, leave, side, seen, used = [], [], [], {}, 0
     for k in range(n):
@@ -93,7 +142,7 @@ def warm() -> None:
           np.random.default_rng(0))
 
 
-def means(table: dict, draws: int, rng: np.random.Generator) -> np.ndarray:
+def means(table: Table, draws: int, rng: np.random.Generator) -> np.ndarray:
     """The mean P/L per trade of `draws` monkeys read off a priced table.
 
     Args:

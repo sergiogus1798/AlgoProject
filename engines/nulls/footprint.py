@@ -1,5 +1,7 @@
 """What a random trader with a mother's own footprint and clock hours earns per day: step 20's benchmark and the oos2 reading's monkey."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -37,10 +39,11 @@ def footprint(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
         per bar is, and what each paid is booked on the bar it closed at. The series sums to
         the traders' mean net P&L exactly.
     """
-    day = bars.index.normalize()
+    stamps = cast(pd.DatetimeIndex, bars.index)
+    day = stamps.normalize()  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.normalize
     if trades.empty:
         return pd.Series(0.0, index=day.unique()), 0.0
-    where = nulls_inputs.on_grid(trades, bars.index, np.inf)
+    where = nulls_inputs.on_grid(trades, stamps, np.inf)
     side = np.where(trades["Type"].astype(object) == "Buy", 1.0, -1.0)
     shared = windowed.grid(bars, np.arange(len(bars)), np.zeros(len(bars), int))
     mine = windowed.located(shared, where["entry"], where["exit"], where["size"], side,
@@ -71,5 +74,5 @@ def footprint(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
     mark = np.where(np.r_[day[1:] != day[:-1], True], closes, after)
     gap = held * (after - mark)
     money = costs["point_value"] * (held * (mark - opens) + np.r_[0.0, gap[:-1]]) + paid / draws
-    daily = pd.Series(money).groupby(day.to_numpy()).sum()
+    daily = cast(pd.Series, pd.Series(money).groupby(day.to_numpy()).sum())
     return daily, float(total.std(ddof=1) / np.sqrt(draws) / len(daily))

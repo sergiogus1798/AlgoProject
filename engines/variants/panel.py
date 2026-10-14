@@ -1,6 +1,7 @@
 """A retested variant batch read back: its C3 columns by split, its usable points, its panel."""
 
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -61,7 +62,7 @@ def label(comp: tuple[tuple, tuple]) -> str:
     return f"{'+'.join(comp[0])}__{'+'.join(comp[1])}"
 
 
-def columns(comp: tuple[tuple, tuple]) -> dict:
+def columns(comp: tuple[tuple, tuple]) -> dict[str, str]:
     """The four C3 columns one composition of the split is measured on.
 
     Args:
@@ -96,8 +97,8 @@ def points(metrics: pd.DataFrame, min_trades: int, cols: dict) -> pd.DataFrame:
         than a statement about the surface.
     """
     kept = metrics.dropna(subset=[cols["is"], cols["oos"]])
-    return kept[(kept[cols["trades_is"]] >= min_trades)
-                & (kept[cols["trades_oos"]] >= min_trades)]
+    return cast(pd.DataFrame, kept[(kept[cols["trades_is"]] >= min_trades)
+                                   & (kept[cols["trades_oos"]] >= min_trades)])
 
 
 def panel(work: Path, period: str) -> pd.DataFrame:
@@ -164,7 +165,7 @@ def usable(wide: pd.DataFrame, metrics: pd.DataFrame, min_trades: int,
         that happen to share a name.
     """
     kept = set(points(metrics, min_trades, cols)["variant_id"])
-    return wide[[c for c in wide.columns if c in kept]]
+    return cast(pd.DataFrame, wide[[c for c in wide.columns if c in kept]])
 
 
 def windows(wide: pd.DataFrame, boundary: str) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -179,4 +180,5 @@ def windows(wide: pd.DataFrame, boundary: str) -> tuple[pd.DataFrame, pd.DataFra
         about the selection procedure, not about this particular history -- but the cost
         of a selection rule in §8c is a question about exactly this split.
     """
-    return wide[wide.index < boundary], wide[wide.index >= boundary]
+    return (cast(pd.DataFrame, wide[wide.index < boundary]),
+            cast(pd.DataFrame, wide[wide.index >= boundary]))

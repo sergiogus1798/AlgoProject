@@ -6,12 +6,16 @@ cost `calibrate.charged` measures, which holds no spread and no slippage
 (knowhow/research/monkey-reprice-audit.md). Nothing of the ladder is touched here, so every
 number it gave before this file existed is the number it gives now."""
 
+from collections.abc import Mapping
+from typing import Any, cast
+
 import numpy as np
 import pandas as pd
 
 from engines.market import calibrate, reprice
 from engines.market.feed import scale
 from engines.nulls import lookup
+from engines.nulls.lookup import Grid, Located, Table
 
 # What each rung of model.RUNGS hands to chance here, beside the entry bar: (the hold is
 # redrawn from the strategy's own, the sizing by volatility is stripped).
@@ -45,7 +49,7 @@ def atr_sized(atr: np.ndarray, entry: np.ndarray, size: np.ndarray,
 
 
 def grid(bars: pd.DataFrame, inside: np.ndarray, labels: np.ndarray,
-         week_mask: np.ndarray | None = None) -> dict:
+         week_mask: np.ndarray | None = None) -> Grid:
     """What every strategy of a run shares: the bars, their windows and where a draw may land.
 
     Args:
@@ -66,8 +70,9 @@ def grid(bars: pd.DataFrame, inside: np.ndarray, labels: np.ndarray,
     atr = np.r_[np.nan, calibrate.atr(bars)[:-1]]
     usable = np.isfinite(atr[inside]) & (atr[inside] > 0)
     if week_mask is not None:
-        usable &= week_mask[scale.minutes(bars.index[inside]) % scale.WEEK]
-    hour = bars.index.hour.to_numpy()
+        usable &= week_mask[scale.minutes(cast(pd.DatetimeIndex, bars.index[inside])) % scale.WEEK]
+    stamps = cast(pd.DatetimeIndex, bars.index)
+    hour = stamps.hour.to_numpy()  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.hour
     eligible = inside[usable]
     edges = pd.Series(inside).groupby(np.asarray(labels)).agg(["min", "max"])
     return {"bars": bars, "time": bars.index.to_numpy(), "atr": atr, "eligible": eligible,
@@ -76,8 +81,8 @@ def grid(bars: pd.DataFrame, inside: np.ndarray, labels: np.ndarray,
             "last": int(inside[-1])}
 
 
-def located(shared: dict, entry: np.ndarray, leave: np.ndarray, size: np.ndarray,
-            side: np.ndarray, window: np.ndarray) -> dict:
+def located(shared: Grid, entry: np.ndarray, leave: np.ndarray, size: np.ndarray,
+            side: np.ndarray, window: np.ndarray) -> Located:
     """One strategy's real trades on the grid, each with the window its monkeys are drawn in.
 
     Args:
@@ -97,7 +102,8 @@ def located(shared: dict, entry: np.ndarray, leave: np.ndarray, size: np.ndarray
             "hour": shared["hour"][np.asarray(entry)], "lo": lo, "hi": hi}
 
 
-def draw(shared: dict, mine: dict, rung: str, draws: int, rng: np.random.Generator) -> dict:
+def draw(shared: Grid, mine: Located, rung: str, draws: int,
+         rng: np.random.Generator) -> dict[str, np.ndarray]:
     """Monkeys of one strategy: every trade re-entered at a uniform bar of its own window AND hour.
 
     Args:
@@ -146,7 +152,7 @@ def draw(shared: dict, mine: dict, rung: str, draws: int, rng: np.random.Generat
     return {"entries": entries, "holds": holds, "sizes": sizes}
 
 
-def price(shared: dict, mine: dict, drawn: dict,
+def price(shared: Grid, mine: Mapping[str, Any], drawn: dict,
           costs: reprice.Costs) -> tuple[np.ndarray, np.ndarray]:
     """Every drawn trade's money P/L at the declared costs, in one reprice.pnl call.
 
@@ -166,7 +172,7 @@ def price(shared: dict, mine: dict, drawn: dict,
                        drawn["sizes"], costs)
 
 
-def priced(shared: dict, mine: dict, costs: reprice.Costs, rung: str) -> dict:
+def priced(shared: Grid, mine: Located, costs: reprice.Costs, rung: str) -> Table:
     """Every trade a monkey of one strategy can draw under one rung, priced once.
 
     Args:
@@ -190,10 +196,11 @@ def priced(shared: dict, mine: dict, costs: reprice.Costs, rung: str) -> dict:
         value[done:done + BLOCK] = price(
             shared, {"side": cells["side"][done:done + BLOCK]},
             {"entries": enter, "holds": leave - enter, "sizes": sizes}, costs)[0]
-    return {"value": value, "redraw": redraw} | {k: cells[k] for k in ("off", "room", "hid")}
+    return {"value": value, "redraw": redraw, "off": cells["off"], "room": cells["room"],
+            "hid": cells["hid"]}
 
 
-def means(shared: dict, mine: dict, costs: reprice.Costs, rung: str, draws: int,
+def means(shared: Grid, mine: Located, costs: reprice.Costs, rung: str, draws: int,
           rng: np.random.Generator) -> np.ndarray:
     """The mean P/L per trade of every monkey of one strategy under one rung.
 

@@ -1,6 +1,7 @@
 """What the study is run on: its knobs, one strategy's trades, and the bars they sat on."""
 
 from pathlib import Path
+from typing import Any, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -9,11 +10,23 @@ import pyarrow.parquet as pq
 from core.barstore import read as read_bars
 from core.paths import DATA
 from core.study import config as study_config
+from engines.market.calibrate import Convention, OnGrid
 
 CONFIG = Path(__file__).with_name("config.yaml")
 
 
-def config(overrides: list[str]) -> dict:
+class Fixed(TypedDict):
+    """What simulate.fixed() keeps for the real run and every null one."""
+
+    located: OnGrid
+    bars: dict[str, np.ndarray]
+    value: float
+    cost: np.ndarray
+    atr: np.ndarray
+    checks: Convention
+
+
+def config(overrides: list[str]) -> dict[str, Any]:
     """The study's knobs, with command-line overrides applied.
 
     Args:
@@ -115,7 +128,7 @@ def bars(feed: str, timeframe: str) -> pd.DataFrame:
     return read_bars(feed, timeframe)
 
 
-def on_grid(trades: pd.DataFrame, index: pd.DatetimeIndex, max_hold: int) -> dict:
+def on_grid(trades: pd.DataFrame, index: pd.DatetimeIndex, max_hold: float) -> OnGrid:
     """Locate every trade on the bar grid, and refuse if one does not fit.
 
     Args:

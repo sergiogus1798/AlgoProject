@@ -11,7 +11,7 @@ from engines.variants import excess
 DAY = np.timedelta64(1, "D")
 
 
-def monday(time: np.ndarray | pd.Series) -> np.ndarray:
+def monday(time: np.ndarray | pd.Series | np.datetime64) -> np.ndarray:
     """The Monday of the calendar week each stamp falls in, on the stamps' own clock.
 
     Args:

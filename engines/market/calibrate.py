@@ -3,6 +3,8 @@
 The point-value and cost measurement the travel test's validity controls (`studies/transfer/crossmarket/travel/validity.py`) and step 8's repricer read.
 """
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
@@ -10,7 +12,7 @@ import pandas as pd
 # One entry per (bars, window). A population study calls atr() once per strategy over the
 # very same bars -- 234 calls x 39 ms = 9.2 s of the gate's 33 -- and the result depends on
 # nothing else. The frame is held in the value so its id cannot be recycled under the key.
-_ATR_CACHE: dict = {}
+_ATR_CACHE: dict[tuple[int, int, int], tuple[pd.DataFrame, np.ndarray]] = {}
 
 
 # The lookback both studies price volatility over unless they say otherwise.
@@ -35,7 +37,7 @@ def atr(frame: pd.DataFrame, window: int = ATR_BARS) -> np.ndarray:
         spread = pd.concat([frame["High"] - frame["Low"], (frame["High"] - prev).abs(),
                             (frame["Low"] - prev).abs()], axis=1).max(axis=1)
         _ATR_CACHE.clear()
-        _ATR_CACHE[key] = (frame, spread.rolling(window).mean().to_numpy())
+        _ATR_CACHE[key] = (frame, np.asarray(spread.rolling(window).mean()))
     return _ATR_CACHE[key][1]
 
 
@@ -71,7 +73,24 @@ def charged(trades: pd.DataFrame, value: float) -> np.ndarray:
     return (move - trades["Profit/Loss"]).to_numpy(np.float64)
 
 
-def sizing(trades: pd.DataFrame, entry_atr: np.ndarray) -> dict:
+class OnGrid(TypedDict):
+    """Trades located on the bar grid (inputs.on_grid)."""
+
+    entry: np.ndarray
+    exit: np.ndarray
+    hold: np.ndarray
+    size: np.ndarray
+    window: tuple[int, int]
+
+
+class Sizing(TypedDict):
+    """sizing() — the constant of size = c / ATR and its dispersion."""
+
+    c: float
+    cv: float
+
+
+def sizing(trades: pd.DataFrame, entry_atr: np.ndarray) -> Sizing:
     """The volatility-normalised sizing rule, recovered and scored.
 
     Args:
@@ -89,12 +108,21 @@ def sizing(trades: pd.DataFrame, entry_atr: np.ndarray) -> dict:
             "cv": float(np.nanstd(product) / np.nanmean(product))}
 
 
+class Convention(TypedDict):
+    """convention() — the bar price SQX filled at and how well it reconciles."""
+
+    fill: str
+    corr: float
+    median_gap: float
+    runner_up: float
+
+
 CONVENTIONS = {"open-open": ("Open", "Open"), "open-close": ("Open", "Close"),
                "close-open": ("Close", "Open"), "close-close": ("Close", "Close")}
 
 
-def convention(trades: pd.DataFrame, frame: pd.DataFrame, located: dict, value: float,
-               cost: np.ndarray) -> dict:
+def convention(trades: pd.DataFrame, frame: pd.DataFrame, located: OnGrid, value: float,
+               cost: np.ndarray) -> Convention:
     """Which bar price SQX filled at, measured rather than assumed.
 
     Args:

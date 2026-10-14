@@ -2,9 +2,11 @@
 
 import hashlib
 from collections.abc import Sequence
+from typing import cast
 
 import numpy as np
 import pandas as pd
+from pandas.core.util.hashing import hash_pandas_object
 
 COLUMNS = ("Open time", "Close time", "Type", "Size", "Open price", "Close price", "Profit/Loss")
 
@@ -23,9 +25,9 @@ def prints(trades: pd.DataFrame, unit: str = "variant_id",
         only when every trade matches; a variant without a trade has no row.
     """
     rows = trades.sort_values([unit, *columns], kind="stable")
-    row = pd.util.hash_pandas_object(rows[list(columns)], index=False)
-    return row.groupby(rows[unit].to_numpy(), sort=False).agg(
-        lambda h: hashlib.blake2b(h.to_numpy(np.uint64).tobytes(), digest_size=16).hexdigest())
+    row = hash_pandas_object(rows[list(columns)], index=False)
+    return cast(pd.Series, row.groupby(rows[unit].to_numpy(), sort=False).agg(
+        lambda h: hashlib.blake2b(h.to_numpy(np.uint64).tobytes(), digest_size=16).hexdigest()))
 
 
 def keep(fingerprint: pd.Series, first: Sequence = ()) -> tuple[pd.Index, float]:
@@ -41,4 +43,4 @@ def keep(fingerprint: pd.Series, first: Sequence = ()) -> tuple[pd.Index, float]
     """
     front = fingerprint.index.isin(first)
     kept = ~fingerprint.iloc[np.argsort(~front, kind="stable")].duplicated().reindex(fingerprint.index)
-    return fingerprint.index[kept.to_numpy()], float(1 - kept.mean())
+    return cast(pd.Index, fingerprint.index[kept.to_numpy()]), float(1 - kept.mean())

@@ -42,7 +42,7 @@ def profit_factor(pnl: np.ndarray) -> np.ndarray:
     return np.divide(gain, loss, out=np.full_like(gain, np.inf), where=loss > 0)
 
 
-def measure(pnl: np.ndarray, names: list[str]) -> dict:
+def measure(pnl: np.ndarray, names: list[str]) -> dict[str, np.ndarray]:
     """Every requested statistic, for every run.
 
     Args:
@@ -62,8 +62,8 @@ def measure(pnl: np.ndarray, names: list[str]) -> dict:
         ones are 36% less volatile.
     """
     wanted = set(names)
-    net = pnl.sum(axis=1) if wanted & {"net", "retdd"} else None
-    fall = drawdown(pnl) if wanted & {"dd", "retdd"} else None
+    net = pnl.sum(axis=1) if wanted & {"net", "retdd"} else np.empty(0)
+    fall = drawdown(pnl) if wanted & {"dd", "retdd"} else np.empty(0)
     build = {"net": lambda: net,
              "sharpe": lambda: pnl.mean(axis=1) / pnl.std(axis=1, ddof=1),
              "pf": lambda: profit_factor(pnl),

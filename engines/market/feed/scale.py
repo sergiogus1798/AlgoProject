@@ -118,7 +118,7 @@ def sigma(close: np.ndarray, at: np.ndarray, cells: np.ndarray, first: int, tick
     Returns:
         Per bar, in log-return units; NaN before the scale has warmed up.
     """
-    across = pd.DataFrame(np.where(cells > 0, cells, np.nan)).median(axis=0).to_numpy()
+    across = np.asarray(pd.DataFrame(np.where(cells > 0, cells, np.nan)).median(axis=0))
     prev = np.r_[close[0], close[:-1]]
     cell = own(at, cells, first)
     floor = np.maximum(floor_rel * across[at // WEEK - first], floor_ticks * tick / prev)

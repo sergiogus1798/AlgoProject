@@ -1,5 +1,7 @@
 """Observed against chance: how many of a family of tests passed, and how many should have."""
 
+from typing import TypedDict
+
 import numpy as np
 
 LAMBDA = 0.5        # Storey's cut: p above it are taken as coming from strategies with no edge
@@ -25,7 +27,19 @@ def share_null(p: np.ndarray, cut: float = LAMBDA) -> float:
     return float(min((p > cut).sum() / ((1 - cut) * len(p)), 1.0))
 
 
-def excess(p: np.ndarray, alpha: float) -> dict:
+class Excess(TypedDict):
+    """excess() — passes against chance."""
+
+    n: int
+    observed: int
+    expected_all_null: float
+    expected: float
+    share_null: float
+    excess: float
+    fdr: float
+
+
+def excess(p: np.ndarray, alpha: float) -> Excess:
     """How many tests passed, how many chance alone would have, and what is left over.
 
     Args:
@@ -53,7 +67,17 @@ def excess(p: np.ndarray, alpha: float) -> dict:
             "fdr": float(min(1.0, alpha * n / observed)) if observed else float("nan")}
 
 
-def resolution(p: np.ndarray, alpha: float, draws: int) -> dict:
+class Resolution(TypedDict):
+    """resolution() — whether the p-values are fine enough."""
+
+    floor: float
+    bar: float
+    reachable: bool
+    saturated: int
+    draws_needed: int
+
+
+def resolution(p: np.ndarray, alpha: float, draws: int) -> Resolution:
     """Whether the p-values are fine-grained enough for the correction to read them.
 
     Args:

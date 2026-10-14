@@ -6,6 +6,7 @@ discard: it locates a result, names what is wrong with it, and stops."""
 import numpy as np
 
 from core import assetcheck, assetdata
+from engines.nulls.inputs import Fixed
 from engines.nulls.stats import GOOD_HIGH
 
 RECONCILE_FLOOR = 0.99      # below this the priced run is not the run SQX reported
@@ -31,7 +32,7 @@ def pvalue(seen: float, drawn: np.ndarray, name: str) -> float:
     return float((1 + beaten) / (len(drawn) + 1))
 
 
-def attribute(seen: dict, per_rung: dict, name: str) -> dict:
+def attribute(seen: dict, per_rung: dict, name: str) -> dict[str, float]:
     """How much of the edge over the monkey each channel accounts for.
 
     Args:
@@ -56,7 +57,7 @@ def attribute(seen: dict, per_rung: dict, name: str) -> dict:
             "null_mean": mean["free"], "real": seen[name]}
 
 
-def distrust(kept: dict, found: dict, trades: int, cfg: dict) -> list[str]:
+def distrust(kept: Fixed, found: dict, trades: int, cfg: dict) -> list[str]:
     """Every reason to read these numbers with suspicion, in the owner's language.
 
     Args:

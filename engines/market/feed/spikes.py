@@ -1,5 +1,7 @@
 """Spikes on the close and on the wick, in units of the bar's own scale, and whether they reverted."""
 
+from typing import TypedDict
+
 import numpy as np
 
 
@@ -42,8 +44,16 @@ def reverted(c: np.ndarray, at: np.ndarray, i: np.ndarray, reach: np.ndarray, m:
     return whole & (back <= (1 - rho) * reach * (1 + 1e-9))
 
 
+class Spikes(TypedDict):
+    """spikes() — per-bar z on the close and on the wick."""
+
+    z_close: np.ndarray
+    z_wick: np.ndarray
+    wick_price: np.ndarray
+
+
 def spikes(o: np.ndarray, h: np.ndarray, low: np.ndarray, c: np.ndarray, at: np.ndarray,
-           r: np.ndarray, sigma: np.ndarray) -> dict:
+           r: np.ndarray, sigma: np.ndarray) -> Spikes:
     """Each bar's move on the close and on the wick, in multiples of its scale.
 
     Args:

@@ -6,6 +6,7 @@ here with no threshold applied to it."""
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import parent_process
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -15,7 +16,7 @@ from engines.market import calibrate
 from engines.nulls import inputs, kernel, model
 
 
-def fixed(trades: pd.DataFrame, frame: pd.DataFrame, cfg: dict) -> dict:
+def fixed(trades: pd.DataFrame, frame: pd.DataFrame, cfg: dict) -> inputs.Fixed:
     """Everything that is the same for the real run and for every null one.
 
     Args:
@@ -27,7 +28,7 @@ def fixed(trades: pd.DataFrame, frame: pd.DataFrame, cfg: dict) -> dict:
         The located trades, the bar arrays, the measured point value and per-trade cost, the
         price barriers, and the reconciliation that says whether any of it can be believed.
     """
-    located = inputs.on_grid(trades, frame.index, cfg["barrier"]["max_hold"])
+    located = inputs.on_grid(trades, cast(pd.DatetimeIndex, frame.index), cfg["barrier"]["max_hold"])
     value = calibrate.point_value(trades)
     cost = calibrate.charged(trades, value)
     checks = calibrate.convention(trades, frame, located, value, cost)
@@ -54,7 +55,7 @@ def warm(frame: pd.DataFrame, cfg: dict) -> None:
     calibrate.atr(frame, cfg["barrier"]["atr_bars"])
 
 
-def prime(kept: dict, cfg: dict) -> None:
+def prime(kept: inputs.Fixed, cfg: dict) -> None:
     """Compile every specialisation of the kernel here, before a population study forks.
 
     Args:
@@ -72,7 +73,7 @@ def prime(kept: dict, cfg: dict) -> None:
         nulls(kept, rung, small, "prime")
 
 
-def real(kept: dict, names: list[str]) -> dict:
+def real(kept: inputs.Fixed, names: list[str]) -> dict[str, float]:
     """The statistics of the run that actually happened, priced the same way as the nulls.
 
     Args:
@@ -93,7 +94,8 @@ def real(kept: dict, names: list[str]) -> dict:
     return {name: float(got[kernel.NAMES.index(name)]) for name in names}
 
 
-def nulls(kept: dict, rung: str, cfg: dict, key: str, threads: int | None = None) -> dict:
+def nulls(kept: inputs.Fixed, rung: str, cfg: dict, key: str,
+          threads: int | None = None) -> dict[str, np.ndarray]:
     """Every null run under one rung, in blocks, each drawn from its own seeded stream.
 
     Args:

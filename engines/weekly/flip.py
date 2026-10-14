@@ -1,6 +1,7 @@
 """The weekly shared-sign flip null: one sign per week for every unit, and where a statistic falls in it."""
 
 from collections.abc import Iterator
+from typing import TypedDict
 
 import numpy as np
 from scipy.stats import rankdata
@@ -45,7 +46,16 @@ def chunks(flips: np.ndarray, size: int) -> Iterator[np.ndarray]:
     return (flips[start:start + size] for start in range(0, len(flips), size))
 
 
-def tails(observed: float, null: np.ndarray) -> dict:
+class Tails(TypedDict):
+    """tails() — one-sided p-values and the null's 5th/95th percentiles."""
+
+    p_mas: float
+    p_menos: float
+    nulo_p5: float
+    nulo_p95: float
+
+
+def tails(observed: float, null: np.ndarray) -> Tails:
     """Where the observed statistic falls among the null's draws.
 
     Args:

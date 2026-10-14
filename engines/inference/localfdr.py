@@ -1,5 +1,7 @@
 """Local false discovery rate of one lot of z, against the lot's own empirical null."""
 
+from typing import TypedDict
+
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
 from scipy.optimize import minimize
@@ -35,7 +37,17 @@ def empirical_null(z: np.ndarray) -> tuple[float, float, float]:
     return float(d), float(s), float(min(1.0, len(inside) / len(z) / (norm.cdf(hi, d, s) - norm.cdf(lo, d, s))))
 
 
-def fit(z: np.ndarray) -> dict:
+class Fit(TypedDict):
+    """fit() — posterior non-null probability and the empirical null."""
+
+    p: np.ndarray | None
+    delta0: float | None
+    sigma0: float | None
+    pi0: float | None
+    reason: str
+
+
+def fit(z: np.ndarray) -> Fit:
     """p_i = 1 - fdr(z_i): the posterior probability that strategy i is not null.
 
     Args:
