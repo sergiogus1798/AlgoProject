@@ -68,7 +68,13 @@ def _results(path: Path) -> str:
         The text of MonteCarloRetest_Results.xml.
     """
     with zipfile.ZipFile(path) as archive:
-        return archive.read(f"{_prefix(archive)}/{RESULTS}").decode("utf8", errors="replace")
+        xml = archive.read(f"{_prefix(archive)}/{RESULTS}").decode("utf8", errors="replace")
+    levels = sorted(int(n) for n in re.findall(r'<LevelStat level="(\d+)"', xml))
+    assert levels == list(CONFIDENCE) and "<RobustnessOriginalResults>" in xml, (
+        f"{path}: retest levels {levels}, expected {CONFIDENCE} plus the original results")
+    assert all(t in xml for t in ("<NumberOfSimulations>", "<Symbol>", "<TimeFrame>", "<DateRange>")), (
+        f"{path}: retest result lacks its header tags")
+    return xml
 
 
 def simulations(path: Path) -> dict:
@@ -90,6 +96,7 @@ def simulations(path: Path) -> dict:
             found = _MEMBER.search(name)
             if found and name.startswith(prefix):
                 members[int(found.group(1))] = name
+        assert members, f"{path}: retest stores no simulation orders"
         index = np.array(sorted(members), dtype=np.int32)
         vectors = [_orders(archive.read(members[i]), members[i]) for i in index]
     offsets = np.zeros(len(vectors) + 1, dtype=np.int64)
@@ -187,6 +194,8 @@ def settings(path: Path) -> dict:
     with zipfile.ZipFile(path) as archive:
         root = ElementTree.fromstring(archive.read("lastSettings.xml"))
     retest = root.find(".//MonteCarloRetest")
+    assert retest is not None and retest.find("Settings") is not None, (
+        f"{path}: lastSettings.xml has no MonteCarloRetest/Settings")
     assert retest.get("use") == "true", f"{path}: lastSettings.xml says no retest ran"
     block = retest.find("Settings")
     methods = {m.get("type"): {p.get("key"): (p.text or "").strip()

@@ -43,7 +43,10 @@ def config(project: str) -> ElementTree.Element:
         Root element, holding the task list, databank registrations and settings.
     """
     with zipfile.ZipFile(resolve(project)) as z:
-        return ElementTree.fromstring(z.read("config.xml"))
+        root = ElementTree.fromstring(z.read("config.xml"))
+        assert root.tag == "Project" and root.find("Tasks") is not None, (
+            f"{z.filename}: config.xml root is {root.tag}, expected Project/Tasks")
+        return root
 
 
 def tasks(project: str) -> list[dict]:
@@ -74,7 +77,12 @@ def task_xml(project: str, member: str) -> ElementTree.Element:
         Root element of that task definition.
     """
     with zipfile.ZipFile(resolve(project)) as z:
-        return ElementTree.fromstring(z.read(member))
+        # Not checked in config(): a .cfx missing a task member is a known corruption (OPEN.md
+        # #3) that callers report per task (strategymeta.settings.producers).
+        assert member in z.namelist(), f"{z.filename}: no {member} in the zip (caught mid-save?)"
+        root = ElementTree.fromstring(z.read(member))
+        assert root.tag == "Settings", f"{z.filename}:{member}: root is {root.tag}, expected Settings"
+        return root
 
 
 def output_databank(task: ElementTree.Element) -> str:

@@ -101,7 +101,9 @@ def describe(path: Path) -> tuple[str, str, str]:
     """
     with zipfile.ZipFile(path) as z:
         names = z.namelist()
-        text = z.read(next(n for n in names if n.endswith(INNER))).decode("utf-8", "replace")
+        assert INNER in names, f"{path}: no {INNER} — not a strategy .sqx"
+        text = z.read(INNER).decode("utf-8", "replace")
+    assert text.rstrip().endswith("</StrategyFile>"), f"{path}: {INNER} is not a whole StrategyFile"
     found = next((m for m in map(RESULTS_RE.search, names) if m), None)
     return _hashed(text), *((found.group(1), found.group(2)) if found else ("", ""))
 
@@ -117,8 +119,10 @@ def rules(path: Path) -> str:
         DOES is in here; the rest of the archive is results.
     """
     with zipfile.ZipFile(path) as z:
-        inner = next(n for n in z.namelist() if n.endswith(INNER))
-        return z.read(inner).decode("utf-8", "replace")
+        assert INNER in z.namelist(), f"{path}: no {INNER} — not a strategy .sqx"
+        text = z.read(INNER).decode("utf-8", "replace")
+    assert text.rstrip().endswith("</StrategyFile>"), f"{path}: {INNER} is not a whole StrategyFile"
+    return text
 
 
 def structure(path: Path) -> str:
@@ -165,8 +169,11 @@ def xml(path: Path) -> ElementTree.Element:
         Root element of strategy_Portfolio.xml — the rules, parameters and orders.
     """
     with zipfile.ZipFile(path) as z:
-        inner = next(n for n in z.namelist() if n.endswith(INNER))
-        return ElementTree.fromstring(z.read(inner))
+        assert INNER in z.namelist(), f"{path}: no {INNER} — not a strategy .sqx"
+        root = ElementTree.fromstring(z.read(INNER))
+    assert root.tag == "StrategyFile" and root.find("Strategy") is not None, (
+        f"{path}: {INNER} root is {root.tag}, expected StrategyFile/Strategy")
+    return root
 
 
 def parameters(path: Path) -> dict[str, str]:
@@ -180,7 +187,7 @@ def parameters(path: Path) -> dict[str, str]:
         element's text, not an attribute.
     """
     return {p.get("key"): (p.text or "").strip()
-            for p in xml(path).iter("Param") if p.get("key")}
+            for p in xml(path).iter("Param")}
 
 
 def param_count(path: Path) -> int:
@@ -198,7 +205,7 @@ def param_count(path: Path) -> int:
         regardless of when it was built or last retested.
     """
     return sum(1 for v in xml(path).iter("variable")
-              if (v.findtext("paramType") or "") in COUNTED_PARAM_TYPES)
+              if v.findtext("paramType") in COUNTED_PARAM_TYPES)
 
 
 # 🔬 2026-10-04: the constants of com.strategyquant.tradinglib.BadStrategyException
