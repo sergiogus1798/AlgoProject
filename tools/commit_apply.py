@@ -13,6 +13,7 @@ import sys
 import time
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -56,7 +57,7 @@ def facts(repo: Path) -> str:
     return "code\tage_min\tsize_kb\tpath\n" + "\n".join(rows)
 
 
-def load(file: Path) -> dict:
+def load(file: Path) -> dict[str, Any]:
     """The proposal as {"groups": [...], ...}; a bare list of groups is accepted too."""
     data = json.loads(file.read_text(encoding="utf-8"))
     return {"groups": data} if isinstance(data, list) else data
@@ -137,7 +138,7 @@ def apply(file: Path, repo: Path, *, dry: bool = False, only: set[int] | None = 
 
 def main() -> None:
     """Parse the flags and apply the proposal of the given day (default today)."""
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("day", nargs="?", default=str(date.today()), help="YYYY-MM-DD of the proposal")
     ap.add_argument("--dry-run", action="store_true", help="print what would be done, change nothing")
     ap.add_argument("--only", help="comma-separated group numbers, e.g. 1,3")

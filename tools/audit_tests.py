@@ -155,7 +155,7 @@ def git_changed() -> set[str]:
 
 def main() -> None:
     """Run all tests, or with --changed the touched ones; print the report; exit 1 on a failure."""
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--changed", nargs="*", metavar="FILE",
                     help="only tests touched by FILEs (default: the .py files in git status)")
     args = ap.parse_args()

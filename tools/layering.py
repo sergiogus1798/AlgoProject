@@ -37,7 +37,7 @@ ALLOW: set[tuple[str, str]] = {
 
 def unit(parts: tuple[str, ...]) -> str:
     """The layer of a dotted module: its top package, except `ui`, split in daemon and desktop."""
-    return ".".join(parts[:2]) if parts[0] == "ui" and len(parts) > 1 else parts[0]
+    return ".".join(parts[:2] if parts[:1] == ("ui",) else parts[:1])
 
 
 def edges(files: list[Path]) -> set[tuple[str, str, str]]:

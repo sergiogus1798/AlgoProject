@@ -5,6 +5,7 @@ a new finding is dead code (delete it, rule 21) or belongs here with its reason.
 """
 
 # ruff: noqa
+# pyright: reportUndefinedVariable=false, reportUnusedExpression=false
 
 # attribute set on a stdlib/third-party object, read by that library
 _.whitespace  # .claude/hooks/shellwords.py

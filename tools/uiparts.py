@@ -10,11 +10,12 @@ import re
 from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
-from PySide6.QtCore import QModelIndex, QPoint, Qt
+from PySide6.QtCore import QAbstractItemModel, QModelIndex, QPoint, Qt
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import (QAbstractButton, QAbstractItemView, QAbstractSpinBox, QComboBox, QLineEdit,
-                               QStackedWidget, QTabBar, QTabWidget, QWidget)
+from PySide6.QtWidgets import (QAbstractButton, QAbstractItemView, QAbstractSpinBox, QComboBox, QDoubleSpinBox, QLineEdit,
+                               QSpinBox, QStackedWidget, QTableView, QTabBar, QTabWidget, QWidget)
 from shiboken6 import isValid
 
 from ui.desktop.helpmark import Mark
@@ -36,7 +37,7 @@ class Item:
     undo: Callable[[], None] | None = None      # run once the view has reacted (a typed probe is taken back)
 
 
-def columns(model: object) -> int:
+def columns(model: QAbstractItemModel) -> int:
     """A model's column count; a list model keeps its own private and has one."""
     try:
         return model.columnCount(QModelIndex())
@@ -54,8 +55,9 @@ def scope(w: QWidget) -> tuple:
     out, a = [], w
     while a is not None:
         p = a.parentWidget()
-        if isinstance(p, QStackedWidget) and isinstance(p.parentWidget(), QTabWidget):
-            out.append(plain(p.parentWidget().tabText(p.parentWidget().indexOf(a))))
+        tabs = p.parentWidget() if isinstance(p, QStackedWidget) else None
+        if isinstance(tabs, QTabWidget):
+            out.append(plain(tabs.tabText(tabs.indexOf(a))))
         a = p
     return tuple(reversed(out))
 
@@ -75,26 +77,27 @@ def view_parts(w: QAbstractItemView) -> list[tuple]:
         return parts
     rows, cols = m.rowCount(QModelIndex()), columns(m)
     name = lambda r: " · ".join(str(m.index(r, c).data() or "") for c in range(min(cols, 2)))[:60]  # noqa: E731
-    if w.selectionMode() != QAbstractItemView.NoSelection:
+    if w.selectionMode() != QAbstractItemView.SelectionMode.NoSelection:
         parts += [(f"fila «{name(r)}»", lambda r=r: w.setCurrentIndex(m.index(r, 0)), "") for r in range(min(rows, ROWS))]
-    head = getattr(w, "horizontalHeader", lambda: None)()
+    head = w.horizontalHeader() if isinstance(w, QTableView) else None
     if head is not None and head.isVisible():
-        parts += [(f"cabecera «{m.headerData(c, Qt.Horizontal)}»", lambda c=c: QTest.mouseClick(
-            head.viewport(), Qt.LeftButton, pos=QPoint(head.sectionViewportPosition(c) + 6, 6)), "") for c in range(cols)]
+        hd, hv = head, head.viewport()
+        parts += [(f"cabecera «{m.headerData(c, Qt.Orientation.Horizontal)}»", lambda c=c: QTest.mouseClick(
+            hv, Qt.MouseButton.LeftButton, pos=QPoint(hd.sectionViewportPosition(c) + 6, 6)), "") for c in range(cols)]
 
     def click(r: int, c: int) -> None:
         """Scroll to one cell and click it."""
         w.scrollTo(m.index(r, c))
-        QTest.mouseClick(w.viewport(), Qt.LeftButton, pos=w.visualRect(m.index(r, c)).center())
+        QTest.mouseClick(w.viewport(), Qt.MouseButton.LeftButton, pos=w.visualRect(m.index(r, c)).center())
 
     every = rows * cols <= CELLS
     parts += [(f"celda ({r},{c})", lambda r=r, c=c: click(r, c), "")
               for r in range(rows if every else min(rows, 1)) for c in range(cols)]
     for r in range(min(rows, 3)):
         for c in range(cols):
-            if m.index(r, c).data(Qt.CheckStateRole) is not None:     # the flag alone is every QTableWidgetItem's default
-                parts.append((f"casilla fila {r}", lambda r=r, c=c: [m.setData(m.index(r, c), s, Qt.CheckStateRole)
-                                                                      for s in (Qt.Checked, Qt.Unchecked)], ""))
+            if m.index(r, c).data(Qt.ItemDataRole.CheckStateRole) is not None:     # the flag alone is every QTableWidgetItem's default
+                parts.append((f"casilla fila {r}", lambda r=r, c=c: [m.setData(m.index(r, c), s, Qt.ItemDataRole.CheckStateRole)
+                                                                      for s in (Qt.CheckState.Checked, Qt.CheckState.Unchecked)], ""))
     if rows > ROWS or not every:
         parts.append(("resto de filas y celdas", lambda: None,
                       f"tope: {rows} filas × {cols} columnas; las no tocadas pasan por el mismo código"))
@@ -108,7 +111,7 @@ def parts_of(w: QWidget) -> tuple[str, str, list[tuple]]:
     if isinstance(w, Mark):
         def shown() -> None:
             """Click the mark; it must carry a sentence."""
-            QTest.mouseClick(w, Qt.LeftButton)
+            QTest.mouseClick(w, Qt.MouseButton.LeftButton)
             assert w.toolTip().strip(), "un «?» sin frase de ayuda"
         return "ayuda «?»", plain(w.toolTip())[:40], [("", shown, "")]
     if isinstance(w, QAbstractButton) and not inner:
@@ -125,15 +128,16 @@ def parts_of(w: QWidget) -> tuple[str, str, list[tuple]]:
         return "pestaña", "", [(f"«{t}»", lambda t=t: go(t), "" if w.isTabEnabled(i) else "desactivada")
                                for i, t in enumerate(titles)]
     if isinstance(w, QLineEdit) and not inner:
-        old = w.text()
+        edit, old = w, w.text()
         return "texto", plain(w.placeholderText())[:40] or tip, [
-            (f"{name} «{v}»", lambda v=v: typed(w, v), "", lambda: isValid(w) and w.setText(old))
+            (f"{name} «{v}»", lambda v=v: typed(edit, v), "", lambda: isValid(edit) and edit.setText(old))
             for name, v in (("vacío", ""), ("basura", "zz 1="))]
-    if isinstance(w, QAbstractSpinBox):
-        return "número", tip, [("mínimo", lambda: w.setValue(w.minimum()), ""), ("máximo", lambda: w.setValue(w.maximum()), "")]
+    if isinstance(w, (QSpinBox, QDoubleSpinBox)):
+        sp: Any = w     # int and float spin boxes share these four calls; the stubs type them apart
+        return "número", tip, [("mínimo", lambda: sp.setValue(sp.minimum()), ""), ("máximo", lambda: sp.setValue(sp.maximum()), "")]
     if isinstance(w, QAbstractItemView) and not inner:
         m = w.model()
-        heads = [str(m.headerData(c, Qt.Horizontal) or "") for c in range(min(columns(m), 3))] if m else []
+        heads = [str(m.headerData(c, Qt.Orientation.Horizontal) or "") for c in range(min(columns(m), 3))] if m else []
         return "tabla", "|".join(heads), view_parts(w)
     return "", "", []
 

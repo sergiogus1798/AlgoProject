@@ -48,7 +48,7 @@ def _file_counts(path: Path) -> Counter[str]:
             name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", "")
             if name == "default_rng" and not node.args and not node.keywords:
                 out["unseeded_rng"] += 1
-            if _is_np_random(f) and f.attr not in MODERN_RNG:
+            if isinstance(f, ast.Attribute) and _is_np_random(f) and f.attr not in MODERN_RNG:
                 out["legacy_np_random"] += 1
     return out
 
@@ -64,7 +64,9 @@ def ruff_counts() -> Counter[str]:
 def pyright_counts() -> Counter[str]:
     """Pyright errors per package of pyproject's [tool.pyright] include, from one run (zeros kept)."""
     toml = (depmap.ROOT / "pyproject.toml").read_text(encoding="utf-8")   # no tomllib on 3.10
-    pkgs = re.findall(r'"([^"]+)"', re.search(r"^include = \[(.*?)\]", toml, re.M).group(1))
+    m = re.search(r"^include = \[(.*?)\]", toml, re.M)
+    assert m, "pyproject.toml has no [tool.pyright] include"
+    pkgs = re.findall(r'"([^"]+)"', m[1])
     res = subprocess.run(["pyright", "--outputjson"], capture_output=True, text=True, cwd=depmap.ROOT)
     out = Counter({f"pyright.{p}": 0 for p in pkgs})
     for d in json.loads(res.stdout or "{}").get("generalDiagnostics", []):
@@ -76,7 +78,8 @@ def pyright_counts() -> Counter[str]:
 def counts(files: list[Path]) -> dict[str, int]:
     """Every ratcheted count, flat keys, zeros for the ruff codes and layering included."""
     total = Counter({c: 0 for c in RUFF_CODES})
-    for f in files:
+    for f in files:   # every package keeps its key at 0, or a rise from 0 would go unseen
+        total[f"untyped_dict.{_package(f)}"] += 0
         total.update(_file_counts(f))
     total.update(ruff_counts())
     total.update(pyright_counts())

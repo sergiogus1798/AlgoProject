@@ -25,6 +25,7 @@ import time
 import traceback
 from collections import Counter
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, TypedDict, cast
 
 import uiwalk
 from uiwalk import ERRORS, HERE, settle
@@ -38,13 +39,16 @@ from shiboken6 import isValid  # noqa: E402
 from ui.desktop import background, client  # noqa: E402
 from uiparts import Item, inventory, plain  # noqa: E402
 
+if TYPE_CHECKING:
+    from ui.desktop.shell import Shell
+
 JOB_S = 1800      # seconds a job a button queued may take
 OK, BAD, REFUSED, SKIPPED = "ok", "excepción", "negativa esperada", "no ejercido"
 REFUSAL = re.compile(r"No se (lanza|ha lanzado|declara)|no se envía|Marca al menos|solo se admiten")
 PAINTED = re.compile(r"Traceback|\b[A-Za-z]+(Error|Exception)\b|No se pudo|El demonio no respondió|Falló \(código")
 NOISE = ("propagateSizeHints", "QFontDatabase", "does not support", "Populating font")
 ANSWER = {"yes": False, "text": ""}      # what a modal gets: QMessageBox Yes/No, QInputDialog's text
-RESULTS: list[dict] = []                 # one row per item: ctx, what, result, detail
+RESULTS: list["Verdict"] = []                 # one row per item: ctx, what, result, detail
 FOUND: dict[tuple, str] = {}
 DONE: set[tuple] = set()
 STATE = {"app": None, "shots": None, "log": None, "at": 0, "n": 0, "dialogs": [], "shot": set()}
@@ -80,7 +84,16 @@ def daemon_log() -> None:
             ERRORS.append((HERE["zone"], "registro del demonio:\n" + new[-1500:]))
 
 
-def drive(zone: QWidget, ctx: str, it: Item) -> dict:
+class Verdict(TypedDict):
+    """What driving one action found."""
+
+    ctx: str
+    what: str
+    result: str
+    detail: str
+
+
+def drive(zone: QWidget, ctx: str, it: Item) -> Verdict:
     """Do one action and classify what followed."""
     errors, before, dialogs = len(ERRORS), texts(zone), len(STATE["dialogs"])
     tops = {t for t in QApplication.topLevelWidgets() if t.isVisible()}
@@ -109,7 +122,7 @@ def drive(zone: QWidget, ctx: str, it: Item) -> dict:
         top.close()
     daemon_log()
     if it.nav:
-        shoot(zone.window(), f"{ctx}_{it.what}")
+        shoot(shell_of(zone), f"{ctx}_{it.what}")
     said |= set(STATE["dialogs"][dialogs:])
     painted = sorted(s for s in said if PAINTED.search(s))
     refused = sorted(s for s in said if REFUSAL.search(s) or s.startswith("diálogo"))
@@ -117,6 +130,11 @@ def drive(zone: QWidget, ctx: str, it: Item) -> dict:
         return {"ctx": ctx, "what": it.what, "result": BAD,
                 "detail": " ¦ ".join([e[1].strip()[-700:] for e in ERRORS[errors:]] + painted)}
     return {"ctx": ctx, "what": it.what, "result": REFUSED if refused else OK, "detail": " ¦ ".join(refused)[:400]}
+
+
+def shell_of(zone: QWidget) -> "Shell":
+    """The window a zone lives in."""
+    return cast("Shell", zone.window())
 
 
 def sweep(root: QWidget, ctx: str, zone: QWidget | None = None, skip: tuple = ()) -> None:
@@ -132,11 +150,12 @@ def sweep(root: QWidget, ctx: str, zone: QWidget | None = None, skip: tuple = ()
         DONE.add((ctx, it.key))
         RESULTS.append(drive(zone or root, ctx, it))
         if zone is not None and not zone.isVisible():     # the action navigated away (an import): come back
-            zone.window().open_zone(next(k for k, v in zone.window().zones.items() if v is zone))
+            win = shell_of(zone)
+            win.open_zone(next(k for k, v in win.zones.items() if v is zone))
             idle()
 
 
-def walk(shell: QWidget, name: str) -> None:
+def walk(shell: "Shell", name: str) -> None:
     """One zone: each module of its rail (when it has one), the module first and then the rest."""
     zone = shell.zones[name]
     shell.open_zone(name)
@@ -170,7 +189,7 @@ def report() -> str:
     return "\n".join(lines) + "\n"
 
 
-def boot(port: int, write: bool = False, log: Path | None = None, shots: Path | None = None) -> QWidget:
+def boot(port: int, write: bool = False, log: Path | None = None, shots: Path | None = None) -> "Shell":
     """The real window against the daemon on `port`, with every trap set; returns the shell."""
     if not client.health(port):
         sys.exit(f"No hay demonio en el puerto {port}: python3 -m ui.daemon.serve --port {port}")
@@ -180,7 +199,7 @@ def boot(port: int, write: bool = False, log: Path | None = None, shots: Path | 
     uiwalk.trap()
     real = client.send
 
-    def send(method: str, path: str, **how: object) -> dict:
+    def send(method: str, path: str, **how: object) -> dict[str, Any]:
         """The window's request, with a non-2xx answer kept for the report."""
         try:
             return real(method, path, **how)
@@ -188,16 +207,16 @@ def boot(port: int, write: bool = False, log: Path | None = None, shots: Path | 
             ERRORS.append((HERE["zone"], f"HTTP {e.response.status_code} {method} /api/{path}: {e.response.text[:300]}"))
             raise
 
-    def modal(box: QDialog) -> int:
+    def modal(box: QDialog) -> QMessageBox.StandardButton:
         """A modal that would block: say it was shown, answer as `ANSWER` says."""
         said = plain(box.text())[:300] if isinstance(box, QMessageBox) else ""
         STATE["dialogs"].append(f"diálogo «{box.windowTitle()}» {said} → {'Sí' if ANSWER['yes'] else 'No'}")
-        return QMessageBox.Yes if ANSWER["yes"] else QMessageBox.No
+        return QMessageBox.StandardButton.Yes if ANSWER["yes"] else QMessageBox.StandardButton.No
 
-    def ask(_parent: QWidget, title: str, text: str = "", *a: object, **k: object) -> int:
+    def ask(_parent: QWidget, title: str, text: str = "", *a: object, **k: object) -> QMessageBox.StandardButton:
         """`QMessageBox.question` and its siblings."""
         STATE["dialogs"].append(f"diálogo «{title}» {plain(text)[:300]} → {'Sí' if ANSWER['yes'] else 'No'}")
-        return QMessageBox.Yes if ANSWER["yes"] else QMessageBox.No
+        return QMessageBox.StandardButton.Yes if ANSWER["yes"] else QMessageBox.StandardButton.No
 
     def get_text(_parent: QWidget, title: str, *a: object, **k: object) -> tuple[str, bool]:
         """`QInputDialog.getText`: the text in `ANSWER`, cancelled when it is empty."""
@@ -205,10 +224,11 @@ def boot(port: int, write: bool = False, log: Path | None = None, shots: Path | 
         return ANSWER["text"], bool(ANSWER["text"])
 
     client.send = send
-    QMessageBox.exec = QDialog.exec = modal
+    setattr(QMessageBox, "exec", modal)
+    setattr(QDialog, "exec", modal)
     for name in ("question", "warning", "information", "critical"):
         setattr(QMessageBox, name, staticmethod(ask))
-    QInputDialog.getText = staticmethod(get_text)
+    setattr(QInputDialog, "getText", staticmethod(get_text))
     qInstallMessageHandler(lambda mode, _ctx, msg: ERRORS.append((HERE["zone"], f"Qt: {msg}")) if mode in (
         QtMsgType.QtWarningMsg, QtMsgType.QtCriticalMsg, QtMsgType.QtFatalMsg) and not any(x in msg for x in NOISE) else None)
     from ui.desktop import helpmark
@@ -228,7 +248,7 @@ def boot(port: int, write: bool = False, log: Path | None = None, shots: Path | 
 
 def main() -> None:
     """Walk one zone and print (or write) its inventory; exit 1 when anything raised."""
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--port", type=int, required=True, help="el puerto del demonio a usar")
     ap.add_argument("--zone", required=True, help="la zona, como la nombra la barra lateral")
     ap.add_argument("--write", action="store_true", help="deja pasar los POST: cada «Calcular» corre de verdad (raíz de prueba)")

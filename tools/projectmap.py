@@ -5,6 +5,7 @@ import ast
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
+from typing import TypedDict
 
 ROOT = Path(__file__).resolve().parent.parent
 GRAPH = ROOT / "graphify-out" / "graph.json"
@@ -57,7 +58,16 @@ def kind(module: str, libs: set[str]) -> str:
     return "MIXED" if libs & NUMERIC else "INFRA"
 
 
-def survey(nodes: dict, edges: list) -> dict:
+class Survey(TypedDict):
+    """What `survey` gathers: lines per file, libraries and dependencies per module, exposed symbols."""
+
+    lines: dict[str, int]
+    libs: defaultdict[str, set[str]]
+    deps: defaultdict[str, Counter[str]]
+    exposed: defaultdict[str, Counter[str]]
+
+
+def survey(nodes: dict, edges: list) -> Survey:
     """Everything the map prints, gathered in one pass over the graph.
 
     Returns:
@@ -65,7 +75,9 @@ def survey(nodes: dict, edges: list) -> dict:
     """
     files = {n["source_file"] for n in nodes.values() if n["source_file"].endswith(".py")}
     lines = {f: len((ROOT / f).read_text(encoding="utf-8").splitlines()) for f in files if (ROOT / f).exists()}
-    libs, deps, exposed = defaultdict(set), defaultdict(Counter), defaultdict(Counter)
+    libs: defaultdict[str, set[str]] = defaultdict(set)
+    deps: defaultdict[str, Counter[str]] = defaultdict(Counter)
+    exposed: defaultdict[str, Counter[str]] = defaultdict(Counter)
     for e in edges:
         if e["relation"] not in USES:
             continue
@@ -92,7 +104,7 @@ def repeated(nodes: dict) -> list[tuple[str, list[str]]]:
     return sorted(((k, sorted(v)) for k, v in where.items() if len(v) >= 3), key=lambda r: -len(r[1]))
 
 
-def render(nodes: dict, s: dict) -> str:
+def render(nodes: dict, s: Survey) -> str:
     """Build the whole PROJECT_MAP.md text; no timestamp, so an unchanged tree regenerates identically."""
     per = defaultdict(list)
     for f, n in s["lines"].items():

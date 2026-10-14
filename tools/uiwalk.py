@@ -19,16 +19,21 @@ import threading
 import time
 import traceback
 from pathlib import Path
+from types import TracebackType
+from typing import TYPE_CHECKING, Any
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QInputDialog,  # noqa: E402
-                               QMessageBox, QTabBar, QTableView)
+                               QMessageBox, QTabBar, QTableWidget, QWidget)
 
 from shiboken6 import isValid  # noqa: E402
 
 from ui.desktop import client  # noqa: E402
+
+if TYPE_CHECKING:
+    from ui.desktop.shell import Shell
 
 # POSTs that only read: the aggregate curve of chosen rows, a config's hash, the chat's next
 # question. Every other POST writes something (a YAML, a ledger row, a job, a load).
@@ -45,7 +50,7 @@ def aim(port: int, write: bool = False) -> None:
         return
     get, real = client.get, client.post
 
-    def post(path: str, body: dict) -> dict:
+    def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
         """Let the reads through; answer every write with an error the views already show."""
         if path == "load":
             return get("load", project=body["project"], databank=body["databank"])
@@ -58,17 +63,17 @@ def aim(port: int, write: bool = False) -> None:
 
 def trap() -> None:
     """Record exceptions from Qt slots and worker threads; make every modal answer «No»."""
-    def hook(kind: type, value: BaseException, tb: object) -> None:
+    def hook(kind: type[BaseException], value: BaseException | None, tb: TracebackType | None) -> None:
         """Keep one exception with the zone it happened in."""
         ERRORS.append((HERE["zone"], "".join(traceback.format_exception(kind, value, tb))))
 
     sys.excepthook = hook
     threading.excepthook = lambda a: hook(a.exc_type, a.exc_value, a.exc_traceback)
     for name in ("question", "warning", "information", "critical"):
-        setattr(QMessageBox, name, staticmethod(lambda *a, **k: QMessageBox.No))
-    QMessageBox.exec = lambda *a, **k: QMessageBox.No
-    QDialog.exec = lambda *a, **k: 0
-    QInputDialog.getText = staticmethod(lambda *a, **k: ("", False))
+        setattr(QMessageBox, name, staticmethod(lambda *a, **k: QMessageBox.StandardButton.No))
+    setattr(QMessageBox, "exec", lambda *a, **k: QMessageBox.StandardButton.No)
+    setattr(QDialog, "exec", lambda *a, **k: 0)
+    setattr(QInputDialog, "getText", staticmethod(lambda *a, **k: ("", False)))
 
 
 def settle(app: QApplication, seconds: float) -> None:
@@ -86,7 +91,7 @@ def settle(app: QApplication, seconds: float) -> None:
         time.sleep(0.05)
 
 
-def drive(app: QApplication, zone: object) -> int:
+def drive(app: QApplication, zone: QWidget) -> int:
     """Move every visible combo, tab bar and table of one zone; return how many were moved."""
     moved = 0
     for box in [b for b in zone.findChildren(QComboBox) if b.isVisible()]:
@@ -103,7 +108,7 @@ def drive(app: QApplication, zone: object) -> int:
                 bar.setCurrentIndex(i)
                 settle(app, 0.4)
         moved += 1
-    for table in [t for t in zone.findChildren(QTableView) if t.isVisible()]:
+    for table in [t for t in zone.findChildren(QTableWidget) if t.isVisible()]:
         if not isValid(table):
             continue
         for r in range(min(table.rowCount(), 3)):
@@ -113,7 +118,7 @@ def drive(app: QApplication, zone: object) -> int:
     return moved
 
 
-def walk(shell: object, app: QApplication, name: str, project: str) -> str:
+def walk(shell: "Shell", app: QApplication, name: str, project: str) -> str:
     """Open one zone, give it its data, drive it; return one line for the report."""
     HERE["zone"] = name
     before = len(ERRORS)
@@ -147,7 +152,7 @@ def walk(shell: object, app: QApplication, name: str, project: str) -> str:
     moved += drive(app, shell.stack.currentWidget())
     title = getattr(shell.stack.currentWidget(), "title", None)
     if name.startswith("Estrategia") or name.startswith("Portfolios"):
-        title = shell.estrategia.currentWidget().title
+        title = getattr(shell.estrategia.currentWidget(), "title")
     shows = (f" · muestra «{title.text()}»" if title is not None and title.text() else
              f" · la ventana dice «{shell.status.text()}»"
              if name in ("Proyecto", "Estrategia") and shell.status.text() else "")
@@ -157,7 +162,7 @@ def walk(shell: object, app: QApplication, name: str, project: str) -> str:
 
 def main() -> None:
     """Build the window against the daemon, walk every zone, print the report."""
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--port", type=int, required=True, help="el puerto del demonio a usar")
     ap.add_argument("--project", default="Test_USDJPY_donchianUpperCrossUp_M30",
                     help="el proyecto con el que se abren Proyecto y Estrategia")

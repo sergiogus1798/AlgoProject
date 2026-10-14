@@ -106,7 +106,7 @@ def missing_requirements(files: list[Path]) -> list[str]:
               for line in req.read_text(encoding="utf-8").splitlines()
               if line.strip() and not line.startswith("#")}
     known = depmap.internal_names(files)
-    used = set()
+    used: set[str] = set()
     for f in files:
         used |= {n for n in depmap.imports_of(f)
                  if n not in known and n not in depmap.STDLIB}
@@ -220,7 +220,7 @@ def workflow_drift(files: list[Path]) -> list[str]:
                      re.M)
     tree = ast.parse((ROOT / "ui" / "daemon" / "workflow" / "steps.py").read_text(encoding="utf-8"))
     rows = next(ast.literal_eval(n.value) for n in tree.body
-                if isinstance(n, ast.Assign) and n.targets[0].id == "S")
+                if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == "S")
     code = [(r[0], r[2]) for r in rows]
     if [n for n, _ in doc] != [n for n, _ in code]:
         return [f"steps.py numbers {[n for n, _ in code]} != WORKFLOW.md {[n for n, _ in doc]}"]
