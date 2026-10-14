@@ -1,6 +1,6 @@
 """The two results a comparison puts side by side: two runs of one strategy, or two strategies."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ui.desktop.blocks.states import colour
 from ui.desktop.studypage.net import fetch
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from ui.desktop.studypage.page import StudyPage
 
 
-def query(where: dict, study: str) -> dict:
+def query(where: dict, study: str) -> dict[str, Any]:
     """The query naming one study of the place on screen.
 
     Args:
@@ -23,7 +23,7 @@ def query(where: dict, study: str) -> dict:
             "strategy": where["strategy"] or "", "identity": where["identity"] or ""}
 
 
-def result(query: dict, day: str = "") -> dict:
+def result(query: dict, day: str = "") -> dict[str, Any]:
     """`/api/result` for the page, without the cross-market tab the Ficha now shows (it stays in
     the stored JSON, which the Ficha reads).
 
@@ -85,6 +85,8 @@ def paint(page: "StudyPage", results: list[dict | None], titles: tuple[str, str]
         page.note.setText(f'<span style="color:{colour("fail")}">No se puede comparar: '
                           f"{', '.join(missing)} no tiene resultado de este estudio aquí.</span>")
         return
-    page.view.compare(results[0], results[1], titles)
+    left, right = results
+    assert left is not None and right is not None
+    page.view.compare(left, right, titles)
     page.note.setText(f"Comparando {titles[0]} (izquierda) con {titles[1]} (derecha).")
     page.back.show()

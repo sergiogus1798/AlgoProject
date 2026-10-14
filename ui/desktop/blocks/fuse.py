@@ -1,5 +1,7 @@
 """A partial re-run laid into the stored result it belongs to: its tagged blocks replace their twins, the rest stays."""
 
+
+from typing import Any
 import json
 from copy import deepcopy
 
@@ -9,7 +11,7 @@ def _key(block: dict) -> tuple[str, str]:
     return block["kind"], json.dumps(block.get("select") or {}, sort_keys=True, ensure_ascii=False)
 
 
-def merge(stored: dict, part: dict) -> dict:
+def merge(stored: dict, part: dict) -> dict[str, Any]:
     """The stored result with one sub-test (a market, a Monte Carlo test) taken from a re-run.
 
     Args:

@@ -114,10 +114,10 @@ class RunBar(QWidget):
         # The rail asks before a run that reads oos2 or writes the ledger; the study page ran
         # it on the click (📓 2026-09-29, WFM «toda la población»).
         spends = self.entry.get("spends")
-        if spends and QMessageBox.question(
+        if spends and QMessageBox.question(  # pyright: ignore[reportCallIssue]  # PySide6 stub wants button0/button1 for the 3-arg form
                 self, "Esto lee oos2 o escribe en el ledger",
                 f"{self.entry['key']}: {spends}. Cada run cuenta y no se deshace.\n\n"
-                "¿Correr?") != QMessageBox.Yes:
+                "¿Correr?") != QMessageBox.StandardButton.Yes:
             self._say(self.line, "No se lanzó nada.")
             return
         got = send("study/run", {

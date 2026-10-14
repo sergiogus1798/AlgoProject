@@ -1,5 +1,7 @@
 """The Estrategia page of an archived version: F4's ficha, every read on `source=archive`, nothing run."""
 
+from typing import Any
+
 from ui.desktop import background
 from ui.desktop.blocks.card import text
 from ui.desktop.portfolios.series import SeriesBar
@@ -22,7 +24,7 @@ class ImportedFicha(Ficha):
         super().__init__()
         self.version = ""
         self.keep.hide()
-        self.compute.run = lambda *_: self.say(FROZEN)
+        self.compute.run = lambda *_: self.say(FROZEN)  # pyright: ignore[reportAttributeAccessIssue]  # instance override of the method: an archive runs nothing
         self.frozen = ArchivedStudies()
         self.series, self.names, self.workflow = SeriesBar(), [], ""
         self.series.step.connect(self.go)
@@ -81,7 +83,7 @@ class ImportedFicha(Ficha):
         self.series.show_at(self.workflow, index, len(self.names))
         return ""
 
-    def ask(self, where: dict) -> dict:
+    def ask(self, where: dict) -> dict[str, Any]:
         """Off the GUI thread: the ficha's three reads, on the archived version."""
         q = {k: where[k] for k in ("project", "databank", "identity")} | {
             "source": "archive", "version": self.version}

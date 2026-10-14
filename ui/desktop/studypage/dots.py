@@ -1,5 +1,7 @@
 """The state dot on each study tab, and where the page reads those states from."""
 
+
+from typing import Any
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 
@@ -20,9 +22,9 @@ def dot(cell: dict | None) -> QIcon:
         The tab's icon.
     """
     pix = QPixmap(SIZE, SIZE)
-    pix.fill(Qt.transparent)
+    pix.fill(Qt.GlobalColor.transparent)
     p = QPainter(pix)
-    p.setRenderHint(QPainter.Antialiasing)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
     if cell is None:
         p.setPen(QPen(QColor(T["faint"]), 1.5))
         p.drawEllipse(3, 3, SIZE - 6, SIZE - 6)
@@ -30,7 +32,7 @@ def dot(cell: dict | None) -> QIcon:
         p.setPen(QPen(QColor(colour(cell["state"])), 2.5))
         p.drawEllipse(2, 2, SIZE - 4, SIZE - 4)
     else:
-        p.setPen(Qt.NoPen)
+        p.setPen(Qt.PenStyle.NoPen)
         p.setBrush(QColor(colour(cell["state"])))
         p.drawEllipse(1, 1, SIZE - 2, SIZE - 2)
     p.end()
@@ -77,7 +79,7 @@ def of_strategy(project: str, databank: str, strategy: str,
     return got.get("studies") or {}, bank.get("strategies") or []
 
 
-def of_population(project: str, databank: str, keys: list[str]) -> dict:
+def of_population(project: str, databank: str, keys: list[str]) -> dict[str, Any]:
     """Every study's newest population run on one databank.
 
     Args:

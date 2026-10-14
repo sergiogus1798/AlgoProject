@@ -72,12 +72,12 @@ def axes(p: QPainter, box: QRectF, xt: list[tuple[float, str]],
         p.setPen(QPen(QColor(T["line"]), 1))
         p.drawLine(QPointF(x, box.top()), QPointF(x, box.bottom()))
         p.setPen(QColor(T["muted"]))
-        p.drawText(QRectF(x - 60, box.bottom() + 6, 120, 18), Qt.AlignHCenter, text)
+        p.drawText(QRectF(x - 60, box.bottom() + 6, 120, 18), Qt.AlignmentFlag.AlignHCenter, text)
     for y, text in yt:
         p.setPen(QPen(QColor(T["line"]), 1))
         p.drawLine(QPointF(box.left(), y), QPointF(box.right(), y))
         p.setPen(QColor(T["muted"]))
-        p.drawText(QRectF(0, y - 9, box.left() - 8, 18), Qt.AlignRight | Qt.AlignVCenter, text)
+        p.drawText(QRectF(0, y - 9, box.left() - 8, 18), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, text)
     p.setPen(QPen(QColor(T["rule"]), 1))
     p.drawLine(box.bottomLeft(), box.bottomRight())
     p.drawLine(box.bottomLeft(), box.topLeft())
@@ -94,16 +94,16 @@ def titles(p: QPainter, box: QRectF, rect: QRectF, x_label: str, y_label: str) -
     """
     p.setFont(font(11, True))
     p.setPen(QColor(T["text"]))
-    p.drawText(QRectF(box.left(), rect.bottom() - 20, box.width(), 18), Qt.AlignHCenter, x_label)
+    p.drawText(QRectF(box.left(), rect.bottom() - 20, box.width(), 18), Qt.AlignmentFlag.AlignHCenter, x_label)
     p.save()
     p.translate(14, box.center().y())
     p.rotate(-90)
-    p.drawText(QRectF(-box.height() / 2, -9, box.height(), 18), Qt.AlignHCenter, y_label)
+    p.drawText(QRectF(-box.height() / 2, -9, box.height(), 18), Qt.AlignmentFlag.AlignHCenter, y_label)
     p.restore()
 
 
 def vline(p: QPainter, x: float, box: QRectF, colour: str, width: float = 1.5,
-          style: Qt.PenStyle = Qt.SolidLine) -> None:
+          style: Qt.PenStyle = Qt.PenStyle.SolidLine) -> None:
     """A vertical mark across the plotting rectangle.
 
     Args:
@@ -184,7 +184,7 @@ class Canvas(QWidget):
             event: Qt's paint event, unused.
         """
         p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.fillRect(self.rect(), QColor(T["bg"]))
         self.draw(p, QRectF(self.rect()), self.hover)
 

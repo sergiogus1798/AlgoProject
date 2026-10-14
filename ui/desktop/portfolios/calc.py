@@ -13,11 +13,11 @@ POLL_MS = 3000
 
 def question(parent: QWidget, sentence: str) -> QMessageBox:
     """The confirmation of a launcher that can open oos2: «No» is the default answer."""
-    box = QMessageBox(QMessageBox.Warning, "Confirmar — lectura de un solo uso", sentence,
-                      QMessageBox.Yes | QMessageBox.No, parent)
-    box.setDefaultButton(QMessageBox.No)
-    box.button(QMessageBox.Yes).setText("Sí, lanzar")
-    box.button(QMessageBox.No).setText("No")
+    box = QMessageBox(QMessageBox.Icon.Warning, "Confirmar — lectura de un solo uso", sentence,
+                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, parent)
+    box.setDefaultButton(QMessageBox.StandardButton.No)
+    box.button(QMessageBox.StandardButton.Yes).setText("Sí, lanzar")
+    box.button(QMessageBox.StandardButton.No).setText("No")
     return box
 
 
@@ -50,7 +50,7 @@ class CalcButton(QPushButton):
             self.setEnabled(True)
             why = got.get("reasons") or [got.get("error", "el demonio no respondió")]
             return self.say("No se lanza:\n" + "\n".join(f"· {r}" for r in why), C["weak"])
-        if got["confirm"] and question(self, got["text"]).exec() != QMessageBox.Yes:
+        if got["confirm"] and question(self, got["text"]).exec() != QMessageBox.StandardButton.Yes:
             self.setEnabled(True)
             return self.say("No se ha lanzado nada.", C["muted"])
         body = {"action": self.action, "params": got["params"], "nonce": got["nonce"]}

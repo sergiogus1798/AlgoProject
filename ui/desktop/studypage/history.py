@@ -43,8 +43,8 @@ class History(QFrame):
         lay.addWidget(text("Clic: ver ese run. Ctrl+clic en dos y «Comparar»: uno al lado "
                            "del otro.", T["muted"], 12))
         self.runs = QListWidget()
-        self.runs.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.runs.itemClicked.connect(lambda it: self.picked.emit(it.data(Qt.UserRole)))
+        self.runs.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.runs.itemClicked.connect(lambda it: self.picked.emit(it.data(Qt.ItemDataRole.UserRole)))
         self.runs.itemSelectionChanged.connect(self._selection)
         lay.addWidget(self.runs, 1)
         self.both = QPushButton("Comparar los dos runs elegidos")
@@ -79,7 +79,7 @@ class History(QFrame):
         self.runs.clear()
         for run in got.get("runs") or []:
             item = QListWidgetItem(line(run))
-            item.setData(Qt.UserRole, run["day"])
+            item.setData(Qt.ItemDataRole.UserRole, run["day"])
             item.setForeground(QColor(colour(run["state"])))
             item.setToolTip(f"calculado {run['computed_at']} · config {run['config_hash']}"
                             + (" — calculado con otra configuración que la de hoy"
@@ -110,7 +110,7 @@ class History(QFrame):
         """
         self.runs.blockSignals(True)
         for i in range(self.runs.count()):
-            self.runs.item(i).setSelected(self.runs.item(i).data(Qt.UserRole) == day)
+            self.runs.item(i).setSelected(self.runs.item(i).data(Qt.ItemDataRole.UserRole) == day)
         self.runs.blockSignals(False)
         self._selection()
 
@@ -123,5 +123,5 @@ class History(QFrame):
 
     def _compare(self) -> None:
         """Emit the two chosen days, older on the left."""
-        days = sorted(it.data(Qt.UserRole) for it in self.runs.selectedItems())
+        days = sorted(it.data(Qt.ItemDataRole.UserRole) for it in self.runs.selectedItems())
         self.compare_runs.emit(days[0], days[1])

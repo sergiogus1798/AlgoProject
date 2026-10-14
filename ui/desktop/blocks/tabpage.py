@@ -1,5 +1,7 @@
 """One contract tab, in one column or beside its counterpart: its note, its selectors, its blocks."""
 
+from typing import Any
+
 from PySide6.QtCore import QSize
 from PySide6.QtWidgets import (QComboBox, QGridLayout, QHBoxLayout, QLabel, QSizePolicy,
                                QVBoxLayout, QWidget)
@@ -49,7 +51,7 @@ class TabPage(QWidget):
         # Left at Qt's default (Expanding), this widget's sizeHint stretches to whatever its
         # QStackedWidget parent is given, which pushed a blank gap below a short tab's blocks
         # instead of leaving that space to the page's own trailing stretch (§1 «hueco enorme»).
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         self.tabs, self.pool = tabs, pool or []
         first = next(t for t in tabs if t is not None)
         self.chosen = {s["key"]: chosen.get(s["key"], s["default"]) for s in selectors(first)}
@@ -59,7 +61,7 @@ class TabPage(QWidget):
             self.chosen[markets.CHOSEN] = chosen.get(markets.CHOSEN) or markets.first(first)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(4, 10, 4, 4)
-        notes = {t.get("note") for t in tabs if t is not None and t.get("note")}
+        notes = {n for t in tabs if t is not None and (n := t.get("note"))}
         for note in notes:
             lay.addWidget(text(note, T["text"], 14))
         row = QHBoxLayout()
@@ -108,10 +110,12 @@ class TabPage(QWidget):
         grid.setContentsMargins(0, 0, 0, 0)
         grid.setHorizontalSpacing(24)
         if self.grouped:
+            assert self.tabs[0] is not None
             plain, maps, consensus = markets.split(self.tabs[0], self.chosen, self.pool)
             sides = [plain]
         else:
             sides = [shown(t, self.chosen) if t is not None else [] for t in self.tabs]
+        rows: list[Any]
         if len(sides) == 1:
             rows = []
             for b in sides[0]:       # `beside` lays a block in the row of the one before it
@@ -134,6 +138,8 @@ class TabPage(QWidget):
             grid.setColumnStretch(j, 1)
         if not rows:
             grid.addWidget(text("Esta combinación no tiene bloques.", T["faint"]), 0, 0)
-        self.layout().replaceWidget(old, self.body)
+        lay = self.layout()
+        assert lay is not None
+        lay.replaceWidget(old, self.body)
         old.hide()          # deleteLater waits for the event loop; until then it would paint over
         old.deleteLater()

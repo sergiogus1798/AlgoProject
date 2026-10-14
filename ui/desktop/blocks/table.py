@@ -1,9 +1,10 @@
 """The table block: sortable, numbers printed the window's way, every cell's full text on hover."""
 
 import re
+from typing import cast
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QShowEvent
 from PySide6.QtWidgets import (QAbstractItemView, QDoubleSpinBox, QHBoxLayout, QHeaderView,
                                QLabel, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 
@@ -56,7 +57,7 @@ class Cell(QTableWidgetItem):
             printed = numbers.num(shown, "%").removesuffix(" %")
         else:
             # A raw contract state in a cell («watch») reads as its label («Vigilar»).
-            printed = chart.num(shown) if figure else STATE_LABEL.get(str(shown), str(shown))
+            printed = chart.num(cast("float | str | None", shown)) if figure else STATE_LABEL.get(str(shown), str(shown))
         super().__init__(printed)
         self.value = value
         word = " ".join(value.lower().split()) if isinstance(value, str) else ""
@@ -108,7 +109,7 @@ class Fitted(QTableWidget):
             bar = self.verticalScrollBar().sizeHint().width() if self.rowCount() > VISIBLE else 0
             self.setMaximumWidth(sum(self.columnWidth(j) for j in range(self.columnCount())) + 6 + bar)
 
-    def showEvent(self, event: object) -> None:  # noqa: N802 — Qt's name
+    def showEvent(self, event: QShowEvent) -> None:  # noqa: N802 — Qt's name
         """Fit once, with the font the table is really drawn in."""
         super().showEvent(event)
         if not self.property("fitted"):
@@ -134,10 +135,12 @@ def widget(block: dict) -> QWidget:
     help_ = b.get("help") or [None] * len(b["columns"])
     for j, h in enumerate(help_[:len(b["columns"])]):   # a stale report may carry more help than columns
         if h:
-            table.horizontalHeaderItem(j).setToolTip(h)   # the uniform "?" of CONTRACT §5
+            header = table.horizontalHeaderItem(j)
+            assert header is not None
+            header.setToolTip(h)   # the uniform "?" of CONTRACT §5
     table.verticalHeader().setVisible(False)
-    table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-    table.setSelectionBehavior(QAbstractItemView.SelectRows)
+    table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+    table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
     table.setWordWrap(False)
     align = b.get("align") or ["left"] * len(b["columns"])
     market = [c.lower() in MARKET_COLS for c in b["columns"]]
@@ -146,7 +149,7 @@ def widget(block: dict) -> QWidget:
     # Per column, not per cell: a population table is 10,000 rows × 35 columns, and the
     # header's words and the alignment flag were a third of the seconds it took to draw.
     heads = [label(c) for c in b["columns"]]
-    flags = [(Qt.AlignRight if a == "right" else Qt.AlignLeft) | Qt.AlignVCenter for a in align]
+    flags = [(Qt.AlignmentFlag.AlignRight if a == "right" else Qt.AlignmentFlag.AlignLeft) | Qt.AlignmentFlag.AlignVCenter for a in align]
     compact = bool(b.get("compact"))
     for i, row in enumerate(b["rows"]):
         for j, v in enumerate(row):
@@ -158,9 +161,9 @@ def widget(block: dict) -> QWidget:
             cell.setToolTip(own or f"{heads[j]}: {full}")
             table.setItem(i, j, cell)
     # Enabling sorting sorts at once by column 0; the study's own order is the reading order.
-    table.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+    table.horizontalHeader().setSortIndicator(-1, Qt.SortOrder.AscendingOrder)
     table.setSortingEnabled(True)
-    table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+    table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
     # A last column of sentences (the «why», «what it says») takes the spare width, so less
     # of it is cut; a last column of numbers does not, or its figures drift to the far edge.
     table.horizontalHeader().setStretchLastSection(align[-1] == "left" and not b.get("compact"))
@@ -207,7 +210,7 @@ def _thresholded(table: QTableWidget, cols: list[int], cfg: dict) -> QWidget:
         """Colour every column of `cols` green below `value`, red at or above it."""
         for col in cols:
             for i in range(table.rowCount()):
-                item = table.item(i, col)
+                item = cast(Cell, table.item(i, col))
                 if isinstance(item.value, (int, float)):
                     item.setForeground(QColor(colour("pass" if item.value < value else "fail")))
                     font = item.font()

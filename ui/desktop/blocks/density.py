@@ -50,7 +50,7 @@ def _draw(b: dict, hidden: set[int]) -> Callable:
             p.fillPath(path, fill)
             p.setPen(QPen(colour, 2.5))
             p.drawPath(path)
-            chart.vline(p, x(s["median"]), box, colour.name(), 1.5, Qt.DashLine)
+            chart.vline(p, x(s["median"]), box, colour.name(), 1.5, Qt.PenStyle.DashLine)
             if s.get("real") is not None:
                 chart.vline(p, x(s["real"]), box, colour.name(), 3)
         if b["real"] is not None:

@@ -1,6 +1,9 @@
 """PORTFOLIOS: a rail of modules, each with its strip and result tabs, over one databank that feeds them all."""
 
+
+from typing import Any
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLineEdit, QListWidget, QSplitter, QStackedWidget,
                                QVBoxLayout, QWidget)
 
@@ -37,7 +40,7 @@ class PortfoliosBoard(QFrame):
         lay.setContentsMargins(20, 14, 20, 12)
         lay.setSpacing(6)
         head = QHBoxLayout()
-        head.addWidget(QLabel("Portfolios", objectName="kicker"))
+        head.addWidget(QLabel("Portfolios", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.where = text("", T["muted"], 13)
         head.addWidget(self.where, 1)
         lay.addLayout(head)
@@ -73,7 +76,7 @@ class PortfoliosBoard(QFrame):
         self.bank = Databank()
         self.bank.chosen.connect(self.choose)
         self.bank.declared.connect(self.reload)
-        split = QSplitter(Qt.Vertical)
+        split = QSplitter(Qt.Orientation.Vertical)
         split.addWidget(top)
         split.addWidget(self.bank)
         split.setSizes([760, 240])
@@ -83,7 +86,7 @@ class PortfoliosBoard(QFrame):
 
     rows = property(lambda self: self.archive.rows)
 
-    def showEvent(self, event: object) -> None:  # noqa: N802 — Qt's name
+    def showEvent(self, event: QShowEvent) -> None:  # noqa: N802 — Qt's name
         """Read the archive and the portfolio folder the first time the zone is shown."""
         super().showEvent(event)
         if not self.loaded:
@@ -108,7 +111,7 @@ class PortfoliosBoard(QFrame):
         self.bank.fill(self.archive.rows, got, self.want_run or self.selection.get("run") or self.selection.get("pool", ""))
         self.choose({})
 
-    def run(self) -> dict:
+    def run(self) -> dict[str, Any]:
         """The row of the run chosen in the databank, {} when a pool or nothing is."""
         return next((r for r in self.state.get("runs", []) if r["id"] == self.selection.get("run")), {})
 

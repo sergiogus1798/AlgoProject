@@ -70,39 +70,39 @@ class Pulse(QFrame):
 
     def __init__(self) -> None:
         """Build the line, the figures, the warnings and the history."""
-        super().__init__(objectName="term")
+        super().__init__(objectName="term")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.last: dict = {}            # the newest reading, for «En marcha»'s own line
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(8)
         head = QHBoxLayout()
-        head.addWidget(QLabel("Pulso del custodio · SQX_w2 · /proc, logs y su línea de estado",
+        head.addWidget(QLabel("Pulso del custodio · SQX_w2 · /proc, logs y su línea de estado",  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                               objectName="kicker"))
         head.addStretch(1)
         now = QPushButton("Leer ahora")
         now.clicked.connect(self.refresh)
         head.addWidget(now)
         lay.addLayout(head)
-        self.line = QLabel("sin lectura todavía", styleSheet=f"font-family: {MONO}; "
+        self.line = QLabel("sin lectura todavía", styleSheet=f"font-family: {MONO}; "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                                                               "font-size: 20px; font-weight: 700;")
         self.line.setToolTip("hora · backtests hechos de total · memoria del JVM · CPU (100% = "
                              "un núcleo) · RAM libre de la máquina (MemAvailable) · cuántos "
                              "backtests caben todavía")
         lay.addWidget(self.line)
-        self.warn = QLabel("", wordWrap=True, styleSheet=f"color: {C['dead']}; "
+        self.warn = QLabel("", wordWrap=True, styleSheet=f"color: {C['dead']}; "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                                                          f"font-family: {MONO}; font-size: 14px;")
         lay.addWidget(self.warn)
         grid = QGridLayout()
         grid.setHorizontalSpacing(18)
         self.values: dict[str, QLabel] = {}
         for i, (name, key, tip) in enumerate(FIGURES):
-            title = QLabel(label(name), objectName="kicker", toolTip=tip)
-            value = QLabel("—", objectName="mono", toolTip=tip)
+            title = QLabel(label(name), objectName="kicker", toolTip=tip)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+            value = QLabel("—", objectName="mono", toolTip=tip)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             grid.addWidget(title, i // 4 * 2, i % 4)
             grid.addWidget(value, i // 4 * 2 + 1, i % 4)
             self.values[key] = value
         lay.addLayout(grid)
-        lay.addWidget(QLabel("Últimas lecturas · en memoria, se pierden al cerrar",
+        lay.addWidget(QLabel("Últimas lecturas · en memoria, se pierden al cerrar",  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                              objectName="kicker"))
         self.history = QListWidget()
         self.history.setMaximumHeight(HISTORY_PX)

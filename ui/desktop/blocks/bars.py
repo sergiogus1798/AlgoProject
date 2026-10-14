@@ -41,14 +41,14 @@ def _draw(b: dict) -> Callable:
             p.setPen(QPen(QColor(T["line"]), 1))
             p.drawLine(QPointF(x(v), TOP), QPointF(x(v), bottom))
             p.setPen(QColor(T["muted"]))
-            p.drawText(QRectF(x(v) - 50, bottom + 6, 100, 18), Qt.AlignHCenter, chart.num(v))
+            p.drawText(QRectF(x(v) - 50, bottom + 6, 100, 18), Qt.AlignmentFlag.AlignHCenter, chart.num(v))
         for k, i in enumerate(b["items"]):
             top = TOP + k * row
             thick = min(row - 10, 26)
             mid = top + row / 2
             p.setFont(chart.font(11))
             p.setPen(QColor(T["text"]))
-            p.drawText(QRectF(0, top, left - 10, row), Qt.AlignRight | Qt.AlignVCenter, i["label"])
+            p.drawText(QRectF(0, top, left - 10, row), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, i["label"])
             if i["value"] is None:
                 continue
             a, z = sorted((x(0.0), x(i["value"])))
@@ -65,12 +65,12 @@ def _draw(b: dict) -> Callable:
             # The figure goes past the whisker too, so no line ever runs through it.
             p.setPen(QColor(T["text"]))
             p.setFont(chart.font(11, True))
-            p.drawText(QRectF(end + 8, top, rect.width() - end, row), Qt.AlignLeft | Qt.AlignVCenter,
+            p.drawText(QRectF(end + 8, top, rect.width() - end, row), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
                        chart.num(i["value"], b["unit"]))
         p.setPen(QPen(QColor(T["rule"]), 1))
         p.drawLine(QPointF(x(0.0), TOP), QPointF(x(0.0), bottom))
         if b["reference"] is not None:
-            p.setPen(QPen(QColor(T["text"]), 1.5, Qt.DashLine))
+            p.setPen(QPen(QColor(T["text"]), 1.5, Qt.PenStyle.DashLine))
             p.drawLine(QPointF(x(b["reference"]), TOP - 6), QPointF(x(b["reference"]), bottom))
 
     return draw
@@ -114,7 +114,7 @@ def _columns(b: dict) -> Callable:
             left = box.left() + k * width
             p.setFont(chart.font(10))
             p.setPen(QColor(T["muted"]))
-            p.drawText(QRectF(left, box.bottom() + 6, width, 18), Qt.AlignHCenter, i["label"])
+            p.drawText(QRectF(left, box.bottom() + 6, width, 18), Qt.AlignmentFlag.AlignHCenter, i["label"])
             if i["value"] is None:
                 continue
             a, z = sorted((y(0.0), y(i["value"])))
@@ -124,7 +124,7 @@ def _columns(b: dict) -> Callable:
             p.setFont(chart.font(9, True))
             above = i["value"] >= 0
             p.drawText(QRectF(left - 10, (a - 18) if above else z + 2, width + 20, 16),
-                       Qt.AlignHCenter, chart.num(i["value"], b["unit"]))
+                       Qt.AlignmentFlag.AlignHCenter, chart.num(i["value"], b["unit"]))
 
     return draw
 

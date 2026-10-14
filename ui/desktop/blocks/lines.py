@@ -13,7 +13,7 @@ from ui.desktop.theme import T
 
 # Past six drawn series the hues repeat, so the pen style changes with each lap — except
 # under `auto_dash_negative`, where the style is the sign's alone.
-STYLES = (Qt.SolidLine, Qt.DashDotLine, Qt.DotLine)
+STYLES = (Qt.PenStyle.SolidLine, Qt.PenStyle.DashDotLine, Qt.PenStyle.DotLine)
 
 
 def _ends_negative(s: dict) -> bool:
@@ -35,15 +35,15 @@ def _pens(b: dict) -> list[tuple[str, Qt.PenStyle, float]]:
     auto = b.get("auto_dash_negative")
     out, k = [], 0
     for s in b["series"]:
-        signed = Qt.DashLine if _ends_negative(s) else Qt.SolidLine
+        signed = Qt.PenStyle.DashLine if _ends_negative(s) else Qt.PenStyle.SolidLine
         if s.get("ink"):
-            style = signed if auto else (Qt.DashLine if s.get("dash") else Qt.SolidLine)
+            style = signed if auto else (Qt.PenStyle.DashLine if s.get("dash") else Qt.PenStyle.SolidLine)
             out.append((CURVE[s["ink"]], style, 2.0))
             continue
         if s["role"] == "reference":
-            out.append((T["muted"], signed if auto else Qt.DashLine, 2.0 if auto else 1.5))
+            out.append((T["muted"], signed if auto else Qt.PenStyle.DashLine, 2.0 if auto else 1.5))
             continue
-        lap = Qt.SolidLine if len(drawn) == 1 else STYLES[k // len(SERIES) % 3]
+        lap = Qt.PenStyle.SolidLine if len(drawn) == 1 else STYLES[k // len(SERIES) % 3]
         style = signed if auto else lap
         if len(drawn) == 1:
             out.append((REAL if s["role"] == "real" else SERIES[0], style, 2.5))
@@ -79,17 +79,17 @@ def _draw(b: dict) -> Callable:
         chart.axes(p, box, xt, [(y(v), chart.num(v)) for v in axis.ticks(lo, hi, 5)])
         if b.get("x_label"):
             chart.titles(p, box, rect, b["x_label"], b["y_label"])
-        p.setBrush(Qt.NoBrush)
+        p.setBrush(Qt.BrushStyle.NoBrush)
         for s, (c, style, width) in zip(b["series"], pens):
             p.setPen(QPen(QColor(c), width, style))
             p.drawPath(axis.curve(px, s["values"], y))
             if len(px) <= 40:
-                p.setPen(Qt.NoPen)
+                p.setPen(Qt.PenStyle.NoPen)
                 p.setBrush(QColor(c))
                 for a, v in zip(px, s["values"]):
                     if v is not None:
                         p.drawEllipse(QPointF(a, y(v)), 3.5, 3.5)
-                p.setBrush(Qt.NoBrush)
+                p.setBrush(Qt.BrushStyle.NoBrush)
         if hover is not None and box.contains(hover):
             chart.vline(p, px[axis.nearest(px, hover.x())], box, T["faint"], 1)
 
@@ -126,7 +126,7 @@ def widget(block: dict) -> QWidget:
     canvas = chart.Canvas(_draw(b), _tip(b))
     if len(b["series"]) == 1:
         return card(b, canvas)
-    marks = {Qt.SolidLine: "line", Qt.DashLine: "dash"}
+    marks = {Qt.PenStyle.SolidLine: "line", Qt.PenStyle.DashLine: "dash"}
     key = chart.key([(marks.get(style, "dash"), c, s["label"])
                      for s, (c, style, _) in zip(b["series"], _pens(b))])
     return card(b, canvas, key)

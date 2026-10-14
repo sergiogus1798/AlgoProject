@@ -58,20 +58,20 @@ def _draw(b: dict) -> Callable:
                     if v is not None]
             fill = QColor(SIM)
             fill.setAlphaF(alpha)
-            p.setPen(Qt.NoPen)
+            p.setPen(Qt.PenStyle.NoPen)
             p.setBrush(fill)
             p.drawPolygon(QPolygonF(pts))
-        p.setBrush(Qt.NoBrush)
-        p.setPen(QPen(QColor(MEDIAN), 1.5, Qt.DashLine))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.setPen(QPen(QColor(MEDIAN), 1.5, Qt.PenStyle.DashLine))
         p.drawPath(axis.curve(px, b["bands"][_mid(b)], y))
         p.setPen(QPen(QColor(REAL), 2.8))
         p.drawPath(axis.curve(px, b["real"], y))
         s = _split(b)
         if s is not None:
-            chart.vline(p, px[s], box, T["text"], 1.5, Qt.DotLine)
+            chart.vline(p, px[s], box, T["text"], 1.5, Qt.PenStyle.DotLine)
             p.setFont(chart.font(11, True))
             p.setPen(QColor(T["text"]))
-            p.drawText(QRectF(px[s] + 6, box.top() + 2, 200, 20), Qt.AlignLeft, "OOS →")
+            p.drawText(QRectF(px[s] + 6, box.top() + 2, 200, 20), Qt.AlignmentFlag.AlignLeft, "OOS →")
         if hover is not None and box.contains(hover):
             chart.vline(p, px[axis.nearest(px, hover.x())], box, T["faint"], 1)
 

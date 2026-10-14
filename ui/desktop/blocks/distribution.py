@@ -44,7 +44,7 @@ def _draw(b: dict) -> Callable:
         for a, z, c in zip(edges, edges[1:], counts):
             if c:
                 p.fillRect(QRectF(x(a) + 0.5, y(c), max(x(z) - x(a) - 1, 1.5), y(0) - y(c)), fill)
-        chart.vline(p, x(b["median"]), box, MEDIAN, 1.5, Qt.DashLine)
+        chart.vline(p, x(b["median"]), box, MEDIAN, 1.5, Qt.PenStyle.DashLine)
         if b["real"] is not None:
             xr = x(b["real"])
             chart.vline(p, xr, box, REAL, 3)
@@ -54,7 +54,7 @@ def _draw(b: dict) -> Callable:
             left = xr + 6 if xr + 6 + w < box.right() else xr - 6 - w
             p.fillRect(QRectF(left, box.top() + 2, w, 20), QColor(T["bg"]))
             p.setPen(QColor(REAL))
-            p.drawText(QRectF(left, box.top() + 2, w, 20), Qt.AlignCenter, label)
+            p.drawText(QRectF(left, box.top() + 2, w, 20), Qt.AlignmentFlag.AlignCenter, label)
 
     return draw
 
@@ -90,14 +90,14 @@ def _percentiles(b: dict) -> QTableWidget:
     table = QTableWidget(1, len(keys))
     table.setHorizontalHeaderLabels([f"{k}%" if unit else f"p{k}" for k in keys])
     table.verticalHeader().setVisible(False)
-    table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-    table.setSelectionMode(QAbstractItemView.NoSelection)    # a click only recoloured the cell
-    table.setFocusPolicy(Qt.NoFocus)
+    table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+    table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)    # a click only recoloured the cell
+    table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
     real = b["real"]
     for j, (k, v) in enumerate(zip(keys, vals)):
         # Whole units past 10 with a unit on each cell, or «-641.7 $» no longer fits.
         item = QTableWidgetItem(chart.num(round(v) if unit and abs(v) >= 10 else v) + unit)
-        item.setTextAlignment(Qt.AlignCenter)
+        item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
         item.setToolTip(f"el {k} % de la distribución queda por debajo de {chart.num(v)}")
         nxt = vals[j + 1] if j + 1 < len(vals) else None
         if real is not None and v <= real and (nxt is None or real < nxt):
@@ -105,7 +105,7 @@ def _percentiles(b: dict) -> QTableWidget:
             item.setBackground(QColor(T["select"]))
             item.setToolTip(item.toolTip() + f"\nel valor real ({chart.num(real)}) cae aquí")
         table.setItem(0, j, item)
-    table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+    table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
     table.setFixedHeight(table.horizontalHeader().height() + table.rowHeight(0) + 4)
     return table
 

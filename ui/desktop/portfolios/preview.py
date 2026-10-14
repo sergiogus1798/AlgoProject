@@ -4,6 +4,7 @@
 import argparse
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
@@ -19,7 +20,7 @@ SIZE = (1680, 1050)
 WAIT_S = 60          # the ficha's three reads run off the GUI thread; a shot waits for them
 
 
-def opener(fichas: list) -> callable:
+def opener(fichas: list) -> Callable:
     """The slot `import_requested` is wired to here: a standalone Estrategia window.
 
     Args:
@@ -52,7 +53,7 @@ def settle(app: QApplication, ficha: ImportedFicha) -> None:
     app.processEvents()
 
 
-def main() -> None:
+def main() -> int | None:
     """Open the zone, or save the list and the imported ficha with `--shot DIR` and exit."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--shot", type=Path, help="carpeta donde dejar las PNG y salir")

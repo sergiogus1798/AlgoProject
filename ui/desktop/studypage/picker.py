@@ -39,12 +39,13 @@ class StrategyPicker(QWidget):
         label = QLabel("Estrategia")
         self.box = QComboBox()
         self.box.setEditable(True)
-        self.box.setInsertPolicy(QComboBox.NoInsert)
+        self.box.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         self.box.setMinimumWidth(220)
-        self.box.setModel(QStringListModel(self))
-        done = QCompleter(self.box.model(), self)
-        done.setFilterMode(Qt.MatchContains)
-        done.setCaseSensitivity(Qt.CaseInsensitive)
+        self.names = QStringListModel(self)
+        self.box.setModel(self.names)
+        done = QCompleter(self.names, self)
+        done.setFilterMode(Qt.MatchFlag.MatchContains)
+        done.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.box.setCompleter(done)
         self.prev, self.next = QPushButton("◀"), QPushButton("▶")
         self.prev.setToolTip("Estrategia anterior de la lista.")
@@ -52,7 +53,7 @@ class StrategyPicker(QWidget):
         for w in (label, self.box, self.prev, self.next):
             w.setToolTip(w.toolTip() or TIP)
             lay.addWidget(w)
-        done.activated[str].connect(self.choose)
+        done.activated[str].connect(self.choose)  # pyright: ignore[reportIndexIssue]  # stub lacks the overloaded signal index
         self.box.activated.connect(lambda i: self.choose(self.box.itemText(i)))
         self.prev.clicked.connect(lambda: self.step(-1))
         self.next.clicked.connect(lambda: self.step(1))
@@ -99,6 +100,7 @@ class StrategyPicker(QWidget):
     def refill(self) -> None:
         """List by name the strategies with a result of the study anywhere in the project; the
         identity is the page databank's own, so the choice lands on a strategy it holds."""
+        assert self.bank is not None
         here = self.matrices.get(self.bank[1]) or {}
         # ponytail: the matrix does not know the batch studies (cloud, WFC, CSCV, Market
         # Surfaces): for them every strategy of the page's databank is listed. Filter by
@@ -108,12 +110,12 @@ class StrategyPicker(QWidget):
                      if not self.study or not known or any(
                          (self.study, x) in n for n in self.named.values()
                          for x in (r["strategy"], r["identity"]))]
-        self.box.model().setStringList([r["strategy"] for r in self.rows])
+        self.names.setStringList([r["strategy"] for r in self.rows])
         self.show_current(self.current)
 
     def show_current(self, strategy: str) -> None:
         """Select `strategy` without announcing it."""
-        names = self.box.model().stringList()
+        names = self.names.stringList()
         self.box.setCurrentIndex(names.index(strategy) if strategy in names else -1)
         if strategy not in names:
             self.box.setEditText(strategy or "")

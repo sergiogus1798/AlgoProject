@@ -38,17 +38,28 @@ def sides(result: dict) -> tuple[list[dict], str]:
              for t in result["tabs"]], "<br>".join(t["note"] for t in result["tabs"]))
 
 
+def hide_first_row(view: ResultView) -> None:
+    """Hide `compare()`'s first row, each side's verdict header."""
+    lay = view.content.layout()
+    assert lay is not None
+    item = lay.itemAt(0)
+    assert item is not None
+    widget = item.widget()
+    assert widget is not None
+    widget.hide()
+
+
 class Sub(QWidget):
     """One sub-tab: a line saying what is shown (or why not), then the drawing."""
 
-    def __init__(self, body: QWidget) -> None:
+    def __init__(self, body: ResultView) -> None:
         """Hold `body` under a line of text."""
         super().__init__()
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 6, 0, 0)
         self.line = text("", T["muted"], 14)
         self.body = body
-        lay.addWidget(self.line, 0, Qt.AlignTop)
+        lay.addWidget(self.line, 0, Qt.AlignmentFlag.AlignTop)
         lay.addWidget(body, 1)
         lay.addStretch()            # takes the height when the body is hidden
 
@@ -96,9 +107,9 @@ class Ficha(QFrame):
         row = QHBoxLayout()
         row.addWidget(self.top)
         row.addWidget(self.share)
-        row.addWidget(QLabel("de trades", objectName="dim"))
+        row.addWidget(QLabel("de trades", objectName="dim"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         row.addSpacing(28)
-        row.addWidget(QLabel("Drawdown en", objectName="dim"))
+        row.addWidget(QLabel("Drawdown en", objectName="dim"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         for i, unit in enumerate(("%", "$")):
             button = QPushButton(unit)
             button.setCheckable(True)
@@ -160,10 +171,11 @@ class Ficha(QFrame):
             return sub.body.show_result(got, None)
         pair, notes = sides(got)
         sub.line.setText(notes)
-        sub.body.compare(*pair, tuple(t["title"] for t in got["tabs"]))
+        left, right = pair
+        sub.body.compare(left, right, (got["tabs"][0]["title"], got["tabs"][1]["title"]))
         # compare()'s first row is each side's verdict header; the Ficha judges nothing and
         # its sides are named by the tab title and the notes above, so the row goes.
-        sub.body.content.layout().itemAt(0).widget().hide()
+        hide_first_row(sub.body)
 
     def _random_oos(self, sub: Sub, w: dict) -> None:
         """The Cross Market result's «oos» tab (random entry on the main market's OOS), drawn here."""
@@ -175,4 +187,4 @@ class Ficha(QFrame):
         sub.body.show()
         sub.line.setText("")
         sub.body.show_result({**got["result"], "tabs": [tab], "warnings": []}, None)
-        sub.body.content.layout().itemAt(0).widget().hide()   # the cross-market verdict is not this test's
+        hide_first_row(sub.body)   # the cross-market verdict is not this test's

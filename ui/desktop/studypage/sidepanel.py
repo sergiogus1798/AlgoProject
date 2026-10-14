@@ -28,7 +28,7 @@ class SideToggles(QWidget):
         self.buttons: dict[QWidget, QPushButton] = {}
         self.row = QHBoxLayout(self)
         self.row.setContentsMargins(0, 0, 0, 0)
-        self.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)    # never wider than its buttons
+        self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)    # never wider than its buttons
         side.hide()
         self.sync()
 
@@ -38,7 +38,7 @@ class SideToggles(QWidget):
             page = self.side.widget(i)
             if page not in self.buttons and self.side.tabText(i) in BUTTONS:
                 words, tip = BUTTONS[self.side.tabText(i)]
-                b = QPushButton(words, checkable=True)
+                b = QPushButton(words, checkable=True)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                 b.setProperty("help", tip)
                 b.clicked.connect(lambda _=False, p=page: self.toggle(p))
                 self.row.addWidget(b)

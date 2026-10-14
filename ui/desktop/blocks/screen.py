@@ -1,10 +1,12 @@
 """The result as it stands on screen: each tab reduced to the blocks drawn, its choices written in its note."""
 
+
+from typing import Any
 from ui.desktop.blocks import markets
 from ui.desktop.blocks.pick import picked, selectors, shown
 
 
-def screen(result: dict, memory: dict[str, dict], alone: bool = True) -> dict:
+def screen(result: dict, memory: dict[str, dict], alone: bool = True) -> dict[str, Any]:
     """One result cut down to what the window draws, for `core.study.render` to write as a page.
 
     Args:

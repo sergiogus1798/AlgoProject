@@ -34,9 +34,9 @@ KINDS = {"pool": "Pool", "real": "Real", "funded": "Fondeo"}
 def table(columns: tuple) -> QTableWidget:
     """A read-only, row-selecting table with a tooltip per header."""
     out = QTableWidget(0, len(columns))
-    out.setSelectionBehavior(QAbstractItemView.SelectRows)
-    out.setSelectionMode(QAbstractItemView.SingleSelection)
-    out.setEditTriggers(QAbstractItemView.NoEditTriggers)
+    out.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+    out.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+    out.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
     out.verticalHeader().hide()
     for i, (head, tip) in enumerate(columns):
         item = QTableWidgetItem(head)
@@ -63,7 +63,7 @@ class Databank(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 6, 0, 0)
         bar = QHBoxLayout()
-        bar.addWidget(QLabel("Databank", objectName="kicker"))
+        bar.addWidget(QLabel("Databank", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.said = text("", T["muted"], 13)
         bar.addWidget(self.said, 1)
         for label, tip, slot in (
@@ -111,8 +111,8 @@ class Databank(QFrame):
                 item = QTableWidgetItem(value)
                 item.setToolTip(f"Identidad: {r['identity']}" if j else STRATEGIES[0][1])
                 if j == 0:
-                    item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-                    item.setCheckState(Qt.Checked if r["identity"] in kept else Qt.Unchecked)
+                    item.setFlags(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+                    item.setCheckState(Qt.CheckState.Checked if r["identity"] in kept else Qt.CheckState.Unchecked)
                 self.left.setItem(i, j, item)
         self.left.resizeColumnsToContents()
         pools = [{"kind": "pool", "id": p["name"], "pool": p["name"], "plan": "", "k": len(p["members"]),
@@ -146,12 +146,15 @@ class Databank(QFrame):
     def tick(self, on: bool) -> None:
         """Tick or untick every strategy."""
         for i in range(self.left.rowCount()):
-            self.left.item(i, 0).setCheckState(Qt.Checked if on else Qt.Unchecked)
+            box = self.left.item(i, 0)
+            assert box is not None
+            box.setCheckState(Qt.CheckState.Checked if on else Qt.CheckState.Unchecked)
 
     def ticked(self) -> list[dict]:
         """The ticked strategies, each with its newest version."""
         return [{"identity": r["identity"], "version": r["versions"][-1]["version"]}
-                for i, r in enumerate(self.strategies) if self.left.item(i, 0).checkState() == Qt.Checked]
+                for i, r in enumerate(self.strategies)
+                if (box := self.left.item(i, 0)) is not None and box.checkState() == Qt.CheckState.Checked]
 
     def picked(self) -> None:
         """A row of the tab on screen was chosen: tell the zone what the modules now read."""
@@ -173,7 +176,7 @@ class Databank(QFrame):
                                                                "sin espacios):")
         if not ok or not name:
             return
-        if QMessageBox.question(self, "Confirmar", FROZEN.format(name=name, n=len(members))) != QMessageBox.Yes:
+        if QMessageBox.question(self, "Confirmar", FROZEN.format(name=name, n=len(members))) != QMessageBox.StandardButton.Yes:  # pyright: ignore[reportCallIssue]  # PySide6 stub wants button0/button1 for the 3-arg form
             return
         background.post("portfolios/pool", {"name": name, "members": members}, self.written, owner=self)
 

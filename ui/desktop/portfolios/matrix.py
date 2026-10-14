@@ -45,24 +45,25 @@ class Matrix(QWidget):
         n = len(m["ids"])
         short = [label.split(" · ")[0].replace("Strategy ", "") for label in m["labels"]]
         table = QTableWidget(n, n)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        table.setSelectionMode(QAbstractItemView.NoSelection)
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         table.setHorizontalHeaderLabels(short)
         table.setVerticalHeaderLabels(short)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)      # the matrix takes the module's width
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)      # the matrix takes the module's width
         table.horizontalHeader().setMinimumSectionSize(CELL)
-        table.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
+        table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
         table.verticalHeader().setDefaultSectionSize(ROW)
         bold = QFont()
         bold.setBold(True)
         bold.setPointSize(13)
         for a in range(n):
-            table.horizontalHeaderItem(a).setToolTip(m["labels"][a])
-            table.verticalHeaderItem(a).setToolTip(m["labels"][a])
+            for header in (table.horizontalHeaderItem(a), table.verticalHeaderItem(a)):
+                assert header is not None
+                header.setToolTip(m["labels"][a])
             for b in range(n):
                 value, state = m["values"][a][b], m["states"][a][b]
                 item = QTableWidgetItem("" if value is None else f"{value:+.2f}")
-                item.setTextAlignment(Qt.AlignCenter)
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 item.setFont(bold)
                 if a != b:
                     item.setToolTip(f"{m['labels'][a]}\n{m['labels'][b]}\n{m['measure']}: "
@@ -83,7 +84,7 @@ class PairDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Pareja")
         self.resize(1200, 820)
-        frame = QFrame(objectName="term")
+        frame = QFrame(objectName="term")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(frame)

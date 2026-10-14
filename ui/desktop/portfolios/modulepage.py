@@ -1,5 +1,7 @@
 """One rail module of PORTFOLIOS: its settings strip with «Calcular», and below it the result's tabs."""
 
+from typing import TYPE_CHECKING, Any
+
 from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QLabel, QLineEdit, QScrollArea, QTabWidget,
                                QVBoxLayout, QWidget)
 
@@ -12,6 +14,9 @@ from ui.desktop.portfolios.calc import CalcButton
 from ui.desktop.portfolios.matrix import Matrix, PairDialog
 from ui.desktop.theme import T
 
+if TYPE_CHECKING:
+    from ui.desktop.portfolios.board import PortfoliosBoard
+
 NOTHING = "Todavía no hay nada que enseñar"
 MANY = 1
 ONE_ROW = 3     # selectors that fit beside the launchers; more, and the typed ones get a row of their own
@@ -21,7 +26,7 @@ def scrolled(inner: QWidget) -> QScrollArea:
     """A tab's content, scrolling when it is taller than the module."""
     area = QScrollArea()
     area.setWidgetResizable(True)
-    area.setFrameShape(QFrame.NoFrame)
+    area.setFrameShape(QFrame.Shape.NoFrame)
     area.setWidget(inner)
     return area
 
@@ -30,15 +35,16 @@ class ModulePage(QWidget):
     """`board` gives the selection (`board.selection`), the test overrides (`board.overrides()`)
     and is told when a job ended (`board.computed()`)."""
 
-    def __init__(self, name: str, board: QWidget) -> None:
+    def __init__(self, name: str, board: "PortfoliosBoard") -> None:
         """Build the strip; the result is asked for on `refresh`."""
         super().__init__()
         self.name, self.board, self.spec = name, board, strips.MODULES[name]
-        self.asked, self.want_tab, self.inputs, self.followed = None, "", {}, ""
+        self.asked, self.want_tab, self.followed = None, "", ""
+        self.inputs: dict[str, QComboBox | QLineEdit] = {}
         lay = QVBoxLayout(self)
         lay.setContentsMargins(14, 0, 0, 0)
         lay.setSpacing(6)
-        lay.addWidget(QLabel(name, objectName="h1"))
+        lay.addWidget(QLabel(name, objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(text(self.spec["intro"], T["muted"], 14))
         strip, typed = QHBoxLayout(), QHBoxLayout()
         long = len(self.spec["selectors"]) > ONE_ROW       # one row squeezed the combos and cut the button
@@ -47,15 +53,18 @@ class ModulePage(QWidget):
             head = QLabel(label)
             head.setToolTip(tip)
             row.addWidget(head)
-            box = QComboBox() if kind == "combo" else QLineEdit(strips.PREFILLED.get(key, ""))
-            box.setToolTip(tip)
+            box: QComboBox | QLineEdit
             if kind == "combo":
+                box = QComboBox()
+                box.setToolTip(tip)
                 box.setMinimumWidth(150)
-                box.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+                box.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
                 for value, shown in strips.STATIC.get(key, []):
                     box.addItem(shown, value)
                 box.currentIndexChanged.connect(lambda _: self.refresh())
             else:
+                box = QLineEdit(strips.PREFILLED.get(key, ""))
+                box.setToolTip(tip)
                 box.setFixedWidth(130)
                 box.setPlaceholderText("decisión tuya")
             self.inputs[key] = box
@@ -72,7 +81,7 @@ class ModulePage(QWidget):
         for line in (self.state, self.banner, self.lacks):
             line.hide()
             lay.addWidget(line)
-        lay.addWidget(QFrame(objectName="rule"))
+        lay.addWidget(QFrame(objectName="rule"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.body = QWidget()
         lay.addWidget(self.body, 1)
 
@@ -83,7 +92,7 @@ class ModulePage(QWidget):
             return ""
         return (box.currentData() or "") if isinstance(box, QComboBox) else box.text().strip()
 
-    def params(self) -> dict:
+    def params(self) -> dict[str, Any]:
         """What a launcher sends: the databank's selection, this strip, and the test overrides."""
         chosen = {k: self.board.selection.get(k, "") for k in ("pool", "run")}
         return chosen | {k: self.value(k) for k in ("plan", "firm", "horizon", "edge_from", "n_paths")} | {
@@ -106,7 +115,7 @@ class ModulePage(QWidget):
             table.blockSignals(False)
         self.board.computed()
 
-    def query(self) -> dict:
+    def query(self) -> dict[str, str]:
         """What this module asks the daemon now: the selection and the strip, blanks dropped."""
         asked = {"name": self.name, **{k: self.board.selection.get(k, "") for k in ("pool", "run", "strategy")},
                  **{k: self.value(k) for k in ("plan", "firm", "freq", "measure", "bank")}}
@@ -118,6 +127,7 @@ class ModulePage(QWidget):
         if self.name == "Fondeo" and run.get("plan") and run["id"] != self.followed:
             self.followed = run["id"]       # a funded run chosen below brings its plan to the strip
             box = self.inputs["plan"]
+            assert isinstance(box, QComboBox)
             box.blockSignals(True)
             if box.findData(run["plan"]) < 0:
                 box.addItem(run["plan"], run["plan"])
@@ -167,7 +177,7 @@ class ModulePage(QWidget):
             self.body = QWidget()
             col = QVBoxLayout(self.body)
             col.setContentsMargins(0, 24, 0, 0)
-            col.addWidget(QLabel(NOTHING, objectName="kicker"))
+            col.addWidget(QLabel(NOTHING, objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             col.addWidget(text((got.get("empty") or "").replace("\n", "<br>"), T["text"], 18))
             col.addStretch(1)
         else:
@@ -181,7 +191,9 @@ class ModulePage(QWidget):
             self.body.setCurrentIndex(next((i for i, t in enumerate(titles) if t.startswith(keep)), 0) if keep else 0)
             if got.get("empty"):
                 self.say(got["empty"], colour("watch"))
-        self.layout().replaceWidget(old, self.body)
+        lay = self.layout()
+        assert lay is not None
+        lay.replaceWidget(old, self.body)
         old.hide()
         old.deleteLater()
 

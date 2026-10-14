@@ -27,7 +27,7 @@ def as_text(value: object) -> str:
     return value if isinstance(value, str) else json.dumps(value)
 
 
-def editor(knob: dict) -> QWidget:
+def editor(knob: dict) -> QCheckBox | QComboBox | QLineEdit:
     """The widget one knob is edited with, by its type.
 
     Args:
@@ -52,7 +52,7 @@ def editor(knob: dict) -> QWidget:
     return line
 
 
-def read(widget: QWidget) -> str:
+def read(widget: QCheckBox | QComboBox | QLineEdit) -> str:
     """What an editor now holds, in `--set` spelling.
 
     Args:
@@ -68,7 +68,7 @@ def read(widget: QWidget) -> str:
     return widget.text().strip()
 
 
-def put(widget: QWidget, value: str) -> None:
+def put(widget: QCheckBox | QComboBox | QLineEdit, value: str) -> None:
     """Set an editor to a value in `--set` spelling, the inverse of `read`.
 
     Args:
@@ -95,7 +95,7 @@ class Drawer(QFrame):
         self.setObjectName("term")
         self.study = ""
         self.shown_hash: str | None = None
-        self.editors: dict[str, tuple[QWidget, str]] = {}   # key -> (widget, default text)
+        self.editors: dict[str, tuple[QCheckBox | QComboBox | QLineEdit, str]] = {}   # key -> (widget, default text)
         self.edits: dict[str, dict[str, str]] = {}          # study -> {key: text}
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 8, 10, 8)
@@ -114,11 +114,11 @@ class Drawer(QFrame):
         lay.addWidget(self.sign)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.body = QWidget()
         scroll.setWidget(self.body)
-        self.scroll = scroll
+        self.scroll = scroll  # pyright: ignore[reportAttributeAccessIssue]  # shadows QWidget.scroll
         lay.addWidget(scroll, 1)
 
     def load(self, study: str, title: str) -> None:
@@ -145,7 +145,7 @@ class Drawer(QFrame):
             for knob in section["knobs"]:
                 grid.addWidget(self._knob(knob, section["name"]))
         grid.addStretch(1)
-        self.scroll.setWidget(self.body)
+        self.scroll.setWidget(self.body)  # pyright: ignore[reportAttributeAccessIssue]  # QWidget.scroll is a method
         self.refresh()
 
     def _knob(self, knob: dict, section: str) -> QWidget:

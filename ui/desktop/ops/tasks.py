@@ -1,5 +1,7 @@
 """One SQX project task by task, read from its install: the lower half of «En marcha»."""
 
+
+from typing import Any
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QAbstractItemView, QFrame, QHeaderView, QLabel, QSplitter,
@@ -118,18 +120,18 @@ class Tasks(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(8)
-        self.state = QLabel("", objectName="mono", wordWrap=True)
+        self.state = QLabel("", objectName="mono", wordWrap=True)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(self.state)
-        self.genetic = QLabel("", objectName="mono", wordWrap=True, toolTip=GENETIC_TIP)
+        self.genetic = QLabel("", objectName="mono", wordWrap=True, toolTip=GENETIC_TIP)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(self.genetic)
         lay.addWidget(rule())
-        split = QSplitter(Qt.Vertical)
+        split = QSplitter(Qt.Orientation.Vertical)
         top = QFrame()
         tl = QVBoxLayout(top)
         tl.setContentsMargins(0, 0, 0, 0)
         tl.addWidget(kicker("las tareas de SQX y los pasos de Python, en el orden del workflow"))
         self.table = QTableWidget()
-        self.table.setSelectionMode(QAbstractItemView.NoSelection)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         self.table.verticalHeader().setVisible(False)
         self.table.verticalHeader().setDefaultSectionSize(24)
         self.table.setShowGrid(False)
@@ -139,15 +141,15 @@ class Tasks(QFrame):
         bl = QVBoxLayout(bottom)
         bl.setContentsMargins(0, 0, 0, 0)
         bl.addWidget(kicker("el log del install, últimas líneas de progreso"))
-        self.log = QLabel("", objectName="dim")
-        self.log.setAlignment(Qt.AlignTop)
-        self.log.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.log = QLabel("", objectName="dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.log.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.log.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         bl.addWidget(self.log, 1)
         split.addWidget(bottom)
         split.setSizes([420, 160])
         lay.addWidget(split, 1)
 
-    def load(self, role: str, project: str) -> dict:
+    def load(self, role: str, project: str) -> dict[str, Any]:
         """Redraw one project from what the daemon reads right now.
 
         Args:
@@ -159,7 +161,7 @@ class Tasks(QFrame):
         """
         return self.show(project, client.get("ops/steps", install=role, project=project))
 
-    def show(self, project: str, got: dict) -> dict:
+    def show(self, project: str, got: dict) -> dict[str, Any]:
         """Paint one `/api/progress` answer (`load`, or `Running` off the GUI thread).
 
         Args:
@@ -189,7 +191,9 @@ class Tasks(QFrame):
         self.table.setRowCount(len(tasks))
         self.table.setHorizontalHeaderLabels([label(c) for c in COLUMNS])
         for j, name in enumerate(COLUMNS):
-            self.table.horizontalHeaderItem(j).setToolTip(TIPS.get(name, ""))
+            head = self.table.horizontalHeaderItem(j)
+            assert head is not None
+            head.setToolTip(TIPS.get(name, ""))
         for i, t in enumerate(tasks):
             if t["kind"] == "python":
                 self.python_row(i, t)
@@ -203,10 +207,10 @@ class Tasks(QFrame):
                      "·" if n is None else num(n)]
             for j, value in enumerate(cells):
                 item = QTableWidgetItem(value)
-                item.setFlags(Qt.ItemIsEnabled)
+                item.setFlags(Qt.ItemFlag.ItemIsEnabled)
                 item.setToolTip(TIPS.get(COLUMNS[j], ""))
                 if j in (0, 5, 7, 8, 10, 11):
-                    item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
                 if j == 4:
                     item.setForeground(QColor(C[colour]))
                 if t["status"] == "inactive":
@@ -222,9 +226,9 @@ class Tasks(QFrame):
             elif t["status"] in ("done", "earlier"):
                 self.table.setCellWidget(i, BAR, bar(100, 110, C["promising"]))
         header = self.table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.Stretch)
-        header.setSectionResizeMode(BAR, QHeaderView.Fixed)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(BAR, QHeaderView.ResizeMode.Fixed)
         self.table.setColumnWidth(BAR, 120)
 
     def python_row(self, i: int, t: dict) -> None:
@@ -233,10 +237,10 @@ class Tasks(QFrame):
         cells = [num(i + 1), t["title"], "Python", "·", text] + ["·"] * (len(COLUMNS) - 5)
         for j, value in enumerate(cells):
             item = QTableWidgetItem(value)
-            item.setFlags(Qt.ItemIsEnabled)
+            item.setFlags(Qt.ItemFlag.ItemIsEnabled)
             item.setToolTip(t["why"] if j == 1 else TIPS.get(COLUMNS[j], ""))
             if j == 0:
-                item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             if j == 4:
                 item.setForeground(QColor(C[colour]))
             self.table.setItem(i, j, item)

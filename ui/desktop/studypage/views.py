@@ -1,6 +1,9 @@
 """The study page of one strategy, with its Ficha as the first tab — what the Estrategia zone embeds."""
 
+from typing import cast
+
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QVBoxLayout
 
 from ui.desktop.studypage.ficha import Ficha
 from ui.desktop.studypage.offer import OFF
@@ -20,7 +23,7 @@ class StrategyPage(StudyPage):
         super().__init__(strategy_page=True)
         self.ficha = Ficha()
         self.crumb.hide()          # the context bar above says project › strategy already
-        lay = self.layout()
+        lay = cast(QVBoxLayout, self.layout())
         lay.insertWidget(lay.indexOf(self.families) + 1, self.ficha, 1)
         self.families.blockSignals(True)
         self.families.insertTab(0, "Ficha")
@@ -38,14 +41,14 @@ class StrategyPage(StudyPage):
 
     def _mode(self, ficha: bool) -> None:
         """Show the Ficha or the study widgets, never both."""
+        assert self.ficha is not None and (scrolled := self.view.parentWidget()) is not None
         self.ficha.setVisible(ficha)
-        for w in (self.studies, self.head, self.bar, self.toggles, self.note,
-                  self.view.parentWidget()):
+        for w in (self.studies, self.head, self.bar, self.toggles, self.note, scrolled):
             w.setVisible(not ficha)
         if ficha:
             for w in (self.back, self.skipped):
                 w.hide()
-            self.ficha.layout().insertWidget(0, self.picker, 0, Qt.AlignLeft)   # the Ficha's header
+            cast(QVBoxLayout, self.ficha.layout()).insertWidget(0, self.picker, 0, Qt.AlignmentFlag.AlignLeft)   # the Ficha's header
             w = self.where
             self.picker.aim(w["project"], w["databank"], w["strategy"], "")
         else:
@@ -76,8 +79,10 @@ class StrategyPage(StudyPage):
         self.hold = True
         super().follow(now)
         self.hold = False
+        assert self.ficha is not None
         self.ficha.load(self.where)
-        self.picker.aim(*(self.where[k] for k in ("project", "databank", "strategy")), "")
+        w = self.where
+        self.picker.aim(w["project"], w["databank"], w["strategy"], "")
 
     def open_family(self, name: str) -> None:
         """Show one family tab by the name it shows (Estrategia opens on its origin's family).

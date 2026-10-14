@@ -10,7 +10,7 @@ from ui.desktop.blocks.card import text
 from ui.desktop.blocks.result import ResultView
 from ui.desktop.blocks.states import colour
 from ui.desktop.portfolios.detail import FAMILY
-from ui.desktop.studypage.ficha import sides
+from ui.desktop.studypage.ficha import hide_first_row, sides
 from ui.desktop.studypage.net import fetch as daemon_fetch
 from ui.desktop.theme import T
 from ui.desktop.tradegallery import TradeGallery
@@ -66,21 +66,21 @@ class ArchivedStudies(QFrame):
         self.menu.clear()
         for name, _route, _ in SHEETS:
             item = QListWidgetItem(name)
-            item.setData(Qt.UserRole, ("sheet", name, shown["databank"]))
+            item.setData(Qt.ItemDataRole.UserRole, ("sheet", name, shown["databank"]))
             item.setToolTip(f"Las operaciones congeladas de {shown['databank']}, IS y OOS por "
                             "separado. No es un estudio.")
             self.menu.addItem(item)
         for databank, studies in shown["held"].items():
             for s in studies:
                 item = QListWidgetItem(f"{databank} › {s['title']}")
-                item.setData(Qt.UserRole, ("study", s["study"], databank))
+                item.setData(Qt.ItemDataRole.UserRole, ("study", s["study"], databank))
                 item.setToolTip(f"{FAMILY.get(s['family'], s['family'])}"
                                 f"{', paso ' + s['step'] if s['step'] else ''} · corrió el "
                                 f"{s['day']} · configuración {s['config_hash'] or '—'}")
                 self.menu.addItem(item)
         for e in shown.get("extras", []):
             item = QListWidgetItem(f"Campaña · paso {e['step']} › {e['title']}")
-            item.setData(Qt.UserRole, ("extra", e["key"], ""))
+            item.setData(Qt.ItemDataRole.UserRole, ("extra", e["key"], ""))
             item.setToolTip("Resultado que el archivo no puede emparejar por identidad (lleva otra "
                             "firma en su databank): se guardó en la carpeta del workflow, de la madre.")
             self.menu.addItem(item)
@@ -92,7 +92,7 @@ class ArchivedStudies(QFrame):
         item = self.menu.currentItem()
         if item is None:
             return
-        kind, key, databank = item.data(Qt.UserRole)
+        kind, key, databank = item.data(Qt.ItemDataRole.UserRole)
         s = self.shown
         self.view.show()
         self.gallery.hide()
@@ -137,9 +137,10 @@ class ArchivedStudies(QFrame):
             return self._no_report()
         pair, notes = sides(got)
         self.note.setText(f"{self.note.text()}<br>{notes}")
-        self.view.compare(*pair, tuple(t["title"] for t in got["tabs"]))
+        left, right = pair
+        self.view.compare(left, right, (got["tabs"][0]["title"], got["tabs"][1]["title"]))
         # As on the live Ficha: the sheet judges nothing, so compare()'s verdict row goes.
-        self.view.content.layout().itemAt(0).widget().hide()
+        hide_first_row(self.view)
         self._no_report()
 
     def _no_report(self) -> None:

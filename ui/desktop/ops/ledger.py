@@ -3,7 +3,7 @@
 import httpx
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QLabel, QTableWidget,
+from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QFrame, QHBoxLayout, QLabel, QTableWidget,
                                QTableWidgetItem, QTabWidget, QVBoxLayout)
 
 from ui.desktop import client
@@ -53,7 +53,7 @@ def table(headers: list[str], rows: list[list[str]], tips: list[str] | None = No
     t = QTableWidget(len(rows), len(headers))
     t.setHorizontalHeaderLabels([label(h) for h in headers])
     t.verticalHeader().setVisible(False)
-    t.setEditTriggers(QTableWidget.NoEditTriggers)
+    t.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
     for r, row in enumerate(rows):
         for c, text in enumerate(row):
             item = QTableWidgetItem(text)
@@ -70,14 +70,14 @@ class Ledger(QFrame):
 
     def __init__(self) -> None:
         """Build the header, the spent summary and the two tables."""
-        super().__init__(objectName="term")
+        super().__init__(objectName="term")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay = QVBoxLayout(self)
         lay.setContentsMargins(16, 12, 16, 12)
         lay.setSpacing(8)
         head = QHBoxLayout()
-        head.addWidget(QLabel("Registro de búsquedas", objectName="h1"))
-        head.addWidget(QLabel("Estudio", objectName="kicker"))
-        self.pick = QComboBox(minimumWidth=380)
+        head.addWidget(QLabel("Registro de búsquedas", objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        head.addWidget(QLabel("Estudio", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.pick = QComboBox(minimumWidth=380)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.pick.setToolTip("Un estudio es un activo, un timeframe y una familia de plantillas: "
                              "la unidad a la que se le debe la corrección por multiplicidad.")
         self.pick.activated.connect(lambda: self.load(self.pick.currentText()))
@@ -89,13 +89,13 @@ class Ledger(QFrame):
                           "QLabel { border: none; }")
         inside = QVBoxLayout(box)
         inside.setContentsMargins(12, 8, 12, 8)
-        inside.addWidget(QLabel(EXPLAIN, wordWrap=True, styleSheet="font-weight: 600;"))
-        inside.addWidget(QLabel(WHY, objectName="dim", wordWrap=True))
+        inside.addWidget(QLabel(EXPLAIN, wordWrap=True, styleSheet="font-weight: 600;"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        inside.addWidget(QLabel(WHY, objectName="dim", wordWrap=True))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(box)
-        self.window_rows = QLabel("", objectName="dim", wordWrap=True)
+        self.window_rows = QLabel("", objectName="dim", wordWrap=True)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(self.window_rows)
-        self.blind = QLabel("", wordWrap=True)
-        self.trials = QLabel("", objectName="mono", wordWrap=True)
+        self.blind = QLabel("", wordWrap=True)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.trials = QLabel("", objectName="mono", wordWrap=True)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(self.blind)
         lay.addWidget(self.trials)
         self.tabs = QTabWidget()
@@ -180,7 +180,9 @@ class Ledger(QFrame):
         for i, r in enumerate(rows):
             if r.get("launched_by") == WINDOW:
                 for c in range(t.columnCount()):
-                    t.item(i, c).setForeground(QColor(C["accent"]))
+                    it = t.item(i, c)
+                    assert it is not None
+                    it.setForeground(QColor(C["accent"]))
         return t
 
     def funnel(self, funnel: list[dict], rows: list[dict]) -> QTableWidget:
@@ -200,11 +202,15 @@ class Ledger(QFrame):
                   [f"{r['criterion']}\nnota: {r['note']}" for r in rows])
         for r, f in enumerate(funnel):
             if rows[r].get("launched_by") == WINDOW:
-                t.item(r, len(FUNNEL) - 1).setForeground(QColor(C["accent"]))
+                last = t.item(r, len(FUNNEL) - 1)
+                assert last is not None
+                last.setForeground(QColor(C["accent"]))
             share = f["kept"] if f["kept"] is not None else 1
             colour = C["dead"] if share < 0.5 else C["weak"] if share < 1 else T["muted"]
-            t.item(r, 5).setForeground(QColor(colour))
-            t.item(r, 5).setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            kept = t.item(r, 5)
+            assert kept is not None
+            kept.setForeground(QColor(colour))
+            kept.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         return t
 
     def spent(self, spent: dict) -> QTableWidget:
@@ -229,7 +235,9 @@ class Ledger(QFrame):
         for r, n in enumerate(names):
             if virgin[n]["reserved_for"]:
                 colour = C["promising"] if virgin[n]["reads"] == 0 else C["weak"]
-                t.item(r, 2).setForeground(QColor(colour))
-                t.item(r, 2).setToolTip("Cuántas veces se ha leído el tramo. Informativo: "
+                reads = t.item(r, 2)
+                assert reads is not None
+                reads.setForeground(QColor(colour))
+                reads.setToolTip("Cuántas veces se ha leído el tramo. Informativo: "
                                         "sólo un agente autónomo tiene prohibido mirarlo.")
         return t

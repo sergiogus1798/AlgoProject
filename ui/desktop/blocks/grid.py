@@ -89,12 +89,12 @@ def _draw(b: dict) -> Callable:
         p.setFont(chart.font(11, True))
         p.setPen(QColor(T["text"]))
         for j, c in enumerate(b["cols"]):
-            p.drawText(QRectF(left + j * cw, 0, cw, HEAD - 4), Qt.AlignCenter, str(c))
+            p.drawText(QRectF(left + j * cw, 0, cw, HEAD - 4), Qt.AlignmentFlag.AlignCenter, str(c))
         for i, r in enumerate(b["rows"]):
             top = HEAD + i * ch
             p.setFont(chart.font(11, True))
             p.setPen(QColor(T["text"]))
-            p.drawText(QRectF(0, top, left - 10, ch), Qt.AlignRight | Qt.AlignVCenter, str(r))
+            p.drawText(QRectF(0, top, left - 10, ch), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, str(r))
             p.setFont(chart.font(11))
             for j, v in enumerate(b["values"][i]):
                 cell = QRectF(left + j * cw + 1, top + 1, cw - 2, ch - 2)
@@ -107,7 +107,7 @@ def _draw(b: dict) -> Callable:
                 if not b["labels"] and p.fontMetrics().horizontalAdvance(text) >= cw - 6:
                     text = _short(v)
                 if b["labels"] or p.fontMetrics().horizontalAdvance(text) < cw - 6:
-                    p.drawText(cell.adjusted(4, 0, -4, 0), Qt.AlignCenter | Qt.TextWordWrap, text)
+                    p.drawText(cell.adjusted(4, 0, -4, 0), Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap, text)
         if b.get("region"):
             _region(p, b, left, cw, ch)
         if b.get("mark"):
@@ -119,7 +119,7 @@ def _draw(b: dict) -> Callable:
 def _region(p: QPainter, b: dict, left: float, cw: float, ch: float) -> None:
     """A faint outline on every cell of `region` (2026-09-30, §8.5): a plateau box carried
     over from another surface. Never touches `values` or `labels` — only `mark` draws a tag."""
-    p.setBrush(Qt.NoBrush)
+    p.setBrush(Qt.BrushStyle.NoBrush)
     p.setPen(QPen(QColor("#d5dbea"), 3.5))
     for cell in b["region"]:
         i, j = b["rows"].index(cell["row"]), b["cols"].index(cell["col"])
@@ -131,7 +131,7 @@ def _mark(p: QPainter, b: dict, left: float, cw: float, ch: float) -> None:
     m = b["mark"]
     i, j = b["rows"].index(m["row"]), b["cols"].index(m["col"])
     cell = QRectF(left + j * cw, HEAD + i * ch, cw, ch)
-    p.setBrush(Qt.NoBrush)
+    p.setBrush(Qt.BrushStyle.NoBrush)
     p.setPen(QPen(QColor(T["bg"]), 5))
     p.drawRect(cell.adjusted(1, 1, -1, -1))
     p.setPen(QPen(QColor(REAL), 3))
@@ -141,7 +141,7 @@ def _mark(p: QPainter, b: dict, left: float, cw: float, ch: float) -> None:
                  p.fontMetrics().height())
     p.fillRect(tag, QColor(T["bg"]))
     p.setPen(QColor(REAL))
-    p.drawText(tag, Qt.AlignCenter, m["label"])
+    p.drawText(tag, Qt.AlignmentFlag.AlignCenter, m["label"])
 
 
 def _tip(b: dict) -> Callable:

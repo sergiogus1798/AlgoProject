@@ -1,5 +1,7 @@
 """The scatter block: points by group, the quadrants through zero and the fitted line if any."""
 
+
+from typing import Any
 import random
 from collections.abc import Callable
 
@@ -16,7 +18,7 @@ from ui.desktop.theme import T
 MOST = 400   # points drawn; the fit and r in the block were computed on all of them
 
 
-def _sample(b: dict) -> dict:
+def _sample(b: dict) -> dict[str, Any]:
     """The block with at most MOST points (seeded, so a redraw shows the same ones); the axes
     keep the range of all of them."""
     pts = b["points"]
@@ -25,10 +27,10 @@ def _sample(b: dict) -> dict:
     return {**b, "points": kept, "n_all": len(pts), "span": ((min(xs), max(xs)), (min(ys), max(ys)))}
 
 
-def _maps(b: dict, box: QRectF) -> tuple[Callable, Callable, tuple, tuple]:
+def _maps(b: dict, box: QRectF) -> tuple[Callable, Callable, tuple[float, float], tuple[float, float]]:
     """The two data-to-pixel maps and the two data ranges."""
     sx, sy = b["span"]
-    return (axis.scale(*sx, box.left(), box.right()), axis.scale(*sy, box.bottom(), box.top()),
+    return (axis.scale(sx[0], sx[1], box.left(), box.right()), axis.scale(sy[0], sy[1], box.bottom(), box.top()),
             sx, sy)
 
 
@@ -46,7 +48,7 @@ def _draw(b: dict) -> Callable:
         box = chart.area(rect)
         x, y, sx, sy = _maps(b, box)
         chart.axes(p, box, [(x(v), chart.num(v)) for v in axis.ticks(*sx)],
-                   [(y(v), chart.num(v)) for v in axis.ticks(*sy, 5)])
+                   [(y(v), chart.num(v)) for v in axis.ticks(sy[0], sy[1], 5)])
         chart.titles(p, box, rect, b["x_label"], b["y_label"])
         if b["quadrants"]:
             p.setPen(QPen(QColor(T["muted"]), 1.2))
@@ -60,7 +62,7 @@ def _draw(b: dict) -> Callable:
             p.drawEllipse(QPointF(x(pt["x"]), y(pt["y"])), 5, 5)
         if b["fit"]:
             f = b["fit"]
-            p.setPen(QPen(QColor(T["text"]), 1.5, Qt.DashLine))
+            p.setPen(QPen(QColor(T["text"]), 1.5, Qt.PenStyle.DashLine))
             p.drawLine(QPointF(x(sx[0]), y(f["intercept"] + f["slope"] * sx[0])),
                        QPointF(x(sx[1]), y(f["intercept"] + f["slope"] * sx[1])))
 

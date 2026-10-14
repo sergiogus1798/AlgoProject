@@ -1,5 +1,7 @@
 """The whole of one study result, or two side by side: verdict, staleness, tabs, warnings, glossary."""
 
+from typing import Any
+
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QPushButton, QScrollArea, QSizePolicy,
                                QTabWidget, QVBoxLayout, QWidget)
 
@@ -58,6 +60,8 @@ class ResultView(QWidget):
     """One study result as a page, or two compared. Remembers the open tab and the selectors
     across calls, so moving from one strategy to the next keeps the reader where he was."""
 
+    scroll: QScrollArea  # pyright: ignore[reportIncompatibleMethodOverride]  # shadows QWidget.scroll; tests read view.scroll
+
     def __init__(self) -> None:
         """Start empty, inside its own scroll area."""
         super().__init__()
@@ -71,7 +75,7 @@ class ResultView(QWidget):
         self.pages: dict[int, TabPage] = {}
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.content = QWidget()
         scroll.setWidget(self.content)
         outer = QVBoxLayout(self)
@@ -80,7 +84,7 @@ class ResultView(QWidget):
         self.scroll = scroll
         self.show_result(None, None)
 
-    def show(self, *args: object) -> None:
+    def show(self, *args: Any) -> None:
         """Draw one result: `show(result, meta)`. Called bare it is Qt's own `show()`, which
         this name would otherwise hide from every caller that means the widget's visibility.
 
@@ -130,6 +134,7 @@ class ResultView(QWidget):
         Args:
             index: Its position in the stored result's `partials`.
         """
+        assert self.stored is not None
         part = self.stored["partials"][index]["result"]
         for tab in part["tabs"]:            # open the stored side on the same market or test
             for s in selectors(tab):
@@ -145,6 +150,7 @@ class ResultView(QWidget):
         Args:
             index: Its position in the stored result's `partials`.
         """
+        assert self.stored is not None
         part = self.stored["partials"][index]["result"]
         got = fuse.merge(self.stored, part)
         self.showing = f"merged:{index}"
@@ -211,7 +217,7 @@ class ResultView(QWidget):
             # Expanding (Qt's default) grabs the leftover space the outer stretch was meant
             # to hold, leaving a blank gap inside the tab instead of above the glossary
             # (§1 «hueco vacío enorme»); Minimum keeps it at its content's own height.
-            self.tabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+            self.tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
             for n in names:
                 tab = next(t for r in results for t in r["tabs"] if t["name"] == n)
                 holder = Slot()            # the page goes in on first opening: a population
@@ -244,7 +250,9 @@ class ResultView(QWidget):
             page = TabPage(sides, self.memory.setdefault(name, {}), pool)
             self.memory[name] = page.chosen
             self.pages[index] = page
-            self.tabs.widget(index).layout().addWidget(page)
+            holder = self.tabs.widget(index).layout()
+            assert holder is not None
+            holder.addWidget(page)
         self.tab = name
         self.tabs.widget(index).updateGeometry()   # the slots' hints changed with the tab shown
         self.tabs.updateGeometry()

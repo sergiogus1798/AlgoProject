@@ -3,6 +3,7 @@
 from collections.abc import Callable
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (QAbstractItemView, QFrame, QHBoxLayout, QLabel, QListWidget,
                                QListWidgetItem, QPushButton, QScrollArea, QSplitter,
                                QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
@@ -54,16 +55,16 @@ class PortfoliosZone(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(20, 16, 20, 16)
         lay.setSpacing(8)
-        lay.addWidget(QLabel("Portfolios", objectName="kicker"))
-        lay.addWidget(QLabel("Estrategias archivadas", objectName="h1"))
+        lay.addWidget(QLabel("Portfolios", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        lay.addWidget(QLabel("Estrategias archivadas", objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(text(INTRO, T["muted"], 13))
         self.said = text("", T["muted"], 13)
         lay.addWidget(self.said)
-        lay.addWidget(QFrame(objectName="rule"))
+        lay.addWidget(QFrame(objectName="rule"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.table = QTableWidget(0, len(COLUMNS))
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.verticalHeader().hide()
         for i, (head, tip) in enumerate(COLUMNS):
             item = QTableWidgetItem(label(head))
@@ -75,10 +76,10 @@ class PortfoliosZone(QFrame):
         self.versions.setMaximumHeight(150)
         self.versions.currentItemChanged.connect(lambda *_: self._version())
         self.body = text("", T["text"], 13)
-        self.body.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.body.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setWidget(self.body)
         self.go = QPushButton("Importar esta versión")
         self.go.setToolTip("Abre la página de Estrategia con todo lo que esta versión congeló. "
@@ -88,7 +89,7 @@ class PortfoliosZone(QFrame):
         right = QWidget()
         side = QVBoxLayout(right)
         side.setContentsMargins(12, 0, 0, 0)
-        side.addWidget(QLabel(label("versiones"), objectName="mono"))
+        side.addWidget(QLabel(label("versiones"), objectName="mono"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         side.addWidget(self.versions)
         side.addWidget(scroll, 1)
         row = QHBoxLayout()
@@ -101,7 +102,7 @@ class PortfoliosZone(QFrame):
         split.setSizes([900, 640])
         lay.addWidget(split, 1)
 
-    def showEvent(self, event: object) -> None:  # noqa: N802 — Qt's name
+    def showEvent(self, event: QShowEvent) -> None:  # noqa: N802 — Qt's name
         """Read the archive the first time the zone is shown.
 
         Args:
@@ -148,7 +149,7 @@ class PortfoliosZone(QFrame):
         for v in reversed(held["versions"]):
             item = QListWidgetItem(f"{detail.when(v['archived_at'])} · paso {v['step']}"
                                    + (f" · {v['note']}" if v["note"] else ""))
-            item.setData(Qt.UserRole, v["version"])
+            item.setData(Qt.ItemDataRole.UserRole, v["version"])
             item.setToolTip(f"Versión {v['version']} · desde {v['databank']} · "
                             + detail.ledger(v["ledger"]))
             self.versions.addItem(item)
@@ -161,7 +162,7 @@ class PortfoliosZone(QFrame):
         item = self.versions.currentItem()
         if not (picked and item):
             return "", ""
-        return self.rows[picked[0].row()]["identity"], item.data(Qt.UserRole)
+        return self.rows[picked[0].row()]["identity"], item.data(Qt.ItemDataRole.UserRole)
 
     def _version(self) -> None:
         """A version was chosen: say what it holds, and arm «Importar»."""
@@ -183,7 +184,7 @@ class PortfoliosZone(QFrame):
         i = next(k for k, r in enumerate(self.rows) if r["identity"] == identity)
         self.table.selectRow(i)
         for k in range(self.versions.count()):
-            if self.versions.item(k).data(Qt.UserRole) == version:
+            if self.versions.item(k).data(Qt.ItemDataRole.UserRole) == version:
                 self.versions.setCurrentRow(k)
 
     def _import(self) -> None:

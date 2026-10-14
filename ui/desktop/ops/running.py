@@ -26,7 +26,7 @@ class Running(QFrame):
 
     def __init__(self) -> None:
         """Build the header with its pickers, the line that ties both halves, and the split."""
-        super().__init__(objectName="term")
+        super().__init__(objectName="term")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.data: dict[str, list[str]] = {}
         self.by_hand = False                 # once the owner picks, the zone stops choosing
         self.timer = QTimer(self)
@@ -38,21 +38,21 @@ class Running(QFrame):
         lay.setContentsMargins(16, 12, 16, 12)
         lay.setSpacing(8)
         head = QHBoxLayout()
-        head.addWidget(QLabel("En marcha", objectName="h1"))
+        head.addWidget(QLabel("En marcha", objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         head.addSpacing(12)
         head.addWidget(kicker("install"))
-        self.install = QComboBox(toolTip=PICKER_TIP)
+        self.install = QComboBox(toolTip=PICKER_TIP)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.install.activated.connect(self.install_picked)
         head.addWidget(self.install)
         head.addWidget(kicker("proyecto"))
-        self.project = QComboBox(toolTip=PICKER_TIP, minimumWidth=300)
+        self.project = QComboBox(toolTip=PICKER_TIP, minimumWidth=300)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.project.activated.connect(self.project_picked)
         head.addWidget(self.project)
         head.addStretch()
         lay.addLayout(head)
-        self.note = QLabel("", objectName="dim", wordWrap=True)
+        self.note = QLabel("", objectName="dim", wordWrap=True)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(self.note)
-        split = QSplitter(Qt.Vertical)
+        split = QSplitter(Qt.Orientation.Vertical)
         self.pulse = Pulse()
         self.tasks = Tasks()
         split.addWidget(self.pulse)
@@ -96,7 +96,7 @@ class Running(QFrame):
         self.install.clear()
         for r in self.data:
             self.install.addItem(r)
-            self.install.setItemData(self.install.count() - 1, ROLE.get(r, r), Qt.ToolTipRole)
+            self.install.setItemData(self.install.count() - 1, ROLE.get(r, r), Qt.ItemDataRole.ToolTipRole)
         self.install.setCurrentText(role if role in self.data else "custodian")
         self.fill_projects(project)
 

@@ -1,5 +1,7 @@
 """The generic study page: family tabs, study tabs with their state dots, the result, the drawer, the runs."""
 
+from typing import TYPE_CHECKING, Any, cast
+
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QPushButton, QSplitter, QTabBar, QTabWidget,
                                QVBoxLayout)
@@ -18,6 +20,9 @@ from ui.desktop.studypage.runbar import RunBar
 from ui.desktop.studypage.sidepanel import SideToggles
 from ui.desktop.theme import T
 
+if TYPE_CHECKING:
+    from ui.desktop.batchview.tab import BatchTab
+
 
 class StudyPage(QFrame):
     """One study of one strategy (`strategy_page`) or of the population, following SELECTION.
@@ -32,7 +37,7 @@ class StudyPage(QFrame):
         super().__init__()
         self.setObjectName("term")
         self.strategy_page = strategy_page
-        self.where = dict(SELECTION.now)
+        self.where: dict[str, Any] = cast(dict[str, Any], dict(SELECTION.now))
         self.assets: dict[str, str | None] = {}
         self.cells: dict = {}
         self.strategies: list[dict] = []
@@ -47,7 +52,7 @@ class StudyPage(QFrame):
             lay.addWidget(text(got["error"], colour("fail"), 14, True))
         self.families = QTabBar()
         for f in dict.fromkeys(e["family"] for e in self.catalogue.values()):
-            self.families.setTabData(self.families.addTab(notes.FAMILY.get(f, f)), f)
+            self.families.setTabData(self.families.addTab(cast(str, notes.FAMILY.get(f, f))), f)
         self.studies = QTabBar()
         self.studies.setIconSize(QSize(dots.SIZE, dots.SIZE))
         self.studies.setExpanding(False)
@@ -68,9 +73,9 @@ class StudyPage(QFrame):
         row.addWidget(self.note, 1)
         self.back = QPushButton("Volver a un solo run")
         self.back.clicked.connect(lambda: self.load())
-        row.addWidget(self.back, 0, Qt.AlignTop)
+        row.addWidget(self.back, 0, Qt.AlignmentFlag.AlignTop)
         self.offer = Offer(self)             # the tests with no data here, greyed
-        row.addWidget(self.offer.button, 0, Qt.AlignTop)
+        row.addWidget(self.offer.button, 0, Qt.AlignmentFlag.AlignTop)
         lay.addLayout(row)
         self.skipped = text("", T["text"], 13)
         lay.addWidget(self.skipped)
@@ -85,8 +90,8 @@ class StudyPage(QFrame):
         side.addTab(self.history, "historial y comparar")
         side.tabBar().hide()            # the buttons of `SideToggles` choose the tab
         self.toggles = SideToggles(side)
-        tools.addWidget(self.toggles, 0, Qt.AlignTop)
-        self.lote = None       # the mother's variant batch, added only on the WFC study
+        tools.addWidget(self.toggles, 0, Qt.AlignmentFlag.AlignTop)
+        self.lote: BatchTab | None = None       # the mother's variant batch, added only on the WFC study
         split = QSplitter()
         split.addWidget(self.view)
         split.addWidget(side)

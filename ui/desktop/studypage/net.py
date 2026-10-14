@@ -1,11 +1,13 @@
 """The study page's calls to the daemon, with a daemon that does not answer turned into a sentence."""
 
+from typing import Any
+
 import httpx
 
 from ui.desktop import client
 
 
-def fetch(path: str, **params: str) -> dict:
+def fetch(path: str, **params: Any) -> dict[str, Any]:
     """GET a route, never raising.
 
     Args:
@@ -22,7 +24,7 @@ def fetch(path: str, **params: str) -> dict:
         return {"error": f"El demonio no respondió a /api/{path}: {e}"}
 
 
-def send(path: str, body: dict) -> dict:
+def send(path: str, body: dict) -> dict[str, Any]:
     """POST a route, never raising.
 
     Args:

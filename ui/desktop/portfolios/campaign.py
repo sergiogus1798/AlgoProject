@@ -29,9 +29,9 @@ INTRO = ("Cada workflow completo que la campaña guardó, con TODOS sus resultad
 def _table(cols: tuple, multi: bool = False) -> QTableWidget:
     """A read-only table with the column tooltips."""
     t = QTableWidget(0, len(cols))
-    t.setSelectionBehavior(QAbstractItemView.SelectRows)
-    t.setSelectionMode(QAbstractItemView.ExtendedSelection if multi else QAbstractItemView.SingleSelection)
-    t.setEditTriggers(QAbstractItemView.NoEditTriggers)
+    t.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+    t.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection if multi else QAbstractItemView.SelectionMode.SingleSelection)
+    t.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
     t.verticalHeader().hide()
     t.horizontalHeader().setStretchLastSection(True)
     t.setStyleSheet("font-size: 14px;")
@@ -71,15 +71,16 @@ class CampaignPage(QFrame):
         self.fetch, self.rows, self.shown, self.flow = fetch, [], [], {}
         lay = QVBoxLayout(self)
         lay.setContentsMargins(20, 16, 20, 16)
-        lay.addWidget(QLabel("Campaña", objectName="h1"))
+        lay.addWidget(QLabel("Campaña", objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay.addWidget(text(INTRO, T["muted"], 13))
         self.said = text("", T["muted"], 13)
         lay.addWidget(self.said)
-        self.find = QLineEdit()
-        self.find.setPlaceholderText("Filtrar por activo, plantilla o timeframe…")
-        self.find.setToolTip("Escribe parte del activo (NIKKEI225), de la plantilla o del timeframe (M30).")
-        self.find.textChanged.connect(self._filter)
-        lay.addWidget(self.find)
+        find = QLineEdit()
+        self.find = find  # pyright: ignore[reportAttributeAccessIssue]  # shadows QObject.find; tests read page.find
+        find.setPlaceholderText("Filtrar por activo, plantilla o timeframe…")
+        find.setToolTip("Escribe parte del activo (NIKKEI225), de la plantilla o del timeframe (M30).")
+        find.textChanged.connect(self._filter)
+        lay.addWidget(find)
         self.table = _table(FLOWS)
         self.table.itemSelectionChanged.connect(self._picked)
         self.funnel = text("", T["text"], 15)
@@ -93,10 +94,10 @@ class CampaignPage(QFrame):
         right = QWidget()
         side = QVBoxLayout(right)
         side.setContentsMargins(12, 0, 0, 0)
-        for w in (QLabel("Embudo", objectName="mono"), self.funnel, QLabel("Tiempo por fase", objectName="mono")):
+        for w in (QLabel("Embudo", objectName="mono"), self.funnel, QLabel("Tiempo por fase", objectName="mono")):  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             side.addWidget(w)
         side.addWidget(self.steps, 3)
-        side.addWidget(QLabel("Estrategias", objectName="mono"))
+        side.addWidget(QLabel("Estrategias", objectName="mono"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         side.addWidget(self.strats, 2)
         row = QHBoxLayout()
         row.addWidget(self.kept, 1)

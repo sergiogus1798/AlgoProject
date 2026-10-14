@@ -16,7 +16,7 @@ class SeriesBar(QWidget):
         super().__init__()
         self.index, self.total = 0, 0
         self.prev, self.next = QPushButton("◀ anterior"), QPushButton("siguiente ▶")
-        self.where = QLabel("", objectName="mono")
+        self.where = QLabel("", objectName="mono")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.where.setStyleSheet(f"font-size: 14px; color: {T['text']};")
         for button, delta in ((self.prev, -1), (self.next, 1)):
             button.setToolTip("Pasa a la estrategia vecina del workflow sin volver a la lista.")

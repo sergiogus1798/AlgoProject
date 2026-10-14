@@ -1,5 +1,7 @@
 """The status-bar strip of jobs: what runs, a 0-100 % bar for each, what waits, and a cancel."""
 
+
+from typing import Any
 import time
 
 import httpx
@@ -72,7 +74,7 @@ class JobsBar(QWidget):
         self.lay.setContentsMargins(6, 0, 6, 0)
         self.lay.setSpacing(6)
         self.setStyleSheet(f"font-family: {MONO}; font-size: 12px;")  # never widens the window:
-        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)  # 4 long chips made it 3.8k px
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)  # 4 long chips made it 3.8k px
         self.poll = QTimer(self)
         self.poll.timeout.connect(self.refresh)
         self.poll.start(POLL_MS)
@@ -86,7 +88,7 @@ class JobsBar(QWidget):
         sqx = self.ticks % SQX_EVERY == 0
         self.ticks += 1
 
-        def read() -> dict:
+        def read() -> dict[str, Any]:
             """Both reads, on the pool's thread."""
             return {"at": time.monotonic(), "jobs": client.get("jobs")["jobs"],
                     "sqx": client.get("ops/sqx")["runs"] if sqx else None}
@@ -115,7 +117,7 @@ class JobsBar(QWidget):
             colour: Its colour.
         """
         clear(self.lay)
-        self.lay.addWidget(QLabel(text, styleSheet=f"color: {colour};"))
+        self.lay.addWidget(QLabel(text, styleSheet=f"color: {colour};"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.lay.addStretch(1)
 
     def show_jobs(self, jobs: list[dict]) -> None:
@@ -136,10 +138,10 @@ class JobsBar(QWidget):
         # one or why. Newest first, since that is the one the owner just watched fail.
         failed = sorted((j for j in jobs if j.get("rc") not in (None, 0)),
                         key=lambda j: j["started"], reverse=True)
-        self.lay.addWidget(QLabel("Trabajos", styleSheet=f"color: {T['faint']}; "
+        self.lay.addWidget(QLabel("Trabajos", styleSheet=f"color: {T['faint']}; "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                                                           "font-weight: 700;"))
         head = f"{num(len(running) + len(self.sqx))} en marcha · {num(len(queued))} en cola"
-        self.lay.addWidget(QLabel(head, styleSheet=f"color: {T['text']};"))
+        self.lay.addWidget(QLabel(head, styleSheet=f"color: {T['text']};"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         for run in self.sqx:
             self.lay.addWidget(self.sqx_chip(run))
         for job in (running + queued)[:SHOWN]:
@@ -150,7 +152,7 @@ class JobsBar(QWidget):
         for job in failed[:SHOWN]:
             self.lay.addWidget(self.failed_chip(job))
         if len(failed) > SHOWN:
-            self.lay.addWidget(QLabel(f"+{num(len(failed) - SHOWN)} más con error",
+            self.lay.addWidget(QLabel(f"+{num(len(failed) - SHOWN)} más con error",  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                                       styleSheet=f"color: {C['dead']};"))
 
     def failed_chip(self, job: dict) -> QWidget:
@@ -165,7 +167,7 @@ class JobsBar(QWidget):
         where = job.get("asset") or job.get("databank") or ""
         why = next((t for t in reversed(job.get("tail") or []) if t.strip()), job.get("state", ""))
         head = f"{job.get('study') or job['label']}" + (f" · {where}" if where else "")
-        text = QLabel(f"⚠ {head}: {why}"[:60], styleSheet=f"color: {C['dead']}; border: 1px "
+        text = QLabel(f"⚠ {head}: {why}"[:60], styleSheet=f"color: {C['dead']}; border: 1px "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                      f"solid {C['dead']}; border-radius: 3px; padding: 1px 6px;")
         text.setToolTip(f"{job['label']} · {job.get('lane') or 'python'} · {job.get('state', '')}"
                         f"\n{job.get('project') or ''} {where}\n"
@@ -186,12 +188,12 @@ class JobsBar(QWidget):
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(2)
         colour = C["pending"] if waiting(job) else C["accent"]
-        text = QLabel(chip_text(job), styleSheet=f"color: {colour}; border: 1px solid "
+        text = QLabel(chip_text(job), styleSheet=f"color: {colour}; border: 1px solid "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                                                   f"{colour}; border-radius: 3px; padding: 1px 6px;")
         text.setToolTip(f"{job['label']} · {job.get('lane') or 'python'} · empezó "
                         f"{job['started']}\n{job.get('project') or ''} "
                         f"{job.get('databank') or ''}\n" + "\n".join(job.get("tail", [])[-4:]))
-        stop = QPushButton("✕", toolTip="Cancelar este trabajo", fixedWidth=24,
+        stop = QPushButton("✕", toolTip="Cancelar este trabajo", fixedWidth=24,  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                            styleSheet="padding: 0;")
         stop.clicked.connect(lambda: self.cancel(job["id"], job["label"]))
         row.addWidget(text)
@@ -217,7 +219,7 @@ class JobsBar(QWidget):
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(2)
         colour = C["weak"]
-        text = QLabel(sqx_text(run), styleSheet=f"color: {colour}; border: 1px solid "
+        text = QLabel(sqx_text(run), styleSheet=f"color: {colour}; border: 1px solid "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
                                                  f"{colour}; border-radius: 3px; padding: 1px 6px;")
         text.setToolTip(f"{run['project']} en el {ROLE.get(run['role'], run['role'])}: la tarea "
                         "que su log da por empezada. El avance es el que SQX escribe en su log, "
@@ -235,9 +237,9 @@ class JobsBar(QWidget):
             label: Its `label`. A job that drives SQX asks first: one click stopped a
                 custodian hours into an MC Retest (📓 2026-09-29).
         """
-        if label in SQX_JOBS and QMessageBox.question(
+        if label in SQX_JOBS and QMessageBox.question(  # pyright: ignore[reportCallIssue]  # PySide6 stub wants button0/button1 for the 3-arg form
                 self, "Cancelar", "Este trabajo maneja SQX: cancelarlo para el worker a media "
-                "tarea, y lo que no se haya guardado se pierde. ¿Cancelar?") != QMessageBox.Yes:
+                "tarea, y lo que no se haya guardado se pierde. ¿Cancelar?") != QMessageBox.StandardButton.Yes:
             return
         try:
             ok = client.post(f"jobs/{job_id}/cancel", {}).get("ok")
