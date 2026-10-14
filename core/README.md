@@ -5,48 +5,48 @@ live deeper add the root to `sys.path` in their first lines.
 
 | file | what it does | in → out |
 |---|---|---|
-| `__init__.py` | Puts stdout/stderr in UTF-8 on import, so Windows' cp1252 console does not crash on this project's own accents and symbols | — |
-| `paths.py` | The only module that knows where anything lives. Reads `config/machine.yaml`; `ALGO_DATA_ROOT` in the environment replaces its `data_root` for that process and prints «RAÍZ DE PRUEBA» (a test root, `portfolio/testroot/`); `WORKERS` maps a worker role (conductor, custodian) to its install and port | names, roles → `Path` |
-| `datapaths.py` | The data root's secondary trees: the template library, `pipeline/`, `campaign_dir()` (the campaign's ledger and runs), `strategyPermutations/`, `logs/`, `backups/`, `projectsBackup/`, `cache/` and `spread/`, the master's tick files, and `tmp_dir()` — the project's own temp folder `<data root>/tmp` (created on demand; `tempfile` callers pass it as `dir=`, so scratch never fills the 3.9 GB `/tmp` partition). Split out of `paths.py`, which keeps the installs and the primary exports | names → `Path` |
-| `researchpaths.py` | The research director's trees under the data root: the market profile, the results memory, the autopilot's runs and the `ideaExpert`'s files | names → `Path` |
-| `fleetpaths.py` | The live MT5 fleet: the folder of the collector's beats under the data root, and each account's plan (`fleet.vps.accounts` of `machine.yaml`) | → `Path`, dict |
-| `identities.py` | `sqxfile.identity` of many files across `fanout` children, the hashes also filled into the parent's cache (`many`) | imported | files → identities |
-| `sqxfile.py` | Read a `.sqx` without SQX: identity hash, symbol, inner XML, parameters, the corrected `Param Count` mirrored from `<Variables>` (OPEN #17), SQX's `StrategyProblems` bitmask decoded (`strategy_problems`) | `.sqx` → values |
-| `optprofile.py` | Read a `.sqx`'s Sys. Param Permutation profile without SQX: run counts, per-metric medians against the original value, the stored histograms, and every permutation's parameters and statistics when SQX kept them | `.sqx` → dicts |
-| `sqxstats.py` | Read a `.sqx` result without SQX: decode any `SQStats` blob into its 152 statistics, the stored metrics per sample, and the daily equity curve | `.sqx` → metrics, series |
-| `sqxview.py` | The owner's «Export Data View» as SQStats keys (`VIEW`): the metrics export and the cosecha rebuilt from the files with no SQX, equal to the view's export within float32 — except `Param Count (IS)`, always `sqxfile.param_count`, never SQX's frozen `ParameterCount` (OPEN #17) | `.sqx` → metrics table |
-| `sqxretest.py` | Read a Monte Carlo Retest result without SQX: every simulation's P/L vector, the original it was perturbed from, the eleven-level confidence table, and the method settings that produced it | `.sqx` → P/L, levels, provenance |
-| `wfmobjectives.py` | SQX's per-cell WFM objectives that it never stores — stability, score, the `WF*` specials — and the criterion each strategy carries, recomputed exactly as SQX does (checked equal on 14 columns × 17 strategies) | `.sqx` root → rule, rows per cell and condition |
-| `wfmatrix.py` | Read the Walk-Forward Matrix a WFM cross-check leaves in a `.sqx`: the 30 cells, and every cell's walk-forward steps with their windows, chosen parameters and paired IS/OOS statistics | `.sqx` → dicts |
-| `wftrades.py` | Cut a `data=all` export into one block per matrix cell and tag every trade with its walk-forward step, checked against the counts SQX stored | CSV → frames |
-| `trades.py` | Read an `orderstocsv` export: times parsed, unfilled orders dropped, one frame per market, cost and MAE/MFE recovered | CSV → frames |
-| `bars.py` | Read an OHLC export into a frame indexed by bar open time | CSV → frame |
-| `bankfile.py` | Reads an `.abk` (one databank written from SQX's memory by the AlgoBank snippet): the format spec, `load` with its checks, and the trades as a frame | `.abk` → dict, frame |
-| `bankframes.py` | A loaded `.abk` as frames: each strategy's XML, the stored statistics of every result and sample type, and the daily equity | dict → frame |
-| `tickparallel.py` | `tickfile.read` by jobs of 4,096 blocks at once: a pass over the record headers finds the blocks (each opens with an absolute record), a job reads on to the end of its last minute and the next skips it, so output is bit-identical. Falls back to the serial decode if a block is not absolute | `.dat` → minute table |
-| `tickfile.py` | Read SQX's own history files without SQX: a tick feed (`*_TICK.dat`, delta-coded ask/bid) folded minute by minute into spread and bid — 650 M gold ticks in 4,5 s, never held — and an M1 feed (`*_M1.dat`) into bars, for feeds the bar library lacks | `.dat` → frame |
-| `barstore.py` | The bar library: M1 is the only bar data stored, every other timeframe is resampled from it on first use and cached under the M1's fingerprint | feed, timeframe → frame |
-| `tradestore.py` | The trade library: one typed Parquet per export, carrying only the columns that cannot be derived back, and the guard that decides when `Ticket` still has to be kept | CSVs → Parquet → frames |
-| `tradepack.py` | Packs one export's CSVs into that Parquet: parsed across processes, spilled per strategy and written a strategy at a time, so 500 × 9 markets is never one frame | CSVs → Parquet |
-| `fanout.py` | Independent tasks across forked processes, the costliest first (LPT), one BLAS thread each, never more processes than physical cores, results as they land | tasks + costs → results |
-| `cfx.py` | Read a `project.cfx`: task chain, output databanks, acceptance conditions | project → dicts |
-| `phases.py` | `phase(name, detail)` times a block and appends one row (start, seconds, name, detail, pid) to the CSV the environment variable `ALGO_PHASES` names — subprocesses inherit it, phases nest; without the variable it writes nothing. `row` does the same for a block already timed. The autopilot sets it to its run's `fases.csv` | a block → one CSV row |
-| `worker.py` | Start, stop and command a headless worker over its HTTP API; every call takes the role, conductor by default, and goes through `bin/sqx-worker.sh`'s owner lock (OPEN.md §32). `listening(port)` says whether a port answers, `installs()` maps role to install folder (master first), `holding()` reports which PIDs run out of an install, the guard every write to a live install must pass; `lock()` reads who holds the owner lock, read-only | command, role → reply |
-| `uitoken.py` | The ui daemon's session token: `mint(port)` writes `AlgoData/ui/token-<port>` (0600, atomically; `ui.daemon.serve` only), `read(port)` is the ONE way a client — the window, a script, a skill — gets it; `HEADER` is `X-Algo-Token`. Here and not in `ui/` because both the daemon and the window read it and `ui.desktop` may not import `ui.daemon` | imported | port → token |
-| `exportdrv.py` | The exports SQX offers through the worker: trades, symbol list, bars (databank metrics are read off the `.sqx`, `sqxview.py`) | request → files |
-| `manifest.py` | Write and read the `manifest.json` every export must carry; `fresh_dir()` — a run folder made exclusively, `_2`, `_3`… when the name is taken, so two runs of one minute never share one | facts → JSON |
-| `assetdata.py` | What `assets/` declares: costs and windows resolved against the shared policy | symbol → dict |
-| `assetmarkets.py` | The retest universe `_markets.yaml` declares (`markets`, `expected_sign`) and the cross-asset notes in `assets/special/` | symbol → dict |
-| `buildfilters.py` | The Build's acceptance filters for one asset and timeframe, resolved from `assets/_study.yaml` (defaults ← class ← symbol; trade bounds = trades per year × the build segment's years); refuses on any missing value | asset dict + timeframe + mode → the conditions to write |
-| `assetranges.py` | The MC Retest spread and slippage ranges of one asset in SQX's points: a bound the asset declares as written, a null one as `_policy.yaml`'s default multiple of the cost the backtest runs at, with the source said | asset dict → {spread, slippage: {min, max, source}} |
-| `assetoverride.py` | Temporary, one-run overrides of the build doctrine `assetdata.doctrine()` reads — a run-wide precision or MC Retest count for one project, by an env var, never a `_build.yaml` edit | env var → doctrine tree |
-| `assetcheck.py` | What is missing or wrong about an asset: undecided values, and windows the data cannot fill | dict → problems |
-| `assetyaml.py` | The `assets/` YAML files read and written without losing a comment: the round trip, and every editable value of a file with what the file itself says about it | file → leaves |
+| `__init__.py` | Runs before anything else here: makes stdout/stderr able to print this project's own text. | — |
+| `assetcheck.py` | What is missing or wrong about an asset: undecided values, and windows the data cannot fill. | dict → problems |
+| `assetdata.py` | What assets/ declares: costs resolved against the shared policy, checked against the class. | symbol → dict |
+| `assetmarkets.py` | The retest universe `assets/_markets.yaml` declares, and the cross-asset notes in `assets/special/`. | symbol → dict |
+| `assetoverride.py` | Temporary, one-run overrides of the build doctrine — never a `_build.yaml` edit. | env var → doctrine tree |
+| `assetranges.py` | The MC Retest spread and slippage ranges of one asset, in the points SQX takes. | asset dict → {spread, slippage: {min, max, source}} |
+| `assets.py` | The preflight every project needs: one asset read out loud, and the index of all of them. | symbol → report |
+| `assetyaml.py` | The assets/ YAML files read and written without losing a comment — the only round-trip here. | file → leaves |
+| `bankfile.py` | Read an `.abk`: one databank as the AlgoBank snippet wrote it from SQX's memory. | `.abk` → dict, frame |
+| `bankframes.py` | An `.abk` loaded by `core.bankfile`, as the strategies' XML, statistics and daily equity. | dict → frame |
+| `bars.py` | Read an OHLC bar file exported by SQX into a frame indexed by bar open time. | CSV → frame |
+| `barstore.py` | The bar library: M1 is the only bar data stored, every other timeframe is resampled from it. | feed, timeframe → frame |
+| `buildfilters.py` | The Build's acceptance filters for one asset and timeframe, resolved from assets/_study.yaml. | asset dict + timeframe + mode → the conditions to write |
+| `cfx.py` | Read a project.cfx without SQX. It is a ZIP holding config.xml plus one XML per task. | project → dicts |
+| `commission.py` | Each broker's own commission as a %, refreshed weekly from the latest close. | brokers, feed → `pct_now` per broker |
+| `datapaths.py` | The data root's secondary trees: template library, pipeline, permutations, logs, backups, caches, spread. | names → `Path` |
+| `exportdrv.py` | What leaves SQX through the worker: trades, the symbol list and bars (metrics are read off the .sqx). | request → files |
+| `fanout.py` | Independent tasks across processes, the costliest first, each result handed back as it lands. | tasks + costs → results |
+| `fleetpaths.py` | Where the live MT5 fleet's files are, and each account's plan from machine.yaml. | → `Path`, dict |
+| `identities.py` | `sqxfile.identity` of many files across processes, the hashes kept in this process's cache. | files → identities |
+| `manifest.py` | Every export writes one of these. Without it an export cannot be reproduced or trusted. | facts → JSON |
+| `optprofile.py` | Read the Sys. Param Permutation profile SQX stores inside a .sqx, without SQX running. | `.sqx` → dicts |
+| `paths.py` | Every path and port in the project. The only module allowed to know where things live. | names, roles → `Path` |
+| `phases.py` | Wall clock of a named sub-phase, appended to the CSV `ALGO_PHASES` names; nothing without it. | a block → one CSV row |
+| `researchpaths.py` | Where the research director's pieces live under the data root. | names → `Path` |
+| `significance.py` | Could this edge be zero? The Sharpe-based tests three studies now share, and the one Sharpe total. | returns → probabilities |
+| `sqxfile.py` | Read a .sqx strategy without SQX. It is a ZIP; everything useful is in its inner XML. | `.sqx` → values |
+| `sqxretest.py` | Read a Monte Carlo Retest result out of a .sqx: its simulation P/L vectors and its level table. | `.sqx` → P/L, levels, provenance |
+| `sqxstats.py` | Read a .sqx result without SQX: its stored metrics and its daily equity curve. | `.sqx` → metrics, series |
+| `sqxview.py` | The owner's «Export Data View» as SQStats keys: a databank's metrics with no SQX running. | `.sqx` → metrics table |
+| `symbols.py` | The short name a market is called by on screen, from its SQX symbol or feed name. | symbol → short name |
+| `tickfile.py` | Read SQX's own history files without SQX: a tick feed into one row per minute of spread, an M1 feed into bars. | `.dat` → frame |
+| `tickparallel.py` | `tickfile.read` in parallel: a walk over the record headers finds where each block starts, and jobs of whole blocks are decoded at once. | `.dat` → minute table |
+| `tradepack.py` | Pack one export's CSVs into the trade library: parsed in parallel, written a few dozen strategies at a time. | CSVs → Parquet |
+| `trades.py` | Read a trade list exported by SQX's orderstocsv, and the per-trade quantities derived from it. | CSV → frames |
+| `tradestore.py` | The trade library: one Parquet per export, holding only what cannot be derived back. | CSVs → Parquet → frames |
+| `uitoken.py` | The ui daemon's session token: minted by `ui.daemon.serve`, kept in a 0600 file under the data root, read by every client. | port → token |
+| `wfmatrix.py` | Read the Walk-Forward Matrix a WFM cross-check leaves inside a .sqx, without SQX running. | `.sqx` → dicts |
+| `wfmobjectives.py` | SQX's Walk-Forward Matrix objectives per cell — stability, score, the WF specials — and its rule. | `.sqx` root → rule, rows per cell and condition |
+| `wftrades.py` | Assign the trades of a data=all export to the Walk-Forward cell and period that produced them. | CSV → frames |
+| `worker.py` | Drive the headless worker install. The master's CLI is dead while its GUI is up. | command, role → reply |
 | `assetwrite/` | The only writer of `assets/`: one value, one cost with its `why`, or a whole asset into the library or onto the retired shelf | change → file |
-| `assets.py` | The preflight read out loud, with the feed-quality warning the last `studies.data.feedQuality.scan` left for the asset's feeds; `python3 -m core.assets <SYMBOL>` | symbol → report |
-| `commission.py` | Converts a broker's own $/lot or % figure into a % of notional at today's price (`commission_pct`), refreshes every asset's confirmed brokers' `pct_now` from the latest close (`python3 -m core.commission --refresh`, weekly), and hands it to step 26 and `weeklyReconciler` (`broker_pct`) — never to an SQX workflow task, which prices at `costs.commission.use` instead | brokers, feed → `pct_now` per broker |
-| `significance.py` | Could this edge be zero: Sharpe and its shape, the variance factor both formulas below share, the Probabilistic Sharpe Ratio and the minimum track-record length | returns → probabilities |
-| `symbols.py` | `alias(symbol)`: the short market name shown on screen for a full SQX symbol (`USDJPY_M1` → `USDJPY`) — an override in `assets/_aliases.yaml`, else the ticker before the first underscore | symbol → short name |
 | `archive/` · `store/` · `study/` · `surface/` | Subpackages, each with its own `README.md`: the strategy archive (frozen `.sqx`, cosecha rows and study results) · the strategy store (a strategy that passed the gate saved the moment it passes) · the contract every study speaks (`CONTRACT.md`) · the maths of a parameter grid | see each README |
 
 Three rules specific to this folder:

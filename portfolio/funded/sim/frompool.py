@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-from core.datapaths import portfolio_dir
+from core.paths import portfolio_dir
 from portfolio.funded.sim import haircut
 
 FLAVOURS = ("D", "T1", "T2")

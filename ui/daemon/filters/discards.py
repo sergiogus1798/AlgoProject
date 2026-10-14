@@ -4,19 +4,13 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from core.paths import DATA
-
-
-def root() -> Path:
-    """`AlgoData/filters/`, the one root of every filter file. Derived here and not in
-    `core/paths.py`, which cannot take another function under the 250-line limit."""
-    return DATA / "filters"
+from core.paths import filters_root
 
 
 def folder(project: str, databank: str) -> Path:
     """Where one databank's filters live: `<root>/<P>/<D>/`, the databank as its report
     folder spells it (underscores)."""
-    return root() / project / databank.replace(" ", "_")
+    return filters_root() / project / databank.replace(" ", "_")
 
 
 def log_file(project: str, databank: str) -> Path:
@@ -226,5 +220,5 @@ def steps(project: str, databank: str, total: int | None = None) -> list[dict]:
 
 def databanks(project: str) -> list[str]:
     """The databank folders of a project that have a discard log."""
-    top = root() / project
+    top = filters_root() / project
     return sorted(p.parent.name for p in top.glob("*/discards.jsonl")) if top.is_dir() else []

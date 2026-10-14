@@ -12,7 +12,7 @@ import pandas as pd
 
 from core.archive import read as archive_read
 from ledger.study import study_id
-from core.datapaths import portfolio_dir
+from core.paths import portfolio_dir
 from core.manifest import fresh_dir
 from portfolio.funded.rules import catalog
 

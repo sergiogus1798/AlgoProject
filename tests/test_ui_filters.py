@@ -23,7 +23,7 @@ def fake(root: Path) -> dict:
                       for i in range(20)]
              + [{"identity": "idN", "name": "SN", "values": ["SN", None]}]}
     metrics = evaluate.offered(table, {}, set())
-    discards.root = lambda: root
+    discards.filters_root = lambda: root
     discards.folder = lambda p, d: root / p / d.replace(" ", "_")
     api.context = lambda p, d: (table, {}, metrics)
     api.tablemod = SimpleNamespace(table=lambda p, d: table)

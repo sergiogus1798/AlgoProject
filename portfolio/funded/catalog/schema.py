@@ -3,7 +3,7 @@
 import sqlite3
 from pathlib import Path
 
-from core.datapaths import funding_dir
+from core.paths import funding_dir
 
 DB = funding_dir() / "funding.sqlite"
 

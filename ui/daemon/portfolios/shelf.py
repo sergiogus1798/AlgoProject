@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from core.datapaths import portfolio_dir
+from core.paths import portfolio_dir
 from portfolio.common.construct.inputs import pool as pool_mod
 from ui.daemon.archive import shelf as archive
 

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from core.datapaths import portfolio_dir
+from core.paths import portfolio_dir
 
 
 def read(folder: Path) -> dict:

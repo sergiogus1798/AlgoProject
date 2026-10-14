@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 from core.archive import read as archive_read
-from core.datapaths import portfolio_dir
+from core.paths import portfolio_dir
 
 ROOT = portfolio_dir()
 COLUMNS = ("identity", "version", "development", "near", "added_on", "added_by", "note")

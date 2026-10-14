@@ -3,7 +3,7 @@
 import re
 import sqlite3
 
-from core.datapaths import funding_dir
+from core.paths import funding_dir
 from portfolio.funded.catalog.firms import named
 
 _STAGE_ORDER = {"phase1": 1, "phase2": 2, "phase3": 3, "funded": 4}

@@ -16,7 +16,7 @@ The development pool itself waits for `Test_USDJPY_donchianUpperCrossUp_H1` to f
 
 | file | what |
 |---|---|
-| `core/datapaths.py` `portfolio_dir()` | `DATA / "portfolio"` — `core/paths.py` is at the 250-line cap, `funding_dir()` already lives here |
+| `core/paths.py` `portfolio_dir()` | `DATA / "portfolio"`; `funding_dir()` lives beside it |
 | `ledger/thresholds.yaml` | `portfolio.pairs.{pearson,spearman,co_loss,tail,rolling_whole,rolling_recent}` = 0.30, owner 2026-09-29 |
 | `portfolio/common/construct/config.yaml` | every knob of M1-M2 |
 | `portfolio/common/construct/inputs/config.py` | `load(overrides) -> dict`, with `relaxed` = thresholds moved off the ledger's value |
@@ -154,7 +154,7 @@ Semantics frozen by the owner (PLAN §12 «Answered», rule machine row) — imp
 | `rules/machine.py` | `challenge(days: dict[str, np.ndarray], plan: dict, risk: dict[str, float], start: int) -> dict` (`outcome` ∈ pass/fail/open, `stage`, `day`, `rule`, `stage_days: list[int]`, `flags`) — the reference · `sweep(days, plan, risk, starts: np.ndarray) -> np.ndarray` — the same for many start days (numba), outcome codes 1 pass / 0 fail / −1 open, **equal to `challenge` on every test path** |
 | `tests/test_funded_rules.py` | per rule a hand path that breaks it by one tick (0.01) and one that touches it without breaking: daily loss (FTMO balance basis, Hantec max(B,E) basis — a floating profit at midnight raising the next day's base), static max, Hantec trailing (hw from an intraday high, locked at size after +6 %), FTMO eod trailing, target with open floating (not met on equity alone), min trading days, profitable days, both consistency rules, phase 2 starts fresh; catalogue: an unconfirmed rule appears in `flags`, Endurance carries the `conflict`; `sweep` == `challenge` on 200 random paths |
 
-Reads `core.datapaths.funding_dir()` read-only (`mode=ro`). Must NOT touch `portfolio/funded/catalog/`
+Reads `core.paths.funding_dir()` read-only (`mode=ro`). Must NOT touch `portfolio/funded/catalog/`
 or the database.
 
 ### E · M0: pool, source, candidates

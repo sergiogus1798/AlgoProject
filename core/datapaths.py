@@ -1,6 +1,6 @@
 """The data root's secondary trees: template library, pipeline, permutations, logs, backups, caches, spread.
 
-Split out of core/paths.py, which keeps the installs and the primary exports."""
+Split out of core/paths.py, which keeps the installs, the primary exports, `filters_root()`, `funding_dir()` and `portfolio_dir()`."""
 
 from pathlib import Path
 
@@ -221,16 +221,6 @@ def spread_dir(feed: str = "") -> Path:
         The minute table derives from `tick_file(feed)` and is stamped with its size and date.
     """
     return DATA / "spread" / feed
-
-
-def funding_dir() -> Path:
-    """The prop-firm catalogue: raw snapshots per firm, the curated rules, and `funding.sqlite`."""
-    return DATA / "funding"
-
-
-def portfolio_dir() -> Path:
-    """The portfolio engine's tree: declared pools, prohibitions, the universe cache and runs."""
-    return DATA / "portfolio"
 
 
 def tmp_dir() -> Path:

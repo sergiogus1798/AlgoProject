@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from core.datapaths import portfolio_dir
+from core.paths import portfolio_dir
 from core.study import config as study_config
 from core.study import result as study_result
 from portfolio.funded.sim import bank, inputs, monkey, report, table, trials

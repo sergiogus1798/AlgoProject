@@ -11,7 +11,7 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 | `.claude/skills` | INFRA | 3 | 175 | — |
 | `core` | MIXED | 37 | 4523 | Everything that more than one phase needs. Import it as a package from the project root; scripts that |
 | `core/archive` | INFRA | 6 | 488 | A strategy that survived the sequence cost a lot of CPU. The archive freezes it — its `.sqx`, its |
-| `core/assetwrite` | INFRA | 4 | 408 | Split into a folder on 2026-09-29 (`CODESTYLE.md` rule 1, 250 lines). Every caller still writes |
+| `core/assetwrite` | INFRA | 4 | 408 | Split into a folder on 2026-09-29 (`CODESTYLE.md` rule 1, file length cap). Every caller still writes |
 | `core/store` | INFRA | 9 | 1176 | A strategy that passed the gate (step 8, limbo included) is irreproducible — the build is genetic — |
 | `core/study` | CALC | 18 | 1623 | A study (`studies/…`, `portfolio/common/monteCarlo`) computes; this folder only says **what shape |
 | `core/surface` | CALC | 5 | 454 | A grid of parameter tuples measured in two windows. Not a databank, not a strategy: the surface |

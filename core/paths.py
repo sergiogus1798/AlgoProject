@@ -248,3 +248,18 @@ def archive_dir() -> Path:
 def bank_dir(project: str, role: str) -> Path:
     """In-memory folder of one install's transient `.abk` files for a project."""
     return Path("/dev/shm/algobank") / role / project
+
+
+def filters_root() -> Path:
+    """`AlgoData/filters/`, the one root of every filter file."""
+    return DATA / "filters"
+
+
+def funding_dir() -> Path:
+    """The prop-firm catalogue: raw snapshots per firm, the curated rules, and `funding.sqlite`."""
+    return DATA / "funding"
+
+
+def portfolio_dir() -> Path:
+    """The portfolio engine's tree: declared pools, prohibitions, the universe cache and runs."""
+    return DATA / "portfolio"

@@ -23,7 +23,7 @@ Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los 
 | F4 | ruff con `F401` y `B`; los 25 `B023` leídos | Sonnet | D3 | hecho 2026-10-14 (25 B023: ningún bug) |
 | F5 | semillas | Sonnet | D4 | hecho 2026-10-14 (MC y numba también, dueño) |
 | F6 | `assert` en los lectores con fichero dorado | Opus diseña, Sonnet escribe | D5 | sin empezar |
-| F7 | menciones caducas del tope de 250 líneas | Sonnet | D6 | sin empezar |
+| F7 | menciones caducas del tope de 250 líneas | Sonnet | D6 | hecho 2026-10-14 |
 | F8 | comprobador de tipos, por paquetes | Sonnet | F3, D7 | hecho 2026-10-14 (pyright 1.1.414) |
 | F9 | **los `-> dict` sin tipar, todos**, paquete a paquete | Opus orquesta, Sonnet escribe | F8, D8, D9 | sin empezar |
 | F10 | límites por función (complejidad, argumentos) en el trinquete | Sonnet | F3 | hecho con F3 |

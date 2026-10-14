@@ -9,14 +9,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from core import datapaths, manifest
+from core import manifest, paths
 
 from . import real, walkforward, weights
 from .equity import matrix
 from .inputs import config, pool as pool_mod
 from .search import trials
 
-ROOT = datapaths.portfolio_dir() / "weights_wf"
+ROOT = paths.portfolio_dir() / "weights_wf"
 CRITERION = "portfolio/weights_wf"
 ARM = {"fixed": "fijo", "reestimated": "re-estimado"}
 

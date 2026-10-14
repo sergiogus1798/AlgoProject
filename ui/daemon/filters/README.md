@@ -13,14 +13,14 @@ is a search and the ledger exists to count them.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
-| `__init__.py` | The package's one-line purpose | — | — |
-| `discards.py` | The append-only `AlgoData/filters/<P>/<D>/discards.jsonl`: an `applied` line per filter or deletion (origin, expression, ts, n_in, n_out, and a filter's `rows`), one line per identity set aside, a `clear` line for «quitar filtros» (and the `cut` of «Continuar»); replayed after the last clear as **the latest filter + every manual deletion** (`current`, `live`, `hidden`, `steps`) | imported | log ↔ hidden identities, funnel steps |
-| `saved.py` | Filters saved by name in `AlgoData/filters/saved.yaml` | imported | name, rows ↔ yaml |
-| `dists.py` | Every per-strategy `distribution` block of a project's reports by identity, and the median mode: with two samples, the last one's median inside the first one's central X % (read off its density histogram); with one, the real value inside the draws' X % (the stored percentiles) | imported | `reports/<P>/*/<day>/<study>/estrategias/*.json` → blocks |
-| `evaluate.py` | The metrics a filter may read (the table's real columns and the distributions, OOS2 left out), each with its words (`named`: «Cross-timeframe · H1 · p», as the table heads it), the checks, the expression text in those words (the ledger's `criterion`; the machine form stays in `thresholds`) and the AND over the visible rows | imported | table, rows → dropped identities |
-| `ledgerrow.py` | The row's study (Q9: `<symbol>_<timeframe>_<template folder>` from `registry.csv`; none → the filter is refused), its step (the Python step that reads the stage whose task writes the databank: `Results` → 8) and segment, written through `record.log` | imported | filter → one ledger row |
-| `api.py` | The eight routes as `ROUTER`, every failure an `error` field: metrics, `preview` (counts only), apply, discard, clear, state, saved ×2 | imported | request → JSON |
-| `view.py` | What the strip and the funnel read: `state_of` (hidden ids, steps, manual count, the `conditions` in force, a `stale` old filter read back into rows by `recovered`), the funnel's rows and their why in the glossary's words | imported | log → state |
+| `__init__.py` | The databank filters of Proyecto: AND rows over real columns, discards on disk, one ledger row each. | — | — |
+| `api.py` | The filter routes: metrics, preview, apply, manual discard, clear, state, saved filters. | imported | request → JSON |
+| `discards.py` | The discard log of one databank: what the filter in force and the manual deletions set aside. | imported | log ↔ hidden identities, funnel steps |
+| `dists.py` | The stored `distribution` blocks of a project's strategies, by identity, for the median mode. | imported | `reports/<P>/*/<day>/<study>/estrategias/*.json` → blocks |
+| `evaluate.py` | Which columns a filter may read, and which visible strategies an AND of rows sets aside. | imported | table, rows → dropped identities |
+| `ledgerrow.py` | The ledger row of a filter or a manual deletion: its study (Q9), its step and its segment. | imported | filter → one ledger row |
+| `saved.py` | Filters saved by name, to apply again: `AlgoData/filters/saved.yaml`. | imported | name, rows ↔ yaml |
+| `view.py` | What the strip and the funnel read of one databank's discards: counts, steps, conditions. | imported | log → state |
 
 ## Contracts and traps
 
@@ -43,8 +43,7 @@ is a search and the ledger exists to count them.
   a float before the ledger's `thresholds` and `saved.yaml` see it.
 - **Rows without identity** cannot be hidden: counted as `anonymous` in the `applied` line,
   `/state`, `/metrics` and the funnel («N sin identidad, no filtrables»).
-- **One root.** `discards.root()` is `AlgoData/filters/`; `saved.yaml` sits in it. It is not in
-  `core/paths.py`, which is at its 250-line limit. The table itself drops
+- **One root.** `core.paths.filters_root()` is `AlgoData/filters/`; `saved.yaml` sits in it. The table itself drops
   wfc/cscv/wfm/blindJoint while the blind door is shut, and `evaluate.refused` keeps OOS2 columns
   out of the dropdown — both only under `ALGO_AUTONOMOUS=1` (`core.assetdata.enforced`); for a human it is always open (owner, 2026-09-28).
 - **The latest filter decides** (owner, 2026-09-28: «si aflojo, que vuelvan a aparecer»).

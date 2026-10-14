@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from core.datapaths import portfolio_dir
+from core.paths import portfolio_dir
 from portfolio.funded.sim import inputs
 
 # A `--set` of one of these sections is the bank's; the rest are the construct overrides the run was built under.

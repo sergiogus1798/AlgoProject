@@ -2,7 +2,7 @@
 
 import yaml
 
-from core.datapaths import funding_dir
+from core.paths import funding_dir
 
 
 def fetch(firm: str) -> dict:

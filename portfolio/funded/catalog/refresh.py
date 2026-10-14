@@ -7,7 +7,7 @@ import hashlib
 import json
 import sqlite3
 
-from core.datapaths import funding_dir
+from core.paths import funding_dir
 from portfolio.funded.catalog import combos, firms, ftmo, fundednext, hantec, manual, overlay, store
 from portfolio.funded.catalog.schema import connect
 

@@ -3,7 +3,7 @@
 import itertools
 import sqlite3
 
-from core.datapaths import funding_dir
+from core.paths import funding_dir
 from portfolio.funded.rules import catalog
 
 # What this simulation assumes about a funded account and no catalogue table states — carried

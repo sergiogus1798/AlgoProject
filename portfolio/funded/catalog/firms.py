@@ -2,7 +2,7 @@
 
 import yaml
 
-from core.datapaths import funding_dir
+from core.paths import funding_dir
 
 # candidate: followed (catalogue, rules, deals) while the admission protocol runs; not in the studies.
 # active: admitted by the owner; in the buying universe and the studies. rejected: no longer followed.

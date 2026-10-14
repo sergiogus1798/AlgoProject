@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from core.datapaths import portfolio_dir
+from core.paths import portfolio_dir
 from portfolio.funded.decide import choose, tables
 from portfolio.funded.sim import inputs
 

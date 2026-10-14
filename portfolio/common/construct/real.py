@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from core.datapaths import portfolio_dir
+from core.paths import portfolio_dir
 from core.manifest import fresh_dir
 
 from .equity import matrix, universe

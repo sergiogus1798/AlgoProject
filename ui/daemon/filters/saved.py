@@ -2,9 +2,10 @@
 
 import yaml
 
-from ui.daemon.filters.discards import root, stamp
+from core.paths import filters_root
+from ui.daemon.filters.discards import stamp
 
-FILE = root() / "saved.yaml"
+FILE = filters_root() / "saved.yaml"
 
 
 def every() -> dict[str, dict]:

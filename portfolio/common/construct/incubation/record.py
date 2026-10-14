@@ -8,11 +8,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from core import datapaths
+from core import paths
 
 from . import band as band_mod
 
-ROOT = datapaths.portfolio_dir() / "incubation"
+ROOT = paths.portfolio_dir() / "incubation"
 COLUMNS = ["day", "identity", "pnl", "segment", "source"]     # the hand-off's daily.parquet (PLAN §2.2)
 SEGMENT = "incubation"
 SOURCES = ("paper", "live")     # paper: the monthly SQX retest of the bars after oos2; live: a demo or real account
