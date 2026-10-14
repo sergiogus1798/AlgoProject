@@ -53,9 +53,7 @@ def _file_counts(path: Path) -> Counter[str]:
 
 
 def ruff_counts() -> Counter[str]:
-    """Findings per code of RUFF_CODES over the whole project (nothing when ruff is absent)."""
-    if not shutil.which("ruff"):
-        return Counter()
+    """Findings per code of RUFF_CODES over the whole project (ruff must be installed)."""
     res = subprocess.run(["ruff", "check", "--select", ",".join(RUFF_CODES), "--no-cache",
                           "--output-format", "json", str(depmap.ROOT)],
                          capture_output=True, text=True)
@@ -74,6 +72,8 @@ def counts(files: list[Path]) -> dict[str, int]:
 
 def check(files: list[Path]) -> list[str]:
     """Problems for each count above the baseline; a fall (and no rise) rewrites the baseline."""
+    if not shutil.which("ruff"):   # its counts would read 0 and be saved as a fall
+        return ["ruff not found: ratchet not checked (pip install --user -r requirements.txt)"]
     now = counts(files)
     old = json.loads(BASELINE.read_text(encoding="utf-8")) if BASELINE.exists() else {}
     rose = [f"{k}: {old[k]} -> {v} (ratchet: may not rise; see CODESTYLE.md §8)"

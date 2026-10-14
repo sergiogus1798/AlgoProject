@@ -6,6 +6,8 @@
 # pull is a mechanism and not something to remember (owner, 2026-10-10):
 #   - no SQX running there: `git pull --ff-only` first; if it fails, nothing runs (exit 97).
 #   - SQX running there: no pull — the code is never changed under a run — and it says so.
+#   - a workflow running there (`pgrep -f` on pipeline.autopilot / bin/workflow.sh — it leaves no
+#     lock or pid file, so the process name is the marker): nothing runs (exit 96).
 #
 # Usage:
 #   bin/remote.sh gorilla <command...>            run it in the clone, wait, return its exit code
@@ -42,6 +44,9 @@ fi
 
 ssh -o BatchMode=yes -o ServerAliveInterval=30 "$HOST" "
 cd ~/$REPO || { echo 'remote: no clone at ~/$REPO on $NAME' >&2; exit 97; }
+if pgrep -u \"\$USER\" -f '[p]ipeline\\.autopilot|[b]in/workflow\\.sh' >/dev/null; then
+  echo 'remote: a workflow is running on $NAME — nothing run (rule 19: nothing CPU-heavy beside it)' >&2; exit 96
+fi
 if pgrep -u \"\$USER\" -x 'sqcli|StrategyQuantX' >/dev/null; then
   echo 'remote: SQX is running on $NAME — no pull, the code stays as it is under the run' >&2
 else
