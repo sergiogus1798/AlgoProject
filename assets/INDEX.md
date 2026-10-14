@@ -30,4 +30,5 @@ Generado por `python3 -m core.assets --index`. Leer `RULES.md` primero.
 | `USOIL` | `no_forex` | ftmo | `USOIL.cash_M1` | ✅ | — |
 | `XAGUSD` | `no_forex` | Infinox | `XAGUSD_M1` | ✅ | — |
 | `XAUUSD` | `no_forex` | Infinox | `XAUUSD_M1` | ✅ | — |
+| `XAUUSD_SYN01` | `no_forex` | Infinox | `XAUUSD_SYN01` | ✅ | — |
 | `XCUUSD` | `no_forex` | ftmo | `XCUUSD_M1` | ✅ | — |

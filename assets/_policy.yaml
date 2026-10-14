@@ -144,6 +144,11 @@ segments:
     build: {from: 2008, to: 2017}
     oos1: {from: 2018, to: 2022}
     oos2: {from: 2023, to: 2026-09-30, spread: oos2}
+  XAUUSD_SYN01:   # synthetic twin of XAUUSD (factory MCPT feasibility test): same stamps, same windows
+    data: {from: 2003-05-05, to: 2026-10-09}
+    build: {from: 2008, to: 2017}
+    oos1: {from: 2018, to: 2022}
+    oos2: {from: 2023, to: 2026-09-30, spread: oos2}
   USOIL:
     data: {from: 2013-01-01, to: 2026-10-09}   # USOIL.cash_M1, 4.472.387 barras M1
     # Dueño, 2026-10-01: los tramos de los índices (los datos empiezan en 2013).
