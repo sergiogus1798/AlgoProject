@@ -6,6 +6,7 @@ import pandas as pd
 
 from core import assetdata
 from core.paths import databank_dir
+from ledger import study as studymod
 from sqx.curate import apply_verdict
 from sqx.projects import registry
 from ui.daemon.advance.preflight import by_identity
@@ -77,3 +78,15 @@ def about(project: str) -> About:
     return {"symbol": row["symbol"], "timeframe": row["timeframe"],
             "feed": assetdata.load(row["symbol"])["sqx_symbol"],
             "family": where.family(project)}
+
+
+def study_of(project: str) -> tuple[str, About]:
+    """The ledger study id of a project, and what the project is.
+
+    Raises:
+        ValueError: The registry names no template for the project, so no family signs its rows.
+    """
+    who = about(project)
+    if who["family"] is None:
+        raise ValueError(where.no_family(project))
+    return studymod.study_id(who["symbol"], who["timeframe"], who["family"]), who

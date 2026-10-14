@@ -1,7 +1,6 @@
 """The markets `assets/_markets.yaml` declares for an asset: category, first date, group and weight."""
 
 from datetime import date
-from typing import cast
 
 import pandas as pd
 
@@ -33,5 +32,5 @@ def declared(symbol: str) -> pd.DataFrame:
 
 def provisional(feed: str) -> bool:
     """Whether a market's cost card still carries a placeholder: a `why` that starts PROVISIONAL."""
-    costs = assetdata.load(cast(str, assetdata.symbol_for(feed)))["costs"]
+    costs = assetdata.load(assetdata.symbol_of(feed))["costs"]
     return any(str(c.get("why", "")).startswith(PROVISIONAL) for c in costs.values())

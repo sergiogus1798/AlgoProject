@@ -56,7 +56,7 @@ def cards(feed: str) -> tuple[dict | None, dict | None, str]:
     bad = next((reason for _, reason in got.values() if reason), "")
     if bad:
         return None, None, bad
-    return {k: v[0] for k, v in got.items()}, cells.cuts(cast(str, assetdata.symbol_for(feed))), ""
+    return {k: v[0] for k, v in got.items()}, cells.cuts(assetdata.symbol_of(feed)), ""
 
 
 def _day(days: Path, day: str) -> Path | None:

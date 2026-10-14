@@ -113,7 +113,9 @@ def graph(screen: dict[str, Any] | None, known: dict[str, dict]) -> parts.TabBlo
 def pair(pool: str, i: str, j: str, firm: str = "", freq: str = "monthly") -> dict[str, Any]:
     """One cell opened: the two strategies' P&L per period in build, and every measure of the pair."""
     folder, screen = universe(pool, firm)
-    assert folder is not None       # a pair is only opened from a built universe
+    if folder is None:
+        raise FileNotFoundError(f"el pool «{pool}» no tiene universo medido: pulsa «Calcular parejas» "
+                                "antes de abrir una pareja")
     known, manifest = shelf.names(), shelf.load(folder / "manifest.json")
     lo, hi = (pd.Timestamp(d) for d in manifest["calendar"]["build"])
     frame: pd.DataFrame

@@ -244,3 +244,22 @@ def symbol_for(feed: str) -> str | None:
             by_feed.setdefault(_shared(f)["sqx_symbol"], f.stem)
         _FEEDS.update(stamp=stamp, by_feed=by_feed)
     return _FEEDS["by_feed"].get(feed)
+
+
+def symbol_of(feed: str) -> str:
+    """`symbol_for`, for a caller that cannot go on without the asset.
+
+    Args:
+        feed: SQX symbol name, e.g. "USDJPY_M1".
+
+    Returns:
+        The asset name that declares this feed.
+
+    Raises:
+        ValueError: No asset file declares the feed.
+    """
+    got = symbol_for(feed)
+    if got is None:
+        raise ValueError(f"ningún activo declara el feed «{feed}»: revisa `sqx_symbol` en "
+                         f"assets/symbols/*.yaml (¿falta el sufijo _M1 o el activo?)")
+    return got

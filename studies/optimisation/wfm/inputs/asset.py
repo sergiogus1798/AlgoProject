@@ -1,7 +1,7 @@
 """The asset a WFM export traded: its bars, its three segments, the two cost cards and the drift term."""
 
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, TypedDict
 
 import pandas as pd
 import yaml
@@ -42,13 +42,14 @@ def of(feed: str, timeframe: str, charged: str) -> Asset:
         the bars the drift is measured on), `charged` and `real` (`reprice.costs` of the
         charged segment and of `oos2`) and `drift`, the gate's block.
     """
-    data = assetdata.load(cast(str, assetdata.symbol_for(feed)))
+    name = assetdata.symbol_of(feed)
+    data = assetdata.load(name)
     windows: dict[str, tuple[str, str]] = {}
     for name in SEGMENTS:
         last = data["segments"][name]["to"]
         windows[name] = (assetdata.segment_start(data, name),
                          f"{last}-12-31" if isinstance(last, int) else str(last))
-    return {"name": assetdata.symbol_for(feed),
+    return {"name": name,
             "feed": feed, "bars": barstore.read(feed, timeframe), "windows": windows,
             "span": (windows[SEGMENTS[0]][0], windows[CLEAN][1]),
             "charged": reprice.costs(feed, charged), "real": reprice.costs(feed, CLEAN),

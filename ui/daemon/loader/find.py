@@ -37,6 +37,20 @@ def install_of(project: str, databank: str) -> tuple[str, Path] | None:
     return None
 
 
+def top_of(project: str, databank: str) -> Path:
+    """The top folder of the install that holds this databank.
+
+    Raises:
+        FileNotFoundError: No install holds it; check the project and databank names, and that
+            the databank folder exists under `user/projects` of a worker.
+    """
+    where = install_of(project, databank)
+    if where is None:
+        raise FileNotFoundError(f"{project} / {databank} no está en ninguna instalación: "
+                                "comprueba el nombre del proyecto y del databank en user/projects")
+    return where[1]
+
+
 def spelled(project: str, databank: str) -> str:
     """The databank's name as SQX spells it, from either spelling the window may hold.
 

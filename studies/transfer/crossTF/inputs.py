@@ -106,7 +106,7 @@ def oos(packed: pd.DataFrame, feed: str) -> pd.DataFrame:
         packed: What `gather` returned.
         feed: SQX symbol the cells ran on; the asset that declares it owns the segments.
     """
-    data = assetdata.load(cast(str, assetdata.symbol_for(feed)))  # symbol_for may return None: unchanged
+    data = assetdata.load(assetdata.symbol_of(feed))
     start, end = (pd.Timestamp(ms, unit="ms") for ms in assetdata.window(data, "oos1"))
     opened = pd.to_datetime(packed["Open time"])
     return cast(pd.DataFrame, packed[(opened >= start) & (opened < end)]).reset_index(drop=True)

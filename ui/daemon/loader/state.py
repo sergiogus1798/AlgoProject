@@ -124,7 +124,7 @@ def commands(project: str, now: dict, exports: bool = True) -> dict[str, tuple[s
     if now.get("error") or now["writing"]:
         return {}
     db, role = now["databank"], now["role"]
-    top = find.install_of(project, db)[1]  # pyright: ignore[reportOptionalSubscript]  # install_of is None for an unknown databank (runtime TypeError)
+    top = find.top_of(project, db)
     at = [] if role == "master" else ["--role", role]
     want = {k for k, v in now["pieces"].items() if v["state"] in ("missing", "stale")}
     out = {}
@@ -157,7 +157,7 @@ def covers(project: str, now: dict) -> bool:
     """
     if not now.get("partner") or now.get("error"):
         return False
-    top = find.install_of(project, now["databank"])[1]  # pyright: ignore[reportOptionalSubscript]  # install_of is None for an unknown databank (runtime TypeError)
+    top = find.top_of(project, now["databank"])
     own, other = (find.roster(project, d) for d in (now["databank"], now["partner"]))
     return bool(own) and set(own) == set(other) and len(own) == now["strategies"] \
         and len(other) == len(find.files(top, project, now["partner"]))

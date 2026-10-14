@@ -53,7 +53,7 @@ def settle(app: QApplication, ficha: ImportedFicha) -> None:
     app.processEvents()
 
 
-def main() -> int | None:
+def main() -> int:
     """Open the zone, or save the list and the imported ficha with `--shot DIR` and exit."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--shot", type=Path, help="carpeta donde dejar las PNG y salir")
@@ -87,7 +87,8 @@ def main() -> int | None:
     settle(app, fichas[-1])
     fichas[-1].grab().save(str(args.shot / "2-importada.png"))
     print(args.shot / "2-importada.png")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

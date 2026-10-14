@@ -1,6 +1,6 @@
 """Every study the window can show: family, title, step, whether it eliminates, and how it is run."""
 
-from typing import Any, cast
+from typing import Any
 from collections.abc import Callable
 from pathlib import Path
 
@@ -138,11 +138,17 @@ def role(key: str, cfg: dict | None) -> str:
 
     Returns:
         "gate" or "describe".
+
+    Raises:
+        ValueError: The study's role is decided by its config and `cfg` is None.
     """
     said = ROLE[key]
     if isinstance(said, str):
         return said
-    return "gate" if said(cast(dict, cfg)) else "describe"
+    if cfg is None:
+        raise ValueError(f"{key}: its role depends on its config and none was given; pass the "
+                         "study's current config (studies/.../config.yaml)")
+    return "gate" if said(cfg) else "describe"
 
 
 def entry(key: str, cfg: dict | None) -> dict[str, Any]:

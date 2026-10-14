@@ -3,7 +3,6 @@
 import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import cast
 
 import pandas as pd
 
@@ -117,8 +116,7 @@ def wfm(project: str, role: str) -> str:
 
 def study(project: str) -> tuple[str, dict]:
     """The ledger study the block signs — the one blindJoint reads — and its rows' shared fields."""
-    who = survivors.about(project)
-    sid = studymod.study_id(who["symbol"], who["timeframe"], cast(str, who["family"]))
+    sid, who = survivors.study_of(project)
     return sid, {"study": sid, "symbol": who["symbol"], "timeframe": who["timeframe"],
                  "config_hash": None}
 

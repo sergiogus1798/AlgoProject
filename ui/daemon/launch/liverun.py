@@ -7,7 +7,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from core.datapaths import tmp_dir
 from core.phases import note, phase
@@ -119,21 +119,30 @@ def close(role: str, project: str, failed: dict[str, Any] | None = None) -> None
         print(exiting.stop(role, project), flush=True)    # (🔬 2026-10-06); it waits on us instead
     finally:
         live.stop(role, export=False)                  # the script's own cleanup: lock, Xvfb
-    held = cast("preflight.Listing", preflight.tasks(project))     # the project ran: it is there
-    titles = {t for s in failed["steps"]
-              for t in cast("launchsteps.StepTasks", launchsteps.of_step(s["n"], held["cfx"]))["titles"]}
-    for task in held["tasks"]:
-        if task["title"] in titles:
-            for f in (held["cfx"].parent / "databanks" / task["output"]).glob("*.sqx"):
-                f.unlink()
-    newest = max((held["cfx"].parent / "log").glob("global_log_*.log"), key=lambda f: f.stat().st_mtime,
-                 default=None)      # no log yet: a ValueError here hid the real failure (📓 2026-10-11)
-    if newest is None or newest.stat().st_mtime < failed["since"]:   # the step never started: that log is an earlier step's
-        newest = None
-    else:
-        newest.rename(newest.with_suffix(".log.descartado"))
-    print(f"vaciadas en disco las salidas del paso {failed['n']} y apartado {newest.name if newest else 'ningún log'}: se repetirá al reanudar", flush=True)
-    signal.signal(signal.SIGTERM, was)
+    try:
+        held = preflight.tasks(project)
+        if "refuse" in held:
+            raise RuntimeError(f"{project}: no se puede vaciar el paso {failed['n']} tras el fallo, "
+                               f"porque {held['refuse']}; vacía a mano las salidas del paso")
+        titles: set[str] = set()
+        for s in failed["steps"]:
+            got = launchsteps.of_step(s["n"], held["cfx"])
+            if "refuse" in got:
+                raise RuntimeError(f"{project}: el paso {s['n']} no tiene tareas que vaciar: {got['refuse']}")
+            titles |= set(got["titles"])
+        for task in held["tasks"]:
+            if task["title"] in titles:
+                for f in (held["cfx"].parent / "databanks" / task["output"]).glob("*.sqx"):
+                    f.unlink()
+        newest = max((held["cfx"].parent / "log").glob("global_log_*.log"), key=lambda f: f.stat().st_mtime,
+                     default=None)      # no log yet: a ValueError here hid the real failure (📓 2026-10-11)
+        if newest is None or newest.stat().st_mtime < failed["since"]:   # the step never started: that log is an earlier step's
+            newest = None
+        else:
+            newest.rename(newest.with_suffix(".log.descartado"))
+        print(f"vaciadas en disco las salidas del paso {failed['n']} y apartado {newest.name if newest else 'ningún log'}: se repetirá al reanudar", flush=True)
+    finally:
+        signal.signal(signal.SIGTERM, was)
 
 
 def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:

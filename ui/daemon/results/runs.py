@@ -66,6 +66,9 @@ def full(hit: dict, identity: str) -> dict[str, Any]:
         return {**whole(got, alias), "identity": identity or None}
     row = (store.verdicts(hit["path"].parent) or {}).get(alias)
     mine = slice_for(got, alias) if kind == "slice" else None
+    if mine is None and row is None:
+        raise ValueError(f"{hit['path'].parent}: el verdict.csv no tiene fila de «{alias}»; vuelve a "
+                         "correr el estudio de población para que la escriba")
     return {**(mine or verdict_row(got, cast(dict[str, Any], row), alias)), "identity": hit["identity"]}
 
 

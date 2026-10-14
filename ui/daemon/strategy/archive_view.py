@@ -80,7 +80,9 @@ def gate(project: str, databank: str, identity: str, day: str) -> dict | None:
         `gateview.strategy`; None when no gate report judged that harvest.
     """
     folder = harvest.newest(project, databank)
-    report_day, _ = gateview.judged(folder)  # pyright: ignore[reportArgumentType]  # newest() None crashes here today, kept as is
+    if folder is None:
+        return None
+    report_day, _ = gateview.judged(folder)
     if not report_day:
         return None
     report = gateview.gate(project, databank, report_day)

@@ -68,9 +68,13 @@ def tested(x: dict, cal: dict, pcfg: dict, spec: dict, direction: str, judge: di
         more exceedances than the cut allows at the full count.
     """
     draws, most = pcfg["nulls"]["draws"], reach(judge["cut"], pcfg["nulls"]["draws"])
+    if draws <= 0 or judge["chunk"] <= 0 or most < 0:
+        raise ValueError(f"profilePower: draws={draws}, chunk={judge['chunk']}, cut={judge['cut']} "
+                         "leave no chunk to draw (even zero exceedances would pass p above the cut): "
+                         "raise nulls.draws or chunk, or the cut, in the study's config")
     part = {**pcfg, "measures": [spec], "nulls": {**pcfg["nulls"], "draws": judge["chunk"]}}
     exceed, drawn = 0, 0
-    first: dict | None = None
+    first: dict | None = None  # set by the first pass: the guard above makes it run at least once
     while drawn < draws and exceed <= most:
         real, sims = profile_one.against_null(x, cal, part, block, rng)
         k = SIDE[direction]

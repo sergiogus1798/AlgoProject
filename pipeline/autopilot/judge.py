@@ -12,7 +12,7 @@ import yaml
 
 from core import assetdata
 from core.paths import databank_dir, export_dir, harvest_dir, metrics_export
-from ledger import cells, record, study as studymod
+from ledger import cells, record
 from pipeline.autopilot import criteria, facts, selection, survivors, trim
 from sqx.curate import apply_verdict
 from sqx.projects import registry
@@ -116,8 +116,7 @@ def ledger_row(project: str, n: str, spec: dict, before: int, after: int, segmen
     (a question for the owner: only step 8 declares it). `segment` overrides it (18.5's second
     judgement, read with oos2).
     """
-    who = survivors.about(project)
-    sid = studymod.study_id(who["symbol"], who["timeframe"], cast(str, who["family"]))
+    sid, who = survivors.study_of(project)
     record.log(sid, {"step": float(n), "launched_by": "autopilot", "symbol": who["symbol"],
                      "timeframe": who["timeframe"], "segment": segment or spec.get("segment", "oos1"),
                      "n_in": before, "n_out": after, "criterion": f"criteria.yaml paso {n}",
@@ -142,7 +141,7 @@ def _seal(project: str) -> Callable[[], None]:
 
     def resign() -> None:
         """Write the `.sources.sig` of each export that was fresh, over the files as the cut left them."""
-        top = cast(tuple[str, Path], find.install_of(project, bank))[1]
+        top = find.top_of(project, bank)
         own = find.files(top, project, bank)
         other = find.partner(top, project, bank)
         marks = {"metrics": (metrics_export(project, bank) / "manifest.json", own),

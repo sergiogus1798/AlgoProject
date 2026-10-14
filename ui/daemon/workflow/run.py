@@ -1,6 +1,6 @@
 """The rail's run buttons: ticked tests into the runner's jobs, and the backfill of the blind steps' rows."""
 
-from typing import Any, cast
+from typing import Any
 
 import pandas as pd
 
@@ -100,8 +100,11 @@ def plan(spec: dict[str, Any], key: str, ctx: Context, databank: str,
                 "ningún databank de este proyecto en el disco tiene su entrada")
     first = ""
     for bank in candidates:
-        asset = cast("str", ctx["asset"])      # None when neither ledger nor name says it
-        chosen = picked or (population(ctx["project"], bank, asset) if scope == "one" else [])
+        asset = ctx["asset"]      # None when neither ledger nor name says it
+        if asset is None and not picked and scope == "one":
+            return (f"{ctx['project']}: ni el registro ni el nombre dicen el activo, y sin él no se "
+                    "sabe qué estrategias tiene el databank: revisa projects/registry.csv")
+        chosen = picked or (population(ctx["project"], bank, asset) if scope == "one" and asset else [])
         got = table.jobs({"study": key, "scope": scope, "project": ctx["project"],
                           "databank": bank, "asset": ctx["asset"], "overrides": [],
                           "only": None, "strategies": chosen})
@@ -178,18 +181,20 @@ def backfill(ctx: Context, on_disk: list[str]) -> BackfillOffer:
         to write a step twice, so a second press cannot count a look twice.
     """
     missing = [n for n in on_disk if n not in ctx["blind"]["done"]]
-    row = cast("dict[str, Any]", where.enrolled(ctx["project"]))   # a family implies an enrolment
-    wfm = sources.results(ctx["project"], "wfm")
+    row = where.enrolled(ctx["project"])
+    wfm = [r for r in sources.results(ctx["project"], "wfm") if r["databank"]]
     why = ("17, 18 y 19: ningún resultado en disco sin su fila" if not missing else
+           where.no_family(ctx["project"]) if row is None else
            where.no_family(ctx["project"]) if not ctx["family"] else
            "falta el resultado del WFM (paso 19), que ledger.backfill --blind necesita"
            if not wfm else f"resultados sin fila en el ledger: pasos {', '.join(missing)}")
-    if not (missing and ctx["family"] and wfm):
+    family = ctx["family"]
+    if row is None or not (missing and family and wfm):
         return {"offer": False, "why": why, "argv": []}
     return {"offer": True, "why": why, "argv": [
         "-m", "ledger.backfill", "--blind", ctx["project"], "--wfm-databank",
-        cast("str", wfm[0]["databank"]), "--symbol", row["symbol"], "--timeframe", row["timeframe"],
-        "--family", ctx["family"], "--write"]}
+        str(wfm[0]["databank"]), "--symbol", row["symbol"], "--timeframe", row["timeframe"],
+        "--family", family, "--write"]}
 
 
 def blind_on_disk(rows: list[dict[str, Any]]) -> list[str]:
