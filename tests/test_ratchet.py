@@ -53,7 +53,24 @@ def test_check_flags_a_rise_and_keeps_baseline() -> None:
     assert ratchet.BASELINE.read_bytes() == before
 
 
+def test_pyright_counts_per_included_package() -> None:
+    """Errors are counted per package of the include list; warnings and other packages are not."""
+    import json
+    import types
+    diag = lambda pkg, sev: {"file": str(ROOT / pkg / "m.py"), "severity": sev}  # noqa: E731
+    out = json.dumps({"generalDiagnostics": [diag("core", "error"), diag("core", "error"),
+                                             diag("core", "warning"), diag("ui", "error")]})
+    real = ratchet.subprocess.run
+    ratchet.subprocess.run = lambda *a, **k: types.SimpleNamespace(stdout=out)
+    try:
+        got = ratchet.pyright_counts()
+    finally:
+        ratchet.subprocess.run = real
+    assert got["pyright.core"] == 2 and got["pyright.engines"] == 0, got
+
+
 if __name__ == "__main__":
+    test_pyright_counts_per_included_package()
     test_counters()
     test_check_flags_a_rise_and_keeps_baseline()
     print("ok")

@@ -4,6 +4,8 @@
   "PLR0913": 231,
   "broad_except": 57,
   "layering_allow": 19,
+  "pyright.core": 227,
+  "pyright.engines": 50,
   "untyped_dict.core": 63,
   "untyped_dict.engines": 30,
   "untyped_dict.ledger": 13,

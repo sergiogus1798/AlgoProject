@@ -150,6 +150,8 @@ python3 tools/depmap.py && python3 tools/checks.py && python3 tools/audit_tests.
 `--changed` runs the tests you touched plus every `tests/test_*.py` that imports, directly or
 transitively, a `.py` that `git status` shows changed; the whole suite still runs nightly.
 
+Pyright (basic) runs over the packages listed in `pyproject.toml` `[tool.pyright] include`; its error count per package (`pyright.<package>` in the ratchet) may not rise, and a package joins the list when its F9 migration is done (order: core, ledger, engines, sqx, perf, pipeline, mt5, portfolio, studies, ui, tools).
+
 The lint config is `ruff.toml` (real bugs only, no formatter); `ruff check .` must be clean for its selected rules — `checks.py` runs it as its "lint" check.
 
 `checks.py` reports: files over 500 lines, `.py` missing from its folder README, missing module

@@ -3,6 +3,7 @@
 
 import ast
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -60,20 +61,34 @@ def ruff_counts() -> Counter[str]:
     return Counter(d["code"] for d in json.loads(res.stdout or "[]"))
 
 
+def pyright_counts() -> Counter[str]:
+    """Pyright errors per package of pyproject's [tool.pyright] include, from one run (zeros kept)."""
+    toml = (depmap.ROOT / "pyproject.toml").read_text(encoding="utf-8")   # no tomllib on 3.10
+    pkgs = re.findall(r'"([^"]+)"', re.search(r"^include = \[(.*?)\]", toml, re.M).group(1))
+    res = subprocess.run(["pyright", "--outputjson"], capture_output=True, text=True, cwd=depmap.ROOT)
+    out = Counter({f"pyright.{p}": 0 for p in pkgs})
+    for d in json.loads(res.stdout or "{}").get("generalDiagnostics", []):
+        if d["severity"] == "error":
+            out[f"pyright.{Path(d['file']).relative_to(depmap.ROOT).parts[0]}"] += 1
+    return out
+
+
 def counts(files: list[Path]) -> dict[str, int]:
     """Every ratcheted count, flat keys, zeros for the ruff codes and layering included."""
     total = Counter({c: 0 for c in RUFF_CODES})
     for f in files:
         total.update(_file_counts(f))
     total.update(ruff_counts())
+    total.update(pyright_counts())
     total["layering_allow"] = len(layering.ALLOW)
     return dict(sorted(total.items()))
 
 
 def check(files: list[Path]) -> list[str]:
     """Problems for each count above the baseline; a fall (and no rise) rewrites the baseline."""
-    if not shutil.which("ruff"):   # its counts would read 0 and be saved as a fall
-        return ["ruff not found: ratchet not checked (pip install --user -r requirements.txt)"]
+    for tool in ("ruff", "pyright"):   # a missing tool would read 0 and be saved as a fall
+        if not shutil.which(tool):
+            return [f"{tool} not found: ratchet not checked (pip install --user -r requirements.txt)"]
     now = counts(files)
     old = json.loads(BASELINE.read_text(encoding="utf-8")) if BASELINE.exists() else {}
     rose = [f"{k}: {old[k]} -> {v} (ratchet: may not rise; see CODESTYLE.md §8)"

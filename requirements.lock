@@ -34,6 +34,7 @@ markdown==3.10.3          # via -r requirements.txt
 matplotlib==3.10.9        # via -r requirements.txt
 mcp==1.29.1               # via -r requirements.txt
 narwhals==2.27.1          # via formulaic
+nodeenv==1.11.0          # via pyright
 numba==0.67.0             # via -r requirements.txt
 numpy==2.2.6              # via -r requirements.txt, arch, contourpy, diptest, formulaic, matplotlib, numba, pandas, patsy, scipy, statsmodels
 openpyxl==3.1.5           # via -r requirements.txt
@@ -52,6 +53,7 @@ pygments==2.21.0          # via pytest
 pyjwt==2.15.1             # via mcp
 pyparsing==3.3.3          # via matplotlib
 pypdf==6.19.0             # via -r requirements.txt
+pyright==1.1.414         # via -r requirements.txt
 pyside6==6.8.1            # via -r requirements.txt
 pyside6-addons==6.8.1     # via pyside6
 pyside6-essentials==6.8.1  # via pyside6, pyside6-addons

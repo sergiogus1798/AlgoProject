@@ -26,6 +26,8 @@ psutil==7.2.2
 pytest==9.1.1
 # The lint and the ratchet of tools/checks.py; without it the ratchet refuses to judge.
 ruff==0.16.5
+# The type check of tools/checks.py (ratchet pyright.<package>); the wheel bundles pyright, node comes from nodeenv.
+pyright==1.1.414
 
 # The desktop app (ui/). Qt for the window, FastAPI+uvicorn for the local daemon,
 # httpx for the one hop between them.
