@@ -1,0 +1,299 @@
+{
+ "split": "2019-12-31",
+ "end": "2023-12-28",
+ "p_fdr_all_nan": true,
+ "funnel": [
+  [
+   "0",
+   "presencia_passed >= 1",
+   11,
+   0,
+   1
+  ],
+  [
+   "0",
+   "sanidad_passed >= 1",
+   10,
+   0,
+   1
+  ],
+  [
+   "0",
+   "estaticas_value > 0",
+   9,
+   0,
+   2
+  ],
+  [
+   "1b",
+   "e_fin t_b",
+   7,
+   0,
+   1
+  ],
+  [
+   "1b",
+   "edge_mean_oos >= 2",
+   6,
+   0,
+   1
+  ],
+  [
+   "1b",
+   "n_afectadas ret_datos t_a",
+   5,
+   0,
+   0
+  ],
+  [
+   "2",
+   "retraso_ret_min retraso_t_delta",
+   5,
+   1,
+   1
+  ],
+  [
+   "3ab",
+   "q_p > 0.05",
+   4,
+   1,
+   0
+  ],
+  [
+   "3ab",
+   "dd_p > 0.10",
+   4,
+   1,
+   0
+  ],
+  [
+   "3c",
+   "z del mono con horas, por celda",
+   4,
+   0,
+   2
+  ]
+ ],
+ "strategies": {
+  "0fb282a4f43fe99f0e406d262f56fc77c53f3ee498df485611b3ff1358349c6e": {
+   "verdict": "MANTENER",
+   "cayo_nivel": null,
+   "cayo_regla": [],
+   "limbo": [],
+   "sanidad_value": 320.0,
+   "estaticas_value": 31380.070312,
+   "edge_mean_oos": 8.599381,
+   "t_b": 0.211629,
+   "e_fin": 99.821214,
+   "retraso_ret_min": 0.690331,
+   "retraso_t_delta": 1.552333,
+   "q_p": 0.688262,
+   "dd_p": 0.938612,
+   "z_mono": 2.325444,
+   "drift_excess_t": 2.539745,
+   "trade_t": 3.038659
+  },
+  "43bbaec044d27d9adef5ddcc134412955ea7f17ea2ac6b15aa57f198b525032f": {
+   "verdict": "MANTENER",
+   "cayo_nivel": null,
+   "cayo_regla": [],
+   "limbo": [
+    "dd_p"
+   ],
+   "sanidad_value": 202.0,
+   "estaticas_value": 21187.009766,
+   "edge_mean_oos": 7.127891,
+   "t_b": -0.511331,
+   "e_fin": 41.658405,
+   "retraso_ret_min": 1.005532,
+   "retraso_t_delta": -0.031779,
+   "q_p": 0.088782,
+   "dd_p": 0.067387,
+   "z_mono": 1.718175,
+   "drift_excess_t": 1.723483,
+   "trade_t": 1.860712
+  },
+  "4329e488a4cb761aacc8a9e6cfe25be5ba4c8274972fc519652479c03af94433": {
+   "verdict": "DESCARTAR",
+   "cayo_nivel": "3c",
+   "cayo_regla": [
+    "z_mono"
+   ],
+   "limbo": [],
+   "sanidad_value": 209.0,
+   "estaticas_value": 20840.429688,
+   "edge_mean_oos": 7.911743,
+   "t_b": -0.11361,
+   "e_fin": 83.528985,
+   "retraso_ret_min": 0.714727,
+   "retraso_t_delta": 2.413296,
+   "q_p": 0.017996,
+   "dd_p": 0.292741,
+   "z_mono": 1.565676,
+   "drift_excess_t": 1.786886,
+   "trade_t": 1.896504
+  },
+  "0019a1325cc2a8359c5c0d56d4dfbfee47dc4d3df29246ead9f5d3f0fe933491": {
+   "verdict": "DESCARTAR",
+   "cayo_nivel": "3c",
+   "cayo_regla": [
+    "z_mono"
+   ],
+   "limbo": [],
+   "sanidad_value": 391.0,
+   "estaticas_value": 23546.939453,
+   "edge_mean_oos": 4.84975,
+   "t_b": -0.258576,
+   "e_fin": 30.274059,
+   "retraso_ret_min": 0.477741,
+   "retraso_t_delta": 2.284421,
+   "q_p": 0.268746,
+   "dd_p": 0.320936,
+   "z_mono": 1.371455,
+   "drift_excess_t": 1.232653,
+   "trade_t": 1.47696
+  },
+  "000198b5e78d7693b609c60af5e38e54824a43c7ada26fa05554288607e45a49": {
+   "verdict": "DESCARTAR",
+   "cayo_nivel": "0",
+   "cayo_regla": [
+    "estaticas_value"
+   ],
+   "limbo": [],
+   "sanidad_value": 480.0,
+   "estaticas_value": -6083.189941,
+   "edge_mean_oos": null,
+   "t_b": null,
+   "e_fin": null,
+   "retraso_ret_min": null,
+   "retraso_t_delta": null,
+   "q_p": null,
+   "dd_p": null,
+   "z_mono": null,
+   "drift_excess_t": null,
+   "trade_t": -0.395397
+  },
+  "0fa7e460b4a68f1c25eff8461503e50a333b44d03f7801d3f0aa2fe52ab6204d": {
+   "verdict": "DESCARTAR",
+   "cayo_nivel": "1b",
+   "cayo_regla": [
+    "e_fin",
+    "t_b"
+   ],
+   "limbo": [],
+   "sanidad_value": 562.0,
+   "estaticas_value": 35122.398438,
+   "edge_mean_oos": null,
+   "t_b": -2.827241,
+   "e_fin": -52.077985,
+   "retraso_ret_min": null,
+   "retraso_t_delta": null,
+   "q_p": null,
+   "dd_p": null,
+   "z_mono": null,
+   "drift_excess_t": 2.198339,
+   "trade_t": 3.195611
+  },
+  "1b90da7c1df1b94da3198e56068cb60ee7239f111bf46721f722e92e08d50b11": {
+   "verdict": "DESCARTAR",
+   "cayo_nivel": "1b",
+   "cayo_regla": [
+    "edge_mean_oos"
+   ],
+   "limbo": [],
+   "sanidad_value": 472.0,
+   "estaticas_value": 1071.030029,
+   "edge_mean_oos": 1.131085,
+   "t_b": -0.676274,
+   "e_fin": -65.451662,
+   "retraso_ret_min": null,
+   "retraso_t_delta": null,
+   "q_p": null,
+   "dd_p": null,
+   "z_mono": null,
+   "drift_excess_t": -0.4574,
+   "trade_t": 0.057231
+  },
+  "1c4c7e84112a866b9670f8f08583f0f559406db27dc9a8cd377b72c9058756da": {
+   "verdict": "DESCARTAR",
+   "cayo_nivel": "2",
+   "cayo_regla": [
+    "retraso_ret_min",
+    "retraso_t_delta"
+   ],
+   "limbo": [],
+   "sanidad_value": 244.0,
+   "estaticas_value": 20229.25,
+   "edge_mean_oos": 6.269751,
+   "t_b": 0.056262,
+   "e_fin": 77.589186,
+   "retraso_ret_min": 0.193734,
+   "retraso_t_delta": 3.313276,
+   "q_p": null,
+   "dd_p": null,
+   "z_mono": null,
+   "drift_excess_t": 1.995278,
+   "trade_t": 2.266277
+  },
+  "2a8b9ff92edf47d868813505d8a394983be513d40fbeb92d49488332ba04d5bd": {
+   "verdict": "DESCARTAR",
+   "cayo_nivel": "0",
+   "cayo_regla": [
+    "estaticas_value"
+   ],
+   "limbo": [],
+   "sanidad_value": 196.0,
+   "estaticas_value": -3506.27002,
+   "edge_mean_oos": null,
+   "t_b": null,
+   "e_fin": null,
+   "retraso_ret_min": null,
+   "retraso_t_delta": null,
+   "q_p": null,
+   "dd_p": null,
+   "z_mono": null,
+   "drift_excess_t": null,
+   "trade_t": -0.737048
+  },
+  "cd5adb06a2be4f68e38de8a21fcae4ca7f930d65e68d3b3859cbb5da9c805300": {
+   "verdict": "DESCARTAR",
+   "cayo_nivel": "0",
+   "cayo_regla": [
+    "sanidad_passed"
+   ],
+   "limbo": [],
+   "sanidad_value": 196.0,
+   "estaticas_value": -3506.27002,
+   "edge_mean_oos": null,
+   "t_b": null,
+   "e_fin": null,
+   "retraso_ret_min": null,
+   "retraso_t_delta": null,
+   "q_p": null,
+   "dd_p": null,
+   "z_mono": null,
+   "drift_excess_t": null,
+   "trade_t": -0.737048
+  },
+  "0004205095072c331d3dea2ab8f399a29091ad0551ec29884e07bbce1d976d23": {
+   "verdict": "DESCARTAR",
+   "cayo_nivel": "0",
+   "cayo_regla": [
+    "presencia_passed"
+   ],
+   "limbo": [],
+   "sanidad_value": null,
+   "estaticas_value": null,
+   "edge_mean_oos": null,
+   "t_b": null,
+   "e_fin": null,
+   "retraso_ret_min": null,
+   "retraso_t_delta": null,
+   "q_p": null,
+   "dd_p": null,
+   "z_mono": null,
+   "drift_excess_t": null,
+   "trade_t": null
+  }
+ }
+}

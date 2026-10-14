@@ -1,0 +1,77 @@
+{
+ "screens": [
+  {
+   "name": "presencia",
+   "kind": "hard",
+   "why": "si SQX la tiro del databank de retesteo \u2014demasiados trades ambiguos, o cualquier otra de sus banderas rojas\u2014 esa decision ya esta tomada y la estrategia se va. Decision del due\u00f1o, 2026-09-23"
+  },
+  {
+   "name": "sanidad",
+   "kind": "hard",
+   "min_trades": 20,
+   "why": "una estrategia con cuatro trades fuera de muestra no tiene error estandar que leer, y una que repite los trades de otra no es una segunda observacion"
+  },
+  {
+   "name": "estaticas",
+   "kind": "hard",
+   "why": "el neto de oos1 del databank de retesteo (`Net profit [OOS]`): la regla R2 pide que sea positivo"
+  },
+  {
+   "name": "redundancia",
+   "kind": "soft",
+   "why": "si son N estrategias o una repetida N veces, por la LOGICA del XML: los bloques y su orden, ignorando los valores de los parametros. Sustituye a la correlacion de equity (due\u00f1o 2026-09-23), que es un proxy y depende de la ventana. SOFT: agrupar puede matar estrategias buenas, asi que nombra al representante de cada grupo y no descarta a nadie. El valor de la criba es el TAMA\u00d1O del grupo"
+  }
+ ],
+ "monkey": {
+  "draws": 100000,
+  "timeframe": "M30",
+  "seed": 20261014
+ },
+ "cascade": {
+  "on": true
+ },
+ "drift": {
+  "window": "year",
+  "variant": "d",
+  "se_skew_kurt": true
+ },
+ "frequency": {
+  "phi_min": 1.5,
+  "phi_max": 3.5
+ },
+ "centring": {
+  "min_strategies": 30,
+  "cap_log_rate": 0.35,
+  "cap_slope": null
+ },
+ "cost_stress": {
+  "k": 1.25
+ },
+ "concentration": {
+  "drop_trades": 3,
+  "drop_period": "quarter"
+ },
+ "mae": {
+  "percentile": 95
+ },
+ "delay": {
+  "variants": [
+   "E+1",
+   "S+1",
+   "ES+1"
+  ],
+  "on_build": false
+ },
+ "homogeneity": {
+  "permutations": 5000,
+  "period": "quarter",
+  "min_trades": 5,
+  "seed": 20261014
+ },
+ "drawdown": {
+  "block": 8,
+  "sequences": 5000,
+  "percentile": 95,
+  "seed": 20261014
+ }
+}

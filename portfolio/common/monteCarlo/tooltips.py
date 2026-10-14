@@ -9,6 +9,8 @@ TIPS = {
     "global.risk_per_trade": "USD arriesgados por operación; el divisor que convierte el "
                              "P&L en R.",
     "global.n_sims": "Rutas simuladas por cada sub-prueba.",
+    "global.seed": "Semilla de la que descienden todos los sorteos; se guarda con el resultado y "
+                   "la misma semilla repite la corrida. La ventana la pone sola.",
     "global.chunk": "Rutas por lote de cada worker; es memoria, no estadística.",
     "global.max_workers": "Núcleos usados en paralelo. Vacío (null) = todos los que tenga "
                           "esta máquina. Pedir más de los que tienes no falla ni acelera: "

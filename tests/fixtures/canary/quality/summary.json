@@ -1,0 +1,114 @@
+{
+ "feed": "USATEC_M1",
+ "K": 20,
+ "tick": 0.01,
+ "session": "Mon 09:00-Mon 23:01, Tue 09:00-Tue 23:01, Wed 09:00-Wed 23:01, Thu 09:00-Thu 23:01, Fri 09:00-Fri 23:01",
+ "stable_from": 2019,
+ "grade": {
+  "2012": "inestable",
+  "2013": "inestable",
+  "2014": "inestable",
+  "2015": "calidad B",
+  "2016": "calidad B",
+  "2017": "calidad B",
+  "2018": "calidad B",
+  "2019": "estable",
+  "2020": "estable",
+  "2021": "estable",
+  "2022": "estable",
+  "2023": "estable",
+  "2024": "estable",
+  "2025": "estable",
+  "2026": "estable"
+ },
+ "marked_per_year": 43.0,
+ "per_year_median": {
+  "cierre": 53.0,
+  "mecha": 4.0,
+  "cierre y mecha": 1.0,
+  "cierre y vuelta": 2.0,
+  "mecha y vuelta": 1.0,
+  "vuelta m=1": 1.0,
+  "vuelta m=5": 2.0,
+  "movimiento extremo": 51.0,
+  "congelado": 0.0,
+  "hueco": 20.0,
+  "congelado en rollover": 0.0,
+  "hueco en rollover": 0.0,
+  "caída del proveedor": 0.0,
+  "cierre parcial": 0.0,
+  "festivo": 0.0,
+  "marcadas": 43.0
+ },
+ "residual_gaps_per_year": 20.0,
+ "episodes": [
+  {
+   "mes": "2017-08",
+   "columna": "hueco",
+   "sucesos": 22,
+   "mediana previa": 2.0
+  },
+  {
+   "mes": "2017-09",
+   "columna": "hueco",
+   "sucesos": 21,
+   "mediana previa": 2.0
+  },
+  {
+   "mes": "2017-10",
+   "columna": "hueco",
+   "sucesos": 23,
+   "mediana previa": 2.0
+  },
+  {
+   "mes": "2017-11",
+   "columna": "hueco",
+   "sucesos": 23,
+   "mediana previa": 2.0
+  },
+  {
+   "mes": "2017-12",
+   "columna": "hueco",
+   "sucesos": 19,
+   "mediana previa": 2.0
+  },
+  {
+   "mes": "2018-01",
+   "columna": "hueco",
+   "sucesos": 23,
+   "mediana previa": 2.0
+  },
+  {
+   "mes": "2018-02",
+   "columna": "hueco",
+   "sucesos": 24,
+   "mediana previa": 2.0
+  },
+  {
+   "mes": "2018-03",
+   "columna": "hueco",
+   "sucesos": 22,
+   "mediana previa": 2.0
+  },
+  {
+   "mes": "2020-03",
+   "columna": "hueco",
+   "sucesos": 17,
+   "mediana previa": 2.0
+  },
+  {
+   "mes": "2025-01",
+   "columna": "hueco",
+   "sucesos": 6,
+   "mediana previa": 1.0
+  }
+ ],
+ "quiet_medians": {
+  "15": 100.0,
+  "20": 36.0,
+  "25": 14.0,
+  "30": 10.0
+ },
+ "scanned_on": "2026-10-06",
+ "bars_to": "2026-10-01 02:58:00"
+}

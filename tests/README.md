@@ -47,6 +47,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_builder_simple.py` | A Simple Strategy project straight out of `builder.build`: its shape, the owner's genetic block verbatim, its random-generation twin, and the owner's rule 15 on its building blocks. | `python3 tests/test_builder_simple.py` |
 | `test_calc_engines.py` | Known-answer tests for the calc-engines review (2026-10-04): BH, the empirical p, the drawdown from the starting balance and in exit order, placement support, the ATR regime lag, ledger pooling across units, expected max at N=1, curve clones and the excess fdr. | — |
 | `test_campaign.py` | The campaign's loop on a fake workflow command: a STOP mid-run leaves the cell interrupted and SQX's stop called, a restart resumes it with `run` and repeats nothing, three failed tries make a cell failed and two failed cells running end the loop, and a cell whose palette expert asks a question is set aside while the next one runs. No SQX, no install; the data root is a temp folder. | `python3 tests/test_campaign.py` |
+| `test_canary.py` | Nightly canary: a frozen USATEC H1 harvest of 10+1 strategies through the whole step-8 gate without SQX; a changed verdict or number means a seam broke. | `python3 tests/test_canary.py` (`--update` rewrites the golden) |
 | `test_cfx.py` | Golden-file test for core.cfx: a parser that breaks silently poisons every analysis. | `python3 tests/test_cfx.py` |
 | `test_cfxio.py` | cfxio: the guard of hard rule 4 and the atomic rewrite; the registry's lock. No real port is touched. | `python3 tests/test_cfxio.py` |
 | `test_chain.py` | «Correr workflow» and the per-step ▶ SQX on a scratch install: the stop rule, one start per step. | — |
@@ -382,6 +383,13 @@ semester the same way in every market; the second checks the CSCV on synthetic r
 
 | `test_marketsurfaces.py` | step 18.5 on panels built to have one answer: the proposal's five variants read rho 0.80 and −0.50 and a joint 0.15 with weights of 1; a `near_identical` group of `_markets.yaml` shares one vote; a market with over half its variants tied or under the minimum of common variants stays out, and under the weight floor there is no `orden.estado`; the main market is never flipped and every market takes the same weekly sign; without `--oos2` no oos2 leg is asked of the parquet and no `oos2` fact is written, and with it the deciding reading does not move; one seed gives one result whatever the chunk; and over 300 families without an edge about 5 % read positive and 5 % perverse while a planted rho of 0.2 on ten markets is nearly always seen | `python3 tests/test_marketsurfaces.py` |
 | `test_mothertrades.py` | `sqx.variants.mothertrades`: several batches exported in one folder, each gets back only its own mother's trades, tagged with her `variant_id` and the leg — SQX and the packer stood in for | `python3 tests/test_mothertrades.py` |
+
+`fixtures/canary/` is ten strategies of the harvest `AlgoData/harvest/Test_USATEC_H1_ruptura_leaseWeb/Results/_aparte/2026-10-11.090924/`
+(identity prefixes cd5adb06, 2a8b9ff9, 000198b5, 0fa7e460, 1b90da7c, 1c4c7e84, 0019a132, 4329e488,
+43bbaec0, 0fb282a4) plus one row of its `missing_oos.csv`, with the H1 bars, feed quality and costs
+they need, 1.7 MB. `cfg.json` and `rules.json` are frozen so an edit to `criteria.yaml` does not fail
+the nightly. Regenerate (`--update`) only when the change in verdict is intended, and say why in the
+commit.
 
 `fixtures/optimizer.cfx` is a real 2.4 KB project copied from the master. `--bless` rewrites the
 golden file: only do that when the change in output is intended, and say in the commit why.

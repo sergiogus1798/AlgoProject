@@ -1,0 +1,106 @@
+[
+ {
+  "fact": "gate.scorecard.presencia_passed",
+  "pass": ">= 1",
+  "missing": "fail"
+ },
+ {
+  "fact": "gate.scorecard.sanidad_passed",
+  "pass": ">= 1",
+  "missing": "fail"
+ },
+ {
+  "fact": "gate.scorecard.estaticas_value",
+  "pass": "> 0"
+ },
+ {
+  "fact": "gate.scorecard.edge_mean_oos",
+  "pass": ">= 2",
+  "limbo": ">= 1.25"
+ },
+ {
+  "all": [
+   {
+    "fact": "gate.scorecard.t_b",
+    "pass": ">= -1.65",
+    "else": "limbo"
+   },
+   {
+    "any": [
+     {
+      "fact": "gate.scorecard.t_b",
+      "pass": ">= -1.65"
+     },
+     {
+      "fact": "gate.scorecard.e_fin",
+      "pass": "> 0"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "any": [
+   {
+    "fact": "gate.scorecard.n_afectadas",
+    "pass": "== 0"
+   },
+   {
+    "fact": "gate.scorecard.ret_datos",
+    "pass": ">= 0.6",
+    "limbo": ">= 0.25"
+   },
+   {
+    "all": [
+     {
+      "fact": "gate.scorecard.t_a",
+      "pass": "<= 1.65"
+     },
+     {
+      "fact": "gate.scorecard.ret_datos",
+      "pass": ">= 0.6",
+      "else": "limbo"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "any": [
+   {
+    "fact": "gate.scorecard.retraso_ret_min",
+    "pass": ">= 0.6",
+    "limbo": ">= 0.25"
+   },
+   {
+    "all": [
+     {
+      "fact": "gate.scorecard.retraso_t_delta",
+      "pass": "<= 1.65"
+     },
+     {
+      "fact": "gate.scorecard.retraso_ret_min",
+      "pass": ">= 0.6",
+      "else": "limbo"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "fact": "gate.scorecard.q_p",
+  "pass": "> 0.05",
+  "else": "limbo"
+ },
+ {
+  "fact": "gate.scorecard.dd_p",
+  "pass": "> 0.10",
+  "limbo": "> 0.01"
+ },
+ {
+  "name": "z del mono con horas, por celda",
+  "fact": "gate.scorecard.z_mono",
+  "missing": "fail",
+  "pass": ">= 1.6448536269514715"
+ }
+]

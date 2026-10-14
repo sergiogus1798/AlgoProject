@@ -30,7 +30,7 @@ Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los 
 | F11 | código muerto: `vulture` de noche, y borrado de lo que halle | Sonnet | — | sin empezar |
 | F12 | tabla del README generada del docstring | Sonnet | D10 | hecho 2026-10-14 |
 | F13 | lockfile y versión de Python | Sonnet | — | hecho 2026-10-14 |
-| F14 | canario nocturno de extremo a extremo | Opus diseña, Sonnet escribe | D11 | sin empezar |
+| F14 | canario nocturno de extremo a extremo | Opus diseña, Sonnet escribe | D11 | hecho 2026-10-14 |
 | F15 | gorilla comprueba cada push | Sonnet | F1 | hecho 2026-10-14 |
 | F16 | agente `reviewer` propio | Opus | — | hecho 2026-10-14 |
 | F17 | convenciones que faltan en `CODESTYLE.md` | Sonnet | D12, D13 | hecho 2026-10-14 (§6) |

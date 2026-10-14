@@ -1,0 +1,46 @@
+{
+ "market": {
+  "point_value": 1.0,
+  "risk": 1000,
+  "windows": {
+   "IS": [
+    "2012-01-19",
+    "2019"
+   ],
+   "OOS": [
+    "2020",
+    "2023"
+   ]
+  },
+  "years": {
+   "IS": 7.950718685831622,
+   "OOS": 4.0
+  }
+ },
+ "costs": {
+  "point_value": 1.0,
+  "tick_size": 0.01,
+  "spread": 0.9248999999999999,
+  "slippage": 0.3237,
+  "commission_method": "PercentageBased",
+  "commission": 0.0,
+  "swap_long": -7.25,
+  "swap_short": -2.21,
+  "triple": 4,
+  "rollover": 23,
+  "tick_step": null
+ },
+ "costs_build": {
+  "point_value": 1.0,
+  "tick_size": 0.01,
+  "spread": 0.35409999999999997,
+  "slippage": 0.12390000000000001,
+  "commission_method": "PercentageBased",
+  "commission": 0.0,
+  "swap_long": -7.25,
+  "swap_short": -2.21,
+  "triple": 4,
+  "rollover": 23,
+  "tick_step": null
+ }
+}
