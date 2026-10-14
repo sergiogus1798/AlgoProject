@@ -93,7 +93,7 @@ def t1(start: np.ndarray, n: np.ndarray, pnl: np.ndarray, low: np.ndarray, high:
                 at = int(g.random() * (gaps[gap_first[m] + g.integers(0, n_gaps)] + 1))
                 while at < horizon * per_day:
                     i = first[m] + g.integers(0, n_trades)
-                    _lay(at, start[i], n[i], pnl[i], low, high, level, s_low, s_high, closed[p],
+                    _lay(at, start[i], n[i], pnl[i], low, high, level, s_low, s_high, closed[p],  # pyright: ignore[reportArgumentType]  # numba stub types the njit call by its annotations; numpy scalars are valid
                          float_end[p])
                     opened[p, at // per_day] += 1
                     gap = gaps[gap_first[m] + g.integers(0, n_gaps)]

@@ -2,9 +2,36 @@
 
 import itertools
 import sqlite3
+from typing import Any, TypedDict, cast
 
 from core.paths import funding_dir
 from portfolio.funded.rules import catalog
+
+
+class Terms(catalog.Plan):
+    """One plan with one add-on set: the machine's plan plus the funded cash terms."""
+
+    options: str
+    share: float
+    payout_days: Any
+    refund: Any
+    lock: Any
+
+
+class Cash(TypedDict):
+    """The `kernel.TERMS` of a plan under the owner's policy, money in USD."""
+
+    price: float
+    share: float
+    cycle: int
+    refund: float
+    cushion: float
+    fee: float
+    tax: float
+    budget: float
+    rebuy: float
+    lock: float
+
 
 # What this simulation assumes about a funded account and no catalogue table states — carried
 # into every result beside the plan's own flags, as the rule machine does with its modes.
@@ -87,7 +114,7 @@ def _refund(db: sqlite3.Connection, firm: str, family: str, gaps: dict,
     return rule["value"] == "True", flags
 
 
-def terms(plan_key: str, options: str, gaps: dict) -> dict:
+def terms(plan_key: str, options: str, gaps: dict) -> Terms:
     """One plan with one add-on set, ready for `bank`: the machine's plan plus the funded cash terms.
 
     Args:
@@ -142,12 +169,14 @@ def terms(plan_key: str, options: str, gaps: dict) -> dict:
     if missing:
         raise Gap(missing)
     seen = {f["rule_key"] for f in plan["flags"]}
-    return {**plan, "price": combo["price"], "options": options, "share": share / 100,
+    return {"plan_key": plan["plan_key"], "firm": plan["firm"], "family": plan["family"], "size": plan["size"],
+            "price": combo["price"], "price_ccy": plan["price_ccy"], "stages": plan["stages"],
+            "options": options, "share": cast(float, share) / 100,
             "payout_days": payout_days, "refund": refund, "lock": lock,
             "flags": plan["flags"] + [f for f in flags + ASSUMED if f["rule_key"] not in seen]}
 
 
-def cash(plan: dict, owner: dict, days_per_year: float, rebuy: str) -> dict:
+def cash(plan: Terms, owner: dict, days_per_year: float, rebuy: str) -> Cash:
     """The `kernel.TERMS` of a plan under the owner's policy, money in USD.
 
     Args:
@@ -165,7 +194,7 @@ def cash(plan: dict, owner: dict, days_per_year: float, rebuy: str) -> dict:
             "rebuy": float(rebuy == "same_plan"), "lock": float(plan["lock"])}
 
 
-def risk_grid(plan: dict, challenge: list[float], funded: list[float]) -> list[dict[str, float]]:
+def risk_grid(plan: Terms, challenge: list[float], funded: list[float]) -> list[dict[str, float]]:
     """Every risk-per-phase combination of a plan: one level per challenge stage, one for funded."""
     names = [s["stage"] for s in plan["stages"][:-1]]
     return [dict(zip([*names, "funded"], levels))

@@ -1,5 +1,7 @@
 """A member's trades as whole units: each one's floating path per block since entry, at unit risk."""
 
+from typing import TypedDict
+
 import numba
 import numpy as np
 import pandas as pd
@@ -9,8 +11,34 @@ from ..equity import clock
 NS_PER_MINUTE = 60_000_000_000
 
 
+class Slots(TypedDict):
+    """`slots()` output: per-bar day and block position, plus the calendar's shape."""
+
+    day: np.ndarray
+    slot: np.ndarray
+    abs: np.ndarray
+    per_day: int
+    n_days: int
+
+
+class Unit(TypedDict):
+    """One member's trades as bootstrap units, as `units()` returns them."""
+
+    low: np.ndarray
+    high: np.ndarray
+    level: np.ndarray
+    off: np.ndarray
+    pnl: np.ndarray
+    open_day: np.ndarray
+    open_slot: np.ndarray
+    gaps: np.ndarray
+    n_overlap: int
+    per_day: int
+    n_days: int
+
+
 def slots(bar_times: np.ndarray, feed_zone: str, day_zone: str, days: np.ndarray,
-          minutes: int) -> dict[str, np.ndarray]:
+          minutes: int) -> Slots:
     """Where each M1 bar sits on the server-day calendar: its day, its block of the day.
 
     Args:
@@ -29,14 +57,14 @@ def slots(bar_times: np.ndarray, feed_zone: str, day_zone: str, days: np.ndarray
     """
     utc, _ = clock.to_utc(pd.DatetimeIndex(bar_times), feed_zone)
     ok = ~utc.isna()
-    label = clock.day_of(utc[ok], day_zone).as_unit("ns").asi8
+    label = clock.day_of(pd.DatetimeIndex(utc[ok]), day_zone).as_unit("ns").asi8
     pos = np.minimum(np.searchsorted(days, label), len(days) - 1)
     inside = days[pos] == label
     index = pd.DatetimeIndex(days)
     starts = clock.to_utc(index, day_zone)[0].as_unit("ns").asi8
     length = (clock.day_end(index, day_zone).as_unit("ns").asi8 - starts) // (minutes * NS_PER_MINUTE)
     before = np.concatenate([[0], np.cumsum(length)[:-1]])
-    slot = (utc[ok].as_unit("ns").asi8 - starts[pos]) // (minutes * NS_PER_MINUTE)
+    slot = (pd.DatetimeIndex(utc[ok]).as_unit("ns").asi8 - starts[pos]) // (minutes * NS_PER_MINUTE)
     day = np.full(len(bar_times), -1, dtype=np.int32)
     slot_all = np.zeros(len(bar_times), dtype=np.int32)
     abs_all = np.full(len(bar_times), -1, dtype=np.int64)
@@ -48,8 +76,8 @@ def slots(bar_times: np.ndarray, feed_zone: str, day_zone: str, days: np.ndarray
             "n_days": len(days)}
 
 
-def units(trades: pd.DataFrame, bars: pd.DataFrame, where: dict[str, np.ndarray],
-          point_value: float, factor: float) -> dict:
+def units(trades: pd.DataFrame, bars: pd.DataFrame, where: Slots,
+          point_value: float, factor: float) -> Unit:
     """One member's trades as bootstrap units (the `members` item of `mc.paths`).
 
     The wicks and the window are `equity.paths`' own: a long's worst price in a minute is

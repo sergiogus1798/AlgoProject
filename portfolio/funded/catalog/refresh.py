@@ -6,10 +6,33 @@ import datetime as dt
 import hashlib
 import json
 import sqlite3
+from typing import TypedDict
 
 from core.paths import funding_dir
-from portfolio.funded.catalog import combos, firms, ftmo, fundednext, hantec, manual, overlay, store
-from portfolio.funded.catalog.schema import connect
+from portfolio.funded.catalog import (
+    combos,
+    firms,
+    ftmo,
+    fundednext,
+    hantec,
+    manual,
+    overlay,
+    store,
+)
+from portfolio.funded.catalog.schema import Catalogue, connect
+
+
+class Refreshed(TypedDict):
+    """What one firm's refresh did: rows kept, the change log, and the rules still unconfirmed."""
+
+    firm: str
+    note: str
+    plans: int
+    combos: int
+    changes: list[tuple]
+    unmodelled: list[str]
+    open: list[dict]
+
 
 # A firm whose register entry says `catalogue: manual` has no adapter: `manual.py` reads its typed file.
 ADAPTERS = {"hantec": hantec, "ftmo": ftmo, "fundednext": fundednext}
@@ -39,7 +62,7 @@ def _snapshot(db: sqlite3.Connection, firm: str, source: str, raw: dict, plans: 
     return "new catalogue" if last is None or last[0] != sha else "catalogue unchanged"
 
 
-def refresh(firm: str, today: str) -> dict:
+def refresh(firm: str, today: str) -> Refreshed:
     """Fetch, normalise, overlay the rules, store with history, rebuild the combinations."""
     if firm in ADAPTERS:
         raw, source = ADAPTERS[firm].fetch(), ADAPTERS[firm].SOURCE

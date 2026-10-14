@@ -2,6 +2,9 @@
 
 import itertools
 import re
+from typing import cast
+
+from portfolio.funded.catalog.schema import Catalogue
 
 # What each add-on does to the rules: (column, stages, how). An add-on not listed here is still
 # priced and combined; it lands in `extras`, and the refresh names it so the effect gets written.
@@ -23,7 +26,7 @@ RULE_ONLY = {"FIRST_PAYOUT_ON_DEMAND", "EXTRA_TIME_HOURS"}  # no column to chang
 
 def _number(effect: str) -> float:
     """'+2%' → 2.0, '-2%' → -2.0, '95%' → 95.0."""
-    return float(re.search(r"[-+]?\d+(\.\d+)?", effect).group())
+    return float(cast(re.Match[str], re.search(r"[-+]?\d+(\.\d+)?", effect)).group())
 
 
 def _change(stage: dict, column: str, how: str, effect: str) -> None:
@@ -60,7 +63,7 @@ def _row(plan: dict, stages: list[dict], chosen: tuple[dict, ...]) -> dict:
             "extras": ",".join(o["option_key"] for o in chosen if o["option_key"] not in EFFECTS)}
 
 
-def build(rows: dict) -> list[dict]:
+def build(rows: Catalogue) -> list[dict]:
     """All subsets of each plan's priced add-ons (2^n rows per plan, the empty set included)."""
     stages, options = {}, {}
     for s in rows["stages"]:
@@ -74,6 +77,6 @@ def build(rows: dict) -> list[dict]:
             for chosen in itertools.combinations(options.get(p["plan_key"], []), n)]
 
 
-def unmodelled(rows: dict) -> set[str]:
+def unmodelled(rows: Catalogue) -> set[str]:
     """Add-on keys whose effect on the rules nobody has written into `EFFECTS` yet."""
     return {o["option_key"] for o in rows["options"]} - set(EFFECTS) - RULE_ONLY

@@ -1,8 +1,10 @@
 """Pool -> per-member equity, reconciled against SQX, cached under its pool hash and config fingerprint."""
 
-from datetime import datetime, timezone as tz
+from datetime import datetime
+from datetime import timezone as tz
 from itertools import groupby
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -12,9 +14,19 @@ from core.barstore import source as bars_of
 from core.manifest import code_version
 from core.study.config import fingerprint
 
-from . import blocks, days, excursions, matrix, paths, reconcile, sqxcurve, stopexit, store
 from ..inputs import calendar as calendar_mod
 from ..inputs import pool, source
+from . import (
+    blocks,
+    days,
+    excursions,
+    matrix,
+    paths,
+    reconcile,
+    sqxcurve,
+    stopexit,
+    store,
+)
 
 SEGMENT_OF_SAMPLE = sqxcurve.SAMPLE_TO_SEGMENT  # {"IS": "build", "OOS": "oos1"}
 
@@ -28,7 +40,7 @@ def _span(data: dict, has_oos: bool) -> tuple[pd.Timestamp, pd.Timestamp]:
     lo = pd.Timestamp(assetdata.window(data, "build")[0], unit="ms")
     last = "oos1" if has_oos else "build"
     hi = pd.Timestamp(assetdata.window(data, last)[1], unit="ms") - pd.Timedelta(days=1)
-    return lo, hi
+    return cast(pd.Timestamp, lo), cast(pd.Timestamp, hi)
 
 
 def _reconcile_rows(identity: str, s: dict, bars: pd.DataFrame, feed_days: pd.DataFrame,
@@ -121,12 +133,12 @@ def _firm_day_table(kept: list[dict], firm: str) -> pd.DataFrame:
         frame.insert(1, "identity", m["identity"])
         parts.append(frame)
     return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(
-        columns=["day", "identity", "closed", "float_end", "low", "high", "opened", "open_end"])
+        columns=pd.Index(["day", "identity", "closed", "float_end", "low", "high", "opened", "open_end"]))
 
 
 def _m5_blob(kept: list[dict], firm: str, zone: str, grid: pd.DatetimeIndex) -> dict:
     """One firm's M5 grid and every kept member's block arrays on it (contract M)."""
-    return {"grid_start": int(grid[0].value), "n_blocks": len(grid),
+    return {"grid_start": int(cast(pd.Timestamp, grid[0]).value), "n_blocks": len(grid),
             "block_days": blocks.block_days(grid, zone),
             "low": {m["identity"]: m["m5"][firm]["low"] for m in kept},
             "high": {m["identity"]: m["m5"][firm]["high"] for m in kept}}
@@ -137,7 +149,7 @@ def _processed(loaded: dict, cfg: dict) -> tuple[list[dict], pd.DatetimeIndex]:
     spans = {i: _span(assetdata.load(s["symbol"]), "OOS" in set(s["trades"]["sample"]))
              for i, s in loaded.items()}
     grid = blocks.grid(min(lo for lo, _ in spans.values()),
-                       max(hi for _, hi in spans.values()) + pd.Timedelta(days=1),
+                       cast(pd.Timestamp, max(hi for _, hi in spans.values()) + pd.Timedelta(days=1)),
                        cfg["equity"]["block_minutes"])
     _STATE.update(sources=loaded, cfg=cfg, spans=spans, grid=grid)
     out = []
@@ -210,6 +222,6 @@ def build(pool_name: str, cfg: dict) -> Path:
     return out
 
 
-def load(pool_hash_dir: Path) -> dict:
+def load(pool_hash_dir: Path) -> dict[str, Any]:
     """Read a built universe back (`store.load`)."""
     return store.load(pool_hash_dir)

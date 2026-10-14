@@ -1,8 +1,11 @@
 """The bank table as the owner reads it: the Spanish text the command prints and the study-contract result."""
 
+from typing import Any
+
 import pandas as pd
 
 from core.study import blocks, result
+from portfolio.funded.sim.table import Built
 
 MODULE = "portfolio.funded.sim"
 _PHASES = ("phase1", "phase2", "phase3")
@@ -26,7 +29,7 @@ def _breakeven(row: dict, hs: list[float]) -> str:
     return f">{_pct(hs[-1])}" if row[f"ev_h{round(100 * hs[-1])}"] > 0 else f"<{_pct(hs[0])}"
 
 
-def lines(table: dict, owner: dict) -> list[str]:
+def lines(table: Built, owner: dict) -> list[str]:
     """The printed tables: the economics per plan and policy, the odds and the cash drawdown, the two re-buy policies side by side."""
     hs = owner["haircuts"]
     out = [f"{'plan':27} {'recompra':9} {'precio$':>8} {'riesgo % f→fond':>17} {'VE/compra':>10} {'VE/$':>6} {'VE/mes':>8} "
@@ -74,7 +77,7 @@ def side_by_side(rows: list[dict], owner: dict) -> list[str]:
     return out
 
 
-def sentence(table: dict, owner: dict) -> str:
+def sentence(table: Built, owner: dict) -> str:
     """The decision-shaped sentence of encargo 33 §4, as a function of the h and the budget given."""
     h, lo = owner["haircut_decides"], owner["haircuts"][0]
     given = (f"Con h = {_pct(h)}, una caja de {owner['budget_eur']:g} € (1 € = {owner['eurusd']:g} $) y "
@@ -92,7 +95,7 @@ def sentence(table: dict, owner: dict) -> str:
             f"(encargo 33 §3.5.6) es tuyo.")
 
 
-def contract(table: dict, cfg: dict, meta: dict, flags: dict[str, dict], started: float) -> dict:
+def contract(table: Built, cfg: dict, meta: dict, flags: dict[str, dict], started: float) -> dict[str, Any]:
     """The run as a study result: the table, the add-ons, the curve EV(h), every unconfirmed rule a warning.
 
     Args:

@@ -1,6 +1,7 @@
 """What stage B reads per member on one stretch of server days: day figures, exact minutes, trade units."""
 
 import mmap
+from typing import TypedDict, cast
 
 import numba
 import numpy as np
@@ -9,12 +10,37 @@ import pandas as pd
 from core import fanout
 from portfolio.common.construct.equity import blocks, paths, stopexit, universe
 from portfolio.common.construct.mc import units
+from portfolio.common.construct.mc.units import Unit
 
 # Set before the pool forks, so a worker reads the bars and the sources without pickling.
 _STATE: dict = {}
 
 
-def day_arrays(day_table: pd.DataFrame, members: list[str], span: tuple, factors: dict) -> dict:
+class DayArrays(TypedDict):
+    """The members' server-day figures on one stretch, as `day_arrays()` returns them."""
+
+    days: np.ndarray
+    closed: np.ndarray
+    float_end: np.ndarray
+    opened: np.ndarray
+
+
+class StageBData(TypedDict):
+    """Everything stage B sums over combinations of, as `prepare()` returns it."""
+
+    days: np.ndarray
+    closed: np.ndarray
+    float_end: np.ndarray
+    opened: np.ndarray
+    identities: np.ndarray
+    low1: np.ndarray
+    high1: np.ndarray
+    minute_day: np.ndarray
+    units: list[Unit]
+    lot_unit: np.ndarray
+
+
+def day_arrays(day_table: pd.DataFrame, members: list[str], span: tuple, factors: dict) -> DayArrays:
     """The members' server-day figures on one stretch, dense, at unit risk.
 
     Args:
@@ -28,13 +54,13 @@ def day_arrays(day_table: pd.DataFrame, members: list[str], span: tuple, factors
         (float64 [N, D]; the floating carried over a member's days without a minute),
         `opened` (int64 [N, D]).
     """
-    frame = day_table[(day_table["day"] >= span[0]) & (day_table["day"] <= span[1])]
-    days = np.sort(frame["day"].unique()).astype("datetime64[ns]").astype("int64")
+    frame = cast(pd.DataFrame, day_table[(day_table["day"] >= span[0]) & (day_table["day"] <= span[1])])
+    days = np.sort(np.asarray(frame["day"].unique())).astype("datetime64[ns]").astype("int64")
     closed = np.zeros((len(members), len(days)))
     float_end = np.zeros_like(closed)
     opened = np.zeros(closed.shape, dtype=np.int64)
     for i, identity in enumerate(members):
-        rows = frame[frame["identity"] == identity]
+        rows = cast(pd.DataFrame, frame[frame["identity"] == identity])
         pos = np.searchsorted(days, rows["day"].to_numpy().astype("datetime64[ns]").astype("int64"))
         closed[i, pos] = rows["closed"].to_numpy() * factors[identity]
         opened[i, pos] = rows["opened"].to_numpy()
@@ -50,7 +76,7 @@ def _shared(rows: int, columns: int) -> np.ndarray:
     return np.frombuffer(buffer, dtype=np.float32, count=rows * columns).reshape(rows, columns)
 
 
-def _member(row: int) -> dict:
+def _member(row: int) -> Unit:
     """One member, in a worker: its minute path built once, written to the shared rows, never returned.
 
     Returns:
@@ -72,7 +98,7 @@ def _member(row: int) -> dict:
 
 def prepare(sources: dict[str, dict], bars: dict[str, pd.DataFrame], day_table: pd.DataFrame,
             zone: str, span: tuple, factors: dict[str, float], min_size: dict[str, float],
-            cfg: dict) -> dict:
+            cfg: dict) -> StageBData:
     """Everything stage B sums over combinations of, for the members given, on one stretch.
 
     Args:
@@ -97,8 +123,8 @@ def prepare(sources: dict[str, dict], bars: dict[str, pd.DataFrame], day_table: 
     days = out["days"]
     # Two days past the end: `blocks.blocks` drops every later minute of a path into the
     # grid's last block, which must therefore sit outside the stretch.
-    grid = blocks.grid(pd.Timestamp(days[0]) - pd.Timedelta(days=1),
-                       pd.Timestamp(days[-1]) + pd.Timedelta(days=3), 1)
+    grid = blocks.grid(cast(pd.Timestamp, pd.Timestamp(days[0]) - pd.Timedelta(days=1)),
+                       cast(pd.Timestamp, pd.Timestamp(days[-1]) + pd.Timedelta(days=3)), 1)
     grid_day = blocks.block_days(grid, zone)
     keep = np.isin(grid_day, days)
     low1, high1 = _shared(len(members), int(keep.sum())), _shared(len(members), int(keep.sum()))
@@ -112,14 +138,13 @@ def prepare(sources: dict[str, dict], bars: dict[str, pd.DataFrame], day_table: 
     costs = {row: len(sources[m]["trades"]) for row, m in enumerate(members)}
     got = dict(fanout.run(_member, costs, workers))
     _STATE.clear()
-    out.update(identities=np.array(members), low1=low1, high1=high1,
-               minute_day=np.searchsorted(days, grid_day[keep]).astype(np.int32),
-               units=[got[row] for row in range(len(members))],
-               lot_unit=np.array([min_size[m] * factors[m] for m in members]))
-    return out
+    return {**out, "identities": np.array(members), "low1": low1, "high1": high1,
+            "minute_day": np.searchsorted(days, grid_day[keep]).astype(np.int32),
+            "units": [got[row] for row in range(len(members))],
+            "lot_unit": np.array([min_size[m] * factors[m] for m in members])}
 
 
-def joint(data: dict, idxs: np.ndarray) -> dict[str, np.ndarray]:
+def joint(data: StageBData, idxs: np.ndarray) -> dict[str, np.ndarray]:
     """One combination's joint server days, its intraday low and high exact from the minutes.
 
     Args:

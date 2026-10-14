@@ -1,15 +1,44 @@
 """One purchased account from its first day to its end: the challenge, then the funded stage and its payouts — the readable reference."""
 
 from collections.abc import Iterator
+from typing import TypedDict
 
 import numpy as np
 
 from portfolio.funded.rules import machine
-from portfolio.funded.rules.floors import consistency_ok, daily_floor, days_ok, max_floor
+from portfolio.funded.rules.floors import (
+    consistency_ok,
+    daily_floor,
+    days_ok,
+    max_floor,
+)
+from portfolio.funded.sim.plans import Cash, Terms
 
 
-def funded(days: dict[str, np.ndarray], plan: dict, k: float, start: int, terms: dict,
-           deny: Iterator[bool]) -> dict:
+class Funded(TypedDict):
+    """How the funded stage ended: the day and the rule (None while alive), and every payout."""
+
+    end: int | None
+    rule: str | None
+    payouts: list[tuple[int, float]]
+
+
+class Life(TypedDict):
+    """One account's whole life: where it ended, by which rule, and what it paid."""
+
+    start: int
+    end: int | None
+    where: str
+    stage: str
+    rule: str | None
+    passed: int
+    funded_from: int | None
+    payouts: list[tuple[int, float]]
+
+
+
+def funded(days: dict[str, np.ndarray], plan: Terms, k: float, start: int, terms: Cash,
+           deny: Iterator[bool]) -> Funded:
     """The funded stage from `start`: the stage's floors every day, a payout whenever one is due.
 
     Args:
@@ -68,8 +97,8 @@ def funded(days: dict[str, np.ndarray], plan: dict, k: float, start: int, terms:
     return {"end": None, "rule": None, "payouts": payouts}
 
 
-def life(days: dict[str, np.ndarray], plan: dict, risk: dict[str, float], start: int,
-         terms: dict, deny: Iterator[bool]) -> dict:
+def life(days: dict[str, np.ndarray], plan: Terms, risk: dict[str, float], start: int,
+         terms: Cash, deny: Iterator[bool]) -> Life:
     """One account bought on `start`: every challenge stage with the rule machine, then `funded`.
 
     Args:

@@ -1,16 +1,19 @@
 """The real path's verdict on a chosen portfolio (M5): oos1 against random portfolios, then oos2 once."""
 
 import time
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
 
-from . import oos2 as oos2_mod, segment
+from . import oos2 as oos2_mod
+from . import segment
 from .contract import tabs
 from .equity import matrix
 from .pairs import table as pairs_table
 from .search import objective, random_k, trials
 from .verdict import decide, decide_real, hold, null
+from .verdict.hold import Held
 
 CRITERION = "portfolio/verdict/random_k"
 
@@ -20,7 +23,7 @@ def mask(inputs: dict) -> np.ndarray:
     return np.isin(inputs["result"]["identities"], inputs["members"])[None, :]
 
 
-def oos1(inputs: dict, cfg: dict, rng: np.random.Generator) -> dict:
+def oos1(inputs: dict, cfg: dict, rng: np.random.Generator) -> dict[str, Any]:
     """The chosen portfolio's rank score on oos1 among random admissible ones of its size (R6).
 
     The figure is the search's own: each metric at its worst over the shifted starts, the
@@ -46,10 +49,10 @@ def oos1(inputs: dict, cfg: dict, rng: np.random.Generator) -> dict:
             "k": int(chosen.sum()), "n_space": drawn["n_space"], "n_distinct": len(drawn["members"]),
             "metrics": {name: float(table[name][-1]) for name in objective.metrics.NAMES},
             "sharpe": float(table["sharpe"][-1]), "scores": scores[:-1],
-            "span": (str(dates[0].date()), str(dates[-1].date()))}
+            "span": (str(cast(pd.Timestamp, dates[0]).date()), str(cast(pd.Timestamp, dates[-1]).date()))}
 
 
-def held(inputs: dict, segments: list[str], cfg: dict) -> dict:
+def held(inputs: dict, segments: list[str], cfg: dict) -> Held:
     """`hold.held()` of the chosen members over the segments the verdict opened."""
     r, members = inputs["result"], inputs["members"]
     if len(members) < 2:
@@ -58,7 +61,7 @@ def held(inputs: dict, segments: list[str], cfg: dict) -> dict:
     return hold.held(pairs_table.table(daily, matrix.monthly(daily), cfg), members, cfg)
 
 
-def judge(inputs: dict, cfg: dict, rng: np.random.Generator) -> dict:
+def judge(inputs: dict, cfg: dict, rng: np.random.Generator) -> dict[str, Any]:
     """oos1, then oos2 only if oos1 passed; a ledger row per segment opened (PLAN §6).
 
     Returns:
@@ -91,7 +94,7 @@ def judge(inputs: dict, cfg: dict, rng: np.random.Generator) -> dict:
     return decide.verdict({"members": members}, first, second, held(inputs, segments, cfg), cost)
 
 
-def run(inputs: dict, cfg: dict, seed: int) -> dict:
+def run(inputs: dict, cfg: dict, seed: int) -> dict[str, Any]:
     """A portfolio run judged and drawn: the population result of the contract.
 
     Args:

@@ -1,6 +1,7 @@
 """Write one firm's rows into the versioned tables, logging every added, removed or changed value."""
 
 import sqlite3
+from typing import Any
 
 from portfolio.funded.catalog.schema import TABLES
 
@@ -33,7 +34,7 @@ def write(db: sqlite3.Connection, table: str, firm: str, rows: list[dict], today
     """
     keys, values = TABLES[table]
     old = _current(db, table, firm)
-    new = {tuple(r[k] for k in keys): r for r in rows}
+    new: dict[tuple, Any] = {tuple(r[k] for k in keys): r for r in rows}
     assert len(new) == len(rows), f"{table}: two {firm} rows share a key {keys}"
     log = []
     for key in old.keys() - new.keys():

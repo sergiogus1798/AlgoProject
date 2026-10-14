@@ -1,5 +1,7 @@
 """Per-trade MAE/MFE rebuilt from M1 wicks, and the check that licenses the rebuild (§14.2)."""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
@@ -49,8 +51,19 @@ def rebuild(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float) -> pd.
     return pd.DataFrame({"mae": mae, "mfe": mfe}, index=trades.index)
 
 
+class Licence(TypedDict):
+    """Whether the M1 rebuild matches SQX's MAE/MFE: shares exact, median gaps, the verdict."""
+
+    n: int
+    mae_exact: float
+    mfe_exact: float
+    mae_median_gap: float
+    mfe_median_gap: float
+    licensed: bool
+
+
 def licence(trades: pd.DataFrame, rebuilt: pd.DataFrame, tolerance: float,
-            min_share: float) -> dict:
+            min_share: float) -> Licence:
     """Whether the M1 rebuild may stand in for SQX's own `MAE ($)`/`MFE ($)` columns.
 
     Args:

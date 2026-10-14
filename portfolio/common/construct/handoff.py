@@ -7,9 +7,10 @@ import pandas as pd
 
 from . import oos2
 from .inputs import source
+from .inputs.pool import Pool
 
 
-def write(run: Path, pool_name: str, pool: dict, members: list[str], weights: dict[str, float],
+def write(run: Path, pool_name: str, pool: Pool, members: list[str], weights: dict[str, float],
           daily: pd.DataFrame, calendar: dict, verdict: dict, sentence: str, cfg: dict) -> Path:
     """Write `<run>/handoff/`: `portfolio.json`, `daily.parquet`, `trades.parquet`.
 

@@ -1,13 +1,17 @@
 """The rank search's ledger rows (PLAN §6): the pool's own study and one row in each member's."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
 from ledger import record as ledger_record
 from ledger.study import study_id
 
+from ..inputs.pool import PoolId
 
-def record(found: dict, pool: dict, members_meta: dict, note: str) -> list[dict]:
+
+def record(found: dict, pool: PoolId, members_meta: dict, note: str) -> list[dict]:
     """Log one search on build: every combination evaluated is a trial.
 
     The scores stored are the combinations' **daily Sharpes**, not their rank scores: the
@@ -41,8 +45,8 @@ def record(found: dict, pool: dict, members_meta: dict, note: str) -> list[dict]
     return rows
 
 
-def record_admission(judged: pd.DataFrame, pool: dict, members_meta: dict, how: str,
-                     note: str) -> dict:
+def record_admission(judged: pd.DataFrame, pool: PoolId, members_meta: dict, how: str,
+                     note: str) -> dict[str, Any]:
     """Log an admission pass on build: every judgement of every round is a trial.
 
     Args:

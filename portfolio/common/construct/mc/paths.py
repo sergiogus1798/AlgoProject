@@ -63,7 +63,7 @@ def daily_blocks(days: dict[str, np.ndarray], horizon: int, n_paths: int, mean_b
         The five figures, [n_paths, horizon] (module docstring).
     """
     idx = indices(len(days["closed"]), horizon, n_paths, mean_block, rng)
-    out = {k: np.asarray(days[k], dtype=np.float64)[idx] for k in ("closed", "low", "high")}
+    out: dict[str, np.ndarray] = {k: np.asarray(days[k], dtype=np.float64)[idx] for k in ("closed", "low", "high")}
     out["opened"] = np.asarray(days["opened"]).astype(np.int32)[idx]
     seam = np.ones(idx.shape, dtype=bool)
     seam[:, 1:] = idx[:, 1:] != idx[:, :-1] + 1
@@ -93,7 +93,7 @@ def path_gens(rng: np.random.Generator) -> list:
 
 def _empty(n_paths: int, horizon: int) -> dict[str, np.ndarray]:
     """Zeroed output arrays for the laying kernels."""
-    out = {k: np.zeros((n_paths, horizon)) for k in FIGURES[:4]}
+    out: dict[str, np.ndarray] = {k: np.zeros((n_paths, horizon)) for k in FIGURES[:4]}
     out["opened"] = np.zeros((n_paths, horizon), dtype=np.int32)
     return out
 

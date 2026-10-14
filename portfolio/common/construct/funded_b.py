@@ -6,6 +6,7 @@ import resource
 import shutil
 import time
 from pathlib import Path
+from typing import Any
 
 import numba
 import numpy as np
@@ -18,10 +19,21 @@ from portfolio.funded.rules import catalog
 
 from . import funded, funded_verdict, handoff
 from .equity import universe
-from .funded_verdict import prepare as _prepare, union as _union
-from .inputs import config, pool as pool_mod, source
+from .funded_verdict import prepare as _prepare
+from .funded_verdict import union as _union
+from .inputs import config, source
+from .inputs import pool as pool_mod
 from .pairs import table as pairs_table
-from .search import admissible, shortlist, stagea, stagea_data, stageb, stageb_null, stageb_run, trials
+from .search import (
+    admissible,
+    shortlist,
+    stagea,
+    stagea_data,
+    stageb,
+    stageb_null,
+    stageb_run,
+    trials,
+)
 from .verdict import decide
 
 REQUIRED = {"shared_of": ("smaller", "larger"), "t1_gap": ("close_to_open_blocks",)}
@@ -38,7 +50,7 @@ def refuse_unset(cfg: dict) -> None:
                              f"--set stageb.{key}=<valor>; no hay valor por defecto.")
 
 
-def load(run: Path, overrides: list[str]) -> dict:
+def load(run: Path, overrides: list[str]) -> dict[str, Any]:
     """Everything a stage-A run's folder points at, read from the archive and the universe.
 
     Returns:
@@ -91,7 +103,7 @@ def _null_shortlists(world: dict, cfg: dict, rng: np.random.Generator) -> tuple[
             for _ in range(cfg["verdict"]["null_draws"])], n
 
 
-def build(world: dict, cfg: dict, rng: np.random.Generator) -> dict:
+def build(world: dict, cfg: dict, rng: np.random.Generator) -> dict[str, Any]:
     """Stage B on the run's shortlist, then the verdict when oos1 exists (`funded_verdict.judge`).
 
     Returns:
@@ -102,7 +114,7 @@ def build(world: dict, cfg: dict, rng: np.random.Generator) -> dict:
         judging segments the pool has days in).
     """
     refuse_unset(cfg)
-    numba.set_num_threads(min(fanout.CORES, numba.config.NUMBA_NUM_THREADS))
+    numba.set_num_threads(min(fanout.CORES, numba.config.NUMBA_NUM_THREADS))  # pyright: ignore[reportPrivateImportUsage, reportAttributeAccessIssue]  # numba stubs omit config.NUMBA_NUM_THREADS
     plan = world["plan"]
     ranking = shortlist.ranked(world["search"])
     sb = cfg["stageb"]

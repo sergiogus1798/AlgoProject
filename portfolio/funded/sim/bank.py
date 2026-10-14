@@ -5,6 +5,8 @@ import numpy as np
 
 from portfolio.funded.rules import machine
 from portfolio.funded.sim import account, kernel
+from portfolio.funded.sim.account import Life
+from portfolio.funded.sim.plans import Cash, Terms
 
 ARRAYS = ("closed", "float_end", "low", "high", "opened")
 _CH_RULES = ("daily_loss", "max_loss", "time_limit")
@@ -29,8 +31,8 @@ def hazards(n_paths: int, horizon: int, p_denied: float, p_closes_year: float,
     return close_day, rng.random((n_paths, horizon)) < p_denied
 
 
-def walk(days: dict[str, np.ndarray], plan: dict, risk: dict[str, float], terms: dict,
-         close_day: int, deny: np.ndarray) -> tuple[np.ndarray, list[dict]]:
+def walk(days: dict[str, np.ndarray], plan: Terms, risk: dict[str, float], terms: Cash,
+         close_day: int, deny: np.ndarray) -> tuple[np.ndarray, list[Life]]:
     """One draw, account after account, in plain Python — what `simulate` must equal.
 
     Args:
@@ -48,11 +50,11 @@ def walk(days: dict[str, np.ndarray], plan: dict, risk: dict[str, float], terms:
     horizon = len(days["closed"])
     n = min(horizon, int(close_day))
     days = {name: days[name][:n] for name in ARRAYS}
-    row = dict.fromkeys(kernel.COLS, 0.0)
+    row = {c: 0.0 for c in kernel.COLS}
     row["first_payout_day"] = -1.0
     row["firm_closed"] = float(close_day < horizon)
     denials = iter(deny)
-    accounts: list[dict] = []
+    accounts: list[Life] = []
     d = 0
     while d < n and (not accounts or terms["rebuy"]):
         if terms["price"] > terms["budget"] + row["received"] - row["paid"] + 1e-9:
@@ -93,12 +95,12 @@ def walk(days: dict[str, np.ndarray], plan: dict, risk: dict[str, float], terms:
     return np.array([row[c] for c in kernel.COLS]), accounts
 
 
-def pack(terms: dict) -> np.ndarray:
+def pack(terms: Cash) -> np.ndarray:
     """A terms dict as the float vector the kernel reads, in `kernel.TERMS` order."""
     return np.array([float(terms[name]) for name in kernel.TERMS])
 
 
-def stage_matrix(plan: dict, risk: dict[str, float]) -> np.ndarray:
+def stage_matrix(plan: Terms, risk: dict[str, float]) -> np.ndarray:
     """The rule machine's packed stages with the funded stage appended as the last row.
 
     `machine._stage_matrix` skips a stage called "funded", so the funded one goes in renamed.
@@ -110,7 +112,7 @@ def stage_matrix(plan: dict, risk: dict[str, float]) -> np.ndarray:
     return mat
 
 
-def simulate(paths: dict[str, np.ndarray], plan: dict, risk: dict[str, float], terms: dict,
+def simulate(paths: dict[str, np.ndarray], plan: Terms, risk: dict[str, float], terms: Cash,
              close_day: np.ndarray, deny: np.ndarray, track: int = 0,
              threads: int = 8) -> tuple[np.ndarray, np.ndarray]:
     """Every draw of a path set through the bank walk.
@@ -125,7 +127,7 @@ def simulate(paths: dict[str, np.ndarray], plan: dict, risk: dict[str, float], t
     Returns:
         float64 [n_paths, len(kernel.COLS)] and int32 [n_paths, track, 3] (−1 where no account).
     """
-    numba.set_num_threads(min(threads, numba.config.NUMBA_NUM_THREADS))
+    numba.set_num_threads(min(threads, numba.config.NUMBA_NUM_THREADS))  # pyright: ignore[reportPrivateImportUsage, reportAttributeAccessIssue]  # numba stubs omit config.NUMBA_NUM_THREADS
     log = np.full((paths["closed"].shape[0], track, 3), -1, dtype=np.int32)
     out = kernel.run(paths["closed"], paths["float_end"], paths["low"], paths["high"],
                      paths["opened"], stage_matrix(plan, risk), float(plan["size"]), pack(terms),

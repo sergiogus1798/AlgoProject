@@ -1,5 +1,7 @@
 """Per-strategy daily P&L series stacked into day and month matrices, and a calendar segment slice."""
 
+from typing import cast
+
 import pandas as pd
 
 
@@ -26,7 +28,7 @@ def stack(series: dict[str, pd.Series], spans: dict[str, tuple[pd.Timestamp, pd.
 
 def monthly(daily: pd.DataFrame) -> pd.DataFrame:
     """Calendar-month sums; NaN only where the whole month is outside a column's history."""
-    return daily.groupby(daily.index.to_period("M")).sum(min_count=1)
+    return cast(pd.DataFrame, daily.groupby(pd.DatetimeIndex(daily.index).to_period("M")).sum(min_count=1))
 
 
 def segment(frame: pd.DataFrame, calendar: dict, name: str) -> pd.DataFrame:

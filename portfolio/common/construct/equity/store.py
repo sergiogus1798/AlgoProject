@@ -3,6 +3,7 @@
 import hashlib
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -76,7 +77,7 @@ def write(out: Path, daily: pd.DataFrame, monthly: pd.DataFrame, reconcile: pd.D
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
 
 
-def load(out: Path) -> dict:
+def load(out: Path) -> dict[str, Any]:
     """Read a finished universe back.
 
     Args:

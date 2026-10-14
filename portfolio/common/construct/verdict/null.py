@@ -1,5 +1,7 @@
 """Where the chosen combination sits among the selected null's winners."""
 
+from typing import TypedDict
+
 import numpy as np
 
 
@@ -38,7 +40,20 @@ def read(chosen: dict[str, float], null: list[dict[str, float]]) -> dict[str, di
     return out
 
 
-def bar(chosen: float, draws: np.ndarray, quantile: float, share_chosen: float) -> dict:
+class Bar(TypedDict):
+    """The chosen figure against a percentile of the null's draws."""
+
+    value: float
+    bar: float
+    percentile: float
+    null_median: float
+    n: int
+    quantile: float
+    share_chosen: float
+    state: str
+
+
+def bar(chosen: float, draws: np.ndarray, quantile: float, share_chosen: float) -> Bar:
     """The real path's oos1 reading (Q11 d): the chosen figure against a percentile of the null's.
 
     A null that keeps redrawing the chosen portfolio cannot be beaten by it: when the chosen

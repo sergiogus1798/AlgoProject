@@ -42,7 +42,7 @@ def solve(cov: np.ndarray) -> np.ndarray:
     return w / w.sum()
 
 
-def weights(build_daily: pd.DataFrame, cfg: dict) -> dict:
+def weights(build_daily: pd.DataFrame, cfg: dict) -> dict[str, float]:
     """Least-variance weights; estimates the whole covariance, shrunk, and no mean.
 
     Args:
@@ -56,7 +56,7 @@ def weights(build_daily: pd.DataFrame, cfg: dict) -> dict:
         ValueError: No member varies on the estimation days, or the optimiser fails.
     """
     if build_daily.shape[1] == 1:
-        return {build_daily.columns[0]: 1.0}
+        return {str(build_daily.columns[0]): 1.0}
     cov, _ = shrunk(build_daily.to_numpy(dtype=float))
     if not np.trace(cov) > 0:
         raise ValueError("sin varianza en los días de estimación")

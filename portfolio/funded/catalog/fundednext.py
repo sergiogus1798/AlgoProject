@@ -3,6 +3,9 @@
 import json
 import re
 import urllib.request
+from typing import Any
+
+from portfolio.funded.catalog.schema import Catalogue
 
 SOURCE = "https://fundednext.com/"
 STEPS = {"stellar-2-step": 2, "stellar-lite": 2, "stellar-1-step": 1, "fnl001": 1, "stellar-instant": 0}
@@ -10,7 +13,7 @@ STEPS = {"stellar-2-step": 2, "stellar-lite": 2, "stellar-1-step": 1, "fnl001": 
 EA_BELOW = 50000
 
 
-def _balanced(text: str, start: int) -> str:
+def _balanced(text: str, start: int) -> str:  # pyright: ignore[reportReturnType]  # falls off the end (None) on unbalanced input; left as found
     """The JSON array or object opening at `start`, closed at its matching bracket."""
     depth, quoted, escaped = 0, False, False
     for i in range(start, len(text)):
@@ -27,7 +30,7 @@ def _balanced(text: str, start: int) -> str:
                 return text[start:i + 1]
 
 
-def fetch() -> dict:
+def fetch() -> dict[str, Any]:
     """The CFD packages (MT5); the futures block (Flex, Legacy, Rapid) is not MT5 and is left out."""
     req = urllib.request.Request(SOURCE, headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"})
     page = urllib.request.urlopen(req, timeout=60).read().decode()
@@ -81,7 +84,7 @@ def _stages(key: str, family: str, size: float, details: dict) -> list[dict]:
     return rows
 
 
-def normalise(raw: dict) -> dict:
+def normalise(raw: dict) -> Catalogue:
     """Plans and stages in the schema of `schema.TABLES`, at list price (the crossed-out one when on sale)."""
     plans, stages = [], []
     for package in raw["packages"]:

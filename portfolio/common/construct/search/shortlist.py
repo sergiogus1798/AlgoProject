@@ -1,5 +1,7 @@
 """The diverse shortlist: the best combinations of a search, no two sharing more than a set share of members."""
 
+from typing import cast
+
 import pandas as pd
 
 OF = {"smaller": min, "larger": max}
@@ -16,7 +18,7 @@ def ranked(search: pd.DataFrame) -> pd.DataFrame:
         own order breaks ties): `members`, `score`, `level`.
     """
     best = search.dropna(subset=["score"]).sort_values("score", ascending=False, kind="stable")
-    return best.drop_duplicates("members")[["members", "score", "level"]].reset_index(drop=True)
+    return cast(pd.DataFrame, best.drop_duplicates("members")[["members", "score", "level"]]).reset_index(drop=True)
 
 
 def diverse(ranking: pd.DataFrame, size: int, max_shared: float, shared_of: str) -> pd.DataFrame:

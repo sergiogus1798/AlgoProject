@@ -1,13 +1,16 @@
 """One strategy through every family, returned as the contract's data: what the window paints."""
 
 import time
+from typing import Any
 
 from core.study import result as envelope
 from portfolio.common.monteCarlo import run as study
 from portfolio.common.monteCarlo.contract import explorer, headline, order, regime
 from portfolio.common.monteCarlo.inputs import config
+from portfolio.common.monteCarlo.load import Inputs
 from portfolio.common.monteCarlo.model import stress
 from portfolio.common.monteCarlo.simulate import engine, fan, sweeps
+from portfolio.common.monteCarlo.simulate.fan import Bands
 from portfolio.common.monteCarlo.verdict import scoring
 
 MODULE = "portfolio.common.monteCarlo"
@@ -20,7 +23,7 @@ def _progress(done: int, total: int, title: str) -> None:
     envelope.progress(100 * done // max(total, 1), title)
 
 
-def cone(source: dict, label: str, cfg: dict) -> dict:
+def cone(source: dict, label: str, cfg: dict) -> Bands:
     """The equity cone of one sub-test under its own model.
 
     Args:
@@ -40,7 +43,7 @@ def cone(source: dict, label: str, cfg: dict) -> dict:
                         cfg["global"]["starting_equity"], CONE, config.seed(cfg))
 
 
-def _rerun(strategy: str, inputs: dict, cfg: dict, only: str, started: float) -> dict:
+def _rerun(strategy: str, inputs: Inputs, cfg: dict, only: str, started: float) -> dict:
     """One sub-test again, alone, as a partial result the daemon lays beside the stored one."""
     source = inputs["streams"][strategy]
     steps = {s["label"]: s for s in sweeps.plan(len(source["pnl"]), cfg)}
@@ -52,7 +55,7 @@ def _rerun(strategy: str, inputs: dict, cfg: dict, only: str, started: float) ->
                              [envelope.tab("explorer", "Explorador de pruebas", body)])
 
 
-def run(strategy: str, inputs: dict, cfg: dict, only: str | None = None) -> dict:
+def run(strategy: str, inputs: Inputs, cfg: dict, only: str | None = None) -> dict[str, Any]:
     """Everything the study says about one strategy.
 
     Args:

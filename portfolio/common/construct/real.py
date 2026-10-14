@@ -2,21 +2,30 @@
 
 import argparse
 import json
-from datetime import datetime, timezone as tz
+from datetime import datetime
+from datetime import timezone as tz
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
-from core.paths import portfolio_dir
 from core.manifest import fresh_dir
+from core.paths import portfolio_dir
+from portfolio.common.construct.search import (
+    admissible,
+    admission,
+    choose,
+    objective,
+    trials_real,
+)
+from portfolio.common.construct.verdict import decide, metrics
 
 from .equity import matrix, universe
 from .funded import _member_meta, size_members
-from .inputs import config, pool as pool_mod
+from .inputs import config
+from .inputs import pool as pool_mod
 from .pairs import table as pairs_table
-from portfolio.common.construct.search import admissible, admission, choose, objective, trials_real
-from portfolio.common.construct.verdict import decide, metrics
 
 RUNS = portfolio_dir() / "runs"
 REQUIRED = {"losing_year": metrics.LOSING_YEAR, "shift_minimum": objective.SHIFT_MINIMUM}
@@ -32,7 +41,7 @@ def floor_risk(factors: dict, cfg: dict) -> dict[str, float]:
     return {i: (lot / 2) / (f["min_size"] * f["factor"] * account) for i, f in factors.items()}
 
 
-def on_build(daily: pd.DataFrame, calendar: dict, scale: np.ndarray, cfg: dict) -> dict:
+def on_build(daily: pd.DataFrame, calendar: dict, scale: np.ndarray, cfg: dict) -> dict[str, Any]:
     """All the search may read: the build rows of the universe, their pair screen, and no later day.
 
     Args:
@@ -54,7 +63,7 @@ def on_build(daily: pd.DataFrame, calendar: dict, scale: np.ndarray, cfg: dict) 
             "graph": admissible.admissible(pairs, list(daily.columns), cfg)}
 
 
-def build(pool_name: str, cfg: dict, seed: int, search: bool = True) -> dict:
+def build(pool_name: str, cfg: dict, seed: int, search: bool = True) -> dict[str, Any]:
     """Universe, fixed-risk sizing, the minimum-lot floor, the pair screen and the search.
 
     Args:

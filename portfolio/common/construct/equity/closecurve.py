@@ -24,7 +24,7 @@ def _one(identity: str) -> tuple[pd.Series, pd.Series]:
 
 def calendar(bars: pd.DataFrame) -> pd.DatetimeIndex:
     """Every day the feed has a bar on, naive midnight of the feed's clock."""
-    return pd.DatetimeIndex(bars.index.normalize().unique())
+    return pd.DatetimeIndex(bars.index.normalize().unique())  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.normalize
 
 
 def measured(trades: pd.DataFrame) -> tuple[float, dict]:
@@ -43,8 +43,8 @@ def measured(trades: pd.DataFrame) -> tuple[float, dict]:
     """
     same = trades[trades["Open time"].dt.normalize() == trades["Close time"].dt.normalize()]
     side = np.where(same["Type"].astype(object) == "Buy", 1.0, -1.0)
-    move = side * (same["Close price"] - same["Open price"]).to_numpy(np.float64)
-    per_lot = (same["Profit/Loss"] / same["Size"]).to_numpy(np.float64)
+    move = side * np.asarray(same["Close price"] - same["Open price"], dtype=np.float64)
+    per_lot = np.asarray(same["Profit/Loss"] / same["Size"], dtype=np.float64)
     value, minus_cost = np.linalg.lstsq(np.c_[move, np.ones(len(move))], per_lot, rcond=None)[0]
     return float(value), {"method": "SizeBased", "value": float(-minus_cost)}
 

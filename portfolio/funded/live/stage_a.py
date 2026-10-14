@@ -1,15 +1,30 @@
 """Stage A: the first real trades of a strategy against its SQX backtest, on rows 1, 2, 3a and 5 of step 26."""
+from typing import Any, TypedDict, cast
+
 import pandas as pd
 
 from mt5 import compare
 from mt5.verify import judge
+
+
+class StageA(TypedDict):
+    """The verdict of the first real trades against SQX's: the rows, which failed, and whether to take the strategy out."""
+
+    rows: list[dict]
+    failed: list[str]
+    warning: bool
+    out: bool
+    ready: bool
+    n: int
+    hours: Any
+
 
 ROWS = {"1": "matched_min", "2": "trade_gap_max_r", "3a": "daily_corr_min", "5": "dd_rel_gap_max"}
 # judge.rows reads every threshold of its dict; the rows not judged here still need a key.
 UNUSED = {"exit_same_min": 0.0, "daily_mad_max_pct": 0.0, "worst_day_gap_max_pp": 0.0}
 
 
-def run(sqx: pd.DataFrame, real: pd.DataFrame, timeframe: str, deposit: float, cfg: dict) -> dict:
+def run(sqx: pd.DataFrame, real: pd.DataFrame, timeframe: str, deposit: float, cfg: dict) -> StageA:
     """Judge the first `trades` real trades; row 1 only warns, the others take the strategy out.
 
     Args:
@@ -30,7 +45,7 @@ def run(sqx: pd.DataFrame, real: pd.DataFrame, timeframe: str, deposit: float, c
     tolerance = cfg["tolerance_bars"] * judge.MINUTES[timeframe]
     hours = judge.clock(sqx, first, tolerance, cfg["max_offset_h"])
     moved = judge.shifted(sqx, hours)
-    window = moved[(moved["Open time"] >= first["Open time"].min()) & (moved["Close time"] <= first["Close time"].max())]
+    window = cast(pd.DataFrame, moved[(moved["Open time"] >= first["Open time"].min()) & (moved["Close time"] <= first["Close time"].max())])
     pairs = compare.pair(window, first, tolerance)
     th = {**UNUSED, **{k: cfg[k] for k in ROWS.values()}}
     rows = [r for r in judge.rows(window, first, pairs, deposit, th) if r["row"] in ROWS]

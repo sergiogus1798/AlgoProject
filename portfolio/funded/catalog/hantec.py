@@ -2,12 +2,15 @@
 
 import json
 import urllib.request
+from typing import Any
+
+from portfolio.funded.catalog.schema import Catalogue
 
 SOURCE = "https://myhtrader.hmarkets.com/purchasechallenge?handler=InitState"
 STEPS = {1: 1, 2: 2, 3: 3, 99: 0}  # challengeType → evaluation phases; 99 is instant funding
 
 
-def fetch() -> dict:
+def fetch() -> dict[str, Any]:
     """The raw JSON, without the visitor fields (login state, language)."""
     req = urllib.request.Request(SOURCE, headers={"User-Agent": "Mozilla/5.0",
                                                   "X-Requested-With": "XMLHttpRequest"})
@@ -34,7 +37,7 @@ def _stages(p: dict, key: str) -> list[dict]:
     return rows + [funded]
 
 
-def normalise(raw: dict) -> dict:
+def normalise(raw: dict) -> Catalogue:
     """Plans, stages and options in the schema of `schema.TABLES`."""
     plans, stages, options = [], [], []
     for p in raw["plans"]:

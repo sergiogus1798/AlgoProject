@@ -1,23 +1,28 @@
 """Families C, D and E as tabs: execution, regime, and whether the edge could be zero."""
 
+from typing import Any
+
 import pandas as pd
 
-from core.study import blocks, result as envelope
+from core.study import blocks
+from core.study import result as envelope
 from engines.regimes import regime
 from portfolio.common.monteCarlo.contract import headline, shapes
 from portfolio.common.monteCarlo.contract.words import MODELS_ES
 from portfolio.common.monteCarlo.model import stress
+from portfolio.common.monteCarlo.run import Analysis
 from portfolio.common.monteCarlo.verdict import gates
+from portfolio.common.monteCarlo.verdict.scoring import Verdict
 
 
-def family_c(result: dict, verdict: dict, cfg: dict) -> dict:
+def family_c(result: Analysis, verdict: Verdict, cfg: dict) -> dict[str, Any]:
     """Execution luck: the same trades filled worse, charged more, or not taken at all."""
     fired = {f["test"] for f in gates.check(result, cfg) if f["family"] == "C"}
     rows = pd.DataFrame([[stress.TITLES[k], MODELS_ES[k], v["median_net"], v["keep"],
                           v["net_5"], v["pf_5"], "falla" if k in fired else "pasa"]
                          for k, v in result["C"].items()],
-                        columns=["prueba", "qué hace", "beneficio mediano (USD)", "queda",
-                                 "beneficio p5 (USD)", "PF p5", ""])
+                        columns=pd.Index(["prueba", "qué hace", "beneficio mediano (USD)", "queda",
+                                 "beneficio p5 (USD)", "PF p5", ""]))
     figs = []
     for k, v in result["C"].items():
         figs.append(shapes.distribution(v["shapes"]["net"], v["table"]["net"], "net",
@@ -30,7 +35,7 @@ def family_c(result: dict, verdict: dict, cfg: dict) -> dict:
              "promedian, y se ejecutan siempre aunque alguna ya haya fallado.")
 
 
-def _bars(title: str, labels: list[str], values: list[float], note: str) -> dict:
+def _bars(title: str, labels: list[str], values: list[float], note: str) -> dict[str, Any]:
     """Bars in USD, green above zero and red below."""
     return {"kind": "bars", "title": title, "unit": "USD", "reference": 0.0, "note": note,
             "items": [{"label": str(k), "value": v, "error": None,
@@ -38,7 +43,7 @@ def _bars(title: str, labels: list[str], values: list[float], note: str) -> dict
                       for k, v in zip(labels, values)]}
 
 
-def family_d(result: dict, verdict: dict, cfg: dict) -> dict:
+def family_d(result: Analysis, verdict: Verdict, cfg: dict) -> dict[str, Any]:
     """Regime luck: where in the calendar and in market volatility the edge lived."""
     d, months = result["D"], cfg["family_d"]["window_months"]
     over, segs, rg = d["overlapping"], d["nonoverlapping"], d["regime"]
@@ -50,8 +55,8 @@ def family_d(result: dict, verdict: dict, cfg: dict) -> dict:
                  f"{gates.passing(over):.0%} de las ventanas en positivo."),
            blocks.table("Bloques que no se solapan", pd.DataFrame(
                [[w["start"], w["n"], w["median_net"], w["net_5"], w["pf_5"]] for w in segs],
-               columns=["desde", "operaciones", "mediana (USD)", "percentil 5 (USD)",
-                        "PF p5"]),
+               columns=pd.Index(["desde", "operaciones", "mediana (USD)", "percentil 5 (USD)",
+                        "PF p5"])),
                "Las ventanas solapadas suavizan; estos bloques no comparten ni una operación, "
                "así que un periodo malo de verdad aparece aquí.")]
     out += [shapes.distribution(w["shape"], None, "net", f"Beneficio remuestreado — bloque "
@@ -74,16 +79,16 @@ def family_d(result: dict, verdict: dict, cfg: dict) -> dict:
     out.append(blocks.table("Por tercil", pd.DataFrame(
         [[b, v["n"], v["net"], v["median_net"], v["net_5"], v["pf_5"]]
          for b, v in buckets.items()],
-        columns=["tercil", "operaciones", "beneficio real (USD)", "mediana (USD)",
-                 "percentil 5 (USD)", "PF p5"])))
+        columns=pd.Index(["tercil", "operaciones", "beneficio real (USD)", "mediana (USD)",
+                 "percentil 5 (USD)", "PF p5"]))))
     out += [shapes.distribution(buckets[b]["shape"], None, "net",
                                 f"Beneficio remuestreado — tercil {b}")
             for b in regime.BUCKETS]
     out.append(blocks.table("El peor camino posible", pd.DataFrame(
         [[f"{q * 100:.0f}%", v["dd_pct"] * 100, v["net"], v["segments"]]
          for q, v in d["stitch"].items()],
-        columns=["percentil por bloque", "drawdown (%)", "beneficio neto (USD)",
-                 "bloques cosidos"]),
+        columns=pd.Index(["percentil por bloque", "drawdown (%)", "beneficio neto (USD)",
+                 "bloques cosidos"])),
         f"Un mal tramo de cada bloque de {months} meses cosido en uno, a varias severidades. "
         f"No es un veto. Drawdown real {result['observed']['dd_pct']:.1%}; percentil 95 "
         f"reordenando {result['A']['dd_pct_95']:.1%}."))
@@ -98,7 +103,7 @@ def family_d(result: dict, verdict: dict, cfg: dict) -> dict:
                              "volatilidad del mercado.")
 
 
-def family_e(result: dict, verdict: dict, cfg: dict) -> dict:
+def family_e(result: Analysis, verdict: Verdict, cfg: dict) -> dict[str, Any]:
     """Significance: could the true edge be zero, given N and the shape of the returns."""
     e, f = result["E"], cfg["family_e"]
     rows = [["PSR", e["psr"]], ["Objetivo", f["psr_target"]], ["Veto", f["psr_gate"]],
@@ -111,7 +116,7 @@ def family_e(result: dict, verdict: dict, cfg: dict) -> dict:
         "familyE", "Familia E — significación",
         [headline.fired(verdict, "E"),
          blocks.table("PSR y su comprobación cruzada",
-                      pd.DataFrame(rows, columns=["qué", "valor"]),
+                      pd.DataFrame(rows, columns=pd.Index(["qué", "valor"])),
                       "Si las dos últimas filas coinciden, la conclusión no depende de la "
                       "aproximación normal. No hay Deflated Sharpe: haría falta saber cuántas "
                       "estrategias se probaron, y ese número no existe en esta fase.")],

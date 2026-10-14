@@ -1,5 +1,7 @@
 """Stress-day selection, stress-day correlation, and effective N of a candidate set."""
 
+from typing import TypedDict, cast
+
 import numpy as np
 import pandas as pd
 
@@ -16,9 +18,9 @@ def stress_days(build_daily: pd.DataFrame, quantile: float) -> pd.DatetimeIndex:
     Returns:
         The days at or below that quantile of the row-mean over the members available that day.
     """
-    pool = build_daily.mean(axis=1, skipna=True)
+    pool = cast(pd.Series, build_daily.mean(axis=1, skipna=True))
     threshold = pool.quantile(quantile)
-    return pool.index[pool <= threshold]
+    return pd.DatetimeIndex(pool.index[pool <= threshold])
 
 
 def stress_corr(a: np.ndarray, b: np.ndarray, mask: np.ndarray) -> float:
@@ -27,7 +29,14 @@ def stress_corr(a: np.ndarray, b: np.ndarray, mask: np.ndarray) -> float:
     return pearson(a[mask], b[mask], {})
 
 
-def effective_n(corr: np.ndarray) -> dict:
+class EffectiveN(TypedDict):
+    """Effective number of independent bets by two measures."""
+
+    participation: float
+    average: float
+
+
+def effective_n(corr: np.ndarray) -> EffectiveN:
     """Effective number of independent bets in a correlation matrix, both formulas.
 
     Args:

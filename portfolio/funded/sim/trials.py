@@ -1,11 +1,13 @@
 """The bank search's ledger row: every plan × add-on set × risk-per-phase combination it scored."""
 
+from typing import Any
+
 import numpy as np
 
 from ledger import record as ledger_record
 
 
-def record(study: str, symbol: str, segment: str, search: list[dict], chosen: int, cfg_hash: str) -> dict:
+def record(study: str, symbol: str, segment: str, search: list[dict], chosen: int, cfg_hash: str) -> dict[str, Any]:
     """Log one bank run in the study its portfolio belongs to.
 
     Args:

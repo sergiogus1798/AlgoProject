@@ -1,5 +1,6 @@
 """The real trades of one strategy, from the fleet's history, a CSV override, and their R."""
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -7,7 +8,6 @@ from core.paths import MT5_ACCOUNTS, MT5_DATA
 from mt5 import compare
 from mt5.fleet.app import history
 from mt5.reconcile import live, register
-
 
 
 def from_fleet(strategy: str, firm: str) -> tuple[pd.DataFrame, Path, str]:
@@ -22,7 +22,7 @@ def from_fleet(strategy: str, firm: str) -> tuple[pd.DataFrame, Path, str]:
         the collector has no history for the account.
     """
     rows = register.read(MT5_DATA / "reconcile" / "register.csv")
-    mine = rows[(rows["strategy"] == strategy) & (rows["firm"] == firm)]
+    mine = cast(pd.DataFrame, rows[(rows["strategy"] == strategy) & (rows["firm"] == firm)])
     if mine.empty:
         raise SystemExit(f"{strategy}/{firm}: no está en el registro de estrategias en real")
     deals = history.deals(MT5_ACCOUNTS[firm]["login"])

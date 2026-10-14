@@ -2,16 +2,27 @@
 
 import os
 import time
+from typing import Any, TypedDict, cast
 
 import pandas as pd
 
 from core import fanout
-from core.study import blocks, result as envelope
+from core.study import blocks
+from core.study import result as envelope
 from portfolio.common.monteCarlo import one
 from portfolio.common.monteCarlo.contract.shapes import TIER_STATE
 from portfolio.common.monteCarlo.contract.words import TITLES
+from portfolio.common.monteCarlo.load import Inputs
 from portfolio.common.monteCarlo.simulate import engine, kernel
 from portfolio.common.monteCarlo.verdict import scoring
+
+
+class Population(TypedDict):
+    """Every strategy's result (`members`) and the databank's own (`population`, the contract envelope)."""
+
+    population: dict[str, Any]
+    members: list[dict]
+
 
 # What every strategy's worker reads, set before the fork.
 _SHARED: dict = {}
@@ -30,14 +41,14 @@ def table(members: list[dict]) -> pd.DataFrame:
     """One row per strategy: its verdict and the numbers every gate read."""
     rows = [{"strategy": m["strategy"], "identity": m["identity"],
              "verdict": m["summary"]["tier"], **m["summary"]} for m in members]
-    return pd.DataFrame(rows)[COLUMNS].sort_values("composite", ascending=False)
+    return cast(pd.DataFrame, pd.DataFrame(rows)[COLUMNS]).sort_values("composite", ascending=False)
 
 
-def population(members: list[dict], inputs: dict, cfg: dict, started: float) -> dict:
+def population(members: list[dict], inputs: Inputs, cfg: dict, started: float) -> dict[str, Any]:
     """The databank read as one result: how many passed, why the rest fell, every row."""
     rows = table(members)
     fired = pd.DataFrame([f for m in members for f in m["summary"]["fired"]],
-                         columns=["family", "test", "value", "limit", "gate"])
+                         columns=pd.Index(["family", "test", "value", "limit", "gate"]))
     vetoes = fired[fired.gate.astype(bool)].test.value_counts()
     passed = int(rows.verdict.isin(scoring.VERDICTS[:3]).sum())
     stab = inputs["shared"]["stability"]
@@ -60,7 +71,7 @@ def population(members: list[dict], inputs: dict, cfg: dict, started: float) -> 
         envelope.tab("method", "Estabilidad del propio Monte Carlo", [blocks.table(
             "Cuánto se mueve cada número que decide", pd.DataFrame(
                 [[k, v["mean"], v["spread"]] for k, v in stab["by_number"].items()],
-                columns=["número", "media", "dispersión relativa"]),
+                columns=pd.Index(["número", "media", "dispersión relativa"])),
             f"{stab['runs']} repeticiones sobre {inputs['reference']}. "
             + ("Demasiado: sube n_sims." if stab["unstable"] else
                "Por debajo de la tolerancia: las cifras que deciden son estables."))])]
@@ -70,7 +81,7 @@ def population(members: list[dict], inputs: dict, cfg: dict, started: float) -> 
     return envelope.envelope(one.MODULE, None, None, cfg, started, tabs, verdict, warnings)
 
 
-def run(inputs: dict, cfg: dict) -> dict:
+def run(inputs: Inputs, cfg: dict) -> Population:
     """Every strategy, one process each, the longest first.
 
     Args:
@@ -90,7 +101,7 @@ def run(inputs: dict, cfg: dict) -> dict:
     kernel.prime()
     _SHARED.update(inputs=inputs, cfg=cfg)
     costs = {n: int(s["pnl"].size) for n, s in streams.items()}
-    workers = cfg["global"]["max_workers"] or os.cpu_count()
+    workers = cast(int, cfg["global"]["max_workers"] or os.cpu_count())
     members = {}
     for i, (name, got) in enumerate(fanout.run(_strategy, costs, workers), 1):
         members[name] = got

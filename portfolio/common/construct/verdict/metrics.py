@@ -69,7 +69,7 @@ def table(paths: np.ndarray, dates: pd.DatetimeIndex, losing_year: str) -> dict[
         gain_to_pain[i] = (eq[-1] / years) / depth[order[:n_years]].mean()
 
     if losing_year == "calendar":
-        yearly = pd.DataFrame(paths.T, index=dates.year).groupby(level=0).sum().to_numpy().T
+        yearly = pd.DataFrame(paths.T, index=dates.year).groupby(level=0).sum().to_numpy().T  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.year
     else:
         cum = np.concatenate([np.zeros((len(paths), 1)), equity], axis=1)
         yearly = cum[:, YEAR_ROWS:] - cum[:, :-YEAR_ROWS]

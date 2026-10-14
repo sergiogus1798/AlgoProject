@@ -2,15 +2,27 @@
 
 import zipfile
 from pathlib import Path
+from typing import TypedDict
 
 import pandas as pd
 
 from core.archive import read as archive_read
+from core.xmlget import el
 from sqx.inspect.strategymeta import settings
 from sqx.variants.build import rewrite, stoploss
 
 
-def sizing(identity: str, version: str) -> dict:
+class Sizing(TypedDict):
+    """A member's fixed-risk inputs: ATR multiple, risk in USD, the lot floor and the factor."""
+
+    x: float
+    risk_usd: float
+    atr_multiple: float
+    min_size: float
+    factor: float
+
+
+def sizing(identity: str, version: str) -> Sizing:
     """The member's fixed-risk factor, `f = atr_multiple / (risk_usd * x)`.
 
     SQX sizes every trade of the archived strategy at `risk_usd` over `atr_multiple` * ATR(20)
@@ -39,7 +51,7 @@ def sizing(identity: str, version: str) -> dict:
     x = float(rewrite.values(portfolio)[stoploss.VARIABLE])
 
     node = settings.last_settings(sqx_path).find("RiskMoneyManagement/MoneyManagement")
-    mm = settings.sizing(node)
+    mm = settings.sizing(el(node))
     risk_usd = float(mm["params"]["Amount"])
     atr_multiple = float(mm["params"]["ATRMult"])
 

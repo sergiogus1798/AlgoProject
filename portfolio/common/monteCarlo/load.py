@@ -1,15 +1,41 @@
 """Everything one run of the study reads, assembled once: streams, daily bars, costs, identity."""
 
+from pathlib import Path
+from typing import Any, TypedDict
+
+import pandas as pd
+
 from core import barstore, manifest, tradestore
 from core.paths import bar_source, export_dir
 from core.study import identity
 from engines.regimes import regime
 from portfolio.common.monteCarlo.inputs import costs, stream
+from portfolio.common.monteCarlo.inputs.costs import Asset
 from portfolio.common.monteCarlo.simulate import stability
+from portfolio.common.monteCarlo.simulate.stability import Stability
+
+
+class Shared(TypedDict):
+    """What every worker of a run reads: the trades file, the bars source and the stability check."""
+
+    export: Path
+    bars: Any
+    stability: Stability
+
+
+class Inputs(TypedDict):
+    """Everything one run of the study reads, assembled once."""
+
+    streams: dict[str, dict[str, Any]]
+    day: pd.DataFrame
+    asset: Asset
+    identity: dict[str, str | None]
+    reference: str
+    shared: Shared
 
 
 def load(project: str, databank: str, asset: str, export: str, cfg: dict,
-         bars_timeframe: str = "M30", portfolio: bool = False) -> dict:
+         bars_timeframe: str = "M30", portfolio: bool = False) -> Inputs:
     """The inputs one.run() and many.run() read.
 
     Args:

@@ -3,19 +3,21 @@
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
 from core.study import output
 
 from . import handoff, many, real, weights
-from .inputs import config, pool as pool_mod
+from .inputs import config
+from .inputs import pool as pool_mod
 from .search import trials_real
 
 TITLE = "Cartera por rangos: la elección en build y su veredicto"
 
 
-def load(pool_name: str, cfg: dict, run: Path | None, seed: int) -> dict:
+def load(pool_name: str, cfg: dict, run: Path | None, seed: int) -> dict[str, Any]:
     """What the verdict reads: a run of `real.py` (made now when `run` is None) and its world.
 
     Returns:

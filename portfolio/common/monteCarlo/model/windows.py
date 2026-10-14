@@ -1,5 +1,7 @@
 """Family D in time: the calendar slices of a trade stream, defined in months, never in trades."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -20,16 +22,16 @@ def rolling(opens: np.ndarray, months: int, step: int) -> list[dict]:
         half-length window is not comparable to the others and would enter the vote as one.
     """
     when = pd.DatetimeIndex(opens)
-    first = when.min().to_period("M").to_timestamp()
-    last = when.max()
+    first = cast(pd.Timestamp, when.min()).to_period("M").to_timestamp()
+    last = cast(pd.Timestamp, when.max())
     out = []
     start = first
     while start + pd.DateOffset(months=months) <= last:
-        end = start + pd.DateOffset(months=months)
+        end = cast(pd.Timestamp, start + pd.DateOffset(months=months))
         inside = np.flatnonzero((when >= start) & (when < end))
         out.append({"start": start.date().isoformat(), "end": end.date().isoformat(),
                     "positions": inside})
-        start = start + pd.DateOffset(months=step)
+        start = cast(pd.Timestamp, start + pd.DateOffset(months=step))
     return out
 
 
@@ -47,5 +49,7 @@ def calendar(opens: np.ndarray, pnl: np.ndarray) -> dict[str, pd.Series]:
     """
     when = pd.DatetimeIndex(opens)
     series = pd.Series(pnl)
-    return {"month": series.groupby(when.month).sum(),
-            "weekday": series.groupby(when.dayofweek).sum()}
+    month = when.month  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.month
+    weekday = when.dayofweek  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.dayofweek
+    return {"month": cast(pd.Series, series.groupby(month).sum()),
+            "weekday": cast(pd.Series, series.groupby(weekday).sum())}

@@ -3,7 +3,7 @@
 import pandas as pd
 
 
-def weights(build_daily: pd.DataFrame, cfg: dict) -> dict:
+def weights(build_daily: pd.DataFrame, cfg: dict) -> dict[str, float]:
     """1/K per member; holds everything fixed, estimates nothing.
 
     Args:

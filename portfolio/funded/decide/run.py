@@ -5,9 +5,11 @@ import json
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from core.paths import portfolio_dir
 from portfolio.funded.decide import choose, tables
+from portfolio.funded.decide.choose import Choice
 from portfolio.funded.sim import inputs
 
 OPEN = (
@@ -19,7 +21,7 @@ OPEN = (
 )
 
 
-def consistent(used: list[dict]) -> dict:
+def consistent(used: list[dict]) -> dict[str, Any]:
     """The one config every table was simulated under; refuses a mix, a stale table or a missing input."""
     cfgs = [t["manifest"]["config"] for t in used]
     owner, now = cfgs[0]["owner"], inputs.load([])["owner"]
@@ -40,7 +42,7 @@ def _risk(row: dict) -> str:
     return f"{phases} → {100 * row['risk_funded']:g}"
 
 
-def lines(result: dict, owner: dict) -> list[str]:
+def lines(result: Choice, owner: dict) -> list[str]:
     """The table of every row judged: its gain, its cost, its place at each haircut, and whether it may be bought."""
     hs = owner["haircuts"]
     out = [f"{'plan':27} {'recompra':9} {'precio$':>8} {'riesgo % f→fond':>17} {'VE ± e.t. $':>14} {'mono':>7} "
@@ -54,7 +56,7 @@ def lines(result: dict, owner: dict) -> list[str]:
     return out
 
 
-def sentence(result: dict, owner: dict) -> str:
+def sentence(result: Choice, owner: dict) -> str:
     """The decision: what to buy with its cost next to its gain, or that nothing is to be bought and why."""
     best, h = result["chosen"], owner["haircut_decides"]
     if best is None:
@@ -68,9 +70,10 @@ def sentence(result: dict, owner: dict) -> str:
                 f"{near['reason']}.")
     live = ("cualquier fracción" if best["breakeven_h"] is None or best["breakeven_h"] != best["breakeven_h"]
             else f"al menos el {1 - best['breakeven_h']:.0%}")
-    tie = (f" OJO: el segundo ({result['runner_up']['plan']}, «{result['runner_up']['rebuy']}», "
-           f"{result['runner_up']['ev']:+.1f} $) está dentro del error de Monte Carlo: entre los dos la simulación "
-           f"no distingue." if result["tie"] else "")
+    second = result["runner_up"]
+    tie = (f" OJO: el segundo ({second['plan']}, «{second['rebuy']}», "
+           f"{second['ev']:+.1f} $) está dentro del error de Monte Carlo: entre los dos la simulación "
+           f"no distingue." if second is not None and result["tie"] else "")
     return (f"DECISIÓN: compra {best['plan']} a precio de lista ({best['price_usd']:.2f} $), recompra "
             f"«{best['rebuy']}», con la cartera {', '.join(m[:8] for m in best['members'])}, riesgo {_risk(best)} % "
             f"por operación (fases → fondeada). CUESTA {best['fees']:.0f} $ de cuotas esperadas (p90 del desembolso "
@@ -82,7 +85,7 @@ def sentence(result: dict, owner: dict) -> str:
 
 def main() -> None:
     """Read the tables, refuse a mix, judge, print, write the decision."""
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     parser.add_argument("--bank", type=Path, action="append",
                         help="a funded.sim.run folder; repeat it. Default: every run under AlgoData/portfolio/bank")
     parser.add_argument("--ignore-verdict", action="store_true",

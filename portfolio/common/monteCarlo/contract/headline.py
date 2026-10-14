@@ -1,22 +1,27 @@
 """The verdict tab: the call and why, what failed, the backtest at a glance, and the sub-scores."""
 
+from typing import Any
+
 import pandas as pd
 
-from core.study import blocks, result as envelope
+from core.study import blocks
+from core.study import result as envelope
 from portfolio.common.monteCarlo.contract import words
 from portfolio.common.monteCarlo.contract.shapes import TIER_STATE, scale
+from portfolio.common.monteCarlo.run import Analysis
 from portfolio.common.monteCarlo.verdict import confidence, gates, scoring
+from portfolio.common.monteCarlo.verdict.scoring import Verdict
 
 GLANCE = ("net", "sharpe", "dd_pct", "ret_dd", "losing_run")
 
 
-def _family_state(verdict: dict, family: str) -> str:
+def _family_state(verdict: Verdict, family: str) -> str:
     """fail if a gate of this family fired, watch if only a warning did, pass otherwise."""
     fired = [f for f in verdict["flags"] if f["family"] == family]
     return "fail" if any(f["gate"] for f in fired) else "watch" if fired else "pass"
 
 
-def verdict_block(result: dict, verdict: dict) -> dict:
+def verdict_block(result: Analysis, verdict: Verdict) -> dict[str, Any]:
     """The tier, the composite, the sentence naming what decided it, one part per family."""
     return blocks.verdict(
         verdict["tier"], TIER_STATE[verdict["tier"]], words.rationale(result, verdict),
@@ -25,18 +30,18 @@ def verdict_block(result: dict, verdict: dict) -> dict:
           "note": scoring.BUILT_FROM[k]} for k, v in verdict["subscores"].items()])
 
 
-def fired(verdict: dict, family: str | None = None) -> dict:
+def fired(verdict: Verdict, family: str | None = None) -> dict[str, Any]:
     """Every check that fired, vetoes first, as a table; one family's only when named."""
     rows = [["VETO" if f["gate"] else "aviso", f["family"], words.title(f), words.sentence(f)]
             for f in sorted(verdict["flags"], key=lambda f: not f["gate"])
             if family is None or f["family"] == family]
     note = "" if rows else "Ninguna prueba falló ni levantó aviso."
     return blocks.table("Lo que falló" if family is None else f"Lo que falló en la familia "
-                        f"{family}", pd.DataFrame(rows, columns=["tipo", "familia", "prueba",
-                                                                 "qué dice"]), note)
+                        f"{family}", pd.DataFrame(rows, columns=pd.Index(["tipo", "familia", "prueba",
+                                                                 "qué dice"])), note)
 
 
-def glance(result: dict, verdict: dict) -> dict:
+def glance(result: Analysis, verdict: Verdict) -> dict[str, Any]:
     """The backtest against the median simulation, each row with its sample confidence."""
     runs = result["B"]["runs"]
     base = runs[next(iter(runs))]
@@ -48,13 +53,13 @@ def glance(result: dict, verdict: dict) -> dict:
              ["PSR", result["E"]["psr"], None, None, None,
               confidence.average(result["E"]["n"])]]
     return blocks.table("De un vistazo", pd.DataFrame(
-        rows, columns=["", "backtest", "mediana simulada", "percentil 5",
-                       "rango del backtest", "confianza"]),
+        rows, columns=pd.Index(["", "backtest", "mediana simulada", "percentil 5",
+                       "rango del backtest", "confianza"])),
         "El backtest contra la mediana de las simulaciones. «Rango» es la fracción de "
         "simulaciones por debajo del backtest: cerca de 1 es un backtest afortunado.")
 
 
-def scores(verdict: dict, cfg: dict) -> dict:
+def scores(verdict: Verdict, cfg: dict) -> dict[str, Any]:
     """The five sub-scores as bars, the acceptable tier as the reference line."""
     return {"kind": "bars", "title": "Sub-scores por familia", "unit": "sobre 100",
             "reference": float(cfg["scoring"]["tiers"][1]),
@@ -65,7 +70,7 @@ def scores(verdict: dict, cfg: dict) -> dict:
                     "dice su propia pestaña."}
 
 
-def tab(result: dict, verdict: dict, cfg: dict) -> dict:
+def tab(result: Analysis, verdict: Verdict, cfg: dict) -> dict[str, Any]:
     """The tab the result opens on."""
     return envelope.tab("veredicto", "Veredicto",
                         [fired(verdict), glance(result, verdict), scores(verdict, cfg)],
@@ -74,7 +79,7 @@ def tab(result: dict, verdict: dict, cfg: dict) -> dict:
                              "después los números.")
 
 
-def summary(result: dict, verdict: dict) -> dict:
+def summary(result: Analysis, verdict: Verdict) -> dict[str, Any]:
     """The flat row the databank table and verdict.csv carry for this strategy."""
     return {"trades": result["n_trades"], "tier": verdict["tier"],
             "composite": verdict["composite"],

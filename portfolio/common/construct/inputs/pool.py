@@ -4,6 +4,7 @@ import argparse
 import hashlib
 from datetime import date
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
 import pandas as pd
 
@@ -40,13 +41,28 @@ def declare(name: str, rows: list[dict], added_by: str) -> Path:
         "added_on": today,
         "added_by": added_by,
         "note": row.get("note", ""),
-    } for row in rows], columns=COLUMNS)
+    } for row in rows], columns=pd.Index(COLUMNS))
     out.parent.mkdir(parents=True, exist_ok=True)
     frame.to_csv(out, index=False)
     return out
 
 
-def read(name: str, firm: str | None, plan: str | None = None) -> dict:
+class PoolId(TypedDict):
+    """What the ledger needs of a pool: its hash."""
+
+    hash: str
+
+
+class Pool(PoolId):
+    """A declared pool as read: its kept members, the prohibited ones, their counts and the hash."""
+
+    members: list[dict]
+    prohibited: list[dict]
+    n_pool: int
+    n_prohibited: int
+
+
+def read(name: str, firm: str | None, plan: str | None = None) -> Pool:
     """A declared pool, with one firm's prohibitions removed and hashed.
 
     Args:
@@ -64,28 +80,28 @@ def read(name: str, firm: str | None, plan: str | None = None) -> dict:
         same members agree).
     """
     pool = pd.read_csv(ROOT / "pools" / f"{name}.csv", dtype=str)
-    prohibited = pd.DataFrame(columns=PROHIBITION_COLUMNS)
+    prohibited: pd.DataFrame = pd.DataFrame(columns=pd.Index(PROHIBITION_COLUMNS))
     firm_file = ROOT / "prohibitions" / f"{firm}.csv"
     if firm and firm_file.is_file():
         banned = pd.read_csv(firm_file, dtype=str, keep_default_na=False)
         in_pool = set(zip(pool["identity"], pool["version"]))
-        prohibited = banned[[(r.identity, r.version) in in_pool
+        prohibited = cast(pd.DataFrame, banned[[(r.identity, r.version) in in_pool
                              and (plan is None or plan.startswith(r.plan))
-                             for r in banned.itertuples()]]
+                             for r in cast(Any, banned).itertuples()]])
     dropped = set(zip(prohibited["identity"], prohibited["version"]))
-    kept = pool[~pool.apply(lambda r: (r["identity"], r["version"]) in dropped, axis=1)]
+    kept = cast(pd.DataFrame, pool[~pool.apply(lambda r: (r["identity"], r["version"]) in dropped, axis=1)])
     keys = sorted(f"{i}@{v}" for i, v in zip(kept["identity"], kept["version"]))
     digest = hashlib.sha256("\n".join(keys).encode("utf-8")).hexdigest()
     return {"members": kept.to_dict("records"), "prohibited": prohibited.to_dict("records"),
             "n_pool": len(pool), "n_prohibited": len(pool) - len(kept), "hash": digest}
 
 
-def scoped(cfg: dict, firm: str | None, plan: str | None = None) -> dict:
+def scoped(cfg: dict, firm: str | None, plan: str | None = None) -> dict[str, Any]:
     """The run's config naming the firm (and plan) whose prohibitions it applies (`--firm`)."""
     return {**cfg, "pool": {"firm": firm, "plan": plan}} if firm else cfg
 
 
-def declared(name: str, cfg: dict) -> dict:
+def declared(name: str, cfg: dict) -> Pool:
     """`read()` of the pool as the run's config scopes it: whole, or less a firm's prohibitions."""
     scope = cfg.get("pool", {})
     return read(name, scope.get("firm"), scope.get("plan"))

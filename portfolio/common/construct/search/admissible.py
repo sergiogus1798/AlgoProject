@@ -1,5 +1,7 @@
 """The admissible graph: which pairs of a pool clear every pairwise filter."""
 
+from typing import Any, cast
+
 import numpy as np
 import pandas as pd
 
@@ -15,7 +17,7 @@ MEASURE_KEY = {
 }
 
 
-def admissible(pairs: pd.DataFrame, identities: list[str], cfg: dict) -> dict:
+def admissible(pairs: pd.DataFrame, identities: list[str], cfg: dict) -> dict[str, Any]:
     """The N x N admissible graph over `identities`, and why each failing pair fails.
 
     Args:
@@ -38,7 +40,7 @@ def admissible(pairs: pd.DataFrame, identities: list[str], cfg: dict) -> dict:
     index = {name: k for k, name in enumerate(identities)}
     n = len(identities)
     pc = cfg["pairs"]
-    key = pairs["measure"].map(MEASURE_KEY)
+    key = pairs["measure"].map(MEASURE_KEY)  # pyright: ignore[reportArgumentType]  # stub types Series.map without a Mapping
     overlap = pairs["n_overlap_months"].to_numpy()
     too_short = overlap < pc["min_overlap_months"]
     # Owner 2026-09-30: under one full rolling window the rolling filters do not apply.
@@ -50,9 +52,9 @@ def admissible(pairs: pd.DataFrame, identities: list[str], cfg: dict) -> dict:
     undefined = applies & np.isnan(value)
     exceeds = applies & ~undefined & np.where(two_sided, np.abs(value) > threshold, value > threshold)
     label = np.where(too_short, "overlap", np.where(undefined, "undefined", pairs["measure"].to_numpy()))
-    failing = (pd.DataFrame({"i": pairs["i"], "j": pairs["j"], "filter": label})
-               [too_short | undefined | exceeds].drop_duplicates(ignore_index=True))
-    every = pairs[["i", "j", "n_overlap_months"]].drop_duplicates(["i", "j"])
+    failing = cast(pd.DataFrame, pd.DataFrame({"i": pairs["i"], "j": pairs["j"], "filter": label})
+                   [too_short | undefined | exceeds]).drop_duplicates(ignore_index=True)
+    every = cast(pd.DataFrame, pairs[["i", "j", "n_overlap_months"]]).drop_duplicates(subset=["i", "j"])
     no_rolling = int(((every["n_overlap_months"] >= pc["min_overlap_months"])
                       & (every["n_overlap_months"] < pc["rolling_months"])).sum())
     bad = set(zip(failing["i"], failing["j"]))

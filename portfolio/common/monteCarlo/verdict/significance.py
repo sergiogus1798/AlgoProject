@@ -1,15 +1,27 @@
 """Family E: could this edge be zero, given how many trades there are and how they are shaped?"""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
 from core.significance import footprint as _footprint
 from core.significance import psr
+from portfolio.common.monteCarlo.inputs.costs import Asset
+
+
+class Crosscheck(TypedDict):
+    """The analytic PSR against the resampled one."""
+
+    psr: float
+    bootstrap: float
+    gap: float
+
 
 __all__ = ["psr", "crosscheck", "footprint"]
 
 
-def footprint(source: dict, day: pd.DataFrame, asset: dict) -> float:
+def footprint(source: dict, day: pd.DataFrame, asset: Asset) -> float:
     """The Sharpe a same-footprint random trader would have scored, for `psr()`'s benchmark.
 
     Args:
@@ -42,7 +54,7 @@ def footprint(source: dict, day: pd.DataFrame, asset: dict) -> float:
                       asset["point_value"])
 
 
-def crosscheck(psr_value: float, bootstrap_sharpe: np.ndarray) -> dict:
+def crosscheck(psr_value: float, bootstrap_sharpe: np.ndarray) -> Crosscheck:
     """The analytic answer against the resampled one.
 
     Args:

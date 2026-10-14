@@ -1,34 +1,37 @@
 """The one read of `oos2` (PLAN §5.5, Q11 d): the door, the ledger's count, the row that spends it."""
 
 from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
-from ledger import study, tried, trials as ledger_trials
+from ledger import study, tried
+from ledger import trials as ledger_trials
 
+from .inputs.pool import Pool
 from .search import trials
 from .verdict import deflate
 
 
-def pool_study(pool: dict) -> str:
+def pool_study(pool: Pool) -> str:
     """The ledger study of a declared pool."""
     return f"PORTFOLIO_{pool['hash'][:12]}_construct"
 
 
-def spent(pool: dict) -> dict | None:
+def spent(pool: Pool) -> dict | None:
     """The row of the verdict that read this pool's `oos2`, or None while nobody has."""
     frame = study.read(pool_study(pool))
     rows = frame[(frame["step"] == 27) & (frame["segment"] == "oos2")] if len(frame) else frame
     return rows.iloc[0].to_dict() if len(rows) else None
 
 
-def counted() -> dict:
+def counted() -> ledger_trials.Overall:
     """`ledger.trials.overall`: everything the whole project ever tried (owner 2026-10-05, R7)."""
     return ledger_trials.overall([tried.with_sweeps(study.read(s), s) for s in study.studies()])
 
 
-def read(path: Callable[[], np.ndarray], members: list[str], pool: dict, members_meta: dict,
-         criterion: str, launched_by: str, note: str) -> dict:
+def read(path: Callable[[], np.ndarray], members: list[str], pool: Pool, members_meta: dict,
+         criterion: str, launched_by: str, note: str) -> dict[str, Any]:
     """Judge the chosen portfolio on `oos2` by its deflated Sharpe -- once per pool, for good.
 
     The order is the guarantee: the pool's ledger is asked first, then the one-way door for

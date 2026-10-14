@@ -3,6 +3,9 @@
 import json
 import re
 import urllib.request
+from typing import Any, cast
+
+from portfolio.funded.catalog.schema import Catalogue
 
 SOURCE = "https://ftmo.com/en/"
 TYPES = {"step_2": ("2step", "objectives", {"step_1": "phase1", "step_2": "phase2",
@@ -12,11 +15,11 @@ FIELDS = ("profit_target", "max_daily_loss", "max_loss", "min_trading_days", "tr
           "best_day", "rewards")
 
 
-def fetch() -> dict:
+def fetch() -> dict[str, Any]:
     """The `ftmoPricingTable` object the home page carries inline."""
     req = urllib.request.Request(SOURCE, headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"})
     page = urllib.request.urlopen(req, timeout=60).read().decode()
-    return json.loads(re.search(r"var ftmoPricingTable = (\{.*?\});\s*\n", page, re.S).group(1))
+    return json.loads(cast(re.Match[str], re.search(r"var ftmoPricingTable = (\{.*?\});\s*\n", page, re.S)).group(1))
 
 
 def _number(text: str) -> float | None:
@@ -43,7 +46,7 @@ def _stages(objectives: dict, names: dict, key: str) -> list[dict]:
     return rows
 
 
-def normalise(raw: dict) -> dict:
+def normalise(raw: dict) -> Catalogue:
     """Plans, stages and options in the schema of `schema.TABLES`. Prices are list prices in EUR."""
     data = raw["data"]
     plans, stages, options = [], [], []

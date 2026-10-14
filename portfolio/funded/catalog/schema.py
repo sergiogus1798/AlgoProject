@@ -2,8 +2,18 @@
 
 import sqlite3
 from pathlib import Path
+from typing import TypedDict
 
 from core.paths import funding_dir
+
+
+class Catalogue(TypedDict):
+    """A firm's normalised catalogue: its plans, their stages and the add-on options."""
+
+    plans: list[dict]
+    stages: list[dict]
+    options: list[dict]
+
 
 DB = funding_dir() / "funding.sqlite"
 

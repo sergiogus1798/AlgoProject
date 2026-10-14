@@ -1,8 +1,36 @@
 """The core statistics of an equity path, computed on thousands of paths at once."""
 
+from typing import TypedDict
+
 import numpy as np
 
 from core.study.clip import clip
+
+
+class Summary(TypedDict):
+    """One simulated distribution reduced to the numbers the report prints."""
+
+    p: dict[int, float]
+    mean: float
+    median: float
+    std: float
+    kurtosis: float
+    observed: float
+    rank: float
+    n: int
+
+
+class Shape(TypedDict):
+    """A distribution reduced to something a chart can draw."""
+
+    counts: list[int]
+    lo: float
+    hi: float
+    left_out: int
+    observed: float
+    median: float
+    p_report: float
+
 
 NAMES = ("net", "return_pct", "dd", "dd_pct", "ret_dd", "sharpe", "pf", "losing_run")
 
@@ -71,7 +99,7 @@ def observed(pnl: np.ndarray, equity0: float) -> dict[str, float]:
     return {k: float(v[0]) for k, v in paths(pnl[None, :], equity0).items()}
 
 
-def summarise(values: np.ndarray, seen: float, qs: list[int]) -> dict:
+def summarise(values: np.ndarray, seen: float, qs: list[int]) -> Summary:
     """One simulated distribution reduced to the numbers the report prints.
 
     Args:
@@ -93,7 +121,7 @@ def summarise(values: np.ndarray, seen: float, qs: list[int]) -> dict:
             "n": int(clean.size)}
 
 
-def shape(values: np.ndarray, seen: float, q: int, bins: int = 60) -> dict:
+def shape(values: np.ndarray, seen: float, q: int, bins: int = 60) -> Shape:
     """A distribution reduced to something a chart can draw.
 
     Args:
@@ -124,7 +152,7 @@ def shape(values: np.ndarray, seen: float, q: int, bins: int = 60) -> dict:
             "p_report": float(np.percentile(clean, q))}
 
 
-def table(stats: dict[str, np.ndarray], seen: dict[str, float], qs: list[int]) -> dict:
+def table(stats: dict[str, np.ndarray], seen: dict[str, float], qs: list[int]) -> dict[str, Summary]:
     """Every statistic of one sub-run, against what the backtest actually did.
 
     Args:
@@ -138,7 +166,7 @@ def table(stats: dict[str, np.ndarray], seen: dict[str, float], qs: list[int]) -
     return {k: summarise(v, seen[k], qs) for k, v in stats.items()}
 
 
-def shapes(stats: dict[str, np.ndarray], seen: dict[str, float], q: int) -> dict:
+def shapes(stats: dict[str, np.ndarray], seen: dict[str, float], q: int) -> dict[str, Shape]:
     """A drawable histogram of every statistic of one sub-run.
 
     Args:

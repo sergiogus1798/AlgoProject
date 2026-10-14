@@ -1,5 +1,7 @@
 """The rebuild checked against SQX's own daily curve: each day's lowest equity, day by day."""
 
+from typing import TypedDict
+
 import pandas as pd
 
 
@@ -15,7 +17,17 @@ def low_equity(days: pd.DataFrame) -> pd.Series:
     return close.shift(fill_value=0.0) + days["low_open"].fillna(0.0)
 
 
-def curve(rebuilt: pd.Series, sqx: pd.Series, tolerance: float, min_share: float) -> dict:
+class Reconciled(TypedDict):
+    """A rebuilt curve against SQX's: days compared, share exact, the gaps and the verdict."""
+
+    n_days: int
+    exact: float
+    max_gap: float
+    p99_gap: float
+    verdict: str
+
+
+def curve(rebuilt: pd.Series, sqx: pd.Series, tolerance: float, min_share: float) -> Reconciled:
     """Day-by-day agreement of two lowest-equity curves of one leg, over the days both cover.
 
     Args:

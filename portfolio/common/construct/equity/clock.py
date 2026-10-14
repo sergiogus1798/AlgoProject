@@ -1,5 +1,7 @@
 """Naive feed-clock times to UTC, and the day a UTC instant belongs to in any server clock."""
 
+from typing import cast
+
 import pandas as pd
 
 # SQX's EETUS and the NY-close MT5 server convention have no IANA name: New York + 7 h
@@ -37,7 +39,7 @@ def local(utc: pd.DatetimeIndex, zone: str) -> pd.DatetimeIndex:
 
 def day_of(utc: pd.DatetimeIndex, zone: str) -> pd.DatetimeIndex:
     """The server day each instant falls in: naive midnight of the zone's own calendar date."""
-    return local(utc, zone).normalize()
+    return local(utc, zone).normalize()  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.normalize
 
 
 def day_end(days: pd.DatetimeIndex, zone: str) -> pd.DatetimeIndex:
@@ -68,6 +70,6 @@ def reclock(bars: pd.DataFrame, zone_from: str, zone_to: str) -> pd.DataFrame:
         `zone_from` repeats or skips is dropped; of an hour `zone_to` repeats, the first pass
         is kept.
     """
-    utc, _ = to_utc(bars.index, zone_from)
-    stamped = bars[~utc.isna()].set_axis(local(utc[~utc.isna()], zone_to))
-    return stamped[~stamped.index.duplicated()].sort_index()
+    utc, _ = to_utc(pd.DatetimeIndex(bars.index), zone_from)
+    stamped = bars[~utc.isna()].set_axis(local(pd.DatetimeIndex(utc[~utc.isna()]), zone_to))
+    return cast(pd.DataFrame, stamped[~stamped.index.duplicated()]).sort_index()

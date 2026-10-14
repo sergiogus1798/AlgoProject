@@ -2,14 +2,25 @@
 
 import itertools
 from collections.abc import Callable
+from typing import TypedDict, cast
 
 import numpy as np
 
 from portfolio.funded.rules import catalog
 from portfolio.funded.sim import bank, haircut, measures, plans
+from portfolio.funded.sim.plans import Cash, Terms
 
 
-def variants(cfg: dict) -> tuple[list[dict], list[str], dict[str, list[str]]]:
+class Built(TypedDict):
+    """The bank searched: one row per chosen plan variant and policy, the add-on table and every configuration tried."""
+
+    rows: list[dict]
+    addons: list[dict]
+    search: list[dict]
+
+
+
+def variants(cfg: dict) -> tuple[list[Terms], list[str], dict[str, list[str]]]:
     """Every plan of the universe with every add-on set the simulation can tell apart.
 
     Returns:
@@ -28,14 +39,14 @@ def variants(cfg: dict) -> tuple[list[dict], list[str], dict[str, list[str]]]:
     return out, list(gaps.values()), skipped
 
 
-def _multipliers(plan: dict, risk: dict[str, float], unit_risk: float) -> dict[str, float]:
+def _multipliers(plan: Terms, risk: dict[str, float], unit_risk: float) -> dict[str, float]:
     """Risk fractions of the initial balance as the multipliers of a unit-risk path."""
     return {stage: r * plan["size"] / unit_risk for stage, r in risk.items()}
 
 
 def build(paths: dict[str, np.ndarray], zero: dict[str, np.ndarray], meta: dict, cfg: dict,
-          variants_: list[dict], hazards: tuple[np.ndarray, np.ndarray],
-          progress: Callable[[int, str], None] = lambda percent, state: None) -> dict:
+          variants_: list[Terms], hazards: tuple[np.ndarray, np.ndarray],
+          progress: Callable[[int, str], None] = lambda percent, state: None) -> Built:
     """Search the risk per phase of every plan variant under every re-buy policy, then read the chosen ones in full.
 
     Args:
@@ -59,13 +70,13 @@ def build(paths: dict[str, np.ndarray], zero: dict[str, np.ndarray], meta: dict,
     hs, decides = owner["haircuts"], owner["haircut_decides"]
     cut = {h: haircut.apply(paths, h) for h in hs}
 
-    def run(data: dict, plan: dict, risk: dict, cash: dict) -> np.ndarray:
+    def run(data: dict, plan: Terms, risk: dict, cash: Cash) -> np.ndarray:
         """One configuration's draws."""
         return bank.simulate(data, plan, _multipliers(plan, risk, meta["unit_risk"]), cash,
                              *hazards, threads=cfg["compute"]["threads"])[0]
 
     search, rows, addons, base_ev = [], [], [], {}
-    cells = list(itertools.product(variants_, owner["rebuy"]))
+    cells: list[tuple[Terms, str]] = list(itertools.product(variants_, cast(list[str], owner["rebuy"])))
     for i, (plan, rebuy) in enumerate(cells):
         progress(int(100 * i / len(cells)), f"{plan['plan_key']} {plan['options']} {rebuy}")
         cash, key = plans.cash(plan, owner, dpy, rebuy), (plan["plan_key"], rebuy)

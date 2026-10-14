@@ -1,5 +1,7 @@
 """What a batch of bank draws says: the EV three ways with its interval, the odds per phase, the cash drawdown, the rule that fails most."""
 
+from typing import Any
+
 import numpy as np
 
 from portfolio.funded.sim.kernel import C
@@ -25,7 +27,7 @@ def _ratio(a: float, b: float) -> float:
     return float(a / b) if b else float("nan")
 
 
-def summary(out: np.ndarray, horizon: int, days_per_year: float) -> dict:
+def summary(out: np.ndarray, horizon: int, days_per_year: float) -> dict[str, Any]:
     """One configuration's flat row.
 
     Args:
@@ -48,7 +50,7 @@ def summary(out: np.ndarray, horizon: int, days_per_year: float) -> dict:
     half = Z90 * x.std(ddof=1) / np.sqrt(len(x))
     paid_draws = out[:, C["first_payout_day"]] >= 0
     fails = {name: total[C[name]] for name in _RULES}
-    worst = max(fails, key=fails.get)
+    worst = max(fails, key=lambda n: fails[n])
     row = {"ev": float(x.mean()), "ev_se": float(half / Z90), "ev_lo": float(x.mean() - half),
            "ev_hi": float(x.mean() + half), "fees": float(out[:, C["paid"]].mean()),
            "received": float(out[:, C["received"]].mean()), "refunds": float(out[:, C["refunds"]].mean()),

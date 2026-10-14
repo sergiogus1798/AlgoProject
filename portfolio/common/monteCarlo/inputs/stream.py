@@ -1,13 +1,16 @@
 """The input contract: any time-ordered trade list, reduced to what every family needs."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
 from core.trades import SIDE
 from portfolio.common.monteCarlo.inputs import costs
+from portfolio.common.monteCarlo.inputs.costs import Asset
 
 
-def _from_frame(frame: pd.DataFrame, asset: dict, risk: float) -> dict:
+def _from_frame(frame: pd.DataFrame, asset: Asset, risk: float) -> dict:
     """The arrays every family runs on, from a frame already in time order.
 
     Args:
@@ -27,13 +30,13 @@ def _from_frame(frame: pd.DataFrame, asset: dict, risk: float) -> dict:
             "spread": costs.spread_cost(frame, asset),
             "mae": frame["MAE ($)"].to_numpy(dtype=float),
             "size": frame["Size"].to_numpy(dtype=float),
-            "direction": frame["Type"].astype("object").map(SIDE).to_numpy(dtype=float),
+            "direction": frame["Type"].astype("object").map(SIDE).to_numpy(dtype=float),  # pyright: ignore[reportArgumentType]  # stubs reject a dict for map; it is a valid Mapping
             "open": frame["Open time"].to_numpy(),
             "close": frame["Close time"].to_numpy(),
             "sample": frame["Sample type"].to_numpy(dtype=object)}
 
 
-def build(frame: pd.DataFrame, name: str, asset: dict, risk: float) -> dict:
+def build(frame: pd.DataFrame, name: str, asset: Asset, risk: float) -> dict[str, Any]:
     """One strategy's exported trades as a stream.
 
     Args:
@@ -48,7 +51,7 @@ def build(frame: pd.DataFrame, name: str, asset: dict, risk: float) -> dict:
     return {"name": name, "frame": frame, **_from_frame(frame, asset, risk)}
 
 
-def portfolio(packed: pd.DataFrame, asset: dict, risk: float, name: str) -> dict:
+def portfolio(packed: pd.DataFrame, asset: Asset, risk: float, name: str) -> dict[str, Any]:
     """Several strategies as one trade stream, in time order.
 
     Args:
@@ -81,7 +84,7 @@ def samples(stream: dict) -> dict[str, np.ndarray]:
     return {"IS": np.flatnonzero(tag == "IST"), "OOS": np.flatnonzero(tag == "OOS")}
 
 
-def restrict(source: dict, positions: np.ndarray) -> dict:
+def restrict(source: dict, positions: np.ndarray) -> dict[str, Any]:
     """One stream cut down to a subset of its own trades, keeping the same contract.
 
     Args:

@@ -1,6 +1,8 @@
 """Family D's execution: stationary bootstrap inside every calendar window and volatility
 tercile, plus the two time series its page draws."""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
@@ -9,6 +11,18 @@ from portfolio.common.monteCarlo.inputs import config
 from portfolio.common.monteCarlo.model import windows
 from portfolio.common.monteCarlo.simulate import engine, metrics, stitch
 from portfolio.common.monteCarlo.verdict import confidence
+
+
+class FamilyD(TypedDict):
+    """Family D's whole result: window curves, the equity with its marks, the regime split, the stitched path, the calendar."""
+
+    overlapping: list[dict]
+    nonoverlapping: list[dict]
+    equity: dict[str, list]
+    regime: dict
+    stitch: dict
+    calendar: dict[str, dict]
+
 
 
 def _resampled(job: tuple) -> dict:
@@ -73,7 +87,7 @@ def concentration(nets: list[float], total: float) -> float:
     return max(nets) / total if total > 0 else float("nan")
 
 
-def run(source: dict, day: pd.DataFrame, cfg: dict) -> dict:
+def run(source: dict, day: pd.DataFrame, cfg: dict) -> FamilyD:
     """Regime luck: where in time and in market state the edge actually lived.
 
     Args:
@@ -98,7 +112,7 @@ def run(source: dict, day: pd.DataFrame, cfg: dict) -> dict:
     series = {"dates": [dt.date().isoformat() for dt in day.index[scored]],
              "price": day["Close"][scored].tolist(),
              "vol": vol["vol"][scored].tolist(),
-             "bucket": np.digitize(vol["vol"][scored].to_numpy(), edges).tolist()}
+             "bucket": np.digitize(np.asarray(vol["vol"][scored]), edges).tolist()}
     names = list(tagged["positions"])
     buckets = {name: {"n": int(tagged["positions"][name].size),
                       "net": float(source["pnl"][tagged["positions"][name]].sum()), **got}

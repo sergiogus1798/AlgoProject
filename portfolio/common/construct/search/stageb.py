@@ -1,15 +1,31 @@
 """Stage B of the funded search: one combination under three Monte Carlos, every block length, every risk."""
 
 import itertools
+from collections.abc import Iterator
+from typing import Any, TypedDict, cast
 
 import numpy as np
 import pandas as pd
 
 from portfolio.common.construct.mc import blocklen, judge, paths
 from portfolio.common.construct.search import stagea, stageb_data
+from portfolio.common.construct.search.stageb_data import StageBData
+from portfolio.funded.rules.catalog import Plan
 
 
-def risk_grid(plan: dict, cfg: dict) -> np.ndarray:
+class Decision(TypedDict):
+    """The row stage B decides on: the deciding P(pass), its setting, risk and the figures behind it."""
+
+    p: float
+    setting: int
+    risk: dict[str, float]
+    by_flavour: dict[str, float]
+    flavour: str | None
+    length: int | None
+    figures: dict[str, Any]
+
+
+def risk_grid(plan: Plan, cfg: dict) -> np.ndarray:
     """Every risk setting stage B reads: one level of the grid per challenge phase.
 
     Returns:
@@ -19,7 +35,7 @@ def risk_grid(plan: dict, cfg: dict) -> np.ndarray:
     return np.array(list(itertools.product(cfg["funded"]["risk_grid"], repeat=phases)))
 
 
-def flavours(data: dict, idxs: np.ndarray, cfg: dict, rng: np.random.Generator) -> list[tuple]:
+def flavours(data: StageBData, idxs: np.ndarray, cfg: dict, rng: np.random.Generator) -> Iterator[tuple[str, int, bool, dict[str, np.ndarray]]]:
     """The path sets one combination is judged on, generated one at a time.
 
     Returns:
@@ -39,7 +55,7 @@ def flavours(data: dict, idxs: np.ndarray, cfg: dict, rng: np.random.Generator) 
             members, horizon, n_paths, length, rng)
 
 
-def evaluate(data: dict, idxs: np.ndarray, plan: dict, cfg: dict, risk: np.ndarray,
+def evaluate(data: StageBData, idxs: np.ndarray, plan: Plan, cfg: dict, risk: np.ndarray,
              rng: np.random.Generator) -> pd.DataFrame:
     """One combination: every Monte Carlo flavour and block length at every risk setting.
 
@@ -76,7 +92,7 @@ def evaluate(data: dict, idxs: np.ndarray, plan: dict, cfg: dict, risk: np.ndarr
     return pd.concat(frames, ignore_index=True)
 
 
-def decide(rows: pd.DataFrame) -> dict:
+def decide(rows: pd.DataFrame) -> Decision:
     """The setting a combination is read at, and by which Monte Carlo.
 
     Per setting the figure that counts is the lowest P(pass) over every flavour and block
@@ -91,21 +107,31 @@ def decide(rows: pd.DataFrame) -> dict:
         ({phase: r}), `by_flavour` (each flavour's own lowest P(pass) at that setting),
         `flavour`, `length` (the row that decided) and `figures` (that row).
     """
-    worst = rows.groupby("setting")["p_pass"].min()
-    if worst.isna().all():
+    worst: Any = rows.groupby("setting")["p_pass"].min()
+    if bool(worst.isna().all()):
         return {"p": float("nan"), "setting": -1, "risk": {}, "by_flavour": {}, "flavour": None,
                 "length": None, "figures": {}}
-    setting = int(worst.idxmax())
-    at = rows[rows["setting"] == setting]
-    row = at.loc[at["p_pass"].idxmin()]
+    setting = int(cast(Any, worst.idxmax()))
+    at = cast(pd.DataFrame, rows[rows["setting"] == setting])
+    row: Any = at.loc[cast(Any, at["p_pass"]).idxmin()]
     return {"p": float(worst[setting]), "setting": setting,
             "risk": {c[2:]: float(row[c]) for c in rows.columns if c.startswith("r_")},
-            "by_flavour": at.groupby("flavour")["p_pass"].min().to_dict(),
+            "by_flavour": cast(Any, at.groupby("flavour")["p_pass"].min()).to_dict(),
             "flavour": row["flavour"], "length": int(row["length"]), "figures": row.to_dict()}
 
 
-def stability(data: dict, idxs: np.ndarray, plan: dict, cfg: dict, risk: np.ndarray,
-              rng: np.random.Generator) -> dict:
+class Stability(TypedDict):
+    """Re-draws of one combination: the values, their mean and spread, and whether it is unstable."""
+
+    runs: int
+    values: list[float]
+    mean: float
+    spread: float
+    unstable: bool
+
+
+def stability(data: StageBData, idxs: np.ndarray, plan: Plan, cfg: dict, risk: np.ndarray,
+              rng: np.random.Generator) -> Stability:
     """Whether the paths drawn are enough: the deciding figure recomputed on fresh draws.
 
     Args:

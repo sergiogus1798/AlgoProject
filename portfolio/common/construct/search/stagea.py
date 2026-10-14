@@ -1,12 +1,17 @@
 """The funded search's stage A objective: P(pass) of a plan per combination, over a risk grid."""
 
+from typing import cast
+
 import numba
 import numpy as np
 
+from portfolio.funded.rules.catalog import Plan
 from portfolio.funded.rules.machine import _MINDAYS, _RISK, _stage_matrix, _sweep_kernel
 
+from .stagea_data import StageAData
 
-def open_cap(plan: dict, cfg: dict) -> np.ndarray:
+
+def open_cap(plan: Plan, cfg: dict) -> np.ndarray:
     """The most risk a combination may have open at once, per challenge stage (owner, 2026-10-05).
 
     K members each risking r of the initial balance on a trade risk K x r when all are open
@@ -21,7 +26,7 @@ def open_cap(plan: dict, cfg: dict) -> np.ndarray:
                      for s in plan["stages"] if s["stage"] != "funded"])
 
 
-def capped(k: np.ndarray, risk: np.ndarray, plan: dict, cfg: dict) -> np.ndarray:
+def capped(k: np.ndarray, risk: np.ndarray, plan: Plan, cfg: dict) -> np.ndarray:
     """Which risk settings the open-risk cap forbids to combinations of `k` members.
 
     Args:
@@ -33,10 +38,10 @@ def capped(k: np.ndarray, risk: np.ndarray, plan: dict, cfg: dict) -> np.ndarray
     """
     cap = open_cap(plan, cfg)
     risk = risk[:, None] if risk.ndim == 1 else risk
-    return (np.asarray(k)[:, None, None] * risk[None] > cap + 1e-12).any(axis=2)
+    return cast(np.ndarray, (np.asarray(k)[:, None, None] * risk[None] > cap + 1e-12).any(axis=2))
 
 
-def evaluate(data: dict, combos: np.ndarray, plan: dict, cfg: dict) -> np.ndarray:
+def evaluate(data: StageAData, combos: np.ndarray, plan: Plan, cfg: dict) -> np.ndarray:
     """P(pass within the horizon) of `plan`, per combination and risk level.
 
     Args:

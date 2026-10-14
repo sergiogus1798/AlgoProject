@@ -1,11 +1,14 @@
 """This study's histograms and percentile tables turned into contract blocks, in reading units."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
 from core.study import blocks
 from core.study.clip import caption
 from portfolio.common.monteCarlo.contract.words import LABELS, UNITS
+from portfolio.common.monteCarlo.simulate.fan import Bands
 
 # A share of the account is stored as a fraction and read as a percentage.
 SCALE = {"%": 100.0}
@@ -19,7 +22,7 @@ def scale(metric: str) -> float:
 
 
 def distribution(shape: dict, table: dict | None, metric: str, title: str,
-                 note: str = "") -> dict:
+                 note: str = "") -> dict[str, Any]:
     """One stored histogram as a "distribution" block.
 
     Args:
@@ -53,14 +56,14 @@ def distribution(shape: dict, table: dict | None, metric: str, title: str,
             "percentiles": pct, "p": None, "note": note + caption(shape.get("left_out", 0))}
 
 
-def summary(table: dict, metric: str, title: str) -> dict:
+def summary(table: dict, metric: str, title: str) -> dict[str, Any]:
     """One sub-run's percentile table for one statistic, with its moments, as a table block."""
     k = scale(metric)
     rows = [[f"Percentil {q}", v * k] for q, v in table["p"].items()]
     rows += [["Media", table["mean"] * k], ["Mediana", table["median"] * k],
              ["Desviación estándar", table["std"] * k], ["Curtosis (exceso)", table["kurtosis"]],
              ["Backtest", table["observed"] * k], ["Simulaciones utilizables", table["n"]]]
-    return blocks.table(title, pd.DataFrame(rows, columns=["qué", LABELS[metric]]))
+    return blocks.table(title, pd.DataFrame(rows, columns=pd.Index(["qué", LABELS[metric]])))
 
 
 def by_model(runs: dict, titles: dict, q: int, first: tuple[str, dict] | None = None) -> pd.DataFrame:
@@ -79,8 +82,8 @@ def by_model(runs: dict, titles: dict, q: int, first: tuple[str, dict] | None = 
             for title, s in ((titles[k], v) for k, v in runs.items())]
     if first:
         rows.insert(0, [first[0]] + [first[1][m] * scale(m) for m in LABELS])
-    return pd.DataFrame(rows, columns=["modelo"] + [f"{v} ({UNITS[m]})" if UNITS[m] else v
-                                                     for m, v in LABELS.items()])
+    return pd.DataFrame(rows, columns=pd.Index(["modelo"] + [f"{v} ({UNITS[m]})" if UNITS[m] else v
+                                                     for m, v in LABELS.items()]))
 
 
 def overlay(entry: dict, title: str) -> list[dict]:
@@ -90,7 +93,7 @@ def overlay(entry: dict, title: str) -> list[dict]:
             for scope in ("IS", "OOS") if entry.get(scope) is not None]
 
 
-def cone(band: dict, title: str, note: str) -> dict:
+def cone(band: Bands, title: str, note: str) -> dict[str, Any]:
     """A fan.envelope() at 2.5/25/50/75/97.5 as a "cone" block, x in trade order."""
     return {"kind": "cone", "title": title, "unit": "USD", "x": band["at"],
             "bands": {str(q): v for q, v in band["bands"].items()},

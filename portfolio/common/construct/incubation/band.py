@@ -1,5 +1,7 @@
 """The reading of M9: a fresh stretch against the band of equal-length windows of the portfolio's own history."""
 
+from typing import TypedDict
+
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
@@ -13,7 +15,26 @@ def _sharpe(windows: np.ndarray) -> np.ndarray:
 FIGURES = {"pnl": lambda windows: windows.sum(axis=-1), "sharpe": _sharpe}
 
 
-def read(history: np.ndarray, fresh: np.ndarray, figure: str, band: list[float]) -> dict:
+class _BandBase(TypedDict):
+    """The keys every reading has."""
+
+    state: str
+    flagged: bool
+    days: int
+    windows: int
+    independent: int
+
+
+class Band(_BandBase, total=False):
+    """A reading; `value`..`percentile` are absent when there is no band."""
+
+    value: float
+    low: float
+    high: float
+    percentile: float
+
+
+def read(history: np.ndarray, fresh: np.ndarray, figure: str, band: list[float]) -> Band:
     """Where the fresh stretch's figure falls among every window of its length in the history.
 
     Args:

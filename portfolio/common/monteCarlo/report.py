@@ -12,12 +12,13 @@ from core.paths import report_dir
 from core.study import output, verdicts
 from portfolio.common.monteCarlo import load, many, one
 from portfolio.common.monteCarlo.inputs import config
+from portfolio.common.monteCarlo.load import Inputs
 
 LEDE = ("Robustez de una estrategia ya aceptada: cuánto de este resultado es suerte, y de "
         "qué tipo.")
 
 
-def write_one(out: Path, inputs: dict, cfg: dict, strategy: str) -> Path:
+def write_one(out: Path, inputs: Inputs, cfg: dict, strategy: str) -> Path:
     """One strategy's run: only `estrategias/<name>.json` and its page, as crossTF's
     `--strategy` does — `verdict.csv`, `flags.csv`, `monteCarlo.json` and the manifest are
     the population's, and one strategy must not replace them. Its stability section is the
@@ -80,7 +81,7 @@ def main() -> None:
     output.population(out, "monteCarlo", got["population"], title)
     fired = [{"strategy": m["strategy"], **f} for m in got["members"]
              for f in m["summary"]["fired"]]
-    pd.DataFrame(fired, columns=["strategy", "family", "test", "value", "limit", "gate"]
+    pd.DataFrame(fired, columns=pd.Index(["strategy", "family", "test", "value", "limit", "gate"])
                  ).to_csv(out / "flags.csv", index=False)
     command = (f"python3 -m portfolio.common.monteCarlo.report --project {a.project} --databank "
                f"{a.databank} --asset {a.asset} --day {a.day} --seed {a.seed}"

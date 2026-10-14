@@ -1,6 +1,7 @@
 """The engine's knobs: config.yaml with the ledger's thresholds filled and any override applied."""
 
 from pathlib import Path
+from typing import Any
 
 from core.study import config as study_config
 from ledger import thresholds
@@ -9,7 +10,7 @@ FILE = Path(__file__).parents[1] / "config.yaml"
 PAIR_THRESHOLDS = ("pearson", "spearman", "co_loss", "tail", "rolling_whole", "rolling_recent")
 
 
-def load(overrides: list[str] | None = None) -> dict:
+def load(overrides: list[str] | None = None) -> dict[str, Any]:
     """Every knob, `ledger:` placeholders filled, then `section.key=value` overrides applied.
 
     Returns:

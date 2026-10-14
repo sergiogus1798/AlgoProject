@@ -2,8 +2,10 @@
 
 import hashlib
 import json
-from datetime import datetime, timezone as tz
+from datetime import datetime
+from datetime import timezone as tz
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -46,7 +48,7 @@ def path(record: dict, daily: pd.DataFrame) -> pd.Series:
     return (daily["pnl"] * daily["identity"].map(factor)).groupby(daily["day"]).sum().sort_index()
 
 
-def register(run: Path, comparison: dict, scale: dict[str, float]) -> dict:
+def register(run: Path, comparison: dict, scale: dict[str, float]) -> dict[str, Any]:
     """Freeze a judged run's portfolio and the comparison its fresh days will be read with.
 
     Args:
@@ -71,7 +73,7 @@ def register(run: Path, comparison: dict, scale: dict[str, float]) -> dict:
     if (out / "record.json").exists():
         raise SystemExit(f"la cartera {digest[:12]} ya está registrada en {out}: un registro se escribe una vez")
     daily = pd.read_parquet(run / "handoff" / "daily.parquet")
-    daily = daily[daily["segment"].isin(comparison["history"])]
+    daily = cast(pd.DataFrame, daily[daily["segment"].isin(comparison["history"])])
     if daily.empty:
         raise SystemExit(f"la cartera no tiene días en {comparison['history']}")
     record = {"schema": 1, "portfolio": portfolio, "portfolio_hash": digest, "scale": scale,
@@ -121,6 +123,6 @@ def validate(record: dict, rows: pd.DataFrame) -> list[str]:
         problems.append(f"hay días no posteriores a la historia registrada (acaba el {record['history']['to']})")
     if rows.duplicated(["day", "identity"]).any():
         problems.append("hay (día, identidad) repetidos")
-    if not np.isfinite(pd.to_numeric(rows["pnl"], errors="coerce")).all():
+    if not np.isfinite(np.asarray(pd.to_numeric(rows["pnl"], errors="coerce"))).all():
         problems.append("hay pnl no numérico o no finito")
     return problems

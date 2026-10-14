@@ -1,9 +1,31 @@
 """A prop-firm challenge as a state machine over server-day equity: pass, fail (and on which rule), or open."""
 
+from collections.abc import Mapping
+from typing import Any, TypedDict
+
 import numba
 import numpy as np
 
-from portfolio.funded.rules.floors import consistency_ok, daily_floor, days_ok, max_floor, target_met
+from portfolio.funded.rules.catalog import Plan
+from portfolio.funded.rules.floors import (
+    consistency_ok,
+    daily_floor,
+    days_ok,
+    max_floor,
+    target_met,
+)
+
+
+class Challenge(TypedDict):
+    """How one start day went through the challenge stages: pass, fail or still open, and where."""
+
+    outcome: str
+    stage: str
+    day: int
+    rule: str | None
+    stage_days: list[int]
+    flags: list[dict]
+
 
 # stage column layout shared by `sweep`'s numba kernel: keep in sync with `_stage_matrix` below.
 _TARGET, _DLOSS, _MLOSS, _MODE, _BASIS, _MINDAYS, _MDKIND, _PPCT, _CONS, _CKIND, _TLIMIT, _RISK = range(12)
@@ -14,8 +36,8 @@ _TRADING, _PROFITABLE = 0, 1
 _NONE_K, _BEST_TOTAL, _BEST_POS = 0, 1, 2
 
 
-def challenge(days: dict[str, np.ndarray], plan: dict, risk: dict[str, float], start: int,
-              horizon: int = 0) -> dict:
+def challenge(days: dict[str, np.ndarray], plan: Plan, risk: dict[str, float], start: int,
+              horizon: int = 0) -> Challenge:
     """Walk one start day through every challenge stage of a plan — the readable reference.
 
     Args:
@@ -91,7 +113,7 @@ def challenge(days: dict[str, np.ndarray], plan: dict, risk: dict[str, float], s
             "stage_days": stage_days, "flags": plan["flags"]}
 
 
-def _stage_matrix(plan: dict, risk: dict[str, float]) -> np.ndarray:
+def _stage_matrix(plan: Mapping[str, Any], risk: dict[str, float]) -> np.ndarray:
     """Challenge stages of a plan, packed into the numeric layout `sweep`'s kernel reads."""
     mode_code = {"static": _STATIC, "trailing": _TRAILING, "eod_trailing": _EOD_TRAILING}
     basis_code = {"balance": _BAL, "max_be": _MAXBE}
@@ -108,7 +130,7 @@ def _stage_matrix(plan: dict, risk: dict[str, float]) -> np.ndarray:
     return np.array(rows, dtype=np.float64)
 
 
-def sweep(days: dict[str, np.ndarray], plan: dict, risk: dict[str, float], starts: np.ndarray,
+def sweep(days: dict[str, np.ndarray], plan: Mapping[str, Any], risk: dict[str, float], starts: np.ndarray,
           horizon: int = 0) -> np.ndarray:
     """`challenge`, from many start days at once — numba, identical to it day for day.
 

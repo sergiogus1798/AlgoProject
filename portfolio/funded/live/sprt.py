@@ -1,5 +1,18 @@
 """Wald's sequential test on a funded account's per-trade results in R."""
 
+from typing import TypedDict
+
+
+class Verdict(TypedDict):
+    """The SPRT's reading after `n` trades: continue, raise or retire, with the statistic and its bounds."""
+
+    verdict: str
+    n: int
+    stat: float
+    drift: float
+    lower: float
+    upper: float
+
 
 def boundaries(sprt: dict) -> tuple[float, float, float]:
     """The drift and the two limits of S_n - drift*n, derived from the test's parameters.
@@ -15,7 +28,7 @@ def boundaries(sprt: dict) -> tuple[float, float, float]:
     return (sprt["mu0"] + sprt["mu1"]) / 2, sprt["ln_b"] * scale, sprt["ln_a"] * scale
 
 
-def run(results_r: list[float], sprt: dict) -> dict:
+def run(results_r: list[float], sprt: dict) -> Verdict:
     """Walk the trades in order and stop at the first boundary crossed.
 
     Args:

@@ -5,6 +5,7 @@ from pathlib import Path
 import yaml
 
 from core.paths import funding_dir
+from portfolio.funded.catalog.schema import Catalogue
 
 PHASES = ("phase1", "phase2", "phase3")
 
@@ -28,7 +29,7 @@ def _stage_matches(selector: str, stage: str) -> bool:
     return selector == "all" or stage == selector or (selector == "phases" and stage in PHASES)
 
 
-def apply(rows: dict, rules: list[dict]) -> None:
+def apply(rows: Catalogue, rules: list[dict]) -> None:
     """Write each known, non-conflicting rule value into its column, recording where it came from.
 
     A curated value wins over the scraped one: it exists precisely because the site is silent or

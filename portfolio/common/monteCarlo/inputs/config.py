@@ -1,6 +1,7 @@
 """The single source of truth for every tunable of the study, and what N makes of it."""
 
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -13,7 +14,7 @@ HEADLINE = "stationary"     # its drawdown distribution is the order-luck one th
 BASELINE = "iid_bootstrap"  # the independence baseline of the composition family
 
 
-def load(overrides: list[str] | None = None) -> dict:
+def load(overrides: list[str] | None = None) -> dict[str, Any]:
     """Read config.yaml and apply command-line overrides.
 
     Args:

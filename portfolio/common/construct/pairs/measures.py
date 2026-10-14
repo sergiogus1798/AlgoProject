@@ -1,6 +1,6 @@
 """Pairwise correlation measures on aligned P&L series, signed, pairwise-finite."""
 
-from typing import Callable
+from typing import Any, Callable, cast
 
 import numpy as np
 from scipy.stats import pearsonr, spearmanr
@@ -32,7 +32,7 @@ def pearson(a: np.ndarray, b: np.ndarray, cfg: dict) -> float:
     a2, b2 = _aligned(a, b)
     if a2.size < MIN_FINITE:
         return float("nan")
-    return float(pearsonr(a2, b2)[0])
+    return float(cast(Any, pearsonr(a2, b2))[0])
 
 
 def spearman(a: np.ndarray, b: np.ndarray, cfg: dict) -> float:
@@ -40,7 +40,7 @@ def spearman(a: np.ndarray, b: np.ndarray, cfg: dict) -> float:
     a2, b2 = _aligned(a, b)
     if a2.size < MIN_FINITE:
         return float("nan")
-    return float(spearmanr(a2, b2)[0])
+    return float(cast(Any, spearmanr(a2, b2))[0])
 
 
 def co_loss(a: np.ndarray, b: np.ndarray, cfg: dict) -> float:
@@ -68,7 +68,7 @@ def tail(a: np.ndarray, b: np.ndarray, cfg: dict) -> float:
     tail_mask = (a2 <= np.quantile(a2, q)) | (b2 <= np.quantile(b2, q))
     if tail_mask.sum() < MIN_FINITE:
         return float("nan")
-    return float(pearsonr(a2[tail_mask], b2[tail_mask])[0])
+    return float(cast(Any, pearsonr(a2[tail_mask], b2[tail_mask]))[0])
 
 
 MEASURES: dict[str, Callable[[np.ndarray, np.ndarray, dict], float]] = {

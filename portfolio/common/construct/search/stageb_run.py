@@ -1,22 +1,26 @@
 """Stage B over a whole shortlist, its winner, and the same measures re-read on another stretch."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
 from portfolio.common.construct.search import stageb, stageb_data
+from portfolio.common.construct.search.stageb_data import StageBData
 from portfolio.funded.rules import machine
+from portfolio.funded.rules.catalog import Plan
 
 FLAVOURS = ("D", "T1", "T2")
 
 
-def rows_of(data: dict, members: str) -> np.ndarray:
+def rows_of(data: StageBData, members: str) -> np.ndarray:
     """A combination's member rows in `data`, from its identities joined with "+"."""
     index = {identity: row for row, identity in enumerate(data["identities"])}
     return np.array([index[m] for m in members.split("+")], dtype=np.int64)
 
 
-def run(shortlisted: pd.DataFrame, data: dict, plan: dict, cfg: dict,
-        rng: np.random.Generator) -> dict:
+def run(shortlisted: pd.DataFrame, data: StageBData, plan: Plan, cfg: dict,
+        rng: np.random.Generator) -> dict[str, Any]:
     """Every shortlisted combination through stage B, and the one that comes out best.
 
     Args:
@@ -52,18 +56,18 @@ def run(shortlisted: pd.DataFrame, data: dict, plan: dict, cfg: dict,
                          or k == "p_open"}})
     table = pd.concat([shortlisted.reset_index(drop=True).drop(columns="members"),
                        pd.DataFrame(table)], axis=1)
-    winner = table.loc[table["p"].idxmax()].to_dict() if table["p"].notna().any() else None
+    winner = table.loc[table["p"].idxmax()].to_dict() if bool(table["p"].notna().any()) else None
     return {"rows": pd.concat(every, ignore_index=True), "table": table, "winner": winner,
             "n_settings": len(risk)}
 
 
-def risk_of(winner: dict, plan: dict) -> np.ndarray:
+def risk_of(winner: dict, plan: Plan) -> np.ndarray:
     """The risk per phase a winner was kept at, float64 [1, phases]."""
     return np.array([[winner[f"r_{name}"] for name in stageb.judge.stage_names(plan)]])
 
 
-def judged(data: dict, members: str, plan: dict, cfg: dict, risk: np.ndarray,
-           rng: np.random.Generator) -> dict:
+def judged(data: StageBData, members: str, plan: Plan, cfg: dict, risk: np.ndarray,
+           rng: np.random.Generator) -> dict[str, Any]:
     """One combination at one fixed risk, on another stretch: the real path and the Monte Carlos.
 
     Args:

@@ -79,12 +79,12 @@ def sequence(unit: np.ndarray, graph: np.ndarray, base: np.ndarray, candidates: 
         judged = judge(unit, graph, base, np.array(left), how).rename(columns={"enters": "admissible"})
         judged.insert(0, "round", len(rounds) + 1)
         gains = judged["increment"].where(judged["admissible"])
-        judged["enters"] = gains.notna() & (judged.index == gains.idxmax()) if gains.notna().any() else False
+        judged["enters"] = gains.notna() & (judged.index == gains.idxmax()) if bool(gains.notna().any()) else False
         rounds.append(judged)
-        if not judged["enters"].any():
+        if not bool(judged["enters"].any()):
             break
         winner = int(judged.loc[judged["enters"], "candidate"].iloc[0])
         base = np.append(base, winner)
         left.remove(winner)
     columns = ["round", "candidate", "blocked_by", "increment", "admissible", "enters"]
-    return pd.concat(rounds, ignore_index=True) if rounds else pd.DataFrame(columns=columns)
+    return pd.concat(rounds, ignore_index=True) if rounds else pd.DataFrame(columns=pd.Index(columns))

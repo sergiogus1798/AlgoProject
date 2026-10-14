@@ -1,7 +1,9 @@
 """The words the owner reads: every fired check as a sentence, and why the verdict is what it is."""
 
 from portfolio.common.monteCarlo.model import stress
+from portfolio.common.monteCarlo.run import Analysis
 from portfolio.common.monteCarlo.verdict import scoring
+from portfolio.common.monteCarlo.verdict.gates import Flag
 
 LABELS = {"net": "Beneficio neto", "return_pct": "Retorno", "dd": "Drawdown $",
           "dd_pct": "Drawdown %", "ret_dd": "Ret/DD", "sharpe": "Sharpe por operación",
@@ -73,7 +75,7 @@ TITLES = {**stress.TITLES,
           "sample": "Muestra insuficiente", "oos_thin": "OOS insuficiente para la PSR"}
 
 
-def title(flag: dict) -> str:
+def title(flag: Flag) -> str:
     """One fired check's name, for a heading — never the internal key.
 
     Args:
@@ -86,7 +88,7 @@ def title(flag: dict) -> str:
     return TITLES[flag["test"]]
 
 
-def sentence(flag: dict) -> str:
+def sentence(flag: Flag) -> str:
     """One fired check, in plain language, with its own number inside.
 
     Args:
@@ -99,7 +101,7 @@ def sentence(flag: dict) -> str:
     return FLAGS[flag["test"]].format(value=flag["value"], limit=flag["limit"])
 
 
-def rationale(result: dict, verdict: dict) -> str:
+def rationale(result: Analysis, verdict: scoring.Verdict) -> str:
     """Why the verdict is what it is, naming the metric that decided it.
 
     Args:

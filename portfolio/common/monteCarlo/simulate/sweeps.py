@@ -1,5 +1,7 @@
 """Which reordering and resampling runs a stream of this size gets, and the numbers they give."""
 
+import numpy as np
+
 from engines.resample import draws
 from portfolio.common.monteCarlo.inputs import config
 from portfolio.common.monteCarlo.simulate import engine
@@ -28,7 +30,7 @@ def plan(n_trades: int, cfg: dict) -> list[dict]:
              "title": draws.title(model, block)} for label, model, block, family in out]
 
 
-def execute(data: dict, steps: list[dict], n_sims: int, cfg: dict) -> dict:
+def execute(data: dict, steps: list[dict], n_sims: int, cfg: dict) -> dict[str, dict[str, np.ndarray]]:
     """Run every sub-run of a plan.
 
     Args:

@@ -3,18 +3,26 @@
 import numba
 import numpy as np
 
-from portfolio.funded.rules.machine import (_BAL, _BEST_TOTAL, _MINDAYS, _PROFITABLE, _STATIC,
-                                            _TRAILING, _stage_matrix)
+from portfolio.funded.rules.catalog import Plan
+from portfolio.funded.rules.machine import (
+    _BAL,
+    _BEST_TOTAL,
+    _MINDAYS,
+    _PROFITABLE,
+    _STATIC,
+    _TRAILING,
+    _stage_matrix,
+)
 
 RULES = ("daily_loss", "max_loss", "time_limit")       # codes 1, 2, 3 of the kernel
 
 
-def stage_names(plan: dict) -> list[str]:
+def stage_names(plan: Plan) -> list[str]:
     """The challenge stages of a plan, in order (the funded stage is not a phase to pass)."""
     return [s["stage"] for s in plan["stages"] if s["stage"] != "funded"]
 
 
-def outcomes(paths: dict[str, np.ndarray], plan: dict, risk: np.ndarray) -> dict[str, np.ndarray]:
+def outcomes(paths: dict[str, np.ndarray], plan: Plan, risk: np.ndarray) -> dict[str, np.ndarray]:
     """Every path through every risk setting, from its day 0.
 
     The day loop is `portfolio.funded.rules.machine`'s own (`tests/test_portfolio_stageb.py`

@@ -1,5 +1,7 @@
 """Encargo 33 §3.5 as a rule: which rows of the bank tables may be bought, why the others may not, and the one chosen."""
 
+from typing import Any, TypedDict
+
 # The gates, in the order they are asked; the first that fails is the row's reason (Spanish, the owner reads it).
 GATES = (
     ("own", "cartera de otro plan ({source_plan})"),
@@ -11,7 +13,17 @@ GATES = (
 )
 
 
-def facts(row: dict, own: bool, source: dict, h: float) -> dict:
+
+class Choice(TypedDict):
+    """Every candidate row, the one chosen, the runner-up and whether they are a statistical tie."""
+
+    rows: list[dict]
+    chosen: dict | None
+    runner_up: dict | None
+    tie: bool
+
+
+def facts(row: dict, own: bool, source: dict, h: float) -> dict[str, Any]:
     """A table row with what the gates read beside it."""
     return {**row, "h": h, "is_own": own, "source_plan": source.get("plan"),
             "verdict_pass": source.get("verdict_pass"), "verdict_label": source.get("verdict_label"),
@@ -40,7 +52,7 @@ def ranks(rows: list[dict], hs: list[float]) -> None:
             r[f"rank_h{round(100 * h)}"] = i + 1
 
 
-def decide(per_plan: dict[str, dict], owner: dict, ignore_verdict: bool) -> dict:
+def decide(per_plan: dict[str, dict], owner: dict, ignore_verdict: bool) -> Choice:
     """Judge every row, pick the highest EV at the deciding haircut among the rows that pass every gate.
 
     Args:
@@ -63,6 +75,6 @@ def decide(per_plan: dict[str, dict], owner: dict, ignore_verdict: bool) -> dict
     eligible = [r for r in rows if r["reason"] is None]
     chosen = eligible[0] if eligible else None
     runner_up = eligible[1] if len(eligible) > 1 else None
-    tie = bool(runner_up) and (chosen["ev"] - runner_up["ev"]
+    tie = runner_up is not None and chosen is not None and (chosen["ev"] - runner_up["ev"]
                                < 2 * (chosen["ev_se"] ** 2 + runner_up["ev_se"] ** 2) ** 0.5)
     return {"rows": rows, "chosen": chosen, "runner_up": runner_up, "tie": tie}

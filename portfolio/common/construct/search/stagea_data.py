@@ -1,11 +1,27 @@
 """Per-member build-day and M5 block arrays for one firm, scaled to per-(risk x size) units."""
 
+from typing import TypedDict, cast
+
 import numpy as np
 import pandas as pd
 
 
+class StageAData(TypedDict):
+    """Per-member build-day and M5 block arrays of one firm, as `prepare()` returns them."""
+
+    identities: np.ndarray
+    days: np.ndarray
+    closed: np.ndarray
+    float_end: np.ndarray
+    opened: np.ndarray
+    low5: np.ndarray
+    high5: np.ndarray
+    block_day: np.ndarray
+    lot_unit: np.ndarray
+
+
 def prepare(universe: dict, firm: str, members: list[str], calendar: dict,
-            factors: dict[str, float], min_size: dict[str, float]) -> dict:
+            factors: dict[str, float], min_size: dict[str, float]) -> StageAData:
     """Build the arrays `stagea.evaluate` sums over combinations of.
 
     Args:
@@ -35,7 +51,7 @@ def prepare(universe: dict, firm: str, members: list[str], calendar: dict,
     for i, identity in enumerate(members):
         f = factors[identity]
         rows = frame[frame["identity"] == identity]
-        pos = day_pos[rows["day"].to_numpy().astype("datetime64[ns]").astype("int64")].to_numpy()
+        pos = cast(pd.Series, day_pos[rows["day"].to_numpy().astype("datetime64[ns]").astype("int64")]).to_numpy()
         closed[i, pos] = rows["closed"].to_numpy() * f
         opened[i, pos] = rows["opened"].to_numpy()
         fe = np.full(d, np.nan)

@@ -1,11 +1,21 @@
 """The real path's null (Q11 d; owner 2026-10-05, R6): random admissible combinations of one size."""
 
+from typing import TypedDict
+
 import numpy as np
 
 from portfolio.common.construct.search import exhaustive, greedy, objective
 
 
-def draw(graph: np.ndarray, k: int, n: int, limit: int, rng: np.random.Generator) -> dict:
+class Draw(TypedDict):
+    """Combinations drawn: their masks, the draw index and the size of the space (None when unknown)."""
+
+    members: np.ndarray
+    index: np.ndarray
+    n_space: int | None
+
+
+def draw(graph: np.ndarray, k: int, n: int, limit: int, rng: np.random.Generator) -> Draw:
     """`n` random cliques of size `k`, with replacement — no search per draw.
 
     Args:

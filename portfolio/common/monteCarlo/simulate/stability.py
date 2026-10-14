@@ -1,10 +1,24 @@
 """Whether the simulation count is high enough: the same gate numbers, computed again."""
 
+from typing import TypedDict
+
 import numpy as np
 
 from portfolio.common.monteCarlo.inputs import config
 from portfolio.common.monteCarlo.model import stress
 from portfolio.common.monteCarlo.simulate import engine
+
+
+class Stability(TypedDict):
+    """How much each gate-driving number moves between independent runs."""
+
+    runs: int
+    seeds: list[int]
+    by_number: dict[str, dict[str, float]]
+    worst: str
+    worst_spread: float
+    unstable: bool
+
 
 # The percentiles a gate is read from. Nothing else is repeated: the point is to price the
 # noise in the numbers that decide, not to run the whole study eight times.
@@ -31,7 +45,7 @@ def _once(data: dict, cfg: dict, sims: int, seed: int) -> dict[str, float]:
             for label, arr in got.items() for metric, q in DRIVERS}
 
 
-def spread(source: dict, cfg: dict) -> dict:
+def spread(source: dict, cfg: dict) -> Stability:
     """How much each gate-driving number moves between independent runs.
 
     Args:
@@ -53,7 +67,7 @@ def spread(source: dict, cfg: dict) -> dict:
     seeds = [config.seed(cfg) + 1 + i for i in range(repeats)]
     runs = list(engine.pool(cfg).map(_once, [data] * repeats, [cfg] * repeats,
                                      [sims] * repeats, seeds))
-    out = {}
+    out: dict[str, dict[str, float]] = {}
     for key in runs[0]:
         values = np.array([r[key] for r in runs])
         scale = abs(values.mean()) or 1.0

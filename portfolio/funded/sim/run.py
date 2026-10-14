@@ -6,6 +6,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -14,11 +15,22 @@ from core.paths import portfolio_dir
 from core.study import config as study_config
 from core.study import result as study_result
 from portfolio.funded.sim import bank, inputs, monkey, report, table, trials
+from portfolio.funded.sim.plans import Terms
+
+
+class Ran(table.Built):
+    """`table.build()`'s tables plus the study-contract `result`, the plan `variants`, what was `skipped` and the rule `flags`."""
+
+    result: dict[str, Any]
+    variants: list[Terms]
+    skipped: dict[str, list[str]]
+    flags: dict[str, dict]
+
 
 
 def generated(args: argparse.Namespace, seed: int) -> tuple[dict, dict]:
     """A path set drawn now from a server-day table with stage B's block bootstrap (agent C's module)."""
-    from portfolio.common.construct.mc import paths as mc_paths    # lazy: this package runs without it
+    from portfolio.common.construct.mc import paths as mc_paths   # lazy: this package runs without it
     frame = pd.read_parquet(args.days)
     days = {name: frame[name].to_numpy() for name in bank.ARRAYS}
     arrays = mc_paths.daily_blocks(days, args.horizon, args.n_paths, args.mean_block,
@@ -28,7 +40,7 @@ def generated(args: argparse.Namespace, seed: int) -> tuple[dict, dict]:
 
 
 def run(paths: dict, meta: dict, cfg: dict, out: Path, seed: int, zero: dict | None = None,
-        ledger: dict | None = None) -> dict:
+        ledger: dict | None = None) -> Ran:
     """Simulate, write `table.parquet`, `addons.parquet`, `search.parquet`, `result.json`, `manifest.json`.
 
     Args:
@@ -55,13 +67,14 @@ def run(paths: dict, meta: dict, cfg: dict, out: Path, seed: int, zero: dict | N
     for plan in variants:
         for f in plan["flags"]:
             flags.setdefault(f["rule_key"], {**f, "plans": set()})["plans"].add(plan["plan_key"])
-    built["result"] = report.contract(built, cfg, meta, flags, started)
+    result = report.contract(built, cfg, meta, flags, started)
     out.mkdir(parents=True, exist_ok=True)
     for name in ("rows", "addons", "search"):
         pd.DataFrame(built[name]).to_parquet(out / f"{'table' if name == 'rows' else name}.parquet")
-    (out / "result.json").write_text(json.dumps(built["result"], ensure_ascii=False), encoding="utf-8")
+    (out / "result.json").write_text(json.dumps(result, ensure_ascii=False), encoding="utf-8")
     row = None
     if not meta["synthetic"]:
+        assert ledger is not None   # a real-data run always comes with its ledger cell
         row = trials.record(ledger["study"], ledger["symbol"], ledger["segment"], built["search"],
                             len(built["rows"]), study_config.fingerprint(cfg))
     (out / "manifest.json").write_text(json.dumps({
@@ -70,12 +83,13 @@ def run(paths: dict, meta: dict, cfg: dict, out: Path, seed: int, zero: dict | N
         "skipped_addons": skipped, "configurations": len(built["search"]), "ledger": row,
         "wall_s": round(time.time() - started, 2)}, ensure_ascii=False, default=str, indent=1),
         encoding="utf-8")
-    return {**built, "variants": variants, "skipped": skipped, "flags": flags}
+    return {"rows": built["rows"], "addons": built["addons"], "search": built["search"], "result": result,
+            "variants": variants, "skipped": skipped, "flags": flags}
 
 
 def main() -> None:
     """Parse, refuse what the owner has not given, run, print the table and the sentence."""
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     parser.add_argument("--paths", type=Path, help="path set .npz (inputs.paths)")
     parser.add_argument("--days", type=Path, help="server-day table .parquet, to draw the paths now")
     parser.add_argument("--horizon", type=int, help="with --days: path days per draw")
@@ -92,7 +106,7 @@ def main() -> None:
     parser.add_argument("--set", action="append", default=[], metavar="section.key=value")
     args = parser.parse_args()
     cfg = inputs.load(args.set)
-    seed = args.seed if args.seed is not None else int(np.random.SeedSequence().entropy % 2**32)
+    seed = args.seed if args.seed is not None else int(cast(int, np.random.SeedSequence().entropy) % 2**32)
     missing = inputs.refuse(cfg) + table.variants(cfg)[1]
     if not (args.paths or args.days):
         missing.append("--paths <archivo.npz> o --days <tabla.parquet>: los caminos sobre los que se simula")

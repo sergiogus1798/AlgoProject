@@ -33,7 +33,7 @@ def table(daily_build: pd.DataFrame, monthly_build: pd.DataFrame, cfg: dict) -> 
     identities = sorted(daily_build.columns)
     pairs = list(itertools.combinations(identities, 2))
     if not pairs:
-        return pd.DataFrame(columns=COLUMNS)
+        return pd.DataFrame(columns=pd.Index(COLUMNS))
     _STATE.update(
         pcfg=cfg["pairs"], pairs=pairs,
         stress=daily_build.index.isin(stress.stress_days(daily_build, cfg["pairs"]["stress_quantile"])),
@@ -55,7 +55,7 @@ def _chunk(start: int) -> pd.DataFrame:
     rows = []
     for i, j in _STATE["pairs"][start:start + CHUNK_PAIRS]:
         rows.extend(_pair_rows(i, j, m[i], m[j], d[i], d[j], _STATE["stress"], pcfg, _STATE["ranks"]))
-    return pd.DataFrame(rows, columns=COLUMNS)
+    return pd.DataFrame(rows, columns=pd.Index(COLUMNS))
 
 
 def _pair_rows(i: str, j: str, am: np.ndarray, bm: np.ndarray, ad: np.ndarray, bd: np.ndarray,

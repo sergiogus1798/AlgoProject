@@ -2,13 +2,24 @@
 
 import json
 from pathlib import Path
+from typing import Any, TypedDict
 
 import pandas as pd
 
 from core.paths import portfolio_dir
 
 
-def read(folder: Path) -> dict:
+class BankTable(TypedDict):
+    """One bank run read back: its folder, manifest and the table and add-on rows."""
+
+    folder: Path
+    manifest: dict[str, Any]
+    rows: list[dict]
+    addons: list[dict]
+
+
+
+def read(folder: Path) -> BankTable:
     """One bank run: `folder`, `manifest`, `rows` and `addons` (lists of dicts, the parquet's columns)."""
     return {"folder": folder,
             "manifest": json.loads((folder / "manifest.json").read_text(encoding="utf-8")),
@@ -16,7 +27,7 @@ def read(folder: Path) -> dict:
             "addons": pd.read_parquet(folder / "addons.parquet").to_dict("records")}
 
 
-def runs(root: Path | None = None) -> list[dict]:
+def runs(root: Path | None = None) -> list[BankTable]:
     """Every bank run on real paths under a folder, newest first (the folder's stamp orders them).
 
     Args:
@@ -27,7 +38,7 @@ def runs(root: Path | None = None) -> list[dict]:
     return [r for r in found if not r["manifest"]["paths"]["synthetic"]]
 
 
-def per_plan(tables: list[dict]) -> dict[str, dict]:
+def per_plan(tables: list[BankTable]) -> dict[str, dict]:
     """For every plan, the table that speaks for it.
 
     A portfolio is chosen per plan (PLAN §14): the newest table drawn from the portfolio of

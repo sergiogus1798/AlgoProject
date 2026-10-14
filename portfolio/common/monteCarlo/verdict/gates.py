@@ -1,12 +1,26 @@
 """What disqualifies a strategy. Every threshold in the study lives here and nowhere else."""
 
+from typing import TypedDict
+
+from portfolio.common.monteCarlo.run import Analysis
 from portfolio.common.monteCarlo.verdict import confidence
+
+
+class Flag(TypedDict):
+    """One failed or flagged check: the family, the test, what it measured and what it had to clear."""
+
+    family: str
+    test: str
+    value: float
+    limit: float
+    gate: bool
+
 
 # A sub-test's floor: which numbers of the Family C entry are read, and against what.
 C_FLOORS = {"skip": ("keep", "skip_keep_frac"), "fill_degrade": ("keep", "fill_keep_frac")}
 
 
-def _flag(family: str, test: str, value: float, limit: float, gate: bool) -> dict:
+def _flag(family: str, test: str, value: float, limit: float, gate: bool) -> Flag:
     """One failed or flagged check.
 
     Args:
@@ -24,7 +38,7 @@ def _flag(family: str, test: str, value: float, limit: float, gate: bool) -> dic
             "limit": float(limit), "gate": gate}
 
 
-def tiers(result: dict, cfg: dict) -> dict:
+def tiers(result: Analysis, cfg: dict) -> dict[str, str]:
     """The sample-size tier of every statistic a gate is read from.
 
     Args:
@@ -45,7 +59,7 @@ def tiers(result: dict, cfg: dict) -> dict:
     return {**out, "worst": confidence.worst(list(out.values()))}
 
 
-def _family_c(result: dict, cfg: dict) -> list[dict]:
+def _family_c(result: Analysis, cfg: dict) -> list[dict]:
     """The four execution sub-tests against their floors.
 
     Args:
@@ -81,7 +95,7 @@ def passing(rows: list[dict]) -> float:
     return len([r for r in usable if r["net_5"] > 0]) / len(usable) if usable else 0.0
 
 
-def check(result: dict, cfg: dict) -> list[dict]:
+def check(result: Analysis, cfg: dict) -> list[Flag]:
     """Every gate and every flag, in reading order.
 
     Args:

@@ -26,7 +26,7 @@ SERIAL = False
 PROGRESS = None
 
 
-def payload(stream: dict, positions: np.ndarray | None = None) -> dict:
+def payload(stream: dict, positions: np.ndarray | None = None) -> dict[str, np.ndarray]:
     """The part of a stream a worker process needs.
 
     Args:
@@ -131,7 +131,7 @@ def _seeds(seed: int, kind: str, model: str, block: int, n_chunks: int) -> list:
 
 
 def single(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict,
-           seed: int) -> dict:
+           seed: int) -> dict[str, np.ndarray]:
     """Simulate one small sub-test here, without starting a pool.
 
     Args:
@@ -153,7 +153,7 @@ def single(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict
 
 
 def sequential(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict,
-               seed: int) -> dict:
+               seed: int) -> dict[str, np.ndarray]:
     """Simulate one sub-test here, in chunks, without starting a pool.
 
     Args:
@@ -180,7 +180,7 @@ def sequential(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: 
 
 
 def run(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict,
-        title: str, seed: int) -> dict:
+        title: str, seed: int) -> dict[str, np.ndarray]:
     """Simulate one sub-test and collect its statistics.
 
     Args:

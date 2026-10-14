@@ -4,21 +4,31 @@ import argparse
 import json
 import resource
 import time
-from datetime import datetime, timezone as tz
+from datetime import datetime
+from datetime import timezone as tz
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from core.archive import read as archive_read
-from ledger.study import study_id
-from core.paths import portfolio_dir
 from core.manifest import fresh_dir
+from core.paths import portfolio_dir
+from ledger.study import study_id
+from portfolio.common.construct.search import (
+    admissible,
+    genetic,
+    greedy,
+    stagea,
+    stagea_data,
+    trials,
+)
 from portfolio.funded.rules import catalog
 
 from .equity import universe
-from .inputs import config, pool as pool_mod, risk
-from portfolio.common.construct.search import admissible, genetic, greedy, stagea, stagea_data, trials
+from .inputs import config, risk
+from .inputs import pool as pool_mod
 
 RUNS = portfolio_dir() / "runs"
 
@@ -64,7 +74,7 @@ def refuse_uncapped(cfg: dict) -> None:
                          "operación). No lleva valor por defecto: --set funded.open_risk_cap=<fracción>")
 
 
-def build(pool_name: str, plan_key: str, cfg: dict, seed: int) -> dict:
+def build(pool_name: str, plan_key: str, cfg: dict, seed: int) -> dict[str, Any]:
     """Run the whole funded search: universe, sizing, pair screen, greedy seeds + GA.
 
     Args:
@@ -192,6 +202,7 @@ def summarise(result: dict, out: Path | None) -> str:
     lines.append(f"Tope de riesgo abierto: miembros × riesgo ≤ {result['open_risk_cap']:g} × pérdida "
                  f"diaria máxima {daily:.1%} = {result['open_risk_cap'] * daily:.2%} del balance inicial; "
                  f"prohíbe {cap['capped']} de {cap['pairs']} pares (cartera, riesgo) evaluados")
+    row: Any
     for row in top.itertuples():
         names = ", ".join(identities[i][:8] for i in row.key)
         lines.append(f"  K={len(row.key)} P(pass)={row.score:.3f} r={row.level:.3%} [{names}]")

@@ -1,20 +1,24 @@
 """The portfolio's one calendar (owner, Q1), and what a member borrows from its own other segments."""
 
+from typing import cast
+
 import pandas as pd
 
 from core import assetdata
 
 SEGMENTS = ("build", "oos1", "oos2")
 
+Calendar = dict[str, tuple[pd.Timestamp, pd.Timestamp]]
+
 
 def _bound(value: int | str, end: bool) -> pd.Timestamp:
     """One segment bound, inclusive: a bare year's Jan 1 or Dec 31, or an explicit date."""
     if isinstance(value, int):
-        return pd.Timestamp(value, 12, 31) if end else pd.Timestamp(value, 1, 1)
-    return pd.Timestamp(value)
+        return cast(pd.Timestamp, pd.Timestamp(value, 12, 31) if end else pd.Timestamp(value, 1, 1))
+    return cast(pd.Timestamp, pd.Timestamp(value))
 
 
-def combine(segments_by_symbol: dict[str, dict]) -> dict:
+def combine(segments_by_symbol: dict[str, dict]) -> Calendar:
     """The portfolio calendar (Q1) from each member's own `segments` block.
 
     Args:
@@ -44,7 +48,7 @@ def combine(segments_by_symbol: dict[str, dict]) -> dict:
     return calendar
 
 
-def pseudo(calendar: dict, start: str) -> dict:
+def pseudo(calendar: Calendar, start: str) -> Calendar:
     """A test calendar: oos1 cut at a date, its tail renamed oos2 — the real oos2 is not in it.
 
     Args:
@@ -56,10 +60,10 @@ def pseudo(calendar: dict, start: str) -> dict:
         It exercises the code that reads a later segment; it is never a holdout.
     """
     cut, (lo, hi) = pd.Timestamp(start), calendar["oos1"]
-    return {**calendar, "oos1": (lo, cut - pd.Timedelta(days=1)), "oos2": (cut, hi)}
+    return cast(Calendar, {**calendar, "oos1": (lo, cut - pd.Timedelta(days=1)), "oos2": (cut, hi)})
 
 
-def portfolio(symbols: list[str]) -> dict:
+def portfolio(symbols: list[str]) -> Calendar:
     """The portfolio calendar over a list of assets, read from `assets/_policy.yaml`."""
     return combine({symbol: assetdata.load(symbol)["segments"] for symbol in symbols})
 

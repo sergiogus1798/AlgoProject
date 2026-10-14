@@ -25,4 +25,4 @@ def paths(daily: pd.DataFrame, calendar: dict, scale: np.ndarray, members: np.nd
     build_daily = matrix.segment(daily, calendar, "build")
     rows = matrix.segment(daily, calendar, segment)
     held = weights.matrix(build_daily.fillna(0.0) * scale, members, cfg)
-    return held @ (np.nan_to_num(rows.to_numpy().T) * scale[:, None]), rows.index
+    return held @ (np.nan_to_num(rows.to_numpy().T) * scale[:, None]), pd.DatetimeIndex(rows.index)

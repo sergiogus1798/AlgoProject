@@ -1,9 +1,12 @@
 """The portfolio run as the contract's blocks (PLAN §5.6): Veredicto, Universo, Parejas, Búsqueda, Cartera."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
-from core.study import blocks, result as envelope
+from core.study import blocks
+from core.study import result as envelope
 
 from .. import segment, weights
 from ..equity import matrix
@@ -56,7 +59,7 @@ def _pairs_tab(inputs: dict, v: dict) -> list[dict]:
             "unit": "parejas", "reference": None, "note": words.FAILING,
             "items": [{"label": str(name), "value": int(n), "error": None, "state": "info"}
                       for name, n in dict(graph["counts"]).items()]}]
-    over = pd.DataFrame(held["over"], columns=["i", "j", "measure", "value", "threshold"])
+    over = pd.DataFrame(held["over"], columns=pd.Index(["i", "j", "measure", "value", "threshold"]))
     over[["i", "j"]] = over[["i", "j"]].apply(lambda c: c.str[:12])
     out.append(blocks.table(
         f"Parejas de la cartera sobre algún umbral: {held['n_pairs_over']} de {held['n_pairs']}",
@@ -101,7 +104,7 @@ def _portfolio_tab(inputs: dict, v: dict, cfg: dict) -> list[dict]:
         series.append({"label": r["identities"][k][:8], "values": [shares[0][0], *values[1:]], "role": "reference"})
     days = pd.DatetimeIndex([d for s in segments for d in parts[s][1]])
     months = (pd.Series(np.concatenate([parts[s][0][0] for s in segments]), index=days)
-              .groupby([days.year, days.month]).sum().unstack())
+              .groupby([days.year, days.month]).sum().unstack())  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.year/.month
     monthly = pd.DataFrame({"año": months.index, **{MONTHS[m - 1]: months[m].round(2) for m in months.columns},
                             "total": months.sum(axis=1).round(2)})
     members = pd.DataFrame([{"estrategia": i[:12], "símbolo": r["members_meta"][i]["symbol"],
@@ -114,7 +117,7 @@ def _portfolio_tab(inputs: dict, v: dict, cfg: dict) -> list[dict]:
             blocks.table("P&L de la cartera por mes", monthly, words.MONTHLY.format(segments=", ".join(segments)))]
 
 
-def population(inputs: dict, v: dict, sentence: str, cfg: dict, started: float) -> dict:
+def population(inputs: dict, v: dict, sentence: str, cfg: dict, started: float) -> dict[str, Any]:
     """The contract dict of one portfolio run.
 
     Args:

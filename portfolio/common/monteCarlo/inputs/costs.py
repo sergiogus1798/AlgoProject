@@ -1,14 +1,37 @@
 """What the broker charged and what a worse broker would charge, per asset and per trade."""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
 from core import assets, trades
 
+
+class Asset(TypedDict):
+    """The cost facts of one asset, as `load()` reads them from `assets/`."""
+
+    symbol: str
+    point_value: float
+    tick_size: float
+    spread: float
+    commission: float
+    pending: list[str]
+
+
+class CostCheck(TypedDict):
+    """Modelled commission against the cost the backtest booked."""
+
+    modelled: float
+    recovered: float
+    ratio: float
+    diverges: bool
+
+
 DIVERGENCE = 0.25   # modelled against recovered cost; beyond this the cost file is suspect
 
 
-def load(symbol: str) -> dict:
+def load(symbol: str) -> Asset:
     """The cost facts of one asset, taken from its file in assets/.
 
     Args:
@@ -33,7 +56,7 @@ def load(symbol: str) -> dict:
             "pending": assets.pending(data)}
 
 
-def recovered(frame: pd.DataFrame, asset: dict) -> np.ndarray:
+def recovered(frame: pd.DataFrame, asset: Asset) -> np.ndarray:
     """Cost SQX actually charged per trade, measured rather than assumed.
 
     Args:
@@ -48,7 +71,7 @@ def recovered(frame: pd.DataFrame, asset: dict) -> np.ndarray:
     return trades.cost(frame, asset["point_value"]).to_numpy()
 
 
-def spread_cost(frame: pd.DataFrame, asset: dict) -> np.ndarray:
+def spread_cost(frame: pd.DataFrame, asset: Asset) -> np.ndarray:
     """What one round trip costs at the asset's quoted spread.
 
     Args:
@@ -63,7 +86,7 @@ def spread_cost(frame: pd.DataFrame, asset: dict) -> np.ndarray:
             * frame["Size"].to_numpy())
 
 
-def crosscheck(frame: pd.DataFrame, asset: dict) -> dict:
+def crosscheck(frame: pd.DataFrame, asset: Asset) -> CostCheck:
     """Modelled commission against the cost the backtest really booked.
 
     Args:

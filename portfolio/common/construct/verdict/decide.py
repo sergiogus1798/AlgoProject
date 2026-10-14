@@ -1,5 +1,11 @@
 """The verdict of both paths (Q11 d): oos1 first, oos2 only if it passed, and the funded sentence."""
 
+from typing import Any, TypedDict
+
+from .hold import Held
+
+Judgement = TypedDict("Judgement", {"pass": bool | None, "label": str})
+
 LABELS = {"start_p": "P(aprobar) en el camino real, desde cada día de inicio",
           "mc_p": "P(aprobar) del Monte Carlo más pesimista"}
 MEASURES = tuple(LABELS)
@@ -11,7 +17,7 @@ def grouped(n: float) -> str:
     return f"{n:,.0f}".replace(",", " ")
 
 
-def funded_oos1(read: dict, same: int, cfg: dict) -> dict:
+def funded_oos1(read: dict, same: int, cfg: dict) -> dict[str, Any]:
     """The funded path's oos1 reading: the named measure's percentile in the null against the bar.
 
     Args:
@@ -38,7 +44,7 @@ def funded_oos1(read: dict, same: int, cfg: dict) -> dict:
     return {**out, "state": "pass" if read[measure]["percentile"] >= level else "fail"}
 
 
-def combine(oos1: dict, oos2: dict) -> dict:
+def combine(oos1: dict, oos2: dict) -> Judgement:
     """What the two readings decide together.
 
     Returns:
@@ -77,7 +83,7 @@ def hold_line(hold: dict, segments: list[str]) -> str:
             "solape mínimo para juzgarlas (se informa, no decide)")
 
 
-def verdict(chosen: dict, oos1: dict, oos2: dict, hold: dict, cost: dict) -> dict:
+def verdict(chosen: dict, oos1: dict, oos2: dict, hold: Held, cost: dict) -> dict[str, Any]:
     """Assemble a verdict of either path.
 
     Args:

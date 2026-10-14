@@ -3,8 +3,10 @@
 import argparse
 import hashlib
 import json
-from datetime import datetime, timezone as tz
+from datetime import datetime
+from datetime import timezone as tz
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 
@@ -12,7 +14,8 @@ from ..funded import _member_meta, size_members
 from ..inputs import config
 from ..search import trials
 from ..verdict import decide
-from . import band, record as record_mod
+from . import band
+from . import record as record_mod
 
 STATE = {"inside": "DENTRO de la banda", "below": "POR DEBAJO de la banda — señalada",
          "above": "POR ENCIMA de la banda — señalada",
@@ -30,7 +33,7 @@ def head(record: dict) -> str:
             f"{record['history']['days']} días).")
 
 
-def read(record: dict, folder: Path, rows: pd.DataFrame, meta: dict, origin: str) -> dict:
+def read(record: dict, folder: Path, rows: pd.DataFrame, meta: dict, origin: str) -> dict[str, Any]:
     """One reading: the rows validated, the stretch read against the band, the ledger row, the log line.
 
     Args:
@@ -53,7 +56,7 @@ def read(record: dict, folder: Path, rows: pd.DataFrame, meta: dict, origin: str
     fresh = record_mod.path(record, rows)
     c = record["comparison"]
     got = {**band.read(history.to_numpy(), fresh.to_numpy(), c["figure"], c["band"]),
-           "source": rows["source"].iloc[0], "from": str(fresh.index[0].date()), "to": str(fresh.index[-1].date())}
+           "source": rows["source"].iloc[0], "from": str(cast(pd.Timestamp, fresh.index[0]).date()), "to": str(cast(pd.Timestamp, fresh.index[-1]).date())}
     trials.record_rows({"hash": record["portfolio"]["pool_hash"]}, meta, {
         "launched_by": "incubation", "segment": record_mod.SEGMENT, "n_in": 1, "n_out": 0 if got["flagged"] else 1,
         "criterion": f"portfolio/incubation/{c['figure']}", "thresholds": got,

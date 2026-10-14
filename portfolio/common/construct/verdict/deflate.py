@@ -1,11 +1,26 @@
 """The oos2 reading (Q11 d): the chosen portfolio's daily Sharpe against the best that luck gives N trials."""
 
+from typing import TypedDict
+
 import numpy as np
 
 from ledger import trials
 
 
-def read(returns: np.ndarray, sigma: float, n: int) -> dict:
+class Deflated(TypedDict):
+    """The chosen portfolio's daily Sharpe against the benchmark of N trials."""
+
+    sharpe: float
+    benchmark: float
+    excess: float
+    dsr: float
+    n: int
+    sigma: float
+    n_days: int
+    state: str
+
+
+def read(returns: np.ndarray, sigma: float, n: int) -> Deflated:
     """The deflated Sharpe of one daily P&L path, by `ledger.trials.deflated` — no second formula.
 
     «Deflated Sharpe > 0» is read as the Sharpe left after subtracting the expected maximum

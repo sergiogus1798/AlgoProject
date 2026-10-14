@@ -1,5 +1,7 @@
 """M5 floating-equity blocks per member, and a combination's joint day extremes (contract M)."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -86,5 +88,5 @@ def joint_day_low(members: list[np.ndarray], days: np.ndarray) -> pd.Series:
         Series indexed by day label (int64 ns) — exact at block resolution
         (`knowhow/perf/intraday-floating-resolution.md`).
     """
-    return pd.Series(np.sum(members, axis=0), index=days).groupby(level=0).min()
+    return cast(pd.Series, pd.Series(np.sum(members, axis=0), index=days).groupby(level=0).min())
 

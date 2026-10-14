@@ -5,13 +5,16 @@ import json
 import resource
 import time
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 
-from .equity import matrix, universe
-from .inputs import config, pool as pool_mod
-from .pairs import table
 from portfolio.common.construct.search import admissible
+
+from .equity import matrix, universe
+from .inputs import config
+from .inputs import pool as pool_mod
+from .pairs import table
 
 FILTER_WORDS = {"overlap": "solape < 24 meses", "undefined": "coeficiente indefinido"}
 
@@ -21,9 +24,9 @@ def _reconcile_lines(reconcile: pd.DataFrame) -> list[str]:
     lines = []
     for identity, rows in reconcile.groupby("identity"):
         first = rows.iloc[0]
-        segments = ", ".join(f"{r.segment} {r.exact:.0%}" for r in rows.itertuples())
+        segments = ", ".join(f"{r.segment} {r.exact:.0%}" for r in cast(Any, rows).itertuples())
         estado = "excluida" if first.excluded else "conservada"
-        lines.append(f"  {identity[:12]}… [{estado}] daily-low {segments} · "
+        lines.append(f"  {str(identity)[:12]}… [{estado}] daily-low {segments} · "
                      f"MAE {first.mae_exact:.0%} · MFE {first.mfe_exact:.0%}"
                      + (f" · motivo: {first.reason}" if first.excluded else ""))
     return lines
@@ -63,7 +66,7 @@ def summarise(pool_name: str, cfg: dict, out: Path) -> str:
     return text
 
 
-def screen(data: dict, cfg: dict, out: Path) -> dict:
+def screen(data: dict, cfg: dict, out: Path) -> dict[str, Any]:
     """The pairwise screen on the build slice: every measure, the admissible graph, printed.
 
     Args:

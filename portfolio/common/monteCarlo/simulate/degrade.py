@@ -1,5 +1,7 @@
 """Whether each family's headline statistic degrades from in-sample to out-of-sample."""
 
+from typing import Any
+
 import numpy as np
 
 from portfolio.common.monteCarlo.inputs import config, stream
@@ -36,7 +38,7 @@ def scope_shape(source: dict, positions: np.ndarray, kind: str, model: str, bloc
     return {**shape, "n": int(positions.size)}
 
 
-def overlay(source: dict, cfg: dict) -> dict:
+def overlay(source: dict, cfg: dict) -> dict[str, dict[str, Any]]:
     """The IS/OOS pair of every family that gets a degradation check.
 
     Args:

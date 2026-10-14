@@ -1,11 +1,14 @@
 """A firm whose site cannot be read by code: its catalogue typed in `AlgoData/funding/manual/<firm>.yaml`, as normalised rows."""
 
+from typing import Any
+
 import yaml
 
 from core.paths import funding_dir
+from portfolio.funded.catalog.schema import Catalogue
 
 
-def fetch(firm: str) -> dict:
+def fetch(firm: str) -> dict[str, Any]:
     """The typed catalogue, as the file says it."""
     return yaml.safe_load((funding_dir() / "manual" / f"{firm}.yaml").read_text(encoding="utf-8"))
 
@@ -21,7 +24,7 @@ def _stage(key: str, stage: str, rule: dict) -> dict:
             "news_ok": rule.get("news_ok"), "weekend_ok": rule.get("weekend_ok"), "filled_from": ""}
 
 
-def normalise(raw: dict, firm: str) -> dict:
+def normalise(raw: dict, firm: str) -> Catalogue:
     """Plans, stages and options in the schema of `schema.TABLES`."""
     plans, stages, options = [], [], []
     for family in raw["families"]:

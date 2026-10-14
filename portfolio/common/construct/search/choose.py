@@ -1,5 +1,7 @@
 """The search by ranks (M3): every admissible combination when they are few, the GA otherwise."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
@@ -7,7 +9,7 @@ from portfolio.common.construct.search import exhaustive, genetic, greedy, objec
 
 
 def choose(unit: np.ndarray, dates: pd.DatetimeIndex, graph: np.ndarray, cfg: dict,
-           rng: np.random.Generator) -> dict:
+           rng: np.random.Generator) -> dict[str, Any]:
     """Score the admissible combinations on build and name the best.
 
     Exhaustive: every clique is scored and the ranks are taken in that whole space. GA: the

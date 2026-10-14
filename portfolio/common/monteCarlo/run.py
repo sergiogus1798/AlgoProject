@@ -1,13 +1,52 @@
 """Everything one strategy is put through, assembled into the single result the report reads."""
 
+from typing import Any, TypedDict
+
 import numpy as np
 import pandas as pd
 
 from engines.resample import draws
 from portfolio.common.monteCarlo.inputs import config, costs, stream
+from portfolio.common.monteCarlo.inputs.costs import Asset, CostCheck
 from portfolio.common.monteCarlo.model import stress
-from portfolio.common.monteCarlo.simulate import degrade, engine, family_d, metrics, sweeps
+from portfolio.common.monteCarlo.simulate import (
+    degrade,
+    engine,
+    family_d,
+    metrics,
+    sweeps,
+)
+from portfolio.common.monteCarlo.simulate.family_d import FamilyD
+from portfolio.common.monteCarlo.simulate.metrics import Shape, Summary
 from portfolio.common.monteCarlo.verdict import confidence, significance
+
+
+class StepRun(TypedDict):
+    """One sub-test re-run on its own: its percentile table and the histogram of every statistic."""
+
+    label: str
+    title: str
+    table: dict[str, Summary]
+    shapes: dict[str, Shape]
+
+
+class Analysis(TypedDict):
+    """A whole trade stream through every family: what the gates, the score and the report read."""
+
+    name: str
+    n_trades: int
+    observed: dict[str, float]
+    blocks: list[int]
+    titles: dict[str, str]
+    A: dict
+    B: dict
+    C: dict
+    D: FamilyD
+    degrade: dict[str, dict[str, Any]]
+    E: dict
+    cost_check: CostCheck
+    overlap: float
+
 
 
 def _family_a(runs: dict, seen: dict, cfg: dict) -> dict:
@@ -127,7 +166,7 @@ def _family_c(source: dict, cfg: dict, sims: int) -> dict:
     return out
 
 
-def one(source: dict, step: dict, cfg: dict) -> dict:
+def one(source: dict, step: dict, cfg: dict) -> StepRun:
     """A single sub-test on demand, without redoing the rest.
 
     Args:
@@ -150,7 +189,7 @@ def one(source: dict, step: dict, cfg: dict) -> dict:
             "shapes": metrics.shapes(got, seen, cfg["global"]["report_percentile"])}
 
 
-def _family_e(source: dict, day: pd.DataFrame, asset: dict, cfg: dict) -> dict:
+def _family_e(source: dict, day: pd.DataFrame, asset: Asset, cfg: dict) -> dict:
     """Family E, read on the out-of-sample trades alone (owner, 2026-09-29): the random-entry
     benchmark and the PSR it feeds may only be compared against data the strategy was not
     selected on, never the build. `_family_b` already reports the same OOS split for its own
@@ -185,7 +224,7 @@ def _family_e(source: dict, day: pd.DataFrame, asset: dict, cfg: dict) -> dict:
             "warning": None}
 
 
-def analyse(source: dict, day: pd.DataFrame, asset: dict, cfg: dict) -> dict:
+def analyse(source: dict, day: pd.DataFrame, asset: Asset, cfg: dict) -> Analysis:
     """Put one trade stream through every family and return the whole result.
 
     Args:

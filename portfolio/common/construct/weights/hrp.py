@@ -14,7 +14,7 @@ def _cluster_variance(cov: np.ndarray, items: list[int]) -> float:
     return float(w @ sub @ w)
 
 
-def weights(build_daily: pd.DataFrame, cfg: dict) -> dict:
+def weights(build_daily: pd.DataFrame, cfg: dict) -> dict[str, float]:
     """Ward tree on the correlation distance, then recursive bisection by cluster variance.
 
     Holds nothing fixed; estimates the covariance (unshrunk) and inverts none of it. Each
@@ -33,7 +33,7 @@ def weights(build_daily: pd.DataFrame, cfg: dict) -> dict:
     """
     k = build_daily.shape[1]
     if k == 1:
-        return {build_daily.columns[0]: 1.0}
+        return {str(build_daily.columns[0]): 1.0}
     cov = np.cov(build_daily.to_numpy(dtype=float), rowvar=False)
     sigma = np.sqrt(np.diag(cov))
     if not (sigma > 0).all():

@@ -1,9 +1,12 @@
 """Did the diversification hold: the chosen members' pair measures re-read on the judging stretch."""
 
+from typing import Any, TypedDict
+
 import numpy as np
 import pandas as pd
 
 from ..pairs import stress
+from ..pairs.stress import EffectiveN
 
 KEYS = ("pearson", "spearman", "co_loss", "tail")
 
@@ -15,7 +18,18 @@ def threshold_key(measure: str) -> str | None:
     return next((k for k in KEYS if measure.startswith(k)), None)
 
 
-def held(pairs: pd.DataFrame, identities: list[str], cfg: dict) -> dict:
+class Held(TypedDict):
+    """The chosen combination's pairs against the thresholds they were admitted under."""
+
+    over: list[dict]
+    short: list[str]
+    n_pairs: int
+    n_pairs_over: int
+    held: bool
+    effective_n: EffectiveN | None
+
+
+def held(pairs: pd.DataFrame, identities: list[str], cfg: dict) -> Held:
     """Each pair of the chosen combination against the thresholds it was admitted under.
 
     It chooses nothing and removes nothing: the combination was fixed before this ran.
@@ -36,6 +50,7 @@ def held(pairs: pd.DataFrame, identities: list[str], cfg: dict) -> dict:
     over, short = [], set()
     corr = np.eye(len(identities))
     index = {name: k for k, name in enumerate(identities)}
+    row: Any
     for row in pairs.itertuples():
         if row.measure == "pearson_monthly" and np.isfinite(row.value):
             corr[index[row.i], index[row.j]] = corr[index[row.j], index[row.i]] = row.value

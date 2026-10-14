@@ -1,15 +1,26 @@
 """The equity envelope: where the simulated paths ran, trade by trade, around the real one."""
 
+from typing import TypedDict
+
 import numpy as np
 
 from engines.resample import draws
 from portfolio.common.monteCarlo.inputs import config
 from portfolio.common.monteCarlo.model import stress
 
+
+class Bands(TypedDict):
+    """Percentile bands of simulated equity paths, sampled down for an SVG."""
+
+    at: list[int]
+    bands: dict[int, list[float]]
+    observed: list[float]
+
+
 STEPS = 200   # points kept per curve; an SVG cannot show more and the file stays small
 
 
-def _bands(equity: np.ndarray, pnl: np.ndarray, equity0: float, qs: list[int]) -> dict:
+def _bands(equity: np.ndarray, pnl: np.ndarray, equity0: float, qs: list[int]) -> Bands:
     """Percentile bands of a batch of simulated equity paths, sampled down for an SVG.
 
     Args:
@@ -30,7 +41,7 @@ def _bands(equity: np.ndarray, pnl: np.ndarray, equity0: float, qs: list[int]) -
 
 
 def envelope(pnl: np.ndarray, model: str, block: int, sims: int, equity0: float,
-             qs: list[int], seed: int) -> dict:
+             qs: list[int], seed: int) -> Bands:
     """Percentile bands under a reordering or resampling model (Families A and B).
 
     Args:
@@ -52,7 +63,7 @@ def envelope(pnl: np.ndarray, model: str, block: int, sims: int, equity0: float,
     return _bands(equity0 + np.cumsum(pnl[idx], axis=1), pnl, equity0, qs)
 
 
-def stress_envelope(source: dict, model: str, sims: int, cfg: dict, qs: list[int]) -> dict:
+def stress_envelope(source: dict, model: str, sims: int, cfg: dict, qs: list[int]) -> Bands:
     """Percentile bands under one Family C execution stress.
 
     Args:

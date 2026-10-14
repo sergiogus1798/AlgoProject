@@ -11,6 +11,7 @@ from ledger import thresholds
 from mt5 import compare
 from portfolio.funded.live import sprt, stage_a
 from portfolio.funded.live.real import from_fleet, r_values
+from portfolio.funded.live.stage_a import StageA
 from sqx.inspect import feeds
 
 CONFIG = ROOT / "portfolio" / "funded" / "live" / "config.yaml"
@@ -23,7 +24,7 @@ def trades(path: str) -> pd.DataFrame:
     return pd.read_csv(path, parse_dates=TIMES)
 
 
-def say_stage_a(res: dict) -> str:
+def say_stage_a(res: StageA) -> str:
     """Stage A's rows as Spanish lines and its one-line reading."""
     lines = [f"ETAPA A — {res['n']} operaciones reales"]
     for r in res["rows"]:

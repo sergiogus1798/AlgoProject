@@ -1,14 +1,20 @@
 """Families A and B as tabs: order luck (the same trades reordered) and composition luck."""
 
+from typing import Any
+
 import pandas as pd
 
-from core.study import blocks, result as envelope
+from core.study import blocks
+from core.study import result as envelope
 from portfolio.common.monteCarlo.contract import headline, shapes
 from portfolio.common.monteCarlo.inputs import config
+from portfolio.common.monteCarlo.run import Analysis
+from portfolio.common.monteCarlo.simulate.fan import Bands
 from portfolio.common.monteCarlo.verdict import confidence
+from portfolio.common.monteCarlo.verdict.scoring import Verdict
 
 
-def family_a(result: dict, verdict: dict, band: dict, cfg: dict) -> dict:
+def family_a(result: Analysis, verdict: Verdict, band: Bands, cfg: dict) -> dict[str, Any]:
     """Order luck: the same trades in another order move the drawdown, never the profit."""
     q = cfg["global"]["report_percentile"]
     a = result["A"]
@@ -38,7 +44,7 @@ def family_a(result: dict, verdict: dict, band: dict, cfg: dict) -> dict:
              "que llegaron.")
 
 
-def family_b(result: dict, verdict: dict, cfg: dict) -> dict:
+def family_b(result: Analysis, verdict: Verdict, cfg: dict) -> dict[str, Any]:
     """Composition luck: resampled with replacement, so which trades happened can change."""
     b = result["B"]
     table = blocks.table("Cada modelo al percentil 5",
@@ -55,8 +61,8 @@ def family_b(result: dict, verdict: dict, cfg: dict) -> dict:
     samples = pd.DataFrame(
         [[name, v["n"], v["sharpe"], v["net"], v["pf_5"], confidence.average(v["n"])]
          for name, v in b["samples"].items()],
-        columns=["muestra", "operaciones", "Sharpe mediano", "beneficio mediano (USD)",
-                 "PF p5", "confianza"])
+        columns=pd.Index(["muestra", "operaciones", "Sharpe mediano", "beneficio mediano (USD)",
+                 "PF p5", "confianza"]))
     ratio = b["oos_ratio"]
     return envelope.tab(
         "familyB", "Familia B — suerte de composición",

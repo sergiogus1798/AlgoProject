@@ -10,8 +10,10 @@ from perf.inputs.sample import Workload
 from portfolio.common.construct import walkforward, weights
 from portfolio.common.construct.equity import closecurve, universe
 from portfolio.common.construct.inputs import config, source
+from portfolio.common.construct.mc.units import Unit
 from portfolio.common.construct.pairs import table
 from portfolio.common.construct.search import objective, random_k, stageb
+from portfolio.common.construct.search.stageb_data import StageBData
 from portfolio.funded.rules import catalog
 from portfolio.funded.sim import bank, monkey
 from portfolio.funded.sim import inputs as bank_inputs
@@ -124,7 +126,7 @@ def verdict_null(cfg: dict) -> Workload:
     return {"scale": len(drawn["index"]), "bytes_in": 0}
 
 
-def _trade_units(rng: np.random.Generator, per_day: int) -> dict:
+def _trade_units(rng: np.random.Generator, per_day: int) -> Unit:
     """One synthetic member as `mc.units.units()` returns it: 350 trades of ~40 M5 blocks in 10 years."""
     n, days = STAGEB["trades"], STAGEB["days"]
     length = rng.integers(STAGEB["blocks"] // 2, STAGEB["blocks"] * 2, n)
@@ -159,7 +161,7 @@ def stage_b(cfg: dict) -> Workload:
     for row, unit in enumerate(units):
         np.add.at(closed[row], unit["open_day"], unit["pnl"])
     minutes = rng.normal(0, 0.2, (k, days * 1440)).astype(np.float32)
-    data = {"days": np.arange(days), "closed": closed, "float_end": np.zeros((k, days)),
+    data: StageBData = {"days": np.arange(days), "closed": closed, "identities": np.array([f"s{i}" for i in range(k)]), "float_end": np.zeros((k, days)),
             "opened": (closed != 0).astype(np.int64), "low1": minutes - 0.2, "high1": minutes + 0.2,
             "minute_day": np.repeat(np.arange(days, dtype=np.int32), 1440), "units": units,
             "lot_unit": np.ones(k)}

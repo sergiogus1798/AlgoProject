@@ -2,9 +2,24 @@
 
 import re
 import sqlite3
+from typing import Any, TypedDict, cast
 
 from core.paths import funding_dir
 from portfolio.funded.catalog.firms import named
+
+
+class Plan(TypedDict):
+    """One plan normalised: its price, its stages in order and every rule flag raised."""
+
+    plan_key: str
+    firm: str
+    family: str
+    size: Any
+    price: Any
+    price_ccy: str
+    stages: list[dict]
+    flags: list[dict]
+
 
 _STAGE_ORDER = {"phase1": 1, "phase2": 2, "phase3": 3, "funded": 4}
 
@@ -86,7 +101,7 @@ def _consistency(rules: dict, stage_raw: float | None) -> tuple[float, str | Non
     formula = rules.get("consistency_formula")
     best_day = rules.get("best_day")
     if formula is not None:
-        pm = re.search(r"([\d.]+)\s*%", formula["value"])
+        pm = cast(re.Match[str], re.search(r"([\d.]+)\s*%", formula["value"]))
         curated, kind, rule = float(pm.group(1)) / 100, "best_over_total", formula
     elif best_day is not None:
         curated, kind, rule = float(best_day["value"]) / 100, "best_over_positive_sum", best_day
@@ -103,7 +118,7 @@ def _consistency(rules: dict, stage_raw: float | None) -> tuple[float, str | Non
     return (curated, kind, flag)
 
 
-def plan(plan_key: str, days_per_year: float | None = None) -> dict:
+def plan(plan_key: str, days_per_year: float | None = None) -> Plan:
     """One plan's stages and rules, normalised, every unconfirmed or conflicting rule named.
 
     Args:

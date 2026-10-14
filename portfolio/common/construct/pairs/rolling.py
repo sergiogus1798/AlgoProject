@@ -1,5 +1,7 @@
 """Rolling-window correlation extremes over a pair's aligned series."""
 
+from typing import TypedDict
+
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 from scipy.stats import rankdata
@@ -33,8 +35,18 @@ def _corr_per_window(aw: np.ndarray, bw: np.ndarray, method: str, ranks: tuple[n
     return _window_pearson(aw, bw)
 
 
+class Rolling(TypedDict):
+    """The largest correlation over whole history and recent windows, signed and absolute."""
+
+    whole: float
+    recent: float
+    whole_abs: float
+    recent_abs: float
+    n_windows: int
+
+
 def rolling_max(a: np.ndarray, b: np.ndarray, window: int, recent: int, method: str,
-                ranks: tuple[np.ndarray, np.ndarray] | None = None) -> dict:
+                ranks: tuple[np.ndarray, np.ndarray] | None = None) -> Rolling:
     """Maximum signed correlation over every one-step rolling window.
 
     Args:

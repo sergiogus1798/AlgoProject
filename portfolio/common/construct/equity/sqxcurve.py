@@ -1,5 +1,7 @@
 """SQX's own daily curve — each day's LOWEST equity, floating included — per policy segment."""
 
+from typing import cast
+
 import pandas as pd
 
 from core import assetdata
@@ -23,7 +25,7 @@ def _segment(values: pd.Series, data: dict, segment: str) -> pd.DataFrame:
     """
     start_ms, end_ms = assetdata.window(data, segment)
     lo, hi = pd.Timestamp(start_ms, unit="ms"), pd.Timestamp(end_ms, unit="ms")
-    sliced = values[(values.index >= lo) & (values.index < hi)]
+    sliced = cast(pd.Series, values[(values.index >= lo) & (values.index < hi)])
     sliced = sliced[~sliced.index.duplicated(keep="first")]
     return pd.DataFrame({"low": sliced, "segment": segment})
 

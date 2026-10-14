@@ -3,8 +3,10 @@
 import argparse
 import hashlib
 import json
-from datetime import datetime, timezone as tz
+from datetime import datetime
+from datetime import timezone as tz
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -13,8 +15,11 @@ from core import manifest, paths
 
 from . import real, walkforward, weights
 from .equity import matrix
-from .inputs import config, pool as pool_mod
+from .inputs import config
+from .inputs import pool as pool_mod
+from .inputs.pool import Pool
 from .search import trials
+from .walkforward import Walkforward
 
 ROOT = paths.portfolio_dir() / "weights_wf"
 CRITERION = "portfolio/weights_wf"
@@ -28,13 +33,14 @@ def members_of(result: dict, run: Path | None, given: str | None) -> list[str]:
         if any(len(f) != 1 for f in found):
             raise SystemExit(f"--members: cada prefijo debe nombrar UNA estrategia utilizable del pool: {given}")
         return sorted(f[0] for f in found)
+    assert run is not None
     members = json.loads((run / "manifest.json").read_text(encoding="utf-8"))["best_members"]
     if missing := [m[:12] for m in members if m not in result["identities"]]:
         raise SystemExit(f"la cartera de {run.name} tiene miembros no utilizables con esta configuración: {missing}")
     return sorted(members)
 
 
-def run(result: dict, members: list[str], cfg: dict, rng: np.random.Generator) -> dict:
+def run(result: dict, members: list[str], cfg: dict, rng: np.random.Generator) -> Walkforward:
     """Ask the door, cut build (estimation) and oos1 (test), walk every method and compare.
 
     Args:
@@ -55,14 +61,16 @@ def run(result: dict, members: list[str], cfg: dict, rng: np.random.Generator) -
     unit = pd.concat(parts).fillna(0.0) * scale
     if parts[1].empty:
         raise SystemExit("la cartera no tiene días en oos1: no hay dónde probar los pesos")
-    cuts = walkforward.folds(unit.index, parts[1].index[0], int(cfg["wf"]["lookback_years"]), int(cfg["wf"]["step_years"]))
+    cuts = walkforward.folds(pd.DatetimeIndex(unit.index), cast(pd.Timestamp, parts[1].index[0]), int(cfg["wf"]["lookback_years"]), int(cfg["wf"]["step_years"]))
     got = walkforward.arms(unit, cuts, weights.REGISTRY, cfg)
     table = walkforward.compare(got, cfg, rng)
-    return {**got, "table": table, "states": walkforward.decide(table), "cuts": cuts, "members": members,
-            "meta": meta, "build": (parts[0].index[0], parts[0].index[-1]), "test": (parts[1].index[0], parts[1].index[-1])}
+    return {"paths": got["paths"], "dates": got["dates"], "weights": got["weights"], "failed": got["failed"],
+            "table": table, "states": walkforward.decide(table), "cuts": cuts, "members": members,
+            "meta": meta, "build": (cast(pd.Timestamp, parts[0].index[0]), cast(pd.Timestamp, parts[0].index[-1])),
+            "test": (cast(pd.Timestamp, parts[1].index[0]), cast(pd.Timestamp, parts[1].index[-1]))}
 
 
-def record(got: dict, pool: dict, cfg: dict) -> list[dict]:
+def record(got: Walkforward, pool: Pool, cfg: dict) -> list[dict]:
     """One ledger row per segment read (PLAN §6): build estimates, oos1 compares every arm.
 
     The arms' Sharpes carry their own unit: they count in N and stay out of the study's pooled
@@ -77,7 +85,7 @@ def record(got: dict, pool: dict, cfg: dict) -> list[dict]:
                                  table["sharpe"].to_numpy()))
 
 
-def sentence(got: dict, cfg: dict) -> str:
+def sentence(got: Walkforward, cfg: dict) -> str:
     """The decision in Spanish, the cost next to it; it changes no knob."""
     states, table = got["states"], got["table"]
     cost = (f"{len(table) - 1} brazos comparados con pesos iguales sobre {len(got['dates'])} días de oos1, intervalo al "
@@ -95,7 +103,7 @@ def sentence(got: dict, cfg: dict) -> str:
     return f"DECISIÓN: {text} ({cost})."
 
 
-def summarise(got: dict, pool_name: str, cfg: dict) -> str:
+def summarise(got: Walkforward, pool_name: str, cfg: dict) -> str:
     """The Spanish text the owner reads: windows, one line per arm, the weights held, the decision."""
     wf, t = cfg["wf"], got["table"]
     look = f"{wf['lookback_years']} años antes de cada tramo" if wf["lookback_years"] else "todo lo anterior a cada tramo"
@@ -126,7 +134,7 @@ def summarise(got: dict, pool_name: str, cfg: dict) -> str:
     return "\n".join(lines)
 
 
-def write(got: dict, pool_name: str, cfg: dict, source: str) -> Path:
+def write(got: Walkforward, pool_name: str, cfg: dict, source: str) -> Path:
     """`table.parquet`, `weights.parquet` and `result.json` under `weights_wf/<stamp>_<pool>_K<k>_<members' hash>/`."""
     tag = hashlib.sha256("+".join(got["members"]).encode()).hexdigest()[:8]
     out = manifest.fresh_dir(
@@ -136,7 +144,7 @@ def write(got: dict, pool_name: str, cfg: dict, source: str) -> Path:
     blob = {"pool": pool_name, "members": got["members"], "source": source, "states": got["states"],
             "state_words": walkforward.STATES, "sentence": sentence(got, cfg), "failed": got["failed"],
             "windows": got["cuts"], "build": got["build"], "test": got["test"], "test_days": len(got["dates"]),
-            "seed": got["seed"], "wf": cfg["wf"], "relaxed": cfg["relaxed"], "selected_method": cfg["weights"]["method"]}
+            "seed": got.get("seed"), "wf": cfg["wf"], "relaxed": cfg["relaxed"], "selected_method": cfg["weights"]["method"]}
     (out / "result.json").write_text(json.dumps(blob, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
     return out
 

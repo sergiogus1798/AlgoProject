@@ -1,7 +1,23 @@
 """How good a strategy is once nothing has vetoed it: five sub-scores, then one composite."""
 
+from typing import TypedDict
+
 from portfolio.common.monteCarlo.inputs import config
+from portfolio.common.monteCarlo.run import Analysis
 from portfolio.common.monteCarlo.verdict import gates
+from portfolio.common.monteCarlo.verdict.gates import Flag
+
+
+class Verdict(TypedDict):
+    """The headline: sub-scores, composite, tier, what fired, what binds, and the sample-size tiers."""
+
+    subscores: dict[str, float]
+    composite: float
+    tier: str
+    flags: list[Flag]
+    binding: Flag
+    tiers: dict[str, str]
+
 
 VERDICTS = ("STRONG", "ACCEPTABLE", "MARGINAL", "FAIL", "INCONCLUSIVE")
 # What each sub-score is built from. The report prints this beside the number, because a
@@ -33,7 +49,7 @@ def curve(value: float, bad: float, good: float) -> float:
     return float(min(100.0, max(0.0, 100.0 * (value - bad) / (good - bad))))
 
 
-def subscores(result: dict, cfg: dict) -> dict[str, float]:
+def subscores(result: Analysis, cfg: dict) -> dict[str, float]:
     """One score per family, on the metrics that family exists to measure.
 
     Args:
@@ -71,7 +87,7 @@ def subscores(result: dict, cfg: dict) -> dict[str, float]:
     return {k: round(v, 1) for k, v in scores.items()}
 
 
-def verdict(result: dict, cfg: dict) -> dict:
+def verdict(result: Analysis, cfg: dict) -> Verdict:
     """The headline: the sub-scores, the composite, what fired, and what is binding.
 
     Args:
@@ -101,7 +117,7 @@ def verdict(result: dict, cfg: dict) -> dict:
         tier = VERDICTS[2]
     else:
         tier = VERDICTS[3]
-    binding = (vetoes[0] if vetoes else {"family": min(parts, key=parts.get),
+    binding: Flag = (vetoes[0] if vetoes else {"family": min(parts, key=lambda k: parts[k]),
                                          "test": "subscore", "value": min(parts.values()),
                                          "limit": float(acceptable), "gate": False})
     return {"subscores": parts, "composite": composite, "tier": tier, "flags": fired,

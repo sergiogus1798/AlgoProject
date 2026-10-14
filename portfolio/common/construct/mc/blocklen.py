@@ -1,5 +1,7 @@
 """How long the resampled blocks are: measured on the combination's own daily P&L, plus a sweep."""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
@@ -12,7 +14,14 @@ def daily_pnl(days: dict[str, np.ndarray]) -> np.ndarray:
     return np.asarray(days["closed"], dtype=float) + np.diff(floating, prepend=0.0)
 
 
-def lengths(days: dict[str, np.ndarray], sweep: list[int]) -> dict:
+class Lengths(TypedDict):
+    """The block length measured on the data and the sweep's lengths with it."""
+
+    measured: int
+    lengths: list[int]
+
+
+def lengths(days: dict[str, np.ndarray], sweep: list[int]) -> Lengths:
     """The block lengths a combination is resampled at.
 
     Args:

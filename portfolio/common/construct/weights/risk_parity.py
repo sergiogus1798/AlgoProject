@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-def weights(build_daily: pd.DataFrame, cfg: dict) -> dict:
+def weights(build_daily: pd.DataFrame, cfg: dict) -> dict[str, float]:
     """Inverse volatility, normalised to 1; holds correlations at zero, estimates K volatilities.
 
     Args:

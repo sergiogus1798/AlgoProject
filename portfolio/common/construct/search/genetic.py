@@ -2,6 +2,7 @@
 
 import time
 from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
@@ -61,7 +62,7 @@ def _mutate(mask: np.ndarray, rate: float, rng: np.random.Generator) -> np.ndarr
 
 
 def run(graph: np.ndarray, score: Callable[[np.ndarray], np.ndarray], seeds: list[np.ndarray],
-        cfg: dict, rng: np.random.Generator) -> dict:
+        cfg: dict, rng: np.random.Generator) -> dict[str, Any]:
     """Tournament GA over clique masks: union crossover, swap/add/remove mutation, elitism.
 
     A child that is not a clique is repaired by dropping its least-connected member round by

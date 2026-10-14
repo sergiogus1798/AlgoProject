@@ -4,10 +4,12 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 
 from core.paths import portfolio_dir
+from portfolio.common.construct.search.stageb_data import StageBData
 from portfolio.funded.sim import haircut
 
 FLAVOURS = ("D", "T1", "T2")
@@ -16,7 +18,7 @@ FLAVOURS = ("D", "T1", "T2")
 def draw(flavour: str, length: int, days: dict, units: list[dict], horizon: int, n_paths: int,
          rng: np.random.Generator) -> dict[str, np.ndarray]:
     """One of stage B's three Monte Carlos at the bank's horizon."""
-    from portfolio.common.construct.mc import paths as mc_paths    # lazy: the engine is heavy
+    from portfolio.common.construct.mc import paths as mc_paths   # lazy: the engine is heavy
     if flavour == "D":
         return mc_paths.daily_blocks(days, horizon, n_paths, length, rng)
     if flavour == "T1":
@@ -56,7 +58,7 @@ def build(run: Path, overrides: list[str], horizon: int, n_paths: int, edge_from
     cfg, world = config.load(overrides), funded_b.load(run, overrides)
     members = chosen["members"]
 
-    def days_of(segment: str) -> tuple[dict, dict]:
+    def days_of(segment: str) -> tuple[StageBData, dict[str, np.ndarray]]:
         """The members' data on one calendar segment, and their joint server-day table."""
         data = funded_verdict.prepare(world, members, world["calendar"][segment], cfg)
         return data, stageb_data.joint(data, stageb_run.rows_of(data, "+".join(members)))
@@ -84,7 +86,7 @@ def build(run: Path, overrides: list[str], horizon: int, n_paths: int, edge_from
 
 def main() -> None:
     """Parse, draw, write the `.npz`, print what was drawn and the bank command that reads it."""
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     parser.add_argument("--run", type=Path, required=True, help="funded run folder with verdict.json")
     parser.add_argument("--horizon", type=int, required=True, help="server days per draw")
     parser.add_argument("--n-paths", type=int, required=True, help="draws")
@@ -98,7 +100,7 @@ def main() -> None:
     if not (args.run / "verdict.json").exists():
         sys.exit(f"No genero caminos: {args.run} no tiene verdict.json — la cartera fondeada sale del "
                  f"veredicto (portfolio.common.construct.funded_b), no de aquí.")
-    seed = args.seed if args.seed is not None else int(np.random.SeedSequence().entropy % 2**32)
+    seed = args.seed if args.seed is not None else int(cast(int, np.random.SeedSequence().entropy) % 2**32)
     paths, meta = build(args.run, args.set, args.horizon, args.n_paths, args.edge_from.split(","), seed)
     src = meta["source"]
     out = args.out or portfolio_dir() / "bank" / "paths" / f"{meta['label']}.npz"

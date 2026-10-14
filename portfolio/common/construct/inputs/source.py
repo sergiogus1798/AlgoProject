@@ -1,6 +1,7 @@
 """One archived strategy as the engine reads it — files only, nothing recomputed."""
 
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
 import pandas as pd
 
@@ -10,7 +11,24 @@ from core.archive import read as archive_read
 from engines.market import calibrate
 
 
-def load(identity: str, version: str) -> dict:
+class Source(TypedDict):
+    """One archived strategy as `load()` reads it."""
+
+    identity: str
+    version: str
+    step: Any
+    development: bool
+    symbol: str
+    feed: Any
+    timeframe: str
+    clock: Any
+    commission: Any
+    trades: pd.DataFrame
+    sqx_equity: pd.DataFrame
+    point_value: float
+
+
+def load(identity: str, version: str) -> Source:
     """Read one archived strategy's trades, symbol, clock and point value.
 
     Args:
@@ -38,4 +56,4 @@ def load(identity: str, version: str) -> dict:
             "timeframe": timeframed.split("_LOM_")[-1],
             "clock": clock, "commission": commission, "trades": trades,
             "sqx_equity": pd.read_parquet(folder / "harvest" / "equity.parquet"),
-            "point_value": calibrate.point_value(same_day if len(same_day) > 1 else trades)}
+            "point_value": calibrate.point_value(cast(pd.DataFrame, same_day if len(same_day) > 1 else trades))}

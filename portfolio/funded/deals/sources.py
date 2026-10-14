@@ -5,6 +5,7 @@ import http.cookiejar
 import json
 import re
 import urllib.request
+from typing import cast
 
 from portfolio.funded.catalog import ftmo, fundednext, hantec
 
@@ -16,7 +17,7 @@ def _hantec_session() -> tuple[urllib.request.OpenerDirector, str, str]:
     """A cookie session on the purchase page, the page, and its anti-forgery token."""
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
     page = opener.open(urllib.request.Request(PAGE, headers=UA), timeout=60).read().decode()
-    token = re.search(r'__RequestVerificationToken[^>]*value="([^"]+)"', page).group(1)
+    token = cast(re.Match[str], re.search(r'__RequestVerificationToken[^>]*value="([^"]+)"', page)).group(1)
     return opener, page, token
 
 
@@ -26,7 +27,7 @@ def hantec_banners() -> list[dict]:
     text = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", page)))
     found = {m.group(0).strip() for m in re.finditer(r"\d{1,2}\s?% off[^.]{0,120}\.?[^.]{0,60}", text)}
     return [{"firm": "hantec", "kind": "banner", "code": "", "plan_key": "*", "list_price": None,
-             "deal_price": None, "pct": float(re.match(r"\d+", b).group()), "terms": b,
+             "deal_price": None, "pct": float(cast(re.Match[str], re.match(r"\d+", b)).group()), "terms": b,
              "source": PAGE, "status": "valid"} for b in sorted(found)]
 
 

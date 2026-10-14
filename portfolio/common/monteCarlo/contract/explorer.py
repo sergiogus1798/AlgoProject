@@ -1,14 +1,19 @@
 """The explorer tab: any sub-test's distribution of any statistic, chosen by two selectors."""
 
+from typing import Any
+
 import pandas as pd
 
-from core.study import blocks, result as envelope
+from core.study import blocks
+from core.study import result as envelope
 from portfolio.common.monteCarlo.contract import shapes
 from portfolio.common.monteCarlo.contract.words import LABELS
+from portfolio.common.monteCarlo.load import Shared
 from portfolio.common.monteCarlo.model import stress
+from portfolio.common.monteCarlo.run import Analysis
 
 
-def runs(result: dict) -> list[tuple[str, str, dict, dict]]:
+def runs(result: Analysis) -> list[tuple[str, str, dict, dict]]:
     """Every sub-test the study kept: (label, readable name, shapes, tables)."""
     out = [(k, result["titles"][k], result[g]["shapes"][k], result[g]["runs"][k])
            for g in ("A", "B") for k in result[g]["shapes"]]
@@ -33,7 +38,7 @@ def pair(label: str, title: str, shape: dict, table: dict, rerun: bool = False) 
     return out
 
 
-def tab(result: dict, cones: dict) -> dict:
+def tab(result: Analysis, cones: dict) -> dict[str, Any]:
     """Every sub-test × statistic, and each sub-test's equity cone."""
     found = runs(result)
     body = []
@@ -54,7 +59,7 @@ def tab(result: dict, cones: dict) -> dict:
              "veredicto sale de un análisis entero o de ninguno.")
 
 
-def method(result: dict, cfg: dict, shared: dict) -> dict:
+def method(result: Analysis, cfg: dict, shared: Shared) -> dict[str, Any]:
     """What was run, on what data, and what this report may not be used to conclude."""
     g, cost, stab = cfg["global"], result["cost_check"], shared["stability"]
     rows = [["simulaciones por prueba", f"{g['n_sims']:,}"],
@@ -79,9 +84,9 @@ def method(result: dict, cfg: dict, shared: dict) -> dict:
               ["Nada se repite igual dos veces", "Sin semilla, a propósito: la estabilidad dice "
                "cuánto se mueven los números que deciden."]]
     return envelope.tab("method", "Datos y método", [
-        blocks.table("Qué se corrió", pd.DataFrame(rows, columns=["qué", "valor"])),
+        blocks.table("Qué se corrió", pd.DataFrame(rows, columns=pd.Index(["qué", "valor"]))),
         blocks.table("Lo que este informe no dice", pd.DataFrame(limits,
-                                                                 columns=["", "por qué"]))])
+                                                                 columns=pd.Index(["", "por qué"])))])
 
 
 GLOSSARY = [

@@ -35,7 +35,7 @@ def shifted(paths: np.ndarray, dates: pd.DatetimeIndex, cfg: dict) -> list[dict[
     tables = []
     for months in range(cfg["real"]["shift_months"] + 1):
         first = dates.searchsorted(dates[0] + pd.DateOffset(months=months))
-        tables.append(metrics.table(paths[:, first:], dates[first:], cfg["real"]["losing_year"]))
+        tables.append(metrics.table(paths[:, first:], pd.DatetimeIndex(dates[first:]), cfg["real"]["losing_year"]))
     return tables
 
 

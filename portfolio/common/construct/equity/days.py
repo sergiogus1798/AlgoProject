@@ -1,5 +1,7 @@
 """One row per server day from a minute path, and the daily P&L it implies (contract D)."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -42,7 +44,7 @@ def _minute_frame(path: dict, feed_zone: str, day_zone: str) -> pd.DataFrame:
         naive = pd.DatetimeIndex(path["t"])
         utc, n_nat = clock.to_utc(naive, feed_zone)
         keep = ~utc.isna()
-        day = clock.day_of(utc[keep], day_zone)
+        day = clock.day_of(pd.DatetimeIndex(utc[keep]), day_zone)
         frame = pd.DataFrame({"t": utc[keep], "t_i8": utc[keep].astype("int64"), "day": day,
                                "worst": path["worst"][keep], "best": path["best"][keep],
                                "close": path["close"][keep], "realised": path["realised"][keep],
@@ -78,7 +80,7 @@ def server_days(path: dict, feed_zone: str, day_zone: str) -> pd.DataFrame:
     """
     frame = _minute_frame(path, feed_zone, day_zone)
     cols = {k: frame[k].to_numpy() for k in ("worst", "best", "close", "realised", "open", "opens", "e0")}
-    runs = _runs(frame["day"])
+    runs = _runs(cast(pd.Series, frame["day"]))
     opens = cols["opens"]
     # groupby skips NaN and sums with compensation; reduceat does neither, so the fast path
     # takes only NaN-free columns and whole-number opens (sums exact in float).

@@ -2,11 +2,14 @@
 
 import numpy as np
 
-from ledger import gate, record as ledger_record
+from ledger import gate
+from ledger import record as ledger_record
 from ledger.study import study_id
 
+from ..inputs.pool import PoolId
 
-def record(run: dict, pool: dict, plan_key: str, members_meta: dict, cfg: dict) -> list[dict]:
+
+def record(run: dict, pool: PoolId, plan_key: str, members_meta: dict, cfg: dict) -> list[dict]:
     """Log the search: one row in `PORTFOLIO_<pool>_construct`, one in each member's study.
 
     Args:
@@ -38,7 +41,7 @@ def record(run: dict, pool: dict, plan_key: str, members_meta: dict, cfg: dict) 
     return rows
 
 
-def _both(pool: dict, members_meta: dict, base: dict, scores: np.ndarray | None) -> list[dict]:
+def _both(pool: PoolId, members_meta: dict, base: dict, scores: np.ndarray | None) -> list[dict]:
     """One row in `PORTFOLIO_<pool>_construct` and one in each member's own study (Q12)."""
     symbols = "+".join(sorted({m["symbol"] for m in members_meta.values()}))
     rows = [ledger_record.log(f"PORTFOLIO_{pool['hash'][:12]}_construct",
@@ -57,7 +60,7 @@ def admit(members_meta: dict, segments: list[str]) -> None:
             gate.allow(27, segment, symbol)
 
 
-def record_b(stage_b: dict, pool: dict, plan_key: str, members_meta: dict) -> list[dict]:
+def record_b(stage_b: dict, pool: PoolId, plan_key: str, members_meta: dict) -> list[dict]:
     """Log stage B: one search per plan, its candidates the shortlist times the risk settings.
 
     Args:
@@ -79,7 +82,7 @@ def record_b(stage_b: dict, pool: dict, plan_key: str, members_meta: dict) -> li
     return _both(pool, members_meta, base, scores)
 
 
-def record_look(pool: dict, members_meta: dict, segment: str, criterion: str, launched_by: str,
+def record_look(pool: PoolId, members_meta: dict, segment: str, criterion: str, launched_by: str,
                 passed: bool | None, note: str, reading: dict | None = None) -> list[dict]:
     """Log one look of a verdict at one segment (PLAN §6): the pool's study and each member's.
 
@@ -102,7 +105,7 @@ def record_look(pool: dict, members_meta: dict, segment: str, criterion: str, la
     return _both(pool, members_meta, base, None)
 
 
-def record_rows(pool: dict, members_meta: dict, base: dict, scores: np.ndarray | None = None) -> list[dict]:
+def record_rows(pool: PoolId, members_meta: dict, base: dict, scores: np.ndarray | None = None) -> list[dict]:
     """Log a step-27 study that is neither a search nor a verdict's look (the weight walk-forward, incubation).
 
     Args:

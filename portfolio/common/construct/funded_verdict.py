@@ -1,19 +1,24 @@
 """The funded verdict (F4, Q11 d): stage B's winner on oos1 against the selected null, then oos2 once."""
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
-from . import oos2 as oos2_mod, segment
+from . import oos2 as oos2_mod
+from . import segment
 from .equity import matrix
 from .inputs import pool as pool_mod
 from .pairs import table as pairs_table
 from .search import stageb, stageb_data, stageb_run, trials
-from .verdict import decide, hold, null as null_mod
+from .search.stageb_data import StageBData
+from .verdict import decide, hold
+from .verdict import null as null_mod
 
 JUDGE = ("oos1", "oos2")
 
 
-def prepare(world: dict, members: list[str], span: tuple, cfg: dict) -> dict:
+def prepare(world: dict, members: list[str], span: tuple, cfg: dict) -> StageBData:
     """`stageb_data.prepare` for some members of the world on one stretch of server days."""
     return stageb_data.prepare({m: world["sources"][m] for m in members}, world["bars"],
                                world["universe"]["days"][world["firm"]],
@@ -34,7 +39,7 @@ def segments(world: dict) -> list[str]:
 
 
 def judge(world: dict, cfg: dict, rng: np.random.Generator, stage_b: dict, n_shortlist: int,
-          null_winners: list[dict], n_candidates: int) -> dict:
+          null_winners: list[dict], n_candidates: int) -> dict[str, Any]:
     """The winner and each null search's winner on oos1; oos2 only if the winner passed there.
 
     oos1 and oos2 are judged separately and in that order (Council 2026-10-04, `DECISIONS.md`

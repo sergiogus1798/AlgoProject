@@ -11,6 +11,7 @@ import argparse
 import re
 import sqlite3
 import urllib.request
+from typing import cast
 
 from portfolio.funded.catalog.schema import connect
 from portfolio.funded.deals import book
@@ -22,7 +23,7 @@ ECB = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml"
 def eurusd() -> float:
     """Today's ECB reference rate, so FTMO's euro prices rank against Hantec's dollars."""
     xml = urllib.request.urlopen(ECB, timeout=30).read().decode()
-    return float(re.search(r"currency='USD' rate='([\d.]+)'", xml).group(1))
+    return float(cast(re.Match[str], re.search(r"currency='USD' rate='([\d.]+)'", xml)).group(1))
 
 
 def floor(db: sqlite3.Connection, plan_key: str) -> tuple[float | None, bool]:
@@ -42,7 +43,7 @@ def refunded(db: sqlite3.Connection, firm: str, family: str) -> str:
     row = db.execute("SELECT value FROM rules WHERE firm = ? AND family IN (?, '*') AND "
                      "rule_key = 'fee_refund' AND valid_to IS NULL ORDER BY family = '*'",
                      (firm, family)).fetchone()
-    return {"True": "yes", "False": "no"}.get(row[0] if row else None, "?")
+    return {"True": "yes", "False": "no"}.get(row[0] if row else "", "?")
 
 
 def _per_k(price: float, prob: float | None, size: float, refund: str) -> float | None:
@@ -88,7 +89,9 @@ def with_edge(rows: list[dict], per_plan: dict[str, dict]) -> list[dict]:
     out = []
     for r in rows:
         entry = per_plan.get(r["plan"])
-        for t in entry["rows"] if entry else []:
+        if entry is None:
+            continue
+        for t in entry["rows"]:
             manifest = entry["table"]["manifest"]
             # ponytail: purchases held at the list-price run; re-simulate at the deal price if a same_plan verdict hangs on it
             delta = (r["list"] - r["now"]) * (t["purchases"] - t["refunds"])
@@ -138,7 +141,7 @@ def _rank(rows: list[dict], field: str) -> dict[str, int]:
 
 def main() -> None:
     """Print the board, and for one deal how far it moves its plans."""
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     parser.add_argument("deal_id", nargs="?", type=int, help="the id the notification gives")
     args = parser.parse_args()
     db = connect()
