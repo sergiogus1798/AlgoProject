@@ -1,9 +1,10 @@
 ---
 q: At what prices and moments does SQX fill entries and exits for this fleet?
-kw: SQX fill convention open-to-open; entry price offset spread above bar open; how much of the spread is in the fill price; intrabar entries pending fills or clock; zero-duration trades; rebuild P/L from bars; point value per market regression; M1 execution grid
-tag: 🔬  date: 2026-09-26  see: export/data-all-crossmarket, export/exits-and-m1-library, research/zero-duration-trades, costs/where-the-spread-is
+kw: stop fill inside the bar; stop level rounded to tick; gap through stop fills at open; replay delay 0 reconciliation; SQX fill convention open-to-open; entry price offset spread above bar open; how much of the spread is in the fill price; intrabar entries pending fills or clock; zero-duration trades; rebuild P/L from bars; point value per market regression; M1 execution grid
+tag: 🔬  date: 2026-10-14  see: export/sl-pt-same-bar-convention, export/sqx-atr-is-wilder, export/data-all-crossmarket, export/exits-and-m1-library, research/zero-duration-trades, costs/where-the-spread-is
 ---
-# SQX fills this fleet at the logic-TF bar opens (entry and exit); nothing happens inside a bar
+# SQX fills entries and bar exits at the logic-TF bar opens; only a stop fills inside a bar — at its tick-rounded level, or the open when the bar gaps past it
+- **Stops** (🔬 2026-10-14): level = fill − side·coef·round(ATR20[entry−1], 6) **rounded to the tick**; hit in the first own-TF bar reaching it; fill = level − side·slip, or **the open when the bar gaps past it**. Replay: `engines/market/replay/README.md`.
 - Reprice on the logic timeframe's bar grid; M1 would create a fill mismatch. Switch to M1 only when exit-side median error ≠ 0 (stops/targets) — the old `crossmarket/mechanics/pricing.reconcile()` decided (deleted 2026-10-07, encargo 46; `engines/market/calibrate.convention()` measures it now).
 - Entry sits a constant offset above the bar open; exits on the open. Judge price vs bar open, never the clock.
 - ⚠️ **That entry offset, AS A FRACTION OF THE DECLARED SPREAD, is not one universal constant** — measured per feed, 2026-09-26 (edgeCost's `spread_share`, deleted on 2026-10-07 with encargo 44; review BLOCKER): `USDJPY_M1` H1 offset 0.002 against a declared 0.001 (ratio 2.0, i.e. MORE than the full declared spread); `XAUUSD_M1` M30 offset 0.08 IS / 0.15 OOS against declared 0.05 / 0.10 (ratio 1.6 / 1.5). None of the three is the 0.5 an earlier reading of this card's gold-only evidence (below) generalised into a universal "half spread" convention. **Measure the offset per feed and segment directly; never assume a ratio carries over.**
@@ -11,6 +12,7 @@ tag: 🔬  date: 2026-09-26  see: export/data-all-crossmarket, export/exits-and-
 - Check bar-open alignment against the bar index (`Open time` in the real bar index), not `minute == 0` (wrong on M30).
 
 ## Evidence
+- Stops: `tests/test_replay.py` (drop the gap rule or the ATR shift: red).
 - 757 strategies / 960,705 M30 trades (`raw/XAUUSD/MC_Trades/2026-09-19, deleted 2026-09-25`): zero SL/TP/trailing exits; |exit − bar Open| median 0.0000,
   max 0.0100, 0 of 757 non-zero median; |entry − bar Open| median 0.0800, max 0.0900.
 - Retest export (`Strategy 24.14.35`, 1,055 gold trades): entry error 0.05 (989) or 0.06 (66), exit 0 = Buy filled at ask. Silver, Brent median 0 →

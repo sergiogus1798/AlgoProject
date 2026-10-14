@@ -49,6 +49,7 @@ TABS = [
             ("Análisis conjunto (paso 20)", ["blindJoint"], "", None),
             ("Exposición", ["exposure"], "", None),
             ("Edge por coste", ["edgeCost"], "", None),
+            ("Estacionalidad", ["seasonality"], "", None),
         ],
     ),
 ]

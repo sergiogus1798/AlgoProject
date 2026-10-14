@@ -8,6 +8,10 @@ import pandas as pd
 
 from core.paths import harvest_dir
 from perf.inputs import sample
+from studies.readings.seasonality import (
+    inputs as seasonality_inputs,
+    many as seasonality_many,
+)
 from pipeline.autopilot import kept
 from studies.screening.gate import (
     inputs as gate_inputs,
@@ -132,3 +136,20 @@ def kept_rows(cfg: dict) -> sample.Workload:
     equity = pd.read_parquet(folder / "equity.parquet")
     got, _ = kept.rows(card, list(card["strategy"]), equity, 1000.0)
     return {"scale": len(got), "bytes_in": sample.weight([folder / "equity.parquet"])}
+
+
+def seasonality_population(cfg: dict) -> sample.Workload:
+    """The calendar reading over the sample's oos1 trades: per-strategy shuffle nulls."""
+    project, databank, day = cfg["sample"]["gate"]["harvest"]
+    folder = harvest_dir(project, databank, day)
+    study = seasonality_inputs.config([])
+    trades = seasonality_inputs.oos_trades(folder)
+    names = seasonality_inputs.names(folder)
+    ids = sorted(trades["identity"].unique())[
+        : cfg["sample"]["gate"]["strategies"] or None
+    ]
+    zone, warnings = seasonality_inputs.clock(cfg["sample"]["gate"]["feed"], folder)
+    seasonality_many.run(
+        pd.DataFrame(trades[trades["identity"].isin(ids)]), names, zone, study, warnings
+    )
+    return {"scale": len(ids), "bytes_in": sample.weight([folder / "trades.parquet"])}

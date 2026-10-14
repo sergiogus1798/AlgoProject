@@ -89,6 +89,7 @@ STUDIES = {
         None,
     ),
     "edgeCost": ("readings", "studies.readings.edgeCost", "Edge por coste", "8"),
+    "seasonality": ("readings", "studies.readings.seasonality", "Estacionalidad", None),
     "monteCarlo": (
         "readings",
         "portfolio.common.monteCarlo",
@@ -148,6 +149,8 @@ ROLE: dict[str, str | Callable[[dict], bool]] = {
     # the trade-level readings describe one strategy; none writes DESCARTAR
     "monkey": "describe",
     "entryQuality": "describe",
+    # the calendar reading only describes (rule 15): it never names a strategy to drop
+    "seasonality": "describe",
     # verdict.csv carries a tier, not a verdict column
     "monteCarlo": "describe",
     # DESCARTAR only with verdict.action = drop; mark today (ledger, 2026-09-26)

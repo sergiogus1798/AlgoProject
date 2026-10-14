@@ -61,6 +61,11 @@ TARGETS: dict[str, Target] = {
     "gate.level2": {"area": "gate", "unit": "strategies", "call": gate.gate_level2},
     "gate.level3ab": {"area": "gate", "unit": "strategies", "call": gate.gate_level3ab},
     "gate.monkey": {"area": "gate", "unit": "strategies", "call": gate.gate_monkey},
+    "seasonality.population": {
+        "area": "gate",
+        "unit": "strategies",
+        "call": gate.seasonality_population,
+    },
     "gate.kept": {"area": "gate", "unit": "strategies", "call": gate.kept_rows},
     "falsepositives.donor": {
         "area": "strategies",

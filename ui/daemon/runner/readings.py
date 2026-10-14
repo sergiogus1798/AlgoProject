@@ -64,6 +64,22 @@ def entry_quality(c: dict, strategy: str) -> list[str] | str:
     ]
 
 
+def seasonality(c: dict, strategy: str) -> list[str] | str:
+    """Calendar concentration of oos1, over the newest cosecha."""
+    if not c["harvest"]:
+        return "necesita la cosecha de este databank (studies.screening.gate.harvest, skill /oos-gate)"
+    return [
+        "-m",
+        "studies.readings.seasonality.report",
+        "--project",
+        c["project"],
+        "--databank",
+        c["databank"],
+        "--feed",
+        c["feed"],
+    ] + (["--strategy", strategy] if strategy else [])
+
+
 def edge_cost(c: dict, strategy: str) -> list[str] | str:
     """Edge per unit of cost, over the newest cosecha."""
     if not c["harvest"]:
@@ -166,6 +182,7 @@ STUDIES = {
         "population": exported,
     },
     "edgeCost": {"plan": edge_cost, "one": True, "many": True, "sets": True},
+    "seasonality": {"plan": seasonality, "one": True, "many": True, "sets": True},
     "exposure": {"plan": exposure, "one": True, "many": True, "sets": True},
     "monteCarlo": {"plan": monte_carlo, "one": True, "many": True, "sets": True},
     "blindJoint": {"plan": blind_joint, "one": False, "many": True, "sets": True},

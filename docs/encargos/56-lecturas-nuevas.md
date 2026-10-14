@@ -17,9 +17,9 @@ sitios y cada uno olvidado es un hallazgo de auditoría) · `core/study/CONTRACT
 
 | # | frente | modelo | depende de | estado |
 |---|---|---|---|---|
-| 1 | Estacionalidad: ¿el resultado se concentra en meses, días o horas, medido contra el azar? (ex 25) | Opus (estadística) | nada | sin empezar; no existe `studies/readings/seasonality/` |
+| 1 | Estacionalidad: ¿el resultado se concentra en meses, días o horas, medido contra el azar? (ex 25) | Opus (estadística) | nada | **hecho 2026-10-14** → `studies/readings/seasonality/` (§1 borrado: ver bitácora) |
 | 2 | Señal agregada por plantilla: qué plantillas de la librería merece la pena seguir explotando (ex 26) | Opus | **la pregunta del dueño §2.0** (alcance 1, 2 o ambos) y §2.1 (ubicación) | sin empezar; **bloqueado por una pregunta** |
-| 3 | Replay de operaciones, tier 2 del retraso: re-ejecutar cada operación desde una entrada desplazada (ex 16) | Opus (diseño) + Sonnet | decisiones §3.3; ver el bloqueo ya levantado | sin empezar; `engines/market/replay/` sólo tiene su README «not built yet» |
+| 3 | Replay de operaciones, tier 2 del retraso: re-ejecutar cada operación desde una entrada desplazada (ex 16) | Opus (diseño) + Sonnet | decisiones §3.3; ver el bloqueo ya levantado | **motor y reconciliación hechos 2026-10-14** (`engines/market/replay/`); queda §3: que `entryQuality` lo consuma |
 | 4 | Cerebro con probabilidades: regresión logística que da a cada estrategia la `p` de pasar el paso siguiente (ex 40) | Opus | decisiones del dueño (objetivo, corte, scikit-learn) | sólo prototipo en `scratch/cerebro/logit.py` (50 líneas, **fuera de git**) |
 | 5 | Alfa y beta (ex 13) | — | — | **aparcado por el dueño — no se despacha** |
 
@@ -27,6 +27,24 @@ sitios y cada uno olvidado es un hallazgo de auditoría) · `core/study/CONTRACT
 
 - 2026-10-09 — Consolidado desde los encargos 25, 26, 16, 40 y 13 (originales en git en `c923d10`:
   `git show c923d10:docs/encargos/<fichero>`). Estado verificado ese día contra el disco.
+- 2026-10-14 — **Frente 1 hecho y borrado de aquí.** El estudio es `studies/readings/seasonality/`
+  (README: el nulo, las palabras, los límites), su test `tests/test_seasonality.py`, umbrales
+  `seasonality.min_trades` (30, D-3) y `seasonality.fdr_q` (0,05, **pendiente de que el dueño lo
+  confirme**) en `ledger/thresholds.yaml`, ficha `knowhow/research/seasonality-indistinguishable-from-chance.md`,
+  capítulo del manual en `06-lecturas`. Decisiones aplicadas: D-1 sólo informa, D-2 UTC, D-3 30;
+  apertura y cierre se leen las dos por separado. Lectura: XAUUSD donchian2 H1 1/300 y USDCAD
+  reversion M30 0/64 con celda descubierta, bajo el techo del azar (15 y 3,2) → el calendario no
+  explica el resultado; no aporta filtro (y la regla 15 no lo permitiría).
+- 2026-10-14 — **Frente 3: motor y reconciliación hechos.** `engines/market/replay/` (walk, reconcile,
+  inputs; README con la tabla por cosecha), `tests/test_replay.py`. La definición del stop SÍ existe
+  (D-6 se cumple sin esperar): las cosechas `harvest/<P>/Stop_p90/` nombran su lote de variantes y su
+  `x` (SL = x · ATR(20) Wilder de la barra anterior). Con `d = 0` reproduce el 99,4-99,9 % de 18.520
+  operaciones de siete cosechas (barra y razón de salida), 98,8-100 % de los stops a ≤ 2 ticks. Convenciones
+  nuevas en `knowhow/export/fill-and-pricing.md` (nivel redondeado al tick; hueco → se llena a la
+  apertura). SL+TP en la misma barra ya estaba medido (`sl-pt-same-bar-convention.md`). Sin Numba (D-7):
+  0,01 s por cosecha. Lectura (`knowhow/research/delay-tier1-overstates-stop-strategies.md`): el tier 1
+  sobrestima el P&L con retraso de las estrategias con stop (NIKKEI simpleL, 1 barra: 42,0 frente a 27,0 $
+  por operación) → para estrategias con stop sólo vale el tier 2.
 
 ---
 
@@ -50,61 +68,6 @@ una decisión»); lo que tiene interfaz es una vista dentro de `ui/` en estilo t
 del principal o de los mercados adicionales, **nunca en el IS**, y **`oos2` está reservado**: no se lee sin
 que el dueño lo autorice para esa tarea; gráficos grandes, alto contraste, escalas discretas, y cada
 estadístico mostrado se explica (memoria `preferencias-de-visualizacion`).
-
----
-
-## 1 · Estacionalidad (ex 25)
-
-**La pregunta.** BuildAlpha lo llama «seasonality breakdown»: P&L por mes del año, día de la semana y hora.
-Hoy nada dice si el resultado de una estrategia se concentra en unos meses, unos días o unas horas, o está
-repartido.
-
-**Una tabla de «julio rinde mejor» sin más es la trampa que este proyecto ya conoce** (`studies/CLAUDE.md`
-§«Multiple testing es la condición por defecto»): 12 meses + 7 días + 24 horas son decenas de celdas y alguna
-destacará por azar. Dos capas, no una:
-
-1. **El desglose:** P&L, nº de operaciones y win rate por celda de calendario.
-2. **El contraste contra el azar, obligatorio antes de enseñar la capa 1 como lectura:** ¿la concentración
-   observada es mayor que la de repartir las mismas operaciones al azar entre las mismas celdas? Corrige por
-   el número de celdas con `engines/inference` (Benjamini-Hochberg), como ya hacen `gate` y `snoopingScreen`.
-   El azar es el de **OOS**, no el del IS.
-
-**La decisión que debe salir:** «el resultado depende de una ventana de calendario estrecha (una hora, un
-día)» = una **fragilidad a reportar**; o «el reparto es indistinguible del azar» = no aporta nada, dilo.
-
-> **Choque con la regla 15 (posterior al encargo original).** La regla 15 prohíbe al builder dibujar bloques
-> de tiempo (BarTime, CurrentTime, día de la semana o del mes) en cualquier estudio o generación. Este frente
-> **sólo DESCRIBE una estrategia ya terminada por calendario; jamás devuelve un filtro horario o de calendario
-> a una generación**. Ninguna salida suya alimenta el builder. El texto original no proponía actuar sobre el
-> calendario; si al ejecutar aparece la tentación («filtrar las horas malas»), **es una pregunta para el
-> dueño** (§Decisiones D-1), no un paso.
-
-**Dónde va:** `studies/readings/seasonality/` (familia `readings/`, junto a `monkey`, `entryQuality`, `edgeCost`,
-`structure`, `conditionalMap`; tabla en `studies/readings/README.md:5`). No es un paso numerado del WORKFLOW.
-Forma (`studies/CLAUDE.md`, `/new-study`): `config.yaml` (granularidad mes/día/hora, umbral de significancia),
-`tooltips.py`, `one.py`, `many.py` (probablemente sí: cuántas estrategias de la población muestran
-concentración real separa el bloque del ruido), `report.py`, `README.md`.
-
-**Qué reutilizar:**
-- El *timestamp* de cada operación: `core/trades.py` / `core/tradestore.py`. No reimplementes el parseo del trade
-  export (`knowhow/export/trade-export-columns.md`).
-- **Huso horario: ya hay ficha** (el original decía «mídelo si no la hay»): `knowhow/export/feed-clock-timezones.md`
-  — SQX sella en el reloj del broker del feed, nunca en UTC; `sqx.inspect.feeds.timezone(feed)` lo lee;
-  `EETUS` = Nueva York + 7 h; las horas de cambio de hora se localizan con `ambiguous="NaT"` y se cuentan.
-  Sin esto, todo lo horario sale 2-3 h desplazado. Decide y documenta si la hora de calendario es la del feed
-  o UTC (D-2).
-- El benchmark de `studies/readings/entryQuality/eratio.py:51-59` ya empareja el azar **hora a hora**: mira si se
-  puede reutilizar esa maquinaria en vez de duplicarla (`studies/` nunca importa otro estudio: si hace falta,
-  súbela a `engines/`).
-
-**Decisiones a cerrar por escrito antes de programar:** hora de apertura, de cierre o ambas por separado
-(abrir y cerrar pueden caer en celdas distintas); **mínimo de operaciones por celda** por debajo del cual la
-celda se marca «sin datos suficientes», nunca se omite en silencio (ese mínimo lo decide el dueño: D-3).
-
-**Verificación del frente:** `python3 -m pytest tests/test_seasonality.py -q` (caso de respuesta conocida:
-operaciones sintéticas concentradas en una hora → la hora sale significativa tras BH; repartidas → ninguna) ·
-`python3 tools/depmap.py && python3 tools/checks.py` · capítulo del manual (regla 8, `/manual-chapter`) · fila
-en `studies/readings/README.md`.
 
 ---
 
@@ -156,64 +119,16 @@ README de la familia elegida.
 
 ---
 
-## 3 · Replay de operaciones, tier 2 (ex 16)
+## 3 · Replay de operaciones, tier 2 (ex 16) — lo que queda
 
-**Qué es y qué no.** No es un motor de backtest: las entradas vienen de SQX y la lógica de entrada no se
-reimplementa jamás. El simulador sólo **vuelve a ejecutar cada operación desde una entrada, posiblemente
-desplazada `d` barras, caminando el M1 hasta que algo la cierra**. Existe porque el tier 1
-(`studies/readings/entryQuality/delay.py`) es correcto para salidas por señal y por nº de barras pero **falso
-para un stop o un target**, que se recalculan desde el precio de entrada nuevo.
-
-**Dónde va:** el motor en `engines/market/replay/` (calcula y no juzga; sólo existe su `README.md` «not built
-yet»); lo consume `entryQuality` y quien venga. Forma: `studies/CLAUDE.md`, `core/study/CONTRACT.md`.
-
-### 3.1 · El bloqueo original, comprobado hoy (2026-10-09)
-El encargo decía: «esta población no tiene ni un SL ni TP» (XAUUSD/MC_Trades: 960.705 operaciones, 236
-estrategias, sólo `Exit After X Bars` / `Exit Signal` / `End Of Friday (Time)`) → no hay con qué validar el
-recálculo de stops; «si no existe todavía, dilo y párate». **Esa parte del bloqueo ya no es cierta:** existen
-poblaciones con stop (NIKKEI225 simpleL, USA500 indicesIBS, USDJPY doubleROC, entre 18 cosechas en
-`AlgoData/harvest/`; 30-37 % de sus operaciones salen por `Close type` `AT_PRICE`), y `engines/market/reprice.py`
-(commit `90d516d`, `reprice.real` línea 162) ya reproduce el precio de salida de SQX a 0,02 USD
-(`knowhow/export/off-grid-stamps-and-stop-exits.md`).
-**Pero no basta:** `reprice.real` rellena el stop **al precio que SQX exportó** (`Close price` ± slippage); no
-recalcula el **nivel** del stop desde una entrada desplazada. Para eso hace falta la *definición* del stop de la
-estrategia (múltiplo de ATR, puntos…), que el trade export no trae. **Primer paso:** mirar de dónde sacarla
-(el `.sqx` de la estrategia, vía `sqx/inspect/`) y, si no se puede, párate y díselo al dueño (D-6) en vez de
-inventar el recálculo.
-
-### 3.2 · El criterio de aceptación, que es el encargo entero
-**Con `d = 0` el simulador reproduce la lista de operaciones de SQX:** mismos instantes de salida, misma razón
-de salida, P&L dentro de una tolerancia pequeña. Antes de eso, ningún resultado con retraso vale nada. Reporta la
-**tasa de coincidencia** e investiga cada discrepancia (causas por orden de probabilidad: precisión intrabarra,
-modelo de spread, redondeo, swap). El precedente: `studies/readings/monkey/calibrate.convention()` halló el
-fill `open-open` con correlación 0,999985 (el segundo, 0,9629); la reconciliación licenció todo lo demás.
-
-### 3.3 · Tabla de decisiones abiertas (sólo vivía aquí; cerrarlas por escrito)
-
-| situación | qué decidir |
-|---|---|
-| SL y TP tocados en la misma barra M1 | el PDF propone SL primero (conservador). **Mide la convención de SQX antes de asumirla** |
-| la operación dura menos que el retraso | no existe: se descarta y se reporta la fracción descartada por `d` |
-| salida por señal desconocida tras un SL/TP que ya no ocurre | dejarla correr hasta su propio SL/TP o un tope de duración, marcarla, **reportar la fracción marcada**: si es grande, el tier 1 es más fiable que el tier 2 |
-| entradas pendientes (stop/limit) | ¿retrasar la colocación de la orden o desplazar el nivel? Documenta la elección |
-
-Las **dos variantes van las dos**: *retraso sólo en la entrada* (prueba la robustez temporal de la señal) y
-*latencia completa*, entradas y salidas por señal retrasadas (el caso real en vivo).
-
-### 3.4 · Rendimiento
-El PDF propone Numba. **No está en `requirements.txt`; añadir una dependencia compilada es decisión del dueño**
-(`sudo` pide contraseña aquí, las ruedas van a `~/.local`). Antes de pedirla: vectoriza **por lotes de
-operaciones con numpy** (el truco de `engines/nulls/barrier.py`, que hace el triple barrier sobre miles de
-corridas a la vez) y mide. El M1 del oro (7.949.285 barras) carga en 0,4 s con `core.barstore.source`: ni
-memory-mapping ni trozos. `core.trades` y `engines.market.calibrate` ya dan `point_value` medido, coste real
-`bruto − neto` y `engines.nulls.inputs.on_grid`.
-
-**Ya registrado fuera de este fichero:** columnas del export (`knowhow/export/trade-export-columns.md`), sellos
-fuera de rejilla y salidas por stop (`off-grid-stamps-and-stop-exits.md`), tipos de salida y librería M1
-(`exits-and-m1-library.md`), fills y precios (`fill-and-pricing.md`).
-
-**Cómo cierra:** la convención intrabarra que midas se **escribe en `knowhow/export/fill-and-pricing.md`**
-(es el dato que hoy no tiene nadie) · test de reconciliación `d = 0` · `depmap` + `checks` · capítulo del manual.
+El motor está hecho y reconciliado (bitácora 2026-10-14; `engines/market/replay/README.md`). Queda
+**que `studies/readings/entryQuality/` lo consuma** para las estrategias con stop: hoy su `delay.py`
+(tier 1) mantiene las salidas fijas, que sobrestima el P&L con retraso de una estrategia con stop.
+No se hizo el 2026-10-14 porque `entryQuality/one.py` lo tenía otra sesión. Al hacerlo: las dos
+variantes (sólo entrada y latencia completa), reportar las fracciones `dropped` y `unknown`, la lectura en la
+ventana, y el capítulo del manual de `entryQuality` actualizado. La entrada al motor es
+`engines.market.replay.inputs.ready(harvest/<P>/Stop_p90/<día>)`: una cosecha sin stop injertado no
+tiene `x` y se niega.
 
 ---
 
@@ -350,9 +265,8 @@ No hay un único comando para el encargo entero: dos frentes terminan en una **r
 en una medición contra SQX (3) y uno está aparcado (5). Por eso **no se despacha como bucle**. Cada frente
 cierra con su propia **Verificación**:
 
-- **Frente 1:** `python3 -m pytest tests/test_seasonality.py -q && python3 tools/depmap.py && python3 tools/checks.py`
 - **Frente 2:** respuestas D-4 y D-5 en la bitácora; después `python3 -m pytest tests/test_<estudio>.py -q && python3 tools/depmap.py && python3 tools/checks.py`
-- **Frente 3:** tasa de coincidencia con `d = 0` reportada por escrito, la convención de §3.3 en `knowhow/export/fill-and-pricing.md`, y el mismo `pytest && depmap && checks`
+- **Frente 3 (lo que queda):** `entryQuality` lee el tier 2 en las estrategias con stop; `python3 -m pytest tests/test_replay.py -q` más el test que cubra la lectura nueva; `python3 tools/depmap.py && python3 tools/checks.py`
 - **Frente 4:** `scratch/cerebro/logit.py` ya copiado al estudio, `pytest` verde, la tabla de cortes en manos del dueño
 - **Frente 5:** nada que verificar.
 

@@ -1,0 +1,11 @@
+# Estacionalidad (encargo 56 frente 1): resultado de oos1 por mes, día y hora UTC, contra el azar.
+# Sólo DESCRIBE una estrategia ya hecha: ninguna salida vuelve al builder como filtro horario
+# (regla 15; dueño D-1, 2026-10-14). Reloj UTC (D-2).
+#
+# `ledger:<clave>` = el número vive en ledger/thresholds.yaml, con quién lo puso y cuándo.
+shuffle:
+  draws: 20000   # barajadas por nulo; con ~90 celdas, BH pide p ~ 5e-4 y 1/(draws+1) debe quedar muy por debajo
+  seed: null     # null = raíz nueva de entropía del SO en cada corrida, guardada en el manifiesto; un entero la reproduce
+verdict:
+  min_trades: ledger:seasonality.min_trades   # por debajo, la celda se enseña «sin datos suficientes» y no se prueba (D-3)
+  fdr_q: ledger:seasonality.fdr_q             # FDR de Benjamini-Hochberg sobre todas las celdas probadas de una estrategia

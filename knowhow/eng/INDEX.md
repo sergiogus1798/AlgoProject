@@ -43,3 +43,4 @@
 - `vscode-has-no-statusline-usage-json` — Why is ~/.claude/usage.json never written under the VSCode extension?
 - `what-a-tool-sends-is-re-read-too` — Why cap what a tool call SENDS, not only what it returns?
 - `windows-portability` — Which parts of the project run on Windows and which are Linux-only?
+- `yaml-null-key-parses-as-none` — Why does cfg["null"] raise KeyError after loading a config.yaml that has a null: section?

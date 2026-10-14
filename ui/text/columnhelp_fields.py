@@ -289,6 +289,16 @@ FIELDS = {
     ): "Beneficio bruto medio por operación (antes de costes) entre el "
     "coste medio que pagó, sólo en oos1 y con el repreciado común "
     "(el mismo número que la puerta). Se juzga contra 2.",
+    (
+        "seasonality",
+        "cell",
+    ): "El mes, día o hora (reloj del feed pasado a UTC) cuyo neto en "
+    "oos1 pesa más en el resultado de la estrategia.",
+    (
+        "seasonality",
+        "rest_pnl",
+    ): "Neto de oos1 una vez quitadas las operaciones de esa celda: "
+    "si sigue siendo positivo, el resultado no depende de ella.",
     ("mcRetest", "composite"): "Puntuación de 0 a 100: media ponderada de producción, "
     "ejecución, especificación y datos, cada una la peor de sus "
     "tareas. Con un veto, FAIL sea cual sea.",

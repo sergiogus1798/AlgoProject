@@ -73,6 +73,9 @@ VERDICTS = {
     "edgeCost": "¿Cuánto edge bruto lleva cada operación sobre el coste que pagó en oos1? «por "
     "encima del umbral» si el edge medio llega a 2 veces ese coste, «por "
     "debajo» si no. En verdict.csv, DESCARTAR sólo si el dueño eligió eliminar.",
+    "seasonality": "¿El resultado de oos1 se concentra en un mes, un día o una hora más de lo que "
+    "lo haría repartiendo las mismas operaciones al azar? Sólo informa: nunca vuelve al "
+    "builder como filtro horario (regla 15).",
     "feedQuality": "¿Cuánto beneficio se apoya en fallos del feed M1 (picos y vuelta, "
     "congelados, huecos)? «alarma» si las operaciones que tocan uno llevan más "
     "de lo que daría el azar; «sin alarma» si no; «insuficiente» con menos de 10 "

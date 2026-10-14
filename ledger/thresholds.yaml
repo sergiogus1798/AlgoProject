@@ -1151,6 +1151,13 @@ thresholds:
     set_on: 2026-09-30
     why: el stop con el que se opera es SL = X·ATR(20) del paso 24; X = p90 del MAE/ATR de las ganadoras de build, la misma regla para todas, fijada antes de mirar ninguna cartera
 
+  - key: portfolio.funded.verdict_percentile
+    value: 0.95
+    source: portfolio/common/construct/config.yaml#verdict.pass_percentile
+    set_by: dueño
+    set_on: 2026-10-14
+    why: encargo 54, decisión 15 — el veredicto del camino fondeado en oos1 exige que la cartera supere al 95 % de las carteras al azar (verdict.pass_measure = mc_p; escrito como 0,95 porque el veredicto compara en escala 0-1); sin él oos2 no se abría
+
   # ── Fondeo · protocolo en vivo (encargo 65 fila 10): etapa A y SPRT de la fondeada ────
   - key: funded.live.stage_a.trades
     value: 30
@@ -1498,3 +1505,21 @@ thresholds:
     set_by: dueño
     set_on: 2026-10-12
     why: "miradas a oos2 que admite una celda (activo x TF x dirección x familia); con más es «solo vivo» y no se lee (encargo 65 §6)"
+
+  # ── Lectura · estacionalidad (encargo 56 frente 1): describe, nunca filtra (regla 15, D-1) ──
+  - key: seasonality.min_trades
+    value: 30
+    source: studies/readings/seasonality/config.yaml#verdict.min_trades
+    set_by: dueño
+    set_on: 2026-10-14
+    why: "operaciones mínimas de una celda de calendario para probarla; por debajo se enseña «sin datos suficientes» (D-3)"
+
+  - key: seasonality.fdr_q
+    value: 0.05
+    source: studies/readings/seasonality/config.yaml#verdict.fdr_q
+    set_by: agente
+    set_on: 2026-10-14
+    why: >-
+      FDR de Benjamini-Hochberg sobre todas las celdas probadas de una estrategia. Es el 0,05
+      que el dueño fijó en todos sus alfas (wfc, wfm, marketSurfaces, oos2Reading); no corta
+      nada, sólo colorea una descripción. Pendiente de que el dueño lo confirme.

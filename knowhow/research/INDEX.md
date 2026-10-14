@@ -18,6 +18,7 @@
 - `cusum-blind-spot` — Does a CUSUM non-rejection show a strategy is stable?
 - `daily-block-seams` — How must a daily block bootstrap treat floating equity at each block seam?
 - `darwinex-darwinia-published-rules` — What does Darwinex publish on DARWIN risk normalisation, D-Score, DarwinIA SILVER/GOLD and trading constraints?
+- `delay-tier1-overstates-stop-strategies` — Can the delay cost of a strategy with a stop be read with exits held fixed (tier 1)?
 - `distribution-series-outside-the-bins` — Why did the spp report crash with "unsupported operand NoneType * float" on a distribution overlay?
 - `drift-term-biased-by-side` — Why is the gate's drift_excess_t biased toward one side (long or short) of an asset, and how much?
 - `entry-vs-chance` — Do the entries or the exits carry the edge on this corpus, and how to tell?
@@ -59,6 +60,7 @@
 - `research-lessons` — What lessons apply to stop-fill simulations, range restriction and p-values at large n?
 - `robustness-monte-carlo` — How much drawdown should an account be sized for versus the backtest, and how many sims?
 - `rungs-share-random-entries` — Do the four rungs of the monkey (timing, timing_holds, timing_sizing, free) draw the same random entries?
+- `seasonality-indistinguishable-from-chance` — Does a strategy's oos1 result concentrate in a month, weekday or hour beyond chance, and how is that tested?
 - `selected-null-same-pool` — Why does the funded verdict's selected null find the same portfolio as the real pool?
 - `spp-decay-metrics-zero-edge-null` — Can the SPP's IS-vs-OOS1 decay metrics (median ratio, Vargha–Delaney A, W1/IQR) tell a zero-edge family from a real one?
 - `spp-noise-gate-centred-no-floor` — How does the SPP noise gate decide, and is there a minimum trade count?
@@ -76,6 +78,7 @@
 - `trial-count-half-rule` — When does trials.independent over-count the independent trials of a family?
 - `weekly-flip-null-skewed-lower-tail` — Does the weekly sign-flip null keep its size on skewed weekly excess, for a median statistic?
 - `wfc-dependence-moves-missed-pass` — Does making the variants more alike change the WFC's false PASA or its missed PASA?
+- `wfc-real-batch-rehearsal-build-oos1` — What does the step-17 criterion say on real batches, build in and oos1 out, and what does reading one cost?
 - `wfc-top-persistence-sign-flip-null` — Why does step 17's level pass half of the no-edge families, and does its null decide?
 - `wfm-cells-are-not-independent` — How many independent curves are the 30 WFM cells worth?
 - `window-filters-are-ledger-searches` — Does a filter applied in the window count as a search in the ledger?

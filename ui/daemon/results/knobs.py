@@ -32,6 +32,7 @@ LOADERS = {
     "monkey": "engines.nulls.inputs:config",
     "entryQuality": "studies.readings.entryQuality.inputs:config",
     "edgeCost": "studies.readings.edgeCost.inputs:config",
+    "seasonality": "studies.readings.seasonality.inputs:config",
     "monteCarlo": "portfolio.common.monteCarlo.inputs.config:load",
     "feedQuality": "studies.data.feedQuality.inputs:config",
     "maeDepth": "studies.screening.maeDepth.inputs:config",
