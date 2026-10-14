@@ -5,6 +5,7 @@ import hashlib
 import json
 import shutil
 from pathlib import Path
+from typing import Any, TypedDict
 
 from core import assetdata, sqxfile
 from core.datapaths import project_registry
@@ -17,7 +18,33 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def registry(project: str) -> dict:
+class Asset(TypedDict):
+    """What `asset` froze."""
+
+    symbol: str
+    file: str
+    sha256: str
+    card: str
+
+
+class Ledger(TypedDict):
+    """The study's search count at archive time."""
+
+    study: str
+    searches: int
+    trials: dict
+    segments: dict
+    sha256: str | None
+
+
+class Frozen(TypedDict):
+    """A member's clock and commission as of archiving."""
+
+    clock: str
+    commission: dict[str, Any]
+
+
+def registry(project: str) -> dict[str, str]:
     """The project's row of `AlgoData/projects/registry.csv`, the newest when it was built twice.
 
     Args:
@@ -35,7 +62,7 @@ def registry(project: str) -> dict:
     return rows[-1]
 
 
-def asset(symbol: str, out: Path) -> dict:
+def asset(symbol: str, out: Path) -> Asset:
     """Freeze the asset's cost card as it is today.
 
     Args:
@@ -57,7 +84,7 @@ def asset(symbol: str, out: Path) -> dict:
             "card": "asset/card.json"}
 
 
-def ledger(symbol: str, timeframe: str, family: str) -> dict:
+def ledger(symbol: str, timeframe: str, family: str) -> Ledger:
     """The study's search count at archive time: what deflates this strategy's Sharpe later.
 
     Args:
@@ -84,7 +111,7 @@ def feed_of(sqx: Path) -> str:
     return f"{symbol}_{timeframed.split('_LOM_')[0]}"   # the `_LOM_<tf>` suffix is not part of the key
 
 
-def frozen(clock: str, symbol: str) -> dict:
+def frozen(clock: str, symbol: str) -> Frozen:
     """What a portfolio member reads for good: its feed's clock and its commission, as of now.
 
     Both are live facts (the SQX data registry, the asset card) that change under an archived

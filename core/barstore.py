@@ -3,6 +3,7 @@
 import hashlib
 import os
 from pathlib import Path
+from typing import TypedDict, cast
 
 import pandas as pd
 
@@ -33,7 +34,11 @@ def fingerprint(frame: pd.DataFrame) -> str:
     return hashlib.sha1(text.encode("utf-8")).hexdigest()[:8]
 
 
-def library() -> dict:
+BarEntry = TypedDict("BarEntry", {"bars": int, "version": str, "from": str, "to": str})
+"""One feed of the bar library, as the last sync wrote it."""
+
+
+def library() -> dict[str, BarEntry]:
     """What the bar library currently holds.
 
     Returns:
@@ -44,7 +49,7 @@ def library() -> dict:
     return manifest.read(path)["counts"] if (path / "manifest.json").exists() else {}
 
 
-def store(feed: str, csv: Path) -> dict:
+def store(feed: str, csv: Path) -> BarEntry:
     """Put one feed's freshly exported M1 CSV into the library as Parquet.
 
     Args:
@@ -100,7 +105,7 @@ def read(feed: str, timeframe: str) -> pd.DataFrame:
     cache = bar_cache(feed, timeframe, library()[feed]["version"])
     if cache.exists():
         return pd.read_parquet(cache).set_index("t")
-    frame = source(feed).resample(RULE[timeframe]).agg(AGG).dropna()
+    frame = cast(pd.DataFrame, source(feed).resample(RULE[timeframe]).agg(AGG).dropna())
     cache.parent.mkdir(parents=True, exist_ok=True)
     tmp = cache.with_name(f".{cache.name}.{os.getpid()}.tmp")     # whole or not at all: a cut file would raise forever
     frame.reset_index(names="t").to_parquet(tmp, compression="zstd", index=False)

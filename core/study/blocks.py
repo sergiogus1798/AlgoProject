@@ -1,10 +1,14 @@
 """The kinds of block a study result is made of, built from raw numbers and checked."""
 
 import json
+from typing import TYPE_CHECKING, Any, SupportsFloat
 
 import numpy as np
 
 from core.study import blockcheck, clip
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 # The five words a block may colour itself with; the window's scale (ui/desktop/theme.py)
 # has one colour per word and no other. MANTENER or FAIL live in verdict.csv.
@@ -31,7 +35,7 @@ CONE_LEVELS = ("2.5", "25", "50", "75", "97.5")
 BANDS_5_95 = ("5", "25", "50", "75", "95")
 
 
-def _num(value: float) -> float | None:
+def _num(value: SupportsFloat) -> float | None:
     """A float JSON can carry: NaN and infinities become None."""
     value = float(value)
     return value if np.isfinite(value) else None
@@ -80,7 +84,7 @@ def distribution(title: str, unit: str, values: np.ndarray, real: float | None, 
                  p: float | None = None, band: tuple[float, float] = (5, 95),
                  bins: int = 60, series: dict[str, np.ndarray] | None = None,
                  shift: dict | None = None, reals: dict[str, float | None] | None = None,
-                 sign_shade: bool = True, pivot: float = 0.0) -> dict:
+                 sign_shade: bool = True, pivot: float = 0.0) -> dict[str, Any]:
     """The null's distribution with the real value marked, aggregated from the raw draws.
 
     Args:
@@ -140,7 +144,7 @@ def distribution(title: str, unit: str, values: np.ndarray, real: float | None, 
 
 def cone(title: str, unit: str, x: list, paths: np.ndarray, real: list,
          split: str | None = None, levels: tuple[str, ...] = CONE_LEVELS,
-         real_label: str | None = None) -> dict:
+         real_label: str | None = None) -> dict[str, Any]:
     """An equity cone with the real curve on top, aggregated from simulated paths.
 
     Args:
@@ -167,7 +171,7 @@ def cone(title: str, unit: str, x: list, paths: np.ndarray, real: list,
 
 
 def verdict(label: str, state: str, meaning: str, score: float | str | None = None,
-            parts: list[dict] | None = None) -> dict:
+            parts: list[dict] | None = None) -> dict[str, Any]:
     """A categorical call and the sentence that explains it — the label is never shown alone.
 
     Args:
@@ -184,7 +188,7 @@ def verdict(label: str, state: str, meaning: str, score: float | str | None = No
             "meaning": meaning, "parts": parts or []}
 
 
-def table(title: str, frame: object, note: str = "", digits: int = 6) -> dict:
+def table(title: str, frame: "pd.DataFrame", note: str = "", digits: int = 6) -> dict[str, Any]:
     """A table block from a DataFrame, numbers right-aligned and rounded.
 
     Args:
@@ -228,7 +232,7 @@ def _check(block: dict, where: str) -> None:
         raise ValueError(f"{where}: state {wrong} is not one of {STATES}")
 
 
-def validate(result: dict) -> dict:
+def validate(result: dict[str, Any]) -> dict[str, Any]:
     """Check a whole study result against the contract and that it serialises as JSON.
 
     Args:

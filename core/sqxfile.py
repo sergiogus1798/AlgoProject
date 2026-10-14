@@ -1,9 +1,11 @@
 """Read a .sqx strategy without SQX. It is a ZIP; everything useful is in its inner XML."""
 
+import os
 import hashlib
 import re
 import zipfile
 from pathlib import Path
+from typing import TypedDict, cast
 from xml.etree import ElementTree
 
 import numpy as np
@@ -62,7 +64,7 @@ def identity(path: Path) -> str:
     return _SEEN[key]
 
 
-def remember(path: Path, found: str, st: object) -> None:
+def remember(path: Path, found: str, st: os.stat_result) -> None:
     """Hand identity() a hash computed elsewhere (a fanout child), under `st = path.stat()` taken before."""
     _SEEN[(str(path), st.st_size, st.st_mtime_ns)] = found
 
@@ -105,7 +107,8 @@ def describe(path: Path) -> tuple[str, str, str]:
         text = z.read(INNER).decode("utf-8", "replace")
     assert text.rstrip().endswith("</StrategyFile>"), f"{path}: {INNER} is not a whole StrategyFile"
     found = next((m for m in map(RESULTS_RE.search, names) if m), None)
-    return _hashed(text), *((found.group(1), found.group(2)) if found else ("", ""))
+    symbol, feed = (found.group(1), found.group(2)) if found else ("", "")
+    return _hashed(text), symbol, feed
 
 
 def rules(path: Path) -> str:
@@ -186,7 +189,7 @@ def parameters(path: Path) -> dict[str, str]:
         Parameter name to value as stored, e.g. {"#Size#": "0.1"}. The value is the
         element's text, not an attribute.
     """
-    return {p.get("key"): (p.text or "").strip()
+    return {cast(str, p.get("key")): (p.text or "").strip()
             for p in xml(path).iter("Param")}
 
 
@@ -216,7 +219,15 @@ PROBLEM_BITS = {1: "NoTrades", 2: "TooLittleTrades", 4: "ZeroPLTrades", 8: "TooS
                 2048: "StockpickerShiftChanged"}
 
 
-def strategy_problems(path: Path) -> dict:
+class Problems(TypedDict):
+    """SQX's Strategy Problems flag, decoded."""
+
+    value: int
+    reasons: list[str]
+    unknown: int
+
+
+def strategy_problems(path: Path) -> Problems:
     """SQX's own «Strategy Problems» flag of a strategy.
 
     Args:

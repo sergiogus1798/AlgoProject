@@ -6,6 +6,7 @@ A folder since 2026-09-29 (rule 1): `brokers.py` holds `set_brokers()`, re-expor
 import shutil
 from datetime import date
 from pathlib import Path
+from typing import Any, TypedDict
 
 import yaml
 from ruamel.yaml.comments import CommentedMap
@@ -34,7 +35,7 @@ def path_of(name: str) -> Path:
     return ASSETS / SHARED[name] if name in SHARED else SYMBOLS / f"{name}.yaml"
 
 
-def parse(text: str, kind: str) -> object:
+def parse(text: str, kind: str) -> Any:
     """What the window typed, as the YAML scalar it means.
 
     Args:
@@ -50,7 +51,24 @@ def parse(text: str, kind: str) -> object:
     return yaml.safe_load(text) if text.strip() else None
 
 
-def set_value(name: str, keys: list, value: object) -> dict:
+class ValueWrite(TypedDict):
+    """What `set_value` reports."""
+
+    file: str
+    path: list
+    value: object
+
+
+class CostWrite(TypedDict):
+    """What `set_cost` reports."""
+
+    file: str
+    field: str
+    use: object
+    why: str
+
+
+def set_value(name: str, keys: list, value: object) -> ValueWrite:
     """Put one value into one file, leaving every comment and every other line alone.
 
     Args:
@@ -72,7 +90,7 @@ def set_value(name: str, keys: list, value: object) -> dict:
     return {"file": str(path), "path": keys, "value": value}
 
 
-def set_cost(symbol: str, field: str, value: object, why: str, after: str | None = None) -> dict:
+def set_cost(symbol: str, field: str, value: object, why: str, after: str | None = None) -> CostWrite:
     """Change what an asset really costs, and say why in the same write.
 
     Args:
@@ -117,7 +135,7 @@ def rename_cost(symbol: str, old: str, new: str) -> None:
 
 
 def create(symbol: str, cls: str, broker: str, sqx_symbol: str, session: str,
-           instrument: dict) -> dict:
+           instrument: dict) -> dict[str, str]:
     """Add an asset to the library, with every decision still open.
 
     Args:
@@ -192,7 +210,7 @@ def set_segment_end(symbol: str, segment: str, end: date) -> None:
     write(path, doc)
 
 
-def retire(symbol: str) -> dict:
+def retire(symbol: str) -> dict[str, str]:
     """Take an asset out of the library without losing it.
 
     Args:
@@ -209,7 +227,7 @@ def retire(symbol: str) -> dict:
     return {"retired": symbol, "file": str(dest)}
 
 
-def restore(symbol: str) -> dict:
+def restore(symbol: str) -> dict[str, str]:
     """Put a retired asset back into the library.
 
     Args:

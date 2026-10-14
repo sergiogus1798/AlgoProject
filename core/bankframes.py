@@ -41,6 +41,7 @@ def unbound(bank: dict, stats: dict[str, dict], block: int, markets: dict[str, d
     net = np.bincount(at, weights=bankfile.half_up(o["pl"], 2), minlength=size * width).reshape(size, width)
     for i, name in enumerate(names):
         if bank["data"] == "all":
+            assert markets is not None   # the guard above returned otherwise
             want = {k: v.get(block, {}) for k, v in markets.get(name, {}).items() if not k.startswith("Portfolio")}
         else:
             want = {str(bank["strings"][bank["index"]["main"]][i]): stats.get(name, {}).get(block, {})}
@@ -76,7 +77,7 @@ def metrics(bank: dict) -> pd.DataFrame:
     s = bank["stats"]
     f = pd.DataFrame(_who(bank, s["strategy"], s["res"]) | {"sample": s["sample"].astype("int64")})
     values = pd.DataFrame(np.asarray(s["v"]).reshape(len(s), len(bank["keys"])),
-                          columns=[name for name, _ in bank["keys"]])
+                          columns=pd.Index([name for name, _ in bank["keys"]]))
     return pd.concat([f, values.astype({name: "Int64" for name, kind in bank["keys"] if kind != "f"})],
                      axis=1)
 

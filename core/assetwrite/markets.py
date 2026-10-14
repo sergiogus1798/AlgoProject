@@ -1,5 +1,7 @@
 """Write one asset's Cross Market check — `_markets.yaml`'s `family`/`structural` feeds."""
 
+from typing import Any, TypedDict
+
 import yaml
 from ruamel.yaml.comments import CommentedMap
 
@@ -8,7 +10,15 @@ from core.assetyaml import read, write
 from core.paths import ASSETS
 
 
-def declare_main(symbol: str, sqx_symbol: str) -> dict:
+class MarketWrite(TypedDict):
+    """What `set_market` reports."""
+
+    symbol: str
+    category: str
+    feeds: list[dict[str, Any]]
+
+
+def declare_main(symbol: str, sqx_symbol: str) -> dict[str, Any]:
     """Give an asset its own Cross Market block, empty, if it does not have one yet.
 
     Owner, 2026-09-29 (feedback §1.7): every asset with a card is a main, not only the ones
@@ -33,7 +43,7 @@ def declare_main(symbol: str, sqx_symbol: str) -> dict:
     return doc[symbol]
 
 
-def set_market(symbol: str, category: str, feeds: list[dict]) -> dict:
+def set_market(symbol: str, category: str, feeds: list[dict[str, Any]]) -> MarketWrite:
     """Make one category of one asset's Cross Market check hold exactly these markets.
 
     Args:
@@ -79,7 +89,7 @@ def flow(feed: dict) -> CommentedMap:
     return one
 
 
-def set_expected_sign(table: dict[str, dict[str, str]]) -> dict:
+def set_expected_sign(table: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
     """Write the expected-sign table: per idea family, what its family and structural markets must do.
 
     Args:

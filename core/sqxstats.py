@@ -31,7 +31,7 @@ def _settings(path: Path) -> str:
         return z.read("settings.xml").decode("utf8", errors="replace")
 
 
-def records(blob: str) -> dict:
+def records(blob: str) -> dict[str, float]:
     """Decode one base64 SQStats blob into every statistic it holds.
 
     Args:
@@ -42,7 +42,8 @@ def records(blob: str) -> dict:
         not in COLUMNS -- it was zero on every strategy the calibration saw -- is reported
         as `stat:<f|i|l>:<id>`, the same key `core.optprofile` uses.
     """
-    raw, out, i = base64.b64decode(blob), {}, 0
+    raw, i = base64.b64decode(blob), 0
+    out: dict[str, float] = {}
     while i < len(raw):
         kind = raw[i]
         if kind > NAMED:
@@ -72,7 +73,7 @@ def results(path: Path) -> list[str]:
     return _RESULT.findall(xml)
 
 
-def stats(path: Path, result: str = "Main") -> dict:
+def stats(path: Path, result: str = "Main") -> dict[int, dict[str, float]]:
     """Metrics SQX stored in one of a strategy's results, per sample type.
 
     Args:
@@ -166,4 +167,4 @@ def equity(path: Path, result: str = "Main") -> pd.Series:
     count = struct.unpack(">i", buf[:4])[0]
     pairs = np.frombuffer(buf[4:4 + 16 * count], dtype=np.dtype([("t", ">i8"), ("v", ">f8")]))
     return pd.Series(pairs["v"].astype("float64"),
-                     index=pd.to_datetime(pairs["t"], unit="ms").normalize())
+                     index=pd.to_datetime(pairs["t"], unit="ms").normalize())  # pyright: ignore[reportAttributeAccessIssue] -- pandas stubs type to_datetime(ndarray) too wide

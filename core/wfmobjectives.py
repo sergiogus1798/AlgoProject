@@ -2,8 +2,10 @@
 
 import math
 import xml.etree.ElementTree as ET
+from typing import Any
 
 from core import sqxstats
+from core.xmlget import attr as _at, el as _el, text as _tx
 
 # Decoded from SQX (knowhow/conditions/wfm-acceptance.md): none of these three families is
 # stored; SQX recomputes them from the steps every time it paints. Reproduced here and
@@ -48,10 +50,10 @@ def _ratio(a: float, b: float) -> float:
 
 def _days(p: ET.Element, start: str, end: str) -> int:
     """Whole days between two of a step's epoch-millisecond bounds, floored like SQTime."""
-    return (int(p.get(end)) - int(p.get(start))) // DAY_MS
+    return (int(_at(p, end)) - int(_at(p, start))) // DAY_MS
 
 
-def rule(root: ET.Element) -> tuple[dict, list[dict]]:
+def rule(root: ET.Element) -> tuple[dict[str, int], list[dict[str, Any]]]:
     """The criterion the WFM ran with, as the strategy itself stores it.
 
     Args:
@@ -62,20 +64,20 @@ def rule(root: ET.Element) -> tuple[dict, list[dict]]:
         order: `family`, `metric`, `sample`, `op`, `value`. A WF special is a special even
         under subresult 30 — the master's conditions carry it that way and SQX forces it.
     """
-    node = root.find("SpecialValuesMap/SettingsMap/WalkForwardConditions/Conditions")
+    node = _el(root.find("SpecialValuesMap/SettingsMap/WalkForwardConditions/Conditions"))
     conds = []
     for c in node.findall("Condition"):
         if c.get("use") != "true":
             continue
-        col = c.find("Left-Side/Column-Value")
-        metric = col.get("column")
+        col = _el(c.find("Left-Side/Column-Value"))
+        metric = _at(col, "column")
         conds.append({"family": "special" if metric in SPECIALS
-                      else FAMILY[int(col.get("subresult"))],
-                      "metric": metric, "sample": SAMPLE[int(col.get("sampleType"))],
-                      "op": c.find("Comparator").get("value"),
-                      "value": float(c.find("Right-Side/Numeric-Value").get("value"))})
-    return ({"threshold_pct": int(node.get("thresholdPct")), "rows": int(node.get("robCombRows")),
-             "cols": int(node.get("robCombCols")), "min_squares": int(node.get("robMinComb"))},
+                      else FAMILY[int(_at(col, "subresult"))],
+                      "metric": metric, "sample": SAMPLE[int(_at(col, "sampleType"))],
+                      "op": _at(_el(c.find("Comparator")), "value"),
+                      "value": float(_at(_el(c.find("Right-Side/Numeric-Value")), "value"))})
+    return ({"threshold_pct": int(_at(node, "thresholdPct")), "rows": int(_at(node, "robCombRows")),
+             "cols": int(_at(node, "robCombCols")), "min_squares": int(_at(node, "robMinComb"))},
             conds)
 
 
@@ -83,9 +85,9 @@ def _stability(steps: list[ET.Element], metric: str) -> float:
     """Σ run-window metric over Σ optimisation-window metric, ×100, last step left out."""
     opt = run = 0.0
     for p in steps[:-1]:
-        opt += sqxstats.records(p.find("OptimizationStats/stats/SQStats").text)[metric]
+        opt += sqxstats.records(_tx(p.find("OptimizationStats/stats/SQStats")))[metric]
         blob = p.find("RunStats/stats/SQStats")
-        run += 0.0 if blob is None else sqxstats.records(blob.text)[metric]
+        run += 0.0 if blob is None else sqxstats.records(_tx(blob))[metric]
     if metric in PER_DAY:
         opt = _ratio(opt, sum(_days(p, "optimizeFrom", "optimizeTo") for p in steps[:-1]))
         run = _ratio(run, sum(_days(p, "runFrom", "runTo") for p in steps[:-1]))
@@ -94,8 +96,8 @@ def _stability(steps: list[ET.Element], metric: str) -> float:
 
 def _special(steps: list[ET.Element], metric: str) -> float:
     """SQX's `Columns/WalkForward` snippets, over the steps that ran."""
-    runs = [None if p.find("RunStats/stats/SQStats") is None
-            else sqxstats.records(p.find("RunStats/stats/SQStats").text) for p in steps]
+    runs = [None if (blob := p.find("RunStats/stats/SQStats")) is None
+            else sqxstats.records(_tx(blob)) for p in steps]
     if runs[0] is None:
         return 0.0
     live = [r for r in runs if r is not None]
@@ -112,7 +114,7 @@ def _special(steps: list[ET.Element], metric: str) -> float:
     return max(r[key] for r in live)
 
 
-def value(run: ET.Element, cell: ET.Element, base: dict, family: str, metric: str,
+def value(run: ET.Element, cell: ET.Element, base: dict[str, float], family: str, metric: str,
           sample: str = "all") -> float:
     """One objective of one cell, as SQX computes it.
 
@@ -127,15 +129,15 @@ def value(run: ET.Element, cell: ET.Element, base: dict, family: str, metric: st
     steps = run.findall("Periods/WalkForwardPeriod")
     if family == "oos":
         code = {v: k for k, v in SAMPLE.items()}[sample]
-        return float(sqxstats.records(cell.find(BLOB.format(s=code)).text)[metric])
+        return float(sqxstats.records(_tx(cell.find(BLOB.format(s=code))))[metric])
     if family == "special":
         return _special(steps, metric)
     got = (_stability(steps, metric) if family == "stability" else
-           _round2(sqxstats.records(run.find("stats/SQStats").text)[metric] / (base[metric] / 100)))
+           _round2(sqxstats.records(_tx(run.find("stats/SQStats")))[metric] / (base[metric] / 100)))
     return float(math.trunc(got)) if metric in INTEGER else got
 
 
-def cells(root: ET.Element) -> tuple[dict, list[dict], list[dict]]:
+def cells(root: ET.Element) -> tuple[dict[str, int], list[dict[str, Any]], list[dict[str, Any]]]:
     """Every cell of one strategy against its own criterion, and the `SHOWN` objectives.
 
     Args:
@@ -147,14 +149,14 @@ def cells(root: ET.Element) -> tuple[dict, list[dict], list[dict]]:
         `param_stability`, SQX's stored parameter-stability of that cell.
     """
     the_rule, conds = rule(root)
-    found = {r.get("resultKey"): r for r in root.find("ResultsMap/Results")}
+    found = {_at(r, "resultKey"): r for r in _el(root.find("ResultsMap/Results"))}
     main = next(k for k in found if not k.startswith("WF"))
-    base = sqxstats.records(found[main].find(BLOB.format(s=127)).text)
-    special = root.find("SpecialValuesMap/SettingsMap")
+    base = sqxstats.records(_tx(found[main].find(BLOB.format(s=127))))
+    special = _el(root.find("SpecialValuesMap/SettingsMap"))
     checked, shown = [], []
-    for run in root.find(".//WalkForwardResult")[0].findall("RunResult"):
-        key = run.get("resultName")
-        where = {"result": key, "oos_pct": int(run.get("param1")), "runs": int(run.get("param2"))}
+    for run in _el(root.find(".//WalkForwardResult"))[0].findall("RunResult"):
+        key = _at(run, "resultName")
+        where = {"result": key, "oos_pct": int(_at(run, "param1")), "runs": int(_at(run, "param2"))}
         for i, c in enumerate(conds):
             got = value(run, found[key], base, c["family"], c["metric"], c["sample"])
             # `value` was the threshold in `c`; from here on it is the cell's own number.
@@ -162,5 +164,5 @@ def cells(root: ET.Element) -> tuple[dict, list[dict], list[dict]]:
                                         "met": OPS[c["op"]](got, c["value"])})
         stab = special.find(f"ParametersStability_WF_{where['runs']}_runs_{where['oos_pct']}_OOS")
         shown.append(where | {f"{f}_{m}": value(run, found[key], base, f, m) for f, m in SHOWN}
-                     | {"param_stability": None if stab is None else float(stab.text)})
+                     | {"param_stability": None if stab is None else float(_tx(stab))})
     return the_rule, checked, shown

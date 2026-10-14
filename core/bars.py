@@ -1,6 +1,7 @@
 """Read an OHLC bar file exported by SQX into a frame indexed by bar open time."""
 
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -20,4 +21,4 @@ def read(path: Path) -> pd.DataFrame:
     """
     d = pd.read_csv(path)
     d.index = pd.to_datetime(d["Date"] + " " + d["Time"], format=TIME)
-    return d[["Open", "High", "Low", "Close", "Volume"]].sort_index()
+    return cast(pd.DataFrame, d[["Open", "High", "Low", "Close", "Volume"]].sort_index())

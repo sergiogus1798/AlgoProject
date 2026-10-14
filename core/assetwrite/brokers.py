@@ -1,10 +1,20 @@
 """Write one asset's `costs.commission.brokers` table — the per-broker figures `use` is picked from."""
 
+from typing import Any, TypedDict
+
 from core.assetdata import SYMBOLS
 from core.assetyaml import read, write
 
 
-def set_brokers(symbol: str, brokers: dict) -> dict:
+class BrokersWrite(TypedDict):
+    """What `set_brokers` reports."""
+
+    file: str
+    symbol: str
+    brokers: dict[str, Any]
+
+
+def set_brokers(symbol: str, brokers: dict[str, Any]) -> BrokersWrite:
     """Replace the whole per-broker commission table of one asset, in one write.
 
     Args:

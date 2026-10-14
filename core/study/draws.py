@@ -6,6 +6,7 @@ import os
 import threading
 import re
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -21,7 +22,7 @@ TAIL = 100        # the lowest and the highest draws kept exact when the draws t
 
 
 def record(test: str, metric: str, observed: float, drawn: np.ndarray, identity: str = "",
-           raw: bool = True, strategy: str = "", mother: str = "", **where: object) -> dict:
+           raw: bool = True, strategy: str = "", mother: str = "", **where: object) -> dict[str, Any]:
     """One simulated distribution as a row: what `numpy.histogram` gives, and the tails exact.
 
     Args:
@@ -90,14 +91,15 @@ def save(folder: Path | None, rows: list[dict]) -> None:
         consolidate(folder)         # deferred rows are older than this save: fold them first
         if path.exists():
             old = pd.read_parquet(path)
-            new = pd.concat([old[~old["test"].isin(set(new["test"]))], new], ignore_index=True)
+            new = cast(pd.DataFrame, pd.concat([old[~old["test"].isin(list(set(new["test"])))], new],
+                                               ignore_index=True))
         _write(path, new)
 
 
 def _replace(old: pd.DataFrame, new: pd.DataFrame) -> pd.DataFrame:
     """`old` without the rows of `new`'s tests and strategies, then `new`: what a merge means."""
-    gone = old["test"].isin(set(new["test"])) & old["strategy"].isin(set(new["strategy"]))
-    return pd.concat([old[~gone], new], ignore_index=True)
+    gone = old["test"].isin(list(set(new["test"]))) & old["strategy"].isin(list(set(new["strategy"])))
+    return cast(pd.DataFrame, pd.concat([old[~gone], new], ignore_index=True))
 
 
 def merge(folder: Path, rows: list[dict], defer: bool = False) -> None:
@@ -152,6 +154,7 @@ def consolidate(folder: Path) -> int:
         for shard in shards:
             part = pd.read_parquet(shard)
             df = part if df is None else _replace(df, part)
+        assert df is not None   # `shards` is not empty, so the loop below ran
         _write(path, df)
         for shard in shards:
             shard.unlink()

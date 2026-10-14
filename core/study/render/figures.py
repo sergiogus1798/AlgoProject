@@ -1,6 +1,6 @@
 """The four drawings over a continuous axis: distribution (one sample or several overlaid), cone, lines and bars."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from html import escape
 
 from core.study.render import svg
@@ -78,7 +78,7 @@ def distribution(b: dict) -> str:
     return svg.figure(b["title"], b["note"], svg.canvas("".join(body)), key)
 
 
-def _path(xs: list[float], ys: list, x: Callable, y: Callable) -> str:
+def _path(xs: Sequence[float], ys: list, x: Callable, y: Callable) -> str:
     """An SVG path through the points, broken where a value is missing."""
     out, pen = [], "M"
     for a, v in zip(xs, ys):

@@ -4,6 +4,7 @@ import hashlib
 import json
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from core.assetyaml import safe_load
 
@@ -28,7 +29,8 @@ def _cast(old: object, raw: str) -> object:
                      f"{type(old).__name__}")
 
 
-def apply(cfg: dict, overrides: list[str], names: dict | None = None) -> dict:
+def apply(cfg: dict[str, Any], overrides: list[str],
+          names: dict[str, Any] | None = None) -> dict[str, Any]:
     """Apply "section.key=value" overrides in place.
 
     Args:
@@ -53,7 +55,7 @@ def apply(cfg: dict, overrides: list[str], names: dict | None = None) -> dict:
 
 
 def load(path: Path, overrides: list[str],
-         names: Callable[[dict], dict] | None = None) -> dict:
+         names: Callable[[dict], dict] | None = None) -> dict[str, Any]:
     """A config.yaml with its overrides applied.
 
     Args:

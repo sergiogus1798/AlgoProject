@@ -16,6 +16,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from core import sqxfile
 from core.paths import store_dir
@@ -107,7 +108,7 @@ def locked(cell: Path) -> Iterator[None]:
             mine.discard(cell)
 
 
-def manifest(identity: str) -> dict:
+def manifest(identity: str) -> dict[str, Any]:
     """The strategy's manifest, {} when it was never saved."""
     path = folder(identity) / MANIFEST
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}

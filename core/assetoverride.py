@@ -1,5 +1,7 @@
 """Temporary, one-run overrides of the build doctrine — never a `_build.yaml` edit."""
 
+from typing import Any
+
 # Unset by default, so `assetdata.doctrine()` is unchanged until a session sets one for the
 # one process that stages a project's tasks (owner, 2026-09-29 §2): a run-wide precision or
 # MC Retest count applied to ONE project, restored by simply not setting the variable again.
@@ -7,7 +9,7 @@ PRECISION = "ALGO_PRECISION_OVERRIDE"
 MC_SIMULATIONS = "ALGO_MC_SIMULATIONS"
 
 
-def replace(node: object, key: str, value: int) -> object:
+def replace(node: Any, key: str, value: int) -> Any:
     """Every leaf named `key` inside a nested structure, a bare int or a `{sub: int}` pair.
 
     Args:

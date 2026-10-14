@@ -6,7 +6,8 @@ after the work is already done and saved — tested, on `→` in a MC report's l
 """
 
 import sys
+from typing import Any, cast
 
 for _stream in (sys.stdout, sys.stderr):
     if hasattr(_stream, "reconfigure"):
-        _stream.reconfigure(encoding="utf-8", errors="backslashreplace")
+        cast(Any, _stream).reconfigure(encoding="utf-8", errors="backslashreplace")

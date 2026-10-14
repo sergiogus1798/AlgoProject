@@ -3,8 +3,10 @@
 import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
+from typing import Any
 
 from core import sqxstats
+from core.xmlget import attr as _at, el as _el, text as _tx
 
 # SQX writes the matrix axes as two ranges: param1 is the out-of-sample percentage and
 # param2 the number of walk-forward runs. periodType 10 is a rolling window: measured on
@@ -18,7 +20,7 @@ SAMPLES = {"is": 10, "oos": 20, "all": 127}
 BLOB = "ValuesMap/stats_LQ1_direction_DD_{d}_L1_pl_DD_10_L1_sample_DD_{s}_L1__RQ1_/SQStats"
 
 
-def _params(text: str) -> dict:
+def _params(text: str | None) -> dict[str, str]:
     """Split SQX's `Name=value,` parameter string.
 
     Args:
@@ -40,10 +42,10 @@ def _seconds(node: ET.Element, attr: str) -> int:
     Returns:
         Epoch seconds, the unit every other table in this project uses.
     """
-    return int(node.get(attr)) // MILLIS
+    return int(_at(node, attr)) // MILLIS
 
 
-def _stats(node: ET.Element, holder: str) -> dict:
+def _stats(node: ET.Element, holder: str) -> dict[str, float]:
     """Args:
         node: A `WalkForwardPeriod` element.
         holder: `OptimizationStats` or `RunStats`.
@@ -54,10 +56,10 @@ def _stats(node: ET.Element, holder: str) -> dict:
         `RunStats`. Those steps carry no `oos_` columns and must be dropped, not zero-filled.
     """
     blob = node.find(f"{holder}/stats/SQStats")
-    return {} if blob is None else sqxstats.records(blob.text)
+    return {} if blob is None else sqxstats.records(_tx(blob))
 
 
-def _cell_stats(result: ET.Element, direction: int = 0) -> dict:
+def _cell_stats(result: ET.Element, direction: int = 0) -> dict[str, float]:
     """Args:
         result: One `<Result>` element of the strategy's ResultsMap.
         direction: 0 for both sides, 1 long only, -1 short only.
@@ -70,7 +72,7 @@ def _cell_stats(result: ET.Element, direction: int = 0) -> dict:
     """
     return {f"{name}_{k}": v for name, sample in SAMPLES.items()
             for k, v in sqxstats.records(
-                result.find(BLOB.format(d=direction, s=sample)).text).items()}
+                _tx(result.find(BLOB.format(d=direction, s=sample)))).items()}
 
 
 def results(path: Path) -> dict[str, ET.Element]:
@@ -83,7 +85,7 @@ def results(path: Path) -> dict[str, ET.Element]:
     """
     with zipfile.ZipFile(path) as archive:
         xml = archive.read("settings.xml").decode("utf8", errors="replace")
-    return {r.get("resultKey"): r for r in ET.fromstring(xml).find("ResultsMap/Results")}
+    return {_at(r, "resultKey"): r for r in _el(ET.fromstring(xml).find("ResultsMap/Results"))}
 
 
 def matrix(path: Path) -> ET.Element | None:
@@ -101,7 +103,7 @@ def matrix(path: Path) -> ET.Element | None:
     return None if found is None else found[0]
 
 
-def cells(node: ET.Element, found: dict[str, ET.Element]) -> list[dict]:
+def cells(node: ET.Element, found: dict[str, ET.Element]) -> list[dict[str, Any]]:
     """One row per matrix cell: the parameters it settled on and how they did.
 
     Args:
@@ -114,16 +116,16 @@ def cells(node: ET.Element, found: dict[str, ET.Element]) -> list[dict]:
         `is_` for the first optimisation window, `oos_` for the walk-forward runs
         concatenated, `all_` for both together.
     """
-    return [{"result": run.get("resultName"),
-             "oos_pct": int(run.get("param1")), "runs": int(run.get("param2")),
+    return [{"result": _at(run, "resultName"),
+             "oos_pct": int(_at(run, "param1")), "runs": int(_at(run, "param2")),
              "params": _params(run.get("testParams")),
-             "fitness_is": float(found[run.get("resultName")].find("Fitnesses").get("IS")),
-             "fitness_oos": float(found[run.get("resultName")].find("Fitnesses").get("OOS"))}
-            | _cell_stats(found[run.get("resultName")])
+             "fitness_is": float(_at(found[_at(run, "resultName")].find("Fitnesses"), "IS")),
+             "fitness_oos": float(_at(found[_at(run, "resultName")].find("Fitnesses"), "OOS"))}
+            | _cell_stats(found[_at(run, "resultName")])
             for run in node.findall("RunResult")]
 
 
-def periods(node: ET.Element) -> list[dict]:
+def periods(node: ET.Element) -> list[dict[str, Any]]:
     """One row per walk-forward step of every cell -- the table a correlation study needs.
 
     Args:
@@ -138,8 +140,8 @@ def periods(node: ET.Element) -> list[dict]:
         run it on, so it carries no `oos_` columns at all and must be dropped before any
         correlation is taken.
     """
-    return [{"result": run.get("resultName"),
-             "oos_pct": int(run.get("param1")), "runs": int(run.get("param2")),
+    return [{"result": _at(run, "resultName"),
+             "oos_pct": int(_at(run, "param1")), "runs": int(_at(run, "param2")),
              "index": i,
              "optimize_from": _seconds(p, "optimizeFrom"),
              "optimize_to": _seconds(p, "optimizeTo"),

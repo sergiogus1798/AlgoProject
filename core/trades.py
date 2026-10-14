@@ -1,6 +1,7 @@
 """Read a trade list exported by SQX's orderstocsv, and the per-trade quantities derived from it."""
 
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -22,7 +23,7 @@ def read(path: Path) -> pd.DataFrame:
     d = d[d["Close price"].notna()].copy()
     d["Open time"] = pd.to_datetime(d["Open time"], format=TIME)
     d["Close time"] = pd.to_datetime(d["Close time"], format=TIME)
-    return d.reset_index(drop=True)
+    return cast(pd.DataFrame, d.reset_index(drop=True))
 
 
 def cost(trades: pd.DataFrame, point_value: float) -> pd.Series:
@@ -38,7 +39,7 @@ def cost(trades: pd.DataFrame, point_value: float) -> pd.Series:
         appear here; overnight trades carry swap on top.
     """
     # astype first: mapping a categorical returns a categorical, which will not multiply.
-    direction = trades["Type"].astype("object").map(SIDE)
+    direction = trades["Type"].astype("object").map(SIDE)  # pyright: ignore[reportArgumentType] -- pandas stubs reject a dict for map; it is a valid Mapping
     move = trades["Close price"] - trades["Open price"]
     return direction * move * trades["Size"] * point_value - trades["Profit/Loss"]
 

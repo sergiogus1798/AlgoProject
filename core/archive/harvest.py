@@ -40,7 +40,7 @@ def release() -> None:
         _PARTS.clear()
 
 
-def harvest_rows(folder: Path, identity: str, out: Path) -> dict:
+def harvest_rows(folder: Path, identity: str, out: Path) -> dict[str, int]:
     """The cosecha's three tables cut to this identity, every column kept.
 
     Args:
@@ -52,7 +52,7 @@ def harvest_rows(folder: Path, identity: str, out: Path) -> dict:
         Rows kept per table.
     """
     out.mkdir()
-    counts = {}
+    counts: dict[str, int] = {}
     for name in ("metrics", "equity", "trades"):
         if not (folder / f"{name}.parquet").exists():     # a harvest of metrics alone (Stop_p90)
             continue

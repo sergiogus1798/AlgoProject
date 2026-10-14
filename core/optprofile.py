@@ -5,6 +5,7 @@ import struct
 import zipfile
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any, TypedDict, TypeVar
 
 MEMBER = "optimizationProfile.bin"
 COLUMNS = {int(k): v for k, v in
@@ -54,6 +55,16 @@ def _sq_text(data: bytes, at: int) -> tuple[str, int]:
     return data[at:at + size].decode("utf8"), at + size
 
 
+T = TypeVar("T")
+
+
+class Permutation(TypedDict):
+    """One permutation: SQX's `Name=value,` string and its statistics."""
+
+    params: str
+    stats: dict[str, float]
+
+
 class _Reader:
     """A cursor over the payload, one Java ObjectInput primitive per method."""
 
@@ -90,7 +101,7 @@ class _Reader:
         text, self.at = _sq_text(self.data, self.at)
         return text
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, float]:
         """Read one `SQStats` blob.
 
         Returns:
@@ -101,7 +112,7 @@ class _Reader:
         data, at = self.data, self.at
         wide, count = _I32(data, at)[0] == 1, _I32(data, at + 4)[0]
         at += 8
-        out = {}
+        out: dict[str, float] = {}
         for _ in range(count):
             kind = data[at] - 256 if data[at] > 127 else data[at]
             if kind < 100:
@@ -119,13 +130,13 @@ class _Reader:
         self.at = at
         return out
 
-    def result(self) -> dict:
+    def result(self) -> Permutation:
         """Returns: One permutation as `params` (SQX's `Name=value,` string) and `stats`."""
         self.int32()
         params = self.sq_text()
         return {"params": params, "stats": self.stats()}
 
-    def keyed(self, value: Callable[[], object]) -> dict:
+    def keyed(self, value: Callable[[], T]) -> dict[str, T]:
         """Read a fastutil int-keyed map, naming each key by its databank column.
 
         Args:
@@ -140,7 +151,7 @@ class _Reader:
                 for k, v in ((self.int32(), value()) for _ in range(self.int32()))}
 
 
-def read(path: Path) -> dict:
+def read(path: Path) -> dict[str, Any]:
     """Everything one strategy's SPP cross-check left behind.
 
     Args:
@@ -161,7 +172,7 @@ def read(path: Path) -> dict:
     """
     r = _Reader(_payload(path))
     r.int32()
-    out = {"permutation_results": r.boolean()}
+    out: dict[str, Any] = {"permutation_results": r.boolean()}
     if out["permutation_results"]:
         out["original"] = r.result() if r.boolean() else None
         out["results"] = [r.result() for _ in range(r.int32())]

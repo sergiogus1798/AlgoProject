@@ -5,6 +5,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from core.paths import MASTER, WORKERS, project_dir
+from core.xmlget import el
 
 SAMPLE_TYPE = {"10": "IS", "20": "OOS", "127": "Full"}
 
@@ -100,7 +101,7 @@ def output_databank(task: ElementTree.Element) -> str:
     return "default" if value in (None, "null") else value
 
 
-def side(node: ElementTree.Element) -> dict:
+def side(node: ElementTree.Element) -> dict[str, str | None]:
     """One side of an acceptance condition.
 
     Args:
@@ -113,10 +114,10 @@ def side(node: ElementTree.Element) -> dict:
     """
     col = node.find("Column-Value")
     if col is None:
-        return {"value": node.find("Numeric-Value").get("value")}
+        return {"value": el(node.find("Numeric-Value")).get("value")}
     return {"column": col.get("column"), "result": col.get("resultType"),
             "subresult": col.get("subresult"),
-            "sample": SAMPLE_TYPE.get(col.get("sampleType"), col.get("sampleType"))}
+            "sample": SAMPLE_TYPE.get(sample, sample) if (sample := col.get("sampleType")) else sample}
 
 
 def conditions(task: ElementTree.Element) -> list[dict]:
@@ -139,6 +140,6 @@ def conditions(task: ElementTree.Element) -> list[dict]:
                         "fields": [f.text for f in c.findall("Field")]})
         else:
             out.append({"used": used, "left": side(left),
-                        "op": c.find("Comparator").get("value"),
-                        "right": side(c.find("Right-Side"))})
+                        "op": el(c.find("Comparator")).get("value"),
+                        "right": side(el(c.find("Right-Side")))})
     return out

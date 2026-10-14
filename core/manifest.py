@@ -5,6 +5,7 @@ import os
 import subprocess
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 from core.paths import ROOT
 
@@ -53,7 +54,7 @@ def write(out_dir: Path, source: dict, command: str, counts: dict,
     return path
 
 
-def read(out_dir: Path) -> dict:
+def read(out_dir: Path) -> dict[str, Any]:
     """Load the manifest of one export directory.
 
     Args:

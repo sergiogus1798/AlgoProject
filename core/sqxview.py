@@ -1,6 +1,7 @@
 """The owner's «Export Data View» as SQStats keys: a databank's metrics with no SQX running."""
 
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -58,11 +59,11 @@ def frame(files: dict[str, Path]) -> pd.DataFrame:
     return pd.DataFrame([got[name] for name in files])
 
 
-def _row(name: str) -> dict:
+def _row(name: str) -> dict[str, Any]:
     """One strategy's row of frame(), read in a fanout child off the module's `_FILES`."""
     f = _FILES[name]
     st = sqxstats.stats(f)
-    row = {"Strategy Name": name, "Filters result": sqxfile.sqx_filter(f) or "",
+    row: dict[str, Any] = {"Strategy Name": name, "Filters result": sqxfile.sqx_filter(f) or "",
            "TimeFrame (IS)": sqxfile.symbol(f)[1].rsplit("_", 1)[-1]}
     for block, cols in VIEW.items():
         row.update({f"{col} {LABEL[block]}": st.get(block, {}).get(key, 0) for col, key in cols})

@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -54,7 +55,7 @@ def listing() -> list[dict]:
     return out
 
 
-def load(identity: str, version: str | None = None) -> dict:
+def load(identity: str, version: str | None = None) -> dict[str, Any]:
     """One archived strategy, as the window would be served it live.
 
     Args:

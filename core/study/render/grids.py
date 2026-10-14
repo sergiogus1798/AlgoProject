@@ -23,7 +23,7 @@ def _levels(b: dict) -> list[float]:
         return b["levels"]
     if b.get("scale_range"):
         colours = DIVERGING if b["scale"] == "diverging" else SEQUENTIAL
-        return list(np.linspace(*b["scale_range"], len(colours) + 1)[1:-1])
+        return list(np.linspace(b["scale_range"][0], b["scale_range"][1], len(colours) + 1)[1:-1])
     v = np.array([c for r in b["values"] for c in r if c is not None], dtype=float)
     if b["scale"] == "diverging":
         top = float(np.percentile(np.abs(v), 95)) or 1.0

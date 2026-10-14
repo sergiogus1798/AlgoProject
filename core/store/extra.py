@@ -5,8 +5,10 @@ import shutil
 from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
+from pandas.core.util.hashing import hash_pandas_object
 
 from core import sqxfile
 from core.paths import DATA
@@ -48,11 +50,11 @@ def family(frame: pd.DataFrame, name: str, identity: str = "") -> pd.DataFrame:
     if identity:            # never the empty one: rows that carry no identity are nobody's by it
         hit |= frame.index == identity
         if "identity" in frame:
-            hit |= _mask(frame["identity"], lambda said: said.eq(identity))
+            hit |= _mask(cast(pd.Series, frame["identity"]), lambda said: said.eq(identity))
     for col in KEYS:
         if col in frame:
-            hit |= _mask(frame[col], lambda said: said.eq(name) | said.str.startswith(f"{name}_Scaled"))
-    return frame[hit]
+            hit |= _mask(cast(pd.Series, frame[col]), lambda said: said.eq(name) | said.str.startswith(f"{name}_Scaled"))
+    return cast(pd.DataFrame, frame[hit])
 
 
 def population(folder: Path, identity: str, names: list[str], out: Path) -> bool:
@@ -137,8 +139,8 @@ def trades(project: str, name: str, identity: str, tmp: Path,
         if not len(rows) or not any(named(path.parent, name, i) for i in {identity, *also}):
             continue
         # `Ticket` is SQX's numbering inside one databank, not part of a trade
-        print_ = int(pd.util.hash_pandas_object(rows.drop(columns="Ticket", errors="ignore"),
-                                                index=False).sum())
+        print_ = int(hash_pandas_object(rows.drop(columns="Ticket", errors="ignore"),
+                                         index=False).sum())
         if print_ in seen:      # SQX copies a databank to feed the next task: same trades, kept once
             seen[print_].setdefault("also", []).append(f"{databank}.{day}")
             continue

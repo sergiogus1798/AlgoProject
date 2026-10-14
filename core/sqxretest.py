@@ -4,11 +4,13 @@ import re
 import struct
 import zipfile
 from pathlib import Path
+from typing import TypedDict, cast
 from xml.etree import ElementTree
 
 import numpy as np
 
 from core import sqxstats
+from core.xmlget import el
 
 HEADER = 4
 RESULTS = "MonteCarloRetest_Results.xml"
@@ -77,7 +79,34 @@ def _results(path: Path) -> str:
     return xml
 
 
-def simulations(path: Path) -> dict:
+class Simulations(TypedDict):
+    """The ragged simulation layout `simulations` returns."""
+
+    pnl: np.ndarray
+    offsets: np.ndarray
+    index: np.ndarray
+
+
+class Meta(TypedDict):
+    """What a retest declares about itself."""
+
+    declared: int
+    instrument: str
+    timeframe: str
+    date_range: str
+    methods: list[str]
+
+
+class Settings(TypedDict):
+    """The retest configuration as it was set."""
+
+    methods: dict[str, dict[str, str]]
+    simulations: int
+    full_sample: bool
+    precision: str | None
+
+
+def simulations(path: Path) -> Simulations:
     """Every simulation's P/L, in the ragged layout the metric reconstruction consumes.
 
     Args:
@@ -141,7 +170,7 @@ def levels(path: Path) -> dict[int, dict]:
     return {int(level): sqxstats.records(blob) for level, blob in _LEVEL.findall(_results(path))}
 
 
-def reference(path: Path) -> dict:
+def reference(path: Path) -> dict[str, float]:
     """The original backtest's metrics as SQX computed them, from the retest result.
 
     Args:
@@ -151,10 +180,19 @@ def reference(path: Path) -> dict:
         All 152 statistics of the unperturbed run. Four of them -- DataLength and the three
         MaxNewHighDuration fields -- are absent from the level blobs, which carry 148.
     """
-    return sqxstats.records(_REFERENCE.search(_results(path)).group(1))
+    found = _REFERENCE.search(_results(path))
+    assert found is not None
+    return sqxstats.records(found.group(1))
 
 
-def meta(path: Path) -> dict:
+def _group(pattern: str, xml: str) -> str:
+    """The first group of a header tag `_results` already asserted is there."""
+    found = re.search(pattern, xml)
+    assert found is not None
+    return found.group(1)
+
+
+def meta(path: Path) -> Meta:
     """What the retest declares about itself.
 
     Args:
@@ -168,14 +206,14 @@ def meta(path: Path) -> dict:
         a symbol and does not compare equal to one. `core.sqxfile.symbol` splits them.
     """
     xml = _results(path)
-    return {"declared": int(re.search(r"<NumberOfSimulations>(\d+)", xml).group(1)),
-            "instrument": re.search(r"<Symbol>(.*?)</Symbol>", xml).group(1),
-            "timeframe": re.search(r"<TimeFrame>(.*?)</TimeFrame>", xml).group(1),
-            "date_range": re.search(r"<DateRange>(.*?)</DateRange>", xml).group(1),
+    return {"declared": int(_group(r"<NumberOfSimulations>(\d+)", xml)),
+            "instrument": _group(r"<Symbol>(.*?)</Symbol>", xml),
+            "timeframe": _group(r"<TimeFrame>(.*?)</TimeFrame>", xml),
+            "date_range": _group(r"<DateRange>(.*?)</DateRange>", xml),
             "methods": re.findall(r"<Method>(.*?)</Method>", xml)}
 
 
-def settings(path: Path) -> dict:
+def settings(path: Path) -> Settings:
     """The retest configuration as it was actually set, method by method.
 
     Args:
@@ -197,11 +235,11 @@ def settings(path: Path) -> dict:
     assert retest is not None and retest.find("Settings") is not None, (
         f"{path}: lastSettings.xml has no MonteCarloRetest/Settings")
     assert retest.get("use") == "true", f"{path}: lastSettings.xml says no retest ran"
-    block = retest.find("Settings")
-    methods = {m.get("type"): {p.get("key"): (p.text or "").strip()
-                               for p in m.findall("./Params/Param")}
+    block = el(retest.find("Settings"))
+    methods = {cast(str, m.get("type")): {cast(str, p.get("key")): (p.text or "").strip()
+                                          for p in m.findall("./Params/Param")}
                for m in block.findall("./Methods/Method") if m.get("use") == "true"}
     return {"methods": methods,
-            "simulations": int(block.findtext("NumberOfSimulations")),
+            "simulations": int(cast(str, block.findtext("NumberOfSimulations"))),
             "full_sample": block.findtext("MCUseFullSample") == "true",
             "precision": block.findtext("MCBacktestPrecision")}

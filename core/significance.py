@@ -1,5 +1,7 @@
 """Could this edge be zero? The Sharpe-based tests three studies now share, and the one Sharpe total."""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -91,7 +93,25 @@ def footprint(h: np.ndarray, d: np.ndarray, s: np.ndarray, c: np.ndarray, mu: fl
     return float(np.mean(mean_i) / np.sqrt(np.mean(var_i) + np.var(mean_i, ddof=1)))
 
 
-def psr(returns: np.ndarray, benchmark: float) -> dict:
+class Psr(TypedDict):
+    """What `psr` measures of a return series."""
+
+    sharpe: float
+    skew: float
+    kurtosis: float
+    n: int
+    psr: float
+
+
+class TrackRecord(TypedDict):
+    """What `min_track_record` answers."""
+
+    needed: float | None
+    have: int
+    enough: bool
+
+
+def psr(returns: np.ndarray, benchmark: float) -> Psr:
     """Probabilistic Sharpe Ratio of a return series.
 
     Args:
@@ -117,7 +137,7 @@ def psr(returns: np.ndarray, benchmark: float) -> dict:
             "psr": float(stats.norm.cdf(z))}
 
 
-def min_track_record(returns: np.ndarray, alpha: float = 0.05, benchmark: float = 0.0) -> dict:
+def min_track_record(returns: np.ndarray, alpha: float = 0.05, benchmark: float = 0.0) -> TrackRecord:
     """Bailey / Lopez de Prado minimum track-record length.
 
     Args:
@@ -157,7 +177,7 @@ def annual_sharpe(pnl: np.ndarray, closed: np.ndarray) -> float:
         than two days or no variation. Fixed sizing makes daily P&L and daily return on the
         account the same series up to a constant, so the ratio is the same either way.
     """
-    day = pd.DatetimeIndex(closed).normalize() + pd.offsets.BDay(0)
+    day = pd.DatetimeIndex(closed).normalize() + pd.offsets.BDay(0)  # pyright: ignore[reportAttributeAccessIssue] -- pandas stubs omit DatetimeIndex.normalize
     daily = pd.Series(np.asarray(pnl, dtype=np.float64), index=day).groupby(level=0).sum()
     rets = daily.reindex(pd.bdate_range(daily.index.min(), daily.index.max()), fill_value=0.0)
     sd = rets.std(ddof=1) if len(rets) > 1 else 0.0

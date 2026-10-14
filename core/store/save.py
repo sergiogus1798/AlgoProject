@@ -4,6 +4,7 @@ import csv
 import hashlib
 import tempfile
 from pathlib import Path
+from typing import TypedDict, cast
 
 from core import sqxfile
 from core.archive import collect, harvest, manifest as provenance
@@ -41,7 +42,7 @@ def verdicts(project: str) -> dict[str, dict[str, dict]]:
             for row in csv.DictReader(fh):
                 # lineage can name two identities each other's mother: the gate's one stays
                 who = row["identity"]
-                if not (gate and mother.get(mother.get(who)) == who):
+                if not (gate and mother.get(cast(str, mother.get(who))) == who):
                     who = mother.get(who, who)
                 out.setdefault(who, {})[n] = {
                     "strategy": row["strategy"], "verdict": row["verdict"],
@@ -173,7 +174,15 @@ def one(project: str, sqx: Path, steps: dict[str, dict], generated: int,
     return identity
 
 
-def project(name: str, sqx_dirs: list[Path]) -> dict:
+class Saved(TypedDict):
+    """What `project` saved and what it could not."""
+
+    saved: list[str]
+    no_sqx: list[str]
+    problems: dict[str, list[str]]
+
+
+def project(name: str, sqx_dirs: list[Path]) -> Saved:
     """Save every gate survivor of a project whose .sqx can be found.
 
     Args:
@@ -195,7 +204,7 @@ def project(name: str, sqx_dirs: list[Path]) -> dict:
         harvest.release()
 
 
-def _project(name: str, sqx_dirs: list[Path], said: dict, generated: int, mother: dict) -> dict:
+def _project(name: str, sqx_dirs: list[Path], said: dict, generated: int, mother: dict) -> Saved:
     """The body of `project`."""
     alive = {i: s for i, s in said.items() if GATE in s and s[GATE]["verdict"] != DEAD}
     if not generated:       # no step-8 row at all: nothing to save, and no run number to take the max of

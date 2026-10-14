@@ -1,7 +1,9 @@
 """The trade library: one Parquet per export, holding only what cannot be derived back."""
 
 from pathlib import Path
+from typing import cast
 
+import numpy as np
 import pandas as pd
 
 from core import trades
@@ -31,7 +33,7 @@ def ordered(frame: pd.DataFrame) -> bool:
     """
     opens, closes = frame["Open time"], frame["Close time"]
     return bool(opens.is_monotonic_increasing and not opens.duplicated().any()
-                and (opens[1:].to_numpy() >= closes[:-1].to_numpy()).all())
+                and (opens.iloc[1:].to_numpy() >= closes.iloc[:-1].to_numpy()).all())
 
 
 def blocks_of(frame: pd.DataFrame) -> pd.Series:
@@ -63,7 +65,7 @@ def whole(frame: pd.DataFrame) -> bool:
         k-th-occurrence rule sound. A False here means the blocks are guesses.
     """
     sizes = frame.groupby("block")["Ticket"]
-    return bool((sizes.max() == sizes.size()).all() and (sizes.min() == 1).all())
+    return bool(np.all(sizes.max() == sizes.size()) and np.all(sizes.min() == 1))
 
 
 def _prepared(path: Path, per_market: bool) -> tuple:
@@ -97,7 +99,7 @@ def by_strategy(packed: pd.DataFrame) -> dict[str, pd.DataFrame]:
         {strategy name: its trades}, in the order they were packed. Splitting one read beats
         reading one file per strategy: the whole 757-strategy export loads in 0.16 s.
     """
-    return {n: g.reset_index(drop=True)
+    return {str(n): g.reset_index(drop=True)
             for n, g in packed.groupby("strategy", sort=False, observed=True)}
 
 
@@ -133,7 +135,7 @@ def market(packed: pd.DataFrame, strategy: str, feed: str) -> pd.DataFrame:
         the caller shows it rather than treating it as a missing input.
     """
     rows = packed[(packed["strategy"] == strategy) & (packed["Symbol"] == feed)]
-    return rows.drop(columns=["strategy"]).reset_index(drop=True)
+    return cast(pd.DataFrame, rows.drop(columns=["strategy"]).reset_index(drop=True))
 
 
 def block(packed: pd.DataFrame, strategy: str, index: int) -> pd.DataFrame:
@@ -152,4 +154,4 @@ def block(packed: pd.DataFrame, strategy: str, index: int) -> pd.DataFrame:
         The rows, re-indexed from zero, without the `strategy` column.
     """
     rows = packed[(packed["strategy"] == strategy) & (packed["block"] == index)]
-    return rows.drop(columns=["strategy"]).reset_index(drop=True)
+    return cast(pd.DataFrame, rows.drop(columns=["strategy"]).reset_index(drop=True))

@@ -3,9 +3,11 @@
 import re
 import threading
 from pathlib import Path
+from typing import Any, cast
 
 import yaml
 from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap
 
 _Y = YAML()
 _Y.preserve_quotes = True
@@ -35,7 +37,7 @@ _Loader.add_implicit_resolver("tag:yaml.org,2002:float", re.compile(
     r"|[-+]?[0-9][0-9_]*[eE][-+]?[0-9]+|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$"), list("-+0123456789."))
 
 
-def safe_load(text: str) -> object:
+def safe_load(text: str) -> Any:
     """`yaml.safe_load` for the files ruamel writes: `1e-05` is a float here, not a string.
 
     Args:
@@ -47,7 +49,7 @@ def safe_load(text: str) -> object:
     return yaml.load(text, Loader=_Loader)
 
 
-def read(path: Path) -> object:
+def read(path: Path) -> Any:
     """One assets/ file with its comments and its order kept.
 
     Args:
@@ -128,7 +130,7 @@ def _walk(node: object, here: list, lines: list[str], out: list[dict]) -> None:
     """
     if isinstance(node, dict):
         for key in node:
-            line, before = node.lc.key(key)[0], len(out)
+            line, before = cast(CommentedMap, node).lc.key(key)[0], len(out)
             _walk(node[key], [*here, key], lines, out)
             # One new leaf means the key IS that leaf — a scalar, or a list of scalars,
             # which is one editable value. Several means it was a branch, and a branch's

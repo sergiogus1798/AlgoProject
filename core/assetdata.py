@@ -4,6 +4,7 @@ import copy
 import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 
 from core.assetyaml import safe_load
 
@@ -32,11 +33,11 @@ def enforced() -> bool:
 # edit from the window is read on the next call. 🔬 2026-09-25: `symbol_for()` parses every
 # asset file and a study calls it once per strategy or per cell -- 54 s of crossTF's 60 went
 # to parsing the same YAML 1,971 times.
-_PARSED: dict = {}
-_FEEDS: dict = {}     # symbol_for(): feed -> first asset, valid while the cards' stamps are
+_PARSED: dict[Path, tuple[tuple[int, int], dict[str, Any]]] = {}
+_FEEDS: dict[str, Any] = {}     # symbol_for(): feed -> first asset, valid while the cards' stamps are
 
 
-def _shared(path: Path) -> dict:
+def _shared(path: Path) -> dict[str, Any]:
     """The parsed YAML itself, the cache's own object: READ-ONLY, never handed out."""
     stamp = path.stat()
     stamp = (stamp.st_mtime_ns, stamp.st_size)
@@ -45,27 +46,27 @@ def _shared(path: Path) -> dict:
     return _PARSED[path][1]
 
 
-def _parse(path: Path) -> dict:
+def _parse(path: Path) -> dict[str, Any]:
     """One YAML file, parsed once per version of it on disk; each caller gets its own copy."""
     return copy.deepcopy(_shared(path))
 
 
-def _read(name: str) -> dict:
+def _read(name: str) -> dict[str, Any]:
     """The parsed YAML of one file of the assets root, named with its extension."""
     return _parse(ASSETS / name)
 
 
-def policy() -> dict:
+def policy() -> dict[str, Any]:
     """The research policy every asset inherits: segments and swap conventions."""
     return _read(POLICY)
 
 
-def classes() -> dict:
+def classes() -> dict[str, Any]:
     """The cost schema of each class: which fields exist, in what unit, on which SQX setting."""
     return _read(CLASSES)
 
 
-def doctrine() -> dict:
+def doctrine() -> dict[str, Any]:
     """The build doctrine: rule complexity, order types, exits, sizing, hours, cross-checks.
 
     `assetoverride.PRECISION` and `.MC_SIMULATIONS` (unset by default) replace every
@@ -89,7 +90,7 @@ def symbols() -> list[str]:
     return sorted(f.stem for f in SYMBOLS.glob("*.yaml"))
 
 
-def load(symbol: str) -> dict:
+def load(symbol: str) -> dict[str, Any]:
     """One asset, with the shared policy folded in.
 
     Args:
@@ -113,7 +114,7 @@ def load(symbol: str) -> dict:
     return copy.deepcopy({**base, **data, "segments": segments, "data": mine.get("data")})
 
 
-def schema(data: dict) -> dict:
+def schema(data: dict) -> dict[str, Any]:
     """The `_classes.yaml` block for this asset's class: field names, units and SQX settings.
 
     Args:
@@ -197,7 +198,7 @@ def segment_start(data: dict, segment: str) -> str:
     return f"{bound}-01-01" if isinstance(bound, int) else str(bound)
 
 
-def sqx_settings(data: dict, segment: str) -> dict:
+def sqx_settings(data: dict, segment: str) -> dict[str, Any]:
     """What a SQX task for this asset and segment must carry, in SQX's own vocabulary.
 
     Args:

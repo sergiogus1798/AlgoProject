@@ -1,7 +1,9 @@
 """Pack one export's CSVs into the trade library: parsed in parallel, written a few dozen strategies at a time."""
 
 import shutil
+from collections.abc import Collection
 from pathlib import Path
+from typing import Any, TypedDict
 
 import pandas as pd
 import pyarrow as pa
@@ -15,7 +17,7 @@ from core import fanout, tradestore
 WORKERS = 8
 CHUNK = 64           # strategies per spill and per write: bounds the memory of one
 # Where the workers spill, and how to parse, set before the fork.
-_PARTS: dict = {}
+_PARTS: dict[str, Any] = {}
 
 
 def _part(batch: tuple[Path, ...]) -> dict:
@@ -44,7 +46,17 @@ def _part(batch: tuple[Path, ...]) -> dict:
     return {"spill": spill, "info": info}
 
 
-def pack(files: list[Path], out: Path, per_market: bool) -> dict:
+class Pack(TypedDict):
+    """What a pack counts, for `core.tradepack.pack` and `core.bankfile.pack`."""
+
+    strategies: int
+    trades: int
+    columns: list[str]
+    kept_ticket: list[str]
+    torn_blocks: Collection[str]
+
+
+def pack(files: list[Path], out: Path, per_market: bool) -> Pack:
     """Every strategy of one export as a single typed Parquet, never whole in memory.
 
     Args:
@@ -87,6 +99,7 @@ def pack(files: list[Path], out: Path, per_market: bool) -> dict:
         table = pa.Table.from_pandas(frame, preserve_index=False)
         writer = writer or pq.ParquetWriter(out, table.schema, compression="zstd")
         writer.write_table(table.cast(writer.schema))
+    assert writer is not None   # an empty export has nothing to pack
     writer.close()
     shutil.rmtree(parts)
     return {"strategies": len(files), "trades": sum(i["rows"] for i in info),

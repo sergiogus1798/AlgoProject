@@ -46,11 +46,14 @@ THE FORMAT, version 1 — the one spec `AlgoBank.java` and the writer in
 
 import zlib
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+
+from core.tradepack import Pack
 
 MAGIC, END, VERSION, TRAILER = b"ALGOBANK", b"KNABOGLA", 1, 204
 ORDER = np.dtype([("strategy", "<u4"), ("ticket", "<i4"), ("open_ms", "<i8"), ("close_ms", "<i8"),
@@ -102,7 +105,7 @@ def _table(raw: np.ndarray, what: str) -> np.ndarray:
         raise Unreadable(f"la tabla de cadenas «{what}» no es UTF-8: {err}") from err
 
 
-def load(path: Path, check: bool = False) -> dict:
+def load(path: Path, check: bool = False) -> dict[str, Any]:
     """Open one `.abk` and validate it.
 
     Args:
@@ -129,7 +132,7 @@ def load(path: Path, check: bool = False) -> dict:
     if bytes(t[-8:]) != END or told != size:
         raise Unreadable(f"{path}: truncado o a medias — mide {size} bytes y su cola "
                          f"{'no está' if bytes(t[-8:]) != END else f'dice {told}'}")
-    if check and zlib.crc32(m[:-12]) != int(t[192:196].view("<u4")[0]):
+    if check and zlib.crc32(m[:-12]) != int(t[192:196].view("<u4")[0]):  # pyright: ignore[reportArgumentType] -- numpy memmap exposes the buffer protocol; the stubs omit it
         raise Unreadable(f"{path}: el CRC no cuadra, el contenido cambió después de escribirse")
     n, k = (int(v) for v in t[160:168].view("<u4"))
     kinds = dict(orders=ORDER, equity=EQ, stats=stat(k), xml=np.dtype("u1"), index=INDEX,
@@ -161,7 +164,7 @@ def load(path: Path, check: bool = False) -> dict:
         if np.isin(np.unique(o[c]), blank).any():
             raise Unreadable(f"{path}: hay órdenes con «{c}» sin etiqueta — fichero rechazado")
     got.update(labels=labels, strings=strings, xml=got["xml"], names=strings[index["name"]],
-               keys=[tuple(strings[i].split("\t")) for i in got["keys"]],
+               keys=[tuple(cast(str, strings[i]).split("\t")) for i in got["keys"]],
                data="all" if int(m[12:16].view("<u4")[0]) else "main",
                written_ms=int(t[176:184].view("<u8")[0]))
     return got
@@ -227,7 +230,7 @@ def _frame(bank: dict, per_market: bool, only: set[str] | None) -> tuple:
         f["block"] = pd.DataFrame({"s": o["strategy"], "t": o["ticket"]}).groupby(["s", "t"]).cumcount()
         runs = pd.DataFrame({"s": o["strategy"], "b": f["block"], "t": o["ticket"]}).groupby(["s", "b"])["t"]
         torn_blocks = set(runs.size().index.get_level_values(0)[
-            ((runs.max() != runs.size()) | (runs.min() != 1)).to_numpy()])   # tradestore.whole
+            np.asarray((runs.max() != runs.size()) | (runs.min() != 1))])   # tradestore.whole
     same = o["strategy"][1:] == o["strategy"][:-1]
     op, cl = o["open_ms"] // 1000, o["close_ms"] // 1000      # whole seconds, as the CSVs `tradepack.pack` reads
     torn = same & ((op[1:] <= op[:-1]) | (op[1:] < cl[:-1]))
@@ -242,7 +245,7 @@ def _frame(bank: dict, per_market: bool, only: set[str] | None) -> tuple:
     return (f, [names[i] for i in first if i in kept], [names[i] for i in first if i in torn_blocks])
 
 
-def pack(bank: dict, out: Path, per_market: bool = False, only: set[str] | None = None) -> dict:
+def pack(bank: dict, out: Path, per_market: bool = False, only: set[str] | None = None) -> Pack:
     """`core.tradepack.pack` from the databank (args as in `trades`): the same zstd Parquet and dict."""
     f, kept, torn = _frame(bank, per_market, only)
     pq.write_table(pa.Table.from_pandas(f, preserve_index=False), out, compression="zstd")

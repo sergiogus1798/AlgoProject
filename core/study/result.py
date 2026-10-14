@@ -2,6 +2,7 @@
 
 import time
 from datetime import datetime
+from typing import Any
 
 from core.study import blocks
 from core.study.config import fingerprint
@@ -22,7 +23,7 @@ def progress(percent: int, state: str) -> None:
 def envelope(module: str, strategy: str | None, identity: str | None, cfg: dict,
              started: float, tabs: list[dict], verdict: dict | None = None,
              warnings: list[dict] | None = None, glossary: list[dict] | None = None,
-             summary: dict | None = None) -> dict:
+             summary: dict | None = None) -> dict[str, Any]:
     """One strategy's (or one population's) whole result, checked against the contract.
 
     Args:
@@ -58,7 +59,7 @@ def envelope(module: str, strategy: str | None, identity: str | None, cfg: dict,
 
 
 def tab(name: str, title: str, blocks_: list[dict], selectors: list[dict] | None = None,
-        note: str = "") -> dict:
+        note: str = "") -> dict[str, Any]:
     """One tab of a result.
 
     Args:

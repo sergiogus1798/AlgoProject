@@ -3,6 +3,7 @@
 import json
 from collections.abc import Iterable
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -74,7 +75,7 @@ def from_harvest(project: str, databank: str, names: list[str],
         if side is None:
             continue
         table = pd.read_parquet(path, columns=[side])[side]
-        known = dict(zip(table, table.index))
+        known: dict[str, str] = dict(zip(table.tolist(), cast(list[str], table.index.tolist())))
         return {n: known.get(n) for n in names}
     return found
 
@@ -98,7 +99,7 @@ def spelt(project: str, databank: str, identities: list[str]) -> dict[str, str]:
         source = json.loads((path.parent / "manifest.json").read_text(encoding="utf-8"))["source"]
         if wanted in (source.get("databank", "").replace("_", " "), source.get("oos_databank", "").replace("_", " ")):
             names = pd.read_parquet(path, columns=["strategy"])["strategy"]
-            return {i: names[i] for i in identities if i in names.index}
+            return {i: cast(str, names[i]) for i in identities if i in names.index}
     return {}
 
 

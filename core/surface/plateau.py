@@ -1,5 +1,7 @@
 """How much of a grid works, and whether its best point beats what pure search would give."""
 
+from typing import TypedDict
+
 import numpy as np
 from scipy import stats
 
@@ -73,8 +75,17 @@ def expected_max_sharpe(sigma_sr: float, n_eff: int) -> float:
     return float(sigma_sr * ((1 - EULER) * a + EULER * b))
 
 
+class Deflated(TypedDict):
+    """A Sharpe against the benchmark its own search sets."""
+
+    benchmark: float
+    sharpe: float
+    n_eff: int
+    dsr: float
+
+
 def deflated_sharpe(sharpe: float, sigma_sr: float, n_eff: int, n_obs: int,
-                    skew: float, kurtosis: float) -> dict:
+                    skew: float, kurtosis: float) -> Deflated:
     """Is this Sharpe real, given how many configurations were tried to find it?
 
     Args:

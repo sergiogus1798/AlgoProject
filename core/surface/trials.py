@@ -1,5 +1,7 @@
 """How many independent things were really tried, whatever produced them."""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import fcluster, linkage
@@ -54,7 +56,15 @@ def silhouette(dist: np.ndarray, labels: np.ndarray) -> float:
     return float(np.where(alone, 0.0, scored).mean())
 
 
-def independent(window: pd.DataFrame, k_max: int) -> dict:
+class Independent(TypedDict):
+    """The count of distinct trials behind a surface."""
+
+    n_clusters: int
+    silhouette: float
+    n_variants: int
+
+
+def independent(window: pd.DataFrame, k_max: int) -> Independent:
     """The number of genuinely distinct trials behind this surface.
 
     Args:
@@ -82,7 +92,7 @@ def independent(window: pd.DataFrame, k_max: int) -> dict:
     """
     dist = distances(window)
     tree = linkage(squareform(dist, checks=False), method="average")
-    scored = {}
+    scored: dict[int, float] = {}
     for k in range(FLOOR, min(k_max, window.shape[1] - 1) + 1):
         labels = fcluster(tree, k, criterion="maxclust")
         if np.bincount(labels).max() * 2 <= len(labels):
@@ -91,6 +101,6 @@ def independent(window: pd.DataFrame, k_max: int) -> dict:
         raise ValueError(f"no split of {window.shape[1]} variants into 2..{k_max} clusters leaves "
                          f"every cluster at half or less: one family dominates; raise k_max or "
                          f"count this panel by hand")
-    best = max(scored, key=scored.get)
+    best = max(scored, key=scored.__getitem__)
     return {"n_clusters": best, "silhouette": round(scored[best], 4),
             "n_variants": int(window.shape[1])}

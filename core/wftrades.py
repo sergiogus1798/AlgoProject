@@ -1,5 +1,7 @@
 """Assign the trades of a data=all export to the Walk-Forward cell and period that produced them."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -59,7 +61,7 @@ def check(labelled: pd.DataFrame, steps: list[dict]) -> pd.DataFrame:
         `oos_NumberOfTrades` is the only independent witness available.
     """
     got = labelled["period"].value_counts()
-    return pd.DataFrame([{"index": s["index"], "assigned": int(got.get(s["index"], 0)),
+    return pd.DataFrame([{"index": s["index"], "assigned": int(cast(int, got.get(s["index"], 0))),
                           "stored": stored(s)}
                          for s in steps if not s["future"]])
 

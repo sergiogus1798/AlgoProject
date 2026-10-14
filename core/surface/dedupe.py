@@ -2,10 +2,11 @@
 plus the one exact test for two strategies sharing one trade list under different names."""
 
 import hashlib
-from typing import Callable
+from typing import Any, Callable, cast
 
 import numpy as np
 import pandas as pd
+from pandas.core.util.hashing import hash_pandas_object
 
 SENTINEL_LIMIT = 100.0
 SENTINEL_COLUMNS = ("RExpectancy",)
@@ -32,7 +33,7 @@ def drop_sentinels(frame: pd.DataFrame, columns: tuple[str, ...] = SENTINEL_COLU
     for column in columns:
         if column in frame:
             keep &= frame[column].abs() <= limit
-    return frame[keep]
+    return cast(pd.DataFrame, frame[keep])
 
 
 def distinct(frame: pd.DataFrame, keys: tuple[str, ...] = IDENTITY) -> pd.DataFrame:
@@ -108,7 +109,7 @@ def trade_duplicates(trades: pd.DataFrame, by: str,
         One bool per value of `by`, indexed by it: True for every member of a duplicate
         group but its first. A strategy with zero trades reads False, not a false clone.
     """
-    fingerprint = pd.util.hash_pandas_object(trades[list(columns)], index=False)
+    fingerprint = hash_pandas_object(trades[list(columns)], index=False)
     key = fingerprint.groupby(trades[by].values, observed=True).sum()
     return key.duplicated(keep="first") & key.notna()
 
@@ -127,6 +128,6 @@ def curve_duplicates(curves: dict[str, pd.Series]) -> pd.Series:
         builtin `hash()`, because Python salts a bytes hash per process: the same input
         would group differently in a report regenerated tomorrow.
     """
-    key = pd.Series({name: hashlib.sha1(curve.index.asi8.tobytes() + curve.to_numpy().tobytes()).digest()
+    key = pd.Series({name: hashlib.sha1(cast(Any, curve.index).asi8.tobytes() + curve.to_numpy().tobytes()).digest()
                      for name, curve in curves.items()})
     return key.duplicated(keep="first")

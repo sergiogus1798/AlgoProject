@@ -46,6 +46,7 @@ live deeper add the root to `sys.path` in their first lines.
 | `wfmobjectives.py` | SQX's Walk-Forward Matrix objectives per cell — stability, score, the WF specials — and its rule. | `.sqx` root → rule, rows per cell and condition |
 | `wftrades.py` | Assign the trades of a data=all export to the Walk-Forward cell and period that produced them. | CSV → frames |
 | `worker.py` | Drive the headless worker install. The master's CLI is dead while its GUI is up. | command, role → reply |
+| `xmlget.py` | Typed reads of an XML tree whose layout is known: the element, attribute or text is there or the read fails. | — |
 | `assetwrite/` | The only writer of `assets/`: one value, one cost with its `why`, or a whole asset into the library or onto the retired shelf | change → file |
 | `archive/` · `store/` · `study/` · `surface/` | Subpackages, each with its own `README.md`: the strategy archive (frozen `.sqx`, cosecha rows and study results) · the strategy store (a strategy that passed the gate saved the moment it passes) · the contract every study speaks (`CONTRACT.md`) · the maths of a parameter grid | see each README |
 

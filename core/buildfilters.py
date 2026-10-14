@@ -2,6 +2,7 @@
 
 import math
 from pathlib import Path
+from typing import Any, TypedDict
 
 import yaml
 
@@ -15,7 +16,25 @@ SAMPLES = {"IS": "is"}
 YEAR_MS = 365.25 * 86400 * 1000
 
 
-def _need(block: dict, key: str, where: str) -> object:
+class Condition(TypedDict):
+    """One acceptance condition, as `sqx.projects.acceptance.condition` takes it."""
+
+    read: str
+    metric: str
+    op: str
+    value: Any
+
+
+class Filters(TypedDict):
+    """What `filters` resolves for one asset and timeframe."""
+
+    mode: str
+    sample: str
+    build_years: float
+    conditions: list[Condition]
+
+
+def _need(block: dict[str, Any], key: str, where: str) -> Any:
     """One value of the file, or the refusal: there is no default filter."""
     if block.get(key) is None:
         raise SystemExit(f"assets/_study.yaml: falta `{key}` en {where}. Sin ese valor no se "
@@ -23,7 +42,7 @@ def _need(block: dict, key: str, where: str) -> object:
     return block[key]
 
 
-def resolved(data: dict, study: dict) -> dict:
+def resolved(data: dict, study: dict) -> dict[str, Any]:
     """The study filters of one asset: defaults, then its class's, then its own."""
     out = dict(_need(study, "defaults", "la raíz"))
     for layer in ((study.get("classes") or {}).get(data["class"]),
@@ -33,7 +52,7 @@ def resolved(data: dict, study: dict) -> dict:
     return out
 
 
-def filters(data: dict, timeframe: str, mode: str = "study", path: Path = STUDY) -> dict:
+def filters(data: dict, timeframe: str, mode: str = "study", path: Path = STUDY) -> Filters:
     """What the Build task accepts, as the conditions to write and the numbers behind them.
 
     Args:

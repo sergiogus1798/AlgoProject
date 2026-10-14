@@ -11,13 +11,14 @@ an SQX workflow task, which prices at `costs.commission.use` instead (`assets/RU
 """
 
 import sys
+from typing import cast
 
 from core.assetdata import load, symbols
 from core.assetwrite import set_brokers
 from core.paths import bar_source
 
 
-def commission_pct(method: str, value: float, price: float, point_value: float) -> float:
+def commission_pct(method: str, value: float, price: float | None, point_value: float) -> float:
     """One broker's round-turn commission as a percentage of notional, at a given price.
 
     Args:
@@ -30,7 +31,7 @@ def commission_pct(method: str, value: float, price: float, point_value: float) 
     Returns:
         A percentage of notional, comparable across methods.
     """
-    return value if method == "PercentageBased" else value / (price * point_value) * 100
+    return value if method == "PercentageBased" else value / (cast(float, price) * point_value) * 100
 
 
 def broker_pct(asset: str, broker: str) -> float:
@@ -48,7 +49,7 @@ def broker_pct(asset: str, broker: str) -> float:
     return load(asset)["costs"]["commission"]["brokers"][broker]["pct_now"]
 
 
-def refresh() -> dict:
+def refresh() -> dict[str, dict[str, float]]:
     """Recompute every confirmed broker's `pct_now` from the latest close, and write it.
 
     Returns:
@@ -57,7 +58,8 @@ def refresh() -> dict:
         than guessed.
     """
     from core import barstore   # lazy: pulls in pandas, which only the refresh needs
-    out = {}
+    import pandas as pd   # lazy with barstore, same reason
+    out: dict[str, dict[str, float]] = {}
     for asset in symbols():
         data = load(asset)
         brokers = data["costs"]["commission"].get("brokers") or {}
@@ -68,7 +70,7 @@ def refresh() -> dict:
         price, when = None, None
         if bar_source(feed).exists():
             bars = barstore.source(feed, columns=["Close"])
-            price, when = float(bars["Close"].iloc[-1]), bars.index[-1].date().isoformat()
+            price, when = float(bars["Close"].iloc[-1]), cast(pd.Timestamp, bars.index[-1]).date().isoformat()
         point_value = data["instrument"]["point_value"]
         priced = {}
         for name, b in confirmed.items():

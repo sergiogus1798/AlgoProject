@@ -16,6 +16,7 @@ c2 = close<<4 | volume, each nibble logic<<2 | width.
 """
 
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -54,8 +55,11 @@ def _data_start(buf: np.ndarray) -> int:
     return pos
 
 
+Num = int | np.int64   # what numba hands back for an int64: annotations only, jit ignores them
+
+
 @njit(cache=True)
-def _value(buf: np.ndarray, pos: int, width: int) -> tuple[int, int]:
+def _value(buf: np.ndarray, pos: int, width: int) -> tuple[Num, int]:
     """An unsigned big-endian integer of 1, 2, 4 or 8 bytes."""
     n = 1 << width
     v = np.int64(0)
@@ -65,7 +69,7 @@ def _value(buf: np.ndarray, pos: int, width: int) -> tuple[int, int]:
 
 
 @njit(cache=True)
-def _apply(prev: int, v: int, logic: int) -> int:
+def _apply(prev: Num, v: Num, logic: int) -> Num:
     """Minus, plus or as-is: how a stored value moves the running one."""
     if logic == 0:
         return prev - v
@@ -141,7 +145,6 @@ def _bars(buf: np.ndarray, start: int, capacity: int) -> tuple[np.ndarray, np.nd
     out = np.empty((capacity, 4), np.float64)
     pos, count, size = start, 0, len(buf)
     prev = np.zeros(6, np.int64)
-    order = np.array([0, 1, 2, 3, 4, 5])
     while pos + 9 <= size and count < capacity:
         if count % BLOCK == 0:
             pos += CHAIN
@@ -155,7 +158,7 @@ def _bars(buf: np.ndarray, start: int, capacity: int) -> tuple[np.ndarray, np.nd
         if pos + need > size:
             break
         pos += 3
-        for k in order:
+        for k in range(6):
             v, pos = _value(buf, pos, nibbles[k] & 3)
             prev[k] = _apply(prev[k], v, nibbles[k] >> 2)
         stamp[count] = prev[0]
@@ -176,11 +179,11 @@ def bars(feed: str) -> pd.DataFrame:
     buf = np.memmap(bar_file(feed), np.uint8, mode="r")
     start = _data_start(buf)
     stamp, rows = _bars(buf, start, len(buf) // 9)
-    frame = pd.DataFrame(rows, columns=["Open", "High", "Low", "Close"],
+    frame = pd.DataFrame(rows, columns=pd.Index(["Open", "High", "Low", "Close"]),
                          index=pd.to_datetime(stamp, unit="ms"))
     frame.index.name = "t"
     # Two hours of USDJPY 2003–2004 are stored twice; SQX's own export keeps the first.
-    return frame[~frame.index.duplicated()].sort_index()
+    return cast(pd.DataFrame, frame[~frame.index.duplicated()].sort_index())
 
 
 def read(path: Path) -> tuple[pd.DataFrame, int]:
@@ -203,7 +206,7 @@ def read(path: Path) -> tuple[pd.DataFrame, int]:
     from core import tickparallel      # imports this module's decoders: here, not at the top
     got = tickparallel.decode(buf, start)
     stamp, rows, ticks = got if got else _minutes(buf, start, capacity)
-    frame = pd.DataFrame(rows, columns=COLUMNS, index=pd.to_datetime(stamp, unit="ms"))
+    frame = pd.DataFrame(rows, columns=pd.Index(COLUMNS), index=pd.to_datetime(stamp, unit="ms"))
     frame.index.name = "t"
     return frame.astype({"n": np.int32}), int(ticks)
 

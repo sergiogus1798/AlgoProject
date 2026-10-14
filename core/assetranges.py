@@ -1,5 +1,7 @@
 """The MC Retest spread and slippage ranges of one asset, in the points SQX takes."""
 
+from typing import Any
+
 from core.assetdata import policy, sqx_settings
 
 # SQX draws a range on a ~0.1-point grain: under ten steps the task comes out with no dispersion
@@ -7,7 +9,7 @@ from core.assetdata import policy, sqx_settings
 MIN_SPAN = 1.0
 
 
-def mc_retest(data: dict, segment: str = "build") -> dict:
+def mc_retest(data: dict, segment: str = "build") -> dict[str, dict[str, Any]]:
     """The spread and slippage ranges the MC Retest task must randomise within.
 
     Args:

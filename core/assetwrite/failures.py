@@ -1,12 +1,23 @@
 """Write one entry of an asset's `live_failures` list — why a strategy of it left the live protocol."""
 
 from datetime import date
+from typing import TypedDict
 
 from core.assetdata import SYMBOLS
 from core.assetyaml import read, write
 
 
-def add_live_failure(symbol: str, day: date, strategy: str, row: str, value: float | None) -> dict:
+class LiveFailure(TypedDict):
+    """One entry of an asset's `live_failures` list."""
+
+    date: str
+    strategy: str
+    row: str
+    value: float | None
+
+
+def add_live_failure(symbol: str, day: date, strategy: str, row: str,
+                     value: float | None) -> LiveFailure:
     """Append one failure to the asset's card, comments and every other line untouched.
 
     Args:
@@ -21,7 +32,7 @@ def add_live_failure(symbol: str, day: date, strategy: str, row: str, value: flo
     """
     path = SYMBOLS / f"{symbol}.yaml"
     doc = read(path)
-    entry = {"date": day.isoformat(), "strategy": strategy, "row": row,
+    entry: LiveFailure = {"date": day.isoformat(), "strategy": strategy, "row": row,
              "value": None if value is None else round(float(value), 4)}
     doc.setdefault("live_failures", []).append(entry)
     write(path, doc)

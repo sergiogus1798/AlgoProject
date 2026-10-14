@@ -12,7 +12,7 @@ does: the result is bit-identical to the serial decode.
 import numpy as np
 from numba import njit, prange
 
-from core.tickfile import BLOCK, CHAIN, MINUTE, PRICE, _apply, _value
+from core.tickfile import BLOCK, CHAIN, MINUTE, PRICE, Num, _apply, _value
 
 # No `cache=True` here: numba keys its disk cache on THIS file only, and these kernels inline the decoders of
 # core/tickfile.py, so an edit there would leave stale machine code that differs silently from the serial read.
@@ -52,7 +52,7 @@ def skeleton(buf: np.ndarray, start: int) -> tuple[np.ndarray, int, bool]:
 
 
 @njit
-def _last_minute(buf: np.ndarray, pos: int) -> int:
+def _last_minute(buf: np.ndarray, pos: int) -> Num:
     """The minute of the last tick of the full block whose chain starts at `pos`."""
     t = a = b = vol = np.int64(0)  # noqa: F841 numba typing
     pos += CHAIN
