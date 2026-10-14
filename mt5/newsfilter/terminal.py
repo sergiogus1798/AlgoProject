@@ -79,5 +79,6 @@ def call(s: dict, tool: str, args: dict) -> dict[str, Any]:
         },
         s["sid"],
     )
-    assert answer is not None, f"{tool}: the terminal answered an empty body"
+    if answer is None:
+        raise ValueError(f"{tool}: the terminal answered an empty body")
     return json.loads(answer["result"]["content"][0]["text"])

@@ -131,14 +131,15 @@ def check_oos1(trades: pd.DataFrame, windows: tuple[str, str], where: str) -> No
         where: The harvest's folder, named in the error.
 
     Raises:
-        ValueError: Some "OOS" trade opens before or closes after the window.
+        ValueError: Some "OOS" trade opens outside the window.
     """
     start, end = (
         cast(pd.Period, pd.Period(windows[0])).start_time,
         cast(pd.Period, pd.Period(windows[1])).end_time,
     )
     oos = trades[trades["sample"] == "OOS"]
-    out = oos[(oos["Open time"] < start) | (oos["Close time"] > end)]
+    # By open time: a trade opened inside oos1 is oos1's even if it closes after the window.
+    out = oos[(oos["Open time"] < start) | (oos["Open time"] > end)]
     if len(out):
         raise ValueError(
             f"gate: {len(out)} operaciones «OOS» de {where} caen fuera de oos1 ({start.date()} a "

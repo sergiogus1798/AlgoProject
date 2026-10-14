@@ -58,8 +58,12 @@ def _file_counts(path: Path) -> Counter[str]:
                 out[f"untyped_dict.{pkg}"] += 1
         elif isinstance(node, ast.ExceptHandler):
             t = node.type
-            if t is None or (
-                isinstance(t, ast.Name) and t.id in ("Exception", "BaseException")
+            caught = (
+                t.elts if isinstance(t, ast.Tuple) else [t]
+            )  # (Exception, X) is broad too
+            if t is None or any(
+                isinstance(e, ast.Name) and e.id in ("Exception", "BaseException")
+                for e in caught
             ):
                 out["broad_except"] += 1
         elif isinstance(node, ast.Call):
@@ -92,7 +96,11 @@ def ruff_counts() -> Counter[str]:
         capture_output=True,
         text=True,
     )
-    return Counter(d["code"] for d in json.loads(res.stdout or "[]"))
+    if (
+        res.returncode > 1 or not res.stdout
+    ):  # 0 clean, 1 findings; else ruff itself failed
+        raise RuntimeError(f"ruff failed, ratchet not checked: {res.stderr[-500:]}")
+    return Counter(d["code"] for d in json.loads(res.stdout))
 
 
 def pyright_counts() -> Counter[str]:
@@ -106,8 +114,12 @@ def pyright_counts() -> Counter[str]:
     res = subprocess.run(
         ["pyright", "--outputjson"], capture_output=True, text=True, cwd=depmap.ROOT
     )
+    if (
+        res.returncode > 1 or not res.stdout
+    ):  # an empty run would read as 0 and save as a fall
+        raise RuntimeError(f"pyright failed, ratchet not checked: {res.stderr[-500:]}")
     out = Counter({f"pyright.{p}": 0 for p in pkgs})
-    for d in json.loads(res.stdout or "{}").get("generalDiagnostics", []):
+    for d in json.loads(res.stdout).get("generalDiagnostics", []):
         if d["severity"] == "error":
             out[f"pyright.{Path(d['file']).relative_to(depmap.ROOT).parts[0]}"] += 1
     return out
@@ -115,7 +127,13 @@ def pyright_counts() -> Counter[str]:
 
 def counts(files: list[Path]) -> dict[str, int]:
     """Every ratcheted count, flat keys, zeros for the ruff codes and layering included."""
-    total = Counter({c: 0 for c in RUFF_CODES})
+    # Every key exists at 0, or a count that first appears would be saved instead of flagged.
+    total = Counter(
+        {
+            c: 0
+            for c in (*RUFF_CODES, "broad_except", "unseeded_rng", "legacy_np_random")
+        }
+    )
     for (
         f
     ) in files:  # every package keeps its key at 0, or a rise from 0 would go unseen
@@ -140,9 +158,9 @@ def check(files: list[Path]) -> list[str]:
     now = counts(files)
     old = json.loads(BASELINE.read_text(encoding="utf-8")) if BASELINE.exists() else {}
     rose = [
-        f"{k}: {old[k]} -> {v} (ratchet: may not rise; see CODESTYLE.md §12)"
+        f"{k}: {old.get(k, 0)} -> {v} (ratchet: may not rise; see CODESTYLE.md §12)"
         for k, v in now.items()
-        if k in old and v > old[k]
+        if v > old.get(k, 0)
     ]
     if not rose and (set(now) != set(old) or any(now[k] < old.get(k, 0) for k in now)):
         BASELINE.write_text(

@@ -193,7 +193,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `mt5/newsfilter/patch.py` | 117 | Insert a prop firm's news filter into the MQL5 source SQX exports, at the four places it needs. | — | — |
 | `mt5/newsfilter/reading.py` | 288 | What a firm's news rule costs one strategy: its EA in the Strategy Tester with the filter and without, trade by trade. | core, mt5 | pandas |
 | `mt5/newsfilter/run.py` | 109 | Turn SQX-exported EAs into two per strategy — one with a firm's news filter, one without — and compile them. | core, mt5 | — |
-| `mt5/newsfilter/terminal.py` | 83 | Call a read-only tool of the running MT5 terminal's own MCP server over HTTP, from Python. | core | — |
+| `mt5/newsfilter/terminal.py` | 84 | Call a read-only tool of the running MT5 terminal's own MCP server over HTTP, from Python. | core | — |
 | `mt5/newsfilter/testerfile.py` | 162 | Write a firm's restricted releases, in its server's clock, as the CSV the patched EA reads inside the Strategy Tester. | core, mt5 | pandas |
 | `mt5/newsfilter/windows.py` | 134 | The news rule on a trade list, in pure Python: which releases move a symbol, and what the filter does to each trade. | — | numpy, pandas |
 | `mt5/reconcile/floating.py` | 44 | Live trades' MAE and MFE rebuilt from M1 wicks (PLAN §14.2), only where the bars cover the trade. | portfolio | numpy, pandas |
@@ -836,7 +836,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `studies/screening/gate/cascade.py` | 187 | Run the gate's levels in order, the step-8 rules of each right after it, each over what the last left. | pipeline, studies | pandas |
 | `studies/screening/gate/collect.py` | 253 | One databank's three tables, taken in a single staging of its files. | core | pandas |
 | `studies/screening/gate/harvest.py` | 295 | Two databanks in, one joined cosecha out: the build window and the retest window. | core, sqx, studies | pandas |
-| `studies/screening/gate/inputs.py` | 302 | The knobs, one harvest read back, and the out-of-sample window read from the trades. | core, engines, ledger | numpy, pandas, pyarrow |
+| `studies/screening/gate/inputs.py` | 303 | The knobs, one harvest read back, and the out-of-sample window read from the trades. | core, engines, ledger | numpy, pandas, pyarrow |
 | `studies/screening/gate/level0.py` | 92 | Level 0 of the gate: in the retest, readable and not a clone, net of oos1, trades per year of the build. | core | pandas |
 | `studies/screening/gate/level1a.py` | 71 | Level 1a of the gate: R3, the t of the per-trade excess over the market's drift. | engines, studies | pandas |
 | `studies/screening/gate/level1b_centred.py` | 80 | Level 1b of the gate, the facts centred on the population: frequency stability and decay inside oos1. | studies | pandas |
@@ -1256,7 +1256,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tools/layering.py` | 88 | Layering check: which project package may import which, with today's violations as debt. | depmap | — |
 | `tools/manual.py` | 373 | Build the user manual as one PDF per workflow family, from the markdown in AlgoData. | core, markdown | — |
 | `tools/projectmap.py` | 244 | Generate PROJECT_MAP.md from Graphify's graph: modules, who talks to whom, infra vs calculation, hot spots. | — | — |
-| `tools/ratchet.py` | 167 | Ratchet: debt counts that may fall but never rise (CODESTYLE.md §12), baseline in ratchet.json. | depmap, layering | — |
+| `tools/ratchet.py` | 185 | Ratchet: debt counts that may fall but never rise (CODESTYLE.md §12), baseline in ratchet.json. | depmap, layering | — |
 | `tools/readmetable.py` | 115 | Generate the «file» and «what it does» columns of every code folder's README table from the modules' docstrings. | depmap | — |
 | `tools/skillmap.py` | 126 | Read every installed skill and rewrite docs/SKILLS.md: what exists, what it costs, where. | — | — |
 | `tools/uiinventory.py` | 418 | Inventory every actionable widget of one zone of the window, drive each one, and say what happened. | ui, uiparts, uiwalk | PySide6, httpx, shiboken6 |
