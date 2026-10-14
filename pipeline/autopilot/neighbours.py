@@ -72,7 +72,7 @@ def run(project: str, role: str, mothers: pd.DataFrame, stamp: str) -> str:
          str(work), "--symbol", who["symbol"], "--timeframe", who["timeframe"]]))
     closing.clear(project)
     files = len(list((work / "sqx").glob("*.sqx")))
-    return (f"{len(mothers)} madre(s), {files} ficheros en {work}; "
+    return (f"vecinos de parámetros: {len(mothers)} madre(s), {files} ficheros en {work}; "
             + ", ".join(f"{name} {seconds:.0f} s" for name, seconds in spent.items())
             + f"; {said}")
 

@@ -149,7 +149,8 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
     The command is `.claude/skills/sqx-wait/wait.sh` (`/sqx-wait`) — never a hand-written loop.
     → `knowhow/eng/token-spend-is-context-reread.md`
 19. **The workflow runs through ONE command, never step by step by hand.** Owner, 2026-10-05, «regla
-    dura»: `bin/workflow.sh` (skill `/workflow`) — `simple` (no template), `template` (an authored
+    dura»: `bin/workflow.sh`, **always through the skill `/workflow` — invoke it before the command, never
+    the command alone** — `simple` (no template), `template` (an authored
     `.sqx`), `run` (an existing project, from where its rail is) — creates
     the project and runs steps 6 to 21 (then 26 when its four parameters are given) in one SQX session (`pipeline.autopilot.run`; 160 min for
     1,000 strategies and 10 mothers, 230 by hand). Every choice is an argument the owner gives; a
@@ -183,6 +184,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
 | task | read |
 |---|---|
 | a fact about formats, the API, exports, conditions, costs, research, perf | `grep -rh '^q:' knowhow/<domain>/` for a domain's questions, or `grep -rli '<symptom or error text>' knowhow/` to find a card by symptom (its `kw:` line); then read only the card's header (up to `## Evidence`) — domains in `knowhow/INDEX.md` |
+| **running, continuing or testing the workflow** — «lanza el workflow», «estrategia simple», «con plantilla», «continúa el proyecto», «prueba el workflow entero» | invoke the skill `/workflow` first (rule 19); what each step runs: `.claude/skills/workflow/steps.md` |
 | the campaign: the unattended loop over template × asset × timeframe, its ledger and its saved workflows | `pipeline/campaign/README.md`, then `docs/manual/` chapter `106-campana.md` (PDF `04-sqx-plantillas-y-proyectos`) |
 | writing or changing Python | `CODESTYLE.md`, then the folder's own `README.md` |
 | authoring blocks, groups, templates, projects | `sqx/CLAUDE.md` |
