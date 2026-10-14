@@ -41,3 +41,16 @@ def test_same_set_twice_is_one_folder(tmp_path: Path, monkeypatch: pytest.Monkey
     assert harvest.set_aside(out, {"b", "a"}) is None
     assert harvest.set_aside(out.parent / "2026-10-05", {"a"}) is None
     assert not (out.parent / "_aparte").exists()
+
+
+def test_oos_trade_outside_oos1_raises() -> None:
+    """A trade labelled OOS in oos2 refuses the harvest, naming it; trades inside oos1 pass."""
+    from studies.screening.gate import inputs
+    trades = pd.DataFrame({"sample": ["IS", "OOS", "OOS"],
+                           "Open time": pd.to_datetime(["2015-03-01", "2020-02-03", "2020-12-30"], format="ISO8601"),
+                           "Close time": pd.to_datetime(["2015-03-02", "2020-02-04", "2021-12-31T23:00"], format="ISO8601")})
+    inputs.check_oos1(trades, ("2020", "2021"), "P/Results")
+    late = pd.concat([trades, pd.DataFrame({"sample": ["OOS"], "Open time": [pd.Timestamp("2022-03-01")],
+                                            "Close time": [pd.Timestamp("2022-03-02")]})])
+    with pytest.raises(ValueError, match=r"P/Results.*2022-03-02"):
+        inputs.check_oos1(late, ("2020", "2021"), "P/Results")
