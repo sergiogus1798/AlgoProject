@@ -28,17 +28,17 @@ instrument:
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread_is:
-    use: 182.85               # points — tramo `build`
+    use: 182.87               # points — tramo `build`
     sqx_now: 100              # el maestro no configura este feed hoy
-    why: "recalibrado 2026-10-04 — 0.0164 % del precio medio del tramo `build` (11162.1): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
+    why: "recalibrado 2026-10-14 — 0.0164 % del precio medio del tramo `build` (11162.1): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos:
-    use: 233.76               # points — tramo `oos1` (oos2 lleva `spread_oos2`)
+    use: 233.79               # points — tramo `oos1` (oos2 lleva `spread_oos2`)
     sqx_now: 100              # el maestro no configura este feed hoy
-    why: "recalibrado 2026-10-04 — 0.0164 % del precio medio del tramo `oos1` (14270.4): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
+    why: "recalibrado 2026-10-14 — 0.0164 % del precio medio del tramo `oos1` (14270.4): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos2:
-    use: 359.22
+    use: 359.19
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0164 % del precio medio del tramo `oos2` (21929.1): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0164 % del precio medio del tramo `oos2` (21924.6): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:                      # % del nocional
       build:
@@ -135,11 +135,11 @@ costs:
     sqx_now: null
     why: "35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos:
-    use: 81.82              # points — tramo oos1 (oos2 lleva `slippage_oos2`)
+    use: 81.83              # points — tramo oos1 (oos2 lleva `slippage_oos2`)
     sqx_now: null
     why: "35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos2:
-    use: 125.73
+    use: 125.72
     sqx_now: null
     why: '35 % del spread del tramo `oos2` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   swap_long:

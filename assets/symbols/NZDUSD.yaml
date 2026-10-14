@@ -14,15 +14,15 @@ costs:
   spread_is:
     use: 1.03
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0138 % del precio medio del tramo `build` (0.742973): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0138 % del precio medio del tramo `build` (0.7): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   spread_oos:
     use: 0.92
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0138 % del precio medio del tramo `oos1` (0.66866): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0138 % del precio medio del tramo `oos1` (0.7): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   spread_oos2:
     use: 0.82
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0138 % del precio medio del tramo `oos2` (0.59714): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0138 % del precio medio del tramo `oos2` (0.6): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:
       build:
@@ -53,9 +53,9 @@ costs:
     sqx_now: null
     why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-5.16, 0.01)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
   swap_short:
-    use: 0.01
+    use: 0.0
     sqx_now: null
-    why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-5.16, 0.01)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
+    why: "2026-10-14 — decisión del dueño (encargo 59, pregunta 3a): el lado que hoy COBRA swap va a 0, como en el crudo (2026-10-01). Hoy era 0.01 (puntos SQX por noche) a favor del corto; aplicado a toda la historia desde 2008 regalaba ese carry a cualquier corto. El lado que paga no cambia (peor de FTMO/Hantec). Si `studies.data.spread.fundedswap.worst()` se vuelve a correr, un lado positivo se escribe 0."
 notes:
   - '2026-10-02: alta desde la ventana. Ningún coste está pactado y `instrument` es lo que se tecleó: confírmalo con `python3 -m sqx.inspect.instruments`.'
 mc_retest:

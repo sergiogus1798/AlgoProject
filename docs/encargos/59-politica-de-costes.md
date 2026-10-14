@@ -16,16 +16,17 @@ Lee `CLAUDE.md` (reglas 5, 7, 8, 9, 11, 16, 20) · `CODESTYLE.md` · `assets/RUL
 
 | parte | qué | modelo | depende de | estado |
 |---|---|---|---|---|
-| 1 | recuento de cambios de signo, NIKKEI225 `build` | Opus | nada | sin empezar |
-| 2 | spread histórico de los índices | Sonnet | parte 1, pregunta 1 | bloqueada por el dueño |
-| 3 | la hora del rollover | Sonnet | pregunta 2 | bloqueada por el dueño |
-| 4 | swap abonado a 0 en el resto de activos | Sonnet | pregunta 3 | bloqueada por el dueño |
-| 5 | el comando del método vigente y el candado de `--write` | Sonnet | pregunta 4 | bloqueada por el dueño |
-| 6 | coste de las salidas por stop | Opus | pregunta 5 | bloqueada por el dueño |
+| 1 | recuento de cambios de signo, NIKKEI225 `build` | Opus | nada | hecha 2026-10-14 (`AlgoData/audit/costes/nikkei225-cambio-de-signo-2026-10-14.md`) |
+| 2 | spread histórico de los índices | Sonnet | parte 1, pregunta 1 | sin objeto: el NIKKEI se queda en 304 (respuesta 1) |
+| 3 | la hora del rollover | Sonnet | pregunta 2 | medida hecha 2026-10-14; falta la decisión «ponderar por operaciones o por tiempo» |
+| 4 | swap abonado a 0 en el resto de activos | Sonnet | pregunta 3 | hecha 2026-10-14: 16 fichas con el lado abonado a 0 |
+| 5 | el comando del método vigente y el candado de `--write` | Sonnet | pregunta 4 | hecha 2026-10-14: `onboard --funded`, 28 fichas recalculadas |
+| 6 | coste de las salidas por stop | Opus | pregunta 5 | sin objeto: respuesta 5 = nada |
 
 ### Bitácora
 
 - 2026-10-11 — Encargo escrito desde la revisión del dueño de los pasos 1 a 7 (§4, puntos 1 a 5).
+- 2026-10-14 — Partes 1, 3 (medida), 4 y 5 ejecutadas por una sesión Sonnet; la 2 y la 6 quedan sin objeto por las respuestas del dueño. Queda la pregunta sobre cómo ponderar la hora 0 (ver cierre).
 
 ---
 

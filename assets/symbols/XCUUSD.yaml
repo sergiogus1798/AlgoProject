@@ -12,17 +12,17 @@ instrument:
   min_distance: 0
 costs:
   spread_is:
-    use: 25.78
+    use: 25.79
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0894 % del precio medio del tramo `build` (2.88315): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0895 % del precio medio del tramo `build` (2.9): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   spread_oos:
-    use: 33.29
+    use: 33.31
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0894 % del precio medio del tramo `oos1` (3.72303): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0895 % del precio medio del tramo `oos1` (3.7): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   spread_oos2:
     use: 44.69
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0894 % del precio medio del tramo `oos2` (4.99771): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0895 % del precio medio del tramo `oos2` (5.0): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:
       build:
@@ -37,11 +37,11 @@ costs:
     sqx_now: null
     why: '2026-10-02 — 0,0014 % del nocional, la tarifa de FTMO para metales (la confirmada en plata); SIN CONFIRMAR en cobre: la cuenta no tiene operaciones de XCUUSD.'
   slippage_is:
-    use: 9.02
+    use: 9.03
     sqx_now: null
     why: '35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   slippage_oos:
-    use: 11.65
+    use: 11.66
     sqx_now: null
     why: '35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   slippage_oos2:
@@ -53,9 +53,9 @@ costs:
     sqx_now: null
     why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-18.02, 2.55)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
   swap_short:
-    use: 1.41
+    use: 0.0
     sqx_now: null
-    why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-18.02, 2.55)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
+    why: "2026-10-14 — decisión del dueño (encargo 59, pregunta 3a): el lado que hoy COBRA swap va a 0, como en el crudo (2026-10-01). Hoy era 1.41 (puntos SQX por noche) a favor del corto; aplicado a toda la historia desde 2012 regalaba ese carry a cualquier corto. El lado que paga no cambia (peor de FTMO/Hantec). Si `studies.data.spread.fundedswap.worst()` se vuelve a correr, un lado positivo se escribe 0."
 notes:
   - '2026-10-02: el feed (Dukascopy COPPERCMDUSD) cotiza en USD por libra (6,58) y FTMO XCUUSD en centavos por libra (658): un precio de MT5 se divide entre 100. El lote es el de FTMO, 10.000 libras (point_value 10000); un punto de MT5 (0,01 centavos) es un tick de SQX (0,0001 USD).'
   - '2026-10-02: el perfil de FTMO en SQX no trae sesión de cobre; lleva XAGUSD_ftmo, el horario de metales de FTMO (01:05-23:50). Los ticks de XCUUSD en FTMO van de 01:05 a 23:00: revisar si importa esa última hora.'

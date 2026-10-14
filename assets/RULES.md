@@ -99,7 +99,8 @@ index CFDs do since 2026-09-27: their spread fell or rose between the two OOS wi
   1.08–1.72), the tail being stops filled while the spread is blown. The spread itself is the WIDEST
   firm's time-weighted mean as a % of price (the larger of its 12- and 3-month means), times each
   segment's mean price, with no safety factor — the history is charged what 2026 charges in
-  proportion to price. → `knowhow/costs/funded-tick-spread-vs-price.md`
+  proportion to price. `python3 -m studies.data.spread.onboard --funded [--symbol S] [--write]`
+  computes it (2026-10-14); a credited swap side is 0 in every card (owner, 2026-10-14). → `knowhow/costs/funded-tick-spread-vs-price.md`
 - `mc_retest` — the spread and slippage ranges the MC Retest task draws from, in points.
 - `mt5` — the asset's symbol name at each firm. `mt5_point` — each firm's MT5 `point` and
   `to_sqx` = point ÷ `instrument.tick_size`, read off the firm's server (2026-10-01). **Every cost

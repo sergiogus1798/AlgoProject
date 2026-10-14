@@ -25,17 +25,17 @@ instrument:
 
 costs:
   spread_is:
-    use: 52.44               # points — tramo `build`
+    use: 52.46               # points — tramo `build`
     sqx_now: 32.0            # points, el unico que hay hoy
-    why: "recalibrado 2026-10-04 — 0.0755 % del precio medio del tramo `build` (69.4676): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
+    why: "recalibrado 2026-10-14 — 0.0755 % del precio medio del tramo `build` (69.5): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos:
-    use: 55.63               # points — tramos `oos1` y `oos2`
+    use: 55.65               # points — tramos `oos1` y `oos2`
     sqx_now: 32.0            # points, el unico que hay hoy
-    why: "recalibrado 2026-10-04 — 0.0755 % del precio medio del tramo `oos1` (73.682): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
+    why: "recalibrado 2026-10-14 — 0.0755 % del precio medio del tramo `oos1` (73.7): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos2:
-    use: 58.24
+    use: 58.8
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0755 % del precio medio del tramo `oos2` (77.1444): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0755 % del precio medio del tramo `oos2` (77.9): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:                     # método y valor del bróker ganador, POR TRAMO (mixto: SizeBased $/lote o PercentageBased %)
       build:
@@ -116,15 +116,15 @@ costs:
         confirmed: false
         note: agregadores dicen sin comisión en energías; 403 en el fetch propio
   slippage_is:
-    use: 18.35               # points — tramo `build`
+    use: 18.36               # points — tramo `build`
     sqx_now: 0.0
     why: "35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos:
-    use: 19.47               # points — tramos `oos1` y `oos2`
+    use: 19.48               # points — tramos `oos1` y `oos2`
     sqx_now: 0.0
     why: "35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos2:
-    use: 20.38
+    use: 20.58
     sqx_now: null
     why: '35 % del spread del tramo `oos2` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   swap_long:

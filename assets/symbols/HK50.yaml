@@ -12,17 +12,17 @@ instrument:
   min_distance: 0
 costs:
   spread_is:
-    use: 698.31
+    use: 698.42
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0280 % del precio medio del tramo `build` (24963.9): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0280 % del precio medio del tramo `build` (24963.9): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   spread_oos:
-    use: 642.05
+    use: 642.14
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0280 % del precio medio del tramo `oos1` (22952.4): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0280 % del precio medio del tramo `oos1` (22952.4): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   spread_oos2:
-    use: 623.27
+    use: 623.36
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0280 % del precio medio del tramo `oos2` (22281.2): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0280 % del precio medio del tramo `oos2` (22281.2): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:
       build:
@@ -37,15 +37,15 @@ costs:
     sqx_now: null
     why: 2026-10-02 — comisión CERO, la de FTMO y la del dueño (2026-09-29) para todos los índices.
   slippage_is:
-    use: 244.41
+    use: 244.45
     sqx_now: null
     why: '35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   slippage_oos:
-    use: 224.72
+    use: 224.75
     sqx_now: null
     why: '35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   slippage_oos2:
-    use: 218.14
+    use: 218.18
     sqx_now: null
     why: '35 % del spread del tramo `oos2` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   swap_long:
@@ -53,9 +53,9 @@ costs:
     sqx_now: null
     why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-478.71, 10.04)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
   swap_short:
-    use: 0.15
+    use: 0.0
     sqx_now: null
-    why: "2026-10-02 — dueño: «usa los costes y todo de FTMO». Swap de FTMO leído hoy de su servidor MT5 (puntos MT5 largo/corto (-478.71, 10.04)), en la unidad de su clase. Es el de hoy: `studies.data.spread.fundedswap.worst(symbol, firms=('ftmo',))` lo recalcula."
+    why: "2026-10-14 — decisión del dueño (encargo 59, pregunta 3a): el lado que hoy COBRA swap va a 0, como en el crudo (2026-10-01). Hoy era 0.15 (% anual) a favor del corto; aplicado a toda la historia desde 2012 regalaba ese carry a cualquier corto. El lado que paga no cambia (peor de FTMO/Hantec). Si `studies.data.spread.fundedswap.worst()` se vuelve a correr, un lado positivo se escribe 0."
 notes:
   - '2026-10-02: alta desde la ventana. Ningún coste está pactado y `instrument` es lo que se tecleó: confírmalo con `python3 -m sqx.inspect.instruments`.'
 mc_retest:

@@ -30,15 +30,15 @@ costs:
   spread_is:
     use: 35.41                # points — tramo `build`
     sqx_now: 85               # points, el unico que hay hoy
-    why: "recalibrado 2026-10-04 — 0.0072 % del precio medio del tramo `build` (4947.16): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
+    why: "recalibrado 2026-10-14 — 0.0072 % del precio medio del tramo `build` (4947.2): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos:
-    use: 92.49                # points — tramo `oos1` (oos2 lleva `spread_oos2`)
+    use: 92.5                 # points — tramo `oos1` (oos2 lleva `spread_oos2`)
     sqx_now: 85               # points, el unico que hay hoy
-    why: "recalibrado 2026-10-04 — 0.0072 % del precio medio del tramo `oos1` (12924): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
+    why: "recalibrado 2026-10-14 — 0.0072 % del precio medio del tramo `oos1` (12924.0): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos2:
-    use: 162.27
+    use: 162.19
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0072 % del precio medio del tramo `oos2` (22672.9): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0072 % del precio medio del tramo `oos2` (22661.8): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:                      # % del nocional
       build:
@@ -135,11 +135,11 @@ costs:
     sqx_now: 0.0
     why: "35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos:
-    use: 32.37                # points — tramo oos1 (oos2 lleva `slippage_oos2`)
+    use: 32.38                # points — tramo oos1 (oos2 lleva `slippage_oos2`)
     sqx_now: 0.0
     why: "35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos2:
-    use: 56.79
+    use: 56.77
     sqx_now: null
     why: '35 % del spread del tramo `oos2` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   swap_long:

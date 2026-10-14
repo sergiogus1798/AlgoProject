@@ -30,15 +30,15 @@ costs:
   spread_is:
     use: 13.33               # points — tramo `build`
     sqx_now: 5               # points, el unico que hay hoy
-    why: "recalibrado 2026-10-04 — 0.0105 % del precio medio del tramo `build` (1265.27): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
+    why: "recalibrado 2026-10-14 — 0.0105 % del precio medio del tramo `build` (1265.3): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos:
     use: 16.93                # points — tramos `oos1` y `oos2`
     sqx_now: 10               # points, el unico que hay hoy
-    why: "recalibrado 2026-10-04 — 0.0105 % del precio medio del tramo `oos1` (1606.85): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
+    why: "recalibrado 2026-10-14 — 0.0105 % del precio medio del tramo `oos1` (1606.8): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos2:
-    use: 31.42
+    use: 31.43
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0105 % del precio medio del tramo `oos2` (2981.88): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0105 % del precio medio del tramo `oos2` (2981.8): spread medio por tiempo de FTMO, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:                     # método y valor del bróker ganador, POR TRAMO (mixto: SizeBased $/lote o PercentageBased %)
       build:

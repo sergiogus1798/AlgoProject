@@ -18,10 +18,10 @@ from typing import Any, TypedDict, cast
 import pandas as pd
 
 from core import assetwrite
-from core.assetdata import SYMBOLS, load, policy, window
+from core.assetdata import SYMBOLS, load, policy, symbols, window
 from core.assets import report
 from core.assetyaml import read, write
-from studies.data.spread import fundedswap, inputs, measure, registry, verdict
+from studies.data.spread import funded, fundedswap, inputs, measure, registry, verdict
 
 CONFIG = Path(__file__).with_name("config.yaml")
 HALVES = {"build": "is", "oos1": "oos", "oos2": "oos2"}
@@ -239,6 +239,35 @@ def apply(p: Plan, cfg: dict, spread_only: bool) -> None:
     write(CONFIG, doc)
 
 
+def apply_funded(symbols: list[str], cfg: dict, write: bool) -> None:
+    """The funded-firms method (`funded.py`) for existing cards: print each plan, write it with `write`.
+
+    Darwinex is not read. Only spreads and slippage are written, through `core.assetwrite`;
+    a card whose name differs from its `symbol` (the XAUUSD_SYN01 twin) or with no funded
+    ticks is skipped and said so.
+    """
+    factor, share = cfg["safety"]["factor"], cfg["safety"]["slippage_share"]
+    day = pd.Timestamp.now().strftime("%Y-%m-%d")
+    for s in symbols:
+        origin = load(s)["symbol"]
+        if origin != s:
+            print(f"{s}: gemela de {origin}, no se recalcula")
+            continue
+        try:
+            p = funded.plan(s, factor, share)
+        except ValueError as e:
+            print(e)
+            continue
+        print(
+            f"{s}: {funded.NAMES[p['firm']]} {p['pct'] * 100:.4f} %  {p['spreads']}  {p['slippage']}"
+        )
+        if not write:
+            continue
+        why = funded.whys(p, day, share)
+        for field, v in {**p["spreads"], **p["slippage"]}.items():
+            assetwrite.set_cost(s, field, float(v), why[field])
+
+
 def _commission_and_swap(p: Plan, cfg: dict, day: str) -> None:
     """The owner's default commission, swap and triple-swap night for the kind of asset."""
     s = p["symbol"]
@@ -276,8 +305,15 @@ def _commission_and_swap(p: Plan, cfg: dict, day: str) -> None:
 def main() -> None:
     """Plan an asset's costs and, with --write, put them in `assets/`."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--symbol", required=True, help="e.g. EURGBP")
-    ap.add_argument("--kind", required=True, choices=["index", "metal", "forex"])
+    ap.add_argument(
+        "--symbol", help="e.g. EURGBP; with --funded, absent means every card"
+    )
+    ap.add_argument("--kind", choices=["index", "metal", "forex"])
+    ap.add_argument(
+        "--funded",
+        action="store_true",
+        help="funded-firms method: widest firm's % of price, no Darwinex (existing cards only)",
+    )
     ap.add_argument(
         "--bars", default="", help="the Dukascopy M1 feed when there are several"
     )
@@ -294,6 +330,13 @@ def main() -> None:
     )
     a = ap.parse_args()
     cfg = inputs.config([])
+    if a.funded:
+        apply_funded([a.symbol] if a.symbol else sorted(symbols()), cfg, a.write)
+        if not a.write:
+            print("\n(sin escribir: --write para aplicarlo)")
+        return
+    if not (a.symbol and a.kind):
+        ap.error("--symbol y --kind son obligatorios sin --funded")
     found = registry.feeds(a.symbol)
     bars, ticks = a.bars or found["bars"], a.ticks or found["ticks"]
     bars, ticks = (

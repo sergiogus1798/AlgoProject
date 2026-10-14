@@ -30,17 +30,17 @@ instrument:
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread_is:
-    use: 33.27               # points — tramo `build`
+    use: 33.29               # points — tramo `build`
     sqx_now: 22.0            # points, el unico que hay hoy
-    why: "recalibrado 2026-10-04 — 0.1592 % del precio medio del tramo `build` (20.9032): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
+    why: "recalibrado 2026-10-14 — 0.1593 % del precio medio del tramo `build` (20.9): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos:
-    use: 31.59               # points — tramos `oos1` y `oos2`
+    use: 31.61               # points — tramos `oos1` y `oos2`
     sqx_now: 22.0            # points, el unico que hay hoy
-    why: "recalibrado 2026-10-04 — 0.1592 % del precio medio del tramo `oos1` (19.846): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
+    why: "recalibrado 2026-10-14 — 0.1593 % del precio medio del tramo `oos1` (19.8): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos2:
-    use: 62.16
+    use: 62.21
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.1592 % del precio medio del tramo `oos2` (39.0591): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.1593 % del precio medio del tramo `oos2` (39.1): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:                     # método y valor del bróker ganador, POR TRAMO (mixto: SizeBased $/lote o PercentageBased %)
       build:
@@ -124,7 +124,7 @@ costs:
         confirmed: false
         note: agregadores dan $5/lote (forex y metales); 403 en el fetch propio
   slippage_is:
-    use: 11.64               # points — tramo `build`
+    use: 11.65               # points — tramo `build`
     sqx_now: 0.0
     why: "35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos:
@@ -132,7 +132,7 @@ costs:
     sqx_now: 0.0
     why: "35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos2:
-    use: 21.76
+    use: 21.77
     sqx_now: null
     why: '35 % del spread del tramo `oos2` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   swap_long:
@@ -140,9 +140,9 @@ costs:
     sqx_now: {type: points, value: -15.9}
     why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO -14.68/0.38, Hantec -19.0/0.73); este lado sale de hantec. En % anual sobre el nocional de cada bróker al precio de hoy. Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
   swap_short:
-    use: 0.22                # % ANUAL (SQX divide /100 y /360)
+    use: 0.0                 # % ANUAL (SQX divide /100 y /360)
     sqx_now: {type: points, value: 0.78}
-    why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO -14.68/0.38, Hantec -19.0/0.73); este lado sale de ftmo. En % anual sobre el nocional de cada bróker al precio de hoy. Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
+    why: "2026-10-14 — decisión del dueño (encargo 59, pregunta 3a): el lado que hoy COBRA swap va a 0, como en el crudo (2026-10-01). Hoy era 0.22 (puntos SQX por noche) a favor del corto; aplicado a toda la historia desde 2008 regalaba ese carry a cualquier corto. El lado que paga no cambia (peor de FTMO/Hantec). Si `studies.data.spread.fundedswap.worst()` se vuelve a correr, un lado positivo se escribe 0."
 
 notes:
   - "2026-09-23: fichero creado para que XAUUSD pueda escribir su cross-check de mercados adicionales, que se negaba porque ningun fichero declaraba el feed XAGUSD_M1. Todos los costes salen de lo que el MAESTRO lleva hoy, con las conversiones de unidad que exige la clase no_forex (% del nocional y % anual) hechas al ultimo cierre real. No hay ninguna cifra pactada con Infinox. El swap y la comision se mueven ~5x segun el precio de referencia que se elija; esta escrito en cada `why:`."

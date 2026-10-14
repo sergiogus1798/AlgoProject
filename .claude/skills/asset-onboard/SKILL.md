@@ -34,9 +34,11 @@ Stop and ask, never pick, when:
 - **There are several feeds.** `registry.feeds()` lists every `<SYMBOL>_DukasM1_*` and
   `<SYMBOL>_DarwTick_*` in SQX (AUDJPY has the5ers and icmarkets). Ask which broker.
 - **There is no DarwTick feed.** Without ticks there is no spread to measure; say so and stop.
-- **The asset already exists.** Then ask whether to refresh only spreads and slippage
-  (`--spread-only`, the default for an existing asset) or everything, commission and swap
-  included, which overwrites what the owner set by hand.
+- **The asset already exists.** Its spread follows the funded-firms method (owner, 2026-10-14):
+  `python3 -m studies.data.spread.onboard --funded [--symbol S] [--write]` recomputes spreads and
+  slippage from the firms' ticks (`studies/data/spread/funded.py`), no Darwinex read; without
+  `--symbol` it does every card. The Darwinex path below refuses to overwrite a card whose `why`
+  says «sin factor», so `--spread-only` is for a card still on the old method.
 
 ## Run it
 

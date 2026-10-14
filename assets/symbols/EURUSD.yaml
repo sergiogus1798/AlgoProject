@@ -32,15 +32,15 @@ costs:
   spread_is:
     use: 0.32                # points
     sqx_now: 0.1              # points
-    why: "recalibrado 2026-10-04 — 0.0024 % del precio medio del tramo `build` (1.28759): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
+    why: "recalibrado 2026-10-14 — 0.0024 % del precio medio del tramo `build` (1.3): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos:
     use: 0.28
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0024 % del precio medio del tramo `oos1` (1.1355): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0024 % del precio medio del tramo `oos1` (1.1): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   spread_oos2:
     use: 0.27
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0024 % del precio medio del tramo `oos2` (1.1105): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0024 % del precio medio del tramo `oos2` (1.1): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:                     # $ por lote
       build:
@@ -149,9 +149,9 @@ costs:
     sqx_now: {type: points, value: -3.07}
     why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO -10.33/0.37, Hantec -10.24/0.66); este lado sale de ftmo. Pasado a puntos de SQX con pointValue × tickStep de su instrumento (contrato de MT5). Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
   swap_short:
-    use: 0.37                 # points por noche
+    use: 0.0                  # points por noche
     sqx_now: {type: points, value: 0.11}
-    why: "2026-10-01 — decisión del dueño: el PEOR CASO de FTMO y Hantec, lado a lado, leído hoy de sus servidores MT5 (puntos MT5 por noche largo/corto: FTMO -10.33/0.37, Hantec -10.24/0.66); este lado sale de ftmo. Pasado a puntos de SQX con pointValue × tickStep de su instrumento (contrato de MT5). Es el swap de hoy: cambia con los tipos; `studies.data.spread.fundedswap.worst()` lo recalcula."
+    why: "2026-10-14 — decisión del dueño (encargo 59, pregunta 3a): el lado que hoy COBRA swap va a 0, como en el crudo (2026-10-01). Hoy era 0.37 (puntos SQX por noche) a favor del corto; aplicado a toda la historia desde 2008 regalaba ese carry a cualquier corto. El lado que paga no cambia (peor de FTMO/Hantec). Si `studies.data.spread.fundedswap.worst()` se vuelve a correr, un lado positivo se escribe 0."
 
 notes:
   - "2026-09-23: spread, commission y los dos swap rellenados con lo que el MAESTRO lleva hoy (leido de los project.cfx con `sqx.inspect.instruments`), para desbloquear la regla dura 5 sin esperar a las cifras de the5ers. Son defaults de fabrica de SQX, comision CERO incluida: el coste modelado infravalora el real ~10x y su ordenacion entre pares no es creible. Todo resultado con coste producido antes de que el dueno los sustituya arrastra esa advertencia."

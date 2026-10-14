@@ -29,17 +29,17 @@ instrument:
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
   spread_is:
-    use: 27.67                # points — tramo `build`
+    use: 27.68                # points — tramo `build`
     sqx_now: 40               # points, el unico que hay hoy
-    why: "recalibrado 2026-10-04 — 0.0127 % del precio medio del tramo `build` (2180.81): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
+    why: "recalibrado 2026-10-14 — 0.0127 % del precio medio del tramo `build` (2180.8): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos:
     use: 50.35                # points — tramo `oos1` (oos2 lleva `spread_oos2`)
     sqx_now: 40               # points, el unico que hay hoy
-    why: "recalibrado 2026-10-04 — 0.0127 % del precio medio del tramo `oos1` (3967.57): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
+    why: "recalibrado 2026-10-14 — 0.0127 % del precio medio del tramo `oos1` (3967.6): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md"
   spread_oos2:
-    use: 78.8
+    use: 78.78
     sqx_now: null
-    why: 'recalibrado 2026-10-04 — 0.0127 % del precio medio del tramo `oos2` (6210): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 3 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
+    why: 'recalibrado 2026-10-14 — 0.0127 % del precio medio del tramo `oos2` (6207.9): spread medio por tiempo de FundingPips, la más ancha de FTMO/Hantec/FundingPips, media de 12 meses de sus ticks, sin factor. knowhow/costs/funded-tick-spread-vs-price.md'
   commission:
     use:                      # % del nocional
       build:
@@ -132,7 +132,7 @@ costs:
         price_now: 7685.63
         price_date: '2026-10-01'
   slippage_is:
-    use: 9.68               # points — tramo(s) build
+    use: 9.69               # points — tramo(s) build
     sqx_now: 0.0
     why: "35 % del spread del tramo `build` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos:
@@ -140,7 +140,7 @@ costs:
     sqx_now: 0.0
     why: "35 % del spread del tramo `oos1` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72"
   slippage_oos2:
-    use: 27.58
+    use: 27.57
     sqx_now: null
     why: '35 % del spread del tramo `oos2` (dueño, 2026-10-04; antes la mitad): 600 operaciones reales costaron 1,33 × el spread de ida y vuelta, IC 95 % 1,08-1,72'
   swap_long:

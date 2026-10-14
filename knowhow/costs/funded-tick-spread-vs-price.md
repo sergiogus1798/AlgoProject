@@ -14,6 +14,9 @@ instead (below).
   35 % of it, MC Retest 0.5×–2× — % on purpose: history pays 2026's friction relative to price.
 
 ## Evidence
+- Command (2026-10-14): `onboard --funded [--write]`; "12" and "3" are the last 12/3 MONTHLY SAMPLE DAYS in `ticks_hist/`, not calendar months (NIKKEI 0.01735 % = the card's 0.0174, calendar gave 0.01777); price = mean of daily last closes. Darwinex path refuses «sin factor» cards.
+- 🔬 2026-10-14 NIKKEI225 `build` repriced 304 → 747 / 1000 pt (sign changes; with 35 % slippage in brackets): 10 post-step-8 strategies 2 (3) / 3 (4); 10 000 IS-filtered 1 429 (4 581) / 4 023 (7 638). Lower bound, selected at 304. `AlgoData/audit/costes/nikkei225-cambio-de-signo-*.md`.
+- 🔬 2026-10-14 trade legs in server hour 0: USDJPY M30 3.3-5.8 %, H1 / NIKKEI / XAUUSD / EURUSD H1 0 %; 1 h in 24 is 4.2 %: time-weighting already carries it.
 - What moves a firm's spread is a change of regime by the firm, not price: FTMO's JP225.cash averaged 745 pt in 2024, 487 in 2025 and 920 in 2026 (1094 in Jul–Sep); its crude went 20 → 58–65 pt and silver 16 → 64 pt from 2024 to 2026; Hantec's GER40.h fell from 156 pt (2025) to 19 (2026).
 - FTMO quotes XCUUSD at 100× the SQX feed's price: convert through % of price, never raw points.
 - Real fills: round trip 1.33 ± 0.16 × the worst firm's 12-month mean spread over 600 live deals (below).
