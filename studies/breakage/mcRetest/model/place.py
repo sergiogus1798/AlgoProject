@@ -1,9 +1,20 @@
 """Where the original backtest sits among its own re-runs: its percentile and the median's gap."""
 
+from typing import TypedDict
+
 import numpy as np
 
 
-def place(sims: np.ndarray, real: float, floor: float) -> dict:
+class Place(TypedDict):
+    """Where the original sits among its re-runs: percentile, gap in percent and in IQRs, the re-runs' own band."""
+
+    percentile: float
+    gap_pct: float | None
+    gap_iqr: float | None
+    own: list[float] | None
+
+
+def place(sims: np.ndarray, real: float, floor: float) -> Place:
     """The criteria metrics of one task: is the original typical of what the task simulated?
 
     Args:

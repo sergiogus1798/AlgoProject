@@ -1,13 +1,14 @@
 """The single source of truth for every tunable of the study; it computes nothing."""
 
 from pathlib import Path
+from typing import Any
 
 from core.study import config as study_config
 
 FILE = Path(__file__).parents[1] / "config.yaml"
 
 
-def load(overrides: list[str] | None = None) -> dict:
+def load(overrides: list[str] | None = None) -> dict[str, Any]:
     """Read config.yaml and apply command-line overrides.
 
     Args:
@@ -21,7 +22,7 @@ def load(overrides: list[str] | None = None) -> dict:
     return study_config.load(FILE, overrides or [])
 
 
-def flatten(cfg: dict) -> dict:
+def flatten(cfg: dict) -> dict[str, Any]:
     """The config as one level of dotted keys, which is what the drawer and the manifest use.
 
     Args:

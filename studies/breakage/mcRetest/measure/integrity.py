@@ -1,7 +1,11 @@
 """Recomputed order statistics against the table SQX stored: the check everything else rests on."""
 
+from collections.abc import Sequence
+from typing import TypedDict
+
 import numpy as np
 
+from core.sqxretest import Simulations
 from studies.breakage.mcRetest.model import recon
 
 
@@ -25,7 +29,7 @@ def quantile(values: np.ndarray, level: int, worse_high: bool) -> float:
     return float(ordered[max(0, min(ordered.size - 1, rank))])
 
 
-def table(metrics: dict, levels: tuple) -> dict:
+def table(metrics: dict, levels: tuple) -> dict[str, dict[int, float]]:
     """The whole confidence table, rebuilt for every metric SQX never exposes that way.
 
     Args:
@@ -42,7 +46,14 @@ def table(metrics: dict, levels: tuple) -> dict:
             for name, values in metrics.items()}
 
 
-def reconcile(metrics: dict, stored: dict, cfg: dict, readings: list[dict] = ()) -> dict:
+class Reconciled(TypedDict):
+    """One metric's reconciliation: how far outside the admissible band it fell, and whether it cleared."""
+
+    worst_ratio: float
+    passed: bool
+
+
+def reconcile(metrics: dict, stored: dict, cfg: dict, readings: Sequence[dict] = ()) -> dict[str, Reconciled]:
     """Whether the reconstruction reproduces what SQX itself computed.
 
     Args:
@@ -62,7 +73,7 @@ def reconcile(metrics: dict, stored: dict, cfg: dict, readings: list[dict] = ())
         formula there or accepts a wrong one everywhere else.
     """
     tol, floor = cfg["recon"]["tolerance"], cfg["recon"]["absolute_floor"]
-    out = {}
+    out: dict[str, Reconciled] = {}
     for name, values in metrics.items():
         if not np.isfinite(values).all():
             continue
@@ -154,7 +165,7 @@ def stored_only(stored: dict) -> list[str]:
     return sorted(varying(stored) - known)
 
 
-def zero_readings(sims: dict, capital: float) -> list[dict]:
+def zero_readings(sims: Simulations, capital: float) -> list[dict]:
     """The same simulations with every stored 0-cent trade read as a hair below and above zero.
 
     SQX stores each trade's P/L in whole cents but counts wins and losses on the full figure:

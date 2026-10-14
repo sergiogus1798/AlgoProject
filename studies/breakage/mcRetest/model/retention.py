@@ -1,9 +1,20 @@
 """What the re-runs keep of the original's total: retention at the median and the 5th percentile."""
 
+from typing import TypedDict
+
 import numpy as np
 
 
-def retention(runs: np.ndarray, original: float) -> dict:
+class Retention(TypedDict):
+    """What the re-runs keep of the original's total: median and 5th-percentile retention, share positive, count."""
+
+    ret_med: float
+    ret_p5: float
+    f_pos: float
+    n: int
+
+
+def retention(runs: np.ndarray, original: float) -> Retention:
     """Retention of a total across re-runs, as a share of the unperturbed strategy's own total.
 
     Args:

@@ -1,8 +1,11 @@
 """One strategy's retest as the contract's tabs: the call, what breaks it, the stress, the eight."""
 
+from typing import Any, cast
+
 import pandas as pd
 
-from core.study import blocks, result as envelope
+from core.study import blocks
+from core.study import result as envelope
 from studies.breakage.mcRetest.contract import criteria, words
 from studies.breakage.mcRetest.inputs import tasks
 
@@ -13,7 +16,7 @@ COMPOSITE_HELP = ("Media ponderada de cuatro subnotas sobre 100 — producción 
                   "medir.")
 
 
-def verdict_block(got: dict) -> dict:
+def verdict_block(got: dict) -> dict[str, Any]:
     """The call, its composite, what limits it, one part per task group."""
     v = got["verdict"]
     block = blocks.verdict(
@@ -25,12 +28,12 @@ def verdict_block(got: dict) -> dict:
     return block
 
 
-def verdict_tab(got: dict) -> dict:
+def verdict_tab(got: dict) -> dict[str, Any]:
     """Every check that fired, with what it measured, and the sub-scores."""
     rows = [["Veto" if f["gate"] else "Aviso", words.test_name(f["test"]), f["value"], f["limit"],
              words.SENTENCES[f["veto"]]] for f in got["flags"]]
     table = blocks.table("Qué comprobaciones saltaron", pd.DataFrame(
-                             rows, columns=["Tipo", "Prueba", "Midió", "Contra", "Qué dice"]),
+                             rows, columns=pd.Index(["Tipo", "Prueba", "Midió", "Contra", "Qué dice"])),
                          "Qué comprobación descalificó la estrategia (Veto) o solo la marcó "
                          "(Aviso), y contra qué límite. Un veto manda el veredicto a FAIL — o "
                          "a INCONCLUSIVE cuando es sólo de datos, nunca de resultado."
@@ -69,8 +72,8 @@ def cost_tab(got: dict, cfg: dict) -> dict | None:
         blocks.table("Clasificación de tareas por coste", pd.DataFrame(
             [[tasks.TITLES[r["task"]], r["cost"], r["cost_in_sigmas"], r["spread_vs_control"]]
              for r in a["ranking"]],
-            columns=["Tarea", "Coste (USD)", "Sigmas del control",
-                     "Dispersión frente al control"]))])
+            columns=pd.Index(["Tarea", "Coste (USD)", "Sigmas del control",
+                     "Dispersión frente al control"])))])
 
 
 def stress_tab(got: dict) -> dict | None:
@@ -93,10 +96,10 @@ def stress_tab(got: dict) -> dict | None:
              ["Drawdown CVaR (%)", tail["drawdown"]["cvar"], None, None],
              ["Operaciones bajo el agua (mediana)", tail["underwater_median"], None, None],
              ["Simulaciones rentables (%)", round(tail["positive_share"] * 100, 2), None, None]],
-            columns=["Medida", "Valor", "Intervalo al 95 %: desde", "Hasta"]))])
+            columns=pd.Index(["Medida", "Valor", "Intervalo al 95 %: desde", "Hasta"])))])
 
 
-def _fan_cone(title: str, fan: dict) -> dict:
+def _fan_cone(title: str, fan: dict) -> dict[str, Any]:
     """A task's simulated equity as percentile bands 5-95 and 25-75, the median and the original."""
     block = {"kind": "cone", "title": title, "unit": "USD",
              "x": [round(float(p) * 100, 1) for p in fan["progress"]],
@@ -112,7 +115,7 @@ def _fan_cone(title: str, fan: dict) -> dict:
     return block
 
 
-def tasks_tab(got: dict) -> dict:
+def tasks_tab(got: dict) -> dict[str, Any]:
     """What each of the eight tasks did, then each perturbed outcome drawn."""
     present = [t for t in tasks.TASKS if t in got]
     rows = [[tasks.TITLES[t], got[t]["fragility"]["net_p5"]["point"],
@@ -127,23 +130,23 @@ def tasks_tab(got: dict) -> dict:
     missing = [tasks.TITLES[t] for t in tasks.TASKS if t not in got]
     return envelope.tab("tasks", "Las tareas", [
         blocks.table("Qué hizo cada tarea", pd.DataFrame(
-            rows, columns=["Tarea", "Net Profit p5 (USD)", "Mediana Monte Carlo (USD)",
-                           "Backtest original (USD)", "Drawdown CVaR (%)"]),
+            rows, columns=pd.Index(["Tarea", "Net Profit p5 (USD)", "Mediana Monte Carlo (USD)",
+                           "Backtest original (USD)", "Drawdown CVaR (%)"])),
             f"No corrieron: {', '.join(missing)}." if missing else ""),
         criteria.table(got),
         *[b for pair in zip(figs, curves) for b in pair]])
 
 
-def levels_tab(got: dict, levels: pd.DataFrame, cfg: dict) -> dict:
+def levels_tab(got: dict, levels: pd.DataFrame, cfg: dict) -> dict[str, Any]:
     """SQX's own confidence table at the levels the config names, with its trap named."""
-    mine = levels[levels["strategy"] == got["strategy"]]
+    mine = cast(pd.DataFrame, levels[levels["strategy"] == got["strategy"]])
     show = cfg["scenario"]["show_levels"]
-    keep = mine[mine["level"].isin(show) & mine["metric"].isin(
-        ["NetProfit", "ProfitFactor", "DrawdownPct", "NumberOfTrades"])]
+    keep = cast(pd.DataFrame, mine[mine["level"].isin(show) & mine["metric"].isin(
+        ["NetProfit", "ProfitFactor", "DrawdownPct", "NumberOfTrades"])])
     wide = (keep.pivot_table(index=["task", "metric"], columns="level", values="value",
                              observed=True)
             .reset_index())
-    wide["task"] = wide["task"].map(tasks.TITLES)
+    wide["task"] = wide["task"].map(tasks.TITLES)  # pyright: ignore[reportArgumentType]  # pandas stubs reject a dict mapper; pandas takes it (NaN for a missing key)
     wide = wide.rename(columns={"task": "Tarea", "metric": "Métrica"})
     wide.columns = [str(c) for c in wide.columns]
     return envelope.tab("levels", "Tabla de confianza", [
@@ -151,8 +154,8 @@ def levels_tab(got: dict, levels: pd.DataFrame, cfg: dict) -> dict:
             [[tasks.TITLES[t], got[t]["fragility"]["net_p5"]["point"],
               float(pd.Series(got[t]["_net"]).median()), got[t]["original_net"],
               got[t]["fragility"]["drawdown"]["cvar"]] for t in tasks.TASKS if t in got],
-            columns=["Tarea", "Net Profit p5 (USD)", "Mediana Monte Carlo (USD)",
-                    "Backtest original (USD)", "Drawdown CVaR (%)"])),
+            columns=pd.Index(["Tarea", "Net Profit p5 (USD)", "Mediana Monte Carlo (USD)",
+                    "Backtest original (USD)", "Drawdown CVaR (%)"]))),
         blocks.table(f"La tabla que SQX guardó, niveles {', '.join(map(str, show))}", wide,
                      "Tablas con los rangos desplazados por un run cortado no aparecen.")],
         note="Un nivel de confianza no es un escenario: el percentil 5 del beneficio y el del "
@@ -196,7 +199,7 @@ def sparse_warnings(got: dict) -> list[dict]:
     return out
 
 
-def summary(got: dict) -> dict:
+def summary(got: dict) -> dict[str, str | float | None]:
     """The flat row verdict.csv carries; the stress columns are empty when it did not run."""
     v, s = got["verdict"], got.get("stress", {}).get("fragility")
     return {"verdict": v["verdict"], "composite": v["composite"], "binding": v["binding"],

@@ -1,5 +1,7 @@
 """The retest's criteria metrics — the original among its own re-runs — as a table and as columns."""
 
+from typing import Any
+
 import pandas as pd
 
 from core.study import blocks
@@ -30,7 +32,7 @@ NOTE = ("Calculadas y visibles, sin juzgar: ninguna tiene umbral ni cambia el ve
         "mismo histórico: su número no es un tamaño de muestra y aquí no hay p-valores.")
 
 
-def table(got: dict) -> dict:
+def table(got: dict) -> dict[str, Any]:
     """One row per task that ran; numbers stay numbers so each cell is a fact of the autopilot."""
     rows = []
     for task in tasks.TASKS:
@@ -39,16 +41,16 @@ def table(got: dict) -> dict:
             own = "—" if p["own"] is None else (
                 f"{p['own'][0]:+.2f} a {p['own'][1]:+.2f}".replace(".", ","))
             rows.append([tasks.TITLES[task], p["percentile"], p["gap_pct"], p["gap_iqr"], own])
-    frame = pd.DataFrame(rows, columns=[
+    frame = pd.DataFrame(rows, columns=pd.Index([
         "Tarea", "Percentil del original", "Brecha de la mediana (%)",
-        "Distancia a la mediana (IQR)", "Una re-ejecución más (IQR)"])
+        "Distancia a la mediana (IQR)", "Una re-ejecución más (IQR)"]))
     for col in frame.columns[1:4]:
         frame[col] = frame[col].astype(float)
     return blocks.table(f"{TITLE}: el original entre sus re-ejecuciones", frame, NOTE, 4) | {
         "help": HELP, "compact": True}
 
 
-def summary(got: dict) -> dict:
+def summary(got: dict) -> dict[str, float | None]:
     """The production task's three numbers: verdict.csv columns, hence the databank table's."""
     if "stress" not in got:
         return {}

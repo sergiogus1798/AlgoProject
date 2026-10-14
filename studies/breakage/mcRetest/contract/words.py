@@ -1,6 +1,7 @@
 """The Spanish sentence behind every check that can fire, and every task. gates decides, this narrates."""
 
 from studies.breakage.mcRetest.inputs import tasks
+from studies.breakage.mcRetest.run import Battery
 
 # One entry per gates.VETOES. report.py asserts the two sets are equal at start-up, because a
 # veto that fires with no words attached is a verdict nobody can argue with.
@@ -84,7 +85,7 @@ def shape(entry: dict) -> str:
     return "bimodal" if m["bimodality"]["bimodal"] else "unimodal"
 
 
-def battery(result: dict) -> list[list[str]]:
+def battery(result: Battery) -> list[list[str]]:
     """What can only be said across the strategies, one row per fact.
 
     Args:
@@ -97,7 +98,7 @@ def battery(result: dict) -> list[list[str]]:
     bets = ("sin dato: sin el estrés combinado no hay equity diaria" if enb is None else
             f"{enb['enb']:.2f} de {enb['n']} ({enb['ratio']:.1%})")
     order = (f"no evaluable con {ranks['n']} estrategias, hacen falta {ranks['needed']}"
-             if not ranks["measurable"] else
+             if ranks["measurable"] is False else
              f"tau de Kendall {ranks['tau']:+.2f} (p = {ranks['p']:.3f})")
     return [["Apuestas efectivas", bets,
              "Comparten plantilla de generación, pero sus retornos diarios apenas se "

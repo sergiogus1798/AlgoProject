@@ -1,11 +1,14 @@
 """One strategy's Monte Carlo Retest, returned as the contract's data: what the window paints."""
 
 import time
+from typing import Any
 
-from core.study import draws, result as envelope
+from core.study import draws
+from core.study import result as envelope
 from studies.breakage.mcRetest import run as study
 from studies.breakage.mcRetest.contract import retention, tabs
 from studies.breakage.mcRetest.inputs import tasks
+from studies.breakage.mcRetest.load import Loaded
 
 MODULE = "studies.breakage.mcRetest"
 GLOSSARY = [
@@ -35,7 +38,7 @@ GLOSSARY = [
      "mayor que cero."}]
 
 
-def contract(got: dict, inputs: dict, cfg: dict, started: float) -> dict:
+def contract(got: dict, inputs: Loaded, cfg: dict, started: float) -> dict[str, Any]:
     """What run.one() concluded, as the contract dict.
 
     Args:
@@ -64,7 +67,7 @@ def contract(got: dict, inputs: dict, cfg: dict, started: float) -> dict:
         summary=tabs.summary(got)) | {"draws": kept}
 
 
-def run(strategy: str, inputs: dict, cfg: dict) -> dict:
+def run(strategy: str, inputs: Loaded, cfg: dict) -> dict[str, Any]:
     """Everything the study says about one strategy.
 
     Args:

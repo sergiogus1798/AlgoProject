@@ -1,11 +1,13 @@
 """The unperturbed trade list each strategy actually produced, read from its own harvest."""
 
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 import pyarrow as pa
 
-from core import assets, sqxfile, trades as core_trades
+from core import assets, sqxfile
+from core import trades as core_trades
 from core.paths import harvest_dir
 
 KEEP = ["strategy", "Type", "Open time", "Close time", "Size", "cost", "pnl"]
@@ -77,10 +79,10 @@ def read(project: str, harvest_databank: str, identities: dict[str, str],
                           columns=["identity", "sample", "Type", "Open time", "Close time", "Size",
                                    "Open price", "Close price", "Profit/Loss"],
                           filters=[("identity", "in", pa.array(sorted(by_identity), pa.string())), ("sample", "==", sample)])
-    got["strategy"] = got["identity"].map(by_identity)
+    got["strategy"] = got["identity"].map(by_identity)  # pyright: ignore[reportArgumentType]  # pandas stubs reject a dict mapper; pandas takes it (NaN for a missing key)
     got["cost"] = core_trades.cost(got, point_value)
     got["pnl"] = got["Profit/Loss"]
-    return got[KEEP].reset_index(drop=True)
+    return cast(pd.DataFrame, got[KEEP]).reset_index(drop=True)
 
 
 def asset_point_value(symbol: str) -> float:

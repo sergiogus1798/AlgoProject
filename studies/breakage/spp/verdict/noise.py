@@ -1,5 +1,7 @@
 """Does the best point of this grid beat what searching pure noise would have produced?"""
 
+from typing import TypedDict
+
 import pandas as pd
 
 from core.surface import dedupe, plateau
@@ -7,7 +9,32 @@ from core.surface import dedupe, plateau
 PROCEED, NOISE = "proceed", "noise"
 
 
-def noise_check(frame: pd.DataFrame, metric: str, margin: float = 1.0) -> dict:
+class NoiseCheck(TypedDict):
+    """`noise_check`: the grid's best point, the maximum pure noise would reach, and the call."""
+
+    metric: str
+    n_rows: int
+    n_eff: int
+    sigma: float
+    observed_max: float
+    noise_max: float
+    excess: float
+    ratio: float
+    plateau_area: float
+    above_half_max: float
+    verdict: str
+
+
+class Shape(TypedDict):
+    """`shape`: kurtosis, (max - median) / IQR, and the median and maximum themselves."""
+
+    kurtosis: float
+    spike_ratio: float
+    median: float
+    max: float
+
+
+def noise_check(frame: pd.DataFrame, metric: str, margin: float = 1.0) -> NoiseCheck:
     """Compare the grid's best point against the maximum a null grid would reach.
 
     Args:
@@ -28,7 +55,7 @@ def noise_check(frame: pd.DataFrame, metric: str, margin: float = 1.0) -> dict:
         smaller than it looks.
     """
     distinct = dedupe.distinct(frame)
-    values = pd.to_numeric(distinct[metric], errors="coerce").dropna().to_numpy()
+    values = pd.Series(pd.to_numeric(distinct[metric], errors="coerce")).dropna().to_numpy()
     n_eff = int(values.size)
     threshold = plateau.expected_max(float(values.std()), n_eff)
     observed = float(values.max())
@@ -41,7 +68,7 @@ def noise_check(frame: pd.DataFrame, metric: str, margin: float = 1.0) -> dict:
             "verdict": PROCEED if excess > threshold * margin else NOISE}
 
 
-def shape(frame: pd.DataFrame, metric: str) -> dict:
+def shape(frame: pd.DataFrame, metric: str) -> Shape:
     """How peaked the surface is, beyond where its maximum sits.
 
     Args:
@@ -53,7 +80,7 @@ def shape(frame: pd.DataFrame, metric: str) -> dict:
         is small says the result lives at one point, which is the shape that does not
         survive: the two numbers are read together or neither means much.
     """
-    values = pd.to_numeric(dedupe.distinct(frame)[metric], errors="coerce").dropna()
+    values = pd.Series(pd.to_numeric(dedupe.distinct(frame)[metric], errors="coerce")).dropna()
     iqr = float(values.quantile(0.75) - values.quantile(0.25))
     return {"kurtosis": float(values.kurtosis()),
             "spike_ratio": float((values.max() - values.median()) / iqr),

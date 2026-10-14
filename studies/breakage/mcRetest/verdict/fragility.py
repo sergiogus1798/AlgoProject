@@ -1,10 +1,48 @@
 """Question 1 — how much does it hurt? The tail, how well it is known, and the fall behind it."""
 
+from typing import TypedDict
+
 import numpy as np
 from scipy import stats
 
 
-def tail(values: np.ndarray, quantile: float, cfg: dict) -> dict:
+class Tail(TypedDict):
+    """One tail quantile and the order statistics that bracket it."""
+
+    point: float
+    lo: float
+    hi: float
+    method: str
+
+
+class ConditionalDrawdown(TypedDict):
+    """The drawdown beyond its quantile: the mean of that tail, the quantile, the excess and the tail's size."""
+
+    cvar: float
+    quantile: float
+    excess: float
+    n_tail: int
+
+
+class Fan(TypedDict):
+    """The percentile bands of every simulated equity curve on a shared progress grid."""
+
+    progress: np.ndarray
+    bands: dict[float, np.ndarray]
+    original: np.ndarray | None
+
+
+class Fragility(TypedDict):
+    """Question 1 for one task: the two tails, the drawdown behind them and the share of profitable runs."""
+
+    net_p5: Tail
+    pf_p5: Tail
+    drawdown: ConditionalDrawdown
+    underwater_median: float
+    positive_share: float
+
+
+def tail(values: np.ndarray, quantile: float, cfg: dict) -> Tail:
     """One tail quantile with an exact interval around it.
 
     Args:
@@ -35,7 +73,7 @@ def tail(values: np.ndarray, quantile: float, cfg: dict) -> dict:
             "method": "order statistics"}
 
 
-def conditional_drawdown(values: np.ndarray, cfg: dict) -> dict:
+def conditional_drawdown(values: np.ndarray, cfg: dict) -> ConditionalDrawdown:
     """The average of the worst drawdowns, not merely the edge of them.
 
     Args:
@@ -75,7 +113,7 @@ def underwater(pnl: np.ndarray, offsets: np.ndarray) -> np.ndarray:
     return out
 
 
-def fan(pnl: np.ndarray, offsets: np.ndarray, cfg: dict, original: np.ndarray | None = None) -> dict:
+def fan(pnl: np.ndarray, offsets: np.ndarray, cfg: dict, original: np.ndarray | None = None) -> Fan:
     """The percentile bands of every simulated equity curve, on a shared progress grid.
 
     Args:
@@ -105,7 +143,7 @@ def fan(pnl: np.ndarray, offsets: np.ndarray, cfg: dict, original: np.ndarray | 
             np.interp(grid, np.linspace(0.0, 1.0, original.size), original)}
 
 
-def describe(metrics: dict, pnl: np.ndarray, offsets: np.ndarray, cfg: dict) -> dict:
+def describe(metrics: dict, pnl: np.ndarray, offsets: np.ndarray, cfg: dict) -> Fragility:
     """Everything question 1 asks of one strategy under one task.
 
     Args:

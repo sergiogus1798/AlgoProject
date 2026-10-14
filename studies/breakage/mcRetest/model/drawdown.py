@@ -5,6 +5,8 @@ the initial capital plus the equity peak in force, never the peak alone. Reconst
 its stored tables the difference is not subtle -- 5.52% versus 195%.
 """
 
+from typing import Any
+
 import numpy as np
 
 
@@ -29,7 +31,7 @@ def _paths(p: dict) -> tuple[np.ndarray, np.ndarray]:
     return absolute, relative
 
 
-def prepare(p: dict) -> dict:
+def prepare(p: dict[str, Any]) -> dict[str, Any]:
     """Add the drawdown paths to the shared parts, once.
 
     Args:

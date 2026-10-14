@@ -1,11 +1,31 @@
 """Everything one run of the retest study reads from one ingest, assembled once."""
 
+from pathlib import Path
+from typing import Any, TypedDict
+
+import pandas as pd
+
 from core import manifest
 from studies.breakage.mcRetest.measure import store
 from studies.breakage.mcRetest.neighbours import t1 as neighbours
 
 
-def load(project: str, databank: str, day: str) -> dict:
+class Loaded(TypedDict):
+    """The inputs one.run() and many.run() read: the ingest's tables, its manifest facts and the T1 facts."""
+
+    keys: dict[str, str]
+    sims: pd.DataFrame
+    original: pd.DataFrame
+    levels: pd.DataFrame
+    provenance: dict[str, Any]
+    identity: dict[str, Any]
+    trades: pd.DataFrame | None
+    asset: Any
+    folder: Path
+    t1: dict[str, dict[str, float]]
+
+
+def load(project: str, databank: str, day: str) -> Loaded:
     """The inputs one.run() and many.run() read.
 
     Args:
@@ -30,7 +50,7 @@ def load(project: str, databank: str, day: str) -> dict:
                 for key, entry in provenance.items()}
     trades = store.load_trades(**keys) if (folder / store.TRADES).exists() else None
     return {"keys": keys, "sims": store.load_sims(**keys),
-            "original": store.load_original(**keys), "levels": store.load_levels(**keys),
+            "original": store.load_original(**keys), "levels": store.load_levels(project, databank, day),
             "provenance": provenance, "identity": identity, "trades": trades,
             "asset": source.get("asset"), "folder": folder,
             "t1": {name: got for name in identity

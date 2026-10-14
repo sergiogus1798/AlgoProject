@@ -1,5 +1,7 @@
 """The 30 metrics reconstructible from a P/L vector, and the declaration of what the rest are."""
 
+from typing import Any
+
 import numpy as np
 
 from studies.breakage.mcRetest.model import counts, drawdown, runs
@@ -46,7 +48,7 @@ EXCLUDED = {
                    "and barely moves between simulations, so it informs nothing"}
 
 
-def parts(pnl_cents: np.ndarray, offsets: np.ndarray, capital: float) -> dict:
+def parts(pnl_cents: np.ndarray, offsets: np.ndarray, capital: float) -> dict[str, Any]:
     """The shared intermediates every metric reads, computed once per task and strategy.
 
     Args:
@@ -81,7 +83,7 @@ def parts(pnl_cents: np.ndarray, offsets: np.ndarray, capital: float) -> dict:
     return runs.prepare(drawdown.prepare(shared))
 
 
-def frame(pnl_cents: np.ndarray, offsets: np.ndarray, capital: float) -> dict:
+def frame(pnl_cents: np.ndarray, offsets: np.ndarray, capital: float) -> dict[str, np.ndarray]:
     """Every reconstructible metric of every simulation.
 
     Args:

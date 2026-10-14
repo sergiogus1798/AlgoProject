@@ -1,5 +1,7 @@
 """Question 2 — does it decay, or collapse? Whether the outcome is one regime or two."""
 
+from typing import TypedDict, cast
+
 import diptest
 import numpy as np
 from scipy import stats
@@ -69,7 +71,48 @@ def discriminated(values: np.ndarray, cfg: dict) -> bool:
     return outcomes(values) >= cfg["modes"]["min_outcome_share"] * values.size
 
 
-def bimodality(values: np.ndarray, cfg: dict) -> dict:
+class Bimodality(TypedDict):
+    """Hartigan's dip: the statistic, its p-value, the call at alpha and the sample size."""
+
+    dip: float
+    p: float
+    bimodal: bool
+    n: int
+
+
+class Moments(TypedDict):
+    """Skewness and (Pearson) kurtosis of the outcomes."""
+
+    skew: float
+    kurtosis: float
+
+
+class RegimeCollapse(TypedDict):
+    """How much of the original's trade count the runs keep, and whether the median collapsed."""
+
+    median_share: float
+    worst_share: float
+    collapsed: bool
+    min_trades: int
+
+
+class _ModesBase(TypedDict):
+    """What every task's modes carry."""
+
+    discriminated: bool
+    perturbed: bool
+    outcomes: int
+    trades: RegimeCollapse
+
+
+class Modes(_ModesBase, total=False):
+    """Question 3 for one task; `bimodality` and `shape` only when the task's output discriminates."""
+
+    bimodality: Bimodality
+    shape: Moments
+
+
+def bimodality(values: np.ndarray, cfg: dict) -> Bimodality:
     """Hartigan's dip: is there a subset of runs where the strategy simply stopped working?
 
     Args:
@@ -86,13 +129,13 @@ def bimodality(values: np.ndarray, cfg: dict) -> dict:
         on this battery it rejects in 20 of 40 runs and ranges the whole interval, unlike
         Jarque-Bera which rejected 40 of 40 and therefore said nothing.
     """
-    statistic, p_value = diptest.diptest(np.asarray(values, dtype=np.float64))
+    statistic, p_value = cast(tuple[float, float], diptest.diptest(np.asarray(values, dtype=np.float64)))
     return {"dip": float(statistic), "p": float(p_value),
             "bimodal": bool(p_value < cfg["modes"]["dip_alpha"]),
             "n": int(values.size)}
 
 
-def shape(values: np.ndarray) -> dict:
+def shape(values: np.ndarray) -> Moments:
     """How far from normal the outcome distribution sits.
 
     Args:
@@ -111,7 +154,7 @@ def shape(values: np.ndarray) -> dict:
             "kurtosis": float(stats.kurtosis(values, fisher=False))}
 
 
-def regime_collapse(trades: np.ndarray, original: float, cfg: dict) -> dict:
+def regime_collapse(trades: np.ndarray, original: float, cfg: dict) -> RegimeCollapse:
     """Whether the strategy was still the same strategy, or stopped trading.
 
     Args:
@@ -132,7 +175,7 @@ def regime_collapse(trades: np.ndarray, original: float, cfg: dict) -> dict:
             "min_trades": int(trades.min())}
 
 
-def describe(metrics: dict, original_trades: float, cfg: dict) -> dict:
+def describe(metrics: dict, original_trades: float, cfg: dict) -> Modes:
     """Everything question 2 asks of one strategy under one task.
 
     Args:

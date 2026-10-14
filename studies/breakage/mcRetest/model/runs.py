@@ -1,5 +1,7 @@
 """Streaks of wins and losses, and the runs test SQX scores their randomness with."""
 
+from typing import Any
+
 import numpy as np
 
 
@@ -21,7 +23,7 @@ def _streaks(signs: np.ndarray, want: int) -> tuple[int, float]:
     return int(lengths.max()), float(lengths.mean())
 
 
-def prepare(p: dict) -> dict:
+def prepare(p: dict[str, Any]) -> dict[str, Any]:
     """Add the per-simulation streak and runs statistics to the shared parts, once.
 
     Args:

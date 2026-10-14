@@ -1,8 +1,11 @@
 """The fragility tab: T1 as one small table, whose cells are the judge's facts."""
 
+from typing import Any
+
 import pandas as pd
 
-from core.study import blocks, result as envelope
+from core.study import blocks
+from core.study import result as envelope
 
 # One table per test, titled by its code alone, one row per window, one column per measure:
 # `pipeline.autopilot.facts.flatten` then names each cell `fragilidad.<test>.<window>.<measure>`
@@ -33,19 +36,19 @@ NOTE = {
           "(sus operaciones se exportan con fechas)."}
 
 
-def _table(test: str, rows: dict) -> dict:
+def _table(test: str, rows: dict) -> dict[str, Any]:
     """One test's table: `rows` is {window: {measure: value}}, columns in COLUMNS' order."""
     frame = pd.DataFrame([[window, *(got.get(c) for c in COLUMNS[test])]
                           for window, got in rows.items()],
-                         columns=["Ventana", *COLUMNS[test]])
+                         columns=pd.Index(["Ventana", *COLUMNS[test]]))
     frame[COLUMNS[test]] = frame[COLUMNS[test]].astype(float)
     return blocks.table(test.upper(), frame, NOTE[test], 4) | {
         "help": [None, *(HELP[c] for c in COLUMNS[test])], "compact": True}
 
 
-def _t1_rows(t1: dict) -> dict:
+def _t1_rows(t1: dict) -> dict[str, dict[str, float]]:
     """T1's flat facts as table rows: `t1.build.ret_med` → row «build», `t1.rho_vec` → «ambas»."""
-    rows = {}
+    rows: dict[str, dict[str, float]] = {}
     for key, value in t1.items():
         window, _, measure = key.removeprefix("t1.").rpartition(".")
         rows.setdefault(window or "ambas", {})[measure] = value

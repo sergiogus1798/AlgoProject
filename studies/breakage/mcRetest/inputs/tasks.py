@@ -1,6 +1,7 @@
 """The eight tasks: what each perturbs, what it holds fixed, and the check against what SQX ran."""
 
 from pathlib import Path
+from typing import TypedDict
 
 from core import sqxretest
 
@@ -83,7 +84,18 @@ TITLES = {"bar": "Barra inicial (control)", "spread": "Spread", "slippage": "Sli
           "ohlc": "Datos históricos", "stress": "Estrés combinado"}
 
 
-def provenance(path: Path) -> dict:
+class Provenance(TypedDict):
+    """What one .sqx says about the retest that produced it."""
+
+    methods: dict[str, dict[str, str]]
+    declared: int
+    stored: int
+    scope: str
+    precision: str | None
+    date_range: str
+
+
+def provenance(path: Path) -> Provenance:
     """What one .sqx says about the retest that produced it.
 
     Args:
@@ -104,7 +116,7 @@ def provenance(path: Path) -> dict:
             "date_range": meta["date_range"]}
 
 
-def verify(got: dict, task: str) -> list[str]:
+def verify(got: Provenance, task: str) -> list[str]:
     """Whether a databank holds the task it is supposed to hold.
 
     Args:
@@ -136,7 +148,7 @@ def verify(got: dict, task: str) -> list[str]:
     return out
 
 
-def usable(got: dict) -> bool:
+def usable(got: Provenance) -> bool:
     """Whether the confidence table SQX stored for this run can be read at all.
 
     Args:

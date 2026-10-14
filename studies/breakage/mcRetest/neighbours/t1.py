@@ -6,6 +6,7 @@ import json
 import sys
 from datetime import date
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -29,7 +30,7 @@ GATE = Path(__file__).resolve().parents[3] / "screening" / "gate" / "config.yaml
 COLLISION = r"\(\d+\)$"              # what SQX appends to a duplicate on reload
 
 
-def summary(rows: pd.DataFrame) -> dict:
+def summary(rows: pd.DataFrame) -> dict[str, float]:
     """One mother's T1 facts from her per-neighbour table.
 
     Args:
@@ -48,7 +49,7 @@ def summary(rows: pd.DataFrame) -> dict:
         drawdown over build and oos1 together, in R (NaN on a table measured before the
         `dd_r` column existed): the dispersion that fixes k.
     """
-    mother, runs = rows[rows["neighbour"] == 0].iloc[0], rows[rows["neighbour"] > 0]
+    mother, runs = rows[rows["neighbour"] == 0].iloc[0], cast(pd.DataFrame, rows[rows["neighbour"] > 0])
     out = {}
     for seg in SEGMENTS:
         profit = float(mother[f"{seg}_profit"])
@@ -89,7 +90,7 @@ def table(project: str, day: str, strategy: str) -> pd.DataFrame | None:
     return rows.reset_index(drop=True) if len(rows) else None
 
 
-def facts(project: str, day: str, strategy: str) -> dict | None:
+def facts(project: str, day: str, strategy: str) -> dict[str, float] | None:
     """One mother's T1 facts (`summary`), or None when no neighbour batch exists for her."""
     rows = table(project, day, strategy)
     return None if rows is None else summary(rows)
@@ -123,17 +124,17 @@ def measure(project: str, work: Path, symbol: str, timeframe: str, day: str) -> 
         seg = leg["segment"]
         folder = sorted(export_dir(project, leg["databank"], "x").parent.glob(f"*/{BATCH}"))[-1]
         trades = pd.read_parquet(folder / "trades.parquet")
-        trades = trades[trades["Symbol"] == feed]
+        trades = cast(pd.DataFrame, trades[trades["Symbol"] == feed])
         trades = trades.assign(variant_id=trades["strategy"].astype(str)
                                .str.replace(COLLISION, "", regex=True))
         back = set(pd.read_csv(folder / "identity.csv")["strategy"]
                    .str.replace(COLLISION, "", regex=True))
-        span = tuple(str(asset["segments"][seg][edge]) for edge in ("from", "to"))
+        span = (str(asset["segments"][seg]["from"]), str(asset["segments"][seg]["to"]))
         per = engines_excess.per_trade(trades, bars, reprice.costs(feed, seg), span, drift, feed)
         paths.append(per.assign(**{"Close time": trades["Close time"]})
                      [["variant_id", "Close time", "profit"]])
         got = excess.summed(per)
-        got = got.reindex(plan.loc[plan["variant_id"].isin(back), "variant_id"]).fillna(0.0)
+        got = got.reindex(plan.loc[plan["variant_id"].isin(list(back)), "variant_id"]).fillna(0.0)
         out = out.merge(got.add_prefix(f"{seg}_"), left_on="variant_id", right_index=True)
     out = out.merge(excess.drawdowns(paths, gate.market(feed)["risk"]).rename("dd_r"),
                     left_on="variant_id", right_index=True, how="left").fillna({"dd_r": 0.0})

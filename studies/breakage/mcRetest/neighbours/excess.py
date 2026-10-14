@@ -1,5 +1,7 @@
 """Each neighbour's totals in one window: repriced profit, the drift it collected, and the excess."""
 
+from typing import cast
+
 import pandas as pd
 
 from engines.market import reprice
@@ -37,7 +39,7 @@ def summed(per: pd.DataFrame) -> pd.DataFrame:
     wants the trades themselves (`drawdowns`) prices them once."""
     out = per.groupby("variant_id").agg(profit=("profit", "sum"), drift=("drift", "sum"),
                                         trades=("profit", "size"))
-    return out.assign(excess=out["profit"] - out["drift"])[COLUMNS]
+    return cast(pd.DataFrame, out.assign(excess=out["profit"] - out["drift"])[COLUMNS])
 
 
 def drawdowns(legs: list[pd.DataFrame], risk: float) -> pd.Series:
@@ -55,5 +57,5 @@ def drawdowns(legs: list[pd.DataFrame], risk: float) -> pd.Series:
         trade has no row.
     """
     trades = pd.concat(legs).sort_values("Close time", kind="stable")
-    return trades.groupby("variant_id")["profit"].agg(
-        lambda pnl: float(resample.max_drawdown(pnl.to_numpy()))) / risk
+    return cast(pd.Series, trades.groupby("variant_id")["profit"].agg(
+        lambda pnl: float(resample.max_drawdown(pnl.to_numpy())))) / risk

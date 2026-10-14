@@ -1,7 +1,10 @@
 """How good a strategy is once nothing has vetoed it: four sub-scores, then one composite."""
 
+from typing import TypedDict
+
 from studies.breakage.mcRetest.inputs import tasks
 from studies.breakage.mcRetest.verdict import gates
+from studies.breakage.mcRetest.verdict.gates import Flag
 
 VERDICTS = ("STRONG", "ACCEPTABLE", "MARGINAL", "FAIL", "INCONCLUSIVE")
 
@@ -81,7 +84,18 @@ def subscores(result: dict, cfg: dict) -> dict[str, float]:
         "data": curve(_kept(result, "data"), 0.0, 1.0)}
 
 
-def verdict(scores: dict, flags: list[dict], cfg: dict) -> dict:
+class Verdict(TypedDict):
+    """The call, its composite score, the sub-scores, the binding group and the vetoes behind it."""
+
+    composite: float
+    verdict: str
+    subscores: dict[str, float]
+    binding: str
+    vetoes: list[str]
+    blocked_by: list[str]
+
+
+def verdict(scores: dict, flags: list[Flag], cfg: dict) -> Verdict:
     """The call, and the one constraint that drove it.
 
     Args:
@@ -110,6 +124,6 @@ def verdict(scores: dict, flags: list[dict], cfg: dict) -> dict:
                 "ACCEPTABLE" if composite >= tiers[1] else
                 "MARGINAL" if composite >= tiers[2] else "FAIL")
     return {"composite": round(composite, 1), "verdict": call, "subscores": scores,
-            "binding": min(scores, key=scores.get),
+            "binding": min(scores, key=lambda k: scores[k]),
             "vetoes": sorted({flag["veto"] for flag in vetoed}),
             "blocked_by": sorted({flag["veto"] for flag in blocked})}

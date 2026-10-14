@@ -1,6 +1,7 @@
 """Read an SPP export: the wide permutation table, the parameters it permuted, and the origin."""
 
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -81,7 +82,7 @@ def without_original(grid: pd.DataFrame) -> pd.DataFrame:
         step grid misses its own level, θ₀'s level holds θ₀ alone and reads as argmax by
         construction (`knowhow/research/spp-origin-level-sampled-once.md`, `OPEN.md` #79).
     """
-    return grid[grid.index != ORIGINAL]
+    return cast(pd.DataFrame, grid[grid.index != ORIGINAL])
 
 
 def trades(directory: Path, strategy: str) -> pd.DataFrame | None:

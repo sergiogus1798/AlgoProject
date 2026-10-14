@@ -1,5 +1,7 @@
 """Question 3 — what breaks it? Effect sizes between tasks, measured in units of the control."""
 
+from typing import Any, TypedDict, cast
+
 import numpy as np
 from scipy import stats
 
@@ -39,7 +41,18 @@ def cliffs_delta(worse: np.ndarray, better: np.ndarray) -> float:
     return float(2.0 * u / (a.size * b.size) - 1.0)
 
 
-def contrast(left: np.ndarray, right: np.ndarray, sigma: float) -> dict:
+class Contrast(TypedDict):
+    """One comparison between two tasks: rank effect size, shift of medians, dispersion ratio, two p-values."""
+
+    delta: float
+    median_shift: float
+    shift_in_sigmas: float
+    dispersion_ratio: float
+    ks_p: float
+    levene_p: float
+
+
+def contrast(left: np.ndarray, right: np.ndarray, sigma: float) -> Contrast:
     """One comparison between two tasks, effect size first.
 
     Args:
@@ -63,7 +76,7 @@ def contrast(left: np.ndarray, right: np.ndarray, sigma: float) -> dict:
             "median_shift": float(np.median(a) - np.median(b)),
             "shift_in_sigmas": float((np.median(a) - np.median(b)) / sigma) if sigma else np.nan,
             "dispersion_ratio": float(np.std(a) / np.std(b)) if np.std(b) else np.inf,
-            "ks_p": float(stats.ks_2samp(a, b).pvalue),
+            "ks_p": float(cast(Any, stats.ks_2samp(a, b)).pvalue),
             "levene_p": float(stats.levene(a, b, center="median").pvalue)}
 
 

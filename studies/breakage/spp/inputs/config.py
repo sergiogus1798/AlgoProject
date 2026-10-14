@@ -1,6 +1,7 @@
 """Read config.yaml and find the SPP export on disk."""
 
 from pathlib import Path
+from typing import Any
 
 from core.paths import DATA
 from core.study import config as study_config
@@ -8,7 +9,7 @@ from core.study import config as study_config
 HERE = Path(__file__).resolve().parent.parent
 
 
-def load(overrides: list[str] | None = None) -> dict:
+def load(overrides: list[str] | None = None) -> dict[str, Any]:
     """The study's settings.
 
     Args:

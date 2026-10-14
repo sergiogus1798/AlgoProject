@@ -1,13 +1,18 @@
 """Every strategy of one ingest, and what can only be said across them, as one result."""
 
 import time
+from typing import Any, TypedDict, cast
 
 import pandas as pd
 
-from core.study import blocks, result as envelope
-from studies.breakage.mcRetest import one, run as study
+from core.study import blocks
+from core.study import result as envelope
+from studies.breakage.mcRetest import one
+from studies.breakage.mcRetest import run as study
 from studies.breakage.mcRetest.contract import criteria, words
 from studies.breakage.mcRetest.contract.tabs import COMPOSITE_HELP
+from studies.breakage.mcRetest.load import Loaded
+from studies.breakage.mcRetest.run import Battery
 
 COLUMNS = ["strategy", "identity", "verdict", "composite", "binding", "stress_net_p5",
            "stress_cvar_dd_pct", "vetoes", "blocked_by"]
@@ -23,10 +28,10 @@ def table(members: list[dict]) -> pd.DataFrame:
     rows = pd.DataFrame([{"strategy": m["strategy"], "identity": m["identity"], **m["summary"]}
                          for m in members])
     # The criteria metrics ride after the verdict's own columns (contract.criteria.summary).
-    return rows[COLUMNS + [c for c in rows if c not in COLUMNS]].sort_values("composite")
+    return cast(pd.DataFrame, rows[COLUMNS + [c for c in rows if c not in COLUMNS]]).sort_values("composite")
 
 
-def population(result: dict, members: list[dict], cfg: dict, started: float) -> dict:
+def population(result: Battery, members: list[dict], cfg: dict, started: float) -> dict[str, Any]:
     """The ingest read as one result: the verdicts, the cross-strategy facts, the caveat."""
     rows = table(members)
     passed = int(rows.verdict.isin(["STRONG", "ACCEPTABLE", "MARGINAL"]).sum())
@@ -41,7 +46,7 @@ def population(result: dict, members: list[dict], cfg: dict, started: float) -> 
         strategy_table]),
         envelope.tab("battery", "De la batería entera", [blocks.table(
             "Lo que sólo se dice mirando todas", pd.DataFrame(
-                words.battery(result), columns=["qué", "valor", "qué significa"]))],
+                words.battery(result), columns=pd.Index(["qué", "valor", "qué significa"])))],
             note="Los umbrales de gates.py son valores por defecto del config.yaml y nadie "
                  "los ha calibrado contra la operativa real. Si fallan todas, mira primero el "
                  "umbral: se mueve con --set gates.survival_dd_pct=0.35.")]
@@ -54,7 +59,15 @@ def population(result: dict, members: list[dict], cfg: dict, started: float) -> 
     return envelope.envelope(one.MODULE, None, None, cfg, started, tabs, verdict)
 
 
-def run(inputs: dict, cfg: dict) -> dict:
+class Many(TypedDict):
+    """The ingest as a whole: its population result, one result per strategy and their draws rows."""
+
+    population: dict[str, Any]
+    members: list[dict[str, Any]]
+    draws: list[dict[str, Any]]
+
+
+def run(inputs: Loaded, cfg: dict) -> Many:
     """Every strategy of the ingest, one process each.
 
     Args:

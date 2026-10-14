@@ -1,17 +1,44 @@
 """The criteria metrics of an SPP: the original against its own grid, and IS against OOS1 as two unpaired samples."""
 
+from typing import TypedDict, cast
+
 import numpy as np
 import pandas as pd
 from scipy.stats import norm, wasserstein_distance
 
 from studies.breakage.spp.model import combine
 
+
+class Distance(TypedDict):
+    """One metric's gap between the original and its grid: percent, IQRs, and the grid's own 5-95 band."""
+
+    rel: float | None
+    iqr: float
+    null: list[float]
+
+
+class Compared(TypedDict):
+    """One time-free metric, IS against OOS1: ratio of medians, effect size, distance, zero-edge null."""
+
+    ratio: float | None
+    a: float
+    w: float
+    null: dict[str, list[float] | None] | None
+
+
+class Measured(TypedDict):
+    """`measure`: per metric the original's distance on each side, and the IS-OOS1 comparison."""
+
+    original: dict[str, dict[str, Distance]]
+    decay: dict[str, Compared]
+
+
 LEVELS = (5, 25, 50, 75, 95)
 # The path noise of a whole grid is swept at these quantiles of a standard normal.
 Z = norm.ppf(np.arange(0.5, 100.0) / 100.0)
 
 
-def distance(values: np.ndarray, original: float, floor: float) -> dict:
+def distance(values: np.ndarray, original: float, floor: float) -> Distance:
     """How far the original backtest sits from the median of its own permutations.
 
     Args:
@@ -63,7 +90,7 @@ def profit_factor(k: np.ndarray) -> np.ndarray:
     return (norm.pdf(k) + k * norm.cdf(k)) / (norm.pdf(k) - k * norm.cdf(-k))
 
 
-def compare(a: np.ndarray, b: np.ndarray, floor: float, moved: list[np.ndarray] | None) -> dict:
+def compare(a: np.ndarray, b: np.ndarray, floor: float, moved: list[np.ndarray] | None) -> Compared:
     """IS against OOS1 on one time-free metric, and the same three numbers under a zero-edge OOS1.
 
     Args:
@@ -76,13 +103,14 @@ def compare(a: np.ndarray, b: np.ndarray, floor: float, moved: list[np.ndarray] 
         `ratio`, `a`, `w` — the real values — and `null`: per name the `LEVELS` percentiles
         over `moved`, None without a model (and for a ratio under its floor).
     """
-    out = {"ratio": ratio(a, b, floor), "a": superiority(a, b), "w": wasserstein(a, b)}
+    out: Compared = {"ratio": ratio(a, b, floor), "a": superiority(a, b), "w": wasserstein(a, b), "null": None}
     if moved is None:
-        return out | {"null": None}
+        return out
     draws = {"ratio": [ratio(a, m, floor) for m in moved] if out["ratio"] is not None else None,
              "a": [superiority(a, m) for m in moved], "w": [wasserstein(a, m) for m in moved]}
-    return out | {"null": {k: None if v is None else
-                           [float(x) for x in np.percentile(v, LEVELS)] for k, v in draws.items()}}
+    out["null"] = {k: None if v is None else
+                   [float(x) for x in np.percentile(v, LEVELS)] for k, v in draws.items()}
+    return out
 
 
 def zero_edge(oos: pd.DataFrame, years: float) -> dict[str, list[np.ndarray]]:
@@ -119,7 +147,7 @@ def zero_edge(oos: pd.DataFrame, years: float) -> dict[str, list[np.ndarray]]:
 
 
 def measure(is_pop: pd.DataFrame, oos_pop: pd.DataFrame | None, is_real: pd.Series,
-            oos_real: pd.Series | None, cfg: dict) -> dict:
+            oos_real: pd.Series | None, cfg: dict) -> Measured:
     """Every criteria metric of one strategy's SPP.
 
     Args:
@@ -131,13 +159,13 @@ def measure(is_pop: pd.DataFrame, oos_pop: pd.DataFrame | None, is_real: pd.Seri
         `original` — column → {"IS": `distance`, "OOS1": `distance`} over panel 1's metrics;
         `decay` — column → `compare` over the time-free metrics, {} without an OOS1 export.
     """
-    sides = [("IS", is_pop, is_real)] + ([("OOS1", oos_pop, oos_real)] if oos_pop is not None else [])
+    sides = [("IS", is_pop, is_real)] + ([("OOS1", oos_pop, cast(pd.Series, oos_real))] if oos_pop is not None else [])
     original = {col: {side: distance(pop[col].to_numpy(float)[np.isfinite(pop[col].to_numpy(float))],
                                      float(real[col]), cfg["median_floor_iqr"])
                       for side, pop, real in sides} for col, _, _ in combine.METRICS}
     decay = {}
     if oos_pop is not None:
-        moved = zero_edge(oos_pop, float(oos_real["TotalDataYears"]))
+        moved = zero_edge(oos_pop, float(cast(pd.Series, oos_real)["TotalDataYears"]))
         for col, _, _ in combine.TIME_FREE:
             if col in is_pop.columns and col in oos_pop.columns:
                 a, b = is_pop[col].to_numpy(float), oos_pop[col].to_numpy(float)

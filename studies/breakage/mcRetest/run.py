@@ -1,15 +1,31 @@
 """Puts one strategy through the four questions and returns the single result everything reads."""
 
+from typing import Any, TypedDict, cast
+
 import numpy as np
 import pandas as pd
 
 from core import barstore, fanout
-
 from studies.breakage.mcRetest.inputs import tasks
 from studies.breakage.mcRetest.measure import store
 from studies.breakage.mcRetest.model import place
-from studies.breakage.mcRetest.verdict import (attribution, evidence, fragility, gates, modes,
-                                               scoring)
+from studies.breakage.mcRetest.model.place import Place
+from studies.breakage.mcRetest.verdict import (
+    attribution,
+    evidence,
+    fragility,
+    gates,
+    modes,
+    scoring,
+)
+from studies.breakage.mcRetest.verdict.evidence import (
+    Corrected,
+    EffectiveBets,
+    EmpiricalSharpe,
+    RankStability,
+)
+from studies.breakage.mcRetest.verdict.fragility import Fan, Fragility
+from studies.breakage.mcRetest.verdict.modes import Modes
 
 # Columns the questions actually read. Loading thirty when four are wanted costs nothing at
 # five strategies and a great deal at seven hundred.
@@ -22,11 +38,34 @@ WORKERS = 16
 # Below this, a strategy's own OOS trade count is too thin to trust the footprint benchmark
 # it feeds -- printed, never silently swapped for the build's trades (owner, 2026-09-29).
 MIN_OOS_TRADES = 5
+
+
+class TaskResult(TypedDict):
+    """What questions 1 and 2 conclude for one task of one strategy, plus the raw nets the figures draw."""
+
+    fragility: Fragility
+    modes: Modes
+    evidence: EmpiricalSharpe
+    original_net: float
+    place: Place
+    _net: np.ndarray
+    fan: Fan
+
+
+class Battery(TypedDict):
+    """Every strategy of one ingest and the cross-strategy facts: effective bets, multiplicity, rank stability."""
+
+    strategies: dict[str, dict[str, Any]]
+    effective_bets: EffectiveBets | None
+    multiplicity: Corrected
+    rank_stability: RankStability
+
+
 # What the per-strategy workers read, set before the fork.
 _SHARED: dict = {}
 
 
-def _arrays(sims: pd.DataFrame, task: str, strategy: str) -> dict:
+def _arrays(sims: pd.DataFrame, task: str, strategy: str) -> dict[str, np.ndarray]:
     """One task's metrics for one strategy, as plain arrays.
 
     Args:
@@ -37,7 +76,7 @@ def _arrays(sims: pd.DataFrame, task: str, strategy: str) -> dict:
     Returns:
         {metric: one value per simulation}.
     """
-    rows = sims[(sims["task"] == task) & (sims["strategy"] == strategy)]
+    rows = cast(pd.DataFrame, sims[(sims["task"] == task) & (sims["strategy"] == strategy)])
     return {name: rows[name].to_numpy(dtype=np.float64) for name in NEEDED}
 
 
@@ -77,7 +116,7 @@ def _daily_equity(keys: dict, strategy: str) -> np.ndarray | None:
 
 
 def per_task(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, strategy: str,
-             benchmark: float, cfg: dict) -> dict:
+             benchmark: float, cfg: dict) -> dict[str, TaskResult]:
     """Questions 1 and 2 for every task of one strategy.
 
     Args:
@@ -91,12 +130,12 @@ def per_task(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, strategy: s
     Returns:
         {task: fragility, modes, evidence and the original it was perturbed from}.
     """
-    out = {}
+    out: dict[str, TaskResult] = {}
     for task in tasks.TASKS:
         metrics = _arrays(sims, task, strategy)
         if not metrics["NetProfit"].size:
             continue
-        row = original[(original["task"] == task) & (original["strategy"] == strategy)]
+        row = cast(pd.DataFrame, original[(original["task"] == task) & (original["strategy"] == strategy)])
         pnl = store.load_pnl(**keys, task=task, strategy=strategy)
         counts = pnl.groupby("sim", observed=True).size().to_numpy()
         offsets = np.concatenate([[0], np.cumsum(counts)])
@@ -116,7 +155,7 @@ def per_task(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, strategy: s
 
 
 def one(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, provenance: dict,
-        strategy: str, benchmark: float, cfg: dict) -> dict:
+        strategy: str, benchmark: float, cfg: dict) -> dict[str, Any]:
     """Everything the study concludes about one strategy.
 
     Args:
@@ -147,7 +186,7 @@ def one(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, provenance: dict
             "verdict": scoring.verdict(scores, flags, cfg)}
 
 
-def _one(name: str) -> dict:
+def _one(name: str) -> dict[str, Any]:
     """one() for one strategy, in a worker that inherited the ingest's tables by fork."""
     got = _SHARED
     return one(got["keys"], got["sims"], got["original"],
@@ -157,7 +196,7 @@ def _one(name: str) -> dict:
 
 
 def battery(keys: dict, provenance: dict, trades: pd.DataFrame | None, asset: dict | None,
-            cfg: dict) -> dict:
+            cfg: dict) -> Battery:
     """Every strategy of one ingest, plus what can only be said across them.
 
     Args:

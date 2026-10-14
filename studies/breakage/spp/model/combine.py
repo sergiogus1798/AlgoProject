@@ -1,5 +1,7 @@
 """IS and OOS1 side by side: the six across-time metrics, the time-free ones, and what "combined" can honestly mean."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -16,14 +18,14 @@ TIME_FREE = [("SharpeRatio", "Sharpe", ""), ("SortinoRatio", "Sortino", ""),
              ("ProfitFactor", "Profit Factor", ""), ("EdgeRatioInPips", "R/Edge ratio", "pips")]
 
 
-def _ratios(net: float, gp: float, gl: float, dd: float) -> dict:
+def _ratios(net: float, gp: float, gl: float, dd: float) -> dict[str, float]:
     """Profit Factor and Ret/DD rebuilt from the additive parts of a combined window."""
     return {"NetProfit": net, "Drawdown": dd,
             "ProfitFactor": gp / gl if gl else float("inf"),
             "ReturnDDRatio": net / dd if dd else float("inf")}
 
 
-def real_combined(is_row: pd.Series, oos_row: pd.Series) -> dict:
+def real_combined(is_row: pd.Series, oos_row: pd.Series) -> dict[str, float]:
     """The four additive panel-1 metrics of the real strategy, as a concatenated backtest would show.
 
     Args:
@@ -79,7 +81,7 @@ def population(is_grid: pd.DataFrame, oos_grid: pd.DataFrame) -> dict[str, np.nd
                                             oos_grid["SortinoRatio"].to_numpy(float)])}
 
 
-def real_from_trades(trades: pd.DataFrame) -> dict:
+def real_from_trades(trades: pd.DataFrame) -> dict[str, float]:
     """Sharpe and Sortino of a concatenated real backtest, from its own daily equity.
 
     Args:
@@ -92,10 +94,10 @@ def real_from_trades(trades: pd.DataFrame) -> dict:
         (owner, 2026-09-30). Only called when both windows' trades were exported; the grid
         alone cannot give this because it holds no per-permutation trades.
     """
-    day = pd.DatetimeIndex(trades["Close time"]).normalize() + pd.offsets.BDay(0)
+    day = pd.DatetimeIndex(trades["Close time"]).normalize() + pd.offsets.BDay(0)  # pyright: ignore[reportAttributeAccessIssue] -- pandas stubs omit DatetimeIndex.normalize
     daily = pd.Series(trades["Profit/Loss"].to_numpy(dtype=float), index=day).groupby(level=0).sum()
     daily = daily.reindex(pd.bdate_range(daily.index.min(), daily.index.max()), fill_value=0.0)
-    downside = float(np.sqrt((daily.clip(upper=0) ** 2).mean()))
+    downside = float(np.sqrt((cast(pd.Series, daily.clip(upper=0)) ** 2).mean()))
     return {"SharpeRatio": float(daily.mean() / daily.std(ddof=1) * np.sqrt(TRADING_DAYS)),
             "SortinoRatio": (float(daily.mean() / downside * np.sqrt(TRADING_DAYS))
                              if downside else float("inf"))}

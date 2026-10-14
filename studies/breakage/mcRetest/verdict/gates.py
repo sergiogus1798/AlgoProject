@@ -1,5 +1,7 @@
 """What disqualifies a strategy. Every threshold in the study lives here and nowhere else."""
 
+from typing import TypedDict
+
 from studies.breakage.mcRetest.inputs import tasks
 
 # Every veto this module can raise. render/text.py must carry a sentence for each, and
@@ -16,7 +18,18 @@ DATA_VETOES = ("tarea_sin_dispersion", "tabla_de_niveles_corrupta", "reconciliac
                "sin_tarea_de_produccion")
 
 
-def _flag(group: str, test: str, value: float, limit: float, veto: str, gate: bool) -> dict:
+class Flag(TypedDict):
+    """One failed or flagged check: its group, test, measure, limit, the veto it names and whether it gates."""
+
+    group: str
+    test: str
+    value: float
+    limit: float
+    veto: str
+    gate: bool
+
+
+def _flag(group: str, test: str, value: float, limit: float, veto: str, gate: bool) -> Flag:
     """One failed or flagged check.
 
     Args:
@@ -35,7 +48,7 @@ def _flag(group: str, test: str, value: float, limit: float, veto: str, gate: bo
             "veto": veto, "gate": gate}
 
 
-def production(result: dict, cfg: dict) -> list[dict]:
+def production(result: dict, cfg: dict) -> list[Flag]:
     """The only task that carries outcome thresholds.
 
     Args:
@@ -73,7 +86,7 @@ def production(result: dict, cfg: dict) -> list[dict]:
     return out
 
 
-def fragility(result: dict, cfg: dict) -> list[dict]:
+def fragility(result: dict, cfg: dict) -> list[Flag]:
     """The two diagnostic failures that disqualify, and the rest that only have to be seen.
 
     Args:
@@ -108,7 +121,7 @@ def fragility(result: dict, cfg: dict) -> list[dict]:
     return out
 
 
-def data(result: dict, provenance: dict) -> list[dict]:
+def data(result: dict, provenance: dict) -> list[Flag]:
     """What could not be judged, as distinct from what failed.
 
     Args:
@@ -135,7 +148,7 @@ def data(result: dict, provenance: dict) -> list[dict]:
     return out
 
 
-def check(result: dict, provenance: dict, cfg: dict) -> list[dict]:
+def check(result: dict, provenance: dict, cfg: dict) -> list[Flag]:
     """Every veto and every flag, for one strategy.
 
     Args:

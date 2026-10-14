@@ -1,5 +1,7 @@
 """Question 4 — do I believe it? What survives once shape, dependence and multiplicity are paid for."""
 
+from typing import Any, Literal, TypedDict, cast
+
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -35,12 +37,71 @@ def footprint(trades: pd.DataFrame, day: pd.DataFrame, point_value: float) -> fl
     diffs = day["Close"].diff().dropna().to_numpy()
     mu, sigma = float(diffs.mean()), float(diffs.std(ddof=1))
     hold = ((trades["Close time"] - trades["Open time"]) / np.timedelta64(1, "D")).to_numpy()
-    direction = trades["Type"].astype("object").map(SIDE).to_numpy(dtype=float)
+    direction = trades["Type"].astype("object").map(SIDE).to_numpy(dtype=float)  # pyright: ignore[reportArgumentType]  # pandas stubs reject a dict mapper; pandas takes it (NaN for a missing key)
     return significance.footprint(hold, direction, trades["Size"].to_numpy(),
                                   trades["cost"].to_numpy(), mu, sigma, point_value)
 
 
-def empirical_sharpe(metrics: dict, benchmark: float) -> dict:
+class EmpiricalSharpe(TypedDict):
+    """The distribution of the re-runs' Sharpe: share above the benchmark, median, 5th and 95th percentile."""
+
+    p_positive: float
+    median: float
+    p5: float
+    p95: float
+
+
+class EffectiveBets(TypedDict):
+    """The effective number of independent bets among the strategies, its count and its share."""
+
+    enb: float
+    n: int
+    ratio: float
+
+
+class _Survival(TypedDict):
+    """One label's p, its corrected q and whether it survives."""
+
+    p: float
+    q: float
+    survives: bool
+
+
+class _CorrectedBase(TypedDict):
+    """The pool size and the method every correction names."""
+
+    pool: int
+    method: str
+    results: dict[str, _Survival]
+
+
+class Corrected(_CorrectedBase, total=False):
+    """The battery's corrected p-values; `factor` is absent when the pool is empty."""
+
+    factor: float
+
+
+class _RankMeasured(TypedDict):
+    """Kendall's tau between the strategies' original and stressed ranks, and its p-value."""
+
+    measurable: Literal[True]
+    n: int
+    tau: float
+    p: float
+
+
+class _RankUnmeasured(TypedDict):
+    """Too few strategies to rank: how many there are and how many are needed."""
+
+    measurable: Literal[False]
+    n: int
+    needed: int
+
+
+RankStability = _RankMeasured | _RankUnmeasured
+
+
+def empirical_sharpe(metrics: dict, benchmark: float) -> EmpiricalSharpe:
     """The Sharpe of every re-run, read straight off the simulations.
 
     Args:
@@ -66,7 +127,7 @@ def empirical_sharpe(metrics: dict, benchmark: float) -> dict:
             "p95": float(np.percentile(sharpe, 95))}
 
 
-def analytic_sharpe(original_pnl: np.ndarray, benchmark: float) -> dict:
+def analytic_sharpe(original_pnl: np.ndarray, benchmark: float) -> significance.Psr:
     """The probability the unperturbed backtest's edge is above the benchmark.
 
     Args:
@@ -85,7 +146,7 @@ def analytic_sharpe(original_pnl: np.ndarray, benchmark: float) -> dict:
     return significance.psr(np.asarray(original_pnl, dtype=np.float64), benchmark)
 
 
-def effective_bets(returns: pd.DataFrame) -> dict:
+def effective_bets(returns: pd.DataFrame) -> EffectiveBets:
     """How many independent strategies a correlated set really amounts to.
 
     Args:
@@ -116,7 +177,7 @@ def effective_bets(returns: pd.DataFrame) -> dict:
             "ratio": float(np.exp(-(weights * np.log(weights)).sum()) / matrix.shape[0])}
 
 
-def corrected(p_values: dict, cfg: dict) -> dict:
+def corrected(p_values: dict, cfg: dict) -> Corrected:
     """The p-values of the battery, paid for.
 
     Args:
@@ -154,7 +215,7 @@ def corrected(p_values: dict, cfg: dict) -> dict:
                         for i, label in enumerate(labels)}}
 
 
-def rank_stability(original: dict, stressed: dict, cfg: dict) -> dict:
+def rank_stability(original: dict, stressed: dict, cfg: dict) -> RankStability:
     """Whether the ranking of strategies survives the retest.
 
     Args:
@@ -174,6 +235,6 @@ def rank_stability(original: dict, stressed: dict, cfg: dict) -> dict:
     if len(names) < cfg["evidence"]["ranks_min_strategies"]:
         return {"measurable": False, "n": len(names),
                 "needed": cfg["evidence"]["ranks_min_strategies"]}
-    got = stats.kendalltau([original[n] for n in names], [stressed[n] for n in names])
+    got = cast(Any, stats.kendalltau([original[n] for n in names], [stressed[n] for n in names]))
     return {"measurable": True, "n": len(names),
             "tau": float(got.statistic), "p": float(got.pvalue)}

@@ -2,11 +2,14 @@
 
 import time
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 
-from core.study import identity, output, result as envelope
-from studies.breakage.spp import contract, criteria, run as reading
+from core.study import identity, output
+from core.study import result as envelope
+from studies.breakage.spp import contract, criteria
+from studies.breakage.spp import run as reading
 from studies.breakage.spp.inputs import config, export
 from studies.breakage.spp.model import combine, decay, mapa
 
@@ -69,18 +72,21 @@ def _periods(is_pop: pd.DataFrame | None, is_real: pd.Series | None,
     cols = [c for c, _, _ in combine.METRICS]
     out = []
     if is_pop is not None:
+        assert is_real is not None   # _side returns both or neither
         out.append(("Solo IS", {c: is_pop[c].to_numpy(float) for c in cols},
                     {c: float(is_real[c]) for c in cols}, False))
     if oos_pop is not None:
+        assert oos_real is not None
         out.append(("Solo OOS1", {c: oos_pop[c].to_numpy(float) for c in cols},
                     {c: float(oos_real[c]) for c in cols}, False))
     if is_pop is not None and oos_pop is not None:
+        assert is_real is not None and oos_real is not None
         out.append((COMBINED, combine.population(is_pop, oos_pop),
                     combine.real_combined(is_real, oos_real), True))
     return out
 
 
-def _trades_real(is_dir: Path, oos_dir: Path, strategy: str) -> dict | None:
+def _trades_real(is_dir: Path, oos_dir: Path, strategy: str) -> dict[str, float] | None:
     """Sharpe/Sortino of the real concatenated trades, None when either side lacks the export."""
     a, b = export.trades(is_dir, strategy), export.trades(oos_dir, strategy)
     if a is None or b is None:
@@ -88,7 +94,7 @@ def _trades_real(is_dir: Path, oos_dir: Path, strategy: str) -> dict | None:
     return combine.real_from_trades(pd.concat([a, b], ignore_index=True))
 
 
-def run(strategy: str, directory: Path, cfg: dict) -> dict:
+def run(strategy: str, directory: Path, cfg: dict) -> dict[str, Any]:
     """The reading and its design brief, as the contract dict.
 
     Args:
@@ -114,6 +120,7 @@ def run(strategy: str, directory: Path, cfg: dict) -> dict:
     oos_pop, oos_real = _side(oos_dir, strategy)
     periods = _periods(is_pop, is_real, oos_pop, oos_real)
     if len(periods) == 3:
+        assert is_dir is not None and oos_dir is not None   # both pops exist only with both dirs
         extra = _trades_real(is_dir, oos_dir, strategy)
         if extra:
             periods[2][2].update(extra)
@@ -125,6 +132,7 @@ def run(strategy: str, directory: Path, cfg: dict) -> dict:
                       "combinado recompone lo que se puede (Net Profit, PF, Max Drawdown, "
                       "Ret/DD) y agrupa el resto (Sharpe, Sortino) como una sola muestra."}]
     if is_pop is not None and oos_pop is not None:
+        assert is_real is not None and oos_real is not None
         tabs.append(contract.panel2(is_pop, oos_pop, is_real, oos_real))
     else:
         notes.append({"code": "sin_oos", "state": "info",
@@ -134,13 +142,13 @@ def run(strategy: str, directory: Path, cfg: dict) -> dict:
     for tab_name, title, folder in (("build", "Mapa del build (SPP IS)", is_dir),
                                     ("oos1", "Mapa de oos1 (SPP OOS)", oos_dir)):
         grid = None if folder is None else export.grid(folder, strategy)
-        if grid is not None and not grid.empty:
+        if folder is not None and grid is not None and not grid.empty:
             windows[tab_name] = mapa.window(grid, export.parameters(folder, strategy), cfg)
             tabs.append(contract.map_tab(tab_name, title, windows[tab_name]))
     if len(windows) == 2:
         tabs.append(contract.windows_tab(mapa.across(windows["build"], windows["oos1"], cfg),
                                          windows["build"], windows["oos1"]))
-    measured = decay.measure(is_pop, oos_pop, is_real, oos_real, cfg["criteria"]) \
+    measured = decay.measure(is_pop, oos_pop, cast(pd.Series, is_real), oos_real, cfg["criteria"]) \
         if is_pop is not None else None
     if measured:
         tabs.append(criteria.tab(measured))

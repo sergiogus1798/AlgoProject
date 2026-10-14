@@ -5,12 +5,16 @@ import argparse
 import sys
 from datetime import date
 from pathlib import Path
+from typing import cast
+
+import pandas as pd
 
 from core.paths import report_dir
 from core.study import draws, output, verdicts
 from studies.breakage.mcRetest import load, many, one
 from studies.breakage.mcRetest.contract import words
 from studies.breakage.mcRetest.inputs import config
+from studies.breakage.mcRetest.load import Loaded
 from studies.breakage.mcRetest.verdict import gates
 
 LEDE = ("Ocho tareas, cada una perturbando una sola cosa, N re-ejecuciones completas del "
@@ -19,7 +23,7 @@ LEDE = ("Ocho tareas, cada una perturbando una sola cosa, N re-ejecuciones compl
         "existido.")
 
 
-def named(strategy: str, inputs: dict) -> str:
+def named(strategy: str, inputs: Loaded) -> str:
     """The ingest's own spelling of a strategy: it names «1.26.46», the databank «Strategy 1.26.46».
 
     Args:
@@ -37,7 +41,7 @@ def named(strategy: str, inputs: dict) -> str:
     return found[0]
 
 
-def write_one(out: Path, inputs: dict, cfg: dict, strategy: str) -> Path:
+def write_one(out: Path, inputs: Loaded, cfg: dict, strategy: str) -> Path:
     """One strategy's run: only `estrategias/<name>.json` and its page, as crossTF's
     `--strategy` does — `verdict.csv`, `mcRetest.json` and the manifest are the population's,
     and the battery's cross-strategy facts (effective bets, multiplicity, rank stability)
@@ -60,7 +64,7 @@ def write_one(out: Path, inputs: dict, cfg: dict, strategy: str) -> Path:
     if short:
         raise SystemExit(f"{name} fuera del informe, le faltan tareas: {', '.join(short)}")
     if inputs["trades"] is not None:
-        inputs = {**inputs, "trades": inputs["trades"][inputs["trades"]["strategy"] == name]}
+        inputs = {**inputs, "trades": cast(pd.DataFrame, inputs["trades"][inputs["trades"]["strategy"] == name])}
     got = one.run(name, inputs, cfg)
     draws.merge(out, got.pop("draws", []), defer=True)
     return output.member(out, got, f"Monte Carlo Retest — {name}", LEDE)

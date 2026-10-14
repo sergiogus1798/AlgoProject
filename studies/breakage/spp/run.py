@@ -1,14 +1,69 @@
 """One strategy's whole SPP reading: what moves it, what is dead, and whether it is worth more."""
 
 from pathlib import Path
+from typing import TypedDict
+
+import pandas as pd
 
 from core.surface import dedupe
 from studies.breakage.spp.inputs import export
 from studies.breakage.spp.model import influence, mapa, profile
+from studies.breakage.spp.model.profile import Plateau
 from studies.breakage.spp.verdict import noise
+from studies.breakage.spp.verdict.noise import NoiseCheck, Shape
 
 
-def read(directory: Path, strategy: str, settings: dict) -> dict:
+class Profile(TypedDict):
+    """One parameter's curve and the plateau read from it."""
+
+    curve: pd.DataFrame
+    plateau: Plateau
+
+
+class Read(TypedDict):
+    """`read`: the grid's shape, eta-squared, duplicate test, profiles, noise call and original tuple."""
+
+    strategy: str
+    source: str
+    metric: str
+    parameters: list[str]
+    grid: pd.DataFrame
+    profile_metric: str
+    eta2: pd.DataFrame
+    duplicates: pd.DataFrame
+    profiles: dict[str, Profile]
+    noise: NoiseCheck
+    shape: Shape
+    original: dict[str, float]
+
+
+PlateauSpan = TypedDict("PlateauSpan", {"from": float, "to": float})
+Live = TypedDict("Live", {
+    "name": str, "eta2": float, "inert": bool, "center": float, "center_rule": str,
+    "class": str, "plateau": PlateauSpan, "levels": list[float], "original": float,
+    "argmax_is": float, "plateau_width": int, "spike": bool, "is_shift": bool})
+Frozen = TypedDict("Frozen", {"name": str, "value": float, "reason": str, "class": str, "groups": int})
+
+
+class Brief(TypedDict):
+    """`brief`: the design_brief.json contract the variant factory reads."""
+
+    strategy: str
+    source: str
+    verdict: str
+    metric: str
+    profile_metric: str
+    n_eff: int
+    noise_max: float
+    observed_max: float
+    excess: float
+    parameters: list[Live]
+    frozen: list[Frozen]
+    strata: int
+    n_target: int
+
+
+def read(directory: Path, strategy: str, settings: dict) -> Read:
     """Everything the reconnaissance concludes about one strategy.
 
     Args:
@@ -32,7 +87,7 @@ def read(directory: Path, strategy: str, settings: dict) -> dict:
     marginal_grid, _ = mapa.floored(export.grid(directory, strategy), names, settings["grid"])
     if marginal_grid.empty:
         marginal_grid = export.without_original(grid)
-    profiles = {}
+    profiles: dict[str, Profile] = {}
     for name in names:
         curve = profile.marginal(marginal_grid, name, pmetric)
         shape = profile.plateau(curve, design["plateau_share"])
@@ -69,7 +124,7 @@ def levels_for(eta2: float, live: list[float], design: dict) -> int:
     return int(round(lo + (hi - lo) * (eta2 - min(live)) / span))
 
 
-def brief(result: dict, settings: dict) -> dict:
+def brief(result: Read, settings: dict) -> Brief:
     """The design the fabrication stage consumes, derived from the reading.
 
     Args:
@@ -95,12 +150,12 @@ def brief(result: dict, settings: dict) -> dict:
         parameters -- and the duplicate test decides who is in the design at all.
     """
     design, metric = settings["design"], result["metric"]
-    eta2, dup = result["eta2"][metric], result["duplicates"]
+    eta2, dup = result["eta2"][metric].to_dict(), result["duplicates"]
     frozen = [n for n in result["parameters"] if bool(dup.loc[n, "inert"])]
     live = [n for n in result["parameters"] if n not in frozen]
     shares = [float(eta2[n]) for n in live]
 
-    parameters = []
+    parameters: list[Live] = []
     for name in live:
         curve, shape = result["profiles"][name]["curve"], result["profiles"][name]["plateau"]
         count = levels_for(float(eta2[name]), shares, design)

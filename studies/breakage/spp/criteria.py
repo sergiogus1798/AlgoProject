@@ -1,9 +1,13 @@
 """The SPP's criteria metrics as the window's tab and as the columns of verdict.csv."""
 
+from typing import Any
+
 import pandas as pd
 
-from core.study import blocks, draws, result as envelope
+from core.study import blocks, draws
+from core.study import result as envelope
 from studies.breakage.spp.model import combine
+from studies.breakage.spp.model.decay import Measured
 
 TITLE = "Métricas para criterios — sin umbral todavía"
 # How each metric is spelled in a verdict.csv column, which the databank table shows as words.
@@ -51,13 +55,13 @@ def span(pair: list | None, pattern: str = "{:.2f}") -> str:
     return "—" if pair is None else f"{es(pair[0], pattern)} a {es(pair[-1], pattern)}"
 
 
-def table(title: str, columns: list[str], rows: list[list], note: str, tips: list) -> dict:
+def table(title: str, columns: list[str], rows: list[list], note: str, tips: list) -> dict[str, Any]:
     """A compact table block with one «?» per column."""
-    return blocks.table(title, pd.DataFrame(rows, columns=columns), note) | {
+    return blocks.table(title, pd.DataFrame(rows, columns=pd.Index(columns)), note) | {
         "help": tips, "compact": True}
 
 
-def flat(measured: dict) -> dict:
+def flat(measured: Measured) -> dict[str, float | None]:
     """The metrics as one flat row: the columns of verdict.csv, hence of the databank table."""
     out = {}
     for col, sides in measured["original"].items():
@@ -84,7 +88,7 @@ def recorded(strategy: str, identity: str | None, sides: dict[str, tuple]) -> li
             for side, (pop, real) in sides.items() for col, _, _ in combine.METRICS]
 
 
-def tab(measured: dict) -> dict:
+def tab(measured: Measured) -> dict[str, Any]:
     """The tab «Métricas para criterios»: computed and shown, judged by nothing.
 
     Cells are text on purpose: the autopilot reads these numbers from verdict.csv, and a

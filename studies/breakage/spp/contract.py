@@ -1,11 +1,17 @@
 """One strategy's SPP reconnaissance as the contract's tabs: the noise call, and the two performance panels."""
 
+from collections.abc import Mapping
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
-from core.study import blocks, result as envelope
+from core.study import blocks
+from core.study import result as envelope
 from studies.breakage.spp import criteria
 from studies.breakage.spp.model import combine
+from studies.breakage.spp.model.mapa import Across, Window
+from studies.breakage.spp.run import Read
 
 VERDICT = {"proceed": ("SEGUIR", "pass", "aprueba: el máximo supera lo que daría una rejilla de ruido"),
            "noise": ("RUIDO", "fail", "no aprueba: el máximo no supera lo que daría una rejilla de ruido")}
@@ -27,7 +33,7 @@ COMBINED_CAVEAT = {
                     "recalculada."}
 
 
-def verdict(result: dict) -> dict:
+def verdict(result: Read) -> dict[str, Any]:
     """Whether the family is anything but noise, with the numbers behind the call."""
     n, s = result["noise"], result["shape"]
     label, state, meaning = VERDICT[n["verdict"]]
@@ -48,14 +54,14 @@ NO_SHADE = {"Drawdown"}
 
 
 def _hist(col: str, name: str, unit: str, values: np.ndarray, real: float | None, share: float,
-         caveat: str) -> dict:
+         caveat: str) -> dict[str, Any]:
     """One panel-1 histogram: the grid's distribution, the real backtest, a median ± share band."""
     arr = np.asarray(values, dtype=float)
     arr = arr[np.isfinite(arr)]
     median = float(np.median(arr))
     lo, hi = median - share * abs(median), median + share * abs(median)
     b = blocks.distribution(name, unit, arr, real, "", sign_shade=col not in NO_SHADE,
-                           **({"pivot": PIVOT[col]} if col in PIVOT else {}))
+                           pivot=PIVOT.get(col, 0.0))
     b["band"] = [lo, hi]
     where = "" if real is None else ("dentro" if lo <= real <= hi else "fuera")
     b["note"] = (f"Banda: mediana ± {share:.0%} de su propio valor."
@@ -64,7 +70,7 @@ def _hist(col: str, name: str, unit: str, values: np.ndarray, real: float | None
     return b
 
 
-def panel1(periods: list[tuple[str, dict, dict, bool]], share: float) -> dict:
+def panel1(periods: list[tuple[str, dict, dict, bool]], share: float) -> dict[str, Any]:
     """The six across-time histograms, one period at a time (2026-09-30, §7).
 
     Args:
@@ -100,7 +106,7 @@ def panel1(periods: list[tuple[str, dict, dict, bool]], share: float) -> dict:
 
 
 def panel2(is_pop: pd.DataFrame, oos_pop: pd.DataFrame, is_real: pd.Series,
-          oos_real: pd.Series) -> dict:
+          oos_real: pd.Series) -> dict[str, Any]:
     """IS against OOS1 overlaid, time-free metrics only (2026-09-30, §7).
 
     Args:
@@ -127,7 +133,7 @@ def panel2(is_pop: pd.DataFrame, oos_pop: pd.DataFrame, is_real: pd.Series,
             f"{pcts}. IS y OOS1 solapadas como densidad (cada una integra a 1): compara su "
             "forma, no el tamaño de la muestra.", series={"IS": a, "OOS1": b}, reals=reals,
             sign_shade=col not in NO_SHADE,
-            **({"pivot": PIVOT[col]} if col in PIVOT else {})))
+            pivot=PIVOT.get(col, 0.0)))
     return envelope.tab(
         "panel2", "IS contra OOS1: lo que no crece con la ventana", made,
         note="Solo métricas atemporales: Sharpe, Sortino, Profit Factor y R/Edge ratio — nunca "
@@ -168,12 +174,12 @@ GRID_HELP = [
 NA = float("nan")
 
 
-def _row(label: str, d: dict, keys: tuple[str, ...]) -> list:
+def _row(label: str, d: Mapping[str, object], keys: tuple[str, ...]) -> list:
     """One table row: the label, then each key's value or NaN where this row has none."""
     return [label] + [d.get(k, NA) for k in keys]
 
 
-def map_tab(name: str, title: str, w: dict) -> dict:
+def map_tab(name: str, title: str, w: Window) -> dict[str, Any]:
     """One window's map: the mother against its floored grid, on four metrics.
 
     Args:
@@ -213,7 +219,7 @@ def map_tab(name: str, title: str, w: dict) -> dict:
                              "con los desplazamientos como los de la madre; la madre no está en la rejilla.")
 
 
-def windows_tab(across: dict, build: dict, oos: dict) -> dict:
+def windows_tab(across: Across, build: Window, oos: Window) -> dict[str, Any]:
     """The two windows' Sharpe distributions side by side: three numbers and two overlaid histograms."""
     made = [criteria.table(
         "decaimiento", ["métrica", "r_s", "z_decay", "a"],
@@ -232,7 +238,7 @@ def windows_tab(across: dict, build: dict, oos: dict) -> dict:
             "compara su forma, no el tamaño de la muestra.", series={"build": a, "oos1": b},
             reals={"build": build["metrics"][name.lower().replace(" ", "_")]["real"],
                    "oos1": oos["metrics"][name.lower().replace(" ", "_")]["real"]},
-            sign_shade=False, **({"pivot": 1.0} if col == "ProfitFactor" else {})))
+            sign_shade=False, pivot=1.0 if col == "ProfitFactor" else 0.0))
     return envelope.tab("ventanas", "Build contra oos1", made,
                         note="oos1 es más corto: su Sharpe sale más ancho sólo por eso. z_decay descuenta "
                              "ese ruido.")

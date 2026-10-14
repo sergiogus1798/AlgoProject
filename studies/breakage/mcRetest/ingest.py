@@ -7,6 +7,7 @@ import sys
 from concurrent.futures import ProcessPoolExecutor
 from datetime import date
 from pathlib import Path
+from typing import Any, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -14,11 +15,39 @@ import pandas as pd
 from core import fanout, manifest, sqxfile, sqxretest, sqxstats
 from core.paths import MASTER, databank_dir, worker_dir
 from studies.breakage.mcRetest.inputs import config, tasks
+from studies.breakage.mcRetest.inputs.tasks import Provenance
 from studies.breakage.mcRetest.measure import integrity, originals, store
+from studies.breakage.mcRetest.measure.integrity import Reconciled
 from studies.breakage.mcRetest.model import recon
 
 
-def one(path: Path, task: str, cfg: dict) -> dict:
+class StoredProvenance(Provenance):
+    """A run's provenance as the manifest records it: plus whether its table is readable and what it holds."""
+
+    usable: bool
+    stored_only: list[str]
+    identity: str
+
+
+class Ingested(TypedDict):
+    """What one (task, strategy) contributes: four frames, its provenance and its reconciliation.
+
+    `pnl` is the frame in `one` and the row count once `_job` has written it from the worker.
+    """
+
+    task: str
+    strategy: str
+    sims: pd.DataFrame
+    levels: pd.DataFrame
+    pnl: Any
+    returns: pd.DataFrame
+    original: pd.DataFrame
+    original_pnl: pd.DataFrame
+    provenance: StoredProvenance
+    reconciliation: dict[str, Reconciled]
+
+
+def one(path: Path, task: str, cfg: dict) -> Ingested:
     """Everything one strategy's run under one task contributes to the parquet.
 
     Args:
@@ -60,9 +89,9 @@ def one(path: Path, task: str, cfg: dict) -> dict:
     equity = sqxstats.equity(path) if task == "stress" else None
     returns = (pd.DataFrame({"strategy": strategy, "date": equity.index,
                              "ret": equity.diff().fillna(0.0).to_numpy()})
-               if equity is not None else pd.DataFrame(columns=["strategy", "date", "ret"]))
+               if equity is not None else pd.DataFrame(columns=pd.Index(["strategy", "date", "ret"])))
 
-    return {**keys, "sims": sim_rows, "levels": level_rows, "pnl": pnl_rows, "returns": returns,
+    return {"task": task, "strategy": strategy, "sims": sim_rows, "levels": level_rows, "pnl": pnl_rows, "returns": returns,
             "original": pd.DataFrame([{**keys, **{k: float(v[0]) for k, v in original.items()}}]),
             "original_pnl": pd.DataFrame({**keys, "pnl_cents": base}),
             "provenance": {**got, "usable": usable, "stored_only": integrity.stored_only(stored),
@@ -72,7 +101,7 @@ def one(path: Path, task: str, cfg: dict) -> dict:
                                 if usable else {})}
 
 
-def _job(args: tuple) -> dict:
+def _job(args: tuple) -> Ingested:
     """Run one() in a worker process, and write its per-simulation P&L from there.
 
     Args:
@@ -92,7 +121,7 @@ def _job(args: tuple) -> dict:
 
 
 def collect(project: str, cfg: dict, limit: int | None, staging: Path,
-            install: Path = MASTER) -> list[dict]:
+            install: Path = MASTER) -> list[Ingested]:
     """Read every strategy of every task, in parallel.
 
     Args:
@@ -127,7 +156,7 @@ def collect(project: str, cfg: dict, limit: int | None, staging: Path,
         return list(pool.map(_job, jobs))
 
 
-def report(results: list[dict], share: float) -> tuple[list[str], list[str], dict]:
+def report(results: list[Ingested], share: float) -> tuple[list[str], list[str], dict]:
     """What the reconciliation found, and what to record about it.
 
     Args:
