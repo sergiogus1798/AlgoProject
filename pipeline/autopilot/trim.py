@@ -56,13 +56,9 @@ def results(
         for w in WORKERS.values()
         for d in (w["path"] / "user/projects" / project / "databanks").glob("*")
     )
-    try:
-        save.project(project, dirs)
-    except (
-        Exception,
-        SystemExit,
-    ) as e:  # a failed save is a refusal, not the end of the workflow
-        return f"{REFUSED} el guardado falló ({e})"
+    save.project(
+        project, dirs
+    )  # a failed save stops the workflow, before anything is cut (D24)
     lost = sorted(
         set(save.unsaved(project)) & set(kept["strategy"])
     )  # this run's, not an older run's

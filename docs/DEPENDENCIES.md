@@ -261,7 +261,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `pipeline/autopilot/tailrun.py` | 69 | One action of the tail's plan, run: the dispatch from its kind to the module that does it. | pipeline | — |
 | `pipeline/autopilot/tffacts.py` | 80 | Step 12's redesigned facts (encargo 47): `crossTF.tf.*`, read from the two files the study writes beside the old reading. | — | pandas |
 | `pipeline/autopilot/timing.py` | 111 | Where a run's wall clock went: `fases.csv` (`core.phases`) folded into one row per action, SQX apart from everything around it. | core | pandas |
-| `pipeline/autopilot/trim.py` | 84 | After step 8: save the survivors to the store, then cut `Results` down to them (D16, encargo 66). | core, sqx | pandas |
+| `pipeline/autopilot/trim.py` | 80 | After step 8: save the survivors to the store, then cut `Results` down to them (D16, encargo 66). | core, sqx | pandas |
 | `pipeline/autopilot/variants.py` | 204 | Step 16.5 for the autopilot: wire the three WFC legs, then make → execute → equity → collect → every variant's trades → clear per mother, then the mothers' trades and each batch's parameter map. | core, pipeline, sqx | — |
 | `pipeline/campaign/freeze.py` | 136 | Freeze a finished workflow's strategies in the archive — finalists AND their mothers — and copy the run-stamped outputs. | core | — |
 | `pipeline/campaign/keep.py` | 114 | One finished workflow kept for good: its run folder, its timings and counts, and every finalist frozen in the archive. | core, pipeline | — |
@@ -1095,10 +1095,10 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_perf66_ladder.py` | 310 | Encargo 66 §3.3, §3.5, §3.6: the ladder without `argsort` and on threads gives the bits it gave. | core, engines | numba, numpy |
 | `tests/test_perf66_launch.py` | 456 | Encargo 66, the Python↔SQX connection: one test per launcher bug fixed, on fakes — no SQX is contacted. | core, mt5, pipeline, sqx, ui | pytest |
 | `tests/test_perf66_live_presave.py` | 248 | Encargo 66 §7.1/7.4b: `live.start(project)` and the settle before any exit, over HTTP against the fake SQX. | core, mt5, sqx, tests | pytest, yaml |
-| `tests/test_perf66_liveexport.py` | 158 | Encargo 66, tanda E: `liverun.export` dumps the stale banks and cleans up; `export_trades` takes an `.abk`. | core, sqx, tests, ui | pandas, pytest |
+| `tests/test_perf66_liveexport.py` | 159 | Encargo 66, tanda E: `liverun.export` dumps the stale banks and cleans up; `export_trades` takes an `.abk`. | core, sqx, tests, ui | pandas, pytest |
 | `tests/test_perf66_market.py` | 95 | Encargo 66 §9.9: the lazy mirror and `evaluate(directions=)` give the eager mirror's numbers, bit for bit. | studies | numpy, pandas, pytest |
 | `tests/test_perf66_market_tick.py` | 140 | Encargo 66 §9.8: the tick file decoded by jobs of blocks equals the serial decode (the oracle). | core, tests | numpy, pandas, pytest |
-| `tests/test_perf66_membank.py` | 318 | `membank.take` hands an `.abk` over only when it is this databank's, and whole. | core, sqx, studies, tests | pandas, pytest |
+| `tests/test_perf66_membank.py` | 319 | `membank.take` hands an `.abk` over only when it is this databank's, and whole. | core, sqx, studies, tests | pandas, pytest |
 | `tests/test_perf66_member_frozen.py` | 102 | Encargo 66: a member's clock and commission are frozen in its manifest, never read live. | core, portfolio, stat | pytest |
 | `tests/test_perf66_mono.py` | 231 | Encargo 66 §1.5 and §4.1: one root per monkey run, saved; `--only` merges under it. | core, studies, ui | numpy, pandas, pytest |
 | `tests/test_perf66_mt5core.py` | 194 | Encargo 66 §9 (C2): mt5.compare.pair, assetdata.load/symbol_for and feed scale.by_week equal their old logic. | core, engines, mt5 | numpy, pandas, pytest |
@@ -1107,7 +1107,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_perf66_portfolio.py` | 321 | Encargo 66 §9, piece C1: the faster rolling ranks, server_days and medoids equal the old logic bit for bit. | portfolio, studies | numpy, pandas, pytest, scipy |
 | `tests/test_perf66_portfolio_mc.py` | 278 | Encargo 66, the portfolio Monte Carlo: each fast or reseeded path against the code it replaced. | engines, portfolio, test_portfolio_mc_paths | numpy, pandas, pytest, scipy |
 | `tests/test_perf66_resample.py` | 356 | Encargo 66 §3.4 and §3.9c: the gate's resampling made lighter gives the numbers it gave — each oracle below is the code replaced. | studies | numpy, pytest |
-| `tests/test_perf66_retest.py` | 196 | Encargo 66, tanda E: export_retest packs a live session's `.abk` in place of one orderstocsv pass, fakes only. | core, sqx, tests | pandas, pytest |
+| `tests/test_perf66_retest.py` | 197 | Encargo 66, tanda E: export_retest packs a live session's `.abk` in place of one orderstocsv pass, fakes only. | core, sqx, tests | pandas, pytest |
 | `tests/test_perf66_review_data.py` | 199 | Encargo 66, the data reviewer's findings: each test fails on the code before the fix. | core, mt5, pipeline, portfolio, studies, ui | numpy, pandas, pytest, yaml |
 | `tests/test_perf66_scripts.py` | 77 | Encargo 66, the shell and process launchers: the clone script and the one-autopilot lock. | — | — |
 | `tests/test_perf66_shards.py` | 83 | Encargo 66, the data reviewer's findings on the draws shards: names, concurrency and the deferred fold. | core | numpy, pandas |
@@ -1116,7 +1116,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_perf66_sqxprojects.py` | 325 | Encargo 66, the Python↔SQX bugs of the 2026-10-13 hunt, sqx/projects: one test per fix, fakes only. | core, sqx, ui | pandas, pytest |
 | `tests/test_perf66_store.py` | 238 | Encargo 66 §4.3 bis g: the store's slow paths give today's answers (oracles = the old code, kept here). | core | pandas, pytest |
 | `tests/test_perf66_studies.py` | 182 | Encargo 66 §9, piece C3: the point speed-ups of studies/ give today's numbers, with the old logic as oracle. | core, studies | numpy, pandas, pytest |
-| `tests/test_perf66_trim8.py` | 138 | Encargo 66 D16: after step 8 the store is saved, checked, and only then `Results` is cut. No SQX. | pipeline, sqx | pandas, pytest |
+| `tests/test_perf66_trim8.py` | 140 | Encargo 66 D16: after step 8 the store is saved, checked, and only then `Results` is cut. No SQX. | pipeline, sqx | pandas, pytest |
 | `tests/test_perf66_waits.py` | 322 | Encargo 66 §5.6/§5.7: fixed sleeps became waits on the real condition, polled every second at most. | sqx, tests, ui | pytest |
 | `tests/test_perf66_wfc_blocks.py` | 107 | 3.9d: the wfc null read in blocks of draws equals the whole-matrix reading and holds a fraction of its memory. | engines, studies | numpy, pytest |
 | `tests/test_perf66_width.py` | 249 | Encargo 66, piece B4: studies that ran in series inside their process, wide, with the same numbers. | core, pipeline, studies, tests | pandas, pytest |
@@ -1209,7 +1209,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_ui_library.py` | 126 | The library offscreen over the daemon in-process: one names table, Cobertura's links, the lazy zones. | ui | PySide6, fastapi |
 | `tests/test_ui_loader.py` | 262 | The databank loader: what it finds stale, the lane each piece takes, failures never retried alone. | ui | fastapi, pytest |
 | `tests/test_ui_ops.py` | 306 | The operation zone: /api/pulse, /api/ops/sqx and /api/ledger read-only, and its widgets offscreen. | core, ui | PySide6, fastapi |
-| `tests/test_ui_portfolios.py` | 428 | Known-answer test of the PORTFOLIOS zone's daemon: known folders → the JSON the window paints, and the launchers' plumbing. | portfolio, ui, ui_portfolios_planted | PySide6 |
+| `tests/test_ui_portfolios.py` | 433 | Known-answer test of the PORTFOLIOS zone's daemon: known folders → the JSON the window paints, and the launchers' plumbing. | portfolio, ui, ui_portfolios_planted | PySide6 |
 | `tests/test_ui_research.py` | 347 | «Investigar»: its routes on a local app, the queue with fake steps, the preflight's refusals and | core, studies, ui | PySide6, fastapi, pandas |
 | `tests/test_ui_results.py` | 168 | The results routes over the real reports, read-only: shapes, pairing by identity, staleness, old reports. | core, ui | fastapi |
 | `tests/test_ui_runner.py` | 231 | The window's run side: the python queue, cancel, the refusals, and with `--run` a real study | core, ui | fastapi, pandas |
@@ -1351,10 +1351,10 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/daemon/palettes.py` | 127 | What the window needs to draw the palette library, and the four writes it may do. | core, sqx, ui | — |
 | `ui/daemon/portfolios/__init__.py` | 1 | The PORTFOLIOS zone's daemon side: what the portfolio commands wrote, as blocks, and their launchers. | — | — |
 | `ui/daemon/portfolios/analyse.py` | 220 | «Analizar»: the selected portfolio (a judged run's contract) or one strategy (its universe column). | ui | pandas |
-| `ui/daemon/portfolios/api.py` | 214 | The routes of the PORTFOLIOS zone: what exists, each module's tabs, and the «Calcular» launchers. | inspect, portfolio, ui | fastapi, pydantic |
+| `ui/daemon/portfolios/api.py` | 221 | The routes of the PORTFOLIOS zone: what exists, each module's tabs, and the «Calcular» launchers. | inspect, portfolio, ui | fastapi, pydantic |
 | `ui/daemon/portfolios/bank.py` | 240 | «Banco» (encargo 33 §7.5): the bank's expected value per plan, re-buy policy and haircut, and the decision. | portfolio, ui | pandas |
 | `ui/daemon/portfolios/bankjob.py` | 90 | «Calcular la caja» as one job: the portfolio's paths, the bank table on them, then the decision. | core, portfolio | — |
-| `ui/daemon/portfolios/commands.py` | 236 | What each «Calcular» of the zone launches: its command, what it still lacks, and the sentence to confirm. | portfolio, ui | — |
+| `ui/daemon/portfolios/commands.py` | 238 | What each «Calcular» of the zone launches: its command, what it still lacks, and the sentence to confirm. | portfolio, ui | — |
 | `ui/daemon/portfolios/construct.py` | 266 | «Constructor»: one real-path run — the portfolio chosen in build, every combination scored, its verdict. | portfolio, ui | pandas |
 | `ui/daemon/portfolios/correlation.py` | 311 | «Correlación»: a pool's pair measures as a matrix judged against the threshold, and its admissible graph. | portfolio, ui | pandas |
 | `ui/daemon/portfolios/funded.py` | 280 | «Fondeo»: one funded run — stage A's P(pass) per combination and risk, stage B's three Monte Carlos, its verdict. | portfolio, ui | pandas |

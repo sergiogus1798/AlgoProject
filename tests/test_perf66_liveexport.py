@@ -119,7 +119,8 @@ def test_export_trades_takes_a_bound_abk_and_its_pack_equals_the_csv_route(
     import pandas as pd
     from core import bankfile, tradepack
     from sqx.export import export_trades
-    from tests.test_perf66_algobank import _csv, strategies, write
+    from tests.test_perf66_algobank import strategies, write
+    from tests.test_perf66_algobank_pack import _csv
 
     bank = strategies()[:2]
     files = [tmp_path / f"{b['name']}.sqx" for b in bank]

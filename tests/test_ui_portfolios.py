@@ -341,8 +341,13 @@ def main() -> int:
             "verdict: without its preflight's nonce nothing is queued",
             not blind["ok"] and not queued,
         )
+        check(
+            "verdict: each preflight draws its own seed (D25), carried in params",
+            pre["params"]["seed"]
+            != api.preflight("verdict", run=RUN)["params"]["seed"],
+        )
         done = api.run_action(
-            api.Run(action="verdict", params={"run": RUN}, nonce=pre["nonce"])
+            api.Run(action="verdict", params=pre["params"], nonce=pre["nonce"])
         )
         check(
             "verdict: with it, ONE job of report.py on that run (command stubbed)",
@@ -352,10 +357,10 @@ def main() -> int:
             and queued[0][1][:4]
             == ["-m", "portfolio.common.construct.report", "--pool", "Test_p"]
             and queued[0][1][4:6] == ["--run", str(root / "runs" / RUN)]
-            and "--seed" in queued[0][1],
+            and queued[0][1][queued[0][1].index("--seed") + 1] == pre["params"]["seed"],
         )
         again = api.run_action(
-            api.Run(action="verdict", params={"run": RUN}, nonce=pre["nonce"])
+            api.Run(action="verdict", params=pre["params"], nonce=pre["nonce"])
         )
         check(
             "verdict: the nonce is spent — a second press queues nothing",

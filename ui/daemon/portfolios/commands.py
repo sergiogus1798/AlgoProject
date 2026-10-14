@@ -9,7 +9,6 @@ from ui.daemon import jobs
 from ui.daemon.portfolios import bankjob, construct, shelf
 
 LABEL = "portfolio"
-SEED = 0  # the same in the preflight and the launch (the nonce binds argv); each run records it
 SET = re.compile(r"^[a-z_0-9]+(\.[a-z_0-9]+)+=\S+$")
 TITLES = {
     "universe": "Universo y parejas",
@@ -169,7 +168,10 @@ def plan(action: str, p: dict[str, str]) -> dict[str, Any]:
             + flags(over)
         )
         if action != "universe":
-            argv += ["--seed", str(SEED)]
+            argv += [
+                "--seed",
+                p["seed"],
+            ]  # drawn once by the preflight (api.py), recorded by the run
         if action in ("verdict", "stage_b"):
             assert (
                 row is not None

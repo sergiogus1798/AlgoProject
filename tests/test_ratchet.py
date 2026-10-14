@@ -72,7 +72,9 @@ def test_pyright_counts_per_included_package() -> None:
         }
     )
     real = ratchet.subprocess.run
-    ratchet.subprocess.run = lambda *a, **k: types.SimpleNamespace(stdout=out)
+    ratchet.subprocess.run = lambda *a, **k: types.SimpleNamespace(
+        stdout=out, returncode=1, stderr=""
+    )
     try:
         got = ratchet.pyright_counts()
     finally:

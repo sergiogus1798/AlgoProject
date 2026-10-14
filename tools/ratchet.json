@@ -2,7 +2,7 @@
   "B905": 235,
   "C901": 52,
   "PLR0913": 231,
-  "broad_except": 36,
+  "broad_except": 35,
   "layering_allow": 19,
   "legacy_np_random": 0,
   "pyright.core": 0,

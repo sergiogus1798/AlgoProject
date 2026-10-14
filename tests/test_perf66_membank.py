@@ -176,7 +176,8 @@ def _world(
     """`collect.tables` over two sides of two fake strategies, SQX and the file readers faked."""
     from core import bankfile, exportdrv
     from studies.screening.gate import collect
-    from tests.test_perf66_algobank import _csv, strategies, write
+    from tests.test_perf66_algobank import strategies, write
+    from tests.test_perf66_algobank_pack import _csv
 
     bank, calls, real = strategies()[:2], {"jvm": 0, "pack": 0}, bankfile.pack
     other = copy.deepcopy(bank)  # the OOS databank: same strategies, other money

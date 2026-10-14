@@ -2,6 +2,7 @@
 
 import inspect
 import re
+import secrets
 from typing import Any
 
 from fastapi import APIRouter
@@ -140,8 +141,13 @@ def preflight(
     edge_from: str = "",
     n_paths: str = "",
     sets: str = "",
+    seed: str = "",
 ) -> dict[str, object]:
-    """Whether a «Calcular» may start, what it lacks, the sentence to confirm, and its one-use nonce."""
+    """Whether a «Calcular» may start, what it lacks, the sentence to confirm, and its one-use nonce.
+
+    A fresh seed is drawn when none is given (owner, 2026-10-14, D25: each launch is an independent
+    draw); it travels back in `params`, so the launch's recheck rebuilds the same bound argv.
+    """
     params = {
         "pool": pool,
         "run": run,
@@ -151,6 +157,7 @@ def preflight(
         "edge_from": edge_from,
         "n_paths": n_paths,
         "sets": sets,
+        "seed": seed or str(secrets.randbits(31)),
     }
     try:
         got = commands.plan(action, params)

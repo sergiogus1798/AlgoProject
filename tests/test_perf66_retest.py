@@ -23,7 +23,8 @@ def _retest(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, banks: dict
 ) -> tuple[dict, list]:
     """Run export_retest on fake databanks A and B; `banks` maps a databank to the `.abk` to leave for it."""
-    from tests.test_perf66_algobank import _csv, strategies, write
+    from tests.test_perf66_algobank import strategies, write
+    from tests.test_perf66_algobank_pack import _csv
 
     bank, ran, written = strategies(), [], {}
     for db, held in banks.items():

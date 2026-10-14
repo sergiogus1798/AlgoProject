@@ -94,15 +94,17 @@ def test_refuses_without_the_full_harvest(
     assert calls == []
 
 
-def test_a_failed_save_is_a_refusal(
+def test_a_failed_save_stops_before_the_cut(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """`save.project` raising does not end the workflow."""
+    """`save.project` raising ends the workflow with its traceback, and nothing is cut (owner, D24)."""
     calls = rig(monkeypatch, [])
     monkeypatch.setattr(
         trim.save, "project", lambda *a: (_ for _ in ()).throw(RuntimeError("boom"))
     )
-    assert go(calls, tmp_path).startswith("RESULTS SIN RECORTAR:")
+    with pytest.raises(RuntimeError, match="boom"):
+        go(calls, tmp_path)
+    assert calls == []
 
 
 def test_empty_results_is_skipped(
