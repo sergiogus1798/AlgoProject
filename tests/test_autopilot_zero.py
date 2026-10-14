@@ -90,7 +90,7 @@ def test_wait_fails_on_the_abort_line_instead_of_returning_it() -> None:
             log = Path(tmp) / "log_2026_01_01.log"
             log.write_text(f"10:00 {line}\n")
             began = time.monotonic()
-            with patched(live, _up=lambda role: True, _log=lambda role: log):
+            with patched(live, _up=lambda role: True, _log=lambda role: log):  # noqa: B023 called this iteration
                 try:
                     live.wait("custodian", (log, 0))
                 except SystemExit as e:

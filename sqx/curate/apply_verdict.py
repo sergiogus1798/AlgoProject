@@ -2,14 +2,13 @@
 """Delete the strategies a verdict rejected from a databank, with the install stopped, keeping a record."""
 
 import argparse
-import json
 import sys
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 
-from core import manifest, sqxfile, worker
+from core import manifest, worker
 from core.paths import MASTER, WORKERS, databank_dir, metrics_export, report_dir
 from core.study.identity import hashed
 from sqx.curate import aftercut

@@ -164,7 +164,7 @@ def refresh(text: str) -> str:
         indent = "\n      "
         text = text.replace(f"<Instruments>{block}</Instruments>",
                             "<Instruments>" + "".join(indent + e for e in entries) + "\n    </Instruments>", 1)
-    for name, broker_id in wanted:
+    for _name, broker_id in wanted:
         entry = broker_xml(broker_id)
         if entry and "<Brokers>" in text and f'id="{broker_id}"' not in \
                 text.split("<Brokers>")[1].split("</Brokers>")[0]:

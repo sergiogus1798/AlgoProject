@@ -13,4 +13,7 @@ select = [
     "F841", # unused local variable
     "B006", # mutable default argument
     "B008", # function call in default argument
+    "B007", # unused loop variable
+    "B023", # closure over a loop variable
+    "B034", # re.sub/split count or flags passed positionally
 ]

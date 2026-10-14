@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import fleetpaths
 from core.paths import MT5_ACCOUNTS, MT5_DATA, ROOT
 from mt5 import compare
 from mt5.fleet.app import history

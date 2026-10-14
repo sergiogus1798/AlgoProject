@@ -65,7 +65,7 @@ def _meta(sqx: Path, cfx: Path | None) -> dict | None:
 
 def _seal(folder: Path) -> None:
     """Make a version read-only: files 0444, folders 0555, deepest first."""
-    for root, dirs, files in os.walk(folder, topdown=False):
+    for root, _dirs, files in os.walk(folder, topdown=False):
         for name in files:
             os.chmod(Path(root) / name, 0o444)
         os.chmod(root, 0o555)

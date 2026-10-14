@@ -35,7 +35,7 @@ def check(rule: dict) -> None:
         raise ValueError("`missing` solo admite «pass», «limbo» o «fail».")
     if rule.get("else", "limbo") != "limbo":
         raise ValueError("`else` solo admite «limbo»: sin él, no cumplir es Fallo.")
-    for tags, fields in (rule.get("by") or {}).items():
+    for _tags, fields in (rule.get("by") or {}).items():
         check({k: v for k, v in rule.items() if k != "by"} | fields)
     if "is" in rule:
         if rule["is"] not in ("pass", "fail"):

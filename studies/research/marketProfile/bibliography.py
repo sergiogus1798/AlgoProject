@@ -141,7 +141,7 @@ def markdown(measures: pd.DataFrame, cfg: dict) -> str:
     parts = [", ".join(f"{n} «{k}»" for k, n in counts.items()) + f" — {len(got)} entradas.", ""]
     parts += head + [_line(r, r["reading"]) for _, r in got.iterrows()]
     for symbol in sorted(s for group in CLASSES.values() for s in group):
-        mine = got[got["named"] & got["symbols"].map(lambda v: symbol in v)]
+        mine = got[got["named"] & got["symbols"].map(lambda v: symbol in v)]  # noqa: B023 map runs immediately
         parts += ["", f"#### `{symbol}` — lo que la bibliografía dice nombrándolo", ""]
         if mine.empty:
             parts.append("Ninguna entrada lo nombra; le aplican las de su clase (tabla de arriba).")

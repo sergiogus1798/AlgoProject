@@ -2,7 +2,6 @@
 
 import csv
 import time
-from pathlib import Path
 
 from core.researchpaths import autopilot_runs
 from sqx.projects import stage

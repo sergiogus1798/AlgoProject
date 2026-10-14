@@ -14,7 +14,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from studies.research.board import factors, inputs, many, page, palette, proposal, proposalmd, selfcheck, store
+from studies.research.board import factors, inputs, many, page, palette, proposal, selfcheck, store
 
 CFG = inputs.CONFIG
 BARE = json.loads((Path(__file__).parent / "fixtures/research_proposal_draft.json").read_text(encoding="utf-8"))

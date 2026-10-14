@@ -120,7 +120,7 @@ def versus_original(trades: pd.DataFrame, main: pd.DataFrame, steps: pd.DataFram
         def at(frame: pd.DataFrame) -> list[float]:
             """Cumulative profit of `frame` at each grid date."""
             cum = np.concatenate([[0.0], np.cumsum(frame["Profit/Loss"].to_numpy(dtype=float))])
-            return [float(cum[i]) for i in np.searchsorted(frame["Close time"].to_numpy("datetime64[ns]"), grid.to_numpy(), side="right")]
+            return [float(cum[i]) for i in np.searchsorted(frame["Close time"].to_numpy("datetime64[ns]"), grid.to_numpy(), side="right")]  # noqa: B023 called within iteration
         out[str(cell)] = {"x": [d.date().isoformat() for d in grid], "cell": at(g), "original": at(kept),
                           "n_cell": len(g), "n_original": len(kept)}
     return out

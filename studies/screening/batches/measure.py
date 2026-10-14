@@ -1,7 +1,6 @@
 """Whether several builds of one cell are one population: same setup, same funnel, few repeats."""
 
 import hashlib
-import re
 from pathlib import Path
 
 import numpy as np

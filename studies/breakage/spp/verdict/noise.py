@@ -1,6 +1,5 @@
 """Does the best point of this grid beat what searching pure noise would have produced?"""
 
-import numpy as np
 import pandas as pd
 
 from core.surface import dedupe, plateau

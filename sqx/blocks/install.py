@@ -65,7 +65,7 @@ def validate(blocks: Path, store: Path, attr: str) -> None:
         new = ElementTree.parse(blocks).getroot()
         old = ElementTree.parse(store).getroot()
     except (ElementTree.ParseError, OSError) as err:
-        raise SystemExit(f"refused {blocks.name}: cannot read it or the store ({err})")
+        raise SystemExit(f"refused {blocks.name}: cannot read it or the store ({err})") from err
     shape = {c.tag for c in old}
     for item in new:
         if item.tag not in shape:

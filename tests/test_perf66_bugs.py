@@ -212,7 +212,6 @@ def _note_one(args: tuple[str, int]) -> None:
 
 def test_eight_processes_noting_runs_keep_eight_rows_in_one_search(tmp_path: Path) -> None:
     """Eight forked processes noting a run each leave eight rows under one search id."""
-    from ledger import tried
     with mp.get_context("fork").Pool(8) as pool:
         pool.map(_note_one, [(str(tmp_path), i) for i in range(8)], chunksize=1)
     rows = [json.loads(x) for x in (tmp_path / "S.jsonl").read_text().splitlines()]

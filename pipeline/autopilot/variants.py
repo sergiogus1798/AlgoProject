@@ -112,7 +112,7 @@ def run(project: str, role: str, only: set[str] | None = None) -> str:
     done, works = [f"{t[0]} ya hecha" for t in finished], [t[1] for t in finished]
     for strategy, work, brief in todo:
         began = time.monotonic() - (spent[strategy] if apart else make(work, brief))
-        call.again(lambda: _py("sqx.variants.execute", "--work", str(work), "--project",
+        call.again(lambda: _py("sqx.variants.execute", "--work", str(work), "--project",  # noqa: B023 retry runs within iteration
                                project))
         _py("sqx.variants.equity", "--work", str(work))
         _py("sqx.variants.collect", "--work", str(work))

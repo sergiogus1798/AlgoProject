@@ -64,7 +64,7 @@ class ArchivedStudies(QFrame):
         self.shown = shown
         self.menu.blockSignals(True)
         self.menu.clear()
-        for name, route, _ in SHEETS:
+        for name, _route, _ in SHEETS:
             item = QListWidgetItem(name)
             item.setData(Qt.UserRole, ("sheet", name, shown["databank"]))
             item.setToolTip(f"Las operaciones congeladas de {shown['databank']}, IS y OOS por "

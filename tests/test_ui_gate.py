@@ -18,7 +18,6 @@ from ui.daemon import gate, proof  # noqa: E402
 from ui.daemon.advance import api as advance  # noqa: E402
 from ui.daemon.launch import api as launch  # noqa: E402
 from ui.daemon.mt5bridge import api as bridge  # noqa: E402
-from ui.daemon.runner.api import ROUTER as RUNNER  # noqa: E402
 from ui.desktop import client  # noqa: E402
 
 PORT = 8799                     # nothing listens there: TestClient speaks to the app in-process

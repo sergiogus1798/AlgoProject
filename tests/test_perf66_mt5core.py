@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Encargo 66 §9 (C2): mt5.compare.pair, assetdata.load/symbol_for and feed scale.by_week equal their old logic."""
 
-import copy
 import sys
 import time
 from pathlib import Path

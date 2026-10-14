@@ -1,7 +1,5 @@
 """The databank metrics reader: the (IS)/(OOS) block swap and the verdict summary of a split study."""
 
-import json
-from pathlib import Path
 
 import pandas as pd
 import pytest

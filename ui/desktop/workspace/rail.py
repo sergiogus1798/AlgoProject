@@ -138,7 +138,7 @@ class Rail(QFrame):
             gone.hide()          # hidden first, or it paints under the new ones until deleted
             gone.deleteLater()
         self.cards = []
-        for i, step in enumerate(steps):
+        for _i, step in enumerate(steps):
             tests = runnable(step)
             card = StepCard(step, bool(tests) and all(self.ticks[(step["n"], t["key"])]
                                                       for t in tests), step["n"] == self.chosen,

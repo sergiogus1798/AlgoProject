@@ -26,7 +26,7 @@ class FakeSqx:
         (top / "user/log/StrategyQuant").mkdir(parents=True)
         self.log = top / "user/log/StrategyQuant/log_2026_01_01.log"
         self.log.write_text("")
-        for bank, names in mem.items():
+        for bank, _names in mem.items():
             self.write(bank)
         fake = self
 

@@ -10,7 +10,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from studies.closing.exposure import benchmark, compare, inputs, occupancy, one
+from studies.closing.exposure import benchmark, inputs, occupancy, one
 
 
 def test_presence_pairs_each_held_bar_with_its_own_move() -> None:

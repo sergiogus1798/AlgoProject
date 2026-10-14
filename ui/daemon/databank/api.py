@@ -81,7 +81,7 @@ class Visible(BaseModel):
 
 
 @ROUTER.get("/api/databank/equity")
-def get_equity(project: str, databank: str, ids: list[str] | None = Query(None)) -> dict:
+def get_equity(project: str, databank: str, ids: list[str] | None = Query(None)) -> dict:  # noqa: B008 FastAPI idiom
     """The databank's aggregate daily curve, SQX's and at the real spread; `ids` (repeated)
     keeps only those strategies."""
     return shown("la equity agregada", lambda p, d: equity.equity(p, d, ids), project, databank)

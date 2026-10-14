@@ -20,7 +20,7 @@ Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los 
 | F1 | los tests corren al entregar | Sonnet | D1 | hecho 2026-10-14 |
 | F2 | hooks: lint ampliado al escribir, y cierre que no deja terminar en rojo | Sonnet | F1, D2 | hecho 2026-10-14 |
 | F3 | trinquete en `checks.py` | Sonnet | — | hecho 2026-10-14 (`1e78492`) |
-| F4 | ruff con `F401` y `B`; los 25 `B023` leídos | Sonnet | D3 | sin empezar |
+| F4 | ruff con `F401` y `B`; los 25 `B023` leídos | Sonnet | D3 | hecho 2026-10-14 (25 B023: ningún bug) |
 | F5 | semillas | Sonnet | D4 | sin empezar |
 | F6 | `assert` en los lectores con fichero dorado | Opus diseña, Sonnet escribe | D5 | sin empezar |
 | F7 | menciones caducas del tope de 250 líneas | Sonnet | D6 | sin empezar |
@@ -31,7 +31,7 @@ Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los 
 | F12 | tabla del README generada del docstring | Sonnet | D10 | sin empezar |
 | F13 | lockfile y versión de Python | Sonnet | — | sin empezar |
 | F14 | canario nocturno de extremo a extremo | Opus diseña, Sonnet escribe | D11 | sin empezar |
-| F15 | gorilla comprueba cada push | Sonnet | F1 | sin empezar |
+| F15 | gorilla comprueba cada push | Sonnet | F1 | hecho 2026-10-14 |
 | F16 | agente `reviewer` propio | Opus | — | hecho 2026-10-14 |
 | F17 | convenciones que faltan en `CODESTYLE.md` | Sonnet | D12, D13 | hecho 2026-10-14 (§6) |
 | F18 | `ruff format`, lo último | Sonnet | todo lo anterior | sin empezar |

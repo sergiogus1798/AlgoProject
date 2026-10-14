@@ -153,7 +153,7 @@ def check_cross() -> None:
 def check_template() -> None:
     """The EA reads the firm's file in the tester and nothing else changes live: the tester no longer
     returns early, the live path still refreshes its calendars, and an empty file name switches it off."""
-    for key, firm in FIRMS.items():
+    for _key, firm in FIRMS.items():
         inputs, helpers = ("\n".join(b) for b in blocks(firm))
         assert f'NewsTesterFile         = "AlgoProjectNews_{firm["label"]}.csv";' in inputs
         assert "MQLInfoInteger(MQL_TESTER)) return false" not in helpers

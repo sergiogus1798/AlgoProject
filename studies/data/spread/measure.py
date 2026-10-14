@@ -1,6 +1,5 @@
 """The spread as measured: per minute, per day beside Dukascopy's volatility, per year, per hour."""
 
-import numpy as np
 import pandas as pd
 
 BPS = 1e4

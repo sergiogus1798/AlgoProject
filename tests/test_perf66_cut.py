@@ -213,7 +213,6 @@ def test_apply_verdict_wires_trades_fresh_and_a_failing_refilter_never_interrupt
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
     """`apply(trades_fresh=True)` calls `refilter` once; if it raises the cut stands and its record is written; unset it is not called."""
     import pipeline.autopilot.judge as judge
-    from core import paths
     files = sqx_copies(tmp_path, 3)
     bank = files[0].parent
     csv = tmp_path / "verdict.csv"

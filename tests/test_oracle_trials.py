@@ -107,7 +107,7 @@ def ab() -> None:
     rng = np.random.default_rng(1)
     e1 = e2 = 0
     en = 0
-    for i in range(300):
+    for _i in range(300):
         g = groups(rng, int(rng.integers(2, 13)))
         u = np.concatenate(g)
         x = int(rng.integers(0, 50))

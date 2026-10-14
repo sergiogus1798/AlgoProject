@@ -73,9 +73,9 @@ def saved_source(out: Path) -> dict:
         source = json.loads((out / "manifest.json").read_text(encoding="utf-8"))["source"]
         int(source["seed"])
         return source
-    except (OSError, KeyError, ValueError, TypeError):
+    except (OSError, KeyError, ValueError, TypeError) as err:
         raise SystemExit(f"--only completa una corrida previa y en {out} no hay ninguna con "
-                         "manifest: corre primero la población entera")
+                         "manifest: corre primero la población entera") from err
 
 
 def refuse_drift(saved: dict, now: dict) -> None:

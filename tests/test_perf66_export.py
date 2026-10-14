@@ -16,7 +16,7 @@ CSV_HEAD = ("Ticket;Symbol;Type;Open time;Open price;Size;Close time;Close price
 def fake_orderstocsv(source: Path, out_dir: Path, data: str = "main") -> str:
     """The lowest function that needs SQX: one CSV per .sqx, its rows a function of the file name."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    for n, f in enumerate(sorted(Path(source).glob("*.sqx"))):
+    for _n, f in enumerate(sorted(Path(source).glob("*.sqx"))):
         base = len(f.stem.removeprefix("IS__").removeprefix("OOS__"))     # the same strategy under any prefix
         rows = "".join(
             f"{t};EURUSD;Buy;2020.01.{t + 1:02d} 10:00:00;1.{base}0;1.0;2020.01.{t + 1:02d} 12:00:00;"

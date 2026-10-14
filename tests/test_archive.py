@@ -48,7 +48,7 @@ def same(a: object, b: object) -> bool:
 
 def unseal(folder: Path) -> None:
     """Give the owner write access back so a temporary archive can be deleted."""
-    for root, dirs, _ in os.walk(folder):
+    for root, _dirs, _ in os.walk(folder):
         os.chmod(root, 0o755)
 
 

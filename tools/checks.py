@@ -101,7 +101,7 @@ def missing_requirements(files: list[Path]) -> list[str]:
         One message per missing library.
     """
     req = ROOT / "requirements.txt"
-    listed = {re.split(r"[=<>!\[]", line, 1)[0].strip().lower()
+    listed = {re.split(r"[=<>!\[]", line, maxsplit=1)[0].strip().lower()
               for line in req.read_text(encoding="utf-8").splitlines()
               if line.strip() and not line.startswith("#")}
     known = depmap.internal_names(files)

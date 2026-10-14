@@ -2,7 +2,7 @@
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QComboBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
-                               QListWidget, QPushButton, QVBoxLayout, QWidget)
+                               QListWidget, QPushButton, QVBoxLayout)
 
 from ui.desktop.criteria.overrides import HELP, KNOWN, by_built, by_line, by_rows, told
 from ui.desktop.theme import C

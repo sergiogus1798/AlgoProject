@@ -97,9 +97,9 @@ def cross_check(task: str, name: str, on: bool) -> str:
         is set alongside, because an enabled cross-check under a disabled parent does
         nothing.
     """
-    task = re.sub(rf'<{name} use="(?:true|false)"', f'<{name} use="{str(on).lower()}"', task, 1)
+    task = re.sub(rf'<{name} use="(?:true|false)"', f'<{name} use="{str(on).lower()}"', task, count=1)
     return re.sub(r'<CrossChecks use="(?:true|false)"',
-                  f'<CrossChecks use="{str(on).lower()}"', task, 1) if on else task
+                  f'<CrossChecks use="{str(on).lower()}"', task, count=1) if on else task
 
 
 def spp(task: str, spread: int, step_pct: float, max_tests: int) -> str:
@@ -133,11 +133,11 @@ def spp(task: str, spread: int, step_pct: float, max_tests: int) -> str:
                       task, re.S)
     inner = block.group(0)
     inner = re.sub(r'<OptProfileSysParamPermutation use="(?:true|false)"',
-                   '<OptProfileSysParamPermutation use="true"', inner, 1)
+                   '<OptProfileSysParamPermutation use="true"', inner, count=1)
     for tag, value in (("MaxTests", max_tests), ("DistributionUp", spread),
                        ("DistributionDown", spread),
                        ("Steps", round(2 * spread / step_pct))):
-        inner, hit = re.subn(rf"<{tag}>\d+</{tag}>", f"<{tag}>{value}</{tag}>", inner, 1)
+        inner, hit = re.subn(rf"<{tag}>\d+</{tag}>", f"<{tag}>{value}</{tag}>", inner, count=1)
         if not hit:      # the donor's «Retest» task has no Steps: the value would stay inherited
             raise SystemExit(f"la tarea no trae <{tag}> numérico en su SPP: no se configura a medias")
     inner = recommended(inner)
@@ -159,13 +159,13 @@ def recommended(inner: str) -> str:
         for nothing.
     """
     what = re.search(r"<WhatToParametrize\b.*?</WhatToParametrize>", inner, re.S)
-    block = re.sub(r'type="\d+"', 'type="0"', what.group(0), 1)
+    block = re.sub(r'type="\d+"', 'type="0"', what.group(0), count=1)
     block = re.sub(r"<Recommended>(?:true|false)</Recommended>",
-                   "<Recommended>true</Recommended>", block, 1)
+                   "<Recommended>true</Recommended>", block, count=1)
     for family in ("Periods", "Shifts", "Constants", "OtherParams", "EntryParams",
                    "EntryLogic", "ExitParamsUsed", "ExitParamsUnused", "BooleanParams"):
         block = re.sub(rf"<{family}>(?:true|false)</{family}>",
-                       f"<{family}>false</{family}>", block, 1)
+                       f"<{family}>false</{family}>", block, count=1)
     return inner[:what.start()] + block + inner[what.end():]
 
 

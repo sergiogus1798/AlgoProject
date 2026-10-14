@@ -86,7 +86,7 @@ def main() -> None:
         r = refresh(firm, today)
         print(f"== {firm}: {r['plans']} plans, {r['combos']} combinations, {r['note']}, "
               f"{len(r['changes'])} changes")
-        for day, table, key, field, old, new in r["changes"][:200]:
+        for _day, table, key, field, old, new in r["changes"][:200]:
             print(f"  {table:7} {key:40} {field:18} {old} → {new}")
         if len(r["changes"]) > 200:
             print(f"  … {len(r['changes']) - 200} more in the `changes` table")

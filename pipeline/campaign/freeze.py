@@ -5,7 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-from core import sqxfile
 from core.datapaths import variants_dir
 from core.paths import DATA, ROOT
 

@@ -1,6 +1,5 @@
 """What running one analysis module on one strategy means: the command, given what exists on disk."""
 
-import json
 from pathlib import Path
 
 from core import assetdata

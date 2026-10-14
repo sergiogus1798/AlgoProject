@@ -159,11 +159,11 @@ def export(role: str, only: str | None = None, names: set[str] | None = None) ->
     for project, databank in sorted(sel, key=lambda b: find.partner(top, *b) is None):
         def plan() -> dict[str, tuple[str, list[str]]]:
             """What this databank still needs, asked of the loader now."""
-            full = sel[project, databank]
-            todo = state.commands(project, state.status(project, databank),
-                                  exports=databank not in UNREAD_TRADES)
-            return {k: v for k, v in todo.items() if (full or k == "harvest")
-                    and not (k == "trades" and databank in UNREAD_TRADES)}
+            full = sel[project, databank]  # noqa: B023 called this iteration
+            todo = state.commands(project, state.status(project, databank),  # noqa: B023 called this iteration
+                                  exports=databank not in UNREAD_TRADES)  # noqa: B023 called this iteration
+            return {k: v for k, v in todo.items() if (full or k == "harvest")  # noqa: B023 called this iteration
+                    and not (k == "trades" and databank in UNREAD_TRADES)}  # noqa: B023 called this iteration
 
         todo = plan()
         if "harvest" in todo:

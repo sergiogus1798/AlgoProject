@@ -1,7 +1,6 @@
 """What every study said of each strategy of a project, per databank: verdict, state and fields."""
 
 import re
-from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
 

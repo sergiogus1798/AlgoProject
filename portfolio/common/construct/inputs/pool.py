@@ -127,7 +127,7 @@ def main() -> None:
     try:
         out = declare(args.name, rows, args.added_by)
     except FileExistsError as refused:
-        raise SystemExit(str(refused))
+        raise SystemExit(str(refused)) from refused
     print(f"Pool '{args.name}' declarado: {len(rows)} miembros, hash {read(args.name, None)['hash'][:12]}… → {out}")
 
 

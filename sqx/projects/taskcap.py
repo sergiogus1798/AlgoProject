@@ -3,10 +3,8 @@
 import json
 import re
 import time
-from datetime import datetime
 from pathlib import Path
 
-from core import worker
 from core.store.write import atomic
 from core.paths import WORKERS
 from core.researchpaths import autopilot_runs

@@ -11,7 +11,7 @@ from pathlib import Path
 import yaml
 
 from core.assetdata import load
-from core.datapaths import campaign_dir, template_dir, template_registry
+from core.datapaths import campaign_dir, template_dir
 from core.paths import DATA, ROOT, feed_quality_dir
 from pipeline.campaign import ledger
 

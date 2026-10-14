@@ -7,10 +7,9 @@ import os
 import re
 import sys
 
-from core.assetcheck import (REQUIRED, before_data, mc_pending, past_data, pending, provisional,
+from core.assetcheck import (mc_pending, past_data, pending, provisional,
                              segments_pending, validate)
-from core.assetdata import (MARKETS, POLICY, RESERVED, classes, enforced, fields, load, policy,
-                            schema, sqx_settings, symbols, window)
+from core.assetdata import (POLICY, RESERVED, enforced, fields, load, schema, symbols, window)
 from core.assetmarkets import markets, special_notes
 from core.assetranges import mc_retest
 from core.paths import ASSETS, feed_quality_dir

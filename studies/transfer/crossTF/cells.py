@@ -6,7 +6,7 @@ import pandas as pd
 from core import fanout, tradestore
 from core.study import draws
 from core.significance import annual_sharpe
-from engines.nulls import model, simulate, verdict
+from engines.nulls import simulate, verdict
 from studies.transfer.crossTF import siblings
 
 # 2026-09-30 (feedback §5): "P saturado" speaks of a run's own reconstruction, never of the

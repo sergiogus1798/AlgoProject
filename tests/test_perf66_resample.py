@@ -225,17 +225,17 @@ def test_it_is_faster() -> None:
     print()
     for nb, length in ((1500, 300), (5000, 1000)):
         build, mean = g.standard_t(3, nb) * 100, 3.0
-        was = clock(lambda: [old_drawdowns(build, mean, length, 8, 5000, resample.stream(1, "x"))
+        was = clock(lambda: [old_drawdowns(build, mean, length, 8, 5000, resample.stream(1, "x"))  # noqa: B023 timed immediately
                              for _ in range(8)])
-        now = clock(lambda: resample.drawdowns(build, mean, length, 8, 40_000, resample.stream(1, "x")))
+        now = clock(lambda: resample.drawdowns(build, mean, length, 8, 40_000, resample.stream(1, "x")))  # noqa: B023 timed immediately
         print(f"3.4a drawdowns build {nb} oos {length}: {was / 4e4 * 1e6:.2f} -> "
               f"{now / 4e4 * 1e6:.2f} us per sequence (x{was / now:.1f})")
         assert now < was
     for n, groups, permutations in ((120, 4, 40_000), (300, 12, 20_000), (1000, 12, 6000)):
         values, sizes = np.round(g.normal(5, 80, n), 2), np.full(groups, n // groups)
         sizes[-1] += n - sizes.sum()
-        was = clock(lambda: old_q_null(values, sizes, permutations, resample.stream(1, "x")))
-        now = clock(lambda: resample.q_null(values, sizes, permutations, resample.stream(1, "x")))
+        was = clock(lambda: old_q_null(values, sizes, permutations, resample.stream(1, "x")))  # noqa: B023 timed immediately
+        now = clock(lambda: resample.q_null(values, sizes, permutations, resample.stream(1, "x")))  # noqa: B023 timed immediately
         print(f"3.9c q_null n {n} periods {groups}: {was / permutations * 1e6:.2f} -> "
               f"{now / permutations * 1e6:.2f} us per shuffle (x{was / now:.1f}), "
               f"matrix {permutations * n * 8 / 1e6:.0f} MB -> 0")

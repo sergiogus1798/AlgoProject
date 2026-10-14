@@ -153,7 +153,7 @@ def run(got: dict, member: np.ndarray, chunk: int, bins: int, reach: float,
     # A half is half the blocks: it has variance as soon as one of its blocks has.
     flat = (n[:, None] * s2 - s1 * s1 <= FLAT * n[:, None] * s2).sum(axis=0)
     safe = bool(flat.max() < len(n) // 2)
-    halves, width = member.shape[0], s1.shape[1]
+    halves = member.shape[0]
     lo, hi = edges(got, reach)
     per_bin = bins / (hi - lo)
     out = {"pick": np.empty(2 * halves, np.int64), "sr_in": np.empty(2 * halves),

@@ -13,7 +13,6 @@ import pandas as pd
 
 from core import paths
 from core.study import blocks, result as envelope
-from studies.transfer.crossmarket.contract import tabs
 from studies.transfer.crossmarket.travel import run as travel
 
 WORD = "info"       # the `verdict` column verdict.csv and /curate require: measured, no call made here

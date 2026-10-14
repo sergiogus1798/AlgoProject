@@ -2,10 +2,8 @@
 """The command: whether one strategy's entry carries information, and what arriving late costs."""
 
 import argparse
-import json
 from pathlib import Path
 
-import pandas as pd
 
 from core.study import draws, output
 from core.study.render import markdown

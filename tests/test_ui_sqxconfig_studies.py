@@ -16,7 +16,6 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from core.assetyaml import read
-from core.paths import ROOT
 from ui.daemon.sqxconfig import api, studies
 
 # What the owner found missing on 2026-09-28, and the rest of both steps' inputs.
@@ -58,7 +57,7 @@ def gate_checks(c: TestClient, copies: dict) -> list[str]:
     """Every key of the gate's and falsePositives' config listed, written back, comments kept."""
     out = []
     for key, name in (("gate", "gatecfg"), ("falsepositives", "fpcfg")):
-        doc = read(copies[name])
+        read(copies[name])
         want = {(name, tuple(l["path"])) for l in studies_leaves(copies[name])
                 if l["path"][0] != "screens" and l["path"][-1] not in ("name", "kind", "why")}
         have = {x for x in leaf_paths(key) if x[0] == name}

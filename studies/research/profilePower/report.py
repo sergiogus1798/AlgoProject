@@ -50,7 +50,7 @@ def measure(cfg: dict, force: bool) -> tuple[pd.DataFrame, int]:
     costs = {k: len(STATE["bars"][k[:2]]) * (1 + k[4]) for k in todo}
     workers = min(cfg["run"]["workers"], cfg["run"]["budget_bytes"] // cfg["run"]["process_bytes"])
     rows = old.to_dict("records")
-    for n, (key, got) in enumerate(fanout.run(replication, costs, workers), 1):
+    for n, (_key, got) in enumerate(fanout.run(replication, costs, workers), 1):
         rows.append({**got, "cut": cut, "seed": cfg["run"]["seed"]})
         if n % EVERY == 0 or n == len(todo):
             store.save(pd.DataFrame(rows))

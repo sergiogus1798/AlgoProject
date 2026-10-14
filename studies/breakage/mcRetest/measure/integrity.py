@@ -2,7 +2,6 @@
 
 import numpy as np
 
-from core import sqxretest
 from studies.breakage.mcRetest.model import recon
 
 

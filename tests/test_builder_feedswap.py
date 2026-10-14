@@ -9,7 +9,6 @@ worker happens to hold today cannot change the answer (it did, 2026-10-03) — n
 to a worker's HTTP API, and writes no data outside /tmp.
 """
 
-import shutil
 import sys
 import tempfile
 import zipfile

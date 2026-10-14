@@ -85,11 +85,11 @@ class Rows(QAbstractTableModel):
         if 0 <= column < self.columnCount():
             self.rearrange(by=(column, order == Qt.DescendingOrder))
 
-    def rowCount(self, _parent: QModelIndex = QModelIndex()) -> int:  # noqa: N802 — Qt's name
+    def rowCount(self, _parent: QModelIndex = QModelIndex()) -> int:  # noqa: N802,B008 — Qt name, immutable default
         """The rows on show."""
         return len(self.order)
 
-    def columnCount(self, _parent: QModelIndex = QModelIndex()) -> int:  # noqa: N802
+    def columnCount(self, _parent: QModelIndex = QModelIndex()) -> int:  # noqa: N802,B008 immutable default
         """The name and the chosen columns."""
         return len(self.shown) + 1 if self.rows or self.shown else 0
 

@@ -1,6 +1,5 @@
 """The normal approximation of the profile's power: what a t statistic can see, from its error."""
 
-import numpy as np
 import pandas as pd
 from scipy.stats import norm
 

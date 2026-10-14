@@ -2,7 +2,6 @@
 
 from collections.abc import Callable
 
-import numpy as np
 import pandas as pd
 
 from studies.screening.analysis import tradelevel

@@ -98,7 +98,7 @@ def render(nodes: dict, s: dict) -> str:
     for f, n in s["lines"].items():
         per[module_of(f)].append(n)
     fan_in = Counter()
-    for mod, targets in s["deps"].items():
+    for targets in s["deps"].values():
         for other in targets:
             fan_in[other] += 1
     out = ["# PROJECT_MAP — generated", "",

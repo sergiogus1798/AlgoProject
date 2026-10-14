@@ -26,7 +26,7 @@ def eta_squared(frame: pd.DataFrame, parameters: list[str],
         y, grouped = y[ok], frame[ok]
         total = ((y - y.mean()) ** 2).sum()
         out[metric] = {p: grouped.groupby(p)[metric].apply(
-            lambda s: len(s) * (pd.to_numeric(s).mean() - y.mean()) ** 2).sum() / total
+            lambda s: len(s) * (pd.to_numeric(s).mean() - y.mean()) ** 2).sum() / total  # noqa: B023 apply runs immediately
             for p in parameters}
     return pd.DataFrame(out).loc[parameters]
 

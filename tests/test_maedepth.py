@@ -9,7 +9,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from engines.market import atr as sqx_atr, excursion
+from engines.market import atr as sqx_atr
 from studies.screening.maeDepth import inputs, many, measures
 
 

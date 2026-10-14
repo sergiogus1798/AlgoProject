@@ -215,7 +215,7 @@ def gather(project: str, n: str) -> pd.DataFrame:
         found = [r for r in every if r["path"].is_dir()]
         if found:
             rows += (crosstf_rows if study == "crossTF" else
-                     lambda f: from_folder(study, f))(found[0]["path"])
+                     lambda f: from_folder(study, f))(found[0]["path"])  # noqa: B023 called this iteration
     df = pd.DataFrame(rows, columns=COLUMNS).dropna(subset=["value"])
     df["key"] = df["study"] + "." + df["key"]
     nth = df.groupby(["strategy", "identity", "key"]).cumcount()

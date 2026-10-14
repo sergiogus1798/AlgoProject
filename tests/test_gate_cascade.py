@@ -4,7 +4,6 @@ the levels after it, the cascade switched off computes everything and gives the 
 the funnel counts per level and rule, and a run resumes at a level."""
 
 import sys
-import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 

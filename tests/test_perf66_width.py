@@ -14,7 +14,6 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
@@ -29,7 +28,6 @@ from studies.closing.exposure import inputs as exp_inputs, many as exp_many, one
 from studies.data.spread import scan
 from studies.screening.decay import report as decay_report
 from studies.transfer.crossTF import cells
-from studies.transfer.crossTF.tf import run as tf_run
 from tests import test_blindjoint as bj
 from tests import test_crosstf_facts as cf
 from tests import test_crosstf_tf_null as tf
