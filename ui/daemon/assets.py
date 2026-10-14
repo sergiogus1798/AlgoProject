@@ -1,5 +1,6 @@
 """What the window needs to draw assets/, and the writes it may make on it."""
 
+from typing import Any
 from datetime import date
 from functools import lru_cache
 
@@ -15,7 +16,7 @@ from sqx.inspect.instruments import registry
 from ui.daemon.assetprior import prior
 
 
-def units(data: dict) -> dict:
+def units(data: dict) -> dict[str, Any]:
     """Every cost field of this asset mapped to the unit its class declares.
 
     Args:
@@ -33,7 +34,7 @@ def units(data: dict) -> dict:
             **{f: s["swap"]["unit"] for f in s["swap"]["fields"]}}
 
 
-def row(symbol: str) -> dict:
+def row(symbol: str) -> dict[str, Any]:
     """One asset as the list down the left shows it.
 
     Args:
@@ -51,7 +52,7 @@ def row(symbol: str) -> dict:
             "data": data["data"]}
 
 
-def state() -> dict:
+def state() -> dict[str, Any]:
     """Everything the asset zone needs to open, in one round trip.
 
     Returns:
@@ -64,7 +65,7 @@ def state() -> dict:
             "special": [f.name for f in special_notes()], "required": REQUIRED}
 
 
-def one(symbol: str, leaves: bool = True) -> dict:
+def one(symbol: str, leaves: bool = True) -> dict[str, Any]:
     """One asset in full: its decisions, its windows, its universe and its file.
 
     Args:
@@ -116,7 +117,7 @@ def feeds(stamp: tuple) -> dict[str, tuple[str, list[str]]]:
     return {s: (d["sqx_symbol"], d["feeds"]) for s in symbols() for d in [load(s)]}
 
 
-def universe(symbol: str) -> dict:
+def universe(symbol: str) -> dict[str, Any]:
     """One main asset's Cross Market check, with every market named by its asset.
 
     Args:
@@ -144,7 +145,7 @@ def universe(symbol: str) -> dict:
             "categories": cats, "candidates": free if declared else []}
 
 
-def problems(data: dict) -> dict:
+def problems(data: dict) -> dict[str, Any]:
     """Everything the preflight would say about this asset, by severity.
 
     Args:
@@ -175,7 +176,7 @@ def _leaves(name: str) -> list[dict]:
             for leaf in leaves(assetwrite.path_of(name))]
 
 
-def set_value(name: str, path: list, text: str, kind: str) -> dict:
+def set_value(name: str, path: list, text: str, kind: str) -> assetwrite.ValueWrite:
     """Write one value of one file, exactly as it was typed.
 
     Args:
@@ -191,7 +192,7 @@ def set_value(name: str, path: list, text: str, kind: str) -> dict:
     return assetwrite.set_value(name, keys, assetwrite.parse(text, kind))
 
 
-def set_cost(symbol: str, field: str, text: str, why: str) -> dict:
+def set_cost(symbol: str, field: str, text: str, why: str) -> assetwrite.CostWrite:
     """Change one cost and its justification in the same write.
 
     Args:
@@ -206,7 +207,7 @@ def set_cost(symbol: str, field: str, text: str, why: str) -> dict:
     return assetwrite.set_cost(symbol, field, assetwrite.parse(text, "scalar"), why)
 
 
-def create(new: dict) -> dict:
+def create(new: dict) -> dict[str, Any]:
     """Add an asset, or refuse a name the library already holds.
 
     Args:

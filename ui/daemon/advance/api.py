@@ -1,6 +1,7 @@
 """The routes of «Continuar workflow»: its preflight, and the one job that applies it."""
 
 import zipfile
+from typing import TypedDict, cast
 from xml.etree.ElementTree import ParseError
 
 from fastapi import APIRouter
@@ -21,7 +22,19 @@ class Advance(BaseModel):
     nonce: str = ""             # the proof its preflight returned (`proof.py`)
 
 
-def answer(project: str, databank: str) -> dict:
+class Answer(TypedDict):
+    """The preflight as the window reads it: ok, reasons, the sentence, and what it will touch."""
+
+    ok: bool
+    reasons: list[str]
+    text: str
+    install: str | None
+    role: str | None
+    task: str | None
+    n: int | None
+
+
+def answer(project: str, databank: str) -> Answer:
     """The preflight as the window reads it, with a queued «Continuar» counted as a refusal."""
     pre = preflight.check(project, databank)
     # «Lanzar en SQX» shares the lane and the workers: one launcher at a time, either way.
@@ -36,9 +49,9 @@ def answer(project: str, databank: str) -> dict:
             "n": pre.get("n")}
 
 
-def shown(project: str, databank: str, got: dict) -> dict:
+def shown(project: str, databank: str, got: dict[str, object]) -> dict[str, str]:
     """What a nonce of this launcher is bound to: what was asked and the sentence shown."""
-    return {"project": project, "databank": databank, "text": got["text"]}
+    return {"project": project, "databank": databank, "text": cast("str", got["text"])}
 
 
 @ROUTER.get("/api/advance/preflight")
@@ -52,7 +65,7 @@ def confirmable(project: str, databank: str) -> dict[str, object]:
 def check(project: str, databank: str) -> dict[str, object]:
     """Whether «Continuar workflow» may run now; the confirmation text when it may."""
     try:
-        return answer(project, databank)
+        return cast("dict[str, object]", answer(project, databank))
     except (OSError, KeyError, ValueError, zipfile.BadZipFile, ParseError) as e:
         # a file SQX is rewriting, a half-written project.cfx, a bad name
         return {"ok": False, "reasons": [f"no se pudo comprobar: {e}"], "text": ""}

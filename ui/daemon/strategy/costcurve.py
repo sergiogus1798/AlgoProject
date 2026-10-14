@@ -1,5 +1,18 @@
 """One strategy's equity curve: SQX's daily one, IS then OOS1 on one axis."""
 
+from typing import TypedDict
+
+
+class Curve(TypedDict):
+    """The curve payload; `split` is the index of the first OOS day (None without OOS)."""
+
+    days: list[str]
+    sqx: list[float]
+    split: int | None
+    sqx_net: dict[str, float]
+    sqx_dd: float
+    source: str
+
 
 def drawdown(curve: list[float]) -> float:
     """The worst fall from a peak of a cumulative curve, in money, as a negative number."""
@@ -10,7 +23,7 @@ def drawdown(curve: list[float]) -> float:
     return worst
 
 
-def curve(data: dict) -> dict:
+def curve(data: dict) -> Curve:
     """The curve of one strategy, IS then OOS on one axis.
 
     Args:

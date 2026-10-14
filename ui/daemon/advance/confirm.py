@@ -1,7 +1,9 @@
 """The confirmation «Continuar workflow» shows before it deletes anything (encargo 22 §7.2)."""
 
+from typing import Any
 
-def text(pre: dict, project: str, databank: str) -> str:
+
+def text(pre: dict[str, Any], project: str, databank: str) -> str:
     """The literal sentence the owner confirms.
 
     Args:

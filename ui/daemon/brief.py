@@ -1,6 +1,7 @@
 """Turn a finished interview into a draft brief on disk and the command that authors it."""
 
 import json
+from typing import Any
 from datetime import date
 
 from core.datapaths import template_dir, template_draft
@@ -14,7 +15,7 @@ LOGIC_TEXT = {"transition": "transición (cruza / rompe / pasa a estar)",
               "state": "estado (está / sigue)"}
 
 
-def compose(answers: dict[str, str]) -> dict[str, object]:
+def compose(answers: dict[str, str]) -> dict[str, Any]:
     """The brief a finished interview amounts to, in the library's own JSON shape.
 
     Args:
@@ -48,7 +49,7 @@ def compose(answers: dict[str, str]) -> dict[str, object]:
             "status": "draft"}
 
 
-def prompt(brief: dict[str, object]) -> str:
+def prompt(brief: dict[str, Any]) -> str:
     """The message to paste into Claude Code so the skill authors this template.
 
     Args:
@@ -77,7 +78,7 @@ def prompt(brief: dict[str, object]) -> str:
     ])
 
 
-def commands(brief: dict[str, object]) -> list[dict[str, str]]:
+def commands(brief: dict[str, Any]) -> list[dict[str, str]]:
     """The shell commands the skill will run, shown so the reader knows what is coming.
 
     Args:
@@ -108,7 +109,7 @@ def commands(brief: dict[str, object]) -> list[dict[str, str]]:
     ]
 
 
-def save(brief: dict[str, object]) -> str:
+def save(brief: dict[str, Any]) -> str:
     """Write the draft brief where the catalogue's drafts shelf will find it.
 
     Args:

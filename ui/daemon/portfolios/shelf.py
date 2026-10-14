@@ -3,12 +3,20 @@
 import json
 import os
 from pathlib import Path
+from typing import Any, TypedDict
 
 from core.paths import portfolio_dir
 from portfolio.common.construct.inputs import pool as pool_mod
 from ui.daemon.archive import shelf as archive
 
 ROOT = portfolio_dir()
+
+RunRow = TypedDict("RunRow", {
+    "id": str, "pool": str, "kind": str, "plan": str, "firm": str, "members": list[str], "k": int,
+    "score": float | None, "label": str, "pass": bool | None, "relaxed": dict[str, Any],
+    "forced": str, "stage_b": bool, "handoff": bool,
+})
+RunRow.__doc__ = "One run folder as the «Carteras» tab lists it."
 
 
 def test_root() -> str:
@@ -21,7 +29,7 @@ def short(identity: str) -> str:
     return identity[:8]
 
 
-def load(path: Path) -> dict:
+def load(path: Path) -> dict[str, Any]:
     """One JSON file of a run folder."""
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -56,7 +64,7 @@ def folder(kind: str, name: str) -> Path:
     return path
 
 
-def run(path: Path) -> dict:
+def run(path: Path) -> RunRow:
     """One run folder as the «Carteras» tab lists it."""
     m = load(path / "manifest.json")
     v = load(path / "verdict.json") if (path / "verdict.json").exists() else {}
@@ -74,7 +82,7 @@ def run(path: Path) -> dict:
             "handoff": (path / "handoff" / "daily.parquet").exists()}
 
 
-def runs() -> list[dict]:
+def runs() -> list[RunRow]:
     """Every run with a manifest, newest first."""
     found = sorted((ROOT / "runs").glob("*/manifest.json"), reverse=True)
     return [run(m.parent) for m in found]

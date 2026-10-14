@@ -71,8 +71,13 @@ def sqx_step(project: str, actions: list[dict], first: bool, filled: set[str]) -
     if len(actions) == 1:
         pre = preflight.check(project, step=actions[0]["n"], own_log=not first, filled=filled)
     else:
-        cfx = preflight.tasks(project)["cfx"]
-        titles = [t for a in actions for t in launchsteps.of_step(a["n"], cfx)["titles"]]
+        listing = preflight.tasks(project)
+        assert "refuse" not in listing, f"{project}: {listing.get('refuse')}"
+        titles = []
+        for a in actions:
+            got = launchsteps.of_step(a["n"], listing["cfx"])
+            assert "refuse" not in got, f"{project} step {a['n']}: {got.get('refuse')}"
+            titles += got["titles"]
         pre = preflight.check(project, titles=titles, own_log=not first, filled=filled)
     if not pre["ok"]:
         sys.exit(f"paso {'+'.join(a['n'] for a in actions)}: no se lanza:\n  "

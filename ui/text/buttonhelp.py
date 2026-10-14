@@ -1,6 +1,7 @@
 """What every button of the window does, in one or two Spanish sentences, found by its text."""
 
 import re
+from collections.abc import Sequence
 
 from ui.text.buttonhelp_texts import HELP
 
@@ -60,7 +61,7 @@ def merge(said: str, tip: str) -> str:
     return max(said, tip, key=len) if shared >= OVERLAP else f"{said}\n\n{tip}"
 
 
-def help_for(text: str, scopes: list[str] = ()) -> str:
+def help_for(text: str, scopes: Sequence[str] = ()) -> str:
     """The sentence for a button text, '' when the registry has none.
 
     Args:

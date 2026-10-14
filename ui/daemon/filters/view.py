@@ -1,7 +1,9 @@
 """What the strip and the funnel read of one databank's discards: counts, steps, conditions."""
 
 import re
+from typing import TypedDict, cast
 
+from ui.daemon.databank.table import Table
 from ui.daemon.filters import discards, evaluate
 
 PART = re.compile(r"^(.*?) (>|<|≥|≤|=|entre|dentro|fuera) ?(.*)$")
@@ -12,7 +14,7 @@ def worded(step: dict) -> str:
     """A step's expression for the funnel, each metric in the window's words (a step logged
     before the expression was worded still carries raw keys), and its «sin valor» and
     «sin identidad» counts."""
-    parts = [PART.match(p) for p in step["expression"].split(" AND ")]
+    parts = [cast("re.Match[str]", PART.match(p)) for p in step["expression"].split(" AND ")]
     text = step["expression"] if step["origin"] == "manual" else " AND ".join(
         f"{evaluate.named(m.group(1))} {m.group(2)} {m.group(3)}" for m in parts)
     return (text + (f" · {step['blank']} sin valor" if step["blank"] else "")
@@ -43,7 +45,23 @@ def recovered(expression: str, metrics: list[dict]) -> list[dict]:
     return evaluate.normal(rows)
 
 
-def state_of(project: str, databank: str, table: dict, metrics: list[dict]) -> dict:
+class State(TypedDict):
+    """One databank's discards now: see `state_of`."""
+
+    databank: str
+    hidden: int
+    hidden_ids: list[str]
+    entered: int | None
+    remaining: int | None
+    anonymous: int | None
+    steps: list[dict]
+    manual: int
+    conditions: list[dict]
+    stale: str | None
+    orphans: int
+
+
+def state_of(project: str, databank: str, table: Table, metrics: list[dict]) -> State:
     """One databank's discards now: hidden identities, each step's counts, the conditions in
     force (`conditions`), for a log from before re-filtering the old filter (`stale`), and
     the discard lines a truncated log left without a header (`orphans`, never hidden).

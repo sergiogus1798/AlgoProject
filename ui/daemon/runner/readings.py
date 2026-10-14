@@ -34,8 +34,8 @@ def monkey(c: dict, strategy: str) -> list[str] | str:
 
 def entry_quality(c: dict, strategy: str) -> list[str] | str:
     """One strategy's entries against random ones at the same hours, on its own feed and grid."""
-    if runs.own_trades(c):
-        return runs.own_trades(c)
+    if (bad := runs.own_trades(c)):
+        return bad
     frame = where.export_timeframe(Path(c["trades"]).parent)
     if not frame:
         return NO_TF
@@ -53,8 +53,8 @@ def edge_cost(c: dict, strategy: str) -> list[str] | str:
 
 def exposure(c: dict, strategy: str) -> list[str] | str:
     """Step 21: market time against buy and hold."""
-    if runs.own_trades(c):
-        return runs.own_trades(c)
+    if (bad := runs.own_trades(c)):
+        return bad
     frame = where.export_timeframe(Path(c["trades"]).parent)
     # The occupancy grid is the export's own timeframe, not config.yaml's M30.
     return (["-m", "studies.closing.exposure.report", "--project", c["project"], "--databank",
@@ -77,7 +77,7 @@ def blind_joint(c: dict, strategy: str) -> list[str] | str:
     """Step 20 over the WFM databank, signed under the family; its report asks the ledger's
     door itself and refuses while 17, 18 and 19 are not all recorded."""
     row, family = where.enrolled(c["project"]), where.family(c["project"])
-    if family is None:
+    if family is None or row is None:
         return where.no_family(c["project"])
     # Always the project's own WFM databank, whichever tab the button was pressed from
     # (T2, 2026-09-30: the open databank was passed blindly, e.g. a Cross Market one).

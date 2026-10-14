@@ -1,11 +1,13 @@
 """«Correr workflow», before the press: whether the chain may start, what it would run, the sentence to confirm."""
 
+from typing import Any
+
 from ui.daemon.advance import preflight as advance
 from ui.daemon.launch import chainplan, preflight
 from ui.daemon.workflow import api as workflow
 
 
-def check(project: str) -> dict:
+def check(project: str) -> dict[str, Any]:
     """Whether the chain may start now, what it would run and where it would stop.
 
     Args:
@@ -34,7 +36,7 @@ def check(project: str) -> dict:
     return {"ok": not reasons, "reasons": reasons, "plan": plan, **where}
 
 
-def text(got: dict, project: str) -> str:
+def text(got: dict[str, Any], project: str) -> str:
     """The sentence the owner confirms: every step that runs, where, and where it stops."""
     who = preflight.ROLES.get(got["role"], got["role"])
     lines = [f"«Correr workflow» en {project} ({got['install']}), en este orden:"]

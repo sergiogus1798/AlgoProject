@@ -1,7 +1,10 @@
 """Which earlier steps each step needs first: the producer of its input, the judge of that input, the row before."""
 
+from typing import Any
+
 from sqx.projects.stage import titles
 from ui.daemon.workflow.derive import BLIND
+from ui.daemon.workflow.records import Context
 from ui.daemon.workflow.steps import STEPS
 
 ORDER = [s["n"] for s in STEPS]
@@ -11,7 +14,7 @@ BANK = {s["bank"]: s["n"] for s in STEPS if "bank" in s}      # 10.5 fills Cross
 VARIANTS = next(s["n"] for s in STEPS if s["how"] == "variants")
 
 
-def producer(databank: str, tasks: list[dict]) -> str | None:
+def producer(databank: str, tasks: list[dict[str, Any]]) -> str | None:
     """The step that fills a databank: the one whose task writes it, or whose prepared bank it is.
 
     Args:
@@ -34,7 +37,7 @@ def judge(made_by: str, before: str) -> str | None:
                  and isinstance(BY_N[n]["feeds"], tuple) and stage in BY_N[n]["feeds"]), None)
 
 
-def of(spec: dict, ctx: dict) -> list[str]:
+def of(spec: dict[str, Any], ctx: Context) -> list[str]:
     """The steps one step needs done before it, earliest first.
 
     Args:
@@ -50,12 +53,13 @@ def of(spec: dict, ctx: dict) -> list[str]:
     """
     n, feeds = spec["n"], spec["feeds"]
     at = ORDER.index(n)
-    out = []
+    out: list[str | None] = []
     if spec["how"] == "sqx" and ctx["sqx"]:
         tasks = ctx["sqx"]["tasks"]
         mine = [t for t in tasks if t["title"] in titles(spec["stage"])]
         made = {producer(t["input"], tasks) for t in mine if t["input"]} - {None, n}
-        for m in sorted((m for m in made if ORDER.index(m) < at), key=ORDER.index):
+        for m in sorted((m for m in made if m is not None and ORDER.index(m) < at),
+                        key=ORDER.index):
             out += [m, judge(m, n)]
     elif spec["how"] == "blind":
         out += list(BLIND) + [BY_STAGE[f] for f in feeds]

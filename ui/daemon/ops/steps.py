@@ -1,7 +1,9 @@
 """«En marcha» in the workflow's order: SQX tasks and Python steps in one list, WFC counted by mother."""
 
+from typing import Any
 import csv
 import time
+from typing import cast
 
 from core.researchpaths import autopilot_runs
 from sqx.projects import stage
@@ -93,7 +95,7 @@ def python_rows(project: str) -> list[dict]:
         status = STATE[row["state"]]
         if status != "done":
             status = marks.get(spec["n"]) or ("failed" if spec["n"] in failed else status)
-        rows.append({"kind": "python", "step": float(spec["n"]), "n": spec["n"],
+        rows.append({"kind": "python", "step": float(cast(str, spec["n"])), "n": spec["n"],
                      "title": f"Paso {spec['n']} · {spec['title']}", "status": status,
                      "why": row["why"]})
     return rows
@@ -125,7 +127,7 @@ def order(tasks: list[dict], python: list[dict], runs: list[dict], of: int | Non
     return sorted(rows + python, key=lambda r: r["step"])
 
 
-def state(role: str, project: str) -> dict:
+def state(role: str, project: str) -> dict[str, Any]:
     """`progress.state` plus `rows`: what the zone paints."""
     got = progress.state(role, project)
     folder = progress.installs()[role] / "user" / "projects" / project

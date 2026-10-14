@@ -1,6 +1,7 @@
 """What the «Investigar» panel reads: the profile's map, one cell's measures, the memory, the board."""
 
 import json
+from typing import Any, TypedDict, cast
 
 import pandas as pd
 
@@ -15,9 +16,9 @@ from ui.daemon.research import explain
 FUNNEL = MEMORY["stages"] + ["survivors"]
 
 
-def records(frame: pd.DataFrame) -> list[dict]:
+def records(frame: pd.DataFrame) -> list[dict[str, Any]]:
     """Rows as JSON-safe dicts: NaN becomes null."""
-    return json.loads(frame.to_json(orient="records"))
+    return json.loads(cast("str", frame.to_json(orient="records")))
 
 
 SEEN = {"naked": "pasa los cuatro filtros", "plateau": "una variante del barrido pasa en meseta",
@@ -25,7 +26,64 @@ SEEN = {"naked": "pasa los cuatro filtros", "plateau": "una variante del barrido
         "against": "Medido en contra"}
 
 
-def profile_map() -> dict:
+class BestCell(TypedDict):
+    """The highest-scoring family of a grey cell."""
+
+    family: str
+    direction: str
+    score: float
+
+
+class MapCell(TypedDict):
+    """One asset × timeframe of the map: the cell-families on the board, and the best score."""
+
+    passing: list[dict[str, Any]]
+    best: BestCell
+
+
+class ProfileMap(TypedDict):
+    """The research map: the axes, the legend and one `MapCell` per `SYMBOL|TF`."""
+
+    symbols: list[str]
+    timeframes: list[str]
+    families: list[str]
+    cells: dict[str, MapCell]
+    provisional: Any
+    levels: list[dict[str, Any]]
+
+
+class CellView(TypedDict):
+    """One asset × timeframe: family scores, every measure with its explanation, its context."""
+
+    symbol: str
+    timeframe: str
+    measures: list[dict[str, Any]]
+    families: list[dict[str, Any]]
+    context: dict[str, Any]
+    columns: Any
+    context_help: Any
+
+
+class Coverage(TypedDict):
+    """How much of the grid the memory has touched."""
+
+    cells: int
+    untouched: int
+    closed: int
+
+
+class MemoryView(TypedDict):
+    """The memory: every attempt with its funnel, survivors per family, ideas spent, coverage."""
+
+    attempts: list[dict[str, Any]]
+    by_family: Any
+    spent: Any
+    ideas: int
+    stages: list[str]
+    coverage: Coverage
+
+
+def profile_map() -> ProfileMap:
     """The map: per asset × timeframe, the cell-families that are on the board, best first.
 
     Returns:
@@ -36,15 +94,16 @@ def profile_map() -> dict:
         admits it) — empty for a grey cell, which then carries `best`, its highest score.
     """
     scores = inputs.scores()
-    on = {}
+    on: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for c in board()["cells"]:
         on.setdefault((c["symbol"], c["timeframe"]), []).append(
             {"family": c["family"], "direction": c["direction"], "multiple": c["multiple"],
              "level": explain.level(c["multiple"])[0], "trades_per_year": c["trades_per_year"],
              "entered_by": c["entered_by"], "prior": c["prior"], "evidence": c["evidence"],
              "state": SEEN[c["evidence"]], "points": c["points"]})
-    cells = {}
-    for (symbol, tf), rows in scores.groupby(["symbol", "timeframe"]):
+    cells: dict[str, MapCell] = {}
+    for pair, rows in scores.groupby(["symbol", "timeframe"]):
+        symbol, tf = cast("tuple[str, str]", pair)
         top = rows.sort_values("score", ascending=False).iloc[0]
         cells[f"{symbol}|{tf}"] = {"passing": on.get((symbol, tf), []),
                                    "best": {"family": top["family"], "direction": top["direction"],
@@ -55,7 +114,7 @@ def profile_map() -> dict:
             "levels": [{"level": n, "label": label} for _, n, label in explain.LEVELS]}
 
 
-def cell(symbol: str, timeframe: str) -> dict:
+def cell(symbol: str, timeframe: str) -> CellView:
     """One asset × timeframe: its family scores, every measure with its explanation, its context."""
     top = research_profiles_dir()
     here = lambda f: f[(f["symbol"] == symbol) & (f["timeframe"] == timeframe)]  # noqa: E731
@@ -71,7 +130,7 @@ def cell(symbol: str, timeframe: str) -> dict:
             "context_help": explain.CONTEXT}
 
 
-def memory() -> dict:
+def memory() -> MemoryView:
     """The memory: coverage, the funnel of every attempt, survivors per family, ideas spent."""
     got = inputs.memory()
     attempts = [{**{k: a[k] for k in ("project", "template", "family", "symbol", "timeframe",
@@ -86,6 +145,6 @@ def memory() -> dict:
                          "closed": sum(r["closed"] for r in got["by_family"])}}
 
 
-def board() -> dict:
+def board() -> dict[str, Any]:
     """The board as `many.run` orders it now."""
     return many.run(inputs.scores(), inputs.memory(), inputs.CONFIG, inputs.sweep())

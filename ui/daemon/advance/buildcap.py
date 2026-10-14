@@ -3,6 +3,7 @@
 import re
 import zipfile
 from pathlib import Path
+from typing import Any
 
 from core import worker
 
@@ -23,7 +24,7 @@ def minutes(cfx: Path) -> int:
     return 0
 
 
-def enforce(project: str, role: str, now: dict | None, top: Path) -> bool:
+def enforce(project: str, role: str, now: dict[str, Any] | None, top: Path) -> bool:
     """Stop the project once its running build has used its minutes.
 
     Args:

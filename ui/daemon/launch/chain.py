@@ -13,6 +13,7 @@ import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Any
 
 import psutil
 
@@ -26,6 +27,7 @@ from ui.daemon.loader import afterrun, state as loader
 from ui.daemon.runner import batch
 from ui.daemon.workflow import api as workflow
 from ui.daemon.workflow import run as rail
+from ui.daemon.workflow.records import Context
 
 TAIL = 4    # lines of a failed command's output the chain's log keeps
 # The python lane's rules (`jobs.FLOOR_GB`, `jobs.SLOTS`): a command starts when its weight fits
@@ -38,13 +40,14 @@ CHILDREN: set[subprocess.Popen] = set()     # the tests and exports running now
 _GATE = threading.Lock()
 
 
-def feeds(n: str, ctx: dict) -> list[str]:
+def feeds(n: str, ctx: Context) -> list[str]:
     """The databanks a Python step's tests read: its `feeds` stages' outputs, as SQX spells them."""
     spec = rail.BY_N[n]
-    if spec["feeds"] == "batch" or not ctx["sqx"]:
+    view = ctx["sqx"]
+    if spec["feeds"] == "batch" or not view:
         return []
     names = [t for s in spec["feeds"] for t in stage.titles(s)]
-    return list(dict.fromkeys(t["output"] for t in ctx["sqx"]["tasks"] if t["title"] in names))
+    return list(dict.fromkeys(t["output"] for t in view["tasks"] if t["title"] in names))
 
 
 def command(argv: list[str]) -> tuple[int, str]:
@@ -126,7 +129,7 @@ def load(project: str, databank: str) -> list[str]:
     return failed
 
 
-def python_step(project: str, action: dict, strict: bool = False,
+def python_step(project: str, action: dict[str, Any], strict: bool = False,
                 tell: Callable[[str], None] | None = None) -> list[str]:
     """Load what the step reads, then run each of its tests.
 
@@ -180,7 +183,7 @@ def python_step(project: str, action: dict, strict: bool = False,
     return failed + [f for r in results for f in r]
 
 
-def diverged(project: str, action: dict, stale: bool) -> str:
+def diverged(project: str, action: dict[str, Any], stale: bool) -> str:
     """Why the confirmed plan no longer holds for this step, '' when it does.
 
     Args:
@@ -197,7 +200,7 @@ def diverged(project: str, action: dict, stale: bool) -> str:
     return ""
 
 
-def chain(project: str, plan: dict | None = None) -> None:
+def chain(project: str, plan: dict[str, Any] | None = None) -> None:
     """The whole press: the confirmed plan exactly, each SQX step re-checked for safety just
     before it starts; a step whose state moved, a refusal or a failure stops it.
 
@@ -211,6 +214,7 @@ def chain(project: str, plan: dict | None = None) -> None:
         if not got["ok"]:
             sys.exit("no se corre:\n  " + "\n  ".join(got["reasons"]))
         plan = got["plan"]
+    assert plan is not None             # `check` always returns the plan
     todo, stale, filled = plan["do"], False, set()
     for i, action in enumerate(todo):
         say(100 * i // len(todo), f"paso {action['n']} · {action['title']}")

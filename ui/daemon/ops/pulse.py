@@ -1,5 +1,6 @@
 """The custodian's pulse: backtests done of total, JVM against its ceiling, CPU, free RAM — files only."""
 
+from typing import Any, cast
 import os
 import re
 import time
@@ -45,7 +46,9 @@ def xmx_gb(install: Path) -> float:
 
 def free_gb() -> float:
     """The machine's `MemAvailable`, in GB."""
-    return int(re.search(r"MemAvailable:\s+(\d+) kB", Path("/proc/meminfo").read_text()).group(1)) / GB
+    m = re.search(r"MemAvailable:\s+(\d+) kB", Path("/proc/meminfo").read_text())
+    assert m is not None  # every Linux /proc/meminfo has the line
+    return int(m.group(1)) / GB
 
 
 def pss_gb(pids: list[int]) -> float:
@@ -58,7 +61,7 @@ def pss_gb(pids: list[int]) -> float:
         GB of PSS from `smaps_rollup`. PSS and not RSS: RSS counts the shared pages of every
         process that maps them, which overstates a JVM beside the others.
     """
-    return sum(int(PSS.search(Path(f"/proc/{p}/smaps_rollup").read_text()).group(1))
+    return sum(int(cast(re.Match[str], PSS.search(Path(f"/proc/{p}/smaps_rollup").read_text())).group(1))
                for p in pids) / GB
 
 
@@ -132,7 +135,7 @@ def slope_mb(project: str, done: int | None, jvm: float) -> tuple[float, bool]:
     if done is not None:
         READINGS.append({"project": project, "done": done, "jvm": jvm})
     first, last = (READINGS[0], READINGS[-1]) if READINGS else (None, None)
-    if first and last["done"] - first["done"] >= 100 and last["jvm"] > first["jvm"]:
+    if first and last and last["done"] - first["done"] >= 100 and last["jvm"] > first["jvm"]:
         return (last["jvm"] - first["jvm"]) * 1024 / (last["done"] - first["done"]), True
     return SLOPE_MB, False
 
@@ -193,7 +196,7 @@ def writing_out(install: Path) -> bool:
     return data.rfind(b"Syncing datatabank to files") > data.rfind(b"Synchronization finished")
 
 
-def custodian() -> dict:
+def custodian() -> dict[str, Any]:
     """Everything the pulse line says about the custodian, read from /proc and files only.
 
     Returns:

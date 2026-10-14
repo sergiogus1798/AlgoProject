@@ -1,5 +1,6 @@
 """What the Criterios zone shows: criteria.yaml step by step, the Build filters, the freeze."""
 
+from typing import Any
 import hashlib
 import json
 
@@ -24,7 +25,7 @@ GROUPS = {"all": "Todas", "any": "Alguna"}
 SHOWN = 30      # history rows sent to the window, newest first
 
 
-def plain(node: object) -> object:
+def plain(node: object) -> Any:
     """A document read with its comments, as plain dicts, lists and scalars."""
     return json.loads(json.dumps(node, default=str))
 
@@ -82,7 +83,7 @@ def test(rule: dict) -> tuple[str, str]:
     return str(rule["pass"]), str(rule.get("limbo", other))
 
 
-def row(rule: dict) -> dict:
+def row(rule: dict) -> dict[str, Any]:
     """One rule as a table row.
 
     Args:
@@ -146,7 +147,7 @@ def menu(n: str, used: list[dict]) -> list[dict]:
                    for k in keys), key=lambda f: (f["label"], f["fact"]))
 
 
-def build() -> dict:
+def build() -> dict[str, Any]:
     """Step 6: the Build's acceptance filters of assets/_study.yaml, the only criteria SQX
     itself applies. Read only here."""
     study = yaml.safe_load(buildfilters.STUDY.read_text(encoding="utf-8"))
@@ -189,7 +190,7 @@ def history() -> list[dict]:
             for h in map(json.loads, lines[-SHOWN:][::-1])]
 
 
-def state() -> dict:
+def state() -> dict[str, Any]:
     """Everything the zone paints, in one round trip.
 
     Returns:

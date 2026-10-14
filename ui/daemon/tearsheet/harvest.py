@@ -62,6 +62,7 @@ def read(project: str, databank: str, identity: str, name: str = "") -> dict | s
             return Absent(got)
         databank, identity, note = got
         folder = newest(project, databank)
+        assert folder is not None             # `borrow` only names a databank that has a cosecha
     where = [("identity", "==", identity)]
     metrics = pd.read_parquet(folder / "metrics.parquet", filters=where)
     if metrics.empty:

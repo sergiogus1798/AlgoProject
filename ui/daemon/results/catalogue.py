@@ -1,5 +1,6 @@
 """Every study the window can show: family, title, step, whether it eliminates, and how it is run."""
 
+from typing import Any, cast
 from collections.abc import Callable
 from pathlib import Path
 
@@ -141,10 +142,10 @@ def role(key: str, cfg: dict | None) -> str:
     said = ROLE[key]
     if isinstance(said, str):
         return said
-    return "gate" if said(cfg) else "describe"
+    return "gate" if said(cast(dict, cfg)) else "describe"
 
 
-def entry(key: str, cfg: dict | None) -> dict:
+def entry(key: str, cfg: dict | None) -> dict[str, Any]:
     """One row of the catalogue.
 
     Args:

@@ -1,6 +1,7 @@
 """The routes of the asset library: every question the assets zone asks, and its writes."""
 
 from datetime import date
+from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -50,7 +51,7 @@ class MarketChange(BaseModel):
 
 
 @ROUTER.get("/api/assets")
-def asset_state() -> dict[str, object]:
+def asset_state() -> dict[str, Any]:
     """Every asset with what blocks it, plus the retired shelf and the class schemas.
 
     Returns:
@@ -60,7 +61,7 @@ def asset_state() -> dict[str, object]:
 
 
 @ROUTER.get("/api/asset/{symbol}")
-def asset(symbol: str, leaves: bool = True) -> dict[str, object]:
+def asset(symbol: str, leaves: bool = True) -> dict[str, Any]:
     """One asset in full.
 
     Args:
@@ -107,7 +108,7 @@ def why(symbol: str, field: str, text: str) -> dict[str, str]:
 
 
 @ROUTER.post("/api/assets/value")
-def set_asset_value(change: ValueChange) -> dict[str, object]:
+def set_asset_value(change: ValueChange) -> dict[str, Any]:
     """Write one value into one assets/ file, comments and all the rest untouched.
 
     Args:
@@ -116,11 +117,11 @@ def set_asset_value(change: ValueChange) -> dict[str, object]:
     Returns:
         What was written.
     """
-    return assets.set_value(change.name, change.path, change.text, change.kind)
+    return dict(assets.set_value(change.name, change.path, change.text, change.kind))
 
 
 @ROUTER.post("/api/asset/{symbol}/cost")
-def set_cost(symbol: str, change: CostChange) -> dict[str, object]:
+def set_cost(symbol: str, change: CostChange) -> dict[str, Any]:
     """Change a cost and its `why` in the same write.
 
     Args:
@@ -130,11 +131,11 @@ def set_cost(symbol: str, change: CostChange) -> dict[str, object]:
     Returns:
         The field as written.
     """
-    return assets.set_cost(symbol, change.field, change.text, change.why)
+    return dict(assets.set_cost(symbol, change.field, change.text, change.why))
 
 
 @ROUTER.post("/api/assets/new")
-def new_asset(new: NewAsset) -> dict[str, object]:
+def new_asset(new: NewAsset) -> dict[str, Any]:
     """Add an instrument to the library, with every cost open.
 
     Args:
@@ -147,7 +148,7 @@ def new_asset(new: NewAsset) -> dict[str, object]:
 
 
 @ROUTER.post("/api/asset/{symbol}/retire")
-def retire_asset(symbol: str) -> dict[str, object]:
+def retire_asset(symbol: str) -> dict[str, Any]:
     """Take an asset out of the library without losing its file.
 
     Args:
@@ -160,7 +161,7 @@ def retire_asset(symbol: str) -> dict[str, object]:
 
 
 @ROUTER.post("/api/asset/{symbol}/restore")
-def restore_asset(symbol: str) -> dict[str, object]:
+def restore_asset(symbol: str) -> dict[str, Any]:
     """Put a retired asset back.
 
     Args:
@@ -173,7 +174,7 @@ def restore_asset(symbol: str) -> dict[str, object]:
 
 
 @ROUTER.post("/api/assets/market")
-def set_market(change: MarketChange) -> dict[str, object]:
+def set_market(change: MarketChange) -> dict[str, Any]:
     """Make one category of one asset's Cross Market check hold exactly these markets.
 
     Args:
@@ -183,11 +184,11 @@ def set_market(change: MarketChange) -> dict[str, object]:
     Returns:
         The category as written.
     """
-    return assets.assetwrite.set_market(change.symbol, change.category, change.feeds)
+    return dict(assets.assetwrite.set_market(change.symbol, change.category, change.feeds))
 
 
 @ROUTER.post("/api/asset/{symbol}/market/main")
-def declare_main(symbol: str) -> dict[str, object]:
+def declare_main(symbol: str) -> dict[str, Any]:
     """Give this asset its own Cross Market block, empty, if it is not a declared main yet.
 
     Args:

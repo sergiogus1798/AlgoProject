@@ -1,6 +1,7 @@
 """A gate report read off disk — its funnel and scorecard, one strategy's paired metrics and curve —
 for the databank panel's funnel and the archive (`ui.daemon.strategy.archive_view`)."""
 
+from typing import Any, cast
 import json
 from pathlib import Path
 
@@ -17,7 +18,7 @@ PAIRS = ("Net profit", "# of trades", "Profit factor", "Sharpe Ratio", "Ret/DD R
          "Max DD %", "Winning Percent", "R Expectancy", "Stability", "PSR")
 
 
-def manifest(folder: Path) -> dict:
+def manifest(folder: Path) -> dict[str, Any]:
     """A folder's manifest, or `{}` when nobody signed it.
 
     Args:
@@ -60,7 +61,7 @@ def judged(harvest: Path) -> tuple[str, dict]:
     return "", {}
 
 
-def gate(project: str, databank: str, day: str) -> dict:
+def gate(project: str, databank: str, day: str) -> dict[str, Any]:
     """One gate report: its funnel, its source and its scorecard.
 
     Args:
@@ -82,7 +83,7 @@ def gate(project: str, databank: str, day: str) -> dict:
             "funnel": funnel, "screens": screens(), "rows": rows}
 
 
-def strategy(project: str, databank: str, day: str, identity: str) -> dict:
+def strategy(project: str, databank: str, day: str, identity: str) -> dict[str, Any]:
     """One strategy of a harvest: its paired metrics and its daily curve, both sides.
 
     Args:
@@ -102,7 +103,7 @@ def strategy(project: str, databank: str, day: str, identity: str) -> dict:
     metrics = [[p, m.get(f"{p} [IS]"), m.get(f"{p} [OOS]")] for p in PAIRS]
     e = pd.read_parquet(folder / "equity.parquet")
     e = e[e["identity"] == identity]
-    curve = {s: {"days": b["day"].dt.strftime("%Y-%m-%d").tolist(),
+    curve = {s: {"days": cast(pd.DataFrame, b)["day"].dt.strftime("%Y-%m-%d").tolist(),
                  "equity": b["equity"].round(2).tolist()} for s, b in e.groupby("sample")}
     return {"metrics": [[p, None if pd.isna(a) else a, None if pd.isna(b) else b]
                         for p, a, b in metrics], "curve": curve}

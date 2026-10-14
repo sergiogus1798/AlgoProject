@@ -1,5 +1,6 @@
 """What the daemon computed once, kept across restarts: one pickled dict per name in AlgoData/ui/memo/."""
 
+from typing import Any
 import pickle
 from pathlib import Path
 
@@ -15,7 +16,7 @@ def _file(name: str) -> Path:
     return FOLDER / "memo" / f"{name}-{code}.pkl"
 
 
-def load(name: str) -> dict:
+def load(name: str) -> dict[Any, Any]:
     """The memo saved under this name by this same code, or an empty one.
 
     Args:
@@ -29,7 +30,7 @@ def load(name: str) -> dict:
     return pickle.loads(path.read_bytes()) if path.is_file() else {}
 
 
-def save(name: str, memo: dict) -> None:
+def save(name: str, memo: dict[Any, Any]) -> None:
     """Write the memo, whole and atomically, and drop the ones older code left.
 
     Args:

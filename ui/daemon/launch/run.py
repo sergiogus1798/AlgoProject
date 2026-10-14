@@ -10,7 +10,9 @@ import subprocess
 import sys
 import time
 from datetime import date, datetime
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from core import worker
 from core.datapaths import template_runs
@@ -52,7 +54,7 @@ def snapshot(folder: Path) -> Path:
     return partial.rename(to)
 
 
-def compare(before: dict, after: dict, output: str | set[str], kept: Path) -> str:
+def compare(before: dict[str, int], after: dict[str, int], output: str | set[str], kept: Path) -> str:
     """The line on what the run did to the databanks; the snapshot goes only when nothing fell.
 
     Args:
@@ -79,7 +81,7 @@ def compare(before: dict, after: dict, output: str | set[str], kept: Path) -> st
 INTERRUPTED = re.compile(r"Cannot process strategy '([^']+)'")
 
 
-def restore(project_dir: Path, kept: Path, before: dict, outputs: set[str],
+def restore(project_dir: Path, kept: Path, before: dict[str, int], outputs: set[str],
             lines: list[str]) -> list[str]:
     """Put back the strategies SQX's own sync race deleted, from the pre-run snapshot.
 
@@ -110,7 +112,7 @@ def restore(project_dir: Path, kept: Path, before: dict, outputs: set[str],
     return back
 
 
-def record(pre: dict, project: str, built: int) -> str:
+def record(pre: dict[str, Any], project: str, built: int) -> str:
     """A build's row in runs.csv, as the template-run skill writes it by hand."""
     template = Path(pre["row"].get("template") or "").parent.name
     if not template:
@@ -129,7 +131,7 @@ def graceful(_signum: int, _frame: object) -> None:
     raise SystemExit("cancelado desde la ventana: se para el worker antes de salir")
 
 
-def execute(pre: dict, project: str) -> dict:
+def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:
     """The run itself, once a preflight passed: rule 5, copy, stage, start, watch, stop.
 
     Args:
@@ -206,7 +208,8 @@ def execute(pre: dict, project: str) -> dict:
     return moved
 
 
-def launch(project: str, titles: str | list[str] = (), step: str = "") -> dict:
+def launch(project: str, titles: str | Sequence[str] = (),
+           step: str = "") -> dict[str, tuple[int, int]]:
     """The whole sequence, re-checking the preflight first: two clicks cannot race it.
 
     Args:

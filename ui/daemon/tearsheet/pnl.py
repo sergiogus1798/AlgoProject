@@ -1,6 +1,7 @@
 """One sample's cumulative P&L: SQX's daily curve, with or without its best trades."""
 
 import math
+from typing import cast
 
 import pandas as pd
 
@@ -33,6 +34,7 @@ def curves(equity: pd.Series, trades: pd.DataFrame, top: float) -> dict[str, pd.
     pnl = equity.diff().fillna(equity.iloc[0])
     out = {"sqx": pnl.cumsum()}
     if top > 0 and len(trades):
-        out["sqx_top"] = out["sqx"] - _best(pnl.index, trades["Close time"].dt.normalize(),
-                                            trades["Profit/Loss"], top)
+        out["sqx_top"] = out["sqx"] - _best(pd.DatetimeIndex(pnl.index),
+                                            trades["Close time"].dt.normalize(),
+                                            cast(pd.Series, trades["Profit/Loss"]), top)
     return out

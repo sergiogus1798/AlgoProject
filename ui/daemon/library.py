@@ -2,6 +2,7 @@
 
 import csv
 import json
+from typing import Any
 from pathlib import Path
 
 from core.datapaths import template_dir, template_registry, template_runs
@@ -28,7 +29,7 @@ def rows(csv_path: Path) -> list[dict[str, str]]:
     return list(csv.DictReader(csv_path.open(encoding="utf-8")))
 
 
-def folder(name: str) -> dict[str, object]:
+def folder(name: str) -> dict[str, Any]:
     """What is actually on disk for one template, beside what the registry claims.
 
     Args:
@@ -51,7 +52,7 @@ def folder(name: str) -> dict[str, object]:
                         if manifest.exists() else None}
 
 
-def catalogue() -> list[dict[str, object]]:
+def catalogue() -> list[dict[str, Any]]:
     """Every template, with its runs attached and its folder inspected.
 
     Returns:
@@ -79,7 +80,7 @@ def catalogue() -> list[dict[str, object]]:
     return sorted(out, key=lambda t: (t.get("created") or "", t["name"]), reverse=True)
 
 
-def drafts() -> list[dict[str, object]]:
+def drafts() -> list[dict[str, Any]]:
     """Briefs the interview composed that nobody has authored into a template yet.
 
     Returns:
@@ -93,7 +94,7 @@ def drafts() -> list[dict[str, object]]:
                   key=lambda d: d.get("created", ""), reverse=True)
 
 
-def one(name: str) -> dict[str, object]:
+def one(name: str) -> dict[str, Any]:
     """One template's whole record, including the brief as text.
 
     Args:
@@ -117,4 +118,4 @@ def one(name: str) -> dict[str, object]:
     form = shape(sqx, builds) if sqx.exists() else None
     return {**entry, "brief_md": brief.read_text(encoding="utf-8") if brief.exists() else "",
             "holes": form["holes"] if form else [], "fixed": form["fixed"] if form else [],
-            "reach": reach(form) if form else ""}
+            "reach": reach(form) if form else ""}  # pyright: ignore[reportArgumentType]  # sqx.templates.holes.reach takes a bare dict

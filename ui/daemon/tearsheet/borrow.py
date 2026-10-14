@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -50,14 +51,14 @@ def borrow(project: str, databank: str, identity: str,
     """
     homes = [h for h in harvests(project) if h != databank.replace(" ", "_")]
     for home in homes:
-        if len(_rows(newest(project, home), "identity", [identity])):
+        if len(_rows(cast(Path, newest(project, home)), "identity", [identity])):
             return home, identity, (f"{databank} no tiene cosecha: esta ficha es la de la "
                                     f"cosecha de {home}, la misma estrategia (mismo XML).")
     name = find.roster(project, databank).get(identity) or name
     if not (homes and name):
         return None
     for home in homes:
-        found = _rows(newest(project, home), "strategy", aliases(name))
+        found = _rows(cast(Path, newest(project, home)), "strategy", aliases(name))
         if len(found) > 1:
             return (f"La cosecha de {home} tiene {len(found)} «{name}»: ábrela desde la Puerta "
                     "IS/OOS")

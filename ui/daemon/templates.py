@@ -1,5 +1,6 @@
 """The library's routes: the template catalogue, its coverage and writes, the palettes, the chat."""
 
+from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -49,7 +50,7 @@ class Answers(BaseModel):
 
 
 @ROUTER.get("/api/templates")
-def templates() -> dict[str, object]:
+def templates() -> dict[str, Any]:
     """The whole catalogue, plus the drafts shelf and the headline counts.
 
     Returns:
@@ -62,7 +63,7 @@ def templates() -> dict[str, object]:
 
 
 @ROUTER.get("/api/template/{name}")
-def template(name: str) -> dict[str, object]:
+def template(name: str) -> dict[str, Any]:
     """One template's record, its runs and its brief.
 
     Args:
@@ -75,7 +76,7 @@ def template(name: str) -> dict[str, object]:
 
 
 @ROUTER.get("/api/coverage")
-def coverage_matrix(row_axis: str = "archetype") -> dict[str, object]:
+def coverage_matrix(row_axis: str = "archetype") -> dict[str, Any]:
     """The grid of what has been tried.
 
     Args:
@@ -115,7 +116,7 @@ def set_verdict(change: VerdictChange) -> dict[str, str]:
 
 
 @ROUTER.get("/api/palettes")
-def palette_state() -> dict[str, object]:
+def palette_state() -> dict[str, Any]:
     """The taxonomy, the three palettes and what each one resolves to.
 
     Returns:
@@ -126,7 +127,7 @@ def palette_state() -> dict[str, object]:
 
 
 @ROUTER.post("/api/palette/{name}")
-def set_palette(name: str, change: PaletteChange) -> dict[str, object]:
+def set_palette(name: str, change: PaletteChange) -> dict[str, Any]:
     """Write one palette of the library.
 
     Args:
@@ -140,7 +141,7 @@ def set_palette(name: str, change: PaletteChange) -> dict[str, object]:
 
 
 @ROUTER.post("/api/palettes/new")
-def new_palette(new: NewPalette) -> dict[str, object]:
+def new_palette(new: NewPalette) -> dict[str, Any]:
     """Add a palette to the library, empty or cloned from another.
 
     Args:
@@ -153,7 +154,7 @@ def new_palette(new: NewPalette) -> dict[str, object]:
 
 
 @ROUTER.post("/api/palette/{name}/delete")
-def delete_palette(name: str) -> dict[str, object]:
+def delete_palette(name: str) -> dict[str, Any]:
     """Remove one palette from the library.
 
     Args:
@@ -166,7 +167,7 @@ def delete_palette(name: str) -> dict[str, object]:
 
 
 @ROUTER.post("/api/interview/step")
-def interview_step(payload: Answers) -> dict[str, object]:
+def interview_step(payload: Answers) -> dict[str, Any]:
     """What to ask next, given what has been answered.
 
     Args:
@@ -179,7 +180,7 @@ def interview_step(payload: Answers) -> dict[str, object]:
 
 
 @ROUTER.post("/api/interview/finish")
-def interview_finish(payload: Answers) -> dict[str, object]:
+def interview_finish(payload: Answers) -> dict[str, Any]:
     """Close the interview: write the draft brief and hand back the command.
 
     Args:

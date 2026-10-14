@@ -1,5 +1,6 @@
 """Where a running SQX project is: its tasks, which one runs, how far, read from disk only."""
 
+from typing import Any
 from datetime import datetime
 
 from core.paths import WORKERS
@@ -11,7 +12,7 @@ from ui.daemon.daylog import PERCENT, PROGRESS, STARTING, log_lines, trim  # noq
 TAIL_LINES = 14
 
 
-def run_state(lines: list[str]) -> dict:
+def run_state(lines: list[str]) -> dict[str, Any]:
     """What the log says about the last project start.
 
     Args:
@@ -101,7 +102,7 @@ def gui_memory(role: str, project: str) -> dict[str, int] | None:
         return None
 
 
-def state(role: str, project: str) -> dict:
+def state(role: str, project: str) -> dict[str, Any]:
     """Everything the generation zone draws for one project of one install.
 
     Args:

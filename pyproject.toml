@@ -8,5 +8,5 @@ requires-python = ">=3.10"
 pythonVersion = "3.10"
 typeCheckingMode = "basic"
 # Packages whose error count is ratcheted (tools/ratchet.py); a package joins when its F9 migration is done.
-include = ["core", "engines", "ledger", "sqx", "perf", "mt5", "tools", "pipeline", "portfolio"]
+include = ["core", "engines", "ledger", "sqx", "perf", "mt5", "tools", "pipeline", "portfolio", "ui"]
 exclude = ["scratch", "tools/sqx-lab", "**/__pycache__"]

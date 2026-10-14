@@ -1,5 +1,6 @@
 """The routes of the Configuración SQX zone: every setting a new project is built with, and its one write."""
 
+from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -17,7 +18,7 @@ class FieldChange(BaseModel):
 
 
 @ROUTER.get("/api/sqxconfig")
-def sqxconfig() -> dict[str, object]:
+def sqxconfig() -> dict[str, Any]:
     """Every SQX setting, one section per test or topic, each value typed.
 
     Returns:
@@ -27,7 +28,7 @@ def sqxconfig() -> dict[str, object]:
 
 
 @ROUTER.post("/api/sqxconfig/value")
-def set_value(change: FieldChange) -> dict[str, object]:
+def set_value(change: FieldChange) -> dict[str, Any]:
     """Write one value, comments and every other line left alone.
 
     Args:
@@ -42,6 +43,6 @@ def set_value(change: FieldChange) -> dict[str, object]:
     try:
         if change.file in studies.FILES:
             return studywrite.set_field(change.file, change.path, change.value)
-        return write.set_field(change.file, change.path, change.value)
+        return dict(write.set_field(change.file, change.path, change.value))
     except ValueError as err:
         raise HTTPException(422, str(err)) from err

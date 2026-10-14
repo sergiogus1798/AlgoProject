@@ -47,7 +47,7 @@ def sqx(project: str, databank: str, identity: str) -> tuple[Path | None, str]:
         return None, f"SQX está escribiendo {project} en el {where[0]}: se lee cuando acabe"
     held = [f for f in find.files(where[1], project, spelled)
             if sqxfile.identity(f) == identity] if where else []
-    if held:
+    if held and where:                          # `held` is empty without `where`
         return held[0], f"{spelled} en el {where[0]}"
     copy = _exported(project, spelled, identity)
     if copy is not None:

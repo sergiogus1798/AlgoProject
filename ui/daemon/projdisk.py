@@ -1,6 +1,7 @@
 """What a project's folder on disk says: the installs, their projects, a project's tasks, databank counts, genetic settings."""
 
 import zipfile
+from typing import cast
 from functools import lru_cache
 from pathlib import Path
 from xml.etree import ElementTree
@@ -51,7 +52,7 @@ def _tasks(cfx: Path, stamp: int) -> tuple[dict, ...]:
     with zipfile.ZipFile(cfx) as z:
         root = ElementTree.fromstring(z.read("config.xml"))
         for t in root.iter("Task"):
-            settings = ElementTree.fromstring(z.read(t.get("taskXMLFile")))
+            settings = ElementTree.fromstring(z.read(cast(str, t.get("taskXMLFile"))))
             banks = {d.get("name"): d.get("value") for d in settings.iter("Databank")}
             out.append({"title": t.get("title"), "type": t.get("type"),
                         "active": t.get("active") == "true",

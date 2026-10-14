@@ -23,7 +23,7 @@ def step(n: int, what: str, argv: list[str]) -> None:
 
 def main() -> None:
     """Parse, then `sim.frompool` → `sim.run` → `decide.run` on that one table."""
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     parser.add_argument("--run", type=Path, required=True, help="funded run folder with verdict.json")
     parser.add_argument("--horizon", type=int, required=True)
     parser.add_argument("--n-paths", type=int, required=True)

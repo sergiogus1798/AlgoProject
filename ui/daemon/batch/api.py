@@ -1,5 +1,7 @@
 """The variant-batch routes: one mother's batch for the parallel coordinates, and whether it has one."""
 
+from typing import Any
+
 from fastapi import APIRouter
 
 from ui.daemon.batch import panel
@@ -24,7 +26,7 @@ def leaks(value: object) -> bool:
 
 
 @ROUTER.get("/api/batch")
-def get_batch(project: str, strategy: str) -> dict:
+def get_batch(project: str, strategy: str) -> dict[str, Any]:
     """One mother's variant batch: each variant's parameters and NetProfit in build and oos1.
 
     Args:
@@ -44,7 +46,7 @@ def get_batch(project: str, strategy: str) -> dict:
 
 
 @ROUTER.get("/api/batch/has")
-def get_has(project: str, strategy: str) -> dict:
+def get_has(project: str, strategy: str) -> dict[str, Any]:
     """Whether a mother has a batch folder at all, without opening it.
 
     Args:

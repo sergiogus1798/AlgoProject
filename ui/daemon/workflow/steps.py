@@ -1,5 +1,7 @@
 """The steps of docs/AgentPDFs/WORKFLOW.md: where the disk says each happened, its tests and its tab."""
 
+from typing import Any
+
 # One row per line of WORKFLOW.md's table, in its order (the half steps included: that file
 # rules over any other count). `doc` is the bold title of that row, word for word:
 # tools/checks.py fails when the numbers or these titles drift from the table. `title` is the
@@ -75,7 +77,7 @@ STAGE = {"6": "build", "7": "oos", "9": "crossmarket", "11": "crosstf", "13": "m
          "15": "spp", "16.5": "wfc", "19": "wfm"}
 EXTRA = {"8": ["monkey", "entryQuality"]}
 KEYS = ("n", "title", "doc", "kind", "how", "studies", "tab", "sub", "feeds")
-STEPS = [dict(zip(KEYS, row)) | ({"stage": STAGE[row[0]]} if row[0] in STAGE else {})
+STEPS: list[dict[str, Any]] = [dict(zip(KEYS, row)) | ({"stage": STAGE[row[0]]} if row[0] in STAGE else {})
          | ({"bank": "CrossTF_Input"} if row[0] == "10.5" else {})
          | {"extra": EXTRA.get(row[0], [])} for row in S]
 

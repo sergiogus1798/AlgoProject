@@ -2,6 +2,7 @@
 
 import inspect
 import re
+from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -68,7 +69,7 @@ def pair(pool: str, i: str, j: str, firm: str = "", freq: str = "monthly") -> di
             {"kind": "callout", "state": "fail", "text": f"{type(e).__name__}: {e}"}]}
 
 
-def shown(action: str, params: dict, got: dict) -> dict:
+def shown(action: str, params: dict[str, str], got: dict[str, Any]) -> dict[str, Any]:
     """What a nonce is bound to: what was asked, the command and the sentence shown."""
     return {"action": action, "params": params, "argv": got["argv"], "text": got["text"]}
 
@@ -90,7 +91,7 @@ def preflight(action: str, pool: str = "", run: str = "", plan: str = "", firm: 
 @ROUTER.post("/api/portfolios/run")
 def run_action(req: Run) -> dict[str, object]:
     """Queue the command as one Python job — after re-checking, and only against a spent nonce."""
-    got = preflight(req.action, **{k: v for k, v in req.params.items() if k in inspect.signature(preflight).parameters})
+    got: dict[str, Any] = preflight(req.action, **{k: v for k, v in req.params.items() if k in inspect.signature(preflight).parameters})
     if not got["ok"]:
         return got
     proof.ISSUED.pop(got["nonce"], None)        # the recheck's own nonce is not the owner's

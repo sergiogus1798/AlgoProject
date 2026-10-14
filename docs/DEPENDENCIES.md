@@ -242,7 +242,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `perf/store.py` | 116 | The catalogue itself: one appended row per measurement, and the only way anything reads it. | core | pandas |
 | `perf/verdict.py` | 77 | What counts as a regression. Reads the catalogue, judges it, and computes nothing itself. | — | pandas |
 | `pipeline/autopilot/batchfacts.py` | 58 | The `facts` dict a study result carries, as fact rows: one FILE per mother (`<batch>/estudios/<study>.json`) or a page. | — | numpy |
-| `pipeline/autopilot/blind.py` | 180 | Steps 17 to 20, blind: each look admitted and computed, the ledger rows of 17-19 written, then the joint reading. | core, ledger, pipeline, sqx, ui | pandas |
+| `pipeline/autopilot/blind.py` | 182 | Steps 17 to 20, blind: each look admitted and computed, the ledger rows of 17-19 written, then the joint reading. | core, ledger, pipeline, sqx, ui | pandas |
 | `pipeline/autopilot/call.py` | 104 | One command of the tail run to its end: a study's as the window builds it, or one given. | sqx, ui | — |
 | `pipeline/autopilot/closing.py` | 55 | Step 21 for every survivor, and the batch helpers step 13 shares: the panel reading, the mothers' copies, the export, the clear. | core, pipeline | pandas |
 | `pipeline/autopilot/criteria.py` | 152 | Pass, limbo or fail for each strategy of a population, from its facts and a step's rules. | — | pandas |
@@ -252,9 +252,9 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `pipeline/autopilot/judge.py` | 235 | One judging step: its facts, the criteria, the medoid cut, the verdict.csv and the cut in SQX. | core, ledger, pipeline, sqx, ui | pandas, yaml |
 | `pipeline/autopilot/kept.py` | 71 | What the funding module keeps of each strategy that passed the WFM: its oos1 floating curve and risk numbers. | core, pipeline, studies | pandas |
 | `pipeline/autopilot/neighbours.py` | 106 | Step 13's T1 batch for the autopilot: wire two WFC legs, then make → retest → export trades → measure → clear. | core, pipeline, sqx, ui | pandas |
-| `pipeline/autopilot/plan.py` | 153 | What the autopilot runs, in WORKFLOW.md's order: the window's chain without its stops at the judging steps. | core, pipeline, ui | — |
+| `pipeline/autopilot/plan.py` | 154 | What the autopilot runs, in WORKFLOW.md's order: the window's chain without its stops at the judging steps. | core, pipeline, ui | — |
 | `pipeline/autopilot/resume.py` | 115 | Bring a retired project back from the strategy store, ready for `bin/workflow.sh run` at step 13. | core, sqx | — |
-| `pipeline/autopilot/run.py` | 255 | Autopilot: one project's workflow, SQX and Python, judging and cutting at each judging step without stopping. | core, pipeline, sqx, ui | — |
+| `pipeline/autopilot/run.py` | 260 | Autopilot: one project's workflow, SQX and Python, judging and cutting at each judging step without stopping. | core, pipeline, sqx, ui | — |
 | `pipeline/autopilot/selection.py` | 96 | Who a judging step keeps and drops: the identity lookup, the fallen, the medoid cut and the siblings. | pipeline, sqx | pandas |
 | `pipeline/autopilot/survivors.py` | 79 | Who walks the tail: the strategies left in the databank the last judged step cut. | core, sqx, ui | pandas |
 | `pipeline/autopilot/tail.py` | 197 | The autopilot's plan from step 17 on: the blind block, step 20 judged, the closing steps, the finalists. | — | — |
@@ -1439,7 +1439,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/daemon/workflow/needs.py` | 75 | Which earlier steps each step needs first: the producer of its input, the judge of that input, the row before. | sqx, ui | — |
 | `ui/daemon/workflow/records.py` | 129 | The records the rail passes between its modules: the step row, the install view, the context. | — | — |
 | `ui/daemon/workflow/run.py` | 197 | The rail's run buttons: ticked tests into the runner's jobs, and the backfill of the blind steps' rows. | core, sqx, ui | pandas |
-| `ui/daemon/workflow/sources.py` | 195 | What the disk holds for one project: its install, its tasks, its study results, its template. | core, ui | — |
+| `ui/daemon/workflow/sources.py` | 194 | What the disk holds for one project: its install, its tasks, its study results, its template. | core, ui | — |
 | `ui/daemon/workflow/steps.py` | 90 | The steps of docs/AgentPDFs/WORKFLOW.md: where the disk says each happened, its tests and its tab. | — | — |
 | `ui/daemon/workflow/tests.py` | 137 | The tests of each step: which studies, their state on this project, their configuration in one line. | ui | — |
 | `ui/daemon/writes.py` | 47 | The three things the window may change: a template's status, its notes, a run's verdict. | core, sqx, ui | — |
@@ -1465,20 +1465,20 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/desktop/blocks/density.py` | 155 | A distribution with several samples: each one a density on the same bins, a toggle per sample, the shift beside. | ui | PySide6 |
 | `ui/desktop/blocks/desclist.py` | 26 | The list block: a title in bold and a short description under it, one item after another. | ui | PySide6 |
 | `ui/desktop/blocks/distribution.py` | 137 | The distribution block: the null's histogram, its band, its median and the real value marked — or several samples as densities. | ui | PySide6 |
-| `ui/desktop/blocks/fuse.py` | 58 | A partial re-run laid into the stored result it belongs to: its tagged blocks replace their twins, the rest stays. | — | — |
+| `ui/desktop/blocks/fuse.py` | 60 | A partial re-run laid into the stored result it belongs to: its tagged blocks replace their twins, the rest stays. | — | — |
 | `ui/desktop/blocks/grid.py` | 202 | The grid block: a heat map on a discrete scale, every cell labelled, θ₀ marked, the scale's key beneath. | ui | PySide6 |
 | `ui/desktop/blocks/head.py` | 46 | The top of a result: its verdict, the line saying when and under what it was computed, the stale banner. | ui | PySide6 |
 | `ui/desktop/blocks/kinds.py` | 42 | Which widget draws which block kind, and the one call every view makes to draw a block. | ui | PySide6 |
 | `ui/desktop/blocks/lines.py` | 132 | The lines block: several series over one x axis, each in the colour of its role. | ui | PySide6 |
 | `ui/desktop/blocks/markets.py` | 147 | Grids that differ only in their market, laid side by side (2-3 chosen), with the consensus grid under them. | core, ui | PySide6 |
 | `ui/desktop/blocks/pick.py` | 80 | Which stored blocks the chosen selector values pick, and which block sits beside which: filters, never recomputes. | ui | — |
-| `ui/desktop/blocks/result.py` | 250 | The whole of one study result, or two side by side: verdict, staleness, tabs, warnings, glossary. | ui | PySide6 |
-| `ui/desktop/blocks/scatter.py` | 112 | The scatter block: points by group, the quadrants through zero and the fitted line if any. | ui | PySide6 |
-| `ui/desktop/blocks/screen.py` | 39 | The result as it stands on screen: each tab reduced to the blocks drawn, its choices written in its note. | ui | — |
+| `ui/desktop/blocks/result.py` | 258 | The whole of one study result, or two side by side: verdict, staleness, tabs, warnings, glossary. | ui | PySide6 |
+| `ui/desktop/blocks/scatter.py` | 114 | The scatter block: points by group, the quadrants through zero and the fitted line if any. | ui | PySide6 |
+| `ui/desktop/blocks/screen.py` | 41 | The result as it stands on screen: each tab reduced to the blocks drawn, its choices written in its note. | ui | — |
 | `ui/desktop/blocks/shade.py` | 34 | The sign shade of a histogram: faint red behind the negative side of the x axis, faint green behind the positive. | ui | PySide6 |
 | `ui/desktop/blocks/states.py` | 55 | Every colour a block is painted in: the contract states, the series and the heat scales. | ui | — |
-| `ui/desktop/blocks/table.py` | 223 | The table block: sortable, numbers printed the window's way, every cell's full text on hover. | core, ui | PySide6 |
-| `ui/desktop/blocks/tabpage.py` | 139 | One contract tab, in one column or beside its counterpart: its note, its selectors, its blocks. | ui | PySide6 |
+| `ui/desktop/blocks/table.py` | 226 | The table block: sortable, numbers printed the window's way, every cell's full text on hover. | core, ui | PySide6 |
+| `ui/desktop/blocks/tabpage.py` | 145 | One contract tab, in one column or beside its counterpart: its note, its selectors, its blocks. | ui | PySide6 |
 | `ui/desktop/blocks/tools.py` | 80 | Above a result: the report of what is on screen, and the partial re-runs kept beside the stored result. | ui | PySide6, httpx |
 | `ui/desktop/blocks/verdict.py` | 67 | The verdict block: the label in its state's colour, never alone, with its meaning and its parts. | ui | PySide6 |
 | `ui/desktop/blocktable.py` | 92 | The table of blocks under one palette: what each one is, and the override the reader may set. | — | PySide6 |
@@ -1517,29 +1517,29 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/desktop/mt5bridge/zone.py` | 248 | MT5 BRIDGE › Verificar: one strategy in SQX at each prop firm's conditions against its MT5 backtest. | ui | PySide6 |
 | `ui/desktop/names.py` | 82 | The one table of family names the window shows: every stored spelling in, one English name out. | — | — |
 | `ui/desktop/nav.py` | 128 | The sidebar: every zone in its group, one checkable button each. | ui | PySide6 |
-| `ui/desktop/ops/jobsbar.py` | 250 | The status-bar strip of jobs: what runs, a 0-100 % bar for each, what waits, and a cancel. | ui | PySide6, httpx |
-| `ui/desktop/ops/ledger.py` | 235 | «Registro de búsquedas»: one study's searches, its funnel and the history it has already spent. | ui | PySide6, httpx |
+| `ui/desktop/ops/jobsbar.py` | 252 | The status-bar strip of jobs: what runs, a 0-100 % bar for each, what waits, and a cancel. | ui | PySide6, httpx |
+| `ui/desktop/ops/ledger.py` | 243 | «Registro de búsquedas»: one study's searches, its funnel and the history it has already spent. | ui | PySide6, httpx |
 | `ui/desktop/ops/progressbar.py` | 35 | One 0-100 % bar in the terminal look, shared by the jobs strip and «En marcha». | ui | PySide6 |
 | `ui/desktop/ops/pulse.py` | 160 | The custodian's pulse inside «En marcha»: the line of a long run, its figures explained, the last readings. | ui | PySide6 |
 | `ui/desktop/ops/running.py` | 209 | «En marcha»: the custodian's pulse and one project's tasks — the same project, one screen. | ui | PySide6 |
-| `ui/desktop/ops/tasks.py` | 246 | One SQX project task by task, read from its install: the lower half of «En marcha». | ui | PySide6 |
+| `ui/desktop/ops/tasks.py` | 250 | One SQX project task by task, read from its install: the lower half of «En marcha». | ui | PySide6 |
 | `ui/desktop/palettebar.py` | 110 | The palette view's top bar: which palette is open, what it is, and the library actions. | ui | PySide6 |
 | `ui/desktop/palettes.py` | 233 | The palette view: the library of block selections, and what the open one lets the builder draw. | ui | PySide6 |
 | `ui/desktop/palettetext.py` | 36 | The line under the palette bar: what the open palette is, and whether it does anything. | ui | — |
 | `ui/desktop/portfolios/__init__.py` | 1 | PORTFOLIOS: the archived strategies, and «Importar» opening one as the Estrategia page shows it. | — | — |
-| `ui/desktop/portfolios/board.py` | 157 | PORTFOLIOS: a rail of modules, each with its strip and result tabs, over one databank that feeds them all. | ui | PySide6 |
+| `ui/desktop/portfolios/board.py` | 160 | PORTFOLIOS: a rail of modules, each with its strip and result tabs, over one databank that feeds them all. | ui | PySide6 |
 | `ui/desktop/portfolios/calc.py` | 81 | «Calcular»: ask the daemon whether the command may start, confirm when it must, queue it, follow it. | ui | PySide6 |
-| `ui/desktop/portfolios/campaign.py` | 162 | PORTFOLIOS › Campaña: the workflows the campaign saved, each one's funnel, time per phase and strategies. | ui | PySide6 |
-| `ui/desktop/portfolios/databank.py` | 189 | The databank at the bottom of PORTFOLIOS: «Estrategias» to tick and «Carteras» to choose — one selection for every module. | ui | PySide6 |
+| `ui/desktop/portfolios/campaign.py` | 163 | PORTFOLIOS › Campaña: the workflows the campaign saved, each one's funnel, time per phase and strategies. | ui | PySide6 |
+| `ui/desktop/portfolios/databank.py` | 192 | The databank at the bottom of PORTFOLIOS: «Estrategias» to tick and «Carteras» to choose — one selection for every module. | ui | PySide6 |
 | `ui/desktop/portfolios/detail.py` | 63 | What one archived version holds, in words: its studies by databank, what it left out, its provenance. | ui | — |
-| `ui/desktop/portfolios/imported.py` | 97 | The Estrategia page of an archived version: F4's ficha, every read on `source=archive`, nothing run. | ui | — |
-| `ui/desktop/portfolios/matrix.py` | 112 | The correlation matrix: one cell per pair, coloured in discrete steps against the threshold in force. | ui | PySide6 |
-| `ui/desktop/portfolios/modulepage.py` | 191 | One rail module of PORTFOLIOS: its settings strip with «Calcular», and below it the result's tabs. | ui | PySide6 |
-| `ui/desktop/portfolios/preview.py` | 92 | PORTFOLIOS alone in a window, «Importar» opening the archived ficha beside it — until the sidebar wires it. | core, ui | PySide6 |
+| `ui/desktop/portfolios/imported.py` | 99 | The Estrategia page of an archived version: F4's ficha, every read on `source=archive`, nothing run. | ui | — |
+| `ui/desktop/portfolios/matrix.py` | 113 | The correlation matrix: one cell per pair, coloured in discrete steps against the threshold in force. | ui | PySide6 |
+| `ui/desktop/portfolios/modulepage.py` | 203 | One rail module of PORTFOLIOS: its settings strip with «Calcular», and below it the result's tabs. | ui | PySide6 |
+| `ui/desktop/portfolios/preview.py` | 93 | PORTFOLIOS alone in a window, «Importar» opening the archived ficha beside it — until the sidebar wires it. | core, ui | PySide6 |
 | `ui/desktop/portfolios/series.py` | 43 | The bar that walks a saved workflow's strategies one by one: «anterior», where you are, «siguiente». | ui | PySide6 |
 | `ui/desktop/portfolios/strips.py` | 63 | What each rail module of PORTFOLIOS puts in its settings strip: one line of what it is, selectors, launchers. | — | — |
-| `ui/desktop/portfolios/studies.py` | 155 | Below the imported ficha: the backtest sheet and every study the version froze, each read from the archive. | ui | PySide6 |
-| `ui/desktop/portfolios/zone.py` | 193 | PORTFOLIOS: every archived strategy, its versions, and «Importar» — only from the archive for now. | ui | PySide6 |
+| `ui/desktop/portfolios/studies.py` | 156 | Below the imported ficha: the backtest sheet and every study the version froze, each read from the archive. | ui | PySide6 |
+| `ui/desktop/portfolios/zone.py` | 194 | PORTFOLIOS: every archived strategy, its versions, and «Importar» — only from the archive for now. | ui | PySide6 |
 | `ui/desktop/projectflow.py` | 150 | Proyectos → Proyecto → Estrategia in the shell: the Estrategia zone (a live ficha, or an | ui | PySide6, httpx |
 | `ui/desktop/research/__init__.py` | 1 | BIBLIOTECA › Investigar: the map, the memory, the director and its proposal. | — | — |
 | `ui/desktop/research/directview.py` | 65 | «Tablero»: the board the director reads, one row per cell-family. No launcher: the director has none. | ui | PySide6 |
@@ -1558,19 +1558,19 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/desktop/sqxconfig/section.py` | 183 | One test or topic of the SQX settings: a header that folds, the file's own words, one row per value. | ui | PySide6 |
 | `ui/desktop/sqxconfig/zone.py` | 172 | Configuración SQX: every setting a new project is built and tested with, one section per test. | ui | PySide6, httpx |
 | `ui/desktop/studypage/__init__.py` | 1 | The study page: one study of one strategy or of the population, its drawer, its runs and its history. | — | — |
-| `ui/desktop/studypage/compare.py` | 90 | The two results a comparison puts side by side: two runs of one strategy, or two strategies. | ui | — |
-| `ui/desktop/studypage/dots.py` | 96 | The state dot on each study tab, and where the page reads those states from. | ui | PySide6 |
+| `ui/desktop/studypage/compare.py` | 92 | The two results a comparison puts side by side: two runs of one strategy, or two strategies. | ui | — |
+| `ui/desktop/studypage/dots.py` | 98 | The state dot on each study tab, and where the page reads those states from. | ui | PySide6 |
 | `ui/desktop/studypage/drawer.py` | 237 | The configuration drawer: every knob of a study, its sentence, and the hash the next run would sign. | ui | PySide6 |
-| `ui/desktop/studypage/ficha.py` | 178 | The «Ficha» tab of the strategy page: IS/OOS side by side — P&L, drawdown, years. | ui | PySide6 |
+| `ui/desktop/studypage/ficha.py` | 190 | The «Ficha» tab of the strategy page: IS/OOS side by side — P&L, drawdown, years. | ui | PySide6 |
 | `ui/desktop/studypage/history.py` | 127 | The run history of one study here, and the two ways to put results side by side. | ui | PySide6 |
-| `ui/desktop/studypage/net.py` | 38 | The study page's calls to the daemon, with a daemon that does not answer turned into a sentence. | ui | httpx |
+| `ui/desktop/studypage/net.py` | 40 | The study page's calls to the daemon, with a daemon that does not answer turned into a sentence. | ui | httpx |
 | `ui/desktop/studypage/notes.py` | 133 | What the page says about a study around its result: its role, where it was looked for, what was passed over. | ui | PySide6 |
 | `ui/desktop/studypage/offer.py` | 136 | Tests with no result anywhere in the project: their tabs greyed or hidden, the reason said, and a jump to where they run. | ui | PySide6 |
-| `ui/desktop/studypage/page.py` | 250 | The generic study page: family tabs, study tabs with their state dots, the result, the drawer, the runs. | ui | PySide6 |
-| `ui/desktop/studypage/picker.py` | 131 | The «Estrategia» dropdown of the study page: another strategy of the databank, same study. | ui | PySide6 |
+| `ui/desktop/studypage/page.py` | 255 | The generic study page: family tabs, study tabs with their state dots, the result, the drawer, the runs. | ui | PySide6 |
+| `ui/desktop/studypage/picker.py` | 133 | The «Estrategia» dropdown of the study page: another strategy of the databank, same study. | ui | PySide6 |
 | `ui/desktop/studypage/runbar.py` | 187 | The run bar: this strategy, the whole population, one sub-test alone — one job at a time, watched. | ui | PySide6 |
 | `ui/desktop/studypage/sidepanel.py` | 64 | The buttons that open the study's side panel — configuración, historial, lote — folded by default. | — | PySide6 |
-| `ui/desktop/studypage/views.py` | 103 | The study page of one strategy, with its Ficha as the first tab — what the Estrategia zone embeds. | ui | PySide6 |
+| `ui/desktop/studypage/views.py` | 108 | The study page of one strategy, with its Ficha as the first tab — what the Estrategia zone embeds. | ui | PySide6 |
 | `ui/desktop/studypage/wfclote.py` | 28 | «Lote» beside the drawer: the mother's variant batch, only while the WFC study is open. | ui | — |
 | `ui/desktop/theme.py` | 231 | The one design system: the palette every view reads, the stylesheet it becomes, and the two | ui | PySide6 |
 | `ui/desktop/tradegallery/__init__.py` | 5 | The trade gallery of the Ficha: five trades by P&L quantile, or five at random with the seed shown. | ui | — |

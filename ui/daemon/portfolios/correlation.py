@@ -1,5 +1,7 @@
 """«Correlación»: a pool's pair measures as a matrix judged against the threshold, and its admissible graph."""
 
+from typing import Any, cast
+
 import pandas as pd
 
 from portfolio.common.construct.inputs import pool as pool_mod
@@ -23,14 +25,14 @@ MEASURES = (
     ("rolling_spearman_recent", "rolling_recent", "Móvil 60 m · Spearman · reciente",
      "La peor de Spearman en las ventanas que acaban en los últimos 36 meses de build."),
 )
-FILTERS = {"overlap": "solape < 24 meses", "undefined": "coeficiente indefinido"}
+FILTERS: dict[str, str] = {"overlap": "solape < 24 meses", "undefined": "coeficiente indefinido"}
 STEPS = (("pass", "baja: hasta la mitad del umbral"), ("watch", "admisible, cerca del umbral"),
          ("fail", "pasa del umbral: la pareja se rechaza"))
 NO_SCREEN = ("Este universo se construyó antes de que el comando guardase su criba: no sé con qué "
              "umbrales se juzgó ni qué parejas pasan. Pulsa «Calcular parejas» y aparece.")
 
 
-def universe(pool: str, firm: str) -> tuple[shelf.Path | None, dict | None]:
+def universe(pool: str, firm: str) -> tuple[shelf.Path | None, dict[str, Any] | None]:
     """The pool's newest universe folder and its `screen.json` (None when it has none)."""
     found = shelf.universes(pool_mod.read(pool, firm or None)["hash"])
     if not found:
@@ -47,7 +49,7 @@ def state(value: float | None, threshold: float | None, two_sided: bool) -> str 
     return "fail" if size > threshold else "watch" if size > threshold / 2 else "pass"
 
 
-def read(pool: str = "", firm: str = "", freq: str = "monthly", measure: str = "pearson", **_: str) -> dict:
+def read(pool: str = "", firm: str = "", freq: str = "monthly", measure: str = "pearson", **_: str) -> dict[str, Any]:
     """The matrix of one measure and the admissible graph of the pool's newest universe."""
     if not pool:
         return parts.empty("No hay ningún pool declarado.", "marca estrategias abajo, en "
@@ -64,7 +66,7 @@ def read(pool: str = "", firm: str = "", freq: str = "monthly", measure: str = "
     ids = (screen or {}).get("identities") or sorted(set(pairs["i"]) | set(pairs["j"]))
     threshold = screen["thresholds"][limit] if screen else None
     two_sided = bool(screen) and screen["sign"] == "abs" and key not in screen["one_sided"]
-    cell = {(r.i, r.j): r.value for r in pairs[pairs["measure"] == key].itertuples()}
+    cell = {(r.i, r.j): r.value for r in cast(Any, pairs[pairs["measure"] == key]).itertuples()}
     values = [[None if a == b else parts.clean(float(cell.get((a, b), cell.get((b, a), float("nan")))))
                for b in ids] for a in ids]
     matrix = {"ids": ids, "labels": [shelf.label(i, known) for i in ids], "values": values,
@@ -78,13 +80,13 @@ def read(pool: str = "", firm: str = "", freq: str = "monthly", measure: str = "
             "empty": None if screen else NO_SCREEN}
 
 
-def graph(screen: dict | None, known: dict) -> dict:
+def graph(screen: dict[str, Any] | None, known: dict[str, dict]) -> parts.TabBlock:
     """The «Parejas admisibles» tab: every pair, whether it clears the six filters, and why not."""
     if not screen:
         return parts.tab("Parejas admisibles", parts.callout(NO_SCREEN, "watch"))
     why: dict[tuple, list[str]] = {}
     for f in screen["failing"]:
-        why.setdefault((f["i"], f["j"]), []).append(FILTERS.get(f["filter"], f["filter"]))
+        why.setdefault((f["i"], f["j"]), []).append(FILTERS[f["filter"]] if f["filter"] in FILTERS else f["filter"])
     ids, edges = screen["identities"], {tuple(e) for e in screen["edges"]}
     rows, states = [], []
     for a, i in enumerate(ids):
@@ -108,25 +110,28 @@ def graph(screen: dict | None, known: dict) -> dict:
                                  "ser cartera.", states=states), limits)
 
 
-def pair(pool: str, i: str, j: str, firm: str = "", freq: str = "monthly") -> dict:
+def pair(pool: str, i: str, j: str, firm: str = "", freq: str = "monthly") -> dict[str, Any]:
     """One cell opened: the two strategies' P&L per period in build, and every measure of the pair."""
     folder, screen = universe(pool, firm)
+    assert folder is not None       # a pair is only opened from a built universe
     known, manifest = shelf.names(), shelf.load(folder / "manifest.json")
     lo, hi = (pd.Timestamp(d) for d in manifest["calendar"]["build"])
+    frame: pd.DataFrame
     if freq == "monthly":
         frame = pd.read_parquet(folder / "monthly.parquet", columns=[i, j])
-        frame = frame[(frame.index.to_timestamp() >= lo) & (frame.index.to_timestamp() <= hi)]
+        stamps = cast(pd.PeriodIndex, frame.index).to_timestamp()
+        frame = cast(pd.DataFrame, frame[(stamps >= lo) & (stamps <= hi)])
     else:
         frame = pd.read_parquet(folder / "daily.parquet", columns=[i, j]).loc[lo:hi]
     frame = frame.dropna(how="all")
     series = [{"label": shelf.label(k, known), "role": "sim",
                "values": [parts.clean(float(v)) for v in frame[k]]} for k in (i, j)]
     pairs = pd.read_parquet(folder / "pairs.parquet")
-    mine = pairs[((pairs["i"] == i) & (pairs["j"] == j)) | ((pairs["i"] == j) & (pairs["j"] == i))]
+    mine = cast(pd.DataFrame, pairs[((pairs["i"] == i) & (pairs["j"] == j)) | ((pairs["i"] == j) & (pairs["j"] == i))])
     rows, states = [], []
     for key, limit, label, _ in MEASURES:
         for f in (("monthly", "daily") if "{f}" in key else ("",)):
-            hit = mine[mine["measure"] == key.format(f=f)]
+            hit = cast(pd.DataFrame, mine[mine["measure"] == key.format(f=f)])
             if hit.empty:
                 continue
             value = float(hit["value"].iloc[0])

@@ -15,7 +15,7 @@ from core.paths import ROOT
 
 def main() -> None:
     """Check the asset (rule 5), then build and install every workflow task."""
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("name")
     ap.add_argument("--template", required=True, help="la plantilla de la librería, por nombre")
     ap.add_argument("--symbol", required=True)

@@ -138,7 +138,7 @@ def orphans(own: set[int]) -> list[dict]:
             continue
         try:
             m = json.loads(f.read_text(encoding="utf-8"))
-            m["pid"], m["project"], m["since"], m["role"]
+            m["pid"], m["project"], m["since"], m["role"]  # pyright: ignore[reportUnusedExpression]  # raises KeyError on a corrupt marker
         except (ValueError, KeyError):      # half-written or corrupt: nothing to say about it
             continue
         if m["pid"] in own:

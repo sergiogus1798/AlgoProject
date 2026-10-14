@@ -4,6 +4,7 @@ This file holds the app, its gate (`gate.py`) and `/api/health`; every other rou
 `routers.py` (the library's own in `templates.py`).
 """
 
+from typing import Any
 import os
 
 from fastapi import FastAPI
@@ -22,7 +23,7 @@ for router in ROUTERS:
 
 
 @APP.get("/api/health")
-def health() -> dict[str, object]:
+def health() -> dict[str, Any]:
     """Whether the daemon is up and what it is serving.
 
     Returns:

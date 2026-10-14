@@ -1,6 +1,7 @@
 """What each «Calcular» of the zone launches: its command, what it still lacks, and the sentence to confirm."""
 
 import re
+from typing import Any
 
 from portfolio.common.construct.inputs import config
 from portfolio.funded.sim import inputs as bank_inputs, table as bank_table
@@ -40,7 +41,7 @@ def flags(overrides: list[str]) -> list[str]:
     return [x for s in overrides for x in ("--set", s)]
 
 
-def plan(action: str, p: dict) -> dict:
+def plan(action: str, p: dict[str, str]) -> dict[str, Any]:
     """Whether one «Calcular» may start now.
 
     Args:
@@ -68,7 +69,7 @@ def plan(action: str, p: dict) -> dict:
     wants = {"verdict": "real", "weights": "real", "stage_b": "funded", "bank": "funded"}.get(action)
     if wants and (row is None or row["kind"] != wants):
         why.append("elige abajo, en «Carteras», una run " + ("del camino real" if wants == "real" else "de fondeo"))
-    elif wants:
+    elif wants and row is not None:
         pool = row["pool"]
     if not pool:
         why.append("elige un pool (abajo, en «Carteras», o declara uno desde «Estrategias»)")
@@ -79,6 +80,7 @@ def plan(action: str, p: dict) -> dict:
     firm = flags([]) + (["--firm", p["firm"]] if p.get("firm") else [])
     folder = str(shelf.folder("runs", run)) if wants else ""
     if action == "bank":
+        assert row is not None      # `wants` is set for the bank: a missing run returned above
         why += lacks_bank(p, over, row)
         argv = ["-m", "ui.daemon.portfolios.bankjob", "--run", folder, "--horizon", p.get("horizon", ""),
                 "--n-paths", p.get("n_paths", ""), "--edge-from", p.get("edge_from", ""), *flags(over)]
@@ -97,13 +99,14 @@ def plan(action: str, p: dict) -> dict:
         if action != "universe":
             argv += ["--seed", str(SEED)]
         if action in ("verdict", "stage_b"):
+            assert row is not None      # `wants` is set for both: a missing run returned above
             confirm, text = True, confirmation(action, pool, row, cfg)
     return {"ok": not why, "reasons": why, "text": text, "confirm": confirm, "argv": argv,
             "about": {"project": pool, "databank": run or p.get("plan", "") or "pool", "strategy": "",
                       "study": TITLES[action]}}
 
 
-def lacks_bank(p: dict, over: list[str], row: dict) -> list[str]:
+def lacks_bank(p: dict[str, str], over: list[str], row: shelf.RunRow) -> list[str]:
     """What «Calcular la caja» still lacks: the run's verdict, the horizon, the edge's segments, the owner's inputs."""
     why = [] if row["stage_b"] else ["esta run no tiene etapa B ni veredicto: la cartera fondeada sale de ahí"]
     if not p.get("horizon", "").isdigit():
@@ -116,7 +119,7 @@ def lacks_bank(p: dict, over: list[str], row: dict) -> list[str]:
     return why + [f"falta {line}" for line in bank_inputs.refuse(cfg) + bank_table.variants(cfg)[1]]
 
 
-def confirmation(action: str, pool: str, row: dict, cfg: dict) -> str:
+def confirmation(action: str, pool: str, row: shelf.RunRow, cfg: dict[str, Any]) -> str:
     """The sentence the owner reads before a launcher that can open oos2."""
     who = f"la cartera de la run «{row['id']}» (K = {row['k']}) del pool «{pool}»"
     once = construct.spent(pool, row["members"]) or ONCE.format(pool=pool)

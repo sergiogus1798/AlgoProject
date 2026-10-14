@@ -1,6 +1,7 @@
 """The `source=archive` side of every Ficha route: an archived version read back, nothing computed."""
 
 from pathlib import Path
+from typing import Any, TypedDict
 
 import pandas as pd
 
@@ -11,7 +12,7 @@ from ui.daemon.tearsheet.harvest import TRADES
 SOURCES = ("live", "archive")
 
 
-def bad_source(source: str) -> dict | None:
+def bad_source(source: str) -> dict[str, str] | None:
     """The refusal for a `source` other than live or archive, or None."""
     return None if source in SOURCES else {"error": f"Fuente «{source}» no válida: live o archive."}
 
@@ -61,13 +62,13 @@ def harvest_folder(identity: str, version: str = "") -> Path | str:
     return got if isinstance(got, str) else Path(got["folder"]) / "harvest"
 
 
-def _bank(shelf: dict, databank: str) -> dict:
+def _bank(shelf: dict, databank: str) -> dict[str, Any]:
     """One databank's entries of an archived shelf, whichever spelling was asked."""
     return next((v for k, v in shelf.items()
                  if k.replace(" ", "_") == databank.replace(" ", "_")), {})
 
 
-def result(identity: str, databank: str, study: str, strategy: str, version: str = "") -> dict:
+def result(identity: str, databank: str, study: str, strategy: str, version: str = "") -> dict[str, Any]:
     """`/api/result` answered from the archive: the result archived for this study.
 
     Args:
@@ -90,7 +91,14 @@ def result(identity: str, databank: str, study: str, strategy: str, version: str
     return held
 
 
-def history(identity: str, databank: str, study: str, strategy: str, version: str = "") -> dict:
+class History(TypedDict):
+    """The single run an archive froze, in the live history shape; `skipped` is always empty."""
+
+    runs: list[dict]
+    skipped: list[str]
+
+
+def history(identity: str, databank: str, study: str, strategy: str, version: str = "") -> History:
     """`/api/history` from the archive: the single run it froze, in the live row shape."""
     held = result(identity, databank, study, strategy, version)
     if "error" in held or held["result"] is None:
@@ -102,7 +110,7 @@ def history(identity: str, databank: str, study: str, strategy: str, version: st
                       "label": said.get("label"), "stale": meta["stale"]}], "skipped": []}
 
 
-def matrix(identity: str, databank: str, version: str = "") -> dict:
+def matrix(identity: str, databank: str, version: str = "") -> dict[str, Any]:
     """`/api/matrix` from the archive: this identity's row only, as it stood that day."""
     got = load(identity, version)
     if isinstance(got, str):

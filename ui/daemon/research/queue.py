@@ -12,6 +12,7 @@ import sys
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from studies.research.board import proposal, store
 from ui.daemon.research import steps
@@ -27,12 +28,12 @@ def path(proposal_id: str) -> Path:
     return top / f"{proposal_id}.json"
 
 
-def project_name(p: dict, template: str) -> str:
+def project_name(p: dict[str, Any], template: str) -> str:
     """`Research_<SYMBOL>_<template>_<TF>`, the name `/workflow-start` gives a run."""
     return f"{PREFIX}{p['cell']['symbol']}_{template}_{p['cell']['timeframe']}"
 
 
-def initial(p: dict) -> dict:
+def initial(p: dict[str, Any]) -> dict[str, Any]:
     """The queue before anything ran: launchable ideas wait, the rest say why they will not go."""
     ideas = []
     for i in p["ideas"]:
@@ -44,8 +45,8 @@ def initial(p: dict) -> dict:
             "started": datetime.now().isoformat(timespec="seconds"), "finished": ""}
 
 
-def run(p: dict, runners: dict[str, Callable[[dict], None]],
-        save: Callable[[dict], None]) -> dict:
+def run(p: dict[str, Any], runners: dict[str, Callable[[dict[str, Any]], None]],
+        save: Callable[[dict[str, Any]], object]) -> dict[str, Any]:
     """Take every launchable idea through the five steps, in the proposal's order.
 
     An idea whose template or palette step comes back with a question (`steps.Question`, hard
@@ -96,7 +97,7 @@ def run(p: dict, runners: dict[str, Callable[[dict], None]],
 
 def main() -> None:
     """Run a proposal's queue for real; a SIGTERM ends the running step's child first."""
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--proposal", required=True)
     a = ap.parse_args()
     signal.signal(signal.SIGTERM, steps.terminate)

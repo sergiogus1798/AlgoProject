@@ -1,6 +1,7 @@
 """The Ficha of one strategy as a contract result: tabs «IS» and «OOS», each computed on its own."""
 
 from datetime import datetime
+from typing import Any
 
 import pandas as pd
 
@@ -18,7 +19,7 @@ def _days(index: pd.Index) -> list[str]:
     return [f"{d:%Y-%m-%d}" for d in index]
 
 
-def _pnl(sample: str, equity: pd.Series, trades: pd.DataFrame, top: float) -> dict:
+def _pnl(sample: str, equity: pd.Series, trades: pd.DataFrame, top: float) -> dict[str, Any]:
     """«P&L acumulado»: SQX's curve, dashed without its best `top` %."""
     got = pnl.curves(equity, trades, top)
     ink = INK[sample]
@@ -33,7 +34,7 @@ def _pnl(sample: str, equity: pd.Series, trades: pd.DataFrame, top: float) -> di
             "x": _days(got["sqx"].index), "series": series, "note": note}
 
 
-def _drawdown(sample: str, equity: pd.Series, trades: pd.DataFrame, unit: str) -> dict:
+def _drawdown(sample: str, equity: pd.Series, trades: pd.DataFrame, unit: str) -> dict[str, Any]:
     """«Drawdown»: the distance of SQX's daily curve below its running peak, in % or in $."""
     capital = tradestats.capital(trades)
     money, pct = drawdowns.underwater(equity, capital)
@@ -48,7 +49,7 @@ def _drawdown(sample: str, equity: pd.Series, trades: pd.DataFrame, unit: str) -
                     f"Máximo: {shown.min():.2f} {unit} el {worst:%Y-%m-%d}."}
 
 
-def _years(sample: str, equity: pd.Series) -> dict:
+def _years(sample: str, equity: pd.Series) -> dict[str, Any]:
     """«P&L por año»: one column per calendar year of SQX's daily curve."""
     years = months.yearly(months.monthly(equity))
     return {"kind": "bars", "title": "P&L por año", "unit": "$", "reference": None,
@@ -59,7 +60,7 @@ def _years(sample: str, equity: pd.Series) -> dict:
                     "dinero; el primero y el último pueden ser años parciales."}
 
 
-def tab(sample: str, equity: pd.Series, trades: pd.DataFrame, day: str, top: float, dd: str) -> dict:
+def tab(sample: str, equity: pd.Series, trades: pd.DataFrame, day: str, top: float, dd: str) -> dict[str, Any]:
     """One sample's tab.
 
     Args:
@@ -82,7 +83,7 @@ def tab(sample: str, equity: pd.Series, trades: pd.DataFrame, day: str, top: flo
     return result.tab(sample, SAMPLE[sample], out, note=note)
 
 
-def build(data: dict, top: float = 0.0, dd: str = "%") -> dict:
+def build(data: dict, top: float = 0.0, dd: str = "%") -> dict[str, Any]:
     """The whole Ficha of one strategy.
 
     Args:

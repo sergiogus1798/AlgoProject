@@ -1,5 +1,6 @@
 """What the window needs to draw the palette library, and the four writes it may do."""
 
+from typing import Any
 from functools import lru_cache
 
 from core.paths import PALETTES, TAXONOMY
@@ -17,14 +18,14 @@ FAMILY = {"breakout": "breakout", "meanReversion": "mean_reversion", "trendFollo
 WIRE = ("use", "weight", "why")
 
 
-def state() -> dict:
+def state() -> dict[str, Any]:
     """Everything the palette view draws, in one round trip; re-read only when a file changed."""
     files = (TAXONOMY, *sorted(PALETTES.glob("*.yaml")))
     return _state(tuple((f.name, f.stat().st_mtime_ns) for f in files))
 
 
 @lru_cache(maxsize=1)
-def _state(stamp: tuple) -> dict:
+def _state(stamp: tuple) -> dict[str, Any]:
     """The palette view's payload, parsed once per `stamp` (the taxonomy's and each palette's mtime).
 
     Returns:
@@ -43,7 +44,7 @@ def _state(stamp: tuple) -> dict:
             "unlabelled_policies": list(palette.UNLABELLED)}
 
 
-def resolved(p: dict) -> dict:
+def resolved(p: dict) -> dict[str, Any]:
     """One palette against the taxonomy on disk.
 
     Args:
@@ -56,7 +57,7 @@ def resolved(p: dict) -> dict:
 
 
 def save(name: str, unlabelled: str, overrides: dict[str, int], label: str,
-         note: str) -> dict:
+         note: str) -> dict[str, Any]:
     """Write one palette and hand back what it now resolves to.
 
     Args:
@@ -78,7 +79,7 @@ def save(name: str, unlabelled: str, overrides: dict[str, int], label: str,
     return {"palette": p, "summary": palette.summary(resolved(p)), "path": str(where)}
 
 
-def create(name: str, label: str, family: str, source: str | None) -> dict:
+def create(name: str, label: str, family: str, source: str | None) -> dict[str, Any]:
     """Add a palette to the library, empty or cloned.
 
     Args:
@@ -94,7 +95,7 @@ def create(name: str, label: str, family: str, source: str | None) -> dict:
     return {"palette": p, "summary": palette.summary(resolved(p))}
 
 
-def remove(name: str) -> dict:
+def remove(name: str) -> dict[str, Any]:
     """Take a palette out of the library.
 
     Args:

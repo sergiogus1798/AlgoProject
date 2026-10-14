@@ -49,7 +49,7 @@ def skipped() -> set[str]:
     return {wfc["input"], *(t["databank"] for t in wfc["tasks"])}
 
 
-def banks(top: object, only: str | None = None) -> list[tuple[str, str]]:
+def banks(top: Path, only: str | None = None) -> list[tuple[str, str]]:
     """(project, databank) of every custom project on the install with strategies on disk —
     or of `only` — but the variant batches' (`skipped`)."""
     root, off = top / "user" / "projects", skipped()
@@ -202,7 +202,7 @@ def sign(top: Path, ran: str | None = None, names: set[str] | None = None) -> No
 def main() -> None:
     """Export after a stop; `ALGO_NO_EXPORT=1` skips it (a cancel that must end fast). Exit 1
     when a piece failed."""
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--role", required=True, help="el install que se acaba de parar")
     ap.add_argument("--live", action="store_true",
                     help="sesión GUI arriba con sus databanks recién sincronizados (sqx.projects.live)")

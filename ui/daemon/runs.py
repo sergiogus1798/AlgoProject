@@ -1,5 +1,6 @@
 """What running one analysis module on one strategy means: the command, given what exists on disk."""
 
+from typing import Any
 from pathlib import Path
 
 from core import assetdata
@@ -11,7 +12,7 @@ from ui.daemon.runner import rootseed, where
 # a module whose inputs are not there answers with the reason instead of failing later.
 
 
-def context(project: str, databank: str, strategy: str, asset: str) -> dict:
+def context(project: str, databank: str, strategy: str, asset: str) -> dict[str, Any]:
     """Everything a run may need, found once.
 
     Args:
@@ -78,8 +79,8 @@ def gate(c: dict) -> list[str] | str:
 
 def monte_carlo(c: dict) -> list[str] | str:
     """Trade-level Monte Carlo over the databank's newest trades export."""
-    if own_trades(c):
-        return own_trades(c)
+    if (bad := own_trades(c)):
+        return bad
     return ["-m", "portfolio.common.monteCarlo.report", "--project", c["project"], "--databank",
             c["databank"], "--asset", c["asset"], "--day", c["export"],
             "--seed", str(rootseed.root(c["project"], c["databank"]))]
@@ -87,8 +88,8 @@ def monte_carlo(c: dict) -> list[str] | str:
 
 def nulls(c: dict) -> list[str] | str:
     """The entry-timing null of this one strategy."""
-    if own_trades(c):
-        return own_trades(c)
+    if (bad := own_trades(c)):
+        return bad
     frame = where.export_timeframe(Path(c["trades"]).parent)
     if not frame:       # never the report's M30 default: a wrong grid prices every monkey wrong
         return NO_TF
@@ -99,8 +100,8 @@ def nulls(c: dict) -> list[str] | str:
 
 def exposure(c: dict) -> list[str] | str:
     """Step 21: market time against buy and hold, this strategy only."""
-    if own_trades(c):
-        return own_trades(c)
+    if (bad := own_trades(c)):
+        return bad
     return ["-m", "studies.closing.exposure.report", "--project", c["project"], "--databank",
             c["databank"], "--feed", c["feed"], "--symbol", c["asset"], "--strategy",
             c["strategy"]]
@@ -108,8 +109,8 @@ def exposure(c: dict) -> list[str] | str:
 
 def entryquality(c: dict) -> list[str] | str:
     """The entry alone, against random entries at the same hours; prints, writes nothing."""
-    if own_trades(c):
-        return own_trades(c)
+    if (bad := own_trades(c)):
+        return bad
     return ["-m", "studies.readings.entryQuality.report", "--export", c["trades"], "--strategy",
             c["strategy"]]
 
@@ -146,7 +147,7 @@ RUNS = {"gate": gate, "monteCarlo": monte_carlo, "monkey": nulls, "exposure": ex
         "wfc": lambda c: "se corre desde el pipeline, sobre el lote de variantes"}
 
 
-def plan(module: str, c: dict) -> dict:
+def plan(module: str, c: dict) -> dict[str, Any]:
     """Whether the window may start this module here, and with what.
 
     Args:

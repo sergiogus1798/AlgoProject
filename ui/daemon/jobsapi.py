@@ -1,5 +1,6 @@
 """The routes every zone shares: the daemon's job list, and where an SQX project stands on disk."""
 
+from typing import Any
 from fastapi import APIRouter
 
 from ui.daemon import jobs, progress
@@ -8,7 +9,7 @@ ROUTER = APIRouter()
 
 
 @ROUTER.get("/api/jobs")
-def job_list() -> dict[str, object]:
+def job_list() -> dict[str, Any]:
     """Every job this daemon started and how each one stands.
 
     Returns:
@@ -18,7 +19,7 @@ def job_list() -> dict[str, object]:
 
 
 @ROUTER.get("/api/progress/installs")
-def progress_installs() -> dict[str, object]:
+def progress_installs() -> dict[str, Any]:
     """Every install by role, with the projects each one holds.
 
     Returns:
@@ -28,7 +29,7 @@ def progress_installs() -> dict[str, object]:
 
 
 @ROUTER.get("/api/progress")
-def progress_state(install: str, project: str) -> dict[str, object]:
+def progress_state(install: str, project: str) -> dict[str, Any]:
     """Where one project of one install is right now.
 
     Args:

@@ -1,5 +1,7 @@
 """«Analizar»: the selected portfolio (a judged run's contract) or one strategy (its universe column)."""
 
+from typing import Any, cast
+
 import pandas as pd
 
 from ui.daemon.portfolios import construct, parts, shelf
@@ -12,7 +14,7 @@ FUNDED = ("Una run de fondeo guarda cifras de Monte Carlo, no una curva: la P(pa
           "están en «Fondeo». Aquí se ven sus miembros.")
 
 
-def read(pool: str = "", run: str = "", strategy: str = "", **_: str) -> dict:
+def read(pool: str = "", run: str = "", strategy: str = "", **_: str) -> dict[str, Any]:
     """The tabs of the selected portfolio; of the selected strategy when no portfolio is."""
     if run:
         return portfolio(shelf.folder("runs", run))
@@ -21,7 +23,7 @@ def read(pool: str = "", run: str = "", strategy: str = "", **_: str) -> dict:
     return parts.empty("No hay nada seleccionado.", "elige abajo una fila de «Carteras» o de «Estrategias».")
 
 
-def portfolio(folder: shelf.Path) -> dict:
+def portfolio(folder: shelf.Path) -> dict[str, Any]:
     """Resumen, Curva and Miembros of one run's chosen portfolio."""
     row, known = shelf.run(folder), shelf.names()
     who = ", ".join(shelf.label(i, known) for i in row["members"])
@@ -60,7 +62,7 @@ def portfolio(folder: shelf.Path) -> dict:
                                      *drawn.get("Universo", []))]}
 
 
-def single(pool: str, identity: str) -> dict:
+def single(pool: str, identity: str) -> dict[str, Any]:
     """One strategy from its pool's universe: its curve over build and oos1, its months, its facts."""
     known = shelf.names()
     name = shelf.label(identity, known)
@@ -79,8 +81,10 @@ def single(pool: str, identity: str) -> dict:
                                                       for v, keep in zip(total, mask)]}
               for s, mask in (("build", daily.index < cut), ("oos1", daily.index >= cut))]
     months = pd.read_parquet(folder / "monthly.parquet", columns=[identity])[identity]
-    months = months[(months.index.to_timestamp() >= lo) & (months.index.to_timestamp() <= hi)]
-    grid = months.groupby([months.index.year, months.index.month]).sum().unstack()
+    stamps = cast(pd.PeriodIndex, months.index).to_timestamp()
+    months = cast(pd.Series, months[(stamps >= lo) & (stamps <= hi)])
+    when = cast(Any, months.index)      # a PeriodIndex; the stubs miss its .year and .month
+    grid = months.groupby([when.year, when.month]).sum().unstack()
     rows = [[int(y), *[parts.clean(round(float(grid.loc[y].get(m, float("nan"))), 0)) for m in range(1, 13)],
              round(float(grid.loc[y].sum()), 0)] for y in grid.index]
     facts = known.get(identity, {})

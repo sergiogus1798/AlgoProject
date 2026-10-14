@@ -1,12 +1,54 @@
 """Item 6: five trades of one sample, at P&L quantiles or drawn with a seed, each with its bar window."""
 
 import secrets
+from typing import TypedDict
 
 import numpy as np
 import pandas as pd
 
 QUANTILES = (0, 25, 50, 75, 100)
 AROUND = 20          # bars shown before the entry and after the exit
+
+
+class Window(TypedDict, total=False):
+    """The bars around one trade, or just `missing` (the sentence) when there are none."""
+
+    missing: str
+    t: list[str]
+    o: list[float]
+    h: list[float]
+    l: list[float]
+    c: list[float]
+    entry: int
+    exit: int
+    held: int
+
+
+class Tile(TypedDict):
+    """One trade of the gallery: its figures and the bars around it."""
+
+    label: str
+    row: int
+    type: str
+    open_time: str
+    close_time: str
+    open_price: float
+    close_price: float
+    pnl: float
+    mae: float
+    mfe: float
+    close_type: str
+    size: float
+    bars: Window
+
+
+class Gallery(TypedDict):
+    """The five tiles of one sample with the pick, the seed used (None for quantiles) and the trade count."""
+
+    pick: str
+    seed: int | None
+    n: int
+    tiles: list[Tile]
 
 
 def quantile_picks(pnl: np.ndarray) -> list[tuple[int, str]]:
@@ -40,7 +82,7 @@ def random_picks(pnl: np.ndarray, seed: int) -> list[tuple[int, str]]:
     return [(int(r), f"al azar {k + 1}/{len(rows)}") for k, r in enumerate(rows)]
 
 
-def window(bars: pd.DataFrame | None, opened: pd.Timestamp, closed: pd.Timestamp) -> dict:
+def window(bars: pd.DataFrame | None, opened: pd.Timestamp, closed: pd.Timestamp) -> Window:
     """The bars from AROUND before the entry bar to AROUND after the exit bar.
 
     Args:
@@ -58,17 +100,18 @@ def window(bars: pd.DataFrame | None, opened: pd.Timestamp, closed: pd.Timestamp
     if opened < idx[0] or closed > idx[-1]:
         return {"missing": (f"Sin barras para esta operación: el feed cubre {idx[0]:%Y-%m-%d} … "
                             f"{idx[-1]:%Y-%m-%d} en lo que la ventana puede mostrar.")}
-    i0, i1 = idx.searchsorted(opened, "right") - 1, idx.searchsorted(closed, "right") - 1
+    i0 = idx.searchsorted(opened, "right") - 1  # pyright: ignore[reportCallIssue, reportArgumentType]  # pandas stubs reject a scalar Timestamp
+    i1 = idx.searchsorted(closed, "right") - 1  # pyright: ignore[reportCallIssue, reportArgumentType]  # pandas stubs reject a scalar Timestamp
     a, z = max(0, i0 - AROUND), min(len(idx), i1 + AROUND + 1)
     w = bars.iloc[a:z]
     return {"t": [f"{t:%Y-%m-%d %H:%M}" for t in w.index],
-            **{k: w[col].round(6).tolist() for k, col in
-               (("o", "Open"), ("h", "High"), ("l", "Low"), ("c", "Close"))},
+            "o": w["Open"].round(6).tolist(), "h": w["High"].round(6).tolist(),
+            "l": w["Low"].round(6).tolist(), "c": w["Close"].round(6).tolist(),
             "entry": int(i0 - a), "exit": int(i1 - a), "held": int(i1 - i0)}
 
 
 def gallery(trades: pd.DataFrame, bars: pd.DataFrame | None, pick: str,
-            seed: int | None) -> dict:
+            seed: int | None) -> Gallery:
     """The five tiles of one sample.
 
     Args:
@@ -87,7 +130,7 @@ def gallery(trades: pd.DataFrame, bars: pd.DataFrame | None, pick: str,
         picks = random_picks(pnl, seed)
     else:
         seed, picks = None, quantile_picks(pnl)
-    tiles = []
+    tiles: list[Tile] = []
     for row, label in picks:
         t = trades.loc[row]
         tiles.append({"label": label, "row": row, "type": str(t["Type"]),

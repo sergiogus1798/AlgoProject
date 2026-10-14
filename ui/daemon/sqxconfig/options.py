@@ -6,6 +6,7 @@ constants copied BY HAND on 2026-09-27 from the install's settings page
 version adds appears here only once `lists.py` is edited.
 """
 
+from typing import Any
 from core import assetdata
 from core.assetdata import doctrine, policy
 from sqx.projects.acceptance import ESCAPED, READS
@@ -56,7 +57,7 @@ def metrics(index: int) -> list[str]:
     return sorted({c["metric"] for c in conds if c["read"] != "special"})
 
 
-def _number(path: list) -> dict:
+def _number(path: list) -> dict[str, Any]:
     """A number's spec with the range `lists.RANGES` gives it, if any."""
     lo, hi = L.RANGES.get((path[0], path[-1]), L.WFM_AXES.get(path[-2], (None, None))
                           if path[0] == "wfm" and len(path) > 2 else (None, None))
@@ -138,7 +139,7 @@ def _classes(path: list, value: object) -> dict | None:
     return None
 
 
-def spec(name: str, path: list, value: object) -> dict:
+def spec(name: str, path: list, value: object) -> dict[str, Any]:
     """What the window may do with one value.
 
     Args:

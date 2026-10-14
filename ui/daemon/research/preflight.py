@@ -1,5 +1,7 @@
 """Whether a proposal's queue may be launched now, and the sentence the owner confirms."""
 
+from typing import Any, TypedDict
+
 from core.paths import CLAUDE_BIN
 from sqx.projects import registry
 from studies.research.board import proposal
@@ -11,7 +13,20 @@ ROLE = "custodian"
 PER_IDEA_USD = 15      # the dossier's §6: template and palette of one launched idea
 
 
-def check(proposal_id: str) -> dict:
+class LaunchCheck(TypedDict):
+    """Whether a proposal's queue may launch now: reasons, the ideas and projects that would go."""
+
+    ok: bool
+    reasons: list[str]
+    ideas: list[str]
+    projects: list[str]
+    skipped: dict[str, str]
+    role: str
+    hours: Any
+    text: str
+
+
+def check(proposal_id: str) -> LaunchCheck:
     """Every precondition of «Crear plantillas y lanzar en SQX».
 
     Args:
@@ -24,7 +39,7 @@ def check(proposal_id: str) -> dict:
     p = proposal.load(proposal_id)
     go = [i for i in p["ideas"] if proposal.launchable(i)[0]]
     skipped = {i["name"]: proposal.launchable(i)[1] for i in p["ideas"] if i not in go}
-    reasons = []
+    reasons: list[str] = []
     if not go:
         reasons.append("ninguna idea se puede lanzar: " + "; ".join(
             f"{n} ({why})" for n, why in skipped.items()))
@@ -34,7 +49,7 @@ def check(proposal_id: str) -> dict:
     if not CLAUDE_BIN.exists():
         reasons.append(f"no encuentro Claude Code en {CLAUDE_BIN} (config/machine.yaml: claude_bin)")
     reasons += advance.busy(ROLE, "") + launch.queued()
-    got = {"ok": not reasons, "reasons": reasons, "ideas": [i["name"] for i in go],
+    got: LaunchCheck = {"ok": not reasons, "reasons": reasons, "ideas": [i["name"] for i in go],
            "projects": projects, "skipped": skipped, "role": ROLE,
            "hours": sum(i["custodian_hours"] for i in go), "text": ""}
     if got["ok"]:
@@ -42,7 +57,7 @@ def check(proposal_id: str) -> dict:
     return got
 
 
-def text(p: dict, got: dict) -> str:
+def text(p: dict[str, Any], got: LaunchCheck) -> str:
     """What the owner confirms: what runs, where, in which order, and what it costs."""
     c = p["cell"]
     lines = [f"Se van a crear y lanzar {len(got['ideas'])} idea(s) de {c['family']} en "

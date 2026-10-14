@@ -1,15 +1,20 @@
 """The filter routes: metrics, preview, apply, manual discard, clear, state, saved filters."""
 
 from collections.abc import Callable
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 
 from ui.daemon.databank import table as tablemod
+from ui.daemon.databank.table import Table
 from ui.daemon.filters import discards, dists, evaluate, ledgerrow, saved, view
 from ui.daemon.runner import where
 
 ROUTER = APIRouter()
+
+# What `context` reads once: the table, its distributions by identity, the metrics on offer.
+Context = tuple[Table, dict[str, dict[str, dict]], list[dict]]
 
 
 class Row(BaseModel):
@@ -50,7 +55,7 @@ class Saved(BaseModel):
     rows: list[Row]
 
 
-def shown(what: str, act: Callable[[], dict]) -> dict:
+def shown(what: str, act: Callable[[], dict[str, Any]]) -> dict[str, Any]:
     """One call for the window, a failure as `error` instead of a 500 (the ui boundary)."""
     try:
         return act()
@@ -58,7 +63,7 @@ def shown(what: str, act: Callable[[], dict]) -> dict:
         return {"error": f"No se pudo {what}: {failed}"}
 
 
-def context(project: str, databank: str) -> tuple[dict, dict, list[dict]]:
+def context(project: str, databank: str) -> Context:
     """The databank's table, its distributions by identity and the metrics a filter may read."""
     table = tablemod.table(project, databank)
     row = where.enrolled(project)
@@ -67,7 +72,7 @@ def context(project: str, databank: str) -> tuple[dict, dict, list[dict]]:
     return table, by_id, evaluate.offered(table, by_id, studies)
 
 
-def anonymous(table: dict) -> int:
+def anonymous(table: Table) -> int:
     """Rows only a report without identity names: shown, but no filter can hide them."""
     return sum(r["identity"] is None for r in table["rows"])
 
@@ -78,7 +83,7 @@ def samples(rows: list[dict], metrics: list[dict]) -> set[str]:
     return {known[r["metric"]] for r in rows}
 
 
-def state_of(project: str, databank: str, got: tuple | None = None) -> dict:
+def state_of(project: str, databank: str, got: Context | None = None) -> view.State:
     """`view.state_of` over a `context` the caller already read, or read once here."""
     table, _, metrics = got or context(project, databank)
     return view.state_of(project, databank, table, metrics)
@@ -93,7 +98,7 @@ def refused(project: str, databank: str) -> str | None:
     return where if isinstance(where, str) else None
 
 
-def metrics_of(project: str, databank: str, got: tuple | None = None) -> dict:
+def metrics_of(project: str, databank: str, got: Context | None = None) -> dict[str, Any]:
     """What the metric dropdown lists, and why the databank cannot be filtered, if it cannot."""
     table, _, metrics = got or context(project, databank)
     return {"metrics": metrics, "refused": refused(project, databank),
@@ -101,7 +106,7 @@ def metrics_of(project: str, databank: str, got: tuple | None = None) -> dict:
             "ops": list(evaluate.SHOWN), "intervals": sorted(dists.PAIRS)}
 
 
-def judged(req: Apply) -> dict:
+def judged(req: Apply) -> dict[str, Any]:
     """The AND of rows on the whole databank, manual deletions apart; nothing written.
 
     Returns:
@@ -121,10 +126,10 @@ def judged(req: Apply) -> dict:
 
 
 @ROUTER.post("/api/filters/preview")
-def preview(req: Apply) -> dict:
+def preview(req: Apply) -> dict[str, Any]:
     """What these conditions would leave, as the owner edits them: counts only, no ledger
     row, no discard, nothing hidden (the screen keeps showing what «Continuar» would cut)."""
-    def act() -> dict:
+    def act() -> dict[str, Any]:
         """The counts of `judged`, or its error."""
         got = judged(req)
         return got if "error" in got else {
@@ -134,7 +139,7 @@ def preview(req: Apply) -> dict:
     return shown("calcular el filtro", act)
 
 
-def applied(req: Apply) -> dict:
+def applied(req: Apply) -> dict[str, Any]:
     """Apply an AND of rows to the whole databank, replacing the filter in force: loosening
     brings strategies back, tightening hides more; manual deletions stay. One ledger row
     (none for no conditions, which only lifts the filter), then the discards on disk.
@@ -158,7 +163,7 @@ def applied(req: Apply) -> dict:
         return {**counts, "same": True, **state_of(req.project, req.databank, got["got"])}
     text, led = (evaluate.expression(rows) if rows else "sin filtro"), {}
     if rows:
-        step, _ = ledgerrow.placed(req.project, req.databank)
+        step, _ = cast(tuple[float, str], ledgerrow.placed(req.project, req.databank))
         wrote = ledgerrow.log(req.project, req.databank, step,
                               samples(rows, got["got"][2]), n_in, n_out, text, "filter", rows)
         led = {"ledger": {k: wrote[k] for k in ("study", "step", "segment")}}
@@ -169,12 +174,12 @@ def applied(req: Apply) -> dict:
 
 
 @ROUTER.post("/api/filters/apply")
-def apply(req: Apply) -> dict:
+def apply(req: Apply) -> dict[str, Any]:
     """«Aplicar» (`applied`)."""
     return shown("aplicar el filtro", lambda: applied(req))
 
 
-def discarded(req: Discard) -> dict:
+def discarded(req: Discard) -> dict[str, Any]:
     """Delete strategies by hand: the same log and the same one ledger row as a filter."""
     why = refused(req.project, req.databank)
     if why:
@@ -187,7 +192,7 @@ def discarded(req: Discard) -> dict:
     if not dropped:
         return {"error": "ninguna de las seleccionadas está visible con identidad"}
     text = f"descarte manual de {len(dropped)}: {', '.join(sorted(dropped.values()))}"
-    step, _ = ledgerrow.placed(req.project, req.databank)
+    step, _ = cast(tuple[float, str], ledgerrow.placed(req.project, req.databank))
     wrote = ledgerrow.log(req.project, req.databank, step, {"IS", "OOS", ""},
                           len(visible), len(visible) - len(dropped), text, "manual", None)
     discards.record(req.project, req.databank, dropped, "manual", text, len(visible), 0,
@@ -198,20 +203,20 @@ def discarded(req: Discard) -> dict:
 
 
 @ROUTER.post("/api/filters/discard")
-def discard(req: Discard) -> dict:
+def discard(req: Discard) -> dict[str, Any]:
     """«Descartar seleccionadas» (`discarded`)."""
     return shown("descartar", lambda: discarded(req))
 
 
 @ROUTER.post("/api/filters/clear")
-def clear(req: Bank) -> dict:
+def clear(req: Bank) -> dict[str, Any]:
     """«Quitar filtros»: every strategy visible again. The ledger keeps what was looked at."""
     return shown("quitar los filtros", lambda: {
         "back": discards.clear(req.project, req.databank),
         **state_of(req.project, req.databank)})
 
 
-def state(project: str, databank: str | None) -> dict:
+def state(project: str, databank: str | None) -> dict[str, Any]:
     """The funnel's counts: every filtered databank's rows, and with a databank its state
     and its metrics too, read off one `context` (the strip's one call per table refresh)."""
     banks = [databank.replace(" ", "_")] if databank else discards.databanks(project)
@@ -223,19 +228,19 @@ def state(project: str, databank: str | None) -> dict:
 
 
 @ROUTER.get("/api/filters/state")
-def get_state(project: str, databank: str | None = None) -> dict:
+def get_state(project: str, databank: str | None = None) -> dict[str, Any]:
     """`state`, for the strip (with `databank`) and for the funnel (without)."""
     return shown("leer el estado de los filtros", lambda: state(project, databank))
 
 
 @ROUTER.get("/api/filters/saved")
-def get_saved() -> dict:
+def get_saved() -> dict[str, Any]:
     """Every filter saved by name."""
     return shown("leer los filtros guardados", lambda: {"saved": saved.every()})
 
 
 @ROUTER.post("/api/filters/saved")
-def post_saved(req: Saved) -> dict:
+def post_saved(req: Saved) -> dict[str, Any]:
     """Keep a filter under a name."""
     return shown("guardar el filtro", lambda: {
         "name": req.name, **saved.save(req.name, evaluate.normal([r.model_dump()

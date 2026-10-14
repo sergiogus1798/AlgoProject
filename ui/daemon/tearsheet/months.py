@@ -1,5 +1,7 @@
 """Calendar arithmetic on one sample's daily cumulative P&L: months and years."""
 
+from typing import cast
+
 import pandas as pd
 
 
@@ -13,7 +15,7 @@ def monthly(equity: pd.Series) -> pd.Series:
         Indexed by month-start Timestamp. Month-end levels are rounded to whole cents
         before differencing, so the months add up to the last level to the cent.
     """
-    cents = (equity * 100).round().groupby(equity.index.to_period("M")).last()
+    cents = (equity * 100).round().groupby(pd.DatetimeIndex(equity.index).to_period("M")).last()
     moves = cents.diff().fillna(cents.iloc[0])      # each sample starts from 0
     moves.index = moves.index.to_timestamp()
     return moves / 100
@@ -21,4 +23,5 @@ def monthly(equity: pd.Series) -> pd.Series:
 
 def yearly(months: pd.Series) -> pd.Series:
     """P&L per calendar year from the months, indexed by year."""
-    return months.groupby(months.index.year).sum().round(2)
+    years = pd.DatetimeIndex(months.index).year  # pyright: ignore[reportAttributeAccessIssue]  # stubs lack DatetimeIndex.year
+    return cast(pd.Series, months.groupby(years).sum().round(2))

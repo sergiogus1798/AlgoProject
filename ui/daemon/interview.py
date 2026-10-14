@@ -1,5 +1,7 @@
 """The questions the chat asks before a template idea is written down, and which is next."""
 
+from typing import Any
+
 from ui.daemon.coverage import ARCHETYPES
 
 # One entry per question, asked in this order. `default` is the owner's documented default
@@ -58,7 +60,7 @@ QUESTIONS = [
 ]
 
 
-def applies(question: dict[str, object], answers: dict[str, str]) -> bool:
+def applies(question: dict[str, Any], answers: dict[str, str]) -> bool:
     """Whether a conditional question is live given what has been answered.
 
     Args:
@@ -72,7 +74,7 @@ def applies(question: dict[str, object], answers: dict[str, str]) -> bool:
     return gate is None or answers.get(gate[0]) == gate[1]
 
 
-def step(answers: dict[str, str]) -> dict[str, object]:
+def step(answers: dict[str, str]) -> dict[str, Any]:
     """The next question to put to the reader, or the news that there are none left.
 
     Args:

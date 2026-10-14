@@ -2,6 +2,7 @@
 
 import math
 from decimal import Decimal
+from typing import cast
 
 SIGNIFICANT = 4         # digits kept below 1 000, as `.4g` did, but always written out in full
 FLOOR = 1e-10           # below this a figure prints as 0: no metric here lives down there
@@ -59,7 +60,7 @@ def num(value: object, unit: str = "") -> str:
         return value
     if isinstance(value, bool):
         return "sí" if value else "no"
-    v = float(value)
+    v = float(cast(float, value))
     if math.isnan(v):
         return "—"
     if math.isinf(v):

@@ -28,7 +28,7 @@ UNATTENDED = ("\n\nLo lanza la ventana (botón «Crear la plantilla con Claude»
 
 def main() -> None:
     """Author the draft named on the command line; exit 2 on a question for the owner."""
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--name", required=True, help="el borrador del chat, por su nombre")
     a = ap.parse_args()
     draft = json.loads(template_draft(a.name).read_text(encoding="utf-8"))

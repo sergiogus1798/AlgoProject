@@ -1,5 +1,7 @@
 """Filters saved by name, to apply again: `AlgoData/filters/saved.yaml`."""
 
+from typing import TypedDict
+
 import yaml
 
 from core.paths import filters_root
@@ -8,12 +10,19 @@ from ui.daemon.filters.discards import stamp
 FILE = filters_root() / "saved.yaml"
 
 
-def every() -> dict[str, dict]:
+class SavedFilter(TypedDict):
+    """A filter kept by name: its rows and the day it was saved."""
+
+    rows: list[dict]
+    saved: str
+
+
+def every() -> dict[str, SavedFilter]:
     """name → {rows, saved}; {} when nothing was saved yet."""
     return yaml.safe_load(FILE.read_text(encoding="utf-8")) or {} if FILE.is_file() else {}
 
 
-def save(name: str, rows: list[dict]) -> dict:
+def save(name: str, rows: list[dict]) -> SavedFilter:
     """Keep one filter under a name, replacing a filter of the same name.
 
     Args:

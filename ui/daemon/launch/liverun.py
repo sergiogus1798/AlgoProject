@@ -7,6 +7,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import Any, cast
 
 from core.datapaths import tmp_dir
 from core.phases import note, phase
@@ -81,6 +82,7 @@ def export(role: str, project: str, banks: set[str] | None = None) -> None:
         run = subprocess.Popen([sys.executable, "-m", "ui.daemon.loader.afterrun", "--role", role, "--live",
                                 "--project", project, *[a for b in sorted(banks or ()) for a in ("--databank", b)]],
                                cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        assert run.stdout is not None       # opened with PIPE
         for line in run.stdout:
             print(line, end="", flush=True)
             if "no vale" in line:
@@ -92,7 +94,7 @@ def export(role: str, project: str, banks: set[str] | None = None) -> None:
         shutil.rmtree(bank_dir(project, role), ignore_errors=True)
 
 
-def close(role: str, project: str, failed: dict | None = None) -> None:
+def close(role: str, project: str, failed: dict[str, Any] | None = None) -> None:
     """End the session: this project's export, then the stop without the script's own, which
     unmarked read the whole install (🔬 2026-10-05: 229 s of a 243 s stop re-exporting another
     project's databanks).
@@ -117,8 +119,9 @@ def close(role: str, project: str, failed: dict | None = None) -> None:
         print(exiting.stop(role, project), flush=True)    # (🔬 2026-10-06); it waits on us instead
     finally:
         live.stop(role, export=False)                  # the script's own cleanup: lock, Xvfb
-    held = preflight.tasks(project)
-    titles = {t for s in failed["steps"] for t in launchsteps.of_step(s["n"], held["cfx"])["titles"]}
+    held = cast("preflight.Listing", preflight.tasks(project))     # the project ran: it is there
+    titles = {t for s in failed["steps"]
+              for t in cast("launchsteps.StepTasks", launchsteps.of_step(s["n"], held["cfx"]))["titles"]}
     for task in held["tasks"]:
         if task["title"] in titles:
             for f in (held["cfx"].parent / "databanks" / task["output"]).glob("*.sqx"):
@@ -133,7 +136,7 @@ def close(role: str, project: str, failed: dict | None = None) -> None:
     signal.signal(signal.SIGTERM, was)
 
 
-def execute(pre: dict, project: str) -> dict:
+def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:
     """`run.execute` for a live session: same checks and records, SQX never stopped.
 
     Args:

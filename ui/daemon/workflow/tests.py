@@ -1,9 +1,12 @@
 """The tests of each step: which studies, their state on this project, their configuration in one line."""
 
+from typing import Any
+
 from ui.daemon import jobs
 from ui.daemon.results import catalogue, forproject, knobs
 from ui.daemon.runner import table, where
 from ui.daemon.workflow import sources
+from ui.daemon.workflow.records import Context, StudyTest
 
 # The studies that sign their look in the ledger under the template family (owner, Q9 of
 # plan 24): without a template in the registry they never start from the window.
@@ -22,7 +25,7 @@ LAUNCHERS = ("launch", "advance")
 SHOWN = 3   # knobs the one-line summary prints; the drawer shows them all
 
 
-def keys(spec: dict) -> list[str]:
+def keys(spec: dict[str, Any]) -> list[str]:
     """The tests a step offers, evidence first, in order and without repeats.
 
     Args:
@@ -56,7 +59,7 @@ def summary(key: str, project: str) -> str:
     return shown + (f" (+{len(knob_list) - SHOWN})" if len(knob_list) > SHOWN else "")
 
 
-def running(project: str) -> list[dict]:
+def running(project: str) -> list[dict[str, Any]]:
     """The daemon's jobs on this project that have not ended, running or queued.
 
     Args:
@@ -68,7 +71,7 @@ def running(project: str) -> list[dict]:
     return [j for j in jobs.listing() if j.get("project") == project and j["rc"] is None]
 
 
-def one(spec: dict, key: str, ctx: dict, live: list[dict]) -> dict:
+def one(spec: dict[str, Any], key: str, ctx: Context, live: list[dict[str, Any]]) -> StudyTest:
     """One test of one step, as the rail paints it.
 
     Args:
@@ -94,29 +97,33 @@ def one(spec: dict, key: str, ctx: dict, live: list[dict]) -> dict:
                or (where.no_family(ctx["project"]) if key in SIGNED and not ctx["family"]
                    else None))
     found = sources.results(ctx["project"], key)
-    row = {"key": key, "title": title, "config": summary(key, ctx["project"]),
-           "runnable": not refused,
-           "databank": found[0]["databank"] if found else None, "spends": SPENDS.get(key, ""),
-           # ticked by default and in «correr todo»: free to run, and the rail knows where
-           "auto": not refused and key not in SPENDS and spec["feeds"] != ()}
+    databank = found[0]["databank"] if found else None
+
+    def row(state: str, why: str) -> StudyTest:
+        """This test's row with its state and the sentence."""
+        return {"key": key, "title": title, "config": summary(key, ctx["project"]),
+                "runnable": not refused, "databank": databank, "spends": SPENDS.get(key, ""),
+                # ticked by default and in «correr todo»: free to run, and the rail knows where
+                "auto": not refused and key not in SPENDS and spec["feeds"] != (),
+                "state": state, "why": why}
+
     # A job the rail started names its step; one from elsewhere counts for every step.
     job = next((j for j in live if j["study"] == key and j.get("step", spec["n"]) == spec["n"]),
                None)
     if job:
-        return row | {"state": "running",
-                      "why": f"{job['state'] or 'en marcha'} desde {job['started'][11:16]}"}
+        return row("running", f"{job['state'] or 'en marcha'} desde {job['started'][11:16]}")
     # A result says the test ran, even one the rail cannot launch itself (an SQX step's
     # analysis, a terminal-only study, the MT5 check): «bloqueado» beside it read as not done
     # (📓 2026-09-30, steps 19, 23 and 26 of a finished run).
     if found:
-        return row | {"state": "done", "why": f"último resultado del {found[0]['day']}"
-                      + (f" sobre {found[0]['databank']}" if found[0]["databank"] else "")}
+        return row("done", f"último resultado del {found[0]['day']}"
+                   + (f" sobre {found[0]['databank']}" if found[0]["databank"] else ""))
     if refused:
-        return row | {"state": "blocked", "why": refused}
-    return row | {"state": "pending", "why": "sin resultado para este proyecto"}
+        return row("blocked", refused)
+    return row("pending", "sin resultado para este proyecto")
 
 
-def of_step(spec: dict, ctx: dict, live: list[dict]) -> list[dict]:
+def of_step(spec: dict[str, Any], ctx: Context, live: list[dict[str, Any]]) -> list[StudyTest]:
     """Every test of one step.
 
     Args:

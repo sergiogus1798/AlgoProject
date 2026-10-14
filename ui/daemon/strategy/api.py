@@ -1,5 +1,7 @@
 """The Estrategia page's routes: metadata, basic stats, the curve, and «Archivar»."""
 
+from typing import Any
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -37,7 +39,7 @@ def _read(project: str, databank: str, identity: str, source: str,
     return got if isinstance(got, str) else archived.tearsheet(identity, version)
 
 
-def _asked(project: str, databank: str, identity: str, source: str) -> dict | None:
+def _asked(project: str, databank: str, identity: str, source: str) -> dict[str, str] | None:
     """The refusal for an incomplete question or an unknown source, or None."""
     if not (project and databank and identity):
         return {"error": "Elige un proyecto, un databank y una estrategia."}
@@ -46,7 +48,7 @@ def _asked(project: str, databank: str, identity: str, source: str) -> dict | No
 
 @ROUTER.get("/api/strategy/meta")
 def strategy_meta(project: str = "", databank: str = "", identity: str = "",
-                  source: str = "live", version: str = "") -> dict:
+                  source: str = "live", version: str = "") -> dict[str, Any]:
     """What the strategy is: signal, direction, orders, costs, money management, Friday close.
 
     Returns:
@@ -65,7 +67,7 @@ def strategy_meta(project: str = "", databank: str = "", identity: str = "",
 
 @ROUTER.get("/api/strategy/costcurve")
 def strategy_costcurve(project: str = "", databank: str = "", identity: str = "",
-                       source: str = "live", version: str = "", strategy: str = "") -> dict:
+                       source: str = "live", version: str = "", strategy: str = "") -> dict[str, Any]:
     """SQX's equity, IS then OOS1.
 
     Returns:
@@ -83,7 +85,7 @@ def strategy_costcurve(project: str = "", databank: str = "", identity: str = ""
 
 @ROUTER.get("/api/strategy/stats")
 def strategy_stats(project: str = "", databank: str = "", identity: str = "",
-                   source: str = "live", version: str = "", strategy: str = "") -> dict:
+                   source: str = "live", version: str = "", strategy: str = "") -> dict[str, Any]:
     """Trade count, net, PF, win rate, DD, Sharpe and the return distribution, per sample.
 
     Returns:
@@ -101,7 +103,7 @@ def strategy_stats(project: str = "", databank: str = "", identity: str = "",
 
 
 @ROUTER.post("/api/strategy/archive")
-def strategy_archive(req: Archive) -> dict:
+def strategy_archive(req: Archive) -> dict[str, Any]:
     """Freeze the strategy with everything the window shows of it (`archive_write`).
 
     Returns:

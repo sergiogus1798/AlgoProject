@@ -9,6 +9,7 @@ import sys
 import time
 from datetime import date, datetime
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -32,7 +33,7 @@ def say(pct: int, line: str) -> None:
     print(f"PROGRESS {pct} {line}", flush=True)
 
 
-def verdict(pre: dict, folder: Path) -> tuple[Path, int]:
+def verdict(pre: dict[str, Any], folder: Path) -> tuple[Path, int]:
     """Copy each discarded .sqx into `folder` and write the verdict that drops them.
 
     Args:
@@ -62,7 +63,8 @@ def verdict(pre: dict, folder: Path) -> tuple[Path, int]:
     return out, len(rows)
 
 
-def ledger_row(project: str, databank: str, pre: dict, cut: dict, backup: Path) -> str:
+def ledger_row(project: str, databank: str, pre: dict[str, Any], cut: apply_verdict.Applied,
+               backup: Path) -> str:
     """Write the curate's one ledger row, signed and placed as F6 signs its filters (Q9).
 
     Returns:
@@ -126,7 +128,7 @@ def ready(project: str, role: str) -> None:
     sys.exit(f"el {role} no respondió tras {READY_TRIES * POLL} s")
 
 
-def watch(project: str, role: str, offsets: dict[Path, int]) -> dict:
+def watch(project: str, role: str, offsets: dict[Path, int]) -> dict[str, Any]:
     """Follow the run until SQX logs «Project finished», bounded at both ends.
 
     Args:

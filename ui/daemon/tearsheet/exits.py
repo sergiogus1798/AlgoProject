@@ -1,6 +1,7 @@
 """P&L and expectancy by exit reason as a contract result: tabs «IS» and «OOS», each on its own."""
 
 from datetime import datetime
+from typing import Any
 
 import pandas as pd
 
@@ -9,7 +10,7 @@ from ui.daemon.tearsheet import tradestats
 from ui.daemon.tearsheet.sheet import MODULE, SAMPLE
 
 
-def tab(sample: str, trades: pd.DataFrame, day: str) -> dict:
+def tab(sample: str, trades: pd.DataFrame, day: str) -> dict[str, Any]:
     """One sample's exits: the table per exit type and one cumulative line per type.
 
     Args:
@@ -42,7 +43,7 @@ def tab(sample: str, trades: pd.DataFrame, day: str) -> dict:
     return result.tab(sample, SAMPLE[sample], [table, lines], note=tab_note)
 
 
-def build(data: dict) -> dict:
+def build(data: dict) -> dict[str, Any]:
     """The exits of one strategy, IS and OOS apart.
 
     Args:

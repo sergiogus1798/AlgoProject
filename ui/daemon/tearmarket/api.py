@@ -1,6 +1,10 @@
 """The tear sheet's market routes: month signs against the underlying, and the trade gallery."""
 
 import time
+from pathlib import Path
+from typing import Any, TypedDict, cast
+
+import pandas as pd
 
 from fastapi import APIRouter, Query
 
@@ -12,8 +16,17 @@ from ui.daemon.tearmarket import months, source, trades
 ROUTER = APIRouter()
 
 
+class Strategy(TypedDict):
+    """The newest harvest folder of a strategy, its day, name and timeframe."""
+
+    harvest: Path
+    day: str
+    name: str
+    tf: str
+
+
 def _strategy(project: str, databank: str, identity: str, origin: str = "live",
-              version: str = "") -> dict | str:
+              version: str = "") -> Strategy | str:
     """The newest harvest and the strategy's name and timeframe, or the refusal sentence.
 
     Args:
@@ -42,7 +55,7 @@ def _strategy(project: str, databank: str, identity: str, origin: str = "live",
             **got}
 
 
-def _bars(project: str, databank: str, asset: str, tf: str) -> tuple[dict | str, object]:
+def _bars(project: str, databank: str, asset: str, tf: str) -> tuple[source.Market | str, pd.DataFrame | None]:
     """The asset's bars at the strategy's timeframe, or why there are none.
 
     Args:
@@ -63,7 +76,7 @@ def _bars(project: str, databank: str, asset: str, tf: str) -> tuple[dict | str,
 
 @ROUTER.get("/api/tearsheet/market")
 def market(project: str = "", databank: str = "", identity: str = "", asset: str = "",
-           source_: str = Query("live", alias="source"), version: str = "") -> dict:
+           source_: str = Query("live", alias="source"), version: str = "") -> dict[str, Any]:
     """Item 5: how many months the strategy and its market moved each way, IS and OOS apart.
 
     Args:
@@ -84,6 +97,7 @@ def market(project: str = "", databank: str = "", identity: str = "", asset: str
         m, bars = _bars(project, databank, asset, s["tf"])
         if isinstance(m, str):
             return {"error": m}
+        assert bars is not None                 # `_bars` gives no frame only with a sentence
         equity = source.rows(s["harvest"], "equity", identity)
         foreign = source.foreign_samples(equity)
         if foreign:
@@ -99,7 +113,7 @@ def market(project: str = "", databank: str = "", identity: str = "", asset: str
 @ROUTER.get("/api/tearsheet/trades")
 def trade_gallery(project: str = "", databank: str = "", identity: str = "", sample: str = "IS",
                   pick: str = "quantile", seed: str = "", asset: str = "",
-                  source_: str = Query("live", alias="source"), version: str = "") -> dict:
+                  source_: str = Query("live", alias="source"), version: str = "") -> dict[str, Any]:
     """Item 6: five trades of one sample with the bars around each.
 
     Args:
@@ -130,7 +144,7 @@ def trade_gallery(project: str = "", databank: str = "", identity: str = "", sam
         foreign = source.foreign_samples(rows)
         if foreign:
             return {"error": foreign}
-        rows = rows[rows["sample"] == sample]
+        rows = cast(pd.DataFrame, rows[rows["sample"] == sample])
         if rows.empty:
             return {"error": f"La estrategia no tiene operaciones {sample} en la cosecha."}
         m, bars = _bars(project, databank, asset, s["tf"])

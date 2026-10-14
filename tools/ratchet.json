@@ -10,8 +10,10 @@
   "pyright.mt5": 0,
   "pyright.perf": 0,
   "pyright.pipeline": 0,
+  "pyright.portfolio": 10,
   "pyright.sqx": 0,
   "pyright.tools": 0,
+  "pyright.ui": 428,
   "untyped_dict..claude": 0,
   "untyped_dict.core": 0,
   "untyped_dict.engines": 0,
@@ -21,8 +23,8 @@
   "untyped_dict.pipeline": 0,
   "untyped_dict.portfolio": 0,
   "untyped_dict.sqx": 0,
-  "untyped_dict.studies": 90,
+  "untyped_dict.studies": 0,
   "untyped_dict.tests": 185,
   "untyped_dict.tools": 0,
-  "untyped_dict.ui": 289
+  "untyped_dict.ui": 12
 }

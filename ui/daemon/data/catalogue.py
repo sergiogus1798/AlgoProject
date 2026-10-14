@@ -1,5 +1,6 @@
 """What the data root holds, tree by tree: files, formats, newest write, and the manifests that sign it."""
 
+from typing import Any
 import os
 import re
 import time
@@ -61,7 +62,7 @@ def _walk(bucket: int) -> dict[str, dict]:
     return rows
 
 
-def catalogue() -> dict:
+def catalogue() -> dict[str, Any]:
     """Every tree of the data root with its files, formats, newest write and manifests.
 
     Returns:

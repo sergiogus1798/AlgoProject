@@ -67,7 +67,7 @@ def grow(top: Path, offsets: dict[Path, int], kept: list[str],
     return kept
 
 
-def police(cap: dict, fresh: list[str], project: str, role: str, top: Path, stopped: bool) -> None:
+def police(cap: taskcap.Cap, fresh: list[str], project: str, role: str, top: Path, stopped: bool) -> None:
     """End a watched run on what `live.wait` ends it on: an abort line (`live.BAD`, the one list
     `wait.sh` mirrors) or a task past its deadline (`taskcap`), worded as the transient abort
     `call.again` repeats once and as the step failure it does not.

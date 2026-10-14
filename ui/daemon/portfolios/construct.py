@@ -1,5 +1,8 @@
 """«Constructor»: one real-path run — the portfolio chosen in build, every combination scored, its verdict."""
 
+from collections.abc import Mapping
+from typing import Any, cast
+
 import pandas as pd
 
 from portfolio.common.construct import oos2 as oos2_mod
@@ -20,7 +23,7 @@ UNJUDGED = ("Esta cartera no está juzgada. «Juzgar: veredicto» la mide en oos
 MAX_ROWS = 300
 
 
-def pick(pool: str, run: str, kind: str) -> dict | None:
+def pick(pool: str, run: str, kind: str) -> shelf.RunRow | None:
     """The run asked for when it is of this pool and kind, else the pool's newest of the kind."""
     found = [r for r in shelf.runs() if r["pool"] == pool and r["kind"] == kind]
     return next((r for r in found if r["id"] == run), found[0] if found else None)
@@ -44,7 +47,7 @@ def spent(pool: str, members: list[str] | None = None) -> str:
             "solo medirá oos1.")
 
 
-def read(pool: str = "", run: str = "", **_: str) -> dict:
+def read(pool: str = "", run: str = "", **_: str) -> dict[str, Any]:
     """The tabs of one real run: Resultado, Combinaciones, Nulo y veredicto."""
     if not pool:
         return parts.empty("No hay ningún pool declarado.", "marca estrategias abajo, en "
@@ -74,12 +77,13 @@ def read(pool: str = "", run: str = "", **_: str) -> dict:
                      combos(folder, m, known), verdict(folder)]}
 
 
-def combos(folder: shelf.Path, m: dict, known: dict) -> dict:
+def combos(folder: shelf.Path, m: dict[str, Any], known: dict[str, dict]) -> parts.TabBlock:
     """«Combinaciones»: the ranked table of every combination scored."""
     frame = pd.read_parquet(folder / "search.parquet").sort_values("score", ascending=False)
     best = "+".join(sorted(m["best_members"]))
     rows, states = [], []
     for n, r in enumerate(frame.head(MAX_ROWS).itertuples(), 1):
+        r = cast(Any, r)   # itertuples rows are namedtuples; the stubs only know a tuple
         ids = r.members.split("+")
         rows.append([n, " + ".join(shelf.short(i) for i in ids), r.k, r.score, r.rar, r.r_cubed,
                      r.gain_to_pain, r.p_losing_year, r.sharpe, round(100 * r.floor_risk, 4)])
@@ -94,13 +98,13 @@ def combos(folder: shelf.Path, m: dict, known: dict) -> dict:
                                                   helps, states))
 
 
-def verdict(folder: shelf.Path) -> dict:
+def verdict(folder: shelf.Path) -> parts.TabBlock:
     """«Nulo y veredicto»: the oos1 bar against chance, the oos2 line, the sentence."""
     if not (folder / "verdict.json").exists():
         return parts.tab("Nulo y veredicto", parts.callout(UNJUDGED, "watch"))
     v = shelf.load(folder / "verdict.json")
     one, two = v["oos1"], v["oos2"]
-    blocks = [parts.callout(parts.headline(v["label"]), STATE[v["pass"]])]
+    blocks: list[Mapping[str, Any]] = [parts.callout(parts.headline(v["label"]), STATE[v["pass"]])]
     if one["state"] == "no_discrimina":
         blocks.append(parts.callout(
             f"NO SE PUEDE JUZGAR: solo hay {one['n_space']} combinaciones admisibles de K = {one['k']} "

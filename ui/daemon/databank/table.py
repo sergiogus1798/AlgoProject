@@ -3,6 +3,7 @@
 import math
 import threading
 from concurrent.futures import Future
+from typing import Any, TypedDict, cast
 
 import pandas as pd
 
@@ -10,6 +11,7 @@ from ui.daemon.databank import batches, cells, metrics
 from ui.daemon.loader import find
 from ui.daemon.results import catalogue, store
 from ui.daemon.workflow import ledgerview
+from ui.daemon.workflow.records import Door
 
 # Read together or not at all (WORKFLOW.md «los tres a la vez»), and step 20 after them: while
 # the ledger's door is shut none of their figures leaves the daemon.
@@ -24,11 +26,52 @@ HIDDEN_FIELDS = {("crossmarket", "note"),
 # 🔬 2026-10-04: opening a project asks for the same 10,000-row table three times at once
 # (the tab list, the table, the filters), and the three builds shared one GIL: 60 s against
 # the window's 20. Whoever asks while a build is in flight waits for it and reads its answer.
-FLIGHTS: dict[tuple[str, str], Future] = {}
+FLIGHTS: dict[tuple[str, str], "Future[Table]"] = {}
 GUARD = threading.Lock()
 
 
-def door(project: str) -> tuple[dict, str | None]:
+class _Col(TypedDict):
+    """The two keys every table column carries."""
+
+    key: str
+    kind: str
+
+
+class Column(_Col, total=False):
+    """One table column: `key` and `kind` always, the rest by kind (metric or study)."""
+
+    metric: str
+    sample: str
+    study: str
+    sub: str
+    field: str
+    title: str
+
+
+class Row(TypedDict):
+    """One strategy's row: `identity` None for a name-only row, `values` one per column."""
+
+    identity: str | None
+    name: str
+    values: list[object]
+    states: dict[str, str]
+
+
+class Table(TypedDict):
+    """The `build` payload; `held_by` and `sealed` are None when they do not apply."""
+
+    databank: str
+    rows_from: str
+    held_by: str | None
+    writing: bool
+    metrics_from: str
+    columns: list[Column]
+    rows: list[Row]
+    studies: list[str]
+    sealed: dict[str, Any] | None
+
+
+def door(project: str) -> tuple[Door, str | None]:
     """The ledger's door of step 20 — the very one the rail asks — and the project's asset.
 
     Returns:
@@ -51,7 +94,7 @@ def roster(project: str, databank: str, own: dict,
     if held:
         return "archivos", held
     by_id = figures is not None and "name" in figures
-    rows = dict(zip(figures.index, figures["name"])) if by_id else {}
+    rows = dict(zip(figures.index, figures["name"])) if figures is not None and by_id else {}
     for identity, studies in own["by_id"].items():
         rows.setdefault(identity, next(iter(studies.values()))["name"])
     named = {cells.norm(n) for n in rows.values()}
@@ -69,7 +112,7 @@ def roster(project: str, databank: str, own: dict,
     return "informes", rows
 
 
-def studies_of(key: str, name: str, own: dict, every: dict, mothers: dict) -> dict:
+def studies_of(key: str, name: str, own: dict, every: dict, mothers: dict) -> dict[str, dict]:
     """What each study said of one row: this databank's reports by identity, then by name,
     then any databank of the project by identity, then the mother's variant batch by name."""
     found = dict(mothers.get(cells.norm(name), {}))
@@ -79,20 +122,20 @@ def studies_of(key: str, name: str, own: dict, every: dict, mothers: dict) -> di
     return found
 
 
-def clean(value: object) -> object:
+def clean(value: Any) -> object:
     """A value JSON can carry: numpy scalars as Python ones, NaN as None."""
     value = value.item() if hasattr(value, "item") else value
     return None if isinstance(value, float) and math.isnan(value) else value
 
 
-def figures_by_row(figures: pd.DataFrame | None) -> dict:
+def figures_by_row(figures: pd.DataFrame | None) -> dict[Any, dict[str, Any]]:
     """A metrics frame as index → {column: value}: 10,000 rows of 34 figures read one
     `.loc` and one `.get` at a time cost 2 s of the table's 4 (🔬 2026-10-04). Transposed,
     so a row keeps the one dtype `.loc` gave it: an integer among floats is a float."""
     return {} if figures is None else figures.T.to_dict()
 
 
-def table(project: str, databank: str) -> dict:
+def table(project: str, databank: str) -> Table:
     """`build`, once for everybody who asks while it runs; nobody may change what it returns."""
     key = (project, find.spelled(project, databank))
     with GUARD:
@@ -112,7 +155,7 @@ def table(project: str, databank: str) -> dict:
     return flight.result()
 
 
-def build(project: str, databank: str) -> dict:
+def build(project: str, databank: str) -> Table:
     """GET /api/databank/table: the whole databank, every column the window may show.
 
     Args:
@@ -158,21 +201,22 @@ def build(project: str, databank: str) -> dict:
     # daemon is the only place that can tell «never filled» from «this strategy made no trade»
     # (`metrics.empty_samples` blanks the latter per row). Drop only the former.
     if figures is not None:
-        figure_cols = [c for c in figure_cols if not figures[c].isna().all()]
-    columns = ([{"key": "name", "kind": "name"}]
-               + [{"key": c, "kind": "metric", "metric": c.rsplit(" (", 1)[0],
-                   "sample": c.rsplit(" (", 1)[-1].rstrip(")") if " (" in c else ""}
-                  for c in figure_cols]
-               + [{"key": ".".join(p for p in f if p), "kind": "study", "study": f[0],
-                   "sub": f[1], "field": f[2], "title": catalogue.STUDIES[f[0]][2]}
-                  for f in study_cols])
+        figure_cols = [c for c in figure_cols if not bool(figures[c].isna().all())]
+    name_col: list[Column] = [{"key": "name", "kind": "name"}]
+    metric_cols: list[Column] = [{"key": c, "kind": "metric", "metric": c.rsplit(" (", 1)[0],
+                                  "sample": c.rsplit(" (", 1)[-1].rstrip(")") if " (" in c else ""}
+                                 for c in figure_cols]
+    study_defs: list[Column] = [{"key": ".".join(p for p in f if p), "kind": "study", "study": f[0],
+                                 "sub": f[1], "field": f[2], "title": catalogue.STUDIES[f[0]][2]}
+                                for f in study_cols]
+    columns = name_col + metric_cols + study_defs
     by_id = got_from == "cosecha"
     # The cosecha holds only the strategies that had an OOS retest (H1: 60 of the build's 300);
     # the rest kept dashes in every metric though SQX's own export carries their figures
     # (owner's §4.1, 🔬 2026-10-01). A row the cosecha lacks reads the export, by name.
     spare = metrics.export(project, db) if by_id else None
     if spare is not None:
-        spare = spare[~spare.index.map(cells.norm).duplicated()]
+        spare = cast(pd.DataFrame, spare[~spare.index.map(cells.norm).duplicated()])
         spare.index = spare.index.map(cells.norm)
     rows, held, spared = [], figures_by_row(figures), figures_by_row(spare)
     for key, name, said in lines:

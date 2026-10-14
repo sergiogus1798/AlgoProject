@@ -59,7 +59,7 @@ def from_csv(study: str, folder: Path) -> dict[str, dict]:
     for row in store.rows(folder):
         name = row["strategy"]
         word = row.get("verdict") or None
-        state = row.get("verdict_state") or store.WORDS.get(word, "none")
+        state = row.get("verdict_state") or store.WORDS.get(word, "none") if word else "none"
         entry = out.setdefault(name, {"identity": row.get("identity") or None, "verdict": None,
                                       "state": state, "states": {}, "fields": {}})
         sub = row.get(SPLIT[study]) if study in SPLIT else ""
@@ -100,8 +100,10 @@ def from_json(study: str, folder: Path, found: dict[str, dict]) -> None:
                                                    "state": "none", "states": {}, "fields": {}})
         entry["identity"] = row["identity"] or entry["identity"]
         entry["verdict"], entry["state"] = row["label"], row["state"]
-        table = (store.tables(path) or {}).get(SUBTABLE.get(study))
-        for line in table["rows"] if table else []:
+        table = (store.tables(path) or {}).get(SUBTABLE.get(study, ""))
+        if table is None:
+            continue
+        for line in table["rows"]:
             for column, value in zip(table["columns"][1:], line[1:]):
                 entry["fields"][(str(line[0]), column)] = value
 

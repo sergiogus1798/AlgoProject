@@ -2,6 +2,7 @@
 
 import json
 import zipfile
+from typing import Any, cast
 from datetime import datetime
 from xml.etree.ElementTree import ParseError
 
@@ -11,6 +12,8 @@ from pydantic import BaseModel
 from ui.daemon import jobs, proof, winddown, workerguard
 from ui.daemon.advance import preflight as advance
 from ui.daemon.launch import chaincheck, preflight
+from ui.daemon.launch.preflight import Listing
+from ui.daemon.launch.steps import Refusal
 from ui.daemon.workflow.steps import STEPS
 
 ROUTER = APIRouter()
@@ -36,7 +39,7 @@ class Chain(BaseModel):
     plan: dict = {}
 
 
-def orphans() -> list[dict]:
+def orphans() -> list[dict[str, Any]]:
     """What a closed window's launcher left: its markers that no job of this daemon owns."""
     return workerguard.orphans({j["_proc"].pid for j in jobs.JOBS if j["_proc"]})
 
@@ -62,9 +65,9 @@ def listing(project: str) -> dict[str, object]:
     return {"install": got["install"], "role": got["role"], "tasks": got["tasks"]}
 
 
-def shown(project: str, task: str, step: str, got: dict) -> dict:
+def shown(project: str, task: str, step: str, got: dict[str, object]) -> dict[str, str]:
     """What a nonce of this launcher is bound to: what was asked and the sentence shown."""
-    return {"project": project, "task": task, "step": step, "text": got["text"]}
+    return {"project": project, "task": task, "step": step, "text": cast("str", got["text"])}
 
 
 @ROUTER.get("/api/launch/preflight")
@@ -92,7 +95,7 @@ def check(project: str, task: str = "", step: str = "") -> dict[str, object]:
 def steps(project: str) -> dict[str, object]:
     """Every SQX step of the rail: whether its ▶ SQX may launch it now, and why not."""
     try:
-        got = preflight.tasks(project)
+        got: Refusal | Listing = preflight.tasks(project)
         busy = [] if "refuse" in got else advance.busy(got["role"], project) + queued()
     except FAILS as e:
         got = {"refuse": f"no se pudo comprobar: {e}"}

@@ -1,6 +1,10 @@
 """The pieces every portfolio reader answers with: contract blocks, tabs, the relaxed line, the words."""
 
 import math
+from collections.abc import Mapping
+from typing import Any, TypedDict, TypeVar
+
+_T = TypeVar("_T")
 
 # One plain sentence per figure the zone shows (owner: every statistic on screen is explained).
 WORDS = {
@@ -51,7 +55,39 @@ WORDS = {
 }
 
 
-def clean(value: object) -> object:
+class TableBlock(TypedDict):
+    """A contract `table` block as `table` builds it."""
+
+    kind: str
+    title: str
+    columns: list[str]
+    rows: list[list[Any]]
+    align: list[str]
+    note: str
+    help: list[str | None] | None
+    states: list[list[Any]] | None
+    compact: bool
+
+
+class CalloutBlock(TypedDict):
+    """A contract `callout` block."""
+
+    kind: str
+    text: str
+    state: str
+
+
+class TabBlock(TypedDict):
+    """A contract tab: a title, a note and the blocks it holds."""
+
+    name: str
+    title: str
+    note: str
+    selectors: list[Any]
+    blocks: list[Mapping[str, Any]]
+
+
+def clean(value: _T) -> _T | None:
     """A value JSON can carry: NaN and infinities become None, the rest is left alone."""
     return None if isinstance(value, float) and not math.isfinite(value) else value
 
@@ -61,8 +97,8 @@ def pct(share: float | None) -> float | None:
     return None if share is None or share != share else round(100 * float(share), 1)
 
 
-def table(title: str, columns: list[str], rows: list[list], note: str = "",
-          helps: list[str | None] | None = None, states: list[list] | None = None) -> dict:
+def table(title: str, columns: list[str], rows: list[list[Any]], note: str = "",
+          helps: list[str | None] | None = None, states: list[list[Any]] | None = None) -> TableBlock:
     """A contract `table` block, compact, text columns left and figures right."""
     rows = [[clean(v) for v in r] for r in rows]
     align = ["right" if any(isinstance(r[i], (int, float)) and not isinstance(r[i], bool) for r in rows)
@@ -72,12 +108,12 @@ def table(title: str, columns: list[str], rows: list[list], note: str = "",
             "compact": align[-1] != "left"}       # a last column of words takes the width left
 
 
-def callout(text: str, state: str = "info") -> dict:
+def callout(text: str, state: str = "info") -> CalloutBlock:
     """A contract `callout` block."""
     return {"kind": "callout", "text": text, "state": state}
 
 
-def tab(title: str, *blocks: dict, note: str = "") -> dict:
+def tab(title: str, *blocks: Mapping[str, Any] | None, note: str = "") -> TabBlock:
     """A contract tab holding the given blocks (None ones dropped)."""
     return {"name": title, "title": title, "note": note, "selectors": [],
             "blocks": [b for b in blocks if b]}
@@ -88,7 +124,7 @@ def headline(label: str) -> str:
     return label if label.startswith("SIN VEREDICTO") else f"VEREDICTO: {label}"
 
 
-def relaxed(marks: dict | None) -> str:
+def relaxed(marks: Mapping[str, Any] | None) -> str:
     """The line an adjusted run carries on screen; "" for a run at the owner's thresholds."""
     if not marks:
         return ""
@@ -96,6 +132,6 @@ def relaxed(marks: dict | None) -> str:
     return f"AJUSTADO: umbrales relajados ({said}) — no es un resultado"
 
 
-def empty(missing: str, action: str) -> dict:
+def empty(missing: str, action: str) -> dict[str, Any]:
     """A module with nothing to paint: what is missing and the one action that produces it."""
     return {"tabs": [], "empty": f"{missing}\n\nPara tenerlo: {action}", "relaxed": ""}

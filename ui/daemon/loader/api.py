@@ -1,5 +1,6 @@
 """The routes that load a databank's data when the window selects it."""
 
+from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -17,7 +18,7 @@ class Load(BaseModel):
 
 
 @ROUTER.get("/api/load")
-def load_status(project: str, databank: str) -> dict[str, object]:
+def load_status(project: str, databank: str) -> dict[str, Any]:
     """Where one databank's data stands, piece by piece, without starting anything."""
     try:
         return state.status(project, databank)
@@ -26,7 +27,7 @@ def load_status(project: str, databank: str) -> dict[str, object]:
 
 
 @ROUTER.post("/api/load")
-def load(req: Load) -> dict[str, object]:
+def load(req: Load) -> dict[str, Any]:
     """Queue what the databank is missing or has stale, once; answer where it stands."""
     try:
         return state.load(req.project, req.databank, req.retry)

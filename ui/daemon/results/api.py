@@ -1,5 +1,6 @@
 """The results routes: catalogue, one stored result, its history, the config drawer, the matrix."""
 
+from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -31,7 +32,7 @@ def _unknown(study: str) -> dict | None:
 
 
 @ROUTER.get("/api/catalogue")
-def catalogue_list() -> dict[str, object]:
+def catalogue_list() -> dict[str, Any]:
     """Every study, in family order, with whether it eliminates or only describes.
 
     Returns:
@@ -44,7 +45,7 @@ def catalogue_list() -> dict[str, object]:
 
 @ROUTER.get("/api/result")
 def result(project: str, databank: str, study: str, strategy: str = "", identity: str = "",
-           day: str = "", source: str = "live", version: str = "") -> dict[str, object]:
+           day: str = "", source: str = "live", version: str = "") -> dict[str, Any]:
     """One stored result and whether today's config would still sign it.
 
     Args:
@@ -74,7 +75,7 @@ def result(project: str, databank: str, study: str, strategy: str = "", identity
 
 @ROUTER.get("/api/presence")
 def strategy_presence(project: str, databank: str, strategy: str,
-                      identity: str = "") -> dict[str, object]:
+                      identity: str = "") -> dict[str, Any]:
     """Per study, whether this strategy has a result anywhere in the project, and its state.
 
     Args:
@@ -89,7 +90,7 @@ def strategy_presence(project: str, databank: str, strategy: str,
 
 @ROUTER.get("/api/history")
 def history(project: str, databank: str, study: str, strategy: str = "",
-            identity: str = "", source: str = "live", version: str = "") -> dict[str, object]:
+            identity: str = "", source: str = "live", version: str = "") -> dict[str, Any]:
     """Every run of a study on a databank or one of its strategies, newest first.
 
     Args:
@@ -107,12 +108,12 @@ def history(project: str, databank: str, study: str, strategy: str = "",
     if refused:
         return refused
     if source == "archive":
-        return archived.history(identity, databank, study, strategy, version)
+        return dict(archived.history(identity, databank, study, strategy, version))
     return runs.history(project, databank, study, strategy, identity)
 
 
 @ROUTER.get("/api/config")
-def config(study: str, project: str = "") -> dict[str, object]:
+def config(study: str, project: str = "") -> dict[str, Any]:
     """A study's knobs with their tooltips, and the hash they sign.
 
     Args:
@@ -133,7 +134,7 @@ def config(study: str, project: str = "") -> dict[str, object]:
 
 
 @ROUTER.post("/api/config/hash")
-def config_hash(req: Overrides) -> dict[str, object]:
+def config_hash(req: Overrides) -> dict[str, Any]:
     """The hash the next run would sign under the drawer's overrides.
 
     Args:
@@ -154,7 +155,7 @@ def config_hash(req: Overrides) -> dict[str, object]:
 
 @ROUTER.get("/api/matrix")
 def population(project: str, databank: str, identity: str = "", source: str = "live",
-               version: str = "") -> dict[str, object]:
+               version: str = "") -> dict[str, Any]:
     """Every strategy of one databank against every study.
 
     Args:
@@ -175,7 +176,7 @@ def population(project: str, databank: str, identity: str = "", source: str = "l
 
 
 @ROUTER.get("/api/projects")
-def projects() -> dict[str, object]:
+def projects() -> dict[str, Any]:
     """Every project with reports, its databanks and its asset.
 
     Returns:

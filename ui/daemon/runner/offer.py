@@ -1,5 +1,6 @@
 """Which studies a strategy page can use in its own databank, and where the others live."""
 
+from typing import Any
 from ui.daemon.databank import layout
 from ui.daemon.loader import find
 from ui.daemon.results.catalogue import STUDIES
@@ -37,7 +38,7 @@ def _refusal(key: str, project: str, databank: str, strategy: str, asset: str) -
     return got if isinstance(got, str) else None
 
 
-def _go(project: str, databank: str, strategy: str, home: tuple[str, str] | None) -> dict:
+def _go(project: str, databank: str, strategy: str, home: tuple[str, str] | None) -> dict[str, Any]:
     """Where the study's own databank holds this strategy, by name, or why it does not.
 
     Returns:

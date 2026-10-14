@@ -1,5 +1,7 @@
 """Item 5: the month-sign count of a strategy against its market, IS and OOS apart, as a contract dict."""
 
+from typing import Any, cast
+
 import pandas as pd
 
 from ui.daemon.tearmarket.source import SAMPLES
@@ -24,8 +26,8 @@ def strategy_months(equity: pd.DataFrame) -> pd.Series:
         month before; the first month against 0.
     """
     s = equity.sort_values("day").set_index("day")["equity"]
-    last = s.groupby(s.index.to_period("M")).last()
-    return last.diff().fillna(last).round(2)
+    last = s.groupby(pd.DatetimeIndex(s.index).to_period("M")).last()
+    return cast(pd.Series, last.diff().fillna(last).round(2))
 
 
 def market_months(bars: pd.DataFrame, months: pd.PeriodIndex) -> pd.Series:
@@ -39,11 +41,11 @@ def market_months(bars: pd.DataFrame, months: pd.PeriodIndex) -> pd.Series:
         Return per month, NaN where the month has no bar.
     """
     c = bars["Close"]
-    g = c.groupby(c.index.to_period("M"))
+    g = c.groupby(pd.DatetimeIndex(c.index).to_period("M"))
     return (g.last() / g.first() - 1).reindex(months)
 
 
-def count(pnl: pd.Series, ret: pd.Series) -> dict:
+def count(pnl: pd.Series, ret: pd.Series) -> dict[str, int]:
     """Months per cell, flat months and months with no market sign on their own lines.
 
     Args:
@@ -56,12 +58,13 @@ def count(pnl: pd.Series, ret: pd.Series) -> dict:
     flat = pnl == 0
     blind = ~flat & (ret.isna() | (ret == 0))
     live = ~flat & ~blind
-    s, m = pnl[live].gt(0).map({True: 1, False: -1}), ret[live].gt(0).map({True: 1, False: -1})
+    s = cast(pd.Series, pnl[live]).gt(0).map({True: 1, False: -1})
+    m = cast(pd.Series, ret[live]).gt(0).map({True: 1, False: -1})
     out = {k: int(((s == a) & (m == b)).sum()) for k, _, a, b in CELLS}
     return {**out, "flat": int(flat.sum()), "no_market": int(blind.sum()), "months": len(pnl)}
 
 
-def tab(sample: str, n: dict, span: str) -> dict:
+def tab(sample: str, n: dict[str, int], span: str) -> dict[str, Any]:
     """One sample's tab: the 2×2 table and the same counts as bars, both-down highlighted.
 
     Args:
@@ -97,7 +100,7 @@ def tab(sample: str, n: dict, span: str) -> dict:
             "selectors": [], "blocks": [table, bars]}
 
 
-def result(meta: dict, equity: pd.DataFrame, bars: pd.DataFrame) -> dict:
+def result(meta: dict, equity: pd.DataFrame, bars: pd.DataFrame) -> dict[str, Any]:
     """The whole answer of item 5 for one strategy.
 
     Args:
@@ -108,10 +111,11 @@ def result(meta: dict, equity: pd.DataFrame, bars: pd.DataFrame) -> dict:
     Returns:
         A contract dict with one tab per sample and `summary.counts` per sample.
     """
-    tabs, counts = [], {}
+    tabs: list[dict[str, Any]] = []
+    counts: dict[str, dict[str, int]] = {}
     for sample in SAMPLES:
-        pnl = strategy_months(equity[equity["sample"] == sample])
-        counts[sample] = count(pnl, market_months(bars, pnl.index))
+        pnl = strategy_months(cast(pd.DataFrame, equity[equity["sample"] == sample]))
+        counts[sample] = count(pnl, market_months(bars, cast(pd.PeriodIndex, pnl.index)))
         tabs.append(tab(sample, counts[sample], f"{pnl.index[0]} … {pnl.index[-1]}"))
     return {"module": "tearMarket", "strategy": meta["name"], "identity": meta["identity"],
             "config_hash": meta["day"], "computed_at": pd.Timestamp.now().isoformat(timespec="seconds"),

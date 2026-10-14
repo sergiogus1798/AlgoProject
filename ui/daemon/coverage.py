@@ -1,5 +1,6 @@
 """The coverage matrix: what has been tried, where, and what came of it."""
 
+from typing import Any
 from ui.daemon import library
 
 # Named here rather than gathered from the data, because the question the matrix answers
@@ -25,7 +26,7 @@ def cell_verdict(runs: list[dict[str, str]]) -> str:
     return max((r.get("verdict", "") for r in runs), key=lambda v: RANK.get(v, 2))
 
 
-def matrix(row_axis: str = "archetype") -> dict[str, object]:
+def matrix(row_axis: str = "archetype") -> dict[str, Any]:
     """The grid of runs, one axis chosen by the reader and timeframes always across.
 
     Args:
@@ -63,7 +64,7 @@ def matrix(row_axis: str = "archetype") -> dict[str, object]:
                       for k, v in cells.items()}}
 
 
-def totals() -> dict[str, object]:
+def totals() -> dict[str, Any]:
     """The headline counts the window shows above the matrix.
 
     Returns:

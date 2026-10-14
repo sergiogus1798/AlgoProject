@@ -1,5 +1,6 @@
 """The run routes of the study viewer: start a study, one sub-test beside the stored result, the screen as a page, cancel."""
 
+from typing import Any
 import json
 from datetime import datetime
 from html import escape
@@ -42,7 +43,7 @@ class StudyRun(BaseModel):
 
 
 @ROUTER.post("/api/study/run")
-def study_run(req: StudyRun) -> dict[str, object]:
+def study_run(req: StudyRun) -> dict[str, Any]:
     """Queue a study: one job per strategy for `one`, one job for `many`.
 
     Args:
@@ -119,7 +120,7 @@ def _tests(project: str, databank: str, strategy: str) -> list[dict]:
 
 @ROUTER.get("/api/study/only")
 def study_only(study: str, project: str = "", databank: str = "", asset: str = "",
-               strategy: str = "") -> dict[str, object]:
+               strategy: str = "") -> dict[str, Any]:
     """The sub-tests of a study that run alone.
 
     Args:
@@ -141,7 +142,7 @@ def study_only(study: str, project: str = "", databank: str = "", asset: str = "
 
 
 @ROUTER.get("/api/study/offer")
-def study_offer(project: str, databank: str, strategy: str, asset: str = "") -> dict[str, object]:
+def study_offer(project: str, databank: str, strategy: str, asset: str = "") -> dict[str, Any]:
     """What the strategy page greys: each study the runner refuses here, why, and where to go.
 
     Args:
@@ -157,7 +158,7 @@ def study_offer(project: str, databank: str, strategy: str, asset: str = "") -> 
 
 
 @ROUTER.post("/api/study/screen")
-def study_screen(req: Screen) -> dict[str, object]:
+def study_screen(req: Screen) -> dict[str, Any]:
     """Write what the window shows as one page, through `core.study.render` (22 §6.3 point 10).
 
     Args:
@@ -185,7 +186,7 @@ def study_screen(req: Screen) -> dict[str, object]:
 
 
 @ROUTER.post("/api/jobs/{job_id}/cancel")
-def job_cancel(job_id: str) -> dict[str, object]:
+def job_cancel(job_id: str) -> dict[str, Any]:
     """Cancel a running or queued job.
 
     Args:

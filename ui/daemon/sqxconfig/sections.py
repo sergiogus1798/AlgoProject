@@ -1,5 +1,6 @@
 """The SQX settings as the zone draws them: one section per test or topic, every value typed."""
 
+from typing import Any
 import re
 from functools import lru_cache
 
@@ -33,7 +34,7 @@ def header(lines: list[str]) -> list[str]:
     return out
 
 
-def field(name: str, leaf: dict) -> dict:
+def field(name: str, leaf: dict) -> dict[str, Any]:
     """One value, ready for the window.
 
     Args:
@@ -47,7 +48,7 @@ def field(name: str, leaf: dict) -> dict:
             "help": clean(leaf["hint"]), **spec(name, leaf["path"], leaf["value"])}
 
 
-def markets() -> dict:
+def markets() -> dict[str, Any]:
     """The retest universe, one line per declared market, read only.
 
     Returns:
@@ -89,7 +90,7 @@ def groups(doc: object, lines: list[str], top: str, every: list[dict]) -> list[d
             if tuple(path[:k]) in seen or not isinstance(path[k - 1], str):
                 continue
             seen.add(tuple(path[:k]))
-            node = doc
+            node: Any = doc
             for key in path[:k - 1]:
                 node = node[key]
             text = clean(hint(lines, node.lc.key(path[k - 1])[0]))
@@ -159,14 +160,14 @@ def with_studies(sections: list[dict]) -> list[dict]:
     return out
 
 
-def state() -> dict:
+def state() -> dict[str, Any]:
     """The whole zone in one round trip; re-read only when one of its files changed."""
     files = [ASSETS / f for f in SHARED.values()] + list(studies.FILES.values())
     return _state(tuple(f.stat().st_mtime_ns for f in files))
 
 
 @lru_cache(maxsize=1)
-def _state(stamp: tuple) -> dict:
+def _state(stamp: tuple) -> dict[str, Any]:
     """The whole zone, built once per `stamp` (the mtime of every file it reads).
 
     Returns:

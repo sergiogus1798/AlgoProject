@@ -1,5 +1,6 @@
 """The search ledger as the window reads it: searches, funnel and history spent, one study at a time."""
 
+from typing import Any
 import pandas as pd
 
 from ledger import gate, record, spend, study as studymod, trials
@@ -23,7 +24,7 @@ def newest() -> str | None:
     return max(ids, key=lambda s: studymod.path(s).stat().st_mtime) if ids else None
 
 
-def spent_block(frame: pd.DataFrame) -> dict:
+def spent_block(frame: pd.DataFrame) -> dict[str, Any]:
     """What history this study has already spent, and what that costs.
 
     Args:
@@ -60,7 +61,7 @@ def spent_block(frame: pd.DataFrame) -> dict:
     return {"segments": plain(segments), "virgin": virgin, "blind": blind, "trials": pooled}
 
 
-def ledger(study: str | None) -> dict:
+def ledger(study: str | None) -> dict[str, Any]:
     """Everything the ledger zone draws.
 
     Args:
@@ -72,7 +73,7 @@ def ledger(study: str | None) -> dict:
         `spent_block`; empty when the study has no search yet).
     """
     chosen = study or newest()
-    frame = studymod.read(chosen) if chosen else pd.DataFrame(columns=list(studymod.COLUMNS))
+    frame = studymod.read(chosen) if chosen else pd.DataFrame(columns=pd.Index(studymod.COLUMNS))
     return {"studies": studymod.studies(), "study": chosen, "rows": plain(frame),
             "funnel": plain(record.funnel(frame)) if len(frame) else [],
             "spent": spent_block(frame) if len(frame) else {}}

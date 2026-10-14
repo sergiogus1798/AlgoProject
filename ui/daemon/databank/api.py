@@ -1,7 +1,8 @@
 """The databank panel's routes: tabs, table, columns, aggregate equity, funnel and reload."""
 
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
+from typing import Any, cast
 
 from fastapi import APIRouter, Query, Response
 from pydantic import BaseModel
@@ -20,16 +21,16 @@ class Reload(BaseModel):
     databank: str
 
 
-def shown(what: str, read: Callable[..., dict], *args: str) -> dict:
+def shown(what: str, read: Callable[..., Mapping[str, Any]], *args: str) -> dict[str, Any]:
     """One read for the window, a failure as `error` instead of a 500 (the ui boundary)."""
     try:
-        return read(*args)
+        return cast("dict[str, Any]", read(*args))
     except Exception as failed:  # noqa: BLE001 — a file SQX is rewriting, a report half-written
         return {"error": f"No se pudo leer {what} de {' / '.join(args)}: {failed}"}
 
 
 @ROUTER.get("/api/databank/panels")
-def get_panels(project: str) -> dict:
+def get_panels(project: str) -> dict[str, Any]:
     """The two tab rows of one project, each sub-panel with its databank."""
     return shown("las pestañas", layout.panels, project)
 
@@ -44,7 +45,7 @@ def get_table(project: str, databank: str) -> Response:
 
 
 @ROUTER.get("/api/databank/segments")
-def get_segments(project: str, databank: str) -> dict:
+def get_segments(project: str, databank: str) -> dict[str, Any]:
     """The IS+OOS1 figures the column chooser can add, computed from the cosecha's trades."""
     return shown("la unión IS+OOS1", segments.segments, project, databank)
 
@@ -59,13 +60,13 @@ class View(BaseModel):
 
 
 @ROUTER.get("/api/databank/columns")
-def get_columns(project: str, databank: str) -> dict:
+def get_columns(project: str, databank: str) -> dict[str, Any]:
     """Every table's saved column choice of one databank, `views` {table: ids}."""
     return shown("las columnas", lambda p, d: {"views": columns.views(p, d)}, project, databank)
 
 
 @ROUTER.post("/api/databank/columns")
-def post_columns(req: View) -> dict:
+def post_columns(req: View) -> dict[str, Any]:
     """Keep (or, with `view` None, forget) one table's choice under AlgoData/filters/."""
     return shown("las columnas",
                  lambda p, d: {"views": columns.save(p, d, req.table, req.view)},
@@ -81,27 +82,27 @@ class Visible(BaseModel):
 
 
 @ROUTER.get("/api/databank/equity")
-def get_equity(project: str, databank: str, ids: list[str] | None = Query(None)) -> dict:  # noqa: B008 FastAPI idiom
+def get_equity(project: str, databank: str, ids: list[str] | None = Query(None)) -> dict[str, Any]:  # noqa: B008 FastAPI idiom
     """The databank's aggregate daily curve, SQX's and at the real spread; `ids` (repeated)
     keeps only those strategies."""
     return shown("la equity agregada", lambda p, d: equity.equity(p, d, ids), project, databank)
 
 
 @ROUTER.post("/api/databank/equity")
-def post_equity(req: Visible) -> dict:
+def post_equity(req: Visible) -> dict[str, Any]:
     """The same curve for a long list of visible identities, which a URL would not carry."""
     return shown("la equity agregada", lambda p, d: equity.equity(p, d, req.ids),
                  req.project, req.databank)
 
 
 @ROUTER.get("/api/databank/funnel")
-def get_funnel(project: str) -> dict:
+def get_funnel(project: str) -> dict[str, Any]:
     """The population's funnel of one project."""
     return shown("el embudo", funnel.funnel, project)
 
 
 @ROUTER.post("/api/databank/reload")
-def reload(req: Reload) -> dict:
+def reload(req: Reload) -> dict[str, Any]:
     """«Recargar databank»: forget every cached roster, list the folder again and ask
     `POST /api/load` for what the databank now misses.
 

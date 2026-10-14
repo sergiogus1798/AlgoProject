@@ -7,12 +7,17 @@ job's own. Another project of the worker touched a while ago is not a refusal (O
 one task at a time per worker, and the moment one finishes, launching another is fine. Read-only.
 """
 
+from collections.abc import Sequence, Set
+from pathlib import Path
+from typing import Any, TypedDict
+
 from core.paths import databank_dir, project_dir
 from sqx.projects import crosstfload
 from sqx.projects.workflow import CROSSTF_BUILD
 from ui.daemon import progress
 from ui.daemon.advance import confirm, preflight as advance
 from ui.daemon.launch import steps as launchsteps
+from ui.daemon.launch.steps import Refusal
 
 BUILD = "Build"
 ROLES = {"custodian": "custodio", "conductor": "conductor"}   # the owner's words for the workers
@@ -27,13 +32,31 @@ FILLS = {"CrossTF_Input": "· Antes de arrancar (paso 10.5), con el worker parad
                             "(que se vacía antes): es lo que lee el MC Retest."}
 
 
+class TaskRow(TypedDict):
+    """One SQX task as the window lists it, with what its databanks hold on the worker's disk."""
+
+    title: str
+    type: str
+    input: str
+    output: str
+    n_in: int
+    n_out: int
+
+
+class Listing(advance.Located):
+    """A project's install, its project.cfx and its tasks."""
+
+    cfx: Path
+    tasks: list[TaskRow]
+
+
 def count(project: str, databank: str, role: str) -> int:
     """How many .sqx one databank holds on the worker's disk now."""
     folder = databank_dir(project, databank, advance.WORKERS[role]["path"])
     return sum(1 for _ in folder.glob("*.sqx")) if folder.is_dir() else 0
 
 
-def tasks(project: str) -> dict:
+def tasks(project: str) -> Refusal | Listing:
     """A project's SQX tasks as the window lists them.
 
     Args:
@@ -50,15 +73,15 @@ def tasks(project: str) -> dict:
     cfx = project_dir(project, advance.WORKERS[got["role"]]["path"]) / "project.cfx"
     if not cfx.exists():
         return {"refuse": f"{project} no está en {got['install']}"}
-    rows = [{"title": t["title"], "type": t["type"], "input": t["input"], "output": t["output"],
+    rows: list[TaskRow] = [{"title": t["title"], "type": t["type"], "input": t["input"], "output": t["output"],
              "n_in": count(project, t["input"], got["role"]) if t["input"] else 0,
              "n_out": count(project, t["output"], got["role"]) if t["output"] else 0}
             for t in progress.tasks(cfx) if t["title"]]
     return {**got, "cfx": cfx, "tasks": rows}
 
 
-def check(project: str, titles: str | list[str] = (), step: str = "",
-          own_log: bool = False, filled: set[str] = frozenset()) -> dict:
+def check(project: str, titles: str | Sequence[str] = (), step: str = "",
+          own_log: bool = False, filled: Set[str] = frozenset()) -> dict[str, Any]:
     """Every precondition of launching one task, or every task of one workflow step, together.
 
     Args:
@@ -82,8 +105,8 @@ def check(project: str, titles: str | list[str] = (), step: str = "",
     return judge(project, got, reasons, titles, step, filled)
 
 
-def judge(project: str, got: dict, reasons: list[str], titles: str | list[str] = (),
-          step: str = "", filled: set[str] = frozenset()) -> dict:
+def judge(project: str, got: Listing, reasons: list[str], titles: str | Sequence[str] = (),
+          step: str = "", filled: Set[str] = frozenset()) -> dict[str, Any]:
     """`check` once the project's tasks and the worker's state are read: the rail asks for
     every SQX step at once and reads them once.
 
@@ -97,7 +120,7 @@ def judge(project: str, got: dict, reasons: list[str], titles: str | list[str] =
         As `check`.
     """
     reasons = list(reasons)
-    off = {}
+    off: dict[str, str] = {}
     if step:
         picked = launchsteps.of_step(step, got["cfx"])
         if "refuse" in picked:
@@ -138,7 +161,7 @@ def judge(project: str, got: dict, reasons: list[str], titles: str | list[str] =
             "configure": launchsteps.unconfigured(got["cfx"], titles)}
 
 
-def text(pre: dict, project: str) -> str:
+def text(pre: dict[str, Any], project: str) -> str:
     """The sentence the owner confirms before anything is written or started.
 
     Args:

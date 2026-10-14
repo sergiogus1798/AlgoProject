@@ -1,5 +1,6 @@
 """What of a databank is loaded, what is stale, and the commands that bring it up to date."""
 
+from typing import Any
 from pathlib import Path
 
 from core.paths import export_dir, harvest_dir, metrics_export
@@ -59,7 +60,7 @@ def trades_age(project: str, databank: str, own: list[Path]) -> str:
     return age(newest(export_dir(project, databank, "x").parent, "manifest.json"), own)
 
 
-def status(project: str, databank: str) -> dict:
+def status(project: str, databank: str) -> dict[str, Any]:
     """Everything the window says about one databank's data, and why.
 
     Args:
@@ -123,7 +124,7 @@ def commands(project: str, now: dict, exports: bool = True) -> dict[str, tuple[s
     if now.get("error") or now["writing"]:
         return {}
     db, role = now["databank"], now["role"]
-    top = find.install_of(project, db)[1]
+    top = find.install_of(project, db)[1]  # pyright: ignore[reportOptionalSubscript]  # install_of is None for an unknown databank (runtime TypeError)
     at = [] if role == "master" else ["--role", role]
     want = {k for k, v in now["pieces"].items() if v["state"] in ("missing", "stale")}
     out = {}
@@ -156,13 +157,13 @@ def covers(project: str, now: dict) -> bool:
     """
     if not now.get("partner") or now.get("error"):
         return False
-    top = find.install_of(project, now["databank"])[1]
+    top = find.install_of(project, now["databank"])[1]  # pyright: ignore[reportOptionalSubscript]  # install_of is None for an unknown databank (runtime TypeError)
     own, other = (find.roster(project, d) for d in (now["databank"], now["partner"]))
     return bool(own) and set(own) == set(other) and len(own) == now["strategies"] \
         and len(other) == len(find.files(top, project, now["partner"]))
 
 
-def load(project: str, databank: str, retry: bool = False) -> dict:
+def load(project: str, databank: str, retry: bool = False) -> dict[str, Any]:
     """Queue whatever this databank is missing, once, and say where it stands.
 
     Args:

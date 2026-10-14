@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 from types import FrameType
+from typing import Any
 
 from core.datapaths import template_dir
 from core.researchpaths import autopilot_runs
@@ -67,12 +68,12 @@ def agent(which: str, text: str, tag: str) -> str:
     return found.group(1)
 
 
-def assets(ctx: dict) -> None:
+def assets(ctx: dict[str, Any]) -> None:
     """Hard rule 5: `core.assets` must exit zero before anything is authored."""
     call([sys.executable, "-m", "core.assets", ctx["symbol"]])
 
 
-def template(ctx: dict) -> None:
+def template(ctx: dict[str, Any]) -> None:
     """`templateArchitect` on this idea; the template it files becomes `ctx["template"]`."""
     i = ctx["idea"]
     ctx["template"] = agent("templateArchitect", (
@@ -82,7 +83,7 @@ def template(ctx: dict) -> None:
         f"Respuestas del dueño: {json.dumps(i['questions'], ensure_ascii=False)}"), "PLANTILLA")
 
 
-def project(ctx: dict) -> None:
+def project(ctx: dict[str, Any]) -> None:
     """`sqx.projects.builder --workflow` on the custodian, one project per idea."""
     c = ctx["proposal"]["cell"]
     call([sys.executable, "-m", "sqx.projects.builder", ctx["project"], "--purpose",
@@ -93,7 +94,7 @@ def project(ctx: dict) -> None:
           "--workflow"])
 
 
-def palette(ctx: dict) -> None:
+def palette(ctx: dict[str, Any]) -> None:
     """`buildingBlocksExpert` writes and applies the palette the proposal already decided."""
     i = ctx["idea"]
     agent("buildingBlocksExpert", (
@@ -104,7 +105,7 @@ def palette(ctx: dict) -> None:
         "PALETA")
 
 
-def autopilot(ctx: dict) -> None:
+def autopilot(ctx: dict[str, Any]) -> None:
     """The autopilot from the build on, then the run's verdict closed in the memory."""
     try:
         call([sys.executable, "-m", "pipeline.autopilot.run", "--project", ctx["project"],

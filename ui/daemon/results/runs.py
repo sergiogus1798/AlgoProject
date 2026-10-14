@@ -1,6 +1,7 @@
 """A strategy's result as one entity across the whole project (owner, 2026-09-30): the one stored
 result its page shows, chosen among `hits.sources` — its identity first, else its name."""
 
+from typing import Any, cast
 from collections.abc import Iterable
 
 from ui.daemon.results import hits, stale, store
@@ -45,7 +46,7 @@ def judged(hit: dict, study: str, project: str) -> tuple[bool, str | None]:
     return stale.judge(study, hit["config_hash"], project, hit["manifest"], hit["population"])
 
 
-def full(hit: dict, identity: str) -> dict:
+def full(hit: dict, identity: str) -> dict[str, Any]:
     """The contract result a hit points at, as the strategy's page shows it.
 
     Args:
@@ -56,7 +57,8 @@ def full(hit: dict, identity: str) -> dict:
     Returns:
         The result dict, sliced to this strategy when it is the population's run.
     """
-    got, _ = store.load(hit["path"])
+    loaded, _ = store.load(hit["path"])
+    got = cast(dict[str, Any], loaded)    # a hit points at a file that parsed
     kind, alias = hit["kind"], hit["alias"]
     if kind in ("file", "population"):
         return got
@@ -64,11 +66,11 @@ def full(hit: dict, identity: str) -> dict:
         return {**whole(got, alias), "identity": identity or None}
     row = (store.verdicts(hit["path"].parent) or {}).get(alias)
     mine = slice_for(got, alias) if kind == "slice" else None
-    return {**(mine or verdict_row(got, row, alias)), "identity": hit["identity"]}
+    return {**(mine or verdict_row(got, cast(dict[str, Any], row), alias)), "identity": hit["identity"]}
 
 
 def meta(hit: dict | None, skipped: list[dict], study: str, project: str,
-         identity: str) -> dict:
+         identity: str) -> dict[str, Any]:
     """The `meta` beside a result: where it came from and whether it is current.
 
     Returns:
@@ -88,7 +90,7 @@ def meta(hit: dict | None, skipped: list[dict], study: str, project: str,
 
 
 def result(project: str, databank: str, study: str, strategy: str, identity: str,
-           day: str) -> dict:
+           day: str) -> dict[str, Any]:
     """The newest contract result of a study for the population or one strategy.
 
     Args:
@@ -107,7 +109,7 @@ def result(project: str, databank: str, study: str, strategy: str, identity: str
             "meta": meta(hit, skipped, study, project, identity)}
 
 
-def history(project: str, databank: str, study: str, strategy: str, identity: str) -> dict:
+def history(project: str, databank: str, study: str, strategy: str, identity: str) -> dict[str, Any]:
     """Every run of the place the page's result comes from, newest first.
 
     Args:

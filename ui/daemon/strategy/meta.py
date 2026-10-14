@@ -3,6 +3,7 @@
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from core.datapaths import tmp_dir
 from sqx.inspect import strategymeta
@@ -10,7 +11,7 @@ from ui.daemon.loader import find
 from ui.daemon.strategy import archived, locate
 
 
-def live(project: str, databank: str, identity: str) -> dict:
+def live(project: str, databank: str, identity: str) -> dict[str, Any]:
     """The fields of a live strategy, with where its file was found.
 
     Args:
@@ -38,7 +39,7 @@ def live(project: str, databank: str, identity: str) -> dict:
         return strategymeta.read(folder / path.name, cfx) | {"origin": origin}
 
 
-def frozen(identity: str, version: str = "") -> dict:
+def frozen(identity: str, version: str = "") -> dict[str, Any]:
     """The fields archived beside the version, as E2's reader wrote them that day."""
     got = archived.load(identity, version)
     if isinstance(got, str):

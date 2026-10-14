@@ -1,5 +1,7 @@
 """The ledger row of a filter or a manual deletion: its study (Q9), its step and its segment."""
 
+from typing import Any, cast
+
 from ledger import record, study as studymod
 from sqx.projects.stage import titles
 from ui.daemon.databank import layout
@@ -24,6 +26,7 @@ def signed(project: str) -> tuple[str, dict] | str:
         return (f"el proyecto {project} no tiene plantilla en projects/registry.csv: sin "
                 "familia no hay estudio del ledger donde apuntar el filtro, así que no se aplica")
     row = where.enrolled(project)
+    assert row is not None                      # `family` found it above
     return studymod.study_id(row["symbol"], row["timeframe"], family), row
 
 
@@ -57,7 +60,7 @@ def segment(read: set[str]) -> str:
 
 
 def log(project: str, databank: str, step: float, read: set[str], n_in: int, n_out: int,
-        criterion: str, origin: str, thresholds: list[dict] | None) -> dict:
+        criterion: str, origin: str, thresholds: list[dict] | None) -> dict[str, Any]:
     """Write the one ledger row, through `record.log` and so through the one-way door.
 
     Args:
@@ -75,7 +78,7 @@ def log(project: str, databank: str, step: float, read: set[str], n_in: int, n_o
     Returns:
         The row as written. Raises `PermissionError` when the door refuses the segment.
     """
-    study, row = signed(project)
+    study, row = cast(tuple[str, dict], signed(project))
     return record.log(study, {
         "step": step, "launched_by": "ventana", "symbol": row["symbol"],
         "timeframe": row["timeframe"], "segment": segment(read), "n_in": n_in,

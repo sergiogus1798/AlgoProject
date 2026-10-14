@@ -1,6 +1,7 @@
 """A project's own task log and the worker's status line: counts, times and the running total."""
 
 import re
+from typing import cast
 import time
 from datetime import datetime
 from pathlib import Path
@@ -54,7 +55,7 @@ def task_runs(project_dir: Path) -> list[dict]:
             # missing line killed the watcher and, through its `finally`, a live build.
             if task is None:
                 continue
-            started = datetime.strptime(STARTED.search(chunk).group(1), STAMP)
+            started = datetime.strptime(cast(re.Match[str], STARTED.search(chunk)).group(1), STAMP)
             fin = FINISHED.search(chunk)
             finished = datetime.strptime(fin.group(1), STAMP) if fin else None
             listed = BEFORE.search(chunk)
@@ -116,5 +117,5 @@ def status(role: str, project: str) -> dict | None:
     per = got["per_strategy_ms"]
     return {"generated": int(got["generated"].group(1)),
             "per_strategy_ms": to_ms(per.group(1)) if per else None,
-            "running": got["running"].group(1).strip(),
-            "in_databank": int(got["in_databank"].group(1))}
+            "running": cast(re.Match[str], got["running"]).group(1).strip(),
+            "in_databank": int(cast(re.Match[str], got["in_databank"]).group(1))}

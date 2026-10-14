@@ -30,7 +30,7 @@ def _records(blob: str) -> bytes:
     return b"".join(sorted(out))
 
 
-def _canonical(node: ElementTree.Element, h: "hashlib._Hash") -> None:
+def _canonical(node: ElementTree.Element, h: hashlib.blake2b) -> None:
     """Feed one element to `h` with its children in sorted order and its blobs as records.
 
     SQX writes a strategy's results as hash maps, so on each save the statistics blocks and

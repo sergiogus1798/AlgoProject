@@ -1,5 +1,6 @@
 """The creations' routes: what can be chosen, and the two jobs on the conductor lane."""
 
+from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -32,7 +33,7 @@ class Project(BaseModel):
 
 
 @ROUTER.get("/api/create/options")
-def options() -> dict:
+def options() -> dict[str, Any]:
     """Every template with a `.sqx`, every asset, the timeframes and the form's defaults."""
     library = template_dir("x").parent
     return {"templates": sorted(d.name for d in library.iterdir() if (d / "template.sqx").exists()),
@@ -41,7 +42,7 @@ def options() -> dict:
 
 
 @ROUTER.post("/api/create/template")
-def author(req: Author) -> dict:
+def author(req: Author) -> dict[str, Any]:
     """Queue the headless /sqx-strategy-template on the chat's draft, or say why not."""
     if not template_draft(req.name).exists():
         return {"error": f"no hay borrador «{req.name}»: termina antes la entrevista del chat"}
@@ -51,7 +52,7 @@ def author(req: Author) -> dict:
 
 
 @ROUTER.post("/api/create/project")
-def project(req: Project) -> dict:
+def project(req: Project) -> dict[str, Any]:
     """Queue the builder for the form, or say why the name is refused (hard rule 6)."""
     why = registry.check_name(req.name)
     if why:

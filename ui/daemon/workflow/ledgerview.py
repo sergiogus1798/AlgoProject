@@ -1,10 +1,13 @@
 """The ledger as the rail reads it: which studies are this project's, the oos2 budget, the blind door."""
 
+from typing import Any, cast
+
 import pandas as pd
 
 from ledger import gate, spend, study as studymod
 from ui.daemon.runner import where
 from ui.daemon.runs import guess_asset
+from ui.daemon.workflow.records import Door, Oos2Gauge
 from ui.text.numbers import num
 
 
@@ -27,12 +30,12 @@ def studies_of(project: str) -> list[str]:
 def frame(ids: list[str]) -> pd.DataFrame:
     """Every row of those studies, oldest first, in the contract's columns."""
     rows = [r for s in ids for r in studymod.read(s).to_dict("records")]
-    return pd.DataFrame(rows) if rows else pd.DataFrame(columns=list(studymod.COLUMNS))
+    return pd.DataFrame(rows) if rows else pd.DataFrame(columns=pd.Index(list(studymod.COLUMNS)))
 
 
 def symbol(rows: pd.DataFrame, project: str) -> str | None:
     """The project's asset: what its ledger rows say, else what its name says."""
-    return rows["symbol"].mode()[0] if len(rows) else guess_asset(project)
+    return cast("str", rows["symbol"].mode()[0]) if len(rows) else guess_asset(project)
 
 
 def asset_reads(asset: str) -> tuple[int, int]:
@@ -52,7 +55,7 @@ def asset_reads(asset: str) -> tuple[int, int]:
     return sum(reads), sum(1 for n in reads if n)
 
 
-def oos2(rows: pd.DataFrame, asset: str | None) -> dict:
+def oos2(rows: pd.DataFrame, asset: str | None) -> Oos2Gauge:
     """The oos2 gauge: how often this project's studies looked, and who may.
 
     Args:
@@ -67,7 +70,7 @@ def oos2(rows: pd.DataFrame, asset: str | None) -> dict:
         return {"looks": 0, "allowed": None, "virgin": True, "reserved_for": [],
                 "by_step": {}, "text": "Sin activo: ni el ledger ni el nombre del proyecto "
                                        "dicen cuál es, así que no se sabe de qué oos2 hablar."}
-    reads = rows[rows["segment"] == "oos2"]
+    reads = cast("pd.DataFrame", rows[rows["segment"] == "oos2"])
     by_step = {num(s): int(n) for s, n in reads["step"].value_counts().sort_index().items()}
     allowed_steps = gate.reserved(asset).get("oos2", [])
     stray = sorted(num(s) for s in set(reads["step"]) if s not in allowed_steps)
@@ -96,11 +99,12 @@ def door_study(project: str) -> str | None:
         project's own name (E1's tests) are never counted: the rail's door and step 20's
         must be the same door.
     """
-    row, family = where.enrolled(project), where.family(project)
+    row = cast("dict[str, Any]", where.enrolled(project))   # the same registry row as `family`
+    family = where.family(project)
     return studymod.study_id(row["symbol"], row["timeframe"], family) if family else None
 
 
-def blind(rows: pd.DataFrame) -> dict:
+def blind(rows: pd.DataFrame) -> Door:
     """The door over whatever rows it is handed: kept for callers written before `door`.
 
     Args:
@@ -123,7 +127,7 @@ def blind(rows: pd.DataFrame) -> dict:
             "text": "17, 18 y 19 están los tres en el ledger: se leen a la vez."}
 
 
-def door(project: str) -> dict:
+def door(project: str) -> Door:
     """The door of step 20, asked of `ledger.gate` over exactly the study blindJoint reads.
 
     Args:
@@ -139,9 +143,9 @@ def door(project: str) -> dict:
                 "text": "sin plantilla en projects/registry.csv no hay estudio del ledger que "
                         "abra el paso 20: queda cerrado"}
     if not gate.enforced():
-        return blind(pd.DataFrame(columns=["step"])) | {"study": study}
-    got = blind(studymod.read(study))
-    return got | {"study": study, "text": (f"{got['text']} (en el estudio {study})"
+        return {**blind(pd.DataFrame(columns=pd.Index(["step"]))), "study": study}
+    got = blind(studymod.read(cast("str", study)))   # not None: `enforced` was True above
+    return {**got, "study": study, "text": (f"{got['text']} (en el estudio {study})"
                                           if got["sealed"] else
                                           f"17, 18 y 19 están los tres en el ledger del estudio "
                                           f"{study}: se leen a la vez.")}

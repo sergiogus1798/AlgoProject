@@ -1,5 +1,7 @@
 """The population's funnel of one project: the gate's rules by level, then each later step's in and out."""
 
+from typing import TypedDict
+
 import pandas as pd
 
 from ui.daemon.databank.layout import reported
@@ -10,7 +12,34 @@ from ui.daemon.workflow.api import workflow
 WAITING = {"sealed": "sellado", "running": "corriendo", "blocked": "bloqueado"}
 
 
-def gate_rows(project: str) -> tuple[list[dict], str]:
+class _Row(TypedDict):
+    """The keys every funnel row carries; counts are None for a step not read yet."""
+
+    screen: str
+    kind: str
+    entered: int | None
+    passed: int | None
+    died: int | None
+    state: str
+    why: str
+
+
+class FunnelRow(_Row, total=False):
+    """One screen or step of the funnel; the gate's rows add `level` and `limbo`."""
+
+    level: str
+    limbo: int
+
+
+class Funnel(TypedDict):
+    """The `funnel` payload: the project, its rows and where the gate's came from."""
+
+    project: str
+    rows: list[FunnelRow]
+    source: str
+
+
+def gate_rows(project: str) -> tuple[list[FunnelRow], str]:
     """The newest gate report's `funnel.csv`, one row per rule (`screen` holds its label, `level` the level that judged it).
 
     Returns:
@@ -21,12 +50,12 @@ def gate_rows(project: str) -> tuple[list[dict], str]:
     if bank is None:
         return [], ""
     day = store.days(project, bank, "gate")[0]
-    rows = []
+    rows: list[FunnelRow] = []
     table = pd.read_csv(store.bank(project, bank) / day / "gate" / "funnel.csv")
     for r in table.to_dict("records"):
         limbo = int(r.get("limbo", 0))
         # a report written before encargo 44 has no `level`: its rows are the old screens
-        rows.append({"level": str(r["level"]) if pd.notna(r.get("level")) else "", "screen": r["screen"], "kind": r["kind"],
+        rows.append({"level": str(r["level"]) if bool(pd.notna(r.get("level"))) else "", "screen": r["screen"], "kind": r["kind"],
                      "entered": int(r["entered"]), "limbo": limbo, "passed": int(r["passed"]),
                      "died": int(r["died"]), "state": "hecho",
                      "why": f"nivel {r['level']}: {limbo} en Limbo, siguen" if limbo and r.get("level")
@@ -34,7 +63,7 @@ def gate_rows(project: str) -> tuple[list[dict], str]:
     return rows, f"{bank} del {day}"
 
 
-def funnel(project: str) -> dict:
+def funnel(project: str) -> Funnel:
     """GET /api/databank/funnel: what entered each screen and step, what passed, and why.
 
     Args:

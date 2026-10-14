@@ -1,5 +1,7 @@
 """«Banco» (encargo 33 §7.5): the bank's expected value per plan, re-buy policy and haircut, and the decision."""
 
+from typing import Any, cast
+
 import pandas as pd
 
 from portfolio.funded.decide import tables
@@ -18,13 +20,13 @@ def missing() -> list[str]:
             for line in inputs.refuse(inputs.load([])) + table_mod.variants(inputs.load([]))[1]]
 
 
-def decision() -> dict | None:
+def decision() -> dict[str, Any] | None:
     """The newest decision `funded.decide.run` wrote, None while there is none."""
     found = sorted((shelf.ROOT / "bank" / "decisions").glob("*.json"))
     return shelf.load(found[-1]) if found else None
 
 
-def read(bank: str = "", plan: str = "", **_: str) -> dict:
+def read(bank: str = "", plan: str = "", **_: str) -> dict[str, Any]:
     """The tabs of one bank table: Decisión, Tabla VE, VE(h), Supuestos."""
     base = {"missing": missing(), "banks": [t["folder"].name for t in tables.runs()]}
     if not base["banks"]:
@@ -32,14 +34,14 @@ def read(bank: str = "", plan: str = "", **_: str) -> dict:
     folder = shelf.folder("bank", bank if bank in base["banks"] else base["banks"][0])
     m = shelf.load(folder / "manifest.json")
     src, owner = m["paths"]["source"], m["config"]["owner"]
-    hs = [f"ev_h{int(round(parts.pct(h)))}" for h in owner["haircuts"]]
-    at = f"ev_h{int(round(parts.pct(owner['haircut_decides'])))}"
+    hs = [f"ev_h{int(round(parts.pct(h) or 0))}" for h in owner["haircuts"]]
+    at = f"ev_h{int(round(parts.pct(owner['haircut_decides']) or 0))}"
     frame = pd.read_parquet(folder / "table.parquet").sort_values(at, ascending=False)
     plan = plan if plan in set(frame["plan"]) else frame["plan"].iloc[0]
     rows = [[r["plan"], REBUY.get(r["rebuy"], r["rebuy"]), r["price_usd"], *[round(r[h], 1) for h in hs], round(r["ev_monkey"], 1), round(r["ev_se"], 1),
              None if pd.isna(r["breakeven_h"]) else parts.pct(r["breakeven_h"]), parts.pct(r["p_first_payout"]),
              round(r["purchases"], 2), round(r["fees"], 1)] for r in frame.to_dict("records")]
-    heads = ["plan", "recompra", "precio $", *[f"VE $ con h = {int(round(parts.pct(h)))} %" for h in owner["haircuts"]],
+    heads = ["plan", "recompra", "precio $", *[f"VE $ con h = {int(round(parts.pct(h) or 0))} %" for h in owner["haircuts"]],
              "mono $", "± error $", "h de equilibrio %", "P(1.er cobro) %", "compras", "cuotas $"]
     helps = [None, "Mismo plan: se recompra el mismo plan mientras quede caja. Sin recompra: una sola compra.",
              "Lo que cuesta la cuenta hoy.", *[parts.WORDS["ev"] + " " + parts.WORDS["h"]] * len(hs),
@@ -60,7 +62,7 @@ def read(bank: str = "", plan: str = "", **_: str) -> dict:
                             curve(frame, plan, owner, hs), assumed(folder)]}
 
 
-def decided() -> dict:
+def decided() -> parts.TabBlock:
     """«Decisión»: the sentence of `funded.decide.run`, in the owner's words, and each plan's gate."""
     d = decision()
     if d is None:
@@ -80,22 +82,22 @@ def decided() -> dict:
                      table, waits, note=f"Decidido el {d['decided'].replace('T', ' ')}.")
 
 
-def curve(frame: pd.DataFrame, plan: str, owner: dict, hs: list[str]) -> dict:
+def curve(frame: pd.DataFrame, plan: str, owner: dict[str, Any], hs: list[str]) -> parts.TabBlock:
     """«VE(h)»: one plan's EV against the haircut, a line per re-buy policy, and its monkey."""
-    mine = frame[(frame["plan"] == plan) & (frame["options"] == "")]
+    mine = cast(pd.DataFrame, frame[(frame["plan"] == plan) & (frame["options"] == "")])
     series = [{"label": f"{REBUY.get(r['rebuy'], r['rebuy'])} (± {r['ev_se']:.1f} $ de error)", "role": "sim",
                "values": [float(r[h]) for h in hs]} for r in mine.to_dict("records")]
     series += [{"label": f"mono · {REBUY.get(r['rebuy'], r['rebuy'])}", "role": "reference", "values": [float(r["ev_monkey"])] * len(hs)}
                for r in mine.to_dict("records")]
     lines = {"kind": "lines", "title": f"VE del banco de {plan} según el recorte h del edge", "unit": "USD",
-             "x": [int(round(parts.pct(h))) for h in owner["haircuts"]], "series": series, "zero_shade": True,
+             "x": [int(round(parts.pct(h) or 0)) for h in owner["haircuts"]], "series": series, "zero_shade": True,
              "x_label": "recorte h del edge (%)", "y_label": "VE del banco ($)",
              "note": parts.WORDS["h"] + " " + parts.WORDS["monkey"] + " Una curva por debajo de su mono "
                      "(línea gris) no gana nada que la suerte no dé."}
     return parts.tab("VE(h)", lines, note="El plan se elige arriba, en «Plan».")
 
 
-def assumed(folder: shelf.Path) -> dict:
+def assumed(folder: shelf.Path) -> parts.TabBlock:
     """«Supuestos»: what the table took for granted — the catalogue facts still unconfirmed."""
     doc = shelf.load(folder / "result.json")
     rows = [[w["code"], w["text"]] for w in doc.get("warnings", [])]

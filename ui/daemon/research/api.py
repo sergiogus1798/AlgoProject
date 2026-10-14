@@ -1,6 +1,8 @@
 """The routes of «Investigar»: the map, the memory, the board, the proposal and the queue."""
 
 import json
+from collections.abc import Callable
+from typing import Any, cast
 
 import pandas as pd
 from fastapi import APIRouter
@@ -41,7 +43,7 @@ class Launch(BaseModel):
     ideas: list[str]
 
 
-def safe(read: object, *args: object) -> dict:
+def safe(read: Callable[..., Any], *args: object) -> dict[str, Any]:
     """A read whose failure is shown in the panel instead of taking the daemon down."""
     try:
         return read(*args)
@@ -49,65 +51,65 @@ def safe(read: object, *args: object) -> dict:
         return {"error": f"no se pudo leer: {type(e).__name__}: {e}"}
 
 
-def running(label: str, study: str = "") -> dict | None:
+def running(label: str, study: str = "") -> dict[str, Any] | None:
     """The job of that label (and study) queued or running, if any."""
     return next((j for j in jobs.listing() if j["label"] == label and j["rc"] is None
                  and (not study or j.get("study") == study)), None)
 
 
 @ROUTER.get("/api/research/map")
-def profile_map() -> dict:
+def profile_map() -> dict[str, Any]:
     """The profile's map: asset × timeframe, dominant family and intensity."""
     return safe(views.profile_map)
 
 
 @ROUTER.get("/api/research/cell")
-def cell(symbol: str, timeframe: str) -> dict:
+def cell(symbol: str, timeframe: str) -> dict[str, Any]:
     """One cell's measures, each with its explanation."""
     return safe(views.cell, symbol, timeframe)
 
 
 @ROUTER.get("/api/research/memory")
-def memory() -> dict:
+def memory() -> dict[str, Any]:
     """Coverage, each attempt's funnel, survivors per family, ideas spent."""
     return safe(views.memory)
 
 
 @ROUTER.get("/api/research/board")
-def board() -> dict:
+def board() -> dict[str, Any]:
     """The board, ordered now."""
     return safe(views.board)
 
 
 @ROUTER.get("/api/research/proposal")
-def shown(id: str = "") -> dict:
+def shown(id: str = "") -> dict[str, Any]:
     """One proposal (the newest by default), each idea with whether it may be launched."""
     return safe(proposals.latest, id)
 
 
 @ROUTER.post("/api/research/veto")
-def veto(req: Veto) -> dict:
+def veto(req: Veto) -> dict[str, Any]:
     """Veto an idea, or lift the veto."""
     return safe(proposals.veto, req.id, req.idea, req.vetoed)
 
 
 @ROUTER.post("/api/research/answer")
-def answer(req: Answer) -> dict:
+def answer(req: Answer) -> dict[str, Any]:
     """Record the owner's answer to an idea's open question."""
     return safe(proposals.answer, req.id, req.idea, req.question, req.text.strip())
 
 
 @ROUTER.get("/api/research/launch")
-def launch_check(id: str) -> dict:
+def launch_check(id: str) -> dict[str, Any]:
     """Whether the queue may start now, and the sentence to confirm."""
     try:
-        return preflight.check(id)
+        return cast("dict[str, Any]", preflight.check(id))
     except FAILS as e:
         return {"ok": False, "reasons": [f"no se pudo comprobar: {e}"], "text": "", "ideas": []}
 
 
 @ROUTER.post("/api/research/launch")
-def launch(req: Launch) -> dict:
+def launch(req: Launch) -> dict[str, Any]:
     """Queue the proposal's ideas as ONE job on the conductor lane — after re-checking."""
     got = launch_check(req.id)
     if not got["ok"]:
@@ -123,7 +125,7 @@ def launch(req: Launch) -> dict:
 
 
 @ROUTER.get("/api/research/queue")
-def queued(id: str) -> dict:
+def queued(id: str) -> dict[str, Any]:
     """A proposal's queue: which idea is on the custodian, which wait, which ended and how."""
     f = queue.path(id)
     state = safe(store.read, f) if f.exists() else {}

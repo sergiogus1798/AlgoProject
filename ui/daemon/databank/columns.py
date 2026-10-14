@@ -33,7 +33,7 @@ def views(project: str, databank: str) -> dict[str, dict]:
     return got if isinstance(got, dict) else {}
 
 
-def save(project: str, databank: str, table: str, view: dict | None) -> dict:
+def save(project: str, databank: str, table: str, view: dict | None) -> dict[str, dict]:
     """Keep one table's choice, or drop it (`view` None: «restaurar vista por defecto»).
 
     Args:

@@ -1,5 +1,6 @@
 """One value of the SQX settings written from the window, checked against its spec, comments kept."""
 
+from typing import Any
 import yaml
 from ruamel.yaml.comments import CommentedSeq
 from ruamel.yaml.scalarstring import ScalarString
@@ -56,7 +57,7 @@ def _among(value: object, allowed: list) -> bool:
     return any(v == value and type(v) is type(value) for v in allowed)
 
 
-def coerce(kind: dict, current: object, value: object) -> object:
+def coerce(kind: dict, current: object, value: Any) -> object:
     """The value to write, in the form the file already holds.
 
     Args:
@@ -91,7 +92,7 @@ def coerce(kind: dict, current: object, value: object) -> object:
     return type(current)(text) if isinstance(current, ScalarString) else assetwrite.parse(text, "scalar")
 
 
-def _pair(doc: object, path: list, value: object) -> None:
+def _pair(doc: Any, path: list, value: object) -> None:
     """The one check across two values: the bar exit's minimum hours never above its maximum."""
     if path[:2] == ["exits", "bars"]:
         bars = {**doc["exits"]["bars"], path[-1]: value}
@@ -100,7 +101,7 @@ def _pair(doc: object, path: list, value: object) -> None:
                              f"max_hours {bars['max_hours']}.")
 
 
-def _current(doc: object, path: list) -> object:
+def _current(doc: Any, path: list) -> object:
     """The node the file holds at a path already known to exist, style and quotes included."""
     node = doc
     for key in path:
@@ -108,7 +109,7 @@ def _current(doc: object, path: list) -> object:
     return node
 
 
-def set_field(name: str, path: list, value: object) -> dict:
+def set_field(name: str, path: list, value: object) -> assetwrite.ValueWrite:
     """Write one value of one shared file, through the only writer of assets/.
 
     Args:

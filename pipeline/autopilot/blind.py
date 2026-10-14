@@ -92,7 +92,9 @@ def look(project: str, n: str, key: str, mothers: pd.DataFrame, redo: bool,
 
 def bank(project: str) -> str:
     """The databank the project's WFM task writes, as its project.cfx names it."""
-    return next(t["output"] for t in preflight.tasks(project)["tasks"]
+    listing = preflight.tasks(project)
+    assert "refuse" not in listing, f"{project}: {listing.get('refuse')}"
+    return next(t["output"] for t in listing["tasks"]
                 if t["title"] in stage.titles("wfm"))
 
 

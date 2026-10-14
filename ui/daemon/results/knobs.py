@@ -1,5 +1,6 @@
 """A study's knobs as its own loader reads them, their tooltips, and the hash a run would sign."""
 
+from typing import Any
 import copy
 import importlib
 import time
@@ -159,7 +160,7 @@ def _tip(tips: dict[str, str], key: str) -> str:
     return next((t for t in found if t), "")
 
 
-def sections(key: str) -> dict:
+def sections(key: str) -> dict[str, Any]:
     """The configuration drawer of one study.
 
     Args:

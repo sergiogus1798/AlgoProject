@@ -1,6 +1,10 @@
 """What «Correr workflow» runs, in WORKFLOW.md's order, and the step it stops before — from the rail."""
 
+from collections.abc import Mapping
+from typing import Any
+
 from ui.daemon.launch.steps import ELSEWHERE
+from ui.daemon.workflow.records import Plan
 from ui.daemon.workflow.steps import STEPS
 
 
@@ -37,7 +41,7 @@ RULE = ("La cadena corre, en el orden de WORKFLOW.md, cada paso pendiente: los d
         "salta en un proyecto sin tareas de fase 2.")
 
 
-def tests(step: dict, stale: bool) -> list[str]:
+def tests(step: Mapping[str, Any], stale: bool) -> list[str]:
     """The tests the chain runs in one Python step: those the rail's «todas las pruebas Python
     pendientes» (once «correr todo») runs.
 
@@ -55,7 +59,7 @@ def tests(step: dict, stale: bool) -> list[str]:
             and (stale or t["state"] == "pending")]
 
 
-def plan(data: dict) -> dict:
+def plan(data: Mapping[str, Any]) -> Plan:
     """Walk the rail and say what one press runs.
 
     Args:
@@ -67,9 +71,10 @@ def plan(data: dict) -> dict:
         None when the chain simply runs out. It assumes every SQX step it plans ends well;
         the runner re-checks each one before starting it.
     """
-    do, judged, stale = [], False, False
+    do: list[dict[str, Any]] = []
+    judged = stale = False
 
-    def halt(step: dict | None, why: str) -> dict:
+    def halt(step: dict[str, Any] | None, why: str) -> Plan:
         """The plan, ending before `step`."""
         return {"do": do, "stop": {"n": step["n"] if step else None,
                                    "title": step["title"] if step else "", "why": why}}

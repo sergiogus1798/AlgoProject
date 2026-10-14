@@ -3,6 +3,7 @@
 import re
 import sys
 from pathlib import Path
+from collections.abc import Mapping
 from typing import Any, cast
 
 from core.assetdata import load
@@ -36,7 +37,7 @@ def scanned(asset: str, do: list[dict]) -> None:
                  f"`python3 -m studies.data.feedQuality.scan --feed {feed}`")
 
 
-def reopen(data: dict[str, Any], out: Path) -> dict[str, Any]:
+def reopen(data: Mapping[str, Any], out: Path) -> Mapping[str, Any]:
     """A step that failed halfway left partial results the rail reads as done (OPEN #111):
     when the run before `out` (the newest stamp folder beside it) ended in `FALLO en el paso N` or was cut mid-step (OOM, SIGKILL: no `FIN`),
     `N` runs again. The kinds whose half-done output reads as done are the ones that write their
@@ -60,7 +61,7 @@ def reopen(data: dict[str, Any], out: Path) -> dict[str, Any]:
     return data
 
 
-def plan(data: dict[str, Any], given: tail.Given = tail.NOTHING) -> tail.Walked:
+def plan(data: Mapping[str, Any], given: tail.Given = tail.NOTHING) -> tail.Walked:
     """Walk the rail as `chainplan.plan` does, judging instead of stopping.
 
     Args:

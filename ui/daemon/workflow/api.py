@@ -1,5 +1,7 @@
 """The workflow rail's routes: every step of one project with its tests and tab, and its run buttons."""
 
+from typing import Any, cast
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -7,6 +9,7 @@ from ui.daemon import jobs
 from ui.daemon.launch import chainplan
 from ui.daemon.runner import where
 from ui.daemon.workflow import derive, ledgerview, needs, run, sources, tests
+from ui.daemon.workflow.records import Context, Rail, StepRow
 from ui.daemon.workflow.steps import STEPS
 
 ROUTER = APIRouter()
@@ -29,7 +32,7 @@ class Backfill(BaseModel):
     project: str
 
 
-def context(project: str) -> dict:
+def context(project: str) -> Context:
     """Everything the steps read, gathered once per request.
 
     Args:
@@ -51,7 +54,7 @@ def context(project: str) -> dict:
             "oos2": ledgerview.oos2(rows, asset)}
 
 
-def workflow(project: str) -> dict:
+def workflow(project: str) -> Rail:
     """The whole rail for one project.
 
     Args:
@@ -66,14 +69,15 @@ def workflow(project: str) -> dict:
     """
     ctx = context(project)
     live = tests.running(project)
-    out, raw = [], []
+    out: list[dict[str, Any]] = []
+    raw: list[dict[str, Any]] = []
     for spec in STEPS:
-        row = derive.HOW[spec["how"]](spec, ctx)
+        row: StepRow = derive.HOW[spec["how"]](spec, ctx)
         if spec["how"] == "sqx" and spec["studies"] and row["state"] == "done":
             reading = derive.study(spec, ctx)
             if reading["state"] == "done":
-                row |= {"in": reading["in"], "out": reading["out"],
-                        "why": f"{row['why']} Análisis: {reading['why']}"}
+                row["in"], row["out"] = reading["in"], reading["out"]
+                row["why"] = f"{row['why']} Análisis: {reading['why']}"
         raw.append({"n": spec["n"], "state": row["state"]})
         row = derive.seal(spec, row, ctx)
         out.append({"n": spec["n"], "title": spec["title"], "kind": spec["kind"],
@@ -88,25 +92,26 @@ def workflow(project: str) -> dict:
 
 
 @ROUTER.get("/api/workflow")
-def get_workflow(project: str) -> dict:
+def get_workflow(project: str) -> dict[str, Any]:
     """GET /api/workflow?project — the rail. A failure comes back as `error`, never a 500."""
     try:
-        return workflow(project)
+        return cast("dict[str, Any]", workflow(project))
     except Exception as failed:  # noqa: BLE001 — the ui boundary: show it, do not die
         return {"error": f"No se pudo leer el workflow de {project}: {failed}"}
 
 
 @ROUTER.post("/api/workflow/run")
-def post_run(req: RailRun) -> dict:
+def post_run(req: RailRun) -> dict[str, Any]:
     """Queue the ticked tests: `{jobs, refused}`, or `{error}` shown, never raised."""
     try:
-        return run.start(context(req.project), req.tests, req.databank, req.strategies)
+        return cast("dict[str, Any]",
+                    run.start(context(req.project), req.tests, req.databank, req.strategies))
     except Exception as failed:  # noqa: BLE001 — the ui boundary
         return {"error": f"No se pudo lanzar: {failed}"}
 
 
 @ROUTER.post("/api/workflow/backfill")
-def post_backfill(req: Backfill) -> dict:
+def post_backfill(req: Backfill) -> dict[str, Any]:
     """Queue `ledger.backfill --blind … --write` when the rail offers it: `{job}` or `{error}`."""
     try:
         offer = workflow(req.project)["backfill"]

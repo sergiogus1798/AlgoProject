@@ -1,5 +1,6 @@
 """The routes of the Criterios zone: the state, one rule written, and the freeze."""
 
+from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -18,7 +19,7 @@ class RuleChange(BaseModel):
 
 
 @ROUTER.get("/api/criteria")
-def criteria() -> dict[str, object]:
+def criteria() -> dict[str, Any]:
     """Every step's rules, the Build filters, the freeze and the history.
 
     Returns:
@@ -28,7 +29,7 @@ def criteria() -> dict[str, object]:
 
 
 @ROUTER.post("/api/criteria/rule")
-def set_rule(change: RuleChange) -> dict[str, object]:
+def set_rule(change: RuleChange) -> dict[str, Any]:
     """Add, change or delete one rule, comments kept, stamped in the history.
 
     Args:
@@ -45,7 +46,7 @@ def set_rule(change: RuleChange) -> dict[str, object]:
 
 
 @ROUTER.post("/api/criteria/freeze")
-def freeze() -> dict[str, object]:
+def freeze() -> dict[str, Any]:
     """Lock the criteria from now on; refused (422) when they already are."""
     try:
         return write.freeze()

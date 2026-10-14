@@ -1,5 +1,7 @@
 """PORTFOLIOS' two routes: `/api/archive/list` and `/api/archive/show` — files read, nothing run."""
 
+from typing import Any
+
 from fastapi import APIRouter
 
 from ui.daemon.archive import shelf
@@ -8,7 +10,7 @@ ROUTER = APIRouter()
 
 
 @ROUTER.get("/api/archive/list")
-def archive_list() -> dict:
+def archive_list() -> dict[str, Any]:
     """Every archived strategy with its versions, newest archive first.
 
     Returns:
@@ -22,7 +24,7 @@ def archive_list() -> dict:
 
 
 @ROUTER.get("/api/archive/show")
-def archive_show(identity: str = "", version: str = "") -> dict:
+def archive_show(identity: str = "", version: str = "") -> dict[str, Any]:
     """One archived version in full, for the detail beside the list.
 
     Args:

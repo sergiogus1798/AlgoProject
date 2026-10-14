@@ -5,13 +5,14 @@ from pathlib import Path
 import sys
 import zipfile
 from collections.abc import Callable
+from typing import Any
 
 from core.paths import ROOT
 from sqx.projects import stage
 from ui.daemon.launch.steps import silenced
 
 
-def run(pre: dict, say: Callable[[int, str], None]) -> list[str]:
+def run(pre: dict[str, Any], say: Callable[[int, str], None]) -> list[str]:
     """Configure what `steps.unconfigured` named in `pre["configure"]`, never a configured task.
 
     Args:

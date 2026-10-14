@@ -1,12 +1,25 @@
 """A databank's aggregate daily P&L: SQX's."""
 
 from functools import lru_cache
+from typing import TypedDict, cast
 
 import pandas as pd
 
 from core.paths import harvest_dir
 from ui.daemon.loader import find
 from ui.daemon.loader.state import newest
+
+
+class Equity(TypedDict, total=False):
+    """The `equity` payload: aggregate curves, or just `error` when there is no cosecha."""
+
+    error: str
+    days: list[str]
+    sqx: list[float]
+    split: int | None
+    stats: dict[str, float]
+    source: str
+    of: str | int
 
 
 @lru_cache(maxsize=8)
@@ -23,14 +36,14 @@ def daily(path: str, stamp: float) -> pd.DataFrame:
     """
     eq = pd.read_parquet(path).sort_values(["identity", "sample", "day"])
     eq["pnl"] = eq.groupby(["identity", "sample"])["equity"].diff().fillna(eq["equity"])
-    return eq[["identity", "sample", "day", "pnl"]]
+    return cast(pd.DataFrame, eq[["identity", "sample", "day", "pnl"]])
 
 
 def summed(frame: pd.DataFrame, column: str, ids: set[str] | None) -> pd.DataFrame:
     """One column of a per-strategy frame summed by sample and day, over `ids` or every row."""
     if ids is not None:
-        frame = frame[frame["identity"].isin(ids)]
-    return frame.groupby(["sample", "day"], as_index=False)[column].sum()
+        frame = cast(pd.DataFrame, frame[frame["identity"].isin(list(ids))])
+    return cast(pd.DataFrame, frame.groupby(["sample", "day"], as_index=False)[column].sum())
 
 
 def drawdown(curve: list[float]) -> float:
@@ -42,7 +55,7 @@ def drawdown(curve: list[float]) -> float:
     return worst
 
 
-def equity(project: str, databank: str, ids: list[str] | None = None) -> dict:
+def equity(project: str, databank: str, ids: list[str] | None = None) -> Equity:
     """GET /api/databank/equity: the databank's aggregate curves.
 
     Args:
@@ -73,4 +86,4 @@ def equity(project: str, databank: str, ids: list[str] | None = None) -> dict:
              "DD máximo SQX": drawdown(sqx)}
     return {"days": [d.strftime("%Y-%m-%d") for d in pnl["day"]], "sqx": sqx,
             "split": split, "stats": stats, "source": f"cosecha del {found.parent.name}",
-            "of": "todas" if ids is None else len(wanted)}
+            "of": "todas" if wanted is None else len(wanted)}

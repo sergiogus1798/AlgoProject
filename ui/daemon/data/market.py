@@ -1,6 +1,9 @@
 """One asset's data as the Datos zone shows it: its feeds, its bars, and its step-4 studies off the disk."""
 
+from typing import Any
 import json
+
+import pandas as pd
 
 from core import barstore
 from core.datapaths import spread_dir
@@ -56,7 +59,7 @@ def assets() -> list[dict]:
     return [{"symbol": s, **out[s]} for s in sorted(out)]
 
 
-def bars(feed: str, tf: str, since: str) -> dict:
+def bars(feed: str, tf: str, since: str) -> dict[str, Any]:
     """One feed's OHLC at one timeframe, columnar.
 
     Args:
@@ -73,12 +76,12 @@ def bars(feed: str, tf: str, since: str) -> dict:
     if since:
         frame = frame[frame.index >= since]
     return {"feed": feed, "tf": tf, "rows": len(frame),
-            "t": frame.index.strftime("%Y-%m-%d %H:%M").tolist(),
+            "t": pd.DatetimeIndex(frame.index).strftime("%Y-%m-%d %H:%M").tolist(),
             "o": frame["Open"].tolist(), "h": frame["High"].tolist(),
             "l": frame["Low"].tolist(), "c": frame["Close"].tolist()}
 
 
-def study(part: str, feed: str) -> dict:
+def study(part: str, feed: str) -> dict[str, Any]:
     """One feed's step-4 report as its study wrote it.
 
     Args:

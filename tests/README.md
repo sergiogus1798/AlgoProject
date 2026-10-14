@@ -303,6 +303,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_ui_cmdpalette.py` | The Ctrl+K palette offscreen over the whole daemon in-process: matching, the four ways out, recents. | — |
 | `test_ui_columns.py` | The databank table's metric chooser: hide, add, «–» and why, kept per databank as a diff, restore. | `QT_QPA_PLATFORM=offscreen python3 tests/test_ui_columns.py` |
 | `test_ui_criteria.py` | The Criterios zone's daemon: the state step by step, and every write — a rule added, changed, deleted, the stamp in the history, the freeze and its refusals — on a COPY of criteria.yaml. | — |
+| `test_ui_discard.py` | «Descartar seleccionadas» sends the selected rows' identities; a row without one is skipped. | — |
 | `test_ui_filters.py` | The databank filters re-filter from the whole databank: loosening brings strategies back. | `python3 tests/test_ui_filters.py` |
 | `test_ui_gate.py` | The daemon's gate and the launchers' proof of confirmation, on a local app: never the real daemon, never SQX. | — |
 | `test_ui_helpmark.py` | The «?» beside every button: the registry's keys, one mark per button that follows it, and — with `--port P` — every visible enabled button of every zone explained. | `QT_QPA_PLATFORM=offscreen python3 tests/test_ui_helpmark.py --port 8772` |

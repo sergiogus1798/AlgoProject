@@ -1,5 +1,6 @@
 """The daemon's job list: analysis commands started from the window, queued, and how each one ended."""
 
+from typing import Any
 import atexit
 import os
 import re
@@ -99,7 +100,7 @@ def pump() -> None:
 
 
 def start(label: str, argv: list[str], about: dict, lane: str = "python",
-          weight: int | None = None) -> dict:
+          weight: int | None = None) -> dict[str, Any]:
     """Queue one command as a child of the daemon, and start it if a slot is free.
 
     Args:
@@ -182,7 +183,7 @@ def _progress(lines: list[str]) -> tuple[int | None, str]:
     return None, ""
 
 
-def public(job: dict) -> dict:
+def public(job: dict) -> dict[str, Any]:
     """One job as the window sees it: its record, its exit code, its progress and its log's end.
 
     Args:

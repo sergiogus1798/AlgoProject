@@ -42,10 +42,10 @@ def distinct(trades: Path, column: str) -> list[str]:
         return []
     col = pq.read_table(trades, columns=[column]).column(column)
     if not pa.types.is_dictionary(col.type):
-        return sorted(pc.unique(col).to_pylist())
+        return sorted(pc.unique(col).to_pylist())  # pyright: ignore[reportAttributeAccessIssue]  # pyarrow.compute is generated at import
     # Unique codes per chunk, not the dictionary itself: a categorical filtered before it
     # was written keeps categories no row uses. 12 M rows read in 0.25 s this way.
-    return sorted({v for c in col.chunks for v in c.dictionary.take(pc.unique(c.indices)).to_pylist()})
+    return sorted({v for c in col.chunks for v in c.dictionary.take(pc.unique(c.indices)).to_pylist()})  # pyright: ignore[reportAttributeAccessIssue]  # pyarrow.compute is generated at import
 
 
 def markets(trades: Path) -> list[str]:

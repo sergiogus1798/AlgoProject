@@ -1,5 +1,6 @@
 """The Datos zone's routes: the catalogue of the data root, the assets, their bars and their step-4 studies."""
 
+from typing import Any
 from fastapi import APIRouter
 
 from ui.daemon.data import catalogue as tree
@@ -23,7 +24,7 @@ def _refused(feed: str, known: list) -> dict | None:
 
 
 @ROUTER.get("/api/data/catalogue")
-def catalogue() -> dict:
+def catalogue() -> dict[str, Any]:
     """Every tree of AlgoData with its size, newest write, files and manifests.
 
     Returns:
@@ -36,7 +37,7 @@ def catalogue() -> dict:
 
 
 @ROUTER.get("/api/data/assets")
-def assets() -> dict:
+def assets() -> dict[str, Any]:
     """Every asset with its bar, spread and feed-quality feed.
 
     Returns:
@@ -50,7 +51,7 @@ def assets() -> dict:
 
 
 @ROUTER.get("/api/data/bars")
-def bars(feed: str = "", tf: str = "D1", since: str = "") -> dict:
+def bars(feed: str = "", tf: str = "D1", since: str = "") -> dict[str, Any]:
     """One feed's OHLC at D1, H4 or H1 from the bar library.
 
     Args:
@@ -73,7 +74,7 @@ def bars(feed: str = "", tf: str = "D1", since: str = "") -> dict:
 
 
 @ROUTER.get("/api/data/spread")
-def spread(feed: str = "", part: str = "spread") -> dict:
+def spread(feed: str = "", part: str = "spread") -> dict[str, Any]:
     """One tick feed's spread report or its band, as `studies.data.spread` wrote them.
 
     Args:
@@ -89,7 +90,7 @@ def spread(feed: str = "", part: str = "spread") -> dict:
 
 
 @ROUTER.get("/api/data/feedquality")
-def feedquality(feed: str = "") -> dict:
+def feedquality(feed: str = "") -> dict[str, Any]:
     """One M1 feed's quality report, as `studies.data.feedQuality.scan` wrote it.
 
     Args:

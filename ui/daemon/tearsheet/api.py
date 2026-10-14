@@ -1,6 +1,7 @@
 """The Ficha's routes: one strategy's tear sheet, and its P&L by exit reason, from the newest cosecha or the archive."""
 
 from collections.abc import Callable
+from typing import Any
 
 from fastapi import APIRouter
 
@@ -11,8 +12,8 @@ ROUTER = APIRouter()
 TAB = {"IS": "IS", "OOS": "OOS", "OOS1": "OOS"}      # the window says OOS1, the cosecha OOS
 
 
-def _answer(project: str, databank: str, identity: str, build: Callable[[dict], dict],
-            sample: str, source: str, version: str, strategy: str = "") -> dict:
+def _answer(project: str, databank: str, identity: str, build: Callable[[dict], dict[str, Any]],
+            sample: str, source: str, version: str, strategy: str = "") -> dict[str, Any]:
     """Read the cosecha (or the archive) and build, or the sentence of why not — never a 500.
 
     Args:
@@ -58,7 +59,7 @@ def _answer(project: str, databank: str, identity: str, build: Callable[[dict], 
 @ROUTER.get("/api/tearsheet")
 def tearsheet(project: str = "", databank: str = "", identity: str = "", sample: str = "",
               source: str = "live", version: str = "", top: float = 0.0, dd: str = "%",
-              strategy: str = "") -> dict:
+              strategy: str = "") -> dict[str, Any]:
     """The Ficha: P&L (with or without the best trades), drawdown, years.
 
     Args:
@@ -79,7 +80,7 @@ def tearsheet(project: str = "", databank: str = "", identity: str = "", sample:
 
 @ROUTER.get("/api/tearsheet/exits")
 def tearsheet_exits(project: str = "", databank: str = "", identity: str = "", sample: str = "",
-                    source: str = "live", version: str = "", strategy: str = "") -> dict:
+                    source: str = "live", version: str = "", strategy: str = "") -> dict[str, Any]:
     """P&L and expectancy per exit type, and one cumulative line per type — each sample apart.
 
     Returns:

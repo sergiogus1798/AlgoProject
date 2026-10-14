@@ -1,5 +1,6 @@
 """One value of a WFC or CSCV study file written from the window, comments kept, the ledger stamped."""
 
+from typing import Any, cast
 import re
 from datetime import date
 from math import isclose
@@ -11,7 +12,7 @@ from ui.daemon.sqxconfig.write import coerce
 OWNER = "dueño"   # who a write from the window is, in the words the ledger already uses
 
 
-def _listed(name: str, path: list) -> dict:
+def _listed(name: str, path: list) -> dict[str, Any]:
     """The field the zone listed at this path, or ValueError: nothing else is written."""
     found = [f for sec in studies.PARTS for f in studies.fields(sec)
              if f["file"] == name and f["path"] == list(path)]
@@ -42,7 +43,7 @@ def _typed(current: object, new: object) -> object:
     return new
 
 
-def _pair(name: str, doc: object, path: list, new: object) -> str:
+def _pair(name: str, doc: Any, path: list, new: Any) -> str:
     """The checks across two values; returns a note for the status line, or raises.
 
     Args:
@@ -89,7 +90,7 @@ def _pair(name: str, doc: object, path: list, new: object) -> str:
     return ""
 
 
-def _stamp(row: object, old: object, new: object) -> None:
+def _stamp(row: Any, old: object, new: object) -> None:
     """A threshold changed from the window says who, when and, proposed, why.
 
     The proposed why names the date and the value it replaced, so the ledger still tells a
@@ -98,12 +99,12 @@ def _stamp(row: object, old: object, new: object) -> None:
     """
     today = date.today()
     was = f"{old} (fijado por {row['set_by']} el {row['set_on']})"
-    extra = f"{studies.blocks_help(new)}; " if row["key"] == "cscv.blocks" else ""
+    extra = f"{studies.blocks_help(cast(int, new))}; " if row["key"] == "cscv.blocks" else ""
     row["why"] = f"{extra}cambiado desde la ventana el {today.isoformat()}, antes {was}"
     row["set_by"], row["set_on"] = OWNER, today
 
 
-def set_field(name: str, path: list, value: object) -> dict:
+def set_field(name: str, path: list, value: object) -> dict[str, Any]:
     """Write one value of one study file, the only line that changes being its own.
 
     Args:

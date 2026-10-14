@@ -3,6 +3,7 @@ cscv, marketSurfaces."""
 
 from collections import defaultdict
 from pathlib import Path
+from typing import cast
 
 from core.datapaths import variants_dir
 from pipeline.ledger.state import work_dir
@@ -25,7 +26,7 @@ def batches(project: str) -> dict[str, list[Path]]:
         norm name → the folders found, from the factory and from the pipeline. Two of them
         is a mother the window will not choose for the owner, as `runner/where.batch` says.
     """
-    found = defaultdict(list)
+    found: defaultdict[str, list[Path]] = defaultdict(list)
     for root in (variants_dir(project, "x").parent, work_dir(project, "x").parent):
         for folder in sorted(root.glob("*/estudios")) if root.is_dir() else []:
             found[norm(folder.parent.name)].append(folder.parent)
@@ -53,7 +54,7 @@ def entry(path: Path) -> dict | None:
     Args:
         path: `estudios/<study>.json`.
     """
-    return store.cached(path, _entry)
+    return cast("dict | None", store.cached(path, _entry))
 
 
 def _entry(path: Path) -> dict | None:

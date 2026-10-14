@@ -1,6 +1,7 @@
 """Every stored result that could answer for one strategy across the whole project, found cheaply: file
 stats and cached slim reads, never a full parse per question."""
 
+from typing import Any
 import re
 from collections.abc import Iterator
 from pathlib import Path
@@ -69,14 +70,14 @@ def layout(project: str) -> dict[str, dict[str, list[str]]]:
     return out
 
 
-def _hit(path: Path, kind: str, row: dict, **more: object) -> dict:
+def _hit(path: Path, kind: str, row: dict, **more: object) -> dict[str, Any]:
     """One candidate: where it is, what it said, and what its identity is."""
     return {"path": path, "kind": kind, "config_hash": row["config_hash"],
             "computed_at": row["computed_at"], "state": row["state"], "label": row["label"],
             "manifest": None, "note": "", "population": False, **more}
 
 
-def in_folder(folder: Path, study: str, strategy: str, day: str) -> dict:
+def in_folder(folder: Path, study: str, strategy: str, day: str) -> dict[str, Any]:
     """What one study folder of one day holds for the population or one strategy.
 
     Args:

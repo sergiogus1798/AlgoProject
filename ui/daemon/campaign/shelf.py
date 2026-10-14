@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any, TypedDict
 
 from core.datapaths import campaign_dir
 from ui.daemon.archive import shelf as archive
@@ -9,6 +10,15 @@ from ui.daemon.results import catalogue
 
 # Studies of steps 16.5-18.5 kept under `madres/<mother>/estudios/` (the archive pairs by identity, they sign another).
 MOTHER_STUDIES = ("wfc", "cscv", "marketSurfaces")
+
+
+class Extra(TypedDict):
+    """One result file of a mother kept in the workflow folder."""
+
+    key: str
+    study: str
+    title: str
+    step: Any
 
 
 def _folder(name: str) -> Path:
@@ -19,7 +29,7 @@ def _folder(name: str) -> Path:
     return folder
 
 
-def _doc(name: str) -> dict:
+def _doc(name: str) -> dict[str, Any]:
     """A workflow's `workflow.json`."""
     return json.loads((_folder(name) / "workflow.json").read_text(encoding="utf-8"))
 
@@ -30,7 +40,7 @@ def _when(name: str) -> str:
     return f"{stamp[:4]}-{stamp[4:6]}-{stamp[6:8]} {stamp[9:11]}:{stamp[11:13]}"
 
 
-def workflows() -> list[dict]:
+def workflows() -> list[dict[str, Any]]:
     """Every saved workflow, newest first, as the list shows it.
 
     Returns:
@@ -46,7 +56,7 @@ def workflows() -> list[dict]:
     return sorted(out, key=lambda r: r["when"], reverse=True)
 
 
-def show(name: str) -> dict:
+def show(name: str) -> dict[str, Any]:
     """One workflow: its header, its funnel and time per step, its strategies and what was not kept.
 
     Returns:
@@ -65,7 +75,7 @@ def show(name: str) -> dict:
                    "not_kept": d.get("not_kept", [])}
 
 
-def extras(name: str, mother: str) -> list[dict]:
+def extras(name: str, mother: str) -> list[Extra]:
     """The result files of one mother that live in the workflow folder, not in the archive.
 
     Returns:
@@ -74,7 +84,7 @@ def extras(name: str, mother: str) -> list[dict]:
     folder = _folder(name)
     found = [p for p in (folder / "madres" / mother / "estudios").glob("*.json") if p.stem in MOTHER_STUDIES]
     found += [p for p in folder.glob(f"*/**/estrategias/{mother}.json") if "run" not in p.relative_to(folder).parts[:1]]
-    out = []
+    out: list[Extra] = []
     for p in found:
         study = p.stem if p.parent.name == "estudios" else p.parent.parent.name
         if study not in catalogue.STUDIES:   # a study since deleted (steps 22-24): its file stays on disk
@@ -86,7 +96,7 @@ def extras(name: str, mother: str) -> list[dict]:
     return sorted(out, key=lambda e: (float(e["step"] or 99), e["study"]))
 
 
-def opened(name: str, strategy: str) -> dict:
+def opened(name: str, strategy: str) -> dict[str, Any]:
     """What the Estrategia page needs to open one finalist: the MOTHER's archived version.
 
     The finalist is the mother: the studies of steps 8-21 are signed with her identity.
@@ -110,7 +120,7 @@ def opened(name: str, strategy: str) -> dict:
                   "extras": extras(name, s["mother"])}
 
 
-def extra(name: str, key: str) -> dict:
+def extra(name: str, key: str) -> dict[str, Any]:
     """One extra result in the shape `/api/result` answers: `result` and `meta`."""
     folder = _folder(name)
     path = (folder / key).resolve()

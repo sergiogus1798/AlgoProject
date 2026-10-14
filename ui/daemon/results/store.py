@@ -6,6 +6,7 @@ import json
 import threading
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any, TypeVar
 
 from core.paths import report_dir
 from ui.daemon import diskmemo
@@ -30,7 +31,8 @@ WORDS = {
 # mtime is its version; the matrix of a 5,000-strategy databank parses each JSON once.
 # Kept on disk too (owner, 2026-10-04): a daemon just started read a 10,000-strategy project's
 # megabyte JSONs again, ~12 s of a 30-s first open.
-_CACHE: dict[tuple[str, float, str], object] = diskmemo.load("results")
+T = TypeVar("T")
+_CACHE: dict[Any, Any] = diskmemo.load("results")
 _KEPT = [len(_CACHE)]       # how many entries the memo on disk holds
 # One reader at a time: three tables built at once each parsed the same megabyte JSONs
 # (🔬 2026-10-04, 12 s three times over under one GIL). Re-entrant: a reader may read.
@@ -115,7 +117,7 @@ def load(path: Path) -> tuple[dict | None, str | None]:
     return got, why
 
 
-def _cached(path: Path, read: Callable[[Path], object]) -> object:
+def _cached(path: Path, read: Callable[[Path], T]) -> T:
     """What `read(path)` gave the last time this version of the file was read.
 
     Args:
@@ -140,7 +142,7 @@ def keep() -> None:
             _KEPT[0] = len(_CACHE)
 
 
-def cached(path: Path, read: Callable[[Path], object]) -> object:
+def cached(path: Path, read: Callable[[Path], T]) -> T:
     """`_cached` for a reader outside this module (a batch study's table entry): one parse per
     version of the file, whoever asks."""
     return _cached(path, read)

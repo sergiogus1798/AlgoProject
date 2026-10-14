@@ -9,6 +9,7 @@ from core import worker
 from core.datapaths import project_registry, template_dir, template_runs
 from core.paths import DATA, MT5_DATA
 from ui.daemon import progress, tasklog
+from ui.daemon.workflow.records import Result, SqxView
 from ui.daemon.workflow.steps import BATCH_ROOTS, DROP
 
 # Which install holds a project when more than one does: the workers run the workflow; the
@@ -30,7 +31,7 @@ def install(project: str) -> tuple[str, Path] | None:
                  if role in found and project in progress.projects(found[role])), None)
 
 
-def sqx_view(role: str, top: Path, project: str) -> dict:
+def sqx_view(role: str, top: Path, project: str) -> SqxView:
     """The project's tasks, today's task runs and the install log's last start. Files only.
 
     Args:
@@ -57,7 +58,7 @@ def day_of(path: Path) -> str:
     return datetime.fromtimestamp(path.stat().st_mtime).date().isoformat()
 
 
-def results(project: str, key: str, strategy_runs: bool | None = None) -> list[dict]:
+def results(project: str, key: str, strategy_runs: bool | None = None) -> list[Result]:
     """Every contract result of one study for one project, newest first.
 
     Args:
@@ -73,7 +74,7 @@ def results(project: str, key: str, strategy_runs: bool | None = None) -> list[d
     """
     if key == "mt5Validation":
         return verified(project)
-    found = []
+    found: list[Result] = []
     for folder in (DATA / "reports" / project).glob(f"*/*/{key}"):
         m = folder / "manifest.json"
         manifest = json.loads(m.read_text(encoding="utf-8")) if m.exists() else {}
@@ -89,11 +90,11 @@ def results(project: str, key: str, strategy_runs: bool | None = None) -> list[d
         # A `--strategy` run writes only `estrategias/<name>.json` and no manifest — the folder's
         # manifest is step 8's population run of the same day (📓 2026-09-30: step 25 ran on
         # three mothers and the rail said «sin resultado»). Step 25 is read off those files.
-        def per_strategy(r: dict) -> bool:
+        def per_strategy(r: Result) -> bool:
             """Whether a result folder holds `--strategy` runs."""
             return any((r["path"] / "estrategias").glob("*.json"))
 
-        def population(r: dict) -> bool:
+        def population(r: Result) -> bool:
             """Whether a result folder holds a population run."""
             return bool(r["manifest"]) and "--strategy" not in r["manifest"].get("command", "")
 
@@ -101,11 +102,11 @@ def results(project: str, key: str, strategy_runs: bool | None = None) -> list[d
     return sorted(found, key=lambda r: r["day"], reverse=True)
 
 
-def verified(project: str) -> list[dict]:
+def verified(project: str) -> list[Result]:
     """Step 26's runs of this project's strategies, newest first — «Verificar» files them under
     `mt5/verify/<run>/`, not under the project, so a run is this project's when the .sqx it
     verified came from a folder named after it (its databank, or the copies of steps 23-24)."""
-    found = []
+    found: list[Result] = []
     for meta in (MT5_DATA / "verify").glob("*/run.json"):
         run = json.loads(meta.read_text(encoding="utf-8"))
         if f"/{project}/" in run.get("file", "") and run.get("state") == "done":
@@ -114,7 +115,7 @@ def verified(project: str) -> list[dict]:
     return sorted(found, key=lambda r: r["path"].name, reverse=True)
 
 
-def funnel(result: dict) -> tuple[int | None, int | None, str]:
+def funnel(result: Result) -> tuple[int | None, int | None, str]:
     """What entered one study result, what it kept, and the words it used.
 
     Args:

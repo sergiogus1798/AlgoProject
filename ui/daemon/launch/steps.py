@@ -3,13 +3,36 @@
 import re
 import zipfile
 from pathlib import Path
+from typing import Any, TypedDict
 from xml.etree import ElementTree
 
+from core import xmlget
 from sqx.projects import crosstfload, stage
 from sqx.projects.workflow import CROSSTF_BUILD
 from ui.daemon.workflow.steps import STEPS
 
-BY_N = {s["n"]: s for s in STEPS}
+BY_N: dict[str, dict[str, Any]] = {s["n"]: s for s in STEPS}
+
+
+class _Reason(TypedDict):
+    """The one reason a preflight stops at."""
+
+    refuse: str
+
+
+class Refusal(_Reason, total=False):
+    """A refusal; `elsewhere` when the step is not an SQX task at all."""
+
+    elsewhere: bool
+
+
+class StepTasks(TypedDict):
+    """The titles an SQX step switches on, and why the others of its stage stay off."""
+
+    titles: list[str]
+    off: dict[str, str]
+
+
 # SQX steps whose work is not a task start: each needs a preparation only the chat does.
 ELSEWHERE = {
     "5": "el proyecto se crea con sqx.projects.builder (en el chat): no es una tarea de SQX",
@@ -48,18 +71,18 @@ def unconfigured(cfx: Path, titles: list[str]) -> dict[str, list[str]]:
     with zipfile.ZipFile(cfx) as z:
         members = {name: z.read(name) for name in z.namelist()}
     out: dict[str, list[str]] = {}
-    tags = list(ElementTree.fromstring(members["config.xml"]).find("Tasks"))
+    tags = list(xmlget.el(ElementTree.fromstring(members["config.xml"]).find("Tasks")))
     for key, (element, module) in CONFIGURE.items():
         mine = [tag for tag in tags if tag.get("title") in stage.titles(key)]
-        on = {tag.get("title") for tag in mine if re.search(
+        on = {tag.get("title", "") for tag in mine if re.search(
             rf'<{element}\b[^>]*\buse="true"',
             members.get(tag.get("taskXMLFile") or "", b"").decode("utf-8"))}
         # The MC Retest's configurator leaves some of its eight off on purpose (`silenced`):
         # the stage is configured once any of them carries its Monte Carlo.
         if key == "mcretest" and on:
             continue
-        out.update({module: [t.get("title") for t in mine
-                             if t.get("title") in titles and t.get("title") not in on]})
+        out.update({module: [t.get("title", "") for t in mine
+                             if t.get("title", "") in titles and t.get("title", "") not in on]})
     return {m: ts for m, ts in out.items() if ts}
 
 
@@ -73,16 +96,16 @@ def silenced(members: dict[str, bytes], config: str) -> dict[str, str]:
     Returns:
         Title → why it stays off.
     """
-    out = {}
-    for tag in ElementTree.fromstring(config).find("Tasks"):
+    out: dict[str, str] = {}
+    for tag in xmlget.el(ElementTree.fromstring(config).find("Tasks")):
         body = members.get(tag.get("taskXMLFile") or "", b"").decode("utf-8")
         if SILENCED.search(body):
-            out[tag.get("title")] = ("su configurador la dejó sin Monte Carlo (no aplica a esta "
+            out[tag.get("title", "")] = ("su configurador la dejó sin Monte Carlo (no aplica a esta "
                                      "población): se queda apagada")
     return out
 
 
-def of_step(n: str, cfx: Path) -> dict:
+def of_step(n: str, cfx: Path) -> Refusal | StepTasks:
     """The titles an SQX step switches on in one project.
 
     Args:

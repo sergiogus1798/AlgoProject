@@ -1,5 +1,6 @@
 """One rule of criteria.yaml added, changed or deleted from the window, stamped; and the freeze."""
 
+from typing import Any
 import json
 from datetime import datetime
 
@@ -87,7 +88,7 @@ def opened() -> CommentedMap:
     return doc
 
 
-def set_rule(n: str, at: int | None, rule: dict | None, was: dict | None) -> dict:
+def set_rule(n: str, at: int | None, rule: dict | None, was: dict | None) -> dict[str, Any]:
     """Add, change or delete one rule of one step; every other line of the file stays.
 
     Args:
@@ -124,7 +125,7 @@ def set_rule(n: str, at: int | None, rule: dict | None, was: dict | None) -> dic
     return {"step": n, "what": what, "note": f"paso {n}: regla {what}, anotada en el historial"}
 
 
-def freeze() -> dict:
+def freeze() -> dict[str, Any]:
     """Lock the criteria: `frozen` goes into criteria.yaml, first, with the day and the sha of
     what was frozen, and every later write from the window is refused. There is no unfreeze
     here: lifting it is an edit of the file by hand, which git shows."""

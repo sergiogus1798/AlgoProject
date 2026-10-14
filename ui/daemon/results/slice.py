@@ -1,5 +1,6 @@
 """A population result read for one strategy: only its rows, bars and grid line, said to be a view."""
 
+from typing import Any
 import copy
 
 # The columns a population table names its strategy in, as the studies write them.
@@ -45,7 +46,7 @@ def block(b: dict, strategy: str) -> dict | None:
     return None
 
 
-def _alone(tab: dict, kept: list[dict]) -> dict:
+def _alone(tab: dict, kept: list[dict]) -> dict[str, Any]:
     """The tab kept to one mother: no `mother` selector (one choice is noise) and no tag."""
     sel = [s for s in tab.get("selectors") or [] if s["key"] != "mother"]
     blocks = [{**b, "select": {k: v for k, v in b["select"].items() if k != "mother"}}
@@ -77,7 +78,7 @@ def slice_for(result: dict, strategy: str) -> dict | None:
     return {**out, "tabs": tabs, "strategy": strategy, "sliced": True}
 
 
-def verdict_row(result: dict, row: dict, strategy: str) -> dict:
+def verdict_row(result: dict, row: dict, strategy: str) -> dict[str, Any]:
     """A population result whose blocks never name the strategy, read off its verdict.csv row.
 
     Args:
@@ -97,7 +98,7 @@ def verdict_row(result: dict, row: dict, strategy: str) -> dict:
                       "note": "Su fila del verdict.csv del run de toda la población."}]}
 
 
-def whole(result: dict, strategy: str) -> dict:
+def whole(result: dict, strategy: str) -> dict[str, Any]:
     """A population result that says nothing per strategy (Filtros candidatos, exceso sobre el
     mono), shown as it is on a strategy's page — the same for every strategy, and said so."""
     out = copy.deepcopy(result)

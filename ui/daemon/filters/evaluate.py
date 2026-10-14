@@ -1,10 +1,12 @@
 """Which columns a filter may read, and which visible strategies an AND of rows sets aside."""
 
 import re
+from typing import Any, cast
 
 import numpy as np
 
 from ledger import gate
+from ui.daemon.databank.table import Column, Table
 from ui.daemon.filters import dists
 from ui.daemon.results.catalogue import STUDIES
 from ui.daemon.workflow.steps import STEPS
@@ -24,7 +26,7 @@ SHOWN = {">": ">", "<": "<", ">=": "≥", "<=": "≤", "=": "=", "entre": "entre
          "dentro": "dentro", "fuera": "fuera"}
 
 
-def number(value: object) -> float | None:
+def number(value: Any) -> float | None:
     """A cell as a float, or None for a blank or a word."""
     if isinstance(value, bool) or value is None:
         return None
@@ -65,14 +67,14 @@ def refused(symbol: str | None) -> set[str]:
     return OOS2_STUDIES | {k for s in STEPS if float(s["n"]) in steps for k in s["studies"]}
 
 
-def reads_oos2(column: dict, studies: set[str]) -> bool:
+def reads_oos2(column: Column, studies: set[str]) -> bool:
     """Whether a column of `/api/databank/table` is an OOS2 figure."""
     if column["kind"] == "metric":
         return bool(OOS2.search(column.get("sample", "")))
     return column.get("study") in studies or bool(OOS2.search(column["key"]))
 
 
-def offered(table: dict, by_id: dict[str, dict[str, dict]], studies: set[str]) -> list[dict]:
+def offered(table: Table, by_id: dict[str, dict[str, dict]], studies: set[str]) -> list[dict]:
     """The metrics the dropdown lists: the databank's real columns, then its distributions.
 
     Args:
@@ -169,7 +171,7 @@ def holds(row: dict, cell: object, block: dict | None) -> bool | None:
     """One condition on one strategy: True, False, or None when it has no value to judge."""
     op, value = row["op"], row["value"]
     if op in ("dentro", "fuera"):
-        got = None if block is None else dists.inside(block, int(number(value)))
+        got = None if block is None else dists.inside(block, int(cast(float, number(value))))
         return None if got is None else got == (op == "dentro")
     if op == "=":
         return None if cell is None else (number(cell) == number(value)
@@ -178,13 +180,13 @@ def holds(row: dict, cell: object, block: dict | None) -> bool | None:
     if x is None:
         return None
     if op == "entre":
-        lo, hi = sorted(number(v) for v in value)
+        lo, hi = sorted(cast(float, number(v)) for v in value)
         return lo <= x <= hi
-    return {">": x > number(value), "<": x < number(value), ">=": x >= number(value),
-            "<=": x <= number(value)}[op]
+    y = cast(float, number(value))
+    return {">": x > y, "<": x < y, ">=": x >= y, "<=": x <= y}[op]
 
 
-def judge(table: dict, rows: list[dict], by_id: dict[str, dict[str, dict]],
+def judge(table: Table, rows: list[dict], by_id: dict[str, dict[str, dict]],
           hidden: set[str]) -> tuple[dict[str, str], dict[str, str], int]:
     """Which of the visible strategies the AND of rows keeps.
 

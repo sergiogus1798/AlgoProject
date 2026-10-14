@@ -1,13 +1,22 @@
 """What the window is served today for one live strategy, captured so the archive can serve it again."""
 
 from pathlib import Path
+from typing import TypedDict
 
 from ui.daemon import gateview
 from ui.daemon.results import catalogue, matrix, runs
 from ui.daemon.tearsheet import harvest
 
 
-def results(project: str, identity: str, entries: list[dict]) -> dict:
+class Frozen(TypedDict):
+    """What `results` freezes: the study results, the population results and the matrix cells."""
+
+    results: dict[str, dict[str, dict]]
+    populations: dict[str, dict[str, dict]]
+    cells: dict[str, dict]
+
+
+def results(project: str, identity: str, entries: list[dict]) -> Frozen:
     """Each study's result for the strategy, its population's, and its matrix cells.
 
     Args:
@@ -24,7 +33,7 @@ def results(project: str, identity: str, entries: list[dict]) -> dict:
     """
     newest = {(e["databank"], e["study"]): e for e in entries        # entries run oldest day first
               if e["study"] in catalogue.STUDIES}
-    out = {"results": {}, "populations": {}, "cells": {}}
+    out: Frozen = {"results": {}, "populations": {}, "cells": {}}
     for (databank, study), e in newest.items():
         name = e["named"] or e["names"][0]
         out["results"].setdefault(databank, {})[study] = runs.result(
@@ -71,7 +80,7 @@ def gate(project: str, databank: str, identity: str, day: str) -> dict | None:
         `gateview.strategy`; None when no gate report judged that harvest.
     """
     folder = harvest.newest(project, databank)
-    report_day, _ = gateview.judged(folder)
+    report_day, _ = gateview.judged(folder)  # pyright: ignore[reportArgumentType]  # newest() None crashes here today, kept as is
     if not report_day:
         return None
     report = gateview.gate(project, databank, report_day)

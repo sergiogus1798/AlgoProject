@@ -1,5 +1,7 @@
 """The rail's run buttons: ticked tests into the runner's jobs, and the backfill of the blind steps' rows."""
 
+from typing import Any, cast
+
 import pandas as pd
 
 from core.paths import DATA
@@ -8,13 +10,14 @@ from ui.daemon import jobs, runs
 from ui.daemon.runner import batch, table, where
 from ui.daemon.workflow import sources, tests
 from ui.daemon.workflow.derive import BLIND
+from ui.daemon.workflow.records import BackfillOffer, Context, Started
 from ui.daemon.workflow.steps import STEPS
 
 BY_N = {s["n"]: s for s in STEPS}
 ROOTS = ("raw", "harvest", "metrics", "reports")
 
 
-def databanks(spec: dict, key: str, ctx: dict) -> list[str]:
+def databanks(spec: dict[str, Any], key: str, ctx: Context) -> list[str]:
     """Where a test of this step may read, most likely first.
 
     Args:
@@ -29,7 +32,8 @@ def databanks(spec: dict, key: str, ctx: dict) -> list[str]:
         the databank the panel shows.
     """
     found = [r["databank"] for r in sources.results(ctx["project"], key)[:1] if r["databank"]]
-    tasks = ctx["sqx"]["tasks"] if ctx["sqx"] else []
+    view = ctx["sqx"]
+    tasks = view["tasks"] if view else []
     for stage in spec["feeds"]:
         names = titles(stage)
         found += [t["output"].replace(" ", "_") for t in tasks if t["title"] in names]
@@ -62,7 +66,8 @@ def mothers(project: str) -> list[str]:
     return sorted(d.name for d in root.iterdir() if d.is_dir()) if root.is_dir() else []
 
 
-def plan(spec: dict, key: str, ctx: dict, databank: str, picked: list[str]) -> list[dict] | str:
+def plan(spec: dict[str, Any], key: str, ctx: Context, databank: str,
+         picked: list[str]) -> list[dict[str, Any]] | str:
     """The jobs one ticked test starts, or why none.
 
     Args:
@@ -93,10 +98,10 @@ def plan(spec: dict, key: str, ctx: dict, databank: str, picked: list[str]) -> l
     if not candidates:
         return ("elige en el panel el databank que lee" if not spec["feeds"] else
                 "ningún databank de este proyecto en el disco tiene su entrada")
-    first = None
+    first = ""
     for bank in candidates:
-        chosen = picked or (population(ctx["project"], bank, ctx["asset"])
-                            if scope == "one" else [])
+        asset = cast("str", ctx["asset"])      # None when neither ledger nor name says it
+        chosen = picked or (population(ctx["project"], bank, asset) if scope == "one" else [])
         got = table.jobs({"study": key, "scope": scope, "project": ctx["project"],
                           "databank": bank, "asset": ctx["asset"], "overrides": [],
                           "only": None, "strategies": chosen})
@@ -106,7 +111,7 @@ def plan(spec: dict, key: str, ctx: dict, databank: str, picked: list[str]) -> l
     return first
 
 
-def refusal(n: str, key: str, ctx: dict) -> str | None:
+def refusal(n: str, key: str, ctx: Context) -> str | None:
     """Why the rail may not start this test, before any input is looked for.
 
     Args:
@@ -130,7 +135,8 @@ def refusal(n: str, key: str, ctx: dict) -> str | None:
     return None if got["runnable"] else got["why"]
 
 
-def start(ctx: dict, ticked: list[dict], databank: str, picked: list[str]) -> dict:
+def start(ctx: Context, ticked: list[dict[str, Any]], databank: str,
+          picked: list[str]) -> Started:
     """Queue every ticked test.
 
     Args:
@@ -143,7 +149,8 @@ def start(ctx: dict, ticked: list[dict], databank: str, picked: list[str]) -> di
         `jobs` (the records `jobs.start` returned) and `refused` (`[{n, key, why}]`). An SQX
         step's own task is never among the tests: the window starts nothing in SQX.
     """
-    out, refused = [], []
+    out: list[dict[str, Any]] = []
+    refused: list[dict[str, str]] = []
     for t in ticked:
         why = refusal(t["n"], t["key"], ctx)
         if why:
@@ -158,7 +165,7 @@ def start(ctx: dict, ticked: list[dict], databank: str, picked: list[str]) -> di
     return {"jobs": out, "refused": refused}
 
 
-def backfill(ctx: dict, on_disk: list[str]) -> dict:
+def backfill(ctx: Context, on_disk: list[str]) -> BackfillOffer:
     """Whether to offer «rehacer las filas de 17-19», and the command it runs.
 
     Args:
@@ -171,7 +178,7 @@ def backfill(ctx: dict, on_disk: list[str]) -> dict:
         to write a step twice, so a second press cannot count a look twice.
     """
     missing = [n for n in on_disk if n not in ctx["blind"]["done"]]
-    row = where.enrolled(ctx["project"])
+    row = cast("dict[str, Any]", where.enrolled(ctx["project"]))   # a family implies an enrolment
     wfm = sources.results(ctx["project"], "wfm")
     why = ("17, 18 y 19: ningún resultado en disco sin su fila" if not missing else
            where.no_family(ctx["project"]) if not ctx["family"] else
@@ -181,10 +188,10 @@ def backfill(ctx: dict, on_disk: list[str]) -> dict:
         return {"offer": False, "why": why, "argv": []}
     return {"offer": True, "why": why, "argv": [
         "-m", "ledger.backfill", "--blind", ctx["project"], "--wfm-databank",
-        wfm[0]["databank"], "--symbol", row["symbol"], "--timeframe", row["timeframe"],
+        cast("str", wfm[0]["databank"]), "--symbol", row["symbol"], "--timeframe", row["timeframe"],
         "--family", ctx["family"], "--write"]}
 
 
-def blind_on_disk(rows: list[dict]) -> list[str]:
+def blind_on_disk(rows: list[dict[str, Any]]) -> list[str]:
     """The blind steps whose own reader found a result, before the seal hid it."""
     return [r["n"] for r in rows if r["n"] in BLIND and r["state"] == "done"]

@@ -2,18 +2,39 @@
 
 import json
 import math
+from typing import Any, TypedDict
 
 from core.archive import read
 from core.paths import archive_dir
 from ui.daemon.results import catalogue
 
 
-def _manifest(identity: str, version: str) -> dict:
+class Ledger(TypedDict):
+    """The ledger count a version froze: searches, strategies tried and their Sharpe sigma."""
+
+    study: str
+    searches: int
+    n: int
+    sigma: float | None
+
+
+class Version(TypedDict):
+    """One version as the list shows it."""
+
+    version: str
+    archived_at: str
+    step: Any
+    note: str
+    databank: str
+    ledger: Ledger
+
+
+def _manifest(identity: str, version: str) -> dict[str, Any]:
     """One version's `manifest.json`."""
     return json.loads((archive_dir() / identity / version / "manifest.json").read_text(encoding="utf-8"))
 
 
-def _ledger(doc: dict) -> dict:
+def _ledger(doc: dict[str, Any]) -> Ledger:
     """The ledger count frozen that day: searches, strategies tried (N) and their Sharpe σ."""
     held = doc["ledger"]
     trials = held["trials"]
@@ -22,13 +43,13 @@ def _ledger(doc: dict) -> dict:
             "sigma": None if sigma is None or math.isnan(sigma) else sigma}
 
 
-def _version(row: dict, doc: dict) -> dict:
+def _version(row: dict[str, Any], doc: dict[str, Any]) -> Version:
     """One version as the list shows it: stamp, when, at which step, the owner's note."""
     return {"version": row["version"], "archived_at": row["archived_at"], "step": row["step"],
             "note": row["note"], "databank": row["databank"], "ledger": _ledger(doc)}
 
 
-def strategies() -> list[dict]:
+def strategies() -> list[dict[str, Any]]:
     """Every archived strategy, newest archive first.
 
     Returns:
@@ -36,7 +57,7 @@ def strategies() -> list[dict]:
         `symbol`, `timeframe` (the project's registry row), `step`, `archived_at` and
         `ledger` of its newest version, and `versions` oldest first.
     """
-    by_id: dict[str, list] = {}
+    by_id: dict[str, list[tuple[dict[str, Any], dict[str, Any]]]] = {}
     for row in read.listing():
         by_id.setdefault(row["identity"], []).append(
             (row, _manifest(row["identity"], row["version"])))
@@ -52,7 +73,7 @@ def strategies() -> list[dict]:
     return sorted(out, key=lambda r: r["archived_at"], reverse=True)
 
 
-def show(identity: str, version: str = "") -> dict:
+def show(identity: str, version: str = "") -> dict[str, Any]:
     """One archived version in full: what it froze, what it could not, and its provenance.
 
     Args:

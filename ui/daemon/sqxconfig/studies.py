@@ -7,6 +7,7 @@ study's own knobs, and the CSCV's blocks, which live in the ledger's frozen thre
 stamped with who and when on every write (`studywrite.py`).
 """
 
+from typing import Any
 from functools import lru_cache
 from math import comb
 from pathlib import Path
@@ -99,7 +100,7 @@ TIPS = {"variants": FACTORY_TIPS, "cloudcfg": CLOUD_TIPS, "calibcfg": CALIB_TIPS
 
 
 
-def spec(name: str, path: list, value: object, threshold: str = "") -> dict:
+def spec(name: str, path: list, value: object, threshold: str = "") -> dict[str, Any]:
     """What the window may do with one value of a study file.
 
     Args:

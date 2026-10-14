@@ -1,5 +1,6 @@
 """The operation routes: the custodian's pulse, what each worker runs, and the search ledger."""
 
+from typing import Any
 from fastapi import APIRouter
 
 from ui.daemon.ops import ledgerview, pulse, runs, steps
@@ -8,7 +9,7 @@ ROUTER = APIRouter()
 
 
 @ROUTER.get("/api/pulse")
-def get_pulse() -> dict:
+def get_pulse() -> dict[str, Any]:
     """One reading of the custodian: count, rate, JVM against `-Xmx`, CPU, free RAM, warnings.
 
     Returns:
@@ -21,7 +22,7 @@ def get_pulse() -> dict:
 
 
 @ROUTER.get("/api/ops/sqx")
-def get_sqx_runs() -> dict:
+def get_sqx_runs() -> dict[str, Any]:
     """What each SQX worker runs right now, for the jobs strip and «En marcha».
 
     Returns:
@@ -32,7 +33,7 @@ def get_sqx_runs() -> dict:
 
 
 @ROUTER.get("/api/ops/steps")
-def get_steps(install: str, project: str) -> dict:
+def get_steps(install: str, project: str) -> dict[str, Any]:
     """«En marcha» for one project: `/api/progress` plus `rows`, SQX tasks and Python steps in order.
 
     Args:
@@ -49,7 +50,7 @@ def get_steps(install: str, project: str) -> dict:
 
 
 @ROUTER.get("/api/ledger")
-def get_ledger(study: str = "") -> dict:
+def get_ledger(study: str = "") -> dict[str, Any]:
     """One study's search ledger: its searches, its funnel and the history it has spent.
 
     Args:

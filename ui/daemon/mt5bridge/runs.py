@@ -3,6 +3,7 @@ import json
 import re
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Any, TypedDict
 
 from core import assetdata, sqxfile
 from core.archive import read as archive
@@ -30,12 +31,22 @@ def listing() -> list[dict]:
     return out
 
 
+class Check(TypedDict):
+    """A preflight: whether the check may start, why not, the sentence to confirm, the strategy's market."""
+
+    ok: bool
+    reasons: list[str]
+    text: str
+    asset: str | None
+    timeframe: str | None
+
+
 def firm_names() -> dict[str, str]:
     """Firm key -> the label the owner reads, for the summary lines."""
     return {f: firms.label(f) for f in MT5_ACCOUNTS}
 
 
-def result(run: str) -> dict:
+def result(run: str) -> dict[str, Any]:
     """One check's result.json (the study contract) and its run.json."""
     folder = RUNS / run
     if not re.fullmatch(r"[\w.-]+", run) or not (folder / "run.json").exists():
@@ -60,7 +71,7 @@ def folder_listing() -> list[dict]:
     return [{"path": str(p), "name": f"{p.parent.name}/{p.stem}"} for p in found]
 
 
-def options() -> dict:
+def options() -> dict[str, Any]:
     """What the form offers: the firms with a saved account, the tester's models, the archive."""
     shelf = {}
     for row in archive.listing():
@@ -115,7 +126,7 @@ def strategy_file(source: str, identity: str, version: str = "", project: str = 
 
 
 def check(path: Path | None, start: str, end: str, model: str, chosen: list[str],
-          ticks: bool = False, own_log: bool = False) -> dict:
+          ticks: bool = False, own_log: bool = False) -> Check:
     """Whether a check may start now, and the sentence the owner confirms.
 
     Returns:

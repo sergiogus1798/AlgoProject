@@ -1,5 +1,6 @@
 """One sub-test of a study run again alone, written beside the stored result and never over it (OPEN §54)."""
 
+from typing import Any
 import argparse
 import re
 from datetime import date, datetime
@@ -18,7 +19,7 @@ from studies.transfer.crossmarket.inputs import config as cm_config
 from ui.daemon.results import store
 
 
-def crossmarket(a: argparse.Namespace) -> dict:
+def crossmarket(a: argparse.Namespace) -> dict[str, Any]:
     """One market of the cross-market export, for one strategy (`one.run(only=feed)`).
 
     Args:
@@ -31,7 +32,7 @@ def crossmarket(a: argparse.Namespace) -> dict:
                       cm_config.load(a.set), a.only, a.set)
 
 
-def monte_carlo(a: argparse.Namespace) -> dict:
+def monte_carlo(a: argparse.Namespace) -> dict[str, Any]:
     """One sub-test of the trade Monte Carlo, named as the explorer's «Prueba» selector names it.
 
     Args:

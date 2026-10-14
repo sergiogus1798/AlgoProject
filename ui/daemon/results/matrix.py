@@ -1,5 +1,6 @@
 """The population matrix: every strategy of one databank against every study, one state per cell."""
 
+from typing import Any
 from collections import Counter
 from pathlib import Path
 
@@ -56,7 +57,7 @@ def _column(folder: Path, project: str) -> tuple[dict, list[dict]]:
     return cells, [{"path": rel, "reason": why, "n": n} for why, n in skipped.items()]
 
 
-def matrix(project: str, databank: str) -> dict:
+def matrix(project: str, databank: str) -> dict[str, Any]:
     """Every strategy any study judged in one databank, and what each study said of it.
 
     Args:

@@ -3,6 +3,7 @@
 import socket
 import time
 from pathlib import Path
+from typing import Any, TypedDict
 
 from core import sqxfile, worker
 from core.datapaths import project_registry
@@ -11,7 +12,7 @@ from sqx.projects import crosstfload, live, registry, stage
 from sqx.projects.configure import BY_TASK, DEFAULT_SEGMENT
 from ui.daemon import progress, workerguard
 from ui.daemon.filters import discards
-from ui.daemon.launch.steps import unconfigured
+from ui.daemon.launch.steps import Refusal, unconfigured
 from ui.daemon.workflow.steps import STEPS
 
 # QUIET_MIN's job narrowed once the owner lock (OPEN.md #32) existed: a live holder is now
@@ -26,10 +27,39 @@ QUIET_MIN = 15      # the install's SQX log written this recently: it just ran o
 # Where a cut's .sqx are copied before they go (owner, Q7): <P>/<D>/<stamp>/.
 DISCARDS = project_registry().parent / "discards"
 # (path, size, mtime) → identity. ~1 ms a file, but the window re-checks every 20 s.
-_IDS: dict[tuple, str] = {}
+_IDS: dict[tuple[str, int, int], str] = {}
 
 
-def where(project: str) -> dict:
+class Located(TypedDict):
+    """The install `registry.csv` puts a project on, the role that drives it and its row."""
+
+    install: str
+    role: str
+    row: dict[str, Any]
+
+
+class _NextKeys(TypedDict):
+    """The fields every next task has."""
+
+    producer: str
+    step: str
+    fill: str
+    segment: str
+    task: str
+    stage: str
+    skip: list[str]
+
+
+class NextTask(_NextKeys, total=False):
+    """The task launched after a cut; `check` adds what the confirmation shows."""
+
+    configure: dict[str, list[str]]
+    inputs: dict[str, str]
+    output: str
+    n_out: int
+
+
+def where(project: str) -> Refusal | Located:
     """The install `registry.csv` puts a project on, and the role that drives it.
 
     Args:
@@ -126,12 +156,12 @@ def by_identity(source: Path) -> dict[str, list[Path]]:
     return out
 
 
-def step_of(title: str) -> dict | None:
+def step_of(title: str) -> dict[str, Any] | None:
     """The workflow step (a row of `steps.STEPS`) whose SQX stage runs this task title."""
     return next((s for s in STEPS if "stage" in s and title in stage.titles(s["stage"])), None)
 
 
-def next_task(tasks: list[dict], databank: str) -> dict:
+def next_task(tasks: list[dict[str, Any]], databank: str) -> Refusal | NextTask:
     """The task «Continuar» launches after cutting a databank.
 
     Args:
@@ -147,7 +177,7 @@ def next_task(tasks: list[dict], databank: str) -> dict:
     """
     producer = next((t for t in tasks if t["output"] == databank), None)
     here = step_of(producer["title"]) if producer else None
-    if here is None:
+    if producer is None or here is None:
         return {"refuse": f"ninguna tarea de un paso del workflow escribe «{databank}»"}
     later = STEPS[STEPS.index(here) + 1:]
     # CrossTF reads the Cross Market survivors, and MC Retest the mothers CrossTF kept, through
@@ -176,7 +206,7 @@ def next_task(tasks: list[dict], databank: str) -> dict:
     return {"refuse": f"ninguna tarea posterior a «{producer['title']}» lee «{databank}»"}
 
 
-def check(project: str, databank: str) -> dict:
+def check(project: str, databank: str) -> dict[str, Any]:
     """Every precondition of «Continuar workflow», in the plan's order.
 
     Args:
@@ -217,18 +247,20 @@ def check(project: str, databank: str) -> dict:
                        "cambió desde el filtro. Quita los filtros y vuelve a filtrar")
     files = sum(len(held.get(i, [])) for i in ids)
     following = next_task(tasks, databank)
+    extra: dict[str, Any] = {}
     if "refuse" in following:
-        reasons.append(following.pop("refuse"))
+        reasons.append(following["refuse"])
     else:
+        extra = dict(following)
         # The launcher's configurators, on a task of the step whose cross-check is still off.
-        following["configure"] = unconfigured(cfx, [t for t in stage.titles(following["stage"])
-                                                    if t not in following["skip"]])
-        following["inputs"] = {t["title"]: t["input"] for t in tasks}
+        extra["configure"] = unconfigured(cfx, [t for t in stage.titles(following["stage"])
+                                                if t not in following["skip"]])
+        extra["inputs"] = {t["title"]: t["input"] for t in tasks}
         # What the next task's output already holds: a retest appends beside it, so the
         # confirmation says so (📓 2026-09-29, OOS 200 + 21 as «Strategy X(1)»).
         out = next(t["output"] for t in tasks if t["title"] == following["task"])
-        following |= {"output": out,
-                      "n_out": sum(1 for _ in databank_dir(project, out, top).glob("*.sqx"))
-                      if out else 0}
+        extra |= {"output": out,
+                  "n_out": sum(1 for _ in databank_dir(project, out, top).glob("*.sqx"))
+                  if out else 0}
     return {"ok": not reasons, "reasons": reasons, **got, "cfx": cfx, "databank": databank,
-            "source": source, "n": n, "files": files, "discards": rows, **following}
+            "source": source, "n": n, "files": files, "discards": rows, **extra}

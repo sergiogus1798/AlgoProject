@@ -1,5 +1,7 @@
 """MT5 Bridge's routes: the form's options, past checks, one result, the preflight and the job."""
 
+from typing import Any
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -31,7 +33,7 @@ class Verify(BaseModel):
 
 
 @ROUTER.get("/api/mt5bridge/options")
-def options() -> dict:
+def options() -> dict[str, Any]:
     """The saved accounts, the tester's models, the archived strategies and the Banquillo folder."""
     try:
         return runs.options()
@@ -50,7 +52,7 @@ class Where(BaseModel):
 
 
 @ROUTER.post("/api/mt5bridge/dates")
-def dates(req: Where) -> dict:
+def dates(req: Where) -> dict[str, Any]:
     """Hasta = the last day SQX holds data for this strategy's asset; Desde, a fallback (§3.2)."""
     try:
         path, where = runs.strategy_file(req.source, req.identity, req.version, req.project,
@@ -65,13 +67,13 @@ def dates(req: Where) -> dict:
 
 
 @ROUTER.get("/api/mt5bridge/runs")
-def listing() -> dict:
+def listing() -> dict[str, Any]:
     """Every check, newest first."""
     return {"runs": runs.listing()}
 
 
 @ROUTER.get("/api/mt5bridge/result")
-def result(run: str) -> dict:
+def result(run: str) -> dict[str, Any]:
     """One check's result in the study contract, and how it ended."""
     try:
         return runs.result(run)
@@ -79,7 +81,7 @@ def result(run: str) -> dict:
         return {"error": f"No pude leer «{run}»: {type(e).__name__}: {e}"}
 
 
-def _check(req: Verify) -> dict:
+def _check(req: Verify) -> dict[str, Any]:
     """The preflight for one request, plus a launcher of the window already queued."""
     path, where = runs.strategy_file(req.source, req.identity, req.version, req.project,
                                      req.databank)
@@ -89,12 +91,12 @@ def _check(req: Verify) -> dict:
     return {**got, "file": str(path) if path else None, "where": where}
 
 
-def shown(req: Verify, got: dict) -> dict:
+def shown(req: Verify, got: dict[str, Any]) -> dict[str, Any]:
     """What a nonce of this launcher is bound to: the form, the file and the sentence shown."""
     return {**req.model_dump(exclude={"nonce"}), "file": got.get("file"), "text": got["text"]}
 
 
-def checked(req: Verify) -> dict:
+def checked(req: Verify) -> dict[str, Any]:
     """Whether this check may start now, and the text the owner confirms."""
     try:
         return _check(req)
@@ -103,14 +105,14 @@ def checked(req: Verify) -> dict:
 
 
 @ROUTER.post("/api/mt5bridge/preflight")
-def preflight(req: Verify) -> dict:
+def preflight(req: Verify) -> dict[str, Any]:
     """`checked`, plus the one-use nonce `POST /api/mt5bridge/verify` asks back when it is ok."""
     got = checked(req)
     return {**got, "nonce": proof.issue(LABEL, shown(req, got))} if got["ok"] else got
 
 
 @ROUTER.post("/api/mt5bridge/verify")
-def verify(req: Verify) -> dict:
+def verify(req: Verify) -> dict[str, Any]:
     """Queue the check on the conductor lane — after the same preflight, re-run now.
 
     Returns:
@@ -134,7 +136,7 @@ def verify(req: Verify) -> dict:
 
 
 @ROUTER.post("/api/mt5bridge/close-terminal")
-def force_close() -> dict:
+def force_close() -> dict[str, Any]:
     """Force a wedged-open MT5 terminal shut — graceful first, killed outright if that fails.
 
     For the terminal neither the owner's window controls nor a normal check can close

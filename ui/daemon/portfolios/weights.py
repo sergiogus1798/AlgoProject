@@ -1,6 +1,7 @@
 """«Pesos» and «Incubación»: the weight walk-forward's decision, and the incubation reading if one exists."""
 
 import json
+from typing import Any
 
 import pandas as pd
 
@@ -16,7 +17,7 @@ STATES = {"inside": "DENTRO de la banda", "below": "POR DEBAJO de la banda", "ab
 IDLE = "La incubación no está corriendo: no hay cartera elegida ni cuenta."
 
 
-def read(pool: str = "", run: str = "", **_: str) -> dict:
+def read(pool: str = "", run: str = "", **_: str) -> dict[str, Any]:
     """The newest weight walk-forward of the selected portfolio (or of the pool): its table and decision."""
     cfg = config.load([])
     lacks = ([] if cfg["wf"]["confidence"] is not None else
@@ -51,7 +52,7 @@ def read(pool: str = "", run: str = "", **_: str) -> dict:
     wrows = [[shelf.label(i, known), *[parts.clean(float(grid.loc[i].get(m, float("nan")))) for m in grid.columns]]
              for i in grid.index]
     wtable = parts.table("Los pesos que da cada método (primera ventana)",
-                         ["estrategia", *[METHODS.get(m, m) for m in grid.columns]], wrows,
+                         ["estrategia", *[str(METHODS.get(m, m)) for m in grid.columns]], wrows,
                          "Suman 1 por método. Solo «iguales» puede elegirse hoy; los demás se comparan.")
     return {"run": doc["source"], "relaxed": parts.relaxed(doc.get("relaxed")), "empty": None, "missing": lacks,
             "tabs": [parts.tab("Decisión", parts.callout(doc["sentence"],
@@ -59,7 +60,7 @@ def read(pool: str = "", run: str = "", **_: str) -> dict:
                                table), parts.tab("Pesos por método", wtable)]}
 
 
-def incubation(**_: str) -> dict:
+def incubation(**_: str) -> dict[str, Any]:
     """Each registered portfolio's last reading against its band; the plain statement when there is none."""
     folders = sorted(p.parent for p in record.ROOT.glob("*/record.json")) if record.ROOT.exists() else []
     if not folders:

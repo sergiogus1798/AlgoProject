@@ -4,6 +4,7 @@ import re
 import zipfile
 from functools import cache
 from pathlib import Path
+from typing import Any
 
 from core import worker
 from core.paths import DATA
@@ -115,8 +116,8 @@ def template(path: str) -> str | None:
     return p.parent.name if p.name == "template.sqx" else p.stem
 
 
-def card(name: str, where: tuple[str, Path] | None, row: dict, runs_today: dict,
-         has_reports: bool) -> dict:
+def card(name: str, where: tuple[str, Path] | None, row: dict[str, str], runs_today: dict[str, Any],
+         has_reports: bool) -> dict[str, Any]:
     """One gallery card: what `fake.projects` promised, plus where each figure came from.
 
     Args:
@@ -152,7 +153,7 @@ def card(name: str, where: tuple[str, Path] | None, row: dict, runs_today: dict,
             "install_label": LABEL.get(role, role)}
 
 
-def gallery() -> list[dict]:
+def gallery() -> list[dict[str, Any]]:
     """Every card, the running ones first, then by name.
 
     Returns:
@@ -173,7 +174,7 @@ def gallery() -> list[dict]:
     return sorted(cards, key=lambda c: (ORDER.index(c["state"]), c["name"]))
 
 
-def locate(project: str, identity: str, databank: str = "") -> dict:
+def locate(project: str, identity: str, databank: str = "") -> dict[str, Any]:
     """Which databank of a project holds a strategy, and its name there.
 
     Args:

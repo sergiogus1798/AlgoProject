@@ -1,22 +1,25 @@
 """Each step's state, funnel and Spanish why, from what the disk and the ledger hold."""
 
+from typing import Any
+
 from core.assetcheck import pending, provisional, validate
 from core.assetdata import load
 from sqx.projects.crosstfload import phase2_tasks
 from sqx.projects.stage import titles
 from ui.daemon import jobs
 from ui.daemon.workflow import sources
+from ui.daemon.workflow.records import Context, StepRow
 
 BLIND = ("17", "18", "19")
 
 
 def step(state: str, why: str, n_in: int | None = None, n_out: int | None = None,
-         day: str | None = None) -> dict:
+         day: str | None = None) -> StepRow:
     """The fields a step gets besides its row of `STEPS`."""
     return {"state": state, "why": why, "in": n_in, "out": n_out, "day": day}
 
 
-def template(spec: dict, ctx: dict) -> dict:
+def template(spec: dict[str, Any], ctx: Context) -> StepRow:
     """Steps 1-3: done when a template is tied to the project, missing otherwise."""
     name, source = ctx["template"]
     if not name:
@@ -29,7 +32,7 @@ def template(spec: dict, ctx: dict) -> dict:
                          "3": f"Plantilla {name}, enlazada por {source}."}[spec["n"]])
 
 
-def preflight(spec: dict, ctx: dict) -> dict:
+def preflight(spec: dict[str, Any], ctx: Context) -> StepRow:
     """Step 4: `core.assetcheck` on the asset, as it stands today."""
     if not ctx["asset"]:
         return step("missing", "No se sabe el activo del proyecto: ni el ledger ni el nombre.")
@@ -44,7 +47,7 @@ def preflight(spec: dict, ctx: dict) -> dict:
                         + (f"; costes PROVISIONALES: {', '.join(soft)}" if soft else "") + ".")
 
 
-def project(spec: dict, ctx: dict) -> dict:
+def project(spec: dict[str, Any], ctx: Context) -> StepRow:
     """Step 5: the project's folder in an install."""
     view = ctx["sqx"]
     if not view:
@@ -54,7 +57,7 @@ def project(spec: dict, ctx: dict) -> dict:
                 day=sources.day_of(view["folder"] / "project.cfx"))
 
 
-def sqx(spec: dict, ctx: dict, names: list[str] | None = None) -> dict:
+def sqx(spec: dict[str, Any], ctx: Context, names: list[str] | None = None) -> StepRow:
     """An SQX step: its tasks' output on disk, today's runs, the install log's current task.
 
     `names`: the task titles when they are not a stage's (`phase2`)."""
@@ -97,22 +100,22 @@ def sqx(spec: dict, ctx: dict, names: list[str] | None = None) -> dict:
                 n_in, n_out, day)
 
 
-def phase2(spec: dict, ctx: dict) -> dict:
+def phase2(spec: dict[str, Any], ctx: Context) -> StepRow:
     """Step 11.7: the build-window CrossTF twins, read as `sqx` reads a stage; `titles` names them.
 
     A project made before they existed has none: the step is done by not applying, and says so
     (both chains skip it on that empty `titles`)."""
     view = ctx["sqx"]
     if not view:
-        return sqx(spec, ctx) | {"titles": []}
+        return {**sqx(spec, ctx), "titles": []}
     names = [t["title"] for t in phase2_tasks(view["folder"] / "project.cfx")]
     if not names:
-        return step("done", "Este proyecto no lleva tareas de fase 2 (CrossTF <TF> build): el "
-                            "paso no aplica y el 12 juzga sin datos del build.") | {"titles": []}
-    return sqx(spec, ctx, names) | {"titles": names}
+        return {**step("done", "Este proyecto no lleva tareas de fase 2 (CrossTF <TF> build): el "
+                               "paso no aplica y el 12 juzga sin datos del build."), "titles": []}
+    return {**sqx(spec, ctx, names), "titles": names}
 
 
-def running_job(ctx: dict, spec: dict) -> dict | None:
+def running_job(ctx: Context, spec: dict[str, Any]) -> dict[str, Any] | None:
     """A job of this daemon still running one of the step's studies on this project; a job
     the rail started names its step, so a study run for one step does not light another."""
     return next((j for j in jobs.listing() if j["rc"] is None
@@ -121,7 +124,7 @@ def running_job(ctx: dict, spec: dict) -> dict | None:
                  and any(k in " ".join(j["argv"]) for k in spec["studies"])), None)
 
 
-def study(spec: dict, ctx: dict) -> dict:
+def study(spec: dict[str, Any], ctx: Context) -> StepRow:
     """A Python step: the newest contract result of its studies, and its funnel."""
     found = {k: sources.results(ctx["project"], k) for k in spec["studies"]}
     key = next((k for k in spec["studies"] if found[k]), None)
@@ -144,7 +147,7 @@ def study(spec: dict, ctx: dict) -> dict:
                 n_in, n_out, newest["day"])
 
 
-def variants(spec: dict, ctx: dict) -> dict:
+def variants(spec: dict[str, Any], ctx: Context) -> StepRow:
     """Step 16.5: the mothers' batches, and the WFC legs while SQX runs them."""
     if ctx["sqx"]:
         live = sqx(spec, ctx)
@@ -165,23 +168,24 @@ def variants(spec: dict, ctx: dict) -> dict:
                 else "Sin lotes en strategyPermutations/ para este proyecto.")
 
 
-def bank(spec: dict, ctx: dict) -> dict:
+def bank(spec: dict[str, Any], ctx: Context) -> StepRow:
     """Step 10.5: the siblings waiting in their input databank."""
-    held = ctx["sqx"]["banks"].get(spec["bank"], 0) if ctx["sqx"] else 0
-    if not held:
+    view = ctx["sqx"]
+    held = view["banks"].get(spec["bank"], 0) if view else 0
+    if not (view and held):
         return step("pending", f"El databank {spec['bank']} está vacío o no existe.")
     return step("done", f"{held} estrategias escaladas en {spec['bank']}.", None, held,
-                sources.day_of(ctx["sqx"]["folder"] / "databanks" / spec["bank"]))
+                sources.day_of(view["folder"] / "databanks" / spec["bank"]))
 
 
-def blind(spec: dict, ctx: dict) -> dict:
+def blind(spec: dict[str, Any], ctx: Context) -> StepRow:
     """Step 20: blocked while the ledger's door is shut, else its own result."""
     if ctx["blind"]["sealed"]:
         return step("blocked", ctx["blind"]["text"])
     return study(spec, ctx)
 
 
-def seal(spec: dict, row: dict, ctx: dict) -> dict:
+def seal(spec: dict[str, Any], row: StepRow, ctx: Context) -> StepRow:
     """Steps 17-19 while the door is shut: a finished one is shown as an envelope, no numbers."""
     if spec["n"] not in BLIND or not ctx["blind"]["sealed"]:
         return row

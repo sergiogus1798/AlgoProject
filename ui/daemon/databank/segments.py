@@ -1,6 +1,7 @@
 """A databank's IS+OOS1 figures, from its cosecha's trades: the union SQX's export does not carry."""
 
 from functools import lru_cache
+from typing import TypedDict, cast
 
 import pandas as pd
 
@@ -19,7 +20,7 @@ UNION = ("Net profit", "# of trades", "Profit factor", "Winning Percent", "Drawd
 NO_HARVEST = "sin cosecha: la unión IS+OOS1 sale de sus operaciones"
 
 
-def figures(pnl: pd.Series) -> dict:
+def figures(pnl: pd.Series) -> dict[str, float | None]:
     """UNION's figures of one strategy's trades, in closing order.
 
     Args:
@@ -38,8 +39,28 @@ def figures(pnl: pd.Series) -> dict:
             "Drawdown": dd, "Ret/DD Ratio": net / dd if dd > 0 else None}
 
 
+class Union(TypedDict):
+    """One cosecha's union: figures by identity, the strategies lacking OOS, the OOS span, why not."""
+
+    rows: dict[str, dict[str, float | None]]
+    no_oos: list[str]
+    oos: str | None
+    why: str | None
+
+
+class Segments(TypedDict, total=False):
+    """The `segments` payload: `union` metric names, then a `Union`'s keys, and the source."""
+
+    union: list[str]
+    rows: dict[str, dict[str, float | None]]
+    no_oos: list[str]
+    oos: str | None
+    why: str | None
+    source: str
+
+
 @lru_cache(maxsize=4)
-def union(path: str, stamp: float) -> dict:
+def union(path: str, stamp: float) -> Union:
     """Every strategy's IS+OOS1 figures from one cosecha's `trades.parquet`.
 
     Args:
@@ -52,9 +73,9 @@ def union(path: str, stamp: float) -> dict:
         trades' `Sample type` (OOS1, OOS2) or None when it names none or several; `why` when
         that span is not OOS1 and so no union is given.
     """
-    t = pd.read_parquet(path, columns=["identity", "sample", "Sample type", "Close time",
+    t: pd.DataFrame = pd.read_parquet(path, columns=["identity", "sample", "Sample type", "Close time",
                                        "Profit/Loss"])
-    t = t[t["sample"].isin(["IS", "OOS"])]
+    t = cast(pd.DataFrame, t[t["sample"].isin(["IS", "OOS"])])
     spans = set(t.loc[t["sample"] == "OOS", "Sample type"].astype(str).unique())
     oos = next(iter(spans)) if len(spans) == 1 and spans <= {"OOS1", "OOS2"} else None
     held = {s: set(t.loc[t["sample"] == s, "identity"]) for s in ("IS", "OOS")}
@@ -63,14 +84,14 @@ def union(path: str, stamp: float) -> dict:
         return {"rows": {}, "no_oos": no_oos, "oos": oos,
                 "why": f"el OOS de esta cosecha es {', '.join(sorted(spans)) or 'desconocido'}, "
                        "no OOS1: no hay unión IS+OOS1 que calcular"}
-    t = t[t["identity"].isin(held["IS"] & held["OOS"])]
+    t = cast(pd.DataFrame, t[t["identity"].isin(list(held["IS"] & held["OOS"]))])
     t = t.sort_values(["identity", "sample", "Close time"], kind="stable")
-    return {"rows": {k: figures(g["Profit/Loss"].reset_index(drop=True))
+    return {"rows": {str(k): figures(cast(pd.Series, g["Profit/Loss"]).reset_index(drop=True))
                      for k, g in t.groupby("identity", sort=False)},
             "no_oos": no_oos, "oos": oos, "why": None}
 
 
-def segments(project: str, databank: str) -> dict:
+def segments(project: str, databank: str) -> Segments:
     """GET /api/databank/segments: what the column chooser adds beyond the table's own columns.
 
     Args:

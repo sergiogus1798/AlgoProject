@@ -2,6 +2,7 @@
 
 import math
 from pathlib import Path
+from typing import Any
 
 import pyarrow.parquet as pq
 
@@ -61,14 +62,14 @@ def columns(path: Path) -> list[str]:
     return [c for c in keep if not sealed(c)]
 
 
-def clean(v: object) -> object:
+def clean(v: object) -> Any:
     """A cell as JSON carries it and the window prints it: NaN as None, 20.0 as 20."""
     if v is None or (isinstance(v, float) and math.isnan(v)):
         return None
     return int(v) if isinstance(v, float) and v.is_integer() else v
 
 
-def read(path: Path) -> dict:
+def read(path: Path) -> dict[str, Any]:
     """The batch panel from one `metrics.parquet`, oos2 among the outcomes when it has one.
 
     Args:
@@ -109,7 +110,7 @@ def read(path: Path) -> dict:
             "note": note}
 
 
-def batch(project: str, strategy: str) -> dict:
+def batch(project: str, strategy: str) -> dict[str, Any]:
     """What `GET /api/batch` answers for one mother.
 
     Args:

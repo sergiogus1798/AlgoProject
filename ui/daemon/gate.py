@@ -2,6 +2,7 @@
 
 import os
 import secrets
+from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
@@ -56,7 +57,7 @@ def install(app: FastAPI) -> None:
         arm(int(os.environ[ENV]))
 
     @app.middleware("http")
-    async def gate(request: Request, call_next: object) -> Response:
+    async def gate(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         """403 with the reason's one word, or the route's own answer."""
         why = refusal(request.method, request.url.path, dict(request.headers))
         if why:

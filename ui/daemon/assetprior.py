@@ -31,7 +31,8 @@ def measured(stamp: tuple, symbol: str) -> dict[str, dict[str, str]]:
         the profile has no row for the asset.
     """
     rows, variants = _tables(stamp)
-    mine, swept = rows[rows["symbol"] == symbol], variants[variants["symbol"] == symbol]
+    mine = pd.DataFrame(rows[rows["symbol"] == symbol])
+    swept = pd.DataFrame(variants[variants["symbol"] == symbol])
     return {f: {t: flag for t in priorview.TIMEFRAMES if (flag := flag_of(mine, swept, symbol, t, f))}
             for f in priorview.PRIOR["families"]} if len(mine) else {}
 

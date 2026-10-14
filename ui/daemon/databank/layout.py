@@ -1,10 +1,13 @@
 """The databank panel's two rows of tabs for one project: each sub-panel and its databank."""
 
+from typing import TypedDict
+
 from core import cfx
 from core.paths import DATA
 from sqx.projects.stage import titles
 from ui.daemon.databank import cells, metrics, table
 from ui.daemon.workflow import sources
+from ui.daemon.workflow.records import Door
 
 # The top row as the mock fixed it (encargo 22 §4.3, kept by the owner after wave 1), each tab
 # with the workflow stage whose task writes its databank and its sub-panels: (name, studies,
@@ -148,11 +151,36 @@ def splits(project: str, bank: str, study: str) -> list[str]:
         got = table.table(project, bank)
     except Exception:  # noqa: BLE001 — the ui boundary: the tab row must always come back
         return []
-    return list(dict.fromkeys(c["sub"] for c in got["columns"]
-                              if c.get("study") == study and c["sub"]))
+    return list(dict.fromkeys(s for c in got["columns"]
+                              if c.get("study") == study and (s := c.get("sub"))))
 
 
-def panels(project: str) -> dict:
+class Sub(TypedDict):
+    """One sub-panel: its databank, the studies it shows and the sentence while the door holds it."""
+
+    sub: str
+    databank: str
+    studies: list[str]
+    split: str | None
+    blocked: str | None
+
+
+class Tab(TypedDict):
+    """One tab of the panel row with its sub-panels."""
+
+    tab: str
+    subs: list[Sub]
+
+
+class Panels(TypedDict):
+    """The `panels` payload: the tab rows and the ledger's door."""
+
+    project: str
+    tabs: list[Tab]
+    blind: Door
+
+
+def panels(project: str) -> Panels:
     """GET /api/databank/panels: the two tab rows of one project.
 
     Args:
@@ -165,16 +193,17 @@ def panels(project: str) -> dict:
     """
     blind, _ = table.door(project)
     out = outputs(project)
-    tabs = []
+    tabs: list[Tab] = []
     for tab, specs in TABS:
-        subs = []
+        subs: list[Sub] = []
         for name, studies, stage, split in specs:
             bank = databank(project, out, stage, studies)
             locked = blind["text"] if blind["sealed"] and LOCKED & set(studies) else None
-            row = {"sub": name, "databank": bank, "studies": studies, "split": None,
+            row: Sub = {"sub": name, "databank": bank, "studies": studies, "split": None,
                    "blocked": locked}
             subs.append(row)
             if split and not locked:
-                subs += [{**row, "sub": s, "split": s} for s in splits(project, bank, split)]
+                subs += [Sub(sub=s, databank=bank, studies=studies, split=s, blocked=locked)
+                         for s in splits(project, bank, split)]
         tabs.append({"tab": tab, "subs": subs})
     return {"project": project, "tabs": tabs, "blind": blind}
