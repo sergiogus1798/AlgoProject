@@ -56,4 +56,5 @@ else
     || { echo 'remote: git pull failed on $NAME — nothing run' >&2; exit 97; }
 fi
 export SQX_OWNER=\"\${SQX_OWNER:-claude_leaseWeb}\"
+export PATH=\"\$HOME/.local/bin:\$PATH\"   # pip --user tools (ruff, pyright): not on a non-login PATH
 $RUN"
