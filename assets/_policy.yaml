@@ -104,11 +104,6 @@ segments:
     build: {from: 2011-09-19, to: 2019}
     oos1: {from: 2020, to: 2023}
     oos2: {from: 2024, to: 2026-09-30, spread: oos2}
-  SP500ft:
-    data: null   # ⚠️ SP500ft_Plus02_Infinox NO EXISTE en SQX — no hay histórico que partir
-    build: {from: null, to: null}
-    oos1: {from: null, to: null}
-    oos2: {from: null, to: null}
   XAGUSD:
     data: {from: 2003-08-08, to: 2026-10-09}   # XAGUSD_M1, 7.293.985 barras M1
     build: {from: 2008, to: 2017}

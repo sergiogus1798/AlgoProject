@@ -90,6 +90,12 @@ def test_usdjpy_feedswap() -> None:
         )
 
         texts = project_texts(out)
+        check(
+            "template installed where the tasks point",
+            Path(done["template"]).exists()
+            and any(done["template"] in t for t in texts.values()),
+            done["template"],
+        )
         donor_feed = done["feed_replaced"]
         stray = {n for n, t in texts.items() if donor_feed in t}
         check("donor feed (XAUUSD) gone from every task", not stray, str(stray))
@@ -150,6 +156,11 @@ def test_failed_build_leaves_nothing() -> None:
         )
         check(
             "nothing left in the install after the refusal", not leftover, str(leftover)
+        )
+        check(
+            "the template was not installed before the gate refused (issue 114)",
+            not [p for p in Path(install).rglob("*.sqx")],
+            str(list(Path(install).rglob("*.sqx"))),
         )
 
 

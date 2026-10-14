@@ -118,12 +118,15 @@ def build(
     install = worker_dir(role)
     # Every library folder holds a file literally called template.sqx: installed under that
     # name two templates collide silently, so the folder is the template's name.
-    installed_template = None
+    installed_template = staged_template = holder = None
     if template:
         stem = template.parent.name if template.stem == "template" else template.stem
         installed_template = install / TEMPLATES_REL / "authored" / f"{stem}.sqx"
-        installed_template.parent.mkdir(parents=True, exist_ok=True)
-        install_template(template, installed_template)
+        # The gates read `templateFile` (`charts.wanted`), so the copy they read lives outside
+        # the install; it moves in only after every gate has passed (OPEN.md issue 114).
+        holder = tempfile.TemporaryDirectory(prefix="sqx-template-", dir=tmp_dir())
+        staged_template = Path(holder.name) / installed_template.name
+        install_template(template, staged_template)
 
     with zipfile.ZipFile(donor) as z:
         members = {n: z.read(n) for n in z.namelist()}
@@ -173,7 +176,7 @@ def build(
     for member in [n for n in members if n.endswith(".xml") and n != "config.xml"]:
         text = members[member].decode("utf-8")
         text = (
-            set_template(text, hit(installed_template))
+            set_template(text, hit(staged_template))
             if template
             else set_simple(text, hit(side))
         )
@@ -235,8 +238,24 @@ def build(
         }
 
         refuse(result, final, donor_feed, replaced)
+        if template:
+            assert installed_template and staged_template and holder
+            with zipfile.ZipFile(staged, "w", zipfile.ZIP_DEFLATED) as z:
+                for member, blob in final.items():
+                    z.writestr(
+                        member,
+                        blob.replace(
+                            str(staged_template).encode(),
+                            str(installed_template).encode(),
+                        ),
+                    )
         out.parent.mkdir(parents=True, exist_ok=True)
+        if installed_template and staged_template:
+            installed_template.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(staged_template, installed_template)
         shutil.move(str(staged), str(out))
+        if holder:
+            holder.cleanup()
     return result
 
 
