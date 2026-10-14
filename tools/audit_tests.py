@@ -22,6 +22,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))  # depmap, for --change
 
 TIMEOUT = 300  # seconds per test; a hang counts as a failure
 WORKERS = 6
+# A longer cap, with its reason, for a test whose statistics need the time (never shrink its draws).
+SLOW: dict[str, int] = {
+    # test_noise_is_calibrated: 40 seeds x 9 null searches; 234 s alone, over 300 s under load
+    "tests/test_portfolio_verdict.py": 900,
+}
 
 # Set aside, never silently: path -> (reason, date). The audit prints this list as "apartadas" and
 # says when one passes again, so the entry is removed. Not a failure while listed.
@@ -68,14 +73,15 @@ def run_one(path: str) -> tuple[str, int, float, str]:
         ["python3", "-m", "pytest", "-q", path] if pytest_style else ["python3", path]
     )
     env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
+    cap = SLOW.get(path, TIMEOUT)
     start = time.time()
     try:
         p = subprocess.run(
-            command, cwd=ROOT, env=env, capture_output=True, text=True, timeout=TIMEOUT
+            command, cwd=ROOT, env=env, capture_output=True, text=True, timeout=cap
         )
         code, out = p.returncode, p.stdout + p.stderr
     except subprocess.TimeoutExpired:
-        code, out = 124, f"timed out after {TIMEOUT} s"
+        code, out = 124, f"timed out after {cap} s"
     return (
         path,
         code,
