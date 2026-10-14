@@ -1,6 +1,7 @@
-# Real-bug lint only. No formatter, no style rules — CODESTYLE.md decides those.
+# Real-bug lint, plus `ruff format` for layout (encargo 68 F18); other style is CODESTYLE.md's.
+# Markdown is excluded: ruff 0.16 would reflow the code blocks of CODESTYLE.md and the READMEs.
 # Python version: pyproject.toml (requires-python) — ruff reads it from there.
-extend-exclude = ["scratch", "tools/sqx-lab"]
+extend-exclude = ["scratch", "tools/sqx-lab", "*.md"]
 
 [lint]
 select = [

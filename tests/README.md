@@ -104,6 +104,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_fleet_progress.py` | MetaTracker's stage progress on the firm's clock, the payout, the EA comparison, the strategy record and the cross-account pairing. | — |
 | `test_fleet_risk_rules.py` | MetaTracker's stop risk, weekend and news rules at their edges, the hours[] floors, the reasons' order, and the fixture's three lights. | — |
 | `test_funded_bank.py` | Known-answer tests for the bank run: the budget is a hard stop, the measures, the catalogue's terms, the table, the ledger row, the refusal. | — |
+| `test_funded_bank_run.py` | Known-answer tests for the bank run: the whole run on a synthetic path set, the ledger row, the refusal. | — |
 | `test_funded_decide.py` | Known-answer tests for the funding decision: the bank's EV by hand on a one-phase plan, the zero-edge option, the gates of the choice, the deal's ΔEV, the command. | — |
 | `test_funded_live.py` | Known-answer tests of the live protocol: SPRT boundaries and crossings, and stage A's rows. | `python3 -m pytest tests/test_funded_live.py -q` |
 | `test_funded_price.py` | Encargo 33 §7.1: the catalogue's price is Hantec's JS formula, and it is the fee the bank simulation charges. | — |
@@ -185,6 +186,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_palettes_families.py` | The family palettes are lists of real blocks with no clock, no calendar and no stop/limit level: seven short ones, five v3 of 90-150. | `python3 tests/test_palettes_families.py` |
 | `test_panelsplit.py` | Known-answer test: `panel.split` cuts at a segment's own start, not a retested leg's warm-up. | `python3 tests/test_panelsplit.py` |
 | `test_perf66_algobank.py` | An `.abk` written to the spec comes back field by field, and a damaged one is refused. | — |
+| `test_perf66_algobank_pack.py` | `bankfile.pack` against `tradepack.pack` of the same strategies written as CSVs (split from test_perf66_algobank). | — |
 | `test_perf66_algobank_refused.py` | An `.abk` that is empty, truncated, bit-flipped, of another version or incoherent is refused and says why. | — |
 | `test_perf66_bin.py` | Encargo 66: what bin/workflow.sh, bin/sqx-worker.sh and runner/batchrun.py say when something fails. | — |
 | `test_perf66_bugs.py` | Known answers for the audited bugs fixed in encargo 66: each test failed before its fix. | — |
@@ -268,6 +270,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_reprice.py` | The common repricer against SQX's own P/L on audited trades, and against cases worked out by hand. | `python3 tests/test_reprice.py` |
 | `test_research_board.py` | Research board: the gate, the four factors, the hole rules, the proposal's refusals (sheet, review and previous failures included) and the profile's self-examination, on synthetic tables (no AlgoData). | `python3 tests/test_research_board.py` |
 | `test_research_board_own_ideas.py` | The proposal's stamp does not count the proposal's own ideas as spent (OPEN #101). | `python3 -m pytest tests/test_research_board_own_ideas.py` |
+| `test_research_board_selfcheck.py` | Research board: the profile's self-examination on synthetic tables (split from test_research_board). | — |
 | `test_research_memory.py` | Research memory: the resumen parser, the funnel's outcomes, the typed cause, the hypothesis sheet, the ideas index, the queries and the verdict writer, on fixture files in a temp dir (no AlgoData). | `python3 tests/test_research_memory.py` |
 | `test_result_slice.py` | A population study on one strategy's page (feedback 2026-09-29 §4.5): its rows, its bars, its grid line and its scaled siblings; nothing of another strategy; None when none names it. | — |
 | `test_roll_oos2.py` | The oos2 roll moves asset by asset: a stale feed stays behind alone and never holds the others. | — |
@@ -352,6 +355,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_worker_lifecycle.py` | bin/sqx-worker.sh's start/stop lifecycle, without ever touching a real worker. | — |
 | `test_worker_lock.py` | bin/sqx-lock.sh's owner lock (OPEN.md #32): a fake install dir, no real worker touched. | — |
 | `test_workflow_family.py` | A Simple Strategy carries its idea family (owner, 2026-10-12): the refusal, the registry column, an old registry without it, `_family` resolving, the resume command passing it. | `python3 -m pytest tests/test_workflow_family.py` |
+| `ui_portfolios_planted.py` | The folders the PORTFOLIOS zone test reads, planted in a temp root: shared by test_ui_portfolios, not a test itself. | — |
 
 
 `test_models.py` and `test_cscv.py` are the tests here that are not golden files:

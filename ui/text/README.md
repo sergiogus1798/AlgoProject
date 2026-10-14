@@ -26,6 +26,7 @@ daemon never imports the window, so they moved here.
 | `glossary_crossmarket.py` | The Spanish words for cross-market's verdict.csv columns («¿la lógica viaja?», encargo 46). | imported | key → label |
 | `glossary_gate.py` | The gate's facts and knobs in words (encargo 44): the funnel's rules and the Configuración SQX values. | imported | key → label |
 | `glossary_steps.py` | The facts and knobs of steps 17-19 (WFC, CSCV, market surfaces, WFM) in words, as the Criterios zone and the drawers read them. | imported | key → label |
+| `glossary_zones.py` | The labels of the asset zone, the databank panel, the study drawings and the Estrategia page, split from glossary.py. | — | — |
 | `numbers.py` | The one way the window prints a number: never scientific, thousands grouped, K and M when large. | imported | value → text |
 | `verdictwords.py` | A study's English or lowercase verdict words, in Spanish for the databank table. | imported by the databank table's model | word → word |
 

@@ -19,7 +19,12 @@ ROOT, MAX_LINES = depmap.ROOT, 500
 PATHS_MODULE = ROOT / "core" / "paths.py"
 DEVELOPER_ONLY = {"tools", "tests"}
 ABSOLUTE = re.compile(r"""["'](?:/home/|/root/|~/)""")
-PIP_NAME = {"yaml": "PyYAML", "sklearn": "scikit-learn", "PIL": "Pillow", "ruamel": "ruamel.yaml"}
+PIP_NAME = {
+    "yaml": "PyYAML",
+    "sklearn": "scikit-learn",
+    "PIL": "Pillow",
+    "ruamel": "ruamel.yaml",
+}
 
 
 def too_long(files: list[Path]) -> list[str]:
@@ -55,15 +60,20 @@ def undocumented(files: list[Path]) -> list[str]:
         if not ast.get_docstring(mod):
             out.append(f"{rel}: no module docstring")
         for node in depmap.nodes(f):
-            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if not isinstance(
+                node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+            ):
                 continue
             where = f"{rel}:{node.lineno} {node.name}"
             if not ast.get_docstring(node):
                 out.append(f"{where}: no docstring")
             if isinstance(node, ast.ClassDef):
                 continue
-            args = [a for a in node.args.args + node.args.kwonlyargs
-                    if a.arg not in ("self", "cls")]
+            args = [
+                a
+                for a in node.args.args + node.args.kwonlyargs
+                if a.arg not in ("self", "cls")
+            ]
             if any(a.annotation is None for a in args):
                 out.append(f"{where}: arguments without type hints")
             if node.returns is None:
@@ -102,16 +112,22 @@ def missing_requirements(files: list[Path]) -> list[str]:
         One message per missing library.
     """
     req = ROOT / "requirements.txt"
-    listed = {re.split(r"[=<>!\[]", line, maxsplit=1)[0].strip().lower()
-              for line in req.read_text(encoding="utf-8").splitlines()
-              if line.strip() and not line.startswith("#")}
+    listed = {
+        re.split(r"[=<>!\[]", line, maxsplit=1)[0].strip().lower()
+        for line in req.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    }
     known = depmap.internal_names(files)
     used: set[str] = set()
     for f in files:
-        used |= {n for n in depmap.imports_of(f)
-                 if n not in known and n not in depmap.STDLIB}
-    return [f"requirements.txt: missing {PIP_NAME.get(n, n)} (imported as {n})"
-            for n in sorted(used) if PIP_NAME.get(n, n).lower() not in listed]
+        used |= {
+            n for n in depmap.imports_of(f) if n not in known and n not in depmap.STDLIB
+        }
+    return [
+        f"requirements.txt: missing {PIP_NAME.get(n, n)} (imported as {n})"
+        for n in sorted(used)
+        if PIP_NAME.get(n, n).lower() not in listed
+    ]
 
 
 def unlisted_in_readme(files: list[Path]) -> list[str]:
@@ -133,8 +149,11 @@ def unlisted_in_readme(files: list[Path]) -> list[str]:
             out.append(f"{folder.relative_to(ROOT)}/: no README.md")
         elif skill.exists():
             text = readme.read_text(encoding="utf-8")
-            out += [f"{folder.relative_to(ROOT)}/SKILL.md: {f.name} not listed"
-                    for f in sorted(folder.glob("*.py")) if f.name not in text]
+            out += [
+                f"{folder.relative_to(ROOT)}/SKILL.md: {f.name} not listed"
+                for f in sorted(folder.glob("*.py"))
+                if f.name not in text
+            ]
     return out
 
 
@@ -154,6 +173,7 @@ def no_manual_page(files: list[Path]) -> list[str]:
     """
     sys.path.insert(0, str(ROOT))
     from core.paths import MANUAL_SRC
+
     if not MANUAL_SRC.is_dir():
         return [f"{MANUAL_SRC}: the manual's sources are missing, commands not checked"]
     written = "".join(p.read_text(encoding="utf-8") for p in MANUAL_SRC.glob("*.md"))
@@ -164,8 +184,10 @@ def no_manual_page(files: list[Path]) -> list[str]:
         if rel.split("/")[0] in DEVELOPER_ONLY or rel in written or dotted in written:
             continue
         if "__main__" in f.read_text(encoding="utf-8"):
-            out.append(f"{rel}: no manual chapter — copy _PLANTILLA.md in {MANUAL_SRC}, "
-                       f"add it to a family in tools/manual.py and rebuild the PDFs")
+            out.append(
+                f"{rel}: no manual chapter — copy _PLANTILLA.md in {MANUAL_SRC}, "
+                f"add it to a family in tools/manual.py and rebuild the PDFs"
+            )
     return out
 
 
@@ -181,11 +203,55 @@ def lint_bugs(files: list[Path]) -> list[str]:
     if not shutil.which("ruff"):
         return []
     result = subprocess.run(
-        ["ruff", "check", "--select", "F821,F811,F823,E9", "--no-cache",
-         "--output-format", "concise", str(ROOT)],
-        capture_output=True, text=True)
-    return [line for line in result.stdout.splitlines()
-            if line and "Found" not in line and "All checks passed" not in line]
+        [
+            "ruff",
+            "check",
+            "--select",
+            "F821,F811,F823,E9",
+            "--no-cache",
+            "--output-format",
+            "concise",
+            str(ROOT),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    return [
+        line
+        for line in result.stdout.splitlines()
+        if line and "Found" not in line and "All checks passed" not in line
+    ]
+
+
+def unformatted(files: list[Path]) -> list[str]:
+    """Python files `ruff format` would change (encargo 68 F18).
+
+    Args:
+        files: Project Python files, unused: ruff walks the tree itself.
+
+    Returns:
+        One message per file; none when ruff is not installed.
+    """
+    if not shutil.which("ruff"):
+        return []
+    result = subprocess.run(
+        [
+            "ruff",
+            "format",
+            "--check",
+            "--no-cache",
+            "--output-format",
+            "concise",
+            str(ROOT),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    return [
+        f"{line.split(':', 1)[0]}: run `ruff format` on it"
+        for line in result.stdout.splitlines()
+        if ": unformatted:" in line
+    ]
 
 
 def stale_depmap(files: list[Path]) -> list[str]:
@@ -216,27 +282,51 @@ def workflow_drift(files: list[Path]) -> list[str]:
         person editing the table cannot break the window; this check makes the drift loud.
     """
     table = ROOT / "docs" / "AgentPDFs" / "WORKFLOW.md"
-    doc = re.findall(r"^\|\s*([0-9.]+)\s*\|\s*\*\*(.+?)\*\*", table.read_text(encoding="utf-8"),
-                     re.M)
-    tree = ast.parse((ROOT / "ui" / "daemon" / "workflow" / "steps.py").read_text(encoding="utf-8"))
-    rows = next(ast.literal_eval(n.value) for n in tree.body
-                if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == "S")
+    doc = re.findall(
+        r"^\|\s*([0-9.]+)\s*\|\s*\*\*(.+?)\*\*", table.read_text(encoding="utf-8"), re.M
+    )
+    tree = ast.parse(
+        (ROOT / "ui" / "daemon" / "workflow" / "steps.py").read_text(encoding="utf-8")
+    )
+    rows = next(
+        ast.literal_eval(n.value)
+        for n in tree.body
+        if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == "S"
+    )
     code = [(r[0], r[2]) for r in rows]
     if [n for n, _ in doc] != [n for n, _ in code]:
-        return [f"steps.py numbers {[n for n, _ in code]} != WORKFLOW.md {[n for n, _ in doc]}"]
-    return [f"step {n}: steps.py says «{c}», WORKFLOW.md says «{d}»"
-            for (n, d), (_, c) in zip(doc, code) if d != c]
+        return [
+            f"steps.py numbers {[n for n, _ in code]} != WORKFLOW.md {[n for n, _ in doc]}"
+        ]
+    return [
+        f"step {n}: steps.py says «{c}», WORKFLOW.md says «{d}»"
+        for (n, d), (_, c) in zip(doc, code)
+        if d != c
+    ]
 
 
 def main() -> None:
     """Run every check and exit non-zero if anything fails."""
     files = depmap.py_files()
-    checks = [("file length", too_long), ("documentation", undocumented), ("hardcoded paths", hardcoded_paths),
-              ("requirements", missing_requirements), ("folder READMEs", unlisted_in_readme), ("readme tables", readmetable.stale),
-              ("manual pages", no_manual_page), ("lint", lint_bugs), ("dependency map", stale_depmap),
-              ("knowhow cards", knowhowmap.bad_cards), ("knowhow links", knowhowmap.broken_links),
-              ("knowhow header paths", knowhowrefs.dead_header_paths), ("knowhow indexes", knowhowmap.stale_indexes),
-              ("workflow table", workflow_drift), ("layering", bad_layering), ("ratchet", ratchet.check)]
+    checks = [
+        ("file length", too_long),
+        ("documentation", undocumented),
+        ("hardcoded paths", hardcoded_paths),
+        ("requirements", missing_requirements),
+        ("folder READMEs", unlisted_in_readme),
+        ("readme tables", readmetable.stale),
+        ("manual pages", no_manual_page),
+        ("lint", lint_bugs),
+        ("format", unformatted),
+        ("dependency map", stale_depmap),
+        ("knowhow cards", knowhowmap.bad_cards),
+        ("knowhow links", knowhowmap.broken_links),
+        ("knowhow header paths", knowhowrefs.dead_header_paths),
+        ("knowhow indexes", knowhowmap.stale_indexes),
+        ("workflow table", workflow_drift),
+        ("layering", bad_layering),
+        ("ratchet", ratchet.check),
+    ]
     total = 0
     for name, check in checks:
         problems = check(files)
