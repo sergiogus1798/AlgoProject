@@ -27,11 +27,6 @@ def calendar(bars: pd.DataFrame) -> pd.DatetimeIndex:
     return pd.DatetimeIndex(bars.index.normalize().unique())
 
 
-def day_closes(bars: pd.DataFrame) -> pd.Series:
-    """The asset's last M1 close of each feed day — what a close-to-close P&L is held against."""
-    return bars["Close"].groupby(bars.index.normalize()).last()
-
-
 def measured(trades: pd.DataFrame) -> tuple[float, dict]:
     """The point value and the commission the backtest itself ran with, read off its trades.
 

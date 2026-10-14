@@ -98,6 +98,14 @@ def undecided_assets() -> list[str]:
     return out
 
 
+def dead_code() -> list[str]:
+    """Vulture findings over the repo with `tools/vulture_whitelist.py` (reported, never deleted)."""
+    got = subprocess.run([sys.executable, "-m", "vulture", ".", "--min-confidence", "60",
+                          "--exclude", "scratch,tools/sqx-lab"], cwd=ROOT,
+                         capture_output=True, text=True)
+    return [x for x in got.stdout.splitlines() if x]
+
+
 def main() -> None:
     """Write today's mechanical audit and exit non-zero if anything regressed."""
     checks_code, checks_out = run("python3", "tools/checks.py")
@@ -114,6 +122,7 @@ def main() -> None:
     no_manifest = exports_without_manifest()
     unknown_code = manifests_of_unknown_code()
     undecided = undecided_assets()
+    dead = dead_code()
 
     lines = [f"# Mechanical audit {date.today().isoformat()}", "",
              "Written by `tools/daily_audit.py`. It checks only what a machine can check;",
@@ -125,9 +134,12 @@ def main() -> None:
              f"| projects that fail to render | {', '.join(bad) or 'none'} |",
              f"| exports without a manifest | {', '.join(no_manifest) or 'none'} |",
              f"| manifests naming unknown code | {', '.join(unknown_code) or 'none'} |",
-             f"| assets in use, cost still undecided | {', '.join(undecided) or 'none'} |"]
+             f"| assets in use, cost still undecided | {', '.join(undecided) or 'none'} |",
+             f"| dead code (vulture, with the whitelist) | {len(dead) or 'none'} |"]
     if checks_code:
         lines += ["", "## checks.py output", "", "```", checks_out, "```"]
+    if dead:
+        lines += ["", "## dead code (vulture)", "", "```", *dead[:50], "```"]
     lines += tests_row[1:]
 
     AUDIT.mkdir(parents=True, exist_ok=True)

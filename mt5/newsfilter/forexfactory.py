@@ -11,7 +11,6 @@ URL = "https://github.com/janickfarrell/newfac/releases/download/calendar-data/f
 RAW = CAL / "ff_newfac.csv"
 # A second scrape of the red folder only, 2020 on, stamped in UTC (ehsanrs2/forexfactory-scraper:
 # GPL code, never run or copied — only its published CSV is read, to check the first one's clock).
-CHECK = CAL / "ff_ehsanrs2_high.csv"
 
 
 def download() -> int:
@@ -41,13 +40,6 @@ def untimed() -> pd.Series:
     raw = pd.read_csv(RAW, encoding="utf-8-sig", dtype=str, keep_default_na=False)
     red = raw[raw["impact"] == "High"]
     return red.loc[~red["time"].str.fullmatch(r"\d{1,2}:\d{2}"), "time"].value_counts()
-
-
-def load_check() -> pd.DataFrame:
-    """The second scrape's red folder: utc, currency, event."""
-    raw = pd.read_csv(CHECK)
-    utc = pd.to_datetime(raw["DateTime"], utc=True).dt.tz_localize(None)
-    return pd.DataFrame({"utc": utc, "currency": raw["Currency"], "event": raw["Event"]})
 
 
 def main() -> None:

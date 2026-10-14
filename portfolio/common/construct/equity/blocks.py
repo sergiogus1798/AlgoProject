@@ -88,7 +88,3 @@ def joint_day_low(members: list[np.ndarray], days: np.ndarray) -> pd.Series:
     """
     return pd.Series(np.sum(members, axis=0), index=days).groupby(level=0).min()
 
-
-def joint_day_high(members: list[np.ndarray], days: np.ndarray) -> pd.Series:
-    """A combination's joint intraday best: per day, the max over blocks of the members' sum."""
-    return pd.Series(np.sum(members, axis=0), index=days).groupby(level=0).max()

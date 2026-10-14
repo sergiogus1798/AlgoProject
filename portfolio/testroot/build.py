@@ -15,7 +15,6 @@ LINKS = ("bars", "funding", "projects/registry.csv")
 # Segments of the test calendar. The test pool has trades to the end of oos1 and none in oos2;
 # a code path that needs a later segment gets oos1's tail under oos2's name with
 # `--set calendar.pseudo_oos2_from=<this>`. It is not a holdout: every strategy was chosen on it.
-PSEUDO_OOS2_FROM = "2022-01-01"
 
 
 def build(root: Path = ROOT) -> Path:

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from core.significance import moments
-from core.surface import plateau, trials
+from core.surface import plateau
 
 SHARPE_UNITS = ("per_period", "annualised")   # the only score units that are a Sharpe
 YEAR = 252      # trading days a year, for converting SQX's annualised Sharpes
@@ -74,22 +74,6 @@ def overall(frames: list[pd.DataFrame]) -> dict:
     held = [f for f in frames if len(f)]
     return {**accumulated(pd.concat(held, ignore_index=True) if held else pd.DataFrame()),
             "studies": len(held)}
-
-
-def population_n_eff(panel: pd.DataFrame, k_max: int) -> dict:
-    """How many independent things a whole surviving population really is.
-
-    Args:
-        panel: Periods down, strategies across -- the same shape `studies/screening/gate/collect.py`
-            harvests, not one mother's variants.
-        k_max: Largest cluster count to consider.
-
-    Returns:
-        What `core.surface.trials.independent` returns, applied to the population instead
-        of to a variant batch. Strategies that earn the same way week after week are one
-        trial wearing several names, however different their rule trees look.
-    """
-    return trials.independent(panel, k_max)
 
 
 def deflated(returns: np.ndarray, sigma: float, n_eff: int) -> dict:

@@ -158,25 +158,6 @@ def regime_strata(held: pd.DataFrame, market: dict, draws: int,
     return entries, _drop_overlaps(entries, holds)
 
 
-def truncate(entries: np.ndarray, holds: np.ndarray, market: dict) -> np.ndarray:
-    """Cut every random hold at the Friday close, the way the real exit rule cuts the real one.
-
-    Args:
-        entries: A (runs, trades) array of entry bar indices.
-        holds: Bars held, same shape.
-        market: What envelope.describe() returned.
-
-    Returns:
-        The holds, each capped at the bars remaining to the next Friday close. A hold that
-        reaches it exactly becomes zero and its trade drops out of that run — so a run's
-        effective trade count varies even though every model draws the same number of them,
-        which is why the statistics carry a `live` mask. Applied to every model: under
-        block_shift it is close to a no-op, since that model already keeps the weekday and
-        hour, and the difference between the two is the holiday weeks.
-    """
-    return np.minimum(holds, market["friday_cap"][entries])
-
-
 MODELS = {"block_shift": block_shift, "segment_permute": segment_permute,
           "resampled_holds": resampled_holds, "fitted_holds": fitted_holds,
           "regime_strata": regime_strata}

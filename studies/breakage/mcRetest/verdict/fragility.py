@@ -24,7 +24,6 @@ def tail(values: np.ndarray, quantile: float, cfg: dict) -> dict:
         sample values. The bias-correction term then reads a replicate fraction of 0 or 1,
         z0 goes infinite and the interval comes back NaN -- measured on 5 of the 8 tasks
         here at the 5th percentile, not merely in the far tail where it was expected.
-        `bootstrap_mean` below keeps BCa for the statistics it actually suits.
     """
     ordered = np.sort(np.asarray(values, dtype=np.float64))
     n, q = ordered.size, quantile / 100.0
@@ -34,24 +33,6 @@ def tail(values: np.ndarray, quantile: float, cfg: dict) -> dict:
             "lo": float(clamp(stats.binom.ppf(alpha / 2, n, q))),
             "hi": float(clamp(stats.binom.ppf(1 - alpha / 2, n, q))),
             "method": "order statistics"}
-
-
-def bootstrap_mean(values: np.ndarray, cfg: dict) -> dict:
-    """A BCa interval for a smooth statistic, where BCa belongs.
-
-    Args:
-        values: One value per simulation.
-        cfg: What inputs.config.load() returned.
-
-    Returns:
-        The mean and its bias-corrected accelerated interval. Used for means and Sharpe
-        analogues, never for a quantile -- see tail().
-    """
-    got = stats.bootstrap((np.asarray(values, dtype=np.float64),), np.mean, method="BCa",
-                          vectorized=True, n_resamples=cfg["fragility"]["n_resamples"],
-                          confidence_level=cfg["fragility"]["confidence"])
-    return {"point": float(np.mean(values)), "lo": float(got.confidence_interval.low),
-            "hi": float(got.confidence_interval.high), "method": "BCa"}
 
 
 def conditional_drawdown(values: np.ndarray, cfg: dict) -> dict:

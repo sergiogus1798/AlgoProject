@@ -58,18 +58,3 @@ def excursions(trades: pd.DataFrame, point_value: float) -> pd.DataFrame:
     return pd.DataFrame({"mae": trades["MAE ($)"].abs() / scale,
                          "mfe": trades["MFE ($)"].abs() / scale})
 
-
-def on_bar_open(trades: pd.DataFrame, opens: pd.Index) -> float:
-    """Share of entries landing exactly on a bar open.
-
-    Args:
-        trades: One market's trades.
-        opens: The bar open times of that market and timeframe.
-
-    Returns:
-        A fraction. Below 1 means some entries were pending orders filled inside a bar, which
-        is a price-conditional selection a synthetic trade cannot reproduce: a market well
-        below 1 has to be reported, not silently tested. Membership of the real bar index is
-        the only test that works at every timeframe — an M30 bar opens on the half hour too.
-    """
-    return float(trades["Open time"].isin(opens).mean())

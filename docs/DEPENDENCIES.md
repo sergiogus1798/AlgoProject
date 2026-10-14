@@ -38,7 +38,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/bars.py` | 23 | Read an OHLC bar file exported by SQX into a frame indexed by bar open time. | — | pandas |
 | `core/barstore.py` | 108 | The bar library: M1 is the only bar data stored, every other timeframe is resampled from it. | core | pandas |
 | `core/buildfilters.py` | 83 | The Build's acceptance filters for one asset and timeframe, resolved from assets/_study.yaml. | core | yaml |
-| `core/cfx.py` | 143 | Read a project.cfx without SQX. It is a ZIP holding config.xml plus one XML per task. | core | — |
+| `core/cfx.py` | 144 | Read a project.cfx without SQX. It is a ZIP holding config.xml plus one XML per task. | core | — |
 | `core/commission.py` | 96 | Each broker's own commission as a %, refreshed weekly from the latest close. | core | — |
 | `core/datapaths.py` | 238 | The data root's secondary trees: template library, pipeline, permutations, logs, backups, caches, spread. | core | — |
 | `core/exportdrv.py` | 106 | What leaves SQX through the worker: trades, the symbol list and bars (metrics are read off the .sqx). | core | — |

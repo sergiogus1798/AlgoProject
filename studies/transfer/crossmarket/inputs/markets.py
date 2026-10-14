@@ -149,19 +149,3 @@ def feeds(universe_: dict) -> list[str]:
     """
     return [universe_["main"]] + [m["feed"] for m in universe_["markets"]]
 
-
-def out_of_sample(symbol: str) -> dict[str, str] | None:
-    """The main backtest's own out-of-sample stretch, as the declaration states it.
-
-    Args:
-        symbol: Base asset.
-
-    Returns:
-        {"from": ..., "to": ...} as ISO dates. This is the `oos1` segment of
-        `assets/_policy.yaml`, which is the one place the window is declared — it used to be
-        copied here from the project's own <OutOfSample><Range/> and could drift from it.
-        Declared and never inferred: every trade the retest export carries is stamped
-        `Sample type = IST` whatever window it fell in, so the split is unreadable.
-    """
-    seg = assets.load(symbol)["segments"]["oos1"]
-    return {"from": f"{seg['from']}-01-01", "to": f"{seg['to']}-12-31"}

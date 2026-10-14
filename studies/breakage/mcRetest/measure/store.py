@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from core.paths import export_dir
@@ -141,43 +140,6 @@ def load_trades(project: str, databank: str, day: str, strategy: str = "") -> pd
     """
     filters = [("strategy", "==", strategy)] if strategy else None
     return pd.read_parquet(root(project, databank, day) / TRADES, filters=filters)
-
-
-def load_build(project: str, databank: str, day: str, strategy: str) -> pd.DataFrame:
-    """The unperturbed **build** trade list of one strategy, dated, from its harvest.
-
-    Args:
-        project: SQX project name.
-        databank: Ingest run name.
-        day: Ingest date.
-        strategy: One strategy id.
-
-    Returns:
-        The columns of load_trades(), over the window the `bar` and `ohlc` tasks re-run. It is
-        what gives dates to `load_original_pnl()`, which has none.
-    """
-    return pd.read_parquet(root(project, databank, day) / BUILD,
-                           filters=[("strategy", "==", strategy)])
-
-
-def load_original_pnl(project: str, databank: str, day: str, task: str,
-                      strategy: str) -> np.ndarray:
-    """The P/L vector of the backtest one task's simulations were perturbed away from.
-
-    Args:
-        project: SQX project name.
-        databank: Ingest run name.
-        day: Ingest date.
-        task: One task key.
-        strategy: One strategy id.
-
-    Returns:
-        USD per trade, chronological, by the same division as load_pnl(): a re-run's trade
-        that is the original's compares equal to it.
-    """
-    frame = pd.read_parquet(root(project, databank, day) / ORIGINAL_PNL,
-                            filters=[("task", "==", task), ("strategy", "==", strategy)])
-    return (frame["pnl_cents"] / 100.0).to_numpy()
 
 
 def load_returns(project: str, databank: str, day: str) -> pd.DataFrame:

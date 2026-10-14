@@ -809,7 +809,7 @@ the tell, below ~0.2 the count has no structure (a reading aid in docs, no thres
 the 2012/14 PSR/DSR convention. **Done:** with no admissible split up to `k_max`, `independent` raises a
 clear `ValueError` (k_max, «every split leaves a cluster above half») instead of `max() arg is an empty
 sequence`; `tests/test_inference_vs_jsharpe.py` pins the new text. The silhouette already travels in
-the dict `independent` returns (`cscv.json` › `trials`, `ledger.trials.population_n_eff`); no signature
+the dict `independent` returns (`cscv.json` › `trials`, `core.surface.trials.independent`); no signature
 changed. **Open:** nothing prints the silhouette next to the count in a window or a report line.
 → `knowhow/research/trial-count-half-rule.md`, `knowhow/research/psr-dsr-two-conventions-jsharpe.md`
 

@@ -5,7 +5,6 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from core.assets import load as load_asset, provisional
 from core.datapaths import pipeline_dir
 
 BRANCH = "pipeline"
@@ -79,43 +78,6 @@ def write(work: Path, state: dict) -> None:
     os.replace(tmp, work / FILE)
 
 
-def costs_provisional(asset: str) -> bool:
-    """Whether the trading costs this run assumes are still the owner's placeholders.
-
-    Args:
-        asset: Asset name as assets/<asset>.yaml is called.
-
-    Returns:
-        True while any required cost override still says PROVISIONAL. Every report built
-        on this run inherits the stamp, so a number produced with SQX defaults can never
-        be mistaken later for one produced with the broker's real figures.
-    """
-    return bool(provisional(load_asset(asset)))
-
-
-def open_run(work: Path, strategy: str, project: str, databank: str, asset: str) -> dict:
-    """The ledger for this mother, created on first sight and reused afterwards.
-
-    Args:
-        work: The strategy's work directory.
-        strategy: Name as SQX shows it.
-        project: Project name on the master.
-        databank: Databank the SPP export came from.
-        asset: Asset name for the cost stamp.
-
-    Returns:
-        The ledger. An existing one is returned untouched, which is what makes a rerun
-        continue instead of starting over.
-    """
-    if (work / FILE).exists():
-        return read(work)
-    state = {"strategy": strategy, "project": project, "databank": databank,
-             "stage": None, "opened_at": now(), "stages": {},
-             "costs_provisional": costs_provisional(asset)}
-    write(work, state)
-    return state
-
-
 def begin(work: Path, stage: str) -> None:
     """Record that a stage has started, before it has produced anything.
 
@@ -144,17 +106,3 @@ def finish(work: Path, stage: str, facts: dict) -> None:
     state["stage"] = stage
     write(work, state)
 
-
-def is_done(state: dict, stage: str) -> bool:
-    """Whether a stage already finished in an earlier run.
-
-    Args:
-        state: The ledger.
-        stage: Stage name.
-
-    Returns:
-        True when the ledger recorded a completion. The runner also checks that the
-        stage's outputs are still on disk, because the ledger outlives the data it
-        describes and a swept mother must not be read as an unfinished one.
-    """
-    return bool(state["stages"].get(stage, {}).get("done_at"))

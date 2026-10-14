@@ -1,8 +1,6 @@
 """Fit a discrete distribution to observed holds and gaps, and say whether it fits."""
 
 import numpy as np
-import pandas as pd
-from scipy import stats
 
 MIN_HOLD = 1    # a trade that opens and closes on the same bar is not a trade
 
@@ -55,24 +53,3 @@ def fit(values: np.ndarray, draws: int, size: int, rng: np.random.Generator) -> 
         return MIN_HOLD + rng.poisson(mean, size=(draws, size))
     return MIN_HOLD + rng.negative_binomial(*overdispersed(mean, var), size=(draws, size))
 
-
-def goodness(held: pd.DataFrame, gaps: np.ndarray) -> dict:
-    """How well the fitted distributions describe the real holds and gaps.
-
-    Args:
-        held: What envelope.occupancy() returned.
-        gaps: Flat bars before each trade.
-
-    Returns:
-        Dispersion (variance over mean) and a two-sided KS p-value against the fitted model,
-        per quantity. Reported whenever fitted_holds is used: a fit that the data rejects makes
-        that model's result a statement about the wrong distribution.
-    """
-    out = {}
-    for name, values in (("hold", held["hold"].to_numpy()), ("gap", gaps + MIN_HOLD)):
-        shifted = values - MIN_HOLD
-        mean, var = moments(shifted)
-        fitted = stats.poisson(mean) if var <= mean else stats.nbinom(*overdispersed(mean, var))
-        out[f"{name}_dispersion"] = float(var / mean)
-        out[f"{name}_ks_p"] = float(stats.ks_1samp(shifted, fitted.cdf).pvalue)
-    return out

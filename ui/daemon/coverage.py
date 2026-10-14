@@ -8,7 +8,6 @@ from ui.daemon import library
 ARCHETYPES = ("breakout", "meanReversion", "trendFollowing", "momentum", "volatility",
               "pattern", "session")
 TIMEFRAMES = ("M5", "M15", "M30", "H1", "H4", "D1")
-ROW_AXES = ("archetype", "symbol", "template")
 RANK = {"promising": 3, "": 2, "weak": 1, "dead": 0}
 
 

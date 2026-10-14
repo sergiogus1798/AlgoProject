@@ -61,23 +61,3 @@ def tail_excess(before: np.ndarray, after: np.ndarray,
     return float((np.quantile(before, tail) - np.quantile(after, tail))
                  - (np.quantile(before, middle) - np.quantile(after, middle)))
 
-
-def dispersion_ratio(before: np.ndarray, after: np.ndarray,
-                     n_before: float, n_after: float) -> float:
-    """Whether the parameters still govern the result, or noise took over.
-
-    Args:
-        before: Values in the first window.
-        after: Values in the second.
-        n_before: Trades behind a point of the first window -- the median over the grid.
-        n_after: The same for the second.
-
-    Returns:
-        (IQR_after / IQR_before) divided by sqrt(n_before / n_after). The division removes
-        the widening that a shorter window produces mechanically, since the standard error
-        of these metrics falls with 1/sqrt(n). Above 1 after the adjustment the spread is
-        real: the parameters stopped deciding the outcome.
-    """
-    iqr_before = float(np.subtract(*np.quantile(before, [0.75, 0.25])))
-    iqr_after = float(np.subtract(*np.quantile(after, [0.75, 0.25])))
-    return (iqr_after / iqr_before) / np.sqrt(n_before / n_after)

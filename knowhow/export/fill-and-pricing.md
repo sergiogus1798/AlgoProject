@@ -8,7 +8,7 @@ tag: 🔬  date: 2026-09-26  see: export/data-all-crossmarket, export/exits-and-
 - Entry sits a constant offset above the bar open; exits on the open. Judge price vs bar open, never the clock.
 - ⚠️ **That entry offset, AS A FRACTION OF THE DECLARED SPREAD, is not one universal constant** — measured per feed, 2026-09-26 (edgeCost's `spread_share`, deleted on 2026-10-07 with encargo 44; review BLOCKER): `USDJPY_M1` H1 offset 0.002 against a declared 0.001 (ratio 2.0, i.e. MORE than the full declared spread); `XAUUSD_M1` M30 offset 0.08 IS / 0.15 OOS against declared 0.05 / 0.10 (ratio 1.6 / 1.5). None of the three is the 0.5 an earlier reading of this card's gold-only evidence (below) generalised into a universal "half spread" convention. **Measure the offset per feed and segment directly; never assume a ratio carries over.**
 - Rebuild P/L as `(Open[exit]-Open[entry]) * Size * pointValue`; cost = `gross - reported` per trade; `pointValue` by regression. To recover the ACTUAL round-trip cost a fill embedded (as opposed to what a task's `assets/` file declares today, which a historical build may not have carried), measure the entry offset in price units directly against the bar open — do not multiply the declared spread by any fraction.
-- Check bar-open alignment against the bar index (`core.trades.on_bar_open()`), not `minute == 0` (wrong on M30).
+- Check bar-open alignment against the bar index (`Open time` in the real bar index), not `minute == 0` (wrong on M30).
 
 ## Evidence
 - 757 strategies / 960,705 M30 trades (`raw/XAUUSD/MC_Trades/2026-09-19, deleted 2026-09-25`): zero SL/TP/trailing exits; |exit − bar Open| median 0.0000,

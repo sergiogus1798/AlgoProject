@@ -28,7 +28,6 @@ DEFAULT_SEGMENT = "oos1"
 
 
 # Kept for old imports; the guard of hard rule 4 now lives in `cfxio`.
-running_install = cfxio.held
 
 
 def apply(text: str, data: dict, segment: str,

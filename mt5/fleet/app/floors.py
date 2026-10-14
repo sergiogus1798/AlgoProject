@@ -1,10 +1,8 @@
 """One account's distance to its daily and total floors, from one beat and its stage's rules."""
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from portfolio.funded.rules import floors
-
-UTC = timezone.utc
 
 
 def day_start(now: int, zone: str) -> int:

@@ -3,12 +3,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from core.paths import MT5_ACCOUNTS, MT5_DATA, ROOT
+from core.paths import MT5_ACCOUNTS, MT5_DATA
 from mt5 import compare
 from mt5.fleet.app import history
 from mt5.reconcile import live, register
 
-RECONCILE = ROOT / "mt5" / "reconcile" / "config.yaml"
 
 
 def from_fleet(strategy: str, firm: str) -> tuple[pd.DataFrame, Path, str]:
