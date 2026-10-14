@@ -2,6 +2,7 @@
 """Write a cross-check's acceptance element: the conditions it judges by, and their thresholds."""
 
 import re
+from core.buildfilters import Condition
 
 CONDITIONS = re.compile(r"<Conditions\b([^>]*?)(?:/>|>.*?</Conditions>)", re.S)
 ESCAPED = {">": "&gt;", "<": "&lt;", ">=": "&gt;=", "<=": "&lt;=", "=": "=", "<>": "&lt;&gt;"}
@@ -19,7 +20,7 @@ READS = {"is": (30, 10, "0", "Decimal2"),     # the task's own backtest, in-samp
 FORMATS = {"NetProfit": "Decimal2PL", "WFMinTradesInRun": "Integer", "NumberOfTrades": "Integer"}
 
 
-def condition(spec: dict, crosscheck: str) -> str:
+def condition(spec: Condition, crosscheck: str) -> str:
     """One `<Condition>` element, in the shape SQX's own recommended set writes.
 
     Args:
@@ -47,7 +48,7 @@ def condition(spec: dict, crosscheck: str) -> str:
             f'</Right-Side></Condition>')
 
 
-def area(rows: int, cols: int, size: int, minimum: int, threshold_pct: int) -> dict:
+def area(rows: int, cols: int, size: int, minimum: int, threshold_pct: int) -> dict[str, int]:
     """The Walk Forward Matrix's own acceptance attributes, checked against the grid.
 
     Args:
@@ -79,7 +80,7 @@ def area(rows: int, cols: int, size: int, minimum: int, threshold_pct: int) -> d
             "robMinComb": minimum}
 
 
-def acceptance(block: str, specs: list[dict], attrs: dict[str, int], crosscheck: str) -> str:
+def acceptance(block: str, specs: list[Condition], attrs: dict[str, int], crosscheck: str) -> str:
     """Replace a cross-check's whole `<Conditions>` element -- its attributes and its list.
 
     Args:
@@ -97,5 +98,6 @@ def acceptance(block: str, specs: list[dict], attrs: dict[str, int], crosscheck:
     written = "".join(condition(spec, crosscheck) for spec in specs)
     attributes = " ".join(f'{name}="{value}"' for name, value in attrs.items())
     found = CONDITIONS.search(block)
+    assert found is not None
     return (block[:found.start()] + f"<Conditions {attributes}>{written}</Conditions>"
             + block[found.end():])

@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core.paths import DATA
 from sqx.variants import legs as legmod, mothertrades, united
+from typing import TypedDict, cast
 
 NAME = "Strategy Name"
 # The two ways the owner reads one batch, and they are not a preference: the whole point of
@@ -68,7 +69,7 @@ def unions(rows: pd.DataFrame, work: Path) -> pd.DataFrame:
     made = [rows]
     for segments, label in UNIONS:
         first, last = spans[segments[0]][0], spans[segments[-1]][1]
-        window = curves[(curves.index >= first) & (curves.index <= last)]
+        window = cast("pd.DataFrame", curves[(curves.index >= first) & (curves.index <= last)])
         made.append(united.combine(rows, segments, window, label))
     return pd.concat(made, ignore_index=True)
 
@@ -97,7 +98,7 @@ def join(rows: pd.DataFrame, manifest: pd.DataFrame,
     rows = rows.assign(variant_id=rows["variant_id"].str.replace(COLLISION, "", regex=True))
     rows = rows.merge(united.thin(rows, 0, segments), on=["variant_id", "market"],
                       how="left")
-    kept = rows[rows["usable"].fillna(False)]
+    kept = cast("pd.DataFrame", rows[rows["usable"].fillna(False)])
     table = united.wide(kept)
     merged = manifest.drop(columns="sqx_name", errors="ignore").merge(
         table, on="variant_id", how="inner")
@@ -109,7 +110,15 @@ def join(rows: pd.DataFrame, manifest: pd.DataFrame,
                           "thin_cells": int((~rows["usable"].fillna(False)).sum())}
 
 
-def canaries(merged: pd.DataFrame) -> dict:
+class Canaries(TypedDict):
+    """How many controls came back and how many distinct results they gave."""
+
+    n: int
+    distinct_netprofit: int
+    all_identical: bool
+
+
+def canaries(merged: pd.DataFrame) -> Canaries:
     """Whether the controls came back distinguishable from one another.
 
     Args:
@@ -123,13 +132,21 @@ def canaries(merged: pd.DataFrame) -> dict:
         parent's metrics rather than looking empty. If every control returns one identical
         number, nothing ran, and no amount of downstream analysis will say so.
     """
-    controls = merged[merged["stratum"].isin(["canary", "inert", "origin"])]
+    controls = cast("pd.DataFrame", merged[merged["stratum"].isin(["canary", "inert", "origin"])])
     profits = controls["NetProfit (build)"].dropna()
     return {"n": len(controls), "distinct_netprofit": int(profits.nunique()),
             "all_identical": bool(len(profits) > 1 and profits.nunique() == 1)}
 
 
-def fingerprint(path: Path) -> dict:
+class Fingerprint(TypedDict):
+    """A written file as `pipeline.cleanup` verifies it: data-root path, size, sha256."""
+
+    path: str
+    bytes: int
+    sha256: str
+
+
+def fingerprint(path: Path) -> Fingerprint:
     """What `pipeline.cleanup` needs to prove a file is still what this stage wrote.
 
     Args:

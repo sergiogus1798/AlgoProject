@@ -34,11 +34,13 @@ from xml.etree import ElementTree
 from core import sqxfile
 from sqx.inspect.strategymeta import rules, settings
 from sqx.projects import orders
+from core.xmlget import el
+from typing import Any
 
 CARD_NOTE = "asset_card_sha256: ficha de costes actual, no la del backtest (no existe la histórica)"
 
 
-def read(sqx_path: Path, project_cfx: Path | None = None) -> dict:
+def read(sqx_path: Path, project_cfx: Path | None = None) -> dict[str, Any]:
     """Every field the strategy panel shows, from files only — never a call to SQX.
 
     Args:
@@ -63,7 +65,7 @@ def read(sqx_path: Path, project_cfx: Path | None = None) -> dict:
                           for k in ("entry", "exit")},
            "orders": rules.orders(root), "order_types": sorted(orders.carried(sqx_path)),
            "money_management": ({"from": "strategy",
-                                 **settings.sizing(root.find("Strategy/MoneyManagement"))}
+                                 **settings.sizing(el(root.find("Strategy/MoneyManagement")))}
                                 if own else {"from": "task", **last["money_management"]}),
            "friday_close": trading.pop("friday_close"), "trading_options": trading,
            "last_test": last}

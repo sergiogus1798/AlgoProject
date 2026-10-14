@@ -8,6 +8,7 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 
 from sqx.projects.liveapi import call, kill
+from typing import Any
 
 LOAD_S = 300        # s the databanks of every project may take to load (as `live.start` always allowed)
 SAVE_S = 600        # s the parallel saves may take
@@ -90,7 +91,7 @@ def begin(role: str, project: str, files: Callable, log: Callable) -> None:
     thread.start()
 
 
-def settle(role: str) -> dict:
+def settle(role: str) -> dict[str, Any]:
     """Join the background wait before anything exits the session; its figures, `{}` when none ran.
 
     Only a wait that CONFIRMED the load (`loaded_s`) lets the exit go on. A wait that timed out, died or

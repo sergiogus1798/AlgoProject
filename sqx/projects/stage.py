@@ -4,6 +4,7 @@
 import argparse
 import re
 import zipfile
+from collections.abc import Sequence
 from functools import lru_cache
 from pathlib import Path
 
@@ -11,6 +12,7 @@ import yaml
 
 from core.assetdata import doctrine
 from sqx.projects import cfxio, charts
+from core.xmlget import rx
 
 STAGES = Path(__file__).with_name("stages.yaml")
 TASK = re.compile(r"<Task\b[^>]*/>")
@@ -58,15 +60,14 @@ def only(config: str, wanted: list[str]) -> tuple[str, list[tuple[str, bool]]]:
     def one(m: re.Match) -> str:
         """One <Task/> tag with its active flag rewritten."""
         title = re.search(r'title="([^"]*)"', m.group(0))
-        on = bool(title) and title.group(1) in wanted
-        rows.append((title.group(1) if title else re.search(r'name="([^"]*)"',
-                                                             m.group(0)).group(1), on))
+        on = title is not None and title.group(1) in wanted
+        rows.append((title.group(1) if title else rx(r'name="([^"]*)"', m.group(0)).group(1), on))
         return re.sub(r'active="[^"]*"', f'active="{str(on).lower()}"', m.group(0))
 
     return TASK.sub(one, config), rows
 
 
-def apply(cfx: Path, steps: list[str], skip: list[str] = ()) -> list[tuple[str, bool]]:
+def apply(cfx: Path, steps: list[str], skip: Sequence[str] = ()) -> list[tuple[str, bool]]:
     """Leave only these steps' tasks active in a project.cfx.
 
     Args:
@@ -108,7 +109,7 @@ def just(cfx: Path, on: list[str], expected: list[str] | None = None) -> list[tu
     if missing:
         raise SystemExit(f"{cfx.parent.name} no lleva la(s) tarea(s) {', '.join(missing)}. "
                          "Un proyecto de workflow se crea con `sqx.projects.builder --workflow`.")
-    live = [re.search(r'taskXMLFile="([^"]*)"', tag).group(1)
+    live = [rx(r'taskXMLFile="([^"]*)"', tag).group(1)
             for tag in TASK.findall(config) if 'active="true"' in tag]
     # Several configurators (crossmarket, SPP, WFC) write their <Setups> from scratch, with
     # one chart: the project's extra charts go back in here, where every one of them ends.
@@ -121,7 +122,7 @@ def just(cfx: Path, on: list[str], expected: list[str] | None = None) -> list[tu
     return rows
 
 
-def own(cfx: Path, step: str, skip: list[str] = ()) -> str:
+def own(cfx: Path, step: str, skip: Sequence[str] = ()) -> str:
     """What a configurator does after writing its task: leave its step alone switched on.
 
     Args:

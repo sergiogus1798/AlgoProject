@@ -18,6 +18,7 @@ from core.datapaths import crosstf_dir
 from core.paths import ROOT
 from sqx.variants import lengths, ranges
 from sqx.variants.build import rewrite
+from typing import Any
 
 CONFIG = ROOT / "sqx" / "variants" / "config.yaml"
 
@@ -26,7 +27,7 @@ MINUTES = {"M1": 1, "M5": 5, "M10": 10, "M15": 15, "M30": 30, "H1": 60, "H4": 24
            "D1": 1440}
 
 
-def knobs() -> dict:
+def knobs() -> dict[str, Any]:
     """The cross-timeframe section of the factory's config, with the custom-block table.
 
     Returns:
@@ -101,7 +102,7 @@ def atr_ratio(symbol: str, source: str, target: str, cfg: dict) -> float | None:
 
 
 def sibling(mother: Path, out: Path, source: str, target: str, cfg: dict,
-            index: int, c: float | None = None) -> dict:
+            index: int, c: float | None = None) -> dict[str, Any]:
     """Write one timeframe-scaled copy of a mother strategy.
 
     Args:

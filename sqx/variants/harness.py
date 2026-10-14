@@ -131,6 +131,7 @@ def spp(task: str, spread: int, step_pct: float, max_tests: int) -> str:
     """
     block = re.search(r"<OptProfileSysParamPermutation\b.*?</OptProfileSysParamPermutation>",
                       task, re.S)
+    assert block is not None
     inner = block.group(0)
     inner = re.sub(r'<OptProfileSysParamPermutation use="(?:true|false)"',
                    '<OptProfileSysParamPermutation use="true"', inner, count=1)
@@ -159,6 +160,7 @@ def recommended(inner: str) -> str:
         for nothing.
     """
     what = re.search(r"<WhatToParametrize\b.*?</WhatToParametrize>", inner, re.S)
+    assert what is not None
     block = re.sub(r'type="\d+"', 'type="0"', what.group(0), count=1)
     block = re.sub(r"<Recommended>(?:true|false)</Recommended>",
                    "<Recommended>true</Recommended>", block, count=1)

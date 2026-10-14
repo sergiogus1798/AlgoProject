@@ -49,7 +49,7 @@ def metrics(project: str, databank: str) -> pd.DataFrame:
     df = pd.read_csv(csv, sep=";", quotechar='"')
     df = df[[c for c in df.columns if not c.startswith("Unnamed")]]
     df.insert(0, "strategy", df[NAME])
-    return df.rename(columns={c: slug(c) for c in df.columns if c != "strategy"})
+    return df.rename(columns={c: slug(c) for c in df.columns if c != "strategy"})  # pyright: ignore[reportCallIssue, reportArgumentType]  # pandas stub: dict mapper
 
 
 def identities(names: list[str], source: Path) -> dict[str, str]:

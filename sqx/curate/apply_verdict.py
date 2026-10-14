@@ -13,6 +13,7 @@ from core.paths import MASTER, WORKERS, databank_dir, metrics_export, report_dir
 from core.study.identity import hashed
 from sqx.curate import aftercut
 from sqx.projects import live
+from typing import Any, TypedDict
 
 DROP = "DESCARTAR"
 
@@ -107,7 +108,7 @@ def record(source: Path, names: dict[str, str], why: dict[str, str], out: Path, 
     if csv.exists():
         m = pd.read_csv(csv, sep=";", quotechar='"')
         m = m[m["Strategy Name"].isin(names)]
-        m.insert(0, "reason", [why[n] for n in m["Strategy Name"]])
+        m.insert(0, "reason", [why[n] for n in m["Strategy Name"]])  # pyright: ignore[reportArgumentType]  # pandas stub: list is a valid column value
         m.to_csv(out / f"rejected-{stamp}.csv", index=False)
         print(f"  metrics of the dropped kept in {out / f'rejected-{stamp}.csv'}")
     else:
@@ -128,8 +129,18 @@ def refuse_mismatch(source: Path, names: dict[str, str]) -> None:
                  f"verdict was written; re-export and judge again. Nothing was moved.")
 
 
+class Applied(TypedDict):
+    """What `apply` did to one databank: strategies before and after, how many were removed, and where."""
+
+    install: str
+    before: int
+    after: int
+    removed: int
+    out: Any
+
+
 def apply(project: str, databank: str, verdict_csv: Path, role: str,
-          into: str | None = None, trades_fresh: bool = False) -> dict:
+          into: str | None = None, trades_fresh: bool = False) -> Applied:
     """Cut a databank by a verdict: check, record, then delete (or move) the rejected files.
 
     Args:

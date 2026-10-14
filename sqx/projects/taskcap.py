@@ -9,6 +9,7 @@ from core.store.write import atomic
 from core.paths import WORKERS
 from core.researchpaths import autopilot_runs
 from sqx.projects import stage
+from typing import Any, TypedDict
 
 # `OOS : ================================` opens a task; `OOS : Task finished in 21.10 s.` closes it.
 LINE = re.compile(r"ProgressEngine - (.+?) : (?:={8,}|Task finished in ([0-9.]+) s\.)")
@@ -20,18 +21,26 @@ def _history() -> Path:
     return autopilot_runs() / "task-durations.json"
 
 
+class Cap(TypedDict):
+    """What one wait tracks: the task running now, when its start line was read, and the history."""
+
+    task: str | None
+    since: float
+    longest: dict[str, Any]
+
+
 def _longest() -> dict:
     """The history on disk now."""
     f = _history()
     return json.loads(f.read_text()) if f.exists() else {}
 
 
-def fresh() -> dict:
+def fresh() -> Cap:
     """What one wait tracks: the task running now, when its start line was read, and the history."""
     return {"task": None, "since": 0.0, "longest": _longest()}
 
 
-def note(cap: dict, line: str) -> None:
+def note(cap: Cap, line: str) -> None:
     """One log line: a start line opens the task's deadline, a finish line closes it and teaches the history."""
     m = LINE.search(line)
     if not m:
@@ -50,7 +59,7 @@ def note(cap: dict, line: str) -> None:
     atomic(_history(), json.dumps(known, indent=1, sort_keys=True).encode("utf-8"), seal=False)
 
 
-def enforce(cap: dict, role: str, log: Path) -> None:
+def enforce(cap: Cap, role: str, log: Path) -> None:
     """SystemExit — NOT worded as the transient abort — once the running task outlives its deadline.
 
     The build is left alone: it ends on its own time-limit (owner, 2026-10-06: a task that

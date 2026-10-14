@@ -9,6 +9,8 @@ from xml.etree import ElementTree
 
 from core.datapaths import vocabulary_snapshot
 from core.worker import installs
+from core.xmlget import attr, el
+from typing import Any, TypedDict
 
 CONFIG_REL = "internal/web/SQWIZARD/branding/global/config.xml"
 CUSTOM_REL = "user/settings/customBlocks.xml"
@@ -29,7 +31,7 @@ def native_blocks(install: Path) -> dict[str, dict]:
     """
     root = ElementTree.parse(install / CONFIG_REL).getroot()
     found = {}
-    for section in root.find(".//Blocks"):
+    for section in el(root.find(".//Blocks")):
         for category in section:
             for item in category:
                 found[item.get("key")] = {"section": section.tag,
@@ -51,12 +53,21 @@ def custom_blocks(install: Path) -> dict[str, dict]:
         which is how a group item tells a custom block from a native one.
     """
     root = ElementTree.parse(install / CUSTOM_REL).getroot()
-    return {item.get("key"): {"section": item.get("type"),
+    return {attr(item, "key"): {"section": item.get("type"),
                               "category": item.get("category"),
                               "returns": item.get("returnType"),
                               "display": item.get("display") or item.get("name"),
                               "help": item.get("help") or ""}
             for item in root}
+
+
+class Vocabulary(TypedDict):
+    """Everything one install can express: native blocks, custom blocks and groups."""
+
+    install: str
+    native: Any
+    custom: dict[str, dict[str, Any]]
+    groups: dict[str, dict[str, Any]]
 
 
 def groups(install: Path) -> dict[str, dict]:
@@ -71,12 +82,12 @@ def groups(install: Path) -> dict[str, dict]:
         so both kinds are read the same way and told apart by the key prefix.
     """
     root = ElementTree.parse(install / GROUPS_REL).getroot()
-    return {g.get("name"): {"type": g.get("type"),
+    return {attr(g, "name"): {"type": g.get("type"),
                             "items": [i.get("key") for i in g]}
             for g in root}
 
 
-def vocabulary(install: Path) -> dict:
+def vocabulary(install: Path) -> Vocabulary:
     """Everything one install can express, in one structure.
 
     Args:
@@ -92,7 +103,7 @@ def vocabulary(install: Path) -> dict:
             "groups": groups(install)}
 
 
-def pooled_by(vocab: dict, key: str) -> list[str]:
+def pooled_by(vocab: Vocabulary, key: str) -> list[str]:
     """Which groups pool one block.
 
     Args:
@@ -107,7 +118,7 @@ def pooled_by(vocab: dict, key: str) -> list[str]:
     return sorted(name for name, g in vocab["groups"].items() if key in g["items"])
 
 
-def find(vocab: dict, term: str) -> list[dict]:
+def find(vocab: Vocabulary, term: str) -> list[dict]:
     """Every block whose key, display form, category or help text mentions a term.
 
     Args:
@@ -127,7 +138,7 @@ def find(vocab: dict, term: str) -> list[dict]:
     return sorted(rows, key=lambda r: r["key"])
 
 
-def usable_groups(vocab: dict) -> dict[str, list[str]]:
+def usable_groups(vocab: Vocabulary) -> dict[str, list[str]]:
     """Groups split by whether a template can actually sample from them.
 
     Args:
@@ -148,7 +159,7 @@ def usable_groups(vocab: dict) -> dict[str, list[str]]:
     return out
 
 
-def missing(reference: dict, target: dict) -> dict[str, list[str]]:
+def missing(reference: Vocabulary, target: Vocabulary) -> dict[str, list[str]]:
     """What the target install lacks against the reference.
 
     Args:
@@ -164,7 +175,7 @@ def missing(reference: dict, target: dict) -> dict[str, list[str]]:
             "groups": sorted(set(reference["groups"]) - set(target["groups"]))}
 
 
-def report(vocab: dict) -> str:
+def report(vocab: Vocabulary) -> str:
     """One install's inventory as readable lines.
 
     Args:

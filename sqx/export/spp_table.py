@@ -5,6 +5,15 @@ from pathlib import Path
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+from typing import Any, TypedDict
+
+
+class Spilled(TypedDict):
+    """The three tables of one SPP profile."""
+
+    params: Any
+    stats: Any
+    dtypes: dict[str, str]
 
 
 def rows(name: str, profile: dict) -> tuple[pd.DataFrame, list[str], list[str]]:
@@ -29,7 +38,7 @@ def rows(name: str, profile: dict) -> tuple[pd.DataFrame, list[str], list[str]]:
     return frame, list(params.columns), list(stats.columns)
 
 
-def spill(name: str, profile: dict, folder: Path) -> dict:
+def spill(name: str, profile: dict, folder: Path) -> Spilled:
     """Write one strategy's rows aside, so no process ever holds the whole table.
 
     Args:
@@ -86,5 +95,6 @@ def write(spilled: dict, folder: Path, path: Path) -> int:
         writer = writer or pq.ParquetWriter(path, table.schema, compression="zstd")
         writer.write_table(table.cast(writer.schema))
         total += len(frame)
+    assert writer is not None
     writer.close()
     return total

@@ -3,9 +3,13 @@
 import time
 from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from core.datapaths import retire_queue
 from sqx.projects import registry
+
+if TYPE_CHECKING:   # retire imports this module
+    from sqx.projects.retire import Described
 
 # A workflow project carries 15 to 18 tasks; one with fewer than this is a loose test
 # (owner, 2026-09-26: "aquellos que son simplemente unas poquitas tareas, elimínalos").
@@ -19,8 +23,8 @@ def queued() -> list[tuple[str, str]]:
     path = retire_queue()
     if not path.exists():
         return []
-    return [tuple(line.split()[:2]) for line in path.read_text(encoding="utf-8").splitlines()
-            if len(line.split()) >= 2 and not line.startswith("#")]
+    return [(p[0], p[1]) for line in path.read_text(encoding="utf-8").splitlines()
+            if len(p := line.split()) >= 2 and not line.startswith("#")]
 
 
 def dequeue(role: str, name: str) -> None:
@@ -33,7 +37,7 @@ def dequeue(role: str, name: str) -> None:
 
 
 def candidates(installs: dict[str, Path], up: dict[str, bool], stock: set[str],
-               describe: Callable[[Path], dict]) -> list[dict]:
+               describe: Callable[[Path], "Described"]) -> list[dict]:
     """Every project the rule would retire, and every one it held back and why.
 
     Args:

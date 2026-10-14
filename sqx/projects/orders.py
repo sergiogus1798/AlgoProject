@@ -4,6 +4,8 @@
 import re
 import zipfile
 from pathlib import Path
+from core.xmlget import rx
+from typing import Any, TypedDict
 
 # A pending order is one that sits in the book waiting for price. Those are the only ones a
 # broker can refuse for being too close to the market, which is what RandomizeMinDistance
@@ -31,7 +33,7 @@ def allowed(text: str) -> set[str]:
     """
     on = set()
     for tag in ORDER_BLOCK.findall(text):
-        key = re.search(r'key="([^"]*)"', tag).group(1)
+        key = rx(r'key="([^"]*)"', tag).group(1)
         if re.search(r'use="true"', tag):
             on.add(key)
     return on
@@ -50,6 +52,15 @@ def carried(strategy: Path) -> set[str]:
     """
     with zipfile.ZipFile(strategy) as z:
         return set(ENTRY_ITEM.findall(z.read(PORTFOLIO).decode("utf-8", "replace")))
+
+
+class PendingOrders(TypedDict):
+    """Whether a build can draw pending orders: None when unknown, with the order types and where they were read."""
+
+    pending: bool | None
+    types: list[str]
+    source: str
+    read: int
 
 
 def population(databank: Path) -> tuple[set[str], int]:
@@ -72,7 +83,7 @@ def population(databank: Path) -> tuple[set[str], int]:
     return seen, read
 
 
-def pending_orders(members: dict[str, bytes], databank: Path | None) -> dict:
+def pending_orders(members: dict[str, bytes], databank: Path | None) -> PendingOrders:
     """Whether the MinDist task has anything to perturb, and on what evidence.
 
     Args:

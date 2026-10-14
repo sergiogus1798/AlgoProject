@@ -14,6 +14,7 @@ from core import worker
 from sqx.variants import execute, inputs, legs as legmod, livexec, tuples, united
 from sqx.variants.build import fabricate
 from sqx.variants.design import levels, pilot as designpilot
+from typing import Any
 
 COLLISION = re.compile(r"\(\d+\)$")   # the collision suffix SQX appends to a duplicate on reload
 
@@ -44,7 +45,7 @@ def run(design: dict, settings: dict, live: dict[str, list[float]], work: Path, 
     if project in execute.STOCK:
         raise SystemExit(f"{project} es un proyecto de serie: regla dura 10, el piloto necesita "
                          "el mismo proyecto custom del lote, nunca Builder o Retester.")
-    cfg = dict(settings["execute"], project=project)
+    cfg: dict[str, Any] = dict(settings["execute"], project=project)
     pcfg = settings["pilot"]
     parent = inputs.source(design)
     table = designpilot.sample(live, pcfg)
@@ -72,7 +73,7 @@ def run(design: dict, settings: dict, live: dict[str, list[float]], work: Path, 
             worker.stop(cfg["role"], export=False)   # as `execute`: nothing to export
 
     main_rows = rows[rows["market"] == legmod.MAIN].copy()
-    main_rows["variant_id"] = main_rows["variant_id"].str.replace(COLLISION, "", regex=True)
+    main_rows["variant_id"] = main_rows["variant_id"].str.replace(COLLISION, "", regex=True)  # pyright: ignore[reportAttributeAccessIssue]  # pandas stub: column of a copy typed ndarray
     counts = dict(zip(main_rows["variant_id"], main_rows["NumberOfTrades"]))
     banned, report = designpilot.decide(table, counts, pcfg["min_trades"], pcfg["min_support"])
     return banned, {**report, "tested": done, "project": project, "segment": legs[0]["segment"]}

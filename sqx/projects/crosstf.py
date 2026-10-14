@@ -15,6 +15,8 @@ from sqx.projects.crosschecks import member_of, silence
 from sqx.projects.setups import set_span, span
 from sqx.projects.stage import just, own, titles
 from sqx.projects.tasksettings import set_precision
+from core.xmlget import hit
+from typing import Any
 
 MAIN_CHART = re.compile(r'<Chart symbol="([^"]+)" timeframe="([^"]+)"')
 MAIN_DATES = re.compile(r'<Setup dateFrom="([^"]+)" dateTo="([^"]+)"')
@@ -37,12 +39,14 @@ def main_chart(text: str) -> tuple[str, str]:
         block every other block is compared against and guessing it wrong is silent.
     """
     found = MAIN_CHART.search(text)
+    assert found is not None
     return found.group(1), found.group(2)
 
 
 def main_window(text: str) -> tuple[str, str]:
     """The window the task's own main test runs on, as (dateFrom, dateTo)."""
     found = MAIN_DATES.search(text)
+    assert found is not None
     return found.group(1), found.group(2)
 
 
@@ -80,7 +84,7 @@ def set_main(text: str, symbol: str) -> tuple[str, int, str]:
 
 
 def wire(cfx: Path, symbol: str, day: str, project: str = "",
-         targets: list[str] | None = None) -> dict:
+         targets: list[str] | None = None) -> dict[str, Any]:
     """Write `CrossTF` and one task per extra timeframe, and record which databank is which.
 
     Args:
@@ -104,7 +108,7 @@ def wire(cfx: Path, symbol: str, day: str, project: str = "",
         raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
                          f"Paralo: bin/sqx-worker.sh --role {held} stop")
     members = cfxio.members(cfx)
-    task = member_of(members["config.xml"].decode("utf-8"), "CrossTF")
+    task = hit(member_of(members["config.xml"].decode("utf-8"), "CrossTF"))
     text, silenced, warning = set_main(members[task].decode("utf-8"), symbol)
     members[task] = text.encode("utf-8")
     source = main_chart(text)[1]

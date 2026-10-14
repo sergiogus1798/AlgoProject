@@ -34,6 +34,7 @@ def keep(members: dict[str, bytes], keep_types: set[str], system_count: int = 5,
     tasks_el = cfg.find("Tasks")
 
     kept, dropped = [], []
+    assert tasks_el is not None
     for t in list(tasks_el.findall("Task")):
         wanted = t.get("type") in keep_types and (not only or t.get("taskXMLFile") in only)
         (kept if wanted else dropped).append(t)
@@ -56,6 +57,7 @@ def keep(members: dict[str, bytes], keep_types: set[str], system_count: int = 5,
                 referenced.add(v)
 
     dbs_el = cfg.find("Databanks")
+    assert dbs_el is not None
     by_pos = sorted(dbs_el.findall("Databank"), key=lambda d: int(d.get("position") or 0))
     system = {d.get("name") for d in by_pos[:system_count]}
     dropped_dbs = []

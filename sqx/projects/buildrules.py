@@ -9,6 +9,7 @@ from core.paths import worker_dir
 from sqx.inspect.template_check import blocks, rules
 from sqx.projects.buildcensus import kind
 from sqx.templates.holes import conditions
+from core.xmlget import rx, hit
 
 # Bars are what SQX stores, hours are what the owner reasons in. A 24-bar cap means one
 # day on H1 and half a day on M30, so the conversion has to happen per task.
@@ -60,7 +61,7 @@ def set_order_types(text: str, allowed: list[str]) -> str:
         because a stop or limit entry fills at a price the backtest assumes and the
         broker does not owe.
     """
-    section = re.search(r"<OrderTypes>.*?</OrderTypes>", BLOCKS.search(text).group(0), re.S).group(0)
+    section = rx(r"<OrderTypes>.*?</OrderTypes>", hit(BLOCKS.search(text)).group(0), re.S).group(0)
     out = section
     for key in re.findall(r'<Block key="([^"]*)"[^>]*category="orderTypes"', section):
         out = block_use(out, key, key in allowed)
@@ -98,8 +99,8 @@ def set_exit_types(text: str, exits: dict, timeframe: str) -> tuple[str, int]:
         to fire is a bonus. SL and PT are off on purpose — the real stop is decided later,
         by the module that sizes it, once the edge is known to be there.
     """
-    whole = BLOCKS.search(text).group(0)
-    section = re.search(r"<ExitTypes>.*?</ExitTypes>", whole, re.S).group(0)
+    whole = hit(BLOCKS.search(text)).group(0)
+    section = rx(r"<ExitTypes>.*?</ExitTypes>", whole, re.S).group(0)
     out = block_use(section, BARS_BLOCK, True, ALWAYS)
     enabled = 1
     for flag, keys in EXIT_BLOCKS.items():
@@ -109,7 +110,7 @@ def set_exit_types(text: str, exits: dict, timeframe: str) -> tuple[str, int]:
         enabled += bool(exits[flag])
 
     lo, hi = bar_range(exits, timeframe)
-    bars = re.search(rf'<Block key="{BARS_BLOCK}".*?</Block>', out, re.S).group(0)
+    bars = rx(rf'<Block key="{BARS_BLOCK}".*?</Block>', out, re.S).group(0)
     fixed = re.sub(r'<Param key="#ExitAfterBars#"[^>]*/>',
                    '<Param key="#ExitAfterBars#" name="Exit After Bars" type="int" '
                    f'paramType="null" generation="random" minValue="{lo}" maxValue="{hi}" '
@@ -133,10 +134,10 @@ def what_to_build(text: str, complexity: dict, exit_required: bool) -> dict[str,
         is filled by the same range: a side holding one is written 1..1, never 0, which would
         let SQX leave the idea out.
     """
-    tag = STRATEGY_TYPE.search(text).group(0)
+    tag = hit(STRATEGY_TYPE.search(text)).group(0)
     if 'type="template"' not in tag:
         return {side: tuple(complexity["simple"][side]) for side in ("entry", "exit")}
-    counted = conditions(Path(re.search(r'templateFile="([^"]*)"', tag).group(1)))
+    counted = conditions(Path(rx(r'templateFile="([^"]*)"', tag).group(1)))
     out = {}
     for side, floor in (("entry", 1), ("exit", int(exit_required))):
         c = counted[side]
@@ -223,7 +224,7 @@ def set_complexity(text: str, complexity: dict, exit_types: int, exit_required: 
             "minExitConditions": bounds["exit"][0], "maxExitConditions": bounds["exit"][1],
             "minExitTypes": 1, "maxExitTypes": exit_types,
             "minShift": shift, "maxShift": shift}
-    tag = re.search(r'<Chart name="Main chart"[^>]*>', text).group(0)
+    tag = rx(r'<Chart name="Main chart"[^>]*>', text).group(0)
     new = tag
     for attr, value in want.items():
         new = re.sub(f'{attr}="[^"]*"', f'{attr}="{value}"', new)
@@ -241,7 +242,7 @@ def set_slpt(text: str) -> str:
         fixed-pip and percent forms are all switched separately, and leaving one on is
         enough to put stops back into the population.
     """
-    section = re.search(r"<SLPTOptions>.*?</SLPTOptions>", text, re.S).group(0)
+    section = rx(r"<SLPTOptions>.*?</SLPTOptions>", text, re.S).group(0)
     out = section
     for tag in ("SLRequired", "PTRequired", "SLATR", "PTATR", "SLFixedPips", "PTFixedPips",
                 "SLPercent", "PTPercent", "SLIndicatorBased", "PTIndicatorBased",

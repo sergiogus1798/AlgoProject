@@ -23,7 +23,7 @@ def draw(live: dict[str, list[float]], kept: dict[str, list[float]], n: int,
         nearest kept level. Duplicates are NOT removed here: `plan.build` does it.
     """
     names = sorted(live)
-    unit = qmc.LatinHypercube(d=len(names), seed=seed).random(n)
+    unit = qmc.LatinHypercube(d=len(names), seed=seed).random(n)  # pyright: ignore[reportCallIssue]  # scipy stub knows rng= only; seed= draws the stream the studies were run with
     columns = []
     for i, name in enumerate(names):
         levels = np.array(live[name])

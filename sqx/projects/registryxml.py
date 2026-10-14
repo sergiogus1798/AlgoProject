@@ -2,11 +2,13 @@
 
 import re
 import sqlite3
+from typing import Any
 import sys
 import zipfile
 from pathlib import Path
 
 from sqx.projects import sessiondb
+from core.xmlget import hit, rx
 
 SYMBOL = re.compile(r'<Symbol\b[^>]*?name="([^"]+)"[^>]*?>.*?</Symbol>', re.S)
 INSTRUMENT = re.compile(r'<InstrumentInfo\b[^>]*?instrument="([^"]+)"[^>]*?/>')
@@ -29,7 +31,7 @@ def _esc(v: object) -> str:
             .replace('"', "&quot;"))
 
 
-def _registry(sql: str, args: tuple) -> dict | None:
+def _registry(sql: str, args: tuple) -> dict[str, Any] | None:
     """One row of SQX's data registry, read-only, off the data root's copy of the master's."""
     with sqlite3.connect(f"file:{sessiondb.copy()}?mode=ro", uri=True) as db:
         db.row_factory = sqlite3.Row
@@ -55,8 +57,8 @@ def clip(text: str) -> str:
         held = bars(m.group(1))
         if not held:
             return m.group(0)
-        head = re.match(r"<Symbol\b[^>]*>", m.group(0)).group(0)
-        lo, hi = (int(re.search(rf'{k}="(\d+)"', head).group(1)) for k in ("dateFrom", "dateTo"))
+        head = hit(re.match(r"<Symbol\b[^>]*>", m.group(0))).group(0)
+        lo, hi = (int(rx(rf'{k}="(\d+)"', head).group(1)) for k in ("dateFrom", "dateTo"))
         was = (lo, hi)
         lo, hi = max(lo, held[0] // DAY * DAY), min(hi, held[1])
         if (lo, hi) != was:
@@ -77,6 +79,7 @@ def instrument_xml(name: str) -> str:
     when the registry holds them, a null swap written "null".
     """
     i = _registry("SELECT * FROM INSTRUMENTS WHERE INSTRUMENT = ?", (name,))
+    assert i is not None
     step = float(i["TICKSTEP"])
     decimals = max(0, -int(f"{step:e}".split("e")[1])) if step < 1 else 0
     pairs = [("instrument", i["INSTRUMENT"]), ("description", i["DESCRIPTION"] or ""),
@@ -124,7 +127,7 @@ def definitions(feed: str) -> tuple[str, str, str] | None:
         ("precision", d["TIMEFRAME"]), ("timezone", d["TIMEZONE"]), ("dateFrom", d["DATEFROM"]),
         ("dateTo", d["DATETO"]), ("uSymbol", d["USYMBOL"]), ("uSymbolName", d["USYMBOLNAME"]),
         ("removeWeekends", str(bool(d["REMOVE_WEEKENDS"])).lower()), ("broker", d["BROKER_ID"])))
-    return f"<Symbol {head}>\n        {info}\n      </Symbol>", info, broker_xml(d["BROKER_ID"])
+    return f"<Symbol {head}>\n        {info}\n      </Symbol>", info, hit(broker_xml(d["BROKER_ID"]))
 
 
 def refresh(text: str) -> str:
@@ -141,7 +144,7 @@ def refresh(text: str) -> str:
         d = _registry("SELECT * FROM DATA WHERE SYMBOL = ?", (m.group(1),))
         if not d:
             return m.group(0)
-        head = re.match(r"<Symbol\b[^>]*>", m.group(0)).group(0)
+        head = hit(re.match(r"<Symbol\b[^>]*>", m.group(0))).group(0)
         for k, v in (("source", d["SOURCE"]), ("timezone", d["TIMEZONE"]), ("uSymbol", d["USYMBOL"]),
                      ("uSymbolName", d["USYMBOLNAME"]), ("broker", d["BROKER_ID"])):
             head = re.sub(rf'\b{k}="[^"]*"', f'{k}="{_esc(v)}"', head)
@@ -203,7 +206,7 @@ def unresolved(cfx: Path, active_only: bool = False) -> list[str]:
     out = []
     for member, text in texts.items():
         for m in SYMBOL.finditer(text):
-            head = dict(re.findall(r'(\w+)="([^"]*)"', re.match(r"<Symbol\b[^>]*>", m.group(0)).group(0)))
+            head = dict(re.findall(r'(\w+)="([^"]*)"', hit(re.match(r"<Symbol\b[^>]*>", m.group(0))).group(0)))
             d = _registry("SELECT * FROM DATA WHERE SYMBOL = ?", (m.group(1),))
             if not d:
                 out.append(f"{member}: feed {m.group(1)} is not in the registry")

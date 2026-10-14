@@ -204,6 +204,7 @@ def write_task(text: str, spec: dict, methods: dict, data: dict,
     text, _ = set_data_range(text, data, (epoch(data, spec["segment"].split("..")[0])[0],
                                           epoch(data, segment)[1]))
     found = BLOCK.search(text)
+    assert found is not None
     block = set_methods(found.group(0), methods)
     block = set_settings(block, simulations, spec["precision"], spec["full_sample"])
     block, silenced = silence(block)
@@ -213,8 +214,8 @@ def write_task(text: str, spec: dict, methods: dict, data: dict,
         '<OutOfSample showGraph="false" />' if oos is None else
         f'<OutOfSample showGraph="false"><Range dateFrom="{oos[0]}" dateTo="{oos[1]}" />'
         "</OutOfSample>", text, count=1)
-    ranges = set_ranges(text, data, segment)
-    return ranges.pop("text"), {"segment": segment, "from": start, "to": end,
+    text, ranges = set_ranges(text, data, segment)
+    return text, {"segment": segment, "from": start, "to": end,
                                 "out_of_sample": oos, "setups": setups,
                                 "silenced": silenced, "methods": sorted(methods),
                                 "ranges": {k: v for k, v in ranges.items() if v}}

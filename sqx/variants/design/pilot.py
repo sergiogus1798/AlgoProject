@@ -23,11 +23,11 @@ def sample(live: dict[str, list[float]], cfg: dict) -> pd.DataFrame:
     names = sorted(live)
     n = cfg["sample"]
     size = 2 ** int(np.ceil(np.log2(max(n, 2))))
-    unit = qmc.Sobol(d=len(names), scramble=True, seed=cfg["seed"]).random(size)[:n]
+    unit = qmc.Sobol(d=len(names), scramble=True, seed=cfg["seed"]).random(size)[:n]  # pyright: ignore[reportCallIssue]  # scipy stub knows rng= only; seed= draws the stream the studies were run with
     rows = [{name: live[name][min(int(row[i] * len(live[name])), len(live[name]) - 1)]
              for i, name in enumerate(names)} for row in unit]
     table = pd.DataFrame(rows)
-    table.insert(0, "pilot_id", [f"X{i:05d}" for i in range(len(table))])
+    table.insert(0, "pilot_id", [f"X{i:05d}" for i in range(len(table))])  # pyright: ignore[reportArgumentType]  # pandas stub: list is a valid column value
     return table
 
 
@@ -56,7 +56,7 @@ def decide(table: pd.DataFrame, counts: dict[str, float],
         supported it and whether it was dropped -- what `pilot.json` writes to disk, so the
         drop is never silent.
     """
-    trades = table["pilot_id"].map(counts)
+    trades = table["pilot_id"].map(counts)  # pyright: ignore[reportArgumentType]  # pandas stub: a dict is a valid mapper
     names = [c for c in table.columns if c != "pilot_id"]
     banned: dict[str, set] = {}
     rows = []
@@ -72,7 +72,7 @@ def decide(table: pd.DataFrame, counts: dict[str, float],
             drop = set()
         for lvl in levels_sorted:
             rows.append({"parameter": name, "level": lvl,
-                         "median_trades": float(median[lvl]), "support": int(support[lvl]),
+                         "median_trades": float(median[lvl]), "support": int(support[lvl]),  # pyright: ignore[reportArgumentType]  # pandas stub: groupby scalar
                          "dropped": lvl in drop,
                          "kept_despite_floor": bool(starved and median[lvl] < min_trades
                                                     and support[lvl] >= min_support)})

@@ -7,16 +7,17 @@ from pathlib import Path
 
 from core.assetcheck import pending
 from core.assetdata import load
-from core.buildfilters import MODES, STUDY, filters
+from core.buildfilters import MODES, STUDY, Condition, Filters, filters
 from sqx.projects import cfxio
 from sqx.projects import buildrules as rules
 from sqx.projects.acceptance import CONDITIONS, condition
 from sqx.projects.crosschecks import MC_MANIPULATION
+from typing import Any
 
 RANKINGS = re.compile(r"<Rankings\b.*?</Rankings>", re.S)
 
 
-def set_rankings(text: str, specs: list[dict]) -> str:
+def set_rankings(text: str, specs: list[Condition]) -> str:
     """Replace the conditions of a Build task's `<Rankings>` — all of them — with these.
 
     Args:
@@ -29,21 +30,29 @@ def set_rankings(text: str, specs: list[dict]) -> str:
         population's, under `<BuildMode>`, and that one is not an acceptance filter.
     """
     found = RANKINGS.search(text)
+    assert found is not None
     block = found.group(0)
     old = CONDITIONS.search(block)
     written = "".join(condition(spec, "main") for spec in specs)
+    assert old is not None
     block = block[:old.start()] + f"<Conditions>{written}</Conditions>" + block[old.end():]
     return text[:found.start()] + block + text[found.end():]
 
 
-def describe(written: dict) -> str:
+def describe(written: Filters) -> str:
     """One line a human and the registry can read: the mode, the sample and each condition."""
     return (f"{written['mode']} @{written['sample']}: "
             + " & ".join(f"{c['metric']} {c['op']} {c['value']}" for c in written["conditions"]))
 
 
+class Written(Filters):
+    """What `apply` returns: the filters written and the task members they went into."""
+
+    tasks: list[str]
+
+
 def apply(cfx: Path, symbol: str, timeframe: str, mode: str = "study",
-          study: Path = STUDY) -> dict:
+          study: Path = STUDY) -> Written:
     """Write one asset's filters into every Build task of a project.cfx no install holds.
 
     Args:
@@ -61,7 +70,7 @@ def apply(cfx: Path, symbol: str, timeframe: str, mode: str = "study",
     tasks = [n for n, blob in members.items() if n.endswith(".xml") and n != "config.xml"
              and rules.BLOCKS.search(blob.decode("utf-8"))]
     # A project with no Build task (a study's retest on its own) has nothing to filter by.
-    written = (filters(load(symbol), timeframe, mode, study) if tasks else
+    written: Filters = (filters(load(symbol), timeframe, mode, study) if tasks else
                {"mode": "none", "sample": "-", "build_years": 0, "conditions": []})
     for name in tasks:
         text = set_rankings(members[name].decode("utf-8"), written["conditions"])

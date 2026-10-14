@@ -8,6 +8,8 @@ from pathlib import Path
 
 from sqx.projects.patch import NO_TEMPLATE
 from sqx.templates.holes import conditions
+from core.xmlget import rx
+from typing import Any
 
 # Rule 15 (owner, 2026-10-02): nothing that reads the clock or the calendar. Every such block
 # the builder can sample is a native of SQX's «Bar And Time» category under one of these names.
@@ -40,7 +42,7 @@ def kind(key: str, attrs: str) -> str:
     name = key.rsplit(".", 1)[-1]
     if CLOCK.match(name) or name in CLOCK_NAMES:
         return "clock"
-    return KINDS[re.search(r'category="([^"]*)"', attrs).group(1)]
+    return KINDS[rx(r'category="([^"]*)"', attrs).group(1)]
 
 
 def _section(text: str, tag: str) -> str:
@@ -48,7 +50,7 @@ def _section(text: str, tag: str) -> str:
     return re.findall(rf"<{tag}\b[^>]*>.*?</{tag}>", text, re.S)[-1]
 
 
-def census(cfx: Path) -> dict:
+def census(cfx: Path) -> dict[str, Any]:
     """Everything the study must count on a population before it is built, read off the file.
 
     Args:
@@ -65,10 +67,10 @@ def census(cfx: Path) -> dict:
     with zipfile.ZipFile(cfx) as z:
         member = next(n for n in z.namelist() if n.startswith("Build-"))
         text = z.read(member).decode("utf-8")
-    tag = re.search(r"<StrategyType[^>]*>", text).group(0)
-    template = re.search(r'templateFile="([^"]*)"', tag).group(1)
+    tag = rx(r"<StrategyType[^>]*>", text).group(0)
+    template = rx(r'templateFile="([^"]*)"', tag).group(1)
     templated = 'type="template"' in tag
-    chart = re.search(r'<Chart name="Main chart"[^>]*>', text).group(0)
+    chart = rx(r'<Chart name="Main chart"[^>]*>', text).group(0)
     bound = {a: int(v) for a, v in re.findall(r'(\w+)="(\d+)"', chart)}
     blocks = {k: {"on": 0, "of": 0} for k in ("condition", "value", "level", "clock")}
     on = {k: [] for k in blocks}
@@ -78,9 +80,9 @@ def census(cfx: Path) -> dict:
         if use == "true":
             blocks[k]["on"] += 1
             on[k].append(key)
-    mode = re.search(r"<BuildMode\b.*?</BuildMode>", text, re.S).group(0)
-    rankings = re.search(r"<Rankings\b.*?</Rankings>", text, re.S).group(0)
-    stop = re.search(r"<StopCondition[^>]*>", rankings).group(0)
+    mode = rx(r"<BuildMode\b.*?</BuildMode>", text, re.S).group(0)
+    rankings = rx(r"<Rankings\b.*?</Rankings>", text, re.S).group(0)
+    stop = rx(r"<StopCondition[^>]*>", rankings).group(0)
     genetic = dict(re.findall(r"<(\w+)>([^<]*)</\1>", mode))
     genetic["InitialPopulationConditions"] = len(re.findall(r"<Condition\b", mode))
     for name, attrs in re.findall(r"<(EvoRestart\w+|EvoInSamplePeriod) ([^>]*?) ?/>", mode):
@@ -91,7 +93,7 @@ def census(cfx: Path) -> dict:
         "template": template if templated else None,
         "template_conditions": conditions(Path(template)) if templated else None,
         "no_template_named": templated or template == NO_TEMPLATE,
-        "sides": re.search(r'<MarketSides type="([^"]*)"', text).group(1),
+        "sides": rx(r'<MarketSides type="([^"]*)"', text).group(1),
         "symmetry": dict(re.findall(r"<(EntrySymmetry|ExitSymmetry)>([^<]*)<", text)),
         "entry": [bound["minConditions"], bound["maxConditions"]],
         "exit": [bound["minExitConditions"], bound["maxExitConditions"]],
@@ -101,14 +103,14 @@ def census(cfx: Path) -> dict:
         "exit_types": {k: int(p) for k, use, p in TYPED.findall(_section(text, "ExitTypes"))
                        if use == "true"},
         "blocks": blocks, "on": on,
-        "generation": re.search(r'generationType="([^"]*)"', mode).group(1),
+        "generation": rx(r'generationType="([^"]*)"', mode).group(1),
         "genetic": genetic,
-        "fitness": re.search(r'<Ranking type="([^"]*)"', rankings).group(1),
+        "fitness": rx(r'<Ranking type="([^"]*)"', rankings).group(1),
         "acceptance": [f"{col} {html.unescape(op)} {value} @sampleType {sample}"
                        for use, col, sample, op, value in CONDITION.findall(rankings)
                        if use == "true"],
-        "mc_manipulation": re.search(r'<MonteCarloManipulation use="([^"]*)"', text).group(1),
-        "max_strategies": int(re.search(r"<MaxStrategies>(\d+)<", rankings).group(1)),
+        "mc_manipulation": rx(r'<MonteCarloManipulation use="([^"]*)"', text).group(1),
+        "max_strategies": int(rx(r"<MaxStrategies>(\d+)<", rankings).group(1)),
         "stop": dict(re.findall(r'(\w+)="([^"]*)"', stop)),
     }
 

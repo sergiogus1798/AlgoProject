@@ -14,6 +14,7 @@ from core import (bankfile, bankframes, exportdrv, fanout, identities, manifest,
 from core.paths import MASTER, export_dir, worker_dir
 from sqx.export import membank
 from sqx.export.export_trades import SAMPLE_SEED, sign, stage
+from core.tradepack import Pack
 
 
 def pack(raw: Path, staged: int, out: Path, meta: dict, command: str, since: float) -> None:
@@ -33,7 +34,7 @@ def pack(raw: Path, staged: int, out: Path, meta: dict, command: str, since: flo
            staged, out, meta, command, since)
 
 
-def record(packed: dict, staged: int, out: Path, meta: dict, command: str, since: float) -> None:
+def record(packed: Pack, staged: int, out: Path, meta: dict, command: str, since: float) -> None:
     """Write the manifest of a databank whose `trades.parquet` is in `out` (`packed`: the pack's dict)."""
     symbols = pd.read_parquet(out / "trades.parquet", columns=["Symbol"])["Symbol"]
     counts = {str(k): int(v) for k, v in symbols.value_counts().items()}

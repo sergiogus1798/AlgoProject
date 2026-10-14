@@ -14,6 +14,7 @@ from sqx.projects.doctrine import apply_doctrine, blockers, unify_sessions
 from sqx.projects.patch import NO_TEMPLATE
 from sqx.projects.ranges import set_ranges
 from sqx.projects.setups import set_costs
+from core.xmlget import attr, el
 
 # SQX names an InstrumentInfo <uSymbol>_<broker>, not by the feed. The feed names the
 # <Symbol> element instead, and that is where the backtest window lives.
@@ -54,8 +55,7 @@ def apply(text: str, data: dict, segment: str,
     if timeframe:
         text, applied = apply_doctrine(text, data, segment, timeframe)
         counts.update(applied)
-    ranges = set_ranges(text, data)
-    text = ranges.pop("text")
+    text, ranges = set_ranges(text, data)
     counts.update({f"mc_{k}": v for k, v in ranges.items()})
     return text, counts
 
@@ -96,8 +96,8 @@ def segment_of(members: dict[str, bytes]) -> dict[str, str]:
         Task XML member name to segment name.
     """
     cfg = ElementTree.fromstring(members["config.xml"])
-    return {t.get("taskXMLFile"): BY_TASK.get(t.get("type"), DEFAULT_SEGMENT)
-            for t in cfg.find("Tasks")}
+    return {attr(t, "taskXMLFile"): BY_TASK.get(t.get("type") or "", DEFAULT_SEGMENT)
+            for t in el(cfg.find("Tasks"))}
 
 
 def configure(cfx: Path, symbol: str, segment: str | None = None,

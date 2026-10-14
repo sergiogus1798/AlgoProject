@@ -8,12 +8,13 @@ import yaml
 
 from core.datapaths import variants_dir
 from core.paths import ROOT
+from typing import Any
 
 HERE = Path(__file__).resolve().parent
 ORIGINAL = -1
 
 
-def ledger(node: object) -> object:
+def ledger(node: Any) -> Any:
     """A parsed config with every `ledger:<key>` replaced by that row of `thresholds.yaml`.
 
     `sqx` may not import `ledger`, so the rows are read from the file as plain YAML.
@@ -26,7 +27,7 @@ def ledger(node: object) -> object:
     return node
 
 
-def load() -> dict:
+def load() -> dict[str, Any]:
     """The factory's settings.
 
     Returns:
@@ -35,7 +36,7 @@ def load() -> dict:
     return ledger(yaml.safe_load((HERE / "config.yaml").read_text(encoding="utf-8")))
 
 
-def brief(path: Path) -> dict:
+def brief(path: Path) -> dict[str, Any]:
     """One strategy's design brief.
 
     Args:

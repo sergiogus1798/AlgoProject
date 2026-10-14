@@ -15,6 +15,7 @@ from sqx.projects.databanks import set_databank
 from sqx.projects.setups import bounds, set_costs
 from sqx.projects.tasksettings import set_precision
 from sqx.projects.stage import own
+from typing import Any, TypedDict
 
 # ⚠️ The SPP is OptProfileSysParamPermutation. SequentialOptimization sits beside it in the
 # same <CrossChecks> block, is also about permuting parameters, and writes no profile at
@@ -66,6 +67,16 @@ def evaluations_off(block: str) -> tuple[str, int]:
     return block, done
 
 
+class Configured(TypedDict):
+    """What `configure` set on the two SPP tasks."""
+
+    project: str | None
+    input: str
+    max_tests: Any
+    spread_pct: Any
+    tasks: list[dict[str, Any]]
+
+
 def write_task(text: str, spec: dict, data: dict, cfg: dict) -> tuple[str, dict]:
     """Turn one Retest task into the SPP task the catalogue describes.
 
@@ -84,6 +95,7 @@ def write_task(text: str, spec: dict, data: dict, cfg: dict) -> tuple[str, dict]
     text, setups = set_costs(text, data, spec["segment"])
     text = set_precision(text, spec["precision"])
     found = BLOCK.search(text)
+    assert found is not None
     block, steps = settings(found.group(0), cfg)
     block, checks = evaluations_off(block)
     text = text[:found.start()] + block + text[found.end():]
@@ -95,7 +107,7 @@ def write_task(text: str, spec: dict, data: dict, cfg: dict) -> tuple[str, dict]
                   "others_on": others_on(text, "OptProfileSysParamPermutation")}
 
 
-def configure(cfx: Path, symbol: str, source: str) -> dict:
+def configure(cfx: Path, symbol: str, source: str) -> Configured:
     """Write both SPP tasks of one project, and say what each one runs.
 
     Args:

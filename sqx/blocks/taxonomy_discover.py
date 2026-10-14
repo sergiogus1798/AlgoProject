@@ -3,7 +3,8 @@
 from pathlib import Path
 
 from core.cfx import task_xml, tasks
-from sqx.inspect.vocabulary import pooled_by
+from sqx.inspect.vocabulary import Vocabulary, pooled_by
+from core.xmlget import el, hit
 
 # The three switches a Build task carries over the same vocabulary, one per role the block
 # can play. The catalogue says what the install knows; this says what the builder may draw.
@@ -23,13 +24,13 @@ def builder_roles(cfx: Path) -> dict[str, list[str]]:
     """
     member = next(t["file"] for t in tasks(str(cfx)) if t["type"] == "Build")
     found: dict[str, list[str]] = {}
-    for block in task_xml(str(cfx), member).find(".//Blocks/BuildingBlocks"):
-        found.setdefault(block.get("key").rsplit(".", 1)[-1], []).append(
-            ROLES[block.get("category")])
+    for block in el(task_xml(str(cfx), member).find(".//Blocks/BuildingBlocks")):
+        found.setdefault(hit(block.get("key")).rsplit(".", 1)[-1], []).append(
+            ROLES[hit(block.get("category"))])
     return found
 
 
-def with_newer_own(roles: dict[str, list[str]], vocab: dict) -> list[str]:
+def with_newer_own(roles: dict[str, list[str]], vocab: Vocabulary) -> list[str]:
     """Add the owner's blocks the donor's list predates, in place.
 
     Args:
@@ -50,7 +51,7 @@ def with_newer_own(roles: dict[str, list[str]], vocab: dict) -> list[str]:
     return sorted(added)
 
 
-def entry(key: str, vocab: dict, roles: list[str]) -> tuple[str, dict]:
+def entry(key: str, vocab: Vocabulary, roles: list[str]) -> tuple[str, dict]:
     """One block's row: what it is, where it sits, and an empty label to fill.
 
     Args:
@@ -76,7 +77,7 @@ def entry(key: str, vocab: dict, roles: list[str]) -> tuple[str, dict]:
     return known["category"], row
 
 
-def grouped(vocab: dict, roles: dict[str, list[str]]) -> dict[str, dict]:
+def grouped(vocab: Vocabulary, roles: dict[str, list[str]]) -> dict[str, dict]:
     """Every reachable block, nested under its SQX category.
 
     Args:

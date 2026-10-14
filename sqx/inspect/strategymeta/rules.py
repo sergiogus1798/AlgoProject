@@ -3,6 +3,7 @@
 from xml.etree import ElementTree
 
 from sqx.structural import logic
+from core.xmlget import el, hit
 
 # Parameters that say where or under which id a block runs, not what it tests.
 PLUMBING = {"#Identification#", "#Symbol#", "#MagicNumber#", "#Comment#"}
@@ -23,7 +24,7 @@ def values(root: ElementTree.Element) -> dict[str, str]:
         variable's id as its text, never the number: without this map every tuned parameter
         reads as a name.
     """
-    return {v.findtext("id"): v.findtext("value") for v in root.iter("variable")}
+    return {hit(v.findtext("id")): hit(v.findtext("value")) for v in root.iter("variable")}
 
 
 def _value(param: ElementTree.Element, held: dict[str, str]) -> str:
@@ -47,7 +48,7 @@ def params(item: ElementTree.Element, held: dict[str, str]) -> dict[str, str]:
     for child in item:
         key = child.get("key") or ""
         if child.tag == "Block":
-            out[key.strip("#")] = render(child.find("Item"), held)
+            out[key.strip("#")] = render(el(child.find("Item")), held)
         elif child.tag == "Param" and key not in PLUMBING and not key.startswith("#Chart"):
             out[key.strip("#")] = _value(child, held)
     return out
@@ -59,7 +60,7 @@ def terms(item: ElementTree.Element) -> list[ElementTree.Element]:
     A template's AND wraps each term in a `<Block>`; the generic builder's AND carries
     `generated`/`randomId` attributes and holds its terms as bare `<Item>`s.
     """
-    return [c.find("Item") if c.tag == "Block" else c for c in item if c.tag in ("Block", "Item")]
+    return [el(c.find("Item")) if c.tag == "Block" else c for c in item if c.tag in ("Block", "Item")]
 
 
 def render(item: ElementTree.Element, held: dict[str, str]) -> str:
@@ -128,10 +129,11 @@ def rule_lines(rows: list[dict]) -> dict[str, str]:
 def _formula(param: ElementTree.Element, held: dict[str, str]) -> dict | None:
     """An exit method's formula and its parameters, or None when it is SQX's `…None`."""
     formula = param.find("Formula")
-    kind = formula.get("key").rsplit(".", 1)[1]
+    assert formula is not None
+    kind = hit(formula.get("key")).rsplit(".", 1)[1]
     if kind == "None":
         return None
-    return {"formula": kind, **{p.get("key").strip("#"): _value(p, held)
+    return {"formula": kind, **{hit(p.get("key")).strip("#"): _value(p, held)
                                 for p in formula.findall("Param")}}
 
 
@@ -153,7 +155,7 @@ def orders(root: ElementTree.Element) -> list[dict]:
             continue
         p = {c.get("key"): c for c in item if c.tag == "Param"}
         bars = _value(p["#ExitAfterBars.ExitAfterBars#"], held)
-        out.append({"type": item.get("key"), "direction": SIDE[int(p["#Direction#"].text)],
+        out.append({"type": item.get("key"), "direction": SIDE[int(hit(p["#Direction#"].text))],
                     **{name: _formula(p[key], held) for name, key in EXIT_METHODS.items()},
                     "exit_after_bars": int(bars) or None})
     return out

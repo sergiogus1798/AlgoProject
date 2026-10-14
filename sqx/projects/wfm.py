@@ -17,6 +17,7 @@ from sqx.projects.databanks import set_databank
 from sqx.projects.setups import bounds, set_costs, set_data_range
 from sqx.projects.tasksettings import set_precision
 from sqx.projects.stage import own
+from typing import Any
 
 BLOCK = re.compile(r"<WalkForwardMatrix\b.*?</WalkForwardMatrix>", re.S)
 # 🔬 Decoded 2026-09-24 (`OptimizationConst.wfTypeToString`): `type` is the "Walk-Forward
@@ -91,6 +92,7 @@ def settings(block: str, cfg: dict) -> tuple[str, dict]:
     rows, cols = grid(cfg)
     element, steps = axes(cfg)
     found = re.search(r"<WalkForward\b.*?</WalkForward>", block, re.S)
+    assert found is not None
     block = block[:found.start()] + element + block[found.end():]
     block = re.sub(r"<MaxTests>\d+</MaxTests>", f"<MaxTests>{cfg['max_tests']}</MaxTests>",
                    block, count=1)
@@ -141,6 +143,7 @@ def write_task(text: str, cfg: dict, data: dict) -> tuple[str, dict]:
     # everything at 100 % (`computeRobustnessScore`, decompiled 2026-09-24).
     text, silenced = silence(enable(text, "WalkForwardMatrix"))
     found = BLOCK.search(text)
+    assert found is not None
     block, written = settings(found.group(0), cfg)
     text = text[:found.start()] + block + text[found.end():]
     return text, {"segment": cfg["segment"], "from": start, "to": end,
@@ -150,7 +153,7 @@ def write_task(text: str, cfg: dict, data: dict) -> tuple[str, dict]:
                   "others_on": others_on(text, "WalkForwardMatrix"), **written}
 
 
-def configure(cfx: Path, symbol: str, source: str) -> dict:
+def configure(cfx: Path, symbol: str, source: str) -> dict[str, Any]:
     """Write the WFM task of one project, on the window policy reserves for it.
 
     Args:

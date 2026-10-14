@@ -13,6 +13,7 @@ from sqx.projects.databanks import set_databank
 from sqx.projects.setups import set_span
 from sqx.projects.stage import STAGES, apply, titles
 from sqx.projects.wfc import declare
+from core.xmlget import hit, rx
 
 SOURCE = "OOS"                        # the plain retest every added task is copied from
 # The permanent order (owner, 2026-09-29): Cross Market → Cross TF → MC Retest. Cross TF reads
@@ -62,7 +63,7 @@ def add_task(members: dict[str, bytes], title: str, source: str) -> str:
     config = members["config.xml"].decode("utf-8")
     n = max(int(k) for k in re.findall(r"Retest-Task(\d+)\.xml", " ".join(members))) + 1
     member = f"Retest-Task{n}.xml"
-    tag = re.search(rf'<Task\b[^>]*taskXMLFile="{re.escape(source)}"[^>]*/>', config).group(0)
+    tag = rx(rf'<Task\b[^>]*taskXMLFile="{re.escape(source)}"[^>]*/>', config).group(0)
     new = re.sub(r'name="[^"]*"', f'name="Retest strategies {n}"', tag)
     new = re.sub(r'taskXMLFile="[^"]*"', f'taskXMLFile="{member}"', new)
     new = re.sub(r'title="[^"]*"', f'title="{title}"', new)
@@ -84,7 +85,7 @@ def complete(members: dict[str, bytes]) -> list[str]:
     source = member_of(members["config.xml"].decode("utf-8"), SOURCE)
     added = [CROSSTF["title"]] + [t["title"] for t in doctrine()["wfc"]["tasks"]]
     for title in added:
-        add_task(members, title, source)
+        add_task(members, title, hit(source))
     return added
 
 
@@ -105,7 +106,7 @@ def rewire(members: dict[str, bytes]) -> None:
               + [(t, CROSSTF["mothers"], t) for t in titles("mcretest")]
               + [(t["title"], study["input"], t["databank"]) for t in study["tasks"]])
     for title, source, output in wiring:
-        member = member_of(members["config.xml"].decode("utf-8"), title)
+        member = hit(member_of(members["config.xml"].decode("utf-8"), title))
         text = set_databank(members[member].decode("utf-8"), "Input", source)[0]
         members[member] = set_databank(text, "Output", output)[0].encode("utf-8")
     names = sorted({n for _, i, o in wiring for n in (i, o)})
@@ -133,7 +134,7 @@ def trim(cfx: Path, until: str) -> list[str]:
         title = re.search(r'title="([^"]*)"', tag)
         if title and title.group(1) in later:
             config = config.replace(tag, "", 1)
-            del members[re.search(r'taskXMLFile="([^"]*)"', tag).group(1)]
+            del members[rx(r'taskXMLFile="([^"]*)"', tag).group(1)]
             gone.append(title.group(1))
     members["config.xml"] = config.encode("utf-8")
     cfxio.write(cfx, members)
@@ -155,7 +156,7 @@ def finish(cfx: Path, symbol: str) -> None:
     """
     members = cfxio.members(cfx)
     from sqx.projects import crosstf, crosstfsolo      # both import this module
-    member = member_of(members["config.xml"].decode("utf-8"), CROSSTF["title"])
+    member = hit(member_of(members["config.xml"].decode("utf-8"), CROSSTF["title"]))
     text = set_span(members[member].decode("utf-8"), load(symbol), doctrine()["crosstf"]["segment"])
     members[member] = text[0].encode("utf-8")
     # The extra timeframes' tasks exist from the start, so step 11 only rewrites them and a

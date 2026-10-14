@@ -6,6 +6,7 @@ import pandas as pd
 
 from sqx.variants import tuples
 from sqx.variants.design import canaries, levels, lhs
+from typing import cast
 
 CONTROLS = ("origin", "canary", "inert")
 
@@ -133,6 +134,6 @@ def spread(table: pd.DataFrame, n: int) -> pd.DataFrame:
     rest = table[~table["stratum"].isin(CONTROLS)]
     room = n - len(controls)
     if room <= 0:
-        return controls.head(n)
+        return cast("pd.DataFrame", controls.head(n))
     step = max(1, len(rest) // room)
-    return pd.concat([controls, rest.iloc[::step].head(room)], ignore_index=True)
+    return cast("pd.DataFrame", pd.concat([controls, rest.iloc[::step].head(room)], ignore_index=True))

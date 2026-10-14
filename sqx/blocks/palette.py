@@ -4,6 +4,7 @@
 import argparse
 import json
 import re
+from typing import Any
 from datetime import date
 from pathlib import Path
 
@@ -58,7 +59,7 @@ def path(name: str) -> Path:
     return PALETTES / f"{name}.yaml"
 
 
-def load(name: str) -> dict:
+def load(name: str) -> dict[str, Any]:
     """One palette off disk.
 
     Args:
@@ -104,7 +105,7 @@ def save(palette: dict) -> Path:
     return p
 
 
-def create(name: str, label: str, family: str, source: str | None = None) -> dict:
+def create(name: str, label: str, family: str, source: str | None = None) -> dict[str, Any]:
     """A new palette, empty or cloned from another.
 
     Args:
@@ -172,7 +173,7 @@ def resolve(palette: dict, blocks: dict[str, dict]) -> dict[str, dict]:
     return out
 
 
-def summary(resolved: dict[str, dict]) -> dict:
+def summary(resolved: dict[str, dict]) -> dict[str, Any]:
     """How wide this palette leaves the search, by role.
 
     Args:
@@ -185,7 +186,7 @@ def summary(resolved: dict[str, dict]) -> dict:
         reach anyway. That last number is the honest caveat: those blocks are in a pool, so
         a template binding a hole to it draws them whatever this palette says.
     """
-    out = {"unlabelled": sum(1 for r in resolved.values() if r["why"] == "unlabelled"),
+    out: dict[str, Any] = {"unlabelled": sum(1 for r in resolved.values() if r["why"] == "unlabelled"),
            "overridden": sum(1 for r in resolved.values() if r["why"] == "override"),
            "pooled_off": sum(1 for r in resolved.values() if r["groups"] and not r["use"])}
     for role in ("signal", "indicator", "level"):
@@ -195,7 +196,7 @@ def summary(resolved: dict[str, dict]) -> dict:
     return out
 
 
-def everything() -> dict:
+def everything() -> dict[str, Any]:
     """The whole library resolved against the taxonomy, in one read.
 
     Returns:

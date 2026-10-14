@@ -56,6 +56,7 @@ def graft(portfolio: str, x: float) -> str:
     if n != entries or n == 0:
         raise ValueError(f"{n} stops replaced for {entries} entry orders")
     first = FIRST_VARIABLE.search(out)
+    assert first is not None
     pad = first.group(1)
     value = f"{x:g}"
     return (out[:first.start()] + pad + DECLARATION.format(pad=pad, name=VARIABLE, value=value)

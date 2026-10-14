@@ -1,5 +1,6 @@
 """Read the pieces of one task's XML: databanks, conditions, rankings, cross-checks."""
 
+from typing import Any
 from xml.etree.ElementTree import Element
 
 # Cross-check element name -> the label SQX shows in the GUI.
@@ -16,7 +17,7 @@ CROSSCHECK_LABELS = {
 }
 
 
-def text_of(parent: Element, path: str, default: str = None) -> str:
+def text_of(parent: Element | None, path: str, default: str | None = None) -> str | None:
     """Stripped text of a child element.
 
     Args:
@@ -31,7 +32,7 @@ def text_of(parent: Element, path: str, default: str = None) -> str:
     return el.text.strip() if el is not None and el.text else default
 
 
-def render_side(side: Element) -> tuple[str, str]:
+def render_side(side: Element | None) -> tuple[str | None, str]:
     """One side of a condition, as display text.
 
     Args:
@@ -56,7 +57,7 @@ def render_side(side: Element) -> tuple[str, str]:
     return (side.get("valueType") or "?"), ""
 
 
-def render_conditions(conds: Element) -> tuple[list[dict], dict]:
+def render_conditions(conds: Element | None) -> tuple[list[dict], dict]:
     """Every condition of a Conditions element, in both schemas.
 
     Args:
@@ -116,7 +117,7 @@ def conditions_table(rows: list[dict], attrs: dict, indent: str = "") -> list[st
     return out
 
 
-def databanks_of(root: Element) -> tuple[str, str]:
+def databanks_of(root: Element) -> tuple[str | None, str | None]:
     """Input and output databank of a task.
 
     Args:
@@ -140,7 +141,7 @@ def databanks_of(root: Element) -> tuple[str, str]:
     return inp, outp
 
 
-def rankings_summary(root: Element) -> dict:
+def rankings_summary(root: Element) -> dict[str, Any] | None:
     """A task's ranking block: how many strategies it keeps and on what conditions.
 
     Args:
@@ -161,7 +162,7 @@ def rankings_summary(root: Element) -> dict:
             "conditions": render_conditions(r.find("Conditions"))}
 
 
-def crosschecks_summary(root: Element) -> tuple[dict, list[dict]]:
+def crosschecks_summary(root: Element) -> tuple[dict | None, list[dict]]:
     """Which robustness cross-checks a task runs, with their settings and thresholds.
 
     Args:

@@ -15,6 +15,7 @@ from core import (exportdrv, manifest, sqxfile, trades, tradestore, wfmatrix, wf
                   wftrades)
 from core.paths import MASTER, databank_dir, export_dir, worker_dir
 from sqx.export.export_trades import stage
+from typing import cast
 
 KEYS = ["strategy", "result", "oos_pct", "runs"]
 
@@ -71,7 +72,7 @@ def tables(project: str, databank: str, install: Path = MASTER) -> dict[str, pd.
                                              values="value", aggfunc="first").reset_index())
     wide.columns.name = None
     for name in wide.columns.difference([*KEYS, "index"]):
-        number = pd.to_numeric(wide[name], errors="coerce")
+        number = cast("pd.Series", pd.to_numeric(wide[name], errors="coerce"))
         if number.notna().sum() == wide[name].notna().sum():
             wide[name] = number
     return {"cells": frame(cells), "steps": frame(steps), "params": wide,
@@ -101,14 +102,14 @@ def split(raw_dir: Path, steps: pd.DataFrame, out: Path,
     """
     checked, frames, mains = [], [], []
     for f in sorted(raw_dir.glob("*.csv")):
-        mine = steps[steps["strategy"] == f.stem]
+        mine = cast("pd.DataFrame", steps[steps["strategy"] == f.stem])
         if mine.empty:
             continue
         main, *blocks = wftrades.chunks(trades.read(f))
         mains.append(main[tradestore.KEEP + ["Symbol"]].assign(strategy=f.stem,
                                                                 timeframe=timeframes[f.stem]))
         for block, cell in zip(blocks, mine["result"].unique()):
-            rows = mine[mine["result"] == cell].to_dict("records")
+            rows = cast("pd.DataFrame", mine[mine["result"] == cell]).to_dict("records")
             tagged = wftrades.label(block, rows)
             keep = tradestore.KEEP + (["Ticket"] if not tradestore.ordered(tagged) else [])
             frames.append(tagged[keep + ["period", "sample"]]

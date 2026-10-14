@@ -4,6 +4,7 @@ import re
 from datetime import datetime, timedelta, timezone
 
 from sqx.projects import registryxml, resources
+from core.xmlget import hit
 
 
 def _ms(day: str, end: bool) -> int:
@@ -33,7 +34,7 @@ def with_feeds(text: str, used: list[dict]) -> str:
             if info not in text.split("<Instruments>")[1].split("</Instruments>")[0]:
                 text = text.replace("<Instruments>", f"<Instruments>\n      {info}", 1)
             held = text.split("<Brokers>")[1].split("</Brokers>")[0]
-            if f'id="{resources.BROKER.search(broker).group(1)}"' not in held:
+            if f'id="{hit(resources.BROKER.search(broker)).group(1)}"' not in held:
                 text = text.replace("<Brokers>", f"<Brokers>\n      {broker}", 1)
         a, b = _ms(m["window"][0], False), _ms(m["window"][1], True)
         text = resources.SYMBOL.sub(

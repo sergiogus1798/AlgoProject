@@ -8,6 +8,7 @@ import pandas as pd
 from core import fanout
 from sqx.variants import tuples
 from sqx.variants.build import rewrite
+from typing import TypedDict
 
 NAME = "{strategy} {variant_id}"
 BLOCK = 100          # variants per task handed to a worker
@@ -32,7 +33,15 @@ def name_of(strategy: str, variant_id: str) -> str:
     return NAME.format(strategy=strategy, variant_id=variant_id)
 
 
-def batch(plan: pd.DataFrame, parent: Path, strategy: str, out: Path, shape: str) -> dict:
+class Fabricated(TypedDict):
+    """What `batch` wrote: file count, bytes and the shape used."""
+
+    files: int
+    bytes: int
+    shape: str
+
+
+def batch(plan: pd.DataFrame, parent: Path, strategy: str, out: Path, shape: str) -> Fabricated:
     """Fabricate every row of a plan.
 
     Args:
@@ -65,7 +74,7 @@ def batch(plan: pd.DataFrame, parent: Path, strategy: str, out: Path, shape: str
     # Every file is independent and the time is zlib's, so the rows are cut into blocks and
     # written on every core: 🔬 2026-09-25, 5,000 variants took 11 s on one.
     blocks = {i: BLOCK for i in range(0, len(rows), BLOCK)}
-    written = sum(got for _, got in fanout.run(_block, blocks, os.cpu_count()))
+    written = sum(got for _, got in fanout.run(_block, blocks, os.cpu_count() or 1))
     return {"files": len(plan), "bytes": written, "shape": shape}
 
 

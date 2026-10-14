@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from core import fanout, sqxstats
 from sqx.variants import legs as legmod
+from typing import cast
 
 FULL = sqxstats.FULL
 KEY = ["variant_id", "market"]
@@ -51,7 +52,7 @@ def per_result(folder: Path, segment: str,
     # Blocks of files on every core, each file's settings.xml parsed once for all its
     # results: 🔬 2026-09-25, 15,000 files x 10 results took 196 s on one core.
     blocks = dict(fanout.run(_rows, {i: BLOCK for i in range(0, len(files), BLOCK)},
-                             os.cpu_count()))
+                             os.cpu_count() or 1))
     say(100, f"{len(files)} de {len(files)} .sqx leidos ({segment})")
     return pd.DataFrame([row for i in sorted(blocks) for row in blocks[i]])
 
@@ -89,7 +90,7 @@ def combine(rows: pd.DataFrame, segments: list[str], curves: pd.DataFrame | None
         averaging the per-segment ratios, which weights a five-year leg like a ten-year one.
     """
     part = rows[rows["segment"].isin(segments)]
-    out = part.groupby(KEY, as_index=False)[ADDITIVE].sum()
+    out = cast("pd.DataFrame", part.groupby(KEY, as_index=False)[ADDITIVE].sum())
     out["segment"] = label
     out["NumberOfWins"] = out["NumberOfTrades"] - out["NumberOfLosses"]
     # Three cases, and the middle one is why this is not a one-liner. No trades at all ->
@@ -128,7 +129,7 @@ def from_curves(daily: pd.DataFrame) -> pd.DataFrame:
     """
     cum = daily.cumsum()
     drawdown = (cum.cummax().clip(lower=0) - cum).max()     # the peak starts at 0, the balance before the first day
-    sd = daily.std(ddof=1)
+    sd = cast("pd.Series", daily.std(ddof=1))
     sharpe = (daily.mean() / sd.replace(0, np.nan)) * np.sqrt(252)
     return pd.DataFrame({"variant_id": daily.columns, "Drawdown": drawdown.to_numpy(),
                          "SharpeRatio": sharpe.to_numpy()})
@@ -154,7 +155,7 @@ def thin(rows: pd.DataFrame, floor: int, over: list[str]) -> pd.DataFrame:
         correlation. Everything it touches is reported as a count, never dropped in silence.
     """
     part = rows[rows["segment"].isin(over)]
-    total = part.groupby(KEY, as_index=False)["NumberOfTrades"].sum()
+    total = cast("pd.DataFrame", part.groupby(KEY, as_index=False)["NumberOfTrades"].sum())
     return total.rename(columns={"NumberOfTrades": "trades_total"}).assign(
         usable=lambda d: d["trades_total"] >= floor)
 

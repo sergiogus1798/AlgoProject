@@ -15,6 +15,8 @@ from core.store import save
 from core.worker import holding, installs
 from sqx.projects import cfxio
 from sqx.projects import registry, sweep
+from core.xmlget import el
+from typing import TypedDict
 
 STOCK = {"Builder", "Retester", "Optimizer", "PortfolioComposer", "PortfolioMaster"}
 FRESH_MINUTES = 60   # younger than this, someone may still be collecting from it
@@ -25,12 +27,20 @@ def master_up() -> bool:
     return bool(holding(MASTER))
 
 
-def describe(folder: Path) -> dict:
+class Described(TypedDict):
+    """One project folder: task count (or "?"), last change and size on disk."""
+
+    tasks: int | str
+    mtime: float
+    mb: float
+
+
+def describe(folder: Path) -> Described:
     """One project's task count, last change and size on disk."""
     tasks = "?"
     try:
         with zipfile.ZipFile(folder / "project.cfx") as z:
-            tasks = len(ElementTree.fromstring(z.read("config.xml")).find("Tasks"))
+            tasks = len(el(ElementTree.fromstring(z.read("config.xml")).find("Tasks")))
     except (OSError, KeyError, zipfile.BadZipFile, ElementTree.ParseError, TypeError):
         pass
     files = [p for p in folder.rglob("*") if p.is_file()]

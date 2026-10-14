@@ -16,6 +16,8 @@ from sqx.projects.perturbations import OUT_OF_SAMPLE
 from sqx.projects.setups import SETUP, set_data_range, write_setup
 from sqx.projects.tasksettings import set_money_management
 from sqx.projects.wfc import declare, retitle
+from typing import Any, TypedDict
+from collections.abc import Mapping
 
 SAVE_MEMBER = "SaveToFiles-Task1.xml"
 
@@ -26,7 +28,14 @@ def _ms(day: str, end: bool) -> int:
     return assetdata._ms(date.fromisoformat(day), end)
 
 
-def own_sizing(strategy: Path) -> dict:
+class Sizing(TypedDict):
+    """The sizing method a strategy file carries and its parameters, as XML text."""
+
+    method: str
+    params: dict[str, str]
+
+
+def own_sizing(strategy: Path) -> Sizing:
     """The sizing the strategy file itself carries, as `tasksettings.set_money_management` takes it.
 
     Returns:
@@ -37,6 +46,7 @@ def own_sizing(strategy: Path) -> dict:
     with zipfile.ZipFile(strategy) as z:
         xml = z.read("strategy_Portfolio.xml").decode("utf-8")
     found = re.search(r'<MoneyManagement type="(\w+)">(.*?)</MoneyManagement>', xml, re.S)
+    assert found is not None
     params = dict(re.findall(r'<Param key="#?(\w+?)#?"[^>]*>([^<]*)</Param>', found.group(2)))
     if found.group(1) != "FixedSize":
         raise SystemExit(f"{strategy.stem} se dimensiona con {found.group(1)}: sólo FixedSize se "
@@ -45,7 +55,7 @@ def own_sizing(strategy: Path) -> dict:
 
 
 def write_task(text: str, feed: str, costs: dict, window: tuple[str, str],
-               databanks: tuple[str, str], sizing: dict) -> str:
+               databanks: tuple[str, str], sizing: Mapping[str, Any]) -> str:
     """Turn one of the donor's retests into one firm's backtest of the strategy.
 
     Args:
@@ -145,8 +155,17 @@ def save_task(input_bank: str, dest: Path, generator: str, magic: int) -> str:
 """
 
 
+class Configured(TypedDict):
+    """What `configure` set on the step-26 tasks."""
+
+    project: str | None
+    input: str
+    tasks: list[dict[str, Any]]
+    export: str
+
+
 def configure(cfx: Path, feed: str, window: tuple[str, str], firms: dict[str, dict],
-              mq5_dir: Path, cfg: dict, sizing: dict, strategy: Path | None = None) -> dict:
+              mq5_dir: Path, cfg: dict, sizing: Mapping[str, Any], strategy: Path | None = None) -> Configured:
     """Write one retest per firm, and the EA's export, into a project the builder just cloned.
 
     Args:

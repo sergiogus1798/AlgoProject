@@ -9,6 +9,8 @@ import pandas as pd
 from core import fanout
 from sqx.variants import tuples
 from sqx.variants.build import rewrite
+from core.xmlget import hit
+from typing import Any, TypedDict
 
 FILE = "manifest.parquet"
 NUMERIC = ("int", "double")
@@ -35,8 +37,19 @@ def read_back(folder: Path, names: list[str]) -> pd.DataFrame:
     paths = sorted(folder.glob("*.sqx"))
     _SHARED.update(paths=paths, names=names)
     blocks = dict(fanout.run(_read_block, {i: BLOCK for i in range(0, len(paths), BLOCK)},
-                             os.cpu_count()))
+                             os.cpu_count() or 1))
     return pd.DataFrame([row for i in sorted(blocks) for row in blocks[i]])
+
+
+class Verdict(TypedDict):
+    """How the variants on disk compare with the plan."""
+
+    planned: int
+    on_disk: int
+    missing: list[str]
+    unexpected: list[str]
+    tuple_mismatch: list[str]
+    duplicate_tuples: int
 
 
 def _read_block(start: int) -> list[dict]:
@@ -63,13 +76,13 @@ def _read_block(start: int) -> list[dict]:
                      # `P00000`), not after either name field. So this column is the
                      # intent, `variant_id` is the join key, and the collection stage
                      # overwrites this with whatever actually came back.
-                     "sqx_name": rewrite.RESULT_NAME.search(settings).group(0).split('"')[1],
+                     "sqx_name": hit(rewrite.RESULT_NAME.search(settings)).group(0).split('"')[1],
                      "file": path.name, **tuples.columns(found),
                      "tuple_hash": tuples.tuple_hash(found)})
     return rows
 
 
-def verify(plan: pd.DataFrame, disk: pd.DataFrame) -> dict:
+def verify(plan: pd.DataFrame, disk: pd.DataFrame) -> Verdict:
     """Whether the batch on disk is the batch that was planned.
 
     Args:
@@ -97,7 +110,7 @@ def verify(plan: pd.DataFrame, disk: pd.DataFrame) -> dict:
             "duplicate_tuples": int(disk["tuple_hash"].duplicated().sum())}
 
 
-def write(plan: pd.DataFrame, folder: Path, names: list[str]) -> tuple[pd.DataFrame, dict]:
+def write(plan: pd.DataFrame, folder: Path, names: list[str]) -> tuple[pd.DataFrame, Verdict]:
     """Build contract C2 from the files on disk and store it beside them.
 
     Args:

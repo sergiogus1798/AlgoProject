@@ -8,6 +8,8 @@ from xml.etree import ElementTree
 from core.paths import MASTER
 from core.sqxfile import INNER
 from sqx.inspect.template_check import blocks, rules
+from core.xmlget import attr, hit
+from typing import Any, TypedDict
 
 GROUPS_REL = "user/settings/blockGroups.xml"
 
@@ -16,6 +18,13 @@ GROUPS_REL = "user/settings/blockGroups.xml"
 # than drawing from anywhere, so they carry no group and nothing can narrow them.
 HOLES = {"RandomCondition": "condition", "RandomValue": "value"}
 LOGIC = {"AND", "OR", "Not"}
+
+
+class Shape(TypedDict):
+    """What a template leaves to the builder (`holes`) and what it nails down (`fixed`)."""
+
+    holes: list[dict[str, Any]]
+    fixed: list[str]
 
 
 def group_names(install: Path) -> dict[str, str]:
@@ -33,10 +42,10 @@ def group_names(install: Path) -> dict[str, str]:
     if not (install / GROUPS_REL).exists():
         return {}
     root = ElementTree.parse(install / GROUPS_REL).getroot()
-    return {g.get("id"): g.get("name") for g in root}
+    return {attr(g, "id"): attr(g, "name") for g in root}
 
 
-def shape(path: Path, install: Path = MASTER) -> dict:
+def shape(path: Path, install: Path = MASTER) -> Shape:
     """What one template leaves to the builder and what it nails down.
 
     Args:
@@ -60,17 +69,17 @@ def shape(path: Path, install: Path = MASTER) -> dict:
         group = next((p.text for p in item if p.get("key") == "#Group#"), None)
         found.append({"id": next((p.text for p in item if p.get("key") == "#Identification#"),
                                  item.get("key")),
-                      "kind": HOLES[item.get("key")],
+                      "kind": HOLES[hit(item.get("key"))],
                       "group": names.get(group, group) if group else None,
                       "unknown_group": bool(group) and group not in names})
     return {"holes": found, "fixed": sorted(blocks(rules(path)))}
 
 
-def _count(item: ElementTree.Element, got: dict[str, int]) -> None:
+def _count(item: ElementTree.Element, got: dict[str, int], twins: set[tuple[str | None, ...]]) -> None:
     """Add one node of a signal's tree to the count, walking through AND, OR and Not."""
     if item.get("key") in LOGIC:
         for child in item.findall("Block/Item"):
-            _count(child, got)
+            _count(child, got, twins)
     elif item.get("categoryType") == "randomBlock":
         bound = any(p.get("key") == "#Group#" and (p.text or "").strip() for p in item)
         got["bound" if bound else "free"] += 1
@@ -78,8 +87,8 @@ def _count(item: ElementTree.Element, got: dict[str, int]) -> None:
         # Owner, 2026-10-05: the same condition twice on two periods (double ROC, double Vortex)
         # is ONE idea, so a side counts each distinct block shape once.
         twin = tuple(i.get("key") for i in item.iter("Item"))
-        got["fixed"] += twin not in got.setdefault("_twins", set())
-        got["_twins"].add(twin)
+        got["fixed"] += twin not in twins
+        twins.add(twin)
 
 
 def conditions(path: Path) -> dict[str, dict[str, int]]:
@@ -101,10 +110,10 @@ def conditions(path: Path) -> dict[str, dict[str, int]]:
     out = {side: {"fixed": 0, "bound": 0, "free": 0} for side in ("entry", "exit")}
     for signal in root.iter("signal"):
         got = {"fixed": 0, "bound": 0, "free": 0}
+        twins: set[tuple[str | None, ...]] = set()
         for item in signal.findall("Item"):
-            _count(item, got)
+            _count(item, got, twins)
         side = "exit" if "Exit" in names.get(signal.get("variable"), "") else "entry"
-        got.pop("_twins", None)
         if sum(got.values()) > sum(out[side].values()):
             out[side] = got
     return out

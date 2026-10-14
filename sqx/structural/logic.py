@@ -1,6 +1,7 @@
 """Read a strategy's entry conditions and order direction from `strategy_Portfolio.xml`."""
 
 import re
+from core.xmlget import hit
 
 # The signals the builder writes, by the <name> of the boolean variable they assign. Only
 # the entries are read: none of this corpus has an exit signal.
@@ -69,7 +70,7 @@ def conditions(portfolio: str) -> list[dict]:
         inner = body[top.end():] if top else body
         for k, (s, e) in enumerate(_top_blocks(inner) if top else [(0, len(body))]):
             rows.append({"signal": name, "operator": top.group(1) if top else "",
-                         "index": k, "block": KEY.search(inner[s:e]).group(1)})
+                         "index": k, "block": hit(KEY.search(inner[s:e])).group(1)})
     return rows
 
 
@@ -82,8 +83,8 @@ def direction(portfolio: str) -> list[int]:
     Returns:
         1 (long) or -1 (short) per entry order, in file order.
     """
-    rules = RULES.search(portfolio).group(0)
+    rules = hit(RULES.search(portfolio)).group(0)
     out = []
     for order in ENTRY_ORDER.finditer(rules):
-        out.append(int(DIRECTION.search(rules, order.end()).group(2)))
+        out.append(int(hit(DIRECTION.search(rules, order.end())).group(2)))
     return out

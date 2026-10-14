@@ -10,6 +10,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from core.paths import ROOT, worker_dir
+from core.xmlget import hit
 
 SKELETONS = ROOT / "tools/sqx-lab/plugins/sqx-lab/skills/sqx-strategy-template/engine/skeletons"
 INNER = "strategy_Portfolio.xml"
@@ -85,6 +86,7 @@ def block_xml(blocks: Path, key: str, fixed: dict[str, str] | None = None) -> st
     root = ElementTree.parse(blocks).getroot()
     # config.xml also carries preset <Item>s under the same key; the definition is under <Blocks>.
     scope = root.find(".//Blocks") if root.find(".//Blocks") is not None else root
+    assert scope is not None
     item = next(i for i in scope.iter("Item") if i.get("key") == key)
     for contents in item.findall("Contents"):
         item.remove(contents)
@@ -93,8 +95,8 @@ def block_xml(blocks: Path, key: str, fixed: dict[str, str] | None = None) -> st
         item.remove(category)
         item.extend(category.findall("Param"))
     for param in item.findall("Param"):
-        if param.get("key") in (fixed or {}):
-            param.set("defaultValue", fixed[param.get("key")])
+        if fixed and param.get("key") in fixed:
+            param.set("defaultValue", fixed[hit(param.get("key"))])
         elif optimizable(param):
             param.set("generate", "random")
             param.set("randomValue", "default")

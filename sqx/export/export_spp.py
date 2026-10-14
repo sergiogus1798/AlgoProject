@@ -12,6 +12,7 @@ import pandas as pd
 from core import fanout, manifest, optprofile
 from core.paths import MASTER, databank_dir, export_dir, worker_dir
 from sqx.export import spp_table
+from sqx.export.spp_table import Spilled
 
 RUN = ["strategy", "permutations", "profitable", "losing", "zero", "profitable_pct",
        "avg_profit", "top_profit", "stdev", "uniform_changes", "parameters"]
@@ -25,7 +26,7 @@ WORKERS = 16
 _SPILL: dict = {}
 
 
-def _read(path: Path) -> tuple[dict, dict | None]:
+def _read(path: Path) -> tuple[dict, Spilled | None]:
     """One strategy's profile, its permutations already spilled as its rows of the table.
 
     Args:
@@ -83,7 +84,7 @@ def write_runs(found: dict, path: Path) -> int:
     """
     rows = [{"strategy": name, "parameters": " ".join(p["params"]),
              **{k: p[k] for k in RUN[1:-1]}} for name, p in found.items()]
-    pd.DataFrame(rows, columns=RUN).to_parquet(path, index=False)
+    pd.DataFrame(rows, columns=pd.Index(RUN)).to_parquet(path, index=False)
     return len(rows)
 
 

@@ -15,6 +15,8 @@ from sqx.projects.databanks import set_databank
 from sqx.projects.orders import pending_orders, with_exits
 from sqx.projects.perturbations import disable, usable, write_task
 from sqx.projects.stage import own
+from core.xmlget import el, rx
+from typing import Any, TypedDict
 
 
 def active(config: str, title: str, on: bool) -> str:
@@ -30,8 +32,19 @@ def active(config: str, title: str, on: bool) -> str:
         left in place and switched off rather than deleted: the decision is reversible,
         and a project missing a task looks like a different project.
     """
-    tag = re.search(rf'<Task\b[^>]*title="{re.escape(title)}"[^>]*/>', config).group(0)
+    tag = rx(rf'<Task\b[^>]*title="{re.escape(title)}"[^>]*/>', config).group(0)
     return config.replace(tag, re.sub(r'active="[^"]*"', f'active="{str(on).lower()}"', tag), 1)
+
+
+class Configured(TypedDict):
+    """What `configure` set on the MC Retest tasks."""
+
+    project: str | None
+    orders: Any
+    exits: Any
+    simulations: Any
+    input: str
+    tasks: list[dict[str, Any]]
 
 
 def member_of(config: str, title: str) -> str | None:
@@ -44,12 +57,12 @@ def member_of(config: str, title: str) -> str | None:
     Returns:
         The member name, or None when the project has no such task.
     """
-    tag = next((t for t in ElementTree.fromstring(config).find("Tasks")
+    tag = next((t for t in el(ElementTree.fromstring(config).find("Tasks"))
                 if t.get("title") == title), None)
     return tag.get("taskXMLFile") if tag is not None else None
 
 
-def configure(cfx: Path, symbol: str, source: str, databank: Path | None) -> dict:
+def configure(cfx: Path, symbol: str, source: str, databank: Path | None) -> Configured:
     """Write every MC Retest task of one project, and say which were skipped and why.
 
     Args:

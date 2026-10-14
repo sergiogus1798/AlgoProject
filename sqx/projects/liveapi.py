@@ -13,6 +13,8 @@ from pathlib import Path
 
 from core import worker
 from core.paths import WORKERS
+from core.xmlget import rx
+from typing import Any
 
 
 def _file(role: str) -> Path:
@@ -28,10 +30,10 @@ def _settings(role: str, mtime_ns: int) -> str:
 
 def _setting(role: str, key: str) -> str:
     """One value SQX wrote to the install's settings.xml (port and token: at every GUI start)."""
-    return re.search(rf"<{key}>([^<]*)", _settings(role, _file(role).stat().st_mtime_ns)).group(1)
+    return rx(rf"<{key}>([^<]*)", _settings(role, _file(role).stat().st_mtime_ns)).group(1)
 
 
-def call(role: str, action: str, **params: str) -> dict:
+def call(role: str, action: str, **params: str) -> dict[str, Any]:
     """POST one /project/<action>; SystemExit with SQX's own words on an `error` answer."""
     port, token = _setting(role, "WebServerPortUsed"), _setting(role, "BrowserToken")
     req = urllib.request.Request(f"http://localhost:{port}/project/{action}",

@@ -5,6 +5,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from sqx.inspect.strategymeta.rules import _value, values
+from core.xmlget import el, hit
 
 # Exit-method parameters (key as in <Item key="Enter…">), by name.
 EXIT_PARAMS = {"#StopLoss.StopLoss#": "stop_loss", "#ProfitTarget.ProfitTarget#": "profit_target",
@@ -36,7 +37,7 @@ def _number(item: ElementTree.Element | None, held: dict[str, str]) -> float | N
     """The value of a `Number` block, or None."""
     if item is None or item.get("key") != "Number":
         return None
-    return float(_value(item.find("Param"), held))
+    return float(_value(el(item.find("Param")), held))
 
 
 def fixed_distances(source: "str | Path | ElementTree.Element") -> list[dict]:
@@ -64,17 +65,17 @@ def fixed_distances(source: "str | Path | ElementTree.Element") -> list[dict]:
         key, rule = item.get("key") or "", rule_of.get(item, "")
         if key.startswith("Enter"):
             for p in item.findall("Param"):
-                name, formula = EXIT_PARAMS.get(p.get("key")), p.find("Formula")
+                name, formula = EXIT_PARAMS.get(p.get("key") or ""), p.find("Formula")
                 if name is None or formula is None:
                     continue
-                kind = formula.get("key").replace("SQ.Formulas.", "")
+                kind = hit(formula.get("key")).replace("SQ.Formulas.", "")
                 if kind in FIXED_FORMULAS:
-                    value = float(_value(formula.find("Param"), held))
+                    value = float(_value(el(formula.find("Param")), held))
                     out.append({"rule": rule, "where": "order", "param": name, "formula": kind,
                                 "value": value, "unit": "pips"})
         elif key == PIPS_VALUE_BLOCK:
             out.append({"rule": rule, "where": "condition", "param": key, "formula": key,
-                        "value": float(_value(item.find("Param"), held)), "unit": "pips"})
+                        "value": float(_value(el(item.find("Param")), held)), "unit": "pips"})
         elif key in PIPS_READERS:
             sides = [c.find("Item") for c in parent[parent[item]] if c.tag == "Block"]
             other = [n for s in sides if s is not item and (n := _number(s, held)) is not None]

@@ -11,7 +11,7 @@ RANDOMIZE = {"spread": "RandomizeSpread", "slippage": "RandomizeSlippage",
              "min_distance": "RandomizeMinDistance"}
 
 
-def set_ranges(text: str, data: dict, segment: str = "build") -> dict[str, int]:
+def set_ranges(text: str, data: dict, segment: str = "build") -> tuple[str, dict[str, int]]:
     """Put this asset's declared MC Retest ranges into a task, in place.
 
     Args:
@@ -20,14 +20,13 @@ def set_ranges(text: str, data: dict, segment: str = "build") -> dict[str, int]:
         segment: The segment the task is priced at: a range left in multiples follows it.
 
     Returns:
-        Range name to how many <Method> blocks were rewritten, and the new text under
-        "text". Unlike a cost, these live in the task's own <Method> blocks and not in
+        The new text, and range name to how many <Method> blocks were rewritten. Unlike a cost, these live in the task's own <Method> blocks and not in
         <InstrumentInfo>, so they ARE writable — the registry never sees them. A range
         still at null, or one the asset does not declare at all, is skipped rather than
         invented, and only a `use="true"` method is touched: the ranges of a method the
         task does not run are left as the donor wrote them.
     """
-    out = {"text": text}
+    out: dict[str, int] = {}
     for name, method in RANDOMIZE.items():
         span = mc_retest(data, segment).get(name, {"min": None, "max": None})
         if span["min"] is None or span["max"] is None:
@@ -35,7 +34,5 @@ def set_ranges(text: str, data: dict, segment: str = "build") -> dict[str, int]:
             continue
         pattern = (rf'(<Method use="true" type="{method}">\s*<Params>\s*'
                    rf'<Param key="Min"[^>]*>)[^<]*(</Param>\s*<Param key="Max"[^>]*>)[^<]*(</Param>)')
-        out["text"], out[name] = re.subn(pattern,
-                                         rf"\g<1>{span['min']}\g<2>{span['max']}\g<3>",
-                                         out["text"])
-    return out
+        text, out[name] = re.subn(pattern, rf"\g<1>{span['min']}\g<2>{span['max']}\g<3>", text)
+    return text, out

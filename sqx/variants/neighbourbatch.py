@@ -16,6 +16,7 @@ from core import fanout, worker
 from core.paths import worker_dir
 from sqx.variants import execute, inputs, legs as legmod, livexec, manifest, neighbours, tuples
 from sqx.variants.build import fabricate, rewrite
+from typing import Any
 
 MOTHER, NEIGHBOUR = "mother", "neighbour"
 RAN = "ran.json"
@@ -71,7 +72,7 @@ def write(rows: pd.DataFrame, folder: Path, shape: str) -> None:
     for stale in folder.glob("*.sqx"):
         stale.unlink()
     groups = {path: own.to_dict("records") for path, own in rows.groupby("mother", sort=False)}
-    _SHARED.update(source={path: rewrite.members(Path(path)) for path in groups}, rows=groups,
+    _SHARED.update(source={path: rewrite.members(Path(str(path))) for path in groups}, rows=groups,
                    folder=folder, shape=shape)
     # Every file is independent and the time is zlib's: blocks of rows on every core, as
     # `fabricate.batch` does for the factory's variants.
@@ -119,7 +120,7 @@ def make(mothers: Path, out: Path) -> pd.DataFrame:
     return rows
 
 
-def retest(work: Path, project: str) -> dict:
+def retest(work: Path, project: str) -> dict[str, Any]:
     """Load the batch into the project and retest it on the legs `neighbours.legs` names.
 
     `execute`'s own `awake`/`load`/`run`/`synced` (or `livexec`'s, on this holder's live
@@ -141,7 +142,7 @@ def retest(work: Path, project: str) -> dict:
     settings = inputs.load()
     if project in execute.STOCK:
         raise SystemExit(f"{project} es un proyecto de serie: regla dura 10")
-    cfg = dict(settings["execute"], project=project)
+    cfg: dict[str, Any] = dict(settings["execute"], project=project)
     used = [leg for leg in legmod.legs() if leg["title"] in settings["neighbours"]["legs"]]
     cfg["only"] = [leg["title"] for leg in used]
     folder = work / "sqx"

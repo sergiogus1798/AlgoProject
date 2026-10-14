@@ -8,6 +8,7 @@ from pathlib import Path
 from core.symbols import current
 from sqx.projects import registryxml
 from sqx.projects.crosschecks import mc_manipulation_on
+from core.xmlget import rx, hit
 
 SYMBOL = re.compile(r'<Symbol\b[^>]*?name="([^"]+)"[^>]*?>.*?</Symbol>', re.S)
 CHART = re.compile(r'<Chart\b[^>]*?symbol="([^"]+)"')
@@ -26,7 +27,7 @@ def main_feed(members: dict[str, bytes], build_member: str) -> str:
         The SQX symbol name, e.g. "XAUUSD_M1". Only this one is replaced, so
         the extra markets a cross-check task carries keep their own feeds.
     """
-    return CHART.search(members[build_member].decode("utf-8")).group(1)
+    return hit(CHART.search(members[build_member].decode("utf-8"))).group(1)
 
 
 def project_definitions(source: Path, feed: str) -> tuple[str, str, str] | None:
@@ -38,8 +39,8 @@ def project_definitions(source: Path, feed: str) -> tuple[str, str, str] | None:
             block = next((m.group(0) for m in SYMBOL.finditer(text) if m.group(1) == feed), None)
             if not block:
                 continue
-            instrument = INSTRUMENT.search(block).group(1)
-            broker = re.search(r'broker="([^"]+)"', block).group(1)
+            instrument = hit(INSTRUMENT.search(block)).group(1)
+            broker = rx(r'broker="([^"]+)"', block).group(1)
             info = next(m.group(0) for m in INSTRUMENT.finditer(text)
                         if m.group(1) == instrument and m.group(0) != block)
             entry = next(m.group(0) for m in BROKER.finditer(text) if m.group(1) == broker)
@@ -86,12 +87,12 @@ def one_task(text: str, donor_feed: str, blocks: tuple[str, str, str]) -> str:
     """
     symbol, info, broker = blocks
     text = SYMBOL.sub(lambda m: symbol if m.group(1) == donor_feed else m.group(0), text)
-    text = CHART.sub(lambda m: m.group(0).replace(donor_feed, SYMBOL.match(symbol).group(1))
+    text = CHART.sub(lambda m: m.group(0).replace(donor_feed, hit(SYMBOL.match(symbol)).group(1))
                      if m.group(1) == donor_feed else m.group(0), text)
-    instrument = INSTRUMENT.search(info).group(1)
+    instrument = hit(INSTRUMENT.search(info)).group(1)
     if f'instrument="{instrument}"' not in text.split("<Instruments>")[1].split("</Instruments>")[0]:
         text = text.replace("<Instruments>", f"<Instruments>\n      {info}", 1)
-    if f'id="{BROKER.search(broker).group(1)}"' not in text.split("<Brokers>")[1].split("</Brokers>")[0]:
+    if f'id="{hit(BROKER.search(broker)).group(1)}"' not in text.split("<Brokers>")[1].split("</Brokers>")[0]:
         text = text.replace("<Brokers>", f"<Brokers>\n      {broker}", 1)
     return text
 

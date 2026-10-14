@@ -4,6 +4,8 @@ from xml.etree.ElementTree import Element
 
 from sqx.inspect.project_parts import (conditions_table, crosschecks_summary, databanks_of,
                                        rankings_summary, special_summary)
+from core.xmlget import hit
+from typing import Any
 
 
 def databank_table(cfg: Element) -> list[str]:
@@ -39,7 +41,7 @@ def is_active(task: Element) -> bool:
     return task.get("active") != "false"
 
 
-def databank_flow(cfg: Element, task_xml: dict) -> dict:
+def databank_flow(cfg: Element, task_xml: dict) -> dict[str, Any]:
     """Which task numbers read, write and clear each databank.
 
     An inactive task runs nothing — SQX skips it — so it is left out here. Counting it
@@ -190,7 +192,7 @@ def task_detail(number: int, task: Element, root: Element) -> list[str]:
         fmt = lambda v: f"`{v}`" if v else "_(task default)_"
         out += [f"**Databanks:** {fmt(inp)} → {fmt(outp)}", ""]
 
-    for key, value in special_summary(ttype, root):
+    for key, value in special_summary(hit(ttype), root):
         if key == "__conditions__":
             out += ["**Jump conditions:**", ""] + conditions_table(*value) + [""]
         elif isinstance(value, list):

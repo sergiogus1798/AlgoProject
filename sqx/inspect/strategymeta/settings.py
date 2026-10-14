@@ -7,6 +7,8 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from core import assetdata, cfx
+from core.xmlget import hit
+from typing import Any
 
 SCALAR = re.compile(r'<([A-Za-z.]+) type="(?:String|Boolean|Integer|Double|Long)">([^<]*)</\1>')
 
@@ -37,7 +39,7 @@ def _hhmm(value: str) -> str:
     return f"{int(value) // 100:02d}:{int(value) % 100:02d}"
 
 
-def options(s: dict[str, str]) -> dict:
+def options(s: dict[str, str]) -> dict[str, Any]:
     """The trading options: Friday close, weekends, end of day, time range, session.
 
     Args:
@@ -64,7 +66,7 @@ def options(s: dict[str, str]) -> dict:
             "session": s.get("MarketOpenSession")}
 
 
-def sizing(node: ElementTree.Element) -> dict:
+def sizing(node: ElementTree.Element) -> dict[str, Any]:
     """The one sizing method in use under a `<MoneyManagement>`, with its parameters.
 
     Args:
@@ -78,7 +80,7 @@ def sizing(node: ElementTree.Element) -> dict:
     if method is None:
         return {"method": None, "params": {}, "initial_capital": node.findtext("InitialCapital")}
     return {"method": method.get("type"),
-            "params": {p.get("key").strip("#"): (p.text or "").strip()
+            "params": {hit(p.get("key")).strip("#"): (p.text or "").strip()
                        for p in method.iter() if p.tag in ("Param", "Parameter")},
             "initial_capital": node.findtext("InitialCapital")}
 
@@ -91,14 +93,14 @@ def _costs(setup: ElementTree.Element) -> dict:
     every commission method switched on (on 3 of 609 real strategies both are), and the
     swap, None when the setup carries none."""
     swap = setup.find("Swap")
-    return {"spread": setup.find("Chart").get("spread"), "slippage": setup.get("slippage"),
+    return {"spread": hit(setup.find("Chart")).get("spread"), "slippage": setup.get("slippage"),
             "min_distance": setup.get("minDist"),
             "commission": [{"method": m.get("type"), "value": m.findtext(".//Param")}
                            for m in setup.iter("Method") if m.get("use") == "true"],
             "swap": None if swap is None else dict(swap.attrib)}
 
 
-def task_view(root: ElementTree.Element) -> dict:
+def task_view(root: ElementTree.Element) -> dict[str, Any]:
     """What one task tests with: window, precision, costs and sizing, as SQX has them.
 
     Args:

@@ -1,6 +1,7 @@
 """The controls: tuples whose result is known before the retest runs, and the pairs that must tie."""
 
 import pandas as pd
+from typing import cast
 
 RESULTS = ["NetProfit", "NumberOfTrades"]
 ORIGIN = "origin"
@@ -21,7 +22,7 @@ def _picks(table: pd.DataFrame, count: int) -> list[int]:
     """
     order = [table["NetProfit"].idxmax(), table["NetProfit"].idxmin(),
              table["NumberOfTrades"].idxmin()]
-    return list(dict.fromkeys(order))[:count]
+    return cast("list[int]", list(dict.fromkeys(order)))[:count]
 
 
 def rows(design: dict, levels: dict[str, list[float]], origin: dict[str, float],
@@ -63,7 +64,7 @@ def rows(design: dict, levels: dict[str, list[float]], origin: dict[str, float],
     # A canary's expectation is SQX's own result for that exact tuple, so only permutations
     # with every shift where the strategy built it qualify: shifts never move (2026-09-26).
     shifts = [n for n in names if n.lower().endswith("shift1")]
-    table = table[(table[shifts] == pd.Series({n: origin[n] for n in shifts})).all(axis=1)]
+    table = cast("pd.DataFrame", table[(table[shifts] == pd.Series({n: origin[n] for n in shifts})).all(axis=1)])
     for permutation in (_picks(table, settings["n"]) if len(table) else []):
         row = table.loc[permutation]
         values = dict(origin)

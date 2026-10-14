@@ -6,6 +6,7 @@ from pathlib import Path
 
 from core.sqxfile import xml
 from sqx.projects.patch import NO_TEMPLATE
+from core.xmlget import hit
 
 # SQX names a Setup chart by its timeframe code and the builder's chart list by "<code> chart".
 # A stream whose timeframe is not here is refused rather than guessed: the name is what
@@ -30,7 +31,7 @@ def wanted(template: Path) -> list[int]:
         One entry per stream above the main chart, which carries timeFrame 0 and takes the
         task's own. Empty for a single-chart template.
     """
-    streams = [int(d.findtext("timeFrame")) for d in xml(template).iterfind(".//Datas/data")]
+    streams = [int(hit(d.findtext("timeFrame"))) for d in xml(template).iterfind(".//Datas/data")]
     return [tf for tf in streams if tf > 0]
 
 
@@ -90,6 +91,7 @@ def _one_chart_per_setup(text: str) -> str:
         if len(SETUP_CHART.findall(setup)) < 2:
             continue
         first = SETUP_CHART.search(setup)
+        assert first is not None
         kept = setup[:first.end()] + SETUP_CHART.sub("", setup[first.end():])
         text = text.replace(setup, kept, 1)
     return text

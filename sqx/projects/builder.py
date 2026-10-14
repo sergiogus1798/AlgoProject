@@ -25,6 +25,8 @@ from sqx.projects.registryxml import refresh_all
 from sqx.projects.resources import borrow_symbol, main_feed, refuse
 from sqx.projects import workflow as wf
 from xml.etree import ElementTree
+from core.xmlget import el, hit
+from typing import Any
 
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
 ENTRY = re.compile(r'<Rule name="(Long|Short) entry".*?</Rule>', re.S)
@@ -47,7 +49,7 @@ def build(name: str, template: Path | None, symbol: str, role: str, timeframe: s
           tasks: tuple = ("Build",), only: set | None = None,
           session_from: Path | None = None, silence: tuple = (), workflow: bool = False,
           acceptance: str = "study", side: str | None = None,
-          generation: str = GENERATIONS[0]) -> dict:
+          generation: str = GENERATIONS[0]) -> dict[str, Any]:
     """Assemble one Builder project and install it, priced and dated from assets/.
 
     Args:
@@ -105,8 +107,8 @@ def build(name: str, template: Path | None, symbol: str, role: str, timeframe: s
     borrowed = borrow_session(members, load(symbol)["session"], session_from)   # else SQX's registry
     # The donor's own feed is read from its generator when it kept one, and otherwise
     # from any task: every task of a one-asset donor names the same chart.
-    tasks = [m for m in members if m.endswith(".xml") and m != "config.xml"]
-    build_member = next((m for m in tasks if m.startswith("Build-")), tasks[0])
+    xml_members = [m for m in members if m.endswith(".xml") and m != "config.xml"]
+    build_member = next((m for m in xml_members if m.startswith("Build-")), xml_members[0])
     donor_feed = main_feed(members, build_member)
     replaced = borrow_symbol(members, load(symbol)["sqx_symbol"], build_member, session_from)
     refresh_all(members)   # the donor and any borrowed project predate the 2026-10-01 EETUS move
@@ -115,11 +117,12 @@ def build(name: str, template: Path | None, symbol: str, role: str, timeframe: s
     members["config.xml"] = re.sub(r'<Project name="[^"]*"', f'<Project name="{name}"',
                                    config, count=1).encode("utf-8")
     kinds = {t.get("taskXMLFile"): t.get("type")
-             for t in ElementTree.fromstring(members["config.xml"]).find("Tasks")}
+             for t in el(ElementTree.fromstring(members["config.xml"]).find("Tasks"))}
     quiet = 0
     for member in [n for n in members if n.endswith(".xml") and n != "config.xml"]:
         text = members[member].decode("utf-8")
-        text = set_template(text, installed_template) if template else set_simple(text, side)
+        text = (set_template(text, hit(installed_template)) if template
+                else set_simple(text, hit(side)))
         text = set_caps(set_generation(text, generation), strategies, minutes)
         if kinds.get(member) in silence:
             text, n = crosschecks.silence(text)

@@ -9,6 +9,7 @@ from sqx.projects.databanks import set_databank
 from sqx.projects.tasksettings import set_engine, set_timeframe
 from sqx.projects.wfc import declare
 from sqx.projects.workflow import CROSSTF, CROSSTF_BUILD, add_task
+from core.xmlget import hit
 
 # Owner, 2026-09-30: a timeframe is a task, never a block of the cross-check (its export cannot
 # be split on one symbol). D1 was removed from Cross TF on 2026-10-09 (owner).
@@ -88,7 +89,7 @@ def write(members: dict[str, bytes], crosstf_text: str, solo: dict) -> str:
     config = members["config.xml"].decode("utf-8")
     member = member_of(config, solo["title"])
     if member is None:
-        member = add_task(members, solo["title"], member_of(config, CROSSTF["title"]))
+        member = add_task(members, solo["title"], hit(member_of(config, CROSSTF["title"])))
         members["config.xml"] = declare(members["config.xml"].decode("utf-8"),
                                         [solo["databank"]]).encode("utf-8")
     text = re.sub(r'(<RetestOnAdditionalMarkets\b[^>]*?)use="[^"]*"', r'\g<1>use="false"',

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from core.paths import DATA
 from sqx.projects import retire
+from typing import TypedDict
 
 # The top-level AlgoData trees that nest a subfolder per project name. Shared or reference
 # data (bars, barsDerived, spread, templates, ledger, projectsBackup, cache, snapshots, logs,
@@ -21,7 +22,15 @@ def _folder_size(p: Path) -> float:
     return sum(f.stat().st_size for f in p.rglob("*") if f.is_file()) / 1e6
 
 
-def find(name: str) -> dict:
+class Traces(TypedDict):
+    """Where a project lives: the install holding it and its AlgoData folders."""
+
+    role: str | None
+    folders: list[tuple[Path, float]]
+    mb: float
+
+
+def find(name: str) -> Traces:
     """Where a project's traces are: its live install (conductor/custodian only) and its
     AlgoData folders.
 

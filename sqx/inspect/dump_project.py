@@ -9,6 +9,7 @@ from xml.etree import ElementTree
 
 from core.cfx import resolve
 from sqx.inspect import project_map
+from core.xmlget import attr
 
 
 def build(project: str) -> str:
@@ -24,7 +25,7 @@ def build(project: str) -> str:
     with zipfile.ZipFile(path) as z:
         cfg = ElementTree.fromstring(z.read("config.xml"))
         tasks = cfg.findall("Tasks/Task")
-        task_xml = {i: ElementTree.fromstring(z.read(t.get("taskXMLFile")))
+        task_xml = {i: ElementTree.fromstring(z.read(attr(t, "taskXMLFile")))
                     for i, t in enumerate(tasks, 1)}
 
     flow = project_map.databank_flow(cfg, task_xml)

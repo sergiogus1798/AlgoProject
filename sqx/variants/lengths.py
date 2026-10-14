@@ -6,6 +6,8 @@ from pathlib import Path
 import yaml
 
 from sqx.variants.build import rewrite
+from core.xmlget import hit
+from typing import Any
 
 TABLE = Path(__file__).with_name("lengths.yaml")
 PERIOD, SHIFT = "ParamTypePeriod", "ParamTypeShift"
@@ -22,14 +24,14 @@ CUSTOM = "CBlock_"
 MAIN = ("0", "Any")
 
 
-def table() -> dict:
+def table() -> dict[str, Any]:
     """The reviewed rulings of lengths.yaml: custom block to parameter key to its ruling."""
     return yaml.safe_load(TABLE.read_text(encoding="utf-8"))
 
 
 def kinds(portfolio: str) -> dict[str, str]:
     """Every variable's `<paramType>` as SQX wrote it; empty for a file older than the field."""
-    return {rewrite.FIELD["name"].search(b).group(1): (KIND.search(b) or [None, ""])[1]
+    return {hit(rewrite.FIELD["name"].search(b)).group(1): (m.group(1) if (m := KIND.search(b)) else "")
             for b in rewrite.VARIABLE.findall(portfolio)}
 
 

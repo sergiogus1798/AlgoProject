@@ -3,6 +3,7 @@
 import re
 import zipfile
 from pathlib import Path
+from core.xmlget import hit
 
 PORTFOLIO = "strategy_Portfolio.xml"
 SETTINGS = "settings.xml"
@@ -37,7 +38,7 @@ def declared(portfolio: str) -> dict[str, str]:
         Variable name to `int`, `double` or `boolean`. The type decides how a value is
         written back: `67.0` into an int parameter is not the same file as `67`.
     """
-    return {FIELD["name"].search(b).group(1): FIELD["type"].search(b).group(1)
+    return {hit(FIELD["name"].search(b)).group(1): hit(FIELD["type"].search(b)).group(1)
             for b in VARIABLE.findall(portfolio)}
 
 
@@ -52,7 +53,7 @@ def values(portfolio: str) -> dict[str, str]:
         reference the variable by name, so rewriting `<value>` rewrites the rule.
         `settings.xml` carries no parameter names at all.
     """
-    return {FIELD["name"].search(b).group(1): FIELD["value"].search(b).group(1)
+    return {hit(FIELD["name"].search(b)).group(1): hit(FIELD["value"].search(b)).group(1)
             for b in VARIABLE.findall(portfolio)}
 
 
@@ -85,7 +86,7 @@ def set_values(portfolio: str, wanted: dict[str, float]) -> str:
         silent miss is failure mode 3 of this module: the manifest would claim a
         combination the file does not contain, and nothing downstream could tell.
     """
-    types, hit = declared(portfolio), set()
+    types, seen = declared(portfolio), set()
 
     def replace(match: re.Match) -> str:
         """One variable block, with its value swapped when the tuple names it.
@@ -97,15 +98,15 @@ def set_values(portfolio: str, wanted: dict[str, float]) -> str:
             The block, rewritten or untouched.
         """
         block = match.group(0)
-        name = FIELD["name"].search(block).group(1)
+        name = hit(FIELD["name"].search(block)).group(1)
         if name not in wanted:
             return block
-        hit.add(name)
+        seen.add(name)
         return FIELD["value"].sub(f"<value>{_format(wanted[name], types[name])}</value>",
                                   block, count=1)
 
     out = VARIABLE.sub(replace, portfolio)
-    missing = set(wanted) - hit
+    missing = set(wanted) - seen
     if missing:
         raise KeyError(f"not variables of this strategy: {sorted(missing)}")
     return out

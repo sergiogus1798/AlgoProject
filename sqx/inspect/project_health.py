@@ -8,6 +8,7 @@ import zipfile
 from pathlib import Path
 
 from core.paths import MASTER
+from core.xmlget import hit
 
 TASK_REF = re.compile(r'taskXMLFile="([^"]+)"')
 VERSION = re.compile(r'version="([0-9]+\.[0-9]+)"')
@@ -81,7 +82,7 @@ def version_of(cfx: Path) -> str:
         The version attribute of config.xml, e.g. "142.2399".
     """
     with zipfile.ZipFile(cfx) as z:
-        return VERSION.search(z.read("config.xml").decode("utf-8", "replace")).group(1)
+        return hit(VERSION.search(z.read("config.xml").decode("utf-8", "replace"))).group(1)
 
 
 def report(install: Path) -> list[dict]:

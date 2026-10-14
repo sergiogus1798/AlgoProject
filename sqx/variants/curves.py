@@ -23,7 +23,7 @@ PLAUSIBLE_TRADES = 3
 _SHARED: dict = {}
 
 
-def _block(start: int) -> tuple[dict, dict]:
+def _block(start: int) -> tuple[dict, dict, dict]:
     """Every result's curve for one block of a leg's files, and which did not reconcile.
 
     Args:
@@ -63,7 +63,7 @@ def _block(start: int) -> tuple[dict, dict]:
     return {m: pd.DataFrame(c) for m, c in found.items()}, off, implausible
 
 
-def leg_curves(folder: Path, keys: dict) -> dict:
+def leg_curves(folder: Path, keys: dict[str, str]) -> dict[str, tuple[pd.DataFrame, list[str], list[str]]]:
     """Every result of one leg: its cumulative curves and the variants that did not reconcile.
 
     Args:
@@ -80,7 +80,7 @@ def leg_curves(folder: Path, keys: dict) -> dict:
     files = sorted(folder.glob("*.sqx"))
     _SHARED.update(files=files, keys=keys)
     parts = dict(fanout.run(_block, {i: BLOCK for i in range(0, len(files), BLOCK)},
-                            os.cpu_count()))
+                            os.cpu_count() or 1))
     out = {}
     for market in keys:
         frames = [parts[i][0][market] for i in sorted(parts) if not parts[i][0][market].empty]
@@ -90,7 +90,7 @@ def leg_curves(folder: Path, keys: dict) -> dict:
                        [v for i in sorted(parts) for v in parts[i][2][market]])
     return out
 
-def markets_of(folder: Path) -> list[str]:
+def markets_of(folder: Path) -> dict[str, str]:
     """Which results this leg's .sqx carry, main first and one per cross-check market.
 
     Args:

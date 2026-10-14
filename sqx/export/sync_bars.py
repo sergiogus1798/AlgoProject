@@ -11,6 +11,7 @@ from core import barstore, exportdrv, manifest
 from core.assetdata import symbols
 from core.assetmarkets import markets
 from core.paths import DATA, bar_source
+from core.barstore import BarEntry
 
 # Column positions of `-symbol action=list`: name, base symbol, resolution, timezone,
 # date from, date to, days, bars. The rest is the data source and the category.
@@ -51,7 +52,7 @@ def wanted() -> list[str]:
     return sorted(feeds)
 
 
-def stale(feeds: list[str], sqx: dict[str, dict], held: dict[str, dict]) -> list[str]:
+def stale(feeds: list[str], sqx: dict[str, dict], held: dict[str, BarEntry]) -> list[str]:
     """Which feeds have to be pulled from SQX.
 
     Args:

@@ -9,6 +9,7 @@ import pandas as pd
 
 from core import manifest, tradestore
 from core.paths import export_dir
+from typing import cast
 
 
 def remove(source: Path, into: Path | None, names: list[str]) -> tuple[int, list[str]]:
@@ -47,10 +48,10 @@ def _trimmed(frame: pd.DataFrame, kept: set[str]) -> pd.DataFrame | None:
     dropped strategy had, e.g. `Ticket`, would not exist in a fresh pack). Row order is the
     export's: strategies by sorted file name, each one's trades in file order.
     """
-    sub = frame[frame["strategy"].isin(kept)].reset_index(drop=True)
+    sub = cast("pd.DataFrame", frame[frame["strategy"].isin(list(kept))].reset_index(drop=True))
     for c in sub.columns:
-        col = sub[c]
-        if str(col.dtype) == "float64" and (col.isna().all() or (col.dropna() % 1 == 0).all()):
+        col = cast("pd.Series", sub[c])
+        if str(col.dtype) == "float64" and (col.isna().all() or (col.dropna() % 1 == 0).all()):  # pyright: ignore[reportAttributeAccessIssue]  # pandas stub: Series % int typed as bool
             return None
         if c in tradestore.CATEGORICAL and isinstance(col.dtype, pd.CategoricalDtype):
             sub[c] = col.cat.remove_unused_categories()

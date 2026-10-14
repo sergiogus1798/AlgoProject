@@ -17,6 +17,8 @@ from sqx.projects.databanks import set_databank
 from sqx.projects.perturbations import OUT_OF_SAMPLE
 from sqx.projects.setups import bounds, set_costs
 from sqx.projects.stage import own
+from core.xmlget import hit, rx
+from typing import Any, TypedDict
 
 CHECK = "RetestOnAdditionalMarkets"
 
@@ -34,7 +36,7 @@ def retitle(config: str, member: str, title: str) -> str:
         harvest reads the three databanks by, so it is written rather than assumed: a clone
         arrives carrying whatever the donor called its retest tasks.
     """
-    tag = re.search(rf'<Task\b[^>]*taskXMLFile="{re.escape(member)}"[^>]*/>', config).group(0)
+    tag = rx(rf'<Task\b[^>]*taskXMLFile="{re.escape(member)}"[^>]*/>', config).group(0)
     named = re.sub(r'title="[^"]*"', f'title="{title}"', tag)
     return config.replace(tag, re.sub(r'active="[^"]*"', 'active="true"', named), 1)
 
@@ -141,8 +143,16 @@ def declare(config: str, names: list[str]) -> str:
     return config.replace("</Databanks>", new + "  </Databanks>", 1)
 
 
+class Configured(TypedDict):
+    """What `configure` set on the WFC tasks."""
+
+    project: str | None
+    input: str
+    tasks: list[dict[str, Any]]
+
+
 def configure(cfx: Path, symbol: str, timeframe: str, members_in_order: list[str],
-              markets: bool = True) -> dict:
+              markets: bool = True) -> Configured:
     """Write the three legs of the WFC/CSCV retest into one custom project.
 
     Args:
@@ -210,7 +220,7 @@ def main() -> None:
     with zipfile.ZipFile(a.cfx) as z:
         config = z.read("config.xml").decode("utf-8")
     members = (a.tasks.split(",") if a.tasks else
-               [member_of(config, t["title"]) for t in doctrine()["wfc"]["tasks"]])
+               [hit(member_of(config, t["title"])) for t in doctrine()["wfc"]["tasks"]])
     done = configure(a.cfx, a.symbol, a.timeframe, members, not a.no_markets)
     staged = own(a.cfx, "wfc")
     if a.json:

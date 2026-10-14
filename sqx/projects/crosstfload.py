@@ -19,6 +19,8 @@ from sqx.projects.stage import titles
 from sqx.projects.wfc import declare
 from sqx.projects.workflow import CROSSTF
 from sqx.variants import scale
+from core.xmlget import hit
+from typing import Any, TypedDict
 
 # A sibling as `sqx.variants.scale` names it, and as SQX renames a second copy of it: «(1)».
 SIBLING = re.compile(r"_Scaled[MHD]\d+(\(\d+\))?$")
@@ -70,7 +72,7 @@ def refill(folder: Path, files: list[Path]) -> int:
 
 
 def load_input(project: str, role: str, day: str, cfx: Path | None = None,
-               folder: Path | None = None, targets: list[str] | None = None) -> dict:
+               folder: Path | None = None, targets: list[str] | None = None) -> dict[str, Any]:
     """Step 10.5: scale the Cross Market survivors, wire the CrossTF task, fill CrossTF_Input.
 
     Args:
@@ -98,7 +100,7 @@ def load_input(project: str, role: str, day: str, cfx: Path | None = None,
     if not mothers:
         raise SystemExit(f"{source_of} no tiene ningún .sqx: corre antes el Cross Market "
                          "(paso 9) y su corte (paso 10), o da una carpeta con madres")
-    task = members[member_of(members["config.xml"].decode("utf-8"), CROSSTF["title"])]
+    task = members[hit(member_of(members["config.xml"].decode("utf-8"), CROSSTF["title"]))]
     source = crosstf.main_chart(task.decode("utf-8"))[1]
     targets = [t for t in doctrine()["crosstf"]["timeframes"][source]
                if targets is None or t in targets]
@@ -123,7 +125,14 @@ def load_input(project: str, role: str, day: str, cfx: Path | None = None,
             "unverified": int((frame["unverified"] != "").sum())}
 
 
-def load_mothers(project: str, role: str, cfx: Path | None = None) -> dict:
+class Mothers(TypedDict):
+    """How many mothers were copied to CrossTF_Mothers and how many siblings stayed."""
+
+    mothers: int
+    siblings: int
+
+
+def load_mothers(project: str, role: str, cfx: Path | None = None) -> Mothers:
     """Before step 13: the mothers CrossTF kept, without their siblings, into CrossTF_Mothers.
 
     Args:

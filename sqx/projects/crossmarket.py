@@ -195,6 +195,7 @@ def main() -> None:
     with zipfile.ZipFile(a.cfx) as z:
         members = {n: z.read(n) for n in z.namelist()}
     a.task = a.task or member_of(members["config.xml"].decode("utf-8"), TITLE)
+    assert a.task is not None
     text, used, blocked, silenced = set_markets(members[a.task].decode("utf-8"), a.symbol,
                                                a.timeframe, categories=cats)
     if blocked and not (a.skip_undeclared and used):

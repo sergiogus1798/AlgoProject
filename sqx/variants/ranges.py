@@ -10,6 +10,7 @@ import yaml
 from core import assetdata, barstore
 from sqx.variants import lengths
 from sqx.variants.build import rewrite
+from typing import Any, cast
 
 TABLE = Path(__file__).with_name("ranges.yaml")
 BAR, WINDOW, OTHER, UNVERIFIED = "bar", "window", "other", "unverified"
@@ -26,7 +27,7 @@ FIXED = ("FixedValue", "PctValue")
 LITERAL = "ATRBasedValue.Value"
 
 
-def table() -> dict:
+def table() -> dict[str, Any]:
     """The reviewed rulings of ranges.yaml: block to parameter key to its measure."""
     return yaml.safe_load(TABLE.read_text(encoding="utf-8"))
 
@@ -140,7 +141,7 @@ def atr(bars: pd.DataFrame, period: int) -> pd.Series:
     prev = bars["Close"].shift()
     true_range = pd.concat([bars["High"] - bars["Low"], (bars["High"] - prev).abs(),
                             (bars["Low"] - prev).abs()], axis=1).max(axis=1)
-    return true_range.ewm(alpha=1 / period, adjust=False).mean()
+    return cast("pd.Series", true_range.ewm(alpha=1 / period, adjust=False).mean())
 
 
 def ratio(mother: pd.DataFrame, sibling: pd.DataFrame, period: int, scaled: int) -> float:
@@ -177,6 +178,6 @@ def measured(symbol: str, source: str, target: str, period: int, scaled: int) ->
     def bars(timeframe: str) -> pd.DataFrame:
         """The asset's bars on one timeframe, build through oos1."""
         frame = barstore.read(data["sqx_symbol"], timeframe)
-        return frame[(frame.index >= start) & (frame.index < end)]
+        return cast("pd.DataFrame", frame[(frame.index >= start) & (frame.index < end)])
 
     return ratio(bars(source), bars(target), period, scaled)

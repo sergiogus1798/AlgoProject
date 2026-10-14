@@ -3,6 +3,7 @@
 
 import re
 from pathlib import Path
+from core.xmlget import rx, hit
 
 BUILDMODE_MODEL = Path(__file__).with_name("buildmode_model.xml")
 BUILDMODE = re.compile(r"<BuildMode\b.*?</BuildMode>", re.S)
@@ -115,10 +116,10 @@ def set_money_management(text: str, mm: dict) -> str:
         applied. This has to be identical in every task of a project: return and drawdown
         are sizing-dependent, so an IS and an OOS sized differently cannot be compared.
     """
-    section = re.search(r"<MoneyManagement>.*?</MoneyManagement>", text, re.S).group(0)
+    section = rx(r"<MoneyManagement>.*?</MoneyManagement>", text, re.S).group(0)
     out = re.sub(r'(<Method type="(\w+)"[^>]*?)use="[^"]*"',
                  lambda m: f'{m.group(1)}use="{str(m.group(2) == mm["method"]).lower()}"', section)
-    chosen = re.search(rf'<Method type="{mm["method"]}".*?</Method>', out, re.S).group(0)
+    chosen = rx(rf'<Method type="{mm["method"]}".*?</Method>', out, re.S).group(0)
     fixed = chosen
     for key, value in mm["params"].items():
         fixed = re.sub(rf'(<Param key="{key}"[^>]*>)[^<]*', rf"\g<1>{value}", fixed)
@@ -163,7 +164,7 @@ def set_crosschecks(text: str, cc: dict, spread: float, enabled: list) -> str:
     return text.replace(found.group(0), out, 1)
 
 
-def set_genetic(text: str) -> bool | str:
+def set_genetic(text: str) -> str:
     """Replace the genetic settings with the owner's model project, verbatim.
 
     Args:
@@ -179,8 +180,8 @@ def set_genetic(text: str) -> bool | str:
     found = BUILDMODE.search(text)
     if not found:
         return text
-    model = BUILDMODE.search(BUILDMODE_MODEL.read_text(encoding="utf-8")).group(0)
-    mode = re.search(r'generationType="[^"]*"', found.group(0)).group(0)
+    model = hit(BUILDMODE.search(BUILDMODE_MODEL.read_text(encoding="utf-8"))).group(0)
+    mode = rx(r'generationType="[^"]*"', found.group(0)).group(0)
     model = re.sub(r'generationType="[^"]*"', mode, model, count=1)
     return BUILDMODE.sub(lambda _: model, text, count=1)
 

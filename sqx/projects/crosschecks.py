@@ -3,6 +3,7 @@
 
 import re
 from xml.etree import ElementTree
+from core.xmlget import el, rx
 
 DELETE_FAILED = re.compile(r"<DeleteFailedStrategies>\w+")
 # Never switched on, in any project or task (owner, 2026-10-11).
@@ -21,7 +22,7 @@ def member_of(config: str, title: str) -> str | None:
         GUI shows and what a clone keeps; the member name is an index SQX assigns and
         changes between projects, so nothing here addresses a task by member.
     """
-    tag = next((t for t in ElementTree.fromstring(config).find("Tasks")
+    tag = next((t for t in el(ElementTree.fromstring(config).find("Tasks"))
                 if t.get("title") == title), None)
     return tag.get("taskXMLFile") if tag is not None else None
 
@@ -39,7 +40,7 @@ def active(config: str, title: str, on: bool) -> str:
         left in place and switched off rather than deleted: the decision is reversible,
         and a project missing a task looks like a different project.
     """
-    tag = re.search(rf'<Task\b[^>]*title="{re.escape(title)}"[^>]*/>', config).group(0)
+    tag = rx(rf'<Task\b[^>]*title="{re.escape(title)}"[^>]*/>', config).group(0)
     return config.replace(tag, re.sub(r'active="[^"]*"', f'active="{str(on).lower()}"', tag), 1)
 
 
@@ -94,6 +95,7 @@ def recommended(block: str) -> str:
         inflates the run for nothing (owner's default, 2026-09-22).
     """
     found = re.search(r"<WhatToParametrize\b.*?</WhatToParametrize>", block, re.S)
+    assert found is not None
     inner = re.sub(r'type="\d+"', 'type="0"', found.group(0), count=1)
     inner = re.sub(r"<Recommended>(?:true|false)</Recommended>",
                    "<Recommended>true</Recommended>", inner, count=1)
@@ -119,6 +121,7 @@ def others_on(text: str, keep: str) -> list[str]:
         nobody asked for and writes a databank nobody can attribute.
     """
     block = re.search(r"<CrossChecks\b.*?</CrossChecks>", text, re.S)
+    assert block is not None
     return [child.tag for child in ElementTree.fromstring(block.group(0))
             if child.get("use") == "true" and child.tag != keep]
 

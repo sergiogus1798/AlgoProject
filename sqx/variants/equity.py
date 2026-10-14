@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from sqx.variants import legs as legmod
 from sqx.variants.curves import PLAUSIBLE_TRADES, leg_curves, markets_of
+from typing import Any, TypedDict, cast
 
 SCHEMA = pa.schema([("date", pa.timestamp("ns")), ("variant_id", pa.string()),
                     ("pnl", pa.float64()), ("market", pa.string()), ("segment", pa.string())])
@@ -56,7 +57,29 @@ def joined(per_leg: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
 
 
-def harvest(work: Path, legs: list[dict], say: Callable[[int, str], None]) -> dict:
+def _day(index: pd.Index, i: int) -> str:
+    """The calendar day of one position of a date index."""
+    return str(index[i].date())  # pyright: ignore[reportAttributeAccessIssue]  # pandas stub: Index items are untyped; these are Timestamps
+
+
+class Harvest(TypedDict):
+    """What `harvest` writes to `equity.json`: the joined curves' shape and what did not reconcile."""
+
+    n: int
+    days: int
+    windows: dict[str, list[str]]
+    first: str
+    last: str
+    segments: list[str]
+    splits: dict[str, str]
+    markets: list[str]
+    open_at_end: int
+    unreadable: int
+    bytes: int
+    blocks: list[dict[str, Any]]
+
+
+def harvest(work: Path, legs: list[dict], say: Callable[[int, str], None]) -> Harvest:
     """Read all three legs, write the joined curves, and report what did not reconcile.
 
     Args:
@@ -78,8 +101,8 @@ def harvest(work: Path, legs: list[dict], say: Callable[[int, str], None]) -> di
             if cum.empty:
                 continue
             report.append({"segment": leg["segment"], "market": name, "n": cum.shape[1],
-                           "days": cum.shape[0], "first": str(cum.index[0].date()),
-                           "last": str(cum.index[-1].date()), "open_at_end": len(off),
+                           "days": cum.shape[0], "first": _day(cum.index, 0),
+                           "last": _day(cum.index, -1), "open_at_end": len(off),
                            "implausible": len(implausible),
                            "all_off": bool(implausible and len(implausible) == cum.shape[1])})
             if name == legmod.MAIN:
@@ -87,7 +110,7 @@ def harvest(work: Path, legs: list[dict], say: Callable[[int, str], None]) -> di
                 continue
             # One (leg, market) at a time into the file, never all of them in memory:
             # 🔬 2026-09-25, building the 228 M rows before writing peaked at 31.8 GB.
-            rows = daily(cum).stack().rename("pnl").rename_axis(
+            rows = cast("pd.Series", daily(cum).stack()).rename("pnl").rename_axis(
                 ["date", "variant_id"]).reset_index().assign(market=name,
                                                              segment=leg["segment"])
             writer = writer or pq.ParquetWriter(work / "equity_markets.parquet", SCHEMA,
@@ -101,9 +124,9 @@ def harvest(work: Path, legs: list[dict], say: Callable[[int, str], None]) -> di
     return {"n": united.shape[1], "days": united.shape[0],
             # The real span of each leg, measured off its own curves rather than restated
             # from the project: it is what `collect.unions` slices the joined curve by.
-            "windows": {s: [str(d.index[0].date()), str(d.index[-1].date())]
+            "windows": {s: [_day(d.index, 0), _day(d.index, -1)]
                         for s, d in main.items()},
-            "first": str(united.index[0].date()), "last": str(united.index[-1].date()),
+            "first": _day(united.index, 0), "last": _day(united.index, -1),
             "segments": [leg["segment"] for leg in legs],
             # Every boundary, as the first day of each leg after the first. The studies
             # read a boundary from here and never restate one of their own: two files
@@ -135,12 +158,13 @@ def main() -> None:
     done = harvest(a.work, ran["legs"],
                    lambda pct, line: print(f"PROGRESS {5 + pct * 85 // 100} {line}",
                                            flush=True))
-    done["wall_s"] = round(time.time() - started, 1)
-    (a.work / "equity.json").write_text(json.dumps(done, indent=2), encoding="utf-8")
+    wall_s = round(time.time() - started, 1)
+    (a.work / "equity.json").write_text(json.dumps({**done, "wall_s": wall_s}, indent=2),
+                                        encoding="utf-8")
 
     print(f"PROGRESS 100 {done['n']} variantes x {done['days']} dias unidos "
           f"({done['first']} a {done['last']}), mercados: "
-          f"{', '.join(done['markets']) or 'ninguno'}, {done['wall_s']:.0f} s", flush=True)
+          f"{', '.join(done['markets']) or 'ninguno'}, {wall_s:.0f} s", flush=True)
     for row in done["blocks"]:
         print(f"  {row['segment']:<6} {row['market']:<24} {row['n']:>5} curvas  "
               f"{row['first']} a {row['last']}  {row['open_at_end']} con posicion abierta"

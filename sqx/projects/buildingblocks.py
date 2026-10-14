@@ -11,6 +11,7 @@ from sqx.projects import cfxio
 from sqx.blocks import palette
 from sqx.blocks.taxonomy import flat, read
 from sqx.projects import buildcensus
+from typing import Any, TypedDict
 
 BLOCKS = re.compile(r"<BuildingBlocks>.*?</BuildingBlocks>", re.S)
 BLOCK = re.compile(r'<Block key="([^"]+)" weight="\d+" use="(?:true|false)"([^>]*)>')
@@ -32,6 +33,14 @@ def union(names: list[str]) -> dict[str, dict]:
             if key not in out or (r["use"], r["weight"]) > (out[key]["use"], out[key]["weight"]):
                 out[key] = r
     return out
+
+
+class Applied(TypedDict):
+    """A palette written into a project: its name, the tasks touched and how wide it leaves the search."""
+
+    palette: str
+    tasks: Any
+    summary: dict[str, Any]
 
 
 def rewrite(task: str, resolved: dict[str, dict]) -> tuple[str, dict]:
@@ -67,11 +76,12 @@ def rewrite(task: str, resolved: dict[str, dict]) -> tuple[str, dict]:
                 f'use="{"true" if use else "false"}"{m.group(2)}>')
 
     section = BLOCKS.search(task)
+    assert section is not None
     body = BLOCK.sub(one, section.group(0))
     return task[:section.start()] + body + task[section.end():], got
 
 
-def apply(cfx: Path, name: str) -> dict:
+def apply(cfx: Path, name: str) -> Applied:
     """Write palette `name` into every Build task of a project, install stopped (hard rule 4).
 
     Args:
@@ -98,7 +108,7 @@ def apply(cfx: Path, name: str) -> dict:
     return {"palette": name, "tasks": tasks, "summary": palette.summary(resolved)}
 
 
-def say(got: dict) -> None:
+def say(got: Applied) -> None:
     """Print what one `apply` switched."""
     s = got["summary"]
     for task, n in got["tasks"].items():

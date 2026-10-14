@@ -11,6 +11,8 @@ from xml.etree import ElementTree
 from core.cfx import task_xml, tasks
 from core.paths import MASTER, WORKERS, project_dir
 from core.sqxfile import INNER
+from core.xmlget import attr, el, hit
+from typing import Any
 
 # Item categories that name a real trading block. Operators, brackets and variables are
 # structure: every strategy has them whatever template built it.
@@ -58,7 +60,7 @@ def rules(path: Path) -> ElementTree.Element:
     """
     with zipfile.ZipFile(path) as z:
         inner = next(n for n in z.namelist() if n.endswith(INNER))
-        return ElementTree.fromstring(z.read(inner)).find(".//Rules")
+        return el(ElementTree.fromstring(z.read(inner)).find(".//Rules"))
 
 
 def signature(template: Path) -> set[str]:
@@ -78,9 +80,9 @@ def signature(template: Path) -> set[str]:
         root = ElementTree.fromstring(z.read(next(n for n in z.namelist() if n.endswith(INNER))))
     groups = {g.get("id"): [i.get("key") for i in g.findall("Item")]
               for g in root.iter("Group")}
-    bound = {p.text for p in root.find(".//Rules").iter("Param")
+    bound = {p.text for p in hit(root.find(".//Rules")).iter("Param")
              if p.get("key") == "#Group#" and p.text}
-    return blocks(root.find(".//Rules")) | {groups[g][0] for g in bound
+    return blocks(el(root.find(".//Rules"))) | {hit(groups[g][0]) for g in bound
                                             if len(groups.get(g, [])) == 1}
 
 
@@ -94,10 +96,10 @@ def carried(path: Path) -> set[str]:
         Item keys. A block the builder drew into a hole carries no categoryType, so
         `blocks()` would not see the owner's condition in the very strategies it built.
     """
-    return {i.get("key") for i in rules(path).iter("Item")}
+    return {attr(i, "key") for i in rules(path).iter("Item")}
 
 
-def build_settings(project: str) -> dict:
+def build_settings(project: str) -> dict[str, str] | None:
     """What the project's first Build task says it builds.
 
     Args:
@@ -110,6 +112,7 @@ def build_settings(project: str) -> dict:
     for t in tasks(project):
         if t["type"] == "Build":
             node = task_xml(project, t["file"]).find("WhatToBuild/StrategyType")
+            assert node is not None
             return dict(node.attrib)
     return None
 
@@ -133,7 +136,7 @@ def databanks(project: str, install: Path = MASTER) -> dict[str, list[Path]]:
     return found
 
 
-def verdict(project: str, sample: int, seed: int, install: Path = MASTER) -> dict:
+def verdict(project: str, sample: int, seed: int, install: Path = MASTER) -> dict[str, Any]:
     """Whether one project's strategies on disk carry its template's blocks.
 
     Args:
