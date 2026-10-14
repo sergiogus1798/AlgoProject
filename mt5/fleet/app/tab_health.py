@@ -29,8 +29,9 @@ class HealthTab(QWidget):
         self.errors = widgets.label("", "notes", True)
         scroll, _ = widgets.page([self.empty, self.strip, widgets.label("Terminales", "section"), self.table,
                                   self.errors], LEGEND)
-        QVBoxLayout(self).addWidget(scroll)
-        self.layout().setContentsMargins(0, 0, 0, 0)
+        box = QVBoxLayout(self)
+        box.addWidget(scroll)
+        box.setContentsMargins(0, 0, 0, 0)
 
     def paint(self, rows: list[dict]) -> None:
         """Show the health of these rows' terminals and of the VPS."""

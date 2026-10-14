@@ -1,5 +1,7 @@
 """Which prop firms the bridge can verify on: their saved MT5 account and their symbol names."""
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -20,7 +22,7 @@ def label(firm: str) -> str:
     return LABEL.get(firm, firm)
 
 
-def config(overrides: list[str] = ()) -> dict:
+def config(overrides: Sequence[str] = ()) -> dict[str, Any]:
     """config.yaml with the ledger's thresholds filled in, then the --set overrides."""
     cfg = thresholds.fill(yaml.safe_load(CONFIG.read_text(encoding="utf-8")))
     return study_config.apply(cfg, list(overrides))

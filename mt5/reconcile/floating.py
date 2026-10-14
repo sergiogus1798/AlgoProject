@@ -30,5 +30,5 @@ def rebuild(trades: pd.DataFrame, bars: pd.DataFrame | None, point_value: float)
     seen = (closed.notna() & (opened >= bars.index[0])
             & (closed <= bars.index[-1] + pd.Timedelta(minutes=1)) & (b > a)).to_numpy()
     if seen.any():
-        out.loc[seen] = excursions.rebuild(trades[seen], bars, point_value)
+        out.loc[seen] = excursions.rebuild(trades[seen], bars, point_value)  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
     return out

@@ -1,4 +1,6 @@
 """The optional second MT5 pass on real ticks: its backtest, its verdict beside the chosen model's, and the merged tab with three curves per firm."""
+from typing import Any
+
 import pandas as pd
 
 from core.study import result as study_result
@@ -54,7 +56,7 @@ def keep(pieces: dict, summaries: dict, firm: str, piece: dict, report: str) -> 
         summaries[firm] = {**piece["summary"], "report": report}
 
 
-def chart(pieces: dict[str, dict], model: str) -> dict:
+def chart(pieces: dict[str, dict], model: str) -> dict[str, Any]:
     """The merged P&L chart; with a real-ticks piece, three curves per firm.
 
     Args:
@@ -80,7 +82,7 @@ def chart(pieces: dict[str, dict], model: str) -> dict:
     return {**block, "series": series}
 
 
-def tab(params: dict, pieces: dict[str, dict], model: str) -> dict:
+def tab(params: dict, pieces: dict[str, dict], model: str) -> dict[str, Any]:
     """The Verificación tab: parameters, the merged chart, the side-by-side trades, each verdict.
 
     Args:

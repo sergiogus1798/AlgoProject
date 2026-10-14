@@ -81,8 +81,8 @@ def rows_of(run: Path, project: str = "", finalist: dict | None = None) -> list[
 def record(rows: list[dict]) -> None:
     """Append rows to their firms' registers. Nothing is ever rewritten: a second verdict
     for the same strategy is a new line, and `read` keeps the first."""
-    for firm, mine in pd.DataFrame(rows, columns=list(COLUMNS)).groupby("firm", sort=False):
-        out = path(firm)
+    for firm, mine in pd.DataFrame(rows, columns=list(COLUMNS)).groupby("firm", sort=False):  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
+        out = path(firm)  # pyright: ignore[reportArgumentType]  # pandas stubs: groupby key/index is Hashable
         out.parent.mkdir(parents=True, exist_ok=True)
         mine.to_csv(out, mode="a", header=not out.exists(), index=False)
 
@@ -91,7 +91,7 @@ def history(firm: str) -> pd.DataFrame:
     """Every verdict ever recorded for one firm, in the order written; text columns.
     An empty frame for a firm nobody has verified on yet."""
     if not path(firm).exists():
-        return pd.DataFrame(columns=list(COLUMNS), dtype=str)
+        return pd.DataFrame(columns=list(COLUMNS), dtype=str)  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
     return pd.read_csv(path(firm), dtype=str, keep_default_na=False)
 
 
@@ -105,7 +105,7 @@ def read(firm: str) -> pd.DataFrame:
     """
     key = ["identity", "window_from", "window_to", "model"]
     first = history(firm).sort_values("verified_on", kind="stable").groupby(key).head(1)
-    return first[first["verdict"] == VALID].reset_index(drop=True)
+    return first[first["verdict"] == VALID].reset_index(drop=True)  # pyright: ignore[reportReturnType]  # pandas/numpy stubs lose the type through indexing
 
 
 def rebuild(runs: Path | None = None) -> list[dict]:

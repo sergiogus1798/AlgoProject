@@ -1,5 +1,6 @@
 """Read a Strategy Tester HTML report: its summary figures, its deals, and the trades they make."""
 import re
+from typing import Any
 from pathlib import Path
 
 import pandas as pd
@@ -39,7 +40,7 @@ def read(path: Path) -> tuple[dict, pd.DataFrame]:
         for label, value in zip(cells, cells[1:]):
             if label.endswith(":") and value and not value.endswith(":"):
                 summary.setdefault(label[:-1], value)
-    frame = pd.DataFrame(deals, columns=DEAL_COLUMNS)
+    frame = pd.DataFrame(deals, columns=pd.Index(DEAL_COLUMNS))
     frame["Time"] = pd.to_datetime(frame["Time"], format="mixed")
     for col in NUMERIC:
         frame[col] = frame[col].map(_number)
@@ -58,6 +59,7 @@ def trades(deals: pd.DataFrame) -> pd.DataFrame:
     if (deals["Direction"] == "in/out").any():
         raise SystemExit("the report has in/out (reversal) deals: pairing them is not built")
     rows, open_ = [], {}
+    d: Any
     for d in deals[deals["Direction"].isin(["in", "out"])].itertuples(index=False):
         if d.Direction == "in":
             if d.Symbol in open_:
@@ -75,11 +77,11 @@ def trades(deals: pd.DataFrame) -> pd.DataFrame:
                          "Size": t["Size"], "Close time": d.Time,
                          "Close price": t["value"] / t["Size"], "Profit/Loss": round(t["pl"], 2)})
             del open_[d.Symbol]
-    return pd.DataFrame(rows, columns=["Type", "Open time", "Open price", "Size", "Close time",
-                                       "Close price", "Profit/Loss"])
+    return pd.DataFrame(rows, columns=pd.Index(["Type", "Open time", "Open price", "Size", "Close time",
+                                                    "Close price", "Profit/Loss"]))
 
 
-def start_check(summary: dict, trades: pd.DataFrame, log: str, expert: str, asked: str) -> dict:
+def start_check(summary: dict, trades: pd.DataFrame, log: str, expert: str, asked: str) -> dict[str, Any]:
     """What the tester really covered, beside what was asked. No floor: the quality is reported only.
 
     Args:

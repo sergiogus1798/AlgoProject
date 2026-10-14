@@ -30,8 +30,9 @@ class DeployTab(QWidget):
         super().__init__()
         self.notes, self.table = widgets.label("", "notes", True), widgets.table(COLUMNS, "Avisos")
         scroll, _ = widgets.page([self.notes, self.table], LEGEND)
-        QVBoxLayout(self).addWidget(scroll)
-        self.layout().setContentsMargins(0, 0, 0, 0)
+        box = QVBoxLayout(self)
+        box.addWidget(scroll)
+        box.setContentsMargins(0, 0, 0, 0)
 
     def paint(self, rows: list[dict], now: int) -> None:
         """Show every account's deployment as of `now` (UTC epoch)."""

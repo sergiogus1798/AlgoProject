@@ -5,6 +5,7 @@ import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from core.paths import MT5_DATA
 from mt5 import report, wine
@@ -31,7 +32,7 @@ def _ini(expert: str, symbol: str, timeframe: str, start: str, end: str, model: 
 
 def start(expert: str, symbol: str, timeframe: str, start_date: str, end_date: str,
           model: str, deposit: float, leverage: int, account: dict | None = None,
-          tag: str = "") -> dict:
+          tag: str = "") -> dict[str, Any]:
     """Launch one backtest and return at once; the terminal shuts itself down when it ends.
 
     Args:
@@ -93,7 +94,7 @@ def _alive(pid: int) -> bool:
     return True
 
 
-def collect(run: str) -> dict:
+def collect(run: str) -> dict[str, Any]:
     """The result of a run: still running, failed, or its summary with the trades saved to parquet.
 
     Args:

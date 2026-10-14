@@ -1,4 +1,6 @@
 """The fleet as rows: each account's beat, its floors and the light the window paints."""
+from collections.abc import Sequence
+
 from mt5.fleet.app import floors, history, progress, read, risk, rules
 
 SILENT, RED, YELLOW, GREEN, UNKNOWN = "silent", "red", "yellow", "green", "unknown"
@@ -8,7 +10,7 @@ _SWITCHES = [("connected", "Desconectado"), ("autotrading", "AutoTrading apagado
              ("account_trade_expert", "Cuenta sin permiso para EAs")]
 
 
-def reasons(beat: dict, floor: dict | None, now: int, extra: list[tuple[str, str]] = ()) -> list[tuple[str, str]]:
+def reasons(beat: dict, floor: dict | None, now: int, extra: Sequence[tuple[str, str]] = ()) -> list[tuple[str, str]]:
     """Every reason an account is not green, worst first, as (level, Spanish text).
 
     Args:
@@ -34,7 +36,7 @@ def reasons(beat: dict, floor: dict | None, now: int, extra: list[tuple[str, str
     return sorted(out, key=lambda r: ORDER.index(r[0]))
 
 
-def light(beat: dict, floor: dict | None, now: int, extra: list[tuple[str, str]] = ()) -> tuple[str, str]:
+def light(beat: dict, floor: dict | None, now: int, extra: Sequence[tuple[str, str]] = ()) -> tuple[str, str]:
     """An account's light and the Spanish words beside it: its worst reason, or green when it has none."""
     found = reasons(beat, floor, now, extra)
     if found:

@@ -3,6 +3,7 @@ import argparse
 import re
 import shutil
 from pathlib import Path
+from typing import Any
 
 from core.paths import MT5_DATA
 from mt5.newsfilter.firms import FIRMS
@@ -43,7 +44,7 @@ def build(firm_key: str, paths: list[Path]) -> list[dict]:
     return rows
 
 
-def compile_all(firm_key: str, rows: list[dict]) -> dict:
+def compile_all(firm_key: str, rows: list[dict]) -> dict[str, Any]:
     """Copy both EAs of every row into MQL5/Experts/AlgoProject/<Firm>/ and compile that folder.
 
     Needs the MT5 terminal closed (metaeditor.compile_path refuses otherwise).

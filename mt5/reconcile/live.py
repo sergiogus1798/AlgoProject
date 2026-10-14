@@ -1,4 +1,6 @@
 """The live side: an account's deals of one week as trades in the project's trade frame, per strategy."""
+from typing import cast
+
 import pandas as pd
 
 from mt5 import live as terminal
@@ -30,7 +32,7 @@ def fetch(account: dict, week: str, spill_days: int) -> list[dict]:
                                    "end": f"{end:%Y-%m-%d %H:%M}"}, account)
     if isinstance(got, dict) and got.get("error"):
         raise SystemExit(f"el terminal no dio el historial de {account['server']}: {got['error']}")
-    return got
+    return cast(list[dict], got)
 
 
 def trades(deals: list[dict]) -> pd.DataFrame:
@@ -52,31 +54,31 @@ def trades(deals: list[dict]) -> pd.DataFrame:
     """
     d = pd.DataFrame(deals)
     if d.empty:
-        return pd.DataFrame(columns=COLUMNS)
+        return pd.DataFrame(columns=COLUMNS)  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
     d = d[d["type"].isin([BUY, SELL])]
-    if d["entry"].isin([INOUT, OUT_BY]).any():
+    if d["entry"].isin([INOUT, OUT_BY]).any():  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]  # pandas/numpy stubs lose the type through indexing
         raise SystemExit("el historial tiene deals de reversión o de cierre por contraria "
                          "(in/out, out by): emparejarlos no está construido")
     rows = []
-    for position, g in d.sort_values("time").groupby("position_id", sort=False):
+    for position, g in d.sort_values("time").groupby("position_id", sort=False):  # pyright: ignore[reportCallIssue]  # pandas/numpy stubs lose the type through indexing
         ins, outs = g[g["entry"] == IN], g[g["entry"] == OUT]
         if ins.empty:                       # opened before the stretch read: not this week's
             continue
         size = float(ins["volume"].sum())
         closed = len(outs) and abs(float(outs["volume"].sum()) - size) < 1e-9
         rows.append({
-            "magic": int(ins["magic"].iloc[0]), "symbol": ins["symbol"].iloc[0],
-            "position": int(position), "Type": "Buy" if ins["type"].iloc[0] == BUY else "Sell",
-            "Open time": pd.to_datetime(int(ins["time"].iloc[0]), unit="s"),
+            "magic": int(ins["magic"].iloc[0]), "symbol": ins["symbol"].iloc[0],  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
+            "position": int(position), "Type": "Buy" if ins["type"].iloc[0] == BUY else "Sell",  # pyright: ignore[reportArgumentType, reportAttributeAccessIssue]  # pandas stubs: groupby key/index is Hashable; pandas/numpy stubs lose the type through indexing
+            "Open time": pd.to_datetime(int(ins["time"].iloc[0]), unit="s"),  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
             "Open price": float((ins["price"] * ins["volume"]).sum() / size), "Size": size,
-            "Close time": pd.to_datetime(int(outs["time"].iloc[-1]), unit="s") if closed
+            "Close time": pd.to_datetime(int(outs["time"].iloc[-1]), unit="s") if closed  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
             else pd.NaT,
             "Close price": float((outs["price"] * outs["volume"]).sum() / size) if closed
             else float("nan"),
             "Profit/Loss": round(float(g[["profit", "commission", "swap", "fee"]].sum().sum()), 2),
             "Commission": float(g["commission"].sum() + g["fee"].sum()),
             "Swap": float(g["swap"].sum())})
-    out = pd.DataFrame(rows, columns=COLUMNS)
+    out = pd.DataFrame(rows, columns=COLUMNS)  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
     return out.astype({"Open time": "datetime64[ns]", "Close time": "datetime64[ns]"}
                       ).sort_values("Open time").reset_index(drop=True)
 
@@ -96,7 +98,7 @@ def by_strategy(frame: pd.DataFrame, firm: str, register: pd.DataFrame
         registered strategy of the firm has a frame, empty when it did not trade.
     """
     mine = register[register["firm"] == firm]
-    known = {int(r.magic): r.strategy for r in mine.itertuples()}
+    known = {int(r.magic): r.strategy for r in mine.itertuples()}  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
     split = {name: frame[frame["magic"] == magic].reset_index(drop=True)
              for magic, name in known.items()}
-    return split, frame[~frame["magic"].isin(list(known))].reset_index(drop=True)
+    return split, frame[~frame["magic"].isin(list(known))].reset_index(drop=True)  # pyright: ignore[reportReturnType]  # pandas/numpy stubs lose the type through indexing

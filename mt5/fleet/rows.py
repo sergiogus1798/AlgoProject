@@ -1,12 +1,13 @@
 """The collector's pure parts: a beat's history row, the skip test, and the floating MAE/MFE ledger."""
 
 from datetime import datetime, timezone
+from typing import Any
 
 HISTORY_COLUMNS = ["written_gmt", "server_time", "balance", "equity", "floating", "margin",
                    "connected", "autotrading", "ping_us", "n_positions"]
 
 
-def history_row(beat: dict) -> dict:
+def history_row(beat: dict) -> dict[str, Any]:
     """One minute-history row from a beacon beat."""
     row = {k: beat[k] for k in HISTORY_COLUMNS if k != "n_positions"}
     row["n_positions"] = len(beat["positions"])
@@ -23,7 +24,7 @@ def server_day(beat: dict) -> str:
     return datetime.fromtimestamp(beat["server_time"], timezone.utc).strftime("%Y-%m-%d")
 
 
-def update_excursions(excursions: dict, beat: dict) -> dict:
+def update_excursions(excursions: dict, beat: dict) -> dict[str, Any]:
     """Fold a beat's open positions into the per-ticket floating min and max profit.
 
     Args:

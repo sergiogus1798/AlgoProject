@@ -1,6 +1,7 @@
 """Ask the running MT5 terminal read-only questions through the Windows Python in its Wine prefix."""
 import json
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -11,7 +12,7 @@ QUERY = Path(__file__).resolve().parent / "winside" / "query.py"
 MARK = "@@JSON@@"
 
 
-def ask(verb: str, args: dict | None = None, account: dict | None = None) -> object:
+def ask(verb: str, args: dict | None = None, account: dict | None = None) -> Any:
     """Run one verb of winside/query.py and return its JSON answer.
 
     Args:
@@ -34,7 +35,7 @@ def ask(verb: str, args: dict | None = None, account: dict | None = None) -> obj
     return json.loads(line[len(MARK):])
 
 
-def series(verb: str, symbol: str, start: str, end: str, timeframe: str = "") -> dict:
+def series(verb: str, symbol: str, start: str, end: str, timeframe: str = "") -> dict[str, Any]:
     """Pull bars or ticks for a window into a parquet under MT5_DATA.
 
     Args:

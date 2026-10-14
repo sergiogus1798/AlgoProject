@@ -2,6 +2,7 @@
 import re
 import shutil
 from pathlib import Path
+from typing import Any
 
 from mt5 import wine
 
@@ -14,7 +15,7 @@ def _log(log: Path) -> str:
     return raw.decode("utf-16") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8", "replace")
 
 
-def compile_path(target: Path) -> dict:
+def compile_path(target: Path) -> dict[str, Any]:
     """Compile one .mq5, or every .mq5 of a folder, where it already sits inside MQL5/.
 
     Args:
@@ -51,7 +52,7 @@ def compile_path(target: Path) -> dict:
             "messages": messages[:50], "log": str(log)}
 
 
-def expert(source: Path) -> dict:
+def expert(source: Path) -> dict[str, Any]:
     """Copy an EA source (e.g. saved from SQX as MQL5) into MQL5/Experts/AlgoProject and compile it.
 
     Args:
@@ -70,7 +71,7 @@ def expert(source: Path) -> dict:
             "ex5_exists": target.with_suffix(".ex5").exists()}
 
 
-def sqx_indicators() -> dict:
+def sqx_indicators() -> dict[str, Any]:
     """Copy SQX's MT5 Indicators and Include into the terminal, the project's set over them, and compile.
 
     The project's set (wine.PROJECT_MQL5) goes second, so where both have a file its version wins.

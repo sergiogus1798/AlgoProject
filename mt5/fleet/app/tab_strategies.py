@@ -1,4 +1,6 @@
 """The Estrategias tab: every live magic over all accounts, and the same magic's entries paired across accounts."""
+from typing import cast
+
 from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from mt5.fleet.app import chart, equity, fmt, history, read, strategies, theme, widgets
@@ -70,8 +72,9 @@ class StrategiesTab(QWidget):
         scroll, _ = widgets.page([self.open_head, self.open, self.empty, self.eq_head, controls, self.canvas,
                                   self.curves, self.eq_notes, self.heads[0], self.record, self.heads[1],
                                   self.pairs, self.heads[2], self.lonely], LEGEND)
-        QVBoxLayout(self).addWidget(scroll)
-        self.layout().setContentsMargins(0, 0, 0, 0)
+        box = QVBoxLayout(self)
+        box.addWidget(scroll)
+        box.setContentsMargins(0, 0, 0, 0)
 
     def paint(self, rows: list[dict], now: int) -> None:
         """Show the strategies of these rows as of `now` (UTC epoch)."""
@@ -116,7 +119,7 @@ class StrategiesTab(QWidget):
             for p in beat["positions"]:
                 ex = seen.get(str(p["ticket"]))
                 lines.append((register.get(p["magic"], p["comment"]), [
-                    cell(register.get(p["magic"], p["comment"]), right=False), cell(str(p["magic"])),
+                    cell(register.get(p["magic"], p["comment"]), right=False), cell(str(p["magic"])),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
                     cell(name, right=False), cell(p["symbol"], right=False),
                     cell("Compra" if p["side"] == "buy" else "Venta", right=False), cell(f"{p['volume']:g}"),
                     cell(fmt.clock(p["time"])), signed(p["profit"]),
@@ -156,7 +159,7 @@ class StrategiesTab(QWidget):
         """The chosen strategy's curves for the ticked accounts, their table and the accounts with no history."""
         boxes = [self.picks.itemAt(i).widget() for i in range(self.picks.count())]
         for a, b in zip(self.accounts, boxes):
-            self.checked[a["login"]] = b.isChecked()
+            self.checked[a["login"]] = cast(QCheckBox, b).isChecked()
         pct = self.unit.currentIndex() == 0
         shown = [c for c in equity.curves(self.accounts, self.strategy.currentData())
                  if self.checked.get(c["login"], True)] if self.strategy.count() else []

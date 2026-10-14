@@ -3,6 +3,7 @@ import json
 import os
 import urllib.request
 from pathlib import Path
+from typing import Any
 
 from core.paths import ROOT
 
@@ -11,7 +12,7 @@ CLAUDE_JSON = Path.home() / ".claude.json"
 SERVER = "metatrader5"
 
 
-def endpoint() -> dict:
+def endpoint() -> dict[str, Any]:
     """{url, headers} of the terminal's MCP: $MT5_MCP_URL / $MT5_MCP_TOKEN, else Claude Code's entry."""
     if os.environ.get("MT5_MCP_URL"):
         return {"url": os.environ["MT5_MCP_URL"],
@@ -31,7 +32,7 @@ def _post(cfg: dict, body: dict, session: str | None) -> tuple[str | None, dict 
         return r.headers.get("Mcp-Session-Id"), json.loads(raw) if raw.strip() else None
 
 
-def session() -> dict:
+def session() -> dict[str, Any]:
     """Open an MCP session with the terminal (it must be running); pass the result to call()."""
     cfg = endpoint()
     sid, _ = _post(cfg, {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
@@ -41,7 +42,7 @@ def session() -> dict:
     return {"cfg": cfg, "sid": sid}
 
 
-def call(s: dict, tool: str, args: dict) -> dict:
+def call(s: dict, tool: str, args: dict) -> dict[str, Any]:
     """The JSON a tool answers with.
 
     Args:
@@ -51,4 +52,5 @@ def call(s: dict, tool: str, args: dict) -> dict:
     """
     _, answer = _post(s["cfg"], {"jsonrpc": "2.0", "id": 2, "method": "tools/call",
                                  "params": {"name": tool, "arguments": args}}, s["sid"])
+    assert answer is not None, f"{tool}: the terminal answered an empty body"
     return json.loads(answer["result"]["content"][0]["text"])

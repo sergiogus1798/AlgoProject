@@ -1,4 +1,6 @@
 """How far an account is through its stage: profit against the target, the days counted on the firm's clock, the payout."""
+from typing import Any
+
 import numpy as np
 
 from mt5.fleet.app import floors, fmt, history
@@ -41,7 +43,7 @@ def consistency(days: dict[int, float], stage: dict) -> dict | None:
 
 
 def payouts(rows: list[dict], first_trade: int | None, share: float | None, days: int | None,
-            balance: float, size: float) -> dict:
+            balance: float, size: float) -> dict[str, Any]:
     """The funded stage's payout: the last withdrawal, the next date and what is payable now.
 
     Args:
@@ -64,7 +66,7 @@ def payouts(rows: list[dict], first_trade: int | None, share: float | None, days
             "payable": max(balance - size, 0.0) * share if share is not None else None}
 
 
-def reading(beat: dict, stage: dict, terms: dict, rows: list[dict], zone: str | None) -> dict:
+def reading(beat: dict, stage: dict, terms: dict, rows: list[dict], zone: str | None) -> dict[str, Any]:
     """One account's progress through its stage.
 
     Args:

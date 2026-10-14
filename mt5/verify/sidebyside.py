@@ -1,4 +1,6 @@
 """Every SQX entry beside the MT5 trade each firm's EA opened for it: one row per entry, one set of columns per firm."""
+from typing import Any
+
 import pandas as pd
 
 from core.study import blocks
@@ -7,7 +9,7 @@ from mt5.verify import firms
 ROWS = 500          # the table's last N entries: a whole history is thousands of rows
 
 
-def table(pieces: dict[str, dict]) -> dict:
+def table(pieces: dict[str, dict]) -> dict[str, Any]:
     """The side-by-side trades table (owner, 2026-09-30: paired by entry time).
 
     Args:

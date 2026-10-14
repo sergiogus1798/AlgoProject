@@ -1,6 +1,7 @@
 """Export the MT5 terminal's economic calendar to AlgoData in UTC: every event type and every dated release."""
 import argparse
 import datetime as dt
+from typing import Any
 
 import pandas as pd
 
@@ -24,7 +25,7 @@ def server_shift(s: dict) -> pd.Timedelta:
     """
     now = terminal.call(s, "get_time_information", {})
     gap = pd.Timestamp(now["trade_server_last_known_time"]) - pd.Timestamp(now["utc_time"]).tz_localize(None)
-    return gap.round("15min")
+    return gap.round("15min")  # pyright: ignore[reportCallIssue]  # pandas/numpy stubs lose the type through indexing
 
 
 def events(s: dict) -> pd.DataFrame:
@@ -58,7 +59,7 @@ def values(s: dict, first_year: int) -> pd.DataFrame:
     return pd.DataFrame(rows).drop_duplicates("value_id").sort_values("utc", ignore_index=True)
 
 
-def export(first_year: int = FIRST_YEAR) -> dict:
+def export(first_year: int = FIRST_YEAR) -> dict[str, Any]:
     """Write both tables under MT5_DATA/calendar and say what span the terminal gave.
 
     Importance is the event type's rating TODAY: the calendar keeps no history of it.
@@ -70,7 +71,7 @@ def export(first_year: int = FIRST_YEAR) -> dict:
     va.to_parquet(VALUES)
     return {"events": len(ev), "high": int((ev["importance"] == 3).sum()), "values": len(va),
             "first": str(va["utc"].iloc[0]), "last": str(va["utc"].iloc[-1]),
-            "shift_h": server_shift(s) / pd.Timedelta(hours=1)}
+            "shift_h": server_shift(s) / pd.Timedelta(hours=1)}  # pyright: ignore[reportOperatorIssue]  # pandas stubs: Timedelta/Timestamp unions with NaT
 
 
 def load() -> pd.DataFrame:

@@ -1,5 +1,6 @@
 """Pair the trades of an MT5 backtest with SQX's for the same strategy and window, and measure the gap."""
 from bisect import bisect_left
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -51,11 +52,11 @@ def pair(sqx: pd.DataFrame, mt5: pd.DataFrame, tolerance_min: float) -> pd.DataF
                 del ts[best[2]], ix[best[2]]
                 row.update({f"{c}_mt5": v[i] for c, v in cols.items()})
         rows.append(row)
-    out = pd.DataFrame(rows, columns=[*sqx.columns, *(f"{c}_mt5" for c in mt5.columns)])
+    out = pd.DataFrame(rows, columns=pd.Index([*sqx.columns, *(f"{c}_mt5" for c in mt5.columns)]))
     return out.astype({f"{c}_mt5": mt5[c].dtype for c in mt5.columns})
 
 
-def gap(pairs: pd.DataFrame, mt5: pd.DataFrame) -> dict:
+def gap(pairs: pd.DataFrame, mt5: pd.DataFrame) -> dict[str, Any]:
     """The figures that say how faithfully MT5 reproduces SQX.
 
     Args:
@@ -83,7 +84,7 @@ def gap(pairs: pd.DataFrame, mt5: pd.DataFrame) -> dict:
         "pl_mt5": round(float(mt5["Profit/Loss"].sum()), 2),
         "pl_sqx_matched": round(float(hit["Profit/Loss"].sum()), 2),
         "pl_mt5_matched": round(float(hit["Profit/Loss_mt5"].sum()), 2),
-        "pl_corr_matched": round(float(hit["Profit/Loss"].corr(hit["Profit/Loss_mt5"])), 4)
+        "pl_corr_matched": round(float(hit["Profit/Loss"].corr(hit["Profit/Loss_mt5"])), 4)  # pyright: ignore[reportArgumentType]  # pandas stubs: hit[col] is Series | DataFrame
         if len(hit) > 2 else None,
     }.items()}  # NaN is not JSON: an empty median becomes None
 
@@ -91,7 +92,7 @@ def gap(pairs: pd.DataFrame, mt5: pd.DataFrame) -> dict:
 def window(trades: pd.DataFrame, start: str, end: str) -> pd.DataFrame:
     """Trades opened inside [start, end], dates YYYY-MM-DD, end day included."""
     t = trades["Open time"]
-    return trades[(t >= pd.Timestamp(start)) & (t < pd.Timestamp(end) + pd.Timedelta(days=1))]
+    return trades.loc[(t >= pd.Timestamp(start)) & (t < pd.Timestamp(end) + pd.Timedelta(days=1))]
 
 
 def mean_loss(sqx: pd.DataFrame) -> float | None:

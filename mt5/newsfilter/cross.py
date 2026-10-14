@@ -1,6 +1,7 @@
 """Cross the two calendar histories: Forex Factory's red folder against MT5's HIGH releases, minute by minute."""
 import argparse
 import json
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -16,7 +17,7 @@ CLASSES = ["same_minute_high", "same_minute_lower", "near_high", "hour_off", "al
 
 def moments(rows: pd.DataFrame) -> pd.DataFrame:
     """One row per (currency, minute): several figures of one release are one moment to a filter."""
-    return rows.groupby(["currency", "utc"], as_index=False).agg(what=("what", " | ".join))
+    return rows.groupby(["currency", "utc"], as_index=False).agg(what=("what", " | ".join))  # pyright: ignore[reportReturnType]  # pandas/numpy stubs lose the type through indexing
 
 
 def nearest_gap(times: np.ndarray, other: np.ndarray) -> np.ndarray:
@@ -47,13 +48,13 @@ def classify(mine: pd.DataFrame, high: pd.DataFrame, anyrank: pd.DataFrame) -> p
         t = rows["utc"].to_numpy()
         gap_high = nearest_gap(t, high.loc[high["currency"] == cur, "utc"].sort_values().to_numpy())
         gap_any = nearest_gap(t, anyrank.loc[anyrank["currency"] == cur, "utc"].sort_values().to_numpy())
-        label = np.select([gap_high == 0, gap_any == 0, np.abs(gap_high) <= NEAR / pd.Timedelta(minutes=1),
+        label = np.select([gap_high == 0, gap_any == 0, np.abs(gap_high) <= NEAR / pd.Timedelta(minutes=1),  # pyright: ignore[reportOperatorIssue]  # pandas stubs: Timedelta/Timestamp unions with NaT
                            np.abs(gap_high) == 60], CLASSES[:4], "alone")
         out.loc[rows.index] = label
     return out
 
 
-def cross(first_year: int) -> dict:
+def cross(first_year: int) -> dict[str, Any]:
     """Count both directions over the span the two histories share, up to today.
 
     Returns:
@@ -66,10 +67,10 @@ def cross(first_year: int) -> dict:
     ff = ff[ff["currency"].isin(CURRENCIES)]
     start = max(mt5["utc"].min(), ff["utc"].min(), pd.Timestamp(year=first_year, month=1, day=1))
     end = min(pd.Timestamp.now(tz="UTC").tz_localize(None), mt5["utc"].max(), ff["utc"].max())
-    mt5 = mt5[mt5["utc"].between(start, end)].assign(what=lambda d: d["country"] + ":" + d["code"])
-    ff = ff[ff["utc"].between(start, end)].assign(what=lambda d: d["event"])
-    red, ff_all = moments(ff[ff["impact"] == "High"]), moments(ff)
-    high, mt5_all = moments(mt5[mt5["importance"] == 3]), moments(mt5)
+    mt5 = mt5[mt5["utc"].between(start, end)].assign(what=lambda d: d["country"] + ":" + d["code"])  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
+    ff = ff[ff["utc"].between(start, end)].assign(what=lambda d: d["event"])  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
+    red, ff_all = moments(ff[ff["impact"] == "High"]), moments(ff)  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
+    high, mt5_all = moments(mt5[mt5["importance"] == 3]), moments(mt5)  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
     red["class"] = classify(red, high, mt5_all)
     high["class"] = classify(high, red, ff_all)
     lonely = pd.concat([red.assign(side="ff_red"), high.assign(side="mt5_high")])

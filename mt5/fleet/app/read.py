@@ -2,6 +2,7 @@
 import json
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 import openpyxl
 import pandas as pd
@@ -63,7 +64,7 @@ def clocks() -> tuple[dict, tuple]:
     return equity["firm_clocks"], tuple(equity["unconfirmed_clocks"])
 
 
-def terms(plan_key: str, phase: str) -> dict:
+def terms(plan_key: str, phase: str) -> dict[str, Any]:
     """A stage's reward share (a fraction) and payout cycle in days from the catalogue; None where it has none."""
     share, days = catalog._connect().execute(
         "SELECT reward_share_pct, payout_days FROM stages WHERE plan_key = ? AND stage = ? "

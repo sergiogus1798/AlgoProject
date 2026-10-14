@@ -193,7 +193,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `mt5/newsfilter/patch.py` | 96 | Insert a prop firm's news filter into the MQL5 source SQX exports, at the four places it needs. | — | — |
 | `mt5/newsfilter/reading.py` | 164 | What a firm's news rule costs one strategy: its EA in the Strategy Tester with the filter and without, trade by trade. | core, mt5 | pandas |
 | `mt5/newsfilter/run.py` | 81 | Turn SQX-exported EAs into two per strategy — one with a firm's news filter, one without — and compile them. | core, mt5 | — |
-| `mt5/newsfilter/terminal.py` | 55 | Call a read-only tool of the running MT5 terminal's own MCP server over HTTP, from Python. | core | — |
+| `mt5/newsfilter/terminal.py` | 56 | Call a read-only tool of the running MT5 terminal's own MCP server over HTTP, from Python. | core | — |
 | `mt5/newsfilter/testerfile.py` | 110 | Write a firm's restricted releases, in its server's clock, as the CSV the patched EA reads inside the Strategy Tester. | core, mt5 | pandas |
 | `mt5/newsfilter/windows.py` | 90 | The news rule on a trade list, in pure Python: which releases move a symbol, and what the filter does to each trade. | — | numpy, pandas |
 | `mt5/reconcile/floating.py` | 34 | Live trades' MAE and MFE rebuilt from M1 wicks (PLAN §14.2), only where the bars cover the trade. | portfolio | numpy, pandas |

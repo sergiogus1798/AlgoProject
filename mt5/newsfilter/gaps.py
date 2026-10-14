@@ -47,7 +47,7 @@ def stretches(days: list[pd.Timestamp]) -> pd.DataFrame:
             rows[-1]["last"], rows[-1]["days"] = day, rows[-1]["days"] + 1
         else:
             rows.append({"start": day, "last": day, "days": 1})
-    out = pd.DataFrame(rows, columns=["start", "last", "days"])
+    out = pd.DataFrame(rows, columns=["start", "last", "days"])  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
     return out.assign(end=out["last"] + pd.Timedelta(days=1)).drop(columns="last")
 
 
@@ -56,7 +56,7 @@ def outside(trades: pd.DataFrame, gaps: pd.DataFrame) -> tuple[pd.DataFrame, lis
     touched = pd.Series(False, index=trades.index)
     counts = []
     for g in gaps.itertuples():
-        hit = (trades["Open time"] < g.end) & (trades["Close time"] >= g.start)
+        hit = (trades["Open time"] < g.end) & (trades["Close time"] >= g.start)  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
         counts.append(int(hit.sum()))
         touched |= hit
-    return trades[~touched].reset_index(drop=True), counts
+    return trades[~touched].reset_index(drop=True), counts  # pyright: ignore[reportReturnType]  # pandas/numpy stubs lose the type through indexing

@@ -14,7 +14,7 @@ def moves(symbol: str, tag: str, firm: dict) -> bool:
 def for_symbol(releases: pd.DataFrame, symbol: str, firm: dict) -> pd.DataFrame:
     """The rows of a tester file the EA keeps when it trades `symbol`, sorted by time."""
     keep = {tag for tag in releases["tag"].unique() if moves(symbol, tag, firm)}
-    return releases[releases["tag"].isin(keep)].sort_values("time", ignore_index=True)
+    return releases[releases["tag"].isin(keep)].sort_values("time", ignore_index=True)  # pyright: ignore[reportArgumentType, reportCallIssue]  # pandas/numpy stubs lose the type through indexing
 
 
 def spans(releases: pd.DataFrame, firm: dict) -> pd.DataFrame:

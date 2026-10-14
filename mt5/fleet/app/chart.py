@@ -44,15 +44,15 @@ class CurveCanvas(FigureCanvasQTAgg):
             self.draw()
             return
         for h in curve["hours"]:
-            ax.fill_between([at(h["start"]), at(h["start"] + 3600)], h["low"], h["high"], color=BAND,
+            ax.fill_between([at(h["start"]), at(h["start"] + 3600)], h["low"], h["high"], color=BAND,  # pyright: ignore[reportArgumentType]  # matplotlib stubs reject datetime axes
                             alpha=0.45, linewidth=0, label="Mínimo y máximo de cada hora")
-        ax.plot([at(t) for t in curve["times"]], curve["equity"], color=EQUITY, linewidth=2.4,
+        ax.plot([at(t) for t in curve["times"]], curve["equity"], color=EQUITY, linewidth=2.4,  # pyright: ignore[reportArgumentType]  # matplotlib stubs reject datetime axes
                 marker="o" if len(curve["times"]) < 3 else None, label="Equity (minuto)")
         ax.axhline(curve["daily_floor"], color=DAILY, linestyle="--", linewidth=2,
                    label=f"Suelo diario {fmt.money(curve['daily_floor'])}")
         ax.axhline(curve["max_floor"], color=TOTAL, linestyle="--", linewidth=2,
                    label=f"Suelo total {fmt.money(curve['max_floor'])}")
-        ax.set_xlim(at(curve["start"]), at(max(curve["now"], curve["start"] + 3600)))
+        ax.set_xlim(at(curve["start"]), at(max(curve["now"], curve["start"] + 3600)))  # pyright: ignore[reportArgumentType]  # matplotlib stubs reject datetime axes
         ax.xaxis.set_major_formatter(DateFormatter("%H:%M"))
         ax.grid(color=theme.LINE, linewidth=0.8)
         handles, labels = ax.get_legend_handles_labels()
@@ -90,7 +90,7 @@ class LinesCanvas(CurveCanvas):
             self.draw()
             return
         for ln in lines:
-            ax.step([at(t) for t in ln["times"]], ln["values"], where="post", color=ln["colour"],
+            ax.step([at(t) for t in ln["times"]], ln["values"], where="post", color=ln["colour"],  # pyright: ignore[reportArgumentType]  # matplotlib stubs reject datetime axes
                     linewidth=ln["width"], label=ln["name"])
         ax.axhline(0, color=theme.LINE, linewidth=1.2)
         ax.set_ylabel(ylabel, color=theme.TEXT, fontsize=12)

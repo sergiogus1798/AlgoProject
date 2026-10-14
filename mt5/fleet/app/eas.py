@@ -1,5 +1,6 @@
 """The EAs an account should carry against the ones mounted and the magics that actually trade."""
 import re
+from typing import Any
 
 from mt5.fleet.app import floors, history, read
 
@@ -84,7 +85,7 @@ def flags(row: dict, register: dict[int, str], server_now: int) -> list[str]:
     return out
 
 
-def account_view(row: dict, now: int) -> dict:
+def account_view(row: dict, now: int) -> dict[str, Any]:
     """One account's deployment as the Despliegue tab shows it.
 
     Args:

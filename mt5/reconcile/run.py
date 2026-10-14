@@ -3,6 +3,7 @@
 import argparse
 import time
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -17,7 +18,7 @@ CONFIG = Path(__file__).resolve().parent / "config.yaml"
 RUNS = MT5_DATA / "reconcile"
 
 
-def required(cfg: dict, key: str, what: str) -> object:
+def required(cfg: dict, key: str, what: str) -> Any:
     """A key the owner has to fill, or the Spanish refusal that says which and how."""
     section, leaf = key.split(".")
     if cfg[section][leaf] in (None, [], ""):
@@ -85,16 +86,16 @@ def main() -> None:
 
     pieces, bars, library = {}, {}, barstore.library()
     for r in rows.itertuples():
-        data = assetdata.load(r.asset)
+        data = assetdata.load(r.asset)  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
         feed = data["sqx_symbol"]
         if feed not in bars:
             bars[feed] = barstore.source(feed, ["High", "Low"]) if feed in library else None
-        mine = lived[(lived["firm"] == r.firm) & (lived["strategy"] == r.strategy)]
-        pieces[(r.firm, r.strategy)] = judge.reconcile(
-            tested[tested["strategy"] == r.strategy], mine, a.week, r.timeframe,
+        mine = lived[(lived["firm"] == r.firm) & (lived["strategy"] == r.strategy)]  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
+        pieces[(r.firm, r.strategy)] = judge.reconcile(  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
+            tested[tested["strategy"] == r.strategy], mine, a.week, r.timeframe,  # pyright: ignore[reportArgumentType, reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names; pandas/numpy stubs lose the type through indexing
             data["instrument"], (feeds.timezone(feed), cfg["clock"]["server_zone"]),
             bars[feed], cfg)
-    strays = weeks.cut(lived[lived["strategy"].isna()], a.week)
+    strays = weeks.cut(lived[lived["strategy"].isna()], a.week)  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
     report.finish(work, a.week, cfg, started, pieces, strays)
     print(report.say(a.week, pieces, strays))
     print(f"  resultado: {work / 'result.json'}")

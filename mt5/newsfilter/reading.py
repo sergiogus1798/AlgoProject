@@ -2,6 +2,7 @@
 import argparse
 import json
 import time
+from typing import Any
 
 import pandas as pd
 
@@ -15,13 +16,13 @@ KEY = ["Type", "Open time"]
 FATES = ["igual", "cerrada antes", "no abierta", "cambia por arrastre", "nueva por arrastre"]
 
 
-def worst_day(trades: pd.DataFrame) -> dict:
+def worst_day(trades: pd.DataFrame) -> dict[str, Any]:
     """The server day with the lowest closed P&L."""
     daily = trades.groupby(trades["Close time"].dt.normalize())["Profit/Loss"].sum()
-    return {"day": str(daily.idxmin().date()), "pl": round(float(daily.min()), 2)}
+    return {"day": str(daily.idxmin().date()), "pl": round(float(daily.min()), 2)}  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: groupby key/index is Hashable
 
 
-def compare(plain: pd.DataFrame, filtered: pd.DataFrame, releases: pd.DataFrame, firm: dict) -> dict:
+def compare(plain: pd.DataFrame, filtered: pd.DataFrame, releases: pd.DataFrame, firm: dict) -> dict[str, Any]:
     """Pair the two runs by entry (side and open time) and name what the filter did to each trade.
 
     Args:
@@ -148,7 +149,7 @@ def main() -> None:
                                          f"{a.name}_{firm['label']}"))
     (plain, cut_plain), (filtered, cut_filtered) = gaps.outside(plain, thin), gaps.outside(filtered, thin)
     got = compare(plain, filtered, windows.for_symbol(testerfile.read(target), a.symbol, firm), firm)
-    got["summary"]["excluded"] = [{"start": str(g.start.date()), "end": str(g.end.date()), "days": g.days,
+    got["summary"]["excluded"] = [{"start": str(g.start.date()), "end": str(g.end.date()), "days": g.days,  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
                                    "trades": [cut_plain[i], cut_filtered[i]]} for i, g in enumerate(thin.itertuples())]
     out = OUT / f"{a.name}_{a.firm}_{a.symbol}_{a.timeframe}_{a.start}_{a.end}_{a.model}"
     out.mkdir(parents=True, exist_ok=True)

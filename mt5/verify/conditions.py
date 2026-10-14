@@ -1,4 +1,6 @@
 """A prop firm's conditions for one symbol, read off its own MT5 account and put in SQX's units."""
+from typing import Any
+
 from mt5 import live
 
 # MT5's ENUM_SYMBOL_SWAP_MODE → SQX's <Swap type>. The ones left out (swap in the base or the
@@ -12,7 +14,7 @@ class Refused(Exception):
     """This firm cannot be priced for this symbol; the message says why, in Spanish."""
 
 
-def read(symbol: str, account: dict) -> dict:
+def read(symbol: str, account: dict) -> dict[str, Any]:
     """The symbol's specification as the firm's server gives it right now.
 
     Args:

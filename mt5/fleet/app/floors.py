@@ -1,6 +1,7 @@
 """One account's distance to its daily and total floors, from one beat and its stage's rules."""
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from typing import Any
 
 from portfolio.funded.rules import floors
 
@@ -24,7 +25,7 @@ def server_offset(beat: dict) -> int:
     return round((beat["server_time"] - beat["written_gmt"]) / 1800) * 1800
 
 
-def reading(beat: dict, stage: dict, zone: str | None) -> dict:
+def reading(beat: dict, stage: dict, zone: str | None) -> dict[str, Any]:
     """Where an account stands against its two floors at the moment of its beat.
 
     The day's starting balance is today's balance minus every deal booked since the firm's day

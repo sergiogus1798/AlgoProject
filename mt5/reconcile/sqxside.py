@@ -29,10 +29,10 @@ def window(week: str, data: dict, warmup_days: int) -> tuple[str, str]:
     monday, after = weeks.bounds(week)
     last = date.fromisoformat(str(data["data"]["to"])[:10]) - timedelta(days=1)
     end = min((after - pd.Timedelta(days=1)).date(), last)
-    if end < monday.date():
+    if end < monday.date():  # pyright: ignore[reportOperatorIssue]  # pandas stubs: Timedelta/Timestamp unions with NaT
         raise SystemExit(f"SQX tiene datos hasta el {data['data']['to']}: la semana {week} "
                          "todavía no está en los datos de desarrollo (weekly-data-update)")
-    return (monday - pd.Timedelta(days=warmup_days)).date().isoformat(), end.isoformat()
+    return (monday - pd.Timedelta(days=warmup_days)).date().isoformat(), end.isoformat()  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: Timedelta/Timestamp unions with NaT
 
 
 def build(name: str, strategy: Path, asset: str, timeframe: str, cfg: dict) -> Path:
@@ -90,7 +90,7 @@ def backtest(live: pd.DataFrame, week: str, cfg: dict, work: Path) -> pd.DataFra
     """
     out = []
     once = live.drop_duplicates("strategy")        # one backtest serves every firm it runs on
-    for (asset, timeframe), group in once.groupby(["asset", "timeframe"]):
+    for (asset, timeframe), group in once.groupby(["asset", "timeframe"]):  # pyright: ignore[reportGeneralTypeIssues]  # pandas stubs: groupby key/index is Hashable
         rule_five(asset)
         data = assetdata.load(asset)
         days = window(week, data, cfg["warmup_days"])
@@ -109,12 +109,12 @@ def backtest(live: pd.DataFrame, week: str, cfg: dict, work: Path) -> pd.DataFra
             shutil.rmtree(dest, ignore_errors=True)
             if any(banks["week"].glob("*.sqx")):
                 exportdrv.trades(banks["week"], dest)
-            names = {Path(r.sqx).stem: r for r in group.itertuples()}
+            names = {Path(r.sqx).stem: r for r in group.itertuples()}  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
             for csv in sorted(dest.glob("*.csv")):
                 row = names[csv.stem]
-                out.append(trades.read(csv).assign(strategy=row.strategy, identity=row.identity))
+                out.append(trades.read(csv).assign(strategy=row.strategy, identity=row.identity))  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
         finally:
             print(verify_sqx.retire(project, cfg["role"]), flush=True)
     return pd.concat(out, ignore_index=True) if out else pd.DataFrame(
-        columns=["strategy", "identity", "Type", "Open time", "Open price", "Size",
+        columns=["strategy", "identity", "Type", "Open time", "Open price", "Size",  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
                  "Close time", "Close price", "Profit/Loss", "MAE ($)", "MFE ($)"])

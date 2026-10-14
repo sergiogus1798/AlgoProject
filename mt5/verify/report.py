@@ -36,7 +36,7 @@ def finish(work: Path, meta: dict, cfg: dict, started: float, summaries: dict, r
                      f"{meta['from']} → {meta['to']} · modelo del tester «{meta['model']}». "
                      + " ".join(f"{firms.label(f)}: {w}" for f, w in refused.items())),
             "blocks": [study_result.blocks.table(
-                "Cada empresa", pd.DataFrame(rows, columns=[
+                "Cada empresa", pd.DataFrame(rows, columns=[  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
                     "empresa", "veredicto", "reloj (h)", "operaciones SQX", "operaciones MT5",
                     "calidad histórico MT5 (%)", "MT5 empezó",
                     *(["veredicto en Real ticks"] if meta.get("ticks") else [])]),

@@ -41,7 +41,7 @@ def _headless_display() -> str | None:
     return None
 
 
-def env() -> dict:
+def env() -> dict[str, str]:
     """The process environment: WINEPREFIX at the MT5 prefix, Wine's chatter off, and the
     virtual display unless MT5_VISIBLE=1 or Xvfb is missing (then the desktop's, windows show)."""
     out = {**os.environ, "WINEPREFIX": str(MT5_PREFIX), "WINEDEBUG": "-all"}

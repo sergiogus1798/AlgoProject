@@ -9,8 +9,9 @@ import datetime as dt
 import json
 import sys
 import time
+from typing import Any
 
-import MetaTrader5 as mt5
+import MetaTrader5 as mt5  # pyright: ignore[reportMissingImports]  # Windows-only package, absent here
 
 MARK = "@@JSON@@"
 
@@ -25,7 +26,7 @@ def _rows(items: tuple) -> list[dict]:
     return [i._asdict() for i in items or ()]
 
 
-def _csv(array: object, path: str) -> int:
+def _csv(array: Any, path: str) -> int:
     """Write a numpy structured array to CSV; returns the row count."""
     with open(path, "w", newline="") as f:
         w = csv.writer(f)

@@ -52,8 +52,9 @@ class ReconcileTab(QWidget):
         self.pairs_head = widgets.label("Operaciones emparejadas", "section")
         self.pairs = widgets.table(["Empresa", "Estrategia", *[head(report.PAIRS[k]) for k in PAIRED]], "Estrategia")
         scroll, _ = widgets.page([self.empty, self.head, self.summary, self.pairs_head, self.pairs], LEGEND)
-        QVBoxLayout(self).addWidget(scroll)
-        self.layout().setContentsMargins(0, 0, 0, 0)
+        box = QVBoxLayout(self)
+        box.addWidget(scroll)
+        box.setContentsMargins(0, 0, 0, 0)
 
     def paint(self) -> None:
         """Show the newest week's result, or say there is none."""
@@ -81,5 +82,5 @@ class ReconcileTab(QWidget):
         self.pairs_head.setText("Operaciones emparejadas" + ("" if pairs is None or len(pairs) <= MAX_PAIRS else
                                                              f" (las primeras {MAX_PAIRS} de {len(pairs)})"))
         widgets.fill(self.pairs, [] if shown is None else [
-            [cell(fmt.firm(row["firm"]), right=False), cell(row["strategy"], right=False)] +
+            [cell(fmt.firm(row["firm"]), right=False), cell(row["strategy"], right=False)] +  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
             [cell(fmt_cell(row[k])) for k in PAIRED] for _, row in shown.iterrows()])

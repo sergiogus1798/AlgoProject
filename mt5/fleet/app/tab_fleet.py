@@ -1,4 +1,6 @@
 """The Flota tab: totals, one row per account, and the chosen account's curve, reasons, progress, positions and deals."""
+from typing import Any
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
@@ -37,7 +39,7 @@ LEGEND = (
     "Todo lo que necesita el servicio de la versión 2 sale como «—» con el de la versión 1.")
 
 
-def totals(rows: list[dict]) -> dict:
+def totals(rows: list[dict]) -> dict[str, Any]:
     """The strip above the table: accounts, capital, equity, floating and what is payable.
 
     Returns:
@@ -116,7 +118,7 @@ class FleetTab(QWidget):
         self.canvas.setMinimumHeight(330)
         side = QFrame()
         side.setObjectName("card")
-        QVBoxLayout(side).addWidget(self.progress, alignment=Qt.AlignTop)
+        QVBoxLayout(side).addWidget(self.progress, alignment=Qt.AlignmentFlag.AlignTop)
         middle = QWidget()
         row = QHBoxLayout(middle)
         row.setContentsMargins(0, 0, 0, 0)
@@ -128,7 +130,6 @@ class FleetTab(QWidget):
         box = QVBoxLayout(self)
         box.setContentsMargins(0, 0, 0, 0)
         box.addWidget(scroll)
-        self.scroll = scroll
 
     def paint(self, rows: list[dict]) -> None:
         """Show these rows, keeping the chosen account."""
@@ -146,7 +147,9 @@ class FleetTab(QWidget):
         self.chosen = row
         for i in range(self.accounts.rowCount()):
             for j in range(self.accounts.columnCount()):
-                self.accounts.item(i, j).setBackground(QColor(CHOSEN if i == row else theme.PANEL))
+                cell_ = self.accounts.item(i, j)
+                if cell_:
+                    cell_.setBackground(QColor(CHOSEN if i == row else theme.PANEL))
         self.paint_detail()
 
     def paint_detail(self) -> None:
@@ -154,7 +157,10 @@ class FleetTab(QWidget):
         r = self.rows[self.chosen]
         beat, names = r["beat"], read.names()
         firm = r["stage"]["firm"] if r["stage"] else ""
-        named = lambda magic, comment: names.get((firm, magic), comment)  # noqa: E731
+
+        def named(magic: int, comment: str) -> str:
+            """The register's name for a magic at this firm, else the order comment."""
+            return names.get((firm, magic), comment)
         self.detail.setText(f"{fmt.who(beat, r['stage'])} — {len(beat['positions'])} posiciones abiertas")
         shown = "<br>".join(f"<span style='color:{theme.LIGHTS[level]}'>●</span> {text}" for level, text in r["reasons"])
         self.reasons.setText(shown or "<span style='color:%s'>●</span> Sin motivos de aviso" % theme.LIGHTS["green"])

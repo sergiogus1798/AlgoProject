@@ -5,6 +5,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -21,7 +22,7 @@ def say(pct: int, line: str) -> None:
 
 
 def build(name: str, strategy: Path, asset: str, timeframe: str, role: str,
-          members: list[str]) -> dict:
+          members: list[str]) -> dict[str, Any]:
     """Clone the frozen donor into a Test_ project with only the retests this check reuses.
 
     Through the builder's own command, so the project gets its registry row and every check
@@ -122,7 +123,7 @@ def firm_trades(folders: dict[str, Path], work: Path) -> dict[str, pd.DataFrame]
         dest = work / "sqx" / firm
         shutil.rmtree(dest, ignore_errors=True)
         if not found:
-            out[firm] = pd.DataFrame(columns=["Type", "Open time", "Open price", "Size",
+            out[firm] = pd.DataFrame(columns=["Type", "Open time", "Open price", "Size",  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
                                               "Close time", "Close price", "Profit/Loss"])
             continue
         # The folder, never the file: given one .sqx, orderstocsv writes `<output>.csv` beside

@@ -1,6 +1,7 @@
 """Write a week's reconciliation as result.json (the study contract) and say it in Spanish."""
 import json
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -48,7 +49,7 @@ def tabs(week: str, pieces: dict[tuple[str, str], dict], strays: pd.DataFrame) -
     total = judge.totals([p["summary"] for p in pieces.values()])
     rows.append({"empresa": "", "estrategia": "TOTAL", **{ROW[k]: total.get(k) for k in ROW}})
     head = [blocks.table(f"Semana {week}: cada estrategia en real contra su backtest de SQX",
-                         pd.DataFrame(rows, columns=["empresa", "estrategia", *ROW.values()]),
+                         pd.DataFrame(rows, columns=["empresa", "estrategia", *ROW.values()]),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
                          "Puntos: movimiento del precio en ticks del activo, sin tamaño. Divisa: "
                          "la de la cuenta, con el backtest puesto al tamaño de cada operación "
                          "real. Diferencias: real − SQX. " + reference())]
@@ -59,7 +60,7 @@ def tabs(week: str, pieces: dict[tuple[str, str], dict], strays: pd.DataFrame) -
     for (firm, name), p in pieces.items():
         tag = f"{name} · {firm}"
         detail.append(blocks.table(f"{tag}: operaciones emparejadas",
-                                   _times(p["pairs"])[list(PAIRS)].rename(columns=PAIRS),
+                                   _times(p["pairs"])[list(PAIRS)].rename(columns=PAIRS),  # pyright: ignore[reportCallIssue]  # pandas/numpy stubs lose the type through indexing
                                    "Horas en el reloj del servidor."))
         detail.append(blocks.table(f"{tag}: en SQX y no en la cuenta", _times(p["sqx_only"]),
                                    "El backtest abrió y el EA en real no."))
@@ -70,7 +71,7 @@ def tabs(week: str, pieces: dict[tuple[str, str], dict], strays: pd.DataFrame) -
 
 
 def finish(work: Path, week: str, cfg: dict, started: float, pieces: dict[tuple[str, str], dict],
-           strays: pd.DataFrame) -> dict:
+           strays: pd.DataFrame) -> dict[str, Any]:
     """Write `result.json` and `pairs.parquet` in the week's folder.
 
     Returns:

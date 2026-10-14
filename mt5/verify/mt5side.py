@@ -2,6 +2,7 @@
 import re
 import time
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -30,7 +31,7 @@ def fixed_lots(source: str, lots: str) -> str:
     return out
 
 
-def compile_ea(mq5: Path, stem: str, lots: str) -> dict:
+def compile_ea(mq5: Path, stem: str, lots: str) -> dict[str, Any]:
     """Compile the exported EA under a name with no space, trading the strategy's fixed lot.
 
     Args:
@@ -54,7 +55,7 @@ def compile_ea(mq5: Path, stem: str, lots: str) -> dict:
 
 
 def backtest(expert: str, symbol: str, timeframe: str, window: tuple[str, str], model: str,
-             deposit: float, leverage: int, account: dict, tag: str, cfg: dict) -> dict:
+             deposit: float, leverage: int, account: dict, tag: str, cfg: dict) -> dict[str, Any]:
     """One tester pass on one firm's account, waited for.
 
     Args:

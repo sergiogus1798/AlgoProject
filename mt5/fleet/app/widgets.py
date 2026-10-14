@@ -10,7 +10,7 @@ from mt5.fleet.app import fmt, theme
 def cell(text: str, colour: str | None = None, right: bool = True) -> QTableWidgetItem:
     """A read-only table cell, right-aligned unless told otherwise."""
     item = QTableWidgetItem(text)
-    item.setTextAlignment(Qt.AlignVCenter | (Qt.AlignRight if right else Qt.AlignLeft))
+    item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter | (Qt.AlignmentFlag.AlignRight if right else Qt.AlignmentFlag.AlignLeft))
     if colour:
         item.setForeground(QColor(colour))
     return item
@@ -28,13 +28,13 @@ def table(columns: list[str], stretch: str) -> QTableWidget:
     t = QTableWidget(0, len(columns))
     t.setHorizontalHeaderLabels(columns)
     t.verticalHeader().hide()
-    t.setEditTriggers(QAbstractItemView.NoEditTriggers)
-    t.setSelectionMode(QAbstractItemView.NoSelection)
-    t.setFocusPolicy(Qt.NoFocus)
-    t.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-    t.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-    t.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-    t.horizontalHeader().setSectionResizeMode(columns.index(stretch), QHeaderView.Stretch)
+    t.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+    t.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+    t.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+    t.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    t.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    t.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+    t.horizontalHeader().setSectionResizeMode(columns.index(stretch), QHeaderView.ResizeMode.Stretch)
     return t
 
 
@@ -52,7 +52,7 @@ def label(text: str, name: str, wrap: bool = False) -> QLabel:
     w = QLabel(text)
     w.setObjectName(name)
     w.setWordWrap(wrap)
-    w.setTextFormat(Qt.RichText)
+    w.setTextFormat(Qt.TextFormat.RichText)
     return w
 
 

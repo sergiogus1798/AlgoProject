@@ -17,12 +17,12 @@ def bounds(week: str) -> tuple[pd.Timestamp, pd.Timestamp]:
     if not re.fullmatch(r"\d{4}-W\d{2}", week):
         raise SystemExit(f"semana «{week}»: se escribe AAAA-Wss, por ejemplo 2026-W38")
     start = pd.Timestamp.fromisocalendar(int(week[:4]), int(week[6:]), 1)
-    return start, start + pd.Timedelta(days=7)
+    return start, start + pd.Timedelta(days=7)  # pyright: ignore[reportReturnType]  # pandas stubs: Timedelta/Timestamp unions with NaT
 
 
 def cut(trades: pd.DataFrame, week: str) -> pd.DataFrame:
     """The trades OPENED inside the week, whenever they closed. Times already on the server's clock."""
     start, end = bounds(week)
     opened = pd.to_datetime(trades["Open time"])
-    return trades[(opened >= start) & (opened < end)].reset_index(drop=True)
+    return trades[(opened >= start) & (opened < end)].reset_index(drop=True)  # pyright: ignore[reportReturnType]  # pandas/numpy stubs lose the type through indexing
 

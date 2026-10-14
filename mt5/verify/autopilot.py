@@ -3,6 +3,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -54,7 +55,7 @@ def uncommissioned(asset: str, chosen: list[str]) -> list[str]:
                                                       or (brokers.get(f) or {}).get("value") is None)]
 
 
-def check(project: str, finalists: list[dict], params: dict, own_log: bool = False) -> dict:
+def check(project: str, finalists: list[dict], params: dict, own_log: bool = False) -> dict[str, Any]:
     """Whether step 26 may start now for these finalists, and the sentence the owner confirms.
 
     Args:

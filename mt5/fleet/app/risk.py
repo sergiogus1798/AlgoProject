@@ -1,4 +1,6 @@
 """What the open stops would cost: each position's loss at its SL and the equity if all of them hit."""
+from typing import Any
+
 
 LEVEL_TEXT = {"daily": "diario", "max": "total"}
 
@@ -24,7 +26,7 @@ def position_loss(position: dict) -> float | None:
     return ticks * position["tick_value_loss"] * position["volume"]
 
 
-def reading(beat: dict, floor: dict | None) -> dict:
+def reading(beat: dict, floor: dict | None) -> dict[str, Any]:
     """The account's stop risk.
 
     Args:

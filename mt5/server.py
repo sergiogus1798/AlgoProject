@@ -55,7 +55,7 @@ def _sqx(path: str, strategy: str) -> pd.DataFrame:
 
 
 @server.tool()
-def mt5_status() -> dict:
+def mt5_status() -> dict[str, Any]:
     """What is installed and running: Wine, the terminal, its data folder, the Windows Python."""
     out = {"wine": shutil.which("wine"), "prefix": str(wine.MT5_PREFIX),
            "terminal": wine.TERMINAL.exists(), "metaeditor": wine.METAEDITOR.exists(),
@@ -66,13 +66,13 @@ def mt5_status() -> dict:
 
 
 @server.tool()
-def mt5_install_sqx_indicators() -> dict:
+def mt5_install_sqx_indicators() -> dict[str, Any]:
     """Copy SQX's Sq* indicators, then the project's set (mt5/indicators) over them, and compile. After an SQX update or a change there."""
     return metaeditor.sqx_indicators()
 
 
 @server.tool()
-def mt5_compile(source: str) -> dict:
+def mt5_compile(source: str) -> dict[str, Any]:
     """Compile an EA source (.mq5 saved from SQX: Save > Source code > MetaTrader 5).
 
     Args:
@@ -84,7 +84,7 @@ def mt5_compile(source: str) -> dict:
 @server.tool()
 def mt5_backtest_start(source: str, symbol: str, timeframe: str, start: str, end: str,
                        model: str = "real_ticks", deposit: float = 100000,
-                       leverage: int = 100) -> dict:
+                       leverage: int = 100) -> dict[str, Any]:
     """Compile an .mq5 and launch one Strategy Tester pass; returns at once with the run id.
 
     The terminal must be closed (the tester opens its own and shuts it at the end). Poll
@@ -106,13 +106,13 @@ def mt5_backtest_start(source: str, symbol: str, timeframe: str, start: str, end
 
 
 @server.tool()
-def mt5_backtest_result(run: str) -> dict:
+def mt5_backtest_result(run: str) -> dict[str, Any]:
     """The state of a run; when done, its report summary and the trades saved to parquet."""
     return tester.collect(run)
 
 
 @server.tool()
-def mt5_runs() -> list[dict]:
+def mt5_runs() -> list[dict[str, Any]]:
     """Every backtest run on disk, newest first, with whether it has been collected."""
     runs = sorted(tester.TESTS.glob("*/run.json"), key=lambda p: p.stat().st_mtime, reverse=True)
     return [{"run": p.parent.name, **json.loads(p.read_text()),
@@ -121,7 +121,7 @@ def mt5_runs() -> list[dict]:
 
 @server.tool()
 def mt5_compare(run: str, sqx_trades_file: str, strategy: str = "", tolerance_minutes: float = 60,
-                shift_hours: float = 0) -> dict:
+                shift_hours: float = 0) -> dict[str, Any]:
     """Pair a collected MT5 run's trades with SQX's for the same window and measure the gap.
 
     Args:
@@ -144,7 +144,7 @@ def mt5_compare(run: str, sqx_trades_file: str, strategy: str = "", tolerance_mi
 
 
 @server.tool()
-def mt5_account() -> dict:
+def mt5_account() -> dict[str, Any]:
     """The logged-in account and the terminal: login, server, balance, equity, leverage, build."""
     return {"account": live.ask("account"), "terminal": live.ask("terminal")}
 
@@ -156,31 +156,31 @@ def mt5_symbols(group: str = "*") -> list[str]:
 
 
 @server.tool()
-def mt5_symbol(symbol: str) -> dict:
+def mt5_symbol(symbol: str) -> dict[str, Any]:
     """One symbol's contract: digits, point, tick value and size, contract size, swaps, current spread."""
     return live.ask("symbol", {"symbol": symbol})
 
 
 @server.tool()
-def mt5_bars(symbol: str, timeframe: str, start: str, end: str) -> dict:
+def mt5_bars(symbol: str, timeframe: str, start: str, end: str) -> dict[str, Any]:
     """Download bars to a parquet under AlgoData/mt5/bars; returns the file and its span."""
     return live.series("bars", symbol, start, end, timeframe)
 
 
 @server.tool()
-def mt5_ticks(symbol: str, start: str, end: str) -> dict:
+def mt5_ticks(symbol: str, start: str, end: str) -> dict[str, Any]:
     """Download every tick (bid, ask, last, flags) to a parquet under AlgoData/mt5/ticks."""
     return live.series("ticks", symbol, start, end)
 
 
 @server.tool()
-def mt5_positions() -> dict:
+def mt5_positions() -> dict[str, Any]:
     """Open positions and pending orders of the logged-in account. Read-only."""
     return {"positions": live.ask("positions"), "orders": live.ask("orders")}
 
 
 @server.tool()
-def mt5_history(start: str, end: str) -> list[dict]:
+def mt5_history(start: str, end: str) -> list[dict[str, Any]]:
     """Deals of the logged-in account between two dates, YYYY-MM-DD. Read-only."""
     return live.ask("history", {"start": start, "end": end})
 

@@ -1,6 +1,7 @@
 """Write a firm's restricted releases, in its server's clock, as the CSV the patched EA reads inside the Strategy Tester."""
 import argparse
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -49,20 +50,20 @@ def releases(firm: dict, mt5: pd.DataFrame, ff: pd.DataFrame) -> pd.DataFrame:
     """
     parts = []
     if firm["mt5_calendar"]:
-        mt5 = mt5[~((mt5["time_mode"] == ALL_DAY) & (mt5["utc"] == mt5["utc"].dt.normalize()))]
+        mt5 = mt5[~((mt5["time_mode"] == ALL_DAY) & (mt5["utc"] == mt5["utc"].dt.normalize()))]  # pyright: ignore[reportAssignmentType]  # pandas/numpy stubs lose the type through indexing
         if firm["events"] is None:
             rows = mt5[mt5["importance"] == 3].assign(tag=lambda d: d["currency"])
         else:
             tag_of = {key: tag for tag, keys in firm["events"].items() for key in keys}
             rows = mt5.assign(tag=(mt5["country"] + ":" + mt5["code"]).map(tag_of)).dropna(subset=["tag"])
-        parts.append(pd.DataFrame({"time": to_server(rows["utc"], firm["server_zone"]), "tag": rows["tag"],
+        parts.append(pd.DataFrame({"time": to_server(rows["utc"], firm["server_zone"]), "tag": rows["tag"],  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
                                    "source": "MT5", "title": rows["name"]}))
     if firm["forex_factory"]:
         red = ff[ff["impact"] == "High"]
-        parts.append(pd.DataFrame({"time": to_server(red["utc"], firm["server_zone"]), "tag": red["currency"],
+        parts.append(pd.DataFrame({"time": to_server(red["utc"], firm["server_zone"]), "tag": red["currency"],  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
                                    "source": "FF", "title": red["event"]}))
     both = pd.concat(parts)
-    return both.groupby(["time", "tag"], as_index=False).agg(
+    return both.groupby(["time", "tag"], as_index=False).agg(  # pyright: ignore[reportReturnType]  # pandas/numpy stubs lose the type through indexing
         source=("source", lambda s: "+".join(sorted(set(s)))),
         title=("title", lambda s: " | ".join(dict.fromkeys(s))[:120]))
 
@@ -80,7 +81,7 @@ def read(path: Path) -> pd.DataFrame:
     return rows.assign(time=pd.to_datetime(rows["time"], format="%Y.%m.%d %H:%M"))
 
 
-def write(firm_key: str) -> dict:
+def write(firm_key: str) -> dict[str, Any]:
     """Build the firm's file from the two histories in AlgoData; into Common\\Files, a copy kept in AlgoData."""
     firm = FIRMS[firm_key]
     rows = releases(firm, history.load(), forexfactory.load())

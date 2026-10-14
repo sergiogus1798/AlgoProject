@@ -1,4 +1,6 @@
 """One strategy's week: live trades paired with the SQX backtest's, and every gap as a number — no pass bar."""
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
@@ -15,7 +17,7 @@ def _shaped(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     """The frame with exactly `columns` (a missing one NaN), times as datetimes and numbers as
     floats, so an empty side pairs like a full one."""
     out = frame.reindex(columns=columns).reset_index(drop=True)
-    if "Ticket" in columns and out["Ticket"].isna().all():
+    if "Ticket" in columns and out["Ticket"].isna().all():  # pyright: ignore[reportGeneralTypeIssues]  # pandas/numpy stubs lose the type through indexing
         out["Ticket"] = np.arange(1, len(out) + 1)
     for c in columns:
         out[c] = (pd.to_datetime(out[c]) if c.endswith("time") else out[c].astype(object)
@@ -32,7 +34,7 @@ def _points(frame: pd.DataFrame, instrument: dict) -> pd.DataFrame:
 
 def reconcile(sqx: pd.DataFrame, live: pd.DataFrame, week: str, timeframe: str,
               instrument: dict, zones: tuple[str, str], bars: pd.DataFrame | None,
-              cfg: dict) -> dict:
+              cfg: dict) -> dict[str, Any]:
     """Pair one strategy's SQX backtest with what its EA really did, and measure the gaps.
 
     Args:
@@ -67,7 +69,7 @@ def reconcile(sqx: pd.DataFrame, live: pd.DataFrame, week: str, timeframe: str,
     margin = pd.Timedelta(hours=cfg["clock"]["max_offset_h"], days=1)
     near = ((zoned["Open time"] >= start - margin) & (zoned["Open time"] < end + margin)).to_numpy()
     sqx = _points(zoned, instrument).join(
-        floating.rebuild(sqx[near], bars, instrument["point_value"]))
+        floating.rebuild(sqx[near], bars, instrument["point_value"]))  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
     hours = clocks.clock(sqx, live, tolerance, cfg["clock"]["max_offset_h"])
     sqx = weeks.cut(clocks.shifted(sqx, hours), week)
     both = compare.pair(sqx, live, tolerance).astype(sqx.dtypes.to_dict())   # an empty side keeps its types
@@ -115,21 +117,21 @@ def reconcile(sqx: pd.DataFrame, live: pd.DataFrame, week: str, timeframe: str,
         "entry_gap_min_mean_abs": mean("entry_gap_min", True),
         "entry_gap_pts_mean": mean("entry_gap_pts"),
         "entry_slip_pts_mean": mean("entry_slip_pts"),
-        "pnl_pts_sqx": total(sqx["points"]), "pnl_pts_live": total(live["points"]),
-        "pnl_gap_pts_paired": total(pairs["pnl_gap_pts"]),
-        "pnl_cur_live": total(live["Profit/Loss USD"]),
-        "pnl_cur_sqx_paired": total(pairs["pnl_cur_sqx"]),
-        "pnl_gap_cur_paired": total(pairs["pnl_gap_cur"]),
+        "pnl_pts_sqx": total(sqx["points"]), "pnl_pts_live": total(live["points"]),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
+        "pnl_gap_pts_paired": total(pairs["pnl_gap_pts"]),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
+        "pnl_cur_live": total(live["Profit/Loss USD"]),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
+        "pnl_cur_sqx_paired": total(pairs["pnl_cur_sqx"]),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
+        "pnl_gap_cur_paired": total(pairs["pnl_gap_cur"]),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
         "mae_pairs": int(pairs["mae_gap"].notna().sum()),
         "mae_gap_mean": mean("mae_gap"), "mfe_gap_mean": mean("mfe_gap"),
-        "worst_mae_sqx": None if pairs["mae_sqx"].isna().all() else float(pairs["mae_sqx"].min()),
-        "worst_mae_live": None if pairs["mae_live"].isna().all()
+        "worst_mae_sqx": None if pairs["mae_sqx"].isna().all() else float(pairs["mae_sqx"].min()),  # pyright: ignore[reportGeneralTypeIssues]  # pandas/numpy stubs lose the type through indexing
+        "worst_mae_live": None if pairs["mae_live"].isna().all()  # pyright: ignore[reportGeneralTypeIssues]  # pandas/numpy stubs lose the type through indexing
         else float(pairs["mae_live"].min())}
-    return {"pairs": pairs, "sqx_only": sqx_only.reset_index(drop=True),
-            "live_only": live_only.reset_index(drop=True), "summary": summary}
+    return {"pairs": pairs, "sqx_only": sqx_only.reset_index(drop=True),  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
+            "live_only": live_only.reset_index(drop=True), "summary": summary}  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
 
 
-def totals(summaries: list[dict]) -> dict:
+def totals(summaries: list[dict]) -> dict[str, Any]:
     """The week's totals over every live strategy: counts and P&L added, gaps not averaged."""
     keys = ["sqx_trades", "live_trades", "paired", "sqx_only", "live_only", "live_open",
             "pnl_pts_sqx", "pnl_pts_live", "pnl_gap_pts_paired", "pnl_cur_live",

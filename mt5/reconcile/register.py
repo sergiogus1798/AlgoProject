@@ -35,13 +35,13 @@ def read(path: Path) -> pd.DataFrame:
     twice = rows[rows.duplicated(["firm", "magic"], keep=False)]
     if len(twice):
         raise SystemExit(f"{path.name}: magic repetido en la misma empresa — "
-                         + ", ".join(f"{r.firm}/{r.magic}" for r in twice.itertuples()))
+                         + ", ".join(f"{r.firm}/{r.magic}" for r in twice.itertuples()))  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
     return rows
 
 
 def live_in(rows: pd.DataFrame, end: pd.Timestamp) -> pd.DataFrame:
     """The EAs already live before a week ends."""
-    return rows[rows["since"] < end].reset_index(drop=True)
+    return rows[rows["since"] < end].reset_index(drop=True)  # pyright: ignore[reportReturnType]  # pandas/numpy stubs lose the type through indexing
 
 
 def market(sqx: Path) -> tuple[str, str]:

@@ -29,7 +29,7 @@ def load() -> pd.DataFrame:
     """
     raw = pd.read_csv(RAW, encoding="utf-8-sig", dtype=str, keep_default_na=False)
     timed = raw[raw["time"].str.fullmatch(r"\d{1,2}:\d{2}")]
-    utc = pd.to_datetime(timed["date"].str.split(" ", n=1).str[1] + " " + timed["time"],
+    utc = pd.to_datetime(timed["date"].str.split(" ", n=1).str[1] + " " + timed["time"],  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
                          format="%b %d %Y %H:%M")
     return pd.DataFrame({"utc": utc, "currency": timed["currency"], "impact": timed["impact"],
                          "event": timed["event"]}).sort_values("utc", ignore_index=True)
@@ -39,7 +39,7 @@ def untimed() -> pd.Series:
     """How many red-folder rows carry no clock time, by what they say instead."""
     raw = pd.read_csv(RAW, encoding="utf-8-sig", dtype=str, keep_default_na=False)
     red = raw[raw["impact"] == "High"]
-    return red.loc[~red["time"].str.fullmatch(r"\d{1,2}:\d{2}"), "time"].value_counts()
+    return red.loc[~red["time"].str.fullmatch(r"\d{1,2}:\d{2}"), "time"].value_counts()  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
 
 
 def main() -> None:

@@ -1,4 +1,6 @@
 """The health of each terminal and of the VPS they run on, from the beats, the minute history and `vps.json`."""
+from typing import Any
+
 import pandas as pd
 
 from mt5.fleet.app import fmt
@@ -24,12 +26,12 @@ def disconnections(minutes: pd.DataFrame | None, since: int) -> tuple[int, int] 
     if minutes is None:
         return None
     today = minutes[minutes["server_time"] >= since]
-    off = today["connected"].to_numpy() == 0
+    off = today["connected"].to_numpy() == 0  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
     episodes = int((off & ~pd.Series(off).shift(fill_value=False).to_numpy()).sum())
     return episodes, int(off.sum())
 
 
-def terminal(beat: dict, minutes: pd.DataFrame | None, vps: dict | None) -> dict:
+def terminal(beat: dict, minutes: pd.DataFrame | None, vps: dict | None) -> dict[str, Any]:
     """One terminal's row.
 
     Args:

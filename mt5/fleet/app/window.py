@@ -88,5 +88,5 @@ class Tracker(QWidget):
     def fit(self) -> None:
         """Make the window tall enough to show the open tab whole, for a capture."""
         extra = self.height() - self.tabs.currentWidget().height()
-        inner = self.tabs.currentWidget().findChild(QScrollArea).widget()
+        inner = self.tabs.currentWidget().findChild(QScrollArea).widget()  # pyright: ignore[reportAttributeAccessIssue]  # Qt: the open tab always holds a scroll page
         self.resize(self.width(), max(self.height(), inner.sizeHint().height() + extra + 20))

@@ -4,6 +4,7 @@ One merged tab (owner, 2026-09-29 §3.7): a shared parameter table, one P&L char
 firm's curves, one verdict block per firm tagged `"firm"` so the window can toggle it.
 """
 from collections.abc import Callable
+from typing import Any
 
 import pandas as pd
 
@@ -46,7 +47,7 @@ def daily(frame: pd.DataFrame, deposit: float) -> pd.Series:
     if frame.empty:
         return pd.Series(dtype=float)
     days = pd.to_datetime(frame["Close time"]).dt.normalize()
-    return frame.groupby(days)["Profit/Loss"].sum() / deposit * 100
+    return frame.groupby(days)["Profit/Loss"].sum() / deposit * 100  # pyright: ignore[reportOperatorIssue]  # pandas/numpy stubs lose the type through indexing
 
 
 def max_dd(frame: pd.DataFrame, deposit: float) -> float:
@@ -81,12 +82,12 @@ def rows(sqx: pd.DataFrame, mt5: pd.DataFrame, pairs: pd.DataFrame, deposit: flo
     corr = float(a.corr(b)) if len(days) > 2 and a.std() > 0 and b.std() > 0 else None
     mad = float((a - b).abs().mean()) if len(days) else None
     worst = (float(a.min()), float(b.min())) if len(days) else (None, None)
-    worst_gap = abs(worst[0] - worst[1]) if len(days) else None
+    worst_gap = abs(worst[0] - worst[1]) if len(days) else None  # pyright: ignore[reportOperatorIssue]  # guarded by the same len(days) test
     dd = (max_dd(sqx, deposit), max_dd(mt5, deposit))
     dd_gap = abs(dd[0] - dd[1]) / max(dd) if max(dd) > 0 else (0.0 if len(days) else None)
 
     def one(row: str, label: str, value: float | None, limit: float, above: bool,
-            note: str) -> dict:
+            note: str) -> dict[str, Any]:
         """One criterion: pass when the value sits on the right side of its limit."""
         ok = value is not None and (value >= limit if above else value <= limit)
         return {"row": row, "label": label, "value": value, "limit": limit,
@@ -118,7 +119,7 @@ def rows(sqx: pd.DataFrame, mt5: pd.DataFrame, pairs: pd.DataFrame, deposit: flo
 
 
 def firm_result(firm: str, sqx: pd.DataFrame, mt5: pd.DataFrame, timeframe: str, deposit: float,
-                cfg: dict, symbol: str, instrument: dict, zones: tuple[str, str]) -> dict:
+                cfg: dict, symbol: str, instrument: dict, zones: tuple[str, str]) -> dict[str, Any]:
     """One firm's clock-aligned comparison: its verdict, its unpaired-trades table, its curves.
 
     Args:
@@ -167,8 +168,8 @@ def firm_result(firm: str, sqx: pd.DataFrame, mt5: pd.DataFrame, timeframe: str,
                                              for r in got])
     verdict = {**verdict, "firm": firm}
     lonely = pairs[pairs["Open time_mt5"].isna()][["Type", "Open time", "Close time",
-                                                   "Profit/Loss USD"]].head(50)
-    lonely = lonely.rename(columns={"Type": "tipo", "Open time": "apertura",
+                                                   "Profit/Loss USD"]].head(50)  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
+    lonely = lonely.rename(columns={"Type": "tipo", "Open time": "apertura",  # pyright: ignore[reportCallIssue]  # pandas/numpy stubs lose the type through indexing
                                     "Close time": "cierre", "Profit/Loss USD": "P&L (USD)"})
     lonely_block = {**blocks.table(f"{label}: operaciones de SQX sin pareja en MT5 (hasta 50)",
                                    lonely.astype(str),
@@ -184,7 +185,7 @@ def firm_result(firm: str, sqx: pd.DataFrame, mt5: pd.DataFrame, timeframe: str,
             "label": label}
 
 
-def combined_chart(pieces: dict[str, dict]) -> dict:
+def combined_chart(pieces: dict[str, dict]) -> dict[str, Any]:
     """One P&L chart: every firm's SQX and MT5 daily curve, cumulative, on a shared day axis.
 
     Each firm's SQX leg is its own retest, priced at that firm's own conditions — not one
@@ -206,7 +207,7 @@ def combined_chart(pieces: dict[str, dict]) -> dict:
             "unit": "%", "x": [d.strftime("%Y-%m-%d") for d in days], "series": series}
 
 
-def params_table(baseline: dict, costs: dict[str, dict]) -> dict:
+def params_table(baseline: dict, costs: dict[str, dict]) -> dict[str, Any]:
     """SQX's own default costs against what was actually read off each firm's account.
 
     Args:
@@ -239,7 +240,7 @@ def params_table(baseline: dict, costs: dict[str, dict]) -> dict:
         ["deslizamiento", f"{baseline['defaultSlippage']:g}",
          *[col(lambda c: f"{c['defaultSlippage']:g}", f) for f in ("ftmo", "hantec")]],
     ]
-    frame = pd.DataFrame(rows_, columns=["parámetro", "SQX", "FTMO", "Hantec"])
+    frame = pd.DataFrame(rows_, columns=["parámetro", "SQX", "FTMO", "Hantec"])  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
     table = blocks.table("Parámetros de la comparación", frame,
                          "SQX: el default del activo (tramo build) en assets/. FTMO y Hantec: "
                          "leído en su cuenta en el momento de la verificación.")
