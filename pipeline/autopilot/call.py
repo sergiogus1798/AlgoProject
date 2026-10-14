@@ -2,6 +2,7 @@
 
 import contextlib
 from collections.abc import Callable
+from typing import TypeVar
 
 from sqx.projects import live
 from ui.daemon.launch import chain
@@ -9,6 +10,7 @@ from ui.daemon.runner import table
 
 # SQX's own transient crash (a fastutil NullPointerException right after «Task finished»,
 # knowhow/sqx-drive/mcr-nullpointer-fastutil-transient.md): both launchers end on these words.
+T = TypeVar("T")
 ABORT = "SQX abortó"
 
 
@@ -49,7 +51,7 @@ def keeper(pre: dict, restart: bool = True) -> Callable[[], None]:
     return undo
 
 
-def again(run: Callable[[], object], undo: Callable[[], None] | None = None) -> object:
+def again(run: Callable[[], T], undo: Callable[[], None] | None = None) -> T:
     """`run()`, repeated ONCE when it ends on SQX's transient abort: the card's remedy is to
     rerun the step, and an unattended run died on it at step 24 (🔬 2026-10-05). Any other
     failure, and a second abort, end the step as before. `undo` runs before the rerun: what

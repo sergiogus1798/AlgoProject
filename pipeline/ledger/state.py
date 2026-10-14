@@ -4,6 +4,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from core.datapaths import pipeline_dir
 
@@ -48,7 +49,7 @@ def now() -> str:
     return datetime.now().isoformat(timespec="seconds")
 
 
-def read(work: Path) -> dict:
+def read(work: Path) -> dict[str, Any]:
     """The ledger as it stands on disk.
 
     Args:

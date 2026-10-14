@@ -1,6 +1,7 @@
 """The autopilot's plan from step 17 on: the blind block, step 20 judged, the closing steps, the finalists."""
 
 import argparse
+from typing import Any, TypedDict
 
 FIRST = "17"
 DONE = ("done", "sealed")       # sealed: 17-19 done, hidden by the ledger's door
@@ -14,7 +15,47 @@ BLOCK = {"17": "wfc", "18": "cscv", "18.5": "marketSurfaces"}
 PANEL = {"21": "exposure"}
 # Step 26's parameters and the flag each comes from: nothing is defaulted (owner).
 MT5 = {"start": "--mt5-from", "end": "--mt5-to", "model": "--mt5-model", "firms": "--mt5-firms"}
-NOTHING = {"panel": {}, "mt5": {}, "judged": set()}
+
+
+class Mt5Params(TypedDict, total=False):
+    """Step 26's parameters as its agent takes them; empty when none was given."""
+
+    start: str | None
+    end: str | None
+    model: str | None
+    firms: list[str]
+    ticks: bool
+
+
+class _GivenBase(TypedDict):
+    """The tail's inputs every plan carries."""
+
+    panel: dict[str, str]
+    mt5: Mt5Params
+    judged: set[str]
+
+
+class Given(_GivenBase, total=False):
+    """The tail's inputs beside the rail (`inputs`); `NOTHING` has no `until`."""
+
+    until: str | None
+
+
+class Stop(TypedDict):
+    """Where a plan ends: the step it halts before (None when the rail runs out) and why."""
+
+    n: str | None
+    why: str
+
+
+class Walked(TypedDict):
+    """The tail's plan: the actions and where it stopped."""
+
+    do: list[dict[str, Any]]
+    stop: Stop
+
+
+NOTHING = Given(panel={}, mt5={}, judged=set())
 NO_FAMILY = ("el proyecto no tiene plantilla en projects/registry.csv: sin familia las miradas "
              "de 17-20 no se apuntan en el ledger, así que no se corren")
 
@@ -34,7 +75,7 @@ def flags(ap: argparse.ArgumentParser) -> None:
                     help="paso 26: además, una segunda pasada del tester en Real ticks")
 
 
-def inputs(a: argparse.Namespace, cfg: dict) -> dict:
+def inputs(a: argparse.Namespace, cfg: dict[str, Any]) -> Given:
     """What `walk` needs beside the rail: the panel databanks, step 26's parameters as its
     agent takes them, and the steps `criteria.yaml` gives rules to."""
     return {"panel": dict(p.split("=", 1) for p in a.panel), "until": a.until,
@@ -44,8 +85,8 @@ def inputs(a: argparse.Namespace, cfg: dict) -> dict:
             "judged": {n for n, spec in cfg["steps"].items() if spec.get("rules")}}
 
 
-def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
-         family: str | None, given: dict) -> dict:
+def walk(steps: list[dict[str, Any]], do: list[dict[str, Any]], stale: bool, pending: str | None,
+         family: str | None, given: Given) -> Walked:
     """The rail from step 17 to 26, every survivor through every step (owner, 2026-09-29).
 
     Args:
@@ -82,7 +123,7 @@ def walk(steps: list[dict], do: list[dict], stale: bool, pending: str | None,
         if n in given["judged"]:
             add(n, "judge", title="juicio", **more)
 
-    def halt(n: str | None, why: str) -> dict:
+    def halt(n: str | None, why: str) -> Walked:
         """The plan, ending before step `n`."""
         flush()
         return {"do": do, "stop": {"n": n, "why": why}}

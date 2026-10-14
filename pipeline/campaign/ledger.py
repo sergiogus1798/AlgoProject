@@ -2,6 +2,7 @@
 
 import json
 from datetime import datetime
+from typing import Any
 
 from core.datapaths import campaign_dir
 
@@ -24,7 +25,7 @@ def cells() -> dict[str, dict]:
     return out
 
 
-def mark(cell: dict, state: str, **facts: object) -> dict:
+def mark(cell: dict, state: str, **facts: object) -> dict[str, Any]:
     """Append one line: the cell at a new state, with what is known of it now.
 
     Args:

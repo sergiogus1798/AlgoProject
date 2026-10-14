@@ -39,7 +39,7 @@ def results(project: str, role: str, pop: pd.DataFrame, held: pd.DataFrame, out:
     """
     kept = pop[pop["verdict"] != apply_verdict.DROP]
     keep = set(kept["identity"])
-    if not keep or held.empty or held["identity"].isin(keep).all():
+    if not keep or held.empty or bool(held["identity"].isin(list(keep)).all()):
         return f"{BANK}: nada que recortar"
     whole = full()
     if whole is None or not keep <= whole:

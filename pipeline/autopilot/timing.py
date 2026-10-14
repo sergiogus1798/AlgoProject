@@ -1,6 +1,8 @@
 """Where a run's wall clock went: `fases.csv` (`core.phases`) folded into one row per action, SQX apart from everything around it."""
 
+from collections.abc import Iterable
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 
@@ -53,7 +55,8 @@ def table(csv: Path) -> str:
     lines += [f"| {name} | {r.sum():.0f} | " + " | ".join(f"{v:.0f}" for v in r) + " |"
               for name, r in wide.iterrows()]
     total = wide.loc["TOTAL"]
-    big = rows[rows["phase"] != "accion"].nlargest(12, "own")
+    big = cast(pd.DataFrame, rows[rows["phase"] != "accion"]).nlargest(12, "own")
+    longest: Iterable[Any] = big.itertuples()   # namedtuples, typed as plain tuples
     return "\n".join(
         [f"# Tiempos · {csv.parent.parent.name} · {csv.parent.name}", "",
          "Segundos de reloj. `sqx` es SQX calculando (de `action=start` a «Project finished»); "
@@ -62,5 +65,5 @@ def table(csv: Path) -> str:
          f"{(total.sum() - total['sqx']) / 60:.1f} min "
          f"({100 * (1 - total['sqx'] / total.sum()):.0f} % del total).", "",
          "## Las doce fases más largas", "", "| acción | fase | cuál | s |", "|---|---|---|---|",
-         *(f"| {r.action} | {r.phase} | {r.detail} | {r.own:.0f} |" for r in big.itertuples()),
+         *(f"| {r.action} | {r.phase} | {r.detail} | {r.own:.0f} |" for r in longest),
          ""])

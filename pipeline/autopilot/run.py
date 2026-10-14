@@ -38,7 +38,7 @@ def mark(out: Path, n: str, state: str) -> None:
         csv.writer(f).writerow([n, state, f"{datetime.now():%H:%M:%S}"])
 
 
-def summary(out: Path, project: str, done: list[dict], stop: dict, error: str = "") -> None:
+def summary(out: Path, project: str, done: list[dict], stop: tail.Stop, error: str = "") -> None:
     """Write resumen.md: one row per action, how long it took and what it did; and the stop.
 
     Short on purpose (≈ one line per step): an agent reads this file, never SQX's log.
@@ -124,7 +124,7 @@ def after_cut(actions: list[dict], cfg: dict) -> list[dict]:
 
 
 def autopilot(project: str, out: Path, own_log: bool = False, on_live: bool = False,
-              given: dict = tail.NOTHING) -> None:
+              given: tail.Given = tail.NOTHING) -> None:
     """Plan from the rail, then run every action in order; the first failure ends it.
 
     `own_log`: this caller wrote the install's log of the last minutes itself, so it is no

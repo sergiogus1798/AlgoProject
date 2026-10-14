@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import cast
 from xml.etree import ElementTree
 
 from core.paths import ROOT, project_dir, worker_dir
@@ -50,7 +51,7 @@ def fill(project: str, role: str, files: list[Path]) -> list[str]:
     later = {t for s in LATER for t in stage.titles(s)}
     folder = project_dir(project, worker_dir(role))
     parts = cfxio.members(folder / "project.cfx")
-    wrote = {t.get("title"): databanks(parts[t.get("taskXMLFile")].decode("utf-8")).get("Output")
+    wrote = {cast(str, t.get("title")): databanks(parts[cast(str, t.get("taskXMLFile"))].decode("utf-8")).get("Output")
              for t in ElementTree.fromstring(parts["config.xml"]).iter("Task")}
     banks = sorted({bank for title, bank in wrote.items()
                     if bank and title not in later and not title.startswith("WFC")})

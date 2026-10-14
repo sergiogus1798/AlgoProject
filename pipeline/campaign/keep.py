@@ -6,6 +6,7 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
+from typing import TypedDict
 
 from core.datapaths import campaign_dir
 from core.paths import ROOT
@@ -28,7 +29,17 @@ def steps(resumen: Path) -> list[dict]:
     return out
 
 
-def keep(cell: dict, run: Path | None, state: str) -> dict:
+class Kept(TypedDict):
+    """What the ledger records of a kept run: its folder and the numbers of its steps."""
+
+    folder: str
+    steps_minutes: float
+    counts: list[str]
+    finalists: int
+    criteria: str
+
+
+def keep(cell: dict, run: Path | None, state: str) -> Kept:
     """Write the workflow's own folder and return what the ledger records of it.
 
     Args:
@@ -53,7 +64,7 @@ def keep(cell: dict, run: Path | None, state: str) -> dict:
             finalists, skipped = freeze(
                 cell, json.loads((run / "finalistas.json").read_text(encoding="utf-8")), folder, run)
             shelf.place(cell, finalists, folder)
-    facts = {"folder": str(folder), "steps_minutes": round(sum(r["seconds"] for r in rows) / 60, 1),   # not `minutes`: the ledger merges rows, and that is the Build cap
+    facts: Kept = {"folder": str(folder), "steps_minutes": round(sum(r["seconds"] for r in rows) / 60, 1),   # not `minutes`: the ledger merges rows, and that is the Build cap
              "counts": [f"{c['what']} {c['in']}→{c['out']}" for r in rows for c in r["counts"]],
              "finalists": len(finalists),
              "criteria": hashlib.sha256(CRITERIA.read_bytes()).hexdigest()[:12]}

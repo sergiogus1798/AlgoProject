@@ -1,6 +1,7 @@
 """What the funding module keeps of each strategy that passed the WFM: its oos1 floating curve and risk numbers."""
 
 import json
+from typing import cast
 
 import pandas as pd
 
@@ -29,18 +30,18 @@ def rows(card: pd.DataFrame, passed: list[str], equity: pd.DataFrame, risk: floa
     Raises:
         ValueError: A name is held twice by the scorecard, so the link is not unique.
     """
-    named = card.reset_index()
-    named = named[named["strategy"].isin(passed)]
+    named = cast(pd.DataFrame, card.reset_index())
+    named = cast(pd.DataFrame, named[named["strategy"].isin(passed)])
     if named["strategy"].duplicated().any():
         raise ValueError("el scorecard repite un nombre: la fila del paso 8 no es única")
     kept = named.reindex(columns=["strategy", "identity", *FACTS])
     oos = equity[equity["sample"] == "OOS"]
-    after = oos[oos["day"] > equity.loc[equity["sample"] == "IS", "day"].max()]
+    after = cast(pd.DataFrame, oos[oos["day"] > equity.loc[equity["sample"] == "IS", "day"].max()])
     wide = after.pivot(index="day", columns="identity", values="equity")
     wide = wide.diff().fillna(0.0).cumsum() / risk
-    kept = kept[kept["identity"].isin(wide.columns)]
+    kept = cast(pd.DataFrame, kept[kept["identity"].isin(wide.columns)])
     curve = wide[kept["identity"]].set_axis(kept["strategy"], axis=1)
-    curve = curve.rename_axis("strategy", axis=1).stack().rename("equity_r").reset_index()
+    curve = cast(pd.DataFrame, curve.rename_axis("strategy", axis=1).stack().rename("equity_r").reset_index())
     return kept.reset_index(drop=True), curve
 
 

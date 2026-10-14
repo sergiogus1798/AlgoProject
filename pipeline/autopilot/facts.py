@@ -4,7 +4,9 @@ import argparse
 import json
 import re
 import unicodedata
+from collections.abc import Iterable
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 
@@ -25,7 +27,7 @@ CSVS = ("verdict.csv", "nulls.csv")
 NAMES = {"strategy", "identity", "verdict", "verdict_state", "mother", "market"}
 
 
-def slug(text: str) -> str:
+def slug(text: object) -> str:
     """A title as a key part: accents dropped, lower case, runs of anything else as one `_`."""
     plain = unicodedata.normalize("NFKD", str(text)).encode("ascii", "ignore").decode()
     return re.sub(r"[^0-9a-z]+", "_", plain.lower()).strip("_")
@@ -110,10 +112,10 @@ def from_folder(study: str, folder: Path) -> list[dict]:
         df = df.reset_index() if df.index.name == "identity" else df
         if "strategy" not in df.columns:
             continue
-        df = df[df["strategy"].notna()]
+        df = cast(pd.DataFrame, df[df["strategy"].notna()])
         if "market" in df.columns and not df.duplicated(["strategy", "market"]).any():
             for market, part in df.groupby("market", sort=True):    # crossmarket's markets.parquet
-                rows += per_strategy(study, part, f"{slug(f.stem)}.{slug(market)}",
+                rows += per_strategy(study, cast(pd.DataFrame, part), f"{slug(f.stem)}.{slug(market)}",
                                      {"strategy", "identity", "market"})
             continue
         if df["strategy"].duplicated().any():
@@ -136,7 +138,7 @@ def from_folder(study: str, folder: Path) -> list[dict]:
             # spread says its own call in words (pass/fail) beside a verdict that only marks
             rows += [{"study": study, "strategy": s, "identity": i,
                       "key": "verdict_csv.state_pass", "value": float(v == "pass")}
-                     for s, i, v in zip(df["strategy"], ids, df.get("verdict_state", []))]
+                     for s, i, v in zip(df["strategy"], ids, cast(Any, df.get("verdict_state", [])))]
     return rows
 
 
@@ -162,8 +164,10 @@ def crosstf_rows(folder: Path) -> list[dict]:
         rows.append({"study": "crossTF", "strategy": mother, "identity": "",
                      "key": key, "value": number(value)})
 
-    original = {(r.mother, k): v for r in cells[cells["role"] == "baseline"].itertuples()
+    baseline: Iterable[Any] = cells[cells["role"] == "baseline"].itertuples()   # namedtuples, typed as plain tuples
+    original = {(r.mother, k): v for r in baseline
                 for k, v in (r.seen_all or {}).items()}
+    r: Any
     for r in cells.itertuples():
         hit = TARGET.search(r.strategy)
         tf = hit.group(1) if hit else r.timeframe
@@ -182,7 +186,7 @@ def crosstf_rows(folder: Path) -> list[dict]:
             add(r.mother, f"reading.{r.timeframe}.{reading}", r.reading == reading)
     for mother, got in readings.groupby("mother")["reading"]:
         for reading in MEANS:
-            add(mother, f"reading.n_{reading}", (got == reading).sum())
+            add(str(mother), f"reading.n_{reading}", (got == reading).sum())
     return rows + tffacts.rows(folder)
 
 
@@ -207,7 +211,7 @@ def gather(project: str, n: str) -> pd.DataFrame:
         rows with the same label) gets `#2`, `#3`… in its order, never one picked silently.
     """
     rows = []
-    for study in BY_N[n]["studies"] + BY_N[n]["extra"]:
+    for study in cast(list[str], BY_N[n]["studies"]) + cast(list[str], BY_N[n]["extra"]):
         every = sources.results(project, study, False if study == "edgeCost" else None)
         files = {r["path"].parent.parent.name: r["path"] for r in reversed(every)
                  if r["path"].is_file()}        # a batch study: one file per mother, newest wins
@@ -216,7 +220,7 @@ def gather(project: str, n: str) -> pd.DataFrame:
         if found:
             rows += (crosstf_rows if study == "crossTF" else
                      lambda f: from_folder(study, f))(found[0]["path"])  # noqa: B023 called this iteration
-    df = pd.DataFrame(rows, columns=COLUMNS).dropna(subset=["value"])
+    df = pd.DataFrame(rows, columns=pd.Index(COLUMNS)).dropna(subset=["value"])
     df["key"] = df["study"] + "." + df["key"]
     nth = df.groupby(["strategy", "identity", "key"]).cumcount()
     df.loc[nth > 0, "key"] += "#" + (nth[nth > 0] + 1).astype(str)

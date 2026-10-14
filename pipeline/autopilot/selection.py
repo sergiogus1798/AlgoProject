@@ -1,6 +1,8 @@
 """Who a judging step keeps and drops: the identity lookup, the fallen, the medoid cut and the siblings."""
 
 import sys
+from collections.abc import Mapping
+from typing import cast
 
 import pandas as pd
 
@@ -28,9 +30,9 @@ def resolve(pop: pd.DataFrame, found: pd.DataFrame) -> tuple[pd.Series, pd.Serie
     who = pd.Series([i if i in ids else s for s, i in zip(pop["strategy"], pop["identity"])],
                     index=pop.index, dtype=object)
     theirs = found["identity"].where(found["identity"] != "", found["strategy"])
-    named = found["strategy"].map(dict(zip(pop["strategy"], who)))
-    held = found["identity"].isin(set(pop["identity"]) | {""})
-    return who, theirs.where(held | named.isna(), named)
+    named = cast(pd.Series, found["strategy"]).map(cast("Mapping[str, str]", dict(zip(pop["strategy"], who))))
+    held = found["identity"].isin(list(set(pop["identity"]) | {""}))
+    return who, cast(pd.Series, theirs.where(held | named.isna(), named))
 
 
 def fallen(project: str, pop: pd.DataFrame) -> dict[str, str]:
@@ -46,7 +48,7 @@ def fallen(project: str, pop: pd.DataFrame) -> dict[str, str]:
     card = pd.read_parquet(found[0]["path"] / "scorecard.parquet").reset_index()
     if "cayo_regla" not in card:        # a scorecard written before the gate ran by levels
         return {}
-    card = card[card["strategy"].notna() & card["cayo_regla"].notna()]
+    card = cast(pd.DataFrame, card[card["strategy"].notna() & card["cayo_regla"].notna()])
     _, who = resolve(pop, card)
     return {w: f"fail: {rule} (nivel {level})"
             for w, level, rule in zip(who, card["cayo_nivel"], card["cayo_regla"])}
@@ -55,9 +57,9 @@ def fallen(project: str, pop: pd.DataFrame) -> dict[str, str]:
 def largest(card: pd.DataFrame, top: int) -> pd.DataFrame:
     """The scorecard rows of the medoids of the `top` largest groups: size (`redundancia_value`,
     counted among the same survivors) descending, tie by `redundancia_grupo` ascending."""
-    mine = card[card["medoide"].fillna(False).astype(bool)]
-    return mine.sort_values(["redundancia_value", "redundancia_grupo"],
-                            ascending=[False, True]).head(top)
+    mine = cast(pd.DataFrame, card[card["medoide"].fillna(False).astype(bool)])
+    return cast(pd.DataFrame, mine.sort_values(["redundancia_value", "redundancia_grupo"],
+                                               ascending=[False, True]).head(top))
 
 
 def medoids(project: str, pop: pd.DataFrame, top: int) -> set[str]:
@@ -66,11 +68,12 @@ def medoids(project: str, pop: pd.DataFrame, top: int) -> set[str]:
     card = pd.read_parquet(found[0]["path"] / "scorecard.parquet").reset_index() if found else None
     if card is None or "medoide" not in card:
         sys.exit("paso con `medoids`: el scorecard de la puerta no trae la columna `medoide`")
-    _, who = resolve(pop, largest(card[card["strategy"].notna()], top))
+    _, who = resolve(pop, largest(cast(pd.DataFrame, card[card["strategy"].notna()]), top))
     return set(who)
 
 
-def siblings(pop: pd.DataFrame, is_sibling: pd.Series, judged: dict, follow: bool) -> dict:
+def siblings(pop: pd.DataFrame, is_sibling: pd.Series, judged: dict[str, tuple[str, str]],
+             follow: bool) -> dict[str, tuple[str, str]]:
     """What happens to the scaled siblings of the databank being cut.
 
     Args:
@@ -88,6 +91,6 @@ def siblings(pop: pd.DataFrame, is_sibling: pd.Series, judged: dict, follow: boo
     if not follow:
         return {w: ("fail", "hermana escalada: solo sigue la madre") for w in mine["who"]}
     by_name = dict(zip(pop["strategy"], pop["who"]))
-    return {w: judged.get(by_name.get(SIBLING.sub("", name)),
+    return {w: judged.get(cast(str, by_name.get(SIBLING.sub("", name))),
                           ("fail", "hermana sin su madre en el databank"))
             for name, w in zip(mine["strategy"], mine["who"])}

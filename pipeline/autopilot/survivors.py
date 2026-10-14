@@ -1,5 +1,7 @@
 """Who walks the tail: the strategies left in the databank the last judged step cut."""
 
+from typing import TypedDict
+
 import pandas as pd
 
 from core import assetdata
@@ -55,7 +57,16 @@ def mothers(project: str, role: str, cfg: dict, n: str) -> pd.DataFrame:
                          for i, fs in files.items()])
 
 
-def about(project: str) -> dict:
+class About(TypedDict):
+    """What a project is: asset, timeframe, feed and template family."""
+
+    symbol: str
+    timeframe: str
+    feed: str
+    family: str | None
+
+
+def about(project: str) -> About:
     """What the project is, as every command of the tail needs it.
 
     Returns:

@@ -5,6 +5,7 @@ import os
 import sys
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
 import pandas as pd
 import yaml
@@ -33,7 +34,24 @@ READABLE = {"gate.scorecard." + fact for fact in (     # the gate's level 0
 SMOKE_AT, SMOKE_KEEP = "8", 3      # a functional test carries this many past step 8 (owner, 2026-10-13)
 
 
-def settings() -> dict:
+class _JudgedBase(TypedDict):
+    """The three keys every judged step reports."""
+
+    n: str
+    hechos: int
+    corte: str
+
+
+class Judged(_JudgedBase, total=False):
+    """What `judge` returns: the base keys, and the cut's numbers when a verdict was written."""
+
+    before: int
+    after: int
+    limbo: list[str]
+    seed: None
+
+
+def settings() -> dict[str, Any]:
     """criteria.yaml, parsed."""
     cfg = yaml.load(CRITERIA.read_text(encoding="utf-8"), Loader=yaml.CSafeLoader)
     if os.environ.get(SMOKE) == "1":
@@ -99,7 +117,7 @@ def ledger_row(project: str, n: str, spec: dict, before: int, after: int, segmen
     judgement, read with oos2).
     """
     who = survivors.about(project)
-    sid = studymod.study_id(who["symbol"], who["timeframe"], who["family"])
+    sid = studymod.study_id(who["symbol"], who["timeframe"], cast(str, who["family"]))
     record.log(sid, {"step": float(n), "launched_by": "autopilot", "symbol": who["symbol"],
                      "timeframe": who["timeframe"], "segment": segment or spec.get("segment", "oos1"),
                      "n_in": before, "n_out": after, "criterion": f"criteria.yaml paso {n}",
@@ -124,7 +142,7 @@ def _seal(project: str) -> Callable[[], None]:
 
     def resign() -> None:
         """Write the `.sources.sig` of each export that was fresh, over the files as the cut left them."""
-        top = find.install_of(project, bank)[1]
+        top = cast(tuple[str, Path], find.install_of(project, bank))[1]
         own = find.files(top, project, bank)
         other = find.partner(top, project, bank)
         marks = {"metrics": (metrics_export(project, bank) / "manifest.json", own),
@@ -142,7 +160,7 @@ def trades_fresh(project: str, bank: str) -> bool:
     return state.status(project, bank).get("pieces", {}).get("trades", {}).get("state") == "fresh"
 
 
-def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | None = None) -> dict:
+def judge(project: str, n: str, role: str, out: Path, cfg: dict[str, Any], segment: str | None = None) -> Judged:
     """Judge step `n` and apply its verdict, worker stopped.
 
     Args:
@@ -176,9 +194,9 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | 
     pop["who"], found["who"] = selection.resolve(pop, found)
     # A scaled sibling is a measuring device of step 11, never a candidate: it always goes,
     # and only its mother, on her own timeframe and unscaled, is judged (owner, 2026-10-01).
-    sibling = pop["strategy"].map(lambda name: bool(SIBLING.search(name)))
+    sibling = cast(pd.Series, pop["strategy"].map(lambda name: bool(SIBLING.search(name))))
     mothers = sorted(set(pop.loc[~sibling, "who"]))
-    judged = criteria.outcomes(found[found["who"].isin(mothers)], mothers, rules)
+    judged = criteria.outcomes(cast(pd.DataFrame, found[found["who"].isin(mothers)]), mothers, rules)
     if "gate" in facts.BY_N[n]["studies"]:
         judged |= {w: ("fail", why) for w, why in selection.fallen(project, pop).items()
                    if w in judged and judged[w][0] == "fail"}
@@ -197,7 +215,8 @@ def judge(project: str, n: str, role: str, out: Path, cfg: dict, segment: str | 
     pop[["strategy", "verdict", "identity", "outcome", "reason"]].to_csv(csv, index=False)
     drops = int((pop["verdict"] == apply_verdict.DROP).sum())
     fresh = trades_fresh(project, bank) if drops else False
-    cut = apply_verdict.apply(project, bank, csv, role, **({"trades_fresh": True} if fresh else {})) if drops else \
+    opts: Any = {"trades_fresh": True} if fresh else {}   # passed only when set: test doubles take no extra kwarg
+    cut: dict[str, Any] = dict(apply_verdict.apply(project, bank, csv, role, **opts)) if drops else \
         {"before": len(pop), "after": len(pop)}
     if fresh:
         trades_fresh(project, bank)      # seen fresh once more: the loader signs it (`state.age`)

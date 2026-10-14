@@ -7,6 +7,7 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -97,7 +98,7 @@ def queue(n: int) -> list[dict]:
     return [ledger.mark(row, "pending", batch=batch, **row) for row in rows[:n]]
 
 
-def test(template: str, symbol: str, timeframe: str) -> dict:
+def test(template: str, symbol: str, timeframe: str) -> dict[str, Any]:
     """Queue one test cell: the board's cell of that template's family there, config.yaml's short build, a Test_ project."""
     cfg = yaml.safe_load((HERE / "config.yaml").read_text(encoding="utf-8"))
     if not _costed(symbol):

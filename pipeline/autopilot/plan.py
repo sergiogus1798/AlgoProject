@@ -3,12 +3,19 @@
 import re
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 from core.assetdata import load
 from core.paths import feed_quality_dir
 from pipeline.autopilot import tail
 from ui.daemon.launch import chainplan
 from ui.daemon.launch.steps import ELSEWHERE
+
+
+class Plan(tail.Walked):
+    """`plan`'s answer: `tail.Walked` plus the steps that do not apply to this project."""
+
+    skipped: list[dict[str, str]]
 
 
 def scanned(asset: str, do: list[dict]) -> None:
@@ -29,7 +36,7 @@ def scanned(asset: str, do: list[dict]) -> None:
                  f"`python3 -m studies.data.feedQuality.scan --feed {feed}`")
 
 
-def reopen(data: dict, out: Path) -> dict:
+def reopen(data: dict[str, Any], out: Path) -> dict[str, Any]:
     """A step that failed halfway left partial results the rail reads as done (OPEN #111):
     when the run before `out` (the newest stamp folder beside it) ended in `FALLO en el paso N` or was cut mid-step (OOM, SIGKILL: no `FIN`),
     `N` runs again. The kinds whose half-done output reads as done are the ones that write their
@@ -53,7 +60,7 @@ def reopen(data: dict, out: Path) -> dict:
     return data
 
 
-def plan(data: dict, given: dict = tail.NOTHING) -> dict:
+def plan(data: dict[str, Any], given: tail.Given = tail.NOTHING) -> tail.Walked:
     """Walk the rail as `chainplan.plan` does, judging instead of stopping.
 
     Args:
@@ -80,7 +87,7 @@ def plan(data: dict, given: dict = tail.NOTHING) -> dict:
         left = [owed] if owed and owed["n"] == pending and owed["tests"] else []
         return left + [{"n": pending, "title": "juicio", "kind": "judge", "tests": []}]
 
-    def halt(n: str | None, why: str) -> dict:
+    def halt(n: str | None, why: str) -> Plan:
         """The plan, ending before step `n` with the pending judge, if any, done first."""
         if pending:
             do.extend(judged())
@@ -90,7 +97,7 @@ def plan(data: dict, given: dict = tail.NOTHING) -> dict:
         n, state = step["n"], step["state"]
         if chainplan.HOW[n] in chainplan.BEFORE:
             if state != "done":
-                return halt(n, chainplan.BEFORE[chainplan.HOW[n]])
+                return halt(n, chainplan.BEFORE[cast(str, chainplan.HOW[n])])
             continue
         if n == tail.FIRST:
             return tail.walk(data["steps"], do, stale, pending, data.get("family"), given)

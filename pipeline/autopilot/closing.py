@@ -1,8 +1,10 @@
 """Step 21 for every survivor, and the batch helpers step 13 shares: the panel reading, the mothers' copies, the export, the clear."""
 
 import shutil
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 
@@ -18,7 +20,8 @@ def reading(project: str, key: str, databank: str, mothers: pd.DataFrame) -> str
     # A mother carries her last databank's name («…(1)» after a retest); the study reads the
     # panel databank's cosecha, which knows her by its own (📓 2026-10-05, step 22, IndexError).
     spelt = identity.spelt(project, databank, list(mothers["identity"]))
-    names = [spelt.get(m.identity, m.strategy) for m in mothers.itertuples()]
+    rows: Iterable[Any] = mothers.itertuples()   # namedtuples, typed as plain tuples
+    names = [cast(str, spelt.get(m.identity, m.strategy)) for m in rows]
     jobs = call.window(key, project, databank, who["symbol"], names)
     # One process per mother, each writing only `estrategias/<her name>.json` (`output.member`):
     # no two share a file. Four at a time, because each loads the export's trades.
@@ -35,6 +38,7 @@ def copies(mothers: pd.DataFrame, folder: Path) -> Path:
     folder.mkdir(parents=True, exist_ok=True)
     for old in folder.glob("*.sqx"):
         old.unlink()
+    m: Any   # itertuples() rows are namedtuples, typed as plain tuples
     for m in mothers.itertuples():
         shutil.copy2(m.file, folder / f"{m.strategy}.sqx")
     return folder

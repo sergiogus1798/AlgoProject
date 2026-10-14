@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -28,10 +29,11 @@ def write(project: str, mothers: pd.DataFrame, out: Path) -> str:
         survivors.Done: The list is empty; the file is written all the same.
     """
     who = survivors.about(project)
-    known = identity.hashed(Path(m.file) for m in mothers.itertuples())
+    found: list[Any] = list(mothers.itertuples())   # namedtuples, typed as plain tuples
+    known = identity.hashed(Path(m.file) for m in found)
     rows = [{"strategy": m.strategy, "identity": known[Path(m.file)],
              "mother": m.strategy, "sqx": str(Path(m.file).resolve()), "symbol": who["symbol"],
-             "timeframe": who["timeframe"]} for m in mothers.itertuples()]
+             "timeframe": who["timeframe"]} for m in found]
     (out / FILE).write_text(json.dumps(rows, indent=1, ensure_ascii=False), encoding="utf-8")
     if not rows:
         raise survivors.Done("ningún finalista para el paso 26")
