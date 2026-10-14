@@ -68,7 +68,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
    tools/manual.py`. `checks.py` fails on a `__main__` that no chapter names, neither by its path nor by
    its `python3 -m` dotted form. `PENDIENTE.md` there is inherited backlog only — nothing new goes in it.
    The steps and the screenshot tool: `/manual-chapter`.
-9. **Writing Python? Read `CODESTYLE.md` first.** No absolute path outside `core/paths.py`. When done:
+9. **Writing Python? Read `CODESTYLE.md` first; the process around a change is `CONTRIBUTING.md`.** No absolute path outside `core/paths.py`. When done:
    `python3 tools/depmap.py && python3 tools/checks.py`.
 10. **Every SQX run happens in a CUSTOM PROJECT — never in the stock `Builder` or `Retester`.** Owner,
     2026-09-23. A test on a template, a symbol or a timeframe gets a project of its own, cloned from the
@@ -139,7 +139,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
     mechanical and that runs on Opus says so in its first line — «tarea mecánica: `/model sonnet`» — and
     carries on; only the owner switches a session's model. Opus is for designing, deciding, statistics
     and authoring ideas or templates. Significant code — a new module, more than 3 files, a contract
-    between packages — is orchestrated: Opus plans and splits, Sonnet writes (`CODESTYLE.md` §13).
+    between packages — is orchestrated: Opus plans and splits, Sonnet writes (`CONTRIBUTING.md` §6).
 18. **Waiting on SQX happens outside the conversation: one background command, one notice.** Owner,
     2026-10-02 — it replaces the 3-minute pulse he asked for on 2026-09-25. After `action=start`, run
     ONE background command that exits when the run ends — `Project finished` in SQX's log, the `sqcli`
@@ -186,7 +186,7 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
 | a fact about formats, the API, exports, conditions, costs, research, perf | `grep -rh '^q:' knowhow/<domain>/` for a domain's questions, or `grep -rli '<symptom or error text>' knowhow/` to find a card by symptom (its `kw:` line); then read only the card's header (up to `## Evidence`) — domains in `knowhow/INDEX.md` |
 | **running, continuing or testing the workflow** — «lanza el workflow», «estrategia simple», «con plantilla», «continúa el proyecto», «prueba el workflow entero» | invoke the skill `/workflow` first (rule 19); what each step runs: `.claude/skills/workflow/steps.md` |
 | the campaign: the unattended loop over template × asset × timeframe, its ledger and its saved workflows | `pipeline/campaign/README.md`, then `docs/manual/` chapter `106-campana.md` (PDF `04-sqx-plantillas-y-proyectos`) |
-| writing or changing Python | `CODESTYLE.md`, then the folder's own `README.md` |
+| writing or changing Python | `CODESTYLE.md` (and `CONTRIBUTING.md` for checks, review, orchestration), then the folder's own `README.md` |
 | authoring blocks, groups, templates, projects | `sqx/CLAUDE.md` |
 | any study — population or one strategy: where it lives, the shape of a module, the traps | `studies/CLAUDE.md`, then the study's `README.md` |
 | how something is computed and shared: pricing, nulls, resampling, regimes, multiple testing | `engines/README.md` |

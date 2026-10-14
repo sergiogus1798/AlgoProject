@@ -1,7 +1,7 @@
 # 68 · Adaptar el código y las comprobaciones al CODESTYLE del 2026-10-13
 
 **Tu oficio:** ingeniería de herramientas sobre un Python que ya funciona: comprobaciones, hooks y
-arreglos listados. Es trabajo significativo: se orquesta (`CODESTYLE.md` §13) — **Opus** parte y
+arreglos listados. Es trabajo significativo: se orquesta (`CONTRIBUTING.md` §6) — **Opus** parte y
 comprueba, **Sonnet** escribe (regla 17). Son de Opus el diseño de las partes 6, 9, 14 y 16. Ningún
 SQX, ningún dato nuevo. **El dueño lo quiere entero (2026-10-13, «mete TODO»): nada queda fuera.**
 **Tu encargo:** que las reglas nuevas de `CODESTYLE.md` las compruebe una máquina y no la memoria de
@@ -9,7 +9,8 @@ un agente, y que el código viejo deje de incumplir las que son baratas de cumpl
 **una tabla de recuentos antes y después** (avisos de ruff, generadores sin semilla, tests que corren
 al entregar, métricas del trinquete) y la lista de los `B023` que eran bugs de verdad.
 
-Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los nuevos) · `CLAUDE.md` reglas
+Lee `CODESTYLE.md` entero (**reescrito el 2026-10-14**: sólo cómo es el código, 12 secciones, §8 nueva) ·
+`CONTRIBUTING.md` (nuevo: el proceso que antes eran §7-10, §12 y §13) · `CLAUDE.md` reglas
 12, 17, 20 y 21 · `.claude/hooks/README.md` · `tools/checks.py` · `tools/audit_tests.py` (cabecera).
 
 ## Estado del plan (lo actualiza cada sesión al cerrar)
@@ -25,7 +26,7 @@ Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los 
 | F6 | `assert` en los lectores con fichero dorado | Opus diseña, Sonnet escribe | D5 | hecho |
 | F7 | menciones caducas del tope de 250 líneas | Sonnet | D6 | hecho 2026-10-14 |
 | F8 | comprobador de tipos, por paquetes | Sonnet | F3, D7 | hecho 2026-10-14 (pyright 1.1.414) |
-| F9 | **los `-> dict` sin tipar, todos**, paquete a paquete | Opus orquesta, Sonnet escribe | F8, D8, D9 | sin empezar |
+| F9 | **los `-> dict` sin tipar, todos**, paquete a paquete | Opus orquesta, Sonnet escribe | F8, D8, D9 | en curso: core…ui hechos; falta `studies` y meterlo en `pyproject.toml` |
 | F10 | límites por función (complejidad, argumentos) en el trinquete | Sonnet | F3 | hecho con F3 |
 | F11 | código muerto: `vulture` de noche, y borrado de lo que halle | Sonnet | — | hecho |
 | F12 | tabla del README generada del docstring | Sonnet | D10 | hecho 2026-10-14 |
@@ -33,8 +34,12 @@ Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los 
 | F14 | canario nocturno de extremo a extremo | Opus diseña, Sonnet escribe | D11 | hecho 2026-10-14 |
 | F15 | gorilla comprueba cada push | Sonnet | F1 | hecho 2026-10-14 |
 | F16 | agente `reviewer` propio | Opus | — | hecho 2026-10-14 |
-| F17 | convenciones que faltan en `CODESTYLE.md` | Sonnet | D12, D13 | hecho 2026-10-14 (§6) |
-| F18 | `ruff format`, lo último | Sonnet | todo lo anterior | sin empezar |
+| F17 | convenciones que faltan en `CODESTYLE.md` | Sonnet | D12, D13 | hecho 2026-10-14 (hoy §8 y §9) |
+| F19 | `assert` → `raise` en los lectores de F6 | Sonnet | F6, D15 | sin empezar |
+| F20 | `except` amplios a cero | Sonnet | F3, D16 | sin empezar |
+| F21 | `Optional` que no puede faltar, y unidades en los nombres | Sonnet | F9 | sin empezar |
+| F22 | integridad de la investigación (§8): medir, luego arreglar | Opus mide, Sonnet escribe | — | sin empezar |
+| F18 | `ruff format`, lo último | Sonnet | todo lo anterior, F19-F22 incluidas | sin empezar |
 
 ### Bitácora
 
@@ -53,6 +58,10 @@ Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los 
   sólo lo afectado y sale ≠ 0 en rojo. ASIDE: fuera 5 que ya pasan; entran `test_taxonomy` (8 bloques sin
   pesos de arquetipo desde `c81dcbb`: decisión de autoría) y `test_perf66_catalogue` (tolerancia de 20 ms,
   falla con carga).
+- 2026-10-14 — **`CODESTYLE.md` reescrito** (sesión algoproject-4d) para revisión externa: el proceso se
+  va a `CONTRIBUTING.md`; §8 nueva (integridad de la investigación); `raise` en la puerta, no `assert`;
+  `except` amplios a cero; C901 y PLR0913 sólo congelados (como F10). Las citas de secciones de este
+  encargo están puestas al día. El dueño añade F19-F22 antes de F18 (D15-D17).
 
 ## Objetivo — un comando
 
@@ -83,12 +92,12 @@ gusta, dale»; «habrá que diseñar un encargo para adaptar todo el código»).
 
 ## 1. Los tests corren al entregar (F1)
 
-Ficheros: `tools/checks.py`, `tools/audit_tests.py`, `CODESTYLE.md` §8.
+Ficheros: `tools/checks.py`, `tools/audit_tests.py`, `CONTRIBUTING.md` §3.
 
 Hoy un agente puede romper un test, ver `checks.py` en verde y entregar. Mide primero cuánto tarda
 `python3 tools/audit_tests.py` entero y pega el número; D1 se decide con él. El resultado es un modo
-de `checks.py` (o un comando al lado) que corre los tests que tocan a lo cambiado, y `CODESTYLE.md`
-§8 lo nombra en su línea de entrega.
+de `checks.py` (o un comando al lado) que corre los tests que tocan a lo cambiado, y `CONTRIBUTING.md`
+§3 lo nombra en su línea de entrega.
 
 ## 2. Hooks (F2)
 
@@ -105,7 +114,7 @@ Ficheros: `.claude/hooks/lint_py.sh`, un hook nuevo de cierre, `.claude/settings
 ## 3. Trinquete (F3)
 
 Ficheros: `tools/ratchet.py` (nuevo), su línea base `tools/ratchet.json`, una llamada en
-`tools/checks.py`, fila en `tools/README.md`, `CODESTYLE.md` §8.
+`tools/checks.py`, fila en `tools/README.md`, `CODESTYLE.md` §12.
 
 `checks.py` falla si **sube** alguno de estos recuentos respecto a la línea base, y la reescribe
 cuando bajan: `-> dict` sin tipar en funciones públicas, `except` amplios, `default_rng()` sin
@@ -119,7 +128,7 @@ Ficheros: `ruff.toml` y los que señale ruff.
 1. `ruff check . --select F401 --fix`: los 56 imports sin usar. Cuidado con los `__init__.py` que
    reexportan: ahí el import se queda y se declara en `__all__`.
 2. **Los 25 `B023`, uno a uno**: una función definida en un bucle que usa la variable del bucle. Cada
-   uno es bug o no lo es; el que lo sea llega con su test (`CODESTYLE.md` §12.3). Devuelve la lista.
+   uno es bug o no lo es; el que lo sea llega con su test (`CONTRIBUTING.md` §2). Devuelve la lista.
 3. `B007`, `B034`, `B904`, `B008`: 28 arreglos mecánicos.
 4. `B905` (D3, **C**): su recuento entra en el trinquete de la parte 3 y baja fichero a fichero. En
    cada `zip`: si las dos listas miden igual por construcción, `strict=True`; si no está claro, se
@@ -131,7 +140,7 @@ Ficheros: `ruff.toml` y los que señale ruff.
 Ficheros: los 19 sitios (`grep -rn 'default_rng()' --include='*.py' .` y
 `grep -rnE 'np\.random\.(seed|rand|randn|choice|normal|shuffle)\(' --include='*.py' .`).
 
-`CODESTYLE.md` §11: la semilla es argumento de la función que sortea y se guarda con el resultado.
+`CODESTYLE.md` §8: la semilla es argumento de la función que sortea y se guarda con el resultado.
 Pasar de la API antigua a `default_rng` **cambia los números** que salen: para cada uno de los 5,
 di qué resultado guardado o test dorado depende de él antes de tocarlo.
 
@@ -139,7 +148,7 @@ di qué resultado guardado o test dorado depende de él antes de tocarlo.
 
 Ficheros: sólo los lectores que ya tienen fichero dorado en `tests/` — `.sqx`, `.cfx` y el retest.
 
-`CODESTYLE.md` §4, «Check at the door, then trust». Opus escribe primero, para cada lector, la lista
+`CODESTYLE.md` §5, «Validate at the door, then trust» (hoy con `raise`, no `assert`: F19). Opus escribe primero, para cada lector, la lista
 de lo que afirma (forma, rango, columnas) y el dueño la ve (D5); Sonnet la escribe. Un `assert`
 demasiado estricto para un workflow en marcha: por eso cada uno se prueba contra los ficheros dorados
 **y** contra un proyecto real reciente de `AlgoData` antes de darse por bueno.
@@ -194,7 +203,7 @@ se engancha). Lo que señale se borra según la regla 21: grep de cada llamador 
 
 ## 12. La tabla del README, generada (F12)
 
-Ficheros: un generador en `tools/`, los 204 `README.md` de carpetas de código, `CODESTYLE.md` §2.
+Ficheros: un generador en `tools/`, los 204 `README.md` de carpetas de código, `CODESTYLE.md` §1.
 
 Las columnas «file» y «what it does» salen del docstring de módulo; `checks.py` falla si están
 caducas, como ya hace con `docs/DEPENDENCIES.md`. Las otras dos según D10.
@@ -213,19 +222,61 @@ ve. Qué ruta recorre es D11. Se engancha al `auditor`.
 ## 15. Gorilla comprueba cada push (F15)
 
 `bin/remote.sh gorilla` corre el Objetivo de este encargo tras un push: es la prueba real de
-`CODESTYLE.md` §6, «tiene que funcionar en otra máquina». `remote.sh` ya no hace pull bajo un SQX en
+`CODESTYLE.md` §9, «Portability». `remote.sh` ya no hace pull bajo un SQX en
 marcha; comprueba además que no compite por CPU con un workflow de gorilla (regla 19).
 
 ## 16. Agente `reviewer` (F16)
 
 `.claude/agents/reviewer.md`, de sólo lectura, Sonnet: recibe el diff, `CODESTYLE.md` y el objetivo
-en una línea, y devuelve hallazgos como `file:line`. `CODESTYLE.md` §12.6 pasa a nombrarlo en vez
+en una línea, y devuelve hallazgos como `file:line`. `CONTRIBUTING.md` §5 lo nombra en vez
 del subagente genérico. Con `/cron-agent` no: no es nocturno.
 
 ## 17. Convenciones que faltan (F17)
 
 Dos párrafos en `CODESTYLE.md`, cuando el dueño conteste D12 y D13: `print` o `logging`, y en qué
 zona horaria vive una marca de tiempo dentro del código.
+
+## 19. `assert` → `raise` en los lectores (F19)
+
+Ficheros: los de F6 — `sqxfile`, `cfx`, `sqxretest` — y nada más.
+
+`CODESTYLE.md` §5: `python -O` borra los `assert`, así que la comprobación de puerta es
+`if not <cond>: raise ValueError(f"{path}: <qué falla> — <qué correr>")`. **Las listas que el dueño
+aprobó en D5 no cambian**: misma condición, mismo mensaje, otra forma. Prueba: los ficheros dorados y
+el proyecto real de F6 pasan igual, y un fichero roto a propósito sale con el `ValueError`. Los
+`assert` de invariantes internas (no de puerta) se quedan.
+
+## 20. `except` amplios a cero (F20)
+
+`CODESTYLE.md` §5. El trinquete cuenta 57. Cada uno acaba en uno de tres sitios:
+1. **`ui/`** (frontera con una persona): se queda, capturando la excepción concreta si se sabe.
+2. **Limpieza de un efecto externo** — un worker arrancado, un lock, una escritura en `AlgoData`, SQX o
+   MT5 —: pasa a `try/finally`, o a fichero temporal y `rename`.
+3. **El resto se borra** y el error sube. Quitar uno cambia el comportamiento (revienta donde antes
+   callaba): cada uno con el test que lo cubre, y el que oculte un fallo real es un hallazgo para el
+   dueño, no algo que se arregla callando (como D3).
+Al cerrar, el recuento del trinquete es el de los que quedan en `ui/`.
+
+## 21. `Optional` y unidades (F21)
+
+Al hilo de F9, en lo que ya se toca: una función que devuelve `Optional` para un valor que no puede
+faltar deja de hacerlo, y el que sí puede faltar lanza en el origen (`CODESTYLE.md` §3). Una cantidad
+cuya unidad no es obvia — puntos o precio, fracción o porcentaje, barras o minutos — la dice en el
+nombre o en `Args:`. Sin barrido aparte: sólo en las funciones públicas que F9 abre.
+
+## 22. Integridad de la investigación (F22)
+
+`CODESTYLE.md` §8 es nueva y **nadie ha medido cuánto código la incumple**. Primero Opus mide, en
+`engines/`, `studies/`, `portfolio/` y `ledger/`, y devuelve una tabla de `file:line` por regla:
+1. funciones que alinean señales, precios u operaciones sin decir qué barra usa cada salida, y si su
+   test tiene un caso que un desfase de una barra haría fallar;
+2. código que lee `oos` u `oos2` sin nombrar la muestra en sus argumentos;
+3. módulos que reducen una población sin `ledger.record.log`;
+4. resultados guardados sin semilla, parámetros o entradas al lado;
+5. NaN que pueden llegar a la inferencia sin anunciarse, y floats comparados con `==`.
+**El dueño ve la tabla antes de arreglar nada.** Un desfase de información futura o una muestra
+mezclada es un hallazgo que mueve resultados: se para y se dice (ver «Lo que no tocas»), nunca se
+arregla de paso. Lo que sea docstring o firma lo escribe Sonnet.
 
 ## 18. `ruff format` (F18)
 
@@ -265,6 +316,10 @@ D3 **C** (trinquete: todo `zip` nuevo dice `strict=`, y los 235 viejos se revisa
 su test; uno que hoy empareje longitudes distintas es un hallazgo para el dueño, no algo que se
 arregla callando).
 **Sigue abierta:** D11 (la propone Opus en F14).
+**Contestadas el 2026-10-14, tras reescribir `CODESTYLE.md`:** D15 **A** (los `assert` de puerta de F6
+pasan a `raise`, con las mismas listas de D5: F19) · D16 **A** (`except` amplios a cero salvo `ui/` y la
+limpieza de efectos externos: F20) · D17 **A** (lo nuevo entra en este encargo como F19-F22, antes de
+F18, y no en uno aparte).
 
 ## Lo que no tocas
 
@@ -277,7 +332,7 @@ arregla callando).
 
 Qué hizo cada fase · la tabla de recuentos antes y después, con la salida del Objetivo pegada · la
 lista de `B023` que eran bugs · qué quedó sin hacer y por qué · qué descubrió para `knowhow/eng/` ·
-la revisión independiente de `CODESTYLE.md` §12.6 sobre el diff entero · los ficheros cambiados y
+la revisión independiente de `CONTRIBUTING.md` §5 sobre el diff entero · los ficheros cambiados y
 «¿Quieres hacer el commit?».
 
 ```

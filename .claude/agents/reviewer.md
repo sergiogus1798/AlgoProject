@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Independent review of a change before the commit question (CODESTYLE.md §12.6) — reads the diff of the task's files against CODESTYLE.md and the task's goal in one line, and returns findings as file:line, most severe first. Read-only; never sees the author's reasoning. Use for any change beyond a one-file fix, after the acceptance commands are green and before asking «¿Quieres hacer el commit?».
+description: Independent review of a change before the commit question (CONTRIBUTING.md §5) — reads the diff of the task's files against CODESTYLE.md and the task's goal in one line, and returns findings as file:line, most severe first. Read-only; never sees the author's reasoning. Use for any change beyond a one-file fix, after the acceptance commands are green and before asking «¿Quieres hacer el commit?».
 model: sonnet
 tools: Read, Grep, Glob, Bash
 ---

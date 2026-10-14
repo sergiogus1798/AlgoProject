@@ -13,7 +13,7 @@
 | `layering.py` | Layering check: which project package may import which, with today's violations as debt. | imported, not run |
 | `manual.py` | Build the user manual as one PDF per workflow family, from the markdown in AlgoData. | `python3 tools/manual.py` |
 | `projectmap.py` | Generate PROJECT_MAP.md from Graphify's graph: modules, who talks to whom, infra vs calculation, hot spots. | `python3 tools/projectmap.py` |
-| `ratchet.py` | Ratchet: debt counts that may fall but never rise (CODESTYLE.md §8), baseline in ratchet.json. | `python3 tools/ratchet.py` |
+| `ratchet.py` | Ratchet: debt counts that may fall but never rise (CODESTYLE.md §12), baseline in ratchet.json. | `python3 tools/ratchet.py` |
 | `readmetable.py` | Generate the «file» and «what it does» columns of every code folder's README table from the modules' docstrings. | `python3 tools/readmetable.py` |
 | `skillmap.py` | Read every installed skill and rewrite docs/SKILLS.md: what exists, what it costs, where. | `python3 tools/skillmap.py` |
 | `uiinventory.py` | Inventory every actionable widget of one zone of the window, drive each one, and say what happened. | `QT_QPA_PLATFORM=offscreen ALGO_DATA_ROOT=<test root> python3 tools/uiinventory.py --port 8771 --zone Portfolios [--write] [--shots DIR] [--out FILE.md] [--daemon-log FILE]` |

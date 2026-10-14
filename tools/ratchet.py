@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ratchet: debt counts that may fall but never rise (CODESTYLE.md §8), baseline in ratchet.json."""
+"""Ratchet: debt counts that may fall but never rise (CODESTYLE.md §12), baseline in ratchet.json."""
 
 import ast
 import json
@@ -94,7 +94,7 @@ def check(files: list[Path]) -> list[str]:
             return [f"{tool} not found: ratchet not checked (pip install --user -r requirements.txt)"]
     now = counts(files)
     old = json.loads(BASELINE.read_text(encoding="utf-8")) if BASELINE.exists() else {}
-    rose = [f"{k}: {old[k]} -> {v} (ratchet: may not rise; see CODESTYLE.md §8)"
+    rose = [f"{k}: {old[k]} -> {v} (ratchet: may not rise; see CODESTYLE.md §12)"
             for k, v in now.items() if k in old and v > old[k]]
     if not rose and (set(now) != set(old) or any(now[k] < old.get(k, 0) for k in now)):
         BASELINE.write_text(json.dumps(now, indent=2, sort_keys=True) + "\n", encoding="utf-8")
