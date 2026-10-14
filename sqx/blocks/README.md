@@ -4,7 +4,7 @@
 |---|---|---|---|
 | `install.py` | Install authored custom blocks or random groups into a stopped SQX install's settings. | `python3 -m sqx.blocks.install <blocks.xml> [--role conductor]` | an XML of `<Item key="CBlock_…">` → the install's store, plus a dated backup. Since 2026-10-11 it validates (parse, element tag, `CBlock_` key), writes atomically and refreshes the taxonomy itself (`taxonomy.refresh`) |
 | `palette.py` | The palette library: named block selections, each one a family plus what it changes. | `python3 -m sqx.blocks.palette [NAME]` | a palette + the taxonomy → a switch per block |
-| `taxonomy.py` | The block taxonomy: every block the builder can sample, grouped and ready to be labelled. | `python3 -m sqx.blocks.taxonomy [--role master]` | the install's three XML files + a donor's Build task → 767 rows in 83 categories |
+| `taxonomy.py` | The block taxonomy: every block the builder can sample, grouped and ready to be labelled. | `python3 -m sqx.blocks.taxonomy [--role master]` | the install's three XML files + a donor's Build task → 775 rows in 87 categories |
 | `taxonomy_discover.py` | Read the builder's reachable blocks off an install and a donor's Build task. | — | a donor's Build task + a `vocabulary()` → block keys, roles and rows |
 
 **No GUI import is needed.** `customBlocks.xml` is the store itself, and `sqcli` never rewrites it
@@ -25,7 +25,7 @@ The labels are the point and they are **not** derived: `archetypes` is a weight 
 `session`; `taxonomy.family_blocks(family, min_weight)` lists them) that somebody — a person or a labelling agent — puts there.
 Everything else in the file is read back from the install on each refresh and overwritten.
 
-Only the **767 blocks the builder can actually sample** are here, taken from a Build task's
+Only the **775 blocks the builder can actually sample** are here, taken from a Build task's
 `<BuildingBlocks>`. The 253 natives that appear in no role — the actions, the maths functions, the
 158 `talib_*` — are real vocabulary and unreachable from generation, so labelling them would be
 labelling something no palette can ever switch.

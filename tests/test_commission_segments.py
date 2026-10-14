@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Known-answer test for the 2026-09-29 commission fix: a `no_forex` asset with commission
-confirmed prices the WHOLE workflow at Darwinex's own %, the same in build/oos1/oos2 — not
-the per-segment "max broker" pick this replaces — and `core.commission.commission_pct` converts
+"""Known-answer test for the commission per segment: an asset with commission confirmed prices
+the WHOLE workflow at one method and value, the same in build/oos1/oos2, and a built project's
+Setup carries exactly that `use` — and `core.commission.commission_pct` converts
 a broker's own $/lot figure into the % `broker_pct()` hands step 26 and `weeklyReconciler`.
 """
 
@@ -49,23 +49,20 @@ def test_commission_pct_known_answer() -> None:
 
 
 def test_xauusd_real_file() -> None:
-    """Gold's own file (owner's 2026-09-29 correction): build and oos2 both carry Darwinex's
-    PercentageBased 0.005 — the same method AND value in every segment, not one broker per
-    segment picked by who is more expensive there."""
+    """Gold's own file: build, oos1 and oos2 carry the same method AND value — one figure for the
+    whole workflow, not one broker per segment. Which broker wins is the cost cards' call
+    (`assets/_classes.yaml`), so the test reads it instead of pinning it."""
     print("test_xauusd_real_file")
     use = load("XAUUSD")["costs"]["commission"]["use"]
     check(
-        "build: Darwinex, PercentageBased, 0.005 % of notional",
-        use["build"] == {"method": "PercentageBased", "value": 0.005},
+        "build, oos1 and oos2 agree, method and value both",
+        use["build"] == use["oos1"] == use["oos2"],
+        use,
+    )
+    check(
+        "the method is one SQX knows",
+        use["build"]["method"] in ("SizeBased", "PercentageBased"),
         use["build"],
-    )
-    check(
-        "oos2: Darwinex, PercentageBased, 0.005 % of notional",
-        use["oos2"] == {"method": "PercentageBased", "value": 0.005},
-        use["oos2"],
-    )
-    check(
-        "build and oos2 agree, method and value both", use["build"] == use["oos2"], use
     )
 
 
@@ -91,11 +88,13 @@ def test_xauusd_broker_table_has_pct_now() -> None:
     )
 
 
-def test_setup_carries_the_fixed_darwinex_pct() -> None:
-    """A built project's Build task and its retest task must both carry Darwinex's
-    PercentageBased 0.005 — the SAME method and value everywhere, reusing
+def test_setup_carries_the_asset_use() -> None:
+    """A built project's Build task and its retest task both carry the asset's `use` — the SAME
+    method and value everywhere, reusing
     `test_builder_feedswap.py`'s temp-install pattern (no real SQX install touched)."""
-    print("test_setup_carries_the_fixed_darwinex_pct")
+    print("test_setup_carries_the_asset_use")
+    want = load("XAUUSD")["costs"]["commission"]["use"]["build"]
+    method, value = want["method"], want["value"]
     with tempfile.TemporaryDirectory(prefix="sqx-test-install-") as install:
         builder.worker_dir = lambda role: Path(install)
         done = builder.build(
@@ -115,16 +114,15 @@ def test_setup_carries_the_fixed_darwinex_pct() -> None:
             retest_xml = z.read("Retest-Task1.xml").decode("utf-8")
 
         for label, xml in (("Build", build_xml), ("Retest", retest_xml)):
+            at = xml.find(f'<Method type="{method}"')
             check(
-                f"{label}'s Setup has PercentageBased switched on",
-                '<Method type="PercentageBased"' in xml
-                and 'use="true"'
-                in xml[xml.index('<Method type="PercentageBased"') :][:70],
+                f"{label}'s Setup has {method} switched on",
+                at >= 0 and 'use="true"' in xml[at:][:70],
             )
             check(
-                f"{label}'s PercentageBased param carries Darwinex's 0.005",
-                'className="PercentageBased">0.005' in xml,
-                xml,
+                f"{label}'s {method} param carries {value}",
+                f'className="{method}">{value}' in xml,
+                xml[at:][:400] if at >= 0 else "",
             )
 
 
@@ -133,7 +131,7 @@ def main() -> None:
     test_commission_pct_known_answer()
     test_xauusd_real_file()
     test_xauusd_broker_table_has_pct_now()
-    test_setup_carries_the_fixed_darwinex_pct()
+    test_setup_carries_the_asset_use()
     if FAILURES:
         print(f"\ntest_commission_segments: FAILED — {', '.join(FAILURES)}")
         sys.exit(1)

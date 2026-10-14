@@ -35,7 +35,7 @@ def test_every_block_has_exactly_seven_weights_in_range() -> None:
         if set(r["archetypes"]) != set(ARCHETYPES)
         or any(w not in (0, 1, 2, 3) for w in r["archetypes"].values())
     }
-    assert len(BLOCKS) == 767 and not bad, (
+    assert len(BLOCKS) == 775 and not bad, (
         f"{len(bad)} blocks off-schema, first: {list(bad.items())[:3]}"
     )
 

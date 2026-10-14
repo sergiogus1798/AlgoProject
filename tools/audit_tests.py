@@ -30,28 +30,7 @@ SLOW: dict[str, int] = {
 
 # Set aside, never silently: path -> (reason, date). The audit prints this list as "apartadas" and
 # says when one passes again, so the entry is removed. Not a failure while listed.
-ASIDE: dict[str, tuple[str, str]] = {
-    "tests/test_commission_segments.py": (
-        "Darwinex's commission is PercentageBased 0.005 in the asset cards, the donor's Build and "
-        "Retest Setup still say SizeBased 5.0: cost cards in motion (assets/_build.yaml)",
-        "2026-10-02",
-    ),
-    "tests/test_perf66_catalogue.py": (
-        "test_timing_unchanged_by_memory_pass_for_numpy_free_code compares two 50 ms busy-waits to "
-        "20 ms: passes on an idle machine, fails under load (24 ms at load average 34)",
-        "2026-10-14",
-    ),
-    "tests/test_taxonomy.py": (
-        "8 close-crosses blocks (Donchian, EMA, HMA, Keltner) entered sqx/blocks/taxonomy.yaml in "
-        "c81dcbb with empty archetypes: their seven weights are an authoring call, not a test fix",
-        "2026-10-14",
-    ),
-    "tests/test_ui_results.py": (
-        "the results catalogue does not match studies/ (board, marketProfile, memory, monteCarlo): "
-        "ui/daemon/results/ and studies/research are in motion in another session",
-        "2026-10-02",
-    ),
-}
+ASIDE: dict[str, tuple[str, str]] = {}
 
 
 def run_one(path: str) -> tuple[str, int, float, str]:

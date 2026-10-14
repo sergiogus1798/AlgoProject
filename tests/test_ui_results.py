@@ -41,10 +41,12 @@ def check_catalogue(c: TestClient, failures: list[str]) -> None:
     """Every study folder is listed once, in family order, with a known role."""
     got = c.get("/api/catalogue").json()["studies"]
     keys = [s["key"] for s in got]
-    folders = {p.name for p in ROOT.glob("studies/*/*") if p.is_dir()} - {
-        "analysis",
-        "spread",
-    }
+    # research/ is a subsystem with its own zone (test_ui_research); batches/ is imported, never run
+    folders = {
+        p.name
+        for p in ROOT.glob("studies/*/*")
+        if p.is_dir() and p.parent.name != "research" and p.name != "__pycache__"
+    } - {"analysis", "spread", "batches"}
     if set(keys) != folders | {"monteCarlo"} or len(keys) != len(set(keys)):
         failures.append(
             f"el catálogo no casa con studies/: {sorted(set(keys) ^ folders)}"

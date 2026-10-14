@@ -47,10 +47,10 @@ def test_timing_unchanged_by_memory_pass_for_numpy_free_code(
 
     monkeypatch.setitem(runner.TARGETS, "t", {"call": call})
     cfg = {"harness": {"sample_ms": 10}}
-    assert (
-        abs(runner.measure("t", cfg)["wall_s"] - runner.measure("t", cfg, 1)["wall_s"])
-        < 0.02
-    )
+    # the fastest of five each: a busy-wait preempted under load only ever runs longer
+    plain = min(runner.measure("t", cfg)["wall_s"] for _ in range(5))
+    traced = min(runner.measure("t", cfg, 1)["wall_s"] for _ in range(5))
+    assert abs(plain - traced) < 0.02, (plain, traced)
 
 
 def _child(ready: Event, go: Event) -> None:
