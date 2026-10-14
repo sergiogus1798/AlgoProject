@@ -204,3 +204,4 @@ def test_an_spp_tag_the_task_lacks_is_a_refusal() -> None:
             "</OptProfileSysParamPermutation></CrossChecks>")
     with pytest.raises(SystemExit, match="DistributionUp"):
         harness.spp(task, 35, 4.0, 15000)
+

@@ -1,10 +1,13 @@
 """Known-answer tests of the live protocol: SPRT boundaries and crossings, and stage A's rows."""
 import shutil
+import sys
 import tempfile
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core import assetwrite
 from core.assetwrite import failures
