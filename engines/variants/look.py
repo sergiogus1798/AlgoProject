@@ -44,7 +44,7 @@ def admit(step: float, segments: tuple, symbol: str) -> None:
             not have happened, so the refusal comes before the parquet is read.
     """
     for segment in segments:
-        gate.allow(step, segment, symbol)  # pyright: ignore[reportArgumentType]  # ledger.gate.allow annotates step: int, the steps include 16.5
+        gate.allow(step, segment, symbol)
         gate.seal(step, segment, symbol)
 
 

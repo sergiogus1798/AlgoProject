@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime, timezone
 
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -33,7 +34,7 @@ def read(study: str) -> pd.DataFrame:
     file = path(study)
     rows = ([json.loads(x) for x in file.read_text(encoding="utf-8").splitlines() if x.strip()]
             if file.exists() else [])
-    return pd.DataFrame(rows, columns=list(COLUMNS)) if not rows else pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=pd.Index(COLUMNS)) if not rows else pd.DataFrame(rows)
 
 
 def _append(study: str, rows: list[dict]) -> None:
@@ -44,7 +45,7 @@ def _append(study: str, rows: list[dict]) -> None:
         handle.write("".join(json.dumps(r, default=str) + "\n" for r in rows))
 
 
-def _stamp(study: str, **row: object) -> dict:
+def _stamp(study: str, **row: object) -> dict[str, Any]:
     """One L2 line: every column present, the study and the time stamped."""
     return {**{k: None for k in COLUMNS}, "study": study, "fix": False,
             "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"), **row}
@@ -115,8 +116,8 @@ def note_run(study: str, module: str, input_hash: str, config_hash: str, launche
 def _note_run(study: str, module: str, input_hash: str, config_hash: str, launched_by: str) -> str | None:
     """Record a re-run (same module and input, new config) once; the search id, or None if already recorded."""
     seen = read(study)
-    seen = seen[(seen["kind"] == "config") & (seen["name"] == module) & (seen["input_hash"] == input_hash)] \
-        if len(seen) else seen
+    seen = pd.DataFrame(seen[(seen["kind"] == "config") & (seen["name"] == module)
+                             & (seen["input_hash"] == input_hash)] if len(seen) else seen)
     if len(seen) and (seen["config_hash"] == config_hash).any():
         return None
     sid = seen["search_id"].iloc[0] if len(seen) else uuid.uuid4().hex[:12]
@@ -158,13 +159,14 @@ def summary(study: str) -> pd.DataFrame:
     """
     frame = read(study)
     out = []
-    for sid, g in (frame[~frame["fix"].astype(bool)] if len(frame) else frame).groupby("search_id", sort=False):
+    g: pd.DataFrame
+    for sid, g in pd.DataFrame(frame[~frame["fix"].astype(bool)] if len(frame) else frame).groupby("search_id", sort=False):
         kept = g[g["chosen"].astype(bool)]
         runs = g["kind"].iloc[0] == "config"
         out.append({"search_id": sid, "kind": g["kind"].iloc[0], "name": g["name"].iloc[0],
                     "probados": len(g), "elegido": ", ".join(map(str, kept["value"])) if not runs else "",
                     "cuenta": max(len(g) - 1, 0) if runs else (len(g) if len(kept) else 0)})
-    return pd.DataFrame(out, columns=["search_id", "kind", "name", "probados", "elegido", "cuenta"])
+    return pd.DataFrame(out, columns=pd.Index(["search_id", "kind", "name", "probados", "elegido", "cuenta"]))
 
 
 def as_rows(study: str) -> pd.DataFrame:
@@ -174,11 +176,11 @@ def as_rows(study: str) -> pd.DataFrame:
     score, another unit) is unit `sweep` and only raises N.
     """
     frame = read(study)
-    counted = summary(study).set_index("search_id")["cuenta"] if len(frame) else pd.Series(dtype=int)
+    counted = pd.Series(summary(study).set_index("search_id")["cuenta"] if len(frame) else pd.Series(dtype=int))
     rows = []
-    for sid, k in counted[counted > 0].items():
-        g = frame[(frame["search_id"] == sid) & ~frame["fix"].astype(bool)]
-        score = pd.to_numeric(g["score"], errors="coerce").to_numpy(float)
+    for sid, k in pd.Series(counted[counted > 0]).items():
+        g = pd.DataFrame(frame[(frame["search_id"] == sid) & ~frame["fix"].astype(bool)])
+        score = pd.Series(pd.to_numeric(g["score"], errors="coerce")).to_numpy(float)
         unit = g["score_unit"].iloc[0]
         row = {"ts": g["ts"].iloc[0], "step": g["step"].iloc[0], "n_scored": int(k),
                "score_unit": SWEEP_UNIT}
@@ -186,7 +188,7 @@ def as_rows(study: str) -> pd.DataFrame:
             row |= {"score_unit": unit, "sharpe_mean": float(np.mean(score)),
                     "sharpe_std": float(np.std(score, ddof=1))}
         rows.append(row)
-    return pd.DataFrame(rows, columns=["ts", "step", "n_scored", "score_unit", "sharpe_mean", "sharpe_std"])
+    return pd.DataFrame(rows, columns=pd.Index(["ts", "step", "n_scored", "score_unit", "sharpe_mean", "sharpe_std"]))
 
 
 def with_sweeps(frame: pd.DataFrame, study: str) -> pd.DataFrame:

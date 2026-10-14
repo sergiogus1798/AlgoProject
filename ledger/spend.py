@@ -1,5 +1,7 @@
 """The map of spent data: which stretches of history a search has already looked at."""
 
+from typing import Any
+
 import pandas as pd
 
 from core import assetdata
@@ -22,7 +24,7 @@ def spent(frame: pd.DataFrame) -> pd.DataFrame:
         called in the config.
     """
     if not len(frame):
-        return pd.DataFrame(columns=["segment", "searches", "steps", "first", "last"])
+        return pd.DataFrame(columns=pd.Index(["segment", "searches", "steps", "first", "last"]))
     grouped = by_segment(frame).groupby("segment")
     return pd.DataFrame({"searches": grouped.size(),
                          "steps": grouped["step"].apply(lambda s: sorted(set(s))),
@@ -30,7 +32,7 @@ def spent(frame: pd.DataFrame) -> pd.DataFrame:
                          "last": grouped["ts"].max()}).reset_index()
 
 
-def virgin(frame: pd.DataFrame, symbol: str) -> dict:
+def virgin(frame: pd.DataFrame, symbol: str) -> dict[str, dict[str, Any]]:
     """What is left untouched of this asset's history.
 
     Args:

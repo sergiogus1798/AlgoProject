@@ -32,8 +32,8 @@ class Ledger(TypedDict):
 
     study: str
     searches: int
-    trials: dict
-    segments: dict
+    trials: trials.Accumulated
+    segments: dict[str, dict[str, Any]]
     sha256: str | None
 
 

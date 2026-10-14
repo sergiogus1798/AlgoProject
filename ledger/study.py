@@ -60,7 +60,7 @@ def read(study: str) -> pd.DataFrame:
     """
     file = path(study)
     if not file.exists():
-        return pd.DataFrame(columns=list(COLUMNS))
+        return pd.DataFrame(columns=pd.Index(COLUMNS))
     rows = [json.loads(line) for line in file.read_text(encoding="utf-8").splitlines()
             if line.strip()]
     return pd.DataFrame(rows)

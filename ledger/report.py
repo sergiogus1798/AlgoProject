@@ -24,7 +24,7 @@ def returns_of(equity: Path, identity: str) -> np.ndarray:
         it must also be per day -- see the conversion in `main`.
     """
     frame = pd.read_parquet(equity)
-    one = frame[frame["identity"] == identity].sort_values("day")
+    one = pd.DataFrame(frame[frame["identity"] == identity]).sort_values("day")
     return np.diff(one["equity"].to_numpy(float))
 
 
@@ -93,10 +93,10 @@ def main() -> None:
     if not counted["n"]:
         print("\n-- ninguna búsqueda registró la distribución de sus candidatos")
         return
-    print(f"\n-- lo que se ha probado en total: N = {counted['n']} = {counted['searched']} "
+    print(f"\n-- lo que se ha probado en total: N = {counted['n']} = {counted.get('searched')} "
           f"candidatos de {counted['searches']} búsqueda(s) + {spent['hypotheses']} hipótesis "
           f"medidas en {spent['ideas']} idea(s) ({' y '.join(spent['directions'])}), "
-          f"sigma = {counted['sigma']:.4f} ({counted['unit']})")
+          f"sigma = {counted['sigma']:.4f} ({counted.get('unit')})")
     print(f"  aparte, sin sumar: {research.profile_looks(symbol, timeframe, spent['directions'])}"
           " medidas del perfil de mercado y su barrido, corregidas entre sí")
 
@@ -107,7 +107,7 @@ def main() -> None:
     last = frame[frame["n_scored"].notna()].iloc[-1]
     local = int(last["n_scored"])
     sigma = counted["sigma"]
-    widths = (("la última búsqueda", local), ("todas las búsquedas", counted["searched"]),
+    widths = (("la última búsqueda", local), ("todas las búsquedas", counted.get("searched", 0)),
               ("búsquedas + ideas", counted["n"]))
     for label, n in widths:
         print(f"  benchmark con N de {label:<19} ({n:>5}): "

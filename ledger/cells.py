@@ -14,6 +14,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from collections import defaultdict
+from typing import Any
 
 from core.paths import DATA, ROOT
 from core.store.write import atomic, locked
@@ -35,7 +36,7 @@ def key(symbol: str, timeframe: str, direction: str, family: str) -> str:
     return "_".join((symbol, timeframe, direction or UNKNOWN, family or UNKNOWN))
 
 
-def describe(row: dict, tpl: dict) -> dict:
+def describe(row: dict, tpl: dict) -> dict[str, str]:
     """symbol, timeframe, direction, family and template of a registry row.
 
     Direction: `simple:long` in the registry's template column, else the library template's `shape`
@@ -55,6 +56,7 @@ def built() -> dict[str, int]:
     """Strategies the build generated, by project: the `n_scored` of the step-6 rows
     `steprows.log_build` wrote (note `proyecto <name>`). Absent for a project that left none."""
     out: dict[str, int] = {}
+    r: Any   # itertuples() rows are namedtuples, typed as plain tuples
     for sid in studymod.studies():
         frame = studymod.read(sid)
         for r in frame[frame["step"] == 6].itertuples() if len(frame) else ():
@@ -104,7 +106,7 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def seal() -> dict:
+def seal() -> dict[str, str]:
     """Put the first seal, once: the sha256 of `criteria.yaml` now, on every cell at once.
 
     Returns:
@@ -211,7 +213,7 @@ def look_oos2(project: str, max_looks: int) -> int:
     return now
 
 
-def backfill() -> dict:
+def backfill() -> dict[str, int]:
     """Rebuild `projects.csv` from each registered project's newest `gate/funnel.csv`. Run once.
 
     Returns:

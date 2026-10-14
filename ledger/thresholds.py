@@ -2,6 +2,7 @@
 
 import re
 from functools import lru_cache
+from typing import Any
 
 import pandas as pd
 from core.assetyaml import safe_load
@@ -50,7 +51,7 @@ def value(key: str) -> object:
     return found[0]
 
 
-def fill(node: object) -> object:
+def fill(node: Any) -> Any:
     """A parsed config.yaml with every "ledger:<key>" replaced by the ledger's value.
 
     Args:
@@ -86,7 +87,7 @@ def resolve(source: str) -> float:
     return walk(safe_load((ROOT / path).read_text(encoding="utf-8")), dotted)
 
 
-def walk(node: object, dotted: str) -> object:
+def walk(node: Any, dotted: str) -> Any:
     """Follow the part of a pointer after the `#` through a parsed config.
 
     Args:

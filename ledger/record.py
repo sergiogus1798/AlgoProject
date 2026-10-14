@@ -1,6 +1,7 @@
 """Contract L1: one appended line per search that looked at data and reduced a population."""
 
 import json
+from typing import Any
 from datetime import datetime, timezone
 
 import numpy as np
@@ -12,7 +13,7 @@ REQUIRED = ("step", "launched_by", "symbol", "timeframe", "segment", "n_in", "n_
             "criterion")
 
 
-def distribution(values: np.ndarray) -> dict:
+def distribution(values: np.ndarray) -> dict[str, float | int | None]:
     """The spread of the candidates a search chose from, not just its winner.
 
     Args:
@@ -32,7 +33,7 @@ def distribution(values: np.ndarray) -> dict:
             "sharpe_max": float(clean.max()), "n_scored": int(clean.size)}
 
 
-def search(study: str, row: dict, scores: np.ndarray = None) -> dict:
+def search(study: str, row: dict[str, Any], scores: np.ndarray | None = None) -> dict[str, Any]:
     """Build one ledger row, checking it says enough to be worth keeping.
 
     Args:
@@ -62,7 +63,7 @@ def search(study: str, row: dict, scores: np.ndarray = None) -> dict:
             "score_unit": row.get("score_unit", "per_period" if scored else None)}
 
 
-def append(study: str, row: dict) -> dict:
+def append(study: str, row: dict[str, Any]) -> dict[str, Any]:
     """Write one search to the study's ledger.
 
     Args:
@@ -84,7 +85,7 @@ def append(study: str, row: dict) -> dict:
     return row
 
 
-def log(study: str, row: dict, scores: np.ndarray = None) -> dict:
+def log(study: str, row: dict[str, Any], scores: np.ndarray | None = None) -> dict[str, Any]:
     """Check the one-way door, then record the search. The call every module makes.
 
     Args:
@@ -115,6 +116,6 @@ def funnel(frame: pd.DataFrame) -> pd.DataFrame:
         `n_out`/`n_in` column: this is the number the owner asked for -- whether the three
         survivors came out of ten thousand or out of fifty.
     """
-    kept = frame[["ts", "step", "criterion", "segment", "n_in", "n_out"]].copy()
+    kept = pd.DataFrame(frame[["ts", "step", "criterion", "segment", "n_in", "n_out"]])
     kept["kept"] = (kept["n_out"] / kept["n_in"]).round(4)
     return kept

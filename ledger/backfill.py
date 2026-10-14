@@ -4,6 +4,7 @@
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -16,7 +17,7 @@ GATE_CONFIG = ROOT / "studies" / "screening" / "gate" / "config.yaml"
 SCORE = "Sharpe Ratio [OOS]"   # what counts as a candidate's score, in SQX's own units
 
 
-def thresholds_of(screen: str) -> dict:
+def thresholds_of(screen: str) -> dict[str, Any]:
     """What the gate's config says that screen was judged on.
 
     Args:
@@ -70,6 +71,7 @@ def from_gate(folder: Path, study: str, symbol: str, timeframe: str) -> list[dic
     funnel = pd.read_csv(folder / "funnel.csv")
     source = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
     rows = []
+    screen: Any   # itertuples() rows are namedtuples, typed as plain tuples
     for screen in funnel.itertuples():
         # A soft screen informs and removes nobody, so recording its `passed` as the
         # population that came out would say the study ended with nothing left. The count
@@ -104,7 +106,7 @@ def calib(populations: Path, write: bool) -> None:
         print("(sin --write, o con --dry-run, no se ha escrito nada)")
         return
     done = {s for s in frame["study"].unique()
-            if studymod.read(s).get("note", pd.Series(dtype=str)).fillna("").str.startswith(
+            if pd.Series(studymod.read(s).get("note", pd.Series(dtype=str))).fillna("").str.startswith(
                 "backfill calibración").any()}
     if done:
         raise SystemExit(f"ya tienen filas de calibración: {sorted(done)}; no se reescriben")

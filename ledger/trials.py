@@ -1,16 +1,42 @@
 """How much was really tried, across every search of a study rather than inside the last one."""
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
 
 from core.significance import moments
 from core.surface import plateau
+from core.surface.plateau import Deflated
 
 SHARPE_UNITS = ("per_period", "annualised")   # the only score units that are a Sharpe
 YEAR = 252      # trading days a year, for converting SQX's annualised Sharpes
 
 
-def accumulated(frame: pd.DataFrame, extra: int | None = 0) -> dict:
+class _Counted(TypedDict):
+    """The keys every `accumulated` result has."""
+
+    n: int
+    sigma: float
+    searches: int
+
+
+class Accumulated(_Counted, total=False):
+    """`accumulated`'s result; an empty study carries only `n`, `sigma`, `searches`."""
+
+    searched: int
+    extra: int
+    mean: float
+    unit: str
+
+
+class Overall(Accumulated):
+    """`overall`'s result: `accumulated` plus the number of studies that carry rows."""
+
+    studies: int
+
+
+def accumulated(frame: pd.DataFrame, extra: int | None = 0) -> Accumulated:
     """The number of trials and the spread of their scores, over the whole study.
 
     Args:
@@ -38,11 +64,11 @@ def accumulated(frame: pd.DataFrame, extra: int | None = 0) -> dict:
     its scores are not Sharpes and never reach sigma.
     """
     extra = extra or 0
-    scored = frame[frame["n_scored"].notna()] if len(frame) else frame
+    scored = pd.DataFrame(frame[frame["n_scored"].notna()] if len(frame) else frame)
     if not len(scored):
         return {"n": 0, "sigma": float("nan"), "searches": 0}
     searched = int(scored["n_scored"].sum())
-    scored = scored[scored["score_unit"].isin(SHARPE_UNITS) | scored["score_unit"].isna()]
+    scored = pd.DataFrame(scored[scored["score_unit"].isin(SHARPE_UNITS) | scored["score_unit"].isna()])
     if not len(scored):
         return {"n": searched + extra, "searched": searched, "extra": extra,
                 "sigma": float("nan"), "mean": float("nan"), "searches": 0, "unit": "per_period"}
@@ -60,7 +86,7 @@ def accumulated(frame: pd.DataFrame, extra: int | None = 0) -> dict:
             "mean": grand, "searches": int(len(scored)), "unit": "per_period"}
 
 
-def overall(frames: list[pd.DataFrame]) -> dict:
+def overall(frames: list[pd.DataFrame]) -> Overall:
     """N across every study: what the whole project has ever looked at, not one asset's share.
 
     Args:
@@ -76,7 +102,7 @@ def overall(frames: list[pd.DataFrame]) -> dict:
             "studies": len(held)}
 
 
-def deflated(returns: np.ndarray, sigma: float, n_eff: int) -> dict:
+def deflated(returns: np.ndarray, sigma: float, n_eff: int) -> Deflated:
     """The deflated Sharpe of one survivor, against everything the study ever tried.
 
     Args:

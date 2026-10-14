@@ -46,7 +46,7 @@ def reserved(symbol: str) -> dict[str, list[int]]:
             for name, spec in segments.items() if spec.get("reserved_for")}
 
 
-def allow(step: int, segment: str, symbol: str) -> None:
+def allow(step: float, segment: str, symbol: str) -> None:
     """Refuse a search that would spend a segment it has no claim on.
 
     Args:
