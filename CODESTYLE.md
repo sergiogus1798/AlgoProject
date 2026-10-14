@@ -209,8 +209,8 @@ be checked, and a difference between two runs cannot be told from a bug.
    through its test. And read your own `git diff` before reporting: a debugging `print`, a leftover
    or a file that was not the task's is found there.
 6. **An independent review before the commit question**, for any change beyond a one-file fix.
-   Spawn a `general-purpose` subagent, `model: "sonnet"` (Opus, said in the brief, when the diff
-   touches inference or statistics), and give it three things only: `git diff -- <the task's files>`,
+   Spawn the `reviewer` agent (`.claude/agents/reviewer.md`, Sonnet; pass `model: "opus"` when the
+   diff touches inference or statistics), and give it three things only: `git diff -- <the task's files>`,
    this file, and the task's goal in one line. **Never your reasoning or your summary** — a reviewer
    handed the author's account returns it confirmed. It answers with findings as `file:line`; fix
    or rebut each one, and tell the owner the ones left standing.
