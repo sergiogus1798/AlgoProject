@@ -307,6 +307,14 @@ sale alta, la regresión sobra: es beta con horario.
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- D-1 → **sólo se informa** (regla 15). D-2 → **UTC**. D-4 → **ambos** (frecuencia y win rate, y ranking). D-5 → **`studies/readings/`**.
+- D-6 → **esperar** a la definición del stop. D-7 → **medir antes** de añadir Numba. D-8 → **la p predice pasar el paso siguiente**.
+- D-10 → **numpy**. D-11 → **esperar** a corridas de otro símbolo.
+- Siguen abiertas: D-3 (mínimo de operaciones por celda) y D-9 (corte de p, con la tabla delante).
+- D-3 → **30 operaciones** por celda. Sigue abierta D-9.
+
+
 | id | pregunta | lecturas |
 |---|---|---|
 | D-1 (ex 25) | Si la lectura de estacionalidad muestra una hora o un día malo, ¿qué se hace con ello? | (a) sólo se reporta como fragilidad; (b) se propone un filtro horario a la generación — choca con la regla 15, necesita tu OK explícito |

@@ -307,6 +307,16 @@ que cambie (regla 8). Si el dueño decide (Q6) que los criterios varían por fam
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- Q1 → **un año, sin AR(1)**, salvo que K-m muestre diferencia. Q4b → **sin suelo** extra (R5b ya lo cubre).
+- Q2/Q3/Q4 → **se rehacen al reescribir el 50** contra el 65 (R3 cambió).
+- Q4c → activo, TF y tipo de V **se preguntan al lanzarla**. Q5 → **borrar** los nulos de la t si K-m los cubre. Q6 → **sin criterios por familia**.
+- D1 → **llamada directa al builder** para este estudio. D2 → **paleta `_v2`**. D3 → **sesión, día y VWAP anclado leen el reloj: fuera**.
+- D4 → **no** se gastan builds en las celdas medidas en contra. D5 → **asumir la pérdida**, medirla y reabrir si es grande.
+- D6 → **toda estrategia lleva regla de salida**, también con plantilla. D7 → **sí**, confirmándolo con la duración medida. D8 → **no** se vuelve a leer oos1.
+- Sin objeto por el 65: parada 3 (`dev`), Q4d.
+
+
 **De la puerta (ex 44) — se llevan con números, tras K-m (parada 2):**
 
 - **Q1 (ex 44, D / Parada 1).** Ya cerrada: variante **d** (2026-10-07). *Sin respuesta:* la ventana

@@ -98,6 +98,12 @@ Lo que ya existe (leído, no construido por este encargo):
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- **Aparcado por el dueño.** Recomendaciones aceptadas para cuando se retome: D1 → **p95**; D2 → **la métrica del Build**; D3 → **5 × 1 en la piloto, 3 × 1 en el resto**;
+  D4 → **el generador del 58**; D5 → **plantilla y paleta del Build real**; D6 → **activo × TF × dirección × familia**, piloto USATEC H1 ruptura;
+  D7 → **`ledger/thresholds.yaml`**; D8 → **convive con la fila 9 del 65** y comparte sus series.
+
+
 | código | qué se decide | opciones | recomendación |
 |---|---|---|---|
 | D1 | Qué es «el mejor» de una corrida sintética | **A** la mejor estrategia sola, por la métrica que optimiza el Build · **B** un percentil alto (p. ej. p95) de esa métrica | **B.** El máximo de una corrida es una sola muestra de un extremo y se mueve mucho entre corridas. La primera medida del encargo (varias builds de una hora sobre series distintas del mismo activo × TF) lo zanja: muestra la dispersión de A y de B corrida a corrida. Si A resulta estable, A |

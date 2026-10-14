@@ -34,9 +34,12 @@ Modelo: **S** = Sonnet · **H** = Haiku (regla 17). Opus sólo diseña y verific
 | 7 | Ficha de NIKKEI225 a 747 y lotes a 304 en suspenso | B | S | — | ✅ 2026-10-12 — sin cambio: el dueño deja `spread_is` en 304,11 (D9) |
 | 8 | Repreciador < 1 % frente a SQX | B | S | — | ✅ 2026-10-12 con límites — EndTest arreglado, 18.5 de vuelta por madre (29 tests); XAUUSD/USA500 oos1 no cuadran (fill partido) y stop corto, objetivo y comisión en % siguen sin verificar → incidencia en `OPEN.md` (B✓) |
 | B✓ | Cierre de bloque | B | H | 5-8 | 🟡 2026-10-12 — hecho salvo la corrida nula de 5.4 (en marcha): 100 tests, `checks.py` 0 problemas, sello puesto, #120 abierta, recorrido de la ventana 17 zonas y 0 excepciones; sin crítica de capturas |
-| 9 | Build sintético de USATEC H1 ruptura, K = 5 | C | S | bloque B; custodio libre | ⬜ |
+| 9 | Build sintético de USATEC H1 ruptura, K = 5 | C | S | bloque B; custodio libre | ⏸ **parada por el dueño** (2026-10-14), con el 58 |
 | 10 | Protocolo en vivo: Etapa A y SPRT de la fondeada | C | S | — | ✅ 2026-10-12 con un límite — `portfolio/funded/live/` (9 tests, `checks.py` 0 problemas); fronteras derivadas +14,4 / −11,2 R; operaciones del historial de la flota unidas por magic (`mt5/reconcile/register.csv`), R = P&L / pérdida media de SQX, fallos a `live_failures` de la ficha con `--anotar`. Sin probar contra una cuenta viva (`--firm`): sólo el CSV. `tests/test_mt5verify.py` sale con 6 fallos de Setup y filas ajenos a esta fila, sin mirar |
 | C✓ | Cierre de bloque | C | H | 9-10 | ⬜ |
+| 11 | N efectivo por solape de operaciones (heredado del 64, frente A) | D | O | bloque B | ⬜ |
+| 12 | Modelo de mezcla sobre la población: P(μ>0) y fdr local calibrados con la nula y la plantada (heredado del 64, frente C) | D | O | 11; fila 9 o encargo 58 | ⬜ |
+| 13 | `falsePositives` cacheado por activo × TF × tramo (heredado del 63, frente 3) | D | S | — | ⬜ |
 
 **Ritmo (dueño, 2026-10-12): por bloques.** Con A en ✅ ya se puede volver a correr el workflow; B y
 C siguen después. Cada bloque acaba con su lista de ficheros y «¿Quieres hacer el commit?».
@@ -291,7 +294,45 @@ En `portfolio/funded/`, junto a `decide/` y `sim/`:
   respuesta conocida: secuencias escritas a mano que cruzan cada frontera.
 - Un comando con su capítulo del manual. **Las cuentas las abre el dueño.**
 
+## Bloque D — heredado del 63 y del 64 (borrados el 2026-10-14)
+
+Lo único de esos dos encargos que este no recogía. El resto lo sustituyó el consenso.
+
+### 11 · N efectivo por solape de operaciones
+
+Nuevo `studies/screening/dedup/` (contrato de `studies/CLAUDE.md`). Lee el export del paso 7
+(`AlgoData/harvest/<P>/Results/<fecha>/`, trades por estrategia) y escribe, por estrategia, su clúster
+y, por lista, su N efectivo. La medida es el Jaccard de **barras de entrada** (misma barra, misma
+dirección) entre todas las parejas, con clúster por umbral de solape. El umbral es del dueño (0,5 si
+no dice otro); el estudio reporta la curva N_eff(umbral) y no elige. El N efectivo de una lista es el
+número de clústeres que toca. Sale como columna del informe del paso 8. Verificación: la tabla
+«umbral → clústeres → N_eff» en USATEC y la misma sobre los monos de `falsePositives`, donde
+N_eff ≈ N es el control.
+
+### 12 · Modelo de mezcla sobre la población
+
+Nuevo `studies/screening/posterior/`. Para cada estrategia i se toman x̄_i (exceso neto medio por
+operación en oos1) y s_i/√n_i. El modelo es μ_i ~ π₀·F₀ + (1−π₀)·G: F₀ sale de los monos de
+`falsePositives` y G se estima de la población por deconvolución empírico-bayesiana. Por estrategia
+salen P(μ_i>0), E[μ_i | datos] y la fdr local; por lista, el FDR esperado. Es distinto del `localfdr`
+de la fila 5.3, que ajusta la nula sobre las z del lote. Calibración con las poblaciones nula y
+plantada (δ = 0,05 / 0,10 / 0,15): P(μ>0) ≈ 0 en la nula y creciente con δ. El dueño recibe la lista
+del paso 8 ordenada por P(μ>0), con cortes a FDR 10 % y 20 % y su coste frente a R3, o «apenas
+ayuda».
+
+### 13 · `falsePositives` cacheado
+
+Una corrida de monos por activo × TF × tramo, guardada en `AlgoData/` bajo `core.paths` con la fecha
+de los datos. El paso 8 la lee si existe y la recalcula sólo si cambian los datos del tramo. Un test
+en `tests/` falla si dos corridas del paso 8 en la misma celda recalculan los monos.
+
 ## Decisiones del dueño — pregúntalas (regla 11)
+
+- **D14 — resuelta (dueño, 2026-10-14).** Monos adaptativos: **no, por ahora**; se decide con la cifra
+  de la corrida nula del 5.4 delante.
+- **D16 — resuelta (dueño, 2026-10-14).** La fila 9 (build sintético) **se para**, con el encargo 58: el bloque C no se cierra hasta que el dueño la reabra.
+- **D15 — resuelta (dueño, 2026-10-14).** La corrida nula del 5.4 se relanza **de noche**, sin nada
+  al lado, en cuanto acaben la refactorización en curso y el cierre del encargo 66.
 
 - **D1 (bloquea la fila 4) — la tabla de signo esperado.** El consenso dice «7 filas, por familia»;
   la biblioteca tiene **6 arquetipos** (`AlgoData/templates/registry.csv`: trendFollowing 16,

@@ -245,6 +245,16 @@ umbral es una fila en el registro. Los primeros proyectos `Trade_`, solo despué
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- P16-1 → **no corta**, hasta medir falsos positivos. P16-2 → **build**. P16-3 → **suelo de 30 operaciones**.
+- P14-7 → **borrar** los cortes viejos de `gates.py`. P20-2 → **retirar** a los agentes la lectura de oos2 (oos2 sólo en el 19.5).
+- P12-1 → **sigue `z_new ≥ 2,33`**, con T0-T4 calculado al lado hasta calibrarlo. P12-6 → **el 12 no descarta** (todo Limbo).
+- T-8 → **firma en la ventana**, criterio a criterio. T-1 → **calibrar en oos1** y con otra población; oos2 reservado.
+- T-2 → **sí ata** al autopilot; ventana anclada por estudio.
+- Puerto 22 → **cerrarlo**, tras probar Tailscale desde fuera. D6 → **copia nocturna restic a gorilla** por SSH.
+- Sin objeto por el 65: P20-1, P14-2/3/8, T-9, T-6.
+
+
 Cada una lleva su código del catálogo `pendientes-y-decisiones-2026-10-08.md` (el número de
 línea de cada una es el de ese fichero) y las lecturas ya escritas allí y en el dossier del paso.
 

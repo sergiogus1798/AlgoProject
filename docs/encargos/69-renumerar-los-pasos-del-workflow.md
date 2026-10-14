@@ -24,6 +24,10 @@ una vez y sin dejar ningún número viejo.
 
 ## Preguntas que el dueño contesta antes de empezar
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- Sigue aplazado. Cuando se haga: N1 → **sólo el 26 pasa a ser 22**; N2 → **una nota**, sin renombrar carpetas; N3 → **los históricos no se tocan**.
+
+
 | código | qué se decide | A | B |
 |---|---|---|---|
 | N1 | el alcance | sólo el 26 pasa a ser 22 | se renumera todo, medios pasos incluidos, del 1 al final |

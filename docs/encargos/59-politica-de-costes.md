@@ -126,6 +126,12 @@ estudio del build (encargo 60) · `OPEN.md` §85 (fondeo).
 
 ## 7 · Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- 2 → **medir primero** la fracción en la hora 0; si pasa del 1 %, subir el spread medio ponderado (nunca excluir la hora: regla 15).
+- 3 → **swap abonado a 0** en los 16 activos. 4 → **modo nuevo de `onboard`** y recalcular las 28 fichas. 5 → **nada**: el 35 % de slippage ya lo cubre.
+- Sin objeto por el 65: 1 (NIKKEI se queda en 304).
+
+
 1. **Spread histórico de los índices.** Lecturas: (a) como hoy — el % de 2026 de la firma más ancha por el
    precio medio de cada tramo (NIKKEI225: 304 / 475 / 796); (b) lo que midió Darwinex donde hay ticks
    (747 / 732 / 458) y el método vigente donde no; (c) el **mayor** de los dos en cada tramo; (d) una cifra

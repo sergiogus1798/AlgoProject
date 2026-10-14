@@ -311,6 +311,16 @@ ledger cuadra fila a fila. Cierre: capítulo de manual para `/ab-hueco` y el blo
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- 6 → **los monos no miran oos2**; los pasos 17-18 quedan fuera del embudo, declarado como techo.
+- 7 → **no se reproduce** nada del 19 en Python; se declara el techo. 8 → **mismo tiempo de reloj**.
+- 9 → **parar y anotar** si el brazo A agota su espacio; 3 repeticiones; una `buildConfirmed`; barrido acotado a 1-2 condiciones por lado (regla 14 sin excepción).
+- 10 → **sólo `RandomEntrySeeded`**; las plantillas con ruido se cortan en oos1 salvo que sobreviva alguna. 11 → **el brazo A es legítimo**; el B lleva «What to build» 0..1.
+- 1-5 (monos dentro de SQX) siguen abiertas.
+- 1-5 → **recomendaciones aceptadas**: con semilla; probabilidad libre dentro del rango de la real; tantos builds como la real; hasta oos1 y la puerta, más allá sólo si sobrevive alguno; primero USATEC H1 ruptura, con su dirección y su paleta.
+- **Encargo PARADO por el dueño (2026-10-14)**: no se empieza hasta que él lo diga.
+
+
 Ninguna se responde por defecto; las «propuestas» son lo que los encargos de origen sugerían, no una
 decisión.
 

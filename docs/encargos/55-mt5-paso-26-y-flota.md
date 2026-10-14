@@ -320,6 +320,15 @@ imprescindible (la conciliación se niega sin él) y lo escribe el dueño (G). I
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- K-1b → **1 R = distancia al stop** en las estrategias con stop. K-2 → **M1 del terminal de cada firma**. K-3 → **SQLite**.
+- K-4 → **la zona lista todo y marca lo validado**. K-5 → **los 7 EAs vivos se quedan; los nuevos empiezan en 1001 y el asignador genera `register.csv`**.
+- K-6 → **lo quita el encargo**. K-7 → **firma + tamaño**. K-8a → **el filtro de `mt5/newsfilter/`**. K-8b → **sale del 54**. K-8c → **fichero de control**.
+- K-9a → **el Excel se rellena solo**. K-9b → **la app lee el Excel como lo esperado**. K-9c → **histórico del colector**. K-10 → **cerrar 3389 y 5986** cuando haya dinero real.
+- Sigue abierta: K-11 (qué superviviente, fechas y modelo).
+- K-11 → **todo el histórico que haya, con ticks reales**. La superviviente, la primera real que salga.
+
+
 Nada de esto se resuelve con un defecto; cada línea lleva su origen.
 
 - **K-1 (ex 34 §0.5 punto 2).** El «≤ 0,05 R» de la fila 2: ¿R es **la pérdida media de SQX** (lectura de

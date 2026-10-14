@@ -240,6 +240,14 @@ tools/checks.py`.
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- D-3 → **quitar** la subpestaña muerta. D-4 → **borrar** `engines/nulls/placement/` si no tiene llamadores.
+- D-5 → **rehacer** las 19 carpetas de crossmarket y **borrar** los 6 PNG viejos. D-6 → crossmarket **sigue «gate»**, con el comentario corregido.
+- D-7 → **orden de la tabla nueva del 10**. D-8 → **«corta» al 12 cuando la parte V esté entregada**. D-9 → **`other`**, comprobado con una sintética.
+- D-10 → **quitar `tf_*`**. K-1 → **R propia de cada TF**. K-2 → **LIMBO**. K-3 → **la vela de la madre**.
+- Sin objeto por el 65: D-1, D-2 y el resto de D-4.
+
+
 Cada una con su origen. No pongas un valor por defecto.
 
 - **D-1 (ex 46, dec. 5) · ¿Calibrar P1-P9 ahora?** Las líneas son las de la propuesta, sin calibrar; falta

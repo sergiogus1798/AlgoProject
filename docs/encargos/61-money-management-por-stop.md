@@ -85,6 +85,11 @@ los costes (encargo 59) · el rediseño de la cola (pasos 21 a 26): este encargo
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- 2 → **`FixedAmount` con 1.000 USD**. 3 → **bajar el riesgo por operación** si el tope muerde. 5 → **sí**, tope de pérdida real además del nominal.
+- 1 y 4 se contestan con el informe delante.
+
+
 Al entregar el informe, no antes:
 
 1. **¿Se cambia?** A la vista de las cinco respuestas: (a) sí, al money management por stop; (b) no — los

@@ -106,6 +106,12 @@ otro arreglo) · el estudio del build (encargo 60), que anotará su selección e
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- 1 → **un `Test_` gasta tramos, no la celda**. 2 → **una serie de precios es el símbolo entero**. 3 → **familias declaradas y selladas antes de medir**.
+- 4 → **recalcular y marcar** lo ya juzgado. 5 → **el workflow se niega a partir de 3 cribas** de un tramo.
+- La parte 1 ya la hace `ledger/cells.py`: se reescribe sobre él.
+
+
 1. **¿Un `Test_` gasta la celda?** (a) sí: la campaña y el director la dan por probada; (b) gasta los
    tramos pero no la celda — se puede relanzar, avisando de que `oos1` ya se miró N veces; (c) sólo informa.
    ¿Y un `Test_` que no pasó del build?

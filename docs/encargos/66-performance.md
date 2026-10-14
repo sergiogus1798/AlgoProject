@@ -1390,6 +1390,20 @@ N10d código y test · N11 A · N12 no se construye salvo «N12 sí» · N13 A (
 8. `marketProfile` por trozos (D12): ¿se mide la lectura que cambia el flujo de sorteos, o se deja? El null ya hace un sorteo cada vez, así que no hay memoria que acotar.
 9. CSCV: ¿se corrige alguna de las cuatro desviaciones (p. ej. rechazar bloques impares)? Cambiaría números guardados.
 
+**Contestadas por el dueño (2026-10-14):**
+- **2 → se devuelve**: el gate 3c vuelve a guardar los sorteos crudos (son una distribución: intocable).
+- **3 → sí**, sólo si los veredictos salen idénticos antes y después; si alguno cambia, no.
+- **4 → borrar** la clave (regla 21); el 53 §5c dice que ya se borró: comprobar y cerrar.
+- **5 →** N7b y N12 se quedan como se contestaron el 2026-10-13 (línea de «Respuestas posteriores»);
+  la calibración con sintéticos la lleva el encargo 67. El fixture de 291 KB se queda en el repo
+  (el encargo 71 quiere los fixtures en el repo).
+- **6 → corregir** la cita.
+- **8 → dejar**.
+- **D15 → medir** 96 frente a 48 a máquina llena, en un hueco sin workflow.
+- **D27 → diseñarlo dentro del cierre** de este encargo y presentarlo antes de construir.
+- **Defecto de presave → variante B** siempre activa (52,4 → 15,2-15,8 s); se borra la otra.
+- **Tarjeta `unselected-build-population`** → corregir contra D24 cuando cierre la sesión que la tiene.
+
 ## Lo que no tocas
 
 - El master (`~/Desktop/SQX`, 5050) y sus proyectos. Los workers, sólo por `bin/sqx-worker.sh` y con

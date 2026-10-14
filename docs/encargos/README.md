@@ -40,6 +40,36 @@ que sólo estaba escrito en sus originales. El **38** (recuadro de la meseta) y 
 los costes) salieron sin heredero: se construyeron y un rediseño posterior quitó lo construido
 (`ca7dd56` y `90d516d`). Los originales siguen legibles con `git show c923d10:docs/encargos/<fichero>`.
 
+El 2026-10-14, por orden del dueño, salieron el **68** (cerrado; sus restos en `OPEN.md` #122), el
+**63** y el **64** (el 65 los sustituye; lo único que no recogía pasó a su bloque D) y los dos
+prompts de opinión, ya usados.
+
+## Orden de ejecución (dueño, 2026-10-14)
+
+Empieza cuando termine la refactorización en curso y el workflow dé una pasada limpia. Las
+decisiones de los pasos 1 a 4 ya están contestadas en cada encargo.
+
+| # | encargo | por qué aquí | recurso |
+|---|---|---|---|
+| 1 | **71** tests independientes de la máquina | su condición es la pasada limpia; es la red de todo lo que viene después | Python |
+| 2 | **66** cierre de performance | D24 desbloquea el 67 y la fila 9 del 65 | conductor + custodio parado |
+| 3 | **65** cerrar el bloque B (corrida nula del 5.4, de noche) | fija el paso 8 definitivo | ~10 h de CPU Python, nada al lado |
+| 4 | **70** redondeo al tick | hereda la fila 8 del 65 | Python |
+| 5 | **reescribir 50, 49, 53 y 62 contra el 65**; borrar las partes M y R del 52 (dueño, 14-10) | se basan en un paso 8 y un 18.5 que ya no existen | docs, Opus; una tanda de preguntas al dueño |
+| 6 | **50** frente V: la corrida entera con el paso 8 nuevo | la corrida de referencia para lo demás | custodio |
+| 7 | **51** frentes 4 → 1 → 5 | necesita el paso 8 estable; el 53 espera su regla | custodio, muchas horas |
+| 8 | — **parado por el dueño** (14-10): la fila 9 del 65, el 58 y el 67 | compiten por el custodio y comparten el generador | custodio (+ gorilla) |
+| 9 | **60** estudio del build — **aparcado por el dueño** (14-10) | necesita el 62, el 58 y el paso 8 congelado | custodio, 14-30 h |
+| 10 | **53** monos por la cadena 10-20 y en SQX — **parado por el dueño** (14-10) | necesita las reglas firmadas de 49, 51 y 52 | custodio |
+| 11 | **55 C** → **54 C/E/F** → **55 H/I** | necesitan una superviviente real | conductor, MT5, VPS |
+| 12 | **65 bloque D**, **69**, **56 F2/F4/F5**; el **57** entero, **parado por el dueño** (14-10) | aplazados o aparcados; el 69 al final, porque pide otra corrida | — |
+
+**En cualquier momento, en paralelo** (no compiten por el custodio): 61 · 59 parte 1 · 62 parte 1
+sobre `ledger/cells.py` · 55 A/B/D-G · 54 A/B/D · 52 V · 56 F1/F3.
+
+**Una sola autorización de `oos2`** responde a la vez al 49 §3.4, al 52 Q-8, al 53 P6 y al 54 punto
+12: pedirla una vez, no cuatro.
+
 ## Los encargos vivos — reagrupados por temática el 2026-10-09 (el 57 es posterior, 2026-10-10)
 
 Los nueve son **planes vivos**: llevan tabla de estado y bitácora, y cada sesión actualiza su fila.
@@ -76,15 +106,10 @@ Sale de la lectura del dossier `docs/AgentPDFs/criterios-implementados-2026-10-1
 
 | fichero | qué construye | depende de |
 |---|---|---|
-| `63-criterios-del-workflow-opinion-y-rediseno-de-la-cola.md` | plan vivo: la opinión del 2026-10-12 (§0) y siete frentes — repricing que cuadre con SQX, `dev.on` apagado y una población entera con nula y plantada por la cola, `falsePositives` cacheado, el paso 14 por percentil entre vecinas, la cola 17-20 en una prueba prerregistrada en oos2, las reglas inertes del paso 8 a columnas, el perfil del paso 1 | las siete decisiones D-1..D-7 del dueño; los encargos 58, 59, 51, 60, 62 donde se solapan |
-| `63-prompt-segunda-opinion.md` | el prompt para que otro agente, sin ver la primera opinión, audite el mismo dossier desde potencia, economía y «qué haría un fondo» | nada |
-| `64-modelo-global-de-la-poblacion-y-stepm-en-el-paso-8.md` | plan vivo, segunda lectura con cómputo ilimitado en Python: N efectivo por solape de operaciones, StepM/SPA sobre las 10.000 del paso 8, modelo de mezcla empírico-bayesiano (P(μ>0) por estrategia, FDR local), los cambios al 63 (frente 2 primero y en Python, repricing al final, 13-14 a diagnóstico, paso 1 apagado) y la adjudicación de las tres opiniones por predicciones | D-1..D-5 del dueño; el 63 (frente 2), el 58 (poblaciones nula y plantada) |
-| `64-prompt-tercera-opinion.md` | el prompt para un tercer agente, sin ver las dos opiniones, con pregunta abierta y tabla de predicciones prerregistradas por paso | nada |
-| `65-consenso-cuatro-opiniones.md` | plan vivo: los diez cambios del consenso de las cuatro opiniones (§9 de `criterios-cuarta-opinion-2026-10-12.md`) en tres bloques — A borrados y apagados (`dev`, paso 1, cola 14/18/18.5/20, paso 10), B la estadística (mono con horas, contador por celda, una z y fdr local en el 8, lectura única de oos2, NIKKEI a 747, repreciador < 1 %), C build sintético y protocolo en vivo. Donde coincide con 63 o 64, manda este | nada; el bloque C espera al B |
+| `65-consenso-cuatro-opiniones.md` | plan vivo: los diez cambios del consenso de las cuatro opiniones (§9 de `criterios-cuarta-opinion-2026-10-12.md`) en cuatro bloques — A borrados y apagados (`dev`, paso 1, cola 14/18/18.5/20, paso 10), B la estadística (mono con horas, contador por celda, una z y fdr local en el 8, lectura única de oos2, NIKKEI a 304, repreciador < 1 %), C build sintético y protocolo en vivo, D lo heredado del 63 y del 64 (N efectivo, modelo de mezcla, `falsePositives` cacheado) | el bloque C espera al B; queda la corrida nula del 5.4 |
 | `66-performance.md` | plan vivo: la auditoría de rendimiento y errores del Python del workflow (2026-10-12) — pérdida de filas en `draws.merge`, el control de falsos positivos (37 % de la corrida), núcleos del mono para 1 M de sorteos, 48 núcleos donde hoy hay 8, el binario `AlgoBank` por databank y el almacén sin copia; cada cambio con su prueba de igualdad | evidencia en `AlgoData/audit/performance-2026-10-12/`; comparte `gate/level3c.py` y `falsePositives/` con el 65 |
 
 | `67-filtro-minimo-calibrado-con-sinteticos.md` | el umbral mínimo del Build por celda (activo × TF), medido en lo que halla una hora de build sin filtros sobre series sintéticas; con su coste en estrategias rechazadas y minutos hasta 10.000 | `66` (D24 estable), `58` (generador) |
-| `68-adaptar-el-codigo-al-codestyle.md` | plan vivo: que las reglas nuevas de `CODESTYLE.md` (2026-10-13) las compruebe una máquina — 18 fases: tests al entregar, hooks, trinquete, ruff ampliado, semillas, `assert` en los lectores, comprobador de tipos, los 1.375 `-> dict` sin tipar, código muerto, README generado, lockfile, canario, gorilla, agente `reviewer` y `ruff format` | nada |
 | `69-renumerar-los-pasos-del-workflow.md` | aplazado: renumerar los pasos ahora que 22-25 no existen y el MT5 sigue siendo el 26; lo medido (77 + 82 ficheros), por qué se dejó y las tres preguntas previas | sin empezar; sólo cuando el dueño lo pida |
 | `70-redondeo-al-tick-del-repreciador-por-activo.md` | que el repreciador redondee al tick sólo donde SQX lo hace (oro y USA500 no, Nikkei sí, DAX40 mixto), con un campo en la ficha medido activo a activo; incluye el resto de 0,043 USD del oro y la clave propia de la puerta del 18.5 | sin empezar |
 | `71-tests-independientes-de-la-maquina.md` | que la tanda de tests pase igual aquí y en gorilla: cada test planta sus datos en una raíz temporal en vez de leer el `AlgoData` de esta máquina (36 ficheros, D26 A) | una pasada limpia del workflow |
@@ -107,6 +132,8 @@ Para resolver una cita antigua («encargo 44», «el plan 41 §1.5») en el cód
 | 31 mapa de ventaja sobre el mono | 52, parte R | 46 paso 10 | 51 |
 | 33 economía del fondeo | 54, frentes A-C | 47 paso 12 | 51 |
 | 34 validación MT5 y pool | 55 (su §0.5 es ahora el §1) | 48 pasos 16.5 y 17 | 52, partes V y Q |
+| 63 opinión y cola | 65 (frente 3 → fila 13; el resto lo sustituyó el consenso) | 64 modelo global | 65 (frentes A y C → filas 11 y 12; el resto, sustituido) |
+| 63/64 prompts de opinión | usados: dossiers `criterios-{tercera,cuarta}-opinion-2026-10-12` | 68 CODESTYLE | cerrado el 2026-10-14; sus restos, en `OPEN.md` #122 |
 
 ## Cómo se despacha
 

@@ -38,6 +38,14 @@ Lee primero el asunto de `OPEN.md` «Step 18.5 skips every XAUUSD mother…» (t
    en `engines/weekly/panel.py:121` es fracción del neto, como fracción de variantes: su propia clave
    en el ledger, con el valor que diga el dueño.
 
+**Contestado por el dueño (2026-10-14):**
+- **Parte 1 primero**: averiguar la regla de SQX en el DAX40 antes de diseñar el campo. Si no va por
+  activo, se para y se pregunta.
+- **Parte 2**: `price_rounding: tick | none` en la ficha, **sin valor por defecto**.
+- **Parte 3**: un activo sin lote medido queda sin valor y el repreciador **se niega** a repreciarlo
+  (falla claro).
+- **Parte 5**: clave propia en el ledger, arrancando con el valor de hoy; se recalibra después.
+
 ## Lo que no se toca sin prueba
 
 `tests/test_reprice.py::test_cost_off_the_tick_rounds_the_fill` y el caso auditado

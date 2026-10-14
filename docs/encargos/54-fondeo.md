@@ -226,6 +226,25 @@ y `/ui-shot` antes de dar nada por hecho.
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- 1 → **en `portfolio/funded/`**. 2 → **se marca y se queda**. 3 → **la cartera a mano + el número de cada estrategia suelta**. 4 → **las cuentas que elija el dueño en la ventana**.
+- 5 → **comprobación al lado** de `funded/sim/`. 6 → **0,05/252 y 0,75 % / 0,4 %**, ratificado con los números delante. 7 → **en el paso 26**.
+- 9 → **se descarta** (dropped, never trimmed). 10 → **sólo entre fase y fondeada**. 12 → **mercados adicionales o datos futuros**, nunca oos2 gastado.
+- 13a → **504 días**. 13b → **sólo oos1**. 13c → **la tolerancia se fija viendo la tabla**. 13d → **el extremo bajo del intervalo**. 13e → **rejilla adaptativa**.
+- 14 → **capa local en `config/`**.
+- Siguen abiertas (datos del dueño): 8, 11, 15.
+- 8 (en parte) → Hantec **no reembolsa** la cuota (confirmado: `AlgoData/funding/rules/hantec.yaml:169`, artículo de ayuda de Hantec). **FundedNext se admite sólo con cuentas de menos de 25k** (por encima no permite EAs) y **FundingPips se admite**: los dos entran por `/firm-onboard`. El resto del 8, buscado en las páginas de las firmas (2026-10-14; llevarlo a las fichas en el frente B, cada valor con su cita y su URL):
+  - Endurance fondeada (`gaps.hantec_endurance_payout_days`): **14 días** hasta el primer cobro, 7 con el add-on semanal (help.htrader.hmarkets.com, artículo 158000445800). Que los siguientes también sean cada 14 días sólo lo dicen terceros: ambiguo.
+  - Hantec Express (`gaps.hantec_express_floor_after_payout`): **`initial`**, confirmado: «your maximum total loss will lock in at your starting balance» (artículo 158000445797).
+  - FTMO 1-step (`gaps.ftmo_1step_floor_after_payout`): **`stays`**, lectura natural de «Your Maximum Loss Limit does not reset» (ftmo.com/en/faq/how-do-i-withdraw-my-profits/); ambiguo.
+  - FTMO 2-step: **la cuota SÍ se reembolsa con el primer cobro** («we will refund you the initial purchase fee once you request your first Reward withdrawal», ftmo.com/en/faq/are-the-fees-recurrent/). `AlgoData/funding/rules/ftmo.yaml` dice `fee_refund: false` (Consejo, 2026-10-04): **está mal y se corrige**; el dueño cobró un reembolso el 2026-09-29.
+  - Hantec «Profit Target −2 %»: **no encontrado**; su artículo sólo dice «Reduces the required profit target». Sigue la lectura «sólo fase 1» hasta que Hantec conteste.
+  - Estrategias prohibidas de Hantec: la ficha ya las tiene (`forbidden_practices`, `ea_policy`, confirmadas 2026-10-04), contrastadas con los 6 artículos de su carpeta de ayuda; nada nuevo.
+- 11 (en parte) → **EUR/USD = 1,12**. Siguen abiertos: colchón de retiro, impuestos, comisión de cobro, probabilidades de cobro denegado y de cierre de firma.
+- 11 (resto) → **colchón de retiro 0** (retirar todo), **comisión de cobro y divisa 2 %**, **5 % al año** de cobro denegado y **5 % al año** de cierre de firma. Sigue abierto: el tipo de impuestos.
+- 15 → **`funded.open_risk_cap = 0,5`** (todos los stops a la vez gastan como mucho la mitad de la pérdida diaria máxima) y **`verdict.pass_percentile = 95`** (la cartera pasa mejor que el 95 % de las carteras al azar). Se escriben al ejecutar el frente B: el primero en `portfolio/common/construct/config.yaml`, el segundo como `ledger:portfolio.funded.verdict_percentile`.
+
+
 **Ex 45 (antes de escribir código de D/E):**
 1. **(ex 45, D1) Dónde vive y en qué paso se lee:** dentro de `portfolio/funded/` junto al simulador
    (recomendado mirar primero), o como estudio de `studies/`; y si es un paso numerado del WORKFLOW o una

@@ -75,6 +75,15 @@ Ninguno es un bug de código.
 - **D3.** `test_mt5_start_check` en gorilla: ¿instalar allí el terminal, o apartar ese test en
   gorilla?
 
+**Contestadas por el dueño (2026-10-14):**
+- **D1 → (a)**, salvo los tests que existen para validar los datos vivos de esta máquina: esos (b),
+  apartados en gorilla con su motivo. La lista se le enseña igualmente al cerrar la parte 3.
+- **D2 → sintética**: determinista y sin datos del dueño en git (regla 7).
+- **D3 → apartar el test en gorilla.** Condición del dueño: las estrategias que salgan de gorilla se
+  verifican (paso 26) en el MT5 de leaseWeb. Comprueba que el camino existe —que una superviviente
+  de gorilla llega al MT5 Bridge de esta máquina— y, si no existe, apúntalo en `OPEN.md` y en el
+  encargo 57.
+
 ## Lo que no tocas
 
 - Los ficheros de otra sesión: `portfolio/testroot/harvest.py`,

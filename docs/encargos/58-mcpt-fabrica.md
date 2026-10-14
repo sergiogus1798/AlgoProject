@@ -186,6 +186,12 @@ heap (regla 3).
 
 ## 8 · Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- 1 → **PASA ≤ 0,2 / NO PASA ≥ 0,5**. 2 → **las correlaciones se fijan tras ver F4**. 3 → **la paleta de la fila 9 del 65** (USATEC H1 ruptura).
+- 4 → **etapa 0 omitida** («sin dato») si SQX no lo anota. 5 → **sólo anotar** los pasos con lift ≈ 1. 6 → **el FDR junto a cada estrategia del almacén**.
+- **Encargo PARADO por el dueño (2026-10-14)**: no se empieza hasta que él lo diga.
+
+
 1. **Umbrales del veredicto:** PASA ≤ 0,2 y NO PASA ≥ 0,5 (propuesta), o la versión estricta PASA ≤ 0,1.
 2. **Correlaciones de familia:** 0,9 para agrupar y 0,7 para la repetibilidad, o revisarlas con la tabla
    de F4 en la mano (el documento dice «revisar con F4»): ¿se fijan ahora o tras F4?

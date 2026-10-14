@@ -151,6 +151,11 @@ acaba en el paso 8.
 
 ## 6 · Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- **Aparcado por el dueño.** Recomendaciones aceptadas para cuando se retome: 1 → **una celda candidata nueva** (no USATEC: su oos1 ya se cribó);
+  2 → **Sharpe y SQN**; 3 → **brazo aleatorio con la heredada, 12 lotes**; 4 → **Pasa + Limbo**; 5 → **5 réplicas**; 6 → **no tocar `_build.yaml`**.
+
+
 1. **Qué celda.** Activo, marco, dirección y plantilla (o Simple Strategy con qué paleta). Debe ser nueva:
    sin `oos1` cribado ni `oos2` abierto. Trae tres candidatas con lo que el registro dice de cada una
    (encargo 62 si ya existe; si no, `AlgoData/projects/registry.csv`, `AlgoData/campaign/ledger.jsonl` y

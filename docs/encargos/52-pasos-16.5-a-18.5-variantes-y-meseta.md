@@ -248,6 +248,13 @@ dupliques allí lo que se haga aquí.
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
+**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
+- **52-0 → las partes M y R se borran.** Caen con ellas Q-6, Q-6b, Q-6c, Q-7a-e y Q-8 (oos2 sigue sellado).
+- Q-1 → **los topes del WFC los fija el dueño**, con la cifra delante. Q-2 → **0,05 confirmado**. Q-3 → **suelo de dentro + suelo de fuera de 10/año**.
+- Q-4 → **confirmadas** las referencias de `abre`. Q-5a → **quitar** `n_target` y `strata`. Q-5b → **dar por quemadas** las madres que ya leyeron oos2.
+- Q-5c → **LHS y 20 %**, como hoy. Q-5d → **se decide en el 18.5**.
+
+
 Cada una lleva su origen. Ninguna lleva valor por defecto.
 
 **Del 16.5 y el 17 (ex 48):**
