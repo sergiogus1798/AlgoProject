@@ -136,6 +136,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 119 | 🟡 | `MonteCarloManipulation` removed (owner 2026-10-11: never again) — custodian and gorilla still ON | OPEN.md |
 | 120 | 🟠 | El repreciador no reproduce a SQX en XAUUSD y USA500 (oos1) ni en DAX40 por décimas | OPEN.md |
 | 121 | 🟠 | Step 18.5 skips every XAUUSD mother: the repricer's tick rounding matches SQX on some assets and not on others | OPEN.md |
+| 122 | 🟠 | Integridad de la investigación: lo que F22 no arregló | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -1047,3 +1048,15 @@ Found 2026-10-13. Refines the cause of #120 for gold (🔬 measured; scratch scr
 | 3 | Residual 0.043 USD/trade on gold oos1 | A: investigate · B: accept |
 
 Fix of 1 would also close the gold and USA500 part of #120. Written in English because it was recorded from a scratch measurement log; #120 is in Spanish.
+
+## 122. 🟠 Integridad de la investigación: lo que F22 no arregló
+
+Origen: encargo 68 F22 (`e1ce890`, `78d1fe0`), 2026-10-14. Opus midió contra `CODESTYLE.md` §8; Sonnet arregló lo que no tocaba resultados guardados ni criterios del dueño. Lo de abajo quedó sin tocar. 🔬 medido en la revisión; cada punto es una decisión del dueño o necesita su confirmación.
+
+- **Segmento inferido en el ledger.** `judge.py:115` asigna `oos1` cuando un paso no declara segmento; hace falta que el dueño lo declare en `criteria.yaml`.
+- **Cinco filas de `log_cut`** suponen segmento `oos1`, y `monteCarlo` supone el paso 20. A confirmar con el dueño.
+- **Procedencia que no se guarda.** `testroot` tiene la bandera `pseudo_oos2`; `core/study/result.build` no registra ni el proyecto ni la ruta/hash del harvest; los escritores de `verdict.csv` y `panel.parquet` no dejan un meta al lado.
+- **Nombres.** La clave `"oos"` de la puerta (gate) llama así a lo que no siempre es el OOS; el candidato del ledger de `replication`, `monkeyExcess` y `funded/decide` tiene el mismo problema.
+- **Verdad de un flotante.** Guardas del tipo `if x:` sobre un flotante en `attribution`, `crossTF` y el estadístico de `crossmarket` (un 0.0 legítimo cuenta como falta); `== 0.0` en `portfolio/funded`.
+- **Alineadores secundarios sin test de una barra:** `occupancy`, equity/excursiones de `portfolio`, `mc/units`, celdas de `crossmarket`, `touch` de `feedQuality` y `dataquality`.
+- **Monkey `on_grid` frente a `reprice.located`:** difieren en una barra. Alinearlos movería resultados del mono ya guardados; está documentado y fijado por un test, sin cambiar. Decide el dueño.

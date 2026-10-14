@@ -26,7 +26,7 @@ Lee `CODESTYLE.md` entero (**reescrito el 2026-10-14**: sólo cómo es el códig
 | F6 | `assert` en los lectores con fichero dorado | Opus diseña, Sonnet escribe | D5 | hecho |
 | F7 | menciones caducas del tope de 250 líneas | Sonnet | D6 | hecho 2026-10-14 |
 | F8 | comprobador de tipos, por paquetes | Sonnet | F3, D7 | hecho 2026-10-14 (pyright 1.1.414) |
-| F9 | **los `-> dict` sin tipar, todos**, paquete a paquete | Opus orquesta, Sonnet escribe | F8, D8, D9 | en curso: core…ui hechos; falta `studies` y meterlo en `pyproject.toml` |
+| F9 | **los `-> dict` sin tipar, todos**, paquete a paquete | Opus orquesta, Sonnet escribe | F8, D8, D9 | hecho 2026-10-14 (`44a4758` y los anteriores) |
 | F10 | límites por función (complejidad, argumentos) en el trinquete | Sonnet | F3 | hecho con F3 |
 | F11 | código muerto: `vulture` de noche, y borrado de lo que halle | Sonnet | — | hecho |
 | F12 | tabla del README generada del docstring | Sonnet | D10 | hecho 2026-10-14 |
@@ -35,11 +35,11 @@ Lee `CODESTYLE.md` entero (**reescrito el 2026-10-14**: sólo cómo es el códig
 | F15 | gorilla comprueba cada push | Sonnet | F1 | hecho 2026-10-14 |
 | F16 | agente `reviewer` propio | Opus | — | hecho 2026-10-14 |
 | F17 | convenciones que faltan en `CODESTYLE.md` | Sonnet | D12, D13 | hecho 2026-10-14 (hoy §8 y §9) |
-| F19 | `assert` → `raise` en los lectores de F6 | Sonnet | F6, D15 | sin empezar |
-| F20 | `except` amplios a cero | Sonnet | F3, D16 | sin empezar |
-| F21 | `Optional` que no puede faltar, y unidades en los nombres | Sonnet | F9 | sin empezar |
-| F22 | integridad de la investigación (§8): medir, luego arreglar | Opus mide, Sonnet escribe | — | sin empezar |
-| F18 | `ruff format`, lo último | Sonnet | todo lo anterior, F19-F22 incluidas | sin empezar |
+| F19 | `assert` → `raise` en los lectores de F6 | Sonnet | F6, D15 | hecho 2026-10-14 (`6664487`) |
+| F20 | `except` amplios a cero | Sonnet | F3, D16 | hecho 2026-10-14 (`ee557de`) |
+| F21 | `Optional` que no puede faltar, y unidades en los nombres | Sonnet | F9 | hecho 2026-10-14 (`ca97dee`) |
+| F22 | integridad de la investigación (§8): medir, luego arreglar | Opus mide, Sonnet escribe | — | hecho 2026-10-14 (`e1ce890`, `78d1fe0`) |
+| F18 | `ruff format`, lo último | Sonnet | todo lo anterior, F19-F22 incluidas | hecho 2026-10-14 (`fa2e64f`, `4d31f07`; cierre `1bc2194`, `c7b5ab6`) |
 
 ### Bitácora
 
@@ -62,6 +62,35 @@ Lee `CODESTYLE.md` entero (**reescrito el 2026-10-14**: sólo cómo es el códig
   va a `CONTRIBUTING.md`; §8 nueva (integridad de la investigación); `raise` en la puerta, no `assert`;
   `except` amplios a cero; C901 y PLR0913 sólo congelados (como F10). Las citas de secciones de este
   encargo están puestas al día. El dueño añade F19-F22 antes de F18 (D15-D17).
+- 2026-10-14 — Decisiones del dueño D18-D22, todas A (F22: la tabla la midió Opus, los arreglos los hizo
+  Sonnet). Un punto se paró: alinear el `on_grid` del mono con `reprice.located` movería resultados del mono
+  ya guardados; queda documentado y fijado por un test, sin cambiar (`OPEN.md` #122). D23 A: registrar y
+  relanzar es la tercera excepción de `CODESTYLE.md` §5. D24 B: en `trim.py` un guardado fallido para el
+  workflow antes de cualquier corte. D25 A: cada «Calcular» de cartera saca su propia semilla, que viaja en
+  `params`.
+- 2026-10-14 — Revisión independiente (agente `reviewer`): nada grave de comportamiento. Arreglados los dos
+  agujeros del trinquete, un `assert` de puerta en `mt5/newsfilter/terminal.py` y D19 (ahora juzga una
+  operación «OOS» por su hora de apertura, no por la de cierre). Cierre en `1bc2194` y `c7b5ab6`.
+- 2026-10-14 — **Encargo cerrado.** Quedan para el dueño: (1) meter `F401` y `B904` en el `select` de ruff
+  cuando la otra sesión comitee `portfolio/testroot/harvest.py`, `tests/test_autopilot_closing.py` y
+  `tests/test_perf66_review_data.py`; hasta que les pase `ruff format`, `checks.py` muestra 3 problemas
+  «format»; (2) los pesos de arquetipo de los 8 bloques `close-crosses` nuevos (`test_taxonomy`, apartado);
+  (3) los resultados de MC y nulos guardados antes del 2026-10-14 no se reproducen (las semillas pasaron a
+  obligatorias/frescas en F5); (4) el número de supervivientes del paso 17 puede cambiar en una repetición (D20).
+
+### Recuentos antes / después
+
+| recuento | antes (71c5e92) | después |
+|---|---|---|
+| ruff F401+B | 344 (B905 235 · F401 56 · B023 25 · B007 13 · B034 8 · B904 4 · B008 3) | B905 235 (congelado en el trinquete); F401 y B904 aún fuera del select hasta que la otra sesión comitee sus 3 ficheros |
+| C901 / PLR0913 | 52 / 231 | 52 / 231 (congelados) |
+| `default_rng()` sin semilla / `np.random` viejo | 14 / 5 | 0 / 0 |
+| `-> dict` sin tipar | 1.377 | 185, todos en tests/ (congelados por D9) |
+| errores de pyright | sin medir | 10, todos en portfolio/testroot/harvest.py (otra sesión) |
+| except amplios (definición del trinquete) | 57 | 35 (21 ui/, 8 registran y relanzan, 2 atajos documentados, guard.py 2, 2 inventarios de ui) |
+| ALLOW de layering.py | ~19 | 19 |
+| ficheros que ruff format cambiaría | 1.511 | 3 (de otra sesión) |
+| tests | 330 | 345 |
 
 ## Objetivo — un comando
 

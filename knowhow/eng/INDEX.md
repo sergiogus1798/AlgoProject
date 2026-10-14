@@ -32,6 +32,7 @@
 - `pytest-cannot-collect-tests-dir` — Why does `pytest tests` die with INTERNALERROR, and how do I run the tests?
 - `rail-resume-by-recreating-the-project` — How do I resume a retired project so the workflow continues at step 13?
 - `ruamel-yaml-instance-is-not-thread-safe` — Why does a daemon endpoint that reads an asset YAML fail now and then with a ruamel parser error?
+- `ruff-format-and-pyright-side-effects` — What breaks after a mass `ruff format`, and what do pyright stubs reject that looks like valid code?
 - `stale-signs-with-the-runners-overrides` — When is a study result considered stale, given the overrides the window's runner may apply?
 - `step25-reads-a-harvest-of-the-traded-version` — Why does edgeCost.report read only a harvest of the traded version at step 25?
 - `studies-reread-build-yaml` — Do crossTF and structure read a run's own record or today's assets/_build.yaml?

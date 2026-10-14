@@ -1153,7 +1153,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_project_map.py` | 86 | Known-answer test for sqx.inspect.project_map: an inactive task runs nothing in SQX, | sqx | — |
 | `tests/test_rail_run.py` | 141 | The rail's run buttons offscreen, the daemon faked: every card can run, and says why when not. | tests, ui | PySide6 |
 | `tests/test_rank_stability.py` | 36 | A constant ordering gives no Kendall tau: it is not «measurable» (encargo 68 D22). | studies | pytest |
-| `tests/test_ratchet.py` | 87 | Known-answer test for tools/ratchet.py: each counter on a small source snippet. | depmap, ratchet | — |
+| `tests/test_ratchet.py` | 89 | Known-answer test for tools/ratchet.py: each counter on a small source snippet. | depmap, ratchet | — |
 | `tests/test_readmetable.py` | 47 | tools/readmetable.render on a temp folder: a stale row, a missing row and a gone row, hand columns kept. | readmetable | — |
 | `tests/test_registry_names.py` | 39 | `registry.check_name` and `registry.kind`: the three allowed prefixes and what is refused. | sqx | — |
 | `tests/test_reprice.py` | 416 | The common repricer against SQX's own P/L on audited trades, and against cases worked out by hand. | core, engines | numpy, pandas |
