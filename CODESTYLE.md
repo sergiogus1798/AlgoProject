@@ -138,8 +138,11 @@ never edit it by hand.** A hand-maintained map is wrong within two weeks.
 ## 8. Check before you hand work over
 
 ```bash
-python3 tools/depmap.py && python3 tools/checks.py
+python3 tools/depmap.py && python3 tools/checks.py && python3 tools/audit_tests.py --changed
 ```
+
+`--changed` runs the tests you touched plus every `tests/test_*.py` that imports, directly or
+transitively, a `.py` that `git status` shows changed; the whole suite still runs nightly.
 
 The lint config is `ruff.toml` (real bugs only, no formatter); `ruff check .` must be clean for its selected rules — `checks.py` runs it as its "lint" check.
 

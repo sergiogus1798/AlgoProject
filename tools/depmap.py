@@ -68,6 +68,51 @@ def imports_of(path: Path) -> set[str]:
     return found
 
 
+def dotted_names(path: Path) -> set[str]:
+    """Every dotted module name one file may be importing (`from a import b` gives `a` and `a.b`)."""
+    pkg = list(path.relative_to(ROOT).parent.parts)
+    out = set()
+    for node in nodes(path):
+        if isinstance(node, ast.Import):
+            out |= {a.name for a in node.names}
+        elif isinstance(node, ast.ImportFrom):
+            base = (".".join(pkg[:len(pkg) - node.level + 1] + [node.module or ""]).strip(".")
+                    if node.level else node.module)
+            out |= {base} | {f"{base}.{a.name}" if base else a.name for a in node.names}
+    return out - {None, ""}
+
+
+def file_graph() -> dict[Path, set[Path]]:
+    """File-level import graph: each project file -> the project files it imports.
+
+    `imports_of` stops at the first segment ("core"), too coarse to say which test a change reaches.
+    This resolves the full dotted name (and `from pkg import mod`, relative imports, and a module
+    imported by bare name after a sys.path insert) to the file, plus the `__init__.py` of its parents.
+
+    Returns:
+        {importer: {imported files}}, absolute paths, project files only.
+    """
+    files = py_files()
+    by_dotted = {}
+    for p in files:
+        parts = list(p.relative_to(ROOT).with_suffix("").parts)
+        by_dotted[".".join(parts[:-1] if parts[-1] == "__init__" else parts)] = p
+    stems = [p.stem for p in files]
+    by_stem = {p.stem: p for p in files if stems.count(p.stem) == 1}
+    graph = {}
+    for p in files:
+        found = set()
+        for dotted in dotted_names(p):
+            head = dotted.split(".")[0]
+            if head not in by_dotted and head in by_stem:
+                dotted = ".".join(by_stem[head].relative_to(ROOT).with_suffix("").parts)
+            parts = dotted.split(".")
+            found |= {by_dotted[".".join(parts[:i])] for i in range(1, len(parts) + 1)
+                      if ".".join(parts[:i]) in by_dotted}
+        graph[p] = found - {p}
+    return graph
+
+
 def summary(path: Path) -> str:
     """The module docstring's first line, or a marker when there is none.
 

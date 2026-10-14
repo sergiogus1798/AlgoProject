@@ -17,16 +17,16 @@ Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los 
 | fase | qué | modelo | depende de | estado |
 |---|---|---|---|---|
 | F0 | decisiones del dueño: todas contestadas; D11 la propone Opus en F14 | dueño | — | hecho |
-| F1 | los tests corren al entregar | Sonnet | D1 | sin empezar |
+| F1 | los tests corren al entregar | Sonnet | D1 | hecho 2026-10-14 |
 | F2 | hooks: lint ampliado al escribir, y cierre que no deja terminar en rojo | Sonnet | F1, D2 | sin empezar |
-| F3 | trinquete en `checks.py` | Sonnet | — | sin empezar |
+| F3 | trinquete en `checks.py` | Sonnet | — | hecho 2026-10-14 (`1e78492`) |
 | F4 | ruff con `F401` y `B`; los 25 `B023` leídos | Sonnet | D3 | sin empezar |
 | F5 | semillas | Sonnet | D4 | sin empezar |
 | F6 | `assert` en los lectores con fichero dorado | Opus diseña, Sonnet escribe | D5 | sin empezar |
 | F7 | menciones caducas del tope de 250 líneas | Sonnet | D6 | sin empezar |
 | F8 | comprobador de tipos, por paquetes | Sonnet | F3, D7 | sin empezar |
 | F9 | **los `-> dict` sin tipar, todos**, paquete a paquete | Opus orquesta, Sonnet escribe | F8, D8, D9 | sin empezar |
-| F10 | límites por función (complejidad, argumentos) en el trinquete | Sonnet | F3 | sin empezar |
+| F10 | límites por función (complejidad, argumentos) en el trinquete | Sonnet | F3 | hecho con F3 |
 | F11 | código muerto: `vulture` de noche, y borrado de lo que halle | Sonnet | — | sin empezar |
 | F12 | tabla del README generada del docstring | Sonnet | D10 | sin empezar |
 | F13 | lockfile y versión de Python | Sonnet | — | sin empezar |
@@ -48,6 +48,11 @@ Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los 
   operaciones exportadas al veredicto del paso 8; un commit por fase; sin Council. Línea base medida:
   ruff `F401,B` 344 (B905 235, F401 56, B023 25), C901 52, PLR0913 231, `default_rng()` 14,
   `np.random.*` 5, `-> dict` 1.377, `except` amplios 29, `ruff format` 1.511 ficheros, 330 tests.
+- 2026-10-14 — F3+F10 hechos: el trinquete cuenta por AST (sólo públicas): `-> dict` 1.251, `except`
+  amplios 57, `np.random.*` 12. F1 hecho: la suite entera tarda 487 s; `audit_tests.py --changed` corre
+  sólo lo afectado y sale ≠ 0 en rojo. ASIDE: fuera 5 que ya pasan; entran `test_taxonomy` (8 bloques sin
+  pesos de arquetipo desde `c81dcbb`: decisión de autoría) y `test_perf66_catalogue` (tolerancia de 20 ms,
+  falla con carga).
 
 ## Objetivo — un comando
 
