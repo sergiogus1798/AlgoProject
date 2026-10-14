@@ -27,6 +27,20 @@ def load(overrides: list[str] | None = None) -> dict:
     return study_config.load(FILE, overrides or [])
 
 
+def seed(cfg: dict) -> int:
+    """The seed every draw of this run descends from.
+
+    Args:
+        cfg: What load() returned, with `global.seed` set (the CLI's `--seed`).
+
+    Returns:
+        The seed. Raises when it was never given: a draw without one cannot be rerun.
+    """
+    if cfg["global"]["seed"] is None:
+        raise ValueError("falta la semilla: pásala con --seed N (global.seed)")
+    return int(cfg["global"]["seed"])
+
+
 def block_sizes(n_trades: int, cfg: dict) -> list[int]:
     """The block lengths the reordering and resampling sweeps are run at.
 

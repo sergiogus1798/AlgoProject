@@ -31,22 +31,20 @@ def batch(job: tuple) -> dict[str, np.ndarray]:
 
     Args:
         job: (kind, model, block, simulations, payload, starting equity, family_c config,
-            tile bytes).
+            tile bytes, seed).
 
     Returns:
         One array per statistic of metrics.NAMES, of length `simulations`. The generator is
-        seeded from the operating system inside the worker, so every batch draws
-        independent fresh entropy and no two workers can share a stream. Runs are
-        deliberately not reproducible — stability.py measures the run-to-run spread instead
-        of hiding it behind a seed.
+        built from the job's `seed` (a SeedSequence the engine derives per sub-test and chunk),
+        so a run is reproducible and no two chunks share a stream.
 
     Every strip asks its model for its own draw. A hand-rolled strip sampler that reused
     one uniform buffer for "does this block restart" and "where does it restart" would
     correlate the restart positions with the 1/block threshold and pile them at the head of
     the stream; calling the model per strip keeps the two draws independent by construction.
     """
-    kind, model, block, n, data, equity0, cfg_c, tile_bytes = job
-    rng = np.random.default_rng()
+    kind, model, block, n, data, equity0, cfg_c, tile_bytes, seed = job
+    rng = np.random.default_rng(seed)
     # float32 for the gathered P&L: metrics.paths accumulates in float64 whatever it is
     # given, and 24 bits of mantissa summed in 53 make the reordering invariant exact
     # rather than approximate. The Family C models build their P&L from fresh uniforms

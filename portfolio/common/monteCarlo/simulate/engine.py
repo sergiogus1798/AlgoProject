@@ -4,6 +4,7 @@ import multiprocessing
 import os
 import sys
 import time
+import zlib
 from collections.abc import Callable, Iterable
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -123,7 +124,14 @@ def _progress(done: int, total: int, title: str, started: float, step: int) -> N
         print(f"  {title} {share:.0%} {counts}", flush=True)
 
 
-def single(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict) -> dict:
+def _seeds(seed: int, kind: str, model: str, block: int, n_chunks: int) -> list:
+    """One SeedSequence per chunk of a sub-test: distinct across sub-tests, chunks and seeds."""
+    tag = zlib.crc32(f"{kind}/{model}/{block}".encode())
+    return [np.random.SeedSequence([seed, tag, i]) for i in range(n_chunks)]
+
+
+def single(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict,
+           seed: int) -> dict:
     """Simulate one small sub-test here, without starting a pool.
 
     Args:
@@ -133,6 +141,7 @@ def single(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict
         block: Block length, ignored by the models that have none.
         n_sims: Simulations to run.
         cfg: The whole config.
+        seed: Seed of the run; every chunk's generator descends from it.
 
     Returns:
         The same arrays run() returns. Fifty rolling windows of two thousand draws each are
@@ -140,10 +149,11 @@ def single(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict
     """
     g = cfg["global"]
     return tiles.batch((kind, model, block, n_sims, data, g["starting_equity"],
-                        cfg["family_c"], g["tile_bytes"]))
+                        cfg["family_c"], g["tile_bytes"], _seeds(seed, kind, model, block, 1)[0]))
 
 
-def sequential(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict) -> dict:
+def sequential(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict,
+               seed: int) -> dict:
     """Simulate one sub-test here, in chunks, without starting a pool.
 
     Args:
@@ -153,6 +163,7 @@ def sequential(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: 
         block: Block length, ignored by the models that have none.
         n_sims: Simulations to run.
         cfg: The whole config.
+        seed: As single().
 
     Returns:
         The same arrays run() returns. It still walks the count in chunks so that this path
@@ -163,12 +174,13 @@ def sequential(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: 
     g = cfg["global"]
     chunks = [min(g["chunk"], n_sims - i) for i in range(0, n_sims, g["chunk"])]
     out = [tiles.batch((kind, model, block, c, data, g["starting_equity"], cfg["family_c"],
-                        g["tile_bytes"])) for c in chunks]
+                        g["tile_bytes"], s))
+           for c, s in zip(chunks, _seeds(seed, kind, model, block, len(chunks)), strict=True)]
     return {k: np.concatenate([o[k] for o in out]) for k in metrics.NAMES}
 
 
 def run(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict,
-        title: str) -> dict:
+        title: str, seed: int) -> dict:
     """Simulate one sub-test and collect its statistics.
 
     Args:
@@ -179,6 +191,7 @@ def run(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict,
         n_sims: Simulations to run.
         cfg: The whole config.
         title: What to call this sub-run on the progress bar.
+        seed: As single().
 
     Returns:
         One array of length n_sims per statistic of metrics.NAMES. Chunking is task
@@ -186,11 +199,12 @@ def run(data: dict, kind: str, model: str, block: int, n_sims: int, cfg: dict,
         parent, over the whole pool. What a worker costs in memory is tile_bytes, not chunk.
     """
     if SERIAL:
-        return sequential(data, kind, model, block, n_sims, cfg)
+        return sequential(data, kind, model, block, n_sims, cfg, seed)
     g = cfg["global"]
     chunks = [min(g["chunk"], n_sims - i) for i in range(0, n_sims, g["chunk"])]
     jobs = [("draw" if kind == "draw" else "stress", model, block, c, data,
-             g["starting_equity"], cfg["family_c"], g["tile_bytes"]) for c in chunks]
+             g["starting_equity"], cfg["family_c"], g["tile_bytes"], s)
+            for c, s in zip(chunks, _seeds(seed, kind, model, block, len(chunks)), strict=True)]
     started, done, out = time.time(), 0, []
     workers = pool(cfg)
     futures = {workers.submit(tiles.batch, j): j[3] for j in jobs}

@@ -50,7 +50,7 @@ def _analyse(path: Path, cfg: dict) -> dict:
     """
     bar_file = sample.bars(cfg)
     asset = costs.load(cfg["sample"]["asset"])
-    mc = mc_config.load([f"global.n_sims={cfg['sample']['n_sims']}"])
+    mc = mc_config.load([f"global.n_sims={cfg['sample']['n_sims']}", "global.seed=0"])
     source = stream.build(path, asset, mc["global"]["risk_per_trade"])
     run.analyse(source, regime.daily(bars.read(bar_file)), asset, mc)
     return {"scale": int(source["pnl"].size), "bytes_in": sample.weight([path, bar_file])}

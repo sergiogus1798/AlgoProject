@@ -68,7 +68,8 @@ def monte_carlo(c: dict, strategy: str) -> list[str] | str:
     one strategy of it alone."""
     return runs.own_trades(c) or (
         ["-m", "portfolio.common.monteCarlo.report", "--project", c["project"], "--databank",
-         c["databank"], "--asset", c["asset"], "--day", c["export"]]
+         c["databank"], "--asset", c["asset"], "--day", c["export"],
+         "--seed", str(rootseed.root(c["project"], c["databank"]))]
         + (["--strategy", strategy] if strategy else []))
 
 

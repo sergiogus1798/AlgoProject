@@ -11,14 +11,16 @@ from portfolio.common.construct.search import greedy, shortlist
 
 
 @numba.njit(parallel=True, cache=True)
-def _fill(graph: np.ndarray, sizes: np.ndarray, seeds: np.ndarray, out: np.ndarray) -> None:
-    """Row by row, each from its own seed: a shuffled-greedy clique, then a random subset of it."""
-    for row in numba.prange(seeds.shape[0]):
-        np.random.seed(seeds[row])
-        clique = greedy.grow(graph, np.random.permutation(graph.shape[0]))
-        np.random.shuffle(clique)
-        picked = np.sort(clique[:min(sizes[row], clique.size)])
-        out[row, :picked.size] = picked
+def _fill(graph: np.ndarray, sizes: np.ndarray, gens: list, out: np.ndarray) -> None:
+    """Rows c, c+k, … from generator c (k = len(gens)): a shuffled-greedy clique, then a subset."""
+    k = len(gens)
+    for c in numba.prange(k):
+        g = gens[c]
+        for row in range(c, out.shape[0], k):
+            clique = greedy.grow(graph, g.permutation(graph.shape[0]))
+            g.shuffle(clique)
+            picked = np.sort(clique[:min(sizes[row], clique.size)])
+            out[row, :picked.size] = picked
 
 
 def candidates(graph: np.ndarray, sizes: np.ndarray, n: int, rng: np.random.Generator) -> np.ndarray:
@@ -26,9 +28,10 @@ def candidates(graph: np.ndarray, sizes: np.ndarray, n: int, rng: np.random.Gene
 
     Each is a random subset of a shuffled-greedy maximal clique (any subset of a clique is
     one), its size drawn from `sizes`; a clique smaller than the size drawn is taken whole.
-    Compiled, one seed per row (`paths.path_seeds`), since 2026-10-13 (owner, encargo 66 D12):
-    the same distribution as the Python loop it replaced, other draws for the same `rng`, so a
-    null stored before that date does not reproduce draw by draw.
+    Compiled, drawn from `paths.path_gens(rng)` (a fixed number of generators spawned from `rng`,
+    so the result is the same whatever the thread count), since 2026-10-14 (owner, encargo 68 F5):
+    the same distribution as before, other draws for the same `rng`, so a null stored before
+    that date does not reproduce draw by draw.
 
     Args:
         graph: N x N bool admissible adjacency.
@@ -41,7 +44,7 @@ def candidates(graph: np.ndarray, sizes: np.ndarray, n: int, rng: np.random.Gene
     """
     out = np.full((n, int(sizes.max())), -1, dtype=np.int32)
     _fill(np.ascontiguousarray(graph, dtype=np.bool_), rng.choice(sizes, size=n).astype(np.int64),
-          paths.path_seeds(n, rng), out)
+          paths.path_gens(rng), out)
     return out
 
 

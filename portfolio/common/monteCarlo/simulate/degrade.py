@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from portfolio.common.monteCarlo.inputs import stream
+from portfolio.common.monteCarlo.inputs import config, stream
 from portfolio.common.monteCarlo.model import stress
 from portfolio.common.monteCarlo.simulate import engine, metrics
 from portfolio.common.monteCarlo.verdict import confidence
@@ -30,7 +30,7 @@ def scope_shape(source: dict, positions: np.ndarray, kind: str, model: str, bloc
         return None
     cut = stream.restrict(source, positions)
     got = engine.sequential(engine.payload(cut), kind, model, block,
-                            cfg["global"]["n_sims"], cfg)
+                            cfg["global"]["n_sims"], cfg, config.seed(cfg))
     seen = metrics.observed(cut["pnl"], cfg["global"]["starting_equity"])
     shape = metrics.shape(got[metric], seen[metric], cfg["global"]["report_percentile"])
     return {**shape, "n": int(positions.size)}

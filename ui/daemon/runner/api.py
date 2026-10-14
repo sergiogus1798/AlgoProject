@@ -12,7 +12,7 @@ from core.paths import DATA
 from core.study.render import page
 from ui.daemon import jobs, runs
 from ui.daemon.results import store
-from ui.daemon.runner import batch, offer, table, transfer
+from ui.daemon.runner import batch, offer, rootseed, table, transfer
 
 ROUTER = APIRouter()
 # The studies whose one.run() re-runs a sub-test alone (CONTRACT §1). The job is
@@ -90,6 +90,8 @@ def _rerun(req: StudyRun) -> list[dict] | str:
              "argv": ["-m", "ui.daemon.results.rerun", "--study", req.study, "--project",
                       req.project, "--databank", req.databank, "--asset", req.asset, "--day",
                       c["export"], "--strategy", s, "--only", req.only]
+             + (["--seed", str(rootseed.root(req.project, req.databank))]
+                if req.study == "monteCarlo" else [])
              + (["--set", *req.overrides] if req.overrides else [])}
             for s in req.strategies]
 

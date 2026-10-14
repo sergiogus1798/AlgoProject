@@ -16,14 +16,14 @@ def _resampled(job: tuple) -> dict:
 
     Args:
         job: (payload of the slice, its observed net, sims, the whole config, keep the
-            histogram).
+            histogram, the slice's own seed).
 
     Returns:
         `median_net`, `net_5`, `pf_5` and `shape` (None unless asked for).
     """
-    data, net_seen, sims, cfg, want_shape = job
+    data, net_seen, sims, cfg, want_shape, seed = job
     got = engine.single(data, "draw", "stationary", config.stationary_block(data["pnl"].size),
-                        sims, cfg)
+                        sims, cfg, seed)
     return {"median_net": float(np.median(got["net"])),
             "net_5": float(np.percentile(got["net"], 5)),
             "pf_5": float(np.nanpercentile(got["pf"], 5)),
@@ -35,7 +35,8 @@ def _bootstrapped(source: dict, slices: list[np.ndarray], cfg: dict,
                   want_shape: bool) -> list[dict]:
     """`_resampled` for every slice of trade positions, across the pool (`engine.mapped`)."""
     jobs = [(engine.payload(source, pos), float(source["pnl"][pos].sum()),
-             cfg["family_d"]["window_sims"], cfg, want_shape) for pos in slices]
+             cfg["family_d"]["window_sims"], cfg, want_shape, config.seed(cfg) + i)
+            for i, pos in enumerate(slices)]
     return engine.mapped(_resampled, jobs, cfg=cfg)
 
 

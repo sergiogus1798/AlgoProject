@@ -13,7 +13,7 @@
 - `nulls-draws-is-disk-bound` — Does raising the monkey's `draws` reduce how many strategies pass by chance, and what does it cost?
 - `numba-cache-ignores-inlined-dependencies` — Why does a numba kernel with cache=True keep running old code after I edit a module it calls?
 - `numba-division` — Which `@njit` options must every numba kernel in this project use?
-- `numba-seed-is-32-bits` — How many distinct random streams can a numba kernel seeded per path with `np.random.seed` have?
+- `numba-generators-per-chunk` — How does a numba prange kernel draw from numpy Generators without a seed per path?
 - `numba-sign-branch-mispredicts` — Why is a numba loop that sums gains and losses separately slow, and how to fix it bit for bit?
 - `per-strategy-readings-ram` — How much RAM and time do profitShape and entryQuality take per strategy, and how many can run in parallel?
 - `process-pool-shutdown` — How do I find and kill orphan forkserver processes left by a global process pool?

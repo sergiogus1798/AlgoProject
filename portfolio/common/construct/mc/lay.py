@@ -77,53 +77,57 @@ def _fold(s_low: np.ndarray, s_high: np.ndarray, low: np.ndarray, high: np.ndarr
 @numba.njit(parallel=True, cache=True)
 def t1(start: np.ndarray, n: np.ndarray, pnl: np.ndarray, low: np.ndarray, high: np.ndarray,
        level: np.ndarray, first: np.ndarray, gaps: np.ndarray, gap_first: np.ndarray,
-       seeds: np.ndarray, per_day: int, closed: np.ndarray, float_end: np.ndarray,
+       gens: list, per_day: int, closed: np.ndarray, float_end: np.ndarray,
        day_low: np.ndarray, day_high: np.ndarray, opened: np.ndarray) -> None:
     """Per path and member: trades with replacement, end to end, a drawn gap after each."""
     horizon = closed.shape[1]
-    for p in numba.prange(seeds.shape[0]):
-        np.random.seed(seeds[p])
-        s_low = np.zeros((horizon, per_day), dtype=np.float32)
-        s_high = np.zeros((horizon, per_day), dtype=np.float32)
-        for m in range(first.shape[0] - 1):
-            n_trades = first[m + 1] - first[m]
-            n_gaps = gap_first[m + 1] - gap_first[m]
-            at = int(np.random.random() * (gaps[gap_first[m] + np.random.randint(0, n_gaps)] + 1))
-            while at < horizon * per_day:
-                i = first[m] + np.random.randint(0, n_trades)
-                _lay(at, start[i], n[i], pnl[i], low, high, level, s_low, s_high, closed[p],
-                     float_end[p])
-                opened[p, at // per_day] += 1
-                gap = gaps[gap_first[m] + np.random.randint(0, n_gaps)]
-                at = max(at + n[i] - 1 + gap, at + 1)
-        _fold(s_low, s_high, day_low[p], day_high[p])
+    k = len(gens)
+    for c in numba.prange(k):
+        g = gens[c]
+        for p in range(c, closed.shape[0], k):
+            s_low = np.zeros((horizon, per_day), dtype=np.float32)
+            s_high = np.zeros((horizon, per_day), dtype=np.float32)
+            for m in range(first.shape[0] - 1):
+                n_trades = first[m + 1] - first[m]
+                n_gaps = gap_first[m + 1] - gap_first[m]
+                at = int(g.random() * (gaps[gap_first[m] + g.integers(0, n_gaps)] + 1))
+                while at < horizon * per_day:
+                    i = first[m] + g.integers(0, n_trades)
+                    _lay(at, start[i], n[i], pnl[i], low, high, level, s_low, s_high, closed[p],
+                         float_end[p])
+                    opened[p, at // per_day] += 1
+                    gap = gaps[gap_first[m] + g.integers(0, n_gaps)]
+                    at = max(at + n[i] - 1 + gap, at + 1)
+            _fold(s_low, s_high, day_low[p], day_high[p])
 
 
 @numba.njit(parallel=True, cache=True)
 def t2(start: np.ndarray, n: np.ndarray, pnl: np.ndarray, open_slot: np.ndarray,
        low: np.ndarray, high: np.ndarray, level: np.ndarray, day_ptr: np.ndarray,
-       seeds: np.ndarray, window: float, per_day: int, closed: np.ndarray,
+       gens: list, window: float, per_day: int, closed: np.ndarray,
        float_end: np.ndarray, day_low: np.ndarray, day_high: np.ndarray,
        opened: np.ndarray) -> None:
     """Per path: windows of history (geometric lengths), every trade opened in one laid whole."""
     horizon = closed.shape[1]
     n_days = day_ptr.shape[0] - 1
-    for p in numba.prange(seeds.shape[0]):
-        np.random.seed(seeds[p])
-        s_low = np.zeros((horizon, per_day), dtype=np.float32)
-        s_high = np.zeros((horizon, per_day), dtype=np.float32)
-        cursor = 0
-        while cursor < horizon:
-            origin = np.random.randint(0, n_days)
-            length = np.random.geometric(1.0 / window)
-            for j in range(min(length, horizon - cursor)):
-                day = (origin + j) % n_days
-                for i in range(day_ptr[day], day_ptr[day + 1]):
-                    _lay((cursor + j) * per_day + open_slot[i], start[i], n[i], pnl[i], low,
-                         high, level, s_low, s_high, closed[p], float_end[p])
-                    opened[p, cursor + j] += 1
-            cursor += length
-        _fold(s_low, s_high, day_low[p], day_high[p])
+    k = len(gens)
+    for c in numba.prange(k):
+        g = gens[c]
+        for p in range(c, closed.shape[0], k):
+            s_low = np.zeros((horizon, per_day), dtype=np.float32)
+            s_high = np.zeros((horizon, per_day), dtype=np.float32)
+            cursor = 0
+            while cursor < horizon:
+                origin = g.integers(0, n_days)
+                length = g.geometric(1.0 / window)
+                for j in range(min(length, horizon - cursor)):
+                    day = (origin + j) % n_days
+                    for i in range(day_ptr[day], day_ptr[day + 1]):
+                        _lay((cursor + j) * per_day + open_slot[i], start[i], n[i], pnl[i], low,
+                             high, level, s_low, s_high, closed[p], float_end[p])
+                        opened[p, cursor + j] += 1
+                cursor += length
+            _fold(s_low, s_high, day_low[p], day_high[p])
 
 
 @numba.njit(cache=True)

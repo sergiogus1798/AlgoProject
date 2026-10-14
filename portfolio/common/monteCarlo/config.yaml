@@ -11,6 +11,7 @@ global:
   percentile_set: [1, 5, 25, 50, 75, 95, 99]
   report_percentile: 95       # the percentile the observed value is compared against
   progress_update_pct: 1
+  seed: null                  # REQUIRED to draw: the CLI's --seed; every draw descends from it and it is saved with the result
 
 blocks:
   block_min: 5                # smallest block of consecutive trades kept together

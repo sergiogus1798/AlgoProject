@@ -37,7 +37,7 @@ def cone(source: dict, label: str, cfg: dict) -> dict:
         return fan.stress_envelope(engine.payload(source), model, FAN_SIMS, cfg, CONE)
     block = steps[label]["block"] if label in steps else cfg["blocks"]["block_min"]
     return fan.envelope(source["pnl"], model, block, FAN_SIMS,
-                        cfg["global"]["starting_equity"], CONE)
+                        cfg["global"]["starting_equity"], CONE, config.seed(cfg))
 
 
 def _rerun(strategy: str, inputs: dict, cfg: dict, only: str, started: float) -> dict:
@@ -94,4 +94,5 @@ def run(strategy: str, inputs: dict, cfg: dict, only: str | None = None) -> dict
                                  f"veces el que SQX cobró: la familia C se lee con reserva."})
     return envelope.envelope(MODULE, strategy, inputs["identity"].get(strategy), cfg, started,
                              tabs, headline.verdict_block(result, verdict), warnings,
-                             explorer.GLOSSARY, headline.summary(result, verdict))
+                             explorer.GLOSSARY,
+                             {**headline.summary(result, verdict), "seed": config.seed(cfg)})

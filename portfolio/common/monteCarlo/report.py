@@ -52,6 +52,8 @@ def main() -> None:
                     help="treat every strategy as one combined trade stream")
     ap.add_argument("--strategy", help="one strategy alone, as the export names it: writes "
                     "only estrategias/<name>.json, never the population's files")
+    ap.add_argument("--seed", type=int, required=True,
+                    help="seed of every draw of the run; saved with the result")
     ap.add_argument("--set", action="extend", nargs="+", default=[], metavar="KEY=VALUE",
                     help="override any config value, e.g. global.n_sims=20000")
     a = ap.parse_args()
@@ -59,7 +61,7 @@ def main() -> None:
         ap.error("--strategy y --portfolio se excluyen: una cartera es todas a la vez")
 
     print(assets.report(a.asset))
-    cfg = config.load(a.set)
+    cfg = config.load(a.set + [f"global.seed={a.seed}"])
     inputs = load.load(a.project, a.databank, a.asset, a.day, cfg, a.bars_timeframe,
                          a.portfolio)
     print(f"{len(inputs['streams'])} streams · estabilidad sobre {inputs['reference']}",
@@ -81,7 +83,7 @@ def main() -> None:
     pd.DataFrame(fired, columns=["strategy", "family", "test", "value", "limit", "gate"]
                  ).to_csv(out / "flags.csv", index=False)
     command = (f"python3 -m portfolio.common.monteCarlo.report --project {a.project} --databank "
-               f"{a.databank} --asset {a.asset} --day {a.day}"
+               f"{a.databank} --asset {a.asset} --day {a.day} --seed {a.seed}"
                + (" --portfolio" if a.portfolio else "")
                + "".join(f" --set {s}" for s in a.set))
     table = many.table(got["members"])

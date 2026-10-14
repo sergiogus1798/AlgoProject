@@ -80,7 +80,7 @@ def _family_b(runs: dict, source: dict, cfg: dict, sims: int) -> dict:
         cut = engine.payload(source, positions)
         # sequential(), not single(): sims is the full study count here, and single() only
         # bounds memory for the small per-window counts family_d uses.
-        got = engine.sequential(cut, "draw", "iid_bootstrap", 0, sims, cfg)
+        got = engine.sequential(cut, "draw", "iid_bootstrap", 0, sims, cfg, config.seed(cfg))
         parts[name] = {"n": int(positions.size),
                        "sharpe": float(np.median(got["sharpe"])),
                        "net": float(np.median(got["net"])),
@@ -115,7 +115,8 @@ def _family_c(source: dict, cfg: dict, sims: int) -> dict:
     data = engine.payload(source)
     out = {}
     for name in stress.STRESS:
-        got = engine.run(data, "stress", name, 0, sims, cfg, stress.TITLES[name])
+        got = engine.run(data, "stress", name, 0, sims, cfg, stress.TITLES[name],
+                         config.seed(cfg))
         out[name] = {"median_net": float(np.median(got["net"])),
                      "net_5": float(np.percentile(got["net"], 5)),
                      "pf_5": float(np.nanpercentile(got["pf"], 5)),
@@ -143,7 +144,7 @@ def one(source: dict, step: dict, cfg: dict) -> dict:
     seen = metrics.observed(source["pnl"], cfg["global"]["starting_equity"])
     kind = "stress" if step["model"] in stress.STRESS else "draw"
     got = engine.run(engine.payload(source), kind, step["model"], step["block"],
-                     cfg["global"]["n_sims"], cfg, step["title"])
+                     cfg["global"]["n_sims"], cfg, step["title"], config.seed(cfg))
     return {"label": step["label"], "title": step["title"],
             "table": metrics.table(got, seen, cfg["global"]["percentile_set"]),
             "shapes": metrics.shapes(got, seen, cfg["global"]["report_percentile"])}
@@ -178,7 +179,8 @@ def _family_e(source: dict, day: pd.DataFrame, asset: dict, cfg: dict) -> dict:
                            f"la PSR no se calcula sobre el build"}
     benchmark = significance.footprint(oos, day, asset)
     psr = significance.psr(oos["pnl"], benchmark)
-    boot = engine.sequential(engine.payload(oos), "draw", "iid_bootstrap", 0, cfg["global"]["n_sims"], cfg)
+    boot = engine.sequential(engine.payload(oos), "draw", "iid_bootstrap", 0,
+                          cfg["global"]["n_sims"], cfg, config.seed(cfg))
     return {**psr, "benchmark": benchmark, **significance.crosscheck(psr["psr"], boot["sharpe"]),
             "warning": None}
 

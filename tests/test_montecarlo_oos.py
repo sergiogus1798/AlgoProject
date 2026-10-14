@@ -49,7 +49,7 @@ def test_family_e_reads_oos_not_is() -> None:
     is_pnl = 500.0 + rng.normal(0, 5.0, 60)
     oos_pnl = rng.normal(0, 50.0, 40)
     source = stream(is_pnl, oos_pnl)
-    cfg = mc_config.load(["global.n_sims=300", "global.chunk=300"])
+    cfg = mc_config.load(["global.n_sims=300", "global.chunk=300", "global.seed=0"])
     asset = {"point_value": 1.0}
     e = mc_run._family_e(source, day(), asset, cfg)
     assert e["n"] == oos_pnl.size, "Family E must count only the OOS trades"
@@ -68,7 +68,7 @@ def test_family_e_warns_when_oos_too_thin() -> None:
     """Fewer OOS trades than `confidence.MEAN_PROVISIONAL`: NaN and a warning, never IS."""
     rng = np.random.default_rng(SEED)
     source = stream(500.0 + rng.normal(0, 5.0, 60), rng.normal(0, 50.0, 3))
-    cfg = mc_config.load(["global.n_sims=300", "global.chunk=300"])
+    cfg = mc_config.load(["global.n_sims=300", "global.chunk=300", "global.seed=0"])
     e = mc_run._family_e(source, day(), {"point_value": 1.0}, cfg)
     assert e["psr"] != e["psr"], "too few OOS trades must read NaN, never a number from IS"
     assert e["warning"]

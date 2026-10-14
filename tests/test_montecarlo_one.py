@@ -56,7 +56,7 @@ def test_one_strategy_leaves_the_population_alone() -> None:
             "members": [member(n) for n in NAMES],
             "population": envelope.envelope("m", None, None, {}, time.time(), [])}
         report.one.run = one
-        base = ["report", "--project", "P", "--databank", "WFM", "--asset", "USDJPY"]
+        base = ["report", "--project", "P", "--databank", "WFM", "--asset", "USDJPY", "--seed", "0"]
         sys.argv = base
         report.main()
         out = Path(tmp) / "reports" / "monteCarlo"

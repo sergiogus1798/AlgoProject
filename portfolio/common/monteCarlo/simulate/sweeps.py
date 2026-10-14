@@ -43,7 +43,7 @@ def execute(data: dict, steps: list[dict], n_sims: int, cfg: dict) -> dict:
         and the Sharpe cross-check of Family E all read the same draws.
     """
     return {s["label"]: engine.run(data, "draw", s["model"], s["block"], n_sims, cfg,
-                                   s["title"])
+                                   s["title"], config.seed(cfg))
             for s in steps}
 
 

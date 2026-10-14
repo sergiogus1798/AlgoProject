@@ -41,7 +41,9 @@ def monte_carlo(a: argparse.Namespace) -> dict:
     Returns:
         The partial contract dict: that sub-test's distributions and tables, no verdict.
     """
-    cfg = mc_config.load(a.set)
+    if a.seed is None:
+        raise SystemExit("monteCarlo: falta --seed")
+    cfg = mc_config.load(a.set + [f"global.seed={a.seed}"])
     inputs = mc_load.load(a.project, a.databank, a.asset, a.day, cfg)
     n = len(inputs["streams"][a.strategy]["pnl"])
     titles = {s["title"]: s["label"] for s in sweeps.plan(n, cfg)}
@@ -84,6 +86,7 @@ def main() -> None:
     ap.add_argument("--day", required=True, help="the raw export's date, YYYY-MM-DD")
     ap.add_argument("--strategy", required=True)
     ap.add_argument("--only", required=True, help="the sub-test: a feed, or a Monte Carlo test")
+    ap.add_argument("--seed", type=int, help="monteCarlo only, required there: seed of every draw")
     ap.add_argument("--set", action="extend", nargs="+", default=[], metavar="KEY=VALUE")
     a = ap.parse_args()
     got = RUNS[a.study](a)

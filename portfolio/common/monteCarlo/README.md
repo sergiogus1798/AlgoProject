@@ -65,10 +65,12 @@ study and computes none of the numbers it judges.
   stage. Fabricating a trial count would produce a credible, false number. That question belongs to
   the generation study.
 - **It does not validate the edge.** It assumes it and measures what it rests on.
-- **It is not reproducible, on purpose.** No seed anywhere: every run draws fresh entropy.
-  `simulate/stability.py` replaces reproducibility by measuring how far the gate-driving numbers
-  move between independent runs — which is the question a seed hides. One exception since
-  2026-10-13 (owner): Family D's stitched stress path is drawn from `simulate/stitch.py`'s `SEED`.
+- **It is reproducible: every draw is seeded (owner, 2026-10-14).** `--seed` is required; it sets
+  `global.seed`, every sub-test and chunk derives its own stream from it, and it is saved in the
+  member's summary. `simulate/stability.py` still measures how far the gate-driving numbers move
+  between independent runs, now with distinct seeds (`seed + 1 + i`) that it records. Family D's
+  stitched stress path keeps its own constant, `simulate/stitch.py`'s `SEED`. Results stored
+  before 2026-10-14 do not reproduce.
 
 ## The input contract is the only contract
 

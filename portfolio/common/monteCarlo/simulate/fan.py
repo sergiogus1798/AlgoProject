@@ -3,6 +3,7 @@
 import numpy as np
 
 from engines.resample import draws
+from portfolio.common.monteCarlo.inputs import config
 from portfolio.common.monteCarlo.model import stress
 
 STEPS = 200   # points kept per curve; an SVG cannot show more and the file stays small
@@ -29,7 +30,7 @@ def _bands(equity: np.ndarray, pnl: np.ndarray, equity0: float, qs: list[int]) -
 
 
 def envelope(pnl: np.ndarray, model: str, block: int, sims: int, equity0: float,
-             qs: list[int]) -> dict:
+             qs: list[int], seed: int) -> dict:
     """Percentile bands under a reordering or resampling model (Families A and B).
 
     Args:
@@ -40,12 +41,13 @@ def envelope(pnl: np.ndarray, model: str, block: int, sims: int, equity0: float,
             and its bands are stable long before its tails are.
         equity0: Starting account in USD.
         qs: Percentiles to band.
+        seed: Seed of the draw.
 
     Returns:
         What _bands() returns. Read it for the width of the cone, not for any single curve:
         the cone is what order or composition luck alone can do to the same trades.
     """
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(seed)
     idx = draws.DRAWS[model](sims, pnl.size, rng, block)
     return _bands(equity0 + np.cumsum(pnl[idx], axis=1), pnl, equity0, qs)
 
@@ -61,10 +63,10 @@ def stress_envelope(source: dict, model: str, sims: int, cfg: dict, qs: list[int
         qs: Percentiles to band.
 
     Returns:
-        What _bands() returns. The cone here is what the same execution stress can do to
+        What _bands() returns, drawn from `config.seed(cfg)`. The cone here is what the same execution stress can do to
         the curve, not what order alone can — a different question from envelope()'s.
     """
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(config.seed(cfg))
     pnl = stress.STRESS[model](source, sims, rng, cfg["family_c"])
     equity0 = cfg["global"]["starting_equity"]
     return _bands(equity0 + np.cumsum(pnl, axis=1), source["pnl"], equity0, qs)

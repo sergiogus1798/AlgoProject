@@ -78,16 +78,17 @@ def daily_blocks(days: dict[str, np.ndarray], horizon: int, n_paths: int, mean_b
     return out
 
 
-def path_seeds(n: int, rng: np.random.Generator) -> np.ndarray:
-    """One kernel seed per path, all different, uint64 [n].
+CHUNKS = 1024
 
-    numba's `np.random.seed` keeps 32 bits of whatever it is given, so the seeds are drawn from
-    [0, 2**32) WITHOUT replacement: no two paths share a stream. With replacement (until
-    2026-10-13) a million paths held ~116 repeated pairs. The paths' distribution is the same;
-    the draws are not, so paths stored before that date do not reproduce from their seed
-    (owner, 2026-10-13, encargo 66 §9).
+
+def path_gens(rng: np.random.Generator) -> list:
+    """`CHUNKS` independent generators spawned from `rng`, one per strided slice of the paths.
+
+    A kernel runs the slices in parallel and each slice's paths in order, so the draws depend on
+    `rng` only, never on the thread count. (One generator per path would cost 40 times the
+    kernel itself: measured 6.5 s against 0.15 s for 200k paths, owner, 2026-10-14.)
     """
-    return rng.choice(2**32, n, replace=False).astype(np.uint64)
+    return rng.spawn(CHUNKS)
 
 
 def _empty(n_paths: int, horizon: int) -> dict[str, np.ndarray]:
@@ -119,9 +120,9 @@ def trade_bootstrap(members: list[dict], horizon: int, n_paths: int,
         raise ValueError(f"T1: los miembros {short} tienen menos de 2 operaciones: sin huecos que sortear")
     flat = lay.stack(members)
     out = _empty(n_paths, horizon)
-    seeds = path_seeds(n_paths, rng)
+    gens = path_gens(rng)
     lay.t1(flat["start"], flat["n"], flat["pnl"], flat["low"], flat["high"], flat["level"],
-           flat["first"], flat["gaps"], flat["gap_first"], seeds, members[0]["per_day"],
+           flat["first"], flat["gaps"], flat["gap_first"], gens, members[0]["per_day"],
            out["closed"], out["float_end"], out["low"], out["high"], out["opened"])
     return out
 
@@ -146,9 +147,9 @@ def trade_blocks(members: list[dict], horizon: int, n_paths: int, window_days: i
     """
     flat = lay.by_day(lay.stack(members), members[0]["n_days"])
     out = _empty(n_paths, horizon)
-    seeds = path_seeds(n_paths, rng)
+    gens = path_gens(rng)
     lay.t2(flat["start"], flat["n"], flat["pnl"], flat["open_slot"], flat["low"], flat["high"],
-           flat["level"], flat["day_ptr"], seeds, float(window_days), members[0]["per_day"],
+           flat["level"], flat["day_ptr"], gens, float(window_days), members[0]["per_day"],
            out["closed"], out["float_end"], out["low"], out["high"], out["opened"])
     return out
 

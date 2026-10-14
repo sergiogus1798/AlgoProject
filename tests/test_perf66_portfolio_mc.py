@@ -88,14 +88,12 @@ def test_worst_path_is_seeded_and_equal_to_the_matrix(monkeypatch: pytest.Monkey
             assert got[q] == {**want, "segments": 5, "quantile": q}, (strip_bytes, q)
 
 
-def test_a_million_path_seeds_never_repeat() -> None:
-    """No two of a million paths share a kernel seed; the old 32-bit draw repeated ~116 pairs."""
-    seeds = paths.path_seeds(1_000_000, np.random.default_rng(1))
-    assert seeds.dtype == np.uint64 and seeds.max() < 2**32
-    assert len(np.unique(seeds)) == 1_000_000
-    assert np.array_equal(seeds, paths.path_seeds(1_000_000, np.random.default_rng(1)))
-    old = np.random.default_rng(1).integers(0, 2**32, 1_000_000, dtype=np.uint64)
-    assert len(np.unique(old)) < 1_000_000
+def test_path_gens_are_distinct_and_reproducible() -> None:
+    """The kernels' generators come from `rng` alone: same rng, same draws; no two share a stream."""
+    a, b = paths.path_gens(np.random.default_rng(1)), paths.path_gens(np.random.default_rng(1))
+    first = np.array([g.integers(0, 2**62) for g in a])
+    assert len(a) == paths.CHUNKS and len(np.unique(first)) == paths.CHUNKS
+    assert np.array_equal(first, [g.integers(0, 2**62) for g in b])
 
 
 def test_trade_paths_reproduce_from_their_generator() -> None:
@@ -196,7 +194,7 @@ def _old_slices(source: dict, spans: list[dict], cfg: dict, want_shape: bool) ->
                          "pf_5": float("nan"), "shape": None})
             continue
         got = engine.single(engine.payload(source, pos), "draw", "stationary",
-                            mc_config.stationary_block(pos.size), sims, cfg)
+                            mc_config.stationary_block(pos.size), sims, cfg, 0)
         net_seen = float(source["pnl"][pos].sum())
         rows.append({**{k: span[k] for k in ("start", "end")}, "n": int(pos.size),
                      "median_net": float(np.median(got["net"])),
@@ -209,8 +207,8 @@ def _old_slices(source: dict, spans: list[dict], cfg: dict, want_shape: bool) ->
 def test_family_d_windows_same_figures(monkeypatch: pytest.MonkeyPatch) -> None:
     """Every window asks the kernel for what it asked before: fed one stream, the same rows.
 
-    The windows draw from OS entropy on purpose, so each call's generator is pinned here to
-    compare; a sparse stretch leaves windows under the minimum, which stay blank.
+    Each window has its own seed, so each call's generator is pinned here to compare;
+    a sparse stretch leaves windows under the minimum, which stay blank.
     """
     rng = np.random.default_rng(6)
     opens = np.concatenate([pd.date_range("2015-01-01", periods=900, freq="36h").to_numpy(),
@@ -219,7 +217,7 @@ def test_family_d_windows_same_figures(monkeypatch: pytest.MonkeyPatch) -> None:
     pnl = rng.normal(15.0, 200.0, opens.size)
     source = {"pnl": pnl, "cost": np.zeros(pnl.size), "spread": np.full(pnl.size, 0.5),
               "mae": np.abs(pnl), "open": opens}
-    cfg = mc_config.load(["family_d.window_sims=400"])
+    cfg = mc_config.load(["family_d.window_sims=400", "global.seed=0"])
     fresh = np.random.default_rng
     monkeypatch.setattr(np.random, "default_rng", lambda *a: fresh(77))
     monkeypatch.setattr(engine, "SERIAL", True)

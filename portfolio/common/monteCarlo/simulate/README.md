@@ -32,13 +32,12 @@ and every module here would produce the same arrays if the study's verdict rules
   `engine` over `stress`, E is closed-form in `verdict/significance`; D bootstraps *inside* each
   window and each tercile, which is a different loop, so it gets `family_d.py`. The asymmetry is
   real, not an accident of naming.
-- **There is no seed anywhere, on purpose — but for `stitch.SEED`.** The stitched worst path is the
-  one seeded draw (owner, 2026-10-13): a stress reference that moved between two runs read as a
-  finding. It is a constant in `stitch.py`, not a config key; figures stored before that date do not
-  reproduce. Everything else: every run draws fresh entropy, so two runs never agree
-  to the last decimal. `stability.py` replaces reproducibility with the honest version of the same
-  question: how far do the gate-driving percentiles move between independent runs? A seed would hide
-  exactly that.
+- **Every draw is seeded (owner, 2026-10-14).** `engine.single/sequential/run`, `fan.*` and
+  `tiles.batch` take a required `seed` (the CLI's `--seed`, `config.seed(cfg)`); the engine derives
+  one `SeedSequence` per sub-test and chunk, so no two share a stream. The stitched worst path keeps
+  its constant `stitch.SEED`. `stability.py` still asks how far the gate-driving percentiles move
+  between independent runs: it passes a distinct seed per repeat (`seed + 1 + i`) and records them.
+  Figures stored before 2026-10-14 do not reproduce.
 - **The block sweep can vanish.** When N cannot support `min_blocks` blocks of the smallest size,
   `sweeps.plan()` skips it and flags it rather than running a degenerate randomisation.
 - **`chunk` is task granularity, `tile_bytes` is the memory knob.** `chunk` bounds simulations, so

@@ -305,8 +305,8 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `portfolio/common/construct/many.py` | 111 | The real path's verdict on a chosen portfolio (M5): oos1 against random portfolios, then oos2 once. | contract, equity, pairs, search, verdict | numpy, pandas |
 | `portfolio/common/construct/mc/blocklen.py` | 28 | How long the resampled blocks are: measured on the combination's own daily P&L, plus a sweep. | engines | numpy, pandas |
 | `portfolio/common/construct/mc/judge.py` | 161 | The rule machine over Monte Carlo paths and risk settings: who passes, when, and which rule fails. | portfolio | numba, numpy |
-| `portfolio/common/construct/mc/lay.py` | 142 | Whole trades laid on a synthetic calendar of server days: the kernels behind T1 and T2. | — | numba, numpy |
-| `portfolio/common/construct/mc/paths.py` | 164 | Monte Carlo paths of a combination's server days: joint-daily blocks (D), trade bootstrap (T1, T2). | — | numpy |
+| `portfolio/common/construct/mc/lay.py` | 146 | Whole trades laid on a synthetic calendar of server days: the kernels behind T1 and T2. | — | numba, numpy |
+| `portfolio/common/construct/mc/paths.py` | 165 | Monte Carlo paths of a combination's server days: joint-daily blocks (D), trade bootstrap (T1, T2). | — | numpy |
 | `portfolio/common/construct/mc/units.py` | 132 | A member's trades as whole units: each one's floating path per block since entry, at unit risk. | equity | numba, numpy, pandas |
 | `portfolio/common/construct/oos2.py` | 74 | The one read of `oos2` (PLAN §5.5, Q11 d): the door, the ledger's count, the row that spends it. | ledger, search, verdict | numpy |
 | `portfolio/common/construct/pairs/measures.py` | 79 | Pairwise correlation measures on aligned P&L series, signed, pairwise-finite. | — | numpy, scipy |
@@ -328,7 +328,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `portfolio/common/construct/search/stagea_data.py` | 59 | Per-member build-day and M5 block arrays for one firm, scaled to per-(risk x size) units. | — | numpy, pandas |
 | `portfolio/common/construct/search/stageb.py` | 123 | Stage B of the funded search: one combination under three Monte Carlos, every block length, every risk. | portfolio | numpy, pandas |
 | `portfolio/common/construct/search/stageb_data.py` | 156 | What stage B reads per member on one stretch of server days: day figures, exact minutes, trade units. | core, portfolio | numba, numpy, pandas |
-| `portfolio/common/construct/search/stageb_null.py` | 70 | The selected null's searches: random admissible combinations put through the same selection. | portfolio | numba, numpy, pandas |
+| `portfolio/common/construct/search/stageb_null.py` | 73 | The selected null's searches: random admissible combinations put through the same selection. | portfolio | numba, numpy, pandas |
 | `portfolio/common/construct/search/stageb_run.py` | 88 | Stage B over a whole shortlist, its winner, and the same measures re-read on another stretch. | portfolio | numpy, pandas |
 | `portfolio/common/construct/search/trials.py` | 118 | The funded path's ledger rows: the pool's own study, and one row in every member's own study. | ledger | numpy |
 | `portfolio/common/construct/search/trials_real.py` | 64 | The rank search's ledger rows (PLAN §6): the pool's own study and one row in each member's. | ledger | numpy, pandas |
@@ -354,26 +354,26 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `portfolio/common/monteCarlo/contract/regime.py` | 127 | Families C, D and E as tabs: execution, regime, and whether the edge could be zero. | core, engines, portfolio | pandas |
 | `portfolio/common/monteCarlo/contract/shapes.py` | 97 | This study's histograms and percentile tables turned into contract blocks, in reading units. | core, portfolio | numpy, pandas |
 | `portfolio/common/monteCarlo/contract/words.py` | 120 | The words the owner reads: every fired check as a sentence, and why the verdict is what it is. | portfolio | — |
-| `portfolio/common/monteCarlo/inputs/config.py` | 60 | The single source of truth for every tunable of the study, and what N makes of it. | core | numpy |
+| `portfolio/common/monteCarlo/inputs/config.py` | 74 | The single source of truth for every tunable of the study, and what N makes of it. | core | numpy |
 | `portfolio/common/monteCarlo/inputs/costs.py` | 83 | What the broker charged and what a worse broker would charge, per asset and per trade. | core | numpy, pandas |
 | `portfolio/common/monteCarlo/inputs/stream.py` | 114 | The input contract: any time-ordered trade list, reduced to what every family needs. | core, portfolio | numpy, pandas |
 | `portfolio/common/monteCarlo/load.py` | 45 | Everything one run of the study reads, assembled once: streams, daily bars, costs, identity. | core, engines, portfolio | — |
 | `portfolio/common/monteCarlo/many.py` | 100 | Every strategy of one export through one.run, and the databank read as one result. | core, portfolio | pandas |
 | `portfolio/common/monteCarlo/model/stress.py` | 92 | Family C: what the same trades are worth under worse fills, worse costs and missed entries. | — | numpy |
 | `portfolio/common/monteCarlo/model/windows.py` | 51 | Family D in time: the calendar slices of a trade stream, defined in months, never in trades. | — | numpy, pandas |
-| `portfolio/common/monteCarlo/one.py` | 97 | One strategy through every family, returned as the contract's data: what the window paints. | core, portfolio | — |
-| `portfolio/common/monteCarlo/report.py` | 94 | Run the Monte Carlo study over every strategy of one databank and write its report. | core, portfolio | pandas |
-| `portfolio/common/monteCarlo/run.py` | 214 | Everything one strategy is put through, assembled into the single result the report reads. | engines, portfolio | numpy, pandas |
+| `portfolio/common/monteCarlo/one.py` | 98 | One strategy through every family, returned as the contract's data: what the window paints. | core, portfolio | — |
+| `portfolio/common/monteCarlo/report.py` | 96 | Run the Monte Carlo study over every strategy of one databank and write its report. | core, portfolio | pandas |
+| `portfolio/common/monteCarlo/run.py` | 216 | Everything one strategy is put through, assembled into the single result the report reads. | engines, portfolio | numpy, pandas |
 | `portfolio/common/monteCarlo/simulate/degrade.py` | 73 | Whether each family's headline statistic degrades from in-sample to out-of-sample. | portfolio | numpy |
-| `portfolio/common/monteCarlo/simulate/engine.py` | 203 | Run one simulated sub-test across every core, and say how far along it is while it does. | portfolio | numpy |
-| `portfolio/common/monteCarlo/simulate/family_d.py` | 121 | Family D's execution: stationary bootstrap inside every calendar window and volatility | engines, portfolio | numpy, pandas |
-| `portfolio/common/monteCarlo/simulate/fan.py` | 70 | The equity envelope: where the simulated paths ran, trade by trade, around the real one. | engines, portfolio | numpy |
+| `portfolio/common/monteCarlo/simulate/engine.py` | 217 | Run one simulated sub-test across every core, and say how far along it is while it does. | portfolio | numpy |
+| `portfolio/common/monteCarlo/simulate/family_d.py` | 122 | Family D's execution: stationary bootstrap inside every calendar window and volatility | engines, portfolio | numpy, pandas |
+| `portfolio/common/monteCarlo/simulate/fan.py` | 72 | The equity envelope: where the simulated paths ran, trade by trade, around the real one. | engines, portfolio | numpy |
 | `portfolio/common/monteCarlo/simulate/kernel.py` | 91 | The core statistics of many equity paths in one compiled pass, without the path matrix. | — | numba, numpy |
 | `portfolio/common/monteCarlo/simulate/metrics.py` | 154 | The core statistics of an equity path, computed on thousands of paths at once. | core | numpy |
-| `portfolio/common/monteCarlo/simulate/stability.py` | 63 | Whether the simulation count is high enough: the same gate numbers, computed again. | portfolio | numpy |
+| `portfolio/common/monteCarlo/simulate/stability.py` | 65 | Whether the simulation count is high enough: the same gate numbers, computed again. | portfolio | numpy |
 | `portfolio/common/monteCarlo/simulate/stitch.py` | 81 | The adversarial path: a bad draw from every period of the history, one after another. | portfolio | numpy |
 | `portfolio/common/monteCarlo/simulate/sweeps.py` | 62 | Which reordering and resampling runs a stream of this size gets, and the numbers they give. | engines, portfolio | — |
-| `portfolio/common/monteCarlo/simulate/tiles.py` | 65 | One worker's batch, computed in strips of rows small enough to stay in cache. | engines, portfolio | numpy |
+| `portfolio/common/monteCarlo/simulate/tiles.py` | 63 | One worker's batch, computed in strips of rows small enough to stay in cache. | engines, portfolio | numpy |
 | `portfolio/common/monteCarlo/tooltips.py` | 80 | One sentence per config.yaml and asset knob, for the config drawer's hover text. | — | — |
 | `portfolio/common/monteCarlo/verdict/confidence.py` | 65 | Whether the sample can hold up a number. Every statistic in the report carries one of these. | — | — |
 | `portfolio/common/monteCarlo/verdict/gates.py` | 139 | What disqualifies a strategy. Every threshold in the study lives here and nowhere else. | portfolio | — |
@@ -1097,7 +1097,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_perf66_p6.py` | 234 | Encargo 66, pass 6: each speed-up equal to the code it replaced, and the latent crashes made clear. | core, depmap, engines, ledger, portfolio, studies | numpy, pandas, pytest |
 | `tests/test_perf66_periods.py` | 15 | Encargo 66 review 3: a trailing period of size 0 is refused by q_null and permuted.between, not read out of bounds. | studies | numpy, pytest |
 | `tests/test_perf66_portfolio.py` | 205 | Encargo 66 §9, piece C1: the faster rolling ranks, server_days and medoids equal the old logic bit for bit. | portfolio, studies | numpy, pandas, pytest, scipy |
-| `tests/test_perf66_portfolio_mc.py` | 231 | Encargo 66, the portfolio Monte Carlo: each fast or reseeded path against the code it replaced. | engines, portfolio, test_portfolio_mc_paths | numpy, pandas, pytest, scipy |
+| `tests/test_perf66_portfolio_mc.py` | 229 | Encargo 66, the portfolio Monte Carlo: each fast or reseeded path against the code it replaced. | engines, portfolio, test_portfolio_mc_paths | numpy, pandas, pytest, scipy |
 | `tests/test_perf66_resample.py` | 242 | Encargo 66 §3.4 and §3.9c: the gate's resampling made lighter gives the numbers it gave — each oracle below is the code replaced. | studies | numpy, pytest |
 | `tests/test_perf66_retest.py` | 127 | Encargo 66, tanda E: export_retest packs a live session's `.abk` in place of one orderstocsv pass, fakes only. | core, sqx, tests | pandas, pytest |
 | `tests/test_perf66_review_data.py` | 199 | Encargo 66, the data reviewer's findings: each test fails on the code before the fix. | core, mt5, pipeline, portfolio, studies, ui | numpy, pandas, pytest, yaml |
@@ -1368,25 +1368,25 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/daemon/results/knobs.py` | 204 | A study's knobs as its own loader reads them, their tooltips, and the hash a run would sign. | core, engines, ui | — |
 | `ui/daemon/results/matrix.py` | 98 | The population matrix: every strategy of one databank against every study, one state per cell. | ui | — |
 | `ui/daemon/results/presence.py` | 32 | Which studies have a result for one strategy anywhere in the project, and what each says — the | ui | — |
-| `ui/daemon/results/rerun.py` | 98 | One sub-test of a study run again alone, written beside the stored result and never over it (OPEN §54). | core, portfolio, studies, ui | — |
+| `ui/daemon/results/rerun.py` | 101 | One sub-test of a study run again alone, written beside the stored result and never over it (OPEN §54). | core, portfolio, studies, ui | — |
 | `ui/daemon/results/runs.py` | 129 | A strategy's result as one entity across the whole project (owner, 2026-09-30): the one stored | ui | — |
 | `ui/daemon/results/slice.py` | 107 | A population result read for one strategy: only its rows, bars and grid line, said to be a view. | — | — |
 | `ui/daemon/results/stale.py` | 81 | Whether a stored result is «caducado»: no configuration the window could launch today for this | ui | — |
 | `ui/daemon/results/store.py` | 249 | The stored reports of one databank: which days hold a study, one result read with its partial re-runs, and slim cached rows. | core, ui | — |
 | `ui/daemon/results/tfrows.py` | 44 | The cross-TF rows with the T0-T4 reading beside the old one: `tf_*` columns, read from the study's two new files. | — | pandas |
 | `ui/daemon/routers.py` | 61 | Every router the daemon serves, in the order `app.py` includes them. | ui | — |
-| `ui/daemon/runner/api.py` | 195 | The run routes of the study viewer: start a study, one sub-test beside the stored result, the screen as a page, cancel. | core, ui | fastapi, pydantic |
+| `ui/daemon/runner/api.py` | 197 | The run routes of the study viewer: start a study, one sub-test beside the stored result, the screen as a page, cancel. | core, ui | fastapi, pydantic |
 | `ui/daemon/runner/batch.py` | 63 | Fold N one-strategy jobs of one study into a single batch job that forks over the cores. | core, ui | psutil |
 | `ui/daemon/runner/batchrun.py` | 94 | Run one study's per-strategy commands in one process: import once, fork a worker per core. | core | — |
 | `ui/daemon/runner/offer.py` | 85 | Which studies a strategy page can use in its own databank, and where the others live. | ui | — |
 | `ui/daemon/runner/optimisation.py` | 97 | The command lines of the optimisation family (steps 16.5-19), or why the window cannot start one. | core, ui | — |
-| `ui/daemon/runner/readings.py` | 99 | The command lines of the readings and closing families and the trade Monte Carlo, or why not. | ui | — |
+| `ui/daemon/runner/readings.py` | 100 | The command lines of the readings and closing families and the trade Monte Carlo, or why not. | ui | — |
 | `ui/daemon/runner/rootseed.py` | 45 | The one root of a monkey run: every subprocess of it is handed the same `--seed` (encargo 66 §1.5, D2). | core | numpy |
 | `ui/daemon/runner/screening.py` | 97 | The command lines of the screening and data families (steps 4-8), or why the window cannot start one. | core, ui | — |
 | `ui/daemon/runner/table.py` | 121 | One press of a run button into the commands to start, or the Spanish sentence why none can start. | ui | — |
 | `ui/daemon/runner/transfer.py` | 85 | The command lines of the transfer and breakage families (steps 9-16), or why the window cannot start one. | core, ui | — |
 | `ui/daemon/runner/where.py` | 166 | Where a study's input lives on the data root, found before a run is offered — never computed. | core, pipeline, sqx | pandas, pyarrow |
-| `ui/daemon/runs.py` | 172 | What running one analysis module on one strategy means: the command, given what exists on disk. | core, ui | — |
+| `ui/daemon/runs.py` | 174 | What running one analysis module on one strategy means: the command, given what exists on disk. | core, ui | — |
 | `ui/daemon/serve.py` | 46 | Run the daemon on loopback. The window starts it; this is also how to run it by hand. | core, ui | uvicorn |
 | `ui/daemon/sqxconfig/__init__.py` | 1 | Configuración SQX: the settings every new project is built and tested with, read and written. | — | — |
 | `ui/daemon/sqxconfig/api.py` | 47 | The routes of the Configuración SQX zone: every setting a new project is built with, and its one write. | ui | fastapi, pydantic |
