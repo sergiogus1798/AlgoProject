@@ -1,6 +1,9 @@
 """Proyecto: one project's workflow — launchers, rail and funnel; its databanks live in Databanks."""
 
+from typing import Any
+
 from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QSizePolicy, QSplitter, QVBoxLayout
 
 from ui.desktop.client import get
@@ -23,7 +26,7 @@ def scrolled(strip: QFrame) -> QScrollArea:
     """
     area = QScrollArea()
     area.setWidgetResizable(True)
-    area.setFrameShape(QFrame.NoFrame)
+    area.setFrameShape(QFrame.Shape.NoFrame)
     area.setWidget(strip)
     return area
 
@@ -48,7 +51,7 @@ class WorkspaceZone(QFrame):
         self.facts = QLabel("")
         self.facts.setObjectName("dim")
         self.facts.setWordWrap(True)
-        self.facts.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.facts.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         self.rail, self.funnel = Rail(), Funnel()
         self.databanks = DatabanksZone(self.funnel)
         self.panel = self.databanks.panel
@@ -66,7 +69,7 @@ class WorkspaceZone(QFrame):
         self.rail.finished.connect(self.panel.refresh)
         self.rail.finished.connect(lambda *_: self.funnel.load(self.panel.project)
                                    if self.panel.live else None)
-        self.split = QSplitter(Qt.Vertical)
+        self.split = QSplitter(Qt.Orientation.Vertical)
         self.split.setHandleWidth(9)   # the theme paints it: a band to grab, accent on hover
         self.split.splitterMoved.connect(lambda *_: setattr(self, "dragged", self.rail.project))
         for w in (scrolled(self.rail), self.funnel):
@@ -113,19 +116,19 @@ class WorkspaceZone(QFrame):
         rail = min(self.rail.sizeHint().height() + 8, int(avail * 0.7))
         self.split.setSizes([rail, avail - rail])
 
-    def showEvent(self, event: object) -> None:  # noqa: N802 — Qt's name
+    def showEvent(self, event: QShowEvent) -> None:  # noqa: N802 — Qt's name
         """Size the rail now that the zone has its real height."""
         super().showEvent(event)
         if self.rail.data:
             QTimer.singleShot(50, lambda: self.size_rail(self.rail.project))
 
-    def card(self, name: str) -> dict:
+    def card(self, name: str) -> dict[str, Any]:
         """The project's card as the gallery in this window already holds it, or {}.
 
         No request: `/api/projects/all` cost 12-25 s cold (0.13 s on 2026-10-04), and the
         gallery fetched it off the GUI thread before any card could be clicked.
         """
-        held = next((g.rows[name] for g in self.window().findChildren(Gallery)
+        held = next((g.rows[name] for g in (self.window() or self).findChildren(Gallery)
                      if name in getattr(g, "rows", {})), None)
         return held if held is not None else get("projects/one", name=name)   # registry only
 

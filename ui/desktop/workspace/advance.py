@@ -1,5 +1,6 @@
 """«Continuar workflow»: the one button of the window that deletes in SQX, behind its preflight."""
 
+from typing import TYPE_CHECKING
 import httpx
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QShowEvent
@@ -11,6 +12,10 @@ from ui.desktop.workspace.aggregate import ask
 from ui.text.brief import full, off
 
 RECHECK_MS = 20_000     # a filter applied or a worker started elsewhere shows up within this
+
+if TYPE_CHECKING:
+    from ui.desktop.workspace.panel import Panel
+    from ui.desktop.workspace.funnel import Funnel
 
 
 class Advance(QWidget):
@@ -40,7 +45,7 @@ class Advance(QWidget):
         self.why = QLabel("")
         self.why.setObjectName("dim")
         self.why.setWordWrap(True)
-        self.why.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.why.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         lay = QHBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.addWidget(kicker)
@@ -48,11 +53,13 @@ class Advance(QWidget):
         lay.addWidget(self.button)
         lay.addWidget(self.why, 1)
         self.show_state({"ok": False, "reasons": ["elige un databank"]})
-        self.panel, self.funnel = None, None
+        # set by attach(); None until the zone mounts it
+        self.panel: "Panel" = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.funnel: "Funnel" = None  # pyright: ignore[reportAttributeAccessIssue]
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.follow)
 
-    def attach(self, panel: QWidget, funnel: QWidget) -> "Advance":
+    def attach(self, panel: "Panel", funnel: "Funnel") -> "Advance":
         """Follow a databank panel: re-aim whenever it paints a table, and every RECHECK_MS.
 
         Args:
@@ -153,8 +160,8 @@ class Advance(QWidget):
             return
         nonce = self.nonce      # of the sentence about to be shown, not of a poll landing later
         if QMessageBox.question(self, "Continuar workflow", self.text + "\n\n¿Confirmas?",
-                                QMessageBox.Yes | QMessageBox.No,
-                                QMessageBox.No) != QMessageBox.Yes:
+                                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
             return
         try:
             got = client.post("advance/run", {"project": self.project, "databank": self.databank,

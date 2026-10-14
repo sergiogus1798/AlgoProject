@@ -40,7 +40,7 @@ class Card(QFrame):
         self.setObjectName("card")
         self.setStyleSheet(f"QFrame#card {{ border: 1px solid {T['rule']}; border-radius: 6px; }}"
                            f"QFrame#card:hover {{ border-color: {C['accent']}; }}")
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip("\n".join(x for x in (p["name"], p.get("why") or STATE_HELP[p["state"]],
                                               p.get("purpose"), f"Install: {where}") if x))
         self.setMinimumHeight(170)

@@ -1,8 +1,7 @@
 """The rail's watch over its project's jobs: polled off the GUI thread, repaints grouped."""
 
 import time
-
-from PySide6.QtWidgets import QWidget
+from typing import TYPE_CHECKING
 
 from ui.desktop import jobsfeed
 from ui.desktop.theme import C
@@ -14,8 +13,11 @@ POLL_MS = 3000
 # 🔬 2026-09-28: one repaint per ended job, 16 per poll, froze the window for a minute.
 REPAINT_S = 20
 
+if TYPE_CHECKING:
+    from ui.desktop.workspace.rail import Rail
 
-def poll(rail: QWidget, fresh: bool = False) -> None:
+
+def poll(rail: "Rail", fresh: bool = False) -> None:
     """Ask for the job list off the GUI thread; `polled` reads it.
 
     Args:
@@ -28,7 +30,7 @@ def poll(rail: QWidget, fresh: bool = False) -> None:
                    0.0 if fresh else jobsfeed.TTL_S)
 
 
-def polled(rail: QWidget, project: str, got: dict) -> None:
+def polled(rail: "Rail", project: str, got: dict) -> None:
     """Gather the jobs that ended; repaint what they changed at most every REPAINT_S while
     others run, and once when none is left — one `finished` per repaint, not per job.
 
@@ -57,7 +59,7 @@ def polled(rail: QWidget, project: str, got: dict) -> None:
         rail.timer.start(POLL_MS)
 
 
-def repaint(rail: QWidget) -> None:
+def repaint(rail: "Rail") -> None:
     """Reload the rail and emit one `finished` for the jobs gathered since the last repaint.
 
     Args:

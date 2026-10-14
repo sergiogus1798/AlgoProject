@@ -18,7 +18,7 @@ class CostCurves(QWidget):
         super().__init__()
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
-        lay.addWidget(QLabel("Curva de equity", objectName="kicker"))
+        lay.addWidget(QLabel("Curva de equity", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         switches = QHBoxLayout()
         box = QCheckBox(label("curve.sqx"))
         box.setChecked(True)
@@ -31,7 +31,7 @@ class CostCurves(QWidget):
                                  for part, seg in (("IS", "IS"), ("OOS", "OOS1"))]))
         self.curves = SampleCurves(HEIGHT)
         lay.addWidget(self.curves, 1)
-        self.figures = QLabel("", objectName="mono")
+        self.figures = QLabel("", objectName="mono")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.figures.setWordWrap(True)
         lay.addWidget(self.figures)
 

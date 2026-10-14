@@ -21,7 +21,7 @@ def figure(row: dict) -> QLabel:
     """One figure in the window's number format; red only for money below zero — a negative
     skew or a PF is not a loss."""
     value, unit = row["value"], row.get("unit", "")
-    shown = QLabel(num(value, unit), objectName="mono")
+    shown = QLabel(num(value, unit), objectName="mono")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
     money = "USD" in unit or "$" in unit
     ink = C["dead"] if money and isinstance(value, (int, float)) and value < 0 else T["text"]
     shown.setStyleSheet(f"color: {ink}; font-size: {15 if row['label'] in BIG else 13}px;")
@@ -50,21 +50,21 @@ class Stats(QWidget):
             picker.addWidget(button)
         self.segment.idClicked.connect(self.show_sample)
         self.unit = QComboBox()
-        self.unit.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+        self.unit.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self.unit.setToolTip("En qué se cuenta el retorno de cada operación. Por lote quita el "
                              "tamaño de la posición: un money management que crece con la "
                              "cuenta no engorda las colas.")
         self.unit.currentTextChanged.connect(lambda _: self.show_sample(self.segment.checkedId()))
         picker.addWidget(self.unit)
         picker.addStretch(1)
-        self.reserved = QLabel("", objectName="dim")
+        self.reserved = QLabel("", objectName="dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.reserved.setWordWrap(True)
         self.reserved.setStyleSheet(f"color: {C['weak']};")
         self.grid = QGridLayout()
         self.grid.setHorizontalSpacing(18)
         self.grid.setColumnStretch(1, 1)
         left = QVBoxLayout()
-        left.addWidget(QLabel("Estadísticas básicas", objectName="kicker"))
+        left.addWidget(QLabel("Estadísticas básicas", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         left.addLayout(picker)
         left.addWidget(self.reserved)
         left.addLayout(self.grid)
@@ -104,7 +104,7 @@ class Stats(QWidget):
         clear(self.grid)
         clear(self.chart)
         if "error" in self.data:
-            error = QLabel(self.data["error"], objectName="dim")
+            error = QLabel(self.data["error"], objectName="dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             error.setWordWrap(True)
             error.setStyleSheet(f"color: {C['muted' if self.data.get('absent') else 'dead']};")
             self.grid.addWidget(error, 0, 0, 1, 2)
@@ -115,7 +115,7 @@ class Stats(QWidget):
                               if shape else [])
         rows += shape.get("rows", [])
         for i, row in enumerate(rows):
-            name = QLabel(label(row["label"]), objectName="kicker" if row.get("head") else "dim")
+            name = QLabel(label(row["label"]), objectName="kicker" if row.get("head") else "dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             name.setWordWrap(True)
             if row["label"] in BIG:
                 name.setStyleSheet("font-size: 15px;")

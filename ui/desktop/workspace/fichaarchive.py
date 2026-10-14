@@ -21,7 +21,7 @@ def ask(parent: QWidget, name: str) -> dict | None:
     dialog = QDialog(parent)
     dialog.setWindowTitle(f"Archivar {name}")
     lay = QVBoxLayout(dialog)
-    what = QLabel(WHAT, objectName="dim")
+    what = QLabel(WHAT, objectName="dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
     what.setWordWrap(True)
     lay.addWidget(what)
     form = QFormLayout()
@@ -34,12 +34,12 @@ def ask(parent: QWidget, name: str) -> dict | None:
     form.addRow("Paso", step_box)
     form.addRow("Nota", note_box)
     lay.addLayout(form)
-    buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-    buttons.button(QDialogButtonBox.Ok).setText("Archivar")
+    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+    buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Archivar")
     buttons.accepted.connect(dialog.accept)
     buttons.rejected.connect(dialog.reject)
     lay.addWidget(buttons)
-    if dialog.exec() != QDialog.Accepted:
+    if dialog.exec() != QDialog.DialogCode.Accepted:
         return None
     if not step_box.text().strip():
         return {"error": "No se archivó: falta el paso del WORKFLOW en que está la estrategia."}

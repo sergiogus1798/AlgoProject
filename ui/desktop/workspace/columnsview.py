@@ -1,5 +1,7 @@
 """The panel's column views: the metric choice per databank, read off the GUI thread and kept."""
 
+from typing import TYPE_CHECKING, Any
+
 import httpx
 from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QWidget
@@ -16,6 +18,9 @@ UNION = "|IS+OOS1"
 # hiding a study column in one sub-panel must not blank it in another.
 WIDE = "métricas"
 
+if TYPE_CHECKING:
+    from ui.desktop.workspace.panel import Panel
+
 
 class Views(QObject):
     """The column choices and IS+OOS1 figures of the panel's databanks: the metrics one
@@ -24,7 +29,7 @@ class Views(QObject):
     «leyendo…» for an IS+OOS1 column, and repaints when they land. A failed read is said and
     not kept: the next paint, the chooser or «Recargar» asks again."""
 
-    def __init__(self, panel: QWidget) -> None:
+    def __init__(self, panel: "Panel") -> None:
         """Belong to one `Panel`, whose `project`, `sub_spec`, `cache` and `open_sub` it uses."""
         super().__init__(panel)
         self.panel = panel
@@ -135,15 +140,16 @@ class Views(QObject):
         """
         spec = self.panel.sub_spec()
         bank, held = spec["databank"], self.views.get(spec["databank"], {})
-        wanted = {WIDE: None, self.name(): None}
+        wanted: dict[str, Any] = {WIDE: None, self.name(): None}
         if shown is not None:
             offered, _, defaults = self.offer(self.panel.cache[bank], spec, False)
             for key, metric in ((WIDE, True), (self.name(), False)):
                 wanted[key] = diff([k for k in shown if is_metric(k) == metric],
                                    [d for d in defaults if is_metric(d) == metric],
                                    held.get(key), offered)
-        errors = []
+        errors: list[str] = []
         for key, view in wanted.items():
+            got: dict
             try:            # a click the owner waits for: two local writes, a few ms
                 got = client.post("databank/columns", {"project": self.panel.project,
                                                        "databank": bank, "table": key,

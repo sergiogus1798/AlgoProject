@@ -1,7 +1,9 @@
 """The top strip of a project: the workflow rail as map, automation panel and state (22 §4.1)."""
 
+from typing import Any
+
 from PySide6.QtCore import QTimer, Signal
-from PySide6.QtGui import QHideEvent, QShowEvent
+from PySide6.QtGui import QHideEvent, QResizeEvent, QShowEvent
 from PySide6.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
 from ui.desktop import background, client
@@ -89,7 +91,8 @@ class Rail(QFrame):
         lay.addLayout(self.grid)
         lay.addWidget(self.drawer)
         lay.addStretch(1)       # spare height below, not between the lines
-        self.timer = QTimer(self, timeout=self.poll)
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.poll)
 
     def load(self, project: str) -> None:
         """Ask the daemon for one project's rail, off the GUI thread, and paint it when it
@@ -97,7 +100,7 @@ class Rail(QFrame):
         if project != self.project:
             self.project, self.ticks, self.chosen = project, {}, ""
 
-        def both() -> dict:
+        def both() -> dict[str, Any]:
             """The rail and each SQX step's launch state, on the pool's thread."""
             # 10 s cold, past the client's 20 s beside other first reads (📓 2026-09-29).
             got = client.get("workflow", wait=120, project=project)
@@ -175,7 +178,7 @@ class Rail(QFrame):
                                   self.sqx.get(self.chosen), data)
         self.drawer.setVisible(bool(self.chosen))
 
-    def step(self, n: str) -> dict:
+    def step(self, n: str) -> dict[str, Any]:
         """One step on screen, by number."""
         return next(s for s in self.data["steps"] if s["n"] == n)
 
@@ -192,7 +195,7 @@ class Rail(QFrame):
         step = self.step(n)
         if not step["tab"]:
             return
-        zone = self.parentWidget()
+        zone: Any = self.parentWidget()
         while zone is not None and not hasattr(zone, "show_tab"):
             zone = zone.parentWidget()
         if zone is not None:
@@ -244,7 +247,7 @@ class Rail(QFrame):
         super().hideEvent(event)
         self.timer.stop()
 
-    def resizeEvent(self, event: object) -> None:  # noqa: N802 — Qt's name
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802 — Qt's name
         """Reflow the cards when the rail's width changes how many fit in a row."""
         super().resizeEvent(event)
         self.per_row = reflow(self.grid, self.cards, self.width(), self.per_row)

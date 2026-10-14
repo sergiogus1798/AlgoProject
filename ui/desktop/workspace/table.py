@@ -1,5 +1,7 @@
 """The databank panel's table: the columns one sub-panel shows, sortable and movable, losers in red."""
 
+from typing import Any, cast
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableView
 
@@ -64,8 +66,8 @@ class DataTable(QTableView):
         self.ids: list[str] = []
         self.hidden: set[str] = set()
         self.setModel(Rows())
-        self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.verticalHeader().setVisible(False)
         self.verticalHeader().setDefaultSectionSize(24)
         self.setShowGrid(False)
@@ -97,20 +99,21 @@ class DataTable(QTableView):
         self.rows, self.ids = rows, [c["id"] for c in shown]
         head = self.horizontalHeader()
         self.setSortingEnabled(False)
-        self.model().hidden = self.hidden
-        self.model().fill(rows, shown, segs)
+        model = cast(Rows, self.model())
+        model.hidden = self.hidden
+        model.fill(rows, shown, segs)
         head.blockSignals(True)             # forget a header dragged out of place
         for c in range(self.columnCount()):
             head.moveSection(head.visualIndex(c), c)
         head.blockSignals(False)
-        head.setSectionResizeMode(QHeaderView.Interactive)
+        head.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self.resizeColumnsToContents()
         for c in range(self.columnCount()):
             self.setColumnWidth(c, min(self.columnWidth(c), WIDEST))
         # Only a study's text stretches: a last metric stretched carried its right-aligned
         # figures 1,000 px away from the rest once the owner kept two metrics (2026-09-28).
         head.setStretchLastSection(bool(shown) and shown[-1]["group"] == "Estudio")
-        head.setSortIndicator(-1, Qt.AscendingOrder)
+        head.setSortIndicator(-1, Qt.SortOrder.AscendingOrder)
         self.setSortingEnabled(True)
         return len(rows)
 
@@ -122,9 +125,9 @@ class DataTable(QTableView):
         """The columns, the name included."""
         return self.model().columnCount()
 
-    def row_at(self, r: int) -> dict:
+    def row_at(self, r: int) -> dict[str, Any]:
         """The payload's row shown at view row `r`."""
-        return self.rows[self.model().order[r]]
+        return self.rows[cast(Rows, self.model()).order[r]]
 
     def moved(self, *_moved: int) -> None:
         """A header was dragged: the ids in their new order for the panel to keep. The name
@@ -139,7 +142,7 @@ class DataTable(QTableView):
     def set_hidden(self, identities: set[str]) -> None:
         """Hide the rows of these strategies — what a filter set aside (F6), still in SQX."""
         self.hidden = set(identities)
-        self.model().rearrange(hidden=self.hidden)
+        cast(Rows, self.model()).rearrange(hidden=self.hidden)
 
     def double(self, r: int, _c: int = 0) -> None:
         """A row was double-clicked: say which strategy."""

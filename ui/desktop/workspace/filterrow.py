@@ -1,5 +1,7 @@
 """One condition of the filters strip: metric, operator, value, and «×»."""
 
+from typing import Any
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLineEdit, QPushButton, QWidget
 
@@ -27,7 +29,7 @@ def typed(value: object) -> str:
 
 def plain(rows: list[dict]) -> list[dict]:
     """Rows with every numeric text as a float, to compare what is typed with what is in force."""
-    def one(v: object) -> object:
+    def one(v: Any) -> object:
         """A value as a float when it reads as one."""
         try:
             return float(v)
@@ -66,7 +68,7 @@ class FilterRow(QWidget):
         for m in metrics:
             self.column.addItem(shown_metric(m), m["key"])
             self.column.setItemData(self.column.count() - 1, m.get("reading") or
-                                    f"{num(m['n'])} estrategias tienen valor", Qt.ToolTipRole)
+                                    f"{num(m['n'])} estrategias tienen valor", Qt.ItemDataRole.ToolTipRole)
         self.column.currentIndexChanged.connect(self.retype)
         self.value, self.upper = QLineEdit(), QLineEdit()
         for w in (self.value, self.upper):
@@ -108,7 +110,7 @@ class FilterRow(QWidget):
         """Whether a value was typed: an empty row is no condition."""
         return bool(self.value.text().strip() or self.upper.text().strip())
 
-    def spec(self) -> dict:
+    def spec(self) -> dict[str, Any]:
         """The row as the daemon reads it."""
         code, text = self.op.currentData(), self.value.text().strip().replace(",", ".")
         value = [text, self.upper.text().strip().replace(",", ".")] if code == "entre" else text

@@ -1,5 +1,7 @@
 """The databank's aggregate equity beside the table: SQX's curve, with stats."""
 
+from typing import Any
+
 import httpx
 from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
@@ -11,10 +13,10 @@ MIN_HEIGHT = 230            # px
 MIN_WIDTH = 300             # px: the two switches and the stats' two columns still read
 
 
-def ask(path: str, **params: str) -> dict:
+def ask(path: str, **params: str) -> dict[str, Any]:
     """One GET to the daemon; a daemon that does not answer is an `error` to show."""
     try:
-        return client.get(path, **params)
+        return client.get(path, **params)  # pyright: ignore[reportArgumentType]  # background.get/client.get type **params as str but forward wait to float
     except httpx.HTTPError as failed:
         return {"error": f"El demonio no respondió: {failed}"}
 

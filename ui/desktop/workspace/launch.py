@@ -34,14 +34,15 @@ class Launcher(QWidget):
         self.why = QLabel("")
         self.why.setObjectName("dim")
         self.why.setWordWrap(True)
-        self.why.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.why.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         lay = QHBoxLayout(self)
         lay.setContentsMargins(0, 2, 0, 2)
         lay.addWidget(kicker)
         lay.addWidget(self.tasks)
         lay.addWidget(self.button)
         lay.addWidget(self.why, 1)
-        self.timer = QTimer(self, timeout=self.check)
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.check)
         self.timer.start(RECHECK_MS)
         self.show_state({"ok": False, "reasons": ["elige un proyecto"]})
 
@@ -106,8 +107,8 @@ class Launcher(QWidget):
         if not got.get("ok"):
             return
         if QMessageBox.question(self, "Lanzar en SQX", got["text"] + "\n\n¿Confirmas?",
-                                QMessageBox.Yes | QMessageBox.No,
-                                QMessageBox.No) != QMessageBox.Yes:
+                                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
             return
         try:
             got = client.post("launch/run", {"project": self.project, "task": task,

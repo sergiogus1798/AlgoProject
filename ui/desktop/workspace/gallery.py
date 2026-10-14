@@ -64,8 +64,8 @@ class Gallery(QFrame):
         inner.addStretch(1)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setWidget(holder)
         self.area = scroll
         scroll.viewport().installEventFilter(self)
@@ -142,7 +142,7 @@ class Gallery(QFrame):
 
     def eventFilter(self, obj: QObject, ev: QEvent) -> bool:
         """Re-flow the cards when the scroll viewport is resized."""
-        if ev.type() == QEvent.Resize:
+        if ev.type() == QEvent.Type.Resize:
             self.lay_out()
         return False
 
@@ -151,7 +151,7 @@ class Gallery(QFrame):
         self.note.setText(f"{NOTE}\nLeyendo los proyectos de los installs…")
         # The first answer of a fresh daemon hashes every strategy of every install: 25 s on
         # 2026-09-29, past the client's 20 s, and the gallery came up empty.
-        background.get("projects/all", self.landed, key="gallery", wait=180)
+        background.get("projects/all", self.landed, key="gallery", wait=180)  # pyright: ignore[reportArgumentType]  # background.get/client.get type **params as str but forward wait to float
 
     def landed(self, got: dict) -> None:
         """Paint the daemon's answer, or say why there is none."""
@@ -198,4 +198,4 @@ class Gallery(QFrame):
                 "la cosecha se exportan con orderstocsv en el conductor, un trabajo detrás de "
                 "otro (la franja de trabajos de abajo los muestra).\n\n"
                 "«No» abre el proyecto sin cargar nada.")
-        return QMessageBox.question(self, "Cargar el proyecto", text) == QMessageBox.Yes
+        return QMessageBox.question(self, "Cargar el proyecto", text) == QMessageBox.StandardButton.Yes  # pyright: ignore[reportCallIssue]  # PySide6 stub wants button0/button1 for the 3-arg form

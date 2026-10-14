@@ -1,5 +1,7 @@
 """Which columns one databank table can show: today's default, and every metric per segment."""
 
+from typing import TypedDict
+
 import re
 
 from ui.text.columnhelp import help_for
@@ -54,7 +56,7 @@ def unprofitable(key: str, value: object) -> bool:
 def column_id(column: dict) -> str:
     """The id of one payload column: a metric by name and sample, a study column by its key."""
     if column["kind"] == "metric":
-        return metric_id(column["metric"], SAMPLE.get(column["sample"], column["sample"]))
+        return metric_id(column["metric"], SAMPLE.get(column["sample"], column["sample"]))  # pyright: ignore[reportArgumentType]  # .get with an Any default
     return column["key"]
 
 
@@ -117,8 +119,16 @@ def shown_ids(view: dict | None, defaults: list[str]) -> list[str]:
     return sorted(base, key=lambda k: (k not in rank, rank.get(k, 0)))
 
 
+class ColumnDiff(TypedDict):
+    """What the owner changed against a default column view, as the daemon saves it."""
+
+    hidden: list[str]
+    added: list[str]
+    order: list[str]
+
+
 def diff(shown: list[str], defaults: list[str], old: dict | None,
-         offered: dict[str, dict]) -> dict:
+         offered: dict[str, dict]) -> "ColumnDiff":
     """What the owner changed against the default, to save: `hidden`, `added`, `order`. What
     the old choice named and this databank does not offer now is kept, not lost."""
     old = old if isinstance(old, dict) else {}

@@ -1,5 +1,7 @@
 """The databank table's model: one sub-panel's cells read off the payload, sorted and filtered."""
 
+from typing import Any
+
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 from PySide6.QtGui import QColor, QFont
 
@@ -10,11 +12,11 @@ from ui.desktop.theme import C
 from ui.desktop.workspace.columns import DASH, note, unprofitable, value
 
 STATE_INK = {"pass": C["promising"], "fail": C["dead"], "watch": C["weak"]}
-RIGHT = Qt.AlignRight | Qt.AlignVCenter
+RIGHT = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
 # Looked up once: reading a role off `Qt` on every call was most of `data`'s cost (🔬 2026-10-04,
 # 224,000 calls in 4.9 s while Qt measured the columns).
-SHOW, ALIGN, INK, FONT, TIP = (Qt.DisplayRole, Qt.TextAlignmentRole, Qt.ForegroundRole,
-                               Qt.FontRole, Qt.ToolTipRole)
+SHOW, ALIGN, INK, FONT, TIP = (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.TextAlignmentRole, Qt.ItemDataRole.ForegroundRole,
+                               Qt.ItemDataRole.FontRole, Qt.ItemDataRole.ToolTipRole)
 ROLES = {SHOW, ALIGN, INK, FONT, TIP}
 
 
@@ -80,10 +82,10 @@ class Rows(QAbstractTableModel):
             self.index(at[w], i.column()) if w in at else QModelIndex() for w, i in zip(was, old)])
         self.layoutChanged.emit()
 
-    def sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None:
+    def sort(self, column: int, order: Qt.SortOrder = Qt.SortOrder.AscendingOrder) -> None:
         """A header click."""
         if 0 <= column < self.columnCount():
-            self.rearrange(by=(column, order == Qt.DescendingOrder))
+            self.rearrange(by=(column, order == Qt.SortOrder.DescendingOrder))
 
     def rowCount(self, _parent: QModelIndex = QModelIndex()) -> int:  # noqa: N802,B008 — Qt name, immutable default
         """The rows on show."""
@@ -93,23 +95,23 @@ class Rows(QAbstractTableModel):
         """The name and the chosen columns."""
         return len(self.shown) + 1 if self.rows or self.shown else 0
 
-    def headerData(self, c: int, way: Qt.Orientation, role: int = Qt.DisplayRole) -> object:  # noqa: N802
+    def headerData(self, c: int, way: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole) -> object:  # noqa: N802
         """A header and its tooltip; a column that explains itself carries a visible «(?)»
         (owner, 2026-10-01)."""
-        if way == Qt.Horizontal and role == ALIGN and c and self.shown[c - 1]["group"] == "Estudio":
-            return Qt.AlignLeft | Qt.AlignVCenter   # over its words, also when it stretches
-        if way != Qt.Horizontal or role not in (Qt.DisplayRole, Qt.ToolTipRole):
+        if way == Qt.Orientation.Horizontal and role == ALIGN and c and self.shown[c - 1]["group"] == "Estudio":
+            return Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter   # over its words, also when it stretches
+        if way != Qt.Orientation.Horizontal or role not in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.ToolTipRole):
             return None
         if c == 0:
-            return label("strategy") if role == Qt.DisplayRole else None
+            return label("strategy") if role == Qt.ItemDataRole.DisplayRole else None
         choice = self.shown[c - 1]
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return choice["header"] + (" (?)" if choice.get("help") else "")
         tip = choice["why"] or ""
         return "\n\n".join(t for t in (choice.get("help") or "",
                                        f"Sin datos: {tip}" if tip else "") if t)
 
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> object:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> object:
         """One cell: shown through `numbers.num`; a missing metric a grey «–» with why on hover
         (a missing study value stays blank); a study's pass/fail in its colour and bold (owner,
         2026-09-30), and in the dead colour a figure that says the strategy loses."""
@@ -117,10 +119,10 @@ class Rows(QAbstractTableModel):
             return None
         raw, c = self.order[index.row()], index.column()
         row, got = self.rows[raw], self.got(raw, c)
-        choice = self.shown[c - 1] if c else None
+        choice: Any = self.shown[c - 1] if c else None
         study = bool(c) and choice["group"] == "Estudio"
         dash = got is None and c and not study
-        state = row["states"].get(choice["id"]) if study else None
+        state: Any = row["states"].get(choice["id"]) if study else None
         if role == SHOW:
             return num(verdict_word(got) if study else got) if got is not None else (
                 DASH if dash else "")

@@ -1,6 +1,7 @@
 """The ficha's metadata column: what the strategy is built from and how it was backtested (E2's fields)."""
 
 import re
+from typing import Any
 
 from PySide6.QtWidgets import (QDialog, QFrame, QGridLayout, QLabel, QScrollArea, QVBoxLayout,
                                QWidget)
@@ -72,7 +73,8 @@ def rows(meta: dict) -> list[tuple[str, str, str]]:
     mm = meta["money_management"]
     friday = meta["friday_close"]
     opts = meta["trading_options"]
-    out = [("Dirección", DIRECTION.get(meta["direction"], meta["direction"]), ink)]
+    out: list[tuple[str, str, str]] = [
+        ("Dirección", DIRECTION.get(meta["direction"], meta["direction"]), ink)]  # pyright: ignore[reportAssignmentType]  # .get with an Any default
     out += [(label(s), text, ink) for s, text in meta["signals"].items()]
     out += [(f"Condición {i + 1} ({label(c['signal']).lower()})", c["text"], ink)
             for i, c in enumerate(meta["entries"] + meta["exits"])]
@@ -99,7 +101,7 @@ def rows(meta: dict) -> list[tuple[str, str, str]]:
             out.append((f"⚠ Costes de «{task['task']}»", f"{_costs(task)} — no son los del último "
                         "test guardado en el .sqx", warn))
     # A version archived before 2026-10-04 carries no «problems» (📓 uiwalk, Portfolios).
-    prob = meta.get("problems") or {"value": 0}
+    prob: dict[str, Any] = meta.get("problems") or {"value": 0}
     if prob["value"]:
         text = ", ".join(PROBLEMS[r] for r in prob["reasons"])
         if prob["unknown"]:
@@ -117,12 +119,12 @@ class Meta(QScrollArea):
         """Build it empty."""
         super().__init__()
         self.setWidgetResizable(True)
-        self.setFrameShape(QFrame.NoFrame)
+        self.setFrameShape(QFrame.Shape.NoFrame)
         self.setMinimumWidth(360)
         inner = QWidget()
         lay = QVBoxLayout(inner)
         lay.setContentsMargins(14, 0, 4, 0)
-        lay.addWidget(QLabel("Metadatos", objectName="kicker"))
+        lay.addWidget(QLabel("Metadatos", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.grid = QGridLayout()
         self.grid.setVerticalSpacing(1)
         lay.addLayout(self.grid)
@@ -142,11 +144,11 @@ class Meta(QScrollArea):
         else:
             lines = rows(meta)
         for i, (name, text, ink) in enumerate(lines):
-            key = QLabel(label(name), objectName="dim")
+            key = QLabel(label(name), objectName="dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             key.setStyleSheet(f"color: {ink};" if ink != T["text"] else "")
             # A block's text has no spaces to wrap at; a zero-width space after each separator
             # lets «CBlock_…(Int2=22)» break inside a narrow column instead of being cut.
-            value = QLabel(re.sub(r"([,(=→·])", "\\1\u200b", text), objectName="mono")
+            value = QLabel(re.sub(r"([,(=→·])", "\\1\u200b", text), objectName="mono")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             value.setWordWrap(True)
             value.setStyleSheet(f"color: {ink}; margin-bottom: 4px;")
             self.grid.addWidget(key, 2 * i, 0)

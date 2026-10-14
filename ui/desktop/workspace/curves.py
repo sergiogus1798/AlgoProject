@@ -1,5 +1,7 @@
 """SQX's cumulative equity curve, switchable, with the IS / OOS1 boundary."""
 
+from collections.abc import Sequence
+
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPaintEvent, QPen, QPolygonF
 from PySide6.QtWidgets import QWidget
@@ -48,8 +50,8 @@ class Curves(QWidget):
             event: Qt's paint event, unused.
         """
         p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
-        font = QFont(FACE, 9, QFont.Bold)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        font = QFont(FACE, 9, QFont.Weight.Bold)
         values = [v for k, s in self.series.items() if self.shown[k] for v in s] or [0.0]
         lo, hi = min(values + [0.0]), max(values + [0.0])
         # The axis is as wide as its widest figure: a fixed 58 px cut «1.808.633» to «.808.633».
@@ -70,17 +72,17 @@ class Curves(QWidget):
         for v, shown in ticks.items():
             if v == 0.0 and min(abs(at(0, 0.0).y() - at(0, x).y()) for x in (lo, hi)) < 16:
                 continue
-            p.drawText(QRectF(0, at(0, v).y() - 8, gutter, 16), Qt.AlignRight | Qt.AlignVCenter,
+            p.drawText(QRectF(0, at(0, v).y() - 8, gutter, 16), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
                        shown)
-        p.setPen(QPen(QColor(T["line"]), 1, Qt.DashLine))
+        p.setPen(QPen(QColor(T["line"]), 1, Qt.PenStyle.DashLine))
         p.drawLine(at(0, 0.0), at(n - 1, 0.0))
         if self.split is not None:
             x = at(self.split, lo).x()
-            p.setPen(QPen(QColor(T["faint"]), 1, Qt.DashLine))
+            p.setPen(QPen(QColor(T["faint"]), 1, Qt.PenStyle.DashLine))
             p.drawLine(QPointF(x, box.top()), QPointF(x, box.bottom()))
             p.setPen(QColor(T["muted"]))
-            p.drawText(QRectF(x - 90, box.bottom() + 4, 84, 16), Qt.AlignRight, "IS ◂")
-            p.drawText(QRectF(x + 6, box.bottom() + 4, 84, 16), Qt.AlignLeft, "▸ OOS1")
+            p.drawText(QRectF(x - 90, box.bottom() + 4, 84, 16), Qt.AlignmentFlag.AlignRight, "IS ◂")
+            p.drawText(QRectF(x + 6, box.bottom() + 4, 84, 16), Qt.AlignmentFlag.AlignLeft, "▸ OOS1")
         for key, s in self.series.items():
             if self.shown[key] and len(s) > 1:
                 p.setPen(QPen(QColor(INK[key]), 1.6))
@@ -97,7 +99,7 @@ class SampleCurves(Curves):
         self.days: list[str] = []
 
     def fill(self, sqx: list[float], split: int | None = None,
-             days: list[str] = ()) -> None:
+             days: Sequence[str] = ()) -> None:
         """Replace the curve.
 
         Args:
@@ -114,8 +116,8 @@ class SampleCurves(Curves):
             event: Qt's paint event, unused.
         """
         p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
-        font = QFont(FACE, 9, QFont.Bold)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        font = QFont(FACE, 9, QFont.Weight.Bold)
         values = [v for k, s in self.series.items() if self.shown[k] for v in s] or [0.0]
         lo, hi = min(values + [0.0]), max(values + [0.0])
         ys = sorted(set(round_ticks(lo, hi, 7)) | {0.0})
@@ -134,10 +136,10 @@ class SampleCurves(Curves):
         p.setFont(font)
         for v in ys:
             y = at(0, v).y()
-            p.setPen(QPen(QColor(T["line"]), 1, Qt.DashLine if v == 0.0 else Qt.SolidLine))
+            p.setPen(QPen(QColor(T["line"]), 1, Qt.PenStyle.DashLine if v == 0.0 else Qt.PenStyle.SolidLine))
             p.drawLine(QPointF(box.left(), y), QPointF(box.right(), y))
             p.setPen(QColor(T["muted"]))
-            p.drawText(QRectF(0, y - 8, gutter, 16), Qt.AlignRight | Qt.AlignVCenter, num(v))
+            p.drawText(QRectF(0, y - 8, gutter, 16), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, num(v))
         years = [i for i, d in enumerate(self.days) if i == 0 or d[:4] != self.days[i - 1][:4]]
         written = 1e9     # right to left: a partial first year gives way to the next one
         for i in reversed(years):
@@ -147,15 +149,15 @@ class SampleCurves(Curves):
             if written - x >= 46:
                 written = x
                 p.setPen(QColor(T["muted"]))
-                p.drawText(QRectF(x - 22, box.bottom() + 4, 44, 16), Qt.AlignHCenter,
+                p.drawText(QRectF(x - 22, box.bottom() + 4, 44, 16), Qt.AlignmentFlag.AlignHCenter,
                            self.days[i][:4])
         split = self.split if self.split is not None else n - 1
         if self.split is not None:
             x = at(split, lo).x()
-            p.setPen(QPen(QColor(T["text"]), 1, Qt.DashLine))
+            p.setPen(QPen(QColor(T["text"]), 1, Qt.PenStyle.DashLine))
             p.drawLine(QPointF(x, box.top()), QPointF(x, box.bottom()))
-            p.drawText(QRectF(x - 90, box.top() + 2, 84, 16), Qt.AlignRight, "IS ◂")
-            p.drawText(QRectF(x + 6, box.top() + 2, 84, 16), Qt.AlignLeft, "▸ OOS1")
+            p.drawText(QRectF(x - 90, box.top() + 2, 84, 16), Qt.AlignmentFlag.AlignRight, "IS ◂")
+            p.drawText(QRectF(x + 6, box.top() + 2, 84, 16), Qt.AlignmentFlag.AlignLeft, "▸ OOS1")
         for key, s in self.series.items():
             if not (self.shown[key] and len(s) > 1):
                 continue

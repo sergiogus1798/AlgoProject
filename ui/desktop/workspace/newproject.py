@@ -1,5 +1,9 @@
 """«+ Nuevo proyecto»: the form under Proyectos' header that creates a workflow project."""
 
+from typing import Any
+
+from collections.abc import Callable
+
 from PySide6.QtWidgets import (QComboBox, QFormLayout, QFrame, QLineEdit, QPushButton, QSpinBox,
                                QVBoxLayout)
 
@@ -17,7 +21,7 @@ class NewProject(QFrame):
     `Test_<SYMBOL>_<template>_<TF>`), strategies, minutes, purpose; its JobButton queues
     `POST /api/create/project`. `created(name)` when the job ended well."""
 
-    def __init__(self, created: object) -> None:
+    def __init__(self, created: Callable[[str], object]) -> None:
         """Build the toggle; the choices come from `/api/create/options` the first time."""
         super().__init__()
         self.setObjectName("term")
@@ -40,7 +44,7 @@ class NewProject(QFrame):
                          ("Para qué (una frase)", self.purpose)):
             rows.addRow(label, w)
         self.go = JobButton("Crear proyecto", "create/project", self.body, self.confirm,
-                            lambda job: job["rc"] == 0 and self.created(self.name.text()))
+                            lambda job: job["rc"] == 0 and self.created(self.name.text()))  # pyright: ignore[reportArgumentType]  # JobButton ignores the return of `ended`
         rows.addRow(self.go)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
@@ -69,7 +73,7 @@ class NewProject(QFrame):
         self.name.setText(f"Test_{self.symbol.currentText()}_{self.template.currentText()}_"
                           f"{self.tf.currentText()}")
 
-    def body(self) -> dict:
+    def body(self) -> dict[str, Any]:
         """The form as `POST /api/create/project` reads it."""
         return {"name": self.name.text().strip(), "template": self.template.currentText(),
                 "symbol": self.symbol.currentText(), "timeframe": self.tf.currentText(),

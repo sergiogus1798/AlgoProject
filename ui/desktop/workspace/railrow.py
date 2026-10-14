@@ -72,7 +72,7 @@ class StepCard(QFrame):
         edge = T["accent"] if chosen else T["line"]
         self.setStyleSheet(f"QFrame#stepcard {{ border: 1px solid {edge}; "
                            f"border-top: 3px solid {colour}; border-radius: 4px; }}")
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip(self.explain())
         top = QHBoxLayout()
         top.setSpacing(4)
@@ -101,7 +101,7 @@ class StepCard(QFrame):
             top.addWidget(run)
         title = QLabel(label(step["title"]))
         title.setWordWrap(True)
-        title.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
+        title.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         title.setFixedHeight(30)
         title.setStyleSheet("font-weight: 700; font-size: 11px;")
         lay = QVBoxLayout(self)

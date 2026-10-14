@@ -62,14 +62,14 @@ class ColumnsMenu(QDialog):
             if not members:
                 continue
             top = QTreeWidgetItem(self.tree, [titles[group]])
-            top.setFlags(Qt.ItemIsEnabled)
+            top.setFlags(Qt.ItemFlag.ItemIsEnabled)
             for c in members:
                 text = c["header"] + ("   · por defecto" if c["default"] else "") + (
                     "   — sin datos" if c["why"] else "")
                 item = QTreeWidgetItem(top, [text])
-                item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsUserCheckable)
-                item.setCheckState(0, Qt.Checked if c["id"] in chosen else Qt.Unchecked)
-                item.setData(0, Qt.UserRole, c["id"])
+                item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable)
+                item.setCheckState(0, Qt.CheckState.Checked if c["id"] in chosen else Qt.CheckState.Unchecked)
+                item.setData(0, Qt.ItemDataRole.UserRole, c["id"])
                 item.setToolTip(0, f"La columna enseña «–»: {c['why']}" if c["why"] else
                                 "Hay datos para esta columna en este databank.")
             top.setExpanded(group in ("Estudio", "IS", "OOS"))
@@ -103,8 +103,8 @@ class ColumnsMenu(QDialog):
         out = set()
         for g in range(self.tree.topLevelItemCount()):
             top = self.tree.topLevelItem(g)
-            out |= {top.child(i).data(0, Qt.UserRole) for i in range(top.childCount())
-                    if top.child(i).checkState(0) == Qt.Checked}
+            out |= {top.child(i).data(0, Qt.ItemDataRole.UserRole) for i in range(top.childCount())
+                    if top.child(i).checkState(0) == Qt.CheckState.Checked}
         return out
 
     def count(self, *_changed: object) -> None:

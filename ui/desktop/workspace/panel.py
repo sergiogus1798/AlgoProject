@@ -1,6 +1,9 @@
 """The Databanks zone's panel: one project's databanks, SQX-style, with two rows of tabs."""
 
+from typing import Any
+
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton, QSizePolicy,
                                QSplitter, QVBoxLayout, QWidget)
 
@@ -34,13 +37,13 @@ class Panel(QFrame):
         self.dragged = False
         self.columns = columnsview.Views(self)
         head = QHBoxLayout()
-        kicker = QLabel("Databanks", objectName="kicker")
+        kicker = QLabel("Databanks", objectName="kicker")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         head.addWidget(kicker)
         # The seal's sentence alone is ~3,000 px: wrapped and of ignored width, or it sets the
         # window's minimum width (3,867 px seen on 2026-09-28).
-        self.said = QLabel("", objectName="dim")
+        self.said = QLabel("", objectName="dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.said.setWordWrap(True)
-        self.said.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.said.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         head.addStretch(1)
         reload_, run = QPushButton("↻ Recargar databank"), QPushButton("▶ Correr marcados de "
                                                                         "este panel")
@@ -64,9 +67,9 @@ class Panel(QFrame):
         left = QWidget()
         body = QVBoxLayout(left)
         body.setContentsMargins(0, 0, 0, 0)
-        self.lock = QLabel("", objectName="mono")
+        self.lock = QLabel("", objectName="mono")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.lock.setWordWrap(True)
-        self.lock.setAlignment(Qt.AlignTop)
+        self.lock.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.lock.setStyleSheet(f"color: {C['dead']}; font-size: 14px; padding: 16px;")
         self.side = Aggregate()
         body.addWidget(self.lock, 1)
@@ -74,7 +77,7 @@ class Panel(QFrame):
         left.setMinimumWidth(360)
         # Dragged both ways. Until the owner drags it, `resizeEvent` gives the equity SIDE of
         # the width; after, Qt keeps his split for the window's session.
-        self.body = QSplitter(Qt.Horizontal)
+        self.body = QSplitter(Qt.Orientation.Horizontal)
         self.body.setChildrenCollapsible(False)
         self.body.setHandleWidth(7)
         self.body.addWidget(left)
@@ -98,7 +101,7 @@ class Panel(QFrame):
         self.project, self.live, self.cache = project, True, {}
         self.columns.reset()
         background.get("databank/panels", lambda got: self.filled(project, got),
-                       key=f"tabs:{id(self)}", owner=self, project=project, wait=120)
+                       key=f"tabs:{id(self)}", owner=self, project=project, wait=120)  # pyright: ignore[reportArgumentType]  # background.get/client.get type **params as str but forward wait to float
 
     def filled(self, project: str, got: dict) -> None:
         """The project's tabs arrived: lay out both rows and open the first sub-panel."""
@@ -117,7 +120,7 @@ class Panel(QFrame):
         """The top tab on screen."""
         return self.top.tabText(self.top.currentIndex())
 
-    def sub_spec(self) -> dict:
+    def sub_spec(self) -> dict[str, Any]:
         """The sub-panel on screen, as the daemon described it."""
         if not self.tabs:
             return {}
@@ -159,7 +162,7 @@ class Panel(QFrame):
             return
         self.said.setText(f"Leyendo {bank}…")
         background.get("databank/table", lambda got: self.landed(project, spec, got),
-                       key=f"panel:{id(self)}", owner=self, project=project, databank=bank, wait=120)
+                       key=f"panel:{id(self)}", owner=self, project=project, databank=bank, wait=120)  # pyright: ignore[reportArgumentType]  # background.get/client.get type **params as str but forward wait to float
 
     def landed(self, project: str, spec: dict, table: dict) -> None:
         """A databank's table arrived: keep it (not a failure) and paint it if still on screen."""
@@ -209,7 +212,7 @@ class Panel(QFrame):
             notes.append("ningún resultado de este estudio todavía")
         self.said.setText("  ·  ".join(notes))
 
-    def resizeEvent(self, event: object) -> None:  # noqa: N802 — Qt's name
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802 — Qt's name
         """Until the owner drags the splitter, the equity keeps SIDE of the width."""
         super().resizeEvent(event)
         if not self.dragged:
@@ -222,7 +225,8 @@ class Panel(QFrame):
 
     def choose(self, identity: object, name: str) -> None:
         """A row was double-clicked: its identity for the shell."""
-        identity and self.strategy_chosen.emit(identity)
+        if identity:
+            self.strategy_chosen.emit(identity)
 
     def refresh(self, _study: str = "", databank: str = "") -> None:
         """A study the rail ran has finished: read its databank again (every one when the rail

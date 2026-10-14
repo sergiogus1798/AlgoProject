@@ -1,8 +1,10 @@
 """The rail's buttons: Python tests, one SQX step, «Correr workflow» — each behind its question — and each step's ⚙."""
 
+from typing import TYPE_CHECKING, Any
+
 import httpx
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QMessageBox, QWidget
+from PySide6.QtWidgets import QMessageBox
 
 from ui.desktop import client
 from ui.desktop.theme import C
@@ -13,8 +15,11 @@ from ui.text.glossary import label
 from ui.text.numbers import num
 from ui.text.brief import RUNNING, brief, busy, full, off
 
+if TYPE_CHECKING:
+    from ui.desktop.workspace.rail import Rail
 
-def post(path: str, body: dict) -> dict:
+
+def post(path: str, body: dict) -> dict[str, Any]:
     """One POST to the daemon; a daemon that is down comes back as `error` (ui boundary)."""
     try:
         return client.post(path, body)
@@ -22,14 +27,14 @@ def post(path: str, body: dict) -> dict:
         return {"error": f"El demonio no respondió: {failed}"}
 
 
-def panel_choice(rail: QWidget, n: str = "") -> tuple[str, list[str]]:
+def panel_choice(rail: "Rail", n: str = "") -> tuple[str, list[str]]:
     """The databank of step `n`'s own sub-panel and the rows chosen there, ('', []) without one.
 
     Each step reads its own sub-panel; taking whichever sub-panel happened to be open sent
     every step to the wrong databank.
     The rows chosen count only while that sub-panel is the one on screen.
     """
-    zone = rail.parentWidget()
+    zone: Any = rail.parentWidget()
     while zone is not None and not hasattr(zone, "panel"):
         zone = zone.parentWidget()
     if zone is None:
@@ -42,7 +47,7 @@ def panel_choice(rail: QWidget, n: str = "") -> tuple[str, list[str]]:
     return spec.get("databank", ""), chosen
 
 
-def tests(rail: QWidget, keys: list[tuple[str, str]], databank: str = "",
+def tests(rail: "Rail", keys: list[tuple[str, str]], databank: str = "",
           strategies: list[str] | None = None) -> None:
     """Queue tests through POST /api/workflow/run and say what started and what did not.
 
@@ -57,10 +62,10 @@ def tests(rail: QWidget, keys: list[tuple[str, str]], databank: str = "",
         return
     costly = [f"· {t['title']}: {t['spends']}" for n, k in keys
               for t in rail.step(n)["tests"] if t["key"] == k and t["spends"]]
-    if costly and QMessageBox.question(
+    if costly and QMessageBox.question(  # pyright: ignore[reportCallIssue]  # PySide6 stub wants button0/button1 for the 3-arg form
             rail, "Esto lee oos2 o escribe en el ledger",
             "Cada run cuenta y no se deshace:\n" + "\n".join(costly) + "\n\n¿Correr?"
-    ) != QMessageBox.Yes:
+    ) != QMessageBox.StandardButton.Yes:
         rail.said.setText("No se lanzó nada.")
         return
     got = post("workflow/run", {"project": rail.project, "databank": databank,
@@ -76,7 +81,7 @@ def tests(rail: QWidget, keys: list[tuple[str, str]], databank: str = "",
     rail.poll(True)
 
 
-def step(rail: QWidget, n: str) -> None:
+def step(rail: "Rail", n: str) -> None:
     """A Python card's ▶: its ticked tests; with none ticked — after a question listing them,
     «No» by default — every free test of it that is not running, or, on a step whose every
     test reads oos2 or writes the ledger (17, 18, 20), those, behind their own question."""
@@ -90,7 +95,7 @@ def step(rail: QWidget, n: str) -> None:
                 rail, f"Correr el paso {n}",
                 "No hay ninguna prueba marcada en este paso; se correrían todas estas:\n"
                 + "\n".join(f"· {label(t['title'])}" for t in picked) + "\n\n¿Correrlas?",
-                QMessageBox.Yes | QMessageBox.No, QMessageBox.No) != QMessageBox.Yes:
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
             rail.said.setText("No se lanzó nada.")
             return
     databank, chosen = panel_choice(rail, n) if s.get("panel") else ("", [])
@@ -100,14 +105,14 @@ def step(rail: QWidget, n: str) -> None:
             f"Se corre sobre el databank «{databank}» del panel de Databanks, "
             + (f"sólo sobre las {num(len(chosen))} filas elegidas allí."
                if chosen else "sobre todas sus filas (ninguna elegida allí).")
-            + "\n\n¿Correr?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No
-    ) != QMessageBox.Yes:
+            + "\n\n¿Correr?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No
+    ) != QMessageBox.StandardButton.Yes:
         rail.said.setText("No se lanzó nada.")
         return
     tests(rail, keys, databank, chosen)
 
 
-def panel(rail: QWidget, tab: str, databank: str = "", strategies: list[str] | None = None) -> str:
+def panel(rail: "Rail", tab: str, databank: str = "", strategies: list[str] | None = None) -> str:
     """Databanks' «▶ Correr marcados de este panel»: the ticked tests of this tab's steps, or —
     none ticked, after a question listing them — every free one of them.
 
@@ -127,15 +132,15 @@ def panel(rail: QWidget, tab: str, databank: str = "", strategies: list[str] | N
         if QMessageBox.question(
                 rail, f"Correr «{tab}»", "No hay ninguna prueba marcada en esta pestaña; se "
                 "correrían todas estas:\n" + "\n".join(f"· {label(t['title'])}" for _, t in free)
-                + "\n\n¿Correrlas?", QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No) != QMessageBox.Yes:
+                + "\n\n¿Correrlas?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
             return "No se lanzó nada."
         keys = [(n, t["key"]) for n, t in free]
     tests(rail, keys, databank, strategies)
     return rail.said.text()
 
 
-def sqx_step(rail: QWidget, n: str) -> None:
+def sqx_step(rail: "Rail", n: str) -> None:
     """An SQX card's ▶: the step's preflight, its sentence, and only «Sí» queues the job."""
     got = ask("launch/preflight", project=rail.project, step=n)
     if not got.get("ok"):
@@ -143,8 +148,8 @@ def sqx_step(rail: QWidget, n: str) -> None:
         rail.said.setToolTip(full(got.get("reasons") or [got.get("error", "?")]))
         return
     if QMessageBox.question(rail, f"Lanzar el paso {n} en SQX", got["text"] + "\n\n¿Confirmas?",
-                            QMessageBox.Yes | QMessageBox.No,
-                            QMessageBox.No) != QMessageBox.Yes:
+                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                            QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
         rail.said.setText("No se lanzó nada.")
         return
     done = post("launch/run", {"project": rail.project, "step": n,
@@ -156,7 +161,7 @@ def sqx_step(rail: QWidget, n: str) -> None:
     rail.poll(True)
 
 
-def chain(rail: QWidget) -> None:
+def chain(rail: "Rail") -> None:
     """«Correr workflow»: the preflight and the whole plan, and only «Sí» queues the one job."""
     got = ask("launch/chain", project=rail.project)
     if not got.get("ok"):
@@ -164,8 +169,8 @@ def chain(rail: QWidget) -> None:
         rail.said.setToolTip(full(got.get("reasons") or [got.get("error", "?")]))
         return
     if QMessageBox.question(rail, "Correr workflow (hasta la próxima decisión)",
-                            got["text"] + "\n\n¿Confirmas?", QMessageBox.Yes | QMessageBox.No,
-                            QMessageBox.No) != QMessageBox.Yes:
+                            got["text"] + "\n\n¿Confirmas?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                            QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
         rail.said.setText("No se lanzó nada.")
         return
     done = post("launch/chain", {"project": rail.project, "plan": got["plan"]})
@@ -187,7 +192,7 @@ def plan_line(chain_plan: dict) -> str:
     return (f"Correría: {steps}   ·   {end}" if do else f"Nada que correr: {end}")
 
 
-def configure(rail: QWidget, n: str) -> None:
+def configure(rail: "Rail", n: str) -> None:
     """A step's ⚙: open the zone and section where its configuration is edited — a section of
     «Configuración SQX», or the project's asset in «Activos» (`texts.SETTINGS`). A step with
     no such screen opens in the drawer with the reason, never an invented editor.
@@ -196,7 +201,8 @@ def configure(rail: QWidget, n: str) -> None:
         rail: The rail (its `project`, `data`, `open_step`, `said`).
         n: The step's number.
     """
-    shell, where = rail.window(), SETTINGS.get(n)
+    shell: Any = rail.window()
+    where = SETTINGS.get(n)
     if where is None or not hasattr(shell, "open_zone"):
         rail.open_step(n)
         rail.said.setText(f"Paso {n}: {NO_SCREEN}")

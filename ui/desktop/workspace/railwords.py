@@ -3,7 +3,7 @@
 import ast
 import re
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, SignalInstance
 from PySide6.QtWidgets import QLabel, QPushButton, QSizePolicy, QToolButton
 
 from ui.text.glossary import knob, label
@@ -80,7 +80,7 @@ def small(text: str, name: str = "dim", colour: str = "") -> QLabel:
     """
     line = QLabel(text)
     line.setObjectName(name)
-    line.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+    line.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
     if colour:
         line.setStyleSheet(f"color: {colour};")
     return line
@@ -104,7 +104,7 @@ def run_button(kind: str, text: str, why: str) -> QPushButton:
     return button
 
 
-def gear(n: str, configured: Signal) -> QToolButton:
+def gear(n: str, configured: SignalInstance) -> QToolButton:
     """The ⚙ left of a step's run button: it opens the screen where the step's configuration is
     edited (`railrun.configure`). A frameless tool button, so ten cards do not widen, with no
     «?» of its own: its tooltip says it."""
@@ -113,7 +113,7 @@ def gear(n: str, configured: Signal) -> QToolButton:
     button.setAutoRaise(True)
     button.setProperty("helpmark", False)
     button.setFixedWidth(16)
-    button.setCursor(Qt.PointingHandCursor)
+    button.setCursor(Qt.CursorShape.PointingHandCursor)
     button.setStyleSheet(f"QToolButton {{ color: {T['muted']}; border: none; padding: 0; "
                          f"font-size: 14px; }} QToolButton:hover {{ color: {T['accent']}; }}")
     button.setToolTip(label(f"Editar la configuración del paso {n}: abre la pantalla donde se "

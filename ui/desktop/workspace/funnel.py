@@ -1,5 +1,6 @@
 """The middle strip of a project: the population's funnel, and why the fallen fell (22 §4.2)."""
 
+from typing import Any
 import re
 
 import httpx
@@ -98,24 +99,24 @@ class Bars(QWidget):
         if not self.rows:
             return
         p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
         total = max(next((r["entered"] for r in self.rows if r["entered"]), 1), 1)
         span = (self.width() - LABEL - NUMBERS) * 0.45
         why_x = LABEL + span + NUMBERS + 12
-        p.setFont(QFont(FACE, 9, QFont.Bold))
+        p.setFont(QFont(FACE, 9, QFont.Weight.Bold))
         p.setPen(QColor(T["muted"]))
-        for x, w, text, align in ((0, LABEL - 10, HEAD[0], Qt.AlignRight),
-                                  (LABEL + span + 10, NUMBERS, HEAD[1], Qt.AlignLeft),
-                                  (why_x, self.width() - why_x, HEAD[2], Qt.AlignLeft)):
-            p.drawText(QRectF(x, 3, w, ROW - 4), Qt.AlignVCenter | align, text)
+        for x, w, text, align in ((0, LABEL - 10, HEAD[0], Qt.AlignmentFlag.AlignRight),
+                                  (LABEL + span + 10, NUMBERS, HEAD[1], Qt.AlignmentFlag.AlignLeft),
+                                  (why_x, self.width() - why_x, HEAD[2], Qt.AlignmentFlag.AlignLeft)):
+            p.drawText(QRectF(x, 3, w, ROW - 4), Qt.AlignmentFlag.AlignVCenter | align, text)
         for i, r in enumerate(self.rows, start=1):
             y = i * ROW + 3
-            p.setFont(QFont(FACE, 10, QFont.Bold))
+            p.setFont(QFont(FACE, 10, QFont.Weight.Bold))
             p.setPen(QColor(T["text"]))
             # elided on the right: a long compound rule used to lose its level at the left edge
-            p.drawText(QRectF(0, y, LABEL - 10, ROW - 4), Qt.AlignVCenter | Qt.AlignRight,
-                       p.fontMetrics().elidedText(self.name(r), Qt.ElideRight, LABEL - 10))
-            p.setPen(Qt.NoPen)
+            p.drawText(QRectF(0, y, LABEL - 10, ROW - 4), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight,
+                       p.fontMetrics().elidedText(self.name(r), Qt.TextElideMode.ElideRight, LABEL - 10))
+            p.setPen(Qt.PenStyle.NoPen)
             soft = r.get("kind") == "soft"
             if r["entered"] is None:
                 text = r.get("state", "")
@@ -133,15 +134,15 @@ class Bars(QWidget):
                                   ROW - 12))
                 text = f"{num(r['entered']):>6} → {num(r['passed']):>6}"
             p.setPen(QColor(T["text"] if r["entered"] is not None else C["weak"]))
-            p.drawText(QRectF(LABEL + span + 10, y, NUMBERS, ROW - 4), Qt.AlignVCenter, text)
+            p.drawText(QRectF(LABEL + span + 10, y, NUMBERS, ROW - 4), Qt.AlignmentFlag.AlignVCenter, text)
             if r["died"]:
                 p.setPen(QColor(C["dead"]))
-                p.drawText(QRectF(LABEL + span + 10 + 150, y, 70, ROW - 4), Qt.AlignVCenter,
+                p.drawText(QRectF(LABEL + span + 10 + 150, y, 70, ROW - 4), Qt.AlignmentFlag.AlignVCenter,
                            f"−{num(r['died'])}")
             p.setFont(QFont(FACE, 10))
             p.setPen(QColor(T["muted"] if r["passed"] is not None else C["accent"]))
-            p.drawText(QRectF(why_x, y, self.width() - why_x, ROW - 4), Qt.AlignVCenter,
-                       p.fontMetrics().elidedText(capital(r["why"]), Qt.ElideRight,
+            p.drawText(QRectF(why_x, y, self.width() - why_x, ROW - 4), Qt.AlignmentFlag.AlignVCenter,
+                       p.fontMetrics().elidedText(capital(r["why"]), Qt.TextElideMode.ElideRight,
                                                   int(self.width() - why_x)))
 
 
@@ -157,13 +158,13 @@ class Funnel(QFrame):
         self.note = QLabel("")
         self.note.setObjectName("dim")
         self.note.setWordWrap(True)
-        self.note.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.note.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         self.bars = Bars()
         # Seventeen rows are ~420 px: scrolled, so the strip never sets the window's height.
         scroll = QScrollArea()
         scroll.setWidget(self.bars)
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(12, 6, 12, 6)
         lay.setSpacing(4)
@@ -198,7 +199,7 @@ class Funnel(QFrame):
             project: Project name. `/api/filters/state` (F6, wave 3) is read when it answers
                 and adds its rows after the gate's; a 404 or a daemon without it adds none.
         """
-        def both() -> dict:
+        def both() -> dict[str, Any]:
             """The funnel and the filters' rows, on the pool's thread."""
             got = client.get("databank/funnel", project=project)
             if "error" in got:

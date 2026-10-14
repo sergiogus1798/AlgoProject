@@ -1,8 +1,9 @@
 """Databanks: the project's databank panel on the whole height, with its filters strip."""
 
-from PySide6.QtWidgets import QFrame, QLabel, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QBoxLayout, QFrame, QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from ui.desktop.workspace.filters import FiltersStrip
+from ui.desktop.workspace.funnel import Funnel
 from ui.desktop.workspace.panel import Panel
 
 
@@ -13,7 +14,7 @@ class DatabanksZone(QFrame):
     funnel: the filters strip reloads that funnel even though it lives in the other zone.
     """
 
-    def __init__(self, funnel: QWidget) -> None:
+    def __init__(self, funnel: "Funnel") -> None:
         """Build the panel and mount the filters strip under its header.
 
         Args:
@@ -24,10 +25,12 @@ class DatabanksZone(QFrame):
         self.title = QLabel("")
         self.title.setObjectName("h1")
         self.title.setStyleSheet("font-size: 20px;")
-        self.title.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.title.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         self.panel = Panel()
         # F6's strip, right under the panel's header: it follows the panel's databank itself.
-        self.panel.layout().insertWidget(1, FiltersStrip(self.panel, funnel))
+        head = self.panel.layout()
+        assert isinstance(head, QBoxLayout)
+        head.insertWidget(1, FiltersStrip(self.panel, funnel))
         lay = QVBoxLayout(self)
         lay.setContentsMargins(12, 8, 12, 8)
         lay.setSpacing(2)

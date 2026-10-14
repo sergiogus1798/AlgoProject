@@ -1,7 +1,8 @@
 """The databank panel's filters strip: AND rows over real columns, discards, and the ledger (22 §7.1)."""
 
+from typing import TYPE_CHECKING
 import httpx
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from ui.desktop import background, client
@@ -11,6 +12,10 @@ from ui.text.numbers import num
 
 PREVIEW_MS = 350    # a pause in the typing before the live count asks the daemon (~0.15 s warm)
 
+if TYPE_CHECKING:
+    from ui.desktop.workspace.panel import Panel
+    from ui.desktop.workspace.funnel import Funnel
+
 
 class FiltersStrip(QFrame):
     """Below the panel's header: the rows (AND), Aplicar, the saved list, «Quitar filtros» and
@@ -19,7 +24,7 @@ class FiltersStrip(QFrame):
     funnel. A live count says what edited rows would leave, hiding and logging nothing; both
     reads run off the GUI thread (`background`). Nothing here touches SQX."""
 
-    def __init__(self, panel: QWidget, funnel: QWidget | None = None) -> None:
+    def __init__(self, panel: "Panel", funnel: "Funnel | None" = None) -> None:
         """Build the strip over a `workspace.panel.Panel` and, optionally, its `Funnel`."""
         super().__init__()
         self.setObjectName("term")
@@ -85,7 +90,7 @@ class FiltersStrip(QFrame):
 
         # One GET: state, funnel rows and metrics off a single `context` in the daemon.
         background.get("filters/state", lambda got: self.land({"at": at, "moved": moved, "got": got}),
-                       owner=self, project=at[0], databank=at[1], wait=120)
+                       owner=self, project=at[0], databank=at[1], wait=120)  # pyright: ignore[reportArgumentType]  # background.get/client.get type **params as str but forward wait to float
 
     def land(self, msg: dict) -> None:
         """Paint what `follow` read, unless another databank was chosen since. Rows the owner
@@ -215,8 +220,8 @@ class FiltersStrip(QFrame):
     def discard(self) -> None:
         """«Descartar seleccionadas»: the selected rows' identities, set aside by hand."""
         table = self.panel.table
-        ids = sorted({table.rows[table.item(i.row(), 0).data(Qt.UserRole)]["identity"]
-                      for i in table.selectionModel().selectedRows()} - {None})
+        ids = sorted({x for i in table.selectionModel().selectedRows()
+                  if (x := table.row_at(i.row()).get("identity")) is not None})
         if not ids:
             self.say("Selecciona filas con identidad en la tabla para descartarlas")
             return

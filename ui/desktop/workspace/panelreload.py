@@ -1,13 +1,16 @@
 """«Recargar databank»: the daemon relists the databank's folder off the GUI thread, then a repaint."""
 
-from PySide6.QtWidgets import QWidget
+from typing import TYPE_CHECKING
 
 from ui.desktop import background
 from ui.text.numbers import num
 from ui.text.brief import full, line
 
+if TYPE_CHECKING:
+    from ui.desktop.workspace.panel import Panel
 
-def ask(panel: QWidget) -> None:
+
+def ask(panel: "Panel") -> None:
     """Send POST /api/databank/reload for the databank on screen; `answered` reads the reply.
 
     Args:
@@ -23,7 +26,7 @@ def ask(panel: QWidget) -> None:
                     lambda got: answered(panel, project, bank, got), owner=panel)
 
 
-def answered(panel: QWidget, project: str, bank: str, got: dict) -> None:
+def answered(panel: "Panel", project: str, bank: str, got: dict) -> None:
     """Drop what was read of that databank, read it again and say what the daemon found.
 
     Args:

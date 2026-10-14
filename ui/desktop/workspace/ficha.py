@@ -1,5 +1,7 @@
 """Estrategia: the fixed basic panel and the family tabs of one strategy (22 §5); its metadata on a button."""
 
+from typing import Any
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSplitter,
                                QVBoxLayout, QWidget)
@@ -32,14 +34,14 @@ class Ficha(QFrame):
         self.where: dict = {}
         self.data: dict = {}
         self.opened_from = ""
-        self.page = None                      # the studypage, built on the first real strategy
+        self.page: StrategyPage | None = None                      # the studypage, built on the first real strategy
         self.compute = Compute()
         self.compute.said.connect(self.say)
         self.compute.done.connect(self.reload)
-        self.title = QLabel("", objectName="h1")
+        self.title = QLabel("", objectName="h1")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.title.setStyleSheet("font-size: 20px;")
-        self.origin = QLabel("", objectName="dim")
-        self.said = QLabel("", objectName="dim")
+        self.origin = QLabel("", objectName="dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.said = QLabel("", objectName="dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.said.setStyleSheet(f"color: {C['accent']};")
         self.keep = QPushButton("Archivar")
         self.keep.setToolTip(fichaarchive.WHAT)
@@ -60,14 +62,14 @@ class Ficha(QFrame):
         for w in (self.said, self.keep, self.fold, self.info):
             head.addWidget(w)
         self.curves, self.stats = CostCurves(), Stats(self.compute)
-        self.basic = QFrame(objectName="basic")
+        self.basic = QFrame(objectName="basic")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.basic.setStyleSheet(f"QFrame#basic {{ border-bottom: 1px solid {T['rule']}; }}")
         row = QHBoxLayout(self.basic)
         row.setContentsMargins(0, 4, 0, 8)
         row.addWidget(self.curves, 4)
         row.addSpacing(16)
         row.addWidget(self.stats, 5)
-        self.short = QLabel("", objectName="mono")
+        self.short = QLabel("", objectName="mono")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.short.setStyleSheet("font-size: 13px;")
         self.family = QVBoxLayout()
         self.family.addWidget(self.short)
@@ -78,9 +80,9 @@ class Ficha(QFrame):
         low.addLayout(self.family, 1)
         # Each side scrolls: unwrapped they asked 549 + 550 px and the window grew to 1,239 px,
         # past a 1080-px screen (2026-09-28). Wrapped, the splitter takes height from either.
-        self.split = QSplitter(Qt.Vertical)
+        self.split = QSplitter(Qt.Orientation.Vertical)
         for part in (self.basic, lower):
-            area = QScrollArea(widgetResizable=True, frameShape=QFrame.NoFrame)
+            area = QScrollArea(widgetResizable=True, frameShape=QFrame.Shape.NoFrame)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             area.setWidget(part)
             self.split.addWidget(area)
         self.split.setSizes([520, 480])
@@ -113,7 +115,7 @@ class Ficha(QFrame):
         where = dict(self.where)
         background.run(lambda: self.ask(where), self.paint, key=f"ficha:{id(self)}", owner=self)
 
-    def ask(self, where: dict) -> dict:
+    def ask(self, where: dict) -> dict[str, Any]:
         """Off the GUI thread: the three reads of the page, for `paint`."""
         q = {k: where[k] for k in ("project", "databank", "identity")}
         # The name pairs a databank with no cosecha (MCR_All, an ingest) to the project's own.
@@ -182,6 +184,7 @@ class Ficha(QFrame):
         SELECTION.choose(databank=go["databank"], strategy=go["strategy"],
                          identity=go["identity"])
         self.fill(self.where["project"], go["strategy"], go["tab"])
+        assert self.page is not None
         self.page.open_study(study)
 
     def show_meta(self) -> None:
