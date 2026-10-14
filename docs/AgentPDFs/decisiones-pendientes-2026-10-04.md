@@ -133,7 +133,7 @@ Faltan: el importe de la cuota por usar EAs, aceptar una sola cuenta por cartera
 | Activar | una cuenta por cartera; cuota sin medir | una firma más en los estudios de fondeo |
 | No activar | cero | nada |
 
-**Recomendación:** sin recomendación; ver `docs/AgentPDFs/fondeo-admision-fundednext-2026-09-29.md`.
+**Recomendación:** sin recomendación; ver `docs/AgentPDFs/fondeo-admision-fundednext-2026-10-14.md`.
 
 Respuesta: ____
 
@@ -146,7 +146,7 @@ Respuesta: ____
 | Preguntar al soporte | un correo tuyo | la admisión de la firma |
 | Dejarla bloqueada | cero | nada |
 
-**Recomendación:** sin recomendación. Detalle: `docs/AgentPDFs/fondeo-admision-fundingpips-2026-09-29.md`.
+**Recomendación:** sin recomendación. Detalle: `docs/AgentPDFs/fondeo-admision-fundingpips-2026-10-14.md`.
 
 Respuesta: ____
 
