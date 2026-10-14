@@ -2214,6 +2214,36 @@ Disparity Index:
     groups: []
     archetypes: {breakout: 1, mean_reversion: 1, trend: 2, momentum: 3, volatility: 1, pattern: 1, session: 1}
     help: Is triggered if Disparity Index is rising
+Donchian:
+  CBlock_CloseCrossesAboveDCUpper:
+    roles: [signal]
+    origin: own
+    form: Close[1] crosses above Donchian Channels(20).Upper[2]
+    groups: [donchianUpperCrossUpSignal]
+    archetypes: {}
+    help: 'The close breaks the upper Donchian band: Close[1] crosses above the channel of the bar before, Upper[2] = highest High of the Period bars ending at bar 2. Upper[1] would include bar 1''s own High, which Close[1] can never exceed. A transition, not a state.'
+  CBlock_CloseCrossesBelowDCLower:
+    roles: [signal]
+    origin: own
+    form: Close[1] crosses below Donchian Channels(20).Lower[2]
+    groups: []
+    archetypes: {}
+    help: 'Directional mirror of CloseCrossesAboveDCUpper: Close[1] crosses below the LOWER Donchian band of the bar before (Lower[2]). Exists so the long block has an opposite to resolve; not used by a long-only template.'
+EMA:
+  CBlock_CloseCrossesAboveEMA:
+    roles: [signal]
+    origin: own
+    form: CloseCrossesAboveEMA
+    groups: [emaCloseCrossUpSignal]
+    archetypes: {}
+    help: 'The close crosses above an EMA of the close: at or below it on the previous closed bar and above it on the last one. A transition, not a state.'
+  CBlock_CloseCrossesBelowEMA:
+    roles: [signal]
+    origin: own
+    form: CloseCrossesBelowEMA
+    groups: []
+    archetypes: {}
+    help: Directional mirror of CloseCrossesAboveEMA. Exists so the long block has an opposite to resolve; not used by a long-only template.
 Ehlers Mother of All MA:
   CBlock_EMAMAIsRising_2:
     roles: [signal]
@@ -2345,6 +2375,21 @@ Gann Hi Lo:
     groups: []
     archetypes: {breakout: 1, mean_reversion: 1, trend: 3, momentum: 2, volatility: 1, pattern: 1, session: 1}
     help: Is triggered if Close > GannHiLo
+HMA:
+  CBlock_CloseCrossesAboveHMA:
+    roles: [signal]
+    origin: own
+    form: CloseCrossesAboveHMA
+    groups: [crossAboveHMA_v1Signal]
+    archetypes: {}
+    help: 'The close crosses above an HMA of the close: at or below it on the previous closed bar and above it on the last one. A transition, not a state.'
+  CBlock_CloseCrossesBelowHMA:
+    roles: [signal]
+    origin: own
+    form: CloseCrossesBelowHMA
+    groups: []
+    archetypes: {}
+    help: Directional mirror of CloseCrossesAboveHMA. Exists so the long block has an opposite to resolve; not used by a long-only template.
 Highest Lowest:
   BarOpensAboveHighestAfterOpenBelow:
     roles: [signal]
@@ -3334,6 +3379,21 @@ Kaufman Efficiency Ratio:
     groups: []
     archetypes: {breakout: 1, mean_reversion: 3, trend: 1, momentum: 1, volatility: 1, pattern: 1, session: 1}
     help: Is triggered if Kaufman Efficiency Ratio is below value
+Keltner:
+  CBlock_CloseCrossesAboveKCUpper:
+    roles: [signal]
+    origin: own
+    form: CloseCrossesAboveKCUpper
+    groups: [keltnerUpperCrossUpSignal]
+    archetypes: {}
+    help: 'The close crosses above the upper Keltner band: it was at or below it on the previous bar and is above it now. A transition, not a state.'
+  CBlock_CloseCrossesBelowKCLower:
+    roles: [signal]
+    origin: own
+    form: CloseCrossesBelowKCLower
+    groups: []
+    archetypes: {}
+    help: 'Directional mirror of CloseCrossesAboveKCUpper: the close crosses below the LOWER Keltner band. Exists so the long block has an opposite to resolve; not used by a long-only template.'
 Keltner Channel:
   KCBarClosesAboveLower:
     roles: [signal]
@@ -3770,7 +3830,7 @@ Moving Average:
     roles: [signal]
     origin: native
     form: 'Bar closes above #Type# Moving Average(@Chart@#Period#)[#Shift#]'
-    groups: []
+    groups: [emaCloseAboveSignal]
     archetypes: {breakout: 1, mean_reversion: 1, trend: 3, momentum: 2, volatility: 1, pattern: 1, session: 1}
   MABarClosesBelow:
     roles: [signal]
