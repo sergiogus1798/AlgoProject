@@ -111,7 +111,7 @@ def snooping_superior(cfg: dict) -> dict:
         whatever the columns hold.
     """
     project, databank, asset = cfg["sample"]["harvest"]
-    folder = sorted((DATA / "harvest" / project / databank.replace(" ", "_")).glob("*/"))[-1]
+    folder = sorted((DATA / "harvest" / project / databank.replace(" ", "_")).glob("[0-9]*/"))[-1]   # a day, never `_aparte`
     lo, hi = (pd.Timestamp(t, unit="ms") for t in assetdata.window(assetdata.load(asset), "oos1"))
     curve = pd.read_parquet(folder / "equity.parquet")
     curve = curve[curve["sample"] == "OOS"].pivot(index="day", columns="identity", values="equity")
