@@ -15,20 +15,28 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from sqx.projects import crosstfsolo
 from studies.transfer.crossTF import inputs
 
-CONFIG = ('<Project><Tasks>\n'
-          '  <Task type="Retest" name="Retest strategies 15" active="true" '
-          'taskXMLFile="Retest-Task15.xml" title="CrossTF" />\n  </Tasks>\n<Databanks>\n'
-          '    <Databank name="CrossTF" position="100" />\n  </Databanks></Project>')
-TASK = ('<Task><Data><Setups><Setup dateFrom="2008.01.01" engine="MetaTrader5 (hedged)">'
-        '<Chart symbol="USDJPY_M1" timeframe="H1" /></Setup></Setups></Data>'
-        '<RetestOnAdditionalMarkets use="true"><Settings><Setups detailed="true">'
-        '<Setup engine="MetaTrader5 (hedged)"><Chart symbol="USDJPY_M1" '
-        'timeframe="H4" /></Setup></Setups></Settings></RetestOnAdditionalMarkets>'
-        '<Condition use="true" /><Databanks retestSelected="false">'
-        '<Databank label="Output databank" name="Output" value="CrossTF" />'
-        '<Databank label="Input databank" name="Input" value="CrossTF_Input" /></Databanks></Task>')
-SOLO = {"timeframe": "M30", "title": "CrossTF M30", "databank": "CrossTF_M30",
-        "engine": "MetaTrader5 (hedged)"}
+CONFIG = (
+    "<Project><Tasks>\n"
+    '  <Task type="Retest" name="Retest strategies 15" active="true" '
+    'taskXMLFile="Retest-Task15.xml" title="CrossTF" />\n  </Tasks>\n<Databanks>\n'
+    '    <Databank name="CrossTF" position="100" />\n  </Databanks></Project>'
+)
+TASK = (
+    '<Task><Data><Setups><Setup dateFrom="2008.01.01" engine="MetaTrader5 (hedged)">'
+    '<Chart symbol="USDJPY_M1" timeframe="H1" /></Setup></Setups></Data>'
+    '<RetestOnAdditionalMarkets use="true"><Settings><Setups detailed="true">'
+    '<Setup engine="MetaTrader5 (hedged)"><Chart symbol="USDJPY_M1" '
+    'timeframe="H4" /></Setup></Setups></Settings></RetestOnAdditionalMarkets>'
+    '<Condition use="true" /><Databanks retestSelected="false">'
+    '<Databank label="Output databank" name="Output" value="CrossTF" />'
+    '<Databank label="Input databank" name="Input" value="CrossTF_Input" /></Databanks></Task>'
+)
+SOLO = {
+    "timeframe": "M30",
+    "title": "CrossTF M30",
+    "databank": "CrossTF_M30",
+    "engine": "MetaTrader5 (hedged)",
+}
 
 
 def test_task_is_written_beside_crosstf() -> None:
@@ -53,24 +61,34 @@ def test_study_reads_one_databank_per_timeframe(tmp_path: Path) -> None:
     batch = tmp_path / "batch"
     batch.mkdir()
     banks = ["CrossTF", "CrossTF_M30", "CrossTF_H4"]
-    (batch / "blocks.json").write_text(json.dumps({"blocks": ["H1", "M30", "H4"],
-                                                   "databanks": banks}))
+    (batch / "blocks.json").write_text(
+        json.dumps({"blocks": ["H1", "M30", "H4"], "databanks": banks})
+    )
     day = tmp_path / "raw" / "P" / "{}" / "2026-09-30"
     export = Path(str(day).format("CrossTF")) / "trades.parquet"
     for i, bank in enumerate(banks):
         folder = Path(str(day).format(bank))
         folder.mkdir(parents=True)
-        pd.DataFrame({"strategy": ["A", f"A_Scaled{bank[-2:]}"], "Ticket": [1, 1],
-                      "Profit/Loss": [float(i), 1.0]}).to_parquet(folder / "trades.parquet")
+        pd.DataFrame(
+            {
+                "strategy": ["A", f"A_Scaled{bank[-2:]}"],
+                "Ticket": [1, 1],
+                "Profit/Loss": [float(i), 1.0],
+            }
+        ).to_parquet(folder / "trades.parquet")
     got = inputs.gather(batch, export, pd.read_parquet(export))
     assert list(got["block"]) == [0, 0, 1, 1, 2, 2]
     assert list(got.loc[got["block"] == 2, "Profit/Loss"]) == [2.0, 1.0]
-    (batch / "blocks.json").unlink()        # 📓 2026-10-01: filed under a temporary folder's name
+    (
+        batch / "blocks.json"
+    ).unlink()  # 📓 2026-10-01: filed under a temporary folder's name
     with pytest.raises(SystemExit, match="blocks.json"):
         inputs.gather(batch, export, pd.read_parquet(export))
 
+
 if __name__ == "__main__":
     import tempfile
+
     test_task_is_written_beside_crosstf()
     with tempfile.TemporaryDirectory() as tmp:
         test_study_reads_one_databank_per_timeframe(Path(tmp))

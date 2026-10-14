@@ -7,22 +7,42 @@ import pandas as pd
 import yaml
 
 # The two rules of the free hole are the board's data; read as a file, a study imports no other.
-BOARD = yaml.safe_load((Path(__file__).parents[1] / "board" / "config.yaml")
-                       .read_text(encoding="utf-8"))
+BOARD = yaml.safe_load(
+    (Path(__file__).parents[1] / "board" / "config.yaml").read_text(encoding="utf-8")
+)
 CELL = ["symbol", "timeframe", "direction", "family"]
-PAYS, HALF_PAYS = 2.0, 1.0     # effect in round-trip costs: the profile's filter, and grade C's floor
-RAW_ALPHA = 0.05               # grade C without significance: nominal p before the correction
-NO_PAY = 0.5                   # a significant effect below this many costs is structure that loses
-REVERSED = (0.95, -1.0)        # raw p at or above, effect at or below: the sign is the opposite one
+PAYS, HALF_PAYS = (
+    2.0,
+    1.0,
+)  # effect in round-trip costs: the profile's filter, and grade C's floor
+RAW_ALPHA = 0.05  # grade C without significance: nominal p before the correction
+NO_PAY = 0.5  # a significant effect below this many costs is structure that loses
+REVERSED = (
+    0.95,
+    -1.0,
+)  # raw p at or above, effect at or below: the sign is the opposite one
 ORDER = {"A": 0, "B": 1, "C": 2}
 # The palette of the fixed condition, per family: `sqx/blocks/palettes/<name>.yaml`.
-PALETTE = {"ruptura": "ruptura_base_v2", "reversion": "reversion_base_v2",
-           "tendencia": "tendencia_base_v2", "momentum": "momentum_base",
-           "volatilidad": "volatilidad_base", "patron": "patron_base", "sesion": "sesion_base"}
-WEAK = {"frequent": "pocas operaciones", "stable": "frágil", "pays": "paga 1-2×",
-        "significant": "no significativa tras corregir"}
-AVOID = {"no_paga": "estructura real que no paga el coste", "signo_contrario": "signo contrario",
-         "plana": "ninguna celda llega a medio coste"}
+PALETTE = {
+    "ruptura": "ruptura_base_v2",
+    "reversion": "reversion_base_v2",
+    "tendencia": "tendencia_base_v2",
+    "momentum": "momentum_base",
+    "volatilidad": "volatilidad_base",
+    "patron": "patron_base",
+    "sesion": "sesion_base",
+}
+WEAK = {
+    "frequent": "pocas operaciones",
+    "stable": "frágil",
+    "pays": "paga 1-2×",
+    "significant": "no significativa tras corregir",
+}
+AVOID = {
+    "no_paga": "estructura real que no paga el coste",
+    "signo_contrario": "signo contrario",
+    "plana": "ninguna celda llega a medio coste",
+}
 
 
 def tuples(frame: pd.DataFrame) -> Any:
@@ -32,7 +52,7 @@ def tuples(frame: pd.DataFrame) -> Any:
 
 def order(grade: Any) -> Any:
     """The sort rank of each grade (A first); NaN for a blank one."""
-    return grade.map(cast("Any", ORDER))   # the pandas stub rejects a dict for map
+    return grade.map(cast("Any", ORDER))  # the pandas stub rejects a dict for map
 
 
 def graded(scores: pd.DataFrame, by_family: bool = False) -> pd.DataFrame:
@@ -56,21 +76,44 @@ def graded(scores: pd.DataFrame, by_family: bool = False) -> pd.DataFrame:
     if by_family:
         out["significant"], out["p"] = out["significant_family"], out["p_family"]
     multiple = out["multiple"].fillna(float("-inf"))
-    sig, pays, stable, frequent = (out[c].astype(bool) for c in
-                                   ("significant", "pays", "stable", "frequent"))
+    sig, pays, stable, frequent = (
+        out[c].astype(bool) for c in ("significant", "pays", "stable", "frequent")
+    )
     a = sig & pays & stable & frequent
     b = sig & pays & ~a
-    c = stable & frequent & ((sig & ~pays & (multiple >= HALF_PAYS))
-                             | (~sig & pays & (out["p_raw"] <= RAW_ALPHA)))
+    c = (
+        stable
+        & frequent
+        & (
+            (sig & ~pays & (multiple >= HALF_PAYS))
+            | (~sig & pays & (out["p_raw"] <= RAW_ALPHA))
+        )
+    )
     free = ~out["needs_clock"].astype(bool)
-    out["grade"] = pd.Series("", index=out.index).mask(c & free, "C").mask(b & free, "B").mask(
-        a & free, "A")
-    failed = {"frequent": ~frequent, "stable": ~stable, "pays": ~pays, "significant": ~sig}
-    out["weak"] = ["; ".join(WEAK[k] for k, miss in failed.items() if bool(miss[i]))
-                   for i in out.index]
-    out["avoid"] = pd.Series("", index=out.index).mask(
-        (out["p_raw"] >= REVERSED[0]) & (multiple <= REVERSED[1]), "signo_contrario").mask(
-        sig & (multiple < NO_PAY), "no_paga").where(free, "")
+    out["grade"] = (
+        pd.Series("", index=out.index)
+        .mask(c & free, "C")
+        .mask(b & free, "B")
+        .mask(a & free, "A")
+    )
+    failed = {
+        "frequent": ~frequent,
+        "stable": ~stable,
+        "pays": ~pays,
+        "significant": ~sig,
+    }
+    out["weak"] = [
+        "; ".join(WEAK[k] for k, miss in failed.items() if bool(miss[i]))
+        for i in out.index
+    ]
+    out["avoid"] = (
+        pd.Series("", index=out.index)
+        .mask(
+            (out["p_raw"] >= REVERSED[0]) & (multiple <= REVERSED[1]), "signo_contrario"
+        )
+        .mask(sig & (multiple < NO_PAY), "no_paga")
+        .where(free, "")
+    )
     return out
 
 
@@ -113,22 +156,66 @@ def ranked(scores: pd.DataFrame, by_family: bool = False) -> pd.DataFrame:
     """
     cells = graded(scores, by_family)
     cells = cells[cells["grade"] != ""].assign(
-        _g=lambda d: order(d["grade"]), _s=lambda d: ~d["significant"].astype(bool))
-    cells = cells.sort_values(["symbol", "_g", "_s", "multiple"],
-                              ascending=[True, True, True, False])
+        _g=lambda d: order(d["grade"]), _s=lambda d: ~d["significant"].astype(bool)
+    )
+    cells = cells.sort_values(
+        ["symbol", "_g", "_s", "multiple"], ascending=[True, True, True, False]
+    )
     rows = []
-    for (symbol, family), group in cast("Any", cells.groupby(["symbol", "family"], sort=False)):
+    for (symbol, family), group in cast(
+        "Any", cells.groupby(["symbol", "family"], sort=False)
+    ):
         best = group.iloc[0]
-        also = "; ".join(f"{r.timeframe} {r.direction} {r.grade} {r.multiple:.1f}×"
-                         for r in tuples(group.iloc[1:]))
-        rows.append({"symbol": symbol, "family": family, "grade": best["grade"],
-                     "weak": best["weak"], **{k: best[k] for k in (
-                         "timeframe", "direction", "lead", "multiple", "p", "p_raw",
-                         "stability", "trades_per_year")},
-                     "also": also, "palette": PALETTE[family], "hole": hole(family)})
-    out = pd.DataFrame(rows, columns=pd.Index(["symbol", "family", "grade", "weak", "timeframe",
-                                      "direction", "lead", "multiple", "p", "p_raw", "stability",
-                                      "trades_per_year", "also", "palette", "hole"]))
+        also = "; ".join(
+            f"{r.timeframe} {r.direction} {r.grade} {r.multiple:.1f}×"
+            for r in tuples(group.iloc[1:])
+        )
+        rows.append(
+            {
+                "symbol": symbol,
+                "family": family,
+                "grade": best["grade"],
+                "weak": best["weak"],
+                **{
+                    k: best[k]
+                    for k in (
+                        "timeframe",
+                        "direction",
+                        "lead",
+                        "multiple",
+                        "p",
+                        "p_raw",
+                        "stability",
+                        "trades_per_year",
+                    )
+                },
+                "also": also,
+                "palette": PALETTE[family],
+                "hole": hole(family),
+            }
+        )
+    out = pd.DataFrame(
+        rows,
+        columns=pd.Index(
+            [
+                "symbol",
+                "family",
+                "grade",
+                "weak",
+                "timeframe",
+                "direction",
+                "lead",
+                "multiple",
+                "p",
+                "p_raw",
+                "stability",
+                "trades_per_year",
+                "also",
+                "palette",
+                "hole",
+            ]
+        ),
+    )
     out.insert(1, "rank", out.groupby("symbol").cumcount() + 1)
     return out
 
@@ -143,8 +230,9 @@ def avoided(scores: pd.DataFrame) -> pd.DataFrame:
         `cells`, `of` (cells measured), `where` and `best_multiple` (the most any cell pays).
     """
     rows, cells = [], graded(scores)
-    for (symbol, family), group in cast("Any", cells[~cells["needs_clock"].astype(bool)].groupby(
-            ["symbol", "family"])):
+    for (symbol, family), group in cast(
+        "Any", cells[~cells["needs_clock"].astype(bool)].groupby(["symbol", "family"])
+    ):
         bad, best = group[group["avoid"] != ""], group["multiple"].max()
         if (group["grade"] != "").any() or (bad.empty and best >= NO_PAY):
             continue
@@ -155,30 +243,74 @@ def avoided(scores: pd.DataFrame) -> pd.DataFrame:
             reason, scope, n = "plana", "familia", len(group)
         else:
             reason, scope, n = bad["avoid"].iloc[0], "celda", len(bad)
-        where = "" if scope == "familia" else "; ".join(
-            f"{r.timeframe} {r.direction}" for r in tuples(bad))
-        rows.append({"symbol": symbol, "family": family, "reason": reason, "scope": scope,
-                     "cells": n, "of": len(group), "where": where, "best_multiple": best})
-    return pd.DataFrame(rows, columns=pd.Index(["symbol", "family", "reason", "scope", "cells", "of",
-                                       "where", "best_multiple"]))
+        where = (
+            ""
+            if scope == "familia"
+            else "; ".join(f"{r.timeframe} {r.direction}" for r in tuples(bad))
+        )
+        rows.append(
+            {
+                "symbol": symbol,
+                "family": family,
+                "reason": reason,
+                "scope": scope,
+                "cells": n,
+                "of": len(group),
+                "where": where,
+                "best_multiple": best,
+            }
+        )
+    return pd.DataFrame(
+        rows,
+        columns=pd.Index(
+            [
+                "symbol",
+                "family",
+                "reason",
+                "scope",
+                "cells",
+                "of",
+                "where",
+                "best_multiple",
+            ]
+        ),
+    )
 
 
 def summary(table: pd.DataFrame, symbols: list[str]) -> pd.DataFrame:
     """Asset → its ranked families in one line, «nada favorable medido» where there is none."""
-    line = {s: ", ".join(f"{r.family} ({r.grade}, {r.timeframe} {r.direction})"
-                         for r in tuples(g)) for s, g in table.groupby("symbol")}
-    return pd.DataFrame({"symbol": symbols,
-                         "families": [line.get(s, "nada favorable medido") for s in symbols]})
+    line = {
+        s: ", ".join(
+            f"{r.family} ({r.grade}, {r.timeframe} {r.direction})" for r in tuples(g)
+        )
+        for s, g in table.groupby("symbol")
+    }
+    return pd.DataFrame(
+        {
+            "symbol": symbols,
+            "families": [line.get(s, "nada favorable medido") for s in symbols],
+        }
+    )
 
 
 def reverse(table: pd.DataFrame) -> pd.DataFrame:
     """Family → the assets where it is listed, best grade and largest multiple first."""
-    by = table.assign(_g=order(table["grade"])).sort_values(["_g", "multiple"],
-                                                               ascending=[True, False])
-    return pd.DataFrame([{"family": f, "assets": ", ".join(
-        f"{r.symbol} ({r.grade}, {r.timeframe} {r.direction}, {r.multiple:.1f}×)"
-        for r in tuples(g))} for f, g in by.groupby("family", sort=False)],
-        columns=pd.Index(["family", "assets"]))
+    by = table.assign(_g=order(table["grade"])).sort_values(
+        ["_g", "multiple"], ascending=[True, False]
+    )
+    return pd.DataFrame(
+        [
+            {
+                "family": f,
+                "assets": ", ".join(
+                    f"{r.symbol} ({r.grade}, {r.timeframe} {r.direction}, {r.multiple:.1f}×)"
+                    for r in tuples(g)
+                ),
+            }
+            for f, g in by.groupby("family", sort=False)
+        ],
+        columns=pd.Index(["family", "assets"]),
+    )
 
 
 def by_timeframe(scores: pd.DataFrame) -> pd.DataFrame:
@@ -191,12 +323,28 @@ def by_timeframe(scores: pd.DataFrame) -> pd.DataFrame:
     """
     cells = graded(scores)
     cells = cells[~cells["needs_clock"].astype(bool)].assign(
-        _g=lambda d: order(d["grade"]).fillna(len(ORDER)))
+        _g=lambda d: order(d["grade"]).fillna(len(ORDER))
+    )
     cells = cells.sort_values(["_g", "multiple"], ascending=[True, False])
     best = cells.groupby(["symbol", "family", "timeframe"], sort=False).head(1)
-    return cast("pd.DataFrame", best.sort_values(["symbol", "family", "timeframe"])[[
-        "symbol", "family", "timeframe", "direction", "grade", "lead", "multiple", "p", "p_raw",
-        "trades_per_year", "weak"]].reset_index(drop=True))
+    return cast(
+        "pd.DataFrame",
+        best.sort_values(["symbol", "family", "timeframe"])[
+            [
+                "symbol",
+                "family",
+                "timeframe",
+                "direction",
+                "grade",
+                "lead",
+                "multiple",
+                "p",
+                "p_raw",
+                "trades_per_year",
+                "weak",
+            ]
+        ].reset_index(drop=True),
+    )
 
 
 def clocked(measures: pd.DataFrame) -> pd.DataFrame:
@@ -211,14 +359,31 @@ def clocked(measures: pd.DataFrame) -> pd.DataFrame:
         `grade`, `multiple`, `p`, `p_raw`, `stability`, `trades_per_year`.
     """
     clock = cast("pd.DataFrame", measures[measures["needs_clock"].astype(bool)])
-    rows = clock.rename(columns={"p": "p_raw"}).rename(columns={"q": "p"}).assign(
-        needs_clock=False)
+    rows = (
+        clock.rename(columns={"p": "p_raw"})
+        .rename(columns={"q": "p"})
+        .assign(needs_clock=False)
+    )
     rows = graded(rows)
     rows = rows[rows["grade"] != ""].assign(_g=lambda d: order(d["grade"]))
-    return cast("pd.DataFrame", rows.sort_values(
-        ["symbol", "_g", "multiple"], ascending=[True, True, False])[[
-        "symbol", "timeframe", "direction", "measure", "detail", "grade", "multiple", "p",
-        "p_raw", "stability", "trades_per_year"]].reset_index(drop=True))
+    return cast(
+        "pd.DataFrame",
+        rows.sort_values(["symbol", "_g", "multiple"], ascending=[True, True, False])[
+            [
+                "symbol",
+                "timeframe",
+                "direction",
+                "measure",
+                "detail",
+                "grade",
+                "multiple",
+                "p",
+                "p_raw",
+                "stability",
+                "trades_per_year",
+            ]
+        ].reset_index(drop=True),
+    )
 
 
 def regraded(scores: pd.DataFrame) -> pd.DataFrame:
@@ -230,5 +395,18 @@ def regraded(scores: pd.DataFrame) -> pd.DataFrame:
     """
     head, alone = graded(scores), graded(scores, by_family=True)
     out = head.assign(grade_family=alone["grade"], p_family=alone["p"])
-    return cast("pd.DataFrame", out[out["grade"] != out["grade_family"]][[
-        *CELL, "lead", "multiple", "p_raw", "p", "p_family", "grade", "grade_family"]])
+    return cast(
+        "pd.DataFrame",
+        out[out["grade"] != out["grade_family"]][
+            [
+                *CELL,
+                "lead",
+                "multiple",
+                "p_raw",
+                "p",
+                "p_family",
+                "grade",
+                "grade_family",
+            ]
+        ],
+    )

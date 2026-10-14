@@ -1,11 +1,19 @@
 """PORTFOLIOS: a rail of modules, each with its strip and result tabs, over one databank that feeds them all."""
 
-
 from typing import Any
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLineEdit, QListWidget, QSplitter, QStackedWidget,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QSplitter,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import background
 from ui.desktop.blocks.card import text
@@ -17,9 +25,13 @@ from ui.desktop.portfolios.campaign import CampaignPage
 from ui.desktop.portfolios.zone import PortfoliosZone as ArchivePage
 from ui.desktop.theme import T
 
-TEST = "RAÍZ DE PRUEBA — {root}: nada de lo que se vea o se calcule aquí es un resultado."
-TIPS = {"Archivo": "Las versiones archivadas de la estrategia elegida y «Importar esta versión».",
-        "Campaña": "Los workflows completos que guardó la campaña: embudo, tiempos y sus estrategias con todos sus resultados."}
+TEST = (
+    "RAÍZ DE PRUEBA — {root}: nada de lo que se vea o se calcule aquí es un resultado."
+)
+TIPS = {
+    "Archivo": "Las versiones archivadas de la estrategia elegida y «Importar esta versión».",
+    "Campaña": "Los workflows completos que guardó la campaña: embudo, tiempos y sus estrategias con todos sus resultados.",
+}
 
 
 class PortfoliosBoard(QFrame):
@@ -44,13 +56,21 @@ class PortfoliosBoard(QFrame):
         self.where = text("", T["muted"], 13)
         head.addWidget(self.where, 1)
         lay.addLayout(head)
-        self.test = text("", T["bg"], 15, True)         # filled: a test root must never pass for the real one
-        self.test.setStyleSheet(f"background:{colour('watch')}; color:{T['bg']}; font-size:15px; font-weight:700; "
-                                "padding:4px 8px;")
+        self.test = text(
+            "", T["bg"], 15, True
+        )  # filled: a test root must never pass for the real one
+        self.test.setStyleSheet(
+            f"background:{colour('watch')}; color:{T['bg']}; font-size:15px; font-weight:700; "
+            "padding:4px 8px;"
+        )
         self.sets = QLineEdit()
-        self.sets.setPlaceholderText("Ajustes de prueba que se pasan a «Calcular»: --set sección.clave=valor …")
-        self.sets.setToolTip("Solo existe en la raíz de prueba: valores de prueba para los umbrales y las decisiones "
-                             "que faltan. En la raíz real no se admite ninguno.")
+        self.sets.setPlaceholderText(
+            "Ajustes de prueba que se pasan a «Calcular»: --set sección.clave=valor …"
+        )
+        self.sets.setToolTip(
+            "Solo existe en la raíz de prueba: valores de prueba para los umbrales y las decisiones "
+            "que faltan. En la raíz real no se admite ninguno."
+        )
         for widget in (self.test, self.sets):
             widget.hide()
             lay.addWidget(widget)
@@ -58,14 +78,18 @@ class PortfoliosBoard(QFrame):
         self.rail.setFixedWidth(180)
         self.rail.setStyleSheet(f"font-size:15px; color:{T['text']};")
         self.archive = ArchivePage()
-        self.archive.loaded = True          # this zone reloads it, with its own state
+        self.archive.loaded = True  # this zone reloads it, with its own state
         self.archive.import_requested.connect(self.import_requested)
         self.campaign = CampaignPage()
         self.campaign.campaign_requested.connect(self.campaign_requested)
         self.pages = {name: ModulePage(name, self) for name in strips.MODULES}
-        for name, page in (self.pages | {strips.ARCHIVE: self.archive, strips.CAMPAIGN: self.campaign}).items():
+        for name, page in (
+            self.pages | {strips.ARCHIVE: self.archive, strips.CAMPAIGN: self.campaign}
+        ).items():
             self.rail.addItem(name)
-            self.rail.item(self.rail.count() - 1).setToolTip(TIPS.get(name) or strips.MODULES[name]["intro"])
+            self.rail.item(self.rail.count() - 1).setToolTip(
+                TIPS.get(name) or strips.MODULES[name]["intro"]
+            )
             self.stack.addWidget(page)
         self.rail.currentRowChanged.connect(self.show_module)
         top = QWidget()
@@ -102,18 +126,33 @@ class PortfoliosBoard(QFrame):
     def filled(self, got: dict) -> None:
         """`portfolios/state` answered: the test-root banner, the databank, the module on screen."""
         if "error" in got:
-            return self.where.setText(f'<span style="color:{colour("fail")}">{got["error"]}</span>')
+            return self.where.setText(
+                f'<span style="color:{colour("fail")}">{got["error"]}</span>'
+            )
         self.state = got
         self.test.setText(TEST.format(root=got["test_root"]))
         self.test.setVisible(bool(got["test_root"]))
         self.sets.setVisible(bool(got["test_root"]))
         # A pool's own row is listed under its name: without it a reload moved a chosen pool to the newest run.
-        self.bank.fill(self.archive.rows, got, self.want_run or self.selection.get("run") or self.selection.get("pool", ""))
+        self.bank.fill(
+            self.archive.rows,
+            got,
+            self.want_run
+            or self.selection.get("run")
+            or self.selection.get("pool", ""),
+        )
         self.choose({})
 
     def run(self) -> dict[str, Any]:
         """The row of the run chosen in the databank, {} when a pool or nothing is."""
-        return next((r for r in self.state.get("runs", []) if r["id"] == self.selection.get("run")), {})
+        return next(
+            (
+                r
+                for r in self.state.get("runs", [])
+                if r["id"] == self.selection.get("run")
+            ),
+            {},
+        )
 
     def overrides(self) -> str:
         """The test root's `--set` line; always "" on the real root, where the field does not exist."""
@@ -129,10 +168,23 @@ class PortfoliosBoard(QFrame):
         s = self.selection
         if s.get("strategy") and self.archive.rows:
             self.archive.pick(s["strategy"])
-        name = next((r["strategy"] for r in self.archive.rows if r["identity"] == s.get("strategy")), "")
-        said = [f"pool «{s['pool']}»" if s.get("pool") else "", f"cartera {s['run']}" if s.get("run") else "",
-                f"estrategia {name} · {s['strategy'][:8]}" if s.get("strategy") else ""]
-        self.where.setText("Selección del databank: " + (" · ".join(x for x in said if x) or "nada todavía"))
+        name = next(
+            (
+                r["strategy"]
+                for r in self.archive.rows
+                if r["identity"] == s.get("strategy")
+            ),
+            "",
+        )
+        said = [
+            f"pool «{s['pool']}»" if s.get("pool") else "",
+            f"cartera {s['run']}" if s.get("run") else "",
+            f"estrategia {name} · {s['strategy'][:8]}" if s.get("strategy") else "",
+        ]
+        self.where.setText(
+            "Selección del databank: "
+            + (" · ".join(x for x in said if x) or "nada todavía")
+        )
         self.show_module(self.rail.currentRow())
 
     def show_module(self, row: int) -> None:

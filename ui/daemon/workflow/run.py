@@ -31,14 +31,19 @@ def databanks(spec: dict[str, Any], key: str, ctx: Context) -> list[str]:
         (spaces become `_`) and only those the data root holds. Empty when the step reads
         the databank the panel shows.
     """
-    found = [r["databank"] for r in sources.results(ctx["project"], key)[:1] if r["databank"]]
+    found = [
+        r["databank"] for r in sources.results(ctx["project"], key)[:1] if r["databank"]
+    ]
     view = ctx["sqx"]
     tasks = view["tasks"] if view else []
     for stage in spec["feeds"]:
         names = titles(stage)
         found += [t["output"].replace(" ", "_") for t in tasks if t["title"] in names]
-    held = [d for d in dict.fromkeys(found)
-            if any((DATA / root / ctx["project"] / d).is_dir() for root in ROOTS)]
+    held = [
+        d
+        for d in dict.fromkeys(found)
+        if any((DATA / root / ctx["project"] / d).is_dir() for root in ROOTS)
+    ]
     return held
 
 
@@ -55,8 +60,11 @@ def population(project: str, databank: str, asset: str) -> list[str]:
     if c["export"]:
         return where.distinct(c["trades"], "strategy")
     if c["harvest"]:
-        return sorted(pd.read_parquet(c["harvest_dir"] / "metrics.parquet",
-                                      columns=["strategy"])["strategy"].astype(str))
+        return sorted(
+            pd.read_parquet(c["harvest_dir"] / "metrics.parquet", columns=["strategy"])[
+                "strategy"
+            ].astype(str)
+        )
     return []
 
 
@@ -66,8 +74,9 @@ def mothers(project: str) -> list[str]:
     return sorted(d.name for d in root.iterdir() if d.is_dir()) if root.is_dir() else []
 
 
-def plan(spec: dict[str, Any], key: str, ctx: Context, databank: str,
-         picked: list[str]) -> list[dict[str, Any]] | str:
+def plan(
+    spec: dict[str, Any], key: str, ctx: Context, databank: str, picked: list[str]
+) -> list[dict[str, Any]] | str:
     """The jobs one ticked test starts, or why none.
 
     Args:
@@ -88,26 +97,50 @@ def plan(spec: dict[str, Any], key: str, ctx: Context, databank: str,
     entry = table.STUDIES.get(key, {})
     if "plan" not in entry:
         return table.why_not(key) or "estudio desconocido"
-    scope = ("one" if not entry["many"] or (picked and entry["one"])
-             else "many")
+    scope = "one" if not entry["many"] or (picked and entry["one"]) else "many"
     if spec["feeds"] == "batch":
-        return table.jobs({"study": key, "scope": "one", "project": ctx["project"],
-                           "databank": "", "asset": ctx["asset"], "overrides": [],
-                           "only": None, "strategies": picked or mothers(ctx["project"])})
+        return table.jobs(
+            {
+                "study": key,
+                "scope": "one",
+                "project": ctx["project"],
+                "databank": "",
+                "asset": ctx["asset"],
+                "overrides": [],
+                "only": None,
+                "strategies": picked or mothers(ctx["project"]),
+            }
+        )
     candidates = [databank] if databank else databanks(spec, key, ctx)
     if not candidates:
-        return ("elige en el panel el databank que lee" if not spec["feeds"] else
-                "ningún databank de este proyecto en el disco tiene su entrada")
+        return (
+            "elige en el panel el databank que lee"
+            if not spec["feeds"]
+            else "ningún databank de este proyecto en el disco tiene su entrada"
+        )
     first = ""
     for bank in candidates:
-        asset = ctx["asset"]      # None when neither ledger nor name says it
+        asset = ctx["asset"]  # None when neither ledger nor name says it
         if asset is None and not picked and scope == "one":
-            return (f"{ctx['project']}: ni el registro ni el nombre dicen el activo, y sin él no se "
-                    "sabe qué estrategias tiene el databank: revisa projects/registry.csv")
-        chosen = picked or (population(ctx["project"], bank, asset) if scope == "one" and asset else [])
-        got = table.jobs({"study": key, "scope": scope, "project": ctx["project"],
-                          "databank": bank, "asset": ctx["asset"], "overrides": [],
-                          "only": None, "strategies": chosen})
+            return (
+                f"{ctx['project']}: ni el registro ni el nombre dicen el activo, y sin él no se "
+                "sabe qué estrategias tiene el databank: revisa projects/registry.csv"
+            )
+        chosen = picked or (
+            population(ctx["project"], bank, asset) if scope == "one" and asset else []
+        )
+        got = table.jobs(
+            {
+                "study": key,
+                "scope": scope,
+                "project": ctx["project"],
+                "databank": bank,
+                "asset": ctx["asset"],
+                "overrides": [],
+                "only": None,
+                "strategies": chosen,
+            }
+        )
         if not isinstance(got, str):
             return got
         first = first or f"{bank}: {got}"
@@ -138,8 +171,9 @@ def refusal(n: str, key: str, ctx: Context) -> str | None:
     return None if got["runnable"] else got["why"]
 
 
-def start(ctx: Context, ticked: list[dict[str, Any]], databank: str,
-          picked: list[str]) -> Started:
+def start(
+    ctx: Context, ticked: list[dict[str, Any]], databank: str, picked: list[str]
+) -> Started:
     """Queue every ticked test.
 
     Args:
@@ -163,8 +197,15 @@ def start(ctx: Context, ticked: list[dict[str, Any]], databank: str,
         if isinstance(got, str):
             refused.append({"n": t["n"], "key": t["key"], "why": got})
             continue
-        out += [jobs.start(p["label"], p["argv"], p["about"] | {"step": t["n"]},
-                           weight=p.get("weight")) for p in batch.fold(got)]
+        out += [
+            jobs.start(
+                p["label"],
+                p["argv"],
+                p["about"] | {"step": t["n"]},
+                weight=p.get("weight"),
+            )
+            for p in batch.fold(got)
+        ]
     return {"jobs": out, "refused": refused}
 
 
@@ -183,18 +224,39 @@ def backfill(ctx: Context, on_disk: list[str]) -> BackfillOffer:
     missing = [n for n in on_disk if n not in ctx["blind"]["done"]]
     row = where.enrolled(ctx["project"])
     wfm = [r for r in sources.results(ctx["project"], "wfm") if r["databank"]]
-    why = ("17, 18 y 19: ningún resultado en disco sin su fila" if not missing else
-           where.no_family(ctx["project"]) if row is None else
-           where.no_family(ctx["project"]) if not ctx["family"] else
-           "falta el resultado del WFM (paso 19), que ledger.backfill --blind necesita"
-           if not wfm else f"resultados sin fila en el ledger: pasos {', '.join(missing)}")
+    why = (
+        "17, 18 y 19: ningún resultado en disco sin su fila"
+        if not missing
+        else where.no_family(ctx["project"])
+        if row is None
+        else where.no_family(ctx["project"])
+        if not ctx["family"]
+        else "falta el resultado del WFM (paso 19), que ledger.backfill --blind necesita"
+        if not wfm
+        else f"resultados sin fila en el ledger: pasos {', '.join(missing)}"
+    )
     family = ctx["family"]
     if row is None or not (missing and family and wfm):
         return {"offer": False, "why": why, "argv": []}
-    return {"offer": True, "why": why, "argv": [
-        "-m", "ledger.backfill", "--blind", ctx["project"], "--wfm-databank",
-        str(wfm[0]["databank"]), "--symbol", row["symbol"], "--timeframe", row["timeframe"],
-        "--family", family, "--write"]}
+    return {
+        "offer": True,
+        "why": why,
+        "argv": [
+            "-m",
+            "ledger.backfill",
+            "--blind",
+            ctx["project"],
+            "--wfm-databank",
+            str(wfm[0]["databank"]),
+            "--symbol",
+            row["symbol"],
+            "--timeframe",
+            row["timeframe"],
+            "--family",
+            family,
+            "--write",
+        ],
+    }
 
 
 def blind_on_disk(rows: list[dict[str, Any]]) -> list[str]:

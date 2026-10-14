@@ -25,8 +25,9 @@ def before_entry(index: pd.DatetimeIndex, opens: pd.Series) -> np.ndarray:
     return index.searchsorted(opens.to_numpy(), side="right") - 2
 
 
-def measure(trades: pd.DataFrame, index: pd.DatetimeIndex, atr: np.ndarray,
-            point_value: float) -> pd.DataFrame:
+def measure(
+    trades: pd.DataFrame, index: pd.DatetimeIndex, atr: np.ndarray, point_value: float
+) -> pd.DataFrame:
     """MAE and final result per trade, in ATR of the bar before the entry.
 
     Args:

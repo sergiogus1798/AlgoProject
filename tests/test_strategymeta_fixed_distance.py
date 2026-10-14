@@ -14,11 +14,25 @@ HERE = Path(__file__).parent / "fixtures"
 SNAP = Path.home() / "Desktop/AlgoData/snapshots/weekly-data-update-2026-10-03/projects"
 
 
-def _xml(sl: str = "", pt: str = "", trail: str = "", act: str = "", be: str = "", add: str = "", cond: str = "") -> str:
+def _xml(
+    sl: str = "",
+    pt: str = "",
+    trail: str = "",
+    act: str = "",
+    be: str = "",
+    add: str = "",
+    cond: str = "",
+) -> str:
     """A minimal strategy: one Long entry order with the given exit-method formulas."""
+
     def p(key: str, ctl: str, formula: str) -> str:
         """One exit-method Param."""
-        return f'<Param key="{key}" controlType="{ctl}" exitMethod="true">{formula}</Param>' if formula else ""
+        return (
+            f'<Param key="{key}" controlType="{ctl}" exitMethod="true">{formula}</Param>'
+            if formula
+            else ""
+        )
+
     atr = '<Formula key="SQ.Formulas.SLPT.ATRBasedValue"><Param key="#Value#">4.4</Param><Param key="#AtrPeriod#">20</Param></Formula>'
     return f"""<Strategy><variables><variable><id>Pips1</id><name>Pips1</name><value>77</value></variable></variables>
 <Rule name="Long entry"><If>{cond}</If><Then><Item key="EnterAtMarket">
@@ -30,7 +44,11 @@ def _xml(sl: str = "", pt: str = "", trail: str = "", act: str = "", be: str = "
 
 def _fixed(kind: str, value: str = "50", var: bool = False) -> str:
     """A fixed-value Formula."""
-    v = f'<Param key="#Value#" variable="true">{value}</Param>' if var else f'<Param key="#Value#">{value}</Param>'
+    v = (
+        f'<Param key="#Value#" variable="true">{value}</Param>'
+        if var
+        else f'<Param key="#Value#">{value}</Param>'
+    )
     return f'<Formula key="SQ.Formulas.{kind}">{v}</Formula>'
 
 
@@ -44,12 +62,23 @@ def test_atr_pct_level_none_are_not_fixed() -> None:
 
 def test_each_exit_method_is_named() -> None:
     """Each exit method is named."""
-    xml = _xml(sl=_fixed("SLPT.FixedValue", "30"), pt=_fixed("SLPT.FixedValue", "60"),
-               trail=_fixed("RangeLevel.FixedValue", "93"), act=_fixed("Range.FixedValue", "60"),
-               be=_fixed("RangeLevel.FixedValue", "217"), add=_fixed("Range.FixedValue", "10"))
+    xml = _xml(
+        sl=_fixed("SLPT.FixedValue", "30"),
+        pt=_fixed("SLPT.FixedValue", "60"),
+        trail=_fixed("RangeLevel.FixedValue", "93"),
+        act=_fixed("Range.FixedValue", "60"),
+        be=_fixed("RangeLevel.FixedValue", "217"),
+        add=_fixed("Range.FixedValue", "10"),
+    )
     got = {r["param"]: r["value"] for r in fixed_distances(xml)}
-    assert got == {"stop_loss": 30, "profit_target": 60, "trailing_stop": 93,
-                   "trailing_activation": 60, "break_even": 217, "break_even_add": 10}
+    assert got == {
+        "stop_loss": 30,
+        "profit_target": 60,
+        "trailing_stop": 93,
+        "trailing_activation": 60,
+        "break_even": 217,
+        "break_even_add": 10,
+    }
     assert {r["rule"] for r in fixed_distances(xml)} == {"Long entry"}
 
 
@@ -68,18 +97,28 @@ def test_fixed_pips_block_in_a_condition() -> None:
 
 def test_pl_in_pips_needs_a_number_to_compare_with() -> None:
     """Pl in pips needs a number to compare with."""
+
     def cmp(right: str) -> str:
         """A comparison of OpenPLInPips with `right`."""
-        return ('<Item key="IsGreater"><Block key="#Left#"><Item key="OpenPLInPips"><Param key="#Symbol#">x</Param></Item></Block>'
-                f'<Block key="#Right#">{right}</Block></Item>')
+        return (
+            '<Item key="IsGreater"><Block key="#Left#"><Item key="OpenPLInPips"><Param key="#Symbol#">x</Param></Item></Block>'
+            f'<Block key="#Right#">{right}</Block></Item>'
+        )
+
     num = '<Item key="Number"><Param key="#Number#">25</Param></Item>'
     assert [r["value"] for r in fixed_distances(_xml(cond=cmp(num)))] == [25]
-    assert fixed_distances(_xml(cond=cmp('<Item key="Close"><Param key="#Shift#">1</Param></Item>'))) == []
+    assert (
+        fixed_distances(
+            _xml(cond=cmp('<Item key="Close"><Param key="#Shift#">1</Param></Item>'))
+        )
+        == []
+    )
 
 
 def test_accepts_a_parsed_root() -> None:
     """Accepts a parsed root."""
     from xml.etree import ElementTree
+
     root = ElementTree.fromstring(_xml(trail=_fixed("RangeLevel.FixedValue")))
     assert len(fixed_distances(root)) == 1
 
@@ -91,10 +130,14 @@ def test_real_strategies() -> None:
     gbp = SNAP / "GBPJPY_H1/databanks"
     (row,) = fixed_distances(gbp / "RetestPairs/Strategy 5.17.290.sqx")
     assert (row["param"], row["value"]) == ("trailing_stop", 93)
-    (row,) = fixed_distances(SNAP / "Retester/databanks/XAU Incomplete/Strategy 1.3.52.sqx")
+    (row,) = fixed_distances(
+        SNAP / "Retester/databanks/XAU Incomplete/Strategy 1.3.52.sqx"
+    )
     assert (row["param"], row["value"]) == ("FixedPips", 160)
 
 
 def test_atr_sl_pt_fixture_flags_only_its_fixed_trailing() -> None:
     """Atr sl pt fixture flags only its fixed trailing."""
-    assert [r["param"] for r in fixed_distances(HERE / "strategy.sqx")] == ["trailing_stop"]
+    assert [r["param"] for r in fixed_distances(HERE / "strategy.sqx")] == [
+        "trailing_stop"
+    ]

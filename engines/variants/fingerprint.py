@@ -8,11 +8,20 @@ import numpy as np
 import pandas as pd
 from pandas.core.util.hashing import hash_pandas_object
 
-COLUMNS = ("Open time", "Close time", "Type", "Size", "Open price", "Close price", "Profit/Loss")
+COLUMNS = (
+    "Open time",
+    "Close time",
+    "Type",
+    "Size",
+    "Open price",
+    "Close price",
+    "Profit/Loss",
+)
 
 
-def prints(trades: pd.DataFrame, unit: str = "variant_id",
-           columns: Sequence[str] = COLUMNS) -> pd.Series:
+def prints(
+    trades: pd.DataFrame, unit: str = "variant_id", columns: Sequence[str] = COLUMNS
+) -> pd.Series:
     """One hash per variant of its whole trade list.
 
     Args:
@@ -26,8 +35,14 @@ def prints(trades: pd.DataFrame, unit: str = "variant_id",
     """
     rows = trades.sort_values([unit, *columns], kind="stable")
     row = hash_pandas_object(rows[list(columns)], index=False)
-    return cast(pd.Series, row.groupby(rows[unit].to_numpy(), sort=False).agg(
-        lambda h: hashlib.blake2b(h.to_numpy(np.uint64).tobytes(), digest_size=16).hexdigest()))
+    return cast(
+        pd.Series,
+        row.groupby(rows[unit].to_numpy(), sort=False).agg(
+            lambda h: hashlib.blake2b(
+                h.to_numpy(np.uint64).tobytes(), digest_size=16
+            ).hexdigest()
+        ),
+    )
 
 
 def keep(fingerprint: pd.Series, first: Sequence = ()) -> tuple[pd.Index, float]:
@@ -42,5 +57,7 @@ def keep(fingerprint: pd.Series, first: Sequence = ()) -> tuple[pd.Index, float]
         the earliest; the share of variants dropped as duplicates).
     """
     front = fingerprint.index.isin(first)
-    kept = ~fingerprint.iloc[np.argsort(~front, kind="stable")].duplicated().reindex(fingerprint.index)
+    kept = ~fingerprint.iloc[np.argsort(~front, kind="stable")].duplicated().reindex(
+        fingerprint.index
+    )
     return cast(pd.Index, fingerprint.index[kept.to_numpy()]), float(1 - kept.mean())

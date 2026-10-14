@@ -16,7 +16,11 @@ def pending() -> set[str]:
     """The `domain/slug` entries still waiting for a rewritten q:."""
     if not PENDING.exists():
         return set()
-    return {ln.strip() for ln in PENDING.read_text(encoding="utf-8").splitlines() if ln.strip()}
+    return {
+        ln.strip()
+        for ln in PENDING.read_text(encoding="utf-8").splitlines()
+        if ln.strip()
+    }
 
 
 def q_of(card: Path) -> str:
@@ -38,7 +42,9 @@ def question_problems(card: Path) -> list[str]:
     bad = not q.endswith("?") or len(q) > MAX_Q
     listed = name in pending()
     if bad and not listed:
-        return [f"{name}: q: must be one question ending in '?', at most {MAX_Q} chars ({len(q)})"]
+        return [
+            f"{name}: q: must be one question ending in '?', at most {MAX_Q} chars ({len(q)})"
+        ]
     if listed and not bad:
         return [f"{name}: q: complies now, delete it from tools/knowhow_pending_q.txt"]
     return []

@@ -30,27 +30,51 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         population's common slope is taken out. One run is one asset and timeframe, so the
         population is the side.
     """
-    if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
+    if not data:  # tests/test_gate_rules.py runs every level on an empty harvest
         return pd.DataFrame(index=alive, columns=pd.Index(FACTS), dtype=float)
     oos, market, own = data["oos"], data["market"], cfg["centring"]
     by = oos.groupby("identity", sort=False)
-    side = by["side"].min().where(by["side"].min() == by["side"].max(), 0.0)   # 0 = both
+    side = by["side"].min().where(by["side"].min() == by["side"].max(), 0.0)  # 0 = both
     build = data["trades"][data["trades"]["sample"] == "IS"]
-    first, last = (cast(pd.Timestamp, pd.Timestamp(edge)) for edge in market["windows"]["IS"])
+    first, last = (
+        cast(pd.Timestamp, pd.Timestamp(edge)) for edge in market["windows"]["IS"]
+    )
     exposure = centred.calendar_exposure(first, last)
-    counts = (pd.crosstab(build["identity"], build["Open time"].dt.year)
-              .reindex(index=side.index, columns=exposure.index, fill_value=0))
-    phi = centred.dispersion(counts, exposure, cfg["frequency"]["phi_min"],
-                             cfg["frequency"]["phi_max"])
-    rate = centred.rate_change(counts.sum(axis=1), market["years"]["IS"], by.size(),
-                               market["years"]["OOS"], phi)
-    fit = centred.slope(oos, "excess", (oos["close_time"] - oos["close_time"].min())
-                        / pd.Timedelta(days=centred.YEAR))
-    middle = {"log_rate": centred.centre(pd.Series(rate["log_rate"]), side, own["min_strategies"],
-                                         own["cap_log_rate"]),
-              "b": centred.centre(pd.Series(fit["b"]), side, own["min_strategies"], own["cap_slope"])}
+    counts = pd.crosstab(build["identity"], build["Open time"].dt.year).reindex(
+        index=side.index, columns=exposure.index, fill_value=0
+    )
+    phi = centred.dispersion(
+        counts, exposure, cfg["frequency"]["phi_min"], cfg["frequency"]["phi_max"]
+    )
+    rate = centred.rate_change(
+        counts.sum(axis=1),
+        market["years"]["IS"],
+        by.size(),
+        market["years"]["OOS"],
+        phi,
+    )
+    fit = centred.slope(
+        oos,
+        "excess",
+        (oos["close_time"] - oos["close_time"].min()) / pd.Timedelta(days=centred.YEAR),
+    )
+    middle = {
+        "log_rate": centred.centre(
+            pd.Series(rate["log_rate"]),
+            side,
+            own["min_strategies"],
+            own["cap_log_rate"],
+        ),
+        "b": centred.centre(
+            pd.Series(fit["b"]), side, own["min_strategies"], own["cap_slope"]
+        ),
+    }
     b = fit["b"] - middle["b"]
-    return pd.DataFrame({"z_frec": (rate["log_rate"] - middle["log_rate"]) / rate["se"],
-                         "t_b": b / fit["se"],
-                         "e_fin": fit["mean"] + b * market["years"]["OOS"] / 2},
-                        columns=pd.Index(FACTS)).reindex(side.index.union(alive, sort=False))
+    return pd.DataFrame(
+        {
+            "z_frec": (rate["log_rate"] - middle["log_rate"]) / rate["se"],
+            "t_b": b / fit["se"],
+            "e_fin": fit["mean"] + b * market["years"]["OOS"] / 2,
+        },
+        columns=pd.Index(FACTS),
+    ).reindex(side.index.union(alive, sort=False))

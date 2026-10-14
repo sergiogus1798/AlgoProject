@@ -14,7 +14,14 @@ from core import sqxretest
 FIXTURE = Path(__file__).parent / "fixtures" / "retest.sqx"
 GOLDEN = Path(__file__).parent / "fixtures" / "retest.golden.json"
 # Enough of the 148 to catch a shifted or mis-decoded blob without pinning the whole table.
-WATCHED = ("NetProfit", "Drawdown", "NumberOfTrades", "ProfitFactor", "MaxLoss", "StandardDev")
+WATCHED = (
+    "NetProfit",
+    "Drawdown",
+    "NumberOfTrades",
+    "ProfitFactor",
+    "MaxLoss",
+    "StandardDev",
+)
 
 
 def parse() -> dict:
@@ -27,26 +34,40 @@ def parse() -> dict:
     """
     sims = sqxretest.simulations(FIXTURE)
     offsets, pnl = sims["offsets"], sims["pnl"]
-    census = [{"index": int(i),
-               "trades": int(offsets[k + 1] - offsets[k]),
-               "sum_cents": int(pnl[offsets[k]:offsets[k + 1]].sum()),
-               "first": int(pnl[offsets[k]]),
-               "last": int(pnl[offsets[k + 1] - 1])}
-              for k, i in enumerate(sims["index"])]
+    census = [
+        {
+            "index": int(i),
+            "trades": int(offsets[k + 1] - offsets[k]),
+            "sum_cents": int(pnl[offsets[k] : offsets[k + 1]].sum()),
+            "first": int(pnl[offsets[k]]),
+            "last": int(pnl[offsets[k + 1] - 1]),
+        }
+        for k, i in enumerate(sims["index"])
+    ]
     levels = sqxretest.levels(FIXTURE)
     original = sqxretest.original(FIXTURE)
-    return {"simulations": census,
-            "total_trades": int(pnl.size),
-            "offsets_end": int(offsets[-1]),
-            "original": {"trades": int(original.size), "sum_cents": int(original.sum()),
-                         "stored_netprofit": round(
-                             float(sqxretest.reference(FIXTURE)["NetProfit"]), 4)},
-            "levels": {str(level): {k: round(float(levels[level][k]), 4) for k in WATCHED}
-                       for level in sorted(levels)},
-            "level_metric_count": {str(level): len(levels[level]) for level in sorted(levels)},
-            "reference_metric_count": len(sqxretest.reference(FIXTURE)),
-            "meta": sqxretest.meta(FIXTURE),
-            "settings": sqxretest.settings(FIXTURE)}
+    return {
+        "simulations": census,
+        "total_trades": int(pnl.size),
+        "offsets_end": int(offsets[-1]),
+        "original": {
+            "trades": int(original.size),
+            "sum_cents": int(original.sum()),
+            "stored_netprofit": round(
+                float(sqxretest.reference(FIXTURE)["NetProfit"]), 4
+            ),
+        },
+        "levels": {
+            str(level): {k: round(float(levels[level][k]), 4) for k in WATCHED}
+            for level in sorted(levels)
+        },
+        "level_metric_count": {
+            str(level): len(levels[level]) for level in sorted(levels)
+        },
+        "reference_metric_count": len(sqxretest.reference(FIXTURE)),
+        "meta": sqxretest.meta(FIXTURE),
+        "settings": sqxretest.settings(FIXTURE),
+    }
 
 
 def invariants(result: dict) -> list[str]:
@@ -66,11 +87,15 @@ def invariants(result: dict) -> list[str]:
     # The .bin rounds every trade to a whole cent, so the sum may drift by up to one cent per
     # trade against the float SQX stored. Anything wider is a decoder bug, not rounding.
     if abs(bridge - stored) > 0.01 * result["original"]["trades"]:
-        out.append(f"the original P/L sums to {bridge:.2f} but SQX stored {stored:.2f}: "
-                   "the binary and the XML no longer agree")
+        out.append(
+            f"the original P/L sums to {bridge:.2f} but SQX stored {stored:.2f}: "
+            "the binary and the XML no longer agree"
+        )
     index = [s["index"] for s in result["simulations"]]
     if index != list(range(len(index))):
-        out.append("simulation indices are not 0..n-1: they truncate at the tail, never gap")
+        out.append(
+            "simulation indices are not 0..n-1: they truncate at the tail, never gap"
+        )
     if result["offsets_end"] != result["total_trades"]:
         out.append("the last offset does not reach the end of the P/L array")
     if sorted(int(k) for k in result["levels"]) != list(sqxretest.CONFIDENCE):
@@ -110,7 +135,9 @@ def main() -> None:
     if result == expected and not broken:
         print("test_sqxretest: ok")
         return
-    print("test_sqxretest: FAILED — core.sqxretest no longer reads this retest the same way")
+    print(
+        "test_sqxretest: FAILED — core.sqxretest no longer reads this retest the same way"
+    )
     for message in broken:
         print("  invariant:", message)
     if result != expected:

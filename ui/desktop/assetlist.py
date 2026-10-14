@@ -15,7 +15,7 @@ class AssetList(QListWidget):
     shown (encargo 22 §8.1); `/api/assets` still reports the retired ones.
     """
 
-    opened = Signal(str)   # asset name
+    opened = Signal(str)  # asset name
 
     def __init__(self) -> None:
         """Build the list and turn a selection into one signal."""
@@ -44,13 +44,21 @@ class AssetList(QListWidget):
             # Colour and not a glyph: the window's font has no ⛔ and draws a box, and a
             # box beside an instrument reads as breakage rather than as its state.
             blocked = a["pending"] + a["broken"]
-            self.entry(a["symbol"],
-                       f"{words(a['class'])} · {a['broker']} · {a['sqx_symbol']}"
-                       + ("\nbloquea la autoría: " + ", ".join(map(words, blocked))
-                          if blocked else "")
-                       + ("\ncifras provisionales: " + ", ".join(map(words, a["provisional"]))
-                          if a["provisional"] else ""),
-                       C["dead"] if blocked else (C["weak"] if a["provisional"] else ""))
+            self.entry(
+                a["symbol"],
+                f"{words(a['class'])} · {a['broker']} · {a['sqx_symbol']}"
+                + (
+                    "\nbloquea la autoría: " + ", ".join(map(words, blocked))
+                    if blocked
+                    else ""
+                )
+                + (
+                    "\ncifras provisionales: " + ", ".join(map(words, a["provisional"]))
+                    if a["provisional"]
+                    else ""
+                ),
+                C["dead"] if blocked else (C["weak"] if a["provisional"] else ""),
+            )
         self.blockSignals(False)
         self.select(keep)
 

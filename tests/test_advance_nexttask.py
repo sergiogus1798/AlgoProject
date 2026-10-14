@@ -16,9 +16,11 @@ def task(title: str, source: str, output: str) -> dict:
     return {"title": title, "type": "Retest", "input": source, "output": output}
 
 
-TASKS = ([task("CrossTF", "CrossTF_Input", "CrossTF")]
-         + [task(t, "CrossTF_Mothers", t) for t in titles("mcretest")]
-         + [task("SPP IS", "MCR 7 OHLC", "SPP IS"), task("SPP OOS", "SPP IS", "SPP OOS")])
+TASKS = (
+    [task("CrossTF", "CrossTF_Input", "CrossTF")]
+    + [task(t, "CrossTF_Mothers", t) for t in titles("mcretest")]
+    + [task("SPP IS", "MCR 7 OHLC", "SPP IS"), task("SPP OOS", "SPP IS", "SPP OOS")]
+)
 
 
 def test_all_eight_mc_retests_run_after_crosstf() -> None:

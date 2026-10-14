@@ -7,7 +7,9 @@ from pathlib import Path
 
 import numpy as np
 
-ROOT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent
+ROOT = (
+    Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent
+)
 sys.path.insert(0, str(ROOT))
 
 from engines.nulls import model, stats, verdict  # noqa: E402
@@ -52,15 +54,27 @@ def t_rungs() -> None:
     for name, fn in model.RUNGS.items():
         o = fn(loc, d, np.random.default_rng(5))
         e, h, s = o["entries"], o["holds"], o["sizes"]
-        ok(f"{name}.shape", e.shape == h.shape == s.shape == (d, 40), f"{e.shape} {h.shape} {s.shape}")
+        ok(
+            f"{name}.shape",
+            e.shape == h.shape == s.shape == (d, 40),
+            f"{e.shape} {h.shape} {s.shape}",
+        )
         ok(
             f"{name}.integer_entries",
             np.issubdtype(e.dtype, np.integer) or np.all(e == np.round(e)),
             f"{e.dtype}",
         )
-        ok(f"{name}.window", e.min() >= W0 and (e + h).max() <= W1, f"min {e.min()} max end {(e + h).max()}")
+        ok(
+            f"{name}.window",
+            e.min() >= W0 and (e + h).max() <= W1,
+            f"min {e.min()} max end {(e + h).max()}",
+        )
         ok(f"{name}.holds_positive", h.min() >= 1, f"{h.min()}")
-        ok(f"{name}.entries_vary", len(np.unique(e[:, 0])) > 100, "entries do not vary between draws")
+        ok(
+            f"{name}.entries_vary",
+            len(np.unique(e[:, 0])) > 100,
+            "entries do not vary between draws",
+        )
         a = fn(loc, 50, np.random.default_rng(9))["entries"]
         b = fn(loc, 50, np.random.default_rng(9))["entries"]
         c = fn(loc, 50, np.random.default_rng(10))["entries"]
@@ -69,17 +83,24 @@ def t_rungs() -> None:
         o_ = np.argsort(e, axis=1)
         es, hs = np.take_along_axis(e, o_, 1), np.take_along_axis(h, o_, 1)
         ov = float((es[:, 1:] < es[:, :-1] + hs[:, :-1]).any(1).mean())
-        print(f"INFO {name}.overlap: share of draws with overlapping trades = {ov:.3f} (docstring silent)")
+        print(
+            f"INFO {name}.overlap: share of draws with overlapping trades = {ov:.3f} (docstring silent)"
+        )
         if name == "timing":
             ok(
                 "timing.keeps_pairs",
                 np.array_equal(
                     pairs(h.astype(float), s),
-                    pairs(np.tile(loc["hold"], (d, 1)).astype(float), np.tile(loc["size"], (d, 1))),
+                    pairs(
+                        np.tile(loc["hold"], (d, 1)).astype(float),
+                        np.tile(loc["size"], (d, 1)),
+                    ),
                 ),
                 "(hold,size) pairs altered",
             )
-            print(f"INFO timing.column_pairing: column i keeps own hold = {bool((h == loc['hold']).all())}")
+            print(
+                f"INFO timing.column_pairing: column i keeps own hold = {bool((h == loc['hold']).all())}"
+            )
         if name == "timing_holds":
             ok(
                 "timing_holds.sizes_kept",
@@ -96,7 +117,9 @@ def t_rungs() -> None:
                 len(np.unique(np.sort(h, 1), axis=0)) > 100,
                 "hold multiset never varies",
             )
-            print(f"INFO timing_holds.paired: share of cells with own hold = {(h == loc['hold']).mean():.3f}")
+            print(
+                f"INFO timing_holds.paired: share of cells with own hold = {(h == loc['hold']).mean():.3f}"
+            )
         if name == "timing_sizing":
             ok(
                 "timing_sizing.const_mean",
@@ -109,8 +132,12 @@ def t_rungs() -> None:
                 "hold multiset altered",
             )
         if name == "free":
-            print(f"INFO free.sizes: unique={np.unique(s)[:4]} own mean={loc['size'].mean():.4f}")
-            print(f"INFO free.holds: range {h.min()}..{h.max()} own {loc['hold'].min()}..{loc['hold'].max()}")
+            print(
+                f"INFO free.sizes: unique={np.unique(s)[:4]} own mean={loc['size'].mean():.4f}"
+            )
+            print(
+                f"INFO free.holds: range {h.min()}..{h.max()} own {loc['hold'].min()}..{loc['hold'].max()}"
+            )
             ok("free.holds_vary", len(np.unique(h)) > 1, "holds constant")
 
 
@@ -146,14 +173,25 @@ def t_uniform() -> None:
 
 def t_stats() -> None:
     """profit_factor, drawdown, measure on hand cases."""
-    pf = stats.profit_factor(np.array([[1, -2, 3, -1.0], [1, 2, 3, 4.0], [-1, -2, -3, -4.0]]))
+    pf = stats.profit_factor(
+        np.array([[1, -2, 3, -1.0], [1, 2, 3, 4.0], [-1, -2, -3, -4.0]])
+    )
     ok("pf.value", np.isclose(pf[0], 4 / 3), f"{pf[0]}")
     ok("pf.no_losses_inf", np.isinf(pf[1]) and pf[1] > 0, f"{pf[1]}")
     ok("pf.no_gains_zero", pf[2] == 0.0, f"{pf[2]}")
-    rows = [[-3, 1, 1.0, 0, 0, 0], [2, -1, -2, 3, -4.0, 0], [1, 2, 3, 4.0, 1, 1], [5, -1, -1, 4.0, -3, 1]]
+    rows = [
+        [-3, 1, 1.0, 0, 0, 0],
+        [2, -1, -2, 3, -4.0, 0],
+        [1, 2, 3, 4.0, 1, 1],
+        [5, -1, -1, 4.0, -3, 1],
+    ]
     dd = stats.drawdown(np.array(rows))
     ok("dd.first_loss", np.isclose(dd[0], 3), f"{dd[0]} (equity 0 -> -3)")
-    ok("dd.peak_trough", np.isclose(dd[1], 4), f"{dd[1]} (cum 2,1,-1,2,-2: peak 2 to -2)")
+    ok(
+        "dd.peak_trough",
+        np.isclose(dd[1], 4),
+        f"{dd[1]} (cum 2,1,-1,2,-2: peak 2 to -2)",
+    )
     ok("dd.all_win", dd[2] == 0, f"{dd[2]}")
     ok("dd.mid", np.isclose(dd[3], 3), f"{dd[3]} (cum 5,4,3,7,4,5: peak 7 to 4)")
     ok("dd.positive", (dd >= 0).all(), f"{dd}")
@@ -162,15 +200,31 @@ def t_stats() -> None:
     ok("measure.net", np.allclose(m["net"], x.sum(1)), "net = sum")
     ok("measure.pf", np.allclose(m["pf"], stats.profit_factor(x)), "pf")
     ok("measure.dd", np.allclose(m["dd"], stats.drawdown(x)), "dd")
-    ok("measure.retdd", np.allclose(m["retdd"], x.sum(1) / stats.drawdown(x)), "retdd = net/dd")
+    ok(
+        "measure.retdd",
+        np.allclose(m["retdd"], x.sum(1) / stats.drawdown(x)),
+        "retdd = net/dd",
+    )
     s1, s0 = x.mean(1) / x.std(1, ddof=1), x.mean(1) / x.std(1)
-    ok("measure.sharpe", np.allclose(m["sharpe"], s1) or np.allclose(m["sharpe"], s0), f"{m['sharpe'][:2]}")
+    ok(
+        "measure.sharpe",
+        np.allclose(m["sharpe"], s1) or np.allclose(m["sharpe"], s0),
+        f"{m['sharpe'][:2]}",
+    )
     print(
         f"INFO measure.sharpe_ddof: ddof=1 {np.allclose(m['sharpe'], s1)} "
         f"ddof=0 {np.allclose(m['sharpe'], s0)}"
     )
-    ok("measure.one_row", stats.measure(x[:1], ["net"])["net"].shape == (1,), "single row")
-    ok("measure.only_asked", set(m) == {"net", "sharpe", "pf", "retdd", "dd"}, f"{set(m)}")
+    ok(
+        "measure.one_row",
+        stats.measure(x[:1], ["net"])["net"].shape == (1,),
+        "single row",
+    )
+    ok(
+        "measure.only_asked",
+        set(m) == {"net", "sharpe", "pf", "retdd", "dd"},
+        f"{set(m)}",
+    )
 
 
 def t_attribute() -> None:
@@ -186,7 +240,11 @@ def t_attribute() -> None:
         r = verdict.attribute({key: real}, rr, key)
         sg = 1.0 if verdict.GOOD_HIGH[key] else -1.0
         tot = sg * (real - mean_free)
-        ok(f"attribute.{key}.total", np.isclose(float(r["total"]), tot), f"{r['total']} vs {tot}")
+        ok(
+            f"attribute.{key}.total",
+            np.isclose(float(r["total"]), tot),
+            f"{r['total']} vs {tot}",
+        )
         ok(
             f"attribute.{key}.holding",
             np.isclose(float(r["holding_time"]), sg * (a - b)),
@@ -197,7 +255,9 @@ def t_attribute() -> None:
             np.isclose(float(r["sizing"]), sg * (a - c)),
             f"{r['sizing']} vs {sg * (a - c)}",
         )
-    print("INFO attribute.sign: channel = keeps - hands (higher-better); flipped for dd; tested exactly so")
+    print(
+        "INFO attribute.sign: channel = keeps - hands (higher-better); flipped for dd; tested exactly so"
+    )
 
 
 def main() -> None:

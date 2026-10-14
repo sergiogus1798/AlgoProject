@@ -16,7 +16,10 @@ from core.worker import holding, installs, listening
 
 def _installs() -> dict[str, tuple[Path, int | None]]:
     """Role to (install folder, port), the master included (it has no known port)."""
-    return {role: (p.resolve(), WORKERS.get(role, {}).get("port")) for role, p in installs().items()}
+    return {
+        role: (p.resolve(), WORKERS.get(role, {}).get("port"))
+        for role, p in installs().items()
+    }
 
 
 def members(cfx: Path) -> dict[str, bytes]:
@@ -38,7 +41,9 @@ def held(cfx: Path) -> str | None:
     """
     path = Path(cfx).resolve()
     for role, (install, port) in _installs().items():
-        if install in path.parents and ((port is not None and listening(port)) or holding(install)):
+        if install in path.parents and (
+            (port is not None and listening(port)) or holding(install)
+        ):
             return role
     return None
 
@@ -56,8 +61,10 @@ def write(cfx: Path, members: dict[str, bytes], *, force: bool = False) -> None:
     """
     role = None if force else held(cfx)
     if role:
-        raise SystemExit(f"el {role} tiene este proyecto abierto y reescribe el .cfx al salir. "
-                         f"Páralo: bin/sqx-worker.sh --role {role} stop")
+        raise SystemExit(
+            f"el {role} tiene este proyecto abierto y reescribe el .cfx al salir. "
+            f"Páralo: bin/sqx-worker.sh --role {role} stop"
+        )
     cfx = Path(cfx)
     tmp = cfx.with_suffix(cfx.suffix + ".tmp")
     try:
@@ -69,4 +76,4 @@ def write(cfx: Path, members: dict[str, bytes], *, force: bool = False) -> None:
             os.fsync(f.fileno())
         os.replace(tmp, cfx)
     finally:
-        tmp.unlink(missing_ok=True)     # gone already after the replace
+        tmp.unlink(missing_ok=True)  # gone already after the replace

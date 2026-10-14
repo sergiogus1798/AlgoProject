@@ -14,7 +14,7 @@ from typing import Any, TypedDict
 
 FILE = "manifest.parquet"
 NUMERIC = ("int", "double")
-BLOCK = 100          # files read back per worker task
+BLOCK = 100  # files read back per worker task
 
 # What the workers read, set before the fork: the sorted files and the design's names.
 _SHARED: dict = {}
@@ -36,8 +36,13 @@ def read_back(folder: Path, names: list[str]) -> pd.DataFrame:
     """
     paths = sorted(folder.glob("*.sqx"))
     _SHARED.update(paths=paths, names=names)
-    blocks = dict(fanout.run(_read_block, {i: BLOCK for i in range(0, len(paths), BLOCK)},
-                             os.cpu_count() or 1))
+    blocks = dict(
+        fanout.run(
+            _read_block,
+            {i: BLOCK for i in range(0, len(paths), BLOCK)},
+            os.cpu_count() or 1,
+        )
+    )
     return pd.DataFrame([row for i in sorted(blocks) for row in blocks[i]])
 
 
@@ -62,23 +67,31 @@ def _read_block(start: int) -> list[dict]:
         One row per file, as read_back() describes them.
     """
     names, rows = _SHARED["names"], []
-    for path in _SHARED["paths"][start:start + BLOCK]:
+    for path in _SHARED["paths"][start : start + BLOCK]:
         with zipfile.ZipFile(path) as archive:
             portfolio = archive.read(rewrite.PORTFOLIO).decode("utf-8")
             settings = archive.read(rewrite.SETTINGS).decode("utf-8")
         declared = rewrite.declared(portfolio)
         stored = rewrite.values(portfolio)
-        found = {n: float(stored[n]) for n in names
-                 if n in stored and declared[n] in NUMERIC}
-        rows.append({"variant_id": rewrite.stamped(portfolio),
-                     # The name written INSIDE the file. ⚠️ It is not what the databank
-                     # shows: SQX names a loaded entry after the FILE (`P00000.sqx` ->
-                     # `P00000`), not after either name field. So this column is the
-                     # intent, `variant_id` is the join key, and the collection stage
-                     # overwrites this with whatever actually came back.
-                     "sqx_name": hit(rewrite.RESULT_NAME.search(settings)).group(0).split('"')[1],
-                     "file": path.name, **tuples.columns(found),
-                     "tuple_hash": tuples.tuple_hash(found)})
+        found = {
+            n: float(stored[n]) for n in names if n in stored and declared[n] in NUMERIC
+        }
+        rows.append(
+            {
+                "variant_id": rewrite.stamped(portfolio),
+                # The name written INSIDE the file. ⚠️ It is not what the databank
+                # shows: SQX names a loaded entry after the FILE (`P00000.sqx` ->
+                # `P00000`), not after either name field. So this column is the
+                # intent, `variant_id` is the join key, and the collection stage
+                # overwrites this with whatever actually came back.
+                "sqx_name": hit(rewrite.RESULT_NAME.search(settings))
+                .group(0)
+                .split('"')[1],
+                "file": path.name,
+                **tuples.columns(found),
+                "tuple_hash": tuples.tuple_hash(found),
+            }
+        )
     return rows
 
 
@@ -99,18 +112,27 @@ def verify(plan: pd.DataFrame, disk: pd.DataFrame) -> Verdict:
         It counts rather than trusts. A batch with a non-zero count here is not a batch
         with a warning, it is a study that cannot be joined.
     """
-    paired = plan.merge(disk, on="variant_id", how="outer", suffixes=("_plan", "_disk"),
-                        indicator=True)
+    paired = plan.merge(
+        disk, on="variant_id", how="outer", suffixes=("_plan", "_disk"), indicator=True
+    )
     both = paired[paired["_merge"] == "both"]
-    return {"planned": len(plan), "on_disk": len(disk),
-            "missing": sorted(paired.loc[paired["_merge"] == "left_only", "variant_id"]),
-            "unexpected": sorted(paired.loc[paired["_merge"] == "right_only", "variant_id"]),
-            "tuple_mismatch": sorted(
-                both.loc[both["tuple_hash_plan"] != both["tuple_hash_disk"], "variant_id"]),
-            "duplicate_tuples": int(disk["tuple_hash"].duplicated().sum())}
+    return {
+        "planned": len(plan),
+        "on_disk": len(disk),
+        "missing": sorted(paired.loc[paired["_merge"] == "left_only", "variant_id"]),
+        "unexpected": sorted(
+            paired.loc[paired["_merge"] == "right_only", "variant_id"]
+        ),
+        "tuple_mismatch": sorted(
+            both.loc[both["tuple_hash_plan"] != both["tuple_hash_disk"], "variant_id"]
+        ),
+        "duplicate_tuples": int(disk["tuple_hash"].duplicated().sum()),
+    }
 
 
-def write(plan: pd.DataFrame, folder: Path, names: list[str]) -> tuple[pd.DataFrame, Verdict]:
+def write(
+    plan: pd.DataFrame, folder: Path, names: list[str]
+) -> tuple[pd.DataFrame, Verdict]:
     """Build contract C2 from the files on disk and store it beside them.
 
     Args:
@@ -131,8 +153,14 @@ def write(plan: pd.DataFrame, folder: Path, names: list[str]) -> tuple[pd.DataFr
     """
     disk = read_back(folder, names)
     report = verify(plan, disk)
-    carried = ["variant_id", "stratum", "origin", "canary_expect_netprofit",
-               "canary_expect_trades", "canary_expect_same_as"]
+    carried = [
+        "variant_id",
+        "stratum",
+        "origin",
+        "canary_expect_netprofit",
+        "canary_expect_trades",
+        "canary_expect_same_as",
+    ]
     frame = disk.merge(plan[carried], on="variant_id", how="left")
     frame.to_parquet(folder.parent / FILE, compression="zstd", index=False)
     return frame, report

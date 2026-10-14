@@ -22,8 +22,13 @@ from ui.daemon.advance import buildcap, preflight, sqxlog
 from ui.daemon.filters import discards, ledgerrow
 from ui.daemon.launch import configure
 
-POLL, READY_TRIES = 3, 200   # s between two `action=status`; × POLL, the CLI's «not ready» ~20 s
-START_WITHIN = 120  # s after `action=start` for «Starting project '<P>'» to reach the log
+POLL, READY_TRIES = (
+    3,
+    200,
+)  # s between two `action=status`; × POLL, the CLI's «not ready» ~20 s
+START_WITHIN = (
+    120  # s after `action=start` for «Starting project '<P>'» to reach the log
+)
 # No run lasts this long (a 1,000-variant WFC took hours): past it the job is stuck, and stops.
 MAX_HOURS = 48
 
@@ -49,22 +54,35 @@ def verdict(pre: dict[str, Any], folder: Path) -> tuple[Path, int]:
     why = {r["identity"]: r["expression"] for r in pre["discards"]}
     gone = sorted(set(why) - set(by_id))
     if gone:
-        sys.exit(f"{len(gone)} de {len(why)} descartes ya no están en {pre['source'].name}: el "
-                 "databank cambió desde el filtro. Vuelve a filtrar; no se ha tocado nada.")
+        sys.exit(
+            f"{len(gone)} de {len(why)} descartes ya no están en {pre['source'].name}: el "
+            "databank cambió desde el filtro. Vuelve a filtrar; no se ha tocado nada."
+        )
     folder.mkdir(parents=True)
     rows = []
     for identity, reason in why.items():
         for f in by_id[identity]:
             shutil.copy2(f, folder / f.name)
-            rows.append({"strategy": f.stem, "verdict": apply_verdict.DROP,
-                         "identity": identity, "reason": reason})
+            rows.append(
+                {
+                    "strategy": f.stem,
+                    "verdict": apply_verdict.DROP,
+                    "identity": identity,
+                    "reason": reason,
+                }
+            )
     out = folder / "verdict.csv"
     pd.DataFrame(rows).to_csv(out, index=False)
     return out, len(rows)
 
 
-def ledger_row(project: str, databank: str, pre: dict[str, Any], cut: apply_verdict.Applied,
-               backup: Path) -> str:
+def ledger_row(
+    project: str,
+    databank: str,
+    pre: dict[str, Any],
+    cut: apply_verdict.Applied,
+    backup: Path,
+) -> str:
     """Write the curate's one ledger row, signed and placed as F6 signs its filters (Q9).
 
     Returns:
@@ -72,16 +90,27 @@ def ledger_row(project: str, databank: str, pre: dict[str, Any], cut: apply_verd
     """
     signed, placed = ledgerrow.signed(project), ledgerrow.placed(project, databank)
     if isinstance(signed, str):
-        return "sin plantilla en registry.csv: el Ledger no se apunta (Q9); el corte sigue"
+        return (
+            "sin plantilla en registry.csv: el Ledger no se apunta (Q9); el corte sigue"
+        )
     if isinstance(placed, str):
         return f"el Ledger no se apunta: {placed}"
     (sid, row), (step, _) = signed, placed
     exprs = sorted({r["expression"] for r in pre["discards"]})
-    record.log(sid, {"step": step, "launched_by": "ventana", "symbol": row["symbol"],
-                     "timeframe": row["timeframe"], "segment": pre["segment"],
-                     "n_in": cut["before"], "n_out": cut["after"],
-                     "criterion": "curate «Continuar workflow»: " + " · ".join(exprs),
-                     "note": f"copia de lo borrado en {backup}; registro en {cut['out']}"})
+    record.log(
+        sid,
+        {
+            "step": step,
+            "launched_by": "ventana",
+            "symbol": row["symbol"],
+            "timeframe": row["timeframe"],
+            "segment": pre["segment"],
+            "n_in": cut["before"],
+            "n_out": cut["after"],
+            "criterion": "curate «Continuar workflow»: " + " · ".join(exprs),
+            "note": f"copia de lo borrado en {backup}; registro en {cut['out']}",
+        },
+    )
     return f"Ledger: una fila en {sid}"
 
 
@@ -91,8 +120,19 @@ def consume(project: str, databank: str, removed: int, task: str) -> None:
     It carries `clear` too, because that is the line `discards.since_clear` cuts at: the view
     and the next filter start from what the databank now holds, and the lines before stay.
     """
-    discards.append(project, databank, [{"clear": True, "cut": True, "ts": discards.stamp(),
-                                         "removed": removed, "task": task}])
+    discards.append(
+        project,
+        databank,
+        [
+            {
+                "clear": True,
+                "cut": True,
+                "ts": discards.stamp(),
+                "removed": removed,
+                "task": task,
+            }
+        ],
+    )
 
 
 SYNCING, SYNCED = b"Syncing databank(s) from files", b"Synchronization finished"
@@ -143,8 +183,15 @@ def watch(project: str, role: str, offsets: dict[Path, int]) -> dict[str, Any]:
         SystemExit when the start never reaches the log within START_WITHIN, when the worker
         dies, on an abort line or a task past its deadline (`sqxlog.police`), or past MAX_HOURS.
     """
-    top, kept, began, cap = preflight.WORKERS[role]["path"], [], time.monotonic(), taskcap.fresh()
-    seen = stopped = False   # once the start was read, losing it is never «did not start»
+    top, kept, began, cap = (
+        preflight.WORKERS[role]["path"],
+        [],
+        time.monotonic(),
+        taskcap.fresh(),
+    )
+    seen = stopped = (
+        False  # once the start was read, losing it is never «did not start»
+    )
     while True:
         time.sleep(POLL)
         if not worker.holding(top):
@@ -162,13 +209,19 @@ def watch(project: str, role: str, offsets: dict[Path, int]) -> dict[str, Any]:
         sqxlog.police(cap, fresh, project, role, top, stopped)
         waited = time.monotonic() - began
         seen = seen or run["project"] == project
-        if waited > MAX_HOURS * 3600:       # before the `continue`: another project's start waited for ever
-            sys.exit(f"{project} sigue sin «Project finished» tras {MAX_HOURS} h: se para el "
-                     "worker para liberar el carril")
+        if (
+            waited > MAX_HOURS * 3600
+        ):  # before the `continue`: another project's start waited for ever
+            sys.exit(
+                f"{project} sigue sin «Project finished» tras {MAX_HOURS} h: se para el "
+                "worker para liberar el carril"
+            )
         if run["project"] != project:
             if not seen and waited > START_WITHIN:
-                sys.exit(f"SQX no escribió «Starting project '{project}'» en {START_WITHIN} s "
-                         "tras `action=start`: no arrancó; se para el worker")
+                sys.exit(
+                    f"SQX no escribió «Starting project '{project}'» en {START_WITHIN} s "
+                    "tras `action=start`: no arrancó; se para el worker"
+                )
             continue
         if run["finished"]:
             return run
@@ -179,9 +232,17 @@ def watch(project: str, role: str, offsets: dict[Path, int]) -> dict[str, Any]:
         if percent is None and now and now["done"] is not None and now["total"]:
             percent = min(100, 100 * now["done"] // now["total"])
         of = f" de {now['total']}" if now and now["total"] else ""
-        say(60 + (percent or 0) * 35 // 100, f"{run['current'] or 'esperando'}"   # a build: no %
-            + (f" {percent} %" if percent is not None else "") + (f" · {live['generated']}{of} "
-            f"probadas · {live.get('in_databank', '?')} en el databank" if live else ""))
+        say(
+            60 + (percent or 0) * 35 // 100,
+            f"{run['current'] or 'esperando'}"  # a build: no %
+            + (f" {percent} %" if percent is not None else "")
+            + (
+                f" · {live['generated']}{of} "
+                f"probadas · {live.get('in_databank', '?')} en el databank"
+                if live
+                else ""
+            ),
+        )
 
 
 def advance(project: str, databank: str) -> None:
@@ -191,32 +252,42 @@ def advance(project: str, databank: str) -> None:
         sys.exit("no se continúa:\n  " + "\n  ".join(pre["reasons"]))
     role, databank = pre["role"], pre["databank"]
     say(5, f"copiando {pre['n']} descartes")
-    backup = (preflight.DISCARDS / project / databank.replace(" ", "_")
-              / f"{datetime.now():%Y%m%d-%H%M%S}")
+    backup = (
+        preflight.DISCARDS
+        / project
+        / databank.replace(" ", "_")
+        / f"{datetime.now():%Y%m%d-%H%M%S}"
+    )
     csv, n = verdict(pre, backup)
     say(15, f"borrando {n} de {databank} ({pre['install']})")
     cut = apply_verdict.apply(project, databank, csv, role)
     print(ledger_row(project, databank, pre, cut, backup), flush=True)
     consume(project, databank, cut["removed"], pre["task"])
-    if pre.get("fill"):         # CrossTF_Input (10.5) or CrossTF_Mothers, worker stopped
+    if pre.get("fill"):  # CrossTF_Input (10.5) or CrossTF_Mothers, worker stopped
         say(20, f"llenando {pre['fill']}")
         print(crosstfload.fill(pre["fill"], project, role), flush=True)
-    pre["skip"] += configure.run(pre, say)      # its configurator first; silenced MCRs off
-    say(25, "activando " + ", ".join(t for t in stage.titles(pre["stage"]) if t not in pre["skip"]))
+    pre["skip"] += configure.run(pre, say)  # its configurator first; silenced MCRs off
+    say(
+        25,
+        "activando "
+        + ", ".join(t for t in stage.titles(pre["stage"]) if t not in pre["skip"]),
+    )
     on = stage.apply(pre["cfx"], [pre["stage"]], pre["skip"])
-    if pre["stage"] == "crosstf":               # its per-timeframe tasks, created by the fill
-        stage.just(pre["cfx"], [t for t, a in on if a]
-                   + crosstfload.separate_titles(pre["cfx"]))
+    if pre["stage"] == "crosstf":  # its per-timeframe tasks, created by the fill
+        stage.just(
+            pre["cfx"],
+            [t for t, a in on if a] + crosstfload.separate_titles(pre["cfx"]),
+        )
     say(30, f"arrancando el {role}")
     top, port = preflight.WORKERS[role]["path"], preflight.WORKERS[role]["port"]
-    workerguard.refuse_if_up(role, top, port)      # `start` answers 0 on «already running»
+    workerguard.refuse_if_up(role, top, port)  # `start` answers 0 on «already running»
     try:
-        worker.start(role)          # inside: a start that fails half-way is stopped too
+        worker.start(role)  # inside: a start that fails half-way is stopped too
         workerguard.mark(role, project)
         ready(project, role)
         offsets = sqxlog.mark(preflight.WORKERS[role]["path"])
         reply = worker.call(f"-project action=start name={project}", role)
-        if "rror" in reply or "Cannot start" in reply:     # unresolved resources
+        if "rror" in reply or "Cannot start" in reply:  # unresolved resources
             sys.exit(f"SQX rechazó `action=start` de {project}: {reply.strip()}")
         say(60, f"{pre['task']} lanzada")
         run = watch(project, role, offsets)
@@ -224,11 +295,16 @@ def advance(project: str, databank: str) -> None:
         # The daemon started it (the preflight refused a worker already up), so it stops it:
         # a worker left up auto-syncs, and a sync deletes what it does not hold (hard rule 1).
         worker.stop(role)
-        left = workerguard.stopped(role, top, port)    # `stop` answers 0 on «STILL RUNNING»
+        left = workerguard.stopped(
+            role, top, port
+        )  # `stop` answers 0 on «STILL RUNNING»
     if left:
         sys.exit(f"el {role} no se paró ({left}): páralo antes de leer sus databanks")
-    say(100, f"{pre['task']}: {run['events'].get(pre['task'], '?')}; {databank} "
-             f"{cut['before']} → {cut['after']}")
+    say(
+        100,
+        f"{pre['task']}: {run['events'].get(pre['task'], '?')}; {databank} "
+        f"{cut['before']} → {cut['after']}",
+    )
 
 
 def main() -> None:
@@ -241,8 +317,13 @@ def main() -> None:
     # worker it started (ui/daemon/jobs.py `_wind_down`). Local, not `launch.run.graceful`:
     # launch.run imports this module, and importing it back would be a cycle.
     # The export after the stop is skipped on a cancel: it could outlast the grace period.
-    signal.signal(signal.SIGTERM, lambda _s, _f: (os.environ.update(ALGO_NO_EXPORT="1"), sys.exit(
-        "cancelado desde la ventana: se para el worker antes de salir")))
+    signal.signal(
+        signal.SIGTERM,
+        lambda _s, _f: (
+            os.environ.update(ALGO_NO_EXPORT="1"),
+            sys.exit("cancelado desde la ventana: se para el worker antes de salir"),
+        ),
+    )
     advance(a.project, a.databank)
 
 

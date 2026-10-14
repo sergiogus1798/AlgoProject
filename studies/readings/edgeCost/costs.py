@@ -30,8 +30,12 @@ def asset_for(feed: str) -> dict[str, Any]:
     return assetdata.load(symbol)
 
 
-def price(trades: pd.DataFrame, bars: pd.DataFrame, declared: reprice.Costs,
-          feed: str | None = None) -> pd.DataFrame:
+def price(
+    trades: pd.DataFrame,
+    bars: pd.DataFrame,
+    declared: reprice.Costs,
+    feed: str | None = None,
+) -> pd.DataFrame:
     """Every trade repriced by the common repricer.
 
     Args:
@@ -47,9 +51,14 @@ def price(trades: pd.DataFrame, bars: pd.DataFrame, declared: reprice.Costs,
         price, every other from a bar open. Raises where it does.
     """
     priced = reprice.real(trades, bars, declared, feed)
-    return pd.DataFrame({"identity": trades["identity"].to_numpy(),
-                         "open_time": trades["Open time"].to_numpy(),
-                         "pnl": priced["pnl"].to_numpy(), "cost": priced["cost"].to_numpy()})
+    return pd.DataFrame(
+        {
+            "identity": trades["identity"].to_numpy(),
+            "open_time": trades["Open time"].to_numpy(),
+            "pnl": priced["pnl"].to_numpy(),
+            "cost": priced["cost"].to_numpy(),
+        }
+    )
 
 
 def per_trade(trades: pd.DataFrame, feed: str, timeframe: str) -> pd.DataFrame:
@@ -77,8 +86,16 @@ def warnings(asset: dict) -> list[dict]:
         One warning when a cost field is a stand-in (`core.assetcheck.provisional`).
     """
     stood_in = assetcheck.provisional(asset)
-    return [{"code": "provisional", "state": "watch",
-             "text": f"{asset['symbol']}: {', '.join(stood_in)} son valores puestos por el "
-                     "dueño para desbloquear la autoría, no cifras pactadas con el bróker "
-                     "(assets/symbols/*.yaml). Todo coste de este resultado los hereda."}
-            ] if stood_in else []
+    return (
+        [
+            {
+                "code": "provisional",
+                "state": "watch",
+                "text": f"{asset['symbol']}: {', '.join(stood_in)} son valores puestos por el "
+                "dueño para desbloquear la autoría, no cifras pactadas con el bróker "
+                "(assets/symbols/*.yaml). Todo coste de este resultado los hereda.",
+            }
+        ]
+        if stood_in
+        else []
+    )

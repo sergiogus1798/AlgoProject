@@ -4,9 +4,21 @@ from collections.abc import Callable
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import (QAbstractItemView, QFrame, QHBoxLayout, QLabel, QListWidget,
-                               QListWidgetItem, QPushButton, QScrollArea, QSplitter,
-                               QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QScrollArea,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.states import colour
@@ -17,23 +29,33 @@ from ui.desktop.studypage.net import fetch as daemon_fetch
 from ui.desktop.theme import T
 
 # (header, tooltip) of the list's columns, in order.
-COLUMNS = (("Estrategia", "Su nombre en el databank del que se archivó."),
-           ("Activo", "El símbolo del proyecto de origen."),
-           ("Timeframe", "El del proyecto de origen."),
-           ("Paso", "El paso del WORKFLOW en que estaba al archivar su versión más nueva."),
-           ("Versiones", "Cuántas veces se archivó. Una versión nunca se sobrescribe."),
-           ("Última versión", "Cuándo se archivó la versión más nueva."),
-           ("N del Ledger", "Candidatas puntuadas en TODAS las búsquedas del estudio del Ledger "
-                            "(la plantilla en ese activo y timeframe) el día que se archivó: con "
-                            "ella se deflacta su Sharpe. «—» cuando hay búsquedas pero ninguna "
-                            "apuntó candidatas."),
-           ("Búsquedas", "Todas las filas del Ledger de ese estudio ese día: cada build, retest o "
-                         "filtro que miró sus datos, apunte candidatas o no."),
-           ("Proyecto", "El proyecto de SQX del que viene."))
-INTRO = ("Las estrategias archivadas con «Archivar» en la ficha de Estrategia. «Importar» las abre "
-         "tal como se guardaron: todos los paneles leen el archivo, no se recalcula nada ni se "
-         "encola ningún trabajo. Por ahora solo se importa desde el archivo; desde un databank "
-         "vivo, cuando el dueño lo pida.")
+COLUMNS = (
+    ("Estrategia", "Su nombre en el databank del que se archivó."),
+    ("Activo", "El símbolo del proyecto de origen."),
+    ("Timeframe", "El del proyecto de origen."),
+    ("Paso", "El paso del WORKFLOW en que estaba al archivar su versión más nueva."),
+    ("Versiones", "Cuántas veces se archivó. Una versión nunca se sobrescribe."),
+    ("Última versión", "Cuándo se archivó la versión más nueva."),
+    (
+        "N del Ledger",
+        "Candidatas puntuadas en TODAS las búsquedas del estudio del Ledger "
+        "(la plantilla en ese activo y timeframe) el día que se archivó: con "
+        "ella se deflacta su Sharpe. «—» cuando hay búsquedas pero ninguna "
+        "apuntó candidatas.",
+    ),
+    (
+        "Búsquedas",
+        "Todas las filas del Ledger de ese estudio ese día: cada build, retest o "
+        "filtro que miró sus datos, apunte candidatas o no.",
+    ),
+    ("Proyecto", "El proyecto de SQX del que viene."),
+)
+INTRO = (
+    "Las estrategias archivadas con «Archivar» en la ficha de Estrategia. «Importar» las abre "
+    "tal como se guardaron: todos los paneles leen el archivo, no se recalcula nada ni se "
+    "encola ningún trabajo. Por ahora solo se importa desde el archivo; desde un databank "
+    "vivo, cuando el dueño lo pida."
+)
 
 
 class PortfoliosZone(QFrame):
@@ -82,8 +104,10 @@ class PortfoliosZone(QFrame):
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setWidget(self.body)
         self.go = QPushButton("Importar esta versión")
-        self.go.setToolTip("Abre la página de Estrategia con todo lo que esta versión congeló. "
-                           "No calcula nada: lo que no se archivó sale como no calculado.")
+        self.go.setToolTip(
+            "Abre la página de Estrategia con todo lo que esta versión congeló. "
+            "No calcula nada: lo que no se archivó sale como no calculado."
+        )
         self.go.setEnabled(False)
         self.go.clicked.connect(self._import)
         right = QWidget()
@@ -117,22 +141,37 @@ class PortfoliosZone(QFrame):
         self.loaded = True
         got = self.fetch("archive/list")
         if "error" in got:
-            return self.said.setText(f'<span style="color:{colour("fail")}">{got["error"]}</span>')
+            return self.said.setText(
+                f'<span style="color:{colour("fail")}">{got["error"]}</span>'
+            )
         self.rows = got["strategies"]
         count = sum(len(r["versions"]) for r in self.rows)
-        self.said.setText(f"{num(len(self.rows))} estrategia{'s' * (len(self.rows) != 1)} "
-                          f"archivada{'s' * (len(self.rows) != 1)}, {num(count)} "
-                          f"versi{'ones' if count != 1 else 'ón'}."
-                          if self.rows else "El archivo está vacío: archiva una estrategia desde "
-                                            "su ficha, en Estrategia.")
+        self.said.setText(
+            f"{num(len(self.rows))} estrategia{'s' * (len(self.rows) != 1)} "
+            f"archivada{'s' * (len(self.rows) != 1)}, {num(count)} "
+            f"versi{'ones' if count != 1 else 'ón'}."
+            if self.rows
+            else "El archivo está vacío: archiva una estrategia desde "
+            "su ficha, en Estrategia."
+        )
         self.table.setRowCount(len(self.rows))
         for i, r in enumerate(self.rows):
-            cells = (r["strategy"] or "—", r["symbol"], r["timeframe"] or "—", r["step"],
-                     num(len(r["versions"])), detail.when(r["archived_at"]),
-                     detail.trials(r["ledger"]), num(r["ledger"]["searches"]), r["project"])
+            cells = (
+                r["strategy"] or "—",
+                r["symbol"],
+                r["timeframe"] or "—",
+                r["step"],
+                num(len(r["versions"])),
+                detail.when(r["archived_at"]),
+                detail.trials(r["ledger"]),
+                num(r["ledger"]["searches"]),
+                r["project"],
+            )
             for j, value in enumerate(cells):
                 item = QTableWidgetItem(value)
-                item.setToolTip(f"Identidad: {r['identity']}" if j == 0 else COLUMNS[j][1])
+                item.setToolTip(
+                    f"Identidad: {r['identity']}" if j == 0 else COLUMNS[j][1]
+                )
                 self.table.setItem(i, j, item)
         self.table.resizeColumnsToContents()
         if self.rows:
@@ -147,11 +186,15 @@ class PortfoliosZone(QFrame):
         self.versions.blockSignals(True)
         self.versions.clear()
         for v in reversed(held["versions"]):
-            item = QListWidgetItem(f"{detail.when(v['archived_at'])} · paso {v['step']}"
-                                   + (f" · {v['note']}" if v["note"] else ""))
+            item = QListWidgetItem(
+                f"{detail.when(v['archived_at'])} · paso {v['step']}"
+                + (f" · {v['note']}" if v["note"] else "")
+            )
             item.setData(Qt.ItemDataRole.UserRole, v["version"])
-            item.setToolTip(f"Versión {v['version']} · desde {v['databank']} · "
-                            + detail.ledger(v["ledger"]))
+            item.setToolTip(
+                f"Versión {v['version']} · desde {v['databank']} · "
+                + detail.ledger(v["ledger"])
+            )
             self.versions.addItem(item)
         self.versions.blockSignals(False)
         self.versions.setCurrentRow(0)
@@ -162,7 +205,9 @@ class PortfoliosZone(QFrame):
         item = self.versions.currentItem()
         if not (picked and item):
             return "", ""
-        return self.rows[picked[0].row()]["identity"], item.data(Qt.ItemDataRole.UserRole)
+        return self.rows[picked[0].row()]["identity"], item.data(
+            Qt.ItemDataRole.UserRole
+        )
 
     def _version(self) -> None:
         """A version was chosen: say what it holds, and arm «Importar»."""
@@ -171,8 +216,11 @@ class PortfoliosZone(QFrame):
             return
         got = self.fetch("archive/show", identity=identity, version=version)
         self.go.setEnabled("error" not in got)
-        self.body.setText(f'<span style="color:{colour("fail")}">{got["error"]}</span>'
-                          if "error" in got else detail.page(got))
+        self.body.setText(
+            f'<span style="color:{colour("fail")}">{got["error"]}</span>'
+            if "error" in got
+            else detail.page(got)
+        )
 
     def pick(self, identity: str, version: str = "") -> None:
         """Select one strategy and one of its versions ("" for the newest) — for a launcher.

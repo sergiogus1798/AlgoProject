@@ -1,4 +1,5 @@
 """The MT5 half of a check: compile the EA SQX exported, and backtest it on each firm's account."""
+
 import re
 import time
 from pathlib import Path
@@ -19,15 +20,30 @@ def fixed_lots(source: str, lots: str) -> str:
     """
     # Exported from a FixedSize retest (`sqx.projects.mt5verify`), the EA sizes with `mmLots`
     # alone and carries neither switch (📓 2026-09-30): that one input is the lot.
-    out, k = re.subn(r"input double mmLots = [\d.]+;", f"input double mmLots = {lots};", source)
+    out, k = re.subn(
+        r"input double mmLots = [\d.]+;", f"input double mmLots = {lots};", source
+    )
     if k == 1:
-        return re.sub(r"input double mmMultiplier = [\d.]+;", "input double mmMultiplier = 1.0;", out)
-    out, n = re.subn(r"input bool UseMoneyManagement = \w+;", "input bool UseMoneyManagement = false;",
-                     source)
-    out, m = re.subn(r"input double mmLotsIfNoMM = [\d.]+;", f"input double mmLotsIfNoMM = {lots};", out)
+        return re.sub(
+            r"input double mmMultiplier = [\d.]+;",
+            "input double mmMultiplier = 1.0;",
+            out,
+        )
+    out, n = re.subn(
+        r"input bool UseMoneyManagement = \w+;",
+        "input bool UseMoneyManagement = false;",
+        source,
+    )
+    out, m = re.subn(
+        r"input double mmLotsIfNoMM = [\d.]+;",
+        f"input double mmLotsIfNoMM = {lots};",
+        out,
+    )
     if (n, m) != (1, 1):
-        raise SystemExit("el EA exportado no trae UseMoneyManagement y mmLotsIfNoMM: no se le "
-                         "puede fijar el tamaño de la estrategia")
+        raise SystemExit(
+            "el EA exportado no trae UseMoneyManagement y mmLotsIfNoMM: no se le "
+            "puede fijar el tamaño de la estrategia"
+        )
     return out
 
 
@@ -44,18 +60,32 @@ def compile_ea(mq5: Path, stem: str, lots: str) -> dict[str, Any]:
         `metaeditor.expert`'s dict. Raises when it did not compile.
     """
     if not wine.close_terminal():
-        raise SystemExit("el terminal de MT5 sigue abierto y MetaEditor no compila con él")
+        raise SystemExit(
+            "el terminal de MT5 sigue abierto y MetaEditor no compila con él"
+        )
     safe = mq5.with_name(re.sub(r"\W+", "_", stem) + ".mq5")
     safe.write_text(fixed_lots(mq5.read_text(encoding="utf-8"), lots), encoding="utf-8")
     got = metaeditor.expert(safe)
     if not got["ok"] or not got["ex5_exists"]:
-        raise SystemExit(f"{safe.name} no compila: {got['errors']} errores\n"
-                         + "\n".join(got["messages"][:10]))
+        raise SystemExit(
+            f"{safe.name} no compila: {got['errors']} errores\n"
+            + "\n".join(got["messages"][:10])
+        )
     return got
 
 
-def backtest(expert: str, symbol: str, timeframe: str, window: tuple[str, str], model: str,
-             deposit: float, leverage: int, account: dict, tag: str, cfg: dict) -> dict[str, Any]:
+def backtest(
+    expert: str,
+    symbol: str,
+    timeframe: str,
+    window: tuple[str, str],
+    model: str,
+    deposit: float,
+    leverage: int,
+    account: dict,
+    tag: str,
+    cfg: dict,
+) -> dict[str, Any]:
     """One tester pass on one firm's account, waited for.
 
     Args:
@@ -74,18 +104,37 @@ def backtest(expert: str, symbol: str, timeframe: str, window: tuple[str, str], 
         {"trades": frame, "summary": the report's figures, "dir": the run's folder}.
     """
     if not wine.close_terminal():
-        raise SystemExit("el terminal de MT5 sigue abierto y el tester no arranca con él")
-    started = tester.start(expert, symbol, timeframe, window[0], window[1], model, deposit,
-                           leverage, account, tag)
+        raise SystemExit(
+            "el terminal de MT5 sigue abierto y el tester no arranca con él"
+        )
+    started = tester.start(
+        expert,
+        symbol,
+        timeframe,
+        window[0],
+        window[1],
+        model,
+        deposit,
+        leverage,
+        account,
+        tag,
+    )
     deadline = time.monotonic() + cfg["max_minutes"] * 60
     while True:
         time.sleep(cfg["collect_every_s"])
         got = tester.collect(started["run"])
         if got["state"] == "done":
-            return {"trades": pd.read_parquet(got["trades_file"]), "summary": got["summary"],
-                    "dir": got["dir"]}
+            return {
+                "trades": pd.read_parquet(got["trades_file"]),
+                "summary": got["summary"],
+                "dir": got["dir"],
+            }
         if got["state"] == "no_report":
-            raise SystemExit(f"el tester de {account['server']} acabó sin informe: {got['hint']}")
+            raise SystemExit(
+                f"el tester de {account['server']} acabó sin informe: {got['hint']}"
+            )
         if time.monotonic() > deadline:
             wine.close_terminal()
-            raise SystemExit(f"el tester de {account['server']} no acabó en {cfg['max_minutes']} min")
+            raise SystemExit(
+                f"el tester de {account['server']} no acabó en {cfg['max_minutes']} min"
+            )

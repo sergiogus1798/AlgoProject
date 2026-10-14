@@ -7,7 +7,10 @@ from itertools import product
 from studies.research.memory import sources
 from studies.research.memory.sources import CONFIG
 
-CONCLUSIVE = ("survivors", "died")   # outcome prefixes that answer; failed/incomplete/unknown do not
+CONCLUSIVE = (
+    "survivors",
+    "died",
+)  # outcome prefixes that answer; failed/incomplete/unknown do not
 
 
 def cell(row: dict) -> tuple:
@@ -17,8 +20,14 @@ def cell(row: dict) -> tuple:
 
 def grid() -> list[tuple]:
     """Every cell of the director's board: assets × timeframes × directions × families."""
-    return list(product(CONFIG["asset_class"], CONFIG["timeframes"], CONFIG["directions"],
-                        CONFIG["families"]))
+    return list(
+        product(
+            CONFIG["asset_class"],
+            CONFIG["timeframes"],
+            CONFIG["directions"],
+            CONFIG["families"],
+        )
+    )
 
 
 def untouched_cells(attempts: list[dict]) -> list[tuple]:
@@ -34,12 +43,23 @@ def conclusive(row: dict, include_dev: bool) -> bool:
     return row["outcome"].startswith(CONCLUSIVE) and (include_dev or not row["dev_cut"])
 
 
-def failures(attempts: Sequence[dict], symbol: str, timeframe: str, direction: str, family: str,
-             include_dev: bool = False) -> list[dict]:
+def failures(
+    attempts: Sequence[dict],
+    symbol: str,
+    timeframe: str,
+    direction: str,
+    family: str,
+    include_dev: bool = False,
+) -> list[dict]:
     """The closed runs of one cell that carry a cause: what whoever proposes there next must
     adopt or reject, one by one. A failed run (`infrastructure`) is not closed and not here."""
-    return [a for a in attempts if cell(a) == (symbol, timeframe, direction, family)
-            and a["cause"] and conclusive(a, include_dev)]
+    return [
+        a
+        for a in attempts
+        if cell(a) == (symbol, timeframe, direction, family)
+        and a["cause"]
+        and conclusive(a, include_dev)
+    ]
 
 
 def survivors_by_family(attempts: list[dict], include_dev: bool = False) -> list[dict]:
@@ -64,9 +84,14 @@ def survivors_by_family(attempts: list[dict], include_dev: bool = False) -> list
             r["closed"] += 1
             r["with_survivors"] += a["outcome"] == "survivors"
             r["survivors"] += a["survivors"]
-    return [{"family": f, "asset_class": c, **{k: r[k] for k in
-             ("attempts", "closed", "with_survivors", "survivors")}}
-            for (f, c), r in sorted(seen.items())]
+    return [
+        {
+            "family": f,
+            "asset_class": c,
+            **{k: r[k] for k in ("attempts", "closed", "with_survivors", "survivors")},
+        }
+        for (f, c), r in sorted(seen.items())
+    ]
 
 
 def ideas_spent(ideas: list[dict]) -> list[dict]:
@@ -81,8 +106,10 @@ def ideas_spent(ideas: list[dict]) -> list[dict]:
         asset, timeframe and direction (the board adds that row to every family's). `hypotheses`
         is what the ideaExpert measured, each file counted once.
     """
-    family = {n: CONFIG["archetype_family"].get(t["archetype"], "")
-              for n, t in sources.templates().items()}
+    family = {
+        n: CONFIG["archetype_family"].get(t["archetype"], "")
+        for n, t in sources.templates().items()
+    }
     cells: dict = {}
     for i in ideas:
         c = cell(i | {"family": family.get(i["idea"], "")})
@@ -90,6 +117,12 @@ def ideas_spent(ideas: list[dict]) -> list[dict]:
         r["ideas"] += 1
         r["chosen"] += i["chosen"] == "yes"
         r["files"][i["file"]] = i["hypotheses_measured"] or 0
-    return [dict(zip(("symbol", "timeframe", "direction", "family"), c), ideas=r["ideas"],
-                 chosen=r["chosen"], hypotheses=sum(r["files"].values()))
-            for c, r in sorted(cells.items())]
+    return [
+        dict(
+            zip(("symbol", "timeframe", "direction", "family"), c),
+            ideas=r["ideas"],
+            chosen=r["chosen"],
+            hypotheses=sum(r["files"].values()),
+        )
+        for c, r in sorted(cells.items())
+    ]

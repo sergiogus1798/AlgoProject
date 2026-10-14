@@ -1,11 +1,14 @@
 """Live trades' MAE and MFE rebuilt from M1 wicks (PLAN §14.2), only where the bars cover the trade."""
+
 import numpy as np
 import pandas as pd
 
 from portfolio.common.construct.equity import excursions
 
 
-def rebuild(trades: pd.DataFrame, bars: pd.DataFrame | None, point_value: float) -> pd.DataFrame:
+def rebuild(
+    trades: pd.DataFrame, bars: pd.DataFrame | None, point_value: float
+) -> pd.DataFrame:
     """Each trade's worst and best floating, or NaN where no M1 bar can say.
 
     Args:
@@ -24,11 +27,18 @@ def rebuild(trades: pd.DataFrame, bars: pd.DataFrame | None, point_value: float)
     if bars is None or trades.empty:
         return out
     t = bars.index.to_numpy()
-    opened, closed = pd.to_datetime(trades["Open time"]), pd.to_datetime(trades["Close time"])
+    opened, closed = (
+        pd.to_datetime(trades["Open time"]),
+        pd.to_datetime(trades["Close time"]),
+    )
     a = np.searchsorted(t, opened.to_numpy(), side="right") - 1
     b = np.searchsorted(t, closed.to_numpy(), side="right") - 1
-    seen = (closed.notna() & (opened >= bars.index[0])
-            & (closed <= bars.index[-1] + pd.Timedelta(minutes=1)) & (b > a)).to_numpy()
+    seen = (
+        closed.notna()
+        & (opened >= bars.index[0])
+        & (closed <= bars.index[-1] + pd.Timedelta(minutes=1))
+        & (b > a)
+    ).to_numpy()
     if seen.any():
         out.loc[seen] = excursions.rebuild(trades[seen], bars, point_value)  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
     return out

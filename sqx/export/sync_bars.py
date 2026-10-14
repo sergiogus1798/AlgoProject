@@ -46,13 +46,20 @@ def wanted() -> list[str]:
     """
     declared = [markets(s) for s in symbols()]
     feeds = {spec["main"] for spec in declared if spec}
-    feeds |= {m["feed"] for spec in declared if spec
-              for category in spec.get("categories", {}).values() for m in category}
+    feeds |= {
+        m["feed"]
+        for spec in declared
+        if spec
+        for category in spec.get("categories", {}).values()
+        for m in category
+    }
     feeds |= {d.name for d in (DATA / "bars").iterdir() if bar_source(d.name).exists()}
     return sorted(feeds)
 
 
-def stale(feeds: list[str], sqx: dict[str, dict], held: dict[str, BarEntry]) -> list[str]:
+def stale(
+    feeds: list[str], sqx: dict[str, dict], held: dict[str, BarEntry]
+) -> list[str]:
     """Which feeds have to be pulled from SQX.
 
     Args:
@@ -68,14 +75,15 @@ def stale(feeds: list[str], sqx: dict[str, dict], held: dict[str, BarEntry]) -> 
         because every feed is pulled over its own full range; a fixed window would clip one
         feed and report it stale forever.
     """
-    return [f for f in feeds
-            if f not in held or held[f]["bars"] != sqx[f]["bars"]]
+    return [f for f in feeds if f not in held or held[f]["bars"] != sqx[f]["bars"]]
 
 
 def main() -> None:
     """Pull every missing or outdated feed's M1 bars into the library."""
     ap = argparse.ArgumentParser()
-    ap.add_argument("--check", action="store_true", help="report what is stale, pull nothing")
+    ap.add_argument(
+        "--check", action="store_true", help="report what is stale, pull nothing"
+    )
     a = ap.parse_args()
 
     sqx = catalogue(exportdrv.symbols())
@@ -86,7 +94,9 @@ def main() -> None:
     for f in feeds:
         mark = "PULL" if f in todo else "ok  "
         have = held.get(f, {}).get("bars", 0)
-        print(f"  {mark} {f:32} library {have:>9,}  SQX {sqx.get(f, {}).get('bars', 0):>9,}")
+        print(
+            f"  {mark} {f:32} library {have:>9,}  SQX {sqx.get(f, {}).get('bars', 0):>9,}"
+        )
     for f in missing:
         print(f"  ??   {f:32} SQX does not list it as an M1 feed")
     if a.check or not todo:
@@ -96,18 +106,27 @@ def main() -> None:
     entries = dict(held)
     for f in todo:
         # One worker start per feed: a second export inside the same JVM overwrites the first.
-        written = exportdrv.bars(f, "M1", bar_source(f).parent,
-                                 sqx[f]["from"], sqx[f]["to"])
+        written = exportdrv.bars(
+            f, "M1", bar_source(f).parent, sqx[f]["from"], sqx[f]["to"]
+        )
         entries[f] = barstore.store(f, written)
         # Written after EVERY feed, not once at the end: a pull of thirteen feeds is tens of
         # minutes and whatever interrupts it used to leave gigabytes on disk that the
         # manifest had never heard of, so the next run downloaded them all again.
-        manifest.write(DATA / "bars",
-                       {"timeframe": "M1", "window": "each feed over its own full range",
-                        "synced": date.today().isoformat()},
-                       "sync_bars.py", entries)
-        print(f"  {f:32} {entries[f]['bars']:>9,} bars  "
-              f"{entries[f]['from']} → {entries[f]['to']}  {bar_source(f).stat().st_size/1e6:.0f} MB")
+        manifest.write(
+            DATA / "bars",
+            {
+                "timeframe": "M1",
+                "window": "each feed over its own full range",
+                "synced": date.today().isoformat(),
+            },
+            "sync_bars.py",
+            entries,
+        )
+        print(
+            f"  {f:32} {entries[f]['bars']:>9,} bars  "
+            f"{entries[f]['from']} → {entries[f]['to']}  {bar_source(f).stat().st_size / 1e6:.0f} MB"
+        )
 
     print(f"{len(todo)} feed(s) refreshed; library holds {len(entries)}")
 

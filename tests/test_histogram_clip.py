@@ -11,4 +11,4 @@ def test_outliers_leave_the_axis_and_the_caption_counts_them() -> None:
     b = blocks.distribution("t", "pb", v, 1.5, "nota")
     assert b["bins"][-1] < 3 and sum(b["counts"]) < len(v)
     assert "5 valores fuera" in b["note"] or "valores fuera" in b["note"]
-    assert max(b["counts"]) < 0.5 * sum(b["counts"])      # not one pile in a single bar
+    assert max(b["counts"]) < 0.5 * sum(b["counts"])  # not one pile in a single bar

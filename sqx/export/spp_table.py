@@ -30,11 +30,21 @@ def rows(name: str, profile: dict) -> tuple[pd.DataFrame, list[str], list[str]]:
         then the statistics.
     """
     runs = [(-1, profile["original"])] + list(enumerate(profile["results"]))
-    params = pd.DataFrame([dict(kv.partition("=")[::2] for kv in r["params"].split(",") if kv)
-                           for _, r in runs]).apply(pd.to_numeric, errors="coerce")
+    params = pd.DataFrame(
+        [
+            dict(kv.partition("=")[::2] for kv in r["params"].split(",") if kv)
+            for _, r in runs
+        ]
+    ).apply(pd.to_numeric, errors="coerce")
     stats = pd.DataFrame([r["stats"] for _, r in runs])
-    frame = pd.concat([pd.DataFrame({"strategy": name, "permutation": [i for i, _ in runs]}),
-                       params, stats], axis=1)
+    frame = pd.concat(
+        [
+            pd.DataFrame({"strategy": name, "permutation": [i for i, _ in runs]}),
+            params,
+            stats,
+        ],
+        axis=1,
+    )
     return frame, list(params.columns), list(stats.columns)
 
 
@@ -53,8 +63,11 @@ def spill(name: str, profile: dict, folder: Path) -> Spilled:
     """
     frame, params, stats = rows(name, profile)
     frame.to_parquet(folder / f"{name}.parquet", index=False)
-    return {"params": params, "stats": stats,
-            "dtypes": {c: str(t) for c, t in frame.dtypes.items()}}
+    return {
+        "params": params,
+        "stats": stats,
+        "dtypes": {c: str(t) for c, t in frame.dtypes.items()},
+    }
 
 
 def write(spilled: dict, folder: Path, path: Path) -> int:
@@ -79,16 +92,27 @@ def write(spilled: dict, folder: Path, path: Path) -> int:
     names = sorted({c for s in spilled.values() for c in s["params"]})
     stats = sorted({c for s in spilled.values() for c in s["stats"]})
     if set(names) & set(stats):
-        raise SystemExit(f"parameter and statistic share a name: {sorted(set(names) & set(stats))}")
-    dtypes = {c: ({s["dtypes"].get(c) for s in spilled.values()} | {None}) - {None}
-              for c in names + stats}
-    dtypes = {c: t.pop() if len(t) == 1 and all(c in s["dtypes"] for s in spilled.values())
-              else "float64" for c, t in dtypes.items()}
+        raise SystemExit(
+            f"parameter and statistic share a name: {sorted(set(names) & set(stats))}"
+        )
+    dtypes = {
+        c: ({s["dtypes"].get(c) for s in spilled.values()} | {None}) - {None}
+        for c in names + stats
+    }
+    dtypes = {
+        c: t.pop()
+        if len(t) == 1 and all(c in s["dtypes"] for s in spilled.values())
+        else "float64"
+        for c, t in dtypes.items()
+    }
     categories = sorted(spilled)
     writer, total = None, 0
     for name in spilled:
-        frame = pd.read_parquet(folder / f"{name}.parquet").reindex(
-            columns=["strategy", "permutation", *names, *stats]).astype(dtypes)
+        frame = (
+            pd.read_parquet(folder / f"{name}.parquet")
+            .reindex(columns=["strategy", "permutation", *names, *stats])
+            .astype(dtypes)
+        )
         frame["strategy"] = pd.Categorical(frame["strategy"], categories=categories)
         frame["permutation"] = frame["permutation"].astype("int32")
         table = pa.Table.from_pandas(frame, preserve_index=False)

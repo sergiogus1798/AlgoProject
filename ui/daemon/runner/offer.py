@@ -25,20 +25,33 @@ def _home(project: str) -> dict[str, tuple[str, str]]:
     return out
 
 
-def _refusal(key: str, project: str, databank: str, strategy: str, asset: str) -> str | None:
+def _refusal(
+    key: str, project: str, databank: str, strategy: str, asset: str
+) -> str | None:
     """The runner's sentence when the study cannot start here on this strategy, else None."""
     entry = table.STUDIES.get(key, {})
     scope = "one" if entry.get("one") else "many"
     try:
-        got = table.jobs({"study": key, "scope": scope, "project": project,
-                          "databank": databank, "strategies": [strategy], "asset": asset,
-                          "overrides": [], "only": None})
+        got = table.jobs(
+            {
+                "study": key,
+                "scope": scope,
+                "project": project,
+                "databank": databank,
+                "strategies": [strategy],
+                "asset": asset,
+                "overrides": [],
+                "only": None,
+            }
+        )
     except (FileNotFoundError, KeyError, ValueError, OSError) as e:
         return f"no se pudo comprobar: {e}"
     return got if isinstance(got, str) else None
 
 
-def _go(project: str, databank: str, strategy: str, home: tuple[str, str] | None) -> dict[str, Any]:
+def _go(
+    project: str, databank: str, strategy: str, home: tuple[str, str] | None
+) -> dict[str, Any]:
     """Where the study's own databank holds this strategy, by name, or why it does not.
 
     Returns:
@@ -50,16 +63,22 @@ def _go(project: str, databank: str, strategy: str, home: tuple[str, str] | None
     bank, tab = home
     where = find.install_of(project, find.spelled(project, bank))
     if where is None or find.writing(where[1], project):
-        return {"absent": f"no se puede mirar {bank}, el databank de este test, ahora: no está "
-                          "en ningún install o SQX lo está escribiendo"}
+        return {
+            "absent": f"no se puede mirar {bank}, el databank de este test, ahora: no está "
+            "en ningún install o SQX lo está escribiendo"
+        }
     same = [i for i, name in find.roster(project, bank).items() if name == strategy]
     if len(same) == 1:
         return {"databank": bank, "tab": tab, "strategy": strategy, "identity": same[0]}
     if not same:
-        return {"absent": f"«{strategy}» no está en {bank}, el databank de este test: no pasó "
-                          "a ese paso, o el paso aún no ha corrido"}
-    return {"absent": f"{bank} tiene {len(same)} estrategias llamadas «{strategy}»: ábrela "
-                      f"desde la pestaña {tab} de Databanks"}
+        return {
+            "absent": f"«{strategy}» no está en {bank}, el databank de este test: no pasó "
+            "a ese paso, o el paso aún no ha corrido"
+        }
+    return {
+        "absent": f"{bank} tiene {len(same)} estrategias llamadas «{strategy}»: ábrela "
+        f"desde la pestaña {tab} de Databanks"
+    }
 
 
 def offer(project: str, databank: str, strategy: str, asset: str) -> dict[str, dict]:
@@ -81,6 +100,8 @@ def offer(project: str, databank: str, strategy: str, asset: str) -> dict[str, d
     for key in STUDIES:
         why = _refusal(key, project, databank, strategy, asset)
         if why:
-            out[key] = {"why": why, "go": _go(project, databank, strategy, homes.get(key))}
+            out[key] = {
+                "why": why,
+                "go": _go(project, databank, strategy, homes.get(key)),
+            }
     return out
-

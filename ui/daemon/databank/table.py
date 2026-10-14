@@ -20,9 +20,13 @@ SEALED = ("wfc", "cscv", "wfm", "blindJoint")
 # A study field the databank table never shows as a column, though the study keeps it (other
 # tables, the ficha's own view, read the entry directly): the owner's Cross Market databank
 # read (2026-09-30) — «Nota» clutters the table without deciding anything there.
-HIDDEN_FIELDS = {("crossmarket", "note"),
-                 ("mcRetest", "qué perturba"), ("mcRetest", "operaciones vs original"),
-                 ("mcRetest", "forma"), ("blindJoint", "reason")}
+HIDDEN_FIELDS = {
+    ("crossmarket", "note"),
+    ("mcRetest", "qué perturba"),
+    ("mcRetest", "operaciones vs original"),
+    ("mcRetest", "forma"),
+    ("blindJoint", "reason"),
+}
 # 🔬 2026-10-04: opening a project asks for the same 10,000-row table three times at once
 # (the tab list, the table, the filters), and the three builds shared one GIL: 60 s against
 # the window's 20. Whoever asks while a build is in flight waits for it and reads its answer.
@@ -81,8 +85,9 @@ def door(project: str) -> tuple[Door, str | None]:
     return ledgerview.door(project), ledgerview.symbol(rows, project)
 
 
-def roster(project: str, databank: str, own: dict,
-           figures: pd.DataFrame | None) -> tuple[str, dict[str, str]]:
+def roster(
+    project: str, databank: str, own: dict, figures: pd.DataFrame | None
+) -> tuple[str, dict[str, str]]:
     """The rows: the databank's files, or — when no install holds it any more — what the
     cosecha and this databank's reports remember of it.
 
@@ -94,7 +99,11 @@ def roster(project: str, databank: str, own: dict,
     if held:
         return "archivos", held
     by_id = figures is not None and "name" in figures
-    rows = dict(zip(figures.index, figures["name"])) if figures is not None and by_id else {}
+    rows = (
+        dict(zip(figures.index, figures["name"]))
+        if figures is not None and by_id
+        else {}
+    )
     for identity, studies in own["by_id"].items():
         rows.setdefault(identity, next(iter(studies.values()))["name"])
     named = {cells.norm(n) for n in rows.values()}
@@ -108,11 +117,16 @@ def roster(project: str, databank: str, own: dict,
     if databank.replace(" ", "_") == "MCR_All":
         # The MC ingest names «1.26.46»: the page would open a name no other study knows
         # (📓 2026-09-30); `results.api` strips the prefix again when it asks mcRetest.
-        rows = {k: n if n.startswith("Strategy ") else f"Strategy {n}" for k, n in rows.items()}
+        rows = {
+            k: n if n.startswith("Strategy ") else f"Strategy {n}"
+            for k, n in rows.items()
+        }
     return "informes", rows
 
 
-def studies_of(key: str, name: str, own: dict, every: dict, mothers: dict) -> dict[str, dict]:
+def studies_of(
+    key: str, name: str, own: dict, every: dict, mothers: dict
+) -> dict[str, dict]:
     """What each study said of one row: this databank's reports by identity, then by name,
     then any databank of the project by identity, then the mother's variant batch by name."""
     found = dict(mothers.get(cells.norm(name), {}))
@@ -181,8 +195,11 @@ def build(project: str, databank: str) -> Table:
     hidden = set(SEALED) if blind["sealed"] else set()
     lines, fields = [], {}
     for key, name in sorted(keys.items(), key=lambda kv: kv[1]):
-        said = {s: e for s, e in studies_of(key, name, own, anywhere, mothers).items()
-                if s not in hidden}
+        said = {
+            s: e
+            for s, e in studies_of(key, name, own, anywhere, mothers).items()
+            if s not in hidden
+        }
         for study, e in said.items():
             fields.setdefault((study, "", "verdict"), None)
             for sub, field in e["fields"]:
@@ -191,11 +208,15 @@ def build(project: str, databank: str) -> Table:
                 fields.setdefault((study, sub, field), None)
         lines.append((key, name, said))
     order = catalogue.ordered()
-    rank = {}                                   # a study's subs in the order its data gives
+    rank = {}  # a study's subs in the order its data gives
     for study, sub, _ in fields:
         rank.setdefault((study, sub), -1 if not sub else len(rank))
-    study_cols = sorted(fields, key=lambda f: (order.index(f[0]), rank[f[:2]], f[2] != "verdict"))
-    figure_cols = [c for c in (figures.columns if figures is not None else []) if c != "name"]
+    study_cols = sorted(
+        fields, key=lambda f: (order.index(f[0]), rank[f[:2]], f[2] != "verdict")
+    )
+    figure_cols = [
+        c for c in (figures.columns if figures is not None else []) if c != "name"
+    ]
     # A sample this databank never carries (Cross Market's OOS: no retest window) is empty in
     # every row, not just some — SQX's own «Export Data View» always offers the column, so the
     # daemon is the only place that can tell «never filled» from «this strategy made no trade»
@@ -203,12 +224,26 @@ def build(project: str, databank: str) -> Table:
     if figures is not None:
         figure_cols = [c for c in figure_cols if not bool(figures[c].isna().all())]
     name_col: list[Column] = [{"key": "name", "kind": "name"}]
-    metric_cols: list[Column] = [{"key": c, "kind": "metric", "metric": c.rsplit(" (", 1)[0],
-                                  "sample": c.rsplit(" (", 1)[-1].rstrip(")") if " (" in c else ""}
-                                 for c in figure_cols]
-    study_defs: list[Column] = [{"key": ".".join(p for p in f if p), "kind": "study", "study": f[0],
-                                 "sub": f[1], "field": f[2], "title": catalogue.STUDIES[f[0]][2]}
-                                for f in study_cols]
+    metric_cols: list[Column] = [
+        {
+            "key": c,
+            "kind": "metric",
+            "metric": c.rsplit(" (", 1)[0],
+            "sample": c.rsplit(" (", 1)[-1].rstrip(")") if " (" in c else "",
+        }
+        for c in figure_cols
+    ]
+    study_defs: list[Column] = [
+        {
+            "key": ".".join(p for p in f if p),
+            "kind": "study",
+            "study": f[0],
+            "sub": f[1],
+            "field": f[2],
+            "title": catalogue.STUDIES[f[0]][2],
+        }
+        for f in study_cols
+    ]
     columns = name_col + metric_cols + study_defs
     by_id = got_from == "cosecha"
     # The cosecha holds only the strategies that had an OOS retest (H1: 60 of the build's 300);
@@ -221,25 +256,43 @@ def build(project: str, databank: str) -> Table:
     rows, held, spared = [], figures_by_row(figures), figures_by_row(spare)
     for key, name, said in lines:
         figs = held.get(key if by_id else name) or spared.get(cells.norm(name))
-        values = [name] + [clean(figs.get(c)) if figs is not None else None
-                           for c in figure_cols]
+        values = [name] + [
+            clean(figs.get(c)) if figs is not None else None for c in figure_cols
+        ]
         states = {}
         for study, sub, field in study_cols:
             e = said.get(study)
             if e is None:
                 values.append(None)
                 continue
-            values.append(clean(e["verdict"] if (sub, field) == ("", "verdict")
-                                else e["fields"].get((sub, field))))
+            values.append(
+                clean(
+                    e["verdict"]
+                    if (sub, field) == ("", "verdict")
+                    else e["fields"].get((sub, field))
+                )
+            )
             if field == "verdict":
                 states[".".join(p for p in (study, sub, field) if p)] = (
-                    e["states"].get(sub, e["state"]) if sub else e["state"])
-        rows.append({"identity": None if key.startswith("name:") else key, "name": name,
-                     "values": values, "states": states})
+                    e["states"].get(sub, e["state"]) if sub else e["state"]
+                )
+        rows.append(
+            {
+                "identity": None if key.startswith("name:") else key,
+                "name": name,
+                "values": values,
+                "states": states,
+            }
+        )
     where = find.install_of(project, db) if rows_from == "informes" else None
-    return {"databank": db, "rows_from": rows_from, "held_by": where[0] if where else None,
-            "writing": bool(where) and find.writing(where[1], project),
-            "metrics_from": got_from,
-            "columns": columns, "rows": rows,
-            "studies": [s for s in order if any(f[0] == s for f in study_cols)],
-            "sealed": {"studies": list(SEALED), "text": blind["text"]} if hidden else None}
+    return {
+        "databank": db,
+        "rows_from": rows_from,
+        "held_by": where[0] if where else None,
+        "writing": bool(where) and find.writing(where[1], project),
+        "metrics_from": got_from,
+        "columns": columns,
+        "rows": rows,
+        "studies": [s for s in order if any(f[0] == s for f in study_cols)],
+        "sealed": {"studies": list(SEALED), "text": blind["text"]} if hidden else None,
+    }

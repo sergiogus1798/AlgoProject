@@ -20,9 +20,13 @@ class SavedFilters(QWidget):
         self.kept: dict[str, dict] = {}
         self.names = QComboBox()
         self.names.setMinimumWidth(180)
-        self.names.setToolTip("Filtros guardados con nombre (AlgoData/filters/saved.yaml)")
+        self.names.setToolTip(
+            "Filtros guardados con nombre (AlgoData/filters/saved.yaml)"
+        )
         load, self.store = QPushButton("Cargar"), QPushButton("Guardar con nombre…")
-        load.setToolTip("Pone las condiciones del filtro guardado en las filas; no lo aplica.")
+        load.setToolTip(
+            "Pone las condiciones del filtro guardado en las filas; no lo aplica."
+        )
         load.clicked.connect(self.load)
         lay = QHBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)

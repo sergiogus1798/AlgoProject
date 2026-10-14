@@ -2,5 +2,5 @@
 
 TIPS = {
     "trades.bins": "Cuántas barras tiene cada histograma. IS y OOS comparten las mismas, para "
-                   "que una barra signifique lo mismo en las dos muestras.",
+    "que una barra signifique lo mismo en las dos muestras.",
 }

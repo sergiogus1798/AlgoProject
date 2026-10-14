@@ -9,18 +9,36 @@ from PySide6.QtCore import QSettings
 # Recent choices: the per-viewer QSettings of the app (organisation, application), never AlgoData.
 RECENT_KEY, RECENT_MAX, SHOWN = "cmdpalette/recent", 10, 60
 STORE = ("AlgoProject", "AlgoProject")
-TAG = {"zone": "zona", "project": "proyecto", "databank": "databank", "strategy": "estrategia",
-       "study": "estudio"}
+TAG = {
+    "zone": "zona",
+    "project": "proyecto",
+    "databank": "databank",
+    "strategy": "estrategia",
+    "study": "estudio",
+}
 ORDER = list(TAG)
 # Other words a zone answers to: the owner still says «ledger» for the search log (22 §9).
-ALIASES = {"Registro de búsquedas": ("ledger",), "En marcha": ("custodio", "generación"),
-           "Portfolios": ("carteras", "correlación", "constructor", "fondeo", "banco", "pesos")}
+ALIASES = {
+    "Registro de búsquedas": ("ledger",),
+    "En marcha": ("custodio", "generación"),
+    "Portfolios": (
+        "carteras",
+        "correlación",
+        "constructor",
+        "fondeo",
+        "banco",
+        "pesos",
+    ),
+}
 
 
 def fold(s: str) -> str:
     """Lower case without accents, so «busquedas» finds «búsquedas»."""
-    return "".join(c for c in unicodedata.normalize("NFD", s.lower())
-                   if unicodedata.category(c) != "Mn")
+    return "".join(
+        c
+        for c in unicodedata.normalize("NFD", s.lower())
+        if unicodedata.category(c) != "Mn"
+    )
 
 
 def match(query: str, label: str) -> int | None:
@@ -50,8 +68,11 @@ def match(query: str, label: str) -> int | None:
 
 def best(query: str, item: dict) -> int | None:
     """The best score of a query against an item's label and its aliases, or None."""
-    scores = [s for s in (match(query, w) for w in (item["label"], *item.get("also", ())))
-              if s is not None]
+    scores = [
+        s
+        for s in (match(query, w) for w in (item["label"], *item.get("also", ())))
+        if s is not None
+    ]
     return min(scores) if scores else None
 
 
@@ -72,10 +93,21 @@ def rank(query: str, items: list[dict], recent: list[dict]) -> list[dict]:
         The matching items, a recent one carrying `recent: True`.
     """
     seen = {ident(r) for r in recent}
-    pool = [{**r, "recent": True} for r in recent] + [i for i in items if ident(i) not in seen]
+    pool = [{**r, "recent": True} for r in recent] + [
+        i for i in items if ident(i) not in seen
+    ]
     kept = [(s, i) for s, i in ((best(query, i), i) for i in pool) if s is not None]
-    return [i for _, i in sorted(kept, key=lambda p: (0, 0, 0) if p[1].get("recent") else
-                                 (1, p[0], ORDER.index(p[1]["kind"])))]
+    return [
+        i
+        for _, i in sorted(
+            kept,
+            key=lambda p: (
+                (0, 0, 0)
+                if p[1].get("recent")
+                else (1, p[0], ORDER.index(p[1]["kind"]))
+            ),
+        )
+    ]
 
 
 def load_recent() -> list[dict]:

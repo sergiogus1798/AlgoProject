@@ -23,7 +23,10 @@ def fixed(project: str, names: list[str], identity: dict[str, str | None]) -> pd
     """
     found = {}
     roots = [paths.DATA / "raw" / project]
-    roots += [paths.project_dir(project, w["path"]) / "databanks" for w in paths.WORKERS.values()]
+    roots += [
+        paths.project_dir(project, w["path"]) / "databanks"
+        for w in paths.WORKERS.values()
+    ]
     for path in (f for root in roots for f in root.rglob("*.sqx")):
         if path.stem in names and path.stem not in found and identity.get(path.stem):
             if sqxfile.identity(path) == identity[path.stem]:

@@ -13,8 +13,8 @@ from pathlib import Path
 for var in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):
     os.environ.setdefault(var, "1")
 
-NICE = 10        # below the window and the daemon, which then keep answering at full load
-TAIL = 6         # lines of a failed task's log printed into the batch's own log
+NICE = 10  # below the window and the daemon, which then keep answering at full load
+TAIL = 6  # lines of a failed task's log printed into the batch's own log
 
 
 def one(task: tuple[int, dict, str]) -> tuple[str, int, list[str]]:
@@ -39,9 +39,14 @@ def one(task: tuple[int, dict, str]) -> tuple[str, int, list[str]]:
             runpy.run_module(module, run_name="__main__", alter_sys=True)
             rc = 0
         except SystemExit as stop:
-            rc = stop.code if isinstance(stop.code, int) else (0 if stop.code is None else 1)
-        except Exception:                     # noqa: BLE001 — a task's crash is its exit code
+            rc = (
+                stop.code
+                if isinstance(stop.code, int)
+                else (0 if stop.code is None else 1)
+            )
+        except Exception:  # noqa: BLE001 — a task's crash is its exit code
             import traceback
+
             traceback.print_exc()
             rc = 1
         sys.stdout.flush()
@@ -53,32 +58,48 @@ def one(task: tuple[int, dict, str]) -> tuple[str, int, list[str]]:
 def main() -> None:
     """Import the study once, fork the workers, print PROGRESS as each strategy lands."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--plan", required=True, type=Path, help="the JSON `runner.batch.fold` wrote")
+    ap.add_argument(
+        "--plan", required=True, type=Path, help="the JSON `runner.batch.fold` wrote"
+    )
     ap.add_argument("--workers", required=True, type=int, help="forked processes")
     a = ap.parse_args()
     if hasattr(os, "nice"):
         os.nice(NICE)
     items = json.loads(a.plan.read_text(encoding="utf-8"))
     for module in sorted({it["argv"][1] for it in items}):
-        importlib.import_module(module)       # every report.py guards its main(): safe
+        importlib.import_module(module)  # every report.py guards its main(): safe
     folder = a.plan.with_suffix("")
     folder.mkdir(parents=True, exist_ok=True)
     from core import fanout
-    print(f"{len(items)} estrategias en {a.workers} procesos; logs por estrategia en {folder}",
-          flush=True)
+
+    print(
+        f"{len(items)} estrategias en {a.workers} procesos; logs por estrategia en {folder}",
+        flush=True,
+    )
     _TASKS.update({i: (i, it, str(folder)) for i, it in enumerate(items)})
     done, failed = 0, []
-    for _, (strategy, rc, tail) in fanout.run(_work, {i: len(items) - i for i in _TASKS},
-                                              a.workers):
+    for _, (strategy, rc, tail) in fanout.run(
+        _work, {i: len(items) - i for i in _TASKS}, a.workers
+    ):
         done += 1
         if rc:
             failed.append(strategy)
             print(f"FALLÓ {strategy} (código {rc}):", *tail, sep="\n  ", flush=True)
-        print(f"PROGRESS {100 * done / len(items):.0f} {done}/{len(items)} estrategias"
-              + (f" · {len(failed)} fallaron" if failed else ""), flush=True)
-    print(f"terminado: {len(items) - len(failed)} bien, {len(failed)} fallaron", flush=True)
-    if failed:      # owner 2026-10-13: some failing is exit 0 (the next step goes on with the rest), never silent
-        print(f"FALLARON {len(failed)} de {len(items)}: {', '.join(failed)}", file=sys.stderr, flush=True)
+        print(
+            f"PROGRESS {100 * done / len(items):.0f} {done}/{len(items)} estrategias"
+            + (f" · {len(failed)} fallaron" if failed else ""),
+            flush=True,
+        )
+    print(
+        f"terminado: {len(items) - len(failed)} bien, {len(failed)} fallaron",
+        flush=True,
+    )
+    if failed:  # owner 2026-10-13: some failing is exit 0 (the next step goes on with the rest), never silent
+        print(
+            f"FALLARON {len(failed)} de {len(items)}: {', '.join(failed)}",
+            file=sys.stderr,
+            flush=True,
+        )
     sys.exit(1 if failed and len(failed) == len(items) else 0)
 
 

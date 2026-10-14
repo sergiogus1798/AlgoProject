@@ -22,8 +22,12 @@ def ask(panel: "Panel") -> None:
         return
     panel.said.setText(f"Releyendo {bank}…")
     project = panel.project
-    background.post("databank/reload", {"project": project, "databank": bank},
-                    lambda got: answered(panel, project, bank, got), owner=panel)
+    background.post(
+        "databank/reload",
+        {"project": project, "databank": bank},
+        lambda got: answered(panel, project, bank, got),
+        owner=panel,
+    )
 
 
 def answered(panel: "Panel", project: str, bank: str, got: dict) -> None:
@@ -46,12 +50,17 @@ def answered(panel: "Panel", project: str, bank: str, got: dict) -> None:
     panel.open_sub(panel.sub.currentIndex())
     load = got.get("load") or {}
     queued = load.get("queued") or []
-    held = (f"{num(got['strategies'])} estrategias en disco" if got.get("strategies") else
-            f"SQX está escribiendo {project} ahora: se relee cuando termine"
-            if load.get("writing") else
-            f"{bank} no tiene estrategias en disco: las filas son las de la cosecha y los "
-            "informes" if load.get("role") else
-            f"{bank} no está en ningún install: las filas siguen siendo las de la cosecha "
-            "y los informes")
-    panel.said.setText(f"Releído: {held}" + (f" · cargando {', '.join(queued)}" if queued
-                                             else ""))
+    held = (
+        f"{num(got['strategies'])} estrategias en disco"
+        if got.get("strategies")
+        else f"SQX está escribiendo {project} ahora: se relee cuando termine"
+        if load.get("writing")
+        else f"{bank} no tiene estrategias en disco: las filas son las de la cosecha y los "
+        "informes"
+        if load.get("role")
+        else f"{bank} no está en ningún install: las filas siguen siendo las de la cosecha "
+        "y los informes"
+    )
+    panel.said.setText(
+        f"Releído: {held}" + (f" · cargando {', '.join(queued)}" if queued else "")
+    )

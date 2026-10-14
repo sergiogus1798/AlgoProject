@@ -27,7 +27,9 @@ def run(*command: str) -> tuple[int, str]:
     return p.returncode, (p.stdout + p.stderr).strip()
 
 
-WONT_FIX = {"Infinox_SP500ft_H4_HighPrecision"}   # OPEN.md #3: the owner's decision, not a nightly finding
+WONT_FIX = {
+    "Infinox_SP500ft_H4_HighPrecision"
+}  # OPEN.md #3: the owner's decision, not a nightly finding
 
 
 def corrupt_projects() -> list[str]:
@@ -41,7 +43,9 @@ def corrupt_projects() -> list[str]:
     for d in sorted((MASTER / "user/projects").iterdir()):
         if d.name in WONT_FIX or not (d / "project.cfx").exists():
             continue
-        code, _ = run("python3", "-m", "sqx.inspect.dump_project", d.name, "-o", "/dev/null")
+        code, _ = run(
+            "python3", "-m", "sqx.inspect.dump_project", d.name, "-o", "/dev/null"
+        )
         if code:
             bad.append(d.name)
     return bad
@@ -61,7 +65,7 @@ def exports_without_manifest() -> list[str]:
     missing = set()
     for d in raw.rglob("*"):
         if d.is_dir() and any(d.iterdir()) and not any(c.is_dir() for c in d.iterdir()):
-            chain = [d, *d.parents[:len(d.relative_to(raw).parts) - 1]]
+            chain = [d, *d.parents[: len(d.relative_to(raw).parts) - 1]]
             if not any((p / "manifest.json").exists() for p in chain):
                 missing.add(str(Path("raw", *d.relative_to(raw).parts[:3])))
     return sorted(missing)
@@ -76,10 +80,15 @@ def manifests_of_unknown_code() -> list[str]:
     """
     seen = {}
     for m in sorted((DATA / "raw").rglob("manifest.json")):
-        seen.setdefault(json.loads(m.read_text(encoding="utf-8")).get("code_version", ""), m.parent)
-    return [f"{d.relative_to(DATA)} ({v or 'no code_version'})" for v, d in seen.items()
-            if v != manifest.PRE_GIT
-            and run("git", "cat-file", "-e", v.removesuffix("-dirty") + "^{commit}")[0]]
+        seen.setdefault(
+            json.loads(m.read_text(encoding="utf-8")).get("code_version", ""), m.parent
+        )
+    return [
+        f"{d.relative_to(DATA)} ({v or 'no code_version'})"
+        for v, d in seen.items()
+        if v != manifest.PRE_GIT
+        and run("git", "cat-file", "-e", v.removesuffix("-dirty") + "^{commit}")[0]
+    ]
 
 
 def undecided_assets() -> list[str]:
@@ -90,6 +99,7 @@ def undecided_assets() -> list[str]:
     """
     sys.path.insert(0, str(ROOT))
     from core import assets
+
     out = []
     for symbol in assets.symbols():
         data = assets.load(symbol)
@@ -100,9 +110,21 @@ def undecided_assets() -> list[str]:
 
 def dead_code() -> list[str]:
     """Vulture findings over the repo with `tools/vulture_whitelist.py` (reported, never deleted)."""
-    got = subprocess.run([sys.executable, "-m", "vulture", ".", "--min-confidence", "60",
-                          "--exclude", "scratch,tools/sqx-lab"], cwd=ROOT,
-                         capture_output=True, text=True)
+    got = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vulture",
+            ".",
+            "--min-confidence",
+            "60",
+            "--exclude",
+            "scratch,tools/sqx-lab",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
     return [x for x in got.stdout.splitlines() if x]
 
 
@@ -124,18 +146,23 @@ def main() -> None:
     undecided = undecided_assets()
     dead = dead_code()
 
-    lines = [f"# Mechanical audit {date.today().isoformat()}", "",
-             "Written by `tools/daily_audit.py`. It checks only what a machine can check;",
-             "documentation drift and statistical rigour need the `/audit` agent.", "",
-             "| check | result |", "|---|---|",
-             f"| `tools/checks.py` | {'ok' if not checks_code else 'FAILED'} |",
-             tests_row[0],
-             f"| `docs/DEPENDENCIES.md` | {'stale, regenerated' if dirty else 'current'} |",
-             f"| projects that fail to render | {', '.join(bad) or 'none'} |",
-             f"| exports without a manifest | {', '.join(no_manifest) or 'none'} |",
-             f"| manifests naming unknown code | {', '.join(unknown_code) or 'none'} |",
-             f"| assets in use, cost still undecided | {', '.join(undecided) or 'none'} |",
-             f"| dead code (vulture, with the whitelist) | {len(dead) or 'none'} |"]
+    lines = [
+        f"# Mechanical audit {date.today().isoformat()}",
+        "",
+        "Written by `tools/daily_audit.py`. It checks only what a machine can check;",
+        "documentation drift and statistical rigour need the `/audit` agent.",
+        "",
+        "| check | result |",
+        "|---|---|",
+        f"| `tools/checks.py` | {'ok' if not checks_code else 'FAILED'} |",
+        tests_row[0],
+        f"| `docs/DEPENDENCIES.md` | {'stale, regenerated' if dirty else 'current'} |",
+        f"| projects that fail to render | {', '.join(bad) or 'none'} |",
+        f"| exports without a manifest | {', '.join(no_manifest) or 'none'} |",
+        f"| manifests naming unknown code | {', '.join(unknown_code) or 'none'} |",
+        f"| assets in use, cost still undecided | {', '.join(undecided) or 'none'} |",
+        f"| dead code (vulture, with the whitelist) | {len(dead) or 'none'} |",
+    ]
     if checks_code:
         lines += ["", "## checks.py output", "", "```", checks_out, "```"]
     if dead:
@@ -146,8 +173,9 @@ def main() -> None:
     out = AUDIT / f"{date.today().isoformat()}-mechanical.md"
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"wrote {out}")
-    sys.exit(1 if (checks_code or tests_failed or depmap_code
-                   or bad or no_manifest) else 0)
+    sys.exit(
+        1 if (checks_code or tests_failed or depmap_code or bad or no_manifest) else 0
+    )
 
 
 if __name__ == "__main__":

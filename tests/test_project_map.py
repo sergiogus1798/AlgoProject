@@ -31,8 +31,11 @@ T2 = '<Task><ClearDatabanks><Databank name="Pool"/></ClearDatabanks></Task>'
 # Task 3 (GoToTask, INACTIVE): would loop unconditionally back to task 1 — must not count.
 T3 = '<Task><GoToTask task="Build"/></Task>'
 
-TASK_XML = {1: ElementTree.fromstring(T1), 2: ElementTree.fromstring(T2),
-            3: ElementTree.fromstring(T3)}
+TASK_XML = {
+    1: ElementTree.fromstring(T1),
+    2: ElementTree.fromstring(T2),
+    3: ElementTree.fromstring(T3),
+}
 
 
 def main() -> None:
@@ -53,7 +56,9 @@ def main() -> None:
     # inactive clear) does not run.
     tldr_text = "\n".join(tldr)
     if "Pool" not in tldr_text.split("Terminal output databanks")[-1]:
-        failures.append("Pool not reported as a terminal output databank:\n" + tldr_text)
+        failures.append(
+            "Pool not reported as a terminal output databank:\n" + tldr_text
+        )
 
     # 2 of 3 tasks inactive.
     if "3 tasks**, 2 inactive" not in tldr_text:
@@ -61,7 +66,9 @@ def main() -> None:
 
     # The inactive GoToTask loop must not be reported as a live (even conditional) loop.
     if "loops back to" in tldr_text:
-        failures.append("an inactive GoToTask was reported as a live loop:\n" + tldr_text)
+        failures.append(
+            "an inactive GoToTask was reported as a live loop:\n" + tldr_text
+        )
 
     order_text = "\n".join(order)
     if "Loop (off)" not in order_text or "[INACTIVE]" not in order_text:

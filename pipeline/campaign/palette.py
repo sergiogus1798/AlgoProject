@@ -6,7 +6,7 @@ import subprocess
 from core.datapaths import template_dir
 from core.paths import CLAUDE_BIN, ROOT
 
-MINUTES = 30        # a session that has not answered by then is a failure, not a wait
+MINUTES = 30  # a session that has not answered by then is a failure, not a wait
 
 
 def choose(cell: dict) -> tuple[str | None, str]:
@@ -32,16 +32,33 @@ def choose(cell: dict) -> tuple[str | None, str]:
         "ni de calendario, sin bloques de entrada stop/limit, nunca la paleta entera.\n\n"
         "Lo lanza la campaña desatendida: nadie te contesta. Si algo es ambiguo (regla dura 11), NO "
         "elijas: termina con una línea que empiece por «PREGUNTA:» con las lecturas posibles. "
-        f"Al terminar, una línea «PALETA: {name}».")
+        f"Al terminar, una línea «PALETA: {name}»."
+    )
     try:
-        out = subprocess.run([str(CLAUDE_BIN), "-p", prompt, "--model", "opus", "--permission-mode", "auto",
-                              "--output-format", "text"], cwd=ROOT, capture_output=True, text=True,
-                             timeout=MINUTES * 60).stdout
+        out = subprocess.run(
+            [
+                str(CLAUDE_BIN),
+                "-p",
+                prompt,
+                "--model",
+                "opus",
+                "--permission-mode",
+                "auto",
+                "--output-format",
+                "text",
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=MINUTES * 60,
+        ).stdout
     except subprocess.TimeoutExpired:
         return None, f"el buildingBlocksExpert no contestó en {MINUTES} min"
     if "PREGUNTA:" in out:
-        return None, out[out.index("PREGUNTA:"):].splitlines()[0]
-    if not re.search(rf"^PALETA: {name}\s*$", out, re.M) or not (
-            ROOT / "sqx" / "blocks" / "palettes" / f"{name}.yaml").exists():
+        return None, out[out.index("PREGUNTA:") :].splitlines()[0]
+    if (
+        not re.search(rf"^PALETA: {name}\s*$", out, re.M)
+        or not (ROOT / "sqx" / "blocks" / "palettes" / f"{name}.yaml").exists()
+    ):
         return None, "el buildingBlocksExpert no dejó su paleta: " + out.strip()[-300:]
     return name, ""

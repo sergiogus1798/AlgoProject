@@ -30,13 +30,21 @@ def judged(rows: pd.DataFrame, cfg: dict) -> pd.DataFrame:
         `sweep.plateau` neighbours pay).
     """
     floor = 1 / (cfg["sweep"]["draws"] + 1)
-    tail = np.where(rows["p"] <= floor * (1 + 1e-9), np.minimum(floor, norm.sf(rows["z"])), rows["p"])
+    tail = np.where(
+        rows["p"] <= floor * (1 + 1e-9),
+        np.minimum(floor, norm.sf(rows["z"])),
+        rows["p"],
+    )
     out = many.judged(rows.assign(p_empirical=rows["p"], p=tail), cfg["filters"]).drop(
-        columns=["q_family", "significant_family", "passes_family"])
+        columns=["q_family", "significant_family", "passes_family"]
+    )
     out["good"] = out["pays"] & out["stable"]
     knobs = cfg["sweep"]
-    rank = {(name, p): i for name, spec in knobs["entries"].items()
-            for i, p in enumerate(spec["params"])}
+    rank = {
+        (name, p): i
+        for name, spec in knobs["entries"].items()
+        for i, p in enumerate(spec["params"])
+    }
     out["_p"] = [rank[(e, p)] for e, p in zip(out["entry"], out["param"])]
     ladder = {f"hold{m:g}x": i for i, m in enumerate(knobs["holds"])}
     ladder |= {f"trail{w:g}": 100 + i for i, w in enumerate(knobs["trails"])}
@@ -66,8 +74,10 @@ def best(variants: pd.DataFrame) -> pd.DataFrame:
         smallest corrected p — with `variants`, `pass_any`, `plateau_any`, `pays_any` (some
         variant pays twice the cost at all) and `max_multiple` of the cell-family.
     """
-    ordered = variants.sort_values(["on_plateau", "passes", "plateau", "q", "multiple"],
-                                   ascending=[False, False, False, True, False])
+    ordered = variants.sort_values(
+        ["on_plateau", "passes", "plateau", "q", "multiple"],
+        ascending=[False, False, False, True, False],
+    )
     top = ordered.groupby(CELL, sort=False).head(1).set_index(CELL)
     group = variants.groupby(CELL)
     top["variants"] = group.size()
@@ -75,9 +85,29 @@ def best(variants: pd.DataFrame) -> pd.DataFrame:
     top["plateau_any"] = group["on_plateau"].any()
     top["pays_any"] = group["pays"].any()
     top["max_multiple"] = group["multiple"].max()
-    keep = ["entry", "param", "exit", "multiple", "p", "q", "stability", "trades_per_year",
-            "plateau", "neighbours", "significant", "pays", "stable", "frequent", "passes",
-            "on_plateau", "variants", "pass_any", "plateau_any", "pays_any", "max_multiple"]
+    keep = [
+        "entry",
+        "param",
+        "exit",
+        "multiple",
+        "p",
+        "q",
+        "stability",
+        "trades_per_year",
+        "plateau",
+        "neighbours",
+        "significant",
+        "pays",
+        "stable",
+        "frequent",
+        "passes",
+        "on_plateau",
+        "variants",
+        "pass_any",
+        "plateau_any",
+        "pays_any",
+        "max_multiple",
+    ]
     return top[keep].reset_index().sort_values(CELL)
 
 
@@ -90,17 +120,27 @@ def counts(top: pd.DataFrame, scores: pd.DataFrame) -> pd.DataFrame:
     """
     naked = pd.Series(scores[~scores["needs_clock"]].set_index(CELL)["passes"])
     joined = top.join(naked.rename("naked"), on=CELL)
-    return cast("pd.DataFrame", joined.groupby("timeframe").agg(
-        cell_families=("naked", "size"), naked=("naked", "sum"), any_variant=("pass_any", "sum"),
-        on_plateau=("plateau_any", "sum"),
-        never_pays=("pays_any", lambda s: int((~s).sum()))).reindex(["M15", "M30", "H1", "H4"]))
+    return cast(
+        "pd.DataFrame",
+        joined.groupby("timeframe")
+        .agg(
+            cell_families=("naked", "size"),
+            naked=("naked", "sum"),
+            any_variant=("pass_any", "sum"),
+            on_plateau=("plateau_any", "sum"),
+            never_pays=("pays_any", lambda s: int((~s).sum())),
+        )
+        .reindex(["M15", "M30", "H1", "H4"]),
+    )
 
 
 def summary(variants: pd.DataFrame) -> str:
     """One Spanish paragraph: how many variants, how many survive, and what they are."""
-    return (f"{len(variants)} variantes contrastadas y corregidas juntas dentro del barrido; "
-            f"{int(variants['significant'].sum())} significativas, "
-            f"{int(variants['passes'].sum())} pasan los cuatro filtros, "
-            f"{int(variants['on_plateau'].sum())} de ellas en meseta. Una variante elegida aquí "
-            "es una HIPÓTESIS seleccionada dentro de muestra, no un hallazgo: dice qué celdas "
-            "merecen un build en SQX, que es donde está la prueba fuera de muestra.")
+    return (
+        f"{len(variants)} variantes contrastadas y corregidas juntas dentro del barrido; "
+        f"{int(variants['significant'].sum())} significativas, "
+        f"{int(variants['passes'].sum())} pasan los cuatro filtros, "
+        f"{int(variants['on_plateau'].sum())} de ellas en meseta. Una variante elegida aquí "
+        "es una HIPÓTESIS seleccionada dentro de muestra, no un hallazgo: dice qué celdas "
+        "merecen un build en SQX, que es donde está la prueba fuera de muestra."
+    )

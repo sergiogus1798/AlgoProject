@@ -37,8 +37,12 @@ def names() -> list[tuple[str, str]]:
         The product, minus `ninguna` with `supervivientes`: when the pieces keep
         everyone the two populations are the same one.
     """
-    return [(c, p) for c in COMBINE for p in POPULATIONS
-            if not (c == "ninguna" and p == "supervivientes")]
+    return [
+        (c, p)
+        for c in COMBINE
+        for p in POPULATIONS
+        if not (c == "ninguna" and p == "supervivientes")
+    ]
 
 
 def label(reading: tuple[str, str]) -> str:
@@ -56,10 +60,16 @@ def kept(states: pd.DataFrame, combine: str) -> list[str]:
     Returns:
         Their names, in the frame's order.
     """
-    return [str(m) for m, row in states.iterrows() if COMBINE[combine](row[list(PIECES)].tolist())]
+    return [
+        str(m)
+        for m, row in states.iterrows()
+        if COMBINE[combine](row[list(PIECES)].tolist())
+    ]
 
 
-def verdicts(states: pd.DataFrame, named: Mapping[str, list[str] | None]) -> pd.DataFrame:
+def verdicts(
+    states: pd.DataFrame, named: Mapping[str, list[str] | None]
+) -> pd.DataFrame:
     """Every complete mother's call under every reading.
 
     Args:
@@ -77,6 +87,13 @@ def verdicts(states: pd.DataFrame, named: Mapping[str, list[str] | None]) -> pd.
         survivors = set(kept(states, reading[0]))
         chosen = named[label(reading)]
         table[label(reading)] = [
-            "fail" if m not in survivors else "none" if chosen is None
-            else "pass" if m in chosen else "fail" for m in states.index]
+            "fail"
+            if m not in survivors
+            else "none"
+            if chosen is None
+            else "pass"
+            if m in chosen
+            else "fail"
+            for m in states.index
+        ]
     return pd.DataFrame(table, index=states.index)

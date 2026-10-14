@@ -28,24 +28,35 @@ PRICE = 1e6
 BLOCK = 1000
 CHAIN = 15 + 4
 MINUTE = 60_000
-COLUMNS = ("n", "spread_open", "spread_twa", "spread_min", "spread_max",
-           "bid_open", "bid_high", "bid_low", "bid_close")
+COLUMNS = (
+    "n",
+    "spread_open",
+    "spread_twa",
+    "spread_min",
+    "spread_max",
+    "bid_open",
+    "bid_high",
+    "bid_low",
+    "bid_close",
+)
 
 
 def _utf(buf: np.ndarray, pos: int) -> tuple[str, int]:
     """One Java `readUTF` string and the position after it."""
     size = int(buf[pos]) << 8 | int(buf[pos + 1])
-    return bytes(buf[pos + 2:pos + 2 + size]).decode(), pos + 2 + size
+    return bytes(buf[pos + 2 : pos + 2 + size]).decode(), pos + 2 + size
 
 
 def _data_start(buf: np.ndarray) -> int:
     """Check the header and return where the first magic chain starts."""
     version, pos = _utf(buf, 0)
     kind, pos = _utf(buf, pos)
-    assert (version, kind) == ("4.2", "D"), f"tick file {version!r}/{kind!r}: only plain 4.2 is read"
+    assert (version, kind) == ("4.2", "D"), (
+        f"tick file {version!r}/{kind!r}: only plain 4.2 is read"
+    )
     _, pos = _utf(buf, pos)
     pos += 8
-    pairs = int.from_bytes(bytes(buf[pos:pos + 4]), "big")
+    pairs = int.from_bytes(bytes(buf[pos : pos + 4]), "big")
     pos += 4
     for _ in range(pairs):
         _, pos = _utf(buf, pos)
@@ -55,7 +66,9 @@ def _data_start(buf: np.ndarray) -> int:
     return pos
 
 
-Num = int | np.int64   # what numba hands back for an int64: annotations only, jit ignores them
+Num = (
+    int | np.int64
+)  # what numba hands back for an int64: annotations only, jit ignores them
 
 
 @njit(cache=True)
@@ -79,7 +92,9 @@ def _apply(prev: Num, v: Num, logic: int) -> Num:
 
 
 @njit(cache=True)
-def _minutes(buf: np.ndarray, start: int, capacity: int) -> tuple[np.ndarray, np.ndarray, int]:
+def _minutes(
+    buf: np.ndarray, start: int, capacity: int
+) -> tuple[np.ndarray, np.ndarray, int]:
     """Decode every tick and fold it into its minute; returns the filled rows."""
     minute = np.empty(capacity, np.int64)
     out = np.empty((capacity, 9), np.float64)
@@ -135,7 +150,7 @@ def _minutes(buf: np.ndarray, start: int, capacity: int) -> tuple[np.ndarray, np
     if rows >= 0:
         end = (cur + 1) * MINUTE
         out[rows, 2] = (acc + s_last * (end - t_last)) / (end - t_first)
-    return minute[:rows + 1], out[:rows + 1], count
+    return minute[: rows + 1], out[: rows + 1], count
 
 
 @njit(cache=True)
@@ -151,7 +166,14 @@ def _bars(buf: np.ndarray, start: int, capacity: int) -> tuple[np.ndarray, np.nd
         if pos + 9 > size:
             break
         c = buf[pos], buf[pos + 1], buf[pos + 2]
-        nibbles = ((c[0] >> 4) & 15, c[0] & 15, (c[1] >> 4) & 15, c[1] & 15, (c[2] >> 4) & 15, c[2] & 15)
+        nibbles = (
+            (c[0] >> 4) & 15,
+            c[0] & 15,
+            (c[1] >> 4) & 15,
+            c[1] & 15,
+            (c[2] >> 4) & 15,
+            c[2] & 15,
+        )
         need = 3
         for nb in nibbles:
             need += 1 << (nb & 3)
@@ -179,8 +201,11 @@ def bars(feed: str) -> pd.DataFrame:
     buf = np.memmap(bar_file(feed), np.uint8, mode="r")
     start = _data_start(buf)
     stamp, rows = _bars(buf, start, len(buf) // 9)
-    frame = pd.DataFrame(rows, columns=pd.Index(["Open", "High", "Low", "Close"]),
-                         index=pd.to_datetime(stamp, unit="ms"))
+    frame = pd.DataFrame(
+        rows,
+        columns=pd.Index(["Open", "High", "Low", "Close"]),
+        index=pd.to_datetime(stamp, unit="ms"),
+    )
     frame.index.name = "t"
     # Two hours of USDJPY 2003–2004 are stored twice; SQX's own export keeps the first.
     return cast(pd.DataFrame, frame[~frame.index.duplicated()].sort_index())
@@ -201,12 +226,17 @@ def read(path: Path) -> tuple[pd.DataFrame, int]:
     """
     buf = np.memmap(path, np.uint8, mode="r")
     start = _data_start(buf)
-    first, _ = _value(np.asarray(buf[start + CHAIN + 2:start + CHAIN + 10]), 0, 3)
+    first, _ = _value(np.asarray(buf[start + CHAIN + 2 : start + CHAIN + 10]), 0, 3)
     capacity = int((pd.Timestamp.now().value // 1_000_000 - first) // MINUTE) + 2
-    from core import tickparallel      # imports this module's decoders: here, not at the top
+    from core import (
+        tickparallel,
+    )  # imports this module's decoders: here, not at the top
+
     got = tickparallel.decode(buf, start)
     stamp, rows, ticks = got if got else _minutes(buf, start, capacity)
-    frame = pd.DataFrame(rows, columns=pd.Index(COLUMNS), index=pd.to_datetime(stamp, unit="ms"))
+    frame = pd.DataFrame(
+        rows, columns=pd.Index(COLUMNS), index=pd.to_datetime(stamp, unit="ms")
+    )
     frame.index.name = "t"
     return frame.astype({"n": np.int32}), int(ticks)
 

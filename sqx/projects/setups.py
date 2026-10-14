@@ -24,7 +24,9 @@ def bounds(data: dict, segment: str) -> tuple[str, str]:
         not the epoch milliseconds the <Resources> <Symbol> uses for the data range.
     """
     seg = data["segments"][segment]
-    at = lambda b, end: (date(b, 12, 31) if end else date(b, 1, 1)) if isinstance(b, int) else b
+    at = lambda b, end: (
+        (date(b, 12, 31) if end else date(b, 1, 1)) if isinstance(b, int) else b
+    )
     return (f"{at(seg['from'], False):%Y.%m.%d}", f"{at(seg['to'], True):%Y.%m.%d}")
 
 
@@ -52,8 +54,10 @@ def span(data: dict, segment: str, reserved_ok: bool = False) -> tuple[str, str,
     """
     named = segment.split("..")
     if "oos2" in named and not reserved_ok and assetdata.enforced():
-        raise SystemExit(f"`{segment}` toca oos2, reservado al WFC y a la WFM — cada mirada "
-                         "lo gasta. Si de verdad hace falta, que lo diga el dueno.")
+        raise SystemExit(
+            f"`{segment}` toca oos2, reservado al WFC y a la WFM — cada mirada "
+            "lo gasta. Si de verdad hace falta, que lo diga el dueno."
+        )
     return (bounds(data, named[0])[0], bounds(data, named[-1])[1], named[-1])
 
 
@@ -88,21 +92,36 @@ def write_setup(block: str, s: dict, a: str, b: str) -> str:
     """
     block = re.sub(r'dateFrom="[^"]*"', f'dateFrom="{a}"', block, count=1)
     block = re.sub(r'dateTo="[^"]*"', f'dateTo="{b}"', block, count=1)
-    block = re.sub(r'(<Setup\b[^>]*?)slippage="[^"]*"', rf'\g<1>slippage="{s["defaultSlippage"]}"',
-                   block, count=1)
-    block = re.sub(r'(<Chart\b[^>]*?)spread="[^"]*"', rf'\g<1>spread="{s["defaultSpread"]}"', block)
+    block = re.sub(
+        r'(<Setup\b[^>]*?)slippage="[^"]*"',
+        rf'\g<1>slippage="{s["defaultSlippage"]}"',
+        block,
+        count=1,
+    )
+    block = re.sub(
+        r'(<Chart\b[^>]*?)spread="[^"]*"', rf'\g<1>spread="{s["defaultSpread"]}"', block
+    )
 
     want = s["commission"]["method"]
-    block = re.sub(r'(<Method type="(\w+)"[^>]*?)use="[^"]*"',
-                   lambda m: f'{m.group(1)}use="{"true" if m.group(2) == want else "false"}"', block)
-    block = re.sub(rf'(<Param key="\w+" className="{want}">)[^<]*',
-                   rf'\g<1>{s["commission"]["value"]}', block)
+    block = re.sub(
+        r'(<Method type="(\w+)"[^>]*?)use="[^"]*"',
+        lambda m: f'{m.group(1)}use="{"true" if m.group(2) == want else "false"}"',
+        block,
+    )
+    block = re.sub(
+        rf'(<Param key="\w+" className="{want}">)[^<]*',
+        rf"\g<1>{s['commission']['value']}",
+        block,
+    )
 
     sw = s["swap"]
-    block = re.sub(r'<Swap\b[^>]*/>',
-                   f'<Swap use="true" type="{sw["type"]}" long="{sw["long"]}" '
-                   f'short="{sw["short"]}" tripleSwapOn="{sw["triple_swap_on"]}" '
-                   f'rolloutHour="{sw["rollout_hour"]}" />', block)
+    block = re.sub(
+        r"<Swap\b[^>]*/>",
+        f'<Swap use="true" type="{sw["type"]}" long="{sw["long"]}" '
+        f'short="{sw["short"]}" tripleSwapOn="{sw["triple_swap_on"]}" '
+        f'rolloutHour="{sw["rollout_hour"]}" />',
+        block,
+    )
     return block
 
 
@@ -126,6 +145,7 @@ def set_data_range(text: str, data: dict, span: tuple[int, int]) -> tuple[str, i
     to the bars the registry holds (`registryxml.clip`): a range past a feed's last bar
     made `action=start` refuse the WFM task — «Cannot start project», 2026-10-06.
     """
+
     def rewrite(m: re.Match) -> str:
         """One <Symbol>, rewritten when it is this asset's feed."""
         if f'name="{data["sqx_symbol"]}"' not in m.group(0):
@@ -133,8 +153,11 @@ def set_data_range(text: str, data: dict, span: tuple[int, int]) -> tuple[str, i
         one = re.sub(r'dateFrom="\d+"', f'dateFrom="{span[0]}"', m.group(0), count=1)
         return re.sub(r'dateTo="\d+"', f'dateTo="{span[1]}"', one, count=1)
 
-    found = [m for m in SYMBOL.finditer(text) if f'name="{data["sqx_symbol"]}"' in m.group(0)]
+    found = [
+        m for m in SYMBOL.finditer(text) if f'name="{data["sqx_symbol"]}"' in m.group(0)
+    ]
     return registryxml.clip(SYMBOL.sub(rewrite, text)), len(found)
+
 
 OOS_RANGE = re.compile(r'(<OutOfSample[^>]*>\s*<Range )dateFrom="[^"]*" dateTo="[^"]*"')
 
@@ -191,5 +214,7 @@ def set_span(text: str, data: dict, segment: str) -> tuple[str, int]:
     text, done = set_costs(text, data, costs)
     text = text.replace(f'dateFrom="{bounds(data, costs)[0]}"', f'dateFrom="{start}"')
     first = segment.split("..")[0]
-    text, _ = set_data_range(text, data, (window(data, first)[0], window(data, costs)[1]))
+    text, _ = set_data_range(
+        text, data, (window(data, first)[0], window(data, costs)[1])
+    )
     return text, done

@@ -22,7 +22,7 @@ def load_status(project: str, databank: str) -> dict[str, Any]:
     """Where one databank's data stands, piece by piece, without starting anything."""
     try:
         return state.status(project, databank)
-    except (OSError, KeyError, ValueError) as e:    # a file the owner's SQX is rewriting
+    except (OSError, KeyError, ValueError) as e:  # a file the owner's SQX is rewriting
         return {"error": f"no se pudo leer {project} / {databank}: {e}"}
 
 

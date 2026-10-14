@@ -14,8 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from core import exportdrv, tradepack
 from core.datapaths import tmp_dir
 
-KEPT = "origin"             # in the batch folder: the mother's retested .sqx, <segment>.sqx
-OUT = "trades.parquet"      # what `studies/closing/blindJoint/inputs.py` reads
+KEPT = "origin"  # in the batch folder: the mother's retested .sqx, <segment>.sqx
+OUT = "trades.parquet"  # what `studies/closing/blindJoint/inputs.py` reads
 
 
 def keep(work: Path, legs: list[dict]) -> None:
@@ -29,12 +29,16 @@ def keep(work: Path, legs: list[dict]) -> None:
         Nothing. The mother is the variant the manifest flags `origin`; SQX names a databank
         entry after the file it was loaded from, so her file is `<variant_id>.sqx`.
     """
-    manifest = pd.read_parquet(work / "manifest.parquet", columns=["variant_id", "origin"])
+    manifest = pd.read_parquet(
+        work / "manifest.parquet", columns=["variant_id", "origin"]
+    )
     origin = manifest.loc[manifest["origin"], "variant_id"].item()
     (work / KEPT).mkdir(exist_ok=True)
     for leg in legs:
-        shutil.copy(Path(leg["databank_dir"]) / f"{origin}.sqx",
-                    work / KEPT / f"{leg['segment']}.sqx")
+        shutil.copy(
+            Path(leg["databank_dir"]) / f"{origin}.sqx",
+            work / KEPT / f"{leg['segment']}.sqx",
+        )
 
 
 def harvest(works: list[Path]) -> dict[Path, int]:
@@ -54,7 +58,9 @@ def harvest(works: list[Path]) -> dict[Path, int]:
         staged, csvs, where = Path(tmp) / "sqx", Path(tmp) / "csv", {}
         staged.mkdir()
         for work in works:
-            manifest = pd.read_parquet(work / "manifest.parquet", columns=["variant_id", "origin"])
+            manifest = pd.read_parquet(
+                work / "manifest.parquet", columns=["variant_id", "origin"]
+            )
             origin = manifest.loc[manifest["origin"], "variant_id"].item()
             for kept in sorted((work / KEPT).glob("*.sqx")):
                 where[f"{len(where):04d}"] = (work, origin, kept.stem)
@@ -75,8 +81,13 @@ def harvest(works: list[Path]) -> dict[Path, int]:
 def main() -> None:
     """Export the mothers of the batches given and say how many trades each one left."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--work", required=True, type=Path, action="append",
-                    help="a batch folder `collect` already read; repeat it for several")
+    ap.add_argument(
+        "--work",
+        required=True,
+        type=Path,
+        action="append",
+        help="a batch folder `collect` already read; repeat it for several",
+    )
     a = ap.parse_args()
     for work, n in harvest(a.work).items():
         print(f"{work.name}: {n} operaciones de la madre en {OUT}")

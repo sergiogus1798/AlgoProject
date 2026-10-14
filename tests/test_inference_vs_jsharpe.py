@@ -19,14 +19,19 @@ REFERENCE = Path(__file__).resolve().parent / "fixtures" / "jsharpe" / "referenc
 
 SHAPES = ("normal", "left_skew", "right_skew", "fat_tails")
 LENGTHS = (60, 250, 1000)
-SHARPES = (0.05, 0.15)          # per observation, never annualised
+SHARPES = (0.05, 0.15)  # per observation, never annualised
 BENCHMARKS = (0.0, 0.03)
 TRIALS = (10, 100, 1000)
-SIGMA_SR = 0.05                 # spread of the trial Sharpes, same unit as SHARPES
+SIGMA_SR = 0.05  # spread of the trial Sharpes, same unit as SHARPES
 ALPHA = 0.05
-K_MAX = 40                      # studies/optimisation/cscv/config.yaml's cluster_k_max
-PANELS = {"two_blocks": (20, 20), "four_blocks": (10, 10, 10, 10), "eight_blocks": (5,) * 8,
-          "one_dominant": (30, 5, 5), "one_blob": (40,)}
+K_MAX = 40  # studies/optimisation/cscv/config.yaml's cluster_k_max
+PANELS = {
+    "two_blocks": (20, 20),
+    "four_blocks": (10, 10, 10, 10),
+    "eight_blocks": (5,) * 8,
+    "one_dominant": (30, 5, 5),
+    "one_blob": (40,),
+}
 WEEKS, RHO, SEED = 300, 0.8, 42
 EXACT = 1e-9
 
@@ -44,8 +49,12 @@ def series(shape: str, n: int, sharpe: float) -> np.ndarray:
         draw: the fixture's numbers must not depend on a generator's stream.
     """
     p = (np.arange(n) + 0.5) / n
-    x = {"normal": stats.norm.ppf(p), "left_skew": -stats.lognorm(0.5).ppf(p),
-         "right_skew": stats.lognorm(0.5).ppf(p), "fat_tails": stats.t(4).ppf(p)}[shape]
+    x = {
+        "normal": stats.norm.ppf(p),
+        "left_skew": -stats.lognorm(0.5).ppf(p),
+        "right_skew": stats.lognorm(0.5).ppf(p),
+        "fat_tails": stats.t(4).ppf(p),
+    }[shape]
     return (x - x.mean()) / x.std(ddof=1) + sharpe
 
 
@@ -59,8 +68,12 @@ def panel(name: str) -> pd.DataFrame:
         WEEKS rows by 40 columns. Inside a block every pair correlates RHO; across blocks, zero.
     """
     rng = np.random.default_rng(SEED)
-    columns = [np.sqrt(RHO) * factor[:, None] + np.sqrt(1 - RHO) * rng.standard_normal((WEEKS, size))
-               for size in PANELS[name] for factor in [rng.standard_normal(WEEKS)]]
+    columns = [
+        np.sqrt(RHO) * factor[:, None]
+        + np.sqrt(1 - RHO) * rng.standard_normal((WEEKS, size))
+        for size in PANELS[name]
+        for factor in [rng.standard_normal(WEEKS)]
+    ]
     return pd.DataFrame(np.hstack(columns))
 
 
@@ -86,7 +99,10 @@ def compare(cases: list[dict]) -> dict[str, dict[str, list]]:
         Quantity -> {"aligned": pairs against jsharpe fed our convention, "default": pairs against
         jsharpe called as its README does}. `moments` and `expected_max` have one convention.
     """
-    out = {q: {"aligned": [], "default": []} for q in ("moments", "psr", "mintrl", "expected_max", "dsr")}
+    out = {
+        q: {"aligned": [], "default": []}
+        for q in ("moments", "psr", "mintrl", "expected_max", "dsr")
+    }
     for case in cases:
         r = series(case["shape"], case["n"], round(case["sharpe"], 2))
         label = f"{case['shape']} n={case['n']} SR={case['sharpe']:.2f}"
@@ -94,16 +110,28 @@ def compare(cases: list[dict]) -> dict[str, dict[str, list]]:
             out["moments"]["aligned"].append((f"{label} {key}", ours, case[key]))
         for bench, ref in case["benchmarks"].items():
             got = psr(r, float(bench))["psr"]
-            out["psr"]["aligned"].append((f"{label} SR0={bench}", got, ref["psr_aligned"]))
+            out["psr"]["aligned"].append(
+                (f"{label} SR0={bench}", got, ref["psr_aligned"])
+            )
             out["psr"]["default"].append((f"{label} SR0={bench}", got, ref["psr"]))
             needed = min_track_record(r, ALPHA, float(bench))["needed"]
-            out["mintrl"]["aligned"].append((f"{label} SR0={bench}", needed, ref["mintrl_aligned"]))
-            out["mintrl"]["default"].append((f"{label} SR0={bench}", needed, ref["mintrl"]))
+            out["mintrl"]["aligned"].append(
+                (f"{label} SR0={bench}", needed, ref["mintrl_aligned"])
+            )
+            out["mintrl"]["default"].append(
+                (f"{label} SR0={bench}", needed, ref["mintrl"])
+            )
         sharpe, skew, kurtosis = moments(r)
         for k, ref in case["trials"].items():
-            got = plateau.deflated_sharpe(sharpe, SIGMA_SR, int(k), r.size, skew, kurtosis)
-            out["expected_max"]["aligned"].append((f"K={k}", got["benchmark"], ref["expected_max"]))
-            out["dsr"]["aligned"].append((f"{label} K={k}", got["dsr"], ref["dsr_aligned"]))
+            got = plateau.deflated_sharpe(
+                sharpe, SIGMA_SR, int(k), r.size, skew, kurtosis
+            )
+            out["expected_max"]["aligned"].append(
+                (f"K={k}", got["benchmark"], ref["expected_max"])
+            )
+            out["dsr"]["aligned"].append(
+                (f"{label} K={k}", got["dsr"], ref["dsr_aligned"])
+            )
             out["dsr"]["default"].append((f"{label} K={k}", got["dsr"], ref["dsr"]))
     return out
 
@@ -114,9 +142,11 @@ def compare(cases: list[dict]) -> dict[str, dict[str, list]]:
 # Zoonekynd 2025: the variance UNDER THE NULL (at SR0, so at SR0=0 skew and kurtosis drop out),
 # over T, no +1. The pair below is the grid's widest gap (ours, jsharpe's); a change on either
 # side moves it and fails this test, which is the point: re-read both before re-pinning.
-DOCUMENTED = {"psr": ("left_skew n=60 SR=0.15 SR0=0.0", 0.850964, 0.877361),
-              "mintrl": ("left_skew n=1000 SR=0.05 SR0=0.03", 7355.989556, 7111.739619),
-              "dsr": ("right_skew n=60 SR=0.05 K=1000", 0.185235, 0.165677)}
+DOCUMENTED = {
+    "psr": ("left_skew n=60 SR=0.15 SR0=0.0", 0.850964, 0.877361),
+    "mintrl": ("left_skew n=1000 SR=0.05 SR0=0.03", 7355.989556, 7111.739619),
+    "dsr": ("right_skew n=60 SR=0.05 K=1000", 0.185235, 0.165677),
+}
 
 
 def conventions(table: dict[str, dict[str, list]]) -> list[str]:
@@ -132,17 +162,27 @@ def conventions(table: dict[str, dict[str, list]]) -> list[str]:
     for quantity, pairs in table.items():
         label, ours, theirs = worst(pairs["aligned"])
         if abs(ours - theirs) > EXACT * max(1.0, abs(theirs)):
-            failures.append(f"{quantity}: la aritmética ya no coincide con jsharpe — {label}: "
-                            f"nuestro {ours!r}, jsharpe {theirs!r}")
+            failures.append(
+                f"{quantity}: la aritmética ya no coincide con jsharpe — {label}: "
+                f"nuestro {ours!r}, jsharpe {theirs!r}"
+            )
         if quantity in DOCUMENTED:
             label, ours, theirs = worst(pairs["default"])
-            print(f"DISCREPANCIA DOCUMENTADA {quantity} (convención, no aritmética): {label}: "
-                  f"nuestro {ours:.6f}, jsharpe {theirs:.6f}, diferencia {ours - theirs:+.6f}")
+            print(
+                f"DISCREPANCIA DOCUMENTADA {quantity} (convención, no aritmética): {label}: "
+                f"nuestro {ours:.6f}, jsharpe {theirs:.6f}, diferencia {ours - theirs:+.6f}"
+            )
             where, want_ours, want_theirs = DOCUMENTED[quantity]
-            if label != where or abs(ours - want_ours) > 1e-6 or abs(theirs - want_theirs) > 1e-6:
-                failures.append(f"{quantity}: la discrepancia documentada con jsharpe cambió — era "
-                                f"{where}: {want_ours} contra {want_theirs}; ahora {label}: "
-                                f"{ours!r} contra {theirs!r}")
+            if (
+                label != where
+                or abs(ours - want_ours) > 1e-6
+                or abs(theirs - want_theirs) > 1e-6
+            ):
+                failures.append(
+                    f"{quantity}: la discrepancia documentada con jsharpe cambió — era "
+                    f"{where}: {want_ours} contra {want_theirs}; ahora {label}: "
+                    f"{ours!r} contra {theirs!r}"
+                )
     return failures
 
 
@@ -156,8 +196,10 @@ def unreachable(theirs: float) -> list[str]:
         One line if `min_track_record` stopped answering None there.
     """
     got = min_track_record(series("normal", 250, 0.05), ALPHA, 0.08)["needed"]
-    print(f"DISCREPANCIA DOCUMENTADA mintrl inalcanzable: SR=0.05 < SR0=0.08: nuestro {got}, "
-          f"jsharpe {theirs:.1f} (eleva al cuadrado la diferencia negativa)")
+    print(
+        f"DISCREPANCIA DOCUMENTADA mintrl inalcanzable: SR=0.05 < SR0=0.08: nuestro {got}, "
+        f"jsharpe {theirs:.1f} (eleva al cuadrado la diferencia negativa)"
+    )
     return [] if got is None else [f"mintrl: SR<SR0 debía dar None y dio {got!r}"]
 
 
@@ -166,9 +208,13 @@ def unreachable(theirs: float) -> list[str]:
 #   one_dominant: the true split puts 30 of 40 in one cluster, which `independent` refuses (no
 #     cluster above half), so it cuts the dominant family until the rule holds: 14, not 3.
 #   one_blob: nothing to find; both invent a count (ours 16 at silhouette 0.014, jsharpe 39).
-CLUSTERS = {"two_blocks": (2, 2, [2] * 8), "four_blocks": (4, 4, [4] * 8),
-            "eight_blocks": (8, 8, [4, 8, 8, 2, 8, 4, 8, 4]),
-            "one_dominant": (3, 14, [3] * 8), "one_blob": (1, 16, [39] * 8)}
+CLUSTERS = {
+    "two_blocks": (2, 2, [2] * 8),
+    "four_blocks": (4, 4, [4] * 8),
+    "eight_blocks": (8, 8, [4, 8, 8, 2, 8, 4, 8, 4]),
+    "one_dominant": (3, 14, [3] * 8),
+    "one_blob": (1, 16, [39] * 8),
+}
 
 
 def clusters(reference: dict[str, dict]) -> list[str]:
@@ -184,17 +230,27 @@ def clusters(reference: dict[str, dict]) -> list[str]:
     for name, (truth, want, theirs) in CLUSTERS.items():
         window = panel(name)
         if abs(window.to_numpy().sum() - reference[name]["checksum"]) > 1e-6:
-            failures.append(f"clusters {name}: el panel sintético ya no es el de la referencia")
+            failures.append(
+                f"clusters {name}: el panel sintético ya no es el de la referencia"
+            )
             continue
         got = trials.independent(window, K_MAX)
         stored = reference[name]["number_of_clusters_by_seed"]
-        mark = "igual" if got["n_clusters"] == truth == min(stored) == max(stored) else "DISCREPANCIA DOCUMENTADA"
-        print(f"clusters {name}: verdad {truth}, nuestro {got['n_clusters']} (silueta "
-              f"{got['silhouette']}), jsharpe por semilla {stored}, rango efectivo "
-              f"{reference[name]['effective_rank']:.1f} — {mark}")
+        mark = (
+            "igual"
+            if got["n_clusters"] == truth == min(stored) == max(stored)
+            else "DISCREPANCIA DOCUMENTADA"
+        )
+        print(
+            f"clusters {name}: verdad {truth}, nuestro {got['n_clusters']} (silueta "
+            f"{got['silhouette']}), jsharpe por semilla {stored}, rango efectivo "
+            f"{reference[name]['effective_rank']:.1f} — {mark}"
+        )
         if (got["n_clusters"], stored) != (want, theirs):
-            failures.append(f"clusters {name}: se esperaba nuestro {want} y jsharpe {theirs}, "
-                            f"salió nuestro {got['n_clusters']} y jsharpe {stored}")
+            failures.append(
+                f"clusters {name}: se esperaba nuestro {want} y jsharpe {theirs}, "
+                f"salió nuestro {got['n_clusters']} y jsharpe {stored}"
+            )
     return failures
 
 
@@ -207,23 +263,35 @@ def k_max_too_small() -> list[str]:
     try:
         got = trials.independent(panel("one_blob"), 10)
     except ValueError as error:
-        print(f"DISCREPANCIA DOCUMENTADA clusters one_blob con k_max=10: nuestro ValueError "
-              f"({error}), jsharpe 2 — ningún corte hasta 10 deja todo grupo en la mitad o menos")
+        print(
+            f"DISCREPANCIA DOCUMENTADA clusters one_blob con k_max=10: nuestro ValueError "
+            f"({error}), jsharpe 2 — ningún corte hasta 10 deja todo grupo en la mitad o menos"
+        )
         if "leaves every cluster at half or less" not in str(error):
-            return [f"clusters: el ValueError con k_max=10 ya no es el mensaje claro: {error}"]
+            return [
+                f"clusters: el ValueError con k_max=10 ya no es el mensaje claro: {error}"
+            ]
         return []
-    return [f"clusters: con k_max=10 `independent` ya no falla y da {got}; quita este caso"]
+    return [
+        f"clusters: con k_max=10 `independent` ya no falla y da {got}; quita este caso"
+    ]
 
 
 def main() -> None:
     """Run every comparison and exit non-zero on any failure."""
     reference = json.loads(REFERENCE.read_text())
-    failures = (conventions(compare(reference["cases"])) + unreachable(reference["unreachable_mintrl"])
-                + clusters(reference["clusters"]) + k_max_too_small())
+    failures = (
+        conventions(compare(reference["cases"]))
+        + unreachable(reference["unreachable_mintrl"])
+        + clusters(reference["clusters"])
+        + k_max_too_small()
+    )
     for line in failures:
         print("FALLO", line)
-    print(f"jsharpe {reference['commit'][:10]}: {len(reference['cases'])} series, "
-          f"{len(failures)} fallos")
+    print(
+        f"jsharpe {reference['commit'][:10]}: {len(reference['cases'])} series, "
+        f"{len(failures)} fallos"
+    )
     sys.exit(1 if failures else 0)
 
 

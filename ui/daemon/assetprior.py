@@ -7,15 +7,22 @@ import pandas as pd
 from core.researchpaths import research_profiles_dir
 from studies.research.marketProfile import priorview
 
-VERDICTS = ["bien", "sin_confirmar", "sin_medir", "mal"]   # the order the Características panel lists them in
+VERDICTS = [
+    "bien",
+    "sin_confirmar",
+    "sin_medir",
+    "mal",
+]  # the order the Características panel lists them in
 
 
 @lru_cache(maxsize=1)
 def _tables(stamp: tuple) -> tuple[pd.DataFrame, pd.DataFrame]:
     """The profile's graded measures and its sweep variants, read once per `stamp`."""
     folder = research_profiles_dir()
-    return (priorview.graded(pd.read_csv(folder / "measures.csv")),
-            pd.read_parquet(folder / "sweep" / "variants.parquet"))
+    return (
+        priorview.graded(pd.read_csv(folder / "measures.csv")),
+        pd.read_parquet(folder / "sweep" / "variants.parquet"),
+    )
 
 
 @lru_cache(maxsize=32)
@@ -33,16 +40,27 @@ def measured(stamp: tuple, symbol: str) -> dict[str, dict[str, str]]:
     rows, variants = _tables(stamp)
     mine = pd.DataFrame(rows[rows["symbol"] == symbol])
     swept = pd.DataFrame(variants[variants["symbol"] == symbol])
-    return {f: {t: flag for t in priorview.TIMEFRAMES if (flag := flag_of(mine, swept, symbol, t, f))}
-            for f in priorview.PRIOR["families"]} if len(mine) else {}
+    return (
+        {
+            f: {
+                t: flag
+                for t in priorview.TIMEFRAMES
+                if (flag := flag_of(mine, swept, symbol, t, f))
+            }
+            for f in priorview.PRIOR["families"]
+        }
+        if len(mine)
+        else {}
+    )
 
 
-def flag_of(rows: pd.DataFrame, variants: pd.DataFrame, symbol: str, timeframe: str,
-            family: str) -> str | None:
+def flag_of(
+    rows: pd.DataFrame, variants: pd.DataFrame, symbol: str, timeframe: str, family: str
+) -> str | None:
     """One cell's `priorview` flag, or None where the profile measured nothing for it."""
     try:
         return priorview.state(rows, variants, symbol, timeframe, family)["flag"]
-    except IndexError:      # no naked measure in that cell: `state` reads the first row
+    except IndexError:  # no naked measure in that cell: `state` reads the first row
         return None
 
 
@@ -59,8 +77,11 @@ def prior(symbol: str) -> list[dict]:
     """
     folder = research_profiles_dir()
     files = [folder / "measures.csv", folder / "sweep" / "variants.parquet"]
-    seen = measured(tuple(f.stat().st_mtime_ns for f in files), symbol) if all(
-        f.exists() for f in files) else {}
+    seen = (
+        measured(tuple(f.stat().st_mtime_ns for f in files), symbol)
+        if all(f.exists() for f in files)
+        else {}
+    )
     known = symbol in priorview.PRIOR["matrix"]
     if not known and not seen:
         return []
@@ -70,10 +91,31 @@ def prior(symbol: str) -> list[dict]:
         level = priorview.matrix(symbol, f) if known else None
         favour = [t for t, flag in flags.items() if flag == priorview.FOR]
         against = [t for t, flag in flags.items() if flag == priorview.AGAINST]
-        verdict = ("bien" if favour else "mal" if against
-                   else "sin_medir" if level == "Baja" else "sin_confirmar")
-        rows.append({"family": f, "level": level, "long_only": priorview.long_only(symbol, f),
-                     "favour": favour, "against": against, "verdict": verdict})
+        verdict = (
+            "bien"
+            if favour
+            else "mal"
+            if against
+            else "sin_medir"
+            if level == "Baja"
+            else "sin_confirmar"
+        )
+        rows.append(
+            {
+                "family": f,
+                "level": level,
+                "long_only": priorview.long_only(symbol, f),
+                "favour": favour,
+                "against": against,
+                "verdict": verdict,
+            }
+        )
     levels = [*priorview.LEVEL.values(), None]
-    return sorted(rows, key=lambda r: (VERDICTS.index(r["verdict"]), -len(r["favour"]),
-                                       levels.index(r["level"])))
+    return sorted(
+        rows,
+        key=lambda r: (
+            VERDICTS.index(r["verdict"]),
+            -len(r["favour"]),
+            levels.index(r["level"]),
+        ),
+    )

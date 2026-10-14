@@ -1,4 +1,5 @@
 """The EAs an account should carry against the ones mounted and the magics that actually trade."""
+
 import re
 from typing import Any
 
@@ -13,7 +14,9 @@ def strategy_key(text: str) -> str:
     return ".".join(m.groups()) if m else text
 
 
-def activity(trades: list[dict], positions: list[dict]) -> tuple[dict[str, int], dict[int, int]]:
+def activity(
+    trades: list[dict], positions: list[dict]
+) -> tuple[dict[str, int], dict[int, int]]:
     """What the account's own trades say about its magics.
 
     Args:
@@ -34,8 +37,14 @@ def activity(trades: list[dict], positions: list[dict]) -> tuple[dict[str, int],
     return linked, last
 
 
-def compare(sheet: list[dict] | None, charts: list[dict] | None, trades: list[dict],
-            positions: list[dict], register: dict[int, str], server_now: int) -> list[dict]:
+def compare(
+    sheet: list[dict] | None,
+    charts: list[dict] | None,
+    trades: list[dict],
+    positions: list[dict],
+    register: dict[int, str],
+    server_now: int,
+) -> list[dict]:
     """One row per strategy the account should carry, carries, or trades, with what is wrong with it.
 
     Args:
@@ -59,12 +68,28 @@ def compare(sheet: list[dict] | None, charts: list[dict] | None, trades: list[di
     for key, tf in sorted(expected.keys() | mounted.keys()):
         src = expected.get((key, tf)) or mounted[(key, tf)]
         magic = linked.get(key, by_name.get(key))
-        rows.append({"strategy": key, "symbol": src["symbol"], "tf": tf, "magic": magic,
-                     "expected": None if sheet is None else (key, tf) in expected,
-                     "mounted": None if charts is None else (key, tf) in mounted})
+        rows.append(
+            {
+                "strategy": key,
+                "symbol": src["symbol"],
+                "tf": tf,
+                "magic": magic,
+                "expected": None if sheet is None else (key, tf) in expected,
+                "mounted": None if charts is None else (key, tf) in mounted,
+            }
+        )
     seen = {r["magic"] for r in rows}
-    rows += [{"strategy": register.get(m, f"magic {m}"), "symbol": "", "tf": "", "magic": m,
-              "expected": None, "mounted": None} for m in sorted(last.keys() - seen)]
+    rows += [
+        {
+            "strategy": register.get(m, f"magic {m}"),
+            "symbol": "",
+            "tf": "",
+            "magic": m,
+            "expected": None,
+            "mounted": None,
+        }
+        for m in sorted(last.keys() - seen)
+    ]
     for r in rows:
         r["last"] = last.get(r["magic"])
         r["flags"] = flags(r, register, server_now)
@@ -80,7 +105,10 @@ def flags(row: dict, register: dict[int, str], server_now: int) -> list[str]:
         out.append("montada y no esperada")
     if register and row["magic"] is not None and row["magic"] not in register:
         out.append("magic sin registrar")
-    if row["last"] and (server_now - row["last"]) / 86400 > read.CFG["silent_strategy_days"]:
+    if (
+        row["last"]
+        and (server_now - row["last"]) / 86400 > read.CFG["silent_strategy_days"]
+    ):
         out.append(f"sin operar hace {(server_now - row['last']) // 86400} d")
     return out
 
@@ -99,16 +127,33 @@ def account_view(row: dict, now: int) -> dict[str, Any]:
     beat, stage = row["beat"], row["stage"]
     sheet_name = stage["excel"] if stage else None
     sheet = read.sheet(sheet_name) if sheet_name else None
-    register = {m: s for (f, m), s in read.names().items() if stage and f == stage["firm"]}
+    register = {
+        m: s for (f, m), s in read.names().items() if stage and f == stage["firm"]
+    }
     trades = history.trades(row["deals"]) if row["deals"] is not None else []
     notes = []
     if sheet is None:
         notes.append("sin hoja en el Excel: no se sabe qué EAs debería llevar")
     if "charts" not in beat:
-        notes.append("el beacon es de la versión 1: recarga FleetBeacon v2 en ese terminal de la VPS para ver qué EAs hay montados")
+        notes.append(
+            "el beacon es de la versión 1: recarga FleetBeacon v2 en ese terminal de la VPS para ver qué EAs hay montados"
+        )
     if row["deals"] is None:
-        notes.append("falta el historial de la cuenta: recarga FleetBeacon v2 en ese terminal de la VPS (Navegador → Servicios → FleetBeacon → Detener e Iniciar); mientras tanto no se ven los magics ni las últimas operaciones")
+        notes.append(
+            "falta el historial de la cuenta: recarga FleetBeacon v2 en ese terminal de la VPS (Navegador → Servicios → FleetBeacon → Detener e Iniciar); mientras tanto no se ven los magics ni las últimas operaciones"
+        )
     if not read.names():
-        notes.append("aún no hay registro de magics del reconciliador: no se puede comprobar el magic de cada EA")
-    return {"notes": notes, "rows": compare(sheet, beat.get("charts"), trades, beat["positions"], register,
-                                            now + floors.server_offset(beat))}
+        notes.append(
+            "aún no hay registro de magics del reconciliador: no se puede comprobar el magic de cada EA"
+        )
+    return {
+        "notes": notes,
+        "rows": compare(
+            sheet,
+            beat.get("charts"),
+            trades,
+            beat["positions"],
+            register,
+            now + floors.server_offset(beat),
+        ),
+    }

@@ -76,40 +76,72 @@ def layout(shared: Grid, mine: Located, redraw: bool) -> Layout:
         redrawn: one column, the trade's own). The arithmetic is windowed.draw()'s.
     """
     n, last = mine["entry"].size, shared["last"]
-    pool, hid = (np.unique(mine["hold"], return_inverse=True) if redraw
-                 else (np.empty(0, np.int64), np.zeros(n, np.int64)))
+    pool, hid = (
+        np.unique(mine["hold"], return_inverse=True)
+        if redraw
+        else (np.empty(0, np.int64), np.zeros(n, np.int64))
+    )
     off, room = (np.empty((n, pool.size if redraw else 1), np.int64) for _ in range(2))
     enter, leave, side, seen, used = [], [], [], {}, 0
     for k in range(n):
         hour, low, top = int(mine["hour"][k]), int(mine["lo"][k]), int(mine["hi"][k])
-        key = (hour, low, top, float(mine["side"][k]), None if redraw else int(mine["hold"][k]))
+        key = (
+            hour,
+            low,
+            top,
+            float(mine["side"][k]),
+            None if redraw else int(mine["hold"][k]),
+        )
         if key not in seen:
             at_hour = shared["by_hour"][hour]
             if not at_hour.size:
-                raise IndexError(f"no eligible bar at hour {hour}: trade {k} entered on a bar "
-                                 "the grid never draws (no usable ATR, or outside the session)")
-            holds = np.minimum(pool if redraw else mine["hold"][k:k + 1], last - low)
+                raise IndexError(
+                    f"no eligible bar at hour {hour}: trade {k} entered on a bar "
+                    "the grid never draws (no usable ATR, or outside the session)"
+                )
+            holds = np.minimum(pool if redraw else mine["hold"][k : k + 1], last - low)
             first = np.searchsorted(at_hour, low)
-            rooms = np.maximum(np.searchsorted(at_hour, np.minimum(top, last - holds),
-                                               side="right") - first, 1)
+            rooms = np.maximum(
+                np.searchsorted(at_hour, np.minimum(top, last - holds), side="right")
+                - first,
+                1,
+            )
             start = np.cumsum(rooms) - rooms
-            bar = at_hour[np.minimum(first + np.arange(rooms.sum()) - np.repeat(start, rooms),
-                                     at_hour.size - 1)]
+            bar = at_hour[
+                np.minimum(
+                    first + np.arange(rooms.sum()) - np.repeat(start, rooms),
+                    at_hour.size - 1,
+                )
+            ]
             enter.append(bar)
             leave.append(np.minimum(bar + np.repeat(holds, rooms), last))
             side.append(np.full(bar.size, key[3]))
             seen[key] = (used + start, rooms)
             used += bar.size
         off[k], room[k] = seen[key]
-    return {"enter": np.concatenate(enter), "leave": np.concatenate(leave),
-            "side": np.concatenate(side), "off": off, "room": room, "hid": hid.astype(np.int64)}
+    return {
+        "enter": np.concatenate(enter),
+        "leave": np.concatenate(leave),
+        "side": np.concatenate(side),
+        "off": off,
+        "room": room,
+        "hid": hid.astype(np.int64),
+    }
 
 
 # No cache=True: this inlines pcg.py, and numba does not invalidate a disk cache when only that file changes.
 @njit(nogil=True)
-def _fill(value: np.ndarray, off: np.ndarray, room: np.ndarray, hid: np.ndarray,
-          redraw: bool, state: np.ndarray, one: np.ndarray, row: np.ndarray,
-          out: np.ndarray) -> None:
+def _fill(
+    value: np.ndarray,
+    off: np.ndarray,
+    room: np.ndarray,
+    hid: np.ndarray,
+    redraw: bool,
+    state: np.ndarray,
+    one: np.ndarray,
+    row: np.ndarray,
+    out: np.ndarray,
+) -> None:
     """out[s, k] = the table value draw s gives trade k, on the uniforms numpy would have drawn.
 
     Draw s reads `rng.random((2, n))`: n uniforms for the entries, then n for the holds, whatever
@@ -125,12 +157,16 @@ def _fill(value: np.ndarray, off: np.ndarray, room: np.ndarray, hid: np.ndarray,
                 high, low = pcg.step(high, low, one)
                 far, near = pcg.step(far, near, one)
                 j = hid[np.int64(pcg.uniform(far, near) * n)]
-                out[s, k] = value[off[k, j] + np.int64(pcg.uniform(high, low) * room[k, j])]
+                out[s, k] = value[
+                    off[k, j] + np.int64(pcg.uniform(high, low) * room[k, j])
+                ]
             high, low = far, near
         else:
             for k in range(n):
                 high, low = pcg.step(high, low, one)
-                out[s, k] = value[off[k, 0] + np.int64(pcg.uniform(high, low) * room[k, 0])]
+                out[s, k] = value[
+                    off[k, 0] + np.int64(pcg.uniform(high, low) * room[k, 0])
+                ]
             high, low = pcg.step(high, low, row)
     state[0], state[1] = high, low
 
@@ -138,8 +174,17 @@ def _fill(value: np.ndarray, off: np.ndarray, room: np.ndarray, hid: np.ndarray,
 def warm() -> None:
     """Compile `_fill` here, once, before a study forks: a fork child that compiles its own took the pool down."""
     one = np.zeros((1, 1), np.int64)
-    means({"value": np.zeros(1), "off": one, "room": one + 1, "hid": one[0], "redraw": False}, 1,
-          np.random.default_rng(0))
+    means(
+        {
+            "value": np.zeros(1),
+            "off": one,
+            "room": one + 1,
+            "hid": one[0],
+            "redraw": False,
+        },
+        1,
+        np.random.default_rng(0),
+    )
 
 
 def means(table: Table, draws: int, rng: np.random.Generator) -> np.ndarray:
@@ -158,9 +203,18 @@ def means(table: Table, draws: int, rng: np.random.Generator) -> np.ndarray:
     one, row = pcg.jump(inc, 1), pcg.jump(inc, n)
     out, held = np.empty(draws), np.empty((max(1, PASS // n), n))
     for done in range(0, draws, len(held)):
-        part = held[:draws - done]
-        _fill(table["value"], table["off"], table["room"], table["hid"], table["redraw"],
-              state, one, row, part)
-        out[done:done + len(part)] = part.mean(axis=1)
+        part = held[: draws - done]
+        _fill(
+            table["value"],
+            table["off"],
+            table["room"],
+            table["hid"],
+            table["redraw"],
+            state,
+            one,
+            row,
+            part,
+        )
+        out[done : done + len(part)] = part.mean(axis=1)
     pcg.store(rng, state)
     return out

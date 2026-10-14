@@ -1,4 +1,5 @@
 """What the collector keeps per account: every deal since it opened, the minute curve, the floating excursions."""
+
 import json
 from datetime import datetime, timezone
 
@@ -6,7 +7,7 @@ import pandas as pd
 
 from core import fleetpaths
 
-BALANCE_TYPE = 2   # DEAL_TYPE_BALANCE: deposits, withdrawals
+BALANCE_TYPE = 2  # DEAL_TYPE_BALANCE: deposits, withdrawals
 
 
 def deals(login: int) -> list[dict] | None:
@@ -25,7 +26,10 @@ def minutes(login: int, server_days: list[int]) -> pd.DataFrame | None:
     Returns:
         None when none of the days has a file.
     """
-    names = {datetime.fromtimestamp(d, timezone.utc).strftime("%Y-%m-%d") for d in server_days}
+    names = {
+        datetime.fromtimestamp(d, timezone.utc).strftime("%Y-%m-%d")
+        for d in server_days
+    }
     files = [fleetpaths.history_dir(login) / f"{n}.parquet" for n in sorted(names)]
     frames = [pd.read_parquet(f) for f in files if f.exists()]
     return pd.concat(frames, ignore_index=True) if frames else None
@@ -60,8 +64,19 @@ def trades(rows: list[dict]) -> list[dict]:
         if not entry:
             continue
         e = min(entry, key=lambda d: d["time"])
-        out.append({"position": pos, "symbol": e["symbol"], "side": "buy" if e["type"] == 0 else "sell",
-                    "magic": e["magic"], "comment": e["comment"], "open": e["time"], "volume": e["volume"],
-                    "close": max(d["time"] for d in exits) if exits else None,
-                    "net": sum(d["profit"] + d["swap"] + d["commission"] + d["fee"] for d in ds)})
+        out.append(
+            {
+                "position": pos,
+                "symbol": e["symbol"],
+                "side": "buy" if e["type"] == 0 else "sell",
+                "magic": e["magic"],
+                "comment": e["comment"],
+                "open": e["time"],
+                "volume": e["volume"],
+                "close": max(d["time"] for d in exits) if exits else None,
+                "net": sum(
+                    d["profit"] + d["swap"] + d["commission"] + d["fee"] for d in ds
+                ),
+            }
+        )
     return out

@@ -11,11 +11,29 @@ from core.paths import ledger_file
 SAFE = re.compile(r"[^A-Za-z0-9]+")
 
 # Contract L1: what every search leaves behind. Order is reading order, not importance.
-COLUMNS = ("study", "ts", "step", "launched_by", "config_hash", "symbol", "timeframe",
-           "segment", "window_from", "window_to", "n_in", "n_out", "criterion",
-           "thresholds", "sharpe_mean", "sharpe_std", "sharpe_max", "n_scored",
-           "score_unit", "seeds", "note")
-
+COLUMNS = (
+    "study",
+    "ts",
+    "step",
+    "launched_by",
+    "config_hash",
+    "symbol",
+    "timeframe",
+    "segment",
+    "window_from",
+    "window_to",
+    "n_in",
+    "n_out",
+    "criterion",
+    "thresholds",
+    "sharpe_mean",
+    "sharpe_std",
+    "sharpe_max",
+    "n_scored",
+    "score_unit",
+    "seeds",
+    "note",
+)
 
 
 def study_id(symbol: str, timeframe: str, family: str) -> str:
@@ -61,8 +79,11 @@ def read(study: str) -> pd.DataFrame:
     file = path(study)
     if not file.exists():
         return pd.DataFrame(columns=pd.Index(COLUMNS))
-    rows = [json.loads(line) for line in file.read_text(encoding="utf-8").splitlines()
-            if line.strip()]
+    rows = [
+        json.loads(line)
+        for line in file.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     return pd.DataFrame(rows)
 
 
@@ -74,4 +95,3 @@ def studies() -> list[str]:
     """
     folder = path("x").parent
     return sorted(f.stem for f in folder.glob("*.jsonl")) if folder.exists() else []
-

@@ -19,7 +19,7 @@ from ui.desktop import client, combofix, helpmark
 from ui.desktop.shell import Shell
 from ui.desktop.theme import QSS
 
-SHOT_MS = 2500      # the zones read the daemon when built; this lets the last paint land
+SHOT_MS = 2500  # the zones read the daemon when built; this lets the last paint land
 
 
 def replace_stale(port: int, info: dict) -> None:
@@ -34,18 +34,24 @@ def replace_stale(port: int, info: dict) -> None:
     2026-09-26: a daemon from the day before, 404 on /api/catalogue).
     """
     if info.get("busy"):
-        refuse(f"El demonio del puerto {port} corre código anterior a esta versión y tiene "
-               f"{info['busy']} trabajo(s) en marcha. Vuelve a abrir la ventana cuando "
-               f"terminen: entonces se reinicia solo.")
+        refuse(
+            f"El demonio del puerto {port} corre código anterior a esta versión y tiene "
+            f"{info['busy']} trabajo(s) en marcha. Vuelve a abrir la ventana cuando "
+            f"terminen: entonces se reinicia solo."
+        )
     if "pid" not in info:
-        refuse(f"El demonio del puerto {port} es de una versión que no dice su pid. "
-               f"Páralo a mano (ps -ef | grep ui.daemon.serve, kill <pid>) y vuelve a abrir.")
+        refuse(
+            f"El demonio del puerto {port} es de una versión que no dice su pid. "
+            f"Páralo a mano (ps -ef | grep ui.daemon.serve, kill <pid>) y vuelve a abrir."
+        )
     os.kill(info["pid"], signal.SIGTERM)
     for _ in range(40):
         if not client.awake(port):
             return
         time.sleep(0.25)
-    refuse(f"El demonio viejo (pid {info['pid']}) no se paró. Páralo a mano y vuelve a abrir.")
+    refuse(
+        f"El demonio viejo (pid {info['pid']}) no se paró. Páralo a mano y vuelve a abrir."
+    )
 
 
 def refuse(text: str) -> None:
@@ -75,14 +81,20 @@ def ensure_daemon(port: int) -> subprocess.Popen | None:
         return None
     if info:
         replace_stale(port, info)
-    proc = subprocess.Popen([sys.executable, "-m", "ui.daemon.serve", "--port", str(port)],
-                            cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "ui.daemon.serve", "--port", str(port)],
+        cwd=ROOT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     for _ in range(60):
         if client.awake(port):
             return proc
         time.sleep(0.25)
-    raise SystemExit(f"el demonio no respondió en el puerto {port}. Arráncalo a mano con "
-                     f"python3 -m ui.daemon.serve para ver el error")
+    raise SystemExit(
+        f"el demonio no respondió en el puerto {port}. Arráncalo a mano con "
+        f"python3 -m ui.daemon.serve para ver el error"
+    )
 
 
 def shoot(window: Shell, folder: Path, zone: str) -> None:
@@ -104,23 +116,39 @@ def spanish(app: QApplication) -> None:
     """Qt's own words in Spanish: the standard buttons said «&Yes», «&No», «OK» and «Cancel»
     under Spanish questions (📓 2026-09-29), for want of the translation PySide6 ships."""
     translator = QTranslator(app)
-    if translator.load("qtbase_es", QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)):
+    if translator.load(
+        "qtbase_es", QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
+    ):
         app.installTranslator(translator)
 
 
 def main() -> None:
     """Open the window and run until it is closed."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--zone", default="Cobertura",
-                    help="la zona que se abre al arrancar, por su nombre en la barra lateral")
-    ap.add_argument("--port", type=int, default=UI_PORT,
-                    help=f"el puerto del demonio (por defecto {UI_PORT}); otro para no tocar el "
-                         "de la ventana del dueño")
-    ap.add_argument("--shot", type=Path, metavar="DIR",
-                    help="guarda una captura PNG de la ventana en esa carpeta y sale")
-    ap.add_argument("--size", metavar="ANCHOxALTO",
-                    help="tamaño de la ventana, p. ej. 2560x1400 para una captura a pantalla "
-                         "del dueño (por defecto 1440x900)")
+    ap.add_argument(
+        "--zone",
+        default="Cobertura",
+        help="la zona que se abre al arrancar, por su nombre en la barra lateral",
+    )
+    ap.add_argument(
+        "--port",
+        type=int,
+        default=UI_PORT,
+        help=f"el puerto del demonio (por defecto {UI_PORT}); otro para no tocar el "
+        "de la ventana del dueño",
+    )
+    ap.add_argument(
+        "--shot",
+        type=Path,
+        metavar="DIR",
+        help="guarda una captura PNG de la ventana en esa carpeta y sale",
+    )
+    ap.add_argument(
+        "--size",
+        metavar="ANCHOxALTO",
+        help="tamaño de la ventana, p. ej. 2560x1400 para una captura a pantalla "
+        "del dueño (por defecto 1440x900)",
+    )
     args = ap.parse_args()
 
     app = QApplication(sys.argv)
@@ -131,8 +159,8 @@ def main() -> None:
     # The same icon the menu entry uses, so the taskbar and alt-tab show it too.
     app.setWindowIcon(QIcon(str(Path(__file__).with_name("icon-256.png"))))
     app.setStyleSheet(QSS)
-    helpmark.install(app)     # the «?» beside every button
-    combofix.install(app)     # every dropdown shows all it fits (§1, 2026-09-30)
+    helpmark.install(app)  # the «?» beside every button
+    combofix.install(app)  # every dropdown shows all it fits (§1, 2026-09-30)
     window = Shell()
     if args.size:
         window.resize(*map(int, args.size.split("x")))

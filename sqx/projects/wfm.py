@@ -12,7 +12,14 @@ from core import assetdata
 from core.assetdata import doctrine, load, policy, sqx_settings, window
 from sqx.projects import cfxio
 from sqx.projects.acceptance import acceptance, area
-from sqx.projects.crosschecks import active, enable, member_of, others_on, recommended, silence
+from sqx.projects.crosschecks import (
+    active,
+    enable,
+    member_of,
+    others_on,
+    recommended,
+    silence,
+)
 from sqx.projects.databanks import set_databank
 from sqx.projects.setups import bounds, set_costs, set_data_range
 from sqx.projects.tasksettings import set_precision
@@ -26,9 +33,11 @@ BLOCK = re.compile(r"<WalkForwardMatrix\b.*?</WalkForwardMatrix>", re.S)
 # window for real; simulated slices it out of one backtest already computed, which also
 # decides WHICH parameters each step picks. The label is SQX's own, so the output says what
 # the GUI would say.
-WF_TYPES = {"simulated_is_simulated_oos": (0, "Simulated IS, Simulated OOS (fastest)"),
-            "simulated_is_exact_oos": (1, "Simulated IS, Exact OOS (slower)"),
-            "exact_is_exact_oos": (2, "Exact IS, Exact OOS (slow)")}
+WF_TYPES = {
+    "simulated_is_simulated_oos": (0, "Simulated IS, Simulated OOS (fastest)"),
+    "simulated_is_exact_oos": (1, "Simulated IS, Exact OOS (slower)"),
+    "exact_is_exact_oos": (2, "Exact IS, Exact OOS (slow)"),
+}
 # 🔬 Decoded 2026-09-24 from the install's own plugin (`CrossCheckWalkForwardMatrix`): the two
 # integers the donor carried are enums. The period type is what makes Param1 a percentage and
 # Param2 a number of passes; with `days` or `bars` both axes would be lengths and the grid
@@ -49,8 +58,10 @@ def grid(cfg: dict) -> tuple[int, int]:
         the area rule slides its rectangle over.
     """
     oos, runs = cfg["oos_pct"], cfg["runs"]
-    return (len(range(runs["start"], runs["stop"] + 1, runs["step"])),
-            len(range(oos["start"], oos["stop"] + 1, oos["step"])))
+    return (
+        len(range(runs["start"], runs["stop"] + 1, runs["step"])),
+        len(range(oos["start"], oos["stop"] + 1, oos["step"])),
+    )
 
 
 def axes(cfg: dict) -> tuple[str, int]:
@@ -66,15 +77,17 @@ def axes(cfg: dict) -> tuple[str, int]:
     """
     oos, runs = cfg["oos_pct"], cfg["runs"]
     steps = round(2 * cfg["distribution_pct"] / cfg["step_pct"])
-    return (f'<WalkForward type="{WF_TYPES[cfg["wf_type"]][0]}" '
-            f'period="{PERIOD_TYPES[cfg["period_type"]]}" '
-            f'optimization="{OPTIMIZATION_TYPES[cfg["optimization_type"]]}" '
-            f'distributionUp="{cfg["distribution_pct"]}" '
-            f'distributionDown="{cfg["distribution_pct"]}" maxSteps="{steps}">'
-            f'<Param1 value="undefined" start="{oos["start"]}" stop="{oos["stop"]}" '
-            f'step="{oos["step"]}" />'
-            f'<Param2 value="undefined" start="{runs["start"]}" stop="{runs["stop"]}" '
-            f'step="{runs["step"]}" /></WalkForward>'), steps
+    return (
+        f'<WalkForward type="{WF_TYPES[cfg["wf_type"]][0]}" '
+        f'period="{PERIOD_TYPES[cfg["period_type"]]}" '
+        f'optimization="{OPTIMIZATION_TYPES[cfg["optimization_type"]]}" '
+        f'distributionUp="{cfg["distribution_pct"]}" '
+        f'distributionDown="{cfg["distribution_pct"]}" maxSteps="{steps}">'
+        f'<Param1 value="undefined" start="{oos["start"]}" stop="{oos["stop"]}" '
+        f'step="{oos["step"]}" />'
+        f'<Param2 value="undefined" start="{runs["start"]}" stop="{runs["stop"]}" '
+        f'step="{runs["step"]}" /></WalkForward>'
+    ), steps
 
 
 def settings(block: str, cfg: dict) -> tuple[str, dict]:
@@ -93,19 +106,32 @@ def settings(block: str, cfg: dict) -> tuple[str, dict]:
     element, steps = axes(cfg)
     found = re.search(r"<WalkForward\b.*?</WalkForward>", block, re.S)
     assert found is not None
-    block = block[:found.start()] + element + block[found.end():]
-    block = re.sub(r"<MaxTests>\d+</MaxTests>", f"<MaxTests>{cfg['max_tests']}</MaxTests>",
-                   block, count=1)
+    block = block[: found.start()] + element + block[found.end() :]
+    block = re.sub(
+        r"<MaxTests>\d+</MaxTests>",
+        f"<MaxTests>{cfg['max_tests']}</MaxTests>",
+        block,
+        count=1,
+    )
     size = cfg["grid_passing_size"]
-    block = acceptance(recommended(block), cfg["conditions"],
-                       area(rows, cols, size, cfg["min_squares"], cfg["threshold_pct"]),
-                       "WalkForwardMatrix")
-    return block, {"cells": rows * cols, "rows": rows, "columns": cols, "steps": steps,
-                   "wf_type": cfg["wf_type"],
-                   "conditions": len(cfg["conditions"]),
-                   "threshold_pct": cfg["threshold_pct"], "area": f"{size}x{size}",
-                   "min_squares": cfg["min_squares"],
-                   "positions": (rows - size + 1) * (cols - size + 1)}
+    block = acceptance(
+        recommended(block),
+        cfg["conditions"],
+        area(rows, cols, size, cfg["min_squares"], cfg["threshold_pct"]),
+        "WalkForwardMatrix",
+    )
+    return block, {
+        "cells": rows * cols,
+        "rows": rows,
+        "columns": cols,
+        "steps": steps,
+        "wf_type": cfg["wf_type"],
+        "conditions": len(cfg["conditions"]),
+        "threshold_pct": cfg["threshold_pct"],
+        "area": f"{size}x{size}",
+        "min_squares": cfg["min_squares"],
+        "positions": (rows - size + 1) * (cols - size + 1),
+    }
 
 
 def write_task(text: str, cfg: dict, data: dict) -> tuple[str, dict]:
@@ -134,8 +160,9 @@ def write_task(text: str, cfg: dict, data: dict) -> tuple[str, dict]:
     priced = bounds(data, cfg["costs_segment"])
     text = text.replace(f'dateFrom="{priced[0]}"', f'dateFrom="{start}"')
     text = text.replace(f'dateTo="{priced[1]}"', f'dateTo="{end}"')
-    text, _ = set_data_range(text, data, (window(data, names[0])[0],
-                                          window(data, names[-1])[1]))
+    text, _ = set_data_range(
+        text, data, (window(data, names[0])[0], window(data, names[-1])[1])
+    )
     text = set_precision(text, cfg["precision"])
     # The donor's own judgement goes first and the catalogue's is written after: `silence`
     # turns off every active condition of the WHOLE task, this one's included, so writing
@@ -145,12 +172,19 @@ def write_task(text: str, cfg: dict, data: dict) -> tuple[str, dict]:
     found = BLOCK.search(text)
     assert found is not None
     block, written = settings(found.group(0), cfg)
-    text = text[:found.start()] + block + text[found.end():]
-    return text, {"segment": cfg["segment"], "from": start, "to": end,
-                  "priced_at": cfg["costs_segment"], "spread": sqx_settings(
-                      data, cfg["costs_segment"])["defaultSpread"],
-                  "precision": cfg["precision"], "setups": setups, "silenced": silenced,
-                  "others_on": others_on(text, "WalkForwardMatrix"), **written}
+    text = text[: found.start()] + block + text[found.end() :]
+    return text, {
+        "segment": cfg["segment"],
+        "from": start,
+        "to": end,
+        "priced_at": cfg["costs_segment"],
+        "spread": sqx_settings(data, cfg["costs_segment"])["defaultSpread"],
+        "precision": cfg["precision"],
+        "setups": setups,
+        "silenced": silenced,
+        "others_on": others_on(text, "WalkForwardMatrix"),
+        **written,
+    }
 
 
 def configure(cfx: Path, symbol: str, source: str) -> dict[str, Any]:
@@ -175,8 +209,10 @@ def configure(cfx: Path, symbol: str, source: str) -> dict[str, Any]:
     config = members["config.xml"].decode("utf-8")
     member = member_of(config, cfg["title"])
     if not member:
-        raise SystemExit(f"el proyecto no lleva la tarea {cfg['title']}. Clonalo del donante "
-                         "con --tasks Retest y el --only que la incluya.")
+        raise SystemExit(
+            f"el proyecto no lleva la tarea {cfg['title']}. Clonalo del donante "
+            "con --tasks Retest y el --only que la incluya."
+        )
 
     text, done = write_task(members[member].decode("utf-8"), cfg, data)
     text, _ = set_databank(text, "Input", source)
@@ -184,11 +220,18 @@ def configure(cfx: Path, symbol: str, source: str) -> dict[str, Any]:
     members[member] = text.encode("utf-8")
     members["config.xml"] = active(config, cfg["title"], True).encode("utf-8")
     cfxio.write(cfx, members)
-    return {"project": ElementTree.fromstring(config).get("name"), "title": cfg["title"],
-            "member": member, "reads": source, "writes": cfg["title"],
-            "reserved_for": policy()["segments_default"][cfg["segment"].split("..")[-1]]
-                            .get("reserved_for"),
-            "max_tests": cfg["max_tests"], **done}
+    return {
+        "project": ElementTree.fromstring(config).get("name"),
+        "title": cfg["title"],
+        "member": member,
+        "reads": source,
+        "writes": cfg["title"],
+        "reserved_for": policy()["segments_default"][
+            cfg["segment"].split("..")[-1]
+        ].get("reserved_for"),
+        "max_tests": cfg["max_tests"],
+        **done,
+    }
 
 
 def main() -> None:
@@ -196,20 +239,27 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("symbol")
     ap.add_argument("--cfx", required=True, type=Path)
-    ap.add_argument("--input", required=True,
-                    help="databank que lee. No se adivina: son los supervivientes que han "
-                         "llegado hasta el paso 19")
+    ap.add_argument(
+        "--input",
+        required=True,
+        help="databank que lee. No se adivina: son los supervivientes que han "
+        "llegado hasta el paso 19",
+    )
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
     missing = pending(load(a.symbol))
     if missing:
-        raise SystemExit(f"{a.symbol}: {', '.join(missing)} sin valor pactado. "
-                         "Preguntale al dueno antes de configurar nada (regla dura 5).")
+        raise SystemExit(
+            f"{a.symbol}: {', '.join(missing)} sin valor pactado. "
+            "Preguntale al dueno antes de configurar nada (regla dura 5)."
+        )
     held = cfxio.held(a.cfx)
     if held:
-        raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al "
-                         f"salir. Parala: bin/sqx-worker.sh --role {held} stop")
+        raise SystemExit(
+            f"el {held} tiene este proyecto abierto y reescribe el .cfx al "
+            f"salir. Parala: bin/sqx-worker.sh --role {held} stop"
+        )
     done = configure(a.cfx, a.symbol, a.input)
     staged = own(a.cfx, "wfm")
 
@@ -218,32 +268,48 @@ def main() -> None:
         return
     print(staged)
     print(f"{done['project']}  {a.symbol}  {done['reads']} → {done['writes']}")
-    print(f"  ✓ {done['title']:<4} {done['segment']} {done['from']}→{done['to']}  "
-          f"{done['cells']} celdas ({done['rows']} pasadas x {done['columns']} % OOS), "
-          f"tope {done['max_tests']} tests por paso, {done['steps']} pasos de parametro, "
-          f"precision {done['precision']}")
-    print(f"      cobrada al tramo {done['priced_at']}: spread {done['spread']} — NO al "
-          "ultimo tramo de la ventana, que es lo que hacen los demas spans")
-    print(f"      fidelidad \"{WF_TYPES[done['wf_type']][1]}\" — {done['max_tests']} tests "
-          f"por paso x {done['cells']} celdas, y cada paso es una optimizacion propia")
-    print(f"      {done['silenced']} condicion(es) del donante apagadas y "
-          f"{done['conditions']} propias escritas: una casilla aprueba con "
-          f"{done['threshold_pct']} % de ellas cumplidas")
+    print(
+        f"  ✓ {done['title']:<4} {done['segment']} {done['from']}→{done['to']}  "
+        f"{done['cells']} celdas ({done['rows']} pasadas x {done['columns']} % OOS), "
+        f"tope {done['max_tests']} tests por paso, {done['steps']} pasos de parametro, "
+        f"precision {done['precision']}"
+    )
+    print(
+        f"      cobrada al tramo {done['priced_at']}: spread {done['spread']} — NO al "
+        "ultimo tramo de la ventana, que es lo que hacen los demas spans"
+    )
+    print(
+        f'      fidelidad "{WF_TYPES[done["wf_type"]][1]}" — {done["max_tests"]} tests '
+        f"por paso x {done['cells']} celdas, y cada paso es una optimizacion propia"
+    )
+    print(
+        f"      {done['silenced']} condicion(es) del donante apagadas y "
+        f"{done['conditions']} propias escritas: una casilla aprueba con "
+        f"{done['threshold_pct']} % de ellas cumplidas"
+    )
     if done["min_squares"]:
-        print(f"      SQX marca FAILED a quien no encuentre {done['min_squares']} casillas "
-              f"aprobadas en un area de {done['area']} — {done['positions']} posiciones "
-              "posibles. Marca, NO borra (DeleteFailedStrategies=false), y NO juzga: el "
-              "paso 19 lo decide el analisis en oos2, que anota el area corregida")
+        print(
+            f"      SQX marca FAILED a quien no encuentre {done['min_squares']} casillas "
+            f"aprobadas en un area de {done['area']} — {done['positions']} posiciones "
+            "posibles. Marca, NO borra (DeleteFailedStrategies=false), y NO juzga: el "
+            "paso 19 lo decide el analisis en oos2, que anota el area corregida"
+        )
     else:
         print("      min_squares 0 — modo mapa: puntua cada casilla y no marca a nadie")
     if done["others_on"]:
-        print(f"      ⚠️ esta tarea corre ademas: {', '.join(done['others_on'])} — el "
-              "proyecto no paso por la doctrina")
-    if assetdata.enforced():                   # an autonomous agent only (owner, 2026-09-28)
-        print(f"\n⚠️ {done['segment']} acaba en un tramo RESERVADO para "
-              f"{', '.join(done['reserved_for'] or [])}: cada mirada lo gasta y no se repite.")
-        print("⚠️ Y no se LEE hasta que 17, 18 y 19 esten los tres hechos. Mirar el WFC antes "
-              "de decidir si se corre esto contamina la decision con lo ya visto.")
+        print(
+            f"      ⚠️ esta tarea corre ademas: {', '.join(done['others_on'])} — el "
+            "proyecto no paso por la doctrina"
+        )
+    if assetdata.enforced():  # an autonomous agent only (owner, 2026-09-28)
+        print(
+            f"\n⚠️ {done['segment']} acaba en un tramo RESERVADO para "
+            f"{', '.join(done['reserved_for'] or [])}: cada mirada lo gasta y no se repite."
+        )
+        print(
+            "⚠️ Y no se LEE hasta que 17, 18 y 19 esten los tres hechos. Mirar el WFC antes "
+            "de decidir si se corre esto contamina la decision con lo ya visto."
+        )
 
 
 if __name__ == "__main__":

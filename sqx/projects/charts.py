@@ -17,7 +17,9 @@ STRATEGY_TYPE = re.compile(r"<StrategyType[^>]*>")
 SETUP = re.compile(r"<Setup\b.*?</Setup>", re.S)
 # Every chart of a Setup, in SQX's own spelling. The RulesComplexity charts carry `name=`
 # instead of `symbol=` and are a different list, indexed by the builder, not a data source.
-SETUP_CHART = re.compile(r'<Chart symbol="([^"]*)" timeframe="([^"]*)" spread="([^"]*)"\s*/>')
+SETUP_CHART = re.compile(
+    r'<Chart symbol="([^"]*)" timeframe="([^"]*)" spread="([^"]*)"\s*/>'
+)
 MAIN_RULE_CHART = re.compile(r'<Chart name="Main chart"([^>]*)/>')
 
 
@@ -31,7 +33,10 @@ def wanted(template: Path) -> list[int]:
         One entry per stream above the main chart, which carries timeFrame 0 and takes the
         task's own. Empty for a single-chart template.
     """
-    streams = [int(hit(d.findtext("timeFrame"))) for d in xml(template).iterfind(".//Datas/data")]
+    streams = [
+        int(hit(d.findtext("timeFrame")))
+        for d in xml(template).iterfind(".//Datas/data")
+    ]
     return [tf for tf in streams if tf > 0]
 
 
@@ -92,7 +97,7 @@ def _one_chart_per_setup(text: str) -> str:
             continue
         first = SETUP_CHART.search(setup)
         assert first is not None
-        kept = setup[:first.end()] + SETUP_CHART.sub("", setup[first.end():])
+        kept = setup[: first.end()] + SETUP_CHART.sub("", setup[first.end() :])
         text = text.replace(setup, kept, 1)
     return text
 
@@ -119,25 +124,37 @@ def ensure(text: str, extra: list[int]) -> tuple[str, int]:
         return text, 0
     unknown = [tf for tf in extra if tf not in TF_NAME]
     if unknown:
-        raise SystemExit(f"el flujo de {unknown[0]} min no tiene nombre de gráfico en SQX. "
-                         "Hay que añadirlo a charts.TF_NAME, no se adivina.")
+        raise SystemExit(
+            f"el flujo de {unknown[0]} min no tiene nombre de gráfico en SQX. "
+            "Hay que añadirlo a charts.TF_NAME, no se adivina."
+        )
     text, added = _one_chart_per_setup(text), 0
     for stream, tf in enumerate(extra, start=1):
         name = TF_NAME[tf]
         text, n = SETUP_CHART.subn(
-            rf'\g<0>\n        <Chart symbol="\g<1>" timeframe="{name}" spread="\g<3>" />', text)
+            rf'\g<0>\n        <Chart symbol="\g<1>" timeframe="{name}" spread="\g<3>" />',
+            text,
+        )
         added += n
-        if (re.search(r"</data>\s*</Datas>", text)
-                and f"<timeFrame>{tf}</timeFrame>" not in text):
-            text = re.sub(r"</data>\s*</Datas>",
-                          "</data>\n            <data>\n"
-                          f"              <id>{stream}</id>\n"
-                          "              <symbol>NULL</symbol>\n"
-                          "              <chart>Main chart</chart>\n"
-                          f"              <timeFrame>{tf}</timeFrame>\n"
-                          "            </data>\n          </Datas>", text, count=1)
+        if (
+            re.search(r"</data>\s*</Datas>", text)
+            and f"<timeFrame>{tf}</timeFrame>" not in text
+        ):
+            text = re.sub(
+                r"</data>\s*</Datas>",
+                "</data>\n            <data>\n"
+                f"              <id>{stream}</id>\n"
+                "              <symbol>NULL</symbol>\n"
+                "              <chart>Main chart</chart>\n"
+                f"              <timeFrame>{tf}</timeFrame>\n"
+                "            </data>\n          </Datas>",
+                text,
+                count=1,
+            )
         if MAIN_RULE_CHART.search(text) and f'<Chart name="{name} chart"' not in text:
-            text = MAIN_RULE_CHART.sub(rf'\g<0><Chart name="{name} chart"\g<1>/>', text, count=1)
+            text = MAIN_RULE_CHART.sub(
+                rf'\g<0><Chart name="{name} chart"\g<1>/>', text, count=1
+            )
     return text, added
 
 
@@ -157,12 +174,19 @@ def missing(text: str, extra: list[int]) -> list[str]:
     for setup in SETUP.findall(text) if extra else []:
         found = len(SETUP_CHART.findall(setup))
         if found != len(extra) + 1:
-            out.append(f"las estrategias piden {len(extra) + 1} gráficos y un Setup define "
-                       f"{found}: SQX abortará con «requires {len(extra) + 1} charts, "
-                       f"{found} defined».")
+            out.append(
+                f"las estrategias piden {len(extra) + 1} gráficos y un Setup define "
+                f"{found}: SQX abortará con «requires {len(extra) + 1} charts, "
+                f"{found} defined»."
+            )
     for tf in extra:
-        if MAIN_RULE_CHART.search(text) and f'<Chart name="{TF_NAME[tf]} chart"' not in text:
-            out.append(f"la plantilla lee en {TF_NAME[tf]} y <RulesComplexity> no lista ese "
-                       "gráfico: cada hueco #Chart#=1 caería al gráfico principal sin avisar, "
-                       "y las estrategias leerían el filtro en el timeframe de la señal.")
+        if (
+            MAIN_RULE_CHART.search(text)
+            and f'<Chart name="{TF_NAME[tf]} chart"' not in text
+        ):
+            out.append(
+                f"la plantilla lee en {TF_NAME[tf]} y <RulesComplexity> no lista ese "
+                "gráfico: cada hueco #Chart#=1 caería al gráfico principal sin avisar, "
+                "y las estrategias leerían el filtro en el timeframe de la señal."
+            )
     return out

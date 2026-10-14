@@ -10,7 +10,14 @@ from xml.etree import ElementTree
 from core.assetcheck import pending
 from core.assetdata import doctrine, load
 from sqx.projects import cfxio
-from sqx.projects.crosschecks import active, enable, member_of, others_on, recommended, silence
+from sqx.projects.crosschecks import (
+    active,
+    enable,
+    member_of,
+    others_on,
+    recommended,
+    silence,
+)
 from sqx.projects.databanks import set_databank
 from sqx.projects.setups import bounds, set_costs
 from sqx.projects.tasksettings import set_precision
@@ -20,10 +27,15 @@ from typing import Any, TypedDict
 # ⚠️ The SPP is OptProfileSysParamPermutation. SequentialOptimization sits beside it in the
 # same <CrossChecks> block, is also about permuting parameters, and writes no profile at
 # all -- enabling it burned 47 cores for 91 minutes and produced nothing (2026-09-22).
-BLOCK = re.compile(r"<OptProfileSysParamPermutation\b.*?</OptProfileSysParamPermutation>",
-                   re.S)
-EVALUATIONS = ("EvalProfitOptCheck", "EvalAvgProfitCheck", "EvalUniformDistrCheck",
-               "EvalTopProfitCheck")
+BLOCK = re.compile(
+    r"<OptProfileSysParamPermutation\b.*?</OptProfileSysParamPermutation>", re.S
+)
+EVALUATIONS = (
+    "EvalProfitOptCheck",
+    "EvalAvgProfitCheck",
+    "EvalUniformDistrCheck",
+    "EvalTopProfitCheck",
+)
 
 
 def settings(block: str, cfg: dict) -> tuple[str, int]:
@@ -40,10 +52,15 @@ def settings(block: str, cfg: dict) -> tuple[str, int]:
         what the donor carries, is 5 % and coarse.
     """
     steps = round(2 * cfg["spread_pct"] / cfg["step_pct"])
-    for tag, value in (("MaxTests", cfg["max_tests"]),
-                       ("DistributionUp", cfg["spread_pct"]),
-                       ("DistributionDown", cfg["spread_pct"]), ("Steps", steps)):
-        block = re.sub(rf"<{tag}>\d+</{tag}>", f"<{tag}>{value}</{tag}>", block, count=1)
+    for tag, value in (
+        ("MaxTests", cfg["max_tests"]),
+        ("DistributionUp", cfg["spread_pct"]),
+        ("DistributionDown", cfg["spread_pct"]),
+        ("Steps", steps),
+    ):
+        block = re.sub(
+            rf"<{tag}>\d+</{tag}>", f"<{tag}>{value}</{tag}>", block, count=1
+        )
     return recommended(block), steps
 
 
@@ -98,13 +115,20 @@ def write_task(text: str, spec: dict, data: dict, cfg: dict) -> tuple[str, dict]
     assert found is not None
     block, steps = settings(found.group(0), cfg)
     block, checks = evaluations_off(block)
-    text = text[:found.start()] + block + text[found.end():]
+    text = text[: found.start()] + block + text[found.end() :]
     text, silenced = silence(enable(text, "OptProfileSysParamPermutation"))
     start, end = bounds(data, spec["segment"])
-    return text, {"segment": spec["segment"], "from": start, "to": end, "steps": steps,
-                  "precision": spec["precision"], "setups": setups, "silenced": silenced,
-                  "evaluations_off": checks,
-                  "others_on": others_on(text, "OptProfileSysParamPermutation")}
+    return text, {
+        "segment": spec["segment"],
+        "from": start,
+        "to": end,
+        "steps": steps,
+        "precision": spec["precision"],
+        "setups": setups,
+        "silenced": silenced,
+        "evaluations_off": checks,
+        "others_on": others_on(text, "OptProfileSysParamPermutation"),
+    }
 
 
 def configure(cfx: Path, symbol: str, source: str) -> Configured:
@@ -130,22 +154,40 @@ def configure(cfx: Path, symbol: str, source: str) -> Configured:
     for spec in cfg["tasks"]:
         member = member_of(config, spec["title"])
         if not member:
-            rows.append({"title": spec["title"], "written": False,
-                         "why": f"el proyecto no lleva la tarea {spec['title']}"})
+            rows.append(
+                {
+                    "title": spec["title"],
+                    "written": False,
+                    "why": f"el proyecto no lleva la tarea {spec['title']}",
+                }
+            )
             continue
         text, done = write_task(members[member].decode("utf-8"), spec, data, cfg)
         text, _ = set_databank(text, "Input", reads)
         text, _ = set_databank(text, "Output", spec["title"])
         members[member] = text.encode("utf-8")
         config = active(config, spec["title"], True)
-        rows.append({"title": spec["title"], "member": member, "written": True,
-                     "reads": reads, "writes": spec["title"], **done})
+        rows.append(
+            {
+                "title": spec["title"],
+                "member": member,
+                "written": True,
+                "reads": reads,
+                "writes": spec["title"],
+                **done,
+            }
+        )
         reads = spec["title"]
 
     members["config.xml"] = config.encode("utf-8")
     cfxio.write(cfx, members)
-    return {"project": ElementTree.fromstring(config).get("name"), "input": source,
-            "max_tests": cfg["max_tests"], "spread_pct": cfg["spread_pct"], "tasks": rows}
+    return {
+        "project": ElementTree.fromstring(config).get("name"),
+        "input": source,
+        "max_tests": cfg["max_tests"],
+        "spread_pct": cfg["spread_pct"],
+        "tasks": rows,
+    }
 
 
 def main() -> None:
@@ -153,20 +195,27 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("symbol")
     ap.add_argument("--cfx", required=True, type=Path)
-    ap.add_argument("--input", required=True,
-                    help="databank que lee la primera tarea. No se adivina: son los "
-                         "supervivientes del paso anterior")
+    ap.add_argument(
+        "--input",
+        required=True,
+        help="databank que lee la primera tarea. No se adivina: son los "
+        "supervivientes del paso anterior",
+    )
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
     missing = pending(load(a.symbol))
     if missing:
-        raise SystemExit(f"{a.symbol}: {', '.join(missing)} sin valor pactado. "
-                         "Preguntale al dueno antes de configurar nada (regla dura 5).")
+        raise SystemExit(
+            f"{a.symbol}: {', '.join(missing)} sin valor pactado. "
+            "Preguntale al dueno antes de configurar nada (regla dura 5)."
+        )
     held = cfxio.held(a.cfx)
     if held:
-        raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al "
-                         f"salir. Parala: bin/sqx-worker.sh --role {held} stop")
+        raise SystemExit(
+            f"el {held} tiene este proyecto abierto y reescribe el .cfx al "
+            f"salir. Parala: bin/sqx-worker.sh --role {held} stop"
+        )
     done = configure(a.cfx, a.symbol, a.input)
     staged = own(a.cfx, "spp")
 
@@ -179,18 +228,28 @@ def main() -> None:
         if not row["written"]:
             print(f"  ⊘ {row['title']:<8} NO configurada — {row['why']}")
             continue
-        print(f"  ✓ {row['title']:<8} {row['segment']} {row['from']}→{row['to']}  "
-              f"±{done['spread_pct']} % en {row['steps']} pasos, tope "
-              f"{done['max_tests']:,} permutaciones, precision {row['precision']}")
-        print(f"      {row['reads']} → {row['writes']}   {row['silenced']} condicion(es) y "
-              f"{row['evaluations_off']} chequeo(s) del SPP apagados")
+        print(
+            f"  ✓ {row['title']:<8} {row['segment']} {row['from']}→{row['to']}  "
+            f"±{done['spread_pct']} % en {row['steps']} pasos, tope "
+            f"{done['max_tests']:,} permutaciones, precision {row['precision']}"
+        )
+        print(
+            f"      {row['reads']} → {row['writes']}   {row['silenced']} condicion(es) y "
+            f"{row['evaluations_off']} chequeo(s) del SPP apagados"
+        )
         if row["others_on"]:
-            print(f"      ⚠️ esta tarea corre ademas: {', '.join(row['others_on'])} — el "
-                  "proyecto no paso por la doctrina")
-    print("\nEl perfil lo guarda cada .sqx del databank de salida: sacalo con "
-          "sqx/export/export_spp.py y leelo con studies/breakage/spp/.")
-    print("⚠️ Una SPP a la vez por instalacion: el perfil ocupa decenas de GB mientras se "
-          "construye (medido 2026-09-22).")
+            print(
+                f"      ⚠️ esta tarea corre ademas: {', '.join(row['others_on'])} — el "
+                "proyecto no paso por la doctrina"
+            )
+    print(
+        "\nEl perfil lo guarda cada .sqx del databank de salida: sacalo con "
+        "sqx/export/export_spp.py y leelo con studies/breakage/spp/."
+    )
+    print(
+        "⚠️ Una SPP a la vez por instalacion: el perfil ocupa decenas de GB mientras se "
+        "construye (medido 2026-09-22)."
+    )
 
 
 if __name__ == "__main__":

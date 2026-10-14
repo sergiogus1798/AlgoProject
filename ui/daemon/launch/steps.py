@@ -37,11 +37,11 @@ class StepTasks(TypedDict):
 ELSEWHERE = {
     "5": "el proyecto se crea con sqx.projects.builder (en el chat): no es una tarea de SQX",
     "10.5": "se hace sola al lanzar el paso 11: con el worker parado, las supervivientes de "
-            "Cross Market se escalan y se cargan con sus hermanas en CrossTF_Input "
-            "(sqx.projects.crosstfload), y enseguida corre «CrossTF»",
+    "Cross Market se escalan y se cargan con sus hermanas en CrossTF_Input "
+    "(sqx.projects.crosstfload), y enseguida corre «CrossTF»",
     "16.5": "el lote de variantes se fabrica y se carga con /variants en el chat "
-            "(sqx.variants.make → execute): lanzar solo las tareas WFC retestearía lo que "
-            "WFC_Variants tenga ahora",
+    "(sqx.variants.make → execute): lanzar solo las tareas WFC retestearía lo que "
+    "WFC_Variants tenga ahora",
 }
 # An MC Retest task its configurator skipped carries its Monte Carlo off (`perturbations.disable`).
 SILENCED = re.compile(r'<MonteCarloRetest use="false"')
@@ -52,10 +52,12 @@ SILENCED = re.compile(r'<MonteCarloRetest use="false"')
 # donor, the task is a plain retest (🔬 2026-09-29: «WFM» done in 6 s, no matrix, 21
 # strategies passed through). The window runs the configurator first, and only on a task
 # whose cross-check is off (owner, 2026-09-29): a configured task is never rewritten.
-CONFIGURE = {"crossmarket": ("RetestOnAdditionalMarkets", "sqx.projects.crossmarket"),
-             "mcretest": ("MonteCarloRetest", "sqx.projects.mcretest"),
-             "spp": ("OptProfileSysParamPermutation", "sqx.projects.spp"),
-             "wfm": ("WalkForwardMatrix", "sqx.projects.wfm")}
+CONFIGURE = {
+    "crossmarket": ("RetestOnAdditionalMarkets", "sqx.projects.crossmarket"),
+    "mcretest": ("MonteCarloRetest", "sqx.projects.mcretest"),
+    "spp": ("OptProfileSysParamPermutation", "sqx.projects.spp"),
+    "wfm": ("WalkForwardMatrix", "sqx.projects.wfm"),
+}
 
 
 def unconfigured(cfx: Path, titles: list[str]) -> dict[str, list[str]]:
@@ -74,15 +76,27 @@ def unconfigured(cfx: Path, titles: list[str]) -> dict[str, list[str]]:
     tags = list(xmlget.el(ElementTree.fromstring(members["config.xml"]).find("Tasks")))
     for key, (element, module) in CONFIGURE.items():
         mine = [tag for tag in tags if tag.get("title") in stage.titles(key)]
-        on = {tag.get("title", "") for tag in mine if re.search(
-            rf'<{element}\b[^>]*\buse="true"',
-            members.get(tag.get("taskXMLFile") or "", b"").decode("utf-8"))}
+        on = {
+            tag.get("title", "")
+            for tag in mine
+            if re.search(
+                rf'<{element}\b[^>]*\buse="true"',
+                members.get(tag.get("taskXMLFile") or "", b"").decode("utf-8"),
+            )
+        }
         # The MC Retest's configurator leaves some of its eight off on purpose (`silenced`):
         # the stage is configured once any of them carries its Monte Carlo.
         if key == "mcretest" and on:
             continue
-        out.update({module: [t.get("title", "") for t in mine
-                             if t.get("title", "") in titles and t.get("title", "") not in on]})
+        out.update(
+            {
+                module: [
+                    t.get("title", "")
+                    for t in mine
+                    if t.get("title", "") in titles and t.get("title", "") not in on
+                ]
+            }
+        )
     return {m: ts for m, ts in out.items() if ts}
 
 
@@ -100,8 +114,10 @@ def silenced(members: dict[str, bytes], config: str) -> dict[str, str]:
     for tag in xmlget.el(ElementTree.fromstring(config).find("Tasks")):
         body = members.get(tag.get("taskXMLFile") or "", b"").decode("utf-8")
         if SILENCED.search(body):
-            out[tag.get("title", "")] = ("su configurador la dejó sin Monte Carlo (no aplica a esta "
-                                     "población): se queda apagada")
+            out[tag.get("title", "")] = (
+                "su configurador la dejó sin Monte Carlo (no aplica a esta "
+                "población): se queda apagada"
+            )
     return out
 
 
@@ -124,27 +140,43 @@ def of_step(n: str, cfx: Path) -> Refusal | StepTasks:
         return {"refuse": f"el paso {n} no es un paso de SQX"}
     if n in ELSEWHERE:
         return {"refuse": ELSEWHERE[n], "elsewhere": True}
-    if n == CROSSTF_BUILD["step"]:      # 11.7: the build twins this project carries, not a stage's
+    if (
+        n == CROSSTF_BUILD["step"]
+    ):  # 11.7: the build twins this project carries, not a stage's
         got = [t["title"] for t in crosstfload.phase2_tasks(cfx)]
-        return {"titles": got, "off": {}} if got else {
-            "refuse": "el proyecto no lleva tareas de fase 2 (CrossTF <TF> build): el 11.7 no aplica"}
+        return (
+            {"titles": got, "off": {}}
+            if got
+            else {
+                "refuse": "el proyecto no lleva tareas de fase 2 (CrossTF <TF> build): el 11.7 no aplica"
+            }
+        )
     if "stage" not in spec:
         # A new SQX step with no stage in `workflow.steps.STAGE` (2026-09-29) raised
         # KeyError here and /api/launch/steps answered 500: every ▶ SQX of the rail went grey.
-        return {"refuse": f"el paso {n} no tiene tareas de SQX que la ventana sepa lanzar"}
+        return {
+            "refuse": f"el paso {n} no tiene tareas de SQX que la ventana sepa lanzar"
+        }
     wanted = stage.titles(spec["stage"])
     with zipfile.ZipFile(cfx) as z:
         members = {name: z.read(name) for name in z.namelist()}
     config = members["config.xml"].decode("utf-8")
     missing = [t for t in wanted if f'title="{t}"' not in config]
     if missing:
-        return {"refuse": f"el proyecto no lleva {', '.join(missing)}: un proyecto de workflow "
-                          "se crea con `sqx.projects.builder --workflow`"}
+        return {
+            "refuse": f"el proyecto no lleva {', '.join(missing)}: un proyecto de workflow "
+            "se crea con `sqx.projects.builder --workflow`"
+        }
     # Only an MC Retest task carries the flag as a verdict: every other retest has it off; and
     # before its configurator ran, all eight have it off — to configure, not silenced.
-    off = ({t: why for t, why in silenced(members, config).items() if t in wanted}
-           if spec["stage"] == "mcretest" and not unconfigured(cfx, wanted) else {})
+    off = (
+        {t: why for t, why in silenced(members, config).items() if t in wanted}
+        if spec["stage"] == "mcretest" and not unconfigured(cfx, wanted)
+        else {}
+    )
     on = [t for t in wanted if t not in off]
     if not on:
-        return {"refuse": f"todas las tareas del paso {n} están apagadas por su configurador"}
+        return {
+            "refuse": f"todas las tareas del paso {n} están apagadas por su configurador"
+        }
     return {"titles": on, "off": off}

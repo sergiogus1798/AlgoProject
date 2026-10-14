@@ -28,17 +28,29 @@ def blocks_of(path: str, _mtime: float) -> tuple[str | None, tuple[dict, ...]]:
             if b.get("kind") != "distribution":
                 continue
             series = b.get("series") or []
-            out.append({"title": b["title"], "unit": b.get("unit", ""), "real": b.get("real"),
-                        "percentiles": b.get("percentiles", {}), "bins": b.get("bins", []),
-                        "series": [{k: s[k] for k in ("label", "median", "counts")}
-                                   for s in (series[0], series[-1])] if len(series) > 1
-                        else None})
+            out.append(
+                {
+                    "title": b["title"],
+                    "unit": b.get("unit", ""),
+                    "real": b.get("real"),
+                    "percentiles": b.get("percentiles", {}),
+                    "bins": b.get("bins", []),
+                    "series": [
+                        {k: s[k] for k in ("label", "median", "counts")}
+                        for s in (series[0], series[-1])
+                    ]
+                    if len(series) > 1
+                    else None,
+                }
+            )
     return got.get("identity"), tuple(out)
 
 
 def key(study: str, block: dict) -> str:
     """The metric key a distribution is offered under: `dist:<study>/<title> [<unit>]`."""
-    return f"dist:{study}/{block['title']}" + (f" [{block['unit']}]" if block["unit"] else "")
+    return f"dist:{study}/{block['title']}" + (
+        f" [{block['unit']}]" if block["unit"] else ""
+    )
 
 
 def project(project_name: str, refused: set[str]) -> dict[str, dict[str, dict]]:
@@ -93,10 +105,16 @@ def inside(block: dict, width: int) -> bool | None:
     lo_q, hi_q = PAIRS[width]
     if block["series"]:
         first, last = block["series"]
-        lo, hi = (quantile(block["bins"], first["counts"], q / 100) for q in (lo_q, hi_q))
+        lo, hi = (
+            quantile(block["bins"], first["counts"], q / 100) for q in (lo_q, hi_q)
+        )
         point = last["median"]
     else:
-        lo, hi, point = block["percentiles"][str(lo_q)], block["percentiles"][str(hi_q)], block["real"]
+        lo, hi, point = (
+            block["percentiles"][str(lo_q)],
+            block["percentiles"][str(hi_q)],
+            block["real"],
+        )
     return None if point is None else lo <= point <= hi
 
 

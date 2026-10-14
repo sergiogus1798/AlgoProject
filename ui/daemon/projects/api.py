@@ -17,7 +17,7 @@ def every_project() -> dict[str, object]:
     """
     try:
         return {"projects": sources.gallery()}
-    except (OSError, KeyError, ValueError) as e:     # a project.cfx SQX is rewriting
+    except (OSError, KeyError, ValueError) as e:  # a project.cfx SQX is rewriting
         return {"projects": [], "error": f"no se pudieron leer los proyectos: {e}"}
 
 
@@ -32,8 +32,11 @@ def one_project(name: str) -> dict[str, object]:
     row = sources.registered().get(name)
     if not row:
         return {}
-    return {"symbol": row["symbol"], "timeframe": row["timeframe"],
-            "template": sources.template(row["template"])}
+    return {
+        "symbol": row["symbol"],
+        "timeframe": row["timeframe"],
+        "template": sources.template(row["template"]),
+    }
 
 
 @ROUTER.get("/api/projects/find")

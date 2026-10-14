@@ -9,10 +9,32 @@ from studies.research.memory import causes, sheet, sources
 from studies.research.memory.sources import CONFIG
 
 STAGES = CONFIG["stages"]
-COLUMNS = ["project", "template", "family", "archetype", "symbol", "timeframe", "direction",
-           "asset_class", "idea", "date", "custodian_hours", "runs", *STAGES, "crosstf_cells",
-           "last_stage", "died_at", "survivors", "dev_cut", "failed_at", "outcome", *causes.BLANK,
-           *sheet.BLANK, "verdict", "source"]
+COLUMNS = [
+    "project",
+    "template",
+    "family",
+    "archetype",
+    "symbol",
+    "timeframe",
+    "direction",
+    "asset_class",
+    "idea",
+    "date",
+    "custodian_hours",
+    "runs",
+    *STAGES,
+    "crosstf_cells",
+    "last_stage",
+    "died_at",
+    "survivors",
+    "dev_cut",
+    "failed_at",
+    "outcome",
+    *causes.BLANK,
+    *sheet.BLANK,
+    "verdict",
+    "source",
+]
 NAME = re.compile(r"^(?:Test|Trade|Research)_([A-Z0-9]+)_.*_(M15|M30|H1|H4|D1)$")
 DIRECTION = {"market_long": "long", "market_short": "short"}
 
@@ -41,18 +63,43 @@ def funnel(stages: dict, failed: str) -> Funnel:
         the task may simply not have run.
     """
     seen = [s for s in STAGES if s in stages]
-    died = next((s for s, prev in zip(seen, [None, *seen]) if stages[s] == 0
-                 and (prev is None or stages[prev] > 0)), "")
+    died = next(
+        (
+            s
+            for s, prev in zip(seen, [None, *seen])
+            if stages[s] == 0 and (prev is None or stages[prev] > 0)
+        ),
+        "",
+    )
     last = seen[-1] if seen else ""
     final = last == STAGES[-1] and stages[last] > 0
-    outcome = ("failed@" + failed if failed else f"died@{died}" if died else
-               "survivors" if final else f"incomplete@{last}" if last else "unknown")
-    return {"last_stage": last, "died_at": "" if failed else died,
-            "survivors": 0 if died and not failed else stages[last] if final else "",
-            "outcome": outcome}
+    outcome = (
+        "failed@" + failed
+        if failed
+        else f"died@{died}"
+        if died
+        else "survivors"
+        if final
+        else f"incomplete@{last}"
+        if last
+        else "unknown"
+    )
+    return {
+        "last_stage": last,
+        "died_at": "" if failed else died,
+        "survivors": 0 if died and not failed else stages[last] if final else "",
+        "outcome": outcome,
+    }
 
 
-def one(project: str, reg: dict, runs: dict, tpl: dict, ideas: AbstractSet, root: Path | None = None) -> dict[str, Any]:
+def one(
+    project: str,
+    reg: dict,
+    runs: dict,
+    tpl: dict,
+    ideas: AbstractSet,
+    root: Path | None = None,
+) -> dict[str, Any]:
     """The row of one project from every source that knows it; what none knows stays ''.
     Its sheet is read before its cause: a build that contradicts the sheet is a cause too."""
     name = sources.template_of(reg) or runs.get("template", "")
@@ -64,19 +111,35 @@ def one(project: str, reg: dict, runs: dict, tpl: dict, ideas: AbstractSet, root
     if not stages and runs.get("strategies_built"):
         stages["built"] = int(runs["strategies_built"])
     row = {c: "" for c in COLUMNS}
-    row |= {"project": project, "template": name, "archetype": info.get("archetype", ""),
-            "family": CONFIG["archetype_family"].get(info.get("archetype", ""), ""),
-            "symbol": symbol, "timeframe": reg.get("timeframe") or runs.get("timeframe")
-            or (parts[2] if parts else ""), "direction": DIRECTION.get(info.get("shape"), ""),
-            "asset_class": CONFIG["asset_class"].get(symbol, ""),
-            "idea": name if name in ideas else "",
-            "date": (reg.get("created") or runs.get("date") or pilot["first"])[:10],
-            "custodian_hours": round(pilot["minutes"] / 60, 2) if pilot["runs"] else "",
-            "runs": pilot["runs"], "crosstf_cells": pilot["crosstf"] if pilot["runs"] else "",
-            "dev_cut": "yes" if pilot["dev_cut"] else "", "failed_at": pilot["failed"],
-            "verdict": runs.get("verdict", ""),
-            "source": "+".join(s for s, on in (("projects", reg), ("runs.csv", runs),
-                                               ("autopilot", pilot["runs"])) if on)}
+    row |= {
+        "project": project,
+        "template": name,
+        "archetype": info.get("archetype", ""),
+        "family": CONFIG["archetype_family"].get(info.get("archetype", ""), ""),
+        "symbol": symbol,
+        "timeframe": reg.get("timeframe")
+        or runs.get("timeframe")
+        or (parts[2] if parts else ""),
+        "direction": DIRECTION.get(info.get("shape"), ""),
+        "asset_class": CONFIG["asset_class"].get(symbol, ""),
+        "idea": name if name in ideas else "",
+        "date": (reg.get("created") or runs.get("date") or pilot["first"])[:10],
+        "custodian_hours": round(pilot["minutes"] / 60, 2) if pilot["runs"] else "",
+        "runs": pilot["runs"],
+        "crosstf_cells": pilot["crosstf"] if pilot["runs"] else "",
+        "dev_cut": "yes" if pilot["dev_cut"] else "",
+        "failed_at": pilot["failed"],
+        "verdict": runs.get("verdict", ""),
+        "source": "+".join(
+            s
+            for s, on in (
+                ("projects", reg),
+                ("runs.csv", runs),
+                ("autopilot", pilot["runs"]),
+            )
+            if on
+        ),
+    }
     row |= {s: stages.get(s, "") for s in STAGES}
     row |= funnel(stages if pilot["runs"] else {}, pilot["failed"])
     row |= sheet.reading(name, project) if name else sheet.BLANK
@@ -94,7 +157,11 @@ def table(ideas: AbstractSet = frozenset()) -> list[dict]:
         autopilot folder. Projects of other kinds (MT5 verification, hand-made) carry no
         template and are left out.
     """
-    reg, runs, tpl = sources.registry_projects(), sources.runs_by_project(), sources.templates()
+    reg, runs, tpl = (
+        sources.registry_projects(),
+        sources.runs_by_project(),
+        sources.templates(),
+    )
     folders = {p.name for p in sources.autopilot_runs().glob("*") if p.is_dir()}
     names = {n for n, r in reg.items() if sources.template_of(r)} | set(runs) | folders
     rows = [one(n, reg.get(n, {}), runs.get(n, {}), tpl, ideas) for n in names]

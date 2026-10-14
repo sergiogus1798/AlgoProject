@@ -32,7 +32,9 @@ def test_pearson_spearman_match_scipy() -> None:
     check("pearson == scipy", np.isclose(got_p, want_p), f"{got_p:.6f} vs {want_p:.6f}")
     got_s = measures.spearman(a, b, {})
     want_s = spearmanr(a, b)[0]
-    check("spearman == scipy", np.isclose(got_s, want_s), f"{got_s:.6f} vs {want_s:.6f}")
+    check(
+        "spearman == scipy", np.isclose(got_s, want_s), f"{got_s:.6f} vs {want_s:.6f}"
+    )
 
 
 def test_co_loss_hand_table() -> None:
@@ -56,7 +58,11 @@ def test_tail_worst_months_only() -> None:
     got = measures.tail(a, b, {"tail_quantile": 0.30})
     whole = measures.pearson(a, b, {})
     check("tail correlation high", got > 0.9, f"tail={got:.3f}")
-    check("tail != whole-series pearson", not np.isclose(got, whole, atol=0.2), f"{got:.3f} vs {whole:.3f}")
+    check(
+        "tail != whole-series pearson",
+        not np.isclose(got, whole, atol=0.2),
+        f"{got:.3f} vs {whole:.3f}",
+    )
 
 
 def test_overlap_never_forced_zero() -> None:
@@ -88,11 +94,21 @@ def test_rolling_whole_and_recent() -> None:
     b[:60] = rng.normal(size=60)
     b[60:] = 0.9 * a[60:] + rng.normal(scale=0.05, size=60)
     result = rolling.rolling_max(a, b, window=60, recent=36, method="pearson")
-    check("rolling whole_abs picks up the rho=0.9 window",
-          result["whole_abs"] > 0.8, f"{result}")
-    check("rolling recent_abs == whole_abs (the winning window ends inside the last 36)",
-          np.isclose(result["recent_abs"], result["whole_abs"]), f"{result}")
-    check("n_windows == n - window + 1", result["n_windows"] == n - 60 + 1, f"{result['n_windows']}")
+    check(
+        "rolling whole_abs picks up the rho=0.9 window",
+        result["whole_abs"] > 0.8,
+        f"{result}",
+    )
+    check(
+        "rolling recent_abs == whole_abs (the winning window ends inside the last 36)",
+        np.isclose(result["recent_abs"], result["whole_abs"]),
+        f"{result}",
+    )
+    check(
+        "n_windows == n - window + 1",
+        result["n_windows"] == n - 60 + 1,
+        f"{result['n_windows']}",
+    )
 
 
 def test_rolling_skips_nonfinite_window() -> None:
@@ -102,7 +118,11 @@ def test_rolling_skips_nonfinite_window() -> None:
     a[65] = np.nan
     result = rolling.rolling_max(a, b, window=60, recent=10, method="pearson")
     # 11 windows total (start 0..10); windows with start in [6,10] contain index 65 -> 5 skipped
-    check("rolling skips windows touching the NaN", result["n_windows"] == 11 - 5, f"{result}")
+    check(
+        "rolling skips windows touching the NaN",
+        result["n_windows"] == 11 - 5,
+        f"{result}",
+    )
 
 
 def test_stress_calm_vs_stress_days() -> None:
@@ -119,7 +139,11 @@ def test_stress_calm_vs_stress_days() -> None:
     calm = stress.stress_corr(a, b, ~stress_idx)
     hot = stress.stress_corr(a, b, stress_idx)
     check("stress_corr on calm days ~= 0", abs(calm) < 0.2, f"calm={calm:.3f}")
-    check("stress_corr on planted stress days == 1", np.isclose(hot, 1.0), f"stress={hot:.3f}")
+    check(
+        "stress_corr on planted stress days == 1",
+        np.isclose(hot, 1.0),
+        f"stress={hot:.3f}",
+    )
 
 
 def test_stress_days_selection() -> None:
@@ -131,7 +155,11 @@ def test_stress_days_selection() -> None:
     worst_day = idx[3]
     pool.loc[worst_day] = -100.0
     days = stress.stress_days(pool, 0.01)
-    check("stress_days includes the planted worst day", worst_day in days, f"{list(days)[:3]}")
+    check(
+        "stress_days includes the planted worst day",
+        worst_day in days,
+        f"{list(days)[:3]}",
+    )
 
 
 def test_effective_n_clones_and_independent() -> None:
@@ -139,13 +167,29 @@ def test_effective_n_clones_and_independent() -> None:
     k = 8
     clones = np.ones((k, k))
     result = stress.effective_n(clones)
-    check("effective_n clones participation == 1", np.isclose(result["participation"], 1.0), f"{result}")
-    check("effective_n clones average == 1", np.isclose(result["average"], 1.0), f"{result}")
+    check(
+        "effective_n clones participation == 1",
+        np.isclose(result["participation"], 1.0),
+        f"{result}",
+    )
+    check(
+        "effective_n clones average == 1",
+        np.isclose(result["average"], 1.0),
+        f"{result}",
+    )
 
     independent = np.eye(k)
     result = stress.effective_n(independent)
-    check("effective_n independent participation == k", np.isclose(result["participation"], k), f"{result}")
-    check("effective_n independent average == k", np.isclose(result["average"], k), f"{result}")
+    check(
+        "effective_n independent participation == k",
+        np.isclose(result["participation"], k),
+        f"{result}",
+    )
+    check(
+        "effective_n independent average == k",
+        np.isclose(result["average"], k),
+        f"{result}",
+    )
 
 
 def report_timings() -> None:
@@ -164,11 +208,15 @@ def report_timings() -> None:
     pairs = 0
     for i in range(50):
         for j in range(i + 1, 50):
-            rolling.rolling_max(series[i], series[j], window=60, recent=36, method="pearson")
+            rolling.rolling_max(
+                series[i], series[j], window=60, recent=36, method="pearson"
+            )
             pairs += 1
     elapsed = time.perf_counter() - t0
-    print(f"TIMING {pairs} pairs (~{n_pairs}), 120 months: {elapsed:.3f} s total, "
-          f"{elapsed / pairs * 1000:.3f} ms/pair")
+    print(
+        f"TIMING {pairs} pairs (~{n_pairs}), 120 months: {elapsed:.3f} s total, "
+        f"{elapsed / pairs * 1000:.3f} ms/pair"
+    )
 
 
 def main() -> int:

@@ -11,7 +11,7 @@ from sqx.variants.build import rewrite
 from typing import TypedDict
 
 NAME = "{strategy} {variant_id}"
-BLOCK = 100          # variants per task handed to a worker
+BLOCK = 100  # variants per task handed to a worker
 
 # What every worker reads, set before the fork: the parent's members, the plan's rows,
 # the strategy's name, where the files go and their shape.
@@ -41,7 +41,9 @@ class Fabricated(TypedDict):
     shape: str
 
 
-def batch(plan: pd.DataFrame, parent: Path, strategy: str, out: Path, shape: str) -> Fabricated:
+def batch(
+    plan: pd.DataFrame, parent: Path, strategy: str, out: Path, shape: str
+) -> Fabricated:
     """Fabricate every row of a plan.
 
     Args:
@@ -69,8 +71,13 @@ def batch(plan: pd.DataFrame, parent: Path, strategy: str, out: Path, shape: str
     for stale in out.glob("*.sqx"):
         stale.unlink()
     rows = plan.to_dict("records")
-    _SHARED.update(source=rewrite.members(parent), rows=rows, strategy=strategy, out=out,
-                   shape=shape)
+    _SHARED.update(
+        source=rewrite.members(parent),
+        rows=rows,
+        strategy=strategy,
+        out=out,
+        shape=shape,
+    )
     # Every file is independent and the time is zlib's, so the rows are cut into blocks and
     # written on every core: 🔬 2026-09-25, 5,000 variants took 11 s on one.
     blocks = {i: BLOCK for i in range(0, len(rows), BLOCK)}
@@ -89,9 +96,14 @@ def _block(start: int) -> int:
     """
     got = _SHARED
     written = 0
-    for row in got["rows"][start:start + BLOCK]:
-        parts = rewrite.variant(got["source"], row["variant_id"],
-                                name_of(got["strategy"], row["variant_id"]),
-                                tuples.from_columns(row))
-        written += rewrite.save(got["out"] / f"{row['variant_id']}.sqx", parts, got["shape"])
+    for row in got["rows"][start : start + BLOCK]:
+        parts = rewrite.variant(
+            got["source"],
+            row["variant_id"],
+            name_of(got["strategy"], row["variant_id"]),
+            tuples.from_columns(row),
+        )
+        written += rewrite.save(
+            got["out"] / f"{row['variant_id']}.sqx", parts, got["shape"]
+        )
     return written

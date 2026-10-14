@@ -29,7 +29,9 @@ def projects(install: Path) -> list[str]:
     Returns:
         Names of every folder under `user/projects` with a `project.cfx`, sorted.
     """
-    return sorted(p.parent.name for p in (install / "user" / "projects").glob("*/project.cfx"))
+    return sorted(
+        p.parent.name for p in (install / "user" / "projects").glob("*/project.cfx")
+    )
 
 
 def tasks(cfx: Path) -> list[dict]:
@@ -54,9 +56,15 @@ def _tasks(cfx: Path, stamp: int) -> tuple[dict, ...]:
         for t in root.iter("Task"):
             settings = ElementTree.fromstring(z.read(cast(str, t.get("taskXMLFile"))))
             banks = {d.get("name"): d.get("value") for d in settings.iter("Databank")}
-            out.append({"title": t.get("title"), "type": t.get("type"),
-                        "active": t.get("active") == "true",
-                        "output": banks.get("Output", ""), "input": banks.get("Input", "")})
+            out.append(
+                {
+                    "title": t.get("title"),
+                    "type": t.get("type"),
+                    "active": t.get("active") == "true",
+                    "output": banks.get("Output", ""),
+                    "input": banks.get("Input", ""),
+                }
+            )
     return tuple(out)
 
 
@@ -70,8 +78,11 @@ def counts(project_dir: Path) -> dict[str, int]:
         Databank name → `.sqx` files. SQX writes them on sync, so a running task's output
         lags until it saves.
     """
-    return {d.name: sum(1 for _ in d.glob("*.sqx"))
-            for d in (project_dir / "databanks").glob("*") if d.is_dir()}   # none before its first run
+    return {
+        d.name: sum(1 for _ in d.glob("*.sqx"))
+        for d in (project_dir / "databanks").glob("*")
+        if d.is_dir()
+    }  # none before its first run
 
 
 def genetic(cfx: Path, running: bool, banks: dict[str, int]) -> dict | None:
@@ -101,6 +112,12 @@ def genetic(cfx: Path, running: bool, banks: dict[str, int]) -> dict | None:
         size, islands = int(g["PopulationSize"]), int(g["Islands"])
     except (StopIteration, AttributeError, KeyError, ValueError, zipfile.BadZipFile):
         return None
-    return {"population": size * islands, "size": size, "islands": islands,
-            "generations": int(g["MaxGenerations"]), "initial": banks.get("Initial population"),
-            "last": banks.get("Last generation"), "results": banks.get("Results")}
+    return {
+        "population": size * islands,
+        "size": size,
+        "islands": islands,
+        "generations": int(g["MaxGenerations"]),
+        "initial": banks.get("Initial population"),
+        "last": banks.get("Last generation"),
+        "results": banks.get("Results"),
+    }

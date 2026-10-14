@@ -23,15 +23,18 @@ def events(project: str, databank: str) -> list[dict]:
     path = log_file(project, databank)
     if not path.is_file():
         return []
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()
-            if line.strip()]
+    return [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
 
 
 def since_clear(project: str, databank: str) -> list[dict]:
     """Every line after the last «quitar filtros» (or cut): applied headers and discards."""
     lines = events(project, databank)
     cut = max((i for i, e in enumerate(lines) if e.get("clear")), default=-1)
-    return lines[cut + 1:]
+    return lines[cut + 1 :]
 
 
 def groups(project: str, databank: str) -> list[tuple[dict, list[dict]]]:
@@ -53,8 +56,9 @@ def orphans(project: str, databank: str) -> int:
     return sum("identity" in e for e in lines[:first])
 
 
-def current(project: str, databank: str) -> tuple[list[tuple[dict, list[dict]]],
-                                                  list[tuple[dict, list[dict]]]]:
+def current(
+    project: str, databank: str
+) -> tuple[list[tuple[dict, list[dict]]], list[tuple[dict, list[dict]]]]:
     """The filter in force and the manual deletions, apart.
 
     The latest filter decides: it was judged on the whole databank, so loosening it brings
@@ -68,8 +72,10 @@ def current(project: str, databank: str) -> tuple[list[tuple[dict, list[dict]]],
     """
     every = groups(project, databank)
     filters = [g for g in every if g[0]["origin"] == "filter"]
-    return ([filters[-1]] if filters and "rows" in filters[-1][0] else [],
-            [g for g in every if g[0]["origin"] == "manual"])
+    return (
+        [filters[-1]] if filters and "rows" in filters[-1][0] else [],
+        [g for g in every if g[0]["origin"] == "manual"],
+    )
 
 
 def stale(project: str, databank: str) -> str | None:
@@ -101,7 +107,9 @@ def hidden(project: str, databank: str) -> set[str]:
 
 def manual_ids(project: str, databank: str) -> set[str]:
     """The identities deleted by hand since the last clear: they survive every re-filter."""
-    return {line["identity"] for _, lines in current(project, databank)[1] for line in lines}
+    return {
+        line["identity"] for _, lines in current(project, databank)[1] for line in lines
+    }
 
 
 def rows_now(project: str, databank: str) -> list[dict]:
@@ -110,8 +118,9 @@ def rows_now(project: str, databank: str) -> list[dict]:
     return (filters[0][0]["rows"] or []) if filters else []
 
 
-def unchanged(project: str, databank: str, rows: list[dict], n_in: int,
-              dropped: set[str]) -> bool:
+def unchanged(
+    project: str, databank: str, rows: list[dict], n_in: int, dropped: set[str]
+) -> bool:
     """Whether applying would change nothing: the same conditions in force AND the same
     judgement over the table now. A strategy SQX wrote or deleted since makes it differ, so
     a re-apply picks the change up (and drops identities the table no longer holds)."""
@@ -119,8 +128,11 @@ def unchanged(project: str, databank: str, rows: list[dict], n_in: int,
     if not filters:
         return not rows and not stale(project, databank)
     head, lines = filters[0]
-    return ((head["rows"] or []) == rows and head["n_in"] == n_in
-            and {line["identity"] for line in lines} == dropped)
+    return (
+        (head["rows"] or []) == rows
+        and head["n_in"] == n_in
+        and {line["identity"] for line in lines} == dropped
+    )
 
 
 def stamp() -> str:
@@ -143,9 +155,18 @@ def append(project: str, databank: str, lines: list[dict]) -> None:
             handle.write(json.dumps(line, ensure_ascii=False) + "\n")
 
 
-def record(project: str, databank: str, dropped: dict[str, str], origin: str,
-           expression: str, n_in: int, blank: int = 0, anonymous: int = 0,
-           rows: list[dict] | None = None, total: int | None = None) -> None:
+def record(
+    project: str,
+    databank: str,
+    dropped: dict[str, str],
+    origin: str,
+    expression: str,
+    n_in: int,
+    blank: int = 0,
+    anonymous: int = 0,
+    rows: list[dict] | None = None,
+    total: int | None = None,
+) -> None:
     """Write one filter's or one manual deletion's discards, after one `applied` line that
     keeps its counts (a filter that set nobody aside is still a step of the funnel).
 
@@ -165,12 +186,34 @@ def record(project: str, databank: str, dropped: dict[str, str], origin: str,
             in force); a filter's is its n_in.
     """
     ts = stamp()
-    head = {"applied": True, "origin": origin, "expression": expression, "ts": ts,
-            "n_in": n_in, "n_out": n_in - len(dropped), "blank": blank,
-            "anonymous": anonymous, "rows": rows, "total": n_in if total is None else total}
-    append(project, databank, [head] + [{"identity": i, "name": n, "origin": origin,
-                                "expression": expression, "ts": ts, "n_in": n_in}
-                               for i, n in sorted(dropped.items(), key=lambda kv: kv[1])])
+    head = {
+        "applied": True,
+        "origin": origin,
+        "expression": expression,
+        "ts": ts,
+        "n_in": n_in,
+        "n_out": n_in - len(dropped),
+        "blank": blank,
+        "anonymous": anonymous,
+        "rows": rows,
+        "total": n_in if total is None else total,
+    }
+    append(
+        project,
+        databank,
+        [head]
+        + [
+            {
+                "identity": i,
+                "name": n,
+                "origin": origin,
+                "expression": expression,
+                "ts": ts,
+                "n_in": n_in,
+            }
+            for i, n in sorted(dropped.items(), key=lambda kv: kv[1])
+        ],
+    )
 
 
 def clear(project: str, databank: str) -> int:
@@ -203,22 +246,48 @@ def steps(project: str, databank: str, total: int | None = None) -> list[dict]:
     for head, lines in filters:
         gone |= {line["identity"] for line in lines}
         if head.get("rows") != []:
-            out.append({"expression": head["expression"], "origin": "filter", "ts": head["ts"],
-                        "entered": head["n_in"], "passed": head["n_out"],
-                        "died": head["n_in"] - head["n_out"], "blank": head.get("blank", 0),
-                        "anonymous": head.get("anonymous", 0)})
+            out.append(
+                {
+                    "expression": head["expression"],
+                    "origin": "filter",
+                    "ts": head["ts"],
+                    "entered": head["n_in"],
+                    "passed": head["n_out"],
+                    "died": head["n_in"] - head["n_out"],
+                    "blank": head.get("blank", 0),
+                    "anonymous": head.get("anonymous", 0),
+                }
+            )
     for head, lines in manual:
         ids = {line["identity"] for line in lines} - gone
         gone |= ids
-        entered = (out[-1]["passed"] if out else total if total is not None
-                   else head.get("total", head["n_in"]))
-        out.append({"expression": head["expression"], "origin": "manual", "ts": head["ts"],
-                    "entered": entered, "passed": entered - len(ids), "died": len(ids),
-                    "blank": 0, "anonymous": head.get("anonymous", 0)})
+        entered = (
+            out[-1]["passed"]
+            if out
+            else total
+            if total is not None
+            else head.get("total", head["n_in"])
+        )
+        out.append(
+            {
+                "expression": head["expression"],
+                "origin": "manual",
+                "ts": head["ts"],
+                "entered": entered,
+                "passed": entered - len(ids),
+                "died": len(ids),
+                "blank": 0,
+                "anonymous": head.get("anonymous", 0),
+            }
+        )
     return out
 
 
 def databanks(project: str) -> list[str]:
     """The databank folders of a project that have a discard log."""
     top = filters_root() / project
-    return sorted(p.parent.name for p in top.glob("*/discards.jsonl")) if top.is_dir() else []
+    return (
+        sorted(p.parent.name for p in top.glob("*/discards.jsonl"))
+        if top.is_dir()
+        else []
+    )

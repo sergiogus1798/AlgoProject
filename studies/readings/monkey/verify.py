@@ -26,8 +26,14 @@ class Uniformity(TypedDict):
     mean: float
 
 
-def slow_exits(entries: np.ndarray, holds: np.ndarray, low: np.ndarray, high: np.ndarray,
-               stop: np.ndarray, target: np.ndarray) -> np.ndarray:
+def slow_exits(
+    entries: np.ndarray,
+    holds: np.ndarray,
+    low: np.ndarray,
+    high: np.ndarray,
+    stop: np.ndarray,
+    target: np.ndarray,
+) -> np.ndarray:
     """The first barrier touch of every trade, written the obvious way.
 
     Args:
@@ -67,12 +73,17 @@ def barriers(kept: inputs.Fixed, atr_mult: float = 1.5) -> Barriers:
     entry_px = arrays["enter_px"][located["entry"]]
     reach = kept["atr"][located["entry"]] * atr_mult
     stop, target = entry_px - reach, entry_px + reach
-    fast, _, _ = kernel.touched(located["entry"], located["hold"], arrays["low"],
-                                arrays["high"], stop, target)
-    slow = slow_exits(located["entry"], located["hold"], arrays["low"], arrays["high"],
-                      stop, target)
-    return {"trades": len(fast), "disagree": int((fast != slow).sum()),
-            "touched": int((fast > 0).sum())}
+    fast, _, _ = kernel.touched(
+        located["entry"], located["hold"], arrays["low"], arrays["high"], stop, target
+    )
+    slow = slow_exits(
+        located["entry"], located["hold"], arrays["low"], arrays["high"], stop, target
+    )
+    return {
+        "trades": len(fast),
+        "disagree": int((fast != slow).sum()),
+        "touched": int((fast > 0).sum()),
+    }
 
 
 def uniformity(kept: inputs.Fixed, cfg: dict, trials: int) -> Uniformity:
@@ -93,8 +104,12 @@ def uniformity(kept: inputs.Fixed, cfg: dict, trials: int) -> Uniformity:
     stand_in, rest = drawn[:trials], drawn[trials:]
     found = np.array([(1 + (rest >= one).sum()) / (len(rest) + 1) for one in stand_in])
     result = stats.kstest(found, "uniform")
-    return {"trials": trials, "ks": float(result.statistic), "p": float(result.pvalue),
-            "mean": float(found.mean())}
+    return {
+        "trials": trials,
+        "ks": float(result.statistic),
+        "p": float(result.pvalue),
+        "mean": float(found.mean()),
+    }
 
 
 def main() -> None:
@@ -111,19 +126,27 @@ def main() -> None:
     a = ap.parse_args()
 
     cfg = inputs.config(a.set)
-    trades = inputs.sample(inputs.newest(a.project, a.databank), a.strategy, a.sample, a.feed)
+    trades = inputs.sample(
+        inputs.newest(a.project, a.databank), a.strategy, a.sample, a.feed
+    )
     kept = simulate.fixed(trades, inputs.bars(a.feed, a.timeframe), cfg)
 
     print(f"{a.strategy}  ({len(trades)} trades, muestra {a.sample})\n")
-    print(f"RECONCILIACION  fill={kept['checks']['fill']}  corr={kept['checks']['corr']:.6f}  "
-          f"gap mediano={kept['checks']['median_gap']:.2f} $  "
-          f"(segunda mejor convencion: {kept['checks']['runner_up']:.4f})")
+    print(
+        f"RECONCILIACION  fill={kept['checks']['fill']}  corr={kept['checks']['corr']:.6f}  "
+        f"gap mediano={kept['checks']['median_gap']:.2f} $  "
+        f"(segunda mejor convencion: {kept['checks']['runner_up']:.4f})"
+    )
     got = barriers(kept)
-    print(f"BARRERAS        {got['trades']} trades, {got['touched']} tocan una barrera "
-          f"sintetica, discrepancias vectorizado vs bucle: {got['disagree']}")
+    print(
+        f"BARRERAS        {got['trades']} trades, {got['touched']} tocan una barrera "
+        f"sintetica, discrepancias vectorizado vs bucle: {got['disagree']}"
+    )
     flat = uniformity(kept, cfg, a.trials)
-    print(f"UNIFORMIDAD     {flat['trials']} runs nulos juzgados contra el resto: "
-          f"KS={flat['ks']:.4f} p={flat['p']:.3f} media={flat['mean']:.3f} (debe ser ~0.5)")
+    print(
+        f"UNIFORMIDAD     {flat['trials']} runs nulos juzgados contra el resto: "
+        f"KS={flat['ks']:.4f} p={flat['p']:.3f} media={flat['mean']:.3f} (debe ser ~0.5)"
+    )
 
 
 if __name__ == "__main__":

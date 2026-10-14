@@ -8,7 +8,7 @@ from ui.daemon.workflow import ledgerview
 
 LOCKED = "reservado: se abre tras los pasos 17, 18 y 19"
 NO_EXPORT = "OOS2 abierto, sin export: exporta el retest oos2"
-NAMES = ["OOS2", "oos2"]        # how a cosecha may spell the sample (plan 24 §10, Q10)
+NAMES = ["OOS2", "oos2"]  # how a cosecha may spell the sample (plan 24 §10, Q10)
 
 
 def blocked(project: str) -> dict | None:
@@ -38,18 +38,30 @@ def read(project: str, identity: str) -> dict | str:
         `harvest.read`'s shape with every row's sample «OOS2», or `NO_EXPORT`.
     """
     where = [("identity", "==", identity), ("sample", "in", NAMES)]
-    for path in sorted((DATA / "harvest" / project).glob("*/*/equity.parquet"),
-                       key=lambda p: p.parent.name, reverse=True):
+    for path in sorted(
+        (DATA / "harvest" / project).glob("*/*/equity.parquet"),
+        key=lambda p: p.parent.name,
+        reverse=True,
+    ):
         equity = pd.read_parquet(path, columns=EQUITY, filters=where)
         if equity.empty:
             continue
         folder = path.parent
-        trades = pd.read_parquet(folder / "trades.parquet", columns=TRADES, filters=where)
+        trades = pd.read_parquet(
+            folder / "trades.parquet", columns=TRADES, filters=where
+        )
         metrics = pd.read_parquet(folder / "metrics.parquet", filters=where[:1])
         row = metrics.iloc[0].to_dict() if len(metrics) else {"strategy": ""}
         trades["Close type"] = trades["Close type"].astype(str)
-        return {"day": folder.name, "folder": str(folder), "strategy": row["strategy"],
-                "identity": identity, "metrics": row,
-                "equity": equity.assign(sample="OOS2").sort_values("day", kind="stable"),
-                "trades": trades.assign(sample="OOS2").sort_values("Close time", kind="stable")}
+        return {
+            "day": folder.name,
+            "folder": str(folder),
+            "strategy": row["strategy"],
+            "identity": identity,
+            "metrics": row,
+            "equity": equity.assign(sample="OOS2").sort_values("day", kind="stable"),
+            "trades": trades.assign(sample="OOS2").sort_values(
+                "Close time", kind="stable"
+            ),
+        }
     return NO_EXPORT

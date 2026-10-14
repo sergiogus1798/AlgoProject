@@ -30,23 +30,42 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         calendar window it opened in, and `stop`, the raw price of an exit SQX filled inside
         its bar (a stop-loss), NaN on an exit at a bar open. Raises as reprice.real does.
     """
-    if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
+    if not data:  # tests/test_gate_rules.py runs every level on an empty harvest
         return pd.DataFrame(index=alive, columns=pd.Index(FACTS), dtype=float)
     bars, drift = data["bars"], cfg["drift"]
     trades = data["trades"]
-    oos = (trades[(trades["sample"] == "OOS") & trades["identity"].isin(alive)]
-           .sort_values(["identity", "Close time"]))
-    priced = reprice.real(oos, bars, data["costs"], data.get("feed"))   # tests stage no feed
-    term, window = tradelevel.drift_term(oos, bars, data["market"]["windows"]["OOS"],
-                                         drift["window"], drift["variant"],
-                                         data["costs"]["point_value"])
+    oos = trades[
+        (trades["sample"] == "OOS") & trades["identity"].isin(alive)
+    ].sort_values(["identity", "Close time"])
+    priced = reprice.real(
+        oos, bars, data["costs"], data.get("feed")
+    )  # tests stage no feed
+    term, window = tradelevel.drift_term(
+        oos,
+        bars,
+        data["market"]["windows"]["OOS"],
+        drift["window"],
+        drift["variant"],
+        data["costs"]["point_value"],
+    )
     when, pnl = bars.index.to_numpy(), priced["pnl"].to_numpy()
-    data["oos"] = pd.DataFrame({
-        "identity": oos["identity"].to_numpy(), "open_time": when[priced["enter"]],
-        "close_time": when[priced["leave"]], "side": priced["side"].to_numpy(),
-        "lots": oos["Size"].to_numpy(), "pnl": pnl, "cost": priced["cost"].to_numpy(),
-        "drift": term, "excess": pnl - term, "window": window,
-        "stop": priced["stop"].to_numpy()})
+    data["oos"] = pd.DataFrame(
+        {
+            "identity": oos["identity"].to_numpy(),
+            "open_time": when[priced["enter"]],
+            "close_time": when[priced["leave"]],
+            "side": priced["side"].to_numpy(),
+            "lots": oos["Size"].to_numpy(),
+            "pnl": pnl,
+            "cost": priced["cost"].to_numpy(),
+            "drift": term,
+            "excess": pnl - term,
+            "window": window,
+            "stop": priced["stop"].to_numpy(),
+        }
+    )
     data["oos"].to_parquet(data["out"] / "operaciones.parquet", index=False)
     t = tradelevel.t_skew_kurt if drift["se_skew_kurt"] else tradelevel.t
-    return pd.DataFrame(t(data["oos"], "excess")[["ar1"]].set_axis(list(FACTS), axis=1)).reindex(alive)
+    return pd.DataFrame(
+        t(data["oos"], "excess")[["ar1"]].set_axis(list(FACTS), axis=1)
+    ).reindex(alive)

@@ -21,7 +21,7 @@ def monday(time: np.ndarray | pd.Series | np.datetime64) -> np.ndarray:
         datetime64[D]; a Saturday or Sunday stamp belongs to the week that just traded.
     """
     day = np.asarray(time, "datetime64[D]")
-    return day - (day.astype(np.int64) + 3) % 7 * DAY          # 1970-01-01 was a Thursday
+    return day - (day.astype(np.int64) + 3) % 7 * DAY  # 1970-01-01 was a Thursday
 
 
 def years(window: tuple[str, str]) -> float:
@@ -34,9 +34,15 @@ def years(window: tuple[str, str]) -> float:
     return ((last - first).days + 1) / 365.25
 
 
-def per_trade(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
-              span: tuple[str, str], drift: dict, feed: str | None = None,
-              drift_span: tuple[str, str] | None = None) -> pd.DataFrame:
+def per_trade(
+    trades: pd.DataFrame,
+    bars: pd.DataFrame,
+    costs: reprice.Costs,
+    span: tuple[str, str],
+    drift: dict,
+    feed: str | None = None,
+    drift_span: tuple[str, str] | None = None,
+) -> pd.DataFrame:
     """One leg's trades on one market with their net and gross excess and their stamps.
 
     Args:
@@ -50,12 +56,20 @@ def per_trade(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
         and markets concatenate into what weekly() takes.
     """
     per = excess.per_trade(trades, bars, costs, span, drift, feed, drift_span)
-    return per.assign(net=per["excess"], gross=per["excess"] + per["cost"],
-                      open=trades["Open time"], close=trades["Close time"])
+    return per.assign(
+        net=per["excess"],
+        gross=per["excess"] + per["cost"],
+        open=trades["Open time"],
+        close=trades["Close time"],
+    )
 
 
-def weekly(per: pd.DataFrame, window: tuple[str, str], unit: str = "variant_id",
-           units: Sequence | None = None) -> dict[str, pd.DataFrame]:
+def weekly(
+    per: pd.DataFrame,
+    window: tuple[str, str],
+    unit: str = "variant_id",
+    units: Sequence | None = None,
+) -> dict[str, pd.DataFrame]:
     """Weeks x units of excess over one window, every trade whole in the week it closes in.
 
     Args:
@@ -74,17 +88,24 @@ def weekly(per: pd.DataFrame, window: tuple[str, str], unit: str = "variant_id",
     first, last = (monday(np.datetime64(day, "D")) for day in window)
     index = np.arange(first, last + DAY, 7 * DAY)
     close = np.asarray(per["close"], "datetime64[D]")
-    assert len(close) == 0 or (close.min() >= np.datetime64(window[0], "D")
-                               and close.max() <= np.datetime64(window[1], "D")), (
-        f"a trade closes outside {window}")
+    assert len(close) == 0 or (
+        close.min() >= np.datetime64(window[0], "D")
+        and close.max() <= np.datetime64(window[1], "D")
+    ), f"a trade closes outside {window}"
     columns = pd.Index(per[unit].unique() if units is None else units, name=unit)
     col, week = columns.get_indexer(per[unit]), (monday(close) - first) // (7 * DAY)
     assert (col >= 0).all(), f"trades of a {unit} that is not among the panel's units"
     shape = (len(index), len(columns))
-    return {name: pd.DataFrame(
-        np.bincount(week * shape[1] + col, per[name].to_numpy(), shape[0] * shape[1]).reshape(shape),
-        index=pd.DatetimeIndex(index.astype("datetime64[ns]"), name="week"), columns=columns)
-        for name in ("net", "gross")}
+    return {
+        name: pd.DataFrame(
+            np.bincount(
+                week * shape[1] + col, per[name].to_numpy(), shape[0] * shape[1]
+            ).reshape(shape),
+            index=pd.DatetimeIndex(index.astype("datetime64[ns]"), name="week"),
+            columns=columns,
+        )
+        for name in ("net", "gross")
+    }
 
 
 def per_year(panel: pd.DataFrame, window: tuple[str, str]) -> pd.Series:
@@ -100,8 +121,13 @@ def per_year(panel: pd.DataFrame, window: tuple[str, str]) -> pd.Series:
     return panel.sum() / years(window)
 
 
-def sqx_gap(per: pd.DataFrame, net_profit: pd.Series, unit: str = "variant_id",
-            tolerance: float = 0.0, relative: float = 0.0) -> tuple[float, pd.Series]:
+def sqx_gap(
+    per: pd.DataFrame,
+    net_profit: pd.Series,
+    unit: str = "variant_id",
+    tolerance: float = 0.0,
+    relative: float = 0.0,
+) -> tuple[float, pd.Series]:
     """Whether the repriced trades add up to the NetProfit SQX reported, unit by unit.
 
     Args:
@@ -116,13 +142,19 @@ def sqx_gap(per: pd.DataFrame, net_profit: pd.Series, unit: str = "variant_id",
         (the share of units off by more than tolerance + relative x |NetProfit|, the gap sum -
         NetProfit of those units).
     """
-    gap = per.groupby(unit, observed=True)["profit"].sum().reindex(net_profit.index, fill_value=0.0) \
+    gap = (
+        per.groupby(unit, observed=True)["profit"]
+        .sum()
+        .reindex(net_profit.index, fill_value=0.0)
         - net_profit
+    )
     off = gap[gap.abs() > np.maximum(tolerance, relative * net_profit.abs())]
     return len(off) / len(net_profit), off
 
 
-def straddle(open_time: np.ndarray | pd.Series, close_time: np.ndarray | pd.Series) -> float:
+def straddle(
+    open_time: np.ndarray | pd.Series, close_time: np.ndarray | pd.Series
+) -> float:
     """Share of trades closed on a Monday or Tuesday after being held over the weekend.
 
     Args:

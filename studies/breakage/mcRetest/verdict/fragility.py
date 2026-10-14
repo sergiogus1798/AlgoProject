@@ -66,11 +66,13 @@ def tail(values: np.ndarray, quantile: float, cfg: dict) -> Tail:
     ordered = np.sort(np.asarray(values, dtype=np.float64))
     n, q = ordered.size, quantile / 100.0
     alpha = 1 - cfg["fragility"]["confidence"]
-    clamp = (lambda i: ordered[max(0, min(n - 1, int(i)))])
-    return {"point": float(np.percentile(ordered, quantile)),
-            "lo": float(clamp(stats.binom.ppf(alpha / 2, n, q))),
-            "hi": float(clamp(stats.binom.ppf(1 - alpha / 2, n, q))),
-            "method": "order statistics"}
+    clamp = lambda i: ordered[max(0, min(n - 1, int(i)))]
+    return {
+        "point": float(np.percentile(ordered, quantile)),
+        "lo": float(clamp(stats.binom.ppf(alpha / 2, n, q))),
+        "hi": float(clamp(stats.binom.ppf(1 - alpha / 2, n, q))),
+        "method": "order statistics",
+    }
 
 
 def conditional_drawdown(values: np.ndarray, cfg: dict) -> ConditionalDrawdown:
@@ -90,8 +92,12 @@ def conditional_drawdown(values: np.ndarray, cfg: dict) -> ConditionalDrawdown:
     alpha = cfg["fragility"]["cvar_alpha"]
     edge = float(np.quantile(values, 1 - alpha))
     beyond = values[values >= edge]
-    return {"cvar": float(beyond.mean()), "quantile": edge,
-            "excess": float(beyond.mean() - edge), "n_tail": int(beyond.size)}
+    return {
+        "cvar": float(beyond.mean()),
+        "quantile": edge,
+        "excess": float(beyond.mean() - edge),
+        "n_tail": int(beyond.size),
+    }
 
 
 def underwater(pnl: np.ndarray, offsets: np.ndarray) -> np.ndarray:
@@ -113,7 +119,9 @@ def underwater(pnl: np.ndarray, offsets: np.ndarray) -> np.ndarray:
     return out
 
 
-def fan(pnl: np.ndarray, offsets: np.ndarray, cfg: dict, original: np.ndarray | None = None) -> Fan:
+def fan(
+    pnl: np.ndarray, offsets: np.ndarray, cfg: dict, original: np.ndarray | None = None
+) -> Fan:
     """The percentile bands of every simulated equity curve, on a shared progress grid.
 
     Args:
@@ -136,14 +144,21 @@ def fan(pnl: np.ndarray, offsets: np.ndarray, cfg: dict, original: np.ndarray | 
     for k, (start, stop) in enumerate(zip(offsets[:-1], offsets[1:])):
         equity = np.cumsum(pnl[start:stop])
         curves[k] = np.interp(grid, np.linspace(0.0, 1.0, equity.size), equity)
-    return {"progress": grid,
-            "bands": {level: np.percentile(curves, level, axis=0)
-                      for level in cfg["fragility"]["band_levels"]},
-            "original": None if original is None else
-            np.interp(grid, np.linspace(0.0, 1.0, original.size), original)}
+    return {
+        "progress": grid,
+        "bands": {
+            level: np.percentile(curves, level, axis=0)
+            for level in cfg["fragility"]["band_levels"]
+        },
+        "original": None
+        if original is None
+        else np.interp(grid, np.linspace(0.0, 1.0, original.size), original),
+    }
 
 
-def describe(metrics: dict, pnl: np.ndarray, offsets: np.ndarray, cfg: dict) -> Fragility:
+def describe(
+    metrics: dict, pnl: np.ndarray, offsets: np.ndarray, cfg: dict
+) -> Fragility:
     """Everything question 1 asks of one strategy under one task.
 
     Args:
@@ -156,8 +171,10 @@ def describe(metrics: dict, pnl: np.ndarray, offsets: np.ndarray, cfg: dict) -> 
         The 5th percentile of net profit with its interval, the same for profit factor, the
         conditional drawdown, and how long a simulation typically spent under water.
     """
-    return {"net_p5": tail(metrics["NetProfit"], 5.0, cfg),
-            "pf_p5": tail(metrics["ProfitFactor"], 5.0, cfg),
-            "drawdown": conditional_drawdown(metrics["DrawdownPct"], cfg),
-            "underwater_median": float(np.median(underwater(pnl, offsets))),
-            "positive_share": float(np.mean(metrics["NetProfit"] > 0))}
+    return {
+        "net_p5": tail(metrics["NetProfit"], 5.0, cfg),
+        "pf_p5": tail(metrics["ProfitFactor"], 5.0, cfg),
+        "drawdown": conditional_drawdown(metrics["DrawdownPct"], cfg),
+        "underwater_median": float(np.median(underwater(pnl, offsets))),
+        "positive_share": float(np.mean(metrics["NetProfit"] > 0)),
+    }

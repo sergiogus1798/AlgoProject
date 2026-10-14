@@ -9,8 +9,16 @@ import pandas as pd
 
 from ledger import gate, study as studymod
 
-REQUIRED = ("step", "launched_by", "symbol", "timeframe", "segment", "n_in", "n_out",
-            "criterion")
+REQUIRED = (
+    "step",
+    "launched_by",
+    "symbol",
+    "timeframe",
+    "segment",
+    "n_in",
+    "n_out",
+    "criterion",
+)
 
 
 def distribution(values: np.ndarray) -> dict[str, float | int | None]:
@@ -29,11 +37,17 @@ def distribution(values: np.ndarray) -> dict[str, float | int | None]:
     clean = clean[np.isfinite(clean)]
     if not clean.size:
         return {}
-    return {"sharpe_mean": float(clean.mean()), "sharpe_std": float(clean.std(ddof=1)) if clean.size > 1 else None,
-            "sharpe_max": float(clean.max()), "n_scored": int(clean.size)}
+    return {
+        "sharpe_mean": float(clean.mean()),
+        "sharpe_std": float(clean.std(ddof=1)) if clean.size > 1 else None,
+        "sharpe_max": float(clean.max()),
+        "n_scored": int(clean.size),
+    }
 
 
-def search(study: str, row: dict[str, Any], scores: np.ndarray | None = None) -> dict[str, Any]:
+def search(
+    study: str, row: dict[str, Any], scores: np.ndarray | None = None
+) -> dict[str, Any]:
     """Build one ledger row, checking it says enough to be worth keeping.
 
     Args:
@@ -55,12 +69,21 @@ def search(study: str, row: dict[str, Any], scores: np.ndarray | None = None) ->
     """
     missing = [k for k in REQUIRED if k not in row]
     if missing:
-        raise KeyError(f"ledger: falta {missing} en la búsqueda del paso {row.get('step')}")
-    stamped = {"study": study, "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-               **{k: None for k in studymod.COLUMNS if k not in ("study", "ts")}, **row}
+        raise KeyError(
+            f"ledger: falta {missing} en la búsqueda del paso {row.get('step')}"
+        )
+    stamped = {
+        "study": study,
+        "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        **{k: None for k in studymod.COLUMNS if k not in ("study", "ts")},
+        **row,
+    }
     scored = distribution(scores) if scores is not None else {}
-    return {**stamped, **scored,
-            "score_unit": row.get("score_unit", "per_period" if scored else None)}
+    return {
+        **stamped,
+        **scored,
+        "score_unit": row.get("score_unit", "per_period" if scored else None),
+    }
 
 
 def append(study: str, row: dict[str, Any]) -> dict[str, Any]:
@@ -85,7 +108,9 @@ def append(study: str, row: dict[str, Any]) -> dict[str, Any]:
     return row
 
 
-def log(study: str, row: dict[str, Any], scores: np.ndarray | None = None) -> dict[str, Any]:
+def log(
+    study: str, row: dict[str, Any], scores: np.ndarray | None = None
+) -> dict[str, Any]:
     """Check the one-way door, then record the search. The call every module makes.
 
     Args:

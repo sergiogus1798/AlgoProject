@@ -204,7 +204,7 @@ def tick_file(feed: str) -> Path:
         The master's `.dat`: several GB of delta-coded ask/bid ticks that only
         `core.tickfile` reads. Read-only; SQX rewrites it on a data update.
     """
-    feed = current(feed)   # an older .sqx names the feed as it was before 2026-10-01
+    feed = current(feed)  # an older .sqx names the feed as it was before 2026-10-01
     return MASTER / "user" / "data" / "History" / feed / f"{feed}_TICK.dat"
 
 

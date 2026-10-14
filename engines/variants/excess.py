@@ -8,12 +8,18 @@ import pandas as pd
 from engines.market import reprice
 from studies.screening.analysis import tradelevel
 
-CHUNK = 200_000       # trades spread over their held bars at a time: bounds daily()'s memory
+CHUNK = 200_000  # trades spread over their held bars at a time: bounds daily()'s memory
 
 
-def per_trade(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
-              span: tuple[str, str], drift: dict, feed: str | None = None,
-              drift_span: tuple[str, str] | None = None) -> pd.DataFrame:
+def per_trade(
+    trades: pd.DataFrame,
+    bars: pd.DataFrame,
+    costs: reprice.Costs,
+    span: tuple[str, str],
+    drift: dict,
+    feed: str | None = None,
+    drift_span: tuple[str, str] | None = None,
+) -> pd.DataFrame:
     """Each trade's repriced profit, the drift the market paid it for being in, and the excess.
 
     Args:
@@ -34,15 +40,28 @@ def per_trade(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
         on: under variants `b` and `d` a trade takes the drift of its own calendar window, so
         a `drift_span` that leaves that window out has none.
     """
-    trades = trades.assign(identity=trades["variant_id"])     # reprice.real names it on a bad fill
+    trades = trades.assign(
+        identity=trades["variant_id"]
+    )  # reprice.real names it on a bad fill
     priced = reprice.real(trades, bars, costs, feed)
-    term, label = tradelevel.drift_term(trades, bars, drift_span or span, drift["window"],
-                                        drift["variant"], costs["point_value"])
+    term, label = tradelevel.drift_term(
+        trades,
+        bars,
+        drift_span or span,
+        drift["window"],
+        drift["variant"],
+        costs["point_value"],
+    )
     assert np.isfinite(term).all(), (
         f"no bars of {drift_span or span} to measure the drift of the trades opened in "
-        f"{sorted(set(label[~np.isfinite(term)]))} (drift variant {drift['variant']})")
-    return priced.assign(variant_id=trades["variant_id"], profit=priced["pnl"], drift=term,
-                         excess=priced["pnl"] - term)
+        f"{sorted(set(label[~np.isfinite(term)]))} (drift variant {drift['variant']})"
+    )
+    return priced.assign(
+        variant_id=trades["variant_id"],
+        profit=priced["pnl"],
+        drift=term,
+        excess=priced["pnl"] - term,
+    )
 
 
 def per_year(excess: pd.DataFrame, window: tuple[str, str]) -> pd.Series:
@@ -61,9 +80,15 @@ def per_year(excess: pd.DataFrame, window: tuple[str, str]) -> pd.Series:
     return total / (((last - first).days + 1) / 365.25)
 
 
-def daily(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
-          span: tuple[str, str], drift: dict, feed: str | None = None,
-          drift_span: tuple[str, str] | None = None) -> pd.DataFrame:
+def daily(
+    trades: pd.DataFrame,
+    bars: pd.DataFrame,
+    costs: reprice.Costs,
+    span: tuple[str, str],
+    drift: dict,
+    feed: str | None = None,
+    drift_span: tuple[str, str] | None = None,
+) -> pd.DataFrame:
     """The excess of each variant day by day: the day's gain minus the drift collected that day.
 
     A trade is marked to the bar opens: each bar it holds books the move to the next open,
@@ -83,19 +108,30 @@ def daily(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
     days = stamps[stamps.slice_indexer(*span)].normalize().unique()  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.normalize
     day, opened = days.get_indexer(stamps.normalize()), bars["Open"].to_numpy()  # pyright: ignore[reportAttributeAccessIssue]  # same
     enter, leave, term = (per[k].to_numpy() for k in ("enter", "leave", "drift"))
-    assert (day[enter] >= 0).all() and (day[leave] >= 0).all(), f"a trade outside {span}"
+    assert (day[enter] >= 0).all() and (day[leave] >= 0).all(), (
+        f"a trade outside {span}"
+    )
     code, ids = pd.factorize(per["variant_id"])
     held, cells = leave - enter, len(ids) * len(days)
     value = per["side"].to_numpy() * trades["Size"].to_numpy() * costs["point_value"]
     rate = term / np.maximum(held, 1)
-    rest = (per["profit"].to_numpy() - value * (opened[leave] - opened[enter])
-            - np.where(held == 0, term, 0.0))
+    rest = (
+        per["profit"].to_numpy()
+        - value * (opened[leave] - opened[enter])
+        - np.where(held == 0, term, 0.0)
+    )
     out = np.bincount(code * len(days) + day[leave], rest, cells)
     for start in range(0, len(per), CHUNK):
-        n = held[start:start + CHUNK]
+        n = held[start : start + CHUNK]
         j = np.repeat(np.arange(start, start + len(n)), n)
         bar = enter[j] + np.arange(len(j)) - np.repeat(n.cumsum() - n, n)
-        out += np.bincount(code[j] * len(days) + day[bar],
-                           value[j] * (opened[bar + 1] - opened[bar]) - rate[j], cells)
-    return pd.DataFrame(out.reshape(len(ids), len(days)),
-                        index=pd.Index(ids, name="variant_id"), columns=days)
+        out += np.bincount(
+            code[j] * len(days) + day[bar],
+            value[j] * (opened[bar + 1] - opened[bar]) - rate[j],
+            cells,
+        )
+    return pd.DataFrame(
+        out.reshape(len(ids), len(days)),
+        index=pd.Index(ids, name="variant_id"),
+        columns=days,
+    )

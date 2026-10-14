@@ -3,8 +3,15 @@
 from typing import TYPE_CHECKING, Any, cast
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QPushButton, QSplitter, QTabBar, QTabWidget,
-                               QVBoxLayout)
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QPushButton,
+    QSplitter,
+    QTabBar,
+    QTabWidget,
+    QVBoxLayout,
+)
 
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.result import ResultView
@@ -52,7 +59,9 @@ class StudyPage(QFrame):
             lay.addWidget(text(got["error"], colour("fail"), 14, True))
         self.families = QTabBar()
         for f in dict.fromkeys(e["family"] for e in self.catalogue.values()):
-            self.families.setTabData(self.families.addTab(cast(str, notes.FAMILY.get(f, f))), f)
+            self.families.setTabData(
+                self.families.addTab(cast(str, notes.FAMILY.get(f, f))), f
+            )
         self.studies = QTabBar()
         self.studies.setIconSize(QSize(dots.SIZE, dots.SIZE))
         self.studies.setExpanding(False)
@@ -66,7 +75,7 @@ class StudyPage(QFrame):
         self.picker = StrategyPicker(strategy_page)
         tools.addWidget(self.picker)
         tools.addWidget(self.bar, 1)
-        tools.addStretch(0)                  # keeps the panel's buttons right when the bar hides
+        tools.addStretch(0)  # keeps the panel's buttons right when the bar hides
         lay.addLayout(tools)
         row = QHBoxLayout()
         self.note = text("", T["muted"], 14)
@@ -74,7 +83,7 @@ class StudyPage(QFrame):
         self.back = QPushButton("Volver a un solo run")
         self.back.clicked.connect(lambda: self.load())
         row.addWidget(self.back, 0, Qt.AlignmentFlag.AlignTop)
-        self.offer = Offer(self)             # the tests with no data here, greyed
+        self.offer = Offer(self)  # the tests with no data here, greyed
         row.addWidget(self.offer.button, 0, Qt.AlignmentFlag.AlignTop)
         lay.addLayout(row)
         self.skipped = text("", T["text"], 13)
@@ -88,10 +97,12 @@ class StudyPage(QFrame):
         side.setDocumentMode(True)
         side.addTab(self.drawer, "configuración")
         side.addTab(self.history, "historial y comparar")
-        side.tabBar().hide()            # the buttons of `SideToggles` choose the tab
+        side.tabBar().hide()  # the buttons of `SideToggles` choose the tab
         self.toggles = SideToggles(side)
         tools.addWidget(self.toggles, 0, Qt.AlignmentFlag.AlignTop)
-        self.lote: BatchTab | None = None       # the mother's variant batch, added only on the WFC study
+        self.lote: BatchTab | None = (
+            None  # the mother's variant batch, added only on the WFC study
+        )
         split = QSplitter()
         split.addWidget(self.view)
         split.addWidget(side)
@@ -135,10 +146,13 @@ class StudyPage(QFrame):
         if not (w["project"] and w["databank"]):
             return
         if self.strategy_page and w["strategy"]:
-            self.cells, self.strategies = dots.of_strategy(w["project"], w["databank"],
-                                                           w["strategy"], w["identity"])
+            self.cells, self.strategies = dots.of_strategy(
+                w["project"], w["databank"], w["strategy"], w["identity"]
+            )
         elif not self.strategy_page:
-            self.cells = dots.of_population(w["project"], w["databank"], list(self.catalogue))
+            self.cells = dots.of_population(
+                w["project"], w["databank"], list(self.catalogue)
+            )
 
     def open_study(self, key: str) -> None:
         """Show one study: its family's tab, its own tab, its result.
@@ -148,8 +162,11 @@ class StudyPage(QFrame):
         """
         self.key = key
         family = self.catalogue[key]["family"]
-        index = next(i for i in range(self.families.count())
-                     if self.families.tabData(i) == family)
+        index = next(
+            i
+            for i in range(self.families.count())
+            if self.families.tabData(i) == family
+        )
         if index == self.families.currentIndex():
             self._family(index)
         else:
@@ -163,17 +180,24 @@ class StudyPage(QFrame):
     def _family(self, index: int) -> None:
         """Fill the study tabs of one family, each with its dot, and open the right one."""
         family = self.families.tabData(index)
-        keys = [k for k, e in self.catalogue.items()
-               if e["family"] == family and not self.offer.hide(k)]
-        if not keys:          # everything here is hidden: better an unusable tab than none
+        keys = [
+            k
+            for k, e in self.catalogue.items()
+            if e["family"] == family and not self.offer.hide(k)
+        ]
+        if not keys:  # everything here is hidden: better an unusable tab than none
             keys = [k for k, e in self.catalogue.items() if e["family"] == family]
         if self.key not in keys:
             self.key = self.offer.first(keys)
         self.studies.blockSignals(True)
         while self.studies.count():
             self.studies.removeTab(0)
-        for k, cell in ((k, self.cells.get(k)) for k in keys):      # «&&»: no Qt shortcut mark
-            i = self.studies.addTab(dots.dot(cell), self.catalogue[k]["title"].replace("&", "&&"))
+        for k, cell in (
+            (k, self.cells.get(k)) for k in keys
+        ):  # «&&»: no Qt shortcut mark
+            i = self.studies.addTab(
+                dots.dot(cell), self.catalogue[k]["title"].replace("&", "&&")
+            )
             self.studies.setTabData(i, k)
             self.studies.setTabToolTip(i, dots.says(cell))
         self.studies.setCurrentIndex(keys.index(self.key))
@@ -203,12 +227,17 @@ class StudyPage(QFrame):
         if not (w["project"] and w["databank"]):
             return self._empty("Elige un proyecto y un databank.")
         if self.strategy_page and not w["strategy"]:
-            return self._empty("Elige una estrategia en el panel de databanks de Proyecto.")
+            return self._empty(
+                "Elige una estrategia en el panel de databanks de Proyecto."
+            )
         query = compare.query(w, self.key)
         got = compare.result(query, day)
-        self.history.fill(fetch("history", **query),
-                          [s for s in self.strategies if s["identity"] != w["identity"]]
-                          if self.strategy_page else None)
+        self.history.fill(
+            fetch("history", **query),
+            [s for s in self.strategies if s["identity"] != w["identity"]]
+            if self.strategy_page
+            else None,
+        )
         if "error" in got:
             return self._empty(got["error"], colour("fail"))
         self.meta = got["meta"]
@@ -220,8 +249,10 @@ class StudyPage(QFrame):
         if got["result"] is None:
             self.note.setText(notes.absent(entry, self.strategy_page))
         else:
-            self.note.setText(notes.shown(self.meta["day"], bool(day), self.strategy_page)
-                              + notes.elsewhere(self.meta))
+            self.note.setText(
+                notes.shown(self.meta["day"], bool(day), self.strategy_page)
+                + notes.elsewhere(self.meta)
+            )
         self.offer.explain()
         wfclote.show(self)
 
@@ -247,7 +278,9 @@ class StudyPage(QFrame):
         Args:
             strategy, identity: The other strategy.
         """
-        compare.paint(self, *compare.strategies(self.where, self.key, strategy, identity))
+        compare.paint(
+            self, *compare.strategies(self.where, self.key, strategy, identity)
+        )
 
     def after_run(self) -> None:
         """A run of this page ended: re-read the dots and the newest result."""

@@ -20,13 +20,21 @@ def _picks(table: pd.DataFrame, count: int) -> list[int]:
         parameter, loaded the wrong file or silently reused the parent returns a
         plausible middling number. It does not return the maximum of a grid of thousands.
     """
-    order = [table["NetProfit"].idxmax(), table["NetProfit"].idxmin(),
-             table["NumberOfTrades"].idxmin()]
+    order = [
+        table["NetProfit"].idxmax(),
+        table["NetProfit"].idxmin(),
+        table["NumberOfTrades"].idxmin(),
+    ]
     return cast("list[int]", list(dict.fromkeys(order)))[:count]
 
 
-def rows(design: dict, levels: dict[str, list[float]], origin: dict[str, float],
-         table: pd.DataFrame, settings: dict) -> list[dict]:
+def rows(
+    design: dict,
+    levels: dict[str, list[float]],
+    origin: dict[str, float],
+    table: pd.DataFrame,
+    settings: dict,
+) -> list[dict]:
     """Every control row of the batch, the origin first.
 
     Args:
@@ -58,21 +66,38 @@ def rows(design: dict, levels: dict[str, list[float]], origin: dict[str, float],
         factory.
     """
     names = [c for c in table.columns if c not in RESULTS]
-    out = [{"values": dict(origin), "stratum": ORIGIN, "origin": True,
-            "expect_netprofit": None, "expect_trades": None, "expect_same_as": None}]
+    out = [
+        {
+            "values": dict(origin),
+            "stratum": ORIGIN,
+            "origin": True,
+            "expect_netprofit": None,
+            "expect_trades": None,
+            "expect_same_as": None,
+        }
+    ]
 
     # A canary's expectation is SQX's own result for that exact tuple, so only permutations
     # with every shift where the strategy built it qualify: shifts never move (2026-09-26).
     shifts = [n for n in names if n.lower().endswith("shift1")]
-    table = cast("pd.DataFrame", table[(table[shifts] == pd.Series({n: origin[n] for n in shifts})).all(axis=1)])
-    for permutation in (_picks(table, settings["n"]) if len(table) else []):
+    table = cast(
+        "pd.DataFrame",
+        table[(table[shifts] == pd.Series({n: origin[n] for n in shifts})).all(axis=1)],
+    )
+    for permutation in _picks(table, settings["n"]) if len(table) else []:
         row = table.loc[permutation]
         values = dict(origin)
         values.update({n: float(row[n]) for n in names})
-        out.append({"values": values, "stratum": "canary", "origin": False,
-                    "expect_netprofit": float(row["NetProfit"]),
-                    "expect_trades": int(row["NumberOfTrades"]),
-                    "expect_same_as": None})
+        out.append(
+            {
+                "values": values,
+                "stratum": "canary",
+                "origin": False,
+                "expect_netprofit": float(row["NetProfit"]),
+                "expect_trades": int(row["NumberOfTrades"]),
+                "expect_same_as": None,
+            }
+        )
 
     if settings["inert_pairs"]:
         for item in design["frozen"]:
@@ -80,7 +105,14 @@ def rows(design: dict, levels: dict[str, list[float]], origin: dict[str, float],
             far = max(levels[name], key=lambda v: abs(v - float(item["value"])))
             values = dict(origin)
             values[name] = far
-            out.append({"values": values, "stratum": "inert", "origin": False,
-                        "expect_netprofit": None, "expect_trades": None,
-                        "expect_same_as": ORIGIN})
+            out.append(
+                {
+                    "values": values,
+                    "stratum": "inert",
+                    "origin": False,
+                    "expect_netprofit": None,
+                    "expect_trades": None,
+                    "expect_same_as": ORIGIN,
+                }
+            )
     return out

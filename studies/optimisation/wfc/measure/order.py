@@ -16,6 +16,8 @@ def partial(inside: np.ndarray, outside: np.ndarray, controls: np.ndarray) -> fl
         variants that agree only because they share a control are not counted.
     """
     z = np.column_stack([np.ones(len(inside)), rankdata(controls, axis=0)])
-    x, y = (r - z @ np.linalg.lstsq(z, r, rcond=None)[0]
-            for r in (rankdata(inside), rankdata(outside)))
+    x, y = (
+        r - z @ np.linalg.lstsq(z, r, rcond=None)[0]
+        for r in (rankdata(inside), rankdata(outside))
+    )
     return float(x @ y / np.sqrt((x @ x) * (y @ y)))

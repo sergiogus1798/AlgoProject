@@ -74,11 +74,19 @@ def said(file: Path) -> Piece:
     result = json.loads(file.read_text(encoding="utf-8"))
     verdict = result["verdict"]
     # Only the WFC's: the surfaces carry an `estado` too (`orden.estado`), in other words.
-    judged = [c["estado"] for c in (result.get("facts") or {}).values()
-              if file.stem == "wfc" and isinstance(c, dict) and "estado" in c]
-    return {"label": verdict["label"], "state": WFC[judged[0]] if judged else verdict["state"],
-            "score": verdict.get("score"), "meaning": verdict["meaning"],
-            "computed_at": result["computed_at"], "summary": result.get("summary") or {}}
+    judged = [
+        c["estado"]
+        for c in (result.get("facts") or {}).values()
+        if file.stem == "wfc" and isinstance(c, dict) and "estado" in c
+    ]
+    return {
+        "label": verdict["label"],
+        "state": WFC[judged[0]] if judged else verdict["state"],
+        "score": verdict.get("score"),
+        "meaning": verdict["meaning"],
+        "computed_at": result["computed_at"],
+        "summary": result.get("summary") or {},
+    }
 
 
 def population(project: str, wfm_databank: str) -> pd.DataFrame:
@@ -100,14 +108,26 @@ def population(project: str, wfm_databank: str) -> pd.DataFrame:
     rows = []
     for mother in sorted(set(wfm.index) | set(found)):
         batch = found.get(mother)
-        files = {p: batch / "estudios" / f"{p}.json" if batch else None
-                 for p in ("wfc", "cscv")}
-        files["wfm"] = folder / "estrategias" / f"{mother}.json" if mother in wfm.index else None
+        files = {
+            p: batch / "estudios" / f"{p}.json" if batch else None
+            for p in ("wfc", "cscv")
+        }
+        files["wfm"] = (
+            folder / "estrategias" / f"{mother}.json" if mother in wfm.index else None
+        )
         have = {p: f for p, f in files.items() if f is not None and f.exists()}
         missing = [p for p in PIECES if p not in have]
-        rows.append({"mother": mother, "batch": batch,
-                     "identity": wfm["identity"].get(mother) if mother in wfm.index else None,
-                     "complete": not missing, "missing": missing,
-                     # Read only when all three are there: an incomplete mother stays blind.
-                     **{p: said(have[p]) if not missing else None for p in PIECES}})
+        rows.append(
+            {
+                "mother": mother,
+                "batch": batch,
+                "identity": wfm["identity"].get(mother)
+                if mother in wfm.index
+                else None,
+                "complete": not missing,
+                "missing": missing,
+                # Read only when all three are there: an incomplete mother stays blind.
+                **{p: said(have[p]) if not missing else None for p in PIECES},
+            }
+        )
     return pd.DataFrame(rows).set_index("mother").assign(wfm_source=str(folder))

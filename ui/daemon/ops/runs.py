@@ -21,7 +21,7 @@ def count(role: str, project: str) -> dict | None:
     """
     install = WORKERS[role]["path"]
     if project not in progress.projects(install):
-        return None                       # the log names a project since retired
+        return None  # the log names a project since retired
     got = progress.state(role, project)
     now = next((t for t in got["tasks"] if t["status"] == "running"), None)
     if now is None:
@@ -30,8 +30,13 @@ def count(role: str, project: str) -> dict | None:
     percent = got["run"]["percent"]
     if percent is None and done is not None and total:
         percent = min(100, round(100 * done / total))
-    return {"task": now["title"], "done": done, "total": total,
-            "elapsed_s": now.get("elapsed_s"), "percent": percent}
+    return {
+        "task": now["title"],
+        "done": done,
+        "total": total,
+        "elapsed_s": now.get("elapsed_s"),
+        "percent": percent,
+    }
 
 
 def running(role: str) -> dict | None:
@@ -50,8 +55,14 @@ def running(role: str) -> dict | None:
     run = progress.run_state(progress.log_lines(install)[0])
     if not run["project"] or run["finished"]:
         return None
-    base = {"role": role, "project": run["project"], "task": run["current"], "done": None,
-            "total": None, "percent": run["percent"]}
+    base = {
+        "role": role,
+        "project": run["project"],
+        "task": run["current"],
+        "done": None,
+        "total": None,
+        "percent": run["percent"],
+    }
     return base | (count(role, run["project"]) or {})
 
 

@@ -11,9 +11,15 @@ from ui.daemon.coverage import ARCHETYPES as REGISTRY_ARCHETYPES
 # The registry names seven archetypes for the coverage matrix and, since 2026-10-01, the
 # taxonomy labels blocks against the same seven families. Only the first three spell
 # differently (`meanReversion` / `mean_reversion`, `trendFollowing` / `trend`).
-FAMILY = {"breakout": "breakout", "meanReversion": "mean_reversion", "trendFollowing": "trend",
-          "momentum": "momentum", "volatility": "volatility", "pattern": "pattern",
-          "session": "session"}
+FAMILY = {
+    "breakout": "breakout",
+    "meanReversion": "mean_reversion",
+    "trendFollowing": "trend",
+    "momentum": "momentum",
+    "volatility": "volatility",
+    "pattern": "pattern",
+    "session": "session",
+}
 
 WIRE = ("use", "weight", "why")
 
@@ -37,11 +43,17 @@ def _state(stamp: tuple) -> dict[str, Any]:
     """
     all_of = palette.everything()
     for entry in all_of["palettes"].values():
-        entry["resolved"] = {key: {k: r[k] for k in WIRE}
-                             for key, r in entry["resolved"].items()}
-    return {**all_of, "family": FAMILY, "families": list(ARCHETYPES),
-            "family_labels": palette.FAMILY_ES, "archetypes": list(REGISTRY_ARCHETYPES),
-            "unlabelled_policies": list(palette.UNLABELLED)}
+        entry["resolved"] = {
+            key: {k: r[k] for k in WIRE} for key, r in entry["resolved"].items()
+        }
+    return {
+        **all_of,
+        "family": FAMILY,
+        "families": list(ARCHETYPES),
+        "family_labels": palette.FAMILY_ES,
+        "archetypes": list(REGISTRY_ARCHETYPES),
+        "unlabelled_policies": list(palette.UNLABELLED),
+    }
 
 
 def resolved(p: dict) -> dict[str, Any]:
@@ -56,8 +68,9 @@ def resolved(p: dict) -> dict[str, Any]:
     return palette.resolve(p, flat(read(TAXONOMY)))
 
 
-def save(name: str, unlabelled: str, overrides: dict[str, int], label: str,
-         note: str) -> dict[str, Any]:
+def save(
+    name: str, unlabelled: str, overrides: dict[str, int], label: str, note: str
+) -> dict[str, Any]:
     """Write one palette and hand back what it now resolves to.
 
     Args:
@@ -73,8 +86,14 @@ def save(name: str, unlabelled: str, overrides: dict[str, int], label: str,
         The palette as written, its summary, and where the file landed.
     """
     p = palette.load(name)
-    p.update({"unlabelled": unlabelled, "label": label, "note": note,
-              "overrides": {k: int(v) for k, v in overrides.items()}})
+    p.update(
+        {
+            "unlabelled": unlabelled,
+            "label": label,
+            "note": note,
+            "overrides": {k: int(v) for k, v in overrides.items()},
+        }
+    )
     where = palette.save(p)
     return {"palette": p, "summary": palette.summary(resolved(p)), "path": str(where)}
 

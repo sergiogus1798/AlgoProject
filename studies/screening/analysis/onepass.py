@@ -34,7 +34,9 @@ def t_cost(oos: pd.DataFrame, k: float, t: Callable) -> pd.Series:
     return t(oos.assign(net=oos["excess"] - (k - 1) * oos["cost"]), "net")["ar1"]
 
 
-def t_without(oos: pd.DataFrame, t: Callable, drop_trades: int, period: str) -> pd.DataFrame:
+def t_without(
+    oos: pd.DataFrame, t: Callable, drop_trades: int, period: str
+) -> pd.DataFrame:
     """R3's t without the best calendar period and without the best trades, per identity.
 
     Args:
@@ -48,14 +50,22 @@ def t_without(oos: pd.DataFrame, t: Callable, drop_trades: int, period: str) -> 
         defaults); NaN where nothing is left to measure.
     """
     ident = oos["identity"]
-    label = pd.Series(tradelevel.calendar(pd.Series(oos["open_time"]), period), index=oos.index)
+    label = pd.Series(
+        tradelevel.calendar(pd.Series(oos["open_time"]), period), index=oos.index
+    )
     total = oos.groupby([ident, label])["excess"].sum()
     best = pd.Series(total.groupby(level=0).idxmax()).map(lambda i: i[1])
-    rank = oos.groupby("identity", sort=False)["excess"].rank(method="first", ascending=False)
-    return pd.DataFrame({
-        "t_sin_mejor_trimestre": t(oos[label.to_numpy() != pd.Series(ident).map(best).to_numpy()],
-                                   "excess")["ar1"],
-        "t_sin_3_mejores": t(oos[rank > drop_trades], "excess")["ar1"]})
+    rank = oos.groupby("identity", sort=False)["excess"].rank(
+        method="first", ascending=False
+    )
+    return pd.DataFrame(
+        {
+            "t_sin_mejor_trimestre": t(
+                oos[label.to_numpy() != pd.Series(ident).map(best).to_numpy()], "excess"
+            )["ar1"],
+            "t_sin_3_mejores": t(oos[rank > drop_trades], "excess")["ar1"],
+        }
+    )
 
 
 def mae_pct(trades: pd.DataFrame, risk: float, percentile: float) -> pd.Series:
@@ -66,5 +76,8 @@ def mae_pct(trades: pd.DataFrame, risk: float, percentile: float) -> pd.Series:
         risk: 1R in account currency.
         percentile: 0-100.
     """
-    return (trades["MAE ($)"].abs() / risk).groupby(trades["identity"], sort=False).quantile(
-        percentile / 100)
+    return (
+        (trades["MAE ($)"].abs() / risk)
+        .groupby(trades["identity"], sort=False)
+        .quantile(percentile / 100)
+    )

@@ -9,16 +9,23 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 _FILE = ROOT / "config" / "machine.yaml"
 if not _FILE.exists():
-    raise SystemExit(f"{_FILE} is missing. Copy config/machine.example.yaml to it and edit "
-                     "the paths for this machine — it is the only file not in git.")
+    raise SystemExit(
+        f"{_FILE} is missing. Copy config/machine.example.yaml to it and edit "
+        "the paths for this machine — it is the only file not in git."
+    )
 _CFG = yaml.safe_load(_FILE.read_text(encoding="utf-8"))
 
 MASTER = Path(_CFG["sqx_master"]).expanduser()
 WORKER = Path(_CFG["sqx_worker"]).expanduser()
-_TEST = os.environ.get("ALGO_DATA_ROOT")   # every write of this process goes to a test root (`portfolio/testroot.py`)
+_TEST = os.environ.get(
+    "ALGO_DATA_ROOT"
+)  # every write of this process goes to a test root (`portfolio/testroot.py`)
 DATA = Path(_TEST or _CFG["data_root"]).expanduser()
 if _TEST:
-    print(f"RAÍZ DE PRUEBA: {DATA} — lo que salga de aquí no es un resultado", file=sys.stderr)
+    print(
+        f"RAÍZ DE PRUEBA: {DATA} — lo que salga de aquí no es un resultado",
+        file=sys.stderr,
+    )
 # Optional: no browser is needed unless the manual is rendered to PDF.
 BROWSER = Path(_CFG.get("browser", "")).expanduser()
 WORKER_PORT = _CFG["worker_port"]
@@ -27,17 +34,31 @@ UI_PORT = _CFG.get("ui_port", 8765)
 # MetaTrader 5 under Wine: the prefix holding the terminal; its reports go under the data root.
 MT5_PREFIX = Path(_CFG.get("mt5_prefix", "~/Desktop/MT5")).expanduser()
 MT5_DATA = DATA / "mt5"
-MT5_ACCOUNTS = _CFG.get("mt5_accounts") or {}   # {firm: {login, server}}; the terminal keeps the passwords
-CLAUDE_BIN = Path(_CFG.get("claude_bin") or max(  # «Crear la plantilla con Claude»; else VS Code's
-    Path("~/.vscode/extensions").expanduser().glob("anthropic.claude-code-*/resources/native-binary/claude"), default="claude")).expanduser()
-STRATEGY_POOLS = {name: Path(p).expanduser()
-                  for name, p in (_CFG.get("strategy_pools") or {}).items()}
+MT5_ACCOUNTS = (
+    _CFG.get("mt5_accounts") or {}
+)  # {firm: {login, server}}; the terminal keeps the passwords
+CLAUDE_BIN = Path(
+    _CFG.get("claude_bin")
+    or max(  # «Crear la plantilla con Claude»; else VS Code's
+        Path("~/.vscode/extensions")
+        .expanduser()
+        .glob("anthropic.claude-code-*/resources/native-binary/claude"),
+        default="claude",
+    )
+).expanduser()
+STRATEGY_POOLS = {
+    name: Path(p).expanduser() for name, p in (_CFG.get("strategy_pools") or {}).items()
+}
 
 # Headless installs by role. The conductor is sqx_worker / worker_port themselves (one place
 # per port); any other role, the custodian included and optional, comes from sqx_workers.
 WORKERS = {"conductor": {"path": WORKER, "port": WORKER_PORT}}
-WORKERS.update({role: {"path": Path(w["path"]).expanduser(), "port": w["port"]}
-                for role, w in (_CFG.get("sqx_workers") or {}).items()})
+WORKERS.update(
+    {
+        role: {"path": Path(w["path"]).expanduser(), "port": w["port"]}
+        for role, w in (_CFG.get("sqx_workers") or {}).items()
+    }
+)
 
 # Other servers that hold a copy of this machine's master data: {name: {ssh, master}}, the ssh
 # alias and the master folder over there. Optional; bin/mirror-data.sh is the only reader.
@@ -50,9 +71,13 @@ TAXONOMY = ROOT / "sqx" / "blocks" / "taxonomy.yaml"
 # Las paletas: una por arquetipo, lo único que la ventana escribe de este lado.
 PALETTES = ROOT / "sqx" / "blocks" / "palettes"
 MANUAL = ROOT / "docs" / "manual"
-MANUAL_SRC = DATA / "manual-fuentes"   # the chapters and screenshots; the owner reads only the PDFs
-KEPT = DATA / "kept"   # per project, what the funding module reads of each strategy that passed the WFM
-AUDIT = DATA / "audit"   # the unattended agents' reports and the auditor's state.json
+MANUAL_SRC = (
+    DATA / "manual-fuentes"
+)  # the chapters and screenshots; the owner reads only the PDFs
+KEPT = (
+    DATA / "kept"
+)  # per project, what the funding module reads of each strategy that passed the WFM
+AUDIT = DATA / "audit"  # the unattended agents' reports and the auditor's state.json
 VIEWS_REL = "user/settings/views/databanks"
 STAGING_REL = "user/projects/Retester/databanks/Results"
 STAGING = WORKER / STAGING_REL

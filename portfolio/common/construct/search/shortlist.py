@@ -17,11 +17,17 @@ def ranked(search: pd.DataFrame) -> pd.DataFrame:
         One row per distinct member set with a finite score, sorted by score (the search's
         own order breaks ties): `members`, `score`, `level`.
     """
-    best = search.dropna(subset=["score"]).sort_values("score", ascending=False, kind="stable")
-    return cast(pd.DataFrame, best.drop_duplicates("members")[["members", "score", "level"]]).reset_index(drop=True)
+    best = search.dropna(subset=["score"]).sort_values(
+        "score", ascending=False, kind="stable"
+    )
+    return cast(
+        pd.DataFrame, best.drop_duplicates("members")[["members", "score", "level"]]
+    ).reset_index(drop=True)
 
 
-def diverse(ranking: pd.DataFrame, size: int, max_shared: float, shared_of: str) -> pd.DataFrame:
+def diverse(
+    ranking: pd.DataFrame, size: int, max_shared: float, shared_of: str
+) -> pd.DataFrame:
     """Walk the ranking, keeping a combination unless it is too close to one already kept.
 
     Args:
@@ -38,7 +44,10 @@ def diverse(ranking: pd.DataFrame, size: int, max_shared: float, shared_of: str)
     kept, sets = [], []
     for rank, members in enumerate(ranking["members"]):
         own = set(members.split("+"))
-        if all(len(own & other) <= max_shared * base(len(own), len(other)) for other in sets):
+        if all(
+            len(own & other) <= max_shared * base(len(own), len(other))
+            for other in sets
+        ):
             kept.append(rank)
             sets.append(own)
             if len(kept) == size:

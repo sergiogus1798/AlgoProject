@@ -27,7 +27,9 @@ def test_wfc_rows_reproduce_p_mas_and_p_nivel() -> None:
     e_oos = {k: w.sum(axis=0) / 2.7 for k, w in weeks.items()}
     e_is = {"gross": skill * 30.0, "net": skill * 30.0 - 600.0}
     kept = []
-    found = reading.measure(e_is, e_oos, weeks, 2.7, CFG, name="M", comp="c1", record=kept)
+    found = reading.measure(
+        e_is, e_oos, weeks, 2.7, CFG, name="M", comp="c1", record=kept
+    )
     rows = {d["metric"]: d for d in kept}
     for metric in ("p_mas", "p_nivel"):
         row = rows[metric]
@@ -37,9 +39,11 @@ def test_wfc_rows_reproduce_p_mas_and_p_nivel() -> None:
 
 def test_merge_keeps_the_other_strategies() -> None:
     """A second strategy's run replaces only its own rows of the same test."""
+
     def row(name: str, value: float) -> dict:
         """One recorded distribution for a strategy."""
         return draws.record("t", "m", value, np.arange(10.0), strategy=name, seed=1)
+
     with tempfile.TemporaryDirectory() as tmp:
         draws.merge(Path(tmp), [row("a", 1.0), row("b", 2.0)])
         draws.merge(Path(tmp), [row("b", 3.0)])

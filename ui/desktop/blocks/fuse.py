@@ -1,6 +1,5 @@
 """A partial re-run laid into the stored result it belongs to: its tagged blocks replace their twins, the rest stays."""
 
-
 from typing import Any
 import json
 from copy import deepcopy
@@ -8,7 +7,9 @@ from copy import deepcopy
 
 def _key(block: dict) -> tuple[str, str]:
     """What makes two blocks the same drawing: their kind and their selector tags."""
-    return block["kind"], json.dumps(block.get("select") or {}, sort_keys=True, ensure_ascii=False)
+    return block["kind"], json.dumps(
+        block.get("select") or {}, sort_keys=True, ensure_ascii=False
+    )
 
 
 def merge(stored: dict, part: dict) -> dict[str, Any]:
@@ -33,7 +34,9 @@ def merge(stored: dict, part: dict) -> dict[str, Any]:
             out["tabs"].append(deepcopy(ptab))
             continue
         new = {_key(b) for b in tagged}
-        tab["blocks"] = [b for b in tab["blocks"] if _key(b) not in new] + deepcopy(tagged)
+        tab["blocks"] = [b for b in tab["blocks"] if _key(b) not in new] + deepcopy(
+            tagged
+        )
         for s in tab.get("selectors") or []:
             offered = [str(o) for o in s["options"]]
             for b in tagged:
@@ -41,7 +44,9 @@ def merge(stored: dict, part: dict) -> dict[str, Any]:
                 if v is not None and str(v) not in offered:
                     s["options"].append(v)
                     offered.append(str(v))
-    out["warnings"] += [{**w, "text": f"re-ejecución · {w['text']}"} for w in part["warnings"]]
+    out["warnings"] += [
+        {**w, "text": f"re-ejecución · {w['text']}"} for w in part["warnings"]
+    ]
     return out
 
 
@@ -55,6 +60,8 @@ def notice(stored: dict, part: dict) -> str:
     Returns:
         The sentence in Spanish.
     """
-    return (f"Fusionado: «{part.get('only')}» sale de la re-ejecución del "
-            f"{part.get('computed_at')}; todo lo demás, veredicto incluido, es el resultado "
-            f"guardado del {stored.get('computed_at')}.")
+    return (
+        f"Fusionado: «{part.get('only')}» sale de la re-ejecución del "
+        f"{part.get('computed_at')}; todo lo demás, veredicto incluido, es el resultado "
+        f"guardado del {stored.get('computed_at')}."
+    )

@@ -5,18 +5,35 @@ from collections.abc import Callable
 
 from PySide6.QtWidgets import QWidget
 
-from ui.desktop.blocks import (bars, callout, cone, desclist, distribution, grid, lines,
-                               scatter, table, verdict)
+from ui.desktop.blocks import (
+    bars,
+    callout,
+    cone,
+    desclist,
+    distribution,
+    grid,
+    lines,
+    scatter,
+    table,
+    verdict,
+)
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.states import colour
 
 # One widget per contract kind (core/study/CONTRACT.md §2). `callout` and `list` were added
 # 2026-09-30 (feedback §1.7, §1.10): a new kind is still a new module here, asked for first.
 WIDGETS: dict[str, Callable[[dict], QWidget]] = {
-    "distribution": distribution.widget, "cone": cone.widget, "grid": grid.widget,
-    "scatter": scatter.widget, "bars": bars.widget, "lines": lines.widget,
-    "table": table.widget, "verdict": verdict.widget, "callout": callout.widget,
-    "list": desclist.widget}
+    "distribution": distribution.widget,
+    "cone": cone.widget,
+    "grid": grid.widget,
+    "scatter": scatter.widget,
+    "bars": bars.widget,
+    "lines": lines.widget,
+    "table": table.widget,
+    "verdict": verdict.widget,
+    "callout": callout.widget,
+    "list": desclist.widget,
+}
 
 
 def draw(block: dict) -> QWidget:
@@ -32,11 +49,21 @@ def draw(block: dict) -> QWidget:
     """
     kind = block.get("kind")
     if kind not in WIDGETS:
-        return text(f"Bloque de tipo desconocido «{kind}» ({block.get('title', 'sin título')}): "
-                    "la ventana no sabe dibujarlo.", colour("fail"), 14, True)
+        return text(
+            f"Bloque de tipo desconocido «{kind}» ({block.get('title', 'sin título')}): "
+            "la ventana no sabe dibujarlo.",
+            colour("fail"),
+            14,
+            True,
+        )
     try:
         return WIDGETS[kind](block)
     except Exception as e:  # noqa: BLE001 — the boundary: shown, never swallowed
         traceback.print_exc()
-        return text(f"No se pudo dibujar «{block.get('title', kind)}» ({kind}): "
-                    f"{type(e).__name__}: {e}", colour("fail"), 14, True)
+        return text(
+            f"No se pudo dibujar «{block.get('title', kind)}» ({kind}): "
+            f"{type(e).__name__}: {e}",
+            colour("fail"),
+            14,
+            True,
+        )

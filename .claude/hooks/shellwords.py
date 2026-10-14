@@ -1,20 +1,46 @@
 """Split a shell command line into the simple commands it would run, for guard.py."""
+
 import re
 import shlex
 from pathlib import Path
 
 OPS = "();<>|&\n"
-SUB = "__SUB__"      # stands where a `$(…)` or a backtick body was lifted out of a word
+SUB = "__SUB__"  # stands where a `$(…)` or a backtick body was lifted out of a word
 # A heredoc: its body is data handed to the command, so it becomes one quoted argument of it.
-HEREDOC = re.compile(r"(?<!<)<<(?!<)-?[ \t]*(['\"]?)(\w+)\1([^\n]*)\n(.*?)\n[ \t]*\2[ \t]*(?=\n|$)",
-                     re.S)
-FD = re.compile(r"(?<=[\s;|&(])\d(?=[<>])")      # the 2 of `2>/dev/null` is not an argument
+HEREDOC = re.compile(
+    r"(?<!<)<<(?!<)-?[ \t]*(['\"]?)(\w+)\1([^\n]*)\n(.*?)\n[ \t]*\2[ \t]*(?=\n|$)", re.S
+)
+FD = re.compile(r"(?<=[\s;|&(])\d(?=[<>])")  # the 2 of `2>/dev/null` is not an argument
 SHELLS = {"sh", "bash", "zsh", "dash", "eval"}
-WRAPPERS = {"sudo", "env", "nohup", "time", "command", "builtin", "exec", "nice", "ionice",
-            "setsid", "stdbuf", "timeout", "xargs", "{", "}", "!", "if", "then", "else", "elif",
-            "while", "until", "do"}
+WRAPPERS = {
+    "sudo",
+    "env",
+    "nohup",
+    "time",
+    "command",
+    "builtin",
+    "exec",
+    "nice",
+    "ionice",
+    "setsid",
+    "stdbuf",
+    "timeout",
+    "xargs",
+    "{",
+    "}",
+    "!",
+    "if",
+    "then",
+    "else",
+    "elif",
+    "while",
+    "until",
+    "do",
+}
 ASSIGN = re.compile(r"\w+=.*", re.S)
-SKIPPED = re.compile(r"-.*|\d+(\.\d+)?[smhd]?|\w+=.*|\{\}", re.S)   # a wrapper's own arguments
+SKIPPED = re.compile(
+    r"-.*|\d+(\.\d+)?[smhd]?|\w+=.*|\{\}", re.S
+)  # a wrapper's own arguments
 
 
 def _close(cmd: str, start: int) -> int:
@@ -43,7 +69,7 @@ def _lift(cmd: str) -> tuple[str, list[str]]:
         if quote == "'":
             quote = "" if c == "'" else quote
         elif c == "\\":
-            out.append(cmd[i:i + 2])
+            out.append(cmd[i : i + 2])
             i += 2
             continue
         elif c == quote or (c in "'\"" and not quote):
@@ -83,7 +109,7 @@ def _simple(words: list[str]) -> list[tuple[list[str], list[str]]]:
     while i < len(words):
         if _operator(words[i]):
             if ">" in words[i]:
-                writes += words[i + 1:i + 2]
+                writes += words[i + 1 : i + 2]
             i += 2
             continue
         args.append(words[i])
@@ -114,7 +140,9 @@ def commands(cmd: str) -> list[tuple[list[str], list[str]]]:
         One (words, redirection write targets) per command, the command word first, wrappers
         (`sudo`, `env X=1`, `xargs`, `then`…) removed. Raises ValueError on unbalanced quoting.
     """
-    text, inner = _lift(HEREDOC.sub(lambda m: shlex.quote(m[4]) + m[3], cmd.replace("\\\n", " ")))
+    text, inner = _lift(
+        HEREDOC.sub(lambda m: shlex.quote(m[4]) + m[3], cmd.replace("\\\n", " "))
+    )
     out, words = [], []
     for token in [*_lex(text), ";"]:
         if _operator(token) and ("(" in token or not set(token) & set("<>")):

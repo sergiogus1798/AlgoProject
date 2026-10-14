@@ -13,8 +13,13 @@ from studies.transfer.crossmarket.contract import tabs
 MODULE = "studies.transfer.crossmarket"
 
 
-def run(name: str, inputs: load.Inputs, cfg: dict, only: str | None = None,
-        overrides: list[str] | None = None) -> dict[str, Any]:
+def run(
+    name: str,
+    inputs: load.Inputs,
+    cfg: dict,
+    only: str | None = None,
+    overrides: list[str] | None = None,
+) -> dict[str, Any]:
     """Everything the study measures for one strategy.
 
     The joint random runs belong to the whole export (one draw moves every market and every
@@ -41,11 +46,30 @@ def run(name: str, inputs: load.Inputs, cfg: dict, only: str | None = None,
     warn = tabs.warnings(markets, ident)
     if only:
         markets = cast(pd.DataFrame, markets[markets["market"] == only])
-        warn.append({"code": "parcial", "state": "info",
-                     "text": f"Sólo se enseña {alias(only)}; la z conjunta sale de todos los "
-                             f"mercados a la vez."})
+        warn.append(
+            {
+                "code": "parcial",
+                "state": "info",
+                "text": f"Sólo se enseña {alias(only)}; la z conjunta sale de todos los "
+                f"mercados a la vez.",
+            }
+        )
     return envelope.envelope(
-        MODULE, name, ident, cfg, started,
-        tabs.strategy_tabs(row, markets, got["d_y"].get(name, []), cfg), None, warn, tabs.GLOSSARY,
-        summary={"verdict": many.WORD, **{k: v for k, v in row.items()
-                                          if isinstance(v, (int, float)) and k != "strategy"}})
+        MODULE,
+        name,
+        ident,
+        cfg,
+        started,
+        tabs.strategy_tabs(row, markets, got["d_y"].get(name, []), cfg),
+        None,
+        warn,
+        tabs.GLOSSARY,
+        summary={
+            "verdict": many.WORD,
+            **{
+                k: v
+                for k, v in row.items()
+                if isinstance(v, (int, float)) and k != "strategy"
+            },
+        },
+    )

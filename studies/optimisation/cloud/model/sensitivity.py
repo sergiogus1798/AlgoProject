@@ -34,8 +34,7 @@ def sobol(model: surrogate.Fit, power: int, seed: int) -> Indices:
         `measure.reference` says whether it may be read.
     """
     k = model["k"]
-    draw = qmc.Sobol(d=2 * k, scramble=True,
-                     seed=seed).random(2 ** power)  # pyright: ignore[reportCallIssue]  # scipy stub names only `rng`; `seed` is its legacy alias
+    draw = qmc.Sobol(d=2 * k, scramble=True, seed=seed).random(2**power)  # pyright: ignore[reportCallIssue]  # scipy stub names only `rng`; `seed` is its legacy alias
     a, b = draw[:, :k], draw[:, k:]
     ya, yb = surrogate.predict(model, a), surrogate.predict(model, b)
     variance = float(np.var(np.concatenate([ya, yb])))

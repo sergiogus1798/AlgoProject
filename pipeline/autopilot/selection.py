@@ -27,10 +27,15 @@ def resolve(pop: pd.DataFrame, found: pd.DataFrame) -> tuple[pd.Series, pd.Serie
         keeps its key, so nothing moves for a strategy whose identity held.
     """
     ids = set(found["identity"]) - {""}
-    who = pd.Series([i if i in ids else s for s, i in zip(pop["strategy"], pop["identity"])],
-                    index=pop.index, dtype=object)
+    who = pd.Series(
+        [i if i in ids else s for s, i in zip(pop["strategy"], pop["identity"])],
+        index=pop.index,
+        dtype=object,
+    )
     theirs = found["identity"].where(found["identity"] != "", found["strategy"])
-    named = cast(pd.Series, found["strategy"]).map(cast("Mapping[str, str]", dict(zip(pop["strategy"], who))))
+    named = cast(pd.Series, found["strategy"]).map(
+        cast("Mapping[str, str]", dict(zip(pop["strategy"], who)))
+    )
     held = found["identity"].isin(list(set(pop["identity"]) | {""}))
     return who, cast(pd.Series, theirs.where(held | named.isna(), named))
 
@@ -42,38 +47,62 @@ def fallen(project: str, pop: pd.DataFrame) -> dict[str, str]:
     «sin dato» for it: the reason is the one rule the scorecard names (`cayo_nivel`,
     `cayo_regla`), which is text and so not among the facts.
     """
-    found = [r for r in facts.sources.results(project, "gate", None) if r["path"].is_dir()]
+    found = [
+        r for r in facts.sources.results(project, "gate", None) if r["path"].is_dir()
+    ]
     if not found:
         return {}
     card = pd.read_parquet(found[0]["path"] / "scorecard.parquet").reset_index()
-    if "cayo_regla" not in card:        # a scorecard written before the gate ran by levels
+    if "cayo_regla" not in card:  # a scorecard written before the gate ran by levels
         return {}
-    card = cast(pd.DataFrame, card[card["strategy"].notna() & card["cayo_regla"].notna()])
+    card = cast(
+        pd.DataFrame, card[card["strategy"].notna() & card["cayo_regla"].notna()]
+    )
     _, who = resolve(pop, card)
-    return {w: f"fail: {rule} (nivel {level})"
-            for w, level, rule in zip(who, card["cayo_nivel"], card["cayo_regla"])}
+    return {
+        w: f"fail: {rule} (nivel {level})"
+        for w, level, rule in zip(who, card["cayo_nivel"], card["cayo_regla"])
+    }
 
 
 def largest(card: pd.DataFrame, top: int) -> pd.DataFrame:
     """The scorecard rows of the medoids of the `top` largest groups: size (`redundancia_value`,
     counted among the same survivors) descending, tie by `redundancia_grupo` ascending."""
     mine = cast(pd.DataFrame, card[card["medoide"].fillna(False).astype(bool)])
-    return cast(pd.DataFrame, mine.sort_values(["redundancia_value", "redundancia_grupo"],
-                                               ascending=[False, True]).head(top))
+    return cast(
+        pd.DataFrame,
+        mine.sort_values(
+            ["redundancia_value", "redundancia_grupo"], ascending=[False, True]
+        ).head(top),
+    )
 
 
 def medoids(project: str, pop: pd.DataFrame, top: int) -> set[str]:
     """`who` of the medoids of the `top` largest groups the gate marked in its scorecard."""
-    found = [r for r in facts.sources.results(project, "gate", None) if r["path"].is_dir()]
-    card = pd.read_parquet(found[0]["path"] / "scorecard.parquet").reset_index() if found else None
+    found = [
+        r for r in facts.sources.results(project, "gate", None) if r["path"].is_dir()
+    ]
+    card = (
+        pd.read_parquet(found[0]["path"] / "scorecard.parquet").reset_index()
+        if found
+        else None
+    )
     if card is None or "medoide" not in card:
-        sys.exit("paso con `medoids`: el scorecard de la puerta no trae la columna `medoide`")
-    _, who = resolve(pop, largest(cast(pd.DataFrame, card[card["strategy"].notna()]), top))
+        sys.exit(
+            "paso con `medoids`: el scorecard de la puerta no trae la columna `medoide`"
+        )
+    _, who = resolve(
+        pop, largest(cast(pd.DataFrame, card[card["strategy"].notna()]), top)
+    )
     return set(who)
 
 
-def siblings(pop: pd.DataFrame, is_sibling: pd.Series, judged: dict[str, tuple[str, str]],
-             follow: bool) -> dict[str, tuple[str, str]]:
+def siblings(
+    pop: pd.DataFrame,
+    is_sibling: pd.Series,
+    judged: dict[str, tuple[str, str]],
+    follow: bool,
+) -> dict[str, tuple[str, str]]:
     """What happens to the scaled siblings of the databank being cut.
 
     Args:
@@ -89,8 +118,14 @@ def siblings(pop: pd.DataFrame, is_sibling: pd.Series, judged: dict[str, tuple[s
     """
     mine = pop[is_sibling]
     if not follow:
-        return {w: ("fail", "hermana escalada: solo sigue la madre") for w in mine["who"]}
+        return {
+            w: ("fail", "hermana escalada: solo sigue la madre") for w in mine["who"]
+        }
     by_name = dict(zip(pop["strategy"], pop["who"]))
-    return {w: judged.get(cast(str, by_name.get(SIBLING.sub("", name))),
-                          ("fail", "hermana sin su madre en el databank"))
-            for name, w in zip(mine["strategy"], mine["who"])}
+    return {
+        w: judged.get(
+            cast(str, by_name.get(SIBLING.sub("", name))),
+            ("fail", "hermana sin su madre en el databank"),
+        )
+        for name, w in zip(mine["strategy"], mine["who"])
+    }

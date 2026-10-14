@@ -3,14 +3,23 @@
 from typing import TYPE_CHECKING
 import httpx
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import background, client
 from ui.desktop.workspace.filterrow import FilterRow, guessed, plain
 from ui.desktop.workspace.filtersaved import SavedFilters
 from ui.text.numbers import num
 
-PREVIEW_MS = 350    # a pause in the typing before the live count asks the daemon (~0.15 s warm)
+PREVIEW_MS = (
+    350  # a pause in the typing before the live count asks the daemon (~0.15 s warm)
+)
 
 if TYPE_CHECKING:
     from ui.desktop.workspace.panel import Panel
@@ -32,17 +41,26 @@ class FiltersStrip(QFrame):
         self.anonymous, self.now, self.asked, self.shown_ids = 0, [], 0, None
         kicker = QLabel("Filtros")
         kicker.setObjectName("kicker")
-        add, apply_, clear, drop = (QPushButton("+ condición"), QPushButton("▶ Aplicar"),
-                                    QPushButton("Quitar filtros"),
-                                    QPushButton("Descartar seleccionadas"))
-        apply_.setToolTip("Aplica todas las condiciones a la vez (AND) sobre todo el databank y "
-                          "sustituye al filtro anterior: si aflojas, vuelven las que ahora pasan. "
-                          "Los descartes a mano se quedan. Sin condiciones, quita solo el filtro. "
-                          "Se apunta en el Ledger como una búsqueda. No toca SQX.")
-        drop.setToolTip("Oculta las filas seleccionadas; siguen ocultas aunque cambies el "
-                        "filtro. También se apunta en el Ledger.")
-        clear.setToolTip("Quita el filtro y los descartes a mano: vuelve a mostrar todo. Lo ya "
-                         "apuntado en el Ledger se queda: se miró.")
+        add, apply_, clear, drop = (
+            QPushButton("+ condición"),
+            QPushButton("▶ Aplicar"),
+            QPushButton("Quitar filtros"),
+            QPushButton("Descartar seleccionadas"),
+        )
+        apply_.setToolTip(
+            "Aplica todas las condiciones a la vez (AND) sobre todo el databank y "
+            "sustituye al filtro anterior: si aflojas, vuelven las que ahora pasan. "
+            "Los descartes a mano se quedan. Sin condiciones, quita solo el filtro. "
+            "Se apunta en el Ledger como una búsqueda. No toca SQX."
+        )
+        drop.setToolTip(
+            "Oculta las filas seleccionadas; siguen ocultas aunque cambies el "
+            "filtro. También se apunta en el Ledger."
+        )
+        clear.setToolTip(
+            "Quita el filtro y los descartes a mano: vuelve a mostrar todo. Lo ya "
+            "apuntado en el Ledger se queda: se miró."
+        )
         add.clicked.connect(lambda: self.add())
         apply_.clicked.connect(self.apply)
         clear.clicked.connect(self.clear)
@@ -72,12 +90,16 @@ class FiltersStrip(QFrame):
         lay.addLayout(self.box)
         lay.addWidget(self.guess)
         lay.addWidget(self.said)
-        panel.table.model().modelReset.connect(lambda: QTimer.singleShot(0, self.follow))
+        panel.table.model().modelReset.connect(
+            lambda: QTimer.singleShot(0, self.follow)
+        )
 
     def bank(self) -> tuple[str, str]:
         """The project and the databank the panel shows, or '' when it shows no live one."""
         spec = self.panel.sub_spec() if self.panel.live else {}
-        return self.panel.project, ("" if spec.get("blocked") else spec.get("databank", ""))
+        return self.panel.project, (
+            "" if spec.get("blocked") else spec.get("databank", "")
+        )
 
     def follow(self) -> None:
         """The panel painted a table (a databank chosen, «Recargar», a «Continuar» done): read
@@ -89,8 +111,14 @@ class FiltersStrip(QFrame):
         moved, self.at = at != self.at, at
 
         # One GET: state, funnel rows and metrics off a single `context` in the daemon.
-        background.get("filters/state", lambda got: self.land({"at": at, "moved": moved, "got": got}),
-                       owner=self, project=at[0], databank=at[1], wait=120)  # pyright: ignore[reportArgumentType]  # background.get/client.get type **params as str but forward wait to float
+        background.get(
+            "filters/state",
+            lambda got: self.land({"at": at, "moved": moved, "got": got}),
+            owner=self,
+            project=at[0],
+            databank=at[1],
+            wait=120,
+        )  # pyright: ignore[reportArgumentType]  # background.get/client.get type **params as str but forward wait to float
 
     def land(self, msg: dict) -> None:
         """Paint what `follow` read, unless another databank was chosen since. Rows the owner
@@ -116,23 +144,32 @@ class FiltersStrip(QFrame):
         loose = state.get("anonymous") or self.anonymous
         tail = f" · {num(loose)} sin identidad, no filtrables" if loose else ""
         if state.get("orphans"):
-            tail += (f" · {num(state['orphans'])} líneas de descarte sin cabecera en el registro "
-                     "(truncado): no esconden nada")
+            tail += (
+                f" · {num(state['orphans'])} líneas de descarte sin cabecera en el registro "
+                "(truncado): no esconden nada"
+            )
         if state.get("stale"):
-            tail += (f" · el filtro «{state['stale']}» es de antes de que los filtros se "
-                     "recalcularan y no está en vigor: pulsa ▶ Aplicar para aplicarlo")
+            tail += (
+                f" · el filtro «{state['stale']}» es de antes de que los filtros se "
+                "recalcularan y no está en vigor: pulsa ▶ Aplicar para aplicarlo"
+            )
         if not state.get("steps"):
-            return (f"{self.at[1]}: sin filtros · {num(len(self.offer))} métricas filtrables "
-                    f"(OOS2 no){tail}")
+            return (
+                f"{self.at[1]}: sin filtros · {num(len(self.offer))} métricas filtrables "
+                f"(OOS2 no){tail}"
+            )
         hand = f" ({num(state['manual'])} a mano)" if state.get("manual") else ""
-        return (f"{self.at[1]}: {num(state['entered'])} → {num(state['remaining'])} visibles · "
-                f"{num(state['hidden'])} descartadas{hand}{tail}")
+        return (
+            f"{self.at[1]}: {num(state['entered'])} → {num(state['remaining'])} visibles · "
+            f"{num(state['hidden'])} descartadas{hand}{tail}"
+        )
 
     def add(self, row: dict | None = None) -> None:
         """One more condition, empty or a saved one."""
         line = FilterRow(self.offer)
-        line.gone.connect(lambda w: (self.box.removeWidget(w), w.deleteLater(),
-                                     self.timer.start()))
+        line.gone.connect(
+            lambda w: (self.box.removeWidget(w), w.deleteLater(), self.timer.start())
+        )
         line.changed.connect(self.timer.start)
         if row:
             line.put(row)
@@ -171,10 +208,17 @@ class FiltersStrip(QFrame):
         if not self.at[1] or plain(rows) == plain(self.now):
             self.guess.setText("")
             return
-        seq, body = self.asked, {"project": self.at[0], "databank": self.at[1], "rows": rows}
+        seq, body = (
+            self.asked,
+            {"project": self.at[0], "databank": self.at[1], "rows": rows},
+        )
 
-        background.post("filters/preview", body, lambda got: self.show_count({"seq": seq, "got": got}),
-                        owner=self)
+        background.post(
+            "filters/preview",
+            body,
+            lambda got: self.show_count({"seq": seq, "got": got}),
+            owner=self,
+        )
 
     def show_count(self, msg: dict) -> None:
         """Paint a live count, unless the rows changed since it was asked."""
@@ -197,11 +241,16 @@ class FiltersStrip(QFrame):
             done = f"Ese filtro ya está aplicado: no se apunta otra vez  ·  {done}"
         elif "ledger" in got:
             led = got["ledger"]
-            done = (f"{num(got['n_in'])} → {num(got['n_out'])}"
-                    + (f" ({num(got['blank'])} sin valor, siguen visibles)" if got.get("blank")
-                       else "")
-                    + f" · apuntado en el Ledger: {led['study']}, paso {num(led['step'])}, "
-                    f"{led['segment']}  ·  {done}")
+            done = (
+                f"{num(got['n_in'])} → {num(got['n_out'])}"
+                + (
+                    f" ({num(got['blank'])} sin valor, siguen visibles)"
+                    if got.get("blank")
+                    else ""
+                )
+                + f" · apuntado en el Ledger: {led['study']}, paso {num(led['step'])}, "
+                f"{led['segment']}  ·  {done}"
+            )
         self.say(done)
 
     def hide_ids(self, state: dict) -> None:
@@ -214,19 +263,28 @@ class FiltersStrip(QFrame):
 
     def apply(self) -> None:
         """«Aplicar»: the AND of the rows on the whole databank, replacing the filter in force."""
-        self.send("filters/apply", {"project": self.at[0], "databank": self.at[1],
-                                    "rows": self.rows()})
+        self.send(
+            "filters/apply",
+            {"project": self.at[0], "databank": self.at[1], "rows": self.rows()},
+        )
 
     def discard(self) -> None:
         """«Descartar seleccionadas»: the selected rows' identities, set aside by hand."""
         table = self.panel.table
-        ids = sorted({x for i in table.selectionModel().selectedRows()
-                  if (x := table.row_at(i.row()).get("identity")) is not None})
+        ids = sorted(
+            {
+                x
+                for i in table.selectionModel().selectedRows()
+                if (x := table.row_at(i.row()).get("identity")) is not None
+            }
+        )
         if not ids:
             self.say("Selecciona filas con identidad en la tabla para descartarlas")
             return
-        self.send("filters/discard", {"project": self.at[0], "databank": self.at[1],
-                                      "identities": ids})
+        self.send(
+            "filters/discard",
+            {"project": self.at[0], "databank": self.at[1], "identities": ids},
+        )
 
     def clear(self) -> None:
         """«Quitar filtros»: the filter and the manual deletions lifted, everything visible."""

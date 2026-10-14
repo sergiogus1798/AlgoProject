@@ -29,9 +29,15 @@ def _named(path: Path) -> frozenset[str]:
     for tab in (got or {}).get("tabs", []):
         for b in tab.get("blocks", []):
             at = [i for i, c in enumerate(b.get("columns") or []) if c in KEYS]
-            found |= {str(r[i]) for r in b.get("rows") or [] for i in at
-                      if b.get("kind") == "table"}
-            found |= {str(i.get("label", "")).split(" · ")[0] for i in b.get("items") or []}
+            found |= {
+                str(r[i])
+                for r in b.get("rows") or []
+                for i in at
+                if b.get("kind") == "table"
+            }
+            found |= {
+                str(i.get("label", "")).split(" · ")[0] for i in b.get("items") or []
+            }
             found |= {str(r) for r in b.get("rows") or [] if b.get("kind") == "grid"}
     return frozenset(found)
 
@@ -72,9 +78,18 @@ def layout(project: str) -> dict[str, dict[str, list[str]]]:
 
 def _hit(path: Path, kind: str, row: dict, **more: object) -> dict[str, Any]:
     """One candidate: where it is, what it said, and what its identity is."""
-    return {"path": path, "kind": kind, "config_hash": row["config_hash"],
-            "computed_at": row["computed_at"], "state": row["state"], "label": row["label"],
-            "manifest": None, "note": "", "population": False, **more}
+    return {
+        "path": path,
+        "kind": kind,
+        "config_hash": row["config_hash"],
+        "computed_at": row["computed_at"],
+        "state": row["state"],
+        "label": row["label"],
+        "manifest": None,
+        "note": "",
+        "population": False,
+        **more,
+    }
 
 
 def in_folder(folder: Path, study: str, strategy: str, day: str) -> dict[str, Any]:
@@ -100,14 +115,31 @@ def in_folder(folder: Path, study: str, strategy: str, day: str) -> dict[str, An
                 row = store.slim(path)
                 if row is None:
                     return {"skip": NOT_CONTRACT}
-                return _hit(path, "file", row, alias=a, **base,
-                            identity=row["identity"] or table.get(a, {}).get("identity"))
+                return _hit(
+                    path,
+                    "file",
+                    row,
+                    alias=a,
+                    **base,
+                    identity=row["identity"] or table.get(a, {}).get("identity"),
+                )
     whole = store.slim(population) if population.is_file() else None
     if whole is None:
-        return {"skip": NOT_CONTRACT if population.is_file() else "no hay resultado guardado"}
+        return {
+            "skip": NOT_CONTRACT
+            if population.is_file()
+            else "no hay resultado guardado"
+        }
     if not strategy:
-        return _hit(population, "population", whole, alias="", identity=None, population=True,
-                    **base)
+        return _hit(
+            population,
+            "population",
+            whole,
+            alias="",
+            identity=None,
+            population=True,
+            **base,
+        )
     at = named(population, names)
     row_at = next((a for a in names if a in table), None)
     alone = not (folder / "estrategias").is_dir()
@@ -116,31 +148,57 @@ def in_folder(folder: Path, study: str, strategy: str, day: str) -> dict[str, An
         return {"skip": "el run de la población no nombra esta estrategia"}
     alias = at or row_at or strategy
     row = table.get(alias)
-    said = ({**whole, "state": store.WORDS.get(row["word"], "none"), "label": row["word"]}
-            if row else whole)
-    return _hit(population, kind, said, alias=alias, population=True, **base,
-                identity=row["identity"] if row else None)
+    said = (
+        {**whole, "state": store.WORDS.get(row["word"], "none"), "label": row["word"]}
+        if row
+        else whole
+    )
+    return _hit(
+        population,
+        kind,
+        said,
+        alias=alias,
+        population=True,
+        **base,
+        identity=row["identity"] if row else None,
+    )
 
 
 def _batch(project: str, study: str, strategy: str) -> Iterator[dict]:
     """A batch study's one result for a mother (`cloud`/`wfc`/`cscv`/`marketSurfaces`)."""
     found = batches(project).get(norm(strategy), [])
     if len(found) != 1:
-        yield {"skip": "dos lotes de variantes para esta madre: sin uno solo que leer" if found
-               else "esta estrategia no es madre de ningún lote de variantes", "day": ""}
+        yield {
+            "skip": "dos lotes de variantes para esta madre: sin uno solo que leer"
+            if found
+            else "esta estrategia no es madre de ningún lote de variantes",
+            "day": "",
+        }
         return
     path = found[0] / "estudios" / f"{study}.json"
     row = store.slim(path) if path.is_file() else None
     if row is None:
-        yield {"skip": NOT_CONTRACT if path.is_file() else "no hay resultado guardado", "day": ""}
+        yield {
+            "skip": NOT_CONTRACT if path.is_file() else "no hay resultado guardado",
+            "day": "",
+        }
         return
     # Its `estudios/manifest.json` is shared by every study of the batch: not this run's.
-    yield _hit(path, "file", row, alias=strategy, day=(row["computed_at"] or "")[:10],
-               identity=row["identity"], origin=f"lote {found[0].name}", elsewhere=None)
+    yield _hit(
+        path,
+        "file",
+        row,
+        alias=strategy,
+        day=(row["computed_at"] or "")[:10],
+        identity=row["identity"],
+        origin=f"lote {found[0].name}",
+        elsewhere=None,
+    )
 
 
-def sources(project: str, databank: str, study: str, strategy: str,
-            day: str = "") -> Iterator[dict]:
+def sources(
+    project: str, databank: str, study: str, strategy: str, day: str = ""
+) -> Iterator[dict]:
     """Every candidate result, in the order they are preferred when identity does not decide.
 
     This databank's days newest first; then, for a strategy, every other
@@ -160,17 +218,35 @@ def sources(project: str, databank: str, study: str, strategy: str,
         `{"skip", "day"}` for a folder passed over with its reason.
     """
     if study in BATCH_STUDIES:
-        yield from (_batch(project, study, strategy) if strategy else
-                    iter([{"skip": "este estudio solo tiene resultado por madre, en su lote "
-                                   "de variantes", "day": ""}]))
+        yield from (
+            _batch(project, study, strategy)
+            if strategy
+            else iter(
+                [
+                    {
+                        "skip": "este estudio solo tiene resultado por madre, en su lote "
+                        "de variantes",
+                        "day": "",
+                    }
+                ]
+            )
+        )
         return
     here = databank.replace(" ", "_")
     tree = layout(project)
-    others = sorted((d for d in tree if d != here), key=lambda d: max(
-        (x for days in tree[d].values() for x in days), default=""), reverse=True)
+    others = sorted(
+        (d for d in tree if d != here),
+        key=lambda d: max((x for days in tree[d].values() for x in days), default=""),
+        reverse=True,
+    )
     for db in [here, *others] if strategy else [here]:
         for d in tree.get(db, {}).get(study, []):
             if day and d != day:
                 continue
             got = in_folder(store.bank(project, db) / d / study, study, strategy, d)
-            yield {**got, "day": d, "origin": db, "elsewhere": None if db == here else db}
+            yield {
+                **got,
+                "day": d,
+                "origin": db,
+                "elsewhere": None if db == here else db,
+            }

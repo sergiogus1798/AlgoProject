@@ -3,6 +3,7 @@
 Registered in the repo's .mcp.json as `mt5`, stdio. It has no tool that sends, modifies or
 closes an order, on purpose (owner, 2026-09-27): trading is not this server's business.
 """
+
 import functools
 import json
 import shutil
@@ -21,12 +22,14 @@ server = FastMCP("mt5")
 def _safe(register: Callable) -> Callable:
     """Wrap `server.tool` so a helper's SystemExit becomes a RuntimeError: FastMCP turns an
     Exception into a tool error but lets SystemExit kill the stdio server."""
+
     def tool(*a: Any, **k: Any) -> Callable:
         """The registering decorator, with the guard inside."""
         deco = register(*a, **k)
 
         def wrap(fn: Callable) -> Callable:
             """Guard one tool function and register it."""
+
             @functools.wraps(fn)
             def run(*args: Any, **kw: Any) -> Any:
                 """The tool, its SystemExit made an Exception."""
@@ -34,8 +37,11 @@ def _safe(register: Callable) -> Callable:
                     return fn(*args, **kw)
                 except SystemExit as e:
                     raise RuntimeError(str(e)) from e
+
             return deco(run)
+
         return wrap
+
     return tool
 
 
@@ -57,9 +63,14 @@ def _sqx(path: str, strategy: str) -> pd.DataFrame:
 @server.tool()
 def mt5_status() -> dict[str, Any]:
     """What is installed and running: Wine, the terminal, its data folder, the Windows Python."""
-    out = {"wine": shutil.which("wine"), "prefix": str(wine.MT5_PREFIX),
-           "terminal": wine.TERMINAL.exists(), "metaeditor": wine.METAEDITOR.exists(),
-           "windows_python": wine.PYTHON.exists(), "terminal_running": wine.terminal_running()}
+    out = {
+        "wine": shutil.which("wine"),
+        "prefix": str(wine.MT5_PREFIX),
+        "terminal": wine.TERMINAL.exists(),
+        "metaeditor": wine.METAEDITOR.exists(),
+        "windows_python": wine.PYTHON.exists(),
+        "terminal_running": wine.terminal_running(),
+    }
     if out["terminal"]:
         out["data_dir"] = str(wine.data_dir())
     return out
@@ -82,9 +93,16 @@ def mt5_compile(source: str) -> dict[str, Any]:
 
 
 @server.tool()
-def mt5_backtest_start(source: str, symbol: str, timeframe: str, start: str, end: str,
-                       model: str = "real_ticks", deposit: float = 100000,
-                       leverage: int = 100) -> dict[str, Any]:
+def mt5_backtest_start(
+    source: str,
+    symbol: str,
+    timeframe: str,
+    start: str,
+    end: str,
+    model: str = "real_ticks",
+    deposit: float = 100000,
+    leverage: int = 100,
+) -> dict[str, Any]:
     """Compile an .mq5 and launch one Strategy Tester pass; returns at once with the run id.
 
     The terminal must be closed (the tester opens its own and shuts it at the end). Poll
@@ -102,7 +120,9 @@ def mt5_backtest_start(source: str, symbol: str, timeframe: str, start: str, end
     built = metaeditor.expert(Path(source).expanduser())
     if not built["ok"]:
         return {"state": "compile_failed", **built}
-    return tester.start(built["expert"], symbol, timeframe, start, end, model, deposit, leverage)
+    return tester.start(
+        built["expert"], symbol, timeframe, start, end, model, deposit, leverage
+    )
 
 
 @server.tool()
@@ -114,14 +134,27 @@ def mt5_backtest_result(run: str) -> dict[str, Any]:
 @server.tool()
 def mt5_runs() -> list[dict[str, Any]]:
     """Every backtest run on disk, newest first, with whether it has been collected."""
-    runs = sorted(tester.TESTS.glob("*/run.json"), key=lambda p: p.stat().st_mtime, reverse=True)
-    return [{"run": p.parent.name, **json.loads(p.read_text()),
-             "collected": (p.parent / "trades.parquet").exists()} for p in runs]
+    runs = sorted(
+        tester.TESTS.glob("*/run.json"), key=lambda p: p.stat().st_mtime, reverse=True
+    )
+    return [
+        {
+            "run": p.parent.name,
+            **json.loads(p.read_text()),
+            "collected": (p.parent / "trades.parquet").exists(),
+        }
+        for p in runs
+    ]
 
 
 @server.tool()
-def mt5_compare(run: str, sqx_trades_file: str, strategy: str = "", tolerance_minutes: float = 60,
-                shift_hours: float = 0) -> dict[str, Any]:
+def mt5_compare(
+    run: str,
+    sqx_trades_file: str,
+    strategy: str = "",
+    tolerance_minutes: float = 60,
+    shift_hours: float = 0,
+) -> dict[str, Any]:
     """Pair a collected MT5 run's trades with SQX's for the same window and measure the gap.
 
     Args:
@@ -134,7 +167,9 @@ def mt5_compare(run: str, sqx_trades_file: str, strategy: str = "", tolerance_mi
     """
     folder = tester.TESTS / run
     meta = json.loads((folder / "run.json").read_text())
-    mt5_t = compare.window(pd.read_parquet(folder / "trades.parquet"), meta["start"], meta["end"])
+    mt5_t = compare.window(
+        pd.read_parquet(folder / "trades.parquet"), meta["start"], meta["end"]
+    )
     sqx = _sqx(sqx_trades_file, strategy)
     sqx[["Open time", "Close time"]] += pd.Timedelta(hours=shift_hours)
     sqx = compare.window(sqx, meta["start"], meta["end"])

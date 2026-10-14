@@ -13,9 +13,11 @@ from core.paths import CLAUDE_BIN, ROOT
 
 # The seconds a cancelled step's child gets to stop its worker (`sqx-worker.sh stop` waits 5 min).
 GRACE_S = 330
-UNATTENDED = ("\n\nLo lanza la ventana (cola de «Investigar»): nadie te contesta. Si algo es "
-              "ambiguo (regla dura 11), NO elijas: termina con una línea que empiece por "
-              "«PREGUNTA:» con las lecturas posibles.")
+UNATTENDED = (
+    "\n\nLo lanza la ventana (cola de «Investigar»): nadie te contesta. Si algo es "
+    "ambiguo (regla dura 11), NO elijas: termina con una línea que empiece por "
+    "«PREGUNTA:» con las lecturas posibles."
+)
 CHILD: list[subprocess.Popen] = []
 
 
@@ -40,8 +42,9 @@ def terminate(_signum: int, _frame: FrameType | None) -> None:
 
 def call(argv: list[str]) -> str:
     """Run one command in the repository, echo its output into the job's log, return it."""
-    child = subprocess.Popen(argv, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                             text=True)
+    child = subprocess.Popen(
+        argv, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
     CHILD.append(child)
     out, _ = child.communicate()
     CHILD.remove(child)
@@ -57,11 +60,22 @@ def agent(which: str, text: str, tag: str) -> str:
     Returns:
         The name after the line `<TAG>: <name>` it must end with.
     """
-    out = call([str(CLAUDE_BIN), "-p", f"Sigue .claude/agents/{which}.md al pie de la letra.\n\n"
-                + text + UNATTENDED + f" Al terminar, una línea «{tag}: <nombre>».",
-                "--permission-mode", "auto", "--output-format", "text"])
+    out = call(
+        [
+            str(CLAUDE_BIN),
+            "-p",
+            f"Sigue .claude/agents/{which}.md al pie de la letra.\n\n"
+            + text
+            + UNATTENDED
+            + f" Al terminar, una línea «{tag}: <nombre>».",
+            "--permission-mode",
+            "auto",
+            "--output-format",
+            "text",
+        ]
+    )
     if "PREGUNTA:" in out:
-        raise Question(out[out.index("PREGUNTA:"):].splitlines()[0])
+        raise Question(out[out.index("PREGUNTA:") :].splitlines()[0])
     found = re.search(rf"^{tag}: (\S+)", out, re.M)
     if not found:
         raise Failed(f"el {which} no terminó con su línea «{tag}: <nombre>»")
@@ -76,46 +90,89 @@ def assets(ctx: dict[str, Any]) -> None:
 def template(ctx: dict[str, Any]) -> None:
     """`templateArchitect` on this idea; the template it files becomes `ctx["template"]`."""
     i = ctx["idea"]
-    ctx["template"] = agent("templateArchitect", (
-        f"Fichero de ideas: {i.get('idea_file', '')}\nIdea elegida: {i['name']}\n"
-        f"Regla exacta: {i['rule']}\nDirección: {i['direction']} (una sola, regla dura 13)\n"
-        f"Bloques custom a crear: {json.dumps(i['custom_blocks'], ensure_ascii=False)}\n"
-        f"Respuestas del dueño: {json.dumps(i['questions'], ensure_ascii=False)}"), "PLANTILLA")
+    ctx["template"] = agent(
+        "templateArchitect",
+        (
+            f"Fichero de ideas: {i.get('idea_file', '')}\nIdea elegida: {i['name']}\n"
+            f"Regla exacta: {i['rule']}\nDirección: {i['direction']} (una sola, regla dura 13)\n"
+            f"Bloques custom a crear: {json.dumps(i['custom_blocks'], ensure_ascii=False)}\n"
+            f"Respuestas del dueño: {json.dumps(i['questions'], ensure_ascii=False)}"
+        ),
+        "PLANTILLA",
+    )
 
 
 def project(ctx: dict[str, Any]) -> None:
     """`sqx.projects.builder --workflow` on the custodian, one project per idea."""
     c = ctx["proposal"]["cell"]
-    call([sys.executable, "-m", "sqx.projects.builder", ctx["project"], "--purpose",
-          f"Director de investigación {ctx['proposal']['id']}: {ctx['idea']['name']} "
-          f"({c['family']}, {c['direction']})",
-          "--template", str(template_dir(ctx["template"]) / "template.sqx"),
-          "--symbol", ctx["symbol"], "--timeframe", ctx["timeframe"], "--role", "custodian",
-          "--workflow"])
+    call(
+        [
+            sys.executable,
+            "-m",
+            "sqx.projects.builder",
+            ctx["project"],
+            "--purpose",
+            f"Director de investigación {ctx['proposal']['id']}: {ctx['idea']['name']} "
+            f"({c['family']}, {c['direction']})",
+            "--template",
+            str(template_dir(ctx["template"]) / "template.sqx"),
+            "--symbol",
+            ctx["symbol"],
+            "--timeframe",
+            ctx["timeframe"],
+            "--role",
+            "custodian",
+            "--workflow",
+        ]
+    )
 
 
 def palette(ctx: dict[str, Any]) -> None:
     """`buildingBlocksExpert` writes and applies the palette the proposal already decided."""
     i = ctx["idea"]
-    agent("buildingBlocksExpert", (
-        f"Fichero de ideas: {i.get('idea_file', '')}\nIdea: {i['name']}\n"
-        f"Plantilla: {ctx['template']}\nProyecto: {ctx['project']} (custodio, parado)\n"
-        "La paleta YA está decidida por el director de investigación; escríbela y aplícala "
-        f"sin cambiar sus familias:\n{json.dumps(i['palette'], ensure_ascii=False, indent=1)}"),
-        "PALETA")
+    agent(
+        "buildingBlocksExpert",
+        (
+            f"Fichero de ideas: {i.get('idea_file', '')}\nIdea: {i['name']}\n"
+            f"Plantilla: {ctx['template']}\nProyecto: {ctx['project']} (custodio, parado)\n"
+            "La paleta YA está decidida por el director de investigación; escríbela y aplícala "
+            f"sin cambiar sus familias:\n{json.dumps(i['palette'], ensure_ascii=False, indent=1)}"
+        ),
+        "PALETA",
+    )
 
 
 def autopilot(ctx: dict[str, Any]) -> None:
     """The autopilot from the build on, then the run's verdict closed in the memory."""
     try:
-        call([sys.executable, "-m", "pipeline.autopilot.run", "--project", ctx["project"],
-              *(["--own-log"] if ctx.get("ran_before") else [])])
+        call(
+            [
+                sys.executable,
+                "-m",
+                "pipeline.autopilot.run",
+                "--project",
+                ctx["project"],
+                *(["--own-log"] if ctx.get("ran_before") else []),
+            ]
+        )
     finally:
         runs = sorted((autopilot_runs() / ctx["project"]).glob("*/"))
         if runs:
-            call([sys.executable, "-m", "studies.research.memory.report", "--close",
-                  str(runs[-1])])
+            call(
+                [
+                    sys.executable,
+                    "-m",
+                    "studies.research.memory.report",
+                    "--close",
+                    str(runs[-1]),
+                ]
+            )
 
 
-RUNNERS = {"activos": assets, "plantilla": template, "proyecto": project, "paleta": palette,
-           "autopilot": autopilot}
+RUNNERS = {
+    "activos": assets,
+    "plantilla": template,
+    "proyecto": project,
+    "paleta": palette,
+    "autopilot": autopilot,
+}

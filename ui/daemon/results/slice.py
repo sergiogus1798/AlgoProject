@@ -31,8 +31,11 @@ def block(b: dict, strategy: str) -> dict | None:
         rows = [r for r in b.get("rows") or [] if any(mine(r[i], strategy) for i in at)]
         return {**b, "rows": rows} if rows else None
     if kind == "bars":
-        items = [i for i in b.get("items") or [] if mine(str(i.get("label", "")).split(" · ")[0],
-                                                          strategy)]
+        items = [
+            i
+            for i in b.get("items") or []
+            if mine(str(i.get("label", "")).split(" · ")[0], strategy)
+        ]
         return {**b, "items": items} if items else None
     if kind == "lines":
         return b if mine((b.get("select") or {}).get("mother"), strategy) else None
@@ -40,18 +43,29 @@ def block(b: dict, strategy: str) -> dict | None:
         keep = [i for i, r in enumerate(b.get("rows") or []) if mine(r, strategy)]
         if not keep:
             return None
-        return {**b, "rows": [b["rows"][i] for i in keep],
-                "values": [b["values"][i] for i in keep],
-                **({"labels": [b["labels"][i] for i in keep]} if b.get("labels") else {})}
+        return {
+            **b,
+            "rows": [b["rows"][i] for i in keep],
+            "values": [b["values"][i] for i in keep],
+            **({"labels": [b["labels"][i] for i in keep]} if b.get("labels") else {}),
+        }
     return None
 
 
 def _alone(tab: dict, kept: list[dict]) -> dict[str, Any]:
     """The tab kept to one mother: no `mother` selector (one choice is noise) and no tag."""
     sel = [s for s in tab.get("selectors") or [] if s["key"] != "mother"]
-    blocks = [{**b, "select": {k: v for k, v in b["select"].items() if k != "mother"}}
-              if b.get("select") else b for b in kept]
-    return {"selectors": sel, "blocks": blocks} if tab.get("selectors") else {"blocks": blocks}
+    blocks = [
+        {**b, "select": {k: v for k, v in b["select"].items() if k != "mother"}}
+        if b.get("select")
+        else b
+        for b in kept
+    ]
+    return (
+        {"selectors": sel, "blocks": blocks}
+        if tab.get("selectors")
+        else {"blocks": blocks}
+    )
 
 
 def slice_for(result: dict, strategy: str) -> dict | None:
@@ -71,8 +85,14 @@ def slice_for(result: dict, strategy: str) -> dict | None:
     for tab in out.get("tabs", []):
         kept = [k for k in (block(b, strategy) for b in tab.get("blocks", [])) if k]
         if kept:
-            tabs.append({**tab, **_alone(tab, kept), "note": "Run de toda la población, vista "
-                         "solo para esta estrategia. " + (tab.get("note") or "")})
+            tabs.append(
+                {
+                    **tab,
+                    **_alone(tab, kept),
+                    "note": "Run de toda la población, vista "
+                    "solo para esta estrategia. " + (tab.get("note") or ""),
+                }
+            )
     if not tabs:
         return None
     return {**out, "tabs": tabs, "strategy": strategy, "sliced": True}
@@ -91,11 +111,26 @@ def verdict_row(result: dict, row: dict, strategy: str) -> dict[str, Any]:
         what the study said about this strategy, when its page drew only aggregates (decay).
     """
     keys = [k for k in row if k != "identity"]
-    table = {"kind": "table", "title": "Lo que el estudio dijo de esta estrategia",
-             "columns": keys, "rows": [[row[k] for k in keys]], "align": ["left"] * len(keys)}
-    return {**copy.deepcopy(result), "strategy": strategy, "sliced": True,
-            "tabs": [{"name": "row", "title": "Esta estrategia", "blocks": [table],
-                      "note": "Su fila del verdict.csv del run de toda la población."}]}
+    table = {
+        "kind": "table",
+        "title": "Lo que el estudio dijo de esta estrategia",
+        "columns": keys,
+        "rows": [[row[k] for k in keys]],
+        "align": ["left"] * len(keys),
+    }
+    return {
+        **copy.deepcopy(result),
+        "strategy": strategy,
+        "sliced": True,
+        "tabs": [
+            {
+                "name": "row",
+                "title": "Esta estrategia",
+                "blocks": [table],
+                "note": "Su fila del verdict.csv del run de toda la población.",
+            }
+        ],
+    }
 
 
 def whole(result: dict, strategy: str) -> dict[str, Any]:
@@ -103,6 +138,8 @@ def whole(result: dict, strategy: str) -> dict[str, Any]:
     mono), shown as it is on a strategy's page — the same for every strategy, and said so."""
     out = copy.deepcopy(result)
     for tab in out.get("tabs", []):
-        tab["note"] = ("Este estudio lee la población entera: su resultado es el mismo para "
-                       "todas las estrategias del databank. " + (tab.get("note") or ""))
+        tab["note"] = (
+            "Este estudio lee la población entera: su resultado es el mismo para "
+            "todas las estrategias del databank. " + (tab.get("note") or "")
+        )
     return {**out, "strategy": strategy, "sliced": True}

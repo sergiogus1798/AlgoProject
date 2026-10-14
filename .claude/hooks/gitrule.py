@@ -1,30 +1,62 @@
 """Rule 12 on one git command: one folder, one branch, staging by name — for guard.py."""
+
 import re
 
-VALUED = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-prefix", "--config-env"}
-WHOLE = {".", "..", "*", ":", ":/*", ":(top)", "$PWD", "${PWD}", "__SUB__"}   # after rstrip("/")
+VALUED = {
+    "-C",
+    "-c",
+    "--git-dir",
+    "--work-tree",
+    "--namespace",
+    "--super-prefix",
+    "--config-env",
+}
+WHOLE = {
+    ".",
+    "..",
+    "*",
+    ":",
+    ":/*",
+    ":(top)",
+    "$PWD",
+    "${PWD}",
+    "__SUB__",
+}  # after rstrip("/")
 ADD_ALL = re.compile(r"--all|--update|--no-ignore-removal|-[a-zA-Z]*[Au][a-zA-Z]*")
 COMMIT_ALL = re.compile(r"--all|-[a-zA-Z]*a[a-zA-Z]*")
-COMMIT_VALUED = re.compile(r"--(message|file|author|date|reuse-message|reedit-message|fixup|squash"
-                           r"|template)|-[a-zA-Z]*[mFCct]")
+COMMIT_VALUED = re.compile(
+    r"--(message|file|author|date|reuse-message|reedit-message|fixup|squash"
+    r"|template)|-[a-zA-Z]*[mFCct]"
+)
 BRANCH_CHANGES = re.compile(r"--(delete|move|copy|force)|-[a-zA-Z]*[dDmMcCf][a-zA-Z]*")
-BRANCH_VALUED = {"--contains", "--no-contains", "--merged", "--no-merged", "--points-at", "--sort",
-                 "--format"}
+BRANCH_VALUED = {
+    "--contains",
+    "--no-contains",
+    "--merged",
+    "--no-merged",
+    "--points-at",
+    "--sort",
+    "--format",
+}
 BRANCH_LISTS = re.compile(r"--list|-[a-zA-Z]*l[a-zA-Z]*")
 CHECKOUT_BRANCHES = {"-b", "-B", "--orphan", "-t", "--track", "--detach"}
 
 STAGE = "rule 12: stage only this task's files by name — never `git add -A` / `-u` / `git add .`"
 COMMIT = "rule 12: stage this task's files by name, then commit — never `git commit -a`"
 BRANCH = "rule 12: one branch — never create, delete or switch a branch"
-CHECKOUT = ("rule 12: one branch — `git checkout` only to restore files: "
-            "`git checkout [<ref>] -- <file>`")
-FOLDER = "rule 12: one folder — never `git worktree` (only `list`) and never a second clone"
+CHECKOUT = (
+    "rule 12: one branch — `git checkout` only to restore files: "
+    "`git checkout [<ref>] -- <file>`"
+)
+FOLDER = (
+    "rule 12: one folder — never `git worktree` (only `list`) and never a second clone"
+)
 
 
 def _add(rest: list[str], root: str) -> str | None:
     """`git add` of everything: by flag, or by a pathspec that names the whole tree."""
     cut = rest.index("--") if "--" in rest else len(rest)
-    paths = rest[cut + 1:] + [a for a in rest[:cut] if not a.startswith("-")]
+    paths = rest[cut + 1 :] + [a for a in rest[:cut] if not a.startswith("-")]
     if any(ADD_ALL.fullmatch(a) for a in rest[:cut]):
         return STAGE
     return STAGE if any(p.rstrip("/") in WHOLE | {root} for p in paths) else None
@@ -61,7 +93,7 @@ def _branch(rest: list[str]) -> str | None:
 
 def _checkout(rest: list[str]) -> str | None:
     """Any `git checkout` that is not a file restore with an explicit `--`."""
-    restores = "--" in rest and rest[rest.index("--") + 1:]
+    restores = "--" in rest and rest[rest.index("--") + 1 :]
     return None if restores and not CHECKOUT_BRANCHES & set(rest) else CHECKOUT
 
 
@@ -76,7 +108,7 @@ def git(words: list[str], root: str) -> str | None:
     i = 1
     while i < len(words) and words[i].startswith("-"):
         i += 2 if words[i] in VALUED else 1
-    sub, rest = (words[i:i + 1] or [""])[0], words[i + 1:]
+    sub, rest = (words[i : i + 1] or [""])[0], words[i + 1 :]
     if sub == "add":
         return _add(rest, root)
     if sub == "commit":

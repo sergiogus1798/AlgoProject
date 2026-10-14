@@ -19,17 +19,24 @@ BANK = re.compile(r"(?:^|, )([^(]+?) \((\d+)\)")
 # minute per strategy the «N s.» pattern matched nothing and /api/pulse answered 500).
 DURATION = r"((?:[\d.]+ (?:hr|min|s|ms)\.\s*)+)"
 UNIT_MS = {"hr": 3_600_000, "min": 60_000, "s": 1000, "ms": 1}
-TESTED = re.compile(r"Total tested: (\d+), Time per strategy: " + DURATION
-                    + r", Passed: (\d+), Failed: (\d+)")
-STATUS = {"generated": re.compile(r"Strategies generated\s+(\d+)"),
-          "per_strategy_ms": re.compile(r"Time per strategy\s+" + DURATION),
-          "running": re.compile(r"Running time so far\s+(.+)"),
-          "in_databank": re.compile(r"In databank\s+(\d+)")}
+TESTED = re.compile(
+    r"Total tested: (\d+), Time per strategy: "
+    + DURATION
+    + r", Passed: (\d+), Failed: (\d+)"
+)
+STATUS = {
+    "generated": re.compile(r"Strategies generated\s+(\d+)"),
+    "per_strategy_ms": re.compile(r"Time per strategy\s+" + DURATION),
+    "running": re.compile(r"Running time so far\s+(.+)"),
+    "in_databank": re.compile(r"In databank\s+(\d+)"),
+}
 
 
 def to_ms(text: str) -> float:
     """Milliseconds in one of SQX's durations, «1 min. 10 s.» → 70000.0."""
-    return sum(float(n) * UNIT_MS[u] for n, u in re.findall(r"([\d.]+) (hr|min|s|ms)\.", text))
+    return sum(
+        float(n) * UNIT_MS[u] for n, u in re.findall(r"([\d.]+) (hr|min|s|ms)\.", text)
+    )
 
 
 def task_runs(project_dir: Path) -> list[dict]:
@@ -45,7 +52,9 @@ def task_runs(project_dir: Path) -> list[dict]:
         `tested`, `per_strategy_ms`, `passed`, `failed`.
     """
     out = []
-    for f in sorted((project_dir / "log").glob(f"global_log_{datetime.now():%Y%m%d}_*.log")):
+    for f in sorted(
+        (project_dir / "log").glob(f"global_log_{datetime.now():%Y%m%d}_*.log")
+    ):
         text = f.read_text(encoding="utf-8", errors="replace")
         for chunk in text.split("TASK STARTED at ")[1:]:
             chunk = "TASK STARTED at " + chunk
@@ -55,21 +64,40 @@ def task_runs(project_dir: Path) -> list[dict]:
             # missing line killed the watcher and, through its `finally`, a live build.
             if task is None:
                 continue
-            started = datetime.strptime(cast(re.Match[str], STARTED.search(chunk)).group(1), STAMP)
+            started = datetime.strptime(
+                cast(re.Match[str], STARTED.search(chunk)).group(1), STAMP
+            )
             fin = FINISHED.search(chunk)
             finished = datetime.strptime(fin.group(1), STAMP) if fin else None
             listed = BEFORE.search(chunk)
-            before = ({m.group(1).strip(): int(m.group(2)) for m in BANK.finditer(listed.group(1))}
-                      if listed else {})
-            row = {"title": task.group(1), "type": task.group(2),
-                   "started": started.isoformat(timespec="seconds"),
-                   "finished": finished.isoformat(timespec="seconds") if finished else None,
-                   "elapsed_s": round(((finished or datetime.now()) - started).total_seconds()),
-                   "before": before}
+            before = (
+                {
+                    m.group(1).strip(): int(m.group(2))
+                    for m in BANK.finditer(listed.group(1))
+                }
+                if listed
+                else {}
+            )
+            row = {
+                "title": task.group(1),
+                "type": task.group(2),
+                "started": started.isoformat(timespec="seconds"),
+                "finished": finished.isoformat(timespec="seconds")
+                if finished
+                else None,
+                "elapsed_s": round(
+                    ((finished or datetime.now()) - started).total_seconds()
+                ),
+                "before": before,
+            }
             t = TESTED.search(chunk)
             if t:
-                row |= {"tested": int(t.group(1)), "per_strategy_ms": to_ms(t.group(2)),
-                        "passed": int(t.group(3)), "failed": int(t.group(4))}
+                row |= {
+                    "tested": int(t.group(1)),
+                    "per_strategy_ms": to_ms(t.group(2)),
+                    "passed": int(t.group(3)),
+                    "failed": int(t.group(4)),
+                }
             out.append(row)
     return out
 
@@ -115,7 +143,9 @@ def status(role: str, project: str) -> dict | None:
     if not got["generated"]:
         return None
     per = got["per_strategy_ms"]
-    return {"generated": int(got["generated"].group(1)),
-            "per_strategy_ms": to_ms(per.group(1)) if per else None,
-            "running": cast(re.Match[str], got["running"]).group(1).strip(),
-            "in_databank": int(cast(re.Match[str], got["in_databank"]).group(1))}
+    return {
+        "generated": int(got["generated"].group(1)),
+        "per_strategy_ms": to_ms(per.group(1)) if per else None,
+        "running": cast(re.Match[str], got["running"]).group(1).strip(),
+        "in_databank": int(cast(re.Match[str], got["in_databank"]).group(1)),
+    }

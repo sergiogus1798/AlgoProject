@@ -1,4 +1,5 @@
 """tools/readmetable.render on a temp folder: a stale row, a missing row and a gone row, hand columns kept."""
+
 import sys
 import tempfile
 from pathlib import Path
@@ -38,7 +39,7 @@ def test_render() -> None:
         (root / "README.md").write_text(README)
         assert readmetable.render(root / "README.md") == EXPECTED
         (root / "README.md").write_text(EXPECTED)
-        assert readmetable.render(root / "README.md") == EXPECTED     # idempotent
+        assert readmetable.render(root / "README.md") == EXPECTED  # idempotent
 
 
 if __name__ == "__main__":

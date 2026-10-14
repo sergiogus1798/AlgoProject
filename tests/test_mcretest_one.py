@@ -25,20 +25,42 @@ SEEN: list = []
 def member(name: str) -> dict:
     """A contract result for one strategy, with the summary row many.table reads."""
     return envelope.envelope(
-        "studies.breakage.mcRetest", name, f"id-{name}", {}, time.time(),
+        "studies.breakage.mcRetest",
+        name,
+        f"id-{name}",
+        {},
+        time.time(),
         [envelope.tab("t", "t", [blocks.table("t", pd.DataFrame({"x": [1]}))])],
         blocks.verdict("FAIL", "fail", "m"),
-        summary={"verdict": "FAIL", "composite": float(len(name)), "binding": "x",
-                 "stress_net_p5": 0.0, "stress_cvar_dd_pct": 0.0, "vetoes": "",
-                 "blocked_by": ""})
+        summary={
+            "verdict": "FAIL",
+            "composite": float(len(name)),
+            "binding": "x",
+            "stress_net_p5": 0.0,
+            "stress_cvar_dd_pct": 0.0,
+            "vetoes": "",
+            "blocked_by": "",
+        },
+    )
 
 
 def inputs(project: str, databank: str, day: str) -> dict:
     """An ingest of three strategies; 1.2.5 lacks the `stress` task."""
-    sims = pd.DataFrame([(t, n) for n in NAMES for t in ("bar", "stress")
-                         if (n, t) != ("1.2.5", "stress")], columns=["task", "strategy"])
-    return {"sims": sims, "folder": Path(tempfile.gettempdir()), "identity": {},
-            "trades": pd.DataFrame({"strategy": NAMES, "pnl": [1.0, 2.0, 3.0]})}
+    sims = pd.DataFrame(
+        [
+            (t, n)
+            for n in NAMES
+            for t in ("bar", "stress")
+            if (n, t) != ("1.2.5", "stress")
+        ],
+        columns=["task", "strategy"],
+    )
+    return {
+        "sims": sims,
+        "folder": Path(tempfile.gettempdir()),
+        "identity": {},
+        "trades": pd.DataFrame({"strategy": NAMES, "pnl": [1.0, 2.0, 3.0]}),
+    }
 
 
 def one(name: str, got: dict, cfg: dict) -> dict:
@@ -49,8 +71,11 @@ def one(name: str, got: dict, cfg: dict) -> dict:
 
 def files(folder: Path) -> dict[str, str]:
     """Every file under a folder, by its SHA-256."""
-    return {f.relative_to(folder).as_posix(): hashlib.sha256(f.read_bytes()).hexdigest()
-            for f in folder.rglob("*") if f.is_file()}
+    return {
+        f.relative_to(folder).as_posix(): hashlib.sha256(f.read_bytes()).hexdigest()
+        for f in folder.rglob("*")
+        if f.is_file()
+    }
 
 
 def test_one_strategy_leaves_the_population_alone() -> None:
@@ -60,7 +85,8 @@ def test_one_strategy_leaves_the_population_alone() -> None:
         report.load.load = inputs
         report.many.run = lambda got, cfg: {
             "members": [member(n) for n in NAMES],
-            "population": envelope.envelope("m", None, None, {}, time.time(), [])}
+            "population": envelope.envelope("m", None, None, {}, time.time(), []),
+        }
         report.one.run = one
         base = ["report", "--project", "P", "--day", "2026-09-30"]
         sys.argv = base
@@ -73,12 +99,20 @@ def test_one_strategy_leaves_the_population_alone() -> None:
             sys.argv = base + ["--strategy", spelling]
             report.main()
             after = files(out)
-            assert {k: v for k, v in after.items() if not k.startswith("estrategias/1.2.4.")} \
-                == {k: v for k, v in before.items() if not k.startswith("estrategias/1.2.4.")}
+            assert {
+                k: v for k, v in after.items() if not k.startswith("estrategias/1.2.4.")
+            } == {
+                k: v
+                for k, v in before.items()
+                if not k.startswith("estrategias/1.2.4.")
+            }
             assert set(after) == set(before)
             assert SEEN[-1]["strategy"].tolist() == ["1.2.4"]
         assert len(pd.read_csv(out / "verdict.csv")) == 3
-        assert json.loads((out / "estrategias" / "1.2.4.json").read_text())["strategy"] == "1.2.4"
+        assert (
+            json.loads((out / "estrategias" / "1.2.4.json").read_text())["strategy"]
+            == "1.2.4"
+        )
 
         sys.argv = base + ["--strategy", "Strategy 1.2.5"]
         try:

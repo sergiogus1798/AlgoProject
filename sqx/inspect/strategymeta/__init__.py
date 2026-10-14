@@ -52,23 +52,42 @@ def read(sqx_path: Path, project_cfx: Path | None = None) -> dict[str, Any]:
     """
     portfolio = sqxfile.rules(sqx_path)
     root = ElementTree.fromstring(portfolio)
-    stamp, last = settings.stamped(sqx_path), settings.task_view(settings.last_settings(sqx_path))
+    stamp, last = (
+        settings.stamped(sqx_path),
+        settings.task_view(settings.last_settings(sqx_path)),
+    )
     entries, exits = rules.conditions(root, False), rules.conditions(root, True)
     own = stamp["MoneyManagement.UseFromStrategy"] == "true"
     trading = settings.options(stamp)
     asset, card = settings.asset_card(last["chart"])
-    out = {"file": sqx_path.name, "name": stamp["StrategyName"],
-           "identity": sqxfile.identity(sqx_path), "feed": last["chart"],
-           "timeframe": last["timeframe"], "direction": rules.direction(portfolio),
-           "entries": entries, "exits": exits, "signals": rules.rule_lines(entries + exits),
-           "indicators": {k: [i for i in stamp.get(f"{k.title()}Indicators", "").split(",") if i]
-                          for k in ("entry", "exit")},
-           "orders": rules.orders(root), "order_types": sorted(orders.carried(sqx_path)),
-           "money_management": ({"from": "strategy",
-                                 **settings.sizing(el(root.find("Strategy/MoneyManagement")))}
-                                if own else {"from": "task", **last["money_management"]}),
-           "friday_close": trading.pop("friday_close"), "trading_options": trading,
-           "last_test": last}
+    out = {
+        "file": sqx_path.name,
+        "name": stamp["StrategyName"],
+        "identity": sqxfile.identity(sqx_path),
+        "feed": last["chart"],
+        "timeframe": last["timeframe"],
+        "direction": rules.direction(portfolio),
+        "entries": entries,
+        "exits": exits,
+        "signals": rules.rule_lines(entries + exits),
+        "indicators": {
+            k: [i for i in stamp.get(f"{k.title()}Indicators", "").split(",") if i]
+            for k in ("entry", "exit")
+        },
+        "orders": rules.orders(root),
+        "order_types": sorted(orders.carried(sqx_path)),
+        "money_management": (
+            {
+                "from": "strategy",
+                **settings.sizing(el(root.find("Strategy/MoneyManagement"))),
+            }
+            if own
+            else {"from": "task", **last["money_management"]}
+        ),
+        "friday_close": trading.pop("friday_close"),
+        "trading_options": trading,
+        "last_test": last,
+    }
     notes = [CARD_NOTE]
     if project_cfx is not None:
         out["backtest"] = settings.producers(project_cfx, sqx_path.parent.name)
@@ -80,18 +99,35 @@ def read(sqx_path: Path, project_cfx: Path | None = None) -> dict[str, Any]:
 def _task_notes(tasks: list[dict], last: dict) -> list[str]:
     """What the reader must know about the project's tasks next to the stored test."""
     read = [t for t in tasks if "error" not in t]
-    notes = [f"la tarea «{t['task']}» no se pudo leer ({t['error']}): no se sabe si escribe "
-             "en este databank" for t in tasks if "error" in t]
+    notes = [
+        f"la tarea «{t['task']}» no se pudo leer ({t['error']}): no se sabe si escribe "
+        "en este databank"
+        for t in tasks
+        if "error" in t
+    ]
     if not read:
         return notes + ["ninguna tarea del proyecto escribe en este databank"]
     if len(read) > 1:
-        notes.append(f"{len(read)} tareas escriben en este databank: "
-                     + ", ".join(f"{t['task']} ({'activa' if t['active'] else 'inactiva'})"
-                                 for t in read))
-    notes += [f"la tarea «{t['task']}» ({t['type']}) no lleva costes en su XML: valen los de "
-              "last_test" for t in read if t["costs"] is None]
-    notes += [f"la tarea «{t['task']}» ({t['type']}) lee sus costes de CustomData"
-              for t in read if t["setup_from"] == "CustomData"]
-    notes += [f"los costes de «{t['task']}» hoy no son los del último test guardado en el .sqx"
-              for t in read if t["costs"] is not None and t["costs"] != last["costs"]]
+        notes.append(
+            f"{len(read)} tareas escriben en este databank: "
+            + ", ".join(
+                f"{t['task']} ({'activa' if t['active'] else 'inactiva'})" for t in read
+            )
+        )
+    notes += [
+        f"la tarea «{t['task']}» ({t['type']}) no lleva costes en su XML: valen los de "
+        "last_test"
+        for t in read
+        if t["costs"] is None
+    ]
+    notes += [
+        f"la tarea «{t['task']}» ({t['type']}) lee sus costes de CustomData"
+        for t in read
+        if t["setup_from"] == "CustomData"
+    ]
+    notes += [
+        f"los costes de «{t['task']}» hoy no son los del último test guardado en el .sqx"
+        for t in read
+        if t["costs"] is not None and t["costs"] != last["costs"]
+    ]
     return notes

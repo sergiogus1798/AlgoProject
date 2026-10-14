@@ -25,8 +25,10 @@ def targets() -> dict[str, dict]:
         Role name to its path and cli port. The master is included and carries no port:
         its GUI is the owner's and is never written to by this tool.
     """
-    return {"master": {"path": MASTER, "port": None},
-            **{r: {"path": w["path"], "port": w["port"]} for r, w in WORKERS.items()}}
+    return {
+        "master": {"path": MASTER, "port": None},
+        **{r: {"path": w["path"], "port": w["port"]} for r, w in WORKERS.items()},
+    }
 
 
 def backup(store: Path) -> Path:
@@ -65,16 +67,22 @@ def validate(blocks: Path, store: Path, attr: str) -> None:
         new = ElementTree.parse(blocks).getroot()
         old = ElementTree.parse(store).getroot()
     except (ElementTree.ParseError, OSError) as err:
-        raise SystemExit(f"refused {blocks.name}: cannot read it or the store ({err})") from err
+        raise SystemExit(
+            f"refused {blocks.name}: cannot read it or the store ({err})"
+        ) from err
     shape = {c.tag for c in old}
     for item in new:
         if item.tag not in shape:
-            raise SystemExit(f"refused {blocks.name}: <{item.tag}> is not a <{'/'.join(shape)}> "
-                             f"of {store.name}")
+            raise SystemExit(
+                f"refused {blocks.name}: <{item.tag}> is not a <{'/'.join(shape)}> "
+                f"of {store.name}"
+            )
         key = item.get(attr)
         if not key or (attr == "key" and not key.startswith("CBlock_")):
-            raise SystemExit(f"refused {blocks.name}: a <{item.tag}> has {attr}={key!r}, "
-                             "custom blocks need a CBlock_ key")
+            raise SystemExit(
+                f"refused {blocks.name}: a <{item.tag}> has {attr}={key!r}, "
+                "custom blocks need a CBlock_ key"
+            )
     if not len(new):
         raise SystemExit(f"refused {blocks.name}: it holds no elements")
 
@@ -118,20 +126,31 @@ def install(blocks: Path, into: Path) -> dict[str, list[str]]:
 def main() -> None:
     """Install a block XML into one install, refusing while that install is running."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("blocks", type=Path,
-                    help="XML of <Item key='CBlock_...'> blocks, or of <Group> random groups")
-    ap.add_argument("--role", default="conductor", choices=sorted(targets()),
-                    help="which install to write to; default the conductor")
+    ap.add_argument(
+        "blocks",
+        type=Path,
+        help="XML of <Item key='CBlock_...'> blocks, or of <Group> random groups",
+    )
+    ap.add_argument(
+        "--role",
+        default="conductor",
+        choices=sorted(targets()),
+        help="which install to write to; default the conductor",
+    )
     args = ap.parse_args()
 
     target = targets()[args.role]
     if args.role == "master":
-        raise SystemExit("the master is the owner's install; author on a worker and hand "
-                         "the blocks over")
+        raise SystemExit(
+            "the master is the owner's install; author on a worker and hand "
+            "the blocks over"
+        )
     if worker.listening(target["port"]):
-        raise SystemExit(f"{target['path'].name} is running on port {target['port']}. It "
-                         "rewrites user/settings on exit, so this write would be lost. "
-                         f"Stop it first: bin/sqx-worker.sh --role {args.role} stop")
+        raise SystemExit(
+            f"{target['path'].name} is running on port {target['port']}. It "
+            "rewrites user/settings on exit, so this write would be lost. "
+            f"Stop it first: bin/sqx-worker.sh --role {args.role} stop"
+        )
 
     rel = store_of(args.blocks)[0]
     kept = backup(target["path"] / rel)
@@ -141,9 +160,15 @@ def main() -> None:
     print(f"  {Path(rel).name} now holds {total}; previous copy kept at {kept}")
     try:
         taxonomy.refresh(args.role)
-    except (FileNotFoundError, KeyError, ValueError) as err:    # donor or install files absent
-        print(f"  taxonomy NOT refreshed ({err!r}): run python3 -m sqx.blocks.taxonomy "
-              f"--role {args.role}")
+    except (
+        FileNotFoundError,
+        KeyError,
+        ValueError,
+    ) as err:  # donor or install files absent
+        print(
+            f"  taxonomy NOT refreshed ({err!r}): run python3 -m sqx.blocks.taxonomy "
+            f"--role {args.role}"
+        )
 
 
 if __name__ == "__main__":

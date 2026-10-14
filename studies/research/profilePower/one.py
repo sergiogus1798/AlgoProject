@@ -20,7 +20,9 @@ def reach(cut: float, draws: int) -> int:
 
 def trades(x: dict, cal: dict, pcfg: dict, spec: dict, direction: str) -> tuple:
     """The measure's (statistic, entry bars, exit bars) on a series, in one direction."""
-    row = profile_one.evaluate(profile_one.framed(x, cal, pcfg), cal, [spec])[SIDE[direction]]
+    row = profile_one.evaluate(profile_one.framed(x, cal, pcfg), cal, [spec])[
+        SIDE[direction]
+    ]
     return row[2], row[3], row[4]
 
 
@@ -33,8 +35,14 @@ class Earned(TypedDict):
     years_with_sign: int
 
 
-def earned(x: dict, cost: np.ndarray, year: np.ndarray, sign: int, entry: np.ndarray,
-           leave: np.ndarray) -> Earned:
+def earned(
+    x: dict,
+    cost: np.ndarray,
+    year: np.ndarray,
+    sign: int,
+    entry: np.ndarray,
+    leave: np.ndarray,
+) -> Earned:
     """What the measure's trades earned on a series, in round-trip costs, and per year.
 
     The numbers marketProfile.one.money gives, read in logs: a planted series can drift far
@@ -42,12 +50,24 @@ def earned(x: dict, cost: np.ndarray, year: np.ndarray, sign: int, entry: np.nda
     """
     pnl = sign * (x["o"][leave] - x["o"][entry])
     yearly = pd.Series(pnl).groupby(year[entry]).mean()
-    return {"n_trades": int(entry.size), "multiple": pnl.mean() / cost[entry].mean(),
-            "years": int(yearly.size), "years_with_sign": int((yearly.to_numpy() > 0).sum())}
+    return {
+        "n_trades": int(entry.size),
+        "multiple": pnl.mean() / cost[entry].mean(),
+        "years": int(yearly.size),
+        "years_with_sign": int((yearly.to_numpy() > 0).sum()),
+    }
 
 
-def tested(x: dict, cal: dict, pcfg: dict, spec: dict, direction: str, judge: dict,
-           block: int, rng: np.random.Generator) -> dict[str, Any]:
+def tested(
+    x: dict,
+    cal: dict,
+    pcfg: dict,
+    spec: dict,
+    direction: str,
+    judge: dict,
+    block: int,
+    rng: np.random.Generator,
+) -> dict[str, Any]:
     """The profile's own test of one measure on one series, stopped once the cut is out of reach.
 
     Args:
@@ -69,20 +89,33 @@ def tested(x: dict, cal: dict, pcfg: dict, spec: dict, direction: str, judge: di
     """
     draws, most = pcfg["nulls"]["draws"], reach(judge["cut"], pcfg["nulls"]["draws"])
     if draws <= 0 or judge["chunk"] <= 0 or most < 0:
-        raise ValueError(f"profilePower: draws={draws}, chunk={judge['chunk']}, cut={judge['cut']} "
-                         "leave no chunk to draw (even zero exceedances would pass p above the cut): "
-                         "raise nulls.draws or chunk, or the cut, in the study's config")
-    part = {**pcfg, "measures": [spec], "nulls": {**pcfg["nulls"], "draws": judge["chunk"]}}
+        raise ValueError(
+            f"profilePower: draws={draws}, chunk={judge['chunk']}, cut={judge['cut']} "
+            "leave no chunk to draw (even zero exceedances would pass p above the cut): "
+            "raise nulls.draws or chunk, or the cut, in the study's config"
+        )
+    part = {
+        **pcfg,
+        "measures": [spec],
+        "nulls": {**pcfg["nulls"], "draws": judge["chunk"]},
+    }
     exceed, drawn = 0, 0
-    first: dict | None = None  # set by the first pass: the guard above makes it run at least once
+    first: dict | None = (
+        None  # set by the first pass: the guard above makes it run at least once
+    )
     while drawn < draws and exceed <= most:
         real, sims = profile_one.against_null(x, cal, part, block, rng)
         k = SIDE[direction]
         exceed += int((sims[:, k] >= real[k][2]).sum())
         drawn += judge["chunk"]
-        first = first or {"p_first": (1 + exceed) / (drawn + 1), "stat": real[k][2],
-                          "null_mean": sims[:, k].mean(), "null_sd": sims[:, k].std(ddof=1),
-                          "entry": real[k][3], "leave": real[k][4]}
+        first = first or {
+            "p_first": (1 + exceed) / (drawn + 1),
+            "stat": real[k][2],
+            "null_mean": sims[:, k].mean(),
+            "null_sd": sims[:, k].std(ddof=1),
+            "entry": real[k][3],
+            "leave": real[k][4],
+        }
     return {**cast("dict", first), "exceed": exceed, "drawn": drawn, "draws": draws}
 
 
@@ -108,17 +141,45 @@ def run(key: tuple, bars: pd.DataFrame, asset: dict, cfg: dict) -> dict[str, Any
     seed = [cfg["run"]["seed"], zlib.crc32(f"{symbol}/{timeframe}".encode()), rep]
     x, cal = series.logs(bars), series.calendar(bars.index, timeframe, pcfg)
     base = series.flipped(x, np.random.default_rng(seed))
-    rng = np.random.default_rng(seed + [zlib.crc32(f"{measure}/{direction}/{effect}".encode())])
+    rng = np.random.default_rng(
+        seed + [zlib.crc32(f"{measure}/{direction}/{effect}".encode())]
+    )
     _, entry, leave = trades(base, cal, pcfg, spec, direction)
     sign = 1 if direction == "long" else -1
     cost = inputs.cost_log(asset, base["o"])
-    grown = plant.planted(base, entry, leave, sign, effect, cost, cfg["plant"]["how"], rng)
-    got = tested(grown, cal, pcfg, spec, direction, cfg["judge"],
-                 pcfg["nulls"]["block"][timeframe], rng)
-    paid = earned(grown, cost, cast("Any", bars.index).year.to_numpy(), sign, got.pop("entry"),
-                  got.pop("leave"))
+    grown = plant.planted(
+        base, entry, leave, sign, effect, cost, cfg["plant"]["how"], rng
+    )
+    got = tested(
+        grown,
+        cal,
+        pcfg,
+        spec,
+        direction,
+        cfg["judge"],
+        pcfg["nulls"]["block"][timeframe],
+        rng,
+    )
+    paid = earned(
+        grown,
+        cost,
+        cast("Any", bars.index).year.to_numpy(),
+        sign,
+        got.pop("entry"),
+        got.pop("leave"),
+    )
     years = (bars.index[-1] - bars.index[0]).days / 365.25
-    return {"symbol": symbol, "timeframe": timeframe, "family": spec["family"],
-            "measure": measure, "direction": direction, "effect_planted": effect, "rep": rep,
-            "how": cfg["plant"]["how"], **got, **paid,
-            "trades_per_year": (paid["n_trades"] or 0) / years, "wall_s": time.time() - started}
+    return {
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "family": spec["family"],
+        "measure": measure,
+        "direction": direction,
+        "effect_planted": effect,
+        "rep": rep,
+        "how": cfg["plant"]["how"],
+        **got,
+        **paid,
+        "trades_per_year": (paid["n_trades"] or 0) / years,
+        "wall_s": time.time() - started,
+    }

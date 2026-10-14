@@ -2,8 +2,17 @@
 
 import httpx
 from PySide6.QtCore import QEvent, QObject, Qt, Signal
-from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout, QHBoxLayout, QLabel,
-                               QMessageBox, QScrollArea, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import background, client
 from ui.text.glossary import label
@@ -13,14 +22,19 @@ from ui.desktop.workspace.card import CARD_MIN, Card
 from ui.desktop.workspace.newproject import NewProject
 
 PER_ROW = 4
-NOTE = ("Una tarjeta por proyecto de cualquier install, tenga informes o no. Las estrategias son "
-        "el total entre todos sus databanks. Clic en una tarjeta para abrir el proyecto entero.")
+NOTE = (
+    "Una tarjeta por proyecto de cualquier install, tenga informes o no. Las estrategias son "
+    "el total entre todos sus databanks. Clic en una tarjeta para abrir el proyecto entero."
+)
 # The three filters (owner, 2026-10-04): card field → what its combo says when it filters nothing.
-FILTERS = {"symbol": "Todos los activos", "timeframe": "Todas las temporalidades",
-           "install_label": "Todas las instalaciones"}
+FILTERS = {
+    "symbol": "Todos los activos",
+    "timeframe": "Todas las temporalidades",
+    "install_label": "Todas las instalaciones",
+}
 
 
-RETIRED = "retirados"      # the daemon's `install_label` of a retired project
+RETIRED = "retirados"  # the daemon's `install_label` of a retired project
 
 
 def passes(p: dict, chosen: dict[str, str]) -> bool:
@@ -30,7 +44,9 @@ def passes(p: dict, chosen: dict[str, str]) -> bool:
     """
     if p.get("install_label") == RETIRED and chosen.get("install_label") != RETIRED:
         return False
-    return all(not want or (p.get(field) or "—") == want for field, want in chosen.items())
+    return all(
+        not want or (p.get(field) or "—") == want for field, want in chosen.items()
+    )
 
 
 class Gallery(QFrame):
@@ -73,14 +89,16 @@ class Gallery(QFrame):
         lay.setContentsMargins(24, 18, 24, 18)
         lay.addWidget(kicker)
         lay.addWidget(self.note)
-        lay.addWidget(NewProject(lambda _name: self.load()))   # owner, 2026-09-28
+        lay.addWidget(NewProject(lambda _name: self.load()))  # owner, 2026-09-28
         bar = QHBoxLayout()
         self.filters: dict[str, QComboBox] = {}
         for field, every in FILTERS.items():
             combo = QComboBox()
             combo.addItem(every, "")
-            combo.setToolTip("Se combina con los otros dos filtros: la galería enseña los "
-                             "proyectos que cumplen los tres a la vez.")
+            combo.setToolTip(
+                "Se combina con los otros dos filtros: la galería enseña los "
+                "proyectos que cumplen los tres a la vez."
+            )
             combo.currentIndexChanged.connect(self.refilter)
             self.filters[field] = combo
             bar.addWidget(combo)
@@ -99,7 +117,10 @@ class Gallery(QFrame):
             projects: `/api/projects/all` rows.
         """
         self.rows = {p["name"]: p for p in projects}
-        for field, combo in self.filters.items():      # keep what was chosen across a reload
+        for (
+            field,
+            combo,
+        ) in self.filters.items():  # keep what was chosen across a reload
             kept = combo.currentData()
             combo.blockSignals(True)
             while combo.count() > 1:
@@ -116,11 +137,18 @@ class Gallery(QFrame):
         projects = [p for p in self.rows.values() if passes(p, chosen)]
         retired = sum(p.get("install_label") == RETIRED for p in self.rows.values())
         if chosen["install_label"] == RETIRED:
-            self.shown.setText(f"{len(projects)} de {retired} proyectos retirados con informes")
+            self.shown.setText(
+                f"{len(projects)} de {retired} proyectos retirados con informes"
+            )
         else:
-            self.shown.setText(f"{len(projects)} de {len(self.rows) - retired} proyectos"
-                               + (f" · {retired} retirados con informes (filtro de instalación)"
-                                  if retired else ""))
+            self.shown.setText(
+                f"{len(projects)} de {len(self.rows) - retired} proyectos"
+                + (
+                    f" · {retired} retirados con informes (filtro de instalación)"
+                    if retired
+                    else ""
+                )
+            )
         while self.grid.count():
             self.grid.takeAt(0).widget().deleteLater()
         self.cards = [Card(p) for p in projects]
@@ -177,8 +205,9 @@ class Gallery(QFrame):
         full = [d for d, n in p.get("databanks", {}).items() if n]
         if not full or not self.confirm(name, full):
             SELECTION.choose(project=name, asset=p["symbol"])
-            return f"{name}: elegido sin cargar" + ("" if full else " (ninguna databank tiene "
-                                                                    "estrategias)")
+            return f"{name}: elegido sin cargar" + (
+                "" if full else " (ninguna databank tiene estrategias)"
+            )
         failed = []
         for databank in full:
             try:
@@ -191,11 +220,18 @@ class Gallery(QFrame):
 
     def confirm(self, name: str, databanks: list[str]) -> bool:
         """Ask before queuing the loads: they run SQX on the conductor, one export at a time."""
-        listed = "\n".join(f"  · {d} ({num(self.rows[name]['databanks'][d])} estrategias)"
-                           for d in databanks)
-        text = (f"Abrir {name} y cargar sus {len(databanks)} databanks con estrategias:\n\n"
-                f"{listed}\n\nLas métricas se leen de los ficheros, sin SQX. Las operaciones y "
-                "la cosecha se exportan con orderstocsv en el conductor, un trabajo detrás de "
-                "otro (la franja de trabajos de abajo los muestra).\n\n"
-                "«No» abre el proyecto sin cargar nada.")
-        return QMessageBox.question(self, "Cargar el proyecto", text) == QMessageBox.StandardButton.Yes  # pyright: ignore[reportCallIssue]  # PySide6 stub wants button0/button1 for the 3-arg form
+        listed = "\n".join(
+            f"  · {d} ({num(self.rows[name]['databanks'][d])} estrategias)"
+            for d in databanks
+        )
+        text = (
+            f"Abrir {name} y cargar sus {len(databanks)} databanks con estrategias:\n\n"
+            f"{listed}\n\nLas métricas se leen de los ficheros, sin SQX. Las operaciones y "
+            "la cosecha se exportan con orderstocsv en el conductor, un trabajo detrás de "
+            "otro (la franja de trabajos de abajo los muestra).\n\n"
+            "«No» abre el proyecto sin cargar nada."
+        )
+        return (
+            QMessageBox.question(self, "Cargar el proyecto", text)  # pyright: ignore[reportCallIssue]  # PySide6 stub wants button0/button1 for the 3-arg form
+            == QMessageBox.StandardButton.Yes
+        )

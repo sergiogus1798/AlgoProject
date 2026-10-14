@@ -14,15 +14,33 @@ import pandas as pd
 from core.store.write import locked
 
 FILE = "distribuciones.parquet"
-BINS = 200        # over the whole range of the draws, never clipped
+BINS = 200  # over the whole range of the draws, never clipped
 EMPTY = np.array([], np.float32)
-LISTS = ("draws", "low", "high", "edges")   # float lists: byte-stream-split halves them (measured)
-SHARDS = "distribuciones"   # per-strategy files of a deferred `merge`, until `consolidate`
-TAIL = 100        # the lowest and the highest draws kept exact when the draws themselves are not
+LISTS = (
+    "draws",
+    "low",
+    "high",
+    "edges",
+)  # float lists: byte-stream-split halves them (measured)
+SHARDS = (
+    "distribuciones"  # per-strategy files of a deferred `merge`, until `consolidate`
+)
+TAIL = (
+    100  # the lowest and the highest draws kept exact when the draws themselves are not
+)
 
 
-def record(test: str, metric: str, observed: float, drawn: np.ndarray, identity: str = "",
-           raw: bool = True, strategy: str = "", mother: str = "", **where: object) -> dict[str, Any]:
+def record(
+    test: str,
+    metric: str,
+    observed: float,
+    drawn: np.ndarray,
+    identity: str = "",
+    raw: bool = True,
+    strategy: str = "",
+    mother: str = "",
+    **where: object,
+) -> dict[str, Any]:
     """One simulated distribution as a row: what `numpy.histogram` gives, and the tails exact.
 
     Args:
@@ -51,25 +69,43 @@ def record(test: str, metric: str, observed: float, drawn: np.ndarray, identity:
     """
     drawn = np.sort(np.asarray(drawn, float).ravel())
     fine = drawn[np.isfinite(drawn)]
-    counts, edges = np.histogram(fine, BINS) if len(fine) else (np.array([], int), np.array([]))
+    counts, edges = (
+        np.histogram(fine, BINS) if len(fine) else (np.array([], int), np.array([]))
+    )
     kept = fine.astype(np.float32)
-    return {"identity": identity, "strategy": strategy, "mother": mother, "test": test, "metric": metric,
-            "where": json.dumps(where, ensure_ascii=False, sort_keys=True, default=str),
-            "observed": float(observed), "n": len(drawn), "n_finite": len(fine),
-            "n_ge": int((drawn >= observed).sum()), "n_le": int((drawn <= observed).sum()),
-            "mean": float(fine.mean()) if len(fine) else np.nan,
-            "sd": float(fine.std(ddof=1)) if len(fine) > 1 else np.nan,
-            "edges": edges.tolist(), "counts": counts.tolist(),
-            "low": EMPTY if raw else kept[:TAIL], "high": EMPTY if raw else kept[-TAIL:],
-            "draws": kept if raw else EMPTY}
+    return {
+        "identity": identity,
+        "strategy": strategy,
+        "mother": mother,
+        "test": test,
+        "metric": metric,
+        "where": json.dumps(where, ensure_ascii=False, sort_keys=True, default=str),
+        "observed": float(observed),
+        "n": len(drawn),
+        "n_finite": len(fine),
+        "n_ge": int((drawn >= observed).sum()),
+        "n_le": int((drawn <= observed).sum()),
+        "mean": float(fine.mean()) if len(fine) else np.nan,
+        "sd": float(fine.std(ddof=1)) if len(fine) > 1 else np.nan,
+        "edges": edges.tolist(),
+        "counts": counts.tolist(),
+        "low": EMPTY if raw else kept[:TAIL],
+        "high": EMPTY if raw else kept[-TAIL:],
+        "draws": kept if raw else EMPTY,
+    }
 
 
 def _write(path: Path, df: pd.DataFrame) -> None:
     """The one writer of the parquet: whole or not at all (a truncated file would stop the next save)."""
     tmp = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
-    df.to_parquet(tmp, index=False, compression="zstd", compression_level=9,    # 19 took 24 s vs 1.6 s, file +6 %
-                  use_dictionary=[c for c in df.columns if c not in (*LISTS, "counts")],
-                  use_byte_stream_split=[f"{c}.list.element" for c in LISTS])
+    df.to_parquet(
+        tmp,
+        index=False,
+        compression="zstd",
+        compression_level=9,  # 19 took 24 s vs 1.6 s, file +6 %
+        use_dictionary=[c for c in df.columns if c not in (*LISTS, "counts")],
+        use_byte_stream_split=[f"{c}.list.element" for c in LISTS],
+    )
     os.replace(tmp, path)
 
 
@@ -88,17 +124,24 @@ def save(folder: Path | None, rows: list[dict]) -> None:
         return
     new, path = pd.DataFrame(rows), Path(folder) / FILE
     with locked(Path(folder)):
-        consolidate(folder)         # deferred rows are older than this save: fold them first
+        consolidate(folder)  # deferred rows are older than this save: fold them first
         if path.exists():
             old = pd.read_parquet(path)
-            new = cast(pd.DataFrame, pd.concat([old[~old["test"].isin(list(set(new["test"])))], new],
-                                               ignore_index=True))
+            new = cast(
+                pd.DataFrame,
+                pd.concat(
+                    [old[~old["test"].isin(list(set(new["test"])))], new],
+                    ignore_index=True,
+                ),
+            )
         _write(path, new)
 
 
 def _replace(old: pd.DataFrame, new: pd.DataFrame) -> pd.DataFrame:
     """`old` without the rows of `new`'s tests and strategies, then `new`: what a merge means."""
-    gone = old["test"].isin(list(set(new["test"]))) & old["strategy"].isin(list(set(new["strategy"])))
+    gone = old["test"].isin(list(set(new["test"]))) & old["strategy"].isin(
+        list(set(new["strategy"]))
+    )
     return cast(pd.DataFrame, pd.concat([old[~gone], new], ignore_index=True))
 
 
@@ -121,16 +164,30 @@ def merge(folder: Path, rows: list[dict], defer: bool = False) -> None:
     if defer:
         for name, part in new.groupby("strategy", sort=False, dropna=False):
             safe = re.sub(r"[^\w.-]", "_", str(name)) or "_"
-            if safe != name:        # two names that sanitise alike (or None) must not share a file
+            if (
+                safe != name
+            ):  # two names that sanitise alike (or None) must not share a file
                 safe += "-" + hashlib.sha1(repr(name).encode()).hexdigest()[:8]
             shard = Path(folder) / SHARDS / f"{safe}.parquet"
-            with locked(shard.parent):          # two tests of one strategy at once: still one file
-                _write(shard, _replace(pd.read_parquet(shard), part) if shard.exists() else part)
+            with locked(
+                shard.parent
+            ):  # two tests of one strategy at once: still one file
+                _write(
+                    shard,
+                    _replace(pd.read_parquet(shard), part) if shard.exists() else part,
+                )
         return
     path = Path(folder) / FILE
-    with locked(Path(folder)):      # `--strategy` runs side by side read, change and rewrite one file
+    with locked(
+        Path(folder)
+    ):  # `--strategy` runs side by side read, change and rewrite one file
         consolidate(folder)
-        save(folder, (_replace(pd.read_parquet(path), new) if path.exists() else new).to_dict("records"))
+        save(
+            folder,
+            (_replace(pd.read_parquet(path), new) if path.exists() else new).to_dict(
+                "records"
+            ),
+        )
 
 
 def consolidate(folder: Path) -> int:
@@ -143,7 +200,7 @@ def consolidate(folder: Path) -> int:
         How many strategy files were folded (0: nothing was deferred, nothing is touched).
     """
     folder = Path(folder)
-    if not any((folder / SHARDS).glob("*.parquet")):    # the usual case: no lock, no I/O
+    if not any((folder / SHARDS).glob("*.parquet")):  # the usual case: no lock, no I/O
         return 0
     with locked(folder), locked(folder / SHARDS):
         shards = sorted((folder / SHARDS).glob("*.parquet"))
@@ -154,7 +211,7 @@ def consolidate(folder: Path) -> int:
         for shard in shards:
             part = pd.read_parquet(shard)
             df = part if df is None else _replace(df, part)
-        assert df is not None   # `shards` is not empty, so the loop below ran
+        assert df is not None  # `shards` is not empty, so the loop below ran
         _write(path, df)
         for shard in shards:
             shard.unlink()

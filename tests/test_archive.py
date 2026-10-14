@@ -20,11 +20,23 @@ from ui.daemon.results import matrix, runs  # noqa: E402
 from ui.daemon.strategy import archive_write as write  # noqa: E402
 from ui.daemon.tearsheet import harvest, sheet  # noqa: E402
 
-PROJECT, DATABANK, FAMILY = "Test_USDJPY_donchianUpperCrossUp_M30", "Results", "donchianUpperCrossUp"
-IDENTITY = "47da0743d600c27cedda1f78cc30de3ebd4935f6624d8ffbf4e9cc0e0e6140dd"   # Strategy 13.14.82
+PROJECT, DATABANK, FAMILY = (
+    "Test_USDJPY_donchianUpperCrossUp_M30",
+    "Results",
+    "donchianUpperCrossUp",
+)
+IDENTITY = "47da0743d600c27cedda1f78cc30de3ebd4935f6624d8ffbf4e9cc0e0e6140dd"  # Strategy 13.14.82
 # One of the 21 of the newest cosecha (2026-09-29; 10.11.79 was cut with the other 178). The
 # SPP export kept its file. Run it with the custodian stopped: archive refuses while SQX writes.
-SQX = DATA / "raw" / PROJECT / "SPP_IS" / "2026-09-29" / "strategies" / "Strategy 13.14.82.sqx"
+SQX = (
+    DATA
+    / "raw"
+    / PROJECT
+    / "SPP_IS"
+    / "2026-09-29"
+    / "strategies"
+    / "Strategy 13.14.82.sqx"
+)
 CHILD = """
 import os, subprocess, sys
 from pathlib import Path
@@ -43,7 +55,9 @@ print("child ok:", sum(len(v) for v in got["results"].values()), "results, no st
 
 def same(a: object, b: object) -> bool:
     """Equal as the daemon would serve them: the same JSON text."""
-    return json.dumps(a, sort_keys=True, default=str) == json.dumps(b, sort_keys=True, default=str)
+    return json.dumps(a, sort_keys=True, default=str) == json.dumps(
+        b, sort_keys=True, default=str
+    )
 
 
 def unseal(folder: Path) -> None:
@@ -57,9 +71,13 @@ def main() -> None:
     tmp = Path(tempfile.mkdtemp())
     write.archive_dir = read.archive_dir = lambda: tmp
     try:
-        stamps = iter(["2026-01-01T0000", "2026-01-01T0000", "2026-01-01T0001", "2026-01-01T0002"])
+        stamps = iter(
+            ["2026-01-01T0000", "2026-01-01T0000", "2026-01-01T0001", "2026-01-01T0002"]
+        )
         write._stamp = lambda: next(stamps)
-        first = write.archive(PROJECT, DATABANK, IDENTITY, "16", "prueba", family=FAMILY, sqx=SQX)
+        first = write.archive(
+            PROJECT, DATABANK, IDENTITY, "16", "prueba", family=FAMILY, sqx=SQX
+        )
         before = (first / "manifest.json").read_bytes()
         try:
             write.archive(PROJECT, DATABANK, IDENTITY, "16", family=FAMILY, sqx=SQX)
@@ -67,13 +85,26 @@ def main() -> None:
         except FileExistsError:
             pass
         write.archive(PROJECT, DATABANK, IDENTITY, "17", family=FAMILY, sqx=SQX)
-        assert read.versions(IDENTITY) == ["2026-01-01T0000", "2026-01-01T0001"], read.versions(IDENTITY)
-        assert (first / "manifest.json").read_bytes() == before, "the first version changed"
-        assert all(not (p.stat().st_mode & 0o222) for p in first.rglob("*")), "not sealed"
-        print("versions:", read.versions(IDENTITY), "· same stamp refused · sealed read-only")
+        assert read.versions(IDENTITY) == ["2026-01-01T0000", "2026-01-01T0001"], (
+            read.versions(IDENTITY)
+        )
+        assert (first / "manifest.json").read_bytes() == before, (
+            "the first version changed"
+        )
+        assert all(not (p.stat().st_mode & 0o222) for p in first.rglob("*")), (
+            "not sealed"
+        )
+        print(
+            "versions:",
+            read.versions(IDENTITY),
+            "· same stamp refused · sealed read-only",
+        )
 
         held, busy = write.find.install_of, write.find.writing
-        write.find.install_of, write.find.writing = lambda p, d: ("custodian", tmp), lambda t, p: True
+        write.find.install_of, write.find.writing = (
+            lambda p, d: ("custodian", tmp),
+            lambda t, p: True,
+        )
         try:
             write.archive(PROJECT, DATABANK, IDENTITY, "16", family=FAMILY, sqx=SQX)
             raise AssertionError("archived while SQX was writing the project")
@@ -85,15 +116,22 @@ def main() -> None:
 
         got = read.load(IDENTITY)
         assert sqxfile.identity(Path(got["sqx"])) == IDENTITY
-        newest = {(e["databank"], e["study"]): e for e in got["manifest"]["studies"]
-                  if e["study"] in got["results"].get(e["databank"], {})}
+        newest = {
+            (e["databank"], e["study"]): e
+            for e in got["manifest"]["studies"]
+            if e["study"] in got["results"].get(e["databank"], {})
+        }
         for (databank, study), e in newest.items():
-            live = runs.result(PROJECT, databank, study, e["named"] or e["names"][0], IDENTITY, "")
+            live = runs.result(
+                PROJECT, databank, study, e["named"] or e["names"][0], IDENTITY, ""
+            )
             assert same(got["results"][databank][study], live), (databank, study)
             live = runs.result(PROJECT, databank, study, "", "", e["day"])
             assert same(got["populations"][databank][study], live), (databank, study)
         for databank, cells in got["cells"].items():
-            assert same(cells, matrix.matrix(PROJECT, databank)["cells"].get(IDENTITY, {}))
+            assert same(
+                cells, matrix.matrix(PROJECT, databank)["cells"].get(IDENTITY, {})
+            )
         report = gateview.gate(PROJECT, DATABANK, got["gate"]["report_day"])
         report["rows"] = [r for r in report["rows"] if r["identity"] == IDENTITY]
         assert same(got["gate"]["report"], report), "the gate report differs"
@@ -104,19 +142,34 @@ def main() -> None:
         pd.testing.assert_frame_equal(got["tearsheet"]["trades"], live["trades"])
         drawn = [sheet.build(got["tearsheet"]), sheet.build(live)]
         for d in drawn:
-            d.pop("computed_at")                  # stamped with now() at second precision
+            d.pop("computed_at")  # stamped with now() at second precision
         assert same(*drawn), "the Ficha differs"
         try:
             read.load("0" * 64)
             raise AssertionError("an identity never archived did not raise")
         except FileNotFoundError as e:
             print("unknown identity:", e)
-        print("skipped:", [k["path"] for k in got["manifest"]["skipped"]], "· loose:", got["manifest"]["loose"])
-        print("equal to live:", {d: sorted(s) for d, s in got["results"].items()}, "+ Ficha + gate")
+        print(
+            "skipped:",
+            [k["path"] for k in got["manifest"]["skipped"]],
+            "· loose:",
+            got["manifest"]["loose"],
+        )
+        print(
+            "equal to live:",
+            {d: sorted(s) for d, s in got["results"].items()},
+            "+ Ficha + gate",
+        )
 
-        out = subprocess.run([sys.executable, "-c", CHILD.format(root=str(ROOT), tmp=str(tmp),
-                                                                 identity=IDENTITY)],
-                             capture_output=True, text=True)
+        out = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                CHILD.format(root=str(ROOT), tmp=str(tmp), identity=IDENTITY),
+            ],
+            capture_output=True,
+            text=True,
+        )
         assert out.returncode == 0, out.stderr
         print(out.stdout.strip())
     finally:

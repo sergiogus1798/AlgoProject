@@ -57,9 +57,13 @@ def templates() -> dict[str, Any]:
         Everything the two left-hand views need, in one round trip. The catalogue is small
         — tens of rows — so paging it would add a mode for nothing.
     """
-    return {"templates": library.catalogue(), "drafts": library.drafts(),
-            "totals": coverage.totals(), "statuses": list(library.STATUSES),
-            "verdicts": list(library.VERDICTS)}
+    return {
+        "templates": library.catalogue(),
+        "drafts": library.drafts(),
+        "totals": coverage.totals(),
+        "statuses": list(library.STATUSES),
+        "verdicts": list(library.VERDICTS),
+    }
 
 
 @ROUTER.get("/api/template/{name}")
@@ -112,7 +116,9 @@ def set_verdict(change: VerdictChange) -> dict[str, str]:
     Returns:
         The run row as written.
     """
-    return writes.set_verdict(change.template, change.symbol, change.timeframe, change.verdict)
+    return writes.set_verdict(
+        change.template, change.symbol, change.timeframe, change.verdict
+    )
 
 
 @ROUTER.get("/api/palettes")
@@ -137,7 +143,9 @@ def set_palette(name: str, change: PaletteChange) -> dict[str, Any]:
     Returns:
         The palette as written plus its new summary.
     """
-    return palettes.save(name, change.unlabelled, change.overrides, change.label, change.note)
+    return palettes.save(
+        name, change.unlabelled, change.overrides, change.label, change.note
+    )
 
 
 @ROUTER.post("/api/palettes/new")
@@ -191,5 +199,9 @@ def interview_finish(payload: Answers) -> dict[str, Any]:
         commands the skill will run.
     """
     composed = brief.compose(payload.answers)
-    return {"brief": composed, "path": brief.save(composed),
-            "prompt": brief.prompt(composed), "commands": brief.commands(composed)}
+    return {
+        "brief": composed,
+        "path": brief.save(composed),
+        "prompt": brief.prompt(composed),
+        "commands": brief.commands(composed),
+    }

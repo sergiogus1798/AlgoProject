@@ -8,8 +8,13 @@ from engines.nulls import pcg
 _M32, _S1, _S32 = np.uint64(2**32 - 1), np.uint64(1), np.uint64(32)
 
 
-def between(centred: np.ndarray, starts: np.ndarray, sizes: np.ndarray, permutations: int,
-            rng: np.random.Generator) -> np.ndarray:
+def between(
+    centred: np.ndarray,
+    starts: np.ndarray,
+    sizes: np.ndarray,
+    permutations: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
     """The between-period sum of squares of every shuffle of the trades across periods.
 
     Args:
@@ -22,12 +27,22 @@ def between(centred: np.ndarray, starts: np.ndarray, sizes: np.ndarray, permutat
         One per shuffle, bit for bit `(np.add.reduceat(rng.permuted(rows, axis=1), starts,
         axis=1) ** 2 / sizes).sum(axis=1)` over `permutations` copies of `centred`.
     """
-    if sizes[-1] < 1:         # an empty period inside is read as numpy does; a trailing one starts past the last trade
-        raise ValueError("the last period is empty: the kernel would read past the trades")
+    if (
+        sizes[-1] < 1
+    ):  # an empty period inside is read as numpy does; a trailing one starts past the last trade
+        raise ValueError(
+            "the last period is empty: the kernel would read past the trades"
+        )
     state, inc = pcg.load(rng)
     out = np.empty(permutations)
-    _shuffled(np.asarray(centred, float), starts.astype(np.int64), sizes.astype(float), state,
-              pcg.jump(inc, 1), out)
+    _shuffled(
+        np.asarray(centred, float),
+        starts.astype(np.int64),
+        sizes.astype(float),
+        state,
+        pcg.jump(inc, 1),
+        out,
+    )
     pcg.store(rng, state)
     return out
 
@@ -58,7 +73,7 @@ def _pairwise(a: np.ndarray, lo: int, n: int) -> float:
     while t:
         t -= 1
         at, m = todo[t]
-        if m < 0:                   # both halves summed: left + right
+        if m < 0:  # both halves summed: left + right
             k -= 1
             sums[k - 1] += sums[k]
         elif m <= 128:
@@ -66,15 +81,25 @@ def _pairwise(a: np.ndarray, lo: int, n: int) -> float:
             k += 1
         else:
             half = m // 2 - m // 2 % 8
-            todo[t], todo[t + 1], todo[t + 2] = (0, -1), (at + half, m - half), (at, half)
+            todo[t], todo[t + 1], todo[t + 2] = (
+                (0, -1),
+                (at + half, m - half),
+                (at, half),
+            )
             t += 3
     return sums[0]
 
 
 # No cache=True: this inlines engines/nulls/pcg.py, and numba does not invalidate a disk cache when only that file changes.
 @njit(nogil=True, error_model="numpy")
-def _shuffled(centred: np.ndarray, starts: np.ndarray, sizes: np.ndarray, st: np.ndarray,
-              one: np.ndarray, out: np.ndarray) -> None:
+def _shuffled(
+    centred: np.ndarray,
+    starts: np.ndarray,
+    sizes: np.ndarray,
+    st: np.ndarray,
+    one: np.ndarray,
+    out: np.ndarray,
+) -> None:
     """between()'s statistic of one shuffle per entry of `out`.
 
     `st` is what `pcg.load` gave and `one` its single step; `st` ends where numpy would be. The
@@ -107,7 +132,9 @@ def _shuffled(centred: np.ndarray, starts: np.ndarray, sizes: np.ndarray, st: np
         for b in range(g):
             count = (starts[b + 1] if b + 1 < g else n) - starts[b]
             # reduceat hands back the element itself where a period is empty
-            s = work[starts[b]] + (_pairwise(work, starts[b] + 1, count - 1) if count > 1 else 0.0)
+            s = work[starts[b]] + (
+                _pairwise(work, starts[b] + 1, count - 1) if count > 1 else 0.0
+            )
             term[b] = s * s / sizes[b]
         out[p] = _pairwise(term, 0, g)
     st[0], st[1], st[2], st[3] = hi, lo, np.uint64(have), spare

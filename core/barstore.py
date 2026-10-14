@@ -14,8 +14,17 @@ from core.symbols import current
 # SQX timeframe code to the pandas offset that reproduces it. Verified on XAUUSD 2026-09-21:
 # resampling 7,708,823 M1 bars to M30 gives SQX's own M30 export to the last decimal on all
 # four prices, same index, no bar on either side — see knowhow/export/bars.md.
-RULE = {"M1": "1min", "M5": "5min", "M10": "10min", "M15": "15min", "M30": "30min", "H1": "1h",
-        "H4": "4h", "H12": "12h", "D1": "1D"}
+RULE = {
+    "M1": "1min",
+    "M5": "5min",
+    "M10": "10min",
+    "M15": "15min",
+    "M30": "30min",
+    "H1": "1h",
+    "H4": "4h",
+    "H12": "12h",
+    "D1": "1D",
+}
 AGG = {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
 
 
@@ -65,8 +74,12 @@ def store(feed: str, csv: Path) -> BarEntry:
     out.parent.mkdir(parents=True, exist_ok=True)
     frame.reset_index(names="t").to_parquet(out, compression="zstd", index=False)
     csv.unlink()
-    return {"bars": len(frame), "version": fingerprint(frame),
-            "from": f"{frame.index[0]:%Y-%m-%d}", "to": f"{frame.index[-1]:%Y-%m-%d}"}
+    return {
+        "bars": len(frame),
+        "version": fingerprint(frame),
+        "from": f"{frame.index[0]:%Y-%m-%d}",
+        "to": f"{frame.index[-1]:%Y-%m-%d}",
+    }
 
 
 def source(feed: str, columns: list[str] | None = None) -> pd.DataFrame:
@@ -82,8 +95,9 @@ def source(feed: str, columns: list[str] | None = None) -> pd.DataFrame:
         returns them. Prices stay float64: under zstd they compress smaller than float32
         does, so rounding them buys nothing and costs precision.
     """
-    return pd.read_parquet(bar_source(current(feed)),
-                           columns=["t", *columns] if columns else None).set_index("t")
+    return pd.read_parquet(
+        bar_source(current(feed)), columns=["t", *columns] if columns else None
+    ).set_index("t")
 
 
 def read(feed: str, timeframe: str) -> pd.DataFrame:
@@ -99,7 +113,7 @@ def read(feed: str, timeframe: str) -> pd.DataFrame:
         kept under the M1 fingerprint, so a refreshed feed rebuilds it instead of serving
         bars from the previous data.
     """
-    feed = current(feed)   # an older .sqx names the feed as it was before 2026-10-01
+    feed = current(feed)  # an older .sqx names the feed as it was before 2026-10-01
     if timeframe == "M1":
         return source(feed)
     cache = bar_cache(feed, timeframe, library()[feed]["version"])
@@ -107,7 +121,9 @@ def read(feed: str, timeframe: str) -> pd.DataFrame:
         return pd.read_parquet(cache).set_index("t")
     frame = cast(pd.DataFrame, source(feed).resample(RULE[timeframe]).agg(AGG).dropna())
     cache.parent.mkdir(parents=True, exist_ok=True)
-    tmp = cache.with_name(f".{cache.name}.{os.getpid()}.tmp")     # whole or not at all: a cut file would raise forever
+    tmp = cache.with_name(
+        f".{cache.name}.{os.getpid()}.tmp"
+    )  # whole or not at all: a cut file would raise forever
     frame.reset_index(names="t").to_parquet(tmp, compression="zstd", index=False)
     os.replace(tmp, cache)
     return frame

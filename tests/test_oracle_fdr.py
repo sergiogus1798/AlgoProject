@@ -72,10 +72,15 @@ def a() -> None:
             p[-1] = 1.0
         q = fdr.adjusted(rows_of(p))
         qa = np.array([q[f"m{i}"] for i in range(n)])
-        worst = max(worst, np.max(np.abs(qa - stats.false_discovery_control(p, method="bh"))))
+        worst = max(
+            worst, np.max(np.abs(qa - stats.false_discovery_control(p, method="bh")))
+        )
         worst2 = max(worst2, np.max(np.abs(qa - multipletests(p, method="fdr_bh")[1])))
-    rep(worst <= 1e-12 and worst2 <= 1e-12, "a_adjusted",
-        f"max diff scipy {worst:.3g}, statsmodels {worst2:.3g}")
+    rep(
+        worst <= 1e-12 and worst2 <= 1e-12,
+        "a_adjusted",
+        f"max diff scipy {worst:.3g}, statsmodels {worst2:.3g}",
+    )
 
 
 run("a_adjusted", a)
@@ -94,7 +99,10 @@ def b() -> None:
         for al in (0.01, 0.05, 0.10, 0.20):
             d = fdr.discoveries(r, al)
             tot += 1
-            ref = {f"m{i}" for i in np.where(multipletests(p, alpha=al, method="fdr_bh")[0])[0]}
+            ref = {
+                f"m{i}"
+                for i in np.where(multipletests(p, alpha=al, method="fdr_bh")[0])[0]
+            }
             ref2 = {m for m, v in q.items() if v <= al}
             if d != ref or d != ref2:
                 badc += 1
@@ -106,8 +114,23 @@ run("b_discoveries", b)
 
 def c() -> None:
     """The Benjamini-Hochberg 1995 worked example gives four discoveries."""
-    p = [0.0001, 0.0004, 0.0019, 0.0095, 0.0201, 0.0278, 0.0298, 0.0344, 0.0459, 0.3240,
-         0.4262, 0.5719, 0.6528, 0.7590, 1.0]
+    p = [
+        0.0001,
+        0.0004,
+        0.0019,
+        0.0095,
+        0.0201,
+        0.0278,
+        0.0298,
+        0.0344,
+        0.0459,
+        0.3240,
+        0.4262,
+        0.5719,
+        0.6528,
+        0.7590,
+        1.0,
+    ]
     d = fdr.discoveries(rows_of(p), 0.05)
     rep(d == {"m0", "m1", "m2", "m3"}, "c_BH1995", f"got {sorted(d)}")
 
@@ -126,8 +149,10 @@ def d() -> None:
             hits += 1
     s = hits / R
     band = 2.576 * math.sqrt(al * (1 - al) / R)
-    print(f"INFO d_global_null share={s:.4f} alpha={al} 99% band=[{al-band:.4f},{al+band:.4f}]")
-    rep(s <= al + band, "d_global_null", f"share {s:.4f} > {al+band:.4f}")
+    print(
+        f"INFO d_global_null share={s:.4f} alpha={al} 99% band=[{al - band:.4f},{al + band:.4f}]"
+    )
+    rep(s <= al + band, "d_global_null", f"share {s:.4f} > {al + band:.4f}")
 
 
 run("d_global_null", d)
@@ -149,8 +174,14 @@ def e() -> None:
         pw.append(sum(i >= 900 for i in idx) / 100)
     m = np.mean(fdp)
     se = np.std(fdp, ddof=1) / math.sqrt(R)
-    print(f"INFO e_planted meanFDP={m:.5f} se={se:.5f} target={al*0.9:.4f} power={np.mean(pw):.4f}")
-    rep(m <= al + 3*se and m >= al*0.9 - 3*se, "e_planted", f"meanFDP {m:.5f} se {se:.5f}")
+    print(
+        f"INFO e_planted meanFDP={m:.5f} se={se:.5f} target={al * 0.9:.4f} power={np.mean(pw):.4f}"
+    )
+    rep(
+        m <= al + 3 * se and m >= al * 0.9 - 3 * se,
+        "e_planted",
+        f"meanFDP {m:.5f} se {se:.5f}",
+    )
 
 
 run("e_planted", e)
@@ -163,8 +194,9 @@ def f() -> None:
     r = rows_of(p)
     s = r[:]
     random.Random(1).shuffle(s)
-    ok = (all(fdr.discoveries(r, a) == fdr.discoveries(s, a) for a in (0.01, 0.05, 0.2))
-          and fdr.adjusted(r) == fdr.adjusted(s))
+    ok = all(
+        fdr.discoveries(r, a) == fdr.discoveries(s, a) for a in (0.01, 0.05, 0.2)
+    ) and fdr.adjusted(r) == fdr.adjusted(s)
     rep(ok, "f_order_invariance", "differs")
 
 

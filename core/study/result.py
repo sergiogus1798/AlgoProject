@@ -20,10 +20,18 @@ def progress(percent: int, state: str) -> None:
     print(f"PROGRESS {int(percent)} {state}", flush=True)
 
 
-def envelope(module: str, strategy: str | None, identity: str | None, cfg: dict,
-             started: float, tabs: list[dict], verdict: dict | None = None,
-             warnings: list[dict] | None = None, glossary: list[dict] | None = None,
-             summary: dict | None = None) -> dict[str, Any]:
+def envelope(
+    module: str,
+    strategy: str | None,
+    identity: str | None,
+    cfg: dict,
+    started: float,
+    tabs: list[dict],
+    verdict: dict | None = None,
+    warnings: list[dict] | None = None,
+    glossary: list[dict] | None = None,
+    summary: dict | None = None,
+) -> dict[str, Any]:
     """One strategy's (or one population's) whole result, checked against the contract.
 
     Args:
@@ -49,17 +57,30 @@ def envelope(module: str, strategy: str | None, identity: str | None, cfg: dict,
     # Blocks are built from numpy results; plain() is the one place their scalars and NaNs
     # become JSON, so no module has to remember to cast. What is drawn keeps six significant
     # digits; the summary, which verdict.csv carries, keeps every digit.
-    return blocks.validate({
-        "module": module, "strategy": strategy, "identity": identity,
-        "config_hash": fingerprint(cfg), "computed_at": datetime.now().isoformat("T", "seconds"),
-        "wall_s": round(time.time() - started, 2),
-        "verdict": blocks.plain(verdict, DIGITS), "tabs": blocks.plain(tabs, DIGITS),
-        "warnings": warnings or [], "glossary": glossary or [],
-        "summary": blocks.plain(summary or {})})
+    return blocks.validate(
+        {
+            "module": module,
+            "strategy": strategy,
+            "identity": identity,
+            "config_hash": fingerprint(cfg),
+            "computed_at": datetime.now().isoformat("T", "seconds"),
+            "wall_s": round(time.time() - started, 2),
+            "verdict": blocks.plain(verdict, DIGITS),
+            "tabs": blocks.plain(tabs, DIGITS),
+            "warnings": warnings or [],
+            "glossary": glossary or [],
+            "summary": blocks.plain(summary or {}),
+        }
+    )
 
 
-def tab(name: str, title: str, blocks_: list[dict], selectors: list[dict] | None = None,
-        note: str = "") -> dict[str, Any]:
+def tab(
+    name: str,
+    title: str,
+    blocks_: list[dict],
+    selectors: list[dict] | None = None,
+    note: str = "",
+) -> dict[str, Any]:
     """One tab of a result.
 
     Args:
@@ -75,5 +96,10 @@ def tab(name: str, title: str, blocks_: list[dict], selectors: list[dict] | None
     Returns:
         A tab dict.
     """
-    return {"name": name, "title": title, "note": note, "selectors": selectors or [],
-            "blocks": blocks_}
+    return {
+        "name": name,
+        "title": title,
+        "note": note,
+        "selectors": selectors or [],
+        "blocks": blocks_,
+    }

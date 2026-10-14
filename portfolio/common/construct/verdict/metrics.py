@@ -6,8 +6,8 @@ import pandas as pd
 NAMES = ("rar", "r_cubed", "gain_to_pain", "p_losing_year")
 SIGN = {"rar": 1.0, "r_cubed": 1.0, "gain_to_pain": 1.0, "p_losing_year": -1.0}
 LOSING_YEAR = ("calendar", "rolling")
-YEAR_ROWS = 252     # trading rows in the rolling reading's year
-TOP_DRAWDOWNS = 5   # Faith's R-cubed averages the five largest
+YEAR_ROWS = 252  # trading rows in the rolling reading's year
+TOP_DRAWDOWNS = 5  # Faith's R-cubed averages the five largest
 
 
 def drawdowns(equity: np.ndarray, day: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -25,7 +25,9 @@ def drawdowns(equity: np.ndarray, day: np.ndarray) -> tuple[np.ndarray, np.ndarr
     eq = np.concatenate([[0.0], equity])
     days = np.concatenate([[day[0] - 1], day])
     under = np.maximum.accumulate(eq) - eq
-    edges = np.flatnonzero(np.diff(np.concatenate([[False], under > 0, [False]]).astype(np.int8)))
+    edges = np.flatnonzero(
+        np.diff(np.concatenate([[False], under > 0, [False]]).astype(np.int8))
+    )
     starts, ends = edges[::2], edges[1::2]
     if starts.size == 0:
         return np.empty(0), np.empty(0)
@@ -34,7 +36,9 @@ def drawdowns(equity: np.ndarray, day: np.ndarray) -> tuple[np.ndarray, np.ndarr
     return depth, length.astype(float)
 
 
-def table(paths: np.ndarray, dates: pd.DatetimeIndex, losing_year: str) -> dict[str, np.ndarray]:
+def table(
+    paths: np.ndarray, dates: pd.DatetimeIndex, losing_year: str
+) -> dict[str, np.ndarray]:
     """The four ranked metrics and the daily Sharpe of each path.
 
     RAR is the slope of a straight line fitted to the cumulative P&L, per year, in the paths'
@@ -71,10 +75,16 @@ def table(paths: np.ndarray, dates: pd.DatetimeIndex, losing_year: str) -> dict[
         gain_to_pain[i] = (eq[-1] / years) / depth[order[:n_years]].mean()
 
     if losing_year == "calendar":
-        yearly = pd.DataFrame(paths.T, index=dates.year).groupby(level=0).sum().to_numpy().T  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.year
+        yearly = (
+            pd.DataFrame(paths.T, index=dates.year).groupby(level=0).sum().to_numpy().T  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.year
+        )
     else:
         cum = np.concatenate([np.zeros((len(paths), 1)), equity], axis=1)
         yearly = cum[:, YEAR_ROWS:] - cum[:, :-YEAR_ROWS]
-    return {"rar": rar, "r_cubed": r_cubed, "gain_to_pain": gain_to_pain,
-            "p_losing_year": (yearly < 0).mean(axis=1),
-            "sharpe": paths.mean(axis=1) / paths.std(axis=1, ddof=1)}
+    return {
+        "rar": rar,
+        "r_cubed": r_cubed,
+        "gain_to_pain": gain_to_pain,
+        "p_losing_year": (yearly < 0).mean(axis=1),
+        "sharpe": paths.mean(axis=1) / paths.std(axis=1, ddof=1),
+    }

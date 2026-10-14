@@ -16,12 +16,18 @@ EFFECTS = {
     "REMOVE_CONSISTENCY_CHALLENGE": [("consistency_pct", "phases", "zero")],
     "WEEKLY_PAYOUT": [("payout_days", "funded", "seven")],
     "NEWS_TRADING": [("news_ok", "all", "one")],
-    "WEEKEND_HOLDING_NEWS_TRADING": [("news_ok", "all", "one"), ("weekend_ok", "all", "one")],
+    "WEEKEND_HOLDING_NEWS_TRADING": [
+        ("news_ok", "all", "one"),
+        ("weekend_ok", "all", "one"),
+    ],
     "NO_MINIMUM_TRADING_DAYS": [("min_days", "all", "zero")],
     "NO_MINIMUM_PROFITABLE_DAYS": [("min_days", "all", "zero")],
     "SWING": [("news_ok", "funded", "one"), ("weekend_ok", "funded", "one")],
 }
-RULE_ONLY = {"FIRST_PAYOUT_ON_DEMAND", "EXTRA_TIME_HOURS"}  # no column to change, noted in extras
+RULE_ONLY = {
+    "FIRST_PAYOUT_ON_DEMAND",
+    "EXTRA_TIME_HOURS",
+}  # no column to change, noted in extras
 
 
 def _number(effect: str) -> float:
@@ -45,22 +51,44 @@ def _row(plan: dict, stages: list[dict], chosen: tuple[dict, ...]) -> dict:
     for o in chosen:
         for column, where, how in EFFECTS.get(o["option_key"], []):
             for s in stages:
-                if where == "all" or s["stage"] == where or (where == "phases" and s["stage"] != "funded"):
+                if (
+                    where == "all"
+                    or s["stage"] == where
+                    or (where == "phases" and s["stage"] != "funded")
+                ):
                     _change(s, column, how, o["effect"])
     by = {s["stage"]: s for s in stages}
     first, funded = by.get("phase1", by["funded"]), by["funded"]
-    return {"plan_key": plan["plan_key"], "options": ",".join(o["option_key"] for o in chosen),
-            "price": round(plan["price"] * (1 + sum(o["price_pct"] for o in chosen) / 100), 2),
-            "price_ccy": plan["price_ccy"], "firm": plan["firm"], "family": plan["family"],
-            "size": plan["size"], "eas_allowed": plan["eas_allowed"],
-            **{f"p{i}_target_pct": by[f"phase{i}"]["profit_target_pct"] if f"phase{i}" in by else None
-               for i in (1, 2, 3)},
-            "daily_loss_pct": first["daily_loss_pct"], "max_loss_pct": first["max_loss_pct"],
-            "max_loss_mode": first["max_loss_mode"], "min_days": first["min_days"],
-            "consistency_pct": first["consistency_pct"],
-            "reward_share_pct": funded["reward_share_pct"], "payout_days": funded["payout_days"],
-            "news_ok": funded["news_ok"], "weekend_ok": funded["weekend_ok"],
-            "extras": ",".join(o["option_key"] for o in chosen if o["option_key"] not in EFFECTS)}
+    return {
+        "plan_key": plan["plan_key"],
+        "options": ",".join(o["option_key"] for o in chosen),
+        "price": round(
+            plan["price"] * (1 + sum(o["price_pct"] for o in chosen) / 100), 2
+        ),
+        "price_ccy": plan["price_ccy"],
+        "firm": plan["firm"],
+        "family": plan["family"],
+        "size": plan["size"],
+        "eas_allowed": plan["eas_allowed"],
+        **{
+            f"p{i}_target_pct": by[f"phase{i}"]["profit_target_pct"]
+            if f"phase{i}" in by
+            else None
+            for i in (1, 2, 3)
+        },
+        "daily_loss_pct": first["daily_loss_pct"],
+        "max_loss_pct": first["max_loss_pct"],
+        "max_loss_mode": first["max_loss_mode"],
+        "min_days": first["min_days"],
+        "consistency_pct": first["consistency_pct"],
+        "reward_share_pct": funded["reward_share_pct"],
+        "payout_days": funded["payout_days"],
+        "news_ok": funded["news_ok"],
+        "weekend_ok": funded["weekend_ok"],
+        "extras": ",".join(
+            o["option_key"] for o in chosen if o["option_key"] not in EFFECTS
+        ),
+    }
 
 
 def build(rows: Catalogue) -> list[dict]:
@@ -71,10 +99,12 @@ def build(rows: Catalogue) -> list[dict]:
     for o in rows["options"]:
         if o["price_pct"] is not None:
             options.setdefault(o["plan_key"], []).append(o)
-    return [_row(p, stages[p["plan_key"]], chosen)
-            for p in rows["plans"]
-            for n in range(len(options.get(p["plan_key"], [])) + 1)
-            for chosen in itertools.combinations(options.get(p["plan_key"], []), n)]
+    return [
+        _row(p, stages[p["plan_key"]], chosen)
+        for p in rows["plans"]
+        for n in range(len(options.get(p["plan_key"], [])) + 1)
+        for chosen in itertools.combinations(options.get(p["plan_key"], []), n)
+    ]
 
 
 def unmodelled(rows: Catalogue) -> set[str]:

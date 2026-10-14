@@ -61,13 +61,20 @@ def only(config: str, wanted: list[str]) -> tuple[str, list[tuple[str, bool]]]:
         """One <Task/> tag with its active flag rewritten."""
         title = re.search(r'title="([^"]*)"', m.group(0))
         on = title is not None and title.group(1) in wanted
-        rows.append((title.group(1) if title else rx(r'name="([^"]*)"', m.group(0)).group(1), on))
+        rows.append(
+            (
+                title.group(1) if title else rx(r'name="([^"]*)"', m.group(0)).group(1),
+                on,
+            )
+        )
         return re.sub(r'active="[^"]*"', f'active="{str(on).lower()}"', m.group(0))
 
     return TASK.sub(one, config), rows
 
 
-def apply(cfx: Path, steps: list[str], skip: Sequence[str] = ()) -> list[tuple[str, bool]]:
+def apply(
+    cfx: Path, steps: list[str], skip: Sequence[str] = ()
+) -> list[tuple[str, bool]]:
     """Leave only these steps' tasks active in a project.cfx.
 
     Args:
@@ -83,7 +90,9 @@ def apply(cfx: Path, steps: list[str], skip: Sequence[str] = ()) -> list[tuple[s
     return just(cfx, [t for t in wanted if t not in skip], wanted)
 
 
-def just(cfx: Path, on: list[str], expected: list[str] | None = None) -> list[tuple[str, bool]]:
+def just(
+    cfx: Path, on: list[str], expected: list[str] | None = None
+) -> list[tuple[str, bool]]:
     """Leave only these task titles active in a project.cfx — a step's, or the one the owner
     chose in the window («Lanzar en SQX»).
 
@@ -100,23 +109,32 @@ def just(cfx: Path, on: list[str], expected: list[str] | None = None) -> list[tu
     """
     held = cfxio.held(cfx)
     if held:
-        raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
-                         f"Paralo: bin/sqx-worker.sh --role {held} stop")
+        raise SystemExit(
+            f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
+            f"Paralo: bin/sqx-worker.sh --role {held} stop"
+        )
     wanted = expected if expected is not None else on
     members = cfxio.members(cfx)
     config, rows = only(members["config.xml"].decode("utf-8"), on)
     missing = sorted(set(wanted) - {title for title, _ in rows})
     if missing:
-        raise SystemExit(f"{cfx.parent.name} no lleva la(s) tarea(s) {', '.join(missing)}. "
-                         "Un proyecto de workflow se crea con `sqx.projects.builder --workflow`.")
-    live = [rx(r'taskXMLFile="([^"]*)"', tag).group(1)
-            for tag in TASK.findall(config) if 'active="true"' in tag]
+        raise SystemExit(
+            f"{cfx.parent.name} no lleva la(s) tarea(s) {', '.join(missing)}. "
+            "Un proyecto de workflow se crea con `sqx.projects.builder --workflow`."
+        )
+    live = [
+        rx(r'taskXMLFile="([^"]*)"', tag).group(1)
+        for tag in TASK.findall(config)
+        if 'active="true"' in tag
+    ]
     # Several configurators (crossmarket, SPP, WFC) write their <Setups> from scratch, with
     # one chart: the project's extra charts go back in here, where every one of them ends.
     extra = charts.streams(members)
     for name in live:
         if name in members:
-            members[name] = charts.ensure(members[name].decode("utf-8"), extra)[0].encode("utf-8")
+            members[name] = charts.ensure(members[name].decode("utf-8"), extra)[
+                0
+            ].encode("utf-8")
     members["config.xml"] = config.encode("utf-8")
     cfxio.write(cfx, members)
     return rows
@@ -136,22 +154,31 @@ def own(cfx: Path, step: str, skip: Sequence[str] = ()) -> str:
     """
     with zipfile.ZipFile(cfx) as z:
         config = z.read("config.xml").decode("utf-8")
-    if not all(f'title="{t}"' in config for s in yaml.safe_load(STAGES.read_text())
-               for t in titles(s)):
-        return (f"⚠️ {cfx.parent.name} no es un proyecto de workflow: `action=start` corre TODAS "
-                "sus tareas activas. Mira cuáles lo están antes de lanzarlo.")
+    if not all(
+        f'title="{t}"' in config
+        for s in yaml.safe_load(STAGES.read_text())
+        for t in titles(s)
+    ):
+        return (
+            f"⚠️ {cfx.parent.name} no es un proyecto de workflow: `action=start` corre TODAS "
+            "sus tareas activas. Mira cuáles lo están antes de lanzarlo."
+        )
     apply(cfx, [step], skip)
-    return (f"el proximo `action=start` de {cfx.parent.name} corre solo `{step}`"
-            + (f" (sin {', '.join(skip)})" if skip else ""))
+    return f"el proximo `action=start` de {cfx.parent.name} corre solo `{step}`" + (
+        f" (sin {', '.join(skip)})" if skip else ""
+    )
 
 
 def main() -> None:
     """Switch a project's tasks so that only the named steps run on the next start."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--cfx", required=True, type=Path)
-    ap.add_argument("--step", required=True,
-                    help="uno o varios pasos separados por comas: "
-                         f"{', '.join(list(yaml.safe_load(STAGES.read_text()))+['wfc'])}")
+    ap.add_argument(
+        "--step",
+        required=True,
+        help="uno o varios pasos separados por comas: "
+        f"{', '.join(list(yaml.safe_load(STAGES.read_text())) + ['wfc'])}",
+    )
     a = ap.parse_args()
     rows = apply(a.cfx, a.step.split(","))
     print(f"{a.cfx.parent.name}: el proximo `action=start` corre {a.step}")

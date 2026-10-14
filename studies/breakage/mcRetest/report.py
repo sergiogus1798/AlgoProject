@@ -18,10 +18,12 @@ from studies.breakage.mcRetest.inputs import config
 from studies.breakage.mcRetest.load import Loaded
 from studies.breakage.mcRetest.verdict import gates
 
-LEDE = ("Ocho tareas, cada una perturbando una sola cosa, N re-ejecuciones completas del "
-        "backtest en cada una (N = `mc_retest.simulations`). La pregunta no es si la curva "
-        "fue suerte, sino si habría "
-        "existido.")
+LEDE = (
+    "Ocho tareas, cada una perturbando una sola cosa, N re-ejecuciones completas del "
+    "backtest en cada una (N = `mc_retest.simulations`). La pregunta no es si la curva "
+    "fue suerte, sino si habría "
+    "existido."
+)
 
 
 def named(strategy: str, inputs: Loaded) -> str:
@@ -35,8 +37,11 @@ def named(strategy: str, inputs: Loaded) -> str:
         The name the ingest's tables carry.
     """
     names = set(inputs["sims"]["strategy"].unique())
-    found = [n for n in (strategy, strategy.removeprefix("Strategy "), f"Strategy {strategy}")
-             if n in names]
+    found = [
+        n
+        for n in (strategy, strategy.removeprefix("Strategy "), f"Strategy {strategy}")
+        if n in names
+    ]
     if not found:
         raise SystemExit(f"{strategy} no está en el ingest {inputs['folder']}")
     return found[0]
@@ -63,9 +68,16 @@ def write_one(out: Path, inputs: Loaded, cfg: dict, strategy: str) -> Path:
     ran = set(sims["task"].unique())
     short = sorted(ran - set(sims.loc[sims["strategy"] == name, "task"].unique()))
     if short:
-        raise SystemExit(f"{name} fuera del informe, le faltan tareas: {', '.join(short)}")
+        raise SystemExit(
+            f"{name} fuera del informe, le faltan tareas: {', '.join(short)}"
+        )
     if inputs["trades"] is not None:
-        inputs = {**inputs, "trades": cast(pd.DataFrame, inputs["trades"][inputs["trades"]["strategy"] == name])}
+        inputs = {
+            **inputs,
+            "trades": cast(
+                pd.DataFrame, inputs["trades"][inputs["trades"]["strategy"] == name]
+            ),
+        }
     got = one.run(name, inputs, cfg)
     draws.merge(out, got.pop("draws", []), defer=True)
     return output.member(out, got, f"Monte Carlo Retest — {name}", LEDE)
@@ -77,14 +89,25 @@ def main() -> None:
     parser.add_argument("--project", required=True)
     parser.add_argument("--databank", default="MCR_All")
     parser.add_argument("--day", default=date.today().isoformat())
-    parser.add_argument("--strategy", help="one strategy alone, «1.26.46» or «Strategy 1.26.46»: "
-                        "writes only estrategias/<name>.json, never the population's files")
-    parser.add_argument("--set", action="extend", nargs="+", default=[], dest="overrides",
-                        metavar="KEY=VALUE")
+    parser.add_argument(
+        "--strategy",
+        help="one strategy alone, «1.26.46» or «Strategy 1.26.46»: "
+        "writes only estrategias/<name>.json, never the population's files",
+    )
+    parser.add_argument(
+        "--set",
+        action="extend",
+        nargs="+",
+        default=[],
+        dest="overrides",
+        metavar="KEY=VALUE",
+    )
     args = parser.parse_args()
 
     missing = set(gates.VETOES) ^ set(words.SENTENCES)
-    assert not missing, f"gates and words disagree about these vetoes: {sorted(missing)}"
+    assert not missing, (
+        f"gates and words disagree about these vetoes: {sorted(missing)}"
+    )
 
     cfg = config.load(args.overrides)
     inputs = load.load(args.project, args.databank, args.day)
@@ -101,9 +124,18 @@ def main() -> None:
     draws.save(out, got.get("draws", []))
     table = many.table(got["members"])
     verdicts.write(out, table, inputs["folder"], " ".join(sys.argv), args.overrides)
-    print(steprows.log_cut(args.project, 14, (len(table),
-                                           int(table["verdict"].isin(["STRONG", "ACCEPTABLE", "MARGINAL"]).sum())),
-                           "mcRetest: veredicto de la batería", "studies.breakage.mcRetest.report"))
+    print(
+        steprows.log_cut(
+            args.project,
+            14,
+            (
+                len(table),
+                int(table["verdict"].isin(["STRONG", "ACCEPTABLE", "MARGINAL"]).sum()),
+            ),
+            "mcRetest: veredicto de la batería",
+            "studies.breakage.mcRetest.report",
+        )
+    )
     print(f"report: {len(table)} strategies -> {out}")
     print(table.drop(columns=["identity"]).to_string(index=False, max_colwidth=40))
 

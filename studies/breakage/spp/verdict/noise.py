@@ -55,17 +55,26 @@ def noise_check(frame: pd.DataFrame, metric: str, margin: float = 1.0) -> NoiseC
         smaller than it looks.
     """
     distinct = dedupe.distinct(frame)
-    values = pd.Series(pd.to_numeric(distinct[metric], errors="coerce")).dropna().to_numpy()
+    values = (
+        pd.Series(pd.to_numeric(distinct[metric], errors="coerce")).dropna().to_numpy()
+    )
     n_eff = int(values.size)
     threshold = plateau.expected_max(float(values.std()), n_eff)
     observed = float(values.max())
     excess = observed - float(values.mean())
-    return {"metric": metric, "n_rows": int(len(frame)), "n_eff": n_eff,
-            "sigma": float(values.std()), "observed_max": observed,
-            "noise_max": threshold, "excess": excess, "ratio": excess / threshold,
-            "plateau_area": plateau.plateau_area(values),
-            "above_half_max": plateau.above_half_max(values),
-            "verdict": PROCEED if excess > threshold * margin else NOISE}
+    return {
+        "metric": metric,
+        "n_rows": int(len(frame)),
+        "n_eff": n_eff,
+        "sigma": float(values.std()),
+        "observed_max": observed,
+        "noise_max": threshold,
+        "excess": excess,
+        "ratio": excess / threshold,
+        "plateau_area": plateau.plateau_area(values),
+        "above_half_max": plateau.above_half_max(values),
+        "verdict": PROCEED if excess > threshold * margin else NOISE,
+    }
 
 
 def shape(frame: pd.DataFrame, metric: str) -> Shape:
@@ -80,8 +89,13 @@ def shape(frame: pd.DataFrame, metric: str) -> Shape:
         is small says the result lives at one point, which is the shape that does not
         survive: the two numbers are read together or neither means much.
     """
-    values = pd.Series(pd.to_numeric(dedupe.distinct(frame)[metric], errors="coerce")).dropna()
+    values = pd.Series(
+        pd.to_numeric(dedupe.distinct(frame)[metric], errors="coerce")
+    ).dropna()
     iqr = float(values.quantile(0.75) - values.quantile(0.25))
-    return {"kurtosis": float(values.kurtosis()),
-            "spike_ratio": float((values.max() - values.median()) / iqr),
-            "median": float(values.median()), "max": float(values.max())}
+    return {
+        "kurtosis": float(values.kurtosis()),
+        "spike_ratio": float((values.max() - values.median()) / iqr),
+        "median": float(values.median()),
+        "max": float(values.max()),
+    }

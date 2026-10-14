@@ -28,17 +28,27 @@ def fixed(trades: pd.DataFrame, frame: pd.DataFrame, cfg: dict) -> inputs.Fixed:
         The located trades, the bar arrays, the measured point value and per-trade cost, the
         price barriers, and the reconciliation that says whether any of it can be believed.
     """
-    located = inputs.on_grid(trades, cast(pd.DatetimeIndex, frame.index), cfg["barrier"]["max_hold"])
+    located = inputs.on_grid(
+        trades, cast(pd.DatetimeIndex, frame.index), cfg["barrier"]["max_hold"]
+    )
     value = calibrate.point_value(trades)
     cost = calibrate.charged(trades, value)
     checks = calibrate.convention(trades, frame, located, value, cost)
     enter, leave = calibrate.CONVENTIONS[checks["fill"]]
-    arrays = {"low": frame["Low"].to_numpy(np.float64),
-              "high": frame["High"].to_numpy(np.float64),
-              "enter_px": frame[enter].to_numpy(np.float64),
-              "leave_px": frame[leave].to_numpy(np.float64)}
-    return {"located": located, "bars": arrays, "value": value, "cost": cost,
-            "atr": calibrate.atr(frame, cfg["barrier"]["atr_bars"]), "checks": checks}
+    arrays = {
+        "low": frame["Low"].to_numpy(np.float64),
+        "high": frame["High"].to_numpy(np.float64),
+        "enter_px": frame[enter].to_numpy(np.float64),
+        "leave_px": frame[leave].to_numpy(np.float64),
+    }
+    return {
+        "located": located,
+        "bars": arrays,
+        "value": value,
+        "cost": cost,
+        "atr": calibrate.atr(frame, cfg["barrier"]["atr_bars"]),
+        "checks": checks,
+    }
 
 
 def warm(frame: pd.DataFrame, cfg: dict) -> None:
@@ -88,14 +98,23 @@ def real(kept: inputs.Fixed, names: list[str]) -> dict[str, float]:
     """
     located = kept["located"]
     bars, got = kept["bars"], np.empty((1, len(kernel.NAMES)))
-    kernel.runs(located["entry"][None, :], located["hold"][None, :], located["size"][None, :],
-                bars["enter_px"], bars["leave_px"], kept["cost"], kept["value"], got)
+    kernel.runs(
+        located["entry"][None, :],
+        located["hold"][None, :],
+        located["size"][None, :],
+        bars["enter_px"],
+        bars["leave_px"],
+        kept["cost"],
+        kept["value"],
+        got,
+    )
     got = got[0]
     return {name: float(got[kernel.NAMES.index(name)]) for name in names}
 
 
-def nulls(kept: inputs.Fixed, rung: str, cfg: dict, key: str,
-          threads: int | None = None) -> dict[str, np.ndarray]:
+def nulls(
+    kept: inputs.Fixed, rung: str, cfg: dict, key: str, threads: int | None = None
+) -> dict[str, np.ndarray]:
     """Every null run under one rung, in blocks, each drawn from its own seeded stream.
 
     Args:
@@ -131,11 +150,21 @@ def nulls(kept: inputs.Fixed, rung: str, cfg: dict, key: str,
 
     def one(i: int) -> None:
         """Draw and price block `i` of the draws into its rows of `out`."""
-        rows = out[i * block:(i + 1) * block]
+        rows = out[i * block : (i + 1) * block]
         rng = np.random.default_rng(root + [i])
         drawn = model.RUNGS[rung](located, len(rows), rng, placed=False)
-        kernel.ladder(drawn["u"], drawn["holds"], drawn["sizes"], bars["enter_px"],
-                      bars["leave_px"], kept["cost"], kept["value"], lo, hi, rows)
+        kernel.ladder(
+            drawn["u"],
+            drawn["holds"],
+            drawn["sizes"],
+            bars["enter_px"],
+            bars["leave_px"],
+            kept["cost"],
+            kept["value"],
+            lo,
+            hi,
+            rows,
+        )
 
     blocks = range(-(-knobs["draws"] // block))
     threads = min(len(blocks), threads or (1 if parent_process() else fanout.CORES))

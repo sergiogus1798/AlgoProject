@@ -15,17 +15,30 @@ from core.study import output, result
 from core.study.config import fingerprint
 from studies.research.marketProfile import ledgerrows as profile_ledger
 from studies.research.memory.sources import CONFIG as MEMORY
-from studies.research.profilePower import (analytic, contract, inputs, ledgerrows, many, one,
-                                            store)
+from studies.research.profilePower import (
+    analytic,
+    contract,
+    inputs,
+    ledgerrows,
+    many,
+    one,
+    store,
+)
 
 STATE = {}
 TITLE = "Potencia del perfil de mercado"
-LEDE = ("Qué tamaño de edge ve el perfil: se planta uno conocido en copias sin dirección de "
-        "las barras de build y se le pasa la misma prueba, con la misma nula y los mismos "
-        "sorteos.")
+LEDE = (
+    "Qué tamaño de edge ve el perfil: se planta uno conocido en copias sin dirección de "
+    "las barras de build y se le pasa la misma prueba, con la misma nula y los mismos "
+    "sorteos."
+)
 LEVELS = [1, 2, 5]
-HIT = ("inside", "engulfing", "run")    # the profile's measures judged by a hit rate, not a t
-EVERY = 100     # replications between two writes of runs.parquet
+HIT = (
+    "inside",
+    "engulfing",
+    "run",
+)  # the profile's measures judged by a hit rate, not a t
+EVERY = 100  # replications between two writes of runs.parquet
 
 
 def replication(key: tuple) -> dict[str, Any]:
@@ -40,16 +53,27 @@ def measure(cfg: dict, force: bool) -> tuple[pd.DataFrame, int]:
     The fan-out is cut to `run.budget_bytes`; runs.parquet is rewritten every EVERY rows, so
     a run that is stopped keeps what it finished.
     """
-    cut, draws, how = cfg["judge"]["cut"], cfg["profile"]["nulls"]["draws"], cfg["plant"]["how"]
+    cut, draws, how = (
+        cfg["judge"]["cut"],
+        cfg["profile"]["nulls"]["draws"],
+        cfg["plant"]["how"],
+    )
     old = store.runs(cut, draws)
     done = set() if force else set(map(tuple, old[store.KEY].to_numpy()))
-    keys = [(s, t, m, d, float(e), r) for s, t in inputs.cells(cfg)
-            for m in cfg["plant"]["measures"] for d in cfg["plant"]["directions"]
-            for e in cfg["plant"]["effects"] for r in range(cfg["plant"]["replications"])]
+    keys = [
+        (s, t, m, d, float(e), r)
+        for s, t in inputs.cells(cfg)
+        for m in cfg["plant"]["measures"]
+        for d in cfg["plant"]["directions"]
+        for e in cfg["plant"]["effects"]
+        for r in range(cfg["plant"]["replications"])
+    ]
     todo = [k for k in keys if (*k, how) not in done]
     STATE.update(cfg=cfg, bars={c: inputs.bars(*c) for c in {k[:2] for k in todo}})
     costs = {k: len(STATE["bars"][k[:2]]) * (1 + k[4]) for k in todo}
-    workers = min(cfg["run"]["workers"], cfg["run"]["budget_bytes"] // cfg["run"]["process_bytes"])
+    workers = min(
+        cfg["run"]["workers"], cfg["run"]["budget_bytes"] // cfg["run"]["process_bytes"]
+    )
     rows = old.to_dict("records")
     for n, (_key, got) in enumerate(fanout.run(replication, costs, workers), 1):
         rows.append({**got, "cut": cut, "seed": cfg["run"]["seed"]})
@@ -61,36 +85,67 @@ def measure(cfg: dict, force: bool) -> tuple[pd.DataFrame, int]:
 
 def judge(runs: pd.DataFrame, cfg: dict) -> dict[str, pd.DataFrame]:
     """Every table of the study from the replications and the map on disk."""
-    classes, cut, target = MEMORY["asset_class"], cfg["judge"]["cut"], cfg["judge"]["power"]
+    classes, cut, target = (
+        MEMORY["asset_class"],
+        cfg["judge"]["cut"],
+        cfg["judge"]["power"],
+    )
     judged = many.judged(pd.DataFrame(runs[runs["how"] == cfg["plant"]["how"]]), cfg)
     judged["asset_class"] = judged["symbol"].map(classes)
-    by, by_class = ["family", "measure", "timeframe"], ["asset_class", "measure", "timeframe"]
+    by, by_class = (
+        ["family", "measure", "timeframe"],
+        ["asset_class", "measure", "timeframe"],
+    )
     curve = many.curve(judged, by)
     profiles = research_profiles_dir()
     hit = [m["name"] for m in cfg["profile"]["measures"] if m["fn"] in HIT]
-    wide = analytic.widened(pd.read_csv(profiles / "measures.csv"),
-                            pd.read_csv(profiles / "context.csv"), classes, cut, target, hit)
-    return {"runs_judged": judged, "curve": curve, "mde": many.minimum(curve, by, target),
-            "curve_class": many.curve(judged, by_class),
-            "mde_class": many.minimum(many.curve(judged, by_class), by_class, target),
-            "calibration": analytic.calibrated(judged, cut, hit), "widened": wide,
-            "reach": analytic.reachable(wide, ["family", "timeframe"], LEVELS),
-            "reach_class": analytic.reachable(wide, ["asset_class", "timeframe"], LEVELS)}
+    wide = analytic.widened(
+        pd.read_csv(profiles / "measures.csv"),
+        pd.read_csv(profiles / "context.csv"),
+        classes,
+        cut,
+        target,
+        hit,
+    )
+    return {
+        "runs_judged": judged,
+        "curve": curve,
+        "mde": many.minimum(curve, by, target),
+        "curve_class": many.curve(judged, by_class),
+        "mde_class": many.minimum(many.curve(judged, by_class), by_class, target),
+        "calibration": analytic.calibrated(judged, cut, hit),
+        "widened": wide,
+        "reach": analytic.reachable(wide, ["family", "timeframe"], LEVELS),
+        "reach_class": analytic.reachable(wide, ["asset_class", "timeframe"], LEVELS),
+    }
 
 
 def main() -> None:
     """Run the replications asked for, judge every one stored, print and write the tables."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--judge-only", action="store_true", help="no replications, only the tables")
-    ap.add_argument("--force", action="store_true", help="run again what is already stored")
-    ap.add_argument("--set", dest="overrides", action="extend", nargs="+", default=[],
-                    metavar="KEY=VALUE")
+    ap.add_argument(
+        "--judge-only", action="store_true", help="no replications, only the tables"
+    )
+    ap.add_argument(
+        "--force", action="store_true", help="run again what is already stored"
+    )
+    ap.add_argument(
+        "--set",
+        dest="overrides",
+        action="extend",
+        nargs="+",
+        default=[],
+        metavar="KEY=VALUE",
+    )
     a = ap.parse_args()
     started = time.time()
     os.nice(19)
     cfg = inputs.config(a.overrides)
     if a.judge_only:
-        runs, fresh = store.runs(cfg["judge"]["cut"], cfg["profile"]["nulls"]["draws"]), 0
+        runs, fresh = (
+            store.runs(cfg["judge"]["cut"], cfg["profile"]["nulls"]["draws"]),
+            0,
+        )
     else:
         runs, fresh = measure(cfg, a.force)
     tables = judge(runs, cfg)
@@ -98,17 +153,32 @@ def main() -> None:
     out = store.write(tables)
     if fresh:
         new = judged[judged["seed"] == cfg["run"]["seed"]]
-        profile_ledger.append(out / "ledger.jsonl", ledgerrows.rows(pd.DataFrame(new), cfg))
+        profile_ledger.append(
+            out / "ledger.jsonl", ledgerrows.rows(pd.DataFrame(new), cfg)
+        )
     output.population(out, "power", contract.build(tables, cfg, started), TITLE, LEDE)
-    (out / "run.json").write_text(json.dumps({
-        "code_version": manifest.code_version(), "config_hash": fingerprint(cfg),
-        "seed": cfg["run"]["seed"], "cut": cfg["judge"]["cut"], "replications": len(judged),
-        "fresh": fresh, "core_hours": round(float(judged["wall_s"].sum()) / 3600, 2),
-        "wall_s": round(time.time() - started, 1)}, indent=1), encoding="utf-8")
+    (out / "run.json").write_text(
+        json.dumps(
+            {
+                "code_version": manifest.code_version(),
+                "config_hash": fingerprint(cfg),
+                "seed": cfg["run"]["seed"],
+                "cut": cfg["judge"]["cut"],
+                "replications": len(judged),
+                "fresh": fresh,
+                "core_hours": round(float(judged["wall_s"].sum()) / 3600, 2),
+                "wall_s": round(time.time() - started, 1),
+            },
+            indent=1,
+        ),
+        encoding="utf-8",
+    )
     result.progress(100, "hecho")
     pd.set_option("display.width", 220)
-    print(f"\n{len(judged)} réplicas ({judged['wall_s'].sum() / 3600:.1f} horas de núcleo), "
-          f"corte p ≤ {cfg['judge']['cut']:.5f}\n")
+    print(
+        f"\n{len(judged)} réplicas ({judged['wall_s'].sum() / 3600:.1f} horas de núcleo), "
+        f"corte p ≤ {cfg['judge']['cut']:.5f}\n"
+    )
     print(tables["mde"].round(3).to_string(index=False))
     print("\nLo que el mapa entero puede ver (aproximación normal):")
     print(tables["reach"].round(3).to_string(index=False))

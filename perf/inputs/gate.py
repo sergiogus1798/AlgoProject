@@ -9,8 +9,17 @@ import pandas as pd
 from core.paths import harvest_dir
 from perf.inputs import sample
 from pipeline.autopilot import kept
-from studies.screening.gate import (inputs as gate_inputs, level0, level1a, level1b_centred,
-                                    level1b_data, level1b_onepass, level2, level3ab, level3c)
+from studies.screening.gate import (
+    inputs as gate_inputs,
+    level0,
+    level1a,
+    level1b_centred,
+    level1b_data,
+    level1b_onepass,
+    level2,
+    level3ab,
+    level3c,
+)
 
 
 def _gate_sample(cfg: dict) -> tuple[dict, Path]:
@@ -26,14 +35,15 @@ def _gate_sample(cfg: dict) -> tuple[dict, Path]:
     project, databank, day = cfg["sample"]["gate"]["harvest"]
     folder = harvest_dir(project, databank, day)
     data: dict[str, Any] = dict(gate_inputs.load(folder))
-    ids = data["metrics"].index[:cfg["sample"]["gate"]["strategies"] or None]
+    ids = data["metrics"].index[: cfg["sample"]["gate"]["strategies"] or None]
     data["metrics"] = data["metrics"].loc[ids]
     for key in ("trades", "equity", "missing"):
         data[key] = data[key][data[key]["identity"].isin(ids)]
     data["curve"] = data["curve"].reindex(columns=ids)
     timeframe = gate_inputs.timeframe(data["metrics"], gate_inputs.config([]), [])
-    return gate_inputs.staged(data, cfg["sample"]["gate"]["feed"], timeframe,
-                              Path(tempfile.mkdtemp())), folder
+    return gate_inputs.staged(
+        data, cfg["sample"]["gate"]["feed"], timeframe, Path(tempfile.mkdtemp())
+    ), folder
 
 
 def _gate_level(cfg: dict, *modules) -> sample.Workload:
@@ -55,20 +65,29 @@ def _gate_level(cfg: dict, *modules) -> sample.Workload:
         if module is level3ab:
             data["build"] = gate_inputs.build_pnl(data, everyone)
         module.run(data, everyone, gate_cfg)
-    return {"scale": len(everyone), "bytes_in": sample.weight([folder / "trades.parquet"])}
+    return {
+        "scale": len(everyone),
+        "bytes_in": sample.weight([folder / "trades.parquet"]),
+    }
 
 
 def gate_stage(cfg: dict) -> sample.Workload:
     """Read and stage the sample only: the part every gate target shares."""
     data, folder = _gate_sample(cfg)
-    return {"scale": len(data["metrics"]), "bytes_in": sample.weight([folder / "trades.parquet"])}
+    return {
+        "scale": len(data["metrics"]),
+        "bytes_in": sample.weight([folder / "trades.parquet"]),
+    }
 
 
 def gate_level0(cfg: dict) -> sample.Workload:
     """Stage the sample and run level 0 (presence, sanity, statics) over it."""
     data, folder = _gate_sample(cfg)
     level0.run(data, data["metrics"].index, gate_inputs.config([]))
-    return {"scale": len(data["metrics"]), "bytes_in": sample.weight([folder / "trades.parquet"])}
+    return {
+        "scale": len(data["metrics"]),
+        "bytes_in": sample.weight([folder / "trades.parquet"]),
+    }
 
 
 def gate_level1a(cfg: dict) -> sample.Workload:

@@ -6,9 +6,10 @@ from core.assetdata import fields
 
 # Cost fields that block authoring while undecided, per class. The swaps do not block.
 # One spread per segment for every class since 2026-09-30 (owner): IS, OOS1 and OOS2.
-REQUIRED = {"forex": ("spread_is", "spread_oos", "spread_oos2", "commission"),
-            "no_forex": ("spread_is", "spread_oos", "spread_oos2", "commission")}
-
+REQUIRED = {
+    "forex": ("spread_is", "spread_oos", "spread_oos2", "commission"),
+    "no_forex": ("spread_is", "spread_oos", "spread_oos2", "commission"),
+}
 
 
 def numeric_strings(node: object, here: str = "") -> list[str]:
@@ -22,9 +23,15 @@ def numeric_strings(node: object, here: str = "") -> list[str]:
         One line per such leaf. `1e-05` loaded by YAML 1.1 as a string once crashed step 26.
     """
     if isinstance(node, dict):
-        return [m for k, v in node.items() for m in numeric_strings(v, f"{here}.{k}".strip("."))]
+        return [
+            m
+            for k, v in node.items()
+            for m in numeric_strings(v, f"{here}.{k}".strip("."))
+        ]
     if isinstance(node, list):
-        return [m for i, v in enumerate(node) for m in numeric_strings(v, f"{here}[{i}]")]
+        return [
+            m for i, v in enumerate(node) for m in numeric_strings(v, f"{here}[{i}]")
+        ]
     if isinstance(node, str):
         try:
             float(node)
@@ -45,15 +52,22 @@ def validate(data: dict) -> list[str]:
         remembered: a forex file with two spreads is an error, not a convention to know.
     """
     want, have, cls = set(fields(data)), set(data["costs"]), data["class"]
-    return ([f"falta `{f}`, que exige la clase `{cls}`" for f in sorted(want - have)]
-            + [f"sobra `{f}`, la clase `{cls}` no lo tiene" for f in sorted(have - want)]
-            + [f"falta `mc_retest.{k}`" for k in ("spread", "slippage")
-               if k not in (data.get("mc_retest") or {})]
-            + [f"`instrument.{k}` no es un número: {v!r} — comentario pegado al valor"
-               for k, v in data["instrument"].items() if not isinstance(v, (int, float))]
-            + numeric_strings(data)
-            + before_data(data))
-
+    return (
+        [f"falta `{f}`, que exige la clase `{cls}`" for f in sorted(want - have)]
+        + [f"sobra `{f}`, la clase `{cls}` no lo tiene" for f in sorted(have - want)]
+        + [
+            f"falta `mc_retest.{k}`"
+            for k in ("spread", "slippage")
+            if k not in (data.get("mc_retest") or {})
+        ]
+        + [
+            f"`instrument.{k}` no es un número: {v!r} — comentario pegado al valor"
+            for k, v in data["instrument"].items()
+            if not isinstance(v, (int, float))
+        ]
+        + numeric_strings(data)
+        + before_data(data)
+    )
 
 
 def pending(data: dict) -> list[str]:
@@ -69,15 +83,17 @@ def pending(data: dict) -> list[str]:
         blocked while ANY segment still carries a null `value`, not while the field itself
         is null.
     """
+
     def blocked(field: str) -> bool:
         """Whether this field still has a real decision missing."""
         use = data["costs"][field]["use"]
         if isinstance(use, dict):
-            return any((use.get(seg) or {}).get("value") is None for seg in data["segments"])
+            return any(
+                (use.get(seg) or {}).get("value") is None for seg in data["segments"]
+            )
         return use is None
 
     return [k for k in REQUIRED[data["class"]] if blocked(k)]
-
 
 
 def provisional(data: dict) -> list[str]:
@@ -95,7 +111,6 @@ def provisional(data: dict) -> list[str]:
     return [k for k in fields(data) if "PROVISIONAL" in data["costs"][k]["why"]]
 
 
-
 def segments_pending(data: dict) -> list[str]:
     """Segments whose dates the owner has not set for this asset.
 
@@ -106,8 +121,9 @@ def segments_pending(data: dict) -> list[str]:
         Segment names still carrying a null bound. They do not block authoring — the costs
         already do — but window() refuses to invent one.
     """
-    return [n for n, s in data["segments"].items() if s["from"] is None or s["to"] is None]
-
+    return [
+        n for n, s in data["segments"].items() if s["from"] is None or s["to"] is None
+    ]
 
 
 def before_data(data: dict) -> list[str]:
@@ -122,14 +138,17 @@ def before_data(data: dict) -> list[str]:
         while the DAX40 has nothing before 2013 and a 2008 window would silently run short.
     """
     if not data["data"]:
-        return [f"SQX no tiene datos de `{data['sqx_symbol']}`, así que ninguna ventana es válida"]
+        return [
+            f"SQX no tiene datos de `{data['sqx_symbol']}`, así que ninguna ventana es válida"
+        ]
     first = data["data"]["from"]
     year = lambda b: b if isinstance(b, int) else b.year
-    return [f"el tramo `{n}` empieza en {s['from']} y los datos de `{data['sqx_symbol']}` "
-            f"empiezan en {first}"
-            for n, s in data["segments"].items()
-            if s["from"] is not None and year(s["from"]) < first.year]
-
+    return [
+        f"el tramo `{n}` empieza en {s['from']} y los datos de `{data['sqx_symbol']}` "
+        f"empiezan en {first}"
+        for n, s in data["segments"].items()
+        if s["from"] is not None and year(s["from"]) < first.year
+    ]
 
 
 def past_data(data: dict) -> list[str]:
@@ -147,10 +166,12 @@ def past_data(data: dict) -> list[str]:
         return []
     last = data["data"]["to"]
     end = lambda b: date(b, 12, 31) if isinstance(b, int) else b
-    return [f"el tramo `{n}` llega a {s['to']} y los datos de `{data['sqx_symbol']}` acaban "
-            f"en {last}" for n, s in data["segments"].items()
-            if s["to"] is not None and end(s["to"]) > last]
-
+    return [
+        f"el tramo `{n}` llega a {s['to']} y los datos de `{data['sqx_symbol']}` acaban "
+        f"en {last}"
+        for n, s in data["segments"].items()
+        if s["to"] is not None and end(s["to"]) > last
+    ]
 
 
 def mc_pending(data: dict) -> list[str]:
@@ -169,4 +190,6 @@ def mc_pending(data: dict) -> list[str]:
     # the policy, so importing it up here would make the two modules circular.
     from core.assetranges import mc_retest
 
-    return [k for k, v in mc_retest(data).items() if v["min"] is None or v["max"] is None]
+    return [
+        k for k, v in mc_retest(data).items() if v["min"] is None or v["max"] is None
+    ]

@@ -16,8 +16,9 @@ class LiveFailure(TypedDict):
     value: float | None
 
 
-def add_live_failure(symbol: str, day: date, strategy: str, row: str,
-                     value: float | None) -> LiveFailure:
+def add_live_failure(
+    symbol: str, day: date, strategy: str, row: str, value: float | None
+) -> LiveFailure:
     """Append one failure to the asset's card, comments and every other line untouched.
 
     Args:
@@ -32,8 +33,12 @@ def add_live_failure(symbol: str, day: date, strategy: str, row: str,
     """
     path = SYMBOLS / f"{symbol}.yaml"
     doc = read(path)
-    entry: LiveFailure = {"date": day.isoformat(), "strategy": strategy, "row": row,
-             "value": None if value is None else round(float(value), 4)}
+    entry: LiveFailure = {
+        "date": day.isoformat(),
+        "strategy": strategy,
+        "row": row,
+        "value": None if value is None else round(float(value), 4),
+    }
     doc.setdefault("live_failures", []).append(entry)
     write(path, doc)
     from core.assetwrite import reindex

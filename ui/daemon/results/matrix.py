@@ -36,9 +36,12 @@ def _column(folder: Path, project: str) -> tuple[dict, list[dict]]:
         if not identity:
             skipped["sin identidad"] += 1
             continue
-        cells[identity] = {"strategy": row["strategy"], "state": row["state"],
-                           "label": row["label"],
-                           "stale": bool(one) and row["config_hash"] not in one}
+        cells[identity] = {
+            "strategy": row["strategy"],
+            "state": row["state"],
+            "label": row["label"],
+            "stale": bool(one) and row["config_hash"] not in one,
+        }
     population = folder / f"{folder.name}.json"
     whole = store.slim(population) if population.is_file() else None
     signed = whole["config_hash"] if whole else None
@@ -49,10 +52,15 @@ def _column(folder: Path, project: str) -> tuple[dict, list[dict]]:
             skipped["sin identidad"] += 1
             continue
         cells[row["identity"]] = {
-            "strategy": name, "state": store.WORDS.get(row["word"], "none"), "label": row["word"],
-            "stale": None if signed is None or not many else signed not in many}
+            "strategy": name,
+            "state": store.WORDS.get(row["word"], "none"),
+            "label": row["word"],
+            "stale": None if signed is None or not many else signed not in many,
+        }
     if not cells and not skipped:
-        skipped["ni JSON por estrategia del contrato ni verdict.csv con estrategia y veredicto"] = 0
+        skipped[
+            "ni JSON por estrategia del contrato ni verdict.csv con estrategia y veredicto"
+        ] = 0
     rel = f"{folder.parent.name}/{folder.name}"
     return cells, [{"path": rel, "reason": why, "n": n} for why, n in skipped.items()]
 
@@ -80,8 +88,13 @@ def matrix(project: str, databank: str) -> dict[str, Any]:
     for day in sorted(p for p in root.iterdir() if p.is_dir()) if root.is_dir() else []:
         for folder in sorted(p for p in day.iterdir() if p.is_dir()):
             if folder.name not in catalogue.STUDIES:
-                skipped.append({"path": f"{day.name}/{folder.name}", "n": None,
-                                "reason": "no es un estudio del catálogo"})
+                skipped.append(
+                    {
+                        "path": f"{day.name}/{folder.name}",
+                        "n": None,
+                        "reason": "no es un estudio del catálogo",
+                    }
+                )
                 continue
             got, lost = _column(folder, project)
             skipped += lost
@@ -93,7 +106,13 @@ def matrix(project: str, databank: str) -> dict[str, Any]:
         names.setdefault(identity, name)
     present = {s for row in cells.values() for s in row}
     order = catalogue.ordered()
-    return {"studies": order, "present": [k for k in order if k in present],
-            "strategies": sorted(({"strategy": n, "identity": i} for i, n in names.items()),
-                                 key=lambda r: r["strategy"]),
-            "cells": cells, "skipped": skipped}
+    return {
+        "studies": order,
+        "present": [k for k in order if k in present],
+        "strategies": sorted(
+            ({"strategy": n, "identity": i} for i, n in names.items()),
+            key=lambda r: r["strategy"],
+        ),
+        "cells": cells,
+        "skipped": skipped,
+    }

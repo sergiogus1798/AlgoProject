@@ -46,8 +46,14 @@ def groups(cfg: dict, root: Path = DATA) -> list[dict]:
     for path in root.rglob("*"):
         if path.is_file() and path.stat().st_size >= cfg["disk"]["hash_bytes"]:
             seen[_fingerprint(path, cfg["disk"]["hash_head"])].append(path)
-    rows = [{"copies": len(paths), "bytes": paths[0].stat().st_size,
-             "wasted": paths[0].stat().st_size * (len(paths) - 1),
-             "paths": [str(p.relative_to(root)) for p in paths]}
-            for paths in seen.values() if len(paths) > 1]
+    rows = [
+        {
+            "copies": len(paths),
+            "bytes": paths[0].stat().st_size,
+            "wasted": paths[0].stat().st_size * (len(paths) - 1),
+            "paths": [str(p.relative_to(root)) for p in paths],
+        }
+        for paths in seen.values()
+        if len(paths) > 1
+    ]
     return sorted(rows, key=lambda r: r["wasted"], reverse=True)

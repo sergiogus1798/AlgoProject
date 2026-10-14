@@ -6,12 +6,30 @@ from collections.abc import Sequence
 from core.researchpaths import ideas_dir
 from studies.research.memory import sources
 
-COLUMNS = ["idea", "symbol", "timeframe", "direction", "date", "rank", "hypotheses_measured",
-           "origin", "from_book", "chosen", "attempts", "file"]
-HEADING = re.compile(r"^### Idea (\d+)[^—\n]*— `(\w+)` · (M15|M30|H1|H4|D1)\b(.*)$", re.M)
+COLUMNS = [
+    "idea",
+    "symbol",
+    "timeframe",
+    "direction",
+    "date",
+    "rank",
+    "hypotheses_measured",
+    "origin",
+    "from_book",
+    "chosen",
+    "attempts",
+    "file",
+]
+HEADING = re.compile(
+    r"^### Idea (\d+)[^—\n]*— `(\w+)` · (M15|M30|H1|H4|D1)\b(.*)$", re.M
+)
 HYPOTHESES = re.compile(r"Hip[oó]tesis medidas(?: en total)?[ \t*]*:?[ \t*]*(\d+)")
 ORIGIN = re.compile(r"^\W*Origen:?\W*\s*(.+)$", re.M | re.I)
-PUBLISHED = ("libro", "bibliograf", "paper")    # an origin that carries its author's trials
+PUBLISHED = (
+    "libro",
+    "bibliograf",
+    "paper",
+)  # an origin that carries its author's trials
 
 
 def direction(tail: str) -> str:
@@ -40,15 +58,28 @@ def parse(text: str, symbol: str, name: str) -> list[dict]:
     marks = list(HEADING.finditer(text))
     rows = []
     for i, m in enumerate(marks):
-        section = text[m.end():marks[i + 1].start() if i + 1 < len(marks) else len(text)]
+        section = text[
+            m.end() : marks[i + 1].start() if i + 1 < len(marks) else len(text)
+        ]
         origin = ORIGIN.search(section)
-        rows.append({"idea": m[2], "symbol": symbol, "timeframe": m[3],
-                     "direction": direction(m[4]), "date": name[:10], "rank": int(m[1]),
-                     "hypotheses_measured": max(counted) if counted else "",
-                     "origin": origin[1].strip() if origin else "",
-                     "from_book": ("yes" if any(w in origin[1].lower() for w in PUBLISHED)
-                                   else "no")
-                     if origin else "unknown", "file": f"{symbol}/{name}"})
+        rows.append(
+            {
+                "idea": m[2],
+                "symbol": symbol,
+                "timeframe": m[3],
+                "direction": direction(m[4]),
+                "date": name[:10],
+                "rank": int(m[1]),
+                "hypotheses_measured": max(counted) if counted else "",
+                "origin": origin[1].strip() if origin else "",
+                "from_book": (
+                    "yes" if any(w in origin[1].lower() for w in PUBLISHED) else "no"
+                )
+                if origin
+                else "unknown",
+                "file": f"{symbol}/{name}",
+            }
+        )
     return rows
 
 

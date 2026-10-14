@@ -25,9 +25,11 @@ def clear(cfg: dict) -> int:
     """
     held = worker.holding(worker_dir(cfg["role"]))
     if held:
-        raise SystemExit(f"el {cfg['role']} esta arriba (PID {held}): con SQX vivo un sync "
-                         "desharia el borrado. Paralo antes: bin/sqx-worker.sh --role "
-                         f"{cfg['role']} stop")
+        raise SystemExit(
+            f"el {cfg['role']} esta arriba (PID {held}): con SQX vivo un sync "
+            "desharia el borrado. Paralo antes: bin/sqx-worker.sh --role "
+            f"{cfg['role']} stop"
+        )
     gone = 0
     for bank in [legmod.source()] + [leg["databank"] for leg in legmod.legs()]:
         for path in legmod.bank_dir(cfg["role"], cfg["project"], bank).glob("*.sqx"):
@@ -39,7 +41,9 @@ def clear(cfg: dict) -> int:
 # SQX's own line when a run dies: 🔬 2026-09-29, a NullPointerException in ProjectGlobalLog at the
 # end of «WFC 1 IS» aborted the project and `execute.run` waited 53 min for tests never coming.
 ABORTED = b"Error while running project"
-FINISHED = b"Project finished"      # one per `action=start`, as `sqx.projects.live.wait` reads it
+FINISHED = (
+    b"Project finished"  # one per `action=start`, as `sqx.projects.live.wait` reads it
+)
 TESTED = re.compile(r"Total tested\s+(\d+)")
 # A project whose tasks are all Retest reports no "Total tested" line; what moves is the
 # record count across its databanks, the loaded batch plus every leg's output so far.
@@ -73,7 +77,7 @@ def ended(logs: Path, seen: dict[Path, int]) -> bytes | None:
         with log.open("rb") as fh:
             fh.seek(seen.get(log, 0))
             chunk = fh.read()
-        whole = chunk[:chunk.rfind(b"\n") + 1]      # a half-written line waits for its end
+        whole = chunk[: chunk.rfind(b"\n") + 1]  # a half-written line waits for its end
         seen[log] = seen.get(log, 0) + len(whole)
         if ABORTED in whole:
             return ABORTED
@@ -96,8 +100,10 @@ def in_bank(status: str, project: str) -> int:
     """
     found = IN_BANK.search(status)
     if not found:
-        raise SystemExit(f"{project}: `action=status` no trae «In databank»; SQX respondió: "
-                         f"{status.strip()[:300] or '(vacío)'}")
+        raise SystemExit(
+            f"{project}: `action=status` no trae «In databank»; SQX respondió: "
+            f"{status.strip()[:300] or '(vacío)'}"
+        )
     return int(found.group(1))
 
 

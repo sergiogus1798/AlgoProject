@@ -18,11 +18,15 @@ IS, OOS, FULL = 10, 20, 127
 # name suffixed "?" is one of a pair whose two members are equal on all 66 strategies.
 NAMED = 100
 WIDTH = {1: ("i", ">i", 4), 2: ("l", ">q", 8), 3: ("f", ">f", 4)}
-COLUMNS = json.loads((Path(__file__).parent / "sqxstats_columns.json").read_text(encoding="utf-8"))
+COLUMNS = json.loads(
+    (Path(__file__).parent / "sqxstats_columns.json").read_text(encoding="utf-8")
+)
 
 _RESULT = re.compile(r'<Result resultKey="([^"]*)"')
-_BLOCK = re.compile(r'<stats_LQ1_direction_DD_(-?\d+)_L1_pl_DD_(\d+)_L1_sample_DD_(\d+)_L1__RQ1_'
-                    r'[^>]*>\s*<SQStats version="\d+" e="b64">([^<]+)</SQStats>')
+_BLOCK = re.compile(
+    r"<stats_LQ1_direction_DD_(-?\d+)_L1_pl_DD_(\d+)_L1_sample_DD_(\d+)_L1__RQ1_"
+    r'[^>]*>\s*<SQStats version="\d+" e="b64">([^<]+)</SQStats>'
+)
 
 
 def _settings(path: Path) -> str:
@@ -47,13 +51,17 @@ def records(blob: str) -> dict[str, float]:
     while i < len(raw):
         kind = raw[i]
         if kind > NAMED:
-            size = struct.unpack(">H", raw[i + 1:i + 3])[0]
-            name, i, kind = raw[i + 3:i + 3 + size].decode(), i + 3 + size, kind - NAMED
+            size = struct.unpack(">H", raw[i + 1 : i + 3])[0]
+            name, i, kind = (
+                raw[i + 3 : i + 3 + size].decode(),
+                i + 3 + size,
+                kind - NAMED,
+            )
         else:
             slot = f"{WIDTH[kind][0]}:{raw[i + 1]}"
             name, i = COLUMNS.get(slot, f"stat:{slot}"), i + 2
         _, fmt, width = WIDTH[kind]
-        out[name] = struct.unpack(fmt, raw[i:i + width])[0]
+        out[name] = struct.unpack(fmt, raw[i : i + width])[0]
         i += width
     return out
 
@@ -101,12 +109,15 @@ def stats(path: Path, result: str = "Main") -> dict[int, dict[str, float]]:
     cuts = [(m.start(), m.group(1)) for m in _RESULT.finditer(xml)]
     at = next((i for i, (_, key) in enumerate(cuts) if key.startswith(result)), None)
     if at is None:
-        raise KeyError(f"{path.name} no lleva el resultado {result!r}: "
-                       f"{[k for _, k in cuts]}")
+        raise KeyError(
+            f"{path.name} no lleva el resultado {result!r}: {[k for _, k in cuts]}"
+        )
     end = cuts[at + 1][0] if at + 1 < len(cuts) else len(xml)
-    return {int(sample): records(blob)
-            for direction, pl, sample, blob in _BLOCK.findall(xml[cuts[at][0]:end])
-            if direction == "0"}
+    return {
+        int(sample): records(blob)
+        for direction, pl, sample, blob in _BLOCK.findall(xml[cuts[at][0] : end])
+        if direction == "0"
+    }
 
 
 def every(path: Path) -> dict[str, dict]:
@@ -123,10 +134,14 @@ def every(path: Path) -> dict[str, dict]:
     """
     xml = _settings(path)
     cuts = [(m.start(), m.group(1)) for m in _RESULT.finditer(xml)] + [(len(xml), "")]
-    return {key: {int(sample): records(blob)
-                  for direction, pl, sample, blob in _BLOCK.findall(xml[start:end])
-                  if direction == "0"}
-            for (start, key), (end, _) in zip(cuts, cuts[1:])}
+    return {
+        key: {
+            int(sample): records(blob)
+            for direction, pl, sample, blob in _BLOCK.findall(xml[start:end])
+            if direction == "0"
+        }
+        for (start, key), (end, _) in zip(cuts, cuts[1:])
+    }
 
 
 def equity(path: Path, result: str = "Main") -> pd.Series:
@@ -148,23 +163,30 @@ def equity(path: Path, result: str = "Main") -> pd.Series:
         `P00000`, 10,476 against 35,328 -- so the result is named, never taken by position.
     """
     with zipfile.ZipFile(path) as archive:
-        member = next(n for n in archive.namelist()
-                      if n.startswith(f"Results/{result}") and n.endswith("dailyEquity.bin"))
+        member = next(
+            n
+            for n in archive.namelist()
+            if n.startswith(f"Results/{result}") and n.endswith("dailyEquity.bin")
+        )
         raw = archive.read(member)
     i, buf = 4, bytearray()
     while i < len(raw):
         marker = raw[i]
         if marker == 0x7A:
-            size = struct.unpack(">i", raw[i + 1:i + 5])[0]
-            buf += raw[i + 5:i + 5 + size]
+            size = struct.unpack(">i", raw[i + 1 : i + 5])[0]
+            buf += raw[i + 5 : i + 5 + size]
             i += 5 + size
         elif marker == 0x77:
             size = raw[i + 1]
-            buf += raw[i + 2:i + 2 + size]
+            buf += raw[i + 2 : i + 2 + size]
             i += 2 + size
         else:
             break
     count = struct.unpack(">i", buf[:4])[0]
-    pairs = np.frombuffer(buf[4:4 + 16 * count], dtype=np.dtype([("t", ">i8"), ("v", ">f8")]))
-    return pd.Series(pairs["v"].astype("float64"),
-                     index=pd.to_datetime(pairs["t"], unit="ms").normalize())  # pyright: ignore[reportAttributeAccessIssue] -- pandas stubs type to_datetime(ndarray) too wide
+    pairs = np.frombuffer(
+        buf[4 : 4 + 16 * count], dtype=np.dtype([("t", ">i8"), ("v", ">f8")])
+    )
+    return pd.Series(
+        pairs["v"].astype("float64"),
+        index=pd.to_datetime(pairs["t"], unit="ms").normalize(),  # pyright: ignore[reportAttributeAccessIssue] -- pandas stubs type to_datetime(ndarray) too wide
+    )

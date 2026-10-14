@@ -30,15 +30,19 @@ def _settings(role: str, mtime_ns: int) -> str:
 
 def _setting(role: str, key: str) -> str:
     """One value SQX wrote to the install's settings.xml (port and token: at every GUI start)."""
-    return rx(rf"<{key}>([^<]*)", _settings(role, _file(role).stat().st_mtime_ns)).group(1)
+    return rx(
+        rf"<{key}>([^<]*)", _settings(role, _file(role).stat().st_mtime_ns)
+    ).group(1)
 
 
 def call(role: str, action: str, **params: str) -> dict[str, Any]:
     """POST one /project/<action>; SystemExit with SQX's own words on an `error` answer."""
     port, token = _setting(role, "WebServerPortUsed"), _setting(role, "BrowserToken")
-    req = urllib.request.Request(f"http://localhost:{port}/project/{action}",
-                                 data=urllib.parse.urlencode(params, doseq=True).encode(),
-                                 headers={"browserToken": token})
+    req = urllib.request.Request(
+        f"http://localhost:{port}/project/{action}",
+        data=urllib.parse.urlencode(params, doseq=True).encode(),
+        headers={"browserToken": token},
+    )
     with urllib.request.urlopen(req, timeout=600) as r:
         got = json.loads(r.read().decode("utf-8"))
     if "error" in got:
@@ -63,4 +67,6 @@ def kill(role: str) -> None:
                 break
             time.sleep(1)
     if not worker.holding(top):
-        worker.stop(role, export=False)       # nothing runs: the script only clears its lock and Xvfb
+        worker.stop(
+            role, export=False
+        )  # nothing runs: the script only clears its lock and Xvfb

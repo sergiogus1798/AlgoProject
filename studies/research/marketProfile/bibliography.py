@@ -7,32 +7,53 @@ import yaml
 
 from core.researchpaths import research_profiles_dir
 
-FILES = ("edges-*.yaml", "scout-*.yaml")    # built by hand; added by the literature scout
-CLASSES = {"indices": ["DAX40", "DJ30", "NIKKEI225", "USA500", "USATEC"],
-           "forex": ["AUDJPY", "AUDUSD", "CADJPY", "EURJPY", "EURUSD", "GBPJPY", "GBPUSD", "USDCAD",
-                     "USDCHF", "USDJPY"],
-           "metals": ["XAGUSD", "XAUUSD"], "oils": ["UKOIL", "USOIL"]}
-MEASURED, ONLY, ABSENT, CLOCK = ("medido", "sólo bibliografía",
-                                 "la bibliografía lo afirma y aquí no se mide",
-                                 "descartado por usar reloj")
+FILES = ("edges-*.yaml", "scout-*.yaml")  # built by hand; added by the literature scout
+CLASSES = {
+    "indices": ["DAX40", "DJ30", "NIKKEI225", "USA500", "USATEC"],
+    "forex": [
+        "AUDJPY",
+        "AUDUSD",
+        "CADJPY",
+        "EURJPY",
+        "EURUSD",
+        "GBPJPY",
+        "GBPUSD",
+        "USDCAD",
+        "USDCHF",
+        "USDJPY",
+    ],
+    "metals": ["XAGUSD", "XAUUSD"],
+    "oils": ["UKOIL", "USOIL"],
+}
+MEASURED, ONLY, ABSENT, CLOCK = (
+    "medido",
+    "sólo bibliografía",
+    "la bibliografía lo afirma y aquí no se mide",
+    "descartado por usar reloj",
+)
 # Why an entry that needs no clock and has a testable translation is still not measured.
 WHY = {
     "TR-13": "es una rejilla de correlaciones lookback × hold en D1, no una regla; los `tsmom_d*` "
-             "miden sus diagonales",
+    "miden sus diagonales",
     "REV-44": "es una vida media por par en D1; el perfil sólo la mide en el marco de la celda "
-              "(`pullback_speed`)",
+    "(`pullback_speed`)",
     "GOLD-51": "necesita otro activo (EURUSD como proxy del dólar): el perfil mide cada activo solo",
     "VOL-52": "es una correlación de rangos diarios, no una regla con operaciones",
     "VOL-53": "es un filtro de volatilidad sobre cualquier entrada larga de índice; medido sólo "
-              "en `fast_d5_20_quiet_run`",
-    "VOL-54": "necesita terciles móviles de la anchura de Bollinger; no implementado"}
+    "en `fast_d5_20_quiet_run`",
+    "VOL-54": "necesita terciles móviles de la anchura de Bollinger; no implementado",
+}
 
 
 def entries() -> list[dict]:
     """Every literature entry: the hand-built file's, then the scout's, oldest first."""
     root = research_profiles_dir().parent / "literature"
     files = [f for pattern in FILES for f in sorted(root.glob(pattern))]
-    return [e for f in files for e in yaml.safe_load(f.read_text(encoding="utf-8"))["entries"]]
+    return [
+        e
+        for f in files
+        for e in yaml.safe_load(f.read_text(encoding="utf-8"))["entries"]
+    ]
 
 
 def tested(cfg: dict) -> dict[str, list[str]]:
@@ -76,14 +97,25 @@ def _flat(text: object) -> str:
 
 def _best(rows: pd.DataFrame) -> str:
     """The best row of a set in one phrase: what passes first, then the smallest corrected p."""
-    r = rows.sort_values(["passes", "q", "multiple"], ascending=[False, True, False]).iloc[0]
-    fails = [w for w, ok in (("no significativa", r["significant"]), ("no paga 2×", r["pays"]),
-                             ("inestable", r["stable"]), ("pocas operaciones", r["frequent"]))
-             if not ok]
+    r = rows.sort_values(
+        ["passes", "q", "multiple"], ascending=[False, True, False]
+    ).iloc[0]
+    fails = [
+        w
+        for w, ok in (
+            ("no significativa", r["significant"]),
+            ("no paga 2×", r["pays"]),
+            ("inestable", r["stable"]),
+            ("pocas operaciones", r["frequent"]),
+        )
+        if not ok
+    ]
     verdict = "pasa los cuatro filtros" if r["passes"] else "falla: " + ", ".join(fails)
-    return (f"{r['symbol']} {r['timeframe']} {r['direction']} `{r['measure']}` {r['multiple']:.1f}× "
-            f"· p corr. {r['q']:.2f} (cruda {r['p']:.3f}) · {r['trades_per_year']:.0f}/año — "
-            f"{verdict}")
+    return (
+        f"{r['symbol']} {r['timeframe']} {r['direction']} `{r['measure']}` {r['multiple']:.1f}× "
+        f"· p corr. {r['q']:.2f} (cruda {r['p']:.3f}) · {r['trades_per_year']:.0f}/año — "
+        f"{verdict}"
+    )
 
 
 def reading(rows: pd.DataFrame) -> str:
@@ -93,9 +125,11 @@ def reading(rows: pd.DataFrame) -> str:
     ran = pd.DataFrame(rows[rows["n_trades"] >= 30])
     if ran.empty:
         return f"{len(rows)} celdas, ninguna llega a 30 operaciones en build: sin contraste"
-    return (f"{len(ran)} celdas con contraste: {int((ran['p'] <= 0.05).sum())} con p cruda ≤ 0,05, "
-            f"{int(ran['significant'].sum())} significativas tras corregir, "
-            f"{int(ran['passes'].sum())} pasan los cuatro. Mejor: {_best(ran)}")
+    return (
+        f"{len(ran)} celdas con contraste: {int((ran['p'] <= 0.05).sum())} con p cruda ≤ 0,05, "
+        f"{int(ran['significant'].sum())} significativas tras corregir, "
+        f"{int(ran['passes'].sum())} pasan los cuatro. Mejor: {_best(ran)}"
+    )
 
 
 def table(measures: pd.DataFrame, cfg: dict) -> pd.DataFrame:
@@ -113,46 +147,80 @@ def table(measures: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     for e in entries():
         names = links.get(e["id"].split("-")[0] + "-" + e["id"].split("-")[1], [])
         where, named = symbols(e)
-        own = pd.DataFrame(measures[measures["measure"].isin(names) & measures["symbol"].isin(where)
-                                    & measures["direction"].isin(directions(e))])
+        own = pd.DataFrame(
+            measures[
+                measures["measure"].isin(names)
+                & measures["symbol"].isin(where)
+                & measures["direction"].isin(directions(e))
+            ]
+        )
         state = flag(e, names)
-        rows.append({"id": e["id"], "family": e["family"], "assets": str(e["assets"]),
-                     "named": named, "symbols": where, "directions": directions(e),
-                     "claim": _flat(f"{e['direction']} — {e['size']}"),
-                     "source": _flat(e["source"]),
-                     "verified": _flat(e["verified"]), "grade": _flat(e["grade"]), "flag": state,
-                     "measures": names,
-                     "reading": reading(own) if state == MEASURED else WHY.get(
-                         e["id"].split("-")[0] + "-" + e["id"].split("-")[1], "—")})
+        rows.append(
+            {
+                "id": e["id"],
+                "family": e["family"],
+                "assets": str(e["assets"]),
+                "named": named,
+                "symbols": where,
+                "directions": directions(e),
+                "claim": _flat(f"{e['direction']} — {e['size']}"),
+                "source": _flat(e["source"]),
+                "verified": _flat(e["verified"]),
+                "grade": _flat(e["grade"]),
+                "flag": state,
+                "measures": names,
+                "reading": reading(own)
+                if state == MEASURED
+                else WHY.get(e["id"].split("-")[0] + "-" + e["id"].split("-")[1], "—"),
+            }
+        )
     return pd.DataFrame(rows)
 
 
 def _line(r: Any, reading_: str) -> str:
     """One Markdown row; a source the file does not mark verified carries its caveat in bold."""
-    sure = r["verified"] if r["verified"].startswith("yes") else f"**⚠️ {r['verified']}**"
-    return (f"| `{r['id']}` | `{r['family']}` | {r['claim']} | {r['source']} | {sure} · "
-            f"{r['grade']} | «{r['flag']}» | {reading_} |")
+    sure = (
+        r["verified"] if r["verified"].startswith("yes") else f"**⚠️ {r['verified']}**"
+    )
+    return (
+        f"| `{r['id']}` | `{r['family']}` | {r['claim']} | {r['source']} | {sure} · "
+        f"{r['grade']} | «{r['flag']}» | {reading_} |"
+    )
 
 
 def markdown(measures: pd.DataFrame, cfg: dict) -> str:
     """The bibliography view: every entry once, then per asset the entries that name it."""
     got = table(measures, cfg)
-    head = ["| id | familia | qué afirma (dirección — tamaño) | fuente | verificado · grado | "
-            "estado | lo medido aquí |", "|---|---|---|---|---|---|---|"]
+    head = [
+        "| id | familia | qué afirma (dirección — tamaño) | fuente | verificado · grado | "
+        "estado | lo medido aquí |",
+        "|---|---|---|---|---|---|---|",
+    ]
     counts = got["flag"].value_counts()
-    parts = [", ".join(f"{n} «{k}»" for k, n in counts.items()) + f" — {len(got)} entradas.", ""]
+    parts = [
+        ", ".join(f"{n} «{k}»" for k, n in counts.items()) + f" — {len(got)} entradas.",
+        "",
+    ]
     r: Any
     parts += head + [_line(r, str(r["reading"])) for _, r in got.iterrows()]
     for symbol in sorted(s for group in CLASSES.values() for s in group):
         mine = got[got["named"] & got["symbols"].map(lambda v: symbol in v)]  # noqa: B023 map runs immediately
         parts += ["", f"#### `{symbol}` — lo que la bibliografía dice nombrándolo", ""]
         if mine.empty:
-            parts.append("Ninguna entrada lo nombra; le aplican las de su clase (tabla de arriba).")
+            parts.append(
+                "Ninguna entrada lo nombra; le aplican las de su clase (tabla de arriba)."
+            )
             continue
         parts += head
         for _, r in mine.iterrows():
-            own = pd.DataFrame(measures[measures["measure"].isin(r["measures"])
-                                        & (measures["symbol"] == symbol)
-                                        & measures["direction"].isin(r["directions"])])
-            parts.append(_line(r, reading(own) if r["flag"] == MEASURED else str(r["reading"])))
+            own = pd.DataFrame(
+                measures[
+                    measures["measure"].isin(r["measures"])
+                    & (measures["symbol"] == symbol)
+                    & measures["direction"].isin(r["directions"])
+                ]
+            )
+            parts.append(
+                _line(r, reading(own) if r["flag"] == MEASURED else str(r["reading"]))
+            )
     return "\n".join(parts) + "\n"

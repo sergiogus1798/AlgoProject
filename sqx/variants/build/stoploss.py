@@ -8,23 +8,29 @@ PERIOD = 20
 # The #StopLoss.StopLoss# parameter of an entry, holding the "no stop" formula. Only that one:
 # #ProfitTarget.ProfitTarget# carries the very same SLPT.None and must stay untouched.
 # SQX writes the attributes in no fixed order: `key=` is not always the first one.
-EMPTY = re.compile(r'(<Param\b[^>]*\bkey="#StopLoss\.StopLoss#"[^>]*>\s*)<Formula key="SQ\.Formulas\.SLPT\.None" />')
+EMPTY = re.compile(
+    r'(<Param\b[^>]*\bkey="#StopLoss\.StopLoss#"[^>]*>\s*)<Formula key="SQ\.Formulas\.SLPT\.None" />'
+)
 ENTRY = re.compile(r'<Item\b[^>]*key="Enter(?:AtMarket|AtStop|AtLimit)"')
 # What SQX itself writes for `SL = X * ATR(20)`, copied from tests/fixtures/strategy.sqx.
-FORMULA = ('<Formula key="SQ.Formulas.SLPT.ATRBasedValue">\n'
-           '{pad}  <Param key="#Value#" controlType="jspinnerVar" type="double" variable="true">'
-           f'{VARIABLE}</Param>\n'
-           '{pad}  <Param key="#AtrPeriod#" controlType="jspinnerVar" type="int">'
-           f'{PERIOD}</Param>\n'
-           '{pad}</Formula>')
-DECLARATION = ('<variable makeExternal="true">\n'
-               '{pad}  <id>{name}</id>\n'
-               '{pad}  <name>{name}</name>\n'
-               '{pad}  <type>double</type>\n'
-               '{pad}  <value>{value}</value>\n'
-               '{pad}  <paramType>ParamTypeExitUsed</paramType>\n'
-               '{pad}  <makeExternal>true</makeExternal>\n'
-               '{pad}</variable>\n{pad}')
+FORMULA = (
+    '<Formula key="SQ.Formulas.SLPT.ATRBasedValue">\n'
+    '{pad}  <Param key="#Value#" controlType="jspinnerVar" type="double" variable="true">'
+    f"{VARIABLE}</Param>\n"
+    '{pad}  <Param key="#AtrPeriod#" controlType="jspinnerVar" type="int">'
+    f"{PERIOD}</Param>\n"
+    "{pad}</Formula>"
+)
+DECLARATION = (
+    '<variable makeExternal="true">\n'
+    "{pad}  <id>{name}</id>\n"
+    "{pad}  <name>{name}</name>\n"
+    "{pad}  <type>double</type>\n"
+    "{pad}  <value>{value}</value>\n"
+    "{pad}  <paramType>ParamTypeExitUsed</paramType>\n"
+    "{pad}  <makeExternal>true</makeExternal>\n"
+    "{pad}</variable>\n{pad}"
+)
 FIRST_VARIABLE = re.compile(r"([ \t]*)<variable\b")
 
 
@@ -59,5 +65,9 @@ def graft(portfolio: str, x: float) -> str:
     assert first is not None
     pad = first.group(1)
     value = f"{x:g}"
-    return (out[:first.start()] + pad + DECLARATION.format(pad=pad, name=VARIABLE, value=value)
-            + out[first.start() + len(pad):])
+    return (
+        out[: first.start()]
+        + pad
+        + DECLARATION.format(pad=pad, name=VARIABLE, value=value)
+        + out[first.start() + len(pad) :]
+    )

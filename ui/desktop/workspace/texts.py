@@ -31,43 +31,58 @@ PREFLIGHT = (
     "últimas 24 h, su log no se escribió en los últimos 15 min ni dice que un run empezó "
     "y no acabó); que el proyecto lleve las tareas del paso; que un build vaya sólo al "
     "custodio; que la tarea tenga estrategias en su databank de entrada; y que no haya otro "
-    "lanzamiento en cola. Si algo falla, el botón se apaga y dice por qué.")
+    "lanzamiento en cola. Si algo falla, el botón se apaga y dice por qué."
+)
 
 # The steps whose short line the drawer shows under the step's own why.
 STEP_NOTES = {
     "4": PREFLIGHT,
     "16.5": "QUÉ HACE. Fabrica los parámetros de cada madre en un lote de variantes (un hipercubo "
-            "latino sobre la meseta del SPP), lo reteste en SQX y dibuja el mapa de parámetros: "
-            "qué parámetros mueven el exceso por año de la madre y si ese ranking se puede leer "
-            "o es ruido. Diagnóstico: no corta nada, y el mapa no lee oos2.",
+    "latino sobre la meseta del SPP), lo reteste en SQX y dibuja el mapa de parámetros: "
+    "qué parámetros mueven el exceso por año de la madre y si ese ranking se puede leer "
+    "o es ruido. Diagnóstico: no corta nada, y el mapa no lee oos2.",
     "17": "QUÉ MIRA. Para cada madre, sus variantes: ¿las que mejor van dentro de muestra son "
-          "también las que mejor van fuera? Mide la ρ de Spearman del exceso por año (un "
-          "coeficiente de −1 a +1) contra un nulo que voltea los días de fuera, y mira si el top "
-          "que elegiría un optimizador gana fuera. Estado: PASA (un veto levantado, no un voto a "
-          "favor), LIMBO o NO PASA. No descarta en SQX. Lee el oos2 y apunta su fila en el "
-          "ledger.",
+    "también las que mejor van fuera? Mide la ρ de Spearman del exceso por año (un "
+    "coeficiente de −1 a +1) contra un nulo que voltea los días de fuera, y mira si el top "
+    "que elegiría un optimizador gana fuera. Estado: PASA (un veto levantado, no un voto a "
+    "favor), LIMBO o NO PASA. No descarta en SQX. Lee el oos2 y apunta su fila en el "
+    "ledger.",
 }
 
 # Where the ⚙ of each step takes the owner to edit that step's configuration: a section of
 # «Configuración SQX» (its key in /api/sqxconfig), or «Activos» on the project's asset.
-SETTINGS = {"4": ("Activos", ""), "6": ("Configuración SQX", "complexity"),
-            "7": ("Activos", ""), "9": ("Configuración SQX", "crossmarket"),
-            "10.5": ("Configuración SQX", "crosstf"), "11": ("Configuración SQX", "crosstf"),
-            "13": ("Configuración SQX", "mc_retest"), "15": ("Configuración SQX", "spp"),
-            "16.5": ("Configuración SQX", "wfc"), "17": ("Configuración SQX", "wfc"),
-            "18": ("Configuración SQX", "cscv"), "19": ("Configuración SQX", "wfm")}
+SETTINGS = {
+    "4": ("Activos", ""),
+    "6": ("Configuración SQX", "complexity"),
+    "7": ("Activos", ""),
+    "9": ("Configuración SQX", "crossmarket"),
+    "10.5": ("Configuración SQX", "crosstf"),
+    "11": ("Configuración SQX", "crosstf"),
+    "13": ("Configuración SQX", "mc_retest"),
+    "15": ("Configuración SQX", "spp"),
+    "16.5": ("Configuración SQX", "wfc"),
+    "17": ("Configuración SQX", "wfc"),
+    "18": ("Configuración SQX", "cscv"),
+    "19": ("Configuración SQX", "wfm"),
+}
 # What the ⚙ says when the step's settings have no editing screen in the window.
-NO_SCREEN = ("la ventana no tiene pantalla para editar su configuración: está en el "
-             "config.yaml de cada estudio. Abajo, «configuración» la enseña (sólo lectura) con "
-             "los valores que correrán para este proyecto.")
+NO_SCREEN = (
+    "la ventana no tiene pantalla para editar su configuración: está en el "
+    "config.yaml de cada estudio. Abajo, «configuración» la enseña (sólo lectura) con "
+    "los valores que correrán para este proyecto."
+)
 # Said on the SQX settings a step's ⚙ opens: they reach new projects, not this one's tasks.
-NOT_YET = ("Lo que cambies aquí vale para los proyectos que se creen desde ahora: las tareas "
-           "de {project} ya están escritas y «▶ SQX» no las reescribe. Para que el cambio llegue "
-           "a este proyecto hay que volver a configurar el paso {n} (su skill en el chat). "
-           "Vuelve con «Proyecto» en la barra de la izquierda.")
+NOT_YET = (
+    "Lo que cambies aquí vale para los proyectos que se creen desde ahora: las tareas "
+    "de {project} ya están escritas y «▶ SQX» no las reescribe. Para que el cambio llegue "
+    "a este proyecto hay que volver a configurar el paso {n} (su skill en el chat). "
+    "Vuelve con «Proyecto» en la barra de la izquierda."
+)
 # Said instead for a Python step (17, 18): its study values are read again on the next run.
-STUDY_NOW = ("Viene del paso {n} de {project}: los valores del estudio (su config.yaml) valen "
-             "desde el próximo run. Vuelve con «Proyecto» en la barra de la izquierda.")
+STUDY_NOW = (
+    "Viene del paso {n} de {project}: los valores del estudio (su config.yaml) valen "
+    "desde el próximo run. Vuelve con «Proyecto» en la barra de la izquierda."
+)
 
 
 def informes(table: dict) -> str:
@@ -78,8 +93,10 @@ def informes(table: dict) -> str:
     MCR_All, which never was an SQX databank.
     """
     if table.get("writing"):
-        return ("SQX está escribiendo este proyecto: filas de la cosecha y los informes hasta "
-                "que acabe")
+        return (
+            "SQX está escribiendo este proyecto: filas de la cosecha y los informes hasta "
+            "que acabe"
+        )
     if table.get("held_by"):
         return f"vacío en el {table['held_by']}: filas de la cosecha y los informes"
     if table.get("databank") == "MCR_All":
@@ -89,10 +106,19 @@ def informes(table: dict) -> str:
 
 # The Databanks panel's tabs with no aggregate equity beside the table (owner, 2026-09-29):
 # every test's databank, as the IS/OOS gate already was.
-TABLE_ONLY = {"Puerta IS/OOS", "Cross Market", "Cross Timeframe", "MC Retest", "SPP",
-              "WFM + WFC + CSCV + Market Surfaces", "Cierre"}
+TABLE_ONLY = {
+    "Puerta IS/OOS",
+    "Cross Market",
+    "Cross Timeframe",
+    "MC Retest",
+    "SPP",
+    "WFM + WFC + CSCV + Market Surfaces",
+    "Cierre",
+}
 # The ⚙ Métricas button's tooltip, which the «?» reads too.
-CHOOSER = ("Elige qué métricas enseña la tabla: quita las de siempre (hasta dejar, por ejemplo, "
-           "solo Beneficio neto y DD máximo) o añade cualquiera de IS, OOS1, OOS2 o IS+OOS1. "
-           "Se guarda para este databank: vale en todas sus pestañas y al volver a abrir la "
-           "ventana; otro databank (Cross Market, SPP…) guarda la suya.")
+CHOOSER = (
+    "Elige qué métricas enseña la tabla: quita las de siempre (hasta dejar, por ejemplo, "
+    "solo Beneficio neto y DD máximo) o añade cualquiera de IS, OOS1, OOS2 o IS+OOS1. "
+    "Se guarda para este databank: vale en todas sus pestañas y al volver a abrir la "
+    "ventana; otro databank (Cross Market, SPP…) guarda la suya."
+)

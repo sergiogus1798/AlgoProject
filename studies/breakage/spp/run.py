@@ -38,11 +38,27 @@ class Read(TypedDict):
 
 
 PlateauSpan = TypedDict("PlateauSpan", {"from": float, "to": float})
-Live = TypedDict("Live", {
-    "name": str, "eta2": float, "inert": bool, "center": float, "center_rule": str,
-    "class": str, "plateau": PlateauSpan, "levels": list[float], "original": float,
-    "argmax_is": float, "plateau_width": int, "spike": bool, "is_shift": bool})
-Frozen = TypedDict("Frozen", {"name": str, "value": float, "reason": str, "class": str, "groups": int})
+Live = TypedDict(
+    "Live",
+    {
+        "name": str,
+        "eta2": float,
+        "inert": bool,
+        "center": float,
+        "center_rule": str,
+        "class": str,
+        "plateau": PlateauSpan,
+        "levels": list[float],
+        "original": float,
+        "argmax_is": float,
+        "plateau_width": int,
+        "spike": bool,
+        "is_shift": bool,
+    },
+)
+Frozen = TypedDict(
+    "Frozen", {"name": str, "value": float, "reason": str, "class": str, "groups": int}
+)
 
 
 class Brief(TypedDict):
@@ -84,7 +100,9 @@ def read(directory: Path, strategy: str, settings: dict) -> Read:
 
     # The profile reads the floored grid (no shift rows, no thin permutations) on its own metric.
     pmetric = settings["profile"]["metric"]
-    marginal_grid, _ = mapa.floored(export.grid(directory, strategy), names, settings["grid"])
+    marginal_grid, _ = mapa.floored(
+        export.grid(directory, strategy), names, settings["grid"]
+    )
     if marginal_grid.empty:
         marginal_grid = export.without_original(grid)
     profiles: dict[str, Profile] = {}
@@ -93,14 +111,20 @@ def read(directory: Path, strategy: str, settings: dict) -> Read:
         shape = profile.plateau(curve, design["plateau_share"])
         profiles[name] = {"curve": curve, "plateau": shape}
 
-    return {"strategy": strategy, "source": str(directory), "metric": metric,
-            "parameters": names, "grid": grid, "profile_metric": pmetric,
-            "eta2": influence.eta_squared(grid, names, metrics),
-            "duplicates": influence.duplicate_test(grid, names),
-            "profiles": profiles,
-            "noise": noise.noise_check(grid, metric, settings["verdict"]["margin"]),
-            "shape": noise.shape(grid, metric),
-            "original": export.original(directory, strategy)}
+    return {
+        "strategy": strategy,
+        "source": str(directory),
+        "metric": metric,
+        "parameters": names,
+        "grid": grid,
+        "profile_metric": pmetric,
+        "eta2": influence.eta_squared(grid, names, metrics),
+        "duplicates": influence.duplicate_test(grid, names),
+        "profiles": profiles,
+        "noise": noise.noise_check(grid, metric, settings["verdict"]["margin"]),
+        "shape": noise.shape(grid, metric),
+        "original": export.original(directory, strategy),
+    }
 
 
 def levels_for(eta2: float, live: list[float], design: dict) -> int:
@@ -157,37 +181,68 @@ def brief(result: Read, settings: dict) -> Brief:
 
     parameters: list[Live] = []
     for name in live:
-        curve, shape = result["profiles"][name]["curve"], result["profiles"][name]["plateau"]
+        curve, shape = (
+            result["profiles"][name]["curve"],
+            result["profiles"][name]["plateau"],
+        )
         count = levels_for(float(eta2[name]), shares, design)
         shift = mapa.is_fixed(name, settings["grid"]["fixed"])
-        parameters.append({
-            "name": name, "eta2": float(eta2[name]), "inert": bool(dup.loc[name, "inert"]),
-            "center": shape["center"], "center_rule": "plateau_midpoint",
-            # A shift stays where it was built (owner, 2026-09-26): it changes which bar the
-            # rule reads, not how sensitive the rule is.
-            # `class` and `plateau` are what the variant factory's Latin hypercube reads
-            # (encargo 48 F): a live parameter moves inside [from, to], a shift never moves.
-            "class": "shift" if shift else "live",
-            "plateau": {"from": shape["from"], "to": shape["to"]},
-            "levels": ([float(result["original"][name])] if shift else
-                       profile.design_levels(curve, shape, result["original"][name], count,
-                                             design["min_span"])),
-            "original": float(result["original"][name]), "argmax_is": shape["argmax"],
-            "plateau_width": shape["width"],
-            # Width 1 means there is no plateau on this axis: the "centre" is the argmax
-            # wearing another name, and a deployment sitting on it has no margin either
-            # side. The fabrication stage must not read that centre as stable.
-            "spike": shape["width"] == 1,
-            "is_shift": shift})
+        parameters.append(
+            {
+                "name": name,
+                "eta2": float(eta2[name]),
+                "inert": bool(dup.loc[name, "inert"]),
+                "center": shape["center"],
+                "center_rule": "plateau_midpoint",
+                # A shift stays where it was built (owner, 2026-09-26): it changes which bar the
+                # rule reads, not how sensitive the rule is.
+                # `class` and `plateau` are what the variant factory's Latin hypercube reads
+                # (encargo 48 F): a live parameter moves inside [from, to], a shift never moves.
+                "class": "shift" if shift else "live",
+                "plateau": {"from": shape["from"], "to": shape["to"]},
+                "levels": (
+                    [float(result["original"][name])]
+                    if shift
+                    else profile.design_levels(
+                        curve,
+                        shape,
+                        result["original"][name],
+                        count,
+                        design["min_span"],
+                    )
+                ),
+                "original": float(result["original"][name]),
+                "argmax_is": shape["argmax"],
+                "plateau_width": shape["width"],
+                # Width 1 means there is no plateau on this axis: the "centre" is the argmax
+                # wearing another name, and a deployment sitting on it has no margin either
+                # side. The fabrication stage must not read that centre as stable.
+                "spike": shape["width"] == 1,
+                "is_shift": shift,
+            }
+        )
 
-    return {"strategy": result["strategy"], "source": result["source"],
-            "verdict": result["noise"]["verdict"], "metric": metric,
-            "profile_metric": result["profile_metric"],
-            "n_eff": result["noise"]["n_eff"], "noise_max": result["noise"]["noise_max"],
-            "observed_max": result["noise"]["observed_max"],
-            "excess": result["noise"]["excess"],
-            "parameters": parameters,
-            "frozen": [{"name": n, "value": result["original"][n],
-                        "reason": "exact_duplicates", "class": "frozen",
-                        "groups": int(dup.loc[n, "groups"])} for n in frozen],
-            "strata": design["strata"], "n_target": design["n_target"]}
+    return {
+        "strategy": result["strategy"],
+        "source": result["source"],
+        "verdict": result["noise"]["verdict"],
+        "metric": metric,
+        "profile_metric": result["profile_metric"],
+        "n_eff": result["noise"]["n_eff"],
+        "noise_max": result["noise"]["noise_max"],
+        "observed_max": result["noise"]["observed_max"],
+        "excess": result["noise"]["excess"],
+        "parameters": parameters,
+        "frozen": [
+            {
+                "name": n,
+                "value": result["original"][n],
+                "reason": "exact_duplicates",
+                "class": "frozen",
+                "groups": int(dup.loc[n, "groups"]),
+            }
+            for n in frozen
+        ],
+        "strata": design["strata"],
+        "n_target": design["n_target"],
+    }

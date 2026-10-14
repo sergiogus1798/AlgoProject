@@ -39,7 +39,7 @@ STRATEGY = pd.read_parquet(_export, columns=["strategy"])["strategy"].iloc[0]
 QUERY = STRATEGY.removeprefix("Strategy ")
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 SCRATCH = tempfile.TemporaryDirectory(prefix="ui-cmdpalette-")
-LOADS: list = []     # what the load bar asked the daemon to start
+LOADS: list = []  # what the load bar asked the daemon to start
 
 
 def serve() -> None:
@@ -63,8 +63,9 @@ def serve() -> None:
     tasklog.status = lambda role, project: None
     # Choosing a databank queues its loading; here the jobs are written down, never started —
     # two of them would run orderstocsv on the conductor.
-    loadstate.jobs = SimpleNamespace(listing=jobs.listing,
-                                     start=lambda *a, **k: LOADS.append((a, k)))
+    loadstate.jobs = SimpleNamespace(
+        listing=jobs.listing, start=lambda *a, **k: LOADS.append((a, k))
+    )
     QSettings.setPath(QSettings.NativeFormat, QSettings.UserScope, SCRATCH.name)
     QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, SCRATCH.name)
     cmdrank.STORE = ("AlgoProjectTest", "cmdpalette")
@@ -110,9 +111,13 @@ def test_match() -> None:
     assert m("busquedas", "Búsquedas") == 0
     assert m("xyz", "Proyecto") is None and m(QUERY, STRATEGY) is not None
     assert m("est", "Estrategia") < m("est", "Registro de búsquedas")
-    items = [{"kind": "zone", "label": z, "also": cmdrank.ALIASES.get(z, ())}
-             for z in ("En marcha", "Registro de búsquedas", "Proyecto")]
-    assert [i["label"] for i in cmdrank.rank("ledger", items, [])] == ["Registro de búsquedas"]
+    items = [
+        {"kind": "zone", "label": z, "also": cmdrank.ALIASES.get(z, ())}
+        for z in ("En marcha", "Registro de búsquedas", "Proyecto")
+    ]
+    assert [i["label"] for i in cmdrank.rank("ledger", items, [])] == [
+        "Registro de búsquedas"
+    ]
 
 
 def test_lazy() -> None:
@@ -124,14 +129,18 @@ def test_zone() -> None:
     """A zone by an alias, through open_zone: the stack and the sidebar agree."""
     pick(QAPP, SHELL, "ledger")
     assert SHELL.stack.currentWidget() is SHELL.ledger
-    assert [n for n, b in SHELL.nav.items() if b.isChecked()] == ["Registro de búsquedas"]
+    assert [n for n, b in SHELL.nav.items() if b.isChecked()] == [
+        "Registro de búsquedas"
+    ]
 
 
 def test_strategy() -> None:
     """A strategy of the chosen databank: SELECTION gets name and identity, Estrategia opens."""
     SELECTION.choose(project=PROJECT, databank=DATABANK)
     pick(QAPP, SHELL, QUERY)
-    assert SELECTION.now["strategy"] == STRATEGY and len(SELECTION.now["identity"]) == 64
+    assert (
+        SELECTION.now["strategy"] == STRATEGY and len(SELECTION.now["identity"]) == 64
+    )
     assert SELECTION.now["project"] == PROJECT and SELECTION.now["databank"] == DATABANK
     assert SHELL.stack.currentWidget() is SHELL.estrategia
     assert SHELL.estrategia.currentWidget() is SHELL.ficha
@@ -146,8 +155,11 @@ def test_study() -> None:
     assert SHELL.ficha.page is not None and SHELL.ficha.page.key == "edgeCost"
     QTest.keyClick(SHELL, Qt.Key_K, Qt.ControlModifier)
     settle(QAPP)
-    assert not [i for i in SHELL.cmdpalette.items
-                if i["kind"] == "study" and i["study"] == "gate"]
+    assert not [
+        i
+        for i in SHELL.cmdpalette.items
+        if i["kind"] == "study" and i["study"] == "gate"
+    ]
     QTest.keyClick(SHELL.cmdpalette.field, Qt.Key_Escape)
     settle(QAPP)
 
@@ -165,7 +177,10 @@ def test_recent_and_escape() -> None:
     SHELL.cmdpalette.grab().save(str(SHOTS / "I-palette.png"))
     QTest.keyClick(SHELL.cmdpalette.field, Qt.Key_Escape)
     settle(QAPP)
-    assert not SHELL.cmdpalette.isVisible() and SHELL.stack.currentWidget() is SHELL.estrategia
+    assert (
+        not SHELL.cmdpalette.isVisible()
+        and SHELL.stack.currentWidget() is SHELL.estrategia
+    )
 
 
 def test_store_limits() -> None:
@@ -195,8 +210,16 @@ def test_text_field_keeps_ctrl_k() -> None:
 
 def main() -> None:
     """Run every check and print its time."""
-    for test in (test_match, test_lazy, test_zone, test_strategy, test_study,
-                 test_recent_and_escape, test_store_limits, test_text_field_keeps_ctrl_k):
+    for test in (
+        test_match,
+        test_lazy,
+        test_zone,
+        test_strategy,
+        test_study,
+        test_recent_and_escape,
+        test_store_limits,
+        test_text_field_keeps_ctrl_k,
+    ):
         t = time.time()
         test()
         print(f"ok  {test.__name__}  {time.time() - t:.1f} s")

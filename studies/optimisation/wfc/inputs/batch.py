@@ -11,7 +11,7 @@ from engines.market import reprice
 from engines.variants import fingerprint, look, panel
 from engines.weekly import panel as weekly
 
-TRADES = "variant_trades.parquet"       # written by sqx.variants.varianttrades
+TRADES = "variant_trades.parquet"  # written by sqx.variants.varianttrades
 MAIN = "Main"
 STEP = 17
 # The excess is step 14's: the gate's drift block, never a copy of its values.
@@ -30,14 +30,19 @@ def drift() -> dict[str, Any]:
 
 def span(asset: dict, legs: tuple) -> tuple[str, str]:
     """The declared bounds of consecutive legs, as strings a DatetimeIndex slices by."""
-    return (str(asset["segments"][legs[0]]["from"]), str(asset["segments"][legs[-1]]["to"]))
+    return (
+        str(asset["segments"][legs[0]]["from"]),
+        str(asset["segments"][legs[-1]]["to"]),
+    )
 
 
 def window(asset: dict, legs: tuple) -> tuple[str, str]:
     """First and last day of consecutive legs as full dates, both inside; a bare year is whole."""
     last = asset["segments"][legs[-1]]["to"]
-    return (assetdata.segment_start(asset, legs[0]),
-            f"{last}-12-31" if isinstance(last, int) else str(last))
+    return (
+        assetdata.segment_start(asset, legs[0]),
+        f"{last}-12-31" if isinstance(last, int) else str(last),
+    )
 
 
 def years(asset: dict, legs: tuple) -> float:
@@ -48,12 +53,20 @@ def years(asset: dict, legs: tuple) -> float:
 
 def trades(work: Path, leg: str) -> pd.DataFrame:
     """One leg's trades on the main market, every variant; no other leg's rows are read."""
-    got = pd.read_parquet(work / TRADES, filters=[("leg", "==", leg), ("market", "==", MAIN)])
+    got = pd.read_parquet(
+        work / TRADES, filters=[("leg", "==", leg), ("market", "==", MAIN)]
+    )
     return got.assign(variant_id=got["variant_id"].astype(str))
 
 
-def priced(raw: pd.DataFrame, symbol: str, bars: pd.DataFrame, leg: str,
-           term: dict | None = None, drift_span: tuple[str, str] | None = None) -> pd.DataFrame:
+def priced(
+    raw: pd.DataFrame,
+    symbol: str,
+    bars: pd.DataFrame,
+    leg: str,
+    term: dict | None = None,
+    drift_span: tuple[str, str] | None = None,
+) -> pd.DataFrame:
     """One leg's trades with their excess, after costs (`net`) and before them (`gross`).
 
     Args:
@@ -70,11 +83,20 @@ def priced(raw: pd.DataFrame, symbol: str, bars: pd.DataFrame, leg: str,
     """
     asset = assetdata.load(symbol)
     feed = asset["sqx_symbol"]
-    return weekly.per_trade(raw, bars, reprice.costs(feed, leg), span(asset, (leg,)),
-                            term or drift(), feed, drift_span)
+    return weekly.per_trade(
+        raw,
+        bars,
+        reprice.costs(feed, leg),
+        span(asset, (leg,)),
+        term or drift(),
+        feed,
+        drift_span,
+    )
 
 
-def read(work: Path, symbol: str, timeframe: str, legs: tuple = panel.SEGMENTS) -> dict[str, Any]:
+def read(
+    work: Path, symbol: str, timeframe: str, legs: tuple = panel.SEGMENTS
+) -> dict[str, Any]:
     """Everything the compositions over `legs` are measured on, the door asked first.
 
     Args:
@@ -95,10 +117,16 @@ def read(work: Path, symbol: str, timeframe: str, legs: tuple = panel.SEGMENTS) 
     asset = assetdata.load(symbol)
     bars = barstore.read(asset["sqx_symbol"], timeframe)
     raw = {leg: trades(work, leg) for leg in legs}
-    got = {"per": {leg: priced(raw[leg], symbol, bars, leg)[COLUMNS] for leg in legs},
-           "prints": fingerprint.prints(pd.concat([raw[leg] for leg in legs if leg != "oos2"]))}
+    got = {
+        "per": {leg: priced(raw[leg], symbol, bars, leg)[COLUMNS] for leg in legs},
+        "prints": fingerprint.prints(
+            pd.concat([raw[leg] for leg in legs if leg != "oos2"])
+        ),
+    }
     if "oos2" in legs:
-        prior = priced(raw["oos2"], symbol, bars, "oos2", PRIOR, span(asset, panel.SEGMENTS[:2]))
+        prior = priced(
+            raw["oos2"], symbol, bars, "oos2", PRIOR, span(asset, panel.SEGMENTS[:2])
+        )
         got["prior"] = prior.groupby("variant_id")["net"].sum()
     return got
 

@@ -15,8 +15,15 @@ def row(name: str, detail: str, seconds: float) -> None:
     path = os.environ.get(ENV)
     if path:
         with open(path, "a", newline="", encoding="utf-8") as f:
-            csv.writer(f).writerow([f"{time.time() - seconds:.3f}", f"{seconds:.3f}", name,
-                                    detail, os.getpid()])
+            csv.writer(f).writerow(
+                [
+                    f"{time.time() - seconds:.3f}",
+                    f"{seconds:.3f}",
+                    name,
+                    detail,
+                    os.getpid(),
+                ]
+            )
 
 
 def note(name: str, detail: str) -> None:

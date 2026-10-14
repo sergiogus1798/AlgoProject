@@ -11,7 +11,9 @@ from core.paths import ROOT
 
 FILE = ROOT / "ledger" / "thresholds.yaml"
 SELECTOR = re.compile(r"^(\w+)\[(\w+)=([^\]]+)\]$")
-PLACEHOLDER = "ledger:"   # what a module's config.yaml writes where the ledger owns the number
+PLACEHOLDER = (
+    "ledger:"  # what a module's config.yaml writes where the ledger owns the number
+)
 
 
 def declared() -> list[dict]:
@@ -46,8 +48,10 @@ def value(key: str) -> object:
     """
     found = [row["value"] for row in declared() if row["key"] == key]
     if len(found) != 1:
-        raise KeyError(f"{key}: declared {len(found)} times in {FILE.name}, "
-                       "a module reading it needs exactly one")
+        raise KeyError(
+            f"{key}: declared {len(found)} times in {FILE.name}, "
+            "a module reading it needs exactly one"
+        )
     return found[0]
 
 
@@ -129,9 +133,18 @@ def divergences() -> pd.DataFrame:
     for row in declared():
         live = resolve(row["source"])
         migrated = isinstance(live, str) and live.startswith(PLACEHOLDER)
-        rows.append({"key": row["key"], "declarado": row["value"],
-                     "lee_de": "ledger" if migrated else "copia",
-                     "coincide": bool(live == PLACEHOLDER + row["key"] if migrated
-                                      else live == row["value"]),
-                     "fijado_por": row["set_by"], "el": row["set_on"]})
+        rows.append(
+            {
+                "key": row["key"],
+                "declarado": row["value"],
+                "lee_de": "ledger" if migrated else "copia",
+                "coincide": bool(
+                    live == PLACEHOLDER + row["key"]
+                    if migrated
+                    else live == row["value"]
+                ),
+                "fijado_por": row["set_by"],
+                "el": row["set_on"],
+            }
+        )
     return pd.DataFrame(rows)

@@ -1,6 +1,5 @@
 """The result as it stands on screen: each tab reduced to the blocks drawn, its choices written in its note."""
 
-
 from typing import Any
 from ui.desktop.blocks import markets
 from ui.desktop.blocks.pick import picked, selectors, shown
@@ -29,13 +28,21 @@ def screen(result: dict, memory: dict[str, dict], alone: bool = True) -> dict[st
         if alone and markets.grouped(tab):
             plain, maps, consensus = markets.split(tab, chosen, pool)
             kept = plain + maps + ([consensus] if consensus else [])
-            pick[markets.KEY] = ", ".join(chosen.get(markets.CHOSEN) or markets.first(tab))
+            pick[markets.KEY] = ", ".join(
+                chosen.get(markets.CHOSEN) or markets.first(tab)
+            )
         else:
             kept = shown(tab, chosen)
         said = " · ".join(f"{s['label']}: {pick[s['key']]}" for s in selectors(tab))
         note = (tab.get("note") or "") + (f" En pantalla: {said}." if said else "")
         # The static page draws only blocks whose tags agree with its selectors' defaults
         # (render/page.shown); with the selectors gone, a kept block must carry no tag either.
-        tabs.append({**tab, "note": note.strip(), "selectors": [],
-                     "blocks": [{k: v for k, v in b.items() if k != "select"} for b in kept]})
+        tabs.append(
+            {
+                **tab,
+                "note": note.strip(),
+                "selectors": [],
+                "blocks": [{k: v for k, v in b.items() if k != "select"} for b in kept],
+            }
+        )
     return {**{k: v for k, v in result.items() if k != "partials"}, "tabs": tabs}

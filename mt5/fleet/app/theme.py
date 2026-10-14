@@ -2,8 +2,13 @@
 
 BG, PANEL, LINE = "#0f1319", "#18202b", "#4a5d73"
 TEXT, DIM, ACCENT = "#eef2f6", "#b3c0cf", "#5cc8ff"
-LIGHTS = {"green": "#3ddc84", "yellow": "#ffc832", "red": "#ff4d4d", "silent": "#a3adb8",
-          "unknown": "#b48cff"}
+LIGHTS = {
+    "green": "#3ddc84",
+    "yellow": "#ffc832",
+    "red": "#ff4d4d",
+    "silent": "#a3adb8",
+    "unknown": "#b48cff",
+}
 GAIN, LOSS = "#3ddc84", "#ff6b6b"
 
 SHEET = f"""
@@ -13,7 +18,7 @@ QLabel#title {{ font-size: 26px; font-weight: bold; color: {ACCENT}; }}
 QLabel#clock {{ color: {DIM}; }}
 QLabel#section {{ font-size: 17px; font-weight: bold; color: {ACCENT}; padding-top: 10px; }}
 QLabel#reasons {{ font-size: 16px; padding: 6px 4px; }}
-QLabel#notes {{ color: {LIGHTS['yellow']}; }}
+QLabel#notes {{ color: {LIGHTS["yellow"]}; }}
 QLabel#empty {{ color: {DIM}; font-size: 16px; background: {PANEL}; border: 1px solid {LINE};
                 border-radius: 6px; padding: 16px; }}
 QLabel#legend {{ color: {DIM}; font-size: 14px; background: {PANEL}; border: 1px solid {LINE};

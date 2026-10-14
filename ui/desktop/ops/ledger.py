@@ -3,35 +3,72 @@
 import httpx
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QFrame, QHBoxLayout, QLabel, QTableWidget,
-                               QTableWidgetItem, QTabWidget, QVBoxLayout)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QComboBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QVBoxLayout,
+)
 
 from ui.desktop import client
 from ui.text.glossary import label
 from ui.text.numbers import num
 from ui.desktop.theme import C, T
 
-FUNNEL = [("cuándo", "ts"), ("paso", "step"), ("tramo", "segment"), ("entran", "n_in"),
-          ("salen", "n_out"), ("conserva", "kept"), ("criterio", "criterion")]
-SEARCHES = [("cuándo", "ts"), ("paso", "step"), ("tramo", "segment"), ("criterio", "criterion"),
-            ("entran", "n_in"), ("salen", "n_out"), ("hash", "config_hash"),
-            ("lanzado por", "launched_by"), ("nota", "note")]
-SEGMENTS = ["tramo", "ventana", "lecturas", "pasos que lo leyeron",
-            "reservado (sólo agente autónomo)"]
-EXPLAIN = ("Una línea por búsqueda que miró datos y redujo una población, en todo el estudio "
-           "(activo + timeframe + familia). Sólo lectura: el ledger no se edita. Tres "
-           "supervivientes de 10.000 no valen lo que tres de 50.")
-WHY = ("Por qué importa: cada mirada a los datos es una prueba más, y cuantas más pruebas, más "
-       "fácil es que el mejor resultado sea suerte. Este registro las cuenta todas — las de los "
-       "estudios, las del SQX y los filtros que aplicas en la ventana («lanzado por: ventana») — "
-       "para que el Sharpe desinflado sepa cuánto se ha buscado.")
-WINDOW = "ventana"          # `launched_by` of the rows the window's filters write (plan 24, F6)
+FUNNEL = [
+    ("cuándo", "ts"),
+    ("paso", "step"),
+    ("tramo", "segment"),
+    ("entran", "n_in"),
+    ("salen", "n_out"),
+    ("conserva", "kept"),
+    ("criterio", "criterion"),
+]
+SEARCHES = [
+    ("cuándo", "ts"),
+    ("paso", "step"),
+    ("tramo", "segment"),
+    ("criterio", "criterion"),
+    ("entran", "n_in"),
+    ("salen", "n_out"),
+    ("hash", "config_hash"),
+    ("lanzado por", "launched_by"),
+    ("nota", "note"),
+]
+SEGMENTS = [
+    "tramo",
+    "ventana",
+    "lecturas",
+    "pasos que lo leyeron",
+    "reservado (sólo agente autónomo)",
+]
+EXPLAIN = (
+    "Una línea por búsqueda que miró datos y redujo una población, en todo el estudio "
+    "(activo + timeframe + familia). Sólo lectura: el ledger no se edita. Tres "
+    "supervivientes de 10.000 no valen lo que tres de 50."
+)
+WHY = (
+    "Por qué importa: cada mirada a los datos es una prueba más, y cuantas más pruebas, más "
+    "fácil es que el mejor resultado sea suerte. Este registro las cuenta todas — las de los "
+    "estudios, las del SQX y los filtros que aplicas en la ventana («lanzado por: ventana») — "
+    "para que el Sharpe desinflado sepa cuánto se ha buscado."
+)
+WINDOW = "ventana"  # `launched_by` of the rows the window's filters write (plan 24, F6)
 
 
 def cell(value: object) -> str:
     """One value as a table prints it: numbers through `num` (a step keeps no trailing .0),
     «—» for nothing; anything else as its text."""
-    return num(value) if value is None or isinstance(value, (int, float, str)) else str(value)
+    return (
+        num(value)
+        if value is None or isinstance(value, (int, float, str))
+        else str(value)
+    )
 
 
 def when(ts: str) -> str:
@@ -39,7 +76,9 @@ def when(ts: str) -> str:
     return ts[:16].replace("T", " ")
 
 
-def table(headers: list[str], rows: list[list[str]], tips: list[str] | None = None) -> QTableWidget:
+def table(
+    headers: list[str], rows: list[list[str]], tips: list[str] | None = None
+) -> QTableWidget:
     """A read-only table.
 
     Args:
@@ -78,15 +117,19 @@ class Ledger(QFrame):
         head.addWidget(QLabel("Registro de búsquedas", objectName="h1"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         head.addWidget(QLabel("Estudio", objectName="kicker"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.pick = QComboBox(minimumWidth=380)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-        self.pick.setToolTip("Un estudio es un activo, un timeframe y una familia de plantillas: "
-                             "la unidad a la que se le debe la corrección por multiplicidad.")
+        self.pick.setToolTip(
+            "Un estudio es un activo, un timeframe y una familia de plantillas: "
+            "la unidad a la que se le debe la corrección por multiplicidad."
+        )
         self.pick.activated.connect(lambda: self.load(self.pick.currentText()))
         head.addWidget(self.pick)
         head.addStretch(1)
         lay.addLayout(head)
         box = QFrame()
-        box.setStyleSheet(f"QFrame {{ border: 1px solid {T['rule']}; border-radius: 4px; }} "
-                          "QLabel { border: none; }")
+        box.setStyleSheet(
+            f"QFrame {{ border: 1px solid {T['rule']}; border-radius: 4px; }} "
+            "QLabel { border: none; }"
+        )
         inside = QVBoxLayout(box)
         inside.setContentsMargins(12, 8, 12, 8)
         inside.addWidget(QLabel(EXPLAIN, wordWrap=True, styleSheet="font-weight: 600;"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
@@ -143,18 +186,25 @@ class Ledger(QFrame):
             self.window_rows.setText("")
             return
         blind = spent["blind"]
-        steps = " · ".join(f"{s} {'hecho' if ran else 'pendiente'}" for s, ran in blind["done"].items())
+        steps = " · ".join(
+            f"{s} {'hecho' if ran else 'pendiente'}" for s, ran in blind["done"].items()
+        )
         colour = C["promising"] if blind["open"] else C["weak"]
         self.blind.setText(f"Pasos 17, 18 y 19 · {steps}\n{blind['text']}")
         self.blind.setStyleSheet(f"color: {colour}; font-weight: 600;")
         pooled = spent["trials"]
-        self.trials.setText(pooled["error"] if "error" in pooled else
-                            f"Probado en total · N = {num(pooled['n'])} candidatos en "
-                            f"{num(pooled['searches'])} búsqueda(s) · σ = {num(pooled['sigma'])} "
-                            f"({pooled['unit']}) — la σ que necesita el Sharpe desinflado")
-        self.trials.setToolTip("N y σ agrupan exactamente todas las búsquedas que registraron "
-                               "la distribución de sus candidatos. Cuanto mayor N, más alto el "
-                               "listón que tiene que superar el mejor Sharpe.")
+        self.trials.setText(
+            pooled["error"]
+            if "error" in pooled
+            else f"Probado en total · N = {num(pooled['n'])} candidatos en "
+            f"{num(pooled['searches'])} búsqueda(s) · σ = {num(pooled['sigma'])} "
+            f"({pooled['unit']}) — la σ que necesita el Sharpe desinflado"
+        )
+        self.trials.setToolTip(
+            "N y σ agrupan exactamente todas las búsquedas que registraron "
+            "la distribución de sus candidatos. Cuanto mayor N, más alto el "
+            "listón que tiene que superar el mejor Sharpe."
+        )
         self.tabs.addTab(self.funnel(data["funnel"], data["rows"]), "Embudo")
         self.tabs.addTab(self.spent(spent), "Historia gastada")
         self.tabs.addTab(self.searches(data["rows"]), "Búsquedas")
@@ -162,8 +212,10 @@ class Ledger(QFrame):
         self.window_rows.setText(
             f"{num(mine)} de {num(len(data['rows']))} búsquedas de este estudio son filtros "
             "aplicados o borrados a mano en la ventana; su criterio sale en violeta."
-            if mine else "Ningún filtro de la ventana en este estudio todavía: cuando apliques "
-                         "uno en «Proyecto», su fila aparece aquí como cualquier búsqueda.")
+            if mine
+            else "Ningún filtro de la ventana en este estudio todavía: cuando apliques "
+            "uno en «Proyecto», su fila aparece aquí como cualquier búsqueda."
+        )
 
     def searches(self, rows: list[dict]) -> QTableWidget:
         """Every search of the study, the window's own filters marked in the accent colour.
@@ -174,9 +226,14 @@ class Ledger(QFrame):
         Returns:
             The table.
         """
-        t = table([h for h, _ in SEARCHES],
-                  [[when(r[k]) if k == "ts" else cell(r[k]) for _, k in SEARCHES] for r in rows],
-                  [f"umbrales: {r['thresholds']}\nnota: {r['note']}" for r in rows])
+        t = table(
+            [h for h, _ in SEARCHES],
+            [
+                [when(r[k]) if k == "ts" else cell(r[k]) for _, k in SEARCHES]
+                for r in rows
+            ],
+            [f"umbrales: {r['thresholds']}\nnota: {r['note']}" for r in rows],
+        )
         for i, r in enumerate(rows):
             if r.get("launched_by") == WINDOW:
                 for c in range(t.columnCount()):
@@ -195,22 +252,36 @@ class Ledger(QFrame):
         Returns:
             The table.
         """
-        t = table([h for h, _ in FUNNEL],
-                  [[when(f[k]) if k == "ts" else num(round(f[k] * 100, 1), "%")
+        t = table(
+            [h for h, _ in FUNNEL],
+            [
+                [
+                    when(f[k])
+                    if k == "ts"
+                    else num(round(f[k] * 100, 1), "%")
                     if k == "kept" and f[k] is not None
-                    else cell(f[k]) for _, k in FUNNEL] for f in funnel],
-                  [f"{r['criterion']}\nnota: {r['note']}" for r in rows])
+                    else cell(f[k])
+                    for _, k in FUNNEL
+                ]
+                for f in funnel
+            ],
+            [f"{r['criterion']}\nnota: {r['note']}" for r in rows],
+        )
         for r, f in enumerate(funnel):
             if rows[r].get("launched_by") == WINDOW:
                 last = t.item(r, len(FUNNEL) - 1)
                 assert last is not None
                 last.setForeground(QColor(C["accent"]))
             share = f["kept"] if f["kept"] is not None else 1
-            colour = C["dead"] if share < 0.5 else C["weak"] if share < 1 else T["muted"]
+            colour = (
+                C["dead"] if share < 0.5 else C["weak"] if share < 1 else T["muted"]
+            )
             kept = t.item(r, 5)
             assert kept is not None
             kept.setForeground(QColor(colour))
-            kept.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            kept.setTextAlignment(
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+            )
         return t
 
     def spent(self, spent: dict) -> QTableWidget:
@@ -227,17 +298,27 @@ class Ledger(QFrame):
             return table(["tramo"], [[virgin["error"]]])
         by = {s["segment"]: s["steps"] for s in spent["segments"]}
         names = list(virgin)
-        t = table(SEGMENTS, [[n, f"{virgin[n]['from']} → {virgin[n]['to']}",
-                              f"{num(virgin[n]['reads'])}×",
-                              ", ".join(cell(s) for s in by.get(n, [])) or "ninguno",
-                              ", ".join(virgin[n]["reserved_for"] or []) or "—"]
-                             for n in names])
+        t = table(
+            SEGMENTS,
+            [
+                [
+                    n,
+                    f"{virgin[n]['from']} → {virgin[n]['to']}",
+                    f"{num(virgin[n]['reads'])}×",
+                    ", ".join(cell(s) for s in by.get(n, [])) or "ninguno",
+                    ", ".join(virgin[n]["reserved_for"] or []) or "—",
+                ]
+                for n in names
+            ],
+        )
         for r, n in enumerate(names):
             if virgin[n]["reserved_for"]:
                 colour = C["promising"] if virgin[n]["reads"] == 0 else C["weak"]
                 reads = t.item(r, 2)
                 assert reads is not None
                 reads.setForeground(QColor(colour))
-                reads.setToolTip("Cuántas veces se ha leído el tramo. Informativo: "
-                                        "sólo un agente autónomo tiene prohibido mirarlo.")
+                reads.setToolTip(
+                    "Cuántas veces se ha leído el tramo. Informativo: "
+                    "sólo un agente autónomo tiene prohibido mirarlo."
+                )
         return t

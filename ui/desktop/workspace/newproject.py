@@ -4,16 +4,25 @@ from typing import Any
 
 from collections.abc import Callable
 
-from PySide6.QtWidgets import (QComboBox, QFormLayout, QFrame, QLineEdit, QPushButton, QSpinBox,
-                               QVBoxLayout)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QFormLayout,
+    QFrame,
+    QLineEdit,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+)
 
 from ui.desktop import background
 from ui.desktop.jobbutton import JobButton
 from ui.desktop.theme import C
 
-CONFIRM = ("Crear «{name}» en el custodio: {template} sobre {symbol} {tf}, todas las tareas del "
-           "workflow (builder --workflow), build de hasta {n} estrategias o {m} min. Antes corre "
-           "core.assets {symbol} (regla 5) y se para si no pasa. No arranca SQX. ¿Crear?")
+CONFIRM = (
+    "Crear «{name}» en el custodio: {template} sobre {symbol} {tf}, todas las tareas del "
+    "workflow (builder --workflow), build de hasta {n} estrategias o {m} min. Antes corre "
+    "core.assets {symbol} (regla 5) y se para si no pasa. No arranca SQX. ¿Crear?"
+)
 
 
 class NewProject(QFrame):
@@ -38,13 +47,23 @@ class NewProject(QFrame):
         self.m.setRange(5, 2880)
         for box in (self.template, self.symbol, self.tf):
             box.currentTextChanged.connect(self.suggest)
-        for label, w in (("Plantilla", self.template), ("Activo", self.symbol),
-                         ("Timeframe", self.tf), ("Nombre", self.name),
-                         ("Estrategias máx. del build", self.n), ("Minutos máx. del build", self.m),
-                         ("Para qué (una frase)", self.purpose)):
+        for label, w in (
+            ("Plantilla", self.template),
+            ("Activo", self.symbol),
+            ("Timeframe", self.tf),
+            ("Nombre", self.name),
+            ("Estrategias máx. del build", self.n),
+            ("Minutos máx. del build", self.m),
+            ("Para qué (una frase)", self.purpose),
+        ):
             rows.addRow(label, w)
-        self.go = JobButton("Crear proyecto", "create/project", self.body, self.confirm,
-                            lambda job: job["rc"] == 0 and self.created(self.name.text()))  # pyright: ignore[reportArgumentType]  # JobButton ignores the return of `ended`
+        self.go = JobButton(
+            "Crear proyecto",
+            "create/project",
+            self.body,
+            self.confirm,
+            lambda job: job["rc"] == 0 and self.created(self.name.text()),  # pyright: ignore[reportArgumentType]  # JobButton ignores the return of `ended`
+        )
         rows.addRow(self.go)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
@@ -70,15 +89,22 @@ class NewProject(QFrame):
 
     def suggest(self) -> None:
         """The name rule 6 accepts, from the three choices; the owner may edit it."""
-        self.name.setText(f"Test_{self.symbol.currentText()}_{self.template.currentText()}_"
-                          f"{self.tf.currentText()}")
+        self.name.setText(
+            f"Test_{self.symbol.currentText()}_{self.template.currentText()}_"
+            f"{self.tf.currentText()}"
+        )
 
     def body(self) -> dict[str, Any]:
         """The form as `POST /api/create/project` reads it."""
-        return {"name": self.name.text().strip(), "template": self.template.currentText(),
-                "symbol": self.symbol.currentText(), "timeframe": self.tf.currentText(),
-                "max_strategies": self.n.value(), "minutes": self.m.value(),
-                "purpose": self.purpose.text().strip()}
+        return {
+            "name": self.name.text().strip(),
+            "template": self.template.currentText(),
+            "symbol": self.symbol.currentText(),
+            "timeframe": self.tf.currentText(),
+            "max_strategies": self.n.value(),
+            "minutes": self.m.value(),
+            "purpose": self.purpose.text().strip(),
+        }
 
     def confirm(self) -> str | None:
         """The confirmation sentence, or None (said under the button) when the form is short."""
@@ -86,5 +112,11 @@ class NewProject(QFrame):
         if not b["name"] or not b["purpose"]:
             self.go.say("falta el nombre o el «para qué»", C["dead"])
             return None
-        return CONFIRM.format(name=b["name"], template=b["template"], symbol=b["symbol"],
-                              tf=b["timeframe"], n=b["max_strategies"], m=b["minutes"])
+        return CONFIRM.format(
+            name=b["name"],
+            template=b["template"],
+            symbol=b["symbol"],
+            tf=b["timeframe"],
+            n=b["max_strategies"],
+            m=b["minutes"],
+        )

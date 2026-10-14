@@ -15,9 +15,26 @@ from pipeline.autopilot.resume import builder_argv
 from sqx.projects import registry
 from studies.research.memory import sources
 
-OLD = ["name", "kind", "install", "created", "purpose", "symbol", "timeframe", "template", "workflow",
-       "retired", "archive", "acceptance"]
-DONE = {"project": "Test_new", "install": "SQX_w2", "timeframe": "H1", "acceptance": {"mode": "m", "sample": "s", "conditions": []}}
+OLD = [
+    "name",
+    "kind",
+    "install",
+    "created",
+    "purpose",
+    "symbol",
+    "timeframe",
+    "template",
+    "workflow",
+    "retired",
+    "archive",
+    "acceptance",
+]
+DONE = {
+    "project": "Test_new",
+    "install": "SQX_w2",
+    "timeframe": "H1",
+    "acceptance": {"mode": "m", "sample": "s", "conditions": []},
+}
 
 
 def fake(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
@@ -26,7 +43,14 @@ def fake(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     with path.open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=OLD)
         w.writeheader()
-        w.writerow({"name": "Test_old", "install": "SQX_w2", "template": "simple:long", "symbol": "X"})
+        w.writerow(
+            {
+                "name": "Test_old",
+                "install": "SQX_w2",
+                "template": "simple:long",
+                "symbol": "X",
+            }
+        )
     monkeypatch.setattr(registry, "project_registry", lambda: path)
     monkeypatch.setattr(sources, "project_registry", lambda: path)
     return path
@@ -41,7 +65,9 @@ def test_refusal_lists_the_table_and_acceptance_reads_it() -> None:
     assert "breakout" in assetmarkets.expected_sign()
 
 
-def test_old_row_without_the_column_reads_and_survives_a_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_old_row_without_the_column_reads_and_survives_a_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """An old file reads (no `family` key); the next record adds the column, old rows empty."""
     path = fake(tmp_path, monkeypatch)
     assert "family" not in registry.rows()[0] and sources.family_of("Test_old") == ""
@@ -51,25 +77,45 @@ def test_old_row_without_the_column_reads_and_survives_a_write(tmp_path: Path, m
     assert path.read_text().splitlines()[0].endswith(",family")
 
 
-def test_family_resolves_from_the_registry_when_there_is_no_template(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_family_resolves_from_the_registry_when_there_is_no_template(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Template archetype first, else the registry's family, else none."""
     fake(tmp_path, monkeypatch)
     registry.record(DONE, "p", "X", "simple:long", "breakout")
-    assert sources.family_of("Test_new") == "breakout" and sources.family_of("Test_unknown") == ""
+    assert (
+        sources.family_of("Test_new") == "breakout"
+        and sources.family_of("Test_unknown") == ""
+    )
     monkeypatch.setattr(sources, "templates", lambda: {"t1": {"archetype": "momentum"}})
-    registry.record({**DONE, "project": "Test_tpl"}, "p", "X", "/x/templates/library/t1/template.sqx")
+    registry.record(
+        {**DONE, "project": "Test_tpl"},
+        "p",
+        "X",
+        "/x/templates/library/t1/template.sqx",
+    )
     assert sources.family_of("Test_tpl") == "momentum"
 
 
 def test_resume_passes_the_family() -> None:
     """store-resume rebuilds a Simple Strategy with the family its row holds."""
-    row = {"template": "simple:long", "purpose": "p", "symbol": "X", "timeframe": "H1", "family": "session"}
+    row = {
+        "template": "simple:long",
+        "purpose": "p",
+        "symbol": "X",
+        "timeframe": "H1",
+        "family": "session",
+    }
     argv = builder_argv("Test_x", row, 1, "custodian")
     assert argv[argv.index("--family") + 1] == "session"
-    assert "--family" not in builder_argv("Test_x", {**row, "family": ""}, 1, "custodian")
+    assert "--family" not in builder_argv(
+        "Test_x", {**row, "family": ""}, 1, "custodian"
+    )
 
 
-def test_recreating_an_old_project_needs_no_family_but_a_new_name_does(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_recreating_an_old_project_needs_no_family_but_a_new_name_does(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """A name with a registry row and no family is accepted on recreate (store-resume); a new one is refused."""
     fake(tmp_path, monkeypatch)
     assert registry.check_family(None, True, "Test_old") is None

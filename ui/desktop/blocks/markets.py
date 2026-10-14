@@ -11,9 +11,11 @@ from ui.desktop.blocks.pick import picked, selectors, shown
 from ui.text.glossary import label
 from ui.desktop.theme import T
 
-KEY = "market"          # the selector a study tags per-market surfaces with (marketSurfaces, E4)
-MOST = 3                # the owner's 22 §6.2: two or three at a time, never more
-CHOSEN = "_markets"     # where the tab's memory keeps the markets on screen
+KEY = (
+    "market"  # the selector a study tags per-market surfaces with (marketSurfaces, E4)
+)
+MOST = 3  # the owner's 22 §6.2: two or three at a time, never more
+CHOSEN = "_markets"  # where the tab's memory keeps the markets on screen
 
 
 def grouped(tab: dict) -> bool:
@@ -25,8 +27,9 @@ def grouped(tab: dict) -> bool:
     Returns:
         True when a `market` selector exists and at least one grid is tagged with it.
     """
-    return (any(s["key"] == KEY for s in selectors(tab))
-            and any(b["kind"] == "grid" and KEY in (b.get("select") or {}) for b in tab["blocks"]))
+    return any(s["key"] == KEY for s in selectors(tab)) and any(
+        b["kind"] == "grid" and KEY in (b.get("select") or {}) for b in tab["blocks"]
+    )
 
 
 def main(tab: dict) -> str:
@@ -41,7 +44,9 @@ def first(tab: dict) -> list[str]:
     return options[:MOST]
 
 
-def split(tab: dict, chosen: dict, pool: list[dict]) -> tuple[list[dict], list[dict], dict | None]:
+def split(
+    tab: dict, chosen: dict, pool: list[dict]
+) -> tuple[list[dict], list[dict], dict | None]:
     """What a grouped tab draws: its other blocks, one grid per chosen market, the consensus.
 
     Args:
@@ -56,15 +61,32 @@ def split(tab: dict, chosen: dict, pool: list[dict]) -> tuple[list[dict], list[d
         recomputed: every combination is already in the result (CONTRACT §1).
     """
     markets = chosen.get(CHOSEN) or first(tab)
-    markets = [main(tab)] + [m for m in markets if m != main(tab)]       # the main one, always first
-    plain = [b for b in shown(tab, {**chosen, KEY: markets[0]})
-             if not (b["kind"] == "grid" and KEY in (b.get("select") or {}))]
-    grids = [b for m in markets for b in shown(tab, {**chosen, KEY: m})
-             if b["kind"] == "grid" and str((b.get("select") or {}).get(KEY)) == m]
+    markets = [main(tab)] + [
+        m for m in markets if m != main(tab)
+    ]  # the main one, always first
+    plain = [
+        b
+        for b in shown(tab, {**chosen, KEY: markets[0]})
+        if not (b["kind"] == "grid" and KEY in (b.get("select") or {}))
+    ]
+    grids = [
+        b
+        for m in markets
+        for b in shown(tab, {**chosen, KEY: m})
+        if b["kind"] == "grid" and str((b.get("select") or {}).get(KEY)) == m
+    ]
     rest = {k: v for k, v in picked(tab, chosen).items() if k != KEY}
-    consensus = next((b for b in pool if b["kind"] == "grid" and b.get("select")
-                      and KEY not in b["select"]
-                      and {k: str(v) for k, v in b["select"].items()} == rest), None)
+    consensus = next(
+        (
+            b
+            for b in pool
+            if b["kind"] == "grid"
+            and b.get("select")
+            and KEY not in b["select"]
+            and {k: str(v) for k, v in b["select"].items()} == rest
+        ),
+        None,
+    )
     return plain, grids, consensus
 
 
@@ -87,7 +109,14 @@ def row(grids: list[dict], consensus: dict | None) -> QWidget:
     lay.addLayout(across)
     if consensus is not None:
         under = QHBoxLayout()
-        lay.addWidget(text(label("markets.consensus")[:1].upper() + label("markets.consensus")[1:], T["text"], 11, True))
+        lay.addWidget(
+            text(
+                label("markets.consensus")[:1].upper() + label("markets.consensus")[1:],
+                T["text"],
+                11,
+                True,
+            )
+        )
         under.addWidget(draw(consensus), 1)
         for _ in grids[1:]:
             under.addWidget(QWidget(), 1)
@@ -119,7 +148,7 @@ def picker(tab: dict, on: list[str], changed: Callable[[list[str]], None]) -> QW
 
     def press(market: str, down: bool) -> None:
         """Add or drop one market, never below one nor above MOST."""
-        if down == (market in keep):       # the echo of a toggle this function made itself
+        if down == (market in keep):  # the echo of a toggle this function made itself
             return
         if down:
             keep.append(market)
@@ -136,10 +165,14 @@ def picker(tab: dict, on: list[str], changed: Callable[[list[str]], None]) -> QW
         b = QPushButton(alias(o))
         b.setCheckable(True)
         b.setChecked(o in keep)
-        b.setStyleSheet(f"QPushButton:checked {{ background: {T['accent']}; color: {T['bg']}; "
-                        "font-weight: 700; }")
-        b.setToolTip("Enseña u oculta la superficie de este mercado. Hasta tres a la vez, todas "
-                     "con la misma escala de color. No recalcula nada.")
+        b.setStyleSheet(
+            f"QPushButton:checked {{ background: {T['accent']}; color: {T['bg']}; "
+            "font-weight: 700; }"
+        )
+        b.setToolTip(
+            "Enseña u oculta la superficie de este mercado. Hasta tres a la vez, todas "
+            "con la misma escala de color. No recalcula nada."
+        )
         b.toggled.connect(lambda down, o=o: press(o, down))
         buttons[o] = b
         lay.addWidget(b)

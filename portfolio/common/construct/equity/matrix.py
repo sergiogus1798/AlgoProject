@@ -5,7 +5,9 @@ from typing import cast
 import pandas as pd
 
 
-def stack(series: dict[str, pd.Series], spans: dict[str, tuple[pd.Timestamp, pd.Timestamp]]) -> pd.DataFrame:
+def stack(
+    series: dict[str, pd.Series], spans: dict[str, tuple[pd.Timestamp, pd.Timestamp]]
+) -> pd.DataFrame:
     """Daily P&L per identity: 0 inside its own history with no P&L, NaN outside it.
 
     Args:
@@ -28,7 +30,10 @@ def stack(series: dict[str, pd.Series], spans: dict[str, tuple[pd.Timestamp, pd.
 
 def monthly(daily: pd.DataFrame) -> pd.DataFrame:
     """Calendar-month sums; NaN only where the whole month is outside a column's history."""
-    return cast(pd.DataFrame, daily.groupby(pd.DatetimeIndex(daily.index).to_period("M")).sum(min_count=1))
+    return cast(
+        pd.DataFrame,
+        daily.groupby(pd.DatetimeIndex(daily.index).to_period("M")).sum(min_count=1),
+    )
 
 
 def segment(frame: pd.DataFrame, calendar: dict, name: str) -> pd.DataFrame:

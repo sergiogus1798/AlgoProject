@@ -1,4 +1,5 @@
 """Where MetaTrader 5 lives inside its Wine prefix, and how to run a Windows program there."""
+
 import os
 import shutil
 import subprocess
@@ -9,7 +10,9 @@ from core.paths import MASTER, MT5_PREFIX
 
 INSTALL = MT5_PREFIX / "drive_c" / "Program Files" / "MetaTrader 5"
 TERMINAL = INSTALL / "terminal64.exe"
-METAEDITOR = INSTALL / "MetaEditor64.exe"   # Linux is case-sensitive: the installer writes this case
+METAEDITOR = (
+    INSTALL / "MetaEditor64.exe"
+)  # Linux is case-sensitive: the installer writes this case
 # The Windows Python bin/mt5-install.sh puts in the prefix, for the MetaTrader5 package.
 PYTHON = MT5_PREFIX / "drive_c" / "Python" / "python.exe"
 # What SQX's generated EAs call: its Sq* indicators and their include.
@@ -32,8 +35,12 @@ def _headless_display() -> str | None:
     xvfb = shutil.which("Xvfb")
     if xvfb is None:
         return None
-    subprocess.Popen([xvfb, HEADLESS_DISPLAY, "-screen", "0", "1280x1024x24", "-nolisten", "tcp"],
-                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    subprocess.Popen(
+        [xvfb, HEADLESS_DISPLAY, "-screen", "0", "1280x1024x24", "-nolisten", "tcp"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
     for _ in range(50):
         if socket.exists():
             return HEADLESS_DISPLAY
@@ -75,17 +82,25 @@ def data_dir() -> Path:
     """
     root = MT5_PREFIX / "drive_c" / "users"
     for origin in root.glob("*/AppData/Roaming/MetaQuotes/Terminal/*/origin.txt"):
-        if origin.read_text(encoding="utf-16").strip().lower() == windows(INSTALL).lower():
-            return INSTALL if (origin.parent / "portable.txt").exists() else origin.parent
-    raise SystemExit(f"no data folder for {INSTALL}: start the terminal once (bin/mt5-install.sh)")
+        if (
+            origin.read_text(encoding="utf-16").strip().lower()
+            == windows(INSTALL).lower()
+        ):
+            return (
+                INSTALL if (origin.parent / "portable.txt").exists() else origin.parent
+            )
+    raise SystemExit(
+        f"no data folder for {INSTALL}: start the terminal once (bin/mt5-install.sh)"
+    )
 
 
 def terminal_running() -> bool:
     """Whether a terminal64.exe of this prefix is up. MT5 refuses a second one on the same data."""
     # Wine shows the process as its Windows command line; matching only that keeps a shell
     # whose command merely mentions terminal64.exe from reading as a running terminal.
-    out = subprocess.run(["pgrep", "-af", r"^C:\\.*terminal64\.exe"], capture_output=True,
-                         text=True).stdout
+    out = subprocess.run(
+        ["pgrep", "-af", r"^C:\\.*terminal64\.exe"], capture_output=True, text=True
+    ).stdout
     return bool(out.strip())
 
 
@@ -102,12 +117,18 @@ def open_terminal(wait_s: float = 60) -> bool:
     """
     if terminal_running():
         return True
-    subprocess.Popen(["wine", str(TERMINAL)], env=env(), stdout=subprocess.DEVNULL,
-                     stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
+    subprocess.Popen(
+        ["wine", str(TERMINAL)],
+        env=env(),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        stdin=subprocess.DEVNULL,
+        start_new_session=True,
+    )
     for _ in range(int(wait_s)):
         time.sleep(1)
         if terminal_running():
-            time.sleep(5)            # the process is listed before its IPC answers
+            time.sleep(5)  # the process is listed before its IPC answers
             return True
     return False
 
@@ -124,8 +145,11 @@ def close_terminal(wait_s: float = 90) -> bool:
     """
     if not terminal_running():
         return True
-    run(INSTALL.parent.parent / "windows" / "system32" / "taskkill.exe",
-        ["/IM", "terminal64.exe"], timeout=60)
+    run(
+        INSTALL.parent.parent / "windows" / "system32" / "taskkill.exe",
+        ["/IM", "terminal64.exe"],
+        timeout=60,
+    )
     for _ in range(int(wait_s)):
         if not terminal_running():
             return True
@@ -151,7 +175,9 @@ def kill_terminal() -> bool:
     return not terminal_running()
 
 
-def run(exe: Path, args: list[str], timeout: float, cwd: Path | None = None) -> subprocess.CompletedProcess:
+def run(
+    exe: Path, args: list[str], timeout: float, cwd: Path | None = None
+) -> subprocess.CompletedProcess:
     """Run a Windows program under Wine and wait for it.
 
     Args:
@@ -168,6 +194,12 @@ def run(exe: Path, args: list[str], timeout: float, cwd: Path | None = None) -> 
     Returns:
         The finished process, output captured as text.
     """
-    return subprocess.run(["wine", str(exe), *args], env=env(), capture_output=True,
-                          text=True, errors="replace", timeout=timeout,
-                          cwd=str(cwd) if cwd else None)
+    return subprocess.run(
+        ["wine", str(exe), *args],
+        env=env(),
+        capture_output=True,
+        text=True,
+        errors="replace",
+        timeout=timeout,
+        cwd=str(cwd) if cwd else None,
+    )

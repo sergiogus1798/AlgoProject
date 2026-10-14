@@ -41,7 +41,9 @@ def held(project: str) -> tuple[dict[tuple, set[str]], dict[str, str]]:
             with zipfile.ZipFile(write.folder(identity) / file) as z:
                 inside = {Path(n).name for n in z.namelist()}
             keys = [(about.get("study"), about.get("databank"), about.get("day"))]
-            keys += [("operaciones", *also.rsplit(".", 1)) for also in about.get("also", [])]
+            keys += [
+                ("operaciones", *also.rsplit(".", 1)) for also in about.get("also", [])
+            ]
             for key in keys:
                 have.setdefault(key, set()).update(inside)
     return have, who
@@ -65,30 +67,51 @@ def missing(project: str) -> tuple[list[str], list[str]]:
     for top in sorted(p.name for p in DATA.iterdir() if (p / project).is_dir()):
         if top not in IGNORED and top not in READ:
             falta.append(f"{top}/{project}: carpeta que el almacén no conoce")
-    for folder in sorted(p for p in (DATA / "reports" / project).glob("*/*/*") if p.is_dir()):
+    for folder in sorted(
+        p for p in (DATA / "reports" / project).glob("*/*/*") if p.is_dir()
+    ):
         databank, day, study = folder.parts[-3:]
         inside = have.get((study, databank, day))
         if inside is None:
             vouched = any(late.names(project, databank, day, i) for i in who.values())
             (falta if vouched else ajeno).append(
                 f"reports/{databank}/{day}/{study}: en ningún zip"
-                + ("" if vouched else " (no avala a ninguna guardada)"))
+                + ("" if vouched else " (no avala a ninguna guardada)")
+            )
             continue
-        lost = sorted(p.name for p in folder.iterdir()
-                      if p.is_file() and p.suffix not in late.PAGES and p.name not in inside)
-        falta += [f"reports/{databank}/{day}/{study}/{n}: fichero en ningún zip" for n in lost]
-    for folder in sorted(p for p in (DATA / "raw" / project).glob("[!_]*/*") if p.is_dir()):
+        lost = sorted(
+            p.name
+            for p in folder.iterdir()
+            if p.is_file() and p.suffix not in late.PAGES and p.name not in inside
+        )
+        falta += [
+            f"reports/{databank}/{day}/{study}/{n}: fichero en ningún zip" for n in lost
+        ]
+    for folder in sorted(
+        p for p in (DATA / "raw" / project).glob("[!_]*/*") if p.is_dir()
+    ):
         databank, day = folder.parts[-2:]
         vouched = any(late.names(project, databank, day, i) for i in who.values())
-        tables = [p for p in folder.rglob("*") if p.suffix in late.TABLES and p.parent != folder
-                  and "strategies" not in p.parts and not any(x.startswith("_") for x in p.parts)]
-        for study, there in (("operaciones", (folder / "trades.parquet").exists()),
-                             ("exportacion", bool(tables))):
+        tables = [
+            p
+            for p in folder.rglob("*")
+            if p.suffix in late.TABLES
+            and p.parent != folder
+            and "strategies" not in p.parts
+            and not any(x.startswith("_") for x in p.parts)
+        ]
+        for study, there in (
+            ("operaciones", (folder / "trades.parquet").exists()),
+            ("exportacion", bool(tables)),
+        ):
             if there and (study, databank, day) not in have:
                 (falta if vouched else ajeno).append(
                     f"raw/{databank}/{day}: {study} en ningún zip"
-                    + ("" if vouched else " (no avala a ninguna guardada)"))
-    if (DATA / "metrics" / project).is_dir() and not any(k[0] == "metricas" for k in have):
+                    + ("" if vouched else " (no avala a ninguna guardada)")
+                )
+    if (DATA / "metrics" / project).is_dir() and not any(
+        k[0] == "metricas" for k in have
+    ):
         falta.append("metrics: en ningún zip")
     for path in sorted((DATA / "crosstf" / project).glob("*/scaling.parquet")):
         if ("hermanas", None, path.parent.name) not in have:
@@ -96,12 +119,19 @@ def missing(project: str) -> tuple[list[str], list[str]]:
     for name, identity in sorted(who.items()):
         folder = variants_dir(project, name)
         if folder.is_dir():
-            studies = {a.get("study") for a in write.manifest(identity)["files"].values()}
-            falta += [f"strategyPermutations/{folder.name}: sin {s} en {identity[:12]}"
-                      for s in ("variantes", "optimizacion")
-                      if s not in studies and (s == "variantes" or (folder / "estudios").is_dir())]
+            studies = {
+                a.get("study") for a in write.manifest(identity)["files"].values()
+            }
+            falta += [
+                f"strategyPermutations/{folder.name}: sin {s} en {identity[:12]}"
+                for s in ("variantes", "optimizacion")
+                if s not in studies
+                and (s == "variantes" or (folder / "estudios").is_dir())
+            ]
     known = {n.replace(" ", "_") for n in who}
-    ajeno += [f"strategyPermutations/{p.name}: lote de una estrategia que no está guardada"
-              for p in sorted((DATA / "strategyPermutations" / project).glob("*"))
-              if p.is_dir() and p.name not in known]
+    ajeno += [
+        f"strategyPermutations/{p.name}: lote de una estrategia que no está guardada"
+        for p in sorted((DATA / "strategyPermutations" / project).glob("*"))
+        if p.is_dir() and p.name not in known
+    ]
     return falta, ajeno

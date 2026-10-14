@@ -34,7 +34,9 @@ def check(label: str, ok: bool, detail: str = "") -> None:
         FAILURES.append(f"{label} {detail}")
 
 
-def refuses(label: str, text: str, symbol: str, timeframe: str, mode: str = "study") -> None:
+def refuses(
+    label: str, text: str, symbol: str, timeframe: str, mode: str = "study"
+) -> None:
     """A study file with this text must stop `filters` with a SystemExit."""
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "study.yaml"
@@ -63,38 +65,72 @@ def main() -> None:
         golden = FIXTURES / f"rankings_XAUUSD_H1_{mode}.xml"
         if "--update" in sys.argv:
             golden.write_text(conditions_of(out), encoding="utf-8")
-        check(f"{mode}: golden conditions", conditions_of(out) == golden.read_text("utf-8"))
-        check(f"{mode}: donor's Sortino and Stagnation gone from <Rankings>",
-              "SortinoRatio" not in conditions_of(out) and "Stagnation" not in conditions_of(out))
-        check(f"{mode}: every condition reads sampleType 10",
-              conditions_of(out).count('sampleType="10"') == len(written["conditions"])
-              and 'sampleType="127"' not in conditions_of(out))
+        check(
+            f"{mode}: golden conditions",
+            conditions_of(out) == golden.read_text("utf-8"),
+        )
+        check(
+            f"{mode}: donor's Sortino and Stagnation gone from <Rankings>",
+            "SortinoRatio" not in conditions_of(out)
+            and "Stagnation" not in conditions_of(out),
+        )
+        check(
+            f"{mode}: every condition reads sampleType 10",
+            conditions_of(out).count('sampleType="10"') == len(written["conditions"])
+            and 'sampleType="127"' not in conditions_of(out),
+        )
         mode_block = re.search(r"<BuildMode.*?</BuildMode>", donor, re.S).group(0)
         check(f"{mode}: <BuildMode> conditions untouched", mode_block in out)
-        check(f"{mode}: nothing else of the task changed",
-              out.replace(conditions_of(out), "") == donor.replace(conditions_of(donor), ""))
-    check("study: totals are per-year x the build's 10 years",
-          rankings.describe(filters(load("XAUUSD"), "H1", "study", STUDY)) ==
-          "study @IS: NumberOfTrades >= 300 & NumberOfTrades <= 750 & ProfitFactor >= 1.2 "
-          "& NetProfit > 0")
-    check("override: DAX40 takes its own PF and timeframe, over its 6.25-year build",
-          rankings.describe(filters(load("DAX40"), "H4", "study", STUDY)) ==
-          "study @IS: NumberOfTrades >= 125 & NumberOfTrades <= 312 & ProfitFactor >= 1.25 "
-          "& NetProfit > 0")
+        check(
+            f"{mode}: nothing else of the task changed",
+            out.replace(conditions_of(out), "")
+            == donor.replace(conditions_of(donor), ""),
+        )
+    check(
+        "study: totals are per-year x the build's 10 years",
+        rankings.describe(filters(load("XAUUSD"), "H1", "study", STUDY))
+        == "study @IS: NumberOfTrades >= 300 & NumberOfTrades <= 750 & ProfitFactor >= 1.2 "
+        "& NetProfit > 0",
+    )
+    check(
+        "override: DAX40 takes its own PF and timeframe, over its 6.25-year build",
+        rankings.describe(filters(load("DAX40"), "H4", "study", STUDY))
+        == "study @IS: NumberOfTrades >= 125 & NumberOfTrades <= 312 & ProfitFactor >= 1.25 "
+        "& NetProfit > 0",
+    )
     text = STUDY.read_text(encoding="utf-8")
     refuses("refuses: no file", None, "XAUUSD", "H1")
     refuses("refuses: timeframe without trades_per_year", text, "XAUUSD", "M30")
-    refuses("refuses: no profit_factor_min", text.replace("  profit_factor_min: 1.20\n", ""),
-            "XAUUSD", "H1")
+    refuses(
+        "refuses: no profit_factor_min",
+        text.replace("  profit_factor_min: 1.20\n", ""),
+        "XAUUSD",
+        "H1",
+    )
     with tempfile.TemporaryDirectory() as tmp:
-        (Path(tmp) / "s.yaml").write_text(text.replace("H1: {min: 30, max: 75}", "H1: {min: 30}"), "utf-8")
-        check("no ceiling written: the floor alone",
-              rankings.describe(filters(load("XAUUSD"), "H1", "study", Path(tmp) / "s.yaml"))
-              == "study @IS: NumberOfTrades >= 300 & ProfitFactor >= 1.2 & NetProfit > 0")
-    refuses("refuses: a sample that is not IS", text.replace("sample: IS", "sample: OOS"),
-            "XAUUSD", "H1")
-    refuses("refuses: calibration without its block", text.split("calibration:")[0],
-            "XAUUSD", "H1", "calibration")
+        (Path(tmp) / "s.yaml").write_text(
+            text.replace("H1: {min: 30, max: 75}", "H1: {min: 30}"), "utf-8"
+        )
+        check(
+            "no ceiling written: the floor alone",
+            rankings.describe(
+                filters(load("XAUUSD"), "H1", "study", Path(tmp) / "s.yaml")
+            )
+            == "study @IS: NumberOfTrades >= 300 & ProfitFactor >= 1.2 & NetProfit > 0",
+        )
+    refuses(
+        "refuses: a sample that is not IS",
+        text.replace("sample: IS", "sample: OOS"),
+        "XAUUSD",
+        "H1",
+    )
+    refuses(
+        "refuses: calibration without its block",
+        text.split("calibration:")[0],
+        "XAUUSD",
+        "H1",
+        "calibration",
+    )
     if FAILURES:
         raise SystemExit("\n".join(FAILURES))
     print("all ok")

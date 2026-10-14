@@ -3,25 +3,90 @@
 import numba
 import numpy as np
 
-from portfolio.funded.rules.machine import (_BAL, _BEST_TOTAL, _PROFITABLE, _STATIC, _TRAILING)
+from portfolio.funded.rules.machine import (
+    _BAL,
+    _BEST_TOTAL,
+    _PROFITABLE,
+    _STATIC,
+    _TRAILING,
+)
 
 # one output row per draw — `bank.walk` (the reference) fills the same columns
-COLS = ("paid", "received", "purchases", "payouts", "first_payout_day", "purchases_to_first",
-        "outlay_before_first", "funded_accounts", "funded_days", "accounts_paid", "refunds",
-        "pass_phase1", "pass_phase2", "pass_phase3", "fail_phase1", "fail_phase2", "fail_phase3",
-        "ch_daily_loss", "ch_max_loss", "ch_time_limit", "fd_daily_loss", "fd_max_loss",
-        "denied", "firm_closed", "budget_stop")
+COLS = (
+    "paid",
+    "received",
+    "purchases",
+    "payouts",
+    "first_payout_day",
+    "purchases_to_first",
+    "outlay_before_first",
+    "funded_accounts",
+    "funded_days",
+    "accounts_paid",
+    "refunds",
+    "pass_phase1",
+    "pass_phase2",
+    "pass_phase3",
+    "fail_phase1",
+    "fail_phase2",
+    "fail_phase3",
+    "ch_daily_loss",
+    "ch_max_loss",
+    "ch_time_limit",
+    "fd_daily_loss",
+    "fd_max_loss",
+    "denied",
+    "firm_closed",
+    "budget_stop",
+)
 C = {name: i for i, name in enumerate(COLS)}
 # cash terms, packed for the kernel — `bank.terms` builds it
-TERMS = ("price", "share", "cycle", "refund", "cushion", "fee", "tax", "budget", "rebuy", "lock")
-_PAID, _RECV, _BUYS, _PAYS, _FIRST, _TOFIRST, _OUTLAY, _FACC, _FDAYS, _APAID, _REFUNDS = range(11)
-_PASS, _FAIL, _CH_RULE, _FD_RULE = C["pass_phase1"], C["fail_phase1"], C["ch_daily_loss"], C["fd_daily_loss"]
+TERMS = (
+    "price",
+    "share",
+    "cycle",
+    "refund",
+    "cushion",
+    "fee",
+    "tax",
+    "budget",
+    "rebuy",
+    "lock",
+)
+(
+    _PAID,
+    _RECV,
+    _BUYS,
+    _PAYS,
+    _FIRST,
+    _TOFIRST,
+    _OUTLAY,
+    _FACC,
+    _FDAYS,
+    _APAID,
+    _REFUNDS,
+) = range(11)
+_PASS, _FAIL, _CH_RULE, _FD_RULE = (
+    C["pass_phase1"],
+    C["fail_phase1"],
+    C["ch_daily_loss"],
+    C["fd_daily_loss"],
+)
 _DENIED, _CLOSED, _BUDGET = C["denied"], C["firm_closed"], C["budget_stop"]
 
 
 @numba.njit(cache=True)
-def _eligible(mindays: float, mdkind: float, profitable: int, trading: int, cons: float,
-              ckind: float, best: float, psum: float, pos: float) -> bool:
+def _eligible(
+    mindays: float,
+    mdkind: float,
+    profitable: int,
+    trading: int,
+    cons: float,
+    ckind: float,
+    best: float,
+    psum: float,
+    pos: float,
+) -> bool:
     """Minimum days and consistency over the days counted so far (the machine's two checks)."""
     if mindays != 0 and (profitable if mdkind == _PROFITABLE else trading) < mindays:
         return False
@@ -31,9 +96,19 @@ def _eligible(mindays: float, mdkind: float, profitable: int, trading: int, cons
 
 
 @numba.njit(cache=True, parallel=True)
-def run(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, high: np.ndarray,
-        opened: np.ndarray, stagemat: np.ndarray, size: float, terms: np.ndarray,
-        close_day: np.ndarray, deny: np.ndarray, track: np.ndarray) -> np.ndarray:
+def run(
+    closed: np.ndarray,
+    float_end: np.ndarray,
+    low: np.ndarray,
+    high: np.ndarray,
+    opened: np.ndarray,
+    stagemat: np.ndarray,
+    size: float,
+    terms: np.ndarray,
+    close_day: np.ndarray,
+    deny: np.ndarray,
+    track: np.ndarray,
+) -> np.ndarray:
     """Walk every draw: buy, challenge stages, funded stage with payouts, re-buy, until path or cash ends.
 
     Args:
@@ -80,8 +155,20 @@ def run(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, high: np.nda
             funded = False
             got_paid = False
             for si in range(n_ch + 1):
-                (target, dloss, mloss, mode, basis, mindays, mdkind, ppct, cons, ckind, tlimit,
-                 k) = stagemat[si]
+                (
+                    target,
+                    dloss,
+                    mloss,
+                    mode,
+                    basis,
+                    mindays,
+                    mdkind,
+                    ppct,
+                    cons,
+                    ckind,
+                    tlimit,
+                    k,
+                ) = stagemat[si]
                 live = si == n_ch
                 if live:
                     funded = True
@@ -121,7 +208,10 @@ def run(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, high: np.nda
                         mfloor = min(eod - mloss * size, size)
                     if e0 + low[p, d] * k < max(dfloor, mfloor):
                         end = d
-                        row[(_FD_RULE if live else _CH_RULE) + (0 if dfloor >= mfloor else 1)] += 1.0
+                        row[
+                            (_FD_RULE if live else _CH_RULE)
+                            + (0 if dfloor >= mfloor else 1)
+                        ] += 1.0
                         break
                     day_p = closed[p, d] * k
                     if carry != 0.0 and float_end[p, d] == 0.0:
@@ -140,8 +230,22 @@ def run(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, high: np.nda
                         best = day_p
                     if live:
                         gross = b - size - cushion * size
-                        if (d >= next_pay and gross > 0 and psum > 0 and _eligible(
-                                mindays, mdkind, profitable, trading, cons, ckind, best, psum, pos)):
+                        if (
+                            d >= next_pay
+                            and gross > 0
+                            and psum > 0
+                            and _eligible(
+                                mindays,
+                                mdkind,
+                                profitable,
+                                trading,
+                                cons,
+                                ckind,
+                                best,
+                                psum,
+                                pos,
+                            )
+                        ):
                             denied = pay_idx < deny.shape[1] and deny[p, pay_idx]
                             pay_idx += 1
                             if denied:
@@ -169,7 +273,16 @@ def run(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, high: np.nda
                             pos = 0.0
                             best = -1e300
                     elif b - size >= target * size and _eligible(
-                            mindays, mdkind, profitable, trading, cons, ckind, best, psum, pos):
+                        mindays,
+                        mdkind,
+                        profitable,
+                        trading,
+                        cons,
+                        ckind,
+                        best,
+                        psum,
+                        pos,
+                    ):
                         passed = True
                         row[_PASS + si] += 1.0
                         break

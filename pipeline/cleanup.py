@@ -25,7 +25,10 @@ def unchanged(entry: dict) -> bool:
         the data it describes.
     """
     path = DATA / entry["path"]
-    return path.exists() and hashlib.sha256(path.read_bytes()).hexdigest() == entry["sha256"]
+    return (
+        path.exists()
+        and hashlib.sha256(path.read_bytes()).hexdigest() == entry["sha256"]
+    )
 
 
 def inside(path: Path, work: Path) -> bool:
@@ -64,17 +67,23 @@ def candidates(work: Path) -> list[dict]:
     ledger = state.read(work)
     stage = ledger["stages"].get(COLLECTED, {})
     if not stage.get("done_at"):
-        raise SystemExit(f"{ledger['strategy']}: la recogida no ha terminado, no se borra nada")
+        raise SystemExit(
+            f"{ledger['strategy']}: la recogida no ha terminado, no se borra nada"
+        )
     broken = [f["path"] for f in stage["files"] if not unchanged(f)]
     if broken:
-        raise SystemExit(f"{ledger['strategy']}: el export ya no coincide con su hash: " +
-                         ", ".join(broken))
+        raise SystemExit(
+            f"{ledger['strategy']}: el export ya no coincide con su hash: "
+            + ", ".join(broken)
+        )
     here = str(work.relative_to(DATA))
     rows = [r for r in retention.collected() if r["path"].startswith(here)]
     outside = [r["path"] for r in rows if not inside(DATA / r["path"], work)]
     if outside:
-        raise SystemExit(f"{ledger['strategy']}: el registro propone borrar fuera de su "
-                         f"carpeta: {', '.join(outside)}")
+        raise SystemExit(
+            f"{ledger['strategy']}: el registro propone borrar fuera de su "
+            f"carpeta: {', '.join(outside)}"
+        )
     return rows
 
 
@@ -101,7 +110,8 @@ def sweep(work: Path, apply: bool) -> list[dict]:
             path.unlink()
     ledger = state.read(work)
     ledger["stages"][COLLECTED]["deleted"] = (
-        ledger["stages"][COLLECTED].get("deleted", []) + rows)
+        ledger["stages"][COLLECTED].get("deleted", []) + rows
+    )
     state.write(work, ledger)
     return rows
 
@@ -111,14 +121,20 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--project", required=True)
     ap.add_argument("--strategy", required=True)
-    ap.add_argument("--apply", action="store_true", help="borra de verdad; sin él solo informa")
+    ap.add_argument(
+        "--apply", action="store_true", help="borra de verdad; sin él solo informa"
+    )
     args = ap.parse_args()
 
     rows = sweep(state.work_dir(args.project, args.strategy), args.apply)
     for row in rows:
-        print(f"{'borrado ' if args.apply else 'liberaría'} {row['bytes']:>12,d} B  {row['path']}")
-    print(f"{sum(r['bytes'] for r in rows):,d} B en {len(rows)} rutas"
-          + ("" if args.apply else "  (nada borrado: falta --apply)"))
+        print(
+            f"{'borrado ' if args.apply else 'liberaría'} {row['bytes']:>12,d} B  {row['path']}"
+        )
+    print(
+        f"{sum(r['bytes'] for r in rows):,d} B en {len(rows)} rutas"
+        + ("" if args.apply else "  (nada borrado: falta --apply)")
+    )
 
 
 if __name__ == "__main__":

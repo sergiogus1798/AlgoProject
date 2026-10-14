@@ -49,8 +49,11 @@ def test_min_track_record_benchmark_zero_matches_old_formula() -> None:
     passes 0.0 explicitly."""
     r = returns()
     sharpe, skew, kurtosis = moments(r)
-    old = 1 + (1 - skew * sharpe + (kurtosis - 1) / 4 * sharpe ** 2) * (1.6448536269514722
-                                                                        / sharpe) ** 2
+    old = (
+        1
+        + (1 - skew * sharpe + (kurtosis - 1) / 4 * sharpe**2)
+        * (1.6448536269514722 / sharpe) ** 2
+    )
     got = min_track_record(r, alpha=0.05)
     assert abs(got["needed"] - old) < 1e-6
 
@@ -74,8 +77,10 @@ def test_min_track_record_unreachable_when_sharpe_does_not_clear_benchmark() -> 
     sharpe = moments(r)[0]
     for benchmark in (sharpe, sharpe + 0.0087, 1.0):
         got = min_track_record(r, benchmark=benchmark)
-        assert got["needed"] is None and got["enough"] is False and got["have"] == r.size
-    assert min_track_record(-r)["needed"] is None          # a losing series against zero
+        assert (
+            got["needed"] is None and got["enough"] is False and got["have"] == r.size
+        )
+    assert min_track_record(-r)["needed"] is None  # a losing series against zero
     assert min_track_record(r, benchmark=sharpe - 0.01)["needed"] > r.size
 
 
@@ -83,13 +88,17 @@ def test_annual_sharpe_counts_trading_days_only() -> None:
     """Known answer: P&L on two Mondays and a Saturday close that lands on the third Monday;
     every other trading day is a zero. The calendar-day version this replaced also counted
     the weekend days as zeros and read a smaller ratio."""
-    closed = pd.to_datetime(["2024-01-01 10:00", "2024-01-08 15:00", "2024-01-13 02:00"])
+    closed = pd.to_datetime(
+        ["2024-01-01 10:00", "2024-01-08 15:00", "2024-01-13 02:00"]
+    )
     pnl = np.array([100.0, 40.0, 60.0])
-    daily = np.array([100.0, 0, 0, 0, 0, 40.0, 0, 0, 0, 0, 60.0])   # Mon 1st .. Mon 15th
+    daily = np.array([100.0, 0, 0, 0, 0, 40.0, 0, 0, 0, 0, 60.0])  # Mon 1st .. Mon 15th
     want = daily.mean() / daily.std(ddof=1) * np.sqrt(252)
     assert abs(annual_sharpe(pnl, closed) - want) < 1e-9
     calendar = np.array([100.0, 0, 0, 0, 0, 0, 0, 40.0, 0, 0, 0, 0, 60.0])
-    assert annual_sharpe(pnl, closed) > calendar.mean() / calendar.std(ddof=1) * np.sqrt(252)
+    assert annual_sharpe(pnl, closed) > calendar.mean() / calendar.std(
+        ddof=1
+    ) * np.sqrt(252)
     assert np.isnan(annual_sharpe(np.array([5.0]), pd.to_datetime(["2024-01-02"])))
 
 
@@ -99,7 +108,7 @@ def test_footprint_zero_noise_reproduces_the_no_noise_value() -> None:
     is modelled as noiseless (the bug this replaces treated every case that way)."""
     rng = np.random.default_rng(11)
     n = 300
-    h = rng.uniform(1, 20, n)          # bars held
+    h = rng.uniform(1, 20, n)  # bars held
     d = rng.choice([1.0, -1.0], n)
     s = rng.uniform(0.5, 2.0, n)
     c = rng.uniform(0, 3, n)
@@ -131,6 +140,7 @@ def test_footprint_realistic_gold_numbers_are_small_and_below_buy_and_hold() -> 
     sets the random trader's dispersion, so a short, noisy hold does not inherit a
     buy-and-hold-sized Sharpe."""
     from core import barstore
+
     bars = barstore.read("XAUUSD_M1", "M30").loc["2018-01-01":"2022-12-31"]
     diffs = bars["Close"].diff().dropna().to_numpy()
     mu, sigma = float(diffs.mean()), float(diffs.std(ddof=1))
@@ -141,10 +151,12 @@ def test_footprint_realistic_gold_numbers_are_small_and_below_buy_and_hold() -> 
     s = np.ones(n)
     c = np.full(n, 0.02)
     sr_b = footprint(h, d, s, c, mu, sigma, 1.0)
-    print(f"XAUUSD M30 2018-2022: mu={mu:.4f} sigma={sigma:.4f} SR_b(hold=8)={sr_b:.4f}")
+    print(
+        f"XAUUSD M30 2018-2022: mu={mu:.4f} sigma={sigma:.4f} SR_b(hold=8)={sr_b:.4f}"
+    )
     assert abs(sr_b) < 0.1
     bars_n = len(bars) - 1
-    sr_buy_and_hold = mu * np.sqrt(bars_n) / sigma        # a single hold of the whole window
+    sr_buy_and_hold = mu * np.sqrt(bars_n) / sigma  # a single hold of the whole window
     assert abs(sr_b) < abs(sr_buy_and_hold)
 
 
@@ -155,12 +167,12 @@ def test_footprint_as_benchmark_reproduces_openmd71() -> None:
     r = returns()
     rng = np.random.default_rng(5)
     n = 500
-    h = np.ones(n)   # constant hold: every trade's footprint moves only with cost
+    h = np.ones(n)  # constant hold: every trade's footprint moves only with cost
     d = np.ones(n)
     s = np.ones(n)
     cheap = footprint(h, d, s, rng.normal(0.0, 1.0, n), 0.0, 1.0, 1.0)
     costly = footprint(h, d, s, rng.normal(0.3, 1.0, n), 0.0, 1.0, 1.0)
-    assert cheap > costly       # more cost -> a smaller footprint to beat
+    assert cheap > costly  # more cost -> a smaller footprint to beat
     assert psr(r, cheap)["psr"] < psr(r, costly)["psr"]
 
 

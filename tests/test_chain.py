@@ -25,22 +25,35 @@ from ui.daemon.workflow.tests import SPENDS  # noqa: E402
 
 MCR = stage.titles("mcretest")
 # (title, type, input, output, MC Retest on): a workflow project's chain, MCR 4 left off.
-TASKS = ([("CONSTRUCCION", "Build", "", "Results", False), ("OOS", "Retest", "Results", "OOS", False)]
-         + [(t, "Retest", "Results", t, t != "MCR 4 MinDist") for t in MCR]
-         + [("SPP IS", "Retest", "Results", "SPP IS", False),
-            ("SPP OOS", "Retest", "SPP IS", "SPP OOS", False)])
+TASKS = (
+    [
+        ("CONSTRUCCION", "Build", "", "Results", False),
+        ("OOS", "Retest", "Results", "OOS", False),
+    ]
+    + [(t, "Retest", "Results", t, t != "MCR 4 MinDist") for t in MCR]
+    + [
+        ("SPP IS", "Retest", "Results", "SPP IS", False),
+        ("SPP OOS", "Retest", "SPP IS", "SPP OOS", False),
+    ]
+)
 
 
 def workflow_cfx(path: Path) -> None:
     """Rewrite the scratch project.cfx with the tasks above, as `perturbations.disable` leaves one."""
-    tags = "".join(f'<Task active="false" name="t{i}" taskXMLFile="t{i}.xml" title="{t}" '
-                   f'type="{k}"/>' for i, (t, k, *_) in enumerate(TASKS))
+    tags = "".join(
+        f'<Task active="false" name="t{i}" taskXMLFile="t{i}.xml" title="{t}" '
+        f'type="{k}"/>'
+        for i, (t, k, *_) in enumerate(TASKS)
+    )
     with zipfile.ZipFile(path, "w") as z:
         z.writestr("config.xml", f"<Project><Tasks>{tags}</Tasks></Project>")
         for i, (_, _, src, out, mc) in enumerate(TASKS):
-            z.writestr(f"t{i}.xml", f'<Settings><MonteCarloRetest use="{str(mc).lower()}"/>'
-                                    f'<Databank name="Input" value="{src}"/>'
-                                    f'<Databank name="Output" value="{out}"/></Settings>')
+            z.writestr(
+                f"t{i}.xml",
+                f'<Settings><MonteCarloRetest use="{str(mc).lower()}"/>'
+                f'<Databank name="Input" value="{src}"/>'
+                f'<Databank name="Output" value="{out}"/></Settings>',
+            )
 
 
 def rail(states: dict[str, str], tests_state: str = "pending") -> dict:
@@ -50,10 +63,24 @@ def rail(states: dict[str, str], tests_state: str = "pending") -> dict:
     """
     steps = []
     for s in STEPS:
-        tests = [{"key": k, "runnable": True, "state": tests_state,
-                  "auto": k not in SPENDS and s["feeds"] != ()} for k in s["studies"]]
-        steps.append({"n": s["n"], "title": s["title"], "kind": s["kind"],
-                      "state": states.get(s["n"], "done"), "tests": tests})
+        tests = [
+            {
+                "key": k,
+                "runnable": True,
+                "state": tests_state,
+                "auto": k not in SPENDS and s["feeds"] != (),
+            }
+            for k in s["studies"]
+        ]
+        steps.append(
+            {
+                "n": s["n"],
+                "title": s["title"],
+                "kind": s["kind"],
+                "state": states.get(s["n"], "done"),
+                "tests": tests,
+            }
+        )
     return {"steps": steps}
 
 
@@ -62,27 +89,47 @@ def test_stop_rule(root: Path) -> None:
     only a press starting ON that task (its judge done) crosses it; a judge not done halts,
     whatever its tests; a running step halts; the oos2 steps and 21-25 never run."""
     got = chainplan.plan(rail({"6": "pending", "7": "pending", "9": "pending"}, "done"))
-    assert [(a["n"], a["kind"]) for a in got["do"]] == [("6", "sqx"), ("7", "sqx"),
-                                                        ("8", "python")], got
+    assert [(a["n"], a["kind"]) for a in got["do"]] == [
+        ("6", "sqx"),
+        ("7", "sqx"),
+        ("8", "python"),
+    ], got
     assert got["do"][2]["tests"] == ["gate"], got
     assert got["stop"]["n"] == "9" and "decides tú" in got["stop"]["why"], got
     again = chainplan.plan(rail({"9": "pending", "10.5": "pending"}, "done"))
-    assert [a["n"] for a in again["do"]] == ["9", "10"] and again["stop"]["n"] == "10.5", again
+    assert [a["n"] for a in again["do"]] == ["9", "10"] and again["stop"][
+        "n"
+    ] == "10.5", again
     mc = chainplan.plan(rail({"13": "pending", "15": "pending"}, "done"))
     assert [a["n"] for a in mc["do"]] == ["13", "14"] and mc["stop"]["n"] == "15", mc
     late = chainplan.plan(rail({"19": "pending"}))
     ran = {k for a in late["do"] for k in a["tests"]}
     assert not ran & set(SPENDS) and not {a["n"] for a in late["do"]} & {
-        "17", "18", "18.5", "20", "21", "22", "23", "24", "25"}, late
+        "17",
+        "18",
+        "18.5",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+    }, late
     assert late["stop"]["n"] == "19" and "oos2" in late["stop"]["why"], late
     assert chainplan.plan(rail({"3": "missing"}))["do"] == []
     judge = chainplan.plan(rail({"8": "pending", "9": "pending"}))
     assert [a["n"] for a in judge["do"]] == ["8"] and judge["stop"]["n"] == "9", judge
-    busy = chainplan.plan(rail({"11": "pending", "12": "running", "13": "pending"}, "done"))
+    busy = chainplan.plan(
+        rail({"11": "pending", "12": "running", "13": "pending"}, "done")
+    )
     # 11.5 (encargo 47) reruns after the 11 like any Python step, 11.7 has no twins here: skipped
-    assert [a["n"] for a in busy["do"]] == ["11", "11.5"] and busy["stop"]["n"] == "12", busy
+    assert [a["n"] for a in busy["do"]] == ["11", "11.5"] and busy["stop"][
+        "n"
+    ] == "12", busy
     idle = chainplan.plan(rail({"8": "blocked", "9": "pending"}, "done"))
-    assert idle["do"] == [] and idle["stop"]["n"] == "8", "a judge not done halts, tests or not"
+    assert idle["do"] == [] and idle["stop"]["n"] == "8", (
+        "a judge not done halts, tests or not"
+    )
 
 
 def test_step_launch(root: Path) -> None:
@@ -122,19 +169,33 @@ def test_chain_runs(root: Path) -> None:
         start(role)
 
     worker.start = fresh
-    chain.workflow.workflow = lambda p: rail({"6": "pending", "7": "pending", "9": "pending"})
+    chain.workflow.workflow = lambda p: rail(
+        {"6": "pending", "7": "pending", "9": "pending"}
+    )
     chain.workflow.context = lambda p: {"sqx": None}
     chain.rail.refusal = lambda n, k, ctx: None
-    chain.rail.plan = lambda spec, k, ctx, db, picked: [{"label": k, "argv": ["-m", k],
-                                                         "about": {}}]
+    chain.rail.plan = lambda spec, k, ctx, db, picked: [
+        {"label": k, "argv": ["-m", k], "about": {}}
+    ]
     chain.command = lambda argv: (CALLS.append(("cmd", argv[1])), (0, ""))[1]
     got = chaincheck.check(P)
     assert got["ok"], got
     assert "Se para antes del paso 9" in chaincheck.text(got, P)
     chain.chain(P)
-    kinds = [x[0] if x[0] != "cmd" else x[1] for x in CALLS if x[0] not in ("state", "call")]
-    assert kinds == ["assets", "just", "start", "stop", "assets", "just", "start", "stop",
-                     "gate"], kinds
+    kinds = [
+        x[0] if x[0] != "cmd" else x[1] for x in CALLS if x[0] not in ("state", "call")
+    ]
+    assert kinds == [
+        "assets",
+        "just",
+        "start",
+        "stop",
+        "assets",
+        "just",
+        "start",
+        "stop",
+        "gate",
+    ], kinds
     assert [x[2] for x in CALLS if x[0] == "just"] == [["CONSTRUCCION"], ["OOS"]], CALLS
 
 
@@ -143,7 +204,7 @@ def test_plan_diverged(root: Path) -> None:
     scratch(root, install="SQX_w2", role="custodian")
     chain.workflow.workflow = lambda p: rail({"6": "pending", "7": "pending"})
     confirmed = chaincheck.check(P)["plan"]
-    chain.workflow.workflow = lambda p: rail({"7": "pending"})       # 6 finished meanwhile
+    chain.workflow.workflow = lambda p: rail({"7": "pending"})  # 6 finished meanwhile
     try:
         chain.chain(P, confirmed)
         raise AssertionError("a moved step must stop the chain")
@@ -176,7 +237,9 @@ def test_worker_guards(root: Path) -> None:
         raise AssertionError("a worker that does not stop must fail the run")
     except SystemExit as stop:
         assert "no se paró" in str(stop), stop
-    assert workerguard.marked("conductor")["pid"] == os.getpid(), "the marker stays while up"
+    assert workerguard.marked("conductor")["pid"] == os.getpid(), (
+        "the marker stays while up"
+    )
 
 
 def test_chain_refused(root: Path) -> None:
@@ -188,20 +251,29 @@ def test_chain_refused(root: Path) -> None:
     got = api.chain_check(P)
     assert not got["ok"] and any("lanzamiento" in r for r in got["reasons"]), got
     started = []
-    jobs.start = lambda label, argv, about, lane="python": started.append((label, lane)) or {
-        "id": "1"}
+    jobs.start = lambda label, argv, about, lane="python": (
+        started.append((label, lane)) or {"id": "1"}
+    )
     queued.clear()
     jobs.LOGS = root / "logs"
     shown = api.chain_check(P)["plan"]
-    assert not api.chain_run(api.Chain(project=P, plan={"do": []}))["ok"], "another plan"
+    assert not api.chain_run(api.Chain(project=P, plan={"do": []}))["ok"], (
+        "another plan"
+    )
     assert api.chain_run(api.Chain(project=P, plan=shown))["job"] == "1"
     assert started == [("launch", "conductor")], started
     assert json.loads(next((root / "logs").glob("chain-*.json")).read_text()) == shown
 
 
 if __name__ == "__main__":
-    for test in (test_stop_rule, test_step_launch, test_chain_runs, test_plan_diverged,
-                 test_worker_guards, test_chain_refused):
+    for test in (
+        test_stop_rule,
+        test_step_launch,
+        test_chain_runs,
+        test_plan_diverged,
+        test_worker_guards,
+        test_chain_refused,
+    ):
         with tempfile.TemporaryDirectory() as tmp:
             began = time.time()
             test(Path(tmp))

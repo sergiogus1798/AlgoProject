@@ -55,7 +55,9 @@ def per(t: dict) -> str:
     return f"{num(round(ms))} ms" if ms < 1000 else f"{num(round(ms / 1000, 1))} s"
 
 
-def share(done: int | None, total: int | None, percent: int | None = None) -> int | None:
+def share(
+    done: int | None, total: int | None, percent: int | None = None
+) -> int | None:
     """How far a task is, 0-100, for a progress bar.
 
     Args:

@@ -3,8 +3,10 @@
 from pathlib import Path
 from typing import Any, TypedDict
 
-_StepKeys = TypedDict("_StepKeys", {"state": str, "why": str, "in": int | None,
-                                    "out": int | None, "day": str | None})
+_StepKeys = TypedDict(
+    "_StepKeys",
+    {"state": str, "why": str, "in": int | None, "out": int | None, "day": str | None},
+)
 
 
 class StepRow(_StepKeys, total=False):

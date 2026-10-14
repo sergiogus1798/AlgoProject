@@ -6,7 +6,9 @@ from typing import cast
 import pandas as pd
 
 
-def _best(days: pd.DatetimeIndex, closes: pd.Series, pnl: pd.Series, top: float) -> pd.Series:
+def _best(
+    days: pd.DatetimeIndex, closes: pd.Series, pnl: pd.Series, top: float
+) -> pd.Series:
     """The running sum of the best `top` % of trades, on the curve's days, to take off it.
 
     Args:
@@ -34,7 +36,10 @@ def curves(equity: pd.Series, trades: pd.DataFrame, top: float) -> dict[str, pd.
     pnl = equity.diff().fillna(equity.iloc[0])
     out = {"sqx": pnl.cumsum()}
     if top > 0 and len(trades):
-        out["sqx_top"] = out["sqx"] - _best(pd.DatetimeIndex(pnl.index),
-                                            trades["Close time"].dt.normalize(),
-                                            cast(pd.Series, trades["Profit/Loss"]), top)
+        out["sqx_top"] = out["sqx"] - _best(
+            pd.DatetimeIndex(pnl.index),
+            trades["Close time"].dt.normalize(),
+            cast(pd.Series, trades["Profit/Loss"]),
+            top,
+        )
     return out

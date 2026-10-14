@@ -1,7 +1,14 @@
 """One instrument's page of the asset zone: costs, windows, Cross Market check, traits, raw file."""
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+)
 
 from ui.desktop import client
 from ui.desktop.assetcard import AssetCard
@@ -9,16 +16,20 @@ from ui.desktop.assetspans import AssetSpans
 from ui.desktop.assettraits import LEGEND, TRAITS_HELP, trait, traits_table
 from ui.desktop.yamltree import YamlTree
 
-MARKETS_WIDTH = 360   # a name, a date and a button per market (owner, 2026-10-04: 310 boxed it in)
-SIDE_WIDTH = 290      # two date selectors side by side, and a column of prose under them
-PAGE_HEIGHT = 480     # what a filled page measures: an unread one holds the room until it is shown
+MARKETS_WIDTH = (
+    360  # a name, a date and a button per market (owner, 2026-10-04: 310 boxed it in)
+)
+SIDE_WIDTH = 290  # two date selectors side by side, and a column of prose under them
+PAGE_HEIGHT = (
+    480  # what a filled page measures: an unread one holds the room until it is shown
+)
 
 
 class AssetPage(QFrame):
     """One instrument: its costs, its windows, its Cross Market check, its trading character,
     and, on demand, its file."""
 
-    changed = Signal(str)   # the asset written, so the zone recounts and redraws only it
+    changed = Signal(str)  # the asset written, so the zone recounts and redraws only it
     retired = Signal(str)
 
     def __init__(self, symbol: str) -> None:
@@ -35,11 +46,15 @@ class AssetPage(QFrame):
         self.card, self.spans, self.tree = AssetCard(), AssetSpans(), YamlTree()
         self.raw = QPushButton("Fichero entero")
         self.raw.setCheckable(True)
-        self.raw.setToolTip("Todos los valores del fichero del activo, cada uno con su comentario.")
+        self.raw.setToolTip(
+            "Todos los valores del fichero del activo, cada uno con su comentario."
+        )
         self.raw.toggled.connect(self.on_raw)
         drop = QPushButton("Retirar")
-        drop.setToolTip("Mueve el fichero a assets/symbols/_retired/. Deja de contar para "
-                        "`core.assets`, pero no se pierde.")
+        drop.setToolTip(
+            "Mueve el fichero a assets/symbols/_retired/. Deja de contar para "
+            "`core.assets`, pero no se pierde."
+        )
         drop.clicked.connect(self.on_retire)
         self.card.bar.addWidget(self.raw)
         self.card.bar.addWidget(drop)
@@ -54,7 +69,10 @@ class AssetPage(QFrame):
         body = QHBoxLayout()
         body.setSpacing(12)
         costs, side = QVBoxLayout(), QVBoxLayout()
-        for col, parts in ((costs, (self.card, self.spans.ranges)), (side, (self.spans,))):
+        for col, parts in (
+            (costs, (self.card, self.spans.ranges)),
+            (side, (self.spans,)),
+        ):
             col.setSpacing(10)
             for w in parts:
                 col.addWidget(w, 0, Qt.AlignmentFlag.AlignLeft)
@@ -100,7 +118,7 @@ class AssetPage(QFrame):
         """Read this asset again and redraw the three parts (the first read happens when it shows)."""
         self.loaded = True
         self.setMinimumHeight(0)
-        shown = self.raw.isChecked()       # the raw file is read only while it is open
+        shown = self.raw.isChecked()  # the raw file is read only while it is open
         data = client.get(f"asset/{self.symbol}", leaves=str(shown).lower())
         self.card.fill(data)
         self.spans.fill(data)
@@ -123,16 +141,20 @@ class AssetPage(QFrame):
             text: What was typed.
             kind: "scalar" or "list".
         """
-        client.post("assets/value", {"name": name, "path": path, "text": text, "kind": kind})
+        client.post(
+            "assets/value", {"name": name, "path": path, "text": text, "kind": kind}
+        )
         self.changed.emit(self.symbol)
 
     def on_retire(self) -> None:
         """Withdraw this asset after saying what that does."""
         ok = QMessageBox.question(  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
-            self, f"Retirar {self.symbol}",
+            self,
+            f"Retirar {self.symbol}",
             f"El fichero se mueve a assets/symbols/_retired/{self.symbol}.yaml. Deja de existir "
             "para `core.assets` y para el índice, y ninguna tarea nueva podrá usarlo. Sus tramos "
-            "se quedan en _policy.yaml. ¿Lo retiro?")
+            "se quedan en _policy.yaml. ¿Lo retiro?",
+        )
         if ok == QMessageBox.StandardButton.Yes:
             client.post(f"asset/{self.symbol}/retire", {})
             self.retired.emit(self.symbol)

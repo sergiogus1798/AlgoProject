@@ -26,52 +26,159 @@ RENDERED = MANUAL_SRC / ".rendered.json"
 
 # One PDF per family, chapters in reading order. A chapter missing from every family is an error.
 FAMILIES = {
-    "01-empezar": ("Empezar", [
-        "00-empezar", "20-donde-esta-todo", "21-vocabulario", "46-knowhow", "23-skills",
-        "10-github"]),
+    "01-empezar": (
+        "Empezar",
+        [
+            "00-empezar",
+            "20-donde-esta-todo",
+            "21-vocabulario",
+            "46-knowhow",
+            "23-skills",
+            "10-github",
+        ],
+    ),
     # The window in the order a newcomer walks it: PROYECTO first (gallery -> project -> its
     # filters -> one strategy -> one study), then what runs, the archive, the library zones, and
     # the reading conventions last, as reference.
-    "02-la-ventana": ("La ventana de escritorio", [
-        "61-app-proyectos", "65-app-proyecto", "69-app-filtros-y-continuar",
-        "68-app-estrategia", "58-app-estudios", "70-app-operacion", "71-app-portfolios",
-        "35-app-plantillas", "84-app-investigar", "38-app-activos", "66-app-configuracion-sqx", "67-app-datos",
-        "60-app-pulido", "72-app-crear", "95-app-criterios"]),
-    "03-datos-costes-y-registro": ("Datos, costes y registro de la búsqueda", [
-        "13-barras", "57-calidad-del-feed", "59-spread-real", "25-actualizar-datos", "24-costes", "43-ledger",
-        "12-rendimiento", "64-archivo", "109-almacen-de-estrategias", "73-fondeo-catalogo",
-        "74-fondeo-ofertas"]),
-    "04-sqx-plantillas-y-proyectos": ("SQX: bloques, plantillas y proyectos", [
-        "40-sqx-lab", "111-snippets-de-sqx", "36-taxonomia", "22-plantillas", "28-builder", "47-proyecto-workflow",
-        "06-mover-estrategias", "27-curar", "17-pipeline", "80-autopiloto", "105-workflow-de-un-comando", "106-campana", "55-retirar-proyectos",
-        "62-metadatos-estrategia", "82-perfil-de-mercado", "81-memoria-de-resultados",
-        "83-tablero-de-investigacion", "90-explorador-de-bibliografia", "97-inspeccionar-proyectos",
-        "91-potencia-del-perfil", "92-perfil-agrupado"]),
-    "05-cribado-oos": ("Cribado fuera de muestra", [
-        "01-analisis-is-oos", "02-filtros", "03-comparar-muestras", "04-decaimiento",
-        "29-puerta", "98-criba-mae-profundo", "99-monos-por-la-cadena",
-        "108-lotes-de-una-celda"]),
-    "06-lecturas": ("Lecturas de una estrategia", [
-        "26-nulos", "50-edge-por-coste", "42-calidad-de-la-entrada"]),
-    "07-otros-mercados-y-timeframes": ("Otros mercados y otros timeframes", [
-        "30-crossmarket", "05-retest-mercados", "39-crossmarket-lote", "31-crosstf"]),
-    "08-montecarlo": ("Monte Carlo y MC Retest", [
-        "07-montecarlo", "32-mcretest", "11-retest-mc"]),
-    "09-optimizacion": ("Parámetros: SPP, variantes, WFC, CSCV y WFM", [
-        "33-spp", "08-spp", "09-diccionario-spp", "15-sppultra", "18-variantes",
-        "37-wfc-retest", "19-wfc", "107-wfc-calibracion", "25-cscv", "39-nube-de-parametros",
-        "52-superficies-mercado", "34-wfm", "09-wfm", "14-walkforwardmatrix", "110-lectura-unica-oos2"]),
-    "10-cierre": ("El cierre: paso 20, exposición y MetaTrader 5", [
-        "56-paso-20", "85-autopiloto-cierre", "38-exposicion", "60-mt5", "76-mt5-verificar", "86-mt5-pool-validado",
-        "75-filtro-noticias", "93-metatracker", "94-flota-colector"]),
-    "11-cartera": ("Cartera: el pool, el universo, las parejas y la búsqueda de fondeo", [
-        "77-cartera-pool", "78-cartera-universo", "79-cartera-fondeo",
-        "87-cartera-etapa-b-y-veredicto", "88-fondeo-caja", "96-cartera-busqueda-por-rangos",
-        "100-cartera-raiz-de-prueba", "101-cartera-veredicto",
-        "102-fondeo-decision", "103-cartera-pesos-walk-forward", "104-cartera-incubacion",
-        "112-protocolo-en-vivo"]),
-    "12-en-real": ("En real: la cuenta contra SQX", [
-        "89-reconciliador-semanal"]),
+    "02-la-ventana": (
+        "La ventana de escritorio",
+        [
+            "61-app-proyectos",
+            "65-app-proyecto",
+            "69-app-filtros-y-continuar",
+            "68-app-estrategia",
+            "58-app-estudios",
+            "70-app-operacion",
+            "71-app-portfolios",
+            "35-app-plantillas",
+            "84-app-investigar",
+            "38-app-activos",
+            "66-app-configuracion-sqx",
+            "67-app-datos",
+            "60-app-pulido",
+            "72-app-crear",
+            "95-app-criterios",
+        ],
+    ),
+    "03-datos-costes-y-registro": (
+        "Datos, costes y registro de la búsqueda",
+        [
+            "13-barras",
+            "57-calidad-del-feed",
+            "59-spread-real",
+            "25-actualizar-datos",
+            "24-costes",
+            "43-ledger",
+            "12-rendimiento",
+            "64-archivo",
+            "109-almacen-de-estrategias",
+            "73-fondeo-catalogo",
+            "74-fondeo-ofertas",
+        ],
+    ),
+    "04-sqx-plantillas-y-proyectos": (
+        "SQX: bloques, plantillas y proyectos",
+        [
+            "40-sqx-lab",
+            "111-snippets-de-sqx",
+            "36-taxonomia",
+            "22-plantillas",
+            "28-builder",
+            "47-proyecto-workflow",
+            "06-mover-estrategias",
+            "27-curar",
+            "17-pipeline",
+            "80-autopiloto",
+            "105-workflow-de-un-comando",
+            "106-campana",
+            "55-retirar-proyectos",
+            "62-metadatos-estrategia",
+            "82-perfil-de-mercado",
+            "81-memoria-de-resultados",
+            "83-tablero-de-investigacion",
+            "90-explorador-de-bibliografia",
+            "97-inspeccionar-proyectos",
+            "91-potencia-del-perfil",
+            "92-perfil-agrupado",
+        ],
+    ),
+    "05-cribado-oos": (
+        "Cribado fuera de muestra",
+        [
+            "01-analisis-is-oos",
+            "02-filtros",
+            "03-comparar-muestras",
+            "04-decaimiento",
+            "29-puerta",
+            "98-criba-mae-profundo",
+            "99-monos-por-la-cadena",
+            "108-lotes-de-una-celda",
+        ],
+    ),
+    "06-lecturas": (
+        "Lecturas de una estrategia",
+        ["26-nulos", "50-edge-por-coste", "42-calidad-de-la-entrada"],
+    ),
+    "07-otros-mercados-y-timeframes": (
+        "Otros mercados y otros timeframes",
+        ["30-crossmarket", "05-retest-mercados", "39-crossmarket-lote", "31-crosstf"],
+    ),
+    "08-montecarlo": (
+        "Monte Carlo y MC Retest",
+        ["07-montecarlo", "32-mcretest", "11-retest-mc"],
+    ),
+    "09-optimizacion": (
+        "Parámetros: SPP, variantes, WFC, CSCV y WFM",
+        [
+            "33-spp",
+            "08-spp",
+            "09-diccionario-spp",
+            "15-sppultra",
+            "18-variantes",
+            "37-wfc-retest",
+            "19-wfc",
+            "107-wfc-calibracion",
+            "25-cscv",
+            "39-nube-de-parametros",
+            "52-superficies-mercado",
+            "34-wfm",
+            "09-wfm",
+            "14-walkforwardmatrix",
+            "110-lectura-unica-oos2",
+        ],
+    ),
+    "10-cierre": (
+        "El cierre: paso 20, exposición y MetaTrader 5",
+        [
+            "56-paso-20",
+            "85-autopiloto-cierre",
+            "38-exposicion",
+            "60-mt5",
+            "76-mt5-verificar",
+            "86-mt5-pool-validado",
+            "75-filtro-noticias",
+            "93-metatracker",
+            "94-flota-colector",
+        ],
+    ),
+    "11-cartera": (
+        "Cartera: el pool, el universo, las parejas y la búsqueda de fondeo",
+        [
+            "77-cartera-pool",
+            "78-cartera-universo",
+            "79-cartera-fondeo",
+            "87-cartera-etapa-b-y-veredicto",
+            "88-fondeo-caja",
+            "96-cartera-busqueda-por-rangos",
+            "100-cartera-raiz-de-prueba",
+            "101-cartera-veredicto",
+            "102-fondeo-decision",
+            "103-cartera-pesos-walk-forward",
+            "104-cartera-incubacion",
+            "112-protocolo-en-vivo",
+        ],
+    ),
+    "12-en-real": ("En real: la cuenta contra SQX", ["89-reconciliador-semanal"]),
 }
 
 STYLE = """
@@ -131,7 +238,9 @@ def relink(text: str, where: dict[str, str]) -> str:
         The markdown with `NN-name.md` links and mentions rewritten to `family.pdf`.
     """
     text = _LINK.sub(lambda m: f"]({where.get(m[1], m[1])}.pdf)", text)
-    return _MENTION.sub(lambda m: f"{where[m[1]]}.pdf › {m[1]}" if m[1] in where else m[0], text)
+    return _MENTION.sub(
+        lambda m: f"{where[m[1]]}.pdf › {m[1]}" if m[1] in where else m[0], text
+    )
 
 
 def title(page: Path) -> str:
@@ -150,15 +259,22 @@ def cover(name: str, chapters: list[Path]) -> str:
         An HTML fragment.
     """
     items = "".join(f"<li>{title(p)}</li>" for p in chapters)
-    rest = "".join(f"<li><b>{fam}.pdf</b> — {t}</li>" for fam, (t, _) in FAMILIES.items())
-    index = f"<p style='margin-top:28px'>El manual entero:</p><ul>{rest}</ul>" \
-        if chapters and chapters[0].stem == "00-empezar" else ""
+    rest = "".join(
+        f"<li><b>{fam}.pdf</b> — {t}</li>" for fam, (t, _) in FAMILIES.items()
+    )
+    index = (
+        f"<p style='margin-top:28px'>El manual entero:</p><ul>{rest}</ul>"
+        if chapters and chapters[0].stem == "00-empezar"
+        else ""
+    )
     # The chapters' own last change, not today: a rebuild with nothing new must render the same
     # bytes, or every run commits ten fresh PDFs to git.
     changed = date.fromtimestamp(max(p.stat().st_mtime for p in chapters)).isoformat()
-    return (f'<div id="cover"><h1>{name}</h1>'
-            f'<p>AlgoProject — manual de uso. Actualizado el {changed} '
-            f'con <code>tools/manual.py</code>.</p><ol>{items}</ol>{index}</div>')
+    return (
+        f'<div id="cover"><h1>{name}</h1>'
+        f"<p>AlgoProject — manual de uso. Actualizado el {changed} "
+        f"con <code>tools/manual.py</code>.</p><ol>{items}</ol>{index}</div>"
+    )
 
 
 def render(name: str, chapters: list[Path], where: dict[str, str]) -> str:
@@ -179,9 +295,11 @@ def render(name: str, chapters: list[Path], where: dict[str, str]) -> str:
         md.reset()
         text = relink(page.read_text(encoding="utf-8"), where)
         body.append(f"<section>{md.convert(text)}</section>")
-    return (f'<!doctype html><html lang="es"><head><meta charset="utf-8">'
-            f"<title>AlgoProject — {name}</title><style>{STYLE}</style></head>"
-            f"<body>{cover(name, chapters)}{''.join(body)}</body></html>")
+    return (
+        f'<!doctype html><html lang="es"><head><meta charset="utf-8">'
+        f"<title>AlgoProject — {name}</title><style>{STYLE}</style></head>"
+        f"<body>{cover(name, chapters)}{''.join(body)}</body></html>"
+    )
 
 
 _SRC = re.compile(r'src="([^"]+)"')
@@ -202,7 +320,9 @@ def fingerprint(html: str) -> str:
     digest = hashlib.sha256(html.encode("utf-8"))
     for src in sorted(set(_SRC.findall(html))):
         picture = MANUAL_SRC / src
-        digest.update(src.encode("utf-8") + (picture.read_bytes() if picture.is_file() else b""))
+        digest.update(
+            src.encode("utf-8") + (picture.read_bytes() if picture.is_file() else b"")
+        )
     return digest.hexdigest()
 
 
@@ -211,8 +331,10 @@ def main() -> None:
     found = {p.stem for p in MANUAL_SRC.glob("*.md") if p.name[0].isdigit()}
     where = home()
     if found - set(where) or set(where) - found:
-        raise SystemExit(f"chapters without a family: {sorted(found - set(where))}; "
-                         f"families naming a missing chapter: {sorted(set(where) - found)}")
+        raise SystemExit(
+            f"chapters without a family: {sorted(found - set(where))}; "
+            f"families naming a missing chapter: {sorted(set(where) - found)}"
+        )
     try:
         done = json.loads(RENDERED.read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -224,15 +346,27 @@ def main() -> None:
             print(f"{len(stems):2d} chapters -> {pdf.name} unchanged")
             continue
         html.write_text(doc, encoding="utf-8")
-        subprocess.run([str(BROWSER), "--headless=new", "--disable-gpu", "--no-sandbox",
-                        "--no-pdf-header-footer", "--virtual-time-budget=10000",
-                        f"--print-to-pdf={pdf}", html.as_uri()],
-                       check=True, capture_output=True,
-                       env={**os.environ, "TMPDIR": str(tmp_dir())})   # Chrome's scoped_dir*
+        subprocess.run(
+            [
+                str(BROWSER),
+                "--headless=new",
+                "--disable-gpu",
+                "--no-sandbox",
+                "--no-pdf-header-footer",
+                "--virtual-time-budget=10000",
+                f"--print-to-pdf={pdf}",
+                html.as_uri(),
+            ],
+            check=True,
+            capture_output=True,
+            env={**os.environ, "TMPDIR": str(tmp_dir())},
+        )  # Chrome's scoped_dir*
         html.unlink()
         done[fam] = fingerprint(doc)
         RENDERED.write_text(json.dumps(done, indent=1), encoding="utf-8")
-        print(f"{len(stems):2d} chapters -> {pdf.name} ({pdf.stat().st_size // 1024} KB)")
+        print(
+            f"{len(stems):2d} chapters -> {pdf.name} ({pdf.stat().st_size // 1024} KB)"
+        )
 
 
 if __name__ == "__main__":

@@ -21,7 +21,10 @@ def table(data: dict) -> pd.DataFrame:
     market = data["market"]
     trades = data["trades"].sort_values(["identity", "Close time"])
     daily = data["curve"].diff()
-    legs = {"IS": daily[daily.index < data["split"]], "OOS": daily[data["split"]:data["end"]]}
+    legs = {
+        "IS": daily[daily.index < data["split"]],
+        "OOS": daily[data["split"] : data["end"]],
+    }
     parts = []
     for sample, leg in legs.items():
         mine = trades[trades["sample"] == sample]
@@ -29,6 +32,9 @@ def table(data: dict) -> pd.DataFrame:
         if sample == "OOS":
             parts.append(pd.DataFrame({"trade_t": plain["iid"]}))
         risk = floating.table(leg, mine, market["risk"], market["years"][sample])
-        parts.append(risk.assign(trades_per_year=plain["n"] / market["years"][sample])
-                     .add_prefix(sample.lower() + "_"))
+        parts.append(
+            risk.assign(
+                trades_per_year=plain["n"] / market["years"][sample]
+            ).add_prefix(sample.lower() + "_")
+        )
     return pd.concat(parts, axis=1).drop(columns="is_trades_per_year")

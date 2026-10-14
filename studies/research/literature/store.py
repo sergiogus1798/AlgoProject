@@ -23,22 +23,33 @@ def entries() -> list[dict]:
     """Every entry: the hand-built `edges-*.yaml` first, then the scout's `scout-*.yaml` by day."""
     root = research_literature_dir()
     files = sorted(root.glob("edges-*.yaml")) + sorted(root.glob("scout-*.yaml"))
-    return [e for f in files for e in yaml.safe_load(f.read_text(encoding="utf-8"))["entries"]]
+    return [
+        e
+        for f in files
+        for e in yaml.safe_load(f.read_text(encoding="utf-8"))["entries"]
+    ]
 
 
 def next_number() -> int:
     """One more than the largest number any entry id carries."""
-    return 1 + max(int(cast("re.Match[str]", NUMBER.match(e["id"]))[1]) for e in entries())
+    return 1 + max(
+        int(cast("re.Match[str]", NUMBER.match(e["id"]))[1]) for e in entries()
+    )
 
 
 def add(entry: dict, day: str) -> Path:
     """Append one stamped entry to that day's `scout-<day>.yaml`."""
     path = research_literature_dir() / f"scout-{day}.yaml"
-    held = yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {
-        "generated": day, "entries": []}
+    held = (
+        yaml.safe_load(path.read_text(encoding="utf-8"))
+        if path.exists()
+        else {"generated": day, "entries": []}
+    )
     held["entries"].append(entry)
-    path.write_text(yaml.safe_dump(held, sort_keys=False, allow_unicode=True, width=110),
-                    encoding="utf-8")
+    path.write_text(
+        yaml.safe_dump(held, sort_keys=False, allow_unicode=True, width=110),
+        encoding="utf-8",
+    )
     return path
 
 
@@ -47,9 +58,13 @@ def replace(entry: dict) -> None:
     for path in research_literature_dir().glob("scout-*.yaml"):
         held = yaml.safe_load(path.read_text(encoding="utf-8"))
         if any(e["id"] == entry["id"] for e in held["entries"]):
-            held["entries"] = [entry if e["id"] == entry["id"] else e for e in held["entries"]]
-            path.write_text(yaml.safe_dump(held, sort_keys=False, allow_unicode=True, width=110),
-                            encoding="utf-8")
+            held["entries"] = [
+                entry if e["id"] == entry["id"] else e for e in held["entries"]
+            ]
+            path.write_text(
+                yaml.safe_dump(held, sort_keys=False, allow_unicode=True, width=110),
+                encoding="utf-8",
+            )
 
 
 def papers() -> dict[str, dict]:
@@ -65,8 +80,10 @@ def save_papers(rows: dict[str, dict]) -> None:
     """Write the papers register whole, through a temp file beside it."""
     path = research_literature_dir() / "papers.jsonl"
     tmp = path.with_suffix(".tmp")
-    tmp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows.values()),
-                   encoding="utf-8")
+    tmp.write_text(
+        "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows.values()),
+        encoding="utf-8",
+    )
     tmp.replace(path)
 
 
@@ -87,5 +104,7 @@ def runs() -> list[dict]:
 
 def add_run(row: dict) -> None:
     """Append one run's cost line."""
-    with (research_literature_dir() / "runs.jsonl").open("a", encoding="utf-8") as handle:
+    with (research_literature_dir() / "runs.jsonl").open(
+        "a", encoding="utf-8"
+    ) as handle:
         handle.write(json.dumps(row, ensure_ascii=False) + "\n")

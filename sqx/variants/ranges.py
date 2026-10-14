@@ -17,7 +17,9 @@ BAR, WINDOW, OTHER, UNVERIFIED = "bar", "window", "other", "unverified"
 BUILTIN = "_builtin"
 CONSTANT = "ParamTypeConstant"
 # What SQX writes for a distance: `SLPT` for stop and target, other namespaces for the rest.
-FORMULA = re.compile(r'(<Formula key="SQ\.Formulas\.\w+\.(\w+)">)(.*?)(</Formula>)', re.S)
+FORMULA = re.compile(
+    r'(<Formula key="SQ\.Formulas\.\w+\.(\w+)">)(.*?)(</Formula>)', re.S
+)
 VALUE = re.compile(r'(<Param\b[^>]*\bkey="#Value#"[^>]*>)([^<]+)(</Param>)')
 ATR_PERIOD = re.compile(r'(<Param\b[^>]*\bkey="#AtrPeriod#"[^>]*>)([^<]+)(</Param>)')
 ATR_BASED = "ATRBasedValue"
@@ -67,23 +69,34 @@ def measures(portfolio: str, rulings: dict) -> dict[str, str]:
         if name[0].isdigit() or typed == "boolean":
             continue
         if name in bound:
-            found[name] = (BAR if bound[name] == ATR_BASED
-                           else OTHER if bound[name] in FIXED else UNVERIFIED)
+            found[name] = (
+                BAR
+                if bound[name] == ATR_BASED
+                else OTHER
+                if bound[name] in FIXED
+                else UNVERIFIED
+            )
         elif block.startswith(lengths.CUSTOM):
             listed = rulings.get(block) or {}
             if param in listed or typed == "double":
                 found[name] = listed.get(param, UNVERIFIED)
         elif typed == "double":
-            rule = next((r["measure"] for r in rulings[BUILTIN]
-                         if re.search(r["block"], block) and re.fullmatch(r["param"], param)),
-                        None)
+            rule = next(
+                (
+                    r["measure"]
+                    for r in rulings[BUILTIN]
+                    if re.search(r["block"], block) and re.fullmatch(r["param"], param)
+                ),
+                None,
+            )
             if rule or kind[name] not in ("", CONSTANT):
                 found[name] = rule or UNVERIFIED
     return found
 
 
-def stops(portfolio: str, c: float | None,
-          period: Callable[[float], dict]) -> tuple[str, int, list[dict]]:
+def stops(
+    portfolio: str, c: float | None, period: Callable[[float], dict]
+) -> tuple[str, int, list[dict]]:
     """The same strategy with every literal of its ATR distances moved to the sibling's bars.
 
     A coefficient bound to a variable is `measures`' business; this is for what the formula
@@ -113,7 +126,11 @@ def stops(portfolio: str, c: float | None,
             if 'variable="true"' in m.group(1):
                 return m.group(0)
             coefs += 1
-            return m.group(1) + (f"{float(m.group(2)) / c:.6g}" if c else m.group(2)) + m.group(3)
+            return (
+                m.group(1)
+                + (f"{float(m.group(2)) / c:.6g}" if c else m.group(2))
+                + m.group(3)
+            )
 
         def bars(m: re.Match) -> str:
             """A literal ATR period rescaled like any other length."""
@@ -139,12 +156,20 @@ def atr(bars: pd.DataFrame, period: int) -> pd.Series:
         a few periods, which a median over years does not see.
     """
     prev = bars["Close"].shift()
-    true_range = pd.concat([bars["High"] - bars["Low"], (bars["High"] - prev).abs(),
-                            (bars["Low"] - prev).abs()], axis=1).max(axis=1)
+    true_range = pd.concat(
+        [
+            bars["High"] - bars["Low"],
+            (bars["High"] - prev).abs(),
+            (bars["Low"] - prev).abs(),
+        ],
+        axis=1,
+    ).max(axis=1)
     return cast("pd.Series", true_range.ewm(alpha=1 / period, adjust=False).mean())
 
 
-def ratio(mother: pd.DataFrame, sibling: pd.DataFrame, period: int, scaled: int) -> float:
+def ratio(
+    mother: pd.DataFrame, sibling: pd.DataFrame, period: int, scaled: int
+) -> float:
     """c: how much bigger the sibling's typical bar is than the mother's (proposal 4.2).
 
     Args:

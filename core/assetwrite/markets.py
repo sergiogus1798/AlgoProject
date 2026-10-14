@@ -36,8 +36,13 @@ def declare_main(symbol: str, sqx_symbol: str) -> dict[str, Any]:
     path = ASSETS / MARKETS
     doc = read(path)
     if symbol not in doc:
-        block = CommentedMap({"main": sqx_symbol, "timeframe": None,
-                              "categories": CommentedMap({"family": [], "structural": []})})
+        block = CommentedMap(
+            {
+                "main": sqx_symbol,
+                "timeframe": None,
+                "categories": CommentedMap({"family": [], "structural": []}),
+            }
+        )
         doc[symbol] = block
         write(path, doc)
     return doc[symbol]
@@ -65,10 +70,15 @@ def set_market(symbol: str, category: str, feeds: list[dict[str, Any]]) -> Marke
             del rows[i]
     rows.extend([flow(f) for f in feeds if f["feed"] not in {r["feed"] for r in rows}])
     rows.fa.set_block_style() if rows else rows.fa.set_flow_style()
-    if not rows and rows.ca.end:   # an emptied list drops the lines after it: its key keeps them
-        rows.ca.end[0].value = "\n" + "".join(" " * t.column * t.value.startswith("#") + t.value
-                                               for t in rows.ca.end)
-        cats.ca.items.setdefault(category, [None] * 4)[2] = rows.ca.end[0]   # keep its comment above
+    if (
+        not rows and rows.ca.end
+    ):  # an emptied list drops the lines after it: its key keeps them
+        rows.ca.end[0].value = "\n" + "".join(
+            " " * t.column * t.value.startswith("#") + t.value for t in rows.ca.end
+        )
+        cats.ca.items.setdefault(category, [None] * 4)[2] = rows.ca.end[
+            0
+        ]  # keep its comment above
     write(path, doc)
     return {"symbol": symbol, "category": category, "feeds": feeds}
 
@@ -109,10 +119,14 @@ def set_expected_sign(table: dict[str, dict[str, str]]) -> dict[str, dict[str, s
     first = EXPECTED_SIGN not in doc
     doc[EXPECTED_SIGN] = block
     if first:
-        doc.yaml_set_comment_before_after_key(EXPECTED_SIGN, before=(
-            "\nNO es un activo (dueño, 2026-10-12): el signo esperado de los mercados por familia de\n"
-            "idea (arquetipo de plantilla). `family: positive` siempre; `structural: control` = control\n"
-            "negativo (pasa con z <= 0, cuenta en P8 con z >= +1,65); `none` = sin signo, no se juzga.\n"
-            "Lo escribe core.assetwrite.set_expected_sign; lo lee core.assetmarkets.expected_sign."))
+        doc.yaml_set_comment_before_after_key(
+            EXPECTED_SIGN,
+            before=(
+                "\nNO es un activo (dueño, 2026-10-12): el signo esperado de los mercados por familia de\n"
+                "idea (arquetipo de plantilla). `family: positive` siempre; `structural: control` = control\n"
+                "negativo (pasa con z <= 0, cuenta en P8 con z >= +1,65); `none` = sin signo, no se juzga.\n"
+                "Lo escribe core.assetwrite.set_expected_sign; lo lee core.assetmarkets.expected_sign."
+            ),
+        )
     write(path, doc)
     return table

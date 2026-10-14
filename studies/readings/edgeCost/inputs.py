@@ -63,7 +63,9 @@ def names(folder: Path) -> pd.Series:
     Returns:
         Series indexed by identity; the retest (OOS) databank's own name for it.
     """
-    return pd.Series(pd.read_parquet(folder / "metrics.parquet", columns=["strategy"])["strategy"])
+    return pd.Series(
+        pd.read_parquet(folder / "metrics.parquet", columns=["strategy"])["strategy"]
+    )
 
 
 def timeframe(folder: Path) -> str:

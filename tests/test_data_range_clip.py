@@ -10,8 +10,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sqx.projects import registryxml, setups  # noqa: E402
 
 DAY = registryxml.DAY
-TASK = ('<Resources><Symbol name="X_M1" source="2" dateFrom="100" dateTo="900"></Symbol>'
-        '<Symbol name="Y_M1" source="2" dateFrom="100" dateTo="900"></Symbol></Resources>')
+TASK = (
+    '<Resources><Symbol name="X_M1" source="2" dateFrom="100" dateTo="900"></Symbol>'
+    '<Symbol name="Y_M1" source="2" dateFrom="100" dateTo="900"></Symbol></Resources>'
+)
 
 
 def test_clipped_to_bars(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -19,8 +21,12 @@ def test_clipped_to_bars(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(registryxml, "bars", lambda feed: (3 * DAY + 5, 10 * DAY + 7))
     text, n = setups.set_data_range(TASK, {"sqx_symbol": "X_M1"}, (0, 20 * DAY))
     assert n == 1
-    assert f'name="X_M1" source="2" dateFrom="{3 * DAY}" dateTo="{10 * DAY + 7}"' in text
-    assert f'name="Y_M1" source="2" dateFrom="{3 * DAY}" dateTo="900"' in text   # a market: its own range, clipped too
+    assert (
+        f'name="X_M1" source="2" dateFrom="{3 * DAY}" dateTo="{10 * DAY + 7}"' in text
+    )
+    assert (
+        f'name="Y_M1" source="2" dateFrom="{3 * DAY}" dateTo="900"' in text
+    )  # a market: its own range, clipped too
 
 
 def test_inside_bars_kept(monkeypatch: pytest.MonkeyPatch) -> None:

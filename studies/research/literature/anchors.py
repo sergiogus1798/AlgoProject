@@ -15,7 +15,9 @@ def squeeze(text: str) -> str:
     they are the result.
     """
     signs = text.translate({0x2212: "-", 0x2013: "-", 0x2014: "-", 0x2217: "*"})
-    flat = unicodedata.normalize("NFKD", signs).encode("ascii", "ignore").decode().lower()
+    flat = (
+        unicodedata.normalize("NFKD", signs).encode("ascii", "ignore").decode().lower()
+    )
     # A hyphen before a digit is a minus sign or a range and is kept; any other one is a word
     # broken at a line end, or a compound, and goes.
     return re.sub(r"-(?![0-9.])|[^a-z0-9%.,*-]", "", flat)
@@ -24,8 +26,10 @@ def squeeze(text: str) -> str:
 def pages(text: str) -> dict[str, str]:
     """A stored source split at its `[abstract]` and `[page N]` marks: place → its text."""
     parts = PAGE.split(text)
-    return {f"p. {name[5:]}" if name.startswith("page") else name: body
-            for name, body in zip(parts[1::2], parts[2::2])}
+    return {
+        f"p. {name[5:]}" if name.startswith("page") else name: body
+        for name, body in zip(parts[1::2], parts[2::2])
+    }
 
 
 def found(quote: str, where: str, source: dict[str, str]) -> bool:
@@ -33,8 +37,14 @@ def found(quote: str, where: str, source: dict[str, str]) -> bool:
     return where in source and squeeze(quote) in squeeze(source[where])
 
 
-def errors(anchor: object, value: object, name: str, source: dict[str, str],
-           min_chars: int, only: str = "") -> list[str]:
+def errors(
+    anchor: object,
+    value: object,
+    name: str,
+    source: dict[str, str],
+    min_chars: int,
+    only: str = "",
+) -> list[str]:
     """What is wrong with one field's anchor.
 
     Args:
@@ -49,14 +59,23 @@ def errors(anchor: object, value: object, name: str, source: dict[str, str],
         Messages, empty when the anchor holds.
     """
     if anchor == ABSENT or value == ABSENT:
-        return [] if anchor == value else [
-            f"{name}: «{ABSENT}» must be both the value and the anchor, or neither"]
+        return (
+            []
+            if anchor == value
+            else [
+                f"{name}: «{ABSENT}» must be both the value and the anchor, or neither"
+            ]
+        )
     if not isinstance(anchor, dict) or set(anchor) != {"quote", "where"}:
         return [f"{name}: the anchor is {{quote, where}} or «{ABSENT}»"]
     if len(anchor["quote"]) < min_chars:
-        return [f"{name}: a quote of {len(anchor['quote'])} characters is not a sentence"]
+        return [
+            f"{name}: a quote of {len(anchor['quote'])} characters is not a sentence"
+        ]
     if only and anchor["where"] != only:
-        return [f"{name}: read as {only} only, the quote cannot come from {anchor['where']}"]
+        return [
+            f"{name}: read as {only} only, the quote cannot come from {anchor['where']}"
+        ]
     if not found(anchor["quote"], anchor["where"], source):
         return [f"{name}: the quote is not in the source at {anchor['where']}"]
     return []

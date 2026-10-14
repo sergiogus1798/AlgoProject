@@ -1,4 +1,5 @@
 """One strategy's week: live trades paired with the SQX backtest's, and every gap as a number — no pass bar."""
+
 from typing import Any
 
 import numpy as np
@@ -8,9 +9,25 @@ from mt5 import compare
 from mt5.reconcile import floating, week as weeks
 from mt5.verify import judge as clocks
 
-SQX = ["Ticket", "Type", "Open time", "Open price", "Size", "Close time", "Close price",
-       "Profit/Loss"]
-LIVE = ["Type", "Open time", "Open price", "Size", "Close time", "Close price", "Profit/Loss"]
+SQX = [
+    "Ticket",
+    "Type",
+    "Open time",
+    "Open price",
+    "Size",
+    "Close time",
+    "Close price",
+    "Profit/Loss",
+]
+LIVE = [
+    "Type",
+    "Open time",
+    "Open price",
+    "Size",
+    "Close time",
+    "Close price",
+    "Profit/Loss",
+]
 
 
 def _shaped(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
@@ -20,21 +37,36 @@ def _shaped(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     if "Ticket" in columns and out["Ticket"].isna().all():  # pyright: ignore[reportGeneralTypeIssues]  # pandas/numpy stubs lose the type through indexing
         out["Ticket"] = np.arange(1, len(out) + 1)
     for c in columns:
-        out[c] = (pd.to_datetime(out[c]) if c.endswith("time") else out[c].astype(object)
-                  if c == "Type" else out[c].astype(float))
+        out[c] = (
+            pd.to_datetime(out[c])
+            if c.endswith("time")
+            else out[c].astype(object)
+            if c == "Type"
+            else out[c].astype(float)
+        )
     return out
 
 
 def _points(frame: pd.DataFrame, instrument: dict) -> pd.DataFrame:
     """`compare.in_points`, plus `points`: the price move in the asset's ticks, free of size."""
     out = compare.in_points(frame, instrument)
-    return out.assign(points=out["Profit/Loss"] / (instrument["point_value"] * out["Size"])
-                      / instrument["tick_size"])
+    return out.assign(
+        points=out["Profit/Loss"]
+        / (instrument["point_value"] * out["Size"])
+        / instrument["tick_size"]
+    )
 
 
-def reconcile(sqx: pd.DataFrame, live: pd.DataFrame, week: str, timeframe: str,
-              instrument: dict, zones: tuple[str, str], bars: pd.DataFrame | None,
-              cfg: dict) -> dict[str, Any]:
+def reconcile(
+    sqx: pd.DataFrame,
+    live: pd.DataFrame,
+    week: str,
+    timeframe: str,
+    instrument: dict,
+    zones: tuple[str, str],
+    bars: pd.DataFrame | None,
+    cfg: dict,
+) -> dict[str, Any]:
     """Pair one strategy's SQX backtest with what its EA really did, and measure the gaps.
 
     Args:
@@ -58,8 +90,9 @@ def reconcile(sqx: pd.DataFrame, live: pd.DataFrame, week: str, timeframe: str,
     tolerance = cfg["pairing"]["entry_tolerance_bars"] * clocks.MINUTES[timeframe]
     live = weeks.cut(_shaped(live, LIVE), week)
     in_feed = compare.to_zone(live, zones[1], zones[0])
-    live = _points(live, instrument).join(floating.rebuild(in_feed, bars,
-                                                           instrument["point_value"]))
+    live = _points(live, instrument).join(
+        floating.rebuild(in_feed, bars, instrument["point_value"])
+    )
     live["row"] = np.arange(len(live), dtype=float)
     sqx = _shaped(sqx, SQX)
     zoned = compare.to_zone(sqx, *zones)
@@ -67,39 +100,71 @@ def reconcile(sqx: pd.DataFrame, live: pd.DataFrame, week: str, timeframe: str,
     # (at most max_offset_h) is applied, plus a day of margin. The rest are cut below anyway.
     start, end = weeks.bounds(week)
     margin = pd.Timedelta(hours=cfg["clock"]["max_offset_h"], days=1)
-    near = ((zoned["Open time"] >= start - margin) & (zoned["Open time"] < end + margin)).to_numpy()
+    near = (
+        (zoned["Open time"] >= start - margin) & (zoned["Open time"] < end + margin)
+    ).to_numpy()
     sqx = _points(zoned, instrument).join(
-        floating.rebuild(sqx[near], bars, instrument["point_value"]))  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
+        floating.rebuild(sqx[near], bars, instrument["point_value"])  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
+    )
     hours = clocks.clock(sqx, live, tolerance, cfg["clock"]["max_offset_h"])
     sqx = weeks.cut(clocks.shifted(sqx, hours), week)
-    both = compare.pair(sqx, live, tolerance).astype(sqx.dtypes.to_dict())   # an empty side keeps its types
+    both = compare.pair(sqx, live, tolerance).astype(
+        sqx.dtypes.to_dict()
+    )  # an empty side keeps its types
     hit = both.dropna(subset=["Open time_mt5"])
     scale = hit["Size_mt5"] / hit["Size"]
     side = np.where(hit["Type"].astype(str).str.startswith("Buy"), 1.0, -1.0)
-    pairs = pd.DataFrame({
-        "ticket_sqx": hit["Ticket"].astype(int), "type": hit["Type"],
-        "open_sqx": hit["Open time"], "open_live": hit["Open time_mt5"],
-        "entry_gap_min": (hit["Open time_mt5"] - hit["Open time"]).dt.total_seconds() / 60,
-        "price_sqx": hit["Open price"], "price_live": hit["Open price_mt5"],
-        "entry_gap_pts": (hit["Open price_mt5"] - hit["Open price"]) / instrument["tick_size"],
-        # the same gap signed by what it cost: + is a worse fill live than in the backtest
-        "entry_slip_pts": (hit["Open price_mt5"] - hit["Open price"]) * side
-        / instrument["tick_size"],
-        "close_gap_min": (hit["Close time_mt5"] - hit["Close time"]).dt.total_seconds() / 60,
-        "pnl_pts_sqx": hit["points"], "pnl_pts_live": hit["points_mt5"],
-        "pnl_gap_pts": hit["points_mt5"] - hit["points"],
-        "size_live": hit["Size_mt5"],
-        "pnl_cur_sqx": hit["Profit/Loss USD"] * scale, "pnl_cur_live": hit["Profit/Loss USD_mt5"],
-        "pnl_gap_cur": hit["Profit/Loss USD_mt5"] - hit["Profit/Loss USD"] * scale,
-        "mae_sqx": hit["mae"] * scale, "mae_live": hit["mae_mt5"],
-        "mae_gap": hit["mae_mt5"] - hit["mae"] * scale,
-        "mfe_sqx": hit["mfe"] * scale, "mfe_live": hit["mfe_mt5"],
-        "mfe_gap": hit["mfe_mt5"] - hit["mfe"] * scale}).reset_index(drop=True)
-    sqx_only = both[both["Open time_mt5"].isna()][["Ticket", "Type", "Open time", "Open price",
-                                                   "Close time", "points"]]
-    live_only = live[~live["row"].isin(hit["row_mt5"])][["Type", "Open time", "Open price",
-                                                         "Close time", "Size", "points",
-                                                         "Profit/Loss USD"]]
+    pairs = pd.DataFrame(
+        {
+            "ticket_sqx": hit["Ticket"].astype(int),
+            "type": hit["Type"],
+            "open_sqx": hit["Open time"],
+            "open_live": hit["Open time_mt5"],
+            "entry_gap_min": (
+                hit["Open time_mt5"] - hit["Open time"]
+            ).dt.total_seconds()
+            / 60,
+            "price_sqx": hit["Open price"],
+            "price_live": hit["Open price_mt5"],
+            "entry_gap_pts": (hit["Open price_mt5"] - hit["Open price"])
+            / instrument["tick_size"],
+            # the same gap signed by what it cost: + is a worse fill live than in the backtest
+            "entry_slip_pts": (hit["Open price_mt5"] - hit["Open price"])
+            * side
+            / instrument["tick_size"],
+            "close_gap_min": (
+                hit["Close time_mt5"] - hit["Close time"]
+            ).dt.total_seconds()
+            / 60,
+            "pnl_pts_sqx": hit["points"],
+            "pnl_pts_live": hit["points_mt5"],
+            "pnl_gap_pts": hit["points_mt5"] - hit["points"],
+            "size_live": hit["Size_mt5"],
+            "pnl_cur_sqx": hit["Profit/Loss USD"] * scale,
+            "pnl_cur_live": hit["Profit/Loss USD_mt5"],
+            "pnl_gap_cur": hit["Profit/Loss USD_mt5"] - hit["Profit/Loss USD"] * scale,
+            "mae_sqx": hit["mae"] * scale,
+            "mae_live": hit["mae_mt5"],
+            "mae_gap": hit["mae_mt5"] - hit["mae"] * scale,
+            "mfe_sqx": hit["mfe"] * scale,
+            "mfe_live": hit["mfe_mt5"],
+            "mfe_gap": hit["mfe_mt5"] - hit["mfe"] * scale,
+        }
+    ).reset_index(drop=True)
+    sqx_only = both[both["Open time_mt5"].isna()][
+        ["Ticket", "Type", "Open time", "Open price", "Close time", "points"]
+    ]
+    live_only = live[~live["row"].isin(hit["row_mt5"])][
+        [
+            "Type",
+            "Open time",
+            "Open price",
+            "Close time",
+            "Size",
+            "points",
+            "Profit/Loss USD",
+        ]
+    ]
 
     def mean(column: str, absolute: bool = False) -> float | None:
         """A column's mean over the pairs that have it, None when none does."""
@@ -111,29 +176,54 @@ def reconcile(sqx: pd.DataFrame, live: pd.DataFrame, week: str, timeframe: str,
         return float(values.fillna(0.0).sum())
 
     summary = {
-        "sqx_trades": len(sqx), "live_trades": len(live), "paired": len(pairs),
-        "sqx_only": len(sqx_only), "live_only": len(live_only),
-        "live_open": int(live["Close time"].isna().sum()), "clock_h": hours,
+        "sqx_trades": len(sqx),
+        "live_trades": len(live),
+        "paired": len(pairs),
+        "sqx_only": len(sqx_only),
+        "live_only": len(live_only),
+        "live_open": int(live["Close time"].isna().sum()),
+        "clock_h": hours,
         "entry_gap_min_mean_abs": mean("entry_gap_min", True),
         "entry_gap_pts_mean": mean("entry_gap_pts"),
         "entry_slip_pts_mean": mean("entry_slip_pts"),
-        "pnl_pts_sqx": total(sqx["points"]), "pnl_pts_live": total(live["points"]),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
+        "pnl_pts_sqx": total(sqx["points"]),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
+        "pnl_pts_live": total(live["points"]),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
         "pnl_gap_pts_paired": total(pairs["pnl_gap_pts"]),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
         "pnl_cur_live": total(live["Profit/Loss USD"]),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
         "pnl_cur_sqx_paired": total(pairs["pnl_cur_sqx"]),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
         "pnl_gap_cur_paired": total(pairs["pnl_gap_cur"]),  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
         "mae_pairs": int(pairs["mae_gap"].notna().sum()),
-        "mae_gap_mean": mean("mae_gap"), "mfe_gap_mean": mean("mfe_gap"),
-        "worst_mae_sqx": None if pairs["mae_sqx"].isna().all() else float(pairs["mae_sqx"].min()),  # pyright: ignore[reportGeneralTypeIssues]  # pandas/numpy stubs lose the type through indexing
-        "worst_mae_live": None if pairs["mae_live"].isna().all()  # pyright: ignore[reportGeneralTypeIssues]  # pandas/numpy stubs lose the type through indexing
-        else float(pairs["mae_live"].min())}
-    return {"pairs": pairs, "sqx_only": sqx_only.reset_index(drop=True),  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
-            "live_only": live_only.reset_index(drop=True), "summary": summary}  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
+        "mae_gap_mean": mean("mae_gap"),
+        "mfe_gap_mean": mean("mfe_gap"),
+        "worst_mae_sqx": None
+        if pairs["mae_sqx"].isna().all()  # pyright: ignore[reportGeneralTypeIssues]  # pandas/numpy stubs lose the type through indexing
+        else float(pairs["mae_sqx"].min()),
+        "worst_mae_live": None
+        if pairs["mae_live"].isna().all()  # pyright: ignore[reportGeneralTypeIssues]  # pandas/numpy stubs lose the type through indexing
+        else float(pairs["mae_live"].min()),
+    }
+    return {
+        "pairs": pairs,
+        "sqx_only": sqx_only.reset_index(drop=True),  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
+        "live_only": live_only.reset_index(drop=True),  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
+        "summary": summary,
+    }
 
 
 def totals(summaries: list[dict]) -> dict[str, Any]:
     """The week's totals over every live strategy: counts and P&L added, gaps not averaged."""
-    keys = ["sqx_trades", "live_trades", "paired", "sqx_only", "live_only", "live_open",
-            "pnl_pts_sqx", "pnl_pts_live", "pnl_gap_pts_paired", "pnl_cur_live",
-            "pnl_cur_sqx_paired", "pnl_gap_cur_paired"]
+    keys = [
+        "sqx_trades",
+        "live_trades",
+        "paired",
+        "sqx_only",
+        "live_only",
+        "live_open",
+        "pnl_pts_sqx",
+        "pnl_pts_live",
+        "pnl_gap_pts_paired",
+        "pnl_cur_live",
+        "pnl_cur_sqx_paired",
+        "pnl_gap_cur_paired",
+    ]
     return {k: sum(s[k] for s in summaries) for k in keys}

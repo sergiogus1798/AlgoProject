@@ -4,8 +4,12 @@ import pandas as pd
 
 from studies.research.literature import selection
 
-QUESTION, NO_MEASURE, WAITING, MEASURED = ("pregunta al dueño", "sin medida: falta una condición",
-                                           "en cola", "medida")
+QUESTION, NO_MEASURE, WAITING, MEASURED = (
+    "pregunta al dueño",
+    "sin medida: falta una condición",
+    "en cola",
+    "medida",
+)
 
 
 def tested(entry: dict) -> list[str]:
@@ -30,13 +34,21 @@ def reading(rows: pd.DataFrame) -> str:
     ran = pd.DataFrame(rows[rows["n_trades"] >= 30])
     if ran.empty:
         return f"{len(rows)} celdas, ninguna llega a 30 operaciones en build"
-    best = ran.sort_values(["passes", "q", "multiple"], ascending=[False, True, False]).iloc[0]
-    tried = f"{rows['measure'].nunique()} medidas, " if rows["measure"].nunique() > 1 else ""
-    return (f"{tried}{len(ran)} celdas con contraste, {int((ran['p'] <= 0.05).sum())} con p cruda ≤ 0,05, "
-            f"{int(ran['significant'].sum())} significativas tras corregir, "
-            f"{int(ran['passes'].sum())} pasan los cuatro filtros; mejor: `{best['measure']}` {best['symbol']} "
-            f"{best['timeframe']} {best['direction']} {best['multiple']:.1f}× el coste, "
-            f"p corr. {best['q']:.2f}, {best['trades_per_year']:.0f} op/año")
+    best = ran.sort_values(
+        ["passes", "q", "multiple"], ascending=[False, True, False]
+    ).iloc[0]
+    tried = (
+        f"{rows['measure'].nunique()} medidas, "
+        if rows["measure"].nunique() > 1
+        else ""
+    )
+    return (
+        f"{tried}{len(ran)} celdas con contraste, {int((ran['p'] <= 0.05).sum())} con p cruda ≤ 0,05, "
+        f"{int(ran['significant'].sum())} significativas tras corregir, "
+        f"{int(ran['passes'].sum())} pasan los cuatro filtros; mejor: `{best['measure']}` {best['symbol']} "
+        f"{best['timeframe']} {best['direction']} {best['multiple']:.1f}× el coste, "
+        f"p corr. {best['q']:.2f}, {best['trades_per_year']:.0f} op/año"
+    )
 
 
 def table(entries: list[dict], measures: pd.DataFrame, classes: dict) -> list[dict]:
@@ -57,10 +69,26 @@ def table(entries: list[dict], measures: pd.DataFrame, classes: dict) -> list[di
         where = selection.symbols(e, classes)
         got = state(e, measured)
         names = tested(e)
-        rows = measures[measures["measure"].isin(names) & measures["symbol"].isin(where)]
+        rows = measures[
+            measures["measure"].isin(names) & measures["symbol"].isin(where)
+        ]
         passing = rows[rows["passes"]]
-        out.append({"id": e["id"], "family": e["family"], "state": got, "measures": names,
-                    "symbols": where, "reading": reading(pd.DataFrame(rows)) if got == MEASURED else "—",
-                    "passing": list(zip(passing["symbol"], passing["timeframe"],
-                                        passing["direction"], passing["measure"]))})
+        out.append(
+            {
+                "id": e["id"],
+                "family": e["family"],
+                "state": got,
+                "measures": names,
+                "symbols": where,
+                "reading": reading(pd.DataFrame(rows)) if got == MEASURED else "—",
+                "passing": list(
+                    zip(
+                        passing["symbol"],
+                        passing["timeframe"],
+                        passing["direction"],
+                        passing["measure"],
+                    )
+                ),
+            }
+        )
     return out

@@ -10,7 +10,12 @@ from engines.market.calibrate import atr
 WINDOWS = {"year": (12, ""), "semester": (6, "H"), "quarter": (3, "Q")}
 NONE = np.empty(0, dtype=np.intp)  # a window the span holds no bar of
 # The drift term's variants: (one move per calendar window, the blind trade for the mean bar).
-VARIANTS = {"a": (False, False), "b": (True, False), "c": (False, True), "d": (True, True)}
+VARIANTS = {
+    "a": (False, False),
+    "b": (True, False),
+    "c": (False, True),
+    "d": (True, True),
+}
 
 
 def mean_move(bars: pd.DataFrame, windows: dict) -> dict[str, float]:
@@ -25,10 +30,15 @@ def mean_move(bars: pd.DataFrame, windows: dict) -> dict[str, float]:
         {sample: mean change in price units per bar}.
     """
     change = bars["Close"].diff()
-    return {sample: float(change[first:last].mean()) for sample, (first, last) in windows.items()}
+    return {
+        sample: float(change[first:last].mean())
+        for sample, (first, last) in windows.items()
+    }
 
 
-def drift(trades: pd.DataFrame, bars: pd.DataFrame, move: dict, point_value: float) -> np.ndarray:
+def drift(
+    trades: pd.DataFrame, bars: pd.DataFrame, move: dict, point_value: float
+) -> np.ndarray:
     """What the market's drift alone paid each trade for being in it, at the trade's own size.
 
     Args:
@@ -42,11 +52,17 @@ def drift(trades: pd.DataFrame, bars: pd.DataFrame, move: dict, point_value: flo
         mean term `core.significance.footprint` gives a same-footprint random trader.
     """
     grid = bars.index.to_numpy()
-    held = (np.searchsorted(grid, trades["Close time"].to_numpy(), side="right")
-            - np.searchsorted(grid, trades["Open time"].to_numpy(), side="right"))
+    held = np.searchsorted(
+        grid, trades["Close time"].to_numpy(), side="right"
+    ) - np.searchsorted(grid, trades["Open time"].to_numpy(), side="right")
     side = np.where(trades["Type"].astype(str) == "Sell", -1.0, 1.0)
-    return side * pd.Series(trades["sample"]).map(move).to_numpy() * held * trades["Size"].to_numpy() \
+    return (
+        side
+        * pd.Series(trades["sample"]).map(move).to_numpy()
+        * held
+        * trades["Size"].to_numpy()
         * point_value
+    )
 
 
 def t(trades: pd.DataFrame, value: str) -> pd.DataFrame:
@@ -66,7 +82,12 @@ def t(trades: pd.DataFrame, value: str) -> pd.DataFrame:
     x = (trades[value] - by.transform("mean")).to_numpy()
     keys = trades["identity"].to_numpy()
     lagged = np.where(np.r_[False, keys[1:] == keys[:-1]], x * np.r_[0.0, x[:-1]], 0.0)
-    sums = pd.DataFrame({"g0": x * x, "g1": lagged}).groupby(keys, sort=False).sum().reindex(n.index)
+    sums = (
+        pd.DataFrame({"g0": x * x, "g1": lagged})
+        .groupby(keys, sort=False)
+        .sum()
+        .reindex(n.index)
+    )
     rho = sums["g1"] / sums["g0"]
     effective = pd.Series(np.minimum(n * (1 - rho) / (1 + rho), n)).clip(lower=2)
     iid = by.mean() / by.std(ddof=1) * np.sqrt(n)
@@ -83,7 +104,9 @@ def calendar(time: pd.Series | pd.DatetimeIndex, window: str) -> np.ndarray:
     Returns:
         One label per stamp: "2020", "2020H1" or "2020Q3".
     """
-    assert window in WINDOWS, f"drift window {window!r}: year, semester or quarter, nothing shorter"
+    assert window in WINDOWS, (
+        f"drift window {window!r}: year, semester or quarter, nothing shorter"
+    )
     months, letter = WINDOWS[window]
     stamps = pd.Series(pd.DatetimeIndex(time)).dt
     year = stamps.year.astype(str)
@@ -91,8 +114,14 @@ def calendar(time: pd.Series | pd.DatetimeIndex, window: str) -> np.ndarray:
     return np.asarray(year + letter + part if letter else year)
 
 
-def drift_term(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str], window: str,
-               variant: str, point_value: float) -> tuple[np.ndarray, np.ndarray]:
+def drift_term(
+    trades: pd.DataFrame,
+    bars: pd.DataFrame,
+    span: tuple[str, str],
+    window: str,
+    variant: str,
+    point_value: float,
+) -> tuple[np.ndarray, np.ndarray]:
     """What the market paid each trade for being in it, under one of the four drift terms.
 
     Args:
@@ -120,7 +149,11 @@ def drift_term(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str], 
     per_window, blind = VARIANTS[variant]
     label = calendar(pd.Series(trades["Open time"]), window)
     inside = np.arange(len(bars))[bars.index.slice_indexer(*span)]
-    pool = calendar(pd.DatetimeIndex(bars.index[inside]), window) if per_window else np.full(len(inside), "")
+    pool = (
+        calendar(pd.DatetimeIndex(bars.index[inside]), window)
+        if per_window
+        else np.full(len(inside), "")
+    )
     mine = trades.assign(sample=label if per_window else "")
     if not blind:
         move = bars["Close"].diff().iloc[inside].groupby(pool).mean().to_dict()
@@ -128,21 +161,30 @@ def drift_term(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str], 
     opened, grid = bars["Open"].to_numpy(), bars.index.to_numpy()
     weight = 1.0 / np.r_[np.nan, atr(bars)[:-1]]
     weight[~np.isfinite(weight)] = 0.0
-    held = (np.searchsorted(grid, trades["Close time"].to_numpy(), side="right")
-            - np.searchsorted(grid, trades["Open time"].to_numpy(), side="right"))
+    held = np.searchsorted(
+        grid, trades["Close time"].to_numpy(), side="right"
+    ) - np.searchsorted(grid, trades["Open time"].to_numpy(), side="right")
     keys = pd.MultiIndex.from_arrays([mine["sample"].to_numpy(), held])
     moved, bars_of = {}, pd.Series(inside).groupby(pool).indices
     for group, hold in keys.unique():
         at = inside[bars_of.get(group, NONE)]
         at = at[at + hold < len(opened)]
-        moved[group, hold] = (((opened[at + hold] - opened[at]) * weight[at]).sum()
-                              / weight[at].sum())
+        moved[group, hold] = (
+            (opened[at + hold] - opened[at]) * weight[at]
+        ).sum() / weight[at].sum()
     side = np.where(trades["Type"].astype(str) == "Sell", -1.0, 1.0)
-    return (side * trades["Size"].to_numpy() * point_value
-            * pd.Series(moved).reindex(keys).to_numpy(), label)
+    return (
+        side
+        * trades["Size"].to_numpy()
+        * point_value
+        * pd.Series(moved).reindex(keys).to_numpy(),
+        label,
+    )
 
 
-def skew_kurt_t(s: np.ndarray, n: np.ndarray, skew: np.ndarray, kurt: np.ndarray) -> np.ndarray:
+def skew_kurt_t(
+    s: np.ndarray, n: np.ndarray, skew: np.ndarray, kurt: np.ndarray
+) -> np.ndarray:
     """The t of a mean with the Probabilistic Sharpe Ratio's standard error.
 
     Args:
@@ -173,8 +215,16 @@ def t_skew_kurt(trades: pd.DataFrame, value: str) -> pd.DataFrame:
     plain = t(trades, value)
     by = trades.groupby("identity", sort=False)[value]
     x = trades[value] - by.transform("mean")
-    m = (pd.DataFrame({k: x ** k for k in (2, 3, 4)})
-         .groupby(trades["identity"].to_numpy(), sort=False).mean().reindex(plain.index))
-    iid = skew_kurt_t(by.mean() / np.sqrt(m[2]), plain["n"].to_numpy(), m[3] / m[2] ** 1.5,
-                      m[4] / m[2] ** 2)
+    m = (
+        pd.DataFrame({k: x**k for k in (2, 3, 4)})
+        .groupby(trades["identity"].to_numpy(), sort=False)
+        .mean()
+        .reindex(plain.index)
+    )
+    iid = skew_kurt_t(
+        by.mean() / np.sqrt(m[2]),
+        plain["n"].to_numpy(),
+        m[3] / m[2] ** 1.5,
+        m[4] / m[2] ** 2,
+    )
     return plain.assign(iid=iid, ar1=iid * plain["ar1"] / plain["iid"])

@@ -15,9 +15,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from studies.transfer.crossTF import inputs as crosstf_inputs
 
-TODAY_DOCTRINE = {"crosstf": {"timeframes": {"H1": ["H4", "D1"]}},
-                  "wfc": {"tasks": [{"databank": "WFC_Build", "segment": "build"},
-                                   {"databank": "WFC_OOS1", "segment": "oos1"}]}}
+TODAY_DOCTRINE = {
+    "crosstf": {"timeframes": {"H1": ["H4", "D1"]}},
+    "wfc": {
+        "tasks": [
+            {"databank": "WFC_Build", "segment": "build"},
+            {"databank": "WFC_OOS1", "segment": "oos1"},
+        ]
+    },
+}
 
 
 def main() -> None:
@@ -30,30 +36,43 @@ def main() -> None:
         # crossTF: blocks.json says the run actually used M30/H4 — today's doctrine (H1
         # base, H4/D1) must never override it.
         (batch / "blocks.json").write_text(
-            json.dumps({"blocks": ["M30", "H4"]}), encoding="utf-8")
+            json.dumps({"blocks": ["M30", "H4"]}), encoding="utf-8"
+        )
         scaling = pd.DataFrame({"source_tf": ["H1", "H1"]})
-        with mock.patch("studies.transfer.crossTF.inputs.doctrine", return_value=TODAY_DOCTRINE):
+        with mock.patch(
+            "studies.transfer.crossTF.inputs.doctrine", return_value=TODAY_DOCTRINE
+        ):
             got = crosstf_inputs.blocks(scaling, None, batch)
         if got != ["M30", "H4"]:
-            failures.append(f"blocks() con blocks.json dio {got}, se esperaba el del archivo")
+            failures.append(
+                f"blocks() con blocks.json dio {got}, se esperaba el del archivo"
+            )
 
         # No blocks.json: the doctrine is the only thing left, and it must still answer.
         empty = Path(tmp) / "no_file"
         empty.mkdir()
-        with mock.patch("studies.transfer.crossTF.inputs.doctrine", return_value=TODAY_DOCTRINE):
+        with mock.patch(
+            "studies.transfer.crossTF.inputs.doctrine", return_value=TODAY_DOCTRINE
+        ):
             got = crosstf_inputs.blocks(scaling, None, empty)
         if got != ["H1", "H4", "D1"]:
-            failures.append(f"blocks() sin archivo dio {got}, se esperaba la doctrina de hoy")
+            failures.append(
+                f"blocks() sin archivo dio {got}, se esperaba la doctrina de hoy"
+            )
 
         # An explicit --set run.blocks= still wins over the file.
-        with mock.patch("studies.transfer.crossTF.inputs.doctrine", return_value=TODAY_DOCTRINE):
+        with mock.patch(
+            "studies.transfer.crossTF.inputs.doctrine", return_value=TODAY_DOCTRINE
+        ):
             got = crosstf_inputs.blocks(scaling, ["H1", "H2"], batch)
         if got != ["H1", "H2"]:
             failures.append("blocks() ignoro un run.blocks explicito")
 
-    print("\n".join(failures) or
-          "ok: blocks.json y ran.json mandan sobre un run ya hecho; sin ellos, la doctrina de "
-          "hoy sigue respondiendo; un run.blocks explicito sigue ganando a todos")
+    print(
+        "\n".join(failures)
+        or "ok: blocks.json y ran.json mandan sobre un run ya hecho; sin ellos, la doctrina de "
+        "hoy sigue respondiendo; un run.blocks explicito sigue ganando a todos"
+    )
     sys.exit(1 if failures else 0)
 
 

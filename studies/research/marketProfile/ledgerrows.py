@@ -9,7 +9,7 @@ from core.study.config import fingerprint
 from ledger import record, study
 from studies.research.marketProfile import inputs
 
-STEP = 1    # the profile belongs to the workflow's step 1, the idea
+STEP = 1  # the profile belongs to the workflow's step 1, the idea
 
 
 def rows(measures: pd.DataFrame, cfg: dict) -> list[dict]:
@@ -28,16 +28,27 @@ def rows(measures: pd.DataFrame, cfg: dict) -> list[dict]:
     for m in measures.to_dict("records"):
         lo, hi = inputs.span(m["symbol"])
         kept = m["significant"] if pd.isna(m["n_trades"]) else m["passes"]
-        out.append(record.search(
-            study.study_id(m["symbol"], m["timeframe"], "marketProfile"),
-            {"step": STEP, "launched_by": "studies.research.marketProfile.report",
-             "config_hash": fingerprint(cfg), "symbol": m["symbol"],
-             "timeframe": m["timeframe"], "segment": inputs.SEGMENT,
-             "window_from": str(lo.date()), "window_to": str(hi.date()), "n_in": 1,
-             "n_out": int(kept),
-             "criterion": f"marketProfile/{m['family']}/{m['measure']}/{m['direction']}",
-             "thresholds": cfg["filters"], "seeds": [cfg["nulls"]["seed"]],
-             "note": f"p {m['p']:.4g}, q {m['q']:.4g}, {cfg['nulls']['draws']} sorteos"}))
+        out.append(
+            record.search(
+                study.study_id(m["symbol"], m["timeframe"], "marketProfile"),
+                {
+                    "step": STEP,
+                    "launched_by": "studies.research.marketProfile.report",
+                    "config_hash": fingerprint(cfg),
+                    "symbol": m["symbol"],
+                    "timeframe": m["timeframe"],
+                    "segment": inputs.SEGMENT,
+                    "window_from": str(lo.date()),
+                    "window_to": str(hi.date()),
+                    "n_in": 1,
+                    "n_out": int(kept),
+                    "criterion": f"marketProfile/{m['family']}/{m['measure']}/{m['direction']}",
+                    "thresholds": cfg["filters"],
+                    "seeds": [cfg["nulls"]["seed"]],
+                    "note": f"p {m['p']:.4g}, q {m['q']:.4g}, {cfg['nulls']['draws']} sorteos",
+                },
+            )
+        )
     return out
 
 

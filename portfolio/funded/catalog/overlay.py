@@ -20,13 +20,19 @@ def load(firm: str) -> list[dict]:
     rows = []
     for r in yaml.safe_load(rules_file(firm).read_text(encoding="utf-8")):
         families = r["family"] if isinstance(r["family"], list) else [r["family"]]
-        rows += [{**r, "family": f, "checked_on": str(r["checked_on"])} for f in families]
+        rows += [
+            {**r, "family": f, "checked_on": str(r["checked_on"])} for f in families
+        ]
     return rows
 
 
 def _stage_matches(selector: str, stage: str) -> bool:
     """'phases' = every evaluation phase, 'all' = every stage, else one stage by name."""
-    return selector == "all" or stage == selector or (selector == "phases" and stage in PHASES)
+    return (
+        selector == "all"
+        or stage == selector
+        or (selector == "phases" and stage in PHASES)
+    )
 
 
 def apply(rows: Catalogue, rules: list[dict]) -> None:
@@ -47,14 +53,25 @@ def apply(rows: Catalogue, rules: list[dict]) -> None:
                     p[r["field"]] = value
             continue
         for s in rows["stages"]:
-            if r["family"] in ("*", family_of[s["plan_key"]]) and _stage_matches(r["stage"], s["stage"]):
+            if r["family"] in ("*", family_of[s["plan_key"]]) and _stage_matches(
+                r["stage"], s["stage"]
+            ):
                 s[r["field"]] = value
                 s["filled_from"] = ",".join(filter(None, [s["filled_from"], tag]))
 
 
 def compendium(firm: str, rules: list[dict]) -> list[dict]:
     """The rules as rows of the `rules` table."""
-    return [{"firm": firm, "family": r["family"], "rule_key": r["rule_key"],
-             "value": None if r["value"] is None else str(r["value"]), "text": r["text"],
-             "source": r["source"], "status": r["status"], "checked_on": r["checked_on"]}
-            for r in rules]
+    return [
+        {
+            "firm": firm,
+            "family": r["family"],
+            "rule_key": r["rule_key"],
+            "value": None if r["value"] is None else str(r["value"]),
+            "text": r["text"],
+            "source": r["source"],
+            "status": r["status"],
+            "checked_on": r["checked_on"],
+        }
+        for r in rules
+    ]

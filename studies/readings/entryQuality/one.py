@@ -36,32 +36,48 @@ def read(packed: Path, strategy: str, cfg: dict) -> Reading:
     keep = inputs.usable(found, e["horizon"], len(frame))
 
     price = found["trades"]["Open price"].to_numpy(np.float64)
-    walk = excursion.paths(frame, found["entry"][keep], found["side"][keep],
-                           price[keep], e["horizon"])
+    walk = excursion.paths(
+        frame, found["entry"][keep], found["side"][keep], price[keep], e["horizon"]
+    )
     scale = calibrate.atr(frame, run["atr"])
     normal = excursion.normalised(walk, found["atr"][keep])
     real = eratio.curve(normal)
     bands = eratio.band(frame, found, keep, scale, e)
 
     opens = frame["Open"].to_numpy()
-    on_tf = delay.cost(delay.given_up(opens, found["entry"], found["side"], d["bars"]),
-                       found["size"], found["point_value"],
-                       found["trades"]["Profit/Loss"].to_numpy(np.float64),
-                       found["charged"], d["bars"])
+    on_tf = delay.cost(
+        delay.given_up(opens, found["entry"], found["side"], d["bars"]),
+        found["size"],
+        found["point_value"],
+        found["trades"]["Profit/Loss"].to_numpy(np.float64),
+        found["charged"],
+        d["bars"],
+    )
 
     minute = barstore.source(run["feed"], ["Open"])
     at_m1 = minute.index.searchsorted(found["trades"]["Open time"].to_numpy())
-    on_m1 = delay.cost(delay.given_up(minute["Open"].to_numpy(), at_m1, found["side"],
-                                      d["minutes"]),
-                       found["size"], found["point_value"],
-                       found["trades"]["Profit/Loss"].to_numpy(np.float64),
-                       found["charged"], d["minutes"])
+    on_m1 = delay.cost(
+        delay.given_up(minute["Open"].to_numpy(), at_m1, found["side"], d["minutes"]),
+        found["size"],
+        found["point_value"],
+        found["trades"]["Profit/Loss"].to_numpy(np.float64),
+        found["charged"],
+        d["minutes"],
+    )
 
-    hold = (found["trades"]["Close time"] - found["trades"]["Open time"])
-    return {"found": found, "keep": keep, "real": real, "bands": bands,
-            "walk": normal, "on_tf": on_tf, "on_m1": on_m1,
-            "peak": int(np.argmax(real)) + 1, "hold": hold.median(),
-            "sides": by_side(found, normal, keep)}
+    hold = found["trades"]["Close time"] - found["trades"]["Open time"]
+    return {
+        "found": found,
+        "keep": keep,
+        "real": real,
+        "bands": bands,
+        "walk": normal,
+        "on_tf": on_tf,
+        "on_m1": on_m1,
+        "peak": int(np.argmax(real)) + 1,
+        "hold": hold.median(),
+        "sides": by_side(found, normal, keep),
+    }
 
 
 def by_side(found: Located, normal: Walk, keep: np.ndarray) -> dict[str, np.ndarray]:
@@ -81,7 +97,9 @@ def by_side(found: Located, normal: Walk, keep: np.ndarray) -> dict[str, np.ndar
     for name, want in (("largos", 1.0), ("cortos", -1.0)):
         mask = found["side"][keep] == want
         if mask.any():
-            out[name] = eratio.curve(Walk(mfe=normal["mfe"][mask], mae=normal["mae"][mask]))
+            out[name] = eratio.curve(
+                Walk(mfe=normal["mfe"][mask], mae=normal["mae"][mask])
+            )
             out[f"n_{name}"] = int(mask.sum())
     return out
 
@@ -99,12 +117,24 @@ def records(strategy: str, found: Reading, cfg: dict) -> list[dict]:
         No p is computed by this study; the rows let one be.
     """
     seed = cfg["eratio"]["seed"]
-    return [draws.record("entryQuality", "eratio", found["real"][k], found["bands"]["stacked"][:, k],
-                         strategy=strategy, horizon=k + 1, seed=seed, raw=False)
-            for k in range(found["real"].size)]
+    return [
+        draws.record(
+            "entryQuality",
+            "eratio",
+            found["real"][k],
+            found["bands"]["stacked"][:, k],
+            strategy=strategy,
+            horizon=k + 1,
+            seed=seed,
+            raw=False,
+        )
+        for k in range(found["real"].size)
+    ]
 
 
-def run(strategy: str, export: Path, cfg: dict, keep: list | None = None) -> dict[str, Any]:
+def run(
+    strategy: str, export: Path, cfg: dict, keep: list | None = None
+) -> dict[str, Any]:
     """Whether one strategy's entry carries information, and what arriving late costs.
 
     Args:
@@ -123,11 +153,21 @@ def run(strategy: str, export: Path, cfg: dict, keep: list | None = None) -> dic
         keep.extend(records(strategy, found, cfg))
     kept, total = int(found["keep"].sum()), int(found["keep"].size)
     return envelope.envelope(
-        MODULE, strategy, output.identify(export.parent, [strategy])[strategy], cfg, started,
+        MODULE,
+        strategy,
+        output.identify(export.parent, [strategy])[strategy],
+        cfg,
+        started,
         [contract.eratio_tab(found, cfg), contract.delay_tab(found, cfg)],
-        warnings=[{"code": "tier_1", "state": "info",
-                   "text": "El retraso supone que las salidas no se mueven. Con stop o target "
-                           "eso es falso, y ahí manda el simulador de replay "
-                           "(docs/encargos/16-replay-de-operaciones.md)."}],
+        warnings=[
+            {
+                "code": "tier_1",
+                "state": "info",
+                "text": "El retraso supone que las salidas no se mueven. Con stop o target "
+                "eso es falso, y ahí manda el simulador de replay "
+                "(docs/encargos/16-replay-de-operaciones.md).",
+            }
+        ],
         glossary=contract.GLOSSARY,
-        summary={"trades": total, "full_path": kept, "sample": cfg["run"]["sample"]})
+        summary={"trades": total, "full_path": kept, "sample": cfg["run"]["sample"]},
+    )

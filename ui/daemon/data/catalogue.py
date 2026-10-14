@@ -14,9 +14,11 @@ from core.paths import DATA
 from perf.inputs import config
 
 DAY = 86400
-TTL = 300         # seconds the walk of the data root is reused
-DEPTH = 3          # levels of the tree the window shows
-STAT_UP_TO = 20   # a folder with more files than this is dated by its own mtime, not by each file
+TTL = 300  # seconds the walk of the data root is reused
+DEPTH = 3  # levels of the tree the window shows
+STAT_UP_TO = (
+    20  # a folder with more files than this is dated by its own mtime, not by each file
+)
 # An archived strategy's folder is named by its identity, which the window never prints
 # (encargo 22 §10): those branches are folded into `archive/`, whose row still counts them.
 IDENTITY = re.compile(r"[0-9a-f]{64}")
@@ -45,12 +47,22 @@ def _walk(bucket: int) -> dict[str, dict]:
             newest = os.stat(root).st_mtime
         else:
             newest = max(os.stat(os.path.join(root, f)).st_mtime for f in files)
-        kinds = Counter(f[f.rfind("."):] if f.rfind(".") > 0 else "none" for f in files)
+        kinds = Counter(
+            f[f.rfind(".") :] if f.rfind(".") > 0 else "none" for f in files
+        )
         m = manifest.read(Path(root)) if "manifest.json" in files else None
         for depth in range(1, min(len(parts), DEPTH) + 1):
-            r = rows.setdefault("/".join(parts[:depth]), {
-                "files": 0, "kinds": Counter(), "newest": 0.0,
-                "exports": 0, "signed": "", "command": ""})
+            r = rows.setdefault(
+                "/".join(parts[:depth]),
+                {
+                    "files": 0,
+                    "kinds": Counter(),
+                    "newest": 0.0,
+                    "exports": 0,
+                    "signed": "",
+                    "command": "",
+                },
+            )
             r["files"] += len(files)
             r["kinds"] += kinds
             r["newest"] = max(r["newest"], newest)
@@ -74,14 +86,25 @@ def catalogue() -> dict[str, Any]:
     """
     stale_days, now = config.load()["disk"]["stale_days"], time.time()
     rows = []
-    for branch, r in sorted(_walk(int(now // TTL)).items(), key=lambda kv: -kv[1]["files"]):
+    for branch, r in sorted(
+        _walk(int(now // TTL)).items(), key=lambda kv: -kv[1]["files"]
+    ):
         parts = branch.split("/")
         if any(IDENTITY.fullmatch(p) for p in parts):
             continue
         age = (now - r["newest"]) / DAY
-        rows.append({"branch": branch, "depth": len(parts), "files": r["files"],
-                     "formats": ", ".join(f"{k} x{n}" for k, n in r["kinds"].most_common(3)),
-                     "age_days": age, "stale": age > stale_days,
-                     "newest": datetime.fromtimestamp(r["newest"]).strftime("%Y-%m-%d"),
-                     "exports": r["exports"], "signed": r["signed"], "command": r["command"]})
+        rows.append(
+            {
+                "branch": branch,
+                "depth": len(parts),
+                "files": r["files"],
+                "formats": ", ".join(f"{k} x{n}" for k, n in r["kinds"].most_common(3)),
+                "age_days": age,
+                "stale": age > stale_days,
+                "newest": datetime.fromtimestamp(r["newest"]).strftime("%Y-%m-%d"),
+                "exports": r["exports"],
+                "signed": r["signed"],
+                "command": r["command"],
+            }
+        )
     return {"root": DATA.name, "stale_days": stale_days, "rows": rows}

@@ -19,8 +19,12 @@ from ui.daemon.criteria import api, read
 
 REAL = read.FILES["criteria"]
 VERDICT = {"fact": "crossmarket.verdict.pass", "is": "pass", "else": "limbo"}
-BOTH = {"all": [{"fact": "spp.verdict.pass", "is": "pass"},
-                {"fact": "spp.summary.n_eff", "pass": ">= 20", "limbo": ">= 10"}]}
+BOTH = {
+    "all": [
+        {"fact": "spp.verdict.pass", "is": "pass"},
+        {"fact": "spp.summary.n_eff", "pass": ">= 20", "limbo": ">= 10"},
+    ]
+}
 
 
 def http() -> TestClient:
@@ -48,25 +52,47 @@ def test_state_write_stamp_freeze() -> None:
             c = http()
             state = c.get("/api/criteria").json()
             ns = [s["n"] for s in state["steps"]]
-            assert ns[:6] == ["8", "10", "11.5", "12", "14", "16"] and "6" not in ns and "20" in ns
-            assert ns[ns.index("17"):ns.index("20")] == ["17", "18", "18.5", "19", "19.5"]
+            assert (
+                ns[:6] == ["8", "10", "11.5", "12", "14", "16"]
+                and "6" not in ns
+                and "20" in ns
+            )
+            assert ns[ns.index("17") : ns.index("20")] == [
+                "17",
+                "18",
+                "18.5",
+                "19",
+                "19.5",
+            ]
             wfm = next(s for s in state["steps"] if s["n"] == "19")
-            assert [r["rule"].get("missing") for r in wfm["rows"]] == ["limbo", "limbo", "pass", "pass"]
+            assert [r["rule"].get("missing") for r in wfm["rows"]] == [
+                "limbo",
+                "limbo",
+                "pass",
+                "pass",
+            ]
             assert state["frozen"] is None and state["history"] == []
             assert [r["kind"] for r in state["build"]["rows"]] == ["Métrica SQX"] * 3
             eight = state["steps"][0]
             cfg = yaml.safe_load(before)["steps"]["8"]
-            assert eight["cut"] == cfg["cut"] and len(eight["rows"]) == len(cfg["rules"])
+            assert eight["cut"] == cfg["cut"] and len(eight["rows"]) == len(
+                cfg["rules"]
+            )
             first = eight["rows"][0]
-            assert first["tip"] == cfg["rules"][0]["fact"] and first["why"].startswith("R1")
+            assert first["tip"] == cfg["rules"][0]["fact"] and first["why"].startswith(
+                "R1"
+            )
             comments = sum(line.strip().startswith("#") for line in before.splitlines())
 
             # refused, and nothing written
             assert rule(c, n="8", at=0, rule=VERDICT, was={"fact": "otro"})[0] == 422
             assert rule(c, n="10", rule={"fact": "x", "pass": "grande"})[0] == 422
             assert rule(c, n="10", rule={"any": []})[0] == 422
-            assert rule(c, n="17", rule=VERDICT)[0] == 422            # no `cut` in the file
-            assert yaml.safe_load(copy.read_text()) == yaml.safe_load(before) and not log.exists()
+            assert rule(c, n="17", rule=VERDICT)[0] == 422  # no `cut` in the file
+            assert (
+                yaml.safe_load(copy.read_text()) == yaml.safe_load(before)
+                and not log.exists()
+            )
 
             # added (a verdict, a compound), changed, deleted
             assert rule(c, n="10", rule=VERDICT) == (200, mock.ANY)
@@ -78,18 +104,34 @@ def test_state_write_stamp_freeze() -> None:
             got = yaml.safe_load(text)["steps"]
             had = yaml.safe_load(before)["steps"]["10"]["rules"]
             assert got["10"]["rules"] == had + [VERDICT] and got["16"]["rules"] == []
-            assert got["8"]["rules"][0] == new and got["8"]["rules"][1:] == cfg["rules"][1:]
-            assert sum(line.strip().startswith("#") for line in text.splitlines()) == comments
-            lines = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+            assert (
+                got["8"]["rules"][0] == new
+                and got["8"]["rules"][1:] == cfg["rules"][1:]
+            )
+            assert (
+                sum(line.strip().startswith("#") for line in text.splitlines())
+                == comments
+            )
+            lines = [
+                json.loads(line)
+                for line in log.read_text(encoding="utf-8").splitlines()
+            ]
             assert [(h["step"], h["what"]) for h in lines] == [
-                ("10", "añadida"), ("16", "añadida"), ("8", "cambiada"), ("16", "borrada")]
+                ("10", "añadida"),
+                ("16", "añadida"),
+                ("8", "cambiada"),
+                ("16", "borrada"),
+            ]
             assert lines[2]["before"] == first["rule"] and lines[2]["after"] == new
             assert lines[3]["after"] is None and all(h["at"] and h["by"] for h in lines)
             state = c.get("/api/criteria").json()
             ten = state["steps"][1]["rows"][-1]
-            assert (ten["kind"], ten["passes"], ten["limbo"]) == ("Veredicto", "Aprobado",
-                                                                  "Si no cumple")
-            assert state["history"][0]["what"] == "borrada"           # newest first
+            assert (ten["kind"], ten["passes"], ten["limbo"]) == (
+                "Veredicto",
+                "Aprobado",
+                "Si no cumple",
+            )
+            assert state["history"][0]["what"] == "borrada"  # newest first
 
             # the freeze: stamped, read back, and nothing is written after it
             assert c.post("/api/criteria/freeze").status_code == 200
@@ -99,22 +141,39 @@ def test_state_write_stamp_freeze() -> None:
             status, said = rule(c, n="10", at=0, was=VERDICT)
             assert status == 422 and "congelados" in said["detail"]
             assert c.post("/api/criteria/freeze").status_code == 422
-            copy.write_text(copy.read_text(encoding="utf-8").replace('">= 0.5"', '">= 0.6"'),
-                            encoding="utf-8")                         # edited by hand afterwards
+            copy.write_text(
+                copy.read_text(encoding="utf-8").replace('">= 0.5"', '">= 0.6"'),
+                encoding="utf-8",
+            )  # edited by hand afterwards
             assert c.get("/api/criteria").json()["frozen"]["changed"] is True
-            medoids = yaml.safe_load(copy.read_text(encoding="utf-8"))["steps"]["8"]["medoids"]
-            assert medoids == yaml.safe_load(before)["steps"]["8"]["medoids"]   # survived the writes
+            medoids = yaml.safe_load(copy.read_text(encoding="utf-8"))["steps"]["8"][
+                "medoids"
+            ]
+            assert (
+                medoids == yaml.safe_load(before)["steps"]["8"]["medoids"]
+            )  # survived the writes
     assert REAL.read_text(encoding="utf-8") == before
 
 
 def test_labels() -> None:
     """A median band and a compound are worded; a fact SQX computed is told from the app's."""
-    band = read.row({"fact": "gate.scorecard.forma_value", "near_median": 0.2,
-                     "limbo_near_median": 0.5, "by": {"H4": {"near_median": 0.3}}})
-    assert band["passes"] == "A ±20 % de la mediana" and band["limbo"] == "A ±50 % de la mediana"
+    band = read.row(
+        {
+            "fact": "gate.scorecard.forma_value",
+            "near_median": 0.2,
+            "limbo_near_median": 0.5,
+            "by": {"H4": {"near_median": 0.3}},
+        }
+    )
+    assert (
+        band["passes"] == "A ±20 % de la mediana"
+        and band["limbo"] == "A ±50 % de la mediana"
+    )
     assert band["by"].startswith("H4: A ±30 %") and band["kind"] == "Test de la app"
-    assert read.row({"fact": "spread.verdict_csv.pf_sqx_oos", "pass": ">= 1.1"})["kind"] == \
-        "Métrica SQX"
+    assert (
+        read.row({"fact": "spread.verdict_csv.pf_sqx_oos", "pass": ">= 1.1"})["kind"]
+        == "Métrica SQX"
+    )
     both = read.row(BOTH)
     assert both["kind"] == "Compuesto" and both["label"] == "Todas de 2"
     assert both["passes"].startswith("Todas:\n") and ">= 20" in both["passes"]
@@ -123,7 +182,11 @@ def test_labels() -> None:
 def test_by_rows() -> None:
     """The override rows rebuild `by`: empty keys dropped, empty texts omitted, unknown fields kept."""
     from ui.desktop.criteria.overrides import by_built, by_rows
-    old = {"H4": {"pass": ">= 2.5", "limbo": ">= 1.65", "else": "limbo"}, "H1": {"pass": ">= 1"}}
+
+    old = {
+        "H4": {"pass": ">= 2.5", "limbo": ">= 1.65", "else": "limbo"},
+        "H1": {"pass": ">= 1"},
+    }
     assert by_built(by_rows(old), old) == old
     got = by_built([("H4", ">= 3", ""), ("  ", "x", "y"), ("forex", "", ">= 1")], old)
     assert got == {"H4": {"else": "limbo", "pass": ">= 3"}, "forex": {"limbo": ">= 1"}}
@@ -134,9 +197,11 @@ def test_missing_and_nested_roundtrip() -> None:
     """Step 8's live rules go through the dialog unchanged — `missing: fail`, the nested R5d — and
     saved over a copy, the YAML differs only in the rule edited."""
     import os
+
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     from PySide6.QtWidgets import QApplication
     from ui.desktop.criteria.dialog import RuleDialog
+
     app = QApplication.instance() or QApplication([])
     live = yaml.safe_load(REAL.read_text(encoding="utf-8"))["steps"]["8"]["rules"]
     nested = next(r for r in live if "all" in r and any("any" in p for p in r["all"]))
@@ -156,11 +221,16 @@ def test_missing_and_nested_roundtrip() -> None:
                     d.value.setText("2")
                 new = d.built()
                 assert rule(c, n="8", at=live.index(old), rule=new, was=old)[0] == 200
-                after = yaml.safe_load(copy.read_text(encoding="utf-8"))["steps"]["8"]["rules"]
+                after = yaml.safe_load(copy.read_text(encoding="utf-8"))["steps"]["8"][
+                    "rules"
+                ]
                 live2 = [new if r is old else r for r in live]
                 assert after == live2 and (new != old) == ("fact" in old)
                 live = live2
-            assert rule(c, n="8", rule={"fact": "x", "pass": ">= 1", "missing": "boom"})[0] == 422
+            assert (
+                rule(c, n="8", rule={"fact": "x", "pass": ">= 1", "missing": "boom"})[0]
+                == 422
+            )
 
 
 if __name__ == "__main__":

@@ -12,24 +12,34 @@ def _show(identity: str, version: str | None) -> None:
     got = read.load(identity, version)
     doc = got["manifest"]
     tear = got["tearsheet"]
-    print(f"versión {got['version']} · {doc['project']}/{doc['databank']} · paso {doc['step']}"
-          f" · archivada {doc['archived_at']} · código {doc['code_version']}")
+    print(
+        f"versión {got['version']} · {doc['project']}/{doc['databank']} · paso {doc['step']}"
+        f" · archivada {doc['archived_at']} · código {doc['code_version']}"
+    )
     print(f"  estrategia: {tear['strategy'] if isinstance(tear, dict) else tear}")
     print(f"  .sqx: {doc['sqx']['from']}{' (a mano)' if doc['sqx']['by_hand'] else ''}")
     print(f"  activo: {doc['asset']['symbol']} sha256 {doc['asset']['sha256'][:12]}")
     led = doc["ledger"]
-    print(f"  ledger {led['study']}: {led['searches']} búsquedas, "
-          f"N={led['trials']['n']} candidatos puntuados")
+    print(
+        f"  ledger {led['study']}: {led['searches']} búsquedas, "
+        f"N={led['trials']['n']} candidatos puntuados"
+    )
     for e in doc["studies"]:
-        print(f"  {e['databank']:<26} {e['day']} {e['study']:<12} hash {str(e['config_hash'])[:8]}"
-              f"  {len(e['files'])} ficheros")
-    for rel in doc.get("loose", []):          # versions archived before 2026-09-27T21 lack both lists
+        print(
+            f"  {e['databank']:<26} {e['day']} {e['study']:<12} hash {str(e['config_hash'])[:8]}"
+            f"  {len(e['files'])} ficheros"
+        )
+    for rel in doc.get(
+        "loose", []
+    ):  # versions archived before 2026-09-27T21 lack both lists
         print(f"  suelto: {rel}")
     for skip in doc.get("skipped", []):
         print(f"  no archivado: {skip['path']} — {skip['reason']}")
     if doc["harvest"]:
         print(f"  cosecha: {doc['harvest']['rows']}")
-    print(f"  gate: {'sí' if got['gate'] else 'no'} · metadatos: {'sí' if got['meta'] else 'no'}")
+    print(
+        f"  gate: {'sí' if got['gate'] else 'no'} · metadatos: {'sí' if got['meta'] else 'no'}"
+    )
 
 
 def main() -> None:
@@ -50,8 +60,20 @@ def main() -> None:
         for row in read.listing():
             print(json.dumps(row, ensure_ascii=False))
     elif args.verb == "archive":
-        from ui.daemon.strategy import archive_write as write   # the window freezes; layering.ALLOW
-        print(write.archive(args.project, args.databank, args.identity, args.step, args.note,
-                            family=args.family, sqx=args.sqx))
+        from ui.daemon.strategy import (
+            archive_write as write,
+        )  # the window freezes; layering.ALLOW
+
+        print(
+            write.archive(
+                args.project,
+                args.databank,
+                args.identity,
+                args.step,
+                args.note,
+                family=args.family,
+                sqx=args.sqx,
+            )
+        )
     else:
         _show(args.identity, args.version)

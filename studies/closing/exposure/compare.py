@@ -30,7 +30,8 @@ class Dichotomy(TypedDict):
     dd_ratio: float
     hours_off: float
 
-TRADING_DAYS = 252   # SQX's own convention for its Sharpe
+
+TRADING_DAYS = 252  # SQX's own convention for its Sharpe
 
 
 def stats(daily: pd.Series, equity: float) -> Stats:
@@ -53,12 +54,14 @@ def stats(daily: pd.Series, equity: float) -> Stats:
     path = equity + daily.cumsum()
     index = cast(pd.DatetimeIndex, daily.index)
     years = (index[-1] - index[0]).days / YEAR
-    return {"net": float(daily.sum()),
-            "return_pct": float(daily.sum() / equity * 100),
-            "cagr_pct": float(((path.iloc[-1] / equity) ** (1 / years) - 1) * 100),
-            "maxdd_pct": float(((path.cummax() - path) / path.cummax()).max() * 100),
-            "vol": float(daily.std(ddof=1)),
-            "sharpe": float(daily.mean() / daily.std(ddof=1) * np.sqrt(TRADING_DAYS))}
+    return {
+        "net": float(daily.sum()),
+        "return_pct": float(daily.sum() / equity * 100),
+        "cagr_pct": float(((path.iloc[-1] / equity) ** (1 / years) - 1) * 100),
+        "maxdd_pct": float(((path.cummax() - path) / path.cummax()).max() * 100),
+        "vol": float(daily.std(ddof=1)),
+        "sharpe": float(daily.mean() / daily.std(ddof=1) * np.sqrt(TRADING_DAYS)),
+    }
 
 
 def equity_start(trades: pd.DataFrame) -> float:
@@ -97,8 +100,10 @@ def dichotomy(strategy: Stats, bench: Stats, exposure: Occupancy) -> Dichotomy:
         a return anyone could have earned.
     """
     per_exposure = strategy["return_pct"] / exposure["share"]
-    return {"return_per_exposure_pct": per_exposure,
-            "efficiency": per_exposure / bench["return_pct"],
-            "return_ratio": strategy["return_pct"] / bench["return_pct"],
-            "dd_ratio": strategy["maxdd_pct"] / bench["maxdd_pct"],
-            "hours_off": 24 * 7 - exposure["hours_per_week"]}
+    return {
+        "return_per_exposure_pct": per_exposure,
+        "efficiency": per_exposure / bench["return_pct"],
+        "return_ratio": strategy["return_pct"] / bench["return_pct"],
+        "dd_ratio": strategy["maxdd_pct"] / bench["maxdd_pct"],
+        "hours_off": 24 * 7 - exposure["hours_per_week"],
+    }

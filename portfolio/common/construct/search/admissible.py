@@ -8,11 +8,16 @@ import pandas as pd
 from portfolio.common.construct.pairs import stress
 
 MEASURE_KEY = {
-    "pearson_monthly": "pearson", "pearson_daily": "pearson",
-    "spearman_monthly": "spearman", "spearman_daily": "spearman",
-    "co_loss": "co_loss", "tail": "tail",
-    "rolling_pearson_whole": "rolling_whole", "rolling_pearson_recent": "rolling_recent",
-    "rolling_spearman_whole": "rolling_whole", "rolling_spearman_recent": "rolling_recent",
+    "pearson_monthly": "pearson",
+    "pearson_daily": "pearson",
+    "spearman_monthly": "spearman",
+    "spearman_daily": "spearman",
+    "co_loss": "co_loss",
+    "tail": "tail",
+    "rolling_pearson_whole": "rolling_whole",
+    "rolling_pearson_recent": "rolling_recent",
+    "rolling_spearman_whole": "rolling_whole",
+    "rolling_spearman_recent": "rolling_recent",
     "stress": None,
 }
 
@@ -44,19 +49,43 @@ def admissible(pairs: pd.DataFrame, identities: list[str], cfg: dict) -> dict[st
     overlap = pairs["n_overlap_months"].to_numpy()
     too_short = overlap < pc["min_overlap_months"]
     # Owner 2026-09-30: under one full rolling window the rolling filters do not apply.
-    no_window = (overlap < pc["rolling_months"]) & pairs["measure"].str.startswith("rolling_").to_numpy()
+    no_window = (overlap < pc["rolling_months"]) & pairs["measure"].str.startswith(
+        "rolling_"
+    ).to_numpy()
     applies = key.notna().to_numpy() & ~too_short & ~no_window
     value = pairs["value"].to_numpy(dtype=float)
-    threshold = key.map(lambda k: pc[k] if isinstance(k, str) else np.nan).to_numpy(dtype=float)
-    two_sided = (pc["sign"] == "abs") & ~pairs["measure"].isin(pc["one_sided"]).to_numpy()
+    threshold = key.map(lambda k: pc[k] if isinstance(k, str) else np.nan).to_numpy(
+        dtype=float
+    )
+    two_sided = (pc["sign"] == "abs") & ~pairs["measure"].isin(
+        pc["one_sided"]
+    ).to_numpy()
     undefined = applies & np.isnan(value)
-    exceeds = applies & ~undefined & np.where(two_sided, np.abs(value) > threshold, value > threshold)
-    label = np.where(too_short, "overlap", np.where(undefined, "undefined", pairs["measure"].to_numpy()))
-    failing = cast(pd.DataFrame, pd.DataFrame({"i": pairs["i"], "j": pairs["j"], "filter": label})
-                   [too_short | undefined | exceeds]).drop_duplicates(ignore_index=True)
-    every = cast(pd.DataFrame, pairs[["i", "j", "n_overlap_months"]]).drop_duplicates(subset=["i", "j"])
-    no_rolling = int(((every["n_overlap_months"] >= pc["min_overlap_months"])
-                      & (every["n_overlap_months"] < pc["rolling_months"])).sum())
+    exceeds = (
+        applies
+        & ~undefined
+        & np.where(two_sided, np.abs(value) > threshold, value > threshold)
+    )
+    label = np.where(
+        too_short,
+        "overlap",
+        np.where(undefined, "undefined", pairs["measure"].to_numpy()),
+    )
+    failing = cast(
+        pd.DataFrame,
+        pd.DataFrame({"i": pairs["i"], "j": pairs["j"], "filter": label})[
+            too_short | undefined | exceeds
+        ],
+    ).drop_duplicates(ignore_index=True)
+    every = cast(pd.DataFrame, pairs[["i", "j", "n_overlap_months"]]).drop_duplicates(
+        subset=["i", "j"]
+    )
+    no_rolling = int(
+        (
+            (every["n_overlap_months"] >= pc["min_overlap_months"])
+            & (every["n_overlap_months"] < pc["rolling_months"])
+        ).sum()
+    )
     bad = set(zip(failing["i"], failing["j"]))
     graph = np.zeros((n, n), dtype=bool)
     for i, j in zip(every["i"], every["j"]):
@@ -77,13 +106,17 @@ def admissible(pairs: pd.DataFrame, identities: list[str], cfg: dict) -> dict[st
         "n_out": n_out,
         "relaxed": cfg["relaxed"],
         "effective_n": {
-            "calm": stress.effective_n(_corr_matrix(pairs, identities, "pearson_monthly")),
+            "calm": stress.effective_n(
+                _corr_matrix(pairs, identities, "pearson_monthly")
+            ),
             "stress": stress.effective_n(_corr_matrix(pairs, identities, "stress")),
         },
     }
 
 
-def _corr_matrix(pairs: pd.DataFrame, identities: list[str], measure: str) -> np.ndarray:
+def _corr_matrix(
+    pairs: pd.DataFrame, identities: list[str], measure: str
+) -> np.ndarray:
     """Symmetric identities x identities matrix of one measure's pair values, diagonal 1."""
     index = {name: k for k, name in enumerate(identities)}
     matrix = np.eye(len(identities))

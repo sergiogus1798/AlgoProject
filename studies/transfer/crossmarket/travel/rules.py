@@ -12,12 +12,23 @@ from studies.transfer.crossmarket.travel import stat, tensor
 def windows(cal: pd.DataFrame) -> dict[str, np.ndarray]:
     """The cell masks every rule reads: the whole span (V0 + V1 + V2, never `after`), each window and V0 + V2 (V1, where the main was fitted, left out)."""
     mask = {w: (cal["window"] == w).to_numpy() for w in ("V0", "V1", "V2")}
-    return {"all": (cal["window"] != "after").to_numpy(), **mask, "V0V2": mask["V0"] | mask["V2"]}
+    return {
+        "all": (cal["window"] != "after").to_numpy(),
+        **mask,
+        "V0V2": mask["V0"] | mask["V2"],
+    }
 
 
 def on_net(one: tensor.Built) -> tensor.Built:
     """The tensor read on NET R (`real_net`, `null_net`); itself when it has none or judges net."""
-    return cast(tensor.Built, {**one, "real": one.get("real_net", one["real"]), "null": one.get("null_net", one["null"])})
+    return cast(
+        tensor.Built,
+        {
+            **one,
+            "real": one.get("real_net", one["real"]),
+            "null": one.get("null_net", one["null"]),
+        },
+    )
 
 
 def per_market(one: tensor.Built, whole: np.ndarray) -> pd.DataFrame:
@@ -35,10 +46,20 @@ def per_market(one: tensor.Built, whole: np.ndarray) -> pd.DataFrame:
     """
     rows = []
     for j, name in enumerate(one["markets"]):
-        got, n = stat.joint(one, [j], whole), float(stat.total(one["trades"], [j], whole))
+        got, n = (
+            stat.joint(one, [j], whole),
+            float(stat.total(one["trades"], [j], whole)),
+        )
         net = stat.joint(on_net(one), [j], whole)
-        rows.append({"market": name, "z": got["z"], "p": got["p"],
-                     "e": (net["real"] - net["mean"]) / n if n > 0 else np.nan, "trades": n})
+        rows.append(
+            {
+                "market": name,
+                "z": got["z"],
+                "p": got["p"],
+                "e": (net["real"] - net["mean"]) / n if n > 0 else np.nan,
+                "trades": n,
+            }
+        )
     return pd.DataFrame(rows)
 
 
@@ -72,7 +93,9 @@ def breadth(one: tensor.Built, whole: np.ndarray) -> tuple[float, float]:
     return (1 + int((runs >= seen).sum())) / (len(runs) + 1), float(seen)
 
 
-def tau_half(e: np.ndarray, trades: np.ndarray, e_principal: float, min_trades: int) -> float:
+def tau_half(
+    e: np.ndarray, trades: np.ndarray, e_principal: float, min_trades: int
+) -> float:
     """P7, §4.3: the ceil(M/2)-th largest of e_j / e_principal.
 
     Args:
@@ -90,7 +113,9 @@ def tau_half(e: np.ndarray, trades: np.ndarray, e_principal: float, min_trades: 
     return float(np.sort(tau)[::-1][math.ceil(len(tau) / 2) - 1])
 
 
-def roles(feeds: list[str], category: dict[str, str], family: str, table: dict) -> list[str]:
+def roles(
+    feeds: list[str], category: dict[str, str], family: str, table: dict
+) -> list[str]:
     """What each market is for P8: "free" (judged as ever), "control" or "skip" (owner, 2026-10-12).
 
     Args:
@@ -104,12 +129,21 @@ def roles(feeds: list[str], category: dict[str, str], family: str, table: dict) 
         control, `none` is left out; every other market keeps today's sense.
     """
     sign = table.get(family, {})
-    return [{"control": "control", "none": "skip"}.get(sign.get("structural"), "free")
-            if category.get(f) == "structural" else "free" for f in feeds]
+    return [
+        {"control": "control", "none": "skip"}.get(sign.get("structural"), "free")
+        if category.get(f) == "structural"
+        else "free"
+        for f in feeds
+    ]
 
 
-def worse(z: np.ndarray, trades: np.ndarray, min_trades: int, worse_z: float,
-          role: list[str] | None = None) -> int:
+def worse(
+    z: np.ndarray,
+    trades: np.ndarray,
+    min_trades: int,
+    worse_z: float,
+    role: list[str] | None = None,
+) -> int:
     """P8, §4.4: markets where the strategy does clearly worse than random (z <= worse_z); a
     market under `min_trades` is not counted. A negative control counts instead when z >= -worse_z
     (it did clearly BETTER than random where it should not), a "skip" market never counts."""
@@ -146,7 +180,9 @@ class Degradation(_Degradation, total=False):
     draws: tuple[float, np.ndarray]
 
 
-def degradation(one: tensor.Built, cal: pd.DataFrame, whole: np.ndarray, deg: dict) -> Degradation:
+def degradation(
+    one: tensor.Built, cal: pd.DataFrame, whole: np.ndarray, deg: dict
+) -> Degradation:
     """P9, §7.3: the slope of the edge per trade over the years, against the random runs' own slopes.
 
     Args:
@@ -167,27 +203,45 @@ def degradation(one: tensor.Built, cal: pd.DataFrame, whole: np.ndarray, deg: di
         cells = whole & (year == y)
         real = stat.total(one["real"], cells=cells)
         if not np.isnan(real):
-            rows.append((y, stat.total(one["trades"], cells=cells), real,
-                         stat.total(one["null"], cells=cells)))
-    out = Degradation(beta=np.nan, z_beta=np.nan, e_end=np.nan, e_end_ratio=np.nan, d_y=[])
+            rows.append(
+                (
+                    y,
+                    stat.total(one["trades"], cells=cells),
+                    real,
+                    stat.total(one["null"], cells=cells),
+                )
+            )
+    out = Degradation(
+        beta=np.nan, z_beta=np.nan, e_end=np.nan, e_end_ratio=np.nan, d_y=[]
+    )
     groups = _pool(rows, deg["min_trades_year"]) if rows else []
     if len(groups) < deg["min_years"]:
         return out
     n = np.array([sum(r[1] for r in g) for g in groups])
     real = np.array([sum(r[2] for r in g) for g in groups])
     null = np.stack([sum(r[3] for r in g) for g in groups], 1)
-    t = np.array([np.average([r[0] for r in g], weights=[r[1] for r in g]) for g in groups])
+    t = np.array(
+        [np.average([r[0] for r in g], weights=[r[1] for r in g]) for g in groups]
+    )
     d, d_null = (real - null.mean(0)) / n, (null - null.mean(0)) / n
     centred = t - np.average(t, weights=n)
-    slope = lambda v: (n * centred * v).sum(-1) / (n * centred ** 2).sum()
+    slope = lambda v: (n * centred * v).sum(-1) / (n * centred**2).sum()
     beta, spread = slope(d), slope(d_null)
     mean = np.average(d, weights=n)
     end = mean + beta * (rows[-1][0] - np.average(t, weights=n))
-    return Degradation(beta=float(beta), z_beta=float((beta - spread.mean()) / spread.std(ddof=1))
-                       if spread.std(ddof=1) > 0 else np.nan, draws=(float(beta), spread),
-                       e_end=float(end), e_end_ratio=float(end / mean) if mean else np.nan,
-                       d_y=[{"years": [int(r[0]) for r in g], "trades": int(m), "d": float(v)}
-                            for g, m, v in zip(groups, n, d)])
+    return Degradation(
+        beta=float(beta),
+        z_beta=float((beta - spread.mean()) / spread.std(ddof=1))
+        if spread.std(ddof=1) > 0
+        else np.nan,
+        draws=(float(beta), spread),
+        e_end=float(end),
+        e_end_ratio=float(end / mean) if mean else np.nan,
+        d_y=[
+            {"years": [int(r[0]) for r in g], "trades": int(m), "d": float(v)}
+            for g, m, v in zip(groups, n, d)
+        ],
+    )
 
 
 class Evaluated(TypedDict):
@@ -199,8 +253,13 @@ class Evaluated(TypedDict):
     beta: tuple[float, np.ndarray] | None
 
 
-def evaluate(one: tensor.Built, cal: pd.DataFrame, cfg: dict, e_principal: float = np.nan,
-             role: list[str] | None = None) -> Evaluated:
+def evaluate(
+    one: tensor.Built,
+    cal: pd.DataFrame,
+    cfg: dict,
+    e_principal: float = np.nan,
+    role: list[str] | None = None,
+) -> Evaluated:
     """Every column of P3-P9 for one strategy, from its tensor.
 
     Args:
@@ -217,22 +276,40 @@ def evaluate(one: tensor.Built, cal: pd.DataFrame, cfg: dict, e_principal: float
     mask = windows(cal)
     got = {k: stat.joint(one, cells=mask[k]) for k in mask}
     rows = per_market(one, mask["all"])
-    free = None if role is None else np.array(role) == "free"     # controls and skips out of P3's z
+    free = (
+        None if role is None else np.array(role) == "free"
+    )  # controls and skips out of P3's z
     v0v2 = stat.joint(one, free, mask["V0V2"])["z"]
     z_minus, who = minus_market(one, mask["all"])
     p_breadth, count = breadth(one, mask["all"])
     trades, min_n = rows["trades"].to_numpy(), cfg["min_trades_market"]
     n_worse = worse(rows["z"].to_numpy(), trades, min_n, cfg["worse_z"], role)
     kept = len(rows) - (role or []).count("skip")
-    slope = degradation(on_net(one), cal, mask["all"], cfg["degradation"])     # e_end, beta: net
-    judged = degradation(one, cal, mask["all"], cfg["degradation"])    # z_beta: judged
-    verdict = {"z_conj": got["all"]["z"], "p_conj": got["all"]["p"], "z_conj_v2": got["V2"]["z"],
-               "z_conj_v0": got["V0"]["z"], "z_conj_v0v2": v0v2, "z_conj_v1": got["V1"]["z"],
-               "z_minus_market": z_minus, "minus_market": who,
-               "p_breadth": p_breadth, "breadth_count": count,
-               "tau_half": tau_half(rows["e"].to_numpy(), trades, e_principal, min_n),
-               "e_principal": e_principal, "worse": n_worse, "worse_fraction": n_worse / max(kept, 1),
-               "z_beta": judged["z_beta"], "e_end": slope["e_end"], "beta": slope["beta"],
-               "e_end_ratio": slope["e_end_ratio"], "trades": float(trades.sum())}
-    return Evaluated(verdict=verdict, markets=rows, d_y=slope["d_y"],
-                     beta=judged.get("draws"))
+    slope = degradation(
+        on_net(one), cal, mask["all"], cfg["degradation"]
+    )  # e_end, beta: net
+    judged = degradation(one, cal, mask["all"], cfg["degradation"])  # z_beta: judged
+    verdict = {
+        "z_conj": got["all"]["z"],
+        "p_conj": got["all"]["p"],
+        "z_conj_v2": got["V2"]["z"],
+        "z_conj_v0": got["V0"]["z"],
+        "z_conj_v0v2": v0v2,
+        "z_conj_v1": got["V1"]["z"],
+        "z_minus_market": z_minus,
+        "minus_market": who,
+        "p_breadth": p_breadth,
+        "breadth_count": count,
+        "tau_half": tau_half(rows["e"].to_numpy(), trades, e_principal, min_n),
+        "e_principal": e_principal,
+        "worse": n_worse,
+        "worse_fraction": n_worse / max(kept, 1),
+        "z_beta": judged["z_beta"],
+        "e_end": slope["e_end"],
+        "beta": slope["beta"],
+        "e_end_ratio": slope["e_end_ratio"],
+        "trades": float(trades.sum()),
+    }
+    return Evaluated(
+        verdict=verdict, markets=rows, d_y=slope["d_y"], beta=judged.get("draws")
+    )

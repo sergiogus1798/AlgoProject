@@ -28,25 +28,45 @@ def record(found: dict, pool: PoolId, members_meta: dict, note: str) -> list[dic
         Every row appended, the pool's first.
     """
     scores = np.asarray(found["table"]["sharpe"], dtype=float)
-    base = {"step": 27, "launched_by": "real", "segment": "build", "n_in": len(members_meta),
-            "n_out": int(found["members"][found["best"]].sum()),
-            "criterion": f"portfolio/ranks4/{found['mode']}", "score_unit": "per_period",
-            "note": note}
+    base = {
+        "step": 27,
+        "launched_by": "real",
+        "segment": "build",
+        "n_in": len(members_meta),
+        "n_out": int(found["members"][found["best"]].sum()),
+        "criterion": f"portfolio/ranks4/{found['mode']}",
+        "score_unit": "per_period",
+        "note": note,
+    }
     symbols = "+".join(sorted({m["symbol"] for m in members_meta.values()}))
-    rows = [ledger_record.log(f"PORTFOLIO_{pool['hash'][:12]}_construct",
-                              {**base, "symbol": symbols, "timeframe": "mixed"}, scores)]
+    rows = [
+        ledger_record.log(
+            f"PORTFOLIO_{pool['hash'][:12]}_construct",
+            {**base, "symbol": symbols, "timeframe": "mixed"},
+            scores,
+        )
+    ]
     # a member's study gains the looks (N) but not the spread: a portfolio's Sharpe pooled with
     # single strategies' would widen that study's sigma with numbers of another kind
     for meta in members_meta.values():
-        rows.append(ledger_record.log(
-            study_id(meta["symbol"], meta["timeframe"], meta["family"]),
-            {**base, "symbol": meta["symbol"], "timeframe": meta["timeframe"],
-             "score_unit": "portfolio_sharpe"}, scores))
+        rows.append(
+            ledger_record.log(
+                study_id(meta["symbol"], meta["timeframe"], meta["family"]),
+                {
+                    **base,
+                    "symbol": meta["symbol"],
+                    "timeframe": meta["timeframe"],
+                    "score_unit": "portfolio_sharpe",
+                },
+                scores,
+            )
+        )
     return rows
 
 
-def record_admission(judged: pd.DataFrame, pool: PoolId, members_meta: dict, how: str,
-                     note: str) -> dict[str, Any]:
+def record_admission(
+    judged: pd.DataFrame, pool: PoolId, members_meta: dict, how: str, note: str
+) -> dict[str, Any]:
     """Log an admission pass on build: every judgement of every round is a trial.
 
     Args:
@@ -60,9 +80,20 @@ def record_admission(judged: pd.DataFrame, pool: PoolId, members_meta: dict, how
         and never to the Sharpes' spread.
     """
     symbols = "+".join(sorted({m["symbol"] for m in members_meta.values()}))
-    row = {"step": 27, "launched_by": "real", "segment": "build",
-           "n_in": int(judged["candidate"].nunique()), "n_out": int(judged["enters"].sum()),
-           "criterion": f"portfolio/admission/{how}/sequence", "note": note,
-           "score_unit": "sharpe_increment", "symbol": symbols, "timeframe": "mixed"}
-    return ledger_record.log(f"PORTFOLIO_{pool['hash'][:12]}_construct", row,
-                             judged["increment"].to_numpy(float))
+    row = {
+        "step": 27,
+        "launched_by": "real",
+        "segment": "build",
+        "n_in": int(judged["candidate"].nunique()),
+        "n_out": int(judged["enters"].sum()),
+        "criterion": f"portfolio/admission/{how}/sequence",
+        "note": note,
+        "score_unit": "sharpe_increment",
+        "symbol": symbols,
+        "timeframe": "mixed",
+    }
+    return ledger_record.log(
+        f"PORTFOLIO_{pool['hash'][:12]}_construct",
+        row,
+        judged["increment"].to_numpy(float),
+    )

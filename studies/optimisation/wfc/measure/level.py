@@ -35,8 +35,9 @@ def premium(values: np.ndarray, best: np.ndarray) -> np.ndarray:
     return np.median(values[..., best], axis=-1) - np.median(values, axis=-1)
 
 
-def retention(inside: np.ndarray, outside: np.ndarray, best: np.ndarray,
-              min_gap: float) -> np.ndarray | None:
+def retention(
+    inside: np.ndarray, outside: np.ndarray, best: np.ndarray, min_gap: float
+) -> np.ndarray | None:
     """How much of the top's in-sample premium over the whole family survives out of sample.
 
     Args:

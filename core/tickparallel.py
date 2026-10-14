@@ -16,7 +16,9 @@ from core.tickfile import BLOCK, CHAIN, MINUTE, PRICE, Num, _apply, _value
 
 # No `cache=True` here: numba keys its disk cache on THIS file only, and these kernels inline the decoders of
 # core/tickfile.py, so an edit there would leave stale machine code that differs silently from the serial read.
-JOB_BLOCKS = 4096          # blocks per job: 4 M ticks, ~20 ms of decoding each, ~100 jobs on a big feed
+JOB_BLOCKS = (
+    4096  # blocks per job: 4 M ticks, ~20 ms of decoding each, ~100 jobs on a big feed
+)
 
 
 @njit
@@ -39,13 +41,24 @@ def skeleton(buf: np.ndarray, start: int) -> tuple[np.ndarray, int, bool]:
         if pos + 6 > size:
             break
         c0, c1 = buf[pos], buf[pos + 1]
-        need = 2 + (1 << ((c0 >> 4) & 3)) + (1 << (c0 & 3)) + (1 << ((c1 >> 4) & 3)) + (1 << (c1 & 3))
+        need = (
+            2
+            + (1 << ((c0 >> 4) & 3))
+            + (1 << (c0 & 3))
+            + (1 << ((c1 >> 4) & 3))
+            + (1 << (c1 & 3))
+        )
         if pos + need > size:
             break
         if count % BLOCK == 0:
             starts[blocks] = here
             blocks += 1
-            absolute = absolute and ((c0 >> 6) & 3) == 2 and ((c0 >> 2) & 3) == 2 and ((c1 >> 6) & 3) == 2
+            absolute = (
+                absolute
+                and ((c0 >> 6) & 3) == 2
+                and ((c0 >> 2) & 3) == 2
+                and ((c1 >> 6) & 3) == 2
+            )
         pos += need
         count += 1
     return starts[:blocks], count, absolute
@@ -67,8 +80,15 @@ def _last_minute(buf: np.ndarray, pos: int) -> Num:
 
 
 @njit
-def _job(buf: np.ndarray, pos: int, records: int, left: int, skip: int, minute: np.ndarray,
-         out: np.ndarray) -> int:
+def _job(
+    buf: np.ndarray,
+    pos: int,
+    records: int,
+    left: int,
+    skip: int,
+    minute: np.ndarray,
+    out: np.ndarray,
+) -> int:
     """Fold the minutes that start in `records` ticks from the chain at `pos`; the rows used.
 
     Same arithmetic as `tickfile._minutes`. Ticks of minute `skip` at the start belong to the
@@ -129,16 +149,34 @@ def _job(buf: np.ndarray, pos: int, records: int, left: int, skip: int, minute: 
 
 
 @njit(parallel=True)
-def _jobs(buf: np.ndarray, starts: np.ndarray, size: int, per_job: np.ndarray, skip: np.ndarray,
-          room: np.ndarray, minute: np.ndarray, out: np.ndarray, used: np.ndarray) -> None:
+def _jobs(
+    buf: np.ndarray,
+    starts: np.ndarray,
+    size: int,
+    per_job: np.ndarray,
+    skip: np.ndarray,
+    room: np.ndarray,
+    minute: np.ndarray,
+    out: np.ndarray,
+    used: np.ndarray,
+) -> None:
     """Run every job (`size` blocks each) at once; job j writes into rows room[j]..room[j+1]."""
     for j in prange(len(per_job) - 1):
         lo = room[j]
-        used[j] = _job(buf, starts[j * size] - CHAIN, per_job[j + 1] - per_job[j],
-                       per_job[-1] - per_job[j], skip[j], minute[lo:room[j + 1]], out[lo:room[j + 1]])
+        used[j] = _job(
+            buf,
+            starts[j * size] - CHAIN,
+            per_job[j + 1] - per_job[j],
+            per_job[-1] - per_job[j],
+            skip[j],
+            minute[lo : room[j + 1]],
+            out[lo : room[j + 1]],
+        )
 
 
-def decode(buf: np.ndarray, start: int, size: int = JOB_BLOCKS) -> tuple[np.ndarray, np.ndarray, int] | None:
+def decode(
+    buf: np.ndarray, start: int, size: int = JOB_BLOCKS
+) -> tuple[np.ndarray, np.ndarray, int] | None:
     """`tickfile._minutes` by jobs of `size` blocks; None when it cannot be trusted.
 
     None means: a block does not start from an absolute record, the file is small, or ticks go back
@@ -153,13 +191,27 @@ def decode(buf: np.ndarray, start: int, size: int = JOB_BLOCKS) -> tuple[np.ndar
     jobs = -(-len(starts) // size)
     per_job = np.minimum(np.arange(jobs + 1) * size * BLOCK, count)
     first = np.array([_value(buf, int(s) + 2, 3)[0] for s in starts[::size]])
-    if (np.diff(first) < 0).any():          # time back at a job edge: the rows of a job could go negative
+    if (
+        np.diff(first) < 0
+    ).any():  # time back at a job edge: the rows of a job could go negative
         return None
-    nxt = np.append(first[1:], first[-1] + (per_job[-1] - per_job[-2]) * MINUTE)   # a loose bound for the tail
-    room = np.concatenate([[0], np.cumsum(np.minimum((nxt - first) // MINUTE + 2, per_job[1:] - per_job[:-1]))])
+    nxt = np.append(
+        first[1:], first[-1] + (per_job[-1] - per_job[-2]) * MINUTE
+    )  # a loose bound for the tail
+    room = np.concatenate(
+        [
+            [0],
+            np.cumsum(
+                np.minimum((nxt - first) // MINUTE + 2, per_job[1:] - per_job[:-1])
+            ),
+        ]
+    )
     minute, out = np.empty(room[-1], np.int64), np.empty((room[-1], 9), np.float64)
     used = np.zeros(jobs, np.int64)
-    skip = np.array([-1] + [_last_minute(buf, int(starts[j * size - 1]) - CHAIN) for j in range(1, jobs)])
+    skip = np.array(
+        [-1]
+        + [_last_minute(buf, int(starts[j * size - 1]) - CHAIN) for j in range(1, jobs)]
+    )
     _jobs(buf, starts, size, per_job, skip, room, minute, out, used)
     if (used < 0).any():
         return None

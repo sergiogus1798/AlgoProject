@@ -3,6 +3,7 @@
 One merged tab (owner, 2026-09-29 §3.7): a shared parameter table, one P&L chart with every
 firm's curves, one verdict block per firm tagged `"firm"` so the window can toggle it.
 """
+
 from collections.abc import Callable
 from typing import Any
 
@@ -23,7 +24,9 @@ def shifted(frame: pd.DataFrame, hours: int) -> pd.DataFrame:
     return out
 
 
-def clock(sqx: pd.DataFrame, mt5: pd.DataFrame, tolerance_min: float, max_h: int) -> int:
+def clock(
+    sqx: pd.DataFrame, mt5: pd.DataFrame, tolerance_min: float, max_h: int
+) -> int:
     """The whole-hour shift from SQX's feed clock to the firm's server clock that pairs most.
 
     SQX stamps its feed's zone, MT5 its server's (`knowhow/export/feed-clock-timezones.md`):
@@ -38,7 +41,9 @@ def clock(sqx: pd.DataFrame, mt5: pd.DataFrame, tolerance_min: float, max_h: int
         hit = pairs.dropna(subset=["Open time_mt5"])
         gaps = (hit["Open time_mt5"] - hit["Open time"]).abs()
         close = int((gaps <= pd.Timedelta(minutes=tolerance_min / 2)).sum())
-        scored.append((close, len(hit), -float(gaps.dt.total_seconds().sum()), -abs(h), h))
+        scored.append(
+            (close, len(hit), -float(gaps.dt.total_seconds().sum()), -abs(h), h)
+        )
     return max(scored)[4]
 
 
@@ -59,8 +64,9 @@ def max_dd(frame: pd.DataFrame, deposit: float) -> float:
     return float(((peak - equity) / peak).max() * 100)
 
 
-def rows(sqx: pd.DataFrame, mt5: pd.DataFrame, pairs: pd.DataFrame, deposit: float,
-         th: dict) -> list[dict]:
+def rows(
+    sqx: pd.DataFrame, mt5: pd.DataFrame, pairs: pd.DataFrame, deposit: float, th: dict
+) -> list[dict]:
     """The six figures, each with its threshold and whether it passes.
 
     Returns:
@@ -71,8 +77,14 @@ def rows(sqx: pd.DataFrame, mt5: pd.DataFrame, pairs: pd.DataFrame, deposit: flo
     hit = pairs.dropna(subset=["Open time_mt5"])
     matched = len(hit) / len(pairs) if len(pairs) else None
     matched_mt5 = len(hit) / len(mt5) if len(mt5) else None
-    both = min(matched or 0.0, matched_mt5 or 0.0) if matched is not None or matched_mt5 is not None else None
-    same_exit = float((hit["Close time_mt5"] == hit["Close time"]).mean()) if len(hit) else None
+    both = (
+        min(matched or 0.0, matched_mt5 or 0.0)
+        if matched is not None or matched_mt5 is not None
+        else None
+    )
+    same_exit = (
+        float((hit["Close time_mt5"] == hit["Close time"]).mean()) if len(hit) else None
+    )
     r = compare.mean_loss(sqx)
     diff = hit["Profit/Loss_mt5"] - hit["Profit/Loss"]
     gap_r = float(diff.abs().mean()) / r if r and len(hit) else None
@@ -84,42 +96,102 @@ def rows(sqx: pd.DataFrame, mt5: pd.DataFrame, pairs: pd.DataFrame, deposit: flo
     worst = (float(a.min()), float(b.min())) if len(days) else (None, None)
     worst_gap = abs(worst[0] - worst[1]) if len(days) else None  # pyright: ignore[reportOperatorIssue]  # guarded by the same len(days) test
     dd = (max_dd(sqx, deposit), max_dd(mt5, deposit))
-    dd_gap = abs(dd[0] - dd[1]) / max(dd) if max(dd) > 0 else (0.0 if len(days) else None)
+    dd_gap = (
+        abs(dd[0] - dd[1]) / max(dd) if max(dd) > 0 else (0.0 if len(days) else None)
+    )
 
-    def one(row: str, label: str, value: float | None, limit: float, above: bool,
-            note: str) -> dict[str, Any]:
+    def one(
+        row: str, label: str, value: float | None, limit: float, above: bool, note: str
+    ) -> dict[str, Any]:
         """One criterion: pass when the value sits on the right side of its limit."""
         ok = value is not None and (value >= limit if above else value <= limit)
-        return {"row": row, "label": label, "value": value, "limit": limit,
-                "state": "pass" if ok else "fail", "note": note}
+        return {
+            "row": row,
+            "label": label,
+            "value": value,
+            "limit": limit,
+            "state": "pass" if ok else "fail",
+            "note": note,
+        }
 
     return [
-        one("1", "operaciones emparejadas, en el peor de los dos sentidos", both, th["matched_min"], True,
+        one(
+            "1",
+            "operaciones emparejadas, en el peor de los dos sentidos",
+            both,
+            th["matched_min"],
+            True,
             f"{len(hit)} parejas: {'—' if matched is None else f'{matched:.0%}'} de las "
             f"{len(pairs)} de SQX y {'—' if matched_mt5 is None else f'{matched_mt5:.0%}'} "
-            f"de las {len(mt5)} de MT5"),
-        one("1b", "parejas que cierran a la misma hora", same_exit, th["exit_same_min"], True,
-            "la salida también tiene que coincidir, no solo la entrada"),
-        one("2", "diferencia media por operación emparejada, en R", gap_r,
-            th["trade_gap_max_r"], False,
+            f"de las {len(mt5)} de MT5",
+        ),
+        one(
+            "1b",
+            "parejas que cierran a la misma hora",
+            same_exit,
+            th["exit_same_min"],
+            True,
+            "la salida también tiene que coincidir, no solo la entrada",
+        ),
+        one(
+            "2",
+            "diferencia media por operación emparejada, en R",
+            gap_r,
+            th["trade_gap_max_r"],
+            False,
             "media de |P&L MT5 − P&L SQX| del movimiento de precio, al valor de punto fijo "
             f"del activo; R = la pérdida media de SQX ({'—' if r is None else f'{r:.2f}'} "
-            f"USD): sin stop; sesgo {'—' if not len(hit) else f'{diff.mean():+.2f}'} USD"),
-        one("3a", "correlación del P&L diario", corr, th["daily_corr_min"], True,
-            f"{len(days)} días del servidor con alguna operación cerrada en un lado u otro"),
-        one("3b", "diferencia media absoluta del P&L diario, % de la cuenta", mad,
-            th["daily_mad_max_pct"], False, f"cuenta de {deposit:,.0f} USD"),
-        one("4", "peor día: diferencia en puntos de %", worst_gap, th["worst_day_gap_max_pp"],
-            False, "SQX {:.3f} %, MT5 {:.3f} %".format(*worst) if worst[0] is not None else
-            "sin días"),
-        one("5", "drawdown máximo: diferencia relativa", dd_gap, th["dd_rel_gap_max"], False,
+            f"USD): sin stop; sesgo {'—' if not len(hit) else f'{diff.mean():+.2f}'} USD",
+        ),
+        one(
+            "3a",
+            "correlación del P&L diario",
+            corr,
+            th["daily_corr_min"],
+            True,
+            f"{len(days)} días del servidor con alguna operación cerrada en un lado u otro",
+        ),
+        one(
+            "3b",
+            "diferencia media absoluta del P&L diario, % de la cuenta",
+            mad,
+            th["daily_mad_max_pct"],
+            False,
+            f"cuenta de {deposit:,.0f} USD",
+        ),
+        one(
+            "4",
+            "peor día: diferencia en puntos de %",
+            worst_gap,
+            th["worst_day_gap_max_pp"],
+            False,
+            "SQX {:.3f} %, MT5 {:.3f} %".format(*worst)
+            if worst[0] is not None
+            else "sin días",
+        ),
+        one(
+            "5",
+            "drawdown máximo: diferencia relativa",
+            dd_gap,
+            th["dd_rel_gap_max"],
+            False,
             f"SQX {dd[0]:.3f} %, MT5 {dd[1]:.3f} % — sobre el balance al cerrar cada "
-            "operación; el flotante intradía con M1 está pendiente"),
+            "operación; el flotante intradía con M1 está pendiente",
+        ),
     ]
 
 
-def firm_result(firm: str, sqx: pd.DataFrame, mt5: pd.DataFrame, timeframe: str, deposit: float,
-                cfg: dict, symbol: str, instrument: dict, zones: tuple[str, str]) -> dict[str, Any]:
+def firm_result(
+    firm: str,
+    sqx: pd.DataFrame,
+    mt5: pd.DataFrame,
+    timeframe: str,
+    deposit: float,
+    cfg: dict,
+    symbol: str,
+    instrument: dict,
+    zones: tuple[str, str],
+) -> dict[str, Any]:
     """One firm's clock-aligned comparison: its verdict, its unpaired-trades table, its curves.
 
     Args:
@@ -149,40 +221,79 @@ def firm_result(firm: str, sqx: pd.DataFrame, mt5: pd.DataFrame, timeframe: str,
     pairs = compare.pair(moved, mt5, tolerance)
     got = rows(moved, mt5, pairs, deposit, th)
     few = len(sqx) < th["trades_min"]
-    state = "none" if few else "pass" if all(r["state"] == "pass" for r in got) else "fail"
+    state = (
+        "none" if few else "pass" if all(r["state"] == "pass" for r in got) else "fail"
+    )
     ok = state == "pass"
     failed = [r["row"] for r in got if r["state"] == "fail"]
     label = firms.label(firm)
-    meaning = (f"{label} — SQX tiene menos de {th['trades_min']} operaciones en la ventana: muestra corta, ni "
-               "pasa ni falla y no se anota en el pool." if few else
-               f"{label} — SQX reproduce lo que el EA hace en su cuenta: el histórico largo de "
-               "SQX vale para ella." if ok else
-               f"{label} — falla{'n' if len(failed) > 1 else ''} la{'s' if len(failed) > 1 else ''} "
-               f"fila{'s' if len(failed) > 1 else ''} {', '.join(failed)} de los criterios de "
-               "aceptación: casi siempre es el reloj o un coste; se corrige y se compara una vez "
-               "más, y si sigue fallando la estrategia no entra en el pool de esta empresa.")
-    verdict = blocks.verdict("Sin veredicto" if few else "Validada" if ok else "No validada", state,
-                             meaning, parts=[{"label": f"{r['row']} · {r['label']}",
-                                              "state": r["state"], "value": r["value"],
-                                              "note": f"límite {r['limit']} · {r['note']}"}
-                                             for r in got])
+    meaning = (
+        f"{label} — SQX tiene menos de {th['trades_min']} operaciones en la ventana: muestra corta, ni "
+        "pasa ni falla y no se anota en el pool."
+        if few
+        else f"{label} — SQX reproduce lo que el EA hace en su cuenta: el histórico largo de "
+        "SQX vale para ella."
+        if ok
+        else f"{label} — falla{'n' if len(failed) > 1 else ''} la{'s' if len(failed) > 1 else ''} "
+        f"fila{'s' if len(failed) > 1 else ''} {', '.join(failed)} de los criterios de "
+        "aceptación: casi siempre es el reloj o un coste; se corrige y se compara una vez "
+        "más, y si sigue fallando la estrategia no entra en el pool de esta empresa."
+    )
+    verdict = blocks.verdict(
+        "Sin veredicto" if few else "Validada" if ok else "No validada",
+        state,
+        meaning,
+        parts=[
+            {
+                "label": f"{r['row']} · {r['label']}",
+                "state": r["state"],
+                "value": r["value"],
+                "note": f"límite {r['limit']} · {r['note']}",
+            }
+            for r in got
+        ],
+    )
     verdict = {**verdict, "firm": firm}
-    lonely = pairs[pairs["Open time_mt5"].isna()][["Type", "Open time", "Close time",
-                                                   "Profit/Loss USD"]].head(50)  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
-    lonely = lonely.rename(columns={"Type": "tipo", "Open time": "apertura",  # pyright: ignore[reportCallIssue]  # pandas/numpy stubs lose the type through indexing
-                                    "Close time": "cierre", "Profit/Loss USD": "P&L (USD)"})
-    lonely_block = {**blocks.table(f"{label}: operaciones de SQX sin pareja en MT5 (hasta 50)",
-                                   lonely.astype(str),
-                                   f"{symbol}, {len(pairs) - len(pairs.dropna(subset=['Open time_mt5']))} "
-                                   "sin pareja de " + str(len(pairs)) + "; si hay muchas y "
-                                   "seguidas, mira el reloj o el historial de la empresa en "
-                                   "esas fechas"), "firm": firm}
-    summary = {"firm": firm, "state": state, "clock_h": hours,
-               "sqx_trades": len(sqx), "mt5_trades": len(mt5),
-               **{f"row_{r['row']}": r["value"] for r in got}}
-    return {"verdict": verdict, "lonely": lonely_block, "summary": summary, "pairs": pairs,
-            "hours": hours, "daily_sqx": daily(moved, deposit), "daily_mt5": daily(mt5, deposit),
-            "label": label}
+    lonely = pairs[pairs["Open time_mt5"].isna()][
+        ["Type", "Open time", "Close time", "Profit/Loss USD"]
+    ].head(50)  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
+    lonely = lonely.rename(
+        columns={
+            "Type": "tipo",
+            "Open time": "apertura",  # pyright: ignore[reportCallIssue]  # pandas/numpy stubs lose the type through indexing
+            "Close time": "cierre",
+            "Profit/Loss USD": "P&L (USD)",
+        }
+    )
+    lonely_block = {
+        **blocks.table(
+            f"{label}: operaciones de SQX sin pareja en MT5 (hasta 50)",
+            lonely.astype(str),
+            f"{symbol}, {len(pairs) - len(pairs.dropna(subset=['Open time_mt5']))} "
+            "sin pareja de " + str(len(pairs)) + "; si hay muchas y "
+            "seguidas, mira el reloj o el historial de la empresa en "
+            "esas fechas",
+        ),
+        "firm": firm,
+    }
+    summary = {
+        "firm": firm,
+        "state": state,
+        "clock_h": hours,
+        "sqx_trades": len(sqx),
+        "mt5_trades": len(mt5),
+        **{f"row_{r['row']}": r["value"] for r in got},
+    }
+    return {
+        "verdict": verdict,
+        "lonely": lonely_block,
+        "summary": summary,
+        "pairs": pairs,
+        "hours": hours,
+        "daily_sqx": daily(moved, deposit),
+        "daily_mt5": daily(mt5, deposit),
+        "label": label,
+    }
 
 
 def combined_chart(pieces: dict[str, dict]) -> dict[str, Any]:
@@ -192,19 +303,45 @@ def combined_chart(pieces: dict[str, dict]) -> dict[str, Any]:
     shared SQX curve — so a firm's pair of series is labelled with its name on both legs.
     Every series carries `"firm"`, so the window can show or hide a firm's pair by its light.
     """
-    days = sorted(set().union(*(set(p["daily_sqx"].index) | set(p["daily_mt5"].index)
-                                for p in pieces.values()))) if pieces else []
+    days = (
+        sorted(
+            set().union(
+                *(
+                    set(p["daily_sqx"].index) | set(p["daily_mt5"].index)
+                    for p in pieces.values()
+                )
+            )
+        )
+        if pieces
+        else []
+    )
     series = []
     for firm, p in pieces.items():
         a = p["daily_sqx"].reindex(days, fill_value=0.0).cumsum()
         b = p["daily_mt5"].reindex(days, fill_value=0.0).cumsum()
-        series.append({"label": f"SQX · {p['label']}", "role": "real",
-                       "values": [float(v) for v in a], "firm": firm})
-        series.append({"label": f"MT5 · {p['label']}", "role": "sim",
-                       "values": [float(v) for v in b], "firm": firm})
-    return {"kind": "lines",
-            "title": "P&L acumulado por día (hora del servidor), % de la cuenta, puntos a valor fijo",
-            "unit": "%", "x": [d.strftime("%Y-%m-%d") for d in days], "series": series}
+        series.append(
+            {
+                "label": f"SQX · {p['label']}",
+                "role": "real",
+                "values": [float(v) for v in a],
+                "firm": firm,
+            }
+        )
+        series.append(
+            {
+                "label": f"MT5 · {p['label']}",
+                "role": "sim",
+                "values": [float(v) for v in b],
+                "firm": firm,
+            }
+        )
+    return {
+        "kind": "lines",
+        "title": "P&L acumulado por día (hora del servidor), % de la cuenta, puntos a valor fijo",
+        "unit": "%",
+        "x": [d.strftime("%Y-%m-%d") for d in days],
+        "series": series,
+    }
 
 
 def params_table(baseline: dict, costs: dict[str, dict]) -> dict[str, Any]:
@@ -221,29 +358,64 @@ def params_table(baseline: dict, costs: dict[str, dict]) -> dict[str, Any]:
         A "table" block, columns fixed to SQX | FTMO | Hantec — a firm not priced this run
         shows a dash, never a guess.
     """
+
     def col(get: Callable[[dict], str], firm: str) -> str:
         """One firm's formatted figure, or a dash when it was not priced this run."""
         return "—" if firm not in costs else get(costs[firm])
 
     rows_ = [
-        ["spread (puntos SQX)", f"{baseline['defaultSpread']:g}",
-         *[col(lambda c: f"{c['defaultSpread']:g}", f) for f in ("ftmo", "hantec")]],
-        ["comisión", f"{baseline['commission']['method']} {baseline['commission']['value']:g}",
-         *[col(lambda c: f"{c['commission']['method']} {c['commission']['value']:g}", f)
-           for f in ("ftmo", "hantec")]],
-        ["swap largo (puntos/noche)", f"{baseline['swap']['long']:g}",
-         *[col(lambda c: f"{c['swap']['long']:g}", f) for f in ("ftmo", "hantec")]],
-        ["swap corto (puntos/noche)", f"{baseline['swap']['short']:g}",
-         *[col(lambda c: f"{c['swap']['short']:g}", f) for f in ("ftmo", "hantec")]],
-        ["triple swap el", baseline["swap"]["triple_swap_on"].capitalize(),
-         *[col(lambda c: c["swap"]["triple_swap_on"].capitalize(), f) for f in ("ftmo", "hantec")]],
-        ["deslizamiento", f"{baseline['defaultSlippage']:g}",
-         *[col(lambda c: f"{c['defaultSlippage']:g}", f) for f in ("ftmo", "hantec")]],
+        [
+            "spread (puntos SQX)",
+            f"{baseline['defaultSpread']:g}",
+            *[col(lambda c: f"{c['defaultSpread']:g}", f) for f in ("ftmo", "hantec")],
+        ],
+        [
+            "comisión",
+            f"{baseline['commission']['method']} {baseline['commission']['value']:g}",
+            *[
+                col(
+                    lambda c: (
+                        f"{c['commission']['method']} {c['commission']['value']:g}"
+                    ),
+                    f,
+                )
+                for f in ("ftmo", "hantec")
+            ],
+        ],
+        [
+            "swap largo (puntos/noche)",
+            f"{baseline['swap']['long']:g}",
+            *[col(lambda c: f"{c['swap']['long']:g}", f) for f in ("ftmo", "hantec")],
+        ],
+        [
+            "swap corto (puntos/noche)",
+            f"{baseline['swap']['short']:g}",
+            *[col(lambda c: f"{c['swap']['short']:g}", f) for f in ("ftmo", "hantec")],
+        ],
+        [
+            "triple swap el",
+            baseline["swap"]["triple_swap_on"].capitalize(),
+            *[
+                col(lambda c: c["swap"]["triple_swap_on"].capitalize(), f)
+                for f in ("ftmo", "hantec")
+            ],
+        ],
+        [
+            "deslizamiento",
+            f"{baseline['defaultSlippage']:g}",
+            *[
+                col(lambda c: f"{c['defaultSlippage']:g}", f)
+                for f in ("ftmo", "hantec")
+            ],
+        ],
     ]
     frame = pd.DataFrame(rows_, columns=["parámetro", "SQX", "FTMO", "Hantec"])  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
-    table = blocks.table("Parámetros de la comparación", frame,
-                         "SQX: el default del activo (tramo build) en assets/. FTMO y Hantec: "
-                         "leído en su cuenta en el momento de la verificación.")
+    table = blocks.table(
+        "Parámetros de la comparación",
+        frame,
+        "SQX: el default del activo (tramo build) en assets/. FTMO y Hantec: "
+        "leído en su cuenta en el momento de la verificación.",
+    )
     # Which column index is which firm's — the window drops a firm's column when its light is
     # off (§3.7 "su columna"); "SQX" and "parámetro" never toggle.
     table["firm_columns"] = {"ftmo": 2, "hantec": 3}

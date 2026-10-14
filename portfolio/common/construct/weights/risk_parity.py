@@ -18,7 +18,11 @@ def weights(build_daily: pd.DataFrame, cfg: dict) -> dict[str, float]:
         ValueError: A member does not vary on the estimation days: it has no volatility to
             weigh by, and no other method is substituted.
     """
-    sigma = build_daily.to_numpy().std(axis=0, ddof=1) if len(build_daily) > 1 else np.zeros(build_daily.shape[1])
+    sigma = (
+        build_daily.to_numpy().std(axis=0, ddof=1)
+        if len(build_daily) > 1
+        else np.zeros(build_daily.shape[1])
+    )
     if build_daily.shape[1] > 1 and not (sigma > 0).all():
         flat = [str(c)[:12] for c, s in zip(build_daily.columns, sigma) if not s > 0]
         raise ValueError(f"sin volatilidad en los días de estimación: {flat}")

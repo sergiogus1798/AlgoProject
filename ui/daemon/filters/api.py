@@ -98,12 +98,18 @@ def refused(project: str, databank: str) -> str | None:
     return where if isinstance(where, str) else None
 
 
-def metrics_of(project: str, databank: str, got: Context | None = None) -> dict[str, Any]:
+def metrics_of(
+    project: str, databank: str, got: Context | None = None
+) -> dict[str, Any]:
     """What the metric dropdown lists, and why the databank cannot be filtered, if it cannot."""
     table, _, metrics = got or context(project, databank)
-    return {"metrics": metrics, "refused": refused(project, databank),
-            "anonymous": anonymous(table),
-            "ops": list(evaluate.SHOWN), "intervals": sorted(dists.PAIRS)}
+    return {
+        "metrics": metrics,
+        "refused": refused(project, databank),
+        "anonymous": anonymous(table),
+        "ops": list(evaluate.SHOWN),
+        "intervals": sorted(dists.PAIRS),
+    }
 
 
 def judged(req: Apply) -> dict[str, Any]:
@@ -121,21 +127,36 @@ def judged(req: Apply) -> dict[str, Any]:
         return {"error": bad}
     every, dropped, blank = evaluate.judge(table, rows, by_id, set())
     manual = discards.manual_ids(req.project, req.databank) & set(every)
-    return {"rows": rows, "got": (table, by_id, metrics), "every": every, "dropped": dropped,
-            "blank": blank, "hidden": len(set(dropped) | manual)}
+    return {
+        "rows": rows,
+        "got": (table, by_id, metrics),
+        "every": every,
+        "dropped": dropped,
+        "blank": blank,
+        "hidden": len(set(dropped) | manual),
+    }
 
 
 @ROUTER.post("/api/filters/preview")
 def preview(req: Apply) -> dict[str, Any]:
     """What these conditions would leave, as the owner edits them: counts only, no ledger
     row, no discard, nothing hidden (the screen keeps showing what «Continuar» would cut)."""
+
     def act() -> dict[str, Any]:
         """The counts of `judged`, or its error."""
         got = judged(req)
-        return got if "error" in got else {
-            "n_in": len(got["every"]), "n_out": len(got["every"]) - len(got["dropped"]),
-            "blank": got["blank"], "hidden": got["hidden"],
-            "visible": len(got["every"]) - got["hidden"]}
+        return (
+            got
+            if "error" in got
+            else {
+                "n_in": len(got["every"]),
+                "n_out": len(got["every"]) - len(got["dropped"]),
+                "blank": got["blank"],
+                "hidden": got["hidden"],
+                "visible": len(got["every"]) - got["hidden"],
+            }
+        )
+
     return shown("calcular el filtro", act)
 
 
@@ -160,17 +181,43 @@ def applied(req: Apply) -> dict[str, Any]:
     n_out = n_in - len(got["dropped"])
     counts = {"n_in": n_in, "n_out": n_out, "blank": got["blank"]}
     if discards.unchanged(req.project, req.databank, rows, n_in, set(got["dropped"])):
-        return {**counts, "same": True, **state_of(req.project, req.databank, got["got"])}
+        return {
+            **counts,
+            "same": True,
+            **state_of(req.project, req.databank, got["got"]),
+        }
     text, led = (evaluate.expression(rows) if rows else "sin filtro"), {}
     if rows:
         step, _ = cast(tuple[float, str], ledgerrow.placed(req.project, req.databank))
-        wrote = ledgerrow.log(req.project, req.databank, step,
-                              samples(rows, got["got"][2]), n_in, n_out, text, "filter", rows)
+        wrote = ledgerrow.log(
+            req.project,
+            req.databank,
+            step,
+            samples(rows, got["got"][2]),
+            n_in,
+            n_out,
+            text,
+            "filter",
+            rows,
+        )
         led = {"ledger": {k: wrote[k] for k in ("study", "step", "segment")}}
-    discards.record(req.project, req.databank, got["dropped"], "filter", text, n_in,
-                    got["blank"], anonymous(got["got"][0]), rows)
-    return {**counts, "expression": text, **led,
-            **state_of(req.project, req.databank, got["got"])}
+    discards.record(
+        req.project,
+        req.databank,
+        got["dropped"],
+        "filter",
+        text,
+        n_in,
+        got["blank"],
+        anonymous(got["got"][0]),
+        rows,
+    )
+    return {
+        **counts,
+        "expression": text,
+        **led,
+        **state_of(req.project, req.databank, got["got"]),
+    }
 
 
 @ROUTER.post("/api/filters/apply")
@@ -186,20 +233,45 @@ def discarded(req: Discard) -> dict[str, Any]:
         return {"error": why}
     got = context(req.project, req.databank)
     table, hidden = got[0], discards.hidden(req.project, req.databank)
-    visible = {r["identity"]: r["name"] for r in table["rows"]
-               if r["identity"] and r["identity"] not in hidden}
+    visible = {
+        r["identity"]: r["name"]
+        for r in table["rows"]
+        if r["identity"] and r["identity"] not in hidden
+    }
     dropped = {i: visible[i] for i in req.identities if i in visible}
     if not dropped:
         return {"error": "ninguna de las seleccionadas está visible con identidad"}
     text = f"descarte manual de {len(dropped)}: {', '.join(sorted(dropped.values()))}"
     step, _ = cast(tuple[float, str], ledgerrow.placed(req.project, req.databank))
-    wrote = ledgerrow.log(req.project, req.databank, step, {"IS", "OOS", ""},
-                          len(visible), len(visible) - len(dropped), text, "manual", None)
-    discards.record(req.project, req.databank, dropped, "manual", text, len(visible), 0,
-                    anonymous(table), total=len(table["rows"]) - anonymous(table))
-    return {"n_in": len(visible), "n_out": len(visible) - len(dropped), "expression": text,
-            "ledger": {k: wrote[k] for k in ("study", "step", "segment")},
-            **state_of(req.project, req.databank, got)}
+    wrote = ledgerrow.log(
+        req.project,
+        req.databank,
+        step,
+        {"IS", "OOS", ""},
+        len(visible),
+        len(visible) - len(dropped),
+        text,
+        "manual",
+        None,
+    )
+    discards.record(
+        req.project,
+        req.databank,
+        dropped,
+        "manual",
+        text,
+        len(visible),
+        0,
+        anonymous(table),
+        total=len(table["rows"]) - anonymous(table),
+    )
+    return {
+        "n_in": len(visible),
+        "n_out": len(visible) - len(dropped),
+        "expression": text,
+        "ledger": {k: wrote[k] for k in ("study", "step", "segment")},
+        **state_of(req.project, req.databank, got),
+    }
 
 
 @ROUTER.post("/api/filters/discard")
@@ -211,9 +283,13 @@ def discard(req: Discard) -> dict[str, Any]:
 @ROUTER.post("/api/filters/clear")
 def clear(req: Bank) -> dict[str, Any]:
     """«Quitar filtros»: every strategy visible again. The ledger keeps what was looked at."""
-    return shown("quitar los filtros", lambda: {
-        "back": discards.clear(req.project, req.databank),
-        **state_of(req.project, req.databank)})
+    return shown(
+        "quitar los filtros",
+        lambda: {
+            "back": discards.clear(req.project, req.databank),
+            **state_of(req.project, req.databank),
+        },
+    )
 
 
 def state(project: str, databank: str | None) -> dict[str, Any]:
@@ -242,6 +318,10 @@ def get_saved() -> dict[str, Any]:
 @ROUTER.post("/api/filters/saved")
 def post_saved(req: Saved) -> dict[str, Any]:
     """Keep a filter under a name."""
-    return shown("guardar el filtro", lambda: {
-        "name": req.name, **saved.save(req.name, evaluate.normal([r.model_dump()
-                                                                 for r in req.rows]))})
+    return shown(
+        "guardar el filtro",
+        lambda: {
+            "name": req.name,
+            **saved.save(req.name, evaluate.normal([r.model_dump() for r in req.rows])),
+        },
+    )

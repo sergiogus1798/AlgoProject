@@ -44,7 +44,9 @@ def band_range(x: dict, cal: dict) -> tuple:
     """Long when, after a band closes, a bar first closes above that band's high."""
     trades = {}
     for name, (inside, later) in cal["ranges"].items():
-        top = np.maximum.reduceat(np.where(inside, x["h"], -np.inf), cal["day_first"])[cal["day"]]
+        top = np.maximum.reduceat(np.where(inside, x["h"], -np.inf), cal["day_first"])[
+            cal["day"]
+        ]
         above = later & (x["c"] > top)
         trades[name] = after(above & ~prev(above), cal["range_hold"])
     return _best(x, cal, trades, "band")

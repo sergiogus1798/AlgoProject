@@ -23,9 +23,13 @@ def _read(cfx: Path) -> dict:
 
 def _fake_install(root: Path) -> tuple:
     """Patch the installs to one fake custodian under `root`, with its port answering."""
-    return (mock.patch.object(cfxio, "_installs", lambda: {"custodian": (root.resolve(), 5070)}),
-            mock.patch.object(cfxio, "listening", lambda port: True),
-            mock.patch.object(cfxio, "holding", lambda install: []))
+    return (
+        mock.patch.object(
+            cfxio, "_installs", lambda: {"custodian": (root.resolve(), 5070)}
+        ),
+        mock.patch.object(cfxio, "listening", lambda port: True),
+        mock.patch.object(cfxio, "holding", lambda install: []),
+    )
 
 
 def test_round_trip_and_crash() -> None:
@@ -39,7 +43,7 @@ def test_round_trip_and_crash() -> None:
             assert got == MEMBERS and list(got) == list(MEMBERS)
             assert not cfx.with_suffix(".cfx.tmp").exists()
             before = cfx.read_bytes()
-            bad = {"x.xml": b"1", "y.xml": object()}            # writestr raises on the second
+            bad = {"x.xml": b"1", "y.xml": object()}  # writestr raises on the second
             try:
                 cfxio.write(cfx, bad)
             except TypeError:
@@ -63,8 +67,8 @@ def test_held() -> None:
         a, b, c = _fake_install(root / "inst")
         with a, b, c:
             assert cfxio.held(cfx) == "custodian"
-            assert cfxio.held(link) == "custodian"          # a symlink to a held file is held
-            assert cfxio.held(outside) is None              # outside every install: never held
+            assert cfxio.held(link) == "custodian"  # a symlink to a held file is held
+            assert cfxio.held(outside) is None  # outside every install: never held
             try:
                 cfxio.write(link, MEMBERS)
             except SystemExit:
@@ -73,23 +77,32 @@ def test_held() -> None:
                 raise AssertionError("write went through a held file")
             assert cfx.read_bytes() == b"x"
             cfxio.write(cfx, MEMBERS, force=True)
-        with a, mock.patch.object(cfxio, "listening", lambda port: False), \
-                mock.patch.object(cfxio, "holding", lambda install: [4242]):
-            assert cfxio.held(cfx) == "custodian"           # JVM booting: no port yet, a process
+        with (
+            a,
+            mock.patch.object(cfxio, "listening", lambda port: False),
+            mock.patch.object(cfxio, "holding", lambda install: [4242]),
+        ):
+            assert cfxio.held(cfx) == "custodian"  # JVM booting: no port yet, a process
         with a, mock.patch.object(cfxio, "listening", lambda port: False), c:
-            assert cfxio.held(cfx) is None                  # down and no process
+            assert cfxio.held(cfx) is None  # down and no process
 
 
 def test_registry_interleaved_writers_lose_no_row() -> None:
     """Three threads recording 25 rows each: all 75 are there."""
     with tempfile.TemporaryDirectory() as d:
         csv_path = Path(d) / "registry.csv"
-        done = lambda n: {"project": n, "install": "SQX_w2", "timeframe": "H1",
-                          "acceptance": {"mode": "m", "sample": "s", "conditions": []}}
+        done = lambda n: {
+            "project": n,
+            "install": "SQX_w2",
+            "timeframe": "H1",
+            "acceptance": {"mode": "m", "sample": "s", "conditions": []},
+        }
+
         def work(tag: str) -> None:
             """Record 25 projects."""
             for i in range(25):
                 registry.record(done(f"Test_{tag}{i}"), "p", "XAUUSD", "t")
+
         with mock.patch.object(registry, "project_registry", lambda: csv_path):
             ts = [threading.Thread(target=work, args=(t,)) for t in "ABC"]
             [t.start() for t in ts]
@@ -100,6 +113,10 @@ def test_registry_interleaved_writers_lose_no_row() -> None:
 
 
 if __name__ == "__main__":
-    for t in (test_round_trip_and_crash, test_held, test_registry_interleaved_writers_lose_no_row):
+    for t in (
+        test_round_trip_and_crash,
+        test_held,
+        test_registry_interleaved_writers_lose_no_row,
+    ):
         t()
     print("test_cfxio: ok")

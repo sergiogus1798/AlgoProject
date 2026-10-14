@@ -13,16 +13,20 @@ from ui.daemon.workflow.records import Context, StudyTest
 SIGNED = {"wfc", "cscv", "marketSurfaces", "blindJoint"}
 # What a run of these costs beyond CPU: a look at the reserved oos2, or a ledger row. They are
 # never ticked by default nor in «correr todo»; the window asks before each run.
-SPENDS = {"wfc": "lee el oos2 y escribe su fila en el ledger",
-          "cscv": "lee el oos2 y escribe su fila en el ledger",
-          "marketSurfaces": "lee build y oos1 (el oos2 sólo en el bloque ciego) y escribe su fila en el ledger",
-          "wfm": "lee el oos2 de la Walk Forward Matrix",
-          "blindJoint": "lee el oos2 del paso 20 y escribe su fila en el ledger"}
-SQX_STEP = ("paso de SQX: su tarea se lanza con el ▶ SQX de la tarjeta; su análisis se corre "
-            "después con «▶▶ toda la población» en la ficha de una de sus estrategias")
+SPENDS = {
+    "wfc": "lee el oos2 y escribe su fila en el ledger",
+    "cscv": "lee el oos2 y escribe su fila en el ledger",
+    "marketSurfaces": "lee build y oos1 (el oos2 sólo en el bloque ciego) y escribe su fila en el ledger",
+    "wfm": "lee el oos2 de la Walk Forward Matrix",
+    "blindJoint": "lee el oos2 del paso 20 y escribe su fila en el ledger",
+}
+SQX_STEP = (
+    "paso de SQX: su tarea se lanza con el ▶ SQX de la tarjeta; su análisis se corre "
+    "después con «▶▶ toda la población» en la ficha de una de sus estrategias"
+)
 # Jobs that run SQX on a project (`ui/daemon/launch`, `advance`): no test starts on it meanwhile.
 LAUNCHERS = ("launch", "advance")
-SHOWN = 3   # knobs the one-line summary prints; the drawer shows them all
+SHOWN = 3  # knobs the one-line summary prints; the drawer shows them all
 
 
 def keys(spec: dict[str, Any]) -> list[str]:
@@ -50,12 +54,17 @@ def summary(key: str, project: str) -> str:
     Returns:
         e.g. "null.draws=2000 · null.chunk=250 · seed=7 (+9)", or "sin configuración".
     """
-    knob_list = [k for s in forproject.apply(key, knobs.sections(key)["sections"], project)
-                 for k in s["knobs"]]
+    knob_list = [
+        k
+        for s in forproject.apply(key, knobs.sections(key)["sections"], project)
+        for k in s["knobs"]
+    ]
     if not knob_list:
         return "sin configuración"
-    shown = " · ".join(f"{k['key']}={'⚠ ' if k.get('warn') else ''}{k['value']}"
-                       for k in knob_list[:SHOWN])
+    shown = " · ".join(
+        f"{k['key']}={'⚠ ' if k.get('warn') else ''}{k['value']}"
+        for k in knob_list[:SHOWN]
+    )
     return shown + (f" (+{len(knob_list) - SHOWN})" if len(knob_list) > SHOWN else "")
 
 
@@ -68,10 +77,14 @@ def running(project: str) -> list[dict[str, Any]]:
     Returns:
         The public job records, oldest first.
     """
-    return [j for j in jobs.listing() if j.get("project") == project and j["rc"] is None]
+    return [
+        j for j in jobs.listing() if j.get("project") == project and j["rc"] is None
+    ]
 
 
-def one(spec: dict[str, Any], key: str, ctx: Context, live: list[dict[str, Any]]) -> StudyTest:
+def one(
+    spec: dict[str, Any], key: str, ctx: Context, live: list[dict[str, Any]]
+) -> StudyTest:
     """One test of one step, as the rail paints it.
 
     Args:
@@ -89,41 +102,69 @@ def one(spec: dict[str, Any], key: str, ctx: Context, live: list[dict[str, Any]]
     """
     title = catalogue.STUDIES[key][2] if key in catalogue.STUDIES else key
     sqx = next((j for j in live if j["label"] in LAUNCHERS), None)
-    refused = (SQX_STEP if spec["kind"] == "sqx" else
-               f"SQX trabaja en este proyecto («{sqx.get('study') or sqx['label']}»): sus "
-               "databanks cambian; espera a que acabe" if sqx else
-               f"bloqueado: {ctx['blind']['text']}" if spec["n"] == "20"
-               and ctx["blind"]["sealed"] else table.why_not(key)
-               or (where.no_family(ctx["project"]) if key in SIGNED and not ctx["family"]
-                   else None))
+    refused = (
+        SQX_STEP
+        if spec["kind"] == "sqx"
+        else f"SQX trabaja en este proyecto («{sqx.get('study') or sqx['label']}»): sus "
+        "databanks cambian; espera a que acabe"
+        if sqx
+        else f"bloqueado: {ctx['blind']['text']}"
+        if spec["n"] == "20" and ctx["blind"]["sealed"]
+        else table.why_not(key)
+        or (
+            where.no_family(ctx["project"])
+            if key in SIGNED and not ctx["family"]
+            else None
+        )
+    )
     found = sources.results(ctx["project"], key)
     databank = found[0]["databank"] if found else None
 
     def row(state: str, why: str) -> StudyTest:
         """This test's row with its state and the sentence."""
-        return {"key": key, "title": title, "config": summary(key, ctx["project"]),
-                "runnable": not refused, "databank": databank, "spends": SPENDS.get(key, ""),
-                # ticked by default and in «correr todo»: free to run, and the rail knows where
-                "auto": not refused and key not in SPENDS and spec["feeds"] != (),
-                "state": state, "why": why}
+        return {
+            "key": key,
+            "title": title,
+            "config": summary(key, ctx["project"]),
+            "runnable": not refused,
+            "databank": databank,
+            "spends": SPENDS.get(key, ""),
+            # ticked by default and in «correr todo»: free to run, and the rail knows where
+            "auto": not refused and key not in SPENDS and spec["feeds"] != (),
+            "state": state,
+            "why": why,
+        }
 
     # A job the rail started names its step; one from elsewhere counts for every step.
-    job = next((j for j in live if j["study"] == key and j.get("step", spec["n"]) == spec["n"]),
-               None)
+    job = next(
+        (
+            j
+            for j in live
+            if j["study"] == key and j.get("step", spec["n"]) == spec["n"]
+        ),
+        None,
+    )
     if job:
-        return row("running", f"{job['state'] or 'en marcha'} desde {job['started'][11:16]}")
+        return row(
+            "running", f"{job['state'] or 'en marcha'} desde {job['started'][11:16]}"
+        )
     # A result says the test ran, even one the rail cannot launch itself (an SQX step's
     # analysis, a terminal-only study, the MT5 check): «bloqueado» beside it read as not done
     # (📓 2026-09-30, steps 19, 23 and 26 of a finished run).
     if found:
-        return row("done", f"último resultado del {found[0]['day']}"
-                   + (f" sobre {found[0]['databank']}" if found[0]["databank"] else ""))
+        return row(
+            "done",
+            f"último resultado del {found[0]['day']}"
+            + (f" sobre {found[0]['databank']}" if found[0]["databank"] else ""),
+        )
     if refused:
         return row("blocked", refused)
     return row("pending", "sin resultado para este proyecto")
 
 
-def of_step(spec: dict[str, Any], ctx: Context, live: list[dict[str, Any]]) -> list[StudyTest]:
+def of_step(
+    spec: dict[str, Any], ctx: Context, live: list[dict[str, Any]]
+) -> list[StudyTest]:
     """Every test of one step.
 
     Args:

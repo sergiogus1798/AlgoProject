@@ -22,16 +22,18 @@ NAME = "Strategy Name"
 # `oos2` spends the reserved segment as the only out-of-sample; `build` vs `oos1+oos2`
 # treats everything after the build as out of sample. Both are written into C3 so one
 # harvest answers both without re-running anything.
-UNIONS = [(["build", "oos1"], "build+oos1"), (["oos1", "oos2"], "oos1+oos2"),
-          (["build", "oos1", "oos2"], "ALL")]
+UNIONS = [
+    (["build", "oos1"], "build+oos1"),
+    (["oos1", "oos2"], "oos1+oos2"),
+    (["build", "oos1", "oos2"], "ALL"),
+]
 # SQX renames a colliding strategy by appending "(1)", "(2)" ... Stripping it is what lets
 # a batch loaded twice still be read; the duplicate rows are then caught as duplicates
 # rather than silently joining onto the wrong tuple.
 COLLISION = r"\(\d+\)$"
 
 
-def per_segment(legs: list[dict],
-                say: Callable[[int, str], None]) -> pd.DataFrame:
+def per_segment(legs: list[dict], say: Callable[[int, str], None]) -> pd.DataFrame:
     """Every leg's stored metrics, one row per variant, segment and market.
 
     Args:
@@ -45,9 +47,14 @@ def per_segment(legs: list[dict],
         market** — which is what a view of the performance surface on other assets needs,
         and what makes the unions exact.
     """
-    rows = [united.per_result(Path(leg["databank_dir"]), leg["segment"],
-                              lambda p, line, i=i: say(i * 25 + p * 25 // 100, line))
-            for i, leg in enumerate(legs)]
+    rows = [
+        united.per_result(
+            Path(leg["databank_dir"]),
+            leg["segment"],
+            lambda p, line, i=i: say(i * 25 + p * 25 // 100, line),
+        )
+        for i, leg in enumerate(legs)
+    ]
     return pd.concat(rows, ignore_index=True)
 
 
@@ -69,13 +76,16 @@ def unions(rows: pd.DataFrame, work: Path) -> pd.DataFrame:
     made = [rows]
     for segments, label in UNIONS:
         first, last = spans[segments[0]][0], spans[segments[-1]][1]
-        window = cast("pd.DataFrame", curves[(curves.index >= first) & (curves.index <= last)])
+        window = cast(
+            "pd.DataFrame", curves[(curves.index >= first) & (curves.index <= last)]
+        )
         made.append(united.combine(rows, segments, window, label))
     return pd.concat(made, ignore_index=True)
 
 
-def join(rows: pd.DataFrame, manifest: pd.DataFrame,
-         segments: list[str]) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+def join(
+    rows: pd.DataFrame, manifest: pd.DataFrame, segments: list[str]
+) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
     """Attach every variant's design tuple to its measured results, minus the thin ones.
 
     Args:
@@ -95,19 +105,32 @@ def join(rows: pd.DataFrame, manifest: pd.DataFrame,
         outside), so each study applies its own. `usable` is still written, true for every
         backtest -- `marketSurfaces` reads it -- and `trades_total` says how much it traded.
     """
-    rows = rows.assign(variant_id=rows["variant_id"].str.replace(COLLISION, "", regex=True))
-    rows = rows.merge(united.thin(rows, 0, segments), on=["variant_id", "market"],
-                      how="left")
+    rows = rows.assign(
+        variant_id=rows["variant_id"].str.replace(COLLISION, "", regex=True)
+    )
+    rows = rows.merge(
+        united.thin(rows, 0, segments), on=["variant_id", "market"], how="left"
+    )
     kept = cast("pd.DataFrame", rows[rows["usable"].fillna(False)])
     table = united.wide(kept)
     merged = manifest.drop(columns="sqx_name", errors="ignore").merge(
-        table, on="variant_id", how="inner")
+        table, on="variant_id", how="inner"
+    )
     thin_ids = sorted(set(rows["variant_id"]) - set(table["variant_id"]))
     missing = sorted(set(manifest["variant_id"]) - set(rows["variant_id"]))
     extra = sorted(set(rows["variant_id"]) - set(manifest["variant_id"]))
-    return rows, merged, {"missing": missing, "unexpected": extra, "floor": 0,
-                          "thin": len(thin_ids), "thin_ids": thin_ids[:20],
-                          "thin_cells": int((~rows["usable"].fillna(False)).sum())}
+    return (
+        rows,
+        merged,
+        {
+            "missing": missing,
+            "unexpected": extra,
+            "floor": 0,
+            "thin": len(thin_ids),
+            "thin_ids": thin_ids[:20],
+            "thin_cells": int((~rows["usable"].fillna(False)).sum()),
+        },
+    )
 
 
 class Canaries(TypedDict):
@@ -132,10 +155,15 @@ def canaries(merged: pd.DataFrame) -> Canaries:
         parent's metrics rather than looking empty. If every control returns one identical
         number, nothing ran, and no amount of downstream analysis will say so.
     """
-    controls = cast("pd.DataFrame", merged[merged["stratum"].isin(["canary", "inert", "origin"])])
+    controls = cast(
+        "pd.DataFrame", merged[merged["stratum"].isin(["canary", "inert", "origin"])]
+    )
     profits = controls["NetProfit (build)"].dropna()
-    return {"n": len(controls), "distinct_netprofit": int(profits.nunique()),
-            "all_identical": bool(len(profits) > 1 and profits.nunique() == 1)}
+    return {
+        "n": len(controls),
+        "distinct_netprofit": int(profits.nunique()),
+        "all_identical": bool(len(profits) > 1 and profits.nunique() == 1),
+    }
 
 
 class Fingerprint(TypedDict):
@@ -165,8 +193,11 @@ def fingerprint(path: Path) -> Fingerprint:
         never recorded a hash `cleanup` could compare against in the first place. Fixed
         here, not in `cleanup.py`, because this stage is the one holding the file open.
     """
-    return {"path": str(path.relative_to(DATA)), "bytes": path.stat().st_size,
-            "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+    return {
+        "path": str(path.relative_to(DATA)),
+        "bytes": path.stat().st_size,
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+    }
 
 
 def main() -> None:
@@ -177,8 +208,12 @@ def main() -> None:
 
     ran = json.loads((a.work / "ran.json").read_text(encoding="utf-8"))
     print("PROGRESS 5 leyendo las metricas de los tres tramos", flush=True)
-    rows = unions(per_segment(ran["legs"], lambda pct, line:
-                               print(f"PROGRESS {pct} {line}", flush=True)), a.work)
+    rows = unions(
+        per_segment(
+            ran["legs"], lambda pct, line: print(f"PROGRESS {pct} {line}", flush=True)
+        ),
+        a.work,
+    )
     manifest = pd.read_parquet(a.work / "manifest.parquet")
     rows, merged, gaps = join(rows, manifest, [leg["segment"] for leg in ran["legs"]])
     rows.to_parquet(a.work / "segments.parquet", index=False)
@@ -191,27 +226,46 @@ def main() -> None:
     # Lifted to the top level as well as nested: the pipeline's `must` gate reads one
     # number out of this file by name, and a gate that has to walk into a sub-object is a
     # gate nobody will add the next one to.
-    checks = gaps | {"canaries": found, "n": len(merged),
-                     "canaries_distinct": found["distinct_netprofit"],
-                     "segments": sorted(set(rows["segment"])), "markets": markets}
+    checks = gaps | {
+        "canaries": found,
+        "n": len(merged),
+        "canaries_distinct": found["distinct_netprofit"],
+        "segments": sorted(set(rows["segment"])),
+        "markets": markets,
+    }
     (a.work / "collected.json").write_text(
-        json.dumps(checks | {"files": [fingerprint(a.work / "metrics.parquet"),
-                                       fingerprint(a.work / "segments.parquet")],
-                             "removable": [str((a.work / "sqx").relative_to(DATA))]},
-                  indent=2),
-        encoding="utf-8")
-    print(f"PROGRESS 100 {found['distinct_netprofit']} resultados distintos entre "
-          f"{found['n']} controles, mercados: {', '.join(markets) or 'ninguno'}", flush=True)
+        json.dumps(
+            checks
+            | {
+                "files": [
+                    fingerprint(a.work / "metrics.parquet"),
+                    fingerprint(a.work / "segments.parquet"),
+                ],
+                "removable": [str((a.work / "sqx").relative_to(DATA))],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    print(
+        f"PROGRESS 100 {found['distinct_netprofit']} resultados distintos entre "
+        f"{found['n']} controles, mercados: {', '.join(markets) or 'ninguno'}",
+        flush=True,
+    )
     if gaps["thin"]:
-        print(f"\n⚠️  {gaps['thin']} variantes y {gaps['thin_cells']} celdas "
-              f"(variante x mercado) operan menos de {gaps['floor']} veces en "
-              f"build+oos1+oos2 y quedan FUERA de toda estadistica. Siguen en "
-              f"segments.parquet con usable=False, por si hace falta mirarlas.")
+        print(
+            f"\n⚠️  {gaps['thin']} variantes y {gaps['thin_cells']} celdas "
+            f"(variante x mercado) operan menos de {gaps['floor']} veces en "
+            f"build+oos1+oos2 y quedan FUERA de toda estadistica. Siguen en "
+            f"segments.parquet con usable=False, por si hace falta mirarlas."
+        )
     print(json.dumps(checks, indent=2))
 
     if found["all_identical"]:
-        sys.exit("los controles devuelven el MISMO resultado: nada se reteseo de verdad, "
-                 "las variantes traen las metricas del padre. No uses este lote.")
+        sys.exit(
+            "los controles devuelven el MISMO resultado: nada se reteseo de verdad, "
+            "las variantes traen las metricas del padre. No uses este lote."
+        )
     if gaps["missing"]:
         sys.exit(f"{len(gaps['missing'])} variantes no volvieron del retest")
 

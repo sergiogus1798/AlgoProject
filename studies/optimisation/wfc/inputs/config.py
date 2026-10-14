@@ -21,6 +21,7 @@ def load(overrides: list[str] | None = None) -> dict[str, Any]:
         One dict: engines/variants/config.yaml, then this study's own config.yaml over it,
         every `ledger:<key>` replaced by the number ledger/thresholds.yaml declares.
     """
-    cfg = thresholds.fill({**study_config.load(SHARED, []),
-                           **study_config.load(HERE / "config.yaml", [])})
+    cfg = thresholds.fill(
+        {**study_config.load(SHARED, []), **study_config.load(HERE / "config.yaml", [])}
+    )
     return study_config.apply(cfg, overrides or [])

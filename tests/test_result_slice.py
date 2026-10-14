@@ -9,15 +9,43 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from ui.daemon.results.slice import slice_for, verdict_row, whole
 
-POPULATION = {"strategy": None, "identity": None, "tabs": [
-    {"name": "scaled", "note": "n", "blocks": [
-        {"kind": "grid", "rows": ["A", "B"], "cols": ["x"], "values": [[1.0], [2.0]]},
-        {"kind": "bars", "items": [{"label": "A", "value": 1}, {"label": "B", "value": 2}]},
-        {"kind": "table", "columns": ["mother", "timeframe"],
-         "rows": [["A", "H4"], ["B", "H4"]]},
-        {"kind": "table", "columns": ["strategy"], "rows": [["A_ScaledH4"], ["AB"]]},
-        {"kind": "verdict", "text": "3 de 90"}]},
-    {"name": "agg", "blocks": [{"kind": "table", "columns": ["", "valor"], "rows": [["x", 1]]}]}]}
+POPULATION = {
+    "strategy": None,
+    "identity": None,
+    "tabs": [
+        {
+            "name": "scaled",
+            "note": "n",
+            "blocks": [
+                {
+                    "kind": "grid",
+                    "rows": ["A", "B"],
+                    "cols": ["x"],
+                    "values": [[1.0], [2.0]],
+                },
+                {
+                    "kind": "bars",
+                    "items": [{"label": "A", "value": 1}, {"label": "B", "value": 2}],
+                },
+                {
+                    "kind": "table",
+                    "columns": ["mother", "timeframe"],
+                    "rows": [["A", "H4"], ["B", "H4"]],
+                },
+                {
+                    "kind": "table",
+                    "columns": ["strategy"],
+                    "rows": [["A_ScaledH4"], ["AB"]],
+                },
+                {"kind": "verdict", "text": "3 de 90"},
+            ],
+        },
+        {
+            "name": "agg",
+            "blocks": [{"kind": "table", "columns": ["", "valor"], "rows": [["x", 1]]}],
+        },
+    ],
+}
 
 
 def test_only_this_strategy() -> None:
@@ -30,16 +58,20 @@ def test_only_this_strategy() -> None:
     assert table["rows"] == [["A", "H4"]] and siblings["rows"] == [["A_ScaledH4"]]
     assert got["tabs"][0]["note"].startswith("Run de toda la población")
     assert slice_for(POPULATION, "C") is None
-    assert POPULATION["tabs"][0]["blocks"][0]["rows"] == ["A", "B"]      # never mutated
+    assert POPULATION["tabs"][0]["blocks"][0]["rows"] == ["A", "B"]  # never mutated
 
 
 def test_verdict_row_and_whole() -> None:
     """Nothing names it: its verdict.csv row when it has one, else the population as it is,
     each tab saying so."""
-    row = verdict_row(POPULATION, {"strategy": "C", "identity": "x", "verdict": "DUDOSA"}, "C")
+    row = verdict_row(
+        POPULATION, {"strategy": "C", "identity": "x", "verdict": "DUDOSA"}, "C"
+    )
     assert row["tabs"][0]["blocks"][0]["rows"] == [["C", "DUDOSA"]]
     shown = whole(POPULATION, "C")
-    assert len(shown["tabs"]) == 2 and shown["tabs"][1]["note"].startswith("Este estudio lee")
+    assert len(shown["tabs"]) == 2 and shown["tabs"][1]["note"].startswith(
+        "Este estudio lee"
+    )
 
 
 if __name__ == "__main__":

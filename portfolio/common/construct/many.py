@@ -34,22 +34,43 @@ def oos1(inputs: dict, cfg: dict, rng: np.random.Generator) -> dict[str, Any]:
         four), `sharpe`, `span` and `scores` (every draw's, for the picture).
     """
     r, chosen = inputs["result"], mask(inputs)
-    drawn = random_k.draw(r["graph"]["graph"], int(chosen.sum()), cfg["real"]["null_draws"],
-                          cfg["real"]["exhaustive_max"], rng)
+    drawn = random_k.draw(
+        r["graph"]["graph"],
+        int(chosen.sum()),
+        cfg["real"]["null_draws"],
+        cfg["real"]["exhaustive_max"],
+        rng,
+    )
     if not len(drawn["index"]):
-        raise ValueError(f"la cartera elegida no es admisible: ninguna combinación de K={int(chosen.sum())} lo es")
-    paths, dates = segment.paths(r["daily"], r["calendar"], r["scale"],
-                                   np.vstack([drawn["members"], chosen]), cfg, "oos1")
+        raise ValueError(
+            f"la cartera elegida no es admisible: ninguna combinación de K={int(chosen.sum())} lo es"
+        )
+    paths, dates = segment.paths(
+        r["daily"],
+        r["calendar"],
+        r["scale"],
+        np.vstack([drawn["members"], chosen]),
+        cfg,
+        "oos1",
+    )
     table = objective.worst(objective.shifted(paths, dates, cfg))
     index = np.append(drawn["index"], len(drawn["members"]))
     every = {name: values[index] for name, values in table.items()}
     scores = objective.rank_score(every, every)
     share = float((drawn["members"] == chosen).all(axis=1)[drawn["index"]].mean())
-    return {**null.bar(scores[-1], scores[:-1], cfg["real"]["null_percentile"], share),
-            "k": int(chosen.sum()), "n_space": drawn["n_space"], "n_distinct": len(drawn["members"]),
-            "metrics": {name: float(table[name][-1]) for name in objective.metrics.NAMES},
-            "sharpe": float(table["sharpe"][-1]), "scores": scores[:-1],
-            "span": (str(cast(pd.Timestamp, dates[0]).date()), str(cast(pd.Timestamp, dates[-1]).date()))}
+    return {
+        **null.bar(scores[-1], scores[:-1], cfg["real"]["null_percentile"], share),
+        "k": int(chosen.sum()),
+        "n_space": drawn["n_space"],
+        "n_distinct": len(drawn["members"]),
+        "metrics": {name: float(table[name][-1]) for name in objective.metrics.NAMES},
+        "sharpe": float(table["sharpe"][-1]),
+        "scores": scores[:-1],
+        "span": (
+            str(cast(pd.Timestamp, dates[0]).date()),
+            str(cast(pd.Timestamp, dates[-1]).date()),
+        ),
+    }
 
 
 def held(inputs: dict, segments: list[str], cfg: dict) -> Held:
@@ -57,7 +78,9 @@ def held(inputs: dict, segments: list[str], cfg: dict) -> Held:
     r, members = inputs["result"], inputs["members"]
     if len(members) < 2:
         return hold.held(pd.DataFrame(), members, cfg)
-    daily = pd.concat([matrix.segment(r["daily"][members], r["calendar"], s) for s in segments])
+    daily = pd.concat(
+        [matrix.segment(r["daily"][members], r["calendar"], s) for s in segments]
+    )
     return hold.held(pairs_table.table(daily, matrix.monthly(daily), cfg), members, cfg)
 
 
@@ -70,28 +93,52 @@ def judge(inputs: dict, cfg: dict, rng: np.random.Generator) -> dict[str, Any]:
     """
     r, members = inputs["result"], inputs["members"]
     meta = {m: r["members_meta"][m] for m in members}
-    days = {s: len(matrix.segment(r["daily"].iloc[:, :0], r["calendar"], s))
-            for s in ("oos1", "oos2") if s in r["calendar"]}
+    days = {
+        s: len(matrix.segment(r["daily"].iloc[:, :0], r["calendar"], s))
+        for s in ("oos1", "oos2")
+        if s in r["calendar"]
+    }
     if not days.get("oos1"):
         return {"pass": None, "label": "SIN VEREDICTO (el pool no tiene días en oos1)"}
     note = f"relaxed={cfg['relaxed'] or 'no'}"
     trials.admit(meta, ["oos1"])
     first = oos1(inputs, cfg, rng)
     passed = {"pass": True, "fail": False}.get(first["state"])
-    trials.record_look(inputs["pool"], meta, "oos1", CRITERION, "report", passed,
-                       f"{first['state']}: puntuacion {first['value']:.3f} vs p{first['quantile']:.0f} "
-                       f"{first['bar']:.3f} de {first['n']} al azar de K={first['k']} "
-                       f"({first['n_space']} distintas posibles); {note}")
+    trials.record_look(
+        inputs["pool"],
+        meta,
+        "oos1",
+        CRITERION,
+        "report",
+        passed,
+        f"{first['state']}: puntuacion {first['value']:.3f} vs p{first['quantile']:.0f} "
+        f"{first['bar']:.3f} de {first['n']} al azar de K={first['k']} "
+        f"({first['n_space']} distintas posibles); {note}",
+    )
     second = decide.UNOPENED
     if passed and not days.get("oos2"):
         second = {"state": "not_opened", "reason": "el pool no tiene días en oos2"}
     elif passed:
         second = oos2_mod.read(
-            lambda: segment.paths(r["daily"], r["calendar"], r["scale"], mask(inputs), cfg, "oos2")[0][0],
-            members, inputs["pool"], meta, CRITERION, "report", note)
+            lambda: segment.paths(
+                r["daily"], r["calendar"], r["scale"], mask(inputs), cfg, "oos2"
+            )[0][0],
+            members,
+            inputs["pool"],
+            meta,
+            CRITERION,
+            "report",
+            note,
+        )
     segments = ["oos1"] + ["oos2"] * (second["state"] in ("pass", "fail"))
-    cost = {"n_pool": len(r["identities"]), "n_scored": len(inputs["table"]), "segments": segments}
-    return decide.verdict({"members": members}, first, second, held(inputs, segments, cfg), cost)
+    cost = {
+        "n_pool": len(r["identities"]),
+        "n_scored": len(inputs["table"]),
+        "segments": segments,
+    }
+    return decide.verdict(
+        {"members": members}, first, second, held(inputs, segments, cfg), cost
+    )
 
 
 def run(inputs: dict, cfg: dict, seed: int) -> dict[str, Any]:
@@ -110,5 +157,9 @@ def run(inputs: dict, cfg: dict, seed: int) -> dict[str, Any]:
     started = time.time()
     v = judge(inputs, cfg, np.random.default_rng(seed))
     text = decide_real.sentence(v) if "oos1" in v else f"Veredicto: {v['label']}."
-    return {"verdict": v, "sentence": text, "root_seed": seed,
-            "population": tabs.population(inputs, v, text, cfg, started)}
+    return {
+        "verdict": v,
+        "sentence": text,
+        "root_seed": seed,
+        "population": tabs.population(inputs, v, text, cfg, started),
+    }

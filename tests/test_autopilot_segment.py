@@ -15,10 +15,20 @@ def test_185_second_judgement_carries_oos2() -> None:
     """The plan judges 18.5 once, with the oos2 segment; ledger_row signs a segment override and
     falls back to criteria.yaml's segment."""
     got = plan.plan(rail(), GIVEN | {"judged": {"18.5"}})
-    assert [a.get("segment") for a in got["do"] if a["n"] == "18.5" and a["kind"] == "judge"] == ["build+oos1+oos2"]
+    assert [
+        a.get("segment") for a in got["do"] if a["n"] == "18.5" and a["kind"] == "judge"
+    ] == ["build+oos1+oos2"]
     rows = []
-    with mock.patch.object(judge.survivors, "about", return_value={"symbol": "X", "timeframe": "H1", "family": "f"}), \
-            mock.patch.object(judge.record, "log", lambda sid, row: rows.append(row)):
+    with (
+        mock.patch.object(
+            judge.survivors,
+            "about",
+            return_value={"symbol": "X", "timeframe": "H1", "family": "f"},
+        ),
+        mock.patch.object(judge.record, "log", lambda sid, row: rows.append(row)),
+    ):
         judge.ledger_row("P", "18.5", {"segment": "build+oos1"}, 1, 1)
-        judge.ledger_row("P", "18.5", {"segment": "build+oos1"}, 1, 1, "build+oos1+oos2")
+        judge.ledger_row(
+            "P", "18.5", {"segment": "build+oos1"}, 1, 1, "build+oos1+oos2"
+        )
     assert [r["segment"] for r in rows] == ["build+oos1", "build+oos1+oos2"]

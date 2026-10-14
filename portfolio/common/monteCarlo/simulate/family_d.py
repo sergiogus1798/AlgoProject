@@ -24,7 +24,6 @@ class FamilyD(TypedDict):
     calendar: dict[str, dict]
 
 
-
 def _resampled(job: tuple) -> dict:
     """One slice's stationary bootstrap, summarised where it ran so only four figures travel.
 
@@ -36,25 +35,46 @@ def _resampled(job: tuple) -> dict:
         `median_net`, `net_5`, `pf_5` and `shape` (None unless asked for).
     """
     data, net_seen, sims, cfg, want_shape, seed = job
-    got = engine.single(data, "draw", "stationary", config.stationary_block(data["pnl"].size),
-                        sims, cfg, seed)
-    return {"median_net": float(np.median(got["net"])),
-            "net_5": float(np.percentile(got["net"], 5)),
-            "pf_5": float(np.nanpercentile(got["pf"], 5)),
-            "shape": metrics.shape(got["net"], net_seen, cfg["global"]["report_percentile"])
-            if want_shape else None}
+    got = engine.single(
+        data,
+        "draw",
+        "stationary",
+        config.stationary_block(data["pnl"].size),
+        sims,
+        cfg,
+        seed,
+    )
+    return {
+        "median_net": float(np.median(got["net"])),
+        "net_5": float(np.percentile(got["net"], 5)),
+        "pf_5": float(np.nanpercentile(got["pf"], 5)),
+        "shape": metrics.shape(got["net"], net_seen, cfg["global"]["report_percentile"])
+        if want_shape
+        else None,
+    }
 
 
-def _bootstrapped(source: dict, slices: list[np.ndarray], cfg: dict,
-                  want_shape: bool) -> list[dict]:
+def _bootstrapped(
+    source: dict, slices: list[np.ndarray], cfg: dict, want_shape: bool
+) -> list[dict]:
     """`_resampled` for every slice of trade positions, across the pool (`engine.mapped`)."""
-    jobs = [(engine.payload(source, pos), float(source["pnl"][pos].sum()),
-             cfg["family_d"]["window_sims"], cfg, want_shape, config.seed(cfg) + i)
-            for i, pos in enumerate(slices)]
+    jobs = [
+        (
+            engine.payload(source, pos),
+            float(source["pnl"][pos].sum()),
+            cfg["family_d"]["window_sims"],
+            cfg,
+            want_shape,
+            config.seed(cfg) + i,
+        )
+        for i, pos in enumerate(slices)
+    ]
     return engine.mapped(_resampled, jobs, cfg=cfg)
 
 
-def _slices(source: dict, spans: list[dict], cfg: dict, want_shape: bool = False) -> list[dict]:
+def _slices(
+    source: dict, spans: list[dict], cfg: dict, want_shape: bool = False
+) -> list[dict]:
     """Stationary bootstrap inside each calendar slice of the history.
 
     Args:
@@ -73,13 +93,30 @@ def _slices(source: dict, spans: list[dict], cfg: dict, want_shape: bool = False
         is. A window with a negative median is a period in which the strategy did not work,
         which no average over windows may hide.
     """
-    blank = {"median_net": float("nan"), "net_5": float("nan"), "pf_5": float("nan"),
-             "shape": None}
-    enough = [s["positions"] for s in spans if s["positions"].size >= confidence.MEAN_PROVISIONAL]
+    blank = {
+        "median_net": float("nan"),
+        "net_5": float("nan"),
+        "pf_5": float("nan"),
+        "shape": None,
+    }
+    enough = [
+        s["positions"]
+        for s in spans
+        if s["positions"].size >= confidence.MEAN_PROVISIONAL
+    ]
     done = iter(_bootstrapped(source, enough, cfg, want_shape))
-    return [{**{k: span[k] for k in ("start", "end")}, "n": int(span["positions"].size),
-             **(next(done) if span["positions"].size >= confidence.MEAN_PROVISIONAL else blank)}
-            for span in spans]
+    return [
+        {
+            **{k: span[k] for k in ("start", "end")},
+            "n": int(span["positions"].size),
+            **(
+                next(done)
+                if span["positions"].size >= confidence.MEAN_PROVISIONAL
+                else blank
+            ),
+        }
+        for span in spans
+    ]
 
 
 def concentration(nets: list[float], total: float) -> float:
@@ -101,36 +138,62 @@ def run(source: dict, day: pd.DataFrame, cfg: dict) -> FamilyD:
         stitched stress path and the calendar split.
     """
     d = cfg["family_d"]
-    over = _slices(source, windows.rolling(source["open"], d["window_months"],
-                                           d["window_step_months"]), cfg)
+    over = _slices(
+        source,
+        windows.rolling(source["open"], d["window_months"], d["window_step_months"]),
+        cfg,
+    )
     segments = windows.rolling(source["open"], d["window_months"], d["window_months"])
     marks = np.cumsum([len(s["positions"]) for s in segments])[:-1].tolist()
     vol = regime.VOL[d["vol_model"]](day, d)
     tagged = regime.tag(source["open"], vol["vol"])
     scored = vol["vol"].notna()
     edges = tagged["edges"]
-    series = {"dates": [dt.date().isoformat() for dt in day.index[scored]],
-             "price": day["Close"][scored].tolist(),
-             "vol": vol["vol"][scored].tolist(),
-             "bucket": np.digitize(np.asarray(vol["vol"][scored]), edges).tolist()}
+    series = {
+        "dates": [dt.date().isoformat() for dt in day.index[scored]],
+        "price": day["Close"][scored].tolist(),
+        "vol": vol["vol"][scored].tolist(),
+        "bucket": np.digitize(np.asarray(vol["vol"][scored]), edges).tolist(),
+    }
     names = list(tagged["positions"])
-    buckets = {name: {"n": int(tagged["positions"][name].size),
-                      "net": float(source["pnl"][tagged["positions"][name]].sum()), **got}
-               for name, got in zip(names, _bootstrapped(
-                   source, [tagged["positions"][n] for n in names], cfg, True))}
+    buckets = {
+        name: {
+            "n": int(tagged["positions"][name].size),
+            "net": float(source["pnl"][tagged["positions"][name]].sum()),
+            **got,
+        }
+        for name, got in zip(
+            names,
+            _bootstrapped(source, [tagged["positions"][n] for n in names], cfg, True),
+        )
+    }
     total = float(source["pnl"].sum())
     equity0 = cfg["global"]["starting_equity"]
-    return {"overlapping": over,
-            "nonoverlapping": _slices(source, segments, cfg, want_shape=True),
-            "equity": {"curve": (equity0 + np.cumsum(source["pnl"])).tolist(),
-                      "marks": marks},
-            "regime": {"model": vol["model"], "note": vol["note"],
-                       "edges": edges, "coverage": tagged["coverage"],
-                       "buckets": buckets, "series": series,
-                       "concentration": concentration([b["net"] for b in buckets.values()], total)},
-            "stitch": stitch.worst_path(source["pnl"], segments, d["window_sims"],
-                                        d["stitch_quantiles"],
-                                        cfg["global"]["starting_equity"]),
-            "calendar": {k: v.round(0).to_dict()
-                         for k, v in windows.calendar(source["open"],
-                                                      source["pnl"]).items()}}
+    return {
+        "overlapping": over,
+        "nonoverlapping": _slices(source, segments, cfg, want_shape=True),
+        "equity": {
+            "curve": (equity0 + np.cumsum(source["pnl"])).tolist(),
+            "marks": marks,
+        },
+        "regime": {
+            "model": vol["model"],
+            "note": vol["note"],
+            "edges": edges,
+            "coverage": tagged["coverage"],
+            "buckets": buckets,
+            "series": series,
+            "concentration": concentration([b["net"] for b in buckets.values()], total),
+        },
+        "stitch": stitch.worst_path(
+            source["pnl"],
+            segments,
+            d["window_sims"],
+            d["stitch_quantiles"],
+            cfg["global"]["starting_equity"],
+        ),
+        "calendar": {
+            k: v.round(0).to_dict()
+            for k, v in windows.calendar(source["open"], source["pnl"]).items()
+        },
+    }

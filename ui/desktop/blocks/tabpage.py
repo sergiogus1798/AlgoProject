@@ -3,8 +3,15 @@
 from typing import Any
 
 from PySide6.QtCore import QSize
-from PySide6.QtWidgets import (QComboBox, QGridLayout, QHBoxLayout, QLabel, QSizePolicy,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop.blocks import markets
 from ui.desktop.blocks.card import initial, text
@@ -12,7 +19,12 @@ from ui.desktop.blocks.kinds import draw
 from ui.desktop.blocks.pick import pairs, selectors, shown
 from ui.desktop.theme import T
 
-__all__ = ["Slot", "TabPage", "pairs", "shown"]    # shown and pairs live in pick; kept here for callers
+__all__ = [
+    "Slot",
+    "TabPage",
+    "pairs",
+    "shown",
+]  # shown and pairs live in pick; kept here for callers
 
 
 class Slot(QWidget):
@@ -38,7 +50,9 @@ class Slot(QWidget):
 class TabPage(QWidget):
     """The page of one tab. Holds the combos' wiring; what to draw is `shown` and `pairs`."""
 
-    def __init__(self, tabs: list[dict | None], chosen: dict, pool: list[dict] | None = None) -> None:
+    def __init__(
+        self, tabs: list[dict | None], chosen: dict, pool: list[dict] | None = None
+    ) -> None:
         """Build the note, the selectors and the first drawing.
 
         Args:
@@ -54,11 +68,15 @@ class TabPage(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         self.tabs, self.pool = tabs, pool or []
         first = next(t for t in tabs if t is not None)
-        self.chosen = {s["key"]: chosen.get(s["key"], s["default"]) for s in selectors(first)}
+        self.chosen = {
+            s["key"]: chosen.get(s["key"], s["default"]) for s in selectors(first)
+        }
         # Side by side only on a lone result: a comparison already uses the width for two runs.
         self.grouped = len(tabs) == 1 and markets.grouped(first)
         if self.grouped:
-            self.chosen[markets.CHOSEN] = chosen.get(markets.CHOSEN) or markets.first(first)
+            self.chosen[markets.CHOSEN] = chosen.get(markets.CHOSEN) or markets.first(
+                first
+            )
         lay = QVBoxLayout(self)
         lay.setContentsMargins(4, 10, 4, 4)
         notes = {n for t in tabs if t is not None and (n := t.get("note"))}
@@ -70,22 +88,32 @@ class TabPage(QWidget):
                 continue
             head = QLabel(initial(s["label"]))
             if s.get("help"):
-                head.setToolTip(s["help"])   # the uniform "?" of CONTRACT §1 (2026-09-30)
+                head.setToolTip(
+                    s["help"]
+                )  # the uniform "?" of CONTRACT §1 (2026-09-30)
             row.addWidget(head)
             combo = QComboBox()
-            for o in s["options"]:       # shown capitalised, chosen by the study's own text
+            for o in s["options"]:  # shown capitalised, chosen by the study's own text
                 combo.addItem(initial(o), str(o))
             combo.setCurrentIndex(max(0, combo.findData(str(self.chosen[s["key"]]))))
-            combo.setToolTip("Cambia qué combinación se dibuja. No recalcula nada: el estudio "
-                             "guardó todas.")
+            combo.setToolTip(
+                "Cambia qué combinación se dibuja. No recalcula nada: el estudio "
+                "guardó todas."
+            )
             combo.currentIndexChanged.connect(
-                lambda _, k=s["key"], c=combo: self.choose(k, c.currentData()))
+                lambda _, k=s["key"], c=combo: self.choose(k, c.currentData())
+            )
             row.addWidget(combo)
         row.addStretch(1)
         lay.addLayout(row)
         if self.grouped:
-            lay.addWidget(markets.picker(first, self.chosen[markets.CHOSEN],
-                                         lambda on: self.choose(markets.CHOSEN, on)))
+            lay.addWidget(
+                markets.picker(
+                    first,
+                    self.chosen[markets.CHOSEN],
+                    lambda on: self.choose(markets.CHOSEN, on),
+                )
+            )
         self.body = QWidget()
         lay.addWidget(self.body)
         lay.addStretch(1)
@@ -118,7 +146,7 @@ class TabPage(QWidget):
         rows: list[Any]
         if len(sides) == 1:
             rows = []
-            for b in sides[0]:       # `beside` lays a block in the row of the one before it
+            for b in sides[0]:  # `beside` lays a block in the row of the one before it
                 if b.get("beside") and rows and not self.grouped:
                     rows[-1] += (b,)
                 else:
@@ -128,9 +156,18 @@ class TabPage(QWidget):
         wide = max([len(sides), *map(len, rows)])
         for i, row in enumerate(rows):
             for j, b in enumerate(row):
-                span = wide - len(row) + 1 if len(sides) == 1 and j == len(row) - 1 else 1
-                grid.addWidget(draw(b) if b is not None else
-                               text("(Sin equivalente en este lado)", T["faint"]), i, j, 1, span)
+                span = (
+                    wide - len(row) + 1 if len(sides) == 1 and j == len(row) - 1 else 1
+                )
+                grid.addWidget(
+                    draw(b)
+                    if b is not None
+                    else text("(Sin equivalente en este lado)", T["faint"]),
+                    i,
+                    j,
+                    1,
+                    span,
+                )
         if self.grouped and maps:
             grid.addWidget(markets.row(maps, consensus), len(rows), 0)
             rows.append(maps)
@@ -141,5 +178,5 @@ class TabPage(QWidget):
         lay = self.layout()
         assert lay is not None
         lay.replaceWidget(old, self.body)
-        old.hide()          # deleteLater waits for the event loop; until then it would paint over
+        old.hide()  # deleteLater waits for the event loop; until then it would paint over
         old.deleteLater()

@@ -72,10 +72,14 @@ def markets(packed: Path) -> list[str]:
     """
     if "Symbol" not in pq.read_schema(packed).names:
         return []
-    return sorted(pd.read_parquet(packed, columns=["Symbol"])["Symbol"].astype(str).unique())
+    return sorted(
+        pd.read_parquet(packed, columns=["Symbol"])["Symbol"].astype(str).unique()
+    )
 
 
-def trades(packed: Path, which: str, feed: str = "", strategy: str = "") -> pd.DataFrame:
+def trades(
+    packed: Path, which: str, feed: str = "", strategy: str = ""
+) -> pd.DataFrame:
     """The trades of one sample of an export, of one market and one strategy when asked.
 
     Args:
@@ -92,8 +96,10 @@ def trades(packed: Path, which: str, feed: str = "", strategy: str = "") -> pd.D
     """
     held = markets(packed)
     if len(held) > 1 and not feed:
-        raise SystemExit(f"{packed} tiene {len(held)} mercados ({', '.join(held)}): di cuál "
-                         f"con --feed, o córrelo por mercado")
+        raise SystemExit(
+            f"{packed} tiene {len(held)} mercados ({', '.join(held)}): di cuál "
+            f"con --feed, o córrelo por mercado"
+        )
     filters = [("Sample type", "==", which)]
     filters += [("Symbol", "==", feed)] if held and feed else []
     filters += [("strategy", "==", strategy)] if strategy else []
@@ -154,11 +160,17 @@ def on_grid(trades: pd.DataFrame, index: pd.DatetimeIndex, max_hold: float) -> O
     leave = index.searchsorted(trades["Close time"].to_numpy())
     hold = leave - entry
     if hold.max() > max_hold:
-        raise SystemExit(f"nulls: un trade dura {hold.max()} barras y barrier.max_hold "
-                         f"es {max_hold}; sube el techo en vez de truncar el trade")
-    return {"entry": entry, "exit": leave, "hold": hold,
-            "size": trades["Size"].to_numpy(np.float64),
-            "window": (int(entry.min()), int(leave.max()))}
+        raise SystemExit(
+            f"nulls: un trade dura {hold.max()} barras y barrier.max_hold "
+            f"es {max_hold}; sube el techo en vez de truncar el trade"
+        )
+    return {
+        "entry": entry,
+        "exit": leave,
+        "hold": hold,
+        "size": trades["Size"].to_numpy(np.float64),
+        "window": (int(entry.min()), int(leave.max())),
+    }
 
 
 def newest(project: str, databank: str) -> Path:

@@ -46,19 +46,38 @@ def spent_block(frame: pd.DataFrame) -> dict[str, Any]:
     done = gate.done(frame)
     try:
         gate.allow_read(frame)
-        blind = {"done": {str(k): v for k, v in done.items()}, "open": True,
-                 "text": ("17, 18 y 19 hechos: el paso 20 puede leerlos" if all(done.values())
-                          else "abierta: la puerta ciega sólo se cierra a un agente autónomo")}
+        blind = {
+            "done": {str(k): v for k, v in done.items()},
+            "open": True,
+            "text": (
+                "17, 18 y 19 hechos: el paso 20 puede leerlos"
+                if all(done.values())
+                else "abierta: la puerta ciega sólo se cierra a un agente autónomo"
+            ),
+        }
     except PermissionError as refusal:
-        blind = {"done": {str(k): v for k, v in done.items()}, "open": False,
-                 "text": str(refusal)}
+        blind = {
+            "done": {str(k): v for k, v in done.items()},
+            "open": False,
+            "text": str(refusal),
+        }
     try:
         counted = trials.accumulated(frame)
-        pooled = counted if counted["n"] else {"error": "ninguna búsqueda registró la "
-                                                        "distribución de sus candidatos"}
+        pooled = (
+            counted
+            if counted["n"]
+            else {
+                "error": "ninguna búsqueda registró la distribución de sus candidatos"
+            }
+        )
     except ValueError as refusal:
         pooled = {"error": str(refusal)}
-    return {"segments": plain(segments), "virgin": virgin, "blind": blind, "trials": pooled}
+    return {
+        "segments": plain(segments),
+        "virgin": virgin,
+        "blind": blind,
+        "trials": pooled,
+    }
 
 
 def ledger(study: str | None) -> dict[str, Any]:
@@ -73,7 +92,15 @@ def ledger(study: str | None) -> dict[str, Any]:
         `spent_block`; empty when the study has no search yet).
     """
     chosen = study or newest()
-    frame = studymod.read(chosen) if chosen else pd.DataFrame(columns=pd.Index(studymod.COLUMNS))
-    return {"studies": studymod.studies(), "study": chosen, "rows": plain(frame),
-            "funnel": plain(record.funnel(frame)) if len(frame) else [],
-            "spent": spent_block(frame) if len(frame) else {}}
+    frame = (
+        studymod.read(chosen)
+        if chosen
+        else pd.DataFrame(columns=pd.Index(studymod.COLUMNS))
+    )
+    return {
+        "studies": studymod.studies(),
+        "study": chosen,
+        "rows": plain(frame),
+        "funnel": plain(record.funnel(frame)) if len(frame) else [],
+        "spent": spent_block(frame) if len(frame) else {},
+    }

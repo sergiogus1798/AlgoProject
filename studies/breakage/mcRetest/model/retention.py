@@ -30,7 +30,9 @@ def retention(runs: np.ndarray, original: float) -> Retention:
     runs = np.asarray(runs, dtype=np.float64)
     n = int(runs.size)
     ok = n > 0 and original > 0
-    return {"ret_med": float(np.median(runs) / original) if ok else float("nan"),
-            "ret_p5": float(np.percentile(runs, 5) / original) if ok else float("nan"),
-            "f_pos": float((runs > 0).mean()) if n else float("nan"),
-            "n": n}
+    return {
+        "ret_med": float(np.median(runs) / original) if ok else float("nan"),
+        "ret_p5": float(np.percentile(runs, 5) / original) if ok else float("nan"),
+        "f_pos": float((runs > 0).mean()) if n else float("nan"),
+        "n": n,
+    }

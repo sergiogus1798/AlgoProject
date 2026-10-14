@@ -25,7 +25,7 @@ def _fills(b: dict) -> tuple:
 def _range(b: dict) -> tuple[float, float]:
     """The y range over every band and the real curve."""
     v = [y for s in (*b["bands"].values(), b["real"]) for y in s if y is not None]
-    margin = 0.06 * (max(v) - min(v))   # so no mark sits on the frame
+    margin = 0.06 * (max(v) - min(v))  # so no mark sits on the frame
     return min(v) - margin, max(v) + margin
 
 
@@ -53,9 +53,14 @@ def _draw(b: dict) -> Callable:
         y = axis.scale(lo, hi, box.bottom(), box.top())
         chart.axes(p, box, xt, [(y(v), chart.num(v)) for v in axis.ticks(lo, hi, 5)])
         for down, up, alpha in _fills(b):
-            pts = [QPointF(a, y(v)) for a, v in zip(px, b["bands"][up]) if v is not None]
-            pts += [QPointF(a, y(v)) for a, v in reversed(list(zip(px, b["bands"][down])))
-                    if v is not None]
+            pts = [
+                QPointF(a, y(v)) for a, v in zip(px, b["bands"][up]) if v is not None
+            ]
+            pts += [
+                QPointF(a, y(v))
+                for a, v in reversed(list(zip(px, b["bands"][down])))
+                if v is not None
+            ]
             fill = QColor(SIM)
             fill.setAlphaF(alpha)
             p.setPen(Qt.PenStyle.NoPen)
@@ -71,7 +76,11 @@ def _draw(b: dict) -> Callable:
             chart.vline(p, px[s], box, T["text"], 1.5, Qt.PenStyle.DotLine)
             p.setFont(chart.font(11, True))
             p.setPen(QColor(T["text"]))
-            p.drawText(QRectF(px[s] + 6, box.top() + 2, 200, 20), Qt.AlignmentFlag.AlignLeft, "OOS →")
+            p.drawText(
+                QRectF(px[s] + 6, box.top() + 2, 200, 20),
+                Qt.AlignmentFlag.AlignLeft,
+                "OOS →",
+            )
         if hover is not None and box.contains(hover):
             chart.vline(p, px[axis.nearest(px, hover.x())], box, T["faint"], 1)
 
@@ -89,7 +98,10 @@ def _tip(b: dict) -> Callable:
         px, _ = axis.xaxis(b["x"], box.left(), box.right())
         i = axis.nearest(px, pos.x())
         rows = [f"x = {b['x'][i]}", f"real: {chart.num(b['real'][i], b['unit'])}"]
-        rows += [f"p{k}: {chart.num(v[i], b['unit'])}" for k, v in reversed(b["bands"].items())]
+        rows += [
+            f"p{k}: {chart.num(v[i], b['unit'])}"
+            for k, v in reversed(b["bands"].items())
+        ]
         return "\n".join(rows)
 
     return tip
@@ -108,11 +120,18 @@ def widget(block: dict) -> QWidget:
     real = any(v is not None for v in b["real"])
     (a, z, _), (c, d, _) = _fills(b)
     name = b.get("real_label", "curva real")
-    items = [("box", chart.blend(SIM, ALPHAS[0]), f"{num(float(a))}–{num(float(z))} % de las simulaciones"),
-             ("box", chart.blend(SIM, sum(ALPHAS)), f"{num(float(c))}–{num(float(d))} %"),
-             ("dash", MEDIAN, "mediana simulada"),
-             ("line", REAL, name) if real else
-             ("line", T["faint"], "sin curva real: el estudio no la dio")]
+    items = [
+        (
+            "box",
+            chart.blend(SIM, ALPHAS[0]),
+            f"{num(float(a))}–{num(float(z))} % de las simulaciones",
+        ),
+        ("box", chart.blend(SIM, sum(ALPHAS)), f"{num(float(c))}–{num(float(d))} %"),
+        ("dash", MEDIAN, "mediana simulada"),
+        ("line", REAL, name)
+        if real
+        else ("line", T["faint"], "sin curva real: el estudio no la dio"),
+    ]
     if _split(b) is not None:
         items.append(("dash", T["text"], f"empieza el fuera de muestra ({b['split']})"))
     return card(b, chart.Canvas(_draw(b), _tip(b)), chart.key(items))

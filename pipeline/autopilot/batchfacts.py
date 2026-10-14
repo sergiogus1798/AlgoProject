@@ -7,7 +7,14 @@ import numpy as np
 
 # Text a rule can test as a number: a state (pasa/limbo/no_pasa, one is better than the next)
 # and an order (positivo/neutro/perverso) — the WFC's and the market surfaces'.
-WORDS = {"pasa": 1.0, "limbo": 0.0, "no_pasa": -1.0, "positivo": 1.0, "neutro": 0.0, "perverso": -1.0}
+WORDS = {
+    "pasa": 1.0,
+    "limbo": 0.0,
+    "no_pasa": -1.0,
+    "positivo": 1.0,
+    "neutro": 0.0,
+    "perverso": -1.0,
+}
 BOOLS = {"True": 1.0, "False": 0.0}
 
 
@@ -52,7 +59,11 @@ def rows(study: str, file: Path, pairs: list) -> list[dict]:
 
     The mother is the batch folder two levels up (`databank_name`).
     """
-    pairs = list(pairs) + flat(json.loads(file.read_text(encoding="utf-8")).get("facts") or {})
+    pairs = list(pairs) + flat(
+        json.loads(file.read_text(encoding="utf-8")).get("facts") or {}
+    )
     name = databank_name(file.parent.parent.name)
-    return [{"study": study, "strategy": name, "identity": "", "key": k, "value": number(x)}
-            for k, x in pairs]
+    return [
+        {"study": study, "strategy": name, "identity": "", "key": k, "value": number(x)}
+        for k, x in pairs
+    ]

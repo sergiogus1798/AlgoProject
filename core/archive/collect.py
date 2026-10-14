@@ -14,9 +14,9 @@ from core.paths import DATA
 from core.study import draws
 
 
-_READ: dict = {}        # (path, kind) -> (mtime, size, value): a save freezes many survivors from the same files
-_LOCK = threading.Lock()    # the daemon's threads archive side by side
-_ROOM = 1 << 31         # bytes of files held; past it the cache starts again
+_READ: dict = {}  # (path, kind) -> (mtime, size, value): a save freezes many survivors from the same files
+_LOCK = threading.Lock()  # the daemon's threads archive side by side
+_ROOM = 1 << 31  # bytes of files held; past it the cache starts again
 
 
 def _cached(path: Path, kind: str, load: Callable[[Path], Any]) -> Any:
@@ -57,7 +57,9 @@ def _json(path: Path) -> dict:
     return _cached(path, "json", lambda p: json.loads(p.read_text(encoding="utf-8")))
 
 
-def _names(folder: Path, ids: frozenset[str]) -> tuple[list[str], list[str], str | None]:
+def _names(
+    folder: Path, ids: frozenset[str]
+) -> tuple[list[str], list[str], str | None]:
     """The names this identity goes by in one study folder, or why the folder cannot say.
 
     Args:
@@ -109,7 +111,13 @@ def _table(path: Path, ids: frozenset[str], names: list[str], out: Path) -> None
         Nothing. A parquet that names no strategy is a population aggregate that can weigh
         megabytes and is left out; a CSV that names none (a funnel) is copied whole.
     """
-    frame = _cached(path, "table", lambda p: pd.read_parquet(p) if p.suffix == ".parquet" else pd.read_csv(p, dtype=str))
+    frame = _cached(
+        path,
+        "table",
+        lambda p: (
+            pd.read_parquet(p) if p.suffix == ".parquet" else pd.read_csv(p, dtype=str)
+        ),
+    )
     if frame.index.name == "identity":
         frame = frame[frame.index.isin(ids)]
     elif "identity" in frame.columns and frame["identity"].isin(ids).any():
@@ -124,7 +132,9 @@ def _table(path: Path, ids: frozenset[str], names: list[str], out: Path) -> None
         frame.to_csv(out / path.name, index=False)
 
 
-def _freeze(folder: Path, ids: frozenset[str], own: list[str], names: list[str], out: Path) -> list[str]:
+def _freeze(
+    folder: Path, ids: frozenset[str], own: list[str], names: list[str], out: Path
+) -> list[str]:
     """Copy what one study folder holds about this strategy.
 
     Args:
@@ -142,19 +152,26 @@ def _freeze(folder: Path, ids: frozenset[str], own: list[str], names: list[str],
     if own:
         (out / "estrategias").mkdir()
     for name in own:
-        shutil.copy2(folder / "estrategias" / f"{name}.json", out / "estrategias" / f"{name}.json")
+        shutil.copy2(
+            folder / "estrategias" / f"{name}.json",
+            out / "estrategias" / f"{name}.json",
+        )
     for path in sorted(folder.iterdir()):
         if path.suffix in (".csv", ".parquet"):
             _table(path, ids, names, out)
-        elif path.suffix == ".json" and (path.stem in (folder.name, "manifest") or
-                                         _json(path).get("strategy") in names):
+        elif path.suffix == ".json" and (
+            path.stem in (folder.name, "manifest")
+            or _json(path).get("strategy") in names
+        ):
             shutil.copy2(path, out / path.name)
     return sorted(p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file())
 
 
 def _hash(folder: Path, own: list[str]) -> str | None:
     """The config_hash of the result this folder holds for the strategy, else its population's."""
-    for path in [folder / "estrategias" / f"{n}.json" for n in own] + [folder / f"{folder.name}.json"]:
+    for path in [folder / "estrategias" / f"{n}.json" for n in own] + [
+        folder / f"{folder.name}.json"
+    ]:
         if path.is_file():
             return _json(path).get("config_hash")
     return None
@@ -184,11 +201,18 @@ def _loose(root: Path, ids: frozenset[str], out: Path) -> tuple[list[str], list[
             rows.to_csv(out / rel, index=False)
             frozen.append(rel.as_posix())
         elif not any("identity" in c for c in frame.columns):
-            skipped.append({"path": rel.as_posix(), "reason": "no nombra estrategias por identidad"})
+            skipped.append(
+                {
+                    "path": rel.as_posix(),
+                    "reason": "no nombra estrategias por identidad",
+                }
+            )
     return frozen, skipped
 
 
-def freeze(project: str, identity: str, out: Path, also: frozenset[str] = frozenset()) -> tuple[list[dict], list[str], list[dict]]:
+def freeze(
+    project: str, identity: str, out: Path, also: frozenset[str] = frozenset()
+) -> tuple[list[dict], list[str], list[dict]]:
     """Every study, every databank and every day that judged this identity, frozen.
 
     Args:
@@ -210,15 +234,27 @@ def freeze(project: str, identity: str, out: Path, also: frozenset[str] = frozen
         databank, day = folder.parts[-3:-1]
         if not folder.is_dir() or databank.startswith("_"):
             continue
-        draws.consolidate(folder)       # a `--strategy` run leaves its rows apart; a copy by file name would miss them
+        draws.consolidate(
+            folder
+        )  # a `--strategy` run leaves its rows apart; a copy by file name would miss them
         own, names, reason = _names(folder, ids)
         if reason:
-            skipped.append({"path": folder.relative_to(root).as_posix(), "reason": reason})
+            skipped.append(
+                {"path": folder.relative_to(root).as_posix(), "reason": reason}
+            )
         if not names:
             continue
         files = _freeze(folder, ids, own, names, out / databank / day / folder.name)
-        entries.append({"databank": databank, "day": day, "study": folder.name,
-                        "named": own[0] if own else None, "names": names,
-                        "config_hash": _hash(folder, own), "files": files})
+        entries.append(
+            {
+                "databank": databank,
+                "day": day,
+                "study": folder.name,
+                "named": own[0] if own else None,
+                "names": names,
+                "config_hash": _hash(folder, own),
+                "files": files,
+            }
+        )
     loose, lost = _loose(root, ids, out)
     return entries, loose, skipped + lost

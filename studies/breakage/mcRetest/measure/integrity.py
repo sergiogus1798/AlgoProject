@@ -41,9 +41,13 @@ def table(metrics: dict, levels: tuple) -> dict[str, dict[int, float]]:
         metric, exactly as SQX's is -- so two metrics at one level still come from two
         different simulations, and this table is no more a scenario than the stored one.
     """
-    return {name: {level: quantile(values, level, name in recon.HIGHER_IS_WORSE)
-                   for level in levels}
-            for name, values in metrics.items()}
+    return {
+        name: {
+            level: quantile(values, level, name in recon.HIGHER_IS_WORSE)
+            for level in levels
+        }
+        for name, values in metrics.items()
+    }
 
 
 class Reconciled(TypedDict):
@@ -53,7 +57,9 @@ class Reconciled(TypedDict):
     passed: bool
 
 
-def reconcile(metrics: dict, stored: dict, cfg: dict, readings: Sequence[dict] = ()) -> dict[str, Reconciled]:
+def reconcile(
+    metrics: dict, stored: dict, cfg: dict, readings: Sequence[dict] = ()
+) -> dict[str, Reconciled]:
     """Whether the reconstruction reproduces what SQX itself computed.
 
     Args:
@@ -82,8 +88,11 @@ def reconcile(metrics: dict, stored: dict, cfg: dict, readings: Sequence[dict] =
             if name not in blob:
                 continue
             target = float(blob[name])
-            band = [v for alt in (values, *(r[name] for r in readings))
-                    for v in _band(alt, level, name)]
+            band = [
+                v
+                for alt in (values, *(r[name] for r in readings))
+                for v in _band(alt, level, name)
+            ]
             outside = max(min(band) - target, target - max(band), 0.0)
             worst = max(worst, outside / max(abs(target) * tol, floor))
         out[name] = {"worst_ratio": worst, "passed": worst <= 1.0}
@@ -121,8 +130,11 @@ def partition() -> list[str]:
         nobody decided about, and silence there reads as "unimportant" when it means
         "unexamined".
     """
-    sets = {"RECON": set(recon.RECON), "ANALOGUE": set(recon.ANALOGUE),
-            "EXCLUDED": set(recon.EXCLUDED)}
+    sets = {
+        "RECON": set(recon.RECON),
+        "ANALOGUE": set(recon.ANALOGUE),
+        "EXCLUDED": set(recon.EXCLUDED),
+    }
     out = []
     for left, names in sets.items():
         for right, others in sets.items():
@@ -143,8 +155,11 @@ def varying(stored: dict) -> set:
         there is nothing about them to reconstruct or to decide.
     """
     blobs = list(stored.values())
-    return {name for name in blobs[0]
-            if len({round(float(blob[name]), 6) for blob in blobs}) > 1}
+    return {
+        name
+        for name in blobs[0]
+        if len({round(float(blob[name]), 6) for blob in blobs}) > 1
+    }
 
 
 def stored_only(stored: dict) -> list[str]:
@@ -180,5 +195,9 @@ def zero_readings(sims: Simulations, capital: float) -> list[dict]:
     pnl, zero = sims["pnl"], sims["pnl"] == 0
     if not zero.any():
         return []
-    return [recon.frame(np.where(zero, nudge, pnl.astype(np.float64)), sims["offsets"], capital)
-            for nudge in (-0.1, 0.1)]
+    return [
+        recon.frame(
+            np.where(zero, nudge, pnl.astype(np.float64)), sims["offsets"], capital
+        )
+        for nudge in (-0.1, 0.1)
+    ]

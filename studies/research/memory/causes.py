@@ -42,7 +42,11 @@ def of_reason(reason: str) -> set[str]:
     Only `fail:` parts count: a limbo goes on, and the dev draw and the scaled siblings are
     not failures of the strategy.
     """
-    parts = [p[len("fail: "):].rpartition("=") for p in reason.split("; ") if p.startswith("fail: ")]
+    parts = [
+        p[len("fail: ") :].rpartition("=")
+        for p in reason.split("; ")
+        if p.startswith("fail: ")
+    ]
     return {of_fact(fact, value) for fact, _, value in parts}
 
 
@@ -66,7 +70,10 @@ def of_verdicts(paths: list[Path]) -> Counter:
 def verdicts(folder: Path, stage: str) -> list[Path]:
     """The newest verdict.csv of each judging step that cuts into `stage`, in a project's
     autopilot folder (`<root>/<project>/<stamp>/paso-<n>/verdict.csv`)."""
-    found = [sorted(folder.glob(f"*/paso-{n}/verdict.csv")) for n in CAUSES["judged_at"].get(stage, [])]
+    found = [
+        sorted(folder.glob(f"*/paso-{n}/verdict.csv"))
+        for n in CAUSES["judged_at"].get(stage, [])
+    ]
     return [runs[-1] for runs in found if runs]
 
 
@@ -80,10 +87,13 @@ def named(cause: str, seen: Counter | None = None) -> Cause:
     """A cause with its two texts and, when it was counted, its share and the other causes."""
     counts = seen or Counter()
     others = [c for c in ranked(counts)]
-    return {"cause": cause,
-            "cause_share": f"{counts[cause]}/{counts['']}" if others else "",
-            "causes": ";".join(f"{c}:{counts[c]}" for c in others),
-            "rules_out": VOCABULARY[cause]["rules_out"], "try_next": VOCABULARY[cause]["try_next"]}
+    return {
+        "cause": cause,
+        "cause_share": f"{counts[cause]}/{counts['']}" if others else "",
+        "causes": ";".join(f"{c}:{counts[c]}" for c in others),
+        "rules_out": VOCABULARY[cause]["rules_out"],
+        "try_next": VOCABULARY[cause]["try_next"],
+    }
 
 
 def typed(row: dict, folder: Path) -> Cause:
@@ -108,10 +118,16 @@ def typed(row: dict, folder: Path) -> Cause:
     if kind == "failed":
         return named("infrastructure")
     if kind != "died":
-        return named("hypothesis_mismatch") if mismatch and kind == "survivors" else BLANK.copy()
+        return (
+            named("hypothesis_mismatch")
+            if mismatch and kind == "survivors"
+            else BLANK.copy()
+        )
     seen = of_verdicts(verdicts(folder, row["died_at"]))
     first = ranked(seen)
     got = named(first[0], seen) if first else named(CAUSES["stage"][row["died_at"]])
     if mismatch:
-        got["causes"] = ";".join(filter(None, [got["causes"] or got["cause"], "hypothesis_mismatch"]))
+        got["causes"] = ";".join(
+            filter(None, [got["causes"] or got["cause"], "hypothesis_mismatch"])
+        )
     return got

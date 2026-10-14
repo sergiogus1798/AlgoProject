@@ -1,7 +1,15 @@
 """The ficha's basic statistics: IS / OOS1 / IS+OOS1 / OOS2 (behind its door), the figures and the trade distribution."""
 
-from PySide6.QtWidgets import (QButtonGroup, QComboBox, QGridLayout, QHBoxLayout, QLabel,
-                               QPushButton, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QButtonGroup,
+    QComboBox,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop.blocks.kinds import draw
 from ui.text.glossary import label
@@ -13,8 +21,10 @@ SEGMENTS = ("IS", "OOS1", "IS+OOS1", "OOS2")
 LOCKED = SEGMENTS.index("OOS2")
 # The four figures the owner reads first, one step larger (2026-09-28); their names keep the grey.
 BIG = ("Operaciones", "Net Profit (SQX, suma de operaciones)", "Profit Factor")
-PICKED = (f"QPushButton:checked {{ border-color: {C['accent']}; background: {T['select']}; }}"
-          f"QPushButton:disabled {{ color: {T['faint']}; border: 1px dashed {T['faint']}; }}")
+PICKED = (
+    f"QPushButton:checked {{ border-color: {C['accent']}; background: {T['select']}; }}"
+    f"QPushButton:disabled {{ color: {T['faint']}; border: 1px dashed {T['faint']}; }}"
+)
 
 
 def figure(row: dict) -> QLabel:
@@ -23,8 +33,14 @@ def figure(row: dict) -> QLabel:
     value, unit = row["value"], row.get("unit", "")
     shown = QLabel(num(value, unit), objectName="mono")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
     money = "USD" in unit or "$" in unit
-    ink = C["dead"] if money and isinstance(value, (int, float)) and value < 0 else T["text"]
-    shown.setStyleSheet(f"color: {ink}; font-size: {15 if row['label'] in BIG else 13}px;")
+    ink = (
+        C["dead"]
+        if money and isinstance(value, (int, float)) and value < 0
+        else T["text"]
+    )
+    shown.setStyleSheet(
+        f"color: {ink}; font-size: {15 if row['label'] in BIG else 13}px;"
+    )
     return shown
 
 
@@ -51,10 +67,14 @@ class Stats(QWidget):
         self.segment.idClicked.connect(self.show_sample)
         self.unit = QComboBox()
         self.unit.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-        self.unit.setToolTip("En qué se cuenta el retorno de cada operación. Por lote quita el "
-                             "tamaño de la posición: un money management que crece con la "
-                             "cuenta no engorda las colas.")
-        self.unit.currentTextChanged.connect(lambda _: self.show_sample(self.segment.checkedId()))
+        self.unit.setToolTip(
+            "En qué se cuenta el retorno de cada operación. Por lote quita el "
+            "tamaño de la posición: un money management que crece con la "
+            "cuenta no engorda las colas."
+        )
+        self.unit.currentTextChanged.connect(
+            lambda _: self.show_sample(self.segment.checkedId())
+        )
         picker.addWidget(self.unit)
         picker.addStretch(1)
         self.reserved = QLabel("", objectName="dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
@@ -93,7 +113,9 @@ class Stats(QWidget):
         locked = "rows" not in oos2
         self.segment.button(LOCKED).setEnabled(not locked)
         # A disabled button never shows its tooltip, so the reason is written beside it.
-        why = oos2.get("blocked", "").removeprefix("OOS2 ")    # one reason already names it
+        why = oos2.get("blocked", "").removeprefix(
+            "OOS2 "
+        )  # one reason already names it
         self.reserved.setText(f"OOS2 {why}" if why else "")
         self.reserved.setToolTip(oos2.get("why", ""))
         self.segment.button(0).setChecked(True)
@@ -106,16 +128,23 @@ class Stats(QWidget):
         if "error" in self.data:
             error = QLabel(self.data["error"], objectName="dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             error.setWordWrap(True)
-            error.setStyleSheet(f"color: {C['muted' if self.data.get('absent') else 'dead']};")
+            error.setStyleSheet(
+                f"color: {C['muted' if self.data.get('absent') else 'dead']};"
+            )
             self.grid.addWidget(error, 0, 0, 1, 2)
             return
         got = self.data["samples"][SEGMENTS[index]]
         shape = got.get("returns", {}).get(self.unit.currentText(), {})
-        rows = got["rows"] + ([{"label": "Retorno por operación", "value": None, "head": True}]
-                              if shape else [])
+        rows = got["rows"] + (
+            [{"label": "Retorno por operación", "value": None, "head": True}]
+            if shape
+            else []
+        )
         rows += shape.get("rows", [])
         for i, row in enumerate(rows):
-            name = QLabel(label(row["label"]), objectName="kicker" if row.get("head") else "dim")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+            name = QLabel(
+                label(row["label"]), objectName="kicker" if row.get("head") else "dim"
+            )  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             name.setWordWrap(True)
             if row["label"] in BIG:
                 name.setStyleSheet("font-size: 15px;")

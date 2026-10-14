@@ -5,7 +5,9 @@ import numpy as np
 from studies.research.marketProfile.measure.trades import after, prev, tstat
 
 
-def _trade(x: dict, cal: dict, mask: np.ndarray, hold: int, detail: dict | None = None) -> tuple:
+def _trade(
+    x: dict, cal: dict, mask: np.ndarray, hold: int, detail: dict | None = None
+) -> tuple:
     """A signal as (statistic, entry, exit, detail)."""
     entry, leave = after(mask, hold)
     return tstat(x, entry, leave, cal["least"]), entry, leave, detail or {}
@@ -36,8 +38,16 @@ def breakout(x: dict, cal: dict, N: int, H: int) -> tuple:
     The detail carries the characteristic size of the break and the ATR at it, in logs.
     """
     mask = _breaks(x, N)
-    return _trade(x, cal, mask, H, {"size": float(np.median((x["c"] - x["hi"][N])[mask])),
-                                    "atr": float(np.nanmedian(x["atr1"][mask]))})
+    return _trade(
+        x,
+        cal,
+        mask,
+        H,
+        {
+            "size": float(np.median((x["c"] - x["hi"][N])[mask])),
+            "atr": float(np.nanmedian(x["atr1"][mask])),
+        },
+    )
 
 
 def false_break(x: dict, cal: dict, N: int, within: int) -> tuple:
@@ -54,7 +64,12 @@ def false_break(x: dict, cal: dict, N: int, within: int) -> tuple:
     for j in range(1, within + 1):
         back |= c[idx + j] < level
     years = np.unique(cal["year"]).size
-    return -back.mean(), None, None, {"false_rate": back.mean(), "per_year": back.sum() / years}
+    return (
+        -back.mean(),
+        None,
+        None,
+        {"false_rate": back.mean(), "per_year": back.sum() / years},
+    )
 
 
 def extreme(x: dict, cal: dict, k: float, H: int) -> tuple:

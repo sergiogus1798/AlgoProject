@@ -22,8 +22,9 @@ class Run(TypedDict):
     wall_s: float
 
 
-def run(symbol: str, group: str, timeframe: str, bars: pd.DataFrame, asset: dict,
-        cfg: dict) -> Run:
+def run(
+    symbol: str, group: str, timeframe: str, bars: pd.DataFrame, asset: dict, cfg: dict
+) -> Run:
     """The asset's measures against a null whose draws are the group's.
 
     Args:
@@ -47,9 +48,16 @@ def run(symbol: str, group: str, timeframe: str, bars: pd.DataFrame, asset: dict
     started = time.time()
     pcfg = cfg["profile"]
     spec = {s["name"]: s for s in pcfg["measures"]}
-    rng = np.random.default_rng([cfg["run"]["seed"], zlib.crc32(f"{group}/{timeframe}".encode())])
-    real, sims = profile_one.against_null(series.logs(bars), series.calendar(
-        bars.index, timeframe, pcfg), pcfg, pcfg["nulls"]["block"][timeframe], rng)
+    rng = np.random.default_rng(
+        [cfg["run"]["seed"], zlib.crc32(f"{group}/{timeframe}".encode())]
+    )
+    real, sims = profile_one.against_null(
+        series.logs(bars),
+        series.calendar(bars.index, timeframe, pcfg),
+        pcfg,
+        pcfg["nulls"]["block"][timeframe],
+        rng,
+    )
     p = profile_one.pvalues(real, sims)
     opens = bars["Open"].to_numpy()
     years = (bars.index[-1] - bars.index[0]).days / 365.25
@@ -62,13 +70,30 @@ def run(symbol: str, group: str, timeframe: str, bars: pd.DataFrame, asset: dict
         if entry is not None and tested:
             noise = (opens[leave] - opens[entry]).std(ddof=1) / np.sqrt(entry.size)
             se = (1.0 if spec[name]["fn"] in HIT else spread) * noise / paid["cost"]
-        rows.append({"group": group, "symbol": symbol, "timeframe": timeframe,
-                     "direction": direction, "family": spec[name]["family"], "measure": name,
-                     "stat": stat, "null_mean": centre, "null_sd": spread,
-                     "z": (stat - centre) / spread if spread > 0 and tested else 0.0,
-                     "p": p[k] if tested else 1.0, "tested": bool(tested and spread > 0),
-                     **paid, "se": se, "trades_per_year": (paid["n_trades"] or 0) / years})
-    rows = pd.DataFrame(rows).assign(bars=len(bars), first_bar=str(bars.index[0]),
-                                     last_bar=str(bars.index[-1]))
-    return {"rows": rows, "sims": sims.astype(np.float32),
-            "wall_s": time.time() - started}
+        rows.append(
+            {
+                "group": group,
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "direction": direction,
+                "family": spec[name]["family"],
+                "measure": name,
+                "stat": stat,
+                "null_mean": centre,
+                "null_sd": spread,
+                "z": (stat - centre) / spread if spread > 0 and tested else 0.0,
+                "p": p[k] if tested else 1.0,
+                "tested": bool(tested and spread > 0),
+                **paid,
+                "se": se,
+                "trades_per_year": (paid["n_trades"] or 0) / years,
+            }
+        )
+    rows = pd.DataFrame(rows).assign(
+        bars=len(bars), first_bar=str(bars.index[0]), last_bar=str(bars.index[-1])
+    )
+    return {
+        "rows": rows,
+        "sims": sims.astype(np.float32),
+        "wall_s": time.time() - started,
+    }

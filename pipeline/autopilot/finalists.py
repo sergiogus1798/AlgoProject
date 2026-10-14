@@ -29,12 +29,22 @@ def write(project: str, mothers: pd.DataFrame, out: Path) -> str:
         survivors.Done: The list is empty; the file is written all the same.
     """
     who = survivors.about(project)
-    found: list[Any] = list(mothers.itertuples())   # namedtuples, typed as plain tuples
+    found: list[Any] = list(mothers.itertuples())  # namedtuples, typed as plain tuples
     known = identity.hashed(Path(m.file) for m in found)
-    rows = [{"strategy": m.strategy, "identity": known[Path(m.file)],
-             "mother": m.strategy, "sqx": str(Path(m.file).resolve()), "symbol": who["symbol"],
-             "timeframe": who["timeframe"]} for m in found]
-    (out / FILE).write_text(json.dumps(rows, indent=1, ensure_ascii=False), encoding="utf-8")
+    rows = [
+        {
+            "strategy": m.strategy,
+            "identity": known[Path(m.file)],
+            "mother": m.strategy,
+            "sqx": str(Path(m.file).resolve()),
+            "symbol": who["symbol"],
+            "timeframe": who["timeframe"],
+        }
+        for m in found
+    ]
+    (out / FILE).write_text(
+        json.dumps(rows, indent=1, ensure_ascii=False), encoding="utf-8"
+    )
     if not rows:
         raise survivors.Done("ningún finalista para el paso 26")
     return f"{len(rows)} finalista(s) en {out / FILE}"
@@ -54,7 +64,10 @@ def verify(project: str, params: dict, out: Path) -> str:
     Raises:
         survivors.Done: Its own check says it cannot start; the reasons are the stop's why.
     """
-    from mt5.verify import autopilot as mt5step     # step 26's agent owns it: imported late
+    from mt5.verify import (
+        autopilot as mt5step,
+    )  # step 26's agent owns it: imported late
+
     rows = json.loads((out / FILE).read_text(encoding="utf-8"))
     got = mt5step.check(project, rows, params, own_log=True)
     if not got["ok"]:

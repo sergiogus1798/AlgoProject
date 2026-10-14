@@ -14,5 +14,7 @@ def fingerprint() -> str:
         it from the checkout: when they differ, the daemon still running predates the code
         on disk and lacks whatever routes were added since.
     """
-    stamps = sorted(f"{p.relative_to(HERE)}:{p.stat().st_mtime_ns}" for p in HERE.rglob("*.py"))
+    stamps = sorted(
+        f"{p.relative_to(HERE)}:{p.stat().st_mtime_ns}" for p in HERE.rglob("*.py")
+    )
     return hashlib.sha256("\n".join(stamps).encode()).hexdigest()[:16]

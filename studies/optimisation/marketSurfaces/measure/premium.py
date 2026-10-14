@@ -32,4 +32,8 @@ def premium(excess: np.ndarray, best: np.ndarray) -> np.ndarray:
         return np.full(excess.shape[:-1], np.nan)
     low, mid, high = np.percentile(excess, [25, 50, 75], axis=-1)
     with np.errstate(invalid="ignore", divide="ignore"):
-        return np.where(high > low, (np.median(excess[..., best], axis=-1) - mid) / (high - low), np.nan)
+        return np.where(
+            high > low,
+            (np.median(excess[..., best], axis=-1) - mid) / (high - low),
+            np.nan,
+        )

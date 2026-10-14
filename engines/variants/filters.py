@@ -19,10 +19,18 @@ def knobs() -> dict[str, Any]:
     return cast(dict[str, Any], thresholds.fill(study_config.load(path, [])))["panel"]
 
 
-def screen(metrics: pd.DataFrame, comp: tuple[tuple, tuple], k: int, years_oos1: float,
-           symbol: str, values: pd.DataFrame | None = None, floors: bool = True,
-           step: float = 17, cfg: dict | None = None,
-           prints: pd.Series | None = None) -> tuple[pd.DataFrame, dict[str, Any]]:
+def screen(
+    metrics: pd.DataFrame,
+    comp: tuple[tuple, tuple],
+    k: int,
+    years_oos1: float,
+    symbol: str,
+    values: pd.DataFrame | None = None,
+    floors: bool = True,
+    step: float = 17,
+    cfg: dict | None = None,
+    prints: pd.Series | None = None,
+) -> tuple[pd.DataFrame, dict[str, Any]]:
     """The variants one composition of the split measures, and how many each filter removed.
 
     Order: controls and the inside floor; then the seal (`gate.seal`, raises PermissionError);
@@ -68,7 +76,9 @@ def screen(metrics: pd.DataFrame, comp: tuple[tuple, tuple], k: int, years_oos1:
         if not floors or (len(mother) and mother.iloc[0] < need):
             counts[name] = 0
             if floors:
-                notes.append(f"{name}: la madre ({mother.iloc[0]:.0f}) no llega a {need:.0f}; no se aplica")
+                notes.append(
+                    f"{name}: la madre ({mother.iloc[0]:.0f}) no llega a {need:.0f}; no se aplica"
+                )
             return
         drop(name, cast(pd.Series, left[column] >= need))
 
@@ -76,12 +86,21 @@ def screen(metrics: pd.DataFrame, comp: tuple[tuple, tuple], k: int, years_oos1:
     floor("suelo_dentro", cols["trades_is"], cfg["floor_is_per_param"] * k)
     gate.seal(step, "+".join(comp[1]), symbol)
     first = left.assign(_o=left["stratum"] != ORIGIN).sort_values("_o", kind="stable")
-    sig = (first[[f"NetProfit ({s})" for s in panel.SEGMENTS[:2]]].round(2) if prints is None
-           else first["variant_id"].map(prints))  # pyright: ignore[reportArgumentType]  # stub types map() without a Series mapper
+    sig = (
+        first[[f"NetProfit ({s})" for s in panel.SEGMENTS[:2]]].round(2)
+        if prints is None
+        else first["variant_id"].map(prints)  # pyright: ignore[reportArgumentType]  # stub types map() without a Series mapper
+    )
     drop("duplicados", cast(pd.Series, ~sig.duplicated().reindex(left.index)))
-    floor("suelo_fuera", "NumberOfTrades (oos1)", cfg["floor_oos_per_year"] * years_oos1)
+    floor(
+        "suelo_fuera", "NumberOfTrades (oos1)", cfg["floor_oos_per_year"] * years_oos1
+    )
     if values is not None:
         left = left.join(values[["e_is", "e_oos"]], on="variant_id")
         drop("sin_valor", cast(pd.Series, left[["e_is", "e_oos"]].notna().all(axis=1)))
-    counts |= {"quedan": len(left), "sin_dato": len(left) < cfg["min_variants"], "avisos": notes}
+    counts |= {
+        "quedan": len(left),
+        "sin_dato": len(left) < cfg["min_variants"],
+        "avisos": notes,
+    }
     return left, counts

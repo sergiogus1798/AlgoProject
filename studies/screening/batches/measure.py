@@ -8,10 +8,13 @@ import numpy as np
 import pandas as pd
 
 ALIVE = "sobrevive"
-SMALL = "otras"          # destinations whose expected count per batch is under MIN_EXPECTED
+SMALL = "otras"  # destinations whose expected count per batch is under MIN_EXPECTED
 MIN_EXPECTED = 5
-ALARM = 0.01             # the funnel differs between batches
-WARN, STOP = 0.10, 0.30  # share of a batch already generated in the earlier ones (owner, 2026-10-07)
+ALARM = 0.01  # the funnel differs between batches
+WARN, STOP = (
+    0.10,
+    0.30,
+)  # share of a batch already generated in the earlier ones (owner, 2026-10-07)
 DRAWS = 5000
 
 
@@ -26,14 +29,22 @@ def parts(verdict: pd.DataFrame) -> pd.DataFrame:
         genetic build's strategy `Strategy <island>.<generation>.<n>`: an island evolves its
         own relatives, so it is the unit chance acts on, not the strategy.
     """
-    return pd.DataFrame({
-        "identity": verdict["identity"],
-        "island": verdict["strategy"].str.extract(r"Strategy (\d+)\.")[0].astype(int),
-        "dest": verdict["reason"].str.extract(r"gate\.scorecard\.(\w+?)=")[0]
-        .where(verdict["verdict"] == "DESCARTAR", ALIVE)})
+    return pd.DataFrame(
+        {
+            "identity": verdict["identity"],
+            "island": verdict["strategy"]
+            .str.extract(r"Strategy (\d+)\.")[0]
+            .astype(int),
+            "dest": verdict["reason"]
+            .str.extract(r"gate\.scorecard\.(\w+?)=")[0]
+            .where(verdict["verdict"] == "DESCARTAR", ALIVE),
+        }
+    )
 
 
-def fingerprint(source: dict, screens: list[str], row: dict) -> dict[str, str | list[str]]:
+def fingerprint(
+    source: dict, screens: list[str], row: dict
+) -> dict[str, str | list[str]]:
     """What has to be equal for two batches to be the same draw.
 
     Args:
@@ -45,11 +56,16 @@ def fingerprint(source: dict, screens: list[str], row: dict) -> dict[str, str | 
         Field -> value. The gate's seeds are left out: they are drawn per run.
     """
     template = Path(row["template"])
-    return {"symbol": row["symbol"], "timeframe": row["timeframe"],
-            "template": hashlib.sha256(template.read_bytes()).hexdigest()[:12],
-            "feed": source["feed"], "split": source["split"], "end": source["end"],
-            "overrides": sorted(o for o in source["overrides"] if "seed" not in o),
-            "rules": screens}
+    return {
+        "symbol": row["symbol"],
+        "timeframe": row["timeframe"],
+        "template": hashlib.sha256(template.read_bytes()).hexdigest()[:12],
+        "feed": source["feed"],
+        "split": source["split"],
+        "end": source["end"],
+        "overrides": sorted(o for o in source["overrides"] if "seed" not in o),
+        "rules": screens,
+    }
 
 
 def table(batches: dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -65,19 +81,24 @@ def table(batches: dict[str, pd.DataFrame]) -> pd.DataFrame:
     both = pd.concat([b.assign(batch=name) for name, b in batches.items()])
     share = both["dest"].value_counts(normalize=True)
     least = min(len(b) for b in batches.values())
-    pooled = both["dest"].where(pd.Series(both["dest"]).map(share) * least >= MIN_EXPECTED, SMALL)
+    pooled = both["dest"].where(
+        pd.Series(both["dest"]).map(share) * least >= MIN_EXPECTED, SMALL
+    )
     return pd.crosstab([both["batch"], both["island"]], pooled)
 
 
 def chi2(counts: np.ndarray) -> float:
     """Pearson's statistic of a rows-by-destinations table of counts; an empty column adds nothing."""
     counts = counts[:, counts.sum(0) > 0]
-    expected = counts.sum(1, keepdims=True) * counts.sum(0, keepdims=True) / counts.sum()
+    expected = (
+        counts.sum(1, keepdims=True) * counts.sum(0, keepdims=True) / counts.sum()
+    )
     return float(((counts - expected) ** 2 / expected).sum())
 
 
 class Homogeneity(TypedDict):
     """Whether the batches' funnels differ more than chance: statistic, p, alarm and dispersion."""
+
     chi2: float
     p: float
     alarm: bool
@@ -86,6 +107,7 @@ class Homogeneity(TypedDict):
 
 class Repeat(TypedDict):
     """How much of one batch the earlier ones had already generated."""
+
     batch: str
     generated: int
     repeated: int
@@ -98,6 +120,7 @@ class Repeat(TypedDict):
 
 class Spread(TypedDict):
     """How concentrated a batch's survivors are among its islands."""
+
     alive: int
     islands: int
     of: int
@@ -129,11 +152,17 @@ def homogeneity(islands: pd.DataFrame, seed: int) -> Homogeneity:
     rng = np.random.default_rng(seed)
     seen = between(label)
     drawn = np.array([between(rng.permutation(label)) for _ in range(DRAWS)])
-    within = [(chi2(counts[label == k]), (np.sum(label == k) - 1) * (counts.shape[1] - 1))
-              for k in range(label.max() + 1)]
+    within = [
+        (chi2(counts[label == k]), (np.sum(label == k) - 1) * (counts.shape[1] - 1))
+        for k in range(label.max() + 1)
+    ]
     p = float((1 + np.sum(drawn >= seen)) / (1 + DRAWS))
-    return Homogeneity(chi2=seen, p=p, alarm=p < ALARM,
-                       phi=float(sum(c for c, _ in within) / sum(d for _, d in within)))
+    return Homogeneity(
+        chi2=seen,
+        p=p,
+        alarm=p < ALARM,
+        phi=float(sum(c for c, _ in within) / sum(d for _, d in within)),
+    )
 
 
 def by_rule(funnels: dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -157,9 +186,12 @@ def by_rule(funnels: dict[str, pd.DataFrame]) -> pd.DataFrame:
     for name in names[1:]:
         n1, n2 = first["entered"], funnels[name]["entered"]
         pooled = (first["died"] + funnels[name]["died"]) / (n1 + n2)
-        out[f"z {name}"] = ((out[f"rate {name}"] - out[f"rate {names[0]}"])
-                            / np.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2)))
-    return pd.DataFrame(out[sum(out[f"died {n}"] for n in names) > 0]).reset_index(drop=True)
+        out[f"z {name}"] = (out[f"rate {name}"] - out[f"rate {names[0]}"]) / np.sqrt(
+            pooled * (1 - pooled) * (1 / n1 + 1 / n2)
+        )
+    return pd.DataFrame(out[sum(out[f"died {n}"] for n in names) > 0]).reset_index(
+        drop=True
+    )
 
 
 def repeats(batches: dict[str, pd.DataFrame]) -> list[Repeat]:
@@ -181,12 +213,22 @@ def repeats(batches: dict[str, pd.DataFrame]) -> list[Repeat]:
         if seen:
             hit = b["identity"].isin(list(seen))
             share = float(hit.mean())
-            out.append(Repeat(
-                batch=name, generated=len(b), repeated=int(hit.sum()), share=share,
-                alive=int((b["dest"] == ALIVE).sum()),
-                alive_repeated=int((hit & (b["dest"] == ALIVE)).sum()),
-                space=len(seen) * len(b) / max(int(hit.sum()), 1),
-                state="parar" if share >= STOP else "aviso" if share >= WARN else "ok"))
+            out.append(
+                Repeat(
+                    batch=name,
+                    generated=len(b),
+                    repeated=int(hit.sum()),
+                    share=share,
+                    alive=int((b["dest"] == ALIVE).sum()),
+                    alive_repeated=int((hit & (b["dest"] == ALIVE)).sum()),
+                    space=len(seen) * len(b) / max(int(hit.sum()), 1),
+                    state="parar"
+                    if share >= STOP
+                    else "aviso"
+                    if share >= WARN
+                    else "ok",
+                )
+            )
         seen |= set(b["identity"])
     return out
 
@@ -194,9 +236,13 @@ def repeats(batches: dict[str, pd.DataFrame]) -> list[Repeat]:
 def spread(b: pd.DataFrame) -> Spread:
     """How concentrated a batch's survivors are: of how many islands, and the largest one's."""
     alive = pd.Series(b[b["dest"] == ALIVE]["island"]).value_counts()
-    return Spread(alive=int(alive.sum()), islands=int(len(alive)), of=int(b["island"].nunique()),
-                  top=int(cast(int, alive.index[0])) if len(alive) else 0,
-                  top_n=int(alive.max()) if len(alive) else 0)
+    return Spread(
+        alive=int(alive.sum()),
+        islands=int(len(alive)),
+        of=int(b["island"].nunique()),
+        top=int(cast(int, alive.index[0])) if len(alive) else 0,
+        top_n=int(alive.max()) if len(alive) else 0,
+    )
 
 
 def differing(prints: dict[str, dict[str, str | list[str]]]) -> list[str]:
@@ -205,7 +251,9 @@ def differing(prints: dict[str, dict[str, str | list[str]]]) -> list[str]:
     return [k for k in first if any(p[k] != first[k] for p in prints.values())]
 
 
-def decision(fields: list[str], same: Homogeneity | None, dup: list[Repeat]) -> tuple[str, str]:
+def decision(
+    fields: list[str], same: Homogeneity | None, dup: list[Repeat]
+) -> tuple[str, str]:
     """The one line the owner acts on.
 
     Args:
@@ -219,15 +267,24 @@ def decision(fields: list[str], same: Homogeneity | None, dup: list[Repeat]) -> 
     """
     if fields:
         return "NO SUMAR", "la configuración difiere entre lotes: " + ", ".join(fields)
-    assert same is not None     # only `fields` makes the caller skip homogeneity
+    assert same is not None  # only `fields` makes the caller skip homogeneity
     if same["alarm"]:
-        return "NO SUMAR", (f"el embudo difiere entre lotes más que el azar (p={same['p']:.4f}): "
-                            "mirar qué cambió antes de juntarlos")
+        return "NO SUMAR", (
+            f"el embudo difiere entre lotes más que el azar (p={same['p']:.4f}): "
+            "mirar qué cambió antes de juntarlos"
+        )
     worst = max(dup, key=lambda d: d["share"])
     if worst["state"] == "parar":
-        return "PARAR CELDA", (f"{worst['share']:.0%} de {worst['batch']} ya estaba generado: "
-                               "la celda está agotada, o la semilla se repite si es casi todo")
+        return "PARAR CELDA", (
+            f"{worst['share']:.0%} de {worst['batch']} ya estaba generado: "
+            "la celda está agotada, o la semilla se repite si es casi todo"
+        )
     if worst["state"] == "aviso":
-        return "AVISO", (f"{worst['share']:.0%} de {worst['batch']} ya estaba generado: la celda "
-                         f"tiene del orden de {worst['space']:,.0f} estrategias distintas")
-    return "SUMAR", "no se detecta diferencia entre lotes ni repetidas (con pocos lotes, potencia baja)"
+        return "AVISO", (
+            f"{worst['share']:.0%} de {worst['batch']} ya estaba generado: la celda "
+            f"tiene del orden de {worst['space']:,.0f} estrategias distintas"
+        )
+    return (
+        "SUMAR",
+        "no se detecta diferencia entre lotes ni repetidas (con pocos lotes, potencia baja)",
+    )

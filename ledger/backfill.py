@@ -14,7 +14,7 @@ from core.paths import ROOT
 from ledger import blind, record, steprows, study as studymod, thresholds
 
 GATE_CONFIG = ROOT / "studies" / "screening" / "gate" / "config.yaml"
-SCORE = "Sharpe Ratio [OOS]"   # what counts as a candidate's score, in SQX's own units
+SCORE = "Sharpe Ratio [OOS]"  # what counts as a candidate's score, in SQX's own units
 
 
 def thresholds_of(screen: str) -> dict[str, Any]:
@@ -28,7 +28,9 @@ def thresholds_of(screen: str) -> dict[str, Any]:
         it was produced under, with the ledger's numbers in place of its `ledger:` keys. A
         funnel read without its thresholds says nothing.
     """
-    screens = thresholds.fill(yaml.safe_load(GATE_CONFIG.read_text(encoding="utf-8")))["screens"]
+    screens = thresholds.fill(yaml.safe_load(GATE_CONFIG.read_text(encoding="utf-8")))[
+        "screens"
+    ]
     # Since encargo 44 a funnel row is a step-8 rule whose label carries its own line.
     row = next((s for s in screens if s["name"] == screen), {})
     return {k: v for k, v in row.items() if k not in ("name", "kind", "why")}
@@ -71,23 +73,33 @@ def from_gate(folder: Path, study: str, symbol: str, timeframe: str) -> list[dic
     funnel = pd.read_csv(folder / "funnel.csv")
     source = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
     rows = []
-    screen: Any   # itertuples() rows are namedtuples, typed as plain tuples
+    screen: Any  # itertuples() rows are namedtuples, typed as plain tuples
     for screen in funnel.itertuples():
         # A soft screen informs and removes nobody, so recording its `passed` as the
         # population that came out would say the study ended with nothing left. The count
         # it reported goes in the note instead, where it cannot be read as a funnel.
         soft = screen.kind == "soft"
-        rows.append({"study": study, "ts": source["date"], "step": 8,
-                     "launched_by": source["command"], "symbol": symbol,
-                     "timeframe": timeframe, "segment": "oos1",
-                     "n_in": int(screen.entered),
-                     "n_out": int(screen.entered if soft else screen.passed),
-                     "criterion": f"gate/{screen.screen}",
-                     "thresholds": thresholds_of(screen.screen),
-                     "window_from": source["source"]["split"],
-                     "window_to": source["source"]["end"],
-                     "note": (f"backfill · {screen.kind} · {source['source']['project']}"
-                              + (f" · informó {int(screen.passed)}" if soft else ""))})
+        rows.append(
+            {
+                "study": study,
+                "ts": source["date"],
+                "step": 8,
+                "launched_by": source["command"],
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "segment": "oos1",
+                "n_in": int(screen.entered),
+                "n_out": int(screen.entered if soft else screen.passed),
+                "criterion": f"gate/{screen.screen}",
+                "thresholds": thresholds_of(screen.screen),
+                "window_from": source["source"]["split"],
+                "window_to": source["source"]["end"],
+                "note": (
+                    f"backfill · {screen.kind} · {source['source']['project']}"
+                    + (f" · informó {int(screen.passed)}" if soft else "")
+                ),
+            }
+        )
     rows[0]["scores"] = scores_of(source["source"], SCORE)
     rows[0]["score_unit"] = "annualised"
     return rows
@@ -96,20 +108,37 @@ def from_gate(folder: Path, study: str, symbol: str, timeframe: str) -> list[dic
 def calib(populations: Path, write: bool) -> None:
     """Print the calibration populations' rows and their total; append them only on `write`."""
     found = steprows.calib_rows(populations)
-    frame = pd.DataFrame([{"study": s, **{k: r[k] for k in ("step", "segment", "n_in", "n_out")},
-                           "n_scored": r.get("n_scored")} for s, r in found])
+    frame = pd.DataFrame(
+        [
+            {
+                "study": s,
+                **{k: r[k] for k in ("step", "segment", "n_in", "n_out")},
+                "n_scored": r.get("n_scored"),
+            }
+            for s, r in found
+        ]
+    )
     print(frame.to_string(index=False))
     counted = int(frame["n_scored"].sum())
-    print(f"\n{len(found)} filas en {frame['study'].nunique()} estudios; "
-          f"{counted} estrategias entran en N (pasos 6)")
+    print(
+        f"\n{len(found)} filas en {frame['study'].nunique()} estudios; "
+        f"{counted} estrategias entran en N (pasos 6)"
+    )
     if not write:
         print("(sin --write, o con --dry-run, no se ha escrito nada)")
         return
-    done = {s for s in frame["study"].unique()
-            if pd.Series(studymod.read(s).get("note", pd.Series(dtype=str))).fillna("").str.startswith(
-                "backfill calibración").any()}
+    done = {
+        s
+        for s in frame["study"].unique()
+        if pd.Series(studymod.read(s).get("note", pd.Series(dtype=str)))
+        .fillna("")
+        .str.startswith("backfill calibración")
+        .any()
+    }
     if done:
-        raise SystemExit(f"ya tienen filas de calibración: {sorted(done)}; no se reescriben")
+        raise SystemExit(
+            f"ya tienen filas de calibración: {sorted(done)}; no se reescriben"
+        )
     for sid, row in found:
         record.append(sid, record.search(sid, row))
     print("escritas")
@@ -119,30 +148,52 @@ def main() -> None:
     """Reconstruct one study's ledger from a gate report, or its blind steps, and append it."""
     ap = argparse.ArgumentParser(description=__doc__)
     source = ap.add_mutually_exclusive_group(required=True)
-    source.add_argument("--calib", type=Path, metavar="POPULATIONS_CSV",
-                        help="the Test_Calib_* populations: a step-6 and a step-8 row each "
-                             "(needs no --symbol/--timeframe/--family)")
-    source.add_argument("--gate", type=Path,
-                        help="a reports/<project>/<databank>/<date>/gate/ directory")
-    source.add_argument("--blind", metavar="PROJECT",
-                        help="rebuild steps 17, 18 and 19 from this project's results")
-    ap.add_argument("--wfm-databank", default="WFM", help="with --blind: the WFM databank")
+    source.add_argument(
+        "--calib",
+        type=Path,
+        metavar="POPULATIONS_CSV",
+        help="the Test_Calib_* populations: a step-6 and a step-8 row each "
+        "(needs no --symbol/--timeframe/--family)",
+    )
+    source.add_argument(
+        "--gate",
+        type=Path,
+        help="a reports/<project>/<databank>/<date>/gate/ directory",
+    )
+    source.add_argument(
+        "--blind",
+        metavar="PROJECT",
+        help="rebuild steps 17, 18 and 19 from this project's results",
+    )
+    ap.add_argument(
+        "--wfm-databank", default="WFM", help="with --blind: the WFM databank"
+    )
     ap.add_argument("--symbol")
     ap.add_argument("--timeframe")
     ap.add_argument("--family", help="template or family the population came from")
-    ap.add_argument("--write", action="store_true", help="append; without it, only print")
-    ap.add_argument("--dry-run", action="store_true", help="print the rows and their total; "
-                    "overrides --write")
+    ap.add_argument(
+        "--write", action="store_true", help="append; without it, only print"
+    )
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="print the rows and their total; overrides --write",
+    )
     a = ap.parse_args()
     if a.calib:
         calib(a.calib, a.write and not a.dry_run)
         return
     if not (a.symbol and a.timeframe and a.family):
-        raise SystemExit("ledger.backfill: --symbol, --timeframe y --family son obligatorios")
+        raise SystemExit(
+            "ledger.backfill: --symbol, --timeframe y --family son obligatorios"
+        )
 
     study = studymod.study_id(a.symbol, a.timeframe, a.family)
-    rows = (from_gate(a.gate, study, a.symbol, a.timeframe) if a.gate else
-            blind.rebuild(a.blind, a.wfm_databank, study, a.symbol, a.timeframe))
+    rows = (
+        from_gate(a.gate, study, a.symbol, a.timeframe)
+        if a.gate
+        else blind.rebuild(a.blind, a.wfm_databank, study, a.symbol, a.timeframe)
+    )
     frame = pd.DataFrame(rows)[["step", "segment", "criterion", "n_in", "n_out", "ts"]]
     print(f"{study}: {len(rows)} búsquedas reconstruidas de {a.gate or a.blind}")
     print(frame.to_string(index=False))
@@ -151,9 +202,15 @@ def main() -> None:
         return
     # The ledger is append-only: a second backfill of the blind steps would count every
     # look at oos2 twice, and nothing can take a line back out.
-    twice = sorted(set(studymod.read(study)["step"]) & set(frame["step"])) if a.blind else []
+    twice = (
+        sorted(set(studymod.read(study)["step"]) & set(frame["step"]))
+        if a.blind
+        else []
+    )
     if twice:
-        raise SystemExit(f"{study} ya tiene filas de los pasos {twice}: no se reescriben")
+        raise SystemExit(
+            f"{study} ya tiene filas de los pasos {twice}: no se reescriben"
+        )
     for row in rows:
         scores = row.pop("scores", None)
         record.append(study, record.search(study, row, scores))

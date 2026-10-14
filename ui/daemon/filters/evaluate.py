@@ -20,10 +20,18 @@ from ui.text.glossary import label
 # compositions are caught by name below.
 OOS2_STUDIES = {"wfm", "blindJoint", "cscv", "marketSurfaces", "exposure"}
 OOS2 = re.compile(r"oos\s*_?2", re.IGNORECASE)
-SAMPLE = re.compile(r"^(.*) [(\[]([^()\[\]]+)[)\]]$")    # «Net profit (IS)», «… [OOS]»
+SAMPLE = re.compile(r"^(.*) [(\[]([^()\[\]]+)[)\]]$")  # «Net profit (IS)», «… [OOS]»
 NUMERIC = (">", "<", ">=", "<=", "entre")
-SHOWN = {">": ">", "<": "<", ">=": "≥", "<=": "≤", "=": "=", "entre": "entre",
-         "dentro": "dentro", "fuera": "fuera"}
+SHOWN = {
+    ">": ">",
+    "<": "<",
+    ">=": "≥",
+    "<=": "≤",
+    "=": "=",
+    "entre": "entre",
+    "dentro": "dentro",
+    "fuera": "fuera",
+}
 
 
 def number(value: Any) -> float | None:
@@ -48,7 +56,7 @@ def named(key: str) -> str:
         a key none of those fits, through the glossary.
     """
     if key.startswith("dist:"):
-        study, title = key[len("dist:"):].split("/", 1)
+        study, title = key[len("dist:") :].split("/", 1)
         return f"Distribución · {STUDIES[study][2] if study in STUDIES else label(study)} · {title}"
     parts = key.split(".")
     if len(parts) > 1 and parts[0] in STUDIES:
@@ -64,7 +72,9 @@ def refused(symbol: str | None) -> set[str]:
     if not gate.enforced():
         return set()
     steps = set(gate.reserved(symbol).get("oos2", [])) if symbol else set()
-    return OOS2_STUDIES | {k for s in STEPS if float(s["n"]) in steps for k in s["studies"]}
+    return OOS2_STUDIES | {
+        k for s in STEPS if float(s["n"]) in steps for k in s["studies"]
+    }
 
 
 def reads_oos2(column: Column, studies: set[str]) -> bool:
@@ -74,7 +84,9 @@ def reads_oos2(column: Column, studies: set[str]) -> bool:
     return column.get("study") in studies or bool(OOS2.search(column["key"]))
 
 
-def offered(table: Table, by_id: dict[str, dict[str, dict]], studies: set[str]) -> list[dict]:
+def offered(
+    table: Table, by_id: dict[str, dict[str, dict]], studies: set[str]
+) -> list[dict]:
     """The metrics the dropdown lists: the databank's real columns, then its distributions.
 
     Args:
@@ -95,15 +107,31 @@ def offered(table: Table, by_id: dict[str, dict[str, dict]], studies: set[str]) 
         if values:
             tail = re.search(r"\[(IS|OOS)\]$", c["key"])
             sample = c.get("sample") or (tail.group(1) if tail else "")
-            out.append({"key": c["key"], "label": named(c["key"]), "kind": c["kind"],
-                        "sample": sample, "n": len(values),
-                        "numeric": all(number(v) is not None for v in values)})
+            out.append(
+                {
+                    "key": c["key"],
+                    "label": named(c["key"]),
+                    "kind": c["kind"],
+                    "sample": sample,
+                    "n": len(values),
+                    "numeric": all(number(v) is not None for v in values),
+                }
+            )
     seen: dict[str, dict] = {}
     for identity in ids & set(by_id):
         for k, block in by_id[identity].items():
-            seen.setdefault(k, {"key": k, "label": named(k), "kind": "dist", "sample": "",
-                                "numeric": True, "n": 0,
-                                "reading": dists.reading(block)})["n"] += 1
+            seen.setdefault(
+                k,
+                {
+                    "key": k,
+                    "label": named(k),
+                    "kind": "dist",
+                    "sample": "",
+                    "numeric": True,
+                    "n": 0,
+                    "reading": dists.reading(block),
+                },
+            )["n"] += 1
     return out + sorted(seen.values(), key=lambda m: m["key"])
 
 
@@ -115,8 +143,15 @@ def numeric(value: object) -> object:
 def normal(rows: list[dict]) -> list[dict]:
     """The rows with every value that reads as a number stored as one: the window sends text,
     and the ledger's `thresholds` and the saved filters must hold 30, not "30"."""
-    return [{**r, "value": [numeric(v) for v in r["value"]] if isinstance(r["value"], list)
-             else numeric(r["value"])} for r in rows]
+    return [
+        {
+            **r,
+            "value": [numeric(v) for v in r["value"]]
+            if isinstance(r["value"], list)
+            else numeric(r["value"]),
+        }
+        for r in rows
+    ]
 
 
 def written(value: object) -> str:
@@ -149,21 +184,30 @@ def check(rows: list[dict], metrics: list[dict]) -> str | None:
     for r in rows:
         m = known.get(r["metric"])
         if m is None:
-            return (f"«{named(r['metric'])}» no es una columna de este databank (o es de "
-                    "OOS2, que no se filtra)")
+            return (
+                f"«{named(r['metric'])}» no es una columna de este databank (o es de "
+                "OOS2, que no se filtra)"
+            )
         if r["op"] not in SHOWN:
             return f"operador desconocido «{r['op']}»"
         if (m["kind"] == "dist") != (r["op"] in ("dentro", "fuera")):
-            return (f"«{named(r['metric'])}»: una distribución se filtra con «dentro»/«fuera» "
-                    "del intervalo, y una columna con >, <, ≥, ≤, = o entre")
+            return (
+                f"«{named(r['metric'])}»: una distribución se filtra con «dentro»/«fuera» "
+                "del intervalo, y una columna con >, <, ≥, ≤, = o entre"
+            )
         if r["op"] in ("dentro", "fuera") and number(r["value"]) not in dists.PAIRS:
             return f"el intervalo tiene que ser uno de {sorted(dists.PAIRS)} %"
-        if r["op"] == "entre" and (not isinstance(r["value"], list) or len(r["value"]) != 2
-                                   or any(number(v) is None for v in r["value"])):
+        if r["op"] == "entre" and (
+            not isinstance(r["value"], list)
+            or len(r["value"]) != 2
+            or any(number(v) is None for v in r["value"])
+        ):
             return f"«{named(r['metric'])}» entre: hacen falta dos números"
         if r["op"] in NUMERIC[:4] and (not m["numeric"] or number(r["value"]) is None):
-            return (f"«{named(r['metric'])}» {SHOWN[r['op']]}: la columna o el valor no es "
-                    "un número")
+            return (
+                f"«{named(r['metric'])}» {SHOWN[r['op']]}: la columna o el valor no es "
+                "un número"
+            )
     return None
 
 
@@ -171,11 +215,22 @@ def holds(row: dict, cell: object, block: dict | None) -> bool | None:
     """One condition on one strategy: True, False, or None when it has no value to judge."""
     op, value = row["op"], row["value"]
     if op in ("dentro", "fuera"):
-        got = None if block is None else dists.inside(block, int(cast(float, number(value))))
+        got = (
+            None
+            if block is None
+            else dists.inside(block, int(cast(float, number(value))))
+        )
         return None if got is None else got == (op == "dentro")
     if op == "=":
-        return None if cell is None else (number(cell) == number(value)
-                                          if number(value) is not None else str(cell) == str(value))
+        return (
+            None
+            if cell is None
+            else (
+                number(cell) == number(value)
+                if number(value) is not None
+                else str(cell) == str(value)
+            )
+        )
     x = number(cell)
     if x is None:
         return None
@@ -186,8 +241,9 @@ def holds(row: dict, cell: object, block: dict | None) -> bool | None:
     return {">": x > y, "<": x < y, ">=": x >= y, "<=": x <= y}[op]
 
 
-def judge(table: Table, rows: list[dict], by_id: dict[str, dict[str, dict]],
-          hidden: set[str]) -> tuple[dict[str, str], dict[str, str], int]:
+def judge(
+    table: Table, rows: list[dict], by_id: dict[str, dict[str, dict]], hidden: set[str]
+) -> tuple[dict[str, str], dict[str, str], int]:
     """Which of the visible strategies the AND of rows keeps.
 
     Args:
@@ -201,12 +257,21 @@ def judge(table: Table, rows: list[dict], by_id: dict[str, dict[str, dict]],
         blank: a strategy with no value for a row's metric is not judged by it, and stays).
     """
     col = {c["key"]: i for i, c in enumerate(table["columns"])}
-    visible = {r["identity"]: r for r in table["rows"]
-               if r["identity"] and r["identity"] not in hidden}
+    visible = {
+        r["identity"]: r
+        for r in table["rows"]
+        if r["identity"] and r["identity"] not in hidden
+    }
     dropped, blank = {}, 0
     for identity, r in visible.items():
-        said = [holds(f, r["values"][col[f["metric"]]] if f["metric"] in col else None,
-                      by_id.get(identity, {}).get(f["metric"])) for f in rows]
+        said = [
+            holds(
+                f,
+                r["values"][col[f["metric"]]] if f["metric"] in col else None,
+                by_id.get(identity, {}).get(f["metric"]),
+            )
+            for f in rows
+        ]
         if False in said:
             dropped[identity] = r["name"]
         elif None in said:

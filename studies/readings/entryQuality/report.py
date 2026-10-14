@@ -14,9 +14,17 @@ def main() -> None:
     """Read one strategy's entries against the bars, print what they were worth, write it."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--export", required=True, type=Path, help="a trades.parquet")
-    ap.add_argument("--strategy", required=True, help="its name as the export spells it")
-    ap.add_argument("--set", dest="overrides",
-                    action="extend", nargs="+", default=[], metavar="KEY=VALUE")
+    ap.add_argument(
+        "--strategy", required=True, help="its name as the export spells it"
+    )
+    ap.add_argument(
+        "--set",
+        dest="overrides",
+        action="extend",
+        nargs="+",
+        default=[],
+        metavar="KEY=VALUE",
+    )
     a = ap.parse_args()
 
     cfg = inputs.config(a.overrides)
@@ -24,9 +32,11 @@ def main() -> None:
     got = one.run(a.strategy, a.export, cfg, kept)
     run = cfg["run"]
     title = f"Calidad de la entrada — {a.strategy}"
-    lede = (f"Muestra {run['sample']} · {run['feed']} {run['timeframe']} · "
-            f"{got['summary']['full_path']} de {got['summary']['trades']} operaciones con "
-            f"camino completo.")
+    lede = (
+        f"Muestra {run['sample']} · {run['feed']} {run['timeframe']} · "
+        f"{got['summary']['full_path']} de {got['summary']['trades']} operaciones con "
+        f"camino completo."
+    )
     out = output.folder(a.export, "entryQuality")
     draws.merge(out, kept, defer=True)
     print(markdown.render(got, title))

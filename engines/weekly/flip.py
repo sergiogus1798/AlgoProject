@@ -7,8 +7,9 @@ import numpy as np
 from scipy.stats import rankdata
 
 
-def signs(seed: int | np.random.SeedSequence, draws: int, weeks: int,
-          block_weeks: int = 1) -> np.ndarray:
+def signs(
+    seed: int | np.random.SeedSequence, draws: int, weeks: int, block_weeks: int = 1
+) -> np.ndarray:
     """The null's sign vectors: +1 or -1 per week, consecutive weeks of a block sharing one.
 
     Args:
@@ -43,7 +44,7 @@ def chunks(flips: np.ndarray, size: int) -> Iterator[np.ndarray]:
     Returns:
         Consecutive row slices (views) that concatenate back to `flips`.
     """
-    return (flips[start:start + size] for start in range(0, len(flips), size))
+    return (flips[start : start + size] for start in range(0, len(flips), size))
 
 
 class Tails(TypedDict):
@@ -68,9 +69,12 @@ def tails(observed: float, null: np.ndarray) -> Tails:
         95th percentiles, `nulo_p5` and `nulo_p95`.
     """
     lo, hi = np.percentile(null, [5, 95])
-    return {"p_mas": float((1 + (null >= observed).sum()) / (1 + len(null))),
-            "p_menos": float((1 + (null <= observed).sum()) / (1 + len(null))),
-            "nulo_p5": float(lo), "nulo_p95": float(hi)}
+    return {
+        "p_mas": float((1 + (null >= observed).sum()) / (1 + len(null))),
+        "p_menos": float((1 + (null <= observed).sum()) / (1 + len(null))),
+        "nulo_p5": float(lo),
+        "nulo_p95": float(hi),
+    }
 
 
 def spearman(fixed: np.ndarray, redrawn: np.ndarray) -> np.ndarray:

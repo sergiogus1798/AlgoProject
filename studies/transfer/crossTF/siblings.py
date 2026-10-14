@@ -49,16 +49,24 @@ def beyond(panel: pd.DataFrame) -> pd.DataFrame:
     scaled = panel["role"] == "scaled"
     rho = panel.loc[scaled, "corr_vs_baseline"].clip(0.0, MOST_ALIKE).fillna(0.0)
     theirs = panel.loc[scaled, "mother"].map(mother).to_numpy()
-    panel.loc[scaled, "z_new"] = (panel.loc[scaled, "z"] - rho * theirs) / np.sqrt(1 - rho ** 2)
+    panel.loc[scaled, "z_new"] = (panel.loc[scaled, "z"] - rho * theirs) / np.sqrt(
+        1 - rho**2
+    )
     fair = scaled & (panel["unverified"] == 0)
     new = panel[fair].groupby("mother")["z_new"]
-    summed = pd.DataFrame({"combined_n_tested": new.count(),
-                           "combined_z_new": new.sum(min_count=1) / np.sqrt(new.count()),
-                           "combined_z_new_max": new.max()})
+    summed = pd.DataFrame(
+        {
+            "combined_n_tested": new.count(),
+            "combined_z_new": new.sum(min_count=1) / np.sqrt(new.count()),
+            "combined_z_new_max": new.max(),
+        }
+    )
     base = panel["role"] == "baseline"
     for name in summed:
         panel.loc[base, name] = panel.loc[base, "mother"].map(summed[name]).to_numpy()
-    panel.loc[base, "combined_n_tested"] = panel.loc[base, "combined_n_tested"].fillna(0)
+    panel.loc[base, "combined_n_tested"] = panel.loc[base, "combined_n_tested"].fillna(
+        0
+    )
     return panel
 
 
@@ -85,9 +93,23 @@ def correlations(plan: pd.DataFrame, packed: pd.DataFrame) -> pd.DataFrame:
         base = monthly(tradestore.block(packed, base_row.strategy, base_row.block))
         for row in cast(Any, rows_m[rows_m["role"] != "baseline"].itertuples()):
             other = monthly(tradestore.block(packed, row.strategy, row.block))
-            joined = pd.concat([base, other], axis=1, join="outer").reindex(span).fillna(0.0)
+            joined = (
+                pd.concat([base, other], axis=1, join="outer").reindex(span).fillna(0.0)
+            )
             n = len(joined)
-            corr = float(joined.iloc[:, 0].corr(joined.iloc[:, 1])) if n >= 2 else float("nan")
-            out.append({"mother": mother, "timeframe": row.timeframe, "role": row.role,
-                        "strategy": row.strategy, "corr": corr, "months": n})
+            corr = (
+                float(joined.iloc[:, 0].corr(joined.iloc[:, 1]))
+                if n >= 2
+                else float("nan")
+            )
+            out.append(
+                {
+                    "mother": mother,
+                    "timeframe": row.timeframe,
+                    "role": row.role,
+                    "strategy": row.strategy,
+                    "corr": corr,
+                    "months": n,
+                }
+            )
     return pd.DataFrame(out)

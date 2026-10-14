@@ -7,8 +7,12 @@ from . import equal, hrp, min_variance, risk_parity
 
 # equal is the one the search and the verdict use (`weights.method`); the rest are M8's
 # candidates, estimated once and held, that `construct.wf` compares against it
-REGISTRY = {"equal": equal.weights, "risk_parity": risk_parity.weights,
-            "min_variance": min_variance.weights, "hrp": hrp.weights}
+REGISTRY = {
+    "equal": equal.weights,
+    "risk_parity": risk_parity.weights,
+    "min_variance": min_variance.weights,
+    "hrp": hrp.weights,
+}
 
 
 def matrix(build_daily: pd.DataFrame, members: np.ndarray, cfg: dict) -> np.ndarray:

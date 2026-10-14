@@ -15,8 +15,12 @@ WRITERS = {
     "parquet_zstd": lambda f, p: f.to_parquet(p, compression="zstd", index=False),
     "feather": lambda f, p: f.to_feather(p),
 }
-READERS = {"csv": pd.read_csv, "parquet_snappy": pd.read_parquet,
-           "parquet_zstd": pd.read_parquet, "feather": pd.read_feather}
+READERS = {
+    "csv": pd.read_csv,
+    "parquet_snappy": pd.read_parquet,
+    "parquet_zstd": pd.read_parquet,
+    "feather": pd.read_feather,
+}
 
 
 def one(frame: pd.DataFrame, label: str) -> list[dict]:
@@ -38,9 +42,16 @@ def one(frame: pd.DataFrame, label: str) -> list[dict]:
         written = time.perf_counter() - start
         start = time.perf_counter()
         READERS[name](path)
-        rows.append({"table": label, "format": name, "rows": len(frame),
-                     "bytes": path.stat().st_size, "write_s": written,
-                     "read_s": time.perf_counter() - start})
+        rows.append(
+            {
+                "table": label,
+                "format": name,
+                "rows": len(frame),
+                "bytes": path.stat().st_size,
+                "write_s": written,
+                "read_s": time.perf_counter() - start,
+            }
+        )
         path.unlink()
     return rows
 

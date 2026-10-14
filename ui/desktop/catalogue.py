@@ -1,8 +1,17 @@
 """The catalogue: the list of templates and drafts on the left, one page of detail on the right."""
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QLineEdit, QListWidget,
-                               QListWidgetItem, QSplitter, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import client, names
 from ui.desktop.detail import Detail
@@ -21,7 +30,9 @@ def summary(t: dict) -> str:
     """
     if t["orphan"]:
         return "solo en runs.csv — no está en el registro"
-    markets = " ".join(f"{r['symbol']}·{r['timeframe']}" for r in t["runs"]) or "sin runs"
+    markets = (
+        " ".join(f"{r['symbol']}·{r['timeframe']}" for r in t["runs"]) or "sin runs"
+    )
     return f"{names.family(t.get('archetype'))} — {markets}"
 
 
@@ -41,8 +52,10 @@ class Catalogue(QWidget):
         self.search.textChanged.connect(self.fill)
         filters.addWidget(self.search, 1)
         # The family the library's front page sent here, and the way back to all of them.
-        self.family = QComboBox(toolTip="Sólo las plantillas de una familia. Cobertura abre "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-                                        "esta lista ya filtrada al pulsar una familia.")
+        self.family = QComboBox(
+            toolTip="Sólo las plantillas de una familia. Cobertura abre "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+            "esta lista ya filtrada al pulsar una familia."
+        )
         self.family.addItem("Todas las familias", "")
         for row in names.TABLE:
             self.family.addItem(row[names.SHOWN], row[names.REGISTRY])
@@ -69,7 +82,11 @@ class Catalogue(QWidget):
 
     def reload(self) -> None:
         """Fetch the catalogue and redraw the list, keeping the current selection."""
-        keep = self.list.currentItem().data(Qt.ItemDataRole.UserRole) if self.list.currentItem() else None
+        keep = (
+            self.list.currentItem().data(Qt.ItemDataRole.UserRole)
+            if self.list.currentItem()
+            else None
+        )
         self.data = client.get("templates")
         if self.status.count() == 1:
             for s in self.data["statuses"]:
@@ -86,14 +103,24 @@ class Catalogue(QWidget):
         for t in self.data["templates"]:
             if family and t.get("archetype") != family:
                 continue
-            haystack = " ".join([t["name"], t.get("archetype", ""), names.family(t.get("archetype")),
-                                 *(r["symbol"] + r["timeframe"] for r in t["runs"])]).lower()
+            haystack = " ".join(
+                [
+                    t["name"],
+                    t.get("archetype", ""),
+                    names.family(t.get("archetype")),
+                    *(r["symbol"] + r["timeframe"] for r in t["runs"]),
+                ]
+            ).lower()
             if term and term not in haystack:
                 continue
             if want and t.get("status") != want:
                 continue
-            self.add_row(t["name"], summary(t), STATUS_COLOUR.get(t.get("status", ""), C["faint"]),
-                         t["name"])
+            self.add_row(
+                t["name"],
+                summary(t),
+                STATUS_COLOUR.get(t.get("status", ""), C["faint"]),
+                t["name"],
+            )
         for d in self.data["drafts"]:
             if term and term not in d["name"].lower():
                 continue
@@ -101,9 +128,12 @@ class Catalogue(QWidget):
                 continue
             if want:
                 continue
-            self.add_row(f"{d['name']}  ·  borrador",
-                         f"{names.family(d.get('archetype'))} — sin autorar, del chat",
-                         VERDICT_COLOUR["weak"], None)
+            self.add_row(
+                f"{d['name']}  ·  borrador",
+                f"{names.family(d.get('archetype'))} — sin autorar, del chat",
+                VERDICT_COLOUR["weak"],
+                None,
+            )
 
     def add_row(self, title: str, subtitle: str, colour: str, name: str | None) -> None:
         """Put one row in the list.
@@ -122,7 +152,9 @@ class Catalogue(QWidget):
         lay.setContentsMargins(10, 4, 6, 4)
         lay.setSpacing(1)
         head = QLabel(title)
-        head.setStyleSheet(f"font-weight:600; border-left:3px solid {colour}; padding-left:8px;")
+        head.setStyleSheet(
+            f"font-weight:600; border-left:3px solid {colour}; padding-left:8px;"
+        )
         lay.addWidget(head)
         sub = QLabel(subtitle, objectName="faint")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         sub.setStyleSheet(f"color:{C['faint']}; padding-left:11px;")
@@ -145,9 +177,11 @@ class Catalogue(QWidget):
         elif item:
             # A draft has nothing authored to show; the click used to leave the previous
             # page or the placeholder on screen, as if it had not been heard (📓 2026-09-29).
-            self.detail.show_empty("Borrador del chat, sin autorar todavía: no hay plantilla "
-                                   "que enseñar. Se crea en «Nueva plantilla» con «▶ Crear la "
-                                   "plantilla con Claude», o pegando su prompt en Claude Code.")
+            self.detail.show_empty(
+                "Borrador del chat, sin autorar todavía: no hay plantilla "
+                "que enseñar. Se crea en «Nueva plantilla» con «▶ Crear la "
+                "plantilla con Claude», o pegando su prompt en Claude Code."
+            )
 
     def select(self, name: str) -> None:
         """Move the selection to one template by name.
@@ -167,6 +201,8 @@ class Catalogue(QWidget):
             key: The family in any spelling `names` knows; "" for all of them.
         """
         self.search.clear()
-        self.family.setCurrentIndex(max(self.family.findData(names.spelt(key, names.REGISTRY)), 0))
+        self.family.setCurrentIndex(
+            max(self.family.findData(names.spelt(key, names.REGISTRY)), 0)
+        )
         if self.list.count():
             self.list.setCurrentRow(0)

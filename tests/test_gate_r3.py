@@ -17,9 +17,18 @@ from studies.screening.analysis import tradelevel  # noqa: E402
 from studies.screening.gate import level1a  # noqa: E402
 
 SPAN = ("2020-01-01", "2021-12-31")
-FREE = {"point_value": 1.0, "tick_size": 0.01, "spread": 0.0, "slippage": 0.0,
-        "commission_method": "SizeBased", "commission": 0.0, "swap_long": 0.0,
-        "swap_short": 0.0, "triple": 4, "rollover": 23}
+FREE = {
+    "point_value": 1.0,
+    "tick_size": 0.01,
+    "spread": 0.0,
+    "slippage": 0.0,
+    "commission_method": "SizeBased",
+    "commission": 0.0,
+    "swap_long": 0.0,
+    "swap_short": 0.0,
+    "triple": 4,
+    "rollover": 23,
+}
 
 
 def bars(calm: tuple[int, int], wild: tuple[int, int], seed: int = 0) -> pd.DataFrame:
@@ -33,18 +42,37 @@ def bars(calm: tuple[int, int], wild: tuple[int, int], seed: int = 0) -> pd.Data
     rng = np.random.default_rng(seed)
     quiet = (np.arange(len(index)) // 40) % 2 == 0
     late = (index.year > 2020).astype(int)
-    cents = np.where(quiet, np.array(calm)[late], np.array(wild)[late]) + rng.integers(-3, 4, len(index))
+    cents = np.where(quiet, np.array(calm)[late], np.array(wild)[late]) + rng.integers(
+        -3, 4, len(index)
+    )
     close = 500.0 + cents.cumsum() / 100
     open_ = np.r_[500.0, close[:-1]]
     reach = np.where(quiet, 0.05, 0.75)
-    return pd.DataFrame({"Open": open_, "High": np.maximum(open_, close) + reach,
-                         "Low": np.minimum(open_, close) - reach, "Close": close}, index=index)
+    return pd.DataFrame(
+        {
+            "Open": open_,
+            "High": np.maximum(open_, close) + reach,
+            "Low": np.minimum(open_, close) - reach,
+            "Close": close,
+        },
+        index=index,
+    )
 
 
-def held(frame: pd.DataFrame, cuts: np.ndarray, side: str = "Buy", size: float = 1.0) -> pd.DataFrame:
+def held(
+    frame: pd.DataFrame, cuts: np.ndarray, side: str = "Buy", size: float = 1.0
+) -> pd.DataFrame:
     """Back-to-back trades between consecutive bar positions: always in the market."""
-    return pd.DataFrame({"identity": "x", "Type": side, "Open time": frame.index[cuts[:-1]],
-                         "Close time": frame.index[cuts[1:]], "Size": size, "sample": "OOS"})
+    return pd.DataFrame(
+        {
+            "identity": "x",
+            "Type": side,
+            "Open time": frame.index[cuts[:-1]],
+            "Close time": frame.index[cuts[1:]],
+            "Size": size,
+            "sample": "OOS",
+        }
+    )
 
 
 def always_in(frame: pd.DataFrame, last: str = SPAN[1], seed: int = 1) -> np.ndarray:
@@ -60,30 +88,55 @@ def sized_by_atr(frame: pd.DataFrame, last: str, side: str) -> pd.DataFrame:
     inside = np.arange(len(frame))[frame.index.slice_indexer(SPAN[0], last)]
     size = 1.0 / np.r_[np.nan, atr(frame)[:-1]][inside]
     keep = np.isfinite(size)
-    return pd.DataFrame({"identity": "x", "Type": side, "Open time": frame.index[inside[keep]],
-                         "Close time": frame.index[inside[keep] + 1], "Size": size[keep],
-                         "sample": "OOS"})
+    return pd.DataFrame(
+        {
+            "identity": "x",
+            "Type": side,
+            "Open time": frame.index[inside[keep]],
+            "Close time": frame.index[inside[keep] + 1],
+            "Size": size[keep],
+            "sample": "OOS",
+        }
+    )
 
 
 def gross(trades: pd.DataFrame, frame: pd.DataFrame) -> np.ndarray:
     """Each trade's P/L open to open at no cost, point value 1."""
     opened = frame["Open"]
     sign = np.where(trades["Type"] == "Sell", -1.0, 1.0)
-    return sign * trades["Size"].to_numpy() * (opened[trades["Close time"]].to_numpy()
-                                               - opened[trades["Open time"]].to_numpy())
+    return (
+        sign
+        * trades["Size"].to_numpy()
+        * (
+            opened[trades["Close time"]].to_numpy()
+            - opened[trades["Open time"]].to_numpy()
+        )
+    )
 
 
-def excess(trades: pd.DataFrame, frame: pd.DataFrame, window: str, variant: str) -> np.ndarray:
+def excess(
+    trades: pd.DataFrame, frame: pd.DataFrame, window: str, variant: str
+) -> np.ndarray:
     """Gross P/L minus the drift term of one variant."""
-    return gross(trades, frame) - tradelevel.drift_term(trades, frame, SPAN, window, variant, 1.0)[0]
+    return (
+        gross(trades, frame)
+        - tradelevel.drift_term(trades, frame, SPAN, window, variant, 1.0)[0]
+    )
 
 
-def gate(trades: pd.DataFrame, frame: pd.DataFrame, costs: dict, **drift: object) -> tuple:
+def gate(
+    trades: pd.DataFrame, frame: pd.DataFrame, costs: dict, **drift: object
+) -> tuple:
     """level1a.run on one harvest: (its facts, the table it wrote)."""
     cfg = {"drift": {"window": "year", "variant": "b", "se_skew_kurt": True, **drift}}
     with tempfile.TemporaryDirectory() as out:
-        data = {"trades": trades, "bars": frame, "costs": costs, "out": Path(out),
-                "market": {"windows": {"OOS": SPAN}}}
+        data = {
+            "trades": trades,
+            "bars": frame,
+            "costs": costs,
+            "out": Path(out),
+            "market": {"windows": {"OOS": SPAN}},
+        }
         facts = level1a.run(data, pd.Index(trades["identity"].unique()), cfg)
         written = pd.read_parquet(Path(out) / "operaciones.parquet")
     pd.testing.assert_frame_equal(written, data["oos"])
@@ -98,12 +151,15 @@ def test_always_long_and_always_in_has_no_excess_with_any_window() -> None:
     cuts = always_in(frame)
     for side in ("Buy", "Sell"):
         trades = held(frame, cuts, side)
-        assert abs(gross(trades, frame).sum()) > 500           # it did make (or lose) money
+        assert abs(gross(trades, frame).sum()) > 500  # it did make (or lose) money
         for window in tradelevel.WINDOWS:
             _, table = gate(trades, frame, FREE, window=window, variant="a")
             assert abs(table["excess"].sum()) < 1e-6, (side, window)
             _, table = gate(trades, frame, FREE, window=window, variant="b")
-            assert table.groupby("window")["excess"].sum().abs().max() < 1e-6, (side, window)
+            assert table.groupby("window")["excess"].sum().abs().max() < 1e-6, (
+                side,
+                window,
+            )
             assert table["window"].nunique() == 24 // tradelevel.WINDOWS[window][0]
 
 
@@ -126,8 +182,12 @@ def test_variant_a_is_todays_term() -> None:
     """(a) is `drift` on `mean_move` over the whole of oos1, the gate's term to the bit."""
     frame = bars(calm=(6, 1), wild=(-2, 3))
     trades = held(frame, always_in(frame), size=1.7)
-    today = tradelevel.drift(trades, frame, tradelevel.mean_move(frame, {"OOS": SPAN}), 1.0)
-    assert np.array_equal(tradelevel.drift_term(trades, frame, SPAN, "year", "a", 1.0)[0], today)
+    today = tradelevel.drift(
+        trades, frame, tradelevel.mean_move(frame, {"OOS": SPAN}), 1.0
+    )
+    assert np.array_equal(
+        tradelevel.drift_term(trades, frame, SPAN, "year", "a", 1.0)[0], today
+    )
 
 
 def test_b_stops_paying_for_being_in_during_the_good_year() -> None:
@@ -136,7 +196,7 @@ def test_b_stops_paying_for_being_in_during_the_good_year() -> None:
     exactly bars x (2020's move - the two years' move) of free excess; (b) leaves nothing."""
     frame = bars(calm=(6, 1), wild=(6, 1))
     trades = held(frame, always_in(frame, last="2020-12-31"))
-    change = frame["Close"].diff()[SPAN[0]:SPAN[1]]
+    change = frame["Close"].diff()[SPAN[0] : SPAN[1]]
     free = len(change["2020"]) * (change["2020"].mean() - change.mean())
     assert free > 100
     assert abs(excess(trades, frame, "year", "a").sum() - free) < 1e-6
@@ -184,9 +244,14 @@ def test_t_skew_kurt_reads_the_columns_own_moments() -> None:
     """Per strategy: the plain t over the radicand of its own skewness and kurtosis, a loss
     tail lowering it and a gain tail raising it, and the AR(1) column cut as t() cuts its own."""
     rng = np.random.default_rng(5)
-    tail = rng.exponential(1.0, 400) - 1.0                     # skew +2, kurtosis 9
-    frame = pd.concat([pd.DataFrame({"identity": name, "x": 0.15 + sign * tail})
-                       for name, sign in (("gains", 1.0), ("losses", -1.0))], ignore_index=True)
+    tail = rng.exponential(1.0, 400) - 1.0  # skew +2, kurtosis 9
+    frame = pd.concat(
+        [
+            pd.DataFrame({"identity": name, "x": 0.15 + sign * tail})
+            for name, sign in (("gains", 1.0), ("losses", -1.0))
+        ],
+        ignore_index=True,
+    )
     plain, got = tradelevel.t(frame, "x"), tradelevel.t_skew_kurt(frame, "x")
     assert got["iid"]["losses"] < plain["iid"]["losses"]
     assert got["iid"]["gains"] > plain["iid"]["gains"]
@@ -195,8 +260,11 @@ def test_t_skew_kurt_reads_the_columns_own_moments() -> None:
     for name, rows in frame.groupby("identity"):
         x = rows["x"].to_numpy()
         z = (x - x.mean()) / x.std()
-        want = plain["iid"][name] / np.sqrt(1 - (z ** 3).mean() * x.mean() / x.std()
-                                            + ((z ** 4).mean() - 1) / 4 * (x.mean() / x.std()) ** 2)
+        want = plain["iid"][name] / np.sqrt(
+            1
+            - (z**3).mean() * x.mean() / x.std()
+            + ((z**4).mean() - 1) / 4 * (x.mean() / x.std()) ** 2
+        )
         assert abs(got["iid"][name] - want) < 1e-9
 
 
@@ -206,20 +274,45 @@ def test_the_level_reprices_and_judges_the_excess() -> None:
     column — with the skewness-kurtosis standard error only when the config says so."""
     frame = bars(calm=(4, 4), wild=(4, 4))
     cuts = always_in(frame)
-    both = pd.concat([held(frame, cuts[::2]).assign(identity="b"),
-                      held(frame, cuts).assign(identity="a")], ignore_index=True)
+    both = pd.concat(
+        [
+            held(frame, cuts[::2]).assign(identity="b"),
+            held(frame, cuts).assign(identity="a"),
+        ],
+        ignore_index=True,
+    )
     costs = {**FREE, "spread": 0.30, "slippage": 0.10}
     for corrected, t in ((True, tradelevel.t_skew_kurt), (False, tradelevel.t)):
         facts, table = gate(both, frame, costs, se_skew_kurt=corrected)
-        assert list(table.columns) == ["identity", "open_time", "close_time", "side", "lots",
-                                       "pnl", "cost", "drift", "excess", "window", "stop"]
+        assert list(table.columns) == [
+            "identity",
+            "open_time",
+            "close_time",
+            "side",
+            "lots",
+            "pnl",
+            "cost",
+            "drift",
+            "excess",
+            "window",
+            "stop",
+        ]
         mine = table[table["identity"] == "a"]
-        assert np.allclose(mine["pnl"] + mine["cost"], gross(held(frame, cuts), frame), atol=1e-9)
-        assert np.allclose(mine["cost"], 0.50, atol=1e-9)      # spread + slippage in and out
+        assert np.allclose(
+            mine["pnl"] + mine["cost"], gross(held(frame, cuts), frame), atol=1e-9
+        )
+        assert np.allclose(
+            mine["cost"], 0.50, atol=1e-9
+        )  # spread + slippage in and out
         assert np.allclose(table["excess"], table["pnl"] - table["drift"], atol=1e-12)
-        assert list(facts.columns) == ["drift_excess_t"] and set(facts.index) == {"a", "b"}
-        assert np.allclose(facts["drift_excess_t"], t(table, "excess")["ar1"].reindex(facts.index))
-        assert (facts["drift_excess_t"] < 0).all()             # no timing, and it paid costs
+        assert list(facts.columns) == ["drift_excess_t"] and set(facts.index) == {
+            "a",
+            "b",
+        }
+        assert np.allclose(
+            facts["drift_excess_t"], t(table, "excess")["ar1"].reindex(facts.index)
+        )
+        assert (facts["drift_excess_t"] < 0).all()  # no timing, and it paid costs
 
 
 def test_a_strategy_the_cascade_dropped_is_not_repriced() -> None:
@@ -227,13 +320,23 @@ def test_a_strategy_the_cascade_dropped_is_not_repriced() -> None:
     one that fell at level 0 has no row. With everyone alive, everyone is there."""
     frame = bars(calm=(4, 4), wild=(4, 4))
     cuts = always_in(frame)
-    both = pd.concat([held(frame, cuts[::2]).assign(identity="fell"),
-                      held(frame, cuts).assign(identity="alive")], ignore_index=True)
+    both = pd.concat(
+        [
+            held(frame, cuts[::2]).assign(identity="fell"),
+            held(frame, cuts).assign(identity="alive"),
+        ],
+        ignore_index=True,
+    )
     cfg = {"drift": {"window": "year", "variant": "b", "se_skew_kurt": True}}
     for alive in (["alive"], ["alive", "fell"]):
         with tempfile.TemporaryDirectory() as out:
-            data = {"trades": both, "bars": frame, "costs": FREE, "out": Path(out),
-                    "market": {"windows": {"OOS": SPAN}}}
+            data = {
+                "trades": both,
+                "bars": frame,
+                "costs": FREE,
+                "out": Path(out),
+                "market": {"windows": {"OOS": SPAN}},
+            }
             facts = level1a.run(data, pd.Index(alive), cfg)
             written = pd.read_parquet(Path(out) / "operaciones.parquet")
         assert set(written["identity"]) == set(data["oos"]["identity"]) == set(alive)

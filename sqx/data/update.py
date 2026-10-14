@@ -13,7 +13,9 @@ from core.datapaths import data_update_backups
 from core.paths import MASTER
 from core.worker import holding
 
-UPDATE_TIMEOUT_S = 6 * 3600  # a full download of every symbol is hours; only a hung sqcli passes this
+UPDATE_TIMEOUT_S = (
+    6 * 3600
+)  # a full download of every symbol is hours; only a hung sqcli passes this
 SNAPSHOTS = data_update_backups()
 
 
@@ -61,14 +63,26 @@ def update(install: Path, symbol: str | None) -> tuple[str, int]:
         still checks rule 1 whatever happened: the sync ran either way. The same
         `env -u ELECTRON_RUN_AS_NODE ./sqcli` invocation bin/sqx-worker.sh uses, from the install's own directory, which sqcli requires.
     """
-    cmd = ["./sqcli", "-data", "action=update"] + ([f"symbol={symbol}"] if symbol else [])
+    cmd = ["./sqcli", "-data", "action=update"] + (
+        [f"symbol={symbol}"] if symbol else []
+    )
     try:
-        done = subprocess.run(cmd, cwd=install, capture_output=True, text=True,
-                              env={"PATH": "/usr/bin:/bin", "HOME": str(Path.home())},
-                              timeout=UPDATE_TIMEOUT_S)
+        done = subprocess.run(
+            cmd,
+            cwd=install,
+            capture_output=True,
+            text=True,
+            env={"PATH": "/usr/bin:/bin", "HOME": str(Path.home())},
+            timeout=UPDATE_TIMEOUT_S,
+        )
     except subprocess.TimeoutExpired as e:
-        out = [x.decode() if isinstance(x, bytes) else x or "" for x in (e.stdout, e.stderr)]
-        return "".join(out) + f"\nsqcli -data update: timeout after {UPDATE_TIMEOUT_S} s", 124
+        out = [
+            x.decode() if isinstance(x, bytes) else x or ""
+            for x in (e.stdout, e.stderr)
+        ]
+        return "".join(
+            out
+        ) + f"\nsqcli -data update: timeout after {UPDATE_TIMEOUT_S} s", 124
     return done.stdout + done.stderr, done.returncode
 
 
@@ -82,29 +96,40 @@ def lost(before: dict[str, int], after: dict[str, int]) -> list[str]:
         One line per file that vanished or shrank to nothing. Empty is the expected result
         and the only acceptable one; anything here means the sync ate work.
     """
-    return [f"{name} ({before[name]} bytes)" for name in sorted(before)
-            if after.get(name, 0) == 0]
+    return [
+        f"{name} ({before[name]} bytes)"
+        for name in sorted(before)
+        if after.get(name, 0) == 0
+    ]
 
 
 def main() -> None:
     """Update the master's data, refusing while its GUI is up and proving nothing was lost."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--apply", action="store_true", help="really run it; otherwise a dry run")
-    ap.add_argument("--symbol", help="one SQX symbol; default is every configured symbol")
+    ap.add_argument(
+        "--apply", action="store_true", help="really run it; otherwise a dry run"
+    )
+    ap.add_argument(
+        "--symbol", help="one SQX symbol; default is every configured symbol"
+    )
     a = ap.parse_args()
 
     pids = holding(MASTER)
     if pids:
-        sys.exit(f"SQX está corriendo desde {MASTER} (PID {', '.join(map(str, pids))}).\n"
-                 "Ciérralo tú y vuelve a lanzarlo: la regla dura 2 prohíbe sqcli en el maestro\n"
-                 "con la GUI levantada, y este comando acaba en un sync que borra .sqx de disco.")
+        sys.exit(
+            f"SQX está corriendo desde {MASTER} (PID {', '.join(map(str, pids))}).\n"
+            "Ciérralo tú y vuelve a lanzarlo: la regla dura 2 prohíbe sqcli en el maestro\n"
+            "con la GUI levantada, y este comando acaba en un sync que borra .sqx de disco."
+        )
 
     when = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
     before = inventory(MASTER)
     print(f"{len(before)} .sqx en disco bajo {MASTER}/user/projects")
     if not a.apply:
-        print(f"ENSAYO. Lanzaría: ./sqcli -data action=update"
-              f"{' symbol=' + a.symbol if a.symbol else ''}  (cwd {MASTER})")
+        print(
+            f"ENSAYO. Lanzaría: ./sqcli -data action=update"
+            f"{' symbol=' + a.symbol if a.symbol else ''}  (cwd {MASTER})"
+        )
         print("Añade --apply para hacerlo de verdad.")
         return
 

@@ -1,4 +1,5 @@
 """How a figure is written on MetaTracker's screens: the Spanish way, and «—» where there is none."""
+
 from datetime import datetime, timezone
 
 DASH = "—"
@@ -23,7 +24,11 @@ def firm_phase(stage: dict) -> str:
 
 def who(beat: dict, stage: dict | None) -> str:
     """An account's short name: «Funding Pips 11308943» (the broker's company without a plan)."""
-    return f"{firm(stage['firm'])} {beat['login']}" if stage else f"{beat['company'].split()[0]} {beat['login']}"
+    return (
+        f"{firm(stage['firm'])} {beat['login']}"
+        if stage
+        else f"{beat['company'].split()[0]} {beat['login']}"
+    )
 
 
 def money(x: float | None) -> str:

@@ -62,8 +62,10 @@ def bars_read(cfg: dict) -> sample.Workload:
         measures a date parse — it measures the read the whole bar library is built on.
     """
     path = sample.bars(cfg)
-    return {"scale": len(barstore.source(cfg["sample"]["bars_feed"])),
-            "bytes_in": sample.weight([path])}
+    return {
+        "scale": len(barstore.source(cfg["sample"]["bars_feed"])),
+        "bytes_in": sample.weight([path]),
+    }
 
 
 def ticks_read(cfg: dict) -> sample.Workload:
@@ -79,4 +81,3 @@ def ticks_read(cfg: dict) -> sample.Workload:
     feed = "USDJPY_TICK"
     _, ticks = tickfile.minutes(feed)
     return {"scale": ticks, "bytes_in": tick_file(feed).stat().st_size}
-

@@ -14,8 +14,13 @@ def databanks(text: str) -> dict[str, str]:
         {"Input": name, "Output": name} for the labels the task carries, missing keys when
         it carries neither.
     """
-    return {m.group(1): m.group(2) for m in
-            re.finditer(r'<Databank label="\w+ databank" name="(Input|Output)" value="([^"]*)"', text)}
+    return {
+        m.group(1): m.group(2)
+        for m in re.finditer(
+            r'<Databank label="\w+ databank" name="(Input|Output)" value="([^"]*)"',
+            text,
+        )
+    }
 
 
 def set_databank(text: str, which: str, value: str) -> tuple[str, str | None]:
@@ -30,9 +35,15 @@ def set_databank(text: str, which: str, value: str) -> tuple[str, str | None]:
     Returns:
         The task and what the value was before, or None when the task has no such element.
     """
-    pat = re.compile(rf'(<Databank label="\w+ databank" name="{which}" value=")([^"]*)(")')
+    pat = re.compile(
+        rf'(<Databank label="\w+ databank" name="{which}" value=")([^"]*)(")'
+    )
     found = pat.search(text)
-    return (pat.sub(rf"\g<1>{value}\g<3>", text, count=1), found.group(2)) if found else (text, None)
+    return (
+        (pat.sub(rf"\g<1>{value}\g<3>", text, count=1), found.group(2))
+        if found
+        else (text, None)
+    )
 
 
 def chain_databanks(members: dict[str, bytes]) -> list[dict]:
@@ -65,7 +76,13 @@ def chain_databanks(members: dict[str, bytes]) -> list[dict]:
         if previous:
             text, was = set_databank(text, "Input", previous)
             members[member] = text.encode("utf-8")
-        rows.append({"task": member, "writes": current.get("Output"),
-                     "read_before": was, "reads": previous or was})
+        rows.append(
+            {
+                "task": member,
+                "writes": current.get("Output"),
+                "read_before": was,
+                "reads": previous or was,
+            }
+        )
         previous = current.get("Output") or previous
     return rows

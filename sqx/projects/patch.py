@@ -29,8 +29,12 @@ def install_template(template: Path, target: Path) -> None:
     whole = io.BytesIO()
     with zipfile.ZipFile(whole, "w", zipfile.ZIP_DEFLATED) as z:
         for n, blob in members.items():
-            z.writestr(n, current(blob.decode("utf-8")).encode("utf-8") if n.endswith(".xml")
-                       else blob)
+            z.writestr(
+                n,
+                current(blob.decode("utf-8")).encode("utf-8")
+                if n.endswith(".xml")
+                else blob,
+            )
     atomic(target, whole.getvalue(), seal=False)
 
 
@@ -97,10 +101,16 @@ def set_caps(text: str, strategies: int, minutes: int) -> str:
         The task XML with both caps applied. A build with no cap inherits the donor's,
         which on XAUUSD is 10,000 strategies and 90 minutes.
     """
-    text = re.sub(r"<MaxStrategies>\d+</MaxStrategies>",
-                  f"<MaxStrategies>{strategies}</MaxStrategies>", text)
-    return re.sub(r'(<StopCondition[^>]*passedStrategies=")\d+("[^>]*hours=")\d+("[^>]*minutes=")\d+',
-                  rf"\g<1>{strategies}\g<2>{minutes // 60}\g<3>{minutes % 60}", text)
+    text = re.sub(
+        r"<MaxStrategies>\d+</MaxStrategies>",
+        f"<MaxStrategies>{strategies}</MaxStrategies>",
+        text,
+    )
+    return re.sub(
+        r'(<StopCondition[^>]*passedStrategies=")\d+("[^>]*hours=")\d+("[^>]*minutes=")\d+',
+        rf"\g<1>{strategies}\g<2>{minutes // 60}\g<3>{minutes % 60}",
+        text,
+    )
 
 
 def sync_databanks(config: str) -> tuple[str, list[str]]:
@@ -114,6 +124,11 @@ def sync_databanks(config: str) -> tuple[str, list[str]]:
         "Auto-sync never", which builds fine and leaves the directory empty, so nothing
         outside SQX can read the result and /curate has no files to act on.
     """
-    changed = re.findall(r'<Databank name="([^"]*)"[^>]*syncType="Auto-sync never"', config)
-    return re.sub(r'(<Databank name="[^"]*"[^>]*syncType=")Auto-sync never',
-                  rf"\g<1>{SYNCED}", config), changed
+    changed = re.findall(
+        r'<Databank name="([^"]*)"[^>]*syncType="Auto-sync never"', config
+    )
+    return re.sub(
+        r'(<Databank name="[^"]*"[^>]*syncType=")Auto-sync never',
+        rf"\g<1>{SYNCED}",
+        config,
+    ), changed

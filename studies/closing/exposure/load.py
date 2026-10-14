@@ -42,7 +42,16 @@ def load(project: str, databank: str, feed: str, symbol: str, cfg: dict) -> Load
     packed = inputs.newest(project, databank)
     frame = inputs.sample(packed, cfg["study"]["sample"])
     names = list(frame["strategy"].unique())
-    return {"project": project, "databank": databank, "feed": feed, "symbol": symbol,
-            "span": span, "bars": inputs.bars(feed, cfg["study"]["timeframe"], span),
-            "point_value": inputs.point_value(symbol), "packed": packed, "frame": frame,
-            "strategies": names, "identity": identity.lookup(project, databank, names)}
+    return {
+        "project": project,
+        "databank": databank,
+        "feed": feed,
+        "symbol": symbol,
+        "span": span,
+        "bars": inputs.bars(feed, cfg["study"]["timeframe"], span),
+        "point_value": inputs.point_value(symbol),
+        "packed": packed,
+        "frame": frame,
+        "strategies": names,
+        "identity": identity.lookup(project, databank, names),
+    }

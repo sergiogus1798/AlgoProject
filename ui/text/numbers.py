@@ -4,9 +4,9 @@ import math
 from decimal import Decimal
 from typing import cast
 
-SIGNIFICANT = 4         # digits kept below 1 000, as `.4g` did, but always written out in full
-FLOOR = 1e-10           # below this a figure prints as 0: no metric here lives down there
-P_FLOOR = 0.0001        # the smallest p-value printed as a number; below it «< 0.0001»
+SIGNIFICANT = 4  # digits kept below 1 000, as `.4g` did, but always written out in full
+FLOOR = 1e-10  # below this a figure prints as 0: no metric here lives down there
+P_FLOOR = 0.0001  # the smallest p-value printed as a number; below it «< 0.0001»
 
 
 def exact(value: float) -> str:
@@ -36,9 +36,13 @@ def _scaled(v: float) -> str:
     a = abs(v)
     if a < 1e5:
         return _plain(v)
-    size, suffix = (1e6, "M") if a >= 999_950 else (1e3, "K")   # «1000 K» reads as «1 M»
+    size, suffix = (1e6, "M") if a >= 999_950 else (1e3, "K")  # «1000 K» reads as «1 M»
     head = v / size
-    text = _grouped(round(head)) if abs(head) >= 1000 else f"{head:.1f}".rstrip("0").rstrip(".")
+    text = (
+        _grouped(round(head))
+        if abs(head) >= 1000
+        else f"{head:.1f}".rstrip("0").rstrip(".")
+    )
     return f"{text} {suffix}"
 
 

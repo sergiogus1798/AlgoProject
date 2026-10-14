@@ -31,17 +31,24 @@ def results(project: str, identity: str, entries: list[dict]) -> Frozen:
         verdict.csv rows has `result` None, exactly as the live route answers. A folder
         that is not a catalogue study (`curate`) is frozen but has no route to serve.
     """
-    newest = {(e["databank"], e["study"]): e for e in entries        # entries run oldest day first
-              if e["study"] in catalogue.STUDIES}
+    newest = {
+        (e["databank"], e["study"]): e
+        for e in entries  # entries run oldest day first
+        if e["study"] in catalogue.STUDIES
+    }
     out: Frozen = {"results": {}, "populations": {}, "cells": {}}
     for (databank, study), e in newest.items():
         name = e["named"] or e["names"][0]
         out["results"].setdefault(databank, {})[study] = runs.result(
-            project, databank, study, name, identity, "")
+            project, databank, study, name, identity, ""
+        )
         out["populations"].setdefault(databank, {})[study] = runs.result(
-            project, databank, study, "", "", e["day"])
+            project, databank, study, "", "", e["day"]
+        )
     for databank in sorted({databank for databank, _ in newest}):
-        out["cells"][databank] = matrix.matrix(project, databank)["cells"].get(identity, {})
+        out["cells"][databank] = matrix.matrix(project, databank)["cells"].get(
+            identity, {}
+        )
     return out
 
 
@@ -87,5 +94,8 @@ def gate(project: str, databank: str, identity: str, day: str) -> dict | None:
         return None
     report = gateview.gate(project, databank, report_day)
     report["rows"] = [r for r in report["rows"] if r["identity"] == identity]
-    return {"report_day": report_day, "report": report,
-            "strategy": gateview.strategy(project, databank, day, identity)}
+    return {
+        "report_day": report_day,
+        "report": report,
+        "strategy": gateview.strategy(project, databank, day, identity),
+    }

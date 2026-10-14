@@ -94,7 +94,7 @@ def origin(shell: "Opens") -> tuple[str, str]:
         panel = shell.workspace.panel
         tab = panel.top.tabText(panel.top.currentIndex())
         sub = panel.sub.tabText(panel.sub.currentIndex())
-    except AttributeError:                    # a panel without its tab row yet
+    except AttributeError:  # a panel without its tab row yet
         return FIRST_PANEL, ""
     return (tab, sub) if tab in ficha_module.ORIGIN_FAMILY else (FIRST_PANEL, "")
 
@@ -145,8 +145,12 @@ def select_strategy(identity: str, shown: tuple[str, str] | None = None) -> str:
     """
     now = SELECTION.now
     try:
-        got = client.get("projects/find", project=now["project"] or "", identity=identity,
-                         databank=(shown[0] if shown else now["databank"]) or "")
+        got = client.get(
+            "projects/find",
+            project=now["project"] or "",
+            identity=identity,
+            databank=(shown[0] if shown else now["databank"]) or "",
+        )
     except httpx.HTTPError as e:
         return f"El demonio no respondió: {e}"
     if "error" in got and shown:

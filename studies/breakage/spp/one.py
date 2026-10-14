@@ -16,37 +16,85 @@ from studies.breakage.spp.model import combine, decay, mapa
 MODULE = "studies.breakage.spp"
 COMBINED = "IS + OOS1 combinado"
 GLOSSARY = [
-    {"term": "n_eff", "text": "Cuántas tuplas de parámetros dieron un resultado distinto; "
-     "el nulo del máximo se calcula sobre ellas, no sobre las filas."},
-    {"term": "Net Profit", "text": "Ganancia neta de la permutación en la ventana, en USD."},
-    {"term": "Profit Factor", "text": "Bruto ganado dividido por bruto perdido: por encima de 1 "
-     "la permutación gana dinero."},
-    {"term": "Retorno/Drawdown", "text": "Net Profit dividido por el Max Drawdown: cuánto se gana "
-     "por cada dólar de caída máxima."},
-    {"term": "Max Drawdown", "text": "La mayor caída del capital desde un máximo, en USD."},
-    {"term": "Sharpe", "text": "Rendimiento medio entre su desviación típica; por encima de 0 "
-     "es rentable."},
-    {"term": "Sortino", "text": "Como Sharpe, pero solo penaliza la volatilidad a la baja."},
-    {"term": "R/Edge ratio", "text": "Cuánto se mueve el precio a favor de la entrada frente a "
-     "en contra; por encima de 1 hay ventaja de entrada."},
-    {"term": "Rentables", "text": "Porcentaje de permutaciones que ganan dinero: Net Profit, "
-     "Ret/DD, Sharpe o Sortino mayores que 0, Profit Factor o R/Edge ratio mayores que 1."},
-    {"term": "Permutación", "text": "Un backtest con todos los parámetros cambiados a la vez, al "
-     "azar, dentro de su rango."},
-    {"term": "OOS1", "text": "Primer tramo fuera de muestra, no usado para construir la "
-     "estrategia."},
-    {"term": "Área de meseta", "text": "Parte de la rejilla cuyo resultado queda cerca del mejor "
-     "nivel: cerca de 1 es una zona ancha y estable."},
-    {"term": "(Máx − mediana)/IQR", "text": "Cuánto sobresale el mejor punto de la rejilla, "
-     "medido en rangos intercuartílicos: un valor alto es un pico aislado."},
-    {"term": "Curtosis", "text": "Peso de las colas de la distribución; alta significa pocos "
-     "puntos extremos."},
-    {"term": "Banda", "text": "Mediana ± el porcentaje configurado de su propio valor: el "
-     "rango que la SPP habría dado con otra combinación de parámetros."},
-    {"term": COMBINED, "text": "Los dos SPP no comparten tuplas (solo 6 de ~11.600 en "
-     "Strategy 17.9.39): aquí se recomponen sus componentes aditivos cuando se puede (Net "
-     "Profit, PF, Max Drawdown, Ret/DD) y se agrupan como una sola muestra cuando no "
-     "(Sharpe, Sortino)."}]
+    {
+        "term": "n_eff",
+        "text": "Cuántas tuplas de parámetros dieron un resultado distinto; "
+        "el nulo del máximo se calcula sobre ellas, no sobre las filas.",
+    },
+    {
+        "term": "Net Profit",
+        "text": "Ganancia neta de la permutación en la ventana, en USD.",
+    },
+    {
+        "term": "Profit Factor",
+        "text": "Bruto ganado dividido por bruto perdido: por encima de 1 "
+        "la permutación gana dinero.",
+    },
+    {
+        "term": "Retorno/Drawdown",
+        "text": "Net Profit dividido por el Max Drawdown: cuánto se gana "
+        "por cada dólar de caída máxima.",
+    },
+    {
+        "term": "Max Drawdown",
+        "text": "La mayor caída del capital desde un máximo, en USD.",
+    },
+    {
+        "term": "Sharpe",
+        "text": "Rendimiento medio entre su desviación típica; por encima de 0 "
+        "es rentable.",
+    },
+    {
+        "term": "Sortino",
+        "text": "Como Sharpe, pero solo penaliza la volatilidad a la baja.",
+    },
+    {
+        "term": "R/Edge ratio",
+        "text": "Cuánto se mueve el precio a favor de la entrada frente a "
+        "en contra; por encima de 1 hay ventaja de entrada.",
+    },
+    {
+        "term": "Rentables",
+        "text": "Porcentaje de permutaciones que ganan dinero: Net Profit, "
+        "Ret/DD, Sharpe o Sortino mayores que 0, Profit Factor o R/Edge ratio mayores que 1.",
+    },
+    {
+        "term": "Permutación",
+        "text": "Un backtest con todos los parámetros cambiados a la vez, al "
+        "azar, dentro de su rango.",
+    },
+    {
+        "term": "OOS1",
+        "text": "Primer tramo fuera de muestra, no usado para construir la estrategia.",
+    },
+    {
+        "term": "Área de meseta",
+        "text": "Parte de la rejilla cuyo resultado queda cerca del mejor "
+        "nivel: cerca de 1 es una zona ancha y estable.",
+    },
+    {
+        "term": "(Máx − mediana)/IQR",
+        "text": "Cuánto sobresale el mejor punto de la rejilla, "
+        "medido en rangos intercuartílicos: un valor alto es un pico aislado.",
+    },
+    {
+        "term": "Curtosis",
+        "text": "Peso de las colas de la distribución; alta significa pocos "
+        "puntos extremos.",
+    },
+    {
+        "term": "Banda",
+        "text": "Mediana ± el porcentaje configurado de su propio valor: el "
+        "rango que la SPP habría dado con otra combinación de parámetros.",
+    },
+    {
+        "term": COMBINED,
+        "text": "Los dos SPP no comparten tuplas (solo 6 de ~11.600 en "
+        "Strategy 17.9.39): aquí se recomponen sus componentes aditivos cuando se puede (Net "
+        "Profit, PF, Max Drawdown, Ret/DD) y se agrupan como una sola muestra cuando no "
+        "(Sharpe, Sortino).",
+    },
+]
 
 
 def _paired(directory: Path) -> tuple[Path | None, Path | None]:
@@ -56,33 +104,59 @@ def _paired(directory: Path) -> tuple[Path | None, Path | None]:
     return (directory, mate) if databank.upper().endswith("_IS") else (mate, directory)
 
 
-def _side(directory: Path | None, strategy: str) -> tuple[pd.DataFrame | None, pd.Series | None]:
+def _side(
+    directory: Path | None, strategy: str
+) -> tuple[pd.DataFrame | None, pd.Series | None]:
     """(without-θ0 population, real row) of one window's grid, or (None, None) with no export."""
     if directory is None:
         return None, None
     grid = export.grid(directory, strategy)
-    if grid.empty:      # the other databank holds this strategy under another name, or not at all
+    if (
+        grid.empty
+    ):  # the other databank holds this strategy under another name, or not at all
         return None, None
     return export.without_original(grid), grid.loc[-1]
 
 
-def _periods(is_pop: pd.DataFrame | None, is_real: pd.Series | None,
-            oos_pop: pd.DataFrame | None, oos_real: pd.Series | None) -> list[tuple]:
+def _periods(
+    is_pop: pd.DataFrame | None,
+    is_real: pd.Series | None,
+    oos_pop: pd.DataFrame | None,
+    oos_real: pd.Series | None,
+) -> list[tuple]:
     """One entry per period the data supports: values by metric, real by metric, is-combined."""
     cols = [c for c, _, _ in combine.METRICS]
     out = []
     if is_pop is not None:
-        assert is_real is not None   # _side returns both or neither
-        out.append(("Solo IS", {c: is_pop[c].to_numpy(float) for c in cols},
-                    {c: float(is_real[c]) for c in cols}, False))
+        assert is_real is not None  # _side returns both or neither
+        out.append(
+            (
+                "Solo IS",
+                {c: is_pop[c].to_numpy(float) for c in cols},
+                {c: float(is_real[c]) for c in cols},
+                False,
+            )
+        )
     if oos_pop is not None:
         assert oos_real is not None
-        out.append(("Solo OOS1", {c: oos_pop[c].to_numpy(float) for c in cols},
-                    {c: float(oos_real[c]) for c in cols}, False))
+        out.append(
+            (
+                "Solo OOS1",
+                {c: oos_pop[c].to_numpy(float) for c in cols},
+                {c: float(oos_real[c]) for c in cols},
+                False,
+            )
+        )
     if is_pop is not None and oos_pop is not None:
         assert is_real is not None and oos_real is not None
-        out.append((COMBINED, combine.population(is_pop, oos_pop),
-                    combine.real_combined(is_real, oos_real), True))
+        out.append(
+            (
+                COMBINED,
+                combine.population(is_pop, oos_pop),
+                combine.real_combined(is_real, oos_real),
+                True,
+            )
+        )
     return out
 
 
@@ -120,45 +194,94 @@ def run(strategy: str, directory: Path, cfg: dict) -> dict[str, Any]:
     oos_pop, oos_real = _side(oos_dir, strategy)
     periods = _periods(is_pop, is_real, oos_pop, oos_real)
     if len(periods) == 3:
-        assert is_dir is not None and oos_dir is not None   # both pops exist only with both dirs
+        assert (
+            is_dir is not None and oos_dir is not None
+        )  # both pops exist only with both dirs
         extra = _trades_real(is_dir, oos_dir, strategy)
         if extra:
             periods[2][2].update(extra)
 
     tabs = [contract.panel1(periods, cfg["panel1"]["band_share"])]
-    notes = [{"code": "sin_emparejar", "state": "info",
-              "text": "Una tirada SPP ancha no empareja y nunca emparejará: entre la IS y la OOS "
-                      "de Strategy 17.9.39 hubo 6 tuplas en común de ~11.600. El periodo "
-                      "combinado recompone lo que se puede (Net Profit, PF, Max Drawdown, "
-                      "Ret/DD) y agrupa el resto (Sharpe, Sortino) como una sola muestra."}]
+    notes = [
+        {
+            "code": "sin_emparejar",
+            "state": "info",
+            "text": "Una tirada SPP ancha no empareja y nunca emparejará: entre la IS y la OOS "
+            "de Strategy 17.9.39 hubo 6 tuplas en común de ~11.600. El periodo "
+            "combinado recompone lo que se puede (Net Profit, PF, Max Drawdown, "
+            "Ret/DD) y agrupa el resto (Sharpe, Sortino) como una sola muestra.",
+        }
+    ]
     if is_pop is not None and oos_pop is not None:
         assert is_real is not None and oos_real is not None
         tabs.append(contract.panel2(is_pop, oos_pop, is_real, oos_real))
     else:
-        notes.append({"code": "sin_oos", "state": "info",
-                      "text": "Solo hay export de un lado (IS u OOS) de este proyecto: no hay "
-                              "con qué solapar IS y OOS1."})
+        notes.append(
+            {
+                "code": "sin_oos",
+                "state": "info",
+                "text": "Solo hay export de un lado (IS u OOS) de este proyecto: no hay "
+                "con qué solapar IS y OOS1.",
+            }
+        )
     windows = {}
-    for tab_name, title, folder in (("build", "Mapa del build (SPP IS)", is_dir),
-                                    ("oos1", "Mapa de oos1 (SPP OOS)", oos_dir)):
+    for tab_name, title, folder in (
+        ("build", "Mapa del build (SPP IS)", is_dir),
+        ("oos1", "Mapa de oos1 (SPP OOS)", oos_dir),
+    ):
         grid = None if folder is None else export.grid(folder, strategy)
         if folder is not None and grid is not None and not grid.empty:
-            windows[tab_name] = mapa.window(grid, export.parameters(folder, strategy), cfg)
+            windows[tab_name] = mapa.window(
+                grid, export.parameters(folder, strategy), cfg
+            )
             tabs.append(contract.map_tab(tab_name, title, windows[tab_name]))
     if len(windows) == 2:
-        tabs.append(contract.windows_tab(mapa.across(windows["build"], windows["oos1"], cfg),
-                                         windows["build"], windows["oos1"]))
-    measured = decay.measure(is_pop, oos_pop, cast(pd.Series, is_real), oos_real, cfg["criteria"]) \
-        if is_pop is not None else None
+        tabs.append(
+            contract.windows_tab(
+                mapa.across(windows["build"], windows["oos1"], cfg),
+                windows["build"],
+                windows["oos1"],
+            )
+        )
+    measured = (
+        decay.measure(
+            is_pop, oos_pop, cast(pd.Series, is_real), oos_real, cfg["criteria"]
+        )
+        if is_pop is not None
+        else None
+    )
     if measured:
         tabs.append(criteria.tab(measured))
     ident = output.identify(directory, [strategy])[strategy]
-    kept = criteria.recorded(strategy, ident, {side: (pop, real) for side, pop, real in (
-        ("IS", is_pop, is_real), ("OOS1", oos_pop, oos_real)) if pop is not None})
+    kept = criteria.recorded(
+        strategy,
+        ident,
+        {
+            side: (pop, real)
+            for side, pop, real in (
+                ("IS", is_pop, is_real),
+                ("OOS1", oos_pop, oos_real),
+            )
+            if pop is not None
+        },
+    )
     return envelope.envelope(
-        MODULE, strategy, ident, cfg, started, tabs, contract.verdict(found),
-        notes + identity.warning(ident), GLOSSARY,
-        summary={"verdict": brief["verdict"], "n_eff": brief["n_eff"],
-                "combinaciones_distintas": brief["n_eff"],
-                "live": len(brief["parameters"]), "frozen": len(brief["frozen"]),
-                "brief": brief, "criterios": criteria.flat(measured) if measured else {}}) | {"draws": kept}
+        MODULE,
+        strategy,
+        ident,
+        cfg,
+        started,
+        tabs,
+        contract.verdict(found),
+        notes + identity.warning(ident),
+        GLOSSARY,
+        summary={
+            "verdict": brief["verdict"],
+            "n_eff": brief["n_eff"],
+            "combinaciones_distintas": brief["n_eff"],
+            "live": len(brief["parameters"]),
+            "frozen": len(brief["frozen"]),
+            "brief": brief,
+            "criterios": criteria.flat(measured) if measured else {},
+        },
+    ) | {"draws": kept}

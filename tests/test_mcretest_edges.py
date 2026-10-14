@@ -33,7 +33,10 @@ def test_empty_simulation_after_a_multi_trade_one() -> None:
         got = recon.frame(pnl, np.array([0, 3, 3]), 10000.0)
     assert np.allclose(got["NetProfit"], [150, 0]), got["NetProfit"]
     from studies.breakage.mcRetest.model import drawdown
-    assert np.allclose(drawdown.reduce(np.add, np.array([1., 2, 4]), np.array([0, 3, 3])), [7, 0])
+
+    assert np.allclose(
+        drawdown.reduce(np.add, np.array([1.0, 2, 4]), np.array([0, 3, 3])), [7, 0]
+    )
 
 
 def test_underwater_counts_the_starting_balance() -> None:

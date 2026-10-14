@@ -27,8 +27,14 @@ def install(project: str) -> tuple[str, Path] | None:
         (role, top folder), the first in `PREFERENCE` order, or None.
     """
     found = progress.installs()
-    return next(((role, found[role]) for role in PREFERENCE
-                 if role in found and project in progress.projects(found[role])), None)
+    return next(
+        (
+            (role, found[role])
+            for role in PREFERENCE
+            if role in found and project in progress.projects(found[role])
+        ),
+        None,
+    )
 
 
 def sqx_view(role: str, top: Path, project: str) -> SqxView:
@@ -48,9 +54,15 @@ def sqx_view(role: str, top: Path, project: str) -> SqxView:
     """
     folder = top / "user" / "projects" / project
     lines, _ = progress.log_lines(top)
-    return {"role": role, "folder": folder, "tasks": progress.tasks(folder / "project.cfx"),
-            "banks": progress.counts(folder), "runs": tasklog.task_runs(folder),
-            "run": progress.run_state(lines), "alive": bool(worker.holding(top))}
+    return {
+        "role": role,
+        "folder": folder,
+        "tasks": progress.tasks(folder / "project.cfx"),
+        "banks": progress.counts(folder),
+        "runs": tasklog.task_runs(folder),
+        "run": progress.run_state(lines),
+        "alive": bool(worker.holding(top)),
+    }
 
 
 def day_of(path: Path) -> str:
@@ -78,14 +90,21 @@ def results(project: str, key: str, strategy_runs: bool | None = None) -> list[R
     for folder in (DATA / "reports" / project).glob(f"*/*/{key}"):
         m = folder / "manifest.json"
         manifest = json.loads(m.read_text(encoding="utf-8")) if m.exists() else {}
-        found.append({"path": folder, "day": folder.parent.name,
-                      "databank": folder.parent.parent.name, "manifest": manifest})
+        found.append(
+            {
+                "path": folder,
+                "day": folder.parent.name,
+                "databank": folder.parent.parent.name,
+                "manifest": manifest,
+            }
+        )
     for root in BATCH_ROOTS:
         top = DATA / root / project
         for hit in (*top.glob(f"*/estudios/{key}*"), *top.glob(f"*/*/estudios/{key}*")):
             if hit.name in (key, f"{key}.json"):
-                found.append({"path": hit, "day": day_of(hit), "databank": None,
-                              "manifest": {}})
+                found.append(
+                    {"path": hit, "day": day_of(hit), "databank": None, "manifest": {}}
+                )
     if strategy_runs is not None:
         # A `--strategy` run writes only `estrategias/<name>.json` and no manifest — the folder's
         # manifest is step 8's population run of the same day (📓 2026-09-30: step 25 ran on
@@ -96,7 +115,9 @@ def results(project: str, key: str, strategy_runs: bool | None = None) -> list[R
 
         def population(r: Result) -> bool:
             """Whether a result folder holds a population run."""
-            return bool(r["manifest"]) and "--strategy" not in r["manifest"].get("command", "")
+            return bool(r["manifest"]) and "--strategy" not in r["manifest"].get(
+                "command", ""
+            )
 
         found = [r for r in found if (per_strategy if strategy_runs else population)(r)]
     return sorted(found, key=lambda r: r["day"], reverse=True)
@@ -110,8 +131,14 @@ def verified(project: str) -> list[Result]:
     for meta in (MT5_DATA / "verify").glob("*/run.json"):
         run = json.loads(meta.read_text(encoding="utf-8"))
         if f"/{project}/" in run.get("file", "") and run.get("state") == "done":
-            found.append({"path": meta.parent, "day": run["started"][:10], "databank": None,
-                          "manifest": {}})
+            found.append(
+                {
+                    "path": meta.parent,
+                    "day": run["started"][:10],
+                    "databank": None,
+                    "manifest": {},
+                }
+            )
     return sorted(found, key=lambda r: r["path"].name, reverse=True)
 
 
@@ -133,7 +160,9 @@ def funnel(result: Result) -> tuple[int | None, int | None, str]:
     if "entered" in counts:
         return counts["entered"], counts["survives"], ""
     folder = result["path"]
-    verdict = folder / "verdict.csv" if folder.is_dir() else folder.parent / "verdict.csv"
+    verdict = (
+        folder / "verdict.csv" if folder.is_dir() else folder.parent / "verdict.csv"
+    )
     if verdict.exists():
         with verdict.open(newline="", encoding="utf-8") as f:
             words = [row.get("verdict", "") for row in csv.DictReader(f)]
@@ -155,17 +184,25 @@ def template(project: str, studies: list[str]) -> tuple[str | None, str]:
         (template name or None, the source in Spanish). runs.csv and the project registry
         record the link; failing them, a ledger family that is a folder of the library.
     """
-    for source, path in (("runs.csv", template_runs()), ("projects/registry.csv",
-                                                           project_registry())):
+    for source, path in (
+        ("runs.csv", template_runs()),
+        ("projects/registry.csv", project_registry()),
+    ):
         if path.exists():
             with path.open(newline="", encoding="utf-8") as f:
-                rows = [r for r in csv.DictReader(f) if r.get("project", r.get("name")) == project]
+                rows = [
+                    r
+                    for r in csv.DictReader(f)
+                    if r.get("project", r.get("name")) == project
+                ]
             if rows and rows[-1].get("template"):
                 path = Path(rows[-1]["template"])
                 # a library template is <name>/template.sqx: its name is the folder's
-                return (path.parent.name if path.name == "template.sqx" else path.stem), source
+                return (
+                    path.parent.name if path.name == "template.sqx" else path.stem
+                ), source
     for study in studies:
-        family = study.split("_", 2)[-1]   # a study id is <symbol>_<timeframe>_<family>
+        family = study.split("_", 2)[-1]  # a study id is <symbol>_<timeframe>_<family>
         if template_dir(family).is_dir():
             return family, f"la familia del estudio {study} en el ledger"
     return None, ""
@@ -180,14 +217,18 @@ def variants(project: str) -> tuple[int, int, str | None]:
     Returns:
         (mothers with a batch folder, mothers with `collected.json`, newest day or None).
     """
-    batches = [b for b in (DATA / "strategyPermutations" / project).glob("*") if b.is_dir()]
+    batches = [
+        b for b in (DATA / "strategyPermutations" / project).glob("*") if b.is_dir()
+    ]
     done = [b / "collected.json" for b in batches if (b / "collected.json").exists()]
     return len(batches), len(done), max((day_of(f) for f in done), default=None)
 
 
 def curated(project: str, databank: str) -> str:
     """What `/curate` last removed from a databank, as a Spanish clause, or ''."""
-    hits = sorted((DATA / "reports" / project / databank).glob("*/curate/manifest.json"))
+    hits = sorted(
+        (DATA / "reports" / project / databank).glob("*/curate/manifest.json")
+    )
     if not hits:
         return ""
     c = json.loads(hits[-1].read_text(encoding="utf-8")).get("counts", {})

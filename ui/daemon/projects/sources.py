@@ -17,7 +17,9 @@ from ui.daemon.loader import find
 ORDER = ("corriendo", "parado", "terminado", "construido", "ausente")
 FIRST_TASK = re.compile(r'<Task [^>]*taskXMLFile="([^"]+)"')
 CHART = re.compile(r'<Chart symbol="([^"]+)" timeframe="([^"]+)"')
-RETIRED = "retirados"      # the install filter's value for a retired project that left reports
+RETIRED = (
+    "retirados"  # the install filter's value for a retired project that left reports
+)
 LABEL = {"master": "maestro", "conductor": "conductor", "custodian": "custodio"}
 
 
@@ -73,12 +75,20 @@ def chart(cfx: Path, stamp: float) -> tuple[str | None, str | None]:
 
 def ending(run: dict) -> str:
     """How the last start of the log ended: «Project stopped» or «Project finished»."""
-    stopped = next((line for line in reversed(run["tail"])
-                    if "Project stopped" in line or "Project finished" in line), "")
+    stopped = next(
+        (
+            line
+            for line in reversed(run["tail"])
+            if "Project stopped" in line or "Project finished" in line
+        ),
+        "",
+    )
     return "parado" if "Project stopped" in stopped else "terminado"
 
 
-def state(role: str, top: Path, name: str, run: dict, held: int) -> tuple[str, str, dict | None]:
+def state(
+    role: str, top: Path, name: str, run: dict, held: int
+) -> tuple[str, str, dict | None]:
     """Where one project stands, from its install's log; a live worker is asked only its status.
 
     Args:
@@ -96,7 +106,11 @@ def state(role: str, top: Path, name: str, run: dict, held: int) -> tuple[str, s
     """
     if run["project"] == name and not run["finished"]:
         if role != "master" and not worker.holding(top):
-            return "parado", "El log de hoy lo dejó a medias y el worker está parado.", None
+            return (
+                "parado",
+                "El log de hoy lo dejó a medias y el worker está parado.",
+                None,
+            )
         live = progress.state(role, name)["status"]
         return "corriendo", "El log de hoy lo tiene en marcha.", live
     if run["project"] == name:
@@ -116,8 +130,13 @@ def template(path: str) -> str | None:
     return p.parent.name if p.name == "template.sqx" else p.stem
 
 
-def card(name: str, where: tuple[str, Path] | None, row: dict[str, str], runs_today: dict[str, Any],
-         has_reports: bool) -> dict[str, Any]:
+def card(
+    name: str,
+    where: tuple[str, Path] | None,
+    row: dict[str, str],
+    runs_today: dict[str, Any],
+    has_reports: bool,
+) -> dict[str, Any]:
     """One gallery card: what `fake.projects` promised, plus where each figure came from.
 
     Args:
@@ -131,13 +150,26 @@ def card(name: str, where: tuple[str, Path] | None, row: dict[str, str], runs_to
         name, symbol, timeframe, strategies, databanks {name: count}, template, state, why,
         live, install (role), install_label, kind, purpose, reports.
     """
-    base = {"name": name, "kind": registry.kind(name), "purpose": row.get("purpose", ""),
-            "template": template(row.get("template", "")), "reports": has_reports}
+    base = {
+        "name": name,
+        "kind": registry.kind(name),
+        "purpose": row.get("purpose", ""),
+        "template": template(row.get("template", "")),
+        "reports": has_reports,
+    }
     if where is None:
-        return {**base, "symbol": row.get("symbol") or runs.guess_asset(name),
-                "timeframe": row.get("timeframe") or None, "strategies": 0, "databanks": {},
-                "state": "ausente", "why": "Ya no está en ningún install; quedan sus informes.",
-                "live": None, "install": None, "install_label": "ningún install"}
+        return {
+            **base,
+            "symbol": row.get("symbol") or runs.guess_asset(name),
+            "timeframe": row.get("timeframe") or None,
+            "strategies": 0,
+            "databanks": {},
+            "state": "ausente",
+            "why": "Ya no está en ningún install; quedan sus informes.",
+            "live": None,
+            "install": None,
+            "install_label": "ningún install",
+        }
     role, top = where
     folder = top / "user" / "projects" / name
     cfx = folder / "project.cfx"
@@ -147,10 +179,18 @@ def card(name: str, where: tuple[str, Path] | None, row: dict[str, str], runs_to
     # on a cold daemon. A duplicated strategy counts twice here; the databank view dedups.
     counted = dict(sorted(progress.counts(folder).items()))
     said, why, live = state(role, top, name, run, sum(counted.values()))
-    return {**base, "symbol": row.get("symbol") or symbol or runs.guess_asset(name),
-            "timeframe": row.get("timeframe") or timeframe, "strategies": sum(counted.values()),
-            "databanks": counted, "state": said, "why": why, "live": live, "install": role,
-            "install_label": LABEL.get(role, role)}
+    return {
+        **base,
+        "symbol": row.get("symbol") or symbol or runs.guess_asset(name),
+        "timeframe": row.get("timeframe") or timeframe,
+        "strategies": sum(counted.values()),
+        "databanks": counted,
+        "state": said,
+        "why": why,
+        "live": live,
+        "install": role,
+        "install_label": LABEL.get(role, role),
+    }
 
 
 def gallery() -> list[dict[str, Any]]:
@@ -164,10 +204,14 @@ def gallery() -> list[dict[str, Any]]:
     """
     held, rows, reps = on_disk(), registered(), reported()
     gone = {r["name"] for r in registry.rows() if r["retired"]} - set(rows) - set(held)
-    runs_today = {role: progress.run_state(progress.log_lines(top)[0])
-                  for role, top in progress.installs().items()}
-    cards = [card(n, held.get(n), rows.get(n, {}), runs_today, n in reps)
-             for n in sorted(set(held) | reps)]
+    runs_today = {
+        role: progress.run_state(progress.log_lines(top)[0])
+        for role, top in progress.installs().items()
+    }
+    cards = [
+        card(n, held.get(n), rows.get(n, {}), runs_today, n in reps)
+        for n in sorted(set(held) | reps)
+    ]
     for c in cards:
         if c["name"] in gone:
             c["install_label"], c["why"] = RETIRED, "Retirado; quedan sus informes."
@@ -188,8 +232,13 @@ def locate(project: str, identity: str, databank: str = "") -> dict[str, Any]:
     where = on_disk().get(project)
     names = [databank] if databank else []
     if where:
-        names += [d.name for d in sorted((where[1] / "user" / "projects" / project /
-                                           "databanks").glob("*")) if d.is_dir()]
+        names += [
+            d.name
+            for d in sorted(
+                (where[1] / "user" / "projects" / project / "databanks").glob("*")
+            )
+            if d.is_dir()
+        ]
     for d in names:
         got = find.roster(project, d).get(identity)
         if got:

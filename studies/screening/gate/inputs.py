@@ -21,6 +21,7 @@ CONFIG = Path(__file__).with_name("config.yaml")
 
 class Market(TypedDict):
     """What the measured columns need of the asset behind a feed."""
+
     point_value: float
     risk: float
     windows: dict[str, tuple[str, str]]
@@ -29,6 +30,7 @@ class Market(TypedDict):
 
 class Harvest(TypedDict):
     """One joined harvest, as `load` returns it."""
+
     metrics: pd.DataFrame
     trades: pd.DataFrame
     equity: pd.DataFrame
@@ -73,10 +75,16 @@ def timeframe(metrics: pd.DataFrame, cfg: dict, overrides: list[str]) -> str:
     for item in overrides:
         if item.startswith("monkey.timeframe="):
             return item.split("=", 1)[1]
-    found = metrics["TimeFrame [IS]"].astype(str).unique() if "TimeFrame [IS]" in metrics else []
+    found = (
+        metrics["TimeFrame [IS]"].astype(str).unique()
+        if "TimeFrame [IS]" in metrics
+        else []
+    )
     if len(found) > 1:
-        raise SystemExit(f"gate: la cosecha mezcla timeframes {sorted(found)}; "
-                         "pasa --set monkey.timeframe=<TF>")
+        raise SystemExit(
+            f"gate: la cosecha mezcla timeframes {sorted(found)}; "
+            "pasa --set monkey.timeframe=<TF>"
+        )
     return found[0] if len(found) == 1 else cfg["monkey"]["timeframe"]
 
 
@@ -97,12 +105,18 @@ def market(feed: str) -> Market:
     asset = assetdata.load(symbol)
     segment = {"IS": "build", "OOS": "oos1"}
     edges = {s: assetdata.window(asset, k) for s, k in segment.items()}
-    return {"point_value": asset["instrument"]["point_value"],
-            "risk": assetdata.doctrine()["money_management"]["params"]["Amount"],
-            "windows": {s: (str(asset["segments"][k]["from"]), str(asset["segments"][k]["to"]))
-                        for s, k in segment.items()},
-            "years": {s: (pd.Timestamp(b, unit="ms") - pd.Timestamp(a, unit="ms")).days / 365.25
-                      for s, (a, b) in edges.items()}}
+    return {
+        "point_value": asset["instrument"]["point_value"],
+        "risk": assetdata.doctrine()["money_management"]["params"]["Amount"],
+        "windows": {
+            s: (str(asset["segments"][k]["from"]), str(asset["segments"][k]["to"]))
+            for s, k in segment.items()
+        },
+        "years": {
+            s: (pd.Timestamp(b, unit="ms") - pd.Timestamp(a, unit="ms")).days / 365.25
+            for s, (a, b) in edges.items()
+        },
+    }
 
 
 def check_oos1(trades: pd.DataFrame, windows: tuple[str, str], where: str) -> None:
@@ -119,15 +133,18 @@ def check_oos1(trades: pd.DataFrame, windows: tuple[str, str], where: str) -> No
     Raises:
         ValueError: Some "OOS" trade opens before or closes after the window.
     """
-    start, end = (cast(pd.Period, pd.Period(windows[0])).start_time,
-                  cast(pd.Period, pd.Period(windows[1])).end_time)
+    start, end = (
+        cast(pd.Period, pd.Period(windows[0])).start_time,
+        cast(pd.Period, pd.Period(windows[1])).end_time,
+    )
     oos = trades[trades["sample"] == "OOS"]
     out = oos[(oos["Open time"] < start) | (oos["Close time"] > end)]
     if len(out):
         raise ValueError(
             f"gate: {len(out)} operaciones «OOS» de {where} caen fuera de oos1 ({start.date()} a "
             f"{end.date()}): de {out['Open time'].min()} a {out['Close time'].max()}. La tarea de "
-            "retest cubrió más que oos1; rehaz el retest sobre oos1 y vuelve a cosechar")
+            "retest cubrió más que oos1; rehaz el retest sobre oos1 y vuelve a cosechar"
+        )
 
 
 def staged(data: Mapping[str, Any], feed: str, frame: str, out: Path) -> dict[str, Any]:
@@ -151,8 +168,14 @@ def staged(data: Mapping[str, Any], feed: str, frame: str, out: Path) -> dict[st
     asset = market(feed)
     check_oos1(data["trades"], asset["windows"]["OOS"], str(data.get("folder", feed)))
     staged_data: dict[str, Any] = {
-        **data, "bars": read_bars(feed, frame), "market": asset, "out": out, "feed": feed,
-        "costs": reprice.costs(feed, "oos1"), "costs_build": reprice.costs(feed, "build")}
+        **data,
+        "bars": read_bars(feed, frame),
+        "market": asset,
+        "out": out,
+        "feed": feed,
+        "costs": reprice.costs(feed, "oos1"),
+        "costs_build": reprice.costs(feed, "build"),
+    }
     if (feed_quality_dir(current(feed)) / "events.parquet").exists():
         staged_data["quality"] = feed_quality_dir(current(feed))
     return staged_data
@@ -170,10 +193,13 @@ def build_pnl(data: dict, alive: pd.Index) -> pd.DataFrame:
         within each identity.
     """
     bars, raw = data["bars"], pd.DataFrame(data["trades"])
-    raw = (pd.DataFrame(raw[(raw["sample"] == "IS") & raw["identity"].isin(list(alive))])
-           .sort_values(["identity", "Close time"]))
+    raw = pd.DataFrame(
+        raw[(raw["sample"] == "IS") & raw["identity"].isin(list(alive))]
+    ).sort_values(["identity", "Close time"])
     priced = reprice.real(raw, bars, data["costs_build"], data.get("feed"))
-    return pd.DataFrame({"identity": raw["identity"].to_numpy(), "pnl": priced["pnl"].to_numpy()})
+    return pd.DataFrame(
+        {"identity": raw["identity"].to_numpy(), "pnl": priced["pnl"].to_numpy()}
+    )
 
 
 def newest(project: str, databank: str) -> Path:
@@ -204,8 +230,11 @@ def wide(path: Path) -> dict[str, pd.DataFrame]:
         values="equity")` of that sample's rows. Raises ValueError on a repeated (day, identity),
         as `pivot` does.
     """
-    t = pq.read_table(path, columns=["sample", "day", "identity", "equity"],
-                      read_dictionary=["identity", "sample"])
+    t = pq.read_table(
+        path,
+        columns=["sample", "day", "identity", "equity"],
+        read_dictionary=["identity", "sample"],
+    )
     ident, samp = t["identity"].combine_chunks(), t["sample"].combine_chunks()
     names = np.asarray(ident.dictionary.to_pylist(), dtype=object)
     icode, scode = ident.indices.to_numpy(), samp.indices.to_numpy()
@@ -217,14 +246,21 @@ def wide(path: Path) -> dict[str, pd.DataFrame]:
             continue
         days, di = np.unique(day[pick], return_inverse=True)
         used, ii = np.unique(icode[pick], return_inverse=True)
-        grid = np.full((len(days), len(used)), np.nan, dtype=np.result_type(value.dtype, np.float32))
+        grid = np.full(
+            (len(days), len(used)),
+            np.nan,
+            dtype=np.result_type(value.dtype, np.float32),
+        )
         seen = np.zeros(grid.shape, dtype=bool)
         seen[di, ii] = True
         if seen.sum() != len(di):
             raise ValueError("Index contains duplicate entries, cannot reshape")
         grid[di, ii] = value[pick]
-        out[name] = pd.DataFrame(grid, index=pd.DatetimeIndex(days, name="day"),
-                                 columns=pd.Index(names[used], name="identity")).sort_index(axis=1)
+        out[name] = pd.DataFrame(
+            grid,
+            index=pd.DatetimeIndex(days, name="day"),
+            columns=pd.Index(names[used], name="identity"),
+        ).sort_index(axis=1)
     return out
 
 
@@ -254,8 +290,13 @@ def load(folder: Path) -> Harvest:
     after = curves["OOS"].diff()[curves["OOS"].index > last]
     split = cast(pd.Timestamp, after.index.min())
     daily = pd.concat([curves["IS"].diff(), after])
-    return Harvest(metrics=metrics, trades=trades, equity=equity, curve=daily.cumsum(),
-                   missing=pd.read_csv(folder / "missing_oos.csv"),
-                   split=split.date().isoformat(),
-                   end=cast(pd.Timestamp, curves["OOS"].index.max()).date().isoformat(),
-                   folder=str(folder))
+    return Harvest(
+        metrics=metrics,
+        trades=trades,
+        equity=equity,
+        curve=daily.cumsum(),
+        missing=pd.read_csv(folder / "missing_oos.csv"),
+        split=split.date().isoformat(),
+        end=cast(pd.Timestamp, curves["OOS"].index.max()).date().isoformat(),
+        folder=str(folder),
+    )

@@ -43,15 +43,22 @@ def block(b: dict) -> list[tuple[str, float | None]]:
     """
     t = slug(b.get("title") or b.get("label") or b["kind"])
     if b["kind"] == "distribution":
-        got = [(f"{t}.real", b.get("real")), (f"{t}.median", b.get("median")),
-               (f"{t}.p", b.get("p"))]
+        got = [
+            (f"{t}.real", b.get("real")),
+            (f"{t}.median", b.get("median")),
+            (f"{t}.p", b.get("p")),
+        ]
         return got + [(f"{t}.p{q}", v) for q, v in (b.get("percentiles") or {}).items()]
     if b["kind"] == "table":
-        return [(f"{t}.{slug(row[0])}.{slug(col)}", cell) for row in b["rows"]
-                for col, cell in zip(b["columns"][1:], row[1:])]
+        return [
+            (f"{t}.{slug(row[0])}.{slug(col)}", cell)
+            for row in b["rows"]
+            for col, cell in zip(b["columns"][1:], row[1:])
+        ]
     if b["kind"] == "verdict":
         return [("verdict_pass", b["state"] == "pass")] + [
-            (f"{t}.{slug(p['label'])}", p.get("value")) for p in b.get("parts", [])]
+            (f"{t}.{slug(p['label'])}", p.get("value")) for p in b.get("parts", [])
+        ]
     return []
 
 
@@ -66,28 +73,48 @@ def flatten(result: dict) -> list[tuple[str, float | None]]:
     out = [(f"summary.{slug(k)}", v) for k, v in (result.get("summary") or {}).items()]
     v = result.get("verdict")
     if v:
-        out += [("verdict.pass", v["state"] == "pass"), ("verdict.score", v.get("score"))]
-        out += [(f"verdict.{slug(p['label'])}", p.get("value")) for p in v.get("parts", [])]
+        out += [
+            ("verdict.pass", v["state"] == "pass"),
+            ("verdict.score", v.get("score")),
+        ]
+        out += [
+            (f"verdict.{slug(p['label'])}", p.get("value")) for p in v.get("parts", [])
+        ]
     for tab in result.get("tabs", []):
         for b in tab["blocks"]:
-            if "select" in b and any(s["default"] != b["select"].get(s["key"])
-                                     for s in tab.get("selectors", [])):
+            if "select" in b and any(
+                s["default"] != b["select"].get(s["key"])
+                for s in tab.get("selectors", [])
+            ):
                 continue
             out += [(f"{slug(tab['name'])}.{k}", x) for k, x in block(b)]
     return out
 
 
-def per_strategy(study: str, df: pd.DataFrame, prefix: str, skip: set[str]) -> list[dict]:
+def per_strategy(
+    study: str, df: pd.DataFrame, prefix: str, skip: set[str]
+) -> list[dict]:
     """Every column of a one-row-per-strategy table with a number in it, as `<prefix>.<col>`;
     its text cells and None (a cascade that never reached the strategy) the caller drops."""
-    ids = df["identity"].fillna("") if "identity" in df.columns else pd.Series("", index=df.index)
+    ids = (
+        df["identity"].fillna("")
+        if "identity" in df.columns
+        else pd.Series("", index=df.index)
+    )
     rows = []
     for col in df.columns.difference(skip, sort=False):
         values = [number(x) for x in df[col]]
         if any(v is not None for v in values):
-            rows += [{"study": study, "strategy": s, "identity": i,
-                      "key": f"{prefix}.{slug(col)}", "value": v}
-                     for s, i, v in zip(df["strategy"], ids, values)]
+            rows += [
+                {
+                    "study": study,
+                    "strategy": s,
+                    "identity": i,
+                    "key": f"{prefix}.{slug(col)}",
+                    "value": v,
+                }
+                for s, i, v in zip(df["strategy"], ids, values)
+            ]
     return rows
 
 
@@ -104,9 +131,16 @@ def from_folder(study: str, folder: Path) -> list[dict]:
     rows = []
     for f in sorted((folder / "estrategias").glob("*.json")):
         r = json.loads(f.read_text(encoding="utf-8"))
-        rows += [{"study": study, "strategy": r["strategy"], "identity": r.get("identity", ""),
-                  "key": k, "value": number(x)}
-                 for k, x in flatten(r) + batchfacts.flat(r.get("facts") or {})]   # the WFM's page
+        rows += [
+            {
+                "study": study,
+                "strategy": r["strategy"],
+                "identity": r.get("identity", ""),
+                "key": k,
+                "value": number(x),
+            }
+            for k, x in flatten(r) + batchfacts.flat(r.get("facts") or {})
+        ]  # the WFM's page
     for f in sorted(folder.glob("*.parquet")):
         df = pd.read_parquet(f)
         df = df.reset_index() if df.index.name == "identity" else df
@@ -114,12 +148,18 @@ def from_folder(study: str, folder: Path) -> list[dict]:
             continue
         df = cast(pd.DataFrame, df[df["strategy"].notna()])
         if "market" in df.columns and not df.duplicated(["strategy", "market"]).any():
-            for market, part in df.groupby("market", sort=True):    # crossmarket's markets.parquet
-                rows += per_strategy(study, cast(pd.DataFrame, part), f"{slug(f.stem)}.{slug(market)}",
-                                     {"strategy", "identity", "market"})
+            for market, part in df.groupby(
+                "market", sort=True
+            ):  # crossmarket's markets.parquet
+                rows += per_strategy(
+                    study,
+                    cast(pd.DataFrame, part),
+                    f"{slug(f.stem)}.{slug(market)}",
+                    {"strategy", "identity", "market"},
+                )
             continue
         if df["strategy"].duplicated().any():
-            continue        # a trade or cell table: its rows are not one per strategy
+            continue  # a trade or cell table: its rows are not one per strategy
         rows += per_strategy(study, df, slug(f.stem), {"strategy", "identity"})
     for name in CSVS:
         csv = folder / name
@@ -127,18 +167,37 @@ def from_folder(study: str, folder: Path) -> list[dict]:
             continue
         df = pd.read_csv(csv, dtype=str)
         if name != "verdict.csv" and df["strategy"].duplicated().any():
-            continue        # a ladder over several markets: no one row per strategy
+            continue  # a ladder over several markets: no one row per strategy
         rows += per_strategy(study, df, f"{csv.stem}_csv", NAMES)
         if name == "verdict.csv":
-            ids = df["identity"].fillna("") if "identity" in df.columns else \
-                pd.Series("", index=df.index)
-            rows += [{"study": study, "strategy": s, "identity": i, "key": "verdict_csv.drop",
-                      "value": float(v == "DESCARTAR")}
-                     for s, i, v in zip(df["strategy"], ids, df["verdict"])]
+            ids = (
+                df["identity"].fillna("")
+                if "identity" in df.columns
+                else pd.Series("", index=df.index)
+            )
+            rows += [
+                {
+                    "study": study,
+                    "strategy": s,
+                    "identity": i,
+                    "key": "verdict_csv.drop",
+                    "value": float(v == "DESCARTAR"),
+                }
+                for s, i, v in zip(df["strategy"], ids, df["verdict"])
+            ]
             # spread says its own call in words (pass/fail) beside a verdict that only marks
-            rows += [{"study": study, "strategy": s, "identity": i,
-                      "key": "verdict_csv.state_pass", "value": float(v == "pass")}
-                     for s, i, v in zip(df["strategy"], ids, cast(Any, df.get("verdict_state", [])))]
+            rows += [
+                {
+                    "study": study,
+                    "strategy": s,
+                    "identity": i,
+                    "key": "verdict_csv.state_pass",
+                    "value": float(v == "pass"),
+                }
+                for s, i, v in zip(
+                    df["strategy"], ids, cast(Any, df.get("verdict_state", []))
+                )
+            ]
     return rows
 
 
@@ -161,21 +220,37 @@ def crosstf_rows(folder: Path) -> list[dict]:
 
     def add(mother: str, key: str, value: object) -> None:
         """One fact of one mother; identity left empty so it matches the mother's file by name."""
-        rows.append({"study": "crossTF", "strategy": mother, "identity": "",
-                     "key": key, "value": number(value)})
+        rows.append(
+            {
+                "study": "crossTF",
+                "strategy": mother,
+                "identity": "",
+                "key": key,
+                "value": number(value),
+            }
+        )
 
-    baseline: Iterable[Any] = cells[cells["role"] == "baseline"].itertuples()   # namedtuples, typed as plain tuples
-    original = {(r.mother, k): v for r in baseline
-                for k, v in (r.seen_all or {}).items()}
+    baseline: Iterable[Any] = cells[
+        cells["role"] == "baseline"
+    ].itertuples()  # namedtuples, typed as plain tuples
+    original = {
+        (r.mother, k): v for r in baseline for k, v in (r.seen_all or {}).items()
+    }
     r: Any
     for r in cells.itertuples():
         hit = TARGET.search(r.strategy)
         tf = hit.group(1) if hit else r.timeframe
         at = f"cells.{r.role}.{tf}"
-        for k, v in [*((c, getattr(r, c)) for c in cells.columns if c != "block"),
-                     *(r.seen_all or {}).items(),
-                     *((f"p_{k}", v) for k, v in (r.p_all or {}).items())]:
-            add(r.mother, k.replace("_", ".", 1) if k[:9] == "combined_" else f"{at}.{k}", v)
+        for k, v in [
+            *((c, getattr(r, c)) for c in cells.columns if c != "block"),
+            *(r.seen_all or {}).items(),
+            *((f"p_{k}", v) for k, v in (r.p_all or {}).items()),
+        ]:
+            add(
+                r.mother,
+                k.replace("_", ".", 1) if k[:9] == "combined_" else f"{at}.{k}",
+                v,
+            )
         for k, v in (r.seen_all or {}).items() if r.role != "baseline" else []:
             base = original.get((r.mother, k))
             if v is not None and base:
@@ -193,7 +268,9 @@ def crosstf_rows(folder: Path) -> list[dict]:
 def file_rows(study: str, file: Path) -> list[dict]:
     """The facts of one result that is a FILE, `<batch>/estudios/<study>.json` (the WFC, 18, 18.5):
     the contract's own `flatten` plus the study's `facts` (`batchfacts.rows`)."""
-    return batchfacts.rows(study, file, flatten(json.loads(file.read_text(encoding="utf-8"))))
+    return batchfacts.rows(
+        study, file, flatten(json.loads(file.read_text(encoding="utf-8")))
+    )
 
 
 def gather(project: str, n: str) -> pd.DataFrame:
@@ -211,15 +288,21 @@ def gather(project: str, n: str) -> pd.DataFrame:
         rows with the same label) gets `#2`, `#3`… in its order, never one picked silently.
     """
     rows = []
-    for study in cast(list[str], BY_N[n]["studies"]) + cast(list[str], BY_N[n]["extra"]):
+    for study in cast(list[str], BY_N[n]["studies"]) + cast(
+        list[str], BY_N[n]["extra"]
+    ):
         every = sources.results(project, study, False if study == "edgeCost" else None)
-        files = {r["path"].parent.parent.name: r["path"] for r in reversed(every)
-                 if r["path"].is_file()}        # a batch study: one file per mother, newest wins
+        files = {
+            r["path"].parent.parent.name: r["path"]
+            for r in reversed(every)
+            if r["path"].is_file()
+        }  # a batch study: one file per mother, newest wins
         rows += [x for f in files.values() for x in file_rows(study, f)]
         found = [r for r in every if r["path"].is_dir()]
         if found:
-            rows += (crosstf_rows if study == "crossTF" else
-                     lambda f: from_folder(study, f))(found[0]["path"])  # noqa: B023 called this iteration
+            rows += (
+                crosstf_rows if study == "crossTF" else lambda f: from_folder(study, f)
+            )(found[0]["path"])  # noqa: B023 called this iteration
     df = pd.DataFrame(rows, columns=pd.Index(COLUMNS)).dropna(subset=["value"])
     df["key"] = df["study"] + "." + df["key"]
     nth = df.groupby(["strategy", "identity", "key"]).cumcount()
@@ -232,13 +315,16 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=main.__doc__)
     ap.add_argument("--project", required=True)
     ap.add_argument("--step", required=True, help="paso que juzga: 8, 10, 12, 14 o 16")
-    ap.add_argument("--grep", default="", help="solo las claves que contienen este texto")
+    ap.add_argument(
+        "--grep", default="", help="solo las claves que contienen este texto"
+    )
     a = ap.parse_args()
     df = gather(a.project, a.step)
     df = df[df["key"].str.contains(a.grep, regex=False)]
     table = df.groupby("key")["value"].agg(["count", "median", "min", "max"])
-    with pd.option_context("display.max_rows", None, "display.width", 200,
-                           "display.max_colwidth", 90):
+    with pd.option_context(
+        "display.max_rows", None, "display.width", 200, "display.max_colwidth", 90
+    ):
         print(table.round(4).to_string())
 
 

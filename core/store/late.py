@@ -9,9 +9,13 @@ from core.datapaths import variants_dir
 from core.paths import DATA
 from core.store import extra
 
-PAGES = (".html", ".md", ".pdf")     # drawn from the numbers beside them: never stored
+PAGES = (".html", ".md", ".pdf")  # drawn from the numbers beside them: never stored
 TABLES = (".parquet", ".csv")
-REBUILT = ("sqx", "pilot", "origin")  # a variant batch's .sqx: the plan and the mother make them again
+REBUILT = (
+    "sqx",
+    "pilot",
+    "origin",
+)  # a variant batch's .sqx: the plan and the mother make them again
 
 
 def mothers(project: str) -> dict[str, str]:
@@ -30,7 +34,9 @@ def mothers(project: str) -> dict[str, str]:
     return {k: v for k, v in out.items() if k not in clash and k != v}
 
 
-def aliases(project: str, identity: str, mother: dict[str, str] | None = None) -> frozenset[str]:
+def aliases(
+    project: str, identity: str, mother: dict[str, str] | None = None
+) -> frozenset[str]:
     """The identity SQX gave the same strategy later, when the two name each other mother.
 
     Only a mutual pair counts: a variant has a mother that does not point back, and is another
@@ -63,7 +69,9 @@ def names(project: str, databank: str, day: str, identity: str) -> set[str]:
         if path.exists():
             said = extra.table(path)
             out |= set(said.loc[said[col] == identity, "strategy"].astype(str))
-    for path in sorted((DATA / "reports" / project / databank / day).glob("*/verdict.csv")):
+    for path in sorted(
+        (DATA / "reports" / project / databank / day).glob("*/verdict.csv")
+    ):
         said = extra.table(path)
         if {"strategy", "identity"} <= set(said.columns):
             out |= set(said.loc[said["identity"] == identity, "strategy"].astype(str))
@@ -73,10 +81,14 @@ def names(project: str, databank: str, day: str, identity: str) -> set[str]:
 def cut(path: Path, known: set[str], out: Path) -> int:
     """Write the rows of one table that name any of `known` (or its sisters) under `out`."""
     frame = extra.table(path)
-    rows = frame[frame.index.isin([i for n in known for i in extra.family(frame, n).index])]
+    rows = frame[
+        frame.index.isin([i for n in known for i in extra.family(frame, n).index])
+    ]
     if len(rows):
         out.mkdir(parents=True, exist_ok=True)
-        (rows.to_parquet if path.suffix == ".parquet" else rows.to_csv)(out / path.name, index=False)
+        (rows.to_parquet if path.suffix == ".parquet" else rows.to_csv)(
+            out / path.name, index=False
+        )
     return len(rows)
 
 
@@ -95,11 +107,15 @@ def exports(project: str, identity: str, tmp: Path) -> list[tuple[str, Path, dic
         The top-level `trades.parquet` is `extra.trades`'; `.sqx` copies are not kept.
     """
     found = []
-    for folder in sorted(p for p in (DATA / "raw" / project).glob("[!_]*/*") if p.is_dir()):
+    for folder in sorted(
+        p for p in (DATA / "raw" / project).glob("[!_]*/*") if p.is_dir()
+    ):
         databank, day = folder.parts[-2:]
         known = names(project, databank, day, identity)
         out, n = tmp / databank / day, 0
-        for path in sorted(p for p in folder.rglob("*") if known and p.parent != folder):
+        for path in sorted(
+            p for p in folder.rglob("*") if known and p.parent != folder
+        ):
             rel = path.relative_to(folder)
             if any(part.startswith("_") or part == "strategies" for part in rel.parts):
                 continue
@@ -108,12 +124,24 @@ def exports(project: str, identity: str, tmp: Path) -> list[tuple[str, Path, dic
             elif path.name == "manifest.json" and (out / rel.parent).exists():
                 shutil.copyfile(path, out / rel)
         if n:
-            found.append((f"exportacion.{databank}.{day}", out,
-                          {"study": "exportacion", "databank": databank, "day": day, "rows": n}))
+            found.append(
+                (
+                    f"exportacion.{databank}.{day}",
+                    out,
+                    {
+                        "study": "exportacion",
+                        "databank": databank,
+                        "day": day,
+                        "rows": n,
+                    },
+                )
+            )
     return found
 
 
-def variants(project: str, name: str, identity: str, tmp: Path) -> list[tuple[str, Path, dict]]:
+def variants(
+    project: str, name: str, identity: str, tmp: Path
+) -> list[tuple[str, Path, dict]]:
     """Step 16.5's batch of a mother and the studies read on it (cloud, 17, 18, 18.5).
 
     Args:
@@ -132,8 +160,13 @@ def variants(project: str, name: str, identity: str, tmp: Path) -> list[tuple[st
     origin = folder / "origin" / "build.sqx"
     if not origin.exists() or sqxfile.identity(origin) != identity:
         return []
-    files = [p for p in folder.rglob("*") if p.is_file() and p.suffix not in PAGES
-             and p.relative_to(folder).parts[0] not in REBUILT]
+    files = [
+        p
+        for p in folder.rglob("*")
+        if p.is_file()
+        and p.suffix not in PAGES
+        and p.relative_to(folder).parts[0] not in REBUILT
+    ]
     day = date.fromtimestamp(max(p.stat().st_mtime for p in files)).isoformat()
     found = []
     for stem, study in (("variantes", False), ("optimizacion", True)):
@@ -144,7 +177,13 @@ def variants(project: str, name: str, identity: str, tmp: Path) -> list[tuple[st
                 (out / rel).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(path, out / rel)
         if out.exists():
-            found.append((f"{stem}.{day}", out, {"study": stem, "day": day, "batch": folder.name}))
+            found.append(
+                (
+                    f"{stem}.{day}",
+                    out,
+                    {"study": stem, "day": day, "batch": folder.name},
+                )
+            )
     return found
 
 
@@ -156,7 +195,9 @@ def leftovers(folder: Path, frozen: Path, pop: Path) -> bool:
     strategy of the run. Returns whether anything was copied.
     """
     took = False
-    for path in sorted(p for p in folder.iterdir() if p.is_file() and p.suffix not in PAGES):
+    for path in sorted(
+        p for p in folder.iterdir() if p.is_file() and p.suffix not in PAGES
+    ):
         if not (frozen / path.name).exists() and not (pop / path.name).exists():
             pop.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(path, pop / path.name)
@@ -164,8 +205,9 @@ def leftovers(folder: Path, frozen: Path, pop: Path) -> bool:
     return took
 
 
-def unpaired(project: str, identity: str, frozen: set[str], cannot: set[str],
-             tmp: Path) -> list[tuple[str, Path, dict]]:
+def unpaired(
+    project: str, identity: str, frozen: set[str], cannot: set[str], tmp: Path
+) -> list[tuple[str, Path, dict]]:
     """The report folders `collect.freeze` did not pair with the strategy by its identity.
 
     Args:
@@ -183,7 +225,9 @@ def unpaired(project: str, identity: str, frozen: set[str], cannot: set[str],
         `cannot` goes whole to the population. Any other is another strategy's and is left.
     """
     found = []
-    for folder in sorted(p for p in (DATA / "reports" / project).glob("*/*/*") if p.is_dir()):
+    for folder in sorted(
+        p for p in (DATA / "reports" / project).glob("*/*/*") if p.is_dir()
+    ):
         databank, day, study = folder.parts[-3:]
         rel = f"{databank}/{day}/{study}"
         known = names(project, databank, day, identity)
@@ -191,8 +235,12 @@ def unpaired(project: str, identity: str, frozen: set[str], cannot: set[str],
             continue
         own, pop = tmp / rel / "own", tmp / rel / "pop"
         for path in sorted(p for p in folder.iterdir() if p.suffix in TABLES and known):
-            if cut(path, known, own) == len(extra.table(path)):   # nobody else's rows: not a cut
-                (own / path.name).unlink(missing_ok=True)   # a header-only table cut nothing
+            if cut(path, known, own) == len(
+                extra.table(path)
+            ):  # nobody else's rows: not a cut
+                (own / path.name).unlink(
+                    missing_ok=True
+                )  # a header-only table cut nothing
         for page in (folder / "estrategias" / f"{n}.json" for n in sorted(known)):
             if page.exists():
                 (own / "estrategias").mkdir(parents=True, exist_ok=True)
@@ -201,5 +249,11 @@ def unpaired(project: str, identity: str, frozen: set[str], cannot: set[str],
         if own.exists() and any(own.iterdir()):
             found.append((f"{study}.{databank}.{day}", own, about))
         if leftovers(folder, own, pop):
-            found.append((f"{study}.{databank}.{day}.poblacion", pop, about | {"population": True}))
+            found.append(
+                (
+                    f"{study}.{databank}.{day}.poblacion",
+                    pop,
+                    about | {"population": True},
+                )
+            )
     return found

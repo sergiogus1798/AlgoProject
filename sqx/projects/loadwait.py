@@ -18,7 +18,9 @@ def loaded(role: str, since: tuple, seconds: float, poll: float, what: str) -> N
         if "Strategies loaded" in live.tail(role, since):
             return
         if time.monotonic() > end:
-            raise SystemExit(f"SQX no registró «Strategies loaded» en {seconds} s tras el load de {what}")
+            raise SystemExit(
+                f"SQX no registró «Strategies loaded» en {seconds} s tras el load de {what}"
+            )
         time.sleep(poll)
 
 
@@ -35,4 +37,6 @@ def booted(role: str, launch: Callable[[], object], seconds: int = 300) -> None:
             return
         time.sleep(1)
     live.kill(role)
-    raise SystemExit(f"{role}: SQX no escribió «APP LOADED» en {seconds} s; sesión matada por PID, no se arranca ninguna tarea")
+    raise SystemExit(
+        f"{role}: SQX no escribió «APP LOADED» en {seconds} s; sesión matada por PID, no se arranca ninguna tarea"
+    )

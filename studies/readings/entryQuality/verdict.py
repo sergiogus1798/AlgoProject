@@ -8,9 +8,9 @@ from studies.readings.entryQuality.eratio import Band
 MEANS = {
     "signal": "la entrada predice movimiento favorable por encima del azar con su mismo horario",
     "no_signal": "la entrada no se distingue de entrar al azar a las mismas horas: lo que gana "
-                 "viene de las salidas o de la deriva del mercado",
+    "viene de las salidas o de la deriva del mercado",
     "latency_fragile": "una barra de retraso se lleva una parte grande del edge bruto: o es "
-                       "frágil a la latencia, o hay información del futuro en la entrada",
+    "frágil a la latencia, o hay información del futuro en la entrada",
     "latency_robust": "el edge sobrevive a entrar tarde",
 }
 
@@ -39,5 +39,8 @@ def latency(table: pd.DataFrame, threshold: float) -> str:
     Returns:
         One key of MEANS, read on the first delay in the table.
     """
-    return ("latency_fragile" if abs(table["DCR"].iloc[0]) >= threshold
-            else "latency_robust")
+    return (
+        "latency_fragile"
+        if abs(table["DCR"].iloc[0]) >= threshold
+        else "latency_robust"
+    )

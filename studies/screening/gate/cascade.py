@@ -6,7 +6,7 @@ from pipeline.autopilot import criteria
 from studies.screening.gate import inputs, level3ab
 from studies.screening.gate.levels import LEVELS
 
-PREFIX = "gate.scorecard."     # a scorecard column as the fact criteria.yaml names
+PREFIX = "gate.scorecard."  # a scorecard column as the fact criteria.yaml names
 
 
 def population(data: dict) -> pd.DataFrame:
@@ -30,7 +30,11 @@ def placed(rules: list[dict]) -> dict[int, list[dict]]:
 
     A rule on a fact no level produces (another study's) is the judge's alone: left out.
     """
-    at = {PREFIX + fact: i for i, (_, module) in enumerate(LEVELS) for fact in module.FACTS}
+    at = {
+        PREFIX + fact: i
+        for i, (_, module) in enumerate(LEVELS)
+        for fact in module.FACTS
+    }
     out: dict[int, list[dict]] = {}
     for rule in rules:
         facts = criteria.reads([rule])
@@ -47,14 +51,16 @@ def label(rule: dict) -> str:
 
 def said(scores: pd.DataFrame, rule: dict, who: pd.Index) -> dict[str, tuple[str, str]]:
     """One rule over the strategies `who`, by `criteria.judged`: id → (state, `fact=value`)."""
-    cols: dict[str, pd.Series] = {f: pd.Series(scores[f.removeprefix(PREFIX)])
-                                  for f in criteria.reads([rule])}
+    cols: dict[str, pd.Series] = {
+        f: pd.Series(scores[f.removeprefix(PREFIX)]) for f in criteria.reads([rule])
+    }
     medians = pd.Series({f: pd.Series(col[who]).median() for f, col in cols.items()})
     return {w: criteria.judged(rule, cols, w, medians) for w in who}
 
 
-def run(data: dict, cfg: dict, rules: list[dict], start: str = "0",
-        say: bool = True) -> tuple[pd.DataFrame, pd.DataFrame]:
+def run(
+    data: dict, cfg: dict, rules: list[dict], start: str = "0", say: bool = True
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """The cascade over one harvest: level by level, the step-8 rules of each right after it.
 
     Args:
@@ -88,34 +94,51 @@ def run(data: dict, cfg: dict, rules: list[dict], start: str = "0",
     funnel: list[dict]
     if first:
         kept = [fact for _, module in LEVELS[:first] for fact in module.FACTS]
-        scores = pd.DataFrame(pd.read_parquet(out / "scorecard.parquet")[
-            ["strategy", "strategy_build", "cayo_nivel", "cayo_regla", *kept]])
-        scores.loc[scores["cayo_nivel"].isin(order[first:]), ["cayo_nivel", "cayo_regla"]] = None
+        scores = pd.DataFrame(
+            pd.read_parquet(out / "scorecard.parquet")[
+                ["strategy", "strategy_build", "cayo_nivel", "cayo_regla", *kept]
+            ]
+        )
+        scores.loc[
+            scores["cayo_nivel"].isin(order[first:]), ["cayo_nivel", "cayo_regla"]
+        ] = None
         shown = pd.read_csv(out / "funnel.csv")
-        funnel = pd.DataFrame(shown[shown["level"].astype(str).isin(order[:first])]).to_dict("records")
+        funnel = pd.DataFrame(
+            shown[shown["level"].astype(str).isin(order[:first])]
+        ).to_dict("records")
         data["oos"] = pd.read_parquet(out / "operaciones.parquet")
     else:
         scores, funnel = population(data).assign(cayo_nivel=None, cayo_regla=None), []
     standing = pd.Index(scores.index[scores["cayo_nivel"].isna().to_numpy()])
     for i, (level, module) in enumerate(LEVELS[first:], first):
         alive = standing if cfg["cascade"]["on"] else scores.index
-        if module is level3ab:      # R6's build P/L, repriced only for who got this far
+        if module is level3ab:  # R6's build P/L, repriced only for who got this far
             data["build"] = inputs.build_pnl(data, alive)
         got = module.run(data if len(alive) else {}, alive, cfg)
-        for fact in got:            # joined on identity: a level may return more than `alive`
+        for fact in got:  # joined on identity: a level may return more than `alive`
             scores.loc[got.index, fact] = got[fact]
         for rule in rules_at.get(i, []):
             got = said(scores, rule, standing)
             fell = [who for who, (state, _) in got.items() if state == "fail"]
             scores.loc[fell, "cayo_nivel"] = level
             scores.loc[fell, "cayo_regla"] = [got[who][1] for who in fell]
-            funnel.append({"level": level, "screen": label(rule), "kind": "hard",
-                           "entered": len(standing), "passed": len(standing) - len(fell),
-                           "limbo": sum(state == "limbo" for state, _ in got.values()),
-                           "died": len(fell)})
+            funnel.append(
+                {
+                    "level": level,
+                    "screen": label(rule),
+                    "kind": "hard",
+                    "entered": len(standing),
+                    "passed": len(standing) - len(fell),
+                    "limbo": sum(state == "limbo" for state, _ in got.values()),
+                    "died": len(fell),
+                }
+            )
             if say:
-                print(f"nivel {level:3s} {funnel[-1]['screen']:44s} entran {len(standing):5d} "
-                      f"limbo {funnel[-1]['limbo']:5d} caen {len(fell):5d}", flush=True)
+                print(
+                    f"nivel {level:3s} {funnel[-1]['screen']:44s} entran {len(standing):5d} "
+                    f"limbo {funnel[-1]['limbo']:5d} caen {len(fell):5d}",
+                    flush=True,
+                )
             standing = standing.difference(fell)
         scores.to_parquet(out / "scorecard.parquet", compression="zstd")
         pd.DataFrame(funnel).to_csv(out / "funnel.csv", index=False)
@@ -124,8 +147,9 @@ def run(data: dict, cfg: dict, rules: list[dict], start: str = "0",
         for who, (state, text) in said(scores, rule, standing).items():
             doubts[who] += [text] if state == "limbo" else []
     scores["survives"] = scores["cayo_nivel"].isna()
-    scores["limbo"] = pd.Series({who: "; ".join(texts) for who, texts in doubts.items()},
-                                dtype=object)
+    scores["limbo"] = pd.Series(
+        {who: "; ".join(texts) for who, texts in doubts.items()}, dtype=object
+    )
     return scores, pd.DataFrame(funnel)
 
 
@@ -145,9 +169,19 @@ def verdict(scores: pd.DataFrame, side: str) -> pd.DataFrame:
         the number that failed it, so a cut can be read a month later without rerunning.
     """
     named = pd.DataFrame(scores[scores[side].notna()])
-    reason = ["" if alive else f"nivel {level}: {rule}" for alive, level, rule in
-              zip(named["survives"], named["cayo_nivel"], named["cayo_regla"])]
-    return pd.DataFrame({"strategy": named[side].to_numpy(),
-                         "verdict": pd.Series(named["survives"]).map(
-                             {True: "MANTENER", False: "DESCARTAR"}).to_numpy(),
-                         "identity": named.index, "reason": reason})
+    reason = [
+        "" if alive else f"nivel {level}: {rule}"
+        for alive, level, rule in zip(
+            named["survives"], named["cayo_nivel"], named["cayo_regla"]
+        )
+    ]
+    return pd.DataFrame(
+        {
+            "strategy": named[side].to_numpy(),
+            "verdict": pd.Series(named["survives"])
+            .map({True: "MANTENER", False: "DESCARTAR"})
+            .to_numpy(),
+            "identity": named.index,
+            "reason": reason,
+        }
+    )

@@ -13,9 +13,15 @@ from studies.research.memory.sources import CONFIG
 
 NUMBERS = ("trades_per_year", "holding_hours")
 TEXTS = ("not_where", "kills")
-BLANK = {"sheet_trades_per_year": "", "built_trades_per_year": "", "trades_ratio": "",
-         "sheet_holding_hours": "", "built_holding_hours": "", "holding_ratio": "",
-         "hypothesis": ""}
+BLANK = {
+    "sheet_trades_per_year": "",
+    "built_trades_per_year": "",
+    "trades_ratio": "",
+    "sheet_holding_hours": "",
+    "built_holding_hours": "",
+    "holding_ratio": "",
+    "hypothesis": "",
+}
 
 
 def problems(sheet: dict) -> list[str]:
@@ -26,16 +32,22 @@ def problems(sheet: dict) -> list[str]:
             strategy's in-sample trades a year and hours from entry to exit, by the clock),
             `not_where` (where the idea should NOT work) and `kills` (the result that kills it).
     """
-    out = [f"la hoja no dice «{k}» con un número mayor que cero" for k in NUMBERS
-           if not (isinstance(sheet.get(k), (int, float)) and sheet[k] > 0)]
-    return out + [f"la hoja no dice «{k}»" for k in TEXTS if not str(sheet.get(k, "")).strip()]
+    out = [
+        f"la hoja no dice «{k}» con un número mayor que cero"
+        for k in NUMBERS
+        if not (isinstance(sheet.get(k), (int, float)) and sheet[k] > 0)
+    ]
+    return out + [
+        f"la hoja no dice «{k}»" for k in TEXTS if not str(sheet.get(k, "")).strip()
+    ]
 
 
 def seal(sheet: dict) -> str:
     """A sheet's fingerprint: its four fields hashed, so a prediction moved after the build shows."""
     fields = {k: sheet[k] for k in NUMBERS + TEXTS}
-    return hashlib.sha256(json.dumps(fields, sort_keys=True, ensure_ascii=False)
-                          .encode("utf-8")).hexdigest()[:16]
+    return hashlib.sha256(
+        json.dumps(fields, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    ).hexdigest()[:16]
 
 
 def proposals_dir() -> Path:
@@ -52,7 +64,10 @@ def sealed(idea: str) -> dict | None:
     for path in sorted(proposals_dir().glob("[0-9]*.json"), reverse=True):
         for i in json.loads(path.read_text(encoding="utf-8"))["ideas"]:
             if i["name"] == idea and "sheet" in i:
-                return {"sheet": i["sheet"], "intact": seal(i["sheet"]) == i["sheet_seal"]}
+                return {
+                    "sheet": i["sheet"],
+                    "intact": seal(i["sheet"]) == i["sheet_seal"],
+                }
     return None
 
 
@@ -76,11 +91,15 @@ def built(trades: pd.DataFrame) -> Built:
         last exit, a little under the build window; the hours are by the clock, weekends in.
     """
     mine = pd.DataFrame(trades[trades["Sample type"].astype(str).str.startswith("IS")])
-    years = (mine["Close time"].max() - mine["Open time"].min()).total_seconds() / (365.25 * 86400)
+    years = (mine["Close time"].max() - mine["Open time"].min()).total_seconds() / (
+        365.25 * 86400
+    )
     hours = (mine["Close time"] - mine["Open time"]).dt.total_seconds() / 3600
     by = mine["strategy"].astype(str)
-    return {"trades_per_year": float((by.value_counts() / years).median()),
-            "holding_hours": float(hours.groupby(by).median().median())}
+    return {
+        "trades_per_year": float((by.value_counts() / years).median()),
+        "holding_hours": float(hours.groupby(by).median().median()),
+    }
 
 
 def compare(sheet: dict, got: Built, tolerance: float | str) -> dict[str, Any]:
@@ -97,14 +116,22 @@ def compare(sheet: dict, got: Built, tolerance: float | str) -> dict[str, Any]:
         (built ÷ predicted) and `hypothesis`: pending, match or mismatch.
     """
     ratio = {k: got[k] / sheet[k] for k in NUMBERS}
-    off = tolerance != "pending" and any(r > float(tolerance) or r < 1 / float(tolerance) for r in ratio.values())
-    return {"sheet_trades_per_year": sheet["trades_per_year"],
-            "built_trades_per_year": round(got["trades_per_year"], 1),
-            "trades_ratio": round(ratio["trades_per_year"], 2),
-            "sheet_holding_hours": sheet["holding_hours"],
-            "built_holding_hours": round(got["holding_hours"], 1),
-            "holding_ratio": round(ratio["holding_hours"], 2),
-            "hypothesis": "pending" if tolerance == "pending" else "mismatch" if off else "match"}
+    off = tolerance != "pending" and any(
+        r > float(tolerance) or r < 1 / float(tolerance) for r in ratio.values()
+    )
+    return {
+        "sheet_trades_per_year": sheet["trades_per_year"],
+        "built_trades_per_year": round(got["trades_per_year"], 1),
+        "trades_ratio": round(ratio["trades_per_year"], 2),
+        "sheet_holding_hours": sheet["holding_hours"],
+        "built_holding_hours": round(got["holding_hours"], 1),
+        "holding_ratio": round(ratio["holding_hours"], 2),
+        "hypothesis": "pending"
+        if tolerance == "pending"
+        else "mismatch"
+        if off
+        else "match",
+    }
 
 
 def reading(idea: str, project: str) -> dict[str, Any]:
@@ -117,7 +144,15 @@ def reading(idea: str, project: str) -> dict[str, Any]:
     if not found["intact"]:
         return BLANK | {"hypothesis": "altered"}
     cfg = CONFIG["sheet"]
-    exports = sorted(export_dir(project, cfg["databank"], "x").parent.glob("*/trades.parquet"))
+    exports = sorted(
+        export_dir(project, cfg["databank"], "x").parent.glob("*/trades.parquet")
+    )
     if not exports:
-        return BLANK | {"hypothesis": "no_data"} | {f"sheet_{k}": found["sheet"][k] for k in NUMBERS}
-    return compare(found["sheet"], built(pd.read_parquet(exports[-1])), cfg["tolerance"])
+        return (
+            BLANK
+            | {"hypothesis": "no_data"}
+            | {f"sheet_{k}": found["sheet"][k] for k in NUMBERS}
+        )
+    return compare(
+        found["sheet"], built(pd.read_parquet(exports[-1])), cfg["tolerance"]
+    )

@@ -8,16 +8,26 @@ from pathlib import Path
 from typing import Any, TypedDict, TypeVar
 
 MEMBER = "optimizationProfile.bin"
-COLUMNS = {int(k): v for k, v in
-           json.loads((Path(__file__).parent / "optprofile_columns.json").read_text(encoding="utf-8")).items()}
-STATS = json.loads((Path(__file__).parent / "sqxstats_columns.json").read_text(encoding="utf-8"))
+COLUMNS = {
+    int(k): v
+    for k, v in json.loads(
+        (Path(__file__).parent / "optprofile_columns.json").read_text(encoding="utf-8")
+    ).items()
+}
+STATS = json.loads(
+    (Path(__file__).parent / "sqxstats_columns.json").read_text(encoding="utf-8")
+)
 ARRAY = {1: "i", 2: "l", 3: "f"}
-_SLOT = {(kind, slot): STATS.get(f"{code}:{slot}", f"stat:{code}:{slot}")
-         for kind, code in ARRAY.items() for slot in range(256)}
+_SLOT = {
+    (kind, slot): STATS.get(f"{code}:{slot}", f"stat:{code}:{slot}")
+    for kind, code in ARRAY.items()
+    for slot in range(256)
+}
 # Bound once: a profile of 10,000 permutations is ~5 M of these reads, and slicing a new bytes
 # object for each one was 38 M calls and 15 s for eight strategies (🔬 2026-09-26).
-_I32, _I64, _F64, _F32, _U16 = (struct.Struct(f).unpack_from
-                                for f in (">i", ">q", ">d", ">f", ">H"))
+_I32, _I64, _F64, _F32, _U16 = (
+    struct.Struct(f).unpack_from for f in (">i", ">q", ">d", ">f", ">H")
+)
 
 
 def _payload(path: Path) -> bytes:
@@ -34,12 +44,12 @@ def _payload(path: Path) -> bytes:
     i, buf = 4, bytearray()
     while i < len(raw):
         if raw[i] == 0x7A:
-            size = struct.unpack(">i", raw[i + 1:i + 5])[0]
-            buf += raw[i + 5:i + 5 + size]
+            size = struct.unpack(">i", raw[i + 1 : i + 5])[0]
+            buf += raw[i + 5 : i + 5 + size]
             i += 5 + size
         elif raw[i] == 0x77:
             size = raw[i + 1]
-            buf += raw[i + 2:i + 2 + size]
+            buf += raw[i + 2 : i + 2 + size]
             i += 2 + size
         else:
             break
@@ -52,7 +62,7 @@ def _sq_text(data: bytes, at: int) -> tuple[str, int]:
         size, at = _U16(data, at + 1)[0], at + 3
     else:
         size, at = _I32(data, at + 1)[0], at + 5
-    return data[at:at + size].decode("utf8"), at + size
+    return data[at : at + size].decode("utf8"), at + size
 
 
 T = TypeVar("T")
@@ -70,7 +80,7 @@ class _Reader:
 
     def __init__(self, data: bytes) -> None:
         """Args:
-            data: The unframed payload to walk.
+        data: The unframed payload to walk.
         """
         self.data, self.at = data, 0
 
@@ -93,7 +103,7 @@ class _Reader:
         """Returns: The next writeUTF string — a 2-byte length then UTF-8."""
         size = _U16(self.data, self.at)[0]
         self.at += 2 + size
-        return self.data[self.at - size:self.at].decode("utf8")
+        return self.data[self.at - size : self.at].decode("utf8")
 
     def sq_text(self) -> str:
         """Returns: The next `SQUtils.writeUTF` string — a marker byte, then a 2-byte
@@ -147,8 +157,10 @@ class _Reader:
             that no longer resolves, so the names come from the calibrated COLUMNS table;
             a key it does not hold is reported as id:<key>.
         """
-        return {COLUMNS.get(k, f"id:{k}"): v
-                for k, v in ((self.int32(), value()) for _ in range(self.int32()))}
+        return {
+            COLUMNS.get(k, f"id:{k}"): v
+            for k, v in ((self.int32(), value()) for _ in range(self.int32()))
+        }
 
 
 def read(path: Path) -> dict[str, Any]:
@@ -181,10 +193,25 @@ def read(path: Path) -> dict[str, Any]:
     out["charts"] = r.keyed(lambda: json.loads(r.text()))
     out["params"] = json.loads(r.text())
     json.loads(r.text())
-    out |= dict(zip(("permutations", "profitable", "losing", "last_count", "zero"),
-                    (r.int32() for _ in range(5))))
-    out |= dict(zip(("profitable_pct", "avg_profit", "uniform_changes", "top_profit",
-                     "stdev", "stdev_computed"), (r.double() for _ in range(6))))
+    out |= dict(
+        zip(
+            ("permutations", "profitable", "losing", "last_count", "zero"),
+            (r.int32() for _ in range(5)),
+        )
+    )
+    out |= dict(
+        zip(
+            (
+                "profitable_pct",
+                "avg_profit",
+                "uniform_changes",
+                "top_profit",
+                "stdev",
+                "stdev_computed",
+            ),
+            (r.double() for _ in range(6)),
+        )
+    )
     out["distribution"] = json.loads(r.text())
     return out
 
@@ -203,7 +230,13 @@ def histogram(chart: dict) -> list[dict]:
     """
     sets = {d["label"]: d["data"] for d in chart["chart"]["data"]["datasets"]}
     labels = chart["chart"]["data"]["labels"]
-    return [{"bin": i, "edge": labels[i], "frequency": int(float(sets["Frequency"][i])),
-             "is_median": float(sets["Median"][i]) > 0,
-             "is_orig": float(sets["Orig. value"][i]) > 0}
-            for i in range(len(labels))]
+    return [
+        {
+            "bin": i,
+            "edge": labels[i],
+            "frequency": int(float(sets["Frequency"][i])),
+            "is_median": float(sets["Median"][i]) > 0,
+            "is_orig": float(sets["Orig. value"][i]) > 0,
+        }
+        for i in range(len(labels))
+    ]

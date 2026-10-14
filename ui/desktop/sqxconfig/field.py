@@ -4,7 +4,14 @@ from typing import Any, cast
 
 import httpx
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QWidget
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QWidget,
+)
 
 from ui.desktop import client
 from ui.text.numbers import num
@@ -19,8 +26,16 @@ def shown(value: object) -> str:
 
 
 # What a fixed option says on screen; the value the file keeps is untouched.
-DISPLAY: dict[str, str] = {"D": "Day", "W": "Week", "ME": "Month", "sharpe": "Sharpe", "sortino": "Sortino",
-           "year": "año · year", "semester": "semestre · semester", "quarter": "trimestre · quarter"}
+DISPLAY: dict[str, str] = {
+    "D": "Day",
+    "W": "Week",
+    "ME": "Month",
+    "sharpe": "Sharpe",
+    "sortino": "Sortino",
+    "year": "año · year",
+    "semester": "semestre · semester",
+    "quarter": "trimestre · quarter",
+}
 
 
 def combo(options: list[dict[str, Any]], current: object) -> QComboBox:
@@ -59,7 +74,7 @@ class Field(QWidget):
 
     written = Signal(str)
     refused = Signal(str)
-    stale = Signal()   # the write changed what other editors show: the zone re-reads
+    stale = Signal()  # the write changed what other editors show: the zone re-reads
 
     def __init__(self, file: str, spec: dict) -> None:
         """Build the editor the spec asks for.
@@ -80,8 +95,8 @@ class Field(QWidget):
         """(Re)build the editor on `self.value`."""
         while self.row.count():
             item = self.row.takeAt(0)
-            if item.widget():          # the trailing stretch is an item with no widget
-                item.widget().hide()   # deleteLater alone leaves it painted until the loop runs
+            if item.widget():  # the trailing stretch is an item with no widget
+                item.widget().hide()  # deleteLater alone leaves it painted until the loop runs
                 item.widget().deleteLater()
         kind = self.spec["type"]
         if self.spec.get("locked"):
@@ -96,8 +111,13 @@ class Field(QWidget):
         elif kind == "choices":
             self.items()
         else:
-            edit = QLineEdit(", ".join(map(str, self.value)) if kind == "list"
-                             else "" if self.value is None else str(self.value))
+            edit = QLineEdit(
+                ", ".join(map(str, self.value))
+                if kind == "list"
+                else ""
+                if self.value is None
+                else str(self.value)
+            )
             edit.setMinimumWidth(220)
             if kind == "list":
                 edit.setPlaceholderText("separados por comas")
@@ -125,13 +145,17 @@ class Field(QWidget):
         boxes = []
         for v in self.value:
             box = combo(self.spec["options"], v)
-            box.activated.connect(lambda _i: self.send([b.currentData() for b in boxes]))
+            box.activated.connect(
+                lambda _i: self.send([b.currentData() for b in boxes])
+            )
             boxes.append(box)
             self.row.addWidget(box)
         add, drop = QPushButton("+"), QPushButton("−")
         add.setToolTip("Añadir al final la primera opción que la lista aún no lleva")
         drop.setToolTip("Quitar el último elemento de la lista")
-        unused = [o["value"] for o in self.spec["options"] if o["value"] not in self.value]
+        unused = [
+            o["value"] for o in self.spec["options"] if o["value"] not in self.value
+        ]
         add.clicked.connect(lambda: self.send([*self.value, unused[0]]))
         add.setEnabled(bool(unused))
         drop.clicked.connect(lambda: self.send(self.value[:-1]))
@@ -141,11 +165,19 @@ class Field(QWidget):
 
     def typed(self, text: str) -> None:
         """A box lost focus: send it only when it says something new."""
-        now = (", ".join(map(str, self.value)) if self.spec["type"] == "list"
-               else "" if self.value is None else str(self.value))
+        now = (
+            ", ".join(map(str, self.value))
+            if self.spec["type"] == "list"
+            else ""
+            if self.value is None
+            else str(self.value)
+        )
         if text != now:
-            self.send([t.strip() for t in text.split(",") if t.strip()]
-                      if self.spec["type"] == "list" else text)
+            self.send(
+                [t.strip() for t in text.split(",") if t.strip()]
+                if self.spec["type"] == "list"
+                else text
+            )
 
     def send(self, value: object) -> None:
         """Ask the daemon to write the value; on a refusal put the editor back.
@@ -155,15 +187,19 @@ class Field(QWidget):
         """
         where = " › ".join(str(p) for p in self.spec["path"])
         try:
-            done = client.post("sqxconfig/value", {"file": self.file, "path": self.spec["path"],
-                                                   "value": value})
+            done = client.post(
+                "sqxconfig/value",
+                {"file": self.file, "path": self.spec["path"], "value": value},
+            )
         except httpx.HTTPStatusError as err:
             self.refused.emit(f"{where}: {err.response.json().get('detail', err)}")
             self.build()
             return
         self.value = done["value"]
-        self.written.emit(f"escrito en {done.get('where', 'assets')} · {where} = "
-                          f"{shown(self.value)}{done.get('note', '')}")
+        self.written.emit(
+            f"escrito en {done.get('where', 'assets')} · {where} = "
+            f"{shown(self.value)}{done.get('note', '')}"
+        )
         self.build()
         if done.get("reload"):
             self.stale.emit()

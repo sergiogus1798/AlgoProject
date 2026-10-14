@@ -59,8 +59,11 @@ def classify(symbol: str) -> dict[str, str]:
         {feed: category}. The base asset is not in it: it belongs to no category because it
         is the market the strategies were fitted on.
     """
-    return {m["feed"]: name for name, markets in load(symbol)["categories"].items()
-            for m in markets}
+    return {
+        m["feed"]: name
+        for name, markets in load(symbol)["categories"].items()
+        for m in markets
+    }
 
 
 def dates(symbol: str) -> dict[str, str]:
@@ -73,8 +76,11 @@ def dates(symbol: str) -> dict[str, str]:
         {feed: data_from}, stringified. Nothing is filtered on it; it is reported so the
         shrinking of the common window across markets is visible.
     """
-    return {m["feed"]: str(m["data_from"]) for markets in load(symbol)["categories"].values()
-            for m in markets}
+    return {
+        m["feed"]: str(m["data_from"])
+        for markets in load(symbol)["categories"].values()
+        for m in markets
+    }
 
 
 def declared(symbol: str) -> list[str]:
@@ -90,8 +96,9 @@ def declared(symbol: str) -> list[str]:
         works from universe(), which reconciles the declaration against what really ran.
     """
     spec = load(symbol)
-    return [spec["main"]] + [m["feed"] for markets_ in spec["categories"].values()
-                             for m in markets_]
+    return [spec["main"]] + [
+        m["feed"] for markets_ in spec["categories"].values() for m in markets_
+    ]
 
 
 def own_window(feed: str) -> dict[str, str] | None:
@@ -110,8 +117,10 @@ def own_window(feed: str) -> dict[str, str] | None:
         return None
     data = assetdata.load(owner)
     last = data["segments"]["oos1"]["to"]
-    return {"from": assetdata.segment_start(data, "build"),
-            "to": f"{last}-12-31" if isinstance(last, int) else str(last)}
+    return {
+        "from": assetdata.segment_start(data, "build"),
+        "to": f"{last}-12-31" if isinstance(last, int) else str(last),
+    }
 
 
 def universe(symbol: str, trades: Path) -> Universe:
@@ -137,14 +146,24 @@ def universe(symbol: str, trades: Path) -> Universe:
     spec = load(symbol)
     known, first = classify(symbol), dates(symbol)
     present = [f for f in discovered(trades) if f != spec["main"]]
-    (timeframe,) = json.loads((trades.parent / "manifest.json").read_text(
-        encoding="utf-8"))["source"]["timeframes"]
-    return Universe(main=spec["main"], timeframe=timeframe,
-                    markets=[{"feed": f, "category": known.get(f, UNCLASSIFIED),
-                              "data_from": first.get(f, "unknown"),
-                              "window_from": (own_window(f) or {}).get("from"),
-                              "window_to": (own_window(f) or {}).get("to")} for f in present],
-                    absent=sorted(set(known) - set(present)))
+    (timeframe,) = json.loads(
+        (trades.parent / "manifest.json").read_text(encoding="utf-8")
+    )["source"]["timeframes"]
+    return Universe(
+        main=spec["main"],
+        timeframe=timeframe,
+        markets=[
+            {
+                "feed": f,
+                "category": known.get(f, UNCLASSIFIED),
+                "data_from": first.get(f, "unknown"),
+                "window_from": (own_window(f) or {}).get("from"),
+                "window_to": (own_window(f) or {}).get("to"),
+            }
+            for f in present
+        ],
+        absent=sorted(set(known) - set(present)),
+    )
 
 
 def feeds(universe_: Universe) -> list[str]:
@@ -158,4 +177,3 @@ def feeds(universe_: Universe) -> list[str]:
         is never tested against its own null, because it is reported as the reference case.
     """
     return [universe_["main"]] + [m["feed"] for m in universe_["markets"]]
-

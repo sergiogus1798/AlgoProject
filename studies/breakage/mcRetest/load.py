@@ -46,12 +46,23 @@ def load(project: str, databank: str, day: str) -> Loaded:
     folder = store.root(**keys)
     source = manifest.read(folder)["source"]
     provenance = source["tasks"]
-    identity = {key.split("/", 1)[1]: entry.get("identity")
-                for key, entry in provenance.items()}
+    identity = {
+        key.split("/", 1)[1]: entry.get("identity") for key, entry in provenance.items()
+    }
     trades = store.load_trades(**keys) if (folder / store.TRADES).exists() else None
-    return {"keys": keys, "sims": store.load_sims(**keys),
-            "original": store.load_original(**keys), "levels": store.load_levels(project, databank, day),
-            "provenance": provenance, "identity": identity, "trades": trades,
-            "asset": source.get("asset"), "folder": folder,
-            "t1": {name: got for name in identity
-                   if (got := neighbours.facts(project, day, name)) is not None}}
+    return {
+        "keys": keys,
+        "sims": store.load_sims(**keys),
+        "original": store.load_original(**keys),
+        "levels": store.load_levels(project, databank, day),
+        "provenance": provenance,
+        "identity": identity,
+        "trades": trades,
+        "asset": source.get("asset"),
+        "folder": folder,
+        "t1": {
+            name: got
+            for name in identity
+            if (got := neighbours.facts(project, day, name)) is not None
+        },
+    }

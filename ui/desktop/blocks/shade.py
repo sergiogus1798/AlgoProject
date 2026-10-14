@@ -9,7 +9,14 @@ from ui.desktop.blocks.states import colour
 from ui.text.numbers import num
 
 
-def sign_shade(p: QPainter, box: QRectF, x: Callable[[float], float], lo: float, hi: float, pivot: float = 0.0) -> None:
+def sign_shade(
+    p: QPainter,
+    box: QRectF,
+    x: Callable[[float], float],
+    lo: float,
+    hi: float,
+    pivot: float = 0.0,
+) -> None:
     """Paint red left of `pivot` and green right of it, when the axis [lo, hi] crosses it.
 
     Args:
@@ -31,4 +38,6 @@ def sign_shade(p: QPainter, box: QRectF, x: Callable[[float], float], lo: float,
 
 def caption(share: float, pivot: float = 0.0) -> str:
     """«X % rentables» for pivot 0, «X % por encima de P» otherwise (share is 0..1)."""
-    return f"{num(100 * share, '%')} " + ("rentables" if not pivot else f"por encima de {num(pivot)}")
+    return f"{num(100 * share, '%')} " + (
+        "rentables" if not pivot else f"por encima de {num(pivot)}"
+    )

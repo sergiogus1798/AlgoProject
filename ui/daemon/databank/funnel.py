@@ -55,11 +55,23 @@ def gate_rows(project: str) -> tuple[list[FunnelRow], str]:
     for r in table.to_dict("records"):
         limbo = int(r.get("limbo", 0))
         # a report written before encargo 44 has no `level`: its rows are the old screens
-        rows.append({"level": str(r["level"]) if bool(pd.notna(r.get("level"))) else "", "screen": r["screen"], "kind": r["kind"],
-                     "entered": int(r["entered"]), "limbo": limbo, "passed": int(r["passed"]),
-                     "died": int(r["died"]), "state": "hecho",
-                     "why": f"nivel {r['level']}: {limbo} en Limbo, siguen" if limbo and r.get("level")
-                     else f"nivel {r['level']}" if r.get("level") else ""})
+        rows.append(
+            {
+                "level": str(r["level"]) if bool(pd.notna(r.get("level"))) else "",
+                "screen": r["screen"],
+                "kind": r["kind"],
+                "entered": int(r["entered"]),
+                "limbo": limbo,
+                "passed": int(r["passed"]),
+                "died": int(r["died"]),
+                "state": "hecho",
+                "why": f"nivel {r['level']}: {limbo} en Limbo, siguen"
+                if limbo and r.get("level")
+                else f"nivel {r['level']}"
+                if r.get("level")
+                else "",
+            }
+        )
     return rows, f"{bank} del {day}"
 
 
@@ -78,18 +90,43 @@ def funnel(project: str) -> Funnel:
     """
     rows, source = gate_rows(project)
     if rows:
-        rows.insert(0, {"screen": "Build", "kind": "build", "entered": rows[0]["entered"],
-                        "passed": rows[0]["entered"], "died": 0, "state": "hecho",
-                        "why": "la población del build que el gate juzgó"})
+        rows.insert(
+            0,
+            {
+                "screen": "Build",
+                "kind": "build",
+                "entered": rows[0]["entered"],
+                "passed": rows[0]["entered"],
+                "died": 0,
+                "state": "hecho",
+                "why": "la población del build que el gate juzgó",
+            },
+        )
     for step in workflow(project)["steps"]:
         if step["kind"] != "python" or float(step["n"]) <= 8:
             continue
         if step["state"] == "done" and step["in"] is not None:
-            rows.append({"screen": step["title"], "kind": "step", "entered": step["in"],
-                         "passed": step["out"], "died": step["in"] - step["out"],
-                         "state": "hecho", "why": step["why"]})
+            rows.append(
+                {
+                    "screen": step["title"],
+                    "kind": "step",
+                    "entered": step["in"],
+                    "passed": step["out"],
+                    "died": step["in"] - step["out"],
+                    "state": "hecho",
+                    "why": step["why"],
+                }
+            )
         elif step["state"] in WAITING:
-            rows.append({"screen": step["title"], "kind": "step", "entered": None,
-                         "passed": None, "died": None, "state": WAITING[step["state"]],
-                         "why": step["why"]})
+            rows.append(
+                {
+                    "screen": step["title"],
+                    "kind": "step",
+                    "entered": None,
+                    "passed": None,
+                    "died": None,
+                    "state": WAITING[step["state"]],
+                    "why": step["why"],
+                }
+            )
     return {"project": project, "rows": rows, "source": source}

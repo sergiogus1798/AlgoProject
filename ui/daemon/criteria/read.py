@@ -17,12 +17,14 @@ from ui.text.glossary import label
 
 # The file the autopilot judges with and the history of what the window changed in it. A dict
 # so a test points both at copies.
-FILES = {"criteria": ROOT / "pipeline" / "autopilot" / "criteria.yaml",
-         "history": ROOT / "ledger" / "criteria-history.jsonl",
-         "offered": ROOT / "pipeline" / "autopilot" / "offered.yaml"}
+FILES = {
+    "criteria": ROOT / "pipeline" / "autopilot" / "criteria.yaml",
+    "history": ROOT / "ledger" / "criteria-history.jsonl",
+    "offered": ROOT / "pipeline" / "autopilot" / "offered.yaml",
+}
 WORDS = {"pass": "Aprobado", "fail": "Suspenso"}
 GROUPS = {"all": "Todas", "any": "Alguna"}
-SHOWN = 30      # history rows sent to the window, newest first
+SHOWN = 30  # history rows sent to the window, newest first
 
 
 def plain(node: object) -> Any:
@@ -53,7 +55,11 @@ def kind(rule: dict) -> str:
         return "Compuesto"
     if "is" in rule:
         return "Veredicto"
-    return "Métrica SQX" if "sqx" in rule["fact"].rsplit(".", 1)[-1].lower() else "Test de la app"
+    return (
+        "Métrica SQX"
+        if "sqx" in rule["fact"].rsplit(".", 1)[-1].lower()
+        else "Test de la app"
+    )
 
 
 def test(rule: dict) -> tuple[str, str]:
@@ -68,17 +74,26 @@ def test(rule: dict) -> tuple[str, str]:
     """
     if "all" in rule or "any" in rule:
         word = "all" if "all" in rule else "any"
-        parts = [f"{name(r['fact']) if 'fact' in r else GROUPS['all' if 'all' in r else 'any']} "
-                 f"{test(r)[0]}" for r in rule[word]]
+        parts = [
+            f"{name(r['fact']) if 'fact' in r else GROUPS['all' if 'all' in r else 'any']} "
+            f"{test(r)[0]}"
+            for r in rule[word]
+        ]
         return f"{GROUPS[word]}:\n" + "\n".join(parts), "—"
     other = "Si no cumple" if rule.get("else") == "limbo" else "—"
     if "is" in rule:
         return WORDS[rule["is"]], other
     if "near_median" in rule:
         band = "A ±{:g} % de la mediana".format
-        return (band(100 * rule["near_median"]),
-                band(100 * rule["limbo_near_median"]) if "limbo_near_median" in rule else other)
-    if "alpha" in rule:      # per-cell: the judge computes the line from B (criteria.thresholded)
+        return (
+            band(100 * rule["near_median"]),
+            band(100 * rule["limbo_near_median"])
+            if "limbo_near_median" in rule
+            else other,
+        )
+    if (
+        "alpha" in rule
+    ):  # per-cell: the judge computes the line from B (criteria.thresholded)
         return f"≥ Φ⁻¹(1 − {rule['alpha']:g}/B), B = lotes de su celda", other
     return str(rule["pass"]), str(rule.get("limbo", other))
 
@@ -96,13 +111,26 @@ def row(rule: dict) -> dict[str, Any]:
     """
     passes, limbo = test(rule)
     own = {k: v for k, v in rule.items() if k != "by"}
-    by = [f"{tags}: {' · limbo '.join(t for t in test(own | fields) if t != '—')}"
-          for tags, fields in (rule.get("by") or {}).items()]
+    by = [
+        f"{tags}: {' · limbo '.join(t for t in test(own | fields) if t != '—')}"
+        for tags, fields in (rule.get("by") or {}).items()
+    ]
     fact = rule.get("fact", "")
     parts = rule.get("all") or rule.get("any") or []
-    shown = name(fact) if fact else f"{GROUPS['all' if 'all' in rule else 'any']} de {len(parts)}"
-    return {"rule": rule, "label": rule.get("name") or shown, "tip": fact or passes,
-            "kind": kind(rule), "passes": passes, "limbo": limbo, "by": "; ".join(by)}
+    shown = (
+        name(fact)
+        if fact
+        else f"{GROUPS['all' if 'all' in rule else 'any']} de {len(parts)}"
+    )
+    return {
+        "rule": rule,
+        "label": rule.get("name") or shown,
+        "tip": fact or passes,
+        "kind": kind(rule),
+        "passes": passes,
+        "limbo": limbo,
+        "by": "; ".join(by),
+    }
 
 
 def offered(n: str, used: list[dict]) -> list[dict]:
@@ -117,11 +145,20 @@ def offered(n: str, used: list[dict]) -> list[dict]:
     """
     ruled = {r.get("fact") for r in used}
     listed = yaml.safe_load(FILES["offered"].read_text(encoding="utf-8")).get(n) or []
-    return [{"fact": o["fact"], "label": o["name"], "kind": "Test de la app", "passes": "—",
-             "limbo": "—", "by": "",
-             "tip": f"{o['fact']}\n\nDisponible, sin umbral todavía: no juzga hasta que se "
-                    f"le ponga uno. Lo que da sin ventaja: {o['card']}"}
-            for o in listed if o["fact"] not in ruled]
+    return [
+        {
+            "fact": o["fact"],
+            "label": o["name"],
+            "kind": "Test de la app",
+            "passes": "—",
+            "limbo": "—",
+            "by": "",
+            "tip": f"{o['fact']}\n\nDisponible, sin umbral todavía: no juzga hasta que se "
+            f"le ponga uno. Lo que da sin ventaja: {o['card']}",
+        }
+        for o in listed
+        if o["fact"] not in ruled
+    ]
 
 
 def menu(n: str, used: list[dict]) -> list[dict]:
@@ -136,15 +173,30 @@ def menu(n: str, used: list[dict]) -> list[dict]:
         `{fact, label, sqx}` sorted by label. Empty for a step no run has gathered yet: the
         dialog still takes a key typed by hand.
     """
-    found = sorted(autopilot_runs().glob(f"*/*/paso-{n}/hechos.parquet"),
-                   key=lambda p: p.parts[-3])
-    keys = set(pq.read_table(found[-1], columns=["key"]).column("key").unique().to_pylist()) \
-        if found else set()
-    keys |= {r["fact"] for rule in used for r in [rule, *(rule.get("all") or rule.get("any") or [])]
-             if "fact" in r}
+    found = sorted(
+        autopilot_runs().glob(f"*/*/paso-{n}/hechos.parquet"), key=lambda p: p.parts[-3]
+    )
+    keys = (
+        set(
+            pq.read_table(found[-1], columns=["key"]).column("key").unique().to_pylist()
+        )
+        if found
+        else set()
+    )
+    keys |= {
+        r["fact"]
+        for rule in used
+        for r in [rule, *(rule.get("all") or rule.get("any") or [])]
+        if "fact" in r
+    }
     keys |= {o["fact"] for o in offered(n, [])}
-    return sorted(({"fact": k, "label": name(k), "sqx": "sqx" in k.rsplit(".", 1)[-1].lower()}
-                   for k in keys), key=lambda f: (f["label"], f["fact"]))
+    return sorted(
+        (
+            {"fact": k, "label": name(k), "sqx": "sqx" in k.rsplit(".", 1)[-1].lower()}
+            for k in keys
+        ),
+        key=lambda f: (f["label"], f["fact"]),
+    )
 
 
 def build() -> dict[str, Any]:
@@ -153,18 +205,34 @@ def build() -> dict[str, Any]:
     study = yaml.safe_load(buildfilters.STUDY.read_text(encoding="utf-8"))
     base, sample = study["defaults"], study["sample"]
     own = {**(study.get("classes") or {}), **(study.get("symbols") or {})}
-    per_year = " · ".join(f"{tf}: {v['min']:g}" + (f" a {v['max']:g}" if v.get("max") is not None else " o más")
-                          for tf, v in base["trades_per_year"].items())
-    rows = [("Operaciones por año", "NumberOfTrades", per_year),
-            ("Profit Factor", "ProfitFactor", f">= {base['profit_factor_min']:g}"),
-            ("Net Profit", "NetProfit", f"> {base['net_profit_min']:g}")]
+    per_year = " · ".join(
+        f"{tf}: {v['min']:g}"
+        + (f" a {v['max']:g}" if v.get("max") is not None else " o más")
+        for tf, v in base["trades_per_year"].items()
+    )
+    rows = [
+        ("Operaciones por año", "NumberOfTrades", per_year),
+        ("Profit Factor", "ProfitFactor", f">= {base['profit_factor_min']:g}"),
+        ("Net Profit", "NetProfit", f"> {base['net_profit_min']:g}"),
+    ]
     keys = ("trades_per_year", "profit_factor_min", "net_profit_min")
-    return {"where": "assets/_study.yaml", "rows": [
-        {"label": f"{text} · {sample}", "tip": f"{metric} ({sample}) — `{key}` de _study.yaml",
-         "kind": "Métrica SQX", "passes": passes, "limbo": "—",
-         "by": ", ".join(who for who, fields in own.items() if key in fields),
-         "why": "\n".join(f"{w}: {json.dumps(f[key])}" for w, f in own.items() if key in f)}
-        for (text, metric, passes), key in zip(rows, keys)]}
+    return {
+        "where": "assets/_study.yaml",
+        "rows": [
+            {
+                "label": f"{text} · {sample}",
+                "tip": f"{metric} ({sample}) — `{key}` de _study.yaml",
+                "kind": "Métrica SQX",
+                "passes": passes,
+                "limbo": "—",
+                "by": ", ".join(who for who, fields in own.items() if key in fields),
+                "why": "\n".join(
+                    f"{w}: {json.dumps(f[key])}" for w, f in own.items() if key in f
+                ),
+            }
+            for (text, metric, passes), key in zip(rows, keys)
+        ],
+    }
 
 
 def said(rule: object) -> str:
@@ -177,17 +245,21 @@ def said(rule: object) -> str:
         return "—" if rule is None else str(rule)
     if not rule or "sha" in rule:
         return "—"
-    if not ({"fact", "all", "any"} & rule.keys()):   # a setting, like `medoids`
+    if not ({"fact", "all", "any"} & rule.keys()):  # a setting, like `medoids`
         return "; ".join(f"{k} = {v}" for k, v in rule.items())
-    return f"{row(rule)['label']}: " + " · limbo ".join(t for t in test(rule) if t != "—")
+    return f"{row(rule)['label']}: " + " · limbo ".join(
+        t for t in test(rule) if t != "—"
+    )
 
 
 def history() -> list[dict]:
     """The newest changes the window wrote, newest first, `was` and `now` worded."""
     file = FILES["history"]
     lines = file.read_text(encoding="utf-8").splitlines() if file.exists() else []
-    return [h | {"was": said(h["before"]), "now": said(h["after"])}
-            for h in map(json.loads, lines[-SHOWN:][::-1])]
+    return [
+        h | {"was": said(h["before"]), "now": said(h["after"])}
+        for h in map(json.loads, lines[-SHOWN:][::-1])
+    ]
 
 
 def state() -> dict[str, Any]:
@@ -210,9 +282,21 @@ def state() -> dict[str, Any]:
         spec = doc["steps"].get(s["n"], {})
         rules = spec.get("rules") or []
         at = noted["steps"][s["n"]]["rules"].lc.data if rules else {}
-        steps.append({"n": s["n"], "title": s["title"], "cut": spec.get("cut"),
-                      "rows": [row(r) | {"why": hint(lines, at[i][0])}
-                               for i, r in enumerate(rules)],
-                      "facts": menu(s["n"], rules), "offered": offered(s["n"], rules)})
-    return {"frozen": frozen and {**frozen, "changed": frozen["sha"] != sha(doc["steps"])},
-            "build": build(), "steps": steps, "history": history()}
+        steps.append(
+            {
+                "n": s["n"],
+                "title": s["title"],
+                "cut": spec.get("cut"),
+                "rows": [
+                    row(r) | {"why": hint(lines, at[i][0])} for i, r in enumerate(rules)
+                ],
+                "facts": menu(s["n"], rules),
+                "offered": offered(s["n"], rules),
+            }
+        )
+    return {
+        "frozen": frozen and {**frozen, "changed": frozen["sha"] != sha(doc["steps"])},
+        "build": build(),
+        "steps": steps,
+        "history": history(),
+    }

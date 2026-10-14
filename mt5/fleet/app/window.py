@@ -1,4 +1,5 @@
 """MetaTracker's window: the five tabs over the fleet, the refresh timer and the desktop notifications."""
+
 import subprocess
 import time
 from datetime import datetime
@@ -20,14 +21,23 @@ def tab_index(name: str) -> int:
     """The position of a tab by its name, ignoring case and accents: «conciliacion» is the fifth."""
     plain = {"ó": "o", "á": "a"}
     key = "".join(plain.get(c, c) for c in name.lower())
-    return next(i for i, t in enumerate(TABS) if "".join(plain.get(c, c) for c in t.lower()) == key)
+    return next(
+        i
+        for i, t in enumerate(TABS)
+        if "".join(plain.get(c, c) for c in t.lower()) == key
+    )
 
 
 class Tracker(QWidget):
     """The window. It holds the tabs and the timer; every figure comes from `state.rows`."""
 
-    def __init__(self, at: int | None = None, notify: bool = True, tab: str = "Flota",
-                 account: int | None = None) -> None:
+    def __init__(
+        self,
+        at: int | None = None,
+        notify: bool = True,
+        tab: str = "Flota",
+        account: int | None = None,
+    ) -> None:
         """Build the window and paint it once.
 
         Args:
@@ -47,10 +57,17 @@ class Tracker(QWidget):
         title.setObjectName("title")
         self.clock = QLabel()
         self.clock.setObjectName("clock")
-        self.fleet, self.strategies, self.deploy = FleetTab(), StrategiesTab(), DeployTab()
+        self.fleet, self.strategies, self.deploy = (
+            FleetTab(),
+            StrategiesTab(),
+            DeployTab(),
+        )
         self.health, self.reconcile = HealthTab(), ReconcileTab()
         self.tabs = QTabWidget()
-        for page, name in zip((self.fleet, self.strategies, self.deploy, self.health, self.reconcile), TABS):
+        for page, name in zip(
+            (self.fleet, self.strategies, self.deploy, self.health, self.reconcile),
+            TABS,
+        ):
             self.tabs.addTab(page, name)
         self.tabs.setCurrentIndex(tab_index(tab))
         for w in (title, self.clock, self.tabs):
@@ -66,9 +83,11 @@ class Tracker(QWidget):
         """Re-read the files and repaint every tab, keeping the chosen account."""
         now = self.at or int(time.time())
         self.rows = state.rows(now)
-        self.clock.setText(f"Leído a las {datetime.fromtimestamp(now).strftime('%H:%M:%S')} · "
-                           f"{len(self.rows)} cuentas · se refresca cada {read.CFG['refresh_s']} s · "
-                           "las horas de las tablas son del reloj del servidor")
+        self.clock.setText(
+            f"Leído a las {datetime.fromtimestamp(now).strftime('%H:%M:%S')} · "
+            f"{len(self.rows)} cuentas · se refresca cada {read.CFG['refresh_s']} s · "
+            "las horas de las tablas son del reloj del servidor"
+        )
         self.fleet.paint(self.rows)
         self.strategies.paint(self.rows, now)
         self.deploy.paint(self.rows, now)
@@ -80,13 +99,27 @@ class Tracker(QWidget):
         """A desktop notification for each account whose light just turned red or silent."""
         for r in self.rows:
             login = r["beat"]["login"]
-            if self.notify and r["light"] in (state.RED, state.SILENT) and self.seen.get(login) != r["light"]:
-                subprocess.run(["notify-send", "-u", "critical", "MetaTracker",
-                                f"{fmt.who(r['beat'], r['stage'])}: {r['text']}"], check=False)
+            if (
+                self.notify
+                and r["light"] in (state.RED, state.SILENT)
+                and self.seen.get(login) != r["light"]
+            ):
+                subprocess.run(
+                    [
+                        "notify-send",
+                        "-u",
+                        "critical",
+                        "MetaTracker",
+                        f"{fmt.who(r['beat'], r['stage'])}: {r['text']}",
+                    ],
+                    check=False,
+                )
             self.seen[login] = r["light"]
 
     def fit(self) -> None:
         """Make the window tall enough to show the open tab whole, for a capture."""
         extra = self.height() - self.tabs.currentWidget().height()
         inner = self.tabs.currentWidget().findChild(QScrollArea).widget()  # pyright: ignore[reportAttributeAccessIssue]  # Qt: the open tab always holds a scroll page
-        self.resize(self.width(), max(self.height(), inner.sizeHint().height() + extra + 20))
+        self.resize(
+            self.width(), max(self.height(), inner.sizeHint().height() + extra + 20)
+        )

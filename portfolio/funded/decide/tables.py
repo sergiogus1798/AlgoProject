@@ -18,13 +18,14 @@ class BankTable(TypedDict):
     addons: list[dict]
 
 
-
 def read(folder: Path) -> BankTable:
     """One bank run: `folder`, `manifest`, `rows` and `addons` (lists of dicts, the parquet's columns)."""
-    return {"folder": folder,
-            "manifest": json.loads((folder / "manifest.json").read_text(encoding="utf-8")),
-            "rows": pd.read_parquet(folder / "table.parquet").to_dict("records"),
-            "addons": pd.read_parquet(folder / "addons.parquet").to_dict("records")}
+    return {
+        "folder": folder,
+        "manifest": json.loads((folder / "manifest.json").read_text(encoding="utf-8")),
+        "rows": pd.read_parquet(folder / "table.parquet").to_dict("records"),
+        "addons": pd.read_parquet(folder / "addons.parquet").to_dict("records"),
+    }
 
 
 def runs(root: Path | None = None) -> list[BankTable]:
@@ -57,6 +58,9 @@ def per_plan(tables: list[BankTable]) -> dict[str, dict]:
         for plan in dict.fromkeys(r["plan"] for r in table["rows"]):
             own = source.get("plan") == plan
             if plan not in out or (own and not out[plan]["own"]):
-                out[plan] = {"table": table, "own": own,
-                             "rows": [r for r in table["rows"] if r["plan"] == plan]}
+                out[plan] = {
+                    "table": table,
+                    "own": own,
+                    "rows": [r for r in table["rows"] if r["plan"] == plan],
+                }
     return out

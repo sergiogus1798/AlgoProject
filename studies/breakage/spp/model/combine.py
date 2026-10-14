@@ -8,21 +8,33 @@ import pandas as pd
 TRADING_DAYS = 252
 
 # Panel 1: histograms across the whole permutation grid. (SQX column, Spanish label, unit).
-METRICS = [("NetProfit", "Net Profit", "USD"), ("ProfitFactor", "Profit Factor", ""),
-           ("ReturnDDRatio", "Retorno/Drawdown", ""), ("Drawdown", "Max Drawdown", "USD"),
-           ("SharpeRatio", "Sharpe", ""), ("SortinoRatio", "Sortino", "")]
+METRICS = [
+    ("NetProfit", "Net Profit", "USD"),
+    ("ProfitFactor", "Profit Factor", ""),
+    ("ReturnDDRatio", "Retorno/Drawdown", ""),
+    ("Drawdown", "Max Drawdown", "USD"),
+    ("SharpeRatio", "Sharpe", ""),
+    ("SortinoRatio", "Sortino", ""),
+]
 
 # Panel 2: only metrics that do not grow with the sample's length (never Net Profit,
 # Drawdown or Ret/DD -- CONTRACT.md "Two samples, one histogram").
-TIME_FREE = [("SharpeRatio", "Sharpe", ""), ("SortinoRatio", "Sortino", ""),
-             ("ProfitFactor", "Profit Factor", ""), ("EdgeRatioInPips", "R/Edge ratio", "pips")]
+TIME_FREE = [
+    ("SharpeRatio", "Sharpe", ""),
+    ("SortinoRatio", "Sortino", ""),
+    ("ProfitFactor", "Profit Factor", ""),
+    ("EdgeRatioInPips", "R/Edge ratio", "pips"),
+]
 
 
 def _ratios(net: float, gp: float, gl: float, dd: float) -> dict[str, float]:
     """Profit Factor and Ret/DD rebuilt from the additive parts of a combined window."""
-    return {"NetProfit": net, "Drawdown": dd,
-            "ProfitFactor": gp / gl if gl else float("inf"),
-            "ReturnDDRatio": net / dd if dd else float("inf")}
+    return {
+        "NetProfit": net,
+        "Drawdown": dd,
+        "ProfitFactor": gp / gl if gl else float("inf"),
+        "ReturnDDRatio": net / dd if dd else float("inf"),
+    }
 
 
 def real_combined(is_row: pd.Series, oos_row: pd.Series) -> dict[str, float]:
@@ -72,13 +84,26 @@ def population(is_grid: pd.DataFrame, oos_grid: pd.DataFrame) -> dict[str, np.nd
     gp = a["GrossProfit"].to_numpy(float) + b["GrossProfit"].to_numpy(float)
     gl = a["GrossLoss"].to_numpy(float) + b["GrossLoss"].to_numpy(float)
     dd = a["Drawdown"].to_numpy(float) + b["Drawdown"].to_numpy(float)
-    return {"NetProfit": net, "Drawdown": dd,
-            "ProfitFactor": np.divide(gp, gl, out=np.full_like(gp, np.inf), where=gl > 0),
-            "ReturnDDRatio": np.divide(net, dd, out=np.full_like(net, np.inf), where=dd > 0),
-            "SharpeRatio": np.concatenate([is_grid["SharpeRatio"].to_numpy(float),
-                                           oos_grid["SharpeRatio"].to_numpy(float)]),
-            "SortinoRatio": np.concatenate([is_grid["SortinoRatio"].to_numpy(float),
-                                            oos_grid["SortinoRatio"].to_numpy(float)])}
+    return {
+        "NetProfit": net,
+        "Drawdown": dd,
+        "ProfitFactor": np.divide(gp, gl, out=np.full_like(gp, np.inf), where=gl > 0),
+        "ReturnDDRatio": np.divide(
+            net, dd, out=np.full_like(net, np.inf), where=dd > 0
+        ),
+        "SharpeRatio": np.concatenate(
+            [
+                is_grid["SharpeRatio"].to_numpy(float),
+                oos_grid["SharpeRatio"].to_numpy(float),
+            ]
+        ),
+        "SortinoRatio": np.concatenate(
+            [
+                is_grid["SortinoRatio"].to_numpy(float),
+                oos_grid["SortinoRatio"].to_numpy(float),
+            ]
+        ),
+    }
 
 
 def real_from_trades(trades: pd.DataFrame) -> dict[str, float]:
@@ -96,9 +121,20 @@ def real_from_trades(trades: pd.DataFrame) -> dict[str, float]:
         alone cannot give this because it holds no per-permutation trades.
     """
     day = pd.DatetimeIndex(trades["Close time"]).normalize() + pd.offsets.BDay(0)  # pyright: ignore[reportAttributeAccessIssue] -- pandas stubs omit DatetimeIndex.normalize
-    daily = pd.Series(trades["Profit/Loss"].to_numpy(dtype=float), index=day).groupby(level=0).sum()
-    daily = daily.reindex(pd.bdate_range(daily.index.min(), daily.index.max()), fill_value=0.0)
+    daily = (
+        pd.Series(trades["Profit/Loss"].to_numpy(dtype=float), index=day)
+        .groupby(level=0)
+        .sum()
+    )
+    daily = daily.reindex(
+        pd.bdate_range(daily.index.min(), daily.index.max()), fill_value=0.0
+    )
     downside = float(np.sqrt((cast(pd.Series, daily.clip(upper=0)) ** 2).mean()))
-    return {"SharpeRatio": float(daily.mean() / daily.std(ddof=1) * np.sqrt(TRADING_DAYS)),
-            "SortinoRatio": (float(daily.mean() / downside * np.sqrt(TRADING_DAYS))
-                             if downside else float("inf"))}
+    return {
+        "SharpeRatio": float(daily.mean() / daily.std(ddof=1) * np.sqrt(TRADING_DAYS)),
+        "SortinoRatio": (
+            float(daily.mean() / downside * np.sqrt(TRADING_DAYS))
+            if downside
+            else float("inf")
+        ),
+    }

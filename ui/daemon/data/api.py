@@ -20,7 +20,11 @@ def _refused(feed: str, known: list) -> dict | None:
         `{"error": sentence}` or None. Checked against the listing, so a name can never
         climb out of the data root.
     """
-    return None if feed in known else {"error": f"No conozco el feed «{feed}» en este árbol."}
+    return (
+        None
+        if feed in known
+        else {"error": f"No conozco el feed «{feed}» en este árbol."}
+    )
 
 
 @ROUTER.get("/api/data/catalogue")
@@ -33,7 +37,9 @@ def catalogue() -> dict[str, Any]:
     try:
         return tree.catalogue()
     except Exception as e:  # noqa: BLE001 — the boundary with a person: a sentence, never a 500
-        return {"error": f"No pude leer el catálogo de AlgoData: {type(e).__name__}: {e}"}
+        return {
+            "error": f"No pude leer el catálogo de AlgoData: {type(e).__name__}: {e}"
+        }
 
 
 @ROUTER.get("/api/data/assets")
@@ -47,7 +53,9 @@ def assets() -> dict[str, Any]:
     try:
         return {"assets": market.assets(), "timeframes": list(market.TIMEFRAMES)}
     except Exception as e:  # noqa: BLE001 — the boundary with a person
-        return {"error": f"No pude listar los activos de AlgoData: {type(e).__name__}: {e}"}
+        return {
+            "error": f"No pude listar los activos de AlgoData: {type(e).__name__}: {e}"
+        }
 
 
 @ROUTER.get("/api/data/bars")
@@ -66,11 +74,15 @@ def bars(feed: str = "", tf: str = "D1", since: str = "") -> dict[str, Any]:
     if refused:
         return refused
     if tf not in market.TIMEFRAMES:
-        return {"error": f"Timeframe «{tf}» no ofrecido aquí: {', '.join(market.TIMEFRAMES)}."}
+        return {
+            "error": f"Timeframe «{tf}» no ofrecido aquí: {', '.join(market.TIMEFRAMES)}."
+        }
     try:
         return market.bars(feed, tf, since)
     except Exception as e:  # noqa: BLE001 — the boundary with a person
-        return {"error": f"No pude leer las velas de {feed} {tf}: {type(e).__name__}: {e}"}
+        return {
+            "error": f"No pude leer las velas de {feed} {tf}: {type(e).__name__}: {e}"
+        }
 
 
 @ROUTER.get("/api/data/spread")
@@ -99,4 +111,6 @@ def feedquality(feed: str = "") -> dict[str, Any]:
     Returns:
         `{"result": contract dict}` or `{"error": sentence}`.
     """
-    return _refused(feed, market.feeds("feedQuality")) or market.study("feedQuality", feed)
+    return _refused(feed, market.feeds("feedQuality")) or market.study(
+        "feedQuality", feed
+    )

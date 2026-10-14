@@ -45,7 +45,9 @@ def plan(segments: dict, end: date) -> tuple[list, list]:
 def main() -> None:
     """Print the plan; with --apply, write it into `_policy.yaml`."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--apply", action="store_true", help="write it; otherwise a dry run")
+    ap.add_argument(
+        "--apply", action="store_true", help="write it; otherwise a dry run"
+    )
     a = ap.parse_args()
 
     end = month_end_before(date.today())
@@ -56,8 +58,10 @@ def main() -> None:
         if a.apply:
             set_segment_end(symbol, "oos2", end)
     for symbol, to, data_to in short:
-        print(f"  ⚠️ {symbol}: se queda en {to} — los datos llegan a {data_to}, "
-              f"hace falta al menos {last_weekday(end)}")
+        print(
+            f"  ⚠️ {symbol}: se queda en {to} — los datos llegan a {data_to}, "
+            f"hace falta al menos {last_weekday(end)}"
+        )
     if not move and not short:
         print("  nada que mover: todos los oos2 decididos ya llegan ahí")
     if move and not a.apply:

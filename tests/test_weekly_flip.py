@@ -5,7 +5,12 @@ import pytest
 
 from engines.weekly import flip
 
-WEEKS, UNITS, DRAWS, ALPHA = 143, 30, 199, 0.05       # (1 + #) / 200 <= 0.05: an exact 5 % test
+WEEKS, UNITS, DRAWS, ALPHA = (
+    143,
+    30,
+    199,
+    0.05,
+)  # (1 + #) / 200 <= 0.05: an exact 5 % test
 SIMS = 2000
 # 2,000 simulations: the standard error of a 5 % rate is sqrt(.05 x .95 / 2000) = 0.0049
 BAND = 3 * np.sqrt(ALPHA * (1 - ALPHA) / SIMS)
@@ -19,9 +24,13 @@ def gaussian(rng: np.random.Generator) -> np.ndarray:
 
 def skewed(rng: np.random.Generator) -> np.ndarray:
     """Mean zero, few big wins and many small losses with Student-t(3) sizes, units correlated."""
+
     def lottery(shape: tuple[int, int]) -> np.ndarray:
         """One week in ten wins 9, the rest lose 1, times a heavy-tailed size."""
-        return np.where(rng.random(shape) < 0.1, 9.0, -1.0) * np.abs(rng.standard_t(3, shape))
+        return np.where(rng.random(shape) < 0.1, 9.0, -1.0) * np.abs(
+            rng.standard_t(3, shape)
+        )
+
     return 0.8 * lottery((WEEKS, 1)) + 0.2 * lottery((WEEKS, UNITS))
 
 
@@ -33,10 +42,16 @@ def rates(make: callable, seed: int) -> dict:
         rng = np.random.default_rng(data)
         weekly, inside = make(rng), rng.standard_normal(UNITS)
         flipped = flip.signs(coin, DRAWS, WEEKS) @ weekly
-        rho = flip.tails(flip.spearman(inside, weekly.sum(axis=0)), flip.spearman(inside, flipped))
+        rho = flip.tails(
+            flip.spearman(inside, weekly.sum(axis=0)), flip.spearman(inside, flipped)
+        )
         mid = flip.tails(np.median(weekly.sum(axis=0)), np.median(flipped, axis=1))
-        hits += [rho["p_mas"] <= ALPHA, rho["p_menos"] <= ALPHA,
-                 mid["p_mas"] <= ALPHA, mid["p_menos"] <= ALPHA]
+        hits += [
+            rho["p_mas"] <= ALPHA,
+            rho["p_menos"] <= ALPHA,
+            mid["p_mas"] <= ALPHA,
+            mid["p_menos"] <= ALPHA,
+        ]
     return dict(zip(("rho+", "rho-", "median+", "median-"), hits / SIMS))
 
 
@@ -84,8 +99,12 @@ def test_blocks_of_two_weeks_share_a_sign() -> None:
 def test_spearman_in_bulk_is_scipy_row_by_row() -> None:
     """Average ranks on ties, one rho per draw; a constant side is NaN."""
     from scipy.stats import spearmanr
+
     rng = np.random.default_rng(5)
-    fixed, many = rng.integers(0, 6, 40).astype(float), rng.integers(0, 6, (50, 40)).astype(float)
+    fixed, many = (
+        rng.integers(0, 6, 40).astype(float),
+        rng.integers(0, 6, (50, 40)).astype(float),
+    )
     got = flip.spearman(fixed, many)
     assert np.allclose(got, [spearmanr(fixed, row)[0] for row in many])
     assert flip.spearman(fixed, many[0]) == pytest.approx(got[0])
@@ -95,5 +114,9 @@ def test_spearman_in_bulk_is_scipy_row_by_row() -> None:
 def test_tails_count_the_observed_among_the_draws() -> None:
     """(1 + #) / (1 + B), both sides, and the null's 5th and 95th percentiles."""
     got = flip.tails(2.0, np.array([0.0, 1.0, 2.0, 3.0]))
-    assert got["p_mas"] == pytest.approx(3 / 5) and got["p_menos"] == pytest.approx(4 / 5)
-    assert got["nulo_p5"] == pytest.approx(0.15) and got["nulo_p95"] == pytest.approx(2.85)
+    assert got["p_mas"] == pytest.approx(3 / 5) and got["p_menos"] == pytest.approx(
+        4 / 5
+    )
+    assert got["nulo_p5"] == pytest.approx(0.15) and got["nulo_p95"] == pytest.approx(
+        2.85
+    )

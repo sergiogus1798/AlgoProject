@@ -3,7 +3,12 @@
 import pandas as pd
 
 REGRESSION, IMPROVEMENT, STEADY, NOISY, FIRST = (
-    "regression", "improvement", "steady", "noisy", "first")
+    "regression",
+    "improvement",
+    "steady",
+    "noisy",
+    "first",
+)
 # Rows written before the budget column existed were all taken at the config default, so
 # that is what a blank means. It is an interpretation of old rows, never a rewrite of them.
 DEFAULT_BUDGET = 5000
@@ -46,22 +51,46 @@ def compare(frame: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     rows = []
     for target, group in frame.groupby("target", sort=False):
         last = group.iloc[-1]
-        group = group[group["budget"].fillna(DEFAULT_BUDGET)
-                      == (last["budget"] if last["budget"] == last["budget"] else DEFAULT_BUDGET)]
+        group = group[
+            group["budget"].fillna(DEFAULT_BUDGET)
+            == (last["budget"] if last["budget"] == last["budget"] else DEFAULT_BUDGET)
+        ]
         if len(group) < 2:
-            rows.append({"target": target, "wall_s": last["wall_s"], "verdict": FIRST,
-                         "wall_pct": 0.0, "rss_pct": 0.0, "prev_wall_s": float("nan")})
+            rows.append(
+                {
+                    "target": target,
+                    "wall_s": last["wall_s"],
+                    "verdict": FIRST,
+                    "wall_pct": 0.0,
+                    "rss_pct": 0.0,
+                    "prev_wall_s": float("nan"),
+                }
+            )
             continue
         prev = group.iloc[-2]
-        per_now, per_was = last["wall_s"] / last["scale"], prev["wall_s"] / prev["scale"]
+        per_now, per_was = (
+            last["wall_s"] / last["scale"],
+            prev["wall_s"] / prev["scale"],
+        )
         change = (per_now / per_was - 1) * 100
         rss = (last["rss_peak_mb"] / prev["rss_peak_mb"] - 1) * 100
-        verdict = (NOISY if last["wall_s"] < cfg["regression"]["min_wall_s"]
-                   else _call(change, last["wall_spread_pct"], cfg["regression"]["wall_pct"]))
+        verdict = (
+            NOISY
+            if last["wall_s"] < cfg["regression"]["min_wall_s"]
+            else _call(change, last["wall_spread_pct"], cfg["regression"]["wall_pct"])
+        )
         if verdict in (STEADY, NOISY) and rss > cfg["regression"]["rss_pct"]:
             verdict = REGRESSION
-        rows.append({"target": target, "wall_s": last["wall_s"], "prev_wall_s": prev["wall_s"],
-                     "wall_pct": change, "rss_pct": rss, "verdict": verdict})
+        rows.append(
+            {
+                "target": target,
+                "wall_s": last["wall_s"],
+                "prev_wall_s": prev["wall_s"],
+                "wall_pct": change,
+                "rss_pct": rss,
+                "verdict": verdict,
+            }
+        )
     return pd.DataFrame(rows)
 
 
@@ -74,4 +103,6 @@ def failing(judged: pd.DataFrame) -> pd.DataFrame:
     Returns:
         The regressions, worst first. This is what a caller exits non-zero on.
     """
-    return judged[judged["verdict"] == REGRESSION].sort_values("wall_pct", ascending=False)  # pyright: ignore[reportCallIssue]  # stub: boolean-mask result widened
+    return judged[judged["verdict"] == REGRESSION].sort_values(
+        "wall_pct", ascending=False
+    )  # pyright: ignore[reportCallIssue]  # stub: boolean-mask result widened

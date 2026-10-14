@@ -22,5 +22,9 @@ def clip(values: np.ndarray) -> tuple[np.ndarray, float, float]:
 
 def caption(left_out: int) -> str:
     """The sentence saying how many values the clipped axis does not draw."""
-    return (f" Eje recortado a los percentiles {SPAN[0]:g}-{SPAN[1]:g}: {left_out} valores "
-            "fuera, no dibujados." if left_out else "")
+    return (
+        f" Eje recortado a los percentiles {SPAN[0]:g}-{SPAN[1]:g}: {left_out} valores "
+        "fuera, no dibujados."
+        if left_out
+        else ""
+    )

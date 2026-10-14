@@ -14,17 +14,29 @@ from ui.desktop.blocks.pick import shown
 
 def test_cell_selector_picks_one_chart() -> None:
     """Two cells draw different lines; the same count of untagged blocks stays."""
-    files = sorted((paths.DATA / "reports").glob(
-        "Trade_NIKKEI225_M30_volatilidadL/WFM/*/wfm/estrategias/*.json"))
+    files = sorted(
+        (paths.DATA / "reports").glob(
+            "Trade_NIKKEI225_M30_volatilidadL/WFM/*/wfm/estrategias/*.json"
+        )
+    )
     if not files:
         return
-    tab, sel = next((t, s) for t in json.loads(files[-1].read_text())["tabs"]
-                    for s in t.get("selectors", []) if s["key"] == "celda")
-    a, b = shown(tab, {"celda": sel["options"][0]}), shown(tab, {"celda": sel["options"][5]})
-    lines = lambda bl: [x for x in bl if x["kind"] == "lines"]            # noqa: E731
+    tab, sel = next(
+        (t, s)
+        for t in json.loads(files[-1].read_text())["tabs"]
+        for s in t.get("selectors", [])
+        if s["key"] == "celda"
+    )
+    a, b = (
+        shown(tab, {"celda": sel["options"][0]}),
+        shown(tab, {"celda": sel["options"][5]}),
+    )
+    lines = lambda bl: [x for x in bl if x["kind"] == "lines"]  # noqa: E731
     assert len(lines(a)) == len(lines(b)) == 1 and lines(a) != lines(b)
     assert len(a) == len(b)
-    assert all(x["select"]["celda"] in sel["options"] for x in tab["blocks"] if x.get("select"))
+    assert all(
+        x["select"]["celda"] in sel["options"] for x in tab["blocks"] if x.get("select")
+    )
 
 
 if __name__ == "__main__":

@@ -17,7 +17,9 @@ MILLIS = 1000
 # run concatenated, and 127 the two together -- trades and days add up exactly. Direction 0 is the
 # one every study here wants; the long/short split is in the file for whoever needs it.
 SAMPLES = {"is": 10, "oos": 20, "all": 127}
-BLOB = "ValuesMap/stats_LQ1_direction_DD_{d}_L1_pl_DD_10_L1_sample_DD_{s}_L1__RQ1_/SQStats"
+BLOB = (
+    "ValuesMap/stats_LQ1_direction_DD_{d}_L1_pl_DD_10_L1_sample_DD_{s}_L1__RQ1_/SQStats"
+)
 
 
 def _params(text: str | None) -> dict[str, str]:
@@ -70,9 +72,13 @@ def _cell_stats(result: ET.Element, direction: int = 0) -> dict[str, float]:
         despite sitting next to a field called `statsOOS`, and reading it as in-sample
         silently turns the composite into the optimisation window.
     """
-    return {f"{name}_{k}": v for name, sample in SAMPLES.items()
-            for k, v in sqxstats.records(
-                _tx(result.find(BLOB.format(d=direction, s=sample)))).items()}
+    return {
+        f"{name}_{k}": v
+        for name, sample in SAMPLES.items()
+        for k, v in sqxstats.records(
+            _tx(result.find(BLOB.format(d=direction, s=sample)))
+        ).items()
+    }
 
 
 def results(path: Path) -> dict[str, ET.Element]:
@@ -85,7 +91,10 @@ def results(path: Path) -> dict[str, ET.Element]:
     """
     with zipfile.ZipFile(path) as archive:
         xml = archive.read("settings.xml").decode("utf8", errors="replace")
-    return {_at(r, "resultKey"): r for r in _el(ET.fromstring(xml).find("ResultsMap/Results"))}
+    return {
+        _at(r, "resultKey"): r
+        for r in _el(ET.fromstring(xml).find("ResultsMap/Results"))
+    }
 
 
 def matrix(path: Path) -> ET.Element | None:
@@ -116,13 +125,22 @@ def cells(node: ET.Element, found: dict[str, ET.Element]) -> list[dict[str, Any]
         `is_` for the first optimisation window, `oos_` for the walk-forward runs
         concatenated, `all_` for both together.
     """
-    return [{"result": _at(run, "resultName"),
-             "oos_pct": int(_at(run, "param1")), "runs": int(_at(run, "param2")),
-             "params": _params(run.get("testParams")),
-             "fitness_is": float(_at(found[_at(run, "resultName")].find("Fitnesses"), "IS")),
-             "fitness_oos": float(_at(found[_at(run, "resultName")].find("Fitnesses"), "OOS"))}
-            | _cell_stats(found[_at(run, "resultName")])
-            for run in node.findall("RunResult")]
+    return [
+        {
+            "result": _at(run, "resultName"),
+            "oos_pct": int(_at(run, "param1")),
+            "runs": int(_at(run, "param2")),
+            "params": _params(run.get("testParams")),
+            "fitness_is": float(
+                _at(found[_at(run, "resultName")].find("Fitnesses"), "IS")
+            ),
+            "fitness_oos": float(
+                _at(found[_at(run, "resultName")].find("Fitnesses"), "OOS")
+            ),
+        }
+        | _cell_stats(found[_at(run, "resultName")])
+        for run in node.findall("RunResult")
+    ]
 
 
 def periods(node: ET.Element) -> list[dict[str, Any]]:
@@ -140,15 +158,21 @@ def periods(node: ET.Element) -> list[dict[str, Any]]:
         run it on, so it carries no `oos_` columns at all and must be dropped before any
         correlation is taken.
     """
-    return [{"result": _at(run, "resultName"),
-             "oos_pct": int(_at(run, "param1")), "runs": int(_at(run, "param2")),
-             "index": i,
-             "optimize_from": _seconds(p, "optimizeFrom"),
-             "optimize_to": _seconds(p, "optimizeTo"),
-             "run_from": _seconds(p, "runFrom"), "run_to": _seconds(p, "runTo"),
-             "future": p.get("futurePeriod") == "true",
-             "params": _params(p.get("testParameters"))}
-            | {f"is_{k}": v for k, v in _stats(p, "OptimizationStats").items()}
-            | {f"oos_{k}": v for k, v in _stats(p, "RunStats").items()}
-            for run in node.findall("RunResult")
-            for i, p in enumerate(run.findall("Periods/WalkForwardPeriod"))]
+    return [
+        {
+            "result": _at(run, "resultName"),
+            "oos_pct": int(_at(run, "param1")),
+            "runs": int(_at(run, "param2")),
+            "index": i,
+            "optimize_from": _seconds(p, "optimizeFrom"),
+            "optimize_to": _seconds(p, "optimizeTo"),
+            "run_from": _seconds(p, "runFrom"),
+            "run_to": _seconds(p, "runTo"),
+            "future": p.get("futurePeriod") == "true",
+            "params": _params(p.get("testParameters")),
+        }
+        | {f"is_{k}": v for k, v in _stats(p, "OptimizationStats").items()}
+        | {f"oos_{k}": v for k, v in _stats(p, "RunStats").items()}
+        for run in node.findall("RunResult")
+        for i, p in enumerate(run.findall("Periods/WalkForwardPeriod"))
+    ]

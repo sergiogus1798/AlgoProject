@@ -31,11 +31,18 @@ def increment(base: np.ndarray, candidate: np.ndarray, how: str) -> float:
     book = base.mean(axis=0)
     if how == "finite":
         return _sharpe(np.vstack([base, candidate]).mean(axis=0)) - _sharpe(book)
-    return _sharpe(candidate) - float(np.corrcoef(candidate, book)[0, 1]) * _sharpe(book)
+    return _sharpe(candidate) - float(np.corrcoef(candidate, book)[0, 1]) * _sharpe(
+        book
+    )
 
 
-def judge(unit: np.ndarray, graph: np.ndarray, base: np.ndarray, candidates: np.ndarray,
-          how: str) -> pd.DataFrame:
+def judge(
+    unit: np.ndarray,
+    graph: np.ndarray,
+    base: np.ndarray,
+    candidates: np.ndarray,
+    how: str,
+) -> pd.DataFrame:
     """One round: each candidate against the same base; none is added.
 
     Args:
@@ -54,13 +61,24 @@ def judge(unit: np.ndarray, graph: np.ndarray, base: np.ndarray, candidates: np.
     for c in candidates:
         blocked = base[~graph[c, base]]
         gain = increment(unit[base], unit[c], how)
-        rows.append({"candidate": int(c), "blocked_by": blocked.tolist(), "increment": gain,
-                     "enters": blocked.size == 0 and gain > 0})
+        rows.append(
+            {
+                "candidate": int(c),
+                "blocked_by": blocked.tolist(),
+                "increment": gain,
+                "enters": blocked.size == 0 and gain > 0,
+            }
+        )
     return pd.DataFrame(rows)
 
 
-def sequence(unit: np.ndarray, graph: np.ndarray, base: np.ndarray, candidates: np.ndarray,
-             how: str) -> pd.DataFrame:
+def sequence(
+    unit: np.ndarray,
+    graph: np.ndarray,
+    base: np.ndarray,
+    candidates: np.ndarray,
+    how: str,
+) -> pd.DataFrame:
     """Admit in sequence (owner, 2026-10-05): the best increment enters, the rest are re-judged.
 
     Two candidates that each help the base may not help it together (two clones of one idea):
@@ -80,10 +98,16 @@ def sequence(unit: np.ndarray, graph: np.ndarray, base: np.ndarray, candidates: 
     """
     base, left, rounds = np.asarray(base), list(candidates), []
     while left:
-        judged = judge(unit, graph, base, np.array(left), how).rename(columns={"enters": "admissible"})
+        judged = judge(unit, graph, base, np.array(left), how).rename(
+            columns={"enters": "admissible"}
+        )
         judged.insert(0, "round", len(rounds) + 1)
         gains = judged["increment"].where(judged["admissible"])
-        judged["enters"] = gains.notna() & (judged.index == gains.idxmax()) if bool(gains.notna().any()) else False
+        judged["enters"] = (
+            gains.notna() & (judged.index == gains.idxmax())
+            if bool(gains.notna().any())
+            else False
+        )
         rounds.append(judged)
         if not bool(judged["enters"].any()):
             break
@@ -91,4 +115,8 @@ def sequence(unit: np.ndarray, graph: np.ndarray, base: np.ndarray, candidates: 
         base = np.append(base, winner)
         left.remove(winner)
     columns = ["round", "candidate", "blocked_by", "increment", "admissible", "enters"]
-    return pd.concat(rounds, ignore_index=True) if rounds else pd.DataFrame(columns=pd.Index(columns))
+    return (
+        pd.concat(rounds, ignore_index=True)
+        if rounds
+        else pd.DataFrame(columns=pd.Index(columns))
+    )

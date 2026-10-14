@@ -28,8 +28,10 @@ def mc_retest(data: dict, segment: str = "build") -> dict[str, dict[str, Any]]:
     1.0-5.0 is between 1 and 5 points on an instrument whose spread is 1100.
     """
     multiples = policy()["mc_retest"]["default_multiples"]
-    costs = {"spread": sqx_settings(data, segment)["defaultSpread"],
-             "slippage": sqx_settings(data, segment)["defaultSlippage"]}
+    costs = {
+        "spread": sqx_settings(data, segment)["defaultSpread"],
+        "slippage": sqx_settings(data, segment)["defaultSlippage"],
+    }
     out = {}
     for name, span in data["mc_retest"].items():
         if span["min"] is not None and span["max"] is not None:
@@ -37,9 +39,16 @@ def mc_retest(data: dict, segment: str = "build") -> dict[str, dict[str, Any]]:
             continue
         factor, cost = span.get("multiples") or multiples.get(name), costs.get(name)
         if factor is None or cost is None:
-            out[name] = {"min": span["min"], "max": span["max"], "source": "sin decidir"}
+            out[name] = {
+                "min": span["min"],
+                "max": span["max"],
+                "source": "sin decidir",
+            }
             continue
         low = round(factor["min"] * cost, 6)
-        out[name] = {"min": low, "max": max(round(factor["max"] * cost, 6), round(low + MIN_SPAN, 6)),
-                     "source": f"{factor['min']}x-{factor['max']}x el {name} de `{segment}`"}
+        out[name] = {
+            "min": low,
+            "max": max(round(factor["max"] * cost, 6), round(low + MIN_SPAN, 6)),
+            "source": f"{factor['min']}x-{factor['max']}x el {name} de `{segment}`",
+        }
     return out

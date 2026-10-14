@@ -1,4 +1,5 @@
 """The day's equity curve of one account: minute rows, the service's hourly extremes, the two floors."""
+
 from mt5.fleet.app import floors, history
 
 
@@ -22,7 +23,12 @@ def data(beat: dict, floor: dict) -> dict | None:
     hours = [h for h in beat.get("hours", []) if h["start"] >= start]
     if (mins is None or mins.empty) and not hours:
         return None
-    return {"times": [] if mins is None else mins["server_time"].tolist(),
-            "equity": [] if mins is None else mins["equity"].tolist(), "hours": hours,
-            "daily_floor": floor["daily_floor"], "max_floor": floor["max_floor"], "start": start,
-            "now": beat["server_time"]}
+    return {
+        "times": [] if mins is None else mins["server_time"].tolist(),
+        "equity": [] if mins is None else mins["equity"].tolist(),
+        "hours": hours,
+        "daily_floor": floor["daily_floor"],
+        "max_floor": floor["max_floor"],
+        "start": start,
+        "now": beat["server_time"],
+    }

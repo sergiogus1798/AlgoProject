@@ -19,7 +19,7 @@ FAILS = (OSError, KeyError, ValueError)
 class Verify(BaseModel):
     """What the owner confirmed: which strategy, over which window, with which model, where."""
 
-    source: str                 # "archive", "databank" or "folder" (Banquillo)
+    source: str  # "archive", "databank" or "folder" (Banquillo)
     identity: str
     version: str = ""
     project: str = ""
@@ -27,9 +27,9 @@ class Verify(BaseModel):
     start: str
     end: str
     model: str
-    ticks: bool = False         # also a second MT5 pass on real ticks (owner, 2026-10-04)
+    ticks: bool = False  # also a second MT5 pass on real ticks (owner, 2026-10-04)
     firms: list[str]
-    nonce: str = ""             # the proof its preflight returned (`proof.py`); `verify` only
+    nonce: str = ""  # the proof its preflight returned (`proof.py`); `verify` only
 
 
 @ROUTER.get("/api/mt5bridge/options")
@@ -37,7 +37,7 @@ def options() -> dict[str, Any]:
     """The saved accounts, the tester's models, the archived strategies and the Banquillo folder."""
     try:
         return runs.options()
-    except FAILS as e:              # the boundary with a person
+    except FAILS as e:  # the boundary with a person
         return {"error": f"No pude leer las opciones: {type(e).__name__}: {e}"}
 
 
@@ -55,8 +55,9 @@ class Where(BaseModel):
 def dates(req: Where) -> dict[str, Any]:
     """Hasta = the last day SQX holds data for this strategy's asset; Desde, a fallback (§3.2)."""
     try:
-        path, where = runs.strategy_file(req.source, req.identity, req.version, req.project,
-                                         req.databank)
+        path, where = runs.strategy_file(
+            req.source, req.identity, req.version, req.project, req.databank
+        )
         if path is None:
             return {"error": where}
         asset, _ = sqxfile.symbol(path)
@@ -83,8 +84,9 @@ def result(run: str) -> dict[str, Any]:
 
 def _check(req: Verify) -> dict[str, Any]:
     """The preflight for one request, plus a launcher of the window already queued."""
-    path, where = runs.strategy_file(req.source, req.identity, req.version, req.project,
-                                     req.databank)
+    path, where = runs.strategy_file(
+        req.source, req.identity, req.version, req.project, req.databank
+    )
     got = runs.check(path, req.start, req.end, req.model, req.firms, req.ticks)
     got["reasons"] = ([] if path else [where]) + got["reasons"] + queued()
     got["ok"] = not got["reasons"]
@@ -93,7 +95,11 @@ def _check(req: Verify) -> dict[str, Any]:
 
 def shown(req: Verify, got: dict[str, Any]) -> dict[str, Any]:
     """What a nonce of this launcher is bound to: the form, the file and the sentence shown."""
-    return {**req.model_dump(exclude={"nonce"}), "file": got.get("file"), "text": got["text"]}
+    return {
+        **req.model_dump(exclude={"nonce"}),
+        "file": got.get("file"),
+        "text": got["text"],
+    }
 
 
 def checked(req: Verify) -> dict[str, Any]:
@@ -126,12 +132,33 @@ def verify(req: Verify) -> dict[str, Any]:
     if why:
         return {"error": "no se lanza: " + why}
     start = "mt5" if req.start.strip().upper() == runs.DEEPEST else req.start
-    argv = ["-m", "mt5.verify.run", "--strategy", got["file"], "--from", start,
-            "--to", req.end, "--model", req.model, "--firms", ",".join(req.firms),
-            *(["--also-real-ticks"] if req.ticks else [])]
-    job = jobs.start(LABEL, argv, {"project": "", "databank": req.databank,
-                                   "strategy": req.identity, "role": "conductor",
-                                   "study": LABEL}, lane="conductor")
+    argv = [
+        "-m",
+        "mt5.verify.run",
+        "--strategy",
+        got["file"],
+        "--from",
+        start,
+        "--to",
+        req.end,
+        "--model",
+        req.model,
+        "--firms",
+        ",".join(req.firms),
+        *(["--also-real-ticks"] if req.ticks else []),
+    ]
+    job = jobs.start(
+        LABEL,
+        argv,
+        {
+            "project": "",
+            "databank": req.databank,
+            "strategy": req.identity,
+            "role": "conductor",
+            "study": LABEL,
+        },
+        lane="conductor",
+    )
     return job
 
 
@@ -153,9 +180,15 @@ def force_close() -> dict[str, Any]:
         if not wine.terminal_running():
             return {"closed": True, "forced": False}
         if wine.close_terminal(wait_s=10):
-            return {"closed": True, "forced": False,
-                    "warning": "había una verificación en curso" if running else None}
-        return {"closed": wine.kill_terminal(), "forced": True,
-                "warning": "había una verificación en curso" if running else None}
+            return {
+                "closed": True,
+                "forced": False,
+                "warning": "había una verificación en curso" if running else None,
+            }
+        return {
+            "closed": wine.kill_terminal(),
+            "forced": True,
+            "warning": "había una verificación en curso" if running else None,
+        }
     except FAILS as e:
         return {"error": f"no se pudo cerrar MT5: {type(e).__name__}: {e}"}

@@ -13,8 +13,12 @@ from studies.breakage.spp.verdict.noise import NoiseCheck
 
 # Row label -> SQX column. AvgProfitPerYear is NetProfit / TotalDataYears to SQX's rounding
 # (max gap 0.25 USD over 340,000 permutations, measured 2026-10-07), so it is the one used.
-METRICS = {"benef_anual": "AvgProfitPerYear", "sharpe": "SharpeRatio",
-           "profit_factor": "ProfitFactor", "drawdown": "Drawdown"}
+METRICS = {
+    "benef_anual": "AvgProfitPerYear",
+    "sharpe": "SharpeRatio",
+    "profit_factor": "ProfitFactor",
+    "drawdown": "Drawdown",
+}
 LOWER_IS_BETTER = {"drawdown"}
 
 
@@ -71,7 +75,9 @@ def is_fixed(name: str, patterns: list[str]) -> bool:
     return any(fnmatch(name.lower(), p.lower()) for p in patterns)
 
 
-def floored(grid: pd.DataFrame, names: list[str], cfg: dict) -> tuple[pd.DataFrame, FloorInfo]:
+def floored(
+    grid: pd.DataFrame, names: list[str], cfg: dict
+) -> tuple[pd.DataFrame, FloorInfo]:
     """The grid every statistic of a window reads.
 
     Args:
@@ -90,15 +96,22 @@ def floored(grid: pd.DataFrame, names: list[str], cfg: dict) -> tuple[pd.DataFra
     shifts = [n for n in names if is_fixed(n, cfg["fixed"])]
     before = len(frame)
     if shifts:
-        frame = cast(pd.DataFrame, frame[(frame[shifts] == grid.loc[-1, shifts]).all(axis=1)])
+        frame = cast(
+            pd.DataFrame, frame[(frame[shifts] == grid.loc[-1, shifts]).all(axis=1)]
+        )
     fijos = 1 - len(frame) / before if before else np.nan
     frame = dedupe.distinct(frame)
     kept = cast(pd.DataFrame, frame[frame["NumberOfTrades"] >= cfg["min_trades"]])
-    return kept, {"fijos_frac": float(fijos), "n": int(len(kept)),
-                  "excluidas_frac": float(1 - len(kept) / len(frame)) if len(frame) else np.nan}
+    return kept, {
+        "fijos_frac": float(fijos),
+        "n": int(len(kept)),
+        "excluidas_frac": float(1 - len(kept) / len(frame)) if len(frame) else np.nan,
+    }
 
 
-def reading(values: np.ndarray, real: float, lower_is_better: bool, iqr_floor: float) -> Reading:
+def reading(
+    values: np.ndarray, real: float, lower_is_better: bool, iqr_floor: float
+) -> Reading:
     """The mother against its grid on one metric.
 
     Returns:
@@ -109,14 +122,25 @@ def reading(values: np.ndarray, real: float, lower_is_better: bool, iqr_floor: f
     """
     values = values[np.isfinite(values)]
     if not values.size:
-        return {"real": np.nan, "median": np.nan, "iqr": np.nan, "d": np.nan, "puesto": np.nan}
+        return {
+            "real": np.nan,
+            "median": np.nan,
+            "iqr": np.nan,
+            "d": np.nan,
+            "puesto": np.nan,
+        }
     q1, med, q3 = np.percentile(values, [25, 50, 75])
     iqr = q3 - q1
     gap = (med - real) if lower_is_better else (real - med)
     flat = iqr <= iqr_floor * max(abs(med), abs(real))
     worse = values > real if lower_is_better else values < real
-    return {"real": float(real), "median": float(med), "iqr": float(iqr),
-            "d": float("nan") if flat else float(gap / iqr), "puesto": float(worse.mean())}
+    return {
+        "real": float(real),
+        "median": float(med),
+        "iqr": float(iqr),
+        "d": float("nan") if flat else float(gap / iqr),
+        "puesto": float(worse.mean()),
+    }
 
 
 def window(grid: pd.DataFrame, names: list[str], cfg: dict) -> Window:
@@ -137,22 +161,41 @@ def window(grid: pd.DataFrame, names: list[str], cfg: dict) -> Window:
     out: dict[str, Reading] = {}
     for label, col in METRICS.items():
         values = frame[col].to_numpy(float)
-        out[label] = reading(values, float(mother[col]), label in LOWER_IS_BETTER,
-                             cfg["grid"]["iqr_floor"])
-    benef, dd = frame["AvgProfitPerYear"].to_numpy(float), frame["Drawdown"].to_numpy(float)
+        out[label] = reading(
+            values,
+            float(mother[col]),
+            label in LOWER_IS_BETTER,
+            cfg["grid"]["iqr_floor"],
+        )
+    benef, dd = (
+        frame["AvgProfitPerYear"].to_numpy(float),
+        frame["Drawdown"].to_numpy(float),
+    )
     if benef.size:
         p10, p5 = np.percentile(benef, [10, 5])
         real = out["benef_anual"]["real"]
-        out["benef_anual"]["s"] = out["benef_anual"]["median"] / real if real > 0 else np.nan
+        out["benef_anual"]["s"] = (
+            out["benef_anual"]["median"] / real if real > 0 else np.nan
+        )
         out["benef_anual"]["p10"], out["benef_anual"]["p5"] = float(p10), float(p5)
-        out["drawdown"]["m_dd"] = (float(np.percentile(dd, 95)) / out["drawdown"]["real"]
-                                   if out["drawdown"]["real"] > 0 else np.nan)
+        out["drawdown"]["m_dd"] = (
+            float(np.percentile(dd, 95)) / out["drawdown"]["real"]
+            if out["drawdown"]["real"] > 0
+            else np.nan
+        )
     sobresale = None
     if info["n"] >= cfg["grid"]["min_noise_n"]:
         sobresale = noise.noise_check(frame, "SharpeRatio", cfg["verdict"]["margin"])
-    return {"metrics": out, **info, "years": float(mother["TotalDataYears"]), "frame": frame,
-            "frac_vecinos_rentables": float((frame["NetProfit"] > 0).mean()) if len(frame) else np.nan,
-            "sobresale": sobresale}
+    return {
+        "metrics": out,
+        **info,
+        "years": float(mother["TotalDataYears"]),
+        "frame": frame,
+        "frac_vecinos_rentables": float((frame["NetProfit"] > 0).mean())
+        if len(frame)
+        else np.nan,
+        "sobresale": sobresale,
+    }
 
 
 def across(build: Window, oos: Window, cfg: dict) -> Across:
@@ -167,8 +210,13 @@ def across(build: Window, oos: Window, cfg: dict) -> Across:
     if not (build["n"] and oos["n"]):
         return {"r_s": np.nan, "z_decay": np.nan, "a": np.nan}
     noise_sd = np.sqrt(1 / build["years"] + 1 / oos["years"])
-    return {"r_s": o["median"] / b["median"] if b["median"] >= cfg["criteria"]["is_floor"]["SharpeRatio"]
-            else np.nan,
-            "z_decay": float((o["median"] - b["median"]) / noise_sd),
-            "a": decay.superiority(build["frame"]["SharpeRatio"].to_numpy(float),
-                                   oos["frame"]["SharpeRatio"].to_numpy(float))}
+    return {
+        "r_s": o["median"] / b["median"]
+        if b["median"] >= cfg["criteria"]["is_floor"]["SharpeRatio"]
+        else np.nan,
+        "z_decay": float((o["median"] - b["median"]) / noise_sd),
+        "a": decay.superiority(
+            build["frame"]["SharpeRatio"].to_numpy(float),
+            oos["frame"]["SharpeRatio"].to_numpy(float),
+        ),
+    }

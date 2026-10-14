@@ -27,7 +27,9 @@ class Reconciled(TypedDict):
     verdict: str
 
 
-def curve(rebuilt: pd.Series, sqx: pd.Series, tolerance: float, min_share: float) -> Reconciled:
+def curve(
+    rebuilt: pd.Series, sqx: pd.Series, tolerance: float, min_share: float
+) -> Reconciled:
     """Day-by-day agreement of two lowest-equity curves of one leg, over the days both cover.
 
     Args:
@@ -43,6 +45,10 @@ def curve(rebuilt: pd.Series, sqx: pd.Series, tolerance: float, min_share: float
     common = rebuilt.index.intersection(sqx.index)
     gap = (rebuilt.loc[common] - sqx.loc[common]).abs()
     exact = float((gap <= tolerance).mean())
-    return {"n_days": int(len(common)), "exact": exact, "max_gap": float(gap.max()),
-            "p99_gap": float(gap.quantile(0.99)),
-            "verdict": "ok" if exact >= min_share else "out"}
+    return {
+        "n_days": int(len(common)),
+        "exact": exact,
+        "max_gap": float(gap.max()),
+        "p99_gap": float(gap.quantile(0.99)),
+        "verdict": "ok" if exact >= min_share else "out",
+    }

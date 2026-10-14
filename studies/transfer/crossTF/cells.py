@@ -46,8 +46,16 @@ def _trusted(said: list[str]) -> list[str]:
     return [s for s in said if not s.upper().startswith(DROP_WARNINGS)]
 
 
-def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
-            statistic: str, rung: str, key: str, min_trades: int, cell: dict | None = None) -> CellNumbers:
+def numbers(
+    rows: pd.DataFrame,
+    frame: pd.DataFrame,
+    nullcfg: dict,
+    statistic: str,
+    rung: str,
+    key: str,
+    min_trades: int,
+    cell: dict | None = None,
+) -> CellNumbers:
     """One cell's statistics, their empirical p, and what there is to distrust about them.
 
     The statistics are priced from the bars by `engines.nulls.simulate`, never read off SQX,
@@ -86,26 +94,72 @@ def numbers(rows: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict,
     names = nullcfg["statistics"]["report"]
     if rows.empty:
         empty = {n: np.nan for n in names}
-        return CellNumbers(trades=0, seen=np.nan, p=np.nan, null_mean=np.nan, null_sd=np.nan, z=np.nan,
-                           seen_all={**empty, TOTAL: np.nan}, p_all=empty,
-                           warnings=["La estrategia no operó en este timeframe: no hay nada que juzgar."])
+        return CellNumbers(
+            trades=0,
+            seen=np.nan,
+            p=np.nan,
+            null_mean=np.nan,
+            null_sd=np.nan,
+            z=np.nan,
+            seen_all={**empty, TOTAL: np.nan},
+            p_all=empty,
+            warnings=[
+                "La estrategia no operó en este timeframe: no hay nada que juzgar."
+            ],
+        )
     kept = simulate.fixed(rows, frame, nullcfg)
-    seen_all = {**simulate.real(kept, names),
-                TOTAL: annual_sharpe(rows["Profit/Loss"].to_numpy(dtype=float), cast(np.ndarray, rows["Close time"]))}
+    seen_all = {
+        **simulate.real(kept, names),
+        TOTAL: annual_sharpe(
+            rows["Profit/Loss"].to_numpy(dtype=float),
+            cast(np.ndarray, rows["Close time"]),
+        ),
+    }
     if len(rows) < min_trades:
         p_all = {n: np.nan for n in names}
-        return CellNumbers(trades=len(rows), seen=seen_all[statistic], p=np.nan, null_mean=np.nan,
-                           null_sd=np.nan, z=np.nan, seen_all=seen_all, p_all=p_all,
-                           warnings=[f"Solo {len(rows)} operaciones en oos1, menos de las {min_trades} que hacen falta para calcular un p."])
+        return CellNumbers(
+            trades=len(rows),
+            seen=seen_all[statistic],
+            p=np.nan,
+            null_mean=np.nan,
+            null_sd=np.nan,
+            z=np.nan,
+            seen_all=seen_all,
+            p_all=p_all,
+            warnings=[
+                f"Solo {len(rows)} operaciones en oos1, menos de las {min_trades} que hacen falta para calcular un p."
+            ],
+        )
     drawn = simulate.nulls(kept, rung, nullcfg, key)
     p_all = {n: verdict.pvalue(seen_all[n], drawn[n], n) for n in names}
     mean, sd = float(np.mean(drawn[statistic])), float(np.std(drawn[statistic], ddof=1))
-    rec = {} if cell is None else {"draws": [draws.record("crossTF.cell", n, seen_all[n], drawn[n],
-                                                           raw=False, **cell) for n in names]}
-    return cast(CellNumbers, {**rec, "trades": len(rows), "seen": seen_all[statistic], "p": p_all[statistic],
-                              "null_mean": mean, "null_sd": sd, "z": (seen_all[statistic] - mean) / sd if sd else np.nan,
-                              "seen_all": seen_all, "p_all": p_all,
-                              "warnings": _trusted(verdict.distrust(kept, p_all, len(rows), nullcfg))})
+    rec = (
+        {}
+        if cell is None
+        else {
+            "draws": [
+                draws.record(
+                    "crossTF.cell", n, seen_all[n], drawn[n], raw=False, **cell
+                )
+                for n in names
+            ]
+        }
+    )
+    return cast(
+        CellNumbers,
+        {
+            **rec,
+            "trades": len(rows),
+            "seen": seen_all[statistic],
+            "p": p_all[statistic],
+            "null_mean": mean,
+            "null_sd": sd,
+            "z": (seen_all[statistic] - mean) / sd if sd else np.nan,
+            "seen_all": seen_all,
+            "p_all": p_all,
+            "warnings": _trusted(verdict.distrust(kept, p_all, len(rows), nullcfg)),
+        },
+    )
 
 
 def curve(rows: pd.DataFrame, points: int = 50) -> list[float] | None:
@@ -128,19 +182,32 @@ def curve(rows: pd.DataFrame, points: int = 50) -> list[float] | None:
     return [float(v) for v in np.interp(grid, np.linspace(0.0, 1.0, len(pnl)), pnl)]
 
 
-_SHARED: dict = {}     # set by `panel` before the fork, read by `_cell` in the workers
+_SHARED: dict = {}  # set by `panel` before the fork, read by `_cell` in the workers
 
 
 def _cell(i: int) -> CellNumbers:
     """`numbers` of cell `i` of `panel`, in a worker that inherited the parent's inputs."""
     g, row = _SHARED, _SHARED["rows"][i]
-    return numbers(tradestore.block(g["packed"], row.strategy, row.block), g["frames"][row.timeframe],
-                   g["nullcfg"], g["statistic"], g["rung"], f"{row.strategy}|{row.block}",
-                   g["min_trades"], g["where"](row))
+    return numbers(
+        tradestore.block(g["packed"], row.strategy, row.block),
+        g["frames"][row.timeframe],
+        g["nullcfg"],
+        g["statistic"],
+        g["rung"],
+        f"{row.strategy}|{row.block}",
+        g["min_trades"],
+        g["where"](row),
+    )
 
 
-def panel(plan: pd.DataFrame, packed: pd.DataFrame, frames: dict, nullcfg: dict,
-          cfg: dict, sink: list | None = None) -> pd.DataFrame:
+def panel(
+    plan: pd.DataFrame,
+    packed: pd.DataFrame,
+    frames: dict,
+    nullcfg: dict,
+    cfg: dict,
+    sink: list | None = None,
+) -> pd.DataFrame:
     """Every cell of the matrix, measured.
 
     Args:
@@ -156,24 +223,51 @@ def panel(plan: pd.DataFrame, packed: pd.DataFrame, frames: dict, nullcfg: dict,
         `corr_vs_baseline` (`correlations`, NaN on a baseline) and what `beyond` adds.
     """
     statistic, rung = cfg["verdict"]["statistic"], cfg["verdict"]["rung"]
-    where = lambda r: None if sink is None else dict(
-        strategy=r.strategy, block=r.block, timeframe=r.timeframe, role=r.role, mother=r.mother,
-        seed=nullcfg["nulls"]["seed"])
+    where = lambda r: (
+        None
+        if sink is None
+        else dict(
+            strategy=r.strategy,
+            block=r.block,
+            timeframe=r.timeframe,
+            role=r.role,
+            mother=r.mother,
+            seed=nullcfg["nulls"]["seed"],
+        )
+    )
     rows = list(cast(Any, plan.itertuples()))
-    _SHARED.update(rows=rows, packed=packed, frames=frames, nullcfg=nullcfg, statistic=statistic,
-                   rung=rung, min_trades=cfg["usable"]["min_trades"], where=where)
+    _SHARED.update(
+        rows=rows,
+        packed=packed,
+        frames=frames,
+        nullcfg=nullcfg,
+        statistic=statistic,
+        rung=rung,
+        min_trades=cfg["usable"]["min_trades"],
+        where=where,
+    )
     # One cell per task: the seed is `strategy|block`, so a cell draws the same on any process.
-    cost = {i: len(tradestore.block(packed, r.strategy, r.block)) for i, r in enumerate(rows)}
+    cost = {
+        i: len(tradestore.block(packed, r.strategy, r.block))
+        for i, r in enumerate(rows)
+    }
     got = dict(fanout.run(_cell, cost, fanout.CORES))
     measured = [got[i] for i in range(len(rows))]
     for m in measured:
         rows = m.pop("draws", [])
         if sink is not None:
             sink.extend(rows)
-    alike = siblings.correlations(plan, packed).rename(columns={"corr": "corr_vs_baseline"})
+    alike = siblings.correlations(plan, packed).rename(
+        columns={"corr": "corr_vs_baseline"}
+    )
     out = pd.concat([plan.reset_index(drop=True), pd.DataFrame(measured)], axis=1)
-    return siblings.beyond(out.merge(alike[["strategy", "timeframe", "role", "corr_vs_baseline"]],
-                            on=["strategy", "timeframe", "role"], how="left"))
+    return siblings.beyond(
+        out.merge(
+            alike[["strategy", "timeframe", "role", "corr_vs_baseline"]],
+            on=["strategy", "timeframe", "role"],
+            how="left",
+        )
+    )
 
 
 def matrix(panel: pd.DataFrame, statistic: str) -> pd.DataFrame:
@@ -189,7 +283,14 @@ def matrix(panel: pd.DataFrame, statistic: str) -> pd.DataFrame:
         sibling scaled to H4 has no D1 cell, because scaling to two targets at once is not
         a thing the fabrication makes.
     """
-    value = (panel["seen_all"].map(lambda d: d.get(statistic) if isinstance(d, dict) else None)
-             if "seen_all" in panel else panel["seen"])
+    value = (
+        panel["seen_all"].map(
+            lambda d: d.get(statistic) if isinstance(d, dict) else None
+        )
+        if "seen_all" in panel
+        else panel["seen"]
+    )
     wide = panel.assign(cell=panel["role"] + "_" + panel["timeframe"], _value=value)
-    return wide.pivot_table(index="mother", columns="cell", values="_value", observed=True)
+    return wide.pivot_table(
+        index="mother", columns="cell", values="_value", observed=True
+    )

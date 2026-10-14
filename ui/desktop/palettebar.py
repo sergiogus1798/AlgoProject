@@ -1,13 +1,24 @@
 """The palette view's top bar: which palette is open, what it is, and the library actions."""
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QInputDialog, QLabel, QLineEdit,
-                               QMessageBox, QPushButton, QVBoxLayout)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QFrame,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+)
 
 from ui.desktop import names
 
-POLICY_ES = {"neutral": "Sin etiquetar → entra a peso 1",
-             "off": "Sin etiquetar → fuera (la paleta ES su lista)"}
+POLICY_ES = {
+    "neutral": "Sin etiquetar → entra a peso 1",
+    "off": "Sin etiquetar → fuera (la paleta ES su lista)",
+}
 
 
 class PaletteBar(QFrame):
@@ -32,7 +43,8 @@ class PaletteBar(QFrame):
         self.picker = QComboBox()
         self.picker.setMinimumWidth(300)
         self.picker.currentIndexChanged.connect(
-            lambda: self.opened.emit(self.picker.currentData() or ""))
+            lambda: self.opened.emit(self.picker.currentData() or "")
+        )
         row.addWidget(self.picker)
         self.clone = QPushButton("Clonar")
         self.clone.clicked.connect(self.ask_clone)
@@ -46,7 +58,9 @@ class PaletteBar(QFrame):
             self.policy.addItem(text, key)
         self.policy.currentIndexChanged.connect(lambda _: self.restated.emit())
         row.addWidget(self.policy)
-        self.search = QLineEdit(placeholderText="Buscar bloque o forma en las 83 categorías")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.search = QLineEdit(
+            placeholderText="Buscar bloque o forma en las 83 categorías"
+        )  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.search.setMinimumWidth(240)
         self.search.textChanged.connect(lambda _: self.searched.emit())
         row.addWidget(self.search, 1)
@@ -76,13 +90,16 @@ class PaletteBar(QFrame):
         """
         self.picker.blockSignals(True)
         self.picker.clear()
-        for slug, entry in sorted(palettes.items(),
-                                  key=lambda kv: (kv[1]["palette"]["family"],
-                                                  kv[1]["palette"]["label"])):
+        for slug, entry in sorted(
+            palettes.items(),
+            key=lambda kv: (kv[1]["palette"]["family"], kv[1]["palette"]["label"]),
+        ):
             p = entry["palette"]
             mark = "★ " if p["origin"] == "default" else ""
-            self.picker.addItem(f"{names.family(p['family'])}  ·  {mark}{names.palette(p['label'])}",
-                                slug)
+            self.picker.addItem(
+                f"{names.family(p['family'])}  ·  {mark}{names.palette(p['label'])}",
+                slug,
+            )
         if keep:
             self.picker.setCurrentIndex(max(self.picker.findData(keep), 0))
         self.picker.blockSignals(False)
@@ -94,8 +111,9 @@ class PaletteBar(QFrame):
         The slug is derived from what is typed rather than asked for separately: two
         fields for one idea is how a library ends up with `ruptura2` labelled "Tendencia".
         """
-        label, ok = QInputDialog.getText(self, "Clonar paleta",
-                                         "Nombre de la copia:", text="")
+        label, ok = QInputDialog.getText(
+            self, "Clonar paleta", "Nombre de la copia:", text=""
+        )
         if not ok or not label.strip():
             return
         slug = "".join(c if c.isalnum() else "_" for c in label.strip().lower())
@@ -105,6 +123,13 @@ class PaletteBar(QFrame):
         """Say `removed` once the owner confirms: it deleted on the click (📓 2026-09-29), and
         a palette is an edited list of weights whose only undo was git."""
         name = self.picker.currentText()
-        if QMessageBox.question(self, "Borrar paleta", f"¿Borrar la paleta «{name}»? Su fichero "  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
-                                "se elimina de sqx/blocks/palettes/.") == QMessageBox.StandardButton.Yes:
+        if (
+            QMessageBox.question(
+                self,
+                "Borrar paleta",
+                f"¿Borrar la paleta «{name}»? Su fichero "  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
+                "se elimina de sqx/blocks/palettes/.",
+            )
+            == QMessageBox.StandardButton.Yes
+        ):
             self.removed.emit()

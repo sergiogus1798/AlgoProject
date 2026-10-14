@@ -11,7 +11,9 @@ def _locate(times: np.ndarray, bar_times: np.ndarray) -> np.ndarray:
     return np.searchsorted(bar_times, times, side="right") - 1
 
 
-def rebuild(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float) -> pd.DataFrame:
+def rebuild(
+    trades: pd.DataFrame, bars: pd.DataFrame, point_value: float
+) -> pd.DataFrame:
     """Each trade's worst and best floating excursion.
 
     The window is the entry minute up to (not including) the exit minute — the exit fills
@@ -39,10 +41,12 @@ def rebuild(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float) -> pd.
     mae = np.empty(len(trades))
     mfe = np.empty(len(trades))
     for i, (a, b, s) in enumerate(zip(open_idx, close_idx, side)):
-        if a < 0:                   # opened before the first bar: nothing to read, not the last bar's slice
+        if (
+            a < 0
+        ):  # opened before the first bar: nothing to read, not the last bar's slice
             mae[i] = mfe[i] = np.nan
             continue
-        b = max(b, a + 1)           # a trade opened and closed inside one bar reads its own bar
+        b = max(b, a + 1)  # a trade opened and closed inside one bar reads its own bar
         worst = low[a:b].min() if s > 0 else high[a:b].max()
         best = high[a:b].max() if s > 0 else low[a:b].min()
         mae[i] = min(0.0, s * (worst - open_price[i])) * size[i] * point_value
@@ -62,8 +66,9 @@ class Licence(TypedDict):
     licensed: bool
 
 
-def licence(trades: pd.DataFrame, rebuilt: pd.DataFrame, tolerance: float,
-            min_share: float) -> Licence:
+def licence(
+    trades: pd.DataFrame, rebuilt: pd.DataFrame, tolerance: float, min_share: float
+) -> Licence:
     """Whether the M1 rebuild may stand in for SQX's own `MAE ($)`/`MFE ($)` columns.
 
     Args:
@@ -80,7 +85,11 @@ def licence(trades: pd.DataFrame, rebuilt: pd.DataFrame, tolerance: float,
     mfe_gap = rebuilt["mfe"].to_numpy() - trades["MFE ($)"].to_numpy()
     mae_exact = float((np.abs(mae_gap) <= tolerance).mean())
     mfe_exact = float((np.abs(mfe_gap) <= tolerance).mean())
-    return {"n": len(trades), "mae_exact": mae_exact, "mfe_exact": mfe_exact,
-            "mae_median_gap": float(np.median(np.abs(mae_gap))),
-            "mfe_median_gap": float(np.median(np.abs(mfe_gap))),
-            "licensed": mae_exact >= min_share and mfe_exact >= min_share}
+    return {
+        "n": len(trades),
+        "mae_exact": mae_exact,
+        "mfe_exact": mfe_exact,
+        "mae_median_gap": float(np.median(np.abs(mae_gap))),
+        "mfe_median_gap": float(np.median(np.abs(mfe_gap))),
+        "licensed": mae_exact >= min_share and mfe_exact >= min_share,
+    }

@@ -19,7 +19,15 @@ DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
 # it, 1 is neutral, 2 and 3 prefer it. An empty map means nobody has labelled it.
 # The first three keep the keys they always had; `momentum`, `volatility`, `pattern` and
 # `session` are the same words as the coverage registry's. Order is the file's order.
-ARCHETYPES = ("breakout", "mean_reversion", "trend", "momentum", "volatility", "pattern", "session")
+ARCHETYPES = (
+    "breakout",
+    "mean_reversion",
+    "trend",
+    "momentum",
+    "volatility",
+    "pattern",
+    "session",
+)
 WEIGHTS = (0, 1, 2, 3)
 
 HEADER = f"""\
@@ -45,7 +53,9 @@ HEADER = f"""\
 """
 
 
-def merge(fresh: dict[str, dict], old: dict[str, dict]) -> tuple[dict, list[str], list[str]]:
+def merge(
+    fresh: dict[str, dict], old: dict[str, dict]
+) -> tuple[dict, list[str], list[str]]:
     """Carry the labels already written into a freshly read taxonomy.
 
     Args:
@@ -57,9 +67,12 @@ def merge(fresh: dict[str, dict], old: dict[str, dict]) -> tuple[dict, list[str]
         longer holds. The dropped ones are returned rather than kept: an unreachable block
         cannot be in a palette, and git holds the labels if one comes back.
     """
-    labelled = {key: block["archetypes"]
-                for blocks in old.values() for key, block in blocks.items()
-                if block.get("archetypes")}
+    labelled = {
+        key: block["archetypes"]
+        for blocks in old.values()
+        for key, block in blocks.items()
+        if block.get("archetypes")
+    }
     here = {key for blocks in fresh.values() for key in blocks}
     for blocks in fresh.values():
         for key, block in blocks.items():
@@ -91,12 +104,19 @@ def flat(taxonomy: dict[str, dict]) -> dict[str, dict]:
         Block key to its row, the category folded in. The file is nested because that is
         how it is read by a person; everything that computes with it wants it flat.
     """
-    return {key: {**row, "category": category}
-            for category, blocks in taxonomy.items() for key, row in blocks.items()}
+    return {
+        key: {**row, "category": category}
+        for category, blocks in taxonomy.items()
+        for key, row in blocks.items()
+    }
 
 
-def family_blocks(family: str, min_weight: int = 2, taxonomy: dict[str, dict] | None = None,
-                  role: str | None = None) -> dict[str, int]:
+def family_blocks(
+    family: str,
+    min_weight: int = 2,
+    taxonomy: dict[str, dict] | None = None,
+    role: str | None = None,
+) -> dict[str, int]:
     """The blocks that carry at least a given weight in one family.
 
     Args:
@@ -111,9 +131,13 @@ def family_blocks(family: str, min_weight: int = 2, taxonomy: dict[str, dict] | 
     """
     assert family in ARCHETYPES, f"unknown family {family}"
     rows = flat(taxonomy if taxonomy is not None else read(TAXONOMY))
-    hits = {k: r["archetypes"][family] for k, r in rows.items()
-            if family in r["archetypes"] and r["archetypes"][family] >= min_weight
-            and (role is None or role in r["roles"])}
+    hits = {
+        k: r["archetypes"][family]
+        for k, r in rows.items()
+        if family in r["archetypes"]
+        and r["archetypes"][family] >= min_weight
+        and (role is None or role in r["roles"])
+    }
     return dict(sorted(hits.items(), key=lambda kv: (-kv[1], kv[0])))
 
 
@@ -127,8 +151,13 @@ def write(path: Path, taxonomy: dict[str, dict]) -> int:
     Returns:
         How many blocks were written.
     """
-    body = yaml.safe_dump(taxonomy, sort_keys=False, allow_unicode=True,
-                          width=1000, default_flow_style=None)
+    body = yaml.safe_dump(
+        taxonomy,
+        sort_keys=False,
+        allow_unicode=True,
+        width=1000,
+        default_flow_style=None,
+    )
     path.write_text(HEADER + "\n" + body, encoding="utf-8")
     return sum(len(blocks) for blocks in taxonomy.values())
 
@@ -156,10 +185,18 @@ def counts(taxonomy: dict[str, dict]) -> Counter:
 def main() -> None:
     """Refresh the block taxonomy from an install, keeping every label already written."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--role", default="master", choices=sorted(installs()),
-                    help="which install's vocabulary to read; default the master")
-    ap.add_argument("--donor", type=Path, default=DONOR,
-                    help="the project.cfx whose Build task lists the roles")
+    ap.add_argument(
+        "--role",
+        default="master",
+        choices=sorted(installs()),
+        help="which install's vocabulary to read; default the master",
+    )
+    ap.add_argument(
+        "--donor",
+        type=Path,
+        default=DONOR,
+        help="the project.cfx whose Build task lists the roles",
+    )
     ap.add_argument("--out", type=Path, default=TAXONOMY)
     args = ap.parse_args()
     refresh(args.role, args.donor, args.out)
@@ -180,19 +217,29 @@ def refresh(role: str, donor: Path = DONOR, out: Path = TAXONOMY) -> None:
     total = write(out, taxonomy)
     c = counts(taxonomy)
 
-    print(f"{out}: {total} bloques en {len(taxonomy)} categorías, leídos de "
-          f"{vocab['install']}")
-    print(f"  papeles   señal {c['signal']} · indicador {c['indicator']} · nivel {c['level']}")
+    print(
+        f"{out}: {total} bloques en {len(taxonomy)} categorías, leídos de "
+        f"{vocab['install']}"
+    )
+    print(
+        f"  papeles   señal {c['signal']} · indicador {c['indicator']} · nivel {c['level']}"
+    )
     print(f"  etiquetas {c['labelled']} puestas, {total - c['labelled']} por poner")
     if newer:
-        print(f"  posteriores al donante ({len(newer)}), añadidos por su tipo: "
-              f"{', '.join(newer)}")
+        print(
+            f"  posteriores al donante ({len(newer)}), añadidos por su tipo: "
+            f"{', '.join(newer)}"
+        )
     if added:
-        print(f"  nuevos ({len(added)}): {', '.join(added[:8])}"
-              + (" …" if len(added) > 8 else ""))
+        print(
+            f"  nuevos ({len(added)}): {', '.join(added[:8])}"
+            + (" …" if len(added) > 8 else "")
+        )
     if dropped:
-        print(f"  ⚠️ ETIQUETADOS QUE YA NO ESTÁN EN LA INSTALACIÓN ({len(dropped)}), "
-              f"sus etiquetas se pierden: {', '.join(dropped)}")
+        print(
+            f"  ⚠️ ETIQUETADOS QUE YA NO ESTÁN EN LA INSTALACIÓN ({len(dropped)}), "
+            f"sus etiquetas se pierden: {', '.join(dropped)}"
+        )
 
 
 if __name__ == "__main__":

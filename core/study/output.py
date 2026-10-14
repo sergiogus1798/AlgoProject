@@ -32,7 +32,9 @@ def folder(export: Path, module: str) -> Path:
         export's manifest — the path spells the databank with underscores, SQX with spaces.
     """
     source = manifest.read(export.parent)["source"]
-    return report_dir(source["project"], source["databank"], export.parent.name) / module
+    return (
+        report_dir(source["project"], source["databank"], export.parent.name) / module
+    )
 
 
 def identify(folder: Path, names: list[str]) -> dict[str, str | None]:
@@ -47,7 +49,9 @@ def identify(folder: Path, names: list[str]) -> dict[str, str | None]:
     """
     doc = manifest.read(folder)
     source = doc["source"]
-    return identity.resolve(source["project"], source["databank"], names, folder, doc["date"])
+    return identity.resolve(
+        source["project"], source["databank"], names, folder, doc["date"]
+    )
 
 
 def member(out: Path, result: dict, title: str, lede: str = "") -> Path:

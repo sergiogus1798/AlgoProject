@@ -3,8 +3,14 @@
 from collections.abc import Callable
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QListWidget, QListWidgetItem, QPushButton,
-                               QVBoxLayout)
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QVBoxLayout,
+)
 
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.result import ResultView
@@ -19,9 +25,12 @@ from ui.text.glossary import label as words
 # The Ficha's sub-tabs that read the frozen cosecha: (entry, route under /api or None for the
 # trade gallery, whether the route takes the asset). «Lote» is not among them: the variant batch
 # is read live by the mother's name, and the archive does not freeze it.
-SHEETS = (("Ficha · IS/OOS", "tearsheet", False), ("Ficha · Salidas", "tearsheet/exits", False),
-          ("Ficha · Contra el subyacente", "tearsheet/market", True),
-          ("Ficha · Operaciones", None, False))
+SHEETS = (
+    ("Ficha · IS/OOS", "tearsheet", False),
+    ("Ficha · Salidas", "tearsheet/exits", False),
+    ("Ficha · Contra el subyacente", "tearsheet/market", True),
+    ("Ficha · Operaciones", None, False),
+)
 
 
 class ArchivedStudies(QFrame):
@@ -43,8 +52,11 @@ class ArchivedStudies(QFrame):
         self.note = text("", T["muted"], 13)
         self.view = ResultView()
         # The gallery asks /api/tearsheet/trades itself: every call it makes carries the version.
-        self.gallery = TradeGallery(lambda path, **q: self.fetch(
-            path, **q, source="archive", version=self.shown["version"]))
+        self.gallery = TradeGallery(
+            lambda path, **q: self.fetch(
+                path, **q, source="archive", version=self.shown["version"]
+            )
+        )
         self.gallery.hide()
         right = QVBoxLayout()
         right.addWidget(self.note)
@@ -67,22 +79,28 @@ class ArchivedStudies(QFrame):
         for name, _route, _ in SHEETS:
             item = QListWidgetItem(name)
             item.setData(Qt.ItemDataRole.UserRole, ("sheet", name, shown["databank"]))
-            item.setToolTip(f"Las operaciones congeladas de {shown['databank']}, IS y OOS por "
-                            "separado. No es un estudio.")
+            item.setToolTip(
+                f"Las operaciones congeladas de {shown['databank']}, IS y OOS por "
+                "separado. No es un estudio."
+            )
             self.menu.addItem(item)
         for databank, studies in shown["held"].items():
             for s in studies:
                 item = QListWidgetItem(f"{databank} › {s['title']}")
                 item.setData(Qt.ItemDataRole.UserRole, ("study", s["study"], databank))
-                item.setToolTip(f"{FAMILY.get(s['family'], s['family'])}"
-                                f"{', paso ' + s['step'] if s['step'] else ''} · corrió el "
-                                f"{s['day']} · configuración {s['config_hash'] or '—'}")
+                item.setToolTip(
+                    f"{FAMILY.get(s['family'], s['family'])}"
+                    f"{', paso ' + s['step'] if s['step'] else ''} · corrió el "
+                    f"{s['day']} · configuración {s['config_hash'] or '—'}"
+                )
                 self.menu.addItem(item)
         for e in shown.get("extras", []):
             item = QListWidgetItem(f"Campaña · paso {e['step']} › {e['title']}")
             item.setData(Qt.ItemDataRole.UserRole, ("extra", e["key"], ""))
-            item.setToolTip("Resultado que el archivo no puede emparejar por identidad (lleva otra "
-                            "firma en su databank): se guardó en la carpeta del workflow, de la madre.")
+            item.setToolTip(
+                "Resultado que el archivo no puede emparejar por identidad (lleva otra "
+                "firma en su databank): se guardó en la carpeta del workflow, de la madre."
+            )
             self.menu.addItem(item)
         self.menu.blockSignals(False)
         self.menu.setCurrentRow(0)
@@ -96,18 +114,28 @@ class ArchivedStudies(QFrame):
         s = self.shown
         self.view.show()
         self.gallery.hide()
-        where = {"project": s["project"], "databank": databank, "identity": s["identity"],
-                 "source": "archive", "version": s["version"]}
-        mother = (f" · de la madre «{s['strategy']}»" if s.get("label") and s["label"] != s["strategy"]
-                  else "")
+        where = {
+            "project": s["project"],
+            "databank": databank,
+            "identity": s["identity"],
+            "source": "archive",
+            "version": s["version"],
+        }
+        mother = (
+            f" · de la madre «{s['strategy']}»"
+            if s.get("label") and s["label"] != s["strategy"]
+            else ""
+        )
         if kind == "extra":
             got = self.fetch("campaign/extra", workflow=s["workflow"], key=key)
             if "error" in got:
                 return self._say(got["error"])
             self.view.show_result(got["result"], got["meta"])
             self._no_report()
-            return self.note.setText(f"{item.text()} · corrió el {got['meta']['day'] or '—'} · "
-                                     f"guardado en la carpeta del workflow{mother}")
+            return self.note.setText(
+                f"{item.text()} · corrió el {got['meta']['day'] or '—'} · "
+                f"guardado en la carpeta del workflow{mother}"
+            )
         if kind == "study":
             got = self.fetch("result", **where, study=key, strategy=s["strategy"])
             whole = ""
@@ -115,20 +143,28 @@ class ArchivedStudies(QFrame):
                 # A study that writes only the databank's result (spread, crossTF): the
                 # archive froze that one beside the strategy, as the population page showed it.
                 got = self.fetch("result", **where, study=key, strategy="")
-                whole = (" · sin resultado propio de esta estrategia: es el del databank "
-                         "entero, archivado con ella")
+                whole = (
+                    " · sin resultado propio de esta estrategia: es el del databank "
+                    "entero, archivado con ella"
+                )
             if "error" in got:
                 return self._say(got["error"])
             self.view.show_result(got["result"], got["meta"])
             self._no_report()
-            return self.note.setText(f"{item.text()} · corrió el {got['meta']['day'] or '—'} · "
-                                     f"leído de la versión {s['version']} del archivo{whole}{mother}")
+            return self.note.setText(
+                f"{item.text()} · corrió el {got['meta']['day'] or '—'} · "
+                f"leído de la versión {s['version']} del archivo{whole}{mother}"
+            )
         _, route, asset = next(e for e in SHEETS if e[0] == key)
-        self.note.setText(f"{item.text()} · de la versión {s['version']} del archivo{mother}")
+        self.note.setText(
+            f"{item.text()} · de la versión {s['version']} del archivo{mother}"
+        )
         if route is None:
             self.view.hide()
             self.gallery.show()
-            return self.gallery.load(s["project"], databank, s["identity"], "IS", s["symbol"])
+            return self.gallery.load(
+                s["project"], databank, s["identity"], "IS", s["symbol"]
+            )
         got = self.fetch(route, **where, **({"asset": s["symbol"]} if asset else {}))
         if "error" in got:
             return self._say(got["error"])
@@ -138,7 +174,9 @@ class ArchivedStudies(QFrame):
         pair, notes = sides(got)
         self.note.setText(f"{self.note.text()}<br>{notes}")
         left, right = pair
-        self.view.compare(left, right, (got["tabs"][0]["title"], got["tabs"][1]["title"]))
+        self.view.compare(
+            left, right, (got["tabs"][0]["title"], got["tabs"][1]["title"])
+        )
         # As on the live Ficha: the sheet judges nothing, so compare()'s verdict row goes.
         hide_first_row(self.view)
         self._no_report()

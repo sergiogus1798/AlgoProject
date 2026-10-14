@@ -19,15 +19,23 @@ from core.paths import DATA, ROOT
 # file names tests, not numbers, and the numbers are what a caller has. A name here that the
 # policy does not list is refused on the reserved segment all the same: `BlindJoint` (step 20's
 # SPA on oos2) is only the word the owner would add, not a permission.
-STEPS = {"WFC": 17, "CSCV": 18, "MarketSurfaces": 18.5, "WFM": 19, "BlindJoint": 20,
-         "ATRStop": 24}
+STEPS = {
+    "WFC": 17,
+    "CSCV": 18,
+    "MarketSurfaces": 18.5,
+    "WFM": 19,
+    "BlindJoint": 20,
+    "ATRStop": 24,
+}
 BLIND = (17, 18, 19)
 AUTONOMOUS = assetdata.AUTONOMOUS
-enforced = assetdata.enforced      # the door is shut only for an autonomous agent
+enforced = assetdata.enforced  # the door is shut only for an autonomous agent
 # `seal` (encargo 48): the seal inside the study, shut for everyone, human or not.
 CRITERIA = ROOT / "pipeline" / "autopilot" / "criteria.yaml"
 CALIBRATION = DATA / "ledger" / "wfc_calibration.json"
-JUDGED = (17,)      # the steps whose reading of a reserved segment needs a written, calibrated criterion
+JUDGED = (
+    17,
+)  # the steps whose reading of a reserved segment needs a written, calibrated criterion
 
 
 def reserved(symbol: str) -> dict[str, list[int]]:
@@ -42,8 +50,11 @@ def reserved(symbol: str) -> dict[str, list[int]]:
         than none.
     """
     segments = assetdata.load(symbol)["segments"]
-    return {name: [STEPS[t] for t in spec["reserved_for"]]
-            for name, spec in segments.items() if spec.get("reserved_for")}
+    return {
+        name: [STEPS[t] for t in spec["reserved_for"]]
+        for name, spec in segments.items()
+        if spec.get("reserved_for")
+    }
 
 
 def allow(step: float, segment: str, symbol: str) -> None:
@@ -68,19 +79,24 @@ def allow(step: float, segment: str, symbol: str) -> None:
     if not enforced():
         return
     held = reserved(symbol)
-    for part in segment.split("+"):      # step 26 reads "oos1+oos2": any reserved part binds
+    for part in segment.split(
+        "+"
+    ):  # step 26 reads "oos1+oos2": any reserved part binds
         allowed = held.get(part)
         if allowed is not None and step not in allowed:
             names = [n for n, s in STEPS.items() if s in allowed]
             raise PermissionError(
                 f"ledger: el paso {step} no puede mirar `{part}` de {symbol}: está "
                 f"reservado para {', '.join(names)}. Cada mirada lo gasta "
-                f"(assets/_policy.yaml, WORKFLOW.md §la puerta de un solo sentido)")
+                f"(assets/_policy.yaml, WORKFLOW.md §la puerta de un solo sentido)"
+            )
 
 
 def criteria_hash(step: dict | None) -> str:
     """sha256 of a canonical dump of one `criteria.yaml` entry: the value the calibration signs."""
-    return hashlib.sha256(json.dumps(step, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    return hashlib.sha256(
+        json.dumps(step, sort_keys=True, ensure_ascii=False).encode()
+    ).hexdigest()
 
 
 def seal(step: float, segment: str, symbol: str) -> None:
@@ -105,22 +121,39 @@ def seal(step: float, segment: str, symbol: str) -> None:
         if allowed is None:
             continue
         if step not in allowed:
-            raise PermissionError(f"ledger: el paso {step} no puede mirar `{part}` de {symbol}: "
-                                  f"no está en su reserva (assets/_policy.yaml)")
+            raise PermissionError(
+                f"ledger: el paso {step} no puede mirar `{part}` de {symbol}: "
+                f"no está en su reserva (assets/_policy.yaml)"
+            )
         if step not in JUDGED:
             continue
-        entry = yaml.safe_load(CRITERIA.read_text(encoding="utf-8")).get("steps", {}).get(str(int(step)), {}) or {}
+        entry = (
+            yaml.safe_load(CRITERIA.read_text(encoding="utf-8"))
+            .get("steps", {})
+            .get(str(int(step)), {})
+            or {}
+        )
         rules = entry.get("rules")
         if not rules:
-            raise PermissionError(f"ledger: `{part}` sellado: criteria.yaml no tiene regla "
-                                  f"para el paso {step}")
-        found = json.loads(CALIBRATION.read_text(encoding="utf-8")) if CALIBRATION.exists() else {}
+            raise PermissionError(
+                f"ledger: `{part}` sellado: criteria.yaml no tiene regla "
+                f"para el paso {step}"
+            )
+        found = (
+            json.loads(CALIBRATION.read_text(encoding="utf-8"))
+            if CALIBRATION.exists()
+            else {}
+        )
         if found.get("criteria_sha256") != criteria_hash(entry):
-            raise PermissionError(f"ledger: `{part}` sellado: no hay calibración registrada para "
-                                  f"este criteria.yaml ({CALIBRATION})")
+            raise PermissionError(
+                f"ledger: `{part}` sellado: no hay calibración registrada para "
+                f"este criteria.yaml ({CALIBRATION})"
+            )
         if found.get("abre") is not True:
-            raise PermissionError(f"ledger: `{part}` sellado: la calibración registrada el "
-                                  f"{found.get('fecha')} no abre el bloque (abre: false)")
+            raise PermissionError(
+                f"ledger: `{part}` sellado: la calibración registrada el "
+                f"{found.get('fecha')} no abre el bloque (abre: false)"
+            )
 
 
 def done(frame: pd.DataFrame) -> dict[int, bool]:
@@ -159,4 +192,5 @@ def allow_read(frame: pd.DataFrame) -> None:
         raise PermissionError(
             f"ledger: el paso 20 es ciego hasta que 17, 18 y 19 estén los tres hechos; "
             f"faltan {pending}. Mirar dos antes de correr el tercero contamina la "
-            f"decisión de correrlo, y el oos2 es la última bala")
+            f"decisión de correrlo, y el oos2 es la última bala"
+        )

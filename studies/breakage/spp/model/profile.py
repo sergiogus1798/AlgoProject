@@ -6,8 +6,17 @@ import numpy as np
 import pandas as pd
 
 # `plateau`'s result; `from` and `to` are Python keywords, hence the functional form.
-Plateau = TypedDict("Plateau", {"from": float, "to": float, "width": int, "center": float,
-                                "argmax": float, "levels_total": int})
+Plateau = TypedDict(
+    "Plateau",
+    {
+        "from": float,
+        "to": float,
+        "width": int,
+        "center": float,
+        "argmax": float,
+        "levels_total": int,
+    },
+)
 
 
 def marginal(frame: pd.DataFrame, parameter: str, metric: str) -> pd.DataFrame:
@@ -25,11 +34,18 @@ def marginal(frame: pd.DataFrame, parameter: str, metric: str) -> pd.DataFrame:
         represented and a sparse level's median is a weaker reading.
     """
     grouped = frame.groupby(parameter)[metric]
-    return pd.DataFrame({
-        "level": grouped.median().index,
-        "median": grouped.median().to_numpy(),
-        "iqr": (grouped.quantile(0.75) - grouped.quantile(0.25)).to_numpy(),
-        "n": grouped.size().to_numpy()}).sort_values("level").reset_index(drop=True)
+    return (
+        pd.DataFrame(
+            {
+                "level": grouped.median().index,
+                "median": grouped.median().to_numpy(),
+                "iqr": (grouped.quantile(0.75) - grouped.quantile(0.25)).to_numpy(),
+                "n": grouped.size().to_numpy(),
+            }
+        )
+        .sort_values("level")
+        .reset_index(drop=True)
+    )
 
 
 def plateau(profile: pd.DataFrame, share: float = 0.5) -> Plateau:
@@ -60,13 +76,23 @@ def plateau(profile: pd.DataFrame, share: float = 0.5) -> Plateau:
     while hi < len(good) - 1 and good[hi + 1]:
         hi += 1
     levels = profile["level"].to_numpy()
-    return {"from": float(levels[lo]), "to": float(levels[hi]), "width": int(hi - lo + 1),
-            "center": float((levels[lo] + levels[hi]) / 2),
-            "argmax": float(levels[best]), "levels_total": int(len(levels))}
+    return {
+        "from": float(levels[lo]),
+        "to": float(levels[hi]),
+        "width": int(hi - lo + 1),
+        "center": float((levels[lo] + levels[hi]) / 2),
+        "argmax": float(levels[best]),
+        "levels_total": int(len(levels)),
+    }
 
 
-def design_levels(profile: pd.DataFrame, plateau_call: Plateau, original: float,
-                  count: int, min_span: float) -> list[float]:
+def design_levels(
+    profile: pd.DataFrame,
+    plateau_call: Plateau,
+    original: float,
+    count: int,
+    min_span: float,
+) -> list[float]:
     """Where to place the variant grid's levels for this parameter.
 
     Args:

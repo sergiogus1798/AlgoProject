@@ -6,7 +6,14 @@ import re
 import httpx
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent
-from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QFrame,
+    QLabel,
+    QScrollArea,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import background, client
 from ui.text.glossary import LABELS, label
@@ -20,7 +27,9 @@ FACE = MONO.split(",")[0].strip('"')
 # The header row over the columns (owner, 2026-09-28: «Razón · Steps» on top).
 HEAD = ("Criba (nivel · regla de la puerta)", "Entran → pasan", "Razón")
 SENTENCE = re.compile(r"(^|[.·]\s+)([a-záéíóúñ])(?!\w*_)")
-LEADING_KEY = re.compile(r"^[a-z]\w*(?= sobre |: )")     # «wfc: 1 lote…», «spp sobre SPP_IS…»
+LEADING_KEY = re.compile(
+    r"^[a-z]\w*(?= sobre |: )"
+)  # «wfc: 1 lote…», «spp sobre SPP_IS…»
 
 
 def capital(text: str) -> str:
@@ -41,7 +50,9 @@ def step_numbers(steps: list[dict]) -> dict[str, str]:
         a gate screen is the step whose study is the gate, a later row is its step by title.
     """
     out = {s["title"]: s["n"] for s in steps}
-    out["Build"] = ", ".join(s["n"] for s in steps if s.get("stage") in ("build", "oos"))
+    out["Build"] = ", ".join(
+        s["n"] for s in steps if s.get("stage") in ("build", "oos")
+    )
     out["gate"] = next((s["n"] for s in steps if "gate" in s["studies"]), "")
     return out
 
@@ -53,7 +64,7 @@ def rule_words(text: str) -> str:
     """
     tokens = text.split()
     facts = [label(t) for t in tokens if t in LABELS]
-    if len(facts) > 1:      # a compound rule names its facts with no pass line: «e_fin t_b»
+    if len(facts) > 1:  # a compound rule names its facts with no pass line: «e_fin t_b»
         facts = [f[0].lower() + f[1:] if f[1:2].islower() else f for f in facts]
         return " y ".join(facts) + "".join(" " + t for t in tokens if t not in LABELS)
     return " ".join(label(t) if t in LABELS else t for t in tokens)
@@ -68,15 +79,18 @@ class Bars(QWidget):
         """Start empty."""
         super().__init__()
         self.rows: list[dict] = []
-        self.steps: dict[str, str] = {}      # row screen → its steps, `step_numbers`
+        self.steps: dict[str, str] = {}  # row screen → its steps, `step_numbers`
 
     def name(self, r: dict) -> str:
         """A row's label with the steps it stands for: «Estáticas (8)»; a gate rule, by level."""
         if r.get("level"):
             return f"{r['level']} · {rule_words(r['screen'])}"
-        n = self.steps.get(r["screen"]) or (self.steps.get("gate", "")
-                                           if r.get("kind") in ("hard", "soft")
-                                           and not r["screen"].startswith("Filtro") else "")
+        n = self.steps.get(r["screen"]) or (
+            self.steps.get("gate", "")
+            if r.get("kind") in ("hard", "soft")
+            and not r["screen"].startswith("Filtro")
+            else ""
+        )
         return label(r["screen"]) + (f" ({n})" if n else "")
 
     def fill(self, rows: list[dict]) -> None:
@@ -105,17 +119,26 @@ class Bars(QWidget):
         why_x = LABEL + span + NUMBERS + 12
         p.setFont(QFont(FACE, 9, QFont.Weight.Bold))
         p.setPen(QColor(T["muted"]))
-        for x, w, text, align in ((0, LABEL - 10, HEAD[0], Qt.AlignmentFlag.AlignRight),
-                                  (LABEL + span + 10, NUMBERS, HEAD[1], Qt.AlignmentFlag.AlignLeft),
-                                  (why_x, self.width() - why_x, HEAD[2], Qt.AlignmentFlag.AlignLeft)):
-            p.drawText(QRectF(x, 3, w, ROW - 4), Qt.AlignmentFlag.AlignVCenter | align, text)
+        for x, w, text, align in (
+            (0, LABEL - 10, HEAD[0], Qt.AlignmentFlag.AlignRight),
+            (LABEL + span + 10, NUMBERS, HEAD[1], Qt.AlignmentFlag.AlignLeft),
+            (why_x, self.width() - why_x, HEAD[2], Qt.AlignmentFlag.AlignLeft),
+        ):
+            p.drawText(
+                QRectF(x, 3, w, ROW - 4), Qt.AlignmentFlag.AlignVCenter | align, text
+            )
         for i, r in enumerate(self.rows, start=1):
             y = i * ROW + 3
             p.setFont(QFont(FACE, 10, QFont.Weight.Bold))
             p.setPen(QColor(T["text"]))
             # elided on the right: a long compound rule used to lose its level at the left edge
-            p.drawText(QRectF(0, y, LABEL - 10, ROW - 4), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight,
-                       p.fontMetrics().elidedText(self.name(r), Qt.TextElideMode.ElideRight, LABEL - 10))
+            p.drawText(
+                QRectF(0, y, LABEL - 10, ROW - 4),
+                Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight,
+                p.fontMetrics().elidedText(
+                    self.name(r), Qt.TextElideMode.ElideRight, LABEL - 10
+                ),
+            )
             p.setPen(Qt.PenStyle.NoPen)
             soft = r.get("kind") == "soft"
             if r["entered"] is None:
@@ -129,21 +152,39 @@ class Bars(QWidget):
                 p.setBrush(QColor(C["pending"] if soft else C["promising"]))
                 p.drawRect(QRectF(LABEL, y + 5, passed, ROW - 12))
                 p.setBrush(QColor(C["dead"]))
-                p.drawRect(QRectF(LABEL + passed, y + 5,
-                                  span * min(r["died"] / total, 1 - r["passed"] / total),
-                                  ROW - 12))
+                p.drawRect(
+                    QRectF(
+                        LABEL + passed,
+                        y + 5,
+                        span * min(r["died"] / total, 1 - r["passed"] / total),
+                        ROW - 12,
+                    )
+                )
                 text = f"{num(r['entered']):>6} → {num(r['passed']):>6}"
             p.setPen(QColor(T["text"] if r["entered"] is not None else C["weak"]))
-            p.drawText(QRectF(LABEL + span + 10, y, NUMBERS, ROW - 4), Qt.AlignmentFlag.AlignVCenter, text)
+            p.drawText(
+                QRectF(LABEL + span + 10, y, NUMBERS, ROW - 4),
+                Qt.AlignmentFlag.AlignVCenter,
+                text,
+            )
             if r["died"]:
                 p.setPen(QColor(C["dead"]))
-                p.drawText(QRectF(LABEL + span + 10 + 150, y, 70, ROW - 4), Qt.AlignmentFlag.AlignVCenter,
-                           f"−{num(r['died'])}")
+                p.drawText(
+                    QRectF(LABEL + span + 10 + 150, y, 70, ROW - 4),
+                    Qt.AlignmentFlag.AlignVCenter,
+                    f"−{num(r['died'])}",
+                )
             p.setFont(QFont(FACE, 10))
             p.setPen(QColor(T["muted"] if r["passed"] is not None else C["accent"]))
-            p.drawText(QRectF(why_x, y, self.width() - why_x, ROW - 4), Qt.AlignmentFlag.AlignVCenter,
-                       p.fontMetrics().elidedText(capital(r["why"]), Qt.TextElideMode.ElideRight,
-                                                  int(self.width() - why_x)))
+            p.drawText(
+                QRectF(why_x, y, self.width() - why_x, ROW - 4),
+                Qt.AlignmentFlag.AlignVCenter,
+                p.fontMetrics().elidedText(
+                    capital(r["why"]),
+                    Qt.TextElideMode.ElideRight,
+                    int(self.width() - why_x),
+                ),
+            )
 
 
 class Funnel(QFrame):
@@ -158,7 +199,9 @@ class Funnel(QFrame):
         self.note = QLabel("")
         self.note.setObjectName("dim")
         self.note.setWordWrap(True)
-        self.note.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.note.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred
+        )
         self.bars = Bars()
         # Seventeen rows are ~420 px: scrolled, so the strip never sets the window's height.
         scroll = QScrollArea()
@@ -179,11 +222,13 @@ class Funnel(QFrame):
             rows: Funnel rows.
             source: Where the gate's rows came from, said under the kicker.
         """
-        self.note.setText("Cuántas estrategias entran en cada criba, cuántas pasan y por qué "
-                          "caen las que caen. El número entre paréntesis es el paso del workflow "
-                          "(de los 25) al que pertenece la criba. Las barras van a escala de la "
-                          "población del build; cada paso posterior lee su propio databank."
-                          + (f"  Puerta: {source}." if source else ""))
+        self.note.setText(
+            "Cuántas estrategias entran en cada criba, cuántas pasan y por qué "
+            "caen las que caen. El número entre paréntesis es el paso del workflow "
+            "(de los 25) al que pertenece la criba. Las barras van a escala de la "
+            "población del build; cada paso posterior lee su propio databank."
+            + (f"  Puerta: {source}." if source else "")
+        )
         self.bars.fill(rows)
 
     def name_steps(self, steps: list[dict]) -> None:
@@ -199,6 +244,7 @@ class Funnel(QFrame):
             project: Project name. `/api/filters/state` (F6, wave 3) is read when it answers
                 and adds its rows after the gate's; a 404 or a daemon without it adds none.
         """
+
         def both() -> dict[str, Any]:
             """The funnel and the filters' rows, on the pool's thread."""
             got = client.get("databank/funnel", project=project)
@@ -206,9 +252,12 @@ class Funnel(QFrame):
                 return got
             try:
                 extra = client.get("filters/state", project=project).get("rows", [])
-            except httpx.HTTPError as err:       # said in the funnel's label, not swallowed
-                return got | {"source": f"{got['source']} — sin las filas de los filtros: {err}"}
+            except httpx.HTTPError as err:  # said in the funnel's label, not swallowed
+                return got | {
+                    "source": f"{got['source']} — sin las filas de los filtros: {err}"
+                }
             return got | {"rows": got["rows"] + extra}
+
         background.run(both, self.landed, key=f"funnel:{id(self)}")
 
     def landed(self, got: dict) -> None:

@@ -13,8 +13,10 @@ from studies.optimisation.cscv.measure.queue import Mother, Panel
 from studies.optimisation.cscv.verdict import state
 
 FEW = "quedan {n} variantes tras los filtros, menos de {need}: sin dato"
-BAND = ("la mediana del PBO del nulo es {got:.2f}, fuera de {low}–{high}: el remuestreo no "
-        "está dejando el panel sin nada que elegir; no leas el PBO contra este nulo")
+BAND = (
+    "la mediana del PBO del nulo es {got:.2f}, fuera de {low}–{high}: el remuestreo no "
+    "está dejando el panel sin nada que elegir; no leas el PBO contra este nulo"
+)
 BUDGET = "la cola tardó {got:.0f} s, por encima del presupuesto de {budget:.0f} s"
 
 
@@ -32,14 +34,20 @@ def panel(metrics: pd.DataFrame, cells: Weekly, cfg: dict) -> Panel:
         mother's column) and `counts` (`inputs.batch.screen`).
     """
     kept, counts = batch.screen(metrics, cells["info"], cells["years"], cfg["panel"])
-    return {"names": np.array(kept), "counts": counts,
-            "track": kept.index(counts["madre"]) if counts["madre"] in kept else None,
-            "net": cells["net"][kept].to_numpy(np.float64),
-            "gross": cells["gross"][kept].to_numpy(np.float64)}
+    return {
+        "names": np.array(kept),
+        "counts": counts,
+        "track": kept.index(counts["madre"]) if counts["madre"] in kept else None,
+        "net": cells["net"][kept].to_numpy(np.float64),
+        "gross": cells["gross"][kept].to_numpy(np.float64),
+    }
 
 
-def run(batches: dict[Mother, tuple[pd.DataFrame, Weekly]], cfg: dict,
-        progress: Callable[[float], None] | None = None) -> tuple[dict[Mother, dict], dict]:
+def run(
+    batches: dict[Mother, tuple[pd.DataFrame, Weekly]],
+    cfg: dict,
+    progress: Callable[[float], None] | None = None,
+) -> tuple[dict[Mother, dict], dict]:
     """Every mother's CSCV, null and power curve through one queue, and what each says.
 
     Args:
@@ -52,7 +60,9 @@ def run(batches: dict[Mother, tuple[pd.DataFrame, Weekly]], cfg: dict,
         (warnings in Spanish) and, when measured, `names`, `found` (the real run's records),
         `read` (its readings), `draws` and `cpu_s`; the queue's own numbers, `queue.run`).
     """
-    panels = {name: panel(metrics, cells, cfg) for name, (metrics, cells) in batches.items()}
+    panels = {
+        name: panel(metrics, cells, cfg) for name, (metrics, cells) in batches.items()
+    }
     need = cfg["panel"]["min_variants"]
     enough = {name: got for name, got in panels.items() if len(got["names"]) >= need}
     found, perf = queue.run(enough, cfg, progress) if enough else ({}, {})
@@ -60,21 +70,42 @@ def run(batches: dict[Mother, tuple[pd.DataFrame, Weekly]], cfg: dict,
     for name, got in panels.items():
         notes = list(got["counts"]["avisos"])
         if name not in found:
-            out[name] = {"facts": state.no_data(got["counts"]), "counts": got["counts"],
-                         "notes": notes + [FEW.format(n=len(got["names"]), need=need)]}
+            out[name] = {
+                "facts": state.no_data(got["counts"]),
+                "counts": got["counts"],
+                "notes": notes + [FEW.format(n=len(got["names"]), need=need)],
+            }
             continue
         ran = found[name]
-        read = {"real": outputs.summary(ran["net"], tolerance), "bruto": ran["gross"],
-                "seleccion": outputs.selection(ran["net"]["pick"], got["names"]),
-                "madre": None if got["track"] is None else outputs.mother(ran["net"], tolerance)}
+        read = {
+            "real": outputs.summary(ran["net"], tolerance),
+            "bruto": ran["gross"],
+            "seleccion": outputs.selection(ran["net"]["pick"], got["names"]),
+            "madre": None
+            if got["track"] is None
+            else outputs.mother(ran["net"], tolerance),
+        }
         facts = state.facts(read, ran["draws"], got["counts"], cfg)
         if not facts["nulo"]["mediana_en_banda"]:
-            notes.append(BAND.format(got=facts["nulo"]["pbo_mediana"],
-                                     low=cfg["null"]["median_low"],
-                                     high=cfg["null"]["median_high"]))
+            notes.append(
+                BAND.format(
+                    got=facts["nulo"]["pbo_mediana"],
+                    low=cfg["null"]["median_low"],
+                    high=cfg["null"]["median_high"],
+                )
+            )
         if perf["wall_s"] > cfg["perf"]["budget_s"]:
-            notes.append(BUDGET.format(got=perf["wall_s"], budget=cfg["perf"]["budget_s"]))
-        out[name] = {"facts": facts, "counts": got["counts"], "notes": notes,
-                     "names": got["names"], "found": ran["net"], "read": read,
-                     "draws": ran["draws"], "cpu_s": ran["cpu_s"]}
+            notes.append(
+                BUDGET.format(got=perf["wall_s"], budget=cfg["perf"]["budget_s"])
+            )
+        out[name] = {
+            "facts": facts,
+            "counts": got["counts"],
+            "notes": notes,
+            "names": got["names"],
+            "found": ran["net"],
+            "read": read,
+            "draws": ran["draws"],
+            "cpu_s": ran["cpu_s"],
+        }
     return out, perf

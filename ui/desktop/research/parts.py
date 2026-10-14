@@ -5,26 +5,44 @@ from collections.abc import Callable
 from typing import Any
 
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem, QWidget
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHeaderView,
+    QTableWidget,
+    QTableWidgetItem,
+    QWidget,
+)
 
 from ui.desktop import background
 from ui.desktop.theme import T
 
 # One hue per family, far apart on a black ground; never a meaning shared with the verdicts.
-FAMILY = {"tendencia": "#4da3ff", "ruptura": "#ff9a3c", "reversion": "#3ddc84",
-          "momentum": "#ff5fa2", "volatilidad": "#ffe14d", "patron": "#35d6d6",
-          "sesion": "#b48cff"}
+FAMILY = {
+    "tendencia": "#4da3ff",
+    "ruptura": "#ff9a3c",
+    "reversion": "#3ddc84",
+    "momentum": "#ff5fa2",
+    "volatilidad": "#ffe14d",
+    "patron": "#35d6d6",
+    "sesion": "#b48cff",
+}
 # The names and the short forms a family is shown with live in `ui.desktop.names`.
 ARROW = {"long": "▲", "short": "▼", "both": "◆"}
-SHARE = {1: 0.30, 2: 0.60, 3: 1.0}       # the three discrete intensities
+SHARE = {1: 0.30, 2: 0.60, 3: 1.0}  # the three discrete intensities
 GREY = "#2a2a2e"
 
 
 def shade(family: str, level: int) -> str:
     """A family's colour at one of the three intensities: mixed with the terminal's black."""
     ink, ground, k = QColor(FAMILY[family]), QColor(T["bg"]), SHARE[level]
-    mix = [round(g + k * (i - g)) for g, i in zip((ground.red(), ground.green(), ground.blue()),
-                                                  (ink.red(), ink.green(), ink.blue()), strict=True)]
+    mix = [
+        round(g + k * (i - g))
+        for g, i in zip(
+            (ground.red(), ground.green(), ground.blue()),
+            (ink.red(), ink.green(), ink.blue()),
+            strict=True,
+        )
+    ]
     return QColor(*mix).name()
 
 
@@ -44,13 +62,17 @@ def table(heads: list[tuple[str, str]]) -> QTableWidget:
         item = QTableWidgetItem(head)
         item.setToolTip(tip)
         t.setHorizontalHeaderItem(i, item)
-    for i in range(len(heads) - 1):          # the last column takes the rest and wraps
-        t.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
+    for i in range(len(heads) - 1):  # the last column takes the rest and wraps
+        t.horizontalHeader().setSectionResizeMode(
+            i, QHeaderView.ResizeMode.ResizeToContents
+        )
     t.horizontalHeader().setStretchLastSection(True)
     return t
 
 
-def fill(t: QTableWidget, rows: list[list], colours: list[str | None] | None = None) -> None:
+def fill(
+    t: QTableWidget, rows: list[list], colours: list[str | None] | None = None
+) -> None:
     """Put rows of text into a table; `colours` paints each row's first cell."""
     t.setRowCount(len(rows))
     for r, row in enumerate(rows):
@@ -73,8 +95,9 @@ def num(value: object, digits: int = 2) -> str:
     return "—" if value is None else f"{value:.{digits}f}"
 
 
-def call(owner: Any, work: Callable[[], dict], done: Callable[[dict], None],
-         key: str) -> None:
+def call(
+    owner: Any, work: Callable[[], dict], done: Callable[[dict], None], key: str
+) -> None:
     """Ask the daemon off the GUI thread; straight away when the view was given a fake."""
     if owner.sync:
         done(work())

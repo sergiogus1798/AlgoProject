@@ -9,13 +9,17 @@ from core.assetyaml import read, write
 from ui.daemon.sqxconfig import studies
 from ui.daemon.sqxconfig.write import coerce
 
-OWNER = "dueño"   # who a write from the window is, in the words the ledger already uses
+OWNER = "dueño"  # who a write from the window is, in the words the ledger already uses
 
 
 def _listed(name: str, path: list) -> dict[str, Any]:
     """The field the zone listed at this path, or ValueError: nothing else is written."""
-    found = [f for sec in studies.PARTS for f in studies.fields(sec)
-             if f["file"] == name and f["path"] == list(path)]
+    found = [
+        f
+        for sec in studies.PARTS
+        for f in studies.fields(sec)
+        if f["file"] == name and f["path"] == list(path)
+    ]
     if not found:
         raise ValueError(f"{name}:{path} no es un valor que esta zona enseñe.")
     return found[0]
@@ -57,25 +61,38 @@ def _pair(name: str, doc: Any, path: list, new: Any) -> str:
         moving one share breaks the sum until the next one is moved, and refusing would
         make the three impossible to edit one at a time.
     """
-    if name == "thresholds" and path[-1] == "value" and doc["thresholds"][path[1]]["key"] == "cscv.blocks":
+    if (
+        name == "thresholds"
+        and path[-1] == "value"
+        and doc["thresholds"][path[1]]["key"] == "cscv.blocks"
+    ):
         if new % 2:
-            raise ValueError(f"{new} es impar: el CSCV parte el historial en dos mitades iguales.")
+            raise ValueError(
+                f"{new} es impar: el CSCV parte el historial en dos mitades iguales."
+            )
     if name == "gatecfg" and path[0] == "frequency":
         both = {**doc["frequency"], path[-1]: new}
         if both["phi_min"] > both["phi_max"]:
-            raise ValueError(f"phi_min {both['phi_min']} quedaría por encima de phi_max {both['phi_max']}.")
+            raise ValueError(
+                f"phi_min {both['phi_min']} quedaría por encima de phi_max {both['phi_max']}."
+            )
     if name == "gatecfg" and path == ["delay", "variants"]:
         bad = [v for v in new if not re.fullmatch(r"(E|S|ES)[+-]1", str(v))]
         if bad:
-            raise ValueError(f"{bad}: un retraso es E, S o ES seguido de +1 o -1 (E+1, ES-1…).")
+            raise ValueError(
+                f"{bad}: un retraso es E, S o ES seguido de +1 o -1 (E+1, ES-1…)."
+            )
     if (name, path) == ("fpcfg", ["population", "edges"]) and not all(
-            isinstance(v, (int, float)) and v > 0 for v in new):
+        isinstance(v, (int, float)) and v > 0 for v in new
+    ):
         raise ValueError("Los niveles de ventaja son números mayores que 0.")
     if name == "sppdesign" and path[-1] in ("min_levels", "max_levels"):
         levels = {**doc["design"], path[-1]: new}
         if levels["min_levels"] > levels["max_levels"]:
-            raise ValueError(f"min_levels {levels['min_levels']} quedaría por encima de "
-                             f"max_levels {levels['max_levels']}.")
+            raise ValueError(
+                f"min_levels {levels['min_levels']} quedaría por encima de "
+                f"max_levels {levels['max_levels']}."
+            )
     if name == "thresholds" and path[-1] == "value":
         rows = {r["key"]: r["value"] for r in doc["thresholds"]}
         key = doc["thresholds"][path[1]]["key"]
@@ -99,7 +116,11 @@ def _stamp(row: Any, old: object, new: object) -> None:
     """
     today = date.today()
     was = f"{old} (fijado por {row['set_by']} el {row['set_on']})"
-    extra = f"{studies.blocks_help(cast(int, new))}; " if row["key"] == "cscv.blocks" else ""
+    extra = (
+        f"{studies.blocks_help(cast(int, new))}; "
+        if row["key"] == "cscv.blocks"
+        else ""
+    )
     row["why"] = f"{extra}cambiado desde la ventana el {today.isoformat()}, antes {was}"
     row["set_by"], row["set_on"] = OWNER, today
 
@@ -130,19 +151,29 @@ def set_field(name: str, path: list, value: object) -> dict[str, Any]:
         # Written as the text typed: through YAML, «no» would become False and «a: b» a map.
         new = str(value).strip()
         if not new:
-            raise ValueError("El porqué no puede quedar vacío: es lo que dice por qué el umbral vale eso.")
+            raise ValueError(
+                "El porqué no puede quedar vacío: es lo que dice por qué el umbral vale eso."
+            )
     elif kind.get("optional") and str(value).strip() == "":
-        new = None   # blank on purpose: a new seed each run, a cap left open
+        new = None  # blank on purpose: a new seed each run, a cap left open
     else:
         new = _typed(old, coerce(kind, old, value))
     note = _pair(name, doc, list(path), new)
     node[path[-1]] = new
     if name == "thresholds" and path[-1] == "value" and new != old:
         _stamp(node, old, new)
-        note += f" — Ledger sellado: {OWNER}, {date.today().isoformat()}; revisa el porqué"
+        note += (
+            f" — Ledger sellado: {OWNER}, {date.today().isoformat()}; revisa el porqué"
+        )
     write(file, doc)
     # A stamp changes the row's why beside it, and `batch` is shown in both sections: the
     # window re-reads the zone so no editor keeps showing what the file no longer says.
     stale = name == "batch" or (name == "thresholds" and path[-1] == "value")
-    return {"file": str(file), "path": list(path), "value": new, "reload": stale,
-            "where": studies.REL[name], "note": note}
+    return {
+        "file": str(file),
+        "path": list(path),
+        "value": new,
+        "reload": stale,
+        "where": studies.REL[name],
+        "note": note,
+    }

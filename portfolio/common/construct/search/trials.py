@@ -9,7 +9,9 @@ from ledger.study import study_id
 from ..inputs.pool import PoolId
 
 
-def record(run: dict, pool: PoolId, plan_key: str, members_meta: dict, cfg: dict) -> list[dict]:
+def record(
+    run: dict, pool: PoolId, plan_key: str, members_meta: dict, cfg: dict
+) -> list[dict]:
     """Log the search: one row in `PORTFOLIO_<pool>_construct`, one in each member's study.
 
     Args:
@@ -28,28 +30,56 @@ def record(run: dict, pool: PoolId, plan_key: str, members_meta: dict, cfg: dict
     identities = list(members_meta)
     symbols = "+".join(sorted({m["symbol"] for m in members_meta.values()}))
     pool_study = f"PORTFOLIO_{pool['hash'][:12]}_construct"
-    base = {"step": 27, "launched_by": "funded", "segment": "build", "n_in": len(identities),
-            "n_out": int(run["best"]["members"].size), "criterion": f"portfolio/funded/{plan_key}",
-            "score_unit": "p_pass", "note": f"relaxed={cfg.get('relaxed') or 'no'}; "
-                                            f"open_risk_cap={cfg.get('funded', {}).get('open_risk_cap')}"}
-    rows = [ledger_record.log(pool_study, {**base, "symbol": symbols, "timeframe": "mixed"}, scores)]
+    base = {
+        "step": 27,
+        "launched_by": "funded",
+        "segment": "build",
+        "n_in": len(identities),
+        "n_out": int(run["best"]["members"].size),
+        "criterion": f"portfolio/funded/{plan_key}",
+        "score_unit": "p_pass",
+        "note": f"relaxed={cfg.get('relaxed') or 'no'}; "
+        f"open_risk_cap={cfg.get('funded', {}).get('open_risk_cap')}",
+    }
+    rows = [
+        ledger_record.log(
+            pool_study, {**base, "symbol": symbols, "timeframe": "mixed"}, scores
+        )
+    ]
     for identity in identities:
         meta = members_meta[identity]
         sid = study_id(meta["symbol"], meta["timeframe"], meta["family"])
-        rows.append(ledger_record.log(
-            sid, {**base, "symbol": meta["symbol"], "timeframe": meta["timeframe"]}, scores))
+        rows.append(
+            ledger_record.log(
+                sid,
+                {**base, "symbol": meta["symbol"], "timeframe": meta["timeframe"]},
+                scores,
+            )
+        )
     return rows
 
 
-def _both(pool: PoolId, members_meta: dict, base: dict, scores: np.ndarray | None) -> list[dict]:
+def _both(
+    pool: PoolId, members_meta: dict, base: dict, scores: np.ndarray | None
+) -> list[dict]:
     """One row in `PORTFOLIO_<pool>_construct` and one in each member's own study (Q12)."""
     symbols = "+".join(sorted({m["symbol"] for m in members_meta.values()}))
-    rows = [ledger_record.log(f"PORTFOLIO_{pool['hash'][:12]}_construct",
-                              {**base, "symbol": symbols, "timeframe": "mixed"}, scores)]
+    rows = [
+        ledger_record.log(
+            f"PORTFOLIO_{pool['hash'][:12]}_construct",
+            {**base, "symbol": symbols, "timeframe": "mixed"},
+            scores,
+        )
+    ]
     for meta in members_meta.values():
         sid = study_id(meta["symbol"], meta["timeframe"], meta["family"])
-        rows.append(ledger_record.log(
-            sid, {**base, "symbol": meta["symbol"], "timeframe": meta["timeframe"]}, scores))
+        rows.append(
+            ledger_record.log(
+                sid,
+                {**base, "symbol": meta["symbol"], "timeframe": meta["timeframe"]},
+                scores,
+            )
+        )
     return rows
 
 
@@ -60,7 +90,9 @@ def admit(members_meta: dict, segments: list[str]) -> None:
             gate.allow(27, segment, symbol)
 
 
-def record_b(stage_b: dict, pool: PoolId, plan_key: str, members_meta: dict) -> list[dict]:
+def record_b(
+    stage_b: dict, pool: PoolId, plan_key: str, members_meta: dict
+) -> list[dict]:
     """Log stage B: one search per plan, its candidates the shortlist times the risk settings.
 
     Args:
@@ -75,15 +107,29 @@ def record_b(stage_b: dict, pool: PoolId, plan_key: str, members_meta: dict) -> 
         per combination and risk setting, the lowest over the Monte Carlos and block lengths.
     """
     scores = stage_b["rows"].groupby(["members", "setting"])["p_pass"].min().to_numpy()
-    base = {"step": 27, "launched_by": "funded_b", "segment": "build",
-            "n_in": len(members_meta), "n_out": int(stage_b["winner"]["k"]),
-            "criterion": f"portfolio/funded_b/{plan_key}", "score_unit": "p_pass",
-            "note": f"{len(stage_b['table'])} carteras x {stage_b['n_settings']} riesgos"}
+    base = {
+        "step": 27,
+        "launched_by": "funded_b",
+        "segment": "build",
+        "n_in": len(members_meta),
+        "n_out": int(stage_b["winner"]["k"]),
+        "criterion": f"portfolio/funded_b/{plan_key}",
+        "score_unit": "p_pass",
+        "note": f"{len(stage_b['table'])} carteras x {stage_b['n_settings']} riesgos",
+    }
     return _both(pool, members_meta, base, scores)
 
 
-def record_look(pool: PoolId, members_meta: dict, segment: str, criterion: str, launched_by: str,
-                passed: bool | None, note: str, reading: dict | None = None) -> list[dict]:
+def record_look(
+    pool: PoolId,
+    members_meta: dict,
+    segment: str,
+    criterion: str,
+    launched_by: str,
+    passed: bool | None,
+    note: str,
+    reading: dict | None = None,
+) -> list[dict]:
     """Log one look of a verdict at one segment (PLAN §6): the pool's study and each member's.
 
     Args:
@@ -99,13 +145,22 @@ def record_look(pool: PoolId, members_meta: dict, segment: str, criterion: str, 
     Returns:
         Every row appended, the pool's first: `n_in` 1 portfolio, `n_out` 1 unless it failed.
     """
-    base = {"step": 27, "launched_by": launched_by, "segment": segment, "n_in": 1,
-            "n_out": 0 if passed is False else 1, "criterion": criterion, "note": note,
-            "thresholds": reading}
+    base = {
+        "step": 27,
+        "launched_by": launched_by,
+        "segment": segment,
+        "n_in": 1,
+        "n_out": 0 if passed is False else 1,
+        "criterion": criterion,
+        "note": note,
+        "thresholds": reading,
+    }
     return _both(pool, members_meta, base, None)
 
 
-def record_rows(pool: PoolId, members_meta: dict, base: dict, scores: np.ndarray | None = None) -> list[dict]:
+def record_rows(
+    pool: PoolId, members_meta: dict, base: dict, scores: np.ndarray | None = None
+) -> list[dict]:
     """Log a step-27 study that is neither a search nor a verdict's look (the weight walk-forward, incubation).
 
     Args:

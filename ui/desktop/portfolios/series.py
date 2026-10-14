@@ -19,8 +19,12 @@ class SeriesBar(QWidget):
         self.where = QLabel("", objectName="mono")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.where.setStyleSheet(f"font-size: 14px; color: {T['text']};")
         for button, delta in ((self.prev, -1), (self.next, 1)):
-            button.setToolTip("Pasa a la estrategia vecina del workflow sin volver a la lista.")
-            button.clicked.connect(lambda _=False, d=delta: self.step.emit(self.index + d))
+            button.setToolTip(
+                "Pasa a la estrategia vecina del workflow sin volver a la lista."
+            )
+            button.clicked.connect(
+                lambda _=False, d=delta: self.step.emit(self.index + d)
+            )
         row = QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
         for w in (self.prev, self.next, self.where):

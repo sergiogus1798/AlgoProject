@@ -14,8 +14,9 @@ from ui.text.glossary import label
 from ui.desktop.theme import T
 
 
-def report(results: list[dict], titles: list[str], memory: dict[str, dict],
-           path: str | None) -> str:
+def report(
+    results: list[dict], titles: list[str], memory: dict[str, dict], path: str | None
+) -> str:
     """Have the daemon write what is on screen as a page, through `core.study.render`, and open it.
 
     Args:
@@ -30,11 +31,14 @@ def report(results: list[dict], titles: list[str], memory: dict[str, dict],
     """
     if not path:
         return "Este resultado no viene de un informe guardado: no hay dónde escribir la página."
-    body = {"results": [screen(r, memory, len(results) == 1) for r in results],
-            "titles": titles, "path": path}
+    body = {
+        "results": [screen(r, memory, len(results) == 1) for r in results],
+        "titles": titles,
+        "path": path,
+    }
     try:
         got = client.post("study/screen", body)
-    except httpx.HTTPError as e:      # the boundary with a person: said, never raised
+    except httpx.HTTPError as e:  # the boundary with a person: said, never raised
         return f"El demonio no respondió a /api/study/screen: {e}"
     if "error" in got:
         return got["error"]
@@ -42,8 +46,13 @@ def report(results: list[dict], titles: list[str], memory: dict[str, dict],
     return f"Informe de lo que ves escrito en {got['html']}"
 
 
-def strip(partials: list[dict], beside: Callable[[int], None], merged: Callable[[int], None],
-          stored: Callable[[], None], showing: str) -> QWidget:
+def strip(
+    partials: list[dict],
+    beside: Callable[[int], None],
+    merged: Callable[[int], None],
+    stored: Callable[[], None],
+    showing: str,
+) -> QWidget:
     """The partial re-runs of this strategy, each with «al lado» and «fusionado», and the way back.
 
     Args:
@@ -58,22 +67,30 @@ def strip(partials: list[dict], beside: Callable[[int], None], merged: Callable[
     box = QWidget()
     lay = QVBoxLayout(box)
     lay.setContentsMargins(0, 4, 0, 4)
-    lay.addWidget(text(f"{label('partial.head')} ({len(partials)})", T["text"], 11, True))
+    lay.addWidget(
+        text(f"{label('partial.head')} ({len(partials)})", T["text"], 11, True)
+    )
     back = QPushButton(label("partial.stored"))
     back.setEnabled(showing != "stored")
     back.clicked.connect(stored)
     lay.addWidget(back)
     for i, p in enumerate(partials):
         row = QHBoxLayout()
-        row.addWidget(text(f"solo <b>{p['only']}</b> · {p['computed_at']}", T["text"], 13), 1)
-        for name, act, tag in (("partial.beside", beside, f"beside:{i}"),
-                               ("partial.merged", merged, f"merged:{i}")):
+        row.addWidget(
+            text(f"solo <b>{p['only']}</b> · {p['computed_at']}", T["text"], 13), 1
+        )
+        for name, act, tag in (
+            ("partial.beside", beside, f"beside:{i}"),
+            ("partial.merged", merged, f"merged:{i}"),
+        ):
             b = QPushButton(label(name))
             b.setEnabled(showing != tag)
-            b.setToolTip("Al lado: el guardado a la izquierda y la re-ejecución a la derecha, "
-                         "bloque con bloque. Fusionado: el guardado con esta subprueba tomada "
-                         "de la re-ejecución. Ninguno de los dos toca el fichero guardado ni su "
-                         "veredicto.")
+            b.setToolTip(
+                "Al lado: el guardado a la izquierda y la re-ejecución a la derecha, "
+                "bloque con bloque. Fusionado: el guardado con esta subprueba tomada "
+                "de la re-ejecución. Ninguno de los dos toca el fichero guardado ni su "
+                "veredicto."
+            )
             b.clicked.connect(lambda _=False, act=act, i=i: act(i))
             row.addWidget(b)
         lay.addLayout(row)

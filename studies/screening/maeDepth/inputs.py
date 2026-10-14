@@ -18,6 +18,7 @@ CONFIG = Path(__file__).with_name("config.yaml")
 
 class Inputs(TypedDict):
     """What one run reads: the harvest's trades, the bars' index and ATR, the market."""
+
     trades: pd.DataFrame
     names: pd.Series
     timeframe: str
@@ -27,7 +28,10 @@ class Inputs(TypedDict):
     symbol: str
 
 
-SEGMENTS = {"IS": "build", "OOS": "oos1"}     # the harvest's `sample` -> the ledger's segment
+SEGMENTS = {
+    "IS": "build",
+    "OOS": "oos1",
+}  # the harvest's `sample` -> the ledger's segment
 
 
 def config(overrides: list[str]) -> dict[str, Any]:
@@ -60,7 +64,9 @@ def load(folder: Path, feed: str, cfg: dict) -> Inputs:
         `trades` (the harvest's, last row without a close price dropped), `names` (identity ->
         strategy name), `timeframe`, `index` and `atr` on the strategy's bars, `point_value`.
     """
-    metrics = pd.read_parquet(folder / "metrics.parquet", columns=["strategy", "TimeFrame [IS]"])
+    metrics = pd.read_parquet(
+        folder / "metrics.parquet", columns=["strategy", "TimeFrame [IS]"]
+    )
     timeframe = metrics["TimeFrame [IS]"].iloc[0]
     trades = pd.read_parquet(folder / "trades.parquet")
     trades = pd.DataFrame(trades[trades["Close price"].notna()]).reset_index(drop=True)
@@ -68,11 +74,15 @@ def load(folder: Path, feed: str, cfg: dict) -> Inputs:
     symbol = assetdata.symbol_for(feed)
     if symbol is None:
         raise SystemExit(f"ningún fichero de assets/symbols/ declara el feed {feed!r}")
-    return Inputs(trades=trades, names=pd.Series(metrics["strategy"]), timeframe=timeframe,
-                  index=pd.DatetimeIndex(bars.index),
-                  atr=sqx_atr.sqx(bars, cfg["depth"]["atr_period"]),
-                  point_value=float(assetdata.load(symbol)["instrument"]["point_value"]),
-                  symbol=symbol)
+    return Inputs(
+        trades=trades,
+        names=pd.Series(metrics["strategy"]),
+        timeframe=timeframe,
+        index=pd.DatetimeIndex(bars.index),
+        atr=sqx_atr.sqx(bars, cfg["depth"]["atr_period"]),
+        point_value=float(assetdata.load(symbol)["instrument"]["point_value"]),
+        symbol=symbol,
+    )
 
 
 def window(trades: pd.DataFrame) -> tuple[str, str]:

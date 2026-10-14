@@ -7,7 +7,9 @@ from numba import njit
 
 from studies.screening.analysis import permuted
 
-ROWS = 4096     # sequences whose block starts are drawn at a time: memory only, same stream
+ROWS = (
+    4096  # sequences whose block starts are drawn at a time: memory only, same stream
+)
 
 
 def warm() -> None:
@@ -25,7 +27,11 @@ def root(seed: int | None) -> int:
     Returns:
         32 bits when drawn, so it survives a float column of the scorecard exactly.
     """
-    return int(np.random.SeedSequence().generate_state(1)[0]) if seed is None else int(seed)
+    return (
+        int(np.random.SeedSequence().generate_state(1)[0])
+        if seed is None
+        else int(seed)
+    )
 
 
 def stream(seed: int, key: str) -> np.random.Generator:
@@ -80,8 +86,9 @@ def p_upper(null: np.ndarray, observed: float, slack: float = 0.0) -> float:
     return float(((null >= observed - slack).sum() + 1) / (len(null) + 1))
 
 
-def q_null(values: np.ndarray, sizes: np.ndarray, permutations: int,
-           rng: np.random.Generator) -> tuple[np.ndarray, float, float]:
+def q_null(
+    values: np.ndarray, sizes: np.ndarray, permutations: int, rng: np.random.Generator
+) -> tuple[np.ndarray, float, float]:
     """The Q of homogeneity under shuffles of the trades across periods, and the observed one.
 
     Args:
@@ -101,11 +108,16 @@ def q_null(values: np.ndarray, sizes: np.ndarray, permutations: int,
     starts = np.cumsum(sizes) - sizes
     observed = (np.add.reduceat(centred, starts) ** 2 / sizes).sum()
     between = permuted.between(centred, starts, sizes, permutations, rng)
-    return between, float(observed), len(centred) * np.finfo(float).eps * (centred @ centred)
+    return (
+        between,
+        float(observed),
+        len(centred) * np.finfo(float).eps * (centred @ centred),
+    )
 
 
-def homogeneity(values: np.ndarray, sizes: np.ndarray, permutations: int,
-                rng: np.random.Generator) -> float:
+def homogeneity(
+    values: np.ndarray, sizes: np.ndarray, permutations: int, rng: np.random.Generator
+) -> float:
     """Permutation p of the Q of homogeneity: are the periods' means further apart than chance?
 
     Args:
@@ -136,8 +148,14 @@ def max_drawdown(pnl: np.ndarray) -> np.ndarray:
     return (np.maximum(np.maximum.accumulate(curve, axis=-1), 0.0) - curve).max(axis=-1)
 
 
-def drawdowns(build: np.ndarray, mean: float, length: int, block: int, sequences: int,
-              rng: np.random.Generator) -> np.ndarray:
+def drawdowns(
+    build: np.ndarray,
+    mean: float,
+    length: int,
+    block: int,
+    sequences: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
     """Maximum drawdowns of block-bootstrapped sequences of the build's trades at another mean.
 
     Args:
@@ -158,15 +176,21 @@ def drawdowns(build: np.ndarray, mean: float, length: int, block: int, sequences
     block = min(block, len(shifted))
     out = np.empty(sequences)
     for done in range(0, sequences, ROWS):
-        part = out[done:done + ROWS]
-        _dd_stream(shifted, rng.integers(0, len(shifted) - block + 1,
-                                         (len(part), -(-length // block))), block, length, part)
+        part = out[done : done + ROWS]
+        _dd_stream(
+            shifted,
+            rng.integers(0, len(shifted) - block + 1, (len(part), -(-length // block))),
+            block,
+            length,
+            part,
+        )
     return out
 
 
 @njit(cache=True, nogil=True)
-def _dd_stream(shifted: np.ndarray, starts: np.ndarray, block: int, length: int,
-               out: np.ndarray) -> None:
+def _dd_stream(
+    shifted: np.ndarray, starts: np.ndarray, block: int, length: int, out: np.ndarray
+) -> None:
     """max_drawdown() of each row of block starts, walked trade by trade and cut at `length`.
 
     numba's max() drops a NaN that numpy's maximum carries, so a curve that stops being a

@@ -2,20 +2,34 @@
 
 from collections.abc import Callable
 
-from PySide6.QtWidgets import (QButtonGroup, QFrame, QHBoxLayout, QLabel, QPushButton,
-                               QScrollArea, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QButtonGroup,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop.blocks.card import text
 from ui.desktop.studypage.net import fetch as daemon_fetch
 from ui.desktop.theme import T
 from ui.desktop.tradegallery.tile import tile
 
-HELP = {"IS": "Operaciones de la muestra de construcción (IS).",
-        "OOS": "Operaciones de la muestra fuera de muestra (OOS, oos1). oos2 nunca se lee.",
-        "quantile": ("Las operaciones en los cuantiles 0, 25, 50, 75 y 100 % del P&L de la "
-                     "muestra: la peor, la mediana y la mejor, siempre juntas."),
-        "random": ("Cinco operaciones al azar de la muestra, con una semilla nueva. La semilla "
-                   "se muestra: la misma semilla vuelve a sacar las mismas cinco.")}
+HELP = {
+    "IS": "Operaciones de la muestra de construcción (IS).",
+    "OOS": "Operaciones de la muestra fuera de muestra (OOS, oos1). oos2 nunca se lee.",
+    "quantile": (
+        "Las operaciones en los cuantiles 0, 25, 50, 75 y 100 % del P&L de la "
+        "muestra: la peor, la mediana y la mejor, siempre juntas."
+    ),
+    "random": (
+        "Cinco operaciones al azar de la muestra, con una semilla nueva. La semilla "
+        "se muestra: la misma semilla vuelve a sacar las mismas cinco."
+    ),
+}
 
 
 class TradeGallery(QWidget):
@@ -32,8 +46,10 @@ class TradeGallery(QWidget):
         self.where: dict[str, str] | None = None
         frame = QFrame()
         frame.setObjectName("term")
-        frame.setStyleSheet(f"QFrame#term QPushButton:checked {{ background: {T['text']};"
-                            f" color: {T['bg']}; border-color: {T['text']}; }}")
+        frame.setStyleSheet(
+            f"QFrame#term QPushButton:checked {{ background: {T['text']};"
+            f" color: {T['bg']}; border-color: {T['text']}; }}"
+        )
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(frame)
@@ -59,8 +75,10 @@ class TradeGallery(QWidget):
             bar.addWidget(b)
         self.seed_label = QLabel("")
         self.seed_label.setObjectName("mono")
-        self.seed_label.setToolTip("La semilla del sorteo al azar: la misma semilla saca las "
-                                   "mismas cinco operaciones.")
+        self.seed_label.setToolTip(
+            "La semilla del sorteo al azar: la misma semilla saca las "
+            "mismas cinco operaciones."
+        )
         bar.addWidget(self.seed_label)
         bar.addStretch(1)
         lay.addLayout(bar)
@@ -74,8 +92,14 @@ class TradeGallery(QWidget):
         scroll.setWidget(holder)
         lay.addWidget(scroll, 1)
 
-    def load(self, project: str, databank: str, identity: str, sample: str = "IS",
-             asset: str = "") -> None:
+    def load(
+        self,
+        project: str,
+        databank: str,
+        identity: str,
+        sample: str = "IS",
+        asset: str = "",
+    ) -> None:
         """Show five quantile trades of one strategy's sample.
 
         Args:
@@ -83,8 +107,13 @@ class TradeGallery(QWidget):
             sample: "IS" or "OOS".
             asset: The owner's override of the asset, empty to read it off the project's name.
         """
-        self.where = {"project": project, "databank": databank, "identity": identity,
-                      "asset": asset, "sample": sample}
+        self.where = {
+            "project": project,
+            "databank": databank,
+            "identity": identity,
+            "asset": asset,
+            "sample": sample,
+        }
         self.pick, self.seed = "quantile", ""
         self._refresh()
 
@@ -102,12 +131,14 @@ class TradeGallery(QWidget):
 
     def _refresh(self) -> None:
         """Ask the daemon and redraw the tiles."""
-        assert self.where is not None   # `show` sets it before the first refresh
+        assert self.where is not None  # `show` sets it before the first refresh
         for b in self.samples.buttons():
             b.setChecked(b.text() == self.where["sample"])
         self.quant.setChecked(self.pick == "quantile")
         self.other.setChecked(self.pick == "random")
-        got = self.fetch("tearsheet/trades", **self.where, pick=self.pick, seed=self.seed)
+        got = self.fetch(
+            "tearsheet/trades", **self.where, pick=self.pick, seed=self.seed
+        )
         while self.body.count():
             w = self.body.takeAt(0).widget()
             if w:
@@ -119,13 +150,17 @@ class TradeGallery(QWidget):
             return
         self.seed = str(got["seed"]) if got["seed"] is not None else ""
         self.seed_label.setText(f"semilla {self.seed}" if self.seed else "")
-        how = ("en los cuantiles 0/25/50/75/100 % del P&L" if got["pick"] == "quantile"
-               else f"al azar con la semilla {self.seed}")
+        how = (
+            "en los cuantiles 0/25/50/75/100 % del P&L"
+            if got["pick"] == "quantile"
+            else f"al azar con la semilla {self.seed}"
+        )
         shown = min(5, got["n"])
         self.head.setText(
             f"{got['name']} · {got['sample']} · {shown} de {got['n']} operaciones {how} · "
             f"barras {got['feed'] or '—'} {got['tf']} · cosecha {got['harvest_day']}"
-            + (f"\n{got['bars_note']}" if got["bars_note"] else ""))
+            + (f"\n{got['bars_note']}" if got["bars_note"] else "")
+        )
         for t in got["tiles"]:
             self.body.addWidget(tile(t))
         self.body.addStretch(1)

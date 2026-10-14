@@ -27,7 +27,10 @@ _export = where.newest(DATA / "raw" / PROJECT / DATABANK, "*/trades.parquet")
 STRATEGY = pd.read_parquet(_export, columns=["strategy"])["strategy"].iloc[0]
 # Job logs go here, not to AlgoData/logs/ui, and vanish with the test.
 SCRATCH = tempfile.TemporaryDirectory(prefix="ui-runner-")
-SLEEPER = ["-c", "import time; print('PROGRESS 40 a medias', flush=True); time.sleep(30)"]
+SLEEPER = [
+    "-c",
+    "import time; print('PROGRESS 40 a medias', flush=True); time.sleep(30)",
+]
 
 
 def client() -> TestClient:
@@ -60,15 +63,27 @@ def test_real_run() -> None:
     """edgeCost on one strategy of a real harvest: percent reaches 100 and the result lands."""
     http = client()
     before = time.time()
-    got = http.post("/api/study/run", json={
-        "study": "edgeCost", "scope": "one", "project": PROJECT, "databank": DATABANK,
-        "strategies": [STRATEGY], "asset": "USDJPY"}).json()
+    got = http.post(
+        "/api/study/run",
+        json={
+            "study": "edgeCost",
+            "scope": "one",
+            "project": PROJECT,
+            "databank": DATABANK,
+            "strategies": [STRATEGY],
+            "asset": "USDJPY",
+        },
+    ).json()
     assert "jobs" in got, got
     job = wait(http, got["jobs"][0]["id"])
     assert job["rc"] == 0 and job["percent"] == 100, job["tail"]
     assert (job["lane"], job["study"], job["scope"]) == ("python", "edgeCost", "one")
-    landed = (report_dir(PROJECT, DATABANK, date.today().isoformat()) / "edgeCost"
-              / "estrategias" / f"{STRATEGY}.json")
+    landed = (
+        report_dir(PROJECT, DATABANK, date.today().isoformat())
+        / "edgeCost"
+        / "estrategias"
+        / f"{STRATEGY}.json"
+    )
     assert landed.stat().st_mtime >= before, landed
 
 
@@ -76,8 +91,12 @@ def test_queue_and_cancel() -> None:
     """Two wide jobs fill the budget, the third waits; cancelling a runner starts the waiting
     one. Light jobs run sixteen at once and the seventeenth waits."""
     http = client()
-    ids = [jobs.start("crossmarket", SLEEPER, {"project": "p", "databank": "d", "strategy": ""})["id"]
-           for _ in range(3)]
+    ids = [
+        jobs.start(
+            "crossmarket", SLEEPER, {"project": "p", "databank": "d", "strategy": ""}
+        )["id"]
+        for _ in range(3)
+    ]
     time.sleep(1)
     now = listed(http)
     assert [now[i]["queued"] for i in ids] == [None, None, 1], now
@@ -88,17 +107,25 @@ def test_queue_and_cancel() -> None:
     now = listed(http)
     assert now[ids[0]]["rc"] == jobs.CANCELLED and now[ids[0]]["state"] == "cancelado"
     assert now[ids[2]]["queued"] is None and now[ids[2]]["rc"] is None
-    queued = jobs.start("crossmarket", SLEEPER, {"project": "p", "databank": "d", "strategy": ""})
+    queued = jobs.start(
+        "crossmarket", SLEEPER, {"project": "p", "databank": "d", "strategy": ""}
+    )
     assert queued["queued"] == 1
     assert http.post(f"/api/jobs/{queued['id']}/cancel").json() == {"ok": True}
     assert http.post(f"/api/jobs/{queued['id']}/cancel").json() == {"ok": False}
     assert http.post("/api/jobs/nope/cancel").json() == {"ok": False}
     for i in ids[1:]:
         http.post(f"/api/jobs/{i}/cancel")
-    light = [jobs.start("entryQuality", SLEEPER, {"project": "p", "databank": "d", "strategy": "s"})["id"]
-             for _ in range(jobs.SLOTS // jobs.LIGHT + 1)]
+    light = [
+        jobs.start(
+            "entryQuality", SLEEPER, {"project": "p", "databank": "d", "strategy": "s"}
+        )["id"]
+        for _ in range(jobs.SLOTS // jobs.LIGHT + 1)
+    ]
     now = listed(http)
-    assert [now[i]["queued"] for i in light].count(None) == jobs.SLOTS // jobs.LIGHT, now
+    assert [now[i]["queued"] for i in light].count(None) == jobs.SLOTS // jobs.LIGHT, (
+        now
+    )
     assert now[light[-1]]["queued"] == 1
     for i in light:
         http.post(f"/api/jobs/{i}/cancel")
@@ -114,12 +141,24 @@ def test_refusals() -> None:
     http = client()
     started, real = [], jobs.start
     jobs.start = lambda *a, **k: started.append(a) or {"id": "x"}
-    body = {"project": PROJECT, "databank": DATABANK, "strategies": [STRATEGY], "asset": "USDJPY"}
+    body = {
+        "project": PROJECT,
+        "databank": DATABANK,
+        "strategies": [STRATEGY],
+        "asset": "USDJPY",
+    }
     try:
-        for study, scope, extra in [("entryQuality", "many", {}), ("gate", "one", {}),
-                                    ("gate", "many", {"only": "x"}), ("edgeCost", "one", {"asset": ""}),
-                                    ("edgeCost", "one", {"asset": "NOPE"}), ("nope", "many", {})]:
-            got = http.post("/api/study/run", json=body | {"study": study, "scope": scope} | extra)
+        for study, scope, extra in [
+            ("entryQuality", "many", {}),
+            ("gate", "one", {}),
+            ("gate", "many", {"only": "x"}),
+            ("edgeCost", "one", {"asset": ""}),
+            ("edgeCost", "one", {"asset": "NOPE"}),
+            ("nope", "many", {}),
+        ]:
+            got = http.post(
+                "/api/study/run", json=body | {"study": study, "scope": scope} | extra
+            )
             assert set(got.json()) == {"error"}, (study, got.json())
     finally:
         jobs.start = real
@@ -129,28 +168,49 @@ def test_refusals() -> None:
 def test_only_options() -> None:
     """crossmarket offers each market of the export, the main one included; other studies offer none."""
     http = client()
-    got = http.get("/api/study/only", params={
-        "study": "crossmarket", "project": PROJECT, "databank": "Retest_Markets_-_Family",
-        "asset": "USDJPY"}).json()["options"]
+    got = http.get(
+        "/api/study/only",
+        params={
+            "study": "crossmarket",
+            "project": PROJECT,
+            "databank": "Retest_Markets_-_Family",
+            "asset": "USDJPY",
+        },
+    ).json()["options"]
     keys = [o["key"] for o in got]
     assert keys and "USDJPY_DukasM1_the5ers" in keys, keys
-    assert http.get("/api/study/only", params={"study": "gate"}).json() == {"options": []}
+    assert http.get("/api/study/only", params={"study": "gate"}).json() == {
+        "options": []
+    }
 
 
 def test_offer() -> None:
     """On the build databank the tests whose data lives elsewhere are refused, with the jump
     to the databank their Databanks tab reads when it holds the same name, and a sentence when
     it does not; a study that can run on Results is not listed (owner, 2026-09-30)."""
-    got = client().get("/api/study/offer", params={
-        "project": PROJECT, "databank": DATABANK, "strategy": "Strategy 13.14.82",
-        "asset": "USDJPY"}).json()["studies"]
+    got = (
+        client()
+        .get(
+            "/api/study/offer",
+            params={
+                "project": PROJECT,
+                "databank": DATABANK,
+                "strategy": "Strategy 13.14.82",
+                "asset": "USDJPY",
+            },
+        )
+        .json()["studies"]
+    )
     cross = got["crossmarket"]
     assert "cross-market" in cross["why"], cross
     # The project was retired from the custodian on 2026-09-30: with no install holding
     # Retest Markets there is no jump, only the sentence naming the databank.
     go = cross["go"]
-    assert (go.get("tab") == "Cross Market" and go["identity"]
-            if "databank" in go else "Retest_Markets_-_Family" in go["absent"]), go
+    assert (
+        go.get("tab") == "Cross Market" and go["identity"]
+        if "databank" in go
+        else "Retest_Markets_-_Family" in go["absent"]
+    ), go
     assert "MCR_All" in got["mcRetest"]["go"]["absent"], got["mcRetest"]
     assert "gate" not in got and "edgeCost" not in got, sorted(got)
 
@@ -161,8 +221,10 @@ if __name__ == "__main__":
     if "--run" in sys.argv:
         tests.append(test_real_run)
     else:
-        print("    (sin --run: test_real_run no corre edgeCost de verdad; escribiría un informe "
-              "del día en AlgoData/reports/ de este proyecto)")
+        print(
+            "    (sin --run: test_real_run no corre edgeCost de verdad; escribiría un informe "
+            "del día en AlgoData/reports/ de este proyecto)"
+        )
     for test in tests:
         started = time.time()
         test()

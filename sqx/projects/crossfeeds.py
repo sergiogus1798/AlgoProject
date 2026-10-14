@@ -38,8 +38,16 @@ def with_feeds(text: str, used: list[dict]) -> str:
                 text = text.replace("<Brokers>", f"<Brokers>\n      {broker}", 1)
         a, b = _ms(m["window"][0], False), _ms(m["window"][1], True)
         text = resources.SYMBOL.sub(
-            lambda k, a=a, b=b, feed=m["feed"]: k.group(0) if k.group(1) != feed else re.sub(
-                r'dateTo="\d+"', f'dateTo="{b}"',
-                re.sub(r'dateFrom="\d+"', f'dateFrom="{a}"', k.group(0), count=1), count=1),
-            text)
+            lambda k, a=a, b=b, feed=m["feed"]: (
+                k.group(0)
+                if k.group(1) != feed
+                else re.sub(
+                    r'dateTo="\d+"',
+                    f'dateTo="{b}"',
+                    re.sub(r'dateFrom="\d+"', f'dateFrom="{a}"', k.group(0), count=1),
+                    count=1,
+                )
+            ),
+            text,
+        )
     return registryxml.refresh(text)

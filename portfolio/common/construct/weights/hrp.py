@@ -41,14 +41,18 @@ def weights(build_daily: pd.DataFrame, cfg: dict) -> dict[str, float]:
         raise ValueError(f"sin volatilidad en los días de estimación: {flat}")
     distance = np.sqrt(np.clip((1 - cov / np.outer(sigma, sigma)) / 2, 0.0, None))
     np.fill_diagonal(distance, 0.0)
-    order = [0, 1] if k == 2 else leaves_list(linkage(squareform(distance, checks=False), "ward")).tolist()
-    out = np.ones(k)                                  # indexed by COLUMN, never by tree position
+    order = (
+        [0, 1]
+        if k == 2
+        else leaves_list(linkage(squareform(distance, checks=False), "ward")).tolist()
+    )
+    out = np.ones(k)  # indexed by COLUMN, never by tree position
     clusters = [order]
     while clusters:
         items = clusters.pop()
         if len(items) < 2:
             continue
-        left, right = items[:len(items) // 2], items[len(items) // 2:]
+        left, right = items[: len(items) // 2], items[len(items) // 2 :]
         v_left, v_right = _cluster_variance(cov, left), _cluster_variance(cov, right)
         share = 1 - v_left / (v_left + v_right)
         out[left] *= share

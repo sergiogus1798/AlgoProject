@@ -7,12 +7,16 @@ from datetime import date
 from core.datapaths import template_dir, template_draft
 from ui.daemon import interview
 
-RANDOM_TEXT = {"one_free": "una condición aleatoria libre (#Group# vacío, 500 condiciones nativas)",
-               "one_group": "una condición aleatoria del grupo {group}",
-               "two_free": "dos condiciones aleatorias libres",
-               "none": "sin condición aleatoria: solo la fija"}
-LOGIC_TEXT = {"transition": "transición (cruza / rompe / pasa a estar)",
-              "state": "estado (está / sigue)"}
+RANDOM_TEXT = {
+    "one_free": "una condición aleatoria libre (#Group# vacío, 500 condiciones nativas)",
+    "one_group": "una condición aleatoria del grupo {group}",
+    "two_free": "dos condiciones aleatorias libres",
+    "none": "sin condición aleatoria: solo la fija",
+}
+LOGIC_TEXT = {
+    "transition": "transición (cruza / rompe / pasa a estar)",
+    "state": "estado (está / sigue)",
+}
 
 
 def compose(answers: dict[str, str]) -> dict[str, Any]:
@@ -27,26 +31,35 @@ def compose(answers: dict[str, str]) -> dict[str, Any]:
         a default applied silently and never written down is how a decision gets lost.
     """
     a = interview.resolved(answers)
-    skipped = [q["id"] for q in interview.QUESTIONS
-               if interview.applies(q, answers) and not answers.get(q["id"], "")]
+    skipped = [
+        q["id"]
+        for q in interview.QUESTIONS
+        if interview.applies(q, answers) and not answers.get(q["id"], "")
+    ]
     random_text = RANDOM_TEXT[a["random"]].format(group=a.get("group", ""))
-    return {"name": a["name"],
-            "created": date.today().isoformat(),
-            "idea": a["idea"],
-            "archetype": a["archetype"],
-            "direction": a["direction"],
-            "logic": a["logic"],
-            "shape": "fixed_and_random" if a["random"] != "none" else "fixed_only",
-            "signal": {"fixed": {"block": "por decidir — lo resuelve /sqx-strategy-template",
-                                 "rule": a["idea"],
-                                 "logic": LOGIC_TEXT[a["logic"]]},
-                       "random": random_text,
-                       "operator": "AND"},
-            "entry_order": a["entry"],
-            "exits": a.get("exit_rule") or "la pila del esqueleto sin tocar",
-            "defaults_applied": skipped,
-            "origin": "interview",
-            "status": "draft"}
+    return {
+        "name": a["name"],
+        "created": date.today().isoformat(),
+        "idea": a["idea"],
+        "archetype": a["archetype"],
+        "direction": a["direction"],
+        "logic": a["logic"],
+        "shape": "fixed_and_random" if a["random"] != "none" else "fixed_only",
+        "signal": {
+            "fixed": {
+                "block": "por decidir — lo resuelve /sqx-strategy-template",
+                "rule": a["idea"],
+                "logic": LOGIC_TEXT[a["logic"]],
+            },
+            "random": random_text,
+            "operator": "AND",
+        },
+        "entry_order": a["entry"],
+        "exits": a.get("exit_rule") or "la pila del esqueleto sin tocar",
+        "defaults_applied": skipped,
+        "origin": "interview",
+        "status": "draft",
+    }
 
 
 def prompt(brief: dict[str, Any]) -> str:
@@ -62,20 +75,22 @@ def prompt(brief: dict[str, Any]) -> str:
         custom block if the condition is not there.
     """
     s = brief["signal"]
-    return "\n".join([
-        f"/sqx-strategy-template {brief['name']}",
-        "",
-        f"Idea: {brief['idea']}",
-        f"Lógica: {s['fixed']['logic']} — ya preguntado, no lo vuelvas a preguntar.",
-        f"Dirección: {brief['direction']}",
-        f"Arquetipo: {brief['archetype']}",
-        f"Aleatorias: {s['random']}",
-        f"Orden de entrada: {brief['entry_order']}",
-        f"Salidas: {brief['exits']}",
-        "",
-        f"El borrador del brief está en {template_draft(brief['name'])}.",
-        "Cuando la plantilla esté emitida y registrada, bórralo.",
-    ])
+    return "\n".join(
+        [
+            f"/sqx-strategy-template {brief['name']}",
+            "",
+            f"Idea: {brief['idea']}",
+            f"Lógica: {s['fixed']['logic']} — ya preguntado, no lo vuelvas a preguntar.",
+            f"Dirección: {brief['direction']}",
+            f"Arquetipo: {brief['archetype']}",
+            f"Aleatorias: {s['random']}",
+            f"Orden de entrada: {brief['entry_order']}",
+            f"Salidas: {brief['exits']}",
+            "",
+            f"El borrador del brief está en {template_draft(brief['name'])}.",
+            "Cuando la plantilla esté emitida y registrada, bórralo.",
+        ]
+    )
 
 
 def commands(brief: dict[str, Any]) -> list[dict[str, str]]:
@@ -92,20 +107,32 @@ def commands(brief: dict[str, Any]) -> list[dict[str, str]]:
     name = brief["name"]
     lib = template_dir(name)
     return [
-        {"what": "¿Existe ya la condición, y qué grupos la agrupan?",
-         "cmd": "python3 -m sqx.inspect.vocabulary <término>"},
-        {"what": "Instala el bloque en las dos instalaciones (si hay que autorarlo)",
-         "cmd": f"python3 -m sqx.blocks.install {lib}/deps/blocks.xml --role conductor"},
-        {"what": "… y en el custodio, que es el que construye",
-         "cmd": f"python3 -m sqx.blocks.install {lib}/deps/blocks.xml --role custodian"},
-        {"what": "Comprueba que la instalación que construye no se queda sin el bloque",
-         "cmd": "python3 -m sqx.inspect.vocabulary --diff custodian"},
-        {"what": "Emite la plantilla",
-         "cmd": f"python3 -m sqx.templates.build {name} {lib}/deps/blocks.xml "
-                f"<CBlock_key> {lib}/template.sqx"},
-        {"what": "Da de alta la plantilla en el registro",
-         "cmd": f"python3 -m sqx.templates.registry --set name={name} "
-                f"--set archetype={brief['archetype']} --set status=validated"},
+        {
+            "what": "¿Existe ya la condición, y qué grupos la agrupan?",
+            "cmd": "python3 -m sqx.inspect.vocabulary <término>",
+        },
+        {
+            "what": "Instala el bloque en las dos instalaciones (si hay que autorarlo)",
+            "cmd": f"python3 -m sqx.blocks.install {lib}/deps/blocks.xml --role conductor",
+        },
+        {
+            "what": "… y en el custodio, que es el que construye",
+            "cmd": f"python3 -m sqx.blocks.install {lib}/deps/blocks.xml --role custodian",
+        },
+        {
+            "what": "Comprueba que la instalación que construye no se queda sin el bloque",
+            "cmd": "python3 -m sqx.inspect.vocabulary --diff custodian",
+        },
+        {
+            "what": "Emite la plantilla",
+            "cmd": f"python3 -m sqx.templates.build {name} {lib}/deps/blocks.xml "
+            f"<CBlock_key> {lib}/template.sqx",
+        },
+        {
+            "what": "Da de alta la plantilla en el registro",
+            "cmd": f"python3 -m sqx.templates.registry --set name={name} "
+            f"--set archetype={brief['archetype']} --set status=validated",
+        },
     ]
 
 

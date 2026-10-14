@@ -22,11 +22,14 @@ def test_nan_p_is_not_measurable() -> None:
 def test_finite_p_keeps_its_calls() -> None:
     """Below alpha beats the monkey; above, does not."""
     assert one.call(0.01, 0.05, "net", CFG, CHECKS)["state"] == "pass"
-    assert one.call(0.40, 0.05, "net", CFG, CHECKS)["label"] == "no se distingue del mono"
+    assert (
+        one.call(0.40, 0.05, "net", CFG, CHECKS)["label"] == "no se distingue del mono"
+    )
 
 
 if __name__ == "__main__":
     import pytest
+
     sys.exit(pytest.main([__file__, "-q"]))
 
 
@@ -34,6 +37,7 @@ def test_flat_run_has_no_sharpe_and_no_p() -> None:
     """A constant-P&L run has a NaN Sharpe (not inf), and so a NaN p: the call is «no medible»."""
     import numpy as np
     from engines.nulls import stats, verdict
+
     pnl = np.array([[5.0, 5.0, 5.0, 5.0], [1.0, -2.0, 3.0, 0.5]])
     got = stats.measure(pnl, ["sharpe"])["sharpe"]
     assert np.isnan(got[0]) and np.isfinite(got[1])

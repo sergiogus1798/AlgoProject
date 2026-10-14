@@ -44,16 +44,35 @@ def dump(role: str, project: str, banks: set[str] | None) -> dict[str, int]:
     for (p, db), full in afterrun.scope(top, project, banks).items():
         now = state.status(p, db)
         todo = state.commands(p, now, exports=db not in afterrun.UNREAD_TRADES)
-        asks = [(b, "main") for b in (now["databank"], now["partner"]) if "harvest" in todo]
+        asks = [
+            (b, "main") for b in (now["databank"], now["partner"]) if "harvest" in todo
+        ]
         if full and "trades" in todo and db not in afterrun.UNREAD_TRADES:
-            asks.append((now["databank"], "all" if find.cross_market(find.files(top, p, now["databank"])) else "main"))
+            asks.append(
+                (
+                    now["databank"],
+                    "all"
+                    if find.cross_market(find.files(top, p, now["databank"]))
+                    else "main",
+                )
+            )
         for bank, mode in asks:
-            if want.setdefault(bank, mode) != mode:      # one file per bank: the second reader would find the wrong mode
-                raise SystemExit(f"{project}: el databank {bank} se pide en modo main (cosecha) y all (otros mercados) a la vez")
+            if (
+                want.setdefault(bank, mode) != mode
+            ):  # one file per bank: the second reader would find the wrong mode
+                raise SystemExit(
+                    f"{project}: el databank {bank} se pide en modo main (cosecha) y all (otros mercados) a la vez"
+                )
     wrote = membank.run(role, project, want) if want else {}
     if want and not wrote:
-        print(f"{sorted(want)} no vale: la instalación no tiene su proyecto de herramientas o sus snippets sin compilar", flush=True)
-        note("fallback", f"{project}/{sorted(want)}: el volcado no escribió ningún .abk (herramientas o snippets sin compilar)")
+        print(
+            f"{sorted(want)} no vale: la instalación no tiene su proyecto de herramientas o sus snippets sin compilar",
+            flush=True,
+        )
+        note(
+            "fallback",
+            f"{project}/{sorted(want)}: el volcado no escribió ningún .abk (herramientas o snippets sin compilar)",
+        )
     return wrote
 
 
@@ -79,17 +98,33 @@ def export(role: str, project: str, banks: set[str] | None = None) -> None:
         print(f"operaciones desde memoria: {wrote or 'ninguna'}", flush=True)
         if not wrote:
             why.append("AlgoBank no escribió ninguno")
-        run = subprocess.Popen([sys.executable, "-m", "ui.daemon.loader.afterrun", "--role", role, "--live",
-                                "--project", project, *[a for b in sorted(banks or ()) for a in ("--databank", b)]],
-                               cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        assert run.stdout is not None       # opened with PIPE
+        run = subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                "ui.daemon.loader.afterrun",
+                "--role",
+                role,
+                "--live",
+                "--project",
+                project,
+                *[a for b in sorted(banks or ()) for a in ("--databank", b)],
+            ],
+            cwd=ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        assert run.stdout is not None  # opened with PIPE
         for line in run.stdout:
             print(line, end="", flush=True)
             if "no vale" in line:
                 why.append(line.strip())
         if run.wait():
-            raise SystemExit(f"{project}: la exportación falló (código {run.returncode})"
-                             + (f"; .abk descartados: {' | '.join(why)}" if why else ""))
+            raise SystemExit(
+                f"{project}: la exportación falló (código {run.returncode})"
+                + (f"; .abk descartados: {' | '.join(why)}" if why else "")
+            )
     finally:
         shutil.rmtree(bank_dir(project, role), ignore_errors=True)
 
@@ -114,33 +149,51 @@ def close(role: str, project: str, failed: dict[str, Any] | None = None) -> None
         finally:
             live.stop(role, export=False)
         return
-    was = signal.signal(signal.SIGTERM, signal.SIG_IGN)   # the loop's STOP hit this close half-way and
-    try:                                                  # left outputs the rail took for a done step
-        print(exiting.stop(role, project), flush=True)    # (🔬 2026-10-06); it waits on us instead
+    was = signal.signal(
+        signal.SIGTERM, signal.SIG_IGN
+    )  # the loop's STOP hit this close half-way and
+    try:  # left outputs the rail took for a done step
+        print(
+            exiting.stop(role, project), flush=True
+        )  # (🔬 2026-10-06); it waits on us instead
     finally:
-        live.stop(role, export=False)                  # the script's own cleanup: lock, Xvfb
+        live.stop(role, export=False)  # the script's own cleanup: lock, Xvfb
     try:
         held = preflight.tasks(project)
         if "refuse" in held:
-            raise RuntimeError(f"{project}: no se puede vaciar el paso {failed['n']} tras el fallo, "
-                               f"porque {held['refuse']}; vacía a mano las salidas del paso")
+            raise RuntimeError(
+                f"{project}: no se puede vaciar el paso {failed['n']} tras el fallo, "
+                f"porque {held['refuse']}; vacía a mano las salidas del paso"
+            )
         titles: set[str] = set()
         for s in failed["steps"]:
             got = launchsteps.of_step(s["n"], held["cfx"])
             if "refuse" in got:
-                raise RuntimeError(f"{project}: el paso {s['n']} no tiene tareas que vaciar: {got['refuse']}")
+                raise RuntimeError(
+                    f"{project}: el paso {s['n']} no tiene tareas que vaciar: {got['refuse']}"
+                )
             titles |= set(got["titles"])
         for task in held["tasks"]:
             if task["title"] in titles:
-                for f in (held["cfx"].parent / "databanks" / task["output"]).glob("*.sqx"):
+                for f in (held["cfx"].parent / "databanks" / task["output"]).glob(
+                    "*.sqx"
+                ):
                     f.unlink()
-        newest = max((held["cfx"].parent / "log").glob("global_log_*.log"), key=lambda f: f.stat().st_mtime,
-                     default=None)      # no log yet: a ValueError here hid the real failure (📓 2026-10-11)
-        if newest is None or newest.stat().st_mtime < failed["since"]:   # the step never started: that log is an earlier step's
+        newest = max(
+            (held["cfx"].parent / "log").glob("global_log_*.log"),
+            key=lambda f: f.stat().st_mtime,
+            default=None,
+        )  # no log yet: a ValueError here hid the real failure (📓 2026-10-11)
+        if (
+            newest is None or newest.stat().st_mtime < failed["since"]
+        ):  # the step never started: that log is an earlier step's
             newest = None
         else:
             newest.rename(newest.with_suffix(".log.descartado"))
-        print(f"vaciadas en disco las salidas del paso {failed['n']} y apartado {newest.name if newest else 'ningún log'}: se repetirá al reanudar", flush=True)
+        print(
+            f"vaciadas en disco las salidas del paso {failed['n']} y apartado {newest.name if newest else 'ningún log'}: se repetirá al reanudar",
+            flush=True,
+        )
     finally:
         signal.signal(signal.SIGTERM, was)
 
@@ -160,9 +213,9 @@ def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:
     say(2, f"comprobando {pre['row']['symbol']} (regla 5)")
     assets(pre["row"]["symbol"])
     with phase("sync", "antes"):
-        live.sync(role, project)             # disk == memory before the copy and the counts
+        live.sync(role, project)  # disk == memory before the copy and the counts
     if AGED & set(titles):
-        with phase("reapertura"):            # disk == memory: the stop loses nothing
+        with phase("reapertura"):  # disk == memory: the stop loses nothing
             live.stop(role, export=False)
             live.start(role)
     with phase("snapshot"):
@@ -170,11 +223,13 @@ def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:
     with tempfile.TemporaryDirectory(dir=tmp_dir()) as tmp:
         staged = Path(tmp) / "project.cfx"
         shutil.copy2(held, staged)
-        for bank in pre.get("fill", []):         # writes the copy and the databank's folder
+        for bank in pre.get("fill", []):  # writes the copy and the databank's folder
             say(9, f"llenando {bank}")
             with phase("fill", bank):
                 print(crosstfload.fill(bank, project, role, staged), flush=True)
-        off = configure.run({**pre, "cfx": staged, "databanks": held.parent / "databanks"}, say)   # after the fill
+        off = configure.run(
+            {**pre, "cfx": staged, "databanks": held.parent / "databanks"}, say
+        )  # after the fill
         titles = [t for t in titles if t not in off]
         if live.added(staged, held):
             # A project built before the CrossTF tasks were made at step 5: the fill added
@@ -189,7 +244,9 @@ def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:
         say(10, f"activando solo {', '.join(titles)}")
         stage.just(staged, titles)
         with phase("configure", "push"):
-            config = live.push(role, project, staged, held)  # SQX rewrites `held` with the tasks
+            config = live.push(
+                role, project, staged, held
+            )  # SQX rewrites `held` with the tasks
     for bank in pre.get("fill", []):
         with phase("fill", bank):
             print(f"{bank}: {live.load(role, project, bank)} en memoria", flush=True)
@@ -197,13 +254,22 @@ def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:
     say(60, f"{', '.join(titles)} lanzada(s)")
     began = time.time()
     with phase("sqx", " + ".join(titles)):
-        live.run(role, project, config)      # returns on «Project finished» alone: `live.wait` raises on every abort line
+        live.run(
+            role, project, config
+        )  # returns on «Project finished» alone: `live.wait` raises on every abort line
     with phase("sync", "después"):
         # A filled bank is Python's bytes on disk until SQX saves it: its scaled siblings carry a
         # `<!--variant_id-->` stamp SQX drops on load, so the dump would not match (🔬 2026-10-13).
-        live.sync(role, project, force={t["output"] for t in chosen if t["output"]} | set(pre.get("fill", [])))
+        live.sync(
+            role,
+            project,
+            force={t["output"] for t in chosen if t["output"]}
+            | set(pre.get("fill", [])),
+        )
     # the extra-timeframe tasks are not in `chosen` (preflight runs before the fill creates them)
-    outputs = {t["output"] for t in chosen} | {f"{CROSSTF['output']}_{t.rsplit(' ', 1)[1]}" for t in solo}
+    outputs = {t["output"] for t in chosen} | {
+        f"{CROSSTF['output']}_{t.rsplit(' ', 1)[1]}" for t in solo
+    }
     with phase("compare"):
         after = counts(held.parent)
         print(compare(before, after, outputs, kept), flush=True)
@@ -212,6 +278,9 @@ def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:
             print(record(pre, project, after.get(t["output"], 0)), flush=True)
             print(steprows.log_build(project, held.parent / "log", began), flush=True)
     export(role, project, {b for b in outputs | set(pre.get("fill", [])) if b} or None)
-    moved = {t["title"]: (before.get(t["output"], 0), after.get(t["output"], 0)) for t in chosen}
+    moved = {
+        t["title"]: (before.get(t["output"], 0), after.get(t["output"], 0))
+        for t in chosen
+    }
     say(100, " · ".join(f"«{t}»: {n0} → {n1}" for t, (n0, n1) in moved.items()))
     return moved

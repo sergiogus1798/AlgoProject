@@ -45,7 +45,13 @@ def distinct(trades: Path, column: str) -> list[str]:
         return sorted(pc.unique(col).to_pylist())  # pyright: ignore[reportAttributeAccessIssue]  # pyarrow.compute is generated at import
     # Unique codes per chunk, not the dictionary itself: a categorical filtered before it
     # was written keeps categories no row uses. 12 M rows read in 0.25 s this way.
-    return sorted({v for c in col.chunks for v in c.dictionary.take(pc.unique(c.indices)).to_pylist()})  # pyright: ignore[reportAttributeAccessIssue]  # pyarrow.compute is generated at import
+    return sorted(
+        {
+            v
+            for c in col.chunks
+            for v in c.dictionary.take(pc.unique(c.indices)).to_pylist()  # pyright: ignore[reportAttributeAccessIssue]  # pyarrow.compute is generated at import
+        }
+    )
 
 
 def markets(trades: Path) -> list[str]:
@@ -66,7 +72,11 @@ def export_timeframe(day: Path) -> str | None:
     said = json.loads((day / "manifest.json").read_text(encoding="utf-8"))
     # export_retest signs them under `source`, export_trades under `counts` (2026-09-28: every
     # single-market export read «sin timeframe» and monkey/entryQuality/atr never ran).
-    frames = said["source"].get("timeframes") or said.get("counts", {}).get("timeframes") or []
+    frames = (
+        said["source"].get("timeframes")
+        or said.get("counts", {}).get("timeframes")
+        or []
+    )
     return frames[0] if len(frames) == 1 else None
 
 
@@ -96,14 +106,21 @@ def batch(project: str, strategy: str, needs: tuple[str, ...]) -> Path | str:
         The folder, or the sentence why none can be chosen: absent, or present in both
         places — the window does not pick one of two batches for the owner.
     """
-    found = [d for d in (variants_dir(project, strategy), work_dir(project, strategy))
-             if all((d / n).exists() for n in needs)]
+    found = [
+        d
+        for d in (variants_dir(project, strategy), work_dir(project, strategy))
+        if all((d / n).exists() for n in needs)
+    ]
     if not found:
-        return (f"no hay lote de variantes con {', '.join(needs)} para {strategy} "
-                "(skill /variants)")
+        return (
+            f"no hay lote de variantes con {', '.join(needs)} para {strategy} "
+            "(skill /variants)"
+        )
     if len(found) > 1:
-        return (f"hay dos lotes de {strategy}, {found[0]} y {found[1]}: córrelo desde la "
-                "terminal con --work el que quieras")
+        return (
+            f"hay dos lotes de {strategy}, {found[0]} y {found[1]}: córrelo desde la "
+            "terminal con --work el que quieras"
+        )
     return found[0]
 
 
@@ -120,9 +137,12 @@ def scaling_day(project: str, trades: Path) -> str | None:
         export is not a cross-timeframe retest.
     """
     held = set(pd.read_parquet(trades, columns=["strategy"])["strategy"].astype(str))
-    for found in sorted((DATA / "crosstf" / project).glob("*/scaling.parquet"), reverse=True):
+    for found in sorted(
+        (DATA / "crosstf" / project).glob("*/scaling.parquet"), reverse=True
+    ):
         if found.parent.name <= trades.parent.name and held & set(
-                pd.read_parquet(found, columns=["name"])["name"]):
+            pd.read_parquet(found, columns=["name"])["name"]
+        ):
             return found.parent.name
     return None
 
@@ -137,8 +157,14 @@ def enrolled(project: str) -> dict | None:
         The row (symbol, timeframe, template, install…), or None when the builder never
         recorded it with a template.
     """
-    return next((r for r in reversed(registry.rows())
-                 if r["name"] == project and r["template"]), None)
+    return next(
+        (
+            r
+            for r in reversed(registry.rows())
+            if r["name"] == project and r["template"]
+        ),
+        None,
+    )
 
 
 def family(project: str) -> str | None:
@@ -161,6 +187,8 @@ def family(project: str) -> str | None:
 
 def no_family(project: str) -> str:
     """The sentence a study that signs the ledger answers when the project has no template."""
-    return (f"el proyecto {project} no tiene plantilla en projects/registry.csv: sin familia "
-            "no se apunta la mirada en el ledger, así que no se corre (córrelo desde la "
-            "terminal con --family si sabes cuál es)")
+    return (
+        f"el proyecto {project} no tiene plantilla en projects/registry.csv: sin familia "
+        "no se apunta la mirada en el ledger, así que no se corre (córrelo desde la "
+        "terminal con --family si sabes cuál es)"
+    )

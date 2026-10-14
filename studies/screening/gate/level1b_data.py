@@ -29,20 +29,36 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         trade; `ret_datos` is NaN when the mean excess is not positive.
     """
     empty = pd.DataFrame(index=alive, columns=pd.Index(FACTS), dtype=float)
-    if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
+    if not data:  # tests/test_gate_rules.py runs every level on an empty harvest
         return empty
-    folder = cast(Path, data.get("quality"))     # absent -> TypeError below, caught: no inventory
+    folder = cast(
+        Path, data.get("quality")
+    )  # absent -> TypeError below, caught: no inventory
     try:
         ev = pd.read_parquet(folder / "events.parquet")
-        scanned_to = pd.Timestamp(json.loads((folder / "summary.json").read_text("utf-8"))["bars_to"])
+        scanned_to = pd.Timestamp(
+            json.loads((folder / "summary.json").read_text("utf-8"))["bars_to"]
+        )
     except (TypeError, OSError, KeyError, ValueError) as err:
-        log.warning("calidad de datos: sin inventario utilizable (%s: %s); hechos ausentes",
-                    type(err).__name__, err)
+        log.warning(
+            "calidad de datos: sin inventario utilizable (%s: %s); hechos ausentes",
+            type(err).__name__,
+            err,
+        )
         return empty
     oos, index = data["oos"], data["bars"].index
     if scanned_to < oos["close_time"].max():
-        log.warning("calidad de datos: el inventario acaba en %s, antes de la ultima operacion (%s); "
-                    "hechos ausentes", scanned_to, oos["close_time"].max())
+        log.warning(
+            "calidad de datos: el inventario acaba en %s, antes de la ultima operacion (%s); "
+            "hechos ausentes",
+            scanned_to,
+            oos["close_time"].max(),
+        )
         return empty
-    width = int(cast(pd.Timedelta, pd.Series(index[:1000]).diff().mode()[0]).total_seconds() // 60)
-    return dataquality.facts(oos, dataquality.mark(oos, index, width, ev)).reindex(alive)
+    width = int(
+        cast(pd.Timedelta, pd.Series(index[:1000]).diff().mode()[0]).total_seconds()
+        // 60
+    )
+    return dataquality.facts(oos, dataquality.mark(oos, index, width, ev)).reindex(
+        alive
+    )

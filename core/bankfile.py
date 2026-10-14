@@ -56,19 +56,50 @@ import pyarrow.parquet as pq
 from core.tradepack import Pack
 
 MAGIC, END, VERSION, TRAILER = b"ALGOBANK", b"KNABOGLA", 1, 204
-ORDER = np.dtype([("strategy", "<u4"), ("ticket", "<i4"), ("open_ms", "<i8"), ("close_ms", "<i8"),
-                  ("open", "<f4"), ("close", "<f4"), ("size", "<f4"), ("pl", "<f4"), ("balance", "<f4"),
-                  ("mae", "<f4"), ("mfe", "<f4"), ("sym", "<u2"), ("res", "<u2"), ("type", "<u2"),
-                  ("sample", "<u2"), ("close_type", "<u2"), ("flags", "u1"), ("_", "u1")])
+ORDER = np.dtype(
+    [
+        ("strategy", "<u4"),
+        ("ticket", "<i4"),
+        ("open_ms", "<i8"),
+        ("close_ms", "<i8"),
+        ("open", "<f4"),
+        ("close", "<f4"),
+        ("size", "<f4"),
+        ("pl", "<f4"),
+        ("balance", "<f4"),
+        ("mae", "<f4"),
+        ("mfe", "<f4"),
+        ("sym", "<u2"),
+        ("res", "<u2"),
+        ("type", "<u2"),
+        ("sample", "<u2"),
+        ("close_type", "<u2"),
+        ("flags", "u1"),
+        ("_", "u1"),
+    ]
+)
 EQ = np.dtype([("day", "<i4"), ("v", "<f4")])
-INDEX = np.dtype([(c, "<u4") for c in ("name", "main", "symbol", "tf", "filter")]
-                 + [("problems", "<i4"), ("n_orders", "<u4"), ("xml_len", "<u4")])
+INDEX = np.dtype(
+    [(c, "<u4") for c in ("name", "main", "symbol", "tf", "filter")]
+    + [("problems", "<i4"), ("n_orders", "<u4"), ("xml_len", "<u4")]
+)
 EQRUN = np.dtype([("strategy", "<u4"), ("res", "<u4"), ("n", "<u4")])
 SYMDEC = np.dtype([("sym", "<u4"), ("dec", "<i4")])
-SECTIONS = ("orders", "equity", "stats", "xml", "index", "eqruns", "symdec", "keys", "labels", "strings")
+SECTIONS = (
+    "orders",
+    "equity",
+    "stats",
+    "xml",
+    "index",
+    "eqruns",
+    "symdec",
+    "keys",
+    "labels",
+    "strings",
+)
 UNLABELLED = ("", "N/A")
-PENDING = 1                                  # `flags` bit 0: an order that never filled
-CODED = ("type", "sample", "close_type")     # the three whose label must exist
+PENDING = 1  # `flags` bit 0: an order that never filled
+CODED = ("type", "sample", "close_type")  # the three whose label must exist
 
 
 class Unreadable(Exception):
@@ -77,8 +108,15 @@ class Unreadable(Exception):
 
 def stat(k: int) -> np.dtype:
     """The record of the `stats` section for K keys."""
-    return np.dtype([("strategy", "<u4"), ("res", "<u4"), ("sample", "i1"), ("_", "V3"),
-                     ("v", "<f8", (k,))])
+    return np.dtype(
+        [
+            ("strategy", "<u4"),
+            ("res", "<u4"),
+            ("sample", "i1"),
+            ("_", "V3"),
+            ("v", "<f8", (k,)),
+        ]
+    )
 
 
 def half_up(x: np.ndarray, decimals: int | np.ndarray) -> np.ndarray:
@@ -95,12 +133,14 @@ def _table(raw: np.ndarray, what: str) -> np.ndarray:
     n = int(raw[:4].view("<u4")[0]) if len(raw) >= 8 else -1
     if n < 1 or len(raw) < 8 + 4 * n:
         raise Unreadable(f"la tabla de cadenas «{what}» no cabe en su sección")
-    off = raw[4:8 + 4 * n].view("<u4")
-    text = bytes(raw[8 + 4 * n:])
+    off = raw[4 : 8 + 4 * n].view("<u4")
+    text = bytes(raw[8 + 4 * n :])
     if off[-1] != len(text) or (np.diff(off.astype("i8")) < 0).any():
         raise Unreadable(f"la tabla de cadenas «{what}» no cuadra con su sección")
     try:
-        return np.array([text[a:b].decode("utf-8") for a, b in zip(off[:-1], off[1:])], dtype=object)
+        return np.array(
+            [text[a:b].decode("utf-8") for a, b in zip(off[:-1], off[1:])], dtype=object
+        )
     except UnicodeDecodeError as err:
         raise Unreadable(f"la tabla de cadenas «{what}» no es UTF-8: {err}") from err
 
@@ -130,47 +170,87 @@ def load(path: Path, check: bool = False) -> dict[str, Any]:
     t = np.array(m[-TRAILER:])
     told = int(t[184:192].view("<u8")[0])
     if bytes(t[-8:]) != END or told != size:
-        raise Unreadable(f"{path}: truncado o a medias — mide {size} bytes y su cola "
-                         f"{'no está' if bytes(t[-8:]) != END else f'dice {told}'}")
+        raise Unreadable(
+            f"{path}: truncado o a medias — mide {size} bytes y su cola "
+            f"{'no está' if bytes(t[-8:]) != END else f'dice {told}'}"
+        )
     if check and zlib.crc32(m[:-12]) != int(t[192:196].view("<u4")[0]):  # pyright: ignore[reportArgumentType] -- numpy memmap exposes the buffer protocol; the stubs omit it
-        raise Unreadable(f"{path}: el CRC no cuadra, el contenido cambió después de escribirse")
+        raise Unreadable(
+            f"{path}: el CRC no cuadra, el contenido cambió después de escribirse"
+        )
     n, k = (int(v) for v in t[160:168].view("<u4"))
-    kinds = dict(orders=ORDER, equity=EQ, stats=stat(k), xml=np.dtype("u1"), index=INDEX,
-                 eqruns=EQRUN, symdec=SYMDEC, keys=np.dtype("<u4"), labels=np.dtype("u1"),
-                 strings=np.dtype("u1"))
+    kinds = dict(
+        orders=ORDER,
+        equity=EQ,
+        stats=stat(k),
+        xml=np.dtype("u1"),
+        index=INDEX,
+        eqruns=EQRUN,
+        symdec=SYMDEC,
+        keys=np.dtype("<u4"),
+        labels=np.dtype("u1"),
+        strings=np.dtype("u1"),
+    )
     got = {}
-    for name, (at, length) in zip(SECTIONS, t[:160].view("<u8").reshape(10, 2).tolist()):
+    for name, (at, length) in zip(
+        SECTIONS, t[:160].view("<u8").reshape(10, 2).tolist()
+    ):
         if at < 16 or at + length > size - TRAILER or length % kinds[name].itemsize:
-            raise Unreadable(f"{path}: la sección «{name}» ({at}+{length}) no cabe en el fichero")
-        got[name] = m[at:at + length].view(kinds[name])
+            raise Unreadable(
+                f"{path}: la sección «{name}» ({at}+{length}) no cabe en el fichero"
+            )
+        got[name] = m[at : at + length].view(kinds[name])
     labels, strings = _table(got["labels"], "labels"), _table(got["strings"], "strings")
     o, index, runs = got["orders"], got["index"], got["eqruns"]
     if len(index) != n or (len(o) and int(o["strategy"].max()) >= n):
         raise Unreadable(f"{path}: sus secciones no cuadran entre sí (estrategias)")
-    if (len(got["keys"]) != k or len(o) != int(t[168:176].view("<u8")[0])
-            or (np.bincount(o["strategy"], minlength=n) != index["n_orders"]).any()
-            or (np.diff(o["strategy"].astype("i8")) < 0).any()
-            or int(index["xml_len"].sum(dtype="u8")) != len(got["xml"])
-            or int(runs["n"].sum(dtype="u8")) != len(got["equity"])
-            or any(len(a) and int(a.max()) >= n for a in (runs["strategy"], got["stats"]["strategy"]))
-            or any(len(a) and int(a.max()) >= len(strings)
-                   for a in (got["keys"], runs["res"], got["stats"]["res"],
-                             *(index[c] for c in ("name", "main", "symbol", "tf", "filter"))))
-            or any(len(o) and int(o[c].max()) >= len(labels) for c in ("sym", "res") + CODED)
-            or (len(got["symdec"]) and int(got["symdec"]["sym"].max()) >= len(labels))):
+    if (
+        len(got["keys"]) != k
+        or len(o) != int(t[168:176].view("<u8")[0])
+        or (np.bincount(o["strategy"], minlength=n) != index["n_orders"]).any()
+        or (np.diff(o["strategy"].astype("i8")) < 0).any()
+        or int(index["xml_len"].sum(dtype="u8")) != len(got["xml"])
+        or int(runs["n"].sum(dtype="u8")) != len(got["equity"])
+        or any(
+            len(a) and int(a.max()) >= n
+            for a in (runs["strategy"], got["stats"]["strategy"])
+        )
+        or any(
+            len(a) and int(a.max()) >= len(strings)
+            for a in (
+                got["keys"],
+                runs["res"],
+                got["stats"]["res"],
+                *(index[c] for c in ("name", "main", "symbol", "tf", "filter")),
+            )
+        )
+        or any(
+            len(o) and int(o[c].max()) >= len(labels) for c in ("sym", "res") + CODED
+        )
+        or (len(got["symdec"]) and int(got["symdec"]["sym"].max()) >= len(labels))
+    ):
         raise Unreadable(f"{path}: sus secciones no cuadran entre sí")
     blank = np.flatnonzero(np.isin(labels, UNLABELLED))
     for c in CODED:
         if np.isin(np.unique(o[c]), blank).any():
-            raise Unreadable(f"{path}: hay órdenes con «{c}» sin etiqueta — fichero rechazado")
-    got.update(labels=labels, strings=strings, xml=got["xml"], names=strings[index["name"]],
-               keys=[tuple(cast(str, strings[i]).split("\t")) for i in got["keys"]],
-               data="all" if int(m[12:16].view("<u4")[0]) else "main",
-               written_ms=int(t[176:184].view("<u8")[0]))
+            raise Unreadable(
+                f"{path}: hay órdenes con «{c}» sin etiqueta — fichero rechazado"
+            )
+    got.update(
+        labels=labels,
+        strings=strings,
+        xml=got["xml"],
+        names=strings[index["name"]],
+        keys=[tuple(cast(str, strings[i]).split("\t")) for i in got["keys"]],
+        data="all" if int(m[12:16].view("<u4")[0]) else "main",
+        written_ms=int(t[176:184].view("<u8")[0]),
+    )
     return got
 
 
-def trades(bank: dict, per_market: bool = False, only: set[str] | None = None) -> pd.DataFrame:
+def trades(
+    bank: dict, per_market: bool = False, only: set[str] | None = None
+) -> pd.DataFrame:
     """Every filled trade of the databank: the frame `core.tradepack.pack` writes from the CSVs.
 
     Args:
@@ -197,8 +277,10 @@ def _frame(bank: dict, per_market: bool, only: set[str] | None) -> tuple:
     labels, names = bank["labels"], bank["names"]
     # Sorted on read (owner, 2026-10-13): SQX's memory holds a databank in its own order, the
     # trade library in the order of the strategies' file names (🔬 same day, 50 + 50 strategies).
-    first = sorted((i for i in range(len(names)) if only is None or names[i] in only),
-                   key=lambda i: names[i] + ".csv")
+    first = sorted(
+        (i for i in range(len(names)) if only is None or names[i] in only),
+        key=lambda i: names[i] + ".csv",
+    )
     rank = np.full(len(names), -1, "i8")
     rank[first] = np.arange(len(first))
     o = o[rank[o["strategy"]] >= 0]
@@ -207,7 +289,9 @@ def _frame(bank: dict, per_market: bool, only: set[str] | None) -> tuple:
     known[bank["symdec"]["sym"]] = bank["symdec"]["dec"]
     dec = known[o["sym"]]
     if (dec < 0).any():
-        raise Unreadable(f"símbolos sin decimales en SQX: {sorted(set(labels[o['sym'][dec < 0]]))}")
+        raise Unreadable(
+            f"símbolos sin decimales en SQX: {sorted(set(labels[o['sym'][dec < 0]]))}"
+        )
 
     def cat(ids: np.ndarray, of: np.ndarray = labels) -> pd.Categorical:
         """The labels of `ids` as a categorical over just the labels used."""
@@ -217,22 +301,43 @@ def _frame(bank: dict, per_market: bool, only: set[str] | None) -> tuple:
         """Epoch milliseconds as datetime64[ns], whole seconds."""
         return (ms // 1000 * 1000).astype("datetime64[ms]").astype("datetime64[ns]")
 
-    f = pd.DataFrame({
-        "Type": cat(o["type"]), "Open time": when(o["open_ms"]),
-        "Open price": half_up(o["open"], dec), "Size": half_up(o["size"], 2),
-        "Close time": when(o["close_ms"]), "Close price": half_up(o["close"], dec),
-        "Profit/Loss": half_up(o["pl"], 2), "Balance": half_up(o["balance"], 2),
-        "Sample type": cat(o["sample"]), "Close type": cat(o["close_type"]),
-        "MAE ($)": half_up(o["mae"], 2), "MFE ($)": half_up(o["mfe"], 2)})
+    f = pd.DataFrame(
+        {
+            "Type": cat(o["type"]),
+            "Open time": when(o["open_ms"]),
+            "Open price": half_up(o["open"], dec),
+            "Size": half_up(o["size"], 2),
+            "Close time": when(o["close_ms"]),
+            "Close price": half_up(o["close"], dec),
+            "Profit/Loss": half_up(o["pl"], 2),
+            "Balance": half_up(o["balance"], 2),
+            "Sample type": cat(o["sample"]),
+            "Close type": cat(o["close_type"]),
+            "MAE ($)": half_up(o["mae"], 2),
+            "MFE ($)": half_up(o["mfe"], 2),
+        }
+    )
     torn_blocks = set()
     if per_market:
         f["Symbol"] = cat(o["sym"])
-        f["block"] = pd.DataFrame({"s": o["strategy"], "t": o["ticket"]}).groupby(["s", "t"]).cumcount()
-        runs = pd.DataFrame({"s": o["strategy"], "b": f["block"], "t": o["ticket"]}).groupby(["s", "b"])["t"]
-        torn_blocks = set(runs.size().index.get_level_values(0)[
-            np.asarray((runs.max() != runs.size()) | (runs.min() != 1))])   # tradestore.whole
+        f["block"] = (
+            pd.DataFrame({"s": o["strategy"], "t": o["ticket"]})
+            .groupby(["s", "t"])
+            .cumcount()
+        )
+        runs = pd.DataFrame(
+            {"s": o["strategy"], "b": f["block"], "t": o["ticket"]}
+        ).groupby(["s", "b"])["t"]
+        torn_blocks = set(
+            runs.size().index.get_level_values(0)[
+                np.asarray((runs.max() != runs.size()) | (runs.min() != 1))
+            ]
+        )  # tradestore.whole
     same = o["strategy"][1:] == o["strategy"][:-1]
-    op, cl = o["open_ms"] // 1000, o["close_ms"] // 1000      # whole seconds, as the CSVs `tradepack.pack` reads
+    op, cl = (
+        o["open_ms"] // 1000,
+        o["close_ms"] // 1000,
+    )  # whole seconds, as the CSVs `tradepack.pack` reads
     torn = same & ((op[1:] <= op[:-1]) | (op[1:] < cl[:-1]))
     kept = np.unique(o["strategy"][1:][torn])
     if len(kept) and len(kept) == len(first):
@@ -242,12 +347,27 @@ def _frame(bank: dict, per_market: bool, only: set[str] | None) -> tuple:
     f["strategy"] = cat(o["strategy"], names)
     if len(kept) and first[0] not in kept:
         f["Ticket"] = f.pop("Ticket")
-    return (f, [names[i] for i in first if i in kept], [names[i] for i in first if i in torn_blocks])
+    return (
+        f,
+        [names[i] for i in first if i in kept],
+        [names[i] for i in first if i in torn_blocks],
+    )
 
 
-def pack(bank: dict, out: Path, per_market: bool = False, only: set[str] | None = None) -> Pack:
+def pack(
+    bank: dict, out: Path, per_market: bool = False, only: set[str] | None = None
+) -> Pack:
     """`core.tradepack.pack` from the databank (args as in `trades`): the same zstd Parquet and dict."""
     f, kept, torn = _frame(bank, per_market, only)
-    pq.write_table(pa.Table.from_pandas(f, preserve_index=False), out, compression="zstd")
-    return {"strategies": len(bank["names"]) if only is None else len(only & set(bank["names"])),
-            "trades": len(f), "columns": list(f.columns), "kept_ticket": kept, "torn_blocks": torn}
+    pq.write_table(
+        pa.Table.from_pandas(f, preserve_index=False), out, compression="zstd"
+    )
+    return {
+        "strategies": len(bank["names"])
+        if only is None
+        else len(only & set(bank["names"])),
+        "trades": len(f),
+        "columns": list(f.columns),
+        "kept_ticket": kept,
+        "torn_blocks": torn,
+    }

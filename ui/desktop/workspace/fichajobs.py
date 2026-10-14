@@ -32,15 +32,25 @@ class Compute(QObject):
             scope: "one" or "many".
         """
         w = self.where
-        got = send("study/run", {"study": study, "scope": scope, "project": w["project"],
-                                 "databank": w["databank"], "asset": w.get("asset") or "",
-                                 "strategies": [w["strategy"]] if scope == "one" else []})
+        got = send(
+            "study/run",
+            {
+                "study": study,
+                "scope": scope,
+                "project": w["project"],
+                "databank": w["databank"],
+                "asset": w.get("asset") or "",
+                "strategies": [w["strategy"]] if scope == "one" else [],
+            },
+        )
         if "error" in got:
             self.said.emit(f"{study}: {got['error']}")
             return
         self.ids += [j["id"] for j in got["jobs"]]
-        self.said.emit(f"{study} en cola ({'esta estrategia' if scope == 'one' else 'todo el databank'}); "
-                       "la ficha se redibuja cuando termine")
+        self.said.emit(
+            f"{study} en cola ({'esta estrategia' if scope == 'one' else 'todo el databank'}); "
+            "la ficha se redibuja cuando termine"
+        )
         self.timer.start()
 
     def poll(self) -> None:
@@ -52,14 +62,20 @@ class Compute(QObject):
         jobs = {j["id"]: j for j in got.get("jobs", [])}
         mine = [jobs[i] for i in self.ids if i in jobs]
         if not self.ids or "error" in got:
-            return                            # a late answer, or a daemon that did not answer
+            return  # a late answer, or a daemon that did not answer
         if any(j["rc"] is None for j in mine):
-            self.said.emit(" · ".join(f"{j['label']} {j.get('percent', 0)}% · {j['state']}"
-                                      for j in mine if j["rc"] is None))
+            self.said.emit(
+                " · ".join(
+                    f"{j['label']} {j.get('percent', 0)}% · {j['state']}"
+                    for j in mine
+                    if j["rc"] is None
+                )
+            )
             return
         self.timer.stop()
         failed = [j for j in mine if j["rc"] != 0]
         self.ids = []
-        self.said.emit(f"terminó con error: {failed[0]['label']}" if failed else "calculado")
+        self.said.emit(
+            f"terminó con error: {failed[0]['label']}" if failed else "calculado"
+        )
         self.done.emit()
-

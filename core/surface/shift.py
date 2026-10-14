@@ -43,8 +43,9 @@ def cliff_delta(before: np.ndarray, after: np.ndarray) -> float:
     return float(2 * u / (after.size * before.size) - 1)
 
 
-def tail_excess(before: np.ndarray, after: np.ndarray,
-                tail: float = 0.95, middle: float = 0.50) -> float:
+def tail_excess(
+    before: np.ndarray, after: np.ndarray, tail: float = 0.95, middle: float = 0.50
+) -> float:
     """How much further the tail fell than the middle did.
 
     Args:
@@ -58,6 +59,7 @@ def tail_excess(before: np.ndarray, after: np.ndarray,
         the surface fell in one piece; positive means the peak collapsed faster than the
         plateau.
     """
-    return float((np.quantile(before, tail) - np.quantile(after, tail))
-                 - (np.quantile(before, middle) - np.quantile(after, middle)))
-
+    return float(
+        (np.quantile(before, tail) - np.quantile(after, tail))
+        - (np.quantile(before, middle) - np.quantile(after, middle))
+    )

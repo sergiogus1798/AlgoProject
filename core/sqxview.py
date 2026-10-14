@@ -12,24 +12,48 @@ from core import fanout, sqxfile, sqxstats
 # USDJPY_emaCross_H1 Results/OOS (100 + 32 strategies): every column equal to the view's
 # export within 6e-8 relative (float32), except `R Expectancy`, which the view rounds to two
 # decimals. Sample type 10 carries the (IS) block and 20 the (OOS) one; each emits its own set.
-VIEW = {10: [("Net profit", "NetProfit"), ("# of trades", "NumberOfTrades"),
-             ("Profit factor", "ProfitFactor"), ("Sharpe Ratio", "SharpeRatio"),
-             ("Sortino Ratio", "SortinoRatio"), ("R Expectancy", "RExpectancy"),
-             ("Winning Percent", "WinningPct"), ("Stability", "Stability"),
-             ("Drawdown", "Drawdown"), ("Ret/DD Ratio", "ReturnDDRatio"),
-             ("CAGR/Max DD %", "AnnualPctReturnDDRatio?"),
-             ("CalmarRatio", "AnnualPctReturnDDRatio?"), ("DoF Ratio", "DoFRatio"),
-             ("Max DD %", "DrawdownPct"), ("PSR", "ProbSharpeRatio"), ("RSquared", "RSquared"),
-             ("SQN", "SQN"), ("TRL Ratio", "TRLRatio"), ("Ulcer Index %", "UlcerIndex"),
-             ("ZScore", "ZScore"), ("Param Count", "ParameterCount")],
-        20: [("Annual % Return", "AHPR"), ("CAGR/Max DD %", "AnnualPctReturnDDRatio?"),
-             ("CalmarRatio", "AnnualPctReturnDDRatio?"), ("Net profit", "NetProfit"),
-             ("PSR", "ProbSharpeRatio"), ("Profit factor", "ProfitFactor"),
-             ("Ret/DD Ratio", "ReturnDDRatio"), ("SQN", "SQN"), ("Sharpe Ratio", "SharpeRatio"),
-             ("Sortino Ratio", "SortinoRatio"), ("Winning Percent", "WinningPct"),
-             ("Ulcer Index %", "UlcerIndex"), ("ZScore", "ZScore")]}
+VIEW = {
+    10: [
+        ("Net profit", "NetProfit"),
+        ("# of trades", "NumberOfTrades"),
+        ("Profit factor", "ProfitFactor"),
+        ("Sharpe Ratio", "SharpeRatio"),
+        ("Sortino Ratio", "SortinoRatio"),
+        ("R Expectancy", "RExpectancy"),
+        ("Winning Percent", "WinningPct"),
+        ("Stability", "Stability"),
+        ("Drawdown", "Drawdown"),
+        ("Ret/DD Ratio", "ReturnDDRatio"),
+        ("CAGR/Max DD %", "AnnualPctReturnDDRatio?"),
+        ("CalmarRatio", "AnnualPctReturnDDRatio?"),
+        ("DoF Ratio", "DoFRatio"),
+        ("Max DD %", "DrawdownPct"),
+        ("PSR", "ProbSharpeRatio"),
+        ("RSquared", "RSquared"),
+        ("SQN", "SQN"),
+        ("TRL Ratio", "TRLRatio"),
+        ("Ulcer Index %", "UlcerIndex"),
+        ("ZScore", "ZScore"),
+        ("Param Count", "ParameterCount"),
+    ],
+    20: [
+        ("Annual % Return", "AHPR"),
+        ("CAGR/Max DD %", "AnnualPctReturnDDRatio?"),
+        ("CalmarRatio", "AnnualPctReturnDDRatio?"),
+        ("Net profit", "NetProfit"),
+        ("PSR", "ProbSharpeRatio"),
+        ("Profit factor", "ProfitFactor"),
+        ("Ret/DD Ratio", "ReturnDDRatio"),
+        ("SQN", "SQN"),
+        ("Sharpe Ratio", "SharpeRatio"),
+        ("Sortino Ratio", "SortinoRatio"),
+        ("Winning Percent", "WinningPct"),
+        ("Ulcer Index %", "UlcerIndex"),
+        ("ZScore", "ZScore"),
+    ],
+}
 LABEL = {10: "(IS)", 20: "(OOS)"}
-_FILES: dict[str, Path] = {}    # what frame() hands its forked children
+_FILES: dict[str, Path] = {}  # what frame() hands its forked children
 
 
 def dof_ratio(trades: float, params: int) -> float:
@@ -63,10 +87,18 @@ def _row(name: str) -> dict[str, Any]:
     """One strategy's row of frame(), read in a fanout child off the module's `_FILES`."""
     f = _FILES[name]
     st = sqxstats.stats(f)
-    row: dict[str, Any] = {"Strategy Name": name, "Filters result": sqxfile.sqx_filter(f) or "",
-           "TimeFrame (IS)": sqxfile.symbol(f)[1].rsplit("_", 1)[-1]}
+    row: dict[str, Any] = {
+        "Strategy Name": name,
+        "Filters result": sqxfile.sqx_filter(f) or "",
+        "TimeFrame (IS)": sqxfile.symbol(f)[1].rsplit("_", 1)[-1],
+    }
     for block, cols in VIEW.items():
-        row.update({f"{col} {LABEL[block]}": st.get(block, {}).get(key, 0) for col, key in cols})
+        row.update(
+            {
+                f"{col} {LABEL[block]}": st.get(block, {}).get(key, 0)
+                for col, key in cols
+            }
+        )
     # SQX freezes ParameterCount into the result it was computed under and never
     # recomputes it (OPEN #17): every strategy built before 2026-09-06 still carries the
     # old, inflated count. Replaced with the Python mirror off the definition itself
@@ -101,13 +133,18 @@ def measured(stats: dict[str, dict]) -> int:
             guess, so the gate refuses rather than picking.
     """
     paired = sorted({k for _, k in VIEW[10]} & {k for _, k in VIEW[20]})
-    weight = {n: sum(abs(float(st.get(n, {}).get(k, 0))) for st in stats.values() for k in paired)
-              for n in VIEW}
+    weight = {
+        n: sum(
+            abs(float(st.get(n, {}).get(k, 0))) for st in stats.values() for k in paired
+        )
+        for n in VIEW
+    }
     filled = [n for n, w in weight.items() if w > 0]
     if len(filled) != 1:
         raise SystemExit(
             f"este databank llena {[LABEL[n] for n in filled] or 'ninguno'} de los dos bloques "
             f"de muestra, sobre {len(paired)} metricas pareadas {weight}. La puerta empareja "
             f"dos databanks de UNA ventana cada uno; uno que llena los dos corrio su propio "
-            f"corte dentro y no se puede saber cual mitad es el retesteo")
+            f"corte dentro y no se puede saber cual mitad es el retesteo"
+        )
     return filled[0]

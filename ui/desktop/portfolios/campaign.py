@@ -3,8 +3,19 @@
 from collections.abc import Callable
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import (QAbstractItemView, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-                               QSplitter, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.states import colour
@@ -12,25 +23,59 @@ from ui.desktop.studypage.net import fetch as daemon_fetch
 from ui.desktop.theme import T
 from ui.text.numbers import num
 
-FLOWS = (("Fecha", "Cuándo se guardó el workflow."), ("Activo", "El símbolo de la celda."),
-         ("TF", "El timeframe de la celda."), ("Plantilla", "La plantilla de la celda; «simple_long» es una Simple Strategy sin plantilla."),
-         ("Dir.", "Una sola dirección por estrategia: long o short."),
-         ("Estado", "done: terminó; failed: falló tres veces; interrupted: se paró antes del final."),
-         ("Min", "Minutos de reloj de todos los pasos, del 6 al 25."),
-         ("Finales", "Las estrategias que salieron del paso 25: las que se guardaron en el archivo."))
-STEPS = (("Paso", "El número del WORKFLOW."), ("Tipo", "sqx: corre en StrategyQuant; python: un estudio; judge: aplica el criterio."),
-         ("Seg", "Segundos de reloj que tardó."), ("Qué hizo", "Lo que dijo el autopiloto, con «entran → quedan» donde cribó."))
-STRATS = (("Final", "La estrategia superviviente, sin stop por operación: lo que se llevaría a probar."),
-          ("Madre", "La estrategia de SQX de la que sale: casi todos los estudios llevan su firma."))
-INTRO = ("Cada workflow completo que la campaña guardó, con TODOS sus resultados. Elige uno para ver su embudo y cuánto "
-         "tardó cada fase; elige estrategias y «Abrir» las enseña en Estrategia, una a una, con «anterior / siguiente».")
+FLOWS = (
+    ("Fecha", "Cuándo se guardó el workflow."),
+    ("Activo", "El símbolo de la celda."),
+    ("TF", "El timeframe de la celda."),
+    (
+        "Plantilla",
+        "La plantilla de la celda; «simple_long» es una Simple Strategy sin plantilla.",
+    ),
+    ("Dir.", "Una sola dirección por estrategia: long o short."),
+    (
+        "Estado",
+        "done: terminó; failed: falló tres veces; interrupted: se paró antes del final.",
+    ),
+    ("Min", "Minutos de reloj de todos los pasos, del 6 al 25."),
+    (
+        "Finales",
+        "Las estrategias que salieron del paso 25: las que se guardaron en el archivo.",
+    ),
+)
+STEPS = (
+    ("Paso", "El número del WORKFLOW."),
+    (
+        "Tipo",
+        "sqx: corre en StrategyQuant; python: un estudio; judge: aplica el criterio.",
+    ),
+    ("Seg", "Segundos de reloj que tardó."),
+    ("Qué hizo", "Lo que dijo el autopiloto, con «entran → quedan» donde cribó."),
+)
+STRATS = (
+    (
+        "Final",
+        "La estrategia superviviente, sin stop por operación: lo que se llevaría a probar.",
+    ),
+    (
+        "Madre",
+        "La estrategia de SQX de la que sale: casi todos los estudios llevan su firma.",
+    ),
+)
+INTRO = (
+    "Cada workflow completo que la campaña guardó, con TODOS sus resultados. Elige uno para ver su embudo y cuánto "
+    "tardó cada fase; elige estrategias y «Abrir» las enseña en Estrategia, una a una, con «anterior / siguiente»."
+)
 
 
 def _table(cols: tuple, multi: bool = False) -> QTableWidget:
     """A read-only table with the column tooltips."""
     t = QTableWidget(0, len(cols))
     t.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-    t.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection if multi else QAbstractItemView.SelectionMode.SingleSelection)
+    t.setSelectionMode(
+        QAbstractItemView.SelectionMode.ExtendedSelection
+        if multi
+        else QAbstractItemView.SelectionMode.SingleSelection
+    )
     t.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
     t.verticalHeader().hide()
     t.horizontalHeader().setStretchLastSection(True)
@@ -78,7 +123,9 @@ class CampaignPage(QFrame):
         find = QLineEdit()
         self.find = find  # pyright: ignore[reportAttributeAccessIssue]  # shadows QObject.find; tests read page.find
         find.setPlaceholderText("Filtrar por activo, plantilla o timeframe…")
-        find.setToolTip("Escribe parte del activo (NIKKEI225), de la plantilla o del timeframe (M30).")
+        find.setToolTip(
+            "Escribe parte del activo (NIKKEI225), de la plantilla o del timeframe (M30)."
+        )
         find.textChanged.connect(self._filter)
         lay.addWidget(find)
         self.table = _table(FLOWS)
@@ -87,14 +134,20 @@ class CampaignPage(QFrame):
         self.steps, self.strats = _table(STEPS), _table(STRATS, multi=True)
         self.strats.itemDoubleClicked.connect(lambda *_: self._open())
         self.go = QPushButton("Abrir en Estrategia")
-        self.go.setToolTip("Abre las estrategias elegidas con todos sus resultados, una tras otra. Con una sola "
-                           "elegida, «anterior / siguiente» recorre las demás del workflow. No calcula nada.")
+        self.go.setToolTip(
+            "Abre las estrategias elegidas con todos sus resultados, una tras otra. Con una sola "
+            "elegida, «anterior / siguiente» recorre las demás del workflow. No calcula nada."
+        )
         self.go.clicked.connect(self._open)
         self.kept = text("", T["muted"], 12)
         right = QWidget()
         side = QVBoxLayout(right)
         side.setContentsMargins(12, 0, 0, 0)
-        for w in (QLabel("Embudo", objectName="mono"), self.funnel, QLabel("Tiempo por fase", objectName="mono")):  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        for w in (
+            QLabel("Embudo", objectName="mono"),  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+            self.funnel,
+            QLabel("Tiempo por fase", objectName="mono"),  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        ):
             side.addWidget(w)
         side.addWidget(self.steps, 3)
         side.addWidget(QLabel("Estrategias", objectName="mono"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
@@ -113,20 +166,43 @@ class CampaignPage(QFrame):
         """Read the saved workflows again."""
         got = self.fetch("campaign/list")
         if "error" in got:
-            return self.said.setText(f'<span style="color:{colour("fail")}">{got["error"]}</span>')
+            return self.said.setText(
+                f'<span style="color:{colour("fail")}">{got["error"]}</span>'
+            )
         self.rows = got["workflows"]
-        self.said.setText(f"{num(len(self.rows))} workflow{'s' * (len(self.rows) != 1)} guardado"
-                          f"{'s' * (len(self.rows) != 1)}." if self.rows else
-                          "Todavía no hay ninguno: la campaña guarda uno al terminar cada celda.")
+        self.said.setText(
+            f"{num(len(self.rows))} workflow{'s' * (len(self.rows) != 1)} guardado"
+            f"{'s' * (len(self.rows) != 1)}."
+            if self.rows
+            else "Todavía no hay ninguno: la campaña guarda uno al terminar cada celda."
+        )
         self._filter()
 
     def _filter(self) -> None:
         """Show the rows whose asset, template or timeframe holds what was typed."""
         word = self.find.text().strip().lower()
-        self.shown = [r for r in self.rows if word in f"{r['symbol']} {r['template']} {r['timeframe']}".lower()]
-        _fill(self.table, [(r["when"], r["symbol"], r["timeframe"], r["template"], r["direction"], r["state"],
-                            num(r["minutes"]), num(r["finalists"])) for r in self.shown],
-              [r["name"] for r in self.shown])
+        self.shown = [
+            r
+            for r in self.rows
+            if word in f"{r['symbol']} {r['template']} {r['timeframe']}".lower()
+        ]
+        _fill(
+            self.table,
+            [
+                (
+                    r["when"],
+                    r["symbol"],
+                    r["timeframe"],
+                    r["template"],
+                    r["direction"],
+                    r["state"],
+                    num(r["minutes"]),
+                    num(r["finalists"]),
+                )
+                for r in self.shown
+            ],
+            [r["name"] for r in self.shown],
+        )
         if self.shown:
             self.table.selectRow(0)
 
@@ -137,18 +213,38 @@ class CampaignPage(QFrame):
             return
         got = self.fetch("campaign/show", workflow=self.shown[picked[0].row()]["name"])
         if "error" in got:
-            return self.said.setText(f'<span style="color:{colour("fail")}">{got["error"]}</span>')
+            return self.said.setText(
+                f'<span style="color:{colour("fail")}">{got["error"]}</span>'
+            )
         self.flow = got
         counts = [c for r in got["steps"] for c in r["counts"]]
-        self.funnel.setText("  ›  ".join(f"<b>{c['what']}</b> {num(c['in'])} → {num(c['out'])}" for c in counts)
-                            or "sin cifras")
-        self.funnel.setToolTip("Cada tramo es «qué se cribó: cuántas entraron → cuántas quedaron», en el orden en que "
-                               "corrió el workflow.")
-        _fill(self.steps, [(r["step"], r["kind"], num(r["seconds"]), r["what"]) for r in got["steps"]])
+        self.funnel.setText(
+            "  ›  ".join(
+                f"<b>{c['what']}</b> {num(c['in'])} → {num(c['out'])}" for c in counts
+            )
+            or "sin cifras"
+        )
+        self.funnel.setToolTip(
+            "Cada tramo es «qué se cribó: cuántas entraron → cuántas quedaron», en el orden en que "
+            "corrió el workflow."
+        )
+        _fill(
+            self.steps,
+            [
+                (r["step"], r["kind"], num(r["seconds"]), r["what"])
+                for r in got["steps"]
+            ],
+        )
         _fill(self.strats, [(s["name"], s["mother"]) for s in got["strategies"]])
         lost = got["not_kept"]
-        self.kept.setText(f"{num(len(lost))} cosas no se copiaron (ficheros grandes o intermedios)." if lost else "")
-        self.kept.setToolTip("\n".join(f"{x['path']}: {x['reason']}" for x in lost[:30]))
+        self.kept.setText(
+            f"{num(len(lost))} cosas no se copiaron (ficheros grandes o intermedios)."
+            if lost
+            else ""
+        )
+        self.kept.setToolTip(
+            "\n".join(f"{x['path']}: {x['reason']}" for x in lost[:30])
+        )
         if got["strategies"]:
             self.strats.selectRow(0)
 

@@ -3,8 +3,18 @@
 from typing import Any
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QComboBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
-                               QListWidget, QPushButton, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop.criteria.overrides import HELP, KNOWN, by_built, by_line, by_rows, told
 from ui.desktop.theme import C
@@ -12,11 +22,20 @@ from ui.desktop.theme import C
 KINDS = ("Métrica SQX", "Test de la app", "Veredicto", "Compuesto")
 SQX, APP, VERDICT, COMPOUND = range(4)
 OPS = (">=", ">", "<=", "<", "==")
+
+
 class RuleDialog(QDialog):
     """One rule edited. `rule` holds what «Guardar» built; `deleted` says «Borrar» was pressed."""
 
-    def __init__(self, parent: QWidget | None, title: str, facts: list[dict], rule: dict | None = None,
-                 nested: bool = False, why: str = "") -> None:
+    def __init__(
+        self,
+        parent: QWidget | None,
+        title: str,
+        facts: list[dict],
+        rule: dict | None = None,
+        nested: bool = False,
+        why: str = "",
+    ) -> None:
         """Build the form and fill it.
 
         Args:
@@ -32,10 +51,16 @@ class RuleDialog(QDialog):
         self.setMinimumWidth(760)
         self.facts, self.rule, self.deleted = facts, None, False
         self.by = (rule or {}).get("by")
-        self.rest = {k: v for k, v in (rule or {}).items() if k not in KNOWN}   # kept as found
+        self.rest = {
+            k: v for k, v in (rule or {}).items() if k not in KNOWN
+        }  # kept as found
         self.had_missing = "missing" in (rule or {})
-        self.cell = dict(rule) if rule and "alpha" in rule else None     # per-cell: returned as found
-        self.parts: list[dict] = list((rule or {}).get("all") or (rule or {}).get("any") or [])
+        self.cell = (
+            dict(rule) if rule and "alpha" in rule else None
+        )  # per-cell: returned as found
+        self.parts: list[dict] = list(
+            (rule or {}).get("all") or (rule or {}).get("any") or []
+        )
         self.kind = QComboBox()
         self.kind.addItems(KINDS[:COMPOUND] if nested else KINDS)
         self.fact = QComboBox(editable=True)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
@@ -53,25 +78,52 @@ class RuleDialog(QDialog):
         self.list = QListWidget()
         self.list.setFixedHeight(110)
         add, drop = QPushButton("Añadir condición"), QPushButton("Quitar condición")
-        add.setToolTip("Añade una condición a la regla compuesta: un número o un veredicto.")
+        add.setToolTip(
+            "Añade una condición a la regla compuesta: un número o un veredicto."
+        )
         drop.setToolTip("Quita de la regla compuesta la condición seleccionada.")
         add.clicked.connect(self.add_part)
         drop.clicked.connect(self.drop_part)
         self.by_box, self.by_lines = QVBoxLayout(), []
-        grow = QPushButton("+", clicked=lambda: self.add_by("", "", ""), maximumWidth=40)  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        grow = QPushButton(
+            "+", clicked=lambda: self.add_by("", "", ""), maximumWidth=40
+        )  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.by_box.addWidget(grow, alignment=Qt.AlignmentFlag.AlignLeft)
         self.buttons = QHBoxLayout()
         for w in (add, drop):
             self.buttons.addWidget(w)
         self.buttons.addStretch(1)
         self.form = QFormLayout()
-        self.rows = {"kind": self.kind, "name": self.name, "fact": self.fact, "shape": self.shape,
-                     "pass": self.pair(self.op, self.value), "want": self.want,
-                     "limbo": self.pair(self.lop, self.lvalue), "miss": self.miss,
-                     "absent": self.absent, "by": self.by_box, "join": self.join, "parts": self.list, "edit": self.buttons}
-        labels = {"kind": "Tipo", "name": "Nombre", "fact": "Dato", "shape": "Forma",
-                  "pass": "Pasa si", "want": "Tiene que decir", "limbo": "Limbo si",
-                  "miss": "Si no cumple", "absent": "Si falta el dato", "by": "Ajustes por activo o temporalidad", "join": "Unir con", "parts": "Condiciones", "edit": ""}
+        self.rows = {
+            "kind": self.kind,
+            "name": self.name,
+            "fact": self.fact,
+            "shape": self.shape,
+            "pass": self.pair(self.op, self.value),
+            "want": self.want,
+            "limbo": self.pair(self.lop, self.lvalue),
+            "miss": self.miss,
+            "absent": self.absent,
+            "by": self.by_box,
+            "join": self.join,
+            "parts": self.list,
+            "edit": self.buttons,
+        }
+        labels = {
+            "kind": "Tipo",
+            "name": "Nombre",
+            "fact": "Dato",
+            "shape": "Forma",
+            "pass": "Pasa si",
+            "want": "Tiene que decir",
+            "limbo": "Limbo si",
+            "miss": "Si no cumple",
+            "absent": "Si falta el dato",
+            "by": "Ajustes por activo o temporalidad",
+            "join": "Unir con",
+            "parts": "Condiciones",
+            "edit": "",
+        }
         for key, field in self.rows.items():
             label = QLabel(labels[key], toolTip=HELP.get(key, ""))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             if hasattr(field, "setToolTip"):
@@ -80,12 +132,18 @@ class RuleDialog(QDialog):
         self.note = QLabel("")
         self.note.setWordWrap(True)
         self.note.setStyleSheet(f"color: {C['weak']};")
-        save, cancel, delete = QPushButton("Guardar"), QPushButton("Cancelar"), QPushButton("Borrar")
+        save, cancel, delete = (
+            QPushButton("Guardar"),
+            QPushButton("Cancelar"),
+            QPushButton("Borrar"),
+        )
         save.setDefault(True)
         save.clicked.connect(self.save)
         cancel.clicked.connect(self.reject)
         delete.clicked.connect(self.delete)
-        delete.setToolTip("Borra este criterio del paso. Queda anotado en el historial.")
+        delete.setToolTip(
+            "Borra este criterio del paso. Queda anotado en el historial."
+        )
         delete.setVisible(rule is not None and not nested)
         foot = QHBoxLayout()
         foot.addWidget(delete)
@@ -119,25 +177,33 @@ class RuleDialog(QDialog):
         """Put a rule into the form; an empty one leaves the defaults."""
         fact = rule.get("fact", "")
         sqx = next((f["sqx"] for f in self.facts if f["fact"] == fact), False)
-        kind = COMPOUND if self.parts else VERDICT if "is" in rule else SQX if sqx else APP
+        kind = (
+            COMPOUND if self.parts else VERDICT if "is" in rule else SQX if sqx else APP
+        )
         self.kind.setCurrentIndex(kind if rule else APP)
         self.name.setText(rule.get("name", ""))
         self.join.setCurrentIndex(1 if "any" in rule else 0)
         self.want.setCurrentIndex(1 if rule.get("is") == "fail" else 0)
         self.miss.setCurrentIndex(1 if rule.get("else") == "limbo" else 0)
-        self.absent.setCurrentText({"limbo": "Limbo", "fail": "Fallo", "pass": "Pasa"}[
-            rule.get("missing", "limbo")])
+        self.absent.setCurrentText(
+            {"limbo": "Limbo", "fail": "Fallo", "pass": "Pasa"}[
+                rule.get("missing", "limbo")
+            ]
+        )
         self.shape.setCurrentIndex(1 if "near_median" in rule else 0)
         if "near_median" in rule:
             self.value.setText(f"{100 * rule['near_median']:g}")
             if "limbo_near_median" in rule:
                 self.lvalue.setText(f"{100 * rule['limbo_near_median']:g}")
-        for key, op, value in (("pass", self.op, self.value), ("limbo", self.lop, self.lvalue)):
+        for key, op, value in (
+            ("pass", self.op, self.value),
+            ("limbo", self.lop, self.lvalue),
+        ):
             if key in rule:
                 sign, _, number = str(rule[key]).partition(" ")
                 op.setCurrentText(sign)
                 value.setText(number)
-        if "alpha" in rule:      # the judge computes the line from B: nothing to type here
+        if "alpha" in rule:  # the judge computes the line from B: nothing to type here
             self.value.setText("por celda: Φ⁻¹(1 − α/B)")
             self.value.setEnabled(False)
             self.lvalue.setEnabled(False)
@@ -150,18 +216,34 @@ class RuleDialog(QDialog):
         """Show the rows the chosen type uses, and list the facts that type offers."""
         kind, median = self.kind.currentIndex(), self.shape.currentIndex() == 1
         number = kind in (SQX, APP)
-        shown = {"kind": True, "name": not self.nested, "fact": kind != COMPOUND, "shape": number,
-                 "pass": number, "limbo": number, "want": kind == VERDICT,
-                 "miss": kind != COMPOUND, "absent": kind != COMPOUND, "join": kind == COMPOUND, "parts": kind == COMPOUND,
-                 "edit": kind == COMPOUND, "by": kind != COMPOUND}
+        shown = {
+            "kind": True,
+            "name": not self.nested,
+            "fact": kind != COMPOUND,
+            "shape": number,
+            "pass": number,
+            "limbo": number,
+            "want": kind == VERDICT,
+            "miss": kind != COMPOUND,
+            "absent": kind != COMPOUND,
+            "join": kind == COMPOUND,
+            "parts": kind == COMPOUND,
+            "edit": kind == COMPOUND,
+            "by": kind != COMPOUND,
+        }
         for key, on in shown.items():
             self.form.setRowVisible(self.rows[key], on)
         self.op.setVisible(number and not median)
         self.lop.setVisible(number and not median)
-        self.value.setPlaceholderText("% de la mediana, p. ej. 20" if median else "número")
-        self.lvalue.setPlaceholderText("% de la mediana (opcional)" if median
-                                       else "número (opcional)")
-        offered = [f for f in self.facts if kind == VERDICT or f["sqx"] == (kind == SQX)]
+        self.value.setPlaceholderText(
+            "% de la mediana, p. ej. 20" if median else "número"
+        )
+        self.lvalue.setPlaceholderText(
+            "% de la mediana (opcional)" if median else "número (opcional)"
+        )
+        offered = [
+            f for f in self.facts if kind == VERDICT or f["sqx"] == (kind == SQX)
+        ]
         typed = self.fact.currentText() or self.wanted
         self.fact.clear()
         for f in offered:
@@ -170,10 +252,17 @@ class RuleDialog(QDialog):
         self.fact.setCurrentIndex(at)
         if at < 0:
             self.fact.setEditText(typed)
-        by = f" Sus excepciones ({', '.join(self.by)}) se conservan: se editan en criteria.yaml." \
-            if self.by and kind == COMPOUND else ""
-        none = "Este paso no tiene métricas de SQX entre sus datos: escribe la clave a mano, " \
-               "o usa un test de la app." if kind == SQX and not offered else ""
+        by = (
+            f" Sus excepciones ({', '.join(self.by)}) se conservan: se editan en criteria.yaml."
+            if self.by and kind == COMPOUND
+            else ""
+        )
+        none = (
+            "Este paso no tiene métricas de SQX entre sus datos: escribe la clave a mano, "
+            "o usa un test de la app."
+            if kind == SQX and not offered
+            else ""
+        )
         self.note.setText(none + by)
 
     def add_by(self, key: str, passes: str, limbo: str) -> None:
@@ -185,7 +274,9 @@ class RuleDialog(QDialog):
 
     def add_part(self) -> None:
         """Open the same dialog for one condition of the compound and append what it built."""
-        part = RuleDialog(self, "Condición de la regla compuesta", self.facts, nested=True)
+        part = RuleDialog(
+            self, "Condición de la regla compuesta", self.facts, nested=True
+        )
         if part.exec() and part.rule:
             self.parts.append(part.rule)
             self.list.addItem(told(part.rule))
@@ -205,11 +296,20 @@ class RuleDialog(QDialog):
         kind = self.kind.currentIndex()
         name = {"name": self.name.text().strip()} if self.name.text().strip() else {}
         if kind == COMPOUND:
-            return name | {("all", "any")[self.join.currentIndex()]: self.parts} | self.rest
+            return (
+                name
+                | {("all", "any")[self.join.currentIndex()]: self.parts}
+                | self.rest
+            )
         at = self.fact.findText(self.fact.currentText())
-        rule = name | {"fact": self.fact.itemData(at) if at >= 0
-                       else self.fact.currentText().strip()}
-        value, limbo = (w.text().strip().replace(",", ".") for w in (self.value, self.lvalue))
+        rule = name | {
+            "fact": self.fact.itemData(at)
+            if at >= 0
+            else self.fact.currentText().strip()
+        }
+        value, limbo = (
+            w.text().strip().replace(",", ".") for w in (self.value, self.lvalue)
+        )
         if kind == VERDICT:
             rule["is"] = ("pass", "fail")[self.want.currentIndex()]
         elif self.shape.currentIndex() == 1:
@@ -224,11 +324,18 @@ class RuleDialog(QDialog):
                 rule["limbo"] = f"{self.lop.currentText()} {limbo}"
         if self.miss.currentIndex() == 1:
             rule["else"] = "limbo"
-        gone = {"Limbo": "limbo", "Fallo": "fail", "Pasa": "pass"}[self.absent.currentText()]
+        gone = {"Limbo": "limbo", "Fallo": "fail", "Pasa": "pass"}[
+            self.absent.currentText()
+        ]
         if gone != "limbo" or self.had_missing:
             rule["missing"] = gone
-        by = self.by if kind == COMPOUND else by_built(
-            [tuple(b.text() for b in line) for line in self.by_lines], self.by)
+        by = (
+            self.by
+            if kind == COMPOUND
+            else by_built(
+                [tuple(b.text() for b in line) for line in self.by_lines], self.by
+            )
+        )
         return rule | ({"by": by} if by else {}) | self.rest
 
     def save(self) -> None:
@@ -236,8 +343,9 @@ class RuleDialog(QDialog):
         try:
             self.rule = self.built()
         except ValueError:
-            self.note.setText("El valor tiene que ser un número (y el de limbo, un número o "
-                              "nada).")
+            self.note.setText(
+                "El valor tiene que ser un número (y el de limbo, un número o nada)."
+            )
             return
         self.accept()
 

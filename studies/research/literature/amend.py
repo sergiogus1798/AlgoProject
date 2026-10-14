@@ -27,11 +27,15 @@ def clashes(specs: list[dict], entries: list[dict]) -> tuple[list[str], list[str
     """
     measures = profile_measures()
     used = {m["name"] for m in measures} | {
-        s["name"] for e in entries for s in e["translation"].get("measures", [])}
+        s["name"] for e in entries for s in e["translation"].get("measures", [])
+    }
     names = [s["name"] for s in specs]
     taken = [f"translation.measures: the name {n} is taken" for n in names if n in used]
-    taken += [f"translation.measures: the name {n} is repeated" for n in set(names)
-              if names.count(n) > 1]
+    taken += [
+        f"translation.measures: the name {n} is repeated"
+        for n in set(names)
+        if names.count(n) > 1
+    ]
     twins = []
     for s in specs:
         twin = dedupe.same_rule(s["args"], entries, measures)

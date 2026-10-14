@@ -50,23 +50,39 @@ def one_batch(work: Path, cfg: dict) -> dict[str, Any]:
     symbol, timeframe = look.market(work)
     table = metrics(work)
     got = batch.read(work, symbol, timeframe, LEGS)
-    out = one.composition(COMP, table, got, symbol, batch.live(table, filters.CONTROLS), cfg, True)
+    out = one.composition(
+        COMP, table, got, symbol, batch.live(table, filters.CONTROLS), cfg, True
+    )
     facts, kept = out["facts"], out["kept"]
-    row = {"lote": f"{work.parent.name}/{work.name}", "n": facts["n"], "estado": facts["estado"],
-           "casilla": state.NO_DATA, "estado_sin": "limbo", "rho": None, "nivel_top": None,
-           "p_nivel": None, "sd_rho_nulo": None}
+    row = {
+        "lote": f"{work.parent.name}/{work.name}",
+        "n": facts["n"],
+        "estado": facts["estado"],
+        "casilla": state.NO_DATA,
+        "estado_sin": "limbo",
+        "rho": None,
+        "nivel_top": None,
+        "p_nivel": None,
+        "sd_rho_nulo": None,
+    }
     if facts["orden"] == state.NO_DATA:
         return row
     asset, ids = assetdata.load(symbol), kept["variant_id"]
     per = got["per"][LEGS[1]]
-    weeks = weekly.weekly(per[per["variant_id"].isin(ids)], batch.window(asset, COMP[1]),
-                          units=cast(Any, ids))["gross"].to_numpy()
+    weeks = weekly.weekly(
+        per[per["variant_id"].isin(ids)],
+        batch.window(asset, COMP[1]),
+        units=cast(Any, ids),
+    )["gross"].to_numpy()
     inside = one.values(COMP, table, got, asset).loc[ids, "g_is"].to_numpy(float)
     return row | {
-        "casilla": rates.cell(facts["orden"], facts["nivel_top"]), "rho": facts["rho"],
-        "nivel_top": facts["nivel_top"], "p_nivel": facts["p_nivel"],
+        "casilla": rates.cell(facts["orden"], facts["nivel_top"]),
+        "rho": facts["rho"],
+        "nivel_top": facts["nivel_top"],
+        "p_nivel": facts["p_nivel"],
         "estado_sin": rates.without_level_null(facts["orden"], facts, cfg),
-        "sd_rho_nulo": rates.sd_rho(inside, weeks, batch.years(asset, COMP[1]), cfg)}
+        "sd_rho_nulo": rates.sd_rho(inside, weeks, batch.years(asset, COMP[1]), cfg),
+    }
 
 
 class Rehearsal(TypedDict):

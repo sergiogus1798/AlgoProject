@@ -22,7 +22,7 @@ QAPP = QApplication.instance() or QApplication([])
 HTTP = TestClient(APP)
 client.get = lambda path, **params: HTTP.get(f"/api/{path}", params=params).json()
 client.post = lambda path, body: HTTP.post(f"/api/{path}", json=body).json()
-tasklog.status = lambda role, project: None      # the one call that could reach an install
+tasklog.status = lambda role, project: None  # the one call that could reach an install
 SHELL = Shell()
 
 
@@ -33,17 +33,22 @@ def on_screen() -> str:
 
 def test_every_spelling_shows_one_name() -> None:
     """Registry, taxonomy, research and Spanish spellings of a family all show the same words."""
-    for spellings, shown in ((("meanReversion", "mean_reversion", "reversion",
-                               "Reversión a la media"), "Mean reversion"),
-                             (("trendFollowing", "trend", "tendencia", "Tendencia"),
-                              "Trend following"),
-                             (("breakout", "ruptura", "Ruptura"), "Breakout")):
+    for spellings, shown in (
+        (
+            ("meanReversion", "mean_reversion", "reversion", "Reversión a la media"),
+            "Mean reversion",
+        ),
+        (("trendFollowing", "trend", "tendencia", "Tendencia"), "Trend following"),
+        (("breakout", "ruptura", "Ruptura"), "Breakout"),
+    ):
         assert {names.family(s) for s in spellings} == {shown}
     assert [names.spelt(a, names.REGISTRY) for a in ARCHETYPES] == list(ARCHETYPES)
     assert names.family("free") == "Free" and names.family("") == "Sin familia"
     assert names.palette("Reversión a la media — base") == "Mean reversion — base"
-    assert names.palette("Pullback — tendencia + reversión") == \
-        "Pullback — trend following + mean reversion"
+    assert (
+        names.palette("Pullback — tendencia + reversión")
+        == "Pullback — trend following + mean reversion"
+    )
 
 
 def test_sidebar_holds_the_front_page_only() -> None:
@@ -55,11 +60,17 @@ def test_sidebar_holds_the_front_page_only() -> None:
 
 def test_zones_load_when_first_opened() -> None:
     """Nothing but the front page is read before the window shows; «Recargar» marks them again."""
-    assert SHELL.coverage.data and "Activos" in SHELL.stale and not SHELL.palettes.data["palettes"]
+    assert (
+        SHELL.coverage.data
+        and "Activos" in SHELL.stale
+        and not SHELL.palettes.data["palettes"]
+    )
     SHELL.open_zone("Paletas")
     assert "Paletas" not in SHELL.stale and SHELL.palettes.data["palettes"]
     SHELL.refresh()
-    assert "Plantillas" in SHELL.stale and "Paletas" not in SHELL.stale    # the open one was re-read
+    assert (
+        "Plantillas" in SHELL.stale and "Paletas" not in SHELL.stale
+    )  # the open one was re-read
 
 
 def test_a_family_leads_to_its_templates() -> None:
@@ -68,9 +79,13 @@ def test_a_family_leads_to_its_templates() -> None:
     # Whichever family the library holds today: `breakout` went empty on 2026-10-05.
     family = client.get("templates")["templates"][0]["archetype"]
     SHELL.coverage.on_row(SHELL.coverage.data["rows"].index(family))
-    assert on_screen() == "Plantillas" and SHELL.catalogue.family.currentData() == family
-    listed = [SHELL.catalogue.list.item(i).data(Qt.UserRole)
-              for i in range(SHELL.catalogue.list.count())]
+    assert (
+        on_screen() == "Plantillas" and SHELL.catalogue.family.currentData() == family
+    )
+    listed = [
+        SHELL.catalogue.list.item(i).data(Qt.UserRole)
+        for i in range(SHELL.catalogue.list.count())
+    ]
     by_name = {t["name"]: t for t in SHELL.catalogue.data["templates"]}
     assert listed and all(by_name[n]["archetype"] == family for n in listed)
     assert SHELL.nav["Cobertura"].isChecked() and SHELL.library.isVisibleTo(SHELL)
@@ -81,12 +96,19 @@ def test_a_cell_leads_to_palette_chat_and_research() -> None:
     """The four buttons of a chosen cell open the other pages on that cell's family."""
     cover = SHELL.coverage
     SHELL.open_zone("Cobertura")
-    cover.on_click(cover.data["rows"].index("trendFollowing"), cover.data["columns"].index("H4"))
+    cover.on_click(
+        cover.data["rows"].index("trendFollowing"), cover.data["columns"].index("H4")
+    )
     assert cover.cell["family"] == "trendFollowing" and cover.cell["timeframe"] == "H4"
     cover.act("palette")
-    assert on_screen() == "Paletas" and SHELL.palettes.entry()["palette"]["family"] == "trend"
+    assert (
+        on_screen() == "Paletas"
+        and SHELL.palettes.entry()["palette"]["family"] == "trend"
+    )
     cover.act("new")
-    assert on_screen() == "Nueva plantilla" and SHELL.chat.answers == {"archetype": "trendFollowing"}
+    assert on_screen() == "Nueva plantilla" and SHELL.chat.answers == {
+        "archetype": "trendFollowing"
+    }
     cover.act("research")
     research = SHELL.zones["Investigar"]
     assert on_screen() == "Investigar" and research.tabs.currentWidget() is research.map

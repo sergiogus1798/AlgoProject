@@ -29,7 +29,10 @@ def workbook() -> Path:
 @lru_cache(maxsize=1)
 def _accounts(mtime_ns: int) -> dict[int, dict]:
     """The `fleet.vps.accounts` of machine.yaml as of one modification time."""
-    cfg = yaml.load((ROOT / "config" / "machine.yaml").read_text(encoding="utf-8"), Loader=yaml.CSafeLoader)
+    cfg = yaml.load(
+        (ROOT / "config" / "machine.yaml").read_text(encoding="utf-8"),
+        Loader=yaml.CSafeLoader,
+    )
     return ((cfg.get("fleet") or {}).get("vps") or {}).get("accounts") or {}
 
 

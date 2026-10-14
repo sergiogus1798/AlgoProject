@@ -74,31 +74,74 @@ def one(path: Path, task: str, cfg: dict) -> Ingested:
     usable = tasks.usable(got)
 
     keys = {"task": task, "strategy": strategy}
-    sim_rows = pd.DataFrame({**keys, "sim": sims["index"],
-                             **{name: values.astype(np.float32)
-                                for name, values in metrics.items()}})
-    level_rows = pd.DataFrame([{**keys, "level": level, "metric": name,
-                                "value": float(value), "usable": usable}
-                               for level, blob in stored.items() for name, value in blob.items()])
-    pnl_rows = pd.DataFrame({**keys,
-                             "sim": np.repeat(sims["index"], np.diff(sims["offsets"])),
-                             "pnl_cents": sims["pnl"]})
+    sim_rows = pd.DataFrame(
+        {
+            **keys,
+            "sim": sims["index"],
+            **{name: values.astype(np.float32) for name, values in metrics.items()},
+        }
+    )
+    level_rows = pd.DataFrame(
+        [
+            {
+                **keys,
+                "level": level,
+                "metric": name,
+                "value": float(value),
+                "usable": usable,
+            }
+            for level, blob in stored.items()
+            for name, value in blob.items()
+        ]
+    )
+    pnl_rows = pd.DataFrame(
+        {
+            **keys,
+            "sim": np.repeat(sims["index"], np.diff(sims["offsets"])),
+            "pnl_cents": sims["pnl"],
+        }
+    )
     # The daily equity of the ORIGINAL, once per strategy, from the full-sample task: it is the
     # only dated series here -- a simulation carries no dates -- and the only possible input to a
     # correlation between strategies, which the effective number of bets needs.
     equity = sqxstats.equity(path) if task == "stress" else None
-    returns = (pd.DataFrame({"strategy": strategy, "date": equity.index,
-                             "ret": equity.diff().fillna(0.0).to_numpy()})
-               if equity is not None else pd.DataFrame(columns=pd.Index(["strategy", "date", "ret"])))
+    returns = (
+        pd.DataFrame(
+            {
+                "strategy": strategy,
+                "date": equity.index,
+                "ret": equity.diff().fillna(0.0).to_numpy(),
+            }
+        )
+        if equity is not None
+        else pd.DataFrame(columns=pd.Index(["strategy", "date", "ret"]))
+    )
 
-    return {"task": task, "strategy": strategy, "sims": sim_rows, "levels": level_rows, "pnl": pnl_rows, "returns": returns,
-            "original": pd.DataFrame([{**keys, **{k: float(v[0]) for k, v in original.items()}}]),
-            "original_pnl": pd.DataFrame({**keys, "pnl_cents": base}),
-            "provenance": {**got, "usable": usable, "stored_only": integrity.stored_only(stored),
-                           "identity": sqxfile.identity(path)},
-            "reconciliation": (integrity.reconcile(metrics, stored, cfg,
-                                                   integrity.zero_readings(sims, capital))
-                                if usable else {})}
+    return {
+        "task": task,
+        "strategy": strategy,
+        "sims": sim_rows,
+        "levels": level_rows,
+        "pnl": pnl_rows,
+        "returns": returns,
+        "original": pd.DataFrame(
+            [{**keys, **{k: float(v[0]) for k, v in original.items()}}]
+        ),
+        "original_pnl": pd.DataFrame({**keys, "pnl_cents": base}),
+        "provenance": {
+            **got,
+            "usable": usable,
+            "stored_only": integrity.stored_only(stored),
+            "identity": sqxfile.identity(path),
+        },
+        "reconciliation": (
+            integrity.reconcile(
+                metrics, stored, cfg, integrity.zero_readings(sims, capital)
+            )
+            if usable
+            else {}
+        ),
+    }
 
 
 def _job(args: tuple) -> Ingested:
@@ -115,13 +158,15 @@ def _job(args: tuple) -> Ingested:
     """
     path, task, cfg, staging = args
     got = one(path, task, cfg)
-    got["pnl"] = store.write(got["pnl"], staging, ["task", "strategy"],
-                             cfg["ingest"]["compression"])
+    got["pnl"] = store.write(
+        got["pnl"], staging, ["task", "strategy"], cfg["ingest"]["compression"]
+    )
     return got
 
 
-def collect(project: str, cfg: dict, limit: int | None, staging: Path,
-            install: Path = MASTER) -> list[Ingested]:
+def collect(
+    project: str, cfg: dict, limit: int | None, staging: Path, install: Path = MASTER
+) -> list[Ingested]:
     """Read every strategy of every task, in parallel.
 
     Args:
@@ -137,7 +182,9 @@ def collect(project: str, cfg: dict, limit: int | None, staging: Path,
     """
     jobs, absent = [], []
     for task in tasks.TASKS:
-        found = sorted(databank_dir(project, tasks.DATABANK[task], install).glob("*.sqx"))
+        found = sorted(
+            databank_dir(project, tasks.DATABANK[task], install).glob("*.sqx")
+        )
         # A task with no .sqx is a task the project could not run, not a broken ingest:
         # MinDistance never applies to a population of market orders, and a perturbation
         # whose range the owner has not decided is not written at all. The study reads the
@@ -148,11 +195,13 @@ def collect(project: str, cfg: dict, limit: int | None, staging: Path,
         jobs += [(path, task, cfg, staging) for path in found[:limit]]
     # Only the control is required: since 2026-10-07 the chain runs `bar` and `ohlc` alone.
     assert tasks.DATABANK["bar"] not in absent, (
-        "falta la tarea `bar`, que no es opcional: es el denominador de toda comparación")
+        "falta la tarea `bar`, que no es opcional: es el denominador de toda comparación"
+    )
     if absent:
         print(f"sin correr, se leen las demás: {', '.join(absent)}")
-    with ProcessPoolExecutor(max_workers=min(len(jobs), cfg["ingest"]["workers"]
-                                             or fanout.CORES)) as pool:
+    with ProcessPoolExecutor(
+        max_workers=min(len(jobs), cfg["ingest"]["workers"] or fanout.CORES)
+    ) as pool:
         return list(pool.map(_job, jobs))
 
 
@@ -182,29 +231,52 @@ def report(results: list[Ingested], share: float) -> tuple[list[str], list[str],
             if not got["passed"]:
                 missed.setdefault(name, []).append(
                     f"{entry['task']}/{entry['strategy']}: {name} "
-                    f"at {got['worst_ratio']:.2f}x its tolerance")
-    fatal = [line for name, lines in missed.items()
-             if len(lines) >= max(2, share * seen[name]) for line in lines]
-    isolated = [line for name, lines in missed.items()
-                if len(lines) < max(2, share * seen[name]) for line in lines]
-    return fatal, isolated, {"metrics_checked": len(worst), "unreconciled_cells": isolated,
-                             "worst_ratio_by_metric": {k: round(v, 4)
-                                                       for k, v in sorted(worst.items())}}
+                    f"at {got['worst_ratio']:.2f}x its tolerance"
+                )
+    fatal = [
+        line
+        for name, lines in missed.items()
+        if len(lines) >= max(2, share * seen[name])
+        for line in lines
+    ]
+    isolated = [
+        line
+        for name, lines in missed.items()
+        if len(lines) < max(2, share * seen[name])
+        for line in lines
+    ]
+    return (
+        fatal,
+        isolated,
+        {
+            "metrics_checked": len(worst),
+            "unreconciled_cells": isolated,
+            "worst_ratio_by_metric": {k: round(v, 4) for k, v in sorted(worst.items())},
+        },
+    )
 
 
 def main() -> None:
     """Read the task databanks that ran and write one dated, immutable export."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", required=True)
-    parser.add_argument("--databank", default="MCR_All", help="name for this ingest run")
+    parser.add_argument(
+        "--databank", default="MCR_All", help="name for this ingest run"
+    )
     parser.add_argument("--day", default=date.today().isoformat())
-    parser.add_argument("--limit", type=int, help="strategies per task, for a smoke run")
-    parser.add_argument("--role", help="headless install holding the project; "
-                        "omit for the master")
-    parser.add_argument("--harvest-databank", default="Results",
-                        help="the build databank studies.screening.gate.harvest paired; only "
-                             "its OOS-tagged trades are kept, for the footprint() benchmark "
-                             "(owner, 2026-09-29: never the build's own trades)")
+    parser.add_argument(
+        "--limit", type=int, help="strategies per task, for a smoke run"
+    )
+    parser.add_argument(
+        "--role", help="headless install holding the project; omit for the master"
+    )
+    parser.add_argument(
+        "--harvest-databank",
+        default="Results",
+        help="the build databank studies.screening.gate.harvest paired; only "
+        "its OOS-tagged trades are kept, for the footprint() benchmark "
+        "(owner, 2026-09-29: never the build's own trades)",
+    )
     parser.add_argument("--set", action="append", dest="overrides", metavar="KEY=VALUE")
     args = parser.parse_args()
 
@@ -214,7 +286,8 @@ def main() -> None:
     # into a directory that already holds one silently doubles every row -- which happened
     # here on 2026-09-18 and read back as 79,992 simulations from 40 runs of 1,000.
     assert not (out / store.SIMS).exists(), (
-        f"{out} already holds an ingest; re-ingest under another --day or delete it first")
+        f"{out} already holds an ingest; re-ingest under another --day or delete it first"
+    )
     install = worker_dir(args.role) if args.role else MASTER
     staging = out.parent / f".{out.name}.{store.PNL}.staging"
     shutil.rmtree(staging, ignore_errors=True)
@@ -222,8 +295,10 @@ def main() -> None:
     failures, isolated, summary = report(results, cfg["recon"]["systematic_share"])
     if failures:
         shutil.rmtree(staging)
-        print(f"ingest: REFUSING to write — {len(failures)} reconstructions disagree with SQX "
-              "on a metric that misses systematically, which is a wrong formula")
+        print(
+            f"ingest: REFUSING to write — {len(failures)} reconstructions disagree with SQX "
+            "on a metric that misses systematically, which is a wrong formula"
+        )
         for line in failures[:20]:
             print("  ", line)
         sys.exit(1)
@@ -232,8 +307,13 @@ def main() -> None:
 
     codec = cfg["ingest"]["compression"]
     counts = {}
-    for name, parts in (("sims", ["task", "strategy"]), ("levels", ["task"]),
-                        ("original", []), ("original_pnl", []), ("returns", [])):
+    for name, parts in (
+        ("sims", ["task", "strategy"]),
+        ("levels", ["task"]),
+        ("original", []),
+        ("original_pnl", []),
+        ("returns", []),
+    ):
         frame = pd.concat([entry[name] for entry in results], ignore_index=True)
         counts[name] = store.write(frame, out / name, parts, codec)
     shutil.move(staging, out / store.PNL)
@@ -243,34 +323,61 @@ def main() -> None:
     # strategy, priced from its own harvest (OPEN.md #71), never per (task, strategy) like
     # everything above.
     identities = {e["strategy"]: e["provenance"]["identity"] for e in results}
-    sample = next(p for t in tasks.TASKS for p in sorted(
-        databank_dir(args.project, tasks.DATABANK[t], install).glob("*.sqx")))
+    sample = next(
+        p
+        for t in tasks.TASKS
+        for p in sorted(
+            databank_dir(args.project, tasks.DATABANK[t], install).glob("*.sqx")
+        )
+    )
     symbol, feed, timeframe = originals.feed_of(sample)
     point_value = originals.asset_point_value(symbol)
     # The build's trades date the P/L of `bar` and `ohlc` (T2, T3); the OOS ones feed footprint().
     for name, side in ((store.BUILD, "IS"), (store.TRADES, "OOS")):
-        harvested = originals.read(args.project, args.harvest_databank, identities, point_value,
-                                   side)
+        harvested = originals.read(
+            args.project, args.harvest_databank, identities, point_value, side
+        )
         counts[name] = store.write(harvested, out / name, ["strategy"], codec)
     missing = sorted(set(identities) - set(harvested["strategy"].unique()))
     if missing:
-        print(f"  sin operaciones originales (no emparejadas en su cosecha): "
-              f"{', '.join(missing)}")
+        print(
+            f"  sin operaciones originales (no emparejadas en su cosecha): "
+            f"{', '.join(missing)}"
+        )
 
-    short = [f"{e['task']}/{e['strategy']}" for e in results if not e["provenance"]["usable"]]
-    manifest.write(out,
-                   {"install": str(install), "project": args.project,
-                    "tasks": {e["task"] + "/" + e["strategy"]: e["provenance"] for e in results},
-                    "unusable_level_tables": short, "asset": {"symbol": symbol, "feed": feed,
-                                                              "point_value": point_value,
-                                                              "timeframe": timeframe},
-                    "harvest_databank": args.harvest_databank,
-                    "integrity": summary, "config": config.flatten(cfg)},
-                   " ".join(sys.argv), counts)
+    short = [
+        f"{e['task']}/{e['strategy']}" for e in results if not e["provenance"]["usable"]
+    ]
+    manifest.write(
+        out,
+        {
+            "install": str(install),
+            "project": args.project,
+            "tasks": {
+                e["task"] + "/" + e["strategy"]: e["provenance"] for e in results
+            },
+            "unusable_level_tables": short,
+            "asset": {
+                "symbol": symbol,
+                "feed": feed,
+                "point_value": point_value,
+                "timeframe": timeframe,
+            },
+            "harvest_databank": args.harvest_databank,
+            "integrity": summary,
+            "config": config.flatten(cfg),
+        },
+        " ".join(sys.argv),
+        counts,
+    )
     print(f"ingest: {len(results)} runs, {counts['sims']} simulations -> {out}")
-    print(f"  reconciled {summary['metrics_checked']} metrics against SQX, 0 disagreements")
-    print(f"  level tables unusable (run cut short): {len(short)}"
-          + (f" — {', '.join(short)}" if short else ""))
+    print(
+        f"  reconciled {summary['metrics_checked']} metrics against SQX, 0 disagreements"
+    )
+    print(
+        f"  level tables unusable (run cut short): {len(short)}"
+        + (f" — {', '.join(short)}" if short else "")
+    )
 
 
 if __name__ == "__main__":

@@ -9,14 +9,35 @@ from pathlib import Path
 
 from core.datapaths import template_registry, template_runs
 
-TEMPLATE_COLUMNS = ("name", "archetype", "shape", "entry", "exit", "groups", "blocks",
-                    "created", "origin", "status", "notes")
-RUN_COLUMNS = ("template", "symbol", "timeframe", "project", "date", "strategies_built",
-               "strategies_kept", "verdict", "report")
+TEMPLATE_COLUMNS = (
+    "name",
+    "archetype",
+    "shape",
+    "entry",
+    "exit",
+    "groups",
+    "blocks",
+    "created",
+    "origin",
+    "status",
+    "notes",
+)
+RUN_COLUMNS = (
+    "template",
+    "symbol",
+    "timeframe",
+    "project",
+    "date",
+    "strategies_built",
+    "strategies_kept",
+    "verdict",
+    "report",
+)
 
 
-def append(csv_path: Path, columns: tuple[str, ...], row: dict[str, str],
-           key: tuple[str, ...]) -> str:
+def append(
+    csv_path: Path, columns: tuple[str, ...], row: dict[str, str], key: tuple[str, ...]
+) -> str:
     """Add a row, or update in place the row that already carries the same key.
 
     Args:
@@ -36,7 +57,11 @@ def append(csv_path: Path, columns: tuple[str, ...], row: dict[str, str],
     # The lock is a sidecar: the CSV is replaced, so a lock on the CSV itself would be lost.
     with csv_path.with_suffix(".csv.lock").open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        rows = list(csv.DictReader(csv_path.open(encoding="utf-8"))) if csv_path.exists() else []
+        rows = (
+            list(csv.DictReader(csv_path.open(encoding="utf-8")))
+            if csv_path.exists()
+            else []
+        )
         ident = tuple(row.get(c, "") for c in key)
         old = next((r for r in rows if tuple(r[c] for c in key) == ident), None)
         if old:
@@ -55,15 +80,26 @@ def append(csv_path: Path, columns: tuple[str, ...], row: dict[str, str],
 def main() -> None:
     """Write one template row, or one run row, into the library's CSVs."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--run", action="store_true", help="write a run row instead of a template row")
-    ap.add_argument("--set", action="append", default=[], metavar="COLUMN=VALUE",
-                    help="a column value; repeat once per column")
+    ap.add_argument(
+        "--run", action="store_true", help="write a run row instead of a template row"
+    )
+    ap.add_argument(
+        "--set",
+        action="append",
+        default=[],
+        metavar="COLUMN=VALUE",
+        help="a column value; repeat once per column",
+    )
     args = ap.parse_args()
 
     row = dict(pair.split("=", 1) for pair in args.set)
     if args.run:
-        what = append(template_runs(), RUN_COLUMNS, row, ("template", "symbol", "timeframe"))
-        print(f"runs.csv: {what} {row['template']} on {row.get('symbol')} {row.get('timeframe')}")
+        what = append(
+            template_runs(), RUN_COLUMNS, row, ("template", "symbol", "timeframe")
+        )
+        print(
+            f"runs.csv: {what} {row['template']} on {row.get('symbol')} {row.get('timeframe')}"
+        )
     else:
         what = append(template_registry(), TEMPLATE_COLUMNS, row, ("name",))
         print(f"registry.csv: {what} {row['name']} ({row.get('status')})")

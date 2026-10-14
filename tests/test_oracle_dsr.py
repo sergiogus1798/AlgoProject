@@ -8,7 +8,9 @@ from pathlib import Path
 import numpy as np
 from scipy import stats
 
-ROOT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent
+ROOT = (
+    Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent
+)
 sys.path.insert(0, str(ROOT))
 
 from core import significance as sg  # noqa: E402
@@ -41,7 +43,10 @@ def ref_emax(sigma: float, n: int) -> float:
     """Reference Bailey-LdP expected maximum of n N(0, sigma^2) draws."""
     if n < 2:
         return 0.0
-    return sigma * ((1 - EULER) * stats.norm.ppf(1 - 1 / n) + EULER * stats.norm.ppf(1 - 1 / (n * np.e)))
+    return sigma * (
+        (1 - EULER) * stats.norm.ppf(1 - 1 / n)
+        + EULER * stats.norm.ppf(1 - 1 / (n * np.e))
+    )
 
 
 def t_moments() -> None:
@@ -64,8 +69,16 @@ def t_psr() -> None:
     """PSR and variance_factor against the closed formula, then calibration."""
     x = np.random.default_rng(3).standard_t(6, 300) * 0.01 + 0.0015
     sh, sk, ku = sg.moments(x)
-    ok("variance_factor", close(sg.variance_factor(sh, sk, ku), vf(sh, sk, ku)), "formula")
-    ok("variance_factor.normal0", close(sg.variance_factor(0.0, 0.0, 3.0), 1.0), "SR=0 normal -> 1")
+    ok(
+        "variance_factor",
+        close(sg.variance_factor(sh, sk, ku), vf(sh, sk, ku)),
+        "formula",
+    )
+    ok(
+        "variance_factor.normal0",
+        close(sg.variance_factor(0.0, 0.0, 3.0), 1.0),
+        "SR=0 normal -> 1",
+    )
     for b in (0.0, 0.05):
         r = sg.psr(x, b)
         e = stats.norm.cdf((sh - b) * np.sqrt(len(x) - 1) / np.sqrt(vf(sh, sk, ku)))
@@ -79,7 +92,11 @@ def t_psr() -> None:
     ku = stats.kurtosis(m, axis=1, fisher=False)
     p = stats.norm.cdf(s * np.sqrt(t - 1) / np.sqrt(vf(s, sk, ku)))
     lib = np.array([sg.psr(m[i], 0.0)["psr"] for i in range(300)])
-    ok("psr.vs_vectorised", np.allclose(lib, p[:300], atol=1e-9), "library vs own vector")
+    ok(
+        "psr.vs_vectorised",
+        np.allclose(lib, p[:300], atol=1e-9),
+        "library vs own vector",
+    )
     obs, band = float((p > 0.95).mean()), 3.29 * np.sqrt(0.05 * 0.95 / reps)
     print(f"INFO psr.calibration obs={obs:.4f} exp=0.05 band={band:.4f}")
     ok("psr.calibration", abs(obs - 0.05) <= band, f"{obs} vs 0.05 +-{band}")
@@ -101,18 +118,34 @@ def t_mintrl() -> None:
 
 def t_expmax() -> None:
     """expected_max and expected_max_sharpe: formula, Monte Carlo, N=1."""
-    ok("expected_max.formula", close(pl.expected_max(0.3, 50), 0.3 * np.sqrt(2 * np.log(50))), "sqrt(2 ln N)")
+    ok(
+        "expected_max.formula",
+        close(pl.expected_max(0.3, 50), 0.3 * np.sqrt(2 * np.log(50))),
+        "sqrt(2 ln N)",
+    )
     ok("expected_max.n1", pl.expected_max(1.0, 1) == 0.0, f"{pl.expected_max(1.0, 1)}")
-    ok("emax_sharpe.n1", pl.expected_max_sharpe(1.0, 1) == 0.0, f"{pl.expected_max_sharpe(1.0, 1)}")
+    ok(
+        "emax_sharpe.n1",
+        pl.expected_max_sharpe(1.0, 1) == 0.0,
+        f"{pl.expected_max_sharpe(1.0, 1)}",
+    )
     rng = np.random.default_rng(6)
     for n, reps in ((10, 20000), (100, 10000), (1000, 2000)):
         lib = pl.expected_max_sharpe(0.7, n)
-        ok(f"emax_sharpe.formula N={n}", close(lib, ref_emax(0.7, n), 1e-6), f"{lib} vs {ref_emax(0.7, n)}")
+        ok(
+            f"emax_sharpe.formula N={n}",
+            close(lib, ref_emax(0.7, n), 1e-6),
+            f"{lib} vs {ref_emax(0.7, n)}",
+        )
         mc = float((rng.normal(0, 0.7, size=(reps, n)).max(1)).mean())
         gap = lib / mc - 1
         print(f"INFO emax_sharpe N={n} lib={lib:.4f} mc={mc:.4f} gap={gap:+.3%}")
         ok(f"emax_sharpe.mc N={n}", abs(gap) < 0.05, f"gap {gap:+.3%}")
-        ok(f"expected_max.bound N={n}", pl.expected_max(0.7, n) >= lib, "sqrt bound above sharper")
+        ok(
+            f"expected_max.bound N={n}",
+            pl.expected_max(0.7, n) >= lib,
+            "sqrt bound above sharper",
+        )
 
 
 def t_dsr() -> None:
@@ -123,7 +156,10 @@ def t_dsr() -> None:
     e = stats.norm.cdf((sr - b) * np.sqrt(t - 1) / np.sqrt(vf(sr, sk, ku)))
     ok("dsr.benchmark", close(r["benchmark"], b, 1e-6), f"{r['benchmark']} vs {b}")
     ok("dsr.value", close(r["dsr"], e, 1e-6), f"{r['dsr']} vs {e}")
-    d = [pl.deflated_sharpe(sr, sig, k, t, sk, ku)["dsr"] for k in (2, 10, 100, 1000, 10000)]
+    d = [
+        pl.deflated_sharpe(sr, sig, k, t, sk, ku)["dsr"]
+        for k in (2, 10, 100, 1000, 10000)
+    ]
     ok("dsr.falls_with_n_eff", all(a > c for a, c in zip(d, d[1:])), f"{d}")
     d = [pl.deflated_sharpe(sr, sig, n, k, sk, ku)["dsr"] for k in (50, 100, 400, 1600)]
     ok("dsr.rises_with_n_obs", all(a < c for a, c in zip(d, d[1:])), f"{d}")
@@ -145,9 +181,21 @@ def t_plateau() -> None:
     """Hand-computed answers for the grid helpers and annual_sharpe."""
     v = np.array([1.0, 2.0, 3.0, 4.0, 10.0])
     ok("above_half_max", close(pl.above_half_max(v), 0.2), f"{pl.above_half_max(v)}")
-    ok("plateau_area", close(pl.plateau_area(np.array([-1, 0.5, 2, 3.0])), 0.75), "area")
-    ok("plateau_area.pf", close(pl.plateau_area(np.array([0.5, 1.5, 2.0, 0.9]), 1.0), 0.5), "breakeven 1")
-    ok("plateau_fraction", close(pl.plateau_fraction(v, 4.0), 0.4), f"{pl.plateau_fraction(v, 4.0)}")
+    ok(
+        "plateau_area",
+        close(pl.plateau_area(np.array([-1, 0.5, 2, 3.0])), 0.75),
+        "area",
+    )
+    ok(
+        "plateau_area.pf",
+        close(pl.plateau_area(np.array([0.5, 1.5, 2.0, 0.9]), 1.0), 0.5),
+        "breakeven 1",
+    )
+    ok(
+        "plateau_fraction",
+        close(pl.plateau_fraction(v, 4.0), 0.4),
+        f"{pl.plateau_fraction(v, 4.0)}",
+    )
     neg = np.array([-20, -11, -10, -5, 0.0])
     ok(
         "plateau_fraction.neg",
@@ -157,12 +205,18 @@ def t_plateau() -> None:
     ok("rank_of", close(pl.rank_of(v, 3.5), 0.6), f"{pl.rank_of(v, 3.5)}")
     ok("rank_of.top", close(pl.rank_of(v, 11.0), 1.0), "beats all")
     ok("shrunk", close(pl.shrunk(v), 3.0), f"{pl.shrunk(v)}")
-    closed = np.array(["2024-01-01", "2024-01-03", "2024-01-06"], dtype="datetime64[ns]")
+    closed = np.array(
+        ["2024-01-01", "2024-01-03", "2024-01-06"], dtype="datetime64[ns]"
+    )
     d = np.array([1, 0, 3, 0, 0, 2.0])
     e = d.mean() / d.std(ddof=1) * np.sqrt(252)
     got = sg.annual_sharpe(np.array([1.0, 3.0, 2.0]), closed)
     ok("annual_sharpe", close(got, e), f"{got} vs {e}")
-    ok("annual_sharpe.nan", np.isnan(sg.annual_sharpe(np.array([1.0]), closed[:1])), "one day -> NaN")
+    ok(
+        "annual_sharpe.nan",
+        np.isnan(sg.annual_sharpe(np.array([1.0]), closed[:1])),
+        "one day -> NaN",
+    )
 
 
 def main() -> None:

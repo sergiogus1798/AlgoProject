@@ -9,7 +9,11 @@ batch)` in and `(entries, holds)` out, and declares in RANDOMISES what it change
 import numpy as np
 import pandas as pd
 
-from engines.nulls.placement.free_models import fitted_holds, resampled_holds, segment_permute
+from engines.nulls.placement.free_models import (
+    fitted_holds,
+    resampled_holds,
+    segment_permute,
+)
 
 
 def semester_shift(seed: int, period: int, draws: int, batch: int) -> np.ndarray:
@@ -50,7 +54,10 @@ def cut_at_next(entries: np.ndarray, holds: np.ndarray) -> np.ndarray:
         zero drops out of that run exactly as a Friday cut drops one.
     """
     order = np.argsort(entries, axis=1, kind="stable")
-    ent, hold = np.take_along_axis(entries, order, 1), np.take_along_axis(holds, order, 1)
+    ent, hold = (
+        np.take_along_axis(entries, order, 1),
+        np.take_along_axis(holds, order, 1),
+    )
     room = np.full(hold.shape, np.iinfo(np.int64).max)
     room[:, :-1] = ent[:, 1:] - ent[:, :-1]
     out = np.empty_like(hold)
@@ -58,8 +65,13 @@ def cut_at_next(entries: np.ndarray, holds: np.ndarray) -> np.ndarray:
     return out
 
 
-def block_shift(held: pd.DataFrame, market: dict, draws: int, rng: np.random.Generator,
-                batch: int = 0) -> tuple[np.ndarray, np.ndarray]:
+def block_shift(
+    held: pd.DataFrame,
+    market: dict,
+    draws: int,
+    rng: np.random.Generator,
+    batch: int = 0,
+) -> tuple[np.ndarray, np.ndarray]:
     """Move each regime block's real trades by a whole number of weeks inside that block.
 
     Args:
@@ -99,11 +111,13 @@ def block_shift(held: pd.DataFrame, market: dict, draws: int, rng: np.random.Gen
         member = ids == b
         here = entry[member]
         span = index["size"][here].max()
-        weeks = (semester_shift(market["seed"], int(period[here[0]]), draws, batch)
-                 * span).astype(np.int64)
+        weeks = (
+            semester_shift(market["seed"], int(period[here[0]]), draws, batch) * span
+        ).astype(np.int64)
         rank = index["pos"][here] - index["start"][here]
-        out[:, member] = index["order"][index["start"][here]
-                                        + (rank + weeks) % index["size"][here]]
+        out[:, member] = index["order"][
+            index["start"][here] + (rank + weeks) % index["size"][here]
+        ]
     holds = np.repeat(held["hold"].to_numpy()[None, :], draws, axis=0)
     return out, cut_at_next(out, holds)
 
@@ -121,7 +135,10 @@ def _drop_overlaps(entries: np.ndarray, holds: np.ndarray) -> np.ndarray:
         charges it that trade's size and cost.
     """
     order = np.argsort(entries, axis=1, kind="stable")
-    ent, hold = np.take_along_axis(entries, order, 1), np.take_along_axis(holds, order, 1)
+    ent, hold = (
+        np.take_along_axis(entries, order, 1),
+        np.take_along_axis(holds, order, 1),
+    )
     reach = np.maximum.accumulate(ent + hold, axis=1)
     clash = np.zeros(hold.shape, dtype=bool)
     clash[:, 1:] = ent[:, 1:] < reach[:, :-1]
@@ -130,8 +147,13 @@ def _drop_overlaps(entries: np.ndarray, holds: np.ndarray) -> np.ndarray:
     return out
 
 
-def regime_strata(held: pd.DataFrame, market: dict, draws: int,
-                  rng: np.random.Generator, batch: int = 0) -> tuple[np.ndarray, np.ndarray]:
+def regime_strata(
+    held: pd.DataFrame,
+    market: dict,
+    draws: int,
+    rng: np.random.Generator,
+    batch: int = 0,
+) -> tuple[np.ndarray, np.ndarray]:
     """Move each real trade, with its own hold, to a random bar of its own regime stratum.
 
     Args:
@@ -151,23 +173,30 @@ def regime_strata(held: pd.DataFrame, market: dict, draws: int,
         `nulls.models` lists it, and the window sweep never uses it.
     """
     entry, index = held["entry"].to_numpy(), market["strata"]
-    pick = index["start"][entry] + (rng.random((draws, entry.size))
-                                    * index["size"][entry]).astype(np.int64)
+    pick = index["start"][entry] + (
+        rng.random((draws, entry.size)) * index["size"][entry]
+    ).astype(np.int64)
     entries = index["order"][pick]
     holds = np.repeat(held["hold"].to_numpy()[None, :], draws, axis=0)
     return entries, _drop_overlaps(entries, holds)
 
 
-MODELS = {"block_shift": block_shift, "segment_permute": segment_permute,
-          "resampled_holds": resampled_holds, "fitted_holds": fitted_holds,
-          "regime_strata": regime_strata}
+MODELS = {
+    "block_shift": block_shift,
+    "segment_permute": segment_permute,
+    "resampled_holds": resampled_holds,
+    "fitted_holds": fitted_holds,
+    "regime_strata": regime_strata,
+}
 
 # What each model holds fixed and what it randomises. A model that randomises more than one
 # thing cannot attribute a low p-value to any single cause, which is why the verdict uses
 # block_shift and the others are read beside it.
-RANDOMISES = {"block_shift": "placement, within the regime block and the weekday-hour slot",
-              "segment_permute": "placement, order, clustering and calendar",
-              "resampled_holds": "placement, which holds and gaps occur, and time in market",
-              "fitted_holds": "placement, and the holding times themselves",
-              "regime_strata": "placement, within bars of the same volatility quantile and "
-                               "trend sign; frees the weekday, hour and clustering"}
+RANDOMISES = {
+    "block_shift": "placement, within the regime block and the weekday-hour slot",
+    "segment_permute": "placement, order, clustering and calendar",
+    "resampled_holds": "placement, which holds and gaps occur, and time in market",
+    "fitted_holds": "placement, and the holding times themselves",
+    "regime_strata": "placement, within bars of the same volatility quantile and "
+    "trend sign; frees the weekday, hour and clustering",
+}

@@ -17,7 +17,9 @@ CROSSCHECK_LABELS = {
 }
 
 
-def text_of(parent: Element | None, path: str, default: str | None = None) -> str | None:
+def text_of(
+    parent: Element | None, path: str, default: str | None = None
+) -> str | None:
     """Stripped text of a child element.
 
     Args:
@@ -48,8 +50,11 @@ def render_side(side: Element | None) -> tuple[str | None, str]:
     if cv is not None:
         name = cv.get("name") or cv.get("column") or "?"
         bits = [f"resultType={cv.get('resultType')}"]
-        bits += [f"{k}={cv.get(k)}" for k in ("sampleType", "subresult", "plType", "format")
-                 if cv.get(k) is not None]
+        bits += [
+            f"{k}={cv.get(k)}"
+            for k in ("sampleType", "subresult", "plType", "format")
+            if cv.get(k) is not None
+        ]
         return name, ", ".join(bits)
     nv = side.find("Numeric-Value")
     if nv is not None:
@@ -75,18 +80,28 @@ def render_conditions(conds: Element | None) -> tuple[list[dict], dict]:
         fields = c.findall("Field")
         if fields and c.find("Left-Side") is None:
             byt = {f.get("type"): (f.text or "").strip() for f in fields}
-            rows.append({"use": c.get("use", "true"),
-                         "lhs": byt.get("databank", c.get("type") or "?"),
-                         "cmp": byt.get("comparator", "?"),
-                         "rhs": byt.get("number", "?"),
-                         "meta": f"type={c.get('type')}"})
+            rows.append(
+                {
+                    "use": c.get("use", "true"),
+                    "lhs": byt.get("databank", c.get("type") or "?"),
+                    "cmp": byt.get("comparator", "?"),
+                    "rhs": byt.get("number", "?"),
+                    "meta": f"type={c.get('type')}",
+                }
+            )
             continue
         lhs, meta = render_side(c.find("Left-Side"))
         comp = c.find("Comparator")
         rhs, _ = render_side(c.find("Right-Side"))
-        rows.append({"use": c.get("use", "true"), "lhs": lhs,
-                     "cmp": comp.get("value") if comp is not None else "?",
-                     "rhs": rhs, "meta": meta})
+        rows.append(
+            {
+                "use": c.get("use", "true"),
+                "lhs": lhs,
+                "cmp": comp.get("value") if comp is not None else "?",
+                "rhs": rhs,
+                "meta": meta,
+            }
+        )
     return rows, dict(conds.attrib)
 
 
@@ -103,8 +118,10 @@ def conditions_table(rows: list[dict], attrs: dict, indent: str = "") -> list[st
     """
     out = []
     if attrs:
-        out.append(f"{indent}Matrix/threshold attrs: " +
-                   ", ".join(f"`{k}={v}`" for k, v in attrs.items()))
+        out.append(
+            f"{indent}Matrix/threshold attrs: "
+            + ", ".join(f"`{k}={v}`" for k, v in attrs.items())
+        )
         out.append("")
     if not rows:
         return out + [f"{indent}_No conditions defined._"]
@@ -112,8 +129,10 @@ def conditions_table(rows: list[dict], attrs: dict, indent: str = "") -> list[st
     out.append(f"{indent}|---|----|--------|------|-------|--------|")
     for i, r in enumerate(rows, 1):
         tick = "✅" if r["use"] == "true" else "⬜"
-        out.append(f"{indent}| {i} | {tick} | `{r['lhs']}` | `{r['cmp']}` | "
-                   f"**{r['rhs']}** | {r['meta']} |")
+        out.append(
+            f"{indent}| {i} | {tick} | `{r['lhs']}` | `{r['cmp']}` | "
+            f"**{r['rhs']}** | {r['meta']} |"
+        )
     return out
 
 
@@ -154,12 +173,14 @@ def rankings_summary(root: Element) -> dict[str, Any] | None:
     if r is None:
         return None
     stop = r.find("StopCondition")
-    return {"type": r.get("type"),
-            "MaxStrategies": text_of(r, "MaxStrategies"),
-            "DeleteFailedStrategies": text_of(r, "DeleteFailedStrategies"),
-            "ForceRunCrossChecks": text_of(r, "ForceRunCrossChecks"),
-            "StopCondition": dict(stop.attrib) if stop is not None else {},
-            "conditions": render_conditions(r.find("Conditions"))}
+    return {
+        "type": r.get("type"),
+        "MaxStrategies": text_of(r, "MaxStrategies"),
+        "DeleteFailedStrategies": text_of(r, "DeleteFailedStrategies"),
+        "ForceRunCrossChecks": text_of(r, "ForceRunCrossChecks"),
+        "StopCondition": dict(stop.attrib) if stop is not None else {},
+        "conditions": render_conditions(r.find("Conditions")),
+    }
 
 
 def crosschecks_summary(root: Element) -> tuple[dict | None, list[dict]]:
@@ -189,11 +210,16 @@ def crosschecks_summary(root: Element) -> tuple[dict | None, list[dict]]:
                     settings.append((el.tag, dict(el.attrib)))
                 elif el.text and el.text.strip():
                     settings.append((el.tag, el.text.strip()))
-        enabled.append({"tag": child.tag,
-                        "label": CROSSCHECK_LABELS.get(child.tag, child.tag),
-                        "settings": settings,
-                        "conditions": render_conditions(
-                            child.find("AcceptanceSettings/Conditions"))})
+        enabled.append(
+            {
+                "tag": child.tag,
+                "label": CROSSCHECK_LABELS.get(child.tag, child.tag),
+                "settings": settings,
+                "conditions": render_conditions(
+                    child.find("AcceptanceSettings/Conditions")
+                ),
+            }
+        )
     return dict(cc.attrib), enabled
 
 
@@ -210,8 +236,12 @@ def special_summary(ttype: str, root: Element) -> list[tuple]:
     """
     out = []
     if ttype == "ClearDatabanks":
-        out.append(("Clears databanks",
-                    [d.get("name") for d in root.findall("ClearDatabanks/Databank")]))
+        out.append(
+            (
+                "Clears databanks",
+                [d.get("name") for d in root.findall("ClearDatabanks/Databank")],
+            )
+        )
     elif ttype == "GoToTask":
         g = root.find("GoToTask")
         if g is not None:
@@ -222,7 +252,9 @@ def special_summary(ttype: str, root: Element) -> list[tuple]:
     elif ttype == "CustomAnalysis":
         ca = root.find("CustomAnalysis")
         if ca is not None:
-            out += [(el.tag, el.text.strip()) for el in ca if el.text and el.text.strip()]
+            out += [
+                (el.tag, el.text.strip()) for el in ca if el.text and el.text.strip()
+            ]
     elif ttype == "Build":
         wtb = root.find("WhatToBuild")
         if wtb is not None:

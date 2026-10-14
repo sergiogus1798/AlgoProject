@@ -11,8 +11,16 @@ import pandas as pd
 from pipeline.autopilot import criteria
 from studies.screening.analysis import delay, tradelevel
 from studies.screening.falsePositives import model
-from studies.screening.gate import (cascade, inputs as gate_inputs, level0, level1a, level2, level3ab,
-                                    level3c, measures)
+from studies.screening.gate import (
+    cascade,
+    inputs as gate_inputs,
+    level0,
+    level1a,
+    level2,
+    level3ab,
+    level3c,
+    measures,
+)
 from studies.screening.gate.levels import LEVELS
 
 
@@ -31,15 +39,26 @@ def as_harvest(trades: pd.DataFrame, real: dict) -> dict[str, Any]:
     """
     ids = trades["identity"].unique()
     net = trades[trades["sample"] == "OOS"].groupby("identity")["Profit/Loss"].sum()
-    metrics = pd.DataFrame({"strategy": ids, "strategy_build": ids,
-                            "Net profit [OOS]": net.reindex(ids, fill_value=0.0).to_numpy()},
-                           index=pd.Index(ids, name="identity"))
-    return {**real, "metrics": metrics, "trades": trades,
-            "missing": pd.DataFrame(columns=pd.Index(["identity", "strategy_build"])),
-            "curve": model.curve(trades, real["market"]["windows"]["IS"][0], real["end"])}
+    metrics = pd.DataFrame(
+        {
+            "strategy": ids,
+            "strategy_build": ids,
+            "Net profit [OOS]": net.reindex(ids, fill_value=0.0).to_numpy(),
+        },
+        index=pd.Index(ids, name="identity"),
+    )
+    return {
+        **real,
+        "metrics": metrics,
+        "trades": trades,
+        "missing": pd.DataFrame(columns=pd.Index(["identity", "strategy_build"])),
+        "curve": model.curve(trades, real["market"]["windows"]["IS"][0], real["end"]),
+    }
 
 
-def _plant(data: dict, scores: pd.DataFrame, edge: float, cfg: dict) -> tuple[pd.DataFrame, pd.Series]:
+def _plant(
+    data: dict, scores: pd.DataFrame, edge: float, cfg: dict
+) -> tuple[pd.DataFrame, pd.Series]:
     """The edge planted right after level 1a, everywhere a later reader looks.
 
     Args:
@@ -56,18 +75,32 @@ def _plant(data: dict, scores: pd.DataFrame, edge: float, cfg: dict) -> tuple[pd
     data["bare"] = data["oos"]
     data["oos"], add = model.planted(data["oos"], edge)
     raw, out = data["trades"], data["trades"]["sample"] == "OOS"
-    data["trades"] = raw.assign(**{"Profit/Loss": raw["Profit/Loss"]
-                                   + raw["identity"].map(add).where(out, 0.0).to_numpy(float)})
-    data["curve"] = model.curve(data["trades"], data["market"]["windows"]["IS"][0], data["end"])
+    data["trades"] = raw.assign(
+        **{
+            "Profit/Loss": raw["Profit/Loss"]
+            + raw["identity"].map(add).where(out, 0.0).to_numpy(float)
+        }
+    )
+    data["curve"] = model.curve(
+        data["trades"], data["market"]["windows"]["IS"][0], data["end"]
+    )
     by = data["oos"].groupby("identity", sort=False)["excess"]
     scores["estaticas_value"] += (add * by.size()).reindex(scores.index)
     t = tradelevel.t_skew_kurt if cfg["drift"]["se_skew_kurt"] else tradelevel.t
-    facts = pd.DataFrame(t(data["oos"], "excess")[["ar1"]].set_axis(list(level1a.FACTS), axis=1))
+    facts = pd.DataFrame(
+        t(data["oos"], "excess")[["ar1"]].set_axis(list(level1a.FACTS), axis=1)
+    )
     return facts, pd.Series(add / by.mean())
 
 
-def _delayed(data: dict, got: pd.DataFrame, everyone: pd.Index, cfg: dict, share: pd.Series,
-             bare: pd.DataFrame | None) -> pd.DataFrame:
+def _delayed(
+    data: dict,
+    got: pd.DataFrame,
+    everyone: pd.Index,
+    cfg: dict,
+    share: pd.Series,
+    bare: pd.DataFrame | None,
+) -> pd.DataFrame:
     """Level 2's facts of a planted population: the edge is in the moved trade too.
 
     Args:
@@ -91,12 +124,23 @@ def _delayed(data: dict, got: pd.DataFrame, everyone: pd.Index, cfg: dict, share
     if bare is None:
         level2.run({**data, "oos": data["bare"]}, everyone, cfg)
         bare = pd.read_parquet(data["out"] / "retraso.parquet")
-    paired = bare.set_index(["identity", "variant"])["t_delta"].reindex(list(zip(worst.index, worst))).to_numpy()
-    return pd.DataFrame({"retraso_ret_min": got["retraso_ret_min"].reindex(worst.index) + share,
-                         "retraso_t_delta": paired}, index=worst.index)
+    paired = (
+        bare.set_index(["identity", "variant"])["t_delta"]
+        .reindex(list(zip(worst.index, worst)))
+        .to_numpy()
+    )
+    return pd.DataFrame(
+        {
+            "retraso_ret_min": got["retraso_ret_min"].reindex(worst.index) + share,
+            "retraso_t_delta": paired,
+        },
+        index=worst.index,
+    )
 
 
-def _pass(base: dict, everyone: pd.Index, gate_cfg: dict, edge: float, cache: dict) -> pd.DataFrame:
+def _pass(
+    base: dict, everyone: pd.Index, gate_cfg: dict, edge: float, cache: dict
+) -> pd.DataFrame:
     """One population's facts, taking from `cache` what an earlier pass already measured and leaving there what a later one can take.
 
     What an edge planted after level 1a cannot move is measured once, on the unplanted pass:
@@ -118,10 +162,16 @@ def _pass(base: dict, everyone: pd.Index, gate_cfg: dict, edge: float, cache: di
                 if planted and "q_p" in cache:
                     data["q_p"] = cache["q_p"]
             if module is level3c and not planted:
-                data["shifts"] = {e: model.planted(data["oos"], e)[1] for e in cache["edges"] if e}
+                data["shifts"] = {
+                    e: model.planted(data["oos"], e)[1] for e in cache["edges"] if e
+                }
                 data["shifted"] = cache["mono"] = {}
             # the build delay no fact reads: written once, on the unplanted pass
-            cfg = {**gate_cfg, "delay": {**gate_cfg["delay"], "on_build": False}} if planted and module is level2 else gate_cfg
+            cfg = (
+                {**gate_cfg, "delay": {**gate_cfg["delay"], "on_build": False}}
+                if planted and module is level2
+                else gate_cfg
+            )
             got = module.run(data, everyone, cfg)
             if module in (level0, level1a):
                 pre[module] = got
@@ -139,8 +189,12 @@ def _pass(base: dict, everyone: pd.Index, gate_cfg: dict, edge: float, cache: di
     return scores.join(measures.table(data).astype(float)).add_prefix(cascade.PREFIX)
 
 
-def facts_edges(data: dict, gate_cfg: dict, edges: tuple[float, ...],
-                each: Callable[[float], None] = lambda edge: None) -> dict[float, pd.DataFrame]:
+def facts_edges(
+    data: dict,
+    gate_cfg: dict,
+    edges: tuple[float, ...],
+    each: Callable[[float], None] = lambda edge: None,
+) -> dict[float, pd.DataFrame]:
     """Step 8's facts with the cascade off, for one population and the same one with edges planted.
 
     Args:
@@ -167,8 +221,13 @@ def facts_edges(data: dict, gate_cfg: dict, edges: tuple[float, ...],
     everyone = cascade.population(data).index
     cache = {"edges": edges, "moved": {}}
     with tempfile.TemporaryDirectory() as tmp:
-        data = {**data, "out": Path(tmp), "keep_draws": False, "rungs": (level3c.HEADLINE,),
-                "moved": cache["moved"]}
+        data = {
+            **data,
+            "out": Path(tmp),
+            "keep_draws": False,
+            "rungs": (level3c.HEADLINE,),
+            "moved": cache["moved"],
+        }
         got = {}
         for edge in edges:
             got[edge] = _pass(data, everyone, gate_cfg, edge, cache)
@@ -184,8 +243,13 @@ def facts8(data: dict, gate_cfg: dict, edge: float = 0.0) -> pd.DataFrame:
 FACTS = {"8": facts8}
 
 
-def walk(facts: dict[str, pd.DataFrame], who: list[str], steps: dict,
-         tags: set[str], batches: int = 1) -> tuple[pd.DataFrame, pd.DataFrame]:
+def walk(
+    facts: dict[str, pd.DataFrame],
+    who: list[str],
+    steps: dict,
+    tags: set[str],
+    batches: int = 1,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """A population through every step of criteria.yaml, in its order.
 
     Args:
@@ -205,18 +269,26 @@ def walk(facts: dict[str, pd.DataFrame], who: list[str], steps: dict,
     """
     alive, funnel, per_rule = list(who), [], []
     for n, spec in steps.items():
-        rules = criteria.thresholded(criteria.resolved(spec.get("rules") or [], tags), batches)
+        rules = criteria.thresholded(
+            criteria.resolved(spec.get("rules") or [], tags), batches
+        )
         have = facts[n] if n in facts else pd.DataFrame()
         cols: dict[str, pd.Series] = {key: pd.Series(have[key]) for key in have}
         medians = pd.Series(have.reindex(alive).median())
         standing, doubt, applied = set(alive), set(), 0
         for rule in rules:
-            row = {"step": n, "rule": json.dumps(rule, ensure_ascii=False),
-                   "label": cascade.label(rule), "n_in": len(alive),
-                   "applied": criteria.reads([rule]) <= cols.keys()}
+            row = {
+                "step": n,
+                "rule": json.dumps(rule, ensure_ascii=False),
+                "label": cascade.label(rule),
+                "n_in": len(alive),
+                "applied": criteria.reads([rule]) <= cols.keys(),
+            }
             if row["applied"]:
-                said = pd.Series({w: criteria.judged(rule, cols, w, medians)[0] for w in alive},
-                                 dtype=object)
+                said = pd.Series(
+                    {w: criteria.judged(rule, cols, w, medians)[0] for w in alive},
+                    dtype=object,
+                )
                 fell = set(pd.Index(said.index[(said == "fail").to_numpy()]))
                 row |= {s: int((said == s).sum()) for s in criteria.RANK}
                 row["died"] = len(standing & fell)
@@ -225,8 +297,17 @@ def walk(facts: dict[str, pd.DataFrame], who: list[str], steps: dict,
                 applied += 1
             per_rule.append(row)
         limbo = len(standing & doubt)
-        funnel.append({"step": n, "segment": spec.get("segment", "oos1"), "rules": len(rules),
-                       "applied": applied, "n_in": len(alive), "pass": len(standing) - limbo,
-                       "limbo": limbo, "n_out": len(standing)})
+        funnel.append(
+            {
+                "step": n,
+                "segment": spec.get("segment", "oos1"),
+                "rules": len(rules),
+                "applied": applied,
+                "n_in": len(alive),
+                "pass": len(standing) - limbo,
+                "limbo": limbo,
+                "n_out": len(standing),
+            }
+        )
         alive = [w for w in alive if w in standing]
     return pd.DataFrame(funnel), pd.DataFrame(per_rule)

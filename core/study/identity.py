@@ -11,7 +11,9 @@ from core import fanout, identities, sqxfile
 from core.paths import DATA, MASTER, WORKERS, databank_dir
 
 
-POOL_FROM = 20      # fewer files than this: hashed here, a forked pool costs more than it saves
+POOL_FROM = (
+    20  # fewer files than this: hashed here, a forked pool costs more than it saves
+)
 
 
 def hashed(files: Iterable[Path]) -> dict[Path, str]:
@@ -44,8 +46,9 @@ def lookup(project: str, databank: str, names: list[str]) -> dict[str, str | Non
     return found
 
 
-def from_harvest(project: str, databank: str, names: list[str],
-                 day: str | None = None) -> dict[str, str | None]:
+def from_harvest(
+    project: str, databank: str, names: list[str], day: str | None = None
+) -> dict[str, str | None]:
     """Each named strategy's identity, from the newest cosecha that paired this databank.
 
     Args:
@@ -63,19 +66,30 @@ def from_harvest(project: str, databank: str, names: list[str],
     """
     found: dict[str, str | None] = dict.fromkeys(names)
     wanted = databank.replace("_", " ")
-    for path in sorted((DATA / "harvest" / project).glob("*/*/metrics.parquet"),
-                       key=lambda p: p.parent.name, reverse=True):
+    for path in sorted(
+        (DATA / "harvest" / project).glob("*/*/metrics.parquet"),
+        key=lambda p: p.parent.name,
+        reverse=True,
+    ):
         if day and path.parent.name > day:
             continue
-        source = json.loads((path.parent / "manifest.json").read_text(encoding="utf-8"))["source"]
-        if "databank" not in source:      # a variants cosecha (Stop_p90): batch, feed — not a databank
+        source = json.loads(
+            (path.parent / "manifest.json").read_text(encoding="utf-8")
+        )["source"]
+        if (
+            "databank" not in source
+        ):  # a variants cosecha (Stop_p90): batch, feed — not a databank
             continue
-        side = {source["databank"].replace("_", " "): "strategy_build",
-                source["oos_databank"].replace("_", " "): "strategy"}.get(wanted)
+        side = {
+            source["databank"].replace("_", " "): "strategy_build",
+            source["oos_databank"].replace("_", " "): "strategy",
+        }.get(wanted)
         if side is None:
             continue
         table = pd.read_parquet(path, columns=[side])[side]
-        known: dict[str, str] = dict(zip(table.tolist(), cast(list[str], table.index.tolist())))
+        known: dict[str, str] = dict(
+            zip(table.tolist(), cast(list[str], table.index.tolist()))
+        )
         return {n: known.get(n) for n in names}
     return found
 
@@ -94,10 +108,18 @@ def spelt(project: str, databank: str, identities: list[str]) -> dict[str, str]:
         after a retest), and a study run on the cosecha knows only the cosecha's name.
     """
     wanted = databank.replace("_", " ")
-    for path in sorted((DATA / "harvest" / project).glob("*/*/metrics.parquet"),
-                       key=lambda p: p.parent.name, reverse=True):
-        source = json.loads((path.parent / "manifest.json").read_text(encoding="utf-8"))["source"]
-        if wanted in (source.get("databank", "").replace("_", " "), source.get("oos_databank", "").replace("_", " ")):
+    for path in sorted(
+        (DATA / "harvest" / project).glob("*/*/metrics.parquet"),
+        key=lambda p: p.parent.name,
+        reverse=True,
+    ):
+        source = json.loads(
+            (path.parent / "manifest.json").read_text(encoding="utf-8")
+        )["source"]
+        if wanted in (
+            source.get("databank", "").replace("_", " "),
+            source.get("oos_databank", "").replace("_", " "),
+        ):
             names = pd.read_parquet(path, columns=["strategy"])["strategy"]
             return {i: cast(str, names[i]) for i in identities if i in names.index}
     return {}
@@ -118,7 +140,9 @@ def from_export(folder: Path, names: list[str]) -> dict[str, str | None]:
     found: dict[str, str | None] = dict.fromkeys(names)
     if (folder / "identity.csv").is_file():
         kept = pd.read_csv(folder / "identity.csv", dtype=str)
-        found |= {n: i for n, i in zip(kept["strategy"], kept["identity"]) if n in found}
+        found |= {
+            n: i for n, i in zip(kept["strategy"], kept["identity"]) if n in found
+        }
     for where in (folder / "strategies", folder.parent / "strategies"):
         paths = {n: where / f"{n}.sqx" for n, v in found.items() if v is None}
         ids = hashed(p for p in paths.values() if p.is_file())
@@ -126,8 +150,13 @@ def from_export(folder: Path, names: list[str]) -> dict[str, str | None]:
     return found
 
 
-def resolve(project: str, databank: str, names: list[str], folder: Path | None = None,
-            day: str | None = None) -> dict[str, str | None]:
+def resolve(
+    project: str,
+    databank: str,
+    names: list[str],
+    folder: Path | None = None,
+    day: str | None = None,
+) -> dict[str, str | None]:
     """Each named strategy's identity: the installs first, then the cosecha, then the export.
 
     Args:
@@ -141,16 +170,20 @@ def resolve(project: str, databank: str, names: list[str], folder: Path | None =
         said (`note`), never filled by a name read in another databank.
     """
     found = lookup(project, databank, names)
-    for step in (lambda left: from_harvest(project, databank, left, day),
-                 lambda left: from_export(folder, left) if folder else {}):
+    for step in (
+        lambda left: from_harvest(project, databank, left, day),
+        lambda left: from_export(folder, left) if folder else {},
+    ):
         left = [n for n, v in found.items() if v is None]
         if left:
             found |= {n: v for n, v in step(left).items() if v}
     return found
 
 
-NOTE = ("sin identidad: ni una instalación, ni la cosecha, ni los .sqx de la exportación la "
-        "guardan; no se empareja por nombre entre databanks")
+NOTE = (
+    "sin identidad: ni una instalación, ni la cosecha, ni los .sqx de la exportación la "
+    "guardan; no se empareja por nombre entre databanks"
+)
 
 
 def note(found: dict[str, str | None]) -> str:
@@ -161,4 +194,8 @@ def note(found: dict[str, str | None]) -> str:
 
 def warning(ident: str | None) -> list[dict]:
     """The contract's warning for one strategy signed without identity, or none."""
-    return [] if ident else [{"code": "identidad", "state": "watch", "text": NOTE.capitalize() + "."}]
+    return (
+        []
+        if ident
+        else [{"code": "identidad", "state": "watch", "text": NOTE.capitalize() + "."}]
+    )

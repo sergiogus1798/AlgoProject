@@ -25,7 +25,11 @@ def edited_files(transcript: Path) -> list[str]:
             if not isinstance(block, dict) or block.get("name") not in EDIT_TOOLS:
                 continue
             path = Path((block.get("input") or {}).get("file_path", ""))
-            if path.suffix == ".py" and path.is_file() and path.resolve().is_relative_to(ROOT):
+            if (
+                path.suffix == ".py"
+                and path.is_file()
+                and path.resolve().is_relative_to(ROOT)
+            ):
                 found[str(path.resolve())] = None
     return list(found)
 
@@ -35,7 +39,10 @@ def run(cmd: list[str]) -> str:
     out = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=570)
     if out.returncode == 0:
         return ""
-    return "\n".join((out.stdout + out.stderr).strip().splitlines()[-15:]) or f"exit {out.returncode}"
+    return (
+        "\n".join((out.stdout + out.stderr).strip().splitlines()[-15:])
+        or f"exit {out.returncode}"
+    )
 
 
 def main() -> int:
@@ -49,12 +56,27 @@ def main() -> int:
             return 0
         failures = []
         for name, cmd in (
-            ("ruff", ["ruff", "check", "--config", str(ROOT / "ruff.toml"), "--no-cache", *files]),
+            (
+                "ruff",
+                [
+                    "ruff",
+                    "check",
+                    "--config",
+                    str(ROOT / "ruff.toml"),
+                    "--no-cache",
+                    *files,
+                ],
+            ),
             ("tests", [sys.executable, "tools/audit_tests.py", "--changed", *files]),
         ):
             if tail := run(cmd):
                 failures.append(f"{name} en rojo:\n{tail}")
-    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as e:  # a hook bug must never block work
+    except (
+        OSError,
+        ValueError,
+        KeyError,
+        subprocess.SubprocessError,
+    ) as e:  # a hook bug must never block work
         print(f"stop_checks: skipped ({e!r})", file=sys.stderr)
         return 0
     if failures:
@@ -63,4 +85,6 @@ def main() -> int:
     return 0
 
 
-sys.exit(main())   # a hook, not a command: nothing imports this file, and it has no manual chapter
+sys.exit(
+    main()
+)  # a hook, not a command: nothing imports this file, and it has no manual chapter

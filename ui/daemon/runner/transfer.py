@@ -6,17 +6,28 @@ from core.paths import DATA
 from core.symbols import alias
 from ui.daemon.runner import where
 
-NO_CROSS = ("necesita el export del retest cross-market de este databank (skill /crossmarket); si "
-            "ya corrió, abre la estrategia desde la pestaña Cross Market de Databanks")
+NO_CROSS = (
+    "necesita el export del retest cross-market de este databank (skill /crossmarket); si "
+    "ya corrió, abre la estrategia desde la pestaña Cross Market de Databanks"
+)
 
 
 def crossmarket(c: dict, strategy: str) -> list[str] | str:
     """Step 10: breadth over every market of the cross-market export, or one strategy in full."""
     if not c["multimarket"]:
         return NO_CROSS
-    return (["-m", "studies.transfer.crossmarket.report", "--project", c["project"],
-             "--databank", c["databank"], "--asset", c["asset"], "--day", c["export"]]
-            + (["--strategy", strategy] if strategy else []))
+    return [
+        "-m",
+        "studies.transfer.crossmarket.report",
+        "--project",
+        c["project"],
+        "--databank",
+        c["databank"],
+        "--asset",
+        c["asset"],
+        "--day",
+        c["export"],
+    ] + (["--strategy", strategy] if strategy else [])
 
 
 def cross_tf(c: dict, strategy: str) -> list[str] | str:
@@ -29,14 +40,27 @@ def cross_tf(c: dict, strategy: str) -> list[str] | str:
         return "necesita el export del retest cross-timeframe de este databank (skill /crosstf)"
     made = where.scaling_day(c["project"], Path(c["trades"]))
     if not made:
-        return (f"ningún crosstf/{c['project']}/*/scaling.parquet de ese día o anterior nombra "
-                "las estrategias de este export: no es un retest cross-timeframe (skill /crosstf)")
-    return (["-m", "studies.transfer.crossTF.report", "--project", c["project"], "--databank",
-             c["databank"], "--asset", c["asset"], "--day", c["export"], "--fabricated", made]
-            + (["--strategy", strategy] if strategy else []))
+        return (
+            f"ningún crosstf/{c['project']}/*/scaling.parquet de ese día o anterior nombra "
+            "las estrategias de este export: no es un retest cross-timeframe (skill /crosstf)"
+        )
+    return [
+        "-m",
+        "studies.transfer.crossTF.report",
+        "--project",
+        c["project"],
+        "--databank",
+        c["databank"],
+        "--asset",
+        c["asset"],
+        "--day",
+        c["export"],
+        "--fabricated",
+        made,
+    ] + (["--strategy", strategy] if strategy else [])
 
 
-MCR_ALL = "MCR_All"      # `ui.daemon.loader.afterrun`'s MC ingest target
+MCR_ALL = "MCR_All"  # `ui.daemon.loader.afterrun`'s MC ingest target
 
 
 def mc_retest(c: dict, strategy: str) -> list[str] | str:
@@ -50,19 +74,35 @@ def mc_retest(c: dict, strategy: str) -> list[str] | str:
     if not found:
         return "necesita la ingesta del MC Retest (MCR_All; se hace sola al parar el worker)"
     # The ingest names «1.26.46», the databank «Strategy 1.26.46»: the report takes either.
-    return (["-m", "studies.breakage.mcRetest.report", "--project", c["project"], "--databank",
-             MCR_ALL, "--day", found.parent.name]
-            + (["--strategy", strategy] if strategy else []))
+    return [
+        "-m",
+        "studies.breakage.mcRetest.report",
+        "--project",
+        c["project"],
+        "--databank",
+        MCR_ALL,
+        "--day",
+        found.parent.name,
+    ] + (["--strategy", strategy] if strategy else [])
 
 
 def spp(c: dict, strategy: str) -> list[str] | str:
     """Step 15: each strategy's permutation profile over the newest SPP export."""
-    found = where.newest(DATA / "raw" / c["project"] / c["databank"].replace(" ", "_"), "*/spp")
+    found = where.newest(
+        DATA / "raw" / c["project"] / c["databank"].replace(" ", "_"), "*/spp"
+    )
     if not found:
         return "necesita el export del SPP de este databank (skill /spp)"
-    return (["-m", "studies.breakage.spp.report", "--project", c["project"], "--databank",
-             c["databank"].replace(" ", "_"), "--day", found.parent.name]
-            + (["--strategy", strategy] if strategy else []))
+    return [
+        "-m",
+        "studies.breakage.spp.report",
+        "--project",
+        c["project"],
+        "--databank",
+        c["databank"].replace(" ", "_"),
+        "--day",
+        found.parent.name,
+    ] + (["--strategy", strategy] if strategy else [])
 
 
 STUDIES = {

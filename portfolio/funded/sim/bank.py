@@ -12,8 +12,14 @@ ARRAYS = ("closed", "float_end", "low", "high", "opened")
 _CH_RULES = ("daily_loss", "max_loss", "time_limit")
 
 
-def hazards(n_paths: int, horizon: int, p_denied: float, p_closes_year: float,
-            days_per_year: float, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
+def hazards(
+    n_paths: int,
+    horizon: int,
+    p_denied: float,
+    p_closes_year: float,
+    days_per_year: float,
+    rng: np.random.Generator,
+) -> tuple[np.ndarray, np.ndarray]:
     """Per draw, the day the firm closes and which payout requests it denies.
 
     Args:
@@ -31,8 +37,14 @@ def hazards(n_paths: int, horizon: int, p_denied: float, p_closes_year: float,
     return close_day, rng.random((n_paths, horizon)) < p_denied
 
 
-def walk(days: dict[str, np.ndarray], plan: Terms, risk: dict[str, float], terms: Cash,
-         close_day: int, deny: np.ndarray) -> tuple[np.ndarray, list[Life]]:
+def walk(
+    days: dict[str, np.ndarray],
+    plan: Terms,
+    risk: dict[str, float],
+    terms: Cash,
+    close_day: int,
+    deny: np.ndarray,
+) -> tuple[np.ndarray, list[Life]]:
     """One draw, account after account, in plain Python — what `simulate` must equal.
 
     Args:
@@ -70,9 +82,13 @@ def walk(days: dict[str, np.ndarray], plan: Terms, risk: dict[str, float], terms
             row[f"pass_phase{i + 1}"] += 1
         if acc["funded_from"] is not None:
             row["funded_accounts"] += 1
-            row["funded_days"] += (n - 1 if acc["end"] is None else acc["end"]) - acc["funded_from"] + 1
+            row["funded_days"] += (
+                (n - 1 if acc["end"] is None else acc["end"]) - acc["funded_from"] + 1
+            )
         for day, gross in acc["payouts"]:
-            row["received"] += gross * terms["share"] * (1 - terms["fee"]) * (1 - terms["tax"])
+            row["received"] += (
+                gross * terms["share"] * (1 - terms["fee"]) * (1 - terms["tax"])
+            )
             row["payouts"] += 1
             if row["first_payout_day"] < 0:
                 row["first_payout_day"] = day
@@ -112,9 +128,16 @@ def stage_matrix(plan: Terms, risk: dict[str, float]) -> np.ndarray:
     return mat
 
 
-def simulate(paths: dict[str, np.ndarray], plan: Terms, risk: dict[str, float], terms: Cash,
-             close_day: np.ndarray, deny: np.ndarray, track: int = 0,
-             threads: int = 8) -> tuple[np.ndarray, np.ndarray]:
+def simulate(
+    paths: dict[str, np.ndarray],
+    plan: Terms,
+    risk: dict[str, float],
+    terms: Cash,
+    close_day: np.ndarray,
+    deny: np.ndarray,
+    track: int = 0,
+    threads: int = 8,
+) -> tuple[np.ndarray, np.ndarray]:
     """Every draw of a path set through the bank walk.
 
     Args:
@@ -129,7 +152,17 @@ def simulate(paths: dict[str, np.ndarray], plan: Terms, risk: dict[str, float], 
     """
     numba.set_num_threads(min(threads, numba.config.NUMBA_NUM_THREADS))  # pyright: ignore[reportPrivateImportUsage, reportAttributeAccessIssue]  # numba stubs omit config.NUMBA_NUM_THREADS
     log = np.full((paths["closed"].shape[0], track, 3), -1, dtype=np.int32)
-    out = kernel.run(paths["closed"], paths["float_end"], paths["low"], paths["high"],
-                     paths["opened"], stage_matrix(plan, risk), float(plan["size"]), pack(terms),
-                     close_day, deny, log)
+    out = kernel.run(
+        paths["closed"],
+        paths["float_end"],
+        paths["low"],
+        paths["high"],
+        paths["opened"],
+        stage_matrix(plan, risk),
+        float(plan["size"]),
+        pack(terms),
+        close_day,
+        deny,
+        log,
+    )
     return out, log

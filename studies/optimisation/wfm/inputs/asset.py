@@ -10,7 +10,7 @@ from core import assetdata, barstore
 from engines.market import reprice
 
 SEGMENTS = ("build", "oos1", "oos2")
-CLEAN = "oos2"          # the only segment nobody used to choose anything
+CLEAN = "oos2"  # the only segment nobody used to choose anything
 # The excess is step 14's: the gate's drift block, never a copy of its values.
 GATE = Path(__file__).resolve().parents[3] / "screening" / "gate" / "config.yaml"
 
@@ -47,10 +47,17 @@ def of(feed: str, timeframe: str, charged: str) -> Asset:
     windows: dict[str, tuple[str, str]] = {}
     for name in SEGMENTS:
         last = data["segments"][name]["to"]
-        windows[name] = (assetdata.segment_start(data, name),
-                         f"{last}-12-31" if isinstance(last, int) else str(last))
-    return {"name": name,
-            "feed": feed, "bars": barstore.read(feed, timeframe), "windows": windows,
-            "span": (windows[SEGMENTS[0]][0], windows[CLEAN][1]),
-            "charged": reprice.costs(feed, charged), "real": reprice.costs(feed, CLEAN),
-            "drift": yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"]}
+        windows[name] = (
+            assetdata.segment_start(data, name),
+            f"{last}-12-31" if isinstance(last, int) else str(last),
+        )
+    return {
+        "name": name,
+        "feed": feed,
+        "bars": barstore.read(feed, timeframe),
+        "windows": windows,
+        "span": (windows[SEGMENTS[0]][0], windows[CLEAN][1]),
+        "charged": reprice.costs(feed, charged),
+        "real": reprice.costs(feed, CLEAN),
+        "drift": yaml.safe_load(GATE.read_text(encoding="utf-8"))["drift"],
+    }

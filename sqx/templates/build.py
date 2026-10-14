@@ -12,7 +12,9 @@ from xml.etree import ElementTree
 from core.paths import ROOT, worker_dir
 from core.xmlget import hit
 
-SKELETONS = ROOT / "tools/sqx-lab/plugins/sqx-lab/skills/sqx-strategy-template/engine/skeletons"
+SKELETONS = (
+    ROOT / "tools/sqx-lab/plugins/sqx-lab/skills/sqx-strategy-template/engine/skeletons"
+)
 INNER = "strategy_Portfolio.xml"
 TEMPLATES_REL = "user/settings/StrategyTemplates"
 HOLE = re.compile(r'<Item key="RandomCondition".*?</Item>', re.DOTALL)
@@ -29,7 +31,9 @@ def skeleton_xml(shape: str) -> str:
         element verbatim, and re-serialising the whole document would reorder attributes
         SQX wrote — a diff against a proven file is the only cheap correctness check here.
     """
-    return zipfile.ZipFile(SKELETONS / f"{shape}_skeleton.sqx").read(INNER).decode("utf-8")
+    return (
+        zipfile.ZipFile(SKELETONS / f"{shape}_skeleton.sqx").read(INNER).decode("utf-8")
+    )
 
 
 def optimizable(param: ElementTree.Element) -> bool:
@@ -44,8 +48,12 @@ def optimizable(param: ElementTree.Element) -> bool:
         🔬 2026-09-25: without `generate="random"` the builder leaves the default in every
         strategy — 100 of 100 USDJPY builds carried EMA period 20.
     """
-    return (param.get("type") in ("int", "double") and param.get("paramType") != "shift"
-            and param.get("controlType") != "combo" and "Shift" not in param.get("key", ""))
+    return (
+        param.get("type") in ("int", "double")
+        and param.get("paramType") != "shift"
+        and param.get("controlType") != "combo"
+        and "Shift" not in param.get("key", "")
+    )
 
 
 def group_xml(name: str, item: str) -> tuple[str, str]:
@@ -63,8 +71,10 @@ def group_xml(name: str, item: str) -> tuple[str, str]:
         still carries this exact condition.
     """
     gid = str(uuid.uuid5(uuid.NAMESPACE_URL, f"algoproject/template/{name}"))
-    return gid, (f'<Group id="{gid}" name="{name}Signal" type="Condition" strategyType="Standard" '
-                 f'category="Template" status="0" action="add">{item}</Group>')
+    return gid, (
+        f'<Group id="{gid}" name="{name}Signal" type="Condition" strategyType="Standard" '
+        f'category="Template" status="0" action="add">{item}</Group>'
+    )
 
 
 def block_xml(blocks: Path, key: str, fixed: dict[str, str] | None = None) -> str:
@@ -125,12 +135,23 @@ def bind_into_signal(xml: str, gid: str, group: str) -> str:
         vocabulary, which is what the owner asks for when he names no group.
     """
     first, second = HOLE.findall(xml)[:2]
-    bound = re.sub(r'(randomGroupType="Conditions")>[^<]*</Param>', rf"\1>{gid}</Param>", first,
-                   count=1)
-    freed = re.sub(r'(randomGroupType="Conditions")>[^<]*</Param>', r"\1 />", second, count=1)
+    bound = re.sub(
+        r'(randomGroupType="Conditions")>[^<]*</Param>',
+        rf"\1>{gid}</Param>",
+        first,
+        count=1,
+    )
+    freed = re.sub(
+        r'(randomGroupType="Conditions")>[^<]*</Param>', r"\1 />", second, count=1
+    )
     xml = xml.replace(first, bound, 1).replace(second, freed, 1)
-    return re.sub(r"<RandomGroups>.*?</RandomGroups>", lambda _: f"<RandomGroups>{group}</RandomGroups>",
-                  xml, count=1, flags=re.S)
+    return re.sub(
+        r"<RandomGroups>.*?</RandomGroups>",
+        lambda _: f"<RandomGroups>{group}</RandomGroups>",
+        xml,
+        count=1,
+        flags=re.S,
+    )
 
 
 def write_template(xml: str, name: str, out: Path) -> Path:
@@ -145,7 +166,11 @@ def write_template(xml: str, name: str, out: Path) -> Path:
         The path written. lastSettings.xml is carried over from the skeleton unchanged;
         it holds the builder's own last-used settings and is not part of the template.
     """
-    xml = re.sub(r"<StrategyName>[^<]*</StrategyName>", f"<StrategyName>{name}</StrategyName>", xml)
+    xml = re.sub(
+        r"<StrategyName>[^<]*</StrategyName>",
+        f"<StrategyName>{name}</StrategyName>",
+        xml,
+    )
     out.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr(INNER, xml)
@@ -157,15 +182,28 @@ def main() -> None:
     """Build one template from a skeleton plus one authored block, and optionally install it."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("name", help="template name, camelCase")
-    ap.add_argument("blocks", type=Path, help="XML holding the block: the authored deps/blocks.xml, "
-                                              "or the install's config.xml for a native one")
+    ap.add_argument(
+        "blocks",
+        type=Path,
+        help="XML holding the block: the authored deps/blocks.xml, "
+        "or the install's config.xml for a native one",
+    )
     ap.add_argument("key", help="key of the block to fix into the signal")
     ap.add_argument("out", type=Path, help="where to write the .sqx")
-    ap.add_argument("--shape", default="market_long", help="skeleton to transplant into")
-    ap.add_argument("--install", help="also copy it into this role's StrategyTemplates/")
+    ap.add_argument(
+        "--shape", default="market_long", help="skeleton to transplant into"
+    )
+    ap.add_argument(
+        "--install", help="also copy it into this role's StrategyTemplates/"
+    )
     ap.add_argument("--set", default="authored", help="subfolder used when installing")
-    ap.add_argument("--param", action="append", default=[], metavar="KEY=VALUE",
-                    help="fix a param the owner named, e.g. '#Type#=1' (repeatable)")
+    ap.add_argument(
+        "--param",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="fix a param the owner named, e.g. '#Type#=1' (repeatable)",
+    )
     args = ap.parse_args()
 
     fixed = dict(p.split("=", 1) for p in args.param)
@@ -173,15 +211,21 @@ def main() -> None:
     xml = bind_into_signal(skeleton_xml(args.shape), gid, group)
     ElementTree.fromstring(xml)
     if args.key not in xml or len(HOLE.findall(xml)) != 2:
-        raise SystemExit(f"{args.key} did not land, or the holes are not two; the build failed")
+        raise SystemExit(
+            f"{args.key} did not land, or the holes are not two; the build failed"
+        )
     out = write_template(xml, args.name, args.out)
     groups = args.out.parent / "deps" / "groups.xml"
     groups.parent.mkdir(parents=True, exist_ok=True)
     groups.write_text(f"<RandomGroups>{group}</RandomGroups>\n", encoding="utf-8")
     drawn = re.findall(r'key="([^"]+)"[^>]*generate="random"', group)
-    print(f"{out}  ({out.stat().st_size} bytes, shape {args.shape}, condition {args.key}, "
-          f"drawn at random: {', '.join(drawn) or 'nothing'})")
-    print(f"{groups}  — install it on both workers: python3 -m sqx.blocks.install {groups} --role …")
+    print(
+        f"{out}  ({out.stat().st_size} bytes, shape {args.shape}, condition {args.key}, "
+        f"drawn at random: {', '.join(drawn) or 'nothing'})"
+    )
+    print(
+        f"{groups}  — install it on both workers: python3 -m sqx.blocks.install {groups} --role …"
+    )
 
     if args.install:
         dest = worker_dir(args.install) / TEMPLATES_REL / args.set / out.name

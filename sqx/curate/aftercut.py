@@ -48,17 +48,23 @@ def _trimmed(frame: pd.DataFrame, kept: set[str]) -> pd.DataFrame | None:
     dropped strategy had, e.g. `Ticket`, would not exist in a fresh pack). Row order is the
     export's: strategies by sorted file name, each one's trades in file order.
     """
-    sub = cast("pd.DataFrame", frame[frame["strategy"].isin(list(kept))].reset_index(drop=True))
+    sub = cast(
+        "pd.DataFrame", frame[frame["strategy"].isin(list(kept))].reset_index(drop=True)
+    )
     for c in sub.columns:
         col = cast("pd.Series", sub[c])
-        if str(col.dtype) == "float64" and (col.isna().all() or (col.dropna() % 1 == 0).all()):  # pyright: ignore[reportAttributeAccessIssue]  # pandas stub: Series % int typed as bool
+        if str(col.dtype) == "float64" and (
+            col.isna().all() or (col.dropna() % 1 == 0).all()  # pyright: ignore[reportAttributeAccessIssue]  # pandas stub: Series % int typed as bool
+        ):
             return None
         if c in tradestore.CATEGORICAL and isinstance(col.dtype, pd.CategoricalDtype):
             sub[c] = col.cat.remove_unused_categories()
     return sub
 
 
-def refilter(project: str, databank: str, before: dict[str, str], kept: set[str]) -> str:
+def refilter(
+    project: str, databank: str, before: dict[str, str], kept: set[str]
+) -> str:
     """After a cut, make the databank's trade export the subset it already was, instead of re-exporting it.
 
     Args:
@@ -75,8 +81,11 @@ def refilter(project: str, databank: str, before: dict[str, str], kept: set[str]
         something. `lineage.csv` is cut as it is: a survivor's mother is read off the project's
         OTHER databanks, which a cut inside this one does not move.
     """
-    days = sorted(d for d in export_dir(project, databank, "x").parent.glob("*")
-                  if (d / "manifest.json").exists())
+    days = sorted(
+        d
+        for d in export_dir(project, databank, "x").parent.glob("*")
+        if (d / "manifest.json").exists()
+    )
     if not days or not kept:
         return ""
     folder = days[-1]
@@ -84,7 +93,9 @@ def refilter(project: str, databank: str, before: dict[str, str], kept: set[str]
     names = ("trades.parquet", "timeframes.csv", "identity.csv", "lineage.csv")
     if not all((folder / n).exists() for n in names):
         return ""
-    held = [ln.rsplit(",", 1) for ln in ident.read_text(encoding="utf-8").splitlines()[1:]]
+    held = [
+        ln.rsplit(",", 1) for ln in ident.read_text(encoding="utf-8").splitlines()[1:]
+    ]
     if dict(held) != before:
         return ""
     sub = _trimmed(pd.read_parquet(folder / "trades.parquet"), kept)
@@ -98,13 +109,20 @@ def refilter(project: str, databank: str, before: dict[str, str], kept: set[str]
     doc = manifest.read(folder)
     old = doc["counts"]
     zones = sorted({ln.rsplit(",", 1)[1].strip() for ln in text["timeframes.csv"][1:]})
-    counts = {**old, "strategies": len(text["identity.csv"]) - 1, "trades": len(sub),
-              "kept_ticket": [n for n in old.get("kept_ticket", []) if n in kept],
-              "torn_blocks": [n for n in old.get("torn_blocks", []) if n in kept], "timeframes": zones}
+    counts = {
+        **old,
+        "strategies": len(text["identity.csv"]) - 1,
+        "trades": len(sub),
+        "kept_ticket": [n for n in old.get("kept_ticket", []) if n in kept],
+        "torn_blocks": [n for n in old.get("torn_blocks", []) if n in kept],
+        "timeframes": zones,
+    }
     for n, lines in text.items():
         (folder / f"{n}.{stamp}").write_text("".join(lines), encoding="utf-8")
     sub.to_parquet(folder / f"trades.parquet.{stamp}", compression="zstd", index=False)
     for n in names:
         os.replace(folder / f"{n}.{stamp}", folder / n)
-    manifest.write(folder, doc["source"], doc["command"], {**counts, "cut_from": old["strategies"]})
+    manifest.write(
+        folder, doc["source"], doc["command"], {**counts, "cut_from": old["strategies"]}
+    )
     return str(folder)

@@ -38,12 +38,18 @@ class Walkforward(Arms, _Seed):
     meta: dict
     build: tuple[pd.Timestamp, pd.Timestamp]
     test: tuple[pd.Timestamp, pd.Timestamp]
-STATES = {"fixed": "gana a pesos iguales con los pesos fijos",
-          "only_reestimated": "solo gana a pesos iguales re-estimando",
-          "no": "no gana a pesos iguales"}
 
 
-def folds(dates: pd.DatetimeIndex, first: pd.Timestamp, lookback_years: int, step_years: int) -> list[dict]:
+STATES = {
+    "fixed": "gana a pesos iguales con los pesos fijos",
+    "only_reestimated": "solo gana a pesos iguales re-estimando",
+    "no": "no gana a pesos iguales",
+}
+
+
+def folds(
+    dates: pd.DatetimeIndex, first: pd.Timestamp, lookback_years: int, step_years: int
+) -> list[dict]:
     """The estimation and test windows: a test window starts at `first`, then every `step_years` on 1 January.
 
     Args:
@@ -58,12 +64,26 @@ def folds(dates: pd.DatetimeIndex, first: pd.Timestamp, lookback_years: int, ste
         (exclusive) -- estimation is `estimate_from` <= day < `test_from`.
     """
     last = cast(pd.Timestamp, dates[-1])
-    starts = cast(list[pd.Timestamp], [first] + [pd.Timestamp(year=y, month=1, day=1)
-                                                  for y in range(first.year + step_years, last.year + 1, step_years)])
+    starts = cast(
+        list[pd.Timestamp],
+        [first]
+        + [
+            pd.Timestamp(year=y, month=1, day=1)
+            for y in range(first.year + step_years, last.year + 1, step_years)
+        ],
+    )
     ends = starts[1:] + [last + pd.Timedelta(days=1)]
-    return [{"estimate_from": a - pd.DateOffset(years=lookback_years) if lookback_years else dates[0],
-             "test_from": a, "test_to": b}
-            for a, b in zip(starts, ends) if ((dates >= a) & (dates < b)).any()]
+    return [
+        {
+            "estimate_from": a - pd.DateOffset(years=lookback_years)
+            if lookback_years
+            else dates[0],
+            "test_from": a,
+            "test_to": b,
+        }
+        for a, b in zip(starts, ends)
+        if ((dates >= a) & (dates < b)).any()
+    ]
 
 
 def arms(unit: pd.DataFrame, cuts: list[dict], methods: dict, cfg: dict) -> Arms:
@@ -81,25 +101,57 @@ def arms(unit: pd.DataFrame, cuts: list[dict], methods: dict, cfg: dict) -> Arms
         method, identity, weight) and `failed` ({method: why it could not be estimated} --
         such a method has no path and nothing replaces it).
     """
-    test = [unit[(unit.index >= c["test_from"]) & (unit.index < c["test_to"])] for c in cuts]
+    test = [
+        unit[(unit.index >= c["test_from"]) & (unit.index < c["test_to"])] for c in cuts
+    ]
     paths: dict[tuple[str, str], np.ndarray] = {}
     rows: list[dict] = []
     failed: dict[str, str] = {}
     for name, method in methods.items():
         try:
-            held = [method(unit[(unit.index >= c["estimate_from"]) & (unit.index < c["test_from"])], cfg)
-                    for c in cuts]
+            held = [
+                method(
+                    unit[
+                        (unit.index >= c["estimate_from"])
+                        & (unit.index < c["test_from"])
+                    ],
+                    cfg,
+                )
+                for c in cuts
+            ]
         except ValueError as error:
             failed[name] = str(error)
             continue
-        rows += [{"window": n, "test_from": c["test_from"], "method": name, "identity": i, "weight": w}
-                 for n, (c, got) in enumerate(zip(cuts, held)) for i, w in got.items()]
-        paths[name, "fixed"] = np.concatenate([t.to_numpy() @ cast(pd.Series, pd.Series(held[0])[t.columns]).to_numpy() for t in test])
+        rows += [
+            {
+                "window": n,
+                "test_from": c["test_from"],
+                "method": name,
+                "identity": i,
+                "weight": w,
+            }
+            for n, (c, got) in enumerate(zip(cuts, held))
+            for i, w in got.items()
+        ]
+        paths[name, "fixed"] = np.concatenate(
+            [
+                t.to_numpy() @ cast(pd.Series, pd.Series(held[0])[t.columns]).to_numpy()
+                for t in test
+            ]
+        )
         if name != "equal":
             paths[name, "reestimated"] = np.concatenate(
-                [t.to_numpy() @ cast(pd.Series, pd.Series(w)[t.columns]).to_numpy() for t, w in zip(test, held)])
-    return {"paths": paths, "dates": pd.DatetimeIndex(np.concatenate([t.index for t in test])),
-            "weights": pd.DataFrame(rows), "failed": failed}
+                [
+                    t.to_numpy() @ cast(pd.Series, pd.Series(w)[t.columns]).to_numpy()
+                    for t, w in zip(test, held)
+                ]
+            )
+    return {
+        "paths": paths,
+        "dates": pd.DatetimeIndex(np.concatenate([t.index for t in test])),
+        "weights": pd.DataFrame(rows),
+        "failed": failed,
+    }
 
 
 def _sharpe(paths: np.ndarray) -> np.ndarray:
@@ -136,13 +188,25 @@ def compare(got: Arms, cfg: dict, rng: np.random.Generator) -> pd.DataFrame:
     tail = (1 - float(cfg["wf"]["confidence"])) / 2
     rows = []
     for n, (method, arm) in enumerate(keys):
-        row = {"method": method, "arm": arm, **{m: float(v[n]) for m, v in table.items()}, "block": block}
+        row = {
+            "method": method,
+            "arm": arm,
+            **{m: float(v[n]) for m, v in table.items()},
+            "block": block,
+        }
         for versus, suffix in ((("equal", "fixed"), ""), ((method, "fixed"), "_fixed")):
             if versus == (method, arm) or (suffix and arm == "fixed"):
                 continue
             lo, hi = np.quantile(drawn[method, arm] - drawn[versus], [tail, 1 - tail])
-            row.update({f"diff{suffix}": float(_sharpe(stack[n]) - _sharpe(got["paths"][versus])),
-                        f"lo{suffix}": float(lo), f"hi{suffix}": float(hi)})
+            row.update(
+                {
+                    f"diff{suffix}": float(
+                        _sharpe(stack[n]) - _sharpe(got["paths"][versus])
+                    ),
+                    f"lo{suffix}": float(lo),
+                    f"hi{suffix}": float(hi),
+                }
+            )
         row["beats"] = bool(row.get("lo", 0.0) > 0)
         rows.append(row)
     return pd.DataFrame(rows)
@@ -154,5 +218,12 @@ def decide(table: pd.DataFrame) -> dict[str, str]:
     `only_reestimated` = held fixed it does not beat equal weight and re-estimated it does.
     """
     beats = table.set_index(["method", "arm"])["beats"]
-    return {m: "fixed" if bool(beats[m, "fixed"]) else "only_reestimated" if bool(beats[m, "reestimated"]) else "no"
-            for m in table["method"].unique() if m != "equal"}
+    return {
+        m: "fixed"
+        if bool(beats[m, "fixed"])
+        else "only_reestimated"
+        if bool(beats[m, "reestimated"])
+        else "no"
+        for m in table["method"].unique()
+        if m != "equal"
+    }

@@ -1,8 +1,18 @@
 """The «Ficha» tab of the strategy page: IS/OOS side by side — P&L, drawdown, years."""
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QFrame, QHBoxLayout, QLabel, QPushButton,
-                               QSpinBox, QTabWidget, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSpinBox,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.result import ResultView
@@ -16,9 +26,11 @@ from ui.desktop.theme import C, T
 # 2026-09-28; PORTFOLIOS still lists them for an archived version. «Lote» moved to the WFC
 # study's own tab on 2026-09-29 — a strategy can have no batch, so it does not belong here.
 SUBS = (("IS/OOS", "tearsheet"), ("Entrada aleatoria · OOS principal", "result"))
-TOP = 5                 # «Excluir top X% de trades»: the X it opens with
-PICKED = (f"QPushButton:checked {{ background: {C['accent']}; color: {T['bg']}; font-weight: 700; }}"
-          "QPushButton { min-width: 34px; }")
+TOP = 5  # «Excluir top X% de trades»: the X it opens with
+PICKED = (
+    f"QPushButton:checked {{ background: {C['accent']}; color: {T['bg']}; font-weight: 700; }}"
+    "QPushButton { min-width: 34px; }"
+)
 PENDING = "pendiente: {what} todavía no está en esta versión de la ventana."
 
 
@@ -32,10 +44,17 @@ def sides(result: dict) -> tuple[list[dict], str]:
         (one result per sample in the result's order, their tab notes as one text) — the
         notes move above the columns, where each is read beside the other.
     """
-    title = " · ".join(f"{t['title']} a la {side}" for t, side in
-                       zip(result["tabs"], ("izquierda", "derecha")))
-    return ([{**result, "tabs": [{**t, "name": "muestra", "title": title, "note": ""}]}
-             for t in result["tabs"]], "<br>".join(t["note"] for t in result["tabs"]))
+    title = " · ".join(
+        f"{t['title']} a la {side}"
+        for t, side in zip(result["tabs"], ("izquierda", "derecha"))
+    )
+    return (
+        [
+            {**result, "tabs": [{**t, "name": "muestra", "title": title, "note": ""}]}
+            for t in result["tabs"]
+        ],
+        "<br>".join(t["note"] for t in result["tabs"]),
+    )
 
 
 def hide_first_row(view: ResultView) -> None:
@@ -61,7 +80,7 @@ class Sub(QWidget):
         self.body = body
         lay.addWidget(self.line, 0, Qt.AlignmentFlag.AlignTop)
         lay.addWidget(body, 1)
-        lay.addStretch()            # takes the height when the body is hidden
+        lay.addStretch()  # takes the height when the body is hidden
 
     def say(self, sentence: str, ink: str = T["muted"]) -> None:
         """Show a sentence in place of the drawing."""
@@ -96,9 +115,11 @@ class Ficha(QFrame):
     def _knobs(self) -> QHBoxLayout:
         """The IS/OOS sheet's two switches: the P&L without its best trades, the drawdown's unit."""
         self.top = QCheckBox("Excluir top")
-        self.top.setToolTip("Dibuja también, discontinua, cada curva de P&L acumulado sin su X % "
-                            "de operaciones mejores: si el resto no gana, el beneficio cuelga de "
-                            "unas pocas.")
+        self.top.setToolTip(
+            "Dibuja también, discontinua, cada curva de P&L acumulado sin su X % "
+            "de operaciones mejores: si el resto no gana, el beneficio cuelga de "
+            "unas pocas."
+        )
         self.share = QSpinBox()
         self.share.setRange(1, 50)
         self.share.setValue(TOP)
@@ -119,7 +140,9 @@ class Ficha(QFrame):
             row.addWidget(button)
         row.addStretch(1)
         self.top.toggled.connect(self._redraw)
-        self.share.valueChanged.connect(lambda _: self.top.isChecked() and self._redraw())
+        self.share.valueChanged.connect(
+            lambda _: self.top.isChecked() and self._redraw()
+        )
         self.dd.idClicked.connect(self._redraw)
         return row
 
@@ -136,12 +159,16 @@ class Ficha(QFrame):
             where: The strategy page's selection (project, databank, strategy, identity, asset).
         """
         key = [where.get(k) for k in ("project", "databank", "identity", "asset")]
-        if key == [self.where.get(k) for k in ("project", "databank", "identity", "asset")]:
+        if key == [
+            self.where.get(k) for k in ("project", "databank", "identity", "asset")
+        ]:
             return
         self.where = dict(where)
         self.done = set()
-        self.note.setText(f"{where.get('strategy') or 'Ninguna estrategia elegida'} · "
-                          f"{where.get('project') or '—'} › {where.get('databank') or '—'}")
+        self.note.setText(
+            f"{where.get('strategy') or 'Ninguna estrategia elegida'} · "
+            f"{where.get('project') or '—'} › {where.get('databank') or '—'}"
+        )
         self._open(self.tabs.currentIndex())
 
     def _open(self, index: int) -> None:
@@ -155,16 +182,26 @@ class Ficha(QFrame):
         _, route = SUBS[index]
         if route == "result":
             return self._random_oos(sub, w)
-        got = fetch(route, project=w["project"], databank=w["databank"], identity=w["identity"],
-                    strategy=w.get("strategy") or "", top=self.share.value() if self.top.isChecked() else 0,
-                    dd=self.dd.checkedButton().text())
+        got = fetch(
+            route,
+            project=w["project"],
+            databank=w["databank"],
+            identity=w["identity"],
+            strategy=w.get("strategy") or "",
+            top=self.share.value() if self.top.isChecked() else 0,
+            dd=self.dd.checkedButton().text(),
+        )
         if "error" in got:
             late = "404" in got["error"]
-            return sub.say(PENDING.format(what=f"/api/{route}") if late else got["error"],
-                           T["muted"] if late or got.get("absent") else colour("fail"))
-        if got.get("harvest_day") and index == 0:      # §3.1: no «cosecha del…» line
-            self.note.setText(f"{got['strategy']} · {w['project']} › {w['databank']}"
-                              + (f" · {got['note']}" if got.get("note") else ""))
+            return sub.say(
+                PENDING.format(what=f"/api/{route}") if late else got["error"],
+                T["muted"] if late or got.get("absent") else colour("fail"),
+            )
+        if got.get("harvest_day") and index == 0:  # §3.1: no «cosecha del…» line
+            self.note.setText(
+                f"{got['strategy']} · {w['project']} › {w['databank']}"
+                + (f" · {got['note']}" if got.get("note") else "")
+            )
         sub.body.show()
         if [t["name"] for t in got["tabs"]] != ["IS", "OOS"]:
             sub.line.setText("")
@@ -172,7 +209,9 @@ class Ficha(QFrame):
         pair, notes = sides(got)
         sub.line.setText(notes)
         left, right = pair
-        sub.body.compare(left, right, (got["tabs"][0]["title"], got["tabs"][1]["title"]))
+        sub.body.compare(
+            left, right, (got["tabs"][0]["title"], got["tabs"][1]["title"])
+        )
         # compare()'s first row is each side's verdict header; the Ficha judges nothing and
         # its sides are named by the tab title and the notes above, so the row goes.
         hide_first_row(sub.body)
@@ -180,11 +219,20 @@ class Ficha(QFrame):
     def _random_oos(self, sub: Sub, w: dict) -> None:
         """The Cross Market result's «oos» tab (random entry on the main market's OOS), drawn here."""
         got = fetch("result", **compare.query(w, "crossmarket"))
-        tab = next((t for t in (got.get("result") or {}).get("tabs", []) if t["name"] == "oos"), None)
+        tab = next(
+            (
+                t
+                for t in (got.get("result") or {}).get("tabs", [])
+                if t["name"] == "oos"
+            ),
+            None,
+        )
         if tab is None:
-            return sub.say("Sin resultado: el test de entrada aleatoria aún no se ha corrido para "
-                           "esta estrategia.")
+            return sub.say(
+                "Sin resultado: el test de entrada aleatoria aún no se ha corrido para "
+                "esta estrategia."
+            )
         sub.body.show()
         sub.line.setText("")
         sub.body.show_result({**got["result"], "tabs": [tab], "warnings": []}, None)
-        hide_first_row(sub.body)   # the cross-market verdict is not this test's
+        hide_first_row(sub.body)  # the cross-market verdict is not this test's

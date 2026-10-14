@@ -1,4 +1,5 @@
 """The SQX side: the live strategies retested over one week in a Test_Reconcile project on the conductor. UNRUN."""
+
 import json
 import re
 import shutil
@@ -30,24 +31,46 @@ def window(week: str, data: dict, warmup_days: int) -> tuple[str, str]:
     last = date.fromisoformat(str(data["data"]["to"])[:10]) - timedelta(days=1)
     end = min((after - pd.Timedelta(days=1)).date(), last)
     if end < monday.date():  # pyright: ignore[reportOperatorIssue]  # pandas stubs: Timedelta/Timestamp unions with NaT
-        raise SystemExit(f"SQX tiene datos hasta el {data['data']['to']}: la semana {week} "
-                         "todavía no está en los datos de desarrollo (weekly-data-update)")
+        raise SystemExit(
+            f"SQX tiene datos hasta el {data['data']['to']}: la semana {week} "
+            "todavía no está en los datos de desarrollo (weekly-data-update)"
+        )
     return (monday - pd.Timedelta(days=warmup_days)).date().isoformat(), end.isoformat()  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: Timedelta/Timestamp unions with NaT
 
 
 def build(name: str, strategy: Path, asset: str, timeframe: str, cfg: dict) -> Path:
     """Clone the frozen donor into the week's Test_ project through the builder's own command
     (hard rules 6 and 10: its registry row, its checks). Returns the project.cfx."""
-    argv = [sys.executable, "-m", "sqx.projects.builder", name,
-            "--purpose", "weeklyReconciler: las estrategias en real de la semana, en SQX con "
-                         "los datos de desarrollo, para compararlas con la cuenta",
-            "--template", str(strategy), "--symbol", asset, "--role", cfg["role"],
-            "--timeframe", timeframe, "--tasks", "Retest", "--only",
-            ",".join(cfg["donor_members"]), "--silence", "Retest", "--json"]
+    argv = [
+        sys.executable,
+        "-m",
+        "sqx.projects.builder",
+        name,
+        "--purpose",
+        "weeklyReconciler: las estrategias en real de la semana, en SQX con "
+        "los datos de desarrollo, para compararlas con la cuenta",
+        "--template",
+        str(strategy),
+        "--symbol",
+        asset,
+        "--role",
+        cfg["role"],
+        "--timeframe",
+        timeframe,
+        "--tasks",
+        "Retest",
+        "--only",
+        ",".join(cfg["donor_members"]),
+        "--silence",
+        "Retest",
+        "--json",
+    ]
     got = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True, timeout=600)
     if got.returncode:
-        raise SystemExit(f"el builder no creó {name}:\n{(got.stderr or got.stdout)[-2000:]}")
-    return Path(json.loads(got.stdout[got.stdout.index("{"):])["cfx"])
+        raise SystemExit(
+            f"el builder no creó {name}:\n{(got.stderr or got.stdout)[-2000:]}"
+        )
+    return Path(json.loads(got.stdout[got.stdout.index("{") :])["cfx"])
 
 
 def configure(cfx: Path, data: dict, days: tuple[str, str], cfg: dict) -> None:
@@ -61,12 +84,21 @@ def configure(cfx: Path, data: dict, days: tuple[str, str], cfg: dict) -> None:
     member = cfg["donor_members"][0]
     sizing = {"method": "FixedSize", "params": {"Size": cfg["lots"]}}
     members[member] = mt5verify.write_task(
-        members[member].decode("utf-8"), data["sqx_symbol"],
-        assetdata.sqx_settings(data, cfg["segment"]), days, (cfg["input"], cfg["output"]),
-        sizing).encode("utf-8")
-    config = re.sub(r'(<Task\b[^>]*?)active="true"', r'\g<1>active="false"',
-                    members["config.xml"].decode("utf-8"))
-    config = declare(retitle(config, member, cfg["task_title"]), [cfg["input"], cfg["output"]])
+        members[member].decode("utf-8"),
+        data["sqx_symbol"],
+        assetdata.sqx_settings(data, cfg["segment"]),
+        days,
+        (cfg["input"], cfg["output"]),
+        sizing,
+    ).encode("utf-8")
+    config = re.sub(
+        r'(<Task\b[^>]*?)active="true"',
+        r'\g<1>active="false"',
+        members["config.xml"].decode("utf-8"),
+    )
+    config = declare(
+        retitle(config, member, cfg["task_title"]), [cfg["input"], cfg["output"]]
+    )
     members["config.xml"] = config.encode("utf-8")
     with zipfile.ZipFile(cfx, "w", zipfile.ZIP_DEFLATED) as z:
         for name, blob in members.items():
@@ -89,7 +121,7 @@ def backtest(live: pd.DataFrame, week: str, cfg: dict, work: Path) -> pd.DataFra
         up); each project is retired whatever happened (hard rule 6).
     """
     out = []
-    once = live.drop_duplicates("strategy")        # one backtest serves every firm it runs on
+    once = live.drop_duplicates("strategy")  # one backtest serves every firm it runs on
     for (asset, timeframe), group in once.groupby(["asset", "timeframe"]):  # pyright: ignore[reportGeneralTypeIssues]  # pandas stubs: groupby key/index is Hashable
         rule_five(asset)
         data = assetdata.load(asset)
@@ -98,13 +130,14 @@ def backtest(live: pd.DataFrame, week: str, cfg: dict, work: Path) -> pd.DataFra
         files = [Path(p) for p in group["sqx"]]
         folder = work / project
         (folder / "in").mkdir(parents=True, exist_ok=True)
-        for extra in files[1:]:                    # run() stages the first; the load reads the folder
+        for extra in files[1:]:  # run() stages the first; the load reads the folder
             shutil.copy2(extra, folder / "in" / extra.name)
         cfx = build(project, files[0], asset, timeframe, cfg)
         try:
             configure(cfx, data, days, cfg)
-            banks = verify_sqx.run(project, cfg["role"], files[0], folder,
-                                   {"week": cfg["output"]}, cfg)
+            banks = verify_sqx.run(
+                project, cfg["role"], files[0], folder, {"week": cfg["output"]}, cfg
+            )
             dest = folder / "csv"
             shutil.rmtree(dest, ignore_errors=True)
             if any(banks["week"].glob("*.sqx")):
@@ -112,9 +145,30 @@ def backtest(live: pd.DataFrame, week: str, cfg: dict, work: Path) -> pd.DataFra
             names = {Path(r.sqx).stem: r for r in group.itertuples()}  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
             for csv in sorted(dest.glob("*.csv")):
                 row = names[csv.stem]
-                out.append(trades.read(csv).assign(strategy=row.strategy, identity=row.identity))  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
+                out.append(
+                    trades.read(csv).assign(
+                        strategy=row.strategy,  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
+                        identity=row.identity,  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
+                    )
+                )
         finally:
             print(verify_sqx.retire(project, cfg["role"]), flush=True)
-    return pd.concat(out, ignore_index=True) if out else pd.DataFrame(
-        columns=["strategy", "identity", "Type", "Open time", "Open price", "Size",  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
-                 "Close time", "Close price", "Profit/Loss", "MAE ($)", "MFE ($)"])
+    return (
+        pd.concat(out, ignore_index=True)
+        if out
+        else pd.DataFrame(
+            columns=[
+                "strategy",
+                "identity",
+                "Type",
+                "Open time",
+                "Open price",
+                "Size",  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
+                "Close time",
+                "Close price",
+                "Profit/Loss",
+                "MAE ($)",
+                "MFE ($)",
+            ]
+        )
+    )

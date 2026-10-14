@@ -37,8 +37,9 @@ def send(method: str, path: str, **how: Any) -> dict[str, Any]:
         The decoded JSON body. The token is read from the daemon's own file each time
         (`core.uitoken`): a daemon another window restarted has minted a new one.
     """
-    r = _HTTP.request(method, f"/api/{path}", headers={uitoken.HEADER: uitoken.read(PORT)},
-                      **how)
+    r = _HTTP.request(
+        method, f"/api/{path}", headers={uitoken.HEADER: uitoken.read(PORT)}, **how
+    )
     r.raise_for_status()
     return r.json()
 
@@ -56,7 +57,9 @@ def get(path: str, wait: float | None = None, **params: Any) -> dict[str, Any]:
         The decoded JSON body. A non-2xx raises: the daemon is on loopback and started by
         this same process, so a failure there is a bug to see, not a state to render.
     """
-    return send("GET", path, params=params, **({"timeout": wait} if wait is not None else {}))
+    return send(
+        "GET", path, params=params, **({"timeout": wait} if wait is not None else {})
+    )
 
 
 def post(path: str, body: Mapping[str, Any]) -> dict[str, Any]:
@@ -83,7 +86,9 @@ def awake(port: int) -> bool:
         writing the same CSVs is how a row gets lost.
     """
     try:
-        return httpx.get(f"http://127.0.0.1:{port}/api/health", timeout=1.0).json()["ok"]
+        return httpx.get(f"http://127.0.0.1:{port}/api/health", timeout=1.0).json()[
+            "ok"
+        ]
     except httpx.HTTPError:
         return False
 

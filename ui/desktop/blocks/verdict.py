@@ -14,13 +14,21 @@ def _part(p: dict) -> QLabel:
     """One part of the verdict as a tile: its name, its state word and its value."""
     c = colour(p["state"])
     value = p.get("value")
-    figure = label(p["state"]) if value is None else (
-        f'{p.get("shown") or chart.num(value)}</span>&nbsp;<span style="color:{c}; font-size:12px;">'
-        f'{label(p["state"])}')
-    tile = QLabel(f'<span style="color:{T["text"]}; font-size:13px;">{p["label"]}</span><br>'
-                  f'<span style="color:{c}; font-size:18px; font-weight:700;">{figure}</span>')
-    tile.setStyleSheet(f"border-left: 4px solid {c}; padding: 4px 10px; "
-                       f"font-family: {chart.FACE};")
+    figure = (
+        label(p["state"])
+        if value is None
+        else (
+            f'{p.get("shown") or chart.num(value)}</span>&nbsp;<span style="color:{c}; font-size:12px;">'
+            f"{label(p['state'])}"
+        )
+    )
+    tile = QLabel(
+        f'<span style="color:{T["text"]}; font-size:13px;">{p["label"]}</span><br>'
+        f'<span style="color:{c}; font-size:18px; font-weight:700;">{figure}</span>'
+    )
+    tile.setStyleSheet(
+        f"border-left: 4px solid {c}; padding: 4px 10px; font-family: {chart.FACE};"
+    )
     tip = f"{p['label']}: {label(p['state'])}"
     if p.get("value") is not None:
         tip += f", valor {chart.num(p['value'])}"
@@ -48,13 +56,22 @@ def widget(block: dict) -> QWidget:
     # No state word beside the label (owner, 2026-10-01: «quitar Descartar nota cero / Falla y
     # nota cero»): the colour already says it, and it stays in the tooltip. A score shows only
     # where a study passes one on purpose (mcRetest's composite); crossmarket no longer does.
-    text_score = isinstance(b.get("score"), str)      # already formatted («Spearman 44,53 %»): big
-    score = "" if b.get("score") is None else (
-        f'&nbsp;&nbsp;<span style="color:{T["text"] if text_score else T["muted"]}; '
-        f'font-size:{26 if text_score else 16}px;{" font-weight:800;" if text_score else ""}">'
-        f'{b["score"] if text_score else chart.num(b["score"])}</span>')
-    head = QLabel(f'<span style="color:{c}; font-size:26px; font-weight:800;">{b["label"]}'
-                  f'</span>{score}')
+    text_score = isinstance(
+        b.get("score"), str
+    )  # already formatted («Spearman 44,53 %»): big
+    score = (
+        ""
+        if b.get("score") is None
+        else (
+            f'&nbsp;&nbsp;<span style="color:{T["text"] if text_score else T["muted"]}; '
+            f'font-size:{26 if text_score else 16}px;{" font-weight:800;" if text_score else ""}">'
+            f"{b['score'] if text_score else chart.num(b['score'])}</span>"
+        )
+    )
+    head = QLabel(
+        f'<span style="color:{c}; font-size:26px; font-weight:800;">{b["label"]}'
+        f"</span>{score}"
+    )
     head.setStyleSheet(f"font-family: {chart.FACE};")
     head.setToolTip(f"estado del veredicto: {label(b['state'])}")
     lay.addWidget(head)

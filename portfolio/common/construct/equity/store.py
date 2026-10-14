@@ -12,7 +12,7 @@ from core.paths import portfolio_dir
 
 ROOT = portfolio_dir() / "universe"
 HERE = Path(__file__).parent
-SOURCES = (HERE, HERE.parent / "inputs")        # the code a universe is built by
+SOURCES = (HERE, HERE.parent / "inputs")  # the code a universe is built by
 
 
 def code(sources: tuple[Path, ...] = SOURCES) -> str:
@@ -23,7 +23,9 @@ def code(sources: tuple[Path, ...] = SOURCES) -> str:
     (`core.assetdata`, `core.barstore`, the bars themselves) does not move it.
     """
     files = sorted(p for folder_ in sources for p in folder_.glob("*.py"))
-    return hashlib.sha256(b"".join(p.name.encode() + p.read_bytes() for p in files)).hexdigest()[:8]
+    return hashlib.sha256(
+        b"".join(p.name.encode() + p.read_bytes() for p in files)
+    ).hexdigest()[:8]
 
 
 def folder(pool_hash: str, config_fingerprint: str) -> Path:
@@ -46,9 +48,15 @@ def cached(out: Path) -> bool:
     return (out / "manifest.json").is_file()
 
 
-def write(out: Path, daily: pd.DataFrame, monthly: pd.DataFrame, reconcile: pd.DataFrame,
-          days_by_firm: dict[str, pd.DataFrame], m5_by_firm: dict[str, dict],
-          manifest: dict) -> None:
+def write(
+    out: Path,
+    daily: pd.DataFrame,
+    monthly: pd.DataFrame,
+    reconcile: pd.DataFrame,
+    days_by_firm: dict[str, pd.DataFrame],
+    m5_by_firm: dict[str, dict],
+    manifest: dict,
+) -> None:
     """Write every universe file.
 
     Args:
@@ -69,12 +77,28 @@ def write(out: Path, daily: pd.DataFrame, monthly: pd.DataFrame, reconcile: pd.D
         frame.to_parquet(out / f"days_{firm}.parquet")
     for firm, blob in m5_by_firm.items():
         ids = list(blob["low"].keys())
-        low = np.stack([blob["low"][i] for i in ids]) if ids else np.zeros((0, blob["n_blocks"]), np.float32)
-        high = np.stack([blob["high"][i] for i in ids]) if ids else np.zeros((0, blob["n_blocks"]), np.float32)
-        np.savez_compressed(out / f"m5_{firm}.npz", grid_start=blob["grid_start"],
-                             n_blocks=blob["n_blocks"], block_days=blob["block_days"],
-                             identities=np.array(ids), low=low, high=high)
-    (out / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
+        low = (
+            np.stack([blob["low"][i] for i in ids])
+            if ids
+            else np.zeros((0, blob["n_blocks"]), np.float32)
+        )
+        high = (
+            np.stack([blob["high"][i] for i in ids])
+            if ids
+            else np.zeros((0, blob["n_blocks"]), np.float32)
+        )
+        np.savez_compressed(
+            out / f"m5_{firm}.npz",
+            grid_start=blob["grid_start"],
+            n_blocks=blob["n_blocks"],
+            block_days=blob["block_days"],
+            identities=np.array(ids),
+            low=low,
+            high=high,
+        )
+    (out / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, default=str), encoding="utf-8"
+    )
 
 
 def load(out: Path) -> dict[str, Any]:
@@ -98,10 +122,18 @@ def load(out: Path) -> dict[str, Any]:
         if m5_path.is_file():
             with np.load(m5_path, allow_pickle=False) as npz:
                 ids = npz["identities"].tolist()
-                m5[firm] = {"grid_start": int(npz["grid_start"]), "n_blocks": int(npz["n_blocks"]),
-                            "block_days": npz["block_days"],
-                            "low": dict(zip(ids, npz["low"])), "high": dict(zip(ids, npz["high"]))}
-    return {"daily": pd.read_parquet(out / "daily.parquet"),
-            "monthly": pd.read_parquet(out / "monthly.parquet"),
-            "reconcile": pd.read_csv(out / "reconcile.csv"),
-            "days": days, "m5": m5, "manifest": manifest}
+                m5[firm] = {
+                    "grid_start": int(npz["grid_start"]),
+                    "n_blocks": int(npz["n_blocks"]),
+                    "block_days": npz["block_days"],
+                    "low": dict(zip(ids, npz["low"])),
+                    "high": dict(zip(ids, npz["high"])),
+                }
+    return {
+        "daily": pd.read_parquet(out / "daily.parquet"),
+        "monthly": pd.read_parquet(out / "monthly.parquet"),
+        "reconcile": pd.read_csv(out / "reconcile.csv"),
+        "days": days,
+        "m5": m5,
+        "manifest": manifest,
+    }

@@ -11,7 +11,9 @@ KEY = "objetivo"
 
 def _grid(frame: pd.DataFrame, column: str) -> pd.DataFrame:
     """Rows runs, columns oos_pct, the value rounded to two decimals."""
-    wide = frame.pivot_table(index="runs", columns="oos_pct", values=column, aggfunc="first")
+    wide = frame.pivot_table(
+        index="runs", columns="oos_pct", values=column, aggfunc="first"
+    )
     out = wide.round(2).reset_index()
     out.columns = ["pasadas \\ % OOS"] + [f"{c}%" for c in wide.columns]
     return out
@@ -23,33 +25,63 @@ def _conditions(cond: pd.DataFrame) -> list[tuple[str, dict]]:
     for i, g in cast(Any, cond.groupby("condition")):
         first = g.iloc[0]
         label = f"C{i + 1} · {labels.condition(first.to_dict())}"
-        states = [[None] + ["pass" if m else "fail" for m in row]
-                  for row in g.pivot_table(index="runs", columns="oos_pct", values="met",
-                                           aggfunc="first").to_numpy()]
-        out.append((label, {**blocks.table(
-            label, _grid(g, "value"),
-            f"Cumple en {int(g['met'].sum())} de {len(g)} celdas. "
-            f"{labels.meaning(first['family'], first['metric'])}"), "states": states}))
+        states = [
+            [None] + ["pass" if m else "fail" for m in row]
+            for row in g.pivot_table(
+                index="runs", columns="oos_pct", values="met", aggfunc="first"
+            ).to_numpy()
+        ]
+        out.append(
+            (
+                label,
+                {
+                    **blocks.table(
+                        label,
+                        _grid(g, "value"),
+                        f"Cumple en {int(g['met'].sum())} de {len(g)} celdas. "
+                        f"{labels.meaning(first['family'], first['metric'])}",
+                    ),
+                    "states": states,
+                },
+            )
+        )
     return out
 
 
-def _shown(objectives: pd.DataFrame, taken: set[tuple[str, str]]) -> list[tuple[str, dict]]:
+def _shown(
+    objectives: pd.DataFrame, taken: set[tuple[str, str]]
+) -> list[tuple[str, dict]]:
     """The WF metrics SQX shows whatever the conditions, the ones already a condition left out."""
     out = []
     for column in objectives.columns.drop(["strategy", "result", "oos_pct", "runs"]):
         family, _, metric = column.partition("_")
         # SQX's scores count the first optimisation window: only the corrected condition shows.
-        if family == "score" or (family, metric) in taken or bool(objectives[column].isna().all()):
+        if (
+            family == "score"
+            or (family, metric) in taken
+            or bool(objectives[column].isna().all())
+        ):
             continue
         own = column == "param_stability"
-        label = "Estabilidad de parámetros (SQX)" if own else labels.name(family, metric)
-        out.append((label, blocks.table(label, _grid(objectives, column),
-                                        labels.MEANING[column] if own
-                                        else labels.meaning(family, metric))))
+        label = (
+            "Estabilidad de parámetros (SQX)" if own else labels.name(family, metric)
+        )
+        out.append(
+            (
+                label,
+                blocks.table(
+                    label,
+                    _grid(objectives, column),
+                    labels.MEANING[column] if own else labels.meaning(family, metric),
+                ),
+            )
+        )
     return out
 
 
-def tab(checked: pd.DataFrame, objectives: pd.DataFrame | None, strategy: str) -> dict[str, Any]:
+def tab(
+    checked: pd.DataFrame, objectives: pd.DataFrame | None, strategy: str
+) -> dict[str, Any]:
     """The «Objetivos» tab for one strategy.
 
     Args:
@@ -63,12 +95,19 @@ def tab(checked: pd.DataFrame, objectives: pd.DataFrame | None, strategy: str) -
     cond = cast(pd.DataFrame, checked[checked["strategy"] == strategy])
     pairs = _conditions(cond)
     if objectives is not None:
-        pairs += _shown(cast(pd.DataFrame, objectives[objectives["strategy"] == strategy]),
-                        set(zip(cond["family"], cond["metric"])))
+        pairs += _shown(
+            cast(pd.DataFrame, objectives[objectives["strategy"] == strategy]),
+            set(zip(cond["family"], cond["metric"])),
+        )
     names = [name for name, _ in pairs]
     return envelope.tab(
-        "objectives", "Los objetivos", [b | {"select": {KEY: n}} for n, b in pairs],
-        selectors=[{"key": KEY, "label": "Objetivo", "options": names, "default": names[0]}],
+        "objectives",
+        "Los objetivos",
+        [b | {"select": {KEY: n}} for n, b in pairs],
+        selectors=[
+            {"key": KEY, "label": "Objetivo", "options": names, "default": names[0]}
+        ],
         note="Cada objetivo en su matriz: filas, número de pasadas; columnas, % fuera de "
-             "muestra. Las condiciones (C1…) llevan su verde/rojo; el resto son las métricas "
-             "walk-forward que SQX enseña, sin umbral.")
+        "muestra. Las condiciones (C1…) llevan su verde/rojo; el resto son las métricas "
+        "walk-forward que SQX enseña, sin umbral.",
+    )

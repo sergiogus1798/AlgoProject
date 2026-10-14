@@ -5,11 +5,15 @@ import json
 import secrets
 import time
 
-TTL_S = 600         # a confirmation left open longer is asked again
-KEEP = 512          # preflights are polled; only the newest proofs are worth holding
-ISSUED: dict[str, tuple[str, float]] = {}       # nonce → (the plan's hash, when it was issued)
-UNKNOWN = ("esta confirmación no existe o ya se usó: vuelve a pulsar el botón y confirma lo "
-           "que te enseñe")
+TTL_S = 600  # a confirmation left open longer is asked again
+KEEP = 512  # preflights are polled; only the newest proofs are worth holding
+ISSUED: dict[
+    str, tuple[str, float]
+] = {}  # nonce → (the plan's hash, when it was issued)
+UNKNOWN = (
+    "esta confirmación no existe o ya se usó: vuelve a pulsar el botón y confirma lo "
+    "que te enseñe"
+)
 EXPIRED = "la confirmación caducó (más de 10 minutos): vuelve a pulsar y confirma"
 CHANGED = "el plan cambió desde que lo viste: vuelve a pulsar y confirma el nuevo"
 

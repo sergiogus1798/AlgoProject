@@ -3,29 +3,55 @@
 import re
 from typing import Any
 
-from PySide6.QtWidgets import (QDialog, QFrame, QGridLayout, QLabel, QScrollArea, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (
+    QDialog,
+    QFrame,
+    QGridLayout,
+    QLabel,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.text.glossary import label
 from ui.desktop.theme import C, T
 
 DIRECTION = {"long": "solo largos", "short": "solo cortos", "both": "largos y cortos"}
 SIDE = {"long": "larga", "short": "corta"}
-EXITS = (("stop_loss", "SL"), ("profit_target", "PT"), ("trailing_stop", "trailing"),
-         ("break_even", "break even"))
-DAYS = {"MONDAY": "lunes", "TUESDAY": "martes", "WEDNESDAY": "miércoles", "THURSDAY": "jueves",
-        "FRIDAY": "viernes", "SATURDAY": "sábado", "SUNDAY": "domingo"}
+EXITS = (
+    ("stop_loss", "SL"),
+    ("profit_target", "PT"),
+    ("trailing_stop", "trailing"),
+    ("break_even", "break even"),
+)
+DAYS = {
+    "MONDAY": "lunes",
+    "TUESDAY": "martes",
+    "WEDNESDAY": "miércoles",
+    "THURSDAY": "jueves",
+    "FRIDAY": "viernes",
+    "SATURDAY": "sábado",
+    "SUNDAY": "domingo",
+}
 # BadStrategyException's bits (core.sqxfile.PROBLEM_BITS), as the owner reads them.
-PROBLEMS = {"NoTrades": "sin operaciones", "TooLittleTrades": "demasiado pocas operaciones",
-            "ZeroPLTrades": "operaciones con P/L cero",
-            "TooShortTrades": "demasiadas operaciones cierran en la misma barra",
-            "ZeroDurationTrades": "operaciones de duración cero",
-            "TooManyOpenTrades": "demasiadas operaciones abiertas",
-            "TooLongTrade": "operaciones sin cerrar al final", "NoFilledTrades": "ninguna orden ejecutada",
-            "OutlierTrade": "una operación enorme que domina el resultado",
-            "AmbiguousTrades": "demasiadas operaciones ambiguas (SL y PT en la misma barra)",
-            "StockpickerShiftChanged": "SQX cambió el shift de una condición"}
-COSTS = (("spread", "spread"), ("slippage", "slippage"), ("min_distance", "min distance"))
+PROBLEMS = {
+    "NoTrades": "sin operaciones",
+    "TooLittleTrades": "demasiado pocas operaciones",
+    "ZeroPLTrades": "operaciones con P/L cero",
+    "TooShortTrades": "demasiadas operaciones cierran en la misma barra",
+    "ZeroDurationTrades": "operaciones de duración cero",
+    "TooManyOpenTrades": "demasiadas operaciones abiertas",
+    "TooLongTrade": "operaciones sin cerrar al final",
+    "NoFilledTrades": "ninguna orden ejecutada",
+    "OutlierTrade": "una operación enorme que domina el resultado",
+    "AmbiguousTrades": "demasiadas operaciones ambiguas (SL y PT en la misma barra)",
+    "StockpickerShiftChanged": "SQX cambió el shift de una condición",
+}
+COSTS = (
+    ("spread", "spread"),
+    ("slippage", "slippage"),
+    ("min_distance", "min distance"),
+)
 
 
 def _on(option: dict) -> bool:
@@ -43,8 +69,11 @@ def _order(o: dict) -> str:
     parts = [f"{o['type']} ({SIDE.get(o['direction'], o['direction'])})"]
     for key, name in EXITS:
         v = o[key]
-        parts.append(f"sin {name}" if v is None else
-                     f"{name} {v.get('formula', '') if isinstance(v, dict) else v}")
+        parts.append(
+            f"sin {name}"
+            if v is None
+            else f"{name} {v.get('formula', '') if isinstance(v, dict) else v}"
+        )
     if o.get("exit_after_bars"):
         parts.append(f"sale tras {o['exit_after_bars']} barras")
     return " · ".join(parts)
@@ -55,11 +84,19 @@ def _costs(test: dict) -> str:
     c = test["costs"]
     if c is None:
         return "la tarea no lleva costes propios"
-    fees = ", ".join(f"{m['method']} {m['value']}" for m in c["commission"]) or "ninguna"
+    fees = (
+        ", ".join(f"{m['method']} {m['value']}" for m in c["commission"]) or "ninguna"
+    )
     swap = c["swap"]
-    swapped = (f"swap largo {swap['long']}, corto {swap['short']} ({swap['type']}, triple el "
-               f"{DAYS.get(swap['tripleSwapOn'], swap['tripleSwapOn'])})" if swap and swap.get("use") == "true" else "sin swap")
-    return " · ".join([*(f"{name} {c[key]}" for key, name in COSTS), f"comisión {fees}", swapped])
+    swapped = (
+        f"swap largo {swap['long']}, corto {swap['short']} ({swap['type']}, triple el "
+        f"{DAYS.get(swap['tripleSwapOn'], swap['tripleSwapOn'])})"
+        if swap and swap.get("use") == "true"
+        else "sin swap"
+    )
+    return " · ".join(
+        [*(f"{name} {c[key]}" for key, name in COSTS), f"comisión {fees}", swapped]
+    )
 
 
 def rows(meta: dict) -> list[tuple[str, str, str]]:
@@ -74,32 +111,74 @@ def rows(meta: dict) -> list[tuple[str, str, str]]:
     friday = meta["friday_close"]
     opts = meta["trading_options"]
     out: list[tuple[str, str, str]] = [
-        ("Dirección", DIRECTION.get(meta["direction"], meta["direction"]), ink)]  # pyright: ignore[reportAssignmentType]  # .get with an Any default
+        ("Dirección", DIRECTION.get(meta["direction"], meta["direction"]), ink)  # pyright: ignore[reportAssignmentType]  # .get with an Any default
+    ]
     out += [(label(s), text, ink) for s, text in meta["signals"].items()]
-    out += [(f"Condición {i + 1} ({label(c['signal']).lower()})", c["text"], ink)
-            for i, c in enumerate(meta["entries"] + meta["exits"])]
+    out += [
+        (f"Condición {i + 1} ({label(c['signal']).lower()})", c["text"], ink)
+        for i, c in enumerate(meta["entries"] + meta["exits"])
+    ]
     for side in ("entry", "exit"):
         if meta["indicators"][side]:
-            out.append((f"Indicadores de {'entrada' if side == 'entry' else 'salida'}",
-                        ", ".join(meta["indicators"][side]), ink))
+            out.append(
+                (
+                    f"Indicadores de {'entrada' if side == 'entry' else 'salida'}",
+                    ", ".join(meta["indicators"][side]),
+                    ink,
+                )
+            )
     out += [(f"Orden {i + 1}", _order(o), ink) for i, o in enumerate(meta["orders"])]
-    out.append(("Money management", f"{mm['method']} ({_params(mm['params'])}) · capital "
-                f"{mm['initial_capital']} · de la {'estrategia' if mm['from'] == 'strategy' else 'tarea'}",
-                ink))
-    out.append(("Cierre de los viernes", f"sí, a las {friday['time']}" if _on(friday) else "no", ink))
-    others = [name for key, name in (("weekend", "no opera en fin de semana"),
-                                     ("end_of_day", "cierra al final del día"),
-                                     ("time_range", "limita el horario")) if _on(opts[key])]
+    out.append(
+        (
+            "Money management",
+            f"{mm['method']} ({_params(mm['params'])}) · capital "
+            f"{mm['initial_capital']} · de la {'estrategia' if mm['from'] == 'strategy' else 'tarea'}",
+            ink,
+        )
+    )
+    out.append(
+        (
+            "Cierre de los viernes",
+            f"sí, a las {friday['time']}" if _on(friday) else "no",
+            ink,
+        )
+    )
+    others = [
+        name
+        for key, name in (
+            ("weekend", "no opera en fin de semana"),
+            ("end_of_day", "cierra al final del día"),
+            ("time_range", "limita el horario"),
+        )
+        if _on(opts[key])
+    ]
     out.append(("Otras opciones", ", ".join(others) or "ninguna", ink))
-    out.append(("Activo", f"{meta['asset']} · {meta['feed']} · {meta['timeframe']} · sesión "
-                f"{opts['session']}", ink))
-    out.append(("Último test", f"{last['input']} → {last['output']} · {' → '.join(last['window'])}"
-                f" · {last['engine']} · precisión {last['precision']}", ink))
+    out.append(
+        (
+            "Activo",
+            f"{meta['asset']} · {meta['feed']} · {meta['timeframe']} · sesión "
+            f"{opts['session']}",
+            ink,
+        )
+    )
+    out.append(
+        (
+            "Último test",
+            f"{last['input']} → {last['output']} · {' → '.join(last['window'])}"
+            f" · {last['engine']} · precisión {last['precision']}",
+            ink,
+        )
+    )
     out.append(("Costes del último test", _costs(last), ink))
     for task in meta.get("backtest", []):
         if "error" not in task and task["costs"] != last["costs"]:
-            out.append((f"⚠ Costes de «{task['task']}»", f"{_costs(task)} — no son los del último "
-                        "test guardado en el .sqx", warn))
+            out.append(
+                (
+                    f"⚠ Costes de «{task['task']}»",
+                    f"{_costs(task)} — no son los del último test guardado en el .sqx",
+                    warn,
+                )
+            )
     # A version archived before 2026-10-04 carries no «problems» (📓 uiwalk, Portfolios).
     prob: dict[str, Any] = meta.get("problems") or {"value": 0}
     if prob["value"]:

@@ -184,7 +184,9 @@ def set_market(change: MarketChange) -> dict[str, Any]:
     Returns:
         The category as written.
     """
-    return dict(assets.assetwrite.set_market(change.symbol, change.category, change.feeds))
+    return dict(
+        assets.assetwrite.set_market(change.symbol, change.category, change.feeds)
+    )
 
 
 @ROUTER.post("/api/asset/{symbol}/market/main")

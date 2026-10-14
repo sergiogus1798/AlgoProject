@@ -46,8 +46,17 @@ def minutes(feed: str) -> pd.DataFrame:
     frame, ticks = tickfile.minutes(feed)
     folder.mkdir(parents=True, exist_ok=True)
     frame.to_parquet(cached)
-    meta.write_text(json.dumps({"stamp": stamp, "ticks": ticks, "minutes": len(frame),
-                                "from": str(frame.index[0]), "to": str(frame.index[-1])}))
+    meta.write_text(
+        json.dumps(
+            {
+                "stamp": stamp,
+                "ticks": ticks,
+                "minutes": len(frame),
+                "from": str(frame.index[0]),
+                "to": str(frame.index[-1]),
+            }
+        )
+    )
     return frame
 
 
@@ -62,8 +71,17 @@ def volatility(feed: str) -> pd.DataFrame:
         The one thing known in every year, Darwinex's or not, that the spread may follow.
         From the bar library, or straight from SQX's own M1 file for a feed it lacks.
     """
-    close = cast(pd.Series, (source(feed, ["Close"]) if bar_source(feed).exists() else tickfile.bars(feed))["Close"])
+    close = cast(
+        pd.Series,
+        (source(feed, ["Close"]) if bar_source(feed).exists() else tickfile.bars(feed))[
+            "Close"
+        ],
+    )
     moves = cast(pd.Series, np.log(close)).diff().abs()
     day = cast(Any, close.index).normalize()
-    got = pd.DataFrame({"rv": moves.groupby(day).mean(), "price": close.groupby(day).median()})
-    return cast(pd.DataFrame, got[got["rv"] > 0])   # a day without a single move is no trading day
+    got = pd.DataFrame(
+        {"rv": moves.groupby(day).mean(), "price": close.groupby(day).median()}
+    )
+    return cast(
+        pd.DataFrame, got[got["rv"] > 0]
+    )  # a day without a single move is no trading day

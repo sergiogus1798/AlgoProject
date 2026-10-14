@@ -21,14 +21,24 @@ STATE = {}
 
 def _cell(symbol: str, timeframe: str) -> tuple[dict, dict]:
     """One cell's log bars and calendar."""
-    bars = inputs.bars(inputs.minute_bars(symbol, STATE["cfg"]["run"]["fresh_minutes"]), timeframe)
+    bars = inputs.bars(
+        inputs.minute_bars(symbol, STATE["cfg"]["run"]["fresh_minutes"]), timeframe
+    )
     return series.logs(bars), series.calendar(bars.index, timeframe, STATE["cfg"])
 
 
 # How long a cell's series remembers: Politis-White blocks and the |returns| decay lag.
-Memory = TypedDict("Memory", {"symbol": str, "timeframe": str, "pw_returns": float,
-                              "pw_abs_returns": float, "abs_acf_1": float,
-                              "lag_abs_acf_below_0.05": int})
+Memory = TypedDict(
+    "Memory",
+    {
+        "symbol": str,
+        "timeframe": str,
+        "pw_returns": float,
+        "pw_abs_returns": float,
+        "abs_acf_1": float,
+        "lag_abs_acf_below_0.05": int,
+    },
+)
 
 
 class Trial(TypedDict):
@@ -52,10 +62,14 @@ def memory(symbol: str, timeframe: str) -> Memory:
     r = np.diff(x["c"])
     a = np.abs(r) - np.abs(r).mean()
     acf = np.array([a[k:] @ a[:-k] for k in range(1, 2001)]) / (a @ a)
-    return {"symbol": symbol, "timeframe": timeframe,
-            "pw_returns": optimal_block_length(r)["circular"].iloc[0],
-            "pw_abs_returns": optimal_block_length(np.abs(r))["circular"].iloc[0],
-            "abs_acf_1": acf[0], "lag_abs_acf_below_0.05": int(np.argmax(acf < LEVEL)) + 1}
+    return {
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "pw_returns": optimal_block_length(r)["circular"].iloc[0],
+        "pw_abs_returns": optimal_block_length(np.abs(r))["circular"].iloc[0],
+        "abs_acf_1": acf[0],
+        "lag_abs_acf_below_0.05": int(np.argmax(acf < LEVEL)) + 1,
+    }
 
 
 def trial(key: tuple) -> Trial:
@@ -72,17 +86,25 @@ def trial(key: tuple) -> Trial:
     symbol, timeframe, block = key
     cfg, flips = STATE["cfg"], STATE["flips"]
     x, cal = _cell(symbol, timeframe)
-    rng = np.random.default_rng([cfg["nulls"]["seed"], block, zlib.crc32(symbol.encode())])
+    rng = np.random.default_rng(
+        [cfg["nulls"]["seed"], block, zlib.crc32(symbol.encode())]
+    )
     real, sims = one.against_null(x, cal, cfg, block, rng)
     fns = {s["name"]: s["fn"] for s in cfg["measures"]}
-    directional = np.array([fns[r[0]] not in ("range_acf", "narrow_wide") for r in real])
+    directional = np.array(
+        [fns[r[0]] not in ("range_acf", "narrow_wide") for r in real]
+    )
     hits = []
     for _ in range(flips):
         fake, fake_sims = one.against_null(series.flipped(x, rng), cal, cfg, block, rng)
         hits.append(one.pvalues(fake, fake_sims)[directional] <= LEVEL)
-    return {"p": one.pvalues(real, sims), "null_sd": sims.std(axis=0, ddof=1),
-            "size": float(np.mean(hits)), "tests": int(np.size(hits)),
-            "trade": np.array([fns[r[0]] not in SYMMETRIC for r in real])}
+    return {
+        "p": one.pvalues(real, sims),
+        "null_sd": sims.std(axis=0, ddof=1),
+        "size": float(np.mean(hits)),
+        "tests": int(np.size(hits)),
+        "trade": np.array([fns[r[0]] not in SYMMETRIC for r in real]),
+    }
 
 
 def main() -> None:
@@ -91,7 +113,9 @@ def main() -> None:
     ap.add_argument("--symbols", nargs="+", default=["XAUUSD", "EURUSD", "USA500"])
     ap.add_argument("--timeframes", nargs="+", default=["H1", "H4"])
     ap.add_argument("--blocks", nargs="+", type=int, default=[1, 6, 24, 72, 240])
-    ap.add_argument("--flips", type=int, default=30, help="sign-flipped copies per trial")
+    ap.add_argument(
+        "--flips", type=int, default=30, help="sign-flipped copies per trial"
+    )
     ap.add_argument("--draws", type=int, default=200, help="null draws per series")
     ap.add_argument("--workers", type=int, default=4)
     a = ap.parse_args()
@@ -100,7 +124,10 @@ def main() -> None:
     for s in a.symbols:
         assetdata.load(s)
     cells = [(s, t) for s in a.symbols for t in a.timeframes]
-    print(pd.DataFrame([memory(*c) for c in cells]).round(3).to_string(index=False), flush=True)
+    print(
+        pd.DataFrame([memory(*c) for c in cells]).round(3).to_string(index=False),
+        flush=True,
+    )
     keys = {(s, t, b): series.MINUTES[t] ** -1 for s, t in cells for b in a.blocks}
     got = dict(fanout.run(trial, keys, a.workers))
     rows = []
@@ -108,12 +135,20 @@ def main() -> None:
         ref = got[(s, t, a.blocks[0])]
         for b in a.blocks:
             g = got[(s, t, b)]
-            rows.append({"symbol": s, "timeframe": t, "block": b, "size_at_0.05": g["size"],
-                         "tests": g["tests"], "real_p_below_0.05": int((g["p"] <= LEVEL).sum()),
-                         "of": g["p"].size,
-                         "trade_p_below_0.05": int((g["p"][g["trade"]] <= LEVEL).sum()),
-                         "rank_corr_p_vs_first": spearmanr(g["p"], ref["p"])[0],
-                         "null_sd_vs_first": float(np.median(g["null_sd"] / ref["null_sd"]))})
+            rows.append(
+                {
+                    "symbol": s,
+                    "timeframe": t,
+                    "block": b,
+                    "size_at_0.05": g["size"],
+                    "tests": g["tests"],
+                    "real_p_below_0.05": int((g["p"] <= LEVEL).sum()),
+                    "of": g["p"].size,
+                    "trade_p_below_0.05": int((g["p"][g["trade"]] <= LEVEL).sum()),
+                    "rank_corr_p_vs_first": spearmanr(g["p"], ref["p"])[0],
+                    "null_sd_vs_first": float(np.median(g["null_sd"] / ref["null_sd"])),
+                }
+            )
     table = pd.DataFrame(rows)
     print(table.round(3).to_string(index=False))
     out = research_profiles_dir() / "blocklen.csv"

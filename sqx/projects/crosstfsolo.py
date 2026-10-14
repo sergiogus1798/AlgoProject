@@ -14,10 +14,12 @@ from core.xmlget import hit
 # Owner, 2026-09-30: a timeframe is a task, never a block of the cross-check (its export cannot
 # be split on one symbol). D1 was removed from Cross TF on 2026-10-09 (owner).
 TASK = re.compile(r'title="(CrossTF [A-Z]+\d+)"')
-PHASE2 = re.compile(r'title="(CrossTF ([A-Z]+\d+) build)"')      # `CROSSTF_BUILD`'s title
+PHASE2 = re.compile(r'title="(CrossTF ([A-Z]+\d+) build)"')  # `CROSSTF_BUILD`'s title
 
 
-def planned(source: str, only: list[str] | None = None, d: dict | None = None) -> list[dict]:
+def planned(
+    source: str, only: list[str] | None = None, d: dict | None = None
+) -> list[dict]:
     """The extra timeframes the doctrine asks for from one source timeframe, as tasks.
 
     Args:
@@ -32,12 +34,20 @@ def planned(source: str, only: list[str] | None = None, d: dict | None = None) -
     d = d or doctrine()
     study = d["crosstf"]
     if source not in study["timeframes"]:
-        raise SystemExit(f"assets/_build.yaml: `crosstf.timeframes` no dice en qué timeframes se "
-                         f"reprueba una madre {source} — decídelo antes de construir.")
-    return [{"timeframe": tf, "title": f"{CROSSTF['title']} {tf}",
-             "databank": f"{CROSSTF['output']}_{tf}",
-             "engine": d["engine"]}
-            for tf in study["timeframes"][source] if only is None or tf in only]
+        raise SystemExit(
+            f"assets/_build.yaml: `crosstf.timeframes` no dice en qué timeframes se "
+            f"reprueba una madre {source} — decídelo antes de construir."
+        )
+    return [
+        {
+            "timeframe": tf,
+            "title": f"{CROSSTF['title']} {tf}",
+            "databank": f"{CROSSTF['output']}_{tf}",
+            "engine": d["engine"],
+        }
+        for tf in study["timeframes"][source]
+        if only is None or tf in only
+    ]
 
 
 def phase2(source: str, d: dict | None = None) -> list[dict]:
@@ -52,9 +62,15 @@ def phase2(source: str, d: dict | None = None) -> list[dict]:
         the CrossTF task text priced over that segment.
     """
     b = CROSSTF_BUILD
-    return [{**s, "title": b["title"].format(tf=s["timeframe"]),
-             "databank": b["databank"].format(tf=s["timeframe"]), "segment": b["segment"]}
-            for s in planned(source, d=d)]
+    return [
+        {
+            **s,
+            "title": b["title"].format(tf=s["timeframe"]),
+            "databank": b["databank"].format(tf=s["timeframe"]),
+            "segment": b["segment"],
+        }
+        for s in planned(source, d=d)
+    ]
 
 
 def present_phase2(config: str) -> list[dict]:
@@ -63,9 +79,14 @@ def present_phase2(config: str) -> list[dict]:
     Returns:
         One {timeframe, title, databank} per task, in config order.
     """
-    return [{"timeframe": tf, "title": title,
-             "databank": CROSSTF_BUILD["databank"].format(tf=tf)}
-            for title, tf in PHASE2.findall(config)]
+    return [
+        {
+            "timeframe": tf,
+            "title": title,
+            "databank": CROSSTF_BUILD["databank"].format(tf=tf),
+        }
+        for title, tf in PHASE2.findall(config)
+    ]
 
 
 def present(config: str) -> list[str]:
@@ -89,11 +110,18 @@ def write(members: dict[str, bytes], crosstf_text: str, solo: dict) -> str:
     config = members["config.xml"].decode("utf-8")
     member = member_of(config, solo["title"])
     if member is None:
-        member = add_task(members, solo["title"], hit(member_of(config, CROSSTF["title"])))
-        members["config.xml"] = declare(members["config.xml"].decode("utf-8"),
-                                        [solo["databank"]]).encode("utf-8")
-    text = re.sub(r'(<RetestOnAdditionalMarkets\b[^>]*?)use="[^"]*"', r'\g<1>use="false"',
-                  crosstf_text, count=1)
+        member = add_task(
+            members, solo["title"], hit(member_of(config, CROSSTF["title"]))
+        )
+        members["config.xml"] = declare(
+            members["config.xml"].decode("utf-8"), [solo["databank"]]
+        ).encode("utf-8")
+    text = re.sub(
+        r'(<RetestOnAdditionalMarkets\b[^>]*?)use="[^"]*"',
+        r'\g<1>use="false"',
+        crosstf_text,
+        count=1,
+    )
     text = set_engine(set_timeframe(text, solo["timeframe"])[0], solo["engine"])
     text = silence(text)[0]
     text = set_databank(text, "Input", CROSSTF["input"])[0]

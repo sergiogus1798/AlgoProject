@@ -2,7 +2,12 @@
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor
-from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHeaderView,
+    QTableWidget,
+    QTableWidgetItem,
+)
 
 from ui.desktop import client
 from ui.desktop.assetforms import word
@@ -10,7 +15,7 @@ from ui.text.numbers import num
 from ui.desktop.theme import C
 
 
-ROW = 24   # a row of figures, not of prose: the theme's default is half as tall again
+ROW = 24  # a row of figures, not of prose: the theme's default is half as tall again
 
 
 def grid(headers: list[str]) -> QTableWidget:
@@ -65,21 +70,35 @@ def val(value: object) -> str:
         it made the whole window fail to open, since Activos is built at start.
     """
     if isinstance(value, dict):
-        legs = {seg: (v.get("value"), v.get("method")) for seg, v in value.items()
-                if isinstance(v, dict)}
+        legs = {
+            seg: (v.get("value"), v.get("method"))
+            for seg, v in value.items()
+            if isinstance(v, dict)
+        }
         if not legs:
             return str(value)
-        shown = {f"{val(v)}{' %' if m == 'PercentageBased' else ''}" for v, m in legs.values()}
-        return (shown.pop() if len(shown) == 1 else
-                " · ".join(f"{seg} {val(v)}{' %' if m == 'PercentageBased' else ''}"
-                           for seg, (v, m) in legs.items()))
+        shown = {
+            f"{val(v)}{' %' if m == 'PercentageBased' else ''}"
+            for v, m in legs.values()
+        }
+        return (
+            shown.pop()
+            if len(shown) == 1
+            else " · ".join(
+                f"{seg} {val(v)}{' %' if m == 'PercentageBased' else ''}"
+                for seg, (v, m) in legs.items()
+            )
+        )
     return "sin decidir" if value is None else num(value)
 
 
 def derived(value: float, source: str) -> QTableWidgetItem:
     """A bound the file leaves empty and `core.assets` fills: muted, with where it comes from."""
-    item = cell(val(value), f"El fichero lo deja vacío; el MC Retest usa este: {source}. "
-                            "Doble clic para declarar otro.")
+    item = cell(
+        val(value),
+        f"El fichero lo deja vacío; el MC Retest usa este: {source}. "
+        "Doble clic para declarar otro.",
+    )
     item.setForeground(QBrush(QColor(C["muted"])))
     return item
 
@@ -98,9 +117,14 @@ def fit(table: QTableWidget) -> None:
     # The header, the rows, and the frame's own two borders plus a hair: short by those and
     # the widget below is drawn over the last row.
     height = table.horizontalHeader().height() + 2 * table.frameWidth() + 4
-    table.setFixedHeight(height + sum(table.rowHeight(i) for i in range(table.rowCount())))
-    table.setFixedWidth(2 * table.frameWidth() + 4
-                        + sum(table.columnWidth(j) for j in range(table.columnCount())))
+    table.setFixedHeight(
+        height + sum(table.rowHeight(i) for i in range(table.rowCount()))
+    )
+    table.setFixedWidth(
+        2 * table.frameWidth()
+        + 4
+        + sum(table.columnWidth(j) for j in range(table.columnCount()))
+    )
 
 
 def send(name: str, path: list, text: str) -> None:
@@ -111,5 +135,7 @@ def send(name: str, path: list, text: str) -> None:
         path: The keys leading to the value.
         text: What was typed. Empty means `null`, which is «sin decidir».
     """
-    client.post("assets/value", {"name": name, "path": [str(k) for k in path],
-                                 "text": text, "kind": "scalar"})
+    client.post(
+        "assets/value",
+        {"name": name, "path": [str(k) for k in path], "text": text, "kind": "scalar"},
+    )

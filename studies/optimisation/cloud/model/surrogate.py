@@ -23,7 +23,7 @@ def terms(unit: np.ndarray) -> np.ndarray:
     """
     n, k = unit.shape
     cross = [unit[:, i] * unit[:, j] for i in range(k) for j in range(i + 1, k)]
-    return np.column_stack([np.ones(n), unit, unit ** 2] + cross)
+    return np.column_stack([np.ones(n), unit, unit**2] + cross)
 
 
 def solve(matrix: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray | float]:

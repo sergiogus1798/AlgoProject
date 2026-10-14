@@ -47,11 +47,15 @@ def context(project: str) -> Context:
     rows = ledgerview.frame(ids)
     asset = ledgerview.symbol(rows, project)
     found = sources.install(project)
-    return {"project": project, "asset": asset, "template": sources.template(project, ids),
-            "family": where.family(project),
-            "sqx": sources.sqx_view(*found, project) if found else None,
-            "blind": ledgerview.door(project),
-            "oos2": ledgerview.oos2(rows, asset)}
+    return {
+        "project": project,
+        "asset": asset,
+        "template": sources.template(project, ids),
+        "family": where.family(project),
+        "sqx": sources.sqx_view(*found, project) if found else None,
+        "blind": ledgerview.door(project),
+        "oos2": ledgerview.oos2(rows, asset),
+    }
 
 
 def workflow(project: str) -> Rail:
@@ -80,15 +84,32 @@ def workflow(project: str) -> Rail:
                 row["why"] = f"{row['why']} Análisis: {reading['why']}"
         raw.append({"n": spec["n"], "state": row["state"]})
         row = derive.seal(spec, row, ctx)
-        out.append({"n": spec["n"], "title": spec["title"], "kind": spec["kind"],
-                    "studies": spec["studies"], "tab": spec["tab"], "sub": spec["sub"],
-                    "stage": spec.get("stage"), "panel": spec["feeds"] == (),
-                    "needs": needs.of(spec, ctx), "tests": tests.of_step(spec, ctx, live),
-                    **row})
-    return {"project": project, "asset": ctx["asset"], "family": ctx["family"],
-            "steps": out, "tabs": TABS, "oos2": ctx["oos2"], "blind": ctx["blind"],
-            "backfill": run.backfill(ctx, run.blind_on_disk(raw)),
-            "chain": chainplan.plan({"steps": out})}
+        out.append(
+            {
+                "n": spec["n"],
+                "title": spec["title"],
+                "kind": spec["kind"],
+                "studies": spec["studies"],
+                "tab": spec["tab"],
+                "sub": spec["sub"],
+                "stage": spec.get("stage"),
+                "panel": spec["feeds"] == (),
+                "needs": needs.of(spec, ctx),
+                "tests": tests.of_step(spec, ctx, live),
+                **row,
+            }
+        )
+    return {
+        "project": project,
+        "asset": ctx["asset"],
+        "family": ctx["family"],
+        "steps": out,
+        "tabs": TABS,
+        "oos2": ctx["oos2"],
+        "blind": ctx["blind"],
+        "backfill": run.backfill(ctx, run.blind_on_disk(raw)),
+        "chain": chainplan.plan({"steps": out}),
+    }
 
 
 @ROUTER.get("/api/workflow")
@@ -104,8 +125,10 @@ def get_workflow(project: str) -> dict[str, Any]:
 def post_run(req: RailRun) -> dict[str, Any]:
     """Queue the ticked tests: `{jobs, refused}`, or `{error}` shown, never raised."""
     try:
-        return cast("dict[str, Any]",
-                    run.start(context(req.project), req.tests, req.databank, req.strategies))
+        return cast(
+            "dict[str, Any]",
+            run.start(context(req.project), req.tests, req.databank, req.strategies),
+        )
     except Exception as failed:  # noqa: BLE001 — the ui boundary
         return {"error": f"No se pudo lanzar: {failed}"}
 
@@ -117,7 +140,12 @@ def post_backfill(req: Backfill) -> dict[str, Any]:
         offer = workflow(req.project)["backfill"]
         if not offer["offer"]:
             return {"error": offer["why"]}
-        return {"job": jobs.start("backfill", offer["argv"],
-                                  {"project": req.project, "databank": "", "strategy": ""})}
+        return {
+            "job": jobs.start(
+                "backfill",
+                offer["argv"],
+                {"project": req.project, "databank": "", "strategy": ""},
+            )
+        }
     except Exception as failed:  # noqa: BLE001 — the ui boundary
         return {"error": f"No se pudo rehacer las filas: {failed}"}

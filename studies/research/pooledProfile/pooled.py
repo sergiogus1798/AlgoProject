@@ -23,7 +23,10 @@ def standardised(sims: np.ndarray) -> np.ndarray:
     Returns:
         The same shape; a test whose draws do not move is 0 everywhere.
     """
-    centre, spread = sims.mean(axis=1, keepdims=True), sims.std(axis=1, ddof=1, keepdims=True)
+    centre, spread = (
+        sims.mean(axis=1, keepdims=True),
+        sims.std(axis=1, ddof=1, keepdims=True),
+    )
     return np.divide(sims - centre, spread, out=np.zeros_like(sims), where=spread > 0)
 
 
@@ -43,8 +46,9 @@ def combined(z: np.ndarray, tested: np.ndarray) -> np.ndarray:
     return (z * mask).sum(axis=0) / np.sqrt(count)
 
 
-def against_null(z_real: np.ndarray, sims: np.ndarray, tested: np.ndarray,
-                 placebos: int) -> Against:
+def against_null(
+    z_real: np.ndarray, sims: np.ndarray, tested: np.ndarray, placebos: int
+) -> Against:
     """The group's statistic, its p, and the p of null draws judged as if they were real.
 
     Args:
@@ -61,5 +65,9 @@ def against_null(z_real: np.ndarray, sims: np.ndarray, tested: np.ndarray,
     null = combined(standardised(sims), tested)
     stat = combined(z_real, tested)
     order = np.argsort(np.argsort(-null, axis=0, kind="stable"), axis=0)
-    return {"stat": stat, "p": (1 + (null >= stat).sum(axis=0)) / (null.shape[0] + 1),
-            "assets": tested.sum(axis=0), "placebo_p": (order[:placebos] + 1) / null.shape[0]}
+    return {
+        "stat": stat,
+        "p": (1 + (null >= stat).sum(axis=0)) / (null.shape[0] + 1),
+        "assets": tested.sum(axis=0),
+        "placebo_p": (order[:placebos] + 1) / null.shape[0],
+    }

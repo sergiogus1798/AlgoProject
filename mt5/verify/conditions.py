@@ -1,4 +1,5 @@
 """A prop firm's conditions for one symbol, read off its own MT5 account and put in SQX's units."""
+
 from typing import Any
 
 from mt5 import live
@@ -33,14 +34,22 @@ def read(symbol: str, account: dict) -> dict[str, Any]:
         raise Refused(f"MT5 no da {symbol} en {account['server']}: {info}")
     held = live.ask("account", {}, account)
     if not isinstance(held, dict) or held.get("login") != account["login"]:
-        raise Refused(f"el terminal no entró en la cuenta {account['login']} de "
-                      f"{account['server']}: {held}")
+        raise Refused(
+            f"el terminal no entró en la cuenta {account['login']} de "
+            f"{account['server']}: {held}"
+        )
     first = live.ask("first", {"symbol": symbol}, account)
-    return {**info, "account_leverage": held["leverage"], "account_currency": held["currency"],
-            "first_bar": first.get("first") if isinstance(first, dict) else None}
+    return {
+        **info,
+        "account_leverage": held["leverage"],
+        "account_currency": held["currency"],
+        "first_bar": first.get("first") if isinstance(first, dict) else None,
+    }
 
 
-def for_sqx(data: dict, firm: str, info: dict, slippage: float) -> tuple[dict, list[str]]:
+def for_sqx(
+    data: dict, firm: str, info: dict, slippage: float
+) -> tuple[dict, list[str]]:
     """The firm's costs in `core.assetdata.sqx_settings`' shape, for `setups.write_setup`.
 
     Args:
@@ -64,30 +73,51 @@ def for_sqx(data: dict, firm: str, info: dict, slippage: float) -> tuple[dict, l
     brokers = data["costs"]["commission"].get("brokers") or {}
     com = brokers.get(firm) or {}
     if com.get("method") is None or com.get("value") is None:
-        raise Refused(f"{data['symbol']} no tiene comisión confirmada de {firm} en "
-                      f"assets/symbols/{data['symbol']}.yaml (costs.commission.brokers.{firm}): "
-                      "complétala en la zona Activos; no se adivina")
+        raise Refused(
+            f"{data['symbol']} no tiene comisión confirmada de {firm} en "
+            f"assets/symbols/{data['symbol']}.yaml (costs.commission.brokers.{firm}): "
+            "complétala en la zona Activos; no se adivina"
+        )
     mode = info.get("swap_mode")
     if mode not in SWAP_TYPES:
-        raise Refused(f"{info['name']} cobra el swap en el modo {mode} de MT5, que SQX no expresa")
+        raise Refused(
+            f"{info['name']} cobra el swap en el modo {mode} de MT5, que SQX no expresa"
+        )
     kind = SWAP_TYPES[mode]
     scale = info["point"] / tick if kind == "points" else 1
-    long_, short = ((0, 0) if kind is None else
-                    (round(info["swap_long"] * scale, 6), round(info["swap_short"] * scale, 6)))
-    swap = {"type": kind or "points", "long": long_, "short": short,
-            "triple_swap_on": DAYS[info.get("swap_rollover3days", 3)],
-            "rollout_hour": data["swap"]["rollout_hour"]}
-    lines = [f"spread {spread} puntos de SQX = {info['spread']} puntos de {info['name']} "
-             f"× {info['point']} (leído ahora en su servidor)",
-             f"comisión {com['method']} {com['value']} (assets, {com.get('source') or 'sin fuente'})",
-             f"swap {swap['type']} largo {long_} corto {short}, triple el "
-             f"{swap['triple_swap_on'].lower()} (su servidor)",
-             f"deslizamiento {slippage}: el tester de MT5 no desliza"]
+    long_, short = (
+        (0, 0)
+        if kind is None
+        else (round(info["swap_long"] * scale, 6), round(info["swap_short"] * scale, 6))
+    )
+    swap = {
+        "type": kind or "points",
+        "long": long_,
+        "short": short,
+        "triple_swap_on": DAYS[info.get("swap_rollover3days", 3)],
+        "rollout_hour": data["swap"]["rollout_hour"],
+    }
+    lines = [
+        f"spread {spread} puntos de SQX = {info['spread']} puntos de {info['name']} "
+        f"× {info['point']} (leído ahora en su servidor)",
+        f"comisión {com['method']} {com['value']} (assets, {com.get('source') or 'sin fuente'})",
+        f"swap {swap['type']} largo {long_} corto {short}, triple el "
+        f"{swap['triple_swap_on'].lower()} (su servidor)",
+        f"deslizamiento {slippage}: el tester de MT5 no desliza",
+    ]
     stored = (data.get("mt5_point") or {}).get(firm, {}).get("point")
     if stored is not None and abs(stored - info["point"]) > 1e-12:
-        lines.append(f"OJO: {info['name']} cotiza hoy con point {info['point']}, pero "
-                     f"assets/symbols/{data['symbol']}.yaml (mt5_point.{firm}) guarda {stored}: "
-                     "actualiza la ficha")
-    return ({"defaultSpread": spread, "defaultSlippage": slippage,
-             "commission": {"method": com["method"], "value": com["value"]}, "swap": swap},
-            lines)
+        lines.append(
+            f"OJO: {info['name']} cotiza hoy con point {info['point']}, pero "
+            f"assets/symbols/{data['symbol']}.yaml (mt5_point.{firm}) guarda {stored}: "
+            "actualiza la ficha"
+        )
+    return (
+        {
+            "defaultSpread": spread,
+            "defaultSlippage": slippage,
+            "commission": {"method": com["method"], "value": com["value"]},
+            "swap": swap,
+        },
+        lines,
+    )

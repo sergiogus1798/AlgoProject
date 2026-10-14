@@ -27,8 +27,9 @@ def config(overrides: list[str]) -> dict[str, Any]:
     return study_config.load(CONFIG, overrides)
 
 
-def blocks(scaling: pd.DataFrame, given: list[str] | None,
-          directory: Path | None = None) -> list[str]:
+def blocks(
+    scaling: pd.DataFrame, given: list[str] | None, directory: Path | None = None
+) -> list[str]:
     """The task's <Setup> order: which timeframe each result block was run on.
 
     Args:
@@ -51,9 +52,11 @@ def blocks(scaling: pd.DataFrame, given: list[str] | None,
     found = directory / "blocks.json" if directory else None
     if found and found.exists():
         return json.loads(found.read_text(encoding="utf-8"))["blocks"]
-    print("⚠️  sin blocks.json en el batch: releyendo assets/_build.yaml de HOY para un run "
-          "que no lo escribió (OPEN.md #80) — si `crosstf.timeframes` cambió desde entonces, "
-          "esto relee mal el timeframe de cada bloque.")
+    print(
+        "⚠️  sin blocks.json en el batch: releyendo assets/_build.yaml de HOY para un run "
+        "que no lo escribió (OPEN.md #80) — si `crosstf.timeframes` cambió desde entonces, "
+        "esto relee mal el timeframe de cada bloque."
+    )
     (source,) = scaling["source_tf"].unique()
     return [source] + doctrine()["crosstf"]["timeframes"][source]
 
@@ -76,21 +79,36 @@ def gather(directory: Path, export: Path, packed: pd.DataFrame) -> pd.DataFrame:
         its timeframe (owner, 2026-09-30: why every timeframe is now a task).
     """
     found = directory / "blocks.json"
-    banks = json.loads(found.read_text(encoding="utf-8")).get("databanks") if found.exists() \
+    banks = (
+        json.loads(found.read_text(encoding="utf-8")).get("databanks")
+        if found.exists()
         else None
+    )
     if not banks:
-        if "block" not in packed:       # one task per timeframe, and nothing says which databanks
-            raise SystemExit(f"{found} no existe o no lista `databanks`, y el export no trae "
-                             "bloques: `sqx.projects.crosstf` no archivó este run en esa carpeta")
+        if (
+            "block" not in packed
+        ):  # one task per timeframe, and nothing says which databanks
+            raise SystemExit(
+                f"{found} no existe o no lista `databanks`, y el export no trae "
+                "bloques: `sqx.projects.crosstf` no archivó este run en esa carpeta"
+            )
         return packed
     frames = [packed.assign(block=0)]
     for i, bank in enumerate(banks[1:], 1):
         days = export.parents[2] / bank.replace(" ", "_")
         day = days / export.parent.name
-        day = day if day.is_dir() else max(days.iterdir(), default=None) if days.is_dir() else None
+        day = (
+            day
+            if day.is_dir()
+            else max(days.iterdir(), default=None)
+            if days.is_dir()
+            else None
+        )
         if day is None:
-            raise SystemExit(f"{bank} no tiene export: exporta ese databank (se exporta solo al "
-                             "parar el worker, o con el panel de Databanks) antes de leerlo")
+            raise SystemExit(
+                f"{bank} no tiene export: exporta ese databank (se exporta solo al "
+                "parar el worker, o con el panel de Databanks) antes de leerlo"
+            )
         frames.append(pd.read_parquet(day / "trades.parquet").assign(block=i))
     return pd.concat(frames, ignore_index=True)
 
@@ -109,7 +127,9 @@ def oos(packed: pd.DataFrame, feed: str) -> pd.DataFrame:
     data = assetdata.load(assetdata.symbol_of(feed))
     start, end = (pd.Timestamp(ms, unit="ms") for ms in assetdata.window(data, "oos1"))
     opened = pd.to_datetime(packed["Open time"])
-    return cast(pd.DataFrame, packed[(opened >= start) & (opened < end)]).reset_index(drop=True)
+    return cast(pd.DataFrame, packed[(opened >= start) & (opened < end)]).reset_index(
+        drop=True
+    )
 
 
 def plan(scaling: pd.DataFrame, blocks: list[str]) -> pd.DataFrame:
@@ -133,17 +153,42 @@ def plan(scaling: pd.DataFrame, blocks: list[str]) -> pd.DataFrame:
     rows = []
     for mother in sorted(scaling["mother"].unique()):
         for index, timeframe in enumerate(blocks):
-            rows.append({"strategy": mother, "block": index, "timeframe": timeframe,
-                         "role": "baseline" if index == 0 else "unscaled",
-                         "mother": mother})
+            rows.append(
+                {
+                    "strategy": mother,
+                    "block": index,
+                    "timeframe": timeframe,
+                    "role": "baseline" if index == 0 else "unscaled",
+                    "mother": mother,
+                }
+            )
     for row in cast(Any, scaling.itertuples()):
-        made = {"mother": row.mother, "ratio": row.ratio, "n_scaled": row.n_scaled,
-                "rounding_shift": row.max_rounding_shift, "clamped": float(row.clamped),
-                "unverified": float(bool(getattr(row, "unverified", "")))}
-        rows.append({"strategy": row.name, "block": blocks.index(row.target_tf),
-                     "timeframe": row.target_tf, "role": "scaled", **made})
-        rows.append({"strategy": row.name, "block": 0, "timeframe": blocks[0],
-                     "role": "control", **made})
+        made = {
+            "mother": row.mother,
+            "ratio": row.ratio,
+            "n_scaled": row.n_scaled,
+            "rounding_shift": row.max_rounding_shift,
+            "clamped": float(row.clamped),
+            "unverified": float(bool(getattr(row, "unverified", ""))),
+        }
+        rows.append(
+            {
+                "strategy": row.name,
+                "block": blocks.index(row.target_tf),
+                "timeframe": row.target_tf,
+                "role": "scaled",
+                **made,
+            }
+        )
+        rows.append(
+            {
+                "strategy": row.name,
+                "block": 0,
+                "timeframe": blocks[0],
+                "role": "control",
+                **made,
+            }
+        )
     return pd.DataFrame(rows)
 
 

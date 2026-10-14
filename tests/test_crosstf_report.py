@@ -20,14 +20,27 @@ from studies.transfer.crossTF import report
 
 def got(mothers: list[str]) -> dict:
     """What `many.run` returns, reduced to the parts `report.write` reads."""
-    tab = envelope.tab("crossTF", "Cross-timeframe", [blocks.table("t", pd.DataFrame(
-        {"mother": mothers}))])
-    population = envelope.envelope("studies.transfer.crossTF", None, None, {}, time.time(),
-                                   [tab])
-    table = pd.DataFrame({"strategy": mothers, "identity": [None] * len(mothers),
-                          "verdict": ["survives"] * len(mothers)})
-    return {"population": population, "panel": pd.DataFrame({"mother": mothers}),
-            "table": table, "nulls_seed": 1}
+    tab = envelope.tab(
+        "crossTF",
+        "Cross-timeframe",
+        [blocks.table("t", pd.DataFrame({"mother": mothers}))],
+    )
+    population = envelope.envelope(
+        "studies.transfer.crossTF", None, None, {}, time.time(), [tab]
+    )
+    table = pd.DataFrame(
+        {
+            "strategy": mothers,
+            "identity": [None] * len(mothers),
+            "verdict": ["survives"] * len(mothers),
+        }
+    )
+    return {
+        "population": population,
+        "panel": pd.DataFrame({"mother": mothers}),
+        "table": table,
+        "nulls_seed": 1,
+    }
 
 
 def test_one_mother_leaves_the_population_alone() -> None:
@@ -37,10 +50,13 @@ def test_one_mother_leaves_the_population_alone() -> None:
         export.write_bytes(b"")
         everyone = [f"Strategy 1.{i}" for i in range(15)]
         report.write(out, got(everyone), None, None, "all", export, "cmd", [])
-        before = {f: (out / f).read_bytes() for f in ("verdict.csv", "cells.parquet",
-                                                      "crossTF.json")}
-        report.write(out, got(["Strategy 1.3"]), "abc", "Strategy 1.3", "one", export, "cmd",
-                     [])
+        before = {
+            f: (out / f).read_bytes()
+            for f in ("verdict.csv", "cells.parquet", "crossTF.json")
+        }
+        report.write(
+            out, got(["Strategy 1.3"]), "abc", "Strategy 1.3", "one", export, "cmd", []
+        )
         assert {f: (out / f).read_bytes() for f in before} == before
         assert len(pd.read_csv(out / "verdict.csv")) == 15
         assert len(pd.read_parquet(out / "cells.parquet")) == 15

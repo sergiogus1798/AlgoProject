@@ -25,19 +25,31 @@ def shape(steps: pd.DataFrame) -> pd.DataFrame:
         windows are disjoint and consecutive.
     """
     rows = []
-    for key, cell in cast(Any, steps.groupby(["strategy", "result", "runs", "oos_pct"], observed=True)):
+    for key, cell in cast(
+        Any, steps.groupby(["strategy", "result", "runs", "oos_pct"], observed=True)
+    ):
         cell = cell.sort_values("index")
         opt = (cell["optimize_to"] - cell["optimize_from"]).dt.total_seconds()
         run = (cell["run_to"] - cell["run_from"]).dt.total_seconds()
-        shared = (cell["optimize_to"].to_numpy()[:-1]
-                  - cell["optimize_from"].to_numpy()[1:]) / np.timedelta64(1, "s")
-        overlap = int((cell["run_from"].to_numpy()[1:]
-                       < cell["run_to"].to_numpy()[:-1]).sum())
-        rows.append({"strategy": key[0], "result": key[1], "runs": key[2], "oos_pct": key[3],
-                     "n_steps": len(cell), "is_years": opt.mean() / YEAR,
-                     "oos_years": run.mean() / YEAR,
-                     "is_overlap": float(shared.mean() / opt.to_numpy()[:-1].mean()),
-                     "oos_overlaps": overlap,
-                     "covers_from": cell["run_from"].min(),
-                     "covers_to": cell["run_to"].max()})
+        shared = (
+            cell["optimize_to"].to_numpy()[:-1] - cell["optimize_from"].to_numpy()[1:]
+        ) / np.timedelta64(1, "s")
+        overlap = int(
+            (cell["run_from"].to_numpy()[1:] < cell["run_to"].to_numpy()[:-1]).sum()
+        )
+        rows.append(
+            {
+                "strategy": key[0],
+                "result": key[1],
+                "runs": key[2],
+                "oos_pct": key[3],
+                "n_steps": len(cell),
+                "is_years": opt.mean() / YEAR,
+                "oos_years": run.mean() / YEAR,
+                "is_overlap": float(shared.mean() / opt.to_numpy()[:-1].mean()),
+                "oos_overlaps": overlap,
+                "covers_from": cell["run_from"].min(),
+                "covers_to": cell["run_to"].max(),
+            }
+        )
     return pd.DataFrame(rows)

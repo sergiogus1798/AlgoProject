@@ -79,13 +79,18 @@ def bars(feed: str) -> dict[str, Any]:
         "o", "h", "l", "c"}.
     """
     frame = source(feed, PRICES)
-    return {"t": frame.index, "at": scale.minutes(cast(pd.DatetimeIndex, frame.index)),
-            **{k: frame[col].to_numpy() for k, col in zip("ohlc", PRICES)}}
+    return {
+        "t": frame.index,
+        "at": scale.minutes(cast(pd.DatetimeIndex, frame.index)),
+        **{k: frame[col].to_numpy() for k, col in zip("ohlc", PRICES)},
+    }
 
 
 def year_minute(year: int) -> int:
     """The minute (engines.market.feed.scale axis) that opens a calendar year."""
-    return int(scale.minutes(pd.DatetimeIndex([pd.Timestamp(year=year, month=1, day=1)]))[0])
+    return int(
+        scale.minutes(pd.DatetimeIndex([pd.Timestamp(year=year, month=1, day=1)]))[0]
+    )
 
 
 def week_mask(cfg: dict, feed: str) -> np.ndarray:
@@ -109,7 +114,9 @@ def strategies(folder: Path) -> pd.DataFrame:
     Returns:
         Indexed by identity, columns `strategy` and `TimeFrame [IS]`.
     """
-    return pd.read_parquet(folder / "metrics.parquet", columns=["strategy", "TimeFrame [IS]"])
+    return pd.read_parquet(
+        folder / "metrics.parquet", columns=["strategy", "TimeFrame [IS]"]
+    )
 
 
 def events(feed: str, cfg: dict) -> pd.DataFrame:
@@ -122,12 +129,16 @@ def events(feed: str, cfg: dict) -> pd.DataFrame:
     folder = feed_quality_dir(feed)
     scanned = json.loads((folder / "summary.json").read_text(encoding="utf-8"))
     if scanned["K"] != cfg["K"][feed] or scanned["session"] != cfg["sessions"][feed]:
-        raise SystemExit(f"feedQuality: {feed} se escaneó con K={scanned['K']} y otra sesión; "
-                         "vuelve a correr `python3 -m studies.data.feedQuality.scan`")
+        raise SystemExit(
+            f"feedQuality: {feed} se escaneó con K={scanned['K']} y otra sesión; "
+            "vuelve a correr `python3 -m studies.data.feedQuality.scan`"
+        )
     return pd.read_parquet(folder / "events.parquet")
 
 
 def trades(folder: Path) -> pd.DataFrame:
     """A harvest's trades, IS and OOS, each carrying its strategy's `identity` and `sample`."""
-    return pd.read_parquet(folder / "trades.parquet",
-                           columns=["identity", "sample", "Open time", "Close time", "Profit/Loss"])
+    return pd.read_parquet(
+        folder / "trades.parquet",
+        columns=["identity", "sample", "Open time", "Close time", "Profit/Loss"],
+    )

@@ -15,7 +15,9 @@ from ui.daemon.sqxconfig.options import spec
 FILES = ("build", "classes", "policy", "markets")
 # _policy.yaml's per-asset `segments` are Activos' business; only its globals come here.
 POLICY_KEYS = ("segments_default", "swap", "mc_retest")
-BANNER = re.compile(r"[─━]{2,}\s*(.+?)\s*[─━]{2,}")   # «─── Salidas ────», a section's title
+BANNER = re.compile(
+    r"[─━]{2,}\s*(.+?)\s*[─━]{2,}"
+)  # «─── Salidas ────», a section's title
 RULE = re.compile(r"[─━]+")
 
 
@@ -44,8 +46,13 @@ def field(name: str, leaf: dict) -> dict[str, Any]:
     Returns:
         Its path, current value, comment and spec (type, options, locked).
     """
-    return {"path": leaf["path"], "key": leaf["label"], "value": leaf["value"],
-            "help": clean(leaf["hint"]), **spec(name, leaf["path"], leaf["value"])}
+    return {
+        "path": leaf["path"],
+        "key": leaf["label"],
+        "value": leaf["value"],
+        "help": clean(leaf["hint"]),
+        **spec(name, leaf["path"], leaf["value"]),
+    }
 
 
 def markets() -> dict[str, Any]:
@@ -59,15 +66,27 @@ def markets() -> dict[str, Any]:
     doc, lines = read(path), path.read_text(encoding="utf-8").splitlines()
     fields = []
     for symbol, block in doc.items():
-        if str(symbol).startswith("_"):   # `_expected_sign` is a table, not a market
+        if str(symbol).startswith("_"):  # `_expected_sign` is a table, not a market
             continue
         for category, feeds in block["categories"].items():
             value = [f"{f['feed']} (datos desde {f['data_from']})" for f in feeds]
-            fields.append({"path": [symbol, "categories", category], "key": f"{symbol} · {category}",
-                           "value": value, "help": clean(hint(lines, block["categories"].lc.key(
-                               category)[0])), **spec("markets", [], value)})
-    return {"file": "markets", "key": "universe", "source": f"assets/{SHARED['markets']}",
-            "help": clean(" ".join(header(lines))), "groups": [], "fields": fields}
+            fields.append(
+                {
+                    "path": [symbol, "categories", category],
+                    "key": f"{symbol} · {category}",
+                    "value": value,
+                    "help": clean(hint(lines, block["categories"].lc.key(category)[0])),
+                    **spec("markets", [], value),
+                }
+            )
+    return {
+        "file": "markets",
+        "key": "universe",
+        "source": f"assets/{SHARED['markets']}",
+        "help": clean(" ".join(header(lines))),
+        "groups": [],
+        "fields": fields,
+    }
 
 
 def groups(doc: object, lines: list[str], top: str, every: list[dict]) -> list[dict]:
@@ -91,7 +110,7 @@ def groups(doc: object, lines: list[str], top: str, every: list[dict]) -> list[d
                 continue
             seen.add(tuple(path[:k]))
             node: Any = doc
-            for key in path[:k - 1]:
+            for key in path[: k - 1]:
                 node = node[key]
             text = clean(hint(lines, node.lc.key(path[k - 1])[0]))
             if path[0] == top and text:
@@ -115,10 +134,18 @@ def one_file(name: str) -> list[dict]:
     for top in doc:
         if name == "policy" and top not in POLICY_KEYS:
             continue
-        out.append({"file": name, "key": top, "source": f"assets/{SHARED[name]}",
-                    "help": clean(hint(lines, doc.lc.key(top)[0])),
-                    "groups": groups(doc, lines, top, every),
-                    "fields": [field(name, leaf) for leaf in every if leaf["path"][0] == top]})
+        out.append(
+            {
+                "file": name,
+                "key": top,
+                "source": f"assets/{SHARED[name]}",
+                "help": clean(hint(lines, doc.lc.key(top)[0])),
+                "groups": groups(doc, lines, top, every),
+                "fields": [
+                    field(name, leaf) for leaf in every if leaf["path"][0] == top
+                ],
+            }
+        )
     return out
 
 
@@ -146,17 +173,44 @@ def with_studies(sections: list[dict]) -> list[dict]:
             continue
         extra = [{**f, "help": clean(f["help"])} for f in studies.fields("wfc")]
         files = [sec["source"], *where(extra)]
-        out.append({**sec, "fields": sec["fields"] + extra, "files": files,
-                    "source": f"{sec['source']} + {len(files) - 1} ficheros de estudio"})
+        out.append(
+            {
+                **sec,
+                "fields": sec["fields"] + extra,
+                "files": files,
+                "source": f"{sec['source']} + {len(files) - 1} ficheros de estudio",
+            }
+        )
         cscv = [{**f, "help": clean(f["help"])} for f in studies.fields("cscv")]
-        out.append({"file": "build", "key": "cscv", "groups": [], "fields": cscv,
-                    "help": studies.CSCV_HELP, "files": where(cscv),
-                    "source": f"{len(where(cscv))} ficheros de estudio"})
-        for key, text in (("surfaces", studies.SURF_HELP), ("wfmreading", studies.WFM_HELP),
-                          ("gate", studies.GATE_HELP), ("falsepositives", studies.FP_HELP)):
+        out.append(
+            {
+                "file": "build",
+                "key": "cscv",
+                "groups": [],
+                "fields": cscv,
+                "help": studies.CSCV_HELP,
+                "files": where(cscv),
+                "source": f"{len(where(cscv))} ficheros de estudio",
+            }
+        )
+        for key, text in (
+            ("surfaces", studies.SURF_HELP),
+            ("wfmreading", studies.WFM_HELP),
+            ("gate", studies.GATE_HELP),
+            ("falsepositives", studies.FP_HELP),
+        ):
             rows = [{**f, "help": clean(f["help"])} for f in studies.fields(key)]
-            out.append({"file": "build", "key": key, "groups": [], "fields": rows, "help": text,
-                        "files": where(rows), "source": f"{len(where(rows))} ficheros de estudio"})
+            out.append(
+                {
+                    "file": "build",
+                    "key": key,
+                    "groups": [],
+                    "fields": rows,
+                    "help": text,
+                    "files": where(rows),
+                    "source": f"{len(where(rows))} ficheros de estudio",
+                }
+            )
     return out
 
 
@@ -174,7 +228,13 @@ def _state(stamp: tuple) -> dict[str, Any]:
         `sections` in the order of FILES, and the files they come from. A few hundred
         values: paging them would add a mode for nothing on loopback.
     """
-    sections = (with_studies(one_file("build")) + one_file("classes") + one_file("policy")
-                + [markets()])
-    return {"sections": sections,
-            "files": {name: f"assets/{SHARED[name]}" for name in FILES}}
+    sections = (
+        with_studies(one_file("build"))
+        + one_file("classes")
+        + one_file("policy")
+        + [markets()]
+    )
+    return {
+        "sections": sections,
+        "files": {name: f"assets/{SHARED[name]}" for name in FILES},
+    }

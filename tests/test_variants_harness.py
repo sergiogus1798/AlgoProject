@@ -62,7 +62,7 @@ def check(failures: list, ok: bool, said: str) -> None:
 def main() -> None:
     """Run every property, and raise if one of them broke."""
     failures: list[str] = []
-    harness.worker.listening = no_port   # no real install is ever consulted by this test
+    harness.worker.listening = no_port  # no real install is ever consulted by this test
 
     with tempfile.TemporaryDirectory(prefix="sqx-harness-test-") as tmp:
         cfx = Path(tmp) / "project.cfx"
@@ -70,35 +70,59 @@ def main() -> None:
 
         harness.write(cfx, "<Task>new SPP IS</Task>", "spp_is", "custodian")
         after = read_all(cfx)
-        check(failures, after["Retest-Task13.xml"] == b"<Task>new SPP IS</Task>",
-              "kind=spp_is rewrites Retest-Task13.xml (titled SPP IS)")
+        check(
+            failures,
+            after["Retest-Task13.xml"] == b"<Task>new SPP IS</Task>",
+            "kind=spp_is rewrites Retest-Task13.xml (titled SPP IS)",
+        )
         for name, blob in MEMBERS.items():
             if name == "Retest-Task13.xml":
                 continue
-            check(failures, after[name] == blob, f"kind=spp_is leaves {name} byte-identical")
+            check(
+                failures,
+                after[name] == blob,
+                f"kind=spp_is leaves {name} byte-identical",
+            )
 
-        build_cfx(cfx)   # fresh copy: prove kind=spp_oos touches a DIFFERENT member
+        build_cfx(cfx)  # fresh copy: prove kind=spp_oos touches a DIFFERENT member
         harness.write(cfx, "<Task>new SPP OOS</Task>", "spp_oos", "custodian")
         after = read_all(cfx)
-        check(failures, after["Retest-Task14.xml"] == b"<Task>new SPP OOS</Task>",
-              "kind=spp_oos rewrites Retest-Task14.xml (titled SPP OOS)")
-        check(failures, after["Retest-Task1.xml"] == MEMBERS["Retest-Task1.xml"],
-              "kind=spp_oos never touches Retest-Task1.xml (the real OOS task, "
-              "the pre-2026-09-29 hardcoded target)")
+        check(
+            failures,
+            after["Retest-Task14.xml"] == b"<Task>new SPP OOS</Task>",
+            "kind=spp_oos rewrites Retest-Task14.xml (titled SPP OOS)",
+        )
+        check(
+            failures,
+            after["Retest-Task1.xml"] == MEMBERS["Retest-Task1.xml"],
+            "kind=spp_oos never touches Retest-Task1.xml (the real OOS task, "
+            "the pre-2026-09-29 hardcoded target)",
+        )
         for name, blob in MEMBERS.items():
             if name == "Retest-Task14.xml":
                 continue
-            check(failures, after[name] == blob, f"kind=spp_oos leaves {name} byte-identical")
+            check(
+                failures,
+                after[name] == blob,
+                f"kind=spp_oos leaves {name} byte-identical",
+            )
 
-        build_cfx(cfx)   # kind=retest targets "OOS", i.e. the real Retest-Task1.xml
+        build_cfx(cfx)  # kind=retest targets "OOS", i.e. the real Retest-Task1.xml
         harness.write(cfx, "<Task>new OOS</Task>", "retest", "custodian")
         after = read_all(cfx)
-        check(failures, after["Retest-Task1.xml"] == b"<Task>new OOS</Task>",
-              "kind=retest rewrites Retest-Task1.xml (titled OOS)")
+        check(
+            failures,
+            after["Retest-Task1.xml"] == b"<Task>new OOS</Task>",
+            "kind=retest rewrites Retest-Task1.xml (titled OOS)",
+        )
         for name, blob in MEMBERS.items():
             if name == "Retest-Task1.xml":
                 continue
-            check(failures, after[name] == blob, f"kind=retest leaves {name} byte-identical")
+            check(
+                failures,
+                after[name] == blob,
+                f"kind=retest leaves {name} byte-identical",
+            )
 
         # A project that never went through `builder --workflow` carries no SPP IS/SPP OOS
         # task at all -- refuse cleanly rather than guess a file name.
@@ -109,9 +133,14 @@ def main() -> None:
   </Tasks>
 </Project>
 """
-        build_cfx(cfx, {"config.xml": no_spp.encode("utf-8"),
-                        "Build-Task3.xml": MEMBERS["Build-Task3.xml"],
-                        "Retest-Task1.xml": MEMBERS["Retest-Task1.xml"]})
+        build_cfx(
+            cfx,
+            {
+                "config.xml": no_spp.encode("utf-8"),
+                "Build-Task3.xml": MEMBERS["Build-Task3.xml"],
+                "Retest-Task1.xml": MEMBERS["Retest-Task1.xml"],
+            },
+        )
         try:
             harness.write(cfx, "<Task>x</Task>", "spp_is", "custodian")
             check(failures, False, "missing SPP IS task refuses instead of guessing")

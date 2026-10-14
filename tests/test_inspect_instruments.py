@@ -12,8 +12,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sqx.inspect.instruments import commission, instruments  # noqa: E402
 
-METHOD = ("&lt;Method use=&quot;{use}&quot; type=&quot;SizeBased&quot;&gt;&lt;Params&gt;"
-          "&lt;Param key=&quot;Commission&quot;&gt;8&lt;/Param&gt;&lt;/Params&gt;&lt;/Method&gt;")
+METHOD = (
+    "&lt;Method use=&quot;{use}&quot; type=&quot;SizeBased&quot;&gt;&lt;Params&gt;"
+    "&lt;Param key=&quot;Commission&quot;&gt;8&lt;/Param&gt;&lt;/Params&gt;&lt;/Method&gt;"
+)
 TASK = """<Task><Symbol name="PAID_M1" source="x">
   <InstrumentInfo instrument="PAID" defaultSpread="2.0" commissions="{paid}" swap="" />
 </Symbol><Symbol name="EMPTY_M1" source="x">
@@ -39,8 +41,13 @@ def test_instruments() -> None:
             z.writestr("Build-Task1.xml", TASK.format(paid=METHOD.format(use="true")))
         got = instruments(built)
     assert {k: v["commission"] for k, v in got.items()} == {
-        "PAID_M1": "SizeBased 8", "EMPTY_M1": "", "NONE_M1": ""}, got
-    assert got["EMPTY_M1"]["defaultSpread"] == "1.0" and got["NONE_M1"]["swap"] is False, got
+        "PAID_M1": "SizeBased 8",
+        "EMPTY_M1": "",
+        "NONE_M1": "",
+    }, got
+    assert (
+        got["EMPTY_M1"]["defaultSpread"] == "1.0" and got["NONE_M1"]["swap"] is False
+    ), got
 
 
 if __name__ == "__main__":

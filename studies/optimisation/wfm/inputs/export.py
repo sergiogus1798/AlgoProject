@@ -71,8 +71,11 @@ def chosen(directory: Path) -> pd.DataFrame:
         thousands of combinations it tried inside each step are not stored anywhere, so
         nothing here can say how close the runner-up was.
     """
-    return (pd.read_parquet(directory / "params.parquet").drop(columns=["oos_pct", "runs"])
-            .set_index(["strategy", "result", "index"]))
+    return (
+        pd.read_parquet(directory / "params.parquet")
+        .drop(columns=["oos_pct", "runs"])
+        .set_index(["strategy", "result", "index"])
+    )
 
 
 def varying(frame: pd.DataFrame, prefix: str) -> list[str]:
@@ -88,7 +91,7 @@ def varying(frame: pd.DataFrame, prefix: str) -> list[str]:
     """
     columns = [c for c in frame.columns if c.startswith(prefix)]
     live = [c for c in columns if frame[c].nunique(dropna=True) > 1]
-    return sorted(c[len(prefix):] for c in live)
+    return sorted(c[len(prefix) :] for c in live)
 
 
 def conditions(directory: Path) -> pd.DataFrame | None:
@@ -130,8 +133,13 @@ def rules(directory: Path) -> pd.DataFrame:
         `_build.yaml`'s; one older than 2026-09-26 has no `status.parquet` at all.
     """
     path = directory / "status.parquet"
-    return (pd.read_parquet(path).set_index("strategy") if path.exists() else
-            pd.DataFrame(index=pd.Index(cells(directory)["strategy"].unique(), name="strategy")))
+    return (
+        pd.read_parquet(path).set_index("strategy")
+        if path.exists()
+        else pd.DataFrame(
+            index=pd.Index(cells(directory)["strategy"].unique(), name="strategy")
+        )
+    )
 
 
 def main(directory: Path) -> pd.DataFrame | None:

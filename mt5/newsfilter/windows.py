@@ -1,4 +1,5 @@
 """The news rule on a trade list, in pure Python: which releases move a symbol, and what the filter does to each trade."""
+
 import numpy as np
 import pandas as pd
 
@@ -24,18 +25,27 @@ def spans(releases: pd.DataFrame, firm: dict) -> pd.DataFrame:
         time, title, and: block_from/block_to (no entry, both ends included), close_from/close_to
         (it closes what is open; close_to excluded), rule_from/rule_to (the firm's own window).
     """
-    m = lambda n: pd.Timedelta(minutes=n)   # noqa: E731
+    m = lambda n: pd.Timedelta(minutes=n)  # noqa: E731
     t = releases["time"]
-    return pd.DataFrame({
-        "time": t, "title": releases["title"],
-        "block_from": t - m(max(firm["block_before"], firm["close_before"])), "block_to": t + m(firm["block_after"]),
-        "close_from": t - m(firm["close_before"]), "close_to": t - m(firm["rule_minutes"]),
-        "rule_from": t - m(firm["rule_minutes"]), "rule_to": t + m(firm["rule_minutes"])})
+    return pd.DataFrame(
+        {
+            "time": t,
+            "title": releases["title"],
+            "block_from": t - m(max(firm["block_before"], firm["close_before"])),
+            "block_to": t + m(firm["block_after"]),
+            "close_from": t - m(firm["close_before"]),
+            "close_to": t - m(firm["rule_minutes"]),
+            "rule_from": t - m(firm["rule_minutes"]),
+            "rule_to": t + m(firm["rule_minutes"]),
+        }
+    )
 
 
-def _first_inside(lo: np.ndarray, hi: np.ndarray, start: np.ndarray, end: np.ndarray) -> np.ndarray:
+def _first_inside(
+    lo: np.ndarray, hi: np.ndarray, start: np.ndarray, end: np.ndarray
+) -> np.ndarray:
     """For each [lo, hi], the index of the first span [start, end] it overlaps, -1 if none (spans sorted by start)."""
-    first = np.searchsorted(end, lo, side="left")          # first span not wholly before lo
+    first = np.searchsorted(end, lo, side="left")  # first span not wholly before lo
     ok = (first < len(start)) & (start[np.minimum(first, len(start) - 1)] <= hi)
     return np.where(ok, first, -1)
 
@@ -56,21 +66,34 @@ def expected(trades: pd.DataFrame, releases: pd.DataFrame, firm: dict) -> pd.Dat
     """
     s = spans(releases, firm)
     opened, closed = trades["Open time"].to_numpy(), trades["Close time"].to_numpy()
-    blocked = _first_inside(opened, opened, s["block_from"].to_numpy(), s["block_to"].to_numpy())
+    blocked = _first_inside(
+        opened, opened, s["block_from"].to_numpy(), s["block_to"].to_numpy()
+    )
     # cut: a close window starting while the trade is open, the trade still open when it does
     after = np.searchsorted(s["close_from"].to_numpy(), opened, side="right")
-    cut = np.where((after < len(s)) & (s["close_from"].to_numpy()[np.minimum(after, len(s) - 1)] < closed), after, -1)
+    cut = np.where(
+        (after < len(s))
+        & (s["close_from"].to_numpy()[np.minimum(after, len(s) - 1)] < closed),
+        after,
+        -1,
+    )
     fate = np.select([blocked >= 0, cut >= 0], ["blocked", "cut"], "kept")
     which = np.where(blocked >= 0, blocked, cut)
     out = trades.copy()
     out["fate"] = fate
     out["release"] = s["time"].to_numpy()[np.maximum(which, 0)]
     out.loc[fate == "kept", "release"] = pd.NaT
-    out["cut_at"] = np.where(fate == "cut", s["close_from"].to_numpy()[np.maximum(cut, 0)], np.datetime64("NaT"))
+    out["cut_at"] = np.where(
+        fate == "cut",
+        s["close_from"].to_numpy()[np.maximum(cut, 0)],
+        np.datetime64("NaT"),
+    )
     return out
 
 
-def violations(trades: pd.DataFrame, releases: pd.DataFrame, firm: dict) -> pd.DataFrame:
+def violations(
+    trades: pd.DataFrame, releases: pd.DataFrame, firm: dict
+) -> pd.DataFrame:
     """The trades of a FILTERED run that break what the filter promises — an empty frame is the pass.
 
     Returns:
@@ -80,11 +103,32 @@ def violations(trades: pd.DataFrame, releases: pd.DataFrame, firm: dict) -> pd.D
     """
     s = spans(releases, firm)
     opened, closed = trades["Open time"].to_numpy(), trades["Close time"].to_numpy()
-    checks = [("entry in block window", _first_inside(opened, opened, s["block_from"].to_numpy(), s["block_to"].to_numpy())),
-              ("close in the firm's window", _first_inside(closed, closed, s["rule_from"].to_numpy(), s["rule_to"].to_numpy()))]
+    checks = [
+        (
+            "entry in block window",
+            _first_inside(
+                opened, opened, s["block_from"].to_numpy(), s["block_to"].to_numpy()
+            ),
+        ),
+        (
+            "close in the firm's window",
+            _first_inside(
+                closed, closed, s["rule_from"].to_numpy(), s["rule_to"].to_numpy()
+            ),
+        ),
+    ]
     nxt = np.searchsorted(s["rule_from"].to_numpy(), opened, side="right")
-    across = np.where((nxt < len(s)) & (s["rule_to"].to_numpy()[np.minimum(nxt, len(s) - 1)] < closed), nxt, -1)
+    across = np.where(
+        (nxt < len(s))
+        & (s["rule_to"].to_numpy()[np.minimum(nxt, len(s) - 1)] < closed),
+        nxt,
+        -1,
+    )
     checks.append(("open across the release", across))
-    rows = [trades.loc[hit >= 0, ["Open time", "Close time"]].assign(
-        release=s["time"].to_numpy()[hit[hit >= 0]], breach=label) for label, hit in checks]
+    rows = [
+        trades.loc[hit >= 0, ["Open time", "Close time"]].assign(
+            release=s["time"].to_numpy()[hit[hit >= 0]], breach=label
+        )
+        for label, hit in checks
+    ]
     return pd.concat(rows).sort_values("Open time", ignore_index=True)

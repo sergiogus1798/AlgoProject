@@ -17,20 +17,26 @@ def describe(p: dict, s: dict, blocks: int) -> str:
         default is doing nothing, and saying so is the difference between a view that
         looks broken and one that is honest about being empty.
     """
-    bits = [chip(names.family(p["family"]), C["accent"]),
-            chip(p["origin"], C["muted"])]
+    bits = [chip(names.family(p["family"]), C["accent"]), chip(p["origin"], C["muted"])]
     if p["based_on"]:
         bits.append(chip(f"de {p['based_on']}", C["muted"]))
     head = " ".join(bits) + f'  <span style="color:{C["muted"]}">{p["note"]}</span>'
     if not s["conditions_ok"]:
-        head += (f'<br><span style="color:{C["dead"]}">⚠️ {s["signal"]["on"]} condiciones: '
-                 "fuera del 90–170 que pide el dueño. "
-                 + ("Faltan bloques por elegir." if s["signal"]["on"] < 90
-                    else "Sobran: esta paleta no está estrechando lo suficiente.")
-                 + "</span>")
+        head += (
+            f'<br><span style="color:{C["dead"]}">⚠️ {s["signal"]["on"]} condiciones: '
+            "fuera del 90–170 que pide el dueño. "
+            + (
+                "Faltan bloques por elegir."
+                if s["signal"]["on"] < 90
+                else "Sobran: esta paleta no está estrechando lo suficiente."
+            )
+            + "</span>"
+        )
     if s["overridden"] == 0 and s["unlabelled"] == blocks:
-        head += (f'<br><span style="color:{C["weak"]}">⚠️ Esta paleta no elige nada '
-                 f'todavía: sus {s["unlabelled"]} bloques salen del valor por defecto, '
-                 "así que deja pasar todo el vocabulario. Elige bloques en la columna "
-                 "Peso, o etiqueta la familia en taxonomy.yaml.</span>")
+        head += (
+            f'<br><span style="color:{C["weak"]}">⚠️ Esta paleta no elige nada '
+            f"todavía: sus {s['unlabelled']} bloques salen del valor por defecto, "
+            "así que deja pasar todo el vocabulario. Elige bloques en la columna "
+            "Peso, o etiqueta la familia en taxonomy.yaml.</span>"
+        )
     return head

@@ -4,8 +4,9 @@ import numpy as np
 import pandas as pd
 
 
-def given_up(opens: np.ndarray, entry: np.ndarray, side: np.ndarray,
-             delays: list[int]) -> np.ndarray:
+def given_up(
+    opens: np.ndarray, entry: np.ndarray, side: np.ndarray, delays: list[int]
+) -> np.ndarray:
     """The price handed over by entering d bars after the signal.
 
     Args:
@@ -25,8 +26,14 @@ def given_up(opens: np.ndarray, entry: np.ndarray, side: np.ndarray,
     return side[:, None] * (later - opens[entry][:, None])
 
 
-def cost(handed: np.ndarray, size: np.ndarray, value: float, pnl: np.ndarray,
-         charged: np.ndarray, delays: list[int]) -> pd.DataFrame:
+def cost(
+    handed: np.ndarray,
+    size: np.ndarray,
+    value: float,
+    pnl: np.ndarray,
+    charged: np.ndarray,
+    delays: list[int],
+) -> pd.DataFrame:
     """What that price is worth, and how it compares with the edge and with the costs.
 
     Args:
@@ -50,8 +57,12 @@ def cost(handed: np.ndarray, size: np.ndarray, value: float, pnl: np.ndarray,
     """
     money = handed * (size * value)[:, None]
     gross = (pnl + charged).mean()
-    return pd.DataFrame({"d": delays, "entregado": money.mean(axis=0),
-                         "esperanza_neta": pnl.mean() - money.mean(axis=0),
-                         "DCR": money.mean(axis=0) / gross,
-                         "veces_el_coste": money.mean(axis=0) / charged.mean()}
-                        ).set_index("d")
+    return pd.DataFrame(
+        {
+            "d": delays,
+            "entregado": money.mean(axis=0),
+            "esperanza_neta": pnl.mean() - money.mean(axis=0),
+            "DCR": money.mean(axis=0) / gross,
+            "veces_el_coste": money.mean(axis=0) / charged.mean(),
+        }
+    ).set_index("d")

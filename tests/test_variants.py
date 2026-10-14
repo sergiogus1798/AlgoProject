@@ -17,8 +17,12 @@ VARIANT_ID = "P00042"
 NAME = "Strategy 1.25.215 P00042"
 # Two ints and two doubles: writing 95.0 into an int parameter is not the same file as 95,
 # and a tuple that only ever touched ints would never show it.
-TUPLE = {"AroonCrossesPeriod1": 88.0, "StochasticKPeriod1": 21.0,
-         "ProfitTargetCoef1": 14.25, "StopLossCoef1": 7.0}
+TUPLE = {
+    "AroonCrossesPeriod1": 88.0,
+    "StochasticKPeriod1": 21.0,
+    "ProfitTargetCoef1": 14.25,
+    "StopLossCoef1": 7.0,
+}
 
 
 def digest(blob: bytes) -> str:
@@ -45,14 +49,17 @@ def parse() -> dict:
     parts = rewrite.variant(parent, VARIANT_ID, NAME, TUPLE)
     portfolio = parts[rewrite.PORTFOLIO].decode("utf-8")
     settings = parts[rewrite.SETTINGS].decode("utf-8")
-    return {"values": rewrite.values(portfolio),
-            "result_name": rewrite.RESULT_NAME.search(settings).group(0),
-            "strategy_name": rewrite.STRATEGY_NAME.search(settings).group(0),
-            "stamp": rewrite.stamped(portfolio),
-            "tuple_hash": tuples.tuple_hash(TUPLE),
-            "shapes": {shape: {name: digest(blob) for name, blob in parts.items()
-                               if keep(name)}
-                       for shape, keep in rewrite.SHAPES.items()}}
+    return {
+        "values": rewrite.values(portfolio),
+        "result_name": rewrite.RESULT_NAME.search(settings).group(0),
+        "strategy_name": rewrite.STRATEGY_NAME.search(settings).group(0),
+        "stamp": rewrite.stamped(portfolio),
+        "tuple_hash": tuples.tuple_hash(TUPLE),
+        "shapes": {
+            shape: {name: digest(blob) for name, blob in parts.items() if keep(name)}
+            for shape, keep in rewrite.SHAPES.items()
+        },
+    }
 
 
 def invariants() -> list[str]:
@@ -77,7 +84,10 @@ def invariants() -> list[str]:
     read_back = {k: float(v) for k, v in rewrite.values(new).items() if k in TUPLE}
     if read_back != TUPLE:
         out.append(f"values did not survive the round trip: {read_back} != {TUPLE}")
-    if rewrite.values(new)["StochasticDPeriod1"] != rewrite.values(portfolio)["StochasticDPeriod1"]:
+    if (
+        rewrite.values(new)["StochasticDPeriod1"]
+        != rewrite.values(portfolio)["StochasticDPeriod1"]
+    ):
         out.append("a parameter outside the tuple was rewritten")
     if "<Fingerprint" in parts[rewrite.SETTINGS].decode("utf-8"):
         out.append("the inherited fingerprint is still there")
@@ -87,11 +97,18 @@ def invariants() -> list[str]:
         if parts[name] != parent[name]:
             out.append(f"{name} was modified and must not be")
 
-    same = rewrite.variant(parent, VARIANT_ID, NAME,
-                           {k: float(v) for k, v in rewrite.values(portfolio).items()
-                            if k in TUPLE})
-    if same[rewrite.PORTFOLIO].decode("utf-8").replace(
-            f"<!--variant_id:{VARIANT_ID}-->", "") != portfolio:
+    same = rewrite.variant(
+        parent,
+        VARIANT_ID,
+        NAME,
+        {k: float(v) for k, v in rewrite.values(portfolio).items() if k in TUPLE},
+    )
+    if (
+        same[rewrite.PORTFOLIO]
+        .decode("utf-8")
+        .replace(f"<!--variant_id:{VARIANT_ID}-->", "")
+        != portfolio
+    ):
         out.append("rewriting the parent's own tuple did not reproduce the parent")
     if tuples.tuple_hash({"a": -0.0}) != tuples.tuple_hash({"a": 0}):
         out.append("-0.0 and 0 hash apart: a plan holding -0.0 never matches its file")

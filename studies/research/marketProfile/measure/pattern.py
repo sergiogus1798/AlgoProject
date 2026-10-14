@@ -23,7 +23,9 @@ def engulfing(x: dict, cal: dict) -> tuple:
     """An up bar whose body engulfs the body of the down bar before it."""
     o, c = x["o"], x["c"]
     mask = np.zeros(c.size, dtype=bool)
-    mask[1:] = (c[:-1] < o[:-1]) & (c[1:] > o[1:]) & (c[1:] >= o[:-1]) & (o[1:] <= c[:-1])
+    mask[1:] = (
+        (c[:-1] < o[:-1]) & (c[1:] > o[1:]) & (c[1:] >= o[:-1]) & (o[1:] <= c[:-1])
+    )
     return _state(x, cal, mask)
 
 

@@ -3,8 +3,16 @@
 from typing import Any
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSplitter,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QScrollArea,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import background
 from ui.desktop.selection import SELECTION
@@ -34,7 +42,9 @@ class Ficha(QFrame):
         self.where: dict = {}
         self.data: dict = {}
         self.opened_from = ""
-        self.page: StrategyPage | None = None                      # the studypage, built on the first real strategy
+        self.page: StrategyPage | None = (
+            None  # the studypage, built on the first real strategy
+        )
         self.compute = Compute()
         self.compute.said.connect(self.say)
         self.compute.done.connect(self.reload)
@@ -49,9 +59,12 @@ class Ficha(QFrame):
         self.fold = QPushButton("▾ plegar panel básico")
         self.fold.clicked.connect(self.toggle)
         self.info = QPushButton("metadatos")
-        self.info.setProperty("help", "Abre en una ventana aparte lo que el .sqx dice de la "
-                              "estrategia: condiciones, órdenes, money management, activo y los "
-                              "costes de su último test.")
+        self.info.setProperty(
+            "help",
+            "Abre en una ventana aparte lo que el .sqx dice de la "
+            "estrategia: condiciones, órdenes, money management, activo y los "
+            "costes de su último test.",
+        )
         self.info.setStyleSheet("font-size: 11px; padding: 2px 8px;")
         self.info.clicked.connect(self.show_meta)
         self.metawin = MetaWindow(self)
@@ -63,7 +76,9 @@ class Ficha(QFrame):
             head.addWidget(w)
         self.curves, self.stats = CostCurves(), Stats(self.compute)
         self.basic = QFrame(objectName="basic")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-        self.basic.setStyleSheet(f"QFrame#basic {{ border-bottom: 1px solid {T['rule']}; }}")
+        self.basic.setStyleSheet(
+            f"QFrame#basic {{ border-bottom: 1px solid {T['rule']}; }}"
+        )
         row = QHBoxLayout(self.basic)
         row.setContentsMargins(0, 4, 0, 8)
         row.addWidget(self.curves, 4)
@@ -73,7 +88,7 @@ class Ficha(QFrame):
         self.short.setStyleSheet("font-size: 13px;")
         self.family = QVBoxLayout()
         self.family.addWidget(self.short)
-        self.family.addStretch(0)            # the page, once built, takes it all
+        self.family.addStretch(0)  # the page, once built, takes it all
         lower = QWidget()
         low = QHBoxLayout(lower)
         low.setContentsMargins(0, 6, 0, 0)
@@ -104,26 +119,39 @@ class Ficha(QFrame):
         """
         now = SELECTION.now
         self.opened_from = databank
-        self.where = {"project": project, "strategy": name, "databank": now["databank"] or "",
-                      "identity": now["identity"] or "", "asset": now["asset"] or ""}
+        self.where = {
+            "project": project,
+            "strategy": name,
+            "databank": now["databank"] or "",
+            "identity": now["identity"] or "",
+            "asset": now["asset"] or "",
+        }
         self.compute.where = self.where
         self.title.setText(name)
-        self.origin.setText(f"   abierta desde {databank}   ·   {project}"
-                            + (f"   ·   {self.where['databank']}" if self.where["databank"] else ""))
-        self.lower(True, ORIGIN_FAMILY.get(databank, "Ficha"), default_study(databank, sub))
+        self.origin.setText(
+            f"   abierta desde {databank}   ·   {project}"
+            + (f"   ·   {self.where['databank']}" if self.where["databank"] else "")
+        )
+        self.lower(
+            True, ORIGIN_FAMILY.get(databank, "Ficha"), default_study(databank, sub)
+        )
         self.say("leyendo la estrategia…")
         where = dict(self.where)
-        background.run(lambda: self.ask(where), self.paint, key=f"ficha:{id(self)}", owner=self)
+        background.run(
+            lambda: self.ask(where), self.paint, key=f"ficha:{id(self)}", owner=self
+        )
 
     def ask(self, where: dict) -> dict[str, Any]:
         """Off the GUI thread: the three reads of the page, for `paint`."""
         q = {k: where[k] for k in ("project", "databank", "identity")}
         # The name pairs a databank with no cosecha (MCR_All, an ingest) to the project's own.
         named = q | {"strategy": where["strategy"]}
-        return {"key": (where["project"], where["strategy"]),
-                "curve": fetch("strategy/costcurve", **named),
-                "stats": fetch("strategy/stats", **named),
-                "meta": fetch("strategy/meta", **q)}
+        return {
+            "key": (where["project"], where["strategy"]),
+            "curve": fetch("strategy/costcurve", **named),
+            "stats": fetch("strategy/stats", **named),
+            "meta": fetch("strategy/meta", **q),
+        }
 
     def paint(self, got: dict) -> None:
         """Paint what `ask` brought, unless another strategy was chosen since."""
@@ -135,7 +163,7 @@ class Ficha(QFrame):
         self.curves.fill(got["curve"])
         self.stats.fill(got["stats"])
         self.metawin.fill(got["meta"], self.where["strategy"])
-        self.say(got["curve"].get("note") or "")      # where a borrowed cosecha came from
+        self.say(got["curve"].get("note") or "")  # where a borrowed cosecha came from
 
     def lower(self, live: bool, family: str, study: str | None = None) -> None:
         """Below the panel: the study page, opened on the origin's study (or its family alone).
@@ -181,8 +209,9 @@ class Ficha(QFrame):
             study: The study key to open there.
             go: `/api/study/offer`'s `databank`, `tab`, `strategy`, `identity`.
         """
-        SELECTION.choose(databank=go["databank"], strategy=go["strategy"],
-                         identity=go["identity"])
+        SELECTION.choose(
+            databank=go["databank"], strategy=go["strategy"], identity=go["identity"]
+        )
         self.fill(self.where["project"], go["strategy"], go["tab"])
         assert self.page is not None
         self.page.open_study(study)
@@ -212,15 +241,22 @@ class Ficha(QFrame):
             return self.say(asked["error"])
         self.say("archivando…")
         body = {k: self.where[k] for k in ("project", "databank", "identity")} | asked
-        background.run(lambda: send("strategy/archive", body), self.after_archive, owner=self)
+        background.run(
+            lambda: send("strategy/archive", body), self.after_archive, owner=self
+        )
 
     def after_archive(self, got: dict) -> None:
         """Say where the version went, or why it did not."""
-        self.say(got["error"] if "error" in got else
-                 f"archivada: versión {got['version']} ({got['origin']})")
+        self.say(
+            got["error"]
+            if "error" in got
+            else f"archivada: versión {got['version']} ({got['origin']})"
+        )
 
     def toggle(self) -> None:
         """Fold the basic panel away, or bring it back."""
-        folding = self.split.widget(0).isVisible()      # the basic panel's scroll area
+        folding = self.split.widget(0).isVisible()  # the basic panel's scroll area
         self.split.widget(0).setVisible(not folding)
-        self.fold.setText("▸ desplegar panel básico" if folding else "▾ plegar panel básico")
+        self.fold.setText(
+            "▸ desplegar panel básico" if folding else "▾ plegar panel básico"
+        )

@@ -1,8 +1,15 @@
 """The window itself: grouped side navigation, the context bar, one zone inside, one status bar."""
 
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import (QHBoxLayout, QLabel, QSizePolicy, QStackedWidget, QTabBar,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QStackedWidget,
+    QTabBar,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import background, projectflow as flow
 from ui.desktop.assets import Assets
@@ -27,6 +34,7 @@ from ui.desktop.sqxconfig.zone import SqxConfigZone
 from ui.desktop.theme import C
 from ui.desktop.workspace.gallery import Gallery
 from ui.desktop.workspace.zone import WorkspaceZone
+
 
 class Said(QLabel):
     """The status line: it gives way to the jobs strip instead of widening the window.
@@ -69,20 +77,32 @@ class Shell(Opens, QWidget):
         self.estrategia = flow.StrategyZone()
         self.ficha = self.estrategia.ficha
         self.zones = {
-            "Cobertura": self.coverage, "Plantillas": self.catalogue, "Nueva plantilla": self.chat,
-            "Paletas": self.palettes, "Activos": self.assets, "Proyectos": self.gallery,
-            "Proyecto": self.workspace, "Databanks": self.workspace.databanks,
+            "Cobertura": self.coverage,
+            "Plantillas": self.catalogue,
+            "Nueva plantilla": self.chat,
+            "Paletas": self.palettes,
+            "Activos": self.assets,
+            "Proyectos": self.gallery,
+            "Proyecto": self.workspace,
+            "Databanks": self.workspace.databanks,
             "Estrategia": self.estrategia,
-            "En marcha": self.running, "Registro de búsquedas": self.ledger,
-            "Configuración SQX": SqxConfigZone(), "Datos": DataZone(), "Investigar": ResearchZone(),
-            "Portfolios": PortfoliosBoard(), "Verificar": VerifyZone(),
-            "Criterios": CriteriaZone()}
+            "En marcha": self.running,
+            "Registro de búsquedas": self.ledger,
+            "Configuración SQX": SqxConfigZone(),
+            "Datos": DataZone(),
+            "Investigar": ResearchZone(),
+            "Portfolios": PortfoliosBoard(),
+            "Verificar": VerifyZone(),
+            "Criterios": CriteriaZone(),
+        }
         self.wire()
 
         right = QVBoxLayout()
         right.setContentsMargins(0, 0, 0, 0)
         right.setSpacing(0)
-        self.readonly = QLabel("Esta máquina no tiene SQX: modo lectura", objectName="readonly")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.readonly = QLabel(
+            "Esta máquina no tiene SQX: modo lectura", objectName="readonly"
+        )  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.readonly.hide()
         right.addWidget(self.readonly)
         self.context = ContextBar()
@@ -108,17 +128,24 @@ class Shell(Opens, QWidget):
         self.status = Said()
         self.jobs = JobsBar()
         foot.addWidget(self.status, 1)
-        foot.addWidget(self.jobs, 3)     # Ignored width (jobsbar): takes its share, never pushes
+        foot.addWidget(
+            self.jobs, 3
+        )  # Ignored width (jobsbar): takes its share, never pushes
         right.addLayout(foot)
         # The sidebar is built after the stack because opening a zone needs the stack; it is
         # inserted first so it still sits down the left.
         # What «Recargar» reloads, by zone name: the zones that load once. Its tooltip is
         # written from these keys, so the button never promises a zone it does not reload.
-        self.reloads = {"Cobertura": self.coverage.reload, "Plantillas": self.catalogue.reload,
-                        "Paletas": self.palettes.reload, "Activos": self.assets.reload,
-                        "Proyectos": self.gallery.load, "En marcha": self.running.reload,
-                        "Verificar": self.verify_reload,
-                        "Investigar": self.zones["Investigar"].reload}
+        self.reloads = {
+            "Cobertura": self.coverage.reload,
+            "Plantillas": self.catalogue.reload,
+            "Paletas": self.palettes.reload,
+            "Activos": self.assets.reload,
+            "Proyectos": self.gallery.load,
+            "En marcha": self.running.reload,
+            "Verificar": self.verify_reload,
+            "Investigar": self.zones["Investigar"].reload,
+        }
         bar, self.nav = sidebar(self.open_zone, self.refresh, list(self.reloads))
         lay.insertWidget(0, bar)
         lay.addLayout(right, 1)
@@ -129,8 +156,11 @@ class Shell(Opens, QWidget):
         self.gallery.load()
         self.open_zone(ZONES[0])
         self.restate()
-        background.get("health", lambda h: self.guard(h["sqx"]["installs"]) if "sqx" in h else None,
-                       owner=self)
+        background.get(
+            "health",
+            lambda h: self.guard(h["sqx"]["installs"]) if "sqx" in h else None,
+            owner=self,
+        )
         # The app's only shortcut. A text field that has the focus keeps Ctrl+K (Qt's «delete
         # to end of line»), the chat's answer box included: the palette never eats typing.
         self.cmdpalette = CmdPalette(self)
@@ -177,8 +207,10 @@ class Shell(Opens, QWidget):
         disabled button never shows its tooltip; no zone is greyed out (encargo 22 §11).
         """
         found = ", ".join(role for role, ok in installs.items() if ok) or "ninguno"
-        self.readonly.setToolTip(f"Installs de SQX encontrados en esta máquina: {found}. "
-                                 "Se lee todo; nada que llegue a SQX se puede lanzar.")
+        self.readonly.setToolTip(
+            f"Installs de SQX encontrados en esta máquina: {found}. "
+            "Se lee todo; nada que llegue a SQX se puede lanzar."
+        )
         if any(installs.values()):
             return
         self.readonly.show()
@@ -193,12 +225,14 @@ class Shell(Opens, QWidget):
             name: One of `nav.ZONES`; a desktop launcher opens the window straight on it
                 (`bin/algoui --zone Proyectos`).
         """
-        name, _, inner = name.partition(" · ")       # «Portfolios · Banco · VE(h)»: a module of the zone
+        name, _, inner = name.partition(
+            " · "
+        )  # «Portfolios · Banco · VE(h)»: a module of the zone
         if inner:
             self.zones[name].open(*inner.split(" · "))
         # Databanks is filled by Proyecto's zone: one project, one fill, both zones.
         flow.catch_up(self, "Proyecto" if name == "Databanks" else name)
-        if name in self.stale:           # its first opening, or the first since «Recargar»
+        if name in self.stale:  # its first opening, or the first since «Recargar»
             self.stale.discard(name)
             self.reloads[name]()
         self.stack.setCurrentWidget(self.zones[name])
@@ -218,7 +252,9 @@ class Shell(Opens, QWidget):
         Proyecto, Databanks and Estrategia follow SELECTION and read on their own.
         """
         self.stale = set(self.reloads)
-        self.open_zone(next(n for n in ZONES if self.zones[n] is self.stack.currentWidget()))
+        self.open_zone(
+            next(n for n in ZONES if self.zones[n] is self.stack.currentWidget())
+        )
         self.restate()
 
     def restate(self) -> None:
@@ -226,5 +262,6 @@ class Shell(Opens, QWidget):
         totals = self.coverage.data
         self.status.setText(
             f"registry.csv · runs.csv · library/  —  {len(totals['rows'])} filas × "
-            f"{len(totals['columns'])} timeframes  ·  daemon en 127.0.0.1")
+            f"{len(totals['columns'])} timeframes  ·  daemon en 127.0.0.1"
+        )
         self.status.setStyleSheet(f"color:{C['faint']};")

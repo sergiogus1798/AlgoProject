@@ -29,11 +29,16 @@ def by_exit(trades: pd.DataFrame) -> pd.DataFrame:
         Columns: salida, ops (trades), neto, medio (P&L), % gan. (P&L > 0), MAE, MFE (means).
     """
     g = trades.groupby("Close type", sort=False)
-    out = pd.DataFrame({
-        "ops": g.size(), "neto": g["Profit/Loss"].sum().round(2),
-        "medio": g["Profit/Loss"].mean(),
-        "% gan.": 100 * g["Profit/Loss"].apply(lambda s: (s > 0).mean()),
-        "MAE": g["MAE ($)"].mean(), "MFE": g["MFE ($)"].mean()})
+    out = pd.DataFrame(
+        {
+            "ops": g.size(),
+            "neto": g["Profit/Loss"].sum().round(2),
+            "medio": g["Profit/Loss"].mean(),
+            "% gan.": 100 * g["Profit/Loss"].apply(lambda s: (s > 0).mean()),
+            "MAE": g["MAE ($)"].mean(),
+            "MFE": g["MFE ($)"].mean(),
+        }
+    )
     out = out.round(2).sort_values("ops", ascending=False, kind="stable")
     return out.rename_axis("salida").reset_index()
 
@@ -49,17 +54,28 @@ def exit_paths(trades: pd.DataFrame) -> tuple[list[str], dict[str, list[float]]]
         A type stays flat across the other types' trades, so every line has every point.
     """
     x = trades["Close time"].dt.strftime("%Y-%m-%d").tolist()
-    paths = {t: trades["Profit/Loss"].where(trades["Close type"] == t, 0.0).cumsum().round(2)
-             .tolist() for t in trades["Close type"].unique()}
+    paths = {
+        t: trades["Profit/Loss"]
+        .where(trades["Close type"] == t, 0.0)
+        .cumsum()
+        .round(2)
+        .tolist()
+        for t in trades["Close type"].unique()
+    }
     return x, paths
 
 
 # How one trade's return is counted (default «USD por operación», owner 2026-09-30 — `ui.daemon.
 # strategy.stats.DEFAULT_UNIT`). Per lot takes the position size out, so a sizing rule that grows
 # with the account does not fatten the tails; it stays selectable, just not the default any more.
-UNITS = {"USD por lote": lambda t: t["Profit/Loss"] / t["Size"],
-         "USD por operación": lambda t: t["Profit/Loss"]}
-SHORT = {"USD por lote": "$/lote", "USD por operación": "$/trade"}    # owner: «65.36 $/trade»
+UNITS = {
+    "USD por lote": lambda t: t["Profit/Loss"] / t["Size"],
+    "USD por operación": lambda t: t["Profit/Loss"],
+}
+SHORT = {
+    "USD por lote": "$/lote",
+    "USD por operación": "$/trade",
+}  # owner: «65.36 $/trade»
 
 
 def returns(trades: pd.DataFrame, unit: str) -> pd.Series:
@@ -87,7 +103,9 @@ def shape(values: pd.Series) -> dict[str, float | None]:
         kurtosis 4). The median and the percentiles are the histogram's row, not repeated here.
     """
     n = len(values)
-    return {"media": float(values.mean()) if n else None,
-            "desviación típica": float(values.std()) if n > 1 else None,
-            "asimetría": float(values.skew()) if n > 2 else None,
-            "curtosis (exceso)": float(values.kurt()) if n > 3 else None}
+    return {
+        "media": float(values.mean()) if n else None,
+        "desviación típica": float(values.std()) if n > 1 else None,
+        "asimetría": float(values.skew()) if n > 2 else None,
+        "curtosis (exceso)": float(values.kurt()) if n > 3 else None,
+    }

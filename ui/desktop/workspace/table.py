@@ -10,9 +10,16 @@ from ui.text.glossary import label
 from ui.desktop.workspace.tablemodel import Rows
 
 # The SQX metrics every sub-panel shows beside its study, in SQX's order, IS then OOS.
-BASE = ("Net profit", "# of trades", "Profit factor", "Sharpe Ratio", "Ret/DD Ratio",
-        "Max DD %", "Winning Percent")
-WIDEST = 280            # px: a long reason is cut and read on hover, not allowed to push the rest
+BASE = (
+    "Net profit",
+    "# of trades",
+    "Profit factor",
+    "Sharpe Ratio",
+    "Ret/DD Ratio",
+    "Max DD %",
+    "Winning Percent",
+)
+WIDEST = 280  # px: a long reason is cut and read on hover, not allowed to push the rest
 
 
 def pick(columns: list[dict], sub: dict) -> list[tuple[int, str]]:
@@ -39,16 +46,22 @@ def pick(columns: list[dict], sub: dict) -> list[tuple[int, str]]:
             out.append((i, label("strategy")))
         elif c["kind"] == "metric" and c["metric"] in BASE and not no_base:
             out.append((i, f"{label(c['metric'])} {c['sample']}".strip()))
-        elif c["kind"] == "study" and every and c["field"] == "verdict" and not c["sub"]:
+        elif (
+            c["kind"] == "study" and every and c["field"] == "verdict" and not c["sub"]
+        ):
             out.append((i, c["title"]))
-        elif (c["kind"] == "study" and c["study"] in sub["studies"]
-              and c["sub"] == (sub["split"] or "")):
+        elif (
+            c["kind"] == "study"
+            and c["study"] in sub["studies"]
+            and c["sub"] == (sub["split"] or "")
+        ):
             head = label_for(c["study"], c["field"]) or label(c["field"])
             out.append((i, f"{c['title']} · {head}" if many else head))
     metrics = [p for p in out if columns[p[0]]["kind"] == "metric"]
     order = {m: k for k, m in enumerate(BASE)}
-    metrics.sort(key=lambda p: (columns[p[0]]["sample"] != "IS",
-                                order[columns[p[0]]["metric"]]))
+    metrics.sort(
+        key=lambda p: (columns[p[0]]["sample"] != "IS", order[columns[p[0]]["metric"]])
+    )
     return out[:1] + metrics + [p for p in out[1:] if columns[p[0]]["kind"] != "metric"]
 
 
@@ -74,12 +87,19 @@ class DataTable(QTableView):
         self.setWordWrap(False)
         self.doubleClicked.connect(lambda i: self.double(i.row()))
         self.horizontalHeader().setSectionsMovable(True)
-        self.horizontalHeader().setResizeContentsPrecision(100)   # rows measured for a width
+        self.horizontalHeader().setResizeContentsPrecision(
+            100
+        )  # rows measured for a width
         self.horizontalHeader().sectionMoved.connect(self.moved)
         self.setToolTip("Doble clic en una fila: su página en «Estrategia».")
 
-    def paint(self, rows: list[dict], shown: list[dict], judged: list[int],
-              segs: dict | None = None) -> int:
+    def paint(
+        self,
+        rows: list[dict],
+        shown: list[dict],
+        judged: list[int],
+        segs: dict | None = None,
+    ) -> int:
         """Fill the table.
 
         Args:
@@ -102,7 +122,7 @@ class DataTable(QTableView):
         model = cast(Rows, self.model())
         model.hidden = self.hidden
         model.fill(rows, shown, segs)
-        head.blockSignals(True)             # forget a header dragged out of place
+        head.blockSignals(True)  # forget a header dragged out of place
         for c in range(self.columnCount()):
             head.moveSection(head.visualIndex(c), c)
         head.blockSignals(False)
@@ -151,5 +171,6 @@ class DataTable(QTableView):
 
     def chosen_names(self) -> list[str]:
         """The names of the selected rows, for «correr marcados de este panel»."""
-        return sorted({self.row_at(i.row())["name"]
-                       for i in self.selectionModel().selectedRows()})
+        return sorted(
+            {self.row_at(i.row())["name"] for i in self.selectionModel().selectedRows()}
+        )

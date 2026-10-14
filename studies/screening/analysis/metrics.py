@@ -34,7 +34,9 @@ def load(path: Path) -> tuple[dict[str, np.ndarray], list[str]]:
     return columns, [r["Strategy Name"] for r in rows]
 
 
-def source(project: str, databank: str) -> tuple[dict[str, np.ndarray], list[str], Path]:
+def source(
+    project: str, databank: str
+) -> tuple[dict[str, np.ndarray], list[str], Path]:
     """The population's IS and OOS metrics, from wherever they live together.
 
     Args:
@@ -48,17 +50,26 @@ def source(project: str, databank: str) -> tuple[dict[str, np.ndarray], list[str
         «Panel IS/OOS» found one IS metric, «Param Count», and Filtros candidatos none).
     """
     same = databank.replace(" ", "_")
-    joined = sorted((m.parent for m in (DATA / "harvest" / project).glob("*/*/manifest.json")
-                     if json.loads(m.read_text(encoding="utf-8"))["source"].get(
-                         "oos_databank", "").replace(" ", "_") == same),
-                    key=lambda f: f.name)
+    joined = sorted(
+        (
+            m.parent
+            for m in (DATA / "harvest" / project).glob("*/*/manifest.json")
+            if json.loads(m.read_text(encoding="utf-8"))["source"]
+            .get("oos_databank", "")
+            .replace(" ", "_")
+            == same
+        ),
+        key=lambda f: f.name,
+    )
     if not joined:
         path = metrics_export(project, databank) / "metrics.csv"
         return (*load(path), path)
     frame = pd.read_parquet(joined[-1] / "metrics.parquet")
-    columns = {c.replace(" [IS]", IS).replace(" [OOS]", OOS): frame[c].to_numpy(float)
-               for c in frame.columns if c.endswith(("[IS]", "[OOS]"))
-               and pd.api.types.is_numeric_dtype(frame[c])}
+    columns = {
+        c.replace(" [IS]", IS).replace(" [OOS]", OOS): frame[c].to_numpy(float)
+        for c in frame.columns
+        if c.endswith(("[IS]", "[OOS]")) and pd.api.types.is_numeric_dtype(frame[c])
+    }
     return columns, list(frame["strategy"].astype(str)), joined[-1] / "metrics.parquet"
 
 
@@ -76,8 +87,9 @@ def measured(columns: dict[str, np.ndarray], suffix: str) -> list[str]:
     return sorted(k for k, v in columns.items() if k.endswith(suffix) and v.std() > 0)
 
 
-def deduplicated(columns: dict[str, np.ndarray],
-                 names: list[str]) -> tuple[dict[str, np.ndarray], list[str], int]:
+def deduplicated(
+    columns: dict[str, np.ndarray], names: list[str]
+) -> tuple[dict[str, np.ndarray], list[str], int]:
     """Drop rows that are another strategy's trade list under a different name.
 
     `metrics.csv` carries no trade list to hash (`studies/CLAUDE.md`'s first trap: 45 of 231
@@ -113,5 +125,8 @@ def paired(columns: dict[str, np.ndarray]) -> list[str]:
         Bare metric names without either suffix, sorted.
     """
     varying = set(measured(columns, IS)) | set(measured(columns, OOS))
-    return sorted(k[: -len(IS)] for k in varying
-                  if k.endswith(IS) and f"{k[: -len(IS)]}{OOS}" in varying)
+    return sorted(
+        k[: -len(IS)]
+        for k in varying
+        if k.endswith(IS) and f"{k[: -len(IS)]}{OOS}" in varying
+    )

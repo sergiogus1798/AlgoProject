@@ -44,8 +44,10 @@ def metrics(project: str, databank: str) -> pd.DataFrame:
     """
     csv = metrics_export(project, databank) / "metrics.csv"
     if not csv.exists():
-        sys.exit(f"no metrics export at {csv}. Run sqx.export.export_metrics first: the "
-                 "filter judges that CSV, nothing else.")
+        sys.exit(
+            f"no metrics export at {csv}. Run sqx.export.export_metrics first: the "
+            "filter judges that CSV, nothing else."
+        )
     df = pd.read_csv(csv, sep=";", quotechar='"')
     df = df[[c for c in df.columns if not c.startswith("Unnamed")]]
     df.insert(0, "strategy", df[NAME])
@@ -63,8 +65,12 @@ def identities(names: list[str], source: Path) -> dict[str, str]:
         Name to identity; "" for a name with no file on disk, which happens when the
         databank is `Auto-sync never` and has not been written yet.
     """
-    return {n: sqxfile.identity(source / f"{n}.sqx") if (source / f"{n}.sqx").exists() else ""
-            for n in names}
+    return {
+        n: sqxfile.identity(source / f"{n}.sqx")
+        if (source / f"{n}.sqx").exists()
+        else ""
+        for n in names
+    }
 
 
 def main() -> None:
@@ -72,15 +78,29 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True)
-    ap.add_argument("--role", default="master", choices=["master", *sorted(WORKERS)],
-                    help="install holding the databank; its files give the identities")
+    ap.add_argument(
+        "--role",
+        default="master",
+        choices=["master", *sorted(WORKERS)],
+        help="install holding the databank; its files give the identities",
+    )
     how = ap.add_mutually_exclusive_group(required=True)
-    how.add_argument("--keep", help="pandas expression over the slugged metrics columns; "
-                                    "what does not match is DESCARTAR")
-    how.add_argument("--drop", nargs="+", metavar="NAME",
-                     help="strategy names to mark DESCARTAR, e.g. 'Strategy 11.4.39'")
-    how.add_argument("--columns", action="store_true",
-                     help="print the column names a --keep expression can use, and stop")
+    how.add_argument(
+        "--keep",
+        help="pandas expression over the slugged metrics columns; "
+        "what does not match is DESCARTAR",
+    )
+    how.add_argument(
+        "--drop",
+        nargs="+",
+        metavar="NAME",
+        help="strategy names to mark DESCARTAR, e.g. 'Strategy 11.4.39'",
+    )
+    how.add_argument(
+        "--columns",
+        action="store_true",
+        help="print the column names a --keep expression can use, and stop",
+    )
     a = ap.parse_args()
 
     df = metrics(a.project, a.databank)
@@ -109,12 +129,18 @@ def main() -> None:
     path = out / f"verdict-{now:%H%M%S}.csv"
     verdict.to_csv(path, index=False)
     dropped = (verdict.verdict == DROP).sum()
-    print(f"{a.project}/{a.databank}: {len(verdict)} judged, {len(kept)} kept, {dropped} DESCARTAR")
-    print(f"  identity from file on {sum(1 for i in ids.values() if i)} of {len(ids)} "
-          f"({source})")
+    print(
+        f"{a.project}/{a.databank}: {len(verdict)} judged, {len(kept)} kept, {dropped} DESCARTAR"
+    )
+    print(
+        f"  identity from file on {sum(1 for i in ids.values() if i)} of {len(ids)} "
+        f"({source})"
+    )
     print(f"  {path}")
-    print(f"apply it: python3 -m sqx.curate.apply_verdict --project {a.project} "
-          f"--databank {a.databank} --verdict {path} --role {a.role}   # then --apply, stopped")
+    print(
+        f"apply it: python3 -m sqx.curate.apply_verdict --project {a.project} "
+        f"--databank {a.databank} --verdict {path} --role {a.role}   # then --apply, stopped"
+    )
 
 
 if __name__ == "__main__":

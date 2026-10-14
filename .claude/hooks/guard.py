@@ -5,6 +5,7 @@ through. A bug in here must never block work, so any exception lets the call thr
 line the parser cannot read falls back to the raw-text checks of `legacy`.
 Facts and tests: knowhow/eng/claude-hooks-guard.md, tests/test_guard.py.
 """
+
 import json
 import os
 import re
@@ -24,20 +25,31 @@ SQX_PROCESS = re.compile(r"StrategyQuant|sqcli|java", re.I)
 INPLACE = re.compile(r"--in-place.*|-[a-zA-Z]*i.*")
 COPIERS = {"cp", "mv", "install", "rsync", "ln"}
 INTERPRETERS = ("python", "perl", "ruby", "node")
-WRITES = re.compile(r"open\([^)]*['\"](?:[wax]b?\+?|r\+b?|rb\+)['\"]|write_text|write_bytes"
-                    r"|\.write\(|writeFile|shutil\.(?:copy|move)|os\.(?:replace|rename|remove|unlink)"
-                    r"|\.(?:rename|unlink)\(")
-CFX_PATH = re.compile(r"project\.cfx['\"]")     # a path literal in the code, not a word in a text
+WRITES = re.compile(
+    r"open\([^)]*['\"](?:[wax]b?\+?|r\+b?|rb\+)['\"]|write_text|write_bytes"
+    r"|\.write\(|writeFile|shutil\.(?:copy|move)|os\.(?:replace|rename|remove|unlink)"
+    r"|\.(?:rename|unlink)\("
+)
+CFX_PATH = re.compile(
+    r"project\.cfx['\"]"
+)  # a path literal in the code, not a word in a text
 KILL = "rule 2: never kill SQX by pattern (it matches your own shell) — kill by numeric PID"
 CFX = "rule 4: SQX rewrites project.cfx on save and exit — use the `-project` API on the worker"
-MASTER_UP = ("rule 2: the master's GUI is up (port 5050) — use the conductor, "
-             "`bin/sqx-worker.sh --role conductor`")
+MASTER_UP = (
+    "rule 2: the master's GUI is up (port 5050) — use the conductor, "
+    "`bin/sqx-worker.sh --role conductor`"
+)
 LEGACY_GIT = [
     (r"\bgit\s+worktree\b", "rule 12: one folder — never `git worktree`"),
     (r"\bgit\s+switch\b", "rule 12: one branch — never switch branches"),
-    (r"\bgit\s+checkout\s+(-[bB]|--orphan)\b", "rule 12: one branch — never create a branch"),
-    (r"\bgit\s+add\s+(-A\b|--all\b|\.(\s|$|;|&))",
-     "rule 12: stage only this task's files by name — never `git add -A` / `git add .`"),
+    (
+        r"\bgit\s+checkout\s+(-[bB]|--orphan)\b",
+        "rule 12: one branch — never create a branch",
+    ),
+    (
+        r"\bgit\s+add\s+(-A\b|--all\b|\.(\s|$|;|&))",
+        "rule 12: stage only this task's files by name — never `git add -A` / `git add .`",
+    ),
 ]
 
 
@@ -45,6 +57,7 @@ def _master() -> Path:
     """The master install, from core.paths — the only place that knows where it lives."""
     sys.path.insert(0, str(ROOT))
     from core.paths import MASTER
+
     return MASTER
 
 
@@ -72,7 +85,11 @@ def _names_master(text: str) -> bool:
 
 def _at(cwd: str, word: str) -> Path:
     """Where a path word points from a directory, `~` and `$HOME` expanded, no disk access."""
-    return Path(os.path.normpath(os.path.join(cwd, os.path.expanduser(os.path.expandvars(word)))))
+    return Path(
+        os.path.normpath(
+            os.path.join(cwd, os.path.expanduser(os.path.expandvars(word)))
+        )
+    )
 
 
 def _is_cfx(word: str) -> bool:
@@ -89,8 +106,10 @@ def _master_cli(cmds: list, cwd: str) -> bool:
         name = Path(words[0]).name
         if name in ("cd", "pushd") and len(words) > 1:
             cwd = str(_at(cwd, words[-1]))
-        elif name == "sqcli" and (master in _at(cwd, words[0]).parents
-                                  or any(_names_master(a) for a in words[1:])):
+        elif name == "sqcli" and (
+            master in _at(cwd, words[0]).parents
+            or any(_names_master(a) for a in words[1:])
+        ):
             return True
     return False
 
@@ -98,15 +117,23 @@ def _master_cli(cmds: list, cwd: str) -> bool:
 def _kills_by_pattern(cmds: list) -> bool:
     """pkill/killall on an SQX process name, or a `kill` fed by a search for one."""
     names = [Path(words[0]).name for words, _ in cmds]
-    naming = {name for name, (words, _) in zip(names, cmds)
-              if any(SQX_PROCESS.search(a) for a in words[1:])}
+    naming = {
+        name
+        for name, (words, _) in zip(names, cmds)
+        if any(SQX_PROCESS.search(a) for a in words[1:])
+    }
     hunts = bool({"pgrep", "pidof"} & naming) or (
-        "ps" in names and bool({"grep", "egrep", "awk"} & naming))
+        "ps" in names and bool({"grep", "egrep", "awk"} & naming)
+    )
     for name, (words, _) in zip(names, cmds):
         targets = [a for a in words[1:] if not a.startswith("-") and not a.isupper()]
         if name in ("pkill", "killall") and name in naming:
             return True
-        if name == "kill" and hunts and not (targets and all(t.isdigit() for t in targets)):
+        if (
+            name == "kill"
+            and hunts
+            and not (targets and all(t.isdigit() for t in targets))
+        ):
             return True
     return False
 
@@ -117,15 +144,22 @@ def _writes_cfx(words: list[str], writes: list[str], cwd: str) -> bool:
     named = [a for a in args if _is_cfx(a)]
     if any(_is_cfx(t) for t in writes):
         return True
-    if name in ("tee", "truncate") or (name in ("sed", "perl") and any(map(INPLACE.fullmatch, args))):
+    if name in ("tee", "truncate") or (
+        name in ("sed", "perl") and any(map(INPLACE.fullmatch, args))
+    ):
         return bool(named)
     if name == "dd":
         return any(a.startswith("of=") and _is_cfx(a[3:]) for a in args)
     if name in COPIERS:
         paths = [a for a in args if not a.startswith("-")]
         # into a folder that already holds one is an overwrite; `mv` of one takes it away
-        return bool(paths) and (_is_cfx(paths[-1]) or (bool(named) and (
-            name == "mv" or (_at(cwd, paths[-1]) / "project.cfx").exists())))
+        return bool(paths) and (
+            _is_cfx(paths[-1])
+            or (
+                bool(named)
+                and (name == "mv" or (_at(cwd, paths[-1]) / "project.cfx").exists())
+            )
+        )
     if name.startswith(INTERPRETERS):
         return any(CFX_PATH.search(a) and WRITES.search(a) for a in args)
     return False
@@ -188,7 +222,7 @@ def decide(event: dict) -> str | None:
     if tool in ("Edit", "Write", "MultiEdit"):
         return write(args.get("file_path", ""))
     if tool == "EnterWorktree" or args.get("isolation") == "worktree":
-        return "rule 12: one folder — never a worktree (`isolation: \"worktree\"`, EnterWorktree)"
+        return 'rule 12: one folder — never a worktree (`isolation: "worktree"`, EnterWorktree)'
     return None
 
 
@@ -203,4 +237,4 @@ def main() -> None:
         sys.exit(2)
 
 
-main()   # a hook, not a command: nothing imports this file, and it has no manual chapter
+main()  # a hook, not a command: nothing imports this file, and it has no manual chapter

@@ -5,9 +5,14 @@ from typing import Any, cast
 import numpy as np
 from numba import njit
 
-MULTIPLIER = 0x2360ED051FC65DA44385DF649FCCF645     # PCG_DEFAULT_MULTIPLIER_128, numpy's
+MULTIPLIER = 0x2360ED051FC65DA44385DF649FCCF645  # PCG_DEFAULT_MULTIPLIER_128, numpy's
 WORD = (1 << 64) - 1
-_M32, _S32, _S58, _S11 = np.uint64(0xFFFFFFFF), np.uint64(32), np.uint64(58), np.uint64(11)
+_M32, _S32, _S58, _S11 = (
+    np.uint64(0xFFFFFFFF),
+    np.uint64(32),
+    np.uint64(58),
+    np.uint64(11),
+)
 _U64, _U63 = np.uint64(64), np.uint64(63)
 _UNIT = 1.0 / 9007199254740992.0
 
@@ -44,8 +49,9 @@ def load(rng: np.random.Generator) -> tuple[np.ndarray, int]:
     if seen["bit_generator"] != "PCG64":
         raise TypeError(f"pcg reproduces PCG64 only, not {seen['bit_generator']}")
     word = seen["state"]["state"]
-    return np.array([word >> 64, word & WORD, seen["has_uint32"], seen["uinteger"]],
-                    np.uint64), seen["state"]["inc"]
+    return np.array(
+        [word >> 64, word & WORD, seen["has_uint32"], seen["uinteger"]], np.uint64
+    ), seen["state"]["inc"]
 
 
 def store(rng: np.random.Generator, state: np.ndarray) -> None:
@@ -66,11 +72,18 @@ def _high(a: np.uint64, b: np.uint64) -> np.uint64:
     """The high 64 bits of a 64 x 64 product (numba has no 128-bit integer)."""
     al, ah, bl, bh = a & _M32, a >> _S32, b & _M32, b >> _S32
     low, mid, dim, top = al * bl, al * bh, ah * bl, ah * bh
-    return top + (mid >> _S32) + (dim >> _S32) + (((low >> _S32) + (mid & _M32) + (dim & _M32)) >> _S32)
+    return (
+        top
+        + (mid >> _S32)
+        + (dim >> _S32)
+        + (((low >> _S32) + (mid & _M32) + (dim & _M32)) >> _S32)
+    )
 
 
 @njit(inline="always")
-def step(high: np.uint64, low: np.uint64, by: np.ndarray) -> tuple[np.uint64, np.uint64]:
+def step(
+    high: np.uint64, low: np.uint64, by: np.ndarray
+) -> tuple[np.uint64, np.uint64]:
     """The state `by` draws further on: state * multiplier + increment, modulo 2**128.
 
     Args:
@@ -79,8 +92,13 @@ def step(high: np.uint64, low: np.uint64, by: np.ndarray) -> tuple[np.uint64, np
     """
     carried = low * by[1]
     moved = carried + by[3]
-    return (_high(low, by[1]) + high * by[1] + low * by[0] + by[2]
-            + np.uint64(moved < carried)), moved
+    return (
+        _high(low, by[1])
+        + high * by[1]
+        + low * by[0]
+        + by[2]
+        + np.uint64(moved < carried)
+    ), moved
 
 
 @njit(inline="always")

@@ -13,7 +13,11 @@ from typing import Any, TypedDict
 
 # `OOS : ================================` opens a task; `OOS : Task finished in 21.10 s.` closes it.
 LINE = re.compile(r"ProgressEngine - (.+?) : (?:={8,}|Task finished in ([0-9.]+) s\.)")
-TIMES, FLOOR, UNKNOWN = 3, 20 * 60, 60 * 60      # s: the deadline's floor, and a title never seen
+TIMES, FLOOR, UNKNOWN = (
+    3,
+    20 * 60,
+    60 * 60,
+)  # s: the deadline's floor, and a title never seen
 
 
 def _history() -> Path:
@@ -56,7 +60,11 @@ def note(cap: Cap, line: str) -> None:
     for title, longest in _longest().items():
         known[title] = max(known.get(title, 0), longest)
     cap.update(task=None, longest=known)
-    atomic(_history(), json.dumps(known, indent=1, sort_keys=True).encode("utf-8"), seal=False)
+    atomic(
+        _history(),
+        json.dumps(known, indent=1, sort_keys=True).encode("utf-8"),
+        seal=False,
+    )
 
 
 def enforce(cap: Cap, role: str, log: Path) -> None:
@@ -81,6 +89,8 @@ def enforce(cap: Cap, role: str, log: Path) -> None:
     if ran <= limit:
         return
     why = f"3× su máximo sano de {seen:.0f} s" if seen else "tarea nunca vista"
-    raise SystemExit(f"SQX no avanza: «{task}» lleva {ran / 60:.0f} min sin «Task finished» en {role} "
-                     f"(tope {limit / 60:.0f} min, {why}); sus hilos salen como «Cross check exception» "
-                     f"en {WORKERS[role]['path'] / 'user/log/worker-daemon.log'} al cerrar ({log})")
+    raise SystemExit(
+        f"SQX no avanza: «{task}» lleva {ran / 60:.0f} min sin «Task finished» en {role} "
+        f"(tope {limit / 60:.0f} min, {why}); sus hilos salen como «Cross check exception» "
+        f"en {WORKERS[role]['path'] / 'user/log/worker-daemon.log'} al cerrar ({log})"
+    )

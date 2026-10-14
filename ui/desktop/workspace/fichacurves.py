@@ -7,7 +7,7 @@ from ui.text.glossary import label
 from ui.desktop.theme import C
 from ui.desktop.workspace.curves import INK, SampleCurves
 
-HEIGHT = 300            # px of the drawing; the owner reads it from across the desk
+HEIGHT = 300  # px of the drawing; the owner reads it from across the desk
 
 
 class CostCurves(QWidget):
@@ -27,8 +27,14 @@ class CostCurves(QWidget):
         switches.addWidget(box)
         switches.addStretch(1)
         lay.addLayout(switches)
-        lay.addWidget(chart.key([("line", INK[f"sqx.{part}"], f"SQX · {seg}")
-                                 for part, seg in (("IS", "IS"), ("OOS", "OOS1"))]))
+        lay.addWidget(
+            chart.key(
+                [
+                    ("line", INK[f"sqx.{part}"], f"SQX · {seg}")
+                    for part, seg in (("IS", "IS"), ("OOS", "OOS1"))
+                ]
+            )
+        )
         self.curves = SampleCurves(HEIGHT)
         lay.addWidget(self.curves, 1)
         self.figures = QLabel("", objectName="mono")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
@@ -44,7 +50,9 @@ class CostCurves(QWidget):
         if "error" in curve:
             self.curves.fill([0.0, 0.0])
             self.figures.setText(curve["error"])
-            self.figures.setStyleSheet(f"color: {C['muted' if curve.get('absent') else 'dead']};")
+            self.figures.setStyleSheet(
+                f"color: {C['muted' if curve.get('absent') else 'dead']};"
+            )
             return
         self.figures.setStyleSheet("")
         self.curves.fill(curve["sqx"], curve.get("split"), curve.get("days", []))

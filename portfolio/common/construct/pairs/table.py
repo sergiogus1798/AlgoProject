@@ -9,12 +9,14 @@ from core import fanout
 
 from . import measures, rolling, stress
 
-CHUNK_PAIRS = 500          # small blocks: many more blocks than cores keeps every core busy
-_STATE: dict = {}          # set before the pool forks; workers read it without pickling
+CHUNK_PAIRS = 500  # small blocks: many more blocks than cores keeps every core busy
+_STATE: dict = {}  # set before the pool forks; workers read it without pickling
 COLUMNS = ("i", "j", "measure", "value", "n_overlap_months")
 
 
-def table(daily_build: pd.DataFrame, monthly_build: pd.DataFrame, cfg: dict) -> pd.DataFrame:
+def table(
+    daily_build: pd.DataFrame, monthly_build: pd.DataFrame, cfg: dict
+) -> pd.DataFrame:
     """Every measure of `pairs/` for every pair of columns, pair blocks spread over every core.
 
     Args:
@@ -35,36 +37,66 @@ def table(daily_build: pd.DataFrame, monthly_build: pd.DataFrame, cfg: dict) -> 
     if not pairs:
         return pd.DataFrame(columns=pd.Index(COLUMNS))
     _STATE.update(
-        pcfg=cfg["pairs"], pairs=pairs,
-        stress=daily_build.index.isin(stress.stress_days(daily_build, cfg["pairs"]["stress_quantile"])),
+        pcfg=cfg["pairs"],
+        pairs=pairs,
+        stress=daily_build.index.isin(
+            stress.stress_days(daily_build, cfg["pairs"]["stress_quantile"])
+        ),
         monthly={c: monthly_build[c].to_numpy(dtype=float) for c in identities},
-        daily={c: daily_build[c].to_numpy(dtype=float) for c in identities})
+        daily={c: daily_build[c].to_numpy(dtype=float) for c in identities},
+    )
     w = cfg["pairs"]["rolling_months"]
-    _STATE["ranks"] = {c: rolling.ranked_windows(a, w) for c, a in _STATE["monthly"].items()}
+    _STATE["ranks"] = {
+        c: rolling.ranked_windows(a, w) for c, a in _STATE["monthly"].items()
+    }
     # Workers hold only a few MB (the matrices are shared by fork), so every core is used.
     starts = range(0, len(pairs), CHUNK_PAIRS)
-    frames = [got for _, got in fanout.run(_chunk, {k: 1 for k in starts}, fanout.CORES)]
+    frames = [
+        got for _, got in fanout.run(_chunk, {k: 1 for k in starts}, fanout.CORES)
+    ]
     _STATE.clear()
-    return pd.concat(frames, ignore_index=True).sort_values(["i", "j"], kind="stable",
-                                                            ignore_index=True)
+    return pd.concat(frames, ignore_index=True).sort_values(
+        ["i", "j"], kind="stable", ignore_index=True
+    )
 
 
 def _chunk(start: int) -> pd.DataFrame:
     """One block of pairs, in a worker: every measure row of pairs[start : start + CHUNK_PAIRS]."""
     m, d, pcfg = _STATE["monthly"], _STATE["daily"], _STATE["pcfg"]
     rows = []
-    for i, j in _STATE["pairs"][start:start + CHUNK_PAIRS]:
-        rows.extend(_pair_rows(i, j, m[i], m[j], d[i], d[j], _STATE["stress"], pcfg, _STATE["ranks"]))
+    for i, j in _STATE["pairs"][start : start + CHUNK_PAIRS]:
+        rows.extend(
+            _pair_rows(
+                i, j, m[i], m[j], d[i], d[j], _STATE["stress"], pcfg, _STATE["ranks"]
+            )
+        )
     return pd.DataFrame(rows, columns=pd.Index(COLUMNS))
 
 
-def _pair_rows(i: str, j: str, am: np.ndarray, bm: np.ndarray, ad: np.ndarray, bd: np.ndarray,
-               stress_mask: np.ndarray, pcfg: dict, ranks: dict | None = None) -> list[dict]:
+def _pair_rows(
+    i: str,
+    j: str,
+    am: np.ndarray,
+    bm: np.ndarray,
+    ad: np.ndarray,
+    bd: np.ndarray,
+    stress_mask: np.ndarray,
+    pcfg: dict,
+    ranks: dict | None = None,
+) -> list[dict]:
     """Every measure row for one pair, monthly arrays `am`/`bm` and daily arrays `ad`/`bd`."""
     n_overlap = measures.overlap(am, bm)
-    roll_pearson = rolling.rolling_max(am, bm, pcfg["rolling_months"], pcfg["recent_months"], "pearson")
-    rk = (ranks[i], ranks[j]) if ranks and ranks[i] is not None and ranks[j] is not None else None
-    roll_spearman = rolling.rolling_max(am, bm, pcfg["rolling_months"], pcfg["recent_months"], "spearman", rk)
+    roll_pearson = rolling.rolling_max(
+        am, bm, pcfg["rolling_months"], pcfg["recent_months"], "pearson"
+    )
+    rk = (
+        (ranks[i], ranks[j])
+        if ranks and ranks[i] is not None and ranks[j] is not None
+        else None
+    )
+    roll_spearman = rolling.rolling_max(
+        am, bm, pcfg["rolling_months"], pcfg["recent_months"], "spearman", rk
+    )
     values = {
         "pearson_monthly": measures.pearson(am, bm, pcfg),
         "pearson_daily": measures.pearson(ad, bd, pcfg),
@@ -78,5 +110,7 @@ def _pair_rows(i: str, j: str, am: np.ndarray, bm: np.ndarray, ad: np.ndarray, b
         "rolling_spearman_recent": roll_spearman["recent_abs"],
         "stress": stress.stress_corr(ad, bd, stress_mask),
     }
-    return [{"i": i, "j": j, "measure": name, "value": value, "n_overlap_months": n_overlap}
-            for name, value in values.items()]
+    return [
+        {"i": i, "j": j, "measure": name, "value": value, "n_overlap_months": n_overlap}
+        for name, value in values.items()
+    ]

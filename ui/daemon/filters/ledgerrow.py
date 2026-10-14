@@ -23,10 +23,12 @@ def signed(project: str) -> tuple[str, dict] | str:
     """
     family = where.family(project)
     if family is None:
-        return (f"el proyecto {project} no tiene plantilla en projects/registry.csv: sin "
-                "familia no hay estudio del ledger donde apuntar el filtro, así que no se aplica")
+        return (
+            f"el proyecto {project} no tiene plantilla en projects/registry.csv: sin "
+            "familia no hay estudio del ledger donde apuntar el filtro, así que no se aplica"
+        )
     row = where.enrolled(project)
-    assert row is not None                      # `family` found it above
+    assert row is not None  # `family` found it above
     return studymod.study_id(row["symbol"], row["timeframe"], family), row
 
 
@@ -39,16 +41,31 @@ def placed(project: str, databank: str) -> tuple[float, str] | str:
         stage, or a databank no task of the project's `project.cfx` writes.
     """
     same = databank.replace(" ", "_")
-    task = next((t for t, out in layout.outputs(project).items()
-                 if out.replace(" ", "_") == same), None)
-    stage = next((s for s in STAGE.values() if task in titles(s)), None) if task else None
+    task = next(
+        (
+            t
+            for t, out in layout.outputs(project).items()
+            if out.replace(" ", "_") == same
+        ),
+        None,
+    )
+    stage = (
+        next((s for s in STAGE.values() if task in titles(s)), None) if task else None
+    )
     if stage is None:
-        return (f"ninguna tarea de {project} escribe {databank} (o ningún install tiene ya el "
-                "proyecto): no sé a qué paso del workflow pertenece el filtro")
+        return (
+            f"ninguna tarea de {project} escribe {databank} (o ningún install tiene ya el "
+            "proyecto): no sé a qué paso del workflow pertenece el filtro"
+        )
     if stage in OOS2_STAGES:
         return f"{databank} es de la etapa {stage}, que lee OOS2: no se filtra"
-    step = next(s for s in STEPS if s["kind"] == "python" and isinstance(s["feeds"], tuple)
-                and stage in s["feeds"])
+    step = next(
+        s
+        for s in STEPS
+        if s["kind"] == "python"
+        and isinstance(s["feeds"], tuple)
+        and stage in s["feeds"]
+    )
     n = step["n"]
     return (float(n) if "." in n else int(n)), stage
 
@@ -59,8 +76,17 @@ def segment(read: set[str]) -> str:
     return "build" if read == {"IS"} else "oos1"
 
 
-def log(project: str, databank: str, step: float, read: set[str], n_in: int, n_out: int,
-        criterion: str, origin: str, thresholds: list[dict] | None) -> dict[str, Any]:
+def log(
+    project: str,
+    databank: str,
+    step: float,
+    read: set[str],
+    n_in: int,
+    n_out: int,
+    criterion: str,
+    origin: str,
+    thresholds: list[dict] | None,
+) -> dict[str, Any]:
     """Write the one ledger row, through `record.log` and so through the one-way door.
 
     Args:
@@ -79,10 +105,22 @@ def log(project: str, databank: str, step: float, read: set[str], n_in: int, n_o
         The row as written. Raises `PermissionError` when the door refuses the segment.
     """
     study, row = cast(tuple[str, dict], signed(project))
-    return record.log(study, {
-        "step": step, "launched_by": "ventana", "symbol": row["symbol"],
-        "timeframe": row["timeframe"], "segment": segment(read), "n_in": n_in,
-        "n_out": n_out, "criterion": criterion, "thresholds": thresholds,
-        "note": (f"{'filtro' if origin == 'filter' else 'borrado a mano'} en la ventana · "
-                 f"proyecto {project} · databank {databank} · lee "
-                 f"{', '.join(sorted(s or 'estudios' for s in read))}")})
+    return record.log(
+        study,
+        {
+            "step": step,
+            "launched_by": "ventana",
+            "symbol": row["symbol"],
+            "timeframe": row["timeframe"],
+            "segment": segment(read),
+            "n_in": n_in,
+            "n_out": n_out,
+            "criterion": criterion,
+            "thresholds": thresholds,
+            "note": (
+                f"{'filtro' if origin == 'filter' else 'borrado a mano'} en la ventana · "
+                f"proyecto {project} · databank {databank} · lee "
+                f"{', '.join(sorted(s or 'estudios' for s in read))}"
+            ),
+        },
+    )

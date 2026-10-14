@@ -10,9 +10,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from core import worker                                    # noqa: E402
-from sqx.projects import live                              # noqa: E402
-from sqx.variants import livexec                           # noqa: E402
+from core import worker  # noqa: E402
+from sqx.projects import live  # noqa: E402
+from sqx.variants import livexec  # noqa: E402
 
 CFG = {"role": "custodian", "project": "Test_X", "poll_seconds": 0, "ready_tries": 2}
 
@@ -71,9 +71,14 @@ def test_wait_reads_each_line_once_follows_midnight_and_returns_the_end() -> Non
         elif polls["n"] == 3:
             day2.write_text("00:01 ProgressEngine - Project finished\n")
 
-    with patched((live, "_up", lambda role: True), (time, "sleep", sleep),
-                 (live, "_log", lambda role: day2 if day2.exists() else day1)):
-        assert live.wait("custodian", since) == "00:01 ProgressEngine - Project finished"
+    with patched(
+        (live, "_up", lambda role: True),
+        (time, "sleep", sleep),
+        (live, "_log", lambda role: day2 if day2.exists() else day1),
+    ):
+        assert (
+            live.wait("custodian", since) == "00:01 ProgressEngine - Project finished"
+        )
 
 
 def test_wait_ends_when_the_port_stays_down_or_the_bound_passes() -> None:
@@ -82,12 +87,19 @@ def test_wait_ends_when_the_port_stays_down_or_the_bound_passes() -> None:
     day1 = logs / "log_2026_01_01.log"
     day1.write_text("23:59 Starting\n")
     since, polls = (day1, 0), []
-    with patched((live, "_up", lambda role: False), (time, "sleep", polls.append),
-                 (live, "_log", lambda role: day1)):
+    with patched(
+        (live, "_up", lambda role: False),
+        (time, "sleep", polls.append),
+        (live, "_log", lambda role: day1),
+    ):
         raises("dejó de escuchar", live.wait, "custodian", since)
-    assert len(polls) == live.MISSES - 1                    # one miss is not a dead session
-    with patched((live, "_up", lambda role: True), (time, "sleep", lambda s: None),
-                 (live, "_log", lambda role: day1), (time, "monotonic", clock(3600 * 30.0))):
+    assert len(polls) == live.MISSES - 1  # one miss is not a dead session
+    with patched(
+        (live, "_up", lambda role: True),
+        (time, "sleep", lambda s: None),
+        (live, "_log", lambda role: day1),
+        (time, "monotonic", clock(3600 * 30.0)),
+    ):
         raises(f"tras {worker.MAX_HOURS} h", live.wait, "custodian", since)
 
 
@@ -100,10 +112,13 @@ def test_a_slow_load_raises_before_any_sync_and_keeps_its_copy() -> None:
         (bank / f"{name}.sqx").write_text(name)
     aside, synced = top / "aside", []
     aside.mkdir()
-    fakes = [(live, "_top", lambda role: top), (live, "tmp_dir", lambda: aside),
-             (live, "call", lambda role, action, **params: {"strategies": []}),
-             (live, "sync", lambda role, project, banks=None: synced.append(banks)),
-             (time, "sleep", lambda s: None)]
+    fakes = [
+        (live, "_top", lambda role: top),
+        (live, "tmp_dir", lambda: aside),
+        (live, "call", lambda role, action, **params: {"strategies": []}),
+        (live, "sync", lambda role, project, banks=None: synced.append(banks)),
+        (time, "sleep", lambda s: None),
+    ]
     with patched(*fakes, (live, "records", lambda role, project: {"Results": 2})):
         raises(str(aside), live.load, "custodian", "Test_X", "Results")
     assert synced == []
@@ -120,15 +135,27 @@ def test_a_slow_load_raises_before_any_sync_and_keeps_its_copy() -> None:
 
 def test_a_stopped_project_is_not_a_finished_batch() -> None:
     """«Project stopped» and the abort line are failures; only «Project finished» returns the count."""
-    fakes = [(live, "call", lambda role, action, **params: {"config": {"xml": "<x/>"}}),
-             (livexec.stage, "only", lambda xml, titles: ("<x/>", [])),
-             (live, "records", lambda role, project: {leg["databank"]: 2 for leg in livexec.legmod.legs()})]
-    for end, text in (("10:00 Project stopped", "Project stopped"),
-                      ("10:00 Error while running project", "Error while running")):
+    fakes = [
+        (live, "call", lambda role, action, **params: {"config": {"xml": "<x/>"}}),
+        (livexec.stage, "only", lambda xml, titles: ("<x/>", [])),
+        (
+            live,
+            "records",
+            lambda role, project: {leg["databank"]: 2 for leg in livexec.legmod.legs()},
+        ),
+    ]
+    for end, text in (
+        ("10:00 Project stopped", "Project stopped"),
+        ("10:00 Error while running project", "Error while running"),
+    ):
         with patched(*fakes, (live, "run", lambda role, project, config, end=end: end)):
             raises(text, livexec.run, 6, CFG, lambda pct, line: None)
-    with patched(*fakes, (live, "run", lambda role, project, config: "10:00 Project finished")):
-        assert livexec.run(6, CFG, lambda pct, line: None) == 2 * len(livexec.legmod.legs())
+    with patched(
+        *fakes, (live, "run", lambda role, project, config: "10:00 Project finished")
+    ):
+        assert livexec.run(6, CFG, lambda pct, line: None) == 2 * len(
+            livexec.legmod.legs()
+        )
 
 
 if __name__ == "__main__":

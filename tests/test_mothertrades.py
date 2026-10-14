@@ -16,9 +16,12 @@ def batch(top: Path, name: str, origin: str) -> tuple[Path, list[dict]]:
     """A batch folder whose manifest flags `origin`, and two leg databanks holding its file."""
     work = top / name
     work.mkdir()
-    pd.DataFrame({"variant_id": ["P00000", "P00001"],
-                  "origin": [origin == "P00000", origin == "P00001"]}).to_parquet(
-        work / "manifest.parquet")
+    pd.DataFrame(
+        {
+            "variant_id": ["P00000", "P00001"],
+            "origin": [origin == "P00000", origin == "P00001"],
+        }
+    ).to_parquet(work / "manifest.parquet")
     legs = []
     for segment in ("oos1", "oos2"):
         bank = top / f"{name}_{segment}"
@@ -31,6 +34,7 @@ def batch(top: Path, name: str, origin: str) -> tuple[Path, list[dict]]:
 
 def test_each_batch_gets_its_mother() -> None:
     """The export is one folder for every batch: what comes back is split by where it came from."""
+
     def trades(staged: Path, csvs: Path) -> None:
         """Stand in for orderstocsv: one CSV per staged file, its text as the only trade."""
         csvs.mkdir()
@@ -39,8 +43,12 @@ def test_each_batch_gets_its_mother() -> None:
 
     def pack(files: list[Path], out: Path, per_market: bool) -> dict:
         """Stand in for tradepack: `strategy` is the CSV's stem, as the real one writes it."""
-        pd.DataFrame({"strategy": pd.Categorical([f.stem for f in files]),
-                      "what": [f.read_text() for f in files]}).to_parquet(out)
+        pd.DataFrame(
+            {
+                "strategy": pd.Categorical([f.stem for f in files]),
+                "what": [f.read_text() for f in files],
+            }
+        ).to_parquet(out)
         return {}
 
     real = mothertrades.exportdrv.trades, mothertrades.tradepack.pack
@@ -54,8 +62,10 @@ def test_each_batch_gets_its_mother() -> None:
             assert list(written.values()) == [2, 2], written
             for (work, _), origin in zip(made, ("P00000", "P00001")):
                 got = pd.read_parquet(work / mothertrades.OUT)
-                assert sorted(got["what"]) == [f"{work.name} {origin} oos1",
-                                               f"{work.name} {origin} oos2"], got
+                assert sorted(got["what"]) == [
+                    f"{work.name} {origin} oos1",
+                    f"{work.name} {origin} oos2",
+                ], got
                 assert set(got["variant_id"]) == {origin} and "strategy" not in got
                 assert all(row.what.endswith(row.segment) for row in got.itertuples())
     finally:

@@ -11,16 +11,28 @@ from core import worker
 from core.paths import WORKERS
 from sqx.projects import live, presaving
 
-SAVED = re.compile(r"Databank '([^/']+)/([^']+)' saved .* Sync triggered by 'Save all strategies before exiting")
-PATIENCE = 15 * 60     # s the other projects' saves may take; past it nothing is killed and the script waits
-GRACE, LAST = 10, 30   # s after the last save before the kill; s SIGTERM gets before SIGKILL
+SAVED = re.compile(
+    r"Databank '([^/']+)/([^']+)' saved .* Sync triggered by 'Save all strategies before exiting"
+)
+PATIENCE = (
+    15 * 60
+)  # s the other projects' saves may take; past it nothing is killed and the script waits
+GRACE, LAST = (
+    10,
+    30,
+)  # s after the last save before the kill; s SIGTERM gets before SIGKILL
 
 
 def banks(role: str, running: str) -> set[tuple[str, str]]:
     """(project, databank) pairs with strategies on disk, the running project's aside: what the exit saves."""
     root = WORKERS[role]["path"] / "user/projects"
-    return {(p.name, b.name) for p in root.iterdir() if p.name != running
-            for b in (p / "databanks").glob("*") if any(b.glob("*.sqx"))}
+    return {
+        (p.name, b.name)
+        for p in root.iterdir()
+        if p.name != running
+        for b in (p / "databanks").glob("*")
+        if any(b.glob("*.sqx"))
+    }
 
 
 def stop(role: str, running: str) -> str:
@@ -34,11 +46,20 @@ def stop(role: str, running: str) -> str:
     A databank never synced (no file on disk) is not waited for: `# ponytail:` the exit saves
     it too, and a kill while it writes leaves it partial — none of a finished project's are.
     """
-    presaved = presaving.settle(role).get("clean", set())   # banks the presave already wrote: the exit logs no save line for them
+    presaved = presaving.settle(role).get(
+        "clean", set()
+    )  # banks the presave already wrote: the exit logs no save line for them
     top, (log, offset) = WORKERS[role]["path"], live.mark(role)
-    port, token = live._setting(role, "WebServerPortUsed"), live._setting(role, "BrowserToken")
-    urllib.request.urlopen(urllib.request.Request(f"http://localhost:{port}/main/exitapp",
-                                                  headers={"browserToken": token}), timeout=30).read()
+    port, token = (
+        live._setting(role, "WebServerPortUsed"),
+        live._setting(role, "BrowserToken"),
+    )
+    urllib.request.urlopen(
+        urllib.request.Request(
+            f"http://localhost:{port}/main/exitapp", headers={"browserToken": token}
+        ),
+        timeout=30,
+    ).read()
     pending, began, seen = banks(role, running) - presaved, time.monotonic(), -1
     while pending and worker.holding(top) and time.monotonic() - began < PATIENCE:
         time.sleep(2)
@@ -54,11 +75,15 @@ def stop(role: str, running: str) -> str:
     if not pids:
         return f"{role}: salió solo en {time.monotonic() - began:.0f} s"
     if pending:
-        return (f"{role}: {len(pending)} databank(s) de otros proyectos sin guardar tras {PATIENCE // 60} "
-                f"min ({sorted(pending)[:3]}…): no se mata, se espera a que salga")
+        return (
+            f"{role}: {len(pending)} databank(s) de otros proyectos sin guardar tras {PATIENCE // 60} "
+            f"min ({sorted(pending)[:3]}…): no se mata, se espera a que salga"
+        )
     time.sleep(GRACE)
     for pid in pids:
-        with contextlib.suppress(ProcessLookupError):   # it exited during GRACE (🔬 2026-10-06)
+        with contextlib.suppress(
+            ProcessLookupError
+        ):  # it exited during GRACE (🔬 2026-10-06)
             os.kill(pid, signal.SIGTERM)
     for _ in range(LAST):
         if not worker.holding(top):
@@ -67,5 +92,7 @@ def stop(role: str, running: str) -> str:
     for pid in worker.holding(top):
         with contextlib.suppress(ProcessLookupError):
             os.kill(pid, signal.SIGKILL)
-    return (f"{role}: los demás proyectos guardados en {time.monotonic() - began:.0f} s; «{running}» "
-            f"seguía con su tarea y se mató por PID {pids} (su memoria se pierde, el paso se repite)")
+    return (
+        f"{role}: los demás proyectos guardados en {time.monotonic() - began:.0f} s; «{running}» "
+        f"seguía con su tarea y se mató por PID {pids} (su memoria se pierde, el paso se repite)"
+    )

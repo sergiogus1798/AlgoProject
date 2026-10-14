@@ -2,7 +2,10 @@
 
 from PySide6.QtWidgets import QGridLayout, QWidget
 
-PER_ROW, CARD_W = 10, 175   # cards per row at most; px a card needs for box, ⚙, ▶ and title
+PER_ROW, CARD_W = (
+    10,
+    175,
+)  # cards per row at most; px a card needs for box, ⚙, ▶ and title
 
 
 def reflow(grid: QGridLayout, cards: list[QWidget], width: int, per_row: int) -> int:

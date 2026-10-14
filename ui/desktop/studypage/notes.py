@@ -5,9 +5,15 @@ from PySide6.QtWidgets import QLabel
 from ui.desktop.blocks.states import colour
 from ui.desktop.theme import T
 
-FAMILY = {"screening": "Cribado", "transfer": "Transferencia", "breakage": "Rotura",
-          "optimisation": "Optimización", "closing": "Cierre", "readings": "Lecturas",
-          "data": "Datos"}
+FAMILY = {
+    "screening": "Cribado",
+    "transfer": "Transferencia",
+    "breakage": "Rotura",
+    "optimisation": "Optimización",
+    "closing": "Cierre",
+    "readings": "Lecturas",
+    "data": "Datos",
+}
 
 
 # ⛔ and 👁 are in no font installed here (fc-list, 2026-09-26): they drew as empty boxes.
@@ -20,16 +26,30 @@ def headline(entry: dict) -> str:
     Returns:
         Rich text.
     """
-    role = (f'<b style="color:{colour("fail")}">⊘ Elimina</b> — su verdict.csv quita '
-            f"estrategias vía /curate" if entry["role"] == "gate" else
-            f'<b style="color:{colour("info")}">◉ Describe</b> — no quita a nadie')
+    role = (
+        f'<b style="color:{colour("fail")}">⊘ Elimina</b> — su verdict.csv quita '
+        f"estrategias vía /curate"
+        if entry["role"] == "gate"
+        else f'<b style="color:{colour("info")}">◉ Describe</b> — no quita a nadie'
+    )
     step = f"paso {entry['step']}" if entry["step"] else "fuera de la secuencia"
-    scope = " y ".join(s for s, ok in (("una estrategia", entry["one"]),
-                                       ("la población", entry["many"])) if ok) or "—"
+    scope = (
+        " y ".join(
+            s
+            for s, ok in (
+                ("una estrategia", entry["one"]),
+                ("la población", entry["many"]),
+            )
+            if ok
+        )
+        or "—"
+    )
     # `one`/`many` are the runner's scopes when the study runs from here (catalogue.entry).
     verb = "se corre sobre" if entry["runnable"] else "juzga"
-    return (f'<span style="font-size:17px; font-weight:700">{entry["title"]}</span>'
-            f" · {step} · {role} · {verb} {scope}")
+    return (
+        f'<span style="font-size:17px; font-weight:700">{entry["title"]}</span>'
+        f" · {step} · {role} · {verb} {scope}"
+    )
 
 
 def show_head(label: QLabel, entry: dict) -> None:
@@ -40,8 +60,10 @@ def show_head(label: QLabel, entry: dict) -> None:
         entry: The study's catalogue entry.
     """
     label.setText(headline(entry))
-    label.setToolTip("Elimina: un estudio de cribado, su veredicto saca estrategias del databank. "
-                     "Describe: solo mide y muestra, no quita a nadie.")
+    label.setToolTip(
+        "Elimina: un estudio de cribado, su veredicto saca estrategias del databank. "
+        "Describe: solo mide y muestra, no quita a nadie."
+    )
 
 
 def context(where: dict, strategy_page: bool) -> str:
@@ -59,8 +81,10 @@ def context(where: dict, strategy_page: bool) -> str:
         tail = f" › <b>{where.get('strategy') or '— ninguna estrategia elegida —'}</b>"
     else:
         tail = " › <b>población</b>"
-    return (f"{where.get('project') or '—'} › {where.get('databank') or '—'}{tail}"
-            f' <span style="color:{T["faint"]}">· activo {where.get("asset") or "?"}</span>')
+    return (
+        f"{where.get('project') or '—'} › {where.get('databank') or '—'}{tail}"
+        f' <span style="color:{T["faint"]}">· activo {where.get("asset") or "?"}</span>'
+    )
 
 
 def absent(entry: dict, strategy_page: bool) -> str:
@@ -74,11 +98,15 @@ def absent(entry: dict, strategy_page: bool) -> str:
         One Spanish sentence.
     """
     if entry["source"] == "batch":
-        return ("Este estudio escribe en el lote de variantes de la madre (estudios/), no en "
-                "reports/: solo tiene resultado por madre, nunca de toda la población.")
+        return (
+            "Este estudio escribe en el lote de variantes de la madre (estudios/), no en "
+            "reports/: solo tiene resultado por madre, nunca de toda la población."
+        )
     if strategy_page and not entry["one"] and entry["many"]:
-        return ("Este estudio juzga la población y no dejó ficha de esta estrategia aquí: "
-                "su resultado está en el panel de databanks de Proyecto.")
+        return (
+            "Este estudio juzga la población y no dejó ficha de esta estrategia aquí: "
+            "su resultado está en el panel de databanks de Proyecto."
+        )
     return "Sin resultado de este estudio en ningún databank de este proyecto."
 
 
@@ -91,11 +119,24 @@ def elsewhere(meta: dict) -> str:
     Returns:
         Rich text, "" when the result is this databank's own and the same XML.
     """
-    mark = (' · <span style="color:{0}">versión de otro databank (XML distinto)</span>'
-            .format(colour("watch")) if meta.get("other_identity") else "")
-    where = " · ".join(w for w in (f"de {meta['elsewhere']}" if meta.get("elsewhere") else "",
-                                   meta.get("note") or "") if w)
-    return (f' <span style="color:{T["muted"]}">· {where}</span>' if where else "") + mark
+    mark = (
+        ' · <span style="color:{0}">versión de otro databank (XML distinto)</span>'.format(
+            colour("watch")
+        )
+        if meta.get("other_identity")
+        else ""
+    )
+    where = " · ".join(
+        w
+        for w in (
+            f"de {meta['elsewhere']}" if meta.get("elsewhere") else "",
+            meta.get("note") or "",
+        )
+        if w
+    )
+    return (
+        f' <span style="color:{T["muted"]}">· {where}</span>' if where else ""
+    ) + mark
 
 
 def skipped(rows: list[dict]) -> str:
@@ -110,8 +151,10 @@ def skipped(rows: list[dict]) -> str:
     if not rows:
         return ""
     body = "<br>".join(f"{r['day']}: {r['reason']}" for r in rows)
-    return (f'<span style="color:{colour("watch")}"><b>Runs más nuevos que no se '
-            f"muestran:</b><br>{body}</span>")
+    return (
+        f'<span style="color:{colour("watch")}"><b>Runs más nuevos que no se '
+        f"muestran:</b><br>{body}</span>"
+    )
 
 
 def shown(day: str, chosen: bool, strategy_page: bool) -> str:
@@ -129,5 +172,7 @@ def shown(day: str, chosen: bool, strategy_page: bool) -> str:
         return f"Run del {day}, elegido en el historial."
     if not strategy_page:
         return f"Run del {day}: el más nuevo de la población en este databank."
-    return (f"Run del {day}: el más nuevo de esta estrategia en el proyecto, el de su mismo XML "
-            "si lo hay, si no el de su nombre.")
+    return (
+        f"Run del {day}: el más nuevo de esta estrategia en el proyecto, el de su mismo XML "
+        "si lo hay, si no el de su nombre."
+    )

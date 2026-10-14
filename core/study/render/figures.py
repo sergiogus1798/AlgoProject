@@ -25,27 +25,44 @@ def overlay(b: dict) -> str:
     body = [svg.axes(x, y, svg.ticks(edges[0], edges[-1]), svg.ticks(0, top))]
     key = []
     for colour, s in zip(SERIES, b["series"]):
-        steps = " ".join(f"L{x(a):.1f},{y(c):.1f} L{x(z):.1f},{y(c):.1f}"
-                         for a, z, c in zip(edges, edges[1:], s["counts"]))
-        body.append(f'<path d="M{x(edges[0]):.1f},{y(0):.1f} {steps} L{x(edges[-1]):.1f},'
-                    f'{y(0):.1f} Z" fill="{colour}" fill-opacity=".18" stroke="{colour}" '
-                    f'stroke-width="2"><title>{escape(s["label"])}</title></path>')
+        steps = " ".join(
+            f"L{x(a):.1f},{y(c):.1f} L{x(z):.1f},{y(c):.1f}"
+            for a, z, c in zip(edges, edges[1:], s["counts"])
+        )
+        body.append(
+            f'<path d="M{x(edges[0]):.1f},{y(0):.1f} {steps} L{x(edges[-1]):.1f},'
+            f'{y(0):.1f} Z" fill="{colour}" fill-opacity=".18" stroke="{colour}" '
+            f'stroke-width="2"><title>{escape(s["label"])}</title></path>'
+        )
         if s["median"] is not None:
-            body.append(f'<line x1="{x(s["median"]):.1f}" x2="{x(s["median"]):.1f}" '
-                        f'y1="{PAD["t"]}" y2="{H - PAD["b"]}" stroke="{colour}" '
-                        f'stroke-dasharray="4 3"/>')
+            body.append(
+                f'<line x1="{x(s["median"]):.1f}" x2="{x(s["median"]):.1f}" '
+                f'y1="{PAD["t"]}" y2="{H - PAD["b"]}" stroke="{colour}" '
+                f'stroke-dasharray="4 3"/>'
+            )
         real = s.get("real")
         if real is not None:
-            body.append(f'<line x1="{x(real):.1f}" x2="{x(real):.1f}" y1="{PAD["t"]}" '
-                        f'y2="{H - PAD["b"]}" stroke="{colour}" stroke-width="3"/>')
+            body.append(
+                f'<line x1="{x(real):.1f}" x2="{x(real):.1f}" y1="{PAD["t"]}" '
+                f'y2="{H - PAD["b"]}" stroke="{colour}" stroke-width="3"/>'
+            )
         tail = "" if real is None else f" · real {svg.num(real)}"
-        key.append((svg.box(colour, .5), f"{s['label']} · n {svg.num(s['n'])} · mediana "
-                                         f"{svg.num(s['median'])}{tail}"))
+        key.append(
+            (
+                svg.box(colour, 0.5),
+                f"{s['label']} · n {svg.num(s['n'])} · mediana "
+                f"{svg.num(s['median'])}{tail}",
+            )
+        )
     shift = b.get("shift")
     if shift:
         p = "—" if shift["ks_p"] is None else f"{shift['ks_p']:.4f}"
-        key.append((svg.line(svg.INK2, "dashed"),
-                    f"desplazamiento de la mediana {svg.num(shift['median'])} · KS p = {p}"))
+        key.append(
+            (
+                svg.line(svg.INK2, "dashed"),
+                f"desplazamiento de la mediana {svg.num(shift['median'])} · KS p = {p}",
+            )
+        )
     return svg.figure(b["title"], b["note"], svg.canvas("".join(body)), svg.legend(key))
 
 
@@ -57,24 +74,42 @@ def distribution(b: dict) -> str:
     x = svg.scale(edges[0], edges[-1], PAD["l"], W - PAD["r"])
     y = svg.scale(0, max(counts) or 1, H - PAD["b"], PAD["t"])
     lo, hi = b["band"]
-    body = ([f'<rect x="{x(lo):.1f}" y="{PAD["t"]}" width="{x(hi) - x(lo):.1f}" '
-             f'height="{H - PAD["b"] - PAD["t"]}" fill="{SIM}" opacity=".10"/>']
-            if lo is not None else [])
-    body += [f'<rect x="{x(a) + .5:.1f}" y="{y(c):.1f}" width="{max(x(z) - x(a) - 1, .5):.1f}" '
-             f'height="{y(0) - y(c):.1f}" fill="{SIM}" opacity=".75"/>'
-             for a, z, c in zip(edges, edges[1:], counts)]
-    body.append(svg.axes(x, y, svg.ticks(edges[0], edges[-1]), svg.ticks(0, max(counts) or 1)))
-    body.append(f'<line x1="{x(b["median"]):.1f}" x2="{x(b["median"]):.1f}" y1="{PAD["t"]}" '
-                f'y2="{H - PAD["b"]}" stroke="{svg.INK2}" stroke-dasharray="4 3"/>')
+    body = (
+        [
+            f'<rect x="{x(lo):.1f}" y="{PAD["t"]}" width="{x(hi) - x(lo):.1f}" '
+            f'height="{H - PAD["b"] - PAD["t"]}" fill="{SIM}" opacity=".10"/>'
+        ]
+        if lo is not None
+        else []
+    )
+    body += [
+        f'<rect x="{x(a) + 0.5:.1f}" y="{y(c):.1f}" width="{max(x(z) - x(a) - 1, 0.5):.1f}" '
+        f'height="{y(0) - y(c):.1f}" fill="{SIM}" opacity=".75"/>'
+        for a, z, c in zip(edges, edges[1:], counts)
+    ]
+    body.append(
+        svg.axes(x, y, svg.ticks(edges[0], edges[-1]), svg.ticks(0, max(counts) or 1))
+    )
+    body.append(
+        f'<line x1="{x(b["median"]):.1f}" x2="{x(b["median"]):.1f}" y1="{PAD["t"]}" '
+        f'y2="{H - PAD["b"]}" stroke="{svg.INK2}" stroke-dasharray="4 3"/>'
+    )
     if b["real"] is not None:
-        body.append(f'<line x1="{x(b["real"]):.1f}" x2="{x(b["real"]):.1f}" y1="{PAD["t"]}" '
-                    f'y2="{H - PAD["b"]}" stroke="{REAL}" stroke-width="3"/>'
-                    f'<text class="mark" x="{x(b["real"]) + 5:.1f}" y="{PAD["t"] + 12}">'
-                    f'{escape(b.get("mark", "real"))} {svg.num(b["real"])}</text>')
+        body.append(
+            f'<line x1="{x(b["real"]):.1f}" x2="{x(b["real"]):.1f}" y1="{PAD["t"]}" '
+            f'y2="{H - PAD["b"]}" stroke="{REAL}" stroke-width="3"/>'
+            f'<text class="mark" x="{x(b["real"]) + 5:.1f}" y="{PAD["t"] + 12}">'
+            f"{escape(b.get('mark', 'real'))} {svg.num(b['real'])}</text>"
+        )
     p = "" if b["p"] is None else f" · p = {b['p']:.4f}"
-    key = svg.legend([(svg.box(SIM, .75), "simuladas"), (svg.box(SIM, .2), "banda"),
-                      (svg.line(svg.INK2, "dashed"), f"mediana {svg.num(b['median'])}"),
-                      (svg.line(REAL), f"{b.get('mark', 'real')}{p}")])
+    key = svg.legend(
+        [
+            (svg.box(SIM, 0.75), "simuladas"),
+            (svg.box(SIM, 0.2), "banda"),
+            (svg.line(svg.INK2, "dashed"), f"mediana {svg.num(b['median'])}"),
+            (svg.line(REAL), f"{b.get('mark', 'real')}{p}"),
+        ]
+    )
     return svg.figure(b["title"], b["note"], svg.canvas("".join(body)), key)
 
 
@@ -99,24 +134,49 @@ def cone(b: dict) -> str:
     x = svg.scale(0, max(n - 1, 1), PAD["l"], W - PAD["r"])
     y = svg.scale(min(values), max(values), H - PAD["b"], PAD["t"])
     body = []
-    k = sorted(b["bands"], key=float)     # 5-95 or 2.5-97.5: the block's own levels
-    for lo, hi, alpha in ((k[0], k[-1], .15), (k[1], k[-2], .3)):
+    k = sorted(b["bands"], key=float)  # 5-95 or 2.5-97.5: the block's own levels
+    for lo, hi, alpha in ((k[0], k[-1], 0.15), (k[1], k[-2], 0.3)):
         up, down = b["bands"][hi], b["bands"][lo]
         pts = [f"{x(i):.1f},{y(v):.1f}" for i, v in zip(xs, up) if v is not None]
-        pts += [f"{x(i):.1f},{y(v):.1f}" for i, v in reversed(list(zip(xs, down))) if v is not None]
-        body.append(f'<polygon points="{" ".join(pts)}" fill="{SIM}" opacity="{alpha}"/>')
-    body.append(svg.axes(x, y, svg.ticks(0, n - 1), svg.ticks(min(values), max(values)),
-                         _xfmt(b["x"])))
-    body.append(f'<path d="{_path(xs, b["bands"]["50"], x, y)}" fill="none" stroke="{SIM}" '
-                f'stroke-dasharray="4 3"/>')
-    body.append(f'<path d="{_path(xs, b["real"], x, y)}" fill="none" stroke="{REAL}" '
-                f'stroke-width="2.5"/>')
+        pts += [
+            f"{x(i):.1f},{y(v):.1f}"
+            for i, v in reversed(list(zip(xs, down)))
+            if v is not None
+        ]
+        body.append(
+            f'<polygon points="{" ".join(pts)}" fill="{SIM}" opacity="{alpha}"/>'
+        )
+    body.append(
+        svg.axes(
+            x,
+            y,
+            svg.ticks(0, n - 1),
+            svg.ticks(min(values), max(values)),
+            _xfmt(b["x"]),
+        )
+    )
+    body.append(
+        f'<path d="{_path(xs, b["bands"]["50"], x, y)}" fill="none" stroke="{SIM}" '
+        f'stroke-dasharray="4 3"/>'
+    )
+    body.append(
+        f'<path d="{_path(xs, b["real"], x, y)}" fill="none" stroke="{REAL}" '
+        f'stroke-width="2.5"/>'
+    )
     if b["split"] in b["x"]:
         s = x(b["x"].index(b["split"]))
-        body.append(f'<line x1="{s:.1f}" x2="{s:.1f}" y1="{PAD["t"]}" y2="{H - PAD["b"]}" '
-                    f'stroke="{svg.INK2}" stroke-dasharray="2 4"/>')
-    key = svg.legend([(svg.box(SIM, .15), "2,5–97,5 %"), (svg.box(SIM, .3), "25–75 %"),
-                      (svg.line(SIM, "dashed"), "mediana"), (svg.line(REAL), "real")])
+        body.append(
+            f'<line x1="{s:.1f}" x2="{s:.1f}" y1="{PAD["t"]}" y2="{H - PAD["b"]}" '
+            f'stroke="{svg.INK2}" stroke-dasharray="2 4"/>'
+        )
+    key = svg.legend(
+        [
+            (svg.box(SIM, 0.15), "2,5–97,5 %"),
+            (svg.box(SIM, 0.3), "25–75 %"),
+            (svg.line(SIM, "dashed"), "mediana"),
+            (svg.line(REAL), "real"),
+        ]
+    )
     return svg.figure(b["title"], b.get("note", ""), svg.canvas("".join(body)), key)
 
 
@@ -127,20 +187,42 @@ def lines(b: dict) -> str:
     values = [v for s in b["series"] for v in s["values"] if v is not None]
     x = svg.scale(0, max(n - 1, 1), PAD["l"], W - PAD["r"])
     y = svg.scale(min(values), max(values), H - PAD["b"], PAD["t"])
-    body = [svg.axes(x, y, svg.ticks(0, n - 1), svg.ticks(min(values), max(values)),
-                     _xfmt(b["x"]))]
+    body = [
+        svg.axes(
+            x,
+            y,
+            svg.ticks(0, n - 1),
+            svg.ticks(min(values), max(values)),
+            _xfmt(b["x"]),
+        )
+    ]
     dash = {"real": "", "sim": "", "reference": ' stroke-dasharray="5 4"'}
     drawn = [s for s in b["series"] if s["role"] != "reference"]
-    colour = {id(s): ROLE[s["role"]] if len(drawn) == 1 else SERIES[i % len(SERIES)]
-              for i, s in enumerate(drawn)}
-    colour.update({id(s): ROLE["reference"] for s in b["series"] if s["role"] == "reference"})
+    colour = {
+        id(s): ROLE[s["role"]] if len(drawn) == 1 else SERIES[i % len(SERIES)]
+        for i, s in enumerate(drawn)
+    }
+    colour.update(
+        {id(s): ROLE["reference"] for s in b["series"] if s["role"] == "reference"}
+    )
     for s in b["series"]:
-        body.append(f'<path d="{_path(xs, s["values"], x, y)}" fill="none" '
-                    f'stroke="{colour[id(s)]}" stroke-width="2"{dash[s["role"]]} '
-                    f'opacity="{1 if s["role"] == "real" else .8}"><title>{escape(s["label"])}'
-                    f"</title></path>")
-    key = svg.legend([(svg.line(colour[id(s)], "dashed" if s["role"] == "reference"
-                                else "solid"), s["label"]) for s in b["series"]][:12])
+        body.append(
+            f'<path d="{_path(xs, s["values"], x, y)}" fill="none" '
+            f'stroke="{colour[id(s)]}" stroke-width="2"{dash[s["role"]]} '
+            f'opacity="{1 if s["role"] == "real" else 0.8}"><title>{escape(s["label"])}'
+            f"</title></path>"
+        )
+    key = svg.legend(
+        [
+            (
+                svg.line(
+                    colour[id(s)], "dashed" if s["role"] == "reference" else "solid"
+                ),
+                s["label"],
+            )
+            for s in b["series"]
+        ][:12]
+    )
     return svg.figure(b["title"], b.get("note", ""), svg.canvas("".join(body)), key)
 
 
@@ -149,7 +231,9 @@ def bars(b: dict) -> str:
     items = b["items"]
     row = 26
     height = PAD["t"] + PAD["b"] + row * len(items)
-    ends = [i["value"] for i in items] + [e for i in items for e in (i.get("error") or [])]
+    ends = [i["value"] for i in items] + [
+        e for i in items for e in (i.get("error") or [])
+    ]
     ends += [0.0] + ([b["reference"]] if b["reference"] is not None else [])
     ends = [v for v in ends if v is not None]
     left = PAD["l"] + 150
@@ -159,19 +243,28 @@ def bars(b: dict) -> str:
         top = PAD["t"] + k * row
         v = i["value"] if i["value"] is not None else 0.0
         a, z = sorted((x(0.0), x(v)))
-        body.append(f'<text class="tick" x="{left - 8}" y="{top + 16}" text-anchor="end">'
-                    f'{escape(i["label"])}</text><rect x="{a:.1f}" y="{top + 5}" '
-                    f'width="{max(z - a, 1):.1f}" height="{row - 10}" '
-                    f'fill="{STATE.get(i.get("state"), SIM)}" opacity=".85"/>'
-                    f'<text class="tick" x="{z + 4:.1f}" y="{top + 16}">{svg.num(i["value"])}</text>')
+        body.append(
+            f'<text class="tick" x="{left - 8}" y="{top + 16}" text-anchor="end">'
+            f'{escape(i["label"])}</text><rect x="{a:.1f}" y="{top + 5}" '
+            f'width="{max(z - a, 1):.1f}" height="{row - 10}" '
+            f'fill="{STATE.get(i.get("state"), SIM)}" opacity=".85"/>'
+            f'<text class="tick" x="{z + 4:.1f}" y="{top + 16}">{svg.num(i["value"])}</text>'
+        )
         if i.get("error"):
             lo, hi = i["error"]
-            body.append(f'<line x1="{x(lo):.1f}" x2="{x(hi):.1f}" y1="{top + row / 2:.1f}" '
-                        f'y2="{top + row / 2:.1f}" stroke="var(--ink)" stroke-width="1.5"/>')
+            body.append(
+                f'<line x1="{x(lo):.1f}" x2="{x(hi):.1f}" y1="{top + row / 2:.1f}" '
+                f'y2="{top + row / 2:.1f}" stroke="var(--ink)" stroke-width="1.5"/>'
+            )
     if b["reference"] is not None:
         r = x(b["reference"])
-        body.append(f'<line x1="{r:.1f}" x2="{r:.1f}" y1="{PAD["t"] - 4}" '
-                    f'y2="{height - PAD["b"] + 4}" stroke="{REAL}" stroke-dasharray="4 3"/>')
-    body += [f'<text class="tick" x="{x(v):.1f}" y="{height - PAD["b"] + 20}" '
-             f'text-anchor="middle">{svg.num(v)}</text>' for v in svg.ticks(min(ends), max(ends))]
+        body.append(
+            f'<line x1="{r:.1f}" x2="{r:.1f}" y1="{PAD["t"] - 4}" '
+            f'y2="{height - PAD["b"] + 4}" stroke="{REAL}" stroke-dasharray="4 3"/>'
+        )
+    body += [
+        f'<text class="tick" x="{x(v):.1f}" y="{height - PAD["b"] + 20}" '
+        f'text-anchor="middle">{svg.num(v)}</text>'
+        for v in svg.ticks(min(ends), max(ends))
+    ]
     return svg.figure(b["title"], b.get("note", ""), svg.canvas("".join(body), height))

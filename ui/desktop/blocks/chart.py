@@ -11,7 +11,7 @@ from ui.desktop.blocks.card import initial
 from ui.text import numbers
 from ui.desktop.theme import T
 
-HEIGHT = 340                      # the owner reads these from across the desk: never below 320
+HEIGHT = 340  # the owner reads these from across the desk: never below 320
 PAD = {"l": 84, "r": 28, "t": 18, "b": 44}
 FACE = "DejaVu Sans Mono"
 
@@ -58,8 +58,9 @@ def area(rect: QRectF) -> QRectF:
     return rect.adjusted(PAD["l"], PAD["t"], -PAD["r"], -PAD["b"])
 
 
-def axes(p: QPainter, box: QRectF, xt: list[tuple[float, str]],
-         yt: list[tuple[float, str]]) -> None:
+def axes(
+    p: QPainter, box: QRectF, xt: list[tuple[float, str]], yt: list[tuple[float, str]]
+) -> None:
     """Grid lines and labels: recessive, so the data is what the eye lands on.
 
     Args:
@@ -72,12 +73,20 @@ def axes(p: QPainter, box: QRectF, xt: list[tuple[float, str]],
         p.setPen(QPen(QColor(T["line"]), 1))
         p.drawLine(QPointF(x, box.top()), QPointF(x, box.bottom()))
         p.setPen(QColor(T["muted"]))
-        p.drawText(QRectF(x - 60, box.bottom() + 6, 120, 18), Qt.AlignmentFlag.AlignHCenter, text)
+        p.drawText(
+            QRectF(x - 60, box.bottom() + 6, 120, 18),
+            Qt.AlignmentFlag.AlignHCenter,
+            text,
+        )
     for y, text in yt:
         p.setPen(QPen(QColor(T["line"]), 1))
         p.drawLine(QPointF(box.left(), y), QPointF(box.right(), y))
         p.setPen(QColor(T["muted"]))
-        p.drawText(QRectF(0, y - 9, box.left() - 8, 18), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, text)
+        p.drawText(
+            QRectF(0, y - 9, box.left() - 8, 18),
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+            text,
+        )
     p.setPen(QPen(QColor(T["rule"]), 1))
     p.drawLine(box.bottomLeft(), box.bottomRight())
     p.drawLine(box.bottomLeft(), box.topLeft())
@@ -94,16 +103,30 @@ def titles(p: QPainter, box: QRectF, rect: QRectF, x_label: str, y_label: str) -
     """
     p.setFont(font(11, True))
     p.setPen(QColor(T["text"]))
-    p.drawText(QRectF(box.left(), rect.bottom() - 20, box.width(), 18), Qt.AlignmentFlag.AlignHCenter, x_label)
+    p.drawText(
+        QRectF(box.left(), rect.bottom() - 20, box.width(), 18),
+        Qt.AlignmentFlag.AlignHCenter,
+        x_label,
+    )
     p.save()
     p.translate(14, box.center().y())
     p.rotate(-90)
-    p.drawText(QRectF(-box.height() / 2, -9, box.height(), 18), Qt.AlignmentFlag.AlignHCenter, y_label)
+    p.drawText(
+        QRectF(-box.height() / 2, -9, box.height(), 18),
+        Qt.AlignmentFlag.AlignHCenter,
+        y_label,
+    )
     p.restore()
 
 
-def vline(p: QPainter, x: float, box: QRectF, colour: str, width: float = 1.5,
-          style: Qt.PenStyle = Qt.PenStyle.SolidLine) -> None:
+def vline(
+    p: QPainter,
+    x: float,
+    box: QRectF,
+    colour: str,
+    width: float = 1.5,
+    style: Qt.PenStyle = Qt.PenStyle.SolidLine,
+) -> None:
     """A vertical mark across the plotting rectangle.
 
     Args:
@@ -131,8 +154,10 @@ def blend(colour: str, alpha: float) -> str:
         The hex colour of the mix.
     """
     a, b = QColor(colour), QColor(T["bg"])
-    mix = [round(alpha * x + (1 - alpha) * y) for x, y in
-           zip((a.red(), a.green(), a.blue()), (b.red(), b.green(), b.blue()))]
+    mix = [
+        round(alpha * x + (1 - alpha) * y)
+        for x, y in zip((a.red(), a.green(), a.blue()), (b.red(), b.green(), b.blue()))
+    ]
     return "#" + "".join(f"{c:02x}" for c in mix)
 
 
@@ -150,7 +175,8 @@ def key(items: list[tuple[str, str, str]]) -> QLabel:
     html = "&nbsp;&nbsp;&nbsp;".join(
         f'<span style="color:{c}; font-size:15px;">{glyph[m]}</span>&nbsp;'
         f'<span style="color:{T["text"]};">{escape(initial(t))}</span>'
-        for m, c, t in items)
+        for m, c, t in items
+    )
     label = QLabel(html)
     label.setWordWrap(True)
     label.setStyleSheet(f"font-family:{FACE}; font-size:12px;")
@@ -161,8 +187,12 @@ class Canvas(QWidget):
     """A painted chart that explains the mark under the pointer. The drawing and the
     tooltip are two functions handed in, so each block kind stays a function of its data."""
 
-    def __init__(self, draw: Callable[[QPainter, QRectF, QPointF | None], None],
-                 tip: Callable[[QPointF, QRectF], str | None], height: int = HEIGHT) -> None:
+    def __init__(
+        self,
+        draw: Callable[[QPainter, QRectF, QPointF | None], None],
+        tip: Callable[[QPointF, QRectF], str | None],
+        height: int = HEIGHT,
+    ) -> None:
         """Wire the two functions.
 
         Args:

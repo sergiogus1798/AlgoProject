@@ -9,15 +9,43 @@ from sqx.snippets import install, toolproject
 # result of a WFM strategy on the conductor). The snippet asks SQX for exactly these.
 SAMPLES = (10, 11, 20, 21, 127)
 # The statistics a blob stores under their own name, with their type (🔬 2026-10-13, same file).
-NAMED = {"i": ("DataLength",), "l": ("MaxNewHighDurationTo", "MaxNewHighDurationFrom"), "f": (
-    "AvgDrawdown", "AddMarketsSharpeRatioMedian", "SortinoRatio", "AddMarketsRetDDMedian",
-    "MaxNewHighDurationPct", "TRLRatio", "EquityAngle", "RecoveryFactor",
-    "AddMarketsProfitFactorMedian", "DrawdownPctOnInitial", "UlcerPerformanceIndex",
-    "EdgeRatioInPips", "BestWF", "TSWinLossRatio", "AvgPctDrawdown", "UlcerIndex", "Outlier2",
-    "TotalMFE", "MaxNewHighDuration", "ExitQuality", "ExposurePosition",
-    "AddMarketsNetProfitMedian", "MaxTSIntradayDrawdown", "EdgeDecayRatio",
-    "Parameters", "GiniOOS", "Outlier", "ProbSharpeRatio", "ReturnOpenDDRatio", "EquitySlope",
-    "SlopeRatio")}
+NAMED = {
+    "i": ("DataLength",),
+    "l": ("MaxNewHighDurationTo", "MaxNewHighDurationFrom"),
+    "f": (
+        "AvgDrawdown",
+        "AddMarketsSharpeRatioMedian",
+        "SortinoRatio",
+        "AddMarketsRetDDMedian",
+        "MaxNewHighDurationPct",
+        "TRLRatio",
+        "EquityAngle",
+        "RecoveryFactor",
+        "AddMarketsProfitFactorMedian",
+        "DrawdownPctOnInitial",
+        "UlcerPerformanceIndex",
+        "EdgeRatioInPips",
+        "BestWF",
+        "TSWinLossRatio",
+        "AvgPctDrawdown",
+        "UlcerIndex",
+        "Outlier2",
+        "TotalMFE",
+        "MaxNewHighDuration",
+        "ExitQuality",
+        "ExposurePosition",
+        "AddMarketsNetProfitMedian",
+        "MaxTSIntradayDrawdown",
+        "EdgeDecayRatio",
+        "Parameters",
+        "GiniOOS",
+        "Outlier",
+        "ProbSharpeRatio",
+        "ReturnOpenDDRatio",
+        "EquitySlope",
+        "SlopeRatio",
+    ),
+}
 
 
 def keys() -> list[str]:
@@ -28,8 +56,14 @@ def keys() -> list[str]:
         names without doubt, then the ones stored under their own name. The 34 id-keyed
         slots nobody has named and the two named with a "?" cannot be asked for by name.
     """
-    known = [f"{name}\t{slot[0]}" for slot, name in sqxstats.COLUMNS.items() if not name.endswith("?")]
-    return known + [f"{name}\t{kind}" for kind, names in NAMED.items() for name in names]
+    known = [
+        f"{name}\t{slot[0]}"
+        for slot, name in sqxstats.COLUMNS.items()
+        if not name.endswith("?")
+    ]
+    return known + [
+        f"{name}\t{kind}" for kind, names in NAMED.items() for name in names
+    ]
 
 
 def run(role: str, project: str, banks: dict[str, str]) -> dict[str, int]:
@@ -56,29 +90,54 @@ def run(role: str, project: str, banks: dict[str, str]) -> dict[str, int]:
     for data in dict.fromkeys(banks.values()):
         names = [b for b, d in banks.items() if d == data]
         (out / "_done.tsv").unlink(missing_ok=True)
-        args = "|".join([project, ";".join(names), str(out), str(out / "_keys.tsv"), data,
-                         ",".join(map(str, SAMPLES))])
-        live.call(role, "updateTaskXML", projectName=toolproject.NAME, taskXMLFile=toolproject.MEMBER,
-                  xmlConfig=toolproject.settings("AlgoBank", args))
+        args = "|".join(
+            [
+                project,
+                ";".join(names),
+                str(out),
+                str(out / "_keys.tsv"),
+                data,
+                ",".join(map(str, SAMPLES)),
+            ]
+        )
+        live.call(
+            role,
+            "updateTaskXML",
+            projectName=toolproject.NAME,
+            taskXMLFile=toolproject.MEMBER,
+            xmlConfig=toolproject.settings("AlgoBank", args),
+        )
         end = live.run(role, toolproject.NAME, toolproject.CONFIG)
-        if not (out / "_done.tsv").exists():         # `live.run` already raised on an aborted run
+        if not (
+            out / "_done.tsv"
+        ).exists():  # `live.run` already raised on an aborted run
             raise SystemExit(f"{project}: «AlgoBank» no escribió sus databanks: {end}")
     held = live.records(role, project)
     if missing := [b for b in banks if b not in held]:
-        raise SystemExit(f"{project}: SQX no tiene {missing} cargado(s); tiene {sorted(held)}")
+        raise SystemExit(
+            f"{project}: SQX no tiene {missing} cargado(s); tiene {sorted(held)}"
+        )
     wrote = {}
     for bank in banks:
         got = bankfile.load(out / f"{bank}.abk", check=True)
         wrote[bank] = len(got["names"])
-        if len(set(got["stats"]["strategy"].tolist())) != wrote[bank]:      # statistics not computed yet: the snippet skips them
-            raise SystemExit(f"{project}/{bank}: hay estrategias sin estadísticas en el .abk (¿una tarea llena el databank?)")
+        if (
+            len(set(got["stats"]["strategy"].tolist())) != wrote[bank]
+        ):  # statistics not computed yet: the snippet skips them
+            raise SystemExit(
+                f"{project}/{bank}: hay estrategias sin estadísticas en el .abk (¿una tarea llena el databank?)"
+            )
         if wrote[bank] != held[bank]:
-            raise SystemExit(f"{project}/{bank}: el .abk lleva {wrote[bank]} estrategias y la "
-                             f"memoria de SQX tiene {held[bank]}")
+            raise SystemExit(
+                f"{project}/{bank}: el .abk lleva {wrote[bank]} estrategias y la "
+                f"memoria de SQX tiene {held[bank]}"
+            )
     return wrote
 
 
-def take(project: str, role: str, bank: str, ids: dict[str, str], data: str) -> dict | None:
+def take(
+    project: str, role: str, bank: str, ids: dict[str, str], data: str
+) -> dict | None:
     """The databank's `.abk` loaded, when it is this databank's and whole.
 
     Args:
@@ -98,15 +157,23 @@ def take(project: str, role: str, bank: str, ids: dict[str, str], data: str) -> 
         return None
     try:
         got = bankfile.load(path, check=True)
-        why = (f"modo {got['data']}, se pide {data}" if got["data"] != data
-               else f"nombres distintos ({len(set(got['names']) ^ set(ids))} de diferencia)"
-               if set(got["names"]) != set(ids)
-               else "una identidad no coincide" if any(
-                   sqxfile._hashed(t) != ids[n] for n, t in bankframes.texts(got).items()) else "")
+        why = (
+            f"modo {got['data']}, se pide {data}"
+            if got["data"] != data
+            else f"nombres distintos ({len(set(got['names']) ^ set(ids))} de diferencia)"
+            if set(got["names"]) != set(ids)
+            else "una identidad no coincide"
+            if any(
+                sqxfile._hashed(t) != ids[n] for n, t in bankframes.texts(got).items()
+            )
+            else ""
+        )
     except (OSError, bankfile.Unreadable) as err:
         got, why = None, str(err)
     if why:
         print(f"{project}/{bank}: {path.name} no vale: {why}")
-        phases.note("fallback", f"{project}/{bank}: {why}")      # dumped and refused: the run shows it
+        phases.note(
+            "fallback", f"{project}/{bank}: {why}"
+        )  # dumped and refused: the run shows it
         return None
     return got

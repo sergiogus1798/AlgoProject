@@ -35,7 +35,7 @@ def test_time_limit_is_converted_to_path_days(monkeypatch: pytest.MonkeyPatch) -
         INSERT INTO plans VALUES('f:x:100000:USD','f','x',100000,10,'USD',NULL);
         INSERT INTO stages VALUES('f:x:100000:USD','phase1',8,5,10,'static',0,30,0,1,1,NULL);""")
     monkeypatch.setattr(catalog, "_connect", lambda: db)
-    with pytest.raises(NotImplementedError):          # calendar days are never read one for one
+    with pytest.raises(NotImplementedError):  # calendar days are never read one for one
         catalog.plan("f:x:100000:USD")
     stage = catalog.plan("f:x:100000:USD", 260)["stages"][0]
     assert stage["time_limit"] == 21, stage
@@ -46,7 +46,10 @@ def test_time_limit_is_converted_to_path_days(monkeypatch: pytest.MonkeyPatch) -
 
 def test_target_met_on_the_limit_day_passes_in_every_walker() -> None:
     """m33: the target is read before the limit — met on the limit day it passes, a day later it fails."""
-    for hit, want in ((2, {"ref": "pass", "sweep": 1, "judge": 1}), (3, {"ref": "fail", "sweep": 0, "judge": 0})):
+    for hit, want in (
+        (2, {"ref": "pass", "sweep": 1, "judge": 1}),
+        (3, {"ref": "fail", "sweep": 0, "judge": 0}),
+    ):
         d = _days(10)
         d["closed"][hit] = 2000.0
         assert _all_ways(d, _plan(_stage(target=0.01, time_limit=3))) == want, hit
@@ -56,27 +59,41 @@ def test_build_months_hold_no_day_after_the_build(tmp_path: Path) -> None:
     """m34: a build ending on the 15th — a 1,000 spike on the 20th moves no monthly measure (1e-12)."""
     days = pd.bdate_range("2021-01-01", "2024-03-29")
     rng = np.random.default_rng(0)
-    daily = pd.DataFrame({"A": rng.normal(size=len(days)), "B": rng.normal(size=len(days))}, index=days)
+    daily = pd.DataFrame(
+        {"A": rng.normal(size=len(days)), "B": rng.normal(size=len(days))}, index=days
+    )
     spiked = daily.copy()
     spiked.loc["2024-02-20"] = [1000.0, 1000.0]
     cfg = construct_config.load()
     values = []
     for frame in (daily, spiked):
-        data = {"daily": frame, "monthly": matrix.monthly(frame),
-                "manifest": {"calendar": {"build": ["2021-01-01", "2024-02-15"]}}}
+        data = {
+            "daily": frame,
+            "monthly": matrix.monthly(frame),
+            "manifest": {"calendar": {"build": ["2021-01-01", "2024-02-15"]}},
+        }
         universe.screen(data, cfg, tmp_path)
-        pairs = pd.read_parquet(tmp_path / "pairs.parquet").set_index("measure")["value"]
+        pairs = pd.read_parquet(tmp_path / "pairs.parquet").set_index("measure")[
+            "value"
+        ]
         values.append(pairs[["pearson_monthly", "spearman_monthly"]].to_numpy())
     assert np.abs(values[0] - values[1]).max() < 1e-12, values
-    with pytest.raises(TypeError):                    # a month label cannot be cut at a day
+    with pytest.raises(TypeError):  # a month label cannot be cut at a day
         matrix.segment(matrix.monthly(daily), {"build": (days[0], days[-1])}, "build")
 
 
-def test_stage_b_reports_the_winner_on_fresh_paths(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_stage_b_reports_the_winner_on_fresh_paths(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """m35: on clones (one true P(pass)) the reported figure matches an independent re-draw within 0.008."""
     cfg = small_cfg(shortlist_size=8, max_shared=1.0)
     plan = lenient_plan(target=0.04, max_loss=0.10, phases=2, daily_loss=0.05)
-    world = complete(bar_world(41, 6, "2021-01-04", "2022-01-01", clones=True), plan, cfg, {"build": BUILD})
+    world = complete(
+        bar_world(41, 6, "2021-01-04", "2022-01-01", clones=True),
+        plan,
+        cfg,
+        {"build": BUILD},
+    )
     data = funded_b._prepare(world, world["identities"], BUILD, cfg)
     monkeypatch.setattr(funded_b, "_prepare", lambda *a: data)
     selector, reported, again = [], [], []
@@ -84,11 +101,23 @@ def test_stage_b_reports_the_winner_on_fresh_paths(monkeypatch: pytest.MonkeyPat
         w = funded_b.build(world, cfg, np.random.default_rng(seed))["stage_b"]["winner"]
         selector.append(w["p"])
         reported.append(w["p_fresh"])
-        again.append(stageb.stability(data, stageb_run.rows_of(data, w["members"]), plan, cfg,
-                                      stageb_run.risk_of(w, plan), np.random.default_rng(10_000 + seed))["mean"])
+        again.append(
+            stageb.stability(
+                data,
+                stageb_run.rows_of(data, w["members"]),
+                plan,
+                cfg,
+                stageb_run.risk_of(w, plan),
+                np.random.default_rng(10_000 + seed),
+            )["mean"]
+        )
     selector, reported, again = map(np.array, (selector, reported, again))
-    assert abs((reported - again).mean()) < 0.008, (reported - again).mean()      # ~3 MC standard errors
-    assert (selector - again).mean() > 0.015, (selector - again).mean()           # what `p` alone would report
+    assert abs((reported - again).mean()) < 0.008, (
+        reported - again
+    ).mean()  # ~3 MC standard errors
+    assert (selector - again).mean() > 0.015, (
+        selector - again
+    ).mean()  # what `p` alone would report
 
 
 def test_haircut_refuses_a_path_set_that_never_closes() -> None:
@@ -102,14 +131,26 @@ def test_scores_of_a_loser_and_of_no_drawdown() -> None:
     """m36: net -1,000 with net_5 -2,000 scores B's kept-profit term 0; a zero drawdown is the widest margin."""
     cfg = mc_config.load()
     s = cfg["scoring"]
-    result = {"observed": {"net": -1000.0},
-              "A": {"inflation": s["dd_inflation_flag"], "dd_pct_99": 0.0,
-                    "runs": {mc_config.HEADLINE: {"ret_dd": {"p": {5: 0.0}}}}},
-              "B": {"net_5": -2000.0, "pf_5": s["min_pf"], "outlier": {"share": cfg["family_b"]["outlier_frac"]}},
-              "C": {"skip": {"keep": 1.0}, "fill_degrade": {"keep": 1.0}},
-              "D": {"overlapping": [{"net_5": 1.0}], "nonoverlapping": [{"pf_5": 1.4}],
-                    "regime": {"buckets": {"high": {"pf_5": 1.4}}}},
-              "E": {"psr": cfg["family_e"]["psr_target"]}}
+    result = {
+        "observed": {"net": -1000.0},
+        "A": {
+            "inflation": s["dd_inflation_flag"],
+            "dd_pct_99": 0.0,
+            "runs": {mc_config.HEADLINE: {"ret_dd": {"p": {5: 0.0}}}},
+        },
+        "B": {
+            "net_5": -2000.0,
+            "pf_5": s["min_pf"],
+            "outlier": {"share": cfg["family_b"]["outlier_frac"]},
+        },
+        "C": {"skip": {"keep": 1.0}, "fill_degrade": {"keep": 1.0}},
+        "D": {
+            "overlapping": [{"net_5": 1.0}],
+            "nonoverlapping": [{"pf_5": 1.4}],
+            "regime": {"buckets": {"high": {"pf_5": 1.4}}},
+        },
+        "E": {"psr": cfg["family_e"]["psr_target"]},
+    }
     got = scoring.subscores(result, cfg)
     assert got["B"] == 0.0 and abs(got["A"] - 100 / 3) < 0.06, got
 

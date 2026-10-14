@@ -13,9 +13,11 @@ import pyarrow as pa
 pa.set_cpu_count(1)
 
 NAMES = ["A", "B", "A_dup", "hedge"] + [f"N{k}" for k in range(6)]
-CALENDAR = {"build": (pd.Timestamp("2010-01-01"), pd.Timestamp("2019-12-31")),
-            "oos1": (pd.Timestamp("2020-01-01"), pd.Timestamp("2021-12-31")),
-            "oos2": (pd.Timestamp("2022-01-01"), pd.Timestamp("2023-12-29"))}
+CALENDAR = {
+    "build": (pd.Timestamp("2010-01-01"), pd.Timestamp("2019-12-31")),
+    "oos1": (pd.Timestamp("2020-01-01"), pd.Timestamp("2021-12-31")),
+    "oos2": (pd.Timestamp("2022-01-01"), pd.Timestamp("2023-12-29")),
+}
 SEED = 1
 
 
@@ -38,8 +40,12 @@ def planted_pool(seed: int = SEED) -> pd.DataFrame:
     z = rng.normal(size=(len(NAMES), len(days)))
     late = np.asarray(days > CALENDAR["build"][1])
     a = 0.10 + z[0]
-    cols = {"A": a, "B": 0.12 + z[1], "A_dup": a - 0.02,
-            "hedge": 0.04 - 0.64 * (z[0] + z[1]) + 0.42 * z[3]}
+    cols = {
+        "A": a,
+        "B": 0.12 + z[1],
+        "A_dup": a - 0.02,
+        "hedge": 0.04 - 0.64 * (z[0] + z[1]) + 0.42 * z[3],
+    }
     for k in range(6):
         cols[f"N{k}"] = 3.0 * z[4 + k]
     frame = pd.DataFrame(cols, index=days)[NAMES]
@@ -51,4 +57,5 @@ def planted_pool(seed: int = SEED) -> pd.DataFrame:
 def planted_cfg(**real: object) -> dict:
     """The committed config at the owner's thresholds, with `real.<knob>` overrides."""
     from portfolio.common.construct.inputs import config
+
     return config.load([f"real.{k}={v}" for k, v in real.items()])

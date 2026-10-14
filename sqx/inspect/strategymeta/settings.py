@@ -10,7 +10,9 @@ from core import assetdata, cfx
 from core.xmlget import hit
 from typing import Any
 
-SCALAR = re.compile(r'<([A-Za-z.]+) type="(?:String|Boolean|Integer|Double|Long)">([^<]*)</\1>')
+SCALAR = re.compile(
+    r'<([A-Za-z.]+) type="(?:String|Boolean|Integer|Double|Long)">([^<]*)</\1>'
+)
 
 
 def stamped(path: Path) -> dict[str, str]:
@@ -50,20 +52,33 @@ def options(s: dict[str, str]) -> dict[str, Any]:
         and the SQX `key`; `max_trades_per_day` (0 is no cap) and `session`.
     """
     on = lambda k: s[k] == "true"
-    return {"friday_close": {"on": on("ExitOnFriday.ExitOnFriday"), "key": "ExitOnFriday",
-                             "time": _hhmm(s["ExitOnFriday.FridayExitTime"])},
-            "weekend": {"on": on("DontTradeOnWeekends.DontTradeOnWeekends"),
-                        "key": "DontTradeOnWeekends",
-                        "friday_close": _hhmm(s["DontTradeOnWeekends.FridayCloseTime"]),
-                        "sunday_open": _hhmm(s["DontTradeOnWeekends.SundayOpenTime"])},
-            "end_of_day": {"on": on("ExitAtEndOfDay.ExitAtEndOfDay"), "key": "ExitAtEndOfDay",
-                           "time": _hhmm(s["ExitAtEndOfDay.EODExitTime"])},
-            "time_range": {"on": on("LimitTimeRange.LimitTimeRange"), "key": "LimitTimeRange",
-                           "from": _hhmm(s["LimitTimeRange.SignalTimeRangeFrom"]),
-                           "to": _hhmm(s["LimitTimeRange.SignalTimeRangeTo"]),
-                           "exit_at_end": on("LimitTimeRange.ExitAtEndOfRange")},
-            "max_trades_per_day": int(s["MaxTradesPerDay"]),
-            "session": s.get("MarketOpenSession")}
+    return {
+        "friday_close": {
+            "on": on("ExitOnFriday.ExitOnFriday"),
+            "key": "ExitOnFriday",
+            "time": _hhmm(s["ExitOnFriday.FridayExitTime"]),
+        },
+        "weekend": {
+            "on": on("DontTradeOnWeekends.DontTradeOnWeekends"),
+            "key": "DontTradeOnWeekends",
+            "friday_close": _hhmm(s["DontTradeOnWeekends.FridayCloseTime"]),
+            "sunday_open": _hhmm(s["DontTradeOnWeekends.SundayOpenTime"]),
+        },
+        "end_of_day": {
+            "on": on("ExitAtEndOfDay.ExitAtEndOfDay"),
+            "key": "ExitAtEndOfDay",
+            "time": _hhmm(s["ExitAtEndOfDay.EODExitTime"]),
+        },
+        "time_range": {
+            "on": on("LimitTimeRange.LimitTimeRange"),
+            "key": "LimitTimeRange",
+            "from": _hhmm(s["LimitTimeRange.SignalTimeRangeFrom"]),
+            "to": _hhmm(s["LimitTimeRange.SignalTimeRangeTo"]),
+            "exit_at_end": on("LimitTimeRange.ExitAtEndOfRange"),
+        },
+        "max_trades_per_day": int(s["MaxTradesPerDay"]),
+        "session": s.get("MarketOpenSession"),
+    }
 
 
 def sizing(node: ElementTree.Element) -> dict[str, Any]:
@@ -78,11 +93,20 @@ def sizing(node: ElementTree.Element) -> dict[str, Any]:
     """
     method = next((m for m in node.findall("Method") if m.get("use") == "true"), None)
     if method is None:
-        return {"method": None, "params": {}, "initial_capital": node.findtext("InitialCapital")}
-    return {"method": method.get("type"),
-            "params": {hit(p.get("key")).strip("#"): (p.text or "").strip()
-                       for p in method.iter() if p.tag in ("Param", "Parameter")},
-            "initial_capital": node.findtext("InitialCapital")}
+        return {
+            "method": None,
+            "params": {},
+            "initial_capital": node.findtext("InitialCapital"),
+        }
+    return {
+        "method": method.get("type"),
+        "params": {
+            hit(p.get("key")).strip("#"): (p.text or "").strip()
+            for p in method.iter()
+            if p.tag in ("Param", "Parameter")
+        },
+        "initial_capital": node.findtext("InitialCapital"),
+    }
 
 
 SETUPS = ("Data/Setups/Setup", "CustomData/Setups/Setup")
@@ -93,11 +117,17 @@ def _costs(setup: ElementTree.Element) -> dict:
     every commission method switched on (on 3 of 609 real strategies both are), and the
     swap, None when the setup carries none."""
     swap = setup.find("Swap")
-    return {"spread": hit(setup.find("Chart")).get("spread"), "slippage": setup.get("slippage"),
-            "min_distance": setup.get("minDist"),
-            "commission": [{"method": m.get("type"), "value": m.findtext(".//Param")}
-                           for m in setup.iter("Method") if m.get("use") == "true"],
-            "swap": None if swap is None else dict(swap.attrib)}
+    return {
+        "spread": hit(setup.find("Chart")).get("spread"),
+        "slippage": setup.get("slippage"),
+        "min_distance": setup.get("minDist"),
+        "commission": [
+            {"method": m.get("type"), "value": m.findtext(".//Param")}
+            for m in setup.iter("Method")
+            if m.get("use") == "true"
+        ],
+        "swap": None if swap is None else dict(swap.attrib),
+    }
 
 
 def task_view(root: ElementTree.Element) -> dict[str, Any]:
@@ -120,19 +150,30 @@ def task_view(root: ElementTree.Element) -> dict[str, Any]:
     chart = setup.find("Chart") if setup is not None else None
     node = root.find("RiskMoneyManagement/MoneyManagement")
     risk = root.find("RiskMoneyManagement/RiskManagement")
-    bank = lambda name: next((d.get("value") for d in root.iter("Databank")
-                              if d.get("name") == name), None)
+    bank = lambda name: next(
+        (d.get("value") for d in root.iter("Databank") if d.get("name") == name), None
+    )
     at = lambda el, key: None if el is None else el.get(key)
-    return {"input": bank("Input"), "output": bank("Output"),
-            "setup_from": where and where.split("/")[0],
-            "window": None if setup is None else [setup.get("dateFrom"), setup.get("dateTo")],
-            "oos": [[r.get("dateFrom"), r.get("dateTo")]
-                    for r in root.findall("Data/OutOfSample/Range")],
-            "chart": at(chart, "symbol"), "timeframe": at(chart, "timeframe"),
-            "precision": at(setup, "testPrecision"), "engine": at(setup, "engine"),
-            "costs": None if setup is None else _costs(setup),
-            "money_management": None if node is None else {**sizing(node),
-                                                           "max_drawdown": at(risk, "maxDrawdown")}}
+    return {
+        "input": bank("Input"),
+        "output": bank("Output"),
+        "setup_from": where and where.split("/")[0],
+        "window": None
+        if setup is None
+        else [setup.get("dateFrom"), setup.get("dateTo")],
+        "oos": [
+            [r.get("dateFrom"), r.get("dateTo")]
+            for r in root.findall("Data/OutOfSample/Range")
+        ],
+        "chart": at(chart, "symbol"),
+        "timeframe": at(chart, "timeframe"),
+        "precision": at(setup, "testPrecision"),
+        "engine": at(setup, "engine"),
+        "costs": None if setup is None else _costs(setup),
+        "money_management": None
+        if node is None
+        else {**sizing(node), "max_drawdown": at(risk, "maxDrawdown")},
+    }
 
 
 def producers(project_cfx: Path, databank: str) -> list[dict]:
@@ -153,8 +194,12 @@ def producers(project_cfx: Path, databank: str) -> list[dict]:
         members = set(z.namelist())
     out = []
     for task in cfx.tasks(str(project_cfx)):
-        head = {"project": project_cfx.parent.name, "task": task["name"],
-                "type": task["type"], "active": task["active"]}
+        head = {
+            "project": project_cfx.parent.name,
+            "task": task["name"],
+            "type": task["type"],
+            "active": task["active"],
+        }
         if task["file"] not in members:
             out.append({**head, "error": f"falta {task['file']} en el .cfx"})
             continue
@@ -177,4 +222,6 @@ def asset_card(feed: str) -> tuple[str | None, str | None]:
     asset = assetdata.symbol_for(feed)
     if asset is None:
         return None, None
-    return asset, hashlib.sha256((assetdata.SYMBOLS / f"{asset}.yaml").read_bytes()).hexdigest()
+    return asset, hashlib.sha256(
+        (assetdata.SYMBOLS / f"{asset}.yaml").read_bytes()
+    ).hexdigest()

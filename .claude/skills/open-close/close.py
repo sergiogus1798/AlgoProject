@@ -8,6 +8,7 @@ A closed section moves verbatim to docs/OPEN-closed.md, in numeric order, with i
 flipped and `**Closed <today>.** <note>` appended; its index row points at the archive. A noted
 section stays, with `**<today>.** <note>` appended and its emoji updated.
 """
+
 import datetime
 import json
 import re
@@ -51,8 +52,10 @@ sec, csec = sections(op), sections(cl)
 
 missing = [n for n in list(close) + list(note) if n not in sec]
 if missing or set(close) & set(note) or set(close) & set(csec):
-    sys.exit(f"not an open section of OPEN.md: {missing}; in both close and note: "
-             f"{sorted(set(close) & set(note))}; already in the archive: {sorted(set(close) & set(csec))}")
+    sys.exit(
+        f"not an open section of OPEN.md: {missing}; in both close and note: "
+        f"{sorted(set(close) & set(note))}; already in the archive: {sorted(set(close) & set(csec))}"
+    )
 
 moved, noted = {}, {}
 for n, (emoji, text) in close.items():
@@ -85,19 +88,28 @@ def row(m: re.Match) -> str:
     return m.group(0)
 
 
-op2 = re.sub(r"^\| (\d+[a-z]?) \| (\S+) \|([^|]*)\| OPEN\.md \|$", row, "".join(pieces), flags=re.M)
+op2 = re.sub(
+    r"^\| (\d+[a-z]?) \| (\S+) \|([^|]*)\| OPEN\.md \|$",
+    row,
+    "".join(pieces),
+    flags=re.M,
+)
 
-out = [cl[:min(s for s, _ in csec.values())]]
+out = [cl[: min(s for s, _ in csec.values())]]
 for n in sorted(list(csec) + list(close), key=order):
     if n in close:
         out.append(moved[n] + "\n")
     else:
         s, e = csec[n]
-        out.append(cl[s:e] if cl[s:e].endswith("\n\n") else cl[s:e].rstrip("\n") + "\n\n")
+        out.append(
+            cl[s:e] if cl[s:e].endswith("\n\n") else cl[s:e].rstrip("\n") + "\n\n"
+        )
 cl2 = "".join(out).rstrip("\n") + "\n"
 
-print(f"open {len(sec)} -> {len(sections(op2))} · closed {len(csec)} -> {len(sections(cl2))} · "
-      f"noted {len(note)}")
+print(
+    f"open {len(sec)} -> {len(sections(op2))} · closed {len(csec)} -> {len(sections(cl2))} · "
+    f"noted {len(note)}"
+)
 if "--dry-run" in sys.argv:
     print("dry run: nothing written")
     sys.exit(0)

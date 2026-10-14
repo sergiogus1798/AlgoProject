@@ -49,20 +49,28 @@ def _mad(values: np.ndarray) -> float:
 
 
 @njit(parallel=True, cache=True)
-def _cells(week_s: np.ndarray, r_s: np.ndarray, edges: np.ndarray, n: int, weeks: int,
-           min_weeks: int) -> np.ndarray:
+def _cells(
+    week_s: np.ndarray,
+    r_s: np.ndarray,
+    edges: np.ndarray,
+    n: int,
+    weeks: int,
+    min_weeks: int,
+) -> np.ndarray:
     """by_week()'s 168 × n array; the hours are independent, so one per thread."""
     out = np.full((168, n), np.nan)
     for h in prange(168):
-        wk, rr = week_s[edges[h]:edges[h + 1]], r_s[edges[h]:edges[h + 1]]
+        wk, rr = week_s[edges[h] : edges[h + 1]], r_s[edges[h] : edges[h + 1]]
         if len(wk):
             cut = np.searchsorted(wk, np.arange(n + 1))
             for w in range(min_weeks, n):
-                out[h, w] = _mad(rr[cut[max(0, w - weeks)]:cut[w]])
+                out[h, w] = _mad(rr[cut[max(0, w - weeks)] : cut[w]])
     return out
 
 
-def by_week(r: np.ndarray, at: np.ndarray, weeks: int, min_weeks: int) -> tuple[np.ndarray, int]:
+def by_week(
+    r: np.ndarray, at: np.ndarray, weeks: int, min_weeks: int
+) -> tuple[np.ndarray, int]:
     """MAD × 1.4826 of each hour of the week, over the whole weeks before each week.
 
     Args:
@@ -101,8 +109,15 @@ def own(at: np.ndarray, cells: np.ndarray, first: int) -> np.ndarray:
     return cells[(at % WEEK) // 60, at // WEEK - first]
 
 
-def sigma(close: np.ndarray, at: np.ndarray, cells: np.ndarray, first: int, tick: float,
-          floor_ticks: float, floor_rel: float) -> np.ndarray:
+def sigma(
+    close: np.ndarray,
+    at: np.ndarray,
+    cells: np.ndarray,
+    first: int,
+    tick: float,
+    floor_ticks: float,
+    floor_rel: float,
+) -> np.ndarray:
     """Each bar's scale: its cell's MAD, never under the two floors.
 
     Args:
@@ -121,5 +136,7 @@ def sigma(close: np.ndarray, at: np.ndarray, cells: np.ndarray, first: int, tick
     across = np.asarray(pd.DataFrame(np.where(cells > 0, cells, np.nan)).median(axis=0))
     prev = np.r_[close[0], close[:-1]]
     cell = own(at, cells, first)
-    floor = np.maximum(floor_rel * across[at // WEEK - first], floor_ticks * tick / prev)
+    floor = np.maximum(
+        floor_rel * across[at // WEEK - first], floor_ticks * tick / prev
+    )
     return np.where(np.isfinite(cell), np.maximum(cell, floor), np.nan)

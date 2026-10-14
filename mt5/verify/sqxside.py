@@ -1,4 +1,5 @@
 """The SQX half of a check: a Test_ project on the conductor, one retest per firm, the EA exported."""
+
 import json
 import shutil
 import subprocess
@@ -21,24 +22,45 @@ def say(pct: int, line: str) -> None:
     print(f"PROGRESS {pct} {line}", flush=True)
 
 
-def build(name: str, strategy: Path, asset: str, timeframe: str, role: str,
-          members: list[str]) -> dict[str, Any]:
+def build(
+    name: str, strategy: Path, asset: str, timeframe: str, role: str, members: list[str]
+) -> dict[str, Any]:
     """Clone the frozen donor into a Test_ project with only the retests this check reuses.
 
     Through the builder's own command, so the project gets its registry row and every check
     the builder runs (hard rules 6 and 10). The strategy is its `--template`: the builder
     wants one, and no Build task is kept to read it.
     """
-    argv = [sys.executable, "-m", "sqx.projects.builder", name,
-            "--purpose", f"MT5 Bridge: {strategy.stem} en SQX con las condiciones de cada "
-                         "empresa, para compararlo con su backtest en MT5",
-            "--template", str(strategy), "--symbol", asset, "--role", role,
-            "--timeframe", timeframe, "--tasks", "Retest", "--only", ",".join(members),
-            "--silence", "Retest", "--json"]
+    argv = [
+        sys.executable,
+        "-m",
+        "sqx.projects.builder",
+        name,
+        "--purpose",
+        f"MT5 Bridge: {strategy.stem} en SQX con las condiciones de cada "
+        "empresa, para compararlo con su backtest en MT5",
+        "--template",
+        str(strategy),
+        "--symbol",
+        asset,
+        "--role",
+        role,
+        "--timeframe",
+        timeframe,
+        "--tasks",
+        "Retest",
+        "--only",
+        ",".join(members),
+        "--silence",
+        "Retest",
+        "--json",
+    ]
     got = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True)
     if got.returncode:
-        raise SystemExit(f"el builder no creó {name}:\n{(got.stderr or got.stdout)[-2000:]}")
-    return json.loads(got.stdout[got.stdout.index("{"):])
+        raise SystemExit(
+            f"el builder no creó {name}:\n{(got.stderr or got.stdout)[-2000:]}"
+        )
+    return json.loads(got.stdout[got.stdout.index("{") :])
 
 
 def synced(folder: Path, cfg: dict) -> bool:
@@ -56,8 +78,14 @@ def synced(folder: Path, cfg: dict) -> bool:
     return False
 
 
-def run(project: str, role: str, strategy: Path, work: Path, outputs: dict[str, str],
-        cfg: dict) -> dict[str, Path]:
+def run(
+    project: str,
+    role: str,
+    strategy: Path,
+    work: Path,
+    outputs: dict[str, str],
+    cfg: dict,
+) -> dict[str, Path]:
     """Load the strategy, run the project, and flush each firm's result to disk.
 
     Args:
@@ -87,20 +115,30 @@ def run(project: str, role: str, strategy: Path, work: Path, outputs: dict[str, 
         since = live.mark(role)
         load = f"-databank action=load project={project} name={cfg['input']} folder={staged}"
         worker.checked(worker.call(load, role), load)
-        loadwait.loaded(role, since, cfg['load_s'], cfg['poll_s'], cfg['input'])
+        loadwait.loaded(role, since, cfg["load_s"], cfg["poll_s"], cfg["input"])
         offsets = sqxlog.mark(top)
         reply = worker.call(f"-project action=start name={project}", role)
-        if "rror" in reply or "Cannot start" in reply:     # «Project has unresolved resources»
-            raise SystemExit(f"SQX rechazó `action=start` de {project}: {reply.strip()}")
+        if (
+            "rror" in reply or "Cannot start" in reply
+        ):  # «Project has unresolved resources»
+            raise SystemExit(
+                f"SQX rechazó `action=start` de {project}: {reply.strip()}"
+            )
         say(30, "retest en SQX con las condiciones de cada empresa")
         advance_run.watch(project, role, offsets)
         for firm, bank in outputs.items():
-            worker.call(f"-databank action=synctofiles project={project} name={bank}", role)
+            worker.call(
+                f"-databank action=synctofiles project={project} name={bank}", role
+            )
             folder = databank_dir(project, bank, worker_dir(role))
-            if not synced(folder, cfg):       # a load or a sync that failed must never read as «SQX did not trade»
-                raise SystemExit(f"{bank} ({firm}): nada en disco tras el sync de {project} en "
-                                 f"{cfg['sync_tries'] * cfg['poll_s']} s: el retest no dejó su "
-                                 "estrategia; no se compara nada")
+            if not synced(
+                folder, cfg
+            ):  # a load or a sync that failed must never read as «SQX did not trade»
+                raise SystemExit(
+                    f"{bank} ({firm}): nada en disco tras el sync de {project} en "
+                    f"{cfg['sync_tries'] * cfg['poll_s']} s: el retest no dejó su "
+                    "estrategia; no se compara nada"
+                )
             folders[firm] = folder
     finally:
         worker.stop(role, export=False)
@@ -123,15 +161,24 @@ def firm_trades(folders: dict[str, Path], work: Path) -> dict[str, pd.DataFrame]
         dest = work / "sqx" / firm
         shutil.rmtree(dest, ignore_errors=True)
         if not found:
-            out[firm] = pd.DataFrame(columns=["Type", "Open time", "Open price", "Size",  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
-                                              "Close time", "Close price", "Profit/Loss"])
+            out[firm] = pd.DataFrame(
+                columns=[
+                    "Type",
+                    "Open time",
+                    "Open price",
+                    "Size",  # pyright: ignore[reportArgumentType]  # pandas/numpy stubs lose the type through indexing
+                    "Close time",
+                    "Close price",
+                    "Profit/Loss",
+                ]
+            )
             continue
         # The folder, never the file: given one .sqx, orderstocsv writes `<output>.csv` beside
         # the folder it was told to write into (🔬 2026-09-29).
         exportdrv.trades(folder, dest)
         csv = dest / f"{found[0].stem}.csv"
         got = trades.read(csv)
-        got = got[got["Close price"].notna()]         # an unfilled pending order at the end
+        got = got[got["Close price"].notna()]  # an unfilled pending order at the end
         got.to_parquet(dest / "trades.parquet", index=False)
         out[firm] = got
     return out
@@ -140,7 +187,23 @@ def firm_trades(folders: dict[str, Path], work: Path) -> dict[str, pd.DataFrame]
 def retire(project: str, role: str) -> str:
     """Retire the Test_ project with its worker down (hard rule 6); its .cfx is archived.
     `--own`: this job built it minutes ago, so the freshness wait does not apply."""
-    got = subprocess.run([sys.executable, "-m", "sqx.projects.retire", project, "--role", role,
-                          "--yes", "--own"], cwd=ROOT, capture_output=True, text=True)
-    return (got.stdout or got.stderr).strip().splitlines()[-1] if (got.stdout or got.stderr) else ""
-
+    got = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "sqx.projects.retire",
+            project,
+            "--role",
+            role,
+            "--yes",
+            "--own",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    return (
+        (got.stdout or got.stderr).strip().splitlines()[-1]
+        if (got.stdout or got.stderr)
+        else ""
+    )

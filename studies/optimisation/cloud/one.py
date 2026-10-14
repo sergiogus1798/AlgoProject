@@ -32,8 +32,14 @@ def read(frame: pd.DataFrame, cfg: dict, name: str = "") -> dict[str, Any]:
     """
     cloud, counts = inputs.screen(frame, cfg["floor_is_per_param"])
     live = space.varying(cloud, [c for c in cloud.columns if c.startswith("param_")])
-    found = {"cloud": cloud, "counts": counts, "live": live,
-             "coefficients": surrogate.coefficients(len(live)), "legs": {}, "draws": []}
+    found = {
+        "cloud": cloud,
+        "counts": counts,
+        "live": live,
+        "coefficients": surrogate.coefficients(len(live)),
+        "legs": {},
+        "draws": [],
+    }
     if len(cloud) <= found["coefficients"]:
         return found
     unit = space.unit(cloud, live)
@@ -42,11 +48,22 @@ def read(frame: pd.DataFrame, cfg: dict, name: str = "") -> dict[str, Any]:
         model = surrogate.fit(unit, y)
         shuffled = reference.shuffled(unit, y, cfg["shuffles"], cfg["seed"])
         found["legs"][leg] = {
-            "model": model, "indices": sensitivity.sobol(model, cfg["sobol_power"], cfg["seed"]),
-            **reference.legible(model["r2_adj"], shuffled, cfg["shuffle_percentile"])}
-        found["draws"].append(draws.record(
-            "cloud", "r2_barajado", model["r2_adj"], shuffled, strategy=name, seed=cfg["seed"], leg=leg,
-            unit="R² ajustado de la superficie con la métrica barajada"))
+            "model": model,
+            "indices": sensitivity.sobol(model, cfg["sobol_power"], cfg["seed"]),
+            **reference.legible(model["r2_adj"], shuffled, cfg["shuffle_percentile"]),
+        }
+        found["draws"].append(
+            draws.record(
+                "cloud",
+                "r2_barajado",
+                model["r2_adj"],
+                shuffled,
+                strategy=name,
+                seed=cfg["seed"],
+                leg=leg,
+                unit="R² ajustado de la superficie con la métrica barajada",
+            )
+        )
     return found
 
 
@@ -68,11 +85,22 @@ def run(work: Path, cfg: dict) -> dict[str, Any]:
     found = read(frame, cfg, work.name)
     build = found["legs"].get("build", {})
     result = envelope.envelope(
-        MODULE, work.name.replace("_", " ", 1), None, cfg, started, contract.tabs(found, cfg),
-        warnings=contract.warnings(found, cfg), glossary=contract.GLOSSARY,
-        summary={"variants": len(found["cloud"]), "live": len(found["live"]),
-                 "r2_adj": build.get("r2_adj"), "r2_ref": build.get("r2_ref"),
-                 "legible": build.get("legible")})
+        MODULE,
+        work.name.replace("_", " ", 1),
+        None,
+        cfg,
+        started,
+        contract.tabs(found, cfg),
+        warnings=contract.warnings(found, cfg),
+        glossary=contract.GLOSSARY,
+        summary={
+            "variants": len(found["cloud"]),
+            "live": len(found["live"]),
+            "r2_adj": build.get("r2_adj"),
+            "r2_ref": build.get("r2_ref"),
+            "legible": build.get("legible"),
+        },
+    )
     result["facts"] = blocks.plain(contract.facts(found))
     result["draws"] = found["draws"]
     envelope.progress(100, "hecho")

@@ -13,8 +13,9 @@ from core import assets
 
 
 @pytest.mark.parametrize("cut", ["use_none", "segment_null", "segment_missing"])
-def test_undecided_commission_blocks(cut: str, monkeypatch: pytest.MonkeyPatch,
-                                     capsys: pytest.CaptureFixture) -> None:
+def test_undecided_commission_blocks(
+    cut: str, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
     """USOIL's card with its commission nulled three ways: exit 2 and the word BLOQUEADO."""
     card = copy.deepcopy(assets.load("USOIL"))
     use = card["costs"]["commission"]

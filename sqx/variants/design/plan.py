@@ -27,8 +27,12 @@ def size(live: int, cfg: dict) -> tuple[int, bool]:
     return min(cfg["n_max"], max(cfg["n_min"], want)), want > cfg["n_max"]
 
 
-def build(design: dict, settings: dict, table: pd.DataFrame,
-          banned: dict[str, set] | None = None) -> tuple[pd.DataFrame, dict]:
+def build(
+    design: dict,
+    settings: dict,
+    table: pd.DataFrame,
+    banned: dict[str, set] | None = None,
+) -> tuple[pd.DataFrame, dict]:
     """The whole batch: which tuples, in which stratum, under which identifier.
 
     Args:
@@ -62,7 +66,9 @@ def build(design: dict, settings: dict, table: pd.DataFrame,
     everything = {**live, **levels.frozen(design, settings["design"]["frozen"])}
 
     rows, seen = [], set()
-    for control in canaries.rows(design, everything, origin, table, settings["canaries"]):
+    for control in canaries.rows(
+        design, everything, origin, table, settings["canaries"]
+    ):
         digest = tuples.tuple_hash(control["values"])
         if digest not in seen:
             seen.add(digest)
@@ -77,15 +83,29 @@ def build(design: dict, settings: dict, table: pd.DataFrame,
         if digest in seen:
             continue
         seen.add(digest)
-        rows.append({"values": complete, "stratum": "lhs", "origin": False,
-                     "expect_netprofit": None, "expect_trades": None,
-                     "expect_same_as": None, "tuple_hash": digest})
+        rows.append(
+            {
+                "values": complete,
+                "stratum": "lhs",
+                "origin": False,
+                "expect_netprofit": None,
+                "expect_trades": None,
+                "expect_same_as": None,
+                "tuple_hash": digest,
+            }
+        )
 
     return _frame(rows), {
-        "controls": controls, "live": len(live), "asked": asked, "capped": capped,
-        "live_space": math.prod(len(v) for v in live.values()), "n": len(rows),
-        "kept": len(rows) - controls, "shortfall": asked - (len(rows) - controls),
-        "pilot_dropped": pilot_dropped}
+        "controls": controls,
+        "live": len(live),
+        "asked": asked,
+        "capped": capped,
+        "live_space": math.prod(len(v) for v in live.values()),
+        "n": len(rows),
+        "kept": len(rows) - controls,
+        "shortfall": asked - (len(rows) - controls),
+        "pilot_dropped": pilot_dropped,
+    }
 
 
 def _frame(rows: list[dict]) -> pd.DataFrame:
@@ -102,13 +122,21 @@ def _frame(rows: list[dict]) -> pd.DataFrame:
     """
     ids = [f"P{i:05d}" for i in range(len(rows))]
     origin_id = next(i for i, r in zip(ids, rows) if r["origin"])
-    frame = pd.DataFrame([{
-        "variant_id": vid, "stratum": row["stratum"], "origin": row["origin"],
-        **tuples.columns(row["values"]), "tuple_hash": row["tuple_hash"],
-        "canary_expect_netprofit": row["expect_netprofit"],
-        "canary_expect_trades": row["expect_trades"],
-        "canary_expect_same_as": origin_id if row["expect_same_as"] else None}
-        for vid, row in zip(ids, rows)])
+    frame = pd.DataFrame(
+        [
+            {
+                "variant_id": vid,
+                "stratum": row["stratum"],
+                "origin": row["origin"],
+                **tuples.columns(row["values"]),
+                "tuple_hash": row["tuple_hash"],
+                "canary_expect_netprofit": row["expect_netprofit"],
+                "canary_expect_trades": row["expect_trades"],
+                "canary_expect_same_as": origin_id if row["expect_same_as"] else None,
+            }
+            for vid, row in zip(ids, rows)
+        ]
+    )
     frame["canary_expect_trades"] = frame["canary_expect_trades"].astype("Int64")
     return frame
 
@@ -136,4 +164,7 @@ def spread(table: pd.DataFrame, n: int) -> pd.DataFrame:
     if room <= 0:
         return cast("pd.DataFrame", controls.head(n))
     step = max(1, len(rest) // room)
-    return cast("pd.DataFrame", pd.concat([controls, rest.iloc[::step].head(room)], ignore_index=True))
+    return cast(
+        "pd.DataFrame",
+        pd.concat([controls, rest.iloc[::step].head(room)], ignore_index=True),
+    )

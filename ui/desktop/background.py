@@ -39,11 +39,23 @@ RELAY.landed.connect(_deliver)
 class _Call(QRunnable):
     """One job for the pool: run `work` there, hand its dict to `done` here."""
 
-    def __init__(self, work: Callable[[], dict], done: Callable[[dict], None], key: str,
-                 seq: int, owner: QObject | None) -> None:
+    def __init__(
+        self,
+        work: Callable[[], dict],
+        done: Callable[[dict], None],
+        key: str,
+        seq: int,
+        owner: QObject | None,
+    ) -> None:
         """Keep what to run and where the answer goes."""
         super().__init__()
-        self.work, self.done, self.key, self.seq, self.owner = work, done, key, seq, owner
+        self.work, self.done, self.key, self.seq, self.owner = (
+            work,
+            done,
+            key,
+            seq,
+            owner,
+        )
 
     def run(self) -> None:
         """Worker thread: no widget is touched here, only the daemon."""
@@ -52,15 +64,21 @@ class _Call(QRunnable):
         except httpx.HTTPError as failed:
             got = {"error": f"El demonio no respondió: {failed}"}
         # A window closing while a call is out has already deleted the relay: drop the answer.
-        if (not self.key or _LATEST.get(self.key) == self.seq) and shiboken6.isValid(RELAY):
+        if (not self.key or _LATEST.get(self.key) == self.seq) and shiboken6.isValid(
+            RELAY
+        ):
             try:
                 RELAY.landed.emit(self.done, got, self.owner)
             except RuntimeError:
-                pass          # deleted between the check and the emit, at exit only
+                pass  # deleted between the check and the emit, at exit only
 
 
-def run(work: Callable[[], dict], done: Callable[[dict], None], key: str = "",
-        owner: QObject | None = None) -> None:
+def run(
+    work: Callable[[], dict],
+    done: Callable[[dict], None],
+    key: str = "",
+    owner: QObject | None = None,
+) -> None:
     """Run `work` on the pool and give its answer to `done` on the GUI thread.
 
     Args:
@@ -78,13 +96,23 @@ def run(work: Callable[[], dict], done: Callable[[dict], None], key: str = "",
     POOL.start(_Call(work, done, key, seq, owner))
 
 
-def get(path: str, done: Callable[[dict], None], key: str = "", owner: QObject | None = None,
-        **params: Any) -> None:
+def get(
+    path: str,
+    done: Callable[[dict], None],
+    key: str = "",
+    owner: QObject | None = None,
+    **params: Any,
+) -> None:
     """`client.get` off the GUI thread; see `run`."""
     run(lambda: client.get(path, **params), done, key, owner)
 
 
-def post(path: str, body: Mapping[str, Any], done: Callable[[dict], None], key: str = "",
-         owner: QObject | None = None) -> None:
+def post(
+    path: str,
+    body: Mapping[str, Any],
+    done: Callable[[dict], None],
+    key: str = "",
+    owner: QObject | None = None,
+) -> None:
     """`client.post` off the GUI thread; see `run`."""
     run(lambda: client.post(path, body), done, key, owner)

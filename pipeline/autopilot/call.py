@@ -31,15 +31,18 @@ def keeper(pre: dict, restart: bool = True) -> Callable[[], None]:
         """The strategies of one output databank: on disk, or in the session's memory."""
         if restart:
             return {f.name for f in (banks / bank).glob("*.sqx")}
-        return set(live.call(role, "listStrategies", projectName=project,
-                             databankName=bank)["strategies"])
+        return set(
+            live.call(role, "listStrategies", projectName=project, databankName=bank)[
+                "strategies"
+            ]
+        )
 
     had = {t["output"]: names(t["output"]) for t in pre["chosen"] if t["output"]}
 
     def undo() -> None:
         """Remove what the aborted attempt added."""
         if not restart:
-            with contextlib.suppress(Exception):      # hung or already idle: either way
+            with contextlib.suppress(Exception):  # hung or already idle: either way
                 live.call(role, "stop", projectName=project)
         for bank, before in had.items():
             extra = sorted(names(bank) - before)
@@ -48,6 +51,7 @@ def keeper(pre: dict, restart: bool = True) -> Callable[[], None]:
                     (banks / bank / name).unlink()
             elif extra:
                 live.cut(role, project, bank, extra)
+
     return undo
 
 
@@ -61,7 +65,10 @@ def again(run: Callable[[], T], undo: Callable[[], None] | None = None) -> T:
     except SystemExit as failed:
         if ABORT not in str(failed):
             raise
-        print(f"{failed}\nfallo transitorio conocido de SQX: se repite una vez", flush=True)
+        print(
+            f"{failed}\nfallo transitorio conocido de SQX: se repite una vez",
+            flush=True,
+        )
         if undo:
             undo()
         return run()
@@ -82,8 +89,9 @@ def run(argv: list[str]) -> None:
         raise SystemExit(f"{argv[1]}: {tail}")
 
 
-def window(study: str, project: str, databank: str, symbol: str,
-           strategies: list[str]) -> list[list[str]]:
+def window(
+    study: str, project: str, databank: str, symbol: str, strategies: list[str]
+) -> list[list[str]]:
     """The commands the window's run button starts for one study (`runner.table.jobs`).
 
     Args:
@@ -96,9 +104,18 @@ def window(study: str, project: str, databank: str, symbol: str,
     Returns:
         One argv per job. The sentence the window would show instead ends the step.
     """
-    got = table.jobs({"study": study, "scope": "one" if strategies else "many",
-                      "project": project, "databank": databank, "asset": symbol,
-                      "overrides": [], "only": None, "strategies": strategies})
+    got = table.jobs(
+        {
+            "study": study,
+            "scope": "one" if strategies else "many",
+            "project": project,
+            "databank": databank,
+            "asset": symbol,
+            "overrides": [],
+            "only": None,
+            "strategies": strategies,
+        }
+    )
     if isinstance(got, str):
         raise SystemExit(got)
     return [job["argv"] for job in got]

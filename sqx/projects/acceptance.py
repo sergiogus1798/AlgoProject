@@ -5,19 +5,32 @@ import re
 from core.buildfilters import Condition
 
 CONDITIONS = re.compile(r"<Conditions\b([^>]*?)(?:/>|>.*?</Conditions>)", re.S)
-ESCAPED = {">": "&gt;", "<": "&lt;", ">=": "&gt;=", "<=": "&lt;=", "=": "=", "<>": "&lt;&gt;"}
+ESCAPED = {
+    ">": "&gt;",
+    "<": "&lt;",
+    ">=": "&gt;=",
+    "<=": "&lt;=",
+    "=": "=",
+    "<>": "&lt;&gt;",
+}
 # Where a condition reads its number from, per family: subresult, sampleType and the
 # columnType SQX writes beside it. 🔬 Decompiled 2026-09-24 from
 # WalkForwardCrossCheckMethod.getStatsValue: `subresult` picks the blob, and only family 30
 # looks at `sampleType` -- 20 is every walk-forward run concatenated, which is the only
 # sample a walk-forward cell can be judged on. The other three read statsStability,
 # statsScore and statsSpecial, which are computed per cell and carry no samples at all.
-READS = {"is": (30, 10, "0", "Decimal2"),     # the task's own backtest, in-sample only
-         "oos": (30, 20, "0", "Decimal2"),
-         "stability": (31, 127, "0", "Decimal2Pct"),
-         "score": (32, 127, "0", "Decimal2Pct"),
-         "special": (33, 127, "33", "Decimal2Pct")}
-FORMATS = {"NetProfit": "Decimal2PL", "WFMinTradesInRun": "Integer", "NumberOfTrades": "Integer"}
+READS = {
+    "is": (30, 10, "0", "Decimal2"),  # the task's own backtest, in-sample only
+    "oos": (30, 20, "0", "Decimal2"),
+    "stability": (31, 127, "0", "Decimal2Pct"),
+    "score": (32, 127, "0", "Decimal2Pct"),
+    "special": (33, 127, "33", "Decimal2Pct"),
+}
+FORMATS = {
+    "NetProfit": "Decimal2PL",
+    "WFMinTradesInRun": "Integer",
+    "NumberOfTrades": "Integer",
+}
 
 
 def condition(spec: Condition, crosscheck: str) -> str:
@@ -38,17 +51,21 @@ def condition(spec: Condition, crosscheck: str) -> str:
     """
     subresult, sample, column_type, default = READS[spec["read"]]
     metric = spec["metric"]
-    return (f'<Condition use="true"><Left-Side valueType="column"><Column-Value '
-            f'column="{metric}" columnType="{column_type}" '
-            f'format="{FORMATS.get(metric, default)}" resultType="{crosscheck}" '
-            f'direction="0" sampleType="{sample}" plType="10" confidenceLevel="50" '
-            f'market="1" subresult="{subresult}" pctRatio="0" class="{metric}"/>'
-            f'</Left-Side><Comparator value="{ESCAPED[spec["op"]]}"/>'
-            f'<Right-Side valueType="numeric"><Numeric-Value value="{spec["value"]}"/>'
-            f'</Right-Side></Condition>')
+    return (
+        f'<Condition use="true"><Left-Side valueType="column"><Column-Value '
+        f'column="{metric}" columnType="{column_type}" '
+        f'format="{FORMATS.get(metric, default)}" resultType="{crosscheck}" '
+        f'direction="0" sampleType="{sample}" plType="10" confidenceLevel="50" '
+        f'market="1" subresult="{subresult}" pctRatio="0" class="{metric}"/>'
+        f'</Left-Side><Comparator value="{ESCAPED[spec["op"]]}"/>'
+        f'<Right-Side valueType="numeric"><Numeric-Value value="{spec["value"]}"/>'
+        f"</Right-Side></Condition>"
+    )
 
 
-def area(rows: int, cols: int, size: int, minimum: int, threshold_pct: int) -> dict[str, int]:
+def area(
+    rows: int, cols: int, size: int, minimum: int, threshold_pct: int
+) -> dict[str, int]:
     """The Walk Forward Matrix's own acceptance attributes, checked against the grid.
 
     Args:
@@ -70,17 +87,27 @@ def area(rows: int, cols: int, size: int, minimum: int, threshold_pct: int) -> d
             2026-09-24), so every strategy is dismissed and nothing says why.
     """
     if size > min(rows, cols):
-        raise SystemExit(f"un area de {size}x{size} no cabe en una matriz de {rows}x{cols}. "
-                         "SQX no avisa: se queda con la mejor casilla suelta y la cuenta "
-                         "como una, asi que descartaria todo.")
+        raise SystemExit(
+            f"un area de {size}x{size} no cabe en una matriz de {rows}x{cols}. "
+            "SQX no avisa: se queda con la mejor casilla suelta y la cuenta "
+            "como una, asi que descartaria todo."
+        )
     if minimum > size * size:
-        raise SystemExit(f"min_squares {minimum} es imposible en un area de {size}x{size}: "
-                         f"solo tiene {size * size} casillas.")
-    return {"thresholdPct": threshold_pct, "robCombRows": size, "robCombCols": size,
-            "robMinComb": minimum}
+        raise SystemExit(
+            f"min_squares {minimum} es imposible en un area de {size}x{size}: "
+            f"solo tiene {size * size} casillas."
+        )
+    return {
+        "thresholdPct": threshold_pct,
+        "robCombRows": size,
+        "robCombCols": size,
+        "robMinComb": minimum,
+    }
 
 
-def acceptance(block: str, specs: list[Condition], attrs: dict[str, int], crosscheck: str) -> str:
+def acceptance(
+    block: str, specs: list[Condition], attrs: dict[str, int], crosscheck: str
+) -> str:
     """Replace a cross-check's whole `<Conditions>` element -- its attributes and its list.
 
     Args:
@@ -99,5 +126,8 @@ def acceptance(block: str, specs: list[Condition], attrs: dict[str, int], crossc
     attributes = " ".join(f'{name}="{value}"' for name, value in attrs.items())
     found = CONDITIONS.search(block)
     assert found is not None
-    return (block[:found.start()] + f"<Conditions {attributes}>{written}</Conditions>"
-            + block[found.end():])
+    return (
+        block[: found.start()]
+        + f"<Conditions {attributes}>{written}</Conditions>"
+        + block[found.end() :]
+    )

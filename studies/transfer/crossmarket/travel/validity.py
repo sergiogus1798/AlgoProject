@@ -26,7 +26,11 @@ def card(feed: str, segment: str) -> tuple[reprice.Costs | None, str]:
     if not owner:
         return None, "no_cost_card"
     late = assetcheck.pending(assetdata.load(owner))
-    return (None, "cost_card_pending: " + ", ".join(late)) if late else (reprice.costs(feed, segment), "")
+    return (
+        (None, "cost_card_pending: " + ", ".join(late))
+        if late
+        else (reprice.costs(feed, segment), "")
+    )
 
 
 class Check(TypedDict):
@@ -42,8 +46,16 @@ class Check(TypedDict):
     flat_bars: float
 
 
-def check(feed: str, trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
-          margin: float, flat_fraction: float, max_fill_error: float, period: int) -> Check:
+def check(
+    feed: str,
+    trades: pd.DataFrame,
+    bars: pd.DataFrame,
+    costs: reprice.Costs,
+    margin: float,
+    flat_fraction: float,
+    max_fill_error: float,
+    period: int,
+) -> Check:
     """§7.1 on one market, from the trades of EVERY strategy pooled and none judged alone.
 
     Args:
@@ -68,18 +80,47 @@ def check(feed: str, trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Co
     held = cells.occupancy(trades, bars)
     mine = trades.loc[held.index]
     side = np.where(mine["Type"].astype(str) == "Buy", 1.0, -1.0)
-    unit = float(np.nanmedian(atr(bars) / bars["Close"].to_numpy()))      # median ATR as a share of price
+    unit = float(
+        np.nanmedian(atr(bars) / bars["Close"].to_numpy())
+    )  # median ATR as a share of price
     scale = unit * float(bars["Open"].median())
-    opened = side * (mine["Open price"].to_numpy() - bars["Open"].to_numpy()[held["entry"]]) / scale
-    closed = side * (mine["Close price"].to_numpy() - bars["Open"].to_numpy()[held["exit"]]) / scale
-    error = max(abs(float(np.median(opened))), abs(float(np.median(closed)))) if len(held) else np.nan
-    move = side * (mine["Close price"] - mine["Open price"]).to_numpy() * mine["Size"].to_numpy()
-    fit = float(np.polyfit(move, mine["Profit/Loss"].to_numpy(), 1)[0]) if len(held) > 2 else np.nan
+    opened = (
+        side
+        * (mine["Open price"].to_numpy() - bars["Open"].to_numpy()[held["entry"]])
+        / scale
+    )
+    closed = (
+        side
+        * (mine["Close price"].to_numpy() - bars["Open"].to_numpy()[held["exit"]])
+        / scale
+    )
+    error = (
+        max(abs(float(np.median(opened))), abs(float(np.median(closed))))
+        if len(held)
+        else np.nan
+    )
+    move = (
+        side
+        * (mine["Close price"] - mine["Open price"]).to_numpy()
+        * mine["Size"].to_numpy()
+    )
+    fit = (
+        float(np.polyfit(move, mine["Profit/Loss"].to_numpy(), 1)[0])
+        if len(held) > 2
+        else np.nan
+    )
     gap = fit / costs["point_value"] - 1
     atr_ = sizing.entry_atr(bars, period)
-    why = ([f"fill_mismatch {error:.3g} ATR"] if error > max_fill_error else []) \
-        + ([f"point_value {gap:+.1%}"] if abs(gap) > margin else [])
-    return Check(market=feed, valid=not why, invalid_reason="; ".join(why),
-                 fill_error=error, point_value_card=costs["point_value"],
-                 point_value_fit=fit, point_value_gap=gap,
-                 flat_bars=float(np.mean(atr_ <= flat_fraction * np.nanmedian(atr_))))
+    why = ([f"fill_mismatch {error:.3g} ATR"] if error > max_fill_error else []) + (
+        [f"point_value {gap:+.1%}"] if abs(gap) > margin else []
+    )
+    return Check(
+        market=feed,
+        valid=not why,
+        invalid_reason="; ".join(why),
+        fill_error=error,
+        point_value_card=costs["point_value"],
+        point_value_fit=fit,
+        point_value_gap=gap,
+        flat_bars=float(np.mean(atr_ <= flat_fraction * np.nanmedian(atr_))),
+    )

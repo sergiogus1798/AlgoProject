@@ -9,12 +9,19 @@ def symbols(entry: dict, classes: dict[str, list[str]]) -> list[str]:
     """The assets an entry speaks of: the ones it names, else every asset of its classes."""
     every = [s for group in classes.values() for s in group]
     named = [s for s in every if s in str(entry["assets"])]
-    return named or [s for k, v in classes.items() if k in str(entry["asset_class"])
-                     for s in v] or every
+    return (
+        named
+        or [s for k, v in classes.items() if k in str(entry["asset_class"]) for s in v]
+        or every
+    )
 
 
-def overlap(sample_from: int | None, sample_to: int | None, assets: list[str],
-            segment: str = "build") -> str:
+def overlap(
+    sample_from: int | None,
+    sample_to: int | None,
+    assets: list[str],
+    segment: str = "build",
+) -> str:
     """The `overlaps_is` line (`overlaps_oos1`, `overlaps_oos2`): the authors' sample years against
     one segment's windows of the assets.
 
@@ -31,7 +38,7 @@ def overlap(sample_from: int | None, sample_to: int | None, assets: list[str],
         return "not stated in source"
     try:
         spans = [assetdata.window(assetdata.load(s), segment) for s in assets]
-    except ValueError:    # a segment whose dates are not decided yet
+    except ValueError:  # a segment whose dates are not decided yet
         return f"not decided: {segment} has no dates"
     lo = min(pd.Timestamp(a, unit="ms").year for a, _ in spans)
     hi = max((pd.Timestamp(b, unit="ms") - pd.Timedelta(days=1)).year for _, b in spans)

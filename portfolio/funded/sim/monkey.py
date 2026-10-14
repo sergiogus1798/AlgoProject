@@ -15,8 +15,11 @@ def demean(paths: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
 # name -> (model, what it holds fixed, what it removes). A path set of real random entries with
 # costs, built elsewhere, replaces any of these through the command's `--monkey`.
 MODELS: dict[str, tuple[Callable[[dict], dict], str, str]] = {
-    "demean": (demean, "trading days, intraday excursions, volatility and its clustering",
-               "the mean closed P&L per closing day (costs included: this monkey pays none)"),
+    "demean": (
+        demean,
+        "trading days, intraday excursions, volatility and its clustering",
+        "the mean closed P&L per closing day (costs included: this monkey pays none)",
+    ),
 }
 
 

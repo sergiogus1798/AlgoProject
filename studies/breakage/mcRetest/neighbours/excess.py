@@ -11,8 +11,14 @@ from studies.screening.analysis import resample
 COLUMNS = ["excess", "profit", "drift", "trades"]
 
 
-def totals(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
-           span: tuple[str, str], drift: dict, feed: str | None = None) -> pd.DataFrame:
+def totals(
+    trades: pd.DataFrame,
+    bars: pd.DataFrame,
+    costs: reprice.Costs,
+    span: tuple[str, str],
+    drift: dict,
+    feed: str | None = None,
+) -> pd.DataFrame:
     """Per variant, what step 8's R3 measures per trade, summed over one window.
 
     Args:
@@ -37,8 +43,9 @@ def totals(trades: pd.DataFrame, bars: pd.DataFrame, costs: reprice.Costs,
 def summed(per: pd.DataFrame) -> pd.DataFrame:
     """`totals`' sums over `engines.variants.excess.per_trade`'s rows, so a caller that also
     wants the trades themselves (`drawdowns`) prices them once."""
-    out = per.groupby("variant_id").agg(profit=("profit", "sum"), drift=("drift", "sum"),
-                                        trades=("profit", "size"))
+    out = per.groupby("variant_id").agg(
+        profit=("profit", "sum"), drift=("drift", "sum"), trades=("profit", "size")
+    )
     return cast(pd.DataFrame, out.assign(excess=out["profit"] - out["drift"])[COLUMNS])
 
 
@@ -57,5 +64,12 @@ def drawdowns(legs: list[pd.DataFrame], risk: float) -> pd.Series:
         trade has no row.
     """
     trades = pd.concat(legs).sort_values("Close time", kind="stable")
-    return cast(pd.Series, trades.groupby("variant_id")["profit"].agg(
-        lambda pnl: float(resample.max_drawdown(pnl.to_numpy())))) / risk
+    return (
+        cast(
+            pd.Series,
+            trades.groupby("variant_id")["profit"].agg(
+                lambda pnl: float(resample.max_drawdown(pnl.to_numpy()))
+            ),
+        )
+        / risk
+    )

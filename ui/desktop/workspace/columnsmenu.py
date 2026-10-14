@@ -3,23 +3,37 @@
 import unicodedata
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QDialog, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-                               QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop.theme import T
 from ui.desktop.workspace.columns import SEGMENTS, merged
 
-GROUPS = {"Estudio": "Columnas del estudio de esta pestaña",
-          "IS": "IS",
-          "OOS": "OOS (tramo de la tarea: la cosecha no dice cuál)",
-          "OOS2": "OOS2",
-          "IS+OOS1": "IS+OOS1 (calculada con las operaciones de la cosecha)"}
+GROUPS = {
+    "Estudio": "Columnas del estudio de esta pestaña",
+    "IS": "IS",
+    "OOS": "OOS (tramo de la tarea: la cosecha no dice cuál)",
+    "OOS2": "OOS2",
+    "IS+OOS1": "IS+OOS1 (calculada con las operaciones de la cosecha)",
+}
 
 
 def folded(text: str) -> str:
     """Lower case without accents, so «deposito» finds «depósito» regardless of the accent."""
-    return "".join(ch for ch in unicodedata.normalize("NFD", text.lower())
-                   if unicodedata.category(ch) != "Mn")
+    return "".join(
+        ch
+        for ch in unicodedata.normalize("NFD", text.lower())
+        if unicodedata.category(ch) != "Mn"
+    )
 
 
 class ColumnsMenu(QDialog):
@@ -27,8 +41,14 @@ class ColumnsMenu(QDialog):
     keeps its place, what was added goes at the end); after «Restaurar vista por defecto» it
     is None. The strategy's name is not listed: it always stays."""
 
-    def __init__(self, offered: dict[str, dict], ids: list[str], table: str,
-                 segs: dict | None, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        offered: dict[str, dict],
+        ids: list[str],
+        table: str,
+        segs: dict | None,
+        parent: QWidget | None = None,
+    ) -> None:
         """Build the list checked as the table shows it now.
 
         Args:
@@ -49,14 +69,17 @@ class ColumnsMenu(QDialog):
         self.tree = QTreeWidget()
         self.tree.setHeaderHidden(True)
         # An unticked box drew nothing on the dark look: only the ✓ of the ticked ones showed.
-        self.tree.setStyleSheet(f"QTreeView::indicator:unchecked {{ border: 1px solid "
-                                f"{T['muted']}; width: 11px; height: 11px; }}")
+        self.tree.setStyleSheet(
+            f"QTreeView::indicator:unchecked {{ border: 1px solid "
+            f"{T['muted']}; width: 11px; height: 11px; }}"
+        )
         self.said = QLabel("")
         self.said.setObjectName("dim")
         self.said.setWordWrap(True)
         chosen, span = set(ids), (segs or {}).get("oos")
-        titles = GROUPS | ({"OOS": f"{span} (en la tabla, «OOS»; lo dice la cosecha)"}
-                           if span else {})
+        titles = GROUPS | (
+            {"OOS": f"{span} (en la tabla, «OOS»; lo dice la cosecha)"} if span else {}
+        )
         for group in ("Estudio", *SEGMENTS):
             members = [c for c in offered.values() if c["group"] == group]
             if not members:
@@ -64,25 +87,48 @@ class ColumnsMenu(QDialog):
             top = QTreeWidgetItem(self.tree, [titles[group]])
             top.setFlags(Qt.ItemFlag.ItemIsEnabled)
             for c in members:
-                text = c["header"] + ("   · por defecto" if c["default"] else "") + (
-                    "   — sin datos" if c["why"] else "")
+                text = (
+                    c["header"]
+                    + ("   · por defecto" if c["default"] else "")
+                    + ("   — sin datos" if c["why"] else "")
+                )
                 item = QTreeWidgetItem(top, [text])
-                item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable)
-                item.setCheckState(0, Qt.CheckState.Checked if c["id"] in chosen else Qt.CheckState.Unchecked)
+                item.setFlags(
+                    Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable
+                )
+                item.setCheckState(
+                    0,
+                    Qt.CheckState.Checked
+                    if c["id"] in chosen
+                    else Qt.CheckState.Unchecked,
+                )
                 item.setData(0, Qt.ItemDataRole.UserRole, c["id"])
-                item.setToolTip(0, f"La columna enseña «–»: {c['why']}" if c["why"] else
-                                "Hay datos para esta columna en este databank.")
+                item.setToolTip(
+                    0,
+                    f"La columna enseña «–»: {c['why']}"
+                    if c["why"]
+                    else "Hay datos para esta columna en este databank.",
+                )
             top.setExpanded(group in ("Estudio", "IS", "OOS"))
         self.tree.itemChanged.connect(self.count)
-        restore, cancel, apply_ = (QPushButton("Restaurar vista por defecto"),
-                                   QPushButton("Cancelar"), QPushButton("Aplicar columnas"))
-        restore.setProperty("help", "Vuelve a las métricas de siempre y olvida lo elegido "
-                                    "para este databank, en todas sus pestañas.")
+        restore, cancel, apply_ = (
+            QPushButton("Restaurar vista por defecto"),
+            QPushButton("Cancelar"),
+            QPushButton("Aplicar columnas"),
+        )
+        restore.setProperty(
+            "help",
+            "Vuelve a las métricas de siempre y olvida lo elegido "
+            "para este databank, en todas sus pestañas.",
+        )
         cancel.setProperty("help", "Cierra sin cambiar las columnas.")
-        apply_.setProperty("help", "Enseña las columnas marcadas: las que ya estaban conservan "
-                                   "su sitio y las nuevas van al final. Las métricas se guardan "
-                                   "para este databank (todas sus pestañas); las del estudio, "
-                                   "para esta pestaña.")
+        apply_.setProperty(
+            "help",
+            "Enseña las columnas marcadas: las que ya estaban conservan "
+            "su sitio y las nuevas van al final. Las métricas se guardan "
+            "para este databank (todas sus pestañas); las del estudio, "
+            "para esta pestaña.",
+        )
         restore.clicked.connect(self.restore)
         cancel.clicked.connect(self.reject)
         apply_.clicked.connect(self.accept)
@@ -103,15 +149,20 @@ class ColumnsMenu(QDialog):
         out = set()
         for g in range(self.tree.topLevelItemCount()):
             top = self.tree.topLevelItem(g)
-            out |= {top.child(i).data(0, Qt.ItemDataRole.UserRole) for i in range(top.childCount())
-                    if top.child(i).checkState(0) == Qt.CheckState.Checked}
+            out |= {
+                top.child(i).data(0, Qt.ItemDataRole.UserRole)
+                for i in range(top.childCount())
+                if top.child(i).checkState(0) == Qt.CheckState.Checked
+            }
         return out
 
     def count(self, *_changed: object) -> None:
         """Say how many columns the table will show."""
-        self.said.setText(f"{len(self.checked())} columnas marcadas, más el nombre de la "
-                          f"estrategia (siempre). Las métricas se guardan para el databank "
-                          f"{self.bank}: valen en todas sus pestañas.")
+        self.said.setText(
+            f"{len(self.checked())} columnas marcadas, más el nombre de la "
+            f"estrategia (siempre). Las métricas se guardan para el databank "
+            f"{self.bank}: valen en todas sus pestañas."
+        )
 
     def narrow(self, text: str) -> None:
         """Keep only the rows whose header holds the typed text, and open their groups."""

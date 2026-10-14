@@ -56,7 +56,7 @@ def fake_root(root: Path, mode: str) -> tuple[Path, Path]:
     Returns:
         The copied script and the fake install's top folder.
     """
-    with socket.socket() as s:                    # a free port, never one of SQX's
+    with socket.socket() as s:  # a free port, never one of SQX's
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
     proj, master, worker = root / "proj", root / "SQX_master", root / "SQX_fake"
@@ -70,13 +70,15 @@ def fake_root(root: Path, mode: str) -> tuple[Path, Path]:
     (proj / "core" / "__init__.py").write_text("")
     (proj / "core" / "paths.py").write_text(
         f"MASTER = {str(master)!r}\n"
-        f"WORKERS = {{'conductor': {{'path': {str(worker)!r}, 'port': {port}}}}}\n")
+        f"WORKERS = {{'conductor': {{'path': {str(worker)!r}, 'port': {port}}}}}\n"
+    )
     (master / "user" / "data").mkdir(parents=True)
     (master / "user" / "data" / "data.db").write_text("bars")
     for sub in ("user/log", "user/data", "user/settings", "internal"):
         (worker / sub).mkdir(parents=True)
     (worker / "internal" / "AppSettings.txt").write_text(
-        f"<AppWebServerPortSQUANT>{port}</AppWebServerPortSQUANT>")
+        f"<AppWebServerPortSQUANT>{port}</AppWebServerPortSQUANT>"
+    )
     (worker / "mode").write_text(mode)
     sqcli = worker / "sqcli"
     sqcli.write_text(FAKE_SQCLI.format(python=sys.executable, port=port))
@@ -87,8 +89,17 @@ def fake_root(root: Path, mode: str) -> tuple[Path, Path]:
 def script(sh: Path, verb: str, **env: str) -> subprocess.CompletedProcess:
     """Run the copied bin/sqx-worker.sh with one verb, as holder "tester"."""
     return subprocess.run(
-        [str(sh), verb], capture_output=True, text=True, timeout=120,
-        env={"PATH": "/usr/bin:/bin", "HOME": os.environ["HOME"], "SQX_OWNER": "tester", **env})
+        [str(sh), verb],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        env={
+            "PATH": "/usr/bin:/bin",
+            "HOME": os.environ["HOME"],
+            "SQX_OWNER": "tester",
+            **env,
+        },
+    )
 
 
 def alive(pid: int) -> bool:
@@ -117,13 +128,20 @@ def test_start_and_stop_succeed_as_before(root: Path) -> None:
         xvfb.write_text(str(bystander.pid))
         got = script(sh, "start")
         assert got.returncode == 0, got.stdout + got.stderr
-        for line in ("bars synced", "starting conductor", "worker up:", "owner:      tester"):
+        for line in (
+            "bars synced",
+            "starting conductor",
+            "worker up:",
+            "owner:      tester",
+        ):
             assert line in got.stdout, got.stdout
         assert not xvfb.exists(), "a non-GUI start must clear a stale XVFB file"
         pid = int((w / "launched.pid").read_text())
         lock = json.loads((w / "user" / "log" / "OWNER").read_text())
         assert lock["holder"] == "tester" and lock["pid"] == pid, lock
-        assert (w / "inherited-fd9").read_text() == "False", "the daemon holds the start flock"
+        assert (w / "inherited-fd9").read_text() == "False", (
+            "the daemon holds the start flock"
+        )
         assert "already running" in script(sh, "start").stdout
 
         xvfb.write_text(str(bystander.pid))
@@ -144,13 +162,19 @@ def test_start_and_stop_succeed_as_before(root: Path) -> None:
 def test_concurrent_start_is_refused(root: Path) -> None:
     """While another start holds user/log/.start.lock, `start` exits 1 and launches nothing."""
     sh, w = fake_root(root, "serve")
-    holder = subprocess.Popen(["flock", str(w / "user" / "log" / ".start.lock"), "sleep", "60"])
+    holder = subprocess.Popen(
+        ["flock", str(w / "user" / "log" / ".start.lock"), "sleep", "60"]
+    )
     try:
         time.sleep(0.5)
         got = script(sh, "start")
-        assert got.returncode == 1 and "in progress" in got.stdout, got.stdout + got.stderr
+        assert got.returncode == 1 and "in progress" in got.stdout, (
+            got.stdout + got.stderr
+        )
         assert got.stdout.startswith("REFUSING"), got.stdout
-        assert not (w / "launched.pid").exists(), "the refused start still launched sqcli"
+        assert not (w / "launched.pid").exists(), (
+            "the refused start still launched sqcli"
+        )
         assert not (w / "user" / "log" / "OWNER").exists()
     finally:
         holder.kill()
@@ -164,7 +188,9 @@ def test_start_that_never_opens_its_port_is_killed(root: Path) -> None:
     sh, w = fake_root(root, "noport")
     try:
         got = script(sh, "start", SQX_START_WAIT="4")
-        assert got.returncode == 1 and "worker failed to start" in got.stdout, got.stdout
+        assert got.returncode == 1 and "worker failed to start" in got.stdout, (
+            got.stdout
+        )
         pid = int((w / "launched.pid").read_text())
         assert f"(PID {pid})" in got.stdout, got.stdout
         assert not alive(pid), "the sqcli of a failed start is still alive"
@@ -182,7 +208,9 @@ def test_stop_exits_1_when_the_worker_survives(root: Path) -> None:
         assert script(sh, "start").returncode == 0
         pid = int((w / "launched.pid").read_text())
         got = script(sh, "stop", SQX_STOP_WAIT="3")
-        assert got.returncode == 0 and "killing by PID" in got.stdout, got.stdout + got.stderr
+        assert got.returncode == 0 and "killing by PID" in got.stdout, (
+            got.stdout + got.stderr
+        )
         assert str(pid) in got.stdout, got.stdout
         assert not alive(pid), "the deaf worker survived the kill"
     finally:
@@ -195,16 +223,19 @@ def test_stop_sees_a_worker_whose_port_is_down(root: Path) -> None:
     has been silent, and does not wait five minutes."""
     sh, w = fake_root(root, "noport")
     log = w / "user" / "log" / "worker-daemon.log"
-    log.write_text("SQX CLI is now ready\n")      # skip the 30 s boot wait
+    log.write_text("SQX CLI is now ready\n")  # skip the 30 s boot wait
     booting = subprocess.Popen(["./sqcli"], cwd=w)
     try:
         time.sleep(1)
         (w / "user" / "log" / "OWNER").write_text(
-            json.dumps({"holder": "tester", "pid": booting.pid, "since": "now"}))
+            json.dumps({"holder": "tester", "pid": booting.pid, "since": "now"})
+        )
         began = time.time()
         got = script(sh, "stop")
         assert got.returncode == 0, got.stdout + got.stderr
-        assert "not running" not in got.stdout and "could not reach" in got.stdout, got.stdout
+        assert "not running" not in got.stdout and "could not reach" in got.stdout, (
+            got.stdout
+        )
         assert "killing by PID" in got.stdout, got.stdout
         assert time.time() - began < 120
         assert booting.wait(timeout=10) is not None
@@ -214,10 +245,13 @@ def test_stop_sees_a_worker_whose_port_is_down(root: Path) -> None:
 
 
 if __name__ == "__main__":
-    for test in (test_start_and_stop_succeed_as_before, test_concurrent_start_is_refused,
-                 test_start_that_never_opens_its_port_is_killed,
-                 test_stop_exits_1_when_the_worker_survives,
-                 test_stop_sees_a_worker_whose_port_is_down):
+    for test in (
+        test_start_and_stop_succeed_as_before,
+        test_concurrent_start_is_refused,
+        test_start_that_never_opens_its_port_is_killed,
+        test_stop_exits_1_when_the_worker_survives,
+        test_stop_sees_a_worker_whose_port_is_down,
+    ):
         with tempfile.TemporaryDirectory() as scratch:
             began = time.time()
             test(Path(scratch))

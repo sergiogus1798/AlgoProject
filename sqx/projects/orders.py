@@ -104,19 +104,36 @@ def pending_orders(members: dict[str, bytes], databank: Path | None) -> PendingO
     """
     if databank and any(databank.glob("*.sqx")):
         seen, read = population(databank)
-        return {"pending": bool(seen & set(PENDING)), "types": sorted(seen),
-                "source": "population", "read": read}
-    may = set().union(*(allowed(b.decode("utf-8", "replace")) for n, b in members.items()
-                        if n.endswith(".xml") and n != "config.xml"))
-    return {"pending": None if may & set(PENDING) else False, "types": sorted(may),
-            "source": "generator", "read": 0}
+        return {
+            "pending": bool(seen & set(PENDING)),
+            "types": sorted(seen),
+            "source": "population",
+            "read": read,
+        }
+    may = set().union(
+        *(
+            allowed(b.decode("utf-8", "replace"))
+            for n, b in members.items()
+            if n.endswith(".xml") and n != "config.xml"
+        )
+    )
+    return {
+        "pending": None if may & set(PENDING) else False,
+        "types": sorted(may),
+        "source": "generator",
+        "read": 0,
+    }
 
 
 def exits_set(text: str) -> bool:
     """Whether a strategy's portfolio XML has any exit method set (stop, target, trailing,
     exit after bars, move to BE); the Params are always present, so presence says nothing."""
     for body in (b.strip() for b in EXIT_PARAM.findall(text)):
-        if ('.None"' not in body) if body.startswith("<Formula") else body not in ("", "0"):
+        if (
+            ('.None"' not in body)
+            if body.startswith("<Formula")
+            else body not in ("", "0")
+        ):
             return True
     return False
 

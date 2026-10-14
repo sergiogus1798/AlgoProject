@@ -21,11 +21,14 @@ def families(ev: pd.DataFrame) -> dict[str, tuple[np.ndarray, np.ndarray]]:
         `extremo` the spikes that stayed (both columns, merged); `hueco` the symbol's own gaps
         and the provider's outages. Rollover runs, partial closes and holidays mark nothing.
     """
-    pick = {"cierre": (ev["kind"] == "cierre") & (ev["cls"] == "vuelta"),
-            "mecha": (ev["kind"] == "mecha") & (ev["cls"] == "vuelta"),
-            "extremo": ev["kind"].isin(["cierre", "mecha"]) & (ev["cls"] == "extremo"),
-            "congelado": (ev["kind"] == "congelado") & (ev["cls"] == "congelado"),
-            "hueco": (ev["kind"] == "hueco") & ev["cls"].isin(["símbolo", "caída del proveedor"])}
+    pick = {
+        "cierre": (ev["kind"] == "cierre") & (ev["cls"] == "vuelta"),
+        "mecha": (ev["kind"] == "mecha") & (ev["cls"] == "vuelta"),
+        "extremo": ev["kind"].isin(["cierre", "mecha"]) & (ev["cls"] == "extremo"),
+        "congelado": (ev["kind"] == "congelado") & (ev["cls"] == "congelado"),
+        "hueco": (ev["kind"] == "hueco")
+        & ev["cls"].isin(["símbolo", "caída del proveedor"]),
+    }
     out = {}
     for name, mask in pick.items():
         spans = ev.loc[mask, ["start_min", "end_min"]].drop_duplicates("start_min")
@@ -34,7 +37,9 @@ def families(ev: pd.DataFrame) -> dict[str, tuple[np.ndarray, np.ndarray]]:
     return out
 
 
-def hits(spans: tuple[np.ndarray, np.ndarray], a: np.ndarray, b: np.ndarray) -> np.ndarray:
+def hits(
+    spans: tuple[np.ndarray, np.ndarray], a: np.ndarray, b: np.ndarray
+) -> np.ndarray:
     """How many intervals of one family overlap each window [a, b).
 
     Returns:
@@ -45,7 +50,9 @@ def hits(spans: tuple[np.ndarray, np.ndarray], a: np.ndarray, b: np.ndarray) -> 
     return np.searchsorted(starts, b, "left") - np.searchsorted(ends, a, "right")
 
 
-def bars(trades: pd.DataFrame, index: pd.DatetimeIndex, timeframe: str) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+def bars(
+    trades: pd.DataFrame, index: pd.DatetimeIndex, timeframe: str
+) -> dict[str, tuple[np.ndarray, np.ndarray]]:
     """Each trade's signal, entry and exit bars, and the time between, as minute windows.
 
     Args:
@@ -62,15 +69,26 @@ def bars(trades: pd.DataFrame, index: pd.DatetimeIndex, timeframe: str) -> dict[
     starts = scale.minutes(index)
     k = np.searchsorted(index, trades["Open time"].to_numpy(), "right") - 1
     j = np.searchsorted(index, trades["Close time"].to_numpy(), "right") - 1
-    span = {"signal": starts[np.maximum(k - 1, 0)],    # a first-bar trade has no bar before it
-            "entry": starts[k], "exit": starts[j]}
+    span = {
+        "signal": starts[
+            np.maximum(k - 1, 0)
+        ],  # a first-bar trade has no bar before it
+        "entry": starts[k],
+        "exit": starts[j],
+    }
     out = {name: (s, s + width) for name, s in span.items()}
     out["during"] = (starts[k] + width, np.maximum(starts[k] + width, starts[j]))
     return out
 
 
-def mark(trades: pd.DataFrame, ev: pd.DataFrame, index: pd.DatetimeIndex, timeframe: str,
-         rules: template.Rules, include_non_reverting: bool) -> pd.DataFrame:
+def mark(
+    trades: pd.DataFrame,
+    ev: pd.DataFrame,
+    index: pd.DatetimeIndex,
+    timeframe: str,
+    rules: template.Rules,
+    include_non_reverting: bool,
+) -> pd.DataFrame:
     """Every trade of one strategy, with what it touched and whether it is flagged.
 
     Args:
@@ -88,11 +106,16 @@ def mark(trades: pd.DataFrame, ev: pd.DataFrame, index: pd.DatetimeIndex, timefr
     fam, win = families(ev), bars(trades, index, timeframe)
     out = trades.copy()
     for name in FAMILIES:
-        out[name] = np.any([hits(fam[name], *win[b]) > 0 for b in ("signal", "entry", "exit")],
-                           axis=0)
-    out["durante"] = np.any([hits(fam[n], *win["during"]) > 0
-                             for n in ("mecha", "congelado", "hueco")], axis=0)
+        out[name] = np.any(
+            [hits(fam[name], *win[b]) > 0 for b in ("signal", "entry", "exit")], axis=0
+        )
+    out["durante"] = np.any(
+        [hits(fam[n], *win["during"]) > 0 for n in ("mecha", "congelado", "hueco")],
+        axis=0,
+    )
     out["spike"] = out[rules["column"]] | (out["extremo"] & include_non_reverting)
     out["hueco o congelado"] = out["congelado"] | out["hueco"]
-    out["marcada"] = out["spike"] | out["hueco o congelado"] | (out["durante"] & rules["stop"])
+    out["marcada"] = (
+        out["spike"] | out["hueco o congelado"] | (out["durante"] & rules["stop"])
+    )
     return out

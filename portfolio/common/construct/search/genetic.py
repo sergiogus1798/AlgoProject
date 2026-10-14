@@ -37,7 +37,7 @@ def _pack(masks: np.ndarray) -> np.ndarray:
     out = np.full((masks.shape[0], max(k_max, 1)), -1, dtype=np.int32)
     for i, row in enumerate(masks):
         idx = np.flatnonzero(row)
-        out[i, :idx.size] = idx
+        out[i, : idx.size] = idx
     return out
 
 
@@ -61,8 +61,13 @@ def _mutate(mask: np.ndarray, rate: float, rng: np.random.Generator) -> np.ndarr
     return mask
 
 
-def run(graph: np.ndarray, score: Callable[[np.ndarray], np.ndarray], seeds: list[np.ndarray],
-        cfg: dict, rng: np.random.Generator) -> dict[str, Any]:
+def run(
+    graph: np.ndarray,
+    score: Callable[[np.ndarray], np.ndarray],
+    seeds: list[np.ndarray],
+    cfg: dict,
+    rng: np.random.Generator,
+) -> dict[str, Any]:
     """Tournament GA over clique masks: union crossover, swap/add/remove mutation, elitism.
 
     A child that is not a clique is repaired by dropping its least-connected member round by
@@ -109,7 +114,9 @@ def run(graph: np.ndarray, score: Callable[[np.ndarray], np.ndarray], seeds: lis
         all_origin += ["seed" if gen == 0 else "ga"] * pop
         all_gen.append(np.full(pop, gen))
 
-        scores = np.where(np.isnan(scores), -np.inf, scores)   # an infeasible combination never wins
+        scores = np.where(
+            np.isnan(scores), -np.inf, scores
+        )  # an infeasible combination never wins
         top = int(scores.argmax())
         if scores[top] > best_score:
             best_score, best_mask, stagnant = float(scores[top]), masks[top].copy(), 0
@@ -133,7 +140,13 @@ def run(graph: np.ndarray, score: Callable[[np.ndarray], np.ndarray], seeds: lis
         masks = np.array(new_masks[:pop])
 
     overhead = (time.perf_counter() - wall_start) - score_time
-    return {"members": all_members, "score": np.concatenate(all_scores),
-            "origin": all_origin, "generation": np.concatenate(all_gen),
-            "best": {"members": np.flatnonzero(best_mask), "score": best_score},
-            "generations_run": gen + 1, "score_s": score_time, "overhead_s": overhead}
+    return {
+        "members": all_members,
+        "score": np.concatenate(all_scores),
+        "origin": all_origin,
+        "generation": np.concatenate(all_gen),
+        "best": {"members": np.flatnonzero(best_mask), "score": best_score},
+        "generations_run": gen + 1,
+        "score_s": score_time,
+        "overhead_s": overhead,
+    }

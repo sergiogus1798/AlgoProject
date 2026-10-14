@@ -3,20 +3,35 @@
 import httpx
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
-                               QPushButton, QScrollArea, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import background, client
 from ui.desktop.sqxconfig.section import Section, words
 from ui.desktop.theme import C
 
 # The owner's words for what a write here does (plan 24 §10, Q17).
-WARNING = ("Se aplica a los proyectos que se creen a partir de ahora; los existentes no cambian. "
-           "Cada cambio se escribe en assets/ conservando los comentarios, y git lo ve. WFC y "
-           "CSCV escriben además en los config.yaml de sus estudios y, los bloques del CSCV, en "
-           "ledger/thresholds.yaml, sellado con tu nombre y la fecha.")
-FILES = {"build": "Construcción y tests", "classes": "Esquemas de coste",
-         "policy": "Política común", "markets": "Universo de retest"}
+WARNING = (
+    "Se aplica a los proyectos que se creen a partir de ahora; los existentes no cambian. "
+    "Cada cambio se escribe en assets/ conservando los comentarios, y git lo ve. WFC y "
+    "CSCV escriben además en los config.yaml de sus estudios y, los bloques del CSCV, en "
+    "ledger/thresholds.yaml, sellado con tu nombre y la fecha."
+)
+FILES = {
+    "build": "Construcción y tests",
+    "classes": "Esquemas de coste",
+    "policy": "Política común",
+    "markets": "Universo de retest",
+}
 
 
 class SqxConfigZone(QFrame):
@@ -100,7 +115,9 @@ class SqxConfigZone(QFrame):
                 self.header(FILES[current])
             section = Section(sec)
             section.written.connect(lambda text: self.say(text, C["promising"]))
-            section.refused.connect(lambda text: self.say(f"no escrito — {text}", C["dead"]))
+            section.refused.connect(
+                lambda text: self.say(f"no escrito — {text}", C["dead"])
+            )
             # queued: the section asking is itself rebuilt by the re-read
             section.stale.connect(lambda: QTimer.singleShot(0, self.refresh))
             self.column.addWidget(section)

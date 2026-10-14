@@ -9,7 +9,7 @@ from core import assetcheck, assetdata
 from engines.nulls.inputs import Fixed
 from engines.nulls.stats import GOOD_HIGH
 
-RECONCILE_FLOOR = 0.99      # below this the priced run is not the run SQX reported
+RECONCILE_FLOOR = 0.99  # below this the priced run is not the run SQX reported
 
 
 def pvalue(seen: float, drawn: np.ndarray, name: str) -> float:
@@ -50,11 +50,14 @@ def attribute(seen: dict, per_rung: dict, name: str) -> dict[str, float]:
     """
     mean = {rung: float(np.mean(values[name])) for rung, values in per_rung.items()}
     sign = 1.0 if GOOD_HIGH[name] else -1.0
-    edge = sign * (seen[name] - mean["free"])     # positive is better, as the channels are
-    return {"total": edge,
-            "holding_time": sign * (mean["timing"] - mean["timing_holds"]),
-            "sizing": sign * (mean["timing"] - mean["timing_sizing"]),
-            "null_mean": mean["free"], "real": seen[name]}
+    edge = sign * (seen[name] - mean["free"])  # positive is better, as the channels are
+    return {
+        "total": edge,
+        "holding_time": sign * (mean["timing"] - mean["timing_holds"]),
+        "sizing": sign * (mean["timing"] - mean["timing_sizing"]),
+        "null_mean": mean["free"],
+        "real": seen[name],
+    }
 
 
 def distrust(kept: Fixed, found: dict, trades: int, cfg: dict) -> list[str]:
@@ -73,27 +76,37 @@ def distrust(kept: Fixed, found: dict, trades: int, cfg: dict) -> list[str]:
     """
     knobs, said = cfg["verdict"], []
     if kept["checks"]["corr"] < RECONCILE_FLOOR:
-        said.append(f"RECONCILIACION: el P/L reconstruido correla {kept['checks']['corr']:.4f} "
-                    f"con el de SQX, por debajo de {RECONCILE_FLOOR}. Nada de lo que sigue "
-                    f"describe el backtest que SQX corrio.")
+        said.append(
+            f"RECONCILIACION: el P/L reconstruido correla {kept['checks']['corr']:.4f} "
+            f"con el de SQX, por debajo de {RECONCILE_FLOOR}. Nada de lo que sigue "
+            f"describe el backtest que SQX corrio."
+        )
     if trades < knobs["min_trades"]:
-        said.append(f"MUESTRA: {trades} trades, menos de {knobs['min_trades']}. No se calcula p.")
+        said.append(
+            f"MUESTRA: {trades} trades, menos de {knobs['min_trades']}. No se calcula p."
+        )
     floor = 1 / (cfg["nulls"]["draws"] + 1)
     topped = sorted(name for name, value in found.items() if value <= floor)
     if topped:
-        said.append(f"P SATURADO en {', '.join(topped)}: el p mas pequeno observable es "
-                    f"{floor:.1e}. Un resultado ahi abajo no esta medido, esta topado, y una "
-                    f"correccion por multiplicidad no lo puede leer: sube nulls.draws.")
+        said.append(
+            f"P SATURADO en {', '.join(topped)}: el p mas pequeno observable es "
+            f"{floor:.1e}. Un resultado ahi abajo no esta medido, esta topado, y una "
+            f"correccion por multiplicidad no lo puede leer: sube nulls.draws."
+        )
     # The feed is what a study knows about itself; the asset behind it is what carries the
     # costs. Naming one asset in a constant made every other asset's run claim gold's.
     symbol = assetdata.symbol_for(cfg.get("feed", "")) if cfg.get("feed") else None
     loose = assetcheck.provisional(assetdata.load(symbol)) if symbol else None
     if loose:
-        said.append(f"COSTES PROVISIONALES: {', '.join(loose)} de {symbol} no son cifras "
-                    f"pactadas con el broker (assets/symbols/{symbol}.yaml). La posicion del "
-                    "null la fija sobre todo el coste, asi que estos p se mueven con ellos.")
+        said.append(
+            f"COSTES PROVISIONALES: {', '.join(loose)} de {symbol} no son cifras "
+            f"pactadas con el broker (assets/symbols/{symbol}.yaml). La posicion del "
+            "null la fija sobre todo el coste, asi que estos p se mueven con ellos."
+        )
     elif not symbol:
-        said.append(f"COSTES SIN IDENTIFICAR: ningun fichero de assets/symbols/ declara el feed "
-                    f"`{cfg.get('feed') or 'que se leyo'}`, asi que no se puede decir si el coste "
-                    "con que corrio esto esta pactado. La posicion del null la fija ese coste.")
+        said.append(
+            f"COSTES SIN IDENTIFICAR: ningun fichero de assets/symbols/ declara el feed "
+            f"`{cfg.get('feed') or 'que se leyo'}`, asi que no se puede decir si el coste "
+            "con que corrio esto esta pactado. La posicion del null la fija ese coste."
+        )
     return said

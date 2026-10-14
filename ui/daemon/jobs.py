@@ -25,8 +25,21 @@ TAIL = 25
 SLOTS = fanout.CORES
 # Every study of the catalogue whose module calls `fanout.run` (`tests/test_perf66_chain.py`
 # fails on one that is missing): it takes all the cores, so the chain runs one at a time.
-WIDE = {"crossmarket", "monkey", "gate", "mcRetest", "feedQuality", "cscv", "monteCarlo",
-        "crossTF", "exposure", "blindJoint", "decay", "falsePositives", "marketSurfaces"}
+WIDE = {
+    "crossmarket",
+    "monkey",
+    "gate",
+    "mcRetest",
+    "feedQuality",
+    "cscv",
+    "monteCarlo",
+    "crossTF",
+    "exposure",
+    "blindJoint",
+    "decay",
+    "falsePositives",
+    "marketSurfaces",
+}
 LIGHT = 3
 # A WIDE test run once per picked survivor, not once on the population, takes ~1.3 cores and
 # 1.9 GB each: this many at once. One by one, 1,352 survivors held a run 6 h 30 (2026-10-09).
@@ -37,6 +50,8 @@ def width(key: str, commands: int) -> int:
     """How many of a test's commands a step runs at once: one when the test fans out itself."""
     wide = 1 if key in WIDE else max(1, SLOTS // LIGHT)
     return PICKED.get(key, wide) if commands > 1 else wide
+
+
 # Nothing new starts below this much free RAM unless the lane is empty. 20 GB is the owner's
 # reserve for Python (knowhow/perf/ram-budget.md, 125 GB = heaps + Python 20 + OS 10-12):
 # below it a new study would eat into what the custodian's JVM grows into while it runs.
@@ -46,7 +61,7 @@ CANCELLED = -15
 # Analyses run below the window and the daemon (owner, 2026-09-28: «que la UI sea ligera y
 # fluida aunque haya tests corriendo»): at full load the scheduler serves those two first.
 NICE = 10
-READ_BYTES = 16_000        # the end of a log that holds TAIL lines and its last PROGRESS
+READ_BYTES = 16_000  # the end of a log that holds TAIL lines and its last PROGRESS
 
 # In memory on purpose: a job is a process this daemon owns, and a daemon that dies takes its
 # children with it, so a record that outlived it would describe processes that do not exist.
@@ -59,11 +74,17 @@ def _launch(job: dict) -> None:
     # UTF-8 mode: on Windows a child printing to a file encodes as cp1252 and dies on the
     # first «→» or «ρ» of a Spanish report.
     lower = job["lane"] == "python" and hasattr(os, "nice")
-    with open(job["log"], "wb") as out:      # the child holds its own copy of the descriptor
-        job["_proc"] = subprocess.Popen([sys.executable, *job["argv"]], cwd=ROOT, stdout=out,
-                                        stderr=subprocess.STDOUT,
-                                        env={**os.environ, "PYTHONUTF8": "1"},
-                                        preexec_fn=(lambda: os.nice(NICE)) if lower else None)
+    with open(
+        job["log"], "wb"
+    ) as out:  # the child holds its own copy of the descriptor
+        job["_proc"] = subprocess.Popen(
+            [sys.executable, *job["argv"]],
+            cwd=ROOT,
+            stdout=out,
+            stderr=subprocess.STDOUT,
+            env={**os.environ, "PYTHONUTF8": "1"},
+            preexec_fn=(lambda: os.nice(NICE)) if lower else None,
+        )
     job["started"] = datetime.now().isoformat(timespec="seconds")
     threading.Thread(target=lambda: (job["_proc"].wait(), pump()), daemon=True).start()
 
@@ -90,17 +111,24 @@ def pump() -> None:
                     busy = True
                 continue
             free_gb = psutil.virtual_memory().available / 1e9
-            if blocked or (any(j["lane"] == "python" for j in running)
-                           and (used + weight(job) > SLOTS or free_gb < FLOOR_GB)):
-                blocked = True     # python stays in the order pressed
+            if blocked or (
+                any(j["lane"] == "python" for j in running)
+                and (used + weight(job) > SLOTS or free_gb < FLOOR_GB)
+            ):
+                blocked = True  # python stays in the order pressed
                 continue
             _launch(job)
             running.append(job)
             used += weight(job)
 
 
-def start(label: str, argv: list[str], about: dict, lane: str = "python",
-          weight: int | None = None) -> dict[str, Any]:
+def start(
+    label: str,
+    argv: list[str],
+    about: dict,
+    lane: str = "python",
+    weight: int | None = None,
+) -> dict[str, Any]:
     """Queue one command as a child of the daemon, and start it if a slot is free.
 
     Args:
@@ -121,10 +149,21 @@ def start(label: str, argv: list[str], about: dict, lane: str = "python",
         job_id = f"{datetime.now():%Y%m%d-%H%M%S}-{len(JOBS)}"
         log = LOGS / f"{job_id}-{label}.log"
         log.touch()
-        job = {"id": job_id, "label": label, "argv": argv, "study": label,
-               "scope": "one" if about.get("strategy") else "many", **about, "lane": lane,
-               "log": str(log), "started": datetime.now().isoformat(timespec="seconds"), "rc": None, "cancelled": False, "_proc": None,
-               **({"weight": weight} if weight else {})}
+        job = {
+            "id": job_id,
+            "label": label,
+            "argv": argv,
+            "study": label,
+            "scope": "one" if about.get("strategy") else "many",
+            **about,
+            "lane": lane,
+            "log": str(log),
+            "started": datetime.now().isoformat(timespec="seconds"),
+            "rc": None,
+            "cancelled": False,
+            "_proc": None,
+            **({"weight": weight} if weight else {}),
+        }
         JOBS.append(job)
         pump()
         return public(job)
@@ -140,14 +179,15 @@ def _kill(job: dict) -> None:
         try:
             p.kill()
         except psutil.NoSuchProcess:
-            pass   # a worker that finished between the listing and the kill
+            pass  # a worker that finished between the listing and the kill
     job["_proc"].wait()
 
 
 def _alive(job: dict) -> bool:
     """Its process runs, or a cancel is still stopping the worker it started: the lane stays busy."""
-    return bool(job["_proc"]) and (job["_proc"].poll() is None
-                                   or ("_down" in job and job["_down"].is_alive()))
+    return bool(job["_proc"]) and (
+        job["_proc"].poll() is None or ("_down" in job and job["_down"].is_alive())
+    )
 
 
 def cancel(job_id: str) -> bool:
@@ -162,11 +202,17 @@ def cancel(job_id: str) -> bool:
     """
     with _LOCK:
         job = next((j for j in JOBS if j["id"] == job_id), None)
-        if job is None or job["cancelled"] or (job["_proc"] and job["_proc"].poll() is not None):
+        if (
+            job is None
+            or job["cancelled"]
+            or (job["_proc"] and job["_proc"].poll() is not None)
+        ):
             return False
         job["cancelled"] = True
         if job["_proc"] and job["label"] in winddown.LAUNCHERS:
-            job["_down"] = threading.Thread(target=winddown.wind_down, args=(job, _kill, pump))
+            job["_down"] = threading.Thread(
+                target=winddown.wind_down, args=(job, _kill, pump)
+            )
             job["_down"].start()
         elif job["_proc"]:
             _kill(job)
@@ -199,31 +245,44 @@ def public(job: dict) -> dict[str, Any]:
         return job["_final"]
     proc = job["_proc"]
     alive = _alive(job)
-    job["rc"] = ((None if alive else CANCELLED) if job["cancelled"]
-                 else (proc.poll() if proc else None))
+    job["rc"] = (
+        (None if alive else CANCELLED)
+        if job["cancelled"]
+        else (proc.poll() if proc else None)
+    )
     with open(job["log"], "rb") as f:
         cut = max(0, f.seek(0, 2) - READ_BYTES)
         f.seek(cut)
-        lines = f.read().decode("utf-8", errors="replace").splitlines()[1 if cut else 0:]
+        lines = (
+            f.read().decode("utf-8", errors="replace").splitlines()[1 if cut else 0 :]
+        )
     percent, state = _progress(lines)
     waiting = [j["id"] for j in JOBS if j["_proc"] is None and not j["cancelled"]]
     if job["cancelled"]:
-        state = ("cancelando" + (": parando el worker" if winddown.started(job) else "")) if alive \
+        state = (
+            ("cancelando" + (": parando el worker" if winddown.started(job) else ""))
+            if alive
             else "cancelado"
+        )
     elif proc is None:
         state = "en cola"
     elif job["rc"] == 0:
         percent, state = 100, state or "terminado"
     elif job["rc"] is not None:
         state = f"falló, código {job['rc']}"
-    left = winddown.left_up(job) if job["rc"] is not None else ""   # /proc only behind a marker
+    left = (
+        winddown.left_up(job) if job["rc"] is not None else ""
+    )  # /proc only behind a marker
     if left:
         state += f" · ⚠ el {left} sigue arrancado: bin/sqx-worker.sh --role {left} stop"
-    out = ({k: v for k, v in job.items() if not k.startswith("_")}
-           | {"tail": lines[-TAIL:], "percent": percent or 0, "state": state,
-              "queued": waiting.index(job["id"]) + 1 if job["id"] in waiting else None})
+    out = {k: v for k, v in job.items() if not k.startswith("_")} | {
+        "tail": lines[-TAIL:],
+        "percent": percent or 0,
+        "state": state,
+        "queued": waiting.index(job["id"]) + 1 if job["id"] in waiting else None,
+    }
     if job["rc"] is not None and not alive and not left:
-        job["_final"] = out     # an ended job never changes: its log is not read again
+        job["_final"] = out  # an ended job never changes: its log is not read again
     return out
 
 

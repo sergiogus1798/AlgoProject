@@ -41,8 +41,9 @@ def retitle(config: str, member: str, title: str) -> str:
     return config.replace(tag, re.sub(r'active="[^"]*"', 'active="true"', named), 1)
 
 
-def market_setups(symbol: str, segment: str, timeframe: str,
-                  precision: int, engine: str) -> tuple[str, list, list]:
+def market_setups(
+    symbol: str, segment: str, timeframe: str, precision: int, engine: str
+) -> tuple[str, list, list]:
     """The extra markets of `_markets.yaml`, each over this segment at its own costs.
 
     Args:
@@ -65,18 +66,30 @@ def market_setups(symbol: str, segment: str, timeframe: str,
         if not m["costs_from"]:
             skipped.append(m | {"why": "sin costes declarados en assets/symbols/"})
         elif isinstance(first, date) and f"{first:%Y.%m.%d}" > end:
-            skipped.append(m | {"why": f"sus datos empiezan en {first} y {segment} acaba "
-                                       f"en {end}"})
+            skipped.append(
+                m | {"why": f"sus datos empiezan en {first} y {segment} acaba en {end}"}
+            )
         else:
             at = max(start, f"{first:%Y.%m.%d}") if isinstance(first, date) else start
             used.append(m | {"window": (at, end)})
-    body = "".join(one_market(m["feed"], load(m["costs_from"]), segment, m["window"],
-                              precision, engine, timeframe) for m in used)
+    body = "".join(
+        one_market(
+            m["feed"],
+            load(m["costs_from"]),
+            segment,
+            m["window"],
+            precision,
+            engine,
+            timeframe,
+        )
+        for m in used
+    )
     return body, used, skipped
 
 
-def write_task(text: str, symbol: str, spec: dict, timeframe: str,
-               study: dict, engine: str) -> tuple[str, dict]:
+def write_task(
+    text: str, symbol: str, spec: dict, timeframe: str, study: dict, engine: str
+) -> tuple[str, dict]:
     """Turn one retest task into this segment's leg of the study.
 
     Args:
@@ -102,23 +115,39 @@ def write_task(text: str, symbol: str, spec: dict, timeframe: str,
 
     used, skipped = [], []
     if study["markets"]:
-        body, used, skipped = market_setups(symbol, spec["segment"], timeframe,
-                                            study["precision"], engine)
-        text = SETUPS.sub(rf'\g<1><Setups detailed="true">{body}</Setups>', text, count=1)
-    text = re.sub(rf'(<{CHECK}\b[^>]*?)use="[^"]*"',
-                  rf'\g<1>use="{str(bool(used)).lower()}"', text, count=1)
+        body, used, skipped = market_setups(
+            symbol, spec["segment"], timeframe, study["precision"], engine
+        )
+        text = SETUPS.sub(
+            rf'\g<1><Setups detailed="true">{body}</Setups>', text, count=1
+        )
+    text = re.sub(
+        rf'(<{CHECK}\b[^>]*?)use="[^"]*"',
+        rf'\g<1>use="{str(bool(used)).lower()}"',
+        text,
+        count=1,
+    )
     if used:
-        text = re.sub(r'<CrossChecks use="(?:true|false)"', '<CrossChecks use="true"',
-                      text, count=1)
+        text = re.sub(
+            r'<CrossChecks use="(?:true|false)"',
+            '<CrossChecks use="true"',
+            text,
+            count=1,
+        )
     # Every condition of the task, not only the market check's: `wfc.conditions` is empty.
     # 🔬 2026-09-25, the donor's build-leg task kept `AnnualPctReturn (OOS) > 0` active; a
     # build leg has no OOS, every variant failed it, and with evaluateAll="false" SQX then
     # never ran the nine markets -- the leg came back with USDJPY alone and no error.
     text, silenced = silence(text)
     window = bounds(data, spec["segment"])
-    return text, {"setups": setups, "from": window[0], "to": window[1],
-                  "markets": [m["feed"] for m in used], "silenced": silenced,
-                  "skipped": {m["feed"]: m["why"] for m in skipped}}
+    return text, {
+        "setups": setups,
+        "from": window[0],
+        "to": window[1],
+        "markets": [m["feed"] for m in used],
+        "silenced": silenced,
+        "skipped": {m["feed"]: m["why"] for m in skipped},
+    }
 
 
 def declare(config: str, names: list[str]) -> str:
@@ -136,10 +165,14 @@ def declare(config: str, names: list[str]) -> str:
         hand was not picked up either.
     """
     have = set(re.findall(r'<Databank name="([^"]*)"', config))
-    last = max(map(int, re.findall(r'<Databank [^>]*position="(\d+)"', config)), default=0)
-    new = "".join(f'    <Databank name="{name}" view="Default - Main data" '
-                  f'syncType="Auto-sync every 1 hour" position="{last + 100 * i}" />\n'
-                  for i, name in enumerate([n for n in names if n not in have], 1))
+    last = max(
+        map(int, re.findall(r'<Databank [^>]*position="(\d+)"', config)), default=0
+    )
+    new = "".join(
+        f'    <Databank name="{name}" view="Default - Main data" '
+        f'syncType="Auto-sync every 1 hour" position="{last + 100 * i}" />\n'
+        for i, name in enumerate([n for n in names if n not in have], 1)
+    )
     return config.replace("</Databanks>", new + "  </Databanks>", 1)
 
 
@@ -151,8 +184,13 @@ class Configured(TypedDict):
     tasks: list[dict[str, Any]]
 
 
-def configure(cfx: Path, symbol: str, timeframe: str, members_in_order: list[str],
-              markets: bool = True) -> Configured:
+def configure(
+    cfx: Path,
+    symbol: str,
+    timeframe: str,
+    members_in_order: list[str],
+    markets: bool = True,
+) -> Configured:
     """Write the three legs of the WFC/CSCV retest into one custom project.
 
     Args:
@@ -172,12 +210,16 @@ def configure(cfx: Path, symbol: str, timeframe: str, members_in_order: list[str
     study = doctrine()["wfc"] | ({} if markets else {"markets": False})
     engine = doctrine()["engine"]
     if study["conditions"]:
-        raise SystemExit("`wfc.conditions` de assets/_build.yaml ya no esta vacio: una "
-                         "variante descartada y una que perdio dinero son la misma cosa "
-                         "para el que cuenta, y el PBO deja de significar nada.")
+        raise SystemExit(
+            "`wfc.conditions` de assets/_build.yaml ya no esta vacio: una "
+            "variante descartada y una que perdio dinero son la misma cosa "
+            "para el que cuenta, y el PBO deja de significar nada."
+        )
     if len(members_in_order) != len(study["tasks"]):
-        raise SystemExit(f"--tasks pide {len(study['tasks'])} ficheros, en el orden de "
-                         f"`wfc.tasks`: {', '.join(t['segment'] for t in study['tasks'])}")
+        raise SystemExit(
+            f"--tasks pide {len(study['tasks'])} ficheros, en el orden de "
+            f"`wfc.tasks`: {', '.join(t['segment'] for t in study['tasks'])}"
+        )
 
     members = cfxio.members(cfx)
     config = members["config.xml"].decode("utf-8")
@@ -185,8 +227,9 @@ def configure(cfx: Path, symbol: str, timeframe: str, members_in_order: list[str
     for spec, member in zip(study["tasks"], members_in_order):
         if member not in members:
             raise SystemExit(f"{member} no esta en {cfx.name}")
-        text, done = write_task(members[member].decode("utf-8"), symbol, spec, timeframe,
-                                study, engine)
+        text, done = write_task(
+            members[member].decode("utf-8"), symbol, spec, timeframe, study, engine
+        )
         members[member] = text.encode("utf-8")
         config = retitle(config, member, spec["title"])
         rows.append({"member": member, **spec, **done})
@@ -194,8 +237,11 @@ def configure(cfx: Path, symbol: str, timeframe: str, members_in_order: list[str
     config = declare(config, [study["input"]] + [t["databank"] for t in study["tasks"]])
     members["config.xml"] = config.encode("utf-8")
     cfxio.write(cfx, members)
-    return {"project": ElementTree.fromstring(config).get("name"),
-            "input": study["input"], "tasks": rows}
+    return {
+        "project": ElementTree.fromstring(config).get("name"),
+        "input": study["input"],
+        "tasks": rows,
+    }
 
 
 def main() -> None:
@@ -203,24 +249,36 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("symbol")
     ap.add_argument("--cfx", required=True, type=Path)
-    ap.add_argument("--timeframe", required=True, help="el timeframe del proyecto, e.g. M30")
-    ap.add_argument("--tasks",
-                    help="tres ficheros de tarea separados por comas, en el orden de "
-                         "`wfc.tasks`: build, oos1, oos2. Sin el, las que ya llevan esos "
-                         "titulos (un proyecto de `builder --workflow`)")
-    ap.add_argument("--no-markets", action="store_true",
-                    help="sin los mercados adicionales en las tres patas de ESTE proyecto")
+    ap.add_argument(
+        "--timeframe", required=True, help="el timeframe del proyecto, e.g. M30"
+    )
+    ap.add_argument(
+        "--tasks",
+        help="tres ficheros de tarea separados por comas, en el orden de "
+        "`wfc.tasks`: build, oos1, oos2. Sin el, las que ya llevan esos "
+        "titulos (un proyecto de `builder --workflow`)",
+    )
+    ap.add_argument(
+        "--no-markets",
+        action="store_true",
+        help="sin los mercados adicionales en las tres patas de ESTE proyecto",
+    )
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
     held = cfxio.held(a.cfx)
     if held:
-        raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al "
-                         f"salir. Parala: bin/sqx-worker.sh --role {held} stop")
+        raise SystemExit(
+            f"el {held} tiene este proyecto abierto y reescribe el .cfx al "
+            f"salir. Parala: bin/sqx-worker.sh --role {held} stop"
+        )
     with zipfile.ZipFile(a.cfx) as z:
         config = z.read("config.xml").decode("utf-8")
-    members = (a.tasks.split(",") if a.tasks else
-               [hit(member_of(config, t["title"])) for t in doctrine()["wfc"]["tasks"]])
+    members = (
+        a.tasks.split(",")
+        if a.tasks
+        else [hit(member_of(config, t["title"])) for t in doctrine()["wfc"]["tasks"]]
+    )
     done = configure(a.cfx, a.symbol, a.timeframe, members, not a.no_markets)
     staged = own(a.cfx, "wfc")
     if a.json:
@@ -228,10 +286,14 @@ def main() -> None:
         return
     print(staged)
 
-    print(f"{done['project']}  {a.symbol}  <- {done['input']} (las tres leen el MISMO lote)")
+    print(
+        f"{done['project']}  {a.symbol}  <- {done['input']} (las tres leen el MISMO lote)"
+    )
     for row in done["tasks"]:
-        print(f"  ✓ {row['title']:<12} {row['segment']:<5} {row['from']}→{row['to']}  "
-              f"-> {row['databank']:<10} {row['silenced']} condicion(es) apagada(s)")
+        print(
+            f"  ✓ {row['title']:<12} {row['segment']:<5} {row['from']}→{row['to']}  "
+            f"-> {row['databank']:<10} {row['silenced']} condicion(es) apagada(s)"
+        )
         print(f"      mercados: {', '.join(row['markets']) or 'ninguno'}")
         for feed, why in row["skipped"].items():
             print(f"      ⚠️ sin {feed}: {why}")

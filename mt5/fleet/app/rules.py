@@ -1,4 +1,5 @@
 """The rules a funded stage forbids — holding over the weekend, trading around news — against the open positions."""
+
 from mt5.fleet.app import fmt, read
 from mt5.newsfilter import windows
 from mt5.newsfilter.firms import FIRMS
@@ -34,10 +35,19 @@ def weekend(positions: list[dict], server_now: int) -> list[tuple[str, str]]:
             continue
         left = (p["friday_close"] - server_now) / 3600
         if left <= read.CFG["weekend_red_h"]:
-            when = "ya pasó el cierre" if left <= 0 else f"cierra en {fmt.span(left * 3600)}"
+            when = (
+                "ya pasó el cierre"
+                if left <= 0
+                else f"cierra en {fmt.span(left * 3600)}"
+            )
             out.append(("red", f"Fin de semana: {p['symbol']} sigue abierta y {when}"))
         elif left <= read.CFG["weekend_yellow_h"]:
-            out.append(("yellow", f"Fin de semana: {p['symbol']} sigue abierta, cierra en {fmt.span(left * 3600)}"))
+            out.append(
+                (
+                    "yellow",
+                    f"Fin de semana: {p['symbol']} sigue abierta, cierra en {fmt.span(left * 3600)}",
+                )
+            )
     return out
 
 
@@ -49,8 +59,13 @@ def moving(item: dict, firm: dict) -> list[str]:
     return [tag for tag, keys in firm["events"].items() if key in keys]
 
 
-def news(positions: list[dict], releases: list[dict], firm: dict, server_now: int,
-         note: str = "") -> list[tuple[str, str]]:
+def news(
+    positions: list[dict],
+    releases: list[dict],
+    firm: dict,
+    server_now: int,
+    note: str = "",
+) -> list[tuple[str, str]]:
     """Reasons for each release that moves an open position's symbol and is inside or near the firm's window.
 
     Args:
@@ -75,7 +90,9 @@ def news(positions: list[dict], releases: list[dict], firm: dict, server_now: in
                 continue
             level = "red" if minutes <= firm["rule_minutes"] else "yellow"
             when = f"en {fmt.span(minutes * 60)}" if minutes > 0 else "ahora mismo"
-            out.append((level, f"Noticia «{r['name']}» {when} mueve {p['symbol']}{note}"))
+            out.append(
+                (level, f"Noticia «{r['name']}» {when} mueve {p['symbol']}{note}")
+            )
     return out
 
 

@@ -17,7 +17,9 @@ def _np(label: str, curve: list[float]) -> str:
     return f"{label} · Net Profit {curve[-1]:,.0f}".replace(",", ".")
 
 
-def per_mother(make: Callable[[pd.DataFrame], dict], table: pd.DataFrame, mothers: list[str]) -> list[dict]:
+def per_mother(
+    make: Callable[[pd.DataFrame], dict], table: pd.DataFrame, mothers: list[str]
+) -> list[dict]:
     """One block per mother, each tagged `select: mother` so the window's «Madre» picks it.
 
     Args:
@@ -54,31 +56,63 @@ def blocks(plan: pd.DataFrame, packed: pd.DataFrame) -> list[dict]:
     out = []
     for mother, rows_m in plan.groupby("mother", sort=True):
         base_row = rows_m[rows_m["role"] == "baseline"].iloc[0]
-        base = cells.curve(tradestore.block(packed, base_row.strategy, base_row.block),
-                           CURVE_POINTS)
+        base = cells.curve(
+            tradestore.block(packed, base_row.strategy, base_row.block), CURVE_POINTS
+        )
         if base is None:
             continue
-        for role, label, extra in (("unscaled", "sin escalar", []),
-                                   ("scaled", "escaladas", [("control", "Control", "reference")])):
-            series = [{"label": _np(f"Baseline {base_row.timeframe}", base), "values": base, "role": "real"}]
+        for role, label, extra in (
+            ("unscaled", "sin escalar", []),
+            ("scaled", "escaladas", [("control", "Control", "reference")]),
+        ):
+            series = [
+                {
+                    "label": _np(f"Baseline {base_row.timeframe}", base),
+                    "values": base,
+                    "role": "real",
+                }
+            ]
             for row in cast(Any, rows_m[rows_m["role"] == role].itertuples()):
-                c = cells.curve(tradestore.block(packed, row.strategy, row.block), CURVE_POINTS)
+                c = cells.curve(
+                    tradestore.block(packed, row.strategy, row.block), CURVE_POINTS
+                )
                 if c is not None:
-                    series.append({"label": _np(row.timeframe, c), "values": c, "role": "sim"})
-            target = rows_m[rows_m["role"] == "scaled"].set_index("strategy")["timeframe"]
+                    series.append(
+                        {"label": _np(row.timeframe, c), "values": c, "role": "sim"}
+                    )
+            target = rows_m[rows_m["role"] == "scaled"].set_index("strategy")[
+                "timeframe"
+            ]
             for extra_role, extra_label, extra_kind in extra:
                 for row in cast(Any, rows_m[rows_m["role"] == extra_role].itertuples()):
-                    c = cells.curve(tradestore.block(packed, row.strategy, row.block),
-                                    CURVE_POINTS)
+                    c = cells.curve(
+                        tradestore.block(packed, row.strategy, row.block), CURVE_POINTS
+                    )
                     if c is not None:
-                        series.append({"label": _np(f"{extra_label} {row.timeframe} (hermana {target.get(row.strategy, '?')})", c),
-                                      "values": c, "role": extra_kind})
+                        series.append(
+                            {
+                                "label": _np(
+                                    f"{extra_label} {row.timeframe} (hermana {target.get(row.strategy, '?')})",
+                                    c,
+                                ),
+                                "values": c,
+                                "role": extra_kind,
+                            }
+                        )
             if len(series) > 1:
-                out.append({"kind": "lines", "title": f"Equity {label}: baseline y la misma estrategia en otros timeframes",
-                           "unit": "USD", "x": grid_x, "series": series,
-                           "auto_dash_negative": True, "zero_shade": True,
-                           "select": {"mother": mother},
-                           "note": "Eje X: avance de 0 a 100, no número de operación — las "
-                                   "hermanas de otro timeframe no tienen el mismo número de "
-                                   "operaciones que la baseline."})
+                out.append(
+                    {
+                        "kind": "lines",
+                        "title": f"Equity {label}: baseline y la misma estrategia en otros timeframes",
+                        "unit": "USD",
+                        "x": grid_x,
+                        "series": series,
+                        "auto_dash_negative": True,
+                        "zero_shade": True,
+                        "select": {"mother": mother},
+                        "note": "Eje X: avance de 0 a 100, no número de operación — las "
+                        "hermanas de otro timeframe no tienen el mismo número de "
+                        "operaciones que la baseline.",
+                    }
+                )
     return out

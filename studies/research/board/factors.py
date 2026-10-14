@@ -31,8 +31,13 @@ def brake(ideas: int, half: float) -> float:
     return 1.0 / (1 + ideas / half)
 
 
-def past(by_family: list[dict], family: str, asset_class: str, strength: float,
-         interval: float) -> Past:
+def past(
+    by_family: list[dict],
+    family: str,
+    asset_class: str,
+    strength: float,
+    interval: float,
+) -> Past:
     """Survival rate of a family in an asset class, shrunk towards the pooled rate.
 
     A Beta posterior whose prior is `strength` pseudo-attempts at the rate pooled over every
@@ -50,15 +55,25 @@ def past(by_family: list[dict], family: str, asset_class: str, strength: float,
     """
     closed = sum(r["closed"] for r in by_family)
     pooled = (sum(r["with_survivors"] for r in by_family) + 1) / (closed + 2)
-    mine = next((r for r in by_family
-                 if (r["family"], r["asset_class"]) == (family, asset_class)),
-                {"closed": 0, "with_survivors": 0})
+    mine = next(
+        (
+            r
+            for r in by_family
+            if (r["family"], r["asset_class"]) == (family, asset_class)
+        ),
+        {"closed": 0, "with_survivors": 0},
+    )
     a = pooled * strength + mine["with_survivors"]
     b = (1 - pooled) * strength + mine["closed"] - mine["with_survivors"]
     tail = (1 - interval) / 2
-    return {"closed": mine["closed"], "with_survivors": mine["with_survivors"],
-            "rate": a / (a + b), "low": float(beta.ppf(tail, a, b)),
-            "high": float(beta.ppf(1 - tail, a, b)), "pooled": pooled}
+    return {
+        "closed": mine["closed"],
+        "with_survivors": mine["with_survivors"],
+        "rate": a / (a + b),
+        "low": float(beta.ppf(tail, a, b)),
+        "high": float(beta.ppf(1 - tail, a, b)),
+        "pooled": pooled,
+    }
 
 
 def evidence(row: dict, swept: dict | None) -> str:
@@ -82,5 +97,10 @@ def evidence(row: dict, swept: dict | None) -> str:
 def points(parts: dict, weights: dict) -> float:
     """0-100: the weighted mean of the factors named in `weights`, times the brakes."""
     total = sum(weights.values())
-    return (100 * parts["brake"] * parts.get("against", 1.0)
-            * sum(weights[k] * parts[k] for k in weights) / total)
+    return (
+        100
+        * parts["brake"]
+        * parts.get("against", 1.0)
+        * sum(weights[k] * parts[k] for k in weights)
+        / total
+    )

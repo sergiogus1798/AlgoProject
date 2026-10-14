@@ -2,8 +2,13 @@
 
 from xml.etree.ElementTree import Element
 
-from sqx.inspect.project_parts import (conditions_table, crosschecks_summary, databanks_of,
-                                       rankings_summary, special_summary)
+from sqx.inspect.project_parts import (
+    conditions_table,
+    crosschecks_summary,
+    databanks_of,
+    rankings_summary,
+    special_summary,
+)
 from core.xmlget import hit
 from typing import Any
 
@@ -18,15 +23,26 @@ def databank_table(cfg: Element) -> list[str]:
         Markdown lines. A databank that auto-syncs is flagged, because a sync deletes
         on-disk .sqx not held in memory.
     """
-    out = ["## Databanks", "", "| databank | view | sync | position |", "|---|---|---|---|"]
+    out = [
+        "## Databanks",
+        "",
+        "| databank | view | sync | position |",
+        "|---|---|---|---|",
+    ]
     for d in cfg.findall("Databanks/Databank"):
         sync = d.get("syncType")
         warn = " ⚠️" if sync and "never" not in sync else ""
-        out.append(f"| `{d.get('name')}` | {d.get('view')} | {sync}{warn} | {d.get('position')} |")
-    return out + ["", "⚠️ = auto-syncs on a timer. A sync writes memory → disk and **deletes "
-                  "on-disk `.sqx` files not present in memory**. Combined with a "
-                  "`ClearDatabanks` task this is what empties a databank. See "
-                  "`knowhow/databanks/sync-deletes-unloaded-files.md`.", ""]
+        out.append(
+            f"| `{d.get('name')}` | {d.get('view')} | {sync}{warn} | {d.get('position')} |"
+        )
+    return out + [
+        "",
+        "⚠️ = auto-syncs on a timer. A sync writes memory → disk and **deletes "
+        "on-disk `.sqx` files not present in memory**. Combined with a "
+        "`ClearDatabanks` task this is what empties a databank. See "
+        "`knowhow/databanks/sync-deletes-unloaded-files.md`.",
+        "",
+    ]
 
 
 def is_active(task: Element) -> bool:
@@ -61,13 +77,18 @@ def databank_flow(cfg: Element, task_xml: dict) -> dict[str, Any]:
         root = task_xml[i]
         din, dout = databanks_of(root)
         if din:
-            flow.setdefault(din, {"reads": [], "writes": [], "cleared": []})["reads"].append(str(i))
+            flow.setdefault(din, {"reads": [], "writes": [], "cleared": []})[
+                "reads"
+            ].append(str(i))
         if dout:
-            flow.setdefault(dout, {"reads": [], "writes": [], "cleared": []})["writes"].append(str(i))
+            flow.setdefault(dout, {"reads": [], "writes": [], "cleared": []})[
+                "writes"
+            ].append(str(i))
         if t.get("type") == "ClearDatabanks":
             for d in root.findall("ClearDatabanks/Databank"):
-                flow.setdefault(d.get("name"),
-                                {"reads": [], "writes": [], "cleared": []})["cleared"].append(str(i))
+                flow.setdefault(
+                    d.get("name"), {"reads": [], "writes": [], "cleared": []}
+                )["cleared"].append(str(i))
     return flow
 
 
@@ -85,11 +106,17 @@ def tldr(cfg: Element, task_xml: dict, flow: dict) -> list[str]:
     """
     tasks = cfg.findall("Tasks/Task")
     names = [t.get("name") for t in tasks]
-    sync_of = {d.get("name"): d.get("syncType") or "" for d in cfg.findall("Databanks/Databank")}
+    sync_of = {
+        d.get("name"): d.get("syncType") or ""
+        for d in cfg.findall("Databanks/Databank")
+    }
 
-    out = ["## TL;DR", "",
-           f"- **{len(tasks)} tasks**, "
-           f"{sum(1 for t in tasks if not is_active(t))} inactive."]
+    out = [
+        "## TL;DR",
+        "",
+        f"- **{len(tasks)} tasks**, "
+        f"{sum(1 for t in tasks if not is_active(t))} inactive.",
+    ]
     for i, t in enumerate(tasks, 1):
         if t.get("type") != "GoToTask" or not is_active(t):
             continue
@@ -97,22 +124,38 @@ def tldr(cfg: Element, task_xml: dict, flow: dict) -> list[str]:
         target = g.get("task")
         j = names.index(target) + 1 if target in names else "?"
         conditional = len(g.findall("Conditions/Condition")) > 0
-        out.append(f"- Task {i} loops back to task {j} (`{target}`) — "
-                   + ("conditional." if conditional
-                      else "**unconditional**. This chain never terminates on its own."))
+        out.append(
+            f"- Task {i} loops back to task {j} (`{target}`) — "
+            + (
+                "conditional."
+                if conditional
+                else "**unconditional**. This chain never terminates on its own."
+            )
+        )
 
-    at_risk = [db for db, f in flow.items()
-               if f["cleared"] and "never" not in sync_of.get(db, "never")]
+    at_risk = [
+        db
+        for db, f in flow.items()
+        if f["cleared"] and "never" not in sync_of.get(db, "never")
+    ]
     if at_risk:
-        out.append(f"- **{len(at_risk)} databanks are cleared by a task while auto-sync is on**: "
-                   + ", ".join(f"`{d}`" for d in sorted(at_risk))
-                   + ". Each clear empties the databank in memory; the next sync then deletes "
-                     "its `.sqx` files. This is the strategy-loss mechanism.")
-    terminal = [db for db, f in flow.items()
-                if f["writes"] and not f["reads"] and not f["cleared"]]
+        out.append(
+            f"- **{len(at_risk)} databanks are cleared by a task while auto-sync is on**: "
+            + ", ".join(f"`{d}`" for d in sorted(at_risk))
+            + ". Each clear empties the databank in memory; the next sync then deletes "
+            "its `.sqx` files. This is the strategy-loss mechanism."
+        )
+    terminal = [
+        db
+        for db, f in flow.items()
+        if f["writes"] and not f["reads"] and not f["cleared"]
+    ]
     if terminal:
-        out.append("- **Terminal output databanks** (written, never read, never cleared): "
-                   + ", ".join(f"`{d}`" for d in sorted(terminal)) + ".")
+        out.append(
+            "- **Terminal output databanks** (written, never read, never cleared): "
+            + ", ".join(f"`{d}`" for d in sorted(terminal))
+            + "."
+        )
     return out + [""]
 
 
@@ -126,17 +169,31 @@ def flow_table(flow: dict, cfg: Element) -> list[str]:
     Returns:
         Markdown lines.
     """
-    sync_of = {d.get("name"): d.get("syncType") or "" for d in cfg.findall("Databanks/Databank")}
-    out = ["## Databank flow", "",
-           "Which task numbers read, write and clear each databank. A databank that is "
-           "**cleared while it auto-syncs** loses its `.sqx` files on the next sync.", "",
-           "| databank | written by | read by | cleared by | at risk |", "|---|---|---|---|---|"]
+    sync_of = {
+        d.get("name"): d.get("syncType") or ""
+        for d in cfg.findall("Databanks/Databank")
+    }
+    out = [
+        "## Databank flow",
+        "",
+        "Which task numbers read, write and clear each databank. A databank that is "
+        "**cleared while it auto-syncs** loses its `.sqx` files on the next sync.",
+        "",
+        "| databank | written by | read by | cleared by | at risk |",
+        "|---|---|---|---|---|",
+    ]
     for db in sorted(flow, key=lambda d: (not flow[d]["cleared"], d)):
         f = flow[db]
         auto = "never" not in sync_of.get(db, "never")
-        risk = "🔴 **yes**" if f["cleared"] and auto else ("cleared, sync off" if f["cleared"] else "—")
-        out.append(f"| `{db}` | {', '.join(f['writes']) or '—'} | {', '.join(f['reads']) or '—'} "
-                   f"| {', '.join(f['cleared']) or '—'} | {risk} |")
+        risk = (
+            "🔴 **yes**"
+            if f["cleared"] and auto
+            else ("cleared, sync off" if f["cleared"] else "—")
+        )
+        out.append(
+            f"| `{db}` | {', '.join(f['writes']) or '—'} | {', '.join(f['reads']) or '—'} "
+            f"| {', '.join(f['cleared']) or '—'} | {risk} |"
+        )
     return out + [""]
 
 
@@ -161,7 +218,9 @@ def task_order(cfg: Element, task_xml: dict) -> list[str]:
             g = task_xml[i].find("GoToTask")
             target = g.get("task")
             kind = "if condition" if g.findall("Conditions/Condition") else "ALWAYS"
-            out.append(f"     └─> jumps back to #{order.get(target, '?')} '{target}'  [{kind}]")
+            out.append(
+                f"     └─> jumps back to #{order.get(target, '?')} '{target}'  [{kind}]"
+            )
     return out + ["```", ""]
 
 
@@ -177,14 +236,19 @@ def task_detail(number: int, task: Element, root: Element) -> list[str]:
         Markdown lines for one task's section.
     """
     ttype = task.get("type")
-    out = [f"### {number}. {task.get('title') or task.get('name')}", "",
-           f"- **type** `{ttype}` · **internal name** `{task.get('name')}` · "
-           f"**file** `{task.get('taskXMLFile')}`",
-           f"- **active**: {task.get('active')}"]
+    out = [
+        f"### {number}. {task.get('title') or task.get('name')}",
+        "",
+        f"- **type** `{ttype}` · **internal name** `{task.get('name')}` · "
+        f"**file** `{task.get('taskXMLFile')}`",
+        f"- **active**: {task.get('active')}",
+    ]
     template = task.get("templateFile")
     if template:
         mangled = "Ã" in template or "Æ" in template
-        out.append(f"- **templateFile**: `{template}`" + ("  ⚠️ mojibake" if mangled else ""))
+        out.append(
+            f"- **templateFile**: `{template}`" + ("  ⚠️ mojibake" if mangled else "")
+        )
     out.append("")
 
     inp, outp = databanks_of(root)
@@ -203,14 +267,21 @@ def task_detail(number: int, task: Element, root: Element) -> list[str]:
     ranking = rankings_summary(root)
     if ranking:
         bits = [f"MaxStrategies **{ranking['MaxStrategies']}**"]
-        bits += [f"{k} `{ranking[k]}`" for k in ("DeleteFailedStrategies", "ForceRunCrossChecks")
-                 if ranking[k]]
+        bits += [
+            f"{k} `{ranking[k]}`"
+            for k in ("DeleteFailedStrategies", "ForceRunCrossChecks")
+            if ranking[k]
+        ]
         if ranking["StopCondition"].get("type"):
             bits.append(f"StopCondition `{ranking['StopCondition']['type']}`")
         out += ["", "**Rankings:** " + " · ".join(bits), ""]
         rows, attrs = ranking["conditions"]
         if rows:
-            out += ["**Task-level acceptance conditions:**", ""] + conditions_table(rows, attrs) + [""]
+            out += (
+                ["**Task-level acceptance conditions:**", ""]
+                + conditions_table(rows, attrs)
+                + [""]
+            )
 
     attrs, enabled = crosschecks_summary(root)
     if attrs is not None and not enabled:
@@ -220,6 +291,14 @@ def task_detail(number: int, task: Element, root: Element) -> list[str]:
         for e in enabled:
             out += [f"#### ↳ {e['label']} (`{e['tag']}`)", ""]
             if e["settings"]:
-                out += ["Settings:", ""] + [f"- `{t}` = `{v}`" for t, v in e["settings"]] + [""]
-            out += ["Acceptance conditions:", ""] + conditions_table(*e["conditions"]) + [""]
+                out += (
+                    ["Settings:", ""]
+                    + [f"- `{t}` = `{v}`" for t, v in e["settings"]]
+                    + [""]
+                )
+            out += (
+                ["Acceptance conditions:", ""]
+                + conditions_table(*e["conditions"])
+                + [""]
+            )
     return out + ["---", ""]

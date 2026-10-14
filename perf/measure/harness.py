@@ -37,13 +37,18 @@ class Repeated(Run):
     wall_spread_pct: float
     repeats: int
 
+
 def _pss_mb(pid: int) -> float:
     """Proportional set size of one process: shared pages divided among their sharers."""
     try:
-        for line in (Path("/proc") / str(pid) / "smaps_rollup").read_text(encoding="utf-8").splitlines():
+        for line in (
+            (Path("/proc") / str(pid) / "smaps_rollup")
+            .read_text(encoding="utf-8")
+            .splitlines()
+        ):
             if line.startswith("Pss:"):
                 return int(line.split()[1]) / 1024
-    except OSError:     # exited between the listing and the read, or not ours to read
+    except OSError:  # exited between the listing and the read, or not ours to read
         pass
     return 0.0
 
@@ -65,7 +70,9 @@ def _tree_rss(root_pid: int) -> float:
         if not entry.name.isdigit():
             continue
         try:
-            rest = (entry / "stat").read_text(encoding="utf-8").rpartition(")")[2].split()
+            rest = (
+                (entry / "stat").read_text(encoding="utf-8").rpartition(")")[2].split()
+            )
         except OSError:
             continue
         kids.setdefault(int(rest[1]), []).append(int(entry.name))
@@ -77,8 +84,13 @@ def _tree_rss(root_pid: int) -> float:
     return total
 
 
-def once(target: str, overrides: list[str], cfg: dict,
-         profile: Path | None = None, memtop: int = 0) -> Run:
+def once(
+    target: str,
+    overrides: list[str],
+    cfg: dict,
+    profile: Path | None = None,
+    memtop: int = 0,
+) -> Run:
     """One measured run of one target.
 
     Args:
@@ -124,9 +136,14 @@ def repeat(target: str, cfg: dict, overrides: list[str] | None = None) -> Repeat
         slowest runs sat apart. A measurement whose spread is wide says the machine was
         busy, and reading a 3% regression off it would be reading noise.
     """
-    runs = [once(target, overrides or [], cfg) for _ in range(cfg["harness"]["repeats"])]
+    runs = [
+        once(target, overrides or [], cfg) for _ in range(cfg["harness"]["repeats"])
+    ]
     runs.sort(key=lambda r: r["wall_s"])
     middle = runs[len(runs) // 2]
-    spread = (runs[-1]["wall_s"] - runs[0]["wall_s"]) / statistics.median(
-        [r["wall_s"] for r in runs]) * 100
+    spread = (
+        (runs[-1]["wall_s"] - runs[0]["wall_s"])
+        / statistics.median([r["wall_s"] for r in runs])
+        * 100
+    )
     return Repeated(**middle, wall_spread_pct=spread, repeats=len(runs))

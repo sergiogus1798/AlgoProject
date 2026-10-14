@@ -6,7 +6,12 @@ from ui.daemon import runs
 from ui.daemon.loader import find
 from ui.daemon.runner import optimisation, readings, screening, transfer, where
 
-STUDIES = {**screening.STUDIES, **transfer.STUDIES, **optimisation.STUDIES, **readings.STUDIES}
+STUDIES = {
+    **screening.STUDIES,
+    **transfer.STUDIES,
+    **optimisation.STUDIES,
+    **readings.STUDIES,
+}
 # The one study whose command runs a sub-test alone (CONTRACT §1): `--only <feed>` with
 # `--strategy`. monteCarlo's one.run() can too, but its report.py takes `--strategy` and no
 # `--only`: its sub-tests run through `ui.daemon.results.rerun`.
@@ -58,9 +63,11 @@ def jobs(req: dict) -> list[dict] | str:
         return f"{study}: {why_not(study)}"
     entry = STUDIES[study]
     if not entry[scope]:
-        return (f"{study} no se corre sobre toda la población: elige la estrategia"
-                if scope == "many" else
-                f"{study} lee la población entera: córrelo sobre toda la población")
+        return (
+            f"{study} no se corre sobre toda la población: elige la estrategia"
+            if scope == "many"
+            else f"{study} lee la población entera: córrelo sobre toda la población"
+        )
     if scope == "one" and not req["strategies"]:
         return "elige al menos una estrategia"
     if req["only"] and (study not in ONLY or scope != "one"):
@@ -70,16 +77,22 @@ def jobs(req: dict) -> list[dict] | str:
     if not req["asset"]:
         return "elige el activo del proyecto: de él salen el feed y las ventanas"
     c = runs.context(req["project"], req["databank"], "", req["asset"])
-    if (study in SAMPLED and c["export"] and not any("sample" in o for o in req["overrides"])
-            and not oos1(c)):
+    if (
+        study in SAMPLED
+        and c["export"]
+        and not any("sample" in o for o in req["overrides"])
+        and not oos1(c)
+    ):
         # A build databank reads its OOS1 on the retest the gate pairs it with: the same
         # strategies under the same identities (2026-09-28: the ficha opened from Puerta
         # IS/OOS is on Results, and no tab of the panel shows OOS).
         other = find.oos_partner(req["project"], req["databank"])
         c = runs.context(req["project"], other, "", req["asset"]) if other else c
         if not (c["export"] and oos1(c)):
-            return (f"{study} lee la muestra OOS1 y ni el export de {req['databank']} ni el de "
-                    f"su retest fuera de muestra la traen: carga el databank OOS")
+            return (
+                f"{study} lee la muestra OOS1 y ni el export de {req['databank']} ni el de "
+                f"su retest fuera de muestra la traen: carga el databank OOS"
+            )
     # A batch study (CSCV, Market Surfaces) reads one mother's variant batch, not one
     # strategy of the databank's export: its "many" is "every mother that has a batch",
     # which `entry["population"]` names instead of the usual population-wide single call
@@ -98,10 +111,20 @@ def jobs(req: dict) -> list[dict] | str:
         argv += ["--only", req["only"]] if req["only"] else []
         argv += ["--set", *req["overrides"]] if req["overrides"] else []
         if any(o["argv"] == argv for o in out):
-            continue   # a command without --strategy (isOos) runs the databank once
-        out.append({"label": study, "argv": argv,
-                    "about": {"project": req["project"], "databank": c["databank"],
-                              "strategy": strategy, "study": study, "scope": scope}})
+            continue  # a command without --strategy (isOos) runs the databank once
+        out.append(
+            {
+                "label": study,
+                "argv": argv,
+                "about": {
+                    "project": req["project"],
+                    "databank": c["databank"],
+                    "strategy": strategy,
+                    "study": study,
+                    "scope": scope,
+                },
+            }
+        )
     return out
 
 

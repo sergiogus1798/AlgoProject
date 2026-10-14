@@ -20,6 +20,7 @@ class Alarm(TypedDict):
     draws: np.ndarray | None
     verdict: str
 
+
 ALARM, QUIET, SHORT = "alarma", "sin alarma", "insuficiente"
 
 
@@ -61,9 +62,16 @@ def test(pnl: np.ndarray, flagged: np.ndarray, cfg: dict, seed: str) -> Alarm:
     """
     al = cfg["alarm"]
     m, total, observed = int(flagged.sum()), float(pnl.sum()), float(pnl[flagged].sum())
-    got = Alarm(n=len(pnl), flagged=m, observed=observed, flagged_pnl=observed,
-                at_risk=observed / total if total > 0 else None, p=None, draws=None,
-                verdict=SHORT)
+    got = Alarm(
+        n=len(pnl),
+        flagged=m,
+        observed=observed,
+        flagged_pnl=observed,
+        at_risk=observed / total if total > 0 else None,
+        p=None,
+        draws=None,
+        verdict=SHORT,
+    )
     if m < al["min_flagged"]:
         return got
     drawn = got["draws"] = draws(pnl, m, al["shuffles"], seed)

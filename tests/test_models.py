@@ -19,19 +19,24 @@ def main() -> None:
     failures = []
     # The same semester, drawn for two markets that start five years apart, must move the
     # same way: that is what lets the travel test shift every market jointly.
-    shared = [trade_models.semester_shift(SEED, 4030, DRAWS, 0),
-              trade_models.semester_shift(SEED, 4030, DRAWS, 0)]
+    shared = [
+        trade_models.semester_shift(SEED, 4030, DRAWS, 0),
+        trade_models.semester_shift(SEED, 4030, DRAWS, 0),
+    ]
     if not np.array_equal(*shared):
         failures.append("semester_shift: el mismo semestre dio dos desplazamientos")
     if np.array_equal(shared[0], trade_models.semester_shift(SEED, 4031, DRAWS, 0)):
         failures.append("semester_shift: dos semestres distintos dieron el mismo")
     whole = trade_models.semester_shift(SEED, 4030, DRAWS, 0)
-    halves = np.concatenate([trade_models.semester_shift(SEED, 4030, DRAWS // 2, 0),
-                             trade_models.semester_shift(SEED, 4030, DRAWS // 2, DRAWS // 2)])
+    halves = np.concatenate(
+        [
+            trade_models.semester_shift(SEED, 4030, DRAWS // 2, 0),
+            trade_models.semester_shift(SEED, 4030, DRAWS // 2, DRAWS // 2),
+        ]
+    )
     if not np.array_equal(whole, halves):
         failures.append("semester_shift: por lotes no reproduce la tirada entera")
-    print("\n".join(failures)
-          or "ok: un semestre se mueve igual en cualquier mercado")
+    print("\n".join(failures) or "ok: un semestre se mueve igual en cualquier mercado")
     sys.exit(1 if failures else 0)
 
 

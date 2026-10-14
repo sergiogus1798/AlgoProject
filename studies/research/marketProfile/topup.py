@@ -11,7 +11,11 @@ from studies.research.marketProfile import inputs, one, store
 
 def missing(symbol: str, cfg: dict) -> list[dict]:
     """The config's measures that the asset's stored cells do not carry."""
-    have = set(pd.read_parquet(store.cells() / f"{symbol}.parquet", columns=["measure"])["measure"])
+    have = set(
+        pd.read_parquet(store.cells() / f"{symbol}.parquet", columns=["measure"])[
+            "measure"
+        ]
+    )
     return [s for s in cfg["measures"] if s["name"] not in have]
 
 
@@ -32,11 +36,20 @@ def run(symbol: str, cfg: dict) -> dict[str, Any]:
     if m1 is None:
         return {"status": "feed modificado hace poco o durante la lectura"}
     only, asset = {**cfg, "measures": specs}, assetdata.load(symbol)
-    got = [one.run(symbol, timeframe, inputs.bars(m1, timeframe), asset, only)
-           for timeframe in cfg["run"]["timeframes"]]
+    got = [
+        one.run(symbol, timeframe, inputs.bars(m1, timeframe), asset, only)
+        for timeframe in cfg["run"]["timeframes"]
+    ]
     names = [s["name"] for s in specs]
     walls = {g["context"]["timeframe"]: round(g["wall_s"], 1) for g in got}
-    store.extend(symbol, [r for g in got for r in g["rows"]], {
-        "measures": names, "seed": cfg["nulls"]["seed"], "wall_s": walls,
-        "computed_at": datetime.now().isoformat("T", "seconds")})
+    store.extend(
+        symbol,
+        [r for g in got for r in g["rows"]],
+        {
+            "measures": names,
+            "seed": cfg["nulls"]["seed"],
+            "wall_s": walls,
+            "computed_at": datetime.now().isoformat("T", "seconds"),
+        },
+    )
     return {"status": "ok", "measures": names, "wall_s": walls}

@@ -1,4 +1,5 @@
 """Ask the running MT5 terminal read-only questions through the Windows Python in its Wine prefix."""
+
 import json
 from pathlib import Path
 from typing import Any
@@ -28,14 +29,20 @@ def ask(verb: str, args: dict | None = None, account: dict | None = None) -> Any
     if account and not wine.open_terminal():
         raise SystemExit("el terminal de MT5 no arrancó")
     args = {**(args or {}), **(account or {})}
-    proc = wine.run(wine.PYTHON, [wine.windows(QUERY), verb, json.dumps(args)], timeout=900)
+    proc = wine.run(
+        wine.PYTHON, [wine.windows(QUERY), verb, json.dumps(args)], timeout=900
+    )
     line = next((ln for ln in proc.stdout.splitlines() if ln.startswith(MARK)), None)
     if line is None:
-        raise SystemExit(f"no answer from the Windows Python:\n{proc.stdout[-2000:]}\n{proc.stderr[-2000:]}")
-    return json.loads(line[len(MARK):])
+        raise SystemExit(
+            f"no answer from the Windows Python:\n{proc.stdout[-2000:]}\n{proc.stderr[-2000:]}"
+        )
+    return json.loads(line[len(MARK) :])
 
 
-def series(verb: str, symbol: str, start: str, end: str, timeframe: str = "") -> dict[str, Any]:
+def series(
+    verb: str, symbol: str, start: str, end: str, timeframe: str = ""
+) -> dict[str, Any]:
     """Pull bars or ticks for a window into a parquet under MT5_DATA.
 
     Args:
@@ -51,8 +58,16 @@ def series(verb: str, symbol: str, start: str, end: str, timeframe: str = "") ->
     folder.mkdir(parents=True, exist_ok=True)
     stem = f"{timeframe + '_' if timeframe else ''}{start[:10]}_{end[:10]}"
     csv = folder / f"{stem}.csv"
-    answer = ask(verb, {"symbol": symbol, "timeframe": timeframe, "start": start, "end": end,
-                        "out": wine.windows(csv)})
+    answer = ask(
+        verb,
+        {
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "start": start,
+            "end": end,
+            "out": wine.windows(csv),
+        },
+    )
     if not answer["rows"]:
         return {"rows": 0, "error": answer["error"]}
     frame = pd.read_csv(csv)
@@ -62,5 +77,9 @@ def series(verb: str, symbol: str, start: str, end: str, timeframe: str = "") ->
     out = csv.with_suffix(".parquet")
     frame.to_parquet(out)
     csv.unlink()
-    return {"rows": len(frame), "file": str(out), "first": str(frame["time"].iloc[0]),
-            "last": str(frame["time"].iloc[-1])}
+    return {
+        "rows": len(frame),
+        "file": str(out),
+        "first": str(frame["time"].iloc[0]),
+        "last": str(frame["time"].iloc[-1]),
+    }

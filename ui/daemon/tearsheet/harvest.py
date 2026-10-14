@@ -7,10 +7,19 @@ import pandas as pd
 from core.paths import DATA
 from ui.daemon.tearsheet import borrow
 
-SAMPLES = ("IS", "OOS")      # the one-way door: a harvest holds these two and nothing else
+SAMPLES = ("IS", "OOS")  # the one-way door: a harvest holds these two and nothing else
 EQUITY = ["day", "equity", "sample"]
-TRADES = ["Open time", "Close time", "Profit/Loss", "Size", "Balance", "Close type", "MAE ($)",
-          "MFE ($)", "sample"]
+TRADES = [
+    "Open time",
+    "Close time",
+    "Profit/Loss",
+    "Size",
+    "Balance",
+    "Close type",
+    "MAE ($)",
+    "MFE ($)",
+    "sample",
+]
 
 
 class Absent(str):
@@ -33,9 +42,11 @@ def newest(project: str, databank: str) -> Path | None:
 
 def missing(project: str, databank: str) -> str:
     """The sentence for a databank without a cosecha, naming the command that makes one."""
-    return (f"El databank {databank} de {project} no tiene cosecha. La hace "
-            f"`python3 -m studies.screening.gate.harvest --project {project} --databank "
-            f"{databank} --oos-databank <databank OOS>` (skill /oos-gate).")
+    return (
+        f"El databank {databank} de {project} no tiene cosecha. La hace "
+        f"`python3 -m studies.screening.gate.harvest --project {project} --databank "
+        f"{databank} --oos-databank <databank OOS>` (skill /oos-gate)."
+    )
 
 
 def read(project: str, databank: str, identity: str, name: str = "") -> dict | str:
@@ -62,23 +73,35 @@ def read(project: str, databank: str, identity: str, name: str = "") -> dict | s
             return Absent(got)
         databank, identity, note = got
         folder = newest(project, databank)
-        assert folder is not None             # `borrow` only names a databank that has a cosecha
+        assert folder is not None  # `borrow` only names a databank that has a cosecha
     where = [("identity", "==", identity)]
     metrics = pd.read_parquet(folder / "metrics.parquet", filters=where)
     if metrics.empty:
-        return Absent(f"Sin pareja en el OOS de la cosecha {folder.name}: esta estrategia se "
-                      "quedó fuera en un corte («Continuar workflow») o SQX no la retesteó. La "
-                      "cosecha solo lleva las que tienen las dos muestras; sus cifras IS siguen "
-                      f"en la tabla de {databank}.")
+        return Absent(
+            f"Sin pareja en el OOS de la cosecha {folder.name}: esta estrategia se "
+            "quedó fuera en un corte («Continuar workflow») o SQX no la retesteó. La "
+            "cosecha solo lleva las que tienen las dos muestras; sus cifras IS siguen "
+            f"en la tabla de {databank}."
+        )
     equity = pd.read_parquet(folder / "equity.parquet", columns=EQUITY, filters=where)
     trades = pd.read_parquet(folder / "trades.parquet", columns=TRADES, filters=where)
     stray = (set(equity["sample"]) | set(trades["sample"].astype(str))) - set(SAMPLES)
     if stray:
-        return (f"La cosecha {folder.name} de {project}/{databank} trae muestras "
-                f"{sorted(stray)} además de IS y OOS: la ficha se niega a leerla.")
+        return (
+            f"La cosecha {folder.name} de {project}/{databank} trae muestras "
+            f"{sorted(stray)} además de IS y OOS: la ficha se niega a leerla."
+        )
     trades["Close type"] = trades["Close type"].astype(str)
     trades["sample"] = trades["sample"].astype(str)
     row = metrics.iloc[0].to_dict()
-    return {"day": folder.name, "folder": str(folder), "strategy": row["strategy"],
-            "databank": databank, "note": note, "identity": identity, "metrics": row, "equity": equity.sort_values("day", kind="stable"),
-            "trades": trades.sort_values("Close time", kind="stable")}
+    return {
+        "day": folder.name,
+        "folder": str(folder),
+        "strategy": row["strategy"],
+        "databank": databank,
+        "note": note,
+        "identity": identity,
+        "metrics": row,
+        "equity": equity.sort_values("day", kind="stable"),
+        "trades": trades.sort_values("Close time", kind="stable"),
+    }

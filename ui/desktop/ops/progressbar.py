@@ -28,8 +28,10 @@ def bar(percent: int | None, width: int = 90, colour: str = "") -> QProgressBar:
         b.setValue(max(0, min(100, int(percent))))
         b.setFormat("%p %")
     fill = colour or C["accent"]
-    b.setStyleSheet(f"QProgressBar {{ background: {T['panel']}; border: 1px solid {T['rule']}; "
-                    f"border-radius: 3px; color: {T['text']}; font-size: 10px; "
-                    f"text-align: center; }} QProgressBar::chunk {{ background: {fill}; "
-                    "border-radius: 2px; }")
+    b.setStyleSheet(
+        f"QProgressBar {{ background: {T['panel']}; border: 1px solid {T['rule']}; "
+        f"border-radius: 3px; color: {T['text']}; font-size: 10px; "
+        f"text-align: center; }} QProgressBar::chunk {{ background: {fill}; "
+        "border-radius: 2px; }"
+    )
     return b

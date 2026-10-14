@@ -4,11 +4,20 @@ from PySide6.QtWidgets import QHBoxLayout, QPushButton, QSizePolicy, QTabWidget,
 
 # The button of each side tab, by the tab's text; a tab with no row here gets no button.
 BUTTONS = {
-    "configuración": ("⚙ Configuración", "Abre los parámetros del estudio: lo que cambies aquí "
-                      "solo vale para la próxima ejecución, como --set; el config.yaml no se toca."),
-    "historial y comparar": ("Historial", "Abre los runs anteriores del estudio, para "
-                             "ver una vieja o comparar dos, o esta estrategia contra otra."),
-    "Lote": ("Lote", "Abre el lote de variantes de esta madre en coordenadas paralelas."),
+    "configuración": (
+        "⚙ Configuración",
+        "Abre los parámetros del estudio: lo que cambies aquí "
+        "solo vale para la próxima ejecución, como --set; el config.yaml no se toca.",
+    ),
+    "historial y comparar": (
+        "Historial",
+        "Abre los runs anteriores del estudio, para "
+        "ver una vieja o comparar dos, o esta estrategia contra otra.",
+    ),
+    "Lote": (
+        "Lote",
+        "Abre el lote de variantes de esta madre en coordenadas paralelas.",
+    ),
 }
 
 
@@ -28,7 +37,9 @@ class SideToggles(QWidget):
         self.buttons: dict[QWidget, QPushButton] = {}
         self.row = QHBoxLayout(self)
         self.row.setContentsMargins(0, 0, 0, 0)
-        self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)    # never wider than its buttons
+        self.setSizePolicy(
+            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed
+        )  # never wider than its buttons
         side.hide()
         self.sync()
 

@@ -1,4 +1,5 @@
 """How far an account is through its stage: profit against the target, the days counted on the firm's clock, the payout."""
+
 from typing import Any
 
 import numpy as np
@@ -28,7 +29,13 @@ def by_day(rows: list[dict], offset: int, zone: str | None) -> dict[int, float]:
     for d in rows:
         if d["type"] != history.BALANCE_TYPE:
             key = day_of(d["time"], offset, zone)
-            days[key] = days.get(key, 0.0) + d["profit"] + d["swap"] + d["commission"] + d["fee"]
+            days[key] = (
+                days.get(key, 0.0)
+                + d["profit"]
+                + d["swap"]
+                + d["commission"]
+                + d["fee"]
+            )
     return days
 
 
@@ -37,13 +44,26 @@ def consistency(days: dict[int, float], stage: dict) -> dict | None:
     if not stage["consistency"] or not days:
         return None
     profits = np.array(list(days.values()))
-    base = profits.sum() if stage["consistency_kind"] == "best_over_total" else profits[profits > 0].sum()
-    return {"limit": stage["consistency"], "ratio": profits.max() / base if base > 0 else None,
-            "ok": rules.consistency_ok(profits, stage) if base > 0 else None}
+    base = (
+        profits.sum()
+        if stage["consistency_kind"] == "best_over_total"
+        else profits[profits > 0].sum()
+    )
+    return {
+        "limit": stage["consistency"],
+        "ratio": profits.max() / base if base > 0 else None,
+        "ok": rules.consistency_ok(profits, stage) if base > 0 else None,
+    }
 
 
-def payouts(rows: list[dict], first_trade: int | None, share: float | None, days: int | None,
-            balance: float, size: float) -> dict[str, Any]:
+def payouts(
+    rows: list[dict],
+    first_trade: int | None,
+    share: float | None,
+    days: int | None,
+    balance: float,
+    size: float,
+) -> dict[str, Any]:
     """The funded stage's payout: the last withdrawal, the next date and what is payable now.
 
     Args:
@@ -61,12 +81,16 @@ def payouts(rows: list[dict], first_trade: int | None, share: float | None, days
     out = [d for d in rows if d["type"] == history.BALANCE_TYPE and d["profit"] < 0]
     last = max(out, key=lambda d: d["time"]) if out else None
     since = last["time"] if last else first_trade
-    return {"last": (last["time"], -last["profit"]) if last else None,
-            "next": since + days * DAY if days and since else None,
-            "payable": max(balance - size, 0.0) * share if share is not None else None}
+    return {
+        "last": (last["time"], -last["profit"]) if last else None,
+        "next": since + days * DAY if days and since else None,
+        "payable": max(balance - size, 0.0) * share if share is not None else None,
+    }
 
 
-def reading(beat: dict, stage: dict, terms: dict, rows: list[dict], zone: str | None) -> dict[str, Any]:
+def reading(
+    beat: dict, stage: dict, terms: dict, rows: list[dict], zone: str | None
+) -> dict[str, Any]:
     """One account's progress through its stage.
 
     Args:
@@ -87,40 +111,82 @@ def reading(beat: dict, stage: dict, terms: dict, rows: list[dict], zone: str | 
     size, funded = stage["size"], stage["target"] == 0
     bar = (stage["profitable_pct"] or 0.0) * size
     # With a share, a profitable day reaches it; with none, any gain counts.
-    stats = {"trading_days": len(days),
-             "profitable_days": sum((p >= bar if bar else p > 0) for p in days.values())}
+    stats = {
+        "trading_days": len(days),
+        "profitable_days": sum((p >= bar if bar else p > 0) for p in days.values()),
+    }
     profit = beat["balance"] - size
     first = min((t["open"] for t in history.trades(rows)), default=None)
-    return {"funded": funded, "profit": profit, "target": None if funded else stage["target"] * size,
-            "done": None if funded else profit / (stage["target"] * size), **stats,
-            "min_days": stage["min_days"], "days_kind": stage["min_days_kind"],
-            "days_ok": None if stage["min_days"] is None else rules.days_ok(stats, stage),
-            "consistency": consistency(days, stage),
-            "payout": payouts(rows, first, terms["reward_share"], terms["payout_days"], beat["balance"],
-                              size) if funded else None}
+    return {
+        "funded": funded,
+        "profit": profit,
+        "target": None if funded else stage["target"] * size,
+        "done": None if funded else profit / (stage["target"] * size),
+        **stats,
+        "min_days": stage["min_days"],
+        "days_kind": stage["min_days_kind"],
+        "days_ok": None if stage["min_days"] is None else rules.days_ok(stats, stage),
+        "consistency": consistency(days, stage),
+        "payout": payouts(
+            rows,
+            first,
+            terms["reward_share"],
+            terms["payout_days"],
+            beat["balance"],
+            size,
+        )
+        if funded
+        else None,
+    }
 
 
 def lines(prog: dict) -> list[str]:
     """A progress reading as the Spanish lines the Flota tab shows."""
     out = []
     if not prog["funded"]:
-        out.append(f"Beneficio {fmt.money(prog['profit'])} de {fmt.money(prog['target'])} "
-                   f"({fmt.pct(prog['done'])} del objetivo)")
+        out.append(
+            f"Beneficio {fmt.money(prog['profit'])} de {fmt.money(prog['target'])} "
+            f"({fmt.pct(prog['done'])} del objetivo)"
+        )
     else:
         pay = prog["payout"]
-        out.append("Último pago: " + (f"{fmt.day(pay['last'][0])} · {fmt.money(pay['last'][1])}" if pay["last"]
-                                      else "ninguno todavía"))
-        out.append(f"Próximo pago ≈ {fmt.day(pay['next'])} · a cobrar ahora ≈ {fmt.money(pay['payable'])}")
+        out.append(
+            "Último pago: "
+            + (
+                f"{fmt.day(pay['last'][0])} · {fmt.money(pay['last'][1])}"
+                if pay["last"]
+                else "ninguno todavía"
+            )
+        )
+        out.append(
+            f"Próximo pago ≈ {fmt.day(pay['next'])} · a cobrar ahora ≈ {fmt.money(pay['payable'])}"
+        )
     if prog["min_days"] is None:
-        out.append(f"Días: {prog['trading_days']} de trading, {prog['profitable_days']} rentables "
-                   "(el catálogo no trae un mínimo)")
+        out.append(
+            f"Días: {prog['trading_days']} de trading, {prog['profitable_days']} rentables "
+            "(el catálogo no trae un mínimo)"
+        )
     else:
         kind = "rentables" if prog["days_kind"] == "profitable" else "de trading"
-        have = prog["profitable_days"] if prog["days_kind"] == "profitable" else prog["trading_days"]
-        out.append(f"Días {kind}: {have} (mínimo {prog['min_days']}) · "
-                   f"{'cumplido' if prog['days_ok'] else 'sin cumplir'}")
+        have = (
+            prog["profitable_days"]
+            if prog["days_kind"] == "profitable"
+            else prog["trading_days"]
+        )
+        out.append(
+            f"Días {kind}: {have} (mínimo {prog['min_days']}) · "
+            f"{'cumplido' if prog['days_ok'] else 'sin cumplir'}"
+        )
     c = prog["consistency"]
     if c:
-        out.append(f"Consistencia: mejor día {fmt.pct(c['ratio'])} (límite {fmt.pct(c['limit'], 0)}) · "
-                   + ("sin dato" if c["ok"] is None else "se cumple" if c["ok"] else "NO se cumple"))
+        out.append(
+            f"Consistencia: mejor día {fmt.pct(c['ratio'])} (límite {fmt.pct(c['limit'], 0)}) · "
+            + (
+                "sin dato"
+                if c["ok"] is None
+                else "se cumple"
+                if c["ok"]
+                else "NO se cumple"
+            )
+        )
     return out

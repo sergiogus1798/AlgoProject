@@ -7,11 +7,16 @@ from core.assetranges import mc_retest
 
 # The three methods that draw a value from a range, each named by the key its range
 # carries in `assets/symbols/<SYM>.yaml`. All three are absolute point ranges.
-RANDOMIZE = {"spread": "RandomizeSpread", "slippage": "RandomizeSlippage",
-             "min_distance": "RandomizeMinDistance"}
+RANDOMIZE = {
+    "spread": "RandomizeSpread",
+    "slippage": "RandomizeSlippage",
+    "min_distance": "RandomizeMinDistance",
+}
 
 
-def set_ranges(text: str, data: dict, segment: str = "build") -> tuple[str, dict[str, int]]:
+def set_ranges(
+    text: str, data: dict, segment: str = "build"
+) -> tuple[str, dict[str, int]]:
     """Put this asset's declared MC Retest ranges into a task, in place.
 
     Args:
@@ -32,7 +37,11 @@ def set_ranges(text: str, data: dict, segment: str = "build") -> tuple[str, dict
         if span["min"] is None or span["max"] is None:
             out[name] = 0
             continue
-        pattern = (rf'(<Method use="true" type="{method}">\s*<Params>\s*'
-                   rf'<Param key="Min"[^>]*>)[^<]*(</Param>\s*<Param key="Max"[^>]*>)[^<]*(</Param>)')
-        text, out[name] = re.subn(pattern, rf"\g<1>{span['min']}\g<2>{span['max']}\g<3>", text)
+        pattern = (
+            rf'(<Method use="true" type="{method}">\s*<Params>\s*'
+            rf'<Param key="Min"[^>]*>)[^<]*(</Param>\s*<Param key="Max"[^>]*>)[^<]*(</Param>)'
+        )
+        text, out[name] = re.subn(
+            pattern, rf"\g<1>{span['min']}\g<2>{span['max']}\g<3>", text
+        )
     return text, out

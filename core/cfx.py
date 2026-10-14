@@ -31,7 +31,9 @@ def resolve(project: str) -> Path:
         cfx = project_dir(project, install) / "project.cfx"
         if cfx.exists():
             return cfx
-    raise FileNotFoundError(f"{project}: not in user/projects of any of {[str(i) for i in installs]}")
+    raise FileNotFoundError(
+        f"{project}: not in user/projects of any of {[str(i) for i in installs]}"
+    )
 
 
 def config(project: str) -> ElementTree.Element:
@@ -46,7 +48,9 @@ def config(project: str) -> ElementTree.Element:
     with zipfile.ZipFile(resolve(project)) as z:
         root = ElementTree.fromstring(z.read("config.xml"))
         if not (root.tag == "Project" and root.find("Tasks") is not None):
-            raise ValueError(f"{z.filename}: config.xml root is {root.tag}, expected Project/Tasks")
+            raise ValueError(
+                f"{z.filename}: config.xml root is {root.tag}, expected Project/Tasks"
+            )
         return root
 
 
@@ -62,9 +66,17 @@ def tasks(project: str) -> list[dict]:
         databank lives inside the task XML.
     """
     root = config(project)
-    return [{"n": i, "type": t.get("type"), "name": t.get("name"), "title": t.get("title"),
-             "active": t.get("active") != "false", "file": t.get("taskXMLFile")}
-            for i, t in enumerate(root.iter("Task"), 1)]
+    return [
+        {
+            "n": i,
+            "type": t.get("type"),
+            "name": t.get("name"),
+            "title": t.get("title"),
+            "active": t.get("active") != "false",
+            "file": t.get("taskXMLFile"),
+        }
+        for i, t in enumerate(root.iter("Task"), 1)
+    ]
 
 
 def task_xml(project: str, member: str) -> ElementTree.Element:
@@ -84,7 +96,9 @@ def task_xml(project: str, member: str) -> ElementTree.Element:
             raise ValueError(f"{z.filename}: no {member} in the zip (caught mid-save?)")
         root = ElementTree.fromstring(z.read(member))
         if root.tag != "Settings":
-            raise ValueError(f"{z.filename}:{member}: root is {root.tag}, expected Settings")
+            raise ValueError(
+                f"{z.filename}:{member}: root is {root.tag}, expected Settings"
+            )
         return root
 
 
@@ -117,9 +131,14 @@ def side(node: ElementTree.Element) -> dict[str, str | None]:
     col = node.find("Column-Value")
     if col is None:
         return {"value": el(node.find("Numeric-Value")).get("value")}
-    return {"column": col.get("column"), "result": col.get("resultType"),
-            "subresult": col.get("subresult"),
-            "sample": SAMPLE_TYPE.get(sample, sample) if (sample := col.get("sampleType")) else sample}
+    return {
+        "column": col.get("column"),
+        "result": col.get("resultType"),
+        "subresult": col.get("subresult"),
+        "sample": SAMPLE_TYPE.get(sample, sample)
+        if (sample := col.get("sampleType"))
+        else sample,
+    }
 
 
 def conditions(task: ElementTree.Element) -> list[dict]:
@@ -138,10 +157,20 @@ def conditions(task: ElementTree.Element) -> list[dict]:
         used = c.get("use") != "false"
         left = c.find("Left-Side")
         if left is None:
-            out.append({"used": used, "type": c.get("type"),
-                        "fields": [f.text for f in c.findall("Field")]})
+            out.append(
+                {
+                    "used": used,
+                    "type": c.get("type"),
+                    "fields": [f.text for f in c.findall("Field")],
+                }
+            )
         else:
-            out.append({"used": used, "left": side(left),
-                        "op": el(c.find("Comparator")).get("value"),
-                        "right": side(el(c.find("Right-Side")))})
+            out.append(
+                {
+                    "used": used,
+                    "left": side(left),
+                    "op": el(c.find("Comparator")).get("value"),
+                    "right": side(el(c.find("Right-Side"))),
+                }
+            )
     return out

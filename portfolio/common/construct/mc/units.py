@@ -37,8 +37,9 @@ class Unit(TypedDict):
     n_days: int
 
 
-def slots(bar_times: np.ndarray, feed_zone: str, day_zone: str, days: np.ndarray,
-          minutes: int) -> Slots:
+def slots(
+    bar_times: np.ndarray, feed_zone: str, day_zone: str, days: np.ndarray, minutes: int
+) -> Slots:
     """Where each M1 bar sits on the server-day calendar: its day, its block of the day.
 
     Args:
@@ -62,9 +63,13 @@ def slots(bar_times: np.ndarray, feed_zone: str, day_zone: str, days: np.ndarray
     inside = days[pos] == label
     index = pd.DatetimeIndex(days)
     starts = clock.to_utc(index, day_zone)[0].as_unit("ns").asi8
-    length = (clock.day_end(index, day_zone).as_unit("ns").asi8 - starts) // (minutes * NS_PER_MINUTE)
+    length = (clock.day_end(index, day_zone).as_unit("ns").asi8 - starts) // (
+        minutes * NS_PER_MINUTE
+    )
     before = np.concatenate([[0], np.cumsum(length)[:-1]])
-    slot = (pd.DatetimeIndex(utc[ok]).as_unit("ns").asi8 - starts[pos]) // (minutes * NS_PER_MINUTE)
+    slot = (pd.DatetimeIndex(utc[ok]).as_unit("ns").asi8 - starts[pos]) // (
+        minutes * NS_PER_MINUTE
+    )
     day = np.full(len(bar_times), -1, dtype=np.int32)
     slot_all = np.zeros(len(bar_times), dtype=np.int32)
     abs_all = np.full(len(bar_times), -1, dtype=np.int64)
@@ -72,12 +77,22 @@ def slots(bar_times: np.ndarray, feed_zone: str, day_zone: str, days: np.ndarray
     day[where] = pos[inside]
     slot_all[where] = slot[inside]
     abs_all[where] = before[pos[inside]] + slot[inside]
-    return {"day": day, "slot": slot_all, "abs": abs_all, "per_day": 1440 // minutes,
-            "n_days": len(days)}
+    return {
+        "day": day,
+        "slot": slot_all,
+        "abs": abs_all,
+        "per_day": 1440 // minutes,
+        "n_days": len(days),
+    }
 
 
-def units(trades: pd.DataFrame, bars: pd.DataFrame, where: Slots,
-          point_value: float, factor: float) -> Unit:
+def units(
+    trades: pd.DataFrame,
+    bars: pd.DataFrame,
+    where: Slots,
+    point_value: float,
+    factor: float,
+) -> Unit:
     """One member's trades as bootstrap units (the `members` item of `mc.paths`).
 
     The wicks and the window are `equity.paths`' own: a long's worst price in a minute is
@@ -101,14 +116,22 @@ def units(trades: pd.DataFrame, bars: pd.DataFrame, where: Slots,
     """
     order = np.argsort(trades["Open time"].to_numpy(), kind="stable")
     bar_times = bars.index.to_numpy()
-    open_idx = (np.searchsorted(bar_times, trades["Open time"].to_numpy(), side="right") - 1)[order]
-    close_idx = (np.searchsorted(bar_times, trades["Close time"].to_numpy(), side="right") - 1)[order]
+    open_idx = (
+        np.searchsorted(bar_times, trades["Open time"].to_numpy(), side="right") - 1
+    )[order]
+    close_idx = (
+        np.searchsorted(bar_times, trades["Close time"].to_numpy(), side="right") - 1
+    )[order]
     # A trade outside the bars given would land on their first or last bar: out by its own times.
-    inside = ((trades["Open time"].to_numpy() >= bar_times[0])
-              & (trades["Close time"].to_numpy() < bar_times[-1] + np.timedelta64(1, "m")))[order]
+    inside = (
+        (trades["Open time"].to_numpy() >= bar_times[0])
+        & (trades["Close time"].to_numpy() < bar_times[-1] + np.timedelta64(1, "m"))
+    )[order]
     keep = inside & (where["abs"][open_idx] >= 0) & (where["abs"][close_idx] >= 0)
     open_idx, close_idx = open_idx[keep], close_idx[keep]
-    side = np.where(trades["Type"].astype(object).to_numpy()[order][keep] == "Buy", 1.0, -1.0)
+    side = np.where(
+        trades["Type"].astype(object).to_numpy()[order][keep] == "Buy", 1.0, -1.0
+    )
     k = side * trades["Size"].to_numpy(np.float64)[order][keep] * point_value * factor
     open_price = trades["Open price"].to_numpy(np.float64)[order][keep]
     pnl = trades["Profit/Loss"].to_numpy(np.float64)[order][keep] * factor
@@ -116,21 +139,53 @@ def units(trades: pd.DataFrame, bars: pd.DataFrame, where: Slots,
     first, last = where["abs"][open_idx], where["abs"][close_idx]
     off = np.concatenate([[0], np.cumsum(last - first + 1)]).astype(np.int64)
     low, high, level = (np.full(off[-1], np.nan, dtype=np.float32) for _ in range(3))
-    _fill(open_idx, close_idx, k, open_price, pnl, bars["Low"].to_numpy(np.float64),
-          bars["High"].to_numpy(np.float64), bars["Close"].to_numpy(np.float64),
-          where["abs"], off, low, high, level)
+    _fill(
+        open_idx,
+        close_idx,
+        k,
+        open_price,
+        pnl,
+        bars["Low"].to_numpy(np.float64),
+        bars["High"].to_numpy(np.float64),
+        bars["Close"].to_numpy(np.float64),
+        where["abs"],
+        off,
+        low,
+        high,
+        level,
+    )
     raw = first[1:] - last[:-1]
-    return {"low": low, "high": high, "level": level, "off": off, "pnl": pnl,
-            "open_day": where["day"][open_idx], "open_slot": where["slot"][open_idx],
-            "gaps": np.maximum(raw, 0), "n_overlap": int((raw < 0).sum()),
-            "per_day": where["per_day"], "n_days": where["n_days"]}
+    return {
+        "low": low,
+        "high": high,
+        "level": level,
+        "off": off,
+        "pnl": pnl,
+        "open_day": where["day"][open_idx],
+        "open_slot": where["slot"][open_idx],
+        "gaps": np.maximum(raw, 0),
+        "n_overlap": int((raw < 0).sum()),
+        "per_day": where["per_day"],
+        "n_days": where["n_days"],
+    }
 
 
 @numba.njit(cache=True)
-def _fill(open_idx: np.ndarray, close_idx: np.ndarray, k: np.ndarray, open_price: np.ndarray,
-          pnl: np.ndarray, bar_low: np.ndarray, bar_high: np.ndarray, bar_close: np.ndarray,
-          bar_abs: np.ndarray, off: np.ndarray, low: np.ndarray, high: np.ndarray,
-          level: np.ndarray) -> None:
+def _fill(
+    open_idx: np.ndarray,
+    close_idx: np.ndarray,
+    k: np.ndarray,
+    open_price: np.ndarray,
+    pnl: np.ndarray,
+    bar_low: np.ndarray,
+    bar_high: np.ndarray,
+    bar_close: np.ndarray,
+    bar_abs: np.ndarray,
+    off: np.ndarray,
+    low: np.ndarray,
+    high: np.ndarray,
+    level: np.ndarray,
+) -> None:
     """Each trade's floating per block: wicks while open, the realised P&L in its exit block."""
     for i in range(open_idx.shape[0]):
         base, first = off[i], bar_abs[open_idx[i]]

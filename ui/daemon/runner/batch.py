@@ -11,8 +11,10 @@ from ui.daemon import jobs
 # 🔬 2026-09-28, owner's feedback «la UI se congela … no usa todos los cores»: a population
 # run was one process per strategy (207 for a reading), each ~1 s of which 0.7 s is Python
 # importing pandas and the study, and 16 at a time. One process imports once and forks.
-RESERVE = 4              # physical cores left to the window, the daemon and the OS
-PER_WORKER_GB = 0.6      # a forked worker's own pages over a 12 MB trades export, rounded up
+RESERVE = 4  # physical cores left to the window, the daemon and the OS
+PER_WORKER_GB = (
+    0.6  # a forked worker's own pages over a 12 MB trades export, rounded up
+)
 PLANS = jobs.LOGS / "batches"
 
 
@@ -48,16 +50,34 @@ def fold(planned: list[dict]) -> list[dict]:
         if p["about"].get("strategy") and p["label"] not in jobs.WIDE:
             groups.setdefault(p["label"], []).append(p)
     groups = {label: same for label, same in groups.items() if len(same) >= 2}
-    out = [p for p in planned if not (p["label"] in groups and p["about"].get("strategy"))]
+    out = [
+        p for p in planned if not (p["label"] in groups and p["about"].get("strategy"))
+    ]
     for label, same in groups.items():
         PLANS.mkdir(parents=True, exist_ok=True)
         plan = PLANS / f"{datetime.now():%Y%m%d-%H%M%S-%f}-{label}.json"
-        plan.write_text(json.dumps([{"strategy": p["about"]["strategy"], "argv": p["argv"]}
-                                    for p in same], ensure_ascii=False), encoding="utf-8")
+        plan.write_text(
+            json.dumps(
+                [{"strategy": p["about"]["strategy"], "argv": p["argv"]} for p in same],
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
         n = workers(len(same))
-        out.append({"label": label, "weight": n,
-                    "argv": ["-m", "ui.daemon.runner.batchrun", "--plan", str(plan),
-                             "--workers", str(n)],
-                    "about": same[0]["about"] | {"strategy": "", "scope": "many",
-                                                 "strategies": len(same)}})
+        out.append(
+            {
+                "label": label,
+                "weight": n,
+                "argv": [
+                    "-m",
+                    "ui.daemon.runner.batchrun",
+                    "--plan",
+                    str(plan),
+                    "--workers",
+                    str(n),
+                ],
+                "about": same[0]["about"]
+                | {"strategy": "", "scope": "many", "strategies": len(same)},
+            }
+        )
     return out

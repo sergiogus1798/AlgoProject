@@ -26,14 +26,18 @@ def _from_frame(frame: pd.DataFrame, asset: Asset, risk: float) -> dict:
         a column the export does not carry does not appear.
     """
     pnl = frame["Profit/Loss"].to_numpy(dtype=float)
-    return {"pnl": pnl, "r": pnl / risk, "cost": costs.recovered(frame, asset),
-            "spread": costs.spread_cost(frame, asset),
-            "mae": frame["MAE ($)"].to_numpy(dtype=float),
-            "size": frame["Size"].to_numpy(dtype=float),
-            "direction": frame["Type"].astype("object").map(SIDE).to_numpy(dtype=float),  # pyright: ignore[reportArgumentType]  # stubs reject a dict for map; it is a valid Mapping
-            "open": frame["Open time"].to_numpy(),
-            "close": frame["Close time"].to_numpy(),
-            "sample": frame["Sample type"].to_numpy(dtype=object)}
+    return {
+        "pnl": pnl,
+        "r": pnl / risk,
+        "cost": costs.recovered(frame, asset),
+        "spread": costs.spread_cost(frame, asset),
+        "mae": frame["MAE ($)"].to_numpy(dtype=float),
+        "size": frame["Size"].to_numpy(dtype=float),
+        "direction": frame["Type"].astype("object").map(SIDE).to_numpy(dtype=float),  # pyright: ignore[reportArgumentType]  # stubs reject a dict for map; it is a valid Mapping
+        "open": frame["Open time"].to_numpy(),
+        "close": frame["Close time"].to_numpy(),
+        "sample": frame["Sample type"].to_numpy(dtype=object),
+    }
 
 
 def build(frame: pd.DataFrame, name: str, asset: Asset, risk: float) -> dict[str, Any]:
@@ -51,7 +55,9 @@ def build(frame: pd.DataFrame, name: str, asset: Asset, risk: float) -> dict[str
     return {"name": name, "frame": frame, **_from_frame(frame, asset, risk)}
 
 
-def portfolio(packed: pd.DataFrame, asset: Asset, risk: float, name: str) -> dict[str, Any]:
+def portfolio(
+    packed: pd.DataFrame, asset: Asset, risk: float, name: str
+) -> dict[str, Any]:
     """Several strategies as one trade stream, in time order.
 
     Args:
@@ -97,8 +103,11 @@ def restrict(source: dict, positions: np.ndarray) -> dict[str, Any]:
         different kind of input to them, just a shorter one.
     """
     arrays = {k: v[positions] for k, v in source.items() if k not in ("name", "frame")}
-    return {"name": source["name"],
-            "frame": source["frame"].iloc[positions].reset_index(drop=True), **arrays}
+    return {
+        "name": source["name"],
+        "frame": source["frame"].iloc[positions].reset_index(drop=True),
+        **arrays,
+    }
 
 
 def overlap(stream: dict) -> float:

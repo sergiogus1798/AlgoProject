@@ -2,14 +2,25 @@
 
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QFrame, QGridLayout, QHBoxLayout, QLabel, QMessageBox, QPushButton,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import client
 from ui.desktop.assetforms import FIXED_FIRST, MarketBox, word
 from ui.desktop.theme import C
 
-TINT = {"family": C["accent"], "structural": C["promising"]}   # a group's background, faint
+TINT = {
+    "family": C["accent"],
+    "structural": C["promising"],
+}  # a group's background, faint
 
 
 class CrossMarketCheck(QWidget):
@@ -28,9 +39,11 @@ class CrossMarketCheck(QWidget):
         self.markets_head = QLabel(objectName="h2")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.markets_head.setWordWrap(True)
         self.declare = QPushButton("Declarar como main")
-        self.declare.setToolTip("Le da un bloque vacío en _markets.yaml: todo activo con ficha "
-                                "es un main (dueño, 2026-09-29), no solo los que alguien ya "
-                                "declaró. Después se le añaden mercados con «Añadir».")
+        self.declare.setToolTip(
+            "Le da un bloque vacío en _markets.yaml: todo activo con ficha "
+            "es un main (dueño, 2026-09-29), no solo los que alguien ya "
+            "declaró. Después se le añaden mercados con «Añadir»."
+        )
         self.declare.clicked.connect(self.on_declare)
         self.add = QPushButton("Añadir")
         self.add.clicked.connect(self.on_add)
@@ -59,13 +72,17 @@ class CrossMarketCheck(QWidget):
         self.declare.setVisible(not declared)
         self.add.setVisible(declared and bool(m["candidates"]))
         self.markets_head.setText(
-            "Check de Cross Market" if declared else
-            "Check de Cross Market — todavía sin declarar como main")
+            "Check de Cross Market"
+            if declared
+            else "Check de Cross Market — todavía sin declarar como main"
+        )
         for name, rows in cats.items():
             box = QFrame(objectName="market")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
             tint = QColor(TINT.get(name, C["muted"]))
-            box.setStyleSheet(f"QFrame#market {{ background: rgba({tint.red()},{tint.green()},"
-                              f"{tint.blue()},0.14); border-radius: 6px; }}")
+            box.setStyleSheet(
+                f"QFrame#market {{ background: rgba({tint.red()},{tint.green()},"
+                f"{tint.blue()},0.14); border-radius: 6px; }}"
+            )
             inner = QGridLayout(box)
             inner.setContentsMargins(10, 6, 8, 8)
             inner.setHorizontalSpacing(10)
@@ -80,7 +97,9 @@ class CrossMarketCheck(QWidget):
                 drop.setToolTip(f"Quitar {row['asset']} de {word(name)}.")
                 drop.setFixedSize(22, 20)
                 drop.setStyleSheet("padding: 0;")
-                drop.clicked.connect(lambda *_, c=name, f=row["feed"]: self.on_drop(c, f))
+                drop.clicked.connect(
+                    lambda *_, c=name, f=row["feed"]: self.on_drop(c, f)
+                )
                 inner.addWidget(asset, i, 0)
                 inner.addWidget(since, i, 1)
                 inner.addWidget(drop, i, 2)
@@ -108,13 +127,27 @@ class CrossMarketCheck(QWidget):
         """
         rows = self.data["markets"]["categories"][category]
         asset = next(r["asset"] for r in rows if r["feed"] == feed)
-        if QMessageBox.question(self, f"Quitar {asset}", f"{FIXED_FIRST} ¿Lo quito de "  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
-                                f"{word(category)}?") == QMessageBox.StandardButton.Yes:
+        if (
+            QMessageBox.question(
+                self,
+                f"Quitar {asset}",
+                f"{FIXED_FIRST} ¿Lo quito de "  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
+                f"{word(category)}?",
+            )
+            == QMessageBox.StandardButton.Yes
+        ):
             self.write(category, [r for r in rows if r["feed"] != feed])
 
     def write(self, category: str, rows: list[dict]) -> None:
         """Send the category's whole list; `set_market` turns it into a one-line change."""
-        client.post("assets/market", {"symbol": self.data["symbol"], "category": category,
-                                      "feeds": [{"feed": r["feed"], "data_from": r["data_from"]}
-                                                for r in rows]})
+        client.post(
+            "assets/market",
+            {
+                "symbol": self.data["symbol"],
+                "category": category,
+                "feeds": [
+                    {"feed": r["feed"], "data_from": r["data_from"]} for r in rows
+                ],
+            },
+        )
         self.changed.emit()

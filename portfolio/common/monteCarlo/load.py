@@ -34,8 +34,15 @@ class Inputs(TypedDict):
     shared: Shared
 
 
-def load(project: str, databank: str, asset: str, export: str, cfg: dict,
-         bars_timeframe: str = "M30", portfolio: bool = False) -> Inputs:
+def load(
+    project: str,
+    databank: str,
+    asset: str,
+    export: str,
+    cfg: dict,
+    bars_timeframe: str = "M30",
+    portfolio: bool = False,
+) -> Inputs:
     """The inputs one.run() and many.run() read.
 
     Args:
@@ -58,14 +65,25 @@ def load(project: str, databank: str, asset: str, export: str, cfg: dict,
     # manifest — the record of which market the backtest actually ran on.
     feed = manifest.read(folder)["source"]["symbol"]
     risk = cfg["global"]["risk_per_trade"]
-    streams = ([stream.portfolio(packed, costs_, risk, databank)] if portfolio else
-               [stream.build(f, n, costs_, risk)
-                for n, f in tradestore.by_strategy(packed).items()])
+    streams = (
+        [stream.portfolio(packed, costs_, risk, databank)]
+        if portfolio
+        else [
+            stream.build(f, n, costs_, risk)
+            for n, f in tradestore.by_strategy(packed).items()
+        ]
+    )
     reference = max(streams, key=lambda s: s["pnl"].size)
     names = [s["name"] for s in streams]
-    return {"streams": {s["name"]: s for s in streams},
-            "day": regime.daily(barstore.read(feed, bars_timeframe)), "asset": costs_,
-            "identity": {} if portfolio else identity.lookup(project, databank, names),
-            "reference": reference["name"],
-            "shared": {"export": folder / "trades.parquet", "bars": bar_source(feed),
-                       "stability": stability.spread(reference, cfg)}}
+    return {
+        "streams": {s["name"]: s for s in streams},
+        "day": regime.daily(barstore.read(feed, bars_timeframe)),
+        "asset": costs_,
+        "identity": {} if portfolio else identity.lookup(project, databank, names),
+        "reference": reference["name"],
+        "shared": {
+            "export": folder / "trades.parquet",
+            "bars": bar_source(feed),
+            "stability": stability.spread(reference, cfg),
+        },
+    }

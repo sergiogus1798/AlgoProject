@@ -8,7 +8,9 @@ and the same scan prices it."""
 import numpy as np
 
 
-def vertical(entries: np.ndarray, holds: np.ndarray, leave_px: np.ndarray) -> tuple[np.ndarray, ...]:
+def vertical(
+    entries: np.ndarray, holds: np.ndarray, leave_px: np.ndarray
+) -> tuple[np.ndarray, ...]:
     """Exit purely on time, with no price barrier in the way.
 
     Args:
@@ -24,8 +26,15 @@ def vertical(entries: np.ndarray, holds: np.ndarray, leave_px: np.ndarray) -> tu
     return leave, leave_px[leave]
 
 
-def pnl(entries: np.ndarray, leave: np.ndarray, price: np.ndarray, sizes: np.ndarray,
-        enter_px: np.ndarray, cost: np.ndarray, value: float) -> np.ndarray:
+def pnl(
+    entries: np.ndarray,
+    leave: np.ndarray,
+    price: np.ndarray,
+    sizes: np.ndarray,
+    enter_px: np.ndarray,
+    cost: np.ndarray,
+    value: float,
+) -> np.ndarray:
     """What each trade was worth, in account currency.
 
     Args:

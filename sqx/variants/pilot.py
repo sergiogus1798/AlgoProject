@@ -16,11 +16,19 @@ from sqx.variants.build import fabricate
 from sqx.variants.design import levels, pilot as designpilot
 from typing import Any
 
-COLLISION = re.compile(r"\(\d+\)$")   # the collision suffix SQX appends to a duplicate on reload
+COLLISION = re.compile(
+    r"\(\d+\)$"
+)  # the collision suffix SQX appends to a duplicate on reload
 
 
-def run(design: dict, settings: dict, live: dict[str, list[float]], work: Path, project: str,
-       say: Callable[[int, str], None]) -> tuple[dict, dict]:
+def run(
+    design: dict,
+    settings: dict,
+    live: dict[str, list[float]],
+    work: Path,
+    project: str,
+    say: Callable[[int, str], None],
+) -> tuple[dict, dict]:
     """Score a few hundred sampled tuples on trade count, on the mother's own project.
 
     Args:
@@ -43,8 +51,10 @@ def run(design: dict, settings: dict, live: dict[str, list[float]], work: Path, 
         SystemExit: `project` is a stock project (hard rule 10).
     """
     if project in execute.STOCK:
-        raise SystemExit(f"{project} es un proyecto de serie: regla dura 10, el piloto necesita "
-                         "el mismo proyecto custom del lote, nunca Builder o Retester.")
+        raise SystemExit(
+            f"{project} es un proyecto de serie: regla dura 10, el piloto necesita "
+            "el mismo proyecto custom del lote, nunca Builder o Retester."
+        )
     cfg: dict[str, Any] = dict(settings["execute"], project=project)
     pcfg = settings["pilot"]
     parent = inputs.source(design)
@@ -52,31 +62,47 @@ def run(design: dict, settings: dict, live: dict[str, list[float]], work: Path, 
     folder = work / "pilot" / "sqx"
     say(2, f"fabricando el piloto: {len(table)} tuplas")
     param_names = [c for c in table.columns if c != "pilot_id"]
-    plan_rows = table.rename(columns={"pilot_id": "variant_id",
-                                      **{n: tuples.PREFIX + n for n in param_names}})
+    plan_rows = table.rename(
+        columns={
+            "pilot_id": "variant_id",
+            **{n: tuples.PREFIX + n for n in param_names},
+        }
+    )
     fabricate.batch(plan_rows, parent, design["strategy"], folder, "minimal")
 
     legs = legmod.legs()
     be = livexec.backend(cfg)
-    used = legs[:1] if be is livexec else legs    # live starts what it is sent; leg 1 is read
+    used = (
+        legs[:1] if be is livexec else legs
+    )  # live starts what it is sent; leg 1 is read
     cfg["only"] = [leg["title"] for leg in used]
     ours = be.awake(cfg)
     try:
         say(5, f"cargando el piloto en {project}/{legmod.source()}")
         be.load(folder, cfg)
-        done = be.run(len(table) * len(used), cfg,
-                           lambda p, line: say(5 + p * 80 // 100, line)) // len(used)
+        done = be.run(
+            len(table) * len(used), cfg, lambda p, line: say(5 + p * 80 // 100, line)
+        ) // len(used)
         bank, _ = be.synced(done, cfg, legs[0]["databank"])
         rows = united.per_result(bank, legs[0]["segment"], lambda *_a: None)
     finally:
         if ours:
-            worker.stop(cfg["role"], export=False)   # as `execute`: nothing to export
+            worker.stop(cfg["role"], export=False)  # as `execute`: nothing to export
 
     main_rows = rows[rows["market"] == legmod.MAIN].copy()
-    main_rows["variant_id"] = main_rows["variant_id"].str.replace(COLLISION, "", regex=True)  # pyright: ignore[reportAttributeAccessIssue]  # pandas stub: column of a copy typed ndarray
+    main_rows["variant_id"] = main_rows["variant_id"].str.replace(  # pyright: ignore[reportAttributeAccessIssue]  # pandas stub: column of a copy typed ndarray
+        COLLISION, "", regex=True
+    )
     counts = dict(zip(main_rows["variant_id"], main_rows["NumberOfTrades"]))
-    banned, report = designpilot.decide(table, counts, pcfg["min_trades"], pcfg["min_support"])
-    return banned, {**report, "tested": done, "project": project, "segment": legs[0]["segment"]}
+    banned, report = designpilot.decide(
+        table, counts, pcfg["min_trades"], pcfg["min_support"]
+    )
+    return banned, {
+        **report,
+        "tested": done,
+        "project": project,
+        "segment": legs[0]["segment"],
+    }
 
 
 def main() -> None:
@@ -90,14 +116,22 @@ def main() -> None:
     design = inputs.brief(a.brief)
     settings = inputs.load()
     live = levels.live(design)
-    banned, report = run(design, settings, live, a.out, a.project,
-                         lambda pct, line: print(f"PROGRESS {pct} {line}", flush=True))
+    banned, report = run(
+        design,
+        settings,
+        live,
+        a.out,
+        a.project,
+        lambda pct, line: print(f"PROGRESS {pct} {line}", flush=True),
+    )
     a.out.mkdir(parents=True, exist_ok=True)
     (a.out / "pilot.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     dropped = sum(len(v) for v in banned.values())
-    print(f"\n{report['tested']} reteseadas, {dropped} niveles descartados en "
-          f"{len(banned)} parametros (< {report['min_trades']} operaciones en "
-          f"{report['segment']})")
+    print(
+        f"\n{report['tested']} reteseadas, {dropped} niveles descartados en "
+        f"{len(banned)} parametros (< {report['min_trades']} operaciones en "
+        f"{report['segment']})"
+    )
     print(f"-> {a.out / 'pilot.json'}")
 
 

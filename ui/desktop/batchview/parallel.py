@@ -3,8 +3,15 @@
 from typing import Any
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import (QColor, QMouseEvent, QPainter, QPaintEvent, QPen, QPixmap,
-                           QResizeEvent)
+from PySide6.QtGui import (
+    QColor,
+    QMouseEvent,
+    QPainter,
+    QPaintEvent,
+    QPen,
+    QPixmap,
+    QResizeEvent,
+)
 from PySide6.QtWidgets import QToolTip, QWidget
 
 from ui.desktop.batchview import scale
@@ -16,7 +23,7 @@ from ui.desktop.theme import T
 
 HEIGHT = 480
 PAD = {"l": 96, "r": 100, "t": 44, "b": 30}
-NEAR = 7                          # pixels: how close the pointer must be to pick a line
+NEAR = 7  # pixels: how close the pointer must be to pick a line
 
 
 def layout(batch: dict, metric: str, box: QRectF) -> tuple[list[float], list]:
@@ -30,8 +37,12 @@ def layout(batch: dict, metric: str, box: QRectF) -> tuple[list[float], list]:
     Returns:
         (x per axis, [(label, values, y-map, ticks)] per axis).
     """
-    cols = [(a["label"], a["values"]) for a in batch["axes"]] + [(metric, batch["outcomes"][metric])]
-    xs = [box.left() + i * box.width() / max(1, len(cols) - 1) for i in range(len(cols))]
+    cols = [(a["label"], a["values"]) for a in batch["axes"]] + [
+        (metric, batch["outcomes"][metric])
+    ]
+    xs = [
+        box.left() + i * box.width() / max(1, len(cols) - 1) for i in range(len(cols))
+    ]
     out = []
     for label, vals in cols:
         seen = sorted({v for v in vals if v is not None})
@@ -72,7 +83,10 @@ class Parallel(QWidget):
 
     def points(self, i: int, xs: list[float], cols: list) -> list[QPointF | None]:
         """One variant's point on every axis, None where its value is missing."""
-        return [None if c[1][i] is None else QPointF(x, c[2](c[1][i])) for x, c in zip(xs, cols)]
+        return [
+            None if c[1][i] is None else QPointF(x, c[2](c[1][i]))
+            for x, c in zip(xs, cols)
+        ]
 
     def polyline(self, p: QPainter, pts: list[QPointF | None]) -> None:
         """The segments between consecutive known points."""
@@ -89,7 +103,7 @@ class Parallel(QWidget):
         p = QPainter(pix)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         batch = self.batch
-        assert batch is not None   # `paintEvent` returns early without a batch
+        assert batch is not None  # `paintEvent` returns early without a batch
         box, vals = self.box(), batch["outcomes"][self.outcome]
         xs, cols = layout(batch, self.outcome, box)
         cuts = scale.edges(vals)
@@ -125,16 +139,37 @@ class Parallel(QWidget):
             p.drawLine(QPointF(x, box.top()), QPointF(x, box.bottom()))
             p.setFont(font(10, bold=True))
             p.setPen(QColor(T["text"]))
-            p.drawText(QRectF(x - 80, 4, 160, 34), Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom
-                       | Qt.TextFlag.TextWordWrap, label)
+            p.drawText(
+                QRectF(x - 80, 4, 160, 34),
+                Qt.AlignmentFlag.AlignHCenter
+                | Qt.AlignmentFlag.AlignBottom
+                | Qt.TextFlag.TextWordWrap,
+                label,
+            )
             p.setFont(font(9))
             p.setPen(QColor(T["muted"]))
             for v in tk:
-                r = (QRectF(x + 6, y(v) - 8, 80, 16) if last
-                     else QRectF(x - 66, y(v) - 8, 60, 16))
-                p.fillRect(r.adjusted(2, 1, -2, -1) if last else
-                           r.adjusted(60 - 7 * len(num(v)), 1, 0, -1), QColor(T["bg"]))
-                p.drawText(r, (Qt.AlignmentFlag.AlignLeft if last else Qt.AlignmentFlag.AlignRight) | Qt.AlignmentFlag.AlignVCenter, num(v))
+                r = (
+                    QRectF(x + 6, y(v) - 8, 80, 16)
+                    if last
+                    else QRectF(x - 66, y(v) - 8, 60, 16)
+                )
+                p.fillRect(
+                    r.adjusted(2, 1, -2, -1)
+                    if last
+                    else r.adjusted(60 - 7 * len(num(v)), 1, 0, -1),
+                    QColor(T["bg"]),
+                )
+                p.drawText(
+                    r,
+                    (
+                        Qt.AlignmentFlag.AlignLeft
+                        if last
+                        else Qt.AlignmentFlag.AlignRight
+                    )
+                    | Qt.AlignmentFlag.AlignVCenter,
+                    num(v),
+                )
 
     def paintEvent(self, event: QPaintEvent) -> None:  # noqa: N802 — Qt's name
         """The cached lines, and the hovered variant on top in the brightest ink."""
@@ -142,7 +177,10 @@ class Parallel(QWidget):
         p.fillRect(self.rect(), QColor(T["bg"]))
         if self.batch is None:
             return
-        if self.cache is None or self.cache.size() != self.size() * self.devicePixelRatioF():
+        if (
+            self.cache is None
+            or self.cache.size() != self.size() * self.devicePixelRatioF()
+        ):
             self.cache = self.paint_lines()
         p.drawPixmap(0, 0, self.cache)
         if self.hot is not None:
@@ -159,18 +197,26 @@ class Parallel(QWidget):
     def nearest(self, at: QPointF) -> int | None:
         """The variant whose line passes closest to the pointer, within `NEAR` pixels."""
         batch = self.batch
-        assert batch is not None   # `mouseMoveEvent` returns early without a batch
+        assert batch is not None  # `mouseMoveEvent` returns early without a batch
         xs, cols = layout(batch, self.outcome, self.box())
         if not xs[0] <= at.x() <= xs[-1]:
             return None
-        k = min(len(xs) - 2, max(0, int((at.x() - xs[0]) / (xs[1] - xs[0])))) if len(xs) > 1 else 0
+        k = (
+            min(len(xs) - 2, max(0, int((at.x() - xs[0]) / (xs[1] - xs[0]))))
+            if len(xs) > 1
+            else 0
+        )
         t = (at.x() - xs[k]) / (xs[k + 1] - xs[k]) if len(xs) > 1 else 0
         best, gap = None, NEAR
         for i in range(len(batch["variants"])):
             a, b = cols[k][1][i], cols[min(k + 1, len(cols) - 1)][1][i]
             if a is None or b is None:
                 continue
-            d = abs(cols[k][2](a) * (1 - t) + cols[min(k + 1, len(cols) - 1)][2](b) * t - at.y())
+            d = abs(
+                cols[k][2](a) * (1 - t)
+                + cols[min(k + 1, len(cols) - 1)][2](b) * t
+                - at.y()
+            )
             if d < gap:
                 best, gap = i, d
         return best
@@ -178,7 +224,7 @@ class Parallel(QWidget):
     def sentence(self, i: int) -> str:
         """What one variant is: its name, stratum, every parameter and both outcomes."""
         b = self.batch
-        assert b is not None   # only asked for a variant found in the batch
+        assert b is not None  # only asked for a variant found in the batch
         mother = " — la madre" if i == b["mother"] else ""
         rows = [f"{b['variants'][i]} ({b['stratum'][i]}){mother}"]
         rows += [f"{a['label']} = {num(a['values'][i])}" for a in b["axes"]]
@@ -196,7 +242,9 @@ class Parallel(QWidget):
         if hot is None:
             QToolTip.hideText()
         else:
-            QToolTip.showText(event.globalPosition().toPoint(), self.sentence(hot), self)
+            QToolTip.showText(
+                event.globalPosition().toPoint(), self.sentence(hot), self
+            )
 
     def leaveEvent(self, event: object) -> None:  # noqa: N802 — Qt's name
         """Drop the lit line when the pointer leaves."""

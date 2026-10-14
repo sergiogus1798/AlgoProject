@@ -3,14 +3,22 @@
 import httpx
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QMessageBox, QPushButton, QSizePolicy, QWidget
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QWidget,
+)
 
 from ui.desktop import background, client
 from ui.desktop.workspace.aggregate import ask
 from ui.text.numbers import num
 from ui.text.brief import full, off
 
-RECHECK_MS = 20_000     # a worker started or stopped elsewhere shows up within this
+RECHECK_MS = 20_000  # a worker started or stopped elsewhere shows up within this
 
 
 class Launcher(QWidget):
@@ -53,9 +61,16 @@ class Launcher(QWidget):
             project: The project on screen.
         """
         self.project = project
-        self.show_state({"ok": False, "reasons": ["comprobando…"]})   # never the last project's
-        background.get("launch/tasks", lambda got: self.listed(project, got),
-                       key=f"tasks:{id(self)}", owner=self, project=project)
+        self.show_state(
+            {"ok": False, "reasons": ["comprobando…"]}
+        )  # never the last project's
+        background.get(
+            "launch/tasks",
+            lambda got: self.listed(project, got),
+            key=f"tasks:{id(self)}",
+            owner=self,
+            project=project,
+        )
 
     def listed(self, project: str, got: dict) -> None:
         """The project's tasks arrived (`aim`): fill the chooser and check the first."""
@@ -64,12 +79,19 @@ class Launcher(QWidget):
         self.tasks.blockSignals(True)
         self.tasks.clear()
         for t in got.get("tasks", []):
-            reads = f"{t['input']} ({num(t['n_in'])}) → " if t["type"] != "Build" else ""
-            self.tasks.addItem(f"{t['title']}  ·  {t['type']}  ·  {reads}{t['output']} "
-                               f"({num(t['n_out'])})", t["title"])
+            reads = (
+                f"{t['input']} ({num(t['n_in'])}) → " if t["type"] != "Build" else ""
+            )
+            self.tasks.addItem(
+                f"{t['title']}  ·  {t['type']}  ·  {reads}{t['output']} "
+                f"({num(t['n_out'])})",
+                t["title"],
+            )
         self.tasks.blockSignals(False)
         if "tasks" not in got:
-            self.show_state({"ok": False, "reasons": [got.get("refuse") or got.get("error", "?")]})
+            self.show_state(
+                {"ok": False, "reasons": [got.get("refuse") or got.get("error", "?")]}
+            )
             return
         self.check()
 
@@ -78,10 +100,18 @@ class Launcher(QWidget):
         if not self.isVisible() or not self.project or self.tasks.currentData() is None:
             return
         project, task = self.project, self.tasks.currentData()
-        background.get("launch/preflight",
-                       lambda got: self.show_state(got) if (project, task) == (
-                           self.project, self.tasks.currentData()) else None,
-                       key=f"preflight:{id(self)}", owner=self, project=project, task=task)
+        background.get(
+            "launch/preflight",
+            lambda got: (
+                self.show_state(got)
+                if (project, task) == (self.project, self.tasks.currentData())
+                else None
+            ),
+            key=f"preflight:{id(self)}",
+            owner=self,
+            project=project,
+            task=task,
+        )
 
     def showEvent(self, event: QShowEvent) -> None:  # noqa: N802 — Qt's name
         """Check on coming into view: `aim` may have run while the zone was hidden."""
@@ -101,18 +131,30 @@ class Launcher(QWidget):
         """Re-run the preflight for the project and task on screen and show its fresh
         sentence; only «Sí» queues the job, and the daemon re-checks there."""
         task = self.tasks.currentData()
-        got = ask("launch/preflight", project=self.project, task=task) if task else {
-            "ok": False, "reasons": ["ninguna tarea elegida"]}
+        got = (
+            ask("launch/preflight", project=self.project, task=task)
+            if task
+            else {"ok": False, "reasons": ["ninguna tarea elegida"]}
+        )
         self.show_state(got)
         if not got.get("ok"):
             return
-        if QMessageBox.question(self, "Lanzar en SQX", got["text"] + "\n\n¿Confirmas?",
-                                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+        if (
+            QMessageBox.question(
+                self,
+                "Lanzar en SQX",
+                got["text"] + "\n\n¿Confirmas?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            != QMessageBox.StandardButton.Yes
+        ):
             return
         try:
-            got = client.post("launch/run", {"project": self.project, "task": task,
-                                             "nonce": got.get("nonce", "")})
+            got = client.post(
+                "launch/run",
+                {"project": self.project, "task": task, "nonce": got.get("nonce", "")},
+            )
         except httpx.HTTPError as failed:
             got = {"ok": False, "reasons": [f"El demonio no respondió: {failed}"]}
         if got.get("job"):

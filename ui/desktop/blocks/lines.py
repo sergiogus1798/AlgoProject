@@ -37,18 +37,30 @@ def _pens(b: dict) -> list[tuple[str, Qt.PenStyle, float]]:
     for s in b["series"]:
         signed = Qt.PenStyle.DashLine if _ends_negative(s) else Qt.PenStyle.SolidLine
         if s.get("ink"):
-            style = signed if auto else (Qt.PenStyle.DashLine if s.get("dash") else Qt.PenStyle.SolidLine)
+            style = (
+                signed
+                if auto
+                else (Qt.PenStyle.DashLine if s.get("dash") else Qt.PenStyle.SolidLine)
+            )
             out.append((CURVE[s["ink"]], style, 2.0))
             continue
         if s["role"] == "reference":
-            out.append((T["muted"], signed if auto else Qt.PenStyle.DashLine, 2.0 if auto else 1.5))
+            out.append(
+                (
+                    T["muted"],
+                    signed if auto else Qt.PenStyle.DashLine,
+                    2.0 if auto else 1.5,
+                )
+            )
             continue
         lap = Qt.PenStyle.SolidLine if len(drawn) == 1 else STYLES[k // len(SERIES) % 3]
         style = signed if auto else lap
         if len(drawn) == 1:
             out.append((REAL if s["role"] == "real" else SERIES[0], style, 2.5))
         else:
-            out.append((SERIES[k % len(SERIES)], style, 2.5 if s["role"] == "real" else 1.8))
+            out.append(
+                (SERIES[k % len(SERIES)], style, 2.5 if s["role"] == "real" else 1.8)
+            )
             k += 1
     return out
 
@@ -56,7 +68,7 @@ def _pens(b: dict) -> list[tuple[str, Qt.PenStyle, float]]:
 def _range(b: dict) -> tuple[float, float]:
     """The y range over every series."""
     v = [y for s in b["series"] for y in s["values"] if y is not None]
-    margin = 0.06 * (max(v) - min(v))   # so no mark sits on the frame
+    margin = 0.06 * (max(v) - min(v))  # so no mark sits on the frame
     return min(v) - margin, max(v) + margin
 
 
@@ -74,8 +86,12 @@ def _draw(b: dict) -> Callable:
             above, below = QColor(colour("pass")), QColor(colour("fail"))
             above.setAlphaF(0.08)
             below.setAlphaF(0.08)
-            p.fillRect(QRectF(box.left(), box.top(), box.width(), y(0) - box.top()), above)
-            p.fillRect(QRectF(box.left(), y(0), box.width(), box.bottom() - y(0)), below)
+            p.fillRect(
+                QRectF(box.left(), box.top(), box.width(), y(0) - box.top()), above
+            )
+            p.fillRect(
+                QRectF(box.left(), y(0), box.width(), box.bottom() - y(0)), below
+            )
         chart.axes(p, box, xt, [(y(v), chart.num(v)) for v in axis.ticks(lo, hi, 5)])
         if b.get("x_label"):
             chart.titles(p, box, rect, b["x_label"], b["y_label"])
@@ -107,7 +123,9 @@ def _tip(b: dict) -> Callable:
         px, _ = axis.xaxis(b["x"], box.left(), box.right())
         i = axis.nearest(px, pos.x())
         rows = [f"x = {chart.num(b['x'][i])}"]
-        rows += [f"{s['label']}: {chart.num(s['values'][i], b['unit'])}" for s in b["series"]]
+        rows += [
+            f"{s['label']}: {chart.num(s['values'][i], b['unit'])}" for s in b["series"]
+        ]
         return "\n".join(rows[:16])
 
     return tip
@@ -127,6 +145,10 @@ def widget(block: dict) -> QWidget:
     if len(b["series"]) == 1:
         return card(b, canvas)
     marks = {Qt.PenStyle.SolidLine: "line", Qt.PenStyle.DashLine: "dash"}
-    key = chart.key([(marks.get(style, "dash"), c, s["label"])
-                     for s, (c, style, _) in zip(b["series"], _pens(b))])
+    key = chart.key(
+        [
+            (marks.get(style, "dash"), c, s["label"])
+            for s, (c, style, _) in zip(b["series"], _pens(b))
+        ]
+    )
     return card(b, canvas, key)

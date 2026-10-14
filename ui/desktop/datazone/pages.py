@@ -15,12 +15,24 @@ from ui.text.numbers import num
 from ui.desktop.theme import T
 
 # (text in the combo, days back from the feed's last bar; None keeps the whole history).
-RANGES = (("toda la historia", None), ("10 años", 3653), ("3 años", 1096), ("1 año", 366),
-          ("3 meses", 92))
-DEFAULT_RANGE = 3        # «1 año»: at D1 its ~260 bars are drawn as candles, not columns
-KEYS = {True: [("box", candles.UP, "vela que sube"), ("box", candles.DOWN, "vela que baja")],
-        False: [("line", T["faint"], "rango máximo–mínimo de las velas de cada columna"),
-                ("line", REAL, "cierre de la última vela de la columna")]}
+RANGES = (
+    ("toda la historia", None),
+    ("10 años", 3653),
+    ("3 años", 1096),
+    ("1 año", 366),
+    ("3 meses", 92),
+)
+DEFAULT_RANGE = 3  # «1 año»: at D1 its ~260 bars are drawn as candles, not columns
+KEYS = {
+    True: [
+        ("box", candles.UP, "vela que sube"),
+        ("box", candles.DOWN, "vela que baja"),
+    ],
+    False: [
+        ("line", T["faint"], "rango máximo–mínimo de las velas de cada columna"),
+        ("line", REAL, "cierre de la última vela de la columna"),
+    ],
+}
 
 
 def _swap(lay: QVBoxLayout, old: QWidget | None, new: QWidget) -> QWidget:
@@ -67,7 +79,7 @@ class BarsPage(QWidget):
         lay.addLayout(row)
         self.head = text("", T["muted"], 13)
         lay.addWidget(self.head)
-        self.lay = QVBoxLayout()         # the drawing's slot, held at the top of the page
+        self.lay = QVBoxLayout()  # the drawing's slot, held at the top of the page
         lay.addLayout(self.lay)
         lay.addStretch(1)
 
@@ -81,20 +93,30 @@ class BarsPage(QWidget):
         if not asset:
             return
         if not asset["bars"]:
-            self.head.setText(f"{asset['symbol']} no tiene barras en la librería (bars/): "
-                              "solo sus ticks de Darwinex para el spread.")
+            self.head.setText(
+                f"{asset['symbol']} no tiene barras en la librería (bars/): "
+                "solo sus ticks de Darwinex para el spread."
+            )
             self.body = _swap(self.lay, self.body, QWidget())
             return
         days = RANGES[self.span.currentIndex()][1]
-        since = "" if days is None else str(date.fromisoformat(asset["to"]) - timedelta(days))
-        b = self.fetch("data/bars", feed=asset["bars"], tf=self.tf.currentText(), since=since)
+        since = (
+            ""
+            if days is None
+            else str(date.fromisoformat(asset["to"]) - timedelta(days))
+        )
+        b = self.fetch(
+            "data/bars", feed=asset["bars"], tf=self.tf.currentText(), since=since
+        )
         if "error" in b or not b.get("t"):
             self.head.setText(b.get("error", "Ninguna vela en ese periodo."))
             self.body = _swap(self.lay, self.body, QWidget())
             return
-        self.head.setText(f"{b['feed']} · {b['tf']} · {num(b['rows'])} velas · {b['t'][0]} → "
-                          f"{b['t'][-1]} · remuestreadas del M1 de la librería, idénticas al "
-                          "export de SQX")
+        self.head.setText(
+            f"{b['feed']} · {b['tf']} · {num(b['rows'])} velas · {b['t'][0]} → "
+            f"{b['t'][-1]} · remuestreadas del M1 de la librería, idénticas al "
+            "export de SQX"
+        )
         box = QWidget()
         inner = QVBoxLayout(box)
         inner.setContentsMargins(0, 0, 0, 0)
@@ -118,7 +140,9 @@ class BarsPage(QWidget):
 class StudyPage(QWidget):
     """One step-4 report of the chosen asset, as the study wrote it, drawn by ResultView."""
 
-    def __init__(self, fetch: Callable[..., dict], route: str, kind: str, part: str = "") -> None:
+    def __init__(
+        self, fetch: Callable[..., dict], route: str, kind: str, part: str = ""
+    ) -> None:
         """Wire the route; nothing is fetched until `load`.
 
         Args:
@@ -146,11 +170,20 @@ class StudyPage(QWidget):
             return
         feed = asset[self.kind]
         if not feed:
-            self.head.setText(f"{asset['symbol']} no tiene feed en {self.kind}/: este estudio "
-                              "no se ha corrido sobre él.")
+            self.head.setText(
+                f"{asset['symbol']} no tiene feed en {self.kind}/: este estudio "
+                "no se ha corrido sobre él."
+            )
             self.view.show_result(None)
             return
-        got = self.fetch(self.route, feed=feed, **({"part": self.part} if self.part else {}))
-        self.head.setText(got.get("error", f"{feed} · leído de AlgoData/{self.kind}/{feed}/, "
-                                           "tal y como lo escribió el estudio"))
+        got = self.fetch(
+            self.route, feed=feed, **({"part": self.part} if self.part else {})
+        )
+        self.head.setText(
+            got.get(
+                "error",
+                f"{feed} · leído de AlgoData/{self.kind}/{feed}/, "
+                "tal y como lo escribió el estudio",
+            )
+        )
         self.view.show_result(got.get("result"))

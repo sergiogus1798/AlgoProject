@@ -1,19 +1,34 @@
 """The rail's drawer: one step's tests, each with its box, state, configuration and run button."""
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import (QCheckBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QPushButton,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import background
 from ui.text.glossary import knob, label
 from ui.desktop.theme import C
 from ui.desktop.workspace.railrow import off_reason
-from ui.desktop.workspace.railwords import ink, readable, run_button, small, value_words, word
+from ui.desktop.workspace.railwords import (
+    ink,
+    readable,
+    run_button,
+    small,
+    value_words,
+    word,
+)
 from ui.desktop.workspace.texts import STEP_NOTES
 
 # The ▶ SQX of a step whose own words the owner fixed (2026-09-28); the rest say «lanzar el paso N».
 LAUNCH_WORDS = {"6": "Activar el builder"}
-DONE = ("done", "sealed")        # a step another one needs counts as run in these states
+DONE = ("done", "sealed")  # a step another one needs counts as run in these states
 
 
 def knob_lines(got: dict) -> str:
@@ -28,10 +43,19 @@ def knob_lines(got: dict) -> str:
     """
     if "error" in got:
         return got["error"]
-    lines = [f"{'⚠ ' if k.get('warn') else ''}{knob(k['key'])} = {value_words(k['value'])}"
-             + (f"   ({k['note']})" if k.get("note") else "")
-             + (f"   — {k['warn']}" if k.get("warn") else f"   — {k['tip']}" if k["tip"] else "")
-             for s in got.get("sections", []) for k in s["knobs"]]
+    lines = [
+        f"{'⚠ ' if k.get('warn') else ''}{knob(k['key'])} = {value_words(k['value'])}"
+        + (f"   ({k['note']})" if k.get("note") else "")
+        + (
+            f"   — {k['warn']}"
+            if k.get("warn")
+            else f"   — {k['tip']}"
+            if k["tip"]
+            else ""
+        )
+        for s in got.get("sections", [])
+        for k in s["knobs"]
+    ]
     return "\n".join(lines) or "Sin configuración: este estudio no tiene config.yaml."
 
 
@@ -47,11 +71,20 @@ def needs_line(step: dict, steps: list[dict]) -> tuple[str, bool]:
         return "", False
     missing = [s for s in need if s["state"] not in DONE]
     ready = [s for s in need if s["state"] in DONE]
-    text = ("Antes hay que lanzar: " + "   ·   ".join(
-        f"paso {s['n']} ({label(s['title'])}) — {word(s['state'])}" for s in missing)
-        if missing else "")
-    text += (("   ·   ya hechos: " if missing else "Requisitos hechos: ")
-             + ", ".join(f"✓ {s['n']} {label(s['title'])}" for s in ready) if ready else "")
+    text = (
+        "Antes hay que lanzar: "
+        + "   ·   ".join(
+            f"paso {s['n']} ({label(s['title'])}) — {word(s['state'])}" for s in missing
+        )
+        if missing
+        else ""
+    )
+    text += (
+        ("   ·   ya hechos: " if missing else "Requisitos hechos: ")
+        + ", ".join(f"✓ {s['n']} {label(s['title'])}" for s in ready)
+        if ready
+        else ""
+    )
     return text, bool(missing)
 
 
@@ -80,7 +113,9 @@ class Drawer(QFrame):
         top.addWidget(self.head, 1)
         top.addWidget(self.tab_button)
         self.see = QPushButton("→ ver en Databanks")
-        self.see.clicked.connect(lambda: self.seen.emit(self.step["tab"], self.step["sub"]))
+        self.see.clicked.connect(
+            lambda: self.seen.emit(self.step["tab"], self.step["sub"])
+        )
         top.addWidget(self.see)
         self.note = QLabel("")
         self.note.setObjectName("dim")
@@ -113,8 +148,14 @@ class Drawer(QFrame):
         lay.addWidget(self.needs)
         self.step, self.project = {}, ""
 
-    def show_step(self, step: dict, ticks: dict[tuple[str, str], bool], sealed: bool,
-                  sqx: dict | None = None, data: dict | None = None) -> None:
+    def show_step(
+        self,
+        step: dict,
+        ticks: dict[tuple[str, str], bool],
+        sealed: bool,
+        sqx: dict | None = None,
+        data: dict | None = None,
+    ) -> None:
         """Lay out one step's tests, and for an SQX step its launch row.
 
         Args:
@@ -129,11 +170,13 @@ class Drawer(QFrame):
         self.step, self.project = step, (data or {}).get("project", "")
         while self.grid.count():
             gone = self.grid.takeAt(0).widget()
-            gone.hide()          # hidden first, or it paints under the new ones until deleted
+            gone.hide()  # hidden first, or it paints under the new ones until deleted
             gone.deleteLater()
         self.knobs.hide()
-        self.head.setText(f"Paso {step['n']} · {label(step['title'])} — "
-                          f"{word(step['state'])[:1].upper() + word(step['state'])[1:]}")
+        self.head.setText(
+            f"Paso {step['n']} · {label(step['title'])} — "
+            f"{word(step['state'])[:1].upper() + word(step['state'])[1:]}"
+        )
         self.head.setStyleSheet(f"color: {ink(step['state'])};")
         self.why.setText(label(step["why"]) if step["why"] else "")
         self.note.setText(STEP_NOTES.get(step["n"], ""))
@@ -143,12 +186,19 @@ class Drawer(QFrame):
         self.needs.setStyleSheet(f"color: {C['weak'] if missing else C['promising']};")
         self.needs.setVisible(bool(text))
         playable = step["kind"] != "sqx"
-        self.batch = [{"n": step["n"], "key": t["key"]} for t in step["tests"]
-                      if playable and t["runnable"] and t["state"] != "running"]
+        self.batch = [
+            {"n": step["n"], "key": t["key"]}
+            for t in step["tests"]
+            if playable and t["runnable"] and t["state"] != "running"
+        ]
         self.all_button.setText(f"▶ Lanzar todos ({len(self.batch)})")
-        self.all_button.setToolTip(label("Corre a la vez todas las pruebas de este paso que se "
-                                         "pueden correr aquí; antes pregunta por las que leen "
-                                         "oos2 o escriben en el ledger"))
+        self.all_button.setToolTip(
+            label(
+                "Corre a la vez todas las pruebas de este paso que se "
+                "pueden correr aquí; antes pregunta por las que leen "
+                "oos2 o escriben en el ledger"
+            )
+        )
         self.all_button.setVisible(len(self.batch) > 1)
         self.tab_button.setVisible(bool(step["tab"]))
         self.see.setVisible(bool(step["tab"]))
@@ -156,8 +206,14 @@ class Drawer(QFrame):
         if step["kind"] == "sqx":
             self.grid.addWidget(self.launch_row(step, sqx), 0, 0, 1, 5)
         for row, test in enumerate(step["tests"], start=1):
-            self.add_test(row, step["n"], test, ticks.get((step["n"], test["key"]), False),
-                          sealed and step["n"] in ("17", "18", "19"), playable)
+            self.add_test(
+                row,
+                step["n"],
+                test,
+                ticks.get((step["n"], test["key"]), False),
+                sealed and step["n"] in ("17", "18", "19"),
+                playable,
+            )
 
     def launch_row(self, step: dict, sqx: dict | None) -> QWidget:
         """An SQX step's ▶ and its tasks, in a row of their own: the button's «?» then sits
@@ -174,14 +230,24 @@ class Drawer(QFrame):
         line.addWidget(launch)
         # Red only for a real failure (CLAUDE.md feedback, 2026-09-29): a step done elsewhere
         # is expected, not broken.
-        line.addWidget(small(f"✖ {label(why)}" if fails else f"· {label(why)}" if why else
-                             f"Tareas, todas juntas en un arranque: {titles}. Su análisis se "
-                             "corre en el paso de Python siguiente.", "dim",
-                             ink("blocked") if fails else ""), 1)
+        line.addWidget(
+            small(
+                f"✖ {label(why)}"
+                if fails
+                else f"· {label(why)}"
+                if why
+                else f"Tareas, todas juntas en un arranque: {titles}. Su análisis se "
+                "corre en el paso de Python siguiente.",
+                "dim",
+                ink("blocked") if fails else "",
+            ),
+            1,
+        )
         return row
 
-    def add_test(self, row: int, n: str, test: dict, on: bool, sealed: bool,
-                 playable: bool) -> None:
+    def add_test(
+        self, row: int, n: str, test: dict, on: bool, sealed: bool, playable: bool
+    ) -> None:
         """One test's row: box, title, state, configuration, its drawer button and ▶.
 
         Args:
@@ -192,25 +258,32 @@ class Drawer(QFrame):
             sealed: Whether its result must not be described.
             playable: False on an SQX step: no ▶, its analysis runs from the panel.
         """
-        box = QCheckBox(label(test["title"]).replace("&", "&&"))   # «&» is Qt's mnemonic
+        box = QCheckBox(label(test["title"]).replace("&", "&&"))  # «&» is Qt's mnemonic
         box.setChecked(on)
         box.setEnabled(test["runnable"])
         box.toggled.connect(lambda v, k=test["key"]: self.ticked.emit(n, k, v))
         state = "sealed" if sealed and test["state"] == "done" else test["state"]
-        why = ("hecho; el resultado se lee cuando 17, 18 y 19 estén los tres"
-               if state == "sealed" else test["why"])
+        why = (
+            "hecho; el resultado se lee cuando 17, 18 y 19 estén los tres"
+            if state == "sealed"
+            else test["why"]
+        )
         self.grid.addWidget(box, row, 0)
         word_label = QLabel(word(state))
         word_label.setObjectName("mono")
         word_label.setStyleSheet(f"color: {ink(state)};")
         word_label.setMinimumWidth(90)
         self.grid.addWidget(word_label, row, 1)
-        cost = f"⚠ {test['spends']}   ·   " if test["spends"] else ""   # first: never cut
+        cost = (
+            f"⚠ {test['spends']}   ·   " if test["spends"] else ""
+        )  # first: never cut
         line = small(f"{cost}{readable(test['config'])}   ·   {label(why)}")
         line.setWordWrap(True)
         self.grid.addWidget(line, row, 2)
         show = QPushButton("configuración")
-        show.clicked.connect(lambda _=False, k=test["key"], t=test["title"]: self.reveal(k, t))
+        show.clicked.connect(
+            lambda _=False, k=test["key"], t=test["title"]: self.reveal(k, t)
+        )
         self.grid.addWidget(show, row, 3)
         self.grid.setColumnStretch(2, 1)
         if not playable:
@@ -219,7 +292,9 @@ class Drawer(QFrame):
         run.setFixedWidth(26)
         run.setEnabled(test["runnable"] and test["state"] != "running")
         run.setToolTip(label(f"Correr solo «{test['title']}»"))
-        run.clicked.connect(lambda _=False, k=test["key"]: self.ran.emit([{"n": n, "key": k}]))
+        run.clicked.connect(
+            lambda _=False, k=test["key"]: self.ran.emit([{"n": n, "key": k}])
+        )
         self.grid.addWidget(run, row, 4)
 
     def reveal(self, key: str, title: str) -> None:
@@ -231,5 +306,11 @@ class Drawer(QFrame):
             return
         self.knobs.setText(f"{head}\nleyendo…")
         self.knobs.show()
-        background.get("config", lambda got: self.knobs.setText(f"{head}\n{knob_lines(got)}"),
-                       key=f"knobs:{id(self)}", owner=self, study=key, project=self.project)
+        background.get(
+            "config",
+            lambda got: self.knobs.setText(f"{head}\n{knob_lines(got)}"),
+            key=f"knobs:{id(self)}",
+            owner=self,
+            study=key,
+            project=self.project,
+        )

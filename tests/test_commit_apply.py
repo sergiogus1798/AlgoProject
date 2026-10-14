@@ -15,7 +15,9 @@ from tools.commit_apply import apply, status
 
 def git(repo: Path, *args: str) -> str:
     """Run git in the temp repo."""
-    return subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, check=True).stdout
+    return subprocess.run(
+        ["git", *args], cwd=repo, capture_output=True, text=True, check=True
+    ).stdout
 
 
 def make_repo(tmp: Path) -> Path:
@@ -45,9 +47,11 @@ def proposal(tmp: Path, groups: list[dict]) -> Path:
 
 def groups() -> list[dict]:
     """Three groups, one file each."""
-    return [{"message": "one", "body": "why one", "paths": ["a.py"]},
-            {"message": "two", "body": "", "paths": ["b.md"]},
-            {"message": "three", "body": "", "paths": ["c.txt"]}]
+    return [
+        {"message": "one", "body": "why one", "paths": ["a.py"]},
+        {"message": "two", "body": "", "paths": ["b.md"]},
+        {"message": "three", "body": "", "paths": ["c.txt"]},
+    ]
 
 
 def old(repo: Path, *paths: str) -> None:
@@ -66,7 +70,9 @@ def test_normal(tmp: Path) -> None:
     """Every group becomes its own commit with only its file, plus the trailer when passed."""
     repo = make_repo(tmp)
     old(repo, "a.py", "b.md", "c.txt")
-    assert apply(proposal(tmp, groups()), repo, trailer="Co-Authored-By: X", **kw()) == 0
+    assert (
+        apply(proposal(tmp, groups()), repo, trailer="Co-Authored-By: X", **kw()) == 0
+    )
     assert git(repo, "log", "--format=%s").split() == ["three", "two", "one", "base"]
     assert git(repo, "show", "--name-only", "--format=", "HEAD~1").strip() == "b.md"
     assert "why one" in git(repo, "log", "--format=%B", "-1", "HEAD~2")
@@ -116,7 +122,12 @@ def test_stale_and_clean(tmp: Path) -> None:
 
 def main() -> None:
     """Run each case in its own temp dir."""
-    for case in (test_normal, test_changed_after, test_only_and_dry_run, test_stale_and_clean):
+    for case in (
+        test_normal,
+        test_changed_after,
+        test_only_and_dry_run,
+        test_stale_and_clean,
+    ):
         with tempfile.TemporaryDirectory() as d:
             case(Path(d))
         print("ok", case.__name__)

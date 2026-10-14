@@ -13,15 +13,15 @@ import yaml
 from ruamel.yaml.comments import CommentedMap
 
 from core.assetdata import BUILD, CLASSES, MARKETS, POLICY, SYMBOLS, classes
-from core.assetwrite.brokers import set_brokers   # noqa: F401  (re-exported)
-from core.assetwrite.failures import add_live_failure   # noqa: F401  (re-exported)
-from core.assetwrite.markets import declare_main, flow, set_expected_sign, set_market   # noqa: F401  (re-exported)
+from core.assetwrite.brokers import set_brokers  # noqa: F401  (re-exported)
+from core.assetwrite.failures import add_live_failure  # noqa: F401  (re-exported)
+from core.assetwrite.markets import declare_main, flow, set_expected_sign, set_market  # noqa: F401  (re-exported)
 from core.assetyaml import read, write
 from core.paths import ASSETS
 
 # The four shared files, addressable by a short name so the window never sends a path.
 SHARED = {"policy": POLICY, "classes": CLASSES, "markets": MARKETS, "build": BUILD}
-RETIRED = SYMBOLS / "_retired"   # a withdrawn asset, out of symbols() but not lost
+RETIRED = SYMBOLS / "_retired"  # a withdrawn asset, out of symbols() but not lost
 
 
 def path_of(name: str) -> Path:
@@ -91,7 +91,9 @@ def set_value(name: str, keys: list, value: object) -> ValueWrite:
     return {"file": str(path), "path": keys, "value": value}
 
 
-def set_cost(symbol: str, field: str, value: object, why: str, after: str | None = None) -> CostWrite:
+def set_cost(
+    symbol: str, field: str, value: object, why: str, after: str | None = None
+) -> CostWrite:
     """Change what an asset really costs, and say why in the same write.
 
     Args:
@@ -111,12 +113,21 @@ def set_cost(symbol: str, field: str, value: object, why: str, after: str | None
     if field == "commission" and isinstance(value, (int, float)):
         # `commission.use` is one {method, value} per segment (owner, 2026-09-29): a bare figure
         # from the window or the onboard applies to every segment in the class's own method.
-        method = "SizeBased" if classes()[doc["class"]]["commission"]["unit"] == "usd_per_lot" \
+        method = (
+            "SizeBased"
+            if classes()[doc["class"]]["commission"]["unit"] == "usd_per_lot"
             else "PercentageBased"
-        value = {seg: {"method": method, "value": float(value)} for seg in ("build", "oos1", "oos2")}
+        )
+        value = {
+            seg: {"method": method, "value": float(value)}
+            for seg in ("build", "oos1", "oos2")
+        }
     if field not in doc["costs"]:
-        doc["costs"].insert(list(doc["costs"]).index(after) + 1, field,
-                            CommentedMap(use=None, sqx_now=None, why=""))
+        doc["costs"].insert(
+            list(doc["costs"]).index(after) + 1,
+            field,
+            CommentedMap(use=None, sqx_now=None, why=""),
+        )
     doc["costs"][field].update({"use": value, "why": why})
     write(path, doc)
     reindex()
@@ -135,8 +146,14 @@ def rename_cost(symbol: str, old: str, new: str) -> None:
         reindex()
 
 
-def create(symbol: str, cls: str, broker: str, sqx_symbol: str, session: str | None,
-           instrument: Mapping[str, Any]) -> dict[str, str]:
+def create(
+    symbol: str,
+    cls: str,
+    broker: str,
+    sqx_symbol: str,
+    session: str | None,
+    instrument: Mapping[str, Any],
+) -> dict[str, str]:
     """Add an asset to the library, with every decision still open.
 
     Args:
@@ -152,26 +169,49 @@ def create(symbol: str, cls: str, broker: str, sqx_symbol: str, session: str | N
         blocks authoring: invented values are worse than none, because they look decided.
     """
     schema = classes()[cls]
-    fields = (schema["spread"]["fields"] + ["spread_oos2", schema["commission"]["field"]]
-              + schema["slippage"]["fields"] + ["slippage_oos2"] + schema["swap"]["fields"])
-    body = {"symbol": symbol, "class": cls, "broker": broker, "sqx_symbol": sqx_symbol,
-            "feeds": [sqx_symbol], "verified": date.today(), "session": session,
-            "instrument": instrument,
-            "costs": {f: {"use": None, "sqx_now": None,
-                          "why": "SIN DECIDIR — dado de alta desde la app el "
-                                 f"{date.today()}."} for f in fields},
-            "notes": [f"{date.today()}: alta desde la ventana. Ningún coste está pactado y "
-                      "`instrument` es lo que se tecleó: confírmalo con "
-                      "`python3 -m sqx.inspect.instruments`."],
-            "mc_retest": {k: {"min": None, "max": None, "sqx_now": None}
-                          for k in ("spread", "slippage")}}
+    fields = (
+        schema["spread"]["fields"]
+        + ["spread_oos2", schema["commission"]["field"]]
+        + schema["slippage"]["fields"]
+        + ["slippage_oos2"]
+        + schema["swap"]["fields"]
+    )
+    body = {
+        "symbol": symbol,
+        "class": cls,
+        "broker": broker,
+        "sqx_symbol": sqx_symbol,
+        "feeds": [sqx_symbol],
+        "verified": date.today(),
+        "session": session,
+        "instrument": instrument,
+        "costs": {
+            f: {
+                "use": None,
+                "sqx_now": None,
+                "why": f"SIN DECIDIR — dado de alta desde la app el {date.today()}.",
+            }
+            for f in fields
+        },
+        "notes": [
+            f"{date.today()}: alta desde la ventana. Ningún coste está pactado y "
+            "`instrument` es lo que se tecleó: confírmalo con "
+            "`python3 -m sqx.inspect.instruments`."
+        ],
+        "mc_retest": {
+            k: {"min": None, "max": None, "sqx_now": None}
+            for k in ("spread", "slippage")
+        },
+    }
     path = SYMBOLS / f"{symbol}.yaml"
-    path.write_text(f"# {symbol} — lo propio de este activo, y nada más.\n"
-                    f"#   · sus costes, unidades y ajustes de SQX → `../_classes.yaml`, "
-                    f"clase `{cls}`\n"
-                    "#   · los segmentos temporales y los swaps  → `../_policy.yaml`\n"
-                    "#   · los mercados donde se retestea        → `../_markets.yaml`\n",
-                    encoding="utf-8")
+    path.write_text(
+        f"# {symbol} — lo propio de este activo, y nada más.\n"
+        f"#   · sus costes, unidades y ajustes de SQX → `../_classes.yaml`, "
+        f"clase `{cls}`\n"
+        "#   · los segmentos temporales y los swaps  → `../_policy.yaml`\n"
+        "#   · los mercados donde se retestea        → `../_markets.yaml`\n",
+        encoding="utf-8",
+    )
     doc = read(path) or {}
     doc.update(body)
     write(path, doc)
@@ -191,9 +231,10 @@ def add_segments(symbol: str) -> None:
     """
     path = ASSETS / POLICY
     doc = read(path)
-    doc["segments"][symbol] = {"data": None,
-                               **{s: {"from": None, "to": None}
-                                  for s in doc["segments_default"]}}
+    doc["segments"][symbol] = {
+        "data": None,
+        **{s: {"from": None, "to": None} for s in doc["segments_default"]},
+    }
     write(path, doc)
 
 
@@ -256,6 +297,6 @@ def reindex() -> int:
     Returns:
         How many assets it listed.
     """
-    from core.assets import write_index   # here: it pulls in the whole preflight
+    from core.assets import write_index  # here: it pulls in the whole preflight
 
     return write_index()

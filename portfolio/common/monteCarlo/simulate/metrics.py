@@ -77,13 +77,17 @@ def paths(pnl: np.ndarray, equity0: float) -> dict[str, np.ndarray]:
     net = pnl.sum(axis=1, dtype=np.float64)
     wins = np.where(pnl > 0, pnl, 0.0).sum(axis=1, dtype=np.float64)
     loss = np.where(pnl < 0, -pnl, 0.0).sum(axis=1, dtype=np.float64)
-    return {"net": net, "return_pct": net / equity0,
-            "dd": dd, "dd_pct": (drop / peak).max(axis=1),
-            "ret_dd": np.where(dd > 0, net / np.where(dd > 0, dd, 1.0), np.nan),
-            "sharpe": pnl.mean(axis=1, dtype=np.float64)
-                      / pnl.std(axis=1, ddof=1, dtype=np.float64),
-            "pf": np.where(loss > 0, wins / np.where(loss > 0, loss, 1.0), np.nan),
-            "losing_run": _losing_run(pnl)}
+    return {
+        "net": net,
+        "return_pct": net / equity0,
+        "dd": dd,
+        "dd_pct": (drop / peak).max(axis=1),
+        "ret_dd": np.where(dd > 0, net / np.where(dd > 0, dd, 1.0), np.nan),
+        "sharpe": pnl.mean(axis=1, dtype=np.float64)
+        / pnl.std(axis=1, ddof=1, dtype=np.float64),
+        "pf": np.where(loss > 0, wins / np.where(loss > 0, loss, 1.0), np.nan),
+        "losing_run": _losing_run(pnl),
+    }
 
 
 def observed(pnl: np.ndarray, equity0: float) -> dict[str, float]:
@@ -114,11 +118,17 @@ def summarise(values: np.ndarray, seen: float, qs: list[int]) -> Summary:
     """
     clean = values[np.isfinite(values)]
     std = float(clean.std(ddof=1))
-    kurt = float(((clean - clean.mean()) ** 4).mean() / std ** 4 - 3.0) if std else 0.0
-    return {"p": {q: float(np.percentile(clean, q)) for q in qs},
-            "mean": float(clean.mean()), "median": float(np.median(clean)), "std": std,
-            "kurtosis": kurt, "observed": float(seen), "rank": float(np.mean(clean <= seen)),
-            "n": int(clean.size)}
+    kurt = float(((clean - clean.mean()) ** 4).mean() / std**4 - 3.0) if std else 0.0
+    return {
+        "p": {q: float(np.percentile(clean, q)) for q in qs},
+        "mean": float(clean.mean()),
+        "median": float(np.median(clean)),
+        "std": std,
+        "kurtosis": kurt,
+        "observed": float(seen),
+        "rank": float(np.mean(clean <= seen)),
+        "n": int(clean.size),
+    }
 
 
 def shape(values: np.ndarray, seen: float, q: int, bins: int = 60) -> Shape:
@@ -146,13 +156,20 @@ def shape(values: np.ndarray, seen: float, q: int, bins: int = 60) -> Shape:
         middle = (lo + hi) / 2
         lo, hi = middle - floor / 2, middle + floor / 2
     counts, edges = np.histogram(inside, bins=bins, range=(lo, hi))
-    return {"counts": counts.tolist(), "lo": float(edges[0]), "hi": float(edges[-1]),
-            "left_out": len(clean) - len(inside), "observed": float(seen),
-            "median": float(np.median(clean)),
-            "p_report": float(np.percentile(clean, q))}
+    return {
+        "counts": counts.tolist(),
+        "lo": float(edges[0]),
+        "hi": float(edges[-1]),
+        "left_out": len(clean) - len(inside),
+        "observed": float(seen),
+        "median": float(np.median(clean)),
+        "p_report": float(np.percentile(clean, q)),
+    }
 
 
-def table(stats: dict[str, np.ndarray], seen: dict[str, float], qs: list[int]) -> dict[str, Summary]:
+def table(
+    stats: dict[str, np.ndarray], seen: dict[str, float], qs: list[int]
+) -> dict[str, Summary]:
     """Every statistic of one sub-run, against what the backtest actually did.
 
     Args:
@@ -166,7 +183,9 @@ def table(stats: dict[str, np.ndarray], seen: dict[str, float], qs: list[int]) -
     return {k: summarise(v, seen[k], qs) for k, v in stats.items()}
 
 
-def shapes(stats: dict[str, np.ndarray], seen: dict[str, float], q: int) -> dict[str, Shape]:
+def shapes(
+    stats: dict[str, np.ndarray], seen: dict[str, float], q: int
+) -> dict[str, Shape]:
     """A drawable histogram of every statistic of one sub-run.
 
     Args:

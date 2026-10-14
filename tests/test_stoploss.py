@@ -13,8 +13,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from sqx.variants.build import rewrite, stoploss
 
 HERE = Path(__file__).parent / "fixtures"
-NOSTOP = HERE / "nostop_portfolio.xml"          # XAUUSD Strategy 19.8.78, built without a stop
-WITHSTOP = HERE / "strategy.sqx"                # built by SQX with SL = X * ATR(20)
+NOSTOP = HERE / "nostop_portfolio.xml"  # XAUUSD Strategy 19.8.78, built without a stop
+WITHSTOP = HERE / "strategy.sqx"  # built by SQX with SL = X * ATR(20)
 GOLDEN = HERE / "stoploss.golden.json"
 X = 2.5
 PT_PARAM = re.compile(r'key="#ProfitTarget\.ProfitTarget#".*?</Param>', re.S)
@@ -23,17 +23,23 @@ PT_PARAM = re.compile(r'key="#ProfitTarget\.ProfitTarget#".*?</Param>', re.S)
 def formula(portfolio: str) -> str:
     """The stop's <Formula> of the first entry, whitespace folded, for comparing two writers."""
     at = portfolio.index('key="#StopLoss.StopLoss#"')
-    inner = re.compile(r"<Formula[^>]*/>|<Formula.*?</Formula>", re.S).search(portfolio, at).group(0)
+    inner = (
+        re.compile(r"<Formula[^>]*/>|<Formula.*?</Formula>", re.S)
+        .search(portfolio, at)
+        .group(0)
+    )
     return re.sub(r">\s+<", "><", inner)
 
 
 def parse() -> dict:
     """What the graft produces from the fixture."""
     text = stoploss.graft(NOSTOP.read_text(encoding="utf-8"), X)
-    return {"sha256": hashlib.sha256(text.encode()).hexdigest()[:16],
-            "declared": rewrite.declared(text)[stoploss.VARIABLE],
-            "value": rewrite.values(text)[stoploss.VARIABLE],
-            "formula": formula(text)}
+    return {
+        "sha256": hashlib.sha256(text.encode()).hexdigest()[:16],
+        "declared": rewrite.declared(text)[stoploss.VARIABLE],
+        "value": rewrite.values(text)[stoploss.VARIABLE],
+        "formula": formula(text),
+    }
 
 
 def invariants() -> list[str]:
@@ -44,17 +50,32 @@ def invariants() -> list[str]:
     with zipfile.ZipFile(WITHSTOP) as z:
         built = z.read(rewrite.PORTFOLIO).decode("utf-8")
     if formula(after) != formula(built):
-        bad.append("el stop injertado no es el bloque que SQX escribe para SL = X*ATR(20)")
+        bad.append(
+            "el stop injertado no es el bloque que SQX escribe para SL = X*ATR(20)"
+        )
     if PT_PARAM.findall(after) != PT_PARAM.findall(before):
         bad.append("el injerto ha tocado el ProfitTarget")
-    if after.count("SQ.Formulas.SLPT.None") != before.count("SQ.Formulas.SLPT.None") - 1:
+    if (
+        after.count("SQ.Formulas.SLPT.None")
+        != before.count("SQ.Formulas.SLPT.None") - 1
+    ):
         bad.append("no se ha cambiado exactamente un SLPT.None (hay una entrada)")
     # Everything the graft does not own is byte-identical: take its two insertions out and
     # the original comes back.
-    undone = re.sub(r'<variable makeExternal="true">\s*<id>StopLossCoef1</id>.*?</variable>\s*',
-                    "", after, count=1, flags=re.S)
-    undone = re.sub(r'<Formula key="SQ\.Formulas\.SLPT\.ATRBasedValue">.*?</Formula>',
-                    '<Formula key="SQ.Formulas.SLPT.None" />', undone, count=1, flags=re.S)
+    undone = re.sub(
+        r'<variable makeExternal="true">\s*<id>StopLossCoef1</id>.*?</variable>\s*',
+        "",
+        after,
+        count=1,
+        flags=re.S,
+    )
+    undone = re.sub(
+        r'<Formula key="SQ\.Formulas\.SLPT\.ATRBasedValue">.*?</Formula>',
+        '<Formula key="SQ.Formulas.SLPT.None" />',
+        undone,
+        count=1,
+        flags=re.S,
+    )
     if undone != before:
         bad.append("el injerto cambia algo más que el stop y su variable")
     moved = rewrite.set_values(after, {stoploss.VARIABLE: 3.1})
@@ -66,8 +87,11 @@ def invariants() -> list[str]:
     except ValueError:
         pass
     # SQX does not always write `key=` first (2026-09-27: `generated=… gid=… key=…`).
-    shuffled = before.replace('<Param key="#StopLoss.StopLoss#" name="Stop Loss"',
-                              '<Param name="Stop Loss" key="#StopLoss.StopLoss#"', 1)
+    shuffled = before.replace(
+        '<Param key="#StopLoss.StopLoss#" name="Stop Loss"',
+        '<Param name="Stop Loss" key="#StopLoss.StopLoss#"',
+        1,
+    )
     if formula(stoploss.graft(shuffled, X)) != formula(after):
         bad.append("el injerto depende del orden de los atributos del <Param>")
     return bad

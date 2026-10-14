@@ -28,7 +28,9 @@ class CostCheck(TypedDict):
     diverges: bool
 
 
-DIVERGENCE = 0.25   # modelled against recovered cost; beyond this the cost file is suspect
+DIVERGENCE = (
+    0.25  # modelled against recovered cost; beyond this the cost file is suspect
+)
 
 
 def load(symbol: str) -> Asset:
@@ -48,12 +50,14 @@ def load(symbol: str) -> Asset:
     # defaultSpread per instrument, so both `sqx_now` hold that same number and the first
     # is it. When they diverge, this has to pick the segment the export came from.
     spread = assets.schema(data)["spread"]["fields"][0]
-    return {"symbol": symbol,
-            "point_value": float(data["instrument"]["point_value"]),
-            "tick_size": float(data["instrument"]["tick_size"]),
-            "spread": float(data["costs"][spread]["sqx_now"]),
-            "commission": float(data["costs"]["commission"]["sqx_now"]["value"]),
-            "pending": assets.pending(data)}
+    return {
+        "symbol": symbol,
+        "point_value": float(data["instrument"]["point_value"]),
+        "tick_size": float(data["instrument"]["tick_size"]),
+        "spread": float(data["costs"][spread]["sqx_now"]),
+        "commission": float(data["costs"]["commission"]["sqx_now"]["value"]),
+        "pending": assets.pending(data),
+    }
 
 
 def recovered(frame: pd.DataFrame, asset: Asset) -> np.ndarray:
@@ -82,8 +86,12 @@ def spread_cost(frame: pd.DataFrame, asset: Asset) -> np.ndarray:
         USD per trade. Spread is inside the fill prices SQX used, so this is the size of the
         extra cost a wider spread would add, not a cost to be subtracted twice.
     """
-    return (asset["spread"] * asset["tick_size"] * asset["point_value"]
-            * frame["Size"].to_numpy())
+    return (
+        asset["spread"]
+        * asset["tick_size"]
+        * asset["point_value"]
+        * frame["Size"].to_numpy()
+    )
 
 
 def crosscheck(frame: pd.DataFrame, asset: Asset) -> CostCheck:
@@ -102,5 +110,9 @@ def crosscheck(frame: pd.DataFrame, asset: Asset) -> CostCheck:
     modelled = 2 * asset["commission"] * frame["Size"].to_numpy()
     real = recovered(frame, asset)
     ratio = float(np.median(modelled) / np.median(real))
-    return {"modelled": float(np.median(modelled)), "recovered": float(np.median(real)),
-            "ratio": ratio, "diverges": bool(abs(ratio - 1) > DIVERGENCE)}
+    return {
+        "modelled": float(np.median(modelled)),
+        "recovered": float(np.median(real)),
+        "ratio": ratio,
+        "diverges": bool(abs(ratio - 1) > DIVERGENCE),
+    }

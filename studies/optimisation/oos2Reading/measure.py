@@ -20,7 +20,9 @@ def weekly(mother: pd.Series, monkey: pd.Series) -> np.ndarray:
         entries and the same hours is paid, drift included.
     """
     excess = mother.reindex(monkey.index).fillna(0.0) - monkey
-    return excess.groupby(pd.DatetimeIndex(excess.index).to_period("W")).sum().to_numpy()
+    return (
+        excess.groupby(pd.DatetimeIndex(excess.index).to_period("W")).sum().to_numpy()
+    )
 
 
 class Reading(TypedDict):
@@ -54,5 +56,12 @@ def read(excess: np.ndarray, cfg: dict, seed: np.random.SeedSequence) -> Reading
     spread = null.std(ddof=1)
     z = total / spread if spread > 0 else 0.0
     p = flip.tails(total, null)["p_mas"]
-    return {"suma": total, "z": float(z), "p": p, "p_error_mc": float(np.sqrt(p * (1 - p) / cfg["draws"])),
-            "semanas": len(excess), "bajo_alfa": int(p <= cfg["alpha"]), "corta": int(z <= 0)}
+    return {
+        "suma": total,
+        "z": float(z),
+        "p": p,
+        "p_error_mc": float(np.sqrt(p * (1 - p) / cfg["draws"])),
+        "semanas": len(excess),
+        "bajo_alfa": int(p <= cfg["alpha"]),
+        "corta": int(z <= 0),
+    }

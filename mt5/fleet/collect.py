@@ -14,7 +14,7 @@ from core.paths import DATA
 from mt5.fleet import remote, rows
 
 LOG = DATA / "logs" / "fleet-collect.log"
-PROBE_EVERY_S = 290        # cron runs every minute; the VPS health is asked about every 5
+PROBE_EVERY_S = 290  # cron runs every minute; the VPS health is asked about every 5
 
 # Arrow's thread pools abort the interpreter ("terminate called") at exit now and then; a handful of rows needs none.
 pa.set_cpu_count(1)
@@ -44,7 +44,11 @@ def append_history(beat: dict) -> bool:
         return False
     pd.DataFrame(kept + [rows.history_row(beat)]).to_parquet(day, index=False)
     excursions = history_dir(beat["login"]) / "excursions.json"
-    seen = json.loads(excursions.read_text(encoding="utf-8")) if excursions.exists() else {}
+    seen = (
+        json.loads(excursions.read_text(encoding="utf-8"))
+        if excursions.exists()
+        else {}
+    )
     write_json(excursions, rows.update_excursions(seen, beat))
     return True
 

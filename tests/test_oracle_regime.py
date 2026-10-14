@@ -9,7 +9,9 @@ import numpy as np
 import pandas as pd
 from arch import arch_model
 
-ROOT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent
+ROOT = (
+    Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent
+)
 sys.path.insert(0, str(ROOT))
 
 from engines.regimes import regime as rg  # noqa: E402
@@ -41,7 +43,9 @@ def candles(n: int, seed: int) -> pd.DataFrame:
 def wilder(d: pd.DataFrame, n: int) -> pd.Series:
     """Reference Wilder ATR: TR = max(H-L, |H-Cprev|, |L-Cprev|), SMA seed, then (A*(n-1)+TR)/n."""
     pc = d["Close"].shift(1)
-    tr = pd.concat([d["High"] - d["Low"], (d["High"] - pc).abs(), (d["Low"] - pc).abs()], axis=1).max(axis=1)
+    tr = pd.concat(
+        [d["High"] - d["Low"], (d["High"] - pc).abs(), (d["Low"] - pc).abs()], axis=1
+    ).max(axis=1)
     a = np.full(len(d), np.nan)
     a[n] = tr.iloc[1 : n + 1].mean()
     for t in range(n + 1, len(d)):
@@ -56,17 +60,32 @@ def t_daily() -> None:
     c = 100 + np.cumsum(rng.normal(0, 1, 72))
     o = np.r_[100.0, c[:-1]]
     b = pd.DataFrame(
-        {"Open": o, "High": np.maximum(o, c) + 0.5, "Low": np.minimum(o, c) - 0.5, "Close": c}, index=idx
+        {
+            "Open": o,
+            "High": np.maximum(o, c) + 0.5,
+            "Low": np.minimum(o, c) - 0.5,
+            "Close": c,
+        },
+        index=idx,
     )
     d = rg.daily(b)
     ok("daily.rows", len(d) == 3, f"{len(d)}")
     for k in range(3):
         s = slice(24 * k, 24 * k + 24)
         row = d.iloc[k]
-        exp = (o[s][0], (np.maximum(o, c) + 0.5)[s].max(), (np.minimum(o, c) - 0.5)[s].min(), c[s][-1])
+        exp = (
+            o[s][0],
+            (np.maximum(o, c) + 0.5)[s].max(),
+            (np.minimum(o, c) - 0.5)[s].min(),
+            c[s][-1],
+        )
         got = (row["Open"], row["High"], row["Low"], row["Close"])
         ok(f"daily.day{k}", np.allclose(got, exp), f"{got} vs {exp}")
-    ok("daily.index", list(d.index) == list(pd.date_range("2024-01-01", periods=3)), f"{list(d.index)}")
+    ok(
+        "daily.index",
+        list(d.index) == list(pd.date_range("2024-01-01", periods=3)),
+        f"{list(d.index)}",
+    )
 
 
 def t_atr() -> None:
@@ -75,13 +94,19 @@ def t_atr() -> None:
     out = rg.atr(d, CFG)
     v = out["vol"]
     ref = wilder(d, 5)
-    ok("atr.is_series_same_index", isinstance(v, pd.Series) and v.index.equals(d.index), "index")
+    ok(
+        "atr.is_series_same_index",
+        isinstance(v, pd.Series) and v.index.equals(d.index),
+        "index",
+    )
     ok(
         "atr.lagged_wilder",
         np.allclose(v.iloc[60:].values, ref.shift(1).iloc[60:].values, rtol=1e-6),
         f"max rel gap {np.nanmax(np.abs(v.values[60:] / ref.shift(1).values[60:] - 1))}",
     )
-    print(f"INFO atr.cfg used: {CFG}; model='{out['model']}'; leading NaNs={int(v.isna().sum())}")
+    print(
+        f"INFO atr.cfg used: {CFG}; model='{out['model']}'; leading NaNs={int(v.isna().sum())}"
+    )
     d2 = d.copy()
     k = 90
     d2.iloc[k, d2.columns.get_loc("High")] += 50
@@ -92,7 +117,11 @@ def t_atr() -> None:
         np.allclose(v.iloc[: k + 1], v2.iloc[: k + 1], equal_nan=True),
         "value at day t moved with day t",
     )
-    ok("atr.next_day_reacts", v2.iloc[k + 1] > v.iloc[k + 1] + 1, f"{v.iloc[k + 1]} -> {v2.iloc[k + 1]}")
+    ok(
+        "atr.next_day_reacts",
+        v2.iloc[k + 1] > v.iloc[k + 1] + 1,
+        f"{v.iloc[k + 1]} -> {v2.iloc[k + 1]}",
+    )
     ok("atr.positive", (v.dropna() > 0).all(), "non-positive vol")
 
 
@@ -110,7 +139,13 @@ def sim_garch(n: int) -> tuple[pd.DataFrame, pd.Series, np.ndarray]:
     c = 100 * np.exp(np.cumsum(r))
     o = np.r_[100.0, c[:-1]]
     d = pd.DataFrame(
-        {"Open": o, "High": np.maximum(o, c) * 1.001, "Low": np.minimum(o, c) * 0.999, "Close": c}, index=idx
+        {
+            "Open": o,
+            "High": np.maximum(o, c) * 1.001,
+            "Low": np.minimum(o, c) * 0.999,
+            "Close": c,
+        },
+        index=idx,
     )
     return d, pd.Series(np.sqrt(s2), idx), r
 
@@ -120,7 +155,9 @@ def t_garch() -> None:
     d, sig, r = sim_garch(3000)
     out = rg.garch(d, CFG)
     v = out["vol"]
-    ref = arch_model(100 * np.diff(np.log(d["Close"].values)), p=1, q=1, dist="normal").fit(disp="off")
+    ref = arch_model(
+        100 * np.diff(np.log(d["Close"].values)), p=1, q=1, dist="normal"
+    ).fit(disp="off")
     cv = pd.Series(ref.conditional_volatility, d.index[1:])
     c1, c2 = v.corr(cv), v.corr(sig)
     print(
@@ -134,7 +171,11 @@ def t_garch() -> None:
         "next_day_sigma": v.corr(sig.shift(-1)),
         "prev_day_sigma": v.corr(sig.shift(1)),
     }
-    ok("garch.aligned_to_sigma_D", lag["same_day"] >= max(lag.values()) - 1e-12, f"{lag}")
+    ok(
+        "garch.aligned_to_sigma_D",
+        lag["same_day"] >= max(lag.values()) - 1e-12,
+        f"{lag}",
+    )
     d2 = d.copy()
     k = 2000
     d2.iloc[k:, :] = d2.iloc[k:, :].values * 1.15
@@ -145,7 +186,11 @@ def t_garch() -> None:
         f"vol[k]={rel.iloc[k]:.4f} vol[k+1]={rel.iloc[k + 1]:.4f}; max before k={rel.iloc[:k].max():.4f} "
         "(parameters are refitted on the whole sample: in-sample by design)"
     )
-    ok("garch.shock_hits_next_day", rel.iloc[k + 1] > 5 * rel.iloc[k], f"{rel.iloc[k]} vs {rel.iloc[k + 1]}")
+    ok(
+        "garch.shock_hits_next_day",
+        rel.iloc[k + 1] > 5 * rel.iloc[k],
+        f"{rel.iloc[k]} vs {rel.iloc[k + 1]}",
+    )
 
 
 def t_tag() -> None:
@@ -158,7 +203,11 @@ def t_tag() -> None:
     out = rg.tag(opens, vol)
     q1, q2 = np.quantile(vol.dropna(), [1 / 3, 2 / 3])
     print(f"INFO tag.edges lib={out['edges']} np.quantile={[q1, q2]}")
-    ok("tag.edges", np.allclose(out["edges"], [q1, q2], rtol=1e-6), f"{out['edges']} vs {[q1, q2]}")
+    ok(
+        "tag.edges",
+        np.allclose(out["edges"], [q1, q2], rtol=1e-6),
+        f"{out['edges']} vs {[q1, q2]}",
+    )
     pos = out["positions"]
     exp = {
         "low": np.where(vol.values < q1)[0],
@@ -166,7 +215,11 @@ def t_tag() -> None:
         "high": np.where(vol.values > q2)[0],
     }
     for kx in rg.BUCKETS:
-        ok(f"tag.{kx}", set(pos[kx].tolist()) == set(exp[kx].tolist()), f"{len(pos[kx])} vs {len(exp[kx])}")
+        ok(
+            f"tag.{kx}",
+            set(pos[kx].tolist()) == set(exp[kx].tolist()),
+            f"{len(pos[kx])} vs {len(exp[kx])}",
+        )
     sizes = [len(pos[kx]) for kx in rg.BUCKETS]
     ok("tag.balanced", max(sizes) - min(sizes) <= 2, f"{sizes}")
     ok(
@@ -174,10 +227,18 @@ def t_tag() -> None:
         all(i not in set(np.concatenate(list(pos.values()))) for i in (0, 1, 2)),
         "NaN day tagged",
     )
-    ok("tag.coverage", np.isclose(out["coverage"], (n - 3) / n), f"{out['coverage']} vs {(n - 3) / n}")
+    ok(
+        "tag.coverage",
+        np.isclose(out["coverage"], (n - 3) / n),
+        f"{out['coverage']} vs {(n - 3) / n}",
+    )
     try:
         rg.tag(np.array(["2030-01-01T10:00"], dtype="datetime64[ns]"), vol)
-        ok("tag.missing_day_raises", False, "no exception for a day absent from the series")
+        ok(
+            "tag.missing_day_raises",
+            False,
+            "no exception for a day absent from the series",
+        )
     except ValueError as e:
         ok("tag.missing_day_raises", True, repr(e))
 

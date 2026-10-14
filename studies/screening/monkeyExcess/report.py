@@ -16,7 +16,9 @@ from engines.inference.fdr import discoveries
 
 MODULE = "studies.screening.monkeyExcess.report"
 ALPHA = 0.05
-PREFILTERED = 0.95      # share profitable above which the sample was selected on this sample
+PREFILTERED = (
+    0.95  # share profitable above which the sample was selected on this sample
+)
 
 
 def newest(project: str, databank: str) -> tuple:
@@ -49,8 +51,10 @@ def rows(panel: pd.DataFrame, rung: str, alpha: float, draws: int) -> list[dict]
         questions and routinely disagree by a lot.
     """
     out = []
-    for name in [c[len("real_"):] for c in panel.columns if c.startswith("real_")]:
-        tested = panel[panel[f"p_{rung}_{name}"].notna()]    # no statistic, no p: not a test
+    for name in [c[len("real_") :] for c in panel.columns if c.startswith("real_")]:
+        tested = panel[
+            panel[f"p_{rung}_{name}"].notna()
+        ]  # no statistic, no p: not a test
         p = pd.Series(tested[f"p_{rung}_{name}"]).to_numpy()
         got = {**measure.excess(p, alpha), **measure.resolution(p, alpha, draws)}
         tests = [{"metric": s, "p": v} for s, v in zip(tested["strategy"], p)]
@@ -74,15 +78,18 @@ def contamination(panel: pd.DataFrame) -> str:
     share = float((panel["real_net"] > 0).mean())
     if share < PREFILTERED:
         return ""
-    return (f"MUESTRA PRESELECCIONADA: el {100 * share:.1f}% de estas estrategias gana dinero "
-            f"en la muestra que se esta juzgando. Una poblacion asi fue filtrada POR esta "
-            f"muestra, de modo que el exceso de abajo mide el filtro y no el generador. "
-            f"Para leerlo como veredicto del generador hace falta una databank sin "
-            f"condiciones de aceptacion sobre esta muestra.")
+    return (
+        f"MUESTRA PRESELECCIONADA: el {100 * share:.1f}% de estas estrategias gana dinero "
+        f"en la muestra que se esta juzgando. Una poblacion asi fue filtrada POR esta "
+        f"muestra, de modo que el exceso de abajo mide el filtro y no el generador. "
+        f"Para leerlo como veredicto del generador hace falta una databank sin "
+        f"condiciones de aceptacion sobre esta muestra."
+    )
 
 
-def result(panel: pd.DataFrame, made: dict, rung: str, alpha: float,
-           started: float) -> dict[str, Any]:
+def result(
+    panel: pd.DataFrame, made: dict, rung: str, alpha: float, started: float
+) -> dict[str, Any]:
     """The databank's excess over chance as one result, with every reason to read it warily.
 
     Args:
@@ -99,48 +106,114 @@ def result(panel: pd.DataFrame, made: dict, rung: str, alpha: float,
     draws = made["source"]["draws"]
     found = rows(panel, rung, alpha, draws)
     first = found[0]
-    warn = [{"code": "preseleccionada", "state": "fail", "text": contamination(panel)}] \
-        if contamination(panel) else []
+    warn = (
+        [{"code": "preseleccionada", "state": "fail", "text": contamination(panel)}]
+        if contamination(panel)
+        else []
+    )
     if not first["reachable"]:
-        warn.append({"code": "resolucion", "state": "watch",
-                     "text": f"Con {draws:,} monos el p más pequeño posible es "
-                             f"{first['floor']:.1e}, y Benjamini-Hochberg pide {first['bar']:.1e} "
-                             f"para la mejor de {first['n']:,}. Para que fuese nombrable harían "
-                             f"falta {first['draws_needed']:,} monos."})
+        warn.append(
+            {
+                "code": "resolucion",
+                "state": "watch",
+                "text": f"Con {draws:,} monos el p más pequeño posible es "
+                f"{first['floor']:.1e}, y Benjamini-Hochberg pide {first['bar']:.1e} "
+                f"para la mejor de {first['n']:,}. Para que fuese nombrable harían "
+                f"falta {first['draws_needed']:,} monos.",
+            }
+        )
     for r in found:
         if r["named"] == 0 and r["observed"] > r["expected_all_null"]:
-            warn.append({"code": f"sin_nombre_{r['statistic']}", "state": "watch",
-                         "text": f"{r['statistic']}: {r['observed']} pasan y ninguna es "
-                                 f"nombrable. Hay señal ({r['excess']:.0f} de exceso) pero "
-                                 f"ninguna destaca entre {r['n']:,}."})
+            warn.append(
+                {
+                    "code": f"sin_nombre_{r['statistic']}",
+                    "state": "watch",
+                    "text": f"{r['statistic']}: {r['observed']} pasan y ninguna es "
+                    f"nombrable. Hay señal ({r['excess']:.0f} de exceso) pero "
+                    f"ninguna destaca entre {r['n']:,}.",
+                }
+            )
         if r["saturated"]:
-            warn.append({"code": f"topados_{r['statistic']}", "state": "watch",
-                         "text": f"{r['statistic']}: {r['saturated']} p topados en "
-                                 f"{r['floor']:.1e}: no están medidos, tocan el suelo."})
-    table = pd.DataFrame([[r["statistic"], r["observed"], r["expected_all_null"], r["excess"],
-                           r["fdr"], r["named"], r["share_null"]] for r in found],
-                         columns=pd.Index(["estadístico", "pasan", "si ninguna tuviera edge", "exceso",
-                                           "de las pasadas, suerte", "nombrables",
-                                           "sin edge (Storey)"]))
+            warn.append(
+                {
+                    "code": f"topados_{r['statistic']}",
+                    "state": "watch",
+                    "text": f"{r['statistic']}: {r['saturated']} p topados en "
+                    f"{r['floor']:.1e}: no están medidos, tocan el suelo.",
+                }
+            )
+    table = pd.DataFrame(
+        [
+            [
+                r["statistic"],
+                r["observed"],
+                r["expected_all_null"],
+                r["excess"],
+                r["fdr"],
+                r["named"],
+                r["share_null"],
+            ]
+            for r in found
+        ],
+        columns=pd.Index(
+            [
+                "estadístico",
+                "pasan",
+                "si ninguna tuviera edge",
+                "exceso",
+                "de las pasadas, suerte",
+                "nombrables",
+                "sin edge (Storey)",
+            ]
+        ),
+    )
     return envelope.envelope(
-        MODULE, None, None, {"alpha": alpha, "rung": rung}, started,
-        [envelope.tab("excess", "Cuántas baten al mono, y cuántas deberían", [
-            {"kind": "bars", "title": "Exceso sobre el azar, por estadístico",
-             "unit": "estrategias", "reference": 0.0,
-             "items": [{"label": r["statistic"], "value": r["excess"], "error": None,
-                        "state": "pass" if r["excess"] > 0 else "fail"} for r in found]},
-            blocks.table("Por estadístico", table,
-                         f"Pasan: baten a su mono a p<{alpha:.2f}. Si ninguna tuviera edge: "
-                         f"{alpha} x {first['n']:,}. Exceso: cuántas son probablemente "
-                         f"reales. Nombrables: las que sobreviven Benjamini-Hochberg. El "
-                         f"exceso y las nombrables discrepan a propósito.")],
-            note=f"{len(panel):,} estrategias · muestra {made['source']['sample']} · "
-                 f"{draws:,} monos por estrategia · peldaño {rung}.")],
-        blocks.verdict(f"{first['excess']:+.0f} en {first['statistic']}",
-                       "pass" if first["excess"] > 0 else "fail",
-                       f"{first['observed']} baten al mono donde el azar daría "
-                       f"{first['expected_all_null']:.0f}; {first['named']} se pueden nombrar."),
-        warn)
+        MODULE,
+        None,
+        None,
+        {"alpha": alpha, "rung": rung},
+        started,
+        [
+            envelope.tab(
+                "excess",
+                "Cuántas baten al mono, y cuántas deberían",
+                [
+                    {
+                        "kind": "bars",
+                        "title": "Exceso sobre el azar, por estadístico",
+                        "unit": "estrategias",
+                        "reference": 0.0,
+                        "items": [
+                            {
+                                "label": r["statistic"],
+                                "value": r["excess"],
+                                "error": None,
+                                "state": "pass" if r["excess"] > 0 else "fail",
+                            }
+                            for r in found
+                        ],
+                    },
+                    blocks.table(
+                        "Por estadístico",
+                        table,
+                        f"Pasan: baten a su mono a p<{alpha:.2f}. Si ninguna tuviera edge: "
+                        f"{alpha} x {first['n']:,}. Exceso: cuántas son probablemente "
+                        f"reales. Nombrables: las que sobreviven Benjamini-Hochberg. El "
+                        f"exceso y las nombrables discrepan a propósito.",
+                    ),
+                ],
+                note=f"{len(panel):,} estrategias · muestra {made['source']['sample']} · "
+                f"{draws:,} monos por estrategia · peldaño {rung}.",
+            )
+        ],
+        blocks.verdict(
+            f"{first['excess']:+.0f} en {first['statistic']}",
+            "pass" if first["excess"] > 0 else "fail",
+            f"{first['observed']} baten al mono donde el azar daría "
+            f"{first['expected_all_null']:.0f}; {first['named']} se pueden nombrar.",
+        ),
+        warn,
+    )
 
 
 def main() -> None:
@@ -162,8 +235,10 @@ def main() -> None:
         mine = panel[panel["market"] == market] if market else panel
         got = result(mine, made, a.rung or made["source"]["rungs"][0], a.alpha, started)
         where = out / market if len(markets) > 1 else out
-        title = (f"{a.project} / {a.databank}{f' / {market}' if len(markets) > 1 else ''} — "
-                 f"cuántas baten al mono, y cuántas deberían")
+        title = (
+            f"{a.project} / {a.databank}{f' / {market}' if len(markets) > 1 else ''} — "
+            f"cuántas baten al mono, y cuántas deberían"
+        )
         output.population(where, "monkeyExcess", got, title)
         print(markdown.render(got, title))
         print(f"\n-> {where / 'monkeyExcess.md'}")

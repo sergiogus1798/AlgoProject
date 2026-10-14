@@ -19,7 +19,7 @@ def shrunk(x: np.ndarray) -> tuple[np.ndarray, float]:
     sample = x.T @ x / n
     mu = np.trace(sample) / k
     delta = ((sample - mu * np.eye(k)) ** 2).sum() / k
-    beta = min((((x ** 2).T @ (x ** 2)).sum() / n - (sample ** 2).sum()) / (n * k), delta)
+    beta = min((((x**2).T @ (x**2)).sum() / n - (sample**2).sum()) / (n * k), delta)
     intensity = 0.0 if delta == 0 else float(beta / delta)
     return (1 - intensity) * sample + intensity * mu * np.eye(k), intensity
 
@@ -33,9 +33,19 @@ def solve(cov: np.ndarray) -> np.ndarray:
     """
     k = len(cov)
     scaled = cov / np.trace(cov) * k
-    got = minimize(lambda w: w @ scaled @ w, np.full(k, 1 / k), jac=lambda w: 2 * scaled @ w,
-                   method="SLSQP", bounds=[(0.0, 1.0)] * k, options={"ftol": 1e-12, "maxiter": 500},
-                   constraints={"type": "eq", "fun": lambda w: w.sum() - 1, "jac": lambda w: np.ones(k)})
+    got = minimize(
+        lambda w: w @ scaled @ w,
+        np.full(k, 1 / k),
+        jac=lambda w: 2 * scaled @ w,
+        method="SLSQP",
+        bounds=[(0.0, 1.0)] * k,
+        options={"ftol": 1e-12, "maxiter": 500},
+        constraints={
+            "type": "eq",
+            "fun": lambda w: w.sum() - 1,
+            "jac": lambda w: np.ones(k),
+        },
+    )
     if not got.success:
         raise ValueError(f"mínima varianza no converge: {got.message}")
     w = np.clip(got.x, 0.0, None)

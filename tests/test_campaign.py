@@ -35,13 +35,20 @@ run.AUTOPILOT = "fakeflow.sh [a-z]+ {} "
 run.POLL = run.BOOT = 0.2
 run.project_dir = lambda name, install: TMP / "projects" / name
 run.template_dir = lambda name: TMP / name
-run.shutil.disk_usage = lambda path: types.SimpleNamespace(free=1e12)   # /tmp is small
+run.shutil.disk_usage = lambda path: types.SimpleNamespace(free=1e12)  # /tmp is small
 
 
 def cell(n: str) -> dict:
     """A queued cell named by one letter."""
-    return {"template": f"t{n}", "symbol": "XAUUSD", "timeframe": "H1", "direction": "long",
-            "family": "tendencia", "palette": "-", "project": f"Trade_{n}"}
+    return {
+        "template": f"t{n}",
+        "symbol": "XAUUSD",
+        "timeframe": "H1",
+        "direction": "long",
+        "family": "tendencia",
+        "palette": "-",
+        "project": f"Trade_{n}",
+    }
 
 
 def states() -> dict[str, str]:
@@ -68,7 +75,11 @@ def main() -> None:
     run._stop_file().unlink()
     run.loop()
     assert states() == {"Trade_A": "done", "Trade_B": "done"}, states()
-    assert (TMP / "calls").read_text().split("\n")[:3] == ["template Trade_A", "run Trade_A", "template Trade_B"]
+    assert (TMP / "calls").read_text().split("\n")[:3] == [
+        "template Trade_A",
+        "run Trade_A",
+        "template Trade_B",
+    ]
     assert ledger.following() is None
     done = ledger.cells()[ledger.key(cell("B"))]
     assert done["steps_minutes"] == 3.0 and done["counts"][-1] == "OOS 1000→10", done
@@ -77,22 +88,34 @@ def main() -> None:
     for n in "CDE":
         ledger.mark(cell(n), "pending", **cell(n))
     run.loop()
-    assert [states()[f"Trade_{n}"] for n in "CDE"] == ["failed", "failed", "pending"], states()
+    assert [states()[f"Trade_{n}"] for n in "CDE"] == ["failed", "failed", "pending"], (
+        states()
+    )
     assert (TMP / "calls").read_text().count("Trade_C") == 3
 
     (TMP / "fail").unlink()
     run._stop_file().unlink(missing_ok=True)
     asked = {**cell("F"), "palette": "experto"}
     ledger.mark(asked, "pending", **asked)
-    run.palette.choose = lambda c: (None, "PREGUNTA: ¿cuál?") if c["project"] == "Trade_F" else ("p", "")
+    run.palette.choose = lambda c: (
+        (None, "PREGUNTA: ¿cuál?") if c["project"] == "Trade_F" else ("p", "")
+    )
     run.loop()
     assert states()["Trade_F"] == "question" and states()["Trade_E"] == "done", states()
 
     from pipeline.campaign import shelf
+
     sqx = TMP / "s.sqx"
     sqx.write_text("x")
-    final = {"strategy": "Strategy 1 S0", "mother": "Strategy 1", "identity": "i", "sqx": str(sqx),
-             "stop": {"x": 2.0}, "archive": str(TMP), "mother_archive": None}
+    final = {
+        "strategy": "Strategy 1 S0",
+        "mother": "Strategy 1",
+        "identity": "i",
+        "sqx": str(sqx),
+        "stop": {"x": 2.0},
+        "archive": str(TMP),
+        "mother_archive": None,
+    }
     shelf.place({**cell("G"), "test": True}, [final], TMP)
     filed = TMP / "campaign/supervivientes/_pruebas/XAUUSD/H1/long/tendencia/tG"
     assert len(list(filed.glob("*_Strategy_1_S0/estrategia.sqx"))) == 1

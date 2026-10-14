@@ -11,11 +11,25 @@ from ui.daemon.archive import shelf as archive
 
 ROOT = portfolio_dir()
 
-RunRow = TypedDict("RunRow", {
-    "id": str, "pool": str, "kind": str, "plan": str, "firm": str, "members": list[str], "k": int,
-    "score": float | None, "label": str, "pass": bool | None, "relaxed": dict[str, Any],
-    "forced": str, "stage_b": bool, "handoff": bool,
-})
+RunRow = TypedDict(
+    "RunRow",
+    {
+        "id": str,
+        "pool": str,
+        "kind": str,
+        "plan": str,
+        "firm": str,
+        "members": list[str],
+        "k": int,
+        "score": float | None,
+        "label": str,
+        "pass": bool | None,
+        "relaxed": dict[str, Any],
+        "forced": str,
+        "stage_b": bool,
+        "handoff": bool,
+    },
+)
 RunRow.__doc__ = "One run folder as the «Carteras» tab lists it."
 
 
@@ -48,11 +62,18 @@ def label(identity: str, known: dict[str, dict]) -> str:
 def pools() -> list[dict]:
     """Every declared pool: `name`, `hash`, `members` (identities), newest file first."""
     out = []
-    files = sorted((ROOT / "pools").glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True)
+    files = sorted(
+        (ROOT / "pools").glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True
+    )
     for file in files:
         got = pool_mod.read(file.stem, None)
-        out.append({"name": file.stem, "hash": got["hash"],
-                    "members": [m["identity"] for m in got["members"]]})
+        out.append(
+            {
+                "name": file.stem,
+                "hash": got["hash"],
+                "members": [m["identity"] for m in got["members"]],
+            }
+        )
     return out
 
 
@@ -72,14 +93,24 @@ def run(path: Path) -> RunRow:
     judged = (v.get("verdict") or {}) if funded else v
     best = m.get("best") or {}
     members = (judged.get("chosen") or {}).get("members") or m.get("best_members") or []
-    return {"id": path.name, "pool": m["pool"], "kind": "funded" if funded else "real",
-            "plan": m.get("plan", ""), "firm": m.get("firm") or "", "members": members,
-            "k": len(members), "score": m.get("best_score") if funded else best.get("score"),
-            "label": judged.get("label") or (m.get("verdict") or {}).get("label")
-            or ("solo etapa A" if funded else "sin juzgar"),
-            "pass": judged.get("pass"), "relaxed": m.get("relaxed") or {},
-            "forced": m.get("forced", ""), "stage_b": (path / "stageb.parquet").exists(),
-            "handoff": (path / "handoff" / "daily.parquet").exists()}
+    return {
+        "id": path.name,
+        "pool": m["pool"],
+        "kind": "funded" if funded else "real",
+        "plan": m.get("plan", ""),
+        "firm": m.get("firm") or "",
+        "members": members,
+        "k": len(members),
+        "score": m.get("best_score") if funded else best.get("score"),
+        "label": judged.get("label")
+        or (m.get("verdict") or {}).get("label")
+        or ("solo etapa A" if funded else "sin juzgar"),
+        "pass": judged.get("pass"),
+        "relaxed": m.get("relaxed") or {},
+        "forced": m.get("forced", ""),
+        "stage_b": (path / "stageb.parquet").exists(),
+        "handoff": (path / "handoff" / "daily.parquet").exists(),
+    }
 
 
 def runs() -> list[RunRow]:
@@ -95,4 +126,6 @@ def universes(pool_hash: str) -> list[Path]:
     writing the pair table: those hold nothing «Correlación» can paint.
     """
     found = list((ROOT / "universe").glob(f"{pool_hash}-*/pairs.parquet"))
-    return [m.parent for m in sorted(found, key=lambda m: m.stat().st_mtime, reverse=True)]
+    return [
+        m.parent for m in sorted(found, key=lambda m: m.stat().st_mtime, reverse=True)
+    ]

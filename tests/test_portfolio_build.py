@@ -35,7 +35,9 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         pool.ROOT = Path(tmp) / "pool"
         store.ROOT = Path(tmp) / "universe"
-        pool.declare("uno", [{"identity": IDENTITY, "version": VERSION}], added_by="test")
+        pool.declare(
+            "uno", [{"identity": IDENTITY, "version": VERSION}], added_by="test"
+        )
 
         cfg = config.load([])
         t0 = time.perf_counter()
@@ -46,52 +48,92 @@ def main() -> None:
 
         data = universe.load(out)
         manifest = data["manifest"]
-        check("the member is kept", manifest["members"]["kept"] == [IDENTITY],
-              f"{manifest['members']}")
+        check(
+            "the member is kept",
+            manifest["members"]["kept"] == [IDENTITY],
+            f"{manifest['members']}",
+        )
         check("no excluded member", manifest["members"]["excluded"] == [])
-        check("reconciled ok and licensed",
-              (data["reconcile"]["verdict"] == "ok").all()
-              and data["reconcile"]["licensed"].all(), f"{data['reconcile']}")
+        check(
+            "reconciled ok and licensed",
+            (data["reconcile"]["verdict"] == "ok").all()
+            and data["reconcile"]["licensed"].all(),
+            f"{data['reconcile']}",
+        )
 
         trades = source.load(IDENTITY, VERSION)["trades"]
         total_pnl = float(trades["Profit/Loss"].sum())
         total_daily = float(data["daily"][IDENTITY].sum())
-        check("sum(daily.parquet) == sum(Profit/Loss)",
-              abs(total_daily - total_pnl) < 1e-6, f"{total_daily} vs {total_pnl}")
+        check(
+            "sum(daily.parquet) == sum(Profit/Loss)",
+            abs(total_daily - total_pnl) < 1e-6,
+            f"{total_daily} vs {total_pnl}",
+        )
 
         for firm, frame in data["days"].items():
             one = frame[frame["identity"] == IDENTITY].sort_values("day")
-            mtm = one["closed"] + one["float_end"] - one["float_end"].shift(1).fillna(0.0)
-            check(f"days_{firm}: closed+float_end diff sums to Profit/Loss",
-                  abs(float(mtm.sum()) - total_pnl) < 1e-6, f"{mtm.sum()} vs {total_pnl}")
+            mtm = (
+                one["closed"] + one["float_end"] - one["float_end"].shift(1).fillna(0.0)
+            )
+            check(
+                f"days_{firm}: closed+float_end diff sums to Profit/Loss",
+                abs(float(mtm.sum()) - total_pnl) < 1e-6,
+                f"{mtm.sum()} vs {total_pnl}",
+            )
 
             m5 = data["m5"][firm]
             joint = blocks.joint_day_low([m5["low"][IDENTITY]], m5["block_days"])
             joint.index = pd.to_datetime(joint.index)
             table_low = one.set_index("day")["low"]
             common = joint.index.intersection(table_low.index)
-            check(f"m5_{firm} joint_day_low == days_{firm} low (one member)",
-                  np.allclose(joint.loc[common].to_numpy(), table_low.loc[common].to_numpy(),
-                              atol=0.01), f"n={len(common)}")
+            check(
+                f"m5_{firm} joint_day_low == days_{firm} low (one member)",
+                np.allclose(
+                    joint.loc[common].to_numpy(),
+                    table_low.loc[common].to_numpy(),
+                    atol=0.01,
+                ),
+                f"n={len(common)}",
+            )
 
-        check("hantec is flagged unconfirmed", "hantec" in manifest["unconfirmed_clocks"])
+        check(
+            "hantec is flagged unconfirmed", "hantec" in manifest["unconfirmed_clocks"]
+        )
 
         out2 = universe.build("uno", config.load([]))
-        check("a second build with the same pool+config reuses the cache", out2 == out, f"{out2} vs {out}")
+        check(
+            "a second build with the same pool+config reuses the cache",
+            out2 == out,
+            f"{out2} vs {out}",
+        )
 
         out3 = universe.build("uno", config.load(["equity.excursion_tolerance=2.0"]))
-        check("a config override never reuses the cache", out3 != out, f"{out3} vs {out}")
+        check(
+            "a config override never reuses the cache", out3 != out, f"{out3} vs {out}"
+        )
 
         rng = np.random.default_rng(2)
         days_ix = pd.bdate_range("2008-01-01", "2022-12-30")
         base = rng.normal(size=len(days_ix))
-        daily = pd.DataFrame({"A": base, "B": 0.95 * base + 0.3 * rng.normal(size=len(days_ix)),
-                              "C": rng.normal(size=len(days_ix))}, index=days_ix)
-        fake = {"daily": daily, "monthly": matrix.monthly(daily),
-                "manifest": {"calendar": manifest["calendar"]}}
+        daily = pd.DataFrame(
+            {
+                "A": base,
+                "B": 0.95 * base + 0.3 * rng.normal(size=len(days_ix)),
+                "C": rng.normal(size=len(days_ix)),
+            },
+            index=days_ix,
+        )
+        fake = {
+            "daily": daily,
+            "monthly": matrix.monthly(daily),
+            "manifest": {"calendar": manifest["calendar"]},
+        }
         got = command.screen(fake, config.load([]), Path(tmp))
-        check("screen: the clone pair A-B is rejected, A-C and B-C pass",
-              got["n_admissible_pairs"] == 2 and not got["graph"][0, 1], f"{got['counts']}")
+        check(
+            "screen: the clone pair A-B is rejected, A-C and B-C pass",
+            got["n_admissible_pairs"] == 2 and not got["graph"][0, 1],
+            f"{got['counts']}",
+        )
         check("screen: pairs.parquet written", (Path(tmp) / "pairs.parquet").is_file())
 
     if FAILURES:

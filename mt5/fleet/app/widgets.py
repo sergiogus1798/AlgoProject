@@ -1,8 +1,19 @@
 """The Qt pieces every tab of MetaTracker is made of: cells, tables, cards, legends, scrolling pages."""
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QAbstractItemView, QFrame, QHBoxLayout, QHeaderView, QLabel, QScrollArea,
-                               QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QScrollArea,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from mt5.fleet.app import fmt, theme
 
@@ -10,7 +21,10 @@ from mt5.fleet.app import fmt, theme
 def cell(text: str, colour: str | None = None, right: bool = True) -> QTableWidgetItem:
     """A read-only table cell, right-aligned unless told otherwise."""
     item = QTableWidgetItem(text)
-    item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter | (Qt.AlignmentFlag.AlignRight if right else Qt.AlignmentFlag.AlignLeft))
+    item.setTextAlignment(
+        Qt.AlignmentFlag.AlignVCenter
+        | (Qt.AlignmentFlag.AlignRight if right else Qt.AlignmentFlag.AlignLeft)
+    )
     if colour:
         item.setForeground(QColor(colour))
     return item
@@ -34,7 +48,9 @@ def table(columns: list[str], stretch: str) -> QTableWidget:
     t.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
     t.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
     t.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-    t.horizontalHeader().setSectionResizeMode(columns.index(stretch), QHeaderView.ResizeMode.Stretch)
+    t.horizontalHeader().setSectionResizeMode(
+        columns.index(stretch), QHeaderView.ResizeMode.Stretch
+    )
     return t
 
 
@@ -44,7 +60,11 @@ def fill(t: QTableWidget, lines: list[list[QTableWidgetItem]]) -> None:
     for i, line in enumerate(lines):
         for j, item in enumerate(line):
             t.setItem(i, j, item)
-    t.setFixedHeight(t.horizontalHeader().height() + sum(t.rowHeight(i) for i in range(len(lines))) + 6)
+    t.setFixedHeight(
+        t.horizontalHeader().height()
+        + sum(t.rowHeight(i) for i in range(len(lines)))
+        + 6
+    )
 
 
 def label(text: str, name: str, wrap: bool = False) -> QLabel:

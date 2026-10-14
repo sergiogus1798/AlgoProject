@@ -11,13 +11,14 @@ from ruamel.yaml.comments import CommentedMap
 
 _Y = YAML()
 _Y.preserve_quotes = True
-_Y.width = 4096                              # never re-wrap a long `why`; the files carry them
-_Y.indent(mapping=2, sequence=4, offset=2)   # the indentation assets/ already uses
+_Y.width = 4096  # never re-wrap a long `why`; the files carry them
+_Y.indent(mapping=2, sequence=4, offset=2)  # the indentation assets/ already uses
 # ruamel writes a bare None as an empty value; these files say `null` and mean «undecided»,
 # which is a decision the reader has to see. Verified 2026-09-24: with these three settings
 # a load+dump of the four shared files and the nineteen symbol files is byte-identical.
 _Y.representer.add_representer(
-    type(None), lambda r, d: r.represent_scalar("tag:yaml.org,2002:null", "null"))
+    type(None), lambda r, d: r.represent_scalar("tag:yaml.org,2002:null", "null")
+)
 
 
 # One ruamel instance keeps its reader, scanner and parser on itself: two threads loading at
@@ -32,9 +33,14 @@ class _Loader(yaml.SafeLoader):
 
 
 # 1.1 wants a dot in the mantissa, so `1e-05` -- what ruamel writes for a point -- loads as a str.
-_Loader.add_implicit_resolver("tag:yaml.org,2002:float", re.compile(
-    r"^(?:[-+]?(?:[0-9][0-9_]*)\.[0-9_]*(?:[eE][-+]?[0-9]+)?|\.[0-9][0-9_]*(?:[eE][-+]?[0-9]+)?"
-    r"|[-+]?[0-9][0-9_]*[eE][-+]?[0-9]+|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$"), list("-+0123456789."))
+_Loader.add_implicit_resolver(
+    "tag:yaml.org,2002:float",
+    re.compile(
+        r"^(?:[-+]?(?:[0-9][0-9_]*)\.[0-9_]*(?:[eE][-+]?[0-9]+)?|\.[0-9][0-9_]*(?:[eE][-+]?[0-9]+)?"
+        r"|[-+]?[0-9][0-9_]*[eE][-+]?[0-9]+|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN))$"
+    ),
+    list("-+0123456789."),
+)
 
 
 def safe_load(text: str) -> Any:
@@ -141,6 +147,12 @@ def _walk(node: object, here: list, lines: list[str], out: list[dict]) -> None:
         for i, item in enumerate(node):
             _walk(item, [*here, i], lines, out)
     else:
-        out.append({"path": here, "label": str(here[-1]) if here else "",
-                    "value": list(node) if isinstance(node, list) else node,
-                    "hint": "", "kind": "list" if isinstance(node, list) else "scalar"})
+        out.append(
+            {
+                "path": here,
+                "label": str(here[-1]) if here else "",
+                "value": list(node) if isinstance(node, list) else node,
+                "hint": "",
+                "kind": "list" if isinstance(node, list) else "scalar",
+            }
+        )

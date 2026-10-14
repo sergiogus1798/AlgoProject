@@ -25,14 +25,20 @@ def check(project: str) -> dict[str, Any]:
         return {"ok": False, "reasons": [where["refuse"]], "plan": plan}
     reasons = advance.busy(where["role"], project)
     if not plan["do"]:
-        reasons.append(f"nada que correr: se para ya en el paso {plan['stop']['n']} — "
-                       f"{plan['stop']['why']}" if plan["stop"]["n"] else plan["stop"]["why"])
-    filled: set[str] = set()      # outputs of the SQX steps planned before this one
+        reasons.append(
+            f"nada que correr: se para ya en el paso {plan['stop']['n']} — "
+            f"{plan['stop']['why']}"
+            if plan["stop"]["n"]
+            else plan["stop"]["why"]
+        )
+    filled: set[str] = set()  # outputs of the SQX steps planned before this one
     for action in [a for a in plan["do"] if a["kind"] == "sqx"]:
         pre = preflight.check(project, step=action["n"], filled=filled)
         action["titles"] = [t["title"] for t in pre.get("chosen", [])]
         filled |= {t["output"] for t in pre.get("chosen", [])}
-        reasons += [f"paso {action['n']}: {r}" for r in pre["reasons"] if r not in reasons]
+        reasons += [
+            f"paso {action['n']}: {r}" for r in pre["reasons"] if r not in reasons
+        ]
     return {"ok": not reasons, "reasons": reasons, "plan": plan, **where}
 
 
@@ -41,11 +47,19 @@ def text(got: dict[str, Any], project: str) -> str:
     who = preflight.ROLES.get(got["role"], got["role"])
     lines = [f"«Correr workflow» en {project} ({got['install']}), en este orden:"]
     for a in got["plan"]["do"]:
-        lines.append(f"· paso {a['n']} · {a['title']} — " + (
-            f"SQX en el {who}: {', '.join(a['titles'])}; el worker arranca, corre hasta "
-            "«Project finished» y se para" if a["kind"] == "sqx" else
-            f"Python: {', '.join(a['tests'])}"))
+        lines.append(
+            f"· paso {a['n']} · {a['title']} — "
+            + (
+                f"SQX en el {who}: {', '.join(a['titles'])}; el worker arranca, corre hasta "
+                "«Project finished» y se para"
+                if a["kind"] == "sqx"
+                else f"Python: {', '.join(a['tests'])}"
+            )
+        )
     stop = got["plan"]["stop"]
-    lines.append(f"Se para antes del paso {stop['n']} · {stop['title']}: {stop['why']}."
-                 if stop["n"] else f"Y termina: {stop['why']}.")
+    lines.append(
+        f"Se para antes del paso {stop['n']} · {stop['title']}: {stop['why']}."
+        if stop["n"]
+        else f"Y termina: {stop['why']}."
+    )
     return "\n".join(lines + ["", chainplan.RULE])

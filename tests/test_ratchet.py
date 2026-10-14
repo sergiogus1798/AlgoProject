@@ -45,7 +45,9 @@ def test_counters() -> None:
 def test_check_flags_a_rise_and_keeps_baseline() -> None:
     """A file adding a bare -> dict raises a problem and leaves ratchet.json untouched."""
     before = ratchet.BASELINE.read_bytes()
-    with tempfile.NamedTemporaryFile("w", suffix=".py", dir=ROOT / "tools") as t:  # package "tools" is in the baseline
+    with tempfile.NamedTemporaryFile(
+        "w", suffix=".py", dir=ROOT / "tools"
+    ) as t:  # package "tools" is in the baseline
         t.write("def f() -> dict: ...\n")
         t.flush()
         problems = ratchet.check(depmap.py_files() + [Path(t.name)])
@@ -57,9 +59,18 @@ def test_pyright_counts_per_included_package() -> None:
     """Errors are counted per package of the include list; warnings and other packages are not."""
     import json
     import types
+
     diag = lambda pkg, sev: {"file": str(ROOT / pkg / "m.py"), "severity": sev}  # noqa: E731
-    out = json.dumps({"generalDiagnostics": [diag("core", "error"), diag("core", "error"),
-                                             diag("core", "warning"), diag("ui", "error")]})
+    out = json.dumps(
+        {
+            "generalDiagnostics": [
+                diag("core", "error"),
+                diag("core", "error"),
+                diag("core", "warning"),
+                diag("ui", "error"),
+            ]
+        }
+    )
     real = ratchet.subprocess.run
     ratchet.subprocess.run = lambda *a, **k: types.SimpleNamespace(stdout=out)
     try:

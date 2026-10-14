@@ -38,7 +38,7 @@ def as_agent(autonomous: bool) -> str | None:
     """Set or clear ALGO_AUTONOMOUS for one test; returns the value to put back."""
     before = os.environ.pop(gate.AUTONOMOUS, None)
     if autonomous:
-        os.environ[gate.AUTONOMOUS] = "1"      # the door holds only for an autonomous agent
+        os.environ[gate.AUTONOMOUS] = "1"  # the door holds only for an autonomous agent
     return before
 
 
@@ -73,7 +73,17 @@ def check_route(data: dict) -> dict:
     """`test_route`'s assertions on one answer."""
     assert [s["n"] for s in data["steps"]] == [s["n"] for s in STEPS]
     for s in data["steps"]:
-        assert set(s) >= {"n", "title", "kind", "studies", "state", "why", "in", "out", "day"}
+        assert set(s) >= {
+            "n",
+            "title",
+            "kind",
+            "studies",
+            "state",
+            "why",
+            "in",
+            "out",
+            "day",
+        }
         assert s["state"] in STATES and s["why"], s
     by = {s["n"]: s for s in data["steps"]}
     # Invariants only: a cut, a filter or a curation moves step 8's counts on the live data.
@@ -117,15 +127,22 @@ def test_seal() -> None:
     ctx = {"blind": {"sealed": True, "done": ["17"], "text": "faltan [18, 19]"}}
     done = derive.step("done", "wfc: rho 0.25", 2, 2, "2026-09-26")
     sealed = derive.seal({"n": "17"}, done, ctx)
-    assert sealed["state"] == "sealed" and sealed["in"] is None and "rho" not in sealed["why"]
+    assert (
+        sealed["state"] == "sealed"
+        and sealed["in"] is None
+        and "rho" not in sealed["why"]
+    )
     assert derive.seal({"n": "18.5"}, done, ctx) is done
-    assert derive.seal({"n": "18"}, derive.step("pending", "x"), ctx)["state"] == "pending"
+    assert (
+        derive.seal({"n": "18"}, derive.step("pending", "x"), ctx)["state"] == "pending"
+    )
     on_disk = derive.seal({"n": "18"}, done, ctx)
     assert on_disk["state"] == "sealed" and "backfill" in on_disk["why"]
 
 
 def test_a_16_5_with_a_mother_short_of_its_batch_is_pending(
-        monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """📓 gorilla 2026-10-11: an OutOfMemoryError left 2 of 3 mothers collected, «done» sent the
     rail to 18.5 and it died on the third's missing metrics.parquet."""
     spec, ctx = {"n": "16.5", "title": "Variantes"}, {"sqx": None, "project": "P"}
@@ -141,8 +158,11 @@ def test_widget() -> None:
     from ui.desktop import client
     from ui.desktop.theme import QSS
     from ui.desktop.workspace.rail import Rail
+
     # Never the owner's daemon: showing the rail polls /api/jobs.
-    client.get = lambda path, **params: {"jobs": []} if path == "jobs" else {"error": "sin demonio"}
+    client.get = lambda path, **params: (
+        {"jobs": []} if path == "jobs" else {"error": "sin demonio"}
+    )
     client.post = lambda path, body: {"error": "sin demonio"}
     app = QApplication.instance() or QApplication([])
     app.setStyleSheet(QSS)
@@ -155,14 +175,21 @@ def test_widget() -> None:
     app.processEvents()
     assert rail.data is data
     rail.grab().save(str(SHOTS / "C-workflow.png"))
-    rail.open_step("8")       # several Python tests: «Lanzar todos», and what runs first
+    rail.open_step("8")  # several Python tests: «Lanzar todos», and what runs first
     app.processEvents()
     drawer = rail.drawer
-    assert drawer.all_button.isVisibleTo(rail) and "Lanzar todos" in drawer.all_button.text()
-    assert {t["key"] for t in drawer.batch} <= {t["key"] for t in rail.step("8")["tests"]}
+    assert (
+        drawer.all_button.isVisibleTo(rail)
+        and "Lanzar todos" in drawer.all_button.text()
+    )
+    assert {t["key"] for t in drawer.batch} <= {
+        t["key"] for t in rail.step("8")["tests"]
+    }
     assert "paso 7" in drawer.needs.text() or "✓ 7" in drawer.needs.text()
     rail.open_step("6")
-    assert "Activar el builder" in " ".join(b.text() for b in drawer.findChildren(QPushButton))
+    assert "Activar el builder" in " ".join(
+        b.text() for b in drawer.findChildren(QPushButton)
+    )
     rail.open_step("4")
     assert drawer.note.isVisibleTo(rail) and "PREFLIGHT" in drawer.note.text()
 
@@ -175,14 +202,22 @@ def test_needs() -> None:
     order = [s["n"] for s in data["steps"]]
     assert by["1"]["needs"] == []
     for s in data["steps"][1:]:
-        assert s["needs"] and all(order.index(n) < order.index(s["n"]) for n in s["needs"]), s
+        assert s["needs"] and all(
+            order.index(n) < order.index(s["n"]) for n in s["needs"]
+        ), s
     assert "6" in by["7"]["needs"] and "8" in by["9"]["needs"]
     assert {"17", "18", "19"} <= set(by["20"]["needs"])
     # From the tasks themselves — a retired project has none to read, so they are given here.
     from ui.daemon.workflow import needs
-    tasks = [{"title": "OOS", "input": "Results", "output": "OOS"},
-             {"title": "Retest Markets - Family", "input": "OOS",
-              "output": "Retest Markets - Family"}]
+
+    tasks = [
+        {"title": "OOS", "input": "Results", "output": "OOS"},
+        {
+            "title": "Retest Markets - Family",
+            "input": "OOS",
+            "output": "Retest Markets - Family",
+        },
+    ]
     spec = next(s for s in STEPS if s["n"] == "9")
     assert {"7", "8"} <= set(needs.of(spec, {"sqx": {"tasks": tasks}}))
 
@@ -194,13 +229,22 @@ def test_project_knobs() -> None:
     from ui.daemon.results.api import config
     from ui.daemon import runs
     from ui.daemon.runner import readings
-    got = {k["key"]: k for s in config("entryQuality", PROJECT)["sections"] for k in s["knobs"]}
+
+    got = {
+        k["key"]: k
+        for s in config("entryQuality", PROJECT)["sections"]
+        for k in s["knobs"]
+    }
     mine = forproject.facts(PROJECT)
     assert got["run.feed"]["value"] == mine["feed"] and "note" in got["run.feed"]
-    argv = readings.entry_quality(runs.context(PROJECT, "CrossTF", "S", mine["symbol"]), "S")
+    argv = readings.entry_quality(
+        runs.context(PROJECT, "CrossTF", "S", mine["symbol"]), "S"
+    )
     assert f"run.feed={mine['feed']}" in argv, argv
     cloud = {k["key"] for s in config("cloud", PROJECT)["sections"] for k in s["knobs"]}
-    assert not any(k.startswith("run.") for k in cloud), cloud   # the cloud takes no symbol now
+    assert not any(k.startswith("run.") for k in cloud), (
+        cloud
+    )  # the cloud takes no symbol now
 
 
 if __name__ == "__main__":

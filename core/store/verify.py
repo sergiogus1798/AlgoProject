@@ -54,12 +54,17 @@ def check(identity: str) -> list[str]:
         elif _damaged(path):
             bad.append(f"{name} está dañado por dentro")
     named = set(doc.get("files", {})) | {SQX, MANIFEST}
-    bad += [f"{p.name} no está en el manifiesto" for p in sorted(here.iterdir())
-            if p.name not in named and not p.name.endswith(".tmp")]
+    bad += [
+        f"{p.name} no está en el manifiesto"
+        for p in sorted(here.iterdir())
+        if p.name not in named and not p.name.endswith(".tmp")
+    ]
     return bad
 
 
 def stored() -> list[str]:
     """Every identity with a folder in the store, whatever its cell."""
-    return sorted(json.loads(p.read_text(encoding="utf-8"))["identity"]
-                  for p in store_dir().glob("*/*/manifest.json"))
+    return sorted(
+        json.loads(p.read_text(encoding="utf-8"))["identity"]
+        for p in store_dir().glob("*/*/manifest.json")
+    )

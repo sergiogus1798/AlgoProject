@@ -46,12 +46,21 @@ def footprint(source: dict, day: pd.DataFrame, asset: Asset) -> float:
         charged. The arithmetic itself is the implementation this study, `crossmarket` and
         `mcRetest` all share (`core.significance.footprint`, 2026-09-29).
     """
-    window = day.loc[pd.Timestamp(source["open"].min()):pd.Timestamp(source["close"].max())]
+    window = day.loc[
+        pd.Timestamp(source["open"].min()) : pd.Timestamp(source["close"].max())
+    ]
     diffs = window["Close"].diff().dropna().to_numpy()
     mu, sigma = float(diffs.mean()), float(diffs.std(ddof=1))
     hold = (source["close"] - source["open"]) / np.timedelta64(1, "D")
-    return _footprint(hold, source["direction"], source["size"], source["cost"], mu, sigma,
-                      asset["point_value"])
+    return _footprint(
+        hold,
+        source["direction"],
+        source["size"],
+        source["cost"],
+        mu,
+        sigma,
+        asset["point_value"],
+    )
 
 
 def crosscheck(psr_value: float, bootstrap_sharpe: np.ndarray) -> Crosscheck:
@@ -69,5 +78,4 @@ def crosscheck(psr_value: float, bootstrap_sharpe: np.ndarray) -> Crosscheck:
         error in either number.
     """
     empirical = float(np.mean(bootstrap_sharpe > 0))
-    return {"psr": psr_value, "bootstrap": empirical,
-            "gap": abs(psr_value - empirical)}
+    return {"psr": psr_value, "bootstrap": empirical, "gap": abs(psr_value - empirical)}

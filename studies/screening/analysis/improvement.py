@@ -11,7 +11,7 @@ CUTS = (5, 10, 20, 30, 50)
 MIN_SURVIVORS = 200
 DRAWS = 2000
 ALPHA = 0.05
-ROWS = 250      # resamples drawn at a time in _resampled: memory only, same draws
+ROWS = 250  # resamples drawn at a time in _resampled: memory only, same draws
 SEED = 20260904
 
 # What the sweep's workers read, set before the fork.
@@ -42,8 +42,12 @@ def candidates(is_metrics: list[str]) -> list[dict]:
         lowest) and cut, the percent of the population kept. Both directions are always tried:
         the count of candidates is the search space the correction below has to cover.
     """
-    return [{"metric": m, "side": s, "cut": c}
-            for m in is_metrics for s in ("top", "bottom") for c in CUTS]
+    return [
+        {"metric": m, "side": s, "cut": c}
+        for m in is_metrics
+        for s in ("top", "bottom")
+        for c in CUTS
+    ]
 
 
 def label(candidate: dict) -> str:
@@ -76,6 +80,7 @@ def survivors(column: np.ndarray, candidate: dict) -> np.ndarray:
 
 class Outcome(TypedDict):
     """How one set of strategies did out of sample: size, median and share above break-even."""
+
     n: int
     median: float
     hit: float
@@ -83,6 +88,7 @@ class Outcome(TypedDict):
 
 class Lift(TypedDict):
     """The bootstrapped improvement of the survivors over the population."""
+
     d_median: float
     d_median_lo: float
     d_median_hi: float
@@ -106,7 +112,9 @@ def outcome(y: np.ndarray, level: float) -> Outcome:
     Returns:
         Keys n, median and hit, the share of the set strictly above break-even.
     """
-    return Outcome(n=int(y.size), median=float(np.median(y)), hit=float((y > level).mean()))
+    return Outcome(
+        n=int(y.size), median=float(np.median(y)), hit=float((y > level).mean())
+    )
 
 
 def reach(tests: int) -> int:
@@ -125,8 +133,9 @@ def reach(tests: int) -> int:
     return DRAWS * (round(tests / ALPHA) // DRAWS + 1)
 
 
-def _resampled(rng: np.random.Generator, kept: np.ndarray, level: float,
-               draws: int) -> tuple[np.ndarray, np.ndarray]:
+def _resampled(
+    rng: np.random.Generator, kept: np.ndarray, level: float, draws: int
+) -> tuple[np.ndarray, np.ndarray]:
     """The median and the hit rate of `draws` resamples of the survivors, one block.
 
     Drawn ROWS resamples at a time: the generator hands out the same indices, and the
@@ -136,13 +145,18 @@ def _resampled(rng: np.random.Generator, kept: np.ndarray, level: float,
     for done in range(0, draws, ROWS):
         rows = min(ROWS, draws - done)
         draw = kept[rng.integers(0, kept.size, (rows, kept.size))]
-        median[done:done + rows] = np.median(draw, axis=1)
-        hit[done:done + rows] = (draw > level).mean(axis=1)
+        median[done : done + rows] = np.median(draw, axis=1)
+        hit[done : done + rows] = (draw > level).mean(axis=1)
     return median, hit
 
 
-def lift(y: np.ndarray, mask: np.ndarray, level: float, draws: int = DRAWS,
-         reach: int = DRAWS) -> Lift:
+def lift(
+    y: np.ndarray,
+    mask: np.ndarray,
+    level: float,
+    draws: int = DRAWS,
+    reach: int = DRAWS,
+) -> Lift:
     """Bootstrap the improvement of the survivors over the whole population.
 
     Args:
@@ -170,17 +184,21 @@ def lift(y: np.ndarray, mask: np.ndarray, level: float, draws: int = DRAWS,
     blocks = [_resampled(rng, kept, level, draws)]
     first = blocks[0][0] - base["median"]
     if not min((first <= 0).sum(), (first >= 0).sum()):
-        blocks += [_resampled(rng, kept, level, draws) for _ in range(reach // draws - 1)]
+        blocks += [
+            _resampled(rng, kept, level, draws) for _ in range(reach // draws - 1)
+        ]
     d_median = np.concatenate([b[0] for b in blocks]) - base["median"]
     d_hit = np.concatenate([b[1] for b in blocks]) - base["hit"]
     tail = min(float((d_median <= 0).mean()), float((d_median >= 0).mean()))
-    return Lift(d_median=float(np.median(kept) - base["median"]),
-                d_median_lo=float(np.quantile(d_median, 0.025)),
-                d_median_hi=float(np.quantile(d_median, 0.975)),
-                d_hit=float((kept > level).mean() - base["hit"]),
-                d_hit_lo=float(np.quantile(d_hit, 0.025)),
-                d_hit_hi=float(np.quantile(d_hit, 0.975)),
-                p=max(2 * tail, 1 / d_median.size))
+    return Lift(
+        d_median=float(np.median(kept) - base["median"]),
+        d_median_lo=float(np.quantile(d_median, 0.025)),
+        d_median_hi=float(np.quantile(d_median, 0.975)),
+        d_hit=float((kept > level).mean() - base["hit"]),
+        d_hit_lo=float(np.quantile(d_hit, 0.025)),
+        d_hit_hi=float(np.quantile(d_hit, 0.975)),
+        p=max(2 * tail, 1 / d_median.size),
+    )
 
 
 def _judged(i: int) -> Judged:
@@ -195,11 +213,18 @@ def _judged(i: int) -> Judged:
     columns, y, level = _SHARED["columns"], _SHARED["y"], _SHARED["level"]
     candidate = _SHARED["judged"][i]
     mask = survivors(columns[candidate["metric"]], candidate)
-    return Judged(**outcome(y[mask], level), **lift(y, mask, level, reach=reach(len(_SHARED["judged"]))))
+    return Judged(
+        **outcome(y[mask], level),
+        **lift(y, mask, level, reach=reach(len(_SHARED["judged"]))),
+    )
 
 
-def sweep(columns: dict[str, np.ndarray], is_metrics: list[str], target: str,
-          min_n: int = MIN_SURVIVORS) -> list[dict]:
+def sweep(
+    columns: dict[str, np.ndarray],
+    is_metrics: list[str],
+    target: str,
+    min_n: int = MIN_SURVIVORS,
+) -> list[dict]:
     """Measure every candidate filter against one out-of-sample outcome.
 
     Args:
@@ -217,15 +242,31 @@ def sweep(columns: dict[str, np.ndarray], is_metrics: list[str], target: str,
         the rows are meant for fdr.discoveries at ALPHA.
     """
     y, level = columns[target], breakeven(target)
-    judged = [c for c in candidates(is_metrics)
-              if survivors(columns[c["metric"]], c).sum() >= min_n]
+    judged = [
+        c
+        for c in candidates(is_metrics)
+        if survivors(columns[c["metric"]], c).sum() >= min_n
+    ]
     _SHARED.update(columns=columns, y=y, level=level, judged=judged)
     # Every lift() reseeds its own generator, so a candidate's numbers do not depend on
     # which process ran it: the parallel sweep returns exactly the serial one's rows.
-    got = dict(fanout.run(_judged, {i: int(survivors(columns[c["metric"]], c).sum())
-                                    for i, c in enumerate(judged)}, os.cpu_count() or 1))
+    got = dict(
+        fanout.run(
+            _judged,
+            {
+                i: int(survivors(columns[c["metric"]], c).sum())
+                for i, c in enumerate(judged)
+            },
+            os.cpu_count() or 1,
+        )
+    )
     for i, c in enumerate(judged):
-        got[i] = {"metric": label(c), "column": c["metric"], "side": c["side"],
-                  "cut": c["cut"], **got[i]}
+        got[i] = {
+            "metric": label(c),
+            "column": c["metric"],
+            "side": c["side"],
+            "cut": c["cut"],
+            **got[i],
+        }
     rows = [got[i] for i in range(len(judged))]
     return sorted(rows, key=lambda r: -r["d_median"])

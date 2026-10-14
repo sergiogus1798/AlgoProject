@@ -14,8 +14,18 @@ META = ("name", "kind", "why")
 
 # The IS/OOS pairs the strategy sheet shows, in reading order. The rest of the 38 columns
 # stay in the parquet for whoever wants them.
-PAIRS = ("Net profit", "# of trades", "Profit factor", "Sharpe Ratio", "Ret/DD Ratio",
-         "Max DD %", "Winning Percent", "R Expectancy", "Stability", "PSR")
+PAIRS = (
+    "Net profit",
+    "# of trades",
+    "Profit factor",
+    "Sharpe Ratio",
+    "Ret/DD Ratio",
+    "Max DD %",
+    "Winning Percent",
+    "R Expectancy",
+    "Stability",
+    "PSR",
+)
 
 
 def manifest(folder: Path) -> dict[str, Any]:
@@ -37,9 +47,13 @@ def screens() -> list[dict]:
     Returns:
         One dict per screen: name, kind, why and `thresholds`, the rest of its row.
     """
-    return [{**{k: s[k] for k in META},
-             "thresholds": {k: v for k, v in s.items() if k not in META}}
-            for s in config([])["screens"]]
+    return [
+        {
+            **{k: s[k] for k in META},
+            "thresholds": {k: v for k, v in s.items() if k not in META},
+        }
+        for s in config([])["screens"]
+    ]
 
 
 def judged(harvest: Path) -> tuple[str, dict]:
@@ -54,7 +68,9 @@ def judged(harvest: Path) -> tuple[str, dict]:
         ties the two — and a harvest judged twice shows its latest judgement.
     """
     project, databank = harvest.parts[-3:-1]
-    for folder in sorted((DATA / "reports" / project / databank).glob("*/gate"), reverse=True):
+    for folder in sorted(
+        (DATA / "reports" / project / databank).glob("*/gate"), reverse=True
+    ):
         m = manifest(folder)
         if m.get("source", {}).get("harvest") == str(harvest):
             return folder.parts[-2], m
@@ -79,8 +95,14 @@ def gate(project: str, databank: str, day: str) -> dict[str, Any]:
     funnel = pd.read_csv(folder / "funnel.csv").to_dict("records")
     scores = pd.read_parquet(folder / "scorecard.parquet").reset_index()
     rows = scores.astype(object).where(scores.notna(), None).to_dict("records")
-    return {"source": m["source"], "date": m["date"], "command": m["command"],
-            "funnel": funnel, "screens": screens(), "rows": rows}
+    return {
+        "source": m["source"],
+        "date": m["date"],
+        "command": m["command"],
+        "funnel": funnel,
+        "screens": screens(),
+        "rows": rows,
+    }
 
 
 def strategy(project: str, databank: str, day: str, identity: str) -> dict[str, Any]:
@@ -103,7 +125,17 @@ def strategy(project: str, databank: str, day: str, identity: str) -> dict[str, 
     metrics = [[p, m.get(f"{p} [IS]"), m.get(f"{p} [OOS]")] for p in PAIRS]
     e = pd.read_parquet(folder / "equity.parquet")
     e = e[e["identity"] == identity]
-    curve = {s: {"days": cast(pd.DataFrame, b)["day"].dt.strftime("%Y-%m-%d").tolist(),
-                 "equity": b["equity"].round(2).tolist()} for s, b in e.groupby("sample")}
-    return {"metrics": [[p, None if pd.isna(a) else a, None if pd.isna(b) else b]
-                        for p, a, b in metrics], "curve": curve}
+    curve = {
+        s: {
+            "days": cast(pd.DataFrame, b)["day"].dt.strftime("%Y-%m-%d").tolist(),
+            "equity": b["equity"].round(2).tolist(),
+        }
+        for s, b in e.groupby("sample")
+    }
+    return {
+        "metrics": [
+            [p, None if pd.isna(a) else a, None if pd.isna(b) else b]
+            for p, a, b in metrics
+        ],
+        "curve": curve,
+    }

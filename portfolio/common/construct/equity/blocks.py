@@ -31,7 +31,9 @@ def block_days(grid: pd.DatetimeIndex, day_zone: str) -> np.ndarray:
     return clock.day_of(grid, day_zone).to_numpy(dtype="int64")
 
 
-def blocks(path: dict, feed_zone: str, day_zone: str, grid: pd.DatetimeIndex) -> dict[str, np.ndarray]:
+def blocks(
+    path: dict, feed_zone: str, day_zone: str, grid: pd.DatetimeIndex
+) -> dict[str, np.ndarray]:
     """One member's worst/best floating equity per grid block (contract M).
 
     Args:
@@ -88,5 +90,6 @@ def joint_day_low(members: list[np.ndarray], days: np.ndarray) -> pd.Series:
         Series indexed by day label (int64 ns) — exact at block resolution
         (`knowhow/perf/intraday-floating-resolution.md`).
     """
-    return cast(pd.Series, pd.Series(np.sum(members, axis=0), index=days).groupby(level=0).min())
-
+    return cast(
+        pd.Series, pd.Series(np.sum(members, axis=0), index=days).groupby(level=0).min()
+    )

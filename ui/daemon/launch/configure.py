@@ -26,21 +26,47 @@ def run(pre: dict[str, Any], say: Callable[[int, str], None]) -> list[str]:
         market-orders population): they stay off. Read after configuring — before, all eight
         are off and none is silenced.
     """
-    inputs = pre.get("inputs") or {t["title"]: t["input"] for t in pre.get("chosen", [])}
+    inputs = pre.get("inputs") or {
+        t["title"]: t["input"] for t in pre.get("chosen", [])
+    }
     for module, titles in pre.get("configure", {}).items():
-        extra = (["--timeframe", pre["row"]["timeframe"]] if module.endswith("crossmarket")
-                 else ["--input", inputs[titles[0]]])
-        if module.endswith("mcretest"):      # the population it reads lives by the REAL project, not a staged copy
-            banks = pre.get("databanks") or pre["cfx"].parent / "databanks"   # (🔬 2026-10-06: it saw none, kept Exits)
+        extra = (
+            ["--timeframe", pre["row"]["timeframe"]]
+            if module.endswith("crossmarket")
+            else ["--input", inputs[titles[0]]]
+        )
+        if module.endswith(
+            "mcretest"
+        ):  # the population it reads lives by the REAL project, not a staged copy
+            banks = (
+                pre.get("databanks") or pre["cfx"].parent / "databanks"
+            )  # (🔬 2026-10-06: it saw none, kept Exits)
             extra += ["--databank-dir", str(Path(banks) / inputs[titles[0]])]
         say(8, f"configurando {', '.join(titles)} ({module})")
-        got = subprocess.run([sys.executable, "-m", module, pre["row"]["symbol"], "--cfx",
-                              str(pre["cfx"]), *extra], capture_output=True, text=True, cwd=ROOT)
+        got = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                module,
+                pre["row"]["symbol"],
+                "--cfx",
+                str(pre["cfx"]),
+                *extra,
+            ],
+            capture_output=True,
+            text=True,
+            cwd=ROOT,
+        )
         print(got.stdout[-3000:], flush=True)
         if got.returncode:
-            sys.exit(f"{module} no configuró {', '.join(titles)} (salida {got.returncode}): "
-                     f"{(got.stderr or got.stdout).strip()[-1500:]}")
+            sys.exit(
+                f"{module} no configuró {', '.join(titles)} (salida {got.returncode}): "
+                f"{(got.stderr or got.stdout).strip()[-1500:]}"
+            )
     with zipfile.ZipFile(pre["cfx"]) as z:
         members = {n: z.read(n) for n in z.namelist()}
-    return [t for t in silenced(members, members["config.xml"].decode("utf-8"))
-            if t in stage.titles("mcretest")]
+    return [
+        t
+        for t in silenced(members, members["config.xml"].decode("utf-8"))
+        if t in stage.titles("mcretest")
+    ]

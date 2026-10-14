@@ -10,7 +10,11 @@ from core.study import draws
 
 def _rows(name: object, test: str = "t", seed: int = 0) -> list[dict]:
     """One draws row for strategy `name`."""
-    return [draws.record(test, "z", 1.0, np.random.default_rng(seed).normal(size=50), strategy=name)]
+    return [
+        draws.record(
+            test, "z", 1.0, np.random.default_rng(seed).normal(size=50), strategy=name
+        )
+    ]
 
 
 def test_names_that_sanitise_alike_keep_their_own_shard(tmp_path: Path) -> None:
@@ -34,9 +38,12 @@ def _two_tests(args: tuple[str, str]) -> None:
     draws.merge(Path(args[0]), _rows("S", args[1], seed=len(args[1])), defer=True)
 
 
-def test_two_tests_of_one_strategy_written_concurrently_lose_nothing(tmp_path: Path) -> None:
+def test_two_tests_of_one_strategy_written_concurrently_lose_nothing(
+    tmp_path: Path,
+) -> None:
     """Sixteen tests of one strategy by eight processes: sixteen rows after the fold."""
     import multiprocessing as mp
+
     with mp.get_context("fork").Pool(8) as pool:
         pool.map(_two_tests, [(str(tmp_path), "t" * (i + 1)) for i in range(16)])
     assert len(draws.read(tmp_path)) == 16
@@ -47,7 +54,9 @@ def _old_merge(path: Path, rows: list[dict]) -> None:
     new, f = pd.DataFrame(rows), path / draws.FILE
     if f.exists():
         old = pd.read_parquet(f)
-        gone = old["test"].isin(set(new["test"])) & old["strategy"].isin(set(new["strategy"]))
+        gone = old["test"].isin(set(new["test"])) & old["strategy"].isin(
+            set(new["strategy"])
+        )
         new = pd.concat([old[~gone], new], ignore_index=True)
     draws._write(f, new)
 
@@ -56,9 +65,19 @@ def test_deferred_fold_equals_the_old_merge_in_row_order(tmp_path: Path) -> None
     """Same rows in the same ORDER as merging one after another the old way."""
     old, new = tmp_path / "old", tmp_path / "new"
     old.mkdir()
-    batches = [_rows("s0", "a"), _rows("s1", "a", 1), _rows("s0", "b", 2), _rows("s1", "a", 3), _rows("s2", "b", 4)]
+    batches = [
+        _rows("s0", "a"),
+        _rows("s1", "a", 1),
+        _rows("s0", "b", 2),
+        _rows("s1", "a", 3),
+        _rows("s2", "b", 4),
+    ]
     for b in batches:
         _old_merge(old, b)
         draws.merge(new, b, defer=True)
-    pd.testing.assert_frame_equal(draws.read(new).map(lambda v: v.tolist() if hasattr(v, "tolist") else v),
-                                  pd.read_parquet(old / draws.FILE).map(lambda v: v.tolist() if hasattr(v, "tolist") else v))
+    pd.testing.assert_frame_equal(
+        draws.read(new).map(lambda v: v.tolist() if hasattr(v, "tolist") else v),
+        pd.read_parquet(old / draws.FILE).map(
+            lambda v: v.tolist() if hasattr(v, "tolist") else v
+        ),
+    )

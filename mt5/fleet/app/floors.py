@@ -1,4 +1,5 @@
 """One account's distance to its daily and total floors, from one beat and its stage's rules."""
+
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from typing import Any
@@ -55,29 +56,50 @@ def reading(beat: dict, stage: dict, zone: str | None) -> dict[str, Any]:
     if first:
         b0, e0 = first["balance0"], first["equity0"]
         if beat["service_started"] > start + offset:
-            approx.append("el servicio de la VPS arrancó después del inicio del día de la firma: "
-                          "el equity de inicio es el de su primera lectura")
+            approx.append(
+                "el servicio de la VPS arrancó después del inicio del día de la firma: "
+                "el equity de inicio es el de su primera lectura"
+            )
     else:
-        closed = sum(d["profit"] + d["swap"] + d["commission"] + d["fee"]
-                     for d in beat["deals_today"] if d["time"] - offset >= start)
+        closed = sum(
+            d["profit"] + d["swap"] + d["commission"] + d["fee"]
+            for d in beat["deals_today"]
+            if d["time"] - offset >= start
+        )
         b0 = e0 = beat["balance"] - closed
         if start < served:
-            approx.append("el latido sólo trae las operaciones desde la medianoche del servidor y el día "
-                          "de la firma empezó antes: falta lo cerrado en ese tramo")
-        if stage["daily_basis"] == "max_be" and any(p["time"] - offset < start for p in beat["positions"]):
-            approx.append("el suelo diario parte del mayor entre balance y equity a medianoche, y hay "
-                          "posiciones abiertas desde antes: el equity de medianoche no viene en el latido "
-                          "(el servicio de la VPS de la versión 2 lo trae), se usa sólo el balance")
+            approx.append(
+                "el latido sólo trae las operaciones desde la medianoche del servidor y el día "
+                "de la firma empezó antes: falta lo cerrado en ese tramo"
+            )
+        if stage["daily_basis"] == "max_be" and any(
+            p["time"] - offset < start for p in beat["positions"]
+        ):
+            approx.append(
+                "el suelo diario parte del mayor entre balance y equity a medianoche, y hay "
+                "posiciones abiertas desde antes: el equity de medianoche no viene en el latido "
+                "(el servicio de la VPS de la versión 2 lo trae), se usa sólo el balance"
+            )
     size, equity = stage["size"], beat["equity"]
     if stage["max_loss_mode"] != "static":
-        approx.append("el suelo total es móvil y su máximo histórico no viene en el latido")
+        approx.append(
+            "el suelo total es móvil y su máximo histórico no viene en el latido"
+        )
 
     dfloor = floors.daily_floor(b0, e0, size, stage["daily_loss"], stage["daily_basis"])
-    mfloor = floors.max_floor(stage["max_loss_mode"], size, stage["max_loss"], equity, beat["balance"])
-    return {"day_start": start, "start_balance": b0, "today": equity - b0,
-            "worst_today": min(h["low"] for h in since) if since else None,
-            "daily_floor": dfloor, "daily_room": equity - dfloor,
-            "daily_left": (equity - dfloor) / (b0 - dfloor),
-            "max_floor": mfloor, "max_room": equity - mfloor,
-            "max_left": (equity - mfloor) / (stage["max_loss"] * size),
-            "approx": approx}
+    mfloor = floors.max_floor(
+        stage["max_loss_mode"], size, stage["max_loss"], equity, beat["balance"]
+    )
+    return {
+        "day_start": start,
+        "start_balance": b0,
+        "today": equity - b0,
+        "worst_today": min(h["low"] for h in since) if since else None,
+        "daily_floor": dfloor,
+        "daily_room": equity - dfloor,
+        "daily_left": (equity - dfloor) / (b0 - dfloor),
+        "max_floor": mfloor,
+        "max_room": equity - mfloor,
+        "max_left": (equity - mfloor) / (stage["max_loss"] * size),
+        "approx": approx,
+    }

@@ -6,7 +6,9 @@ from core.xmlget import hit
 # The signals the builder writes, by the <name> of the boolean variable they assign. Only
 # the entries are read: none of this corpus has an exit signal.
 ENTRY_SIGNALS = ("LongEntrySignal", "ShortEntrySignal")
-VARIABLE = re.compile(r"<variable\b[^>]*>\s*<id>([^<]*)</id>\s*<name>([^<]*)</name>", re.S)
+VARIABLE = re.compile(
+    r"<variable\b[^>]*>\s*<id>([^<]*)</id>\s*<name>([^<]*)</name>", re.S
+)
 SIGNAL = re.compile(r'<signal variable="([^"]+)">(.*?)</signal>', re.S)
 TOP = re.compile(r'\s*<Item key="(AND|OR)"[^>]*>')
 TAG = re.compile(r"<(/?)Block\b[^>]*?(/?)>")
@@ -18,7 +20,9 @@ ENTRY_ORDER = re.compile(r'<Item\b[^>]*key="Enter(?:AtMarket|AtStop|AtLimit)"')
 
 def _signal_ids(portfolio: str) -> dict[str, str]:
     """Entry signal name to the variable id its `<signal>` element carries."""
-    return {name: vid for vid, name in VARIABLE.findall(portfolio) if name in ENTRY_SIGNALS}
+    return {
+        name: vid for vid, name in VARIABLE.findall(portfolio) if name in ENTRY_SIGNALS
+    }
 
 
 def _top_blocks(body: str) -> list[tuple[int, int]]:
@@ -67,10 +71,16 @@ def conditions(portfolio: str) -> list[dict]:
         if name is None:
             continue
         top = TOP.match(body)
-        inner = body[top.end():] if top else body
+        inner = body[top.end() :] if top else body
         for k, (s, e) in enumerate(_top_blocks(inner) if top else [(0, len(body))]):
-            rows.append({"signal": name, "operator": top.group(1) if top else "",
-                         "index": k, "block": hit(KEY.search(inner[s:e])).group(1)})
+            rows.append(
+                {
+                    "signal": name,
+                    "operator": top.group(1) if top else "",
+                    "index": k,
+                    "block": hit(KEY.search(inner[s:e])).group(1),
+                }
+            )
     return rows
 
 

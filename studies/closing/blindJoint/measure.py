@@ -8,7 +8,7 @@ from engines.inference.snooping import superior
 from studies.closing.blindJoint import readings
 from studies.closing.blindJoint.pieces import PIECES
 
-YEAR = 252   # SQX's own convention (its SharpeRatio is weekday rows x sqrt(252))
+YEAR = 252  # SQX's own convention (its SharpeRatio is weekday rows x sqrt(252))
 # A column is flat when its std is under this fraction of the panel's largest |daily P&L|:
 # an excess that is zero up to float noise (1e-17) has no variance to studentize by, and its
 # Sharpe would be an enormous number made of rounding.
@@ -25,8 +25,7 @@ def states(population: pd.DataFrame) -> pd.DataFrame:
         Complete mothers down, pieces across.
     """
     complete = cast(pd.DataFrame, population[population["complete"]])
-    return pd.DataFrame({p: complete[p].map(lambda s: s["state"])
-                         for p in PIECES})
+    return pd.DataFrame({p: complete[p].map(lambda s: s["state"]) for p in PIECES})
 
 
 def stepm(excess: pd.DataFrame, columns: list[str], cfg: dict, block: int) -> list[str]:
@@ -44,8 +43,13 @@ def stepm(excess: pd.DataFrame, columns: list[str], cfg: dict, block: int) -> li
     if not columns:
         return []
     boot = cfg["bootstrap"]
-    return superior.stepm(cast(pd.DataFrame, excess[columns]), cfg["stepm"]["fwer"], block, boot["reps"],
-                          boot["seed"])
+    return superior.stepm(
+        cast(pd.DataFrame, excess[columns]),
+        cfg["stepm"]["fwer"],
+        block,
+        boot["reps"],
+        boot["seed"],
+    )
 
 
 def run(data: dict, cfg: dict) -> dict[str, Any]:
@@ -73,7 +77,10 @@ def run(data: dict, cfg: dict) -> dict[str, Any]:
         is not bootstrapped: at `benchmark.draws` it is `mc_day`, about 1/sqrt(draws) of
         the mother's own standard error (config.yaml).
     """
-    got: dict[str, Any] = {"states": states(data["population"]), "refused": data.get("refused")}
+    got: dict[str, Any] = {
+        "states": states(data["population"]),
+        "refused": data.get("refused"),
+    }
     if got["refused"]:
         got["named"] = {readings.label(r): None for r in readings.names()}
         got["calls"] = readings.verdicts(got["states"], got["named"])
@@ -81,24 +88,46 @@ def run(data: dict, cfg: dict) -> dict[str, Any]:
 
     days, random = data["panel"], data["benchmark"]
     excess = cast(pd.DataFrame, days - random)
-    flat = list(excess.columns[excess.std(ddof=1) <= FLAT * float(np.abs(days.to_numpy()).max())])
+    flat = list(
+        excess.columns[
+            excess.std(ddof=1) <= FLAT * float(np.abs(days.to_numpy()).max())
+        ]
+    )
     tested = cast(pd.DataFrame, excess.drop(columns=flat))
     boot = cfg["bootstrap"]
     block = superior.block_length(tested)
     named = {}
     for reading in readings.names():
-        pool = (readings.kept(got["states"], reading[0]) if reading[1] == "supervivientes"
-                else list(got["states"].index))
-        named[readings.label(reading)] = stepm(tested, [m for m in pool if m not in flat],
-                                               cfg, block)
+        pool = (
+            readings.kept(got["states"], reading[0])
+            if reading[1] == "supervivientes"
+            else list(got["states"].index)
+        )
+        named[readings.label(reading)] = stepm(
+            tested, [m for m in pool if m not in flat], cfg, block
+        )
     everyone = named[readings.label(("ninguna", "entrantes"))]
-    table = pd.DataFrame({
-        "sharpe": days.mean() / days.std(ddof=1) * np.sqrt(YEAR),
-        "excess_day": excess.mean(), "random_day": random.mean(), "mc_day": data["mc"],
-        "named_all": excess.columns.isin(everyone)})
+    table = pd.DataFrame(
+        {
+            "sharpe": days.mean() / days.std(ddof=1) * np.sqrt(YEAR),
+            "excess_day": excess.mean(),
+            "random_day": random.mean(),
+            "mc_day": data["mc"],
+            "named_all": excess.columns.isin(everyone),
+        }
+    )
     drawn: dict = {}
-    return {**got, "named": named, "calls": readings.verdicts(got["states"], named),
-            "spa": superior.spa(tested, block, boot["reps"], boot["seed"], drawn),
-            "spa_drawn": drawn,
-            "table": table, "block": block, "days": len(excess), "flat": flat,
-            "K": tested.shape[1], "panel": days, "benchmark": random}
+    return {
+        **got,
+        "named": named,
+        "calls": readings.verdicts(got["states"], named),
+        "spa": superior.spa(tested, block, boot["reps"], boot["seed"], drawn),
+        "spa_drawn": drawn,
+        "table": table,
+        "block": block,
+        "days": len(excess),
+        "flat": flat,
+        "K": tested.shape[1],
+        "panel": days,
+        "benchmark": random,
+    }

@@ -34,11 +34,13 @@ def native_blocks(install: Path) -> dict[str, dict]:
     for section in el(root.find(".//Blocks")):
         for category in section:
             for item in category:
-                found[item.get("key")] = {"section": section.tag,
-                                          "category": category.get("name"),
-                                          "returns": item.get("returnType"),
-                                          "display": item.get("display") or item.get("name"),
-                                          "help": item.get("help") or ""}
+                found[item.get("key")] = {
+                    "section": section.tag,
+                    "category": category.get("name"),
+                    "returns": item.get("returnType"),
+                    "display": item.get("display") or item.get("name"),
+                    "help": item.get("help") or "",
+                }
     return found
 
 
@@ -53,12 +55,16 @@ def custom_blocks(install: Path) -> dict[str, dict]:
         which is how a group item tells a custom block from a native one.
     """
     root = ElementTree.parse(install / CUSTOM_REL).getroot()
-    return {attr(item, "key"): {"section": item.get("type"),
-                              "category": item.get("category"),
-                              "returns": item.get("returnType"),
-                              "display": item.get("display") or item.get("name"),
-                              "help": item.get("help") or ""}
-            for item in root}
+    return {
+        attr(item, "key"): {
+            "section": item.get("type"),
+            "category": item.get("category"),
+            "returns": item.get("returnType"),
+            "display": item.get("display") or item.get("name"),
+            "help": item.get("help") or "",
+        }
+        for item in root
+    }
 
 
 class Vocabulary(TypedDict):
@@ -82,9 +88,10 @@ def groups(install: Path) -> dict[str, dict]:
         so both kinds are read the same way and told apart by the key prefix.
     """
     root = ElementTree.parse(install / GROUPS_REL).getroot()
-    return {attr(g, "name"): {"type": g.get("type"),
-                            "items": [i.get("key") for i in g]}
-            for g in root}
+    return {
+        attr(g, "name"): {"type": g.get("type"), "items": [i.get("key") for i in g]}
+        for g in root
+    }
 
 
 def vocabulary(install: Path) -> Vocabulary:
@@ -97,10 +104,12 @@ def vocabulary(install: Path) -> Vocabulary:
         The install name, its native and custom blocks, and its groups. Nothing here
         starts SQX or writes to the install; it is three XML files and nothing else.
     """
-    return {"install": install.name,
-            "native": native_blocks(install),
-            "custom": custom_blocks(install),
-            "groups": groups(install)}
+    return {
+        "install": install.name,
+        "native": native_blocks(install),
+        "custom": custom_blocks(install),
+        "groups": groups(install),
+    }
 
 
 def pooled_by(vocab: Vocabulary, key: str) -> list[str]:
@@ -132,9 +141,18 @@ def find(vocab: Vocabulary, term: str) -> list[dict]:
     rows = []
     for origin in ("native", "custom"):
         for key, b in vocab[origin].items():
-            if any(needle in (text or "").lower()
-                   for text in (key, b["display"], b.get("category"), b.get("help"))):
-                rows.append({"key": key, "origin": origin, **b, "pooled_by": pooled_by(vocab, key)})
+            if any(
+                needle in (text or "").lower()
+                for text in (key, b["display"], b.get("category"), b.get("help"))
+            ):
+                rows.append(
+                    {
+                        "key": key,
+                        "origin": origin,
+                        **b,
+                        "pooled_by": pooled_by(vocab, key),
+                    }
+                )
     return sorted(rows, key=lambda r: r["key"])
 
 
@@ -171,8 +189,10 @@ def missing(reference: Vocabulary, target: Vocabulary) -> dict[str, list[str]]:
         install and built on another needs both to exist there; when they do not, the
         group goes broken and the template disappears from the builder in silence.
     """
-    return {"custom_blocks": sorted(set(reference["custom"]) - set(target["custom"])),
-            "groups": sorted(set(reference["groups"]) - set(target["groups"]))}
+    return {
+        "custom_blocks": sorted(set(reference["custom"]) - set(target["custom"])),
+        "groups": sorted(set(reference["groups"]) - set(target["groups"])),
+    }
 
 
 def report(vocab: Vocabulary) -> str:
@@ -185,10 +205,12 @@ def report(vocab: Vocabulary) -> str:
         The counts, the usable groups by type, and the empty ones called out.
     """
     u = usable_groups(vocab)
-    lines = [f"{vocab['install']}: {len(vocab['native'])} native + {len(vocab['custom'])} own "
-             f"blocks, {len(vocab['groups'])} groups",
-             f"  Condition pools ({len(u['condition'])}): " + ", ".join(u["condition"]),
-             f"  Value pools     ({len(u['value'])}): " + ", ".join(u["value"])]
+    lines = [
+        f"{vocab['install']}: {len(vocab['native'])} native + {len(vocab['custom'])} own "
+        f"blocks, {len(vocab['groups'])} groups",
+        f"  Condition pools ({len(u['condition'])}): " + ", ".join(u["condition"]),
+        f"  Value pools     ({len(u['value'])}): " + ", ".join(u["value"]),
+    ]
     if u["empty"]:
         lines.append(f"  EMPTY, unusable ({len(u['empty'])}): " + ", ".join(u["empty"]))
     if not u["value"]:
@@ -200,12 +222,22 @@ def main() -> None:
     """Search the vocabulary, report it, snapshot it, or diff two installs."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("term", nargs="?", help="substring to look for, e.g. keltner")
-    ap.add_argument("--role", default="conductor", choices=sorted(installs()),
-                    help="which install to read; default the conductor")
-    ap.add_argument("--diff", choices=sorted(installs()),
-                    help="report what that install lacks against --role")
-    ap.add_argument("--snapshot", action="store_true",
-                    help="also write the inventory under the data root")
+    ap.add_argument(
+        "--role",
+        default="conductor",
+        choices=sorted(installs()),
+        help="which install to read; default the conductor",
+    )
+    ap.add_argument(
+        "--diff",
+        choices=sorted(installs()),
+        help="report what that install lacks against --role",
+    )
+    ap.add_argument(
+        "--snapshot",
+        action="store_true",
+        help="also write the inventory under the data root",
+    )
     args = ap.parse_args()
 
     vocab = vocabulary(installs()[args.role])
@@ -215,16 +247,25 @@ def main() -> None:
         if not rows:
             print(f"{args.term}: nothing in {vocab['install']}")
         for r in rows:
-            pools = ", ".join(r["pooled_by"]) or "NO GROUP POOLS IT — unusable in a template"
-            print(f"{r['key']}  [{r['origin']}/{r['section']}/{r['category']}] -> {r['returns']}\n"
-                  f"    {r['display']}\n    pooled by: {pools}")
+            pools = (
+                ", ".join(r["pooled_by"])
+                or "NO GROUP POOLS IT — unusable in a template"
+            )
+            print(
+                f"{r['key']}  [{r['origin']}/{r['section']}/{r['category']}] -> {r['returns']}\n"
+                f"    {r['display']}\n    pooled by: {pools}"
+            )
     elif args.diff:
         other = vocabulary(installs()[args.diff])
         gap = missing(vocab, other)
         print(f"{other['install']} lacks, against {vocab['install']}:")
-        print(f"  custom blocks ({len(gap['custom_blocks'])}): "
-              + (", ".join(gap["custom_blocks"]) or "none"))
-        print(f"  groups ({len(gap['groups'])}): " + (", ".join(gap["groups"]) or "none"))
+        print(
+            f"  custom blocks ({len(gap['custom_blocks'])}): "
+            + (", ".join(gap["custom_blocks"]) or "none")
+        )
+        print(
+            f"  groups ({len(gap['groups'])}): " + (", ".join(gap["groups"]) or "none")
+        )
     else:
         print(report(vocab))
 

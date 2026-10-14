@@ -25,8 +25,9 @@ class Strategy(TypedDict):
     tf: str
 
 
-def _strategy(project: str, databank: str, identity: str, origin: str = "live",
-              version: str = "") -> Strategy | str:
+def _strategy(
+    project: str, databank: str, identity: str, origin: str = "live", version: str = ""
+) -> Strategy | str:
     """The newest harvest and the strategy's name and timeframe, or the refusal sentence.
 
     Args:
@@ -41,21 +42,31 @@ def _strategy(project: str, databank: str, identity: str, origin: str = "live",
     wrong = source.bad_name(project, databank, identity) or archived.bad_source(origin)
     if wrong:
         return wrong if isinstance(wrong, str) else wrong["error"]
-    harvest = (source.newest(project, databank) if origin == "live"
-               else archived.harvest_folder(identity, version))
+    harvest = (
+        source.newest(project, databank)
+        if origin == "live"
+        else archived.harvest_folder(identity, version)
+    )
     if isinstance(harvest, str):
         return harvest
     if harvest is None:
         return source.NO_HARVEST
     got = source.described(harvest, identity)
     if got is None:
-        return (f"La identidad {identity[:12]}… no está en la cosecha {harvest.name} de "
-                f"{databank}: las identidades solo casan dentro de un databank.")
-    return {"harvest": harvest, "day": harvest.parent.name if origin == "archive" else harvest.name,
-            **got}
+        return (
+            f"La identidad {identity[:12]}… no está en la cosecha {harvest.name} de "
+            f"{databank}: las identidades solo casan dentro de un databank."
+        )
+    return {
+        "harvest": harvest,
+        "day": harvest.parent.name if origin == "archive" else harvest.name,
+        **got,
+    }
 
 
-def _bars(project: str, databank: str, asset: str, tf: str) -> tuple[source.Market | str, pd.DataFrame | None]:
+def _bars(
+    project: str, databank: str, asset: str, tf: str
+) -> tuple[source.Market | str, pd.DataFrame | None]:
     """The asset's bars at the strategy's timeframe, or why there are none.
 
     Args:
@@ -75,8 +86,14 @@ def _bars(project: str, databank: str, asset: str, tf: str) -> tuple[source.Mark
 
 
 @ROUTER.get("/api/tearsheet/market")
-def market(project: str = "", databank: str = "", identity: str = "", asset: str = "",
-           source_: str = Query("live", alias="source"), version: str = "") -> dict[str, Any]:
+def market(
+    project: str = "",
+    databank: str = "",
+    identity: str = "",
+    asset: str = "",
+    source_: str = Query("live", alias="source"),
+    version: str = "",
+) -> dict[str, Any]:
     """Item 5: how many months the strategy and its market moved each way, IS and OOS apart.
 
     Args:
@@ -97,23 +114,38 @@ def market(project: str = "", databank: str = "", identity: str = "", asset: str
         m, bars = _bars(project, databank, asset, s["tf"])
         if isinstance(m, str):
             return {"error": m}
-        assert bars is not None                 # `_bars` gives no frame only with a sentence
+        assert bars is not None  # `_bars` gives no frame only with a sentence
         equity = source.rows(s["harvest"], "equity", identity)
         foreign = source.foreign_samples(equity)
         if foreign:
             return {"error": foreign}
-        meta = {"project": project, "databank": databank, "identity": identity,
-                "name": s["name"], "tf": s["tf"], "day": s["day"], **m,
-                "wall_s": round(time.perf_counter() - t0, 3)}
+        meta = {
+            "project": project,
+            "databank": databank,
+            "identity": identity,
+            "name": s["name"],
+            "tf": s["tf"],
+            "day": s["day"],
+            **m,
+            "wall_s": round(time.perf_counter() - t0, 3),
+        }
         return validate(months.result(meta, equity, bars))
     except Exception as e:  # noqa: BLE001 — the boundary with a person: a sentence, never a 500
         return {"error": f"No pude contar los meses: {type(e).__name__}: {e}"}
 
 
 @ROUTER.get("/api/tearsheet/trades")
-def trade_gallery(project: str = "", databank: str = "", identity: str = "", sample: str = "IS",
-                  pick: str = "quantile", seed: str = "", asset: str = "",
-                  source_: str = Query("live", alias="source"), version: str = "") -> dict[str, Any]:
+def trade_gallery(
+    project: str = "",
+    databank: str = "",
+    identity: str = "",
+    sample: str = "IS",
+    pick: str = "quantile",
+    seed: str = "",
+    asset: str = "",
+    source_: str = Query("live", alias="source"),
+    version: str = "",
+) -> dict[str, Any]:
     """Item 6: five trades of one sample with the bars around each.
 
     Args:
@@ -146,14 +178,23 @@ def trade_gallery(project: str = "", databank: str = "", identity: str = "", sam
             return {"error": foreign}
         rows = cast(pd.DataFrame, rows[rows["sample"] == sample])
         if rows.empty:
-            return {"error": f"La estrategia no tiene operaciones {sample} en la cosecha."}
+            return {
+                "error": f"La estrategia no tiene operaciones {sample} en la cosecha."
+            }
         m, bars = _bars(project, databank, asset, s["tf"])
         got = trades.gallery(rows, bars, pick, int(seed) if seed else None)
-        return {"project": project, "databank": databank, "identity": identity,
-                "name": s["name"], "sample": sample, "tf": s["tf"],
-                "harvest_day": s["day"],
-                "asset": m.get("asset") if isinstance(m, dict) else None,
-                "feed": m.get("feed") if isinstance(m, dict) else None,
-                "bars_note": m if isinstance(m, str) else "", **got}
+        return {
+            "project": project,
+            "databank": databank,
+            "identity": identity,
+            "name": s["name"],
+            "sample": sample,
+            "tf": s["tf"],
+            "harvest_day": s["day"],
+            "asset": m.get("asset") if isinstance(m, dict) else None,
+            "feed": m.get("feed") if isinstance(m, dict) else None,
+            "bars_note": m if isinstance(m, str) else "",
+            **got,
+        }
     except Exception as e:  # noqa: BLE001 — the boundary with a person: a sentence, never a 500
         return {"error": f"No pude leer las operaciones: {type(e).__name__}: {e}"}

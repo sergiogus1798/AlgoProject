@@ -20,7 +20,7 @@ def reading(project: str, key: str, databank: str, mothers: pd.DataFrame) -> str
     # A mother carries her last databank's name («…(1)» after a retest); the study reads the
     # panel databank's cosecha, which knows her by its own (📓 2026-10-05, step 22, IndexError).
     spelt = identity.spelt(project, databank, list(mothers["identity"]))
-    rows: Iterable[Any] = mothers.itertuples()   # namedtuples, typed as plain tuples
+    rows: Iterable[Any] = mothers.itertuples()  # namedtuples, typed as plain tuples
     names = [cast(str, spelt.get(m.identity, m.strategy)) for m in rows]
     jobs = call.window(key, project, databank, who["symbol"], names)
     # One process per mother, each writing only `estrategias/<her name>.json` (`output.member`):
@@ -38,7 +38,7 @@ def copies(mothers: pd.DataFrame, folder: Path) -> Path:
     folder.mkdir(parents=True, exist_ok=True)
     for old in folder.glob("*.sqx"):
         old.unlink()
-    m: Any   # itertuples() rows are namedtuples, typed as plain tuples
+    m: Any  # itertuples() rows are namedtuples, typed as plain tuples
     for m in mothers.itertuples():
         shutil.copy2(m.file, folder / f"{m.strategy}.sqx")
     return folder
@@ -46,8 +46,19 @@ def copies(mothers: pd.DataFrame, folder: Path) -> Path:
 
 def export(project: str, role: str, tag: str, banks: list[str]) -> None:
     """The legs' trades in one SQX start, tagged so batches never overwrite each other."""
-    call.run(["-m", "sqx.export.export_retest", "--project", project, "--role", role,
-              "--batch", tag, *(x for b in banks for x in ("--databank", b))])
+    call.run(
+        [
+            "-m",
+            "sqx.export.export_retest",
+            "--project",
+            project,
+            "--role",
+            role,
+            "--batch",
+            tag,
+            *(x for b in banks for x in ("--databank", b)),
+        ]
+    )
 
 
 def clear(project: str) -> None:

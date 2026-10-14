@@ -33,17 +33,26 @@ def main_feed(members: dict[str, bytes], build_member: str) -> str:
 def project_definitions(source: Path, feed: str) -> tuple[str, str, str] | None:
     """A feed's (<Symbol>, <InstrumentInfo>, <Broker>) as one project.cfx carries them, or None."""
     with zipfile.ZipFile(source) as z:
-        for name in (n for n in z.namelist() if n.endswith(".xml") and n != "config.xml"):
+        for name in (
+            n for n in z.namelist() if n.endswith(".xml") and n != "config.xml"
+        ):
             # A project written before SQX's feeds were renamed names them the old way.
             text = current(z.read(name).decode("utf-8", "replace"))
-            block = next((m.group(0) for m in SYMBOL.finditer(text) if m.group(1) == feed), None)
+            block = next(
+                (m.group(0) for m in SYMBOL.finditer(text) if m.group(1) == feed), None
+            )
             if not block:
                 continue
             instrument = hit(INSTRUMENT.search(block)).group(1)
             broker = rx(r'broker="([^"]+)"', block).group(1)
-            info = next(m.group(0) for m in INSTRUMENT.finditer(text)
-                        if m.group(1) == instrument and m.group(0) != block)
-            entry = next(m.group(0) for m in BROKER.finditer(text) if m.group(1) == broker)
+            info = next(
+                m.group(0)
+                for m in INSTRUMENT.finditer(text)
+                if m.group(1) == instrument and m.group(0) != block
+            )
+            entry = next(
+                m.group(0) for m in BROKER.finditer(text) if m.group(1) == broker
+            )
             return block, info, entry
     return None
 
@@ -68,8 +77,10 @@ def definitions(source: Path | None, feed: str) -> tuple[str, str, str]:
     blocks = project_definitions(source, feed) if source else None
     blocks = blocks or registryxml.definitions(feed)
     if not blocks:
-        raise SystemExit(f"falta el FEED {feed}: no lo define ningún proyecto ni el Data Manager "
-                         "de SQX. Hay que darlo de alta en SQX — un símbolo no se inventa.")
+        raise SystemExit(
+            f"falta el FEED {feed}: no lo define ningún proyecto ni el Data Manager "
+            "de SQX. Hay que darlo de alta en SQX — un símbolo no se inventa."
+        )
     return blocks
 
 
@@ -86,19 +97,34 @@ def one_task(text: str, donor_feed: str, blocks: tuple[str, str, str]) -> str:
         already carry them, because SQX keys both by name and a duplicate is a conflict.
     """
     symbol, info, broker = blocks
-    text = SYMBOL.sub(lambda m: symbol if m.group(1) == donor_feed else m.group(0), text)
-    text = CHART.sub(lambda m: m.group(0).replace(donor_feed, hit(SYMBOL.match(symbol)).group(1))
-                     if m.group(1) == donor_feed else m.group(0), text)
+    text = SYMBOL.sub(
+        lambda m: symbol if m.group(1) == donor_feed else m.group(0), text
+    )
+    text = CHART.sub(
+        lambda m: (
+            m.group(0).replace(donor_feed, hit(SYMBOL.match(symbol)).group(1))
+            if m.group(1) == donor_feed
+            else m.group(0)
+        ),
+        text,
+    )
     instrument = hit(INSTRUMENT.search(info)).group(1)
-    if f'instrument="{instrument}"' not in text.split("<Instruments>")[1].split("</Instruments>")[0]:
+    if (
+        f'instrument="{instrument}"'
+        not in text.split("<Instruments>")[1].split("</Instruments>")[0]
+    ):
         text = text.replace("<Instruments>", f"<Instruments>\n      {info}", 1)
-    if f'id="{hit(BROKER.search(broker)).group(1)}"' not in text.split("<Brokers>")[1].split("</Brokers>")[0]:
+    if (
+        f'id="{hit(BROKER.search(broker)).group(1)}"'
+        not in text.split("<Brokers>")[1].split("</Brokers>")[0]
+    ):
         text = text.replace("<Brokers>", f"<Brokers>\n      {broker}", 1)
     return text
 
 
-def borrow_symbol(members: dict[str, bytes], feed: str, build_member: str,
-                  source: Path | None) -> str | None:
+def borrow_symbol(
+    members: dict[str, bytes], feed: str, build_member: str, source: Path | None
+) -> str | None:
     """Point every task of a clone at this asset's feed, patched in place.
 
     Args:
@@ -121,12 +147,15 @@ def borrow_symbol(members: dict[str, bytes], feed: str, build_member: str,
         return None
     blocks = definitions(source, feed)
     for member in [n for n in members if n.endswith(".xml") and n != "config.xml"]:
-        members[member] = one_task(members[member].decode("utf-8"), donor_feed,
-                                   blocks).encode("utf-8")
+        members[member] = one_task(
+            members[member].decode("utf-8"), donor_feed, blocks
+        ).encode("utf-8")
     return donor_feed
 
 
-def refuse(result: dict, final: dict[str, bytes], donor_feed: str, replaced: str | None) -> None:
+def refuse(
+    result: dict, final: dict[str, bytes], donor_feed: str, replaced: str | None
+) -> None:
     """Stop before anything lands in an install when a gate the human summary would miss failed.
 
     Args:
@@ -142,22 +171,36 @@ def refuse(result: dict, final: dict[str, bytes], donor_feed: str, replaced: str
             the project as a whole still trades the wrong market — OPEN.md issues 34-35, the
             USDJPY clone that built on gold with nothing in SQX complaining.
     """
-    on = sorted(m for m, blob in final.items()
-                if m.endswith(".xml") and mc_manipulation_on(blob.decode("utf-8")))
+    on = sorted(
+        m
+        for m, blob in final.items()
+        if m.endswith(".xml") and mc_manipulation_on(blob.decode("utf-8"))
+    )
     if on:
-        raise SystemExit(f"MonteCarloManipulation está encendido en {', '.join(on)}: no se usa "
-                         "nunca (dueño, 2026-10-11). Apágalo: python3 -m sqx.projects.rankings <cfx> --mc-off")
+        raise SystemExit(
+            f"MonteCarloManipulation está encendido en {', '.join(on)}: no se usa "
+            "nunca (dueño, 2026-10-11). Apágalo: python3 -m sqx.projects.rankings <cfx> --mc-off"
+        )
     if result["template_ignored"]:
-        raise SystemExit("the template would be IGNORED: " + "; ".join(result["template_ignored"]))
+        raise SystemExit(
+            "the template would be IGNORED: " + "; ".join(result["template_ignored"])
+        )
     unpriced = [m for m, n in result["setups"].items() if not n]
     if unpriced:
-        raise SystemExit(f"{', '.join(unpriced)} no lleva ningún <Setup> sobre "
-                         f"{result['feed']}: esas tareas operarían el mercado del donante a "
-                         "sus costes. Pasa --session-from con un proyecto que defina el feed.")
+        raise SystemExit(
+            f"{', '.join(unpriced)} no lleva ningún <Setup> sobre "
+            f"{result['feed']}: esas tareas operarían el mercado del donante a "
+            "sus costes. Pasa --session-from con un proyecto que defina el feed."
+        )
     if replaced:
-        stray = sorted(m for m, blob in final.items()
-                       if m.endswith(".xml") and donor_feed.encode("utf-8") in blob)
+        stray = sorted(
+            m
+            for m, blob in final.items()
+            if m.endswith(".xml") and donor_feed.encode("utf-8") in blob
+        )
         if stray:
-            raise SystemExit(f"{donor_feed} (el feed del donante) sigue apareciendo en "
-                             f"{', '.join(stray)} después del swap: el proyecto seguiría "
-                             "operando ese mercado en alguna tarea. No se instala nada.")
+            raise SystemExit(
+                f"{donor_feed} (el feed del donante) sigue apareciendo en "
+                f"{', '.join(stray)} después del swap: el proyecto seguiría "
+                "operando ese mercado en alguna tarea. No se instala nada."
+            )

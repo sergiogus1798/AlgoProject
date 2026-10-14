@@ -4,7 +4,7 @@ import argparse
 from typing import Any, TypedDict
 
 FIRST = "17"
-DONE = ("done", "sealed")       # sealed: 17-19 done, hidden by the ledger's door
+DONE = ("done", "sealed")  # sealed: 17-19 done, hidden by the ledger's door
 # Computed per mother over her variant batch, one after another, and read only at step 20.
 # 18.5 is back (encargo 65 row 8) without its build+oos1 split; `blind.skipped` skips the mothers whose
 # `descuadre_sqx` is not under `wfc.sqx_gap_relative`, at execution time.
@@ -14,7 +14,12 @@ BLOCK = {"17": "wfc", "18": "cscv", "18.5": "marketSurfaces"}
 # Results). Not chosen here (hard rule 11): `--panel 21=<databank>`, or a clean stop.
 PANEL = {"21": "exposure"}
 # Step 26's parameters and the flag each comes from: nothing is defaulted (owner).
-MT5 = {"start": "--mt5-from", "end": "--mt5-to", "model": "--mt5-model", "firms": "--mt5-firms"}
+MT5 = {
+    "start": "--mt5-from",
+    "end": "--mt5-to",
+    "model": "--mt5-model",
+    "firms": "--mt5-firms",
+}
 
 
 class Mt5Params(TypedDict, total=False):
@@ -56,37 +61,63 @@ class Walked(TypedDict):
 
 
 NOTHING = Given(panel={}, mt5={}, judged=set())
-NO_FAMILY = ("el proyecto no tiene plantilla en projects/registry.csv: sin familia las miradas "
-             "de 17-20 no se apuntan en el ledger, así que no se corren")
+NO_FAMILY = (
+    "el proyecto no tiene plantilla en projects/registry.csv: sin familia las miradas "
+    "de 17-20 no se apuntan en el ledger, así que no se corren"
+)
 
 
 def flags(ap: argparse.ArgumentParser) -> None:
     """The tail's inputs on `pipeline.autopilot.run`'s command line, none with a default."""
-    ap.add_argument("--panel", action="append", default=[], metavar="PASO=DATABANK",
-                    help="el databank que lee un paso de panel: 21 (exposición, su export con "
-                         "OOS1); se repite")
-    ap.add_argument("--until", choices=["wfm"],
-                    help="el run acaba tras el paso 19 (la WFM, su lectura y las filas del ledger)")
+    ap.add_argument(
+        "--panel",
+        action="append",
+        default=[],
+        metavar="PASO=DATABANK",
+        help="el databank que lee un paso de panel: 21 (exposición, su export con "
+        "OOS1); se repite",
+    )
+    ap.add_argument(
+        "--until",
+        choices=["wfm"],
+        help="el run acaba tras el paso 19 (la WFM, su lectura y las filas del ledger)",
+    )
     ap.add_argument("--mt5-from", help="paso 26: primer día del backtest, YYYY-MM-DD")
     ap.add_argument("--mt5-to", help="paso 26: último día, YYYY-MM-DD")
     ap.add_argument("--mt5-model", help="paso 26: el modelo del tester de MT5")
     ap.add_argument("--mt5-firms", help="paso 26: las empresas, separadas por comas")
-    ap.add_argument("--mt5-real-ticks", action="store_true",
-                    help="paso 26: además, una segunda pasada del tester en Real ticks")
+    ap.add_argument(
+        "--mt5-real-ticks",
+        action="store_true",
+        help="paso 26: además, una segunda pasada del tester en Real ticks",
+    )
 
 
 def inputs(a: argparse.Namespace, cfg: dict[str, Any]) -> Given:
     """What `walk` needs beside the rail: the panel databanks, step 26's parameters as its
     agent takes them, and the steps `criteria.yaml` gives rules to."""
-    return {"panel": dict(p.split("=", 1) for p in a.panel), "until": a.until,
-            "mt5": {"start": a.mt5_from, "end": a.mt5_to, "model": a.mt5_model,
-                    "firms": a.mt5_firms.split(",") if a.mt5_firms else [],
-                    "ticks": a.mt5_real_ticks},
-            "judged": {n for n, spec in cfg["steps"].items() if spec.get("rules")}}
+    return {
+        "panel": dict(p.split("=", 1) for p in a.panel),
+        "until": a.until,
+        "mt5": {
+            "start": a.mt5_from,
+            "end": a.mt5_to,
+            "model": a.mt5_model,
+            "firms": a.mt5_firms.split(",") if a.mt5_firms else [],
+            "ticks": a.mt5_real_ticks,
+        },
+        "judged": {n for n, spec in cfg["steps"].items() if spec.get("rules")},
+    }
 
 
-def walk(steps: list[dict[str, Any]], do: list[dict[str, Any]], stale: bool, pending: str | None,
-         family: str | None, given: Given) -> Walked:
+def walk(
+    steps: list[dict[str, Any]],
+    do: list[dict[str, Any]],
+    stale: bool,
+    pending: str | None,
+    family: str | None,
+    given: Given,
+) -> Walked:
     """The rail from step 17 to 26, every survivor through every step (owner, 2026-09-29).
 
     Args:
@@ -149,8 +180,9 @@ def walk(steps: list[dict[str, Any]], do: list[dict[str, Any]], stale: bool, pen
         else:
             pending = n if judged else None
 
-    running = next((n for n in (*BLOCK, "19", "20", *PANEL)
-                    if by[n]["state"] == "running"), None)
+    running = next(
+        (n for n in (*BLOCK, "19", "20", *PANEL) if by[n]["state"] == "running"), None
+    )
     block = any(due(n) for n in (*BLOCK, "19"))
     if (block or due("20")) and not family:
         return halt(FIRST if block else "20", NO_FAMILY)
@@ -159,21 +191,27 @@ def walk(steps: list[dict[str, Any]], do: list[dict[str, Any]], stale: bool, pen
             if n == running:
                 return halt(n, "está en marcha")
             add(n, "blind", tests=[key], redo=stale, oos2=True)
-        for n in BLOCK:         # each state is judged as the block's looks close, before the WFM
-            judge(n, **({"segment": "build+oos1+oos2"} if n == "18.5" else {}))   # 18.5 read oos2
+        for (
+            n
+        ) in BLOCK:  # each state is judged as the block's looks close, before the WFM
+            judge(
+                n, **({"segment": "build+oos1+oos2"} if n == "18.5" else {})
+            )  # 18.5 read oos2
         if running == "19":
             return halt("19", "está en marcha")
         ran = due("19")
         if ran:
             add("19", "sqx")
-        if ran or not any(t["key"] == "wfm" and t["state"] == "done"
-                          for t in by["19"].get("tests", [])):
+        if ran or not any(
+            t["key"] == "wfm" and t["state"] == "done"
+            for t in by["19"].get("tests", [])
+        ):
             add("19", "wfm", title="lectura de la WFM")
             add("19", "kept", title="guardar para fondeo")
         judge("19")
         add("19.5", "oos2read", title="lectura única de oos2")
-        judge("19.5")       # the tail's only cut: z <= 0 leaves the databank (criteria.yaml)
-        stale = True        # a piece of the block is new: 20 and what follows read it again
+        judge("19.5")  # the tail's only cut: z <= 0 leaves the databank (criteria.yaml)
+        stale = True  # a piece of the block is new: 20 and what follows read it again
     if running == "20":
         return halt("20", "está en marcha")
     if due("20"):
@@ -185,13 +223,18 @@ def walk(steps: list[dict[str, Any]], do: list[dict[str, Any]], stale: bool, pen
         if n == running:
             return halt(n, "está en marcha")
         if due(n) and not given["panel"].get(n):
-            return halt(n, f"falta --panel {n}=<databank>: el databank que lee {key} no lo "
-                           "sabe el raíl y no se elige por ti")
+            return halt(
+                n,
+                f"falta --panel {n}=<databank>: el databank que lee {key} no lo "
+                "sabe el raíl y no se elige por ti",
+            )
         visit(n, "reading", tests=[key], databank=given["panel"].get(n))
     add("26", "finalists", title="finalistas para el paso 26")
     missing = [flag for key, flag in MT5.items() if not given["mt5"].get(key)]
     if not missing:
         add("26", "mt5verify", params=given["mt5"])
     elif due("26"):
-        return halt("26", "el paso 26 no da nada por defecto: faltan " + ", ".join(missing))
+        return halt(
+            "26", "el paso 26 no da nada por defecto: faltan " + ", ".join(missing)
+        )
     return halt(None, "no queda ningún paso")

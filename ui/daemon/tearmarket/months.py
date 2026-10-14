@@ -7,10 +7,12 @@ import pandas as pd
 from ui.daemon.tearmarket.source import SAMPLES
 
 # The four cells in reading order: (key, label, strategy sign, market sign).
-CELLS = (("both_up", "estrategia sube · mercado sube", 1, 1),
-         ("up_down", "estrategia sube · mercado baja", 1, -1),
-         ("down_up", "estrategia baja · mercado sube", -1, 1),
-         ("both_down", "estrategia baja · mercado baja", -1, -1))
+CELLS = (
+    ("both_up", "estrategia sube · mercado sube", 1, 1),
+    ("up_down", "estrategia sube · mercado baja", 1, -1),
+    ("down_up", "estrategia baja · mercado sube", -1, 1),
+    ("both_down", "estrategia baja · mercado baja", -1, -1),
+)
 FLAT = "estrategia plana (P&L del mes 0)"
 NO_MARKET = "mercado sin barras o sin variación"
 
@@ -61,7 +63,12 @@ def count(pnl: pd.Series, ret: pd.Series) -> dict[str, int]:
     s = cast(pd.Series, pnl[live]).gt(0).map({True: 1, False: -1})
     m = cast(pd.Series, ret[live]).gt(0).map({True: 1, False: -1})
     out = {k: int(((s == a) & (m == b)).sum()) for k, _, a, b in CELLS}
-    return {**out, "flat": int(flat.sum()), "no_market": int(blind.sum()), "months": len(pnl)}
+    return {
+        **out,
+        "flat": int(flat.sum()),
+        "no_market": int(blind.sum()),
+        "months": len(pnl),
+    }
 
 
 def tab(sample: str, n: dict[str, int], span: str) -> dict[str, Any]:
@@ -75,29 +82,68 @@ def tab(sample: str, n: dict[str, int], span: str) -> dict[str, Any]:
     Returns:
         A contract tab.
     """
-    table = {"kind": "table", "title": f"Meses {sample}: signo de la estrategia contra el mercado",
-             "columns": ["", "mercado sube", "mercado baja", "total"],
-             "rows": [["estrategia sube", n["both_up"], n["up_down"], n["both_up"] + n["up_down"]],
-                      ["estrategia baja", n["down_up"], n["both_down"],
-                       n["down_up"] + n["both_down"]],
-                      [FLAT, "", "", n["flat"]], [NO_MARKET, "", "", n["no_market"]],
-                      ["meses de la muestra", "", "", n["months"]]],
-             "align": ["left", "right", "right", "right"],
-             "note": ("Cada celda cuenta meses naturales. Las cuatro celdas, los meses planos y "
-                      "los meses sin signo del mercado suman los meses de la muestra.")}
-    items = [{"label": lab, "value": n[k], "error": None,
-              "state": "watch" if k == "both_down" else "info"} for k, lab, _, _ in CELLS]
-    items += [{"label": FLAT, "value": n["flat"], "error": None, "state": "none"},
-              {"label": NO_MARKET, "value": n["no_market"], "error": None, "state": "none"}]
-    bars = {"kind": "bars", "title": f"Meses {sample} por celda", "unit": "meses",
-            "items": items, "reference": None,
-            "note": ("Resaltada en ámbar: los meses en que la estrategia y el mercado bajaron a "
-                     "la vez. Plana y sin signo del mercado van aparte, fuera de las cuatro celdas.")}
-    return {"name": sample, "title": f"{sample} · {span}",
-            "note": (f"{n['months']} meses {sample} ({span}). Mes de la estrategia: variación "
-                     "de su curva diaria en el mes. Mes del mercado: último cierre / primer "
-                     "cierre del mes − 1, con las barras del feed."),
-            "selectors": [], "blocks": [table, bars]}
+    table = {
+        "kind": "table",
+        "title": f"Meses {sample}: signo de la estrategia contra el mercado",
+        "columns": ["", "mercado sube", "mercado baja", "total"],
+        "rows": [
+            [
+                "estrategia sube",
+                n["both_up"],
+                n["up_down"],
+                n["both_up"] + n["up_down"],
+            ],
+            [
+                "estrategia baja",
+                n["down_up"],
+                n["both_down"],
+                n["down_up"] + n["both_down"],
+            ],
+            [FLAT, "", "", n["flat"]],
+            [NO_MARKET, "", "", n["no_market"]],
+            ["meses de la muestra", "", "", n["months"]],
+        ],
+        "align": ["left", "right", "right", "right"],
+        "note": (
+            "Cada celda cuenta meses naturales. Las cuatro celdas, los meses planos y "
+            "los meses sin signo del mercado suman los meses de la muestra."
+        ),
+    }
+    items = [
+        {
+            "label": lab,
+            "value": n[k],
+            "error": None,
+            "state": "watch" if k == "both_down" else "info",
+        }
+        for k, lab, _, _ in CELLS
+    ]
+    items += [
+        {"label": FLAT, "value": n["flat"], "error": None, "state": "none"},
+        {"label": NO_MARKET, "value": n["no_market"], "error": None, "state": "none"},
+    ]
+    bars = {
+        "kind": "bars",
+        "title": f"Meses {sample} por celda",
+        "unit": "meses",
+        "items": items,
+        "reference": None,
+        "note": (
+            "Resaltada en ámbar: los meses en que la estrategia y el mercado bajaron a "
+            "la vez. Plana y sin signo del mercado van aparte, fuera de las cuatro celdas."
+        ),
+    }
+    return {
+        "name": sample,
+        "title": f"{sample} · {span}",
+        "note": (
+            f"{n['months']} meses {sample} ({span}). Mes de la estrategia: variación "
+            "de su curva diaria en el mes. Mes del mercado: último cierre / primer "
+            "cierre del mes − 1, con las barras del feed."
+        ),
+        "selectors": [],
+        "blocks": [table, bars],
+    }
 
 
 def result(meta: dict, equity: pd.DataFrame, bars: pd.DataFrame) -> dict[str, Any]:
@@ -115,16 +161,38 @@ def result(meta: dict, equity: pd.DataFrame, bars: pd.DataFrame) -> dict[str, An
     counts: dict[str, dict[str, int]] = {}
     for sample in SAMPLES:
         pnl = strategy_months(cast(pd.DataFrame, equity[equity["sample"] == sample]))
-        counts[sample] = count(pnl, market_months(bars, cast(pd.PeriodIndex, pnl.index)))
+        counts[sample] = count(
+            pnl, market_months(bars, cast(pd.PeriodIndex, pnl.index))
+        )
         tabs.append(tab(sample, counts[sample], f"{pnl.index[0]} … {pnl.index[-1]}"))
-    return {"module": "tearMarket", "strategy": meta["name"], "identity": meta["identity"],
-            "config_hash": meta["day"], "computed_at": pd.Timestamp.now().isoformat(timespec="seconds"),
-            "wall_s": meta["wall_s"], "verdict": None, "tabs": tabs,
-            "warnings": [], "glossary": [
-                {"term": "mes plano", "text": "Mes en que la curva de la estrategia no cambió: "
-                 "no operó o cerró en cero. No entra en ninguna celda."},
-                {"term": "mes del mercado", "text": f"{meta['feed']} en {meta['tf']}: último "
-                 "cierre del mes / primer cierre del mes − 1."}],
-            "summary": {"counts": counts, "asset": meta["asset"], "feed": meta["feed"],
-                        "harvest_day": meta["day"], "project": meta["project"],
-                        "databank": meta["databank"]}}
+    return {
+        "module": "tearMarket",
+        "strategy": meta["name"],
+        "identity": meta["identity"],
+        "config_hash": meta["day"],
+        "computed_at": pd.Timestamp.now().isoformat(timespec="seconds"),
+        "wall_s": meta["wall_s"],
+        "verdict": None,
+        "tabs": tabs,
+        "warnings": [],
+        "glossary": [
+            {
+                "term": "mes plano",
+                "text": "Mes en que la curva de la estrategia no cambió: "
+                "no operó o cerró en cero. No entra en ninguna celda.",
+            },
+            {
+                "term": "mes del mercado",
+                "text": f"{meta['feed']} en {meta['tf']}: último "
+                "cierre del mes / primer cierre del mes − 1.",
+            },
+        ],
+        "summary": {
+            "counts": counts,
+            "asset": meta["asset"],
+            "feed": meta["feed"],
+            "harvest_day": meta["day"],
+            "project": meta["project"],
+            "databank": meta["databank"],
+        },
+    }

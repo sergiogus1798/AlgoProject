@@ -23,8 +23,9 @@ from sqx.variants import legs as legmod
 def _py(*args: str) -> None:
     """One module run as the skill runs it; its failure ends the step with its own words."""
     with phase(args[0].rsplit(".", 1)[-1] + (".clear" if "--clear" in args else "")):
-        got = subprocess.run([sys.executable, "-m", *args], cwd=ROOT, capture_output=True,
-                             text=True)
+        got = subprocess.run(
+            [sys.executable, "-m", *args], cwd=ROOT, capture_output=True, text=True
+        )
     if got.returncode:
         raise SystemExit(f"{args[0]}: {(got.stderr or got.stdout).strip()[-1500:]}")
 
@@ -42,8 +43,16 @@ def _stamp(project: str, brief: Path) -> str:
     design = json.loads(brief.read_text(encoding="utf-8"))
     parent = inputs.source(design)
     mother = sqxfile.identity(parent) if parent.is_file() else None
-    seen = json.dumps([inputs.load(), legmod.legs(symbol), assetdata.load(symbol) if symbol else None, mother],
-                      sort_keys=True, default=str)
+    seen = json.dumps(
+        [
+            inputs.load(),
+            legmod.legs(symbol),
+            assetdata.load(symbol) if symbol else None,
+            mother,
+        ],
+        sort_keys=True,
+        default=str,
+    )
     return hashlib.sha256(brief.read_bytes() + seen.encode()).hexdigest()
 
 
@@ -61,14 +70,28 @@ def wire(project: str, role: str, markets: bool = True) -> None:
     row = next(r for r in reversed(registry.rows()) if r["name"] == project)
     held = project_dir(project, worker_dir(role)) / "project.cfx"
     if not live.mine(role):
-        _py("sqx.projects.wfc", row["symbol"], "--cfx", str(held), "--timeframe", row["timeframe"],
-            *less)
+        _py(
+            "sqx.projects.wfc",
+            row["symbol"],
+            "--cfx",
+            str(held),
+            "--timeframe",
+            row["timeframe"],
+            *less,
+        )
         return
     with tempfile.TemporaryDirectory(dir=tmp_dir()) as tmp:
         staged = Path(tmp) / "project.cfx"
         shutil.copy2(held, staged)
-        _py("sqx.projects.wfc", row["symbol"], "--cfx", str(staged), "--timeframe",
-            row["timeframe"], *less)
+        _py(
+            "sqx.projects.wfc",
+            row["symbol"],
+            "--cfx",
+            str(staged),
+            "--timeframe",
+            row["timeframe"],
+            *less,
+        )
         live.push(role, project, staged, held)
 
 
@@ -90,51 +113,90 @@ def run(project: str, role: str, only: set[str] | None = None) -> str:
     for brief in briefs(project):
         strategy = json.loads(brief.read_text(encoding="utf-8"))["strategy"]
         if only is None or strategy in only:
-            todo.append((strategy, variants_dir(project, strategy), ["--brief", str(brief)]))
+            todo.append(
+                (strategy, variants_dir(project, strategy), ["--brief", str(brief)])
+            )
     stamp = {s: _stamp(project, Path(b[1])) for s, _, b in todo}
-    finished = [t for t in todo if _marker(t[1]).is_file() and _marker(t[1]).read_text() == stamp[t[0]]]
-    todo = [t for t in todo if t not in finished]      # same inputs, already finished: not redone
-    if todo or not apart:       # live with every mother finished: the project is never touched
+    finished = [
+        t
+        for t in todo
+        if _marker(t[1]).is_file() and _marker(t[1]).read_text() == stamp[t[0]]
+    ]
+    todo = [
+        t for t in todo if t not in finished
+    ]  # same inputs, already finished: not redone
+    if (
+        todo or not apart
+    ):  # live with every mother finished: the project is never touched
         wire(project, role, markets=not apart)
 
     def make(work: Path, brief: list[str]) -> float:
         """One mother's design, pilot and batch of `.sqx`; its seconds."""
         began = time.monotonic()
-        call.again(lambda: _py("sqx.variants.make", *brief, "--project", project, "--out",
-                               str(work)))
+        call.again(
+            lambda: _py(
+                "sqx.variants.make", *brief, "--project", project, "--out", str(work)
+            )
+        )
         return time.monotonic() - began
 
     for _, work, _ in todo:
-        _marker(work).unlink(missing_ok=True)      # a cut run must not keep an older brief's marker
-    spent = {strategy: make(work, brief) for strategy, work, brief in todo} if apart else {}
+        _marker(work).unlink(
+            missing_ok=True
+        )  # a cut run must not keep an older brief's marker
+    spent = (
+        {strategy: make(work, brief) for strategy, work, brief in todo} if apart else {}
+    )
     if apart and todo:
         wire(project, role)
     done, works = [f"{t[0]} ya hecha" for t in finished], [t[1] for t in finished]
     for strategy, work, brief in todo:
         began = time.monotonic() - (spent[strategy] if apart else make(work, brief))
-        call.again(lambda: _py("sqx.variants.execute", "--work", str(work), "--project",  # noqa: B023 retry runs within iteration
-                               project))
+        call.again(
+            lambda: _py(
+                "sqx.variants.execute",
+                "--work",
+                str(work),
+                "--project",  # noqa: B023 retry runs within iteration
+                project,
+            )
+        )
         _py("sqx.variants.equity", "--work", str(work))
         _py("sqx.variants.collect", "--work", str(work))
         # Every variant's trades, the three legs and every market, before the databanks empty:
         # the shared excess of steps 14, 16.5 and 17 is computed from them (encargo 48 E/F).
         # `closing.export` is this same command; closing imports this module, so not from there.
-        if apart:       # live: the legs' trades straight from SQX's memory; without a dump it is orderstocsv
+        if apart:  # live: the legs' trades straight from SQX's memory; without a dump it is orderstocsv
             with phase("variants.memoria"):
-                wrote = membank.run(role, project, {leg["databank"]: "all" for leg in legmod.legs()})
+                wrote = membank.run(
+                    role, project, {leg["databank"]: "all" for leg in legmod.legs()}
+                )
                 print(f"operaciones desde memoria: {wrote or 'ninguna'}", flush=True)
-        _py("sqx.export.export_retest", "--project", project, "--role", role, "--batch",
-            "variants", *(x for leg in legmod.legs() for x in ("--databank", leg["databank"])))
+        _py(
+            "sqx.export.export_retest",
+            "--project",
+            project,
+            "--role",
+            role,
+            "--batch",
+            "variants",
+            *(x for leg in legmod.legs() for x in ("--databank", leg["databank"])),
+        )
         shutil.rmtree(bank_dir(project, role), ignore_errors=True)
         _py("sqx.variants.varianttrades", "--work", str(work), "--project", project)
-        _py("sqx.variants.execute", "--work", str(work), "--project", project, "--clear")
+        _py(
+            "sqx.variants.execute", "--work", str(work), "--project", project, "--clear"
+        )
         work.mkdir(parents=True, exist_ok=True)
-        _marker(work).write_text(stamp[strategy])      # last: a cut run leaves none
+        _marker(work).write_text(stamp[strategy])  # last: a cut run leaves none
         done.append(f"{strategy} {time.monotonic() - began:.0f} s")
         works.append(work)
     if not done:
         raise SystemExit(f"{project}: el paso 16 no dejó ningún design brief")
-    _py("sqx.variants.mothertrades", *(x for work in works for x in ("--work", str(work))))
+    _py(
+        "sqx.variants.mothertrades",
+        *(x for work in works for x in ("--work", str(work))),
+    )
     # The map (encargo 48 N): no rule, cuts nothing, reads build and oos1 only. Last, with SQX
     # idle and every batch already on disk, so a map that fails loses nothing of the factory.
     for work in works:

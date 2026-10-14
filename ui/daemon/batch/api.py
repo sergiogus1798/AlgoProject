@@ -40,8 +40,10 @@ def get_batch(project: str, strategy: str) -> dict[str, Any]:
     """
     out = panel.batch(project, strategy)
     if leaks(out):
-        return {"has_batch": out["has_batch"],
-                "error": "la respuesta nombraba el tramo reservado y se ha retenido entera"}
+        return {
+            "has_batch": out["has_batch"],
+            "error": "la respuesta nombraba el tramo reservado y se ha retenido entera",
+        }
     return out
 
 

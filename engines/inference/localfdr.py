@@ -7,8 +7,11 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.optimize import minimize
 from scipy.stats import norm
 
-MIN_Z = 500     # a null and a density fitted on fewer z are noise: p is left empty
-BINS, SMOOTH = 60, 1.5      # the density: a histogram of 60 bins, Gaussian-smoothed over 1.5 bins
+MIN_Z = 500  # a null and a density fitted on fewer z are noise: p is left empty
+BINS, SMOOTH = (
+    60,
+    1.5,
+)  # the density: a histogram of 60 bins, Gaussian-smoothed over 1.5 bins
 
 
 def _nll(t: np.ndarray, inside: np.ndarray, lo: float, hi: float) -> float:
@@ -31,10 +34,17 @@ def empirical_null(z: np.ndarray) -> tuple[float, float, float]:
     lo, hi = np.quantile(z, [0.25, 0.75])
     inside = z[(z >= lo) & (z <= hi)]
 
-    d, s = minimize(_nll, [inside.mean(), inside.std()], args=(inside, lo, hi),
-                    method="Nelder-Mead").x
+    d, s = minimize(
+        _nll, [inside.mean(), inside.std()], args=(inside, lo, hi), method="Nelder-Mead"
+    ).x
     s = abs(s)
-    return float(d), float(s), float(min(1.0, len(inside) / len(z) / (norm.cdf(hi, d, s) - norm.cdf(lo, d, s))))
+    return (
+        float(d),
+        float(s),
+        float(
+            min(1.0, len(inside) / len(z) / (norm.cdf(hi, d, s) - norm.cdf(lo, d, s)))
+        ),
+    )
 
 
 class Fit(TypedDict):
@@ -63,8 +73,13 @@ def fit(z: np.ndarray) -> Fit:
         the three figures are None and `reason` says why.
     """
     if len(z) < MIN_Z:
-        return {"p": None, "delta0": None, "sigma0": None, "pi0": None,
-                "reason": f"{len(z)} z, menos de {MIN_Z}: el ajuste sería ruido"}
+        return {
+            "p": None,
+            "delta0": None,
+            "sigma0": None,
+            "pi0": None,
+            "reason": f"{len(z)} z, menos de {MIN_Z}: el ajuste sería ruido",
+        }
     d, s, pi0 = empirical_null(z)
     counts, edges = np.histogram(z, BINS)
     width = edges[1] - edges[0]
@@ -73,4 +88,10 @@ def fit(z: np.ndarray) -> Fit:
     fdr = np.clip(pi0 * norm.pdf(z, d, s) / f, 0, 1)
     order = np.argsort(z)
     fdr[order] = np.maximum.accumulate(fdr[order][::-1])[::-1]
-    return {"p": np.where(z > d, 1 - fdr, 0.0), "delta0": d, "sigma0": s, "pi0": pi0, "reason": ""}
+    return {
+        "p": np.where(z > d, 1 - fdr, 0.0),
+        "delta0": d,
+        "sigma0": s,
+        "pi0": pi0,
+        "reason": "",
+    }

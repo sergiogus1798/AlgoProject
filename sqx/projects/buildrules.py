@@ -16,11 +16,13 @@ from core.xmlget import rx, hit
 TF_MINUTES = {"M5": 5, "M15": 15, "M30": 30, "H1": 60, "H2": 120, "H4": 240, "D1": 1440}
 
 # One doctrine flag can govern more than one SQX block: a trailing stop is two of them.
-EXIT_BLOCKS = {"stop_loss": ["StopLoss.StopLoss"],
-               "profit_target": ["ProfitTarget.ProfitTarget"],
-               "trailing_stop": ["TrailingStop.TrailingStop", "TrailingStop.TrailingActivation"],
-               "move_sl_to_be": ["MoveSL2BE.MoveSL2BE", "MoveSL2BE.SL2BEAddPips"],
-               "by_condition": ["_ExitRule_"]}
+EXIT_BLOCKS = {
+    "stop_loss": ["StopLoss.StopLoss"],
+    "profit_target": ["ProfitTarget.ProfitTarget"],
+    "trailing_stop": ["TrailingStop.TrailingStop", "TrailingStop.TrailingActivation"],
+    "move_sl_to_be": ["MoveSL2BE.MoveSL2BE", "MoveSL2BE.SL2BEAddPips"],
+    "by_condition": ["_ExitRule_"],
+}
 # SQX asks for each exit type twice: `use` says it is available at all, `probability` how
 # often the generator reaches for it. 100 is what makes one compulsory.
 ALWAYS, SOMETIMES = "100", "50"
@@ -41,11 +43,17 @@ def block_use(text: str, key: str, use: bool, probability: str | None = None) ->
     Returns:
         The text with that block's attributes set.
     """
-    text = re.sub(rf'(<Block key="{re.escape(key)}"[^>]*?)use="[^"]*"',
-                  rf'\g<1>use="{str(use).lower()}"', text)
+    text = re.sub(
+        rf'(<Block key="{re.escape(key)}"[^>]*?)use="[^"]*"',
+        rf'\g<1>use="{str(use).lower()}"',
+        text,
+    )
     if probability:
-        text = re.sub(rf'(<Block key="{re.escape(key)}"[^>]*?)probability="[^"]*"',
-                      rf'\g<1>probability="{probability}"', text)
+        text = re.sub(
+            rf'(<Block key="{re.escape(key)}"[^>]*?)probability="[^"]*"',
+            rf'\g<1>probability="{probability}"',
+            text,
+        )
     return text
 
 
@@ -61,7 +69,9 @@ def set_order_types(text: str, allowed: list[str]) -> str:
         because a stop or limit entry fills at a price the backtest assumes and the
         broker does not owe.
     """
-    section = rx(r"<OrderTypes>.*?</OrderTypes>", hit(BLOCKS.search(text)).group(0), re.S).group(0)
+    section = rx(
+        r"<OrderTypes>.*?</OrderTypes>", hit(BLOCKS.search(text)).group(0), re.S
+    ).group(0)
     out = section
     for key in re.findall(r'<Block key="([^"]*)"[^>]*category="orderTypes"', section):
         out = block_use(out, key, key in allowed)
@@ -80,7 +90,9 @@ def bar_range(exits: dict, timeframe: str) -> tuple[int, int]:
     """
     per_hour = 60 / TF_MINUTES[timeframe]
     b = exits["bars"]
-    return max(1, round(b["min_hours"] * per_hour)), max(1, round(b["max_hours"] * per_hour))
+    return max(1, round(b["min_hours"] * per_hour)), max(
+        1, round(b["max_hours"] * per_hour)
+    )
 
 
 def set_exit_types(text: str, exits: dict, timeframe: str) -> tuple[str, int]:
@@ -104,21 +116,30 @@ def set_exit_types(text: str, exits: dict, timeframe: str) -> tuple[str, int]:
     out = block_use(section, BARS_BLOCK, True, ALWAYS)
     enabled = 1
     for flag, keys in EXIT_BLOCKS.items():
-        odds = ALWAYS if exits["condition_required"] and flag == "by_condition" else SOMETIMES
+        odds = (
+            ALWAYS
+            if exits["condition_required"] and flag == "by_condition"
+            else SOMETIMES
+        )
         for key in keys:
             out = block_use(out, key, bool(exits[flag]), odds)
         enabled += bool(exits[flag])
 
     lo, hi = bar_range(exits, timeframe)
     bars = rx(rf'<Block key="{BARS_BLOCK}".*?</Block>', out, re.S).group(0)
-    fixed = re.sub(r'<Param key="#ExitAfterBars#"[^>]*/>',
-                   '<Param key="#ExitAfterBars#" name="Exit After Bars" type="int" '
-                   f'paramType="null" generation="random" minValue="{lo}" maxValue="{hi}" '
-                   'step="1" />', bars)
+    fixed = re.sub(
+        r'<Param key="#ExitAfterBars#"[^>]*/>',
+        '<Param key="#ExitAfterBars#" name="Exit After Bars" type="int" '
+        f'paramType="null" generation="random" minValue="{lo}" maxValue="{hi}" '
+        'step="1" />',
+        bars,
+    )
     return text.replace(section, out.replace(bars, fixed, 1), 1), enabled
 
 
-def what_to_build(text: str, complexity: dict, exit_required: bool) -> dict[str, tuple[int, int]]:
+def what_to_build(
+    text: str, complexity: dict, exit_required: bool
+) -> dict[str, tuple[int, int]]:
     """«What to build» for one Build task: min and max conditions for `entry` and for `exit`.
 
     Args:
@@ -149,7 +170,9 @@ def what_to_build(text: str, complexity: dict, exit_required: bool) -> dict[str,
 def clock_fixed(template: Path) -> list[str]:
     """The fixed blocks of a template that read the clock or the calendar (rule 15), sorted."""
     # `kind` only needs the category for a non-clock key, so any known one will do.
-    return sorted(k for k in blocks(rules(template)) if kind(k, 'category="signals"') == "clock")
+    return sorted(
+        k for k in blocks(rules(template)) if kind(k, 'category="signals"') == "clock"
+    )
 
 
 def exists(name: str, role: str) -> str | None:
@@ -157,23 +180,40 @@ def exists(name: str, role: str) -> str | None:
     folder = worker_dir(role) / "user/projects" / name
     if folder.exists():
         return str(folder)
-    from sqx.projects import registry  # here: registry -> rankings -> tasksettings -> this module
-    live = next((r for r in registry.rows() if r["name"] == name and not r["retired"]), None)
+    from sqx.projects import (
+        registry,
+    )  # here: registry -> rankings -> tasksettings -> this module
+
+    live = next(
+        (r for r in registry.rows() if r["name"] == name and not r["retired"]), None
+    )
     return f"registry.csv, install {live['install']}" if live else None
 
 
-def early_gates(name: str, role: str, template: Path | None, workflow: bool, timeframe: str) -> list[str]:
+def early_gates(
+    name: str, role: str, template: Path | None, workflow: bool, timeframe: str
+) -> list[str]:
     """Refusals before any work: a live name, a clock block fixed (rule 15), a timeframe crossTF lacks."""
     live = exists(name, role)
-    out = [f"{name} ya existe ({live}): el builder no reconstruye un proyecto vivo. Elige otro "
-           "nombre, o retira el Test_ con sqx.projects.retire."] if live else []
+    out = (
+        [
+            f"{name} ya existe ({live}): el builder no reconstruye un proyecto vivo. Elige otro "
+            "nombre, o retira el Test_ con sqx.projects.retire."
+        ]
+        if live
+        else []
+    )
     known = doctrine()["crosstf"]["timeframes"]
     if workflow and timeframe not in known:
-        out.append(f"{timeframe}: sin timeframes extra en assets/_build.yaml (crosstf.timeframes): "
-                   f"un workflow no se puede construir ahí. Conocidos: {', '.join(known)}")
+        out.append(
+            f"{timeframe}: sin timeframes extra en assets/_build.yaml (crosstf.timeframes): "
+            f"un workflow no se puede construir ahí. Conocidos: {', '.join(known)}"
+        )
     if template and (clock := clock_fixed(template)):
-        out.append(f"{template.name}: condiciones fijas que leen el reloj o el calendario "
-                   f"({', '.join(clock)}): regla 15, ningún bloque de hora o fecha.")
+        out.append(
+            f"{template.name}: condiciones fijas que leen el reloj o el calendario "
+            f"({', '.join(clock)}): regla 15, ningún bloque de hora o fecha."
+        )
     return out
 
 
@@ -192,17 +232,23 @@ def over_the_cap(template: Path, complexity: dict) -> list[str]:
     for side, c in conditions(template).items():
         cap, fixed = complexity[f"max_{side}_conditions"], c["fixed"] + c["bound"]
         if c["free"] > 1:
-            out.append(f"{template.name}: {c['free']} huecos aleatorios libres en «{side}». Con "
-                       "dos huecos salen hasta 4 condiciones; una plantilla de solo huecos es "
-                       "una Simple Strategy (--simple long|short), no una plantilla (regla 14).")
+            out.append(
+                f"{template.name}: {c['free']} huecos aleatorios libres en «{side}». Con "
+                "dos huecos salen hasta 4 condiciones; una plantilla de solo huecos es "
+                "una Simple Strategy (--simple long|short), no una plantilla (regla 14)."
+            )
         elif fixed + c["free"] > cap:
-            out.append(f"{template.name}: {fixed} condiciones fijas + {c['free']} hueco en "
-                       f"«{side}» pasan del máximo de {cap} (regla 14): con {cap} fijas no "
-                       "cabe hueco.")
+            out.append(
+                f"{template.name}: {fixed} condiciones fijas + {c['free']} hueco en "
+                f"«{side}» pasan del máximo de {cap} (regla 14): con {cap} fijas no "
+                "cabe hueco."
+            )
     return out
 
 
-def set_complexity(text: str, complexity: dict, exit_types: int, exit_required: bool) -> str:
+def set_complexity(
+    text: str, complexity: dict, exit_types: int, exit_required: bool
+) -> str:
     """Cap how many conditions a generated strategy may carry, and how far back it may look.
 
     Args:
@@ -220,10 +266,16 @@ def set_complexity(text: str, complexity: dict, exit_types: int, exit_required: 
     """
     shift = complexity["lookback_bars"]
     bounds = what_to_build(text, complexity, exit_required)
-    want = {"minConditions": bounds["entry"][0], "maxConditions": bounds["entry"][1],
-            "minExitConditions": bounds["exit"][0], "maxExitConditions": bounds["exit"][1],
-            "minExitTypes": 1, "maxExitTypes": exit_types,
-            "minShift": shift, "maxShift": shift}
+    want = {
+        "minConditions": bounds["entry"][0],
+        "maxConditions": bounds["entry"][1],
+        "minExitConditions": bounds["exit"][0],
+        "maxExitConditions": bounds["exit"][1],
+        "minExitTypes": 1,
+        "maxExitTypes": exit_types,
+        "minShift": shift,
+        "maxShift": shift,
+    }
     tag = rx(r'<Chart name="Main chart"[^>]*>', text).group(0)
     new = tag
     for attr, value in want.items():
@@ -244,8 +296,18 @@ def set_slpt(text: str) -> str:
     """
     section = rx(r"<SLPTOptions>.*?</SLPTOptions>", text, re.S).group(0)
     out = section
-    for tag in ("SLRequired", "PTRequired", "SLATR", "PTATR", "SLFixedPips", "PTFixedPips",
-                "SLPercent", "PTPercent", "SLIndicatorBased", "PTIndicatorBased",
-                "LimitSLPTRRR"):
+    for tag in (
+        "SLRequired",
+        "PTRequired",
+        "SLATR",
+        "PTATR",
+        "SLFixedPips",
+        "PTFixedPips",
+        "SLPercent",
+        "PTPercent",
+        "SLIndicatorBased",
+        "PTIndicatorBased",
+        "LimitSLPTRRR",
+    ):
         out = re.sub(f"<{tag}>[^<]*</{tag}>", f"<{tag}>false</{tag}>", out)
     return text.replace(section, out, 1)

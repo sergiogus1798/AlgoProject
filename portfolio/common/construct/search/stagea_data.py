@@ -20,8 +20,14 @@ class StageAData(TypedDict):
     lot_unit: np.ndarray
 
 
-def prepare(universe: dict, firm: str, members: list[str], calendar: dict,
-            factors: dict[str, float], min_size: dict[str, float]) -> StageAData:
+def prepare(
+    universe: dict,
+    firm: str,
+    members: list[str],
+    calendar: dict,
+    factors: dict[str, float],
+    min_size: dict[str, float],
+) -> StageAData:
     """Build the arrays `stagea.evaluate` sums over combinations of.
 
     Args:
@@ -51,7 +57,10 @@ def prepare(universe: dict, firm: str, members: list[str], calendar: dict,
     for i, identity in enumerate(members):
         f = factors[identity]
         rows = frame[frame["identity"] == identity]
-        pos = cast(pd.Series, day_pos[rows["day"].to_numpy().astype("datetime64[ns]").astype("int64")]).to_numpy()
+        pos = cast(
+            pd.Series,
+            day_pos[rows["day"].to_numpy().astype("datetime64[ns]").astype("int64")],
+        ).to_numpy()
         closed[i, pos] = rows["closed"].to_numpy() * f
         opened[i, pos] = rows["opened"].to_numpy()
         fe = np.full(d, np.nan)
@@ -70,6 +79,14 @@ def prepare(universe: dict, firm: str, members: list[str], calendar: dict,
         high5[i] = m5["high"][identity][in_build] * f
         lot_unit[i] = min_size[identity] * f
 
-    return {"identities": np.array(members), "days": days, "closed": closed,
-            "float_end": float_end, "opened": opened, "low5": low5, "high5": high5,
-            "block_day": block_day, "lot_unit": lot_unit}
+    return {
+        "identities": np.array(members),
+        "days": days,
+        "closed": closed,
+        "float_end": float_end,
+        "opened": opened,
+        "low5": low5,
+        "high5": high5,
+        "block_day": block_day,
+        "lot_unit": lot_unit,
+    }

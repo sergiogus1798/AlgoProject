@@ -6,7 +6,7 @@ from studies.research.marketProfile.measure.position import walk
 from studies.research.marketProfile.measure.trades import prev, tstat
 
 
-BAND = float(np.log(1 / 0.99))   # TR-65's 1 % filter, on log prices
+BAND = float(np.log(1 / 0.99))  # TR-65's 1 % filter, on log prices
 
 
 def _first(mask: np.ndarray) -> np.ndarray:
@@ -111,7 +111,7 @@ CONDITIONS = {
     "under_c150": lambda x: x["c"] < x["clo"][150],
     "under_c200": lambda x: x["c"] < x["clo"][200],
 }
-RULERS = {"bar": "atr1", "day": "d1_atr"}    # what a trailing exit counts its distance in
+RULERS = {"bar": "atr1", "day": "d1_atr"}  # what a trailing exit counts its distance in
 
 
 def met(x: dict, name: str) -> np.ndarray:
@@ -122,9 +122,17 @@ def met(x: dict, name: str) -> np.ndarray:
         return CONDITIONS[name](x)
 
 
-def rule(x: dict, cal: dict, enter: str, when: list[str] | None = None,
-         leave: str | None = None, cap: int = 0, days: int = 0, trail: float = 0.0,
-         ruler: str = "bar") -> tuple:
+def rule(
+    x: dict,
+    cal: dict,
+    enter: str,
+    when: list[str] | None = None,
+    leave: str | None = None,
+    cap: int = 0,
+    days: int = 0,
+    trail: float = 0.0,
+    ruler: str = "bar",
+) -> tuple:
     """Long at the next open when `enter` and every `when` hold; out on `leave`, cap or trail.
 
     Args:
@@ -145,5 +153,7 @@ def rule(x: dict, cal: dict, enter: str, when: list[str] | None = None,
     for name in when or []:
         signal = signal & met(x, name)
     out = met(x, leave) if leave else np.zeros(signal.size, dtype=bool)
-    entry, exit_ = walk(signal, out, cap + days * cal["per_day"], trail, x["c"], x[RULERS[ruler]])
+    entry, exit_ = walk(
+        signal, out, cap + days * cal["per_day"], trail, x["c"], x[RULERS[ruler]]
+    )
     return tstat(x, entry, exit_, cal["least"]), entry, exit_, {}

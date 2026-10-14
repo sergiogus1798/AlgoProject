@@ -9,8 +9,9 @@ import pandas as pd
 from engines.nulls.placement.holdfit import MIN_HOLD, fit
 
 
-def _lay(holds: np.ndarray, gaps: np.ndarray, n_bars: int,
-         rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
+def _lay(
+    holds: np.ndarray, gaps: np.ndarray, n_bars: int, rng: np.random.Generator
+) -> tuple[np.ndarray, np.ndarray]:
     """Place a sequence of holds and gaps end to end on a circle of bars, from a random start.
 
     Args:
@@ -34,8 +35,13 @@ def _lay(holds: np.ndarray, gaps: np.ndarray, n_bars: int,
     return entries, np.where(keep, holds, 0)
 
 
-def segment_permute(held: pd.DataFrame, market: dict, draws: int,
-                    rng: np.random.Generator, batch: int = 0) -> tuple[np.ndarray, np.ndarray]:
+def segment_permute(
+    held: pd.DataFrame,
+    market: dict,
+    draws: int,
+    rng: np.random.Generator,
+    batch: int = 0,
+) -> tuple[np.ndarray, np.ndarray]:
     """Reorder the real hold-and-gap segments and lay them from a random start bar.
 
     Args:
@@ -61,8 +67,13 @@ def segment_permute(held: pd.DataFrame, market: dict, draws: int,
     return _lay(holds, market["gaps"][order], market["n_bars"], rng)
 
 
-def resampled_holds(held: pd.DataFrame, market: dict, draws: int,
-                    rng: np.random.Generator, batch: int = 0) -> tuple[np.ndarray, np.ndarray]:
+def resampled_holds(
+    held: pd.DataFrame,
+    market: dict,
+    draws: int,
+    rng: np.random.Generator,
+    batch: int = 0,
+) -> tuple[np.ndarray, np.ndarray]:
     """Draw holds and gaps with replacement from the real ones, and lay them out.
 
     Args:
@@ -81,11 +92,18 @@ def resampled_holds(held: pd.DataFrame, market: dict, draws: int,
     """
     shape = (draws, len(held))
     pick = rng.integers(0, len(held), size=shape)
-    return _lay(held["hold"].to_numpy()[pick], market["gaps"][pick], market["n_bars"], rng)
+    return _lay(
+        held["hold"].to_numpy()[pick], market["gaps"][pick], market["n_bars"], rng
+    )
 
 
-def fitted_holds(held: pd.DataFrame, market: dict, draws: int,
-                 rng: np.random.Generator, batch: int = 0) -> tuple[np.ndarray, np.ndarray]:
+def fitted_holds(
+    held: pd.DataFrame,
+    market: dict,
+    draws: int,
+    rng: np.random.Generator,
+    batch: int = 0,
+) -> tuple[np.ndarray, np.ndarray]:
     """Fit a distribution to the real holds and gaps, and draw new ones from it.
 
     Args:
@@ -104,5 +122,9 @@ def fitted_holds(held: pd.DataFrame, market: dict, draws: int,
     """
     shape = (draws, len(held))
     holds = fit(held["hold"].to_numpy(), *shape, rng)
-    return _lay(holds, fit(market["gaps"] + MIN_HOLD, *shape, rng) - MIN_HOLD,
-                market["n_bars"], rng)
+    return _lay(
+        holds,
+        fit(market["gaps"] + MIN_HOLD, *shape, rng) - MIN_HOLD,
+        market["n_bars"],
+        rng,
+    )

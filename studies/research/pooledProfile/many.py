@@ -64,20 +64,40 @@ def cell(rows: list[pd.DataFrame], sims: np.ndarray, cfg: dict) -> Cell:
         se = part["se"].to_numpy(dtype=float) if trade else np.ones(len(part))
         excess = part["z"].to_numpy(dtype=float) * se
         fit = shrink.random_effects(excess, se)
-        tests.append({**part.iloc[0][[*TEST, "family"]], "assets": len(part),
-                      "stat": got["stat"][k], "p": got["p"][k], "mean_excess": fit["mean"],
-                      "tau": fit["tau"], "i2": fit["i2"], "trade": trade})
+        tests.append(
+            {
+                **part.iloc[0][[*TEST, "family"]],
+                "assets": len(part),
+                "stat": got["stat"][k],
+                "p": got["p"][k],
+                "mean_excess": fit["mean"],
+                "tau": fit["tau"],
+                "i2": fit["i2"],
+                "trade": trade,
+            }
+        )
         assets.append(part.assign(excess=excess, se=se, shrunk_excess=fit["shrunk"]))
-    return {"tests": pd.DataFrame(tests), "assets": pd.concat(assets, ignore_index=True),
-            "placebo_p": got["placebo_p"][:, keep]}
+    return {
+        "tests": pd.DataFrame(tests),
+        "assets": pd.concat(assets, ignore_index=True),
+        "placebo_p": got["placebo_p"][:, keep],
+    }
 
 
 def corrected(rows: pd.DataFrame, key: list[str], alpha: float) -> pd.DataFrame:
     """Benjamini-Hochberg over every row: `q` and `significant`, indexed like rows."""
-    tests = [{"metric": "|".join(map(str, k)), "p": p} for k, p in zip(rows[key].to_numpy(), rows["p"])]
+    tests = [
+        {"metric": "|".join(map(str, k)), "p": p}
+        for k, p in zip(rows[key].to_numpy(), rows["p"])
+    ]
     q, named = fdr.adjusted(tests), fdr.discoveries(tests, alpha)
-    return pd.DataFrame({"q": [q[t["metric"]] for t in tests],
-                         "significant": [t["metric"] in named for t in tests]}, index=rows.index)
+    return pd.DataFrame(
+        {
+            "q": [q[t["metric"]] for t in tests],
+            "significant": [t["metric"] in named for t in tests],
+        },
+        index=rows.index,
+    )
 
 
 def filtered(assets: pd.DataFrame, filters: dict) -> pd.DataFrame:
@@ -92,10 +112,15 @@ def filtered(assets: pd.DataFrame, filters: dict) -> pd.DataFrame:
     out = assets.copy()
     out["shrunk_multiple"] = out["shrunk_excess"] + out["multiple"] - out["excess"]
     out["pays"] = out["multiple"].fillna(-np.inf) >= filters["cost_multiple"]
-    out["pays_shrunk"] = out["shrunk_multiple"].fillna(-np.inf) >= filters["cost_multiple"]
-    out["stable"] = (out["years_with_sign"] / out["years"]).fillna(0) > filters["stable_share"]
+    out["pays_shrunk"] = (
+        out["shrunk_multiple"].fillna(-np.inf) >= filters["cost_multiple"]
+    )
+    out["stable"] = (out["years_with_sign"] / out["years"]).fillna(0) > filters[
+        "stable_share"
+    ]
     out["frequent"] = out["trades_per_year"].fillna(0) >= profile_many.min_trades(
-        pd.Series(out["symbol"]), filters)
+        pd.Series(out["symbol"]), filters
+    )
     out["strict"] = out["pays_shrunk"] & out["stable"] & out["frequent"]
     return out
 
@@ -113,10 +138,22 @@ def placebo(cells: list[Cell], alpha: float) -> Placebo:
         group is paired with draw j of the others: groups are taken as independent here.
     """
     p = np.concatenate([c["placebo_p"] for c in cells], axis=1)
-    named = np.array([len(fdr.discoveries([{"metric": str(k), "p": v} for k, v in enumerate(row)],
-                                          alpha)) for row in p])
-    return {"worlds": int(named.size), "any_named": float((named > 0).mean()),
-            "mean_named": float(named.mean()), "max_named": int(named.max())}
+    named = np.array(
+        [
+            len(
+                fdr.discoveries(
+                    [{"metric": str(k), "p": v} for k, v in enumerate(row)], alpha
+                )
+            )
+            for row in p
+        ]
+    )
+    return {
+        "worlds": int(named.size),
+        "any_named": float((named > 0).mean()),
+        "mean_named": float(named.mean()),
+        "max_named": int(named.max()),
+    }
 
 
 def board(tests: pd.DataFrame, assets: pd.DataFrame, inside: set) -> pd.DataFrame:
@@ -136,11 +173,20 @@ def board(tests: pd.DataFrame, assets: pd.DataFrame, inside: set) -> pd.DataFram
     named = pd.DataFrame(tests[tests["significant"] & tests["trade"]])
     rows = assets.merge(named[TEST], on=TEST)
     if rows.empty:
-        return pd.DataFrame(columns=pd.Index([*CELL, "group", "measures", "strict", "alone", "new"]))
-    out = rows.groupby(CELL, sort=True).agg(
-        group=("group", "first"), measures=("measure", lambda m: " ".join(sorted(set(m)))),
-        strict=("strict", "any"), alone=("significant_alone", "any"),
-        best_shrunk_multiple=("shrunk_multiple", "max")).reset_index()
+        return pd.DataFrame(
+            columns=pd.Index([*CELL, "group", "measures", "strict", "alone", "new"])
+        )
+    out = (
+        rows.groupby(CELL, sort=True)
+        .agg(
+            group=("group", "first"),
+            measures=("measure", lambda m: " ".join(sorted(set(m)))),
+            strict=("strict", "any"),
+            alone=("significant_alone", "any"),
+            best_shrunk_multiple=("shrunk_multiple", "max"),
+        )
+        .reset_index()
+    )
     out["new"] = [tuple(k) not in inside for k in out[CELL].to_numpy()]
     return out
 
@@ -158,7 +204,13 @@ def run(cells: list[Cell], cfg: dict, inside: set) -> Judged:
     tests = pd.concat([c["tests"] for c in cells], ignore_index=True)
     assets = pd.concat([c["assets"] for c in cells], ignore_index=True)
     tests[["q", "significant"]] = corrected(tests, TEST, alpha)
-    assets["significant_alone"] = corrected(assets, [*TEST, "symbol"], alpha)["significant"]
+    assets["significant_alone"] = corrected(assets, [*TEST, "symbol"], alpha)[
+        "significant"
+    ]
     assets = filtered(assets, filters)
-    return {"tests": tests, "assets": assets, "board": board(tests, assets, inside),
-            "placebo": placebo(cells, alpha)}
+    return {
+        "tests": tests,
+        "assets": assets,
+        "board": board(tests, assets, inside),
+        "placebo": placebo(cells, alpha),
+    }

@@ -4,21 +4,39 @@ OPTIMISATION = "WFM + WFC + CSCV + Market Surfaces"
 
 # Which family tab opens first, by the databank panel the page was opened from — a fallback
 # for a sub-panel `ORIGIN_STUDY` does not name (or before the panel is known, `Ficha` tab).
-ORIGIN_FAMILY = {"Puerta IS/OOS": "Cribado", "Cross Market": "Transferencia",
-                 "Cross Timeframe": "Transferencia", "MC Retest": "Rotura", "SPP": "Optimización",
-                 OPTIMISATION: "Optimización", "Cierre": "Cierre"}
+ORIGIN_FAMILY = {
+    "Puerta IS/OOS": "Cribado",
+    "Cross Market": "Transferencia",
+    "Cross Timeframe": "Transferencia",
+    "MC Retest": "Rotura",
+    "SPP": "Optimización",
+    OPTIMISATION: "Optimización",
+    "Cierre": "Cierre",
+}
 
 # The study a databank panel's tab (or one of its sub-panels) opens by default (owner,
 # 2026-09-30 §4.3/§9.4): a single study key for a tab that reads only one, or {sub: key} for
 # a tab whose sub-panels each read a different one — "" is the fallback sub.
 ORIGIN_STUDY: dict[str, str | dict[str, str]] = {
-    "Puerta IS/OOS": "gate", "Cross Market": "crossmarket", "Cross Timeframe": "crossTF",
-    "MC Retest": "mcRetest", "SPP": "spp",
-    OPTIMISATION: {"Nube de parámetros": "cloud", "CSCV": "cscv",
-                  "Market Surfaces": "marketSurfaces", "Walk Forward Matrix": "wfm",
-                  "WFC": "wfc", "": "wfc"},
-    "Cierre": {"Análisis conjunto (paso 20)": "blindJoint", "Exposición": "exposure",
-              "Edge por coste": "edgeCost"}}
+    "Puerta IS/OOS": "gate",
+    "Cross Market": "crossmarket",
+    "Cross Timeframe": "crossTF",
+    "MC Retest": "mcRetest",
+    "SPP": "spp",
+    OPTIMISATION: {
+        "Nube de parámetros": "cloud",
+        "CSCV": "cscv",
+        "Market Surfaces": "marketSurfaces",
+        "Walk Forward Matrix": "wfm",
+        "WFC": "wfc",
+        "": "wfc",
+    },
+    "Cierre": {
+        "Análisis conjunto (paso 20)": "blindJoint",
+        "Exposición": "exposure",
+        "Edge por coste": "edgeCost",
+    },
+}
 
 
 def default_study(databank: str, sub: str) -> str | None:

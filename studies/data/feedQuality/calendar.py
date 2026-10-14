@@ -7,10 +7,17 @@ import pandas as pd
 
 from engines.market.feed import scale
 
-HOLIDAY, PARTIAL, OUTAGE, OWN = "festivo", "cierre parcial", "caída del proveedor", "símbolo"
+HOLIDAY, PARTIAL, OUTAGE, OWN = (
+    "festivo",
+    "cierre parcial",
+    "caída del proveedor",
+    "símbolo",
+)
 
 
-def silences(feeds: dict[str, tuple[np.ndarray, np.ndarray]], cfg: dict) -> pd.DataFrame:
+def silences(
+    feeds: dict[str, tuple[np.ndarray, np.ndarray]], cfg: dict
+) -> pd.DataFrame:
     """Stretches in which every feed that should be quoting is silent.
 
     Args:
@@ -42,10 +49,17 @@ def silences(feeds: dict[str, tuple[np.ndarray, np.ndarray]], cfg: dict) -> pd.D
     live_per_day = np.bincount(days, weights=live, minlength=days[-1] + 1)
     weekday = (np.arange(len(bars_per_day)) % 7) < 5
     holiday = weekday & (bars_per_day == 0) & (live_per_day > 0)
-    held = [holiday[a // 1440:(b - 1) // 1440 + 1].any()
-            for a, b in zip(runs["start_min"], runs["end_min"])]
-    runs["cls"] = np.where(held, HOLIDAY, np.where(
-        runs["minutes"] >= cfg["gap"]["partial_close_minutes"], PARTIAL, OUTAGE))
+    held = [
+        holiday[a // 1440 : (b - 1) // 1440 + 1].any()
+        for a, b in zip(runs["start_min"], runs["end_min"])
+    ]
+    runs["cls"] = np.where(
+        held,
+        HOLIDAY,
+        np.where(
+            runs["minutes"] >= cfg["gap"]["partial_close_minutes"], PARTIAL, OUTAGE
+        ),
+    )
     runs["t"] = pd.to_datetime((runs["start_min"] + scale.ORIGIN) * scale.MINUTE_NS)
     return cast(pd.DataFrame, runs)
 

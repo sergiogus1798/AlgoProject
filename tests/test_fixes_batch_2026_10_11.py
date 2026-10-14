@@ -15,9 +15,14 @@ from studies.research.memory import ideas
 ATTRS = ' category="signals"'
 
 
-@pytest.mark.parametrize("text,n", [("Hipótesis medidas: **24**", 24),
-                                    ("3. **Hipótesis medidas en total**: 68 sobre build", 68),
-                                    ("Hipótesis medidas en total: 68", 68)])
+@pytest.mark.parametrize(
+    "text,n",
+    [
+        ("Hipótesis medidas: **24**", 24),
+        ("3. **Hipótesis medidas en total**: 68 sobre build", 68),
+        ("Hipótesis medidas en total: 68", 68),
+    ],
+)
 def test_hypotheses_wordings(text: str, n: int) -> None:
     """Both wordings of the hypotheses count are read."""
     assert int(ideas.HYPOTHESES.search(text).group(1)) == n
@@ -31,15 +36,21 @@ def test_hypotheses_same_line_only() -> None:
 def test_overlap_per_segment(monkeypatch: pytest.MonkeyPatch) -> None:
     """Overlap reads the segment asked for; an undecided one says so."""
     monkeypatch.setattr(selection.assetdata, "load", lambda s: s)
-    wins = {"build": (0, 4_000_000_000_000), "oos1": (1_700_000_000_000, 1_750_000_000_000)}
+    wins = {
+        "build": (0, 4_000_000_000_000),
+        "oos1": (1_700_000_000_000, 1_750_000_000_000),
+    }
 
     def window(d: str, seg: str) -> tuple[int, int]:
         """A fake assetdata.window."""
         if seg not in wins:
             raise ValueError(seg)
         return wins[seg]
+
     monkeypatch.setattr(selection.assetdata, "window", window)
-    assert selection.overlap(1990, 2000, ["X"], "oos1").startswith("no: sample 1990-2000 is outside oos1")
+    assert selection.overlap(1990, 2000, ["X"], "oos1").startswith(
+        "no: sample 1990-2000 is outside oos1"
+    )
     assert selection.overlap(2000, 2001, ["X"], "oos2").startswith("not decided")
     assert selection.overlap(None, 2001, ["X"], "oos2") == "not stated in source"
 
@@ -55,8 +66,11 @@ def test_install_refuses_broken_and_keeps_bytes(tmp_path: Path) -> None:
     """A broken XML is refused and the store is untouched."""
     store = _store(tmp_path)
     before = store.read_bytes()
-    for bad in ('<CustomBlocks><Item key="CBlock_B"', '<X><Item key="NotCustom" /></X>',
-                '<X><Group name="g" /></X>'):
+    for bad in (
+        '<CustomBlocks><Item key="CBlock_B"',
+        '<X><Item key="NotCustom" /></X>',
+        '<X><Group name="g" /></X>',
+    ):
         f = tmp_path / "b.xml"
         f.write_text(bad)
         with pytest.raises(SystemExit):
@@ -76,10 +90,20 @@ def test_install_writes_atomically(tmp_path: Path) -> None:
     assert "CBlock_B" in dest.read_text() and not list(dest.parent.glob("*.tmp"))
 
 
-@pytest.mark.parametrize("key", ["CBlock_TimeBreakoutLong", "CBlock_TimeBreakoutLong_2",
-                                 "SessionHigh", "SessionLow", "SessionOpen", "Sig.SessionLow",
-                                 "SessionClose", "VolumeProfileCustomHours",
-                                 "VolumeProfileCustomHoursMultiSession"])
+@pytest.mark.parametrize(
+    "key",
+    [
+        "CBlock_TimeBreakoutLong",
+        "CBlock_TimeBreakoutLong_2",
+        "SessionHigh",
+        "SessionLow",
+        "SessionOpen",
+        "Sig.SessionLow",
+        "SessionClose",
+        "VolumeProfileCustomHours",
+        "VolumeProfileCustomHoursMultiSession",
+    ],
+)
 def test_clock_names(key: str) -> None:
     """The forbidden session and custom-hours blocks are clock."""
     assert buildcensus.kind(key, ATTRS) == "clock"
@@ -93,9 +117,13 @@ def test_ordinary_blocks_stay() -> None:
 
 def test_find_matches_category_and_help() -> None:
     """find() looks at category and help too."""
-    vocab = {"native": {"A": {"display": "A", "category": "Momentum Bands", "help": ""}},
-             "custom": {"B": {"display": "B", "category": "x", "help": "breaks the Donchian"}},
-             "groups": {}}
+    vocab = {
+        "native": {"A": {"display": "A", "category": "Momentum Bands", "help": ""}},
+        "custom": {
+            "B": {"display": "B", "category": "x", "help": "breaks the Donchian"}
+        },
+        "groups": {},
+    }
     assert [r["key"] for r in vocabulary.find(vocab, "bands")] == ["A"]
     assert [r["key"] for r in vocabulary.find(vocab, "donchian")] == ["B"]
 
@@ -103,6 +131,12 @@ def test_find_matches_category_and_help() -> None:
 def test_no_repo_palette_has_session_close_or_custom_hours() -> None:
     """Owner, 2026-10-13: no repo palette lists the three new clock blocks."""
     from core import paths
-    bad = [p.name for p in (paths.ROOT / "sqx/blocks/palettes").glob("*.yaml")
-           if re.search(r"^\s*(SessionClose|VolumeProfileCustomHours\w*):", p.read_text(), re.M)]
+
+    bad = [
+        p.name
+        for p in (paths.ROOT / "sqx/blocks/palettes").glob("*.yaml")
+        if re.search(
+            r"^\s*(SessionClose|VolumeProfileCustomHours\w*):", p.read_text(), re.M
+        )
+    ]
     assert not bad, bad

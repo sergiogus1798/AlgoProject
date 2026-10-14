@@ -21,8 +21,11 @@ def chunks(trades: pd.DataFrame) -> list[pd.DataFrame]:
         cannot separate these blocks the way it separates a cross-market retest, because
         every cell trades the same symbol.
     """
-    starts = [0] + list(trades.index[(trades["Sample type"] == START)
-                                     & (trades["Sample type"].shift() != START)])
+    starts = [0] + list(
+        trades.index[
+            (trades["Sample type"] == START) & (trades["Sample type"].shift() != START)
+        ]
+    )
     return [trades.iloc[a:b] for a, b in zip(starts, starts[1:] + [len(trades)])]
 
 
@@ -44,8 +47,7 @@ def label(block: pd.DataFrame, steps: list[dict]) -> pd.DataFrame:
     """
     opened = block["Open time"].astype("int64") // 10**9
     period = np.searchsorted([s["run_from"] for s in steps], opened, side="right") - 1
-    return block.assign(period=period,
-                        sample=np.where(period < 0, START, "OOS"))
+    return block.assign(period=period, sample=np.where(period < 0, START, "OOS"))
 
 
 def check(labelled: pd.DataFrame, steps: list[dict]) -> pd.DataFrame:
@@ -61,9 +63,17 @@ def check(labelled: pd.DataFrame, steps: list[dict]) -> pd.DataFrame:
         `oos_NumberOfTrades` is the only independent witness available.
     """
     got = labelled["period"].value_counts()
-    return pd.DataFrame([{"index": s["index"], "assigned": int(cast(int, got.get(s["index"], 0))),
-                          "stored": stored(s)}
-                         for s in steps if not s["future"]])
+    return pd.DataFrame(
+        [
+            {
+                "index": s["index"],
+                "assigned": int(cast(int, got.get(s["index"], 0))),
+                "stored": stored(s),
+            }
+            for s in steps
+            if not s["future"]
+        ]
+    )
 
 
 def stored(step: dict) -> int:

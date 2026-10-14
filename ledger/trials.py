@@ -9,8 +9,8 @@ from core.significance import moments
 from core.surface import plateau
 from core.surface.plateau import Deflated
 
-SHARPE_UNITS = ("per_period", "annualised")   # the only score units that are a Sharpe
-YEAR = 252      # trading days a year, for converting SQX's annualised Sharpes
+SHARPE_UNITS = ("per_period", "annualised")  # the only score units that are a Sharpe
+YEAR = 252  # trading days a year, for converting SQX's annualised Sharpes
 
 
 class _Counted(TypedDict):
@@ -68,10 +68,19 @@ def accumulated(frame: pd.DataFrame, extra: int | None = 0) -> Accumulated:
     if not len(scored):
         return {"n": 0, "sigma": float("nan"), "searches": 0}
     searched = int(scored["n_scored"].sum())
-    scored = pd.DataFrame(scored[scored["score_unit"].isin(SHARPE_UNITS) | scored["score_unit"].isna()])
+    scored = pd.DataFrame(
+        scored[scored["score_unit"].isin(SHARPE_UNITS) | scored["score_unit"].isna()]
+    )
     if not len(scored):
-        return {"n": searched + extra, "searched": searched, "extra": extra,
-                "sigma": float("nan"), "mean": float("nan"), "searches": 0, "unit": "per_period"}
+        return {
+            "n": searched + extra,
+            "searched": searched,
+            "extra": extra,
+            "sigma": float("nan"),
+            "mean": float("nan"),
+            "searches": 0,
+            "unit": "per_period",
+        }
     # annualised rows come to the per-day scale here, once, so no caller has to
     scale = np.where(scored["score_unit"] == "annualised", 1 / np.sqrt(YEAR), 1.0)
     n = scored["n_scored"].to_numpy(float)
@@ -79,11 +88,18 @@ def accumulated(frame: pd.DataFrame, extra: int | None = 0) -> Accumulated:
     sd = scored["sharpe_std"].to_numpy(float) * scale
     total = n.sum()
     grand = float((n * mean).sum() / total)
-    population = np.where(n > 1, sd ** 2 * (n - 1) / n, 0.0)
-    variance = float((n * (population + mean ** 2)).sum() / total - grand ** 2)
+    population = np.where(n > 1, sd**2 * (n - 1) / n, 0.0)
+    variance = float((n * (population + mean**2)).sum() / total - grand**2)
     unbiased = variance * total / (total - 1)
-    return {"n": searched + extra, "searched": searched, "extra": extra, "sigma": float(np.sqrt(max(unbiased, 0.0))),
-            "mean": grand, "searches": int(len(scored)), "unit": "per_period"}
+    return {
+        "n": searched + extra,
+        "searched": searched,
+        "extra": extra,
+        "sigma": float(np.sqrt(max(unbiased, 0.0))),
+        "mean": grand,
+        "searches": int(len(scored)),
+        "unit": "per_period",
+    }
 
 
 def overall(frames: list[pd.DataFrame]) -> Overall:
@@ -98,8 +114,10 @@ def overall(frames: list[pd.DataFrame]) -> Overall:
         how many ideas had a chance to look good by luck anywhere.
     """
     held = [f for f in frames if len(f)]
-    return {**accumulated(pd.concat(held, ignore_index=True) if held else pd.DataFrame()),
-            "studies": len(held)}
+    return {
+        **accumulated(pd.concat(held, ignore_index=True) if held else pd.DataFrame()),
+        "studies": len(held),
+    }
 
 
 def deflated(returns: np.ndarray, sigma: float, n_eff: int) -> Deflated:

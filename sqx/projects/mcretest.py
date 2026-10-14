@@ -33,7 +33,9 @@ def active(config: str, title: str, on: bool) -> str:
         and a project missing a task looks like a different project.
     """
     tag = rx(rf'<Task\b[^>]*title="{re.escape(title)}"[^>]*/>', config).group(0)
-    return config.replace(tag, re.sub(r'active="[^"]*"', f'active="{str(on).lower()}"', tag), 1)
+    return config.replace(
+        tag, re.sub(r'active="[^"]*"', f'active="{str(on).lower()}"', tag), 1
+    )
 
 
 class Configured(TypedDict):
@@ -57,8 +59,14 @@ def member_of(config: str, title: str) -> str | None:
     Returns:
         The member name, or None when the project has no such task.
     """
-    tag = next((t for t in el(ElementTree.fromstring(config).find("Tasks"))
-                if t.get("title") == title), None)
+    tag = next(
+        (
+            t
+            for t in el(ElementTree.fromstring(config).find("Tasks"))
+            if t.get("title") == title
+        ),
+        None,
+    )
     return tag.get("taskXMLFile") if tag is not None else None
 
 
@@ -90,26 +98,49 @@ def configure(cfx: Path, symbol: str, source: str, databank: Path | None) -> Con
         member = member_of(config, spec["title"])
         methods, dropped = usable(spec, data, orders["pending"], exits)
         if not member or not methods:
-            rows.append({"title": spec["title"], "member": member, "written": False,
-                         "dropped": dropped,
-                         "why": f"el proyecto no lleva la tarea {spec['title']}" if not member
-                         else "; ".join(sorted(set(dropped.values())))})
+            rows.append(
+                {
+                    "title": spec["title"],
+                    "member": member,
+                    "written": False,
+                    "dropped": dropped,
+                    "why": f"el proyecto no lleva la tarea {spec['title']}"
+                    if not member
+                    else "; ".join(sorted(set(dropped.values()))),
+                }
+            )
             if member:
                 config = active(config, spec["title"], False)
                 text = disable(members[member].decode("utf-8"))
                 members[member] = set_databank(text, "Input", source)[0].encode("utf-8")
             continue
         sims = spec.get("simulations", catalogue["simulations"])
-        text, done = write_task(members[member].decode("utf-8"), spec, methods, data, sims)
+        text, done = write_task(
+            members[member].decode("utf-8"), spec, methods, data, sims
+        )
         members[member] = set_databank(text, "Input", source)[0].encode("utf-8")
         config = active(config, spec["title"], True)
-        rows.append({"title": spec["title"], "member": member, "written": True,
-                     "simulations": sims, "dropped": dropped, **done})
+        rows.append(
+            {
+                "title": spec["title"],
+                "member": member,
+                "written": True,
+                "simulations": sims,
+                "dropped": dropped,
+                **done,
+            }
+        )
 
     members["config.xml"] = config.encode("utf-8")
     cfxio.write(cfx, members)
-    return {"project": ElementTree.fromstring(config).get("name"), "orders": orders, "exits": exits,
-            "simulations": catalogue["simulations"], "input": source, "tasks": rows}
+    return {
+        "project": ElementTree.fromstring(config).get("name"),
+        "orders": orders,
+        "exits": exits,
+        "simulations": catalogue["simulations"],
+        "input": source,
+        "tasks": rows,
+    }
 
 
 def main() -> None:
@@ -117,26 +148,38 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("symbol")
     ap.add_argument("--cfx", required=True, type=Path)
-    ap.add_argument("--input", required=True,
-                    help="databank the eight tasks read, e.g. 'OOS'. No se adivina: es la "
-                         "poblacion que se perturba")
-    ap.add_argument("--databank-dir", type=Path,
-                    help="carpeta de ese databank, para mirar que ordenes lleva la "
-                         "poblacion. Por defecto, la del propio proyecto")
+    ap.add_argument(
+        "--input",
+        required=True,
+        help="databank the eight tasks read, e.g. 'OOS'. No se adivina: es la "
+        "poblacion que se perturba",
+    )
+    ap.add_argument(
+        "--databank-dir",
+        type=Path,
+        help="carpeta de ese databank, para mirar que ordenes lleva la "
+        "poblacion. Por defecto, la del propio proyecto",
+    )
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
     missing = pending(load(a.symbol))
     if missing:
-        raise SystemExit(f"{a.symbol}: {', '.join(missing)} sin valor pactado. "
-                         "Preguntale al dueno antes de configurar nada (regla dura 5).")
+        raise SystemExit(
+            f"{a.symbol}: {', '.join(missing)} sin valor pactado. "
+            "Preguntale al dueno antes de configurar nada (regla dura 5)."
+        )
     held = cfxio.held(a.cfx)
     if held:
-        raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al "
-                         f"salir. Parala: bin/sqx-worker.sh --role {held} stop")
+        raise SystemExit(
+            f"el {held} tiene este proyecto abierto y reescribe el .cfx al "
+            f"salir. Parala: bin/sqx-worker.sh --role {held} stop"
+        )
     folder = a.databank_dir or a.cfx.parent / "databanks" / a.input
     done = configure(a.cfx, a.symbol, a.input, folder if folder.is_dir() else None)
-    staged = own(a.cfx, "mcretest", [r["title"] for r in done["tasks"] if not r["written"]])
+    staged = own(
+        a.cfx, "mcretest", [r["title"] for r in done["tasks"] if not r["written"]]
+    )
 
     if a.json:
         print(json.dumps(done, indent=2, default=str))
@@ -146,20 +189,26 @@ def main() -> None:
     verdict = {True: "SI", False: "no", None: "SIN RESOLVER"}[o["pending"]]
     read = f", {o['read']} estrategias leidas" if o["read"] else ""
     print(f"{done['project']}  {a.symbol}  <- {done['input']}")
-    print(f"  ordenes ({o['source']}{read}): {', '.join(o['types']) or 'ninguna'}"
-          f"  ->  pendientes: {verdict}")
+    print(
+        f"  ordenes ({o['source']}{read}): {', '.join(o['types']) or 'ninguna'}"
+        f"  ->  pendientes: {verdict}"
+    )
     for row in done["tasks"]:
         if not row["written"]:
             print(f"  ⊘ {row['title']:<14} NO configurada — {row['why']}")
             continue
-        print(f"  ✓ {row['title']:<14} {'+'.join(row['methods'])}  {row['segment']} "
-              f"{row['from']}→{row['to']}  {row['simulations']} sims  "
-              f"{row['silenced']} condicion(es) apagada(s)")
+        print(
+            f"  ✓ {row['title']:<14} {'+'.join(row['methods'])}  {row['segment']} "
+            f"{row['from']}→{row['to']}  {row['simulations']} sims  "
+            f"{row['silenced']} condicion(es) apagada(s)"
+        )
         for method, why in row["dropped"].items():
             print(f"      ⚠️ sin {method}: {why}")
-    print("\nLas ocho leen el MISMO databank: son ocho lecturas de una poblacion, no un "
-          "embudo.\nEl veredicto se toma en Python (studies/breakage/mcRetest/) y se aplica con "
-          "/curate.")
+    print(
+        "\nLas ocho leen el MISMO databank: son ocho lecturas de una poblacion, no un "
+        "embudo.\nEl veredicto se toma en Python (studies/breakage/mcRetest/) y se aplica con "
+        "/curate."
+    )
 
 
 if __name__ == "__main__":

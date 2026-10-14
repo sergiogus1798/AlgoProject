@@ -18,8 +18,9 @@ import pandas as pd
 # wearing the clothes of an answer about edge.
 
 
-def one_lot(trades: pd.DataFrame, moves: pd.Series, daily: pd.Series,
-            point_value: float) -> float:
+def one_lot(
+    trades: pd.DataFrame, moves: pd.Series, daily: pd.Series, point_value: float
+) -> float:
     """One lot held for the whole window.
 
     Args:
@@ -34,8 +35,9 @@ def one_lot(trades: pd.DataFrame, moves: pd.Series, daily: pd.Series,
     return 1.0
 
 
-def avg_size(trades: pd.DataFrame, moves: pd.Series, daily: pd.Series,
-             point_value: float) -> float:
+def avg_size(
+    trades: pd.DataFrame, moves: pd.Series, daily: pd.Series, point_value: float
+) -> float:
     """The strategy's own mean position size, held for the whole window.
 
     Args:
@@ -51,8 +53,9 @@ def avg_size(trades: pd.DataFrame, moves: pd.Series, daily: pd.Series,
     return float(trades["Size"].mean())
 
 
-def equal_risk(trades: pd.DataFrame, moves: pd.Series, daily: pd.Series,
-               point_value: float) -> float:
+def equal_risk(
+    trades: pd.DataFrame, moves: pd.Series, daily: pd.Series, point_value: float
+) -> float:
     """The size whose daily profit and loss is as volatile as the strategy's.
 
     Args:

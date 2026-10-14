@@ -10,7 +10,7 @@ import httpx
 from studies.research.literature import dedupe, search, store
 
 
-DOWN: set[str] = set()    # sources that refused a request in this run: not asked again
+DOWN: set[str] = set()  # sources that refused a request in this run: not asked again
 
 
 def asked(name: str, fn: Callable, *args: object) -> Any:
@@ -29,15 +29,35 @@ def asked(name: str, fn: Callable, *args: object) -> Any:
         return []
 
 
-def row(paper: Mapping[str, Any], query: str, family: str, run: str, twin: str) -> dict[str, Any]:
+def row(
+    paper: Mapping[str, Any], query: str, family: str, run: str, twin: str
+) -> dict[str, Any]:
     """A found paper as its row of the register: undecided, or the duplicate of `twin`."""
-    return {**paper, "query": query, "family": family, "run": run, "found": run[:8], "read": "",
-            "entries": [], "status": "duplicate" if twin else "inbox", "filter": "", "quote": "",
-            "reason": f"same paper as {twin}" if twin else ""}
+    return {
+        **paper,
+        "query": query,
+        "family": family,
+        "run": run,
+        "found": run[:8],
+        "read": "",
+        "entries": [],
+        "status": "duplicate" if twin else "inbox",
+        "filter": "",
+        "quote": "",
+        "reason": f"same paper as {twin}" if twin else "",
+    }
 
 
-def page(query: dict, page: int, run: str, most: int, room: int, held: dict, entries: list[dict],
-         new: list[dict]) -> int:
+def page(
+    query: dict,
+    page: int,
+    run: str,
+    most: int,
+    room: int,
+    held: dict,
+    entries: list[dict],
+    new: list[dict],
+) -> int:
     """Register one page of one query's results; returns how many were new and kept.
 
     Args:
@@ -52,10 +72,27 @@ def page(query: dict, page: int, run: str, most: int, room: int, held: dict, ent
     cfg = store.config()
     ask, src = 4 * cfg["run"]["per_query"], cfg["sources"]
     oa = src["openalex"]
-    first = iter(asked("arxiv", search.arxiv, query["text"], src["arxiv"]["categories"], ask,
-                       page) if src["arxiv"]["enabled"] else [])
-    other = (asked("openalex", search.openalex, query["text"], oa["from_year"], oa["field"], ask,
-                   oa["open_pdf"], page) if oa["enabled"] else [])
+    first = iter(
+        asked(
+            "arxiv", search.arxiv, query["text"], src["arxiv"]["categories"], ask, page
+        )
+        if src["arxiv"]["enabled"]
+        else []
+    )
+    other = (
+        asked(
+            "openalex",
+            search.openalex,
+            query["text"],
+            oa["from_year"],
+            oa["field"],
+            ask,
+            oa["open_pdf"],
+            page,
+        )
+        if oa["enabled"]
+        else []
+    )
     # Two arXiv papers for each OpenAlex one: arXiv always serves its PDF.
     taken = 0
     for paper in (p for trio in zip_longest(first, first, other) for p in trio if p):
@@ -67,8 +104,6 @@ def page(query: dict, page: int, run: str, most: int, room: int, held: dict, ent
             new.append(paper)
             taken += 1
     return taken
-
-
 
 
 def collections(cfg: dict, run: str, held: dict, new: list[Any]) -> None:
@@ -83,7 +118,7 @@ def collections(cfg: dict, run: str, held: dict, new: list[Any]) -> None:
     for spec in cfg["collections"]:
         found = asked(spec["repo"], search.collection, spec["repo"], spec["kind"])
         fresh = [i for i in found if i["key"] not in held]
-        for item in fresh[:cfg["per_run"]]:
+        for item in fresh[: cfg["per_run"]]:
             paper = search.item(item)
             held[paper["key"]] = row(paper, spec["repo"], "repository", run, "")
             new.append(paper)
@@ -99,8 +134,10 @@ def sites(cfg: dict, run: str, held: dict, new: list[Any]) -> None:
         new: The run's new papers, appended to.
     """
     for spec in cfg["sites"]:
-        found = asked(spec["name"], search.site, spec["name"], spec["index"], spec["link"])
-        for item in [i for i in found if i["key"] not in held][:cfg["per_run"]]:
+        found = asked(
+            spec["name"], search.site, spec["name"], spec["index"], spec["link"]
+        )
+        for item in [i for i in found if i["key"] not in held][: cfg["per_run"]]:
             got = asked(spec["name"], search.article, item)
             if got:
                 held[got["key"]] = row(got, spec["index"], "practitioner", run, "")

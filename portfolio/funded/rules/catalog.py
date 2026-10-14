@@ -26,12 +26,18 @@ _STAGE_ORDER = {"phase1": 1, "phase2": 2, "phase3": 3, "funded": 4}
 # Modelling assumptions the catalogue's tables cannot carry (owner, 2026-09-30, PLAN.md §12):
 # the order intraday and end-of-day trailing floors update in, never confirmed by either firm.
 _MODE_FLAGS = {
-    "trailing": {"rule_key": "max_loss_trailing_order", "status": "unconfirmed",
-                 "text": "the day's intraday equity high is assumed to raise the trailing floor "
-                         "before the day's low is checked (the conservative order)"},
-    "eod_trailing": {"rule_key": "max_loss_eod_trailing_basis", "status": "unconfirmed",
-                      "text": "assumed to trail the highest end-of-day balance minus max_loss_pct "
-                              "of the initial balance, capped at the initial balance"},
+    "trailing": {
+        "rule_key": "max_loss_trailing_order",
+        "status": "unconfirmed",
+        "text": "the day's intraday equity high is assumed to raise the trailing floor "
+        "before the day's low is checked (the conservative order)",
+    },
+    "eod_trailing": {
+        "rule_key": "max_loss_eod_trailing_basis",
+        "status": "unconfirmed",
+        "text": "assumed to trail the highest end-of-day balance minus max_loss_pct "
+        "of the initial balance, capped at the initial balance",
+    },
 }
 
 
@@ -57,11 +63,14 @@ def plans(max_size: float, ccy: str) -> list[str]:
     rows = db.execute(
         f"SELECT plan_key FROM plans WHERE valid_to IS NULL AND size <= ? AND account_ccy = ? "
         f"AND eas_allowed = 1 AND firm IN ({marks}) ORDER BY firm, family, size",
-        (max_size, ccy, *active)).fetchall()
+        (max_size, ccy, *active),
+    ).fetchall()
     return [r[0] for r in rows]
 
 
-def _min_days(rules: dict, stage_raw: float | None) -> tuple[int | None, str | None, float | None, dict | None]:
+def _min_days(
+    rules: dict, stage_raw: float | None
+) -> tuple[int | None, str | None, float | None, dict | None]:
     """Resolve a stage's minimum-days rule against the curated compendium.
 
     Returns:
@@ -71,10 +80,20 @@ def _min_days(rules: dict, stage_raw: float | None) -> tuple[int | None, str | N
     """
     rule = rules.get("min_days")
     if rule is None:
-        return (int(stage_raw) if stage_raw is not None else None, "trading", None, None)
+        return (
+            int(stage_raw) if stage_raw is not None else None,
+            "trading",
+            None,
+            None,
+        )
     value = rule["value"]
     if value is None:
-        return (None, None, None, {"rule_key": "min_days", "status": "unconfirmed", "text": rule["text"]})
+        return (
+            None,
+            None,
+            None,
+            {"rule_key": "min_days", "status": "unconfirmed", "text": rule["text"]},
+        )
     m = re.match(r"(\d+)", value)
     curated = int(m.group(1)) if m else None
     kind = "profitable" if "profitable" in value.lower() else "trading"
@@ -83,15 +102,22 @@ def _min_days(rules: dict, stage_raw: float | None) -> tuple[int | None, str | N
         pm = re.search(r"([\d.]+)\s*%", value)
         pct = float(pm.group(1)) / 100 if pm else 0.005
     flag = None
-    if stage_raw is not None and int(stage_raw) != curated:     # None = not scraped, no conflict
-        flag = {"rule_key": "min_days", "status": "conflict",
-                "text": f"stage table says {stage_raw}, curated rule says {curated}: {rule['text']}"}
+    if (
+        stage_raw is not None and int(stage_raw) != curated
+    ):  # None = not scraped, no conflict
+        flag = {
+            "rule_key": "min_days",
+            "status": "conflict",
+            "text": f"stage table says {stage_raw}, curated rule says {curated}: {rule['text']}",
+        }
     elif rule["status"] != "confirmed":
         flag = {"rule_key": "min_days", "status": rule["status"], "text": rule["text"]}
     return (curated, kind, pct, flag)
 
 
-def _consistency(rules: dict, stage_raw: float | None) -> tuple[float, str | None, dict | None]:
+def _consistency(
+    rules: dict, stage_raw: float | None
+) -> tuple[float, str | None, dict | None]:
     """Resolve a stage's consistency rule against the curated compendium.
 
     Returns:
@@ -104,17 +130,28 @@ def _consistency(rules: dict, stage_raw: float | None) -> tuple[float, str | Non
         pm = cast(re.Match[str], re.search(r"([\d.]+)\s*%", formula["value"]))
         curated, kind, rule = float(pm.group(1)) / 100, "best_over_total", formula
     elif best_day is not None:
-        curated, kind, rule = float(best_day["value"]) / 100, "best_over_positive_sum", best_day
+        curated, kind, rule = (
+            float(best_day["value"]) / 100,
+            "best_over_positive_sum",
+            best_day,
+        )
     else:
         consistency = (stage_raw or 0) / 100
         return (consistency, None, None)
     flag = None
     stage_pct = (stage_raw or 0) / 100
     if stage_raw is None or abs(stage_pct - curated) > 1e-9:
-        flag = {"rule_key": rule["rule_key"] if formula is not None else "best_day", "status": "conflict",
-                "text": f"stage table says {stage_pct}, curated rule says {curated}: {rule['text']}"}
+        flag = {
+            "rule_key": rule["rule_key"] if formula is not None else "best_day",
+            "status": "conflict",
+            "text": f"stage table says {stage_pct}, curated rule says {curated}: {rule['text']}",
+        }
     elif rule["status"] != "confirmed":
-        flag = {"rule_key": rule["rule_key"], "status": rule["status"], "text": rule["text"]}
+        flag = {
+            "rule_key": rule["rule_key"],
+            "status": rule["status"],
+            "text": rule["text"],
+        }
     return (curated, kind, flag)
 
 
@@ -136,50 +173,103 @@ def plan(plan_key: str, days_per_year: float | None = None) -> Plan:
     """
     firm, family = plan_key.split(":")[:2]
     db = _connect()
-    prow = db.execute("SELECT firm, family, size, price, price_ccy FROM plans WHERE plan_key = ? "
-                       "AND valid_to IS NULL", (plan_key,)).fetchone()
+    prow = db.execute(
+        "SELECT firm, family, size, price, price_ccy FROM plans WHERE plan_key = ? "
+        "AND valid_to IS NULL",
+        (plan_key,),
+    ).fetchone()
     _, _, size, price, price_ccy = prow
     stage_rows = db.execute(
         "SELECT stage, profit_target_pct, daily_loss_pct, max_loss_pct, max_loss_mode, min_days, "
         "time_limit_days, consistency_pct, news_ok, weekend_ok FROM stages WHERE plan_key = ? "
-        "AND valid_to IS NULL", (plan_key,)).fetchall()
-    rule_rows = db.execute("SELECT rule_key, value, status, text FROM rules WHERE valid_to IS NULL "
-                            "AND firm = ? AND family IN ('*', ?)", (firm, family)).fetchall()
-    rules = {r[0]: {"rule_key": r[0], "value": r[1], "status": r[2], "text": r[3]} for r in rule_rows}
+        "AND valid_to IS NULL",
+        (plan_key,),
+    ).fetchall()
+    rule_rows = db.execute(
+        "SELECT rule_key, value, status, text FROM rules WHERE valid_to IS NULL "
+        "AND firm = ? AND family IN ('*', ?)",
+        (firm, family),
+    ).fetchall()
+    rules = {
+        r[0]: {"rule_key": r[0], "value": r[1], "status": r[2], "text": r[3]}
+        for r in rule_rows
+    }
 
     flags: dict[str, dict] = {}
     daily_basis = "balance" if firm == "ftmo" else "max_be"
     if firm == "hantec":
-        flags["daily_loss_basis"] = {"rule_key": "daily_loss_basis", "status": "unconfirmed",
-                                      "text": rules["daily_loss_basis"]["text"]}
+        flags["daily_loss_basis"] = {
+            "rule_key": "daily_loss_basis",
+            "status": "unconfirmed",
+            "text": rules["daily_loss_basis"]["text"],
+        }
 
     stages = []
-    for (stage, target_pct, daily_loss_pct, max_loss_pct, mode, min_days_raw, time_limit,
-         consistency_raw, news_ok, weekend_ok) in stage_rows:
-        if daily_loss_pct is None or max_loss_pct is None:     # NULL = not known yet; 0 = no such rule
-            raise NotImplementedError(f"{plan_key} stage {stage}: a loss limit is unknown (NULL)")
+    for (
+        stage,
+        target_pct,
+        daily_loss_pct,
+        max_loss_pct,
+        mode,
+        min_days_raw,
+        time_limit,
+        consistency_raw,
+        news_ok,
+        weekend_ok,
+    ) in stage_rows:
+        if (
+            daily_loss_pct is None or max_loss_pct is None
+        ):  # NULL = not known yet; 0 = no such rule
+            raise NotImplementedError(
+                f"{plan_key} stage {stage}: a loss limit is unknown (NULL)"
+            )
         if time_limit and days_per_year is None:
-            raise NotImplementedError(f"{plan_key} stage {stage}: {time_limit} calendar days of "
-                                      "time limit need the path set's days_per_year")
-        min_days, min_days_kind, profitable_pct, md_flag = _min_days(rules, min_days_raw)
+            raise NotImplementedError(
+                f"{plan_key} stage {stage}: {time_limit} calendar days of "
+                "time limit need the path set's days_per_year"
+            )
+        min_days, min_days_kind, profitable_pct, md_flag = _min_days(
+            rules, min_days_raw
+        )
         consistency, consistency_kind, c_flag = _consistency(rules, consistency_raw)
         if consistency > 0 and consistency_kind is None:
             raise NotImplementedError(
-                f"{plan_key} stage {stage}: a consistency threshold with no known formula")
+                f"{plan_key} stage {stage}: a consistency threshold with no known formula"
+            )
         # the curated compendium describes the challenge phases; the funded stage's own scrape gaps
         # (often NULL where a phase concept simply does not apply) are not a real disagreement.
         stage_flags = (md_flag, c_flag) if stage != "funded" else ()
         for flag in (*stage_flags, _MODE_FLAGS.get(mode)):
             if flag is not None:
                 flags[flag["rule_key"]] = flag
-        stages.append({
-            "stage": stage, "target": (target_pct or 0) / 100, "daily_loss": daily_loss_pct / 100,
-            "max_loss": max_loss_pct / 100, "max_loss_mode": mode, "daily_basis": daily_basis,
-            "min_days": min_days, "min_days_kind": min_days_kind, "profitable_pct": profitable_pct,
-            "consistency": consistency, "consistency_kind": consistency_kind,
-            "time_limit": max(1, round(time_limit * days_per_year / 365)) if time_limit else 0,
-            "news_ok": bool(news_ok), "weekend_ok": bool(weekend_ok),
-        })
+        stages.append(
+            {
+                "stage": stage,
+                "target": (target_pct or 0) / 100,
+                "daily_loss": daily_loss_pct / 100,
+                "max_loss": max_loss_pct / 100,
+                "max_loss_mode": mode,
+                "daily_basis": daily_basis,
+                "min_days": min_days,
+                "min_days_kind": min_days_kind,
+                "profitable_pct": profitable_pct,
+                "consistency": consistency,
+                "consistency_kind": consistency_kind,
+                "time_limit": max(1, round(time_limit * days_per_year / 365))
+                if time_limit
+                else 0,
+                "news_ok": bool(news_ok),
+                "weekend_ok": bool(weekend_ok),
+            }
+        )
     stages.sort(key=lambda s: _STAGE_ORDER[s["stage"]])
-    return {"plan_key": plan_key, "firm": firm, "family": family, "size": size, "price": price,
-            "price_ccy": price_ccy, "stages": stages, "flags": list(flags.values())}
+    return {
+        "plan_key": plan_key,
+        "firm": firm,
+        "family": family,
+        "size": size,
+        "price": price,
+        "price_ccy": price_ccy,
+        "stages": stages,
+        "flags": list(flags.values()),
+    }

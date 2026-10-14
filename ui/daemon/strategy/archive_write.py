@@ -17,7 +17,7 @@ from ui.daemon.loader import find
 from ui.daemon.strategy import archive_view as view
 
 STAMP = "%Y-%m-%dT%H%M"
-META = "sqx.inspect.strategymeta"          # front E2's reader; frozen only once it exists
+META = "sqx.inspect.strategymeta"  # front E2's reader; frozen only once it exists
 
 
 def _stamp() -> str:
@@ -25,7 +25,9 @@ def _stamp() -> str:
     return datetime.now().strftime(STAMP)
 
 
-def _source(project: str, databank: str, identity: str, sqx: Path | None) -> tuple[Path, Path | None]:
+def _source(
+    project: str, databank: str, identity: str, sqx: Path | None
+) -> tuple[Path, Path | None]:
     """The strategy file to copy, and the project.cfx beside it.
 
     Args:
@@ -42,17 +44,28 @@ def _source(project: str, databank: str, identity: str, sqx: Path | None) -> tup
     spelled = find.spelled(project, databank)
     where = find.install_of(project, spelled)
     if where and find.writing(where[1], project):
-        raise RuntimeError(f"SQX está escribiendo {project} en {where[0]}: se archiva cuando acabe")
+        raise RuntimeError(
+            f"SQX está escribiendo {project} en {where[0]}: se archiva cuando acabe"
+        )
     cfx = project_dir(project, where[1]) / "project.cfx" if where else None
     if sqx is not None:
         if sqxfile.identity(sqx) != identity:
             raise ValueError(f"{sqx} es otra estrategia: su identidad no es la pedida")
         return sqx, cfx
-    held = [f for f in find.files(where[1], project, spelled)
-            if sqxfile.identity(f) == identity] if where else []
+    held = (
+        [
+            f
+            for f in find.files(where[1], project, spelled)
+            if sqxfile.identity(f) == identity
+        ]
+        if where
+        else []
+    )
     if not held:
-        raise FileNotFoundError(f"Ningún install guarda esa estrategia en {project}/{spelled}: "
-                                "pasa el .sqx a mano con --sqx (se comprueba su identidad)")
+        raise FileNotFoundError(
+            f"Ningún install guarda esa estrategia en {project}/{spelled}: "
+            "pasa el .sqx a mano con --sqx (se comprueba su identidad)"
+        )
     return held[0], cfx
 
 
@@ -71,8 +84,16 @@ def _seal(folder: Path) -> None:
         os.chmod(root, 0o555)
 
 
-def archive(project: str, databank: str, identity: str, step: str, note: str = "", *,
-            family: str, sqx: Path | None = None) -> Path:
+def archive(
+    project: str,
+    databank: str,
+    identity: str,
+    step: str,
+    note: str = "",
+    *,
+    family: str,
+    sqx: Path | None = None,
+) -> Path:
     """`_freeze` (see it for the arguments); the parsed reports it held are dropped even when it raises (up to 2 GB)."""
     try:
         return _freeze(project, databank, identity, step, note, family=family, sqx=sqx)
@@ -81,8 +102,16 @@ def archive(project: str, databank: str, identity: str, step: str, note: str = "
         harvest.release()
 
 
-def _freeze(project: str, databank: str, identity: str, step: str, note: str = "", *,
-            family: str, sqx: Path | None = None) -> Path:
+def _freeze(
+    project: str,
+    databank: str,
+    identity: str,
+    step: str,
+    note: str = "",
+    *,
+    family: str,
+    sqx: Path | None = None,
+) -> Path:
     """Freeze one strategy with everything needed to show and judge it again without recomputing.
 
     Args:
@@ -101,7 +130,9 @@ def _freeze(project: str, databank: str, identity: str, step: str, note: str = "
     """
     final = archive_dir() / identity / _stamp()
     if final.exists():
-        raise FileExistsError(f"{final} ya existe: una versión archivada no se sobrescribe")
+        raise FileExistsError(
+            f"{final} ya existe: una versión archivada no se sobrescribe"
+        )
     source, cfx = _source(project, databank, identity, sqx)
     row = manifest.registry(project)
     work = final.with_name(f".{final.name}.partial")
@@ -110,25 +141,56 @@ def _freeze(project: str, databank: str, identity: str, step: str, note: str = "
     entries, loose, skipped = collect.freeze(project, identity, work / "reports")
     bank = databank.replace(" ", "_")
     tear = view.tearsheet(project, bank, identity, work / "tearsheet")
-    shown = {**view.results(project, identity, entries), "tearsheet": tear,
-             "gate": None if isinstance(tear, str) else view.gate(project, bank, identity, tear["day"])}
-    (work / "view.json").write_text(json.dumps(shown, indent=1, default=str), encoding="utf-8")
+    shown = {
+        **view.results(project, identity, entries),
+        "tearsheet": tear,
+        "gate": None
+        if isinstance(tear, str)
+        else view.gate(project, bank, identity, tear["day"]),
+    }
+    (work / "view.json").write_text(
+        json.dumps(shown, indent=1, default=str), encoding="utf-8"
+    )
     meta = _meta(work / "strategy.sqx", cfx)
     if meta is not None:
-        (work / "meta.json").write_text(json.dumps(meta, indent=1, default=str), encoding="utf-8")
-    doc = {"identity": identity, "project": project, "databank": databank, "step": step,
-           "note": note, "archived_at": datetime.now().isoformat(timespec="seconds"),
-           "code_version": code_version(), "registry": row,
-           "sqx": {"from": str(source), "sha256": manifest.sha256(source), "by_hand": sqx is not None},
-           "harvest": None if isinstance(tear, str) else {
-               "folder": tear["folder"], "rows": harvest.harvest_rows(
-                   Path(tear["folder"]), identity, work / "harvest")},
-           "studies": entries, "loose": loose, "skipped": skipped,
-           "asset": manifest.asset(row["symbol"], work / "asset"),
-           "ledger": manifest.ledger(row["symbol"], row["timeframe"], family),
-           "meta": "meta.json" if meta is not None else None,
-           **manifest.frozen(feeds.timezone(manifest.feed_of(work / "strategy.sqx")), row["symbol"])}
-    (work / "manifest.json").write_text(json.dumps(doc, indent=1, default=str), encoding="utf-8")
+        (work / "meta.json").write_text(
+            json.dumps(meta, indent=1, default=str), encoding="utf-8"
+        )
+    doc = {
+        "identity": identity,
+        "project": project,
+        "databank": databank,
+        "step": step,
+        "note": note,
+        "archived_at": datetime.now().isoformat(timespec="seconds"),
+        "code_version": code_version(),
+        "registry": row,
+        "sqx": {
+            "from": str(source),
+            "sha256": manifest.sha256(source),
+            "by_hand": sqx is not None,
+        },
+        "harvest": None
+        if isinstance(tear, str)
+        else {
+            "folder": tear["folder"],
+            "rows": harvest.harvest_rows(
+                Path(tear["folder"]), identity, work / "harvest"
+            ),
+        },
+        "studies": entries,
+        "loose": loose,
+        "skipped": skipped,
+        "asset": manifest.asset(row["symbol"], work / "asset"),
+        "ledger": manifest.ledger(row["symbol"], row["timeframe"], family),
+        "meta": "meta.json" if meta is not None else None,
+        **manifest.frozen(
+            feeds.timezone(manifest.feed_of(work / "strategy.sqx")), row["symbol"]
+        ),
+    }
+    (work / "manifest.json").write_text(
+        json.dumps(doc, indent=1, default=str), encoding="utf-8"
+    )
     work.rename(final)
     _seal(final)
     return final

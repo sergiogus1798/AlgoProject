@@ -14,8 +14,14 @@ from ui.desktop.theme import QSS
 
 SIZE = (1680, 1050)
 # What the shots open, by section key: the overview folded, then the owner's own example.
-SHOTS = {"1-configuracion-sqx.png": None, "2-crosstf.png": "crosstf", "3-mc-retest.png": "mc_retest",
-         "4-wfm.png": "wfm", "5-wfc.png": "wfc", "6-cscv.png": "cscv"}
+SHOTS = {
+    "1-configuracion-sqx.png": None,
+    "2-crosstf.png": "crosstf",
+    "3-mc-retest.png": "mc_retest",
+    "4-wfm.png": "wfm",
+    "5-wfc.png": "wfc",
+    "6-cscv.png": "cscv",
+}
 
 
 def shoot(zone: SqxConfigZone, app: QApplication, folder: Path) -> None:
@@ -45,16 +51,22 @@ def main() -> None:
     """Open the zone, or save its shots with `--shot DIR` and exit."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--shot", type=Path, help="carpeta donde dejar las PNG y salir")
-    parser.add_argument("--port", type=int, default=UI_PORT,
-                        help="puerto de un demonio de pruebas; por defecto, el de la ventana")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=UI_PORT,
+        help="puerto de un demonio de pruebas; por defecto, el de la ventana",
+    )
     args = parser.parse_args()
     client.aim(args.port)
     if not client.health(args.port):
-        sys.exit(f"No hay demonio en el puerto {args.port}: arráncalo con "
-                 "`python3 -m ui.daemon.serve` o abre la ventana con bin/algoui.")
+        sys.exit(
+            f"No hay demonio en el puerto {args.port}: arráncalo con "
+            "`python3 -m ui.daemon.serve` o abre la ventana con bin/algoui."
+        )
     app = QApplication(sys.argv)
     app.setStyleSheet(QSS)
-    helpmark.install(app)     # the «?» beside every button
+    helpmark.install(app)  # the «?» beside every button
     zone = SqxConfigZone()
     zone.setWindowTitle("AlgoProject — Configuración SQX")
     zone.resize(*SIZE)

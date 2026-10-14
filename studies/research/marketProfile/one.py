@@ -12,8 +12,12 @@ from studies.research.marketProfile import context, higher, inputs, series
 from studies.research.marketProfile.measure import REGISTRY, SYMMETRIC
 
 
-def evaluate(d: dict, cal: dict, specs: list[dict],
-             directions: tuple[str, ...] = ("long", "short")) -> list[tuple]:
+def evaluate(
+    d: dict,
+    cal: dict,
+    specs: list[dict],
+    directions: tuple[str, ...] = ("long", "short"),
+) -> list[tuple]:
     """Every measure on one series: once when it has no direction, else long and short.
 
     Args:
@@ -45,8 +49,13 @@ def framed(x: dict, cal: dict, cfg: dict) -> dict[str, Any]:
     return higher.context(series.derive(x, cfg["derive"]), cal, cfg["higher"])
 
 
-def money(bars: pd.DataFrame, asset: dict, direction: str, entry: np.ndarray,
-          leave: np.ndarray) -> dict[str, Any]:
+def money(
+    bars: pd.DataFrame,
+    asset: dict,
+    direction: str,
+    entry: np.ndarray,
+    leave: np.ndarray,
+) -> dict[str, Any]:
     """What a measure's trades earned on the real bars, in price units, against their cost.
 
     Returns:
@@ -60,14 +69,22 @@ def money(bars: pd.DataFrame, asset: dict, direction: str, entry: np.ndarray,
     pnl = sign * (opens[leave] - opens[entry])
     paid = inputs.cost(asset, opens[entry])
     yearly = pd.Series(pnl).groupby(cast("Any", bars.index).year[entry]).mean()
-    return {"n_trades": int(entry.size), "effect": pnl.mean(), "cost": paid.mean(),
-            "multiple": pnl.mean() / paid.mean(), "years": int(yearly.size),
-            "years_with_sign": int((yearly.to_numpy() > 0).sum()),
-            "per_year": json.dumps({int(y): float(v) for y, v in cast("Any", yearly.items())})}
+    return {
+        "n_trades": int(entry.size),
+        "effect": pnl.mean(),
+        "cost": paid.mean(),
+        "multiple": pnl.mean() / paid.mean(),
+        "years": int(yearly.size),
+        "years_with_sign": int((yearly.to_numpy() > 0).sum()),
+        "per_year": json.dumps(
+            {int(y): float(v) for y, v in cast("Any", yearly.items())}
+        ),
+    }
 
 
-def against_null(x: dict, cal: dict, cfg: dict, block: int,
-                 rng: np.random.Generator) -> tuple[list[tuple], np.ndarray]:
+def against_null(
+    x: dict, cal: dict, cfg: dict, block: int, rng: np.random.Generator
+) -> tuple[list[tuple], np.ndarray]:
     """Every measure on a series and on its block-resampled draws.
 
     Args:
@@ -118,12 +135,18 @@ def overlap(real: list[tuple], family: dict, n: int) -> list[dict]:
         names = list(fired)
         with np.errstate(divide="ignore", invalid="ignore"):
             corr = np.corrcoef([fired[f] for f in names])
-        rows += [{"direction": direction, "family_a": a, "family_b": b, "phi": corr[i, j]}
-                 for i, a in enumerate(names) for j, b in enumerate(names) if i < j]
+        rows += [
+            {"direction": direction, "family_a": a, "family_b": b, "phi": corr[i, j]}
+            for i, a in enumerate(names)
+            for j, b in enumerate(names)
+            if i < j
+        ]
     return rows
 
 
-def run(symbol: str, timeframe: str, bars: pd.DataFrame, asset: dict, cfg: dict) -> dict[str, Any]:
+def run(
+    symbol: str, timeframe: str, bars: pd.DataFrame, asset: dict, cfg: dict
+) -> dict[str, Any]:
     """The profile of one asset on one timeframe.
 
     Args:
@@ -143,10 +166,12 @@ def run(symbol: str, timeframe: str, bars: pd.DataFrame, asset: dict, cfg: dict)
     family = {s["name"]: s["family"] for s in cfg["measures"]}
     spec = {s["name"]: s for s in cfg["measures"]}
     block = cfg["nulls"]["block"][timeframe]
-    rng = np.random.default_rng([cfg["nulls"]["seed"],
-                                 zlib.crc32(f"{symbol}/{timeframe}".encode())])
-    real, sims = against_null(series.logs(bars), series.calendar(bars.index, timeframe, cfg),
-                              cfg, block, rng)
+    rng = np.random.default_rng(
+        [cfg["nulls"]["seed"], zlib.crc32(f"{symbol}/{timeframe}".encode())]
+    )
+    real, sims = against_null(
+        series.logs(bars), series.calendar(bars.index, timeframe, cfg), cfg, block, rng
+    )
     p = pvalues(real, sims)
     years = (bars.index[-1] - bars.index[0]).days / 365.25
     rows = []
@@ -154,19 +179,38 @@ def run(symbol: str, timeframe: str, bars: pd.DataFrame, asset: dict, cfg: dict)
         spread = sims[:, k].std(ddof=1)
         paid = money(bars, asset, direction, entry, leave)
         tested = entry is None or entry.size >= cfg["filters"]["min_trades"]
-        rows.append({
-            "symbol": symbol, "timeframe": timeframe, "direction": direction,
-            "family": family[name], "measure": name, "tag": spec[name].get("tag", "base"),
-            "lit": spec[name].get("lit", ""),
-            "needs_clock": bool(spec[name].get("clock", False)), "stat": stat,
-            "null_mean": sims[:, k].mean(), "null_sd": spread,
-            "z": (stat - sims[:, k].mean()) / spread if spread > 0 else 0.0,
-            "p": p[k] if tested else 1.0, **paid,
-            "trades_per_year": (paid["n_trades"] or 0) / years,
-            "detail": json.dumps(detail, default=float)})
-    return {"rows": rows, "context": {"symbol": symbol, "timeframe": timeframe,
-                                      "bars": len(bars), "block": block,
-                                      **context.block(bars, asset)},
-            "overlap": [{"symbol": symbol, "timeframe": timeframe, **o}
-                        for o in overlap(real, family, len(bars))],
-            "wall_s": time.time() - started}
+        rows.append(
+            {
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "direction": direction,
+                "family": family[name],
+                "measure": name,
+                "tag": spec[name].get("tag", "base"),
+                "lit": spec[name].get("lit", ""),
+                "needs_clock": bool(spec[name].get("clock", False)),
+                "stat": stat,
+                "null_mean": sims[:, k].mean(),
+                "null_sd": spread,
+                "z": (stat - sims[:, k].mean()) / spread if spread > 0 else 0.0,
+                "p": p[k] if tested else 1.0,
+                **paid,
+                "trades_per_year": (paid["n_trades"] or 0) / years,
+                "detail": json.dumps(detail, default=float),
+            }
+        )
+    return {
+        "rows": rows,
+        "context": {
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "bars": len(bars),
+            "block": block,
+            **context.block(bars, asset),
+        },
+        "overlap": [
+            {"symbol": symbol, "timeframe": timeframe, **o}
+            for o in overlap(real, family, len(bars))
+        ],
+        "wall_s": time.time() - started,
+    }

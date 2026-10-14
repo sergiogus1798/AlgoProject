@@ -2,7 +2,7 @@
 
 import numpy as np
 
-MIN_HOLD = 1    # a trade that opens and closes on the same bar is not a trade
+MIN_HOLD = 1  # a trade that opens and closes on the same bar is not a trade
 
 
 def moments(shifted: np.ndarray) -> tuple[float, float]:
@@ -28,11 +28,13 @@ def overdispersed(mean: float, var: float) -> tuple[float, float]:
     Returns:
         The number of successes and the success probability, by moment matching.
     """
-    successes = mean ** 2 / (var - mean)
+    successes = mean**2 / (var - mean)
     return successes, successes / (successes + mean)
 
 
-def fit(values: np.ndarray, draws: int, size: int, rng: np.random.Generator) -> np.ndarray:
+def fit(
+    values: np.ndarray, draws: int, size: int, rng: np.random.Generator
+) -> np.ndarray:
     """Sample from a discrete distribution fitted to `values` by its first two moments.
 
     Args:
@@ -51,5 +53,6 @@ def fit(values: np.ndarray, draws: int, size: int, rng: np.random.Generator) -> 
     mean, var = moments(values - MIN_HOLD)
     if var <= mean:
         return MIN_HOLD + rng.poisson(mean, size=(draws, size))
-    return MIN_HOLD + rng.negative_binomial(*overdispersed(mean, var), size=(draws, size))
-
+    return MIN_HOLD + rng.negative_binomial(
+        *overdispersed(mean, var), size=(draws, size)
+    )

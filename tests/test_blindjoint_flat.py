@@ -25,4 +25,5 @@ def test_near_flat_excess_is_flat() -> None:
 
 if __name__ == "__main__":
     import pytest
+
     sys.exit(pytest.main([__file__, "-q"]))

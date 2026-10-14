@@ -29,10 +29,14 @@ def classes(portfolio: str, cfg: dict) -> dict[str, str]:
         A coefficient written as a literal inside a formula is no variable and is not here.
     """
     kind = lengths.kinds(portfolio)
-    return {name: EXIT if kind[name] == EXIT_USED else ENTRY
-            for name, typed in rewrite.declared(portfolio).items()
-            if typed in manifest.NUMERIC and kind[name] and kind[name] != lengths.SHIFT
-            and not any(re.search(p, name) for p in cfg["fixed"])}
+    return {
+        name: EXIT if kind[name] == EXIT_USED else ENTRY
+        for name, typed in rewrite.declared(portfolio).items()
+        if typed in manifest.NUMERIC
+        and kind[name]
+        and kind[name] != lengths.SHIFT
+        and not any(re.search(p, name) for p in cfg["fixed"])
+    }
 
 
 def mother(portfolio: str, cfg: dict) -> dict[str, float]:
@@ -41,7 +45,9 @@ def mother(portfolio: str, cfg: dict) -> dict[str, float]:
     return {name: float(stored[name]) for name in classes(portfolio, cfg)}
 
 
-def draw(portfolio: str, strategy: str, cfg: dict) -> tuple[list[dict[str, float]], int]:
+def draw(
+    portfolio: str, strategy: str, cfg: dict
+) -> tuple[list[dict[str, float]], int]:
     """One mother's neighbours: every moved parameter drawn uniformly around her own value.
 
     Args:
@@ -68,8 +74,11 @@ def draw(portfolio: str, strategy: str, cfg: dict) -> tuple[list[dict[str, float
         for (name, value), factor in zip(own.items(), row):
             if types[name] == "int":
                 moved_to = float(round(value * factor))
-                drawn[name] = (max(moved_to, float(cfg["int_floor"]))
-                               if value >= cfg["int_floor"] else moved_to)
+                drawn[name] = (
+                    max(moved_to, float(cfg["int_floor"]))
+                    if value >= cfg["int_floor"]
+                    else moved_to
+                )
             else:
                 drawn[name] = float(f"{value * factor:g}")
         key = tuples.tuple_hash(drawn)

@@ -11,7 +11,7 @@ import numpy as np
 TRIAD_BYTES = 24  # two reads and one write of float64 per element, per pass
 
 
-_BUF: tuple = ()   # the worker's three vectors, written once by `_prepare` before any clock runs
+_BUF: tuple = ()  # the worker's three vectors, written once by `_prepare` before any clock runs
 
 
 def _alloc(n: int) -> tuple:
@@ -70,18 +70,23 @@ def sweep(cfg: dict, kb: float) -> list[dict]:
         working set finishes in microseconds and the curve measures pool dispatch instead
         of memory.
     """
-    passes = max(round(cfg["scaling"]["probe_passes"] * cfg["scaling"]["probe_mb"] * 1024
-                       / kb), 1)
+    passes = max(
+        round(cfg["scaling"]["probe_passes"] * cfg["scaling"]["probe_mb"] * 1024 / kb),
+        1,
+    )
     ctx = get_context("forkserver")
     ctx.set_forkserver_preload(["perf.measure.scaling"])
     out = []
     for workers in cfg["scaling"]["workers"]:
         if workers > (os.cpu_count() or 1):
             continue
-        with ProcessPoolExecutor(max_workers=workers, mp_context=ctx,
-                                 initializer=_prepare, initargs=(kb,)) as pool:
+        with ProcessPoolExecutor(
+            max_workers=workers, mp_context=ctx, initializer=_prepare, initargs=(kb,)
+        ) as pool:
             args = [(kb, passes)] * workers
-            list(pool.map(_warm, range(workers)))              # start every worker, vectors built, before the clock
+            list(
+                pool.map(_warm, range(workers))
+            )  # start every worker, vectors built, before the clock
             start = time.perf_counter()
             moved = sum(pool.map(_job, args))
             elapsed = time.perf_counter() - start
@@ -108,6 +113,8 @@ def machine(cfg: dict) -> Machine:
         DRAM curve that flattens is the signature of a kernel whose working set is too big:
         adding workers past the flattening point buys nothing and costs memory.
     """
-    return {"cores": os.cpu_count(),
-            "cache": sweep(cfg, cfg["scaling"]["small_kb"]),
-            "dram": sweep(cfg, cfg["scaling"]["probe_mb"] * 1024)}
+    return {
+        "cores": os.cpu_count(),
+        "cache": sweep(cfg, cfg["scaling"]["small_kb"]),
+        "dram": sweep(cfg, cfg["scaling"]["probe_mb"] * 1024),
+    }

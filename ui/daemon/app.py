@@ -35,5 +35,11 @@ def health() -> dict[str, Any]:
     """
     busy = sum(j["rc"] is None for j in jobs.listing())
     installs = {role: top.is_dir() for role, top in progress.installs().items()}
-    return {"ok": True, "module": "templates", "code": CODE, "pid": os.getpid(), "busy": busy,
-            "sqx": {"installs": installs}}
+    return {
+        "ok": True,
+        "module": "templates",
+        "code": CODE,
+        "pid": os.getpid(),
+        "busy": busy,
+        "sqx": {"installs": installs},
+    }

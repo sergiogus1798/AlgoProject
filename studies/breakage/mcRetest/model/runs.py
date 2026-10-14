@@ -35,8 +35,16 @@ def prepare(p: dict[str, Any]) -> dict[str, Any]:
     """
     signs = np.sign(p["pnl"]).astype(np.int8)
     sims = p["n"].size
-    out = {k: np.zeros(sims) for k in
-           ("max_win_run", "max_loss_run", "avg_win_run", "avg_loss_run", "zscore")}
+    out = {
+        k: np.zeros(sims)
+        for k in (
+            "max_win_run",
+            "max_loss_run",
+            "avg_win_run",
+            "avg_loss_run",
+            "zscore",
+        )
+    }
     for k, (start, stop) in enumerate(zip(p["offsets"][:-1], p["offsets"][1:])):
         run = signs[start:stop]
         out["max_win_run"][k], out["avg_win_run"][k] = _streaks(run, 1)
@@ -71,7 +79,7 @@ def _zscore(signs: np.ndarray) -> float:
         return 0.0
     runs = 1 + int((signs[1:] != signs[:-1]).sum())
     mean = 2 * wins * losses / n + 1
-    var = 2 * wins * losses * (2 * wins * losses - n) / (n ** 2 * (n - 1))
+    var = 2 * wins * losses * (2 * wins * losses - n) / (n**2 * (n - 1))
     return float((runs - mean + 0.5) / np.sqrt(var)) if var > 0 else 0.0
 
 

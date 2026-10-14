@@ -18,12 +18,19 @@ from ui.desktop import client  # noqa: E402
 SENT: list[tuple[str, dict]] = []
 ASKED: list[str] = []
 ANSWER = {"yes": QMessageBox.Yes}
-SQX = {"6": {"ok": True, "reasons": [], "titles": ["CONSTRUCCION"]},
-       "7": {"ok": False, "reasons": ["«Results» no tiene ninguna estrategia"], "titles": []}}
+SQX = {
+    "6": {"ok": True, "reasons": [], "titles": ["CONSTRUCCION"]},
+    "7": {
+        "ok": False,
+        "reasons": ["«Results» no tiene ninguna estrategia"],
+        "titles": [],
+    },
+}
 
 
 def fake_daemon(data: dict) -> None:
     """GETs answered from `data`; POSTs recorded and answered with a queued job."""
+
     def get(path: str, **params: str) -> dict:
         """The routes the rail reads."""
         SENT.append((f"GET {path}", params))
@@ -33,23 +40,36 @@ def fake_daemon(data: dict) -> None:
             return {"steps": SQX}
         if path == "jobs":
             return {"jobs": []}
-        return {"ok": True, "reasons": [], "titles": ["CONSTRUCCION"], "text": "Se va a lanzar",
-                "nonce": "n-1"}
+        return {
+            "ok": True,
+            "reasons": [],
+            "titles": ["CONSTRUCCION"],
+            "text": "Se va a lanzar",
+            "nonce": "n-1",
+        }
 
     def post(path: str, body: dict) -> dict:
         """Every write the rail sends, answered as the daemon would when it queues."""
         SENT.append((f"POST {path}", body))
-        return {"jobs": [{"id": "1"}], "refused": []} if path == "workflow/run" else {
-            "job": "1", "titles": ["CONSTRUCCION"]}
+        return (
+            {"jobs": [{"id": "1"}], "refused": []}
+            if path == "workflow/run"
+            else {"job": "1", "titles": ["CONSTRUCCION"]}
+        )
 
     client.get, client.post = get, post
     client.aim = lambda port: None
-    QMessageBox.question = staticmethod(lambda *a, **k: ASKED.append(a[1]) or ANSWER["yes"])
+    QMessageBox.question = staticmethod(
+        lambda *a, **k: ASKED.append(a[1]) or ANSWER["yes"]
+    )
 
 
 def cards(r: object) -> dict[str, object]:
     """The step cards on the rail, by number."""
-    return {w.step["n"]: w for w in (r.grid.itemAt(i).widget() for i in range(r.grid.count()))}
+    return {
+        w.step["n"]: w
+        for w in (r.grid.itemAt(i).widget() for i in range(r.grid.count()))
+    }
 
 
 def test_buttons() -> None:
@@ -58,16 +78,26 @@ def test_buttons() -> None:
     its reason on the card; «Correr workflow» is on with its plan written beside it."""
     from ui.desktop.theme import QSS
     from ui.desktop.workspace.rail import Rail
+
     app = QApplication.instance() or QApplication([])
     app.setStyleSheet(QSS)
     data = rail({"6": "pending", "7": "pending"}, "done")
     for s in data["steps"]:
         s |= {"tab": "", "sub": "", "why": "", "panel": False, "in": None, "out": None}
         for t in s["tests"]:
-            t |= {"title": t["key"], "why": "", "config": "", "spends": SPENDS.get(t["key"], ""),
-                  "databank": None}
-    data |= {"backfill": {"offer": False, "why": ""}, "oos2": {"text": ""},
-             "blind": {"sealed": False, "text": ""}, "chain": chainplan.plan(data)}
+            t |= {
+                "title": t["key"],
+                "why": "",
+                "config": "",
+                "spends": SPENDS.get(t["key"], ""),
+                "databank": None,
+            }
+    data |= {
+        "backfill": {"offer": False, "why": ""},
+        "oos2": {"text": ""},
+        "blind": {"sealed": False, "text": ""},
+        "chain": chainplan.plan(data),
+    }
     fake_daemon(data)
     r = Rail()
     r.load("Test_Fake")
@@ -78,14 +108,21 @@ def test_buttons() -> None:
     while not r.plan.text() and time.monotonic() < end:
         app.processEvents()
         time.sleep(0.02)
-    assert r.chain.isEnabled() and "6 (SQX) → 7 (SQX) → 8" in r.plan.text(), r.plan.text()
+    assert r.chain.isEnabled() and "6 (SQX) → 7 (SQX) → 8" in r.plan.text(), (
+        r.plan.text()
+    )
     got = cards(r)
     SENT.clear()
     got["8"].findChildren(QPushButton)[0].click()
-    assert ASKED == ["Correr el paso 8"], "nothing ticked: it asks before running them all"
+    assert ASKED == ["Correr el paso 8"], (
+        "nothing ticked: it asks before running them all"
+    )
     body = next(b for p, b in SENT if p == "POST workflow/run")
     assert [t["key"] for t in body["tests"]] == ["gate"], "step 8 is the gate alone"
-    six, seven = got["6"].findChildren(QPushButton)[0], got["7"].findChildren(QPushButton)[0]
+    six, seven = (
+        got["6"].findChildren(QPushButton)[0],
+        got["7"].findChildren(QPushButton)[0],
+    )
     assert six.text() == "▶ SQX" and six.isEnabled() and not seven.isEnabled()
     assert "Results" in got["7"].why, got["7"].why
     SENT.clear()

@@ -21,7 +21,9 @@ class Reload(BaseModel):
     databank: str
 
 
-def shown(what: str, read: Callable[..., Mapping[str, Any]], *args: str) -> dict[str, Any]:
+def shown(
+    what: str, read: Callable[..., Mapping[str, Any]], *args: str
+) -> dict[str, Any]:
     """One read for the window, a failure as `error` instead of a 500 (the ui boundary)."""
     try:
         return cast("dict[str, Any]", read(*args))
@@ -40,8 +42,10 @@ def get_table(project: str, databank: str) -> Response:
     """One databank: a row per strategy, its metrics and every study's columns. Written out
     here: FastAPI's own encoder walks every value, 3 s for the 24 MB of 10,000 strategies."""
     got = shown("la tabla", table.table, project, databank)
-    return Response(json.dumps(got, ensure_ascii=False, allow_nan=False, separators=(",", ":")),
-                    media_type="application/json")
+    return Response(
+        json.dumps(got, ensure_ascii=False, allow_nan=False, separators=(",", ":")),
+        media_type="application/json",
+    )
 
 
 @ROUTER.get("/api/databank/segments")
@@ -62,15 +66,20 @@ class View(BaseModel):
 @ROUTER.get("/api/databank/columns")
 def get_columns(project: str, databank: str) -> dict[str, Any]:
     """Every table's saved column choice of one databank, `views` {table: ids}."""
-    return shown("las columnas", lambda p, d: {"views": columns.views(p, d)}, project, databank)
+    return shown(
+        "las columnas", lambda p, d: {"views": columns.views(p, d)}, project, databank
+    )
 
 
 @ROUTER.post("/api/databank/columns")
 def post_columns(req: View) -> dict[str, Any]:
     """Keep (or, with `view` None, forget) one table's choice under AlgoData/filters/."""
-    return shown("las columnas",
-                 lambda p, d: {"views": columns.save(p, d, req.table, req.view)},
-                 req.project, req.databank)
+    return shown(
+        "las columnas",
+        lambda p, d: {"views": columns.save(p, d, req.table, req.view)},
+        req.project,
+        req.databank,
+    )
 
 
 class Visible(BaseModel):
@@ -82,17 +91,25 @@ class Visible(BaseModel):
 
 
 @ROUTER.get("/api/databank/equity")
-def get_equity(project: str, databank: str, ids: list[str] | None = Query(None)) -> dict[str, Any]:  # noqa: B008 FastAPI idiom
+def get_equity(
+    project: str, databank: str, ids: list[str] | None = Query(None)
+) -> dict[str, Any]:  # noqa: B008 FastAPI idiom
     """The databank's aggregate daily curve, SQX's and at the real spread; `ids` (repeated)
     keeps only those strategies."""
-    return shown("la equity agregada", lambda p, d: equity.equity(p, d, ids), project, databank)
+    return shown(
+        "la equity agregada", lambda p, d: equity.equity(p, d, ids), project, databank
+    )
 
 
 @ROUTER.post("/api/databank/equity")
 def post_equity(req: Visible) -> dict[str, Any]:
     """The same curve for a long list of visible identities, which a URL would not carry."""
-    return shown("la equity agregada", lambda p, d: equity.equity(p, d, req.ids),
-                 req.project, req.databank)
+    return shown(
+        "la equity agregada",
+        lambda p, d: equity.equity(p, d, req.ids),
+        req.project,
+        req.databank,
+    )
 
 
 @ROUTER.get("/api/databank/funnel")
@@ -110,7 +127,14 @@ def reload(req: Reload) -> dict[str, Any]:
         `strategies` — the roster read now —, and `load`, what `/api/load` answered.
     """
     find.forget()
-    held = shown("el databank", lambda p, d: {"n": len(find.roster(p, d))},
-                 req.project, req.databank)
-    return {"strategies": held.get("n"), "error": held.get("error"),
-            "load": loader.load(loader.Load(project=req.project, databank=req.databank))}
+    held = shown(
+        "el databank",
+        lambda p, d: {"n": len(find.roster(p, d))},
+        req.project,
+        req.databank,
+    )
+    return {
+        "strategies": held.get("n"),
+        "error": held.get("error"),
+        "load": loader.load(loader.Load(project=req.project, databank=req.databank)),
+    }

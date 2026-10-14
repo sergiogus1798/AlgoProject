@@ -8,8 +8,11 @@ import pandas as pd
 from studies.transfer.crossmarket.travel import tensor
 
 
-def total(values: np.ndarray, markets: np.ndarray | list | None = None,
-          cells: np.ndarray | list | None = None) -> np.ndarray:
+def total(
+    values: np.ndarray,
+    markets: np.ndarray | list | None = None,
+    cells: np.ndarray | list | None = None,
+) -> np.ndarray:
     """Sum over a choice of markets and cells, keeping «no data» apart from zero.
 
     Args:
@@ -49,13 +52,20 @@ def z(real: float, null: np.ndarray) -> Z:
     """
     mean, sd = float(np.mean(null)), float(np.std(null, ddof=1))
     live = bool(np.isfinite(real)) and sd > 0
-    return Z(z=(real - mean) / sd if live else np.nan,
-             p=(1 + int((null >= real).sum())) / (null.size + 1) if live else np.nan,
-             real=float(real), mean=mean, sd=sd)
+    return Z(
+        z=(real - mean) / sd if live else np.nan,
+        p=(1 + int((null >= real).sum())) / (null.size + 1) if live else np.nan,
+        real=float(real),
+        mean=mean,
+        sd=sd,
+    )
 
 
-def joint(tensor: tensor.Built, markets: np.ndarray | list | None = None,
-          cells: np.ndarray | list | None = None) -> Z:
+def joint(
+    tensor: tensor.Built,
+    markets: np.ndarray | list | None = None,
+    cells: np.ndarray | list | None = None,
+) -> Z:
     """z of one strategy over any markets and cells, from its tensor and nothing else.
 
     Args:
@@ -66,7 +76,10 @@ def joint(tensor: tensor.Built, markets: np.ndarray | list | None = None,
     Returns:
         As z() returns it.
     """
-    return z(cast(float, total(tensor["real"], markets, cells)), total(tensor["null"], markets, cells))
+    return z(
+        cast(float, total(tensor["real"], markets, cells)),
+        total(tensor["null"], markets, cells),
+    )
 
 
 def t(values: np.ndarray) -> float:
@@ -99,7 +112,7 @@ def weekly(values: np.ndarray, day: np.ndarray) -> pd.Series:
         Indexed by each week's Friday, every week from the first to the last present, a week
         with nothing closed at zero (`Series.resample("W-FRI").sum()` in integer arithmetic).
     """
-    number = day.astype(np.int64)                       # days since 1970-01-01, a Thursday
+    number = day.astype(np.int64)  # days since 1970-01-01, a Thursday
     friday = number + (1 - number) % 7
     out = np.bincount((friday - friday.min()) // 7, weights=values)
     index = (friday.min() + 7 * np.arange(len(out))).astype("datetime64[D]")

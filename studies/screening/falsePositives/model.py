@@ -8,7 +8,7 @@ from engines.nulls import barrier, simulate, windowed
 # Keeps the donor monkeys off `resample.stream(seed, key)` (numpy pads [s, k] to [s, k, 0]) and off simulate.TAG's.
 TAG = 0x444F4E52
 
-SAMPLES = ("IS", "OOS")     # the gate's names: the asset's `build` segment and its `oos1`
+SAMPLES = ("IS", "OOS")  # the gate's names: the asset's `build` segment and its `oos1`
 
 
 def atr_sized(kept: dict, enter: np.ndarray) -> np.ndarray:
@@ -30,14 +30,19 @@ def donor_sized(kept: dict, enter: np.ndarray, flat: bool) -> np.ndarray:
     """The donor's lots on every drawn trade (`enter` is the raveled draws x trades), or their mean
     when the rung strips the sizing."""
     size = kept["located"]["size"]
-    return np.full(enter.shape, size.mean()) if flat else np.tile(size, enter.size // size.size)
+    return (
+        np.full(enter.shape, size.mean())
+        if flat
+        else np.tile(size, enter.size // size.size)
+    )
 
 
 SIZING = {"donor": donor_sized, "atr": lambda kept, enter, flat: atr_sized(kept, enter)}
 
 
-def monkeys(donor: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict, knobs: dict,
-            key: str) -> tuple[pd.DataFrame, float]:
+def monkeys(
+    donor: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict, knobs: dict, key: str
+) -> tuple[pd.DataFrame, float]:
     """`draws` monkey strategies with one real strategy's footprint, as trade lists.
 
     Args:
@@ -63,40 +68,77 @@ def monkeys(donor: pd.DataFrame, frame: pd.DataFrame, nullcfg: dict, knobs: dict
     """
     parts, corr, rung, draws = [], 1.0, knobs["rung"], knobs["per_donor"]
     for i, sample in enumerate(SAMPLES):
-        own = pd.DataFrame(donor[donor["sample"] == sample]).sort_values("Open time").reset_index(drop=True)
+        own = (
+            pd.DataFrame(donor[donor["sample"] == sample])
+            .sort_values("Open time")
+            .reset_index(drop=True)
+        )
         kept = simulate.fixed(own, frame, nullcfg)
         corr = min(corr, kept["checks"]["corr"])
-        rng = np.random.default_rng([nullcfg["nulls"]["seed"], simulate._stable(key), TAG, i])
+        rng = np.random.default_rng(
+            [nullcfg["nulls"]["seed"], simulate._stable(key), TAG, i]
+        )
         # The hours null (owner, 2026-10-12, encargo 65 §5.2): each monkey trade re-enters at a
         # uniform bar of the donor's window AND at the clock hour of the trade it replaces.
         at = kept["located"]
         span = np.arange(at["window"][0], at["window"][1] + 1)
         shared = windowed.grid(frame, span, np.zeros(span.size, int))
-        mine = windowed.located(shared, at["entry"], at["exit"], at["size"],
-                                np.where(own["Type"].astype(object) == "Buy", 1.0, -1.0),
-                                np.zeros(at["entry"].size, int))
-        drawn = {k: np.ascontiguousarray(v).ravel()
-                 for k, v in windowed.draw(shared, mine, rung, draws, rng).items()}
+        mine = windowed.located(
+            shared,
+            at["entry"],
+            at["exit"],
+            at["size"],
+            np.where(own["Type"].astype(object) == "Buy", 1.0, -1.0),
+            np.zeros(at["entry"].size, int),
+        )
+        drawn = {
+            k: np.ascontiguousarray(v).ravel()
+            for k, v in windowed.draw(shared, mine, rung, draws, rng).items()
+        }
         bars, enter = kept["bars"], drawn["entries"]
         drawn["sizes"] = SIZING[knobs["sizing"]](kept, enter, windowed.REDRAWS[rung][1])
-        assert np.isfinite(drawn["sizes"]).all(), f"{key}: a {sample} trade has no ATR to size by"
+        assert np.isfinite(drawn["sizes"]).all(), (
+            f"{key}: a {sample} trade has no ATR to size by"
+        )
         leave, price = barrier.vertical(enter, drawn["holds"], bars["leave_px"])
-        pnl = barrier.pnl(enter, leave, price, drawn["sizes"], bars["enter_px"],
-                          np.tile(kept["cost"], draws), kept["value"])
+        pnl = barrier.pnl(
+            enter,
+            leave,
+            price,
+            drawn["sizes"],
+            bars["enter_px"],
+            np.tile(kept["cost"], draws),
+            kept["value"],
+        )
         # Worst price while held: the low for a long, the high for a short (value < 0). In
         # entry order, so the stretches reduceat scans between two trades stay short.
         order = np.argsort(enter, kind="stable")
         worst = np.empty(len(enter))
         worst[order] = (np.minimum if kept["value"] > 0 else np.maximum).reduceat(
             bars["low" if kept["value"] > 0 else "high"],
-            np.column_stack([enter[order], leave[order]]).ravel())[::2]
-        mae = np.minimum(kept["value"] * drawn["sizes"] * (worst - bars["enter_px"][enter]), 0.0)
-        parts.append(pd.DataFrame({
-            "identity": np.repeat([f"{key}#{j:04d}" for j in range(draws)], len(own)),
-            "sample": sample, "Open time": frame.index[enter], "Close time": frame.index[leave],
-            "Type": str(own["Type"].iloc[0]), "Size": drawn["sizes"],
-            "Open price": bars["enter_px"][enter], "Close price": price,
-            "Profit/Loss": pnl, "MAE ($)": mae}))
+            np.column_stack([enter[order], leave[order]]).ravel(),
+        )[::2]
+        mae = np.minimum(
+            kept["value"] * drawn["sizes"] * (worst - bars["enter_px"][enter]), 0.0
+        )
+        parts.append(
+            pd.DataFrame(
+                {
+                    "identity": np.repeat(
+                        [f"{key}#{j:04d}" for j in range(draws)], len(own)
+                    ),
+                    "sample": sample,
+                    "Open time": frame.index[enter],
+                    "Close time": frame.index[leave],
+                    "Type": str(own["Type"].iloc[0]),
+                    "Size": drawn["sizes"],
+                    "Open price": bars["enter_px"][enter],
+                    "Close price": price,
+                    "Profit/Loss": pnl,
+                    "MAE ($)": mae,
+                }
+            )
+        )
     return pd.concat(parts, ignore_index=True), corr
 
 
@@ -114,8 +156,12 @@ def curve(trades: pd.DataFrame, first: str, end: str) -> pd.DataFrame:
         (OPEN.md #88); this one is closed P&L only, so a monkey's drawdown and worst day
         read milder than a real strategy's would.
     """
-    booked = trades.pivot_table(index=trades["Close time"].dt.normalize(), columns="identity",
-                                values="Profit/Loss", aggfunc="sum")
+    booked = trades.pivot_table(
+        index=trades["Close time"].dt.normalize(),
+        columns="identity",
+        values="Profit/Loss",
+        aggfunc="sum",
+    )
     days = pd.bdate_range(first, end).union(booked.index)
     return booked.reindex(days).fillna(0.0).cumsum()
 
@@ -138,6 +184,10 @@ def planted(oos: pd.DataFrame, edge: float) -> tuple[pd.DataFrame, pd.Series]:
         keeps paying.
     """
     by = oos.groupby("identity", sort=False)
-    add = edge * pd.Series(by["excess"].transform("std")) + pd.Series(by["cost"].transform("mean"))
-    return (oos.assign(pnl=oos["pnl"] + add, excess=oos["excess"] + add),
-            add.groupby(oos["identity"], sort=False).first())
+    add = edge * pd.Series(by["excess"].transform("std")) + pd.Series(
+        by["cost"].transform("mean")
+    )
+    return (
+        oos.assign(pnl=oos["pnl"] + add, excess=oos["excess"] + add),
+        add.groupby(oos["identity"], sort=False).first(),
+    )

@@ -3,8 +3,18 @@
 import json
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (QCheckBox, QComboBox, QFrame, QGridLayout, QHBoxLayout, QLineEdit,
-                               QPushButton, QScrollArea, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.states import colour
@@ -48,7 +58,7 @@ def editor(knob: dict) -> QCheckBox | QComboBox | QLineEdit:
         return pick
     line = QLineEdit(as_text(knob["value"]))
     line.setMinimumWidth(140)
-    line.setCursorPosition(0)         # a long value shows its start, not its end
+    line.setCursorPosition(0)  # a long value shows its start, not its end
     return line
 
 
@@ -95,17 +105,27 @@ class Drawer(QFrame):
         self.setObjectName("term")
         self.study = ""
         self.shown_hash: str | None = None
-        self.editors: dict[str, tuple[QCheckBox | QComboBox | QLineEdit, str]] = {}   # key -> (widget, default text)
-        self.edits: dict[str, dict[str, str]] = {}          # study -> {key: text}
+        self.editors: dict[
+            str, tuple[QCheckBox | QComboBox | QLineEdit, str]
+        ] = {}  # key -> (widget, default text)
+        self.edits: dict[str, dict[str, str]] = {}  # study -> {key: text}
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 8, 10, 8)
         self.title = text("Configuración", T["text"], 12, True)
         lay.addWidget(self.title)
-        lay.addWidget(text("Cambia solo la próxima ejecución, como --set. El config.yaml no se "
-                           "toca nunca.", T["muted"], 12))
+        lay.addWidget(
+            text(
+                "Cambia solo la próxima ejecución, como --set. El config.yaml no se "
+                "toca nunca.",
+                T["muted"],
+                12,
+            )
+        )
         row = QHBoxLayout()
         reset = QPushButton("restablecer valores de fábrica")
-        reset.setToolTip("Vuelve cada mando al valor de config.yaml y olvida lo editado aquí.")
+        reset.setToolTip(
+            "Vuelve cada mando al valor de config.yaml y olvida lo editado aquí."
+        )
         reset.clicked.connect(self.reset)
         row.addWidget(reset)
         row.addStretch(1)
@@ -138,10 +158,23 @@ class Drawer(QFrame):
         if "error" in got:
             grid.addWidget(text(got["error"], colour("fail"), 13, True))
         elif not got["sections"]:
-            grid.addWidget(text("Este estudio no tiene config.yaml: no hay mandos que cambiar.",
-                                T["muted"], 13))
+            grid.addWidget(
+                text(
+                    "Este estudio no tiene config.yaml: no hay mandos que cambiar.",
+                    T["muted"],
+                    13,
+                )
+            )
         for section in got.get("sections", []):
-            grid.addWidget(text(knob_words(section["name"])[:1].upper() + knob_words(section["name"])[1:], T["text"], 11, True))
+            grid.addWidget(
+                text(
+                    knob_words(section["name"])[:1].upper()
+                    + knob_words(section["name"])[1:],
+                    T["text"],
+                    11,
+                    True,
+                )
+            )
             for knob in section["knobs"]:
                 grid.addWidget(self._knob(knob, section["name"]))
         grid.addStretch(1)
@@ -156,16 +189,23 @@ class Drawer(QFrame):
         lay = QGridLayout(box)
         lay.setContentsMargins(0, 2, 0, 6)
         lay.setVerticalSpacing(2)
-        key = text(knob_words(knob["key"].removeprefix(f"{section}.")), T["text"], 12, True)
+        key = text(
+            knob_words(knob["key"].removeprefix(f"{section}.")), T["text"], 12, True
+        )
         widget = editor(knob)
-        default = as_text(knob["default"]) if knob["type"] != "bool" else \
-            ("true" if knob["default"] else "false")
+        default = (
+            as_text(knob["default"])
+            if knob["type"] != "bool"
+            else ("true" if knob["default"] else "false")
+        )
         saved = self.edits.get(self.study, {}).get(knob["key"])
         if saved is not None:
             put(widget, saved)
         tip = knob["tip"] or "El estudio no escribió frase para este mando."
         for w in (key, widget):
-            w.setToolTip(f"{knob['key']} ({knob['type']}) — {tip}\nDe fábrica: {default}")
+            w.setToolTip(
+                f"{knob['key']} ({knob['type']}) — {tip}\nDe fábrica: {default}"
+            )
         if isinstance(widget, QCheckBox):
             widget.toggled.connect(self._edited)
         elif isinstance(widget, QComboBox):
@@ -185,13 +225,17 @@ class Drawer(QFrame):
         Returns:
             ["section.key=value", ...], empty when nothing was edited.
         """
-        return [f"{k}={read(w)}" for k, (w, default) in self.editors.items()
-                if read(w) != default]
+        return [
+            f"{k}={read(w)}"
+            for k, (w, default) in self.editors.items()
+            if read(w) != default
+        ]
 
     def _edited(self) -> None:
         """Remember the edits of this study, mark the edited knobs, re-sign."""
-        self.edits[self.study] = {k: read(w) for k, (w, d) in self.editors.items()
-                                  if read(w) != d}
+        self.edits[self.study] = {
+            k: read(w) for k, (w, d) in self.editors.items() if read(w) != d
+        }
         self.refresh()
 
     def reset(self) -> None:
@@ -217,10 +261,15 @@ class Drawer(QFrame):
         for w, default in self.editors.values():
             w.setStyleSheet(EDITED if read(w) != default else "")
         n = len(self.overrides())
-        got = send("config/hash", {"study": self.study, "overrides": self.overrides()}) \
-            if self.study else {"hash": None}
+        got = (
+            send("config/hash", {"study": self.study, "overrides": self.overrides()})
+            if self.study
+            else {"hash": None}
+        )
         if "error" in got:
-            self.sign.setText(f'<span style="color:{colour("fail")}">{got["error"]}</span>')
+            self.sign.setText(
+                f'<span style="color:{colour("fail")}">{got["error"]}</span>'
+            )
         elif got["hash"] is None:
             self.sign.setText("Sin configuración: nada que firmar.")
         else:
@@ -228,10 +277,16 @@ class Drawer(QFrame):
             if shown is None:
                 verdict = "no hay resultado en pantalla con el que comparar"
             elif shown == got["hash"]:
-                verdict = f'<b style="color:{colour("pass")}">coincide</b> con el mostrado'
+                verdict = (
+                    f'<b style="color:{colour("pass")}">coincide</b> con el mostrado'
+                )
             else:
-                verdict = (f'<b style="color:{colour("watch")}">distinta configuración</b> '
-                           f"que el mostrado ({shown})")
-            self.sign.setText(f"próxima ejecución firma <b>{got['hash']}</b> · {verdict}"
-                              f" · {n} mando{'s' if n != 1 else ''} cambiado{'s' if n != 1 else ''}")
+                verdict = (
+                    f'<b style="color:{colour("watch")}">distinta configuración</b> '
+                    f"que el mostrado ({shown})"
+                )
+            self.sign.setText(
+                f"próxima ejecución firma <b>{got['hash']}</b> · {verdict}"
+                f" · {n} mando{'s' if n != 1 else ''} cambiado{'s' if n != 1 else ''}"
+            )
         self.changed.emit()

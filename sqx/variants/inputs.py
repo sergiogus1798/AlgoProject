@@ -22,7 +22,9 @@ def ledger(node: Any) -> Any:
     if isinstance(node, dict):
         return {k: ledger(v) for k, v in node.items()}
     if isinstance(node, str) and node.startswith("ledger:"):
-        rows = yaml.safe_load((ROOT / "ledger" / "thresholds.yaml").read_text(encoding="utf-8"))
+        rows = yaml.safe_load(
+            (ROOT / "ledger" / "thresholds.yaml").read_text(encoding="utf-8")
+        )
         return next(r["value"] for r in rows["thresholds"] if r["key"] == node[7:])
     return node
 
@@ -51,7 +53,9 @@ def brief(path: Path) -> dict[str, Any]:
     """
     got = json.loads(path.read_text(encoding="utf-8"))
     if Path(got["source"]).parent.parent.name.upper().endswith("_OOS"):
-        raise SystemExit(f"{path.name}: its profile comes from the SPP OOS; the design reads build only")
+        raise SystemExit(
+            f"{path.name}: its profile comes from the SPP OOS; the design reads build only"
+        )
     return got
 
 
@@ -86,12 +90,17 @@ def known(design: dict) -> pd.DataFrame:
         grid is `studies/breakage/spp`'s business and is not needed to pick a control.
     """
     folder, strategy = Path(design["source"]), design["strategy"]
-    names = (pd.read_parquet(folder / "runs.parquet").set_index("strategy")
-             .loc[strategy, "parameters"].split())
-    frame = pd.read_parquet(folder / "spp.parquet",
-                            columns=["strategy", "permutation", *names, "NetProfit",
-                                     "NumberOfTrades"],
-                            filters=[("strategy", "==", strategy)])
+    names = (
+        pd.read_parquet(folder / "runs.parquet")
+        .set_index("strategy")
+        .loc[strategy, "parameters"]
+        .split()
+    )
+    frame = pd.read_parquet(
+        folder / "spp.parquet",
+        columns=["strategy", "permutation", *names, "NetProfit", "NumberOfTrades"],
+        filters=[("strategy", "==", strategy)],
+    )
     return frame.drop(columns="strategy").set_index("permutation")
 
 

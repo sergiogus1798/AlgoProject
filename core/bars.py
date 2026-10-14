@@ -21,4 +21,6 @@ def read(path: Path) -> pd.DataFrame:
     """
     d = pd.read_csv(path)
     d.index = pd.to_datetime(d["Date"] + " " + d["Time"], format=TIME)
-    return cast(pd.DataFrame, d[["Open", "High", "Low", "Close", "Volume"]].sort_index())
+    return cast(
+        pd.DataFrame, d[["Open", "High", "Low", "Close", "Volume"]].sort_index()
+    )

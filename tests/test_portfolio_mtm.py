@@ -27,33 +27,65 @@ def _bars(start: str, periods: int, **overrides: np.ndarray) -> pd.DataFrame:
     return frame
 
 
-def _trade(open_t: pd.Timestamp, close_t: pd.Timestamp, open_p: float, close_p: float,
-           pnl: float, side: str = "Buy") -> pd.DataFrame:
+def _trade(
+    open_t: pd.Timestamp,
+    close_t: pd.Timestamp,
+    open_p: float,
+    close_p: float,
+    pnl: float,
+    side: str = "Buy",
+) -> pd.DataFrame:
     """One-row trades frame (schema T) with a fixed Size of 1.0 lot."""
-    return pd.DataFrame({"Type": pd.Categorical([side]), "Open time": [open_t],
-                          "Close time": [close_t], "Open price": [open_p],
-                          "Close price": [close_p], "Size": [1.0], "Profit/Loss": [pnl]})
+    return pd.DataFrame(
+        {
+            "Type": pd.Categorical([side]),
+            "Open time": [open_t],
+            "Close time": [close_t],
+            "Open price": [open_p],
+            "Close price": [close_p],
+            "Size": [1.0],
+            "Profit/Loss": [pnl],
+        }
+    )
 
 
 def check_long_across_days() -> None:
     """A long spanning three day boundaries: floating to the cent, close-day increment,
     a same-day trade, and Σ daily = Σ Profit/Loss exactly."""
     bars = _bars("2026-01-01 00:00", 3 * 24 * 60)
-    trades = pd.concat([
-        _trade(pd.Timestamp("2026-01-01 10:00"), pd.Timestamp("2026-01-03 10:00"), 1.00, 1.05, 50.0),
-        _trade(pd.Timestamp("2026-01-02 03:00"), pd.Timestamp("2026-01-02 04:00"), 1.05, 1.00, -50.0),
-    ], ignore_index=True)
+    trades = pd.concat(
+        [
+            _trade(
+                pd.Timestamp("2026-01-01 10:00"),
+                pd.Timestamp("2026-01-03 10:00"),
+                1.00,
+                1.05,
+                50.0,
+            ),
+            _trade(
+                pd.Timestamp("2026-01-02 03:00"),
+                pd.Timestamp("2026-01-02 04:00"),
+                1.05,
+                1.00,
+                -50.0,
+            ),
+        ],
+        ignore_index=True,
+    )
     path = paths.minute_path(trades, bars, POINT_VALUE)
     d = days.server_days(path, "UTC", "UTC")
     dp = days.daily_pnl(d)
 
-    assert abs(dp.sum() - trades["Profit/Loss"].sum()) < 1e-9, "sum daily != sum Profit/Loss"
+    assert abs(dp.sum() - trades["Profit/Loss"].sum()) < 1e-9, (
+        "sum daily != sum Profit/Loss"
+    )
     day2 = pd.Timestamp("2026-01-02")
     assert abs(dp[day2] - (-50.0)) < 1e-9, "same-day trade must land whole on its day"
     day3 = pd.Timestamp("2026-01-03")
     last_floating_before_close = d.loc[pd.Timestamp("2026-01-02"), "float_end"]
-    assert abs(dp[day3] - (50.0 - last_floating_before_close)) < 1e-9, \
+    assert abs(dp[day3] - (50.0 - last_floating_before_close)) < 1e-9, (
         "close-day increment must equal realised minus last floating"
+    )
     print("ok: long across three day boundaries")
 
 
@@ -73,21 +105,34 @@ def check_short_worst_is_high() -> None:
 def check_weekend_gap() -> None:
     """No bars over the weekend: the path skips it, and the daily sum still holds exactly."""
     week = pd.bdate_range("2026-01-05", periods=5, freq="B")
-    idx = pd.DatetimeIndex(sorted(
-        t for day in week for t in pd.date_range(day, periods=24 * 60, freq="1min")))
+    idx = pd.DatetimeIndex(
+        sorted(
+            t for day in week for t in pd.date_range(day, periods=24 * 60, freq="1min")
+        )
+    )
     bars = pd.DataFrame({"High": 1.10, "Low": 1.00, "Close": 1.05}, index=idx)
-    trades = _trade(pd.Timestamp("2026-01-09 20:00"), pd.Timestamp("2026-01-12 08:00"), 1.00, 1.05, 50.0)
+    trades = _trade(
+        pd.Timestamp("2026-01-09 20:00"),
+        pd.Timestamp("2026-01-12 08:00"),
+        1.00,
+        1.05,
+        50.0,
+    )
     path = paths.minute_path(trades, bars, POINT_VALUE)
     d = days.server_days(path, "UTC", "UTC")
-    assert pd.Timestamp("2026-01-10") not in d.index and pd.Timestamp("2026-01-11") not in d.index, \
-        "a weekend day with no path minute must not appear"
+    assert (
+        pd.Timestamp("2026-01-10") not in d.index
+        and pd.Timestamp("2026-01-11") not in d.index
+    ), "a weekend day with no path minute must not appear"
     assert abs(days.daily_pnl(d).sum() - 50.0) < 1e-9
     print("ok: weekend gap skipped, sum still exact")
 
 
 def check_eetus_and_dst() -> None:
     """EETUS is New York + 7 h, and an hour a clock change repeats is dropped and counted."""
-    idx = pd.date_range("2026-11-01 07:55", periods=20, freq="1min")   # ambiguous NY 01:xx
+    idx = pd.date_range(
+        "2026-11-01 07:55", periods=20, freq="1min"
+    )  # ambiguous NY 01:xx
     bars = pd.DataFrame({"High": 1.1, "Low": 1.0, "Close": 1.05}, index=idx)
     trades = _trade(idx[0], idx[-1], 1.00, 1.05, 50.0)
     path = paths.minute_path(trades, bars, POINT_VALUE)
@@ -100,7 +145,9 @@ def check_eetus_and_dst() -> None:
     trades2 = _trade(idx2[0], idx2[-1], 1.00, 1.05, 10.0)
     path2 = paths.minute_path(trades2, bars2, POINT_VALUE)
     d2 = days.server_days(path2, "EETUS", "America/New_York")
-    assert pd.Timestamp("2026-09-14") in d2.index, "EETUS 23:30 must read as 16:30 New York, same day"
+    assert pd.Timestamp("2026-09-14") in d2.index, (
+        "EETUS 23:30 must read as 16:30 New York, same day"
+    )
     print("ok: EETUS shift and DST-ambiguous hour")
 
 
@@ -111,17 +158,22 @@ def check_blocks_and_carry() -> None:
     low_b = np.array([0, 0, -8, 0], dtype=np.float32)
     day_labels = np.array([1, 1, 1, 1], dtype="int64")
     joint = blocks.joint_day_low([low_a, low_b], day_labels)
-    assert joint.iloc[0] > (low_a.min() + low_b.min()), \
+    assert joint.iloc[0] > (low_a.min() + low_b.min()), (
         "joint low of non-coincident worst minutes must be above the sum of the day-lows"
+    )
 
     bars = _bars("2026-01-05 00:00", 11)
     trades = _trade(bars.index[0], bars.index[10], 1.05, 1.00, -50.0)
     path = paths.minute_path(trades, bars, POINT_VALUE)
-    g = blocks.grid(pd.Timestamp("2026-01-05 00:00", tz="UTC"),
-                     pd.Timestamp("2026-01-05 01:00", tz="UTC"), 5)
+    g = blocks.grid(
+        pd.Timestamp("2026-01-05 00:00", tz="UTC"),
+        pd.Timestamp("2026-01-05 01:00", tz="UTC"),
+        5,
+    )
     bl = blocks.blocks(path, "UTC", "UTC", g)
-    assert np.allclose(bl["low"][2:], -50.0), \
+    assert np.allclose(bl["low"][2:], -50.0), (
         "a flat block after the closed loss must carry -50, not reset to 0"
+    )
     print("ok: joint diversification and carried level after a closed loss")
 
 
@@ -134,7 +186,10 @@ def check_golden() -> None:
     (`knowhow/export/archived-trades-vs-reclocked-bars.md`). The current feed's golden is
     `test_portfolio_golden_current.py`.
     """
-    root = archive_dir() / "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048"
+    root = (
+        archive_dir()
+        / "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048"
+    )
     runs = sorted(root.glob("*/harvest/trades.parquet")) if root.exists() else []
     if not runs:
         print("skip: golden archive not present on this machine")
@@ -143,10 +198,14 @@ def check_golden() -> None:
     trades = pd.read_parquet(runs[0])
     feed = "USDJPY_M1"
     t0 = time.perf_counter()
-    bars = clock.reclock(barstore.source(feed, ["High", "Low", "Close"]), "EETUS", "Asia/Jerusalem")
+    bars = clock.reclock(
+        barstore.source(feed, ["High", "Low", "Close"]), "EETUS", "Asia/Jerusalem"
+    )
     t_read = time.perf_counter() - t0
     value = calibrate.point_value(trades)
-    assert abs(value - 653.92) < 0.01, f"the archive's own point value is 653.92, measured {value}"
+    assert abs(value - 653.92) < 0.01, (
+        f"the archive's own point value is 653.92, measured {value}"
+    )
 
     t0 = time.perf_counter()
     path = paths.minute_path(trades, bars, value)
@@ -155,7 +214,9 @@ def check_golden() -> None:
     d = days.server_days(path, "Asia/Jerusalem", "UTC")
     t_days = time.perf_counter() - tm
     tm = time.perf_counter()
-    grid = blocks.grid(pd.Timestamp(path["t"][0], tz="UTC"), pd.Timestamp(path["t"][-1], tz="UTC"), 5)
+    grid = blocks.grid(
+        pd.Timestamp(path["t"][0], tz="UTC"), pd.Timestamp(path["t"][-1], tz="UTC"), 5
+    )
     blocks.blocks(path, "Asia/Jerusalem", "UTC", grid)
     t_blocks = time.perf_counter() - tm
 
@@ -168,34 +229,68 @@ def check_golden() -> None:
     assert lic["mae_exact"] >= 0.99, f"MAE exact share {lic['mae_exact']} below 0.99"
     assert lic["mfe_exact"] >= 0.99, f"MFE exact share {lic['mfe_exact']} below 0.99"
 
-    print(f"ok: golden — n={lic['n']} mae_exact={lic['mae_exact']:.3f} "
-          f"mfe_exact={lic['mfe_exact']:.3f} sum-gap={gap:.2e}")
-    print(f"    timing: bars read {t_read:.2f}s, path {t_path:.2f}s, days {t_days:.2f}s, "
-          f"blocks {t_blocks:.2f}s")
+    print(
+        f"ok: golden — n={lic['n']} mae_exact={lic['mae_exact']:.3f} "
+        f"mfe_exact={lic['mfe_exact']:.3f} sum-gap={gap:.2e}"
+    )
+    print(
+        f"    timing: bars read {t_read:.2f}s, path {t_path:.2f}s, days {t_days:.2f}s, "
+        f"blocks {t_blocks:.2f}s"
+    )
 
 
 def check_stage_b_charges_the_commission() -> None:
     """Stage B's minute path is the universe's: the card's commission from the entry
     (OPEN.md #88: it was built without, so its floating equity sat above SQX's)."""
     from portfolio.common.construct.search import stageb_data as sb
+
     bars, seen = _bars("2024-01-02 00:00", 3), []
-    was = (sb.stopexit.retime, sb.universe._commission, sb.paths.minute_path, sb.blocks.blocks,
-           sb.units.slots, sb.units.units)
+    was = (
+        sb.stopexit.retime,
+        sb.universe._commission,
+        sb.paths.minute_path,
+        sb.blocks.blocks,
+        sb.units.slots,
+        sb.units.units,
+    )
     sb.stopexit.retime = lambda trades, bars, timeframe: trades
     sb.universe._commission = lambda s: "the card's"
     sb.paths.minute_path = lambda *a: seen.append(a[3:])
     sb.blocks.blocks = lambda *a: {"low": np.zeros(1), "high": np.zeros(1)}
     sb.units.slots = sb.units.units = lambda *a: None
-    sb._STATE.update(members=["m"], factors={"m": 1.0}, bars={"F": bars}, zone="", grid=0,
-                     low1=np.zeros((1, 1)), high1=np.zeros((1, 1)), keep=slice(None),
-                     cut=(bars.index[0], bars.index[-1]), days=None, minutes=None,
-                     sources={"m": {"feed": "F", "trades": None, "timeframe": "M30",
-                                    "point_value": 1.0, "clock": ""}})
+    sb._STATE.update(
+        members=["m"],
+        factors={"m": 1.0},
+        bars={"F": bars},
+        zone="",
+        grid=0,
+        low1=np.zeros((1, 1)),
+        high1=np.zeros((1, 1)),
+        keep=slice(None),
+        cut=(bars.index[0], bars.index[-1]),
+        days=None,
+        minutes=None,
+        sources={
+            "m": {
+                "feed": "F",
+                "trades": None,
+                "timeframe": "M30",
+                "point_value": 1.0,
+                "clock": "",
+            }
+        },
+    )
     try:
         sb._member(0)
     finally:
-        (sb.stopexit.retime, sb.universe._commission, sb.paths.minute_path, sb.blocks.blocks,
-         sb.units.slots, sb.units.units) = was
+        (
+            sb.stopexit.retime,
+            sb.universe._commission,
+            sb.paths.minute_path,
+            sb.blocks.blocks,
+            sb.units.slots,
+            sb.units.units,
+        ) = was
         sb._STATE.clear()
     assert seen == [("the card's",)], seen
     print("ok: stage B charges the commission")

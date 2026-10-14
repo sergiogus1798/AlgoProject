@@ -41,7 +41,9 @@ def scalar(text: str) -> object:
 
 def worst(states: list[str]) -> str:
     """The most severe of several states."""
-    return min(states, key=lambda s: SEVERITY.index(s) if s in SEVERITY else len(SEVERITY))
+    return min(
+        states, key=lambda s: SEVERITY.index(s) if s in SEVERITY else len(SEVERITY)
+    )
 
 
 def from_csv(study: str, folder: Path) -> dict[str, dict]:
@@ -59,9 +61,21 @@ def from_csv(study: str, folder: Path) -> dict[str, dict]:
     for row in store.rows(folder):
         name = row["strategy"]
         word = row.get("verdict") or None
-        state = row.get("verdict_state") or store.WORDS.get(word, "none") if word else "none"
-        entry = out.setdefault(name, {"identity": row.get("identity") or None, "verdict": None,
-                                      "state": state, "states": {}, "fields": {}})
+        state = (
+            row.get("verdict_state") or store.WORDS.get(word, "none")
+            if word
+            else "none"
+        )
+        entry = out.setdefault(
+            name,
+            {
+                "identity": row.get("identity") or None,
+                "verdict": None,
+                "state": state,
+                "states": {},
+                "fields": {},
+            },
+        )
         sub = row.get(SPLIT[study]) if study in SPLIT else ""
         for key, text in row.items():
             if key not in KEYS and key != SPLIT.get(study):
@@ -75,9 +89,14 @@ def from_csv(study: str, folder: Path) -> dict[str, dict]:
             # every row filtered out as unjudged (📓 2026-09-30, 0/105 on
             # Test_USDJPY_donchianUpperCrossUp_H1). Summarise it as the verdict of
             # whichever sub carries the overall worst state, consistent with `state`.
-            entry["verdict"] = next(w for s, w in ((v, entry["fields"][(k, "verdict")])
-                                                    for k, v in entry["states"].items())
-                                     if s == entry["state"])
+            entry["verdict"] = next(
+                w
+                for s, w in (
+                    (v, entry["fields"][(k, "verdict")])
+                    for k, v in entry["states"].items()
+                )
+                if s == entry["state"]
+            )
         else:
             entry["verdict"] = word
     return out
@@ -96,8 +115,16 @@ def from_json(study: str, folder: Path, found: dict[str, dict]) -> None:
         row = store.slim(path)
         if row is None:
             continue
-        entry = found.setdefault(row["strategy"], {"identity": None, "verdict": None,
-                                                   "state": "none", "states": {}, "fields": {}})
+        entry = found.setdefault(
+            row["strategy"],
+            {
+                "identity": None,
+                "verdict": None,
+                "state": "none",
+                "states": {},
+                "fields": {},
+            },
+        )
         entry["identity"] = row["identity"] or entry["identity"]
         entry["verdict"], entry["state"] = row["label"], row["state"]
         table = (store.tables(path) or {}).get(SUBTABLE.get(study, ""))
@@ -112,7 +139,10 @@ def folder_cells(study: str, folder: Path) -> dict[str, dict]:
     """One study folder, one entry per strategy name, with the day it was judged."""
     found = from_csv(study, folder)
     from_json(study, folder, found)
-    return {name: {**e, "name": name, "day": folder.parent.name} for name, e in found.items()}
+    return {
+        name: {**e, "name": name, "day": folder.parent.name}
+        for name, e in found.items()
+    }
 
 
 def project(project_name: str) -> dict[str, dict]:
@@ -127,7 +157,9 @@ def project(project_name: str) -> dict[str, dict]:
         the variant batch's studies come from `batches.py`.
     """
     out: dict[str, dict] = {}
-    for bank in sorted(p for p in (DATA / "reports" / project_name).glob("*") if p.is_dir()):
+    for bank in sorted(
+        p for p in (DATA / "reports" / project_name).glob("*") if p.is_dir()
+    ):
         mine = out.setdefault(bank.name, {"by_id": {}, "by_name": {}})
         for folder in sorted(bank.glob("*/*")):
             if folder.name not in catalogue.STUDIES or not folder.is_dir():

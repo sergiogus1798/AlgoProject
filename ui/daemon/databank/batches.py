@@ -66,8 +66,14 @@ def _entry(path: Path) -> dict | None:
     fields = summary(got)
     if said.get("score") is not None:
         fields[("", "score")] = said["score"]
-    return {"identity": None, "verdict": said.get("label"), "state": said.get("state", "info"),
-            "states": {}, "fields": fields, "day": (got.get("computed_at") or "")[:10]}
+    return {
+        "identity": None,
+        "verdict": said.get("label"),
+        "state": said.get("state", "info"),
+        "states": {},
+        "fields": fields,
+        "day": (got.get("computed_at") or "")[:10],
+    }
 
 
 def mothers(project: str) -> dict[str, dict]:
@@ -83,14 +89,25 @@ def mothers(project: str) -> dict[str, dict]:
     out: dict[str, dict] = {}
     for name, folders in batches(project).items():
         if len(folders) > 1:
-            twice = {"identity": None, "verdict": "dos lotes", "state": "none", "states": {},
-                     "fields": {}, "day": ""}
+            twice = {
+                "identity": None,
+                "verdict": "dos lotes",
+                "state": "none",
+                "states": {},
+                "fields": {},
+                "day": "",
+            }
             out[name] = {s: twice for s in STUDIES}
             continue
         mine = out.setdefault(name, {})
         for study in STUDIES:
             path = folders[0] / "estudios" / f"{study}.json"
-            if path.is_file() and (got := entry(path)):     # a copy: the cached one stays clean
-                mine[study] = {**got, "fields": dict(got["fields"]), "states": dict(got["states"])}
+            if path.is_file() and (
+                got := entry(path)
+            ):  # a copy: the cached one stays clean
+                mine[study] = {
+                    **got,
+                    "fields": dict(got["fields"]),
+                    "states": dict(got["states"]),
+                }
     return out
-

@@ -7,20 +7,30 @@ from typing import TypedDict
 
 import pandas as pd
 
-from core import bankfile, bankframes, exportdrv, fanout, sqxfile, sqxstats, tradepack, tradestore
+from core import (
+    bankfile,
+    bankframes,
+    exportdrv,
+    fanout,
+    sqxfile,
+    sqxstats,
+    tradepack,
+    tradestore,
+)
 from core.identities import many as identities_many
 from core.sqxview import LABEL, VIEW, dof_ratio, measured
 from core.tradepack import Pack
 
-PREFIX = {"IS": "IS__", "OOS": "OOS__"}   # which databank a staged file came from
+PREFIX = {"IS": "IS__", "OOS": "OOS__"}  # which databank a staged file came from
 # 🔬 2026-10-01, 2 x 5,130 strategies: the identities were hashed twice in one thread (33 s)
 # and the 10,260 CSVs parsed in one (35 s) of a 204 s harvest whose JVM takes 45.
 WORKERS = 8
-_STAGED: dict[str, Path] = {}   # what tables() hands its forked children
+_STAGED: dict[str, Path] = {}  # what tables() hands its forked children
 
 
 class SideTables(TypedDict):
     """One databank's tables, as `tables` returns them."""
+
     metrics: pd.DataFrame
     trades: pd.DataFrame
     equity: pd.DataFrame
@@ -58,8 +68,12 @@ def index(folder: Path) -> dict[str, Path]:
 def _read(stem: str) -> tuple:
     """What one staged file gives the tables -- SQStats, curve, timeframe, parameter count -- read in a fanout child."""
     f = _STAGED[stem]
-    return (sqxstats.stats(f), sqxstats.equity(f, "Main"), sqxfile.symbol(f)[1].rsplit("_", 1)[-1],
-            sqxfile.param_count(f))
+    return (
+        sqxstats.stats(f),
+        sqxstats.equity(f, "Main"),
+        sqxfile.symbol(f)[1].rsplit("_", 1)[-1],
+        sqxfile.param_count(f),
+    )
 
 
 def metrics(read: dict[str, tuple]) -> tuple[pd.DataFrame, str]:
@@ -75,20 +89,36 @@ def metrics(read: dict[str, tuple]) -> tuple[pd.DataFrame, str]:
     """
     stats = {stem: got[0] for stem, got in read.items()}
     block = measured(stats)
-    rows = {stem: {"Strategy Name": stem,
-                   **({"TimeFrame": read[stem][2]} if block == 10 else {}),
-                   **{col: st[block][key] for col, key in VIEW[block]
-                      if key not in ("ParameterCount", "DoFRatio")}}
-            for stem, st in stats.items()}
-    for stem, row in rows.items():       # SQX's stored value is never read: it is inflated on old strategies
+    rows = {
+        stem: {
+            "Strategy Name": stem,
+            **({"TimeFrame": read[stem][2]} if block == 10 else {}),
+            **{
+                col: st[block][key]
+                for col, key in VIEW[block]
+                if key not in ("ParameterCount", "DoFRatio")
+            },
+        }
+        for stem, st in stats.items()
+    }
+    for (
+        stem,
+        row,
+    ) in (
+        rows.items()
+    ):  # SQX's stored value is never read: it is inflated on old strategies
         if block == 10:
             row["Param Count"] = read[stem][3]
             row["DoF Ratio"] = dof_ratio(row["# of trades"], row["Param Count"])
     return pd.DataFrame.from_dict(rows, orient="index"), LABEL[block]
 
 
-def tables(sides: dict[str, list[Path]], work: Path,
-           exports: dict[str, Path] | None = None, banks: dict[str, dict] | None = None) -> dict[str, SideTables]:
+def tables(
+    sides: dict[str, list[Path]],
+    work: Path,
+    exports: dict[str, Path] | None = None,
+    banks: dict[str, dict] | None = None,
+) -> dict[str, SideTables]:
     """Stage both databanks' strategies once, and take everything they hold in one pass.
 
     Args:
@@ -113,7 +143,7 @@ def tables(sides: dict[str, list[Path]], work: Path,
         `orderstocsv`, a one-shot `sqcli` on the conductor -- the conductor cycle the metrics
         export needed (~36 s to start and stop) is gone.
     """
-    shutil.rmtree(work, ignore_errors=True)       # what a run that died half-way left
+    shutil.rmtree(work, ignore_errors=True)  # what a run that died half-way left
     staged = work / "sqx"
     staged.mkdir(parents=True, exist_ok=True)
     known = identities([f for files in sides.values() for f in files])
@@ -132,20 +162,35 @@ def tables(sides: dict[str, list[Path]], work: Path,
     # The curves and the metrics are read off the files while the JVM writes the trades: it
     # is a subprocess, and the wait for it was ~10 s of reading left for afterwards.
     with ThreadPoolExecutor(1) as jvm:
-        exported = None if direct else jvm.submit(exportdrv.trades, staged, work / "csv")
+        exported = (
+            None if direct else jvm.submit(exportdrv.trades, staged, work / "csv")
+        )
         _STAGED.update(src)
         got = dict(fanout.run(_read, {stem: 1 for stem in ids}, WORKERS))
         curves = {stem: got[stem][1] for stem in sorted(ids)}
-        read = {side: metrics({stem: got[stem] for stem in ids if side_of[stem] == side})
-                for side in sides}
+        read = {
+            side: metrics({stem: got[stem] for stem in ids if side_of[stem] == side})
+            for side in sides
+        }
         if exported:
             exported.result()
-    if direct:       # the bank must be the result the .sqx files hold, not just the same strategies
+    if (
+        direct
+    ):  # the bank must be the result the .sqx files hold, not just the same strategies
         for side in sides:
-            assert banks is not None    # `direct` with a side to read means every side has a bank
+            assert (
+                banks is not None
+            )  # `direct` with a side to read means every side has a bank
             block = {v: k for k, v in LABEL.items()}[read[side][1]]
-            why = bankframes.unbound(banks[side], {stem[len(PREFIX[side]):]: got[stem][0]
-                                                    for stem in ids if side_of[stem] == side}, block)
+            why = bankframes.unbound(
+                banks[side],
+                {
+                    stem[len(PREFIX[side]) :]: got[stem][0]
+                    for stem in ids
+                    if side_of[stem] == side
+                },
+                block,
+            )
             if why:
                 print(f"{side}: .abk no vale: {why}")
                 return tables(sides, work, exports, None)
@@ -158,26 +203,44 @@ def tables(sides: dict[str, list[Path]], work: Path,
         packed.parent.mkdir(parents=True, exist_ok=True)
         if direct:
             assert banks is not None
-            counts = bankfile.pack(banks[side], packed, False, {f.stem for f in sides[side]})
+            counts = bankfile.pack(
+                banks[side], packed, False, {f.stem for f in sides[side]}
+            )
         else:
             csvs = work / f"csv_{side}"
             csvs.mkdir()
             for f in sorted((work / "csv").glob(f"{PREFIX[side]}*.csv")):
-                f.rename(csvs / f.name[len(PREFIX[side]):])
-            counts = tradepack.pack(sorted(csvs.glob("*.csv")), packed, per_market=False)
+                f.rename(csvs / f.name[len(PREFIX[side]) :])
+            counts = tradepack.pack(
+                sorted(csvs.glob("*.csv")), packed, per_market=False
+            )
         drawn = pd.read_parquet(packed)
         mine, label = read[side]
-        mine = mine.assign(identity=pd.Series(mine["Strategy Name"]).map(ids),
-                           **{"Strategy Name": mine["Strategy Name"].str[len(PREFIX[side]):]})
-        own = {stem[len(PREFIX[side]):]: i for stem, i in ids.items() if side_of[stem] == side}
-        equity = pd.DataFrame({ids[s]: c for s, c in curves.items() if side_of[s] == side})
+        mine = mine.assign(
+            identity=pd.Series(mine["Strategy Name"]).map(ids),
+            **{"Strategy Name": mine["Strategy Name"].str[len(PREFIX[side]) :]},
+        )
+        own = {
+            stem[len(PREFIX[side]) :]: i
+            for stem, i in ids.items()
+            if side_of[stem] == side
+        }
+        equity = pd.DataFrame(
+            {ids[s]: c for s, c in curves.items() if side_of[s] == side}
+        )
         out[side] = SideTables(
             metrics=mine.set_index("identity"),
-            trades=drawn.assign(identity=pd.Series(drawn["strategy"]).astype(str).map(own)).drop(
-                columns=["strategy"]),
-            equity=equity.rename_axis("day").reset_index().melt(
-                id_vars="day", var_name="identity", value_name="equity").dropna(),
-            seen=len(mine), sample=label, packed=counts)
+            trades=drawn.assign(
+                identity=pd.Series(drawn["strategy"]).astype(str).map(own)
+            ).drop(columns=["strategy"]),
+            equity=equity.rename_axis("day")
+            .reset_index()
+            .melt(id_vars="day", var_name="identity", value_name="equity")
+            .dropna(),
+            seen=len(mine),
+            sample=label,
+            packed=counts,
+        )
     # One set of categories over both sides, as one frame of both had: two sides that differ
     # in a text column would otherwise come out of their concat as plain text.
     for c in tradestore.CATEGORICAL:

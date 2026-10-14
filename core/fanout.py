@@ -12,7 +12,7 @@ from threadpoolctl import threadpool_limits
 # 🔬 2026-09-26: two SMT threads of one core get in each other's way, so the logical count is
 # never worth using: crossmarket at 96 processes took the same 17 s as at 48 and held 1.2 GB
 # more (knowhow/perf/python-parallelism.md).
-CORES = cast(int, psutil.cpu_count(logical=False))   # None only where psutil cannot tell
+CORES = cast(int, psutil.cpu_count(logical=False))  # None only where psutil cannot tell
 
 
 def _one_numba_thread() -> None:
@@ -44,12 +44,17 @@ def run(work: Callable, costs: dict, workers: int) -> Iterator[tuple]:
         would otherwise contend with 6,144 of them the moment any calls into it.
     """
     order = sorted(costs, key=costs.__getitem__, reverse=True)
-    with threadpool_limits(1), ProcessPoolExecutor(
-            max_workers=max(1, min(workers, CORES, len(order))), mp_context=get_context("fork"),
-            initializer=_one_numba_thread) as pool:
+    with (
+        threadpool_limits(1),
+        ProcessPoolExecutor(
+            max_workers=max(1, min(workers, CORES, len(order))),
+            mp_context=get_context("fork"),
+            initializer=_one_numba_thread,
+        ) as pool,
+    ):
         pending = {pool.submit(work, key): key for key in order}
         try:
             for done in as_completed(pending):
                 yield pending[done], done.result()
-        finally:        # a no-op once every future is done; on a raise or a closed generator, drop the queue
+        finally:  # a no-op once every future is done; on a raise or a closed generator, drop the queue
             pool.shutdown(wait=False, cancel_futures=True)

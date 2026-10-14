@@ -8,17 +8,27 @@ from core.xmlget import hit
 PORTFOLIO = "strategy_Portfolio.xml"
 SETTINGS = "settings.xml"
 PROFILE = "optimizationProfile.bin"
-MINIMAL = ("META-INF/MANIFEST.MF", SETTINGS, PORTFOLIO, "lastSettings.xml", "version.txt")
+MINIMAL = (
+    "META-INF/MANIFEST.MF",
+    SETTINGS,
+    PORTFOLIO,
+    "lastSettings.xml",
+    "version.txt",
+)
 
 # Which members a variant carries. Measured whole-file sizes, knowhow/sqx-format/writing-a-variant.md:
 # full 123.3 KB · no_profile 98.7 KB · minimal 13.7 KB. No shape drops the parent's <SQStats>:
 # those are in settings.xml, which all three keep.
-SHAPES = {"full": lambda name: True,
-          "no_profile": lambda name: not name.endswith(PROFILE),
-          "minimal": lambda name: name in MINIMAL}
+SHAPES = {
+    "full": lambda name: True,
+    "no_profile": lambda name: not name.endswith(PROFILE),
+    "minimal": lambda name: name in MINIMAL,
+}
 
 VARIABLE = re.compile(r"<variable\b[^>]*>.*?</variable>", re.S)
-FIELD = {key: re.compile(rf"<{key}>(.*?)</{key}>", re.S) for key in ("name", "type", "value")}
+FIELD = {
+    key: re.compile(rf"<{key}>(.*?)</{key}>", re.S) for key in ("name", "type", "value")
+}
 RESULT_NAME = re.compile(r'(<ResultsGroup\b[^>]*?ResultName=")[^"]*(")')
 STRATEGY_NAME = re.compile(r'(<StrategyName type="String">)[^<]*(</StrategyName>)')
 FINGERPRINT = re.compile(r"<Fingerprint\b.*?</Fingerprint>", re.S)
@@ -38,8 +48,10 @@ def declared(portfolio: str) -> dict[str, str]:
         Variable name to `int`, `double` or `boolean`. The type decides how a value is
         written back: `67.0` into an int parameter is not the same file as `67`.
     """
-    return {hit(FIELD["name"].search(b)).group(1): hit(FIELD["type"].search(b)).group(1)
-            for b in VARIABLE.findall(portfolio)}
+    return {
+        hit(FIELD["name"].search(b)).group(1): hit(FIELD["type"].search(b)).group(1)
+        for b in VARIABLE.findall(portfolio)
+    }
 
 
 def values(portfolio: str) -> dict[str, str]:
@@ -53,8 +65,10 @@ def values(portfolio: str) -> dict[str, str]:
         reference the variable by name, so rewriting `<value>` rewrites the rule.
         `settings.xml` carries no parameter names at all.
     """
-    return {hit(FIELD["name"].search(b)).group(1): hit(FIELD["value"].search(b)).group(1)
-            for b in VARIABLE.findall(portfolio)}
+    return {
+        hit(FIELD["name"].search(b)).group(1): hit(FIELD["value"].search(b)).group(1)
+        for b in VARIABLE.findall(portfolio)
+    }
 
 
 def _format(value: float, kind: str) -> str:
@@ -102,8 +116,9 @@ def set_values(portfolio: str, wanted: dict[str, float]) -> str:
         if name not in wanted:
             return block
         seen.add(name)
-        return FIELD["value"].sub(f"<value>{_format(wanted[name], types[name])}</value>",
-                                  block, count=1)
+        return FIELD["value"].sub(
+            f"<value>{_format(wanted[name], types[name])}</value>", block, count=1
+        )
 
     out = VARIABLE.sub(replace, portfolio)
     missing = set(wanted) - seen
@@ -186,8 +201,9 @@ def members(path: Path) -> dict[str, bytes]:
         return {name: archive.read(name) for name in archive.namelist()}
 
 
-def variant(parent: dict[str, bytes], variant_id: str, name: str,
-            wanted: dict[str, float]) -> dict[str, bytes]:
+def variant(
+    parent: dict[str, bytes], variant_id: str, name: str, wanted: dict[str, float]
+) -> dict[str, bytes]:
     """One variant's members, from the parent's.
 
     Args:
@@ -202,8 +218,11 @@ def variant(parent: dict[str, bytes], variant_id: str, name: str,
     """
     portfolio = stamp(set_values(parent[PORTFOLIO].decode("utf-8"), wanted), variant_id)
     settings = drop_fingerprint(rename(parent[SETTINGS].decode("utf-8"), name))
-    return {**parent, PORTFOLIO: portfolio.encode("utf-8"),
-            SETTINGS: settings.encode("utf-8")}
+    return {
+        **parent,
+        PORTFOLIO: portfolio.encode("utf-8"),
+        SETTINGS: settings.encode("utf-8"),
+    }
 
 
 def save(path: Path, parts: dict[str, bytes], shape: str) -> int:

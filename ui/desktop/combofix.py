@@ -19,8 +19,11 @@ def _fit(popup: QWidget, combo: QComboBox) -> None:
         combo: Its combo.
     """
     view = combo.view()
-    need = sum(view.sizeHintForRow(i) for i in range(combo.count())) \
-        + popup.height() - view.viewport().height()
+    need = (
+        sum(view.sizeHintForRow(i) for i in range(combo.count()))
+        + popup.height()
+        - view.viewport().height()
+    )
     room = popup.screen().availableGeometry()
     height = min(need, room.height())
     if popup.height() >= height:
@@ -59,5 +62,7 @@ def install(app: QApplication) -> None:
     Args:
         app: The Qt application.
     """
-    if app.findChild(ComboFix) is None:    # the filter is a child of the app: alive as long as it
+    if (
+        app.findChild(ComboFix) is None
+    ):  # the filter is a child of the app: alive as long as it
         app.installEventFilter(ComboFix(app))

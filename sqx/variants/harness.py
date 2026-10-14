@@ -21,7 +21,11 @@ from sqx.variants import inputs
 TITLES = {"spp_is": "SPP IS", "spp_oos": "SPP OOS", "retest": "OOS"}
 # Donor tasks, by what they are for -- the owner's own XAUUSD settings, frozen: copying one
 # is how a harness inherits a configuration known to work (knowhow/conditions/active-conditions-in-crosschecks.md).
-DONOR = {"spp_is": "Retest-Task13.xml", "spp_oos": "Retest-Task14.xml", "retest": "Retest-Task1.xml"}
+DONOR = {
+    "spp_is": "Retest-Task13.xml",
+    "spp_oos": "Retest-Task14.xml",
+    "retest": "Retest-Task1.xml",
+}
 CHART = re.compile(r'<Chart symbol="[^"]*" timeframe="[^"]*" spread="([^"]*)" ?/>')
 
 
@@ -58,10 +62,16 @@ def retarget(task: str, symbols: list[str], databanks: tuple[str, str]) -> str:
     """
     charts = iter(symbols)
     task = CHART.sub(lambda m: next(charts, None) or m.group(0), task)
-    task = re.sub(r'(<Databank label="Input databank" name="Input" value=")[^"]*"',
-                  rf'\g<1>{databanks[0]}"', task)
-    return re.sub(r'(<Databank label="Output databank" name="Output" value=")[^"]*"',
-                  rf'\g<1>{databanks[1]}"', task)
+    task = re.sub(
+        r'(<Databank label="Input databank" name="Input" value=")[^"]*"',
+        rf'\g<1>{databanks[0]}"',
+        task,
+    )
+    return re.sub(
+        r'(<Databank label="Output databank" name="Output" value=")[^"]*"',
+        rf'\g<1>{databanks[1]}"',
+        task,
+    )
 
 
 def ungate(task: str) -> str:
@@ -97,9 +107,22 @@ def cross_check(task: str, name: str, on: bool) -> str:
         is set alongside, because an enabled cross-check under a disabled parent does
         nothing.
     """
-    task = re.sub(rf'<{name} use="(?:true|false)"', f'<{name} use="{str(on).lower()}"', task, count=1)
-    return re.sub(r'<CrossChecks use="(?:true|false)"',
-                  f'<CrossChecks use="{str(on).lower()}"', task, count=1) if on else task
+    task = re.sub(
+        rf'<{name} use="(?:true|false)"',
+        f'<{name} use="{str(on).lower()}"',
+        task,
+        count=1,
+    )
+    return (
+        re.sub(
+            r'<CrossChecks use="(?:true|false)"',
+            f'<CrossChecks use="{str(on).lower()}"',
+            task,
+            count=1,
+        )
+        if on
+        else task
+    )
 
 
 def spp(task: str, spread: int, step_pct: float, max_tests: int) -> str:
@@ -129,20 +152,36 @@ def spp(task: str, spread: int, step_pct: float, max_tests: int) -> str:
         Steps: one step of ~4 % is the house default. Twelve steps over ±30 % is 5 % a
         step and coarse; twenty over ±40 % is 4 % and right.
     """
-    block = re.search(r"<OptProfileSysParamPermutation\b.*?</OptProfileSysParamPermutation>",
-                      task, re.S)
+    block = re.search(
+        r"<OptProfileSysParamPermutation\b.*?</OptProfileSysParamPermutation>",
+        task,
+        re.S,
+    )
     assert block is not None
     inner = block.group(0)
-    inner = re.sub(r'<OptProfileSysParamPermutation use="(?:true|false)"',
-                   '<OptProfileSysParamPermutation use="true"', inner, count=1)
-    for tag, value in (("MaxTests", max_tests), ("DistributionUp", spread),
-                       ("DistributionDown", spread),
-                       ("Steps", round(2 * spread / step_pct))):
-        inner, hit = re.subn(rf"<{tag}>\d+</{tag}>", f"<{tag}>{value}</{tag}>", inner, count=1)
-        if not hit:      # the donor's «Retest» task has no Steps: the value would stay inherited
-            raise SystemExit(f"la tarea no trae <{tag}> numérico en su SPP: no se configura a medias")
+    inner = re.sub(
+        r'<OptProfileSysParamPermutation use="(?:true|false)"',
+        '<OptProfileSysParamPermutation use="true"',
+        inner,
+        count=1,
+    )
+    for tag, value in (
+        ("MaxTests", max_tests),
+        ("DistributionUp", spread),
+        ("DistributionDown", spread),
+        ("Steps", round(2 * spread / step_pct)),
+    ):
+        inner, hit = re.subn(
+            rf"<{tag}>\d+</{tag}>", f"<{tag}>{value}</{tag}>", inner, count=1
+        )
+        if (
+            not hit
+        ):  # the donor's «Retest» task has no Steps: the value would stay inherited
+            raise SystemExit(
+                f"la tarea no trae <{tag}> numérico en su SPP: no se configura a medias"
+            )
     inner = recommended(inner)
-    task = task[:block.start()] + inner + task[block.end():]
+    task = task[: block.start()] + inner + task[block.end() :]
     return cross_check(task, "SequentialOptimization", False)
 
 
@@ -162,13 +201,30 @@ def recommended(inner: str) -> str:
     what = re.search(r"<WhatToParametrize\b.*?</WhatToParametrize>", inner, re.S)
     assert what is not None
     block = re.sub(r'type="\d+"', 'type="0"', what.group(0), count=1)
-    block = re.sub(r"<Recommended>(?:true|false)</Recommended>",
-                   "<Recommended>true</Recommended>", block, count=1)
-    for family in ("Periods", "Shifts", "Constants", "OtherParams", "EntryParams",
-                   "EntryLogic", "ExitParamsUsed", "ExitParamsUnused", "BooleanParams"):
-        block = re.sub(rf"<{family}>(?:true|false)</{family}>",
-                       f"<{family}>false</{family}>", block, count=1)
-    return inner[:what.start()] + block + inner[what.end():]
+    block = re.sub(
+        r"<Recommended>(?:true|false)</Recommended>",
+        "<Recommended>true</Recommended>",
+        block,
+        count=1,
+    )
+    for family in (
+        "Periods",
+        "Shifts",
+        "Constants",
+        "OtherParams",
+        "EntryParams",
+        "EntryLogic",
+        "ExitParamsUsed",
+        "ExitParamsUnused",
+        "BooleanParams",
+    ):
+        block = re.sub(
+            rf"<{family}>(?:true|false)</{family}>",
+            f"<{family}>false</{family}>",
+            block,
+            count=1,
+        )
+    return inner[: what.start()] + block + inner[what.end() :]
 
 
 def write(cfx: Path, task: str, kind: str, role: str) -> Path:
@@ -191,13 +247,17 @@ def write(cfx: Path, task: str, kind: str, role: str) -> Path:
             titled `TITLES[kind]`.
     """
     if worker.listening(WORKERS[role]["port"]):
-        raise SystemExit(f"{role} esta levantado: paralo antes de reescribir {cfx.parent.name}")
+        raise SystemExit(
+            f"{role} esta levantado: paralo antes de reescribir {cfx.parent.name}"
+        )
     members = cfxio.members(cfx)
     member = member_of(members["config.xml"].decode("utf-8"), TITLES[kind])
     if not member:
-        raise SystemExit(f"{cfx.parent.name} no lleva la tarea {TITLES[kind]!r}: un proyecto "
-                         "de workflow se crea con `sqx.projects.builder --workflow` "
-                         "(regla dura 10).")
+        raise SystemExit(
+            f"{cfx.parent.name} no lleva la tarea {TITLES[kind]!r}: un proyecto "
+            "de workflow se crea con `sqx.projects.builder --workflow` "
+            "(regla dura 10)."
+        )
     members[member] = task.encode("utf-8")
     cfxio.write(cfx, members)
     return cfx
@@ -207,27 +267,55 @@ def main() -> None:
     """Rewrite a worker harness for one kind of run."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--kind", required=True, choices=sorted(DONOR))
-    ap.add_argument("--project", required=True,
-                    help="project on the worker carrying the task --kind names by title")
+    ap.add_argument(
+        "--project",
+        required=True,
+        help="project on the worker carrying the task --kind names by title",
+    )
     ap.add_argument("--input", default="Results")
     ap.add_argument("--output", required=True)
-    ap.add_argument("--chart", action="append", default=[],
-                    help='repeatable, main first: \'SYMBOL TIMEFRAME SPREAD\'')
-    ap.add_argument("--spp", action="store_true",
-                    help="enable the System Parameter Permutation cross-check")
-    ap.add_argument("--spp-spread", type=int, default=35,
-                    help="percent up and down from each parameter (35 or 40; never 30)")
-    ap.add_argument("--spp-step-pct", type=float, default=4.0,
-                    help="how much one step moves a parameter, in percent; Steps is derived")
-    ap.add_argument("--spp-max-tests", type=int, default=15000,
-                    help="ceiling on permutations. NEVER inherit it: a donor can carry "
-                         "1000000001, which is SQX's sentinel for exhaustive")
-    ap.add_argument("--markets", action="store_true",
-                    help="enable the additional-markets cross-check")
+    ap.add_argument(
+        "--chart",
+        action="append",
+        default=[],
+        help="repeatable, main first: 'SYMBOL TIMEFRAME SPREAD'",
+    )
+    ap.add_argument(
+        "--spp",
+        action="store_true",
+        help="enable the System Parameter Permutation cross-check",
+    )
+    ap.add_argument(
+        "--spp-spread",
+        type=int,
+        default=35,
+        help="percent up and down from each parameter (35 or 40; never 30)",
+    )
+    ap.add_argument(
+        "--spp-step-pct",
+        type=float,
+        default=4.0,
+        help="how much one step moves a parameter, in percent; Steps is derived",
+    )
+    ap.add_argument(
+        "--spp-max-tests",
+        type=int,
+        default=15000,
+        help="ceiling on permutations. NEVER inherit it: a donor can carry "
+        "1000000001, which is SQX's sentinel for exhaustive",
+    )
+    ap.add_argument(
+        "--markets",
+        action="store_true",
+        help="enable the additional-markets cross-check",
+    )
     a = ap.parse_args()
 
-    charts = [f'<Chart symbol="{s.split()[0]}" timeframe="{s.split()[1]}" '
-              f'spread="{s.split()[2]}" />' for s in a.chart]
+    charts = [
+        f'<Chart symbol="{s.split()[0]}" timeframe="{s.split()[1]}" '
+        f'spread="{s.split()[2]}" />'
+        for s in a.chart
+    ]
     task = ungate(retarget(donor_task(a.kind), charts, (a.input, a.output)))
     task = cross_check(task, "RetestOnAdditionalMarkets", a.markets)
     if a.spp:
@@ -235,13 +323,20 @@ def main() -> None:
         task = spp(task, a.spp_spread, a.spp_step_pct, a.spp_max_tests)
 
     role = inputs.load()["execute"]["role"]
-    cfx = write(worker_dir(role) / "user/projects" / a.project / "project.cfx", task, a.kind, role)
+    cfx = write(
+        worker_dir(role) / "user/projects" / a.project / "project.cfx",
+        task,
+        a.kind,
+        role,
+    )
     print(f"{a.kind}: {a.input} -> {a.output}")
     for line in re.findall(
-            r"<(?:Setup|Chart|Databanks|CrossChecks|OptProfileSysParamPermutation|"
-            r"SequentialOptimization|RetestOnAdditionalMarkets|WhatToParametrize)\b[^>]*>"
-            r"|<(?:Steps|MaxTests|DistributionUp|DistributionDown)>\d+"
-            r"|<Recommended>\w+", task):
+        r"<(?:Setup|Chart|Databanks|CrossChecks|OptProfileSysParamPermutation|"
+        r"SequentialOptimization|RetestOnAdditionalMarkets|WhatToParametrize)\b[^>]*>"
+        r"|<(?:Steps|MaxTests|DistributionUp|DistributionDown)>\d+"
+        r"|<Recommended>\w+",
+        task,
+    ):
         print("  ", line[:130])
     print(f"-> {cfx}")
 

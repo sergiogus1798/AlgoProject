@@ -15,13 +15,17 @@ ON = '<CrossChecks use="true"><MonteCarloManipulation use="true"><X/></MonteCarl
 def test_set_crosschecks_refuses_it() -> None:
     """The writer refuses the name."""
     with pytest.raises(SystemExit):
-        tasksettings.set_crosschecks(ON, {"precision": 1}, 0.0, ["MonteCarloManipulation"])
+        tasksettings.set_crosschecks(
+            ON, {"precision": 1}, 0.0, ["MonteCarloManipulation"]
+        )
 
 
 def test_the_gate_helper() -> None:
     """The helper tells an XML with it on from one with it off."""
     assert mc_manipulation_on(ON)
-    assert not mc_manipulation_on(ON.replace('Manipulation use="true"', 'Manipulation use="false"'))
+    assert not mc_manipulation_on(
+        ON.replace('Manipulation use="true"', 'Manipulation use="false"')
+    )
 
 
 def test_mc_off_flips_only_the_attribute(tmp_path: Path) -> None:
@@ -35,5 +39,7 @@ def test_mc_off_flips_only_the_attribute(tmp_path: Path) -> None:
     assert rankings.mc_off(cfx) == 1
     after = cfxio.members(cfx)
     assert list(after) == list(before)
-    assert after["Build-Task1.xml"] == before["Build-Task1.xml"].replace(b'Manipulation use="true"', b'Manipulation use="false"')
+    assert after["Build-Task1.xml"] == before["Build-Task1.xml"].replace(
+        b'Manipulation use="true"', b'Manipulation use="false"'
+    )
     assert after["Retest-Task2.xml"] == before["Retest-Task2.xml"]

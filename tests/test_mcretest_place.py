@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from studies.breakage.mcRetest.model.place import place
 
-SIMS = np.arange(1.0, 102.0)          # 1..101: median 51, quartiles 26 and 76, IQR 50
+SIMS = np.arange(1.0, 102.0)  # 1..101: median 51, quartiles 26 and 76, IQR 50
 
 
 def test_original_at_the_median() -> None:
@@ -39,7 +39,7 @@ def test_task_that_moved_nothing() -> None:
 
 def test_original_near_zero_has_no_percentage() -> None:
     """Under the floor the percentage is missing, the IQR distance is not."""
-    got = place(SIMS, 5.0, 0.25)       # 5 < 0.25 × 50
+    got = place(SIMS, 5.0, 0.25)  # 5 < 0.25 × 50
     assert got["gap_pct"] is None and np.isclose(got["gap_iqr"], -0.92)
 
 

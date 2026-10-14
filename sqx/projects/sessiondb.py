@@ -9,9 +9,19 @@ from core.datapaths import cache_dir
 from core.paths import MASTER
 
 SOURCE = MASTER / "user/data/data.db"
-DAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")   # ELEMENTS stores 1..7, Monday first
+DAYS = (
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
+    "Sun",
+)  # ELEMENTS stores 1..7, Monday first
 # A task XML as SQX writes it: CRLF, the elements eight spaces in, the closing tag six.
-ELEMENT = '        <Element dayFrom="{}" dayTo="{}" timeFrom="{}" timeTo="{}" eod="{}" />\r\n'
+ELEMENT = (
+    '        <Element dayFrom="{}" dayTo="{}" timeFrom="{}" timeTo="{}" eod="{}" />\r\n'
+)
 
 
 def copy() -> Path:
@@ -23,10 +33,16 @@ def copy() -> Path:
     """
     out = cache_dir("sessions") / "data.db"
     src = SOURCE.stat()
-    if not out.exists() or out.stat().st_mtime < src.st_mtime or out.stat().st_size != src.st_size:
+    if (
+        not out.exists()
+        or out.stat().st_mtime < src.st_mtime
+        or out.stat().st_size != src.st_size
+    ):
         out.parent.mkdir(parents=True, exist_ok=True)
         tmp = out.with_name(f".{out.name}.{os.getpid()}.tmp")
-        shutil.copy2(SOURCE, tmp)      # a cut copy stays under its own name, never as the cache
+        shutil.copy2(
+            SOURCE, tmp
+        )  # a cut copy stays under its own name, never as the cache
         os.replace(tmp, out)
     return out
 
@@ -43,11 +59,24 @@ def block(session: str, db: Path) -> str | None:
         ELEMENTS keeps a time as the integer HHMM (105 is 01:05).
     """
     with sqlite3.connect(f"file:{db}?mode=ro", uri=True) as con:
-        rows = con.execute("SELECT DAYFROM, TIMEFROM, DAYTO, TIMETO, EOD FROM ELEMENTS "
-                           "WHERE SESSION = ? ORDER BY ID", (session,)).fetchall()
+        rows = con.execute(
+            "SELECT DAYFROM, TIMEFROM, DAYTO, TIMETO, EOD FROM ELEMENTS "
+            "WHERE SESSION = ? ORDER BY ID",
+            (session,),
+        ).fetchall()
     if not rows:
         return None
-    return (f'<Session name="{session}">\r\n' + "".join(
-        ELEMENT.format(DAYS[d0 - 1], DAYS[d1 - 1], f"{t0 // 100:02d}:{t0 % 100:02d}",
-                       f"{t1 // 100:02d}:{t1 % 100:02d}", "true" if eod else "false")
-        for d0, t0, d1, t1, eod in rows) + "      </Session>")
+    return (
+        f'<Session name="{session}">\r\n'
+        + "".join(
+            ELEMENT.format(
+                DAYS[d0 - 1],
+                DAYS[d1 - 1],
+                f"{t0 // 100:02d}:{t0 % 100:02d}",
+                f"{t1 // 100:02d}:{t1 % 100:02d}",
+                "true" if eod else "false",
+            )
+            for d0, t0, d1, t1, eod in rows
+        )
+        + "      </Session>"
+    )

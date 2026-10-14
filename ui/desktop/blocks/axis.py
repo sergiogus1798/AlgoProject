@@ -58,7 +58,9 @@ def xaxis(xs: list, a: float, b: float) -> tuple[list[float], list[tuple[float, 
         return [x(v) for v in xs], [(x(v), num(v)) for v in ticks(min(xs), max(xs))]
     x = scale(0, max(len(xs) - 1, 1), a, b)
     step = max(1, round(len(xs) / 6))
-    return [x(i) for i in range(len(xs))], [(x(i), str(xs[i])) for i in range(0, len(xs), step)]
+    return [x(i) for i in range(len(xs))], [
+        (x(i), str(xs[i])) for i in range(0, len(xs), step)
+    ]
 
 
 def nearest(pixels: list[float], at: float) -> int:

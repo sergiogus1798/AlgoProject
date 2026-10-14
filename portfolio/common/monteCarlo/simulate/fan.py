@@ -17,7 +17,7 @@ class Bands(TypedDict):
     observed: list[float]
 
 
-STEPS = 200   # points kept per curve; an SVG cannot show more and the file stays small
+STEPS = 200  # points kept per curve; an SVG cannot show more and the file stays small
 
 
 def _bands(equity: np.ndarray, pnl: np.ndarray, equity0: float, qs: list[int]) -> Bands:
@@ -35,13 +35,22 @@ def _bands(equity: np.ndarray, pnl: np.ndarray, equity0: float, qs: list[int]) -
     """
     at = np.unique(np.linspace(0, pnl.size - 1, min(STEPS, pnl.size)).astype(int))
     bands = np.percentile(equity[:, at], qs, axis=0)
-    return {"at": at.tolist(),
-            "bands": {q: row.tolist() for q, row in zip(qs, bands)},
-            "observed": (equity0 + np.cumsum(pnl))[at].tolist()}
+    return {
+        "at": at.tolist(),
+        "bands": {q: row.tolist() for q, row in zip(qs, bands)},
+        "observed": (equity0 + np.cumsum(pnl))[at].tolist(),
+    }
 
 
-def envelope(pnl: np.ndarray, model: str, block: int, sims: int, equity0: float,
-             qs: list[int], seed: int) -> Bands:
+def envelope(
+    pnl: np.ndarray,
+    model: str,
+    block: int,
+    sims: int,
+    equity0: float,
+    qs: list[int],
+    seed: int,
+) -> Bands:
     """Percentile bands under a reordering or resampling model (Families A and B).
 
     Args:
@@ -63,7 +72,9 @@ def envelope(pnl: np.ndarray, model: str, block: int, sims: int, equity0: float,
     return _bands(equity0 + np.cumsum(pnl[idx], axis=1), pnl, equity0, qs)
 
 
-def stress_envelope(source: dict, model: str, sims: int, cfg: dict, qs: list[int]) -> Bands:
+def stress_envelope(
+    source: dict, model: str, sims: int, cfg: dict, qs: list[int]
+) -> Bands:
     """Percentile bands under one Family C execution stress.
 
     Args:

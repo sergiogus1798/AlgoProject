@@ -13,8 +13,8 @@ from core.paths import MASTER, WORKERS, WORKER_SH
 
 PROC = Path("/proc")
 READY_POLLS = 900  # x 2 s = 30 min for the databank to load; a JVM start is ~20 s
-TIMEOUT = 600      # seconds one reply may take: what sqx.projects.live's own client allows
-MAX_HOURS = 48     # no wait on a run outlives this (ui/daemon/advance/run.py's bound)
+TIMEOUT = 600  # seconds one reply may take: what sqx.projects.live's own client allows
+MAX_HOURS = 48  # no wait on a run outlives this (ui/daemon/advance/run.py's bound)
 
 
 def require_posix() -> None:
@@ -29,7 +29,8 @@ def require_posix() -> None:
     if sys.platform.startswith("win"):
         raise RuntimeError(
             "Driving StrategyQuant X needs bin/sqx-worker.sh, which does not run on "
-            "Windows. Export on the Linux machine; analyse the CSVs anywhere.")
+            "Windows. Export on the Linux machine; analyse the CSVs anywhere."
+        )
 
 
 def call(command: str, role: str = "conductor", timeout: float = TIMEOUT) -> str:
@@ -70,7 +71,11 @@ def checked(reply: str, command: str) -> str:
 
 def holder() -> str:
     """Who this process is to `bin/sqx-lock.sh`, in its own order: session, $SQX_OWNER, "owner"."""
-    return os.environ.get("CLAUDE_CODE_SESSION_ID") or os.environ.get("SQX_OWNER") or "owner"
+    return (
+        os.environ.get("CLAUDE_CODE_SESSION_ID")
+        or os.environ.get("SQX_OWNER")
+        or "owner"
+    )
 
 
 def start(role: str = "conductor", owner: str | None = None) -> None:
@@ -152,7 +157,10 @@ def wait_ready(project: str, databank: str, role: str = "conductor") -> int:
         if "Records:" in reply:
             return int(reply.split("Records:")[1].split()[0])
         sleep(2)
-    raise SystemExit(f"{project}/{databank}: no records after {READY_POLLS * 2} s on {role}")
+    raise SystemExit(
+        f"{project}/{databank}: no records after {READY_POLLS * 2} s on {role}"
+    )
+
 
 def installs() -> dict[str, Path]:
     """Role to install folder, the master first: `master` plus one entry per headless role."""
@@ -195,6 +203,8 @@ def holding(install: Path) -> list[int]:
         except OSError:
             continue
         exe = line.split("\0")[0]
-        if exe.startswith(f"{install}/") or (here == install.resolve() and not exe.startswith("/")):
+        if exe.startswith(f"{install}/") or (
+            here == install.resolve() and not exe.startswith("/")
+        ):
             found.append(int(d.name))
     return found

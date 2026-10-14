@@ -14,7 +14,7 @@ from portfolio.funded.rules.machine import (
     _stage_matrix,
 )
 
-RULES = ("daily_loss", "max_loss", "time_limit")       # codes 1, 2, 3 of the kernel
+RULES = ("daily_loss", "max_loss", "time_limit")  # codes 1, 2, 3 of the kernel
 
 
 def stage_names(plan: Plan) -> list[str]:
@@ -22,7 +22,9 @@ def stage_names(plan: Plan) -> list[str]:
     return [s["stage"] for s in plan["stages"] if s["stage"] != "funded"]
 
 
-def outcomes(paths: dict[str, np.ndarray], plan: Plan, risk: np.ndarray) -> dict[str, np.ndarray]:
+def outcomes(
+    paths: dict[str, np.ndarray], plan: Plan, risk: np.ndarray
+) -> dict[str, np.ndarray]:
     """Every path through every risk setting, from its day 0.
 
     The day loop is `portfolio.funded.rules.machine`'s own (`tests/test_portfolio_stageb.py`
@@ -44,11 +46,26 @@ def outcomes(paths: dict[str, np.ndarray], plan: Plan, risk: np.ndarray) -> dict
     if np.any(base[:, _MINDAYS] < 0):
         raise NotImplementedError("judge: a challenge stage has no known min_days")
     shape = (risk.shape[0], paths["closed"].shape[0])
-    out = {"code": np.empty(shape, np.int8), "passed": np.empty(shape, np.int8),
-           "day": np.empty(shape, np.int16), "rule": np.empty(shape, np.int8)}
-    _kernel(paths["closed"], paths["float_end"], paths["low"], paths["high"],
-            paths["opened"].astype(np.int64), base, np.ascontiguousarray(risk, dtype=np.float64),
-            float(plan["size"]), out["code"], out["passed"], out["day"], out["rule"])
+    out = {
+        "code": np.empty(shape, np.int8),
+        "passed": np.empty(shape, np.int8),
+        "day": np.empty(shape, np.int16),
+        "rule": np.empty(shape, np.int8),
+    }
+    _kernel(
+        paths["closed"],
+        paths["float_end"],
+        paths["low"],
+        paths["high"],
+        paths["opened"].astype(np.int64),
+        base,
+        np.ascontiguousarray(risk, dtype=np.float64),
+        float(plan["size"]),
+        out["code"],
+        out["passed"],
+        out["day"],
+        out["rule"],
+    )
     return out
 
 
@@ -62,15 +79,18 @@ def figures(got: dict[str, np.ndarray], n_stages: int) -> dict[str, np.ndarray]:
         open at the horizon is in `p_open`, never in the time).
     """
     code = got["code"]
-    out = {"p_pass": (code == 1).mean(axis=1), "p_fail": (code == 0).mean(axis=1),
-           "p_open": (code == -1).mean(axis=1)}
+    out = {
+        "p_pass": (code == 1).mean(axis=1),
+        "p_fail": (code == 0).mean(axis=1),
+        "p_open": (code == -1).mean(axis=1),
+    }
     for j in range(n_stages):
         out[f"p_stage{j + 1}"] = (got["passed"] > j).mean(axis=1)
     for index, name in enumerate(RULES):
         out[f"fail_{name}"] = (got["rule"] == index + 1).mean(axis=1)
     took = np.where(code == 1, got["day"] + 1.0, np.nan)
     empty = ~(code == 1).any(axis=1)
-    took[empty, 0] = -1.0                                   # keeps nanpercentile quiet; masked below
+    took[empty, 0] = -1.0  # keeps nanpercentile quiet; masked below
     median, p90 = np.nanpercentile(took, [50, 90], axis=1)
     out["t_median"] = np.where(empty, np.nan, median)
     out["t_p90"] = np.where(empty, np.nan, p90)
@@ -78,10 +98,20 @@ def figures(got: dict[str, np.ndarray], n_stages: int) -> dict[str, np.ndarray]:
 
 
 @numba.njit(parallel=True, cache=True)
-def _kernel(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, high: np.ndarray,
-            opened: np.ndarray, stagemat: np.ndarray, risk: np.ndarray, size: float,
-            code: np.ndarray, passed_out: np.ndarray, day_out: np.ndarray,
-            rule_out: np.ndarray) -> None:
+def _kernel(
+    closed: np.ndarray,
+    float_end: np.ndarray,
+    low: np.ndarray,
+    high: np.ndarray,
+    opened: np.ndarray,
+    stagemat: np.ndarray,
+    risk: np.ndarray,
+    size: float,
+    code: np.ndarray,
+    passed_out: np.ndarray,
+    day_out: np.ndarray,
+    rule_out: np.ndarray,
+) -> None:
     """`machine._sweep_kernel`'s day loop from day 0 of each path, per risk setting, with detail."""
     n_paths, n = closed.shape
     n_stages = stagemat.shape[0]
@@ -90,8 +120,20 @@ def _kernel(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, high: np
             stage_start = 0
             outcome, rule, n_passed, at = 1, 0, 0, n - 1
             for si in range(n_stages):
-                target, dloss, mloss, mode, basis, mindays, mdkind, ppct, cons, ckind, tlimit, _ = \
-                    stagemat[si]
+                (
+                    target,
+                    dloss,
+                    mloss,
+                    mode,
+                    basis,
+                    mindays,
+                    mdkind,
+                    ppct,
+                    cons,
+                    ckind,
+                    tlimit,
+                    _,
+                ) = stagemat[si]
                 k = risk[c, si]
                 baseline = float_end[p, stage_start - 1] if stage_start > 0 else 0.0
                 carry = baseline * k
@@ -143,11 +185,15 @@ def _kernel(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, high: np
                         best_day = day_p
                     if b - size >= target * size:
                         days_ok = mindays == 0 or (
-                            profitable_days >= mindays if mdkind == _PROFITABLE
-                            else trading_days >= mindays)
-                        cons_ok = (cons == 0.0 or
-                                   (best_day / profit_sum <= cons if ckind == _BEST_TOTAL
-                                    else best_day <= cons * positive_sum))
+                            profitable_days >= mindays
+                            if mdkind == _PROFITABLE
+                            else trading_days >= mindays
+                        )
+                        cons_ok = cons == 0.0 or (
+                            best_day / profit_sum <= cons
+                            if ckind == _BEST_TOTAL
+                            else best_day <= cons * positive_sum
+                        )
                         if days_ok and cons_ok:
                             done = True
                             at = d

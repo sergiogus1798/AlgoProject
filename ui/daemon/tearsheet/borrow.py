@@ -21,13 +21,20 @@ def harvests(project: str) -> list[str]:
 
 def _rows(folder: Path, column: str, values: list[str]) -> pd.DataFrame:
     """The (strategy, identity) rows of one cosecha whose `column` is one of `values`."""
-    return pd.read_parquet(folder / "metrics.parquet", columns=["strategy", "identity"],
-                           filters=[(column, "in", values)]).reset_index()
+    return pd.read_parquet(
+        folder / "metrics.parquet",
+        columns=["strategy", "identity"],
+        filters=[(column, "in", values)],
+    ).reset_index()
 
 
-def borrow(project: str, databank: str, identity: str,
-           newest: Callable[[str, str], Path | None],
-           name: str = "") -> tuple[str, str, str] | str | None:
+def borrow(
+    project: str,
+    databank: str,
+    identity: str,
+    newest: Callable[[str, str], Path | None],
+    name: str = "",
+) -> tuple[str, str, str] | str | None:
     """Where a databank without a cosecha finds this strategy: the same XML in any cosecha of
     the project, else the same name.
 
@@ -52,18 +59,31 @@ def borrow(project: str, databank: str, identity: str,
     homes = [h for h in harvests(project) if h != databank.replace(" ", "_")]
     for home in homes:
         if len(_rows(cast(Path, newest(project, home)), "identity", [identity])):
-            return home, identity, (f"{databank} no tiene cosecha: esta ficha es la de la "
-                                    f"cosecha de {home}, la misma estrategia (mismo XML).")
+            return (
+                home,
+                identity,
+                (
+                    f"{databank} no tiene cosecha: esta ficha es la de la "
+                    f"cosecha de {home}, la misma estrategia (mismo XML)."
+                ),
+            )
     name = find.roster(project, databank).get(identity) or name
     if not (homes and name):
         return None
     for home in homes:
         found = _rows(cast(Path, newest(project, home)), "strategy", aliases(name))
         if len(found) > 1:
-            return (f"La cosecha de {home} tiene {len(found)} «{name}»: ábrela desde la Puerta "
-                    "IS/OOS")
+            return (
+                f"La cosecha de {home} tiene {len(found)} «{name}»: ábrela desde la Puerta "
+                "IS/OOS"
+            )
         if len(found) == 1:
-            return home, found["identity"].iloc[0], (
-                f"{databank} no tiene cosecha: esta ficha es la de «{name}» en la cosecha de "
-                f"{home}, emparejada por nombre (la identidad cambia entre databanks).")
+            return (
+                home,
+                found["identity"].iloc[0],
+                (
+                    f"{databank} no tiene cosecha: esta ficha es la de «{name}» en la cosecha de "
+                    f"{home}, emparejada por nombre (la identidad cambia entre databanks)."
+                ),
+            )
     return f"«{name}» no está en la cosecha de {', '.join(homes)}: se quedó fuera en un corte"

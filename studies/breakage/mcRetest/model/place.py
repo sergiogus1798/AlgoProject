@@ -34,10 +34,15 @@ def place(sims: np.ndarray, real: float, floor: float) -> Place:
     """
     q5, q1, median, q3, q95 = np.percentile(sims, [5, 25, 50, 75, 95])
     spread = float(q3 - q1)
-    return {"percentile": float(100 * ((sims < real).sum() + 0.5 * (sims == real).sum())
-                                / sims.size),
-            "gap_pct": float(100 * (median - real) / abs(real))
-            if abs(real) > 0 and abs(real) >= floor * spread else None,
-            "gap_iqr": float((real - median) / spread) if spread > 0 else None,
-            "own": [float((q5 - median) / spread), float((q95 - median) / spread)]
-            if spread > 0 else None}
+    return {
+        "percentile": float(
+            100 * ((sims < real).sum() + 0.5 * (sims == real).sum()) / sims.size
+        ),
+        "gap_pct": float(100 * (median - real) / abs(real))
+        if abs(real) > 0 and abs(real) >= floor * spread
+        else None,
+        "gap_iqr": float((real - median) / spread) if spread > 0 else None,
+        "own": [float((q5 - median) / spread), float((q95 - median) / spread)]
+        if spread > 0
+        else None,
+    }

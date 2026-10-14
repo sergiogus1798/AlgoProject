@@ -10,12 +10,24 @@ from studies.research.memory import attempts, sources
 from studies.research.memory.causes import VOCABULARY
 from studies.research.memory.sources import CONFIG
 
-COLUMNS = ["template", "symbol", "timeframe", "project", "date", "strategies_built",
-           "strategies_kept", "verdict", "report"]
+COLUMNS = [
+    "template",
+    "symbol",
+    "timeframe",
+    "project",
+    "date",
+    "strategies_built",
+    "strategies_kept",
+    "verdict",
+    "report",
+]
 STEP = {"built": "6", "oos": "7", "gate": "8", "markets": "9", "mcr": "13", "spp": "15"}
 AUTO = "auto"
-HYPOTHESIS = {"pending": "sin juzgar: el umbral de desajuste es del dueño y está pendiente",
-              "match": "encaja", "mismatch": "DESAJUSTE"}
+HYPOTHESIS = {
+    "pending": "sin juzgar: el umbral de desajuste es del dueño y está pendiente",
+    "match": "encaja",
+    "mismatch": "DESAJUSTE",
+}
 
 
 def sentence(row: dict) -> str:
@@ -25,19 +37,40 @@ def sentence(row: dict) -> str:
         row: One `attempts.table()` row.
     """
     funnel = " -> ".join(f"{s} {row[s]}" for s in CONFIG["stages"] if row[s] != "")
-    end = {"survivors": f"llegaron {row['survivors']} al final del paso 15",
-           "died": f"murio en el paso {STEP.get(row['died_at'], '?')} ({row['died_at']})",
-           "failed": f"inconcluso: fallo en el paso {row['failed_at']}",
-           "incomplete": f"incompleto: ultimo tramo {row['last_stage']}",
-           "unknown": "sin datos del embudo"}[row["outcome"].split("@")[0]]
-    dev = "; corte de desarrollo en el paso 8 (sorteo): no es evidencia" if row["dev_cut"] else ""
-    why = (f"; causa: {VOCABULARY[row['cause']]['label']} ({row['cause']}"
-           + (f", {row['cause_share']} de las que fallaron" if row["cause_share"] else "")
-           + f") — descarta: {row['rules_out']}; probar: {row['try_next']}") if row["cause"] else ""
-    sheet = (f"; hoja: {row['built_trades_per_year']} op/año frente a {row['sheet_trades_per_year']} "
-             f"predichas (x{row['trades_ratio']}), {row['built_holding_hours']} h frente a "
-             f"{row['sheet_holding_hours']} (x{row['holding_ratio']}), {HYPOTHESIS[row['hypothesis']]}"
-             ) if row["trades_ratio"] != "" else ""
+    end = {
+        "survivors": f"llegaron {row['survivors']} al final del paso 15",
+        "died": f"murio en el paso {STEP.get(row['died_at'], '?')} ({row['died_at']})",
+        "failed": f"inconcluso: fallo en el paso {row['failed_at']}",
+        "incomplete": f"incompleto: ultimo tramo {row['last_stage']}",
+        "unknown": "sin datos del embudo",
+    }[row["outcome"].split("@")[0]]
+    dev = (
+        "; corte de desarrollo en el paso 8 (sorteo): no es evidencia"
+        if row["dev_cut"]
+        else ""
+    )
+    why = (
+        (
+            f"; causa: {VOCABULARY[row['cause']]['label']} ({row['cause']}"
+            + (
+                f", {row['cause_share']} de las que fallaron"
+                if row["cause_share"]
+                else ""
+            )
+            + f") — descarta: {row['rules_out']}; probar: {row['try_next']}"
+        )
+        if row["cause"]
+        else ""
+    )
+    sheet = (
+        (
+            f"; hoja: {row['built_trades_per_year']} op/año frente a {row['sheet_trades_per_year']} "
+            f"predichas (x{row['trades_ratio']}), {row['built_holding_hours']} h frente a "
+            f"{row['sheet_holding_hours']} (x{row['holding_ratio']}), {HYPOTHESIS[row['hypothesis']]}"
+        )
+        if row["trades_ratio"] != ""
+        else ""
+    )
     return f"{AUTO}: embudo {funnel or '-'}; {end}{dev}{why}{sheet}"
 
 
@@ -51,7 +84,9 @@ def write(path: Path, rows: list[dict], fields: list[str]) -> None:
     os.replace(tmp, path)
 
 
-def close_run(run_dir: Path, runs_csv: Path | None = None, registry_row: dict | None = None) -> dict[str, Any]:
+def close_run(
+    run_dir: Path, runs_csv: Path | None = None, registry_row: dict | None = None
+) -> dict[str, Any]:
     """Close the attempt of a finished autopilot run: counts per stage and the verdict.
 
     Fills `strategies_built`, `strategies_kept` and `verdict` of the project's row in runs.csv,
@@ -71,21 +106,39 @@ def close_run(run_dir: Path, runs_csv: Path | None = None, registry_row: dict | 
     project, path = run_dir.parent.name, runs_csv or template_runs()
     old = sources.read_csv(path)
     mine = next((r for r in reversed(old) if r["project"] == project), None)
-    reg = registry_row if registry_row is not None else sources.registry_projects().get(project, {})
-    row = attempts.one(project, reg, mine or {}, sources.templates(), set(), run_dir.parent.parent)
+    reg = (
+        registry_row
+        if registry_row is not None
+        else sources.registry_projects().get(project, {})
+    )
+    row = attempts.one(
+        project, reg, mine or {}, sources.templates(), set(), run_dir.parent.parent
+    )
     last = row[row["last_stage"]] if row["last_stage"] else ""
-    new = {"template": row["template"], "symbol": row["symbol"], "timeframe": row["timeframe"],
-           "project": project, "date": row["date"], "strategies_built": str(row["built"]),
-           "strategies_kept": str(last), "verdict": sentence(row),
-           "report": str((run_dir / "resumen.md").relative_to(DATA)
-                         if run_dir.is_relative_to(DATA) else run_dir / "resumen.md")}
+    new = {
+        "template": row["template"],
+        "symbol": row["symbol"],
+        "timeframe": row["timeframe"],
+        "project": project,
+        "date": row["date"],
+        "strategies_built": str(row["built"]),
+        "strategies_kept": str(last),
+        "verdict": sentence(row),
+        "report": str(
+            (run_dir / "resumen.md").relative_to(DATA)
+            if run_dir.is_relative_to(DATA)
+            else run_dir / "resumen.md"
+        ),
+    }
     if mine is None:
         old.append(new)
         mine = new
     else:
         owned = not mine["verdict"] or mine["verdict"].startswith(AUTO)
         for k, v in new.items():
-            if (owned and k in ("verdict", "strategies_kept") or not mine.get(k)) and v != "":
+            if (
+                owned and k in ("verdict", "strategies_kept") or not mine.get(k)
+            ) and v != "":
                 mine[k] = v
     write(path, old, list(old[0]) if old and path.exists() else COLUMNS)
     return mine

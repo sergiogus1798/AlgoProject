@@ -13,8 +13,16 @@ from typing import TypedDict
 # profiling, notes, pipeline) is never named here and forget() never touches it.
 # "structural" and "atrCalculator" are no longer written (steps 23-24 deleted) but still
 # hold old per-project data on disk.
-PROJECT_DIRS = ("crosstf", "harvest", "metrics", "reports", "structural",
-                "strategyPermutations", "atrCalculator", "raw")
+PROJECT_DIRS = (
+    "crosstf",
+    "harvest",
+    "metrics",
+    "reports",
+    "structural",
+    "strategyPermutations",
+    "atrCalculator",
+    "raw",
+)
 
 
 def _folder_size(p: Path) -> float:
@@ -41,11 +49,20 @@ def find(name: str) -> Traces:
         `{"role": str | None, "folders": [(Path, mb), ...], "mb": float}`. `role` is None
         when no conductor or custodian holds it live.
     """
-    role = next((r for r, inst in retire.installs().items()
-                if r != "master" and (inst / "user/projects" / name / "project.cfx").exists()),
-                None)
-    folders = [(DATA / d / name, _folder_size(DATA / d / name))
-              for d in PROJECT_DIRS if (DATA / d / name).is_dir()]
+    role = next(
+        (
+            r
+            for r, inst in retire.installs().items()
+            if r != "master"
+            and (inst / "user/projects" / name / "project.cfx").exists()
+        ),
+        None,
+    )
+    folders = [
+        (DATA / d / name, _folder_size(DATA / d / name))
+        for d in PROJECT_DIRS
+        if (DATA / d / name).is_dir()
+    ]
     return {"role": role, "folders": folders, "mb": sum(mb for _, mb in folders)}
 
 
@@ -66,8 +83,10 @@ def forget(name: str, apply: bool) -> list[str]:
     if found["role"] is None and not found["folders"]:
         master_has_it = (retire.installs()["master"] / "user/projects" / name).is_dir()
         if master_has_it:
-            raise SystemExit(f"{name} only exists on the master — that install is the owner's "
-                             "(hard rule 3); nothing was touched. Ask him if it should go.")
+            raise SystemExit(
+                f"{name} only exists on the master — that install is the owner's "
+                "(hard rule 3); nothing was touched. Ask him if it should go."
+            )
         raise SystemExit(f"no trace of {name} on conductor, custodian or in AlgoData.")
     lines = []
     if found["role"]:
@@ -83,7 +102,9 @@ def main() -> None:
     """Show, or with --yes actually erase, everything a named project left behind."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("name", help="the project to forget")
-    ap.add_argument("--yes", action="store_true", help="really do it; without it, a dry run")
+    ap.add_argument(
+        "--yes", action="store_true", help="really do it; without it, a dry run"
+    )
     a = ap.parse_args()
     for line in forget(a.name, a.yes):
         print(line)

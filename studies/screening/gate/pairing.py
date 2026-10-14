@@ -23,5 +23,9 @@ def pair(build: dict[str, Path], after: dict[str, Path]) -> tuple[dict, dict, li
     # Same file name, other identity: the name was reused by a different strategy (a retry,
     # a second build) or the file was rewritten. Never paired; reported so the harvest stops.
     names = {p.stem: ia for ia, p in after.items() if ia not in pairs}
-    alias = {names[p.stem]: ib for ib, p in build.items() if ib not in pairs and p.stem in names}
+    alias = {
+        names[p.stem]: ib
+        for ib, p in build.items()
+        if ib not in pairs and p.stem in names
+    }
     return pairs, alias, sorted(set(build) - set(pairs))

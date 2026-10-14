@@ -24,15 +24,21 @@ def sample(live: dict[str, list[float]], cfg: dict) -> pd.DataFrame:
     n = cfg["sample"]
     size = 2 ** int(np.ceil(np.log2(max(n, 2))))
     unit = qmc.Sobol(d=len(names), scramble=True, seed=cfg["seed"]).random(size)[:n]  # pyright: ignore[reportCallIssue]  # scipy stub knows rng= only; seed= draws the stream the studies were run with
-    rows = [{name: live[name][min(int(row[i] * len(live[name])), len(live[name]) - 1)]
-             for i, name in enumerate(names)} for row in unit]
+    rows = [
+        {
+            name: live[name][min(int(row[i] * len(live[name])), len(live[name]) - 1)]
+            for i, name in enumerate(names)
+        }
+        for row in unit
+    ]
     table = pd.DataFrame(rows)
     table.insert(0, "pilot_id", [f"X{i:05d}" for i in range(len(table))])  # pyright: ignore[reportArgumentType]  # pandas stub: list is a valid column value
     return table
 
 
-def decide(table: pd.DataFrame, counts: dict[str, float],
-           min_trades: int, min_support: int) -> tuple[dict[str, set], dict]:
+def decide(
+    table: pd.DataFrame, counts: dict[str, float], min_trades: int, min_support: int
+) -> tuple[dict[str, set], dict]:
     """Which live-parameter levels the pilot's trade counts say do not trade enough.
 
     Args:
@@ -64,20 +70,36 @@ def decide(table: pd.DataFrame, counts: dict[str, float],
         by_level = trades.groupby(table[name])
         median, support = by_level.median(), by_level.count()
         levels_sorted = sorted(median.index)
-        drop = {lvl for lvl in levels_sorted
-                if support[lvl] >= min_support and median[lvl] < min_trades}
+        drop = {
+            lvl
+            for lvl in levels_sorted
+            if support[lvl] >= min_support and median[lvl] < min_trades
+        }
         kept = len(levels_sorted) - len(drop)
         starved = drop and kept < 2
         if starved:
             drop = set()
         for lvl in levels_sorted:
-            rows.append({"parameter": name, "level": lvl,
-                         "median_trades": float(median[lvl]), "support": int(support[lvl]),  # pyright: ignore[reportArgumentType]  # pandas stub: groupby scalar
-                         "dropped": lvl in drop,
-                         "kept_despite_floor": bool(starved and median[lvl] < min_trades
-                                                    and support[lvl] >= min_support)})
+            rows.append(
+                {
+                    "parameter": name,
+                    "level": lvl,
+                    "median_trades": float(median[lvl]),  # pyright: ignore[reportArgumentType]  # pandas stub: groupby scalar
+                    "support": int(support[lvl]),  # pyright: ignore[reportArgumentType]  # pandas stub: groupby scalar
+                    "dropped": lvl in drop,
+                    "kept_despite_floor": bool(
+                        starved
+                        and median[lvl] < min_trades
+                        and support[lvl] >= min_support
+                    ),
+                }
+            )
         if drop:
             banned[name] = drop
-    return banned, {"min_trades": min_trades, "min_support": min_support,
-                    "pilot_n": len(table), "scored": int(trades.notna().sum()),
-                    "rows": rows}
+    return banned, {
+        "min_trades": min_trades,
+        "min_support": min_support,
+        "pilot_n": len(table),
+        "scored": int(trades.notna().sum()),
+        "rows": rows,
+    }

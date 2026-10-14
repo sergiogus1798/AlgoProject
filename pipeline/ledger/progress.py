@@ -27,7 +27,9 @@ def say(work: Path, stage: str, progress: int, status: str) -> None:
     got = state.read(work)
     before = got["stages"][stage]["progress"]
     if progress < before:
-        raise ValueError(f"{stage}: progress went {before} -> {progress}, it is monotonic")
+        raise ValueError(
+            f"{stage}: progress went {before} -> {progress}, it is monotonic"
+        )
     got["stages"][stage] |= {"progress": progress, "status": status}
     state.write(work, got)
 

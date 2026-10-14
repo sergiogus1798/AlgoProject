@@ -44,8 +44,16 @@ def judge(rows: list[dict], cfg: dict) -> list[dict]:
         else:
             share = gb / limit
             verdict = OVER if share > 1 else NEAR if share >= near else OK
-        out.append({"branch": row["branch"], "gb": gb, "budget_gb": limit,
-                    "share": share, "files": row["files"], "verdict": verdict})
+        out.append(
+            {
+                "branch": row["branch"],
+                "gb": gb,
+                "budget_gb": limit,
+                "share": share,
+                "files": row["files"],
+                "verdict": verdict,
+            }
+        )
     return sorted(out, key=lambda r: r["gb"], reverse=True)
 
 
@@ -115,5 +123,11 @@ def system_tmp(cfg: dict) -> TmpUse:
     used = shutil.disk_usage(folder)
     limit = cfg["disk"]["tmp_max_share"]
     share = used.used / used.total
-    return {"path": folder, "gb": used.used / 1e9, "total_gb": used.total / 1e9,
-            "share": share, "max_share": limit, "over": share > limit}
+    return {
+        "path": folder,
+        "gb": used.used / 1e9,
+        "total_gb": used.total / 1e9,
+        "share": share,
+        "max_share": limit,
+        "over": share > limit,
+    }

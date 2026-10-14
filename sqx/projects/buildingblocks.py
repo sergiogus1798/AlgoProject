@@ -30,7 +30,10 @@ def union(names: list[str]) -> dict[str, dict]:
     out = {}
     for name in names:
         for key, r in palette.resolve(palette.load(name), blocks).items():
-            if key not in out or (r["use"], r["weight"]) > (out[key]["use"], out[key]["weight"]):
+            if key not in out or (r["use"], r["weight"]) > (
+                out[key]["use"],
+                out[key]["weight"],
+            ):
                 out[key] = r
     return out
 
@@ -72,13 +75,15 @@ def rewrite(task: str, resolved: dict[str, dict]) -> tuple[str, dict]:
             got["refused"].append(m.group(1))
             use = False
         got["on" if use else "off"] += 1
-        return (f'<Block key="{m.group(1)}" weight="{r["weight"] if r else 1}" '
-                f'use="{"true" if use else "false"}"{m.group(2)}>')
+        return (
+            f'<Block key="{m.group(1)}" weight="{r["weight"] if r else 1}" '
+            f'use="{"true" if use else "false"}"{m.group(2)}>'
+        )
 
     section = BLOCKS.search(task)
     assert section is not None
     body = BLOCK.sub(one, section.group(0))
-    return task[:section.start()] + body + task[section.end():], got
+    return task[: section.start()] + body + task[section.end() :], got
 
 
 def apply(cfx: Path, name: str) -> Applied:
@@ -94,8 +99,10 @@ def apply(cfx: Path, name: str) -> Applied:
     """
     up = cfxio.held(cfx)
     if up:
-        raise SystemExit(f"el {up} está encendido: SQX reescribe {cfx.name} al salir y el "
-                         f"cambio se perdería. Páralo: bin/sqx-worker.sh --role {up} stop")
+        raise SystemExit(
+            f"el {up} está encendido: SQX reescribe {cfx.name} al salir y el "
+            f"cambio se perdería. Páralo: bin/sqx-worker.sh --role {up} stop"
+        )
     resolved = union(name.split(","))
     members = cfxio.members(cfx)
     tasks = {}
@@ -112,22 +119,38 @@ def say(got: Applied) -> None:
     """Print what one `apply` switched."""
     s = got["summary"]
     for task, n in got["tasks"].items():
-        print(f"{task}: {n['on']} encendidos, {n['off']} apagados"
-              + (f" ({len(n['outside'])} fuera de la taxonomía, apagados)" if n["outside"] else "")
-              + (f" · regla 15: {len(n['refused'])} pedidos y dejados apagados (niveles "
-                 f"stop/limit, reloj): {', '.join(n['refused'])}" if n["refused"] else ""))
-    print(f"paleta {got['palette']}: condiciones {s['signal']['on']}/{s['signal']['of']} "
-          f"({'dentro' if s['conditions_ok'] else 'FUERA'} de la banda {palette.CONDITIONS}), "
-          f"indicadores {s['indicator']['on']}/{s['indicator']['of']}, "
-          f"niveles {s['level']['on']}/{s['level']['of']}")
+        print(
+            f"{task}: {n['on']} encendidos, {n['off']} apagados"
+            + (
+                f" ({len(n['outside'])} fuera de la taxonomía, apagados)"
+                if n["outside"]
+                else ""
+            )
+            + (
+                f" · regla 15: {len(n['refused'])} pedidos y dejados apagados (niveles "
+                f"stop/limit, reloj): {', '.join(n['refused'])}"
+                if n["refused"]
+                else ""
+            )
+        )
+    print(
+        f"paleta {got['palette']}: condiciones {s['signal']['on']}/{s['signal']['of']} "
+        f"({'dentro' if s['conditions_ok'] else 'FUERA'} de la banda {palette.CONDITIONS}), "
+        f"indicadores {s['indicator']['on']}/{s['indicator']['of']}, "
+        f"niveles {s['level']['on']}/{s['level']['of']}"
+    )
 
 
 def main() -> None:
     """Apply a palette to a worker's project and say what the builder may now draw."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--project", required=True)
-    ap.add_argument("--palette", help="nombre en sqx/blocks/palettes/; varios con comas = su unión")
-    ap.add_argument("--count", action="store_true", help="contar lo que la tarea Build lleva")
+    ap.add_argument(
+        "--palette", help="nombre en sqx/blocks/palettes/; varios con comas = su unión"
+    )
+    ap.add_argument(
+        "--count", action="store_true", help="contar lo que la tarea Build lleva"
+    )
     ap.add_argument("--json", action="store_true", help="el recuento como JSON")
     ap.add_argument("--role", default="custodian", choices=["conductor", "custodian"])
     a = ap.parse_args()
@@ -136,8 +159,11 @@ def main() -> None:
         say(apply(cfx, a.palette))
     if a.count or not a.palette:
         counted = buildcensus.census(cfx)
-        print(json.dumps(counted, indent=1, ensure_ascii=False) if a.json
-              else "\n".join(buildcensus.lines(counted)))
+        print(
+            json.dumps(counted, indent=1, ensure_ascii=False)
+            if a.json
+            else "\n".join(buildcensus.lines(counted))
+        )
 
 
 if __name__ == "__main__":

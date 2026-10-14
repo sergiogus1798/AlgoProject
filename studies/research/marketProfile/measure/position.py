@@ -5,8 +5,15 @@ from numba import njit
 
 
 @njit(cache=True)
-def walk(enter: np.ndarray, leave: np.ndarray, cap: int, trail: float, close: np.ndarray,
-         ruler: np.ndarray, stop: float = 0.0) -> tuple[np.ndarray, np.ndarray]:
+def walk(
+    enter: np.ndarray,
+    leave: np.ndarray,
+    cap: int,
+    trail: float,
+    close: np.ndarray,
+    ruler: np.ndarray,
+    stop: float = 0.0,
+) -> tuple[np.ndarray, np.ndarray]:
     """Entry and exit bars of a rule that holds one position at a time.
 
     Args:
@@ -38,9 +45,12 @@ def walk(enter: np.ndarray, leave: np.ndarray, cap: int, trail: float, close: np
         while j < n - 1:
             if close[j] > top:
                 top = close[j]
-            if (leave[j] or (cap > 0 and j - i >= cap)
-                    or (trail > 0 and close[j] < top - trail * ruler[j])
-                    or (stop > 0 and close[j] < floor)):
+            if (
+                leave[j]
+                or (cap > 0 and j - i >= cap)
+                or (trail > 0 and close[j] < top - trail * ruler[j])
+                or (stop > 0 and close[j] < floor)
+            ):
                 done = True
                 break
             j += 1

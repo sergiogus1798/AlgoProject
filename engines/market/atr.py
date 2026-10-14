@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from numba import njit
 
-ROUND = 6       # ATRBasedValue multiplies X by SQUtils.round(atr, 6), not by the raw value
+ROUND = 6  # ATRBasedValue multiplies X by SQUtils.round(atr, 6), not by the raw value
 
 
 def true_range(frame: pd.DataFrame) -> np.ndarray:
@@ -16,7 +16,9 @@ def true_range(frame: pd.DataFrame) -> np.ndarray:
     Returns:
         One value per bar, in price.
     """
-    high, low, close = (frame[c].to_numpy(dtype=float) for c in ("High", "Low", "Close"))
+    high, low, close = (
+        frame[c].to_numpy(dtype=float) for c in ("High", "Low", "Close")
+    )
     prev = np.concatenate([[np.nan], close[:-1]])
     out = np.fmax(high - low, np.fmax(np.abs(high - prev), np.abs(low - prev)))
     out[0] = high[0] - low[0]

@@ -33,8 +33,10 @@ def scanned(asset: str, do: list[dict]) -> None:
         return
     feed = load(asset)["sqx_symbol"]
     if not (feed_quality_dir(feed) / "summary.json").exists():
-        sys.exit(f"el feed {feed} no está escaneado y el paso 8 lo lee: corre antes "
-                 f"`python3 -m studies.data.feedQuality.scan --feed {feed}`")
+        sys.exit(
+            f"el feed {feed} no está escaneado y el paso 8 lo lee: corre antes "
+            f"`python3 -m studies.data.feedQuality.scan --feed {feed}`"
+        )
 
 
 def reopen(data: Mapping[str, Any], out: Path) -> Mapping[str, Any]:
@@ -48,13 +50,29 @@ def reopen(data: Mapping[str, Any], out: Path) -> Mapping[str, Any]:
     📓 2026-10-11: gorilla's 16.5 died of OutOfMemoryError, the rerun skipped it as done and 18.5
     failed on the half-made batch of one mother."""
     try:
-        said = (max(d for d in out.parent.iterdir() if d.is_dir() and d != out and (d / "estado.txt").exists())
-                / "estado.txt").read_text(encoding="utf-8").splitlines()[-1]
+        said = (
+            (
+                max(
+                    d
+                    for d in out.parent.iterdir()
+                    if d.is_dir() and d != out and (d / "estado.txt").exists()
+                )
+                / "estado.txt"
+            )
+            .read_text(encoding="utf-8")
+            .splitlines()[-1]
+        )
     except (OSError, IndexError, ValueError):
         return data
-    m = re.search(r"FALLO en el paso (\S+):|\] paso (\S+) ·", said)     # a cut run's last line is "[k/n] paso N · …"
+    m = re.search(
+        r"FALLO en el paso (\S+):|\] paso (\S+) ·", said
+    )  # a cut run's last line is "[k/n] paso N · …"
     for step in data["steps"]:
-        if m and step["n"] == (m[1] or m[2]) and (step["kind"] == "python" or step["n"] == "16.5"):
+        if (
+            m
+            and step["n"] == (m[1] or m[2])
+            and (step["kind"] == "python" or step["n"] == "16.5")
+        ):
             step["state"] = "pending"
             for t in step["tests"]:
                 t["state"] = "pending"
@@ -101,25 +119,37 @@ def plan(data: Mapping[str, Any], given: tail.Given = tail.NOTHING) -> tail.Walk
                 return halt(n, chainplan.BEFORE[cast(str, chainplan.HOW[n])])
             continue
         if n == tail.FIRST:
-            return tail.walk(data["steps"], do, stale, pending, data.get("family"), given)
+            return tail.walk(
+                data["steps"], do, stale, pending, data.get("family"), given
+            )
         if state == "running":
             return halt(n, "está en marcha")
         if step["kind"] == "python":
             keys = chainplan.tests(step, stale) if stale or state != "done" else []
             if keys:
-                do.append({"n": n, "title": step["title"], "kind": "python", "tests": keys})
-            else:   # done by its evidence, yet a run that failed halfway never ran these
-                owed = {"n": n, "title": step["title"], "kind": "python",
-                        "tests": chainplan.tests(step, False)}
+                do.append(
+                    {"n": n, "title": step["title"], "kind": "python", "tests": keys}
+                )
+            else:  # done by its evidence, yet a run that failed halfway never ran these
+                owed = {
+                    "n": n,
+                    "title": step["title"],
+                    "kind": "python",
+                    "tests": chainplan.tests(step, False),
+                }
             pending = n if n in chainplan.JUDGES else pending
             continue
         if n == chainplan.PHASE2 and not step.get("titles"):
             # An older project has no phase-2 tasks: 11.7 is skipped. The 11.5 judge, when 11.5
             # runs in this plan, goes now where the SQX step would have flushed it, or the 12
             # would take its place; a 11.5 left done is not judged again.
-            skipped.append({"n": n, "why": "el proyecto no lleva tareas de fase 2: se salta"})
+            skipped.append(
+                {"n": n, "why": "el proyecto no lleva tareas de fase 2: se salta"}
+            )
             if pending and any(a["n"] == pending for a in do):
-                do.append({"n": pending, "title": "juicio", "kind": "judge", "tests": []})
+                do.append(
+                    {"n": pending, "title": "juicio", "kind": "judge", "tests": []}
+                )
                 pending = None
             continue
         if state == "done" and not stale:
@@ -127,7 +157,9 @@ def plan(data: Mapping[str, Any], given: tail.Given = tail.NOTHING) -> tail.Walk
             continue
         if n in chainplan.FILLED_BY_NEXT:
             continue
-        if n == "16.5":       # the variant factory runs here, unattended (pipeline.autopilot.variants)
+        if (
+            n == "16.5"
+        ):  # the variant factory runs here, unattended (pipeline.autopilot.variants)
             if any(s["n"] == "19" and s["state"] == "missing" for s in data["steps"]):
                 # trimmed to spp: the batch would feed steps this project does not carry
                 return halt(n, "el proyecto no lleva sus tareas: acaba aquí")
@@ -141,14 +173,18 @@ def plan(data: Mapping[str, Any], given: tail.Given = tail.NOTHING) -> tail.Walk
             return halt(n, ELSEWHERE[n])
         if not step.get("stage") and n != chainplan.PHASE2:
             return halt(n, "no tiene tareas de SQX que el autopiloto sepa lanzar")
-        if state == "missing":      # a project trimmed to an earlier step (`workflow.trim`)
+        if state == "missing":  # a project trimmed to an earlier step (`workflow.trim`)
             return halt(n, "el proyecto no lleva sus tareas: acaba aquí")
         if pending:
             do.extend(judged())
             pending = None
-        if n == "13":     # T1 first, on who step 12's cut left: its batch is measured before the
+        if (
+            n == "13"
+        ):  # T1 first, on who step 12's cut left: its batch is measured before the
             # MC Retest's ingest is dated, and a run that fails in it leaves the 13 to do again
-            do.append({"n": n, "title": "vecinas (T1)", "kind": "neighbours", "tests": []})
+            do.append(
+                {"n": n, "title": "vecinas (T1)", "kind": "neighbours", "tests": []}
+            )
         do.append({"n": n, "title": step["title"], "kind": "sqx", "tests": []})
         stale = True
     return halt(None, "no queda ningún paso")

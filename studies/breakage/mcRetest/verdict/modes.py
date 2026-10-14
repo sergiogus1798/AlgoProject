@@ -129,10 +129,15 @@ def bimodality(values: np.ndarray, cfg: dict) -> Bimodality:
         on this battery it rejects in 20 of 40 runs and ranges the whole interval, unlike
         Jarque-Bera which rejected 40 of 40 and therefore said nothing.
     """
-    statistic, p_value = cast(tuple[float, float], diptest.diptest(np.asarray(values, dtype=np.float64)))
-    return {"dip": float(statistic), "p": float(p_value),
-            "bimodal": bool(p_value < cfg["modes"]["dip_alpha"]),
-            "n": int(values.size)}
+    statistic, p_value = cast(
+        tuple[float, float], diptest.diptest(np.asarray(values, dtype=np.float64))
+    )
+    return {
+        "dip": float(statistic),
+        "p": float(p_value),
+        "bimodal": bool(p_value < cfg["modes"]["dip_alpha"]),
+        "n": int(values.size),
+    }
 
 
 def shape(values: np.ndarray) -> Moments:
@@ -150,8 +155,10 @@ def shape(values: np.ndarray) -> Moments:
         they are the inputs to the Sharpe variance factor and they are what the dip result
         has to be read beside.
     """
-    return {"skew": float(stats.skew(values)),
-            "kurtosis": float(stats.kurtosis(values, fisher=False))}
+    return {
+        "skew": float(stats.skew(values)),
+        "kurtosis": float(stats.kurtosis(values, fisher=False)),
+    }
 
 
 def regime_collapse(trades: np.ndarray, original: float, cfg: dict) -> RegimeCollapse:
@@ -170,9 +177,12 @@ def regime_collapse(trades: np.ndarray, original: float, cfg: dict) -> RegimeCol
         not a diagnostic to glance at.
     """
     share = np.asarray(trades, dtype=np.float64) / original
-    return {"median_share": float(np.median(share)), "worst_share": float(share.min()),
-            "collapsed": bool(np.median(share) < cfg["gates"]["collapse_frac"]),
-            "min_trades": int(trades.min())}
+    return {
+        "median_share": float(np.median(share)),
+        "worst_share": float(share.min()),
+        "collapsed": bool(np.median(share) < cfg["gates"]["collapse_frac"]),
+        "min_trades": int(trades.min()),
+    }
 
 
 def describe(metrics: dict, original_trades: float, cfg: dict) -> Modes:
@@ -189,9 +199,17 @@ def describe(metrics: dict, original_trades: float, cfg: dict) -> Modes:
     """
     net = metrics["NetProfit"]
     if not discriminated(net, cfg):
-        return {"discriminated": False, "perturbed": perturbed(net), "outcomes": outcomes(net),
-                "trades": regime_collapse(metrics["NumberOfTrades"], original_trades, cfg)}
-    return {"discriminated": True, "perturbed": perturbed(net), "outcomes": outcomes(net),
-            "bimodality": bimodality(net, cfg),
-            "shape": shape(net),
-            "trades": regime_collapse(metrics["NumberOfTrades"], original_trades, cfg)}
+        return {
+            "discriminated": False,
+            "perturbed": perturbed(net),
+            "outcomes": outcomes(net),
+            "trades": regime_collapse(metrics["NumberOfTrades"], original_trades, cfg),
+        }
+    return {
+        "discriminated": True,
+        "perturbed": perturbed(net),
+        "outcomes": outcomes(net),
+        "bimodality": bimodality(net, cfg),
+        "shape": shape(net),
+        "trades": regime_collapse(metrics["NumberOfTrades"], original_trades, cfg),
+    }

@@ -12,23 +12,41 @@ from ui.desktop.theme import C, chip
 # owner acts on them: what stops the run, then what blocks authoring, then what only
 # stains the result. A figure nobody can define is a figure nobody should act on.
 TROUBLE = {
-    "broken": ("Esquema roto", C["dead"],
-               "La preflight sale con 3: el fichero no cuadra con su clase, o pide datos que "
-               "SQX no tiene."),
-    "pending": ("Bloquea la autoría", C["dead"],
-                "La preflight sale con 2 (regla dura 5): sin ese coste pactado no se escribe "
-                "ninguna plantilla ni proyecto para este activo."),
-    "segments": ("Tramos sin fechas", C["weak"],
-                 "No bloquea, pero `window()` se niega a inventar una ventana, así que una "
-                 "tarea sobre ese tramo falla al configurarse."),
-    "past_data": ("Ventana por delante de los datos", C["weak"],
-                  "Aviso solo: la ventana es correcta y los datos aún no están sincronizados. "
-                  "Es el estado normal del tramo más nuevo."),
-    "mc": ("Rangos MC Retest sin decidir", C["weak"],
-           "No bloquea: sólo vuelve ininterpretable esa tarea del MC Retest."),
-    "provisional": ("Costes provisionales", C["weak"],
-                    "Hay cifra y no bloquea, pero no está pactada con el bróker: TODO "
-                    "resultado con coste producido con ella arrastra esa advertencia."),
+    "broken": (
+        "Esquema roto",
+        C["dead"],
+        "La preflight sale con 3: el fichero no cuadra con su clase, o pide datos que "
+        "SQX no tiene.",
+    ),
+    "pending": (
+        "Bloquea la autoría",
+        C["dead"],
+        "La preflight sale con 2 (regla dura 5): sin ese coste pactado no se escribe "
+        "ninguna plantilla ni proyecto para este activo.",
+    ),
+    "segments": (
+        "Tramos sin fechas",
+        C["weak"],
+        "No bloquea, pero `window()` se niega a inventar una ventana, así que una "
+        "tarea sobre ese tramo falla al configurarse.",
+    ),
+    "past_data": (
+        "Ventana por delante de los datos",
+        C["weak"],
+        "Aviso solo: la ventana es correcta y los datos aún no están sincronizados. "
+        "Es el estado normal del tramo más nuevo.",
+    ),
+    "mc": (
+        "Rangos MC Retest sin decidir",
+        C["weak"],
+        "No bloquea: sólo vuelve ininterpretable esa tarea del MC Retest.",
+    ),
+    "provisional": (
+        "Costes provisionales",
+        C["weak"],
+        "Hay cifra y no bloquea, pero no está pactada con el bróker: TODO "
+        "resultado con coste producido con ella arrastra esa advertencia.",
+    ),
 }
 
 
@@ -48,7 +66,7 @@ class AssetCard(QWidget):
         top.setContentsMargins(0, 0, 0, 0)
         top.setSpacing(4)
         self.title = QLabel(objectName="h1")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-        self.bar = QHBoxLayout()   # the page puts its buttons here, beside the name
+        self.bar = QHBoxLayout()  # the page puts its buttons here, beside the name
         self.bar.addWidget(self.title)
         self.bar.addStretch()
         top.addLayout(self.bar)
@@ -84,19 +102,36 @@ class AssetCard(QWidget):
         self.data = data
         self.title.setText(data["symbol"])
         feed = data["data"]
-        self.chips.setText("  ".join([
-            chip(word(data["class"]), C["accent"], 15), chip(data["broker"], C["muted"]),
-            chip(data["sqx_symbol"], C["muted"]),
-            chip(f"Sesión {data['session'] or 'sin decidir'}",
-                 C["muted"] if data["session"] else C["dead"]),
-            chip(f"Datos {feed['from']} → {feed['to']}" if feed else "SQX no tiene este feed",
-                 C["muted"] if feed else C["dead"])]))
+        self.chips.setText(
+            "  ".join(
+                [
+                    chip(word(data["class"]), C["accent"], 15),
+                    chip(data["broker"], C["muted"]),
+                    chip(data["sqx_symbol"], C["muted"]),
+                    chip(
+                        f"Sesión {data['session'] or 'sin decidir'}",
+                        C["muted"] if data["session"] else C["dead"],
+                    ),
+                    chip(
+                        f"Datos {feed['from']} → {feed['to']}"
+                        if feed
+                        else "SQX no tiene este feed",
+                        C["muted"] if feed else C["dead"],
+                    ),
+                ]
+            )
+        )
         self.trouble.setText(self.complaints())
         # The why of each warning is a tooltip, not a sentence on the page (owner, 2026-09-30).
-        self.trouble.setToolTip("\n".join(f"{TROUBLE[k][0]}: {TROUBLE[k][2]}"
-                                          for k, v in data["problems"].items() if v))
+        self.trouble.setToolTip(
+            "\n".join(
+                f"{TROUBLE[k][0]}: {TROUBLE[k][2]}"
+                for k, v in data["problems"].items()
+                if v
+            )
+        )
         self.fill_costs()
-        self.footer.setText("")         # owner, 2026-09-30: no «proyectos que lo usan» line
+        self.footer.setText("")  # owner, 2026-09-30: no «proyectos que lo usan» line
 
     def complaints(self) -> str:
         """Everything the preflight would say about this asset.
@@ -109,20 +144,30 @@ class AssetCard(QWidget):
         if not bad:
             return chip("al día", C["promising"], 15)
         return "<br>".join(
-            chip(TROUBLE[k][0], TROUBLE[k][1]) + ("" if k == "mc" else   # the chip says it all
-                f"  <span style='color:{C['muted']}'>{', '.join(word(x) for x in v)}</span>")
-            for k, v in bad)
+            chip(TROUBLE[k][0], TROUBLE[k][1])
+            + (
+                ""
+                if k == "mc"
+                # the chip says it all
+                else f"  <span style='color:{C['muted']}'>{', '.join(word(x) for x in v)}</span>"
+            )
+            for k, v in bad
+        )
 
     def fill_costs(self) -> None:
         """Draw the cost table, in red what stops a project from being written."""
         rows = self.data["costs"]
         self.costs.setRowCount(len(rows))
         for i, c in enumerate(rows):
-            use = cell("Sin decidir" if c["use"] is None else val(c["use"]),
-                       "Lo que se aplica de verdad, en la unidad de su clase.")
+            use = cell(
+                "Sin decidir" if c["use"] is None else val(c["use"]),
+                "Lo que se aplica de verdad, en la unidad de su clase.",
+            )
             if c["use"] is None and c["required"]:
                 use.setForeground(Qt.GlobalColor.red)
-            for j, item in enumerate([cell(word(c["field"])), use, cell(word(c["unit"]))]):
+            for j, item in enumerate(
+                [cell(word(c["field"])), use, cell(word(c["unit"]))]
+            ):
                 item.setToolTip(f"{item.toolTip()}\n\nPor qué: {c['why']}")
                 self.costs.setItem(i, j, item)
         fit(self.costs)
@@ -135,8 +180,12 @@ class AssetCard(QWidget):
             _: Column; any cell of the row opens the same field.
         """
         if isinstance(self.data["costs"][row]["use"], dict):
-            QMessageBox.information(self, "Por tramo", "Este coste va por tramo (build, oos1 y "
-                                    "oos2): se edita en «Fichero entero».")
+            QMessageBox.information(
+                self,
+                "Por tramo",
+                "Este coste va por tramo (build, oos1 y "
+                "oos2): se edita en «Fichero entero».",
+            )
             return
         box = CostBox(self.data["symbol"], self.data["costs"][row])
         if box.exec():

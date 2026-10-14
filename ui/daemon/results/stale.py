@@ -28,7 +28,9 @@ def _signed(study: str, overrides: list[str], population: bool) -> str | None:
         return None
 
 
-def fresh(study: str, project: str, manifest: Path | None, population: bool) -> set[str]:
+def fresh(
+    study: str, project: str, manifest: Path | None, population: bool
+) -> set[str]:
     """Every hash a run of this study for this project would sign with today's config.
 
     The ways it can be run: with the runner's per-project substitutions (the gate's
@@ -47,21 +49,29 @@ def fresh(study: str, project: str, manifest: Path | None, population: bool) -> 
         The hashes; empty for a study without a config.
     """
     sets = [_project(study, project)]
-    recorded = (store.cached(manifest, _recorded) if manifest is not None and manifest.is_file()
-                else None)
+    recorded = (
+        store.cached(manifest, _recorded)
+        if manifest is not None and manifest.is_file()
+        else None
+    )
     if recorded is not None:
         sets.append(recorded)
     base = knobs.config(study, [], population)
     if base is None:
         return set()
     leaves = dict(knobs._leaves(base, ""))
-    choices = [[f"{k}={v}" for v in values] for k, values in knobs.CHOICES.items() if k in leaves]
+    choices = [
+        [f"{k}={v}" for v in values]
+        for k, values in knobs.CHOICES.items()
+        if k in leaves
+    ]
     picks = [list(p) for p in itertools.product(*choices)] if choices else [[]]
     return {h for s in sets for p in picks if (h := _signed(study, s + p, population))}
 
 
-def judge(study: str, config_hash: str, project: str, manifest: Path | None,
-          population: bool) -> tuple[bool, str | None]:
+def judge(
+    study: str, config_hash: str, project: str, manifest: Path | None, population: bool
+) -> tuple[bool, str | None]:
     """Whether one stored result is stale, and the hash it is compared with.
 
     Args:

@@ -15,12 +15,27 @@ from core.datapaths import projects_backup, tmp_dir
 from core.paths import worker_dir
 from core.symbols import current
 from sqx.inspect.keep_tasks import keep
-from sqx.projects import buildrules, cfxio, crosschecks, rankings, registry, source, summary
+from sqx.projects import (
+    buildrules,
+    cfxio,
+    crosschecks,
+    rankings,
+    registry,
+    source,
+    summary,
+)
 from sqx.projects.configure import configure, ignored_templates
 from sqx.projects.databanks import chain_databanks
 from sqx.projects.doctrine import blockers, borrow_session, caps
-from sqx.projects.patch import (GENERATIONS, install_template, set_caps, set_generation,
-                                set_simple, set_template, sync_databanks)
+from sqx.projects.patch import (
+    GENERATIONS,
+    install_template,
+    set_caps,
+    set_generation,
+    set_simple,
+    set_template,
+    sync_databanks,
+)
 from sqx.projects.registryxml import refresh_all
 from sqx.projects.resources import borrow_symbol, main_feed, refuse
 from sqx.projects import workflow as wf
@@ -40,16 +55,34 @@ def directions(template: Path) -> list[str]:
     """
     with zipfile.ZipFile(template) as z:
         text = z.read("strategy_Portfolio.xml").decode("utf-8")
-    return sorted({m.group(1) for m in ENTRY.finditer(text)
-                   if re.search(r'key="Enter\w*"', m.group(0))})
+    return sorted(
+        {
+            m.group(1)
+            for m in ENTRY.finditer(text)
+            if re.search(r'key="Enter\w*"', m.group(0))
+        }
+    )
 
 
-def build(name: str, template: Path | None, symbol: str, role: str, timeframe: str,
-          strategies: int, minutes: int, donor: Path, segment: str | None = None,
-          tasks: tuple = ("Build",), only: set | None = None,
-          session_from: Path | None = None, silence: tuple = (), workflow: bool = False,
-          acceptance: str = "study", side: str | None = None,
-          generation: str = GENERATIONS[0]) -> dict[str, Any]:
+def build(
+    name: str,
+    template: Path | None,
+    symbol: str,
+    role: str,
+    timeframe: str,
+    strategies: int,
+    minutes: int,
+    donor: Path,
+    segment: str | None = None,
+    tasks: tuple = ("Build",),
+    only: set | None = None,
+    session_from: Path | None = None,
+    silence: tuple = (),
+    workflow: bool = False,
+    acceptance: str = "study",
+    side: str | None = None,
+    generation: str = GENERATIONS[0],
+) -> dict[str, Any]:
     """Assemble one Builder project and install it, priced and dated from assets/.
 
     Args:
@@ -96,33 +129,54 @@ def build(name: str, template: Path | None, symbol: str, role: str, timeframe: s
         members = {n: z.read(n) for n in z.namelist()}
     # The donor was frozen before SQX's feeds were renamed (2026-10-01): its tasks name feeds
     # SQX no longer holds, so they are translated before anything reads them.
-    members = {n: current(b.decode("utf-8")).encode("utf-8") if n.endswith(".xml") else b
-               for n, b in members.items()}
-    if workflow:   # every retest measures and none filters, unless the owner names a filter
-        tasks, only = ("Build", "Retest"), wf.kept_members(members["config.xml"].decode("utf-8"))
+    members = {
+        n: current(b.decode("utf-8")).encode("utf-8") if n.endswith(".xml") else b
+        for n, b in members.items()
+    }
+    if (
+        workflow
+    ):  # every retest measures and none filters, unless the owner names a filter
+        tasks, only = (
+            ("Build", "Retest"),
+            wf.kept_members(members["config.xml"].decode("utf-8")),
+        )
         silence = tuple(set(silence) | {"Retest"})
     members, kept = keep(members, set(tasks), only=only)
     added = wf.complete(members) if workflow else []
 
-    borrowed = borrow_session(members, load(symbol)["session"], session_from)   # else SQX's registry
+    borrowed = borrow_session(
+        members, load(symbol)["session"], session_from
+    )  # else SQX's registry
     # The donor's own feed is read from its generator when it kept one, and otherwise
     # from any task: every task of a one-asset donor names the same chart.
     xml_members = [m for m in members if m.endswith(".xml") and m != "config.xml"]
-    build_member = next((m for m in xml_members if m.startswith("Build-")), xml_members[0])
+    build_member = next(
+        (m for m in xml_members if m.startswith("Build-")), xml_members[0]
+    )
     donor_feed = main_feed(members, build_member)
-    replaced = borrow_symbol(members, load(symbol)["sqx_symbol"], build_member, session_from)
-    refresh_all(members)   # the donor and any borrowed project predate the 2026-10-01 EETUS move
+    replaced = borrow_symbol(
+        members, load(symbol)["sqx_symbol"], build_member, session_from
+    )
+    refresh_all(
+        members
+    )  # the donor and any borrowed project predate the 2026-10-01 EETUS move
 
     config, synced = sync_databanks(members["config.xml"].decode("utf-8"))
-    members["config.xml"] = re.sub(r'<Project name="[^"]*"', f'<Project name="{name}"',
-                                   config, count=1).encode("utf-8")
-    kinds = {t.get("taskXMLFile"): t.get("type")
-             for t in el(ElementTree.fromstring(members["config.xml"]).find("Tasks"))}
+    members["config.xml"] = re.sub(
+        r'<Project name="[^"]*"', f'<Project name="{name}"', config, count=1
+    ).encode("utf-8")
+    kinds = {
+        t.get("taskXMLFile"): t.get("type")
+        for t in el(ElementTree.fromstring(members["config.xml"]).find("Tasks"))
+    }
     quiet = 0
     for member in [n for n in members if n.endswith(".xml") and n != "config.xml"]:
         text = members[member].decode("utf-8")
-        text = (set_template(text, hit(installed_template)) if template
-                else set_simple(text, hit(side)))
+        text = (
+            set_template(text, hit(installed_template))
+            if template
+            else set_simple(text, hit(side))
+        )
         text = set_caps(set_generation(text, generation), strategies, minutes)
         if kinds.get(member) in silence:
             text, n = crosschecks.silence(text)
@@ -152,22 +206,33 @@ def build(name: str, template: Path | None, symbol: str, role: str, timeframe: s
         with zipfile.ZipFile(staged) as z:
             final = {n: z.read(n) for n in z.namelist()}
         doc = next((c for _, c in costs.values() if c.get("generator")), {})
-        result = {"project": name, "install": install.name, "cfx": str(out),
-                 "timeframe": timeframe,
-                 "exit_bars": doc.get("exit_bars"), "session": load(symbol)["session"],
-                 "session_borrowed_from": str(session_from) if session_from else None,
-                 "session_borrowed_into": borrowed,
-                 "feed": load(symbol)["sqx_symbol"], "feed_replaced": replaced,
-                 "template": str(installed_template or f"Simple Strategy, {side}"),
-                 "generation": generation, "tasks": kept["kept"], "added": added,
-                 "databanks": kept["databanks"], "synced_to_disk": synced,
-                 "chain": chained,
-                 "max_strategies": strategies, "minutes": minutes, "silenced": quiet,
-                 "acceptance": accepted,
-                 "segments": {n: seg for n, (seg, _) in costs.items()},
-                 "template_ignored": ignored_templates(final),
-                 "provisional_costs": provisional(load(symbol)),
-                 "setups": {n: c.get("setups", 0) for n, (_, c) in costs.items()}}
+        result = {
+            "project": name,
+            "install": install.name,
+            "cfx": str(out),
+            "timeframe": timeframe,
+            "exit_bars": doc.get("exit_bars"),
+            "session": load(symbol)["session"],
+            "session_borrowed_from": str(session_from) if session_from else None,
+            "session_borrowed_into": borrowed,
+            "feed": load(symbol)["sqx_symbol"],
+            "feed_replaced": replaced,
+            "template": str(installed_template or f"Simple Strategy, {side}"),
+            "generation": generation,
+            "tasks": kept["kept"],
+            "added": added,
+            "databanks": kept["databanks"],
+            "synced_to_disk": synced,
+            "chain": chained,
+            "max_strategies": strategies,
+            "minutes": minutes,
+            "silenced": quiet,
+            "acceptance": accepted,
+            "segments": {n: seg for n, (seg, _) in costs.items()},
+            "template_ignored": ignored_templates(final),
+            "provisional_costs": provisional(load(symbol)),
+            "setups": {n: c.get("setups", 0) for n, (_, c) in costs.items()},
+        }
 
         refuse(result, final, donor_feed, replaced)
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -178,29 +243,67 @@ def build(name: str, template: Path | None, symbol: str, role: str, timeframe: s
 def main() -> None:
     """Build and install one Builder project, refusing on anything undecided."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("name", help="Test_<...> (functional test), Trade_<...> (real work) or Research_<...> (research queue)")
-    ap.add_argument("--purpose", required=True, help="one sentence: what this project is for")
+    ap.add_argument(
+        "name",
+        help="Test_<...> (functional test), Trade_<...> (real work) or Research_<...> (research queue)",
+    )
+    ap.add_argument(
+        "--purpose", required=True, help="one sentence: what this project is for"
+    )
     shape = ap.add_mutually_exclusive_group(required=True)
     shape.add_argument("--template", type=Path)
-    shape.add_argument("--simple", choices=("long", "short"), help="Simple Strategy, one side")
-    ap.add_argument("--family", help="Simple Strategy's idea family (required): a key of `_expected_sign`")
-    ap.add_argument("--random", action="store_true", help="random generation, not genetic")
+    shape.add_argument(
+        "--simple", choices=("long", "short"), help="Simple Strategy, one side"
+    )
+    ap.add_argument(
+        "--family",
+        help="Simple Strategy's idea family (required): a key of `_expected_sign`",
+    )
+    ap.add_argument(
+        "--random", action="store_true", help="random generation, not genetic"
+    )
     ap.add_argument("--symbol", required=True)
     ap.add_argument("--role", default="custodian")
-    ap.add_argument("--timeframe", required=True, help="M15, M30, H1 or H4 — every task gets it")
-    ap.add_argument("--max-strategies", type=int, help="default: databank.caps by prefix")
+    ap.add_argument(
+        "--timeframe", required=True, help="M15, M30, H1 or H4 — every task gets it"
+    )
+    ap.add_argument(
+        "--max-strategies", type=int, help="default: databank.caps by prefix"
+    )
     ap.add_argument("--minutes", type=int, help="default: databank.caps by prefix")
     ap.add_argument("--donor", type=Path, default=DONOR)
-    ap.add_argument("--session-from", type=Path, help="project.cfx to borrow the asset's session "
-                    "and feed from; default the newest one defining the feed — read only")
-    ap.add_argument("--segment", choices=("build", "oos1"),
-                    help="force one segment on every task; omit to take each task's own")
-    ap.add_argument("--tasks", default="Build", help="comma-separated donor task types to keep, e.g. Build,Retest")
-    ap.add_argument("--silence", default="", help="comma-separated task types whose acceptance goes off, "
-                    "e.g. Retest — the task then reads instead of filtering")
-    ap.add_argument("--only", help="comma-separated task XML files to narrow --tasks to, e.g. Build-Task3.xml")
-    ap.add_argument("--workflow", action="store_true", help="every workflow task, Build+OOS on")
-    ap.add_argument("--acceptance", choices=rankings.MODES, default="study", help="_study.yaml")
+    ap.add_argument(
+        "--session-from",
+        type=Path,
+        help="project.cfx to borrow the asset's session "
+        "and feed from; default the newest one defining the feed — read only",
+    )
+    ap.add_argument(
+        "--segment",
+        choices=("build", "oos1"),
+        help="force one segment on every task; omit to take each task's own",
+    )
+    ap.add_argument(
+        "--tasks",
+        default="Build",
+        help="comma-separated donor task types to keep, e.g. Build,Retest",
+    )
+    ap.add_argument(
+        "--silence",
+        default="",
+        help="comma-separated task types whose acceptance goes off, "
+        "e.g. Retest — the task then reads instead of filtering",
+    )
+    ap.add_argument(
+        "--only",
+        help="comma-separated task XML files to narrow --tasks to, e.g. Build-Task3.xml",
+    )
+    ap.add_argument(
+        "--workflow", action="store_true", help="every workflow task, Build+OOS on"
+    )
+    ap.add_argument(
+        "--acceptance", choices=rankings.MODES, default="study", help="_study.yaml"
+    )
     ap.add_argument("--json", action="store_true", help="emit the result as JSON only")
     a = ap.parse_args()
 
@@ -215,34 +318,65 @@ def main() -> None:
     builds = a.workflow or "Build" in a.tasks.split(",")
     sides = directions(a.template) if a.template else [a.simple]
     if builds and len(sides) != 1:
-        raise SystemExit(f"{a.template.name} abre operaciones en {sides or 'ninguna dirección'}: "
-                         "una plantilla, y un build, van en UNA sola dirección, long o short "
-                         "(regla dura del dueño, 2026-10-01).")
-    if gate := buildrules.early_gates(a.name, a.role, a.template, a.workflow, a.timeframe):
+        raise SystemExit(
+            f"{a.template.name} abre operaciones en {sides or 'ninguna dirección'}: "
+            "una plantilla, y un build, van en UNA sola dirección, long o short "
+            "(regla dura del dueño, 2026-10-01)."
+        )
+    if gate := buildrules.early_gates(
+        a.name, a.role, a.template, a.workflow, a.timeframe
+    ):
         raise SystemExit("\n".join(gate))
-    if a.template and (over := buildrules.over_the_cap(a.template, doctrine()["complexity"])):
+    if a.template and (
+        over := buildrules.over_the_cap(a.template, doctrine()["complexity"])
+    ):
         raise SystemExit("\n".join(over))
     asset = load(a.symbol)
     missing = pending(asset)
     if missing:
-        raise SystemExit(f"{a.symbol}: {', '.join(missing)} have no agreed value. Ask the owner "
-                         "before authoring anything for it (hard rule 5).")
+        raise SystemExit(
+            f"{a.symbol}: {', '.join(missing)} have no agreed value. Ask the owner "
+            "before authoring anything for it (hard rule 5)."
+        )
     held = cfxio.held(worker_dir(a.role) / "user/projects" / a.name / "project.cfx")
     if held:
-        raise SystemExit(f"the {held} is running and rewrites a project.cfx on exit. "
-                         f"Stop it: bin/sqx-worker.sh --role {held} stop")
+        raise SystemExit(
+            f"the {held} is running and rewrites a project.cfx on exit. "
+            f"Stop it: bin/sqx-worker.sh --role {held} stop"
+        )
     stop = blockers(asset, a.timeframe)
     if stop:
         raise SystemExit("\n".join(stop))
-    borrow = a.session_from or source.pick(a.donor, asset["session"], asset["sqx_symbol"])
+    borrow = a.session_from or source.pick(
+        a.donor, asset["session"], asset["sqx_symbol"]
+    )
     # `build` stages outside the install and moves in only after every gate (`refuse`).
-    done = build(a.name, a.template, a.symbol, a.role, a.timeframe,
-                 *caps(a.name, a.max_strategies, a.minutes), a.donor, a.segment, tuple(a.tasks.split(',')),
-                 set(a.only.split(',')) if a.only else None, borrow,
-                 tuple(x for x in a.silence.split(',') if x), a.workflow, a.acceptance,
-                 a.simple, GENERATIONS[a.random])
+    done = build(
+        a.name,
+        a.template,
+        a.symbol,
+        a.role,
+        a.timeframe,
+        *caps(a.name, a.max_strategies, a.minutes),
+        a.donor,
+        a.segment,
+        tuple(a.tasks.split(",")),
+        set(a.only.split(",")) if a.only else None,
+        borrow,
+        tuple(x for x in a.silence.split(",") if x),
+        a.workflow,
+        a.acceptance,
+        a.simple,
+        GENERATIONS[a.random],
+    )
 
-    registry.record(done, a.purpose, a.symbol, str(a.template or f"simple:{a.simple}"), a.family or "")
+    registry.record(
+        done,
+        a.purpose,
+        a.symbol,
+        str(a.template or f"simple:{a.simple}"),
+        a.family or "",
+    )
     if a.json:
         print(json.dumps(done, indent=2))
         return

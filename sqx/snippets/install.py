@@ -37,7 +37,9 @@ def pending(role: str) -> list[str]:
         same = there.exists() and there.read_bytes() == src.read_bytes()
         built = src.suffix != ".java" or (
             rel.relative_to("Snippets").with_suffix(".class").as_posix() in classes
-            and same and jar.stat().st_mtime >= there.stat().st_mtime)
+            and same
+            and jar.stat().st_mtime >= there.stat().st_mtime
+        )
         if not (same and built):
             out.append(rel.as_posix())
     return out
@@ -57,37 +59,55 @@ def main() -> None:
     """Install the snippets on one stopped worker: copy, one start to compile, stop, verify."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--role", required=True, choices=["conductor", "custodian"])
-    ap.add_argument("--check", action="store_true", help="solo decir qué falta; no toca nada")
+    ap.add_argument(
+        "--check", action="store_true", help="solo decir qué falta; no toca nada"
+    )
     a = ap.parse_args()
     todo = pending(a.role)
-    if not a.check and not worker.holding(worker_dir(a.role)) and toolproject.ensure(a.role):
+    if (
+        not a.check
+        and not worker.holding(worker_dir(a.role))
+        and toolproject.ensure(a.role)
+    ):
         print(f"{a.role}: creado el proyecto {toolproject.NAME}")
     if a.check or not todo:
-        print(f"{a.role}: " + (f"faltan {todo}" if todo else "todos los snippets compilados"))
+        print(
+            f"{a.role}: "
+            + (f"faltan {todo}" if todo else "todos los snippets compilados")
+        )
         raise SystemExit(1 if todo else 0)
     top = worker_dir(a.role)
     if worker.holding(top):
-        raise SystemExit(f"{a.role} está arrancado: los snippets se instalan con el worker parado")
-    for rel in DROPPED:                                     # a dropped snippet stays compiled otherwise
+        raise SystemExit(
+            f"{a.role} está arrancado: los snippets se instalan con el worker parado"
+        )
+    for rel in DROPPED:  # a dropped snippet stays compiled otherwise
         (top / "user/extend" / rel).unlink(missing_ok=True)
     for rel in set(todo) - set(DROPPED):
         (top / "user/extend" / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(SOURCES / rel, top / "user/extend" / rel)
     worker.start(a.role)
     try:
-        log = max((top / "user/log/StrategyQuant").glob("log_*.log"), key=lambda p: p.stat().st_mtime)
+        log = max(
+            (top / "user/log/StrategyQuant").glob("log_*.log"),
+            key=lambda p: p.stat().st_mtime,
+        )
         # the start's own lines: SQX compiles in its first seconds, before the port answers
         text = _started(log, max(0, log.stat().st_size - 200_000))
     finally:
         worker.stop(a.role, export=False)
-    last = text[text.rindex("Server started on port"):]
+    last = text[text.rindex("Server started on port") :]
     if FAILED in last:
-        raise SystemExit(f"{a.role}: SQX no compiló — ningún snippet se actualizó:\n"
-                         + last[last.index(FAILED):][:1500])
+        raise SystemExit(
+            f"{a.role}: SQX no compiló — ningún snippet se actualizó:\n"
+            + last[last.index(FAILED) :][:1500]
+        )
     left = pending(a.role)
     if left:
         raise SystemExit(f"{a.role}: siguen sin compilar {left}")
-    print(f"{a.role}: {len(todo)} snippet(s) compilados; el siguiente arranque ya los carga")
+    print(
+        f"{a.role}: {len(todo)} snippet(s) compilados; el siguiente arranque ya los carga"
+    )
 
 
 if __name__ == "__main__":

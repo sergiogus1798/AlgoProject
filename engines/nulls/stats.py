@@ -80,9 +80,11 @@ def measure(pnl: np.ndarray, names: list[str]) -> dict[str, np.ndarray]:
     wanted = set(names)
     net = pnl.sum(axis=1) if wanted & {"net", "retdd"} else np.empty(0)
     fall = drawdown(pnl) if wanted & {"dd", "retdd"} else np.empty(0)
-    build = {"net": lambda: net,
-             "sharpe": lambda: sharpe(pnl),
-             "pf": lambda: profit_factor(pnl),
-             "dd": lambda: fall,
-             "retdd": lambda: np.divide(net, fall, out=np.zeros_like(net), where=fall > 0)}
+    build = {
+        "net": lambda: net,
+        "sharpe": lambda: sharpe(pnl),
+        "pf": lambda: profit_factor(pnl),
+        "dd": lambda: fall,
+        "retdd": lambda: np.divide(net, fall, out=np.zeros_like(net), where=fall > 0),
+    }
     return {name: build[name]() for name in names}

@@ -8,7 +8,7 @@ from core.paths import harvest_dir, metrics_export
 from ui.daemon.loader.state import newest
 
 # Columns of either file that are labels, not figures.
-STRUCTURAL = ("Param Count", "TimeFrame", "DoF Ratio")      # measured in neither block
+STRUCTURAL = ("Param Count", "TimeFrame", "DoF Ratio")  # measured in neither block
 TEXT = {"strategy", "strategy_build", "structure", "Strategy Name", "Filters result"}
 
 
@@ -48,7 +48,7 @@ def export(project: str, databank: str) -> pd.DataFrame | None:
     if not path.is_file():
         return None
     got = _export(str(path), path.stat().st_mtime_ns, databank)
-    return None if got is None else got.copy()      # callers mutate the frame
+    return None if got is None else got.copy()  # callers mutate the frame
 
 
 @lru_cache(maxsize=8)
@@ -85,22 +85,41 @@ def swap_block(frame: pd.DataFrame, databank: str) -> pd.DataFrame:
     """
     role = "OOS" if databank.replace("_", " ").rsplit(" ", 1)[-1] == "OOS" else "IS"
     other = "IS" if role == "OOS" else "OOS"
-    mine = [c for c in frame.columns if c.endswith(f"({role})")
-            and not c.startswith(("Param Count", "TimeFrame", "DoF Ratio"))]
-    theirs = [c.replace(f"({role})", f"({other})") for c in mine if
-              c.replace(f"({role})", f"({other})") in frame.columns]
+    mine = [
+        c
+        for c in frame.columns
+        if c.endswith(f"({role})")
+        and not c.startswith(("Param Count", "TimeFrame", "DoF Ratio"))
+    ]
+    theirs = [
+        c.replace(f"({role})", f"({other})")
+        for c in mine
+        if c.replace(f"({role})", f"({other})") in frame.columns
+    ]
     if not mine or not theirs:
         return frame
     mine_filled = bool(frame[mine].fillna(0).abs().to_numpy().sum())
     theirs_filled = bool(frame[theirs].fillna(0).abs().to_numpy().sum())
     if mine_filled or not theirs_filled:
         return frame
-    if role == "IS":     # a build..oos1 task (Cross TF, Cross Market): real OOS1 figures, say so
-        return frame.rename(columns={c: c.replace("(OOS)", "(OOS1)") for c in frame.columns
-                                    if c.endswith("(OOS)") and not c.startswith(STRUCTURAL)})
-    swap = {c: c.replace(f"({role})", f"({other})") if c.endswith(f"({role})")
-            else c.replace(f"({other})", f"({role})") if c.endswith(f"({other})") else c
-            for c in frame.columns}
+    if (
+        role == "IS"
+    ):  # a build..oos1 task (Cross TF, Cross Market): real OOS1 figures, say so
+        return frame.rename(
+            columns={
+                c: c.replace("(OOS)", "(OOS1)")
+                for c in frame.columns
+                if c.endswith("(OOS)") and not c.startswith(STRUCTURAL)
+            }
+        )
+    swap = {
+        c: c.replace(f"({role})", f"({other})")
+        if c.endswith(f"({role})")
+        else c.replace(f"({other})", f"({role})")
+        if c.endswith(f"({other})")
+        else c
+        for c in frame.columns
+    }
     return frame.rename(columns=swap)
 
 
@@ -112,8 +131,12 @@ def empty_samples(frame: pd.DataFrame) -> pd.DataFrame:
     A blank reads «—», which is what it is.
     """
     for sample in ("IS", "OOS"):
-        cols = [c for c in frame.columns if c.endswith(f"({sample})")
-                and not c.startswith(("Param Count", "TimeFrame", "DoF Ratio"))]  # not measured
+        cols = [
+            c
+            for c in frame.columns
+            if c.endswith(f"({sample})")
+            and not c.startswith(("Param Count", "TimeFrame", "DoF Ratio"))
+        ]  # not measured
         if cols:
             none = (frame[cols].fillna(0) == 0).all(axis=1)
             frame.loc[none, cols] = float("nan")

@@ -8,8 +8,15 @@ from engines.weekly import flip
 from studies.optimisation.marketSurfaces.measure import order, power, premium
 
 NAN = float("nan")
-BLANK = {"rho": NAN, "p_mas": NAN, "p_menos": NAN, "ties": NAN, "prima": NAN, "madre": NAN,
-         "included": False}
+BLANK = {
+    "rho": NAN,
+    "p_mas": NAN,
+    "p_menos": NAN,
+    "ties": NAN,
+    "prima": NAN,
+    "madre": NAN,
+    "included": False,
+}
 
 
 def tails(observed: float, null: np.ndarray) -> flip.Tails:
@@ -24,9 +31,17 @@ def key(rho: float) -> str:
     return f"r{round(rho * 10):02d}"
 
 
-def measure(main: np.ndarray, best: np.ndarray, markets: dict[str, dict], table: pd.DataFrame,
-            mother: int | None, cfg: dict, seed: np.random.SeedSequence,
-            block_weeks: int | None = None, planted: bool = True) -> dict[str, Any]:
+def measure(
+    main: np.ndarray,
+    best: np.ndarray,
+    markets: dict[str, dict],
+    table: pd.DataFrame,
+    mother: int | None,
+    cfg: dict,
+    seed: np.random.SeedSequence,
+    block_weeks: int | None = None,
+    planted: bool = True,
+) -> dict[str, Any]:
     """Every number of one reading: the main market's window against one window of the others.
 
     The null draws one sign per week (or per block of weeks) and applies it to every variant
@@ -66,55 +81,100 @@ def measure(main: np.ndarray, best: np.ndarray, markets: dict[str, dict], table:
         if row["n"] < 3:
             rows.append(row | BLANK)
             continue
-        x, gross, net, top = main[keep], got["gross"][:, keep], got["net"][:, keep], best[keep]
+        x, gross, net, top = (
+            main[keep],
+            got["gross"][:, keep],
+            got["net"][:, keep],
+            best[keep],
+        )
         y, e = gross.sum(axis=0), net.sum(axis=0)
-        draws = [(flip.spearman(x, c @ gross), premium.premium(c @ net, top))
-                 for c in flip.chunks(signs, knobs["chunk"])]
+        draws = [
+            (flip.spearman(x, c @ gross), premium.premium(c @ net, top))
+            for c in flip.chunks(signs, knobs["chunk"])
+        ]
         rho_null[feed], pi_null[feed] = (np.concatenate(k) for k in zip(*draws))
         rho, ties = float(flip.spearman(x, y)), order.tie_share(y)
         found = tails(rho, rho_null[feed])
-        row |= {"rho": rho, "p_mas": found["p_mas"], "p_menos": found["p_menos"], "ties": ties,
-                "prima": float(premium.premium(e, top)),
-                "madre": 100 * float((e < e[keep[:mother].sum()]).mean())
-                if mother is not None and keep[mother] else NAN,
-                "included": bool(np.isfinite(rho) and row["n"] >= rule["min_common"]
-                                 and ties <= rule["max_ties"])}
+        row |= {
+            "rho": rho,
+            "p_mas": found["p_mas"],
+            "p_menos": found["p_menos"],
+            "ties": ties,
+            "prima": float(premium.premium(e, top)),
+            "madre": 100 * float((e < e[keep[:mother].sum()]).mean())
+            if mother is not None and keep[mother]
+            else NAN,
+            "included": bool(
+                np.isfinite(rho)
+                and row["n"] >= rule["min_common"]
+                and ties <= rule["max_ties"]
+            ),
+        }
         if planted and row["included"]:
             flipped = plant @ gross
-            grown[feed] = {r: power.planted(x, flipped, r) for r in cfg["power"]["rhos"]}
+            grown[feed] = {
+                r: power.planted(x, flipped, r) for r in cfg["power"]["rhos"]
+            }
         rows.append(row)
     frame = table.reset_index(drop=True).join(pd.DataFrame(rows).drop(columns="feed"))
     inside = frame["included"].to_numpy(bool)
 
-    def together(mask: np.ndarray, values: str, null: dict) -> tuple[float, np.ndarray, np.ndarray]:
+    def together(
+        mask: np.ndarray, values: str, null: dict
+    ) -> tuple[float, np.ndarray, np.ndarray]:
         """The weighted mean over the masked markets of one column, observed and per draw."""
         if not mask.any():
             return NAN, np.empty(0), np.empty(0)
         weight = order.weights(frame.loc[mask, "group"])
         draws = np.column_stack([null[f] for f in frame.loc[mask, "feed"]])
-        return (float(order.joint(frame.loc[mask, values].to_numpy(float), weight)),
-                order.joint(draws, weight), weight)
+        return (
+            float(order.joint(frame.loc[mask, values].to_numpy(float), weight)),
+            order.joint(draws, weight),
+            weight,
+        )
 
     def said(mask: np.ndarray) -> dict[str, Any]:
         """The joint rho of the masked markets with its tails, its weight and its count."""
         rho, null, weight = together(mask, "rho", rho_null)
-        return {"rho": rho, **tails(rho, null), "peso": float(weight.sum()),
-                "mercados": int(mask.sum())}
+        return {
+            "rho": rho,
+            **tails(rho, null),
+            "peso": float(weight.sum()),
+            "mercados": int(mask.sum()),
+        }
 
     rho, null, weight = together(inside, "rho", rho_null)
     pi, pi_draws, _ = together(inside, "prima", pi_null)
-    cut = (float(np.nanpercentile(pi_draws, cfg["premium"]["percentile"]))
-           if np.isfinite(pi_draws).any() else NAN)
+    cut = (
+        float(np.nanpercentile(pi_draws, cfg["premium"]["percentile"]))
+        if np.isfinite(pi_draws).any()
+        else NAN
+    )
     frame["weight"] = 0.0
     frame.loc[inside, "weight"] = weight
     feeds = list(frame.loc[inside, "feed"])
     return {
-        "mercados": frame, "orden": said(inside), "nulo": null,
-        "categorias": {c: said(inside & (frame["category"] == c).to_numpy())
-                       for c in frame["category"].unique()},
-        "prima": {"valor": pi, "nulo_p": cut,
-                  "bajo": bool(pi <= cut) if np.isfinite(pi) and np.isfinite(cut) else None},
+        "mercados": frame,
+        "orden": said(inside),
+        "nulo": null,
+        "categorias": {
+            c: said(inside & (frame["category"] == c).to_numpy())
+            for c in frame["category"].unique()
+        },
+        "prima": {
+            "valor": pi,
+            "nulo_p": cut,
+            "bajo": bool(pi <= cut) if np.isfinite(pi) and np.isfinite(cut) else None,
+        },
         "prima_nulo": pi_draws,
-        "potencia": {key(r): power.detected(
-            order.joint(np.column_stack([grown[f][r] for f in feeds]), weight), null,
-            knobs["alpha"]) for r in cfg["power"]["rhos"]} if planted and feeds else {}}
+        "potencia": {
+            key(r): power.detected(
+                order.joint(np.column_stack([grown[f][r] for f in feeds]), weight),
+                null,
+                knobs["alpha"],
+            )
+            for r in cfg["power"]["rhos"]
+        }
+        if planted and feeds
+        else {},
+    }

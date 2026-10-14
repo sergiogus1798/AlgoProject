@@ -11,7 +11,9 @@ from sqx.projects.workflow import CROSSTF_BUILD
 from studies.transfer.crossmarket.travel import cells, validity
 
 KEEP = ["strategy", "Open time", "Close time", "Type"]
-MAIN_DATABANK = "Results"      # where the gate's harvest keeps each mother's own build trades
+MAIN_DATABANK = (
+    "Results"  # where the gate's harvest keeps each mother's own build trades
+)
 
 
 def made(plan: pd.DataFrame) -> pd.DataFrame:
@@ -23,9 +25,23 @@ def made(plan: pd.DataFrame) -> pd.DataFrame:
     Returns:
         `mother`, `sibling`, `timeframe`, `ratio`, `rounding_shift`, `clamped`, `unverified`.
     """
-    rows = cast(pd.DataFrame, plan[plan["role"] == "scaled"]).rename(columns={"strategy": "sibling"})
-    return cast(pd.DataFrame, rows[["mother", "sibling", "timeframe", "ratio", "rounding_shift", "clamped",
-                 "unverified"]]).reset_index(drop=True)
+    rows = cast(pd.DataFrame, plan[plan["role"] == "scaled"]).rename(
+        columns={"strategy": "sibling"}
+    )
+    return cast(
+        pd.DataFrame,
+        rows[
+            [
+                "mother",
+                "sibling",
+                "timeframe",
+                "ratio",
+                "rounding_shift",
+                "clamped",
+                "unverified",
+            ]
+        ],
+    ).reset_index(drop=True)
 
 
 def oos1(plan: pd.DataFrame, packed: pd.DataFrame) -> pd.DataFrame:
@@ -39,7 +55,10 @@ def oos1(plan: pd.DataFrame, packed: pd.DataFrame) -> pd.DataFrame:
         KEEP; the control and unscaled cells of the old reading are left out.
     """
     cell = plan.loc[plan["role"].isin(["baseline", "scaled"]), ["strategy", "block"]]
-    return cast(pd.DataFrame, packed.astype({"strategy": str}).merge(cell, on=["strategy", "block"])[KEEP])
+    return cast(
+        pd.DataFrame,
+        packed.astype({"strategy": str}).merge(cell, on=["strategy", "block"])[KEEP],
+    )
 
 
 def cards(feed: str) -> tuple[dict | None, dict | None, str]:
@@ -85,10 +104,14 @@ def build_banks(directory: Path) -> dict[str, str]:
         return {}
     blocks = json.loads(found.read_text(encoding="utf-8"))
     return blocks.get("build_databanks") or {
-        tf: CROSSTF_BUILD["databank"].format(tf=tf) for tf in blocks.get("blocks", [])[1:]}
+        tf: CROSSTF_BUILD["databank"].format(tf=tf)
+        for tf in blocks.get("blocks", [])[1:]
+    }
 
 
-def build(export: Path, directory: Path, identity: dict, made: pd.DataFrame) -> pd.DataFrame | None:
+def build(
+    export: Path, directory: Path, identity: dict, made: pd.DataFrame
+) -> pd.DataFrame | None:
     """The build-window trades of the siblings and of their mothers, or None when phase 2 did not run.
 
     Args:
@@ -110,13 +133,30 @@ def build(export: Path, directory: Path, identity: dict, made: pd.DataFrame) -> 
     for tf, bank in banks.items():
         day = _day(export.parents[2] / bank.replace(" ", "_"), export.parent.name)
         if day:
-            got = pd.read_parquet(day / "trades.parquet").astype({"strategy": str})[KEEP]
-            frames.append(got[cast(pd.Series, got["strategy"]).isin(made.loc[made["timeframe"] == tf, "sibling"])])
+            got = pd.read_parquet(day / "trades.parquet").astype({"strategy": str})[
+                KEEP
+            ]
+            frames.append(
+                got[
+                    cast(pd.Series, got["strategy"]).isin(
+                        made.loc[made["timeframe"] == tf, "sibling"]
+                    )
+                ]
+            )
     if not frames:
         return None
-    harvest = _day(paths.harvest_dir(export.parents[2].name, MAIN_DATABANK, "x").parent, export.parent.name)
+    harvest = _day(
+        paths.harvest_dir(export.parents[2].name, MAIN_DATABANK, "x").parent,
+        export.parent.name,
+    )
     if harvest and (harvest / "trades.parquet").is_file():
         name = {i: m for m, i in identity.items() if i}
-        main = pd.read_parquet(harvest / "trades.parquet", columns=["identity", *KEEP[1:]])
-        frames.append(main.assign(strategy=main["identity"].map(name)).dropna(subset=["strategy"])[KEEP])  # pyright: ignore[reportArgumentType]  # pandas stubs reject a dict mapper
+        main = pd.read_parquet(
+            harvest / "trades.parquet", columns=["identity", *KEEP[1:]]
+        )
+        frames.append(
+            main.assign(strategy=main["identity"].map(name)).dropna(  # pyright: ignore[reportArgumentType]  # pandas stubs reject a dict mapper
+                subset=["strategy"]
+            )[KEEP]
+        )
     return pd.concat(frames, ignore_index=True)

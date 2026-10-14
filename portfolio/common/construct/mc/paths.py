@@ -26,8 +26,9 @@ from . import lay
 FIGURES = ("closed", "float_end", "low", "high", "opened")
 
 
-def indices(n_days: int, horizon: int, n_paths: int, mean_block: float,
-            rng: np.random.Generator) -> np.ndarray:
+def indices(
+    n_days: int, horizon: int, n_paths: int, mean_block: float, rng: np.random.Generator
+) -> np.ndarray:
     """The stationary bootstrap's day indices (Politis and Romano), int64 [n_paths, horizon].
 
     Each step starts a new block at a uniform day with probability 1 / `mean_block`, else
@@ -41,8 +42,13 @@ def indices(n_days: int, horizon: int, n_paths: int, mean_block: float,
     return (np.take_along_axis(origin, since, axis=1) + column - since) % n_days
 
 
-def daily_blocks(days: dict[str, np.ndarray], horizon: int, n_paths: int, mean_block: float,
-                 rng: np.random.Generator) -> dict[str, np.ndarray]:
+def daily_blocks(
+    days: dict[str, np.ndarray],
+    horizon: int,
+    n_paths: int,
+    mean_block: float,
+    rng: np.random.Generator,
+) -> dict[str, np.ndarray]:
     """D: the joint day table resampled in blocks of consecutive days.
 
     A drawn day brings its own closed P&L, intraday low and high and trades opened. Floating
@@ -63,12 +69,16 @@ def daily_blocks(days: dict[str, np.ndarray], horizon: int, n_paths: int, mean_b
         The five figures, [n_paths, horizon] (module docstring).
     """
     idx = indices(len(days["closed"]), horizon, n_paths, mean_block, rng)
-    out: dict[str, np.ndarray] = {k: np.asarray(days[k], dtype=np.float64)[idx] for k in ("closed", "low", "high")}
+    out: dict[str, np.ndarray] = {
+        k: np.asarray(days[k], dtype=np.float64)[idx] for k in ("closed", "low", "high")
+    }
     out["opened"] = np.asarray(days["opened"]).astype(np.int32)[idx]
     seam = np.ones(idx.shape, dtype=bool)
     seam[:, 1:] = idx[:, 1:] != idx[:, :-1] + 1
     column = np.arange(horizon)
-    first = np.take_along_axis(idx, np.maximum.accumulate(np.where(seam, column, 0), axis=1), axis=1)
+    first = np.take_along_axis(
+        idx, np.maximum.accumulate(np.where(seam, column, 0), axis=1), axis=1
+    )
     before = np.concatenate([[0.0], np.asarray(days["float_end"], dtype=np.float64)])
     floating = before[idx + 1] - before[first]
     last = np.zeros(idx.shape, dtype=bool)
@@ -98,8 +108,9 @@ def _empty(n_paths: int, horizon: int) -> dict[str, np.ndarray]:
     return out
 
 
-def trade_bootstrap(members: list[dict], horizon: int, n_paths: int,
-                    rng: np.random.Generator) -> dict[str, np.ndarray]:
+def trade_bootstrap(
+    members: list[dict], horizon: int, n_paths: int, rng: np.random.Generator
+) -> dict[str, np.ndarray]:
     """T1: each member's trades with replacement, end to end, members independent.
 
     A member's path starts inside a gap (a uniform share of a gap drawn from its history),
@@ -117,18 +128,40 @@ def trade_bootstrap(members: list[dict], horizon: int, n_paths: int,
     """
     short = [i for i, m in enumerate(members) if len(m["gaps"]) == 0]
     if short:
-        raise ValueError(f"T1: los miembros {short} tienen menos de 2 operaciones: sin huecos que sortear")
+        raise ValueError(
+            f"T1: los miembros {short} tienen menos de 2 operaciones: sin huecos que sortear"
+        )
     flat = lay.stack(members)
     out = _empty(n_paths, horizon)
     gens = path_gens(rng)
-    lay.t1(flat["start"], flat["n"], flat["pnl"], flat["low"], flat["high"], flat["level"],
-           flat["first"], flat["gaps"], flat["gap_first"], gens, members[0]["per_day"],
-           out["closed"], out["float_end"], out["low"], out["high"], out["opened"])
+    lay.t1(
+        flat["start"],
+        flat["n"],
+        flat["pnl"],
+        flat["low"],
+        flat["high"],
+        flat["level"],
+        flat["first"],
+        flat["gaps"],
+        flat["gap_first"],
+        gens,
+        members[0]["per_day"],
+        out["closed"],
+        out["float_end"],
+        out["low"],
+        out["high"],
+        out["opened"],
+    )
     return out
 
 
-def trade_blocks(members: list[dict], horizon: int, n_paths: int, window_days: int,
-                 rng: np.random.Generator) -> dict[str, np.ndarray]:
+def trade_blocks(
+    members: list[dict],
+    horizon: int,
+    n_paths: int,
+    window_days: int,
+    rng: np.random.Generator,
+) -> dict[str, np.ndarray]:
     """T2: windows of history; every member's trades that opened in one, together, each whole.
 
     A window is a run of consecutive server days of geometric length, mean `window_days`, the
@@ -148,9 +181,24 @@ def trade_blocks(members: list[dict], horizon: int, n_paths: int, window_days: i
     flat = lay.by_day(lay.stack(members), members[0]["n_days"])
     out = _empty(n_paths, horizon)
     gens = path_gens(rng)
-    lay.t2(flat["start"], flat["n"], flat["pnl"], flat["open_slot"], flat["low"], flat["high"],
-           flat["level"], flat["day_ptr"], gens, float(window_days), members[0]["per_day"],
-           out["closed"], out["float_end"], out["low"], out["high"], out["opened"])
+    lay.t2(
+        flat["start"],
+        flat["n"],
+        flat["pnl"],
+        flat["open_slot"],
+        flat["low"],
+        flat["high"],
+        flat["level"],
+        flat["day_ptr"],
+        gens,
+        float(window_days),
+        members[0]["per_day"],
+        out["closed"],
+        out["float_end"],
+        out["low"],
+        out["high"],
+        out["opened"],
+    )
     return out
 
 
@@ -159,7 +207,20 @@ def history(members: list[dict]) -> dict[str, np.ndarray]:
     flat = lay.stack(members)
     n_days = members[0]["n_days"]
     out = {k: v[0] for k, v in _empty(1, n_days).items()}
-    lay.replay(flat["start"], flat["n"], flat["pnl"], flat["open_day"], flat["open_slot"],
-               flat["low"], flat["high"], flat["level"], members[0]["per_day"], out["closed"],
-               out["float_end"], out["low"], out["high"], out["opened"])
+    lay.replay(
+        flat["start"],
+        flat["n"],
+        flat["pnl"],
+        flat["open_day"],
+        flat["open_slot"],
+        flat["low"],
+        flat["high"],
+        flat["level"],
+        members[0]["per_day"],
+        out["closed"],
+        out["float_end"],
+        out["low"],
+        out["high"],
+        out["opened"],
+    )
     return out

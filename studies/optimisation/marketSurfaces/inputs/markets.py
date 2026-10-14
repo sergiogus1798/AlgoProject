@@ -7,7 +7,7 @@ import pandas as pd
 from core import assetdata, assetmarkets
 
 PROVISIONAL = "PROVISIONAL"
-GROUPS = "near_identical"      # the optional key of an asset's block in _markets.yaml
+GROUPS = "near_identical"  # the optional key of an asset's block in _markets.yaml
 
 
 def declared(symbol: str) -> pd.DataFrame:
@@ -22,12 +22,23 @@ def declared(symbol: str) -> pd.DataFrame:
         near-identical markets in the block's `near_identical` list, -1 when it has none).
     """
     block = assetmarkets.markets(symbol)
-    group = {feed: i for i, feeds in enumerate(block.get(GROUPS) or []) for feed in feeds}
+    group = {
+        feed: i for i, feeds in enumerate(block.get(GROUPS) or []) for feed in feeds
+    }
     return pd.DataFrame(
-        [{"feed": m["feed"], "category": category,
-          "data_from": m["data_from"].isoformat() if isinstance(m.get("data_from"), date) else None,
-          "group": group.get(m["feed"], -1)}
-         for category, rows in block["categories"].items() for m in rows or []])
+        [
+            {
+                "feed": m["feed"],
+                "category": category,
+                "data_from": m["data_from"].isoformat()
+                if isinstance(m.get("data_from"), date)
+                else None,
+                "group": group.get(m["feed"], -1),
+            }
+            for category, rows in block["categories"].items()
+            for m in rows or []
+        ]
+    )
 
 
 def provisional(feed: str) -> bool:

@@ -8,8 +8,18 @@ import pandas as pd
 
 # What the window shows of tf_siblings.parquet (per sibling timeframe) and tf_mothers.csv (per
 # mother, on every one of her rows), under a `tf_` prefix; the helpers in ui/text/columnhelp_fields.
-SIBLING = ("t0", "t1", "t2a", "t2b", "z_frec", "z_delta", "ret", "z_build", "ret_build",
-           "ret_build_pct")
+SIBLING = (
+    "t0",
+    "t1",
+    "t2a",
+    "t2b",
+    "z_frec",
+    "z_delta",
+    "ret",
+    "z_build",
+    "ret_build",
+    "ret_build_pct",
+)
 MOTHER = ("state", "phase1", "t3")
 
 
@@ -37,8 +47,15 @@ def merge(rows: list[dict], folder: Path) -> list[dict]:
         return rows
     with both[0].open(encoding="utf-8", newline="") as fh:
         mothers = {r["strategy"]: r for r in csv.DictReader(fh)}
-    siblings = pd.read_parquet(both[1]).set_index(["mother", "timeframe"]).to_dict("index")
-    return [row | {f"tf_{c}": text(siblings.get((row["mother"], row["timeframe"]), {}).get(c))
-                   for c in SIBLING}
-            | {f"tf_{c}": mothers.get(row["mother"], {}).get(c, "") for c in MOTHER}
-            for row in rows]
+    siblings = (
+        pd.read_parquet(both[1]).set_index(["mother", "timeframe"]).to_dict("index")
+    )
+    return [
+        row
+        | {
+            f"tf_{c}": text(siblings.get((row["mother"], row["timeframe"]), {}).get(c))
+            for c in SIBLING
+        }
+        | {f"tf_{c}": mothers.get(row["mother"], {}).get(c, "") for c in MOTHER}
+        for row in rows
+    ]

@@ -13,7 +13,7 @@ from core.xmlget import hit
 TASK_REF = re.compile(r'taskXMLFile="([^"]+)"')
 VERSION = re.compile(r'version="([0-9]+\.[0-9]+)"')
 # A field re-encoded UTF-8 as CP1252 always ends up carrying these.
-MOJIBAKE = re.compile(r'[ÃÂ][\x80-\xbfŒ-ž–-™]')
+MOJIBAKE = re.compile(r"[ÃÂ][\x80-\xbfŒ-ž–-™]")
 
 
 def decode(text: str) -> str:
@@ -82,7 +82,9 @@ def version_of(cfx: Path) -> str:
         The version attribute of config.xml, e.g. "142.2399".
     """
     with zipfile.ZipFile(cfx) as z:
-        return hit(VERSION.search(z.read("config.xml").decode("utf-8", "replace"))).group(1)
+        return hit(
+            VERSION.search(z.read("config.xml").decode("utf-8", "replace"))
+        ).group(1)
 
 
 def report(install: Path) -> list[dict]:
@@ -102,9 +104,16 @@ def report(install: Path) -> list[dict]:
         if not cfx.exists():
             continue
         declared, missing = members(cfx)
-        rows.append({"project": d.name, "version": version_of(cfx), "tasks": len(declared),
-                     "missing": missing, "mojibake": mojibake(cfx),
-                     "backup": (d / "project_backup.cfx").exists()})
+        rows.append(
+            {
+                "project": d.name,
+                "version": version_of(cfx),
+                "tasks": len(declared),
+                "missing": missing,
+                "mojibake": mojibake(cfx),
+                "backup": (d / "project_backup.cfx").exists(),
+            }
+        )
     build = max(r["version"] for r in rows)
     for r in rows:
         r["stale"] = r["version"] != build
@@ -114,7 +123,9 @@ def report(install: Path) -> list[dict]:
 def main() -> None:
     """Print the health table, or the whole thing as JSON."""
     ap = argparse.ArgumentParser()
-    ap.add_argument("--install", type=Path, default=MASTER, help="default is the master")
+    ap.add_argument(
+        "--install", type=Path, default=MASTER, help="default is the master"
+    )
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
@@ -127,12 +138,19 @@ def main() -> None:
     print(f"{a.install} — newest project stamp {build}\n")
     print(f"{'project':34} {'version':9} {'tasks':>5} {'moji':>5}  state")
     for r in rows:
-        state = "broken: missing " + ", ".join(r["missing"]) if r["missing"] else \
-                "older than the install" if r["stale"] else "ok"
+        state = (
+            "broken: missing " + ", ".join(r["missing"])
+            if r["missing"]
+            else "older than the install"
+            if r["stale"]
+            else "ok"
+        )
         if r["missing"] and r["backup"]:
             state += "  (project_backup.cfx present)"
-        print(f"{r['project']:34} {r['version']:9} {r['tasks']:>5} "
-              f"{len(r['mojibake']):>5}  {state}")
+        print(
+            f"{r['project']:34} {r['version']:9} {r['tasks']:>5} "
+            f"{len(r['mojibake']):>5}  {state}"
+        )
     mangled = {k: v for r in rows for k, v in r["mojibake"].items()}
     if mangled:
         print("\nMangled fields, decoded:")

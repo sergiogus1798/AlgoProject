@@ -10,8 +10,10 @@ from ui.desktop.portfolios.studies import ArchivedStudies
 from ui.desktop.studypage.net import fetch
 from ui.desktop.workspace.ficha import Ficha
 
-FROZEN = ("archivada: aquí no se calcula nada. Para calcular, ábrela desde su proyecto en "
-          "Proyectos.")
+FROZEN = (
+    "archivada: aquí no se calcula nada. Para calcular, ábrela desde su proyecto en "
+    "Proyectos."
+)
 
 
 class ImportedFicha(Ficha):
@@ -43,22 +45,30 @@ class ImportedFicha(Ficha):
         """
         self.version = shown["version"]
         self.opened_from = "PORTFOLIOS"
-        self.where = {"project": shown["project"], "strategy": shown["strategy"],
-                      "databank": shown["databank"], "identity": shown["identity"],
-                      "asset": shown["symbol"]}
+        self.where = {
+            "project": shown["project"],
+            "strategy": shown["strategy"],
+            "databank": shown["databank"],
+            "identity": shown["identity"],
+            "asset": shown["symbol"],
+        }
         self.compute.where = self.where
         self.title.setText(shown.get("label") or shown["strategy"])
         self.banner.setText(shown.get("banner", ""))
         self.banner.setVisible(bool(shown.get("banner")))
         if "workflow" not in shown:
             self.series.hide()
-        self.origin.setText(f"   importada del archivo · versión {shown['version']} · paso "
-                            f"{shown['step']}   ·   {shown['project']}   ·   {shown['databank']}")
+        self.origin.setText(
+            f"   importada del archivo · versión {shown['version']} · paso "
+            f"{shown['step']}   ·   {shown['project']}   ·   {shown['databank']}"
+        )
         self.origin.setToolTip(f"Identidad: {shown['identity']}")
         self.frozen.load(shown)
         self.say("leyendo el archivo…")
         where = dict(self.where)
-        background.run(lambda: self.ask(where), self.paint, key=f"ficha:{id(self)}", owner=self)
+        background.run(
+            lambda: self.ask(where), self.paint, key=f"ficha:{id(self)}", owner=self
+        )
 
     def open_series(self, workflow: str, names: list[str], index: int) -> str:
         """Open one strategy of a saved workflow and arm «anterior / siguiente» over `names`.
@@ -76,7 +86,9 @@ class ImportedFicha(Ficha):
 
     def go(self, index: int) -> str:
         """Show the index-th strategy of the series (`/api/campaign/open`)."""
-        shown = fetch("campaign/open", workflow=self.workflow, strategy=self.names[index])
+        shown = fetch(
+            "campaign/open", workflow=self.workflow, strategy=self.names[index]
+        )
         if "error" in shown:
             return shown["error"]
         self.open(shown)
@@ -86,11 +98,15 @@ class ImportedFicha(Ficha):
     def ask(self, where: dict) -> dict[str, Any]:
         """Off the GUI thread: the ficha's three reads, on the archived version."""
         q = {k: where[k] for k in ("project", "databank", "identity")} | {
-            "source": "archive", "version": self.version}
-        return {"key": (where["project"], where["strategy"]),
-                "curve": fetch("strategy/costcurve", **q),
-                "stats": fetch("strategy/stats", **q),
-                "meta": fetch("strategy/meta", **q)}
+            "source": "archive",
+            "version": self.version,
+        }
+        return {
+            "key": (where["project"], where["strategy"]),
+            "curve": fetch("strategy/costcurve", **q),
+            "stats": fetch("strategy/stats", **q),
+            "meta": fetch("strategy/meta", **q),
+        }
 
     def lower(self, live: bool, family: str, study: str | None = None) -> None:
         """The frozen studies stand where the study tabs would: nothing to switch."""

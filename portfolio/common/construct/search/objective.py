@@ -6,7 +6,7 @@ import pandas as pd
 from portfolio.common.construct import weights
 from portfolio.common.construct.verdict import metrics
 
-SHIFT_MINIMUM = ("metric",)      # owner 2026-10-05: the only reading (`real.shift_minimum`)
+SHIFT_MINIMUM = ("metric",)  # owner 2026-10-05: the only reading (`real.shift_minimum`)
 
 
 def masks(combos: np.ndarray, n: int) -> np.ndarray:
@@ -17,7 +17,9 @@ def masks(combos: np.ndarray, n: int) -> np.ndarray:
     return out
 
 
-def shifted(paths: np.ndarray, dates: pd.DatetimeIndex, cfg: dict) -> list[dict[str, np.ndarray]]:
+def shifted(
+    paths: np.ndarray, dates: pd.DatetimeIndex, cfg: dict
+) -> list[dict[str, np.ndarray]]:
     """`metrics.table` of daily P&L paths on a window with its start shifted 0..n months.
 
     A metric of one fixed window moves with where the window is cut (Faith: 10-15 % from a
@@ -35,12 +37,19 @@ def shifted(paths: np.ndarray, dates: pd.DatetimeIndex, cfg: dict) -> list[dict[
     tables = []
     for months in range(cfg["real"]["shift_months"] + 1):
         first = dates.searchsorted(dates[0] + pd.DateOffset(months=months))
-        tables.append(metrics.table(paths[:, first:], pd.DatetimeIndex(dates[first:]), cfg["real"]["losing_year"]))
+        tables.append(
+            metrics.table(
+                paths[:, first:],
+                pd.DatetimeIndex(dates[first:]),
+                cfg["real"]["losing_year"],
+            )
+        )
     return tables
 
 
-def measure(unit: np.ndarray, dates: pd.DatetimeIndex, members: np.ndarray,
-            cfg: dict) -> list[dict[str, np.ndarray]]:
+def measure(
+    unit: np.ndarray, dates: pd.DatetimeIndex, members: np.ndarray, cfg: dict
+) -> list[dict[str, np.ndarray]]:
     """`shifted()` of each combination's path on build, the weights set once on the whole of it.
 
     Args:
@@ -52,17 +61,25 @@ def measure(unit: np.ndarray, dates: pd.DatetimeIndex, members: np.ndarray,
     Returns:
         `shifted()`'s list for the P combinations.
     """
-    return shifted(weights.matrix(pd.DataFrame(unit.T, index=dates), members, cfg) @ unit, dates, cfg)
+    return shifted(
+        weights.matrix(pd.DataFrame(unit.T, index=dates), members, cfg) @ unit,
+        dates,
+        cfg,
+    )
 
 
 def percentile(values: np.ndarray, reference: np.ndarray) -> np.ndarray:
     """Share of `reference` at or below each value, ties counted half."""
     ordered = np.sort(reference)
-    return (np.searchsorted(ordered, values, "left")
-            + np.searchsorted(ordered, values, "right")) / (2 * ordered.size)
+    return (
+        np.searchsorted(ordered, values, "left")
+        + np.searchsorted(ordered, values, "right")
+    ) / (2 * ordered.size)
 
 
-def rank_score(table: dict[str, np.ndarray], reference: dict[str, np.ndarray]) -> np.ndarray:
+def rank_score(
+    table: dict[str, np.ndarray], reference: dict[str, np.ndarray]
+) -> np.ndarray:
     """The score: the mean over the four metrics of each one's signed rank in the reference.
 
     A rank needs a set to be a rank in. `reference` is that set, fixed for the whole run, so

@@ -1,12 +1,18 @@
 """The status-bar strip of jobs: what runs, a 0-100 % bar for each, what waits, and a cancel."""
 
-
 from typing import Any
 import time
 
 import httpx
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QMessageBox, QPushButton, QSizePolicy, QWidget
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QWidget,
+)
 
 from ui.desktop import background, client, jobsfeed
 from ui.desktop.durations import share
@@ -15,12 +21,17 @@ from ui.desktop.ops.progressbar import bar
 from ui.desktop.theme import C, MONO, T, clear
 
 POLL_MS = 2000
-SQX_EVERY = 8               # the SQX runs are read every 8th poll (16 s): each read may ask a
+SQX_EVERY = 8  # the SQX runs are read every 8th poll (16 s): each read may ask a
 #                             running worker for its status line, and a task moves slowly
-SHOWN = 4                   # chips beyond this collapse into «+N»
+SHOWN = 4  # chips beyond this collapse into «+N»
 BAR_PX = 64
 ROLE = {"custodian": "custodio", "conductor": "conductor"}
-SQX_JOBS = ("launch", "advance", "crear proyecto", "crear plantilla")   # ✕ asks before these
+SQX_JOBS = (
+    "launch",
+    "advance",
+    "crear proyecto",
+    "crear plantilla",
+)  # ✕ asks before these
 
 
 def waiting(job: dict) -> bool:
@@ -59,8 +70,11 @@ def sqx_text(run: dict) -> str:
     Returns:
         `SQX custodio · MCR 3 Slippage · 7 / 20`, the count only when the worker gave one.
     """
-    count = (f" · {num(run['done'])} / {num(run['total']) if run['total'] else '·'}"
-             if run.get("done") is not None else "")
+    count = (
+        f" · {num(run['done'])} / {num(run['total']) if run['total'] else '·'}"
+        if run.get("done") is not None
+        else ""
+    )
     return f"SQX {ROLE.get(run['role'], run['role'])} · {run.get('task') or '…'}{count}"
 
 
@@ -73,13 +87,17 @@ class JobsBar(QWidget):
         self.lay = QHBoxLayout(self)
         self.lay.setContentsMargins(6, 0, 6, 0)
         self.lay.setSpacing(6)
-        self.setStyleSheet(f"font-family: {MONO}; font-size: 12px;")  # never widens the window:
-        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)  # 4 long chips made it 3.8k px
+        self.setStyleSheet(
+            f"font-family: {MONO}; font-size: 12px;"
+        )  # never widens the window:
+        self.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred
+        )  # 4 long chips made it 3.8k px
         self.poll = QTimer(self)
         self.poll.timeout.connect(self.refresh)
         self.poll.start(POLL_MS)
-        self.sqx: list[dict] = []           # the SQX runs as last read
-        self.last: list | None = None       # the job list last drawn
+        self.sqx: list[dict] = []  # the SQX runs as last read
+        self.last: list | None = None  # the job list last drawn
         self.ticks = 0
         self.show_jobs([])
 
@@ -90,8 +108,12 @@ class JobsBar(QWidget):
 
         def read() -> dict[str, Any]:
             """Both reads, on the pool's thread."""
-            return {"at": time.monotonic(), "jobs": client.get("jobs")["jobs"],
-                    "sqx": client.get("ops/sqx")["runs"] if sqx else None}
+            return {
+                "at": time.monotonic(),
+                "jobs": client.get("jobs")["jobs"],
+                "sqx": client.get("ops/sqx")["runs"] if sqx else None,
+            }
+
         background.run(read, self.landed, key=f"jobsbar:{id(self)}")
 
     def landed(self, got: dict) -> None:
@@ -105,7 +127,7 @@ class JobsBar(QWidget):
         if got["sqx"] is not None:
             self.sqx = got["sqx"]
         if got["jobs"] == self.last and not moved:
-            return                          # nothing moved: no rebuild of the strip every 2 s
+            return  # nothing moved: no rebuild of the strip every 2 s
         self.last = got["jobs"]
         self.show_jobs(got["jobs"])
 
@@ -131,15 +153,24 @@ class JobsBar(QWidget):
         live = [j for j in jobs if j.get("rc") is None]
         # The furthest first: a job that prints no PROGRESS sits at 0 % until it ends, and
         # four of those must not hide the one whose bar moves.
-        running = sorted((j for j in live if not waiting(j)),
-                         key=lambda j: -(j.get("percent") or 0))
+        running = sorted(
+            (j for j in live if not waiting(j)), key=lambda j: -(j.get("percent") or 0)
+        )
         queued = sorted((j for j in live if waiting(j)), key=lambda j: j["queued"])
         # §4.3/§16 (owner, 2026-09-30): «un trabajo terminó con error» said nothing about which
         # one or why. Newest first, since that is the one the owner just watched fail.
-        failed = sorted((j for j in jobs if j.get("rc") not in (None, 0)),
-                        key=lambda j: j["started"], reverse=True)
-        self.lay.addWidget(QLabel("Trabajos", styleSheet=f"color: {T['faint']}; "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-                                                          "font-weight: 700;"))
+        failed = sorted(
+            (j for j in jobs if j.get("rc") not in (None, 0)),
+            key=lambda j: j["started"],
+            reverse=True,
+        )
+        self.lay.addWidget(
+            QLabel(
+                "Trabajos",
+                styleSheet=f"color: {T['faint']}; "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+                "font-weight: 700;",
+            )
+        )
         head = f"{num(len(running) + len(self.sqx))} en marcha · {num(len(queued))} en cola"
         self.lay.addWidget(QLabel(head, styleSheet=f"color: {T['text']};"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         for run in self.sqx:
@@ -152,8 +183,12 @@ class JobsBar(QWidget):
         for job in failed[:SHOWN]:
             self.lay.addWidget(self.failed_chip(job))
         if len(failed) > SHOWN:
-            self.lay.addWidget(QLabel(f"+{num(len(failed) - SHOWN)} más con error",  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-                                      styleSheet=f"color: {C['dead']};"))
+            self.lay.addWidget(
+                QLabel(
+                    f"+{num(len(failed) - SHOWN)} más con error",  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+                    styleSheet=f"color: {C['dead']};",
+                )
+            )
 
     def failed_chip(self, job: dict) -> QWidget:
         """One failed job on the strip itself: study, asset/market and why (§4.3/§16).
@@ -165,13 +200,21 @@ class JobsBar(QWidget):
             The chip.
         """
         where = job.get("asset") or job.get("databank") or ""
-        why = next((t for t in reversed(job.get("tail") or []) if t.strip()), job.get("state", ""))
+        why = next(
+            (t for t in reversed(job.get("tail") or []) if t.strip()),
+            job.get("state", ""),
+        )
         head = f"{job.get('study') or job['label']}" + (f" · {where}" if where else "")
-        text = QLabel(f"⚠ {head}: {why}"[:60], styleSheet=f"color: {C['dead']}; border: 1px "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-                     f"solid {C['dead']}; border-radius: 3px; padding: 1px 6px;")
-        text.setToolTip(f"{job['label']} · {job.get('lane') or 'python'} · {job.get('state', '')}"
-                        f"\n{job.get('project') or ''} {where}\n"
-                        + "\n".join(job.get("tail", [])[-8:]))
+        text = QLabel(
+            f"⚠ {head}: {why}"[:60],
+            styleSheet=f"color: {C['dead']}; border: 1px "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+            f"solid {C['dead']}; border-radius: 3px; padding: 1px 6px;",
+        )
+        text.setToolTip(
+            f"{job['label']} · {job.get('lane') or 'python'} · {job.get('state', '')}"
+            f"\n{job.get('project') or ''} {where}\n"
+            + "\n".join(job.get("tail", [])[-8:])
+        )
         return text
 
     def chip(self, job: dict) -> QWidget:
@@ -188,19 +231,30 @@ class JobsBar(QWidget):
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(2)
         colour = C["pending"] if waiting(job) else C["accent"]
-        text = QLabel(chip_text(job), styleSheet=f"color: {colour}; border: 1px solid "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-                                                  f"{colour}; border-radius: 3px; padding: 1px 6px;")
-        text.setToolTip(f"{job['label']} · {job.get('lane') or 'python'} · empezó "
-                        f"{job['started']}\n{job.get('project') or ''} "
-                        f"{job.get('databank') or ''}\n" + "\n".join(job.get("tail", [])[-4:]))
-        stop = QPushButton("✕", toolTip="Cancelar este trabajo", fixedWidth=24,  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-                           styleSheet="padding: 0;")
+        text = QLabel(
+            chip_text(job),
+            styleSheet=f"color: {colour}; border: 1px solid "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+            f"{colour}; border-radius: 3px; padding: 1px 6px;",
+        )
+        text.setToolTip(
+            f"{job['label']} · {job.get('lane') or 'python'} · empezó "
+            f"{job['started']}\n{job.get('project') or ''} "
+            f"{job.get('databank') or ''}\n" + "\n".join(job.get("tail", [])[-4:])
+        )
+        stop = QPushButton(
+            "✕",
+            toolTip="Cancelar este trabajo",
+            fixedWidth=24,  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+            styleSheet="padding: 0;",
+        )
         stop.clicked.connect(lambda: self.cancel(job["id"], job["label"]))
         row.addWidget(text)
         if not waiting(job):
             progress = bar(job.get("percent"), BAR_PX, colour)
-            progress.setToolTip("Avance del trabajo: la última línea «PROGRESS <0-100>» que "
-                                "imprimió; 100 % al acabar bien.")
+            progress.setToolTip(
+                "Avance del trabajo: la última línea «PROGRESS <0-100>» que "
+                "imprimió; 100 % al acabar bien."
+            )
             row.addWidget(progress)
         row.addWidget(stop)
         return box
@@ -219,14 +273,24 @@ class JobsBar(QWidget):
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(2)
         colour = C["weak"]
-        text = QLabel(sqx_text(run), styleSheet=f"color: {colour}; border: 1px solid "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-                                                 f"{colour}; border-radius: 3px; padding: 1px 6px;")
-        text.setToolTip(f"{run['project']} en el {ROLE.get(run['role'], run['role'])}: la tarea "
-                        "que su log da por empezada. El avance es el que SQX escribe en su log, "
-                        "o hechas ÷ total del estado del worker. Detalle en «En marcha».")
+        text = QLabel(
+            sqx_text(run),
+            styleSheet=f"color: {colour}; border: 1px solid "  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+            f"{colour}; border-radius: 3px; padding: 1px 6px;",
+        )
+        text.setToolTip(
+            f"{run['project']} en el {ROLE.get(run['role'], run['role'])}: la tarea "
+            "que su log da por empezada. El avance es el que SQX escribe en su log, "
+            "o hechas ÷ total del estado del worker. Detalle en «En marcha»."
+        )
         row.addWidget(text)
-        row.addWidget(bar(share(run.get("done"), run.get("total"), run.get("percent")),
-                          BAR_PX, colour))
+        row.addWidget(
+            bar(
+                share(run.get("done"), run.get("total"), run.get("percent")),
+                BAR_PX,
+                colour,
+            )
+        )
         return box
 
     def cancel(self, job_id: str, label: str = "") -> None:
@@ -237,9 +301,16 @@ class JobsBar(QWidget):
             label: Its `label`. A job that drives SQX asks first: one click stopped a
                 custodian hours into an MC Retest (📓 2026-09-29).
         """
-        if label in SQX_JOBS and QMessageBox.question(  # pyright: ignore[reportCallIssue]  # PySide6 stub wants button0/button1 for the 3-arg form
-                self, "Cancelar", "Este trabajo maneja SQX: cancelarlo para el worker a media "
-                "tarea, y lo que no se haya guardado se pierde. ¿Cancelar?") != QMessageBox.StandardButton.Yes:
+        if (
+            label in SQX_JOBS
+            and QMessageBox.question(  # pyright: ignore[reportCallIssue]  # PySide6 stub wants button0/button1 for the 3-arg form
+                self,
+                "Cancelar",
+                "Este trabajo maneja SQX: cancelarlo para el worker a media "
+                "tarea, y lo que no se haya guardado se pierde. ¿Cancelar?",
+            )
+            != QMessageBox.StandardButton.Yes
+        ):
             return
         try:
             ok = client.post(f"jobs/{job_id}/cancel", {}).get("ok")

@@ -12,9 +12,11 @@ from studies.optimisation.wfm.measure import drift, excess, gaterule, levels
 from studies.optimisation.wfm.model import windows
 from studies.optimisation.wfm.verdict import call
 
-CELL = "WF: {runs} runs : {oos_pct} % OOS"      # SQX's own name for a cell
-OLD = ("este export es anterior al 2026-10-01: no guarda las operaciones de la madre ni las "
-       "diez condiciones. Vuelve a exportar con sqx.export.export_wfm")
+CELL = "WF: {runs} runs : {oos_pct} % OOS"  # SQX's own name for a cell
+OLD = (
+    "este export es anterior al 2026-10-01: no guarda las operaciones de la madre ni las "
+    "diez condiciones. Vuelve a exportar con sqx.export.export_wfm"
+)
 
 
 def covered(shapes: pd.DataFrame, spans: dict) -> pd.DataFrame:
@@ -27,10 +29,20 @@ def covered(shapes: pd.DataFrame, spans: dict) -> pd.DataFrame:
     Returns:
         Indexed by cell, one column per segment; zero where the runs do not reach it.
     """
-    first, last = shapes["covers_from"].dt.normalize(), shapes["covers_to"].dt.normalize()
-    out = {name: ((last.clip(upper=pd.Timestamp(b) + pd.Timedelta(days=1))
-                   - first.clip(lower=pd.Timestamp(a))).dt.days.clip(lower=0) / 365.25)
-           for name, (a, b) in spans.items()}
+    first, last = (
+        shapes["covers_from"].dt.normalize(),
+        shapes["covers_to"].dt.normalize(),
+    )
+    out = {
+        name: (
+            (
+                last.clip(upper=pd.Timestamp(b) + pd.Timedelta(days=1))
+                - first.clip(lower=pd.Timestamp(a))
+            ).dt.days.clip(lower=0)
+            / 365.25
+        )
+        for name, (a, b) in spans.items()
+    }
     return pd.DataFrame(out).set_index(shapes["result"].astype(str).to_numpy())
 
 
@@ -59,8 +71,14 @@ class Found(gaterule.Area):
     cells: int
 
 
-def one(trades: pd.DataFrame, mother: pd.DataFrame, shapes: pd.DataFrame, the: asset.Asset,
-        cfg: dict, seed: np.random.SeedSequence) -> Measured:
+def one(
+    trades: pd.DataFrame,
+    mother: pd.DataFrame,
+    shapes: pd.DataFrame,
+    the: asset.Asset,
+    cfg: dict,
+    seed: np.random.SeedSequence,
+) -> Measured:
     """Everything measured on one mother's cells in oos2.
 
     Args:
@@ -84,32 +102,51 @@ def one(trades: pd.DataFrame, mother: pd.DataFrame, shapes: pd.DataFrame, the: a
     per = excess.per_trade(trades, the, "result")
     cells = excess.weekly(per, window, "result", names)
     fixed = excess.per_trade(mother, the, "strategy")
-    alone = excess.weekly(fixed, window, "strategy", cast(Any, fixed["strategy"].unique()))
+    alone = excess.weekly(
+        fixed, window, "strategy", cast(Any, fixed["strategy"].unique())
+    )
     signs = flip.signs(seed, null["draws"], len(cells))
     centre = CELL.format(**cfg["centre"])
     ref = levels.reference(cells, cfg["modo_real"], centre)
     clean = cast(pd.DataFrame, per[per["segment"] == asset.CLEAN])
-    straddle = panel.straddle(cast(pd.Series, clean["open"]), cast(pd.Series, clean["close"]))
+    straddle = panel.straddle(
+        cast(pd.Series, clean["open"]), cast(pd.Series, clean["close"])
+    )
     per_year = cells.sum() / years
-    return {"cells": cells, "mother": alone.iloc[:, 0], "ref": ref, "per_year": per_year,
-            "l1": levels.l1(cells, signs, years),
-            "l2": levels.l2(ref, alone.iloc[:, 0], signs, years),
-            "l1_blocks": levels.l1(cells, flip.signs(seed, null["draws"], len(cells), 2), years)
-            if straddle > null["straddle_max"] else None,
-            "straddle": straddle, "skew": levels.skewness(cells),
-            "effective": levels.effective(cells), "positive": float((per_year > 0).mean()),
-            "segments": excess.by_segment(per, "result", covered(shapes, the["windows"])),
-            "recharged": {"trades": int(len(clean)), "money": float(clean["charge"].sum()),
-                          "mother_money": float(fixed["charge"].sum())},
-            "centre": centre}
+    return {
+        "cells": cells,
+        "mother": alone.iloc[:, 0],
+        "ref": ref,
+        "per_year": per_year,
+        "l1": levels.l1(cells, signs, years),
+        "l2": levels.l2(ref, alone.iloc[:, 0], signs, years),
+        "l1_blocks": levels.l1(
+            cells, flip.signs(seed, null["draws"], len(cells), 2), years
+        )
+        if straddle > null["straddle_max"]
+        else None,
+        "straddle": straddle,
+        "skew": levels.skewness(cells),
+        "effective": levels.effective(cells),
+        "positive": float((per_year > 0).mean()),
+        "segments": excess.by_segment(per, "result", covered(shapes, the["windows"])),
+        "recharged": {
+            "trades": int(len(clean)),
+            "money": float(clean["charge"].sum()),
+            "mother_money": float(fixed["charge"].sum()),
+        },
+        "centre": centre,
+    }
 
 
 def area(scored: pd.DataFrame, rule: dict) -> Found:
     """SQX's area rule on one strategy's corrected scores: cells passing, best rectangle."""
     score = scored.pivot(index="runs", columns="oos_pct", values="score_pct").to_numpy()
     passed = score >= rule["threshold_pct"]
-    return {**gaterule.area(passed, score, rule["rows"], rule["cols"], rule["min_squares"]),
-            "cells": int(passed.sum())}
+    return {
+        **gaterule.area(passed, score, rule["rows"], rule["cols"], rule["min_squares"]),
+        "cells": int(passed.sum()),
+    }
 
 
 def facts(got: Measured, drifted: float, found: Found, mode: str) -> dict[str, Any]:
@@ -125,14 +162,21 @@ def facts(got: Measured, drifted: float, found: Found, mode: str) -> dict[str, A
         `l1`, `l2`, `centro`, `celdas_efectivas`, `frac_celdas_positivas`, `deriva`, `area`;
         and `reopt` ONLY in `reoptimizado`, so its rules do not exist in `fijo`.
     """
+
     def tails(level: dict, first: str) -> dict[str, Any]:
         """One level's own number and its place in the null, without the draws."""
         return {k: level[k] for k in (first, "p_mas", "p_menos", "nulo_p5", "nulo_p95")}
+
     centre = float(got["per_year"][got["centre"]])
-    out = {"l1": tails(got["l1"], "mediana_exceso"), "l2": tails(got["l2"], "delta"),
-           "centro": {"exceso_oos2": centre}, "celdas_efectivas": got["effective"],
-           "frac_celdas_positivas": got["positive"], "deriva": drifted,
-           "area": {"celdas": found["cells"], "pasa": int(found["passed"])}}
+    out = {
+        "l1": tails(got["l1"], "mediana_exceso"),
+        "l2": tails(got["l2"], "delta"),
+        "centro": {"exceso_oos2": centre},
+        "celdas_efectivas": got["effective"],
+        "frac_celdas_positivas": got["positive"],
+        "deriva": drifted,
+        "area": {"celdas": found["cells"], "pasa": int(found["passed"])},
+    }
     if mode == call.REOPT:
         out["reopt"] = {"centro_exceso": centre, "l2_p_menos": got["l2"]["p_menos"]}
     return out
@@ -159,9 +203,14 @@ def read(directory: Path, cfg: dict, only: str | None = None) -> dict[str, Any]:
         raise SystemExit(OLD)
     everything = export.steps(directory, cfg["read"]["drop_future"])
     names = sorted(everything["strategy"].unique())
-    seeds = dict(zip(names, np.random.SeedSequence(cfg["null"]["seed"]).spawn(len(names))))
-    the = asset.of(original["Symbol"].iloc[0], original["timeframe"].iloc[0],
-                   cfg["recharge"]["charged"])
+    seeds = dict(
+        zip(names, np.random.SeedSequence(cfg["null"]["seed"]).spawn(len(names)))
+    )
+    the = asset.of(
+        original["Symbol"].iloc[0],
+        original["timeframe"].iloc[0],
+        cfg["recharge"]["charged"],
+    )
     trades = export.trades(directory)
     chosen = export.chosen(directory)
     drifted = drift.summary(drift.per_step(chosen), chosen).set_index("strategy")
@@ -170,18 +219,41 @@ def read(directory: Path, cfg: dict, only: str | None = None) -> dict[str, Any]:
     shapes = windows.shape(everything).sort_values(["runs", "oos_pct"])
     out = {"measured": {}, "facts": {}, "verdicts": {}, "area": {}}
     for name in [only] if only else names:
-        mine = cast(pd.DataFrame, trades[(trades["strategy"] == name) & (trades["sample"] == "OOS")])
-        got = one(mine, cast(pd.DataFrame, original[original["strategy"] == name]),
-                  cast(pd.DataFrame, shapes[shapes["strategy"] == name]), the, cfg, seeds[name])
-        found = area(cast(pd.DataFrame, scored[scored["strategy"] == name]), rules.loc[name].to_dict())
-        said = facts(got, float(drifted.loc[name, "share_changed_median"]), found,
-                     cfg["modo_real"])
+        mine = cast(
+            pd.DataFrame,
+            trades[(trades["strategy"] == name) & (trades["sample"] == "OOS")],
+        )
+        got = one(
+            mine,
+            cast(pd.DataFrame, original[original["strategy"] == name]),
+            cast(pd.DataFrame, shapes[shapes["strategy"] == name]),
+            the,
+            cfg,
+            seeds[name],
+        )
+        found = area(
+            cast(pd.DataFrame, scored[scored["strategy"] == name]),
+            rules.loc[name].to_dict(),
+        )
+        said = facts(
+            got,
+            float(drifted.loc[name, "share_changed_median"]),
+            found,
+            cfg["modo_real"],
+        )
         out["measured"][name], out["area"][name], out["facts"][name] = got, found, said
         out["verdicts"][name] = call.call(said, cfg["modo_real"], cfg["null"]["alpha"])
     return out | {
-        "source": str(directory), "the": the, "checked": checked, "scored": scored,
+        "source": str(directory),
+        "the": the,
+        "checked": checked,
+        "scored": scored,
         "rules": rules[["threshold_pct", "rows", "cols", "min_squares"]],
-        "sqx_failed": rules["sqx_failed"].to_dict(), "objectives": export.objectives(directory),
-        "drift": drifted.reset_index(), "stability": drift.stability(chosen),
+        "sqx_failed": rules["sqx_failed"].to_dict(),
+        "objectives": export.objectives(directory),
+        "drift": drifted.reset_index(),
+        "stability": drift.stability(chosen),
         "trades": trades if not only else trades[trades["strategy"] == only],
-        "original": original, "windows": everything}
+        "original": original,
+        "windows": everything,
+    }

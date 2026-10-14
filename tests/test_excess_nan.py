@@ -21,4 +21,5 @@ def test_nan_p_does_not_inflate_n() -> None:
 
 if __name__ == "__main__":
     import pytest
+
     sys.exit(pytest.main([__file__, "-q"]))

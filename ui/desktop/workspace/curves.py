@@ -3,7 +3,15 @@
 from collections.abc import Sequence
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPaintEvent, QPen, QPolygonF
+from PySide6.QtGui import (
+    QColor,
+    QFont,
+    QFontMetrics,
+    QPainter,
+    QPaintEvent,
+    QPen,
+    QPolygonF,
+)
 from PySide6.QtWidgets import QWidget
 
 from ui.desktop.blocks.axis import ticks as round_ticks
@@ -12,7 +20,7 @@ from ui.text.numbers import num
 from ui.desktop.theme import C, MONO, T
 
 FACE = MONO.split(",")[0].strip('"')
-INK = {"sqx": C["accent"]} | CURVE     # "sqx.IS", "sqx.OOS": per sample
+INK = {"sqx": C["accent"]} | CURVE  # "sqx.IS", "sqx.OOS": per sample
 NAME = {"sqx": "SQX"}
 
 
@@ -52,28 +60,42 @@ class Curves(QWidget):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         font = QFont(FACE, 9, QFont.Weight.Bold)
-        values = [v for k, s in self.series.items() if self.shown[k] for v in s] or [0.0]
+        values = [v for k, s in self.series.items() if self.shown[k] for v in s] or [
+            0.0
+        ]
         lo, hi = min(values + [0.0]), max(values + [0.0])
         # The axis is as wide as its widest figure: a fixed 58 px cut «1.808.633» to «.808.633».
         ticks = {v: num(v) for v in (lo, 0.0, hi)}
-        gutter = max(QFontMetrics(font).horizontalAdvance(t) for t in ticks.values()) + 10
+        gutter = (
+            max(QFontMetrics(font).horizontalAdvance(t) for t in ticks.values()) + 10
+        )
         box = QRectF(gutter + 6, 10, self.width() - gutter - 18, self.height() - 34)
         p.setPen(QPen(QColor(T["rule"]), 1))
         p.drawRect(box)
         if not self.series:
             return
         n = len(self.series["sqx"])
+
         def at(i: int, v: float) -> QPointF:
             """Screen point of day i at value v."""
-            return QPointF(box.left() + box.width() * i / max(n - 1, 1),
-                           box.bottom() - box.height() * (v - lo) / (hi - lo or 1))
+            return QPointF(
+                box.left() + box.width() * i / max(n - 1, 1),
+                box.bottom() - box.height() * (v - lo) / (hi - lo or 1),
+            )
+
         p.setFont(font)
         p.setPen(QColor(T["muted"]))
         for v, shown in ticks.items():
-            if v == 0.0 and min(abs(at(0, 0.0).y() - at(0, x).y()) for x in (lo, hi)) < 16:
+            if (
+                v == 0.0
+                and min(abs(at(0, 0.0).y() - at(0, x).y()) for x in (lo, hi)) < 16
+            ):
                 continue
-            p.drawText(QRectF(0, at(0, v).y() - 8, gutter, 16), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
-                       shown)
+            p.drawText(
+                QRectF(0, at(0, v).y() - 8, gutter, 16),
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+                shown,
+            )
         p.setPen(QPen(QColor(T["line"]), 1, Qt.PenStyle.DashLine))
         p.drawLine(at(0, 0.0), at(n - 1, 0.0))
         if self.split is not None:
@@ -81,8 +103,16 @@ class Curves(QWidget):
             p.setPen(QPen(QColor(T["faint"]), 1, Qt.PenStyle.DashLine))
             p.drawLine(QPointF(x, box.top()), QPointF(x, box.bottom()))
             p.setPen(QColor(T["muted"]))
-            p.drawText(QRectF(x - 90, box.bottom() + 4, 84, 16), Qt.AlignmentFlag.AlignRight, "IS ◂")
-            p.drawText(QRectF(x + 6, box.bottom() + 4, 84, 16), Qt.AlignmentFlag.AlignLeft, "▸ OOS1")
+            p.drawText(
+                QRectF(x - 90, box.bottom() + 4, 84, 16),
+                Qt.AlignmentFlag.AlignRight,
+                "IS ◂",
+            )
+            p.drawText(
+                QRectF(x + 6, box.bottom() + 4, 84, 16),
+                Qt.AlignmentFlag.AlignLeft,
+                "▸ OOS1",
+            )
         for key, s in self.series.items():
             if self.shown[key] and len(s) > 1:
                 p.setPen(QPen(QColor(INK[key]), 1.6))
@@ -98,8 +128,9 @@ class SampleCurves(Curves):
         super().__init__(height)
         self.days: list[str] = []
 
-    def fill(self, sqx: list[float], split: int | None = None,
-             days: Sequence[str] = ()) -> None:
+    def fill(
+        self, sqx: list[float], split: int | None = None, days: Sequence[str] = ()
+    ) -> None:
         """Replace the curve.
 
         Args:
@@ -118,7 +149,9 @@ class SampleCurves(Curves):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         font = QFont(FACE, 9, QFont.Weight.Bold)
-        values = [v for k, s in self.series.items() if self.shown[k] for v in s] or [0.0]
+        values = [v for k, s in self.series.items() if self.shown[k] for v in s] or [
+            0.0
+        ]
         lo, hi = min(values + [0.0]), max(values + [0.0])
         ys = sorted(set(round_ticks(lo, hi, 7)) | {0.0})
         lo, hi = min(ys + [lo]), max(ys + [hi])
@@ -129,19 +162,37 @@ class SampleCurves(Curves):
         n = len(self.series.get("sqx", []))
         if n < 2:
             return
+
         def at(i: int, v: float) -> QPointF:
             """Screen point of day i at value v."""
-            return QPointF(box.left() + box.width() * i / (n - 1),
-                           box.bottom() - box.height() * (v - lo) / (hi - lo or 1))
+            return QPointF(
+                box.left() + box.width() * i / (n - 1),
+                box.bottom() - box.height() * (v - lo) / (hi - lo or 1),
+            )
+
         p.setFont(font)
         for v in ys:
             y = at(0, v).y()
-            p.setPen(QPen(QColor(T["line"]), 1, Qt.PenStyle.DashLine if v == 0.0 else Qt.PenStyle.SolidLine))
+            p.setPen(
+                QPen(
+                    QColor(T["line"]),
+                    1,
+                    Qt.PenStyle.DashLine if v == 0.0 else Qt.PenStyle.SolidLine,
+                )
+            )
             p.drawLine(QPointF(box.left(), y), QPointF(box.right(), y))
             p.setPen(QColor(T["muted"]))
-            p.drawText(QRectF(0, y - 8, gutter, 16), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, num(v))
-        years = [i for i, d in enumerate(self.days) if i == 0 or d[:4] != self.days[i - 1][:4]]
-        written = 1e9     # right to left: a partial first year gives way to the next one
+            p.drawText(
+                QRectF(0, y - 8, gutter, 16),
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+                num(v),
+            )
+        years = [
+            i
+            for i, d in enumerate(self.days)
+            if i == 0 or d[:4] != self.days[i - 1][:4]
+        ]
+        written = 1e9  # right to left: a partial first year gives way to the next one
         for i in reversed(years):
             x = at(i, lo).x()
             p.setPen(QPen(QColor(T["line"]), 1))
@@ -149,19 +200,33 @@ class SampleCurves(Curves):
             if written - x >= 46:
                 written = x
                 p.setPen(QColor(T["muted"]))
-                p.drawText(QRectF(x - 22, box.bottom() + 4, 44, 16), Qt.AlignmentFlag.AlignHCenter,
-                           self.days[i][:4])
+                p.drawText(
+                    QRectF(x - 22, box.bottom() + 4, 44, 16),
+                    Qt.AlignmentFlag.AlignHCenter,
+                    self.days[i][:4],
+                )
         split = self.split if self.split is not None else n - 1
         if self.split is not None:
             x = at(split, lo).x()
             p.setPen(QPen(QColor(T["text"]), 1, Qt.PenStyle.DashLine))
             p.drawLine(QPointF(x, box.top()), QPointF(x, box.bottom()))
-            p.drawText(QRectF(x - 90, box.top() + 2, 84, 16), Qt.AlignmentFlag.AlignRight, "IS ◂")
-            p.drawText(QRectF(x + 6, box.top() + 2, 84, 16), Qt.AlignmentFlag.AlignLeft, "▸ OOS1")
+            p.drawText(
+                QRectF(x - 90, box.top() + 2, 84, 16),
+                Qt.AlignmentFlag.AlignRight,
+                "IS ◂",
+            )
+            p.drawText(
+                QRectF(x + 6, box.top() + 2, 84, 16),
+                Qt.AlignmentFlag.AlignLeft,
+                "▸ OOS1",
+            )
         for key, s in self.series.items():
             if not (self.shown[key] and len(s) > 1):
                 continue
-            for part, span in (("IS", range(0, split + 1)), ("OOS", range(split, len(s)))):
+            for part, span in (
+                ("IS", range(0, split + 1)),
+                ("OOS", range(split, len(s))),
+            ):
                 if len(span) > 1:
                     p.setPen(QPen(QColor(INK[f"{key}.{part}"]), 1.6))
                     p.drawPolyline(QPolygonF([at(i, s[i]) for i in span]))

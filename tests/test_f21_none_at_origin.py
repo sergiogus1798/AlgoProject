@@ -17,9 +17,15 @@ from ui.daemon.strategy import archive_view
 from ui.daemon.workflow import run as wrun
 
 
-def test_study_of_without_template_says_which_project(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_study_of_without_template_says_which_project(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """A project with no template has no family to sign the ledger under."""
-    monkeypatch.setattr(survivors, "about", lambda p: {"symbol": "X", "timeframe": "H1", "feed": "X_M1", "family": None})
+    monkeypatch.setattr(
+        survivors,
+        "about",
+        lambda p: {"symbol": "X", "timeframe": "H1", "feed": "X_M1", "family": None},
+    )
     with pytest.raises(ValueError, match="Test_none"):
         survivors.study_of("Test_none")
 
@@ -27,7 +33,16 @@ def test_study_of_without_template_says_which_project(monkeypatch: pytest.Monkey
 def test_profile_power_without_draws_raises() -> None:
     """No draws left no first chunk, and the old code crashed on `cast(dict, None)`."""
     with pytest.raises(ValueError, match="leave no chunk"):
-        power.tested({}, {}, {"nulls": {"draws": 0}}, {}, "long", {"cut": 0.05, "chunk": 10}, 5, None)  # type: ignore[arg-type]
+        power.tested(
+            {},
+            {},
+            {"nulls": {"draws": 0}},
+            {},
+            "long",
+            {"cut": 0.05, "chunk": 10},
+            5,
+            None,
+        )  # type: ignore[arg-type]
 
 
 def test_pair_without_universe_raises(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -64,16 +79,22 @@ def test_symbol_of_unknown_feed_names_it() -> None:
 
 def test_plan_without_asset_refuses(monkeypatch: pytest.MonkeyPatch) -> None:
     """A one-strategy study over a databank needs the asset: the rail gets a sentence."""
-    monkeypatch.setattr(table, "STUDIES", {"k": {"plan": 1, "many": False, "one": True}})
+    monkeypatch.setattr(
+        table, "STUDIES", {"k": {"plan": 1, "many": False, "one": True}}
+    )
     ctx: Any = {"project": "Test_a", "asset": None, "blind": {"sealed": False}}
     got = wrun.plan({"n": "7", "feeds": "x"}, "k", ctx, "Bank", [])
     assert isinstance(got, str) and "activo" in got
 
 
-def test_close_failed_with_unreadable_project_raises(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_close_failed_with_unreadable_project_raises(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """A refusal from `preflight.tasks` was read as a listing; now it stops with its reason."""
     monkeypatch.setattr(liverun.exiting, "stop", lambda role, project: "stopped")
     monkeypatch.setattr(liverun.live, "stop", lambda role, export=False: None)
-    monkeypatch.setattr(liverun.preflight, "tasks", lambda project: {"refuse": "no está en w1"})
+    monkeypatch.setattr(
+        liverun.preflight, "tasks", lambda project: {"refuse": "no está en w1"}
+    )
     with pytest.raises(RuntimeError, match="no está en w1"):
         liverun.close("w1", "Test_a", {"n": "6", "steps": [], "since": 0.0})

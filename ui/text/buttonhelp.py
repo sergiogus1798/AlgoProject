@@ -11,7 +11,7 @@ SIGNS = re.compile(r"[▶▸▾▴◂◀►■↻⟳→←↑↓+·•…&]")
 QUOTED = re.compile(r"«[^»]*»")
 COUNT = re.compile(r"\([^()]*\d[^()]*\)|(?<!\w)\d[\d\s.,/%\-]*")
 SCOPE = " › "
-OVERLAP = 0.5       # share of the shorter text's words that makes two texts one
+OVERLAP = 0.5  # share of the shorter text's words that makes two texts one
 
 
 def normalise(text: str) -> str:
@@ -24,7 +24,9 @@ def normalise(text: str) -> str:
         E.g. «correr marcados». A text that is nothing but a sign («×», «▶») keeps the sign,
         so it can still have an entry of its own.
     """
-    words = " ".join(COUNT.sub(" ", SIGNS.sub(" ", QUOTED.sub(" ", text))).lower().split())
+    words = " ".join(
+        COUNT.sub(" ", SIGNS.sub(" ", QUOTED.sub(" ", text))).lower().split()
+    )
     return words or text.strip()
 
 
@@ -70,5 +72,11 @@ def help_for(text: str, scopes: Sequence[str] = ()) -> str:
             one of them wins over the plain one.
     """
     bare = normalise(text)
-    return next((KEYS[f"{s}{SCOPE}{bare}"] for s in scopes if f"{s}{SCOPE}{bare}" in KEYS),
-                KEYS.get(bare, "")) if bare else ""
+    return (
+        next(
+            (KEYS[f"{s}{SCOPE}{bare}"] for s in scopes if f"{s}{SCOPE}{bare}" in KEYS),
+            KEYS.get(bare, ""),
+        )
+        if bare
+        else ""
+    )

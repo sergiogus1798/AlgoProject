@@ -9,7 +9,7 @@ from ui.desktop.studypage.ficha import Ficha
 from ui.desktop.studypage.offer import OFF
 from ui.desktop.studypage.page import StudyPage
 
-FICHA = "ficha"     # the family tab's data for the Ficha, which is no family of studies
+FICHA = "ficha"  # the family tab's data for the Ficha, which is no family of studies
 
 
 class StrategyPage(StudyPage):
@@ -18,37 +18,47 @@ class StrategyPage(StudyPage):
 
     def __init__(self) -> None:
         """Build it for scope one and open it on the Ficha."""
-        self.ficha: Ficha | None = None      # the base's __init__ already follows SELECTION
+        self.ficha: Ficha | None = None  # the base's __init__ already follows SELECTION
         self.hold = False
         super().__init__(strategy_page=True)
         self.ficha = Ficha()
-        self.crumb.hide()          # the context bar above says project › strategy already
+        self.crumb.hide()  # the context bar above says project › strategy already
         lay = cast(QVBoxLayout, self.layout())
         lay.insertWidget(lay.indexOf(self.families) + 1, self.ficha, 1)
         self.families.blockSignals(True)
         self.families.insertTab(0, "Ficha")
         self.families.setTabData(0, FICHA)
-        self.families.setTabToolTip(0, "Lo que dice la cosecha de esta estrategia, IS y OOS "
-                                       "por separado. No es un estudio: no se corre desde aquí.")
+        self.families.setTabToolTip(
+            0,
+            "Lo que dice la cosecha de esta estrategia, IS y OOS "
+            "por separado. No es un estudio: no se corre desde aquí.",
+        )
         self.families.setCurrentIndex(0)
         self.families.blockSignals(False)
         self._family(0)
 
     def on_ficha(self) -> bool:
         """Whether the Ficha is the tab on screen."""
-        return self.ficha is not None and self.families.tabData(
-            self.families.currentIndex()) == FICHA
+        return (
+            self.ficha is not None
+            and self.families.tabData(self.families.currentIndex()) == FICHA
+        )
 
     def _mode(self, ficha: bool) -> None:
         """Show the Ficha or the study widgets, never both."""
-        assert self.ficha is not None and (scrolled := self.view.parentWidget()) is not None
+        assert (
+            self.ficha is not None
+            and (scrolled := self.view.parentWidget()) is not None
+        )
         self.ficha.setVisible(ficha)
         for w in (self.studies, self.head, self.bar, self.toggles, self.note, scrolled):
             w.setVisible(not ficha)
         if ficha:
             for w in (self.back, self.skipped):
                 w.hide()
-            cast(QVBoxLayout, self.ficha.layout()).insertWidget(0, self.picker, 0, Qt.AlignmentFlag.AlignLeft)   # the Ficha's header
+            cast(QVBoxLayout, self.ficha.layout()).insertWidget(
+                0, self.picker, 0, Qt.AlignmentFlag.AlignLeft
+            )  # the Ficha's header
             w = self.where
             self.picker.aim(w["project"], w["databank"], w["strategy"], "")
         else:

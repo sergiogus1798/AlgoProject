@@ -3,7 +3,9 @@
 import pandas as pd
 
 
-def underwater(equity: pd.Series, capital: float | None) -> tuple[pd.Series, pd.Series | None]:
+def underwater(
+    equity: pd.Series, capital: float | None
+) -> tuple[pd.Series, pd.Series | None]:
     """Distance below the running peak, in money and in % of the running peak of the account.
 
     Args:

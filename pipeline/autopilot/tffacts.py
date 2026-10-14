@@ -8,14 +8,26 @@ import pandas as pd
 
 # A state is a number a rule of criteria.yaml can compare: «>= 1» passes, «>= 0» is limbo or better.
 STATE = {"pass": 1.0, "limbo": 0.0, "fail": -1.0}
-MOTHER_COLUMNS = ("state", "phase1", "t1", "t2a", "t2b", "t3")      # tf_mothers.csv, as `tf.<col>`
-NAMES = {"mother", "sibling", "timeframe", "role"}                  # tf_siblings.parquet's keys
+MOTHER_COLUMNS = (
+    "state",
+    "phase1",
+    "t1",
+    "t2a",
+    "t2b",
+    "t3",
+)  # tf_mothers.csv, as `tf.<col>`
+NAMES = {"mother", "sibling", "timeframe", "role"}  # tf_siblings.parquet's keys
 
 
 def encode(column: pd.Series) -> pd.Series:
     """A column as numbers: pass/limbo/fail as `STATE`, booleans as 0/1, any other text as NaN."""
-    return cast(pd.Series, pd.to_numeric(column.map(lambda v: STATE.get(v, v) if isinstance(v, str) else v),
-                                         errors="coerce"))
+    return cast(
+        pd.Series,
+        pd.to_numeric(
+            column.map(lambda v: STATE.get(v, v) if isinstance(v, str) else v),
+            errors="coerce",
+        ),
+    )
 
 
 def rows(folder: Path) -> list[dict]:
@@ -36,16 +48,33 @@ def rows(folder: Path) -> list[dict]:
 
     def add(key: str, values: pd.Series, names: Iterable[str]) -> None:
         """One key for every mother whose value is a number."""
-        out.extend({"study": "crossTF", "strategy": m, "identity": "", "key": key, "value": float(v)}
-                   for m, v in zip(names, values) if v == v)
+        out.extend(
+            {
+                "study": "crossTF",
+                "strategy": m,
+                "identity": "",
+                "key": key,
+                "value": float(v),
+            }
+            for m, v in zip(names, values)
+            if v == v
+        )
 
     if (folder / "tf_mothers.csv").exists():
         mothers = pd.read_csv(folder / "tf_mothers.csv", dtype=object)
         for col in MOTHER_COLUMNS:
-            add(f"tf.{col}", encode(cast(pd.Series, mothers[col])), cast(pd.Series, mothers["strategy"]))
+            add(
+                f"tf.{col}",
+                encode(cast(pd.Series, mothers[col])),
+                cast(pd.Series, mothers["strategy"]),
+            )
     if (folder / "tf_siblings.parquet").exists():
         siblings = pd.read_parquet(folder / "tf_siblings.parquet")
         for tf, part in siblings.groupby("timeframe", sort=True):
             for col in part.columns.difference(NAMES, sort=False):
-                add(f"tf.{tf}.{col}", encode(cast(pd.Series, part[col])), cast(pd.Series, part["mother"]))
+                add(
+                    f"tf.{tf}.{col}",
+                    encode(cast(pd.Series, part[col])),
+                    cast(pd.Series, part["mother"]),
+                )
     return out

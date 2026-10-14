@@ -7,11 +7,13 @@ from pathlib import Path
 from sqx.projects import live, taskcap
 from ui.daemon import progress
 
-KEEP = 20_000       # lines held; run_state needs the start, the task lines and the last percent
+KEEP = (
+    20_000  # lines held; run_state needs the start, the task lines and the last percent
+)
 # The line SQX writes under «Error while running project»: the Java exception, which is the cause
 # (📓 2026-10-07, «java.lang.Exception: Strategy from template file requires 2 charts, 1 defined.»).
 CAUSE = re.compile(r"^[\w.$]+(?:Exception|Error): ")
-CAUSES = 5          # distinct ones a failure report keeps, the newest
+CAUSES = 5  # distinct ones a failure report keeps, the newest
 
 
 def path(top: Path, day: date) -> Path:
@@ -35,8 +37,9 @@ def mark(top: Path) -> dict[Path, int]:
     return {f: f.stat().st_size for f in (path(top, d) for d in days()) if f.exists()}
 
 
-def grow(top: Path, offsets: dict[Path, int], kept: list[str],
-         fresh: list[str] | None = None) -> list[str]:
+def grow(
+    top: Path, offsets: dict[Path, int], kept: list[str], fresh: list[str] | None = None
+) -> list[str]:
     """Add what the logs gained since the last read, and advance the offsets.
 
     Args:
@@ -55,19 +58,30 @@ def grow(top: Path, offsets: dict[Path, int], kept: list[str],
         with f.open("rb") as fh:
             fh.seek(start)
             data = fh.read()
-        whole = data[:data.rfind(b"\n") + 1]
+        whole = data[: data.rfind(b"\n") + 1]
         offsets[f] = start + len(whole)
         lines = whole.decode("utf-8", errors="replace").splitlines()
         if fresh is not None:
             fresh.extend(lines)
-        kept.extend(line for line in lines
-                    if progress.STARTING.search(line) or progress.PROGRESS.search(line)
-                    or progress.PERCENT.search(line))
-    kept[:] = progress.trim(kept, KEEP)       # the start line stays, whatever the volume
+        kept.extend(
+            line
+            for line in lines
+            if progress.STARTING.search(line)
+            or progress.PROGRESS.search(line)
+            or progress.PERCENT.search(line)
+        )
+    kept[:] = progress.trim(kept, KEEP)  # the start line stays, whatever the volume
     return kept
 
 
-def police(cap: taskcap.Cap, fresh: list[str], project: str, role: str, top: Path, stopped: bool) -> None:
+def police(
+    cap: taskcap.Cap,
+    fresh: list[str],
+    project: str,
+    role: str,
+    top: Path,
+    stopped: bool,
+) -> None:
     """End a watched run on what `live.wait` ends it on: an abort line (`live.BAD`, the one list
     `wait.sh` mirrors) or a task past its deadline (`taskcap`), worded as the transient abort
     `call.again` repeats once and as the step failure it does not.
@@ -84,8 +98,10 @@ def police(cap: taskcap.Cap, fresh: list[str], project: str, role: str, top: Pat
     for line in fresh:
         taskcap.note(cap, line)
         if live.BAD.search(line) and not (stopped and "Project stopped" in line):
-            raise SystemExit(f"SQX abortó {project}: {line.strip()[:200]}; la tarea no terminó, "
-                             "se para el worker")
+            raise SystemExit(
+                f"SQX abortó {project}: {line.strip()[:200]}; la tarea no terminó, "
+                "se para el worker"
+            )
     taskcap.enforce(cap, role, path(top, date.today()))
 
 
@@ -106,8 +122,11 @@ def matching(top: Path, offsets: dict[Path, int], rx: re.Pattern[str]) -> list[s
             continue
         with f.open("rb") as fh:
             fh.seek(offsets.get(f, 0))
-            found += [line for raw in fh
-                      if rx.search(line := raw.decode("utf-8", errors="replace"))]
+            found += [
+                line
+                for raw in fh
+                if rx.search(line := raw.decode("utf-8", errors="replace"))
+            ]
     return found
 
 
@@ -121,5 +140,11 @@ def causes(top: Path, offsets: dict[Path, int]) -> str:
     Returns:
         A fenced markdown block of the newest distinct ones, or "" when SQX logged none.
     """
-    found = list(dict.fromkeys(line.strip() for line in matching(top, offsets, CAUSE)))[-CAUSES:]
-    return "\nLo que SQX escribió en su log:\n\n```\n" + "\n".join(found) + "\n```\n" if found else ""
+    found = list(dict.fromkeys(line.strip() for line in matching(top, offsets, CAUSE)))[
+        -CAUSES:
+    ]
+    return (
+        "\nLo que SQX escribió en su log:\n\n```\n" + "\n".join(found) + "\n```\n"
+        if found
+        else ""
+    )

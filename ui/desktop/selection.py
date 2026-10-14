@@ -25,8 +25,10 @@ class Selection(QObject):
                 databank clears the strategy — a strategy never survives into a
                 databank it is not in.
         """
-        below = {"project": ("databank", "strategy", "identity"),
-                 "databank": ("strategy", "identity")}
+        below = {
+            "project": ("databank", "strategy", "identity"),
+            "databank": ("strategy", "identity"),
+        }
         for key, value in fields.items():
             if value != self.now[key]:
                 for gone in below.get(key, ()):

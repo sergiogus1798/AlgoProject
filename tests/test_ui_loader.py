@@ -28,8 +28,9 @@ SLEEPER = ["-c", "import time; time.sleep(30)"]
 def fake_jobs(listed: list[dict]) -> list:
     """Point the loader at a job list of our own and record what it starts instead."""
     started = []
-    state.jobs = SimpleNamespace(listing=lambda: listed,
-                                 start=lambda *a, **k: started.append((a, k)))
+    state.jobs = SimpleNamespace(
+        listing=lambda: listed, start=lambda *a, **k: started.append((a, k))
+    )
     return started
 
 
@@ -45,8 +46,10 @@ def held() -> bool:
 # (📓 2026-09-30, T1/R UI feedback pass: it did not tonight, retired per the coordinator's G/H
 # findings). Not a code regression: `state.status` correctly returns `{"error": ...}` for an
 # absent project; these tests just never had a pytest-side skip to match `__main__`'s.
-NEEDS_FIXTURE = pytest.mark.skipif(not held(), reason=f"ninguna instalación guarda "
-                                   f"{BUILD[0]} / {BUILD[1]} y {CROSS[1]}")
+NEEDS_FIXTURE = pytest.mark.skipif(
+    not held(),
+    reason=f"ninguna instalación guarda {BUILD[0]} / {BUILD[1]} y {CROSS[1]}",
+)
 
 
 @NEEDS_FIXTURE
@@ -55,39 +58,72 @@ def test_status_and_lanes() -> None:
     a cross-market one exports with data=all; the metrics never touch SQX."""
     fake_jobs([])
     now = state.status(*BUILD)
-    assert (now["partner"], now["role"]) == ("OOS", "custodian") and now["strategies"], now
-    todo = state.commands(BUILD[0], {**now, "pieces": {k: {"state": "missing"} for k in state.PIECES}})
+    assert (now["partner"], now["role"]) == ("OOS", "custodian") and now[
+        "strategies"
+    ], now
+    todo = state.commands(
+        BUILD[0], {**now, "pieces": {k: {"state": "missing"} for k in state.PIECES}}
+    )
     assert {k: lane for k, (lane, _) in todo.items()} == {
-        "metrics": "python", "trades": "conductor", "harvest": "conductor"}, todo
-    assert "sqx.export.export_trades" in todo["trades"][1] and "--symbol" in todo["trades"][1]
+        "metrics": "python",
+        "trades": "conductor",
+        "harvest": "conductor",
+    }, todo
+    assert (
+        "sqx.export.export_trades" in todo["trades"][1]
+        and "--symbol" in todo["trades"][1]
+    )
     cross = state.status(*CROSS)
-    assert cross["databank"] == "Retest Markets - Family" and cross["pieces"]["harvest"]["state"] == "none"
-    todo = state.commands(CROSS[0], {**cross, "pieces": {k: {"state": "missing"} for k in state.PIECES}})
+    assert (
+        cross["databank"] == "Retest Markets - Family"
+        and cross["pieces"]["harvest"]["state"] == "none"
+    )
+    todo = state.commands(
+        CROSS[0], {**cross, "pieces": {k: {"state": "missing"} for k in state.PIECES}}
+    )
     assert "sqx.export.export_retest" in todo["trades"][1], todo
 
 
 def test_one_strategy_without_markets_does_not_hide_the_cross_market(
-        monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """📓 gorilla 2026-10-11: SQX kept a «no trades» strategy with its main result alone, it
     sorted first, and the databank was exported as one market."""
     files = [Path("a.sqx"), Path("b.sqx")]
     monkeypatch.setattr(find, "install_of", lambda p, d: ("custodian", Path(".")))
     monkeypatch.setattr(find, "files", lambda top, p, d: files)
-    monkeypatch.setattr(find.sqxstats, "results",
-                        lambda f: ["Main", "AdditionalMarket: X"] if f.name == "b.sqx" else ["Main"])
-    now = {"writing": False, "databank": "Retest Markets - Family", "role": "custodian",
-           "partner": None, "pieces": {"trades": {"state": "missing"}}}
+    monkeypatch.setattr(
+        find.sqxstats,
+        "results",
+        lambda f: ["Main", "AdditionalMarket: X"] if f.name == "b.sqx" else ["Main"],
+    )
+    now = {
+        "writing": False,
+        "databank": "Retest Markets - Family",
+        "role": "custodian",
+        "partner": None,
+        "pieces": {"trades": {"state": "missing"}},
+    }
     assert "sqx.export.export_retest" in state.commands("P", now)["trades"][1]
 
 
 @NEEDS_FIXTURE
 def test_failure_and_retry() -> None:
     """A failed load stays failed and is not queued again until the owner retries."""
-    failed = {"loader": "trades", "project": BUILD[0], "databank": BUILD[1], "rc": 1,
-              "cancelled": False, "tail": ["REFUSING: another sqcli already holds SQX_w1."]}
+    failed = {
+        "loader": "trades",
+        "project": BUILD[0],
+        "databank": BUILD[1],
+        "rc": 1,
+        "cancelled": False,
+        "tail": ["REFUSING: another sqcli already holds SQX_w1."],
+    }
     started = fake_jobs([failed])
     got = state.load(*BUILD)
-    assert got["pieces"]["trades"]["state"] == "failed" and "REFUSING" in got["pieces"]["trades"]["why"]
+    assert (
+        got["pieces"]["trades"]["state"] == "failed"
+        and "REFUSING" in got["pieces"]["trades"]["why"]
+    )
     assert "trades" not in {a[2]["loader"] for a, _ in started}, started
     started.clear()
     state.load(*BUILD, retry=True)
@@ -114,16 +150,30 @@ def test_route_and_roster() -> None:
     app = FastAPI()
     app.include_router(api.ROUTER)
     http = TestClient(app)
-    held = http.get("/api/load", params={"project": BUILD[0], "databank": BUILD[1]}).json()
-    assert "error" in http.get("/api/load", params={"project": "nope", "databank": "x"}).json()
+    held = http.get(
+        "/api/load", params={"project": BUILD[0], "databank": BUILD[1]}
+    ).json()
+    assert (
+        "error"
+        in http.get("/api/load", params={"project": "nope", "databank": "x"}).json()
+    )
     assert len(find.roster(*BUILD)) == held["strategies"] > 0
 
 
 def test_conductor_one_at_a_time() -> None:
     """Two conductor jobs: the first runs, the second waits; python jobs are not held back."""
-    ids = [jobs.start("cargar trades", SLEEPER, {"project": "p", "databank": "d", "strategy": ""},
-                      lane="conductor")["id"] for _ in range(2)]
-    light = jobs.start("entryQuality", SLEEPER, {"project": "p", "databank": "d", "strategy": "s"})["id"]
+    ids = [
+        jobs.start(
+            "cargar trades",
+            SLEEPER,
+            {"project": "p", "databank": "d", "strategy": ""},
+            lane="conductor",
+        )["id"]
+        for _ in range(2)
+    ]
+    light = jobs.start(
+        "entryQuality", SLEEPER, {"project": "p", "databank": "d", "strategy": "s"}
+    )["id"]
     time.sleep(0.5)
     now = {j["id"]: j for j in jobs.listing()}
     assert now[ids[0]]["queued"] is None and now[ids[1]]["queued"] is not None, now
@@ -152,15 +202,20 @@ def test_resave_is_not_a_change() -> None:
         os.utime(bank, (time.time() - 60,) * 2)
         done = out / "manifest.json"
         done.write_text("{}")
-        assert state.age(done, [sqx]) == "fresh" and (out / "manifest.json.sources.sig").exists()
-        save(sqx, b"<rules/>", (2026, 9, 29, 10, 52, 0))      # the resave: same content
+        assert (
+            state.age(done, [sqx]) == "fresh"
+            and (out / "manifest.json.sources.sig").exists()
+        )
+        save(sqx, b"<rules/>", (2026, 9, 29, 10, 52, 0))  # the resave: same content
         os.utime(sqx, (time.time() + 5,) * 2)
         assert state.age(done, [sqx]) == "fresh", "a resave alone is not a change"
         wfm = bank / "Strategy 2.2.2.sqx"
         keys = []
         for ref, when in (("4f573d92", 1), ("393e78e3", 2)):
             with zipfile.ZipFile(wfm, "w") as z:
-                z.writestr("settings.xml", f'<R><Run stats="c.s.SQStats@{ref}" p="25"/></R>')
+                z.writestr(
+                    "settings.xml", f'<R><Run stats="c.s.SQStats@{ref}" p="25"/></R>'
+                )
             os.utime(wfm, (time.time() + when,) * 2)
             keys.append(state.fingerprint([wfm]))
         assert keys[0] == keys[1], "a Java object address is not content"
@@ -172,11 +227,15 @@ def test_resave_is_not_a_change() -> None:
             save(f, f"<rules n='{i}'/>".encode(), (2026, 10, 4, 12, 0, 0))
         pooled = state.fingerprint(many)
         printed.SEEN.clear()
-        assert pooled == state.fingerprint(many[:1] + many[1:]), "the same from the cache"
+        assert pooled == state.fingerprint(many[:1] + many[1:]), (
+            "the same from the cache"
+        )
         printed.SEEN.clear()
         printed.POOL_FROM, kept = len(many) + 1, printed.POOL_FROM
         try:
-            assert pooled == state.fingerprint(many), "read on every core or here: one answer"
+            assert pooled == state.fingerprint(many), (
+                "read on every core or here: one answer"
+            )
         finally:
             printed.POOL_FROM = kept
 
@@ -184,12 +243,19 @@ def test_resave_is_not_a_change() -> None:
 if __name__ == "__main__":
     tests = [test_conductor_one_at_a_time, test_resave_is_not_a_change]
     if held():
-        tests = [test_status_and_lanes, test_failure_and_retry, test_writing_waits,
-                 test_route_and_roster, *tests]
+        tests = [
+            test_status_and_lanes,
+            test_failure_and_retry,
+            test_writing_waits,
+            test_route_and_roster,
+            *tests,
+        ]
     else:
-        print(f"    (ninguna instalación guarda {BUILD[0]} / {BUILD[1]} y {CROSS[1]}: los cuatro "
-              "tests que leen un databank vivo con su OOS no corren; hace falta un proyecto "
-              "con build + OOS + cross-market en el custodio)")
+        print(
+            f"    (ninguna instalación guarda {BUILD[0]} / {BUILD[1]} y {CROSS[1]}: los cuatro "
+            "tests que leen un databank vivo con su OOS no corren; hace falta un proyecto "
+            "con build + OOS + cross-market en el custodio)"
+        )
     for test in tests:
         started = time.time()
         test()

@@ -1,4 +1,5 @@
 """Known answers for the Verificar table's helpers: the state cell and the missing result."""
+
 import sys
 from pathlib import Path
 

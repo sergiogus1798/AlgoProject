@@ -15,11 +15,13 @@ from engines.variants import filters, fingerprint
 from engines.variants.panel import SEGMENTS
 from engines.weekly import panel
 
-TRADES = "variant_trades.parquet"       # written by sqx.variants.varianttrades
-WEEKLY = "cscv_weekly.parquet"          # the cache: weeks x (net | gross, variant)
-VARIANTS = "cscv_variants.parquet"      # the cache: per variant, its trades and its fingerprint
+TRADES = "variant_trades.parquet"  # written by sqx.variants.varianttrades
+WEEKLY = "cscv_weekly.parquet"  # the cache: weeks x (net | gross, variant)
+VARIANTS = (
+    "cscv_variants.parquet"  # the cache: per variant, its trades and its fingerprint
+)
 MAIN = "Main"
-PIECES = 16                             # groups of variants priced side by side, per leg
+PIECES = 16  # groups of variants priced side by side, per leg
 # The excess is step 14's: the gate's drift block, never a copy of its values.
 GATE = Path(__file__).resolve().parents[3] / "screening" / "gate" / "config.yaml"
 
@@ -35,8 +37,10 @@ def drift() -> dict[str, Any]:
 def window(asset: dict) -> tuple[str, str]:
     """First day of `build` and last day of `oos2` as full dates: the whole history."""
     last = asset["segments"][SEGMENTS[-1]]["to"]
-    return (assetdata.segment_start(asset, SEGMENTS[0]),
-            f"{last}-12-31" if isinstance(last, int) else str(last))
+    return (
+        assetdata.segment_start(asset, SEGMENTS[0]),
+        f"{last}-12-31" if isinstance(last, int) else str(last),
+    )
 
 
 def _priced(key: tuple[str, int]) -> pd.DataFrame:
@@ -46,13 +50,25 @@ def _priced(key: tuple[str, int]) -> pd.DataFrame:
     trades = got["trades"][leg]
     trades = trades[trades["variant_id"].isin(got["pieces"][piece])]
     bounds = got["asset"]["segments"][leg]
-    per = panel.per_trade(trades, got["bars"], got["costs"][leg],
-                          (str(bounds["from"]), str(bounds["to"])), got["drift"], got["feed"])
+    per = panel.per_trade(
+        trades,
+        got["bars"],
+        got["costs"][leg],
+        (str(bounds["from"]), str(bounds["to"])),
+        got["drift"],
+        got["feed"],
+    )
     return cast(pd.DataFrame, per[["variant_id", "close", "net", "gross"]])
 
 
-def build(trades: pd.DataFrame, bars: pd.DataFrame, asset: dict, costs: dict, term: dict,
-          workers: int) -> tuple[pd.DataFrame, pd.DataFrame]:
+def build(
+    trades: pd.DataFrame,
+    bars: pd.DataFrame,
+    asset: dict,
+    costs: dict,
+    term: dict,
+    workers: int,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """The weekly panel and the per-variant facts of one batch's trades.
 
     Args:
@@ -68,17 +84,36 @@ def build(trades: pd.DataFrame, bars: pd.DataFrame, asset: dict, costs: dict, te
         the whole history; per variant, `trades` and `print`, its trade list's fingerprint).
     """
     ids = np.sort(np.asarray(trades["variant_id"].unique()))
-    _SHARED.update(trades={leg: trades[trades["leg"] == leg] for leg in SEGMENTS}, bars=bars,
-                   asset=asset, costs=costs, drift=term, feed=asset["sqx_symbol"],
-                   pieces=np.array_split(ids, min(PIECES, len(ids))))
-    load = {(leg, i): int(_SHARED["trades"][leg]["variant_id"].isin(piece).sum())
-            for leg in SEGMENTS for i, piece in enumerate(_SHARED["pieces"])}
-    per = pd.concat([got for _, got in fanout.run(
-        _priced, {key: rows for key, rows in load.items() if rows}, workers)])
+    _SHARED.update(
+        trades={leg: trades[trades["leg"] == leg] for leg in SEGMENTS},
+        bars=bars,
+        asset=asset,
+        costs=costs,
+        drift=term,
+        feed=asset["sqx_symbol"],
+        pieces=np.array_split(ids, min(PIECES, len(ids))),
+    )
+    load = {
+        (leg, i): int(_SHARED["trades"][leg]["variant_id"].isin(piece).sum())
+        for leg in SEGMENTS
+        for i, piece in enumerate(_SHARED["pieces"])
+    }
+    per = pd.concat(
+        [
+            got
+            for _, got in fanout.run(
+                _priced, {key: rows for key, rows in load.items() if rows}, workers
+            )
+        ]
+    )
     _SHARED.clear()
     wide = panel.weekly(per, window(asset), units=cast(Any, ids))
-    info = pd.DataFrame({"trades": trades.groupby("variant_id").size(),
-                         "print": fingerprint.prints(trades)})
+    info = pd.DataFrame(
+        {
+            "trades": trades.groupby("variant_id").size(),
+            "print": fingerprint.prints(trades),
+        }
+    )
     return pd.concat(wide, axis=1), info
 
 
@@ -109,32 +144,53 @@ def read(work: Path, symbol: str, timeframe: str, workers: int) -> Weekly:
     asset = assetdata.load(symbol)
     costs = {leg: reprice.costs(asset["sqx_symbol"], leg) for leg in SEGMENTS}
     stat, term = (work / TRADES).stat(), drift()
-    key = digest({"trades": [stat.st_mtime_ns, stat.st_size], "drift": term, "costs": costs,
-                  "window": window(asset), "timeframe": timeframe})
+    key = digest(
+        {
+            "trades": [stat.st_mtime_ns, stat.st_size],
+            "drift": term,
+            "costs": costs,
+            "window": window(asset),
+            "timeframe": timeframe,
+        }
+    )
     wide = pd.read_parquet(work / WEEKLY) if (work / WEEKLY).exists() else None
     cached = wide is not None and wide.attrs.get("key") == key
     if not cached:
         trades = pd.read_parquet(work / TRADES, filters=[("market", "==", MAIN)])
         trades = trades.assign(variant_id=trades["variant_id"].astype(str))
-        wide, info = build(trades, barstore.read(asset["sqx_symbol"], timeframe), asset, costs,
-                           term, workers)
+        wide, info = build(
+            trades,
+            barstore.read(asset["sqx_symbol"], timeframe),
+            asset,
+            costs,
+            term,
+            workers,
+        )
         wide.attrs["key"] = key
         wide.to_parquet(work / WEEKLY)
         info.to_parquet(work / VARIANTS)
-    assert wide is not None   # cached implies it was read; otherwise it was just built
-    return {"net": cast(pd.DataFrame, wide["net"]), "gross": cast(pd.DataFrame, wide["gross"]),
-            "info": pd.read_parquet(work / VARIANTS), "years": panel.years(window(asset)),
-            "cached": bool(cached), "wall_s": time.time() - began}
+    assert wide is not None  # cached implies it was read; otherwise it was just built
+    return {
+        "net": cast(pd.DataFrame, wide["net"]),
+        "gross": cast(pd.DataFrame, wide["gross"]),
+        "info": pd.read_parquet(work / VARIANTS),
+        "years": panel.years(window(asset)),
+        "cached": bool(cached),
+        "wall_s": time.time() - began,
+    }
 
 
 def live(metrics: pd.DataFrame) -> int:
     """How many parameters actually move in the batch, its controls left out."""
-    params = metrics.loc[~metrics["stratum"].isin(filters.CONTROLS)].filter(like="param_")
+    params = metrics.loc[~metrics["stratum"].isin(filters.CONTROLS)].filter(
+        like="param_"
+    )
     return int((params.nunique() > 1).sum())
 
 
-def screen(metrics: pd.DataFrame, info: pd.DataFrame, years: float,
-           knobs: dict) -> tuple[list[str], dict]:
+def screen(
+    metrics: pd.DataFrame, info: pd.DataFrame, years: float, knobs: dict
+) -> tuple[list[str], dict]:
     """The variants that enter the panel, and how many each filter removed.
 
     Controls out; variants without a trade out; exact duplicates (equal trade lists) cut to
@@ -157,16 +213,26 @@ def screen(metrics: pd.DataFrame, info: pd.DataFrame, years: float,
     traded = cast(pd.Series, design[design.isin(cast(Any, info.index))])
     mother = cast(pd.Series, ids[metrics["stratum"] == filters.ORIGIN]).iloc[0]
     kept, share = fingerprint.keep(info.loc[traded, "print"], first=[mother])
-    counts = {"lote": len(ids), "controles": len(ids) - len(design),
-              "sin_operaciones": len(design) - len(traded),
-              "duplicados": len(traded) - len(kept), "duplicados_pct": share,
-              "vivos": live(metrics), "madre": mother, "avisos": []}
+    counts = {
+        "lote": len(ids),
+        "controles": len(ids) - len(design),
+        "sin_operaciones": len(design) - len(traded),
+        "duplicados": len(traded) - len(kept),
+        "duplicados_pct": share,
+        "vivos": live(metrics),
+        "madre": mother,
+        "avisos": [],
+    }
     count = info.loc[kept, "trades"]
-    for name, need in (("suelo_parametros", knobs["floor_per_param"] * counts["vivos"]),
-                       ("suelo_anual", knobs["floor_per_year"] * years)):
+    for name, need in (
+        ("suelo_parametros", knobs["floor_per_param"] * counts["vivos"]),
+        ("suelo_anual", knobs["floor_per_year"] * years),
+    ):
         if count[mother] < need:
-            counts["avisos"].append(f"{name}: la madre ({count[mother]:.0f} operaciones) no "
-                                    f"llega a {need:.0f}; el suelo no se aplica")
+            counts["avisos"].append(
+                f"{name}: la madre ({count[mother]:.0f} operaciones) no "
+                f"llega a {need:.0f}; el suelo no se aplica"
+            )
             counts[name] = 0
             continue
         counts[name] = int((count < need).sum())

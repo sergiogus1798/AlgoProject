@@ -10,8 +10,10 @@ from sqx.projects.orders import PENDING, PORTFOLIO, carried
 
 # An exit parameter is live when its formula is anything but SQX's `.None`. SQX writes the
 # attributes in no fixed order, so `key=` is not always the first one.
-EXIT = re.compile(r'<Param\b[^>]*\bkey="#(StopLoss\.StopLoss|ProfitTarget\.ProfitTarget|'
-                  r'TrailingStop\.TrailingStop)#"[^>]*>\s*<Formula key="SQ\.Formulas\.[\w.]*?(\.None)?"')
+EXIT = re.compile(
+    r'<Param\b[^>]*\bkey="#(StopLoss\.StopLoss|ProfitTarget\.ProfitTarget|'
+    r'TrailingStop\.TrailingStop)#"[^>]*>\s*<Formula key="SQ\.Formulas\.[\w.]*?(\.None)?"'
+)
 
 
 class Rules(TypedDict):
@@ -54,6 +56,9 @@ def rules(strategy: Path) -> Rules:
     live = {key for key, none in EXIT.findall(text) if not none}
     pending = bool(carried(strategy) & set(PENDING))
     exit_orders = bool(live)
-    return Rules(pending=pending, exit_orders=exit_orders,
-                 stop=bool(live & {"StopLoss.StopLoss", "TrailingStop.TrailingStop"}),
-                 column="mecha" if pending or exit_orders else "cierre")
+    return Rules(
+        pending=pending,
+        exit_orders=exit_orders,
+        stop=bool(live & {"StopLoss.StopLoss", "TrailingStop.TrailingStop"}),
+        column="mecha" if pending or exit_orders else "cierre",
+    )

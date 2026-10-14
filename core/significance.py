@@ -21,7 +21,11 @@ def moments(returns: np.ndarray) -> tuple[float, float, float]:
         term expects it that way and excess kurtosis silently shifts both answers.
     """
     sharpe = float(returns.mean() / returns.std(ddof=1))
-    return sharpe, float(stats.skew(returns)), float(stats.kurtosis(returns, fisher=False))
+    return (
+        sharpe,
+        float(stats.skew(returns)),
+        float(stats.kurtosis(returns, fisher=False)),
+    )
 
 
 def variance_factor(sharpe: float, skew: float, kurtosis: float) -> float:
@@ -37,11 +41,18 @@ def variance_factor(sharpe: float, skew: float, kurtosis: float) -> float:
         and fat tails push it above 1, which is what makes a strategy whose profit sits in
         a few enormous trades score worse than a normal-looking one with the same Sharpe.
     """
-    return 1 - skew * sharpe + (kurtosis - 1) / 4 * sharpe ** 2
+    return 1 - skew * sharpe + (kurtosis - 1) / 4 * sharpe**2
 
 
-def footprint(h: np.ndarray, d: np.ndarray, s: np.ndarray, c: np.ndarray, mu: float,
-             sigma: float, pv: float) -> float:
+def footprint(
+    h: np.ndarray,
+    d: np.ndarray,
+    s: np.ndarray,
+    c: np.ndarray,
+    mu: float,
+    sigma: float,
+    pv: float,
+) -> float:
     """Sharpe of a same-footprint random trader, under the market's own noise, for
     `psr()`/`min_track_record()`'s `benchmark`. The one implementation three studies share:
     `studies.transfer.crossmarket`, `portfolio.common.monteCarlo` and `studies.breakage.mcRetest`
@@ -86,10 +97,14 @@ def footprint(h: np.ndarray, d: np.ndarray, s: np.ndarray, c: np.ndarray, mu: fl
         per-observation scale the caller's own `returns`/`pnl` is on -- log return or USD --
         so it is the same ruler `psr()`'s own `sharpe` sits on, only centred differently.
     """
-    h, d, s, c = (np.asarray(h, dtype=np.float64), np.asarray(d, dtype=np.float64),
-                 np.asarray(s, dtype=np.float64), np.asarray(c, dtype=np.float64))
+    h, d, s, c = (
+        np.asarray(h, dtype=np.float64),
+        np.asarray(d, dtype=np.float64),
+        np.asarray(s, dtype=np.float64),
+        np.asarray(c, dtype=np.float64),
+    )
     mean_i = d * mu * h * s * pv - c
-    var_i = sigma ** 2 * h * (s * pv) ** 2
+    var_i = sigma**2 * h * (s * pv) ** 2
     return float(np.mean(mean_i) / np.sqrt(np.mean(var_i) + np.var(mean_i, ddof=1)))
 
 
@@ -131,13 +146,23 @@ def psr(returns: np.ndarray, benchmark: float) -> Psr:
         twice.
     """
     sharpe, skew, kurtosis = moments(returns)
-    z = (sharpe - benchmark) * np.sqrt(returns.size - 1) / np.sqrt(
-        variance_factor(sharpe, skew, kurtosis))
-    return {"sharpe": sharpe, "skew": skew, "kurtosis": kurtosis, "n": returns.size,
-            "psr": float(stats.norm.cdf(z))}
+    z = (
+        (sharpe - benchmark)
+        * np.sqrt(returns.size - 1)
+        / np.sqrt(variance_factor(sharpe, skew, kurtosis))
+    )
+    return {
+        "sharpe": sharpe,
+        "skew": skew,
+        "kurtosis": kurtosis,
+        "n": returns.size,
+        "psr": float(stats.norm.cdf(z)),
+    }
 
 
-def min_track_record(returns: np.ndarray, alpha: float = 0.05, benchmark: float = 0.0) -> TrackRecord:
+def min_track_record(
+    returns: np.ndarray, alpha: float = 0.05, benchmark: float = 0.0
+) -> TrackRecord:
     """Bailey / Lopez de Prado minimum track-record length.
 
     Args:
@@ -159,12 +184,18 @@ def min_track_record(returns: np.ndarray, alpha: float = 0.05, benchmark: float 
     if sharpe <= benchmark:
         return {"needed": None, "have": len(returns), "enough": False}
     z = stats.norm.isf(alpha)
-    needed = 1 + variance_factor(sharpe, skew, kurtosis) * (z / (sharpe - benchmark)) ** 2
-    return {"needed": float(needed), "have": len(returns), "enough": bool(len(returns) >= needed)}
+    needed = (
+        1 + variance_factor(sharpe, skew, kurtosis) * (z / (sharpe - benchmark)) ** 2
+    )
+    return {
+        "needed": float(needed),
+        "have": len(returns),
+        "enough": bool(len(returns) >= needed),
+    }
 
 
 def annual_sharpe(pnl: np.ndarray, closed: np.ndarray) -> float:
-    """"Sharpe total" (owner's rule): the classic Sharpe of the whole backtest's daily P&L.
+    """ "Sharpe total" (owner's rule): the classic Sharpe of the whole backtest's daily P&L.
 
     Args:
         pnl: Account currency per trade.
@@ -178,7 +209,11 @@ def annual_sharpe(pnl: np.ndarray, closed: np.ndarray) -> float:
         account the same series up to a constant, so the ratio is the same either way.
     """
     day = pd.DatetimeIndex(closed).normalize() + pd.offsets.BDay(0)  # pyright: ignore[reportAttributeAccessIssue] -- pandas stubs omit DatetimeIndex.normalize
-    daily = pd.Series(np.asarray(pnl, dtype=np.float64), index=day).groupby(level=0).sum()
-    rets = daily.reindex(pd.bdate_range(daily.index.min(), daily.index.max()), fill_value=0.0)
+    daily = (
+        pd.Series(np.asarray(pnl, dtype=np.float64), index=day).groupby(level=0).sum()
+    )
+    rets = daily.reindex(
+        pd.bdate_range(daily.index.min(), daily.index.max()), fill_value=0.0
+    )
     sd = rets.std(ddof=1) if len(rets) > 1 else 0.0
     return float(rets.mean() / sd * np.sqrt(252)) if sd > 0 else float("nan")

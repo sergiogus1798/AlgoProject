@@ -7,8 +7,25 @@ from pathlib import Path
 import knowhowmap
 
 ROOT = knowhowmap.ROOT
-TOP = ("ui", "core", "sqx", "studies", "engines", "portfolio", "pipeline", "ledger", "perf", "mt5",
-       "tools", "bin", "tests", "assets", "config", "docs", "knowhow")
+TOP = (
+    "ui",
+    "core",
+    "sqx",
+    "studies",
+    "engines",
+    "portfolio",
+    "pipeline",
+    "ledger",
+    "perf",
+    "mt5",
+    "tools",
+    "bin",
+    "tests",
+    "assets",
+    "config",
+    "docs",
+    "knowhow",
+)
 EXT = (".py", ".sh", ".md", ".yaml", ".yml", ".json", ".toml")
 BACKTICKED = re.compile(r"`([^`\n]+)`")
 NOT_REPO = {"AlgoData", "scratch", "user", "raw", "harvest", "memory", "manual"}
@@ -28,11 +45,18 @@ def tokens(text: str) -> list[str]:
     out = []
     for raw in BACKTICKED.findall(text):
         tok = re.sub(r"(::\S*|:\d[\d,-]*|\(.*)$", "", raw.strip()).rstrip(".,;)")
-        if (" " in tok or "/" not in tok or re.search(r"[<>*{}$\[\]|=]", tok) or tok[0] in "/~."
-                or "://" in tok):
+        if (
+            " " in tok
+            or "/" not in tok
+            or re.search(r"[<>*{}$\[\]|=]", tok)
+            or tok[0] in "/~."
+            or "://" in tok
+        ):
             continue
         first = tok.split("/")[0]
-        if first in TOP and (tok.endswith(EXT + ("/",)) or re.search(r"\.[A-Za-z_]\w*$", tok)):
+        if first in TOP and (
+            tok.endswith(EXT + ("/",)) or re.search(r"\.[A-Za-z_]\w*$", tok)
+        ):
             out.append(tok)
         elif first not in TOP + tuple(NOT_REPO) and tok.endswith(".py"):
             out.append(tok)
@@ -54,10 +78,14 @@ def _tails() -> frozenset[str]:
 def dead(tok: str) -> bool:
     """Whether a path-like token resolves to nothing: from the root if it starts at one, else by suffix."""
     tok = tok.rstrip("/")
-    if (ROOT / "knowhow" / f"{tok}.md").exists():  # a card written as domain/slug, e.g. mt5/mt5-under-wine
+    if (
+        ROOT / "knowhow" / f"{tok}.md"
+    ).exists():  # a card written as domain/slug, e.g. mt5/mt5-under-wine
         return False
     if tok.split("/")[0] in TOP:
-        base = re.sub(r"\.[A-Za-z_]\w*$", "", tok)  # path.symbol names a module member, not a file
+        base = re.sub(
+            r"\.[A-Za-z_]\w*$", "", tok
+        )  # path.symbol names a module member, not a file
         return not any((ROOT / t).exists() for t in (tok, base, base + ".py"))
     return tok not in _tails() and not any(t.startswith(tok + "/") for t in _tails())
 
@@ -76,5 +104,9 @@ def dead_header_paths(files: list[Path]) -> list[str]:
     Returns:
         One message per card and dead path. Evidence is exempt: it narrates what a path was.
     """
-    return [f"{c.relative_to(ROOT)}: header cites {t}, which does not exist"
-            for c in knowhowmap.cards() for t in sorted(set(tokens(header(c)))) if dead(t)]
+    return [
+        f"{c.relative_to(ROOT)}: header cites {t}, which does not exist"
+        for c in knowhowmap.cards()
+        for t in sorted(set(tokens(header(c))))
+        if dead(t)
+    ]

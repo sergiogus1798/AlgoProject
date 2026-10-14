@@ -29,7 +29,7 @@ class Launch(BaseModel):
     project: str
     task: str = ""
     step: str = ""
-    nonce: str = ""             # the proof its preflight returned (`proof.py`)
+    nonce: str = ""  # the proof its preflight returned (`proof.py`)
 
 
 class Chain(BaseModel):
@@ -47,9 +47,19 @@ def orphans() -> list[dict[str, Any]]:
 def queued() -> list[str]:
     """A launcher of any kind queued or running — here, or orphaned by a closed window and
     still alive: the refusal, both ways, or nothing."""
-    mine = [j for j in jobs.listing() if j["label"] in winddown.LAUNCHERS and j["rc"] is None]
-    out = [f"ya hay un lanzamiento en marcha o en cola en {mine[0]['project']}: espera a que "
-           "acabe"] if mine else []
+    mine = [
+        j
+        for j in jobs.listing()
+        if j["label"] in winddown.LAUNCHERS and j["rc"] is None
+    ]
+    out = (
+        [
+            f"ya hay un lanzamiento en marcha o en cola en {mine[0]['project']}: espera a que "
+            "acabe"
+        ]
+        if mine
+        else []
+    )
     return out + [o["text"] for o in orphans() if o["alive"]]
 
 
@@ -58,7 +68,7 @@ def listing(project: str) -> dict[str, object]:
     """A project's SQX tasks with what their databanks hold now, or why none can be listed."""
     try:
         got = preflight.tasks(project)
-    except FAILS as e:      # a file SQX is rewriting, a half-written project.cfx
+    except FAILS as e:  # a file SQX is rewriting, a half-written project.cfx
         return {"refuse": f"no se pudo leer el proyecto: {e}"}
     if "refuse" in got:
         return {"refuse": got["refuse"]}
@@ -67,15 +77,23 @@ def listing(project: str) -> dict[str, object]:
 
 def shown(project: str, task: str, step: str, got: dict[str, object]) -> dict[str, str]:
     """What a nonce of this launcher is bound to: what was asked and the sentence shown."""
-    return {"project": project, "task": task, "step": step, "text": cast("str", got["text"])}
+    return {
+        "project": project,
+        "task": task,
+        "step": step,
+        "text": cast("str", got["text"]),
+    }
 
 
 @ROUTER.get("/api/launch/preflight")
 def confirmable(project: str, task: str = "", step: str = "") -> dict[str, object]:
     """`check`, plus the one-use nonce `POST /api/launch/run` asks back when it is ok."""
     got = check(project, task, step)
-    return {**got, "nonce": proof.issue(LABEL, shown(project, task, step, got))} if got[
-        "ok"] else got
+    return (
+        {**got, "nonce": proof.issue(LABEL, shown(project, task, step, got))}
+        if got["ok"]
+        else got
+    )
 
 
 def check(project: str, task: str = "", step: str = "") -> dict[str, object]:
@@ -86,9 +104,13 @@ def check(project: str, task: str = "", step: str = "") -> dict[str, object]:
     except FAILS as e:
         return {"ok": False, "reasons": [f"no se pudo comprobar: {e}"], "text": ""}
     pre["ok"] = not pre["reasons"]
-    return {"ok": pre["ok"], "reasons": pre["reasons"], "role": pre.get("role"),
-            "titles": [t["title"] for t in pre.get("chosen", [])],
-            "text": preflight.text(pre, project) if pre["ok"] else ""}
+    return {
+        "ok": pre["ok"],
+        "reasons": pre["reasons"],
+        "role": pre.get("role"),
+        "titles": [t["title"] for t in pre.get("chosen", [])],
+        "text": preflight.text(pre, project) if pre["ok"] else "",
+    }
 
 
 @ROUTER.get("/api/launch/steps")
@@ -101,11 +123,17 @@ def steps(project: str) -> dict[str, object]:
         got = {"refuse": f"no se pudo comprobar: {e}"}
     out = {}
     for s in [s for s in STEPS if s["kind"] == "sqx"]:
-        pre = ({"ok": False, "reasons": [got["refuse"]]} if "refuse" in got
-               else preflight.judge(project, got, busy, step=s["n"]))
-        out[s["n"]] = {"ok": pre["ok"], "reasons": pre["reasons"],
-                       "titles": [t["title"] for t in pre.get("chosen", [])],
-                       "elsewhere": pre.get("elsewhere", False)}
+        pre = (
+            {"ok": False, "reasons": [got["refuse"]]}
+            if "refuse" in got
+            else preflight.judge(project, got, busy, step=s["n"])
+        )
+        out[s["n"]] = {
+            "ok": pre["ok"],
+            "reasons": pre["reasons"],
+            "titles": [t["title"] for t in pre.get("chosen", [])],
+            "elsewhere": pre.get("elsewhere", False),
+        }
     return {"steps": out, "warnings": [o["text"] for o in orphans()]}
 
 
@@ -120,10 +148,16 @@ def run(req: Launch) -> dict[str, object]:
     if why:
         return {**got, "ok": False, "reasons": [why]}
     what = ["--step", req.step] if req.step else ["--task", req.task]
-    job = jobs.start(LABEL, ["-m", "ui.daemon.launch.run", "--project", req.project, *what],
-                     {"project": req.project, "role": got["role"],
-                      "databank": f"paso {req.step}" if req.step else req.task},
-                     lane="conductor")
+    job = jobs.start(
+        LABEL,
+        ["-m", "ui.daemon.launch.run", "--project", req.project, *what],
+        {
+            "project": req.project,
+            "role": got["role"],
+            "databank": f"paso {req.step}" if req.step else req.task,
+        },
+        lane="conductor",
+    )
     return {**got, "job": job["id"], "task": req.task, "step": req.step}
 
 
@@ -136,8 +170,13 @@ def chain_check(project: str) -> dict[str, object]:
         return {"ok": False, "reasons": [f"no se pudo comprobar: {e}"], "text": ""}
     got["reasons"] += queued()
     got["ok"] = not got["reasons"]
-    return {"ok": got["ok"], "reasons": got["reasons"], "plan": got["plan"],
-            "role": got.get("role"), "text": chaincheck.text(got, project) if got["ok"] else ""}
+    return {
+        "ok": got["ok"],
+        "reasons": got["reasons"],
+        "plan": got["plan"],
+        "role": got.get("role"),
+        "text": chaincheck.text(got, project) if got["ok"] else "",
+    }
 
 
 @ROUTER.post("/api/launch/chain")
@@ -151,14 +190,33 @@ def chain_run(req: Chain) -> dict[str, object]:
     if not got["ok"]:
         return got
     if got["plan"] != req.plan:
-        return {**got, "ok": False, "reasons": ["el plan cambió desde que lo viste: vuelve a "
-                                                "pulsar y confirma el nuevo"]}
+        return {
+            **got,
+            "ok": False,
+            "reasons": [
+                "el plan cambió desde que lo viste: vuelve a pulsar y confirma el nuevo"
+            ],
+        }
     # The job runs exactly what was confirmed: its own process cannot see this daemon's jobs.
     confirmed = jobs.LOGS / f"chain-{req.project}-{datetime.now():%Y%m%d-%H%M%S}.json"
     confirmed.parent.mkdir(parents=True, exist_ok=True)
     confirmed.write_text(json.dumps(req.plan, ensure_ascii=False), encoding="utf-8")
-    job = jobs.start(LABEL, ["-m", "ui.daemon.launch.chain", "--project", req.project,
-                             "--plan", str(confirmed)],
-                     {"project": req.project, "role": got["role"], "databank": "workflow entero",
-                      "study": "Correr workflow"}, lane="conductor")
+    job = jobs.start(
+        LABEL,
+        [
+            "-m",
+            "ui.daemon.launch.chain",
+            "--project",
+            req.project,
+            "--plan",
+            str(confirmed),
+        ],
+        {
+            "project": req.project,
+            "role": got["role"],
+            "databank": "workflow entero",
+            "study": "Correr workflow",
+        },
+        lane="conductor",
+    )
     return {**got, "job": job["id"]}

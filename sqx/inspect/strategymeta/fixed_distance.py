@@ -8,14 +8,23 @@ from sqx.inspect.strategymeta.rules import _value, values
 from core.xmlget import el, hit
 
 # Exit-method parameters (key as in <Item key="Enter…">), by name.
-EXIT_PARAMS = {"#StopLoss.StopLoss#": "stop_loss", "#ProfitTarget.ProfitTarget#": "profit_target",
-               "#TrailingStop.TrailingStop#": "trailing_stop",
-               "#TrailingStop.TrailingActivation#": "trailing_activation",
-               "#MoveSL2BE.MoveSL2BE#": "break_even", "#MoveSL2BE.SL2BEAddPips#": "break_even_add"}
+EXIT_PARAMS = {
+    "#StopLoss.StopLoss#": "stop_loss",
+    "#ProfitTarget.ProfitTarget#": "profit_target",
+    "#TrailingStop.TrailingStop#": "trailing_stop",
+    "#TrailingStop.TrailingActivation#": "trailing_activation",
+    "#MoveSL2BE.MoveSL2BE#": "break_even",
+    "#MoveSL2BE.SL2BEAddPips#": "break_even_add",
+}
 # Formulas SQX's config labels «Fixed value (in pips)» / «Range in pips». ATRBasedValue,
 # PctValue, PriceLevel, ValueFromFormula and None are not fixed distances.
-FIXED_FORMULAS = {"SLPT.FixedValue", "RangeLevel.FixedValue", "Range.FixedValue",
-                  "RangeLevel.PriceRange", "Range.PriceRange"}
+FIXED_FORMULAS = {
+    "SLPT.FixedValue",
+    "RangeLevel.FixedValue",
+    "Range.FixedValue",
+    "RangeLevel.PriceRange",
+    "Range.PriceRange",
+}
 # Condition blocks that carry a pips quantity: FixedPips holds it in #Value#; the P/L-in-pips
 # readers are a distance only against the Number they are compared with.
 PIPS_VALUE_BLOCK = "FixedPips"
@@ -71,15 +80,43 @@ def fixed_distances(source: "str | Path | ElementTree.Element") -> list[dict]:
                 kind = hit(formula.get("key")).replace("SQ.Formulas.", "")
                 if kind in FIXED_FORMULAS:
                     value = float(_value(el(formula.find("Param")), held))
-                    out.append({"rule": rule, "where": "order", "param": name, "formula": kind,
-                                "value": value, "unit": "pips"})
+                    out.append(
+                        {
+                            "rule": rule,
+                            "where": "order",
+                            "param": name,
+                            "formula": kind,
+                            "value": value,
+                            "unit": "pips",
+                        }
+                    )
         elif key == PIPS_VALUE_BLOCK:
-            out.append({"rule": rule, "where": "condition", "param": key, "formula": key,
-                        "value": float(_value(el(item.find("Param")), held)), "unit": "pips"})
+            out.append(
+                {
+                    "rule": rule,
+                    "where": "condition",
+                    "param": key,
+                    "formula": key,
+                    "value": float(_value(el(item.find("Param")), held)),
+                    "unit": "pips",
+                }
+            )
         elif key in PIPS_READERS:
             sides = [c.find("Item") for c in parent[parent[item]] if c.tag == "Block"]
-            other = [n for s in sides if s is not item and (n := _number(s, held)) is not None]
+            other = [
+                n
+                for s in sides
+                if s is not item and (n := _number(s, held)) is not None
+            ]
             if other:
-                out.append({"rule": rule, "where": "condition", "param": key, "formula": key,
-                            "value": other[0], "unit": "pips"})
+                out.append(
+                    {
+                        "rule": rule,
+                        "where": "condition",
+                        "param": key,
+                        "formula": key,
+                        "value": other[0],
+                        "unit": "pips",
+                    }
+                )
     return out

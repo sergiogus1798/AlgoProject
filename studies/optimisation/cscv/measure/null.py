@@ -6,7 +6,7 @@ import numpy as np
 from engines.resample import draws
 from studies.optimisation.cscv.measure import cscv, outputs
 
-WEEKS = 52          # a year, to turn an annual Sharpe into a weekly one
+WEEKS = 52  # a year, to turn an annual Sharpe into a weekly one
 # One stream per (kind, draw), whatever process runs it: the null on net, the null on gross,
 # then one kind per planted Sharpe.
 NET, GROSS, PLANTED = 0, 1, 2
@@ -35,7 +35,9 @@ def standard(values: np.ndarray) -> Standard:
     return {"u": u, "u2": u * u, "m": float(np.median(mean / spread))}
 
 
-def redrawn(shared: Standard, rows: np.ndarray, mean: np.ndarray, blocks: int) -> cscv.Sums:
+def redrawn(
+    shared: Standard, rows: np.ndarray, mean: np.ndarray, blocks: int
+) -> cscv.Sums:
     """Block sums of the equalised panel at redrawn weeks, without building the panel.
 
     Every column is `u + mean`: deviation 1 and Sharpe `mean`, so the common deviation of
@@ -51,16 +53,27 @@ def redrawn(shared: Standard, rows: np.ndarray, mean: np.ndarray, blocks: int) -
         What `cscv.sums` would return for `(u + mean)[rows]`.
     """
     weeks = len(shared["u"])
-    times = np.stack([np.bincount(piece, minlength=weeks)
-                      for piece in np.array_split(rows, blocks)]).astype(np.float64)
+    times = np.stack(
+        [np.bincount(piece, minlength=weeks) for piece in np.array_split(rows, blocks)]
+    ).astype(np.float64)
     n = times.sum(axis=1)
     s1, s2 = times @ shared["u"], times @ shared["u2"]
-    return {"n": n, "s1": s1 + n[:, None] * mean,
-            "s2": s2 + 2 * mean * s1 + n[:, None] * mean * mean}
+    return {
+        "n": n,
+        "s1": s1 + n[:, None] * mean,
+        "s2": s2 + 2 * mean * s1 + n[:, None] * mean * mean,
+    }
 
 
-def draw(shared: Standard, member: np.ndarray, seed: int, kind: int, index: int, delta: float,
-         knobs: dict) -> dict[str, Any]:
+def draw(
+    shared: Standard,
+    member: np.ndarray,
+    seed: int,
+    kind: int,
+    index: int,
+    delta: float,
+    knobs: dict,
+) -> dict[str, Any]:
     """One CSCV on one bootstrap sample of the equalised panel.
 
     Args:
@@ -82,8 +95,14 @@ def draw(shared: Standard, member: np.ndarray, seed: int, kind: int, index: int,
     rows = draws.stationary(1, weeks, rng, knobs["block_weeks"])[0]
     mean = np.full(width, shared["m"])
     if delta:
-        mean[rng.choice(width, max(1, round(knobs["share"] * width)), replace=False)] += (
-            delta / np.sqrt(WEEKS))
-    found = cscv.run(redrawn(shared, rows, mean, knobs["blocks"]), member, knobs["chunk"],
-                     knobs["bins"], knobs["reach"])
+        mean[
+            rng.choice(width, max(1, round(knobs["share"] * width)), replace=False)
+        ] += delta / np.sqrt(WEEKS)
+    found = cscv.run(
+        redrawn(shared, rows, mean, knobs["blocks"]),
+        member,
+        knobs["chunk"],
+        knobs["bins"],
+        knobs["reach"],
+    )
     return outputs.summary(found, knobs["tolerance"])

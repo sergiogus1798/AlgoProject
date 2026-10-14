@@ -13,17 +13,27 @@ from ui.desktop.theme import C, T
 # The daemon's state words (ui/daemon/workflow) as the rail says and paints them. `sealed` is
 # a finished 17-19 whose numbers stay hidden until 20 opens; `missing`, nothing to read.
 # `blocked` is a wait, not a failure: amber, never red (owner, 2026-09-29).
-STATE = {"done": ("hecho", C["promising"]), "running": ("en marcha", C["accent"]),
-         "pending": ("pendiente", C["pending"]), "blocked": ("bloqueado", C["weak"]),
-         "sealed": ("sellado", C["weak"]), "missing": ("sin dato", T["faint"])}
-KIND = {"sqx": ("SQX", "corre en StrategyQuant X: su ▶ SQX lanza todas sus tareas juntas en el "
-                      "worker del proyecto, que se para al acabar"),
-        "python": ("PY", "corre en Python, desde aquí: su ▶ PY corre sus pruebas"),
-        "person": ("TÚ", "lo haces tú, en el chat")}
+STATE = {
+    "done": ("hecho", C["promising"]),
+    "running": ("en marcha", C["accent"]),
+    "pending": ("pendiente", C["pending"]),
+    "blocked": ("bloqueado", C["weak"]),
+    "sealed": ("sellado", C["weak"]),
+    "missing": ("sin dato", T["faint"]),
+}
+KIND = {
+    "sqx": (
+        "SQX",
+        "corre en StrategyQuant X: su ▶ SQX lanza todas sus tareas juntas en el "
+        "worker del proyecto, que se para al acabar",
+    ),
+    "python": ("PY", "corre en Python, desde aquí: su ▶ PY corre sus pruebas"),
+    "person": ("TÚ", "lo haces tú, en el chat"),
+}
 # The run buttons' colours: Python in the accent, SQX in amber — a different machine, and
 # the one whose runs take hours and touch a worker.
 RUN = {"python": C["accent"], "sqx": C["weak"]}
-MORE = re.compile(r" \(\+(\d+)\)$")      # the «(+9)» tail of a test's one-line config
+MORE = re.compile(r" \(\+(\d+)\)$")  # the «(+9)» tail of a test's one-line config
 
 
 def value_words(value: object) -> str:
@@ -34,16 +44,16 @@ def value_words(value: object) -> str:
     if isinstance(value, str):
         try:
             value = ast.literal_eval(value) if value else None
-        except (ValueError, SyntaxError):      # a word: `hard`, `ReturnDDRatio (build)`
+        except (ValueError, SyntaxError):  # a word: `hard`, `ReturnDDRatio (build)`
             return value
     if isinstance(value, (list, tuple)):
         return ", ".join(value_words(v) for v in value) or "—"
     if isinstance(value, float) and value.is_integer():
         value = int(value)
     if isinstance(value, int) and not isinstance(value, bool):
-        return f"{value:,}".replace(",", " ")       # exact: a seed is not «20.3 M»
+        return f"{value:,}".replace(",", " ")  # exact: a seed is not «20.3 M»
     if isinstance(value, float):
-        return exact(value)    # exact and never «1e-05»
+        return exact(value)  # exact and never «1e-05»
     return num(value) if value is None or isinstance(value, (bool, str)) else str(value)
 
 
@@ -52,11 +62,13 @@ def readable(config: str) -> str:
     `ui.daemon.workflow.tests.summary` writes it) in the window's words:
     «Nulos › Runs 2 500 · Ejecución › Bloques — · y 9 más». Anything else passes."""
     more = MORE.search(config)
-    body = config[:more.start()] if more else config
+    body = config[: more.start()] if more else config
     if "=" not in body:
         return config
-    parts = [f"{knob(k)} {value_words(v)}" for k, v in
-             (item.split("=", 1) for item in body.split(" · "))]
+    parts = [
+        f"{knob(k)} {value_words(v)}"
+        for k, v in (item.split("=", 1) for item in body.split(" · "))
+    ]
     return " · ".join(parts) + (f" · y {more.group(1)} más" if more else "")
 
 
@@ -96,9 +108,11 @@ def run_button(kind: str, text: str, why: str) -> QPushButton:
     because a disabled button shows none, also a visible line wherever it sits."""
     button = QPushButton(text)
     colour = RUN[kind]
-    button.setStyleSheet(f"QPushButton {{ color: {colour}; border: 1px solid {colour}; "
-                         f"padding: 1px 5px; }} QPushButton:disabled {{ color: {T['faint']}; "
-                         f"border: 1px dashed {T['line']}; }}")
+    button.setStyleSheet(
+        f"QPushButton {{ color: {colour}; border: 1px solid {colour}; "
+        f"padding: 1px 5px; }} QPushButton:disabled {{ color: {T['faint']}; "
+        f"border: 1px dashed {T['line']}; }}"
+    )
     button.setEnabled(not why)
     button.setToolTip(label(why) if why else "")
     return button
@@ -114,9 +128,15 @@ def gear(n: str, configured: SignalInstance) -> QToolButton:
     button.setProperty("helpmark", False)
     button.setFixedWidth(16)
     button.setCursor(Qt.CursorShape.PointingHandCursor)
-    button.setStyleSheet(f"QToolButton {{ color: {T['muted']}; border: none; padding: 0; "
-                         f"font-size: 14px; }} QToolButton:hover {{ color: {T['accent']}; }}")
-    button.setToolTip(label(f"Editar la configuración del paso {n}: abre la pantalla donde se "
-                            "cambia; luego vuelves aquí a lanzarlo"))
+    button.setStyleSheet(
+        f"QToolButton {{ color: {T['muted']}; border: none; padding: 0; "
+        f"font-size: 14px; }} QToolButton:hover {{ color: {T['accent']}; }}"
+    )
+    button.setToolTip(
+        label(
+            f"Editar la configuración del paso {n}: abre la pantalla donde se "
+            "cambia; luego vuelves aquí a lanzarlo"
+        )
+    )
     button.clicked.connect(lambda: configured.emit(n))
     return button

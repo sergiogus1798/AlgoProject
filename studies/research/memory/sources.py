@@ -10,15 +10,21 @@ import yaml
 from core.datapaths import project_registry, template_registry, template_runs
 from core.researchpaths import autopilot_runs
 
-CONFIG = yaml.safe_load((Path(__file__).parent / "config.yaml").read_text(encoding="utf-8"))
+CONFIG = yaml.safe_load(
+    (Path(__file__).parent / "config.yaml").read_text(encoding="utf-8")
+)
 ROW = re.compile(r"^\| (\S+) \| (\w+) \| (\d+) \| (.*) \|$")
 PAIR = re.compile(r"([^:·|;]+?): (\d+) → (\d+)")
 TOTAL = re.compile(r"Total ([\d.]+) min\.")
 FAILED = re.compile(r"\*\*Falló\*\* en el paso (\S+?)\.")
 FALLO = re.compile(r"# Fallo en el paso (\S+)")
 TEMPLATE_IN_PATH = re.compile(r"templates/library/([^/]+)/")
-TITLE_STAGE = {"CONSTRUCCION": "built", "Retest Markets - Family": "markets",
-               "MCR 8": "mcr", "SPP OOS": "spp"}
+TITLE_STAGE = {
+    "CONSTRUCCION": "built",
+    "Retest Markets - Family": "markets",
+    "MCR 8": "mcr",
+    "SPP OOS": "spp",
+}
 
 
 def read_csv(path: Path) -> list[dict]:
@@ -54,7 +60,11 @@ def family_of(project: str) -> str:
     """The idea family of a project: its template's archetype, else the `family` the registry holds
     for a Simple Strategy. '' for a project neither knows."""
     row = registry_projects().get(project, {})
-    return templates().get(template_of(row), {}).get("archetype", "") or row.get("family") or ""
+    return (
+        templates().get(template_of(row), {}).get("archetype", "")
+        or row.get("family")
+        or ""
+    )
 
 
 def stage_of(step: str, title: str) -> str:
@@ -74,7 +84,13 @@ def parse_resumen(text: str) -> dict[str, Any]:
         (Total), `failed` the step it failed at or '', `dev_cut` True when step 8 kept a random
         draw instead of judging.
     """
-    out = {"stages": {}, "crosstf": None, "minutes": 0.0, "failed": "", "dev_cut": False}
+    out = {
+        "stages": {},
+        "crosstf": None,
+        "minutes": 0.0,
+        "failed": "",
+        "dev_cut": False,
+    }
     for line in text.splitlines():
         row = ROW.match(line)
         if row:
@@ -106,16 +122,30 @@ def autopilot_project(project: str, root: Path | None = None) -> dict[str, Any]:
     """
     folder = (root or autopilot_runs()) / project
     stamps = sorted(p for p in folder.glob("*/resumen.md")) if folder.exists() else []
-    merged = {"stages": {}, "crosstf": None, "minutes": 0.0, "failed": "", "dev_cut": False,
-              "runs": len(stamps), "first": "", "last": ""}
+    merged = {
+        "stages": {},
+        "crosstf": None,
+        "minutes": 0.0,
+        "failed": "",
+        "dev_cut": False,
+        "runs": len(stamps),
+        "first": "",
+        "last": "",
+    }
     for path in stamps:
         one = parse_resumen(path.read_text(encoding="utf-8"))
         merged["stages"].update(one["stages"])
-        merged["crosstf"] = one["crosstf"] if one["crosstf"] is not None else merged["crosstf"]
+        merged["crosstf"] = (
+            one["crosstf"] if one["crosstf"] is not None else merged["crosstf"]
+        )
         merged["minutes"] += one["minutes"]
         merged["dev_cut"] |= one["dev_cut"]
-        fallo = path.parent / "fallo.md"   # the more reliable sign: a final summary can drop the error
-        found = FALLO.match(fallo.read_text(encoding="utf-8")) if fallo.exists() else None
+        fallo = (
+            path.parent / "fallo.md"
+        )  # the more reliable sign: a final summary can drop the error
+        found = (
+            FALLO.match(fallo.read_text(encoding="utf-8")) if fallo.exists() else None
+        )
         merged["failed"] = found.group(1) if found else one["failed"]
     if stamps:
         merged["first"], merged["last"] = stamps[0].parent.name, stamps[-1].parent.name

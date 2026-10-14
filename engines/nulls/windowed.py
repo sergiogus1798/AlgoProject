@@ -19,16 +19,21 @@ from engines.nulls.lookup import Grid, Located, Table
 
 # What each rung of model.RUNGS hands to chance here, beside the entry bar: (the hold is
 # redrawn from the strategy's own, the sizing by volatility is stripped).
-REDRAWS = {"timing": (False, False), "timing_holds": (True, False),
-           "timing_sizing": (False, True), "free": (True, True)}
+REDRAWS = {
+    "timing": (False, False),
+    "timing_holds": (True, False),
+    "timing_sizing": (False, True),
+    "free": (True, True),
+}
 
 # Trade valuations priced per reprice.pnl call, which makes temporaries of ~10x that. Memory
 # only: the table holds the same values whatever the block, so changing this moves no monkey.
 BLOCK = 200_000
 
 
-def atr_sized(atr: np.ndarray, entry: np.ndarray, size: np.ndarray,
-              enter: np.ndarray) -> np.ndarray:
+def atr_sized(
+    atr: np.ndarray, entry: np.ndarray, size: np.ndarray, enter: np.ndarray
+) -> np.ndarray:
     """The lots a sizing rule that normalises by volatility would have given a drawn trade.
 
     Args:
@@ -48,8 +53,12 @@ def atr_sized(atr: np.ndarray, entry: np.ndarray, size: np.ndarray,
     return np.median(size * atr[entry]) / atr[enter]
 
 
-def grid(bars: pd.DataFrame, inside: np.ndarray, labels: np.ndarray,
-         week_mask: np.ndarray | None = None) -> Grid:
+def grid(
+    bars: pd.DataFrame,
+    inside: np.ndarray,
+    labels: np.ndarray,
+    week_mask: np.ndarray | None = None,
+) -> Grid:
     """What every strategy of a run shares: the bars, their windows and where a draw may land.
 
     Args:
@@ -70,19 +79,33 @@ def grid(bars: pd.DataFrame, inside: np.ndarray, labels: np.ndarray,
     atr = np.r_[np.nan, calibrate.atr(bars)[:-1]]
     usable = np.isfinite(atr[inside]) & (atr[inside] > 0)
     if week_mask is not None:
-        usable &= week_mask[scale.minutes(cast(pd.DatetimeIndex, bars.index[inside])) % scale.WEEK]
+        usable &= week_mask[
+            scale.minutes(cast(pd.DatetimeIndex, bars.index[inside])) % scale.WEEK
+        ]
     stamps = cast(pd.DatetimeIndex, bars.index)
     hour = stamps.hour.to_numpy()  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.hour
     eligible = inside[usable]
     edges = pd.Series(inside).groupby(np.asarray(labels)).agg(["min", "max"])
-    return {"bars": bars, "time": bars.index.to_numpy(), "atr": atr, "eligible": eligible,
-            "hour": hour, "by_hour": {int(h): eligible[hour[eligible] == h] for h in range(24)},
-            "bounds": {label: (int(lo), int(hi)) for label, lo, hi in edges.itertuples()},
-            "last": int(inside[-1])}
+    return {
+        "bars": bars,
+        "time": bars.index.to_numpy(),
+        "atr": atr,
+        "eligible": eligible,
+        "hour": hour,
+        "by_hour": {int(h): eligible[hour[eligible] == h] for h in range(24)},
+        "bounds": {label: (int(lo), int(hi)) for label, lo, hi in edges.itertuples()},
+        "last": int(inside[-1]),
+    }
 
 
-def located(shared: Grid, entry: np.ndarray, leave: np.ndarray, size: np.ndarray,
-            side: np.ndarray, window: np.ndarray) -> Located:
+def located(
+    shared: Grid,
+    entry: np.ndarray,
+    leave: np.ndarray,
+    size: np.ndarray,
+    side: np.ndarray,
+    window: np.ndarray,
+) -> Located:
     """One strategy's real trades on the grid, each with the window its monkeys are drawn in.
 
     Args:
@@ -97,13 +120,20 @@ def located(shared: Grid, entry: np.ndarray, leave: np.ndarray, size: np.ndarray
         and `lo` / `hi`, the first and last bar of each trade's window.
     """
     lo, hi = np.array([shared["bounds"][label] for label in window]).T
-    return {"entry": np.asarray(entry), "hold": np.asarray(leave) - np.asarray(entry),
-            "size": np.asarray(size, float), "side": np.asarray(side, float),
-            "hour": shared["hour"][np.asarray(entry)], "lo": lo, "hi": hi}
+    return {
+        "entry": np.asarray(entry),
+        "hold": np.asarray(leave) - np.asarray(entry),
+        "size": np.asarray(size, float),
+        "side": np.asarray(side, float),
+        "hour": shared["hour"][np.asarray(entry)],
+        "lo": lo,
+        "hi": hi,
+    }
 
 
-def draw(shared: Grid, mine: Located, rung: str, draws: int,
-         rng: np.random.Generator) -> dict[str, np.ndarray]:
+def draw(
+    shared: Grid, mine: Located, rung: str, draws: int, rng: np.random.Generator
+) -> dict[str, np.ndarray]:
     """Monkeys of one strategy: every trade re-entered at a uniform bar of its own window AND hour.
 
     Args:
@@ -130,30 +160,47 @@ def draw(shared: Grid, mine: Located, rung: str, draws: int,
     """
     redraw, flat = REDRAWS[rung]
     n = mine["entry"].size
-    u = rng.random((draws, 2, n))     # both layers whatever the rung: the stream is the same for the four
-    holds = (mine["hold"][(u[:, 1] * n).astype(np.int64)] if redraw
-             else np.broadcast_to(mine["hold"], (draws, n)))
+    u = rng.random(
+        (draws, 2, n)
+    )  # both layers whatever the rung: the stream is the same for the four
+    holds = (
+        mine["hold"][(u[:, 1] * n).astype(np.int64)]
+        if redraw
+        else np.broadcast_to(mine["hold"], (draws, n))
+    )
     holds = np.minimum(holds, shared["last"] - mine["lo"])
     entries = np.empty(holds.shape, np.int64)
     for hour in np.unique(mine["hour"]):
         cols = np.flatnonzero(mine["hour"] == hour)
         at_hour = shared["by_hour"][int(hour)]
         if not at_hour.size:
-            raise IndexError(f"no eligible bar at hour {hour}: a trade entered on a bar the "
-                             "grid never draws (no usable ATR, or outside the session)")
+            raise IndexError(
+                f"no eligible bar at hour {hour}: a trade entered on a bar the "
+                "grid never draws (no usable ATR, or outside the session)"
+            )
         first = np.searchsorted(at_hour, mine["lo"][cols])
-        room = np.searchsorted(at_hour, np.minimum(mine["hi"][cols], shared["last"] - holds[:, cols]),
-                               side="right") - first
+        room = (
+            np.searchsorted(
+                at_hour,
+                np.minimum(mine["hi"][cols], shared["last"] - holds[:, cols]),
+                side="right",
+            )
+            - first
+        )
         pick = first + (u[:, 0, cols] * np.maximum(room, 1)).astype(np.int64)
         entries[:, cols] = at_hour[np.minimum(pick, at_hour.size - 1)]
     holds = np.minimum(entries + holds, shared["last"]) - entries
-    sizes = (np.broadcast_to(mine["size"].mean(), entries.shape) if flat
-             else atr_sized(shared["atr"], mine["entry"], mine["size"], entries))
+    sizes = (
+        np.broadcast_to(mine["size"].mean(), entries.shape)
+        if flat
+        else atr_sized(shared["atr"], mine["entry"], mine["size"], entries)
+    )
     return {"entries": entries, "holds": holds, "sizes": sizes}
 
 
-def price(shared: Grid, mine: Mapping[str, Any], drawn: dict,
-          costs: reprice.Costs) -> tuple[np.ndarray, np.ndarray]:
+def price(
+    shared: Grid, mine: Mapping[str, Any], drawn: dict, costs: reprice.Costs
+) -> tuple[np.ndarray, np.ndarray]:
     """Every drawn trade's money P/L at the declared costs, in one reprice.pnl call.
 
     Args:
@@ -167,9 +214,15 @@ def price(shared: Grid, mine: Mapping[str, Any], drawn: dict,
         are charged here, to every draw, exactly as to the real run.
     """
     enter, leave = drawn["entries"], drawn["entries"] + drawn["holds"]
-    return reprice.pnl(reprice.fills(shared["bars"], enter), reprice.fills(shared["bars"], leave),
-                       shared["time"][enter], shared["time"][leave], mine["side"],
-                       drawn["sizes"], costs)
+    return reprice.pnl(
+        reprice.fills(shared["bars"], enter),
+        reprice.fills(shared["bars"], leave),
+        shared["time"][enter],
+        shared["time"][leave],
+        mine["side"],
+        drawn["sizes"],
+        costs,
+    )
 
 
 def priced(shared: Grid, mine: Located, costs: reprice.Costs, rung: str) -> Table:
@@ -190,18 +243,35 @@ def priced(shared: Grid, mine: Located, costs: reprice.Costs, rung: str) -> Tabl
     cells = lookup.layout(shared, mine, redraw)
     value = np.empty(cells["enter"].size)
     for done in range(0, value.size, BLOCK):
-        enter, leave = (cells[k][done:done + BLOCK] for k in ("enter", "leave"))
-        sizes = (np.broadcast_to(mine["size"].mean(), enter.shape) if flat
-                 else atr_sized(shared["atr"], mine["entry"], mine["size"], enter))
-        value[done:done + BLOCK] = price(
-            shared, {"side": cells["side"][done:done + BLOCK]},
-            {"entries": enter, "holds": leave - enter, "sizes": sizes}, costs)[0]
-    return {"value": value, "redraw": redraw, "off": cells["off"], "room": cells["room"],
-            "hid": cells["hid"]}
+        enter, leave = (cells[k][done : done + BLOCK] for k in ("enter", "leave"))
+        sizes = (
+            np.broadcast_to(mine["size"].mean(), enter.shape)
+            if flat
+            else atr_sized(shared["atr"], mine["entry"], mine["size"], enter)
+        )
+        value[done : done + BLOCK] = price(
+            shared,
+            {"side": cells["side"][done : done + BLOCK]},
+            {"entries": enter, "holds": leave - enter, "sizes": sizes},
+            costs,
+        )[0]
+    return {
+        "value": value,
+        "redraw": redraw,
+        "off": cells["off"],
+        "room": cells["room"],
+        "hid": cells["hid"],
+    }
 
 
-def means(shared: Grid, mine: Located, costs: reprice.Costs, rung: str, draws: int,
-          rng: np.random.Generator) -> np.ndarray:
+def means(
+    shared: Grid,
+    mine: Located,
+    costs: reprice.Costs,
+    rung: str,
+    draws: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
     """The mean P/L per trade of every monkey of one strategy under one rung.
 
     Args:

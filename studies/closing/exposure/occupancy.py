@@ -23,7 +23,9 @@ def held(trades: pd.DataFrame, index: pd.DatetimeIndex) -> dict[str, Any]:
         pushed one bar forward so the arithmetic never credits a position with zero
         market time, which would make a scalper look like it was never exposed.
     """
-    entry = np.maximum(index.searchsorted(trades["Open time"].to_numpy(), side="right") - 1, 0)
+    entry = np.maximum(
+        index.searchsorted(trades["Open time"].to_numpy(), side="right") - 1, 0
+    )
     leave = index.searchsorted(trades["Close time"].to_numpy())
     leave = np.maximum(leave, entry + 1)
     size = trades["Size"].to_numpy(np.float64)
@@ -33,7 +35,7 @@ def held(trades: pd.DataFrame, index: pd.DatetimeIndex) -> dict[str, Any]:
         edges = np.zeros(len(index) + 1)
         np.add.at(edges, entry, weight)
         np.add.at(edges, np.minimum(leave, len(index)), -weight)
-        out[name] = np.cumsum(edges)[:len(index)]
+        out[name] = np.cumsum(edges)[: len(index)]
     return out
 
 
@@ -68,8 +70,9 @@ class Presence(TypedDict):
     aligned: float
 
 
-def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float,
-            equity: float) -> Occupancy:
+def measure(
+    trades: pd.DataFrame, bars: pd.DataFrame, point_value: float, equity: float
+) -> Occupancy:
     """Everything about how much market the strategy was standing in.
 
     Args:
@@ -87,16 +90,17 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float,
     """
     stamps = cast(pd.DatetimeIndex, bars.index)
     lots = held(trades, stamps)
-    inside = lots["gross"] > 1e-9   # a float cumsum of overlapping lots leaves a residue
+    inside = lots["gross"] > 1e-9  # a float cumsum of overlapping lots leaves a residue
     notional = lots["gross"] * bars["Close"].to_numpy() * point_value
     minutes = bar_minutes(stamps)
     span = (stamps[-1] - stamps[0]) + pd.Timedelta(minutes=minutes)
-    return {"share": float(inside.mean()),
-            "hours_per_week": float(inside.sum() * minutes / 60
-                                    / (span / WEEK)),
-            "avg_notional_pct": float(notional.mean() / equity * 100),
-            "notional_when_in_pct": float(notional[inside].mean() / equity * 100),
-            "tilt": float(lots["signed"].sum() / lots["gross"].sum())}
+    return {
+        "share": float(inside.mean()),
+        "hours_per_week": float(inside.sum() * minutes / 60 / (span / WEEK)),
+        "avg_notional_pct": float(notional.mean() / equity * 100),
+        "notional_when_in_pct": float(notional[inside].mean() / equity * 100),
+        "tilt": float(lots["signed"].sum() / lots["gross"].sum()),
+    }
 
 
 def presence(lots: np.ndarray, moves: np.ndarray) -> Presence:
@@ -114,5 +118,7 @@ def presence(lots: np.ndarray, moves: np.ndarray) -> Presence:
     """
     total = np.abs(moves).sum()
     inside = lots != 0
-    return {"captured": float(np.abs(moves[inside]).sum() / total),
-            "aligned": float(np.sign(lots[inside]) @ moves[inside] / total)}
+    return {
+        "captured": float(np.abs(moves[inside]).sum() / total),
+        "aligned": float(np.sign(lots[inside]) @ moves[inside] / total),
+    }

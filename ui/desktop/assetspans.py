@@ -1,15 +1,24 @@
 """One asset's windows: its data, the three segments and the MC Retest ranges."""
 
 from PySide6.QtCore import QDate, Signal
-from PySide6.QtWidgets import (QDateEdit, QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (
+    QDateEdit,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop.assettable import cell, derived, fit, grid, send, val
 from ui.desktop.assetforms import TextBox, word
 from ui.desktop.assetmarkets import CrossMarketCheck
 from ui.desktop.theme import clear
 
-EMPTY = QDate(1970, 1, 1)   # the date edit's floor, shown as «sin decidir»: `null` in the file
+EMPTY = QDate(
+    1970, 1, 1
+)  # the date edit's floor, shown as «sin decidir»: `null` in the file
 
 
 def qdate(bound: object, end: bool) -> QDate:
@@ -70,7 +79,9 @@ class AssetSpans(QWidget):
         self.dates.setSpacing(6)
         self.lay.addLayout(self.dates)
 
-        self.ranges = QWidget(objectName="bare")     # else it paints a darker box behind the table  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.ranges = QWidget(
+            objectName="bare"  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        )  # else it paints a darker box behind the table
         self.ranges.setStyleSheet("#bare { background: transparent; }")
         box = QVBoxLayout(self.ranges)
         box.setContentsMargins(0, 0, 0, 0)
@@ -98,10 +109,14 @@ class AssetSpans(QWidget):
         """One card per segment, stacked, under the line of what SQX actually has."""
         clear(self.dates)
         span = self.data["data"] or {}
-        self.feed.setText(f"Datos en SQX: {span.get('from', 'sin datos')} → "
-                          f"{span.get('to', 'sin datos')}")
-        self.feed.setToolTip("Lo que SQX tiene para el feed de este activo. No se edita: lo "
-                             "refresca `python3 -m core.assets --dataranges`.")
+        self.feed.setText(
+            f"Datos en SQX: {span.get('from', 'sin datos')} → "
+            f"{span.get('to', 'sin datos')}"
+        )
+        self.feed.setToolTip(
+            "Lo que SQX tiene para el feed de este activo. No se edita: lo "
+            "refresca `python3 -m core.assets --dataranges`."
+        )
         for seg in self.data["segments"]:
             self.dates.addWidget(self.segment_card(seg))
 
@@ -123,8 +138,14 @@ class AssetSpans(QWidget):
         name.setToolTip(seg["purpose"])
         kept = seg["reserved_for"]
         note = QLabel(f"Spread {word(seg['spread'])}", objectName="muted")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-        note.setToolTip(seg["purpose"] + (f"\nReservado para {', '.join(kept)} (solo ata a "
-                                          "un agente autónomo)." if kept else ""))
+        note.setToolTip(
+            seg["purpose"]
+            + (
+                f"\nReservado para {', '.join(kept)} (solo ata a un agente autónomo)."
+                if kept
+                else ""
+            )
+        )
         go = QPushButton("Aplicar")
         go.setEnabled(False)
         head = QHBoxLayout()
@@ -142,11 +163,14 @@ class AssetSpans(QWidget):
 
         for edit in (first, last):
             edit.dateChanged.connect(
-                lambda *_, s=seg, a=first, b=last, g=go: self.dirty(s, a, b, g))
+                lambda *_, s=seg, a=first, b=last, g=go: self.dirty(s, a, b, g)
+            )
         go.clicked.connect(lambda *_, s=seg, a=first, b=last: self.on_dates(s, a, b))
         return tile
 
-    def dirty(self, seg: dict, first: QDateEdit, last: QDateEdit, go: QPushButton) -> None:
+    def dirty(
+        self, seg: dict, first: QDateEdit, last: QDateEdit, go: QPushButton
+    ) -> None:
         """Enable Aplicar only for a change that makes a window.
 
         Args:
@@ -154,12 +178,18 @@ class AssetSpans(QWidget):
             first, last: Its two selectors.
             go: Its button.
         """
-        moved = (first.date() != qdate(seg["from"], False)
-                 or last.date() != qdate(seg["to"], True))
-        backwards = EMPTY not in (first.date(), last.date()) and first.date() > last.date()
+        moved = first.date() != qdate(seg["from"], False) or last.date() != qdate(
+            seg["to"], True
+        )
+        backwards = (
+            EMPTY not in (first.date(), last.date()) and first.date() > last.date()
+        )
         go.setEnabled(moved and not backwards)
-        go.setToolTip("«Desde» va después de «hasta»." if backwards else
-                      "Escribe en assets/_policy.yaml solo el extremo que cambió.")
+        go.setToolTip(
+            "«Desde» va después de «hasta»."
+            if backwards
+            else "Escribe en assets/_policy.yaml solo el extremo que cambió."
+        )
 
     def on_dates(self, seg: dict, first: QDateEdit, last: QDateEdit) -> None:
         """Write whichever bound of one segment moved.
@@ -170,8 +200,11 @@ class AssetSpans(QWidget):
         """
         for edge, edit, end in (("from", first, False), ("to", last, True)):
             if edit.date() != qdate(seg[edge], end):
-                send("policy", ["segments", self.data["symbol"], seg["name"], edge],
-                     bound_text(edit.date(), end))
+                send(
+                    "policy",
+                    ["segments", self.data["symbol"], seg["name"], edge],
+                    bound_text(edit.date(), end),
+                )
         self.changed.emit()
 
     def fill_mc(self) -> None:
@@ -183,10 +216,14 @@ class AssetSpans(QWidget):
             # file keeps its null and the MinDist task is still not written.
             zero = r["name"] == "min_distance"
             got = r.get("applied") or {}
-            ends = [cell("0", "Sin decidir en el fichero (null): sin perturbación.")
-                    if zero and r[k] is None else
-                    derived(got[k], got["source"]) if r[k] is None and got.get(k) is not None
-                    else cell(val(r[k])) for k in ("min", "max")]
+            ends = [
+                cell("0", "Sin decidir en el fichero (null): sin perturbación.")
+                if zero and r[k] is None
+                else derived(got[k], got["source"])
+                if r[k] is None and got.get(k) is not None
+                else cell(val(r[k]))
+                for k in ("min", "max")
+            ]
             for j, item in enumerate([cell(word(r["name"]), r["name"]), *ends]):
                 self.mc.setItem(i, j, item)
         fit(self.mc)
@@ -201,11 +238,13 @@ class AssetSpans(QWidget):
         if column not in (1, 2):
             return
         r, edge = self.data["mc_retest"][row], "min" if column == 1 else "max"
-        box = TextBox(f"{self.data['symbol']} · MC Retest {word(r['name'])} · {word(edge)}",
-                      "En PUNTOS y absoluto, no un múltiplo del spread real: un rango sólo "
-                      "significa algo a la escala del propio instrumento. Vacío = sin decidir.",
-                      "" if r[edge] is None else str(r[edge]), False)
+        box = TextBox(
+            f"{self.data['symbol']} · MC Retest {word(r['name'])} · {word(edge)}",
+            "En PUNTOS y absoluto, no un múltiplo del spread real: un rango sólo "
+            "significa algo a la escala del propio instrumento. Vacío = sin decidir.",
+            "" if r[edge] is None else str(r[edge]),
+            False,
+        )
         if box.exec():
             send(self.data["symbol"], ["mc_retest", r["name"], edge], box.text())
             self.changed.emit()
-

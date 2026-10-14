@@ -1,4 +1,5 @@
 """Known-answer tests of the live protocol: SPRT boundaries and crossings, and stage A's rows."""
+
 import shutil
 import sys
 import tempfile
@@ -15,9 +16,27 @@ from core.assetyaml import safe_load
 from portfolio.funded.live import real, sprt, stage_a
 
 SPRT = {"mu0": 0.0, "mu1": 0.10, "sigma": 0.706, "ln_a": 2.89, "ln_b": -2.25}
-CFG = {"trades": 30, "tolerance_bars": 1, "matched_min": 0.95, "trade_gap_max_r": 0.05,
-       "daily_corr_min": 0.95, "dd_rel_gap_max": 0.10, "max_offset_h": 3}
-PNL = [100.0, -50.0, 80.0, -120.0, 60.0, -30.0, 150.0, -90.0, 40.0, -70.0] * 3   # one trade a day, 30 days
+CFG = {
+    "trades": 30,
+    "tolerance_bars": 1,
+    "matched_min": 0.95,
+    "trade_gap_max_r": 0.05,
+    "daily_corr_min": 0.95,
+    "dd_rel_gap_max": 0.10,
+    "max_offset_h": 3,
+}
+PNL = [
+    100.0,
+    -50.0,
+    80.0,
+    -120.0,
+    60.0,
+    -30.0,
+    150.0,
+    -90.0,
+    40.0,
+    -70.0,
+] * 3  # one trade a day, 30 days
 
 
 def test_boundaries() -> None:
@@ -39,9 +58,17 @@ def test_crossings() -> None:
 def trades(pnl: list[float], extra: int = 0) -> pd.DataFrame:
     """One 'buy' a day at 10:00 closing at 11:00, plus `extra` zero-P&L trades at 15:00."""
     days = pd.date_range("2026-01-05", periods=len(pnl), freq="D")
-    rows = [("buy", d + pd.Timedelta(hours=10), d + pd.Timedelta(hours=11), p) for d, p in zip(days, pnl)]
-    rows += [("buy", d + pd.Timedelta(hours=15), d + pd.Timedelta(hours=16), 0.0) for d in days[:extra]]
-    return pd.DataFrame(rows, columns=["Type", "Open time", "Close time", "Profit/Loss"])
+    rows = [
+        ("buy", d + pd.Timedelta(hours=10), d + pd.Timedelta(hours=11), p)
+        for d, p in zip(days, pnl)
+    ]
+    rows += [
+        ("buy", d + pd.Timedelta(hours=15), d + pd.Timedelta(hours=16), 0.0)
+        for d in days[:extra]
+    ]
+    return pd.DataFrame(
+        rows, columns=["Type", "Open time", "Close time", "Profit/Loss"]
+    )
 
 
 def judged(real_pnl: list[float], extra: int = 0) -> dict:
@@ -93,7 +120,9 @@ def test_r_is_the_judges_mean_loss() -> None:
 def test_live_failure_writer() -> None:
     """On a temp copy of a card: one entry appended, a second after it, comments and keys kept."""
     tmp = Path(tempfile.mkdtemp())
-    card = next(p for p in failures.SYMBOLS.glob("*.yaml") if not p.name.startswith("_"))
+    card = next(
+        p for p in failures.SYMBOLS.glob("*.yaml") if not p.name.startswith("_")
+    )
     shutil.copy(card, tmp / "TEST.yaml")
     old, failures.SYMBOLS = failures.SYMBOLS, tmp
     noop, assetwrite.reindex = assetwrite.reindex, lambda: 0
@@ -106,8 +135,10 @@ def test_live_failure_writer() -> None:
         failures.SYMBOLS, assetwrite.reindex = old, noop
         shutil.rmtree(tmp, ignore_errors=True)
     doc = safe_load(text)
-    assert doc["live_failures"] == [{"date": "2026-10-12", "strategy": "S1", "row": "2", "value": 0.1235},
-                                    {"date": "2026-10-13", "strategy": "S2", "row": "3a", "value": None}]
+    assert doc["live_failures"] == [
+        {"date": "2026-10-12", "strategy": "S1", "row": "2", "value": 0.1235},
+        {"date": "2026-10-13", "strategy": "S2", "row": "3a", "value": None},
+    ]
     assert text.startswith(before.rstrip("\n")[:200]) and "live_failures" not in before
 
 

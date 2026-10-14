@@ -8,8 +8,13 @@ NAMES = ("net", "sharpe", "pf", "retdd", "dd")
 
 
 @njit(cache=True, nogil=True, inline="always")
-def _drawdown(pnl: np.ndarray, leave: np.ndarray, start: np.ndarray, key: np.ndarray,
-              val: np.ndarray) -> float:
+def _drawdown(
+    pnl: np.ndarray,
+    leave: np.ndarray,
+    start: np.ndarray,
+    key: np.ndarray,
+    val: np.ndarray,
+) -> float:
     """The deepest drawdown of one run's curve, its trades added in exit order.
 
     Args:
@@ -33,13 +38,13 @@ def _drawdown(pnl: np.ndarray, leave: np.ndarray, start: np.ndarray, key: np.nda
     shift = 0
     while (hi - lo) >> shift >= n:
         shift += 1
-    buckets = ((hi - lo) >> shift) + 1                       # never more than n
-    start[:buckets + 1] = 0
+    buckets = ((hi - lo) >> shift) + 1  # never more than n
+    start[: buckets + 1] = 0
     for k in range(n):
         start[((leave[k] - lo) >> shift) + 1] += 1
     for b in range(1, buckets):
-        start[b] += start[b - 1]                             # trades in the buckets before b
-    for k in range(n):                                       # ascending k: stable
+        start[b] += start[b - 1]  # trades in the buckets before b
+    for k in range(n):  # ascending k: stable
         b = (leave[k] - lo) >> shift
         j = start[b]
         start[b] = j + 1
@@ -61,8 +66,9 @@ def _drawdown(pnl: np.ndarray, leave: np.ndarray, start: np.ndarray, key: np.nda
 
 
 @njit(cache=True, nogil=True, error_model="numpy", inline="always")
-def _write(pnl: np.ndarray, net: float, gain: float, loss: float, dd: float,
-           row: np.ndarray) -> None:
+def _write(
+    pnl: np.ndarray, net: float, gain: float, loss: float, dd: float, row: np.ndarray
+) -> None:
     """One run's five statistics into its row of `out`, in NAMES order."""
     n = pnl.size
     mean = net / n
@@ -77,8 +83,16 @@ def _write(pnl: np.ndarray, net: float, gain: float, loss: float, dd: float,
 
 
 @njit(cache=True, nogil=True, error_model="numpy")
-def runs(entries: np.ndarray, holds: np.ndarray, sizes: np.ndarray, enter_px: np.ndarray,
-         leave_px: np.ndarray, cost: np.ndarray, value: float, out: np.ndarray) -> None:
+def runs(
+    entries: np.ndarray,
+    holds: np.ndarray,
+    sizes: np.ndarray,
+    enter_px: np.ndarray,
+    leave_px: np.ndarray,
+    cost: np.ndarray,
+    value: float,
+    out: np.ndarray,
+) -> None:
     """Price every run of a batch on its time barrier and write its five statistics.
 
     Args:
@@ -98,7 +112,11 @@ def runs(entries: np.ndarray, holds: np.ndarray, sizes: np.ndarray, enter_px: np
     """
     n_runs, n = entries.shape
     pnl, val = np.empty(n), np.empty(n)
-    leave, key, start = np.empty(n, np.int64), np.empty(n, np.int64), np.empty(n + 1, np.int64)
+    leave, key, start = (
+        np.empty(n, np.int64),
+        np.empty(n, np.int64),
+        np.empty(n + 1, np.int64),
+    )
     for s in range(n_runs):
         net = gain = loss = 0.0
         for k in range(n):
@@ -107,15 +125,24 @@ def runs(entries: np.ndarray, holds: np.ndarray, sizes: np.ndarray, enter_px: np
             p = value * sizes[s, k] * (leave_px[leave[k]] - enter_px[e]) - cost[k]
             pnl[k] = p
             net += p
-            gain += p if p > 0.0 else 0.0                    # a select, not a branch that
-            loss -= p if p < 0.0 else 0.0                    # mispredicts on half the trades
+            gain += p if p > 0.0 else 0.0  # a select, not a branch that
+            loss -= p if p < 0.0 else 0.0  # mispredicts on half the trades
         _write(pnl, net, gain, loss, _drawdown(pnl, leave, start, key, val), out[s])
 
 
 @njit(cache=True, nogil=True, error_model="numpy")
-def ladder(u: np.ndarray, holds: np.ndarray, sizes: np.ndarray, enter_px: np.ndarray,
-           leave_px: np.ndarray, cost: np.ndarray, value: float, lo: int, hi: int,
-           out: np.ndarray) -> None:
+def ladder(
+    u: np.ndarray,
+    holds: np.ndarray,
+    sizes: np.ndarray,
+    enter_px: np.ndarray,
+    leave_px: np.ndarray,
+    cost: np.ndarray,
+    value: float,
+    lo: int,
+    hi: int,
+    out: np.ndarray,
+) -> None:
     """`runs` for a batch a rung drew, placing each trade from its uniform as it prices it.
 
     Args:
@@ -131,7 +158,11 @@ def ladder(u: np.ndarray, holds: np.ndarray, sizes: np.ndarray, enter_px: np.nda
     """
     n_runs, n = u.shape
     pnl, val = np.empty(n), np.empty(n)
-    leave, key, start = np.empty(n, np.int64), np.empty(n, np.int64), np.empty(n + 1, np.int64)
+    leave, key, start = (
+        np.empty(n, np.int64),
+        np.empty(n, np.int64),
+        np.empty(n + 1, np.int64),
+    )
     for s in range(n_runs):
         net = gain = loss = 0.0
         for k in range(n):
@@ -141,14 +172,20 @@ def ladder(u: np.ndarray, holds: np.ndarray, sizes: np.ndarray, enter_px: np.nda
             p = value * sizes[s, k] * (leave_px[leave[k]] - enter_px[e]) - cost[k]
             pnl[k] = p
             net += p
-            gain += p if p > 0.0 else 0.0                    # a select, not a branch that
-            loss -= p if p < 0.0 else 0.0                    # mispredicts on half the trades
+            gain += p if p > 0.0 else 0.0  # a select, not a branch that
+            loss -= p if p < 0.0 else 0.0  # mispredicts on half the trades
         _write(pnl, net, gain, loss, _drawdown(pnl, leave, start, key, val), out[s])
 
 
 @njit(cache=True, nogil=True, error_model="numpy")
-def touched(entries: np.ndarray, holds: np.ndarray, low: np.ndarray, high: np.ndarray,
-            stop: np.ndarray, target: np.ndarray) -> tuple:
+def touched(
+    entries: np.ndarray,
+    holds: np.ndarray,
+    low: np.ndarray,
+    high: np.ndarray,
+    stop: np.ndarray,
+    target: np.ndarray,
+) -> tuple:
     """The first bar of each trade's life on which a price barrier is reached.
 
     Args:

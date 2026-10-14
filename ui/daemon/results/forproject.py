@@ -8,9 +8,11 @@ from sqx.projects import registry
 # `screening.gate`): the config.yaml's value (the donor's, XAUUSD, M30)
 # never runs for another asset. Kept in step with the runner by hand; the test
 # `tests/test_ui_workflow.py` reads the runner's argv against it.
-SET = {"entryQuality": {"run.feed": "feed", "run.timeframe": "timeframe"},
-       "exposure": {"study.timeframe": "timeframe"},
-       "gate": {"monkey.timeframe": "timeframe"}}
+SET = {
+    "entryQuality": {"run.feed": "feed", "run.timeframe": "timeframe"},
+    "exposure": {"study.timeframe": "timeframe"},
+    "gate": {"monkey.timeframe": "timeframe"},
+}
 # Knobs naming an asset or a grid that the runner does NOT replace: the file's value runs,
 # whatever the project trades. Empty since 2026-09-28 (cloud, exposure and gate now get theirs).
 KEPT: dict[str, dict[str, str]] = {}
@@ -30,8 +32,11 @@ def facts(project: str) -> dict[str, str] | None:
     row = next((r for r in reversed(registry.rows()) if r["name"] == project), None)
     if row is None:
         return None
-    return {"symbol": row["symbol"], "timeframe": row["timeframe"],
-            "feed": load(row["symbol"])["sqx_symbol"]}
+    return {
+        "symbol": row["symbol"],
+        "timeframe": row["timeframe"],
+        "feed": load(row["symbol"])["sqx_symbol"],
+    }
 
 
 def apply(key: str, sections: list[dict], project: str) -> list[dict]:
@@ -56,12 +61,16 @@ def apply(key: str, sections: list[dict], project: str) -> list[dict]:
             what = SET.get(key, {}).get(k["key"])
             kept = KEPT.get(key, {}).get(k["key"])
             if what:
-                k = k | {"value": mine[what],
-                         "note": f"lo pone el proyecto al correr (en el config.yaml: "
-                                 f"{k['value']})"}
+                k = k | {
+                    "value": mine[what],
+                    "note": f"lo pone el proyecto al correr (en el config.yaml: "
+                    f"{k['value']})",
+                }
             elif kept and str(k["value"]) != mine[kept]:
-                k = k | {"warn": f"corre con {k['value']} aunque el {WORDS[kept]} del proyecto "
-                                 f"sea {mine[kept]}: la ventana no lo cambia al lanzarlo"}
+                k = k | {
+                    "warn": f"corre con {k['value']} aunque el {WORDS[kept]} del proyecto "
+                    f"sea {mine[kept]}: la ventana no lo cambia al lanzarlo"
+                }
             knobs.append(k)
         out.append(s | {"knobs": knobs})
     return out

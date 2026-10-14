@@ -15,8 +15,12 @@ from portfolio.common.construct.equity import closecurve
 
 CONFIG = Path(__file__).with_name("config.yaml")
 STEP = 20
-SEGMENT = "oos2"   # the stretch no selection step looked at; not a knob (config.yaml says why)
-TRADES = "trades.parquet"   # per variant, in the batch folder: step 16.5's harvest writes it
+SEGMENT = (
+    "oos2"  # the stretch no selection step looked at; not a knob (config.yaml says why)
+)
+TRADES = (
+    "trades.parquet"  # per variant, in the batch folder: step 16.5's harvest writes it
+)
 # The rebuilt panel's licence, as part A sets it: the median mother's share of days whose
 # rebuilt lowest equity is within TOLERANCE (account currency) of SQX's own curve.
 TOLERANCE, RECONCILED = 1.0, 0.99
@@ -101,12 +105,18 @@ def mother_low(batch: Path, span: tuple[pd.Timestamp, pd.Timestamp]) -> pd.Serie
         leg is not recorded. oos2 from its policy start is clear of them; a cut that still
         catches a duplicated date would add flat days that did not happen, and refuses.
     """
-    origin = pd.read_parquet(batch / "manifest.parquet", columns=["variant_id", "origin"])
+    origin = pd.read_parquet(
+        batch / "manifest.parquet", columns=["variant_id", "origin"]
+    )
     column = origin.loc[origin["origin"], "variant_id"].item()
-    days = cast(pd.Series, pd.read_parquet(batch / "equity.parquet", columns=[column])[column])
+    days = cast(
+        pd.Series, pd.read_parquet(batch / "equity.parquet", columns=[column])[column]
+    )
     days = cast(pd.Series, days[(days.index >= span[0]) & (days.index < span[1])])
     if days.index.duplicated().any():
-        raise ValueError(f"{batch}: el tramo {span} cruza el solape de dos patas del retest")
+        raise ValueError(
+            f"{batch}: el tramo {span} cruza el solape de dos patas del retest"
+        )
     return cast(pd.Series, days.cumsum())
 
 
@@ -121,20 +131,34 @@ def trades_door(batches: dict[str, Path]) -> str | None:
         policy's: the three pieces are read and the SPA is not, with oos2 left unopened.
     """
     lacking = sorted(m for m, b in batches.items() if not (b / TRADES).exists())
-    return (f"sin las operaciones de {', '.join(lacking)} ({TRADES} de su lote de variantes) "
-            f"no se puede reconstruir su curva de cierre a cierre") if lacking else None
+    return (
+        (
+            f"sin las operaciones de {', '.join(lacking)} ({TRADES} de su lote de variantes) "
+            f"no se puede reconstruir su curva de cierre a cierre"
+        )
+        if lacking
+        else None
+    )
 
 
 def mother_trades(batch: Path, span: tuple[pd.Timestamp, pd.Timestamp]) -> pd.DataFrame:
     """One mother's own trades inside oos2, from its batch (schema T plus `variant_id`)."""
-    origin = pd.read_parquet(batch / "manifest.parquet", columns=["variant_id", "origin"])
+    origin = pd.read_parquet(
+        batch / "manifest.parquet", columns=["variant_id", "origin"]
+    )
     trades = pd.read_parquet(batch / TRADES)
-    trades = trades[trades["variant_id"] == origin.loc[origin["origin"], "variant_id"].item()]
-    return cast(pd.DataFrame, trades[(trades["Open time"] >= span[0]) & (trades["Close time"] < span[1])])
+    trades = trades[
+        trades["variant_id"] == origin.loc[origin["origin"], "variant_id"].item()
+    ]
+    return cast(
+        pd.DataFrame,
+        trades[(trades["Open time"] >= span[0]) & (trades["Close time"] < span[1])],
+    )
 
 
-def panel(batches: dict[str, Path], span: tuple[pd.Timestamp, pd.Timestamp],
-          feed: str) -> pd.DataFrame:
+def panel(
+    batches: dict[str, Path], span: tuple[pd.Timestamp, pd.Timestamp], feed: str
+) -> pd.DataFrame:
     """Every complete mother's oos2 days side by side, close to close, from its trades.
 
     Args:
@@ -148,20 +172,30 @@ def panel(batches: dict[str, Path], span: tuple[pd.Timestamp, pd.Timestamp],
         (`portfolio/common/construct/equity/closecurve`), flat days 0. The rebuild's own
         daily lows must match `mother_low`, or the panel is refused — as part A does.
     """
-    trades = pd.concat([mother_trades(b, span).assign(identity=m) for m, b in batches.items()])
+    trades = pd.concat(
+        [mother_trades(b, span).assign(identity=m) for m, b in batches.items()]
+    )
     bars = cast(pd.DataFrame, read_bars(feed, ["High", "Low", "Close"]))
     bars = cast(pd.DataFrame, bars[(bars.index >= span[0]) & (bars.index < span[1])])
     profit, low = closecurve.panel(trades, bars, *closecurve.measured(trades))
-    gap = (low - pd.DataFrame({m: mother_low(b, span) for m, b in batches.items()})).abs()
+    gap = (
+        low - pd.DataFrame({m: mother_low(b, span) for m, b in batches.items()})
+    ).abs()
     exact = ((gap <= TOLERANCE).sum() / gap.notna().sum()).median()
     if exact < RECONCILED:
-        raise ValueError(f"la curva reconstruida de las madres no reproduce la de SQX "
-                         f"({exact:.2%} de los días, hace falta {RECONCILED:.0%})")
+        raise ValueError(
+            f"la curva reconstruida de las madres no reproduce la de SQX "
+            f"({exact:.2%} de los días, hace falta {RECONCILED:.0%})"
+        )
     return cast(pd.DataFrame, profit.reindex(columns=list(batches)).fillna(0.0))
 
 
-def random_traders(batches: dict[str, Path], span: tuple[pd.Timestamp, pd.Timestamp],
-                   feed: str, cfg: dict) -> tuple[pd.DataFrame, pd.Series]:
+def random_traders(
+    batches: dict[str, Path],
+    span: tuple[pd.Timestamp, pd.Timestamp],
+    feed: str,
+    cfg: dict,
+) -> tuple[pd.DataFrame, pd.Series]:
     """What a random trader with each mother's own footprint earns per oos2 day.
 
     Args:
@@ -179,7 +213,11 @@ def random_traders(batches: dict[str, Path], span: tuple[pd.Timestamp, pd.Timest
     bars = cast(pd.DataFrame, read_bars(feed, ["Open", "High", "Low", "Close"]))
     bars = cast(pd.DataFrame, bars[(bars.index >= span[0]) & (bars.index < span[1])])
     costs = reprice.costs(feed, SEGMENT)
-    got = {m: footprint.footprint(mother_trades(b, span), bars, costs, cfg["benchmark"])
-           for m, b in batches.items()}
-    return (pd.DataFrame({m: g[0] for m, g in got.items()}),
-            pd.Series({m: g[1] for m, g in got.items()}))
+    got = {
+        m: footprint.footprint(mother_trades(b, span), bars, costs, cfg["benchmark"])
+        for m, b in batches.items()
+    }
+    return (
+        pd.DataFrame({m: g[0] for m, g in got.items()}),
+        pd.Series({m: g[1] for m, g in got.items()}),
+    )

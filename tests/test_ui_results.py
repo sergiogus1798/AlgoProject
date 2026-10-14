@@ -34,16 +34,21 @@ def fixture() -> tuple[str, str, str, str]:
         project, databank folder, study, strategy name — the last gate strategy JSON by path.
     """
     path = sorted(DATA.glob("reports/*/*/*/gate/estrategias/*.json"))[-1]
-    return path.parts[-6], path.parts[-5], path.parts[-3], path.name[:-len(".json")]
+    return path.parts[-6], path.parts[-5], path.parts[-3], path.name[: -len(".json")]
 
 
 def check_catalogue(c: TestClient, failures: list[str]) -> None:
     """Every study folder is listed once, in family order, with a known role."""
     got = c.get("/api/catalogue").json()["studies"]
     keys = [s["key"] for s in got]
-    folders = {p.name for p in ROOT.glob("studies/*/*") if p.is_dir()} - {"analysis", "spread"}
+    folders = {p.name for p in ROOT.glob("studies/*/*") if p.is_dir()} - {
+        "analysis",
+        "spread",
+    }
     if set(keys) != folders | {"monteCarlo"} or len(keys) != len(set(keys)):
-        failures.append(f"el catálogo no casa con studies/: {sorted(set(keys) ^ folders)}")
+        failures.append(
+            f"el catálogo no casa con studies/: {sorted(set(keys) ^ folders)}"
+        )
     order = [catalogue.FAMILIES.index(s["family"]) for s in got]
     if order != sorted(order):
         failures.append("el catálogo no sigue el orden de familias")
@@ -75,22 +80,29 @@ def check_result(c: TestClient, failures: list[str]) -> None:
     whole = c.get(base).json()["result"]
     if whole is None or whole["strategy"] is not None:
         failures.append("el resultado de población no llega")
-    runs = c.get(f"/api/history?project={project}&databank={bank}&study={study}"
-                 f"&strategy={name}").json()["runs"]
+    runs = c.get(
+        f"/api/history?project={project}&databank={bank}&study={study}&strategy={name}"
+    ).json()["runs"]
     if not runs or runs[0]["day"] != meta["day"] or runs[0]["state"] not in STATES:
-        failures.append(f"el historial no empieza por el resultado más nuevo: {runs[:1]}")
+        failures.append(
+            f"el historial no empieza por el resultado más nuevo: {runs[:1]}"
+        )
     grid = c.get(f"/api/matrix?project={project}&databank={bank}").json()
     cell = grid["cells"].get(res["identity"], {}).get(study)
     if cell is None or cell["state"] != res["verdict"]["state"]:
         failures.append(f"la matriz no da el estado del JSON por identidad: {cell}")
-    if not all(s["state"] in STATES for row in grid["cells"].values() for s in row.values()):
+    if not all(
+        s["state"] in STATES for row in grid["cells"].values() for s in row.values()
+    ):
         failures.append("una celda con un estado fuera de los cinco")
 
 
 def check_old_reports(c: TestClient, failures: list[str]) -> None:
     """Reports that predate the contract are skipped with a reason, never a crash."""
     for project in sorted(p.name for p in (DATA / "reports").iterdir() if p.is_dir()):
-        for bank in sorted(p.name for p in (DATA / "reports" / project).iterdir() if p.is_dir()):
+        for bank in sorted(
+            p.name for p in (DATA / "reports" / project).iterdir() if p.is_dir()
+        ):
             r = c.get(f"/api/matrix?project={project}&databank={bank}")
             if r.status_code != 200:
                 failures.append(f"la matriz de {project}/{bank} rompe: {r.status_code}")
@@ -98,7 +110,9 @@ def check_old_reports(c: TestClient, failures: list[str]) -> None:
     if old:
         project, bank = old[0].parts[-4], old[0].parts[-3]
         got = c.get(f"/api/result?project={project}&databank={bank}&study=decay").json()
-        if got["result"] is None and not all(s["reason"] for s in got["meta"]["skipped"]):
+        if got["result"] is None and not all(
+            s["reason"] for s in got["meta"]["skipped"]
+        ):
             failures.append("un informe antiguo se salta sin motivo")
     projects = c.get("/api/projects").json()["projects"]
     if not projects or any(p["project"].startswith("_") for p in projects):
@@ -109,17 +123,26 @@ def check_config(c: TestClient, failures: list[str]) -> None:
     """The drawer's hash is the study's own; an override moves it; a bad one is an error."""
     drawer = c.get("/api/config?study=gate").json()
     knobs = {k["key"]: k for s in drawer["sections"] for k in s["knobs"]}
-    if knobs.get("sanidad.min_trades", {}).get("type") != "int" or not knobs[
-            "sanidad.min_trades"]["tip"]:
+    if (
+        knobs.get("sanidad.min_trades", {}).get("type") != "int"
+        or not knobs["sanidad.min_trades"]["tip"]
+    ):
         failures.append("el mando sanidad.min_trades no llega con su tipo y su ayuda")
     same = c.post("/api/config/hash", json={"study": "gate", "overrides": []}).json()
     more = knobs["sanidad.min_trades"]["value"] + 1
-    moved = c.post("/api/config/hash", json={
-        "study": "gate", "overrides": [f"sanidad.min_trades={more}"]}).json()
-    if same.get("hash") != drawer["hash"] or moved.get("hash") in (None, drawer["hash"]):
+    moved = c.post(
+        "/api/config/hash",
+        json={"study": "gate", "overrides": [f"sanidad.min_trades={more}"]},
+    ).json()
+    if same.get("hash") != drawer["hash"] or moved.get("hash") in (
+        None,
+        drawer["hash"],
+    ):
         failures.append(f"el hash no responde al ajuste: {same} {moved}")
-    bad = c.post("/api/config/hash", json={"study": "gate",
-                                           "overrides": ["sanidad.min_trades=muchas"]}).json()
+    bad = c.post(
+        "/api/config/hash",
+        json={"study": "gate", "overrides": ["sanidad.min_trades=muchas"]},
+    ).json()
     if "error" not in bad:
         failures.append("un ajuste de otro tipo no da error")
     if c.get("/api/config?study=decay").json() != {"sections": [], "hash": None}:
@@ -132,9 +155,12 @@ def main() -> None:
     failures: list[str] = []
     for check in (check_catalogue, check_result, check_old_reports, check_config):
         check(c, failures)
-    print("\n".join(failures) or "ok: catálogo, resultado por identidad, historial, matriz, "
-                                 "lotes estructurales, informes antiguos y cajón de "
-                                 "configuración")
+    print(
+        "\n".join(failures)
+        or "ok: catálogo, resultado por identidad, historial, matriz, "
+        "lotes estructurales, informes antiguos y cajón de "
+        "configuración"
+    )
     sys.exit(1 if failures else 0)
 
 

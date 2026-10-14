@@ -14,16 +14,26 @@ from core import sqxfile
 from core.paths import DATA
 from core.study import identity as identities
 
-FABRICATED = "fabricated_identity"   # scaling.parquet: the identity of the sister's file as written
-KEYS = ("strategy", "mother", "name", "sibling", "Strategy Name")   # the columns a table names a strategy by
+FABRICATED = "fabricated_identity"  # scaling.parquet: the identity of the sister's file as written
+KEYS = (
+    "strategy",
+    "mother",
+    "name",
+    "sibling",
+    "Strategy Name",
+)  # the columns a table names a strategy by
 
 
-@lru_cache(maxsize=64)      # a save walks one project's tables per survivor in the same order: 64 holds a project's
+@lru_cache(
+    maxsize=64
+)  # a save walks one project's tables per survivor in the same order: 64 holds a project's
 def table(path: Path) -> pd.DataFrame:
     """A .csv or .parquet, read once per save: a project's tables are cut 41 times over."""
     if path.suffix == ".parquet":
         return pd.read_parquet(path)
-    return pd.read_csv(path, sep=";" if path.name == "metrics.csv" else ",")   # SQX's own export
+    return pd.read_csv(
+        path, sep=";" if path.name == "metrics.csv" else ","
+    )  # SQX's own export
 
 
 def _mask(col: pd.Series, test: Callable[[pd.Series], pd.Series]) -> pd.Series:
@@ -31,7 +41,9 @@ def _mask(col: pd.Series, test: Callable[[pd.Series], pd.Series]) -> pd.Series:
     code: its `astype(str)` spells out every row, 0.49 s a million (4-5 s a survivor at 9.7 M)."""
     if not isinstance(col.dtype, pd.CategoricalDtype):
         return test(col.astype(str))
-    cats = pd.Series([*col.cat.categories.astype(str), "nan"])      # code -1 is a NaN, "nan" as text
+    cats = pd.Series(
+        [*col.cat.categories.astype(str), "nan"]
+    )  # code -1 is a NaN, "nan" as text
     return pd.Series(test(cats).to_numpy()[col.cat.codes.to_numpy()], index=col.index)
 
 
@@ -47,13 +59,18 @@ def family(frame: pd.DataFrame, name: str, identity: str = "") -> pd.DataFrame:
         The rows whose KEYS column is the name or a sister's, or whose identity is this one.
     """
     hit = pd.Series(False, index=frame.index)
-    if identity:            # never the empty one: rows that carry no identity are nobody's by it
+    if identity:  # never the empty one: rows that carry no identity are nobody's by it
         hit |= frame.index == identity
         if "identity" in frame:
-            hit |= _mask(cast(pd.Series, frame["identity"]), lambda said: said.eq(identity))
+            hit |= _mask(
+                cast(pd.Series, frame["identity"]), lambda said: said.eq(identity)
+            )
     for col in KEYS:
         if col in frame:
-            hit |= _mask(cast(pd.Series, frame[col]), lambda said: said.eq(name) | said.str.startswith(f"{name}_Scaled"))
+            hit |= _mask(
+                cast(pd.Series, frame[col]),
+                lambda said: said.eq(name) | said.str.startswith(f"{name}_Scaled"),
+            )
     return cast(pd.DataFrame, frame[hit])
 
 
@@ -73,7 +90,10 @@ def population(folder: Path, identity: str, names: list[str], out: Path) -> bool
     moved = False
     for path in sorted(p for p in folder.iterdir() if p.is_file()):
         if path.suffix == ".json":
-            shared = json.loads(path.read_text(encoding="utf-8")).get("strategy") not in names
+            shared = (
+                json.loads(path.read_text(encoding="utf-8")).get("strategy")
+                not in names
+            )
         else:
             frame = table(path)
             shared = any(len(family(frame, n, identity)) < len(frame) for n in names)
@@ -107,15 +127,22 @@ def named(folder: Path, name: str, identity: str) -> bool:
     its `identity.csv`, or its `lineage.csv` naming this identity as the mother.
     """
     for file, col in (("identity.csv", "identity"), ("lineage.csv", "mother")):
-        if (folder / file).exists():       # lineage: a task gave it another identity (the WFM)
+        if (
+            folder / file
+        ).exists():  # lineage: a task gave it another identity (the WFM)
             said = table(folder / file)
             if ((said["strategy"].astype(str) == name) & (said[col] == identity)).any():
                 return True
     return False
 
 
-def trades(project: str, name: str, identity: str, tmp: Path,
-           also: frozenset[str] = frozenset()) -> list[tuple[str, Path, dict]]:
+def trades(
+    project: str,
+    name: str,
+    identity: str,
+    tmp: Path,
+    also: frozenset[str] = frozenset(),
+) -> list[tuple[str, Path, dict]]:
     """The strategy's and its sisters' trades in every databank that was exported.
 
     Args:
@@ -136,26 +163,43 @@ def trades(project: str, name: str, identity: str, tmp: Path,
     for path in sorted((DATA / "raw" / project).glob("*/*/trades.parquet")):
         databank, day = path.parts[-3:-1]
         rows = family(table(path), name)
-        if not len(rows) or not any(named(path.parent, name, i) for i in {identity, *also}):
+        if not len(rows) or not any(
+            named(path.parent, name, i) for i in {identity, *also}
+        ):
             continue
         # `Ticket` is SQX's numbering inside one databank, not part of a trade
-        print_ = int(hash_pandas_object(rows.drop(columns="Ticket", errors="ignore"),
-                                         index=False).sum())
-        if print_ in seen:      # SQX copies a databank to feed the next task: same trades, kept once
+        print_ = int(
+            hash_pandas_object(
+                rows.drop(columns="Ticket", errors="ignore"), index=False
+            ).sum()
+        )
+        if (
+            print_ in seen
+        ):  # SQX copies a databank to feed the next task: same trades, kept once
             seen[print_].setdefault("also", []).append(f"{databank}.{day}")
             continue
         out = tmp / databank / day
         for side in [path, *sorted(path.parent.glob("*.csv"))]:
             _cut(side, name, out)
-        if (path.parent / "manifest.json").exists():      # what the export was asked for
+        if (path.parent / "manifest.json").exists():  # what the export was asked for
             shutil.copyfile(path.parent / "manifest.json", out / "manifest.json")
-        seen[print_] = {"study": "operaciones", "databank": databank, "day": day, "trades": len(rows)}
+        seen[print_] = {
+            "study": "operaciones",
+            "databank": databank,
+            "day": day,
+            "trades": len(rows),
+        }
         found.append((f"operaciones.{databank}.{day}", out, seen[print_]))
     return found
 
 
-def sisters(project: str, name: str, identity: str, tmp: Path,
-            also: frozenset[str] = frozenset()) -> list[tuple[str, Path, dict]]:
+def sisters(
+    project: str,
+    name: str,
+    identity: str,
+    tmp: Path,
+    also: frozenset[str] = frozenset(),
+) -> list[tuple[str, Path, dict]]:
     """What step 12 made of the strategy on other timeframes, enough to make it again.
 
     Args:
@@ -175,21 +219,40 @@ def sisters(project: str, name: str, identity: str, tmp: Path,
     found = []
     for path in sorted((DATA / "crosstf" / project).glob("*/scaling.parquet")):
         day, out = path.parent.name, tmp / path.parent.name
-        mother = path.parent / "sqx" / f"{name}.sqx"     # the mothers ride along verbatim
-        n = _cut(path, name, out) if mother.exists() and sqxfile.identity(mother) in {identity, *also} else 0
+        mother = path.parent / "sqx" / f"{name}.sqx"  # the mothers ride along verbatim
+        n = (
+            _cut(path, name, out)
+            if mother.exists() and sqxfile.identity(mother) in {identity, *also}
+            else 0
+        )
         if n:
             rows = pd.read_parquet(out / path.name)
             # What a rebuilt sister is checked against: SQX's retest gives the same strategy
             # another identity (knowhow/sqx-format/fabricated-variant-identity-differs-from-retest.md).
-            made = identities.hashed(Path(f) for f in set(rows["path"]) if Path(f).exists())
+            made = identities.hashed(
+                Path(f) for f in set(rows["path"]) if Path(f).exists()
+            )
             rows[FABRICATED] = [made.get(Path(f), "") for f in rows["path"]]
             rows.to_parquet(out / path.name, index=False)
             for report in sorted((DATA / "reports" / project).glob(f"*/{day}/*/*")):
                 if report.suffix in (".csv", ".parquet"):
                     _cut(report, name, out / report.parts[-4] / report.parts[-2], True)
-            for said in sorted((DATA / "autopilot" / project).glob("*/paso-*/verdict.csv")):
-                _cut(said, name, out / "autopilot" / said.parts[-3] / said.parts[-2], True)
-            found.append((f"hermanas.{day}", out, {"study": "hermanas", "day": day, "sisters": n}))
+            for said in sorted(
+                (DATA / "autopilot" / project).glob("*/paso-*/verdict.csv")
+            ):
+                _cut(
+                    said,
+                    name,
+                    out / "autopilot" / said.parts[-3] / said.parts[-2],
+                    True,
+                )
+            found.append(
+                (
+                    f"hermanas.{day}",
+                    out,
+                    {"study": "hermanas", "day": day, "sisters": n},
+                )
+            )
     return found
 
 
@@ -207,10 +270,11 @@ def metrics(project: str, name: str, tmp: Path) -> list[tuple[str, Path, dict]]:
         export and by name alone: an export of a later build under the same name is that
         build's, which the trades of `operaciones.*` — paired by identity — are not.
     """
-    n = sum(_cut(path, name, tmp / path.parent.name)
-            for path in sorted((DATA / "metrics" / project).glob("*/metrics.csv")))
+    n = sum(
+        _cut(path, name, tmp / path.parent.name)
+        for path in sorted((DATA / "metrics" / project).glob("*/metrics.csv"))
+    )
     return [("metricas", tmp, {"study": "metricas", "rows": n})] if n else []
-
 
 
 def neighbours(project: str, name: str, tmp: Path) -> list[tuple[str, Path, dict]]:
@@ -219,6 +283,10 @@ def neighbours(project: str, name: str, tmp: Path) -> list[tuple[str, Path, dict
     Returns:
         One entry, `vecinas`: its rows of each day's table, which no `mcRetest` result carries.
     """
-    n = sum(_cut(path, name, tmp / path.parent.name)
-            for path in sorted((DATA / "raw" / project / "T1_Neighbours").glob("*/neighbours.parquet")))
+    n = sum(
+        _cut(path, name, tmp / path.parent.name)
+        for path in sorted(
+            (DATA / "raw" / project / "T1_Neighbours").glob("*/neighbours.parquet")
+        )
+    )
     return [("vecinas", tmp, {"study": "vecinas", "rows": n})] if n else []

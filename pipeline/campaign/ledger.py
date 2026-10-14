@@ -7,7 +7,10 @@ from typing import Any
 from core.datapaths import campaign_dir
 
 KEY = ("template", "symbol", "timeframe", "direction")
-OPEN = ("running", "interrupted")       # a cell the loop takes up again before any pending one
+OPEN = (
+    "running",
+    "interrupted",
+)  # a cell the loop takes up again before any pending one
 
 
 def key(cell: dict) -> str:
@@ -36,8 +39,12 @@ def mark(cell: dict, state: str, **facts: object) -> dict[str, Any]:
     Returns:
         The line written.
     """
-    row = {**{k: cell[k] for k in KEY}, **facts, "state": state,
-           "at": datetime.now().isoformat(timespec="seconds")}
+    row = {
+        **{k: cell[k] for k in KEY},
+        **facts,
+        "state": state,
+        "at": datetime.now().isoformat(timespec="seconds"),
+    }
     file = campaign_dir() / "ledger.jsonl"
     file.parent.mkdir(parents=True, exist_ok=True)
     with file.open("a", encoding="utf-8") as out:

@@ -27,12 +27,14 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         also writes every variant's row into `out` as `retraso.parquet` (delay.measure) and,
         with `delay.on_build`, the build's as `retraso_build.parquet`, which no fact reads.
     """
-    if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
+    if not data:  # tests/test_gate_rules.py runs every level on an empty harvest
         return pd.DataFrame(index=alive, columns=pd.Index(FACTS), dtype=float)
     bars, windows, drift = data["bars"], data["market"]["windows"], cfg["drift"]
     variants = cfg["delay"]["variants"]
     oos = data["oos"][data["oos"]["identity"].isin(alive)]
-    table = delay.measure(oos, bars, windows["OOS"], data["costs"], drift, variants, data.get("moved"))
+    table = delay.measure(
+        oos, bars, windows["OOS"], data["costs"], drift, variants, data.get("moved")
+    )
     table.to_parquet(data["out"] / "retraso.parquet", index=False)
     if cfg["delay"]["on_build"]:
         raw = data["trades"]
@@ -40,12 +42,22 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         raw = raw.sort_values(["identity", "Close time"])
         priced = reprice.real(raw, bars, data["costs_build"], data.get("feed"))
         when = bars.index.to_numpy()
-        build = pd.DataFrame({
-            "identity": raw["identity"].to_numpy(), "open_time": when[priced["enter"]],
-            "close_time": when[priced["leave"]], "lots": raw["Size"].to_numpy(),
-            "side": priced["side"].to_numpy(), "stop": priced["stop"].to_numpy()})
-        build["excess"] = delay.excess(build, bars, windows["IS"], data["costs_build"], drift)
-        delay.measure(build, bars, windows["IS"], data["costs_build"], drift, variants) \
-            .to_parquet(data["out"] / "retraso_build.parquet", index=False)
-    return pd.DataFrame(delay.worst(table)[["ret", "t_delta"]].set_axis(list(FACTS), axis=1)
-                        ).reindex(alive)
+        build = pd.DataFrame(
+            {
+                "identity": raw["identity"].to_numpy(),
+                "open_time": when[priced["enter"]],
+                "close_time": when[priced["leave"]],
+                "lots": raw["Size"].to_numpy(),
+                "side": priced["side"].to_numpy(),
+                "stop": priced["stop"].to_numpy(),
+            }
+        )
+        build["excess"] = delay.excess(
+            build, bars, windows["IS"], data["costs_build"], drift
+        )
+        delay.measure(
+            build, bars, windows["IS"], data["costs_build"], drift, variants
+        ).to_parquet(data["out"] / "retraso_build.parquet", index=False)
+    return pd.DataFrame(
+        delay.worst(table)[["ret", "t_delta"]].set_axis(list(FACTS), axis=1)
+    ).reindex(alive)

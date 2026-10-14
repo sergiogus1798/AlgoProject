@@ -1,11 +1,21 @@
 """«Archivar»: the dialog that asks the step and the note before the ficha freezes the strategy."""
 
-from PySide6.QtWidgets import (QDialog, QDialogButtonBox, QFormLayout, QLabel, QLineEdit,
-                               QPlainTextEdit, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QLabel,
+    QLineEdit,
+    QPlainTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
-WHAT = ("Congela la estrategia en AlgoData/archive/: su .sqx, sus filas de la cosecha, cada "
-        "resultado de estudio que la nombra, la ficha de costes del activo y la cuenta del "
-        "ledger de hoy. Una versión nueva cada vez; nunca se sobrescribe.")
+WHAT = (
+    "Congela la estrategia en AlgoData/archive/: su .sqx, sus filas de la cosecha, cada "
+    "resultado de estudio que la nombra, la ficha de costes del activo y la cuenta del "
+    "ledger de hoy. Una versión nueva cada vez; nunca se sobrescribe."
+)
 
 
 def ask(parent: QWidget, name: str) -> dict | None:
@@ -34,7 +44,9 @@ def ask(parent: QWidget, name: str) -> dict | None:
     form.addRow("Paso", step_box)
     form.addRow("Nota", note_box)
     lay.addLayout(form)
-    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+    buttons = QDialogButtonBox(
+        QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+    )
     buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Archivar")
     buttons.accepted.connect(dialog.accept)
     buttons.rejected.connect(dialog.reject)
@@ -42,5 +54,7 @@ def ask(parent: QWidget, name: str) -> dict | None:
     if dialog.exec() != QDialog.DialogCode.Accepted:
         return None
     if not step_box.text().strip():
-        return {"error": "No se archivó: falta el paso del WORKFLOW en que está la estrategia."}
+        return {
+            "error": "No se archivó: falta el paso del WORKFLOW en que está la estrategia."
+        }
     return {"note": note_box.toPlainText().strip(), "step": step_box.text().strip()}

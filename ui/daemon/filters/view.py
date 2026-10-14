@@ -14,12 +14,25 @@ def worded(step: dict) -> str:
     """A step's expression for the funnel, each metric in the window's words (a step logged
     before the expression was worded still carries raw keys), and its «sin valor» and
     «sin identidad» counts."""
-    parts = [cast("re.Match[str]", PART.match(p)) for p in step["expression"].split(" AND ")]
-    text = step["expression"] if step["origin"] == "manual" else " AND ".join(
-        f"{evaluate.named(m.group(1))} {m.group(2)} {m.group(3)}" for m in parts)
-    return (text + (f" · {step['blank']} sin valor" if step["blank"] else "")
-            + (f" · {step['anonymous']} sin identidad, no filtrables" if step["anonymous"]
-               else ""))
+    parts = [
+        cast("re.Match[str]", PART.match(p)) for p in step["expression"].split(" AND ")
+    ]
+    text = (
+        step["expression"]
+        if step["origin"] == "manual"
+        else " AND ".join(
+            f"{evaluate.named(m.group(1))} {m.group(2)} {m.group(3)}" for m in parts
+        )
+    )
+    return (
+        text
+        + (f" · {step['blank']} sin valor" if step["blank"] else "")
+        + (
+            f" · {step['anonymous']} sin identidad, no filtrables"
+            if step["anonymous"]
+            else ""
+        )
+    )
 
 
 def recovered(expression: str, metrics: list[dict]) -> list[dict]:
@@ -76,19 +89,36 @@ def state_of(project: str, databank: str, table: Table, metrics: list[dict]) -> 
     steps = discards.steps(project, databank, total)
     hidden = discards.hidden(project, databank)
     old = discards.stale(project, databank)
-    return {"databank": databank, "hidden": len(hidden), "hidden_ids": sorted(hidden),
-            "entered": steps[0]["entered"] if steps else None,
-            "remaining": steps[-1]["passed"] if steps else None,
-            "anonymous": steps[-1]["anonymous"] if steps else None, "steps": steps,
-            "manual": len(discards.manual_ids(project, databank)),
-            "conditions": (recovered(old, metrics) if old
-                           else discards.rows_now(project, databank)),
-            "stale": old, "orphans": discards.orphans(project, databank)}
+    return {
+        "databank": databank,
+        "hidden": len(hidden),
+        "hidden_ids": sorted(hidden),
+        "entered": steps[0]["entered"] if steps else None,
+        "remaining": steps[-1]["passed"] if steps else None,
+        "anonymous": steps[-1]["anonymous"] if steps else None,
+        "steps": steps,
+        "manual": len(discards.manual_ids(project, databank)),
+        "conditions": (
+            recovered(old, metrics) if old else discards.rows_now(project, databank)
+        ),
+        "stale": old,
+        "orphans": discards.orphans(project, databank),
+    }
 
 
 def funnel_rows(project: str, banks: list[str]) -> list[dict]:
     """The funnel's rows (screen, entered, passed, died, why), one per filter or deletion."""
-    return [{"screen": f"Filtro · {bank}" if s["origin"] == "filter" else f"A mano · {bank}",
-             "entered": s["entered"], "passed": s["passed"], "died": s["died"],
-             "why": worded(s), "kind": "hard"}
-            for bank in banks for s in discards.steps(project, bank)]
+    return [
+        {
+            "screen": f"Filtro · {bank}"
+            if s["origin"] == "filter"
+            else f"A mano · {bank}",
+            "entered": s["entered"],
+            "passed": s["passed"],
+            "died": s["died"],
+            "why": worded(s),
+            "kind": "hard",
+        }
+        for bank in banks
+        for s in discards.steps(project, bank)
+    ]

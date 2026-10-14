@@ -21,8 +21,18 @@ from studies.screening.analysis import decay
 from studies.screening.decay import one
 
 MODULE = "studies.screening.decay.report"
-COLUMNS = ["name", "sharpe_is", "sharpe_oos", "retention", "t", "years_positive",
-           "worst_year", "concentration", "net_profit_oos", "verdict"]
+COLUMNS = [
+    "name",
+    "sharpe_is",
+    "sharpe_oos",
+    "retention",
+    "t",
+    "years_positive",
+    "worst_year",
+    "concentration",
+    "net_profit_oos",
+    "verdict",
+]
 STATE = {"MANTENER": "pass", "DUDOSA": "watch", "DESCARTAR": "fail"}
 
 
@@ -41,32 +51,72 @@ def result(rows: pd.DataFrame, source: dict, started: float) -> dict[str, Any]:
     """
     counts = rows.verdict.value_counts()
     kept = rows[rows.verdict == "MANTENER"]
-    by = pd.DataFrame(rows.assign(plantilla=rows.name.str.split(".").str[0])).groupby("plantilla")
-    per_template = pd.DataFrame(pd.DataFrame({"n": by.size(),
-                                 "mantener": by.verdict.apply(lambda v: (v == "MANTENER").sum()),
-                                 "descartar": by.verdict.apply(lambda v: (v == "DESCARTAR").sum())}
-                                ).reset_index())
+    by = pd.DataFrame(rows.assign(plantilla=rows.name.str.split(".").str[0])).groupby(
+        "plantilla"
+    )
+    per_template = pd.DataFrame(
+        pd.DataFrame(
+            {
+                "n": by.size(),
+                "mantener": by.verdict.apply(lambda v: (v == "MANTENER").sum()),
+                "descartar": by.verdict.apply(lambda v: (v == "DESCARTAR").sum()),
+            }
+        ).reset_index()
+    )
     return envelope.envelope(
-        MODULE, None, None, {"split": source["split"], "end": source["end"]}, started,
-        [envelope.tab("verdicts", "Veredicto", [
-            {"kind": "bars", "title": "Estrategias por veredicto", "unit": "estrategias",
-             "reference": None,
-             "items": [{"label": k, "value": int(n), "error": None,
-                        "state": STATE.get(k, "info")} for k, n in counts.items()]},
-            blocks.table("Retención del Sharpe", pd.DataFrame(
-                [["mediana", rows.retention.median()], ["p90", rows.retention.quantile(.9)],
-                 ["máximo", rows.retention.max()], ["t máximo", rows.t.max()]],
-                columns=pd.Index(["", "valor"])),
-                "Con t por debajo de 2 el Sharpe fuera de muestra no se distingue de cero."),
-            blocks.table("Por plantilla", per_template),
-            blocks.table("Las que pasan todo", pd.DataFrame(kept[COLUMNS]))],
-            note=f"IS hasta {source['split']} · OOS {source['split']} → {source['end']} · "
-                 f"{source['duplicates_dropped']} duplicadas (misma curva diaria de P&L bajo "
-                 f"otro nombre) descartadas antes de contar.")],
-        blocks.verdict(f"{int(counts.get('MANTENER', 0))} de {len(rows)}",
-                       "pass" if counts.get("MANTENER", 0) else "fail",
-                       "Cuánto del filo dentro de muestra sobrevivió fuera, y si lo que queda "
-                       "bate a su propio error estándar."))
+        MODULE,
+        None,
+        None,
+        {"split": source["split"], "end": source["end"]},
+        started,
+        [
+            envelope.tab(
+                "verdicts",
+                "Veredicto",
+                [
+                    {
+                        "kind": "bars",
+                        "title": "Estrategias por veredicto",
+                        "unit": "estrategias",
+                        "reference": None,
+                        "items": [
+                            {
+                                "label": k,
+                                "value": int(n),
+                                "error": None,
+                                "state": STATE.get(k, "info"),
+                            }
+                            for k, n in counts.items()
+                        ],
+                    },
+                    blocks.table(
+                        "Retención del Sharpe",
+                        pd.DataFrame(
+                            [
+                                ["mediana", rows.retention.median()],
+                                ["p90", rows.retention.quantile(0.9)],
+                                ["máximo", rows.retention.max()],
+                                ["t máximo", rows.t.max()],
+                            ],
+                            columns=pd.Index(["", "valor"]),
+                        ),
+                        "Con t por debajo de 2 el Sharpe fuera de muestra no se distingue de cero.",
+                    ),
+                    blocks.table("Por plantilla", per_template),
+                    blocks.table("Las que pasan todo", pd.DataFrame(kept[COLUMNS])),
+                ],
+                note=f"IS hasta {source['split']} · OOS {source['split']} → {source['end']} · "
+                f"{source['duplicates_dropped']} duplicadas (misma curva diaria de P&L bajo "
+                f"otro nombre) descartadas antes de contar.",
+            )
+        ],
+        blocks.verdict(
+            f"{int(counts.get('MANTENER', 0))} de {len(rows)}",
+            "pass" if counts.get("MANTENER", 0) else "fail",
+            "Cuánto del filo dentro de muestra sobrevivió fuera, y si lo que queda "
+            "bate a su propio error estándar.",
+        ),
+    )
 
 
 def joined(before: pd.Series, after: pd.Series, split: str) -> pd.Series:
@@ -82,18 +132,22 @@ def joined(before: pd.Series, after: pd.Series, split: str) -> pd.Series:
         `diff()`, so two curves that each restart at the capital must not meet as a jump.
     """
     cut = pd.Timestamp(split)
-    daily = pd.concat([pd.Series(before.diff().dropna()[lambda s: s.index < cut]),
-                       pd.Series(after.diff().dropna()[lambda s: s.index >= cut])])
+    daily = pd.concat(
+        [
+            pd.Series(before.diff().dropna()[lambda s: s.index < cut]),
+            pd.Series(after.diff().dropna()[lambda s: s.index >= cut]),
+        ]
+    )
     return daily.cumsum()
 
 
-BLOCK = 200      # files per task: a read is ~1 ms, so one task per file would cost more in hand-over than in work
-_SHARED: dict = {}     # set by `read_all` before the fork, read by `_block` in the workers
+BLOCK = 200  # files per task: a read is ~1 ms, so one task per file would cost more in hand-over than in work
+_SHARED: dict = {}  # set by `read_all` before the fork, read by `_block` in the workers
 
 
 def _block(start: int) -> list:
     """`fn` over one block of files, in a worker that inherited the list."""
-    return [_SHARED["fn"](f) for f in _SHARED["files"][start:start + BLOCK]]
+    return [_SHARED["fn"](f) for f in _SHARED["files"][start : start + BLOCK]]
 
 
 def read_all(fn: Callable[[Any], Any], files: list) -> list:
@@ -104,8 +158,9 @@ def read_all(fn: Callable[[Any], Any], files: list) -> list:
     return [x for i in sorted(done) for x in done[i]]
 
 
-def curves(folder: Path, built: Path | None, split: str,
-           strategy: str | None) -> dict[str, pd.Series]:
+def curves(
+    folder: Path, built: Path | None, split: str, strategy: str | None
+) -> dict[str, pd.Series]:
     """Each strategy's daily equity, read from its .sqx, with its build's IS when given.
 
     Args:
@@ -122,12 +177,17 @@ def curves(folder: Path, built: Path | None, split: str,
     if built is None:
         return got
     mine = [n for n in got if (built / f"{n}.sqx").is_file()]
-    return {n: joined(e, got[n], split)
-            for n, e in zip(mine, read_all(sqxstats.equity, [built / f"{n}.sqx" for n in mine]))}
+    return {
+        n: joined(e, got[n], split)
+        for n, e in zip(
+            mine, read_all(sqxstats.equity, [built / f"{n}.sqx" for n in mine])
+        )
+    }
 
 
-def write_one(out: Path, folder: Path, strategy: str, curve: pd.Series, split: str,
-              end: str) -> Path:
+def write_one(
+    out: Path, folder: Path, strategy: str, curve: pd.Series, split: str, end: str
+) -> Path:
     """One strategy's run: only `estrategias/<name>.json` and its page, the way crossTF's
     `--strategy` does — `decay.json`, `verdict.csv` and the manifest are the population's,
     and rewriting them from one strategy would leave the databank tab with that one alone.
@@ -142,9 +202,11 @@ def write_one(out: Path, folder: Path, strategy: str, curve: pd.Series, split: s
     Returns:
         The JSON's path.
     """
-    got = one.run(strategy, {"curve": curve,
-                             "identity": sqxfile.identity(folder / f"{strategy}.sqx")},
-                  {"split": split, "end": end})
+    got = one.run(
+        strategy,
+        {"curve": curve, "identity": sqxfile.identity(folder / f"{strategy}.sqx")},
+        {"split": split, "end": end},
+    )
     print(markdown.render(got, f"Decaimiento — {strategy}"))
     return output.member(out, got, f"Decaimiento — {strategy}")
 
@@ -154,13 +216,21 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True)
     ap.add_argument("--databank", required=True)
-    ap.add_argument("--split", required=True, help="first out-of-sample day, YYYY-MM-DD")
+    ap.add_argument(
+        "--split", required=True, help="first out-of-sample day, YYYY-MM-DD"
+    )
     ap.add_argument("--end", required=True, help="last day to consider, YYYY-MM-DD")
     ap.add_argument("--role", help="read a worker's install instead of the master")
-    ap.add_argument("--is-databank", help="the build this databank retested out of sample: "
-                    "its curve before --split, paired by name (a workflow keeps IS and OOS apart)")
-    ap.add_argument("--strategy", help="one strategy alone, as the databank names it: writes "
-                    "only estrategias/<name>.json, never the population's files")
+    ap.add_argument(
+        "--is-databank",
+        help="the build this databank retested out of sample: "
+        "its curve before --split, paired by name (a workflow keeps IS and OOS apart)",
+    )
+    ap.add_argument(
+        "--strategy",
+        help="one strategy alone, as the databank names it: writes "
+        "only estrategias/<name>.json, never the population's files",
+    )
     a = ap.parse_args()
 
     started = time.time()
@@ -172,13 +242,17 @@ def main() -> None:
     if a.strategy:
         if a.strategy not in found:
             raise SystemExit(f"{a.strategy} no está en {built} para leer su IS")
-        print(f"-> {write_one(out, folder, a.strategy, found[a.strategy], a.split, a.end)}")
+        print(
+            f"-> {write_one(out, folder, a.strategy, found[a.strategy], a.split, a.end)}"
+        )
         return
     clone = dedupe.curve_duplicates(found)
     dropped = int(clone.sum())
     kept = {name: c for name, c in found.items() if not bool(clone[name])}
     rows = decay.table(kept, a.split, a.end)
-    identity = dict(zip(found, read_all(sqxfile.identity, [folder / f"{n}.sqx" for n in found])))
+    identity = dict(
+        zip(found, read_all(sqxfile.identity, [folder / f"{n}.sqx" for n in found]))
+    )
     source = {"split": a.split, "end": a.end, "duplicates_dropped": dropped}
     got = result(rows, source, started)
     title = f"Decaimiento — {a.project} / {a.databank}"
@@ -187,10 +261,19 @@ def main() -> None:
     table.insert(1, "identity", pd.Series(table["strategy"]).map(identity))
     verdicts.write(out, table, folder, " ".join(sys.argv), [])
     print(markdown.render(got, title))
-    print(steprows.log_cut(a.project, 8, (len(found), int((rows.verdict != "DESCARTAR").sum())),
-                           "decay: retención del Sharpe fuera de muestra", MODULE))
-    print(f"{len(rows)} estrategias ({dropped} duplicadas de trades idénticos descartadas "
-          f"de {len(found)}) → {out}")
+    print(
+        steprows.log_cut(
+            a.project,
+            8,
+            (len(found), int((rows.verdict != "DESCARTAR").sum())),
+            "decay: retención del Sharpe fuera de muestra",
+            MODULE,
+        )
+    )
+    print(
+        f"{len(rows)} estrategias ({dropped} duplicadas de trades idénticos descartadas "
+        f"de {len(found)}) → {out}"
+    )
 
 
 if __name__ == "__main__":

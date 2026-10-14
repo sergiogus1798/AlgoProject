@@ -7,9 +7,24 @@ import os
 import re
 import sys
 
-from core.assetcheck import (mc_pending, past_data, pending, provisional,
-                             segments_pending, validate)
-from core.assetdata import (POLICY, RESERVED, enforced, fields, load, schema, symbols, window)
+from core.assetcheck import (
+    mc_pending,
+    past_data,
+    pending,
+    provisional,
+    segments_pending,
+    validate,
+)
+from core.assetdata import (
+    POLICY,
+    RESERVED,
+    enforced,
+    fields,
+    load,
+    schema,
+    symbols,
+    window,
+)
 from core.assetmarkets import markets, special_notes
 from core.assetranges import mc_retest
 from core.paths import ASSETS, feed_quality_dir
@@ -25,8 +40,11 @@ def _day(bound: int | object, end: bool) -> str:
     Returns:
         An ISO date.
     """
-    return f"{bound}-12-31" if isinstance(bound, int) and end else (
-        f"{bound}-01-01" if isinstance(bound, int) else str(bound))
+    return (
+        f"{bound}-12-31"
+        if isinstance(bound, int) and end
+        else (f"{bound}-01-01" if isinstance(bound, int) else str(bound))
+    )
 
 
 def broker_table(brokers: dict) -> list[str]:
@@ -42,9 +60,13 @@ def broker_table(brokers: dict) -> list[str]:
     lines = []
     for name, b in brokers.items():
         if b.get("confirmed"):
-            lines.append(f"{name}: `{b['method']} {b['value']}` {b['unit']} — {b['source']}, {b['date']}")
+            lines.append(
+                f"{name}: `{b['method']} {b['value']}` {b['unit']} — {b['source']}, {b['date']}"
+            )
         else:
-            lines.append(f"{name}: sin confirmar — {b.get('note', 'sin fuente propia leída')}")
+            lines.append(
+                f"{name}: sin confirmar — {b.get('note', 'sin fuente propia leída')}"
+            )
     return lines
 
 
@@ -59,42 +81,65 @@ def report(symbol: str) -> str:
     """
     data = load(symbol)
     s = schema(data)
-    units = {**{f: s["spread"]["unit"] for f in fields(data) if f.startswith("spread")},
-             s["commission"]["field"]: s["commission"]["unit"],
-             **{f: s["slippage"]["unit"] for f in fields(data) if f.startswith("slippage")},
-             **{f: s["swap"]["unit"] for f in s["swap"]["fields"]}}
-    lines = [f"# {symbol} — clase `{data['class']}`, overrides a aplicar", "",
-             f"SQX symbol: {data['sqx_symbol']}   verificado: {data['verified']}", ""]
+    units = {
+        **{f: s["spread"]["unit"] for f in fields(data) if f.startswith("spread")},
+        s["commission"]["field"]: s["commission"]["unit"],
+        **{f: s["slippage"]["unit"] for f in fields(data) if f.startswith("slippage")},
+        **{f: s["swap"]["unit"] for f in s["swap"]["fields"]},
+    }
+    lines = [
+        f"# {symbol} — clase `{data['class']}`, overrides a aplicar",
+        "",
+        f"SQX symbol: {data['sqx_symbol']}   verificado: {data['verified']}",
+        "",
+    ]
     for f in fields(data):
         spec = data["costs"][f]
         if f == "commission" and isinstance(spec["use"], dict):
-            per_seg = ", ".join(f"{seg}: `{v['method']} {v['value']}`"
-                                for seg, v in spec["use"].items())
-            lines.append(f"- **{f}**: {per_seg} (SQX lleva hoy `{spec['sqx_now']}`) — {spec['why']}")
+            per_seg = ", ".join(
+                f"{seg}: `{v['method']} {v['value']}`" for seg, v in spec["use"].items()
+            )
+            lines.append(
+                f"- **{f}**: {per_seg} (SQX lleva hoy `{spec['sqx_now']}`) — {spec['why']}"
+            )
         else:
             use = spec["use"] if spec["use"] is not None else "SIN DECIDIR"
-            lines.append(f"- **{f}**: usar `{use}` {units[f]}"
-                         f" (SQX lleva hoy `{spec['sqx_now']}`) — {spec['why']}")
+            lines.append(
+                f"- **{f}**: usar `{use}` {units[f]}"
+                f" (SQX lleva hoy `{spec['sqx_now']}`) — {spec['why']}"
+            )
         for row in broker_table(spec.get("brokers", {})):
             lines.append(f"    - {row}")
     span = data["data"]
-    lines.append(f"- **datos en SQX**: {span['from']} a {span['to']}" if span else
-                 f"- **datos en SQX**: ⚠️ NINGUNO — `{data['sqx_symbol']}` no existe")
+    lines.append(
+        f"- **datos en SQX**: {span['from']} a {span['to']}"
+        if span
+        else f"- **datos en SQX**: ⚠️ NINGUNO — `{data['sqx_symbol']}` no existe"
+    )
     for name, seg in data["segments"].items():
-        mark = ("  ⚠️ RESERVADO para " + ", ".join(seg[RESERVED])
-                if RESERVED in seg and enforced() else "")
+        mark = (
+            "  ⚠️ RESERVADO para " + ", ".join(seg[RESERVED])
+            if RESERVED in seg and enforced()
+            else ""
+        )
         if seg["from"] is None or seg["to"] is None:
             lines.append(f"- **segmento {name}**: SIN DECIDIR{mark}")
             continue
         a, b = window(data, name)
-        lines.append(f"- **segmento {name}**: {_day(seg['from'], False)} a {_day(seg['to'], True)} "
-                     f"inclusive (dateFrom {a}, dateTo {b}){mark}")
+        lines.append(
+            f"- **segmento {name}**: {_day(seg['from'], False)} a {_day(seg['to'], True)} "
+            f"inclusive (dateFrom {a}, dateTo {b}){mark}"
+        )
     for name, r in mc_retest(data).items():
         span = f"{r['min']} a {r['max']}" if r["min"] is not None else "SIN DECIDIR"
-        lines.append(f"- **MC Retest {name}**: sortea {span} puntos — {r['source']} "
-                     f"(SQX lleva hoy `{data['mc_retest'][name]['sqx_now']}`)")
+        lines.append(
+            f"- **MC Retest {name}**: sortea {span} puntos — {r['source']} "
+            f"(SQX lleva hoy `{data['mc_retest'][name]['sqx_now']}`)"
+        )
     for cat, feeds in (markets(symbol).get("categories") or {}).items():
-        lines.append(f"- **retest {cat}**: {', '.join(m['feed'] for m in feeds) or '(vacío)'}")
+        lines.append(
+            f"- **retest {cat}**: {', '.join(m['feed'] for m in feeds) or '(vacío)'}"
+        )
     for note in data.get("notes", []):
         lines.append(f"- nota: {note}")
     for f in special_notes():
@@ -119,21 +164,29 @@ def feed_quality(data: dict) -> list[str]:
         if not path.exists():
             continue
         q = json.loads(path.read_text(encoding="utf-8"))
-        lines.append(f"calidad del feed {feed}: {q['marked_per_year']:g} anomalías marcadas por año "
-                     f"(mediana desde 2013, K = {q['K']}), estable desde {q['stable_from']} "
-                     f"(escaneado {q['scanned_on']}).")
+        lines.append(
+            f"calidad del feed {feed}: {q['marked_per_year']:g} anomalías marcadas por año "
+            f"(mediana desde 2013, K = {q['K']}), estable desde {q['stable_from']} "
+            f"(escaneado {q['scanned_on']})."
+        )
         start = data["segments"]["build"]["from"]
         if start is None:
-            continue   # tramo `build` sin decidir (activo de cross-check, nunca main) — nada que comparar
+            continue  # tramo `build` sin decidir (activo de cross-check, nunca main) — nada que comparar
         year = start if isinstance(start, int) else start.year
         if year < q["stable_from"]:
-            worse = sorted({g for y, g in q["grade"].items() if year <= int(y) < q["stable_from"]})
-            lines.append(f"AVISO: la construcción empieza en {year}, antes del año estable "
-                         f"{q['stable_from']}: esos años son {' y '.join(worse)}.")
+            worse = sorted(
+                {g for y, g in q["grade"].items() if year <= int(y) < q["stable_from"]}
+            )
+            lines.append(
+                f"AVISO: la construcción empieza en {year}, antes del año estable "
+                f"{q['stable_from']}: esos años son {' y '.join(worse)}."
+            )
         for col in sorted({e["columna"] for e in q["episodes"]}):
             months = [e["mes"] for e in q["episodes"] if e["columna"] == col]
-            lines.append(f"episodios de {col}: {', '.join(months[:12])}"
-                         f"{f' y {len(months) - 12} más' if len(months) > 12 else ''}.")
+            lines.append(
+                f"episodios de {col}: {', '.join(months[:12])}"
+                f"{f' y {len(months) - 12} más' if len(months) > 12 else ''}."
+            )
     return lines
 
 
@@ -165,14 +218,22 @@ def main() -> None:
     for line in past_data(data):
         print(f"AVISO: {line}", file=sys.stderr)
     if segments_pending(data):
-        print(f"\nAVISO: los tramos {', '.join(segments_pending(data))} no tienen fechas.\n"
-              "Están en assets/_policy.yaml, bajo `segments:`, con los datos que SQX tiene al lado.")
-    loose = [] if missing else mc_pending(data)   # it prices the ranges: needs a decided commission
+        print(
+            f"\nAVISO: los tramos {', '.join(segments_pending(data))} no tienen fechas.\n"
+            "Están en assets/_policy.yaml, bajo `segments:`, con los datos que SQX tiene al lado."
+        )
+    loose = (
+        [] if missing else mc_pending(data)
+    )  # it prices the ranges: needs a decided commission
     if loose:
-        print(f"\nAVISO: los rangos MC Retest {', '.join(loose)} no están decididos. No bloquea,\n"
-              "pero esa tarea del MC Retest no es interpretable hasta que el dueño los fije.")
+        print(
+            f"\nAVISO: los rangos MC Retest {', '.join(loose)} no están decididos. No bloquea,\n"
+            "pero esa tarea del MC Retest no es interpretable hasta que el dueño los fije."
+        )
     if missing:
-        print(f"\nBLOQUEADO: {', '.join(missing)} sin valor pactado. Pregúntale al dueño.")
+        print(
+            f"\nBLOQUEADO: {', '.join(missing)} sin valor pactado. Pregúntale al dueño."
+        )
         sys.exit(2)
 
 
@@ -196,22 +257,28 @@ def write_dataranges() -> list[str]:
         row = rows.get(feed)
         if row:
             bars = f"{int(row[7]):,}".replace(",", ".")
-            new = (f"    data: {{from: {row[4].replace('.', '-')}, "
-                   f"to: {row[5].replace('.', '-')}}}   # {feed}, {bars} barras {row[2]}")
+            new = (
+                f"    data: {{from: {row[4].replace('.', '-')}, "
+                f"to: {row[5].replace('.', '-')}}}   # {feed}, {bars} barras {row[2]}"
+            )
         else:
             new = f"    data: null   # \u26a0\ufe0f {feed} NO EXISTE en SQX \u2014 no hay hist\u00f3rico que partir"
         block = re.search(rf"^  {symbol}:\n    data: .*$", text, re.M)
         # A symbol with a file but no `segments:` entry is a gap in the declaration, not a
         # crash: the windows below `data:` are the owner's decision and are not invented here.
         if not block:
-            changed.append(f"{symbol}: ⚠️ no está en `segments:` de _policy.yaml — "
-                           "sin tramos declarados, no se le puede refrescar el rango")
+            changed.append(
+                f"{symbol}: ⚠️ no está en `segments:` de _policy.yaml — "
+                "sin tramos declarados, no se le puede refrescar el rango"
+            )
             continue
         old = block.group().split("\n")[1]
         if old != new:
             changed.append(f"{symbol}: {old.strip()}  \u2192  {new.strip()}")
             text = text.replace(block.group(), f"  {symbol}:\n{new}")
-    tmp = path.with_suffix(".yaml.tmp")      # a half-written policy would stop every asset load
+    tmp = path.with_suffix(
+        ".yaml.tmp"
+    )  # a half-written policy would stop every asset load
     tmp.write_text(text, encoding="utf-8")
     os.replace(tmp, path)
     return changed
@@ -223,16 +290,22 @@ def write_index() -> int:
     Returns:
         How many assets were listed, so a session sees what is decided without opening 17.
     """
-    lines = ["# assets — índice", "",
-             "Generado por `python3 -m core.assets --index`. Leer `RULES.md` primero.", "",
-             "| activo | clase | bróker | símbolo SQX | decidido | pendiente |",
-             "|---|---|---|---|---|---|"]
+    lines = [
+        "# assets — índice",
+        "",
+        "Generado por `python3 -m core.assets --index`. Leer `RULES.md` primero.",
+        "",
+        "| activo | clase | bróker | símbolo SQX | decidido | pendiente |",
+        "|---|---|---|---|---|---|",
+    ]
     for symbol in symbols():
         d = load(symbol)
         miss = pending(d)
         mark = "—" if miss else ("⚠️ provisional" if provisional(d) else "✅")
-        lines.append(f"| `{symbol}` | `{d['class']}` | {d['broker']} | `{d['sqx_symbol']}` "
-                     f"| {mark} | {', '.join(miss) or '—'} |")
+        lines.append(
+            f"| `{symbol}` | `{d['class']}` | {d['broker']} | `{d['sqx_symbol']}` "
+            f"| {mark} | {', '.join(miss) or '—'} |"
+        )
     (ASSETS / "INDEX.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return len(lines) - 6
 

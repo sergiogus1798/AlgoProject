@@ -7,7 +7,7 @@ import pandas as pd
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial.distance import squareform
 
-FLOOR = 2            # fewest clusters worth testing
+FLOOR = 2  # fewest clusters worth testing
 
 
 def distances(window: pd.DataFrame) -> np.ndarray:
@@ -98,9 +98,14 @@ def independent(window: pd.DataFrame, k_max: int) -> Independent:
         if np.bincount(labels).max() * 2 <= len(labels):
             scored[k] = silhouette(dist, labels)
     if not scored:
-        raise ValueError(f"no split of {window.shape[1]} variants into 2..{k_max} clusters leaves "
-                         f"every cluster at half or less: one family dominates; raise k_max or "
-                         f"count this panel by hand")
+        raise ValueError(
+            f"no split of {window.shape[1]} variants into 2..{k_max} clusters leaves "
+            f"every cluster at half or less: one family dominates; raise k_max or "
+            f"count this panel by hand"
+        )
     best = max(scored, key=scored.__getitem__)
-    return {"n_clusters": best, "silhouette": round(scored[best], 4),
-            "n_variants": int(window.shape[1])}
+    return {
+        "n_clusters": best,
+        "silhouette": round(scored[best], 4),
+        "n_variants": int(window.shape[1]),
+    }

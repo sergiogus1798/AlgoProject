@@ -27,10 +27,20 @@ def stream(is_pnl: np.ndarray, oos_pnl: np.ndarray) -> dict:
     open_ = pd.date_range("2020-01-01", periods=n, freq="12h").to_numpy()
     close = open_ + np.timedelta64(6, "h")
     sample = np.array(["IST"] * is_pnl.size + ["OOS1"] * oos_pnl.size)
-    return {"name": "X", "frame": pd.DataFrame({"Profit/Loss": pnl}), "pnl": pnl,
-            "r": pnl / 1000.0, "cost": np.zeros(n), "spread": np.full(n, 0.5),
-            "mae": np.abs(pnl), "size": np.ones(n), "direction": np.ones(n),
-            "open": open_, "close": close, "sample": sample}
+    return {
+        "name": "X",
+        "frame": pd.DataFrame({"Profit/Loss": pnl}),
+        "pnl": pnl,
+        "r": pnl / 1000.0,
+        "cost": np.zeros(n),
+        "spread": np.full(n, 0.5),
+        "mae": np.abs(pnl),
+        "size": np.ones(n),
+        "direction": np.ones(n),
+        "open": open_,
+        "close": close,
+        "sample": sample,
+    }
 
 
 def day() -> pd.DataFrame:
@@ -38,8 +48,9 @@ def day() -> pd.DataFrame:
     rng = np.random.default_rng(SEED)
     n = 200
     close = 100.0 + np.cumsum(rng.normal(0, 0.3, n))
-    return pd.DataFrame({"Close": close},
-                        index=pd.date_range("2020-01-01", periods=n, freq="D"))
+    return pd.DataFrame(
+        {"Close": close}, index=pd.date_range("2020-01-01", periods=n, freq="D")
+    )
 
 
 def test_family_e_reads_oos_not_is() -> None:
@@ -57,11 +68,14 @@ def test_family_e_reads_oos_not_is() -> None:
     benchmark_all = significance.footprint(source, day(), asset)
     psr_all = significance.psr(source["pnl"], benchmark_all)
     assert psr_all["sharpe"] > 20 * e["sharpe"], (
-        "the IS-inflated Sharpe should dwarf the honest OOS one")
+        "the IS-inflated Sharpe should dwarf the honest OOS one"
+    )
     assert psr_all["psr"] > 0.999, (
-        "the old, wrong computation over IS+OOS reads a near-certain edge from the IS alone")
+        "the old, wrong computation over IS+OOS reads a near-certain edge from the IS alone"
+    )
     assert e["psr"] < 0.85, (
-        "the honest OOS-only PSR must read far less confident than the IS-inflated one")
+        "the honest OOS-only PSR must read far less confident than the IS-inflated one"
+    )
 
 
 def test_family_e_warns_when_oos_too_thin() -> None:
@@ -70,7 +84,9 @@ def test_family_e_warns_when_oos_too_thin() -> None:
     source = stream(500.0 + rng.normal(0, 5.0, 60), rng.normal(0, 50.0, 3))
     cfg = mc_config.load(["global.n_sims=300", "global.chunk=300", "global.seed=0"])
     e = mc_run._family_e(source, day(), {"point_value": 1.0}, cfg)
-    assert e["psr"] != e["psr"], "too few OOS trades must read NaN, never a number from IS"
+    assert e["psr"] != e["psr"], (
+        "too few OOS trades must read NaN, never a number from IS"
+    )
     assert e["warning"]
 
 
@@ -78,14 +94,20 @@ def test_mcretest_originals_keep_oos_only() -> None:
     """`measure.originals.read()` keeps only `sample == 'OOS'` rows of the harvest's own
     trade list -- a strategy whose harvest carries only an IS row comes back with none, and
     a strategy with both keeps only its OOS ones."""
-    mixed = pd.DataFrame({
-        "identity": ["h1", "h2", "h2"],
-        "strategy": ["placeholder"] * 3,   # overwritten by read(), from `identities`
-        "Type": ["Buy"] * 3, "Open price": [1.0, 1.0, 1.0], "Close price": [1.1, 1.2, 0.9],
-        "Open time": pd.to_datetime(["2020-01-01", "2020-01-02", "2020-01-03"]),
-        "Close time": pd.to_datetime(["2020-01-02", "2020-01-03", "2020-01-04"]),
-        "Size": [1.0, 1.0, 1.0], "Profit/Loss": [10.0, 12.0, -9.0],
-        "sample": ["IS", "IS", "OOS"]})
+    mixed = pd.DataFrame(
+        {
+            "identity": ["h1", "h2", "h2"],
+            "strategy": ["placeholder"] * 3,  # overwritten by read(), from `identities`
+            "Type": ["Buy"] * 3,
+            "Open price": [1.0, 1.0, 1.0],
+            "Close price": [1.1, 1.2, 0.9],
+            "Open time": pd.to_datetime(["2020-01-01", "2020-01-02", "2020-01-03"]),
+            "Close time": pd.to_datetime(["2020-01-02", "2020-01-03", "2020-01-04"]),
+            "Size": [1.0, 1.0, 1.0],
+            "Profit/Loss": [10.0, 12.0, -9.0],
+            "sample": ["IS", "IS", "OOS"],
+        }
+    )
     real_newest = originals.newest_harvest
     with tempfile.TemporaryDirectory() as tmp:
         mixed.to_parquet(Path(tmp) / "trades.parquet")

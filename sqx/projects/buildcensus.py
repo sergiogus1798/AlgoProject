@@ -15,17 +15,31 @@ from typing import Any
 # the builder can sample is a native of SQX's «Bar And Time» category under one of these names.
 CLOCK = re.compile(r"^(Current|Bar)(Hour|Minute|DayOf|WeekOf|Month|Time)|^IsMonth")
 # Custom blocks that read the session or the clock, forbidden like the natives (owner, 2026-10-11; SessionClose and the custom-hours volume profiles, 2026-10-13).
-CLOCK_NAMES = frozenset({"CBlock_TimeBreakoutLong", "CBlock_TimeBreakoutLong_2",
-                         "SessionHigh", "SessionLow", "SessionOpen", "SessionClose",
-                         "VolumeProfileCustomHours", "VolumeProfileCustomHoursMultiSession"})
+CLOCK_NAMES = frozenset(
+    {
+        "CBlock_TimeBreakoutLong",
+        "CBlock_TimeBreakoutLong_2",
+        "SessionHigh",
+        "SessionLow",
+        "SessionOpen",
+        "SessionClose",
+        "VolumeProfileCustomHours",
+        "VolumeProfileCustomHoursMultiSession",
+    }
+)
 # The Build's own `category` per block → what it is to a strategy. `stopLimitBlocks` is the
 # price of a stop or limit ENTRY order; whether such an order can be placed at all is
 # `<OrderTypes>` (`EnterAtStop`, `EnterAtLimit`), which `buildrules.set_order_types` governs.
 KINDS = {"signals": "condition", "indicators": "value", "stopLimitBlocks": "level"}
 BLOCK = re.compile(r'<Block key="([^"]+)" weight="\d+" use="(true|false)"([^>]*)>')
-TYPED = re.compile(r'<Block key="([^"]+)"[^>]*?use="(true|false)"(?: probability="(\d+)")?')
-CONDITION = re.compile(r'<Condition use="(true|false)">.*?column="([^"]*)".*?sampleType="(\d+)"'
-                       r'.*?<Comparator value="([^"]*)".*?<Numeric-Value value="([^"]*)"', re.S)
+TYPED = re.compile(
+    r'<Block key="([^"]+)"[^>]*?use="(true|false)"(?: probability="(\d+)")?'
+)
+CONDITION = re.compile(
+    r'<Condition use="(true|false)">.*?column="([^"]*)".*?sampleType="(\d+)"'
+    r'.*?<Comparator value="([^"]*)".*?<Numeric-Value value="([^"]*)"',
+    re.S,
+)
 
 
 def kind(key: str, attrs: str) -> str:
@@ -85,7 +99,9 @@ def census(cfx: Path) -> dict[str, Any]:
     stop = rx(r"<StopCondition[^>]*>", rankings).group(0)
     genetic = dict(re.findall(r"<(\w+)>([^<]*)</\1>", mode))
     genetic["InitialPopulationConditions"] = len(re.findall(r"<Condition\b", mode))
-    for name, attrs in re.findall(r"<(EvoRestart\w+|EvoInSamplePeriod) ([^>]*?) ?/>", mode):
+    for name, attrs in re.findall(
+        r"<(EvoRestart\w+|EvoInSamplePeriod) ([^>]*?) ?/>", mode
+    ):
         genetic[name] = attrs.replace('"', "")
     return {
         "task": member,
@@ -98,17 +114,26 @@ def census(cfx: Path) -> dict[str, Any]:
         "entry": [bound["minConditions"], bound["maxConditions"]],
         "exit": [bound["minExitConditions"], bound["maxExitConditions"]],
         "lookback": [bound["minShift"], bound["maxShift"]],
-        "order_types": [k for k, use, _ in TYPED.findall(_section(text, "OrderTypes"))
-                        if use == "true"],
-        "exit_types": {k: int(p) for k, use, p in TYPED.findall(_section(text, "ExitTypes"))
-                       if use == "true"},
-        "blocks": blocks, "on": on,
+        "order_types": [
+            k
+            for k, use, _ in TYPED.findall(_section(text, "OrderTypes"))
+            if use == "true"
+        ],
+        "exit_types": {
+            k: int(p)
+            for k, use, p in TYPED.findall(_section(text, "ExitTypes"))
+            if use == "true"
+        },
+        "blocks": blocks,
+        "on": on,
         "generation": rx(r'generationType="([^"]*)"', mode).group(1),
         "genetic": genetic,
         "fitness": rx(r'<Ranking type="([^"]*)"', rankings).group(1),
-        "acceptance": [f"{col} {html.unescape(op)} {value} @sampleType {sample}"
-                       for use, col, sample, op, value in CONDITION.findall(rankings)
-                       if use == "true"],
+        "acceptance": [
+            f"{col} {html.unescape(op)} {value} @sampleType {sample}"
+            for use, col, sample, op, value in CONDITION.findall(rankings)
+            if use == "true"
+        ],
         "mc_manipulation": rx(r'<MonteCarloManipulation use="([^"]*)"', text).group(1),
         "max_strategies": int(rx(r"<MaxStrategies>(\d+)<", rankings).group(1)),
         "stop": dict(re.findall(r'(\w+)="([^"]*)"', stop)),
@@ -125,20 +150,31 @@ def lines(c: dict) -> list[str]:
         One line per fact, the condition keys last because they are the long one.
     """
     g, b = c["genetic"], c["blocks"]
-    shape = c["strategy_type"] + (f" {c['template']} {c['template_conditions']}"
-                                  if c["template"] else " (sin plantilla)")
+    shape = c["strategy_type"] + (
+        f" {c['template']} {c['template_conditions']}"
+        if c["template"]
+        else " (sin plantilla)"
+    )
     return [
-        f"{c['task']}: {shape}" + ("" if c["no_template_named"] else "  ⚠️ nombra una plantilla"),
+        f"{c['task']}: {shape}"
+        + ("" if c["no_template_named"] else "  ⚠️ nombra una plantilla"),
         f"  dirección      {c['sides']}  (simetría entrada {c['symmetry']['EntrySymmetry']}, "
         f"salida {c['symmetry']['ExitSymmetry']})",
         f"  condiciones    entrada {c['entry'][0]}..{c['entry'][1]} · salida "
         f"{c['exit'][0]}..{c['exit'][1]} · lookback {c['lookback'][0]}..{c['lookback'][1]}",
         f"  órdenes        {', '.join(c['order_types'])}",
-        "  salidas        " + ", ".join(f"{k} ({p} %)" for k, p in c["exit_types"].items()),
-        "  bloques ON     " + " · ".join(
-            f"{name} {b[k]['on']}/{b[k]['of']}" for k, name in (
-                ("condition", "condiciones"), ("value", "indicadores/valores"),
-                ("level", "niveles stop/limit"), ("clock", "reloj/calendario"))),
+        "  salidas        "
+        + ", ".join(f"{k} ({p} %)" for k, p in c["exit_types"].items()),
+        "  bloques ON     "
+        + " · ".join(
+            f"{name} {b[k]['on']}/{b[k]['of']}"
+            for k, name in (
+                ("condition", "condiciones"),
+                ("value", "indicadores/valores"),
+                ("level", "niveles stop/limit"),
+                ("clock", "reloj/calendario"),
+            )
+        ),
         f"  generación     {c['generation']} · fitness {c['fitness']}",
         f"  genética       población {g['PopulationSize']} × {g['Islands']} islas · "
         f"generaciones {g['MaxGenerations']} · cruce {g['CrossoverProbability']} · mutación "
@@ -151,6 +187,8 @@ def lines(c: dict) -> list[str]:
         f"{c['mc_manipulation']}",
         f"  topes          MaxStrategies {c['max_strategies']} · stop {c['stop']}",
         f"  condiciones ON ({b['condition']['on']}): {', '.join(c['on']['condition'])}",
-    ] + [f"  {name} ON ({b[k]['on']}): {', '.join(c['on'][k])}"
-         for k, name in (("value", "valores"), ("level", "niveles"), ("clock", "reloj"))
-         if c["on"][k]]
+    ] + [
+        f"  {name} ON ({b[k]['on']}): {', '.join(c['on'][k])}"
+        for k, name in (("value", "valores"), ("level", "niveles"), ("clock", "reloj"))
+        if c["on"][k]
+    ]

@@ -62,6 +62,11 @@ def ensure(role: str) -> bool:
     if file.exists():
         return False
     (file.parent / "databanks/Results").mkdir(parents=True)
-    cfxio.write(file, {"config.xml": CONFIG.encode("utf-8"),
-                      MEMBER: settings("AlgoBank", "").encode("utf-8")})
+    cfxio.write(
+        file,
+        {
+            "config.xml": CONFIG.encode("utf-8"),
+            MEMBER: settings("AlgoBank", "").encode("utf-8"),
+        },
+    )
     return True

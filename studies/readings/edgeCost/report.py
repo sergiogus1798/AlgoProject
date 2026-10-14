@@ -23,10 +23,16 @@ def main() -> None:
     """Every strategy of one harvest against its edge-per-cost bar, or one read in full."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--project", required=True)
-    ap.add_argument("--databank", required=True, help="the harvest's build databank name")
+    ap.add_argument(
+        "--databank", required=True, help="the harvest's build databank name"
+    )
     ap.add_argument("--feed", required=True, help="SQX feed, e.g. XAUUSD_M1")
-    ap.add_argument("--strategy", default="", help="one strategy, read in full; all when omitted")
-    ap.add_argument("--set", action="extend", nargs="+", default=[], help="section.key=value")
+    ap.add_argument(
+        "--strategy", default="", help="one strategy, read in full; all when omitted"
+    )
+    ap.add_argument(
+        "--set", action="extend", nargs="+", default=[], help="section.key=value"
+    )
     a = ap.parse_args()
 
     cfg = inputs.config(a.set)
@@ -49,20 +55,45 @@ def main() -> None:
 
     names = inputs.names(folder)
     got = many.run(priced, names, cfg, asset)
-    output.population(out, "edgeCost", got["population"],
-                      f"Edge por coste — {a.project} / {a.databank}")
-    got["panel"].to_csv(out / "verdict.csv",
-                        columns=["identity", "edge_mean", "verdict"])
-    write_manifest(out,
-                   {"project": a.project, "databank": a.databank, "feed": a.feed,
-                    "input": str((folder / "trades.parquet").resolve())},
-                   " ".join(["python3 -m studies.readings.edgeCost.report", "--project",
-                             a.project, "--databank", a.databank, "--feed", a.feed]),
-                   {"verdict.csv": len(got["panel"])})
-    print(steprows.log_cut(a.project, 8, (len(got["panel"]),
-                                          int((got["panel"]["verdict"] != "DESCARTAR").sum())),
-                           "edgeCost: edge por coste (DESCARTAR sólo en modo drop)",
-                           "studies.readings.edgeCost.report"))
+    output.population(
+        out,
+        "edgeCost",
+        got["population"],
+        f"Edge por coste — {a.project} / {a.databank}",
+    )
+    got["panel"].to_csv(
+        out / "verdict.csv", columns=["identity", "edge_mean", "verdict"]
+    )
+    write_manifest(
+        out,
+        {
+            "project": a.project,
+            "databank": a.databank,
+            "feed": a.feed,
+            "input": str((folder / "trades.parquet").resolve()),
+        },
+        " ".join(
+            [
+                "python3 -m studies.readings.edgeCost.report",
+                "--project",
+                a.project,
+                "--databank",
+                a.databank,
+                "--feed",
+                a.feed,
+            ]
+        ),
+        {"verdict.csv": len(got["panel"])},
+    )
+    print(
+        steprows.log_cut(
+            a.project,
+            8,
+            (len(got["panel"]), int((got["panel"]["verdict"] != "DESCARTAR").sum())),
+            "edgeCost: edge por coste (DESCARTAR sólo en modo drop)",
+            "studies.readings.edgeCost.report",
+        )
+    )
     print(f"\n{len(got['panel'])} estrategias -> {out}")
 
 

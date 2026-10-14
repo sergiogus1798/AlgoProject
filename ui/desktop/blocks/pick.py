@@ -22,7 +22,10 @@ def selectors(tab: dict) -> list[dict]:
             seen = found.setdefault(k, [])
             if str(v) not in seen:
                 seen.append(str(v))
-    return [{"key": k, "label": label(k), "options": v, "default": v[0]} for k, v in found.items()]
+    return [
+        {"key": k, "label": label(k), "options": v, "default": v[0]}
+        for k, v in found.items()
+    ]
 
 
 def picked(tab: dict, chosen: dict) -> dict[str, str]:
@@ -39,7 +42,9 @@ def picked(tab: dict, chosen: dict) -> dict[str, str]:
     out = {}
     for s in selectors(tab):
         want = str(chosen.get(s["key"]))
-        out[s["key"]] = want if want in [str(o) for o in s["options"]] else str(s["default"])
+        out[s["key"]] = (
+            want if want in [str(o) for o in s["options"]] else str(s["default"])
+        )
     return out
 
 
@@ -55,8 +60,11 @@ def shown(tab: dict, chosen: dict) -> list[dict]:
         Nothing is recomputed; the study already stored every combination (CONTRACT §1).
     """
     pick = picked(tab, chosen)
-    return [b for b in tab["blocks"]
-            if all(pick.get(k) == str(v) for k, v in (b.get("select") or {}).items())]
+    return [
+        b
+        for b in tab["blocks"]
+        if all(pick.get(k) == str(v) for k, v in (b.get("select") or {}).items())
+    ]
 
 
 def pairs(left: list[dict], right: list[dict]) -> list[tuple[dict | None, dict | None]]:
@@ -71,7 +79,11 @@ def pairs(left: list[dict], right: list[dict]) -> list[tuple[dict | None, dict |
     free = list(right)
     out = []
     for b in left:
-        same = [r for r in free if (r["kind"], r.get("title")) == (b["kind"], b.get("title"))]
+        same = [
+            r
+            for r in free
+            if (r["kind"], r.get("title")) == (b["kind"], b.get("title"))
+        ]
         kin = [r for r in free if r["kind"] == b["kind"]]
         twin = (same or kin or [None])[0]
         if twin is not None:

@@ -32,10 +32,14 @@ def save(symbol: str, got: list[dict], meta: dict) -> None:
     """
     rows = pd.DataFrame([r for g in got for r in g["rows"]])
     rows.to_parquet(cells() / f"{symbol}.parquet", index=False)
-    side = {**meta, "context": [g["context"] for g in got],
-            "overlap": [o for g in got for o in g["overlap"]]}
-    (cells() / f"{symbol}.json").write_text(json.dumps(side, default=float, indent=1),
-                                            encoding="utf-8")
+    side = {
+        **meta,
+        "context": [g["context"] for g in got],
+        "overlap": [o for g in got for o in g["overlap"]],
+    }
+    (cells() / f"{symbol}.json").write_text(
+        json.dumps(side, default=float, indent=1), encoding="utf-8"
+    )
 
 
 def extend(symbol: str, rows: list[dict], meta: dict) -> None:
@@ -47,8 +51,9 @@ def extend(symbol: str, rows: list[dict], meta: dict) -> None:
         meta: The measures added, their seed, timings and date.
     """
     path = cells() / f"{symbol}.parquet"
-    pd.concat([pd.read_parquet(path), pd.DataFrame(rows)], ignore_index=True).to_parquet(
-        path, index=False)
+    pd.concat(
+        [pd.read_parquet(path), pd.DataFrame(rows)], ignore_index=True
+    ).to_parquet(path, index=False)
     side = cells() / f"{symbol}.json"
     held = json.loads(side.read_text(encoding="utf-8"))
     held.setdefault("top_ups", []).append(meta)
@@ -63,12 +68,19 @@ def load() -> dict[str, Any]:
         per cell, direction and pair of families, "meta": {symbol: its side file}}.
     """
     names = done()
-    meta = {s: json.loads((cells() / f"{s}.json").read_text(encoding="utf-8")) for s in names}
-    return {"rows": pd.concat([pd.read_parquet(cells() / f"{s}.parquet") for s in names],
-                              ignore_index=True),
-            "context": pd.DataFrame([c for m in meta.values() for c in m["context"]]),
-            "overlap": pd.DataFrame([o for m in meta.values() for o in m["overlap"]]),
-            "meta": meta}
+    meta = {
+        s: json.loads((cells() / f"{s}.json").read_text(encoding="utf-8"))
+        for s in names
+    }
+    return {
+        "rows": pd.concat(
+            [pd.read_parquet(cells() / f"{s}.parquet") for s in names],
+            ignore_index=True,
+        ),
+        "context": pd.DataFrame([c for m in meta.values() for c in m["context"]]),
+        "overlap": pd.DataFrame([o for m in meta.values() for o in m["overlap"]]),
+        "meta": meta,
+    }
 
 
 def write(judged: Map, stored: dict) -> Path:

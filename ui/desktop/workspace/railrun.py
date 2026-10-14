@@ -41,14 +41,26 @@ def panel_choice(rail: "Rail", n: str = "") -> tuple[str, list[str]]:
         return "", []
     panel, step = zone.panel, rail.step(n) if n else {}
     shown = panel.sub_spec()
-    spec = next((sub for t in panel.tabs if t["tab"] == step.get("tab")
-                 for sub in t["subs"] if sub["sub"] == step.get("sub")), shown)
+    spec = next(
+        (
+            sub
+            for t in panel.tabs
+            if t["tab"] == step.get("tab")
+            for sub in t["subs"]
+            if sub["sub"] == step.get("sub")
+        ),
+        shown,
+    )
     chosen = panel.table.chosen_names() if spec is shown else []
     return spec.get("databank", ""), chosen
 
 
-def tests(rail: "Rail", keys: list[tuple[str, str]], databank: str = "",
-          strategies: list[str] | None = None) -> None:
+def tests(
+    rail: "Rail",
+    keys: list[tuple[str, str]],
+    databank: str = "",
+    strategies: list[str] | None = None,
+) -> None:
     """Queue tests through POST /api/workflow/run and say what started and what did not.
 
     Args:
@@ -58,25 +70,46 @@ def tests(rail: "Rail", keys: list[tuple[str, str]], databank: str = "",
         strategies: The panel's chosen strategies; None or [] for the population.
     """
     if not keys:
-        rail.said.setText(label("Nada que correr: marca una prueba o pulsa el ▶ de un paso."))
+        rail.said.setText(
+            label("Nada que correr: marca una prueba o pulsa el ▶ de un paso.")
+        )
         return
-    costly = [f"· {t['title']}: {t['spends']}" for n, k in keys
-              for t in rail.step(n)["tests"] if t["key"] == k and t["spends"]]
-    if costly and QMessageBox.question(  # pyright: ignore[reportCallIssue]  # PySide6 stub wants button0/button1 for the 3-arg form
-            rail, "Esto lee oos2 o escribe en el ledger",
-            "Cada run cuenta y no se deshace:\n" + "\n".join(costly) + "\n\n¿Correr?"
-    ) != QMessageBox.StandardButton.Yes:
+    costly = [
+        f"· {t['title']}: {t['spends']}"
+        for n, k in keys
+        for t in rail.step(n)["tests"]
+        if t["key"] == k and t["spends"]
+    ]
+    if (
+        costly
+        and QMessageBox.question(  # pyright: ignore[reportCallIssue]  # PySide6 stub wants button0/button1 for the 3-arg form
+            rail,
+            "Esto lee oos2 o escribe en el ledger",
+            "Cada run cuenta y no se deshace:\n" + "\n".join(costly) + "\n\n¿Correr?",
+        )
+        != QMessageBox.StandardButton.Yes
+    ):
         rail.said.setText("No se lanzó nada.")
         return
-    got = post("workflow/run", {"project": rail.project, "databank": databank,
-                                "strategies": strategies or [],
-                                "tests": [{"n": n, "key": k} for n, k in keys]})
+    got = post(
+        "workflow/run",
+        {
+            "project": rail.project,
+            "databank": databank,
+            "strategies": strategies or [],
+            "tests": [{"n": n, "key": k} for n, k in keys],
+        },
+    )
     if "error" in got:
         rail.said.setText(got["error"])
         return
-    refused = "   ".join(f"{r['key']} (paso {r['n']}): {r['why']}" for r in got["refused"])
-    rail.said.setText(f"{num(len(got['jobs']))} trabajos en cola"
-                      + (f"   ·   no se lanzó: {refused}" if refused else ""))
+    refused = "   ".join(
+        f"{r['key']} (paso {r['n']}): {r['why']}" for r in got["refused"]
+    )
+    rail.said.setText(
+        f"{num(len(got['jobs']))} trabajos en cola"
+        + (f"   ·   no se lanzó: {refused}" if refused else "")
+    )
     rail.load(rail.project)
     rail.poll(True)
 
@@ -91,28 +124,49 @@ def step(rail: "Rail", n: str) -> None:
     if not keys:
         picked = [t for t in idle if not t["spends"]] or idle
         keys = [(n, t["key"]) for t in picked]
-        if keys and QMessageBox.question(
-                rail, f"Correr el paso {n}",
+        if (
+            keys
+            and QMessageBox.question(
+                rail,
+                f"Correr el paso {n}",
                 "No hay ninguna prueba marcada en este paso; se correrían todas estas:\n"
-                + "\n".join(f"· {label(t['title'])}" for t in picked) + "\n\n¿Correrlas?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+                + "\n".join(f"· {label(t['title'])}" for t in picked)
+                + "\n\n¿Correrlas?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            != QMessageBox.StandardButton.Yes
+        ):
             rail.said.setText("No se lanzó nada.")
             return
     databank, chosen = panel_choice(rail, n) if s.get("panel") else ("", [])
     # 21-25 read the Databanks panel, which may not be on screen: say what they will read.
-    if databank and keys and QMessageBox.question(
-            rail, f"Correr el paso {n}",
+    if (
+        databank
+        and keys
+        and QMessageBox.question(
+            rail,
+            f"Correr el paso {n}",
             f"Se corre sobre el databank «{databank}» del panel de Databanks, "
-            + (f"sólo sobre las {num(len(chosen))} filas elegidas allí."
-               if chosen else "sobre todas sus filas (ninguna elegida allí).")
-            + "\n\n¿Correr?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No
-    ) != QMessageBox.StandardButton.Yes:
+            + (
+                f"sólo sobre las {num(len(chosen))} filas elegidas allí."
+                if chosen
+                else "sobre todas sus filas (ninguna elegida allí)."
+            )
+            + "\n\n¿Correr?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        != QMessageBox.StandardButton.Yes
+    ):
         rail.said.setText("No se lanzó nada.")
         return
     tests(rail, keys, databank, chosen)
 
 
-def panel(rail: "Rail", tab: str, databank: str = "", strategies: list[str] | None = None) -> str:
+def panel(
+    rail: "Rail", tab: str, databank: str = "", strategies: list[str] | None = None
+) -> str:
     """Databanks' «▶ Correr marcados de este panel»: the ticked tests of this tab's steps, or —
     none ticked, after a question listing them — every free one of them.
 
@@ -123,17 +177,32 @@ def panel(rail: "Rail", tab: str, databank: str = "", strategies: list[str] | No
     steps = [s for s in rail.data.get("steps", []) if s["tab"] == tab]
     keys = [k for k, on in rail.ticks.items() if on and k[0] in {s["n"] for s in steps}]
     if not keys:
-        free = [(s["n"], t) for s in steps if s["kind"] == "python"
-                for t in runnable(s) if t["state"] != "running"]
+        free = [
+            (s["n"], t)
+            for s in steps
+            if s["kind"] == "python"
+            for t in runnable(s)
+            if t["state"] != "running"
+        ]
         if not free:
-            return (f"«{tab}» no tiene pruebas que se corran desde aquí: un análisis de SQX "
-                    "(WFM) se lanza con «▶▶ toda la población» en la ficha de una de sus "
-                    "estrategias.")
-        if QMessageBox.question(
-                rail, f"Correr «{tab}»", "No hay ninguna prueba marcada en esta pestaña; se "
-                "correrían todas estas:\n" + "\n".join(f"· {label(t['title'])}" for _, t in free)
-                + "\n\n¿Correrlas?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+            return (
+                f"«{tab}» no tiene pruebas que se corran desde aquí: un análisis de SQX "
+                "(WFM) se lanza con «▶▶ toda la población» en la ficha de una de sus "
+                "estrategias."
+            )
+        if (
+            QMessageBox.question(
+                rail,
+                f"Correr «{tab}»",
+                "No hay ninguna prueba marcada en esta pestaña; se "
+                "correrían todas estas:\n"
+                + "\n".join(f"· {label(t['title'])}" for _, t in free)
+                + "\n\n¿Correrlas?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            != QMessageBox.StandardButton.Yes
+        ):
             return "No se lanzó nada."
         keys = [(n, t["key"]) for n, t in free]
     tests(rail, keys, databank, strategies)
@@ -144,19 +213,32 @@ def sqx_step(rail: "Rail", n: str) -> None:
     """An SQX card's ▶: the step's preflight, its sentence, and only «Sí» queues the job."""
     got = ask("launch/preflight", project=rail.project, step=n)
     if not got.get("ok"):
-        rail.said.setText(f"Paso {n}: " + off(got.get("reasons") or [got.get("error", "?")]))
+        rail.said.setText(
+            f"Paso {n}: " + off(got.get("reasons") or [got.get("error", "?")])
+        )
         rail.said.setToolTip(full(got.get("reasons") or [got.get("error", "?")]))
         return
-    if QMessageBox.question(rail, f"Lanzar el paso {n} en SQX", got["text"] + "\n\n¿Confirmas?",
-                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                            QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+    if (
+        QMessageBox.question(
+            rail,
+            f"Lanzar el paso {n} en SQX",
+            got["text"] + "\n\n¿Confirmas?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        != QMessageBox.StandardButton.Yes
+    ):
         rail.said.setText("No se lanzó nada.")
         return
-    done = post("launch/run", {"project": rail.project, "step": n,
-                               "nonce": got.get("nonce", "")})
-    rail.said.setText(f"En marcha: paso {n} ({', '.join(done['titles'])}) — su avance, en "
-                      "«En marcha»" if done.get("job") else
-                      "No se lanzó: " + brief(done.get("reasons") or [done.get("error", "?")]))
+    done = post(
+        "launch/run",
+        {"project": rail.project, "step": n, "nonce": got.get("nonce", "")},
+    )
+    rail.said.setText(
+        f"En marcha: paso {n} ({', '.join(done['titles'])}) — su avance, en «En marcha»"
+        if done.get("job")
+        else "No se lanzó: " + brief(done.get("reasons") or [done.get("error", "?")])
+    )
     rail.load(rail.project)
     rail.poll(True)
 
@@ -165,17 +247,29 @@ def chain(rail: "Rail") -> None:
     """«Correr workflow»: the preflight and the whole plan, and only «Sí» queues the one job."""
     got = ask("launch/chain", project=rail.project)
     if not got.get("ok"):
-        rail.said.setText("Correr workflow: " + off(got.get("reasons") or [got.get("error", "?")]))
+        rail.said.setText(
+            "Correr workflow: " + off(got.get("reasons") or [got.get("error", "?")])
+        )
         rail.said.setToolTip(full(got.get("reasons") or [got.get("error", "?")]))
         return
-    if QMessageBox.question(rail, "Correr workflow (hasta la próxima decisión)",
-                            got["text"] + "\n\n¿Confirmas?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                            QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+    if (
+        QMessageBox.question(
+            rail,
+            "Correr workflow (hasta la próxima decisión)",
+            got["text"] + "\n\n¿Confirmas?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        != QMessageBox.StandardButton.Yes
+    ):
         rail.said.setText("No se lanzó nada.")
         return
     done = post("launch/chain", {"project": rail.project, "plan": got["plan"]})
-    rail.said.setText("En marcha: Correr workflow — su avance, en «En marcha»" if done.get("job")
-                      else "No se lanzó: " + brief(done.get("reasons") or [done.get("error", "?")]))
+    rail.said.setText(
+        "En marcha: Correr workflow — su avance, en «En marcha»"
+        if done.get("job")
+        else "No se lanzó: " + brief(done.get("reasons") or [done.get("error", "?")])
+    )
     rail.load(rail.project)
     rail.poll(True)
 
@@ -184,12 +278,16 @@ def plan_line(chain_plan: dict) -> str:
     """What «Correr workflow» would do now, in one line under its button."""
     do, stop = chain_plan["do"], chain_plan["stop"]
     steps = " → ".join(f"{a['n']}{' (SQX)' if a['kind'] == 'sqx' else ''}" for a in do)
-    if busy(stop["why"]):          # the rest is in the step's card (owner, 2026-09-30)
+    if busy(stop["why"]):  # the rest is in the step's card (owner, 2026-09-30)
         end = RUNNING
     else:
-        end = (f"se para antes del paso {stop['n']} ({label(stop['title'])}): "
-               f"{brief(label(stop['why']))}" if stop["n"] else brief(label(stop["why"])))
-    return (f"Correría: {steps}   ·   {end}" if do else f"Nada que correr: {end}")
+        end = (
+            f"se para antes del paso {stop['n']} ({label(stop['title'])}): "
+            f"{brief(label(stop['why']))}"
+            if stop["n"]
+            else brief(label(stop["why"]))
+        )
+    return f"Correría: {steps}   ·   {end}" if do else f"Nada que correr: {end}"
 
 
 def configure(rail: "Rail", n: str) -> None:
@@ -216,9 +314,11 @@ def configure(rail: "Rail", n: str) -> None:
         return
     if not zone.sections:
         zone.load()
-    at = next((i for i, s in enumerate(zone.sections) if s.section["key"] == section), None)
+    at = next(
+        (i for i, s in enumerate(zone.sections) if s.section["key"] == section), None
+    )
     if at is not None:
         zone.open(at)
-    text = (STUDY_NOW if rail.step(n)["kind"] == "python" else NOT_YET)
-    zone.status.setWordWrap(True)      # a long line there would widen the whole window
+    text = STUDY_NOW if rail.step(n)["kind"] == "python" else NOT_YET
+    zone.status.setWordWrap(True)  # a long line there would widen the whole window
     zone.say(text.format(project=rail.project, n=n), C["weak"])

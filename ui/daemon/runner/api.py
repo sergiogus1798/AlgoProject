@@ -62,8 +62,12 @@ def study_run(req: StudyRun) -> dict[str, Any]:
         return {"error": f"no se pudo preparar {req.study}: {e}"}
     if isinstance(planned, str):
         return {"error": planned}
-    return {"jobs": [jobs.start(p["label"], p["argv"], p["about"], weight=p.get("weight"))
-                     for p in batch.fold(planned)]}
+    return {
+        "jobs": [
+            jobs.start(p["label"], p["argv"], p["about"], weight=p.get("weight"))
+            for p in batch.fold(planned)
+        ]
+    }
 
 
 def _rerun(req: StudyRun) -> list[dict] | str:
@@ -82,19 +86,50 @@ def _rerun(req: StudyRun) -> list[dict] | str:
     if not req.asset:
         return "elige el activo del proyecto: de él salen el feed y las ventanas"
     c = runs.context(req.project, req.databank, "", req.asset)
-    why = ((None if c["multimarket"] else transfer.NO_CROSS) if req.study == "crossmarket"
-           else runs.own_trades(c))
+    why = (
+        (None if c["multimarket"] else transfer.NO_CROSS)
+        if req.study == "crossmarket"
+        else runs.own_trades(c)
+    )
     if why:
         return f"{req.study}: {why}"
-    return [{"label": req.study, "about": {"project": req.project, "databank": req.databank,
-                                           "strategy": s, "study": req.study, "scope": "one"},
-             "argv": ["-m", "ui.daemon.results.rerun", "--study", req.study, "--project",
-                      req.project, "--databank", req.databank, "--asset", req.asset, "--day",
-                      c["export"], "--strategy", s, "--only", req.only]
-             + (["--seed", str(rootseed.root(req.project, req.databank))]
-                if req.study == "monteCarlo" else [])
-             + (["--set", *req.overrides] if req.overrides else [])}
-            for s in req.strategies]
+    return [
+        {
+            "label": req.study,
+            "about": {
+                "project": req.project,
+                "databank": req.databank,
+                "strategy": s,
+                "study": req.study,
+                "scope": "one",
+            },
+            "argv": [
+                "-m",
+                "ui.daemon.results.rerun",
+                "--study",
+                req.study,
+                "--project",
+                req.project,
+                "--databank",
+                req.databank,
+                "--asset",
+                req.asset,
+                "--day",
+                c["export"],
+                "--strategy",
+                s,
+                "--only",
+                req.only,
+            ]
+            + (
+                ["--seed", str(rootseed.root(req.project, req.databank))]
+                if req.study == "monteCarlo"
+                else []
+            )
+            + (["--set", *req.overrides] if req.overrides else []),
+        }
+        for s in req.strategies
+    ]
 
 
 def _tests(project: str, databank: str, strategy: str) -> list[dict]:
@@ -109,18 +144,28 @@ def _tests(project: str, databank: str, strategy: str) -> list[dict]:
         maps it back to its label; empty when the study never ran on this strategy here.
     """
     for day in store.days(project, databank, "monteCarlo"):
-        path = Path(f"{store.bank(project, databank) / day / 'monteCarlo' / 'estrategias' / strategy}.json")
+        path = Path(
+            f"{store.bank(project, databank) / day / 'monteCarlo' / 'estrategias' / strategy}.json"
+        )
         if path.is_file():
-            tab = next(t for t in json.loads(path.read_text(encoding="utf-8"))["tabs"]
-                       if t["name"] == "explorer")
+            tab = next(
+                t
+                for t in json.loads(path.read_text(encoding="utf-8"))["tabs"]
+                if t["name"] == "explorer"
+            )
             prueba = next(s for s in tab["selectors"] if s["key"] == "prueba")
             return [{"key": o, "label": o} for o in prueba["options"]]
     return []
 
 
 @ROUTER.get("/api/study/only")
-def study_only(study: str, project: str = "", databank: str = "", asset: str = "",
-               strategy: str = "") -> dict[str, Any]:
+def study_only(
+    study: str,
+    project: str = "",
+    databank: str = "",
+    asset: str = "",
+    strategy: str = "",
+) -> dict[str, Any]:
     """The sub-tests of a study that run alone.
 
     Args:
@@ -134,15 +179,22 @@ def study_only(study: str, project: str = "", databank: str = "", asset: str = "
     """
     try:
         if study == "monteCarlo":
-            return {"options": (_tests(project, databank, strategy)
-                                if project and databank and strategy else [])}
+            return {
+                "options": (
+                    _tests(project, databank, strategy)
+                    if project and databank and strategy
+                    else []
+                )
+            }
         return {"options": table.options(study, project, databank, asset)}
     except (FileNotFoundError, KeyError, ValueError, StopIteration):
         return {"options": []}
 
 
 @ROUTER.get("/api/study/offer")
-def study_offer(project: str, databank: str, strategy: str, asset: str = "") -> dict[str, Any]:
+def study_offer(
+    project: str, databank: str, strategy: str, asset: str = ""
+) -> dict[str, Any]:
     """What the strategy page greys: each study the runner refuses here, why, and where to go.
 
     Args:
@@ -181,7 +233,9 @@ def study_screen(req: Screen) -> dict[str, Any]:
     out = folder / "pantalla" / f"{name}-{datetime.now():%Y%m%d-%H%M%S}.html"
     out.parent.mkdir(parents=True, exist_ok=True)
     head = f"{name} — lo que se ve"
-    out.write_text(page.shell(head, [f"<h1>{escape(head)}</h1>"] + sections), encoding="utf-8")
+    out.write_text(
+        page.shell(head, [f"<h1>{escape(head)}</h1>"] + sections), encoding="utf-8"
+    )
     return {"html": str(out)}
 
 

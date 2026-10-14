@@ -9,6 +9,7 @@ from engines.market import reprice
 from studies.transfer.crossmarket.travel import shift, sizing
 from studies.transfer.crossmarket.travel.cells import occupancy
 
+
 class _Market(TypedDict):
     """What pricing needs of one market: bars, times, cell of each bar, costs, risk, lots, move-on bar, data per cell."""
 
@@ -40,11 +41,16 @@ class Built(TypedDict):
     trades: np.ndarray
 
 
-CELLS = 2_000_000      # runs x trades priced at once: 16 MB per array, a dozen arrays alive
+CELLS = 2_000_000  # runs x trades priced at once: 16 MB per array, a dozen arrays alive
 
 
-def market(bars: pd.DataFrame, costs: reprice.Costs, params: dict[str, Any], cells: pd.DataFrame,
-           flat_fraction: float = 0.0) -> Market:
+def market(
+    bars: pd.DataFrame,
+    costs: reprice.Costs,
+    params: dict[str, Any],
+    cells: pd.DataFrame,
+    flat_fraction: float = 0.0,
+) -> Market:
     """What pricing needs of one market, computed once and shared by every strategy.
 
     Args:
@@ -65,17 +71,28 @@ def market(bars: pd.DataFrame, costs: reprice.Costs, params: dict[str, Any], cel
     start = cells["start"].to_numpy("datetime64[s]").astype(np.int64)
     cell = np.searchsorted(start, seconds, side="right") - 1
     atr_ = sizing.entry_atr(bars, params["ATRPeriod"])
-    return Market(bars=bars, seconds=seconds, time=bars.index.to_numpy(), cell=cell,
-                  costs=costs, risk=params["Amount"],
-                  lots=sizing.lots(atr_, costs["point_value"], params),
-                  next=sizing.usable(atr_, flat_fraction),
-                  data=np.bincount(cell, minlength=len(cells)) > 0)
+    return Market(
+        bars=bars,
+        seconds=seconds,
+        time=bars.index.to_numpy(),
+        cell=cell,
+        costs=costs,
+        risk=params["Amount"],
+        lots=sizing.lots(atr_, costs["point_value"], params),
+        next=sizing.usable(atr_, flat_fraction),
+        data=np.bincount(cell, minlength=len(cells)) > 0,
+    )
 
 
-PROBE_ENTRIES, PROBE_DRAWS = 20_000, 300     # the validity probe: entries per market, shifts per entry
+PROBE_ENTRIES, PROBE_DRAWS = (
+    20_000,
+    300,
+)  # the validity probe: entries per market, shifts per entry
 
 
-def displaced_share(mkt: Market, cells: pd.DataFrame, shifts: np.ndarray, step: str) -> np.ndarray:
+def displaced_share(
+    mkt: Market, cells: pd.DataFrame, shifts: np.ndarray, step: str
+) -> np.ndarray:
     """Per cell, the share of uniformly placed entries a shift displaces to a LATER bar.
 
     A moved stamp with no bar takes the next bar, so after a hole of the data every run piles on
@@ -91,17 +108,26 @@ def displaced_share(mkt: Market, cells: pd.DataFrame, shifts: np.ndarray, step: 
         (cells,) shares in 0..1; NaN where the probe placed no entry (a cell with no bars).
     """
     last = len(mkt["seconds"]) - 1
-    pick = np.sort(np.random.default_rng(0).choice(last, min(PROBE_ENTRIES, last), replace=False))
-    landed = np.minimum(shift.entries(mkt["seconds"], pick, mkt["cell"][pick], cells,
-                                      shifts[:PROBE_DRAWS], step), last)
+    pick = np.sort(
+        np.random.default_rng(0).choice(last, min(PROBE_ENTRIES, last), replace=False)
+    )
+    landed = np.minimum(
+        shift.entries(
+            mkt["seconds"], pick, mkt["cell"][pick], cells, shifts[:PROBE_DRAWS], step
+        ),
+        last,
+    )
     unit = shift.WEEK if step == "week" else shift.DAY
-    bad = ((mkt["seconds"][landed] - mkt["seconds"][pick][None, :]) % unit != 0) \
-        | (mkt["next"][landed] != landed)
+    bad = ((mkt["seconds"][landed] - mkt["seconds"][pick][None, :]) % unit != 0) | (
+        mkt["next"][landed] != landed
+    )
     share = pd.Series(bad.mean(0)).groupby(mkt["cell"][pick]).mean()
     return share.reindex(range(len(cells))).to_numpy()
 
 
-def exclude(mkt: Market, cells: pd.DataFrame, shifts: np.ndarray, step: str, limit: float) -> np.ndarray:
+def exclude(
+    mkt: Market, cells: pd.DataFrame, shifts: np.ndarray, step: str, limit: float
+) -> np.ndarray:
     """Leave out of the tensor every cell of this market whose displaced share exceeds `limit`.
 
     Sets `mkt["share"]` and clears `mkt["data"]` there, so `build` writes NaN (never 0) for the
@@ -116,27 +142,48 @@ def exclude(mkt: Market, cells: pd.DataFrame, shifts: np.ndarray, step: str, lim
     return out
 
 
-def _runs(mkt: Market, held: pd.DataFrame, side: np.ndarray, shifts: np.ndarray,
-          cells: pd.DataFrame, step: str) -> tuple[np.ndarray, np.ndarray]:
+def _runs(
+    mkt: Market,
+    held: pd.DataFrame,
+    side: np.ndarray,
+    shifts: np.ndarray,
+    cells: pd.DataFrame,
+    step: str,
+) -> tuple[np.ndarray, np.ndarray]:
     """(runs, cells) NET and GROSS (net + cost) P/L in R of one market's trades under each row of
     shifts, summed by the cell each trade CLOSES in. Sized by the doctrine at the bar it lands on, priced by the one
     repricer: the real run is the row of zeros through this same code."""
     last = len(mkt["seconds"]) - 1
     entry = held["entry"].to_numpy()
-    moved = shift.entries(mkt["seconds"], entry, mkt["cell"][entry], cells, shifts, step)
+    moved = shift.entries(
+        mkt["seconds"], entry, mkt["cell"][entry], cells, shifts, step
+    )
     moved = mkt["next"][np.minimum(moved, last)]
     leave = np.minimum(moved + held["hold"].to_numpy(), last)
-    net, cost = reprice.pnl(reprice.fills(mkt["bars"], moved), reprice.fills(mkt["bars"], leave),
-                         mkt["time"][moved], mkt["time"][leave], side, mkt["lots"][moved],
-                         mkt["costs"])
+    net, cost = reprice.pnl(
+        reprice.fills(mkt["bars"], moved),
+        reprice.fills(mkt["bars"], leave),
+        mkt["time"][moved],
+        mkt["time"][leave],
+        side,
+        mkt["lots"][moved],
+        mkt["costs"],
+    )
     flat = np.arange(len(shifts))[:, None] * len(cells) + mkt["cell"][leave]
-    by = lambda x: np.bincount(flat.ravel(), (x / mkt["risk"]).ravel(),
-                               len(shifts) * len(cells)).reshape(len(shifts), len(cells))
+    by = lambda x: np.bincount(
+        flat.ravel(), (x / mkt["risk"]).ravel(), len(shifts) * len(cells)
+    ).reshape(len(shifts), len(cells))
     return by(net), by(net + cost)
 
 
-def build(trades: dict[str, pd.DataFrame], markets: dict[str, Market], cells: pd.DataFrame,
-          shifts: np.ndarray, step: str, judge: str = "net") -> Built:
+def build(
+    trades: dict[str, pd.DataFrame],
+    markets: dict[str, Market],
+    cells: pd.DataFrame,
+    shifts: np.ndarray,
+    step: str,
+    judge: str = "net",
+) -> Built:
     """One strategy's tensor: the real run and every random run, per market and cell.
 
     Args:
@@ -173,8 +220,14 @@ def build(trades: dict[str, pd.DataFrame], markets: dict[str, Market], cells: pd
         real[j] = np.where(mkt["data"], now[g][0], np.nan)
         chunk = max(1, CELLS // max(1, len(held)))
         for at in range(0, len(shifts), chunk):
-            got = _runs(mkt, held, side, shifts[at:at + chunk], cells, step)
-            null_net[at:at + chunk, j] = np.where(mkt["data"], got[0], np.nan)
-            null[at:at + chunk, j] = np.where(mkt["data"], got[g], np.nan)
-    return Built(markets=names, real=real, null=null, real_net=real_net,
-                 null_net=null_net, trades=count)
+            got = _runs(mkt, held, side, shifts[at : at + chunk], cells, step)
+            null_net[at : at + chunk, j] = np.where(mkt["data"], got[0], np.nan)
+            null[at : at + chunk, j] = np.where(mkt["data"], got[g], np.nan)
+    return Built(
+        markets=names,
+        real=real,
+        null=null,
+        real_net=real_net,
+        null_net=null_net,
+        trades=count,
+    )

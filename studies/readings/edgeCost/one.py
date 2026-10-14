@@ -10,14 +10,24 @@ from studies.readings.edgeCost import costs
 
 MODULE = "edgeCost"
 GLOSSARY = [
-    {"term": "P&L bruto", "text": "El P/L de la operación repreciada (apertura de barra, spread, "
-     "slippage, comisión y swap de la tarea) más el coste que pagó: lo que dejó el movimiento "
-     "de precio antes de cobrar."},
-    {"term": "Coste pagado", "text": "El spread, el doble slippage, la comisión y el swap por "
-     "noche que el repreciado común cobró a cada operación de oos1 — el mismo que lee la puerta."},
-    {"term": "Edge en costes", "text": "Bruto medio dividido entre coste medio, sólo oos1: cuántas "
-     "veces el coste pagado cabe en la ventaja. 1 es el punto muerto; el mismo número es el "
-     "múltiplo del coste al que la ventaja neta llegaría a cero."}]
+    {
+        "term": "P&L bruto",
+        "text": "El P/L de la operación repreciada (apertura de barra, spread, "
+        "slippage, comisión y swap de la tarea) más el coste que pagó: lo que dejó el movimiento "
+        "de precio antes de cobrar.",
+    },
+    {
+        "term": "Coste pagado",
+        "text": "El spread, el doble slippage, la comisión y el swap por "
+        "noche que el repreciado común cobró a cada operación de oos1 — el mismo que lee la puerta.",
+    },
+    {
+        "term": "Edge en costes",
+        "text": "Bruto medio dividido entre coste medio, sólo oos1: cuántas "
+        "veces el coste pagado cabe en la ventaja. 1 es el punto muerto; el mismo número es el "
+        "múltiplo del coste al que la ventaja neta llegaría a cero.",
+    },
+]
 HOURS_ES = "hora de entrada (reloj del feed)"
 DOW_ES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 
@@ -45,36 +55,64 @@ def measure(priced: pd.DataFrame) -> Measured:
     gross = priced["pnl"] + priced["cost"]
     mean_cost = float(priced["cost"].mean())
     when = priced["open_time"]
-    return {"mean_gross": float(gross.mean()), "mean_cost": mean_cost,
-            "edge_mean": float(gross.mean()) / mean_cost,
-            "by_hour": gross.groupby(when.dt.hour).mean(), "by_dow": gross.groupby(when.dt.dayofweek).mean()}
+    return {
+        "mean_gross": float(gross.mean()),
+        "mean_cost": mean_cost,
+        "edge_mean": float(gross.mean()) / mean_cost,
+        "by_hour": gross.groupby(when.dt.hour).mean(),
+        "by_dow": gross.groupby(when.dt.dayofweek).mean(),
+    }
 
 
 def tabs(got: Measured) -> list[dict]:
     """The headline numbers and the breakdown by session."""
     headline = blocks.table(
-        "Edge sobre el coste pagado (oos1)", pd.DataFrame([[
-            got["mean_gross"], got["mean_cost"], got["edge_mean"]]],
-            columns=pd.Index(["bruto medio", "coste pagado (medio)", "edge medio (× coste)"])),
+        "Edge sobre el coste pagado (oos1)",
+        pd.DataFrame(
+            [[got["mean_gross"], got["mean_cost"], got["edge_mean"]]],
+            columns=pd.Index(
+                ["bruto medio", "coste pagado (medio)", "edge medio (× coste)"]
+            ),
+        ),
         "Sólo oos1, cada operación repreciada con los costes de la tarea. El edge es bruto "
         "medio / coste medio: 1 es el punto muerto, y es también el múltiplo del coste al que "
-        "la ventaja neta llegaría a 0.")
-    by_hour = {"kind": "bars", "title": f"Bruto medio por {HOURS_ES}", "unit": "USD",
-               "reference": 0.0,
-               "items": [{"label": f"{h:02d}h", "value": float(v), "error": None,
-                          "state": "info"} for h, v in got["by_hour"].items()],
-               "note": ""}
-    by_dow = {"kind": "bars", "title": "Bruto medio por día de la semana", "unit": "USD",
-              "reference": 0.0,
-              "items": [{"label": DOW_ES[d], "value": float(v), "error": None, "state": "info"}
-                        for d, v in cast("Any", got["by_dow"].items())],
-              "note": ""}
-    return [envelope.tab("headline", "Edge y coste", [headline]),
-            envelope.tab("sessions", "Por sesión y hora", [by_hour, by_dow])]
+        "la ventaja neta llegaría a 0.",
+    )
+    by_hour = {
+        "kind": "bars",
+        "title": f"Bruto medio por {HOURS_ES}",
+        "unit": "USD",
+        "reference": 0.0,
+        "items": [
+            {"label": f"{h:02d}h", "value": float(v), "error": None, "state": "info"}
+            for h, v in got["by_hour"].items()
+        ],
+        "note": "",
+    }
+    by_dow = {
+        "kind": "bars",
+        "title": "Bruto medio por día de la semana",
+        "unit": "USD",
+        "reference": 0.0,
+        "items": [
+            {"label": DOW_ES[d], "value": float(v), "error": None, "state": "info"}
+            for d, v in cast("Any", got["by_dow"].items())
+        ],
+        "note": "",
+    }
+    return [
+        envelope.tab("headline", "Edge y coste", [headline]),
+        envelope.tab("sessions", "Por sesión y hora", [by_hour, by_dow]),
+    ]
 
 
-def run(strategy: str, priced: pd.DataFrame, cfg: dict, asset: dict,
-        identity: str | None = None) -> dict[str, Any]:
+def run(
+    strategy: str,
+    priced: pd.DataFrame,
+    cfg: dict,
+    asset: dict,
+    identity: str | None = None,
+) -> dict[str, Any]:
     """One strategy against its own edge-per-cost bar.
 
     Args:
@@ -92,10 +130,21 @@ def run(strategy: str, priced: pd.DataFrame, cfg: dict, asset: dict,
     bar, action = cfg["verdict"]["min_edge_spreads"], cfg["verdict"]["action"]
     passed = got["edge_mean"] >= bar
     said = blocks.verdict(
-        "por encima del umbral" if passed else "por debajo del umbral", "pass" if passed else "fail",
+        "por encima del umbral" if passed else "por debajo del umbral",
+        "pass" if passed else "fail",
         f"Edge medio {got['edge_mean']:.2f} veces el coste pagado en oos1 contra un umbral de "
         f"{bar} ({'no elimina, sólo marca' if action == 'mark' else 'elimina en curate'}).",
-        got["edge_mean"])
-    return envelope.envelope(MODULE, strategy, identity, cfg, started, tabs(got), said,
-                             costs.warnings(asset), GLOSSARY,
-                             summary={"edge_mean": got["edge_mean"]})
+        got["edge_mean"],
+    )
+    return envelope.envelope(
+        MODULE,
+        strategy,
+        identity,
+        cfg,
+        started,
+        tabs(got),
+        said,
+        costs.warnings(asset),
+        GLOSSARY,
+        summary={"edge_mean": got["edge_mean"]},
+    )

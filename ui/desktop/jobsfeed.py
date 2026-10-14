@@ -8,7 +8,7 @@ from PySide6.QtCore import QObject
 
 from ui.desktop import background
 
-TTL_S = 2.0      # the status bar reads the list every 2 s; a younger answer is not asked for again
+TTL_S = 2.0  # the status bar reads the list every 2 s; a younger answer is not asked for again
 _LAST: dict = {"at": 0.0, "got": {}}
 
 
@@ -23,8 +23,12 @@ def store(got: dict, at: float) -> None:
         _LAST.update(at=at, got=got)
 
 
-def read(done: Callable[[dict], None], key: str = "", owner: QObject | None = None,
-         ttl: float = TTL_S) -> None:
+def read(
+    done: Callable[[dict], None],
+    key: str = "",
+    owner: QObject | None = None,
+    ttl: float = TTL_S,
+) -> None:
     """Give `done` the job list: the last answer when younger than `ttl`, else a fresh GET.
 
     Args:

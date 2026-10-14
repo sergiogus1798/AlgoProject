@@ -28,8 +28,11 @@ def initial(body: object) -> str:
     if not m:
         return body
     lead, word, rest = m.groups()
-    if (not LATIN.match(word[0]) or word.lower() in UNITS
-            or re.search(r"[\d_.]", word.rstrip(".:,;"))):
+    if (
+        not LATIN.match(word[0])
+        or word.lower() in UNITS
+        or re.search(r"[\d_.]", word.rstrip(".:,;"))
+    ):
         return body
     return lead + word[0].upper() + word[1:] + rest
 
@@ -48,8 +51,9 @@ def text(body: str, colour: str, size: int = 13, bold: bool = False) -> QLabel:
     """
     label = QLabel(body)
     label.setWordWrap(True)
-    label.setStyleSheet(f"color:{colour}; font-size:{size}px;"
-                        + (" font-weight:700;" if bold else ""))
+    label.setStyleSheet(
+        f"color:{colour}; font-size:{size}px;" + (" font-weight:700;" if bold else "")
+    )
     return label
 
 
@@ -75,7 +79,9 @@ def card(block: dict, *parts: QWidget) -> QFrame:
         if isinstance(block.get("help"), str):
             # A table's own `help` is a list parallel to its columns (CONTRACT §2, table.py
             # reads it for the column headers); only a plain string here is a title tooltip.
-            title.setToolTip(block["help"])     # the uniform "?" of CONTRACT §1 (2026-09-30)
+            title.setToolTip(
+                block["help"]
+            )  # the uniform "?" of CONTRACT §1 (2026-09-30)
         lay.addWidget(title)
     if block.get("note"):
         lay.addWidget(text(block["note"], T["muted"]))

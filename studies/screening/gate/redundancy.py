@@ -36,10 +36,13 @@ def redundancia(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         return pd.DataFrame(columns=pd.Index(["value", "passed", "note"]))
     shape = data["metrics"].loc[alive, "structure"]
     size = shape.map(shape.value_counts())
-    first = shape.map(data["metrics"].loc[alive].groupby("structure")["strategy"].first())
+    first = shape.map(
+        data["metrics"].loc[alive].groupby("structure")["strategy"].first()
+    )
     note = first.where(size == 1, "grupo de " + first + " (" + size.astype(str) + ")")
-    return pd.DataFrame({"value": size, "passed": True,
-                         "note": note.mask(size == 1, "única")}).reindex(alive)
+    return pd.DataFrame(
+        {"value": size, "passed": True, "note": note.mask(size == 1, "única")}
+    ).reindex(alive)
 
 
 def medoides(metrics: pd.DataFrame, oos: pd.DataFrame, alive: pd.Index) -> pd.DataFrame:
@@ -59,21 +62,38 @@ def medoides(metrics: pd.DataFrame, oos: pd.DataFrame, alive: pd.Index) -> pd.Da
     if not len(alive):
         return out
     names = metrics.loc[alive, "strategy"]
-    groups = {s: sorted(g.index, key=names.get) for s, g in metrics.loc[alive].groupby("structure")}
+    groups = {
+        s: sorted(g.index, key=names.get)
+        for s, g in metrics.loc[alive].groupby("structure")
+    }
     out["grupo"] = [names[groups[metrics.at[i, "structure"]][0]] for i in alive]
-    bars = {i: set(g) for i, g in oos[oos["identity"].isin(list(alive))].groupby("identity")["open_time"]}
+    bars = {
+        i: set(g)
+        for i, g in oos[oos["identity"].isin(list(alive))].groupby("identity")[
+            "open_time"
+        ]
+    }
 
     def jaccard(a: str, b: str) -> float:
         """Share of entry bars the two strategies have in common."""
-        union = len(bars.get(a, ())) + len(bars.get(b, ())) - len(bars.get(a, set()) & bars.get(b, set()))
+        union = (
+            len(bars.get(a, ()))
+            + len(bars.get(b, ()))
+            - len(bars.get(a, set()) & bars.get(b, set()))
+        )
         return len(bars.get(a, set()) & bars.get(b, set())) / union if union else 0.0
 
     for members in groups.values():
-        sim = {}   # symmetric: one Jaccard per unordered pair, summed in the same order as before
+        sim = {}  # symmetric: one Jaccard per unordered pair, summed in the same order as before
         for a, i in enumerate(members):
-            for j in members[a + 1:]:
+            for j in members[a + 1 :]:
                 sim[i, j] = sim[j, i] = jaccard(i, j)
-        score = {i: sum(sim[i, j] for j in members if j != i) / max(len(members) - 1, 1)
-                 for i in members}
-        out.loc[members[max(range(len(members)), key=lambda a: (score[members[a]], -a))], "medoide"] = True
+        score = {
+            i: sum(sim[i, j] for j in members if j != i) / max(len(members) - 1, 1)
+            for i in members
+        }
+        out.loc[
+            members[max(range(len(members)), key=lambda a: (score[members[a]], -a))],
+            "medoide",
+        ] = True
     return out

@@ -25,8 +25,13 @@ class Spent(TypedDict):
     directions: tuple[str, ...]
 
 
-def spent(ideas: list[dict], templates: dict[str, dict], symbol: str, timeframe: str,
-          family: str) -> Spent:
+def spent(
+    ideas: list[dict],
+    templates: dict[str, dict],
+    symbol: str,
+    timeframe: str,
+    family: str,
+) -> Spent:
     """The looks the ideaExpert took at the data of one ledger study (owner, 2026-10-02).
 
     Args:
@@ -41,16 +46,29 @@ def spent(ideas: list[dict], templates: dict[str, dict], symbol: str, timeframe:
         is on that asset and timeframe, in the study's direction, and its board family is the
         study's or either is unknown: a look with no family yet was a look at all of them.
     """
-    board = {n: CONFIG["archetype_family"].get(t["archetype"], "") for n, t in templates.items()}
+    board = {
+        n: CONFIG["archetype_family"].get(t["archetype"], "")
+        for n, t in templates.items()
+    }
     dirs = directions(family, templates)
-    mine = [i for i in ideas
-            if (i["symbol"], i["timeframe"]) == (symbol, timeframe)
-            and i["direction"] in dirs + ("",)
-            and (not board.get(i["idea"]) or not board.get(family)
-                 or board[i["idea"]] == board[family])]
+    mine = [
+        i
+        for i in ideas
+        if (i["symbol"], i["timeframe"]) == (symbol, timeframe)
+        and i["direction"] in dirs + ("",)
+        and (
+            not board.get(i["idea"])
+            or not board.get(family)
+            or board[i["idea"]] == board[family]
+        )
+    ]
     files = {i["file"]: i["hypotheses_measured"] or 0 for i in mine}
-    return {"hypotheses": sum(files.values()), "ideas": len(mine), "files": len(files),
-            "directions": dirs}
+    return {
+        "hypotheses": sum(files.values()),
+        "ideas": len(mine),
+        "files": len(files),
+        "directions": dirs,
+    }
 
 
 def profile_looks(symbol: str, timeframe: str, dirs: tuple) -> int:

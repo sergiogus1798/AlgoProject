@@ -21,10 +21,15 @@ def carries(cfx: Path, session: str, feed: str) -> tuple[bool, bool]:
         (has the feed, has the session).
     """
     with zipfile.ZipFile(cfx) as z:
-        texts = [current(z.read(n).decode("utf-8", "replace")) for n in z.namelist()
-                 if n.endswith(".xml") and n != "config.xml"]
-    return (any(m.group(1) == feed for t in texts for m in SYMBOL.finditer(t)),
-            any(session_block(t, session) for t in texts))
+        texts = [
+            current(z.read(n).decode("utf-8", "replace"))
+            for n in z.namelist()
+            if n.endswith(".xml") and n != "config.xml"
+        ]
+    return (
+        any(m.group(1) == feed for t in texts for m in SYMBOL.finditer(t)),
+        any(session_block(t, session) for t in texts),
+    )
 
 
 def pick(donor: Path, session: str, feed: str) -> Path | None:
@@ -44,8 +49,12 @@ def pick(donor: Path, session: str, feed: str) -> Path | None:
     if all(carries(donor, session, feed)):
         return None
     installs = [w["path"] for w in WORKERS.values()] + [MASTER]
-    found = sorted((c for i in installs for c in (i / "user/projects").glob("*/project.cfx")),
-                   key=lambda c: c.stat().st_mtime, reverse=True)
+    found = sorted(
+        (c for i in installs for c in (i / "user/projects").glob("*/project.cfx")),
+        key=lambda c: c.stat().st_mtime,
+        reverse=True,
+    )
     have = [(c, carries(c, session, feed)) for c in found]
-    return next((c for c, (f, s) in have if f and s),
-                next((c for c, (f, _) in have if f), None))
+    return next(
+        (c for c, (f, s) in have if f and s), next((c for c, (f, _) in have if f), None)
+    )

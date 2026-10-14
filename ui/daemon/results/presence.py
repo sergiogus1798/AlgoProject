@@ -4,7 +4,9 @@ strategy page's tabs and dots in one cheap answer."""
 from ui.daemon.results import catalogue, hits, runs
 
 
-def presence(project: str, databank: str, strategy: str, identity: str) -> dict[str, dict]:
+def presence(
+    project: str, databank: str, strategy: str, identity: str
+) -> dict[str, dict]:
     """Per study, the result `/api/result` would show for this strategy, without reading it.
 
     Only file stats and the cached slim reads of `hits` (a population result is parsed once
@@ -25,8 +27,12 @@ def presence(project: str, databank: str, strategy: str, identity: str) -> dict[
     for key in catalogue.ordered():
         hit, _ = runs.pick(hits.sources(project, databank, key, strategy), identity)
         if hit is not None:
-            out[key] = {"state": hit["state"], "label": hit["label"],
-                        "stale": runs.judged(hit, key, project)[0], "day": hit["day"],
-                        "elsewhere": hit["elsewhere"] or (hit["note"] or None),
-                        "other_identity": runs.other(hit, identity)}
+            out[key] = {
+                "state": hit["state"],
+                "label": hit["label"],
+                "stale": runs.judged(hit, key, project)[0],
+                "day": hit["day"],
+                "elsewhere": hit["elsewhere"] or (hit["note"] or None),
+                "other_identity": runs.other(hit, identity),
+            }
     return out

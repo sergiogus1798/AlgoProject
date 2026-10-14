@@ -22,8 +22,13 @@ def order(found: dict, alpha: float, min_weight: float) -> str:
     """
     if not np.isfinite(found["rho"]) or found["peso"] < min_weight:
         return NO_DATA
-    return ("positivo" if found["p_mas"] <= alpha
-            else "perverso" if found["p_menos"] <= alpha else "neutro")
+    return (
+        "positivo"
+        if found["p_mas"] <= alpha
+        else "perverso"
+        if found["p_menos"] <= alpha
+        else "neutro"
+    )
 
 
 def step(deciding: str, premium_low: bool | None, oos2: str | None) -> str:
@@ -42,4 +47,8 @@ def step(deciding: str, premium_low: bool | None, oos2: str | None) -> str:
     """
     if deciding == "perverso":
         return "fail"
-    return "watch" if deciding == NO_DATA or premium_low or oos2 in ("perverso", NO_DATA) else "pass"
+    return (
+        "watch"
+        if deciding == NO_DATA or premium_low or oos2 in ("perverso", NO_DATA)
+        else "pass"
+    )

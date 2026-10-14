@@ -14,7 +14,10 @@ Calendar = dict[str, tuple[pd.Timestamp, pd.Timestamp]]
 def _bound(value: int | str, end: bool) -> pd.Timestamp:
     """One segment bound, inclusive: a bare year's Jan 1 or Dec 31, or an explicit date."""
     if isinstance(value, int):
-        return cast(pd.Timestamp, pd.Timestamp(value, 12, 31) if end else pd.Timestamp(value, 1, 1))
+        return cast(
+            pd.Timestamp,
+            pd.Timestamp(value, 12, 31) if end else pd.Timestamp(value, 1, 1),
+        )
     return cast(pd.Timestamp, pd.Timestamp(value))
 
 
@@ -41,7 +44,11 @@ def combine(segments_by_symbol: dict[str, dict]) -> Calendar:
             ends.append(_bound(spec["to"], True))
         if not ends:
             continue
-        lo = previous_end + pd.Timedelta(days=1) if previous_end is not None else min(starts)
+        lo = (
+            previous_end + pd.Timedelta(days=1)
+            if previous_end is not None
+            else min(starts)
+        )
         hi = max(ends)
         calendar[name] = (lo, hi)
         previous_end = hi
@@ -60,7 +67,10 @@ def pseudo(calendar: Calendar, start: str) -> Calendar:
         It exercises the code that reads a later segment; it is never a holdout.
     """
     cut, (lo, hi) = pd.Timestamp(start), calendar["oos1"]
-    return cast(Calendar, {**calendar, "oos1": (lo, cut - pd.Timedelta(days=1)), "oos2": (cut, hi)})
+    return cast(
+        Calendar,
+        {**calendar, "oos1": (lo, cut - pd.Timedelta(days=1)), "oos2": (cut, hi)},
+    )
 
 
 def portfolio(symbols: list[str]) -> Calendar:
@@ -78,9 +88,11 @@ def borrowed_from(calendar: dict, segments: dict) -> dict[str, int]:
     Returns:
         One count per portfolio segment name.
     """
-    own_bounds = {name: (_bound(spec["from"], False), _bound(spec["to"], True))
-                  for name, spec in segments.items()
-                  if spec["from"] is not None and spec["to"] is not None}
+    own_bounds = {
+        name: (_bound(spec["from"], False), _bound(spec["to"], True))
+        for name, spec in segments.items()
+        if spec["from"] is not None and spec["to"] is not None
+    }
     out = {}
     for name, (lo, hi) in calendar.items():
         count = 0

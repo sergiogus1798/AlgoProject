@@ -1,4 +1,5 @@
 """What MT5 Bridge › Verificar reads and checks: past checks, the strategy's file, and whether one may start now."""
+
 import json
 import re
 from datetime import date, timedelta
@@ -16,8 +17,8 @@ from ui.daemon.strategy import locate
 
 RUNS = MT5_DATA / "verify"
 DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-HISTORY_FALLBACK_YEARS = 4       # mt5.verify.run.FALLBACK, when no server says its depth
-DEEPEST = "MT5"                  # Desde = the deepest history every firm's server holds
+HISTORY_FALLBACK_YEARS = 4  # mt5.verify.run.FALLBACK, when no server says its depth
+DEEPEST = "MT5"  # Desde = the deepest history every firm's server holds
 
 
 def listing() -> list[dict]:
@@ -27,7 +28,7 @@ def listing() -> list[dict]:
         try:
             out.append(json.loads(f.read_text(encoding="utf-8")))
         except ValueError:
-            continue      # a run.json being written this instant
+            continue  # a run.json being written this instant
     return out
 
 
@@ -53,9 +54,12 @@ def result(run: str) -> dict[str, Any]:
         return {"error": f"No hay ninguna verificación «{run}»."}
     meta = json.loads((folder / "run.json").read_text(encoding="utf-8"))
     body = folder / "result.json"
-    return {"meta": meta,
-            "result": polish(json.loads(body.read_text(encoding="utf-8")), firm_names())
-            if body.exists() else None}
+    return {
+        "meta": meta,
+        "result": polish(json.loads(body.read_text(encoding="utf-8")), firm_names())
+        if body.exists()
+        else None,
+    }
 
 
 def folder_listing() -> list[dict]:
@@ -75,12 +79,18 @@ def options() -> dict[str, Any]:
     """What the form offers: the firms with a saved account, the tester's models, the archive."""
     shelf = {}
     for row in archive.listing():
-        shelf[row["identity"]] = row          # the newest version wins: listing() is oldest first
-    return {"firms": [{"firm": f, "label": firms.label(f), "server": a["server"]}
-                      for f, a in MT5_ACCOUNTS.items()],
-            "models": sorted(tester.MODELS),
-            "archive": sorted(shelf.values(), key=lambda r: r["archived_at"], reverse=True),
-            "folder": folder_listing()}
+        shelf[row["identity"]] = (
+            row  # the newest version wins: listing() is oldest first
+        )
+    return {
+        "firms": [
+            {"firm": f, "label": firms.label(f), "server": a["server"]}
+            for f, a in MT5_ACCOUNTS.items()
+        ],
+        "models": sorted(tester.MODELS),
+        "archive": sorted(shelf.values(), key=lambda r: r["archived_at"], reverse=True),
+        "folder": folder_listing(),
+    }
 
 
 def hasta_default(asset: str) -> str:
@@ -98,8 +108,9 @@ def desde_default(hasta: str) -> str:
     return DEEPEST if DAY.match(hasta or "") else ""
 
 
-def strategy_file(source: str, identity: str, version: str = "", project: str = "",
-                  databank: str = "") -> tuple[Path | None, str]:
+def strategy_file(
+    source: str, identity: str, version: str = "", project: str = "", databank: str = ""
+) -> tuple[Path | None, str]:
     """The .sqx to verify, from the archive, a project's databank, or the Banquillo folder.
 
     Returns:
@@ -111,13 +122,21 @@ def strategy_file(source: str, identity: str, version: str = "", project: str = 
             return None, "esa estrategia no está en el archivo"
         chosen = version or held[-1]
         path = archive_dir() / identity / chosen / "strategy.sqx"
-        return (path, f"archivo, versión {chosen}") if path.exists() else (None, f"{path} no existe")
+        return (
+            (path, f"archivo, versión {chosen}")
+            if path.exists()
+            else (None, f"{path} no existe")
+        )
     if source == "folder":
         root = STRATEGY_POOLS.get("banquillo")
         path = Path(identity)
         if root is None or root not in path.resolve().parents:
             return None, "esa ruta no está dentro de BanquilloEstrategias"
-        return (path, "BanquilloEstrategias") if path.exists() else (None, f"{path} no existe")
+        return (
+            (path, "BanquilloEstrategias")
+            if path.exists()
+            else (None, f"{path} no existe")
+        )
     if source == "databank":
         if not (project and databank and identity):
             return None, "elige una estrategia en el panel de databanks de Proyecto"
@@ -125,8 +144,15 @@ def strategy_file(source: str, identity: str, version: str = "", project: str = 
     return None, f"origen «{source}» desconocido"
 
 
-def check(path: Path | None, start: str, end: str, model: str, chosen: list[str],
-          ticks: bool = False, own_log: bool = False) -> Check:
+def check(
+    path: Path | None,
+    start: str,
+    end: str,
+    model: str,
+    chosen: list[str],
+    ticks: bool = False,
+    own_log: bool = False,
+) -> Check:
     """Whether a check may start now, and the sentence the owner confirms.
 
     Returns:
@@ -137,10 +163,14 @@ def check(path: Path | None, start: str, end: str, model: str, chosen: list[str]
     """
     reasons = []
     if not MT5_ACCOUNTS:
-        reasons.append("config/machine.yaml no tiene `mt5_accounts`: ninguna cuenta que usar")
+        reasons.append(
+            "config/machine.yaml no tiene `mt5_accounts`: ninguna cuenta que usar"
+        )
     deepest = (start or "").upper() == DEEPEST
     if not ((deepest or DAY.match(start or "")) and DAY.match(end or "")):
-        reasons.append("escribe las dos fechas de la ventana, AAAA-MM-DD (Desde puede ser MT5)")
+        reasons.append(
+            "escribe las dos fechas de la ventana, AAAA-MM-DD (Desde puede ser MT5)"
+        )
     elif not deepest and date.fromisoformat(start) >= date.fromisoformat(end):
         reasons.append("la ventana acaba antes de empezar")
     if model not in tester.MODELS:
@@ -162,23 +192,39 @@ def check(path: Path | None, start: str, end: str, model: str, chosen: list[str]
                 reasons.append(why)
     reasons += advance.busy("conductor", "", own_log)
     if wine.terminal_running():
-        reasons.append("el terminal de MT5 está abierto: ciérralo; la verificación lo abre y "
-                       "lo cierra ella misma, una cuenta tras otra")
-    since = ("lo más antiguo que tengan todos los servidores y SQX" if deepest else
-             f"el {start}")
-    text = (f"Se va a verificar {path.stem if path else '—'} ({asset} {timeframe}) desde {since} "
-            f"hasta el {end} en {', '.join(chosen) or '—'}:\n"
-            "1. MT5 abre cada cuenta con su contraseña guardada y lee el spread y el swap del "
-            "símbolo en ese momento; después se cierra.\n"
-            "2. En el conductor se crea un proyecto Test_ con un retest por empresa a esas "
-            "condiciones, más la exportación del EA a MQL5; el conductor se arranca, corre y "
-            "se para, y el proyecto se retira.\n"
-            f"3. El EA se compila y se backtestea en el tester de MT5 (modelo «{model}») en la "
-            "cuenta de cada empresa" + (
-                ", y una segunda vez en Real ticks (los ticks reales del bróker: mucho más "
-                "lento, hasta horas); se juzgan y se dibujan las dos pasadas"
-                if ticks and model != "real_ticks" else "") + ". El terminal queda en la última cuenta usada. No se opera "
-            "nada: solo backtests.\n"
-            "4. Se comparan las dos listas de operaciones con los criterios de aceptación del paso 26.")
-    return {"ok": not reasons, "reasons": reasons, "text": text, "asset": asset,
-            "timeframe": timeframe}
+        reasons.append(
+            "el terminal de MT5 está abierto: ciérralo; la verificación lo abre y "
+            "lo cierra ella misma, una cuenta tras otra"
+        )
+    since = (
+        "lo más antiguo que tengan todos los servidores y SQX"
+        if deepest
+        else f"el {start}"
+    )
+    text = (
+        f"Se va a verificar {path.stem if path else '—'} ({asset} {timeframe}) desde {since} "
+        f"hasta el {end} en {', '.join(chosen) or '—'}:\n"
+        "1. MT5 abre cada cuenta con su contraseña guardada y lee el spread y el swap del "
+        "símbolo en ese momento; después se cierra.\n"
+        "2. En el conductor se crea un proyecto Test_ con un retest por empresa a esas "
+        "condiciones, más la exportación del EA a MQL5; el conductor se arranca, corre y "
+        "se para, y el proyecto se retira.\n"
+        f"3. El EA se compila y se backtestea en el tester de MT5 (modelo «{model}») en la "
+        "cuenta de cada empresa"
+        + (
+            ", y una segunda vez en Real ticks (los ticks reales del bróker: mucho más "
+            "lento, hasta horas); se juzgan y se dibujan las dos pasadas"
+            if ticks and model != "real_ticks"
+            else ""
+        )
+        + ". El terminal queda en la última cuenta usada. No se opera "
+        "nada: solo backtests.\n"
+        "4. Se comparan las dos listas de operaciones con los criterios de aceptación del paso 26."
+    )
+    return {
+        "ok": not reasons,
+        "reasons": reasons,
+        "text": text,
+        "asset": asset,
+        "timeframe": timeframe,
+    }

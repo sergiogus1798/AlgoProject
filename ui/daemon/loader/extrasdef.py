@@ -15,12 +15,28 @@ EXTRA = {
     # The marker is each export's manifest.json, which every export rewrites: a folder's date
     # does not move when a second export of the day overwrites its files, and the WFM was
     # re-exported (918k trades, ~8 min) at every stop for it (📓 2026-09-29).
-    "ingesta MC Retest": (tuple(MCR.values()), "MCR_All", "*/manifest.json",
-                          ["studies.breakage.mcRetest.ingest", "--databank", "MCR_All"]),
-    "SPP IS": (("SPP IS",), "SPP_IS", "*/spp/manifest.json",
-               ["sqx.export.export_spp", "--databank", "SPP IS"]),
-    "SPP OOS": (("SPP OOS",), "SPP_OOS", "*/spp/manifest.json",
-                ["sqx.export.export_spp", "--databank", "SPP OOS"]),
-    "WFM": (("WFM",), "WFM", "*/wfm/manifest.json",
-            ["sqx.export.export_wfm", "--databank", "WFM"]),
+    "ingesta MC Retest": (
+        tuple(MCR.values()),
+        "MCR_All",
+        "*/manifest.json",
+        ["studies.breakage.mcRetest.ingest", "--databank", "MCR_All"],
+    ),
+    "SPP IS": (
+        ("SPP IS",),
+        "SPP_IS",
+        "*/spp/manifest.json",
+        ["sqx.export.export_spp", "--databank", "SPP IS"],
+    ),
+    "SPP OOS": (
+        ("SPP OOS",),
+        "SPP_OOS",
+        "*/spp/manifest.json",
+        ["sqx.export.export_spp", "--databank", "SPP OOS"],
+    ),
+    "WFM": (
+        ("WFM",),
+        "WFM",
+        "*/wfm/manifest.json",
+        ["sqx.export.export_wfm", "--databank", "WFM"],
+    ),
 }

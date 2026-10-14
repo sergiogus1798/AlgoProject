@@ -9,11 +9,38 @@ from core.study.render.svg import H, PAD, REAL, SIM, W
 
 # Discrete steps, as the owner wants them: never a continuous ramp. Both scales run red (bad)
 # to green (good), the same as the window's (ui/desktop/blocks/states.py); no blue.
-DIVERGING = ("#b2182b", "#d6604d", "#f4a582", "#fddbc7", "#f7f7f7",
-             "#d9f0d3", "#a6dba0", "#5aae61", "#1b7837")
-SEQUENTIAL = ("#c0392b", "#d9573a", "#e8803f", "#f0a94a", "#e8d155",
-              "#b5d65a", "#7cc65e", "#46b563", "#1fa05a")
-DARK = {"#b2182b", "#d6604d", "#c0392b", "#d9573a", "#5aae61", "#1b7837", "#46b563", "#1fa05a"}
+DIVERGING = (
+    "#b2182b",
+    "#d6604d",
+    "#f4a582",
+    "#fddbc7",
+    "#f7f7f7",
+    "#d9f0d3",
+    "#a6dba0",
+    "#5aae61",
+    "#1b7837",
+)
+SEQUENTIAL = (
+    "#c0392b",
+    "#d9573a",
+    "#e8803f",
+    "#f0a94a",
+    "#e8d155",
+    "#b5d65a",
+    "#7cc65e",
+    "#46b563",
+    "#1fa05a",
+)
+DARK = {
+    "#b2182b",
+    "#d6604d",
+    "#c0392b",
+    "#d9573a",
+    "#5aae61",
+    "#1b7837",
+    "#46b563",
+    "#1fa05a",
+}
 
 
 def _levels(b: dict) -> list[float]:
@@ -23,7 +50,11 @@ def _levels(b: dict) -> list[float]:
         return b["levels"]
     if b.get("scale_range"):
         colours = DIVERGING if b["scale"] == "diverging" else SEQUENTIAL
-        return list(np.linspace(b["scale_range"][0], b["scale_range"][1], len(colours) + 1)[1:-1])
+        return list(
+            np.linspace(b["scale_range"][0], b["scale_range"][1], len(colours) + 1)[
+                1:-1
+            ]
+        )
     v = np.array([c for r in b["values"] for c in r if c is not None], dtype=float)
     if b["scale"] == "diverging":
         top = float(np.percentile(np.abs(v), 95)) or 1.0
@@ -44,33 +75,48 @@ def grid(b: dict) -> str:
     left, top = min(320, 24 + int(6.5 * max(len(str(r)) for r in rows))), 40
     cw = (W - left - PAD["r"]) / max(len(cols), 1)
     ch = 26
-    body = [f'<text class="tick" x="{left + (j + .5) * cw:.1f}" y="{top - 8}" '
-            f'text-anchor="middle">{escape(str(c))}</text>' for j, c in enumerate(cols)]
+    body = [
+        f'<text class="tick" x="{left + (j + 0.5) * cw:.1f}" y="{top - 8}" '
+        f'text-anchor="middle">{escape(str(c))}</text>'
+        for j, c in enumerate(cols)
+    ]
     for i, r in enumerate(rows):
         y = top + i * ch
-        body.append(f'<text class="tick" x="{left - 8}" y="{y + 17}" text-anchor="end">'
-                    f"{escape(str(r))}</text>")
+        body.append(
+            f'<text class="tick" x="{left - 8}" y="{y + 17}" text-anchor="end">'
+            f"{escape(str(r))}</text>"
+        )
         for j, v in enumerate(b["values"][i]):
             # A block with more levels than the scale has colours killed step 18.5 (2026-10-06).
-            fill = "var(--card)" if v is None else colours[min(int(np.searchsorted(cut, v)), len(colours) - 1)]
-            text = (b["labels"][i][j] if b["labels"] else svg.num(v))
+            fill = (
+                "var(--card)"
+                if v is None
+                else colours[min(int(np.searchsorted(cut, v)), len(colours) - 1)]
+            )
+            text = b["labels"][i][j] if b["labels"] else svg.num(v)
             ink = "cell dark" if fill in DARK else "cell"
-            body.append(f'<rect x="{left + j * cw:.1f}" y="{y}" width="{cw - 1:.1f}" '
-                        f'height="{ch - 1}" fill="{fill}"/><text class="{ink}" '
-                        f'x="{left + (j + .5) * cw:.1f}" y="{y + 17}" text-anchor="middle">'
-                        f"{escape(str(text))}</text>")
+            body.append(
+                f'<rect x="{left + j * cw:.1f}" y="{y}" width="{cw - 1:.1f}" '
+                f'height="{ch - 1}" fill="{fill}"/><text class="{ink}" '
+                f'x="{left + (j + 0.5) * cw:.1f}" y="{y + 17}" text-anchor="middle">'
+                f"{escape(str(text))}</text>"
+            )
     mark = b.get("mark")
     if mark:
         i, j = rows.index(mark["row"]), cols.index(mark["col"])
-        body.append(f'<rect x="{left + j * cw:.1f}" y="{top + i * ch}" width="{cw - 1:.1f}" '
-                    f'height="{ch - 1}" fill="none" stroke="{REAL}" stroke-width="3"/>'
-                    f'<text class="tick" x="{left + j * cw + 3:.1f}" y="{top + i * ch + 10}" '
-                    f'fill="{REAL}">{escape(mark["label"])}</text>')
+        body.append(
+            f'<rect x="{left + j * cw:.1f}" y="{top + i * ch}" width="{cw - 1:.1f}" '
+            f'height="{ch - 1}" fill="none" stroke="{REAL}" stroke-width="3"/>'
+            f'<text class="tick" x="{left + j * cw + 3:.1f}" y="{top + i * ch + 10}" '
+            f'fill="{REAL}">{escape(mark["label"])}</text>'
+        )
     height = top + ch * len(rows) + 12
     bounds = ["<"] + [svg.num(c) for c in cut]
     # The marked cell and the shared extent are named in words under the figure (page.block).
     key = svg.legend([(svg.box(c), f"{a}") for c, a in zip(colours, bounds)])
-    return svg.figure(b["title"], b.get("note", ""), svg.canvas("".join(body), height), key)
+    return svg.figure(
+        b["title"], b.get("note", ""), svg.canvas("".join(body), height), key
+    )
 
 
 def scatter(b: dict) -> str:
@@ -83,28 +129,43 @@ def scatter(b: dict) -> str:
     body = [svg.axes(x, y, svg.ticks(min(xs), max(xs)), svg.ticks(min(ys), max(ys)))]
     if b["quadrants"]:
         if min(xs) < 0 < max(xs):
-            body.append(f'<line x1="{x(0):.1f}" x2="{x(0):.1f}" y1="{PAD["t"]}" '
-                        f'y2="{H - PAD["b"]}" stroke="var(--ink)"/>')
+            body.append(
+                f'<line x1="{x(0):.1f}" x2="{x(0):.1f}" y1="{PAD["t"]}" '
+                f'y2="{H - PAD["b"]}" stroke="var(--ink)"/>'
+            )
         if min(ys) < 0 < max(ys):
-            body.append(f'<line x1="{PAD["l"]}" x2="{W - PAD["r"]}" y1="{y(0):.1f}" '
-                        f'y2="{y(0):.1f}" stroke="var(--ink)"/>')
+            body.append(
+                f'<line x1="{PAD["l"]}" x2="{W - PAD["r"]}" y1="{y(0):.1f}" '
+                f'y2="{y(0):.1f}" stroke="var(--ink)"/>'
+            )
     groups = sorted({p["group"] for p in pts})
     palette = [SIM, REAL, "var(--good)", "var(--bad)", "var(--watch)"]
     for p in pts:
         c = palette[groups.index(p["group"]) % len(palette)]
-        body.append(f'<circle cx="{x(p["x"]):.1f}" cy="{y(p["y"]):.1f}" r="2.6" fill="{c}" '
-                    f'opacity=".7"><title>{escape(p["label"])}</title></circle>')
+        body.append(
+            f'<circle cx="{x(p["x"]):.1f}" cy="{y(p["y"]):.1f}" r="2.6" fill="{c}" '
+            f'opacity=".7"><title>{escape(p["label"])}</title></circle>'
+        )
     if b["fit"]:
         f = b["fit"]
         a, z = min(xs), max(xs)
-        body.append(f'<line x1="{x(a):.1f}" y1="{y(f["intercept"] + f["slope"] * a):.1f}" '
-                    f'x2="{x(z):.1f}" y2="{y(f["intercept"] + f["slope"] * z):.1f}" '
-                    f'stroke="var(--ink)" stroke-dasharray="5 4"/>')
-    body.append(f'<text class="tick" x="{W / 2}" y="{H - 6}" text-anchor="middle">'
-                f'{escape(b["x_label"])}</text><text class="tick" x="14" y="{H / 2}" '
-                f'transform="rotate(-90 14 {H / 2})" text-anchor="middle">'
-                f'{escape(b["y_label"])}</text>')
-    key = svg.legend([(svg.box(palette[i % len(palette)]), g) for i, g in enumerate(groups)]
-                     + ([(svg.line("var(--ink)", "dashed"), f"r = {b['fit']['r']:.3f}")]
-                        if b["fit"] else []))
+        body.append(
+            f'<line x1="{x(a):.1f}" y1="{y(f["intercept"] + f["slope"] * a):.1f}" '
+            f'x2="{x(z):.1f}" y2="{y(f["intercept"] + f["slope"] * z):.1f}" '
+            f'stroke="var(--ink)" stroke-dasharray="5 4"/>'
+        )
+    body.append(
+        f'<text class="tick" x="{W / 2}" y="{H - 6}" text-anchor="middle">'
+        f'{escape(b["x_label"])}</text><text class="tick" x="14" y="{H / 2}" '
+        f'transform="rotate(-90 14 {H / 2})" text-anchor="middle">'
+        f"{escape(b['y_label'])}</text>"
+    )
+    key = svg.legend(
+        [(svg.box(palette[i % len(palette)]), g) for i, g in enumerate(groups)]
+        + (
+            [(svg.line("var(--ink)", "dashed"), f"r = {b['fit']['r']:.3f}")]
+            if b["fit"]
+            else []
+        )
+    )
     return svg.figure(b["title"], b.get("note", ""), svg.canvas("".join(body)), key)

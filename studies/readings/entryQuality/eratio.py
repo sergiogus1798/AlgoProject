@@ -51,8 +51,13 @@ def eligible(index: pd.DatetimeIndex, entry: np.ndarray, horizon: int) -> np.nda
     return np.arange(int(entry.min()), min(int(entry.max()) + 1, index.size - horizon))
 
 
-def matched(index: pd.DatetimeIndex, pool: np.ndarray, entry: np.ndarray,
-            rng: np.random.Generator, split: list | None = None) -> np.ndarray:
+def matched(
+    index: pd.DatetimeIndex,
+    pool: np.ndarray,
+    entry: np.ndarray,
+    rng: np.random.Generator,
+    split: list | None = None,
+) -> np.ndarray:
     """Random entry bars with the same time-of-day profile as the real ones.
 
     Args:
@@ -78,12 +83,15 @@ def matched(index: pd.DatetimeIndex, pool: np.ndarray, entry: np.ndarray,
 def by_hour(index: pd.DatetimeIndex, pool: np.ndarray, entry: np.ndarray) -> list:
     """The draw's fixed part: per hour of the real entries, the pool bars of that hour and the count."""
     hours = index.hour.to_numpy()  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.hour
-    return [(pool[hours[pool] == hour], count)
-            for hour, count in zip(*np.unique(hours[entry], return_counts=True))]
+    return [
+        (pool[hours[pool] == hour], count)
+        for hour, count in zip(*np.unique(hours[entry], return_counts=True))
+    ]
 
 
-def band(frame: pd.DataFrame, found: Located, keep: np.ndarray, scale: np.ndarray,
-         cfg: dict) -> Band:
+def band(
+    frame: pd.DataFrame, found: Located, keep: np.ndarray, scale: np.ndarray, cfg: dict
+) -> Band:
     """The e-ratio curve of random entries matched to the real ones.
 
     Args:
@@ -111,14 +119,18 @@ def band(frame: pd.DataFrame, found: Located, keep: np.ndarray, scale: np.ndarra
     drawn, split = [], by_hour(stamps, pool, entry)
     for _ in range(cfg["draws"]):
         picks = matched(stamps, pool, entry, rng, split)
-        walk = excursion.paths(frame, picks, rng.permutation(side), opens[picks],
-                               cfg["horizon"])
+        walk = excursion.paths(
+            frame, picks, rng.permutation(side), opens[picks], cfg["horizon"]
+        )
         drawn.append(curve(excursion.normalised(walk, scale[picks - 1])))
     stacked = np.vstack(drawn)
-    return {"low": np.quantile(stacked, 0.05, axis=0),
-            "median": np.quantile(stacked, 0.5, axis=0),
-            "high": np.quantile(stacked, 0.95, axis=0), "draws": cfg["draws"],
-            "stacked": stacked}
+    return {
+        "low": np.quantile(stacked, 0.05, axis=0),
+        "median": np.quantile(stacked, 0.5, axis=0),
+        "high": np.quantile(stacked, 0.95, axis=0),
+        "draws": cfg["draws"],
+        "stacked": stacked,
+    }
 
 
 def table(real: np.ndarray, bands: Band, marks: list[int]) -> pd.DataFrame:
@@ -132,7 +144,15 @@ def table(real: np.ndarray, bands: Band, marks: list[int]) -> pd.DataFrame:
     Returns:
         One row per horizon: the real e(k), the band, and whether it sits above it.
     """
-    rows = [{"k": k, "e(k)": real[k - 1], "p5": bands["low"][k - 1],
-             "mediana": bands["median"][k - 1], "p95": bands["high"][k - 1],
-             "sobre la banda": real[k - 1] > bands["high"][k - 1]} for k in marks]
+    rows = [
+        {
+            "k": k,
+            "e(k)": real[k - 1],
+            "p5": bands["low"][k - 1],
+            "mediana": bands["median"][k - 1],
+            "p95": bands["high"][k - 1],
+            "sobre la banda": real[k - 1] > bands["high"][k - 1],
+        }
+        for k in marks
+    ]
     return pd.DataFrame(rows).set_index("k")

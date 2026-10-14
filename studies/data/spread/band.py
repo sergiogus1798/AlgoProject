@@ -22,10 +22,16 @@ def days(m: pd.DataFrame, tick: float, min_minutes: int) -> pd.DataFrame:
         min_minutes: Holidays and half days below this are dropped.
     """
     day = cast(Any, m.index).normalize()
-    got = pd.DataFrame({"spread": cast(pd.Series, m["spread_open"].groupby(day).mean()) / tick,
-                        "price": m["bid_open"].groupby(day).median(),
-                        "minutes": m["n"].groupby(day).size()})
-    return cast(pd.DataFrame, got[(got["minutes"] >= min_minutes) & (got["spread"] > 0)])
+    got = pd.DataFrame(
+        {
+            "spread": cast(pd.Series, m["spread_open"].groupby(day).mean()) / tick,
+            "price": m["bid_open"].groupby(day).median(),
+            "minutes": m["n"].groupby(day).size(),
+        }
+    )
+    return cast(
+        pd.DataFrame, got[(got["minutes"] >= min_minutes) & (got["spread"] > 0)]
+    )
 
 
 def _quantile(x: np.ndarray, y: np.ndarray, q: float) -> np.ndarray:
@@ -46,8 +52,13 @@ def fit(d: pd.DataFrame, quantiles: list[float]) -> dict[str, dict[str, float]]:
     """
     x, y = np.log(d["price"].to_numpy()), np.log(d["spread"].to_numpy())
     b, a = np.polyfit(x, y, 1)
-    out: dict[str, dict[str, float]] = {"media": {"a": float(np.exp(a)), "b": float(b),
-                     "smear": float(np.exp(np.var(y - (a + b * x)) / 2))}}
+    out: dict[str, dict[str, float]] = {
+        "media": {
+            "a": float(np.exp(a)),
+            "b": float(b),
+            "smear": float(np.exp(np.var(y - (a + b * x)) / 2)),
+        }
+    }
     for q in quantiles:
         a_q, b_q = _quantile(x, y, q)
         out[str(q)] = {"a": float(np.exp(a_q)), "b": float(b_q)}
@@ -61,8 +72,10 @@ def predict(curves: dict, price: np.ndarray) -> pd.DataFrame:
     are sorted back into order (rearrangement), so the 2.5 % never sits above the median.
     """
     price = np.asarray(price, float)
-    got = pd.DataFrame({k: c["a"] * price ** c["b"] * c.get("smear", 1.0) for k, c in curves.items()},
-                       index=pd.Index(price, name="precio"))
+    got = pd.DataFrame(
+        {k: c["a"] * price ** c["b"] * c.get("smear", 1.0) for k, c in curves.items()},
+        index=pd.Index(price, name="precio"),
+    )
     qs = [k for k in got.columns if k != "media"]
     got[qs] = np.sort(got[qs].to_numpy(), axis=1)
     return got
@@ -74,6 +87,10 @@ def coverage(d: pd.DataFrame, curves: dict, low: str, high: str) -> pd.DataFrame
     below = pd.Series(d["spread"].to_numpy() < band[low].to_numpy(), d.index)
     above = pd.Series(d["spread"].to_numpy() > band[high].to_numpy(), d.index)
     year = cast(Any, d.index).year
-    return pd.DataFrame({"días": below.groupby(year).size(),
-                         "% por debajo": cast(pd.Series, below.groupby(year).mean()) * 100,
-                         "% por encima": cast(pd.Series, above.groupby(year).mean()) * 100})
+    return pd.DataFrame(
+        {
+            "días": below.groupby(year).size(),
+            "% por debajo": cast(pd.Series, below.groupby(year).mean()) * 100,
+            "% por encima": cast(pd.Series, above.groupby(year).mean()) * 100,
+        }
+    )

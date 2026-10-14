@@ -43,8 +43,9 @@ def _span(data: dict, has_oos: bool) -> tuple[pd.Timestamp, pd.Timestamp]:
     return cast(pd.Timestamp, lo), cast(pd.Timestamp, hi)
 
 
-def _reconcile_rows(identity: str, s: dict, bars: pd.DataFrame, feed_days: pd.DataFrame,
-                    cfg: dict) -> tuple[list[dict], bool]:
+def _reconcile_rows(
+    identity: str, s: dict, bars: pd.DataFrame, feed_days: pd.DataFrame, cfg: dict
+) -> tuple[list[dict], bool]:
     """Per-leg reconciliation against SQX's curve, plus the MAE/MFE licence.
 
     Args:
@@ -56,27 +57,48 @@ def _reconcile_rows(identity: str, s: dict, bars: pd.DataFrame, feed_days: pd.Da
         One `reconcile.csv` row per segment the member has trades for, and whether the
         member is excluded (any segment "out", or the excursion licence refused).
     """
-    tol, share = cfg["equity"]["excursion_tolerance"], cfg["equity"]["excursion_min_share"]
-    rebuilt = stopexit.fills(excursions.rebuild(s["trades"], bars, s["point_value"]), s["trades"], bars,
-                             s["point_value"])
+    tol, share = (
+        cfg["equity"]["excursion_tolerance"],
+        cfg["equity"]["excursion_min_share"],
+    )
+    rebuilt = stopexit.fills(
+        excursions.rebuild(s["trades"], bars, s["point_value"]),
+        s["trades"],
+        bars,
+        s["point_value"],
+    )
     licence = excursions.licence(s["trades"], rebuilt, tol, share)
     sqx = sqxcurve.from_harvest(s["sqx_equity"], s["symbol"])
     low = reconcile.low_equity(feed_days)
     rows, excluded, before = [], not licence["licensed"], 0.0
-    reasons = [] if licence["licensed"] else [f"licencia MAE/MFE ({licence['mae_exact']:.2f}/"
-                                              f"{licence['mfe_exact']:.2f})"]
+    reasons = (
+        []
+        if licence["licensed"]
+        else [
+            f"licencia MAE/MFE ({licence['mae_exact']:.2f}/{licence['mfe_exact']:.2f})"
+        ]
+    )
     for sample, segment in SEGMENT_OF_SAMPLE.items():
         leg = s["trades"][s["trades"]["sample"] == sample]
         if leg.empty:
             continue
-        got = reconcile.curve(low - before, sqx.loc[sqx["segment"] == segment, "low"], tol, share)
+        got = reconcile.curve(
+            low - before, sqx.loc[sqx["segment"] == segment, "low"], tol, share
+        )
         before += float(leg["Profit/Loss"].sum())
         if got["verdict"] == "out":
             excluded = True
             reasons.append(f"reconcile {segment} ({got['exact']:.2f})")
-        rows.append({"identity": identity, "segment": segment, **got,
-                     "mae_exact": licence["mae_exact"], "mfe_exact": licence["mfe_exact"],
-                     "licensed": licence["licensed"]})
+        rows.append(
+            {
+                "identity": identity,
+                "segment": segment,
+                **got,
+                "mae_exact": licence["mae_exact"],
+                "mfe_exact": licence["mfe_exact"],
+                "licensed": licence["licensed"],
+            }
+        )
     for row in rows:
         row["excluded"], row["reason"] = excluded, "; ".join(reasons)
     return rows, excluded
@@ -88,7 +110,9 @@ def _commission(s: dict) -> np.ndarray:
     cost = np.zeros(len(s["trades"]))
     for sample, segment in SEGMENT_OF_SAMPLE.items():
         leg = (s["trades"]["sample"] == sample).to_numpy()
-        cost[leg] = paths.entry_commission(s["trades"][leg], card[segment], s["point_value"])
+        cost[leg] = paths.entry_commission(
+            s["trades"][leg], card[segment], s["point_value"]
+        )
     return cost
 
 
@@ -106,12 +130,23 @@ def _member(identity: str) -> dict:
     ref_days = days.server_days(path, s["clock"], cfg["equity"]["reference_clock"])
     firm_days, m5 = {}, {}
     for firm, zone in cfg["equity"]["firm_clocks"].items():
-        firm_days[firm] = days.server_days(path, s["clock"], zone)  # then blocks: same cached frame
+        firm_days[firm] = days.server_days(
+            path, s["clock"], zone
+        )  # then blocks: same cached frame
         m5[firm] = blocks.blocks(path, s["clock"], zone, _STATE["grid"])
-    return {"identity": identity, "symbol": s["symbol"], "feed": s["feed"], "clock": s["clock"],
-            "excluded": excluded, "rows": rows, "span": _STATE["spans"][identity],
-            "daily_pnl": days.daily_pnl(ref_days), "firm_days": firm_days, "m5": m5,
-            "n_nat": int(ref_days.attrs["n_nat"])}
+    return {
+        "identity": identity,
+        "symbol": s["symbol"],
+        "feed": s["feed"],
+        "clock": s["clock"],
+        "excluded": excluded,
+        "rows": rows,
+        "span": _STATE["spans"][identity],
+        "daily_pnl": days.daily_pnl(ref_days),
+        "firm_days": firm_days,
+        "m5": m5,
+        "n_nat": int(ref_days.attrs["n_nat"]),
+    }
 
 
 def _workers(bars: pd.DataFrame, n_members: int, cfg: dict) -> int:
@@ -120,8 +155,17 @@ def _workers(bars: pd.DataFrame, n_members: int, cfg: dict) -> int:
     What stays in the parent is taken off first: the shared bars and every member's M5
     arrays (float32, low and high, per firm clock) that accumulate as results land.
     """
-    m5_gb = n_members * len(cfg["equity"]["firm_clocks"]) * 2 * len(_STATE["grid"]) * 4 / 1e9
-    free = cfg["compute"]["max_ram_gb"] - bars.memory_usage(deep=True).sum() / 1e9 - m5_gb
+    m5_gb = (
+        n_members
+        * len(cfg["equity"]["firm_clocks"])
+        * 2
+        * len(_STATE["grid"])
+        * 4
+        / 1e9
+    )
+    free = (
+        cfg["compute"]["max_ram_gb"] - bars.memory_usage(deep=True).sum() / 1e9 - m5_gb
+    )
     return max(1, int(free / cfg["compute"]["worker_ram_gb"]))
 
 
@@ -132,25 +176,48 @@ def _firm_day_table(kept: list[dict], firm: str) -> pd.DataFrame:
         frame = m["firm_days"][firm].reset_index(names="day")
         frame.insert(1, "identity", m["identity"])
         parts.append(frame)
-    return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(
-        columns=pd.Index(["day", "identity", "closed", "float_end", "low", "high", "opened", "open_end"]))
+    return (
+        pd.concat(parts, ignore_index=True)
+        if parts
+        else pd.DataFrame(
+            columns=pd.Index(
+                [
+                    "day",
+                    "identity",
+                    "closed",
+                    "float_end",
+                    "low",
+                    "high",
+                    "opened",
+                    "open_end",
+                ]
+            )
+        )
+    )
 
 
 def _m5_blob(kept: list[dict], firm: str, zone: str, grid: pd.DatetimeIndex) -> dict:
     """One firm's M5 grid and every kept member's block arrays on it (contract M)."""
-    return {"grid_start": int(cast(pd.Timestamp, grid[0]).value), "n_blocks": len(grid),
-            "block_days": blocks.block_days(grid, zone),
-            "low": {m["identity"]: m["m5"][firm]["low"] for m in kept},
-            "high": {m["identity"]: m["m5"][firm]["high"] for m in kept}}
+    return {
+        "grid_start": int(cast(pd.Timestamp, grid[0]).value),
+        "n_blocks": len(grid),
+        "block_days": blocks.block_days(grid, zone),
+        "low": {m["identity"]: m["m5"][firm]["low"] for m in kept},
+        "high": {m["identity"]: m["m5"][firm]["high"] for m in kept},
+    }
 
 
 def _processed(loaded: dict, cfg: dict) -> tuple[list[dict], pd.DatetimeIndex]:
     """Every member through `_member`, one feed's bars in RAM at a time, members in parallel."""
-    spans = {i: _span(assetdata.load(s["symbol"]), "OOS" in set(s["trades"]["sample"]))
-             for i, s in loaded.items()}
-    grid = blocks.grid(min(lo for lo, _ in spans.values()),
-                       cast(pd.Timestamp, max(hi for _, hi in spans.values()) + pd.Timedelta(days=1)),
-                       cfg["equity"]["block_minutes"])
+    spans = {
+        i: _span(assetdata.load(s["symbol"]), "OOS" in set(s["trades"]["sample"]))
+        for i, s in loaded.items()
+    }
+    grid = blocks.grid(
+        min(lo for lo, _ in spans.values()),
+        cast(pd.Timestamp, max(hi for _, hi in spans.values()) + pd.Timedelta(days=1)),
+        cfg["equity"]["block_minutes"],
+    )
     _STATE.update(sources=loaded, cfg=cfg, spans=spans, grid=grid)
     out = []
     by_feed = sorted(loaded, key=lambda i: loaded[i]["feed"])
@@ -158,8 +225,15 @@ def _processed(loaded: dict, cfg: dict) -> tuple[list[dict], pd.DatetimeIndex]:
         _STATE["bars"] = bars_of(feed, ["Open", "High", "Low", "Close"])
         costs = {i: len(loaded[i]["trades"]) for i in group}
         for i in costs:
-            loaded[i]["trades"] = stopexit.retime(loaded[i]["trades"], _STATE["bars"], loaded[i]["timeframe"])
-        out += [got for _, got in fanout.run(_member, costs, _workers(_STATE["bars"], len(loaded), cfg))]
+            loaded[i]["trades"] = stopexit.retime(
+                loaded[i]["trades"], _STATE["bars"], loaded[i]["timeframe"]
+            )
+        out += [
+            got
+            for _, got in fanout.run(
+                _member, costs, _workers(_STATE["bars"], len(loaded), cfg)
+            )
+        ]
     _STATE.clear()
     return out, grid
 
@@ -182,7 +256,10 @@ def build(pool_name: str, cfg: dict) -> Path:
     if store.cached(out):
         return out
 
-    loaded = {r["identity"]: source.load(r["identity"], r["version"]) for r in declared["members"]}
+    loaded = {
+        r["identity"]: source.load(r["identity"], r["version"])
+        for r in declared["members"]
+    }
     processed, grid = _processed(loaded, cfg)
     # the workers answer in the order they finish: without this a rebuild orders the members
     # differently and every sum over them moves in its last bits
@@ -190,14 +267,23 @@ def build(pool_name: str, cfg: dict) -> Path:
     kept = [m for m in processed if not m["excluded"]]
     excluded = [m for m in processed if m["excluded"]]
     if not kept:
-        raise SystemExit("Ningún miembro del pool concilia con SQX, no hay universo:\n" + "\n".join(
-            f"  {m['identity'][:12]}… {m['rows'][0]['reason'] if m['rows'] else 'sin segmentos'}" for m in excluded))
-    daily = matrix.stack({m["identity"]: m["daily_pnl"] for m in kept},
-                         {m["identity"]: m["span"] for m in kept})
+        raise SystemExit(
+            "Ningún miembro del pool concilia con SQX, no hay universo:\n"
+            + "\n".join(
+                f"  {m['identity'][:12]}… {m['rows'][0]['reason'] if m['rows'] else 'sin segmentos'}"
+                for m in excluded
+            )
+        )
+    daily = matrix.stack(
+        {m["identity"]: m["daily_pnl"] for m in kept},
+        {m["identity"]: m["span"] for m in kept},
+    )
     reconcile_rows = pd.DataFrame([row for m in processed for row in m["rows"]])
     firms = cfg["equity"]["firm_clocks"]
     days_by_firm = {firm: _firm_day_table(kept, firm) for firm in firms}
-    m5_by_firm = {firm: _m5_blob(kept, firm, zone, grid) for firm, zone in firms.items()}
+    m5_by_firm = {
+        firm: _m5_blob(kept, firm, zone, grid) for firm, zone in firms.items()
+    }
 
     cal = calendar_mod.portfolio(sorted({m["symbol"] for m in processed}))
     if cfg["calendar"]["pseudo_oos2_from"]:
@@ -206,19 +292,38 @@ def build(pool_name: str, cfg: dict) -> Path:
         "pool": {"name": pool_name, "hash": declared["hash"]},
         "config_fingerprint": fingerprint(cfg),
         "calendar": {k: [str(v[0]), str(v[1])] for k, v in cal.items()},
-        "clock": {"reference": cfg["equity"]["reference_clock"], "firms": firms,
-                  "feeds": {m["feed"]: m["clock"] for m in processed}},
+        "clock": {
+            "reference": cfg["equity"]["reference_clock"],
+            "firms": firms,
+            "feeds": {m["feed"]: m["clock"] for m in processed},
+        },
         "unconfirmed_clocks": cfg["equity"]["unconfirmed_clocks"],
         "n_nat": {m["identity"]: m["n_nat"] for m in processed},
-        "members": {"kept": [m["identity"] for m in kept],
-                    "excluded": [{"identity": m["identity"],
-                                  "reason": m["rows"][0]["reason"] if m["rows"] else "sin segmentos"}
-                                 for m in excluded]},
-        "borrowed": {m["symbol"]: calendar_mod.borrowed(cal, m["symbol"]) for m in processed},
+        "members": {
+            "kept": [m["identity"] for m in kept],
+            "excluded": [
+                {
+                    "identity": m["identity"],
+                    "reason": m["rows"][0]["reason"] if m["rows"] else "sin segmentos",
+                }
+                for m in excluded
+            ],
+        },
+        "borrowed": {
+            m["symbol"]: calendar_mod.borrowed(cal, m["symbol"]) for m in processed
+        },
         "code_version": code_version(),
         "built_at": datetime.now(tz.utc).isoformat(),
     }
-    store.write(out, daily, matrix.monthly(daily), reconcile_rows, days_by_firm, m5_by_firm, manifest)
+    store.write(
+        out,
+        daily,
+        matrix.monthly(daily),
+        reconcile_rows,
+        days_by_firm,
+        m5_by_firm,
+        manifest,
+    )
     return out
 
 

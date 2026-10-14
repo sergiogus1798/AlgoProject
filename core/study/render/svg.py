@@ -7,8 +7,13 @@ from html import escape
 W, H = 760, 300
 PAD = {"l": 70, "r": 20, "t": 20, "b": 46}
 SIM, REAL, GRID, INK2 = "var(--null)", "var(--real)", "var(--grid)", "var(--ink-2)"
-STATE = {"pass": "var(--good)", "fail": "var(--bad)", "watch": "var(--watch)",
-         "info": "var(--null)", "none": "var(--ink-2)"}
+STATE = {
+    "pass": "var(--good)",
+    "fail": "var(--bad)",
+    "watch": "var(--watch)",
+    "info": "var(--null)",
+    "none": "var(--ink-2)",
+}
 
 
 def num(value: float | str | None) -> str:
@@ -23,7 +28,7 @@ def num(value: float | str | None) -> str:
     """
     if value is None:
         return "—"
-    if isinstance(value, str):      # a figure its study already wrote out («44,53 %»)
+    if isinstance(value, str):  # a figure its study already wrote out («44,53 %»)
         return value
     if abs(value) >= 1000 or value == int(value):
         return f"{value:,.0f}"
@@ -60,7 +65,9 @@ def ticks(lo: float, hi: float, count: int = 5) -> list[float]:
     power = 10 ** math.floor(math.log10(raw))
     step = next(m * power for m in (1, 2, 5, 10) if m * power >= raw)
     first = math.ceil(lo / step) * step
-    return [round(first + i * step, 12) for i in range(int((hi - first) / step + 1e-9) + 1)]
+    return [
+        round(first + i * step, 12) for i in range(int((hi - first) / step + 1e-9) + 1)
+    ]
 
 
 def canvas(body: str, height: int = H) -> str:
@@ -68,8 +75,14 @@ def canvas(body: str, height: int = H) -> str:
     return f'<svg viewBox="0 0 {W} {height}" role="img">{body}</svg>'
 
 
-def axes(x: Callable, y: Callable, xs: list[float], ys: list[float], xfmt: Callable = num,
-         height: int = H) -> str:
+def axes(
+    x: Callable,
+    y: Callable,
+    xs: list[float],
+    ys: list[float],
+    xfmt: Callable = num,
+    height: int = H,
+) -> str:
     """The grid lines and tick labels of both axes.
 
     Args:
@@ -81,11 +94,17 @@ def axes(x: Callable, y: Callable, xs: list[float], ys: list[float], xfmt: Calla
     Returns:
         SVG elements.
     """
-    out = [f'<line x1="{PAD["l"]}" x2="{W - PAD["r"]}" y1="{y(v):.1f}" y2="{y(v):.1f}" '
-           f'stroke="{GRID}"/><text class="tick" x="{PAD["l"] - 6}" y="{y(v) + 4:.1f}" '
-           f'text-anchor="end">{num(v)}</text>' for v in ys]
-    out += [f'<text class="tick" x="{x(v):.1f}" y="{height - PAD["b"] + 18}" '
-            f'text-anchor="middle">{escape(str(xfmt(v)))}</text>' for v in xs]
+    out = [
+        f'<line x1="{PAD["l"]}" x2="{W - PAD["r"]}" y1="{y(v):.1f}" y2="{y(v):.1f}" '
+        f'stroke="{GRID}"/><text class="tick" x="{PAD["l"] - 6}" y="{y(v) + 4:.1f}" '
+        f'text-anchor="end">{num(v)}</text>'
+        for v in ys
+    ]
+    out += [
+        f'<text class="tick" x="{x(v):.1f}" y="{height - PAD["b"] + 18}" '
+        f'text-anchor="middle">{escape(str(xfmt(v)))}</text>'
+        for v in xs
+    ]
     return "".join(out)
 
 
@@ -98,8 +117,10 @@ def legend(items: list[tuple[str, str]]) -> str:
     Returns:
         One HTML block, no script.
     """
-    chips = "".join(f'<span class="chip"><i style="{style}"></i>{escape(label)}</span>'
-                    for style, label in items)
+    chips = "".join(
+        f'<span class="chip"><i style="{style}"></i>{escape(label)}</span>'
+        for style, label in items
+    )
     return f'<div class="legend">{chips}</div>'
 
 
@@ -126,5 +147,7 @@ def figure(title: str, note: str, svg: str, key: str = "") -> str:
         One <figure>.
     """
     lede = f"<span>{escape(note)}</span>" if note else ""
-    return (f'<figure class="fig"><figcaption><b>{escape(title)}</b>{lede}</figcaption>'
-            f"{svg}{key}</figure>")
+    return (
+        f'<figure class="fig"><figcaption><b>{escape(title)}</b>{lede}</figcaption>'
+        f"{svg}{key}</figure>"
+    )

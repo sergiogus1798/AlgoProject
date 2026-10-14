@@ -18,7 +18,7 @@ from engines.variants import look
 from ledger import cells
 from studies.optimisation.oos2Reading import inputs, measure
 
-REFUSED = 3     # exit code of a look the ledger refuses
+REFUSED = 3  # exit code of a look the ledger refuses
 
 
 def main() -> None:
@@ -44,16 +44,26 @@ def main() -> None:
     for i, (name, batch) in enumerate(mothers.items()):
         print(f"PROGRESS {100 * i // len(mothers)} {name}", flush=True)
         trades = inputs.mother_trades(batch, span)
-        excess = measure.weekly(inputs.daily(trades, bars),
-                                footprint.footprint(trades, bars, costs, cfg["benchmark"])[0])
+        excess = measure.weekly(
+            inputs.daily(trades, bars),
+            footprint.footprint(trades, bars, costs, cfg["benchmark"])[0],
+        )
         seed = np.random.SeedSequence([cfg["null"]["seed"], zlib.crc32(name.encode())])
         facts = measure.read(excess, cfg["null"], seed)
         (batch / "estudios").mkdir(exist_ok=True)
-        (batch / "estudios" / "oos2Reading.json").write_text(json.dumps(
-            {"strategy": name, "facts": facts | {"miradas_celda": looks}}, indent=2), encoding="utf-8")
-        print(f"{name}: suma {facts['suma']:.2f}  z {facts['z']:+.2f}  p {facts['p']:.4f} "
-              f"± {facts['p_error_mc']:.4f}  {'CORTA' if facts['corta'] else 'sigue'}")
-    print(f"PROGRESS 100 {len(mothers)} madres, mirada {looks} de {cfg['max_looks']} de su celda")
+        (batch / "estudios" / "oos2Reading.json").write_text(
+            json.dumps(
+                {"strategy": name, "facts": facts | {"miradas_celda": looks}}, indent=2
+            ),
+            encoding="utf-8",
+        )
+        print(
+            f"{name}: suma {facts['suma']:.2f}  z {facts['z']:+.2f}  p {facts['p']:.4f} "
+            f"± {facts['p_error_mc']:.4f}  {'CORTA' if facts['corta'] else 'sigue'}"
+        )
+    print(
+        f"PROGRESS 100 {len(mothers)} madres, mirada {looks} de {cfg['max_looks']} de su celda"
+    )
 
 
 if __name__ == "__main__":

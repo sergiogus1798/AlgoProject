@@ -24,9 +24,12 @@ from ui.desktop.tradegallery import TradeGallery  # noqa: E402
 # The USDJPY Donchian project's newest cosecha — the one the route reads. It was pinned to 09-27,
 # and the cosecha of 2026-09-29 (Results cut to 21) no longer held those identities.
 PROJECT, DATABANK = "Test_USDJPY_donchianUpperCrossUp_M30", "Results"
-HARVEST = max(d for d in (DATA / "harvest" / PROJECT / DATABANK).iterdir()
-              if (d / "metrics.parquet").exists())
-XAU = "XAU_ISOOS_ejemplo"            # a project whose name holds no asset symbol
+HARVEST = max(
+    d
+    for d in (DATA / "harvest" / PROJECT / DATABANK).iterdir()
+    if (d / "metrics.parquet").exists()
+)
+XAU = "XAU_ISOOS_ejemplo"  # a project whose name holds no asset symbol
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 
 
@@ -51,14 +54,20 @@ def identities(n: int, harvest: Path = HARVEST) -> list[str]:
     Returns:
         Identities in file order.
     """
-    return pq.read_table(harvest / "metrics.parquet", columns=["identity"]).column(0).to_pylist()[:n]
+    return (
+        pq.read_table(harvest / "metrics.parquet", columns=["identity"])
+        .column(0)
+        .to_pylist()[:n]
+    )
 
 
 def test_market(http: TestClient) -> None:
     """Cells + flat + no-market = months, per sample, on five strategies; both-down in watch."""
     for ident in identities(5):
-        r = http.get("/api/tearsheet/market",
-                     params={"project": PROJECT, "databank": DATABANK, "identity": ident}).json()
+        r = http.get(
+            "/api/tearsheet/market",
+            params={"project": PROJECT, "databank": DATABANK, "identity": ident},
+        ).json()
         assert "error" not in r, r
         validate(r)
         assert [t["name"] for t in r["tabs"]] == ["IS", "OOS"]
@@ -73,23 +82,45 @@ def test_refusals(http: TestClient) -> None:
     """Unknown asset, no asset in the name, a foreign sample, no harvest, an identity elsewhere."""
     ident = identities(1)[0]
     base = {"project": PROJECT, "databank": DATABANK, "identity": ident}
-    cases = [("/api/tearsheet/market", {**base, "asset": "NOPE"}, "No conozco el activo"),
-             ("/api/tearsheet/trades", {**base, "sample": "oos2"}, "solo IS u OOS"),
-             ("/api/tearsheet/market", {**base, "databank": "Nada"}, "no tiene cosecha"),
-             ("/api/tearsheet/trades", {**base, "identity": "0" * 64}, "no está en la cosecha"),
-             ("/api/tearsheet/trades", {**base, "project": "../x"}, "Nombre no válido")]
+    cases = [
+        ("/api/tearsheet/market", {**base, "asset": "NOPE"}, "No conozco el activo"),
+        ("/api/tearsheet/trades", {**base, "sample": "oos2"}, "solo IS u OOS"),
+        ("/api/tearsheet/market", {**base, "databank": "Nada"}, "no tiene cosecha"),
+        (
+            "/api/tearsheet/trades",
+            {**base, "identity": "0" * 64},
+            "no está en la cosecha",
+        ),
+        ("/api/tearsheet/trades", {**base, "project": "../x"}, "Nombre no válido"),
+    ]
     xau = DATA / "harvest" / XAU / DATABANK
     if xau.is_dir():
-        cases.append(("/api/tearsheet/market", {**base, "project": XAU, "identity": identities(
-            1, max(xau.iterdir()))[0]}, "No sé qué activo"))
+        cases.append(
+            (
+                "/api/tearsheet/market",
+                {
+                    **base,
+                    "project": XAU,
+                    "identity": identities(1, max(xau.iterdir()))[0],
+                },
+                "No sé qué activo",
+            )
+        )
     else:
-        print(f"    (sin la cosecha {XAU}/{DATABANK}: no se comprueba el proyecto cuyo nombre "
-              "no dice su activo; hace falta una cosecha de un proyecto así)")
+        print(
+            f"    (sin la cosecha {XAU}/{DATABANK}: no se comprueba el proyecto cuyo nombre "
+            "no dice su activo; hace falta una cosecha de un proyecto así)"
+        )
     for path, params, words in cases:
         r = http.get(path, params=params)
-        assert r.status_code == 200 and words in r.json().get("error", ""), (params, r.json())
+        assert r.status_code == 200 and words in r.json().get("error", ""), (
+            params,
+            r.json(),
+        )
     r = http.get("/api/tearsheet/trades", params={**base, "asset": "NOPE"}).json()
-    assert r["bars_note"] and all("missing" in t["bars"] for t in r["tiles"]), r["bars_note"]
+    assert r["bars_note"] and all("missing" in t["bars"] for t in r["tiles"]), r[
+        "bars_note"
+    ]
 
 
 def test_trades(http: TestClient) -> None:
@@ -104,16 +135,26 @@ def test_trades(http: TestClient) -> None:
         assert a["seed"] is None
         for t in a["tiles"]:
             w = t["bars"]
-            assert w["t"][w["entry"]] <= t["open_time"] and w["t"][w["exit"]] <= t["close_time"]
-            assert w["held"] == w["exit"] - w["entry"] and w["t"][-1] < "2023-01-01", w["t"][-1]
+            assert (
+                w["t"][w["entry"]] <= t["open_time"]
+                and w["t"][w["exit"]] <= t["close_time"]
+            )
+            assert w["held"] == w["exit"] - w["entry"] and w["t"][-1] < "2023-01-01", w[
+                "t"
+            ][-1]
     r1 = http.get("/api/tearsheet/trades", params={**base, "pick": "random"}).json()
-    r2 = http.get("/api/tearsheet/trades",
-                  params={**base, "pick": "random", "seed": str(r1["seed"])}).json()
-    assert r1["seed"] == r2["seed"] and [t["row"] for t in r1["tiles"]] == [t["row"] for t in r2["tiles"]]
+    r2 = http.get(
+        "/api/tearsheet/trades",
+        params={**base, "pick": "random", "seed": str(r1["seed"])},
+    ).json()
+    assert r1["seed"] == r2["seed"] and [t["row"] for t in r1["tiles"]] == [
+        t["row"] for t in r2["tiles"]
+    ]
 
 
 def test_draw(app: QApplication, http: TestClient) -> None:
     """The gallery and the market result drawn offscreen, grabbed for a person to look at."""
+
     def fetch(path: str, **params: str) -> dict:
         """The gallery's daemon call, answered in-process."""
         return http.get(f"/api/{path}", params=params).json()
@@ -135,7 +176,10 @@ def test_draw(app: QApplication, http: TestClient) -> None:
     g.grab().save(str(SHOTS / "H2-gallery-nobars.png"))
     view = ResultView()
     view.resize(1300, 900)
-    view.show_result(fetch("tearsheet/market", project=PROJECT, databank=DATABANK, identity=ident), None)
+    view.show_result(
+        fetch("tearsheet/market", project=PROJECT, databank=DATABANK, identity=ident),
+        None,
+    )
     app.processEvents()
     view.grab().save(str(SHOTS / "H2-market.png"))
 
@@ -144,8 +188,12 @@ if __name__ == "__main__":
     APP = QApplication.instance() or QApplication([])
     APP.setStyleSheet(QSS)
     HTTP = serve()
-    for test, args in ((test_market, (HTTP,)), (test_refusals, (HTTP,)), (test_trades, (HTTP,)),
-                       (test_draw, (APP, HTTP))):
+    for test, args in (
+        (test_market, (HTTP,)),
+        (test_refusals, (HTTP,)),
+        (test_trades, (HTTP,)),
+        (test_draw, (APP, HTTP)),
+    ):
         started = time.time()
         test(*args)
         print(f"ok  {test.__name__}  {time.time() - started:.1f} s")

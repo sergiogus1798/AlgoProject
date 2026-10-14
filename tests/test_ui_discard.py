@@ -18,17 +18,30 @@ def main() -> None:
     """The table is a QTableView: discard() read rows through QTableWidget.item() and crashed."""
     app = QApplication.instance() or QApplication([])
     table = DataTable()
-    table.paint([{"name": "a", "identity": "id-a", "values": []},
-                 {"name": "b", "identity": None, "values": []}], [], [])
+    table.paint(
+        [
+            {"name": "a", "identity": "id-a", "values": []},
+            {"name": "b", "identity": None, "values": []},
+        ],
+        [],
+        [],
+    )
     table.selectAll()
     sent: list[tuple[str, dict]] = []
-    strip = SimpleNamespace(panel=SimpleNamespace(table=table), at=("P", "B"), say=print,
-                            send=lambda url, body: sent.append((url, body)))
+    strip = SimpleNamespace(
+        panel=SimpleNamespace(table=table),
+        at=("P", "B"),
+        say=print,
+        send=lambda url, body: sent.append((url, body)),
+    )
     FiltersStrip.discard(strip)  # type: ignore[arg-type]
-    assert sent == [("filters/discard", {"project": "P", "databank": "B",
-                                         "identities": ["id-a"]})], sent
+    assert sent == [
+        ("filters/discard", {"project": "P", "databank": "B", "identities": ["id-a"]})
+    ], sent
     app.processEvents()
-    print("ok: descartar seleccionadas manda las identidades y salta la fila sin identidad")
+    print(
+        "ok: descartar seleccionadas manda las identidades y salta la fila sin identidad"
+    )
 
 
 if __name__ == "__main__":

@@ -47,10 +47,20 @@ def profile(target: str, cfg: dict, top: int = SITES) -> Profile:
     stats = pstats.Stats(str(dump))
     rows = sorted(stats.stats.items(), key=lambda kv: kv[1][2], reverse=True)[:top]  # pyright: ignore[reportAttributeAccessIssue]  # typeshed omits Stats.stats
     dump.unlink()
-    return {"target": target, "wall_s": run["wall_s"], "memory": run["alloc_top"],
-            "time": [{"where": f"{Path(f).name}:{line}({name})", "own_s": v[2],
-                      "calls": v[0], "share": v[2] / run["wall_s"]}
-                     for (f, line, name), v in rows]}
+    return {
+        "target": target,
+        "wall_s": run["wall_s"],
+        "memory": run["alloc_top"],
+        "time": [
+            {
+                "where": f"{Path(f).name}:{line}({name})",
+                "own_s": v[2],
+                "calls": v[0],
+                "share": v[2] / run["wall_s"],
+            }
+            for (f, line, name), v in rows
+        ],
+    }
 
 
 def text(found: Profile) -> str:
@@ -64,6 +74,10 @@ def text(found: Profile) -> str:
         is longer than an unprofiled one -- read the ranking, not the seconds.
     """
     lines = [f"{found['target']} — {found['wall_s']:.2f} s profiled", "", "TIME (own)"]
-    lines += [f"  {r['share']:6.1%}  {r['own_s']:8.3f} s  {r['calls']:>9,}x  {r['where']}"
-              for r in found["time"]]
-    return "\n".join(lines + ["", "MEMORY (held at peak)"] + [f"  {s}" for s in found["memory"]])
+    lines += [
+        f"  {r['share']:6.1%}  {r['own_s']:8.3f} s  {r['calls']:>9,}x  {r['where']}"
+        for r in found["time"]
+    ]
+    return "\n".join(
+        lines + ["", "MEMORY (held at peak)"] + [f"  {s}" for s in found["memory"]]
+    )

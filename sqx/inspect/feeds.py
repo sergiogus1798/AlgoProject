@@ -19,5 +19,7 @@ def timezone(feed: str) -> str:
         registry is opened with `mode=ro`, so a running master is never written to.
     """
     with sqlite3.connect(f"file:{REGISTRY}?mode=ro", uri=True) as db:
-        row = db.execute("SELECT TIMEZONE FROM DATA WHERE SYMBOL = ?", (current(feed),)).fetchone()
+        row = db.execute(
+            "SELECT TIMEZONE FROM DATA WHERE SYMBOL = ?", (current(feed),)
+        ).fetchone()
     return row[0]

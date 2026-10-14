@@ -51,11 +51,16 @@ def frozen(design: dict, settings: dict) -> dict[str, list[float]]:
     out = {}
     for item in design["frozen"]:
         value = float(item["value"])
-        if item["name"].lower().endswith(SHIFT):   # owner, 2026-09-26: a shift never moves
+        if (
+            item["name"].lower().endswith(SHIFT)
+        ):  # owner, 2026-09-26: a shift never moves
             out[item["name"]] = [value]
             continue
-        span = np.linspace(value * (1 - settings["span"]), value * (1 + settings["span"]),
-                           settings["steps"])
+        span = np.linspace(
+            value * (1 - settings["span"]),
+            value * (1 + settings["span"]),
+            settings["steps"],
+        )
         digits = 0 if float(value).is_integer() else 2
         out[item["name"]] = sorted({round(float(v), digits) for v in span})
     return out

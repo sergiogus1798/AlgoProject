@@ -9,15 +9,38 @@ import pandas as pd
 from studies.research.marketProfile import series
 
 # Keys that change sign when the series is turned upside down.
-SIGNED = ("sma5", "sma10", "sma14", "sma30", "sma50", "sma200", "d1_mom", "d1_above", "d1_band", "d1_mid", "d1_mac",
-          "d1_run", "d1_out", "d1_open")
+SIGNED = (
+    "sma5",
+    "sma10",
+    "sma14",
+    "sma30",
+    "sma50",
+    "sma200",
+    "d1_mom",
+    "d1_above",
+    "d1_band",
+    "d1_mid",
+    "d1_mac",
+    "d1_run",
+    "d1_out",
+    "d1_open",
+)
 
 
 def _rsi(close: np.ndarray, period: int) -> np.ndarray:
     """Wilder's RSI of a log series, 0-100; NaN until `period` changes exist."""
     step = pd.Series(np.diff(close, prepend=close[0]))
-    up = step.clip(lower=0).ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
-    down = (-step).clip(lower=0).ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+    up = (
+        step.clip(lower=0)
+        .ewm(alpha=1 / period, adjust=False, min_periods=period)
+        .mean()
+    )
+    down = (
+        (-step)
+        .clip(lower=0)
+        .ewm(alpha=1 / period, adjust=False, min_periods=period)
+        .mean()
+    )
     return (100 * up / (up + down)).to_numpy()
 
 
@@ -38,8 +61,11 @@ def days(x: dict, cal: dict) -> dict[str, np.ndarray]:
     """
     first = cal["day_first"]
     last = np.append(first[1:] - 1, x["c"].size - 1)
-    return {"h": np.maximum.reduceat(x["h"], first), "l": np.minimum.reduceat(x["l"], first),
-            "c": x["c"][last]}
+    return {
+        "h": np.maximum.reduceat(x["h"], first),
+        "l": np.minimum.reduceat(x["l"], first),
+        "c": x["c"][last],
+    }
 
 
 def _streak(close: np.ndarray, k: int) -> np.ndarray:
@@ -52,7 +78,10 @@ def _streak(close: np.ndarray, k: int) -> np.ndarray:
 def _outside(close: np.ndarray, n: int) -> np.ndarray:
     """+1 when the close is above the highest of the n closes before it, -1 below the lowest."""
     s = pd.Series(close)
-    top, bottom = s.rolling(n).max().shift(1).to_numpy(), s.rolling(n).min().shift(1).to_numpy()
+    top, bottom = (
+        s.rolling(n).max().shift(1).to_numpy(),
+        s.rolling(n).min().shift(1).to_numpy(),
+    )
     with np.errstate(invalid="ignore"):
         return np.where(close > top, 1.0, np.where(close < bottom, -1.0, 0.0))
 
@@ -94,22 +123,34 @@ def daily(day: dict, cfg: dict) -> dict[str, Any]:
     base, mid, sd = c - c[0], {}, {}
     for n in cfg["band"]:
         mean = series._mean(base, n)
-        mid[n], sd[n] = mean + c[0], np.sqrt(np.maximum(series._mean(base * base, n) - mean ** 2, 0))
+        mid[n], sd[n] = (
+            mean + c[0],
+            np.sqrt(np.maximum(series._mean(base * base, n) - mean**2, 0)),
+        )
     few, many = cfg["squeeze"]
     with np.errstate(divide="ignore", invalid="ignore"):
-        return {"d1_mom": mom, "d1_above": {n: c - _sma(c, n) for n in cfg["means"]},
-                "d1_hi": hi, "d1_lo": lo, "d1_atr": atr,
-                "d1_vol": series._mean(true_range, cfg["vol"][0])
-                / series._mean(true_range, cfg["vol"][1]),
-                "d1_high": atr / pd.Series(atr).rolling(cfg["median"]).median().to_numpy(),
-                "d1_atrup": atr / np.concatenate([np.full(cfg["atr"], np.nan), atr[:-cfg["atr"]]]),
-                "d1_rsi": _rsi(c, cfg["rsi"]), "d1_mid": mid, "d1_sd": sd,
-                "d1_band": {n: (c - mid[n]) / sd[n] for n in cfg["band"]},
-                "d1_ibs": (c - l) / (h - l),
-                "d1_mac": (4 * r + 3 * r.shift(1) + 2 * r.shift(2) + r.shift(3)).to_numpy(),
-                "d1_run": _streak(c, cfg["streak"]), "d1_out": _outside(c, cfg["outside"]),
-                "d1_nr": (rg == rg.rolling(cfg["narrow"]).min()).to_numpy().astype(float),
-                "d1_squeeze": (hi[few] - lo[few]) / (hi[many] - lo[many])}
+        return {
+            "d1_mom": mom,
+            "d1_above": {n: c - _sma(c, n) for n in cfg["means"]},
+            "d1_hi": hi,
+            "d1_lo": lo,
+            "d1_atr": atr,
+            "d1_vol": series._mean(true_range, cfg["vol"][0])
+            / series._mean(true_range, cfg["vol"][1]),
+            "d1_high": atr / pd.Series(atr).rolling(cfg["median"]).median().to_numpy(),
+            "d1_atrup": atr
+            / np.concatenate([np.full(cfg["atr"], np.nan), atr[: -cfg["atr"]]]),
+            "d1_rsi": _rsi(c, cfg["rsi"]),
+            "d1_mid": mid,
+            "d1_sd": sd,
+            "d1_band": {n: (c - mid[n]) / sd[n] for n in cfg["band"]},
+            "d1_ibs": (c - l) / (h - l),
+            "d1_mac": (4 * r + 3 * r.shift(1) + 2 * r.shift(2) + r.shift(3)).to_numpy(),
+            "d1_run": _streak(c, cfg["streak"]),
+            "d1_out": _outside(c, cfg["outside"]),
+            "d1_nr": (rg == rg.rolling(cfg["narrow"]).min()).to_numpy().astype(float),
+            "d1_squeeze": (hi[few] - lo[few]) / (hi[many] - lo[many]),
+        }
 
 
 def closed(values: np.ndarray, cal: dict) -> np.ndarray:
@@ -142,22 +183,39 @@ def context(d: dict, cal: dict, cfg: dict) -> dict[str, Any]:
     """
     out = dict(d)
     for key, value in daily(days(d, cal), cfg).items():
-        out[key] = ({n: closed(v, cal) for n, v in value.items()} if isinstance(value, dict)
-                    else closed(value, cal))
+        out[key] = (
+            {n: closed(v, cal) for n, v in value.items()}
+            if isinstance(value, dict)
+            else closed(value, cal)
+        )
     for n in (5, 10, 14, 30, 50, 200):
         out[f"sma{n}"] = _sma(d["c"], n)
     base = d["c"] - d["c"][0]
-    out["sd10"] = np.sqrt(np.maximum(series._mean(base * base, 10) - series._mean(base, 10) ** 2, 0))
+    out["sd10"] = np.sqrt(
+        np.maximum(series._mean(base * base, 10) - series._mean(base, 10) ** 2, 0)
+    )
     out["d1_open"] = d["o"][cal["day_first"]][cal["day"]]
     out["rsi"] = _rsi(d["c"], cfg["rsi"])
     return out
 
 
 # Mirrored key -> the key it reads: highs and lows swap, so do the channels and the daily levels.
-_FROM = {"h": "l", "l": "h", "hi": "lo", "lo": "hi", "chi": "clo", "clo": "chi",
-         "d1_hi": "d1_lo", "d1_lo": "d1_hi"}
+_FROM = {
+    "h": "l",
+    "l": "h",
+    "hi": "lo",
+    "lo": "hi",
+    "chi": "clo",
+    "clo": "chi",
+    "d1_hi": "d1_lo",
+    "d1_lo": "d1_hi",
+}
 _NEG = {"o", "h", "l", "c", "sma", "hi", "lo", "chi", "clo", "d1_hi", "d1_lo", *SIGNED}
-_REFLECT = {"rsi": 100, "d1_rsi": 100, "d1_ibs": 1}     # read from the other end: top - value
+_REFLECT = {
+    "rsi": 100,
+    "d1_rsi": 100,
+    "d1_ibs": 1,
+}  # read from the other end: top - value
 
 
 class _Negated(Mapping):

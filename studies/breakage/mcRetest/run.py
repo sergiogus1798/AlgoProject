@@ -29,7 +29,14 @@ from studies.breakage.mcRetest.verdict.modes import Modes
 
 # Columns the questions actually read. Loading thirty when four are wanted costs nothing at
 # five strategies and a great deal at seven hundred.
-NEEDED = ("NetProfit", "ProfitFactor", "DrawdownPct", "NumberOfTrades", "AvgTrade", "StandardDev")
+NEEDED = (
+    "NetProfit",
+    "ProfitFactor",
+    "DrawdownPct",
+    "NumberOfTrades",
+    "AvgTrade",
+    "StandardDev",
+)
 
 # 🔬 2026-09-26: a worker keeps ~0.3 GB resident once it has read one strategy's seven P&L
 # partitions (0.45 GB with its imports), and a strategy takes about a second. 48 of them on 500
@@ -76,7 +83,9 @@ def _arrays(sims: pd.DataFrame, task: str, strategy: str) -> dict[str, np.ndarra
     Returns:
         {metric: one value per simulation}.
     """
-    rows = cast(pd.DataFrame, sims[(sims["task"] == task) & (sims["strategy"] == strategy)])
+    rows = cast(
+        pd.DataFrame, sims[(sims["task"] == task) & (sims["strategy"] == strategy)]
+    )
     return {name: rows[name].to_numpy(dtype=np.float64) for name in NEEDED}
 
 
@@ -100,11 +109,13 @@ def benchmarks(trades: pd.DataFrame | None, asset: dict | None) -> dict[str, flo
     day = barstore.read(asset["feed"], "D1")
     out = {}
     for name, rows in trades.groupby("strategy", observed=True):
-        window = day.loc[rows["Open time"].min():rows["Close time"].max()]
+        window = day.loc[rows["Open time"].min() : rows["Close time"].max()]
         if len(window) > 1:
             if len(rows) < MIN_OOS_TRADES:
-                print(f"  aviso: {name} sólo tiene {len(rows)} operaciones OOS para el "
-                      f"benchmark aleatorio (mínimo {MIN_OOS_TRADES})")
+                print(
+                    f"  aviso: {name} sólo tiene {len(rows)} operaciones OOS para el "
+                    f"benchmark aleatorio (mínimo {MIN_OOS_TRADES})"
+                )
             out[name] = evidence.footprint(rows, window, asset["point_value"])
     return out
 
@@ -115,8 +126,14 @@ def _daily_equity(keys: dict, strategy: str) -> np.ndarray | None:
     return daily[strategy].cumsum().to_numpy() if strategy in daily else None
 
 
-def per_task(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, strategy: str,
-             benchmark: float, cfg: dict) -> dict[str, TaskResult]:
+def per_task(
+    keys: dict,
+    sims: pd.DataFrame,
+    original: pd.DataFrame,
+    strategy: str,
+    benchmark: float,
+    cfg: dict,
+) -> dict[str, TaskResult]:
     """Questions 1 and 2 for every task of one strategy.
 
     Args:
@@ -135,27 +152,47 @@ def per_task(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, strategy: s
         metrics = _arrays(sims, task, strategy)
         if not metrics["NetProfit"].size:
             continue
-        row = cast(pd.DataFrame, original[(original["task"] == task) & (original["strategy"] == strategy)])
+        row = cast(
+            pd.DataFrame,
+            original[(original["task"] == task) & (original["strategy"] == strategy)],
+        )
         pnl = store.load_pnl(**keys, task=task, strategy=strategy)
         counts = pnl.groupby("sim", observed=True).size().to_numpy()
         offsets = np.concatenate([[0], np.cumsum(counts)])
         out[task] = {
-            "fragility": fragility.describe(metrics, pnl["pnl"].to_numpy(), offsets, cfg),
+            "fragility": fragility.describe(
+                metrics, pnl["pnl"].to_numpy(), offsets, cfg
+            ),
             "modes": modes.describe(metrics, float(row["NumberOfTrades"].iloc[0]), cfg),
             "evidence": evidence.empirical_sharpe(metrics, benchmark),
             "original_net": float(row["NetProfit"].iloc[0]),
-            "place": place.place(metrics["NetProfit"], float(row["NetProfit"].iloc[0]),
-                                 cfg["criteria"]["real_floor_iqr"]),
+            "place": place.place(
+                metrics["NetProfit"],
+                float(row["NetProfit"].iloc[0]),
+                cfg["criteria"]["real_floor_iqr"],
+            ),
             # Kept so the figures can draw the outcome itself, not only its summary. The
             # renderer must never reach back into the parquet: one source per number.
             "_net": metrics["NetProfit"],
-            "fan": fragility.fan(pnl["pnl"].to_numpy(), offsets, cfg, _daily_equity(keys, strategy)
-                                 if task == "stress" else None)}
+            "fan": fragility.fan(
+                pnl["pnl"].to_numpy(),
+                offsets,
+                cfg,
+                _daily_equity(keys, strategy) if task == "stress" else None,
+            ),
+        }
     return out
 
 
-def one(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, provenance: dict,
-        strategy: str, benchmark: float, cfg: dict) -> dict[str, Any]:
+def one(
+    keys: dict,
+    sims: pd.DataFrame,
+    original: pd.DataFrame,
+    provenance: dict,
+    strategy: str,
+    benchmark: float,
+    cfg: dict,
+) -> dict[str, Any]:
     """Everything the study concludes about one strategy.
 
     Args:
@@ -176,27 +213,48 @@ def one(keys: dict, sims: pd.DataFrame, original: pd.DataFrame, provenance: dict
     by_task = per_task(keys, sims, original, strategy, benchmark, cfg)
     trades = store.load_trades(**keys, strategy=strategy)
     original_pnl = trades["pnl"].to_numpy(dtype=np.float64)
-    body = {**by_task,
-            "psr": evidence.analytic_sharpe(original_pnl, benchmark),
-            "attribution": attribution.describe(
-                {task: _arrays(sims, task, strategy)["NetProfit"] for task in by_task}, cfg)}
+    body = {
+        **by_task,
+        "psr": evidence.analytic_sharpe(original_pnl, benchmark),
+        "attribution": attribution.describe(
+            {task: _arrays(sims, task, strategy)["NetProfit"] for task in by_task}, cfg
+        ),
+    }
     flags = gates.check(body, provenance, cfg)
     scores = scoring.subscores(body, cfg)
-    return {"strategy": strategy, **body, "flags": flags,
-            "verdict": scoring.verdict(scores, flags, cfg)}
+    return {
+        "strategy": strategy,
+        **body,
+        "flags": flags,
+        "verdict": scoring.verdict(scores, flags, cfg),
+    }
 
 
 def _one(name: str) -> dict[str, Any]:
     """one() for one strategy, in a worker that inherited the ingest's tables by fork."""
     got = _SHARED
-    return one(got["keys"], got["sims"], got["original"],
-               {task: got["provenance"][f"{task}/{name}"] for task in tasks.TASKS
-                if f"{task}/{name}" in got["provenance"]}, name,
-               got["benchmarks"].get(name, 0.0), got["cfg"])
+    return one(
+        got["keys"],
+        got["sims"],
+        got["original"],
+        {
+            task: got["provenance"][f"{task}/{name}"]
+            for task in tasks.TASKS
+            if f"{task}/{name}" in got["provenance"]
+        },
+        name,
+        got["benchmarks"].get(name, 0.0),
+        got["cfg"],
+    )
 
 
-def battery(keys: dict, provenance: dict, trades: pd.DataFrame | None, asset: dict | None,
-            cfg: dict) -> Battery:
+def battery(
+    keys: dict,
+    provenance: dict,
+    trades: pd.DataFrame | None,
+    asset: dict | None,
+    cfg: dict,
+) -> Battery:
     """Every strategy of one ingest, plus what can only be said across them.
 
     Args:
@@ -213,9 +271,11 @@ def battery(keys: dict, provenance: dict, trades: pd.DataFrame | None, asset: di
         why they live here and not in one().
     """
     if "pnl" not in store.load_trades(**keys):
-        raise SystemExit("mcRetest: este ingest es anterior al 2026-10-04 y no guarda el P/L por "
-                         "operación del original; repite el ingest con "
-                         "`python3 -m studies.breakage.mcRetest.ingest --project <PROYECTO>`")
+        raise SystemExit(
+            "mcRetest: este ingest es anterior al 2026-10-04 y no guarda el P/L por "
+            "operación del original; repite el ingest con "
+            "`python3 -m studies.breakage.mcRetest.ingest --project <PROYECTO>`"
+        )
     sims = store.load_sims(**keys)
     original = store.load_original(**keys)
     bench = benchmarks(trades, asset)
@@ -224,30 +284,54 @@ def battery(keys: dict, provenance: dict, trades: pd.DataFrame | None, asset: di
     # read against -- reporting it would mean answering "what breaks it?" without the task
     # that answers it. It is named and dropped, not half-reported.
     ran = {t for t in tasks.TASKS if (sims["task"] == t).any()}
-    present = {name: {t for t in ran if not sims[(sims["strategy"] == name)
-                                                 & (sims["task"] == t)].empty}
-               for name in sorted(sims["strategy"].unique())}
+    present = {
+        name: {
+            t
+            for t in ran
+            if not sims[(sims["strategy"] == name) & (sims["task"] == t)].empty
+        }
+        for name in sorted(sims["strategy"].unique())
+    }
     partial = {n: sorted(ran - got) for n, got in present.items() if ran - got}
     for name, short in partial.items():
         print(f"fuera del informe, le faltan tareas: {name} — sin {', '.join(short)}")
     names = [n for n in present if n not in partial]
     # One strategy per process, the one with most simulations first: each reads its own
     # P&L partitions and nothing crosses between them until the pool below.
-    _SHARED.update(keys=keys, sims=sims, original=original, provenance=provenance,
-                  benchmarks=bench, cfg=cfg)
-    got = dict(fanout.run(_one, {n: int((sims["strategy"] == n).sum()) for n in names},
-                          WORKERS))
+    _SHARED.update(
+        keys=keys,
+        sims=sims,
+        original=original,
+        provenance=provenance,
+        benchmarks=bench,
+        cfg=cfg,
+    )
+    got = dict(
+        fanout.run(
+            _one, {n: int((sims["strategy"] == n).sum()) for n in names}, WORKERS
+        )
+    )
     per = {name: got[name] for name in names}
 
-    pool = {f"{task}/{name}": got[task]["modes"]["bimodality"]["p"]
-            for name, got in per.items() for task in tasks.TASKS
-            if task in got and got[task]["modes"]["discriminated"]}
-    base = original[original["task"] == "bar"].set_index("strategy")["NetProfit"].to_dict()
+    pool = {
+        f"{task}/{name}": got[task]["modes"]["bimodality"]["p"]
+        for name, got in per.items()
+        for task in tasks.TASKS
+        if task in got and got[task]["modes"]["discriminated"]
+    }
+    base = (
+        original[original["task"] == "bar"].set_index("strategy")["NetProfit"].to_dict()
+    )
     # Without the production task there is no tail to rank by and no daily equity to correlate.
-    tail = {name: got["stress"]["fragility"]["net_p5"]["point"] for name, got in per.items()
-            if "stress" in got}
+    tail = {
+        name: got["stress"]["fragility"]["net_p5"]["point"]
+        for name, got in per.items()
+        if "stress" in got
+    }
     daily = store.load_returns(**keys)
-    return {"strategies": per,
-            "effective_bets": evidence.effective_bets(daily) if daily.shape[1] else None,
-            "multiplicity": evidence.corrected(pool, cfg),
-            "rank_stability": evidence.rank_stability(base, tail, cfg)}
+    return {
+        "strategies": per,
+        "effective_bets": evidence.effective_bets(daily) if daily.shape[1] else None,
+        "multiplicity": evidence.corrected(pool, cfg),
+        "rank_stability": evidence.rank_stability(base, tail, cfg),
+    }

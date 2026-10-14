@@ -28,7 +28,20 @@ class Challenge(TypedDict):
 
 
 # stage column layout shared by `sweep`'s numba kernel: keep in sync with `_stage_matrix` below.
-_TARGET, _DLOSS, _MLOSS, _MODE, _BASIS, _MINDAYS, _MDKIND, _PPCT, _CONS, _CKIND, _TLIMIT, _RISK = range(12)
+(
+    _TARGET,
+    _DLOSS,
+    _MLOSS,
+    _MODE,
+    _BASIS,
+    _MINDAYS,
+    _MDKIND,
+    _PPCT,
+    _CONS,
+    _CKIND,
+    _TLIMIT,
+    _RISK,
+) = range(12)
 # max_loss_mode / daily_basis / min_days_kind / consistency_kind codes
 _STATIC, _TRAILING, _EOD_TRAILING = 0, 1, 2
 _BAL, _MAXBE = 0, 1
@@ -36,8 +49,13 @@ _TRADING, _PROFITABLE = 0, 1
 _NONE_K, _BEST_TOTAL, _BEST_POS = 0, 1, 2
 
 
-def challenge(days: dict[str, np.ndarray], plan: Plan, risk: dict[str, float], start: int,
-              horizon: int = 0) -> Challenge:
+def challenge(
+    days: dict[str, np.ndarray],
+    plan: Plan,
+    risk: dict[str, float],
+    start: int,
+    horizon: int = 0,
+) -> Challenge:
     """Walk one start day through every challenge stage of a plan — the readable reference.
 
     Args:
@@ -65,14 +83,25 @@ def challenge(days: dict[str, np.ndarray], plan: Plan, risk: dict[str, float], s
     for stage in stages:
         k = risk[stage["stage"]]
         baseline = days["float_end"][stage_start - 1] if stage_start > 0 else 0.0
-        b, hw, eod, carry = size, size, size, baseline * k   # carry: the mark of trades carried in
+        b, hw, eod, carry = (
+            size,
+            size,
+            size,
+            baseline * k,
+        )  # carry: the mark of trades carried in
         trading_days = profitable_days = 0
         profits: list[float] = []
         d = stage_start
         while d < n:
             if deadline is not None and d > deadline:
-                return {"outcome": "open", "stage": stage["stage"], "day": d - 1, "rule": None,
-                        "stage_days": stage_days, "flags": plan["flags"]}
+                return {
+                    "outcome": "open",
+                    "stage": stage["stage"],
+                    "day": d - 1,
+                    "rule": None,
+                    "stage_days": stage_days,
+                    "flags": plan["flags"],
+                }
             e0 = b + (0.0 if d == 0 else days["float_end"][d - 1]) * k - carry
             dfloor = daily_floor(b, e0, size, stage["daily_loss"], stage["daily_basis"])
             hw = max(hw, e0 + days["high"][d] * k)
@@ -80,8 +109,14 @@ def challenge(days: dict[str, np.ndarray], plan: Plan, risk: dict[str, float], s
             floor = max(dfloor, mfloor)
             if e0 + days["low"][d] * k < floor:
                 rule = "daily_loss" if dfloor >= mfloor else "max_loss"
-                return {"outcome": "fail", "stage": stage["stage"], "day": d, "rule": rule,
-                        "stage_days": stage_days, "flags": plan["flags"]}
+                return {
+                    "outcome": "fail",
+                    "stage": stage["stage"],
+                    "day": d,
+                    "rule": rule,
+                    "stage_days": stage_days,
+                    "flags": plan["flags"],
+                }
             day_p = days["closed"][d] * k
             if carry != 0.0 and days["float_end"][d] == 0.0:
                 # ponytail: the carried mark leaves the balance on the first flat day end, not on
@@ -91,47 +126,96 @@ def challenge(days: dict[str, np.ndarray], plan: Plan, risk: dict[str, float], s
             eod = max(eod, b)
             if days["opened"][d] > 0:
                 trading_days += 1
-            if (stage["min_days_kind"] == "profitable" and stage["profitable_pct"] is not None
-                    and day_p >= stage["profitable_pct"] * size):
+            if (
+                stage["min_days_kind"] == "profitable"
+                and stage["profitable_pct"] is not None
+                and day_p >= stage["profitable_pct"] * size
+            ):
                 profitable_days += 1
             profits.append(day_p)
             if target_met(b, size, stage["target"]):
-                stats = {"trading_days": trading_days, "profitable_days": profitable_days}
+                stats = {
+                    "trading_days": trading_days,
+                    "profitable_days": profitable_days,
+                }
                 if days_ok(stats, stage) and consistency_ok(np.array(profits), stage):
                     stage_days.append(d)
                     break
             if stage["time_limit"] and (d - stage_start + 1) >= stage["time_limit"]:
-                return {"outcome": "fail", "stage": stage["stage"], "day": d, "rule": "time_limit",
-                        "stage_days": stage_days, "flags": plan["flags"]}
+                return {
+                    "outcome": "fail",
+                    "stage": stage["stage"],
+                    "day": d,
+                    "rule": "time_limit",
+                    "stage_days": stage_days,
+                    "flags": plan["flags"],
+                }
             d += 1
         else:
-            return {"outcome": "open", "stage": stage["stage"], "day": n - 1, "rule": None,
-                    "stage_days": stage_days, "flags": plan["flags"]}
+            return {
+                "outcome": "open",
+                "stage": stage["stage"],
+                "day": n - 1,
+                "rule": None,
+                "stage_days": stage_days,
+                "flags": plan["flags"],
+            }
         stage_start = d + 1
 
-    return {"outcome": "pass", "stage": stages[-1]["stage"], "day": stage_days[-1], "rule": None,
-            "stage_days": stage_days, "flags": plan["flags"]}
+    return {
+        "outcome": "pass",
+        "stage": stages[-1]["stage"],
+        "day": stage_days[-1],
+        "rule": None,
+        "stage_days": stage_days,
+        "flags": plan["flags"],
+    }
 
 
 def _stage_matrix(plan: Mapping[str, Any], risk: dict[str, float]) -> np.ndarray:
     """Challenge stages of a plan, packed into the numeric layout `sweep`'s kernel reads."""
-    mode_code = {"static": _STATIC, "trailing": _TRAILING, "eod_trailing": _EOD_TRAILING}
+    mode_code = {
+        "static": _STATIC,
+        "trailing": _TRAILING,
+        "eod_trailing": _EOD_TRAILING,
+    }
     basis_code = {"balance": _BAL, "max_be": _MAXBE}
     kind_code = {None: _TRADING, "trading": _TRADING, "profitable": _PROFITABLE}
-    cons_code = {None: _NONE_K, "best_over_total": _BEST_TOTAL, "best_over_positive_sum": _BEST_POS}
+    cons_code = {
+        None: _NONE_K,
+        "best_over_total": _BEST_TOTAL,
+        "best_over_positive_sum": _BEST_POS,
+    }
     rows = []
     for s in plan["stages"]:
         if s["stage"] == "funded":
             continue
-        rows.append([s["target"], s["daily_loss"], s["max_loss"], mode_code[s["max_loss_mode"]],
-                     basis_code[s["daily_basis"]], -1 if s["min_days"] is None else s["min_days"],
-                     kind_code[s["min_days_kind"]], s["profitable_pct"] or 0.0, s["consistency"],
-                     cons_code[s["consistency_kind"]], s["time_limit"], risk[s["stage"]]])
+        rows.append(
+            [
+                s["target"],
+                s["daily_loss"],
+                s["max_loss"],
+                mode_code[s["max_loss_mode"]],
+                basis_code[s["daily_basis"]],
+                -1 if s["min_days"] is None else s["min_days"],
+                kind_code[s["min_days_kind"]],
+                s["profitable_pct"] or 0.0,
+                s["consistency"],
+                cons_code[s["consistency_kind"]],
+                s["time_limit"],
+                risk[s["stage"]],
+            ]
+        )
     return np.array(rows, dtype=np.float64)
 
 
-def sweep(days: dict[str, np.ndarray], plan: Mapping[str, Any], risk: dict[str, float], starts: np.ndarray,
-          horizon: int = 0) -> np.ndarray:
+def sweep(
+    days: dict[str, np.ndarray],
+    plan: Mapping[str, Any],
+    risk: dict[str, float],
+    starts: np.ndarray,
+    horizon: int = 0,
+) -> np.ndarray:
     """`challenge`, from many start days at once — numba, identical to it day for day.
 
     Args:
@@ -148,15 +232,31 @@ def sweep(days: dict[str, np.ndarray], plan: Mapping[str, Any], risk: dict[str, 
     stagemat = _stage_matrix(plan, risk)
     if np.any(stagemat[:, _MINDAYS] < 0):
         raise NotImplementedError("sweep: a challenge stage has no known min_days")
-    return _sweep_kernel(days["closed"], days["float_end"], days["low"], days["high"],
-                          days["opened"], stagemat, np.asarray(starts, dtype=np.int64),
-                          plan["size"], horizon)
+    return _sweep_kernel(
+        days["closed"],
+        days["float_end"],
+        days["low"],
+        days["high"],
+        days["opened"],
+        stagemat,
+        np.asarray(starts, dtype=np.int64),
+        plan["size"],
+        horizon,
+    )
 
 
 @numba.njit(cache=True)
-def _sweep_kernel(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, high: np.ndarray,
-                   opened: np.ndarray, stagemat: np.ndarray, starts: np.ndarray, size: float,
-                   horizon: int) -> np.ndarray:
+def _sweep_kernel(
+    closed: np.ndarray,
+    float_end: np.ndarray,
+    low: np.ndarray,
+    high: np.ndarray,
+    opened: np.ndarray,
+    stagemat: np.ndarray,
+    starts: np.ndarray,
+    size: float,
+    horizon: int,
+) -> np.ndarray:
     """`challenge`'s day loop, inlined per `_stage_matrix`'s columns, over every start at once."""
     n = closed.shape[0]
     n_stages = stagemat.shape[0]
@@ -167,8 +267,20 @@ def _sweep_kernel(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, hi
         stage_start = start
         outcome = 1
         for si in range(n_stages):
-            target, dloss, mloss, mode, basis, mindays, mdkind, ppct, cons, ckind, tlimit, k = \
-                stagemat[si]
+            (
+                target,
+                dloss,
+                mloss,
+                mode,
+                basis,
+                mindays,
+                mdkind,
+                ppct,
+                cons,
+                ckind,
+                tlimit,
+                k,
+            ) = stagemat[si]
             baseline = float_end[stage_start - 1] if stage_start > 0 else 0.0
             carry = baseline * k
             b = size
@@ -222,10 +334,15 @@ def _sweep_kernel(closed: np.ndarray, float_end: np.ndarray, low: np.ndarray, hi
                     best_day = day_p
                 if b - size >= target * size:
                     days_ok_ = mindays == 0 or (
-                        profitable_days >= mindays if mdkind == _PROFITABLE else trading_days >= mindays)
-                    cons_ok = (cons == 0.0 or
-                               (best_day / profit_sum <= cons if ckind == _BEST_TOTAL
-                                else best_day <= cons * positive_sum))
+                        profitable_days >= mindays
+                        if mdkind == _PROFITABLE
+                        else trading_days >= mindays
+                    )
+                    cons_ok = cons == 0.0 or (
+                        best_day / profit_sum <= cons
+                        if ckind == _BEST_TOTAL
+                        else best_day <= cons * positive_sum
+                    )
                     if days_ok_ and cons_ok:
                         passed = True
                         break

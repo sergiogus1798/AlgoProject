@@ -37,22 +37,30 @@ class Filters(TypedDict):
 def _need(block: dict[str, Any], key: str, where: str) -> Any:
     """One value of the file, or the refusal: there is no default filter."""
     if block.get(key) is None:
-        raise SystemExit(f"assets/_study.yaml: falta `{key}` en {where}. Sin ese valor no se "
-                         "escribe ningún filtro de aceptación — decídelo antes de construir.")
+        raise SystemExit(
+            f"assets/_study.yaml: falta `{key}` en {where}. Sin ese valor no se "
+            "escribe ningún filtro de aceptación — decídelo antes de construir."
+        )
     return block[key]
 
 
 def resolved(data: dict, study: dict) -> dict[str, Any]:
     """The study filters of one asset: defaults, then its class's, then its own."""
     out = dict(_need(study, "defaults", "la raíz"))
-    for layer in ((study.get("classes") or {}).get(data["class"]),
-                  (study.get("symbols") or {}).get(data["symbol"])):
+    for layer in (
+        (study.get("classes") or {}).get(data["class"]),
+        (study.get("symbols") or {}).get(data["symbol"]),
+    ):
         for key, value in (layer or {}).items():
-            out[key] = {**out.get(key, {}), **value} if isinstance(value, dict) else value
+            out[key] = (
+                {**out.get(key, {}), **value} if isinstance(value, dict) else value
+            )
     return out
 
 
-def filters(data: dict, timeframe: str, mode: str = "study", path: Path = STUDY) -> Filters:
+def filters(
+    data: dict, timeframe: str, mode: str = "study", path: Path = STUDY
+) -> Filters:
     """What the Build task accepts, as the conditions to write and the numbers behind them.
 
     Args:
@@ -72,12 +80,16 @@ def filters(data: dict, timeframe: str, mode: str = "study", path: Path = STUDY)
         SystemExit: A value is missing for this asset, timeframe or mode, or the file is.
     """
     if not path.exists():
-        raise SystemExit(f"{path} no existe: sin él no hay filtros de aceptación que escribir.")
+        raise SystemExit(
+            f"{path} no existe: sin él no hay filtros de aceptación que escribir."
+        )
     study = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.CSafeLoader)
     sample = _need(study, "sample", "la raíz")
     if sample not in SAMPLES:
-        raise SystemExit(f"assets/_study.yaml: `sample: {sample}` no se admite. Un filtro del "
-                         f"build sólo lee {', '.join(SAMPLES)}: seleccionar con el OOS lo gasta.")
+        raise SystemExit(
+            f"assets/_study.yaml: `sample: {sample}` no se admite. Un filtro del "
+            f"build sólo lee {', '.join(SAMPLES)}: seleccionar con el OOS lo gasta."
+        )
     read = SAMPLES[sample]
     start, end = window(data, "build")
     years = round((end - start) / YEAR_MS, 2)
@@ -88,15 +100,33 @@ def filters(data: dict, timeframe: str, mode: str = "study", path: Path = STUDY)
     else:
         block = resolved(data, study)
         where = f"`defaults` (o lo propio de {data['symbol']})"
-        per_year = _need(_need(block, "trades_per_year", where), timeframe,
-                         f"`trades_per_year` de {where}")
-        bounds = [(">=", math.ceil(_need(per_year, "min", f"`trades_per_year.{timeframe}`")
-                                   * years))]
-        if per_year.get("max") is not None:     # the ceiling is optional (owner, 2026-10-09: none today)
+        per_year = _need(
+            _need(block, "trades_per_year", where),
+            timeframe,
+            f"`trades_per_year` de {where}",
+        )
+        bounds = [
+            (
+                ">=",
+                math.ceil(
+                    _need(per_year, "min", f"`trades_per_year.{timeframe}`") * years
+                ),
+            )
+        ]
+        if (
+            per_year.get("max") is not None
+        ):  # the ceiling is optional (owner, 2026-10-09: none today)
             bounds.append(("<=", math.floor(per_year["max"] * years)))
-        rest = [("ProfitFactor", ">=", _need(block, "profit_factor_min", where)),
-                ("NetProfit", ">", _need(block, "net_profit_min", where))]
+        rest = [
+            ("ProfitFactor", ">=", _need(block, "profit_factor_min", where)),
+            ("NetProfit", ">", _need(block, "net_profit_min", where)),
+        ]
     triples = [("NumberOfTrades", op, value) for op, value in bounds] + rest
-    return {"mode": mode, "sample": sample, "build_years": years,
-            "conditions": [{"read": read, "metric": m, "op": op, "value": v}
-                           for m, op, v in triples]}
+    return {
+        "mode": mode,
+        "sample": sample,
+        "build_years": years,
+        "conditions": [
+            {"read": read, "metric": m, "op": op, "value": v} for m, op, v in triples
+        ],
+    }

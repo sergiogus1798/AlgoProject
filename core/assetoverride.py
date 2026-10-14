@@ -22,9 +22,16 @@ def replace(node: Any, key: str, value: int) -> Any:
         A new tree; `node` itself is never mutated.
     """
     if isinstance(node, dict):
-        return {k: ({sub: value for sub in v} if k == key and isinstance(v, dict) else
-                    value if k == key else replace(v, key, value))
-                for k, v in node.items()}
+        return {
+            k: (
+                {sub: value for sub in v}
+                if k == key and isinstance(v, dict)
+                else value
+                if k == key
+                else replace(v, key, value)
+            )
+            for k, v in node.items()
+        }
     if isinstance(node, list):
         return [replace(v, key, value) for v in node]
     return node

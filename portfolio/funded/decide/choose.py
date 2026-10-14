@@ -6,12 +6,20 @@ from typing import Any, TypedDict
 GATES = (
     ("own", "cartera de otro plan ({source_plan})"),
     ("verdict", "la cartera no tiene veredicto favorable: {verdict_label}"),
-    ("edge", "el edge fuera de muestra de la cartera no es positivo ({edge_oos:+.4f} por día con cierre)"),
-    ("budget", "el p90 del desembolso antes del primer cobro ({outlay_p90:.0f} $) supera la caja ({budget_usd:.0f} $)"),
+    (
+        "edge",
+        "el edge fuera de muestra de la cartera no es positivo ({edge_oos:+.4f} por día con cierre)",
+    ),
+    (
+        "budget",
+        "el p90 del desembolso antes del primer cobro ({outlay_p90:.0f} $) supera la caja ({budget_usd:.0f} $)",
+    ),
     ("positive", "el valor esperado con h = {h:.0%} no es positivo ({ev:+.1f} $)"),
-    ("monkey", "el valor esperado no supera al mono ({ev:+.1f} $ contra {ev_monkey:+.1f} $)"),
+    (
+        "monkey",
+        "el valor esperado no supera al mono ({ev:+.1f} $ contra {ev_monkey:+.1f} $)",
+    ),
 )
-
 
 
 class Choice(TypedDict):
@@ -25,19 +33,29 @@ class Choice(TypedDict):
 
 def facts(row: dict, own: bool, source: dict, h: float) -> dict[str, Any]:
     """A table row with what the gates read beside it."""
-    return {**row, "h": h, "is_own": own, "source_plan": source.get("plan"),
-            "verdict_pass": source.get("verdict_pass"), "verdict_label": source.get("verdict_label"),
-            "edge_oos": source.get("edge_oos"), "members": source.get("members"), "run": source.get("run")}
+    return {
+        **row,
+        "h": h,
+        "is_own": own,
+        "source_plan": source.get("plan"),
+        "verdict_pass": source.get("verdict_pass"),
+        "verdict_label": source.get("verdict_label"),
+        "edge_oos": source.get("edge_oos"),
+        "members": source.get("members"),
+        "run": source.get("run"),
+    }
 
 
 def gate(row: dict, ignore_verdict: bool) -> str | None:
     """The first gate a row fails, as its Spanish reason; `None` = it may be bought."""
-    passed = {"own": row["is_own"],
-              "verdict": ignore_verdict or row["verdict_pass"] is True,
-              "edge": row["edge_oos"] is not None and row["edge_oos"] > 0,
-              "budget": row["outlay_p90"] <= row["budget_usd"] + 1e-9,
-              "positive": row["ev"] > 0,
-              "monkey": row["ev"] > row["ev_monkey"]}
+    passed = {
+        "own": row["is_own"],
+        "verdict": ignore_verdict or row["verdict_pass"] is True,
+        "edge": row["edge_oos"] is not None and row["edge_oos"] > 0,
+        "budget": row["outlay_p90"] <= row["budget_usd"] + 1e-9,
+        "positive": row["ev"] > 0,
+        "monkey": row["ev"] > row["ev_monkey"],
+    }
     for name, text in GATES:
         if not passed[name]:
             return text.format(**row)
@@ -66,8 +84,13 @@ def decide(per_plan: dict[str, dict], owner: dict, ignore_verdict: bool) -> Choi
         `tie` (True when the two are closer than twice the Monte Carlo error of their gap).
     """
     hs, h = owner["haircuts"], owner["haircut_decides"]
-    rows = [facts(r, entry["own"], entry["table"]["manifest"]["paths"].get("source") or {}, h)
-            for entry in per_plan.values() for r in entry["rows"]]
+    rows = [
+        facts(
+            r, entry["own"], entry["table"]["manifest"]["paths"].get("source") or {}, h
+        )
+        for entry in per_plan.values()
+        for r in entry["rows"]
+    ]
     for r in rows:
         r["reason"] = gate(r, ignore_verdict)
     ranks(rows, hs)
@@ -75,6 +98,12 @@ def decide(per_plan: dict[str, dict], owner: dict, ignore_verdict: bool) -> Choi
     eligible = [r for r in rows if r["reason"] is None]
     chosen = eligible[0] if eligible else None
     runner_up = eligible[1] if len(eligible) > 1 else None
-    tie = runner_up is not None and chosen is not None and (chosen["ev"] - runner_up["ev"]
-                               < 2 * (chosen["ev_se"] ** 2 + runner_up["ev_se"] ** 2) ** 0.5)
+    tie = (
+        runner_up is not None
+        and chosen is not None
+        and (
+            chosen["ev"] - runner_up["ev"]
+            < 2 * (chosen["ev_se"] ** 2 + runner_up["ev_se"] ** 2) ** 0.5
+        )
+    )
     return {"rows": rows, "chosen": chosen, "runner_up": runner_up, "tie": tie}

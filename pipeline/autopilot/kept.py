@@ -12,8 +12,9 @@ from studies.screening.gate import inputs
 FACTS = ("oos_worst_day_r", "dd_esperado_r", "oos_net_per_year_r")
 
 
-def rows(card: pd.DataFrame, passed: list[str], equity: pd.DataFrame, risk: float
-         ) -> tuple[pd.DataFrame, pd.DataFrame]:
+def rows(
+    card: pd.DataFrame, passed: list[str], equity: pd.DataFrame, risk: float
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Join each strategy that passed the WFM to its step-8 scorecard row, and cut its oos1 curve.
 
     Args:
@@ -33,15 +34,23 @@ def rows(card: pd.DataFrame, passed: list[str], equity: pd.DataFrame, risk: floa
     named = cast(pd.DataFrame, card.reset_index())
     named = cast(pd.DataFrame, named[named["strategy"].isin(passed)])
     if named["strategy"].duplicated().any():
-        raise ValueError("el scorecard repite un nombre: la fila del paso 8 no es única")
+        raise ValueError(
+            "el scorecard repite un nombre: la fila del paso 8 no es única"
+        )
     kept = named.reindex(columns=["strategy", "identity", *FACTS])
     oos = equity[equity["sample"] == "OOS"]
-    after = cast(pd.DataFrame, oos[oos["day"] > equity.loc[equity["sample"] == "IS", "day"].max()])
+    after = cast(
+        pd.DataFrame,
+        oos[oos["day"] > equity.loc[equity["sample"] == "IS", "day"].max()],
+    )
     wide = after.pivot(index="day", columns="identity", values="equity")
     wide = wide.diff().fillna(0.0).cumsum() / risk
     kept = cast(pd.DataFrame, kept[kept["identity"].isin(wide.columns)])
     curve = wide[kept["identity"]].set_axis(kept["strategy"], axis=1)
-    curve = cast(pd.DataFrame, curve.rename_axis("strategy", axis=1).stack().rename("equity_r").reset_index())
+    curve = cast(
+        pd.DataFrame,
+        curve.rename_axis("strategy", axis=1).stack().rename("equity_r").reset_index(),
+    )
     return kept.reset_index(drop=True), curve
 
 
@@ -55,10 +64,14 @@ def save(project: str, databank: str) -> str:
     Returns:
         One line: how many were kept and how many of the WFM's were left out.
     """
-    read = sorted(report_dir(project, databank, "x").parent.glob("*/wfm/verdict.csv"))[-1]
+    read = sorted(report_dir(project, databank, "x").parent.glob("*/wfm/verdict.csv"))[
+        -1
+    ]
     passed = list(pd.read_csv(read)["strategy"])
-    gate = max((DATA / "reports" / project).glob("*/*/gate/scorecard.parquet"),
-               key=lambda f: f.parent.parent.name).parent        # the newest day
+    gate = max(
+        (DATA / "reports" / project).glob("*/*/gate/scorecard.parquet"),
+        key=lambda f: f.parent.parent.name,
+    ).parent  # the newest day
     card = pd.read_parquet(gate / "scorecard.parquet")
     harvest = json.loads((gate / "manifest.json").read_text())["source"]["harvest"]
     equity = pd.read_parquet(f"{harvest}/equity.parquet")

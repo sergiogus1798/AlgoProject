@@ -36,10 +36,19 @@ def footprint(trades: pd.DataFrame, day: pd.DataFrame, point_value: float) -> fl
     """
     diffs = day["Close"].diff().dropna().to_numpy()
     mu, sigma = float(diffs.mean()), float(diffs.std(ddof=1))
-    hold = ((trades["Close time"] - trades["Open time"]) / np.timedelta64(1, "D")).to_numpy()
+    hold = (
+        (trades["Close time"] - trades["Open time"]) / np.timedelta64(1, "D")
+    ).to_numpy()
     direction = trades["Type"].astype("object").map(SIDE).to_numpy(dtype=float)  # pyright: ignore[reportArgumentType]  # pandas stubs reject a dict mapper; pandas takes it (NaN for a missing key)
-    return significance.footprint(hold, direction, trades["Size"].to_numpy(),
-                                  trades["cost"].to_numpy(), mu, sigma, point_value)
+    return significance.footprint(
+        hold,
+        direction,
+        trades["Size"].to_numpy(),
+        trades["cost"].to_numpy(),
+        mu,
+        sigma,
+        point_value,
+    )
 
 
 class EmpiricalSharpe(TypedDict):
@@ -120,12 +129,18 @@ def empirical_sharpe(metrics: dict, benchmark: float) -> EmpiricalSharpe:
         analytic one asks how likely a single realisation's edge is to be zero, this one
         asks how often the edge survived a thousand plausible perturbations of the world.
     """
-    sharpe = np.divide(metrics["AvgTrade"], metrics["StandardDev"],
-                       out=np.zeros_like(metrics["AvgTrade"]), where=metrics["StandardDev"] > 0)
-    return {"p_positive": float(np.mean(sharpe > benchmark)),
-            "median": float(np.median(sharpe)),
-            "p5": float(np.percentile(sharpe, 5)),
-            "p95": float(np.percentile(sharpe, 95))}
+    sharpe = np.divide(
+        metrics["AvgTrade"],
+        metrics["StandardDev"],
+        out=np.zeros_like(metrics["AvgTrade"]),
+        where=metrics["StandardDev"] > 0,
+    )
+    return {
+        "p_positive": float(np.mean(sharpe > benchmark)),
+        "median": float(np.median(sharpe)),
+        "p5": float(np.percentile(sharpe, 5)),
+        "p95": float(np.percentile(sharpe, 95)),
+    }
 
 
 def analytic_sharpe(original_pnl: np.ndarray, benchmark: float) -> significance.Psr:
@@ -173,9 +188,11 @@ def effective_bets(returns: pd.DataFrame) -> EffectiveBets:
     matrix = returns.corr().to_numpy()
     eigenvalues = np.clip(np.linalg.eigvalsh(matrix), 1e-12, None)
     weights = eigenvalues / eigenvalues.sum()
-    return {"enb": float(np.exp(-(weights * np.log(weights)).sum())),
-            "n": int(matrix.shape[0]),
-            "ratio": float(np.exp(-(weights * np.log(weights)).sum()) / matrix.shape[0])}
+    return {
+        "enb": float(np.exp(-(weights * np.log(weights)).sum())),
+        "n": int(matrix.shape[0]),
+        "ratio": float(np.exp(-(weights * np.log(weights)).sum()) / matrix.shape[0]),
+    }
 
 
 def corrected(p_values: dict, cfg: dict) -> Corrected:
@@ -205,15 +222,26 @@ def corrected(p_values: dict, cfg: dict) -> Corrected:
     values = np.array([p_values[label] for label in labels], dtype=np.float64)
     m = values.size
     factor = float(np.sum(1.0 / np.arange(1, m + 1))) if method == "by" else 1.0
-    order = np.argsort(values)                       # ascending, the step-up order
+    order = np.argsort(values)  # ascending, the step-up order
     scaled = values[order] * m * factor / np.arange(1, m + 1)
-    monotone = np.minimum.accumulate(scaled[::-1])[::-1]   # enforce q non-decreasing in p
+    monotone = np.minimum.accumulate(scaled[::-1])[
+        ::-1
+    ]  # enforce q non-decreasing in p
     q = np.empty(m)
     q[order] = np.clip(monotone, 0.0, 1.0)
-    return {"pool": m, "method": method, "factor": factor,
-            "results": {label: {"p": float(values[i]), "q": float(q[i]),
-                                "survives": bool(q[i] <= alpha)}
-                        for i, label in enumerate(labels)}}
+    return {
+        "pool": m,
+        "method": method,
+        "factor": factor,
+        "results": {
+            label: {
+                "p": float(values[i]),
+                "q": float(q[i]),
+                "survives": bool(q[i] <= alpha),
+            }
+            for i, label in enumerate(labels)
+        },
+    }
 
 
 def rank_stability(original: dict, stressed: dict, cfg: dict) -> RankStability:
@@ -235,11 +263,28 @@ def rank_stability(original: dict, stressed: dict, cfg: dict) -> RankStability:
     """
     names = sorted(set(original) & set(stressed))
     if len(names) < cfg["evidence"]["ranks_min_strategies"]:
-        return {"measurable": False, "n": len(names),
-                "needed": cfg["evidence"]["ranks_min_strategies"], "constant": False}
-    got = cast(Any, stats.kendalltau([original[n] for n in names], [stressed[n] for n in names]))
-    if not np.isfinite(got.statistic):         # one of the two lists is constant: no ranking to compare
-        return {"measurable": False, "n": len(names),
-                "needed": cfg["evidence"]["ranks_min_strategies"], "constant": True}
-    return {"measurable": True, "n": len(names),
-            "tau": float(got.statistic), "p": float(got.pvalue)}
+        return {
+            "measurable": False,
+            "n": len(names),
+            "needed": cfg["evidence"]["ranks_min_strategies"],
+            "constant": False,
+        }
+    got = cast(
+        Any,
+        stats.kendalltau([original[n] for n in names], [stressed[n] for n in names]),
+    )
+    if not np.isfinite(
+        got.statistic
+    ):  # one of the two lists is constant: no ranking to compare
+        return {
+            "measurable": False,
+            "n": len(names),
+            "needed": cfg["evidence"]["ranks_min_strategies"],
+            "constant": True,
+        }
+    return {
+        "measurable": True,
+        "n": len(names),
+        "tau": float(got.statistic),
+        "p": float(got.pvalue),
+    }

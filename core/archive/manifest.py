@@ -57,8 +57,10 @@ def registry(project: str) -> dict[str, str]:
     with project_registry().open(encoding="utf-8", newline="") as fh:
         rows = [r for r in csv.DictReader(fh) if r["name"] == project]
     if not rows:
-        raise KeyError(f"{project} no está en {project_registry()}: sin su fila no se sabe "
-                       "el activo ni el timeframe que congelar")
+        raise KeyError(
+            f"{project} no está en {project_registry()}: sin su fila no se sabe "
+            "el activo ni el timeframe que congelar"
+        )
     return rows[-1]
 
 
@@ -78,10 +80,15 @@ def asset(symbol: str, out: Path) -> Asset:
     out.mkdir()
     source = ASSETS / "symbols" / f"{symbol}.yaml"
     shutil.copy2(source, out / source.name)
-    (out / "card.json").write_text(json.dumps(assetdata.load(symbol), indent=1, default=str),
-                                   encoding="utf-8")
-    return {"symbol": symbol, "file": f"asset/{source.name}", "sha256": sha256(source),
-            "card": "asset/card.json"}
+    (out / "card.json").write_text(
+        json.dumps(assetdata.load(symbol), indent=1, default=str), encoding="utf-8"
+    )
+    return {
+        "symbol": symbol,
+        "file": f"asset/{source.name}",
+        "sha256": sha256(source),
+        "card": "asset/card.json",
+    }
 
 
 def ledger(symbol: str, timeframe: str, family: str) -> Ledger:
@@ -100,15 +107,19 @@ def ledger(symbol: str, timeframe: str, family: str) -> Ledger:
     sid = study.study_id(symbol, timeframe, family)
     frame = study.read(sid)
     file = study.path(sid)
-    return {"study": sid, "searches": len(frame), "trials": trials.accumulated(frame),
-            "segments": spend.virgin(frame, symbol),
-            "sha256": sha256(file) if file.exists() else None}
+    return {
+        "study": sid,
+        "searches": len(frame),
+        "trials": trials.accumulated(frame),
+        "segments": spend.virgin(frame, symbol),
+        "sha256": sha256(file) if file.exists() else None,
+    }
 
 
 def feed_of(sqx: Path) -> str:
     """The data-registry key of the feed a strategy file was built on (`USDJPY_M1`)."""
     symbol, timeframed = sqxfile.symbol(sqx)
-    return f"{symbol}_{timeframed.split('_LOM_')[0]}"   # the `_LOM_<tf>` suffix is not part of the key
+    return f"{symbol}_{timeframed.split('_LOM_')[0]}"  # the `_LOM_<tf>` suffix is not part of the key
 
 
 def frozen(clock: str, symbol: str) -> Frozen:
@@ -124,4 +135,7 @@ def frozen(clock: str, symbol: str) -> Frozen:
     Returns:
         `clock` and `commission` (the card's `costs.commission.use`, one entry per segment).
     """
-    return {"clock": clock, "commission": assetdata.load(symbol)["costs"]["commission"]["use"]}
+    return {
+        "clock": clock,
+        "commission": assetdata.load(symbol)["costs"]["commission"]["use"],
+    }

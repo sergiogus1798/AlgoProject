@@ -44,8 +44,11 @@ def constancy(yearly: pd.DataFrame, column: str, tolerance: float) -> Constancy:
     values = full_years(yearly)[column]
     ratios = values / values.median()
     worst = float(ratios.iloc[np.argmax(np.abs(ratios.to_numpy() - 1))])
-    return Constancy(constant=bool((np.abs(ratios - 1) <= tolerance).all()),
-                     ratios={int(y): float(r) for y, r in ratios.items()}, worst=worst)
+    return Constancy(
+        constant=bool((np.abs(ratios - 1) <= tolerance).all()),
+        ratios={int(y): float(r) for y, r in ratios.items()},
+        worst=worst,
+    )
 
 
 def validate(days: pd.DataFrame, candidates: list[str], split: int) -> pd.DataFrame:
@@ -56,14 +59,30 @@ def validate(days: pd.DataFrame, candidates: list[str], split: int) -> pd.DataFr
         Backwards (fitted on the later years) is the direction the Dukascopy years need.
     """
     year = cast(Any, days.index).year
-    folds = (("hacia atrás", year >= split, year < split), ("hacia delante", year < split, year >= split))
+    folds = (
+        ("hacia atrás", year >= split, year < split),
+        ("hacia delante", year < split, year >= split),
+    )
     rows = []
     for name in candidates:
         for direction, train, test in folds:
-            got = model.predict(name, model.fit(name, cast(pd.DataFrame, days[train])), cast(pd.DataFrame, days[test]))
-            by_year = cast(pd.Series, got.groupby(year[test]).mean()) / cast(pd.Series, cast(pd.Series, days["rel"][test]).groupby(year[test]).mean())
-            rows += [{"modelo": name, "sentido": direction, "año": int(y), "error": float(e - 1)}
-                     for y, e in by_year.items()]
+            got = model.predict(
+                name,
+                model.fit(name, cast(pd.DataFrame, days[train])),
+                cast(pd.DataFrame, days[test]),
+            )
+            by_year = cast(pd.Series, got.groupby(year[test]).mean()) / cast(
+                pd.Series, cast(pd.Series, days["rel"][test]).groupby(year[test]).mean()
+            )
+            rows += [
+                {
+                    "modelo": name,
+                    "sentido": direction,
+                    "año": int(y),
+                    "error": float(e - 1),
+                }
+                for y, e in by_year.items()
+            ]
     return pd.DataFrame(rows)
 
 
@@ -71,7 +90,10 @@ def choose(relative: Constancy, errors: pd.DataFrame) -> str:
     """`relativo` when the relative spread is constant; otherwise the smallest mean |error|."""
     if relative["constant"]:
         return "relativo"
-    return cast(str, errors.assign(e=errors["error"].abs()).groupby("modelo")["e"].mean().idxmin())
+    return cast(
+        str,
+        errors.assign(e=errors["error"].abs()).groupby("modelo")["e"].mean().idxmin(),
+    )
 
 
 def reconstruct(days: pd.DataFrame, vol: pd.DataFrame, name: str) -> pd.DataFrame:
@@ -83,8 +105,13 @@ def reconstruct(days: pd.DataFrame, vol: pd.DataFrame, name: str) -> pd.DataFram
     """
     predicted = model.predict(name, model.fit(name, days), vol)
     rel = predicted.where(~vol.index.isin(days.index), days["rel"].reindex(vol.index))
-    return pd.DataFrame({"rel": rel, "price": vol["price"],
-                         "source": np.where(vol.index.isin(days.index), "medido", "modelo")})
+    return pd.DataFrame(
+        {
+            "rel": rel,
+            "price": vol["price"],
+            "source": np.where(vol.index.isin(days.index), "medido", "modelo"),
+        }
+    )
 
 
 def points(part: pd.DataFrame, tick: float, factor: float) -> float:
@@ -103,7 +130,9 @@ def points(part: pd.DataFrame, tick: float, factor: float) -> float:
     return float(part["rel"].mean() * part["price"].mean() / tick * factor)
 
 
-def propose(daily: pd.DataFrame, windows: dict, tick: float, factor: float) -> pd.DataFrame:
+def propose(
+    daily: pd.DataFrame, windows: dict, tick: float, factor: float
+) -> pd.DataFrame:
     """What each segment should carry in SQX, from the reconstructed spread times the owner's factor.
 
     Args:
@@ -120,13 +149,27 @@ def propose(daily: pd.DataFrame, windows: dict, tick: float, factor: float) -> p
     """
     rows = []
     for segment, (start, end) in windows.items():
-        part = cast(pd.DataFrame, daily[(daily.index >= pd.Timestamp(start, unit="ms")) & (daily.index < pd.Timestamp(end, unit="ms"))])
+        part = cast(
+            pd.DataFrame,
+            daily[
+                (daily.index >= pd.Timestamp(start, unit="ms"))
+                & (daily.index < pd.Timestamp(end, unit="ms"))
+            ],
+        )
         rel = float(part["rel"].mean())
         price = float(part["price"].mean())
-        rows.append({"tramo": segment, "desde": f"{part.index[0]:%Y-%m-%d}", "hasta": f"{part.index[-1]:%Y-%m-%d}",
-                     "% días medidos": float((part["source"] == "medido").mean() * 100),
-                     "spread medio (pb)": rel * BPS, "comisión % propuesta": rel * factor * 100,
-                     "precio medio": price, "puntos equivalentes": points(part, tick, factor)})
+        rows.append(
+            {
+                "tramo": segment,
+                "desde": f"{part.index[0]:%Y-%m-%d}",
+                "hasta": f"{part.index[-1]:%Y-%m-%d}",
+                "% días medidos": float((part["source"] == "medido").mean() * 100),
+                "spread medio (pb)": rel * BPS,
+                "comisión % propuesta": rel * factor * 100,
+                "precio medio": price,
+                "puntos equivalentes": points(part, tick, factor),
+            }
+        )
     return pd.DataFrame(rows)
 
 

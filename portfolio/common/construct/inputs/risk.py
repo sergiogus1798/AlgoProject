@@ -57,5 +57,10 @@ def sizing(identity: str, version: str) -> Sizing:
 
     trades = pd.read_parquet(Path(got["folder"]) / "harvest" / "trades.parquet")
     min_size = float(trades["Size"].min())
-    return {"x": x, "risk_usd": risk_usd, "atr_multiple": atr_multiple, "min_size": min_size,
-            "factor": atr_multiple / (risk_usd * x)}
+    return {
+        "x": x,
+        "risk_usd": risk_usd,
+        "atr_multiple": atr_multiple,
+        "min_size": min_size,
+        "factor": atr_multiple / (risk_usd * x),
+    }

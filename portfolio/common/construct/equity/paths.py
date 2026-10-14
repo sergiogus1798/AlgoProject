@@ -9,7 +9,9 @@ def _locate(times: np.ndarray, bar_times: np.ndarray) -> np.ndarray:
     return np.searchsorted(bar_times, times, side="right") - 1
 
 
-def entry_commission(trades: pd.DataFrame, commission: dict, point_value: float) -> np.ndarray:
+def entry_commission(
+    trades: pd.DataFrame, commission: dict, point_value: float
+) -> np.ndarray:
     """Each trade's round-turn commission in account currency, as the asset card states it.
 
     Args:
@@ -25,11 +27,21 @@ def entry_commission(trades: pd.DataFrame, commission: dict, point_value: float)
     size = trades["Size"].to_numpy(np.float64)
     if commission["method"] == "SizeBased":
         return commission["value"] * size
-    return commission["value"] / 100 * trades["Open price"].to_numpy(np.float64) * point_value * size
+    return (
+        commission["value"]
+        / 100
+        * trades["Open price"].to_numpy(np.float64)
+        * point_value
+        * size
+    )
 
 
-def minute_path(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float,
-                commission: np.ndarray | float = 0.0) -> dict[str, np.ndarray]:
+def minute_path(
+    trades: pd.DataFrame,
+    bars: pd.DataFrame,
+    point_value: float,
+    commission: np.ndarray | float = 0.0,
+) -> dict[str, np.ndarray]:
     """Every bar's equity for one strategy, relative to its start (contract P).
 
     Args:
@@ -75,19 +87,25 @@ def minute_path(trades: pd.DataFrame, bars: pd.DataFrame, point_value: float,
     np.add.at(realised, close_idx, pnl)
 
     held = opens.copy()
-    np.add.at(held, close_idx, -1)   # the exit bar is not exposed, as k is not
+    np.add.at(held, close_idx, -1)  # the exit bar is not exposed, as k is not
     open_count = np.cumsum(held)
     k_long, k_short, off = np.cumsum(k_long), np.cumsum(k_short), np.cumsum(off)
     realised_cum = np.cumsum(realised)
 
-    low = bars["Low"].to_numpy(np.float64)[start:end + 1]
-    high = bars["High"].to_numpy(np.float64)[start:end + 1]
-    close = bars["Close"].to_numpy(np.float64)[start:end + 1]
+    low = bars["Low"].to_numpy(np.float64)[start : end + 1]
+    high = bars["High"].to_numpy(np.float64)[start : end + 1]
+    close = bars["Close"].to_numpy(np.float64)[start : end + 1]
 
     worst = realised_cum + low * k_long + high * k_short - off
     best = realised_cum + high * k_long + low * k_short - off
     close_eq = realised_cum + close * (k_long + k_short) - off
 
-    return {"t": bar_times[start:end + 1].astype("int64"), "worst": worst, "best": best,
-            "close": close_eq, "open": open_count.astype(np.int16),
-            "realised": realised_cum, "opens": opens.astype(np.int16)}
+    return {
+        "t": bar_times[start : end + 1].astype("int64"),
+        "worst": worst,
+        "best": best,
+        "close": close_eq,
+        "open": open_count.astype(np.int16),
+        "realised": realised_cum,
+        "opens": opens.astype(np.int16),
+    }

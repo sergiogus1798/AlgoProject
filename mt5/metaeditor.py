@@ -1,4 +1,5 @@
 """Compile MQL5 sources with MetaEditor under Wine, and install the Sq* indicators SQX's EAs call."""
+
 import re
 import shutil
 from pathlib import Path
@@ -12,7 +13,11 @@ RESULT = re.compile(r"(\d+) errors?, (\d+) warnings?")
 def _log(log: Path) -> str:
     """MetaEditor's log text; it writes UTF-16 with a BOM."""
     raw = log.read_bytes()
-    return raw.decode("utf-16") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8", "replace")
+    return (
+        raw.decode("utf-16")
+        if raw[:2] in (b"\xff\xfe", b"\xfe\xff")
+        else raw.decode("utf-8", "replace")
+    )
 
 
 def compile_path(target: Path) -> dict[str, Any]:
@@ -34,22 +39,34 @@ def compile_path(target: Path) -> dict[str, Any]:
             which without this check reads as a mysterious "ok: False" with no messages.
     """
     if wine.terminal_running():
-        raise SystemExit("the MT5 terminal is open: MetaEditor shares its data-folder lock "
-                          "and silently compiles nothing while it runs — close it first")
+        raise SystemExit(
+            "the MT5 terminal is open: MetaEditor shares its data-folder lock "
+            "and silently compiles nothing while it runs — close it first"
+        )
     mql5 = wine.data_dir() / "MQL5"
     rel = str(target.relative_to(mql5)).replace("/", "\\")
     log = target.with_suffix(".log") if target.is_file() else target / "compile.log"
     log.unlink(missing_ok=True)
     rel_log = str(log.relative_to(mql5)).replace("/", "\\")
-    wine.run(wine.METAEDITOR, [f"/compile:{rel}", f"/log:{rel_log}"], timeout=600, cwd=mql5)
+    wine.run(
+        wine.METAEDITOR, [f"/compile:{rel}", f"/log:{rel_log}"], timeout=600, cwd=mql5
+    )
     text = _log(log)
     totals = RESULT.findall(text)
     errors = sum(int(e) for e, _ in totals)
     warnings = sum(int(w) for _, w in totals)
-    messages = [ln.strip() for ln in text.splitlines() if re.search(r"\b(error|warning)\b", ln)
-                and not RESULT.search(ln)]
-    return {"ok": bool(totals) and errors == 0, "errors": errors, "warnings": warnings,
-            "messages": messages[:50], "log": str(log)}
+    messages = [
+        ln.strip()
+        for ln in text.splitlines()
+        if re.search(r"\b(error|warning)\b", ln) and not RESULT.search(ln)
+    ]
+    return {
+        "ok": bool(totals) and errors == 0,
+        "errors": errors,
+        "warnings": warnings,
+        "messages": messages[:50],
+        "log": str(log),
+    }
 
 
 def expert(source: Path) -> dict[str, Any]:
@@ -67,8 +84,11 @@ def expert(source: Path) -> dict[str, Any]:
     target = folder / source.name
     shutil.copy2(source, target)
     out = compile_path(target)
-    return {**out, "expert": f"{wine.EXPERTS_SUB}\\{source.stem}.ex5",
-            "ex5_exists": target.with_suffix(".ex5").exists()}
+    return {
+        **out,
+        "expert": f"{wine.EXPERTS_SUB}\\{source.stem}.ex5",
+        "ex5_exists": target.with_suffix(".ex5").exists(),
+    }
 
 
 def sqx_indicators() -> dict[str, Any]:

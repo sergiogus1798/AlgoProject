@@ -4,6 +4,7 @@ Called by mt5/live.py as `python.exe query.py <verb> <json args>`. Prints one JS
 MARK, or writes a CSV where the args say. Never sends, modifies or closes an order: the
 MetaTrader5 functions that trade are not called anywhere in this file.
 """
+
 import csv
 import datetime as dt
 import json
@@ -35,7 +36,7 @@ def _csv(array: Any, path: str) -> int:
     return len(array)
 
 
-FULL_WEEK = 100      # H1 bars in a traded week: 120 whole; a server's sparse years give ~5
+FULL_WEEK = 100  # H1 bars in a traded week: 120 whole; a server's sparse years give ~5
 
 
 def _full_week(symbol: str, day: dt.datetime) -> bool:
@@ -44,7 +45,9 @@ def _full_week(symbol: str, day: dt.datetime) -> bool:
     the terminal serves M1 only for its last «max bars», one row for anything older. A symbol
     not synced yet answers «Call failed» (None) for a while, so it is asked again."""
     for _ in range(10):
-        rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_H1, day, day + dt.timedelta(days=7))
+        rates = mt5.copy_rates_range(
+            symbol, mt5.TIMEFRAME_H1, day, day + dt.timedelta(days=7)
+        )
         if rates is not None:
             return len(rates) >= FULL_WEEK
         time.sleep(1)
@@ -65,11 +68,15 @@ def first_full(symbol: str) -> str | None:
         time.sleep(1)
     if monthly is None or not len(monthly):
         return None
-    months = [dt.datetime.fromtimestamp(int(m["time"]), dt.timezone.utc) for m in monthly]
+    months = [
+        dt.datetime.fromtimestamp(int(m["time"]), dt.timezone.utc) for m in monthly
+    ]
     lo, hi = 0, len(months) - 1
     while lo < hi:
         mid = (lo + hi) // 2
-        if _full_week(symbol, months[mid] + dt.timedelta(days=7)):    # skip a month's first days
+        if _full_week(
+            symbol, months[mid] + dt.timedelta(days=7)
+        ):  # skip a month's first days
             hi = mid
         else:
             lo = mid + 1
@@ -95,17 +102,31 @@ def run(verb: str, a: dict) -> object:
     if verb == "symbol":
         mt5.symbol_select(a["symbol"], True)
         tick = mt5.symbol_info_tick(a["symbol"])
-        return {**mt5.symbol_info(a["symbol"])._asdict(), "tick": tick._asdict() if tick else None}
+        return {
+            **mt5.symbol_info(a["symbol"])._asdict(),
+            "tick": tick._asdict() if tick else None,
+        }
     if verb == "bars":
         tf = getattr(mt5, "TIMEFRAME_" + a["timeframe"])
-        rates = mt5.copy_rates_range(a["symbol"], tf, _stamp(a["start"]), _stamp(a["end"]))
-        return {"rows": _csv(rates, a["out"]) if rates is not None else 0, "error": mt5.last_error()}
-    if verb == "first":         # how far back the server has whole weeks: what the tester trades
+        rates = mt5.copy_rates_range(
+            a["symbol"], tf, _stamp(a["start"]), _stamp(a["end"])
+        )
+        return {
+            "rows": _csv(rates, a["out"]) if rates is not None else 0,
+            "error": mt5.last_error(),
+        }
+    if (
+        verb == "first"
+    ):  # how far back the server has whole weeks: what the tester trades
         return {"first": first_full(a["symbol"]), "error": mt5.last_error()}
     if verb == "ticks":
-        ticks = mt5.copy_ticks_range(a["symbol"], _stamp(a["start"]), _stamp(a["end"]),
-                                     mt5.COPY_TICKS_ALL)
-        return {"rows": _csv(ticks, a["out"]) if ticks is not None else 0, "error": mt5.last_error()}
+        ticks = mt5.copy_ticks_range(
+            a["symbol"], _stamp(a["start"]), _stamp(a["end"]), mt5.COPY_TICKS_ALL
+        )
+        return {
+            "rows": _csv(ticks, a["out"]) if ticks is not None else 0,
+            "error": mt5.last_error(),
+        }
     if verb == "positions":
         return _rows(mt5.positions_get())
     if verb == "orders":
@@ -123,7 +144,9 @@ def main() -> None:
     (`mt5.wine.open_terminal`): one this package started would hold our stdout open.
     """
     args = json.loads(sys.argv[2]) if len(sys.argv) > 2 else {}
-    if not mt5.initialize(**{k: args[k] for k in ("path", "login", "server") if args.get(k)}):
+    if not mt5.initialize(
+        **{k: args[k] for k in ("path", "login", "server") if args.get(k)}
+    ):
         print(MARK + json.dumps({"error": f"initialize failed: {mt5.last_error()}"}))
         return
     out = run(sys.argv[1], args)

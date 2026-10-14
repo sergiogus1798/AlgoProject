@@ -28,7 +28,9 @@ def set_status(name: str, status: str, notes: str | None = None) -> dict[str, st
     return row
 
 
-def set_verdict(template: str, symbol: str, timeframe: str, verdict: str) -> dict[str, str]:
+def set_verdict(
+    template: str, symbol: str, timeframe: str, verdict: str
+) -> dict[str, str]:
     """Record what a run came to, on the run itself.
 
     Args:
@@ -40,8 +42,11 @@ def set_verdict(template: str, symbol: str, timeframe: str, verdict: str) -> dic
         The run row as written.
     """
     assert verdict in library.VERDICTS or verdict == "", f"unknown verdict {verdict}"
-    row = next(r for r in library.rows(template_runs())
-               if (r["template"], r["symbol"], r["timeframe"]) == (template, symbol, timeframe))
+    row = next(
+        r
+        for r in library.rows(template_runs())
+        if (r["template"], r["symbol"], r["timeframe"]) == (template, symbol, timeframe)
+    )
     row["verdict"] = verdict
     append(template_runs(), RUN_COLUMNS, row, ("template", "symbol", "timeframe"))
     return row

@@ -19,11 +19,18 @@ def versions(identity: str) -> list[str]:
         Version folder names (`YYYY-MM-DDTHHMM`); a half-built `.…partial` is not one.
     """
     folder = archive_dir() / identity
-    return sorted(p.name for p in folder.iterdir()
-                  if p.is_dir() and not p.name.startswith(".")) if folder.is_dir() else []
+    return (
+        sorted(
+            p.name
+            for p in folder.iterdir()
+            if p.is_dir() and not p.name.startswith(".")
+        )
+        if folder.is_dir()
+        else []
+    )
 
 
-_TEAR = '\n "tearsheet": '       # view.json is dumped with indent=1: this opening is the top-level key, never a nested one
+_TEAR = '\n "tearsheet": '  # view.json is dumped with indent=1: this opening is the top-level key, never a nested one
 
 
 def _strategy(path: Path) -> str | None:
@@ -46,12 +53,26 @@ def listing() -> list[dict]:
     """
     root = archive_dir()
     out = []
-    for identity in sorted(p.name for p in root.iterdir() if p.is_dir()) if root.is_dir() else []:
+    for identity in (
+        sorted(p.name for p in root.iterdir() if p.is_dir()) if root.is_dir() else []
+    ):
         for version in versions(identity):
-            doc = json.loads((root / identity / version / "manifest.json").read_text(encoding="utf-8"))
-            out.append({"identity": identity, "version": version,
-                        "strategy": _strategy(root / identity / version / "view.json"),
-                        **{k: doc[k] for k in ("project", "databank", "step", "archived_at", "note")}})
+            doc = json.loads(
+                (root / identity / version / "manifest.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            out.append(
+                {
+                    "identity": identity,
+                    "version": version,
+                    "strategy": _strategy(root / identity / version / "view.json"),
+                    **{
+                        k: doc[k]
+                        for k in ("project", "databank", "step", "archived_at", "note")
+                    },
+                }
+            )
     return out
 
 
@@ -73,16 +94,29 @@ def load(identity: str, version: str | None = None) -> dict[str, Any]:
     """
     held = versions(identity)
     if not held:
-        raise FileNotFoundError(f"No hay ninguna versión archivada de {identity[:12]}… en {archive_dir()}")
+        raise FileNotFoundError(
+            f"No hay ninguna versión archivada de {identity[:12]}… en {archive_dir()}"
+        )
     folder = archive_dir() / identity / (version or held[-1])
     shown = json.loads((folder / "view.json").read_text(encoding="utf-8"))
     if isinstance(shown["tearsheet"], dict):
-        shown["tearsheet"]["equity"] = pd.read_parquet(folder / "tearsheet" / "equity.parquet")
-        shown["tearsheet"]["trades"] = pd.read_parquet(folder / "tearsheet" / "trades.parquet")
+        shown["tearsheet"]["equity"] = pd.read_parquet(
+            folder / "tearsheet" / "equity.parquet"
+        )
+        shown["tearsheet"]["trades"] = pd.read_parquet(
+            folder / "tearsheet" / "trades.parquet"
+        )
     meta = folder / "meta.json"
-    return {**shown, "manifest": json.loads((folder / "manifest.json").read_text(encoding="utf-8")),
-            "version": folder.name, "folder": str(folder), "sqx": str(folder / "strategy.sqx"),
-            "meta": json.loads(meta.read_text(encoding="utf-8")) if meta.is_file() else None}
+    return {
+        **shown,
+        "manifest": json.loads((folder / "manifest.json").read_text(encoding="utf-8")),
+        "version": folder.name,
+        "folder": str(folder),
+        "sqx": str(folder / "strategy.sqx"),
+        "meta": json.loads(meta.read_text(encoding="utf-8"))
+        if meta.is_file()
+        else None,
+    }
 
 
 def frozen(manifest: dict, identity: str) -> tuple[str, dict]:
@@ -97,6 +131,8 @@ def frozen(manifest: dict, identity: str) -> tuple[str, dict]:
         fallback to the live registry or card, which is the bug these fields exist to end.
     """
     if "clock" not in manifest or "commission" not in manifest:
-        raise KeyError(f"{identity[:12]}…: su manifiesto no guarda reloj ni comisión; "
-                       "rellénalo con `python3 -m portfolio.common.construct.inputs.backfill --yes`")
+        raise KeyError(
+            f"{identity[:12]}…: su manifiesto no guarda reloj ni comisión; "
+            "rellénalo con `python3 -m portfolio.common.construct.inputs.backfill --yes`"
+        )
     return manifest["clock"], manifest["commission"]

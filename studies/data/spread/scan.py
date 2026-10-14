@@ -24,16 +24,23 @@ from studies.data.spread import asset, inputs, measure, verdict
 
 SEGMENTS = ("build", "oos1", "oos2")
 WIDTH = 8
-_SHARED: dict = {}     # set by `main` before the fork, read by `_asset` in the workers
+_SHARED: dict = {}  # set by `main` before the fork, read by `_asset` in the workers
 
 
 def declared(data: dict) -> str:
     """What `assets/` declares today for the spread and the commission, in words."""
     c = data["costs"]
-    spreads = [f"{k} {c[k]['use']} puntos" for k in assetdata.fields(data) if k.startswith("spread")]
+    spreads = [
+        f"{k} {c[k]['use']} puntos"
+        for k in assetdata.fields(data)
+        if k.startswith("spread")
+    ]
     use = c["commission"]["use"]
-    fees = (" / ".join(f"{seg} {m['method']} {m['value']}" for seg, m in use.items())
-            if isinstance(use, dict) else f"{use} ({assetdata.schema(data)['commission']['unit']})")
+    fees = (
+        " / ".join(f"{seg} {m['method']} {m['value']}" for seg, m in use.items())
+        if isinstance(use, dict)
+        else f"{use} ({assetdata.schema(data)['commission']['unit']})"
+    )
     return ", ".join(spreads + [f"comisión {fees}"])
 
 
@@ -46,7 +53,10 @@ def one(symbol: str, cfg: dict) -> asset.Facts:
     days = measure.days(m, vol, cfg["day"]["min_minutes"])
     yearly = measure.yearly(m, tick)
     tolerance = cfg["constancy"]["tolerance"]
-    rel, pts = verdict.constancy(yearly, "pb media", tolerance), verdict.constancy(yearly, "puntos media", tolerance)
+    rel, pts = (
+        verdict.constancy(yearly, "pb media", tolerance),
+        verdict.constancy(yearly, "puntos media", tolerance),
+    )
     errors = verdict.validate(days, cfg["model"]["candidates"], cfg["model"]["split"])
     chosen = cfg["model"]["fixed"].get(symbol) or verdict.choose(rel, errors)
     daily = verdict.reconstruct(days, vol, chosen)
@@ -54,22 +64,53 @@ def one(symbol: str, cfg: dict) -> asset.Facts:
     proposal = verdict.propose(daily, windows, tick, cfg["safety"]["factor"])
     hours = measure.hours(m)
     tail_year = int(cast(Any, verdict.full_years(yearly).index[-1]))
-    tail = (measure.relative(m) * measure.BPS)[cast(Any, m.index).year == tail_year].to_numpy()
-    back = cast(pd.DataFrame, errors[(errors["modelo"] == chosen) & (errors["sentido"] == "hacia atrás")])["error"]
+    tail = (measure.relative(m) * measure.BPS)[
+        cast(Any, m.index).year == tail_year
+    ].to_numpy()
+    back = cast(
+        pd.DataFrame,
+        errors[(errors["modelo"] == chosen) & (errors["sentido"] == "hacia atrás")],
+    )["error"]
     facts = asset.Facts(
-        symbol=symbol, ticks=feeds["ticks"], bars=feeds["bars"], model=chosen, tick=tick,
-        relative=rel, points=pts, error_backwards=float(back.abs().mean()),
-        declared=declared(data), tail_year=tail_year,
-        mc_multiples=verdict.mc_multiples(days, chosen, [cfg["band"]["quantiles"][0], cfg["band"]["quantiles"][-1]]),
-        proposal=proposal.to_dict("records"), scanned_on=date.today().isoformat(),
-        ticks_from=str(m.index[0]), ticks_to=str(m.index[-1]))
+        symbol=symbol,
+        ticks=feeds["ticks"],
+        bars=feeds["bars"],
+        model=chosen,
+        tick=tick,
+        relative=rel,
+        points=pts,
+        error_backwards=float(back.abs().mean()),
+        declared=declared(data),
+        tail_year=tail_year,
+        mc_multiples=verdict.mc_multiples(
+            days, chosen, [cfg["band"]["quantiles"][0], cfg["band"]["quantiles"][-1]]
+        ),
+        proposal=proposal.to_dict("records"),
+        scanned_on=date.today().isoformat(),
+        ticks_from=str(m.index[0]),
+        ticks_to=str(m.index[-1]),
+    )
     out = spread_dir(feeds["ticks"])
     daily.to_parquet(out / "daily.parquet")
     hours.rename("multiplier").to_frame().to_parquet(out / "hours.parquet")
     (out / "summary.json").write_text(json.dumps(facts, indent=1, ensure_ascii=False))
-    output.population(out, "spread", asset.run(symbol, facts, yearly, daily, errors, proposal,
-                                               measure.week_grid(m), hours, tail, cfg),
-                      f"Spread real — {symbol}")
+    output.population(
+        out,
+        "spread",
+        asset.run(
+            symbol,
+            facts,
+            yearly,
+            daily,
+            errors,
+            proposal,
+            measure.week_grid(m),
+            hours,
+            tail,
+            cfg,
+        ),
+        f"Spread real — {symbol}",
+    )
     return facts
 
 
@@ -81,8 +122,12 @@ def _asset(symbol: str) -> asset.Facts:
 def main() -> None:
     """Scan every asset of the config, or those named."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--symbol", action="append", default=[], help="one asset; all when omitted")
-    ap.add_argument("--set", action="extend", nargs="+", default=[], help="section.key=value")
+    ap.add_argument(
+        "--symbol", action="append", default=[], help="one asset; all when omitted"
+    )
+    ap.add_argument(
+        "--set", action="extend", nargs="+", default=[], help="section.key=value"
+    )
     a = ap.parse_args()
     cfg = inputs.config(a.set)
     names = a.symbol or list(cfg["assets"])
@@ -90,18 +135,32 @@ def main() -> None:
     # One asset per task, each writing only its own `spread/<tick feed>/` (a feed per asset).
     # Eight at a time: each decodes a tick file of some GB.
     done = {}
-    for symbol, got in fanout.run(_asset, {n: 1 for n in names}, min(WIDTH, fanout.CORES)):
+    for symbol, got in fanout.run(
+        _asset, {n: 1 for n in names}, min(WIDTH, fanout.CORES)
+    ):
         done[symbol] = got
         progress(5 + 90 * len(done) // len(names), symbol)
     for symbol in names:
         got = done[symbol]
         table = pd.DataFrame(got["proposal"]).set_index("tramo")
-        print(f"\n{symbol}: relativo {'constante' if got['relative']['constant'] else 'NO constante'} "
-              f"(peor año {got['relative']['worst']:.2f}×) → modelo {got['model']}, error hacia "
-              f"atrás {got['error_backwards']:.1%}. Hoy: {got['declared']}. MC Retest de spread: "
-              f"{got['mc_multiples']['min']:.2f}x–{got['mc_multiples']['max']:.2f}x el spread de la tarea")
-        print(table[["% días medidos", "spread medio (pb)", "comisión % propuesta",
-                     "puntos equivalentes"]].round(4).to_string())
+        print(
+            f"\n{symbol}: relativo {'constante' if got['relative']['constant'] else 'NO constante'} "
+            f"(peor año {got['relative']['worst']:.2f}×) → modelo {got['model']}, error hacia "
+            f"atrás {got['error_backwards']:.1%}. Hoy: {got['declared']}. MC Retest de spread: "
+            f"{got['mc_multiples']['min']:.2f}x–{got['mc_multiples']['max']:.2f}x el spread de la tarea"
+        )
+        print(
+            table[
+                [
+                    "% días medidos",
+                    "spread medio (pb)",
+                    "comisión % propuesta",
+                    "puntos equivalentes",
+                ]
+            ]
+            .round(4)
+            .to_string()
+        )
     progress(100, "hecho")
     print(f"-> {spread_dir()}")
 

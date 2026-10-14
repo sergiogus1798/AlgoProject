@@ -13,7 +13,7 @@ TIPS = {
     "weights.past": "Peso del rendimiento pasado de la familia en esa clase de activo.",
     "signal.cap": "Efecto, en costes, a partir del cual la señal ya cuenta como completa.",
     "past.prior_strength": "Intentos ficticios a la tasa media: con menos corridas cerradas que "
-                           "esto, la tasa de la familia apenas se separa de la media.",
+    "esto, la tasa de la familia apenas se separa de la media.",
     "past.interval": "Intervalo de credibilidad que se imprime junto a la tasa de supervivencia.",
     "brake.half": "Ideas gastadas en la celda con las que sus puntos se quedan en la mitad.",
     "marks.provisional_costs": "Activos cuyos costes siguen sin cerrar: se marcan, no se excluyen.",
@@ -24,4 +24,5 @@ TIPS = {
     "palette.weights": "Peso de una familia en el hueco según su relación con la condición fija.",
     "palette.min_block_weight": "Peso mínimo de un bloque en su familia para entrar en la paleta.",
     "selfcheck.min_closed": "Corridas cerradas necesarias para examinar si el perfil orienta.",
-    "selfcheck.alpha": "p de Fisher (una cola) con la que se da por probado que orienta."}
+    "selfcheck.alpha": "p de Fisher (una cola) con la que se da por probado que orienta.",
+}

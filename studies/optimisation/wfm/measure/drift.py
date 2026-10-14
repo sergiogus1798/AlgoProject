@@ -32,10 +32,16 @@ def per_step(chosen: pd.DataFrame) -> pd.DataFrame:
         step = ordered.diff().iloc[1:]
         for index, values in step.iterrows():
             changed = values != 0
-            rows.append({"strategy": strategy, "result": result, "index": int(index),
-                         "changed": int(changed.sum()),
-                         "share_changed": float(changed.mean()),
-                         "move": float((values.abs() / spread).mean())})
+            rows.append(
+                {
+                    "strategy": strategy,
+                    "result": result,
+                    "index": int(index),
+                    "changed": int(changed.sum()),
+                    "share_changed": float(changed.mean()),
+                    "move": float((values.abs() / spread).mean()),
+                }
+            )
     return pd.DataFrame(rows)
 
 
@@ -57,12 +63,16 @@ def summary(steps: pd.DataFrame, chosen: pd.DataFrame) -> pd.DataFrame:
     """
     rows = []
     for strategy, block in steps.groupby("strategy"):
-        rows.append({"strategy": strategy,
-                     "parameters": int(chosen.loc[[strategy]].notna().any().sum()),
-                     "pairs": int(len(block)),
-                     "share_changed_median": float(block["share_changed"].median()),
-                     "share_changed_mean": float(block["share_changed"].mean()),
-                     "move_median": float(block["move"].median())})
+        rows.append(
+            {
+                "strategy": strategy,
+                "parameters": int(chosen.loc[[strategy]].notna().any().sum()),
+                "pairs": int(len(block)),
+                "share_changed_median": float(block["share_changed"].median()),
+                "share_changed_mean": float(block["share_changed"].mean()),
+                "move_median": float(block["move"].median()),
+            }
+        )
     return pd.DataFrame(rows)
 
 
@@ -83,7 +93,14 @@ def stability(chosen: pd.DataFrame) -> pd.DataFrame:
         owned = block.dropna(axis=1, how="all")
         for name in owned.columns:
             values = owned[name].dropna()
-            rows.append({"strategy": strategy, "parameter": name,
-                         "distinct": int(values.nunique()),
-                         "modal_share": float(values.value_counts(normalize=True).iloc[0])})
-    return pd.DataFrame(rows).sort_values(["strategy", "modal_share"], ascending=[True, False])
+            rows.append(
+                {
+                    "strategy": strategy,
+                    "parameter": name,
+                    "distinct": int(values.nunique()),
+                    "modal_share": float(values.value_counts(normalize=True).iloc[0]),
+                }
+            )
+    return pd.DataFrame(rows).sort_values(
+        ["strategy", "modal_share"], ascending=[True, False]
+    )

@@ -1,4 +1,5 @@
 """Forex Factory's calendar history from 2007 (janickfarrell/newfac's daily release, MIT), as UTC rows."""
+
 import argparse
 import urllib.request
 
@@ -29,10 +30,18 @@ def load() -> pd.DataFrame:
     """
     raw = pd.read_csv(RAW, encoding="utf-8-sig", dtype=str, keep_default_na=False)
     timed = raw[raw["time"].str.fullmatch(r"\d{1,2}:\d{2}")]
-    utc = pd.to_datetime(timed["date"].str.split(" ", n=1).str[1] + " " + timed["time"],  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
-                         format="%b %d %Y %H:%M")
-    return pd.DataFrame({"utc": utc, "currency": timed["currency"], "impact": timed["impact"],
-                         "event": timed["event"]}).sort_values("utc", ignore_index=True)
+    utc = pd.to_datetime(
+        timed["date"].str.split(" ", n=1).str[1] + " " + timed["time"],  # pyright: ignore[reportAttributeAccessIssue]  # pandas/numpy stubs lose the type through indexing
+        format="%b %d %Y %H:%M",
+    )
+    return pd.DataFrame(
+        {
+            "utc": utc,
+            "currency": timed["currency"],
+            "impact": timed["impact"],
+            "event": timed["event"],
+        }
+    ).sort_values("utc", ignore_index=True)
 
 
 def untimed() -> pd.Series:
@@ -49,8 +58,12 @@ def main() -> None:
     rows = load()
     red = rows[rows["impact"] == "High"]
     print(f"Forex Factory -> {RAW}  ({size / 1e6:.1f} MB)")
-    print(f"  {len(rows)} filas con hora, de {rows['utc'].iloc[0]} a {rows['utc'].iloc[-1]} UTC")
-    print(f"  carpeta roja: {len(red)} con hora, {int(untimed().sum())} sin hora (no entran en el filtro)")
+    print(
+        f"  {len(rows)} filas con hora, de {rows['utc'].iloc[0]} a {rows['utc'].iloc[-1]} UTC"
+    )
+    print(
+        f"  carpeta roja: {len(red)} con hora, {int(untimed().sum())} sin hora (no entran en el filtro)"
+    )
 
 
 if __name__ == "__main__":

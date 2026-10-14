@@ -25,10 +25,12 @@ def mint(port: int) -> str:
     token = secrets.token_urlsafe(32)
     FOLDER.mkdir(parents=True, exist_ok=True)
     fresh = path(port).with_suffix(".new")
-    with os.fdopen(os.open(fresh, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
+    with os.fdopen(
+        os.open(fresh, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w"
+    ) as f:
         f.write(token)
-    os.chmod(fresh, 0o600)          # a file left over from a crash keeps the mode it had
-    os.replace(fresh, path(port))   # a reader never sees it half-written
+    os.chmod(fresh, 0o600)  # a file left over from a crash keeps the mode it had
+    os.replace(fresh, path(port))  # a reader never sees it half-written
     return token
 
 

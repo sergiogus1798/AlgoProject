@@ -2,7 +2,14 @@
 
 import httpx
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QComboBox, QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QComboBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import client
 from ui.desktop.batchview import scale
@@ -11,12 +18,14 @@ from ui.desktop.blocks.chart import key
 from ui.desktop.blocks.states import REAL
 
 METRICS = ("NetProfit (oos1)", "NetProfit (build)", "NetProfit (oos2)")
-TIP = {"NetProfit (oos1)": "Beneficio neto de cada variante en el tramo oos1, el primer tramo "
-                           "fuera de muestra del retest del lote.",
-       "NetProfit (build)": "Beneficio neto de cada variante en el tramo build, el mismo "
-                            "periodo en que se construyó la madre.",
-       "NetProfit (oos2)": "Beneficio neto de cada variante en el tramo oos2, el segundo tramo "
-                           "fuera de muestra, cuando el lote se retesteó sobre él."}
+TIP = {
+    "NetProfit (oos1)": "Beneficio neto de cada variante en el tramo oos1, el primer tramo "
+    "fuera de muestra del retest del lote.",
+    "NetProfit (build)": "Beneficio neto de cada variante en el tramo build, el mismo "
+    "periodo en que se construyó la madre.",
+    "NetProfit (oos2)": "Beneficio neto de cada variante en el tramo oos2, el segundo tramo "
+    "fuera de muestra, cuando el lote se retesteó sobre él.",
+}
 
 
 def has_batch(project: str, strategy: str) -> bool:
@@ -57,7 +66,9 @@ class BatchTab(QFrame):
         self.colour_by = QComboBox()
         for m in METRICS:
             self.colour_by.addItem(m)
-            self.colour_by.setItemData(self.colour_by.count() - 1, TIP[m], Qt.ItemDataRole.ToolTipRole)
+            self.colour_by.setItemData(
+                self.colour_by.count() - 1, TIP[m], Qt.ItemDataRole.ToolTipRole
+            )
         self.colour_by.currentTextChanged.connect(self.redraw)
         row.addWidget(self.pick)
         row.addWidget(self.colour_by)
@@ -100,14 +111,18 @@ class BatchTab(QFrame):
         """
         self.batch = None if "error" in data else data
         self.note.setText(data.get("error") or data["note"])
-        if self.batch is not None:                  # oos2 only when the batch carries it
+        if self.batch is not None:  # oos2 only when the batch carries it
             chosen = self.colour_by.currentText()
             self.colour_by.blockSignals(True)
             self.colour_by.clear()
             for m in (m for m in METRICS if m in self.batch["outcomes"]):
                 self.colour_by.addItem(m)
-                self.colour_by.setItemData(self.colour_by.count() - 1, TIP[m], Qt.ItemDataRole.ToolTipRole)
-            self.colour_by.setCurrentText(chosen if chosen in self.batch["outcomes"] else METRICS[0])
+                self.colour_by.setItemData(
+                    self.colour_by.count() - 1, TIP[m], Qt.ItemDataRole.ToolTipRole
+                )
+            self.colour_by.setCurrentText(
+                chosen if chosen in self.batch["outcomes"] else METRICS[0]
+            )
             self.colour_by.blockSignals(False)
         for w in (self.pick, self.colour_by, self.chart, self.keys):
             w.setVisible(self.batch is not None)
@@ -126,18 +141,28 @@ class BatchTab(QFrame):
         vals = self.batch["outcomes"][metric]
         items = scale.key(vals, scale.edges(vals))
         if self.batch["mother"] is not None:
-            items.append(("dash", REAL, f"la madre, {self.batch['variants'][self.batch['mother']]}"))
+            items.append(
+                (
+                    "dash",
+                    REAL,
+                    f"la madre, {self.batch['variants'][self.batch['mother']]}",
+                )
+            )
         lay = self.keys.layout()
         assert lay is not None
         while lay.count():
             gone = lay.takeAt(0).widget()
-            gone.hide()          # deleteLater waits for the event loop; until then it paints
+            gone.hide()  # deleteLater waits for the event loop; until then it paints
             gone.deleteLater()
-        title = QLabel(f"color = {metric}, en nueve tramos iguales entre −M y +M "
-                       "(rojo pierde, azul gana); pasa el ratón por una línea para ver sus valores")
+        title = QLabel(
+            f"color = {metric}, en nueve tramos iguales entre −M y +M "
+            "(rojo pierde, azul gana); pasa el ratón por una línea para ver sus valores"
+        )
         title.setObjectName("dim")
         title.setWordWrap(True)
         title.setToolTip(TIP[metric])
         lay.addWidget(title)
-        for at in range(0, len(items), 4):   # chart.key joins with no-break spaces: rows of four
-            lay.addWidget(key(items[at:at + 4]))
+        for at in range(
+            0, len(items), 4
+        ):  # chart.key joins with no-break spaces: rows of four
+            lay.addWidget(key(items[at : at + 4]))

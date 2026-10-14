@@ -21,7 +21,9 @@ def pdf_pages(url: str) -> tuple[list[str], str]:
     if reply.status_code != 200 or not reply.content.startswith(b"%PDF"):
         kind = reply.headers.get("content-type", "?")
         return [], f"{url}: HTTP {reply.status_code}, {kind}, not a PDF"
-    return [page.extract_text() or "" for page in PdfReader(io.BytesIO(reply.content)).pages], ""
+    return [
+        page.extract_text() or "" for page in PdfReader(io.BytesIO(reply.content)).pages
+    ], ""
 
 
 def source(paper: dict) -> tuple[str, str, str]:
@@ -34,7 +36,7 @@ def source(paper: dict) -> tuple[str, str, str]:
         (the text — `[abstract]` and one `[page N]` mark per page —, "full text" or
         "abstract only", why the full text could not be read or '').
     """
-    if paper.get("pages"):    # a code repository's item: its code arrived with the search
+    if paper.get("pages"):  # a code repository's item: its code arrived with the search
         pages, why = paper["pages"], ""
     else:
         pages, why = [], "no open-access PDF known"
@@ -44,8 +46,14 @@ def source(paper: dict) -> tuple[str, str, str]:
                 pages, why = pdf_pages(url)
     text = f"[abstract]\n{paper['abstract']}\n"
     text += "".join(f"[page {n}]\n{page}\n" for n, page in enumerate(pages, 1))
-    full = bool(paper.get("pages")) or sum(len(p) for p in pages) > 2 * len(paper["abstract"])
-    return text, "full text" if full else "abstract only", "" if full else why or "a PDF with no text"
+    full = bool(paper.get("pages")) or sum(len(p) for p in pages) > 2 * len(
+        paper["abstract"]
+    )
+    return (
+        text,
+        "full text" if full else "abstract only",
+        "" if full else why or "a PDF with no text",
+    )
 
 
 def excerpt(pages: dict[str, str], words: list[str], most: int) -> str:
@@ -65,6 +73,8 @@ def excerpt(pages: dict[str, str], words: list[str], most: int) -> str:
     body = [k for k in pages if k != "abstract"]
     hits = {k: sum(pages[k].lower().count(w) for w in words) for k in body}
     kept = set(sorted(body, key=lambda k: -hits[k])[:most])
-    out = [f"[abstract]\n{pages['abstract']}"] + [f"[{k}]\n{pages[k]}" for k in body if k in kept]
+    out = [f"[abstract]\n{pages['abstract']}"] + [
+        f"[{k}]\n{pages[k]}" for k in body if k in kept
+    ]
     left = [k for k in body if k not in kept]
     return "\n".join(out) + f"\n[left out: {', '.join(left) or 'nothing'}]"

@@ -19,7 +19,7 @@ class Advance(BaseModel):
 
     project: str
     databank: str
-    nonce: str = ""             # the proof its preflight returned (`proof.py`)
+    nonce: str = ""  # the proof its preflight returned (`proof.py`)
 
 
 class Answer(TypedDict):
@@ -38,15 +38,26 @@ def answer(project: str, databank: str) -> Answer:
     """The preflight as the window reads it, with a queued «Continuar» counted as a refusal."""
     pre = preflight.check(project, databank)
     # «Lanzar en SQX» shares the lane and the workers: one launcher at a time, either way.
-    mine = [j for j in jobs.listing() if j["label"] in winddown.LAUNCHERS and j["rc"] is None]
+    mine = [
+        j
+        for j in jobs.listing()
+        if j["label"] in winddown.LAUNCHERS and j["rc"] is None
+    ]
     if mine:
         pre["ok"] = False
-        pre["reasons"].append(f"ya hay un lanzamiento en marcha o en cola "
-                              f"({mine[0]['project']} / {mine[0]['databank']})")
-    return {"ok": pre["ok"], "reasons": pre["reasons"],
-            "text": confirm.text(pre, project, pre["databank"]) if pre["ok"] else "",
-            "install": pre.get("install"), "role": pre.get("role"), "task": pre.get("task"),
-            "n": pre.get("n")}
+        pre["reasons"].append(
+            f"ya hay un lanzamiento en marcha o en cola "
+            f"({mine[0]['project']} / {mine[0]['databank']})"
+        )
+    return {
+        "ok": pre["ok"],
+        "reasons": pre["reasons"],
+        "text": confirm.text(pre, project, pre["databank"]) if pre["ok"] else "",
+        "install": pre.get("install"),
+        "role": pre.get("role"),
+        "task": pre.get("task"),
+        "n": pre.get("n"),
+    }
 
 
 def shown(project: str, databank: str, got: dict[str, object]) -> dict[str, str]:
@@ -58,8 +69,11 @@ def shown(project: str, databank: str, got: dict[str, object]) -> dict[str, str]
 def confirmable(project: str, databank: str) -> dict[str, object]:
     """`check`, plus the one-use nonce `POST /api/advance/run` asks back when it is ok."""
     got = check(project, databank)
-    return {**got, "nonce": proof.issue(LABEL, shown(project, databank, got))} if got[
-        "ok"] else got
+    return (
+        {**got, "nonce": proof.issue(LABEL, shown(project, databank, got))}
+        if got["ok"]
+        else got
+    )
 
 
 def check(project: str, databank: str) -> dict[str, object]:
@@ -81,8 +95,17 @@ def run(req: Advance) -> dict[str, object]:
     why = proof.refusal(LABEL, req.nonce, shown(req.project, req.databank, got))
     if why:
         return {**got, "ok": False, "reasons": [why]}
-    job = jobs.start(LABEL, ["-m", "ui.daemon.advance.run", "--project", req.project,
-                             "--databank", req.databank],
-                     {"project": req.project, "databank": req.databank,
-                      "role": got.get("role")}, lane="conductor")
+    job = jobs.start(
+        LABEL,
+        [
+            "-m",
+            "ui.daemon.advance.run",
+            "--project",
+            req.project,
+            "--databank",
+            req.databank,
+        ],
+        {"project": req.project, "databank": req.databank, "role": got.get("role")},
+        lane="conductor",
+    )
     return {**got, "job": job["id"]}

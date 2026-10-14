@@ -14,9 +14,15 @@ def show(page: "StudyPage") -> None:
             the Ficha (owner, 2026-09-29): a strategy can have no batch.
     """
     from ui.desktop.batchview.tab import BatchTab, has_batch
+
     w = page.where
-    show_it = bool(page.strategy_page and page.key == "wfc" and w.get("project")
-                   and w.get("strategy") and has_batch(w["project"], w["strategy"]))
+    show_it = bool(
+        page.strategy_page
+        and page.key == "wfc"
+        and w.get("project")
+        and w.get("strategy")
+        and has_batch(w["project"], w["strategy"])
+    )
     if show_it and page.lote is None:
         page.lote = BatchTab()
         page.side.addTab(page.lote, "Lote")

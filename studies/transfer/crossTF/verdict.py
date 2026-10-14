@@ -73,11 +73,21 @@ def read(panel: pd.DataFrame, scaling: pd.DataFrame, cfg: dict) -> pd.DataFrame:
             reading = "inherited"
         else:
             reading = "fails"
-        rows.append({"mother": cell["mother"], "timeframe": cell["timeframe"],
-                     "trades": cell["trades"], "seen": cell["seen"], "p": cell["p"],
-                     "z": cell["z"], "z_new": cell["z_new"], "baseline": base[cell["mother"]],
-                     "control": control[cell["strategy"]], "reading": reading,
-                     "warnings": cell["warnings"]})
+        rows.append(
+            {
+                "mother": cell["mother"],
+                "timeframe": cell["timeframe"],
+                "trades": cell["trades"],
+                "seen": cell["seen"],
+                "p": cell["p"],
+                "z": cell["z"],
+                "z_new": cell["z_new"],
+                "baseline": base[cell["mother"]],
+                "control": control[cell["strategy"]],
+                "reading": reading,
+                "warnings": cell["warnings"],
+            }
+        )
     return pd.DataFrame(rows)
 
 
@@ -95,7 +105,9 @@ def unscaled(panel: pd.DataFrame) -> pd.DataFrame:
         The baseline and unscaled cells, with their statistic, p and trade count.
     """
     rows = panel[panel["role"].isin(["baseline", "unscaled"])]
-    return cast(pd.DataFrame, rows[["mother", "timeframe", "role", "trades", "seen", "p"]]).reset_index(drop=True)
+    return cast(
+        pd.DataFrame, rows[["mother", "timeframe", "role", "trades", "seen", "p"]]
+    ).reset_index(drop=True)
 
 
 def counts(readings: pd.DataFrame) -> dict[str, dict[str, int]]:
@@ -107,6 +119,18 @@ def counts(readings: pd.DataFrame) -> dict[str, dict[str, int]]:
     Returns:
         Timeframe to reading to count.
     """
-    table = readings.pivot_table(index="timeframe", columns="reading", values="mother",
-                                aggfunc="count", observed=True).fillna(0).astype(int)
-    return {str(tf): {str(k): int(v) for k, v in row.items()} for tf, row in table.iterrows()}
+    table = (
+        readings.pivot_table(
+            index="timeframe",
+            columns="reading",
+            values="mother",
+            aggfunc="count",
+            observed=True,
+        )
+        .fillna(0)
+        .astype(int)
+    )
+    return {
+        str(tf): {str(k): int(v) for k, v in row.items()}
+        for tf, row in table.iterrows()
+    }

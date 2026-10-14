@@ -44,8 +44,11 @@ def call(facts: dict, mode: str, alpha: float) -> Call:
             why.append("reoptimizar_empeora")
     if why:
         return {"verdict": LIMBO, "label": "LIMBO", "why": why}
-    return {"verdict": PASA, "why": [],
-            "label": f"PASA · {WINS if one['p_mas'] <= alpha else HOLDS}"}
+    return {
+        "verdict": PASA,
+        "why": [],
+        "label": f"PASA · {WINS if one['p_mas'] <= alpha else HOLDS}",
+    }
 
 
 MEANING = {
@@ -53,7 +56,8 @@ MEANING = {
     "l1_no_gana": "reoptimizar no gana en oos2, pero con este tramo no se puede afirmar que pierda",
     "centro_no_gana": "la celda que se va a operar no gana en oos2",
     "reoptimizar_empeora": "reoptimizar empeora a congelar más de lo que explica el ruido: "
-                           "mejor operar la madre fija"}
+    "mejor operar la madre fija",
+}
 
 
 def sentence(got: dict, facts: dict, mode: str) -> str:
@@ -67,14 +71,21 @@ def sentence(got: dict, facts: dict, mode: str) -> str:
     Returns:
         Spanish: the median excess, its two tails, what fired, and the mode it was judged in.
     """
+
     def n(x: float, f: str = ",.2f") -> str:
         """A figure with the decimal comma."""
         return format(x, f).replace(",", " ").replace(".", ",")
+
     one = facts["l1"]
-    said = ("; ".join(MEANING[w] for w in got["why"]) if got["why"] else
-            "gana en dato limpio más allá del ruido: cuenta como evidencia"
-            if got["label"].endswith(WINS) else
-            "gana en oos2 sin superar al ruido: no descarta, y no cuenta como evidencia")
-    return (f"Mediana de las celdas en oos2: {n(one['mediana_exceso'])} de exceso neto por año "
-            f"(p+ {n(one['p_mas'], '.3f')}, p− {n(one['p_menos'], '.3f')} en el nulo de volteo "
-            f"por semanas): {said}. Juzgado en modo «{mode}».")
+    said = (
+        "; ".join(MEANING[w] for w in got["why"])
+        if got["why"]
+        else "gana en dato limpio más allá del ruido: cuenta como evidencia"
+        if got["label"].endswith(WINS)
+        else "gana en oos2 sin superar al ruido: no descarta, y no cuenta como evidencia"
+    )
+    return (
+        f"Mediana de las celdas en oos2: {n(one['mediana_exceso'])} de exceso neto por año "
+        f"(p+ {n(one['p_mas'], '.3f')}, p− {n(one['p_menos'], '.3f')} en el nulo de volteo "
+        f"por semanas): {said}. Juzgado en modo «{mode}»."
+    )

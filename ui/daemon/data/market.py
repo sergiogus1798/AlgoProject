@@ -9,14 +9,29 @@ from core import barstore
 from core.datapaths import spread_dir
 from core.paths import feed_quality_dir
 
-TIMEFRAMES = ("D1", "H4", "H1")      # what the zone draws; M1 is 8 M rows and M30 adds nothing here
+TIMEFRAMES = (
+    "D1",
+    "H4",
+    "H1",
+)  # what the zone draws; M1 is 8 M rows and M30 adds nothing here
 # Each step-4 report is a contract dict the study already wrote beside its tables; the
 # window reads it back, never recomputes it. part → (folder of one feed, file, command).
 STUDIES = {
-    "spread": (spread_dir, "spread.json", "python3 -m studies.data.spread.scan --symbol {s}"),
-    "band": (spread_dir, "band.json", "python3 -m studies.data.spread.bands --symbol {s}"),
-    "feedQuality": (feed_quality_dir, "feedQuality.json",
-                    "python3 -m studies.data.feedQuality.scan --feed {f}"),
+    "spread": (
+        spread_dir,
+        "spread.json",
+        "python3 -m studies.data.spread.scan --symbol {s}",
+    ),
+    "band": (
+        spread_dir,
+        "band.json",
+        "python3 -m studies.data.spread.bands --symbol {s}",
+    ),
+    "feedQuality": (
+        feed_quality_dir,
+        "feedQuality.json",
+        "python3 -m studies.data.feedQuality.scan --feed {f}",
+    ),
 }
 
 
@@ -31,7 +46,7 @@ def feeds(folder: str) -> list[str]:
         Empty when the study never ran on this machine: the zone then says so per asset.
     """
     top = spread_dir() if folder == "spread" else feed_quality_dir()
-    if not top.is_dir():         # the window's boundary: a fresh data root has neither tree
+    if not top.is_dir():  # the window's boundary: a fresh data root has neither tree
         return []
     return sorted(p.name for p in top.iterdir() if p.is_dir())
 
@@ -46,12 +61,16 @@ def assets() -> list[dict]:
     """
     library = barstore.library()
     out: dict[str, dict] = {}
-    for kind, names in (("bars", sorted(library)), ("spread", feeds("spread")),
-                        ("feedQuality", feeds("feedQuality"))):
+    for kind, names in (
+        ("bars", sorted(library)),
+        ("spread", feeds("spread")),
+        ("feedQuality", feeds("feedQuality")),
+    ):
         for feed in names:
-            row = out.setdefault(feed.split("_")[0], {"bars": None, "spread": None,
-                                                      "feedQuality": None})
-            row[kind] = row[kind] or feed     # two feeds of one symbol: the first, sorted
+            row = out.setdefault(
+                feed.split("_")[0], {"bars": None, "spread": None, "feedQuality": None}
+            )
+            row[kind] = row[kind] or feed  # two feeds of one symbol: the first, sorted
     for row in out.values():
         if row["bars"]:
             lib = library[row["bars"]]
@@ -75,10 +94,16 @@ def bars(feed: str, tf: str, since: str) -> dict[str, Any]:
     frame = barstore.read(feed, tf)
     if since:
         frame = frame[frame.index >= since]
-    return {"feed": feed, "tf": tf, "rows": len(frame),
-            "t": pd.DatetimeIndex(frame.index).strftime("%Y-%m-%d %H:%M").tolist(),
-            "o": frame["Open"].tolist(), "h": frame["High"].tolist(),
-            "l": frame["Low"].tolist(), "c": frame["Close"].tolist()}
+    return {
+        "feed": feed,
+        "tf": tf,
+        "rows": len(frame),
+        "t": pd.DatetimeIndex(frame.index).strftime("%Y-%m-%d %H:%M").tolist(),
+        "o": frame["Open"].tolist(),
+        "h": frame["High"].tolist(),
+        "l": frame["Low"].tolist(),
+        "c": frame["Close"].tolist(),
+    }
 
 
 def study(part: str, feed: str) -> dict[str, Any]:
@@ -95,6 +120,8 @@ def study(part: str, feed: str) -> dict[str, Any]:
     folder, name, command = STUDIES[part]
     path = folder(feed) / name
     if not path.exists():
-        return {"error": f"{feed} no tiene {name} todavía. Lo escribe: "
-                         + command.format(s=feed.split("_")[0], f=feed)}
+        return {
+            "error": f"{feed} no tiene {name} todavía. Lo escribe: "
+            + command.format(s=feed.split("_")[0], f=feed)
+        }
     return {"result": json.loads(path.read_text(encoding="utf-8"))}

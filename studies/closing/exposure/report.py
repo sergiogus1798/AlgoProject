@@ -19,8 +19,12 @@ def main() -> None:
     ap.add_argument("--databank", required=True)
     ap.add_argument("--feed", required=True, help="SQX feed name, e.g. XAUUSD_M1")
     ap.add_argument("--symbol", required=True, help="asset file name, e.g. XAUUSD")
-    ap.add_argument("--strategy", default="", help="one strategy; every one when omitted")
-    ap.add_argument("--set", action="extend", nargs="+", default=[], metavar="section.key=value")
+    ap.add_argument(
+        "--strategy", default="", help="one strategy; every one when omitted"
+    )
+    ap.add_argument(
+        "--set", action="extend", nargs="+", default=[], metavar="section.key=value"
+    )
     args = ap.parse_args()
 
     cfg = inputs.config(args.set)
@@ -37,12 +41,20 @@ def main() -> None:
     found = many.run(got, cfg)
     for m in found["members"]:
         output.member(out, m, f"Exposición — {m['strategy']}")
-    output.population(out, "exposure", found["population"],
-                      f"Exposición — {args.project} / {args.databank}")
+    output.population(
+        out,
+        "exposure",
+        found["population"],
+        f"Exposición — {args.project} / {args.databank}",
+    )
     # No verdict column: the study describes, so the window shows these as plain columns.
     found["table"][many.CSV].to_csv(out / "verdict.csv", index=False)
-    manifest.write(out, {"input": str(got["packed"].resolve()), "overrides": args.set},
-                   " ".join(sys.argv), {"verdict.csv": len(found["table"])})
+    manifest.write(
+        out,
+        {"input": str(got["packed"].resolve()), "overrides": args.set},
+        " ".join(sys.argv),
+        {"verdict.csv": len(found["table"])},
+    )
     print(markdown.render(found["population"], "Exposición"))
     print(f"-> {out / 'verdict.csv'}")
 

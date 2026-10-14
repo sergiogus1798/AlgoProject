@@ -1,6 +1,5 @@
 """The scatter block: points by group, the quadrants through zero and the fitted line if any."""
 
-
 from typing import Any
 import random
 from collections.abc import Callable
@@ -15,7 +14,7 @@ from ui.desktop.blocks.states import SERIES
 from ui.desktop.theme import T
 
 
-MOST = 400   # points drawn; the fit and r in the block were computed on all of them
+MOST = 400  # points drawn; the fit and r in the block were computed on all of them
 
 
 def _sample(b: dict) -> dict[str, Any]:
@@ -24,14 +23,25 @@ def _sample(b: dict) -> dict[str, Any]:
     pts = b["points"]
     xs, ys = [p["x"] for p in pts], [p["y"] for p in pts]
     kept = pts if len(pts) <= MOST else random.Random(0).sample(pts, MOST)
-    return {**b, "points": kept, "n_all": len(pts), "span": ((min(xs), max(xs)), (min(ys), max(ys)))}
+    return {
+        **b,
+        "points": kept,
+        "n_all": len(pts),
+        "span": ((min(xs), max(xs)), (min(ys), max(ys))),
+    }
 
 
-def _maps(b: dict, box: QRectF) -> tuple[Callable, Callable, tuple[float, float], tuple[float, float]]:
+def _maps(
+    b: dict, box: QRectF
+) -> tuple[Callable, Callable, tuple[float, float], tuple[float, float]]:
     """The two data-to-pixel maps and the two data ranges."""
     sx, sy = b["span"]
-    return (axis.scale(sx[0], sx[1], box.left(), box.right()), axis.scale(sy[0], sy[1], box.bottom(), box.top()),
-            sx, sy)
+    return (
+        axis.scale(sx[0], sx[1], box.left(), box.right()),
+        axis.scale(sy[0], sy[1], box.bottom(), box.top()),
+        sx,
+        sy,
+    )
 
 
 def _groups(b: dict) -> list[str]:
@@ -47,8 +57,12 @@ def _draw(b: dict) -> Callable:
         """Paint into the canvas; `hover` is the pointer, for a guide line."""
         box = chart.area(rect)
         x, y, sx, sy = _maps(b, box)
-        chart.axes(p, box, [(x(v), chart.num(v)) for v in axis.ticks(*sx)],
-                   [(y(v), chart.num(v)) for v in axis.ticks(sy[0], sy[1], 5)])
+        chart.axes(
+            p,
+            box,
+            [(x(v), chart.num(v)) for v in axis.ticks(*sx)],
+            [(y(v), chart.num(v)) for v in axis.ticks(sy[0], sy[1], 5)],
+        )
         chart.titles(p, box, rect, b["x_label"], b["y_label"])
         if b["quadrants"]:
             p.setPen(QPen(QColor(T["muted"]), 1.2))
@@ -63,8 +77,10 @@ def _draw(b: dict) -> Callable:
         if b["fit"]:
             f = b["fit"]
             p.setPen(QPen(QColor(T["text"]), 1.5, Qt.PenStyle.DashLine))
-            p.drawLine(QPointF(x(sx[0]), y(f["intercept"] + f["slope"] * sx[0])),
-                       QPointF(x(sx[1]), y(f["intercept"] + f["slope"] * sx[1])))
+            p.drawLine(
+                QPointF(x(sx[0]), y(f["intercept"] + f["slope"] * sx[0])),
+                QPointF(x(sx[1]), y(f["intercept"] + f["slope"] * sx[1])),
+            )
 
     return draw
 
@@ -83,8 +99,10 @@ def _tip(b: dict) -> Callable:
         near = min(b["points"], key=gap)
         if gap(near) > 64:
             return None
-        return (f"{near['label']} · {near['group']}\n{b['x_label']}: {chart.num(near['x'])}\n"
-                f"{b['y_label']}: {chart.num(near['y'])}")
+        return (
+            f"{near['label']} · {near['group']}\n{b['x_label']}: {chart.num(near['x'])}\n"
+            f"{b['y_label']}: {chart.num(near['y'])}"
+        )
 
     return tip
 
@@ -104,11 +122,24 @@ def widget(block: dict) -> QWidget:
         f = b["fit"]
         # The WFC's line is Spearman's (a coefficient from -1 to 1, never a percentage), not a fit.
         rank = "Spearman" in (b.get("note") or "")
-        items.append(("dash", T["text"], f"recta de Spearman, pendiente {chart.num(f['slope'])}, "
-                                         f"ρ = {f['r']:.3f}" if rank else
-                                         f"recta ajustada, pendiente {chart.num(f['slope'])}, "
-                                         f"r = {f['r']:.3f}"))
+        items.append(
+            (
+                "dash",
+                T["text"],
+                f"recta de Spearman, pendiente {chart.num(f['slope'])}, "
+                f"ρ = {f['r']:.3f}"
+                if rank
+                else f"recta ajustada, pendiente {chart.num(f['slope'])}, "
+                f"r = {f['r']:.3f}",
+            )
+        )
     if b["n_all"] > MOST:
-        items.append(("box", T["faint"], f"muestra de {MOST} de {b['n_all']} puntos"
-                      + ("; la recta usa los " + str(b["n_all"]) if b["fit"] else "")))
+        items.append(
+            (
+                "box",
+                T["faint"],
+                f"muestra de {MOST} de {b['n_all']} puntos"
+                + ("; la recta usa los " + str(b["n_all"]) if b["fit"] else ""),
+            )
+        )
     return card(b, chart.Canvas(_draw(b), _tip(b)), chart.key(items))

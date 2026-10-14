@@ -50,10 +50,22 @@ def load(identity: str, version: str) -> Source:
     clock, commission = archive_read.frozen(got["manifest"], identity)
     feed = archive_manifest.feed_of(Path(got["sqx"]))
     trades = pd.read_parquet(folder / "harvest" / "trades.parquet")
-    same_day = trades[trades["Open time"].dt.normalize() == trades["Close time"].dt.normalize()]
-    return {"identity": identity, "version": got["version"], "step": step,
-            "development": float(step) < 26, "symbol": symbol, "feed": feed,
-            "timeframe": timeframed.split("_LOM_")[-1],
-            "clock": clock, "commission": commission, "trades": trades,
-            "sqx_equity": pd.read_parquet(folder / "harvest" / "equity.parquet"),
-            "point_value": calibrate.point_value(cast(pd.DataFrame, same_day if len(same_day) > 1 else trades))}
+    same_day = trades[
+        trades["Open time"].dt.normalize() == trades["Close time"].dt.normalize()
+    ]
+    return {
+        "identity": identity,
+        "version": got["version"],
+        "step": step,
+        "development": float(step) < 26,
+        "symbol": symbol,
+        "feed": feed,
+        "timeframe": timeframed.split("_LOM_")[-1],
+        "clock": clock,
+        "commission": commission,
+        "trades": trades,
+        "sqx_equity": pd.read_parquet(folder / "harvest" / "equity.parquet"),
+        "point_value": calibrate.point_value(
+            cast(pd.DataFrame, same_day if len(same_day) > 1 else trades)
+        ),
+    }

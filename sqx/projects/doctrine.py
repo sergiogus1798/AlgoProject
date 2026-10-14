@@ -8,7 +8,9 @@ from core.assetdata import doctrine, sqx_settings
 from sqx.projects import buildrules as rules, sessiondb, tasksettings as settings
 
 
-def apply_doctrine(text: str, data: dict, segment: str, timeframe: str) -> tuple[str, dict]:
+def apply_doctrine(
+    text: str, data: dict, segment: str, timeframe: str
+) -> tuple[str, dict]:
     """Rewrite one task so it generates and trades the way `_build.yaml` says.
 
     Args:
@@ -43,21 +45,31 @@ def apply_doctrine(text: str, data: dict, segment: str, timeframe: str) -> tuple
     text, options = settings.set_params(text, d["trading_options"])
     text = settings.set_databank_caps(text, d["databank"])
     text = settings.set_genetic(text)
-    text = settings.set_crosschecks(text, d["crosschecks"],
-                                    sqx_settings(data, segment)["defaultSpread"],
-                                    d["crosschecks"][key])
+    text = settings.set_crosschecks(
+        text,
+        d["crosschecks"],
+        sqx_settings(data, segment)["defaultSpread"],
+        d["crosschecks"][key],
+    )
     exit_types = None
     if generates:
         text = rules.set_order_types(text, d["order_types"])
         text, exit_types = rules.set_exit_types(text, d["exits"], timeframe)
-        text = rules.set_complexity(text, d["complexity"], exit_types,
-                                    d["exits"]["condition_required"])
+        text = rules.set_complexity(
+            text, d["complexity"], exit_types, d["exits"]["condition_required"]
+        )
         text = rules.set_slpt(text)
     lo, hi = rules.bar_range(d["exits"], timeframe)
-    return text, {"charts": charts, "generator": generates, "exit_types": exit_types,
-                  "precision": d["precision"][key],
-                  "exit_bars": [lo, hi], "sessions": sessions, "trading_options": options,
-                  "session_defined": settings.session_defined(text, data["session"])}
+    return text, {
+        "charts": charts,
+        "generator": generates,
+        "exit_types": exit_types,
+        "precision": d["precision"][key],
+        "exit_bars": [lo, hi],
+        "sessions": sessions,
+        "trading_options": options,
+        "session_defined": settings.session_defined(text, data["session"]),
+    }
 
 
 def blockers(data: dict, timeframe: str) -> list[str]:
@@ -73,15 +85,21 @@ def blockers(data: dict, timeframe: str) -> list[str]:
     """
     out = []
     if not data.get("session"):
-        out.append(f"{data['symbol']}: `session:` sin decidir en assets/symbols/. "
-                   "Dime cuál es la sesión del activo antes de construir nada.")
+        out.append(
+            f"{data['symbol']}: `session:` sin decidir en assets/symbols/. "
+            "Dime cuál es la sesión del activo antes de construir nada."
+        )
     if timeframe not in rules.TF_MINUTES:
-        out.append(f"{timeframe}: timeframe desconocido. Conocidos: "
-                   + ", ".join(rules.TF_MINUTES))
+        out.append(
+            f"{timeframe}: timeframe desconocido. Conocidos: "
+            + ", ".join(rules.TF_MINUTES)
+        )
     return out
 
 
-def borrow_session(members: dict[str, bytes], session: str, source: Path | None) -> str | None:
+def borrow_session(
+    members: dict[str, bytes], session: str, source: Path | None
+) -> str | None:
     """Bring one session definition into a clone, so it can trade its asset.
 
     Args:
@@ -105,22 +123,39 @@ def borrow_session(members: dict[str, bytes], session: str, source: Path | None)
     only in the database. A task naming a session it does not define trades the wrong
     hours in silence.
     """
-    if any(settings.session_block(b.decode("utf-8"), session)
-           for n, b in members.items() if n.endswith(".xml") and n != "config.xml"):
+    if any(
+        settings.session_block(b.decode("utf-8"), session)
+        for n, b in members.items()
+        if n.endswith(".xml") and n != "config.xml"
+    ):
         return None
     block = None
     if source:
         with zipfile.ZipFile(source) as z:
-            block = next((b for b in (settings.session_block(
-                z.read(n).decode("utf-8", "replace"), session)
-                for n in z.namelist() if n.endswith(".xml") and n != "config.xml") if b), None)
+            block = next(
+                (
+                    b
+                    for b in (
+                        settings.session_block(
+                            z.read(n).decode("utf-8", "replace"), session
+                        )
+                        for n in z.namelist()
+                        if n.endswith(".xml") and n != "config.xml"
+                    )
+                    if b
+                ),
+                None,
+            )
     block = block or sessiondb.block(session, sessiondb.copy())
     if not block:
-        raise SystemExit(f"falta la SESIÓN {session}: no la define ningún proyecto ni el Data "
-                         "Manager de SQX. Hay que darla de alta en SQX — no se inventan horarios.")
+        raise SystemExit(
+            f"falta la SESIÓN {session}: no la define ningún proyecto ni el Data "
+            "Manager de SQX. Hay que darla de alta en SQX — no se inventan horarios."
+        )
     target = next(n for n in members if n.endswith(".xml") and n != "config.xml")
     members[target] = settings.add_session(
-        members[target].decode("utf-8"), block).encode("utf-8")
+        members[target].decode("utf-8"), block
+    ).encode("utf-8")
     return target
 
 
@@ -137,10 +172,15 @@ def unify_sessions(members: dict[str, bytes], session: str) -> list[str] | None:
         invented; a session no task carries has to come from SQX first, and inventing
         trading hours is exactly the kind of quiet fabrication this refuses to do.
     """
-    texts = {n: b.decode("utf-8") for n, b in members.items()
-             if n.endswith(".xml") and n != "config.xml"}
-    block = next((b for b in (settings.session_block(t, session) for t in texts.values()) if b),
-                 None)
+    texts = {
+        n: b.decode("utf-8")
+        for n, b in members.items()
+        if n.endswith(".xml") and n != "config.xml"
+    }
+    block = next(
+        (b for b in (settings.session_block(t, session) for t in texts.values()) if b),
+        None,
+    )
     if not block:
         return None
     fixed = []
@@ -159,5 +199,7 @@ def caps(project: str, strategies: int | None, minutes: int | None) -> tuple[int
         project: Its name; the prefix (`Test_`, `Trade_`, `Research_`) picks the doctrine's `databank.caps`.
         strategies, minutes: What the caller asked for; None takes the doctrine's.
     """
-    cap = next(v for k, v in doctrine()["databank"]["caps"].items() if project.startswith(k))
+    cap = next(
+        v for k, v in doctrine()["databank"]["caps"].items() if project.startswith(k)
+    )
     return (strategies or cap["strategies"], minutes or cap["minutes"])

@@ -40,7 +40,9 @@ def cost_shock(stream: dict, n: int, rng: np.random.Generator, cfg: dict) -> np.
     return stream["pnl"] - stream["cost"] * (factor - 1.0)
 
 
-def fill_degrade(stream: dict, n: int, rng: np.random.Generator, cfg: dict) -> np.ndarray:
+def fill_degrade(
+    stream: dict, n: int, rng: np.random.Generator, cfg: dict
+) -> np.ndarray:
     """Give back part of what each trade had already given up at its worst point.
 
     Args:
@@ -60,7 +62,9 @@ def fill_degrade(stream: dict, n: int, rng: np.random.Generator, cfg: dict) -> n
     return stream["pnl"] - depth * (stream["pnl"] - stream["mae"])
 
 
-def spread_widen(stream: dict, n: int, rng: np.random.Generator, cfg: dict) -> np.ndarray:
+def spread_widen(
+    stream: dict, n: int, rng: np.random.Generator, cfg: dict
+) -> np.ndarray:
     """Pay a wider spread on every trade.
 
     Args:
@@ -79,14 +83,24 @@ def spread_widen(stream: dict, n: int, rng: np.random.Generator, cfg: dict) -> n
     return stream["pnl"] - stream["spread"] * (factor - 1.0)
 
 
-STRESS = {"skip": skip, "cost_shock": cost_shock, "fill_degrade": fill_degrade,
-          "spread_widen": spread_widen}
+STRESS = {
+    "skip": skip,
+    "cost_shock": cost_shock,
+    "fill_degrade": fill_degrade,
+    "spread_widen": spread_widen,
+}
 
 # What each sub-test claims to model, and the floor it has to clear. The floors live in
 # scoring.py; this table is what the report prints beside each of them.
-TITLES = {"skip": "Entradas perdidas", "cost_shock": "Costes hasta el doble",
-          "fill_degrade": "Ejecuciones degradadas", "spread_widen": "Spread más ancho"}
-MODELS = {"skip": "entries the live system does not take",
-          "cost_shock": "commission and swap up to twice what SQX charged",
-          "fill_degrade": "fills that give back part of the trade's own worst excursion",
-          "spread_widen": "a spread wider than the fixed one the backtest assumed"}
+TITLES = {
+    "skip": "Entradas perdidas",
+    "cost_shock": "Costes hasta el doble",
+    "fill_degrade": "Ejecuciones degradadas",
+    "spread_widen": "Spread más ancho",
+}
+MODELS = {
+    "skip": "entries the live system does not take",
+    "cost_shock": "commission and swap up to twice what SQX charged",
+    "fill_degrade": "fills that give back part of the trade's own worst excursion",
+    "spread_widen": "a spread wider than the fixed one the backtest assumed",
+}

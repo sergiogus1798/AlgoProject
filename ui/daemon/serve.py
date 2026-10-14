@@ -33,8 +33,13 @@ def main() -> None:
     # token of the one that serves. The app reads it when imported (`gate.install`).
     uitoken.mint(args.port)
     os.environ[gate.ENV] = str(args.port)
-    config = uvicorn.Config("ui.daemon.app:APP", host="127.0.0.1", port=args.port,
-                            reload=args.reload, log_level="warning")
+    config = uvicorn.Config(
+        "ui.daemon.app:APP",
+        host="127.0.0.1",
+        port=args.port,
+        reload=args.reload,
+        log_level="warning",
+    )
     server = uvicorn.Server(config)
     if args.reload:
         ChangeReload(config, target=server.run, sockets=[sock]).run()

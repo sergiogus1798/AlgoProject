@@ -12,10 +12,11 @@ from studies.optimisation.wfc.calibrate import families
 from studies.optimisation.wfc.measure import reading
 from studies.optimisation.wfc.verdict import state
 
-CELLS = tuple(f"{o}/{w}" for o in ("positivo", "neutro", "perverso")
-              for w in ("gana", "no_gana")) + (state.NO_DATA,)
+CELLS = tuple(
+    f"{o}/{w}" for o in ("positivo", "neutro", "perverso") for w in ("gana", "no_gana")
+) + (state.NO_DATA,)
 STATES = ("pasa", "limbo", "no_pasa")
-JOB: dict = {}        # what _scenario reads; set by table() before the fork
+JOB: dict = {}  # what _scenario reads; set by table() before the fork
 
 
 def both(values: np.ndarray) -> dict[str, np.ndarray]:
@@ -31,7 +32,11 @@ def flips(weeks: np.ndarray, years: float, cfg: dict) -> np.ndarray:
     """
     knobs = cfg["null"]
     seed = np.random.SeedSequence(knobs["seed"]).spawn(2)[0]
-    return flip.signs(seed, knobs["draws"], len(weeks), knobs["block_weeks"]) @ weeks / years
+    return (
+        flip.signs(seed, knobs["draws"], len(weeks), knobs["block_weeks"])
+        @ weeks
+        / years
+    )
 
 
 def sd_rho(e_is: np.ndarray, weeks: np.ndarray, years: float, cfg: dict) -> float:
@@ -44,13 +49,23 @@ def without_level_null(order: str, found: dict, cfg: dict) -> str:
 
     Not the criterion: the comparison the calibration prints beside it.
     """
-    return state.state(order, found["nivel_top"], found["n"], cfg["panel"]["min_variants"],
-                       found["p_nivel"], 1.0)
+    return state.state(
+        order,
+        found["nivel_top"],
+        found["n"],
+        cfg["panel"]["min_variants"],
+        found["p_nivel"],
+        1.0,
+    )
 
 
 def cell(found: str, top_level: float) -> str:
     """The cell of the table of section 6: the order's class and whether the top wins outside."""
-    return found if found == state.NO_DATA else f"{found}/{'gana' if top_level > 0 else 'no_gana'}"
+    return (
+        found
+        if found == state.NO_DATA
+        else f"{found}/{'gana' if top_level > 0 else 'no_gana'}"
+    )
 
 
 class Landed(TypedDict):
@@ -63,8 +78,9 @@ class Landed(TypedDict):
     sd_rho_nulo: float
 
 
-def landed(e_is: np.ndarray, e_oos: np.ndarray, weeks: np.ndarray, years: float,
-           cfg: dict) -> Landed:
+def landed(
+    e_is: np.ndarray, e_oos: np.ndarray, weeks: np.ndarray, years: float, cfg: dict
+) -> Landed:
     """One family under the criterion and under the one without a null on the level.
 
     Returns:
@@ -74,9 +90,13 @@ def landed(e_is: np.ndarray, e_oos: np.ndarray, weeks: np.ndarray, years: float,
     """
     found = reading.measure(both(e_is), both(e_oos), both(weeks), years, cfg)
     said = state.judge(found, cfg)
-    return {"casilla": cell(said["orden"], found["nivel_top"]), "estado": said["estado"],
-            "estado_sin": without_level_null(said["orden"], found, cfg),
-            "p_nivel": found["p_nivel"], "sd_rho_nulo": sd_rho(e_is, weeks, years, cfg)}
+    return {
+        "casilla": cell(said["orden"], found["nivel_top"]),
+        "estado": said["estado"],
+        "estado_sin": without_level_null(said["orden"], found, cfg),
+        "p_nivel": found["p_nivel"],
+        "sd_rho_nulo": sd_rho(e_is, weeks, years, cfg),
+    }
 
 
 def shares(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
@@ -89,12 +109,20 @@ def shares(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     """
     got = pd.DataFrame(rows)
     spread = cast(pd.Series, pd.to_numeric(got["sd_rho_nulo"])).dropna()
-    low, mid, high = np.percentile(spread, [5, 50, 95]) if len(spread) else (None, None, None)
-    return ({name: float((got["casilla"] == name).mean()) for name in CELLS}
-            | {name: float((got["estado"] == name).mean()) for name in STATES}
-            | {f"{name}_sin": float((got["estado_sin"] == name).mean()) for name in STATES}
-            | {"familias": len(got),
-               "sd_rho_p5": low, "sd_rho_p50": mid, "sd_rho_p95": high})
+    low, mid, high = (
+        np.percentile(spread, [5, 50, 95]) if len(spread) else (None, None, None)
+    )
+    return (
+        {name: float((got["casilla"] == name).mean()) for name in CELLS}
+        | {name: float((got["estado"] == name).mean()) for name in STATES}
+        | {f"{name}_sin": float((got["estado_sin"] == name).mean()) for name in STATES}
+        | {
+            "familias": len(got),
+            "sd_rho_p5": low,
+            "sd_rho_p50": mid,
+            "sd_rho_p95": high,
+        }
+    )
 
 
 def _scenario(index: int) -> dict:
@@ -102,8 +130,12 @@ def _scenario(index: int) -> dict:
     spec, cfg, wfc = JOB["specs"][index], JOB["cfg"], JOB["wfc"]
     rng = np.random.default_rng([cfg["seed"], index])
     years = spec["anos_fuera"]
-    return shares([landed(*families.draw(spec, cfg, rng), years, wfc)
-                   for _ in range(cfg["families"])])
+    return shares(
+        [
+            landed(*families.draw(spec, cfg, rng), years, wfc)
+            for _ in range(cfg["families"])
+        ]
+    )
 
 
 def table(specs: list[dict], cfg: dict, wfc: dict, workers: int) -> pd.DataFrame:
@@ -120,8 +152,11 @@ def table(specs: list[dict], cfg: dict, wfc: dict, workers: int) -> pd.DataFrame
     """
     JOB.update(specs=specs, cfg=cfg, wfc=wfc)
     done = {}
-    for index, got in fanout.run(_scenario, {i: s["anos_fuera"] for i, s in enumerate(specs)},
-                                 workers):
+    for index, got in fanout.run(
+        _scenario, {i: s["anos_fuera"] for i, s in enumerate(specs)}, workers
+    ):
         done[index] = specs[index] | got
-        result.progress(90 * len(done) // len(specs), f"{len(done)} de {len(specs)} escenarios")
+        result.progress(
+            90 * len(done) // len(specs), f"{len(done)} de {len(specs)} escenarios"
+        )
     return pd.DataFrame([done[i] for i in range(len(specs))])

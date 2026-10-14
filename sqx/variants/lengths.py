@@ -14,12 +14,16 @@ PERIOD, SHIFT = "ParamTypePeriod", "ParamTypeShift"
 KIND = re.compile(r"<paramType>([^<]*)</paramType>")
 # A rule item opening, or a parameter of the item above it bound to a variable. `key` is not
 # always the first attribute: a parameter the builder drew opens with `generated="random"`.
-BOUND = re.compile(r'<Item\b[^>]*\bkey="([^"]+)"'
-                   r'|<Param\b[^>]*\bkey="#([^"#]+)#"[^>]*variable="true"[^>]*>([^<]+)</Param>')
+BOUND = re.compile(
+    r'<Item\b[^>]*\bkey="([^"]+)"'
+    r'|<Param\b[^>]*\bkey="#([^"#]+)#"[^>]*variable="true"[^>]*>([^<]+)</Param>'
+)
 # An item opening, the chart it reads, or a parameter of the item above bound to a variable.
-ON_CHART = re.compile(r'<Item\b[^>]*\bkey="[^"]+"'
-                      r'|<Param\b[^>]*\bkey="#Chart#"[^>]*>([^<]*)</Param>'
-                      r'|<Param\b[^>]*variable="true"[^>]*>([^<]+)</Param>')
+ON_CHART = re.compile(
+    r'<Item\b[^>]*\bkey="[^"]+"'
+    r'|<Param\b[^>]*\bkey="#Chart#"[^>]*>([^<]*)</Param>'
+    r'|<Param\b[^>]*variable="true"[^>]*>([^<]+)</Param>'
+)
 CUSTOM = "CBlock_"
 MAIN = ("0", "Any")
 
@@ -31,8 +35,12 @@ def table() -> dict[str, Any]:
 
 def kinds(portfolio: str) -> dict[str, str]:
     """Every variable's `<paramType>` as SQX wrote it; empty for a file older than the field."""
-    return {hit(rewrite.FIELD["name"].search(b)).group(1): (m.group(1) if (m := KIND.search(b)) else "")
-            for b in rewrite.VARIABLE.findall(portfolio)}
+    return {
+        hit(rewrite.FIELD["name"].search(b)).group(1): (
+            m.group(1) if (m := KIND.search(b)) else ""
+        )
+        for b in rewrite.VARIABLE.findall(portfolio)
+    }
 
 
 def owners(portfolio: str) -> dict[str, tuple[str, str]]:
@@ -75,7 +83,9 @@ def off_main(portfolio: str) -> set[str]:
     return {n for n, c in found.items() if c not in MAIN}
 
 
-def split(portfolio: str, patterns: list[str], rulings: dict) -> tuple[list[str], list[str]]:
+def split(
+    portfolio: str, patterns: list[str], rulings: dict
+) -> tuple[list[str], list[str]]:
     """The variables to rescale, and the ones nobody could rule on.
 
     A custom block's parameter is ruled by the table and by nothing else — SQX types a custom
@@ -95,7 +105,11 @@ def split(portfolio: str, patterns: list[str], rulings: dict) -> tuple[list[str]
         its sibling must be read as not tested. A variable read on another chart is in
         neither list: `off_main` says why, and `unmatched` is where it shows up for review.
     """
-    types, kind, owner = rewrite.declared(portfolio), kinds(portfolio), owners(portfolio)
+    types, kind, owner = (
+        rewrite.declared(portfolio),
+        kinds(portfolio),
+        owners(portfolio),
+    )
     elsewhere = off_main(portfolio)
     lengths, unverified = [], []
     for name, typed in types.items():
@@ -104,12 +118,17 @@ def split(portfolio: str, patterns: list[str], rulings: dict) -> tuple[list[str]
             continue
         if block.startswith(CUSTOM):
             listed = rulings.get(block)
-            ruling = listed.get(param, "unverified") if isinstance(listed, dict) else "unverified"
+            ruling = (
+                listed.get(param, "unverified")
+                if isinstance(listed, dict)
+                else "unverified"
+            )
             if ruling == "length":
                 lengths.append(name)
             elif ruling == "unverified" and typed == "int":
                 unverified.append(name)
-        elif kind[name] == PERIOD or (kind[name] != SHIFT
-                                      and any(re.search(p, name) for p in patterns)):
+        elif kind[name] == PERIOD or (
+            kind[name] != SHIFT and any(re.search(p, name) for p in patterns)
+        ):
             lengths.append(name)
     return lengths, unverified

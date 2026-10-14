@@ -1,4 +1,5 @@
 """One ISO week on the server's clock: its bounds, and the trades that belong to it."""
+
 import re
 
 import pandas as pd
@@ -25,4 +26,3 @@ def cut(trades: pd.DataFrame, week: str) -> pd.DataFrame:
     start, end = bounds(week)
     opened = pd.to_datetime(trades["Open time"])
     return trades[(opened >= start) & (opened < end)].reset_index(drop=True)  # pyright: ignore[reportReturnType]  # pandas/numpy stubs lose the type through indexing
-

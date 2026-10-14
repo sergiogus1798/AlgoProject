@@ -10,7 +10,7 @@ from core.study import config as study_config
 from portfolio.funded.sim.bank import ARRAYS
 
 FILE = Path(__file__).parent / "config.yaml"
-REBUY = ("same_plan", "none")     # the re-buy policies the kernel knows
+REBUY = ("same_plan", "none")  # the re-buy policies the kernel knows
 OWNER = {
     "eurusd": "el cambio EUR/USD del día del cálculo (dólares por euro)",
     "rebuy": "las políticas de recompra que se comparan: lista de same_plan (recomprar el mismo plan mientras quede caja) y/o none",
@@ -34,12 +34,22 @@ def refuse(cfg: dict) -> list[str]:
     owner = cfg["owner"]
     out = [f"owner.{key} — {what}" for key, what in OWNER.items() if owner[key] is None]
     rebuy = owner["rebuy"]
-    if rebuy is not None and not (isinstance(rebuy, list) and rebuy and set(rebuy) <= set(REBUY)
-                                  and len(set(rebuy)) == len(rebuy)):
-        out.append(f"owner.rebuy = {rebuy!r}: una lista sin repetir de {' y/o '.join(REBUY)}")
-    if None not in (owner["haircuts"], owner["haircut_decides"]) \
-            and owner["haircut_decides"] not in owner["haircuts"]:
-        out.append(f"owner.haircut_decides = {owner['haircut_decides']}: no está en owner.haircuts")
+    if rebuy is not None and not (
+        isinstance(rebuy, list)
+        and rebuy
+        and set(rebuy) <= set(REBUY)
+        and len(set(rebuy)) == len(rebuy)
+    ):
+        out.append(
+            f"owner.rebuy = {rebuy!r}: una lista sin repetir de {' y/o '.join(REBUY)}"
+        )
+    if (
+        None not in (owner["haircuts"], owner["haircut_decides"])
+        and owner["haircut_decides"] not in owner["haircuts"]
+    ):
+        out.append(
+            f"owner.haircut_decides = {owner['haircut_decides']}: no está en owner.haircuts"
+        )
     return out
 
 
@@ -58,10 +68,17 @@ def paths(file: Path) -> tuple[dict[str, np.ndarray], dict]:
         `source` (`None` for a path set that names none).
     """
     with np.load(file) as z:
-        arrays = {name: np.ascontiguousarray(z[name], dtype=np.int32 if name == "opened" else np.float64)
-                  for name in ARRAYS}
-        meta = {"unit_risk": float(z["unit_risk"]), "days_per_year": float(z["days_per_year"]),
-                "synthetic": bool(z["synthetic"]) if "synthetic" in z else False,
-                "label": str(z["label"]) if "label" in z else file.stem,
-                "source": json.loads(str(z["source"])) if "source" in z else None}
+        arrays = {
+            name: np.ascontiguousarray(
+                z[name], dtype=np.int32 if name == "opened" else np.float64
+            )
+            for name in ARRAYS
+        }
+        meta = {
+            "unit_risk": float(z["unit_risk"]),
+            "days_per_year": float(z["days_per_year"]),
+            "synthetic": bool(z["synthetic"]) if "synthetic" in z else False,
+            "label": str(z["label"]) if "label" in z else file.stem,
+            "source": json.loads(str(z["source"])) if "source" in z else None,
+        }
     return arrays, meta

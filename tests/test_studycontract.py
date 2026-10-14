@@ -20,18 +20,49 @@ def every_kind() -> list[dict]:
     rng = np.random.default_rng(0)
     return [
         blocks.distribution("d", "USD", rng.normal(0, 1, 10_000), 2.5, "n", p=0.01),
-        blocks.cone("c", "USD", list(range(30)), rng.normal(0, 1, (500, 30)).cumsum(1),
-                    list(np.linspace(0, 3, 30))),
-        {"kind": "grid", "title": "g", "rows": ["a"], "cols": ["1", "2"],
-         "values": [[0.1, None]], "scale": "diverging", "levels": None, "labels": None},
-        {"kind": "scatter", "title": "s", "x_label": "x", "y_label": "y",
-         "points": [{"x": 0.0, "y": 1.0, "label": "p", "group": "g"},
-                    {"x": 1.0, "y": 0.0, "label": "q", "group": "g"}],
-         "quadrants": True, "fit": None},
-        {"kind": "bars", "title": "b", "unit": "", "reference": 0.0,
-         "items": [{"label": "x", "value": 1.0, "error": None, "state": "pass"}]},
-        {"kind": "lines", "title": "l", "unit": "", "x": [0, 1],
-         "series": [{"label": "r", "values": [0.0, 1.0], "role": "real"}]},
+        blocks.cone(
+            "c",
+            "USD",
+            list(range(30)),
+            rng.normal(0, 1, (500, 30)).cumsum(1),
+            list(np.linspace(0, 3, 30)),
+        ),
+        {
+            "kind": "grid",
+            "title": "g",
+            "rows": ["a"],
+            "cols": ["1", "2"],
+            "values": [[0.1, None]],
+            "scale": "diverging",
+            "levels": None,
+            "labels": None,
+        },
+        {
+            "kind": "scatter",
+            "title": "s",
+            "x_label": "x",
+            "y_label": "y",
+            "points": [
+                {"x": 0.0, "y": 1.0, "label": "p", "group": "g"},
+                {"x": 1.0, "y": 0.0, "label": "q", "group": "g"},
+            ],
+            "quadrants": True,
+            "fit": None,
+        },
+        {
+            "kind": "bars",
+            "title": "b",
+            "unit": "",
+            "reference": 0.0,
+            "items": [{"label": "x", "value": 1.0, "error": None, "state": "pass"}],
+        },
+        {
+            "kind": "lines",
+            "title": "l",
+            "unit": "",
+            "x": [0, 1],
+            "series": [{"label": "r", "values": [0.0, 1.0], "role": "real"}],
+        },
         blocks.table("t", pd.DataFrame({"a": ["x"], "b": [np.nan]})),
         blocks.verdict("KEEP", "pass", "m"),
     ]
@@ -54,18 +85,34 @@ def extensions(got: list[dict]) -> None:
     """
     rng = np.random.default_rng(1)
     a, b = rng.normal(0, 1, 3_000), rng.normal(0.5, 2, 700)
-    d = blocks.distribution("d", "USD", np.concatenate([a, b]), None, "n", p=0.02,
-                            series={"IS": a, "OOS": b}, shift={"median": 0.5, "ks_p": 0.02},
-                            bins=40)
+    d = blocks.distribution(
+        "d",
+        "USD",
+        np.concatenate([a, b]),
+        None,
+        "n",
+        p=0.02,
+        series={"IS": a, "OOS": b},
+        shift={"median": 0.5, "ks_p": 0.02},
+        bins=40,
+    )
     r = result.envelope("test", "S", None, {}, time.time(), [result.tab("t", "T", [d])])
     width = np.diff(r["tabs"][0]["blocks"][0]["bins"])
     for s in r["tabs"][0]["blocks"][0]["series"]:
-        assert abs(np.dot(s["counts"], width) - 1) < 1e-6, f"{s['label']} is not a density"
-    assert [s["n"] for s in d["series"]] == [3_000, 700] and 3_630 <= sum(d["counts"]) <= 3_670
+        assert abs(np.dot(s["counts"], width) - 1) < 1e-6, (
+            f"{s['label']} is not a density"
+        )
+    assert [s["n"] for s in d["series"]] == [3_000, 700] and 3_630 <= sum(
+        d["counts"]
+    ) <= 3_670
     assert page.page(r, "T").count("<path") == 2, "the two series were not overlaid"
     assert refused({**d, "series": [{**d["series"][0], "counts": [1.0] * 40}]})
     assert refused({**d, "shift": {"median": 0.5}})
-    g = {**got[2], "mark": {"row": "a", "col": "2", "label": "θ₀"}, "scale_range": [-1, 1]}
+    g = {
+        **got[2],
+        "mark": {"row": "a", "col": "2", "label": "θ₀"},
+        "scale_range": [-1, 1],
+    }
     blocks.validate({"tabs": [{"name": "t", "blocks": [g]}]})
     assert "θ₀: fila a" in page.block(g)
     assert refused({**g, "mark": {"row": "z", "col": "2", "label": "θ₀"}})
@@ -77,17 +124,29 @@ def main() -> None:
     """Build, validate, serialise and draw; then check what must be refused is refused."""
     got = every_kind()
     d = got[0]
-    assert 9_850 <= sum(d["counts"]) <= 9_900 and len(d["bins"]) == 61, "histogram clip is 0.5-99.5"
+    assert 9_850 <= sum(d["counts"]) <= 9_900 and len(d["bins"]) == 61, (
+        "histogram clip is 0.5-99.5"
+    )
     assert abs(d["percentiles"]["50"]) < 0.05, "median of N(0,1) far from 0"
     assert len(got[1]["bands"]["50"]) == 30, "cone kept runs instead of percentiles"
-    r = result.envelope("test", "S", None, {"k": 1}, time.time(),
-                        [result.tab("t", "T", got)], verdict=got[-1])
+    r = result.envelope(
+        "test",
+        "S",
+        None,
+        {"k": 1},
+        time.time(),
+        [result.tab("t", "T", got)],
+        verdict=got[-1],
+    )
     assert json.loads(json.dumps(r)) == r, "result does not survive JSON"
     html = page.page(r, "T")
     assert html.count("<svg") == 6, "a drawing kind did not draw"
 
-    for bad in ({"kind": "pie"}, {**got[4], "items": [{**got[4]["items"][0], "state": "OK"}]},
-                {k: v for k, v in got[2].items() if k != "scale"}):
+    for bad in (
+        {"kind": "pie"},
+        {**got[4], "items": [{**got[4]["items"][0], "state": "OK"}]},
+        {k: v for k, v in got[2].items() if k != "scale"},
+    ):
         try:
             blocks.validate({"tabs": [{"name": "t", "blocks": [bad]}]})
         except ValueError:

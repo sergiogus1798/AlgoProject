@@ -23,22 +23,48 @@ def main() -> None:
     atr = sqx_atr.sqx(bars)
     mae = [3.5, 3.2, 1, 0.5, 1.5, 4.5, 2, 0.2, 3.0, 5]
     pnl = [10, -20, 5, 5, -10, 30, 5, 5, -4, 20]
-    held = [4] * 9 + [40]       # mean 7.6, sd 11.38, cut 36.06: only the last is anomalous
+    held = [4] * 9 + [40]  # mean 7.6, sd 11.38, cut 36.06: only the last is anomalous
     at = [10 + 50 * i for i in range(10)]
-    trades = pd.DataFrame({
-        "Open time": index[at], "Close time": [index[a + h] for a, h in zip(at, held)],
-        "Size": 1.0, "MAE ($)": [-2.0 * m for m in mae], "MFE ($)": 1.0, "Profit/Loss": pnl,
-        "Close price": 100.0})
+    trades = pd.DataFrame(
+        {
+            "Open time": index[at],
+            "Close time": [index[a + h] for a, h in zip(at, held)],
+            "Size": 1.0,
+            "MAE ($)": [-2.0 * m for m in mae],
+            "MFE ($)": 1.0,
+            "Profit/Loss": pnl,
+            "Close price": 100.0,
+        }
+    )
     t = measures.per_trade(trades, index, atr, 1.0)
     if not np.allclose(t["mae_atr"], mae) or t["bars"].tolist() != held:
-        failures.append(f"per_trade: mae {t['mae_atr'].tolist()} bars {t['bars'].tolist()}")
+        failures.append(
+            f"per_trade: mae {t['mae_atr'].tolist()} bars {t['bars'].tolist()}"
+        )
     got = measures.one_segment(t, cfg)
-    want = {"n": 10, "net": 46, "n_long": 1, "peor_mae": 5, "mae_p95_ganadoras": 4.85,
-            "prof3_n": 5, "prof3_frac": 0.5, "prof3_n_rec": 3, "prof3_pnl_rec": 60,
-            "prof3_cuota_rec": 60 / 46, "prof3_cortado_0": -20, "prof3_cortado_0.5": -25,
-            "prof4_n": 2, "prof4_n_rec": 2, "prof4_cuota_rec": 50 / 46, "prof4_cortado_0": -20,
-            "anom3_n": 1, "anom3_n_rec": 1, "anom3_cuota_rec": 20 / 46, "anom3_cortado_0": 20,
-            "anom4_n": 1}
+    want = {
+        "n": 10,
+        "net": 46,
+        "n_long": 1,
+        "peor_mae": 5,
+        "mae_p95_ganadoras": 4.85,
+        "prof3_n": 5,
+        "prof3_frac": 0.5,
+        "prof3_n_rec": 3,
+        "prof3_pnl_rec": 60,
+        "prof3_cuota_rec": 60 / 46,
+        "prof3_cortado_0": -20,
+        "prof3_cortado_0.5": -25,
+        "prof4_n": 2,
+        "prof4_n_rec": 2,
+        "prof4_cuota_rec": 50 / 46,
+        "prof4_cortado_0": -20,
+        "anom3_n": 1,
+        "anom3_n_rec": 1,
+        "anom3_cuota_rec": 20 / 46,
+        "anom3_cortado_0": 20,
+        "anom4_n": 1,
+    }
     bad = {k: (got[k], v) for k, v in want.items() if not np.isclose(got[k], v)}
     if bad:
         failures.append(f"one_segment (obtenido, esperado): {bad}")
@@ -46,7 +72,9 @@ def main() -> None:
     # A population of two copies, bar set at 0.3: the anomalous recovered give 0.43 of the net.
     both = pd.concat([t.assign(identity=i, segment="build") for i in ("a", "b")])
     names = pd.Series({"a": "A", "b": "B"})
-    p = many.panel(both, names, {**cfg, "verdict": {"min_cuota_rec": 0.3, "action": "drop"}})
+    p = many.panel(
+        both, names, {**cfg, "verdict": {"min_cuota_rec": 0.3, "action": "drop"}}
+    )
     if not (p["marcada"].all() and (p["verdict"] == "DESCARTAR").all()):
         failures.append("panel: con umbral 0,3 y drop las dos tenían que caer")
     free = many.panel(both, names, cfg)

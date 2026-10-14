@@ -10,12 +10,20 @@ from studies.research.marketProfile.measure.rules import CONDITIONS
 def scouted() -> list[dict]:
     """The scout's entries (`scout-<day>.yaml`), oldest first; none while it has stored nothing."""
     files = sorted(research_literature_dir().glob("scout-*.yaml"))
-    return [e for f in files for e in yaml.safe_load(f.read_text(encoding="utf-8"))["entries"]]
+    return [
+        e
+        for f in files
+        for e in yaml.safe_load(f.read_text(encoding="utf-8"))["entries"]
+    ]
 
 
 def named(args: dict) -> list[str]:
     """Every condition a `rule` measure names, without its `not:`."""
-    keys = [args["enter"], *(args.get("when") or []), *([args["leave"]] if args.get("leave") else [])]
+    keys = [
+        args["enter"],
+        *(args.get("when") or []),
+        *([args["leave"]] if args.get("leave") else []),
+    ]
     return [k.removeprefix("not:") for k in keys]
 
 
@@ -43,9 +51,16 @@ def specs(entries: list[dict], taken: set[str]) -> tuple[list[dict], list[str]]:
                 skipped.append(f"{e['id']}: el nombre {spec['name']} ya existe")
             else:
                 taken = taken | {spec["name"]}
-                out.append({"name": spec["name"], "family": e["family"], "tag": "literature",
-                            "lit": "-".join(e["id"].split("-")[:2]), "fn": "rule",
-                            "args": spec["args"]})
+                out.append(
+                    {
+                        "name": spec["name"],
+                        "family": e["family"],
+                        "tag": "literature",
+                        "lit": "-".join(e["id"].split("-")[:2]),
+                        "fn": "rule",
+                        "args": spec["args"],
+                    }
+                )
     return out, skipped
 
 

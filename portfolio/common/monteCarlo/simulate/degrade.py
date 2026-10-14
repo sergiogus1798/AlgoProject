@@ -10,8 +10,15 @@ from portfolio.common.monteCarlo.simulate import engine, metrics
 from portfolio.common.monteCarlo.verdict import confidence
 
 
-def scope_shape(source: dict, positions: np.ndarray, kind: str, model: str, block: int,
-                metric: str, cfg: dict) -> dict | None:
+def scope_shape(
+    source: dict,
+    positions: np.ndarray,
+    kind: str,
+    model: str,
+    block: int,
+    metric: str,
+    cfg: dict,
+) -> dict | None:
     """One family's headline statistic, resampled on just one IS/OOS scope's trades.
 
     Args:
@@ -31,8 +38,15 @@ def scope_shape(source: dict, positions: np.ndarray, kind: str, model: str, bloc
     if positions.size < confidence.MEAN_PROVISIONAL:
         return None
     cut = stream.restrict(source, positions)
-    got = engine.sequential(engine.payload(cut), kind, model, block,
-                            cfg["global"]["n_sims"], cfg, config.seed(cfg))
+    got = engine.sequential(
+        engine.payload(cut),
+        kind,
+        model,
+        block,
+        cfg["global"]["n_sims"],
+        cfg,
+        config.seed(cfg),
+    )
     seen = metrics.observed(cut["pnl"], cfg["global"]["starting_equity"])
     shape = metrics.shape(got[metric], seen[metric], cfg["global"]["report_percentile"])
     return {**shape, "n": int(positions.size)}
@@ -59,10 +73,12 @@ def overlay(source: dict, cfg: dict) -> dict[str, dict[str, Any]]:
     """
     samples = stream.samples(source)
     block = cfg["blocks"]["block_min"]
-    spec = {"A": ("draw", "stationary", block, "dd_pct"),
-            "B": ("draw", "iid_bootstrap", 0, "net"),
-            "D": ("draw", "iid_bootstrap", 0, "net"),
-            **{f"C.{name}": ("stress", name, 0, "net") for name in stress.STRESS}}
+    spec = {
+        "A": ("draw", "stationary", block, "dd_pct"),
+        "B": ("draw", "iid_bootstrap", 0, "net"),
+        "D": ("draw", "iid_bootstrap", 0, "net"),
+        **{f"C.{name}": ("stress", name, 0, "net") for name in stress.STRESS},
+    }
     keys, jobs = [], []
     for fam, (kind, model, blk, metric) in spec.items():
         for scope, positions in samples.items():

@@ -24,7 +24,9 @@ def set_timeframe(text: str, timeframe: str) -> tuple[str, int]:
     """
     tags = re.findall(r'<Chart symbol="[^"]*"[^>]*>', text)
     for tag in tags:
-        text = text.replace(tag, re.sub(r'timeframe="[^"]*"', f'timeframe="{timeframe}"', tag), 1)
+        text = text.replace(
+            tag, re.sub(r'timeframe="[^"]*"', f'timeframe="{timeframe}"', tag), 1
+        )
     return text, len(tags)
 
 
@@ -54,8 +56,11 @@ def set_precision(text: str, precision: int) -> str:
         on the high-precision cross-check to drop what only exists on the big bars.
         Everything after it runs at one minute, the main backtest included.
     """
-    return re.sub(r'(<Setup\b[^>]*?)testPrecision="[^"]*"',
-                  rf'\g<1>testPrecision="{precision}"', text)
+    return re.sub(
+        r'(<Setup\b[^>]*?)testPrecision="[^"]*"',
+        rf'\g<1>testPrecision="{precision}"',
+        text,
+    )
 
 
 def set_params(text: str, values: dict) -> tuple[str, int]:
@@ -117,18 +122,27 @@ def set_money_management(text: str, mm: dict) -> str:
         are sizing-dependent, so an IS and an OOS sized differently cannot be compared.
     """
     section = rx(r"<MoneyManagement>.*?</MoneyManagement>", text, re.S).group(0)
-    out = re.sub(r'(<Method type="(\w+)"[^>]*?)use="[^"]*"',
-                 lambda m: f'{m.group(1)}use="{str(m.group(2) == mm["method"]).lower()}"', section)
+    out = re.sub(
+        r'(<Method type="(\w+)"[^>]*?)use="[^"]*"',
+        lambda m: f'{m.group(1)}use="{str(m.group(2) == mm["method"]).lower()}"',
+        section,
+    )
     chosen = rx(rf'<Method type="{mm["method"]}".*?</Method>', out, re.S).group(0)
     fixed = chosen
     for key, value in mm["params"].items():
         fixed = re.sub(rf'(<Param key="{key}"[^>]*>)[^<]*', rf"\g<1>{value}", fixed)
     out = out.replace(chosen, fixed, 1)
-    out = re.sub(r"<InitialCapital>[^<]*</InitialCapital>",
-                 f"<InitialCapital>{mm['initial_capital']}</InitialCapital>", out)
+    out = re.sub(
+        r"<InitialCapital>[^<]*</InitialCapital>",
+        f"<InitialCapital>{mm['initial_capital']}</InitialCapital>",
+        out,
+    )
     text = text.replace(section, out, 1)
-    return re.sub(r'(<RiskManagement\b[^>]*?)maxDrawdown="[^"]*"',
-                  rf'\g<1>maxDrawdown="{mm["max_drawdown"]}"', text)
+    return re.sub(
+        r'(<RiskManagement\b[^>]*?)maxDrawdown="[^"]*"',
+        rf'\g<1>maxDrawdown="{mm["max_drawdown"]}"',
+        text,
+    )
 
 
 def set_crosschecks(text: str, cc: dict, spread: float, enabled: list) -> str:
@@ -148,18 +162,29 @@ def set_crosschecks(text: str, cc: dict, spread: float, enabled: list) -> str:
         zero, which reruns the strategy for free and calls the result a robustness check.
     """
     if "MonteCarloManipulation" in enabled:
-        raise SystemExit("MonteCarloManipulation no se enciende nunca (dueño, 2026-10-11): quítalo de la lista.")
+        raise SystemExit(
+            "MonteCarloManipulation no se enciende nunca (dueño, 2026-10-11): quítalo de la lista."
+        )
     found = CROSSCHECKS.search(text)
     if not found:
         return text
     out = found.group(0)
     for name in re.findall(r"<(\w+) use=\"(?:true|false)\">", out):
-        out = re.sub(rf'(<{name} )use="[^"]*"', rf'\g<1>use="{str(name in enabled).lower()}"', out)
+        out = re.sub(
+            rf'(<{name} )use="[^"]*"',
+            rf'\g<1>use="{str(name in enabled).lower()}"',
+            out,
+        )
     hp = re.search(r"<RetestWithHigherPrecision.*?</Settings>", out, re.S)
     if hp:
-        fixed = re.sub(r"<Spread>[^<]*</Spread>", f"<Spread>{spread}</Spread>", hp.group(0))
-        fixed = re.sub(r"<Precision>[^<]*</Precision>", f"<Precision>{cc['precision']}</Precision>",
-                       fixed)
+        fixed = re.sub(
+            r"<Spread>[^<]*</Spread>", f"<Spread>{spread}</Spread>", hp.group(0)
+        )
+        fixed = re.sub(
+            r"<Precision>[^<]*</Precision>",
+            f"<Precision>{cc['precision']}</Precision>",
+            fixed,
+        )
         out = out.replace(hp.group(0), fixed, 1)
     return text.replace(found.group(0), out, 1)
 
@@ -198,8 +223,11 @@ def set_databank_caps(text: str, databank: dict) -> str:
         holds is the caller's, because a smoke test and a real build differ in exactly
         that one number and nothing else.
     """
-    return re.sub(r'(<StopCondition\b[^>]*?)type="[^"]*"',
-                  rf'\g<1>type="{databank["stop_condition"]}"', text)
+    return re.sub(
+        r'(<StopCondition\b[^>]*?)type="[^"]*"',
+        rf'\g<1>type="{databank["stop_condition"]}"',
+        text,
+    )
 
 
 def session_block(text: str, session: str) -> str | None:
@@ -212,7 +240,9 @@ def session_block(text: str, session: str) -> str | None:
     Returns:
         The <Session>…</Session> element, or None when this task does not define it.
     """
-    found = re.search(rf'<Session name="{re.escape(session)}">.*?</Session>', text, re.S)
+    found = re.search(
+        rf'<Session name="{re.escape(session)}">.*?</Session>', text, re.S
+    )
     return found.group(0) if found else None
 
 

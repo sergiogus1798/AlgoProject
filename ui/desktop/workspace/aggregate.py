@@ -9,8 +9,8 @@ from ui.desktop import background, client
 from ui.text.numbers import num
 from ui.desktop.workspace.curves import INK, NAME, Curves
 
-MIN_HEIGHT = 230            # px
-MIN_WIDTH = 300             # px: the two switches and the stats' two columns still read
+MIN_HEIGHT = 230  # px
+MIN_WIDTH = 300  # px: the two switches and the stats' two columns still read
 
 
 def ask(path: str, **params: str) -> dict[str, Any]:
@@ -63,7 +63,9 @@ class Aggregate(QWidget):
         self.stats.setWordWrap(True)
         lay.addWidget(self.stats)
 
-    def load(self, project: str, databank: str, rows: list[dict], hidden: set[str]) -> None:
+    def load(
+        self, project: str, databank: str, rows: list[dict], hidden: set[str]
+    ) -> None:
         """Read and paint the databank's aggregate: of every row, or — when a filter hid some
         (F6) — only of the visible ones, sent by identity. Each answer is kept until `forget`.
 
@@ -73,16 +75,22 @@ class Aggregate(QWidget):
             rows: GET /api/databank/table's rows.
             hidden: The identities the table hides.
         """
-        ids = sorted(r["identity"] for r in rows if r["identity"] and r["identity"] not in hidden)
+        ids = sorted(
+            r["identity"] for r in rows if r["identity"] and r["identity"] not in hidden
+        )
         key = (project, databank, tuple(ids) if hidden else None)
         self.shown = key
         if key in self.cache:
             self.fill(self.cache[key])
             return
         self.stats.setText("leyendo la curva…")
-        background.post("databank/equity", {"project": project, "databank": databank,
-                                            "ids": ids if hidden else None},
-                        lambda got: self.landed(key, got), key=f"equity:{id(self)}", owner=self)
+        background.post(
+            "databank/equity",
+            {"project": project, "databank": databank, "ids": ids if hidden else None},
+            lambda got: self.landed(key, got),
+            key=f"equity:{id(self)}",
+            owner=self,
+        )
 
     def landed(self, key: tuple, curve: dict) -> None:
         """The daemon's curve: kept unless it failed, painted if it is still the one shown."""
@@ -102,12 +110,19 @@ class Aggregate(QWidget):
             curve: `sqx`, `split`, `stats` — or `error`.
         """
         of = curve.get("of")
-        self.of.setText("" if of is None else "· de todas las filas" if of == "todas"
-                        else f"· {num(of)} visibles")
+        self.of.setText(
+            ""
+            if of is None
+            else "· de todas las filas"
+            if of == "todas"
+            else f"· {num(of)} visibles"
+        )
         if "error" in curve:
             self.curves.fill([0.0, 0.0])
             self.stats.setText(curve["error"])
             return
         self.curves.fill(curve["sqx"], curve.get("split"))
         pairs = [f"{k}: {num(v)}" for k, v in curve["stats"].items()]
-        self.stats.setText("\n".join("   ".join(pairs[i:i + 2]) for i in range(0, len(pairs), 2)))
+        self.stats.setText(
+            "\n".join("   ".join(pairs[i : i + 2]) for i in range(0, len(pairs), 2))
+        )

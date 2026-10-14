@@ -28,10 +28,17 @@ def ranked_windows(x: np.ndarray, window: int) -> np.ndarray | None:
     return rankdata(sliding_window_view(x, window), axis=1)
 
 
-def _corr_per_window(aw: np.ndarray, bw: np.ndarray, method: str, ranks: tuple[np.ndarray, np.ndarray] | None = None) -> np.ndarray:
+def _corr_per_window(
+    aw: np.ndarray,
+    bw: np.ndarray,
+    method: str,
+    ranks: tuple[np.ndarray, np.ndarray] | None = None,
+) -> np.ndarray:
     """Signed correlation per window, one full pass, no python loop over pairs."""
     if method == "spearman":
-        aw, bw = ranks if ranks is not None else (rankdata(aw, axis=1), rankdata(bw, axis=1))
+        aw, bw = (
+            ranks if ranks is not None else (rankdata(aw, axis=1), rankdata(bw, axis=1))
+        )
     return _window_pearson(aw, bw)
 
 
@@ -45,8 +52,14 @@ class Rolling(TypedDict):
     n_windows: int
 
 
-def rolling_max(a: np.ndarray, b: np.ndarray, window: int, recent: int, method: str,
-                ranks: tuple[np.ndarray, np.ndarray] | None = None) -> Rolling:
+def rolling_max(
+    a: np.ndarray,
+    b: np.ndarray,
+    window: int,
+    recent: int,
+    method: str,
+    ranks: tuple[np.ndarray, np.ndarray] | None = None,
+) -> Rolling:
     """Maximum signed correlation over every one-step rolling window.
 
     Args:
@@ -64,8 +77,13 @@ def rolling_max(a: np.ndarray, b: np.ndarray, window: int, recent: int, method: 
     """
     n = a.size
     if n < window:
-        return {"whole": float("nan"), "recent": float("nan"),
-                "whole_abs": float("nan"), "recent_abs": float("nan"), "n_windows": 0}
+        return {
+            "whole": float("nan"),
+            "recent": float("nan"),
+            "whole_abs": float("nan"),
+            "recent_abs": float("nan"),
+            "n_windows": 0,
+        }
 
     aw = sliding_window_view(a, window)
     bw = sliding_window_view(b, window)

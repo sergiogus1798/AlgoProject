@@ -8,7 +8,11 @@ from core.paths import DATA
 DAY = 86400
 INTERMEDIATES = "intermediates"
 SUPERSEDED, STRATEGY_COPIES, COLLECTED, STALE = (
-    "superseded_export", "strategy_copies", "collected_variants", "stale_branch")
+    "superseded_export",
+    "strategy_copies",
+    "collected_variants",
+    "stale_branch",
+)
 
 
 def _bytes(where: Path) -> tuple[int, int]:
@@ -62,9 +66,15 @@ def superseded(root: Path = DATA) -> list[dict]:
             if missing:
                 continue
             size, files = _bytes(old)
-            rows.append({"rule": SUPERSEDED, "path": str(old.relative_to(root)),
-                         "bytes": size, "files": files,
-                         "why": f"{dates[-1].name} contains everything it has"})
+            rows.append(
+                {
+                    "rule": SUPERSEDED,
+                    "path": str(old.relative_to(root)),
+                    "bytes": size,
+                    "files": files,
+                    "why": f"{dates[-1].name} contains everything it has",
+                }
+            )
     return rows
 
 
@@ -86,9 +96,15 @@ def strategy_copies(root: Path = DATA) -> list[dict]:
     rows = []
     for folder in sorted({p.parent for p in (root / "raw").rglob("*.sqx")}):
         files = list(folder.glob("*.sqx"))
-        rows.append({"rule": STRATEGY_COPIES, "path": str(folder.relative_to(root)),
-                     "bytes": sum(f.stat().st_size for f in files), "files": len(files),
-                     "why": "copies of strategies the databank holds"})
+        rows.append(
+            {
+                "rule": STRATEGY_COPIES,
+                "path": str(folder.relative_to(root)),
+                "bytes": sum(f.stat().st_size for f in files),
+                "files": len(files),
+                "why": "copies of strategies the databank holds",
+            }
+        )
     return rows
 
 
@@ -110,9 +126,15 @@ def intermediates(root: Path = DATA) -> list[dict]:
             folder = packed.parent / name
             if folder.is_dir():
                 size, files = _bytes(folder)
-                rows.append({"rule": INTERMEDIATES, "path": str(folder.relative_to(root)),
-                             "bytes": size, "files": files,
-                             "why": "CSV intermediates of the trades.parquet beside them"})
+                rows.append(
+                    {
+                        "rule": INTERMEDIATES,
+                        "path": str(folder.relative_to(root)),
+                        "bytes": size,
+                        "files": files,
+                        "why": "CSV intermediates of the trades.parquet beside them",
+                    }
+                )
     return rows
 
 
@@ -140,10 +162,19 @@ def collected(root: Path = DATA) -> list[dict]:
         for item in stage.get("removable", []):
             path = root / item
             if path.exists():
-                size, files = _bytes(path) if path.is_dir() else (path.stat().st_size, 1)
-                rows.append({"rule": COLLECTED, "path": item, "bytes": size,
-                             "files": files, "why": f"ledger {got['strategy']}: exported "
-                                                    f"and hashed at {stage['done_at']}"})
+                size, files = (
+                    _bytes(path) if path.is_dir() else (path.stat().st_size, 1)
+                )
+                rows.append(
+                    {
+                        "rule": COLLECTED,
+                        "path": item,
+                        "bytes": size,
+                        "files": files,
+                        "why": f"ledger {got['strategy']}: exported "
+                        f"and hashed at {stage['done_at']}",
+                    }
+                )
     return rows
 
 
@@ -161,9 +192,17 @@ def stale(rows: list[dict], cfg: dict, root: Path = DATA) -> list[dict]:
         reported last and separately.
     """
     days = cfg["disk"]["stale_days"]
-    return [{"rule": STALE, "path": r["branch"], "bytes": r["bytes"], "files": r["files"],
-             "why": f"nothing written for {r['age_days']:.0f} days (limit {days})"}
-            for r in rows if "/" not in r["branch"] and r["stale"]]
+    return [
+        {
+            "rule": STALE,
+            "path": r["branch"],
+            "bytes": r["bytes"],
+            "files": r["files"],
+            "why": f"nothing written for {r['age_days']:.0f} days (limit {days})",
+        }
+        for r in rows
+        if "/" not in r["branch"] and r["stale"]
+    ]
 
 
 def proposals(rows: list[dict], cfg: dict, root: Path = DATA) -> list[dict]:
@@ -179,6 +218,11 @@ def proposals(rows: list[dict], cfg: dict, root: Path = DATA) -> list[dict]:
         by anything in this repository.** The owner decides; this only makes the decision
         possible by attaching a number to it.
     """
-    found = (collected(root) + superseded(root) + strategy_copies(root)
-             + intermediates(root) + stale(rows, cfg, root))
+    found = (
+        collected(root)
+        + superseded(root)
+        + strategy_copies(root)
+        + intermediates(root)
+        + stale(rows, cfg, root)
+    )
     return sorted(found, key=lambda r: r["bytes"], reverse=True)

@@ -2,8 +2,15 @@
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QFrame, QListWidget,
-                               QListWidgetItem, QPushButton, QVBoxLayout)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QComboBox,
+    QFrame,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QVBoxLayout,
+)
 
 from ui.desktop.blocks.card import text
 from ui.desktop.blocks.states import colour, label
@@ -21,17 +28,19 @@ def line(run: dict) -> str:
         sign it.
     """
     stale = " · caducado" if run["stale"] else ""
-    return (f"{run['day']}  {label(run['state'])} «{run['label'] or '—'}»  "
-            f"config {run['config_hash']}{stale}")
+    return (
+        f"{run['day']}  {label(run['state'])} «{run['label'] or '—'}»  "
+        f"config {run['config_hash']}{stale}"
+    )
 
 
 class History(QFrame):
     """The runs of the study on screen, newest first. One click shows that run; two selected
     and «comparar» shows them side by side; the picker compares with another strategy."""
 
-    picked = Signal(str)            # day
+    picked = Signal(str)  # day
     compare_runs = Signal(str, str)  # day, day
-    versus = Signal(str, str)        # strategy, identity
+    versus = Signal(str, str)  # strategy, identity
 
     def __init__(self) -> None:
         """Build the list, the compare button and the strategy picker, empty."""
@@ -40,31 +49,44 @@ class History(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 8, 10, 8)
         lay.addWidget(text("Historial", T["text"], 12, True))
-        lay.addWidget(text("Clic: ver ese run. Ctrl+clic en dos y «Comparar»: uno al lado "
-                           "del otro.", T["muted"], 12))
+        lay.addWidget(
+            text(
+                "Clic: ver ese run. Ctrl+clic en dos y «Comparar»: uno al lado "
+                "del otro.",
+                T["muted"],
+                12,
+            )
+        )
         self.runs = QListWidget()
         self.runs.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        self.runs.itemClicked.connect(lambda it: self.picked.emit(it.data(Qt.ItemDataRole.UserRole)))
+        self.runs.itemClicked.connect(
+            lambda it: self.picked.emit(it.data(Qt.ItemDataRole.UserRole))
+        )
         self.runs.itemSelectionChanged.connect(self._selection)
         lay.addWidget(self.runs, 1)
         self.both = QPushButton("Comparar los dos runs elegidos")
         # Its own sentence: the registry (`ui/text/buttonhelp_texts`) still keys the old label.
-        self.both.setProperty("help", "Pone lado a lado los dos runs elegidos en la lista "
-                                      "(Ctrl+clic).")
+        self.both.setProperty(
+            "help", "Pone lado a lado los dos runs elegidos en la lista (Ctrl+clic)."
+        )
         self.both.clicked.connect(self._compare)
         lay.addWidget(self.both)
         self.skipped = text("", T["faint"], 12)
         lay.addWidget(self.skipped)
-        self.rival_title = text("Comparar con otra estrategia de este databank", T["text"], 11,
-                                True)
+        self.rival_title = text(
+            "Comparar con otra estrategia de este databank", T["text"], 11, True
+        )
         lay.addWidget(self.rival_title)
         self.rival = QComboBox()
-        self.rival.setToolTip("Solo las de este databank: el mismo nombre en otro databank es "
-                              "otra estrategia (otra identidad).")
+        self.rival.setToolTip(
+            "Solo las de este databank: el mismo nombre en otro databank es "
+            "otra estrategia (otra identidad)."
+        )
         lay.addWidget(self.rival)
         self.go = QPushButton("Comparar con esta estrategia")
-        self.go.clicked.connect(lambda: self.versus.emit(self.rival.currentText(),
-                                                         self.rival.currentData()))
+        self.go.clicked.connect(
+            lambda: self.versus.emit(self.rival.currentText(), self.rival.currentData())
+        )
         lay.addWidget(self.go)
         self._selection()
 
@@ -81,9 +103,14 @@ class History(QFrame):
             item = QListWidgetItem(line(run))
             item.setData(Qt.ItemDataRole.UserRole, run["day"])
             item.setForeground(QColor(colour(run["state"])))
-            item.setToolTip(f"calculado {run['computed_at']} · config {run['config_hash']}"
-                            + (" — calculado con otra configuración que la de hoy"
-                               if run["stale"] else ""))
+            item.setToolTip(
+                f"calculado {run['computed_at']} · config {run['config_hash']}"
+                + (
+                    " — calculado con otra configuración que la de hoy"
+                    if run["stale"]
+                    else ""
+                )
+            )
             self.runs.addItem(item)
         if "error" in got:
             self.skipped.setText(got["error"])
@@ -93,7 +120,9 @@ class History(QFrame):
             self.skipped.setText("")
         passed = [f"{s['day']}: {s['reason']}" for s in got.get("skipped") or []]
         if passed:
-            self.skipped.setText("Días con informe que no se muestran:\n" + "\n".join(passed))
+            self.skipped.setText(
+                "Días con informe que no se muestran:\n" + "\n".join(passed)
+            )
         self.rival.clear()
         for s in strategies or []:
             self.rival.addItem(s["strategy"], s["identity"])
@@ -110,7 +139,9 @@ class History(QFrame):
         """
         self.runs.blockSignals(True)
         for i in range(self.runs.count()):
-            self.runs.item(i).setSelected(self.runs.item(i).data(Qt.ItemDataRole.UserRole) == day)
+            self.runs.item(i).setSelected(
+                self.runs.item(i).data(Qt.ItemDataRole.UserRole) == day
+            )
         self.runs.blockSignals(False)
         self._selection()
 
@@ -118,10 +149,15 @@ class History(QFrame):
         """«Comparar» works with exactly two runs chosen."""
         n = len(self.runs.selectedItems())
         self.both.setEnabled(n == 2)
-        self.both.setToolTip("Elige exactamente dos runs (Ctrl+clic)." if n != 2 else
-                             "Los dos runs, misma pestaña abierta en ambos.")
+        self.both.setToolTip(
+            "Elige exactamente dos runs (Ctrl+clic)."
+            if n != 2
+            else "Los dos runs, misma pestaña abierta en ambos."
+        )
 
     def _compare(self) -> None:
         """Emit the two chosen days, older on the left."""
-        days = sorted(it.data(Qt.ItemDataRole.UserRole) for it in self.runs.selectedItems())
+        days = sorted(
+            it.data(Qt.ItemDataRole.UserRole) for it in self.runs.selectedItems()
+        )
         self.compare_runs.emit(days[0], days[1])

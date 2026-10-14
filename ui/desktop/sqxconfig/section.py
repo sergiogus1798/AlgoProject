@@ -1,14 +1,21 @@
 """One test or topic of the SQX settings: a header that folds, the file's own words, one row per value."""
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QFrame,
+    QGridLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop.theme import C
 from ui.text.glossary import LABELS, label
 from ui.desktop.sqxconfig.field import Field
 
-HELP_WIDTH = 440   # px of the per-value comment beside its editor
-SHORT = 420        # characters of a long comment shown before «seguir leyendo»
+HELP_WIDTH = 440  # px of the per-value comment beside its editor
+SHORT = 420  # characters of a long comment shown before «seguir leyendo»
 
 
 def words(key: object, path: list | None = None) -> str:
@@ -37,12 +44,17 @@ def group_of(section: dict, spec: dict) -> str:
     """
     path = spec["path"]
     if spec.get("group"):
-        return " › ".join([spec["group"], *(words(k) for k in path[len(spec["base"]):-1])])
+        return " › ".join(
+            [spec["group"], *(words(k) for k in path[len(spec["base"]) : -1])]
+        )
     parts = []
     for depth, key in enumerate(path[1:-1], start=1):
         if isinstance(key, int):
-            titled = [f["value"] for f in section["fields"]
-                      if f["path"][:depth + 1] == path[:depth + 1] and f["key"] == "title"]
+            titled = [
+                f["value"]
+                for f in section["fields"]
+                if f["path"][: depth + 1] == path[: depth + 1] and f["key"] == "title"
+            ]
             parts.append(titled[0] if titled else f"n.º {key + 1}")
         else:
             parts.append(words(key))
@@ -68,7 +80,9 @@ def note(text: str, width: int = 0, short: int = 0) -> QWidget:
     lay = QVBoxLayout(box)
     lay.setContentsMargins(0, 0, 0, 4)
     lay.setSpacing(2)
-    words_ = QLabel(text if len(text) <= short else text[:short].rsplit(" ", 1)[0] + " …")
+    words_ = QLabel(
+        text if len(text) <= short else text[:short].rsplit(" ", 1)[0] + " …"
+    )
     words_.setWordWrap(True)
     words_.setObjectName("dim")
     words_.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -103,8 +117,10 @@ class Section(QFrame):
         self.head.setCheckable(True)
         self.head.setStyleSheet("text-align: left; border: none; font-size: 17px;")
         count = len(section["fields"])
-        self.caption = (f"{words(section['key'])}   ·   {count} valor{'es' if count != 1 else ''}"
-                        + (f", {locked} bloqueados" if locked else ""))
+        self.caption = (
+            f"{words(section['key'])}   ·   {count} valor{'es' if count != 1 else ''}"
+            + (f", {locked} bloqueados" if locked else "")
+        )
         self.head.setToolTip("\n".join(section.get("files", [section["source"]])))
         self.head.toggled.connect(self.fold)
         self.lay = QVBoxLayout(self)
@@ -162,7 +178,10 @@ class Section(QFrame):
                     grid.addWidget(warning, r, 0, 1, 3)
                     r += 1
             for g in self.section["groups"]:
-                if spec["path"][:len(g["path"])] == g["path"] and g["help"] not in told:
+                if (
+                    spec["path"][: len(g["path"])] == g["path"]
+                    and g["help"] not in told
+                ):
                     told.add(g["help"])
                     grid.addWidget(note(g["help"]), r, 0, 1, 3)
                     r += 1
@@ -177,7 +196,12 @@ class Section(QFrame):
             grid.addWidget(name, r, 0, Qt.AlignmentFlag.AlignTop)
             grid.addWidget(field, r, 1, Qt.AlignmentFlag.AlignTop)
             if spec["help"] and spec["help"] not in told:
-                grid.addWidget(note(spec["help"], HELP_WIDTH, SHORT // 2), r, 2, Qt.AlignmentFlag.AlignTop)
+                grid.addWidget(
+                    note(spec["help"], HELP_WIDTH, SHORT // 2),
+                    r,
+                    2,
+                    Qt.AlignmentFlag.AlignTop,
+                )
             r += 1
         grid.setColumnStretch(1, 1)
         return body

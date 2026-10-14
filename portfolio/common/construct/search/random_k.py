@@ -15,7 +15,9 @@ class Draw(TypedDict):
     n_space: int | None
 
 
-def draw(graph: np.ndarray, k: int, n: int, limit: int, rng: np.random.Generator) -> Draw:
+def draw(
+    graph: np.ndarray, k: int, n: int, limit: int, rng: np.random.Generator
+) -> Draw:
     """`n` random cliques of size `k`, with replacement — no search per draw.
 
     Args:
@@ -49,7 +51,14 @@ def draw(graph: np.ndarray, k: int, n: int, limit: int, rng: np.random.Generator
         if len(rows) == n:
             break
     if len(rows) < n:
-        raise ValueError(f"random_k: {len(rows)} de {n} extracciones de tamaño {k} en {50 * n} intentos")
-    distinct, index = np.unique(np.array(rows, dtype=np.int32), axis=0, return_inverse=True)
-    return {"members": objective.masks(distinct, graph.shape[0]), "index": index.ravel(),
-            "n_space": None}
+        raise ValueError(
+            f"random_k: {len(rows)} de {n} extracciones de tamaño {k} en {50 * n} intentos"
+        )
+    distinct, index = np.unique(
+        np.array(rows, dtype=np.int32), axis=0, return_inverse=True
+    )
+    return {
+        "members": objective.masks(distinct, graph.shape[0]),
+        "index": index.ravel(),
+        "n_space": None,
+    }

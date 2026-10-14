@@ -60,13 +60,17 @@ def sample(packed: Path, which: str) -> pd.DataFrame:
     """
     frame = pd.read_parquet(packed)
     if not (frame["Sample type"] == which).any():
-        raise SystemExit(f"{packed} no tiene ni una operación de la muestra {which}, sólo "
-                         f"{sorted(frame['Sample type'].astype(str).unique())}: exporta el "
-                         f"databank que la corrió (para OOS1, `OOS`, no `Results`)")
+        raise SystemExit(
+            f"{packed} no tiene ni una operación de la muestra {which}, sólo "
+            f"{sorted(frame['Sample type'].astype(str).unique())}: exporta el "
+            f"databank que la corrió (para OOS1, `OOS`, no `Results`)"
+        )
     return cast(pd.DataFrame, frame[frame["Sample type"] == which])
 
 
-def bars(feed: str, timeframe: str, span: tuple[pd.Timestamp, pd.Timestamp]) -> pd.DataFrame:
+def bars(
+    feed: str, timeframe: str, span: tuple[pd.Timestamp, pd.Timestamp]
+) -> pd.DataFrame:
     """The bars of the window this study is measured over.
 
     Args:
@@ -96,8 +100,10 @@ def window(symbol: str, segment: str) -> tuple[pd.Timestamp, pd.Timestamp]:
         credited with a shorter window and a higher occupancy than it had.
     """
     start, end = asset_window(load_asset(symbol), segment)
-    return (cast(pd.Timestamp, pd.Timestamp(start, unit="ms")),
-            cast(pd.Timestamp, pd.Timestamp(end, unit="ms")))
+    return (
+        cast(pd.Timestamp, pd.Timestamp(start, unit="ms")),
+        cast(pd.Timestamp, pd.Timestamp(end, unit="ms")),
+    )
 
 
 def point_value(symbol: str) -> float:

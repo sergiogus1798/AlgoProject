@@ -1,4 +1,5 @@
 """Turn SQX-exported EAs into two per strategy — one with a firm's news filter, one without — and compile them."""
+
 import argparse
 import re
 import shutil
@@ -39,8 +40,15 @@ def build(firm_key: str, paths: list[Path]) -> list[dict]:
         plain = folder / f"{name}_NoNews.mq5"
         filtered.write_bytes(patch(text, firm).encode("utf-8"))
         shutil.copyfile(src, plain)
-        rows.append({"name": name, "filtered": filtered, "plain": plain,
-                     "entries": text.count("// Rule: Long entry") + text.count("// Rule: Short entry")})
+        rows.append(
+            {
+                "name": name,
+                "filtered": filtered,
+                "plain": plain,
+                "entries": text.count("// Rule: Long entry")
+                + text.count("// Rule: Short entry"),
+            }
+        )
     return rows
 
 
@@ -50,7 +58,14 @@ def compile_all(firm_key: str, rows: list[dict]) -> dict[str, Any]:
     Needs the MT5 terminal closed (metaeditor.compile_path refuses otherwise).
     """
     from mt5 import metaeditor, wine
-    dest = wine.data_dir() / "MQL5" / "Experts" / wine.EXPERTS_SUB / FIRMS[firm_key]["label"]
+
+    dest = (
+        wine.data_dir()
+        / "MQL5"
+        / "Experts"
+        / wine.EXPERTS_SUB
+        / FIRMS[firm_key]["label"]
+    )
     dest.mkdir(parents=True, exist_ok=True)
     for r in rows:
         for f in (r["filtered"], r["plain"]):
@@ -63,16 +78,29 @@ def main() -> None:
     """CLI: python3 -m mt5.newsfilter.run <firm> <mq5 or folder>... [--compile]."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("firm", choices=sorted(FIRMS))
-    ap.add_argument("paths", nargs="+", type=Path, help="SQX-exported .mq5 files, or folders of them")
-    ap.add_argument("--compile", action="store_true", help="also compile both EAs in MT5 (terminal closed)")
+    ap.add_argument(
+        "paths",
+        nargs="+",
+        type=Path,
+        help="SQX-exported .mq5 files, or folders of them",
+    )
+    ap.add_argument(
+        "--compile",
+        action="store_true",
+        help="also compile both EAs in MT5 (terminal closed)",
+    )
     a = ap.parse_args()
     rows = build(a.firm, a.paths)
     print(f"{len(rows)} estrategias -> {OUT / FIRMS[a.firm]['label']}")
     for r in rows:
-        print(f"  {r['name']:<28} {r['entries']} regla(s) de entrada  ->  {r['filtered'].name}  +  {r['plain'].name}")
+        print(
+            f"  {r['name']:<28} {r['entries']} regla(s) de entrada  ->  {r['filtered'].name}  +  {r['plain'].name}"
+        )
     if a.compile:
         c = compile_all(a.firm, rows)
-        print(f"compilado en {c['folder']}: {c['errors']} errores, {c['warnings']} avisos")
+        print(
+            f"compilado en {c['folder']}: {c['errors']} errores, {c['warnings']} avisos"
+        )
         for m in c["messages"]:
             print("  " + m)
 

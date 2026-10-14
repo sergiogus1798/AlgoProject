@@ -45,8 +45,28 @@ def run(results_r: list[float], sprt: dict) -> Verdict:
         total += r
         stat = total - drift * n
         if stat >= upper:
-            return {"verdict": "raise", "n": n, "stat": stat, "drift": drift, "lower": lower, "upper": upper}
+            return {
+                "verdict": "raise",
+                "n": n,
+                "stat": stat,
+                "drift": drift,
+                "lower": lower,
+                "upper": upper,
+            }
         if stat <= lower:
-            return {"verdict": "retire", "n": n, "stat": stat, "drift": drift, "lower": lower, "upper": upper}
-    return {"verdict": "continue", "n": len(results_r), "stat": stat, "drift": drift, "lower": lower,
-            "upper": upper}
+            return {
+                "verdict": "retire",
+                "n": n,
+                "stat": stat,
+                "drift": drift,
+                "lower": lower,
+                "upper": upper,
+            }
+    return {
+        "verdict": "continue",
+        "n": len(results_r),
+        "stat": stat,
+        "drift": drift,
+        "lower": lower,
+        "upper": upper,
+    }

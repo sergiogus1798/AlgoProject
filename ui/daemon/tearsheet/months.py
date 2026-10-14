@@ -15,8 +15,13 @@ def monthly(equity: pd.Series) -> pd.Series:
         Indexed by month-start Timestamp. Month-end levels are rounded to whole cents
         before differencing, so the months add up to the last level to the cent.
     """
-    cents = (equity * 100).round().groupby(pd.DatetimeIndex(equity.index).to_period("M")).last()
-    moves = cents.diff().fillna(cents.iloc[0])      # each sample starts from 0
+    cents = (
+        (equity * 100)
+        .round()
+        .groupby(pd.DatetimeIndex(equity.index).to_period("M"))
+        .last()
+    )
+    moves = cents.diff().fillna(cents.iloc[0])  # each sample starts from 0
     moves.index = moves.index.to_timestamp()
     return moves / 100
 

@@ -5,7 +5,9 @@ from typing import TypedDict
 
 import yaml
 
-PRIOR = yaml.safe_load((Path(__file__).parent / "prior.yaml").read_text(encoding="utf-8"))
+PRIOR = yaml.safe_load(
+    (Path(__file__).parent / "prior.yaml").read_text(encoding="utf-8")
+)
 LEVEL = {"A": "Alta", "M": "Media", "B": "Baja"}
 
 
@@ -33,7 +35,9 @@ def level(symbol: str, timeframe: str, direction: str, family: str) -> str:
     return LEVEL[PRIOR["matrix"][symbol][PRIOR["families"].index(family)]]
 
 
-def of(symbol: str, timeframe: str, direction: str, family: str, pullback_as: str) -> Prior:
+def of(
+    symbol: str, timeframe: str, direction: str, family: str, pullback_as: str
+) -> Prior:
     """The prior of a cell of the board, whose families are the profile's seven.
 
     Args:
@@ -46,7 +50,12 @@ def of(symbol: str, timeframe: str, direction: str, family: str, pullback_as: st
         reversion trigger).
     """
     own = level(symbol, timeframe, direction, family)
-    pull = level(symbol, timeframe, direction, "pullback") if family == pullback_as else ""
+    pull = (
+        level(symbol, timeframe, direction, "pullback") if family == pullback_as else ""
+    )
     order = ["", "Baja", "Media", "Alta"]
     best = max(own, pull, key=order.index)
-    return {"level": best, "pullback": bool(pull) and order.index(pull) > order.index(own)}
+    return {
+        "level": best,
+        "pullback": bool(pull) and order.index(pull) > order.index(own),
+    }

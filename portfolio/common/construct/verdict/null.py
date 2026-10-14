@@ -33,10 +33,14 @@ def read(chosen: dict[str, float], null: list[dict[str, float]]) -> dict[str, di
     out = {}
     for name, value in chosen.items():
         draws = np.array([n[name] for n in null], dtype=float)
-        out[name] = {"value": float(value), "percentile": percentile(value, draws),
-                     "null_median": float(np.median(draws)),
-                     "null_p95": float(np.percentile(draws, 95)),
-                     "null_max": float(draws.max()), "n": int(draws.size)}
+        out[name] = {
+            "value": float(value),
+            "percentile": percentile(value, draws),
+            "null_median": float(np.median(draws)),
+            "null_p95": float(np.percentile(draws, 95)),
+            "null_max": float(draws.max()),
+            "n": int(draws.size),
+        }
     return out
 
 
@@ -77,6 +81,13 @@ def bar(chosen: float, draws: np.ndarray, quantile: float, share_chosen: float) 
         state = "no_discrimina"
     else:
         state = "pass" if chosen > level else "fail"
-    return {"value": float(chosen), "bar": level, "percentile": percentile(chosen, draws),
-            "null_median": float(np.median(draws)), "n": int(draws.size),
-            "quantile": float(quantile), "share_chosen": float(share_chosen), "state": state}
+    return {
+        "value": float(chosen),
+        "bar": level,
+        "percentile": percentile(chosen, draws),
+        "null_median": float(np.median(draws)),
+        "n": int(draws.size),
+        "quantile": float(quantile),
+        "share_chosen": float(share_chosen),
+        "state": state,
+    }

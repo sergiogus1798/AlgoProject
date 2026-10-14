@@ -56,10 +56,16 @@ def frame(groups: list, units: list[str] | None = None) -> pd.DataFrame:
         A frame with n_scored, sharpe_mean, sharpe_std and score_unit.
     """
     units = units or ["per_period"] * len(groups)
-    return pd.DataFrame({"n_scored": [len(g) for g in groups],
-        "sharpe_mean": [float(np.mean(g)) for g in groups],
-        "sharpe_std": [float(np.std(g, ddof=1)) if len(g) > 1 else float("nan") for g in groups],
-        "score_unit": units})
+    return pd.DataFrame(
+        {
+            "n_scored": [len(g) for g in groups],
+            "sharpe_mean": [float(np.mean(g)) for g in groups],
+            "sharpe_std": [
+                float(np.std(g, ddof=1)) if len(g) > 1 else float("nan") for g in groups
+            ],
+            "score_unit": units,
+        }
+    )
 
 
 def acc(fr: pd.DataFrame, extra: int = 0) -> dict:
@@ -93,8 +99,10 @@ def groups(rng: Any, k: int) -> list:
     Returns:
         A list of k arrays.
     """
-    return [rng.normal(rng.normal(0, 1), rng.uniform(0.1, 2), int(rng.integers(2, 3001)))
-            for _ in range(k)]
+    return [
+        rng.normal(rng.normal(0, 1), rng.uniform(0.1, 2), int(rng.integers(2, 3001)))
+        for _ in range(k)
+    ]
 
 
 def ab() -> None:
@@ -126,13 +134,19 @@ def c() -> None:
     g = groups(rng, 5)
     r0 = acc(frame(g))
     r1 = acc(frame(g[::-1]).sample(frac=1, random_state=1).reset_index(drop=True))
-    rep(abs(r0["sigma"]-r1["sigma"]) < 1e-12 and r0["n"] == r1["n"], "c_order",
-        f"{r0['sigma']} vs {r1['sigma']}")
+    rep(
+        abs(r0["sigma"] - r1["sigma"]) < 1e-12 and r0["n"] == r1["n"],
+        "c_order",
+        f"{r0['sigma']} vs {r1['sigma']}",
+    )
     h = g[0]
-    cut = len(h)//2
+    cut = len(h) // 2
     r2 = acc(frame([h[:cut], h[cut:]] + g[1:]))
-    rep(abs(r0["sigma"]-r2["sigma"]) < 1e-10 and abs(r0["mean"]-r2["mean"]) < 1e-10, "c_split",
-        f"{r0['sigma']} vs {r2['sigma']}")
+    rep(
+        abs(r0["sigma"] - r2["sigma"]) < 1e-10 and abs(r0["mean"] - r2["mean"]) < 1e-10,
+        "c_split",
+        f"{r0['sigma']} vs {r2['sigma']}",
+    )
 
 
 run("c", c)
@@ -144,8 +158,10 @@ def d() -> None:
     g = groups(rng, 3) + [np.array([0.7])]
     u = np.concatenate(g)
     r = acc(frame(g))
-    print(f"INFO d_size1 sigma={r['sigma']} truth={np.std(u, ddof=1)} n={r['n']} "
-          f"finite={math.isfinite(r['sigma'])}")
+    print(
+        f"INFO d_size1 sigma={r['sigma']} truth={np.std(u, ddof=1)} n={r['n']} "
+        f"finite={math.isfinite(r['sigma'])}"
+    )
 
 
 run("d", d)
@@ -156,12 +172,14 @@ def e() -> None:
     rng = np.random.default_rng(4)
     sc = math.sqrt(252)
     gd = [rng.normal(0.05, 0.05, 500) for _ in range(4)]
-    units = ["annualised"]*2 + ["per_period"]*2
-    gs = [gd[i]*sc if units[i] == "annualised" else gd[i] for i in range(4)]
+    units = ["annualised"] * 2 + ["per_period"] * 2
+    gs = [gd[i] * sc if units[i] == "annualised" else gd[i] for i in range(4)]
     truth = np.std(np.concatenate(gd), ddof=1)
     r = acc(frame(gs, units))
-    print(f"INFO e_units sigma={r['sigma']} unit={r.get('unit')} daily_truth={truth} "
-          f"match={abs(r['sigma']-truth)<1e-9} mean={r['mean']} n={r['n']}")
+    print(
+        f"INFO e_units sigma={r['sigma']} unit={r.get('unit')} daily_truth={truth} "
+        f"match={abs(r['sigma'] - truth) < 1e-9} mean={r['mean']} n={r['n']}"
+    )
 
 
 run("e", e)
@@ -175,9 +193,11 @@ def f() -> None:
     fr = frame(g)
     fr.loc[len(fr)] = [50, 0.3, 0.01, "p_pass"]
     r = acc(fr)
-    print(f"INFO f_ppass n={r['n']} (sharpe-only n={len(u)}, +50={len(u)+50}) sigma={r['sigma']} "
-          f"truth={np.std(u, ddof=1)} sigma_matches_truth={abs(r['sigma']-np.std(u,ddof=1))<1e-9} "
-          f"mean={r['mean']} true_mean={u.mean()} unit={r.get('unit')} keys={sorted(r)}")
+    print(
+        f"INFO f_ppass n={r['n']} (sharpe-only n={len(u)}, +50={len(u) + 50}) sigma={r['sigma']} "
+        f"truth={np.std(u, ddof=1)} sigma_matches_truth={abs(r['sigma'] - np.std(u, ddof=1)) < 1e-9} "
+        f"mean={r['mean']} true_mean={u.mean()} unit={r.get('unit')} keys={sorted(r)}"
+    )
 
 
 run("f", f)

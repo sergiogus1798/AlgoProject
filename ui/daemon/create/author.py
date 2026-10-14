@@ -19,11 +19,13 @@ from core.datapaths import template_draft
 from core.paths import CLAUDE_BIN, ROOT
 from ui.daemon import brief
 
-UNATTENDED = ("\n\nLo lanza la ventana (botón «Crear la plantilla con Claude»): nadie te "
-              "contesta. Si algo es ambiguo (regla dura 11), NO elijas: termina con una línea "
-              "que empiece por «PREGUNTA:» con las lecturas posibles. Si la plantilla ya existe "
-              "con la misma lectura, dilo en una línea que empiece por «YA EXISTE:» y no la "
-              "dupliques. Al terminar, una línea «PLANTILLA: <nombre>» con la que quede.")
+UNATTENDED = (
+    "\n\nLo lanza la ventana (botón «Crear la plantilla con Claude»): nadie te "
+    "contesta. Si algo es ambiguo (regla dura 11), NO elijas: termina con una línea "
+    "que empiece por «PREGUNTA:» con las lecturas posibles. Si la plantilla ya existe "
+    "con la misma lectura, dilo en una línea que empiece por «YA EXISTE:» y no la "
+    "dupliques. Al terminar, una línea «PLANTILLA: <nombre>» con la que quede."
+)
 
 
 def main() -> None:
@@ -34,8 +36,20 @@ def main() -> None:
     draft = json.loads(template_draft(a.name).read_text(encoding="utf-8"))
     text = brief.prompt(draft) + UNATTENDED
     print(text, "\n---", flush=True)
-    got = subprocess.run([str(CLAUDE_BIN), "-p", text, "--permission-mode", "auto",
-                          "--output-format", "text"], cwd=ROOT, capture_output=True, text=True)
+    got = subprocess.run(
+        [
+            str(CLAUDE_BIN),
+            "-p",
+            text,
+            "--permission-mode",
+            "auto",
+            "--output-format",
+            "text",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
     print(got.stdout, got.stderr, sep="\n", flush=True)
     if got.returncode:
         sys.exit(got.returncode)

@@ -16,7 +16,10 @@ def curves(accounts: list[dict], magic: int) -> list[dict]:
     """
     out = []
     for a in accounts:
-        mine = sorted((t for t in a["trades"] if t["magic"] == magic and t["close"]), key=lambda t: t["close"])
+        mine = sorted(
+            (t for t in a["trades"] if t["magic"] == magic and t["close"]),
+            key=lambda t: t["close"],
+        )
         if not mine:
             continue
         cum, total = [0.0], 0.0
@@ -28,10 +31,20 @@ def curves(accounts: list[dict], magic: int) -> list[dict]:
         peak, dd = 0.0, 0.0
         for c in pct or []:
             peak, dd = max(peak, c), max(dd, peak - c)
-        out.append({"login": a["login"], "name": a["name"], "size": size, "times": [min(t["open"] for t in mine)]
-                    + [t["close"] for t in mine], "cum": cum, "pct": pct, "trades": len(mine), "net": total,
-                    "win_rate": sum(t["net"] > 0 for t in mine) / len(mine),
-                    "max_dd": dd if pct else None})
+        out.append(
+            {
+                "login": a["login"],
+                "name": a["name"],
+                "size": size,
+                "times": [min(t["open"] for t in mine)] + [t["close"] for t in mine],
+                "cum": cum,
+                "pct": pct,
+                "trades": len(mine),
+                "net": total,
+                "win_rate": sum(t["net"] > 0 for t in mine) / len(mine),
+                "max_dd": dd if pct else None,
+            }
+        )
     return out
 
 
@@ -56,4 +69,8 @@ def combined(chosen: list[dict]) -> dict | None:
     cum = [sum(at(c, t) for c in chosen) for t in times]
     sizes = [c["size"] for c in chosen]
     total = sum(sizes) if all(sizes) else None
-    return {"times": times, "cum": cum, "pct": [100 * x / total for x in cum] if total else None}
+    return {
+        "times": times,
+        "cum": cum,
+        "pct": [100 * x / total for x in cum] if total else None,
+    }

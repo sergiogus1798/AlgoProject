@@ -28,7 +28,7 @@ from ui.desktop.theme import QSS  # noqa: E402
 PROJECT, DATABANK = "Test_USDJPY_donchianUpperCrossUp_M30", "Results"
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 SCRATCH = tempfile.TemporaryDirectory(prefix="ui-shell-")
-LOADS: list = []     # what the load bar asked the daemon to start
+LOADS: list = []  # what the load bar asked the daemon to start
 
 
 def serve() -> None:
@@ -56,8 +56,9 @@ def serve() -> None:
     tasklog.status = lambda role, project: None
     # Choosing a databank queues its loading; here the jobs are written down, never started —
     # two of them would run orderstocsv on the conductor.
-    loadstate.jobs = SimpleNamespace(listing=jobs.listing,
-                                     start=lambda *a, **k: LOADS.append((a, k)))
+    loadstate.jobs = SimpleNamespace(
+        listing=jobs.listing, start=lambda *a, **k: LOADS.append((a, k))
+    )
 
 
 def settle(app: QApplication) -> None:
@@ -74,7 +75,13 @@ def shot(shell: Shell, name: str) -> None:
 
 def slug(zone: str) -> str:
     """A zone name as a file name."""
-    return zone.lower().replace(" ", "-").replace("/", "").replace("ó", "o").replace("í", "i")
+    return (
+        zone.lower()
+        .replace(" ", "-")
+        .replace("/", "")
+        .replace("ó", "o")
+        .replace("í", "i")
+    )
 
 
 # `app`/`shell` used to be plain parameters, only ever filled by `main()` below — a bare
@@ -119,23 +126,27 @@ def test_panel_to_strategy() -> None:
     table = SHELL.workspace.panel.table
     wait(QAPP, lambda: table.rowCount() > 0)
     assert table.rowCount() > 0, "el panel de Databanks salió vacío"
-    assert SHELL.workspace.panel.window() is SHELL and SHELL.workspace.databanks.isAncestorOf(
-        SHELL.workspace.panel), "el panel de databanks no vive en la zona Databanks"
+    assert (
+        SHELL.workspace.panel.window() is SHELL
+        and SHELL.workspace.databanks.isAncestorOf(SHELL.workspace.panel)
+    ), "el panel de databanks no vive en la zona Databanks"
     shot(SHELL, "proyecto")
     tab = SHELL.workspace.panel.tab()
     SHELL.workspace.see(tab, "")
     assert SHELL.stack.currentWidget() is SHELL.zones["Databanks"]
     assert SHELL.workspace.panel.tab() == tab
     shot(SHELL, "databanks")
-    row = next(r for r in range(table.rowCount())
-               if table.row_at(r)["identity"])
+    row = next(r for r in range(table.rowCount()) if table.row_at(r)["identity"])
     chosen = table.row_at(row)
     table.double(row, 0)
     settle(QAPP)
     assert SHELL.stack.currentWidget() is SHELL.estrategia, SHELL.status.text()
     assert SHELL.estrategia.currentWidget() is SHELL.ficha
     assert SELECTION.now["identity"] == chosen["identity"]
-    assert SELECTION.now["databank"] == DATABANK, (SELECTION.now, SHELL.workspace.panel.sub_spec())
+    assert SELECTION.now["databank"] == DATABANK, (
+        SELECTION.now,
+        SHELL.workspace.panel.sub_spec(),
+    )
     assert SHELL.context.crumbs["strategy"].text() == chosen["name"]
     assert SHELL.ficha.title.text() == chosen["name"]
     wait(QAPP, lambda: not SHELL.ficha.said.text())
@@ -145,8 +156,11 @@ def test_panel_to_strategy() -> None:
 
 def test_crumbs() -> None:
     """Each crumb opens its zone of PROYECTO."""
-    for crumb, zone in (("projects", "Proyectos"), ("project", "Proyecto"),
-                        ("strategy", "Estrategia")):
+    for crumb, zone in (
+        ("projects", "Proyectos"),
+        ("project", "Proyecto"),
+        ("strategy", "Estrategia"),
+    ):
         SHELL.context.crumbs[crumb].click()
         assert SHELL.stack.currentWidget() is SHELL.zones[zone], crumb
 
@@ -158,7 +172,9 @@ def test_portfolios_import() -> None:
     SHELL.open_zone("Portfolios")
     wait(QAPP, lambda: bool(getattr(zone, "rows", None)), 20)
     if not getattr(zone, "rows", None):
-        print("    (sin estrategias archivadas en AlgoData/archive: no hay nada que importar)")
+        print(
+            "    (sin estrategias archivadas en AlgoData/archive: no hay nada que importar)"
+        )
         return
     before = dict(SELECTION.now)
     zone.pick(zone.rows[0]["identity"])
@@ -185,8 +201,13 @@ def test_grabs() -> None:
 
 def main() -> None:
     """Run every check and print its time."""
-    for test in (test_every_zone, test_panel_to_strategy, test_crumbs, test_portfolios_import,
-                 test_grabs):
+    for test in (
+        test_every_zone,
+        test_panel_to_strategy,
+        test_crumbs,
+        test_portfolios_import,
+        test_grabs,
+    ):
         t = time.time()
         test()
         print(f"ok  {test.__name__}  {time.time() - t:.1f} s")

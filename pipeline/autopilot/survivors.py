@@ -29,8 +29,11 @@ def bank(cfg: dict, n: str) -> str:
         cfg: `judge.settings()`.
         n: A WORKFLOW step number, e.g. "17".
     """
-    return [cfg["steps"][s]["cut"] for s in CUTS
-            if float(s) < float(n) and "cut" in cfg["steps"].get(s, {})][-1]
+    return [
+        cfg["steps"][s]["cut"]
+        for s in CUTS
+        if float(s) < float(n) and "cut" in cfg["steps"].get(s, {})
+    ][-1]
 
 
 def mothers(project: str, role: str, cfg: dict, n: str) -> pd.DataFrame:
@@ -53,9 +56,15 @@ def mothers(project: str, role: str, cfg: dict, n: str) -> pd.DataFrame:
     source = bank(cfg, n)
     files = by_identity(databank_dir(project, source, apply_verdict.install_of(role)))
     if not files:
-        raise Done(f"«{source}» no tiene ninguna superviviente: no queda nada que pasear")
-    return pd.DataFrame([{"strategy": fs[0].stem, "identity": i, "file": fs[0]}
-                         for i, fs in files.items()])
+        raise Done(
+            f"«{source}» no tiene ninguna superviviente: no queda nada que pasear"
+        )
+    return pd.DataFrame(
+        [
+            {"strategy": fs[0].stem, "identity": i, "file": fs[0]}
+            for i, fs in files.items()
+        ]
+    )
 
 
 class About(TypedDict):
@@ -75,9 +84,12 @@ def about(project: str) -> About:
         SQX symbol) and `family` (the template the ledger rows are signed under, or None).
     """
     row = next(r for r in reversed(registry.rows()) if r["name"] == project)
-    return {"symbol": row["symbol"], "timeframe": row["timeframe"],
-            "feed": assetdata.load(row["symbol"])["sqx_symbol"],
-            "family": where.family(project)}
+    return {
+        "symbol": row["symbol"],
+        "timeframe": row["timeframe"],
+        "feed": assetdata.load(row["symbol"])["sqx_symbol"],
+        "family": where.family(project),
+    }
 
 
 def study_of(project: str) -> tuple[str, About]:

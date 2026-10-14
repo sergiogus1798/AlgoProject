@@ -17,8 +17,15 @@ sys.path[:0] = [str(ROOT), str(ROOT / "tools")]
 import pytest  # noqa: E402
 from PySide6.QtCore import QEvent, QPoint  # noqa: E402
 from PySide6.QtGui import QHelpEvent  # noqa: E402
-from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QPushButton,  # noqa: E402
-                               QTabBar, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QApplication,
+    QGridLayout,
+    QHBoxLayout,
+    QPushButton,  # noqa: E402
+    QTabBar,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import helpmark  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
@@ -41,13 +48,17 @@ def marks(w: QWidget) -> list:
 def test_keys() -> None:
     """Signs, counts and quoted names never change the key; a bare sign keeps itself."""
     assert normalise("▶ correr marcados (3)") == "correr marcados"
-    assert normalise("▶▶ Correr workflow (hasta la próxima decisión)") == \
-        "correr workflow (hasta la próxima decisión)"
+    assert (
+        normalise("▶▶ Correr workflow (hasta la próxima decisión)")
+        == "correr workflow (hasta la próxima decisión)"
+    )
     assert normalise("▶ correr los marcados de «Filtros»") == "correr los marcados de"
     assert normalise("cuantiles 0·25·50·75·100 %") == "cuantiles"
     assert normalise("ver los 12 avisos restantes") == "ver los avisos restantes"
     assert normalise("OOS2") == "oos2" and normalise("×") == "×"
-    assert help_for("Guardar", ["QFrame", "PaletteBar"]) != help_for("Guardar", ["Detail"])
+    assert help_for("Guardar", ["QFrame", "PaletteBar"]) != help_for(
+        "Guardar", ["Detail"]
+    )
     assert help_for("Guardar") == "" and help_for("") == ""
 
 
@@ -59,8 +70,11 @@ def test_marks() -> None:
     row, grid, column = QHBoxLayout(), QGridLayout(), QVBoxLayout(top)
     known = QPushButton("▶ correr marcados (0)")
     tipped = QPushButton("xyz", toolTip="Hace xyz.")
-    silent, nav, flat = QPushButton("sin ayuda"), QPushButton("Cobertura", objectName="nav"), \
-        QPushButton("Sección", flat=True, toolTip="t")
+    silent, nav, flat = (
+        QPushButton("sin ayuda"),
+        QPushButton("Cobertura", objectName="nav"),
+        QPushButton("Sección", flat=True, toolTip="t"),
+    )
     own = QPushButton("abc")
     own.setProperty("help", "Lo que dice su propiedad.")
     for b in (known, tipped, silent, nav, flat):
@@ -76,14 +90,18 @@ def test_marks() -> None:
     top.show()
     APP.processEvents()
     top.hide()
-    top.show()                       # a second show never adds a second mark
+    top.show()  # a second show never adds a second mark
     APP.processEvents()
     by = {m.button.text(): m for m in marks(top)}
-    assert sorted(by) == sorted(["▶ correr marcados (0)", "xyz", "abc", "seguir leyendo"]), by
+    assert sorted(by) == sorted(
+        ["▶ correr marcados (0)", "xyz", "abc", "seguir leyendo"]
+    ), by
     assert row.indexOf(by["▶ correr marcados (0)"]) == row.indexOf(known) + 1
     assert grid.count() == 1 and fixed.width() == 160
     for b in (own, fixed):
-        assert by[b.text()].isVisible() and by[b.text()].x() > b.geometry().right(), b.text()
+        assert by[b.text()].isVisible() and by[b.text()].x() > b.geometry().right(), (
+            b.text()
+        )
     assert by["xyz"].toolTip() == "Hace xyz."
     assert by["abc"].toolTip() == "Lo que dice su propiedad."
     known.hide()
@@ -91,7 +109,7 @@ def test_marks() -> None:
     known.show()
     assert not by["▶ correr marcados (0)"].isHidden()
     tipped.deleteLater()
-    for _ in range(2):               # the button, then the mark its `destroyed` scheduled
+    for _ in range(2):  # the button, then the mark its `destroyed` scheduled
         APP.sendPostedEvents(None, QEvent.DeferredDelete)
     assert len(marks(top)) == 3
     top.deleteLater()
@@ -123,7 +141,7 @@ def test_reparent() -> None:
     first.show()
     second.show()
     APP.processEvents()
-    two.addWidget(button)            # reparents it to `second`
+    two.addWidget(button)  # reparents it to `second`
     button.show()
     for _ in range(2):
         APP.processEvents()
@@ -131,7 +149,7 @@ def test_reparent() -> None:
     assert not marks(first) and len(marks(second)) == 1, (marks(first), marks(second))
     orphan = QPushButton("Leer ahora")
     orphan.setParent(None)
-    orphan.show()                    # a top-level button: no parent, no mark, no exception
+    orphan.show()  # a top-level button: no parent, no mark, no exception
     APP.processEvents()
     for w in (first, second, orphan):
         w.deleteLater()
@@ -140,23 +158,36 @@ def test_reparent() -> None:
 def test_merge() -> None:
     """A tooltip that nearly copies the sentence is said once; one that adds something, twice."""
     said = help_for("Retirar")
-    assert merge(said, "Mueve el fichero a assets/symbols/_retired/. Deja de contar para "
-                       "`core.assets`, pero no se pierde.") == said
-    assert merge("Hace a.", "Apagado: falta el proyecto.") == "Hace a.\n\nApagado: falta el proyecto."
+    assert (
+        merge(
+            said,
+            "Mueve el fichero a assets/symbols/_retired/. Deja de contar para "
+            "`core.assets`, pero no se pierde.",
+        )
+        == said
+    )
+    assert (
+        merge("Hace a.", "Apagado: falta el proyecto.")
+        == "Hace a.\n\nApagado: falta el proyecto."
+    )
 
 
 # Needs a real scratch daemon on its own port (never the owner's 8765) — opt-in via
 # `--port` in `__main__` below, never through a bare `pytest`/`python3 -m pytest` collection,
 # which has no port to give it and no fixture named `port` to ask pytest for one.
-@pytest.mark.skip(reason="needs --port (a scratch daemon): run "
-                         "`python3 tests/test_ui_helpmark.py --port 8772`")
+@pytest.mark.skip(
+    reason="needs --port (a scratch daemon): run "
+    "`python3 tests/test_ui_helpmark.py --port 8772`"
+)
 def test_coverage(port: int = 0) -> None:
     """Walk every zone as uiwalk does; every visible enabled button must say what it does."""
     import uiwalk
+
     uiwalk.aim(port)
     uiwalk.trap()
     from ui.desktop.nav import ZONES
     from ui.desktop.shell import Shell
+
     shell = Shell()
     shell.resize(1920, 1050)
     shell.show()
@@ -167,25 +198,39 @@ def test_coverage(port: int = 0) -> None:
         """Settle as uiwalk does, then note every button on screen with nothing to say."""
         settle(a, seconds)
         for b in shell.findChildren(QPushButton):
-            if b.isVisible() and b.isEnabled() and not helpmark.skipped(b) and \
-                    not helpmark.text_of(b):
-                bare.setdefault(f"«{b.text()}» en {' › '.join(helpmark.scopes(b)[:3])}",
-                                uiwalk.HERE["zone"])
+            if (
+                b.isVisible()
+                and b.isEnabled()
+                and not helpmark.skipped(b)
+                and not helpmark.text_of(b)
+            ):
+                bare.setdefault(
+                    f"«{b.text()}» en {' › '.join(helpmark.scopes(b)[:3])}",
+                    uiwalk.HERE["zone"],
+                )
 
     uiwalk.settle = look
     for zone in ZONES:
         uiwalk.walk(shell, APP, zone, "Test_USDJPY_donchianUpperCrossUp_M30")
-    sys.excepthook = sys.__excepthook__     # uiwalk's hook would swallow the assertion below
+    sys.excepthook = (
+        sys.__excepthook__
+    )  # uiwalk's hook would swallow the assertion below
     counted = [b for b in shell.findChildren(QPushButton) if not helpmark.skipped(b)]
-    print(f"    {len(counted)} botones vivos al final, {len(marks(shell))} con «?», "
-          f"{len(uiwalk.ERRORS)} excepciones")
-    assert not bare, "sin ayuda:\n" + "\n".join(f"  {k} (zona {z})" for k, z in bare.items())
+    print(
+        f"    {len(counted)} botones vivos al final, {len(marks(shell))} con «?», "
+        f"{len(uiwalk.ERRORS)} excepciones"
+    )
+    assert not bare, "sin ayuda:\n" + "\n".join(
+        f"  {k} (zona {z})" for k, z in bare.items()
+    )
 
 
 def main() -> None:
     """Run the checks; the coverage walk only with a scratch daemon's port."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--port", type=int, help="un demonio de pruebas, nunca el 8765 del dueño")
+    ap.add_argument(
+        "--port", type=int, help="un demonio de pruebas, nunca el 8765 del dueño"
+    )
     args = ap.parse_args()
     test_keys()
     print("ok  test_keys")
@@ -200,7 +245,7 @@ def main() -> None:
     else:
         print("--  test_coverage: sin --port, no se recorre la ventana")
     sys.stdout.flush()
-    os._exit(0)          # the walk's reader threads may still be waiting on the daemon
+    os._exit(0)  # the walk's reader threads may still be waiting on the daemon
 
 
 if __name__ == "__main__":

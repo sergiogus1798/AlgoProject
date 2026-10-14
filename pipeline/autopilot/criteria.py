@@ -6,11 +6,18 @@ from typing import Any, cast
 
 import pandas as pd
 
-Rule = dict[str, Any]   # a step's rule as criteria.yaml spells it: `fact`, `pass`, `missing`, or an `all`/`any` compound
-OPS = {">=": operator.ge, ">": operator.gt, "<=": operator.le, "<": operator.lt,
-       "==": operator.eq}
+Rule = dict[
+    str, Any
+]  # a step's rule as criteria.yaml spells it: `fact`, `pass`, `missing`, or an `all`/`any` compound
+OPS = {
+    ">=": operator.ge,
+    ">": operator.gt,
+    "<=": operator.le,
+    "<": operator.lt,
+    "==": operator.eq,
+}
 RANK = {"pass": 0, "limbo": 1, "fail": 2}
-GROUPS = {"all": max, "any": min}     # a compound's outcome: its worst part, or its best
+GROUPS = {"all": max, "any": min}  # a compound's outcome: its worst part, or its best
 
 
 def holds(value: float, test: str) -> bool:
@@ -31,17 +38,27 @@ def one(value: float, rule: Rule, median: float) -> str:
         median: The fact's median over the population judged.
     """
     if "is" in rule:
-        return "pass" if (value > 0) == (rule["is"] == "pass") else rule.get("else", "fail")
+        return (
+            "pass"
+            if (value > 0) == (rule["is"] == "pass")
+            else rule.get("else", "fail")
+        )
     if "near_median" in rule:
         gap = abs(value - median)
         if gap <= rule["near_median"] * abs(median):
             return "pass"
-        if "limbo_near_median" in rule and gap <= rule["limbo_near_median"] * abs(median):
+        if "limbo_near_median" in rule and gap <= rule["limbo_near_median"] * abs(
+            median
+        ):
             return "limbo"
         return rule.get("else", "fail")
     if holds(value, rule["pass"]):
         return "pass"
-    return "limbo" if "limbo" in rule and holds(value, rule["limbo"]) else rule.get("else", "fail")
+    return (
+        "limbo"
+        if "limbo" in rule and holds(value, rule["limbo"])
+        else rule.get("else", "fail")
+    )
 
 
 def resolved(rules: list[Rule], tags: set[str]) -> list[Rule]:
@@ -60,8 +77,14 @@ def resolved(rules: list[Rule], tags: set[str]) -> list[Rule]:
     """
     out = []
     for rule in rules:
-        extra = next((fields for key, fields in (rule.get("by") or {}).items()
-                      if set(str(key).split("+")) <= tags), {})
+        extra = next(
+            (
+                fields
+                for key, fields in (rule.get("by") or {}).items()
+                if set(str(key).split("+")) <= tags
+            ),
+            {},
+        )
         rule = Rule({k: v for k, v in rule.items() if k != "by"} | extra)
         out.append(rule | {g: resolved(rule[g], tags) for g in GROUPS if g in rule})
     return out
@@ -74,8 +97,15 @@ def threshold(alpha: float, batches: int) -> float:
 
 def per_cell(rules: list[Rule]) -> list[Rule]:
     """The rules, compounds unfolded, that declare `alpha` instead of a line."""
-    return [r for rule in rules for r in ([rule] if "alpha" in rule else
-                                          per_cell(rule.get("all") or rule.get("any") or []))]
+    return [
+        r
+        for rule in rules
+        for r in (
+            [rule]
+            if "alpha" in rule
+            else per_cell(rule.get("all") or rule.get("any") or [])
+        )
+    ]
 
 
 def thresholded(rules: list[Rule], batches: int) -> list[Rule]:
@@ -89,19 +119,32 @@ def thresholded(rules: list[Rule], batches: int) -> list[Rule]:
     out = []
     for rule in rules:
         if "alpha" in rule:
-            rule = Rule({k: v for k, v in rule.items() if k not in ("alpha", "per")} | {
-                "pass": f">= {threshold(rule['alpha'], batches)!r}"})
-        out.append(rule | {g: thresholded(rule[g], batches) for g in GROUPS if g in rule})
+            rule = Rule(
+                {k: v for k, v in rule.items() if k not in ("alpha", "per")}
+                | {"pass": f">= {threshold(rule['alpha'], batches)!r}"}
+            )
+        out.append(
+            rule | {g: thresholded(rule[g], batches) for g in GROUPS if g in rule}
+        )
     return out
 
 
 def reads(rules: list[Rule]) -> set[str]:
     """Every fact the rules read, the parts of a compound included."""
-    return {f for r in rules
-            for f in ([r["fact"]] if "fact" in r else reads(cast(list[Rule], r.get("all") or r.get("any"))))}
+    return {
+        f
+        for r in rules
+        for f in (
+            [r["fact"]]
+            if "fact" in r
+            else reads(cast(list[Rule], r.get("all") or r.get("any")))
+        )
+    }
 
 
-def judged(rule: Rule, cols: dict[str, pd.Series], who: str, medians: pd.Series) -> tuple[str, str]:
+def judged(
+    rule: Rule, cols: dict[str, pd.Series], who: str, medians: pd.Series
+) -> tuple[str, str]:
     """One rule's outcome for one strategy, and what it read.
 
     Args:
@@ -118,16 +161,22 @@ def judged(rule: Rule, cols: dict[str, pd.Series], who: str, medians: pd.Series)
     for group, pick in GROUPS.items():
         if group in rule:
             parts = [judged(r, cols, who, medians) for r in rule[group]]
-            return (pick((state for state, _ in parts), key=RANK.__getitem__),
-                    f"{group}({', '.join(said for _, said in parts)})")
+            return (
+                pick((state for state, _ in parts), key=RANK.__getitem__),
+                f"{group}({', '.join(said for _, said in parts)})",
+            )
     fact = rule["fact"]
     value = cols[fact].get(who) if fact in cols else None
     if value is None or value != value:
-        return rule.get("missing", "limbo"), f"{fact}=sin dato"   # `missing:` is the rule's destination
+        return rule.get(
+            "missing", "limbo"
+        ), f"{fact}=sin dato"  # `missing:` is the rule's destination
     return one(value, rule, float(medians[fact])), f"{fact}={value}"
 
 
-def outcomes(facts: pd.DataFrame, who: list[str], rules: list[Rule]) -> dict[str, tuple[str, str]]:
+def outcomes(
+    facts: pd.DataFrame, who: list[str], rules: list[Rule]
+) -> dict[str, tuple[str, str]]:
     """Every strategy's outcome: its worst rule.
 
     Args:
@@ -139,7 +188,9 @@ def outcomes(facts: pd.DataFrame, who: list[str], rules: list[Rule]) -> dict[str
         id → (pass|limbo|fail, the rules that were not passed, "; "-joined). A strategy
         without the fact is limbo for that rule ("sin dato").
     """
-    wide = facts.pivot_table(index="who", columns="key", values="value", aggfunc="first")
+    wide = facts.pivot_table(
+        index="who", columns="key", values="value", aggfunc="first"
+    )
     cols: dict[str, pd.Series] = {str(key): cast(pd.Series, wide[key]) for key in wide}
     medians = cast(pd.Series, wide.median())
     got = {w: ("pass", []) for w in who}
@@ -148,5 +199,8 @@ def outcomes(facts: pd.DataFrame, who: list[str], rules: list[Rule]) -> dict[str
             state, said = judged(rule, cols, w, medians)
             if state != "pass":
                 worst, why = got[w]
-                got[w] = (max(worst, state, key=RANK.__getitem__), why + [f"{state}: {said}"])
+                got[w] = (
+                    max(worst, state, key=RANK.__getitem__),
+                    why + [f"{state}: {said}"],
+                )
     return {w: (state, "; ".join(why)) for w, (state, why) in got.items()}

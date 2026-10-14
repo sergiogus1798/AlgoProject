@@ -20,26 +20,44 @@ JUDGE = ("oos1", "oos2")
 
 def prepare(world: dict, members: list[str], span: tuple, cfg: dict) -> StageBData:
     """`stageb_data.prepare` for some members of the world on one stretch of server days."""
-    return stageb_data.prepare({m: world["sources"][m] for m in members}, world["bars"],
-                               world["universe"]["days"][world["firm"]],
-                               cfg["equity"]["firm_clocks"][world["firm"]], span, world["factors"],
-                               world["min_size"], cfg)
+    return stageb_data.prepare(
+        {m: world["sources"][m] for m in members},
+        world["bars"],
+        world["universe"]["days"][world["firm"]],
+        cfg["equity"]["firm_clocks"][world["firm"]],
+        span,
+        world["factors"],
+        world["min_size"],
+        cfg,
+    )
 
 
 def union(frames: list[pd.DataFrame]) -> list[str]:
     """Every identity some combination of the frames holds."""
-    return sorted({m for f in frames for members in f["members"] for m in members.split("+")})
+    return sorted(
+        {m for f in frames for members in f["members"] for m in members.split("+")}
+    )
 
 
 def segments(world: dict) -> list[str]:
     """The judging segments the firm's day table has days in, in judging order."""
     table = world["universe"]["days"][world["firm"]]
-    return [s for s in JUDGE if s in world["calendar"]
-            and table["day"].between(*world["calendar"][s]).any()]
+    return [
+        s
+        for s in JUDGE
+        if s in world["calendar"] and table["day"].between(*world["calendar"][s]).any()
+    ]
 
 
-def judge(world: dict, cfg: dict, rng: np.random.Generator, stage_b: dict, n_shortlist: int,
-          null_winners: list[dict], n_candidates: int) -> dict[str, Any]:
+def judge(
+    world: dict,
+    cfg: dict,
+    rng: np.random.Generator,
+    stage_b: dict,
+    n_shortlist: int,
+    null_winners: list[dict],
+    n_candidates: int,
+) -> dict[str, Any]:
     """The winner and each null search's winner on oos1; oos2 only if the winner passed there.
 
     oos1 and oos2 are judged separately and in that order (Council 2026-10-04, `DECISIONS.md`
@@ -67,19 +85,37 @@ def judge(world: dict, cfg: dict, rng: np.random.Generator, stage_b: dict, n_sho
     risk = stageb_run.risk_of(winner, plan)
 
     trials.admit(meta, ["oos1"])
-    later = prepare(world, union([pd.DataFrame([winner, *null_winners])]), calendar["oos1"], cfg)
+    later = prepare(
+        world, union([pd.DataFrame([winner, *null_winners])]), calendar["oos1"], cfg
+    )
     judged = stageb_run.judged(later, winner["members"], plan, cfg, risk, rng)
     nulls = []
     for w in null_winners:
-        got = stageb_run.judged(later, w["members"], plan, cfg, stageb_run.risk_of(w, plan), rng)
-        nulls.append({"members": w["members"], "selector_p": w["p"],
-                      **{k: got[k] for k in decide.MEASURES}})
+        got = stageb_run.judged(
+            later, w["members"], plan, cfg, stageb_run.risk_of(w, plan), rng
+        )
+        nulls.append(
+            {
+                "members": w["members"],
+                "selector_p": w["p"],
+                **{k: got[k] for k in decide.MEASURES},
+            }
+        )
     same = sum(n["members"] == winner["members"] for n in nulls)
-    first = decide.funded_oos1(null_mod.read({k: judged[k] for k in decide.MEASURES}, nulls), same, cfg)
+    first = decide.funded_oos1(
+        null_mod.read({k: judged[k] for k in decide.MEASURES}, nulls), same, cfg
+    )
     passed = {"pass": True, "fail": False}.get(first["state"])
-    trials.record_look(pool, meta, "oos1", criterion, "funded_b", passed,
-                       f"{first['state']}: nulo seleccionado de {len(nulls)} busquedas x "
-                       f"{n_candidates} combinaciones, {same} eligieron la misma; {note}")
+    trials.record_look(
+        pool,
+        meta,
+        "oos1",
+        criterion,
+        "funded_b",
+        passed,
+        f"{first['state']}: nulo seleccionado de {len(nulls)} busquedas x "
+        f"{n_candidates} combinaciones, {same} eligieron la misma; {note}",
+    )
 
     ids = world["identities"]
     daily = world["universe"]["daily"][ids]
@@ -89,16 +125,47 @@ def judge(world: dict, cfg: dict, rng: np.random.Generator, stage_b: dict, n_sho
     elif passed:
         scale = np.array([world["factors"][i] for i in ids])
         second = oos2_mod.read(
-            lambda: segment.paths(daily, calendar, scale, np.isin(ids, chosen)[None, :], cfg, "oos2")[0][0],
-            chosen, pool, meta, criterion, "funded_b", note)
+            lambda: segment.paths(
+                daily, calendar, scale, np.isin(ids, chosen)[None, :], cfg, "oos2"
+            )[0][0],
+            chosen,
+            pool,
+            meta,
+            criterion,
+            "funded_b",
+            note,
+        )
     opened = ["oos1"] + ["oos2"] * (second["state"] in ("pass", "fail"))
     read = pd.concat([matrix.segment(daily[chosen], calendar, s) for s in opened])
-    held = hold.held(pairs_table.table(read, matrix.monthly(read), cfg) if len(chosen) > 1
-                     else pd.DataFrame(), chosen, cfg)
-    cost = {"n_pool": len(ids), "n_stage_a": len(world["search"]), "n_shortlist": n_shortlist,
-            "n_settings": stage_b["n_settings"], "null_draws": len(nulls),
-            "null_candidates": n_candidates, "segments": opened}
-    return {"judged": judged, "nulls": nulls, "verdict": decide.verdict(
-        {"members": chosen, "build_p": winner["p_fresh"], "selector_p": winner["p"],
-         "risk": dict(zip(stageb.judge.stage_names(plan), risk[0].tolist()))},
-        first, second, held, cost)}
+    held = hold.held(
+        pairs_table.table(read, matrix.monthly(read), cfg)
+        if len(chosen) > 1
+        else pd.DataFrame(),
+        chosen,
+        cfg,
+    )
+    cost = {
+        "n_pool": len(ids),
+        "n_stage_a": len(world["search"]),
+        "n_shortlist": n_shortlist,
+        "n_settings": stage_b["n_settings"],
+        "null_draws": len(nulls),
+        "null_candidates": n_candidates,
+        "segments": opened,
+    }
+    return {
+        "judged": judged,
+        "nulls": nulls,
+        "verdict": decide.verdict(
+            {
+                "members": chosen,
+                "build_p": winner["p_fresh"],
+                "selector_p": winner["p"],
+                "risk": dict(zip(stageb.judge.stage_names(plan), risk[0].tolist())),
+            },
+            first,
+            second,
+            held,
+            cost,
+        ),
+    }

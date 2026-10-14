@@ -55,7 +55,10 @@ def test_a_shifted_funnel_is_not_added() -> None:
 
 def test_a_different_setup_is_named_and_nothing_else_is_judged() -> None:
     """Batches under different rules are not compared: the field is named and that is the answer."""
-    prints = {"a": {"feed": "USDJPY_M1", "rules": ["x"]}, "b": {"feed": "USDJPY_M1", "rules": ["y"]}}
+    prints = {
+        "a": {"feed": "USDJPY_M1", "rules": ["x"]},
+        "b": {"feed": "USDJPY_M1", "rules": ["y"]},
+    }
     fields = measure.differing(prints)
     assert fields == ["rules"]
     assert measure.decision(fields, None, [])[0] == "NO SUMAR"
@@ -63,13 +66,22 @@ def test_a_different_setup_is_named_and_nothing_else_is_judged() -> None:
 
 def test_parts_reads_the_island_and_the_first_rule_that_killed() -> None:
     """A kept strategy is alive whatever its limbo reason names; a dead one died at its first rule."""
-    verdict = pd.DataFrame({
-        "strategy": ["Strategy 12.3.250", "Strategy 2.17.257"],
-        "verdict": ["MANTENER", "DESCARTAR"], "identity": ["a", "b"],
-        "reason": ["limbo: gate.scorecard.is_trades_per_year=27.4",
-                   "nivel 1a: gate.scorecard.drift_excess_t=1.06"]})
+    verdict = pd.DataFrame(
+        {
+            "strategy": ["Strategy 12.3.250", "Strategy 2.17.257"],
+            "verdict": ["MANTENER", "DESCARTAR"],
+            "identity": ["a", "b"],
+            "reason": [
+                "limbo: gate.scorecard.is_trades_per_year=27.4",
+                "nivel 1a: gate.scorecard.drift_excess_t=1.06",
+            ],
+        }
+    )
     got = measure.parts(verdict)
-    assert list(got["island"]) == [12, 2] and list(got["dest"]) == [measure.ALIVE, "drift_excess_t"]
+    assert list(got["island"]) == [12, 2] and list(got["dest"]) == [
+        measure.ALIVE,
+        "drift_excess_t",
+    ]
 
 
 def test_a_tenth_repeated_warns_and_sizes_the_cell() -> None:
@@ -77,7 +89,11 @@ def test_a_tenth_repeated_warns_and_sizes_the_cell() -> None:
     one, two = batch(1), batch(2)
     two.loc[:599, "identity"] = one["identity"][:600].to_numpy()
     got = measure.repeats({"a": one, "b": two})[0]
-    assert got["state"] == "aviso" and got["repeated"] == 600 and got["space"] == 6000 * 6000 / 600
+    assert (
+        got["state"] == "aviso"
+        and got["repeated"] == 600
+        and got["space"] == 6000 * 6000 / 600
+    )
 
 
 if __name__ == "__main__":

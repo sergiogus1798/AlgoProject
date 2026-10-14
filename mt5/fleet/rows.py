@@ -3,8 +3,18 @@
 from datetime import datetime, timezone
 from typing import Any
 
-HISTORY_COLUMNS = ["written_gmt", "server_time", "balance", "equity", "floating", "margin",
-                   "connected", "autotrading", "ping_us", "n_positions"]
+HISTORY_COLUMNS = [
+    "written_gmt",
+    "server_time",
+    "balance",
+    "equity",
+    "floating",
+    "margin",
+    "connected",
+    "autotrading",
+    "ping_us",
+    "n_positions",
+]
 
 
 def history_row(beat: dict) -> dict[str, Any]:
@@ -21,7 +31,9 @@ def is_new(beat: dict, last_written_gmt: int | None) -> bool:
 
 def server_day(beat: dict) -> str:
     """The beat's server calendar day, `YYYY-MM-DD` — the server epoch is read as if it were UTC."""
-    return datetime.fromtimestamp(beat["server_time"], timezone.utc).strftime("%Y-%m-%d")
+    return datetime.fromtimestamp(beat["server_time"], timezone.utc).strftime(
+        "%Y-%m-%d"
+    )
 
 
 def update_excursions(excursions: dict, beat: dict) -> dict[str, Any]:
@@ -35,9 +47,18 @@ def update_excursions(excursions: dict, beat: dict) -> dict[str, Any]:
         The same dict, updated in place.
     """
     for p in beat["positions"]:
-        e = excursions.setdefault(str(p["ticket"]), {
-            "magic": p["magic"], "symbol": p["symbol"], "side": p["side"], "volume": p["volume"],
-            "time": p["time"], "min_profit": p["profit"], "max_profit": p["profit"]})
+        e = excursions.setdefault(
+            str(p["ticket"]),
+            {
+                "magic": p["magic"],
+                "symbol": p["symbol"],
+                "side": p["side"],
+                "volume": p["volume"],
+                "time": p["time"],
+                "min_profit": p["profit"],
+                "max_profit": p["profit"],
+            },
+        )
         e["min_profit"] = min(e["min_profit"], p["profit"])
         e["max_profit"] = max(e["max_profit"], p["profit"])
         e["last_seen"] = beat["written_gmt"]

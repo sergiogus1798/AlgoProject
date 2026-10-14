@@ -56,9 +56,13 @@ def distance(values: np.ndarray, original: float, floor: float) -> Distance:
     q1, median, q3 = np.percentile(values, [25, 50, 75])
     spread = q3 - q1
     lo, hi = (np.percentile(values, [5, 95]) - median) / spread
-    return {"rel": float(100 * (original - median) / abs(median))
-            if abs(median) >= floor * spread else None,
-            "iqr": float((original - median) / spread), "null": [float(lo), float(hi)]}
+    return {
+        "rel": float(100 * (original - median) / abs(median))
+        if abs(median) >= floor * spread
+        else None,
+        "iqr": float((original - median) / spread),
+        "null": [float(lo), float(hi)],
+    }
 
 
 def superiority(a: np.ndarray, b: np.ndarray) -> float:
@@ -90,7 +94,9 @@ def profit_factor(k: np.ndarray) -> np.ndarray:
     return (norm.pdf(k) + k * norm.cdf(k)) / (norm.pdf(k) - k * norm.cdf(-k))
 
 
-def compare(a: np.ndarray, b: np.ndarray, floor: float, moved: list[np.ndarray] | None) -> Compared:
+def compare(
+    a: np.ndarray, b: np.ndarray, floor: float, moved: list[np.ndarray] | None
+) -> Compared:
     """IS against OOS1 on one time-free metric, and the same three numbers under a zero-edge OOS1.
 
     Args:
@@ -103,13 +109,25 @@ def compare(a: np.ndarray, b: np.ndarray, floor: float, moved: list[np.ndarray] 
         `ratio`, `a`, `w` — the real values — and `null`: per name the `LEVELS` percentiles
         over `moved`, None without a model (and for a ratio under its floor).
     """
-    out: Compared = {"ratio": ratio(a, b, floor), "a": superiority(a, b), "w": wasserstein(a, b), "null": None}
+    out: Compared = {
+        "ratio": ratio(a, b, floor),
+        "a": superiority(a, b),
+        "w": wasserstein(a, b),
+        "null": None,
+    }
     if moved is None:
         return out
-    draws = {"ratio": [ratio(a, m, floor) for m in moved] if out["ratio"] is not None else None,
-             "a": [superiority(a, m) for m in moved], "w": [wasserstein(a, m) for m in moved]}
-    out["null"] = {k: None if v is None else
-                   [float(x) for x in np.percentile(v, LEVELS)] for k, v in draws.items()}
+    draws = {
+        "ratio": [ratio(a, m, floor) for m in moved]
+        if out["ratio"] is not None
+        else None,
+        "a": [superiority(a, m) for m in moved],
+        "w": [wasserstein(a, m) for m in moved],
+    }
+    out["null"] = {
+        k: None if v is None else [float(x) for x in np.percentile(v, LEVELS)]
+        for k, v in draws.items()
+    }
     return out
 
 
@@ -130,24 +148,33 @@ def zero_edge(oos: pd.DataFrame, years: float) -> dict[str, list[np.ndarray]]:
     Returns:
         Column → one moved grid per quantile of `Z`.
     """
+
     def iqr(col: str) -> float:
         """Interquartile range of one column."""
         q1, q3 = np.nanpercentile(oos[col].to_numpy(float), [25, 75])
         return float(q3 - q1)
 
     out = {}
-    for col, centres in (("SharpeRatio", Z / np.sqrt(years)),
-                         ("SortinoRatio", Z / np.sqrt(years) * iqr("SortinoRatio")
-                          / iqr("SharpeRatio")),
-                         ("ProfitFactor", profit_factor(Z / np.sqrt(oos["NumberOfTrades"].median())))):
+    for col, centres in (
+        ("SharpeRatio", Z / np.sqrt(years)),
+        ("SortinoRatio", Z / np.sqrt(years) * iqr("SortinoRatio") / iqr("SharpeRatio")),
+        ("ProfitFactor", profit_factor(Z / np.sqrt(oos["NumberOfTrades"].median()))),
+    ):
         b = oos[col].to_numpy(float)
         b, median = b[np.isfinite(b)], float(np.nanmedian(b))
-        out[col] = [b * c / median if col == "ProfitFactor" else b - median + c for c in centres]
+        out[col] = [
+            b * c / median if col == "ProfitFactor" else b - median + c for c in centres
+        ]
     return out
 
 
-def measure(is_pop: pd.DataFrame, oos_pop: pd.DataFrame | None, is_real: pd.Series,
-            oos_real: pd.Series | None, cfg: dict) -> Measured:
+def measure(
+    is_pop: pd.DataFrame,
+    oos_pop: pd.DataFrame | None,
+    is_real: pd.Series,
+    oos_real: pd.Series | None,
+    cfg: dict,
+) -> Measured:
     """Every criteria metric of one strategy's SPP.
 
     Args:
@@ -159,16 +186,30 @@ def measure(is_pop: pd.DataFrame, oos_pop: pd.DataFrame | None, is_real: pd.Seri
         `original` — column → {"IS": `distance`, "OOS1": `distance`} over panel 1's metrics;
         `decay` — column → `compare` over the time-free metrics, {} without an OOS1 export.
     """
-    sides = [("IS", is_pop, is_real)] + ([("OOS1", oos_pop, cast(pd.Series, oos_real))] if oos_pop is not None else [])
-    original = {col: {side: distance(pop[col].to_numpy(float)[np.isfinite(pop[col].to_numpy(float))],
-                                     float(real[col]), cfg["median_floor_iqr"])
-                      for side, pop, real in sides} for col, _, _ in combine.METRICS}
+    sides = [("IS", is_pop, is_real)] + (
+        [("OOS1", oos_pop, cast(pd.Series, oos_real))] if oos_pop is not None else []
+    )
+    original = {
+        col: {
+            side: distance(
+                pop[col].to_numpy(float)[np.isfinite(pop[col].to_numpy(float))],
+                float(real[col]),
+                cfg["median_floor_iqr"],
+            )
+            for side, pop, real in sides
+        }
+        for col, _, _ in combine.METRICS
+    }
     decay = {}
     if oos_pop is not None:
         moved = zero_edge(oos_pop, float(cast(pd.Series, oos_real)["TotalDataYears"]))
         for col, _, _ in combine.TIME_FREE:
             if col in is_pop.columns and col in oos_pop.columns:
                 a, b = is_pop[col].to_numpy(float), oos_pop[col].to_numpy(float)
-                decay[col] = compare(a[np.isfinite(a)], b[np.isfinite(b)], cfg["is_floor"][col],
-                                     moved.get(col))
+                decay[col] = compare(
+                    a[np.isfinite(a)],
+                    b[np.isfinite(b)],
+                    cfg["is_floor"][col],
+                    moved.get(col),
+                )
     return {"original": original, "decay": decay}

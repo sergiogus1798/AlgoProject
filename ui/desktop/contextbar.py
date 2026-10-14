@@ -23,8 +23,11 @@ def crumb_text(now: dict) -> dict[str, str]:
         `{projects, project, strategy}` → text; a field not chosen reads «elige …». The
         identity is never printed (encargo 22 §10): it lives in the strategy crumb's tooltip.
     """
-    return {"projects": "Proyectos", "project": now["project"] or "elige proyecto",
-            "strategy": now["strategy"] or "elige estrategia"}
+    return {
+        "projects": "Proyectos",
+        "project": now["project"] or "elige proyecto",
+        "strategy": now["strategy"] or "elige estrategia",
+    }
 
 
 class ContextBar(QFrame):
@@ -45,12 +48,17 @@ class ContextBar(QFrame):
                 sep.setStyleSheet(f"color:{T['faint']}; font-size:16px;")
                 lay.addWidget(sep)
             b = QPushButton()
-            b.clicked.connect(lambda _, k=key: self.zone.emit(
-                TARGET[k] if SELECTION.now["project"] else "Proyectos"))
+            b.clicked.connect(
+                lambda _, k=key: self.zone.emit(
+                    TARGET[k] if SELECTION.now["project"] else "Proyectos"
+                )
+            )
             lay.addWidget(b)
             self.crumbs[key] = b
         self.asset = QLabel("")
-        self.asset.setStyleSheet(f"color:{T['faint']}; font-family:{MONO}; font-size:13px;")
+        self.asset.setStyleSheet(
+            f"color:{T['faint']}; font-family:{MONO}; font-size:13px;"
+        )
         lay.addWidget(self.asset)
         lay.addStretch()
         # The selected databank's data, loaded the moment it is chosen (owner, 2026-09-27).
@@ -70,10 +78,22 @@ class ContextBar(QFrame):
             b.setText(text)
             ink = T["text"] if key == "projects" or now[key] else T["faint"]
             weight = 700 if key == "strategy" and now[key] else 500
-            b.setStyleSheet(f"font-family:{MONO}; font-size:14px; border:none; padding:3px 6px; "
-                            f"color:{ink}; font-weight:{weight};")
-            b.setToolTip(f"Abrir {TARGET[key]}" + (f" · identidad {now['identity']}"
-                                                   if key == "strategy" and now["identity"]
-                                                   else ""))
-        self.asset.setText("   ".join(f"· {word} {now[key]}" for key, word in
-                                      (("databank", "databank"), ("asset", "activo")) if now[key]))
+            b.setStyleSheet(
+                f"font-family:{MONO}; font-size:14px; border:none; padding:3px 6px; "
+                f"color:{ink}; font-weight:{weight};"
+            )
+            b.setToolTip(
+                f"Abrir {TARGET[key]}"
+                + (
+                    f" · identidad {now['identity']}"
+                    if key == "strategy" and now["identity"]
+                    else ""
+                )
+            )
+        self.asset.setText(
+            "   ".join(
+                f"· {word} {now[key]}"
+                for key, word in (("databank", "databank"), ("asset", "activo"))
+                if now[key]
+            )
+        )

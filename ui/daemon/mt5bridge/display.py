@@ -3,10 +3,11 @@
 The stored `result.json` is mt5/verify's (another session's); this only rewrites the copy sent
 to the window, never the file.
 """
+
 import re
 
 NUMBERED = re.compile(r"^(\d+[ab]? · )(.)")
-PERCENT = {"1": 2, "5": 1}      # verdict rows shown as a percentage, by number: decimals
+PERCENT = {"1": 2, "5": 1}  # verdict rows shown as a percentage, by number: decimals
 
 
 def initial(text: object) -> object:
@@ -35,20 +36,30 @@ def polish(result: dict | None, firm_names: dict[str, str]) -> dict | None:
         return result
     for tab in result.get("tabs", []):
         for block in tab.get("blocks", []):
-            if block.get("kind") == "table" and block.get("columns", [""])[0] == "parámetro":
+            if (
+                block.get("kind") == "table"
+                and block.get("columns", [""])[0] == "parámetro"
+            ):
                 for row in block["rows"]:
                     row[0] = initial(row[0])
             if block.get("kind") == "verdict":
                 for part in block.get("parts", []):
-                    part["label"] = NUMBERED.sub(lambda m: m[1] + m[2].upper(), part["label"])
+                    part["label"] = NUMBERED.sub(
+                        lambda m: m[1] + m[2].upper(), part["label"]
+                    )
                     digits = PERCENT.get(part["label"].split(" · ")[0])
                     if digits is not None and part.get("value") is not None:
                         part["shown"] = percent(part["value"], digits)
-    lines = [{"kind": "callout", "state": {"pass": "pass", "none": "none"}.get(state, "fail"),
-              "text": f"{firm_names.get(firm, firm)}: "
-                      f"{ {'pass': 'validada', 'none': 'sin veredicto'}.get(state, 'no validada')}"}
-             for firm, state in (result.get("summary", {}).get("firms") or {}).items()
-             for state in [state["state"]]]
+    lines = [
+        {
+            "kind": "callout",
+            "state": {"pass": "pass", "none": "none"}.get(state, "fail"),
+            "text": f"{firm_names.get(firm, firm)}: "
+            f"{ {'pass': 'validada', 'none': 'sin veredicto'}.get(state, 'no validada') }",
+        }
+        for firm, state in (result.get("summary", {}).get("firms") or {}).items()
+        for state in [state["state"]]
+    ]
     for tab in result.get("tabs", []):
         if tab.get("name") == "resumen":
             tab["blocks"] = lines + tab["blocks"]

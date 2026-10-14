@@ -12,14 +12,21 @@ from engines.market import reprice
 from engines.variants import filters, fingerprint
 from engines.weekly import panel
 
-TRADES = "variant_trades.parquet"       # written by sqx.variants.varianttrades
+TRADES = "variant_trades.parquet"  # written by sqx.variants.varianttrades
 MAIN = "Main"
 # The excess is step 14's: the gate's drift block, never a copy of its values.
 GATE = Path(__file__).resolve().parents[3] / "screening" / "gate" / "config.yaml"
-EMPTY = pd.DataFrame({"variant_id": pd.Series(dtype=str), "net": [], "gross": [], "profit": [],
-                      "open": pd.Series(dtype="datetime64[ns]"),
-                      "close": pd.Series(dtype="datetime64[ns]")})
-_JOB: dict = {}                         # what a forked worker reads: set by read()
+EMPTY = pd.DataFrame(
+    {
+        "variant_id": pd.Series(dtype=str),
+        "net": [],
+        "gross": [],
+        "profit": [],
+        "open": pd.Series(dtype="datetime64[ns]"),
+        "close": pd.Series(dtype="datetime64[ns]"),
+    }
+)
+_JOB: dict = {}  # what a forked worker reads: set by read()
 
 
 def drift() -> dict[str, Any]:
@@ -35,8 +42,10 @@ def span(asset: dict, leg: str) -> tuple[str, str]:
 def window(asset: dict, leg: str) -> tuple[str, str]:
     """First and last day of one leg as full dates, both inside; a bare year is whole."""
     last = asset["segments"][leg]["to"]
-    return (assetdata.segment_start(asset, leg),
-            f"{last}-12-31" if isinstance(last, int) else str(last))
+    return (
+        assetdata.segment_start(asset, leg),
+        f"{last}-12-31" if isinstance(last, int) else str(last),
+    )
 
 
 def years(asset: dict, leg: str, data_from: str | None = None) -> float:
@@ -68,8 +77,14 @@ def variants(work: Path) -> Design:
     metrics = pd.read_parquet(work / "metrics.parquet")
     kept = metrics[~metrics["stratum"].isin(filters.CONTROLS)]
     params = kept.set_index(kept["variant_id"].astype(str)).filter(like="param_")
-    return {"ids": list(params.index), "params": params, "k": int((params.nunique() > 1).sum()),
-            "mother": str(kept.loc[kept["stratum"] == filters.ORIGIN, "variant_id"].iloc[0])}
+    return {
+        "ids": list(params.index),
+        "params": params,
+        "k": int((params.nunique() > 1).sum()),
+        "mother": str(
+            kept.loc[kept["stratum"] == filters.ORIGIN, "variant_id"].iloc[0]
+        ),
+    }
 
 
 def one(market: str) -> dict[str, Any]:
@@ -88,29 +103,63 @@ def one(market: str) -> dict[str, Any]:
     feed = job["feed"] if market == MAIN else market
     bars, ids, legs, raw = barstore.read(feed, job["timeframe"]), job["ids"], {}, []
     for leg in job["legs"][market]:
-        got = pd.read_parquet(job["work"] / TRADES, filters=[("leg", "==", leg), ("market", "==", market)])
+        got = pd.read_parquet(
+            job["work"] / TRADES, filters=[("leg", "==", leg), ("market", "==", market)]
+        )
         got = got.assign(variant_id=got["variant_id"].astype(str))
         got = cast(pd.DataFrame, got[got["variant_id"].isin(ids)])
         per, gap = EMPTY, None
         if len(got):
-            per = panel.per_trade(got, bars, reprice.costs(feed, leg), span(job["asset"], leg),
-                                  job["drift"], feed)
-            sqx = pd.read_parquet(job["work"] / "segments.parquet", columns=["variant_id", "NetProfit"],
-                                  filters=[("segment", "==", leg), ("market", "==", market)])
-            sqx = cast(pd.Series, sqx.set_index(sqx["variant_id"].astype(str))["NetProfit"].reindex(ids).dropna())
-            gap = panel.sqx_gap(per, sqx, tolerance=job["costs"]["tolerance"],
-                                relative=job["costs"]["relative"])[0]
+            per = panel.per_trade(
+                got,
+                bars,
+                reprice.costs(feed, leg),
+                span(job["asset"], leg),
+                job["drift"],
+                feed,
+            )
+            sqx = pd.read_parquet(
+                job["work"] / "segments.parquet",
+                columns=["variant_id", "NetProfit"],
+                filters=[("segment", "==", leg), ("market", "==", market)],
+            )
+            sqx = cast(
+                pd.Series,
+                sqx.set_index(sqx["variant_id"].astype(str))["NetProfit"]
+                .reindex(ids)
+                .dropna(),
+            )
+            gap = panel.sqx_gap(
+                per,
+                sqx,
+                tolerance=job["costs"]["tolerance"],
+                relative=job["costs"]["relative"],
+            )[0]
         weekly = panel.weekly(per, window(job["asset"], leg), units=ids)
         legs[leg] = weekly | {
             "n": per["variant_id"].value_counts().reindex(ids, fill_value=0).to_numpy(),
-            "trades": len(per), "gap": gap,
-            "straddle": panel.straddle(cast(pd.Series, per["open"]), cast(pd.Series, per["close"])) if len(per) else 0.0}
+            "trades": len(per),
+            "gap": gap,
+            "straddle": panel.straddle(
+                cast(pd.Series, per["open"]), cast(pd.Series, per["close"])
+            )
+            if len(per)
+            else 0.0,
+        }
         raw.append(got)
-    return {"legs": legs} | ({"prints": fingerprint.prints(pd.concat(raw))} if market == MAIN else {})
+    return {"legs": legs} | (
+        {"prints": fingerprint.prints(pd.concat(raw))} if market == MAIN else {}
+    )
 
 
-def read(work: Path, symbol: str, timeframe: str, legs: dict[str, tuple], ids: list[str],
-         cfg: dict) -> dict[str, dict]:
+def read(
+    work: Path,
+    symbol: str,
+    timeframe: str,
+    legs: dict[str, tuple],
+    ids: list[str],
+    cfg: dict,
+) -> dict[str, dict]:
     """Every market of the reading, each on its own bars and at its own costs.
 
     Args:
@@ -127,8 +176,16 @@ def read(work: Path, symbol: str, timeframe: str, legs: dict[str, tuple], ids: l
         market's own.
     """
     asset = assetdata.load(symbol)
-    _JOB.update(work=work, feed=asset["sqx_symbol"], timeframe=timeframe, asset=asset, ids=ids,
-                legs=legs, drift=drift(), costs=cfg["costs"])
+    _JOB.update(
+        work=work,
+        feed=asset["sqx_symbol"],
+        timeframe=timeframe,
+        asset=asset,
+        ids=ids,
+        legs=legs,
+        drift=drift(),
+        costs=cfg["costs"],
+    )
     found = dict(fanout.run(one, {m: len(k) for m, k in legs.items()}, cfg["workers"]))
     return {market: found[market] for market in legs}
 

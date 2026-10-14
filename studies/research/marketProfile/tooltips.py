@@ -4,19 +4,19 @@ TIPS = {
     "run.timeframes": "Los marcos temporales del mapa.",
     "run.workers": "Procesos en paralelo, un activo cada uno.",
     "run.fresh_minutes": "Un fichero de barras tocado hace menos de estos minutos se está "
-                         "reescribiendo y el activo se salta.",
+    "reescribiendo y el activo se salta.",
     "nulls.model": "Cómo se remuestrea la serie para la nula (un modelo de engines.resample).",
     "nulls.draws": "Series remuestreadas por celda; la p más pequeña posible es 1/(sorteos+1).",
     "nulls.seed": "Semilla del remuestreo; vacía, se sortea una nueva y se apunta en run.json.",
     "nulls.block": "Barras por bloque en cada marco: lo que dura la memoria que la nula conserva.",
     "filters.alpha": "Tasa de falsos descubrimientos que se tolera en todo el mapa.",
     "filters.cost_multiple": "Cuántas veces el coste de ida y vuelta tiene que pagar el efecto "
-                             "medio por operación.",
+    "medio por operación.",
     "filters.stable_share": "Parte de los años de build que el signo tiene que superar.",
     "filters.min_trades_per_year": "Cuarto filtro: operaciones al año que la medida tiene que dar "
-                                   "en build (40 de partida; nunca por debajo de 35).",
+    "en build (40 de partida; nunca por debajo de 35).",
     "filters.min_trades_per_year_by_asset": "Mínimo propio de un activo, p. ej. {XAGUSD: 35}; no "
-                                            "puede bajar de 35.",
+    "puede bajar de 35.",
     "filters.min_trades": "Con menos operaciones una medida no se contrasta.",
     "score.z_cap": "Tope de la z de cada medida al calcular la puntuación de 0 a 100.",
     "derive.atr": "Barras del ATR que mide extremos e impulsos.",
@@ -49,4 +49,5 @@ TIPS = {
     "range_bands": "Franjas cuyo rango se opera en ruptura cuando la franja termina.",
     "range_hold_hours": "Horas que se mantiene la ruptura del rango de una franja.",
     "measures": "Las medidas del perfil: nombre, familia, función y parámetros en barras; "
-                "`clock` marca las que necesitan reloj y `tag` lo que añade cada una."}
+    "`clock` marca las que necesitan reloj y `tag` lo que añade cada una.",
+}

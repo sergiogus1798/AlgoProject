@@ -6,8 +6,15 @@ import pandas as pd
 from engines.market.feed import session
 
 
-def frozen(o: np.ndarray, h: np.ndarray, low: np.ndarray, c: np.ndarray, at: np.ndarray,
-           eligible: np.ndarray, length: int) -> pd.DataFrame:
+def frozen(
+    o: np.ndarray,
+    h: np.ndarray,
+    low: np.ndarray,
+    c: np.ndarray,
+    at: np.ndarray,
+    eligible: np.ndarray,
+    length: int,
+) -> pd.DataFrame:
     """Runs of at least `length` consecutive minutes whose four prices never change.
 
     Args:
@@ -22,8 +29,15 @@ def frozen(o: np.ndarray, h: np.ndarray, low: np.ndarray, c: np.ndarray, at: np.
         not each of its bars.
     """
     same = np.zeros(len(c), bool)
-    same[1:] = ((np.diff(at) == 1) & (o[1:] == o[:-1]) & (h[1:] == h[:-1])
-                & (low[1:] == low[:-1]) & (c[1:] == c[:-1]) & eligible[1:] & eligible[:-1])
+    same[1:] = (
+        (np.diff(at) == 1)
+        & (o[1:] == o[:-1])
+        & (h[1:] == h[:-1])
+        & (low[1:] == low[:-1])
+        & (c[1:] == c[:-1])
+        & eligible[1:]
+        & eligible[:-1]
+    )
     edges = np.flatnonzero(np.diff(np.r_[0, same.astype(np.int8), 0]))
     begin, end = edges[::2], edges[1::2]
     bars = end - begin + 1
@@ -47,5 +61,6 @@ def gaps(at: np.ndarray, week_mask: np.ndarray, least: int) -> pd.DataFrame:
     p = session.prefix(week_mask, at)
     missing = p[1:] - session.prefix(week_mask, at[:-1] + 1)
     k = np.flatnonzero(missing >= least)
-    return pd.DataFrame({"after": k, "from_min": at[k] + 1, "to_min": at[k + 1],
-                         "minutes": missing[k]})
+    return pd.DataFrame(
+        {"after": k, "from_min": at[k] + 1, "to_min": at[k + 1], "minutes": missing[k]}
+    )

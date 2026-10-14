@@ -29,11 +29,19 @@ def classify(rho: float, p_mas: float, p_menos: float, alpha: float) -> str:
     """
     if not np.isfinite(rho):
         return NO_DATA
-    return "positivo" if p_mas <= alpha else "perverso" if p_menos <= alpha else "neutro"
+    return (
+        "positivo" if p_mas <= alpha else "perverso" if p_menos <= alpha else "neutro"
+    )
 
 
-def state(order: str, level: float, n: int, min_variants: int, p_nivel: float,
-          level_alpha: float) -> str:
+def state(
+    order: str,
+    level: float,
+    n: int,
+    min_variants: int,
+    p_nivel: float,
+    level_alpha: float,
+) -> str:
     """PASA, LIMBO or NO PASA, by the table above.
 
     Args:
@@ -72,12 +80,20 @@ def judge(measured: dict, cfg: dict) -> dict[str, Any]:
     """
     alpha = cfg["null"]["alpha"]
     found = classify(measured["rho"], measured["p_mas"], measured["p_menos"], alpha)
-    said = {"orden": found,
-            "fuerte": found == "positivo" and measured["rho"] >= cfg["order"]["rho_strong"],
-            "estado": state(found, measured["nivel_top"], measured["n"],
-                            cfg["panel"]["min_variants"], measured["p_nivel"],
-                            cfg["level"]["alpha"])}
+    said = {
+        "orden": found,
+        "fuerte": found == "positivo" and measured["rho"] >= cfg["order"]["rho_strong"],
+        "estado": state(
+            found,
+            measured["nivel_top"],
+            measured["n"],
+            cfg["panel"]["min_variants"],
+            measured["p_nivel"],
+            cfg["level"]["alpha"],
+        ),
+    }
     if measured.get("p_mas_bloque") is not None:
-        said["orden_bloque"] = classify(measured["rho"], measured["p_mas_bloque"],
-                                        measured["p_menos_bloque"], alpha)
+        said["orden_bloque"] = classify(
+            measured["rho"], measured["p_mas_bloque"], measured["p_menos_bloque"], alpha
+        )
     return said

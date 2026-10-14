@@ -61,21 +61,31 @@ def shape(path: Path, install: Path = MASTER) -> Shape:
     """
     names = group_names(install)
     with zipfile.ZipFile(path) as z:
-        root = ElementTree.fromstring(z.read(next(n for n in z.namelist() if n.endswith(INNER))))
+        root = ElementTree.fromstring(
+            z.read(next(n for n in z.namelist() if n.endswith(INNER)))
+        )
     found = []
     for item in root.iter("Item"):
         if item.get("key") not in HOLES:
             continue
         group = next((p.text for p in item if p.get("key") == "#Group#"), None)
-        found.append({"id": next((p.text for p in item if p.get("key") == "#Identification#"),
-                                 item.get("key")),
-                      "kind": HOLES[hit(item.get("key"))],
-                      "group": names.get(group, group) if group else None,
-                      "unknown_group": bool(group) and group not in names})
+        found.append(
+            {
+                "id": next(
+                    (p.text for p in item if p.get("key") == "#Identification#"),
+                    item.get("key"),
+                ),
+                "kind": HOLES[hit(item.get("key"))],
+                "group": names.get(group, group) if group else None,
+                "unknown_group": bool(group) and group not in names,
+            }
+        )
     return {"holes": found, "fixed": sorted(blocks(rules(path)))}
 
 
-def _count(item: ElementTree.Element, got: dict[str, int], twins: set[tuple[str | None, ...]]) -> None:
+def _count(
+    item: ElementTree.Element, got: dict[str, int], twins: set[tuple[str | None, ...]]
+) -> None:
     """Add one node of a signal's tree to the count, walking through AND, OR and Not."""
     if item.get("key") in LOGIC:
         for child in item.findall("Block/Item"):
@@ -105,7 +115,9 @@ def conditions(path: Path) -> dict[str, dict[str, int]]:
         signals the fullest one counts, since one strategy trades one direction (rule 13).
     """
     with zipfile.ZipFile(path) as z:
-        root = ElementTree.fromstring(z.read(next(n for n in z.namelist() if n.endswith(INNER))))
+        root = ElementTree.fromstring(
+            z.read(next(n for n in z.namelist() if n.endswith(INNER)))
+        )
     names = {v.findtext("id"): v.findtext("name") or "" for v in root.iter("variable")}
     out = {side: {"fixed": 0, "bound": 0, "free": 0} for side in ("entry", "exit")}
     for signal in root.iter("signal"):
@@ -132,10 +144,15 @@ def reach(shape_of: dict) -> str:
     free = [h for h in shape_of["holes"] if not h["group"]]
     bound = [h for h in shape_of["holes"] if h["group"]]
     if not shape_of["holes"]:
-        return "Sin huecos aleatorios: el builder no sortea nada y la paleta no la toca."
+        return (
+            "Sin huecos aleatorios: el builder no sortea nada y la paleta no la toca."
+        )
     if not free:
-        return (f"Los {len(bound)} huecos están atados a grupos "
-                f"({', '.join(sorted({h['group'] for h in bound}))}). "
-                "La paleta NO la toca: para estrecharla hay que cambiar el grupo.")
-    return (f"{len(free)} hueco(s) libre(s): la paleta sí los gobierna."
-            + (f" Otros {len(bound)} están atados a un grupo y se le escapan." if bound else ""))
+        return (
+            f"Los {len(bound)} huecos están atados a grupos "
+            f"({', '.join(sorted({h['group'] for h in bound}))}). "
+            "La paleta NO la toca: para estrecharla hay que cambiar el grupo."
+        )
+    return f"{len(free)} hueco(s) libre(s): la paleta sí los gobierna." + (
+        f" Otros {len(bound)} están atados a un grupo y se le escapan." if bound else ""
+    )

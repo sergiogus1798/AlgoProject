@@ -20,7 +20,7 @@ from ui.daemon.loader import state as loader
 
 # The flag that adds a study's oos2 reading to the one that decides without it (18.5).
 OOS2 = {"marketSurfaces": "--oos2"}
-REFUSED = 3     # exit code of `studies.optimisation.oos2Reading.report` for a cell with no look left
+REFUSED = 3  # exit code of `studies.optimisation.oos2Reading.report` for a cell with no look left
 
 
 def admit(project: str, n: str) -> None:
@@ -31,7 +31,9 @@ def admit(project: str, n: str) -> None:
 def has(file: Path, flag: str | None) -> bool:
     """Whether a mother's result is there — with its oos2 reading, when a `flag` asks for one."""
     return file.exists() and (
-        not flag or "oos2" in (json.loads(file.read_text(encoding="utf-8")).get("facts") or {}))
+        not flag
+        or "oos2" in (json.loads(file.read_text(encoding="utf-8")).get("facts") or {})
+    )
 
 
 def skipped(project: str, mother: str) -> str | None:
@@ -42,17 +44,28 @@ def skipped(project: str, mother: str) -> str | None:
         `wfc.sqx_gap_relative`; otherwise the Spanish line saying why, a missing figure included.
     """
     file = variants_dir(project, mother) / "estudios" / "wfc.json"
-    facts = json.loads(file.read_text(encoding="utf-8")).get("facts") or {} if file.exists() else {}
-    gaps = [c["descuadre_sqx"] for c in facts.values() if c.get("descuadre_sqx") is not None]
+    facts = (
+        json.loads(file.read_text(encoding="utf-8")).get("facts") or {}
+        if file.exists()
+        else {}
+    )
+    gaps = [
+        c["descuadre_sqx"] for c in facts.values() if c.get("descuadre_sqx") is not None
+    ]
     limit = thresholds.value("wfc.sqx_gap_relative")
     if gaps and max(gaps) < limit:
         return None
-    what = f"descuadre con SQX {max(gaps):.2f} ≥ {limit}".replace(".", ",") if gaps else "sin descuadre con SQX (falta wfc.json)"
+    what = (
+        f"descuadre con SQX {max(gaps):.2f} ≥ {limit}".replace(".", ",")
+        if gaps
+        else "sin descuadre con SQX (falta wfc.json)"
+    )
     return f"18.5 saltado en {mother}: {what} — el repreciador no reproduce a SQX en esta madre"
 
 
-def look(project: str, n: str, key: str, mothers: pd.DataFrame, redo: bool,
-         oos2: bool = True) -> str:
+def look(
+    project: str, n: str, key: str, mothers: pd.DataFrame, redo: bool, oos2: bool = True
+) -> str:
     """One of 17, 18, 18.5 over every mother's variant batch, computed and not read.
 
     Args:
@@ -72,29 +85,50 @@ def look(project: str, n: str, key: str, mothers: pd.DataFrame, redo: bool,
     flag = OOS2.get(key) if oos2 else None
     if oos2:
         admit(project, n)
-    todo = [m for m in mothers["strategy"]
-            if redo or not has(variants_dir(project, m) / "estudios" / f"{key}.json", flag)]
+    todo = [
+        m
+        for m in mothers["strategy"]
+        if redo or not has(variants_dir(project, m) / "estudios" / f"{key}.json", flag)
+    ]
     skip = [skipped(project, m) for m in todo] if key == "marketSurfaces" else []
-    todo, lines = [m for m, why in zip(todo, skip or [None] * len(todo)) if not why], [w for w in skip if w]
+    todo, lines = (
+        [m for m, why in zip(todo, skip or [None] * len(todo)) if not why],
+        [w for w in skip if w],
+    )
     who = survivors.about(project)
     # The mothers at once, by the window's own width rule (`chain.python_step`): each writes
     # its own <work>/estudios and the ledger takes concurrent appends (18.5: 570 s in a row).
     # ponytail: no RAM floor (a mother's study is ~13 MB of input); `chain.floored` if one grows.
     width = 1 if key in jobs.WIDE else max(1, jobs.SLOTS // jobs.LIGHT)
     with ThreadPoolExecutor(width) as pool:
-        list(pool.map(call.run, [argv + [flag] * bool(flag) for argv in
-                                 call.window(key, project, "", who["symbol"], todo)] if todo else []))
+        list(
+            pool.map(
+                call.run,
+                [
+                    argv + [flag] * bool(flag)
+                    for argv in call.window(key, project, "", who["symbol"], todo)
+                ]
+                if todo
+                else [],
+            )
+        )
     how = "a ciegas" if oos2 else "sin oos2 (la lectura que decide)"
-    return "\n".join([f"{key}: {len(todo)} madre(s) leídas {how}, "
-                      f"{len(mothers) - len(todo) - len(lines)} ya lo estaban", *lines])
+    return "\n".join(
+        [
+            f"{key}: {len(todo)} madre(s) leídas {how}, "
+            f"{len(mothers) - len(todo) - len(lines)} ya lo estaban",
+            *lines,
+        ]
+    )
 
 
 def bank(project: str) -> str:
     """The databank the project's WFM task writes, as its project.cfx names it."""
     listing = preflight.tasks(project)
     assert "refuse" not in listing, f"{project}: {listing.get('refuse')}"
-    return next(t["output"] for t in listing["tasks"]
-                if t["title"] in stage.titles("wfm"))
+    return next(
+        t["output"] for t in listing["tasks"] if t["title"] in stage.titles("wfm")
+    )
 
 
 def wfm(project: str, role: str) -> str:
@@ -105,20 +139,51 @@ def wfm(project: str, role: str) -> str:
     stop with `ALGO_NO_EXPORT`), or an earlier matrix's after an export that failed.
     """
     name = bank(project)
-    done = max((DATA / "raw" / project / name.replace(" ", "_")).glob("*/wfm/manifest.json"),
-               key=lambda f: f.stat().st_mtime, default=None)
-    if loader.age(done, list(databank_dir(project, name, worker_dir(role)).glob("*.sqx"))) != "fresh":
-        call.run(["-m", "sqx.export.export_wfm", "--project", project, "--databank", name,
-                  "--role", role])
-    call.run(["-m", "studies.optimisation.wfm.report", "--project", project, "--databank", name])
+    done = max(
+        (DATA / "raw" / project / name.replace(" ", "_")).glob("*/wfm/manifest.json"),
+        key=lambda f: f.stat().st_mtime,
+        default=None,
+    )
+    if (
+        loader.age(
+            done, list(databank_dir(project, name, worker_dir(role)).glob("*.sqx"))
+        )
+        != "fresh"
+    ):
+        call.run(
+            [
+                "-m",
+                "sqx.export.export_wfm",
+                "--project",
+                project,
+                "--databank",
+                name,
+                "--role",
+                role,
+            ]
+        )
+    call.run(
+        [
+            "-m",
+            "studies.optimisation.wfm.report",
+            "--project",
+            project,
+            "--databank",
+            name,
+        ]
+    )
     return f"lectura de {name} escrita, sin leer"
 
 
 def study(project: str) -> tuple[str, dict]:
     """The ledger study the block signs — the one blindJoint reads — and its rows' shared fields."""
     sid, who = survivors.study_of(project)
-    return sid, {"study": sid, "symbol": who["symbol"], "timeframe": who["timeframe"],
-                 "config_hash": None}
+    return sid, {
+        "study": sid,
+        "symbol": who["symbol"],
+        "timeframe": who["timeframe"],
+        "config_hash": None,
+    }
 
 
 def register(project: str, mothers: pd.DataFrame) -> str:
@@ -142,9 +207,14 @@ def register(project: str, mothers: pd.DataFrame) -> str:
     """
     sid, base = study(project)
     frame = studymod.read(sid)
-    rows = [r for m in mothers["strategy"]
-            for r in rebuilt.from_batch(variants_dir(project, m), base, frame)]
-    read = sorted(report_dir(project, bank(project), "x").parent.glob("*/wfm/verdict.csv"))
+    rows = [
+        r
+        for m in mothers["strategy"]
+        for r in rebuilt.from_batch(variants_dir(project, m), base, frame)
+    ]
+    read = sorted(
+        report_dir(project, bank(project), "x").parent.glob("*/wfm/verdict.csv")
+    )
     notes = frame.loc[frame["step"] == 19, "note"].fillna("").astype(str)
     if read and not notes.str.contains(str(read[-1].parent), regex=False).any():
         rows += rebuilt.from_wfm(read[-1].parent, base)
@@ -152,8 +222,11 @@ def register(project: str, mothers: pd.DataFrame) -> str:
         record.log(sid, row)
     gate.allow_read(studymod.read(sid))
     written = pd.Series([r["step"] for r in rows]).value_counts().sort_index()
-    return ("filas escritas: " + ", ".join(f"paso {s:g}: {n}" for s, n in written.items())
-            if rows else "17, 18 y 19 ya tenían sus filas")
+    return (
+        "filas escritas: " + ", ".join(f"paso {s:g}: {n}" for s, n in written.items())
+        if rows
+        else "17, 18 y 19 ya tenían sus filas"
+    )
 
 
 def oos2read(project: str) -> str:
@@ -162,7 +235,9 @@ def oos2read(project: str) -> str:
     Exit 3 is the ledger refusing a fourth look («solo vivo»): the step goes on, writes no
     fact, and `criteria.yaml` reads a missing fact as limbo, so nobody is cut on it.
     """
-    rc, text = chain.command(["-m", "studies.optimisation.oos2Reading.report", "--project", project])
+    rc, text = chain.command(
+        ["-m", "studies.optimisation.oos2Reading.report", "--project", project]
+    )
     if rc == REFUSED:
         return "celda «solo vivo»: no se lee oos2, las madres siguen en limbo"
     if rc:

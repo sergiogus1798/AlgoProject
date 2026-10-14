@@ -11,7 +11,9 @@ from sqx.projects import registry
 
 # SQX's own line at the end of a Build task, in the project's `log/global_log_*.log`.
 BUILT = re.compile(r"Strategies generated: (\d+),.*?Accepted: (\d+), Rejected: (\d+)")
-GENERATED_UNIT = "generated"   # looks that count toward N but are not a Sharpe: never in sigma
+GENERATED_UNIT = (
+    "generated"  # looks that count toward N but are not a Sharpe: never in sigma
+)
 
 
 def signed(project: str) -> tuple[str, dict] | None:
@@ -19,8 +21,14 @@ def signed(project: str) -> tuple[str, dict] | None:
 
     Same identity as `ui.daemon.filters.ledgerrow.signed`; None when the registry names no template.
     """
-    row = next((r for r in reversed(registry.rows())
-                if r["name"] == project and r["template"]), None)
+    row = next(
+        (
+            r
+            for r in reversed(registry.rows())
+            if r["name"] == project and r["template"]
+        ),
+        None,
+    )
     if row is None:
         return None
     family = Path(row["template"]).parent.name
@@ -30,7 +38,9 @@ def signed(project: str) -> tuple[str, dict] | None:
 def built(log_dir: Path, since: float = 0.0) -> tuple[int, int] | None:
     """(generated, accepted) of the last Build task SQX logged since `since` (epoch seconds)."""
     last = None
-    for file in sorted(log_dir.glob("global_log_*.log"), key=lambda f: f.stat().st_mtime):
+    for file in sorted(
+        log_dir.glob("global_log_*.log"), key=lambda f: f.stat().st_mtime
+    ):
         if file.stat().st_mtime >= since:
             for m in BUILT.finditer(file.read_text(encoding="utf-8", errors="replace")):
                 last = (int(m.group(1)), int(m.group(2)))
@@ -50,12 +60,22 @@ def log_build(project: str, log_dir: Path, since: float = 0.0) -> str:
     if sign is None or got is None:
         return "Ledger: sin plantilla en registry.csv o sin línea «Strategies generated» en el log"
     sid, row = sign
-    record.log(sid, {"step": 6, "launched_by": "ventana", "symbol": row["symbol"],
-                     "timeframe": row["timeframe"], "segment": "build",
-                     "n_in": got[0], "n_out": got[1], "n_scored": got[0],
-                     "score_unit": GENERATED_UNIT,
-                     "criterion": "build: SQX generó n_in y aceptó n_out (su línea «Strategies generated»)",
-                     "note": f"proyecto {project}"})
+    record.log(
+        sid,
+        {
+            "step": 6,
+            "launched_by": "ventana",
+            "symbol": row["symbol"],
+            "timeframe": row["timeframe"],
+            "segment": "build",
+            "n_in": got[0],
+            "n_out": got[1],
+            "n_scored": got[0],
+            "score_unit": GENERATED_UNIT,
+            "criterion": "build: SQX generó n_in y aceptó n_out (su línea «Strategies generated»)",
+            "note": f"proyecto {project}",
+        },
+    )
     return f"Ledger: build {got[0]} generadas, {got[1]} aceptadas, en {sid}"
 
 
@@ -78,13 +98,26 @@ def log_wfm(project: str, export: Path, n: int, command: str) -> str:
     if len(frame) and (frame["note"].fillna("") == note).any():
         return f"Ledger: {export} ya está apuntado en {sid}"
     for segment in blind.SEGMENTS:
-        record.log(sid, {"step": 19, "launched_by": command, "symbol": row["symbol"],
-                         "timeframe": row["timeframe"], "segment": segment, "n_in": n,
-                         "n_out": n, "criterion": "wfm/l1_mediana_exceso+l1_p_menos", "note": note})
+        record.log(
+            sid,
+            {
+                "step": 19,
+                "launched_by": command,
+                "symbol": row["symbol"],
+                "timeframe": row["timeframe"],
+                "segment": segment,
+                "n_in": n,
+                "n_out": n,
+                "criterion": "wfm/l1_mediana_exceso+l1_p_menos",
+                "note": note,
+            },
+        )
     return f"Ledger: tres filas del paso 19 en {sid}"
 
 
-def log_cut(project: str, step: float, cut: tuple[int, int], criterion: str, launched_by: str) -> str:
+def log_cut(
+    project: str, step: float, cut: tuple[int, int], criterion: str, launched_by: str
+) -> str:
     """Sign a cut a study made by hand on oos1: one row, unless the workflow runs it.
 
     Inside the workflow (`ALGO_AUTONOMOUS=1`) `pipeline.autopilot.judge.ledger_row` signs the
@@ -106,9 +139,20 @@ def log_cut(project: str, step: float, cut: tuple[int, int], criterion: str, lau
     if sign is None:
         return "Ledger: sin plantilla en registry.csv: el corte no se apunta"
     sid, row = sign
-    record.log(sid, {"step": float(step), "launched_by": launched_by, "symbol": row["symbol"],
-                     "timeframe": row["timeframe"], "segment": "oos1", "n_in": cut[0],
-                     "n_out": cut[1], "criterion": criterion, "note": f"proyecto {project}"})
+    record.log(
+        sid,
+        {
+            "step": float(step),
+            "launched_by": launched_by,
+            "symbol": row["symbol"],
+            "timeframe": row["timeframe"],
+            "segment": "oos1",
+            "n_in": cut[0],
+            "n_out": cut[1],
+            "criterion": criterion,
+            "note": f"proyecto {project}",
+        },
+    )
     return f"Ledger: {criterion} ({cut[0]} -> {cut[1]}) apuntado en {sid}"
 
 
@@ -125,12 +169,34 @@ def calib_rows(populations: Path) -> list[tuple[str, dict]]:
         if sign is None:
             continue
         sid, reg = sign
-        base = {"launched_by": "ledger.backfill --calib", "symbol": reg["symbol"],
-                "timeframe": reg["timeframe"], "n_in": int(n), "n_out": int(n),
-                "note": f"backfill calibración · {pop}"}
-        found += [(sid, {**base, "step": 6, "segment": "build", "n_scored": int(n),
-                         "score_unit": GENERATED_UNIT,
-                         "criterion": "build de calibración: estrategias del databank"}),
-                  (sid, {**base, "step": 8, "segment": "oos1",
-                         "criterion": "calibración de criterios del paso 8, leída en OOS"})]
+        base = {
+            "launched_by": "ledger.backfill --calib",
+            "symbol": reg["symbol"],
+            "timeframe": reg["timeframe"],
+            "n_in": int(n),
+            "n_out": int(n),
+            "note": f"backfill calibración · {pop}",
+        }
+        found += [
+            (
+                sid,
+                {
+                    **base,
+                    "step": 6,
+                    "segment": "build",
+                    "n_scored": int(n),
+                    "score_unit": GENERATED_UNIT,
+                    "criterion": "build de calibración: estrategias del databank",
+                },
+            ),
+            (
+                sid,
+                {
+                    **base,
+                    "step": 8,
+                    "segment": "oos1",
+                    "criterion": "calibración de criterios del paso 8, leída en OOS",
+                },
+            ),
+        ]
     return found

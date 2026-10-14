@@ -31,8 +31,9 @@ def within(trades: pd.DataFrame, feeds: list[str]) -> pd.DataFrame:
         span = markets.own_window(feed)
         if span:
             end = pd.Timestamp(span["to"]) + pd.Timedelta(days=1)
-            keep &= (trades["Symbol"] != feed) | ((trades["Open time"] >= span["from"])
-                                                  & (trades["Close time"] < end))
+            keep &= (trades["Symbol"] != feed) | (
+                (trades["Open time"] >= span["from"]) & (trades["Close time"] < end)
+            )
     return cast(pd.DataFrame, trades[keep])
 
 
@@ -72,10 +73,22 @@ def load(project: str, databank: str, asset: str, export: str) -> Inputs:
     universe = markets.universe(asset, packed)
     whole = tradestore.read(packed)
     trades = within(whole, markets.feeds(universe))
-    names = sorted(trades.loc[trades["Symbol"] == universe["main"], "strategy"].unique())
-    return Inputs(project=project, databank=databank, export=export, asset=asset,
-                  path=packed, universe=universe, trades=trades, strategies=names,
-                  outside=len(whole) - len(trades),
-                  identity=identity.resolve(project, databank, names, packed.parent, export),
-                  bars={feed: barstore.read(feed, universe["timeframe"])
-                        for feed in markets.feeds(universe)})
+    names = sorted(
+        trades.loc[trades["Symbol"] == universe["main"], "strategy"].unique()
+    )
+    return Inputs(
+        project=project,
+        databank=databank,
+        export=export,
+        asset=asset,
+        path=packed,
+        universe=universe,
+        trades=trades,
+        strategies=names,
+        outside=len(whole) - len(trades),
+        identity=identity.resolve(project, databank, names, packed.parent, export),
+        bars={
+            feed: barstore.read(feed, universe["timeframe"])
+            for feed in markets.feeds(universe)
+        },
+    )

@@ -13,8 +13,13 @@ class Walk(TypedDict):
     mae: np.ndarray
 
 
-def paths(frame: pd.DataFrame, entry: np.ndarray, side: np.ndarray,
-          price: np.ndarray, horizon: int) -> Walk:
+def paths(
+    frame: pd.DataFrame,
+    entry: np.ndarray,
+    side: np.ndarray,
+    price: np.ndarray,
+    horizon: int,
+) -> Walk:
     """MFE and MAE at every horizon from 1 to `horizon`, one row per trade.
 
     Args:

@@ -34,8 +34,12 @@ def run(priced: pd.DataFrame, names: pd.Series, cfg: dict, asset: dict) -> Popul
         and the window's population table read}.
     """
     started = time.time()
-    by = priced.assign(gross=priced["pnl"] + priced["cost"]).groupby("identity", observed=True)
-    panel = pd.DataFrame({"mean_gross": by["gross"].mean(), "mean_cost": by["cost"].mean()})
+    by = priced.assign(gross=priced["pnl"] + priced["cost"]).groupby(
+        "identity", observed=True
+    )
+    panel = pd.DataFrame(
+        {"mean_gross": by["gross"].mean(), "mean_cost": by["cost"].mean()}
+    )
     panel["edge_mean"] = panel["mean_gross"] / panel["mean_cost"]
     panel["strategy"] = names.reindex(panel.index)
     panel = panel.reset_index().set_index("strategy")
@@ -44,15 +48,31 @@ def run(priced: pd.DataFrame, names: pd.Series, cfg: dict, asset: dict) -> Popul
     panel["verdict"] = np.where(below & (action == "drop"), "DESCARTAR", "MANTENER")
     shown = panel.reset_index()
     table = blocks.table(
-        "Cada estrategia contra su coste", shown,
+        "Cada estrategia contra su coste",
+        shown,
         f"Verde: edge medio por encima de {bar}. Rojo: por debajo "
         f"({'sólo marcadas' if action == 'mark' else 'DESCARTAR en curate'}). "
-        "edge = bruto medio / coste pagado medio, sólo oos1.")
-    table["states"] = [["pass" if not b else "fail"] * len(shown.columns) for b in below]
+        "edge = bruto medio / coste pagado medio, sólo oos1.",
+    )
+    table["states"] = [
+        ["pass" if not b else "fail"] * len(shown.columns) for b in below
+    ]
     population = envelope.envelope(
-        MODULE, None, None, cfg, started,
-        [envelope.tab("panel", "Cada estrategia contra su coste", [table],
-                      note=f"{int(below.sum())} de {len(panel)} por debajo de {bar} "
-                           f"({'sólo marcadas' if action == 'mark' else 'DESCARTAR en curate'})."
-                      )], warnings=costs.warnings(asset), glossary=one.GLOSSARY)
+        MODULE,
+        None,
+        None,
+        cfg,
+        started,
+        [
+            envelope.tab(
+                "panel",
+                "Cada estrategia contra su coste",
+                [table],
+                note=f"{int(below.sum())} de {len(panel)} por debajo de {bar} "
+                f"({'sólo marcadas' if action == 'mark' else 'DESCARTAR en curate'}).",
+            )
+        ],
+        warnings=costs.warnings(asset),
+        glossary=one.GLOSSARY,
+    )
     return {"population": population, "panel": panel}

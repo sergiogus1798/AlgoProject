@@ -65,26 +65,40 @@ def set_main(text: str, symbol: str) -> tuple[str, int, str]:
     """
     study = doctrine()["crosstf"]
     if study["conditions"]:
-        raise SystemExit("`crosstf.conditions` de assets/_build.yaml ya no esta vacio: esta "
-                         "prueba es una medicion, no una puerta, y escribir condiciones no "
-                         "esta implementado. Quitalas o dilo explicitamente.")
+        raise SystemExit(
+            "`crosstf.conditions` de assets/_build.yaml ya no esta vacio: esta "
+            "prueba es una medicion, no una puerta, y escribir condiciones no "
+            "esta implementado. Quitalas o dilo explicitamente."
+        )
     data = load(symbol)
     start, end, _ = span(data, study["segment"])
     text = set_precision(set_span(text, data, study["segment"])[0], study["precision"])
-    text = re.sub(r'(<RetestOnAdditionalMarkets\b[^>]*?)use="[^"]*"', r'\g<1>use="false"',
-                  text, count=1)
+    text = re.sub(
+        r'(<RetestOnAdditionalMarkets\b[^>]*?)use="[^"]*"',
+        r'\g<1>use="false"',
+        text,
+        count=1,
+    )
     # Every condition of the task, not only this check's: 🔬 2026-09-25 a clone carried live
     # conditions elsewhere (the OOS copy, with DeleteFailedStrategies true).
     text, silenced = silence(text)
     live = main_window(text)
-    warning = ("" if live == (start, end) else
-               f"⚠️  la tarea corre {live[0]} a {live[1]}, no {start} a {end}: configura la "
-               f"tarea con el segmento `{study['segment']}`.")
+    warning = (
+        ""
+        if live == (start, end)
+        else f"⚠️  la tarea corre {live[0]} a {live[1]}, no {start} a {end}: configura la "
+        f"tarea con el segmento `{study['segment']}`."
+    )
     return text, silenced, warning
 
 
-def wire(cfx: Path, symbol: str, day: str, project: str = "",
-         targets: list[str] | None = None) -> dict[str, Any]:
+def wire(
+    cfx: Path,
+    symbol: str,
+    day: str,
+    project: str = "",
+    targets: list[str] | None = None,
+) -> dict[str, Any]:
     """Write `CrossTF` and one task per extra timeframe, and record which databank is which.
 
     Args:
@@ -105,8 +119,10 @@ def wire(cfx: Path, symbol: str, day: str, project: str = "",
     """
     held = cfxio.held(cfx)
     if held:
-        raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
-                         f"Paralo: bin/sqx-worker.sh --role {held} stop")
+        raise SystemExit(
+            f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
+            f"Paralo: bin/sqx-worker.sh --role {held} stop"
+        )
     members = cfxio.members(cfx)
     task = hit(member_of(members["config.xml"].decode("utf-8"), "CrossTF"))
     text, silenced, warning = set_main(members[task].decode("utf-8"), symbol)
@@ -124,10 +140,22 @@ def wire(cfx: Path, symbol: str, day: str, project: str = "",
     # must score these cells on the bars this run actually holds (OPEN.md #80).
     out = crosstf_dir(project or cfx.parent.name, day)
     out.mkdir(parents=True, exist_ok=True)
-    (out / "blocks.json").write_text(json.dumps({"blocks": blocks, "databanks": databanks,
-                                                 "tasks": extra}, indent=2), encoding="utf-8")
-    return {"task": task, "blocks": blocks, "databanks": databanks, "tasks": extra,
-            "silenced": silenced, "warning": warning, "staged": staged, "out": out}
+    (out / "blocks.json").write_text(
+        json.dumps(
+            {"blocks": blocks, "databanks": databanks, "tasks": extra}, indent=2
+        ),
+        encoding="utf-8",
+    )
+    return {
+        "task": task,
+        "blocks": blocks,
+        "databanks": databanks,
+        "tasks": extra,
+        "silenced": silenced,
+        "warning": warning,
+        "staged": staged,
+        "out": out,
+    }
 
 
 def main() -> None:
@@ -135,17 +163,24 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("symbol")
     ap.add_argument("--cfx", required=True, type=Path)
-    ap.add_argument("--day", default=date.today().isoformat(),
-                    help="dia de fabricacion bajo el que se archiva blocks.json "
-                         "(core.datapaths.crosstf_dir); por defecto hoy, igual que "
-                         "sqx.variants.scale")
+    ap.add_argument(
+        "--day",
+        default=date.today().isoformat(),
+        help="dia de fabricacion bajo el que se archiva blocks.json "
+        "(core.datapaths.crosstf_dir); por defecto hoy, igual que "
+        "sqx.variants.scale",
+    )
     a = ap.parse_args()
     got = wire(a.cfx, a.symbol, a.day)
-    print(f"{got['task']}: {got['blocks'][0]}, costes de {a.symbol} a "
-          f"`{doctrine()['crosstf']['segment']}`")
+    print(
+        f"{got['task']}: {got['blocks'][0]}, costes de {a.symbol} a "
+        f"`{doctrine()['crosstf']['segment']}`"
+    )
     for s in got["tasks"]:
         print(f"«{s['title']}»: {s['timeframe']} con {s['engine']} -> {s['databank']}")
-    print(f"{got['silenced']} condiciones de aceptacion apagadas — esto es evidencia, no un filtro")
+    print(
+        f"{got['silenced']} condiciones de aceptacion apagadas — esto es evidencia, no un filtro"
+    )
     if got["warning"]:
         print(got["warning"])
     print(got["staged"])

@@ -7,7 +7,9 @@ def edge(paths: dict[str, np.ndarray]) -> float:
     """The path set's edge: mean closed P&L over the days that closed any, unit risk."""
     closed = paths["closed"]
     if not closed.any():
-        raise ValueError("haircut.edge: no day of the path set closes any P&L — there is no edge to cut")
+        raise ValueError(
+            "haircut.edge: no day of the path set closes any P&L — there is no edge to cut"
+        )
     return float(closed.sum() / np.count_nonzero(closed))
 
 

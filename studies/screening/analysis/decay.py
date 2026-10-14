@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 
 YEAR = 252
-MIN_YEARS_POSITIVE = 4      # of the OOS years; 3 of 5 is what a coin flip gives
-MAX_CONCENTRATION = 0.40    # share of OOS profit allowed to come from one quarter
+MIN_YEARS_POSITIVE = 4  # of the OOS years; 3 of 5 is what a coin flip gives
+MAX_CONCENTRATION = 0.40  # share of OOS profit allowed to come from one quarter
 # NOT a one-sided 5 % test: the curve this t is read on is SQX's daily curve, each day's LOWEST
 # equity, whose low-to-low differences are 14-25 % more volatile than daily P&L — 🔬 the t reads
 # 0.78-0.88 of its close-to-close value on three populations (knowhow/research/gate-t-scales.md).
@@ -19,6 +19,7 @@ SIGNIFICANT_T = 1.65
 
 class Diagnosis(TypedDict):
     """One strategy's decay diagnosis, as `diagnose` returns it."""
+
     sharpe_is: float
     sharpe_oos: float
     retention: float
@@ -61,21 +62,30 @@ def diagnose(curve: pd.Series, split: str, end: str) -> Diagnosis:
     daily = pd.Series(curve.diff().dropna())
     before, after = pd.Series(daily[daily.index < split]), pd.Series(daily[split:end])
     when = pd.Series(after.index).dt
-    quarters = pd.Series(after.groupby([when.year.to_numpy(), when.quarter.to_numpy()]).sum())
+    quarters = pd.Series(
+        after.groupby([when.year.to_numpy(), when.quarter.to_numpy()]).sum()
+    )
     years = pd.Series(after.groupby(when.year.to_numpy()).sum())
     edge = sharpe(after)
     total = float(after.sum())
 
     # Lo (2002), iid: SE of a per-day Sharpe over T days is sqrt((1 + SR_day**2 / 2) / T);
     # annualised, the squared term is the annual Sharpe's over the days in a year.
-    error = np.sqrt((1 + 0.5 * edge ** 2 / YEAR) / (len(after) / YEAR))
-    base = sharpe(before)   # a ratio on a losing denominator flips sign: undefined, not a survival
-    return Diagnosis(sharpe_is=base, sharpe_oos=edge,
-                     retention=edge / base if base > 0 else np.nan, t=edge / error,
-                     years_positive=int((years > 0).sum()), years=len(years),
-                     worst_year=float(years.min()),
-                     concentration=float(quarters.max()) / total if total > 0 else np.nan,
-                     net_profit_oos=total)
+    error = np.sqrt((1 + 0.5 * edge**2 / YEAR) / (len(after) / YEAR))
+    base = sharpe(
+        before
+    )  # a ratio on a losing denominator flips sign: undefined, not a survival
+    return Diagnosis(
+        sharpe_is=base,
+        sharpe_oos=edge,
+        retention=edge / base if base > 0 else np.nan,
+        t=edge / error,
+        years_positive=int((years > 0).sum()),
+        years=len(years),
+        worst_year=float(years.min()),
+        concentration=float(quarters.max()) / total if total > 0 else np.nan,
+        net_profit_oos=total,
+    )
 
 
 def verdict(row: Mapping[str, Any]) -> str:
@@ -90,11 +100,17 @@ def verdict(row: Mapping[str, Any]) -> str:
         edge is significant, consistent across years and not concentrated; "DUDOSA"
         for everything between, which is where most strategies land.
     """
-    if row["sharpe_oos"] <= 0 or row["years_positive"] <= row["years"] // 2 \
-            or row["concentration"] > 0.60:
+    if (
+        row["sharpe_oos"] <= 0
+        or row["years_positive"] <= row["years"] // 2
+        or row["concentration"] > 0.60
+    ):
         return "DESCARTAR"
-    if row["t"] >= SIGNIFICANT_T and row["years_positive"] >= MIN_YEARS_POSITIVE \
-            and row["concentration"] <= MAX_CONCENTRATION:
+    if (
+        row["t"] >= SIGNIFICANT_T
+        and row["years_positive"] >= MIN_YEARS_POSITIVE
+        and row["concentration"] <= MAX_CONCENTRATION
+    ):
         return "MANTENER"
     return "DUDOSA"
 
@@ -111,7 +127,9 @@ def table(curves: dict, split: str, end: str) -> pd.DataFrame:
         One row per strategy, sorted by t descending, with a "verdict" column. Rows are
         never aggregated: strategies from different templates do not pool.
     """
-    rows: list[dict] = [dict(name=name, **diagnose(curve, split, end)) for name, curve in curves.items()]
+    rows: list[dict] = [
+        dict(name=name, **diagnose(curve, split, end)) for name, curve in curves.items()
+    ]
     for row in rows:
         row["verdict"] = verdict(row)
     return pd.DataFrame(rows).sort_values("t", ascending=False).reset_index(drop=True)

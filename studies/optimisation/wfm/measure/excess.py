@@ -14,7 +14,9 @@ from studies.screening.analysis import tradelevel
 CLEAN = "oos2"
 
 
-def recharge(trades: pd.DataFrame, charged: reprice.Costs, real: reprice.Costs) -> np.ndarray:
+def recharge(
+    trades: pd.DataFrame, charged: reprice.Costs, real: reprice.Costs
+) -> np.ndarray:
     """What a trade charged at one segment's costs would have paid on top at another's.
 
     Args:
@@ -34,10 +36,21 @@ def recharge(trades: pd.DataFrame, charged: reprice.Costs, real: reprice.Costs) 
 
     def fee(costs: reprice.Costs) -> np.ndarray:
         """The commission of one card, charged once at the open as `reprice.pnl` does."""
-        return ({"PercentageBased": value * trades["Open price"].to_numpy(float) / 100,
-                 "SizeBased": size}[costs["commission_method"]] * costs["commission"])
-    return (value * (real["spread"] - charged["spread"]
-                     + 2 * (real["slippage"] - charged["slippage"])) + fee(real) - fee(charged))
+        return {
+            "PercentageBased": value * trades["Open price"].to_numpy(float) / 100,
+            "SizeBased": size,
+        }[costs["commission_method"]] * costs["commission"]
+
+    return (
+        value
+        * (
+            real["spread"]
+            - charged["spread"]
+            + 2 * (real["slippage"] - charged["slippage"])
+        )
+        + fee(real)
+        - fee(charged)
+    )
 
 
 def per_trade(trades: pd.DataFrame, the: Asset, unit: str) -> pd.DataFrame:
@@ -60,18 +73,39 @@ def per_trade(trades: pd.DataFrame, the: Asset, unit: str) -> pd.DataFrame:
     segment = pd.Series(np.nan, trades.index, dtype=object)
     for name, (first, last) in the["windows"].items():
         segment[(day >= first) & (day <= last)] = name
-    charge = np.where(segment == CLEAN, recharge(trades, the["charged"], the["real"]), 0.0)
-    drift, label = tradelevel.drift_term(trades, the["bars"], the["span"], the["drift"]["window"],
-                                         the["drift"]["variant"], the["real"]["point_value"])
-    assert np.isfinite(drift).all(), f"no bars to measure the drift of {set(label[~np.isfinite(drift)])}"
+    charge = np.where(
+        segment == CLEAN, recharge(trades, the["charged"], the["real"]), 0.0
+    )
+    drift, label = tradelevel.drift_term(
+        trades,
+        the["bars"],
+        the["span"],
+        the["drift"]["window"],
+        the["drift"]["variant"],
+        the["real"]["point_value"],
+    )
+    assert np.isfinite(drift).all(), (
+        f"no bars to measure the drift of {set(label[~np.isfinite(drift)])}"
+    )
     net = trades["Profit/Loss"].to_numpy(float) - charge - drift
-    return pd.DataFrame({unit: trades[unit].astype(str), "open": trades["Open time"],
-                         "close": trades["Close time"], "segment": segment, "charge": charge,
-                         "drift": drift, "net": net, "gross": net}, index=trades.index)
+    return pd.DataFrame(
+        {
+            unit: trades[unit].astype(str),
+            "open": trades["Open time"],
+            "close": trades["Close time"],
+            "segment": segment,
+            "charge": charge,
+            "drift": drift,
+            "net": net,
+            "gross": net,
+        },
+        index=trades.index,
+    )
 
 
-def weekly(per: pd.DataFrame, window: tuple[str, str], unit: str,
-           units: Sequence[str]) -> pd.DataFrame:
+def weekly(
+    per: pd.DataFrame, window: tuple[str, str], unit: str, units: Sequence[str]
+) -> pd.DataFrame:
     """Weeks x units of net excess over oos2, each trade whole in the week it closes in.
 
     Args:
@@ -83,7 +117,9 @@ def weekly(per: pd.DataFrame, window: tuple[str, str], unit: str,
     Returns:
         `engines.weekly.panel.weekly`'s `net` frame, over the trades that CLOSE in oos2 only.
     """
-    return panel.weekly(cast(pd.DataFrame, per[per["segment"] == CLEAN]), window, unit, units)["net"]
+    return panel.weekly(
+        cast(pd.DataFrame, per[per["segment"] == CLEAN]), window, unit, units
+    )["net"]
 
 
 def by_segment(per: pd.DataFrame, unit: str, covered: pd.DataFrame) -> pd.DataFrame:

@@ -34,7 +34,9 @@ def grid(directory: Path, strategy: str) -> pd.DataFrame:
         and this one did not come out all-NaN in the wide table and are dropped, so the
         frame holds exactly this strategy's parameters, as the long form used to.
     """
-    frame = pd.read_parquet(directory / "spp.parquet", filters=[("strategy", "==", strategy)])
+    frame = pd.read_parquet(
+        directory / "spp.parquet", filters=[("strategy", "==", strategy)]
+    )
     frame = frame.drop(columns="strategy").set_index("permutation")
     return frame.dropna(axis=1, how="all")
 
@@ -66,8 +68,11 @@ def original(directory: Path, strategy: str) -> dict[str, float]:
         downstream: a design that cannot contain it cannot show that the plateau moved.
     """
     names = parameters(directory, strategy)
-    row = pd.read_parquet(directory / "spp.parquet", columns=[*KEYS, *names],
-                          filters=[("strategy", "==", strategy), ("permutation", "==", ORIGINAL)])
+    row = pd.read_parquet(
+        directory / "spp.parquet",
+        columns=[*KEYS, *names],
+        filters=[("strategy", "==", strategy), ("permutation", "==", ORIGINAL)],
+    )
     return {k: float(row[k].iloc[0]) for k in names}
 
 

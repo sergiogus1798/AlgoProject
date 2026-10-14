@@ -9,7 +9,13 @@ from studies.data.feedQuality.calendar import HOLIDAY, OUTAGE, OWN, PARTIAL
 
 # What the attribution marks, and what is only reported: the rollover's frozen runs and gaps
 # are counted and can make an episode, but never mark a trade (owner, 2026-09-26).
-MARKED = ["cierre y vuelta", "mecha y vuelta", "congelado", "hueco", "caída del proveedor"]
+MARKED = [
+    "cierre y vuelta",
+    "mecha y vuelta",
+    "congelado",
+    "hueco",
+    "caída del proveedor",
+]
 
 
 def _columns(ev: pd.DataFrame) -> dict[str, pd.Series]:
@@ -17,7 +23,8 @@ def _columns(ev: pd.DataFrame) -> dict[str, pd.Series]:
     spike = ev["kind"].isin(["cierre", "mecha"])
     back = ev["cls"] == "vuelta"
     return {
-        "cierre": ev["kind"] == "cierre", "mecha": ev["kind"] == "mecha",
+        "cierre": ev["kind"] == "cierre",
+        "mecha": ev["kind"] == "mecha",
         "cierre y mecha": (ev["kind"] == "cierre") & ev["both"].eq(True),
         "cierre y vuelta": (ev["kind"] == "cierre") & back,
         "mecha y vuelta": (ev["kind"] == "mecha") & back,
@@ -26,10 +33,13 @@ def _columns(ev: pd.DataFrame) -> dict[str, pd.Series]:
         "movimiento extremo": spike & ~back,
         "congelado": (ev["kind"] == "congelado") & (ev["cls"] == "congelado"),
         "hueco": (ev["kind"] == "hueco") & (ev["cls"] == OWN),
-        "congelado en rollover": (ev["kind"] == "congelado") & (ev["cls"] == "rollover"),
+        "congelado en rollover": (ev["kind"] == "congelado")
+        & (ev["cls"] == "rollover"),
         "hueco en rollover": (ev["kind"] == "hueco") & (ev["cls"] == "rollover"),
         "caída del proveedor": ev["cls"] == OUTAGE,
-        "cierre parcial": ev["cls"] == PARTIAL, "festivo": ev["cls"] == HOLIDAY}
+        "cierre parcial": ev["cls"] == PARTIAL,
+        "festivo": ev["cls"] == HOLIDAY,
+    }
 
 
 class Facts(TypedDict):
@@ -61,7 +71,9 @@ def counts(ev: pd.DataFrame, period: str) -> pd.DataFrame:
         Periods as rows, plus `marcadas`, the sum of what the attribution reads.
     """
     key = ev["t"].dt.year if period == "Y" else ev["t"].dt.to_period("M")
-    out = pd.DataFrame({name: flag.groupby(key).sum() for name, flag in _columns(ev).items()})
+    out = pd.DataFrame(
+        {name: flag.groupby(key).sum() for name, flag in _columns(ev).items()}
+    )
     out["marcadas"] = out[MARKED].sum(axis=1)
     return out.fillna(0).astype(int)
 
@@ -102,9 +114,14 @@ def stability(yearly: pd.DataFrame, cfg: dict) -> tuple[int | None, dict]:
     base = np.median(g[g.index >= st["base_year"]])
     ok = g <= max(st["factor"] * base, st["floor"])
     after = ok.astype(int)[::-1].cummin()[::-1].astype(bool)
-    grade = {int(y): "estable" if after[y] else
-             "calidad B" if v <= max(st["b_factor"] * base, st["floor"]) else "inestable"
-             for y, v in g.items()}
+    grade = {
+        int(y): "estable"
+        if after[y]
+        else "calidad B"
+        if v <= max(st["b_factor"] * base, st["floor"])
+        else "inestable"
+        for y, v in g.items()
+    }
     return (int(after.idxmax()) if after.any() else None), grade
 
 
@@ -120,15 +137,28 @@ def episodes(monthly: pd.DataFrame, cfg: dict) -> pd.DataFrame:
         was judged against. The first `months` months have no past to judge against.
     """
     ep = cfg["episode"]
-    full = monthly.reindex(pd.period_range(monthly.index.min(), monthly.index.max(), freq="M"),
-                           fill_value=0)
+    full = monthly.reindex(
+        pd.period_range(monthly.index.min(), monthly.index.max(), freq="M"),
+        fill_value=0,
+    )
     rows = []
     for col in ("congelado", "hueco", "congelado en rollover", "hueco en rollover"):
-        past = full[col].shift(1).rolling(ep["months"], min_periods=ep["months"]).median()
+        past = (
+            full[col].shift(1).rolling(ep["months"], min_periods=ep["months"]).median()
+        )
         hit = (full[col] > ep["factor"] * past) & (full[col] >= ep["min_events"])
-        rows += [{"mes": str(m), "columna": col, "sucesos": int(cast(Any, full[col])[m]),
-                  "mediana previa": float(cast(Any, past)[m])} for m in full.index[hit]]
-    return pd.DataFrame(rows, columns=pd.Index(["mes", "columna", "sucesos", "mediana previa"]))
+        rows += [
+            {
+                "mes": str(m),
+                "columna": col,
+                "sucesos": int(cast(Any, full[col])[m]),
+                "mediana previa": float(cast(Any, past)[m]),
+            }
+            for m in full.index[hit]
+        ]
+    return pd.DataFrame(
+        rows, columns=pd.Index(["mes", "columna", "sucesos", "mediana previa"])
+    )
 
 
 def residual_gaps(yearly: pd.DataFrame, cfg: dict, last_full_year: int) -> float:
@@ -138,4 +168,8 @@ def residual_gaps(yearly: pd.DataFrame, cfg: dict, last_full_year: int) -> float
         Over `gap.max_residual_per_year`, the session is declared wrong (owner's answer 2.10).
     """
     g = yearly["hueco"]
-    return float(np.median(g[(g.index >= cfg["stable"]["base_year"]) & (g.index <= last_full_year)]))
+    return float(
+        np.median(
+            g[(g.index >= cfg["stable"]["base_year"]) & (g.index <= last_full_year)]
+        )
+    )

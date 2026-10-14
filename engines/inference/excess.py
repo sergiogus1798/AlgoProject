@@ -4,7 +4,9 @@ from typing import TypedDict
 
 import numpy as np
 
-LAMBDA = 0.5        # Storey's cut: p above it are taken as coming from strategies with no edge
+LAMBDA = (
+    0.5  # Storey's cut: p above it are taken as coming from strategies with no edge
+)
 
 
 def share_null(p: np.ndarray, cut: float = LAMBDA) -> float:
@@ -68,10 +70,16 @@ def excess(p: np.ndarray, alpha: float) -> Excess:
     observed = int((p <= alpha).sum())
     null_share = share_null(p)
     expected = null_share * alpha * n
-    return {"n": n, "unmeasured": unmeasured, "observed": observed, "expected_all_null": alpha * n,
-            "expected": expected, "share_null": null_share,
-            "excess": observed - alpha * n,
-            "fdr": float(min(1.0, alpha * n / observed)) if observed else float("nan")}
+    return {
+        "n": n,
+        "unmeasured": unmeasured,
+        "observed": observed,
+        "expected_all_null": alpha * n,
+        "expected": expected,
+        "share_null": null_share,
+        "excess": observed - alpha * n,
+        "fdr": float(min(1.0, alpha * n / observed)) if observed else float("nan"),
+    }
 
 
 class Resolution(TypedDict):
@@ -104,6 +112,10 @@ def resolution(p: np.ndarray, alpha: float, draws: int) -> Resolution:
     """
     floor = 1 / (draws + 1)
     bar = alpha / len(p)
-    return {"floor": floor, "bar": bar, "reachable": floor <= bar,
-            "saturated": int((p <= floor).sum()),
-            "draws_needed": int(np.ceil(1 / bar)) - 1}
+    return {
+        "floor": floor,
+        "bar": bar,
+        "reachable": floor <= bar,
+        "saturated": int((p <= floor).sum()),
+        "draws_needed": int(np.ceil(1 / bar)) - 1,
+    }

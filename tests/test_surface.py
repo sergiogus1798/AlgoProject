@@ -28,11 +28,15 @@ def grids(seed: int = SEED) -> dict[str, tuple[np.ndarray, np.ndarray]]:
     rng = np.random.default_rng(seed)
     base = rng.normal(1.0, 0.5, N)
     noise = rng.normal(0, 0.05, N)
-    return {"identical": (base, base + noise),
-            "block_drop": (base, base - 0.40 + noise),
-            "shuffled": (base, rng.permutation(base)),
-            "peak_collapse": (base, np.where(base > np.quantile(base, 0.90),
-                                             base - 0.80, base) + noise)}
+    return {
+        "identical": (base, base + noise),
+        "block_drop": (base, base - 0.40 + noise),
+        "shuffled": (base, rng.permutation(base)),
+        "peak_collapse": (
+            base,
+            np.where(base > np.quantile(base, 0.90), base - 0.80, base) + noise,
+        ),
+    }
 
 
 def main() -> None:
@@ -42,14 +46,18 @@ def main() -> None:
     # A surface that only picked up measurement noise: no shift, no reordering.
     before, after = g["identical"]
     if abs(shift.hodges_lehmann(before, after)) > 0.02:
-        failures.append(f"identical: HL {shift.hodges_lehmann(before, after):+.3f}, se esperaba 0")
+        failures.append(
+            f"identical: HL {shift.hodges_lehmann(before, after):+.3f}, se esperaba 0"
+        )
     if stats.spearmanr(before, after).statistic < 0.95:
         failures.append("identical: rho emparejado bajo, deberia ser casi 1")
 
     # The whole surface fell by a known amount: HL recovers it, the ranking survives.
     before, after = g["block_drop"]
     if abs(shift.hodges_lehmann(before, after) + 0.40) > 0.03:
-        failures.append(f"block_drop: HL {shift.hodges_lehmann(before, after):+.3f}, se esperaba -0.40")
+        failures.append(
+            f"block_drop: HL {shift.hodges_lehmann(before, after):+.3f}, se esperaba -0.40"
+        )
     if stats.spearmanr(before, after).statistic < 0.95:
         failures.append("block_drop: una caida en bloque no debe barajar el orden")
     if abs(shift.tail_excess(before, after)) > 0.05:
@@ -61,32 +69,50 @@ def main() -> None:
     if abs(shift.hodges_lehmann(before, after)) > 0.05:
         failures.append("shuffled: HL deberia ser 0 — el histograma no cambio")
     if abs(shift.cliff_delta(before, after)) > 0.05:
-        failures.append("shuffled: delta de Cliff deberia ser 0 — el histograma no cambio")
+        failures.append(
+            "shuffled: delta de Cliff deberia ser 0 — el histograma no cambio"
+        )
     if abs(plateau.plateau_area(before) - plateau.plateau_area(after)) > 0.02:
         failures.append("shuffled: el area de meseta deberia ser identica")
     if abs(stats.spearmanr(before, after).statistic) > 0.10:
-        failures.append("shuffled: rho emparejado deberia ser 0 — y es lo unico que lo ve")
+        failures.append(
+            "shuffled: rho emparejado deberia ser 0 — y es lo unico que lo ve"
+        )
 
     # The peak sinks while the plateau holds: the tail excess is what names it.
     before, after = g["peak_collapse"]
     # 0.20, not the 0.80 the points were dropped by: once the top decile sinks, the new
     # 95th percentile is drawn from the untouched 90%, which compresses the reading.
     if shift.tail_excess(before, after) < 0.20:
-        failures.append(f"peak_collapse: exceso de cola {shift.tail_excess(before, after):.3f}, "
-                        "deberia ser grande y positivo")
+        failures.append(
+            f"peak_collapse: exceso de cola {shift.tail_excess(before, after):.3f}, "
+            "deberia ser grande y positivo"
+        )
     if plateau.plateau_area(after) < plateau.plateau_area(before) - 0.05:
         failures.append("peak_collapse: la meseta aguanta, el area no deberia caer")
 
     # Inert parameters duplicate points; n_eff must count backtests, not rows.
-    frame = pd.DataFrame({"NetProfit": np.repeat(np.arange(500.0), 4),
-                          "NumberOfTrades": np.repeat(np.arange(500), 4),
-                          "RExpectancy": 0.05})
+    frame = pd.DataFrame(
+        {
+            "NetProfit": np.repeat(np.arange(500.0), 4),
+            "NumberOfTrades": np.repeat(np.arange(500), 4),
+            "RExpectancy": 0.05,
+        }
+    )
     if dedupe.n_eff(frame) != 500:
-        failures.append(f"n_eff dio {dedupe.n_eff(frame)} sobre 2000 filas de 500 backtests")
+        failures.append(
+            f"n_eff dio {dedupe.n_eff(frame)} sobre 2000 filas de 500 backtests"
+        )
 
     # The sentinels are 0.08% of the grid and they win the argmax.
-    poisoned = pd.concat([frame, pd.DataFrame({"NetProfit": [9e3], "NumberOfTrades": [1],
-                                               "RExpectancy": [99999.0]})])
+    poisoned = pd.concat(
+        [
+            frame,
+            pd.DataFrame(
+                {"NetProfit": [9e3], "NumberOfTrades": [1], "RExpectancy": [99999.0]}
+            ),
+        ]
+    )
     if dedupe.drop_sentinels(poisoned)["RExpectancy"].max() > 1:
         failures.append("drop_sentinels dejo pasar el 99999 de RExpectancy")
 
@@ -95,7 +121,9 @@ def main() -> None:
     if pure.max() > plateau.expected_max(pure.std(), N) * 1.15:
         failures.append("expected_max: una rejilla de ruido supero su propio umbral")
     if plateau.expected_max_sharpe(1.0, N) >= plateau.expected_max(1.0, N):
-        failures.append("expected_max_sharpe deberia quedar por debajo de la cota sqrt(2 ln N)")
+        failures.append(
+            "expected_max_sharpe deberia quedar por debajo de la cota sqrt(2 ln N)"
+        )
 
     # A bootstrap over tuples must bracket the value it resamples.
     low, high = dedupe.bootstrap_ci(g["identical"][0], np.median, n_resamples=999)
@@ -105,21 +133,28 @@ def main() -> None:
     # A1 on a grid whose answer is known: a lone spike over a flat field. The rank must be
     # 1 and the plateau fraction must be the spike alone; on a broad plateau, the reverse.
     spike = np.concatenate([np.zeros(99), [10.0]])
-    if plateau.rank_of(spike, 10.0) != 1.0 or plateau.plateau_fraction(spike, 10.0, 0.2) != 0.01:
+    if (
+        plateau.rank_of(spike, 10.0) != 1.0
+        or plateau.plateau_fraction(spike, 10.0, 0.2) != 0.01
+    ):
         failures.append("rank_of/plateau_fraction no ven un pico aislado como tal")
     broad = np.concatenate([np.zeros(50), np.full(50, 10.0)])
     if plateau.plateau_fraction(broad, 10.0, 0.2) != 0.5:
         failures.append("plateau_fraction no ve una meseta ancha")
     if plateau.shrunk(spike) != 0.0:
-        failures.append("shrunk deberia devolver la mediana del entorno, no el punto elegido")
+        failures.append(
+            "shrunk deberia devolver la mediana del entorno, no el punto elegido"
+        )
     # On a negative metric the (1-delta)*ref form would put the floor ABOVE the reference.
     if plateau.plateau_fraction(np.array([-5.0, -3.0, -1.0]), -3.0, 0.2) != 2 / 3:
         failures.append("plateau_fraction se rompe con una metrica negativa")
 
-    print("\n".join(failures) or
-          "ok: la rejilla barajada da HL 0, Cliff 0, misma meseta y rho 0 — solo el "
-          "emparejamiento la ve; n_eff cuenta backtests, los centinelas no pasan y A1 "
-          "distingue un pico aislado de una meseta")
+    print(
+        "\n".join(failures)
+        or "ok: la rejilla barajada da HL 0, Cliff 0, misma meseta y rho 0 — solo el "
+        "emparejamiento la ve; n_eff cuenta backtests, los centinelas no pasan y A1 "
+        "distingue un pico aislado de una meseta"
+    )
     sys.exit(1 if failures else 0)
 
 

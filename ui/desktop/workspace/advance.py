@@ -4,14 +4,23 @@ from typing import TYPE_CHECKING
 import httpx
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QMessageBox, QPushButton,
-                               QSizePolicy, QWidget)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QWidget,
+)
 
 from ui.desktop import background, client
 from ui.desktop.workspace.aggregate import ask
 from ui.text.brief import full, off
 
-RECHECK_MS = 20_000     # a filter applied or a worker started elsewhere shows up within this
+RECHECK_MS = (
+    20_000  # a filter applied or a worker started elsewhere shows up within this
+)
 
 if TYPE_CHECKING:
     from ui.desktop.workspace.panel import Panel
@@ -34,10 +43,12 @@ class Advance(QWidget):
         kicker.setObjectName("kicker")
         self.bank = QComboBox()
         self.bank.setMinimumContentsLength(18)
-        self.bank.setToolTip("El databank cuyos descartes se borran en SQX antes de arrancar la "
-                             "tarea siguiente. Al abrir el proyecto elige el primero con "
-                             "descartes (si no, el que muestra Databanks) y ya no cambia solo: "
-                             "sólo si eliges otro, cambias de proyecto o se lanza el Continuar.")
+        self.bank.setToolTip(
+            "El databank cuyos descartes se borran en SQX antes de arrancar la "
+            "tarea siguiente. Al abrir el proyecto elige el primero con "
+            "descartes (si no, el que muestra Databanks) y ya no cambia solo: "
+            "sólo si eliges otro, cambias de proyecto o se lanza el Continuar."
+        )
         self.bank.activated.connect(self.picked)
         self.button = QPushButton("▶▶ Continuar workflow")
         self.button.clicked.connect(self.confirm)
@@ -70,24 +81,39 @@ class Advance(QWidget):
             Itself, so the zone mounts it in one line.
         """
         self.panel, self.funnel = panel, funnel
-        panel.table.model().modelReset.connect(lambda: QTimer.singleShot(0, self.follow))
+        panel.table.model().modelReset.connect(
+            lambda: QTimer.singleShot(0, self.follow)
+        )
         self.timer.start(RECHECK_MS)
         return self
 
     def live(self) -> list[str]:
         """The project's databanks that some unlocked sub-panel reads, in the panel's order."""
-        banks = [s["databank"] for t in self.panel.tabs for s in t["subs"]
-                 if s.get("databank") and not s.get("blocked")] if self.panel.live else []
+        banks = (
+            [
+                s["databank"]
+                for t in self.panel.tabs
+                for s in t["subs"]
+                if s.get("databank") and not s.get("blocked")
+            ]
+            if self.panel.live
+            else []
+        )
         return list(dict.fromkeys(banks))
 
     def default(self, banks: list[str]) -> str:
         """The first databank with discards (what Continuar acts on), else the one Databanks
         shows, else the first."""
-        cut = {r["screen"].split(" · ", 1)[1] for r in self.funnel.bars.rows
-               if r["screen"].startswith(("Filtro · ", "A mano · "))}
+        cut = {
+            r["screen"].split(" · ", 1)[1]
+            for r in self.funnel.bars.rows
+            if r["screen"].startswith(("Filtro · ", "A mano · "))
+        }
         shown = self.panel.sub_spec().get("databank")
-        return next((b for b in banks if b.replace(" ", "_") in cut),
-                    shown if shown in banks else banks[0])
+        return next(
+            (b for b in banks if b.replace(" ", "_") in cut),
+            shown if shown in banks else banks[0],
+        )
 
     def repoint(self, project: str) -> None:
         """Proyecto filled a project: a different one drops the pin, whether or not the zone
@@ -110,8 +136,9 @@ class Advance(QWidget):
             self.bank.addItems(banks)
             self.bank.blockSignals(False)
         if not banks:
-            self.show_state({"ok": False, "reasons": ["el proyecto no tiene ningún databank "
-                                                      "vivo"]})
+            self.show_state(
+                {"ok": False, "reasons": ["el proyecto no tiene ningún databank vivo"]}
+            )
             return
         if not self.pinned or self.bank.currentText() not in banks:
             self.bank.setCurrentText(self.default(banks))
@@ -137,11 +164,18 @@ class Advance(QWidget):
             databank: The databank of the sub-panel on screen, as SQX spells it.
         """
         self.project, self.databank = project, databank
-        background.get("advance/preflight",
-                       lambda got: self.show_state(got) if (project, databank) == (
-                           self.project, self.databank) else None,
-                       key=f"advance:{id(self)}", owner=self, project=project,
-                       databank=databank)
+        background.get(
+            "advance/preflight",
+            lambda got: (
+                self.show_state(got)
+                if (project, databank) == (self.project, self.databank)
+                else None
+            ),
+            key=f"advance:{id(self)}",
+            owner=self,
+            project=project,
+            databank=databank,
+        )
 
     def show_state(self, got: dict) -> None:
         """Enable the button, or disable it with a few words beside it; every reason is in
@@ -155,22 +189,37 @@ class Advance(QWidget):
     def confirm(self) -> None:
         """Re-run the preflight on the chosen databank and show its fresh sentence; only «Sí»
         queues the job, and the daemon checks again there. A job queued drops the pin."""
-        self.show_state(ask("advance/preflight", project=self.project, databank=self.databank))
+        self.show_state(
+            ask("advance/preflight", project=self.project, databank=self.databank)
+        )
         if not self.button.isEnabled():
             return
-        nonce = self.nonce      # of the sentence about to be shown, not of a poll landing later
-        if QMessageBox.question(self, "Continuar workflow", self.text + "\n\n¿Confirmas?",
-                                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+        nonce = (
+            self.nonce
+        )  # of the sentence about to be shown, not of a poll landing later
+        if (
+            QMessageBox.question(
+                self,
+                "Continuar workflow",
+                self.text + "\n\n¿Confirmas?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            != QMessageBox.StandardButton.Yes
+        ):
             return
         try:
-            got = client.post("advance/run", {"project": self.project, "databank": self.databank,
-                                              "nonce": nonce})
+            got = client.post(
+                "advance/run",
+                {"project": self.project, "databank": self.databank, "nonce": nonce},
+            )
         except httpx.HTTPError as failed:
             got = {"ok": False, "reasons": [f"El demonio no respondió: {failed}"]}
         if got.get("job"):
             self.pinned = False
             self.button.setEnabled(False)
-            self.why.setText(f"En marcha: {got['task']} — sigue su avance en «En marcha»")
+            self.why.setText(
+                f"En marcha: {got['task']} — sigue su avance en «En marcha»"
+            )
         else:
             self.show_state(got)

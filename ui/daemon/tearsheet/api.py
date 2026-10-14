@@ -9,11 +9,19 @@ from ui.daemon.strategy import archived
 from ui.daemon.tearsheet import exits, harvest, oos2, sheet
 
 ROUTER = APIRouter()
-TAB = {"IS": "IS", "OOS": "OOS", "OOS1": "OOS"}      # the window says OOS1, the cosecha OOS
+TAB = {"IS": "IS", "OOS": "OOS", "OOS1": "OOS"}  # the window says OOS1, the cosecha OOS
 
 
-def _answer(project: str, databank: str, identity: str, build: Callable[[dict], dict[str, Any]],
-            sample: str, source: str, version: str, strategy: str = "") -> dict[str, Any]:
+def _answer(
+    project: str,
+    databank: str,
+    identity: str,
+    build: Callable[[dict], dict[str, Any]],
+    sample: str,
+    source: str,
+    version: str,
+    strategy: str = "",
+) -> dict[str, Any]:
     """Read the cosecha (or the archive) and build, or the sentence of why not — never a 500.
 
     Args:
@@ -40,26 +48,42 @@ def _answer(project: str, databank: str, identity: str, build: Callable[[dict], 
         locked = oos2.blocked(project)
         if locked:
             return locked
-        data = (oos2.read(project, identity) if source == "live" else
-                "el archivo no guarda OOS2: se archiva lo que la cosecha IS/OOS tenía")
+        data = (
+            oos2.read(project, identity)
+            if source == "live"
+            else "el archivo no guarda OOS2: se archiva lo que la cosecha IS/OOS tenía"
+        )
         return {"blocked": data} if isinstance(data, str) else build(data)
-    data = (harvest.read(project, databank, identity, strategy) if source == "live"
-            else archived.tearsheet(identity, version))
+    data = (
+        harvest.read(project, databank, identity, strategy)
+        if source == "live"
+        else archived.tearsheet(identity, version)
+    )
     if isinstance(data, str):
         return {"error": data, "absent": isinstance(data, harvest.Absent)}
     got = build(data)
     if data.get("note"):
-        got["warnings"] = [{"code": "cosecha prestada", "state": "info", "text": data["note"]},
-                           *(got.get("warnings") or [])]
+        got["warnings"] = [
+            {"code": "cosecha prestada", "state": "info", "text": data["note"]},
+            *(got.get("warnings") or []),
+        ]
     if sample:
         got["tabs"] = [t for t in got["tabs"] if t["name"] == TAB[sample]]
     return got
 
 
 @ROUTER.get("/api/tearsheet")
-def tearsheet(project: str = "", databank: str = "", identity: str = "", sample: str = "",
-              source: str = "live", version: str = "", top: float = 0.0, dd: str = "%",
-              strategy: str = "") -> dict[str, Any]:
+def tearsheet(
+    project: str = "",
+    databank: str = "",
+    identity: str = "",
+    sample: str = "",
+    source: str = "live",
+    version: str = "",
+    top: float = 0.0,
+    dd: str = "%",
+    strategy: str = "",
+) -> dict[str, Any]:
     """The Ficha: P&L (with or without the best trades), drawdown, years.
 
     Args:
@@ -72,19 +96,36 @@ def tearsheet(project: str = "", databank: str = "", identity: str = "", sample:
         `harvest_day`; `{"blocked"}` for OOS2 while sealed or without export; or `{"error"}`.
     """
     if dd not in sheet.UNITS or not 0 <= top <= 50:
-        return {"error": f"top {top:g} fuera de 0-50 o drawdown «{dd}» que no es % ni $."}
-    return _answer(project, databank, identity,
-                   lambda data: sheet.build(data, top, dd), sample, source, version,
-                   strategy)
+        return {
+            "error": f"top {top:g} fuera de 0-50 o drawdown «{dd}» que no es % ni $."
+        }
+    return _answer(
+        project,
+        databank,
+        identity,
+        lambda data: sheet.build(data, top, dd),
+        sample,
+        source,
+        version,
+        strategy,
+    )
 
 
 @ROUTER.get("/api/tearsheet/exits")
-def tearsheet_exits(project: str = "", databank: str = "", identity: str = "", sample: str = "",
-                    source: str = "live", version: str = "", strategy: str = "") -> dict[str, Any]:
+def tearsheet_exits(
+    project: str = "",
+    databank: str = "",
+    identity: str = "",
+    sample: str = "",
+    source: str = "live",
+    version: str = "",
+    strategy: str = "",
+) -> dict[str, Any]:
     """P&L and expectancy per exit type, and one cumulative line per type — each sample apart.
 
     Returns:
         As `/api/tearsheet`.
     """
-    return _answer(project, databank, identity, exits.build, sample,
-                   source, version, strategy)
+    return _answer(
+        project, databank, identity, exits.build, sample, source, version, strategy
+    )

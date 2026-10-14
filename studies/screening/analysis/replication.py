@@ -12,6 +12,7 @@ SEED = 20260904
 
 class Gap(TypedDict):
     """A hit-rate gap between two samples and its 95 % interval."""
+
     gap: float
     lo: float
     hi: float
@@ -19,6 +20,7 @@ class Gap(TypedDict):
 
 class Carried(TypedDict):
     """What a filter chosen on one sample delivers on another."""
+
     predicted: float
     share: float
     n: int
@@ -27,8 +29,9 @@ class Carried(TypedDict):
     hi: float
 
 
-def hit_gap(reference: np.ndarray, sample: np.ndarray, level: float,
-            draws: int = DRAWS) -> Gap:
+def hit_gap(
+    reference: np.ndarray, sample: np.ndarray, level: float, draws: int = DRAWS
+) -> Gap:
     """Difference in out-of-sample hit rate between two independent samples.
 
     Args:
@@ -47,14 +50,25 @@ def hit_gap(reference: np.ndarray, sample: np.ndarray, level: float,
     if not (reference.size and sample.size):
         return Gap(gap=float("nan"), lo=float("nan"), hi=float("nan"))
     rng = np.random.default_rng(SEED)
-    a = (sample[rng.integers(0, sample.size, (draws, sample.size))] > level).mean(axis=1)
-    b = (reference[rng.integers(0, reference.size, (draws, reference.size))] > level).mean(axis=1)
-    return Gap(gap=float((sample > level).mean() - (reference > level).mean()),
-               lo=float(np.quantile(a - b, 0.025)), hi=float(np.quantile(a - b, 0.975)))
+    a = (sample[rng.integers(0, sample.size, (draws, sample.size))] > level).mean(
+        axis=1
+    )
+    b = (
+        reference[rng.integers(0, reference.size, (draws, reference.size))] > level
+    ).mean(axis=1)
+    return Gap(
+        gap=float((sample > level).mean() - (reference > level).mean()),
+        lo=float(np.quantile(a - b, 0.025)),
+        hi=float(np.quantile(a - b, 0.975)),
+    )
 
 
-def carried(reference: dict[str, np.ndarray], sample: dict[str, np.ndarray],
-            candidate: dict, target: str) -> Carried:
+def carried(
+    reference: dict[str, np.ndarray],
+    sample: dict[str, np.ndarray],
+    candidate: dict,
+    target: str,
+) -> Carried:
     """Apply one sample's filter threshold to another sample and see what it delivers there.
 
     Args:
@@ -73,19 +87,29 @@ def carried(reference: dict[str, np.ndarray], sample: dict[str, np.ndarray],
     """
     level = improvement.breakeven(target)
     column, cut = candidate["metric"], candidate["cut"] / 100
-    edge = (np.quantile(reference[column], 1 - cut) if candidate["side"] == "top"
-            else np.quantile(reference[column], cut))
-    kept = (reference[column] >= edge if candidate["side"] == "top"
-            else reference[column] <= edge)
-    passes = (sample[column] >= edge if candidate["side"] == "top"
-              else sample[column] <= edge)
+    edge = (
+        np.quantile(reference[column], 1 - cut)
+        if candidate["side"] == "top"
+        else np.quantile(reference[column], cut)
+    )
+    kept = (
+        reference[column] >= edge
+        if candidate["side"] == "top"
+        else reference[column] <= edge
+    )
+    passes = (
+        sample[column] >= edge if candidate["side"] == "top" else sample[column] <= edge
+    )
     y, base = sample[target][passes], reference[target][kept]
     gap = hit_gap(base, y, level)
-    return Carried(predicted=float((base > level).mean()),
-                   share=float(passes.mean()),
-                   n=int(passes.sum()),
-                   observed=float((y > level).mean()) if y.size else float("nan"),
-                   lo=gap["lo"], hi=gap["hi"])
+    return Carried(
+        predicted=float((base > level).mean()),
+        share=float(passes.mean()),
+        n=int(passes.sum()),
+        observed=float((y > level).mean()) if y.size else float("nan"),
+        lo=gap["lo"],
+        hi=gap["hi"],
+    )
 
 
 def restriction(reference: np.ndarray, sample: np.ndarray) -> float:
@@ -102,7 +126,9 @@ def restriction(reference: np.ndarray, sample: np.ndarray) -> float:
     return float(sample.std() / reference.std())
 
 
-def predictors(columns: dict[str, np.ndarray], target: str, is_metrics: list[str]) -> dict[str, float]:
+def predictors(
+    columns: dict[str, np.ndarray], target: str, is_metrics: list[str]
+) -> dict[str, float]:
     """Spearman of every in-sample metric against one outcome, keyed by metric.
 
     Args:
@@ -113,8 +139,10 @@ def predictors(columns: dict[str, np.ndarray], target: str, is_metrics: list[str
     Returns:
         One entry per metric, its Spearman correlation with the target.
     """
-    return {m: correlations.correlate(columns[m], columns[target])["spearman"]
-            for m in is_metrics}
+    return {
+        m: correlations.correlate(columns[m], columns[target])["spearman"]
+        for m in is_metrics
+    }
 
 
 def stability(reference: dict, sample: dict) -> float:
@@ -128,5 +156,6 @@ def stability(reference: dict, sample: dict) -> float:
         predictors the same way even where the correlations themselves differ in size.
     """
     names = sorted(set(reference) & set(sample))
-    return correlations.correlate(np.array([reference[m] for m in names]),
-                                  np.array([sample[m] for m in names]))["spearman"]
+    return correlations.correlate(
+        np.array([reference[m] for m in names]), np.array([sample[m] for m in names])
+    )["spearman"]

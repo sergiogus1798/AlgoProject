@@ -43,13 +43,16 @@ def folder(name: str) -> dict[str, Any]:
     d = template_dir(name)
     manifest = d / "manifest.json"
     deps = d / "deps"
-    return {"path": str(d),
-            "exists": d.is_dir(),
-            "sqx": (d / "template.sqx").exists(),
-            "brief": (d / "brief.md").exists(),
-            "deps": sorted(f.name for f in deps.iterdir()) if deps.is_dir() else [],
-            "manifest": json.loads(manifest.read_text(encoding="utf-8"))
-                        if manifest.exists() else None}
+    return {
+        "path": str(d),
+        "exists": d.is_dir(),
+        "sqx": (d / "template.sqx").exists(),
+        "brief": (d / "brief.md").exists(),
+        "deps": sorted(f.name for f in deps.iterdir()) if deps.is_dir() else [],
+        "manifest": json.loads(manifest.read_text(encoding="utf-8"))
+        if manifest.exists()
+        else None,
+    }
 
 
 def catalogue() -> list[dict[str, Any]]:
@@ -70,13 +73,27 @@ def catalogue() -> list[dict[str, Any]]:
     for row in rows(template_registry()):
         name = row["name"]
         seen.add(name)
-        out.append({**row, "runs": sorted(by_template.get(name, []), key=lambda r: r["date"]),
-                    "disk": folder(name), "orphan": False})
+        out.append(
+            {
+                **row,
+                "runs": sorted(by_template.get(name, []), key=lambda r: r["date"]),
+                "disk": folder(name),
+                "orphan": False,
+            }
+        )
     for name, its in by_template.items():
         if name not in seen:
-            out.append({"name": name, "status": "", "archetype": "", "created": "",
-                        "runs": sorted(its, key=lambda r: r["date"]),
-                        "disk": folder(name), "orphan": True})
+            out.append(
+                {
+                    "name": name,
+                    "status": "",
+                    "archetype": "",
+                    "created": "",
+                    "runs": sorted(its, key=lambda r: r["date"]),
+                    "disk": folder(name),
+                    "orphan": True,
+                }
+            )
     return sorted(out, key=lambda t: (t.get("created") or "", t["name"]), reverse=True)
 
 
@@ -89,9 +106,14 @@ def drafts() -> list[dict[str, Any]]:
     """
     if not DRAFTS.is_dir():
         return []
-    return sorted((json.loads(f.read_text(encoding="utf-8")) | {"draft_file": str(f)}
-                   for f in DRAFTS.glob("*.json")),
-                  key=lambda d: d.get("created", ""), reverse=True)
+    return sorted(
+        (
+            json.loads(f.read_text(encoding="utf-8")) | {"draft_file": str(f)}
+            for f in DRAFTS.glob("*.json")
+        ),
+        key=lambda d: d.get("created", ""),
+        reverse=True,
+    )
 
 
 def one(name: str) -> dict[str, Any]:
@@ -116,6 +138,10 @@ def one(name: str) -> dict[str, Any]:
     # authored after 2026-09-22 said «un grupo que esta instalación no tiene» (📓 2026-09-29).
     builds = WORKERS["custodian"]["path"] if "custodian" in WORKERS else MASTER
     form = shape(sqx, builds) if sqx.exists() else None
-    return {**entry, "brief_md": brief.read_text(encoding="utf-8") if brief.exists() else "",
-            "holes": form["holes"] if form else [], "fixed": form["fixed"] if form else [],
-            "reach": reach(form) if form else ""}  # pyright: ignore[reportArgumentType]  # sqx.templates.holes.reach takes a bare dict
+    return {
+        **entry,
+        "brief_md": brief.read_text(encoding="utf-8") if brief.exists() else "",
+        "holes": form["holes"] if form else [],
+        "fixed": form["fixed"] if form else [],
+        "reach": reach(form) if form else "",  # pyright: ignore[reportArgumentType]  # sqx.templates.holes.reach takes a bare dict
+    }

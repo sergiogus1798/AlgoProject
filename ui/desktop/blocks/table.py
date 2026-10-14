@@ -5,8 +5,17 @@ from typing import cast
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QShowEvent
-from PySide6.QtWidgets import (QAbstractItemView, QDoubleSpinBox, QHBoxLayout, QHeaderView,
-                               QLabel, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QDoubleSpinBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from core.symbols import alias
 from ui.desktop.blocks import chart
@@ -16,8 +25,8 @@ from ui.text import numbers
 from ui.text.glossary import label
 from ui.desktop.theme import T
 
-VISIBLE = 16        # rows shown before the table scrolls inside itself
-WIDEST = 560        # a column of sentences is cut here; the whole sentence is on hover
+VISIBLE = 16  # rows shown before the table scrolls inside itself
+WIDEST = 560  # a column of sentences is cut here; the whole sentence is on hover
 # Columns holding a full SQX symbol: shown by its short name (core.symbols.alias), the whole
 # string stays on hover so nothing is lost, only shortened on screen.
 MARKET_COLS = {"market", "mercado", "symbol", "activo", "asset"}
@@ -27,7 +36,7 @@ MARKET_COLS = {"market", "mercado", "symbol", "activo", "asset"}
 # «veto», «avisa», «fails» or «survives», which a study writes as a reason or a code.
 PASS_WORDS = {"pass", "pasa", "aprobado", "mantener"}
 FAIL_WORDS = {"fail", "falla", "no pasa", "muere", "suspenso", "descartar"}
-WATCH_WORDS = {"limbo"}     # the WFC's state for «indeciso» (encargo 48)
+WATCH_WORDS = {"limbo"}  # the WFC's state for «indeciso» (encargo 48)
 # A column in percent prints one decimal (§1 «7,7 %, no 8 %»): a «%» that is a unit, not one
 # right after a number — «A CI 95 %» or «intervalo 95 % desde» name a confidence level — or a
 # `_pct` key («dd_pct_95»).
@@ -37,8 +46,14 @@ PERCENT = re.compile(r"(?<![\d\s])\s*%|^%|\(%\)|_pct(_|$)")
 class Cell(QTableWidgetItem):
     """A cell that sorts by its value, not by its printed text: «1 200» after «950»."""
 
-    def __init__(self, value: object, market: bool = False, state: str | None = None,
-                 percent: bool = False, compact: bool = False) -> None:
+    def __init__(
+        self,
+        value: object,
+        market: bool = False,
+        state: str | None = None,
+        percent: bool = False,
+        compact: bool = False,
+    ) -> None:
         """Print the value and keep it for sorting.
 
         Args:
@@ -52,17 +67,30 @@ class Cell(QTableWidgetItem):
             compact: A coloured cell is filled with its state colour, dark text on it.
         """
         shown = alias(value) if market and isinstance(value, str) else value
-        figure = isinstance(shown, (int, float, type(None))) and not isinstance(shown, bool)
+        figure = isinstance(shown, (int, float, type(None))) and not isinstance(
+            shown, bool
+        )
         if figure and percent:
             printed = numbers.num(shown, "%").removesuffix(" %")
         else:
             # A raw contract state in a cell («watch») reads as its label («Vigilar»).
-            printed = chart.num(cast("float | str | None", shown)) if figure else STATE_LABEL.get(str(shown), str(shown))
+            printed = (
+                chart.num(cast("float | str | None", shown))
+                if figure
+                else STATE_LABEL.get(str(shown), str(shown))
+            )
         super().__init__(printed)
         self.value = value
         word = " ".join(value.lower().split()) if isinstance(value, str) else ""
-        state = state or ("pass" if word in PASS_WORDS else "fail" if word in FAIL_WORDS
-                          else "watch" if word in WATCH_WORDS else None)
+        state = state or (
+            "pass"
+            if word in PASS_WORDS
+            else "fail"
+            if word in FAIL_WORDS
+            else "watch"
+            if word in WATCH_WORDS
+            else None
+        )
         if state:
             font = self.font()
             font.setBold(True)
@@ -82,6 +110,7 @@ class Cell(QTableWidgetItem):
         Returns:
             Whether this cell sorts first.
         """
+
         def rank(v: object) -> tuple:
             """A key every cell value can be compared by."""
             if v is None:
@@ -98,16 +127,24 @@ class Fitted(QTableWidget):
     stylesheet's font apply (the terminal's monospace, wider than the default): measured before,
     a long cell was cut with room to spare."""
 
-    compact = False     # a small matrix: as wide as its columns, no wider
+    compact = False  # a small matrix: as wide as its columns, no wider
 
     def fit(self) -> None:
         """Each column as wide as its content, up to `WIDEST`; a compact table's own width with it."""
         self.resizeColumnsToContents()
         for j in range(self.columnCount()):
             self.setColumnWidth(j, min(WIDEST, self.columnWidth(j) + 16))
-        if self.compact:        # a table that scrolls inside itself keeps its last column clear of the bar
-            bar = self.verticalScrollBar().sizeHint().width() if self.rowCount() > VISIBLE else 0
-            self.setMaximumWidth(sum(self.columnWidth(j) for j in range(self.columnCount())) + 6 + bar)
+        if (
+            self.compact
+        ):  # a table that scrolls inside itself keeps its last column clear of the bar
+            bar = (
+                self.verticalScrollBar().sizeHint().width()
+                if self.rowCount() > VISIBLE
+                else 0
+            )
+            self.setMaximumWidth(
+                sum(self.columnWidth(j) for j in range(self.columnCount())) + 6 + bar
+            )
 
     def showEvent(self, event: QShowEvent) -> None:  # noqa: N802 — Qt's name
         """Fit once, with the font the table is really drawn in."""
@@ -128,36 +165,56 @@ def widget(block: dict) -> QWidget:
     """
     b = block
     if not b["rows"]:
-        return card(b, text("(vacía: el estudio no dejó ninguna fila aquí)", T["faint"]))
+        return card(
+            b, text("(vacía: el estudio no dejó ninguna fila aquí)", T["faint"])
+        )
     table = Fitted(len(b["rows"]), len(b["columns"]))
     table.compact = bool(b.get("compact"))
     table.setHorizontalHeaderLabels([label(c) for c in b["columns"]])
     help_ = b.get("help") or [None] * len(b["columns"])
-    for j, h in enumerate(help_[:len(b["columns"])]):   # a stale report may carry more help than columns
+    for j, h in enumerate(
+        help_[: len(b["columns"])]
+    ):  # a stale report may carry more help than columns
         if h:
             header = table.horizontalHeaderItem(j)
             assert header is not None
-            header.setToolTip(h)   # the uniform "?" of CONTRACT §5
+            header.setToolTip(h)  # the uniform "?" of CONTRACT §5
     table.verticalHeader().setVisible(False)
     table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
     table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
     table.setWordWrap(False)
     align = b.get("align") or ["left"] * len(b["columns"])
     market = [c.lower() in MARKET_COLS for c in b["columns"]]
-    percent = [bool(PERCENT.search(str(c)) or PERCENT.search(label(c))) for c in b["columns"]]
+    percent = [
+        bool(PERCENT.search(str(c)) or PERCENT.search(label(c))) for c in b["columns"]
+    ]
     states, tips = b.get("states"), b.get("tips")
     # Per column, not per cell: a population table is 10,000 rows × 35 columns, and the
     # header's words and the alignment flag were a third of the seconds it took to draw.
     heads = [label(c) for c in b["columns"]]
-    flags = [(Qt.AlignmentFlag.AlignRight if a == "right" else Qt.AlignmentFlag.AlignLeft) | Qt.AlignmentFlag.AlignVCenter for a in align]
+    flags = [
+        (Qt.AlignmentFlag.AlignRight if a == "right" else Qt.AlignmentFlag.AlignLeft)
+        | Qt.AlignmentFlag.AlignVCenter
+        for a in align
+    ]
     compact = bool(b.get("compact"))
     for i, row in enumerate(b["rows"]):
         for j, v in enumerate(row):
-            cell = Cell(v, market[j], states[i][j] if states else None, percent[j], compact)
+            cell = Cell(
+                v, market[j], states[i][j] if states else None, percent[j], compact
+            )
             cell.setTextAlignment(flags[j])
             # never 1e-05, even on hover; a plain figure is already printed that way
-            full = v if isinstance(v, str) else chart.num(v) if percent[j] or market[j] else cell.text()
-            own = tips[i][j] if tips else None       # a study's own hover, e.g. WFM's conditions
+            full = (
+                v
+                if isinstance(v, str)
+                else chart.num(v)
+                if percent[j] or market[j]
+                else cell.text()
+            )
+            own = (
+                tips[i][j] if tips else None
+            )  # a study's own hover, e.g. WFM's conditions
             cell.setToolTip(own or f"{heads[j]}: {full}")
             table.setItem(i, j, cell)
     # Enabling sorting sorts at once by column 0; the study's own order is the reading order.
@@ -166,18 +223,26 @@ def widget(block: dict) -> QWidget:
     table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
     # A last column of sentences (the «why», «what it says») takes the spare width, so less
     # of it is cut; a last column of numbers does not, or its figures drift to the far edge.
-    table.horizontalHeader().setStretchLastSection(align[-1] == "left" and not b.get("compact"))
+    table.horizontalHeader().setStretchLastSection(
+        align[-1] == "left" and not b.get("compact")
+    )
     table.fit()
     table.verticalHeader().setDefaultSectionSize(26)
     shown = min(len(b["rows"]), VISIBLE)
     table.setFixedHeight(table.horizontalHeader().sizeHint().height() + 26 * shown + 6)
     if len(b["rows"]) > VISIBLE:
-        table.setToolTip(f"{len(b['rows'])} filas: la tabla se desplaza por dentro; pulsa una "
-                         "cabecera para ordenar.")
+        table.setToolTip(
+            f"{len(b['rows'])} filas: la tabla se desplaza por dentro; pulsa una "
+            "cabecera para ordenar."
+        )
     threshold = b.get("threshold")
     if not threshold:
         return card(b, table)
-    names = threshold["column"] if isinstance(threshold["column"], list) else [threshold["column"]]
+    names = (
+        threshold["column"]
+        if isinstance(threshold["column"], list)
+        else [threshold["column"]]
+    )
     cols = [b["columns"].index(n) for n in names]
     return card(b, _thresholded(table, cols, threshold))
 
@@ -203,8 +268,10 @@ def _thresholded(table: QTableWidget, cols: list[int], cfg: dict) -> QWidget:
     spin.setSingleStep(0.005)
     spin.setRange(0.0, 1.0)
     spin.setValue(cfg.get("default", 0.05))
-    spin.setToolTip("Verde por debajo, rojo por encima; se recalcula al instante para todas las "
-                    "columnas, sin volver a correr el estudio.")
+    spin.setToolTip(
+        "Verde por debajo, rojo por encima; se recalcula al instante para todas las "
+        "columnas, sin volver a correr el estudio."
+    )
 
     def paint(value: float) -> None:
         """Colour every column of `cols` green below `value`, red at or above it."""
@@ -212,7 +279,9 @@ def _thresholded(table: QTableWidget, cols: list[int], cfg: dict) -> QWidget:
             for i in range(table.rowCount()):
                 item = cast(Cell, table.item(i, col))
                 if isinstance(item.value, (int, float)):
-                    item.setForeground(QColor(colour("pass" if item.value < value else "fail")))
+                    item.setForeground(
+                        QColor(colour("pass" if item.value < value else "fail"))
+                    )
                     font = item.font()
                     font.setBold(True)
                     item.setFont(font)

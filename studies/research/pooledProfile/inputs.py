@@ -22,11 +22,12 @@ def config(overrides: list[str] | None = None) -> dict[str, Any]:
     """
     cfg = study_config.load(CONFIG, overrides or [])
     if cfg["run"]["seed"] is None:
-        cfg["run"]["seed"] = int(cast("int", np.random.SeedSequence().entropy) % 2 ** 32)
+        cfg["run"]["seed"] = int(cast("int", np.random.SeedSequence().entropy) % 2**32)
     cfg["profile"] = profile.config([f"nulls.seed={cfg['run']['seed']}"])
     if not cfg["judge"]["clock"]:
-        cfg["profile"]["measures"] = [m for m in cfg["profile"]["measures"]
-                                      if not m.get("clock", False)]
+        cfg["profile"]["measures"] = [
+            m for m in cfg["profile"]["measures"] if not m.get("clock", False)
+        ]
     return cfg
 
 
@@ -54,7 +55,9 @@ def shared(frames: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
     return {s: f.loc[index] for s, f in frames.items()}
 
 
-def bars(symbols: list[str], timeframes: list[str]) -> dict[str, dict[str, pd.DataFrame]]:
+def bars(
+    symbols: list[str], timeframes: list[str]
+) -> dict[str, dict[str, pd.DataFrame]]:
     """A group's bars at each timeframe, build segment only, on their shared instants.
 
     Returns:

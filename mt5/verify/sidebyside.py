@@ -1,4 +1,5 @@
 """Every SQX entry beside the MT5 trade each firm's EA opened for it: one row per entry, one set of columns per firm."""
+
 from typing import Any
 
 import pandas as pd
@@ -6,7 +7,7 @@ import pandas as pd
 from core.study import blocks
 from mt5.verify import firms
 
-ROWS = 500          # the table's last N entries: a whole history is thousands of rows
+ROWS = 500  # the table's last N entries: a whole history is thousands of rows
 
 
 def table(pieces: dict[str, dict]) -> dict[str, Any]:
@@ -34,23 +35,31 @@ def table(pieces: dict[str, dict]) -> dict[str, Any]:
             if part is None:
                 continue
             p = part["pairs"]
-            cols = {"entrada SQX": pd.to_datetime(p["Open time"]) - pd.Timedelta(hours=part["hours"]),
-                    "tipo": p["Type"], f"{label} · P&L SQX": p["Profit/Loss USD"],
-                    f"{label} · entrada {mt5}": pd.to_datetime(p["Open time_mt5"]).dt.strftime(
-                        "%Y-%m-%d %H:%M").fillna(""),
-                    f"{label} · P&L {mt5}": p["Profit/Loss USD_mt5"]}
+            cols = {
+                "entrada SQX": pd.to_datetime(p["Open time"])
+                - pd.Timedelta(hours=part["hours"]),
+                "tipo": p["Type"],
+                f"{label} · P&L SQX": p["Profit/Loss USD"],
+                f"{label} · entrada {mt5}": pd.to_datetime(p["Open time_mt5"])
+                .dt.strftime("%Y-%m-%d %H:%M")
+                .fillna(""),
+                f"{label} · P&L {mt5}": p["Profit/Loss USD_mt5"],
+            }
             if part is not piece:
-                del cols[f"{label} · P&L SQX"]       # the same SQX retest, already a column
+                del cols[f"{label} · P&L SQX"]  # the same SQX retest, already a column
             frames.append(pd.DataFrame(cols).set_index(["entrada SQX", "tipo"]))
             columns[firm] = columns.get(firm, []) + list(range(at, at + len(cols) - 2))
             at += len(cols) - 2
     merged = pd.concat(frames, axis=1).sort_index().tail(ROWS).reset_index()
     merged["entrada SQX"] = merged["entrada SQX"].dt.strftime("%Y-%m-%d %H:%M")
-    out = blocks.table("Operaciones de SQX y de MT5, lado a lado", merged,
-                       f"Una fila por entrada de SQX (las últimas {ROWS} como mucho), en la hora "
-                       "de su feed. Cada empresa: el P&L de su retest de SQX con sus costes, y la "
-                       "operación de su EA en MT5 que abrió en la misma dirección dentro de la "
-                       "tolerancia de entrada, en la hora de su servidor. Vacío = el EA no abrió "
-                       "esa operación.")
+    out = blocks.table(
+        "Operaciones de SQX y de MT5, lado a lado",
+        merged,
+        f"Una fila por entrada de SQX (las últimas {ROWS} como mucho), en la hora "
+        "de su feed. Cada empresa: el P&L de su retest de SQX con sus costes, y la "
+        "operación de su EA en MT5 que abrió en la misma dirección dentro de la "
+        "tolerancia de entrada, en la hora de su servidor. Vacío = el EA no abrió "
+        "esa operación.",
+    )
     out["firm_columns"] = columns
     return out

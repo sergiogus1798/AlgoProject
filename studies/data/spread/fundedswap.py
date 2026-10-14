@@ -17,17 +17,32 @@ def _usd(spec: dict, points: float) -> float:
 
 def _pct(spec: dict, points: float, price: float) -> float:
     """A swap in the server's points as a % ANNUAL of that broker's own notional (SQX ÷100 ÷360)."""
-    return _usd(spec, points) / (price * spec["trade_tick_value"] / spec["trade_tick_size"]) * 36000
+    return (
+        _usd(spec, points)
+        / (price * spec["trade_tick_value"] / spec["trade_tick_size"])
+        * 36000
+    )
 
 
 def _tick_step(feed: str) -> tuple[float, float]:
     """The SQX instrument's pointValue and tickStep: SQX charges `size × pointValue × tickStep × points`."""
     with sqlite3.connect(f"file:{REGISTRY}?mode=ro", uri=True) as db:
-        return db.execute("SELECT I.POINTVALUE, I.TICKSTEP FROM DATA D JOIN INSTRUMENTS I "
-                          "ON I.INSTRUMENT = D.INSTRUMENT WHERE D.SYMBOL = ?", (feed,)).fetchone()
+        return db.execute(
+            "SELECT I.POINTVALUE, I.TICKSTEP FROM DATA D JOIN INSTRUMENTS I "
+            "ON I.INSTRUMENT = D.INSTRUMENT WHERE D.SYMBOL = ?",
+            (feed,),
+        ).fetchone()
 
-Swap = TypedDict("Swap", {"long": float, "short": float, "from": dict[str, str],
-                          "raw": dict[str, tuple[float, float]]})   # "from" is a keyword: functional form
+
+Swap = TypedDict(
+    "Swap",
+    {
+        "long": float,
+        "short": float,
+        "from": dict[str, str],
+        "raw": dict[str, tuple[float, float]],
+    },
+)  # "from" is a keyword: functional form
 
 
 def worst(symbol: str, firms: tuple = ("ftmo", "hantec")) -> Swap:
@@ -57,17 +72,26 @@ def worst(symbol: str, firms: tuple = ("ftmo", "hantec")) -> Swap:
         if not name:
             raise SystemExit(f"{symbol}: no MT5 symbol for {firm} in its `mt5:` block")
         specs[firm] = live.ask("symbol", {"symbol": name}, MT5_ACCOUNTS[firm])
-    out: dict[str, Any] = {"from": {}, "raw": {f: (s["swap_long"], s["swap_short"]) for f, s in specs.items()}}
-    pv, step = _tick_step(asset["sqx_symbol"]) if asset["class"] == "forex" else (None, None)
+    out: dict[str, Any] = {
+        "from": {},
+        "raw": {f: (s["swap_long"], s["swap_short"]) for f, s in specs.items()},
+    }
+    pv, step = (
+        _tick_step(asset["sqx_symbol"]) if asset["class"] == "forex" else (None, None)
+    )
     for side in ("long", "short"):
         cost: dict[str, float] = {}
         for firm, s in specs.items():
             if asset["class"] == "forex":
-                cost[firm] = _usd(s, s[f"swap_{side}"]) / (cast(float, pv) * cast(float, step))
+                cost[firm] = _usd(s, s[f"swap_{side}"]) / (
+                    cast(float, pv) * cast(float, step)
+                )
             else:
                 price = s["bid"] or s["session_close"]
                 if not price:
-                    raise SystemExit(f"{symbol}: {firm} quotes no price now — retry with the market open")
+                    raise SystemExit(
+                        f"{symbol}: {firm} quotes no price now — retry with the market open"
+                    )
                 cost[firm] = _pct(s, s[f"swap_{side}"], price)
         firm = min(cost, key=lambda f: cost[f])
         out[side], out["from"][side] = round(cost[firm], 2), firm

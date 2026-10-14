@@ -1,4 +1,5 @@
 """Run one Strategy Tester pass: write its ini, start the terminal detached, and collect the report."""
+
 import json
 import os
 import shutil
@@ -15,24 +16,63 @@ MODELS = {"every_tick": 0, "ohlc_m1": 1, "open_prices": 2, "real_ticks": 4}
 TESTS = MT5_DATA / "tests"
 
 
-def _ini(expert: str, symbol: str, timeframe: str, start: str, end: str, model: str,
-         deposit: float, leverage: int, report_name: str, account: dict | None = None) -> str:
+def _ini(
+    expert: str,
+    symbol: str,
+    timeframe: str,
+    start: str,
+    end: str,
+    model: str,
+    deposit: float,
+    leverage: int,
+    report_name: str,
+    account: dict | None = None,
+) -> str:
     """The [Tester] section, after a [Common] one naming the account when there is one.
     Dates are YYYY-MM-DD; the tester wants YYYY.MM.DD."""
-    common = (["[Common]", f"Login={account['login']}", f"Server={account['server']}"]
-              if account else [])
-    lines = [*common, "[Tester]", f"Expert={expert}", f"Symbol={symbol}", f"Period={timeframe}",
-             f"Model={MODELS[model]}", "ExecutionMode=0", "Optimization=0", "ForwardMode=0",
-             f"FromDate={start.replace('-', '.')}", f"ToDate={end.replace('-', '.')}",
-             f"Deposit={deposit:g}", "Currency=USD", f"Leverage={leverage}",
-             f"Report=reports\\{report_name}", "ReplaceReport=1", "ShutdownTerminal=1",
-             "Visual=0", "UseLocal=1", "UseRemote=0", "UseCloud=0"]
+    common = (
+        ["[Common]", f"Login={account['login']}", f"Server={account['server']}"]
+        if account
+        else []
+    )
+    lines = [
+        *common,
+        "[Tester]",
+        f"Expert={expert}",
+        f"Symbol={symbol}",
+        f"Period={timeframe}",
+        f"Model={MODELS[model]}",
+        "ExecutionMode=0",
+        "Optimization=0",
+        "ForwardMode=0",
+        f"FromDate={start.replace('-', '.')}",
+        f"ToDate={end.replace('-', '.')}",
+        f"Deposit={deposit:g}",
+        "Currency=USD",
+        f"Leverage={leverage}",
+        f"Report=reports\\{report_name}",
+        "ReplaceReport=1",
+        "ShutdownTerminal=1",
+        "Visual=0",
+        "UseLocal=1",
+        "UseRemote=0",
+        "UseCloud=0",
+    ]
     return "\r\n".join(lines) + "\r\n"
 
 
-def start(expert: str, symbol: str, timeframe: str, start_date: str, end_date: str,
-          model: str, deposit: float, leverage: int, account: dict | None = None,
-          tag: str = "") -> dict[str, Any]:
+def start(
+    expert: str,
+    symbol: str,
+    timeframe: str,
+    start_date: str,
+    end_date: str,
+    model: str,
+    deposit: float,
+    leverage: int,
+    account: dict | None = None,
+    tag: str = "",
+) -> dict[str, Any]:
     """Launch one backtest and return at once; the terminal shuts itself down when it ends.
 
     Args:
@@ -51,26 +91,58 @@ def start(expert: str, symbol: str, timeframe: str, start_date: str, end_date: s
         {"run": its id, "dir": where the result will land}.
     """
     if wine.terminal_running():
-        raise SystemExit("the MT5 terminal is open: the tester needs it closed (one terminal per data folder)")
+        raise SystemExit(
+            "the MT5 terminal is open: the tester needs it closed (one terminal per data folder)"
+        )
     stem = Path(expert.replace("\\", "/")).stem
     run = f"{stem}_{tag + '_' if tag else ''}{symbol}_{timeframe}_{start_date}_{end_date}_{model}"
     folder = TESTS / run
     folder.mkdir(parents=True, exist_ok=True)
     ini = folder / "tester.ini"
-    ini.write_text(_ini(expert, symbol, timeframe, start_date, end_date, model, deposit, leverage,
-                        run, account), encoding="utf-16")
+    ini.write_text(
+        _ini(
+            expert,
+            symbol,
+            timeframe,
+            start_date,
+            end_date,
+            model,
+            deposit,
+            leverage,
+            run,
+            account,
+        ),
+        encoding="utf-16",
+    )
     # The terminal does not create Report='s folder: missing, the test passes and no report is written.
     reports = wine.data_dir() / "reports"
     reports.mkdir(exist_ok=True)
     (reports / f"{run}.htm").unlink(missing_ok=True)
     with open(folder / "terminal.out", "w") as out:
-        proc = subprocess.Popen(["wine", str(wine.TERMINAL), f"/config:{wine.windows(ini)}"],
-                                env=wine.env(), stdout=out, stderr=subprocess.STDOUT,
-                                start_new_session=True)
-    (folder / "run.json").write_text(json.dumps(
-        {"pid": proc.pid, "expert": expert, "symbol": symbol, "timeframe": timeframe,
-         "start": start_date, "end": end_date, "model": model, "deposit": deposit,
-         "leverage": leverage, "server": account["server"] if account else None}, indent=1))
+        proc = subprocess.Popen(
+            ["wine", str(wine.TERMINAL), f"/config:{wine.windows(ini)}"],
+            env=wine.env(),
+            stdout=out,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+    (folder / "run.json").write_text(
+        json.dumps(
+            {
+                "pid": proc.pid,
+                "expert": expert,
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "start": start_date,
+                "end": end_date,
+                "model": model,
+                "deposit": deposit,
+                "leverage": leverage,
+                "server": account["server"] if account else None,
+            },
+            indent=1,
+        )
+    )
     return {"run": run, "dir": str(folder)}
 
 
@@ -86,7 +158,7 @@ def _alive(pid: int) -> bool:
         if os.waitpid(pid, os.WNOHANG)[0]:
             return False
     except ChildProcessError:
-        pass                      # started by another process: not ours to reap
+        pass  # started by another process: not ours to reap
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -110,9 +182,12 @@ def collect(run: str) -> dict[str, Any]:
     if _alive(meta["pid"]) or wine.terminal_running():
         return {"state": "running", "run": run}
     if not htm.exists():
-        return {"state": "no_report", "run": run,
-                "hint": "the terminal ended without a report: see its log in the data folder's "
-                        "tester/logs, and whether the symbol and dates have history"}
+        return {
+            "state": "no_report",
+            "run": run,
+            "hint": "the terminal ended without a report: see its log in the data folder's "
+            "tester/logs, and whether the symbol and dates have history",
+        }
     shutil.copy2(htm, folder / "report.htm")
     summary, deals = report.read(folder / "report.htm")
     trades = report.trades(deals)
@@ -121,8 +196,21 @@ def collect(run: str) -> dict[str, Any]:
     # ponytail: the journal of the report's own day; a run that crosses midnight reads no line
     day = datetime.fromtimestamp(htm.stat().st_mtime).strftime("%Y%m%d")
     log = wine.data_dir() / "Tester" / "logs" / f"{day}.log"
-    summary |= report.start_check(summary, trades, log.read_bytes().decode("utf-16", "replace")
-                                  if log.exists() else "", meta["expert"], meta["start"])
-    (folder / "summary.json").write_text(json.dumps(summary, indent=1, ensure_ascii=False))
-    return {"state": "done", **meta, "summary": summary, "trades": len(trades),
-            "trades_file": str(folder / "trades.parquet"), "dir": str(folder)}
+    summary |= report.start_check(
+        summary,
+        trades,
+        log.read_bytes().decode("utf-16", "replace") if log.exists() else "",
+        meta["expert"],
+        meta["start"],
+    )
+    (folder / "summary.json").write_text(
+        json.dumps(summary, indent=1, ensure_ascii=False)
+    )
+    return {
+        "state": "done",
+        **meta,
+        "summary": summary,
+        "trades": len(trades),
+        "trades_file": str(folder / "trades.parquet"),
+        "dir": str(folder),
+    }

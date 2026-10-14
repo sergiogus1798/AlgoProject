@@ -35,14 +35,22 @@ def shoot(zone: DataZone, folder: Path) -> None:
 def main() -> None:
     """Open the zone; the daemon must already be up (`python3 -m ui.daemon.serve`)."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--asset", default="XAUUSD", help="el activo que se abre, p. ej. USDJPY")
-    ap.add_argument("--tab", default="Catálogo", choices=TABS, help="la pestaña que se abre")
-    ap.add_argument("--shot", type=Path, metavar="DIR",
-                    help="guarda una captura PNG de cada pestaña en esa carpeta y sale")
+    ap.add_argument(
+        "--asset", default="XAUUSD", help="el activo que se abre, p. ej. USDJPY"
+    )
+    ap.add_argument(
+        "--tab", default="Catálogo", choices=TABS, help="la pestaña que se abre"
+    )
+    ap.add_argument(
+        "--shot",
+        type=Path,
+        metavar="DIR",
+        help="guarda una captura PNG de cada pestaña en esa carpeta y sale",
+    )
     args = ap.parse_args()
     app = QApplication(sys.argv)
     app.setStyleSheet(QSS)
-    helpmark.install(app)     # the «?» beside every button
+    helpmark.install(app)  # the «?» beside every button
     zone = DataZone()
     zone.resize(*SIZE)
     zone.show()

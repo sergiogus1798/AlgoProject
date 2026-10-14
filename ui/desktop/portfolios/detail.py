@@ -3,9 +3,15 @@
 from ui.text.numbers import num
 from ui.desktop.theme import T
 
-FAMILY = {"screening": "Cribado", "transfer": "Transferencia", "breakage": "Rotura",
-          "optimisation": "Optimización", "closing": "Cierre", "readings": "Lecturas",
-          "data": "Datos"}
+FAMILY = {
+    "screening": "Cribado",
+    "transfer": "Transferencia",
+    "breakage": "Rotura",
+    "optimisation": "Optimización",
+    "closing": "Cierre",
+    "readings": "Lecturas",
+    "data": "Datos",
+}
 
 
 def when(stamp: str) -> str:
@@ -21,9 +27,11 @@ def trials(held: dict) -> str:
 def ledger(held: dict) -> str:
     """The ledger count frozen that day, as one line."""
     sigma = f" · σ del Sharpe {num(held['sigma'])}" if held["sigma"] is not None else ""
-    return (f"N = {trials(held)} candidatas puntuadas en todas las búsquedas del estudio · "
-            f"{num(held['searches'])} filas del Ledger"
-            f"{sigma} (estudio del Ledger {held['study']})")
+    return (
+        f"N = {trials(held)} candidatas puntuadas en todas las búsquedas del estudio · "
+        f"{num(held['searches'])} filas del Ledger"
+        f"{sigma} (estudio del Ledger {held['study']})"
+    )
 
 
 def page(shown: dict) -> str:
@@ -37,27 +45,44 @@ def page(shown: dict) -> str:
         archived and why, and the provenance. No identity, no file path.
     """
     dim = f'style="color:{T["faint"]}"'
-    rows = [f"<b>{shown['strategy']}</b> · {shown['symbol']} {shown['timeframe'] or ''} · "
-            f"paso {shown['step']} · versión {shown['version']}",
-            f"<span {dim}>archivada el {when(shown['archived_at'])} · desde {shown['databank']} "
-            f"· proyecto {shown['project']}</span>"]
+    rows = [
+        f"<b>{shown['strategy']}</b> · {shown['symbol']} {shown['timeframe'] or ''} · "
+        f"paso {shown['step']} · versión {shown['version']}",
+        f"<span {dim}>archivada el {when(shown['archived_at'])} · desde {shown['databank']} "
+        f"· proyecto {shown['project']}</span>",
+    ]
     if shown["note"]:
         rows.append(f"«{shown['note']}»")
     rows += ["", "<b>Lo que trae</b> (se ve al importar, sin recalcular nada):"]
     for databank, studies in shown["held"].items():
-        names = ", ".join(f"{s['title']} <span {dim}>({FAMILY.get(s['family'], s['family'])}"
-                          f"{', paso ' + s['step'] if s['step'] else ''})</span>" for s in studies)
+        names = ", ".join(
+            f"{s['title']} <span {dim}>({FAMILY.get(s['family'], s['family'])}"
+            f"{', paso ' + s['step'] if s['step'] else ''})</span>"
+            for s in studies
+        )
         rows.append(f"· {databank}: {names or '—'}")
-    rows.append("· la ficha de backtest (IS/OOS, salidas), las dos curvas y los metadatos del .sqx")
+    rows.append(
+        "· la ficha de backtest (IS/OOS, salidas), las dos curvas y los metadatos del .sqx"
+    )
     if shown["skipped"]:
         rows += ["", "<b>Lo que no se archivó</b> y por qué:"]
-        rows += [f"· {s['path']}: <span {dim}>{s['reason']}</span>" for s in shown["skipped"]]
+        rows += [
+            f"· {s['path']}: <span {dim}>{s['reason']}</span>" for s in shown["skipped"]
+        ]
     elif shown["skipped"] is None:
-        rows += ["", f"<span {dim}>Versión anterior a la lista de lo no archivado: no dice qué "
-                     "dejó fuera.</span>"]
-    rows += ["", "<b>Procedencia</b>", ledger(shown["ledger"]),
-             f"ficha de costes de {shown['asset']['symbol']} congelada ese día · código "
-             f"{shown['code_version']}",
-             "el .sqx se copió de un export (no del install)" if shown["sqx"]["by_hand"]
-             else "el .sqx se copió del databank del install"]
+        rows += [
+            "",
+            f"<span {dim}>Versión anterior a la lista de lo no archivado: no dice qué "
+            "dejó fuera.</span>",
+        ]
+    rows += [
+        "",
+        "<b>Procedencia</b>",
+        ledger(shown["ledger"]),
+        f"ficha de costes de {shown['asset']['symbol']} congelada ese día · código "
+        f"{shown['code_version']}",
+        "el .sqx se copió de un export (no del install)"
+        if shown["sqx"]["by_hand"]
+        else "el .sqx se copió del databank del install",
+    ]
     return "<br>".join(rows)

@@ -37,7 +37,9 @@ def above_half_max(values: np.ndarray) -> float:
         OOS numbers comparable when the whole surface dropped: it asks about shape, not
         level.
     """
-    best = values.max()      # |best|, as `plateau_fraction`: on a negative best `best / 2` sits above it
+    best = (
+        values.max()
+    )  # |best|, as `plateau_fraction`: on a negative best `best / 2` sits above it
     return float((values > best - abs(best) / 2).mean())
 
 
@@ -84,8 +86,9 @@ class Deflated(TypedDict):
     dsr: float
 
 
-def deflated_sharpe(sharpe: float, sigma_sr: float, n_eff: int, n_obs: int,
-                    skew: float, kurtosis: float) -> Deflated:
+def deflated_sharpe(
+    sharpe: float, sigma_sr: float, n_eff: int, n_obs: int, skew: float, kurtosis: float
+) -> Deflated:
     """Is this Sharpe real, given how many configurations were tried to find it?
 
     Args:
@@ -103,10 +106,17 @@ def deflated_sharpe(sharpe: float, sigma_sr: float, n_eff: int, n_obs: int,
         means nothing. Convert before calling.
     """
     benchmark = expected_max_sharpe(sigma_sr, n_eff)
-    z = (sharpe - benchmark) * np.sqrt(n_obs - 1) / np.sqrt(
-        variance_factor(sharpe, skew, kurtosis))
-    return {"benchmark": benchmark, "sharpe": sharpe, "n_eff": n_eff,
-            "dsr": float(stats.norm.cdf(z))}
+    z = (
+        (sharpe - benchmark)
+        * np.sqrt(n_obs - 1)
+        / np.sqrt(variance_factor(sharpe, skew, kurtosis))
+    )
+    return {
+        "benchmark": benchmark,
+        "sharpe": sharpe,
+        "n_eff": n_eff,
+        "dsr": float(stats.norm.cdf(z)),
+    }
 
 
 def rank_of(values: np.ndarray, reference: float) -> float:

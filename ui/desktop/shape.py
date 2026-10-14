@@ -26,14 +26,18 @@ def shape_panel(t: dict) -> QFrame:
     verdict.setStyleSheet(f"color:{C['promising'] if free else C['weak']};")
     lay.addWidget(verdict)
     for h in t["holes"]:
-        where = (chip("libre — la paleta lo gobierna", C["promising"]) if not h["group"]
-                 else chip(f"atado a {h['group']}", C["weak"]))
+        where = (
+            chip("libre — la paleta lo gobierna", C["promising"])
+            if not h["group"]
+            else chip(f"atado a {h['group']}", C["weak"])
+        )
         if h["unknown_group"]:
             where = chip("atado a un grupo que esta instalación no tiene", C["dead"])
-        lay.addWidget(QLabel(f'<b>{h["id"]}</b> ({h["kind"]})  {where}'))
+        lay.addWidget(QLabel(f"<b>{h['id']}</b> ({h['kind']})  {where}"))
     if t["fixed"]:
-        fixed = QLabel("Fijos en la plantilla, fuera de toda paleta: "
-                       + ", ".join(t["fixed"]))
+        fixed = QLabel(
+            "Fijos en la plantilla, fuera de toda paleta: " + ", ".join(t["fixed"])
+        )
         fixed.setWordWrap(True)
         fixed.setStyleSheet(f"color:{C['muted']};")
         lay.addWidget(fixed)

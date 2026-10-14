@@ -43,7 +43,9 @@ def summed(frame: pd.DataFrame, column: str, ids: set[str] | None) -> pd.DataFra
     """One column of a per-strategy frame summed by sample and day, over `ids` or every row."""
     if ids is not None:
         frame = cast(pd.DataFrame, frame[frame["identity"].isin(list(ids))])
-    return cast(pd.DataFrame, frame.groupby(["sample", "day"], as_index=False)[column].sum())
+    return cast(
+        pd.DataFrame, frame.groupby(["sample", "day"], as_index=False)[column].sum()
+    )
 
 
 def drawdown(curve: list[float]) -> float:
@@ -71,19 +73,31 @@ def equity(project: str, databank: str, ids: list[str] | None = None) -> Equity:
     db = find.spelled(project, databank)
     found = newest(harvest_dir(project, db, "x").parent, "equity.parquet")
     if found is None:
-        return {"error": f"{db} no tiene cosecha: la curva agregada sale de su equity diaria "
-                         "(la cosecha IS + OOS del paso 8)"}
+        return {
+            "error": f"{db} no tiene cosecha: la curva agregada sale de su equity diaria "
+            "(la cosecha IS + OOS del paso 8)"
+        }
     wanted = set(ids) if ids is not None else None
     pnl = summed(daily(str(found), found.stat().st_mtime), "pnl", wanted).sort_values(
-        ["sample", "day"])                              # «IS» sorts before «OOS»
+        ["sample", "day"]
+    )  # «IS» sorts before «OOS»
     if pnl.empty:
         return {"error": "ninguna de las estrategias visibles está en la cosecha"}
     sqx = pnl["pnl"].cumsum().round(2).tolist()
     oos = (pnl["sample"] == "OOS").tolist()
     split = oos.index(True) if True in oos else None
     net = {s: float(pnl.loc[pnl["sample"] == s, "pnl"].sum()) for s in ("IS", "OOS")}
-    stats = {"Neto SQX IS": net["IS"], "Neto SQX OOS": net["OOS"], "Neto SQX": sqx[-1],
-             "DD máximo SQX": drawdown(sqx)}
-    return {"days": [d.strftime("%Y-%m-%d") for d in pnl["day"]], "sqx": sqx,
-            "split": split, "stats": stats, "source": f"cosecha del {found.parent.name}",
-            "of": "todas" if wanted is None else len(wanted)}
+    stats = {
+        "Neto SQX IS": net["IS"],
+        "Neto SQX OOS": net["OOS"],
+        "Neto SQX": sqx[-1],
+        "DD máximo SQX": drawdown(sqx),
+    }
+    return {
+        "days": [d.strftime("%Y-%m-%d") for d in pnl["day"]],
+        "sqx": sqx,
+        "split": split,
+        "stats": stats,
+        "source": f"cosecha del {found.parent.name}",
+        "of": "todas" if wanted is None else len(wanted),
+    }

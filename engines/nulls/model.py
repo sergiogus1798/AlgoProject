@@ -35,8 +35,14 @@ def _place(located: OnGrid, holds: np.ndarray, u: np.ndarray) -> np.ndarray:
     return (lo + u * (hi - holds - lo + 1)).astype(np.int64)
 
 
-def _rung(located: OnGrid, draws: int, rng: np.random.Generator, placed: bool, redraw: bool,
-          flat: bool) -> dict[str, np.ndarray]:
+def _rung(
+    located: OnGrid,
+    draws: int,
+    rng: np.random.Generator,
+    placed: bool,
+    redraw: bool,
+    flat: bool,
+) -> dict[str, np.ndarray]:
     """The draw every rung is, differing only in what it hands to chance beyond the entry.
 
     Args:
@@ -61,28 +67,36 @@ def _rung(located: OnGrid, draws: int, rng: np.random.Generator, placed: bool, r
     """
     n = located["hold"].size
     u = rng.random((draws, n))
-    holds = (rng.choice(located["hold"], size=(draws, n), replace=True) if redraw
-             else np.broadcast_to(located["hold"], (draws, n)))
-    sizes = np.broadcast_to(located["size"].mean() if flat else located["size"], holds.shape)
+    holds = (
+        rng.choice(located["hold"], size=(draws, n), replace=True)
+        if redraw
+        else np.broadcast_to(located["hold"], (draws, n))
+    )
+    sizes = np.broadcast_to(
+        located["size"].mean() if flat else located["size"], holds.shape
+    )
     if placed:
         return {"entries": _place(located, holds, u), "holds": holds, "sizes": sizes}
     return {"u": u, "holds": holds, "sizes": sizes}
 
 
-def timing(located: OnGrid, draws: int, rng: np.random.Generator,
-           placed: bool = True) -> dict[str, np.ndarray]:
+def timing(
+    located: OnGrid, draws: int, rng: np.random.Generator, placed: bool = True
+) -> dict[str, np.ndarray]:
     """Move every trade, keeping its own holding time and its own size (see `_rung`)."""
     return _rung(located, draws, rng, placed, False, False)
 
 
-def timing_holds(located: OnGrid, draws: int, rng: np.random.Generator,
-                 placed: bool = True) -> dict[str, np.ndarray]:
+def timing_holds(
+    located: OnGrid, draws: int, rng: np.random.Generator, placed: bool = True
+) -> dict[str, np.ndarray]:
     """Move every trade and redraw how long it is held, keeping its size (see `_rung`)."""
     return _rung(located, draws, rng, placed, True, False)
 
 
-def timing_sizing(located: OnGrid, draws: int, rng: np.random.Generator,
-                  placed: bool = True) -> dict[str, np.ndarray]:
+def timing_sizing(
+    located: OnGrid, draws: int, rng: np.random.Generator, placed: bool = True
+) -> dict[str, np.ndarray]:
     """Move every trade and strip the volatility normalisation from its size (see `_rung`).
 
     Against `timing`, the gap is what sizing by ATR was worth -- through the variance, not the
@@ -91,8 +105,9 @@ def timing_sizing(located: OnGrid, draws: int, rng: np.random.Generator,
     return _rung(located, draws, rng, placed, False, True)
 
 
-def free(located: OnGrid, draws: int, rng: np.random.Generator,
-         placed: bool = True) -> dict[str, np.ndarray]:
+def free(
+    located: OnGrid, draws: int, rng: np.random.Generator, placed: bool = True
+) -> dict[str, np.ndarray]:
     """Move every trade, redraw its holding time and strip its sizing (see `_rung`).
 
     The bottom of the ladder: only the trade count and the cost survive, so this is the
@@ -101,13 +116,19 @@ def free(located: OnGrid, draws: int, rng: np.random.Generator,
     return _rung(located, draws, rng, placed, True, True)
 
 
-RUNGS = {"timing": timing, "timing_holds": timing_holds,
-         "timing_sizing": timing_sizing, "free": free}
+RUNGS = {
+    "timing": timing,
+    "timing_holds": timing_holds,
+    "timing_sizing": timing_sizing,
+    "free": free,
+}
 
 # What each rung hands to chance. A rung that randomises more than one thing cannot attribute
 # a low p to any single cause, which is why the summary reports `timing` and the others are
 # read beside it -- and why the attribution is the gap between two rungs, never one rung alone.
-RANDOMISES = {"timing": "when each trade is entered",
-              "timing_holds": "when each trade is entered, and how long it is held",
-              "timing_sizing": "when each trade is entered, and the sizing by volatility",
-              "free": "when, how long, and how big -- only the trade count and the cost remain"}
+RANDOMISES = {
+    "timing": "when each trade is entered",
+    "timing_holds": "when each trade is entered, and how long it is held",
+    "timing_sizing": "when each trade is entered, and the sizing by volatility",
+    "free": "when, how long, and how big -- only the trade count and the cost remain",
+}

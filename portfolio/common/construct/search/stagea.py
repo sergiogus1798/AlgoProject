@@ -22,8 +22,13 @@ def open_cap(plan: Plan, cfg: dict) -> np.ndarray:
     Returns:
         float64 [challenge stages], as a fraction of the initial balance.
     """
-    return np.array([cfg["funded"]["open_risk_cap"] * s["daily_loss"]
-                     for s in plan["stages"] if s["stage"] != "funded"])
+    return np.array(
+        [
+            cfg["funded"]["open_risk_cap"] * s["daily_loss"]
+            for s in plan["stages"]
+            if s["stage"] != "funded"
+        ]
+    )
 
 
 def capped(k: np.ndarray, risk: np.ndarray, plan: Plan, cfg: dict) -> np.ndarray:
@@ -38,7 +43,10 @@ def capped(k: np.ndarray, risk: np.ndarray, plan: Plan, cfg: dict) -> np.ndarray
     """
     cap = open_cap(plan, cfg)
     risk = risk[:, None] if risk.ndim == 1 else risk
-    return cast(np.ndarray, (np.asarray(k)[:, None, None] * risk[None] > cap + 1e-12).any(axis=2))
+    return cast(
+        np.ndarray,
+        (np.asarray(k)[:, None, None] * risk[None] > cap + 1e-12).any(axis=2),
+    )
 
 
 def evaluate(data: StageAData, combos: np.ndarray, plan: Plan, cfg: dict) -> np.ndarray:
@@ -67,10 +75,23 @@ def evaluate(data: StageAData, combos: np.ndarray, plan: Plan, cfg: dict) -> np.
     n_days = data["closed"].shape[1]
     starts = np.arange(0, max(n_days - horizon + 1, 0), dtype=np.int64)
     out = np.full((combos.shape[0], grid.shape[0]), np.nan)
-    _evaluate_kernel(data["closed"], data["float_end"], data["opened"].astype(np.int64),
-                      data["low5"], data["high5"], data["block_day"].astype(np.int64),
-                      data["lot_unit"], combos.astype(np.int32), stagemat_base, grid, size,
-                      min_lot, starts, horizon, out)
+    _evaluate_kernel(
+        data["closed"],
+        data["float_end"],
+        data["opened"].astype(np.int64),
+        data["low5"],
+        data["high5"],
+        data["block_day"].astype(np.int64),
+        data["lot_unit"],
+        combos.astype(np.int32),
+        stagemat_base,
+        grid,
+        size,
+        min_lot,
+        starts,
+        horizon,
+        out,
+    )
     out[capped((combos >= 0).sum(axis=1), grid, plan, cfg)] = np.nan
     return out
 
@@ -96,11 +117,23 @@ def best(scores: np.ndarray, grid: list[float]) -> tuple[np.ndarray, np.ndarray]
 
 
 @numba.njit(parallel=True, cache=True)
-def _evaluate_kernel(closed: np.ndarray, float_end: np.ndarray, opened: np.ndarray,
-                      low5: np.ndarray, high5: np.ndarray, block_day: np.ndarray,
-                      lot_unit: np.ndarray, combos: np.ndarray, stagemat_base: np.ndarray,
-                      risk_grid: np.ndarray, size: float, min_lot: float, starts: np.ndarray,
-                      horizon: int, out: np.ndarray) -> None:
+def _evaluate_kernel(
+    closed: np.ndarray,
+    float_end: np.ndarray,
+    opened: np.ndarray,
+    low5: np.ndarray,
+    high5: np.ndarray,
+    block_day: np.ndarray,
+    lot_unit: np.ndarray,
+    combos: np.ndarray,
+    stagemat_base: np.ndarray,
+    risk_grid: np.ndarray,
+    size: float,
+    min_lot: float,
+    starts: np.ndarray,
+    horizon: int,
+    out: np.ndarray,
+) -> None:
     """One combination per thread: joint day arrays, then the rule machine per risk level."""
     m_total, k_max = combos.shape
     n_days = closed.shape[1]
@@ -153,8 +186,17 @@ def _evaluate_kernel(closed: np.ndarray, float_end: np.ndarray, opened: np.ndarr
             stagemat = stagemat_base.copy()
             for si in range(stagemat.shape[0]):
                 stagemat[si, _RISK] = r * size
-            outcomes = _sweep_kernel(closed_sum, float_sum, day_low, day_high, opened_sum,
-                                      stagemat, starts, size, horizon)
+            outcomes = _sweep_kernel(
+                closed_sum,
+                float_sum,
+                day_low,
+                day_high,
+                opened_sum,
+                stagemat,
+                starts,
+                size,
+                horizon,
+            )
             passes = 0
             for si in range(n_starts):
                 if outcomes[si] == 1:

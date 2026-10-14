@@ -10,7 +10,7 @@ from ui.daemon.workflow.steps import STEPS
 ORDER = [s["n"] for s in STEPS]
 BY_N = {s["n"]: s for s in STEPS}
 BY_STAGE = {s["stage"]: s["n"] for s in STEPS if "stage" in s}
-BANK = {s["bank"]: s["n"] for s in STEPS if "bank" in s}      # 10.5 fills CrossTF_Input
+BANK = {s["bank"]: s["n"] for s in STEPS if "bank" in s}  # 10.5 fills CrossTF_Input
 VARIANTS = next(s["n"] for s in STEPS if s["how"] == "variants")
 
 
@@ -24,17 +24,27 @@ def producer(databank: str, tasks: list[dict[str, Any]]) -> str | None:
     if databank in BANK:
         return BANK[databank]
     task = next((t for t in tasks if t["output"] == databank), None)
-    return next((n for stage, n in BY_STAGE.items() if task and task["title"] in titles(stage)),
-                None)
+    return next(
+        (n for stage, n in BY_STAGE.items() if task and task["title"] in titles(stage)),
+        None,
+    )
 
 
 def judge(made_by: str, before: str) -> str | None:
     """The Python step between the producer and this one whose tests read the producer's output:
     the verdict the next task should run on (WORKFLOW.md, «el contrato que une los pasos pares»)."""
     stage = BY_N[made_by].get("stage")
-    between = ORDER[ORDER.index(made_by) + 1:ORDER.index(before)]
-    return next((n for n in between if BY_N[n]["kind"] == "python"
-                 and isinstance(BY_N[n]["feeds"], tuple) and stage in BY_N[n]["feeds"]), None)
+    between = ORDER[ORDER.index(made_by) + 1 : ORDER.index(before)]
+    return next(
+        (
+            n
+            for n in between
+            if BY_N[n]["kind"] == "python"
+            and isinstance(BY_N[n]["feeds"], tuple)
+            and stage in BY_N[n]["feeds"]
+        ),
+        None,
+    )
 
 
 def of(spec: dict[str, Any], ctx: Context) -> list[str]:
@@ -58,8 +68,9 @@ def of(spec: dict[str, Any], ctx: Context) -> list[str]:
         tasks = ctx["sqx"]["tasks"]
         mine = [t for t in tasks if t["title"] in titles(spec["stage"])]
         made = {producer(t["input"], tasks) for t in mine if t["input"]} - {None, n}
-        for m in sorted((m for m in made if m is not None and ORDER.index(m) < at),
-                        key=ORDER.index):
+        for m in sorted(
+            (m for m in made if m is not None and ORDER.index(m) < at), key=ORDER.index
+        ):
             out += [m, judge(m, n)]
     elif spec["how"] == "blind":
         out += list(BLIND) + [BY_STAGE[f] for f in feeds]
@@ -68,8 +79,13 @@ def of(spec: dict[str, Any], ctx: Context) -> list[str]:
     elif feeds == "batch" and n != VARIANTS:
         out.append(VARIANTS)
     elif feeds == () and spec["kind"] == "python" and at > ORDER.index(BLIND[-1]):
-        out.append(next(m for m in reversed(ORDER[:at])
-                        if BY_N[m]["feeds"] != () or BY_N[m]["kind"] != "python"))
+        out.append(
+            next(
+                m
+                for m in reversed(ORDER[:at])
+                if BY_N[m]["feeds"] != () or BY_N[m]["kind"] != "python"
+            )
+        )
     if at:
         out.append(ORDER[at - 1])
     return sorted({m for m in out if m and m != n}, key=ORDER.index)

@@ -4,7 +4,13 @@ from collections.abc import Callable
 
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem, QWidget
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHeaderView,
+    QTableWidget,
+    QTableWidgetItem,
+    QWidget,
+)
 
 from ui.desktop.blocks import axis, chart, density
 from ui.desktop.blocks.card import card, text
@@ -37,13 +43,20 @@ def _draw(b: dict) -> Callable:
             band = QColor(SIM)
             band.setAlphaF(0.16)
             p.fillRect(QRectF(x(lo), box.top(), x(hi) - x(lo), box.height()), band)
-        chart.axes(p, box, [(x(v), chart.num(v)) for v in axis.ticks(*_span(b))],
-                   [(y(v), chart.num(v)) for v in axis.ticks(0, top * 1.08, 4)])
+        chart.axes(
+            p,
+            box,
+            [(x(v), chart.num(v)) for v in axis.ticks(*_span(b))],
+            [(y(v), chart.num(v)) for v in axis.ticks(0, top * 1.08, 4)],
+        )
         fill = QColor(SIM)
         fill.setAlphaF(0.85)
         for a, z, c in zip(edges, edges[1:], counts):
             if c:
-                p.fillRect(QRectF(x(a) + 0.5, y(c), max(x(z) - x(a) - 1, 1.5), y(0) - y(c)), fill)
+                p.fillRect(
+                    QRectF(x(a) + 0.5, y(c), max(x(z) - x(a) - 1, 1.5), y(0) - y(c)),
+                    fill,
+                )
         chart.vline(p, x(b["median"]), box, MEDIAN, 1.5, Qt.PenStyle.DashLine)
         if b["real"] is not None:
             xr = x(b["real"])
@@ -54,7 +67,9 @@ def _draw(b: dict) -> Callable:
             left = xr + 6 if xr + 6 + w < box.right() else xr - 6 - w
             p.fillRect(QRectF(left, box.top() + 2, w, 20), QColor(T["bg"]))
             p.setPen(QColor(REAL))
-            p.drawText(QRectF(left, box.top() + 2, w, 20), Qt.AlignmentFlag.AlignCenter, label)
+            p.drawText(
+                QRectF(left, box.top() + 2, w, 20), Qt.AlignmentFlag.AlignCenter, label
+            )
 
     return draw
 
@@ -74,8 +89,10 @@ def _tip(b: dict) -> Callable:
             return f"mediana de la distribución: {chart.num(b['median'], b['unit'])}"
         for a, z, c in zip(edges, edges[1:], counts):
             if x(a) <= pos.x() < x(z):
-                return (f"de {chart.num(a, b['unit'])} a {chart.num(z, b['unit'])}\n{c} casos "
-                        f"({100 * c / total:.1f} %)")
+                return (
+                    f"de {chart.num(a, b['unit'])} a {chart.num(z, b['unit'])}\n{c} casos "
+                    f"({100 * c / total:.1f} %)"
+                )
         return None
 
     return tip
@@ -84,26 +101,34 @@ def _tip(b: dict) -> Callable:
 def _percentiles(b: dict) -> QTableWidget:
     """The percentile row under the chart, the bracket that holds the real value outlined.
     With `row_unit` the heads read «1%», «10%»… and every cell carries that unit."""
-    keys = sorted(b["percentiles"], key=float)       # JSON may hand them back as text-sorted
+    keys = sorted(b["percentiles"], key=float)  # JSON may hand them back as text-sorted
     vals = [b["percentiles"][k] for k in keys]
     unit = f" {b['row_unit']}" if b.get("row_unit") else ""
     table = QTableWidget(1, len(keys))
     table.setHorizontalHeaderLabels([f"{k}%" if unit else f"p{k}" for k in keys])
     table.verticalHeader().setVisible(False)
     table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-    table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)    # a click only recoloured the cell
+    table.setSelectionMode(
+        QAbstractItemView.SelectionMode.NoSelection
+    )  # a click only recoloured the cell
     table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
     real = b["real"]
     for j, (k, v) in enumerate(zip(keys, vals)):
         # Whole units past 10 with a unit on each cell, or «-641.7 $» no longer fits.
-        item = QTableWidgetItem(chart.num(round(v) if unit and abs(v) >= 10 else v) + unit)
+        item = QTableWidgetItem(
+            chart.num(round(v) if unit and abs(v) >= 10 else v) + unit
+        )
         item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-        item.setToolTip(f"el {k} % de la distribución queda por debajo de {chart.num(v)}")
+        item.setToolTip(
+            f"el {k} % de la distribución queda por debajo de {chart.num(v)}"
+        )
         nxt = vals[j + 1] if j + 1 < len(vals) else None
         if real is not None and v <= real and (nxt is None or real < nxt):
             item.setForeground(QColor(REAL))
             item.setBackground(QColor(T["select"]))
-            item.setToolTip(item.toolTip() + f"\nel valor real ({chart.num(real)}) cae aquí")
+            item.setToolTip(
+                item.toolTip() + f"\nel valor real ({chart.num(real)}) cae aquí"
+            )
         table.setItem(0, j, item)
     table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
     table.setFixedHeight(table.horizontalHeader().height() + table.rowHeight(0) + 4)
@@ -127,11 +152,21 @@ def widget(block: dict) -> QWidget:
     mark = b.get("mark") or "Real"
     p = "" if b["p"] is None else f" · p = {num(b['p'], 'p')}"
     banded = [("box", chart.blend(SIM, 0.3), "banda")] if lo is not None else []
-    key = chart.key([("box", SIM, "distribución"), *banded,
-                     ("dash", MEDIAN, "mediana"), ("line", REAL, mark)])
+    key = chart.key(
+        [
+            ("box", SIM, "distribución"),
+            *banded,
+            ("dash", MEDIAN, "mediana"),
+            ("line", REAL, mark),
+        ]
+    )
     # Real, median and band are already in the key and the chart: only p earns a line.
     share = b.get("share_positive")
     caption = share_caption(share, b.get("pivot", 0.0)) if share is not None else ""
-    head = text(" · ".join(x for x in (p[3:], caption) if x), T["text"], 14) if p or caption else None
+    head = (
+        text(" · ".join(x for x in (p[3:], caption) if x), T["text"], 14)
+        if p or caption
+        else None
+    )
     parts = [head] if head else []
     return card(b, *parts, chart.Canvas(_draw(b), _tip(b)), key, _percentiles(b))

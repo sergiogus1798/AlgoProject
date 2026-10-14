@@ -54,7 +54,12 @@ def block(bars: pd.DataFrame, asset: dict) -> Block:
     atr = regime.atr(bars, {"atr_period": ATR_PERIOD})["vol"].mean()
     paid = inputs.cost(asset, bars["Open"].to_numpy()).mean()
     daily = pd.Series(regime.daily(bars)["Close"])
-    return {"drift_per_year": float(r.sum() / years), "abs_acf_1": float(acf[0]),
-            "abs_acf_1_20": float(np.mean(acf)), "cost": float(paid), "atr": float(atr),
-            "cost_over_atr": float(paid / atr),
-            "kaufman_daily": float(efficiency(daily, KAUFMAN_DAYS).mean())}
+    return {
+        "drift_per_year": float(r.sum() / years),
+        "abs_acf_1": float(acf[0]),
+        "abs_acf_1_20": float(np.mean(acf)),
+        "cost": float(paid),
+        "atr": float(atr),
+        "cost_over_atr": float(paid / atr),
+        "kaufman_daily": float(efficiency(daily, KAUFMAN_DAYS).mean()),
+    }

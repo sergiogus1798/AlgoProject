@@ -37,13 +37,22 @@ def seed(fresh: int, force: bool) -> int:
 def save(group: str, timeframe: str, symbol: str, got: Run) -> None:
     """Write one asset's rows (parquet) and its null statistics (npy)."""
     np.save(stem(group, timeframe, symbol).with_suffix(".npy"), got["sims"])
-    got["rows"].to_parquet(stem(group, timeframe, symbol).with_suffix(".parquet"), index=False)
+    got["rows"].to_parquet(
+        stem(group, timeframe, symbol).with_suffix(".parquet"), index=False
+    )
 
 
-def load(group: str, timeframe: str, symbols: list[str]) -> tuple[list[pd.DataFrame], np.ndarray]:
+def load(
+    group: str, timeframe: str, symbols: list[str]
+) -> tuple[list[pd.DataFrame], np.ndarray]:
     """A group's cell: each asset's rows, and the null statistics as assets x draws x tests."""
-    rows = [pd.read_parquet(stem(group, timeframe, s).with_suffix(".parquet")) for s in symbols]
-    return rows, np.array([np.load(stem(group, timeframe, s).with_suffix(".npy")) for s in symbols])
+    rows = [
+        pd.read_parquet(stem(group, timeframe, s).with_suffix(".parquet"))
+        for s in symbols
+    ]
+    return rows, np.array(
+        [np.load(stem(group, timeframe, s).with_suffix(".npy")) for s in symbols]
+    )
 
 
 def write(tables: dict[str, pd.DataFrame]) -> Path:

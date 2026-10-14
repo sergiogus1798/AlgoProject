@@ -20,5 +20,7 @@ def widget(block: dict) -> QWidget:
     b = block
     c = colour(b.get("state") or "info")
     body = text(b["text"], c, 15, True)
-    body.setStyleSheet(body.styleSheet() + f" border-left: 4px solid {c}; padding: 8px 12px;")
+    body.setStyleSheet(
+        body.styleSheet() + f" border-left: 4px solid {c}; padding: 8px 12px;"
+    )
     return body

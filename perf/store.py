@@ -14,10 +14,26 @@ if TYPE_CHECKING:
 HISTORY = "history.csv"
 # alloc_peak_mb is filled only by a memory run (memtop > 0); a timing run leaves it blank.
 # Figures restart on 2026-10-13: tracemalloc off in timings, PSS for memory, first touch outside the clock.
-COLUMNS = ["day", "time", "commit", "target", "area", "unit", "scale", "budget",
-           "wall_s", "cpu_s",
-           "rss_peak_mb", "self_rss_mb", "alloc_peak_mb", "bytes_in_mb", "wall_spread_pct",
-           "repeats", "load1", "avail_mb"]
+COLUMNS = [
+    "day",
+    "time",
+    "commit",
+    "target",
+    "area",
+    "unit",
+    "scale",
+    "budget",
+    "wall_s",
+    "cpu_s",
+    "rss_peak_mb",
+    "self_rss_mb",
+    "alloc_peak_mb",
+    "bytes_in_mb",
+    "wall_spread_pct",
+    "repeats",
+    "load1",
+    "avail_mb",
+]
 
 
 class Context(TypedDict):
@@ -52,10 +68,14 @@ def context() -> Context:
         time measured against a busy machine is not comparable with one measured against an
         idle one, and six months later nobody remembers which it was.
     """
-    fields = dict(line.split(":", 1) for line in
-                  Path("/proc/meminfo").read_text(encoding="utf-8").splitlines())
-    return {"load1": os.getloadavg()[0],
-            "avail_mb": int(fields["MemAvailable"].split()[0]) / 1024}
+    fields = dict(
+        line.split(":", 1)
+        for line in Path("/proc/meminfo").read_text(encoding="utf-8").splitlines()
+    )
+    return {
+        "load1": os.getloadavg()[0],
+        "avail_mb": int(fields["MemAvailable"].split()[0]) / 1024,
+    }
 
 
 def append(rows: list[dict], name: str = HISTORY) -> Path:
@@ -74,9 +94,12 @@ def append(rows: list[dict], name: str = HISTORY) -> Path:
     """
     where = perf_dir() / name
     where.parent.mkdir(parents=True, exist_ok=True)
-    import pandas as pd   # lazy: the disk report only needs commit() and context()
+    import pandas as pd  # lazy: the disk report only needs commit() and context()
+
     frame = pd.DataFrame(rows)
-    frame = frame[[c for c in COLUMNS if c in frame.columns]] if name == HISTORY else frame
+    frame = (
+        frame[[c for c in COLUMNS if c in frame.columns]] if name == HISTORY else frame
+    )
     if where.exists():
         stored = pd.read_csv(where)
         if list(stored.columns) != list(frame.columns):
@@ -99,6 +122,7 @@ def history(name: str = HISTORY) -> "pd.DataFrame":
         nothing has been measured yet.
     """
     import pandas as pd
+
     where = perf_dir() / name
     if not where.exists():
         return pd.DataFrame(columns=pd.Index(COLUMNS))

@@ -25,12 +25,15 @@ def _cast(old: object, raw: str) -> object:
         return new
     if isinstance(old, float) and isinstance(new, int) and not isinstance(new, bool):
         return float(new)
-    raise ValueError(f"{raw!r} is a {type(new).__name__}, the knob it replaces is a "
-                     f"{type(old).__name__}")
+    raise ValueError(
+        f"{raw!r} is a {type(new).__name__}, the knob it replaces is a "
+        f"{type(old).__name__}"
+    )
 
 
-def apply(cfg: dict[str, Any], overrides: list[str],
-          names: dict[str, Any] | None = None) -> dict[str, Any]:
+def apply(
+    cfg: dict[str, Any], overrides: list[str], names: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Apply "section.key=value" overrides in place.
 
     Args:
@@ -54,8 +57,9 @@ def apply(cfg: dict[str, Any], overrides: list[str],
     return cfg
 
 
-def load(path: Path, overrides: list[str],
-         names: Callable[[dict], dict] | None = None) -> dict[str, Any]:
+def load(
+    path: Path, overrides: list[str], names: Callable[[dict], dict] | None = None
+) -> dict[str, Any]:
     """A config.yaml with its overrides applied.
 
     Args:

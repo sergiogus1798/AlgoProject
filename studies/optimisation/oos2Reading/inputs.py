@@ -13,9 +13,11 @@ from ledger import thresholds
 from portfolio.common.construct.equity import closecurve
 
 CONFIG = Path(__file__).with_name("config.yaml")
-STEP = 19           # the policy's reserve names WFM (19), not this reading; `ledger.gate.seal` refuses any other number
+STEP = 19  # the policy's reserve names WFM (19), not this reading; `ledger.gate.seal` refuses any other number
 SEGMENT = "oos2"
-TRADES = "trades.parquet"   # per variant, in the batch folder: step 16.5's harvest writes it
+TRADES = (
+    "trades.parquet"  # per variant, in the batch folder: step 16.5's harvest writes it
+)
 
 
 def config(overrides: list[str]) -> dict[str, Any]:
@@ -38,18 +40,29 @@ def window(symbol: str) -> tuple[pd.Timestamp, pd.Timestamp]:
 
 def mother_trades(batch: Path, span: tuple[pd.Timestamp, pd.Timestamp]) -> pd.DataFrame:
     """One mother's own trades inside oos2 (schema T plus `variant_id`): the variant the manifest flags `origin`."""
-    origin = pd.read_parquet(batch / "manifest.parquet", columns=["variant_id", "origin"])
+    origin = pd.read_parquet(
+        batch / "manifest.parquet", columns=["variant_id", "origin"]
+    )
     mine = origin.loc[origin["origin"], "variant_id"].item()
     trades = pd.read_parquet(batch / TRADES, filters=[("variant_id", "==", mine)])
-    if isinstance(trades.index, pd.RangeIndex):      # the filtered read renumbers; the labels are the file's rows
-        ids = pd.read_parquet(batch / TRADES, columns=["variant_id"])["variant_id"].to_numpy()
+    if isinstance(
+        trades.index, pd.RangeIndex
+    ):  # the filtered read renumbers; the labels are the file's rows
+        ids = pd.read_parquet(batch / TRADES, columns=["variant_id"])[
+            "variant_id"
+        ].to_numpy()
         trades.index = np.flatnonzero(ids == mine)
-    return cast(pd.DataFrame, trades[(trades["Open time"] >= span[0]) & (trades["Close time"] < span[1])])
+    return cast(
+        pd.DataFrame,
+        trades[(trades["Open time"] >= span[0]) & (trades["Close time"] < span[1])],
+    )
 
 
 def daily(trades: pd.DataFrame, bars: pd.DataFrame) -> pd.Series:
     """The mother's mark-to-market P&L per feed day, flat days 0 (`closecurve`): sums to her trades' Profit/Loss."""
     if trades.empty:
         return pd.Series(0.0, index=pd.DatetimeIndex(bars.index).normalize().unique())  # pyright: ignore[reportAttributeAccessIssue]  # pandas stub lacks DatetimeIndex.normalize
-    profit, _ = closecurve.panel(trades.assign(identity="m"), bars, *closecurve.measured(trades))
+    profit, _ = closecurve.panel(
+        trades.assign(identity="m"), bars, *closecurve.measured(trades)
+    )
     return cast(pd.Series, profit["m"])

@@ -39,6 +39,13 @@ def read(returns: np.ndarray, sigma: float, n: int) -> Deflated:
     """
     got = trials.deflated(np.asarray(returns, dtype=float), sigma, n)
     excess = float(got["sharpe"] - got["benchmark"])
-    return {"sharpe": float(got["sharpe"]), "benchmark": float(got["benchmark"]), "excess": excess,
-            "dsr": float(got["dsr"]), "n": int(n), "sigma": float(sigma),
-            "n_days": int(len(returns)), "state": "pass" if excess > 0 else "fail"}
+    return {
+        "sharpe": float(got["sharpe"]),
+        "benchmark": float(got["benchmark"]),
+        "excess": excess,
+        "dsr": float(got["dsr"]),
+        "n": int(n),
+        "sigma": float(sigma),
+        "n_days": int(len(returns)),
+        "state": "pass" if excess > 0 else "fail",
+    }

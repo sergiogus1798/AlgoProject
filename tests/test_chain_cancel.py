@@ -21,12 +21,24 @@ def record(job: dict) -> dict:
 
 def deaf_job(marks: Path, marked: bool) -> dict:
     """A `launch` job deaf to SIGTERM; `marked`: it wrote the marker of a worker it started."""
-    mark = (f"from ui.daemon import workerguard\nworkerguard.MARKS = pathlib.Path({str(marks)!r})"
-            f"\nworkerguard.mark('custodian', {P!r})\n" if marked else "")
-    return jobs.start("launch", ["-c", "import pathlib, signal, time\n" + mark
-                                 + "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
-                                 "time.sleep(60)\n"],
-                      {"project": P, "role": "custodian"}, lane="conductor")
+    mark = (
+        f"from ui.daemon import workerguard\nworkerguard.MARKS = pathlib.Path({str(marks)!r})"
+        f"\nworkerguard.mark('custodian', {P!r})\n"
+        if marked
+        else ""
+    )
+    return jobs.start(
+        "launch",
+        [
+            "-c",
+            "import pathlib, signal, time\n"
+            + mark
+            + "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+            "time.sleep(60)\n",
+        ],
+        {"project": P, "role": "custodian"},
+        lane="conductor",
+    )
 
 
 def test_cancel_winds_down(root: Path) -> None:
@@ -35,11 +47,19 @@ def test_cancel_winds_down(root: Path) -> None:
     never someone else's — keeps the lane busy until that stop ends, and says what is left up."""
     jobs.LOGS, workerguard.MARKS = root / "logs", root / "marks"
     out = root / "finally.txt"
-    polite = jobs.start("launch", ["-c", (
-        "import signal, time, pathlib\nfrom ui.daemon.launch.run import graceful\n"
-        "signal.signal(signal.SIGTERM, graceful)\ntry:\n    time.sleep(60)\nfinally:\n"
-        f"    pathlib.Path({str(out)!r}).write_text('stopped')\n")],
-        {"project": P, "role": "custodian"}, lane="conductor")
+    polite = jobs.start(
+        "launch",
+        [
+            "-c",
+            (
+                "import signal, time, pathlib\nfrom ui.daemon.launch.run import graceful\n"
+                "signal.signal(signal.SIGTERM, graceful)\ntry:\n    time.sleep(60)\nfinally:\n"
+                f"    pathlib.Path({str(out)!r}).write_text('stopped')\n"
+            ),
+        ],
+        {"project": P, "role": "custodian"},
+        lane="conductor",
+    )
     time.sleep(1.5)
     assert jobs.cancel(polite["id"])
     record(polite)["_down"].join()
@@ -47,22 +67,29 @@ def test_cancel_winds_down(root: Path) -> None:
     stopped = []
     winddown.WORKERS = {"custodian": {"path": root}}
     winddown.GRACE_S = 1
-    worker.holding = lambda top: [7]            # someone's worker is up all along
-    worker.stop = lambda role, **_: (time.sleep(1), stopped.append(role))   # export=False
+    worker.holding = lambda top: [7]  # someone's worker is up all along
+    worker.stop = lambda role, **_: (
+        time.sleep(1),
+        stopped.append(role),
+    )  # export=False
     other = deaf_job(root / "marks", marked=False)
     time.sleep(1.5)
     assert jobs.cancel(other["id"])
     record(other)["_down"].join()
     assert stopped == [], "a job that started no worker never stops one"
-    assert "sigue arrancado" not in next(j for j in jobs.listing() if j["id"] == other["id"])[
-        "state"]
+    assert (
+        "sigue arrancado"
+        not in next(j for j in jobs.listing() if j["id"] == other["id"])["state"]
+    )
     mine = deaf_job(root / "marks", marked=True)
     time.sleep(1.5)
     assert jobs.cancel(mine["id"])
     job = record(mine)
     while job["_proc"].poll() is None:
         time.sleep(0.1)
-    assert job["_down"].is_alive() and jobs.public(job)["rc"] is None, "lane busy while stopping"
+    assert job["_down"].is_alive() and jobs.public(job)["rc"] is None, (
+        "lane busy while stopping"
+    )
     job["_down"].join()
     assert stopped == ["custodian"], stopped
     shown = next(j for j in jobs.listing() if j["id"] == mine["id"])
@@ -73,8 +100,11 @@ def test_cancel_python_and_snapshot(root: Path) -> None:
     """A cancel during a Python step ends the running tests at once and starts no queued one;
     a snapshot cut short leaves nothing behind."""
     got = {}
-    runner = threading.Thread(target=lambda: got.update(
-        slow=chain.command(["-c", "import time; time.sleep(30)"])))
+    runner = threading.Thread(
+        target=lambda: got.update(
+            slow=chain.command(["-c", "import time; time.sleep(30)"])
+        )
+    )
     began = time.time()
     runner.start()
     time.sleep(1)
@@ -104,7 +134,6 @@ def test_cancel_python_and_snapshot(root: Path) -> None:
     run.shutil.copytree = copy
     assert not any((root / "snapshots" / "P").iterdir()), "a partial copy must go"
     assert not run.snapshot(folder).name.endswith(".partial")
-
 
 
 if __name__ == "__main__":

@@ -17,8 +17,15 @@ from ui.desktop.theme import T
 
 def _span(b: dict) -> tuple[float, float]:
     """The x range: the bins, stretched to reach a real value that falls outside."""
-    marks = [v for v in (b["real"], *(s["median"] for s in b["series"]),
-                        *(s.get("real") for s in b["series"])) if v is not None]
+    marks = [
+        v
+        for v in (
+            b["real"],
+            *(s["median"] for s in b["series"]),
+            *(s.get("real") for s in b["series"]),
+        )
+        if v is not None
+    ]
     return min(b["bins"][0], *marks), max(b["bins"][-1], *marks)
 
 
@@ -32,8 +39,12 @@ def _draw(b: dict, hidden: set[int]) -> Callable:
         box = chart.area(rect)
         x = axis.scale(*_span(b), box.left(), box.right())
         y = axis.scale(0, top * 1.08, box.bottom(), box.top())
-        chart.axes(p, box, [(x(v), chart.num(v)) for v in axis.ticks(*_span(b))],
-                   [(y(v), chart.num(v)) for v in axis.ticks(0, top * 1.08, 4)])
+        chart.axes(
+            p,
+            box,
+            [(x(v), chart.num(v)) for v in axis.ticks(*_span(b))],
+            [(y(v), chart.num(v)) for v in axis.ticks(0, top * 1.08, 4)],
+        )
         if b.get("sign_shade", True):
             sign_shade(p, box, x, *_span(b), b.get("pivot", 0.0))
         for k, s in enumerate(b["series"]):
@@ -50,7 +61,9 @@ def _draw(b: dict, hidden: set[int]) -> Callable:
             p.fillPath(path, fill)
             p.setPen(QPen(colour, 2.5))
             p.drawPath(path)
-            chart.vline(p, x(s["median"]), box, colour.name(), 1.5, Qt.PenStyle.DashLine)
+            chart.vline(
+                p, x(s["median"]), box, colour.name(), 1.5, Qt.PenStyle.DashLine
+            )
             if s.get("real") is not None:
                 chart.vline(p, x(s["real"]), box, colour.name(), 3)
         if b["real"] is not None:
@@ -76,10 +89,15 @@ def _tip(b: dict, hidden: set[int]) -> Callable:
                 return f"mediana de {s['label']}: {chart.num(s['median'], b['unit'])}"
         for i, (a, z) in enumerate(zip(edges, edges[1:])):
             if x(a) <= pos.x() < x(z):
-                rows = [f"{s['label']}: densidad {chart.num(s['counts'][i])} · "
-                        f"{num(100 * s['counts'][i] * (z - a))} % de sus operaciones"
-                        for k, s in enumerate(b["series"]) if k not in hidden]
-                return "\n".join([f"de {chart.num(a, b['unit'])} a {chart.num(z, b['unit'])}", *rows])
+                rows = [
+                    f"{s['label']}: densidad {chart.num(s['counts'][i])} · "
+                    f"{num(100 * s['counts'][i] * (z - a))} % de sus operaciones"
+                    for k, s in enumerate(b["series"])
+                    if k not in hidden
+                ]
+                return "\n".join(
+                    [f"de {chart.num(a, b['unit'])} a {chart.num(z, b['unit'])}", *rows]
+                )
         return None
 
     return tip
@@ -91,23 +109,45 @@ def _side(b: dict) -> QWidget:
     lay = QVBoxLayout(box)
     lay.setContentsMargins(12, 0, 0, 0)
     if b.get("share_positive") is not None:
-        lay.addWidget(text(caption(b["share_positive"], b.get("pivot", 0.0)), T["text"], 14))
+        lay.addWidget(
+            text(caption(b["share_positive"], b.get("pivot", 0.0)), T["text"], 14)
+        )
     for k, s in enumerate(b["series"]):
-        real = f" · real {chart.num(s['real'], b['unit'])}" if s.get("real") is not None else ""
-        lay.addWidget(text(f'<span style="color:{SERIES[k % len(SERIES)]}">■</span> '
-                           f"<b>{s['label']}</b><br>n {num(s['n'])} · mediana "
-                           f"{chart.num(s['median'], b['unit'])}{real}", T["text"], 13))
+        real = (
+            f" · real {chart.num(s['real'], b['unit'])}"
+            if s.get("real") is not None
+            else ""
+        )
+        lay.addWidget(
+            text(
+                f'<span style="color:{SERIES[k % len(SERIES)]}">■</span> '
+                f"<b>{s['label']}</b><br>n {num(s['n'])} · mediana "
+                f"{chart.num(s['median'], b['unit'])}{real}",
+                T["text"],
+                13,
+            )
+        )
     shift = b.get("shift")
     if shift:
         first, last = b["series"][0]["label"], b["series"][-1]["label"]
-        move = text(f"{label('density.shift')}<br><b>{chart.num(shift['median'], b['unit'])}</b> "
-                    f"({last} − {first})", T["text"], 14)
-        move.setToolTip("Cuánto se movió la operación típica de una muestra a la otra, en la "
-                        "unidad del gráfico.")
-        ks = text(f"{label('density.ks')}<br><b>{num(shift['ks_p'], 'p')}</b>", T["text"], 14)
-        ks.setToolTip("Prueba de Kolmogorov-Smirnov de dos muestras: la probabilidad de ver una "
-                      "diferencia de forma así de grande si las dos muestras vinieran de la misma "
-                      "distribución. Pequeño = las operaciones cambiaron de verdad.")
+        move = text(
+            f"{label('density.shift')}<br><b>{chart.num(shift['median'], b['unit'])}</b> "
+            f"({last} − {first})",
+            T["text"],
+            14,
+        )
+        move.setToolTip(
+            "Cuánto se movió la operación típica de una muestra a la otra, en la "
+            "unidad del gráfico."
+        )
+        ks = text(
+            f"{label('density.ks')}<br><b>{num(shift['ks_p'], 'p')}</b>", T["text"], 14
+        )
+        ks.setToolTip(
+            "Prueba de Kolmogorov-Smirnov de dos muestras: la probabilidad de ver una "
+            "diferencia de forma así de grande si las dos muestras vinieran de la misma "
+            "distribución. Pequeño = las operaciones cambiaron de verdad."
+        )
         lay.addWidget(move)
         lay.addWidget(ks)
     lay.addStretch(1)
@@ -139,8 +179,10 @@ def widget(b: dict, percentiles: QWidget) -> QWidget:
         box = QCheckBox(f"{s['label']} (n {num(s['n'])})")
         box.setChecked(True)
         box.setStyleSheet(f"color:{SERIES[k % len(SERIES)]}; font-weight:700;")
-        box.setToolTip("Enseña u oculta esta muestra. Cada una está normalizada como densidad "
-                       "(su área vale 1): muestras de distinta longitud se comparan por su forma.")
+        box.setToolTip(
+            "Enseña u oculta esta muestra. Cada una está normalizada como densidad "
+            "(su área vale 1): muestras de distinta longitud se comparan por su forma."
+        )
         box.toggled.connect(lambda on, k=k: flip(k, on))
         toggles.addWidget(box)
     toggles.addStretch(1)

@@ -2,8 +2,18 @@
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import (QFrame, QGridLayout, QHBoxLayout, QLabel, QMessageBox, QPushButton,
-                               QScrollArea, QSplitter, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import client
 from ui.desktop.assetforms import NewAssetBox
@@ -28,7 +38,8 @@ class Assets(QWidget):
         self.counts.setToolTip(
             "Bloqueado = algún coste obligatorio sin pactar o el esquema roto: la preflight "
             "sale distinta de 0 y no se autoriza nada. Provisional = hay cifra, se puede "
-            "trabajar, y todo resultado con coste arrastra la advertencia.")
+            "trabajar, y todo resultado con coste arrastra la advertencia."
+        )
         new = QPushButton("Nuevo activo")
         new.clicked.connect(self.on_new)
         row.addWidget(self.counts)
@@ -50,7 +61,9 @@ class Assets(QWidget):
         self.area.setWidget(holder)
         self.area.setWidgetResizable(True)
         self.area.verticalScrollBar().valueChanged.connect(self.read_visible)
-        self.area.verticalScrollBar().rangeChanged.connect(lambda *_: self.read_visible())
+        self.area.verticalScrollBar().rangeChanged.connect(
+            lambda *_: self.read_visible()
+        )
         self.area.setFrameShape(QFrame.Shape.NoFrame)
         split.addWidget(self.area)
         split.setStretchFactor(1, 1)
@@ -96,10 +109,18 @@ class Assets(QWidget):
     def recount(self) -> None:
         """Read the library's state and say how many assets are blocked or provisional."""
         self.data = client.get("assets")
-        blocked = [a["symbol"] for a in self.data["assets"] if a["pending"] or a["broken"]]
-        soft = [a for a in self.data["assets"] if a["provisional"] and a["symbol"] not in blocked]
-        self.counts.setText(f"{len(self.data['assets'])} activos · {len(blocked)} bloqueados · "
-                            f"{len(soft)} sólo con cifras provisionales")
+        blocked = [
+            a["symbol"] for a in self.data["assets"] if a["pending"] or a["broken"]
+        ]
+        soft = [
+            a
+            for a in self.data["assets"]
+            if a["provisional"] and a["symbol"] not in blocked
+        ]
+        self.counts.setText(
+            f"{len(self.data['assets'])} activos · {len(blocked)} bloqueados · "
+            f"{len(soft)} sólo con cifras provisionales"
+        )
 
     def show_page(self, symbol: str) -> None:
         """Scroll the grid to one asset's page.
@@ -119,7 +140,9 @@ class Assets(QWidget):
         """
         self.pages[symbol].refresh()
         self.recount()
-        self.list.blockSignals(True)   # reselecting it must not scroll away from the edit
+        self.list.blockSignals(
+            True
+        )  # reselecting it must not scroll away from the edit
         self.list.fill(self.data["assets"], symbol)
         self.list.blockSignals(False)
 

@@ -16,7 +16,9 @@ def cliques(graph: np.ndarray, limit: int) -> np.ndarray | None:
     """
     n = graph.shape[0]
     found: list[np.ndarray] = []
-    stack: list[tuple[np.ndarray, np.ndarray]] = [(np.empty(0, dtype=np.int32), np.arange(n, dtype=np.int32))]
+    stack: list[tuple[np.ndarray, np.ndarray]] = [
+        (np.empty(0, dtype=np.int32), np.arange(n, dtype=np.int32))
+    ]
     while stack:
         members, candidates = stack.pop()
         for pos, node in enumerate(candidates):
@@ -24,7 +26,7 @@ def cliques(graph: np.ndarray, limit: int) -> np.ndarray | None:
             found.append(grown)
             if len(found) > limit:
                 return None
-            later = candidates[pos + 1:]
+            later = candidates[pos + 1 :]
             stack.append((grown, later[graph[node, later]]))
     out = np.zeros((len(found), n), dtype=bool)
     for row, clique in enumerate(found):

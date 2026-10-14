@@ -2,10 +2,21 @@
 
 import re
 
-STATE = {"pass": "Pasa", "fail": "Falla", "watch": "Vigilar", "none": "Sin juicio",
-         "info": "Info"}
-CALL = {"blind": "Ciega", "predicts": "Predice", "perverse": "Perversa",
-        "pasa": "Pasa", "limbo": "Limbo", "no_pasa": "No pasa"}
+STATE = {
+    "pass": "Pasa",
+    "fail": "Falla",
+    "watch": "Vigilar",
+    "none": "Sin juicio",
+    "info": "Info",
+}
+CALL = {
+    "blind": "Ciega",
+    "predicts": "Predice",
+    "perverse": "Perversa",
+    "pasa": "Pasa",
+    "limbo": "Limbo",
+    "no_pasa": "No pasa",
+}
 
 
 def call(label: str) -> str:

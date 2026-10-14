@@ -24,9 +24,17 @@ NS = [s["n"] for s in STEPS]
 
 def rail(done_to: str, last: str = "15") -> dict:
     """The rail up to `last` as GET /api/workflow gives it: done up to `done_to`, then pending."""
-    out = [{**spec, "state": "done" if NS.index(spec["n"]) <= NS.index(done_to) else "pending",
-            "tests": [{"key": k, "runnable": True, "auto": True, "state": "pending"}
-                      for k in spec["studies"]]} for spec in STEPS[:NS.index(last) + 1]]
+    out = [
+        {
+            **spec,
+            "state": "done" if NS.index(spec["n"]) <= NS.index(done_to) else "pending",
+            "tests": [
+                {"key": k, "runnable": True, "auto": True, "state": "pending"}
+                for k in spec["studies"]
+            ],
+        }
+        for spec in STEPS[: NS.index(last) + 1]
+    ]
     return {"steps": out, "family": "fam"}
 
 
@@ -38,28 +46,56 @@ def kinds(todo: dict) -> list[tuple[str, str]]:
 def test_t1_runs_after_step_12s_judge_and_before_the_mc_retest() -> None:
     """12 judged, then the neighbours, the MCR tasks, the study, its judge, and only then SPP."""
     assert kinds(plan.plan(rail("11.7"))) == [
-        ("12", "python"), ("12", "judge"), ("13", "neighbours"), ("13", "sqx"),
-        ("14", "python"), ("14", "judge"), ("15", "sqx")]
+        ("12", "python"),
+        ("12", "judge"),
+        ("13", "neighbours"),
+        ("13", "sqx"),
+        ("14", "python"),
+        ("14", "judge"),
+        ("15", "sqx"),
+    ]
 
 
 def test_a_step_13_already_done_plans_no_neighbours() -> None:
     """T1 belongs to step 13's run: with 13 done, 14 is studied and judged on what there is."""
-    assert kinds(plan.plan(rail("13"))) == [("14", "python"), ("14", "judge"), ("15", "sqx")]
+    assert kinds(plan.plan(rail("13"))) == [
+        ("14", "python"),
+        ("14", "judge"),
+        ("15", "sqx"),
+    ]
 
 
-def test_the_dispatch_hands_t1_the_mothers_crosstf_holds(monkeypatch: pytest.MonkeyPatch,
-                                                         tmp_path: Path) -> None:
+def test_the_dispatch_hands_t1_the_mothers_crosstf_holds(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """`tailrun` runs the kind; a scaled sibling never enters; nobody left is a clean stop."""
     for name in ("Strategy 1.2.3", "Strategy 1.2.3_ScaledH4", "Strategy 4.5.6"):
         (tmp_path / f"{name}.sqx").write_bytes(b"")
-    monkeypatch.setattr(neighbours, "databank_dir", lambda project, bank, install: tmp_path)
+    monkeypatch.setattr(
+        neighbours, "databank_dir", lambda project, bank, install: tmp_path
+    )
     monkeypatch.setattr(neighbours.apply_verdict, "install_of", lambda role: tmp_path)
     seen = {}
-    monkeypatch.setattr(neighbours, "run", lambda project, role, mothers, stamp: seen.update(
-        mothers=list(mothers["strategy"]), files=list(mothers["file"]), stamp=stamp) or "hecho")
+    monkeypatch.setattr(
+        neighbours,
+        "run",
+        lambda project, role, mothers, stamp: (
+            seen.update(
+                mothers=list(mothers["strategy"]),
+                files=list(mothers["file"]),
+                stamp=stamp,
+            )
+            or "hecho"
+        ),
+    )
     assert "neighbours" in tailrun.KINDS
-    said = tailrun.run({"n": "13", "kind": "neighbours", "tests": []}, "P", "custodian",
-                       tmp_path / "20261007-120000", {})
+    said = tailrun.run(
+        {"n": "13", "kind": "neighbours", "tests": []},
+        "P",
+        "custodian",
+        tmp_path / "20261007-120000",
+        {},
+    )
     assert said == "hecho" and seen["stamp"] == "20261007-120000"
     assert seen["mothers"] == ["Strategy 1.2.3", "Strategy 4.5.6"]
     assert all(f.exists() for f in seen["files"])
@@ -75,13 +111,18 @@ def test_the_stage_runs_three_tasks_and_step_14_cuts_what_spp_reads() -> None:
     assert stage.titles("mcretest") == ["MCR 1 Bar", "MCR 4 MinDist", "MCR 7 OHLC"]
     with zipfile.ZipFile(builder.DONOR) as z:
         members = {n: z.read(n) for n in z.namelist()}
-    members, _ = keep(members, {"Build", "Retest"},
-                      only=wf.kept_members(members["config.xml"].decode("utf-8")))
+    members, _ = keep(
+        members,
+        {"Build", "Retest"},
+        only=wf.kept_members(members["config.xml"].decode("utf-8")),
+    )
     wf.complete(members)
     chain_databanks(members)
     wf.rewire(members)
     io = crosstfload.banks(members)
-    cut = yaml.safe_load(judge.CRITERIA.read_text(encoding="utf-8"))["steps"]["14"]["cut"]
+    cut = yaml.safe_load(judge.CRITERIA.read_text(encoding="utf-8"))["steps"]["14"][
+        "cut"
+    ]
     assert io["SPP IS"]["Input"] == cut == "MCR 7 OHLC"
     assert [t for t in io if t.startswith("MCR")] == stage.titles("mcretest")
     for title in stage.titles("mcretest"):
@@ -89,7 +130,9 @@ def test_the_stage_runs_three_tasks_and_step_14_cuts_what_spp_reads() -> None:
     assert io["SPP OOS"]["Input"] == "SPP IS"
 
 
-def test_a_plan_with_feedquality_refuses_an_unscanned_feed(tmp_path: Path = Path("/nonexistent")) -> None:
+def test_a_plan_with_feedquality_refuses_an_unscanned_feed(
+    tmp_path: Path = Path("/nonexistent"),
+) -> None:
     """Before any CPU: a plan that runs feedQuality on a feed with no `summary.json` exits; one
     that does not run it, or whose feed is scanned, goes on."""
     do = [{"n": "8", "kind": "python", "tests": ["gate", "feedQuality"]}]
@@ -98,9 +141,17 @@ def test_a_plan_with_feedquality_refuses_an_unscanned_feed(tmp_path: Path = Path
         m.setattr(plan, "feed_quality_dir", lambda feed: tmp_path / feed)
         with pytest.raises(SystemExit, match="X_M1 no está escaneado"):
             plan.scanned("X", do)
-        plan.scanned("X", [{"n": "6", "kind": "sqx"}, {"n": "8", "kind": "python", "tests": ["gate"]}])
-        m.setattr(plan, "feed_quality_dir", lambda feed: Path(__file__).parent)   # any folder...
-        m.setattr(Path, "exists", lambda self: True)                              # ...with the file
+        plan.scanned(
+            "X",
+            [
+                {"n": "6", "kind": "sqx"},
+                {"n": "8", "kind": "python", "tests": ["gate"]},
+            ],
+        )
+        m.setattr(
+            plan, "feed_quality_dir", lambda feed: Path(__file__).parent
+        )  # any folder...
+        m.setattr(Path, "exists", lambda self: True)  # ...with the file
         plan.scanned("X", do)
 
 
@@ -112,14 +163,18 @@ if __name__ == "__main__":
     print("ok (the dispatch test needs pytest)")
 
 
-def test_a_python_step_the_last_run_failed_at_runs_again_though_its_rail_says_done(tmp_path: Path) -> None:
+def test_a_python_step_the_last_run_failed_at_runs_again_though_its_rail_says_done(
+    tmp_path: Path,
+) -> None:
     """OPEN #111: partial results make step 14 «done»; `FALLO en el paso 14` reopens it."""
     data = rail("14")
     for s in data["steps"]:
         for t in s["tests"]:
             t["state"] = "done"
     (tmp_path / "1").mkdir()
-    (tmp_path / "1" / "estado.txt").write_text("01:25:24 FALLO en el paso 14: x\n", encoding="utf-8")
+    (tmp_path / "1" / "estado.txt").write_text(
+        "01:25:24 FALLO en el paso 14: x\n", encoding="utf-8"
+    )
     plan.reopen(data, tmp_path / "2")
     assert ("14", "python") in kinds(plan.plan(data))
 
@@ -134,6 +189,7 @@ def test_a_failed_variant_batch_runs_again_too(tmp_path: Path) -> None:
             t["state"] = "done"
     (tmp_path / "1").mkdir()
     (tmp_path / "1" / "estado.txt").write_text(
-        "09:32:02 FALLO en el paso 16.5: sqx.variants.execute: x\n", encoding="utf-8")
+        "09:32:02 FALLO en el paso 16.5: sqx.variants.execute: x\n", encoding="utf-8"
+    )
     plan.reopen(data, tmp_path / "2")
     assert ("16.5", "variants") in kinds(plan.plan(data))

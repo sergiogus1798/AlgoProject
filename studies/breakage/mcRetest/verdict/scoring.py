@@ -12,10 +12,11 @@ VERDICTS = ("STRONG", "ACCEPTABLE", "MARGINAL", "FAIL", "INCONCLUSIVE")
 # ingredients are not visible is a number nobody can argue with.
 BUILT_FROM = {
     "production": "el percentil 5 de beneficio bajo estrés combinado, su drawdown condicional "
-                  "y la proporción de re-ejecuciones que mantuvieron el Sharpe positivo",
+    "y la proporción de re-ejecuciones que mantuvieron el Sharpe positivo",
     "execution": "la peor de las tres pruebas de ejecución: spread, slippage y distancia mínima",
     "specification": "la peor de las dos de especificación: parámetros y salidas",
-    "data": "la perturbación del histórico de precios"}
+    "data": "la perturbación del histórico de precios",
+}
 
 
 def curve(value: float, bad: float, good: float) -> float:
@@ -50,10 +51,14 @@ def _kept(result: dict, role: str) -> float:
         percentile is perfectly meaningful and the gate reads it. Filtering on the stricter
         one here made the execution subscore 100 while the execution gate was vetoing.
     """
-    shares = [result[key]["fragility"]["net_p5"]["point"] / result[key]["original_net"]
-              for key in result
-              if key in tasks.ROLE and tasks.ROLE[key] == role
-              and result[key]["original_net"] > 0 and result[key]["modes"]["perturbed"]]
+    shares = [
+        result[key]["fragility"]["net_p5"]["point"] / result[key]["original_net"]
+        for key in result
+        if key in tasks.ROLE
+        and tasks.ROLE[key] == role
+        and result[key]["original_net"] > 0
+        and result[key]["modes"]["perturbed"]
+    ]
     return min(shares) if shares else 1.0
 
 
@@ -76,12 +81,22 @@ def subscores(result: dict, cfg: dict) -> dict[str, float]:
     g = cfg["gates"]
     return {
         "production": min(
-            curve(stress["fragility"]["net_p5"]["point"], 0.0, stress["original_net"] * 0.5),
-            curve(stress["fragility"]["drawdown"]["cvar"], g["survival_dd_pct"] * 100, 5.0),
-            curve(stress["evidence"]["p_positive"], 0.5, 1.0)) if stress else 0.0,
+            curve(
+                stress["fragility"]["net_p5"]["point"],
+                0.0,
+                stress["original_net"] * 0.5,
+            ),
+            curve(
+                stress["fragility"]["drawdown"]["cvar"], g["survival_dd_pct"] * 100, 5.0
+            ),
+            curve(stress["evidence"]["p_positive"], 0.5, 1.0),
+        )
+        if stress
+        else 0.0,
         "execution": curve(_kept(result, "execution"), g["exec_keep_frac"], 1.0),
         "specification": curve(_kept(result, "specification"), 0.0, 1.0),
-        "data": curve(_kept(result, "data"), 0.0, 1.0)}
+        "data": curve(_kept(result, "data"), 0.0, 1.0),
+    }
 
 
 class Verdict(TypedDict):
@@ -120,10 +135,20 @@ def verdict(scores: dict, flags: list[Flag], cfg: dict) -> Verdict:
     elif blocked:
         call = "INCONCLUSIVE"
     else:
-        call = ("STRONG" if composite >= tiers[0] else
-                "ACCEPTABLE" if composite >= tiers[1] else
-                "MARGINAL" if composite >= tiers[2] else "FAIL")
-    return {"composite": round(composite, 1), "verdict": call, "subscores": scores,
-            "binding": min(scores, key=lambda k: scores[k]),
-            "vetoes": sorted({flag["veto"] for flag in vetoed}),
-            "blocked_by": sorted({flag["veto"] for flag in blocked})}
+        call = (
+            "STRONG"
+            if composite >= tiers[0]
+            else "ACCEPTABLE"
+            if composite >= tiers[1]
+            else "MARGINAL"
+            if composite >= tiers[2]
+            else "FAIL"
+        )
+    return {
+        "composite": round(composite, 1),
+        "verdict": call,
+        "subscores": scores,
+        "binding": min(scores, key=lambda k: scores[k]),
+        "vetoes": sorted({flag["veto"] for flag in vetoed}),
+        "blocked_by": sorted({flag["veto"] for flag in blocked}),
+    }

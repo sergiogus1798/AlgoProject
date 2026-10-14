@@ -39,10 +39,14 @@ def reference(cells: pd.DataFrame, mode: str, centre: str) -> pd.Series:
         `fijo`: the median across cells of each WEEK (a series; its sum is not the median of
         the cells' sums that L1 reads). `reoptimizado`: the centre cell's column.
     """
-    return cast(pd.Series, cells[centre] if mode == "reoptimizado" else cells.median(axis=1))
+    return cast(
+        pd.Series, cells[centre] if mode == "reoptimizado" else cells.median(axis=1)
+    )
 
 
-def l2(ref: pd.Series, mother: pd.Series, signs: np.ndarray, years: float) -> dict[str, Any]:
+def l2(
+    ref: pd.Series, mother: pd.Series, signs: np.ndarray, years: float
+) -> dict[str, Any]:
     """Re-optimising against freezing: the weekly difference, under the same sign sets.
 
     Args:
@@ -72,7 +76,7 @@ def effective(cells: pd.DataFrame) -> float:
     """
     live = cells.loc[:, cells.std() > 0]
     values = np.linalg.eigvalsh(np.corrcoef(live.to_numpy(), rowvar=False))
-    return float(values.sum() ** 2 / (values ** 2).sum())
+    return float(values.sum() ** 2 / (values**2).sum())
 
 
 def skewness(cells: pd.DataFrame) -> float:

@@ -26,7 +26,9 @@ class Opens(QWidget):
     workspace: WorkspaceZone
     estrategia: flow.StrategyZone
     ficha: Ficha
-    zones: dict[str, Any]   # each zone has its own API (`open`, `reload`, signals): not one type
+    zones: dict[
+        str, Any
+    ]  # each zone has its own API (`open`, `reload`, signals): not one type
     status: QLabel
     open_zone: Callable[[str], None]
 
@@ -36,8 +38,10 @@ class Opens(QWidget):
         Args:
             item: A row as `cmdpalette.CmdPalette.gather` built it; `kind` says which.
         """
-        kind, fields = item["kind"], {k: item[k] for k in ("project", "asset", "databank")
-                                      if k in item}
+        kind, fields = (
+            item["kind"],
+            {k: item[k] for k in ("project", "asset", "databank") if k in item},
+        )
         if kind == "zone":
             self.open_zone(item["label"])
         elif kind == "study":
@@ -46,7 +50,9 @@ class Opens(QWidget):
             if self.ficha.page is not None:
                 self.ficha.page.open_study(item["study"])
         elif kind == "strategy":
-            SELECTION.choose(**fields, strategy=item["label"], identity=item["identity"])
+            SELECTION.choose(
+                **fields, strategy=item["label"], identity=item["identity"]
+            )
             self.estrategia.show_live()
             self.open_zone("Estrategia")
         elif kind == "project":
@@ -117,8 +123,10 @@ class Opens(QWidget):
             self.palettes.show_family(cell["family"])
         elif action == "new":
             self.open_zone("Nueva plantilla")
-            self.chat.start(cell["family"], " · ".join(
-                x for x in (cell["symbol"], cell["timeframe"]) if x))
+            self.chat.start(
+                cell["family"],
+                " · ".join(x for x in (cell["symbol"], cell["timeframe"]) if x),
+            )
         elif action == "research":
             self.open_zone("Investigar")
             research.open_cell(cell["symbol"], cell["timeframe"])

@@ -55,9 +55,14 @@ def batch(job: tuple) -> dict[str, np.ndarray]:
     for lo in range(0, n, height):
         high = min(lo + height, n)
         if kind == "draw":
-            kernel.gathered(source, draws.DRAWS[model](high - lo, source.size, rng, block),
-                            equity0, out[lo:high])
+            kernel.gathered(
+                source,
+                draws.DRAWS[model](high - lo, source.size, rng, block),
+                equity0,
+                out[lo:high],
+            )
         else:
-            kernel.priced(stress.STRESS[model](data, high - lo, rng, cfg_c), equity0,
-                          out[lo:high])
+            kernel.priced(
+                stress.STRESS[model](data, high - lo, rng, cfg_c), equity0, out[lo:high]
+            )
     return {name: out[:, i].copy() for i, name in enumerate(metrics.NAMES)}

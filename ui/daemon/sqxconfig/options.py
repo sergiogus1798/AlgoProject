@@ -33,11 +33,19 @@ def spans(section: str) -> list[str]:
         which `sqx.projects.setups.span` would refuse otherwise.
     """
     segs = policy()["segments_default"]
-    allowed = [n for n in segs if not assetdata.enforced()
-               or section.upper() in segs[n].get("reserved_for", [section.upper()])]
+    allowed = [
+        n
+        for n in segs
+        if not assetdata.enforced()
+        or section.upper() in segs[n].get("reserved_for", [section.upper()])
+    ]
     names = list(segs)
-    return allowed + [f"{a}..{b}" for i, a in enumerate(names) for b in names[i + 1:]
-                      if a in allowed and b in allowed]
+    return allowed + [
+        f"{a}..{b}"
+        for i, a in enumerate(names)
+        for b in names[i + 1 :]
+        if a in allowed and b in allowed
+    ]
 
 
 def metrics(index: int) -> list[str]:
@@ -59,8 +67,12 @@ def metrics(index: int) -> list[str]:
 
 def _number(path: list) -> dict[str, Any]:
     """A number's spec with the range `lists.RANGES` gives it, if any."""
-    lo, hi = L.RANGES.get((path[0], path[-1]), L.WFM_AXES.get(path[-2], (None, None))
-                          if path[0] == "wfm" and len(path) > 2 else (None, None))
+    lo, hi = L.RANGES.get(
+        (path[0], path[-1]),
+        L.WFM_AXES.get(path[-2], (None, None))
+        if path[0] == "wfm" and len(path) > 2
+        else (None, None),
+    )
     return {"type": "number", "min": lo, "max": hi}
 
 
@@ -77,8 +89,10 @@ def _build(path: list, value: object) -> dict | None:
     """
     section, last = path[0], path[-1]
     if last == "precision" or section == "precision":
-        return {"type": "choice", "options": L.MC_PRECISIONS if section == "mc_retest"
-                else L.PRECISIONS}
+        return {
+            "type": "choice",
+            "options": L.MC_PRECISIONS if section == "mc_retest" else L.PRECISIONS,
+        }
     if path == ["engine"]:
         return {"type": "choice", "options": choice(L.ENGINES)}
     if path == ["order_types"]:
@@ -88,15 +102,24 @@ def _build(path: list, value: object) -> dict | None:
     if path == ["databank", "stop_condition"]:
         return {"type": "choice", "options": choice(L.STOP_CONDITIONS)}
     if path[:2] == ["crosstf", "timeframes"]:
-        return {"type": "choices", "options": choice([t for t in MINUTES if t not in (last, "D1")]),
-                "warn": L.REREAD.format(who="el estudio crossTF (studies/transfer/crossTF)")}
+        return {
+            "type": "choices",
+            "options": choice([t for t in MINUTES if t not in (last, "D1")]),
+            "warn": L.REREAD.format(
+                who="el estudio crossTF (studies/transfer/crossTF)"
+            ),
+        }
     if section == "crosschecks" and last in ("build", "default"):
         return {"type": "choices", "options": choice(L.CROSSCHECKS)}
     if last in ("segment", "costs_segment"):
         return {"type": "choice", "options": choice(spans(section))}
     if path == ["wfm", "wf_type"]:
-        return {"type": "choice", "options": [{"value": k, "text": f"{k} · {v[1]}"}
-                                              for k, v in WF_TYPES.items()]}
+        return {
+            "type": "choice",
+            "options": [
+                {"value": k, "text": f"{k} · {v[1]}"} for k, v in WF_TYPES.items()
+            ],
+        }
     if section == "wfm" and last in ("period_type", "optimization_type"):
         return {"type": "text", "locked": L.LOCKED["fixed"]}
     if path[:2] == ["wfm", "conditions"]:
@@ -131,7 +154,10 @@ def _policy(path: list, value: object) -> dict | None:
 def _classes(path: list, value: object) -> dict | None:
     """The spec of one value of _classes.yaml, or None to fall back on its type."""
     if path[-1] in L.CLASS_CONTRACT:
-        return {"type": "list" if isinstance(value, list) else "text", "locked": L.LOCKED["classes"]}
+        return {
+            "type": "list" if isinstance(value, list) else "text",
+            "locked": L.LOCKED["classes"],
+        }
     if path[-1] == "sqx_method":
         return {"type": "choice", "options": choice(L.COMMISSIONS)}
     if path[-1] == "sqx_type":
@@ -154,13 +180,21 @@ def spec(name: str, path: list, value: object) -> dict[str, Any]:
         not be written here, and `warn` when changing it re-reads past runs.
     """
     if name == "markets":
-        return {"type": "list" if isinstance(value, list) else "text", "locked": L.LOCKED["markets"]}
+        return {
+            "type": "list" if isinstance(value, list) else "text",
+            "locked": L.LOCKED["markets"],
+        }
     found = {"build": _build, "policy": _policy, "classes": _classes}[name](path, value)
     if found:
         return found
     if isinstance(value, bool):
-        return {"type": "bool", "options": [{"value": True, "text": "sí · true"},
-                                            {"value": False, "text": "no · false"}]}
+        return {
+            "type": "bool",
+            "options": [
+                {"value": True, "text": "sí · true"},
+                {"value": False, "text": "no · false"},
+            ],
+        }
     # SQX's own booleans travel as the strings "true"/"false"; the quotes are kept on write.
     if value in ("true", "false"):
         return {"type": "choice", "options": choice(["true", "false"])}

@@ -9,12 +9,17 @@ registrations nothing references any more.
 System databanks (the first `system_count` by position, default 5) are always
 kept; SQX expects them to exist.
 """
+
 import sys
 import xml.etree.ElementTree as ET
 
 
-def keep(members: dict[str, bytes], keep_types: set[str], system_count: int = 5,
-         only: set[str] | None = None) -> tuple[dict[str, bytes], dict]:
+def keep(
+    members: dict[str, bytes],
+    keep_types: set[str],
+    system_count: int = 5,
+    only: set[str] | None = None,
+) -> tuple[dict[str, bytes], dict]:
     """Strip a project's contents down to the chosen task types.
 
     Args:
@@ -36,7 +41,9 @@ def keep(members: dict[str, bytes], keep_types: set[str], system_count: int = 5,
     kept, dropped = [], []
     assert tasks_el is not None
     for t in list(tasks_el.findall("Task")):
-        wanted = t.get("type") in keep_types and (not only or t.get("taskXMLFile") in only)
+        wanted = t.get("type") in keep_types and (
+            not only or t.get("taskXMLFile") in only
+        )
         (kept if wanted else dropped).append(t)
     if not kept:
         sys.exit(f"nothing kept - no task of type(s) {sorted(keep_types)}")
@@ -58,7 +65,9 @@ def keep(members: dict[str, bytes], keep_types: set[str], system_count: int = 5,
 
     dbs_el = cfg.find("Databanks")
     assert dbs_el is not None
-    by_pos = sorted(dbs_el.findall("Databank"), key=lambda d: int(d.get("position") or 0))
+    by_pos = sorted(
+        dbs_el.findall("Databank"), key=lambda d: int(d.get("position") or 0)
+    )
     system = {d.get("name") for d in by_pos[:system_count]}
     dropped_dbs = []
     for d in list(dbs_el.findall("Databank")):
@@ -71,8 +80,10 @@ def keep(members: dict[str, bytes], keep_types: set[str], system_count: int = 5,
     for f in dropped_files:
         members.pop(f, None)
 
-    return members, {"kept": [t.get("type") for t in kept],
-                     "dropped": sorted({t.get("type") for t in dropped}),
-                     "dropped_files": len(dropped_files),
-                     "databanks": [d.get("name") for d in dbs_el.findall("Databank")],
-                     "dropped_databanks": dropped_dbs}
+    return members, {
+        "kept": [t.get("type") for t in kept],
+        "dropped": sorted({t.get("type") for t in dropped}),
+        "dropped_files": len(dropped_files),
+        "databanks": [d.get("name") for d in dbs_el.findall("Databank")],
+        "dropped_databanks": dropped_dbs,
+    }

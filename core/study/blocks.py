@@ -16,8 +16,18 @@ STATES = ("pass", "fail", "watch", "info", "none")
 
 # Every key a block of each kind must carry, beyond "kind". Optional keys are not listed.
 KINDS = {
-    "distribution": ("title", "unit", "bins", "counts", "real", "median", "band",
-                     "percentiles", "p", "note"),
+    "distribution": (
+        "title",
+        "unit",
+        "bins",
+        "counts",
+        "real",
+        "median",
+        "band",
+        "percentiles",
+        "p",
+        "note",
+    ),
     "cone": ("title", "unit", "x", "bands", "real", "split"),
     "grid": ("title", "rows", "cols", "values", "scale", "levels", "labels"),
     "scatter": ("title", "x_label", "y_label", "points", "quadrants", "fit"),
@@ -77,14 +87,26 @@ def thin(length: int, most: int = 400) -> list[int]:
     Returns:
         Sorted indices, every one of them when the series is already short.
     """
-    return sorted(set(np.linspace(0, length - 1, min(length, most)).astype(int).tolist()))
+    return sorted(
+        set(np.linspace(0, length - 1, min(length, most)).astype(int).tolist())
+    )
 
 
-def distribution(title: str, unit: str, values: np.ndarray, real: float | None, note: str,
-                 p: float | None = None, band: tuple[float, float] = (5, 95),
-                 bins: int = 60, series: dict[str, np.ndarray] | None = None,
-                 shift: dict | None = None, reals: dict[str, float | None] | None = None,
-                 sign_shade: bool = True, pivot: float = 0.0) -> dict[str, Any]:
+def distribution(
+    title: str,
+    unit: str,
+    values: np.ndarray,
+    real: float | None,
+    note: str,
+    p: float | None = None,
+    band: tuple[float, float] = (5, 95),
+    bins: int = 60,
+    series: dict[str, np.ndarray] | None = None,
+    shift: dict | None = None,
+    reals: dict[str, float | None] | None = None,
+    sign_shade: bool = True,
+    pivot: float = 0.0,
+) -> dict[str, Any]:
     """The null's distribution with the real value marked, aggregated from the raw draws.
 
     Args:
@@ -109,17 +131,26 @@ def distribution(title: str, unit: str, values: np.ndarray, real: float | None, 
     """
     v = np.asarray(values, dtype=float)
     v = v[np.isfinite(v)]
-    if not v.size: raise ValueError(f"{title}: no finite draw to build a distribution from")
+    if not v.size:
+        raise ValueError(f"{title}: no finite draw to build a distribution from")
     inside, lo, hi = clip.clip(v)
-    edges = np.histogram_bin_edges(inside, bins=bins, range=(lo, hi if hi > lo else lo + 1))
+    edges = np.histogram_bin_edges(
+        inside, bins=bins, range=(lo, hi if hi > lo else lo + 1)
+    )
     counts = np.histogram(inside, bins=edges)[0]
-    out = {"kind": "distribution", "title": title, "unit": unit,
-           "bins": [float(e) for e in edges], "counts": [int(c) for c in counts],
-           "real": None if real is None else _num(real), "median": _num(np.median(v)),
-           "band": [_num(np.percentile(v, band[0])), _num(np.percentile(v, band[1]))],
-           "percentiles": {str(q): _num(np.percentile(v, q)) for q in PERCENTILES},
-           "p": None if p is None else _num(p),
-           "note": note + clip.caption(len(v) - len(inside))}
+    out = {
+        "kind": "distribution",
+        "title": title,
+        "unit": unit,
+        "bins": [float(e) for e in edges],
+        "counts": [int(c) for c in counts],
+        "real": None if real is None else _num(real),
+        "median": _num(np.median(v)),
+        "band": [_num(np.percentile(v, band[0])), _num(np.percentile(v, band[1]))],
+        "percentiles": {str(q): _num(np.percentile(v, q)) for q in PERCENTILES},
+        "p": None if p is None else _num(p),
+        "note": note + clip.caption(len(v) - len(inside)),
+    }
     out["sign_shade"] = sign_shade
     out["pivot"] = float(pivot)
     if sign_shade and v.min() < pivot < v.max():
@@ -133,18 +164,31 @@ def distribution(title: str, unit: str, values: np.ndarray, real: float | None, 
             kept = s[(s >= edges[0]) & (s <= edges[-1])]
             c = np.histogram(kept, bins=edges)[0]
             r = (reals or {}).get(label)
-            out["series"].append({"label": label, "n": len(s), "median": _num(np.median(s)),
-                                  "real": _num(r) if r is not None else None,
-                                  # no value inside the shared bins: a flat zero, not 0/0
-                                  "counts": [float(x) for x in c / (max(len(kept), 1) * width)]})
+            out["series"].append(
+                {
+                    "label": label,
+                    "n": len(s),
+                    "median": _num(np.median(s)),
+                    "real": _num(r) if r is not None else None,
+                    # no value inside the shared bins: a flat zero, not 0/0
+                    "counts": [float(x) for x in c / (max(len(kept), 1) * width)],
+                }
+            )
     if shift is not None:
         out["shift"] = {"median": _num(shift["median"]), "ks_p": _num(shift["ks_p"])}
     return out
 
 
-def cone(title: str, unit: str, x: list, paths: np.ndarray, real: list,
-         split: str | None = None, levels: tuple[str, ...] = CONE_LEVELS,
-         real_label: str | None = None) -> dict[str, Any]:
+def cone(
+    title: str,
+    unit: str,
+    x: list,
+    paths: np.ndarray,
+    real: list,
+    split: str | None = None,
+    levels: tuple[str, ...] = CONE_LEVELS,
+    real_label: str | None = None,
+) -> dict[str, Any]:
     """An equity cone with the real curve on top, aggregated from simulated paths.
 
     Args:
@@ -161,17 +205,30 @@ def cone(title: str, unit: str, x: list, paths: np.ndarray, real: list,
     Returns:
         A "cone" block carrying five percentiles per point, never the runs.
     """
-    q = np.percentile(np.asarray(paths, dtype=float), [float(c) for c in levels], axis=0)
-    out = {"kind": "cone", "title": title, "unit": unit, "x": list(x),
-           "bands": {c: [_num(v) for v in row] for c, row in zip(levels, q)},
-           "real": [_num(v) for v in real], "split": split}
+    q = np.percentile(
+        np.asarray(paths, dtype=float), [float(c) for c in levels], axis=0
+    )
+    out = {
+        "kind": "cone",
+        "title": title,
+        "unit": unit,
+        "x": list(x),
+        "bands": {c: [_num(v) for v in row] for c, row in zip(levels, q)},
+        "real": [_num(v) for v in real],
+        "split": split,
+    }
     if real_label:
         out["real_label"] = real_label
     return out
 
 
-def verdict(label: str, state: str, meaning: str, score: float | str | None = None,
-            parts: list[dict] | None = None) -> dict[str, Any]:
+def verdict(
+    label: str,
+    state: str,
+    meaning: str,
+    score: float | str | None = None,
+    parts: list[dict] | None = None,
+) -> dict[str, Any]:
     """A categorical call and the sentence that explains it — the label is never shown alone.
 
     Args:
@@ -184,11 +241,19 @@ def verdict(label: str, state: str, meaning: str, score: float | str | None = No
     Returns:
         A "verdict" block.
     """
-    return {"kind": "verdict", "label": label, "state": state, "score": score,
-            "meaning": meaning, "parts": parts or []}
+    return {
+        "kind": "verdict",
+        "label": label,
+        "state": state,
+        "score": score,
+        "meaning": meaning,
+        "parts": parts or [],
+    }
 
 
-def table(title: str, frame: "pd.DataFrame", note: str = "", digits: int = 6) -> dict[str, Any]:
+def table(
+    title: str, frame: "pd.DataFrame", note: str = "", digits: int = 6
+) -> dict[str, Any]:
     """A table block from a DataFrame, numbers right-aligned and rounded.
 
     Args:
@@ -201,6 +266,7 @@ def table(title: str, frame: "pd.DataFrame", note: str = "", digits: int = 6) ->
     Returns:
         A "table" block.
     """
+
     def cell(v: object) -> object:
         """One cell, JSON-safe."""
         if isinstance(v, (bool, np.bool_)):
@@ -212,21 +278,29 @@ def table(title: str, frame: "pd.DataFrame", note: str = "", digits: int = 6) ->
         return None if v is None else str(v)
 
     numeric = [str(t).startswith(("int", "float")) for t in frame.dtypes]
-    return {"kind": "table", "title": title, "columns": [str(c) for c in frame.columns],
-            "rows": [[cell(v) for v in row] for row in frame.itertuples(index=False)],
-            "align": ["right" if n else "left" for n in numeric], "note": note}
+    return {
+        "kind": "table",
+        "title": title,
+        "columns": [str(c) for c in frame.columns],
+        "rows": [[cell(v) for v in row] for row in frame.itertuples(index=False)],
+        "align": ["right" if n else "left" for n in numeric],
+        "note": note,
+    }
 
 
 def _check(block: dict, where: str) -> None:
     """Refuse a block of an unknown kind, a missing key or a sixth state word."""
     kind = block["kind"]
     if kind not in KINDS:
-        raise ValueError(f"{where}: kind {kind!r} is not one of the eight; ask before adding")
+        raise ValueError(
+            f"{where}: kind {kind!r} is not one of the eight; ask before adding"
+        )
     missing = [k for k in KINDS[kind] if k not in block]
     if missing:
         raise ValueError(f"{where}: {kind} lacks {missing}")
-    states = [block.get("state")] + [i.get("state") for i in block.get("items", [])
-                                     + block.get("parts", [])]
+    states = [block.get("state")] + [
+        i.get("state") for i in block.get("items", []) + block.get("parts", [])
+    ]
     wrong = {s for s in states if s is not None and s not in STATES}
     if wrong:
         raise ValueError(f"{where}: state {wrong} is not one of {STATES}")

@@ -51,8 +51,12 @@ def archive(source: Path, dest: Path) -> bool:
 def main() -> None:
     """Archive every install's logs and record what was taken."""
     ap = argparse.ArgumentParser()
-    ap.add_argument("--install", type=Path, action="append",
-                    help="repeatable; default is the master and every worker role")
+    ap.add_argument(
+        "--install",
+        type=Path,
+        action="append",
+        help="repeatable; default is the master and every worker role",
+    )
     a = ap.parse_args()
 
     # Every role, not just the conductor. bin/sqx-log-prune.sh walks the same list, and it
@@ -64,13 +68,21 @@ def main() -> None:
         out_dir = log_archive(install.name)
         written = {}
         for source in logs(install):
-            dest = out_dir / source.relative_to(install / "user/log").with_suffix(".log.gz")
+            dest = out_dir / source.relative_to(install / "user/log").with_suffix(
+                ".log.gz"
+            )
             if archive(source, dest):
                 written[str(dest.relative_to(out_dir))] = source.stat().st_size
-            print(f"{'archived' if str(dest.relative_to(out_dir)) in written else 'current '}"
-                  f"  {source.name:26} {source.stat().st_size:>13,} bytes")
-        manifest.write(out_dir, {"install": str(install), "from": "user/log"},
-                       "python3 -m sqx.export.archive_logs", written)
+            print(
+                f"{'archived' if str(dest.relative_to(out_dir)) in written else 'current '}"
+                f"  {source.name:26} {source.stat().st_size:>13,} bytes"
+            )
+        manifest.write(
+            out_dir,
+            {"install": str(install), "from": "user/log"},
+            "python3 -m sqx.export.archive_logs",
+            written,
+        )
         print(f"{install.name}: {len(written)} written, archive at {out_dir}\n")
 
 

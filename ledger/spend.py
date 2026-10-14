@@ -24,12 +24,18 @@ def spent(frame: pd.DataFrame) -> pd.DataFrame:
         called in the config.
     """
     if not len(frame):
-        return pd.DataFrame(columns=pd.Index(["segment", "searches", "steps", "first", "last"]))
+        return pd.DataFrame(
+            columns=pd.Index(["segment", "searches", "steps", "first", "last"])
+        )
     grouped = by_segment(frame).groupby("segment")
-    return pd.DataFrame({"searches": grouped.size(),
-                         "steps": grouped["step"].apply(lambda s: sorted(set(s))),
-                         "first": grouped["ts"].min(),
-                         "last": grouped["ts"].max()}).reset_index()
+    return pd.DataFrame(
+        {
+            "searches": grouped.size(),
+            "steps": grouped["step"].apply(lambda s: sorted(set(s))),
+            "first": grouped["ts"].min(),
+            "last": grouped["ts"].max(),
+        }
+    ).reset_index()
 
 
 def virgin(frame: pd.DataFrame, symbol: str) -> dict[str, dict[str, Any]]:
@@ -46,7 +52,12 @@ def virgin(frame: pd.DataFrame, symbol: str) -> dict[str, dict[str, Any]]:
     """
     segments = assetdata.load(symbol)["segments"]
     counts = by_segment(frame)["segment"].value_counts().to_dict() if len(frame) else {}
-    return {name: {"from": str(spec["from"]), "to": str(spec["to"]),
-                   "reads": int(counts.get(name, 0)),
-                   "reserved_for": spec.get("reserved_for")}
-            for name, spec in segments.items()}
+    return {
+        name: {
+            "from": str(spec["from"]),
+            "to": str(spec["to"]),
+            "reads": int(counts.get(name, 0)),
+            "reserved_for": spec.get("reserved_for"),
+        }
+        for name, spec in segments.items()
+    }

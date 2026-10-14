@@ -4,7 +4,14 @@ from typing import Any
 
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QSizePolicy, QSplitter, QVBoxLayout
+from PySide6.QtWidgets import (
+    QFrame,
+    QLabel,
+    QScrollArea,
+    QSizePolicy,
+    QSplitter,
+    QVBoxLayout,
+)
 
 from ui.desktop.client import get
 from ui.text.numbers import num
@@ -51,27 +58,45 @@ class WorkspaceZone(QFrame):
         self.facts = QLabel("")
         self.facts.setObjectName("dim")
         self.facts.setWordWrap(True)
-        self.facts.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.facts.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred
+        )
         self.rail, self.funnel = Rail(), Funnel()
         self.databanks = DatabanksZone(self.funnel)
         self.panel = self.databanks.panel
-        self.launcher = Launcher()   # any task of the project, on its worker (owner, 2026-09-28)
+        self.launcher = (
+            Launcher()
+        )  # any task of the project, on its worker (owner, 2026-09-28)
         # F7's «Continuar workflow», with its own databank chooser (owner, 2026-09-28).
         self.advance = Advance().attach(self.panel, self.funnel)
         self.rail.opened.connect(self.show_tab)
         self.rail.drawer.seen.connect(self.see)
         self.panel.strategy_chosen.connect(self.strategy_chosen)
         self.panel.run_tab.connect(
-            lambda tab, db, rows: self.panel.say(railrun.panel(self.rail, tab, db, rows)))
-        self.dragged = ""      # the project whose split the owner dragged: kept as he left it
-        self.rail.loaded.connect(lambda p: QTimer.singleShot(50, lambda: self.size_rail(p)))
-        self.rail.loaded.connect(lambda _: self.funnel.name_steps(self.rail.data["steps"]))
+            lambda tab, db, rows: self.panel.say(
+                railrun.panel(self.rail, tab, db, rows)
+            )
+        )
+        self.dragged = (
+            ""  # the project whose split the owner dragged: kept as he left it
+        )
+        self.rail.loaded.connect(
+            lambda p: QTimer.singleShot(50, lambda: self.size_rail(p))
+        )
+        self.rail.loaded.connect(
+            lambda _: self.funnel.name_steps(self.rail.data["steps"])
+        )
         self.rail.finished.connect(self.panel.refresh)
-        self.rail.finished.connect(lambda *_: self.funnel.load(self.panel.project)
-                                   if self.panel.live else None)
+        self.rail.finished.connect(
+            lambda *_: self.funnel.load(self.panel.project) if self.panel.live else None
+        )
         self.split = QSplitter(Qt.Orientation.Vertical)
-        self.split.setHandleWidth(9)   # the theme paints it: a band to grab, accent on hover
-        self.split.splitterMoved.connect(lambda *_: setattr(self, "dragged", self.rail.project))
+        self.split.setHandleWidth(
+            9
+        )  # the theme paints it: a band to grab, accent on hover
+        self.split.splitterMoved.connect(
+            lambda *_: setattr(self, "dragged", self.rail.project)
+        )
         for w in (scrolled(self.rail), self.funnel):
             self.split.addWidget(w)
             self.split.setCollapsible(self.split.indexOf(w), False)
@@ -94,16 +119,22 @@ class WorkspaceZone(QFrame):
         p = self.card(name)
         self.title.setText(f"{p.get('symbol') or '?'} · {p.get('timeframe') or '?'}")
         where = p.get("install_label") or p.get("install")
-        self.facts.setText(f"{name}   ·   plantilla {p.get('template') or '—'}   ·   "
-                           f"{num(p.get('strategies') or 0)} estrategias   ·   "
-                           + (f"{p.get('state', '')} en el {where}".strip() if where
-                              else "ya no está en ningún install" if p
-                              else "sin ficha de la galería todavía"))
+        self.facts.setText(
+            f"{name}   ·   plantilla {p.get('template') or '—'}   ·   "
+            f"{num(p.get('strategies') or 0)} estrategias   ·   "
+            + (
+                f"{p.get('state', '')} en el {where}".strip()
+                if where
+                else "ya no está en ningún install"
+                if p
+                else "sin ficha de la galería todavía"
+            )
+        )
         self.launcher.aim(name)
         self.rail.load(name)
         self.funnel.load(name)
         self.databanks.fill(name, p.get("symbol") or "?", p.get("timeframe") or "?")
-        self.advance.repoint(name)   # no table modelReset may follow a project change
+        self.advance.repoint(name)  # no table modelReset may follow a project change
 
     def size_rail(self, project: str) -> None:
         """The rail's cards whole when they fit in 70 % of the height; the funnel scrolls.
@@ -128,9 +159,17 @@ class WorkspaceZone(QFrame):
         No request: `/api/projects/all` cost 12-25 s cold (0.13 s on 2026-10-04), and the
         gallery fetched it off the GUI thread before any card could be clicked.
         """
-        held = next((g.rows[name] for g in (self.window() or self).findChildren(Gallery)
-                     if name in getattr(g, "rows", {})), None)
-        return held if held is not None else get("projects/one", name=name)   # registry only
+        held = next(
+            (
+                g.rows[name]
+                for g in (self.window() or self).findChildren(Gallery)
+                if name in getattr(g, "rows", {})
+            ),
+            None,
+        )
+        return (
+            held if held is not None else get("projects/one", name=name)
+        )  # registry only
 
     def show_tab(self, tab: str, sub: str = "") -> None:
         """Bring one tab of the Databanks panel forward, and one of its sub-panels — the rail's
@@ -158,7 +197,14 @@ class WorkspaceZone(QFrame):
             databank: As SQX or the palette spells it; spaces and underscores match.
         """
         same = databank.replace(" ", "_")
-        hit = next(((t["tab"], sub["sub"]) for t in self.panel.tabs for sub in t["subs"]
-                    if (sub.get("databank") or "").replace(" ", "_") == same), None)
+        hit = next(
+            (
+                (t["tab"], sub["sub"])
+                for t in self.panel.tabs
+                for sub in t["subs"]
+                if (sub.get("databank") or "").replace(" ", "_") == same
+            ),
+            None,
+        )
         if hit:
             self.show_tab(*hit)

@@ -14,8 +14,13 @@ from studies.breakage.spp.verdict import noise
 
 def grid(values: np.ndarray) -> pd.DataFrame:
     """One distinct backtest (NetProfit, NumberOfTrades) per tuple, metric `m`."""
-    return pd.DataFrame({"NetProfit": np.arange(values.size, dtype=float),
-                         "NumberOfTrades": 100, "m": values})
+    return pd.DataFrame(
+        {
+            "NetProfit": np.arange(values.size, dtype=float),
+            "NumberOfTrades": 100,
+            "m": values,
+        }
+    )
 
 
 def test_pure_noise_with_a_positive_mean_reads_noise() -> None:

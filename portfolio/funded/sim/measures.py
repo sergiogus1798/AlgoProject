@@ -7,9 +7,14 @@ import numpy as np
 from portfolio.funded.sim.kernel import C
 
 Z90 = 1.6448536269514722
-_RULES = {"ch_daily_loss": "pérdida diaria (challenge)", "ch_max_loss": "pérdida máxima (challenge)",
-          "ch_time_limit": "límite de tiempo (challenge)", "fd_daily_loss": "pérdida diaria (fondeada)",
-          "fd_max_loss": "pérdida máxima (fondeada)", "denied": "cobro denegado"}
+_RULES = {
+    "ch_daily_loss": "pérdida diaria (challenge)",
+    "ch_max_loss": "pérdida máxima (challenge)",
+    "ch_time_limit": "límite de tiempo (challenge)",
+    "fd_daily_loss": "pérdida diaria (fondeada)",
+    "fd_max_loss": "pérdida máxima (fondeada)",
+    "denied": "cobro denegado",
+}
 
 
 def net(out: np.ndarray) -> np.ndarray:
@@ -51,21 +56,33 @@ def summary(out: np.ndarray, horizon: int, days_per_year: float) -> dict[str, An
     paid_draws = out[:, C["first_payout_day"]] >= 0
     fails = {name: total[C[name]] for name in _RULES}
     worst = max(fails, key=lambda n: fails[n])
-    row = {"ev": float(x.mean()), "ev_se": float(half / Z90), "ev_lo": float(x.mean() - half),
-           "ev_hi": float(x.mean() + half), "fees": float(out[:, C["paid"]].mean()),
-           "received": float(out[:, C["received"]].mean()), "refunds": float(out[:, C["refunds"]].mean()),
-           "net_min": float(x.min()), "net_p5": float(np.percentile(x, 5)), "net_p95": float(np.percentile(x, 95)),
-           "ev_per_purchase": _ratio(x.sum(), total[C["purchases"]]),
-           "ev_per_dollar": _ratio(x.sum(), total[C["paid"]]),
-           "ev_per_month": float(x.mean() / (horizon / (days_per_year / 12))),
-           "p_first_payout": float(paid_draws.mean()),
-           "purchases": float(out[:, C["purchases"]].mean()),
-           "purchases_to_first": _ratio(out[paid_draws, C["purchases_to_first"]].sum(), paid_draws.sum()),
-           "payouts_per_funded": _ratio(total[C["payouts"]], total[C["funded_accounts"]]),
-           "funded_life_days": _ratio(total[C["funded_days"]], total[C["funded_accounts"]]),
-           "worst_rule": _RULES[worst] if fails[worst] else "ninguna",
-           "worst_rule_share": _ratio(fails[worst], sum(fails.values())),
-           "budget_stop": float(out[:, C["budget_stop"]].mean())}
+    row = {
+        "ev": float(x.mean()),
+        "ev_se": float(half / Z90),
+        "ev_lo": float(x.mean() - half),
+        "ev_hi": float(x.mean() + half),
+        "fees": float(out[:, C["paid"]].mean()),
+        "received": float(out[:, C["received"]].mean()),
+        "refunds": float(out[:, C["refunds"]].mean()),
+        "net_min": float(x.min()),
+        "net_p5": float(np.percentile(x, 5)),
+        "net_p95": float(np.percentile(x, 95)),
+        "ev_per_purchase": _ratio(x.sum(), total[C["purchases"]]),
+        "ev_per_dollar": _ratio(x.sum(), total[C["paid"]]),
+        "ev_per_month": float(x.mean() / (horizon / (days_per_year / 12))),
+        "p_first_payout": float(paid_draws.mean()),
+        "purchases": float(out[:, C["purchases"]].mean()),
+        "purchases_to_first": _ratio(
+            out[paid_draws, C["purchases_to_first"]].sum(), paid_draws.sum()
+        ),
+        "payouts_per_funded": _ratio(total[C["payouts"]], total[C["funded_accounts"]]),
+        "funded_life_days": _ratio(
+            total[C["funded_days"]], total[C["funded_accounts"]]
+        ),
+        "worst_rule": _RULES[worst] if fails[worst] else "ninguna",
+        "worst_rule_share": _ratio(fails[worst], sum(fails.values())),
+        "budget_stop": float(out[:, C["budget_stop"]].mean()),
+    }
     for i in (1, 2, 3):
         passed, failed = total[C[f"pass_phase{i}"]], total[C[f"fail_phase{i}"]]
         row[f"p_phase{i}"] = _ratio(passed, passed + failed)

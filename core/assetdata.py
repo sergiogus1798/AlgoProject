@@ -12,11 +12,15 @@ from core import assetoverride
 from core.paths import ASSETS
 
 POLICY, CLASSES, MARKETS = "_policy.yaml", "_classes.yaml", "_markets.yaml"
-EXPECTED_SIGN = "_expected_sign"   # top-level key of _markets.yaml that is NOT an asset
-BUILD = "_build.yaml"   # how a strategy is generated; the symbol files say what it costs
-SYMBOLS = ASSETS / "symbols"   # one file per instrument; the `_*.yaml` above them are shared
+EXPECTED_SIGN = "_expected_sign"  # top-level key of _markets.yaml that is NOT an asset
+BUILD = "_build.yaml"  # how a strategy is generated; the symbol files say what it costs
+SYMBOLS = (
+    ASSETS / "symbols"
+)  # one file per instrument; the `_*.yaml` above them are shared
 
-RESERVED = "reserved_for"   # a segment spent by looking at it; binds only under enforced()
+RESERVED = (
+    "reserved_for"  # a segment spent by looking at it; binds only under enforced()
+)
 AUTONOMOUS = "ALGO_AUTONOMOUS"
 
 
@@ -34,7 +38,9 @@ def enforced() -> bool:
 # asset file and a study calls it once per strategy or per cell -- 54 s of crossTF's 60 went
 # to parsing the same YAML 1,971 times.
 _PARSED: dict[Path, tuple[tuple[int, int], dict[str, Any]]] = {}
-_FEEDS: dict[str, Any] = {}     # symbol_for(): feed -> first asset, valid while the cards' stamps are
+_FEEDS: dict[
+    str, Any
+] = {}  # symbol_for(): feed -> first asset, valid while the cards' stamps are
 
 
 def _shared(path: Path) -> dict[str, Any]:
@@ -104,14 +110,18 @@ def load(symbol: str) -> dict[str, Any]:
     """
     base = _shared(ASSETS / POLICY)
     data = _shared(SYMBOLS / f"{symbol}.yaml")
-    mine = (base["segments"].get(symbol) or {})
+    mine = base["segments"].get(symbol) or {}
     # `from`/`to` first: an asset with no block yet in _policy.yaml — one just added, or
     # one that arrived as a cross-market feed — has undecided windows, not missing keys.
-    segments = {name: {"from": None, "to": None, **spec, **(mine.get(name) or {})}
-                for name, spec in base["segments_default"].items()}
+    segments = {
+        name: {"from": None, "to": None, **spec, **(mine.get(name) or {})}
+        for name, spec in base["segments_default"].items()
+    }
     # One copy of what is handed out; `base["segments"]` (every asset's block, the big part)
     # is replaced above and never copied. 🔬 2026-10-13: encargo 66 §9.12.
-    return copy.deepcopy({**base, **data, "segments": segments, "data": mine.get("data")})
+    return copy.deepcopy(
+        {**base, **data, "segments": segments, "data": mine.get("data")}
+    )
 
 
 def schema(data: dict) -> dict[str, Any]:
@@ -138,8 +148,14 @@ def fields(data: dict) -> list[str]:
     """
     s = schema(data)
     extra = sorted({seg["spread"] for seg in data["segments"].values()} - {"is", "oos"})
-    return (s["spread"]["fields"] + [f"spread_{h}" for h in extra] + [s["commission"]["field"]]
-            + s["slippage"]["fields"] + [f"slippage_{h}" for h in extra] + s["swap"]["fields"])
+    return (
+        s["spread"]["fields"]
+        + [f"spread_{h}" for h in extra]
+        + [s["commission"]["field"]]
+        + s["slippage"]["fields"]
+        + [f"slippage_{h}" for h in extra]
+        + s["swap"]["fields"]
+    )
 
 
 def _ms(bound: int | date, end: bool) -> int:
@@ -157,7 +173,9 @@ def _ms(bound: int | date, end: bool) -> int:
         day = date(bound + 1, 1, 1) if end else date(bound, 1, 1)
     else:
         day = bound + timedelta(days=1) if end else bound
-    return int(datetime(day.year, day.month, day.day, tzinfo=timezone.utc).timestamp() * 1000)
+    return int(
+        datetime(day.year, day.month, day.day, tzinfo=timezone.utc).timestamp() * 1000
+    )
 
 
 def window(data: dict, segment: str) -> tuple[int, int]:
@@ -175,8 +193,10 @@ def window(data: dict, segment: str) -> tuple[int, int]:
     """
     seg = data["segments"][segment]
     if seg["from"] is None or seg["to"] is None:
-        raise ValueError(f"el tramo `{segment}` de {data['symbol']} no tiene fechas decididas; "
-                         f"están en assets/_policy.yaml, bajo `segments: {data['symbol']}:`")
+        raise ValueError(
+            f"el tramo `{segment}` de {data['symbol']} no tiene fechas decididas; "
+            f"están en assets/_policy.yaml, bajo `segments: {data['symbol']}:`"
+        )
     return _ms(seg["from"], False), _ms(seg["to"], True)
 
 
@@ -193,8 +213,10 @@ def segment_start(data: dict, segment: str) -> str:
     """
     bound = data["segments"][segment]["from"]
     if bound is None:
-        raise ValueError(f"el tramo `{segment}` de {data['symbol']} no tiene fechas decididas; "
-                         f"están en assets/_policy.yaml, bajo `segments: {data['symbol']}:`")
+        raise ValueError(
+            f"el tramo `{segment}` de {data['symbol']} no tiene fechas decididas; "
+            f"están en assets/_policy.yaml, bajo `segments: {data['symbol']}:`"
+        )
     return f"{bound}-01-01" if isinstance(bound, int) else str(bound)
 
 
@@ -218,11 +240,17 @@ def sqx_settings(data: dict, segment: str) -> dict[str, Any]:
     s = schema(data)
     half = data["segments"][segment]["spread"]
     commission = use("commission")[segment]
-    return {"defaultSpread": use(f"spread_{half}"),
-            "defaultSlippage": use(f"slippage_{half}"),
-            "commission": {"method": commission["method"], "value": commission["value"]},
-            "swap": {"type": s["swap"]["sqx_type"], "long": use("swap_long"),
-                     "short": use("swap_short"), **data["swap"]}}
+    return {
+        "defaultSpread": use(f"spread_{half}"),
+        "defaultSlippage": use(f"slippage_{half}"),
+        "commission": {"method": commission["method"], "value": commission["value"]},
+        "swap": {
+            "type": s["swap"]["sqx_type"],
+            "long": use("swap_long"),
+            "short": use("swap_short"),
+            **data["swap"],
+        },
+    }
 
 
 def symbol_for(feed: str) -> str | None:
@@ -237,8 +265,10 @@ def symbol_for(feed: str) -> str | None:
         sentence that every asset then gets.
     """
     files = [SYMBOLS / f"{s}.yaml" for s in symbols()]
-    stamp = tuple((f.name, st.st_mtime_ns, st.st_size) for f in files for st in [f.stat()])
-    if _FEEDS.get("stamp") != stamp:       # an added, removed or edited card is a new stamp
+    stamp = tuple(
+        (f.name, st.st_mtime_ns, st.st_size) for f in files for st in [f.stat()]
+    )
+    if _FEEDS.get("stamp") != stamp:  # an added, removed or edited card is a new stamp
         by_feed: dict = {}
         for f in files:
             by_feed.setdefault(_shared(f)["sqx_symbol"], f.stem)
@@ -260,6 +290,8 @@ def symbol_of(feed: str) -> str:
     """
     got = symbol_for(feed)
     if got is None:
-        raise ValueError(f"ningún activo declara el feed «{feed}»: revisa `sqx_symbol` en "
-                         f"assets/symbols/*.yaml (¿falta el sufijo _M1 o el activo?)")
+        raise ValueError(
+            f"ningún activo declara el feed «{feed}»: revisa `sqx_symbol` en "
+            f"assets/symbols/*.yaml (¿falta el sufijo _M1 o el activo?)"
+        )
     return got

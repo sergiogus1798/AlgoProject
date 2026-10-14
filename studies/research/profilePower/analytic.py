@@ -25,7 +25,9 @@ def error(rows: pd.DataFrame) -> pd.Series:
 
 def power(effect: pd.Series | float, se: pd.Series, cut: float) -> pd.Series:
     """The chance a one-sided test at raw p `cut` names an excess of `effect` costs."""
-    return pd.Series(norm.cdf(effect / se - norm.isf(cut)), index=se.index).where(se.notna())
+    return pd.Series(norm.cdf(effect / se - norm.isf(cut)), index=se.index).where(
+        se.notna()
+    )
 
 
 def detectable(se: pd.Series, cut: float, target: float) -> pd.Series:
@@ -46,15 +48,29 @@ def calibrated(runs: pd.DataFrame, cut: float, hit: list[str]) -> pd.DataFrame:
         replications, each at its own realised error), and their difference.
     """
     rows = pd.DataFrame(runs[~runs["measure"].isin(hit)])
-    rows = rows.assign(predicted=power(pd.Series(rows["effect_planted"]), error(rows), cut))
-    out = rows.groupby(["measure", "timeframe", "effect_planted"], sort=False).agg(
-        runs=("significant", "size"), detected=("significant", "mean"),
-        predicted=("predicted", "mean")).reset_index()
+    rows = rows.assign(
+        predicted=power(pd.Series(rows["effect_planted"]), error(rows), cut)
+    )
+    out = (
+        rows.groupby(["measure", "timeframe", "effect_planted"], sort=False)
+        .agg(
+            runs=("significant", "size"),
+            detected=("significant", "mean"),
+            predicted=("predicted", "mean"),
+        )
+        .reset_index()
+    )
     return out.assign(gap=out["detected"] - out["predicted"])
 
 
-def widened(measures: pd.DataFrame, context: pd.DataFrame, classes: dict, cut: float,
-            target: float, hit: list[str]) -> pd.DataFrame:
+def widened(
+    measures: pd.DataFrame,
+    context: pd.DataFrame,
+    classes: dict,
+    cut: float,
+    target: float,
+    hit: list[str],
+) -> pd.DataFrame:
     """Every trade measure of the map with the smallest excess it could have named.
 
     Args:
@@ -70,17 +86,29 @@ def widened(measures: pd.DataFrame, context: pd.DataFrame, classes: dict, cut: f
         costs, excess over what the null's drift already gives) and `mde_atr` (the same in
         ATRs of the cell's bar).
     """
-    rows = pd.DataFrame(measures[measures["n_trades"].notna() & ~measures["needs_clock"]
-                                 & (measures["stat"] != 0) & ~measures["measure"].isin(hit)]).copy()
+    rows = pd.DataFrame(
+        measures[
+            measures["n_trades"].notna()
+            & ~measures["needs_clock"]
+            & (measures["stat"] != 0)
+            & ~measures["measure"].isin(hit)
+        ]
+    ).copy()
     rows["asset_class"] = rows["symbol"].map(cast("Any", classes))
     rows["mde"] = detectable(error(rows), cut, target)
     ratio = context.set_index(["symbol", "timeframe"])["cost_over_atr"]
-    rows["mde_atr"] = rows["mde"] * ratio.reindex(
-        pd.MultiIndex.from_frame(pd.DataFrame(rows[["symbol", "timeframe"]]))).to_numpy()
+    rows["mde_atr"] = (
+        rows["mde"]
+        * ratio.reindex(
+            pd.MultiIndex.from_frame(pd.DataFrame(rows[["symbol", "timeframe"]]))
+        ).to_numpy()
+    )
     return rows
 
 
-def reachable(rows: pd.DataFrame, by: list[str], levels: Sequence[float]) -> pd.DataFrame:
+def reachable(
+    rows: pd.DataFrame, by: list[str], levels: Sequence[float]
+) -> pd.DataFrame:
     """Per group, the median detectable excess and the share of tests that can see each level.
 
     Args:
@@ -88,10 +116,16 @@ def reachable(rows: pd.DataFrame, by: list[str], levels: Sequence[float]) -> pd.
         by: Grouping columns.
         levels: Effects in costs, e.g. [1, 2, 5].
     """
-    out = rows.groupby(by, sort=True).agg(
-        tests=("mde", "size"), mde_median=("mde", "median"),
-        mde_atr_median=("mde_atr", "median"),
-        trades_per_year_median=("trades_per_year", "median")).reset_index()
+    out = (
+        rows.groupby(by, sort=True)
+        .agg(
+            tests=("mde", "size"),
+            mde_median=("mde", "median"),
+            mde_atr_median=("mde_atr", "median"),
+            trades_per_year_median=("trades_per_year", "median"),
+        )
+        .reset_index()
+    )
     for level in levels:
         share = rows.assign(ok=rows["mde"] <= level).groupby(by, sort=True)["ok"].mean()
         out[f"sees_{level:g}x"] = share.to_numpy()

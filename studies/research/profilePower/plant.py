@@ -31,11 +31,20 @@ PLANTS = {"condition": condition, "random": random}
 HOLDS = {
     "condition": "the measure sees a mean gain of `effect` costs per trade: this is the power",
     "random": "the series gains the same total drift and the measure's trades none of it but "
-              "by chance: this is the control, it must detect at the rate of no effect"}
+    "by chance: this is the control, it must detect at the rate of no effect",
+}
 
 
-def planted(base: dict, entry: np.ndarray, leave: np.ndarray, sign: int, effect: float,
-            cost: np.ndarray, how: str, rng: np.random.Generator) -> dict[str, np.ndarray]:
+def planted(
+    base: dict,
+    entry: np.ndarray,
+    leave: np.ndarray,
+    sign: int,
+    effect: float,
+    cost: np.ndarray,
+    how: str,
+    rng: np.random.Generator,
+) -> dict[str, np.ndarray]:
     """A series with an edge of known size added to the returns of the chosen bars.
 
     Args:
@@ -56,5 +65,12 @@ def planted(base: dict, entry: np.ndarray, leave: np.ndarray, sign: int, effect:
     where = PLANTS[how](held, rng)
     g = series.gaps(base)
     close = g["c"] + where * sign * effect * cost / (leave - entry).mean()
-    return series.path({"o": g["o"], "c": close, "h": np.maximum(g["h"], close),
-                        "l": np.minimum(g["l"], close)}, base["o"][0])
+    return series.path(
+        {
+            "o": g["o"],
+            "c": close,
+            "h": np.maximum(g["h"], close),
+            "l": np.minimum(g["l"], close),
+        },
+        base["o"][0],
+    )

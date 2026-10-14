@@ -7,9 +7,12 @@ from core.xmlget import el, hit
 
 # Parameters that say where or under which id a block runs, not what it tests.
 PLUMBING = {"#Identification#", "#Symbol#", "#MagicNumber#", "#Comment#"}
-EXIT_METHODS = {"stop_loss": "#StopLoss.StopLoss#", "profit_target": "#ProfitTarget.ProfitTarget#",
-                "trailing_stop": "#TrailingStop.TrailingStop#",
-                "break_even": "#MoveSL2BE.MoveSL2BE#"}
+EXIT_METHODS = {
+    "stop_loss": "#StopLoss.StopLoss#",
+    "profit_target": "#ProfitTarget.ProfitTarget#",
+    "trailing_stop": "#TrailingStop.TrailingStop#",
+    "break_even": "#MoveSL2BE.MoveSL2BE#",
+}
 SIDE = {1: "long", -1: "short"}
 
 
@@ -24,7 +27,9 @@ def values(root: ElementTree.Element) -> dict[str, str]:
         variable's id as its text, never the number: without this map every tuned parameter
         reads as a name.
     """
-    return {hit(v.findtext("id")): hit(v.findtext("value")) for v in root.iter("variable")}
+    return {
+        hit(v.findtext("id")): hit(v.findtext("value")) for v in root.iter("variable")
+    }
 
 
 def _value(param: ElementTree.Element, held: dict[str, str]) -> str:
@@ -49,7 +54,11 @@ def params(item: ElementTree.Element, held: dict[str, str]) -> dict[str, str]:
         key = child.get("key") or ""
         if child.tag == "Block":
             out[key.strip("#")] = render(el(child.find("Item")), held)
-        elif child.tag == "Param" and key not in PLUMBING and not key.startswith("#Chart"):
+        elif (
+            child.tag == "Param"
+            and key not in PLUMBING
+            and not key.startswith("#Chart")
+        ):
             out[key.strip("#")] = _value(child, held)
     return out
 
@@ -60,18 +69,28 @@ def terms(item: ElementTree.Element) -> list[ElementTree.Element]:
     A template's AND wraps each term in a `<Block>`; the generic builder's AND carries
     `generated`/`randomId` attributes and holds its terms as bare `<Item>`s.
     """
-    return [el(c.find("Item")) if c.tag == "Block" else c for c in item if c.tag in ("Block", "Item")]
+    return [
+        el(c.find("Item")) if c.tag == "Block" else c
+        for c in item
+        if c.tag in ("Block", "Item")
+    ]
 
 
 def render(item: ElementTree.Element, held: dict[str, str]) -> str:
     """A block as one readable line: `Key(Param=value, …)`, nested operands inside."""
     if item.get("key") in ("AND", "OR"):
-        return "(" + f" {item.get('key')} ".join(render(t, held) for t in terms(item)) + ")"
+        return (
+            "("
+            + f" {item.get('key')} ".join(render(t, held) for t in terms(item))
+            + ")"
+        )
     body = ", ".join(f"{k}={v}" for k, v in params(item, held).items())
     return f"{item.get('key')}({body})"
 
 
-def signals(root: ElementTree.Element) -> dict[str, tuple[str, list[ElementTree.Element]]]:
+def signals(
+    root: ElementTree.Element,
+) -> dict[str, tuple[str, list[ElementTree.Element]]]:
     """Every signal the strategy computes, by variable name, as its operator and its terms.
 
     Args:
@@ -111,9 +130,17 @@ def conditions(root: ElementTree.Element, exits: bool) -> list[dict]:
     for signal, (op, items) in signals(root).items():
         if not signal.endswith("ExitSignal" if exits else "EntrySignal"):
             continue
-        out += [{"signal": signal, "operator": op, "index": i, "block": item.get("key"),
-                 "params": params(item, held), "text": render(item, held)}
-                for i, item in enumerate(items)]
+        out += [
+            {
+                "signal": signal,
+                "operator": op,
+                "index": i,
+                "block": item.get("key"),
+                "params": params(item, held),
+                "text": render(item, held),
+            }
+            for i, item in enumerate(items)
+        ]
     return out
 
 
@@ -133,8 +160,13 @@ def _formula(param: ElementTree.Element, held: dict[str, str]) -> dict | None:
     kind = hit(formula.get("key")).rsplit(".", 1)[1]
     if kind == "None":
         return None
-    return {"formula": kind, **{hit(p.get("key")).strip("#"): _value(p, held)
-                                for p in formula.findall("Param")}}
+    return {
+        "formula": kind,
+        **{
+            hit(p.get("key")).strip("#"): _value(p, held)
+            for p in formula.findall("Param")
+        },
+    }
 
 
 def orders(root: ElementTree.Element) -> list[dict]:
@@ -155,9 +187,14 @@ def orders(root: ElementTree.Element) -> list[dict]:
             continue
         p = {c.get("key"): c for c in item if c.tag == "Param"}
         bars = _value(p["#ExitAfterBars.ExitAfterBars#"], held)
-        out.append({"type": item.get("key"), "direction": SIDE[int(hit(p["#Direction#"].text))],
-                    **{name: _formula(p[key], held) for name, key in EXIT_METHODS.items()},
-                    "exit_after_bars": int(bars) or None})
+        out.append(
+            {
+                "type": item.get("key"),
+                "direction": SIDE[int(hit(p["#Direction#"].text))],
+                **{name: _formula(p[key], held) for name, key in EXIT_METHODS.items()},
+                "exit_after_bars": int(bars) or None,
+            }
+        )
     return out
 
 

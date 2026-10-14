@@ -15,8 +15,8 @@ from core.paths import export_dir
 from sqx.projects import registry
 from sqx.variants import legs as legmod
 
-TAG = "variants"                  # the `export_retest --batch` tag of this export
-OUT = "variant_trades.parquet"    # what `engines/variants/excess.py` reads
+TAG = "variants"  # the `export_retest --batch` tag of this export
+OUT = "variant_trades.parquet"  # what `engines/variants/excess.py` reads
 
 
 def main_feed(project: str) -> str:
@@ -47,26 +47,44 @@ def gather(work: Path, project: str, day: str | None = None) -> int:
     # the next day when the export started before midnight
     if not day:
         first = export_dir(project, legmod.legs()[0]["databank"], "")
-        days = [d.name for d in first.glob("*") if (d / TAG / "trades.parquet").exists()]
+        days = [
+            d.name for d in first.glob("*") if (d / TAG / "trades.parquet").exists()
+        ]
         if not days:
-            raise SystemExit(f"{project}: ningún export «{TAG}» en {first}; corre antes "
-                             f"`sqx.export.export_retest --project {project} --batch {TAG}`")
+            raise SystemExit(
+                f"{project}: ningún export «{TAG}» en {first}; corre antes "
+                f"`sqx.export.export_retest --project {project} --batch {TAG}`"
+            )
         day, ran = max(days), work / "ran.json"
-        if ran.exists() and (first / day / TAG / "trades.parquet").stat().st_mtime < ran.stat().st_mtime:
-            raise SystemExit(f"{project}: el export «{TAG}» más nuevo ({day}) es anterior al retest "
-                             f"de {work.name}: es de otro lote, y el de este no escribió nada")
+        if (
+            ran.exists()
+            and (first / day / TAG / "trades.parquet").stat().st_mtime
+            < ran.stat().st_mtime
+        ):
+            raise SystemExit(
+                f"{project}: el export «{TAG}» más nuevo ({day}) es anterior al retest "
+                f"de {work.name}: es de otro lote, y el de este no escribió nada"
+            )
     parts, folders, own = [], [], main_feed(project)
     for leg in legmod.legs():
         folder = export_dir(project, leg["databank"], day, TAG)
         frame = pd.read_parquet(folder / "trades.parquet")
         symbol = frame["Symbol"].astype(str)
         market = symbol.where(symbol != own, legmod.MAIN)
-        parts.append(frame.assign(
-            variant_id=frame["strategy"].astype(str).str.replace(r"\(\d+\)$", "", regex=True),
-            leg=leg["segment"], market=market).drop(columns=["strategy"]))
+        parts.append(
+            frame.assign(
+                variant_id=frame["strategy"]
+                .astype(str)
+                .str.replace(r"\(\d+\)$", "", regex=True),
+                leg=leg["segment"],
+                market=market,
+            ).drop(columns=["strategy"])
+        )
         folders.append(folder)
     trades = pd.concat(parts, ignore_index=True)
-    for name in trades.select_dtypes(exclude="number").columns.difference(["Open time", "Close time"]):
+    for name in trades.select_dtypes(exclude="number").columns.difference(
+        ["Open time", "Close time"]
+    ):
         trades[name] = trades[name].astype("category")
     trades.to_parquet(work / OUT, index=False)
     for folder in folders:
@@ -79,7 +97,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--work", required=True, type=Path)
     ap.add_argument("--project", required=True)
-    ap.add_argument("--day", help="export date; the newest export of the batch when absent")
+    ap.add_argument(
+        "--day", help="export date; the newest export of the batch when absent"
+    )
     a = ap.parse_args()
     print(f"{a.work.name}: {gather(a.work, a.project, a.day)} operaciones en {OUT}")
 

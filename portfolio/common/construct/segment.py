@@ -7,8 +7,13 @@ from portfolio.common.construct import weights
 from portfolio.common.construct.equity import matrix
 
 
-def held(daily: pd.DataFrame, calendar: dict, scale: np.ndarray, members: np.ndarray,
-         cfg: dict) -> np.ndarray:
+def held(
+    daily: pd.DataFrame,
+    calendar: dict,
+    scale: np.ndarray,
+    members: np.ndarray,
+    cfg: dict,
+) -> np.ndarray:
     """The weights `build` gives each combination -- build rows only, scaled: the ones the verdicts judge.
 
     Returns:
@@ -18,8 +23,14 @@ def held(daily: pd.DataFrame, calendar: dict, scale: np.ndarray, members: np.nda
     return weights.matrix(build_daily.fillna(0.0) * scale, members, cfg)
 
 
-def paths(daily: pd.DataFrame, calendar: dict, scale: np.ndarray, members: np.ndarray,
-          cfg: dict, segment: str) -> tuple[np.ndarray, pd.DatetimeIndex]:
+def paths(
+    daily: pd.DataFrame,
+    calendar: dict,
+    scale: np.ndarray,
+    members: np.ndarray,
+    cfg: dict,
+    segment: str,
+) -> tuple[np.ndarray, pd.DatetimeIndex]:
     """Combinations' daily P&L per unit of risk on one segment, at the weights build gave them.
 
     Args:
@@ -34,4 +45,6 @@ def paths(daily: pd.DataFrame, calendar: dict, scale: np.ndarray, members: np.nd
         [P, D] paths and the segment's D days.
     """
     rows = matrix.segment(daily, calendar, segment)
-    return held(daily, calendar, scale, members, cfg) @ (np.nan_to_num(rows.to_numpy().T) * scale[:, None]), pd.DatetimeIndex(rows.index)
+    return held(daily, calendar, scale, members, cfg) @ (
+        np.nan_to_num(rows.to_numpy().T) * scale[:, None]
+    ), pd.DatetimeIndex(rows.index)

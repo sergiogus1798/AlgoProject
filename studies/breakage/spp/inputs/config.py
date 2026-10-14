@@ -52,9 +52,9 @@ def pair(databank: str) -> str:
         them, and neither export alone carries the other window's numbers.
     """
     if databank.upper().endswith("_OOS"):
-        return databank[:-len("_OOS")] + "_IS"
+        return databank[: -len("_OOS")] + "_IS"
     if databank.upper().endswith("_IS"):
-        return databank[:-len("_IS")] + "_OOS"
+        return databank[: -len("_IS")] + "_OOS"
     raise ValueError(f"{databank!r} does not end in _IS or _OOS")
 
 

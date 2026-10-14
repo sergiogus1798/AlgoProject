@@ -6,7 +6,7 @@ from core.study.config import fingerprint
 from ledger import record, study
 from studies.research.marketProfile import inputs as profile
 
-STEP = 1    # like the profile, the workflow's step 1
+STEP = 1  # like the profile, the workflow's step 1
 
 
 def rows(tests: pd.DataFrame, cfg: dict, windows: dict) -> list[dict]:
@@ -25,14 +25,26 @@ def rows(tests: pd.DataFrame, cfg: dict, windows: dict) -> list[dict]:
     out = []
     for t in tests.to_dict("records"):
         lo, hi = windows[(t["group"], t["timeframe"])]
-        out.append(record.search(
-            study.study_id(t["group"], t["timeframe"], "pooledProfile"),
-            {"step": STEP, "launched_by": "studies.research.pooledProfile.report",
-             "config_hash": fingerprint(cfg), "symbol": t["group"], "timeframe": t["timeframe"],
-             "segment": profile.SEGMENT, "window_from": str(lo), "window_to": str(hi),
-             "n_in": int(t["assets"]), "n_out": int(t["significant"]),
-             "criterion": f"pooledProfile/{t['family']}/{t['measure']}/{t['direction']}",
-             "thresholds": {"alpha": cfg["judge"]["alpha"]}, "seeds": [cfg["run"]["seed"]],
-             "note": f"p {t['p']:.4g}, q {t['q']:.4g}, {cfg['profile']['nulls']['draws']} "
-                     "sorteos conjuntos"}))
+        out.append(
+            record.search(
+                study.study_id(t["group"], t["timeframe"], "pooledProfile"),
+                {
+                    "step": STEP,
+                    "launched_by": "studies.research.pooledProfile.report",
+                    "config_hash": fingerprint(cfg),
+                    "symbol": t["group"],
+                    "timeframe": t["timeframe"],
+                    "segment": profile.SEGMENT,
+                    "window_from": str(lo),
+                    "window_to": str(hi),
+                    "n_in": int(t["assets"]),
+                    "n_out": int(t["significant"]),
+                    "criterion": f"pooledProfile/{t['family']}/{t['measure']}/{t['direction']}",
+                    "thresholds": {"alpha": cfg["judge"]["alpha"]},
+                    "seeds": [cfg["run"]["seed"]],
+                    "note": f"p {t['p']:.4g}, q {t['q']:.4g}, {cfg['profile']['nulls']['draws']} "
+                    "sorteos conjuntos",
+                },
+            )
+        )
     return out

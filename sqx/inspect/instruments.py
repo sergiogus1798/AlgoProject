@@ -12,8 +12,15 @@ from xml.etree import ElementTree
 
 from core.paths import MASTER
 
-FIELDS = ("instrument", "tickSize", "minDistance", "defaultSpread", "defaultSlippage",
-          "decimals", "pointValue")
+FIELDS = (
+    "instrument",
+    "tickSize",
+    "minDistance",
+    "defaultSpread",
+    "defaultSlippage",
+    "decimals",
+    "pointValue",
+)
 
 
 def commission(raw: str) -> str:
@@ -51,12 +58,16 @@ def instruments(cfx: Path) -> dict[str, dict]:
             if name == "config.xml":
                 continue
             text = z.read(name).decode("utf-8", "replace")
-            for block in re.findall(r"<Symbol name=\"([^\"]+)\"[^>]*>\s*<InstrumentInfo([^>]*)>", text):
+            for block in re.findall(
+                r"<Symbol name=\"([^\"]+)\"[^>]*>\s*<InstrumentInfo([^>]*)>", text
+            ):
                 symbol, attrs = block
                 info = dict(re.findall(r'(\w+)="([^"]*)"', attrs))
                 found[symbol] = {k: info.get(k) for k in FIELDS}
                 found[symbol]["commission"] = commission(info.get("commissions", ""))
-                found[symbol]["swap"] = 'use="true"' in html.unescape(info.get("swap", ""))
+                found[symbol]["swap"] = 'use="true"' in html.unescape(
+                    info.get("swap", "")
+                )
     return found
 
 
@@ -76,9 +87,12 @@ def registry(root: Path, sqx_symbol: str) -> dict[str, object]:
     """
     db = sqlite3.connect(f"file:{root / 'user/data/data.db'}?mode=ro", uri=True)
     try:
-        row = db.execute("SELECT i.DEFAULTSPREAD, i.DEFAULTSLIPPAGE, i.COMMISSIONS, i.SWAP "
-                         "FROM DATA d JOIN INSTRUMENTS i ON i.INSTRUMENT = d.INSTRUMENT "
-                         "WHERE d.SYMBOL = ? LIMIT 1", (sqx_symbol,)).fetchone()
+        row = db.execute(
+            "SELECT i.DEFAULTSPREAD, i.DEFAULTSLIPPAGE, i.COMMISSIONS, i.SWAP "
+            "FROM DATA d JOIN INSTRUMENTS i ON i.INSTRUMENT = d.INSTRUMENT "
+            "WHERE d.SYMBOL = ? LIMIT 1",
+            (sqx_symbol,),
+        ).fetchone()
     finally:
         db.close()
     if row is None:
@@ -89,10 +103,17 @@ def registry(root: Path, sqx_symbol: str) -> dict[str, object]:
     sw = dict(re.findall(r'(\w+)="([^"]*)"', swap or ""))
     out = {f"spread_{h}": spread for h in ("is", "oos", "oos2")}
     out |= {f"slippage_{h}": slip for h in ("is", "oos", "oos2")}
-    out["commission"] = {"method": method.group(1) if method else None,
-                         "value": float(value.group(1)) if value else None}
-    out |= {f"swap_{k}": {"type": sw.get("type"), "value": float(sw[k]) if k in sw else None}
-            for k in ("long", "short")}
+    out["commission"] = {
+        "method": method.group(1) if method else None,
+        "value": float(value.group(1)) if value else None,
+    }
+    out |= {
+        f"swap_{k}": {
+            "type": sw.get("type"),
+            "value": float(sw[k]) if k in sw else None,
+        }
+        for k in ("long", "short")
+    }
     return out
 
 
@@ -107,15 +128,21 @@ def main() -> None:
         cfx = d / "project.cfx"
         if cfx.exists():
             for symbol, info in instruments(cfx).items():
-                rows.setdefault(symbol, {**info, "projects": []})["projects"].append(d.name)
+                rows.setdefault(symbol, {**info, "projects": []})["projects"].append(
+                    d.name
+                )
 
     if a.json:
         print(json.dumps(rows, indent=2))
         return
-    print(f"{'symbol':34} {'spread':>8} {'point':>8} {'tick':>8} {'commission':22} swap")
+    print(
+        f"{'symbol':34} {'spread':>8} {'point':>8} {'tick':>8} {'commission':22} swap"
+    )
     for symbol, r in sorted(rows.items()):
-        print(f"{symbol:34} {r['defaultSpread'] or '':>8} {r['pointValue'] or '':>8} "
-              f"{r['tickSize'] or '':>8} {r['commission']:22} {r['swap']}")
+        print(
+            f"{symbol:34} {r['defaultSpread'] or '':>8} {r['pointValue'] or '':>8} "
+            f"{r['tickSize'] or '':>8} {r['commission']:22} {r['swap']}"
+        )
 
 
 if __name__ == "__main__":

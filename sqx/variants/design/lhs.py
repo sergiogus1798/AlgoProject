@@ -6,8 +6,9 @@ from scipy.stats import qmc
 DECIMALS = 3
 
 
-def draw(live: dict[str, list[float]], kept: dict[str, list[float]], n: int,
-         seed: int) -> list[dict[str, float]]:
+def draw(
+    live: dict[str, list[float]], kept: dict[str, list[float]], n: int, seed: int
+) -> list[dict[str, float]]:
     """N tuples spread uniformly over the box, one stratum per parameter and per draw.
 
     Args:

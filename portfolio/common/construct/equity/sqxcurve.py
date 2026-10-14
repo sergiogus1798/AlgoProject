@@ -43,9 +43,18 @@ def from_harvest(equity: pd.DataFrame, symbol: str) -> pd.DataFrame:
         the M1 rebuild matches it on every day (`knowhow/sqx-format/daily-equity-bin.md`).
     """
     data = assetdata.load(symbol)
-    return pd.concat([_segment(equity.loc[equity["sample"] == sample].set_index("day")["equity"]
-                               .sort_index(), data, segment)
-                      for sample, segment in SAMPLE_TO_SEGMENT.items()])
+    return pd.concat(
+        [
+            _segment(
+                equity.loc[equity["sample"] == sample]
+                .set_index("day")["equity"]
+                .sort_index(),
+                data,
+                segment,
+            )
+            for sample, segment in SAMPLE_TO_SEGMENT.items()
+        ]
+    )
 
 
 def from_batch(column: pd.Series, symbol: str) -> pd.DataFrame:
@@ -61,5 +70,10 @@ def from_batch(column: pd.Series, symbol: str) -> pd.DataFrame:
     """
     data = assetdata.load(symbol)
     values = column.sort_index(kind="stable")
-    return pd.concat([_segment(values, data, segment) for segment in SEGMENTS
-                      if data["segments"][segment]["from"] is not None])
+    return pd.concat(
+        [
+            _segment(values, data, segment)
+            for segment in SEGMENTS
+            if data["segments"][segment]["from"] is not None
+        ]
+    )

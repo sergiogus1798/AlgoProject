@@ -9,7 +9,15 @@ from ui.daemon.runner import table
 
 # Family order is studies/CLAUDE.md's table; the trade-level Monte Carlo lives in portfolio/
 # but reads one strategy, so the window files it under readings.
-FAMILIES = ("screening", "transfer", "breakage", "optimisation", "closing", "readings", "data")
+FAMILIES = (
+    "screening",
+    "transfer",
+    "breakage",
+    "optimisation",
+    "closing",
+    "readings",
+    "data",
+)
 
 # key -> (family, package, title on screen, WORKFLOW step or None for a reading outside it).
 # `analysis/` under screening is shared maths, not a study, and is deliberately absent.
@@ -19,27 +27,81 @@ STUDIES = {
     "filters": ("screening", "studies.screening.filters", "Filtros candidatos", "8"),
     "replication": ("screening", "studies.screening.replication", "Replicación", "8"),
     "decay": ("screening", "studies.screening.decay", "Decaimiento IS→OOS", "8"),
-    "monkeyExcess": ("screening", "studies.screening.monkeyExcess", "Exceso sobre el mono", "8"),
-    "falsePositives": ("screening", "studies.screening.falsePositives", "Falsos positivos", "8"),
+    "monkeyExcess": (
+        "screening",
+        "studies.screening.monkeyExcess",
+        "Exceso sobre el mono",
+        "8",
+    ),
+    "falsePositives": (
+        "screening",
+        "studies.screening.falsePositives",
+        "Falsos positivos",
+        "8",
+    ),
     "crossmarket": ("transfer", "studies.transfer.crossmarket", "Cross-market", "10"),
     "crossTF": ("transfer", "studies.transfer.crossTF", "Cross-timeframe", "12"),
     "mcRetest": ("breakage", "studies.breakage.mcRetest", "MC Retest", "14"),
-    "spp": ("breakage", "studies.breakage.spp", "Permutación de parámetros (SPP)", "16"),
-    "cloud": ("optimisation", "studies.optimisation.cloud", "Nube de parámetros", "16.5"),
-    "wfc": ("optimisation", "studies.optimisation.wfc", "Walk Forward Correlation", "17"),
+    "spp": (
+        "breakage",
+        "studies.breakage.spp",
+        "Permutación de parámetros (SPP)",
+        "16",
+    ),
+    "cloud": (
+        "optimisation",
+        "studies.optimisation.cloud",
+        "Nube de parámetros",
+        "16.5",
+    ),
+    "wfc": (
+        "optimisation",
+        "studies.optimisation.wfc",
+        "Walk Forward Correlation",
+        "17",
+    ),
     "cscv": ("optimisation", "studies.optimisation.cscv", "CSCV / PBO", "18"),
-    "marketSurfaces": ("optimisation", "studies.optimisation.marketSurfaces",
-                       "Superficies por mercado", "18.5"),
+    "marketSurfaces": (
+        "optimisation",
+        "studies.optimisation.marketSurfaces",
+        "Superficies por mercado",
+        "18.5",
+    ),
     "wfm": ("optimisation", "studies.optimisation.wfm", "Walk Forward Matrix", "19"),
-    "oos2Reading": ("optimisation", "studies.optimisation.oos2Reading", "Lectura única de oos2", "19.5"),
+    "oos2Reading": (
+        "optimisation",
+        "studies.optimisation.oos2Reading",
+        "Lectura única de oos2",
+        "19.5",
+    ),
     "blindJoint": ("closing", "studies.closing.blindJoint", "Lectura conjunta", "20"),
-    "exposure": ("closing", "studies.closing.exposure", "Exposición contra buy & hold", "21"),
+    "exposure": (
+        "closing",
+        "studies.closing.exposure",
+        "Exposición contra buy & hold",
+        "21",
+    ),
     "monkey": ("readings", "studies.readings.monkey", "Test del mono", None),
-    "entryQuality": ("readings", "studies.readings.entryQuality", "Calidad de la entrada", None),
+    "entryQuality": (
+        "readings",
+        "studies.readings.entryQuality",
+        "Calidad de la entrada",
+        None,
+    ),
     "edgeCost": ("readings", "studies.readings.edgeCost", "Edge por coste", "8"),
-    "monteCarlo": ("readings", "portfolio.common.monteCarlo", "Monte Carlo de operaciones", None),
+    "monteCarlo": (
+        "readings",
+        "portfolio.common.monteCarlo",
+        "Monte Carlo de operaciones",
+        None,
+    ),
     "feedQuality": ("data", "studies.data.feedQuality", "Calidad del feed", "8"),
-    "maeDepth": ("screening", "studies.screening.maeDepth", "Criba del MAE profundo", "8"),
+    "maeDepth": (
+        "screening",
+        "studies.screening.maeDepth",
+        "Criba del MAE profundo",
+        "8",
+    ),
 }
 
 # Gate = its verdict.csv is meant to remove strategies through /curate, which drops exactly
@@ -78,7 +140,9 @@ ROLE: dict[str, str | Callable[[dict], bool]] = {
     # cuts by the sign of z in criteria.yaml (step 19.5); its own files write no verdict.csv
     "oos2Reading": "describe",
     # MANTENER for all while joint.pieces or joint.population is null; DESCARTAR once both set
-    "blindJoint": lambda cfg: bool(cfg["joint"]["pieces"] and cfg["joint"]["population"]),
+    "blindJoint": lambda cfg: bool(
+        cfg["joint"]["pieces"] and cfg["joint"]["population"]
+    ),
     # describes since 2026-10-11: no verdict
     "exposure": "describe",
     # the trade-level readings describe one strategy; none writes DESCARTAR
@@ -100,15 +164,15 @@ ROLE: dict[str, str | Callable[[dict], bool]] = {
 # strategy is the population run, sliced.
 ONE_WHY = {
     "gate": "La puerta criba la población entera: su embudo y sus correcciones dependen de "
-            "cuántas estrategias entran. El veredicto de esta sale del run de todo el databank.",
+    "cuántas estrategias entran. El veredicto de esta sale del run de todo el databank.",
     "filters": "Barre cortes de una métrica IS sobre toda la población y mide qué dejan pasar "
-               "fuera: con una sola estrategia no hay nada que cortar.",
+    "fuera: con una sola estrategia no hay nada que cortar.",
     "monkeyExcess": "Cuenta cuántas estrategias baten a su mono frente a cuántas daría el azar: "
-                    "es una pregunta sobre el conjunto, no sobre una.",
+    "es una pregunta sobre el conjunto, no sobre una.",
     "falsePositives": "Es el control negativo de la cadena: sortea monos con la huella de "
-                      "todas las estrategias del databank; de una sola no sale una tasa.",
+    "todas las estrategias del databank; de una sola no sale una tasa.",
     "blindJoint": "El StepM del paso 20 cuenta todas las madres que llegaron: una sola no "
-                  "paga la búsqueda.",
+    "paga la búsqueda.",
 }
 
 # Studies that write into a mother's variant batch (`estudios/`), not under reports/<P>/<D>/:
@@ -146,8 +210,10 @@ def role(key: str, cfg: dict | None) -> str:
     if isinstance(said, str):
         return said
     if cfg is None:
-        raise ValueError(f"{key}: its role depends on its config and none was given; pass the "
-                         "study's current config (studies/.../config.yaml)")
+        raise ValueError(
+            f"{key}: its role depends on its config and none was given; pass the "
+            "study's current config (studies/.../config.yaml)"
+        )
     return "gate" if said(cfg) else "describe"
 
 
@@ -165,19 +231,34 @@ def entry(key: str, cfg: dict | None) -> dict[str, Any]:
         never offers a button the runner refuses. A study the window never starts has no
         scope there; its `one`/`many` then say what its files can judge.
     """
-    from ui.daemon.workflow.tests import SPENDS   # it imports this module: read at call time
+    from ui.daemon.workflow.tests import (
+        SPENDS,
+    )  # it imports this module: read at call time
+
     family, _, title, step = STUDIES[key]
     why = table.why_not(key)
     if why:
         here = folder(key)
         one = (here / "one.py").exists()
-        many = (here / "many.py").exists() or ((here / "report.py").exists() and not one)
+        many = (here / "many.py").exists() or (
+            (here / "report.py").exists() and not one
+        )
     else:
         one, many = table.STUDIES[key]["one"], table.STUDIES[key]["many"]
-    return {"key": key, "family": family, "title": title, "step": step, "role": role(key, cfg),
-            "one": one, "many": many, "runnable": why is None, "why_not": why,
-            "one_why": None if one else ONE_WHY.get(key),
-            "spends": SPENDS.get(key, ""), "source": "batch" if key in BATCH else "reports"}
+    return {
+        "key": key,
+        "family": family,
+        "title": title,
+        "step": step,
+        "role": role(key, cfg),
+        "one": one,
+        "many": many,
+        "runnable": why is None,
+        "why_not": why,
+        "one_why": None if one else ONE_WHY.get(key),
+        "spends": SPENDS.get(key, ""),
+        "source": "batch" if key in BATCH else "reports",
+    }
 
 
 def ordered() -> list[str]:

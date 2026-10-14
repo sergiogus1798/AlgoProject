@@ -19,8 +19,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from core.datapaths import cache_dir, projects_backup
 from sqx.projects import builder, registryxml, sessiondb
 
-TEMPLATE = (Path(__file__).resolve().parent.parent / "tools/sqx-lab/plugins/sqx-lab/skills/"
-            "sqx-strategy-template/engine/skeletons/market_skeleton.sqx")
+TEMPLATE = (
+    Path(__file__).resolve().parent.parent / "tools/sqx-lab/plugins/sqx-lab/skills/"
+    "sqx-strategy-template/engine/skeletons/market_skeleton.sqx"
+)
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
 # The copy of SQX's registry `sessiondb.copy` keeps on the data root. Pinned, so the test
 # neither stats the master's original nor borrows from a project of a live install.
@@ -41,8 +43,11 @@ def check(label: str, ok: bool, detail: str = "") -> None:
 def project_texts(cfx: Path) -> dict[str, str]:
     """Every task XML of a built project, decoded."""
     with zipfile.ZipFile(cfx) as z:
-        return {n: z.read(n).decode("utf-8", "replace") for n in z.namelist()
-                if n.endswith(".xml") and n != "config.xml"}
+        return {
+            n: z.read(n).decode("utf-8", "replace")
+            for n in z.namelist()
+            if n.endswith(".xml") and n != "config.xml"
+        }
 
 
 def test_usdjpy_feedswap() -> None:
@@ -55,17 +60,34 @@ def test_usdjpy_feedswap() -> None:
     with tempfile.TemporaryDirectory(prefix="sqx-test-install-") as install:
         builder.worker_dir = lambda role: Path(install)
         done = builder.build(
-            name="Test_fixture_usdjpy_feedswap", template=TEMPLATE, symbol="USDJPY",
-            role="conductor", timeframe="M30", strategies=50, minutes=5, donor=DONOR,
-            session_from=None)
+            name="Test_fixture_usdjpy_feedswap",
+            template=TEMPLATE,
+            symbol="USDJPY",
+            role="conductor",
+            timeframe="M30",
+            strategies=50,
+            minutes=5,
+            donor=DONOR,
+            session_from=None,
+        )
 
         out = Path(done["cfx"])
         check("project.cfx installed", out.exists())
-        check("feed actually swapped", done["feed_replaced"] is not None, str(done["feed_replaced"]))
-        check("every task priced (no zero Setup count)",
-              bool(done["setups"]) and all(done["setups"].values()), str(done["setups"]))
-        check("session is USDJPY's, not gold's", done["session"] == "USDJPY_ftmo",
-              done["session"])
+        check(
+            "feed actually swapped",
+            done["feed_replaced"] is not None,
+            str(done["feed_replaced"]),
+        )
+        check(
+            "every task priced (no zero Setup count)",
+            bool(done["setups"]) and all(done["setups"].values()),
+            str(done["setups"]),
+        )
+        check(
+            "session is USDJPY's, not gold's",
+            done["session"] == "USDJPY_ftmo",
+            done["session"],
+        )
 
         texts = project_texts(out)
         donor_feed = done["feed_replaced"]
@@ -76,11 +98,15 @@ def test_usdjpy_feedswap() -> None:
         # (assets/symbols/USDJPY.yaml). Not a hard failure by itself (10.0 could coincide
         # by chance) but worth a look if it fires.
         if stray_spread:
-            print(f"  note: spread=\"10.0\" (gold's) still literally present in {stray_spread} "
-                  "— check by hand whether that is coincidence")
-        check("main chart carries USDJPY's feed",
-              all(done["feed"] in t for n, t in texts.items() if n.startswith("Build")),
-              done["feed"])
+            print(
+                f'  note: spread="10.0" (gold\'s) still literally present in {stray_spread} '
+                "— check by hand whether that is coincidence"
+            )
+        check(
+            "main chart carries USDJPY's feed",
+            all(done["feed"] in t for n, t in texts.items() if n.startswith("Build")),
+            done["feed"],
+        )
 
 
 def test_failed_build_leaves_nothing() -> None:
@@ -100,15 +126,31 @@ def test_failed_build_leaves_nothing() -> None:
         raised = ""
         try:
             builder.build(
-                name="Test_fixture_dax40_feedswap", template=TEMPLATE, symbol="DAX40",
-                role="conductor", timeframe="M30", strategies=50, minutes=5, donor=DONOR,
-                session_from=None)
+                name="Test_fixture_dax40_feedswap",
+                template=TEMPLATE,
+                symbol="DAX40",
+                role="conductor",
+                timeframe="M30",
+                strategies=50,
+                minutes=5,
+                donor=DONOR,
+                session_from=None,
+            )
         except SystemExit as e:
             raised = str(e)
-        check("build refuses for the missing feed (SystemExit)", "falta el FEED" in raised, raised)
-        leftover = list(Path(install, "user", "projects").glob("*")) \
-            if Path(install, "user", "projects").exists() else []
-        check("nothing left in the install after the refusal", not leftover, str(leftover))
+        check(
+            "build refuses for the missing feed (SystemExit)",
+            "falta el FEED" in raised,
+            raised,
+        )
+        leftover = (
+            list(Path(install, "user", "projects").glob("*"))
+            if Path(install, "user", "projects").exists()
+            else []
+        )
+        check(
+            "nothing left in the install after the refusal", not leftover, str(leftover)
+        )
 
 
 def main() -> None:

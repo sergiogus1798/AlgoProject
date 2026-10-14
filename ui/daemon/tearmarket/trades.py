@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 QUANTILES = (0, 25, 50, 75, 100)
-AROUND = 20          # bars shown before the entry and after the exit
+AROUND = 20  # bars shown before the entry and after the exit
 
 
 class Window(TypedDict, total=False):
@@ -64,7 +64,10 @@ def quantile_picks(pnl: np.ndarray) -> list[tuple[int, str]]:
     order = np.argsort(pnl, kind="stable")
     if len(order) <= len(QUANTILES):
         return [(int(r), f"{k + 1}.º de {len(order)}") for k, r in enumerate(order)]
-    return [(int(order[round(q / 100 * (len(order) - 1))]), f"cuantil {q} %") for q in QUANTILES]
+    return [
+        (int(order[round(q / 100 * (len(order) - 1))]), f"cuantil {q} %")
+        for q in QUANTILES
+    ]
 
 
 def random_picks(pnl: np.ndarray, seed: int) -> list[tuple[int, str]]:
@@ -82,7 +85,9 @@ def random_picks(pnl: np.ndarray, seed: int) -> list[tuple[int, str]]:
     return [(int(r), f"al azar {k + 1}/{len(rows)}") for k, r in enumerate(rows)]
 
 
-def window(bars: pd.DataFrame | None, opened: pd.Timestamp, closed: pd.Timestamp) -> Window:
+def window(
+    bars: pd.DataFrame | None, opened: pd.Timestamp, closed: pd.Timestamp
+) -> Window:
     """The bars from AROUND before the entry bar to AROUND after the exit bar.
 
     Args:
@@ -98,20 +103,31 @@ def window(bars: pd.DataFrame | None, opened: pd.Timestamp, closed: pd.Timestamp
         return {"missing": "Sin barras: el activo o su feed no se conocen."}
     idx = bars.index
     if opened < idx[0] or closed > idx[-1]:
-        return {"missing": (f"Sin barras para esta operación: el feed cubre {idx[0]:%Y-%m-%d} … "
-                            f"{idx[-1]:%Y-%m-%d} en lo que la ventana puede mostrar.")}
+        return {
+            "missing": (
+                f"Sin barras para esta operación: el feed cubre {idx[0]:%Y-%m-%d} … "
+                f"{idx[-1]:%Y-%m-%d} en lo que la ventana puede mostrar."
+            )
+        }
     i0 = idx.searchsorted(opened, "right") - 1  # pyright: ignore[reportCallIssue, reportArgumentType]  # pandas stubs reject a scalar Timestamp
     i1 = idx.searchsorted(closed, "right") - 1  # pyright: ignore[reportCallIssue, reportArgumentType]  # pandas stubs reject a scalar Timestamp
     a, z = max(0, i0 - AROUND), min(len(idx), i1 + AROUND + 1)
     w = bars.iloc[a:z]
-    return {"t": [f"{t:%Y-%m-%d %H:%M}" for t in w.index],
-            "o": w["Open"].round(6).tolist(), "h": w["High"].round(6).tolist(),
-            "l": w["Low"].round(6).tolist(), "c": w["Close"].round(6).tolist(),
-            "entry": int(i0 - a), "exit": int(i1 - a), "held": int(i1 - i0)}
+    return {
+        "t": [f"{t:%Y-%m-%d %H:%M}" for t in w.index],
+        "o": w["Open"].round(6).tolist(),
+        "h": w["High"].round(6).tolist(),
+        "l": w["Low"].round(6).tolist(),
+        "c": w["Close"].round(6).tolist(),
+        "entry": int(i0 - a),
+        "exit": int(i1 - a),
+        "held": int(i1 - i0),
+    }
 
 
-def gallery(trades: pd.DataFrame, bars: pd.DataFrame | None, pick: str,
-            seed: int | None) -> Gallery:
+def gallery(
+    trades: pd.DataFrame, bars: pd.DataFrame | None, pick: str, seed: int | None
+) -> Gallery:
     """The five tiles of one sample.
 
     Args:
@@ -133,12 +149,21 @@ def gallery(trades: pd.DataFrame, bars: pd.DataFrame | None, pick: str,
     tiles: list[Tile] = []
     for row, label in picks:
         t = trades.loc[row]
-        tiles.append({"label": label, "row": row, "type": str(t["Type"]),
-                      "open_time": f"{t['Open time']:%Y-%m-%d %H:%M}",
-                      "close_time": f"{t['Close time']:%Y-%m-%d %H:%M}",
-                      "open_price": float(t["Open price"]), "close_price": float(t["Close price"]),
-                      "pnl": float(t["Profit/Loss"]), "mae": float(t["MAE ($)"]),
-                      "mfe": float(t["MFE ($)"]), "close_type": str(t["Close type"]),
-                      "size": float(t["Size"]),
-                      "bars": window(bars, t["Open time"], t["Close time"])})
+        tiles.append(
+            {
+                "label": label,
+                "row": row,
+                "type": str(t["Type"]),
+                "open_time": f"{t['Open time']:%Y-%m-%d %H:%M}",
+                "close_time": f"{t['Close time']:%Y-%m-%d %H:%M}",
+                "open_price": float(t["Open price"]),
+                "close_price": float(t["Close price"]),
+                "pnl": float(t["Profit/Loss"]),
+                "mae": float(t["MAE ($)"]),
+                "mfe": float(t["MFE ($)"]),
+                "close_type": str(t["Close type"]),
+                "size": float(t["Size"]),
+                "bars": window(bars, t["Open time"], t["Close time"]),
+            }
+        )
     return {"pick": pick, "seed": seed, "n": len(trades), "tiles": tiles}

@@ -27,11 +27,17 @@ def run_state(lines: list[str]) -> dict[str, Any]:
     """
     project, finished, events, percent, current = None, True, {}, None, None
     tail: list[str] = []
-    since = 0   # index of the running task's first line; a percentage before it is another task's
+    since = 0  # index of the running task's first line; a percentage before it is another task's
     for i, line in enumerate(lines):
         m = STARTING.search(line)
         if m:
-            project, finished, events, percent, current = m.group(1), False, {}, None, None
+            project, finished, events, percent, current = (
+                m.group(1),
+                False,
+                {},
+                None,
+                None,
+            )
             continue
         p = PROGRESS.search(line)
         if not p:
@@ -63,11 +69,19 @@ def run_state(lines: list[str]) -> dict[str, Any]:
         if m:
             percent = int(m.group(1))
             break
-    return {"project": project, "finished": finished, "events": events, "current": current,
-            "percent": None if finished else percent, "tail": tail[-TAIL_LINES:]}
+    return {
+        "project": project,
+        "finished": finished,
+        "events": events,
+        "current": current,
+        "percent": None if finished else percent,
+        "tail": tail[-TAIL_LINES:],
+    }
 
 
-def in_memory(task: dict, status: str, runs: list[dict], live: dict | None) -> int | None:
+def in_memory(
+    task: dict, status: str, runs: list[dict], live: dict | None
+) -> int | None:
     """What SQX itself holds in a task's output databank, which the disk shows only after a sync.
 
     Args:
@@ -127,8 +141,9 @@ def state(role: str, project: str) -> dict[str, Any]:
     # A start with no finish and later starts after it is a run that was killed: its
     # counts are another population's (📓 2026-09-29, the cancelled MCR 2 Spread over 200
     # lent its total to the next one over 21, whose own start SQX had not logged yet).
-    by_title = {r["title"]: r for i, r in enumerate(runs)
-                if r["finished"] or i == len(runs) - 1}
+    by_title = {
+        r["title"]: r for i, r in enumerate(runs) if r["finished"] or i == len(runs) - 1
+    }
     going = run["project"] == project and not run["finished"]
     live = tasklog.status(role, project) if going else None
     mem = gui_memory(role, project) if going and not live else None
@@ -138,35 +153,57 @@ def state(role: str, project: str) -> dict[str, Any]:
         status = seen or ("queued" if t["active"] else "inactive")
         if status == "skipped" and held.get(t["output"]):
             status = "earlier"
-        row = {**t, "status": status, "strategies": held.get(t["output"]),
-               "in_memory": in_memory(t, status, runs, live),
-               "started": None, "elapsed_s": None, "total": None, "done": None,
-               "per_strategy_ms": None}
+        row = {
+            **t,
+            "status": status,
+            "strategies": held.get(t["output"]),
+            "in_memory": in_memory(t, status, runs, live),
+            "started": None,
+            "elapsed_s": None,
+            "total": None,
+            "done": None,
+            "per_strategy_ms": None,
+        }
         r = by_title.get(t["title"])
         if r:
             # The project log writes «Databanks before start» late, not when the task
             # begins (📓 2026-09-29, MCR 1 Bar: 2 min in, still absent), so a running retest
             # had no total; its input databank on disk does not change while it reads it.
-            total = (r["before"].get(t["input"], held.get(t["input"]))
-                     if t["type"] != "Build" else None)
-            row |= {"started": r["started"], "elapsed_s": r["elapsed_s"], "total": total,
-                    "done": r.get("tested"), "per_strategy_ms": r.get("per_strategy_ms")}
+            total = (
+                r["before"].get(t["input"], held.get(t["input"]))
+                if t["type"] != "Build"
+                else None
+            )
+            row |= {
+                "started": r["started"],
+                "elapsed_s": r["elapsed_s"],
+                "total": total,
+                "done": r.get("tested"),
+                "per_strategy_ms": r.get("per_strategy_ms"),
+            }
             if status == "running" and live:
                 row["done"] = live["generated"]
-                row["per_strategy_ms"] = (live["per_strategy_ms"] or
-                                          (r["elapsed_s"] * 1000 / live["generated"]
-                                           if live["generated"] else None))
+                row["per_strategy_ms"] = live["per_strategy_ms"] or (
+                    r["elapsed_s"] * 1000 / live["generated"]
+                    if live["generated"]
+                    else None
+                )
         elif status == "running" and live:
             # Running, but its start is not in the project log yet (SQX writes it late):
             # the worker's count over the input on disk.
-            row |= {"done": live["generated"], "per_strategy_ms": live["per_strategy_ms"],
-                    "total": held.get(t["input"]) if t["type"] != "Build" else None}
+            row |= {
+                "done": live["generated"],
+                "per_strategy_ms": live["per_strategy_ms"],
+                "total": held.get(t["input"]) if t["type"] != "Build" else None,
+            }
         if status == "running" and mem:
             # A GUI session has no `action=status`: the task's output in SQX's memory is its
             # count — every retest here is silenced, so each strategy tested lands there.
             base = r["before"].get(t["output"], 0) if r and t["type"] != "Build" else 0
-            row |= {"in_memory": mem.get(t["output"]),
-                    "done": (mem.get(t["output"]) or 0) - base}
+            row |= {
+                "in_memory": mem.get(t["output"]),
+                "done": (mem.get(t["output"]) or 0) - base,
+            }
             if row["elapsed_s"] and row["done"]:
                 row["per_strategy_ms"] = row["elapsed_s"] * 1000 / row["done"]
         if row["total"] == 0 and row["done"]:
@@ -175,10 +212,18 @@ def state(role: str, project: str) -> dict[str, Any]:
             row["total"] = None
         rows.append(row)
     first = datetime.fromisoformat(runs[0]["started"]) if runs else None
-    last = (datetime.fromisoformat(runs[-1]["finished"]) if runs and runs[-1]["finished"]
-            else datetime.now())
+    last = (
+        datetime.fromisoformat(runs[-1]["finished"])
+        if runs and runs[-1]["finished"]
+        else datetime.now()
+    )
     build = any(r["type"] == "Build" and r["status"] == "running" for r in rows)
-    return {"tasks": rows, "run": run, "banks": held, "status": live,
-            "genetic": genetic(folder / "project.cfx", build, held),
-            "workflow_s": round((last - first).total_seconds()) if first else None,
-            "log_age_s": round(datetime.now().timestamp() - mtime) if mtime else None}
+    return {
+        "tasks": rows,
+        "run": run,
+        "banks": held,
+        "status": live,
+        "genetic": genetic(folder / "project.cfx", build, held),
+        "workflow_s": round((last - first).total_seconds()) if first else None,
+        "log_age_s": round(datetime.now().timestamp() - mtime) if mtime else None,
+    }

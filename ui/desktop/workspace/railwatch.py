@@ -24,10 +24,14 @@ def poll(rail: "Rail", fresh: bool = False) -> None:
         rail: The `Rail` (its `project`, `timer`, `live`, `ended`, `painted`, `said`).
         fresh: Force the GET (a press just queued a job the cached list lacks).
     """
-    rail.timer.stop()                     # restarted by `polled`: never two asks in flight
+    rail.timer.stop()  # restarted by `polled`: never two asks in flight
     project = rail.project
-    jobsfeed.read(lambda got: polled(rail, project, got), f"railjobs:{id(rail)}", rail,
-                   0.0 if fresh else jobsfeed.TTL_S)
+    jobsfeed.read(
+        lambda got: polled(rail, project, got),
+        f"railjobs:{id(rail)}",
+        rail,
+        0.0 if fresh else jobsfeed.TTL_S,
+    )
 
 
 def polled(rail: "Rail", project: str, got: dict) -> None:
@@ -52,9 +56,14 @@ def polled(rail: "Rail", project: str, got: dict) -> None:
         repaint(rail)
     elif rail.live:
         done = sum(j.get("percent", 0) for j in rail.live.values()) / len(rail.live)
-        rail.said.setText(f"{num(len(rail.live))} en marcha ({done:.0f}% de media)"
-                          + (f", {num(len(rail.ended))} terminados desde la última "
-                             "recarga" if rail.ended else ""))
+        rail.said.setText(
+            f"{num(len(rail.live))} en marcha ({done:.0f}% de media)"
+            + (
+                f", {num(len(rail.ended))} terminados desde la última recarga"
+                if rail.ended
+                else ""
+            )
+        )
     if rail.live and rail.isVisible():
         rail.timer.start(POLL_MS)
 
@@ -69,12 +78,18 @@ def repaint(rail: "Rail") -> None:
     ended, rail.ended, rail.painted = rail.ended, [], time.monotonic()
     banks = {j.get("databank") or "" for j in ended}
     studies = {j["study"] for j in ended}
-    rail.finished.emit(studies.pop() if len(studies) == 1 else "",
-                       banks.pop() if len(banks) == 1 else "")
+    rail.finished.emit(
+        studies.pop() if len(studies) == 1 else "",
+        banks.pop() if len(banks) == 1 else "",
+    )
     rail.load(rail.project)
     failed = [j["label"] for j in ended if j["rc"] != 0]
-    left = [j["state"].split(" · ⚠ ")[-1] for j in ended if "sigue arrancado" in j["state"]]
-    rail.said.setText(f"{num(len(ended))} terminados, {num(len(rail.live))} en marcha"
-                      + (f"   ·   fallaron: {', '.join(failed)} (ver Trabajos)"
-                         if failed else "") + "".join(f"   ·   ⚠ {w}" for w in left))
+    left = [
+        j["state"].split(" · ⚠ ")[-1] for j in ended if "sigue arrancado" in j["state"]
+    ]
+    rail.said.setText(
+        f"{num(len(ended))} terminados, {num(len(rail.live))} en marcha"
+        + (f"   ·   fallaron: {', '.join(failed)} (ver Trabajos)" if failed else "")
+        + "".join(f"   ·   ⚠ {w}" for w in left)
+    )
     rail.said.setStyleSheet(f"color: {C['dead']};" if left else "")

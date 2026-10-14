@@ -24,7 +24,8 @@ def pick(found: Iterable[dict], identity: str) -> tuple[dict | None, list[dict]]
         if "skip" in h:
             where = f" ({h['elsewhere']})" if h.get("elsewhere") else ""
             (skipped if first is None else before).append(
-                {"day": f"{h['day']}{where}", "reason": h["skip"]})
+                {"day": f"{h['day']}{where}", "reason": h["skip"]}
+            )
             continue
         if identity and h["identity"] == identity:
             return h, skipped + before
@@ -43,7 +44,9 @@ def other(hit: dict, identity: str) -> bool:
 
 def judged(hit: dict, study: str, project: str) -> tuple[bool, str | None]:
     """`stale.judge` of one hit."""
-    return stale.judge(study, hit["config_hash"], project, hit["manifest"], hit["population"])
+    return stale.judge(
+        study, hit["config_hash"], project, hit["manifest"], hit["population"]
+    )
 
 
 def full(hit: dict, identity: str) -> dict[str, Any]:
@@ -58,7 +61,7 @@ def full(hit: dict, identity: str) -> dict[str, Any]:
         The result dict, sliced to this strategy when it is the population's run.
     """
     loaded, _ = store.load(hit["path"])
-    got = cast(dict[str, Any], loaded)    # a hit points at a file that parsed
+    got = cast(dict[str, Any], loaded)  # a hit points at a file that parsed
     kind, alias = hit["kind"], hit["alias"]
     if kind in ("file", "population"):
         return got
@@ -67,13 +70,19 @@ def full(hit: dict, identity: str) -> dict[str, Any]:
     row = (store.verdicts(hit["path"].parent) or {}).get(alias)
     mine = slice_for(got, alias) if kind == "slice" else None
     if mine is None and row is None:
-        raise ValueError(f"{hit['path'].parent}: el verdict.csv no tiene fila de «{alias}»; vuelve a "
-                         "correr el estudio de población para que la escriba")
-    return {**(mine or verdict_row(got, cast(dict[str, Any], row), alias)), "identity": hit["identity"]}
+        raise ValueError(
+            f"{hit['path'].parent}: el verdict.csv no tiene fila de «{alias}»; vuelve a "
+            "correr el estudio de población para que la escriba"
+        )
+    return {
+        **(mine or verdict_row(got, cast(dict[str, Any], row), alias)),
+        "identity": hit["identity"],
+    }
 
 
-def meta(hit: dict | None, skipped: list[dict], study: str, project: str,
-         identity: str) -> dict[str, Any]:
+def meta(
+    hit: dict | None, skipped: list[dict], study: str, project: str, identity: str
+) -> dict[str, Any]:
     """The `meta` beside a result: where it came from and whether it is current.
 
     Returns:
@@ -82,18 +91,36 @@ def meta(hit: dict | None, skipped: list[dict], study: str, project: str,
         it came from one).
     """
     if hit is None:
-        return {"day": None, "path": None, "config_hash": None, "current_hash": None,
-                "stale": False, "computed_at": None, "skipped": skipped, "elsewhere": None,
-                "other_identity": False, "note": ""}
+        return {
+            "day": None,
+            "path": None,
+            "config_hash": None,
+            "current_hash": None,
+            "stale": False,
+            "computed_at": None,
+            "skipped": skipped,
+            "elsewhere": None,
+            "other_identity": False,
+            "note": "",
+        }
     old, current = judged(hit, study, project)
-    return {"day": hit["day"], "path": str(hit["path"]), "config_hash": hit["config_hash"],
-            "current_hash": current, "stale": old, "computed_at": hit["computed_at"],
-            "skipped": skipped, "elsewhere": hit["elsewhere"],
-            "other_identity": other(hit, identity), "note": hit["note"]}
+    return {
+        "day": hit["day"],
+        "path": str(hit["path"]),
+        "config_hash": hit["config_hash"],
+        "current_hash": current,
+        "stale": old,
+        "computed_at": hit["computed_at"],
+        "skipped": skipped,
+        "elsewhere": hit["elsewhere"],
+        "other_identity": other(hit, identity),
+        "note": hit["note"],
+    }
 
 
-def result(project: str, databank: str, study: str, strategy: str, identity: str,
-           day: str) -> dict[str, Any]:
+def result(
+    project: str, databank: str, study: str, strategy: str, identity: str, day: str
+) -> dict[str, Any]:
     """The newest contract result of a study for the population or one strategy.
 
     Args:
@@ -108,11 +135,15 @@ def result(project: str, databank: str, study: str, strategy: str, identity: str
         `result` (the contract dict or None) and `meta` as `meta`.
     """
     hit, skipped = pick(hits.sources(project, databank, study, strategy, day), identity)
-    return {"result": full(hit, identity) if hit else None,
-            "meta": meta(hit, skipped, study, project, identity)}
+    return {
+        "result": full(hit, identity) if hit else None,
+        "meta": meta(hit, skipped, study, project, identity),
+    }
 
 
-def history(project: str, databank: str, study: str, strategy: str, identity: str) -> dict[str, Any]:
+def history(
+    project: str, databank: str, study: str, strategy: str, identity: str
+) -> dict[str, Any]:
     """Every run of the place the page's result comes from, newest first.
 
     Args:
@@ -125,10 +156,27 @@ def history(project: str, databank: str, study: str, strategy: str, identity: st
     found = list(hits.sources(project, databank, study, strategy))
     hit, _ = pick(found, identity)
     if hit is None:
-        return {"runs": [], "skipped": [{"day": h["day"], "reason": h["skip"]} for h in found]}
+        return {
+            "runs": [],
+            "skipped": [{"day": h["day"], "reason": h["skip"]} for h in found],
+        }
     mine = [h for h in found if h.get("origin") == hit.get("origin")]
-    runs = [{"day": h["day"], "config_hash": h["config_hash"], "computed_at": h["computed_at"],
-             "state": h["state"], "label": h["label"], "stale": judged(h, study, project)[0],
-             "elsewhere": h["elsewhere"]} for h in mine if "skip" not in h]
-    return {"runs": runs, "skipped": [{"day": h["day"], "reason": h["skip"]}
-                                      for h in mine if "skip" in h]}
+    runs = [
+        {
+            "day": h["day"],
+            "config_hash": h["config_hash"],
+            "computed_at": h["computed_at"],
+            "state": h["state"],
+            "label": h["label"],
+            "stale": judged(h, study, project)[0],
+            "elsewhere": h["elsewhere"],
+        }
+        for h in mine
+        if "skip" not in h
+    ]
+    return {
+        "runs": runs,
+        "skipped": [
+            {"day": h["day"], "reason": h["skip"]} for h in mine if "skip" in h
+        ],
+    }

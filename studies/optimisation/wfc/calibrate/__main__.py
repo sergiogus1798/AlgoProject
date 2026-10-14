@@ -17,16 +17,25 @@ HERE = Path(__file__).resolve().parent
 
 def load(overrides: list[str]) -> dict[str, Any]:
     """The calibration's config.yaml, `ledger:` keys filled, then the overrides."""
-    return study_config.apply(thresholds.fill(study_config.load(HERE / "config.yaml", [])),
-                              overrides)
+    return study_config.apply(
+        thresholds.fill(study_config.load(HERE / "config.yaml", [])), overrides
+    )
 
 
 def main() -> None:
     """Measure the synthetic grid, rehearse the real batches, print the report, write the register."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--set", dest="overrides", action="extend", nargs="+", default=[],
-                    help="clave=valor de calibrate/config.yaml; con esto el registro no se escribe")
-    ap.add_argument("--workers", type=int, default=16, help="procesos para los escenarios")
+    ap.add_argument(
+        "--set",
+        dest="overrides",
+        action="extend",
+        nargs="+",
+        default=[],
+        help="clave=valor de calibrate/config.yaml; con esto el registro no se escribe",
+    )
+    ap.add_argument(
+        "--workers", type=int, default=16, help="procesos para los escenarios"
+    )
     a = ap.parse_args()
     cfg, wfc = load(a.overrides), wfc_config.load()
     table = rates.table(families.specs(cfg), cfg, wfc, a.workers)

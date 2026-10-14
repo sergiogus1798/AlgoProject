@@ -34,7 +34,9 @@ def fake_pack(files: list, out: Path, per_market: bool) -> dict:
     return {"strategies": len(files)}
 
 
-def fake_profiles(project: str, databank: str, install: Path, spill: Path) -> tuple[dict, dict]:
+def fake_profiles(
+    project: str, databank: str, install: Path, spill: Path
+) -> tuple[dict, dict]:
     """Stand in for the profile reader: no profile, but the scratch folder main() removes."""
     spill.mkdir(parents=True)
     return {}, {}
@@ -54,17 +56,28 @@ with tempfile.TemporaryDirectory() as tmp:
     export_spp.profiles = fake_profiles
 
     out = data / DAY / "today"
-    for mod, extra in ((export_spp, []), (export_trades, ["--symbol", "USDJPY"]),
-                       (export_trades, ["--symbol", "USDJPY"])):
+    for mod, extra in (
+        (export_spp, []),
+        (export_trades, ["--symbol", "USDJPY"]),
+        (export_trades, ["--symbol", "USDJPY"]),
+    ):
         sys.argv = ["x", "--project", "Test_P", "--databank", "SPP IS", *extra]
         mod.main()
-        assert manifest.read(out / "spp")["command"].startswith("export_spp.py"), mod.__name__
+        assert manifest.read(out / "spp")["command"].startswith("export_spp.py"), (
+            mod.__name__
+        )
         assert manifest.read(out / "strategies")["counts"] == {"sqx": 1}, mod.__name__
         assert (out / "strategies" / "Strategy 1.sqx").exists(), mod.__name__
     assert manifest.read(out)["command"].startswith("export_trades.py")
     assert sorted(p.name for p in out.iterdir()) == [
-        "identity.csv", "lineage.csv", "manifest.json", "spp", "strategies", "timeframes.csv",
-        "trades.parquet"]
+        "identity.csv",
+        "lineage.csv",
+        "manifest.json",
+        "spp",
+        "strategies",
+        "timeframes.csv",
+        "trades.parquet",
+    ]
 
     # The audit: a manifest in the folder that holds the data, or above it, covers it; a
     # half-finished export (CSVs, no manifest) is reported once, by its dated folder.
@@ -81,6 +94,9 @@ with tempfile.TemporaryDirectory() as tmp:
     for name, version in (("old", manifest.PRE_GIT), ("lost", "0000000-dirty")):
         (data / "raw/Test_P" / name).mkdir()
         (data / "raw/Test_P" / name / "manifest.json").write_text(
-            json.dumps({"code_version": version}))
-    assert daily_audit.manifests_of_unknown_code() == ["raw/Test_P/lost (0000000-dirty)"]
+            json.dumps({"code_version": version})
+        )
+    assert daily_audit.manifests_of_unknown_code() == [
+        "raw/Test_P/lost (0000000-dirty)"
+    ]
 print("ok")

@@ -3,7 +3,7 @@
 from typing import Any, TypedDict
 from engines.weekly import flip
 
-NULLS = ("nulo", "nulo_bruto")      # the kinds of draw that plant nothing
+NULLS = ("nulo", "nulo_bruto")  # the kinds of draw that plant nothing
 PASS, LIMBO, FAIL = "pasa", "limbo", "no_pasa"
 
 
@@ -56,35 +56,70 @@ def facts(read: dict, draws: dict, counts: dict, cfg: dict) -> dict[str, Any]:
     beta = flip.tails(real["beta"], null["beta"].to_numpy())
     gross = flip.tails(bruto["pbo"], draws["nulo_bruto"]["pbo"].to_numpy())
     middle = float(null["pbo"].median())
-    lost_top = float(null["p_perdida"].quantile(cfg["state"]["p_perdida_null_pct"] / 100))
+    lost_top = float(
+        null["p_perdida"].quantile(cfg["state"]["p_perdida_null_pct"] / 100)
+    )
     out = {
-        "n": counts["quedan"], "duplicados_pct": counts["duplicados_pct"],
-        "p_perdida": real["p_perdida"], "pbo": real["pbo"], "pbo_p": pbo["p_menos"],
-        "pbo_p_mas": pbo["p_mas"], "pbo_sobre_p95": int(real["pbo"] >= pbo["nulo_p95"]),
+        "n": counts["quedan"],
+        "duplicados_pct": counts["duplicados_pct"],
+        "p_perdida": real["p_perdida"],
+        "pbo": real["pbo"],
+        "pbo_p": pbo["p_menos"],
+        "pbo_p_mas": pbo["p_mas"],
+        "pbo_sobre_p95": int(real["pbo"] >= pbo["nulo_p95"]),
         "p_perdida_sobre_p95": int(real["p_perdida"] > lost_top),
-        "beta": real["beta"], "beta_p": beta["p_menos"], "r2": real["r2"], "hc": real["hc"],
-        "nulo": {"pbo_p5": pbo["nulo_p5"], "pbo_p95": pbo["nulo_p95"], "pbo_mediana": middle,
-                 "pbo_desv": float(null["pbo"].std()),
-                 "p_perdida": float(null["p_perdida"].median()), "p_perdida_p95": lost_top,
-                 "beta_p5": beta["nulo_p5"], "beta_p95": beta["nulo_p95"],
-                 "beta_mediana": float(null["beta"].median()),
-                 "r2_mediana": float(null["r2"].median()),
-                 "hc_mediana": float(null["hc"].median()), "sorteos": len(null),
-                 "mediana_en_banda": int(cfg["null"]["median_low"] <= middle
-                                         <= cfg["null"]["median_high"])},
-        "bruto": {"pbo": bruto["pbo"], "pbo_p": gross["p_menos"], "nulo_p5": gross["nulo_p5"],
-                  "nulo_p95": gross["nulo_p95"], "p_perdida": bruto["p_perdida"]},
-        "potencia": {kind: float((rows["pbo"] < pbo["nulo_p5"]).mean())
-                     for kind, rows in draws.items() if kind not in NULLS},
-        "dominancia": {"primer_orden": int(real["primer_orden"]),
-                       "segundo_orden": int(real["segundo_orden"]), "brecha": real["brecha"],
-                       "nulo_primer_orden": float(null["primer_orden"].mean()),
-                       "nulo_segundo_orden": float(null["segundo_orden"].mean())},
-        "seleccion": {"distintas": read["seleccion"]["distintas"],
-                      "peso": read["seleccion"]["peso"]}}
-    out["orden_estable"] = int(real["pbo"] <= pbo["nulo_p5"] and bruto["pbo"] <= gross["nulo_p5"])
+        "beta": real["beta"],
+        "beta_p": beta["p_menos"],
+        "r2": real["r2"],
+        "hc": real["hc"],
+        "nulo": {
+            "pbo_p5": pbo["nulo_p5"],
+            "pbo_p95": pbo["nulo_p95"],
+            "pbo_mediana": middle,
+            "pbo_desv": float(null["pbo"].std()),
+            "p_perdida": float(null["p_perdida"].median()),
+            "p_perdida_p95": lost_top,
+            "beta_p5": beta["nulo_p5"],
+            "beta_p95": beta["nulo_p95"],
+            "beta_mediana": float(null["beta"].median()),
+            "r2_mediana": float(null["r2"].median()),
+            "hc_mediana": float(null["hc"].median()),
+            "sorteos": len(null),
+            "mediana_en_banda": int(
+                cfg["null"]["median_low"] <= middle <= cfg["null"]["median_high"]
+            ),
+        },
+        "bruto": {
+            "pbo": bruto["pbo"],
+            "pbo_p": gross["p_menos"],
+            "nulo_p5": gross["nulo_p5"],
+            "nulo_p95": gross["nulo_p95"],
+            "p_perdida": bruto["p_perdida"],
+        },
+        "potencia": {
+            kind: float((rows["pbo"] < pbo["nulo_p5"]).mean())
+            for kind, rows in draws.items()
+            if kind not in NULLS
+        },
+        "dominancia": {
+            "primer_orden": int(real["primer_orden"]),
+            "segundo_orden": int(real["segundo_orden"]),
+            "brecha": real["brecha"],
+            "nulo_primer_orden": float(null["primer_orden"].mean()),
+            "nulo_segundo_orden": float(null["segundo_orden"].mean()),
+        },
+        "seleccion": {
+            "distintas": read["seleccion"]["distintas"],
+            "peso": read["seleccion"]["peso"],
+        },
+    }
+    out["orden_estable"] = int(
+        real["pbo"] <= pbo["nulo_p5"] and bruto["pbo"] <= gross["nulo_p5"]
+    )
     if read["madre"]:
-        out["madre"] = {k: int(v) if isinstance(v, bool) else v for k, v in read["madre"].items()}
+        out["madre"] = {
+            k: int(v) if isinstance(v, bool) else v for k, v in read["madre"].items()
+        }
     return out | {"estado": state(out, cfg)}
 
 
@@ -98,4 +133,8 @@ class NoData(TypedDict):
 
 def no_data(counts: dict) -> NoData:
     """The facts of a batch with too few variants left: nothing measured, LIMBO."""
-    return {"n": counts["quedan"], "duplicados_pct": counts["duplicados_pct"], "estado": LIMBO}
+    return {
+        "n": counts["quedan"],
+        "duplicados_pct": counts["duplicados_pct"],
+        "estado": LIMBO,
+    }

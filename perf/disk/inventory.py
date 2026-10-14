@@ -52,7 +52,14 @@ def tree(cfg: dict, root: Path = DATA) -> list[dict]:
         if not files:
             continue
         age = (now - newest) / DAY
-        rows.append({"branch": str(path.relative_to(root)), "bytes": total, "files": files,
-                     "formats": ", ".join(f"{k} x{n}" for k, n in kinds.most_common(3)),
-                     "age_days": age, "stale": age > cfg["disk"]["stale_days"]})
+        rows.append(
+            {
+                "branch": str(path.relative_to(root)),
+                "bytes": total,
+                "files": files,
+                "formats": ", ".join(f"{k} x{n}" for k, n in kinds.most_common(3)),
+                "age_days": age,
+                "stale": age > cfg["disk"]["stale_days"],
+            }
+        )
     return sorted(rows, key=lambda r: r["bytes"], reverse=True)

@@ -90,7 +90,11 @@ def begin(work: Path, stage: str) -> None:
     monitor has to be able to tell them apart from the file alone.
     """
     state = read(work)
-    state["stages"][stage] = {"started_at": now(), "progress": 0, "status": "arrancando"}
+    state["stages"][stage] = {
+        "started_at": now(),
+        "progress": 0,
+        "status": "arrancando",
+    }
     write(work, state)
 
 
@@ -106,4 +110,3 @@ def finish(work: Path, stage: str, facts: dict) -> None:
     state["stages"][stage] |= {"done_at": now(), "progress": 100} | facts
     state["stage"] = stage
     write(work, state)
-

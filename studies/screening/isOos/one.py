@@ -14,7 +14,10 @@ MODULE = "studies.screening.isOos.report"
 # Which reading the owner wants first is his question (closing of encargo 24 E3).
 UNITS = {
     "USD": ("USD", lambda t, col: t[col]),
-    "% del saldo": ("%", lambda t, col: 100 * t[col] / (t["Balance"] - t["Profit/Loss"])),
+    "% del saldo": (
+        "%",
+        lambda t, col: 100 * t[col] / (t["Balance"] - t["Profit/Loss"]),
+    ),
     "USD por lote": ("USD/lote", lambda t, col: t[col] / t["Size"]),
 }
 MONEY = {
@@ -22,24 +25,39 @@ MONEY = {
     "MAE ($)": ("mae", "MAE — lo peor que llegó a ir cada operación"),
     "MFE ($)": ("mfe", "MFE — lo mejor que llegó a ir cada operación"),
 }
-NOTE = ("Cada curva es una densidad —el área bajo cada una vale 1—, así IS y OOS se comparan "
-        "aunque tengan distinto número de operaciones. Las colas más allá del eje se suman a "
-        "la primera y la última barra.")
+NOTE = (
+    "Cada curva es una densidad —el área bajo cada una vale 1—, así IS y OOS se comparan "
+    "aunque tengan distinto número de operaciones. Las colas más allá del eje se suman a "
+    "la primera y la última barra."
+)
 GLOSSARY = [
-    {"term": "densidad", "text": "Altura de la barra = fracción de operaciones en ella dividida "
-                                 "por su anchura. No depende de cuántas operaciones haya."},
-    {"term": "desplazamiento de la mediana", "text": "Mediana OOS menos mediana IS, en la "
-                                                     "unidad del gráfico."},
-    {"term": "KS p", "text": "p de la prueba de Kolmogorov-Smirnov de dos muestras: la mayor "
-                             "distancia entre las dos curvas acumuladas. Bajo, las dos muestras "
-                             "no parecen salir de la misma distribución. Con duraciones que se "
-                             "repiten (salida a X barras) el p es conservador."},
-    {"term": "MAE / MFE", "text": "Máxima excursión adversa y favorable: lo peor y lo mejor que "
-                                  "estuvo la operación abierta, en dinero de la cuenta."},
+    {
+        "term": "densidad",
+        "text": "Altura de la barra = fracción de operaciones en ella dividida "
+        "por su anchura. No depende de cuántas operaciones haya.",
+    },
+    {
+        "term": "desplazamiento de la mediana",
+        "text": "Mediana OOS menos mediana IS, en la unidad del gráfico.",
+    },
+    {
+        "term": "KS p",
+        "text": "p de la prueba de Kolmogorov-Smirnov de dos muestras: la mayor "
+        "distancia entre las dos curvas acumuladas. Bajo, las dos muestras "
+        "no parecen salir de la misma distribución. Con duraciones que se "
+        "repiten (salida a X barras) el p es conservador.",
+    },
+    {
+        "term": "MAE / MFE",
+        "text": "Máxima excursión adversa y favorable: lo peor y lo mejor que "
+        "estuvo la operación abierta, en dinero de la cuenta.",
+    },
 ]
 
 
-def compare(title: str, unit: str, is_: np.ndarray, oos: np.ndarray, cfg: dict) -> dict[str, Any]:
+def compare(
+    title: str, unit: str, is_: np.ndarray, oos: np.ndarray, cfg: dict
+) -> dict[str, Any]:
     """One per-trade metric of both samples on shared bins, with the shift between them.
 
     Args:
@@ -52,10 +70,18 @@ def compare(title: str, unit: str, is_: np.ndarray, oos: np.ndarray, cfg: dict) 
         A distribution block with two series and its `shift`; `p` repeats the KS p.
     """
     both = np.concatenate([is_, oos])
-    ks = cast(Any, ks_2samp(is_, oos)).pvalue    # scipy stubs lack .pvalue
-    return blocks.distribution(title, unit, both, None, NOTE, p=ks, bins=cfg["bins"],
-                               series={"IS": is_, "OOS": oos},
-                               shift={"median": np.median(oos) - np.median(is_), "ks_p": ks})
+    ks = cast(Any, ks_2samp(is_, oos)).pvalue  # scipy stubs lack .pvalue
+    return blocks.distribution(
+        title,
+        unit,
+        both,
+        None,
+        NOTE,
+        p=ks,
+        bins=cfg["bins"],
+        series={"IS": is_, "OOS": oos},
+        shift={"median": np.median(oos) - np.median(is_), "ks_p": ks},
+    )
 
 
 def run(strategy: str, inputs: dict, cfg: dict) -> dict[str, Any]:
@@ -78,17 +104,42 @@ def run(strategy: str, inputs: dict, cfg: dict) -> dict[str, Any]:
     shown, summary = [], {"n_is": len(side["IS"]), "n_oos": len(side["OOS"])}
     for col, (key, title) in MONEY.items():
         for option, (unit, read) in UNITS.items():
-            b = compare(title, unit, read(side["IS"], col).to_numpy(),
-                        read(side["OOS"], col).to_numpy(), c)
+            b = compare(
+                title,
+                unit,
+                read(side["IS"], col).to_numpy(),
+                read(side["OOS"], col).to_numpy(),
+                c,
+            )
             shown.append({**b, "select": {"unidad": option}})
             if option == "USD":
-                summary |= {f"{key}_shift": b["shift"]["median"], f"{key}_ks_p": b["shift"]["ks_p"]}
-    unit = {"key": "unidad", "label": "Unidad del dinero", "options": list(UNITS),
-            "default": next(iter(UNITS))}
-    tab = envelope.tab("trades", "IS contra OOS, operación por operación", shown, [unit],
-                       "Las mismas medidas por operación dentro y fuera de muestra. "
-                       "Sólo medidas por operación: el beneficio neto y el drawdown crecen "
-                       "con la longitud de la ventana y no se comparan así. El múltiplo R "
-                       "espera a que la estrategia lleve stop (paso 24).")
-    return envelope.envelope(MODULE, strategy, inputs["identity"], cfg, started, [tab],
-                             glossary=GLOSSARY, summary=summary)
+                summary |= {
+                    f"{key}_shift": b["shift"]["median"],
+                    f"{key}_ks_p": b["shift"]["ks_p"],
+                }
+    unit = {
+        "key": "unidad",
+        "label": "Unidad del dinero",
+        "options": list(UNITS),
+        "default": next(iter(UNITS)),
+    }
+    tab = envelope.tab(
+        "trades",
+        "IS contra OOS, operación por operación",
+        shown,
+        [unit],
+        "Las mismas medidas por operación dentro y fuera de muestra. "
+        "Sólo medidas por operación: el beneficio neto y el drawdown crecen "
+        "con la longitud de la ventana y no se comparan así. El múltiplo R "
+        "espera a que la estrategia lleve stop (paso 24).",
+    )
+    return envelope.envelope(
+        MODULE,
+        strategy,
+        inputs["identity"],
+        cfg,
+        started,
+        [tab],
+        glossary=GLOSSARY,
+        summary=summary,
+    )

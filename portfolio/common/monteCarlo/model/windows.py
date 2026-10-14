@@ -29,8 +29,13 @@ def rolling(opens: np.ndarray, months: int, step: int) -> list[dict]:
     while start + pd.DateOffset(months=months) <= last:
         end = cast(pd.Timestamp, start + pd.DateOffset(months=months))
         inside = np.flatnonzero((when >= start) & (when < end))
-        out.append({"start": start.date().isoformat(), "end": end.date().isoformat(),
-                    "positions": inside})
+        out.append(
+            {
+                "start": start.date().isoformat(),
+                "end": end.date().isoformat(),
+                "positions": inside,
+            }
+        )
         start = cast(pd.Timestamp, start + pd.DateOffset(months=step))
     return out
 
@@ -51,5 +56,7 @@ def calendar(opens: np.ndarray, pnl: np.ndarray) -> dict[str, pd.Series]:
     series = pd.Series(pnl)
     month = when.month  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.month
     weekday = when.dayofweek  # pyright: ignore[reportAttributeAccessIssue]  # stub lacks DatetimeIndex.dayofweek
-    return {"month": cast(pd.Series, series.groupby(month).sum()),
-            "weekday": cast(pd.Series, series.groupby(weekday).sum())}
+    return {
+        "month": cast(pd.Series, series.groupby(month).sum()),
+        "weekday": cast(pd.Series, series.groupby(weekday).sum()),
+    }

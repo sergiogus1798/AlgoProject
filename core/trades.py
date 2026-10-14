@@ -56,6 +56,6 @@ def excursions(trades: pd.DataFrame, point_value: float) -> pd.DataFrame:
         conversion uses each trade's own size and a fixed divisor would be wrong.
     """
     scale = trades["Size"] * point_value
-    return pd.DataFrame({"mae": trades["MAE ($)"].abs() / scale,
-                         "mfe": trades["MFE ($)"].abs() / scale})
-
+    return pd.DataFrame(
+        {"mae": trades["MAE ($)"].abs() / scale, "mfe": trades["MFE ($)"].abs() / scale}
+    )

@@ -12,14 +12,16 @@ from ui.desktop.theme import C, MONO, T
 # One chip per piece, in the order they land: the metrics in a second, the trades and the
 # cosecha after their turn on the conductor.
 NAMES = {"metrics": "métricas", "trades": "operaciones", "harvest": "cosecha"}
-LOOK = {"fresh": ("✓", C["promising"], "al día"),
-        "loading": ("⟳", C["accent"], "cargando"),
-        "stale": ("!", C["weak"], "vieja: sus .sqx cambiaron después"),
-        "missing": ("·", C["weak"], "no cargada"),
-        "none": ("—", T["faint"], "no aplica a este databank"),
-        "failed": ("✗", C["dead"], "falló; ↻ para reintentar")}
-POLL_MS = 3000          # while something loads
-WAIT_MS = 30000         # while SQX is writing the project: try again later
+LOOK = {
+    "fresh": ("✓", C["promising"], "al día"),
+    "loading": ("⟳", C["accent"], "cargando"),
+    "stale": ("!", C["weak"], "vieja: sus .sqx cambiaron después"),
+    "missing": ("·", C["weak"], "no cargada"),
+    "none": ("—", T["faint"], "no aplica a este databank"),
+    "failed": ("✗", C["dead"], "falló; ↻ para reintentar"),
+}
+POLL_MS = 3000  # while something loads
+WAIT_MS = 30000  # while SQX is writing the project: try again later
 
 
 class LoadBar(QWidget):
@@ -46,7 +48,9 @@ class LoadBar(QWidget):
         self.again = QPushButton("↻")
         self.again.setToolTip("Volver a cargar lo que falló")
         self.again.setStyleSheet("border:none; padding:0 4px;")
-        self.again.clicked.connect(lambda: self.show_state(self.ask("post", retry=True)))
+        self.again.clicked.connect(
+            lambda: self.show_state(self.ask("post", retry=True))
+        )
         self.again.hide()
         lay.addWidget(self.again)
         self.writing = False
@@ -81,11 +85,16 @@ class LoadBar(QWidget):
     def later(self, verb: str) -> None:
         """`ask` off the GUI thread; its answer is painted only if the selection has not moved."""
         where = self.where
-        background.run(lambda: self.ask(verb, where=where),
-                       lambda got: self.show_state(got) if where == self.where else None,
-                       key=f"loadbar:{id(self)}", owner=self)
+        background.run(
+            lambda: self.ask(verb, where=where),
+            lambda got: self.show_state(got) if where == self.where else None,
+            key=f"loadbar:{id(self)}",
+            owner=self,
+        )
 
-    def ask(self, verb: str, retry: bool = False, where: tuple | None = None) -> dict[str, Any]:
+    def ask(
+        self, verb: str, retry: bool = False, where: tuple | None = None
+    ) -> dict[str, Any]:
         """POST to load (queues what is missing) or GET the state; a daemon error is shown.
 
         Args:
@@ -99,10 +108,11 @@ class LoadBar(QWidget):
         project, databank = where or self.where
         try:
             if verb == "post":
-                return client.post("load", {"project": project, "databank": databank,
-                                            "retry": retry})
+                return client.post(
+                    "load", {"project": project, "databank": databank, "retry": retry}
+                )
             return client.get("load", project=project, databank=databank)
-        except Exception as e:     # the window's boundary: a daemon down must not close it
+        except Exception as e:  # the window's boundary: a daemon down must not close it
             return {"error": f"el demonio no respondió: {e}"}
 
     def show_state(self, got: dict | None) -> None:
@@ -115,26 +125,37 @@ class LoadBar(QWidget):
             for chip in self.chips.values():
                 chip.setText("")
             self.note.setText(got["error"] if got else "")
-            self.note.setStyleSheet(f"font-family:{MONO}; font-size:12px; color:{C['dead']};")
+            self.note.setStyleSheet(
+                f"font-family:{MONO}; font-size:12px; color:{C['dead']};"
+            )
             return
         pieces = got["pieces"]
         for key, chip in self.chips.items():
             mark, ink, word = LOOK[pieces[key]["state"]]
             chip.setText(f"{mark} {NAMES[key]}")
             chip.setStyleSheet(f"font-family:{MONO}; font-size:12px; color:{ink};")
-            chip.setToolTip(f"{NAMES[key].capitalize()}: {word}.\n{pieces[key]['what']}."
-                            + (f"\n{pieces[key]['why']}" if "why" in pieces[key] else ""))
+            chip.setToolTip(
+                f"{NAMES[key].capitalize()}: {word}.\n{pieces[key]['what']}."
+                + (f"\n{pieces[key]['why']}" if "why" in pieces[key] else "")
+            )
             if self.last.get(key) == "loading" and pieces[key]["state"] == "fresh":
                 self.loaded.emit(key)
         self.last = {k: v["state"] for k, v in pieces.items()}
         self.again.setVisible("failed" in self.last.values())
         writing = self.writing = got["writing"]
-        self.note.setText(f"{got['strategies']} estrategias · {got['role']}"
-                          + (" · SQX está escribiendo este proyecto: se carga al terminar"
-                             if writing else ""))
+        self.note.setText(
+            f"{got['strategies']} estrategias · {got['role']}"
+            + (
+                " · SQX está escribiendo este proyecto: se carga al terminar"
+                if writing
+                else ""
+            )
+        )
         self.note.setToolTip(self.note.text())
-        self.note.setStyleSheet(f"font-family:{MONO}; font-size:12px; color:"
-                                f"{C['weak'] if writing else T['faint']};")
+        self.note.setStyleSheet(
+            f"font-family:{MONO}; font-size:12px; color:"
+            f"{C['weak'] if writing else T['faint']};"
+        )
         if writing:
             self.timer.start(WAIT_MS)
         elif "loading" in self.last.values():

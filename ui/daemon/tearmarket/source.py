@@ -11,8 +11,10 @@ from core.paths import DATA
 from ui.daemon.runs import context, guess_asset
 
 SAMPLES = ("IS", "OOS")
-NO_HARVEST = ("Este databank no tiene cosecha: la crea studies.screening.gate.harvest "
-              "(skill /oos-gate).")
+NO_HARVEST = (
+    "Este databank no tiene cosecha: la crea studies.screening.gate.harvest "
+    "(skill /oos-gate)."
+)
 
 
 class Described(TypedDict):
@@ -68,8 +70,9 @@ def rows(harvest: Path, name: str, identity: str) -> pd.DataFrame:
     Returns:
         The rows of that identity.
     """
-    return pq.read_table(harvest / f"{name}.parquet",
-                         filters=[("identity", "==", identity)]).to_pandas()
+    return pq.read_table(
+        harvest / f"{name}.parquet", filters=[("identity", "==", identity)]
+    ).to_pandas()
 
 
 def foreign_samples(frame: pd.DataFrame) -> str | None:
@@ -82,8 +85,14 @@ def foreign_samples(frame: pd.DataFrame) -> str | None:
         The sentence, or None when every row is IS or OOS.
     """
     other = sorted(set(frame["sample"].astype(str)) - set(SAMPLES))
-    return (f"La cosecha trae muestras {other} además de IS y OOS: la ventana no lee nada "
-            "fuera de IS y OOS.") if other else None
+    return (
+        (
+            f"La cosecha trae muestras {other} además de IS y OOS: la ventana no lee nada "
+            "fuera de IS y OOS."
+        )
+        if other
+        else None
+    )
 
 
 def described(harvest: Path, identity: str) -> Described | None:
@@ -97,11 +106,16 @@ def described(harvest: Path, identity: str) -> Described | None:
         `{name, tf}` (tf from `TimeFrame [IS]`, e.g. "H1"), or None when the identity is not
         in the harvest.
     """
-    m = pq.read_table(harvest / "metrics.parquet",
-                      columns=["identity", "strategy", "TimeFrame [IS]"],
-                      filters=[("identity", "==", identity)]).to_pandas()
-    return {"name": str(m["strategy"].iloc[0]), "tf": str(m["TimeFrame [IS]"].iloc[0])} \
-        if len(m) else None
+    m = pq.read_table(
+        harvest / "metrics.parquet",
+        columns=["identity", "strategy", "TimeFrame [IS]"],
+        filters=[("identity", "==", identity)],
+    ).to_pandas()
+    return (
+        {"name": str(m["strategy"].iloc[0]), "tf": str(m["TimeFrame [IS]"].iloc[0])}
+        if len(m)
+        else None
+    )
 
 
 def market(project: str, databank: str, asset: str) -> Market | str:
@@ -117,15 +131,19 @@ def market(project: str, databank: str, asset: str) -> Market | str:
     """
     guessed = asset or guess_asset(project)
     if not guessed:
-        return (f"No sé qué activo opera «{project}»: su nombre no contiene ningún símbolo de "
-                "assets/symbols/. Elige el activo a mano.")
+        return (
+            f"No sé qué activo opera «{project}»: su nombre no contiene ningún símbolo de "
+            "assets/symbols/. Elige el activo a mano."
+        )
     asset = guessed
     if asset not in assetdata.symbols():
         return f"No conozco el activo «{asset}»: no está en assets/symbols/."
     c = context(project, databank, "", asset)
     if c["feed"] not in barstore.library():
-        return (f"No hay barras M1 del feed {c['feed']} en la biblioteca: las trae "
-                "python3 -m sqx.export.sync_bars.")
+        return (
+            f"No hay barras M1 del feed {c['feed']} en la biblioteca: las trae "
+            "python3 -m sqx.export.sync_bars."
+        )
     return {"asset": asset, "feed": c["feed"], "end": c["end"]}
 
 
@@ -142,4 +160,6 @@ def bars(feed: str, tf: str, end: str) -> pd.DataFrame:
         resampled timeframe under `barsDerived/` the first time it is asked, by design.
     """
     frame = barstore.read(feed, tf)
-    return cast(pd.DataFrame, frame[frame.index < pd.Timestamp(end) + pd.Timedelta(days=1)])
+    return cast(
+        pd.DataFrame, frame[frame.index < pd.Timestamp(end) + pd.Timedelta(days=1)]
+    )

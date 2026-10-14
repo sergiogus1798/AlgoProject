@@ -26,7 +26,8 @@ def builder_roles(cfx: Path) -> dict[str, list[str]]:
     found: dict[str, list[str]] = {}
     for block in el(task_xml(str(cfx), member).find(".//Blocks/BuildingBlocks")):
         found.setdefault(hit(block.get("key")).rsplit(".", 1)[-1], []).append(
-            ROLES[hit(block.get("category"))])
+            ROLES[hit(block.get("category"))]
+        )
     return found
 
 
@@ -67,11 +68,13 @@ def entry(key: str, vocab: Vocabulary, roles: list[str]) -> tuple[str, dict]:
         which is the case for 317 of the 767.
     """
     known = vocab["native"].get(key) or vocab["custom"][key]
-    row = {"roles": roles,
-           "origin": "native" if key in vocab["native"] else "own",
-           "form": " ".join((known["display"] or key).split()),
-           "groups": pooled_by(vocab, key),
-           "archetypes": {}}
+    row = {
+        "roles": roles,
+        "origin": "native" if key in vocab["native"] else "own",
+        "form": " ".join((known["display"] or key).split()),
+        "groups": pooled_by(vocab, key),
+        "archetypes": {},
+    }
     if known.get("help"):
         row["help"] = " ".join(known["help"].split())
     return known["category"], row

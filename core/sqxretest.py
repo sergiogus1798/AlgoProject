@@ -20,7 +20,9 @@ CONFIDENCE = (50, 60, 70, 80, 90, 92, 95, 97, 98, 99, 100)
 
 _MEMBER = re.compile(r"MonteCarloRetest_Simulation(\d+)Orders\.bin$")
 _LEVEL = re.compile(r'<LevelStat level="(\d+)">\s*<SQStats[^>]*>([^<]+)</SQStats>')
-_REFERENCE = re.compile(r'<RobustnessOriginalResults>\s*<SQStats[^>]*>([^<]+)</SQStats>')
+_REFERENCE = re.compile(
+    r"<RobustnessOriginalResults>\s*<SQStats[^>]*>([^<]+)</SQStats>"
+)
 
 
 def _orders(raw: bytes, member: str) -> np.ndarray:
@@ -37,7 +39,9 @@ def _orders(raw: bytes, member: str) -> np.ndarray:
     """
     count = struct.unpack_from(">i", raw, 0)[0]
     if len(raw) != HEADER + 4 * count:
-        raise ValueError(f"{member}: {len(raw)} bytes but {count} trades needs {HEADER + 4 * count}")
+        raise ValueError(
+            f"{member}: {len(raw)} bytes but {count} trades needs {HEADER + 4 * count}"
+        )
     return np.frombuffer(raw, dtype=">i4", count=count, offset=HEADER).astype(np.int32)
 
 
@@ -57,7 +61,9 @@ def _prefix(archive: zipfile.ZipFile) -> str:
     """
     found = {n.rsplit("/", 1)[0] for n in archive.namelist() if n.endswith(RESULTS)}
     if len(found) != 1:
-        raise ValueError(f"{archive.filename}: {len(found)} retest results, expected one")
+        raise ValueError(
+            f"{archive.filename}: {len(found)} retest results, expected one"
+        )
     return found.pop()
 
 
@@ -71,11 +77,18 @@ def _results(path: Path) -> str:
         The text of MonteCarloRetest_Results.xml.
     """
     with zipfile.ZipFile(path) as archive:
-        xml = archive.read(f"{_prefix(archive)}/{RESULTS}").decode("utf8", errors="replace")
+        xml = archive.read(f"{_prefix(archive)}/{RESULTS}").decode(
+            "utf8", errors="replace"
+        )
     levels = sorted(int(n) for n in re.findall(r'<LevelStat level="(\d+)"', xml))
     if not (levels == list(CONFIDENCE) and "<RobustnessOriginalResults>" in xml):
-        raise ValueError(f"{path}: retest levels {levels}, expected {CONFIDENCE} plus the original results")
-    if not all(t in xml for t in ("<NumberOfSimulations>", "<Symbol>", "<TimeFrame>", "<DateRange>")):
+        raise ValueError(
+            f"{path}: retest levels {levels}, expected {CONFIDENCE} plus the original results"
+        )
+    if not all(
+        t in xml
+        for t in ("<NumberOfSimulations>", "<Symbol>", "<TimeFrame>", "<DateRange>")
+    ):
         raise ValueError(f"{path}: retest result lacks its header tags")
     return xml
 
@@ -139,7 +152,13 @@ def stored(path: Path) -> int:
     """How many simulations the .sqx holds, counted from the archive's names (nothing decoded)."""
     with zipfile.ZipFile(path) as archive:
         prefix = _prefix(archive)
-        return len({m.group(1) for n in archive.namelist() if (m := _MEMBER.search(n)) and n.startswith(prefix)})
+        return len(
+            {
+                m.group(1)
+                for n in archive.namelist()
+                if (m := _MEMBER.search(n)) and n.startswith(prefix)
+            }
+        )
 
 
 def original(path: Path) -> np.ndarray:
@@ -169,7 +188,10 @@ def levels(path: Path) -> dict[int, dict]:
         marginal order statistic of its own metric, so two metrics at one level come from
         two different simulations and the pair is not a scenario.
     """
-    return {int(level): sqxstats.records(blob) for level, blob in _LEVEL.findall(_results(path))}
+    return {
+        int(level): sqxstats.records(blob)
+        for level, blob in _LEVEL.findall(_results(path))
+    }
 
 
 def reference(path: Path) -> dict[str, float]:
@@ -208,11 +230,13 @@ def meta(path: Path) -> Meta:
         a symbol and does not compare equal to one. `core.sqxfile.symbol` splits them.
     """
     xml = _results(path)
-    return {"declared": int(_group(r"<NumberOfSimulations>(\d+)", xml)),
-            "instrument": _group(r"<Symbol>(.*?)</Symbol>", xml),
-            "timeframe": _group(r"<TimeFrame>(.*?)</TimeFrame>", xml),
-            "date_range": _group(r"<DateRange>(.*?)</DateRange>", xml),
-            "methods": re.findall(r"<Method>(.*?)</Method>", xml)}
+    return {
+        "declared": int(_group(r"<NumberOfSimulations>(\d+)", xml)),
+        "instrument": _group(r"<Symbol>(.*?)</Symbol>", xml),
+        "timeframe": _group(r"<TimeFrame>(.*?)</TimeFrame>", xml),
+        "date_range": _group(r"<DateRange>(.*?)</DateRange>", xml),
+        "methods": re.findall(r"<Method>(.*?)</Method>", xml),
+    }
 
 
 def settings(path: Path) -> Settings:
@@ -239,10 +263,17 @@ def settings(path: Path) -> Settings:
     if retest.get("use") != "true":
         raise ValueError(f"{path}: lastSettings.xml says no retest ran")
     block = el(retest.find("Settings"))
-    methods = {cast(str, m.get("type")): {cast(str, p.get("key")): (p.text or "").strip()
-                                          for p in m.findall("./Params/Param")}
-               for m in block.findall("./Methods/Method") if m.get("use") == "true"}
-    return {"methods": methods,
-            "simulations": int(cast(str, block.findtext("NumberOfSimulations"))),
-            "full_sample": block.findtext("MCUseFullSample") == "true",
-            "precision": block.findtext("MCBacktestPrecision")}
+    methods = {
+        cast(str, m.get("type")): {
+            cast(str, p.get("key")): (p.text or "").strip()
+            for p in m.findall("./Params/Param")
+        }
+        for m in block.findall("./Methods/Method")
+        if m.get("use") == "true"
+    }
+    return {
+        "methods": methods,
+        "simulations": int(cast(str, block.findtext("NumberOfSimulations"))),
+        "full_sample": block.findtext("MCUseFullSample") == "true",
+        "precision": block.findtext("MCBacktestPrecision"),
+    }

@@ -18,7 +18,9 @@ from core.assetwrite import set_brokers
 from core.paths import bar_source
 
 
-def commission_pct(method: str, value: float, price: float | None, point_value: float) -> float:
+def commission_pct(
+    method: str, value: float, price: float | None, point_value: float
+) -> float:
     """One broker's round-turn commission as a percentage of notional, at a given price.
 
     Args:
@@ -31,7 +33,11 @@ def commission_pct(method: str, value: float, price: float | None, point_value: 
     Returns:
         A percentage of notional, comparable across methods.
     """
-    return value if method == "PercentageBased" else value / (cast(float, price) * point_value) * 100
+    return (
+        value
+        if method == "PercentageBased"
+        else value / (cast(float, price) * point_value) * 100
+    )
 
 
 def broker_pct(asset: str, broker: str) -> float:
@@ -57,8 +63,9 @@ def refresh() -> dict[str, dict[str, float]]:
         broker on a feed with no bars synced yet (the five indices) is left untouched rather
         than guessed.
     """
-    from core import barstore   # lazy: pulls in pandas, which only the refresh needs
-    import pandas as pd   # lazy with barstore, same reason
+    from core import barstore  # lazy: pulls in pandas, which only the refresh needs
+    import pandas as pd  # lazy with barstore, same reason
+
     out: dict[str, dict[str, float]] = {}
     for asset in symbols():
         data = load(asset)
@@ -70,13 +77,18 @@ def refresh() -> dict[str, dict[str, float]]:
         price, when = None, None
         if bar_source(feed).exists():
             bars = barstore.source(feed, columns=["Close"])
-            price, when = float(bars["Close"].iloc[-1]), cast(pd.Timestamp, bars.index[-1]).date().isoformat()
+            price, when = (
+                float(bars["Close"].iloc[-1]),
+                cast(pd.Timestamp, bars.index[-1]).date().isoformat(),
+            )
         point_value = data["instrument"]["point_value"]
         priced = {}
         for name, b in confirmed.items():
             if b["method"] == "SizeBased" and price is None:
                 continue
-            b["pct_now"] = round(commission_pct(b["method"], b["value"], price, point_value), 6)
+            b["pct_now"] = round(
+                commission_pct(b["method"], b["value"], price, point_value), 6
+            )
             b["price_now"], b["price_date"] = price, when
             priced[name] = b["pct_now"]
         if priced:

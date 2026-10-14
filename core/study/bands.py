@@ -7,8 +7,15 @@ import numpy as np
 from core.study import blocks
 
 
-def bands(title: str, unit: str, x: list, curves: np.ndarray, original: list,
-          split: str | None = None, original_label: str = "original") -> dict[str, Any]:
+def bands(
+    title: str,
+    unit: str,
+    x: list,
+    curves: np.ndarray,
+    original: list,
+    split: str | None = None,
+    original_label: str = "original",
+) -> dict[str, Any]:
     """Many curves drawn as percentile bands: 5-95 light, 25-75 darker, the median, the original.
 
     Args:
@@ -23,4 +30,6 @@ def bands(title: str, unit: str, x: list, curves: np.ndarray, original: list,
     Returns:
         A "cone" block with `BANDS_5_95` levels; the curves never leave.
     """
-    return blocks.cone(title, unit, x, curves, original, split, blocks.BANDS_5_95, original_label)
+    return blocks.cone(
+        title, unit, x, curves, original, split, blocks.BANDS_5_95, original_label
+    )

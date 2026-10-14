@@ -14,15 +14,20 @@ from ui.desktop.studypage.net import fetch as daemon_fetch
 from ui.desktop.studypage.net import send as daemon_send
 from ui.desktop.theme import T
 
-INTRO = ("Dónde investigar y con qué: Python mide los mercados y cuenta lo probado; el tablero "
-         "ordena las celdas. Las propuestas del director se guardan aquí; tú vetas y lanzas.")
+INTRO = (
+    "Dónde investigar y con qué: Python mide los mercados y cuenta lo probado; el tablero "
+    "ordena las celdas. Las propuestas del director se guardan aquí; tú vetas y lanzas."
+)
 
 
 class ResearchZone(QFrame):
     """Mapa · Memoria · Tablero · Propuesta."""
 
-    def __init__(self, fetch: Callable[..., dict] = daemon_fetch,
-                 send: Callable[[str, dict], dict] = daemon_send) -> None:
+    def __init__(
+        self,
+        fetch: Callable[..., dict] = daemon_fetch,
+        send: Callable[[str, dict], dict] = daemon_send,
+    ) -> None:
         """Build the four views; nothing is asked of the daemon until the zone is shown.
 
         Args:
@@ -38,8 +43,12 @@ class ResearchZone(QFrame):
         self.direct = DirectView(fetch, sync)
         self.proposal = ProposalView(fetch, send, sync)
         self.tabs = QTabWidget()
-        for name, view in (("Mapa", self.map), ("Memoria", self.memory),
-                           ("Tablero", self.direct), ("Propuesta", self.proposal)):
+        for name, view in (
+            ("Mapa", self.map),
+            ("Memoria", self.memory),
+            ("Tablero", self.direct),
+            ("Propuesta", self.proposal),
+        ):
             self.tabs.addTab(view, name)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(20, 16, 20, 16)

@@ -1,4 +1,5 @@
 """The optional second MT5 pass on real ticks: its backtest, its verdict beside the chosen model's, and the merged tab with three curves per firm."""
+
 from typing import Any
 
 import pandas as pd
@@ -10,13 +11,25 @@ from mt5.verify import judge, mt5side, sidebyside
 # spread. «Every tick» (Model=0) interpolates synthetic ticks from the M1 bars, so it adds time
 # and no fidelity over OHLC M1 — the extra pass is always this one (owner, 2026-10-04).
 MODEL = "real_ticks"
-NAMES = {"ohlc_m1": "OHLC M1", "every_tick": "Every tick", "open_prices": "Open prices",
-         MODEL: "Real ticks"}
-MARK = "\x00ticks"      # the suffix that carries a firm's second piece through `combined_chart`
+NAMES = {
+    "ohlc_m1": "OHLC M1",
+    "every_tick": "Every tick",
+    "open_prices": "Open prices",
+    MODEL: "Real ticks",
+}
+MARK = "\x00ticks"  # the suffix that carries a firm's second piece through `combined_chart`
 
 
-def backtest(expert: str, row: dict, timeframe: str, window: tuple[str, str], deposit: float,
-             leverage: int, firm: str, cfg: dict) -> pd.DataFrame:
+def backtest(
+    expert: str,
+    row: dict,
+    timeframe: str,
+    window: tuple[str, str],
+    deposit: float,
+    leverage: int,
+    firm: str,
+    cfg: dict,
+) -> pd.DataFrame:
     """The EA's trades on real ticks on one firm's account.
 
     Args:
@@ -28,15 +41,28 @@ def backtest(expert: str, row: dict, timeframe: str, window: tuple[str, str], de
     """
     study_result.progress(80, f"backtest en MT5 con Real ticks en la cuenta de {firm}")
     slow = {**cfg, "max_minutes": cfg["ticks_max_minutes"]}
-    return mt5side.backtest(expert, row["symbol"], timeframe, window, MODEL, deposit, leverage,
-                            row["account"], f"{firm}_ticks", slow)["trades"]
+    return mt5side.backtest(
+        expert,
+        row["symbol"],
+        timeframe,
+        window,
+        MODEL,
+        deposit,
+        leverage,
+        row["account"],
+        f"{firm}_ticks",
+        slow,
+    )["trades"]
 
 
 def named(piece: dict, model: str) -> list[dict]:
     """A piece's verdict and unpaired table, each saying which tester model it judged."""
     name = NAMES.get(model, model)
-    verdict = {**piece["verdict"], "label": f"{piece['verdict']['label']} · {name}",
-               "meaning": f"MT5 en {name}. {piece['verdict']['meaning']}"}
+    verdict = {
+        **piece["verdict"],
+        "label": f"{piece['verdict']['label']} · {name}",
+        "meaning": f"MT5 en {name}. {piece['verdict']['meaning']}",
+    }
     lonely = {**piece["lonely"], "title": f"{piece['lonely']['title']} · {name}"}
     return [verdict, lonely]
 
@@ -50,7 +76,9 @@ def keep(pieces: dict, summaries: dict, firm: str, piece: dict, report: str) -> 
     """
     if firm in pieces:
         pieces[firm]["ticks"] = piece
-        summaries[firm] |= {f"ticks_{k}": v for k, v in piece["summary"].items() if k != "firm"}
+        summaries[firm] |= {
+            f"ticks_{k}": v for k, v in piece["summary"].items() if k != "firm"
+        }
     else:
         pieces[firm] = piece
         summaries[firm] = {**piece["summary"], "report": report}
@@ -75,9 +103,14 @@ def chart(pieces: dict[str, dict], model: str) -> dict[str, Any]:
     for s in block["series"]:
         second = s["firm"].endswith(MARK)
         if second and s["role"] == "real":
-            continue                        # the same SQX retest, already drawn
+            continue  # the same SQX retest, already drawn
         if s["role"] != "real":
-            s = {**s, "label": s["label"].replace("MT5", f"MT5 {NAMES[MODEL if second else model]}", 1)}
+            s = {
+                **s,
+                "label": s["label"].replace(
+                    "MT5", f"MT5 {NAMES[MODEL if second else model]}", 1
+                ),
+            }
         series.append({**s, "firm": s["firm"].removesuffix(MARK)})
     return {**block, "series": series}
 
@@ -95,7 +128,11 @@ def tab(params: dict, pieces: dict[str, dict], model: str) -> dict[str, Any]:
         both = "ticks" in piece
         blocks += named(piece, model) if both else [piece["verdict"], piece["lonely"]]
         blocks += named(piece["ticks"], MODEL) if both else []
-    return {"name": "verificacion", "title": "Verificación",
-            "note": "Criterios de aceptación (verde: superado, rojo: fallido) y P&L por "
-                    "empresa; la lucecita de cada empresa en la ventana enciende o apaga "
-                    "su curva y sus criterios.", "blocks": blocks}
+    return {
+        "name": "verificacion",
+        "title": "Verificación",
+        "note": "Criterios de aceptación (verde: superado, rojo: fallido) y P&L por "
+        "empresa; la lucecita de cada empresa en la ventana enciende o apaga "
+        "su curva y sus criterios.",
+        "blocks": blocks,
+    }

@@ -5,6 +5,7 @@ The proposal (AlgoData/audit/<date>-commit.json) is written by bin/nightly-commi
 commit stays the owner's decision (hard rule 12), so this runs only after his «sí». `--facts` prints
 the git state with each file's age, which is what the proposing agent reads.
 """
+
 import argparse
 import json
 import os
@@ -63,7 +64,9 @@ def load(file: Path) -> dict[str, Any]:
     return {"groups": data} if isinstance(data, list) else data
 
 
-def check(group: dict, current: dict[str, str], repo: Path, since: float) -> tuple[list[str], list[str]]:
+def check(
+    group: dict, current: dict[str, str], repo: Path, since: float
+) -> tuple[list[str], list[str]]:
     """The group's paths that left `git status` and the ones modified after the proposal."""
     gone = [p for p in group["paths"] if p not in current]
     changed = [p for p in group["paths"] if p in current and mtime(repo, p) > since]
@@ -72,8 +75,12 @@ def check(group: dict, current: dict[str, str], repo: Path, since: float) -> tup
 
 def forbidden(group: dict) -> list[str]:
     """Paths a commit must never carry: the machine's config and data files (the /sync skill's stops)."""
-    return [p for p in group["paths"] if p in NEVER
-            or (p.endswith(NEVER_SUFFIX) and not p.startswith("tests/fixtures/"))]
+    return [
+        p
+        for p in group["paths"]
+        if p in NEVER
+        or (p.endswith(NEVER_SUFFIX) and not p.startswith("tests/fixtures/"))
+    ]
 
 
 def commit(repo: Path, group: dict, trailer: str) -> str:
@@ -87,14 +94,25 @@ def commit(repo: Path, group: dict, trailer: str) -> str:
     return git(repo, "rev-parse", "--short", "HEAD").strip()
 
 
-def apply(file: Path, repo: Path, *, dry: bool = False, only: set[int] | None = None,
-          push: bool = True, force: bool = False, max_age_h: float = 12, trailer: str = "") -> int:
+def apply(
+    file: Path,
+    repo: Path,
+    *,
+    dry: bool = False,
+    only: set[int] | None = None,
+    push: bool = True,
+    force: bool = False,
+    max_age_h: float = 12,
+    trailer: str = "",
+) -> int:
     """Apply a proposal; prints the Spanish summary and returns the exit code (2 = refused)."""
     since = file.stat().st_mtime
     age_h = (time.time() - since) / 3600
     if age_h > max_age_h and not force:
-        print(f"RECHAZADA: la propuesta tiene {age_h:.1f} h (límite {max_age_h:g} h) y el árbol se mueve. "
-              "Pide una nueva, o usa --force si sabes que no ha cambiado nada.")
+        print(
+            f"RECHAZADA: la propuesta tiene {age_h:.1f} h (límite {max_age_h:g} h) y el árbol se mueve. "
+            "Pide una nueva, o usa --force si sabes que no ha cambiado nada."
+        )
         return 2
     proposal = load(file)
     done, skipped = [], []
@@ -108,45 +126,77 @@ def apply(file: Path, repo: Path, *, dry: bool = False, only: set[int] | None = 
         if bad:
             skipped.append(f"{head}: lleva ficheros prohibidos {bad}")
         elif (gone or changed) and not force:
-            why = (f"ya no están en git status {gone} " if gone else "") + \
-                  (f"modificados tras la propuesta {changed}" if changed else "")
+            why = (f"ya no están en git status {gone} " if gone else "") + (
+                f"modificados tras la propuesta {changed}" if changed else ""
+            )
             skipped.append(f"{head}: {why.strip()}")
         else:
             group = {**group, "paths": [p for p in group["paths"] if p in current]}
             if not group["paths"]:
                 skipped.append(f"{head}: ya estaba commiteado")
             elif dry:
-                done.append(f"{head}: haría `git add` + `git commit` de {len(group['paths'])} ficheros")
+                done.append(
+                    f"{head}: haría `git add` + `git commit` de {len(group['paths'])} ficheros"
+                )
             else:
                 done.append(f"{head}: commit {commit(repo, group, trailer)}")
     pushed = ""
     if done and push and not dry:
         branch = git(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
-        env = {**os.environ, "PATH": f"{Path.home() / '.local/bin'}:{os.environ['PATH']}"}
-        got = subprocess.run([*PUSH, branch], cwd=repo, capture_output=True, text=True, env=env)
-        pushed = "push hecho" if got.returncode == 0 else f"PUSH FALLÓ: {got.stderr.strip()}"
+        env = {
+            **os.environ,
+            "PATH": f"{Path.home() / '.local/bin'}:{os.environ['PATH']}",
+        }
+        got = subprocess.run(
+            [*PUSH, branch], cwd=repo, capture_output=True, text=True, env=env
+        )
+        pushed = (
+            "push hecho" if got.returncode == 0 else f"PUSH FALLÓ: {got.stderr.strip()}"
+        )
     elif done:
         pushed = "sin push (dry-run o --no-push)"
-    print(f"{'DRY-RUN — ' if dry else ''}Propuesta de {proposal.get('date', file.name)}")
+    print(
+        f"{'DRY-RUN — ' if dry else ''}Propuesta de {proposal.get('date', file.name)}"
+    )
     print("Commits:" if not dry else "Haría:", *(done or ["ninguno"]), sep="\n  ")
     print("Saltados:", *(skipped or ["ninguno"]), sep="\n  ")
     print(f"{pushed}\n" if pushed else "", end="")
-    print(f"Sigue sin commitear: {len(status(repo))} ficheros "
-          f"(en curso según la propuesta: {len(proposal.get('en_curso', []))}).")
+    print(
+        f"Sigue sin commitear: {len(status(repo))} ficheros "
+        f"(en curso según la propuesta: {len(proposal.get('en_curso', []))})."
+    )
     return 0
 
 
 def main() -> None:
     """Parse the flags and apply the proposal of the given day (default today)."""
     ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
-    ap.add_argument("day", nargs="?", default=str(date.today()), help="YYYY-MM-DD of the proposal")
-    ap.add_argument("--dry-run", action="store_true", help="print what would be done, change nothing")
+    ap.add_argument(
+        "day", nargs="?", default=str(date.today()), help="YYYY-MM-DD of the proposal"
+    )
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="print what would be done, change nothing",
+    )
     ap.add_argument("--only", help="comma-separated group numbers, e.g. 1,3")
     ap.add_argument("--no-push", action="store_true")
-    ap.add_argument("--force", action="store_true", help="apply a stale proposal and groups whose files moved")
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="apply a stale proposal and groups whose files moved",
+    )
     ap.add_argument("--max-age-hours", type=float, default=12)
-    ap.add_argument("--trailer", default="", help="attribution line appended to every commit message")
-    ap.add_argument("--facts", action="store_true", help="print the uncommitted files with their age and exit")
+    ap.add_argument(
+        "--trailer",
+        default="",
+        help="attribution line appended to every commit message",
+    )
+    ap.add_argument(
+        "--facts",
+        action="store_true",
+        help="print the uncommitted files with their age and exit",
+    )
     a = ap.parse_args()
     if a.facts:
         print(facts(ROOT))
@@ -155,8 +205,18 @@ def main() -> None:
     if not file.exists():
         sys.exit(f"No hay propuesta: {file}")
     only = {int(x) for x in a.only.split(",")} if a.only else None
-    sys.exit(apply(file, ROOT, dry=a.dry_run, only=only, push=not a.no_push, force=a.force,
-                   max_age_h=a.max_age_hours, trailer=a.trailer))
+    sys.exit(
+        apply(
+            file,
+            ROOT,
+            dry=a.dry_run,
+            only=only,
+            push=not a.no_push,
+            force=a.force,
+            max_age_h=a.max_age_hours,
+            trailer=a.trailer,
+        )
+    )
 
 
 if __name__ == "__main__":

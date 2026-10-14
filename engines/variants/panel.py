@@ -8,7 +8,6 @@ import pandas as pd
 from core import assetdata
 
 
-
 # Which segments sit on each side of the split. Owner, 2026-09-27 (encargo 24, Q11): `build`
 # is ALWAYS in sample; the in-sample side is `build` or `build+oos1`; the out-of-sample side is
 # whatever is left, and `oos1` may be left out entirely. The batch is retested once and
@@ -17,15 +16,20 @@ from core import assetdata
 SEGMENTS = ("build", "oos1", "oos2")
 # Step 17's three compositions, each under its own key (encargo 48): c1 decides, c2 and c3
 # are annotated. `build -> oos1` alone is out (it spends nothing the others do not).
-KEYS = {"c1": (("build", "oos1"), ("oos2",)), "c2": (("build",), ("oos1", "oos2")),
-        "c3": (("build",), ("oos2",))}
+KEYS = {
+    "c1": (("build", "oos1"), ("oos2",)),
+    "c2": (("build",), ("oos1", "oos2")),
+    "c3": (("build",), ("oos2",)),
+}
 COMPOSITIONS = tuple(KEYS.values())
 
 # The two readings of 2026-09-24, kept as names. `oos1_oos2` asks the ordinary question — does
 # the build predict everything after it. `oos2_only` asks the strict one: with build AND oos1
 # both treated as in sample, does the segment nothing has ever looked at still come back.
-SHORTCUTS = {"oos1_oos2": (("build",), ("oos1", "oos2")),
-             "oos2_only": (("build", "oos1"), ("oos2",))}
+SHORTCUTS = {
+    "oos1_oos2": (("build",), ("oos1", "oos2")),
+    "oos2_only": (("build", "oos1"), ("oos2",)),
+}
 
 
 def composition(inside: list[str], outside: list[str]) -> tuple[tuple, tuple]:
@@ -42,13 +46,16 @@ def composition(inside: list[str], outside: list[str]) -> tuple[tuple, tuple]:
         ValueError: `build` is not in sample, `oos1` is out while `build+oos1` is in, a
             segment sits on both sides or is not one of the three, or nothing is out.
     """
-    comp = (tuple(s for s in SEGMENTS if s in inside),
-            tuple(s for s in SEGMENTS if s in outside))
+    comp = (
+        tuple(s for s in SEGMENTS if s in inside),
+        tuple(s for s in SEGMENTS if s in outside),
+    )
     if (set(inside) | set(outside)) - set(SEGMENTS) or comp not in COMPOSITIONS:
         raise ValueError(
             f"composición no admitida: IS {'+'.join(inside)}, OOS {'+'.join(outside)}. "
             f"`build` va siempre dentro; dentro es build o build,oos1; fuera, lo que queda "
-            f"de {', '.join(SEGMENTS)} (oos1 puede quedarse fuera de las dos)")
+            f"de {', '.join(SEGMENTS)} (oos1 puede quedarse fuera de las dos)"
+        )
     return comp
 
 
@@ -75,10 +82,14 @@ def columns(comp: tuple[tuple, tuple]) -> dict[str, str]:
         `oos1+oos2`), so none needs a column of its own.
     """
     inside, outside = "+".join(comp[0]), "+".join(comp[1])
-    return {"is": f"NetProfit ({inside})", "oos": f"NetProfit ({outside})",
-            "trades_is": f"NumberOfTrades ({inside})",
-            "trades_oos": f"NumberOfTrades ({outside})",
-            "is_label": inside, "oos_label": outside}
+    return {
+        "is": f"NetProfit ({inside})",
+        "oos": f"NetProfit ({outside})",
+        "trades_is": f"NumberOfTrades ({inside})",
+        "trades_oos": f"NumberOfTrades ({outside})",
+        "is_label": inside,
+        "oos_label": outside,
+    }
 
 
 def points(metrics: pd.DataFrame, min_trades: int, cols: dict) -> pd.DataFrame:
@@ -97,8 +108,13 @@ def points(metrics: pd.DataFrame, min_trades: int, cols: dict) -> pd.DataFrame:
         than a statement about the surface.
     """
     kept = metrics.dropna(subset=[cols["is"], cols["oos"]])
-    return cast(pd.DataFrame, kept[(kept[cols["trades_is"]] >= min_trades)
-                                   & (kept[cols["trades_oos"]] >= min_trades)])
+    return cast(
+        pd.DataFrame,
+        kept[
+            (kept[cols["trades_is"]] >= min_trades)
+            & (kept[cols["trades_oos"]] >= min_trades)
+        ],
+    )
 
 
 def panel(work: Path, period: str) -> pd.DataFrame:
@@ -149,8 +165,9 @@ def split(symbol: str, comp: tuple[tuple, tuple]) -> str:
     return assetdata.segment_start(assetdata.load(symbol), comp[1][0])
 
 
-def usable(wide: pd.DataFrame, metrics: pd.DataFrame, min_trades: int,
-           cols: dict) -> pd.DataFrame:
+def usable(
+    wide: pd.DataFrame, metrics: pd.DataFrame, min_trades: int, cols: dict
+) -> pd.DataFrame:
     """Narrow the panel to the variants the correlation study already accepted.
 
     Args:
@@ -180,5 +197,7 @@ def windows(wide: pd.DataFrame, boundary: str) -> tuple[pd.DataFrame, pd.DataFra
         about the selection procedure, not about this particular history -- but the cost
         of a selection rule in §8c is a question about exactly this split.
     """
-    return (cast(pd.DataFrame, wide[wide.index < boundary]),
-            cast(pd.DataFrame, wide[wide.index >= boundary]))
+    return (
+        cast(pd.DataFrame, wide[wide.index < boundary]),
+        cast(pd.DataFrame, wide[wide.index >= boundary]),
+    )

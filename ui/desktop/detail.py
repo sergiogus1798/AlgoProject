@@ -1,14 +1,32 @@
 """One template's page: what it is, what is on disk, where it ran, and the two writes."""
 
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QHeaderView, QLabel,
-                               QPlainTextEdit, QPushButton, QScrollArea, QTableWidget,
-                               QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QPlainTextEdit,
+    QPushButton,
+    QScrollArea,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import client, names
 from ui.desktop.shape import shape_panel
-from ui.desktop.theme import (C, STATUS_COLOUR, STATUS_HELP, VERDICT_LABEL, chip, verdict_colour,
-                              verdict_label)
+from ui.desktop.theme import (
+    C,
+    STATUS_COLOUR,
+    STATUS_HELP,
+    VERDICT_LABEL,
+    chip,
+    verdict_colour,
+    verdict_label,
+)
 
 RUN_COLUMNS = ("Activo", "TF", "Fecha", "Proyecto", "Constr.", "Retenidas", "Veredicto")
 
@@ -44,8 +62,10 @@ class Detail(QWidget):
         self.pane.setWidget(body)
         return lay
 
-    def show_empty(self, text: str = "Elige una plantilla a la izquierda, o una celda de la "
-                                      "matriz.") -> None:
+    def show_empty(
+        self,
+        text: str = "Elige una plantilla a la izquierda, o una celda de la matriz.",
+    ) -> None:
         """The placeholder before anything is selected, or `text` instead of a draft's page."""
         lay = self.page()
         msg = QLabel(text, objectName="muted")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
@@ -91,12 +111,20 @@ class Detail(QWidget):
         Returns:
             A rich-text label carrying one chip per fact that is present.
         """
-        parts = [chip(t.get("status") or "sin estado", STATUS_COLOUR.get(t.get("status", ""),
-                                                                        C["faint"]))]
+        parts = [
+            chip(
+                t.get("status") or "sin estado",
+                STATUS_COLOUR.get(t.get("status", ""), C["faint"]),
+            )
+        ]
         for field in ("archetype", "shape", "origin", "created"):
             if t.get(field):
-                parts.append(chip(names.family(t[field]) if field == "archetype" else t[field],
-                                  C["muted"]))
+                parts.append(
+                    chip(
+                        names.family(t[field]) if field == "archetype" else t[field],
+                        C["muted"],
+                    )
+                )
         label = QLabel(" ".join(parts))
         label.setToolTip(STATUS_HELP.get(t.get("status", ""), ""))
         return label
@@ -116,13 +144,20 @@ class Detail(QWidget):
         if not d["exists"]:
             text = f'<span style="color:{C["dead"]}">La carpeta no existe: {d["path"]}</span>'
         else:
-            bits = [("template.sqx", d["sqx"]), ("brief.md", d["brief"]),
-                    (f"deps/ ({len(d['deps'])})", bool(d["deps"]))]
-            text = " · ".join(chip(n, C["promising"] if ok else C["dead"]) for n, ok in bits)
+            bits = [
+                ("template.sqx", d["sqx"]),
+                ("brief.md", d["brief"]),
+                (f"deps/ ({len(d['deps'])})", bool(d["deps"])),
+            ]
+            text = " · ".join(
+                chip(n, C["promising"] if ok else C["dead"]) for n, ok in bits
+            )
         label = QLabel(text)
-        label.setToolTip(f"{d['path']}\n\ndeps/ es lo que hace la carpeta autocontenida: sin los "
-                         "bloques al lado, la plantilla desaparece en silencio del builder de otra "
-                         "instalación.")
+        label.setToolTip(
+            f"{d['path']}\n\ndeps/ es lo que hace la carpeta autocontenida: sin los "
+            "bloques al lado, la plantilla desaparece en silencio del builder de otra "
+            "instalación."
+        )
         return label
 
     def controls(self, t: dict) -> QFrame:
@@ -140,7 +175,9 @@ class Detail(QWidget):
         lay.setSpacing(10)
         lay.addWidget(QLabel("Estado:", objectName="muted"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         box = QComboBox()
-        statuses = list(STATUS_HELP)       # the library's STATUSES, which the zone already read
+        statuses = list(
+            STATUS_HELP
+        )  # the library's STATUSES, which the zone already read
         box.addItems(statuses)
         box.setCurrentText(t.get("status") or "draft")
         box.setToolTip("\n".join(f"{s}: {STATUS_HELP[s]}" for s in statuses))
@@ -150,7 +187,9 @@ class Detail(QWidget):
         note.setPlaceholderText("Nota — por qué está en este estado, qué falta")
         lay.addWidget(note, 1)
         save = QPushButton("Guardar", objectName="primary")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-        save.clicked.connect(lambda: self.save_status(box.currentText(), note.toPlainText()))
+        save.clicked.connect(
+            lambda: self.save_status(box.currentText(), note.toPlainText())
+        )
         lay.addWidget(save)
         return f
 
@@ -183,8 +222,16 @@ class Detail(QWidget):
         table.setFixedHeight(46 + 40 * max(len(t["runs"]), 1))
         table.verticalHeader().setDefaultSectionSize(40)
         for r, run in enumerate(t["runs"]):
-            for c, key in enumerate(("symbol", "timeframe", "date", "project",
-                                     "strategies_built", "strategies_kept")):
+            for c, key in enumerate(
+                (
+                    "symbol",
+                    "timeframe",
+                    "date",
+                    "project",
+                    "strategies_built",
+                    "strategies_kept",
+                )
+            ):
                 item = QTableWidgetItem(run.get(key, ""))
                 item.setFlags(Qt.ItemFlag.ItemIsEnabled)
                 item.setToolTip(run.get("report", ""))
@@ -214,7 +261,8 @@ class Detail(QWidget):
         box.setCurrentIndex(box.findData(stored))
         box.setStyleSheet(f"color: {verdict_colour(stored)};")
         box.currentIndexChanged.connect(
-            lambda _, b=box, r=run: self.save_verdict(r, b.currentData()))
+            lambda _, b=box, r=run: self.save_verdict(r, b.currentData())
+        )
         return box
 
     def save_verdict(self, run: dict, verdict: str) -> None:
@@ -224,8 +272,15 @@ class Detail(QWidget):
             run: The run row being judged.
             verdict: One of the verdicts, or "" to take it back.
         """
-        client.post("verdict", {"template": run["template"], "symbol": run["symbol"],
-                                "timeframe": run["timeframe"], "verdict": verdict})
+        client.post(
+            "verdict",
+            {
+                "template": run["template"],
+                "symbol": run["symbol"],
+                "timeframe": run["timeframe"],
+                "verdict": verdict,
+            },
+        )
         self.redraw()
 
     def redraw(self) -> None:

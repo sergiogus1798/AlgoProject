@@ -26,9 +26,13 @@ def days(m: pd.DataFrame, vol: pd.DataFrame, min_minutes: int) -> pd.DataFrame:
         mean spread in price, `minutes`, and `rv`, `price` from Dukascopy.
     """
     day = cast(Any, m.index).normalize()
-    got = pd.DataFrame({"rel": relative(m).groupby(day).mean(),
-                        "spread": m["spread_open"].groupby(day).mean(),
-                        "minutes": m["n"].groupby(day).size()})
+    got = pd.DataFrame(
+        {
+            "rel": relative(m).groupby(day).mean(),
+            "spread": m["spread_open"].groupby(day).mean(),
+            "minutes": m["n"].groupby(day).size(),
+        }
+    )
     got = cast(pd.DataFrame, got[got["minutes"] >= min_minutes]).join(vol, how="inner")
     return cast(pd.DataFrame, got[got["rv"] > 0])
 
@@ -37,12 +41,16 @@ def yearly(m: pd.DataFrame, tick: float) -> pd.DataFrame:
     """The spread by calendar year, in points of `assets/`'s tick and in basis points of price."""
     rel, pts = relative(m) * BPS, m["spread_open"] / tick
     year = cast(Any, m.index).year
-    return pd.DataFrame({"puntos mediana": pts.groupby(year).median(),
-                         "puntos media": pts.groupby(year).mean(),
-                         "pb mediana": rel.groupby(year).median(),
-                         "pb media": rel.groupby(year).mean(),
-                         "precio mediano": m["bid_open"].groupby(year).median(),
-                         "minutos": m["n"].groupby(year).size()})
+    return pd.DataFrame(
+        {
+            "puntos mediana": pts.groupby(year).median(),
+            "puntos media": pts.groupby(year).mean(),
+            "pb mediana": rel.groupby(year).median(),
+            "pb media": rel.groupby(year).mean(),
+            "precio mediano": m["bid_open"].groupby(year).median(),
+            "minutos": m["n"].groupby(year).size(),
+        }
+    )
 
 
 def hours(m: pd.DataFrame) -> pd.Series:
@@ -59,7 +67,11 @@ def hours(m: pd.DataFrame) -> pd.Series:
 def week_grid(m: pd.DataFrame) -> pd.DataFrame:
     """Mean relative spread in basis points by weekday (rows) and hour (columns)."""
     rel = relative(m) * BPS
-    return rel.groupby([cast(Any, m.index).dayofweek, cast(Any, m.index).hour]).mean().unstack()
+    return (
+        rel.groupby([cast(Any, m.index).dayofweek, cast(Any, m.index).hour])
+        .mean()
+        .unstack()
+    )
 
 
 def quantiles(values: pd.Series) -> dict[str, float]:

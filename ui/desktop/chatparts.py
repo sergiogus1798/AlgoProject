@@ -29,11 +29,15 @@ def drop(layout: QLayout) -> None:
 def bubble(text: str, mine: bool) -> QFrame:
     """One message of the transcript, a framed label; `mine` (the reader's) sits accented."""
     f = QFrame()
-    f.setStyleSheet(f"background:{C['accent'] if mine else C['raised']}; border-radius:10px;")
+    f.setStyleSheet(
+        f"background:{C['accent'] if mine else C['raised']}; border-radius:10px;"
+    )
     lay = QVBoxLayout(f)
     lay.setContentsMargins(13, 9, 13, 9)
     label = QLabel(text)
     label.setWordWrap(True)
-    label.setStyleSheet("background:transparent; color:#ffffff;" if mine else "background:transparent;")
+    label.setStyleSheet(
+        "background:transparent; color:#ffffff;" if mine else "background:transparent;"
+    )
     lay.addWidget(label)
     return f

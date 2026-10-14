@@ -20,7 +20,12 @@ from ledger import study as studymod
 from pipeline.autopilot import blind, call, plan, run, survivors, tail
 from ui.daemon.workflow.steps import STEPS
 
-MT5 = {"start": "2024-01-01", "end": "2026-08-30", "model": "ohlc_m1", "firms": ["ftmo"]}
+MT5 = {
+    "start": "2024-01-01",
+    "end": "2026-08-30",
+    "model": "ohlc_m1",
+    "firms": ["ftmo"],
+}
 GIVEN = {"panel": {"21": "OOS"}, "mt5": MT5, "judged": set()}
 WHO = {"symbol": "USDJPY", "timeframe": "H1", "feed": "USDJPY_M1", "family": "fam"}
 # 18.5 is back (encargo 65 row 8), without its build+oos1 split: the block is the three looks, all at oos2
@@ -46,11 +51,22 @@ def rail(pending_from: str = "16.5", family: str | None = "fam", **states: str) 
     (keys as `s18_5` for step 18.5)."""
     at = [s["n"] for s in STEPS].index(pending_from)
     over = {k[1:].replace("_", "."): v for k, v in states.items()}
-    return {"asset": "X", "family": family, "steps": [
-        {"n": s["n"], "title": s["title"], "kind": s["kind"], "stage": s.get("stage"),
-         "state": over.get(s["n"], "done" if i < at else "pending"),
-         "tests": [{"key": "wfm", "state": "done" if i < at else "pending"}] * (s["n"] == "19")}
-        for i, s in enumerate(STEPS)]}
+    return {
+        "asset": "X",
+        "family": family,
+        "steps": [
+            {
+                "n": s["n"],
+                "title": s["title"],
+                "kind": s["kind"],
+                "stage": s.get("stage"),
+                "state": over.get(s["n"], "done" if i < at else "pending"),
+                "tests": [{"key": "wfm", "state": "done" if i < at else "pending"}]
+                * (s["n"] == "19"),
+            }
+            for i, s in enumerate(STEPS)
+        ],
+    }
 
 
 def kinds(got: dict) -> list[tuple[str, str]]:
@@ -62,19 +78,33 @@ def test_the_whole_tail_in_order() -> None:
     """16 judged, the variants, the blind block with the WFM and its rows, 20 and its judge,
     21, the finalists, step 26 — and every blind look redone, the batches being new."""
     got = plan.plan(rail(), GIVEN)
-    assert kinds(got) == [("16", "judge"), ("16.5", "variants"), *BLOCK, ("19", "sqx"),
-                          ("19", "wfm"), ("19", "kept"), ("19.5", "oos2read"), ("19", "ledger"), ("20", "joint"), ("20", "judge"),
-                          *CLOSING, ("26", "mt5verify")]
+    assert kinds(got) == [
+        ("16", "judge"),
+        ("16.5", "variants"),
+        *BLOCK,
+        ("19", "sqx"),
+        ("19", "wfm"),
+        ("19", "kept"),
+        ("19.5", "oos2read"),
+        ("19", "ledger"),
+        ("20", "joint"),
+        ("20", "judge"),
+        *CLOSING,
+        ("26", "mt5verify"),
+    ]
     assert got["stop"] == {"n": None, "why": "no queda ningún paso"}
     assert all(a["redo"] for a in got["do"] if a["kind"] == "blind")
     assert got["do"][-1]["params"] == MT5 and got["do"][12]["databank"] == "OOS"
-    json.dumps(got)     # plan.json is written as it comes
+    json.dumps(got)  # plan.json is written as it comes
 
 
 def test_until_wfm_stops_before_20() -> None:
     """`--until wfm`: the block, the WFM and the ledger rows, then a clean stop before step 20."""
     got = plan.plan(rail(), GIVEN | {"until": "wfm"})
-    assert kinds(got)[-3:] == [("19", "kept"), ("19.5", "oos2read"), ("19", "ledger")] and got["stop"]["n"] == "20"
+    assert (
+        kinds(got)[-3:] == [("19", "kept"), ("19.5", "oos2read"), ("19", "ledger")]
+        and got["stop"]["n"] == "20"
+    )
 
 
 def test_clean_stops() -> None:
@@ -82,7 +112,10 @@ def test_clean_stops() -> None:
     a family and a step in marcha each end the plan before it, saying what is missing."""
     got = plan.plan(rail(), GIVEN | {"mt5": MT5 | {"model": None, "firms": []}})
     assert kinds(got)[-1] == ("26", "finalists") and got["stop"]["n"] == "26"
-    assert "--mt5-model, --mt5-firms" in got["stop"]["why"] and "--mt5-from" not in got["stop"]["why"]
+    assert (
+        "--mt5-model, --mt5-firms" in got["stop"]["why"]
+        and "--mt5-from" not in got["stop"]["why"]
+    )
 
     got = plan.plan(rail(), GIVEN | {"panel": {}})
     assert kinds(got)[-2:] == [("20", "joint"), ("20", "judge")]
@@ -104,9 +137,18 @@ def test_a_rerun_takes_up_where_it_stopped() -> None:
     """17 and 18 done, 19 not: the looks are planned without `redo` (a mother with her
     result is skipped when run), the WFM runs, and everything after it runs again."""
     got = plan.plan(rail("19", s16_5="done"), GIVEN)
-    assert kinds(got) == [*BLOCK, ("19", "sqx"), ("19", "wfm"), ("19", "kept"), ("19.5", "oos2read"),
-                          ("19", "ledger"),
-                          ("20", "joint"), ("20", "judge"), *CLOSING, ("26", "mt5verify")]
+    assert kinds(got) == [
+        *BLOCK,
+        ("19", "sqx"),
+        ("19", "wfm"),
+        ("19", "kept"),
+        ("19.5", "oos2read"),
+        ("19", "ledger"),
+        ("20", "joint"),
+        ("20", "judge"),
+        *CLOSING,
+        ("26", "mt5verify"),
+    ]
     assert not any(a["redo"] for a in got["do"] if a["kind"] == "blind")
 
     # the block and 20 done, 21 done: only what is pending, and no judge of a step whose
@@ -116,7 +158,11 @@ def test_a_rerun_takes_up_where_it_stopped() -> None:
 
     # a step the owner gives rules to is judged right after it runs
     got = plan.plan(rail("21"), GIVEN | {"judged": {"8", "21"}})
-    assert kinds(got)[-4:-1] == [("21", "reading"), ("21", "judge"), ("26", "finalists")]
+    assert kinds(got)[-4:-1] == [
+        ("21", "reading"),
+        ("21", "judge"),
+        ("26", "finalists"),
+    ]
 
 
 def test_the_block_is_judged_and_18_5_is_read_with_oos2() -> None:
@@ -124,8 +170,20 @@ def test_the_block_is_judged_and_18_5_is_read_with_oos2() -> None:
     its oos2 segment), and 19 after its reading."""
     got = plan.plan(rail(), GIVEN | {"judged": {"17", "18", "18.5", "19", "19.5"}})
     assert kinds(got)[2:15] == [
-        ("17", "blind"), ("18", "blind"), ("18.5", "blind"), ("17", "judge"), ("18", "judge"), ("18.5", "judge"), ("19", "sqx"),
-        ("19", "wfm"), ("19", "kept"), ("19", "judge"), ("19.5", "oos2read"), ("19.5", "judge"), ("19", "ledger")]
+        ("17", "blind"),
+        ("18", "blind"),
+        ("18.5", "blind"),
+        ("17", "judge"),
+        ("18", "judge"),
+        ("18.5", "judge"),
+        ("19", "sqx"),
+        ("19", "wfm"),
+        ("19", "kept"),
+        ("19", "judge"),
+        ("19.5", "oos2read"),
+        ("19.5", "judge"),
+        ("19", "ledger"),
+    ]
     assert [a["oos2"] for a in got["do"] if a["kind"] == "blind"] == [True] * 3
     # only the steps with rules are judged; a block already done is not judged again
     got = plan.plan(rail(), GIVEN | {"judged": {"18"}})
@@ -139,49 +197,91 @@ def test_the_deciding_reading_does_not_ask_for_oos2() -> None:
     block it is asked, the flag is added, and a result without its oos2 reading is run again."""
     ran, asked = [], []
     mothers = pd.DataFrame({"strategy": ["M"], "identity": ["i"], "file": [None]})
-    with tempfile.TemporaryDirectory() as tmp, \
-            patched(survivors, about=lambda p: WHO), \
-            patched(gate, allow=lambda *a: asked.append(a)), \
-            patched(call, run=ran.append, window=lambda *a: [["-m", a[0]]]), \
-            patched(blind, variants_dir=lambda p, m: Path(tmp) / m, skipped=lambda p, m: None):
-        said = blind.look("P", "18.5", "marketSurfaces", mothers, redo=False, oos2=False)
+    with (
+        tempfile.TemporaryDirectory() as tmp,
+        patched(survivors, about=lambda p: WHO),
+        patched(gate, allow=lambda *a: asked.append(a)),
+        patched(call, run=ran.append, window=lambda *a: [["-m", a[0]]]),
+        patched(
+            blind, variants_dir=lambda p, m: Path(tmp) / m, skipped=lambda p, m: None
+        ),
+    ):
+        said = blind.look(
+            "P", "18.5", "marketSurfaces", mothers, redo=False, oos2=False
+        )
         assert asked == [] and ran == [["-m", "marketSurfaces"]] and "sin oos2" in said
         result = Path(tmp) / "M" / "estudios" / "marketSurfaces.json"
         result.parent.mkdir(parents=True)
         result.write_text(json.dumps({"facts": {"orden": {"estado": "neutro"}}}))
-        assert "0 madre(s)" in blind.look("P", "18.5", "marketSurfaces", mothers, False, False)
+        assert "0 madre(s)" in blind.look(
+            "P", "18.5", "marketSurfaces", mothers, False, False
+        )
         del ran[:]
         blind.look("P", "18.5", "marketSurfaces", mothers, redo=False)
-        assert asked == [(18.5, "oos2", "USDJPY")] and ran == [["-m", "marketSurfaces", "--oos2"]]
+        assert asked == [(18.5, "oos2", "USDJPY")] and ran == [
+            ["-m", "marketSurfaces", "--oos2"]
+        ]
         result.write_text(json.dumps({"facts": {"oos2": {"perverso": 0}}}))
-        assert "0 madre(s)" in blind.look("P", "18.5", "marketSurfaces", mothers, redo=False)
+        assert "0 madre(s)" in blind.look(
+            "P", "18.5", "marketSurfaces", mothers, redo=False
+        )
 
 
 def ledger(folder: Path, steps: list[int]) -> None:
     """A study's ledger in `folder` holding one row of each of `steps`."""
     for step in steps:
-        record.append("S", record.search("S", {
-            "step": step, "launched_by": "test", "symbol": "USDJPY", "timeframe": "H1",
-            "segment": "oos2", "n_in": 1, "n_out": 1, "criterion": "x", "note": "lote M"}))
+        record.append(
+            "S",
+            record.search(
+                "S",
+                {
+                    "step": step,
+                    "launched_by": "test",
+                    "symbol": "USDJPY",
+                    "timeframe": "H1",
+                    "segment": "oos2",
+                    "n_in": 1,
+                    "n_out": 1,
+                    "criterion": "x",
+                    "note": "lote M",
+                },
+            ),
+        )
 
 
 def test_the_door_refuses_to_read_without_the_three_rows() -> None:
     """Under ALGO_AUTONOMOUS, step 20 and the registration refuse while 19 has no row, and
     no command starts; a human is not refused. With the WFM read, its rows are written once."""
     ran, asked = [], []
-    with tempfile.TemporaryDirectory() as tmp, \
-            patched(studymod, path=lambda s: Path(tmp) / f"{s}.jsonl"), \
-            patched(survivors, about=lambda p: WHO), \
-            patched(call, run=ran.append, window=lambda *a: [["-m", a[0]]]), \
-            patched(blind, study=lambda p: ("S", {"study": "S", "symbol": "USDJPY",
-                                                  "timeframe": "H1", "config_hash": None}),
-                    bank=lambda p: "WFM", variants_dir=lambda p, m: Path(tmp) / m,
-                    report_dir=lambda p, d, day: Path(tmp) / "reports" / d / day):
+    with (
+        tempfile.TemporaryDirectory() as tmp,
+        patched(studymod, path=lambda s: Path(tmp) / f"{s}.jsonl"),
+        patched(survivors, about=lambda p: WHO),
+        patched(call, run=ran.append, window=lambda *a: [["-m", a[0]]]),
+        patched(
+            blind,
+            study=lambda p: (
+                "S",
+                {
+                    "study": "S",
+                    "symbol": "USDJPY",
+                    "timeframe": "H1",
+                    "config_hash": None,
+                },
+            ),
+            bank=lambda p: "WFM",
+            variants_dir=lambda p, m: Path(tmp) / m,
+            report_dir=lambda p, d, day: Path(tmp) / "reports" / d / day,
+        ),
+    ):
         ledger(Path(tmp), [17, 18])
         mothers = pd.DataFrame({"strategy": ["M"], "identity": ["i"], "file": [None]})
         os.environ[gate.AUTONOMOUS] = "1"
         try:
-            for refused in (lambda: blind.joint("P"), lambda: blind.register("P", mothers)):
+            for refused in (
+                lambda: blind.joint("P"),
+                lambda: blind.register("P", mothers),
+            ):
                 try:
                     refused()
                     raise AssertionError("the door let a blind read through")
@@ -196,8 +296,12 @@ def test_the_door_refuses_to_read_without_the_three_rows() -> None:
             assert said.startswith("wfc: 1 madre(s)")
             (Path(tmp) / "M" / "estudios").mkdir(parents=True)
             (Path(tmp) / "M" / "estudios" / "wfc.json").write_text("{}")
-            assert "0 madre(s) leídas" in blind.look("P", "17", "wfc", mothers, redo=False)
-            assert "1 madre(s) leídas" in blind.look("P", "17", "wfc", mothers, redo=True)
+            assert "0 madre(s) leídas" in blind.look(
+                "P", "17", "wfc", mothers, redo=False
+            )
+            assert "1 madre(s) leídas" in blind.look(
+                "P", "17", "wfc", mothers, redo=True
+            )
             (Path(tmp) / "M" / "estudios" / "wfc.json").unlink()
 
             # the WFM reading lands: its three rows are written, once, and the door opens
@@ -205,7 +309,8 @@ def test_the_door_refuses_to_read_without_the_three_rows() -> None:
             (read / "estrategias").mkdir(parents=True)
             (read / "verdict.csv").write_text("strategy,verdict\nM,blind\n")
             (read / "estrategias" / "M.json").write_text(
-                json.dumps({"computed_at": "2026-10-02T10:00:00+00:00"}))
+                json.dumps({"computed_at": "2026-10-02T10:00:00+00:00"})
+            )
             assert blind.register("P", mothers) == "filas escritas: paso 19: 3"
             assert blind.register("P", mothers) == "17, 18 y 19 ya tenían sus filas"
             assert list(studymod.read("S")["step"]) == [17, 18, 19, 19, 19]
@@ -222,18 +327,25 @@ def test_the_door_refuses_to_read_without_the_three_rows() -> None:
 def test_nobody_left_is_a_clean_end() -> None:
     """Zero survivors of 16: the variants never start, resumen.md says why, no fallo.md."""
     started = []
-    todo = {"do": [{"n": "16.5", "title": "v", "kind": "variants", "tests": []}],
-            "stop": {"n": "26", "why": "x"}}
-    with tempfile.TemporaryDirectory() as tmp, \
-            patched(run.advance, where=lambda p: {"role": "custodian"}, busy=lambda *a: []), \
-            patched(run.workflow, workflow=lambda p: {"asset": "X"}), \
-            patched(run.plan, plan=lambda data, given: todo), \
-            patched(run.variants, run=lambda *a: started.append(a)), \
-            patched(survivors, databank_dir=lambda *a: Path(tmp) / "empty"):
+    todo = {
+        "do": [{"n": "16.5", "title": "v", "kind": "variants", "tests": []}],
+        "stop": {"n": "26", "why": "x"},
+    }
+    with (
+        tempfile.TemporaryDirectory() as tmp,
+        patched(run.advance, where=lambda p: {"role": "custodian"}, busy=lambda *a: []),
+        patched(run.workflow, workflow=lambda p: {"asset": "X"}),
+        patched(run.plan, plan=lambda data, given: todo),
+        patched(run.variants, run=lambda *a: started.append(a)),
+        patched(survivors, databank_dir=lambda *a: Path(tmp) / "empty"),
+    ):
         out = Path(tmp)
         run.autopilot("Test_x", out)
         assert started == [] and not (out / "fallo.md").exists()
-        assert "«SPP OOS» no tiene ninguna superviviente" in (out / "resumen.md").read_text()
+        assert (
+            "«SPP OOS» no tiene ninguna superviviente"
+            in (out / "resumen.md").read_text()
+        )
         assert (out / "estado.txt").read_text().split(" ", 1)[1].startswith("FIN")
 
 
@@ -246,4 +358,3 @@ if __name__ == "__main__":
     test_the_door_refuses_to_read_without_the_three_rows()
     test_nobody_left_is_a_clean_end()
     print("ok")
-

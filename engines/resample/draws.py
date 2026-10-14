@@ -20,7 +20,9 @@ def iid_shuffle(n: int, size: int, rng: np.random.Generator, block: int) -> np.n
     return rng.permuted(np.tile(np.arange(size), (n, 1)), axis=1)
 
 
-def block_shuffle(n: int, size: int, rng: np.random.Generator, block: int) -> np.ndarray:
+def block_shuffle(
+    n: int, size: int, rng: np.random.Generator, block: int
+) -> np.ndarray:
     """Permute contiguous blocks of trades, keeping each block's inside order.
 
     Args:
@@ -66,7 +68,9 @@ def stationary(n: int, size: int, rng: np.random.Generator, block: int) -> np.nd
     return out
 
 
-def iid_bootstrap(n: int, size: int, rng: np.random.Generator, block: int) -> np.ndarray:
+def iid_bootstrap(
+    n: int, size: int, rng: np.random.Generator, block: int
+) -> np.ndarray:
     """Draw the same number of trades with replacement, independently.
 
     Args:
@@ -81,7 +85,9 @@ def iid_bootstrap(n: int, size: int, rng: np.random.Generator, block: int) -> np
     return rng.integers(0, size, (n, size))
 
 
-def block_bootstrap(n: int, size: int, rng: np.random.Generator, block: int) -> np.ndarray:
+def block_bootstrap(
+    n: int, size: int, rng: np.random.Generator, block: int
+) -> np.ndarray:
     """Draw contiguous blocks with replacement, wrapping around the end.
 
     Args:
@@ -100,28 +106,42 @@ def block_bootstrap(n: int, size: int, rng: np.random.Generator, block: int) -> 
     return laid.reshape(n, count * block)[:, :size]
 
 
-DRAWS = {"iid_shuffle": iid_shuffle, "block_shuffle": block_shuffle,
-         "stationary": stationary, "iid_bootstrap": iid_bootstrap,
-         "block_bootstrap": block_bootstrap}
+DRAWS = {
+    "iid_shuffle": iid_shuffle,
+    "block_shuffle": block_shuffle,
+    "stationary": stationary,
+    "iid_bootstrap": iid_bootstrap,
+    "block_bootstrap": block_bootstrap,
+}
 
 # What each model holds fixed and what it randomises. A model that changes more than one
 # thing cannot attribute a result to any single cause, so this table is printed next to the
 # numbers it produced rather than kept as documentation.
-FAMILY = {"iid_shuffle": "A", "block_shuffle": "A", "stationary": "A",
-          "iid_bootstrap": "B", "block_bootstrap": "B"}
+FAMILY = {
+    "iid_shuffle": "A",
+    "block_shuffle": "A",
+    "stationary": "A",
+    "iid_bootstrap": "B",
+    "block_bootstrap": "B",
+}
 PRESERVES = {
     "iid_shuffle": "every trade exactly once; only the order changes",
     "block_shuffle": "every trade exactly once, and the runs inside each block",
     "stationary": "the trade count and, on average, runs of length block; composition drifts",
     "iid_bootstrap": "only the trade count; which trades occur changes",
-    "block_bootstrap": "the trade count and runs of consecutive trades; composition changes"}
+    "block_bootstrap": "the trade count and runs of consecutive trades; composition changes",
+}
 KEEPS_MULTISET = ("iid_shuffle", "block_shuffle")
 
 # What a run is called on screen and in the report. The keys above are code; nobody should
 # have to know them to read a progress bar.
-TITLES = {"iid_shuffle": "Barajado i.i.d.", "block_shuffle": "Bloques barajados",
-          "stationary": "Bootstrap estacionario", "iid_bootstrap": "Remuestreo i.i.d.",
-          "block_bootstrap": "Bloques remuestreados"}
+TITLES = {
+    "iid_shuffle": "Barajado i.i.d.",
+    "block_shuffle": "Bloques barajados",
+    "stationary": "Bootstrap estacionario",
+    "iid_bootstrap": "Remuestreo i.i.d.",
+    "block_bootstrap": "Bloques remuestreados",
+}
 
 
 def title(model: str, block: int) -> str:

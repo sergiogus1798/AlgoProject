@@ -6,8 +6,14 @@ import pandas as pd
 
 from core.paths import export_dir
 
-SIMS, LEVELS, ORIGINAL, PNL, RETURNS, TRADES = ("sims", "levels", "original", "pnl", "returns",
-                                                "trades")
+SIMS, LEVELS, ORIGINAL, PNL, RETURNS, TRADES = (
+    "sims",
+    "levels",
+    "original",
+    "pnl",
+    "returns",
+    "trades",
+)
 # What T2 and T3 date a P/L with (2026-10-07): the original's build trades, and its P/L vector.
 BUILD, ORIGINAL_PNL = "build", "original_pnl"
 
@@ -45,7 +51,9 @@ def write(frame: pd.DataFrame, where: Path, parts: list[str], compression: str) 
     return len(frame)
 
 
-def load_sims(project: str, databank: str, day: str, task: str | None = None) -> pd.DataFrame:
+def load_sims(
+    project: str, databank: str, day: str, task: str | None = None
+) -> pd.DataFrame:
     """The reconstructed metrics, one row per simulation.
 
     Args:
@@ -63,7 +71,9 @@ def load_sims(project: str, databank: str, day: str, task: str | None = None) ->
     return pd.read_parquet(where, filters=filters)
 
 
-def load_levels(project: str, databank: str, day: str, usable: bool = True) -> pd.DataFrame:
+def load_levels(
+    project: str, databank: str, day: str, usable: bool = True
+) -> pd.DataFrame:
     """The confidence table SQX stored, long.
 
     Args:
@@ -100,7 +110,9 @@ def load_original(project: str, databank: str, day: str) -> pd.DataFrame:
     return pd.read_parquet(root(project, databank, day) / ORIGINAL)
 
 
-def load_pnl(project: str, databank: str, day: str, task: str, strategy: str) -> pd.DataFrame:
+def load_pnl(
+    project: str, databank: str, day: str, task: str, strategy: str
+) -> pd.DataFrame:
     """The raw P/L vectors of one strategy under one task.
 
     Args:
@@ -117,12 +129,16 @@ def load_pnl(project: str, databank: str, day: str, task: str, strategy: str) ->
         separate dataset because only the equity fan and the coherent scenario need it, and
         the test battery should not pay to read it.
     """
-    frame = pd.read_parquet(root(project, databank, day) / PNL,
-                            filters=[("task", "==", task), ("strategy", "==", strategy)])
+    frame = pd.read_parquet(
+        root(project, databank, day) / PNL,
+        filters=[("task", "==", task), ("strategy", "==", strategy)],
+    )
     return frame.assign(pnl=frame["pnl_cents"] / 100.0).drop(columns="pnl_cents")
 
 
-def load_trades(project: str, databank: str, day: str, strategy: str = "") -> pd.DataFrame:
+def load_trades(
+    project: str, databank: str, day: str, strategy: str = ""
+) -> pd.DataFrame:
     """The unperturbed trade list each strategy actually produced, joined in from its harvest.
 
     Args:

@@ -28,7 +28,11 @@ def _unknown(study: str) -> dict | None:
     Returns:
         `{"error": ...}` in Spanish, or None for a known key.
     """
-    return None if study in catalogue.STUDIES else {"error": f"No hay ningún estudio «{study}»."}
+    return (
+        None
+        if study in catalogue.STUDIES
+        else {"error": f"No hay ningún estudio «{study}»."}
+    )
 
 
 @ROUTER.get("/api/catalogue")
@@ -39,13 +43,27 @@ def catalogue_list() -> dict[str, Any]:
         `studies`, one `catalogue.entry` each. Only a study whose role is a knob of its
         config has that config read.
     """
-    return {"studies": [catalogue.entry(k, knobs.config(k, []) if callable(catalogue.ROLE[k])
-                                        else None) for k in catalogue.ordered()]}
+    return {
+        "studies": [
+            catalogue.entry(
+                k, knobs.config(k, []) if callable(catalogue.ROLE[k]) else None
+            )
+            for k in catalogue.ordered()
+        ]
+    }
 
 
 @ROUTER.get("/api/result")
-def result(project: str, databank: str, study: str, strategy: str = "", identity: str = "",
-           day: str = "", source: str = "live", version: str = "") -> dict[str, Any]:
+def result(
+    project: str,
+    databank: str,
+    study: str,
+    strategy: str = "",
+    identity: str = "",
+    day: str = "",
+    source: str = "live",
+    version: str = "",
+) -> dict[str, Any]:
     """One stored result and whether today's config would still sign it.
 
     Args:
@@ -74,8 +92,9 @@ def result(project: str, databank: str, study: str, strategy: str = "", identity
 
 
 @ROUTER.get("/api/presence")
-def strategy_presence(project: str, databank: str, strategy: str,
-                      identity: str = "") -> dict[str, Any]:
+def strategy_presence(
+    project: str, databank: str, strategy: str, identity: str = ""
+) -> dict[str, Any]:
     """Per study, whether this strategy has a result anywhere in the project, and its state.
 
     Args:
@@ -89,8 +108,15 @@ def strategy_presence(project: str, databank: str, strategy: str,
 
 
 @ROUTER.get("/api/history")
-def history(project: str, databank: str, study: str, strategy: str = "",
-            identity: str = "", source: str = "live", version: str = "") -> dict[str, Any]:
+def history(
+    project: str,
+    databank: str,
+    study: str,
+    strategy: str = "",
+    identity: str = "",
+    source: str = "live",
+    version: str = "",
+) -> dict[str, Any]:
     """Every run of a study on a databank or one of its strategies, newest first.
 
     Args:
@@ -129,8 +155,11 @@ def config(study: str, project: str = "") -> dict[str, Any]:
     if refused:
         return refused
     got = knobs.sections(study)
-    return got | {"sections": forproject.apply(study, got["sections"], project)} if project \
+    return (
+        got | {"sections": forproject.apply(study, got["sections"], project)}
+        if project
         else got
+    )
 
 
 @ROUTER.post("/api/config/hash")
@@ -154,8 +183,13 @@ def config_hash(req: Overrides) -> dict[str, Any]:
 
 
 @ROUTER.get("/api/matrix")
-def population(project: str, databank: str, identity: str = "", source: str = "live",
-               version: str = "") -> dict[str, Any]:
+def population(
+    project: str,
+    databank: str,
+    identity: str = "",
+    source: str = "live",
+    version: str = "",
+) -> dict[str, Any]:
     """Every strategy of one databank against every study.
 
     Args:
@@ -186,8 +220,18 @@ def projects() -> dict[str, Any]:
         not a project or a databank.
     """
     root = DATA / "reports"
-    return {"projects": [
-        {"project": p.name, "asset": launch.guess_asset(p.name),
-         "databanks": sorted(d.name for d in p.iterdir()
-                             if d.is_dir() and not d.name.startswith("_"))}
-        for p in sorted(root.iterdir()) if p.is_dir() and not p.name.startswith("_")]}
+    return {
+        "projects": [
+            {
+                "project": p.name,
+                "asset": launch.guess_asset(p.name),
+                "databanks": sorted(
+                    d.name
+                    for d in p.iterdir()
+                    if d.is_dir() and not d.name.startswith("_")
+                ),
+            }
+            for p in sorted(root.iterdir())
+            if p.is_dir() and not p.name.startswith("_")
+        ]
+    }

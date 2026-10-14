@@ -50,9 +50,22 @@ def workflows() -> list[dict[str, Any]]:
     out = []
     for f in sorted((campaign_dir() / "runs").glob("*/workflow.json")):
         d = json.loads(f.read_text(encoding="utf-8"))
-        out.append({"name": f.parent.name, "when": _when(f.parent.name)} | {
-            k: d[k] for k in ("template", "symbol", "timeframe", "direction", "state",
-                              "finalists", "counts")} | {"minutes": d.get("steps_minutes", d.get("minutes"))})
+        out.append(
+            {"name": f.parent.name, "when": _when(f.parent.name)}
+            | {
+                k: d[k]
+                for k in (
+                    "template",
+                    "symbol",
+                    "timeframe",
+                    "direction",
+                    "state",
+                    "finalists",
+                    "counts",
+                )
+            }
+            | {"minutes": d.get("steps_minutes", d.get("minutes"))}
+        )
     return sorted(out, key=lambda r: r["when"], reverse=True)
 
 
@@ -65,14 +78,26 @@ def show(name: str) -> dict[str, Any]:
         `mother_version`) and `not_kept` (`path`, `reason`).
     """
     d = _doc(name)
-    rows = [{"name": s["strategy"], "identity": s["identity"],
-             "version": Path(s["archive"]).name if s.get("archive") else None,
-             "mother": s["mother"], "mother_identity": s.get("mother_identity"),
-             "mother_version": Path(s["mother_archive"]).name if s.get("mother_archive") else None}
-            for s in d["strategies"]]
+    rows = [
+        {
+            "name": s["strategy"],
+            "identity": s["identity"],
+            "version": Path(s["archive"]).name if s.get("archive") else None,
+            "mother": s["mother"],
+            "mother_identity": s.get("mother_identity"),
+            "mother_version": Path(s["mother_archive"]).name
+            if s.get("mother_archive")
+            else None,
+        }
+        for s in d["strategies"]
+    ]
     head = next(r for r in workflows() if r["name"] == name)
-    return head | {"project": d["project"], "steps": d["steps"], "strategies": rows,
-                   "not_kept": d.get("not_kept", [])}
+    return head | {
+        "project": d["project"],
+        "steps": d["steps"],
+        "strategies": rows,
+        "not_kept": d.get("not_kept", []),
+    }
 
 
 def extras(name: str, mother: str) -> list[Extra]:
@@ -82,17 +107,34 @@ def extras(name: str, mother: str) -> list[Extra]:
         `key` (path under the folder), `study`, `title`, `step`, ordered by step.
     """
     folder = _folder(name)
-    found = [p for p in (folder / "madres" / mother / "estudios").glob("*.json") if p.stem in MOTHER_STUDIES]
-    found += [p for p in folder.glob(f"*/**/estrategias/{mother}.json") if "run" not in p.relative_to(folder).parts[:1]]
+    found = [
+        p
+        for p in (folder / "madres" / mother / "estudios").glob("*.json")
+        if p.stem in MOTHER_STUDIES
+    ]
+    found += [
+        p
+        for p in folder.glob(f"*/**/estrategias/{mother}.json")
+        if "run" not in p.relative_to(folder).parts[:1]
+    ]
     out: list[Extra] = []
     for p in found:
         study = p.stem if p.parent.name == "estudios" else p.parent.parent.name
-        if study not in catalogue.STUDIES:   # a study since deleted (steps 22-24): its file stays on disk
+        if (
+            study not in catalogue.STUDIES
+        ):  # a study since deleted (steps 22-24): its file stays on disk
             continue
         fam, _, title, step = catalogue.STUDIES[study]
         rel = p.relative_to(folder)
         pas = next((x for x in rel.parts if x.startswith("pass")), "")
-        out.append({"key": str(rel), "study": study, "title": f"{title} ({pas})" if pas else title, "step": step})
+        out.append(
+            {
+                "key": str(rel),
+                "study": study,
+                "title": f"{title} ({pas})" if pas else title,
+                "step": step,
+            }
+        )
     return sorted(out, key=lambda e: (float(e["step"] or 99), e["study"]))
 
 
@@ -110,14 +152,30 @@ def opened(name: str, strategy: str) -> dict[str, Any]:
     if s is None:
         raise FileNotFoundError(f"El workflow no tiene la estrategia «{strategy}».")
     mother = bool(s["mother_identity"] and s["mother_version"])
-    got = archive.show(s["mother_identity"], s["mother_version"]) if mother \
+    got = (
+        archive.show(s["mother_identity"], s["mother_version"])
+        if mother
         else archive.show(s["identity"], s["version"])
-    variant = mother and s["mother"] != s["name"]   # saved before 2026-10-11: a stop variant
-    banner = (f"Esta final es una variante con stop de la madre «{s['mother']}» (workflow anterior al "
-              "2026-10-11). Las cifras y los estudios de abajo son los de la madre.") if variant else \
-        "" if mother else "La madre de esta final no se archivó: solo se ven los estudios de la propia final."
-    return got | {"label": s["name"], "banner": banner, "workflow": name,
-                  "extras": extras(name, s["mother"])}
+    )
+    variant = (
+        mother and s["mother"] != s["name"]
+    )  # saved before 2026-10-11: a stop variant
+    banner = (
+        (
+            f"Esta final es una variante con stop de la madre «{s['mother']}» (workflow anterior al "
+            "2026-10-11). Las cifras y los estudios de abajo son los de la madre."
+        )
+        if variant
+        else ""
+        if mother
+        else "La madre de esta final no se archivó: solo se ven los estudios de la propia final."
+    )
+    return got | {
+        "label": s["name"],
+        "banner": banner,
+        "workflow": name,
+        "extras": extras(name, s["mother"]),
+    }
 
 
 def extra(name: str, key: str) -> dict[str, Any]:
@@ -127,7 +185,18 @@ def extra(name: str, key: str) -> dict[str, Any]:
     if folder.resolve() not in path.parents or path.suffix != ".json":
         raise FileNotFoundError("Ese resultado no está en el workflow.")
     result = json.loads(path.read_text(encoding="utf-8"))
-    return {"result": result, "meta": {
-        "day": result.get("computed_at", "")[:10], "path": None, "config_hash": result.get("config_hash"),
-        "current_hash": result.get("config_hash"), "stale": False, "computed_at": result.get("computed_at"),
-        "skipped": [], "elsewhere": None, "other_identity": False, "note": ""}}
+    return {
+        "result": result,
+        "meta": {
+            "day": result.get("computed_at", "")[:10],
+            "path": None,
+            "config_hash": result.get("config_hash"),
+            "current_hash": result.get("config_hash"),
+            "stale": False,
+            "computed_at": result.get("computed_at"),
+            "skipped": [],
+            "elsewhere": None,
+            "other_identity": False,
+            "note": "",
+        },
+    }

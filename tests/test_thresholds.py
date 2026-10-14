@@ -12,9 +12,14 @@ from ledger import thresholds
 
 # Every threshold these modules' config.yaml points at must be read through the ledger.
 # A module joins the list the commit it is migrated; it never leaves it.
-MIGRATED = ("studies/screening/gate/", "studies/readings/entryQuality/",
-            "studies/optimisation/cloud/", "studies/optimisation/cscv/",
-            "studies/optimisation/marketSurfaces/", "studies/readings/edgeCost/")
+MIGRATED = (
+    "studies/screening/gate/",
+    "studies/readings/entryQuality/",
+    "studies/optimisation/cloud/",
+    "studies/optimisation/cscv/",
+    "studies/optimisation/marketSurfaces/",
+    "studies/readings/edgeCost/",
+)
 
 
 def reader(source: str) -> object:
@@ -30,7 +35,7 @@ def reader(source: str) -> object:
     dotted = ".".join(folder.parts)
     split = (ROOT / folder / "inputs" / "config.py").exists()
     module = importlib.import_module(f"{dotted}.inputs{'.config' if split else ''}")
-    return getattr(module, "config", None) or module.load   # the CSCV names it load()
+    return getattr(module, "config", None) or module.load  # the CSCV names it load()
 
 
 def main() -> None:
@@ -44,9 +49,13 @@ def main() -> None:
         for r in rows:
             if not r["source"].startswith(MIGRATED):
                 continue
-            seen = thresholds.walk(reader(r["source"])([]), r["source"].split("#", 1)[1])
+            seen = thresholds.walk(
+                reader(r["source"])([]), r["source"].split("#", 1)[1]
+            )
             if seen != sentinel[r["key"]]:
-                failures.append(f"{r['key']}: el módulo lee {seen!r}, no el valor del ledger")
+                failures.append(
+                    f"{r['key']}: el módulo lee {seen!r}, no el valor del ledger"
+                )
     finally:
         thresholds.value = real
 
@@ -62,10 +71,16 @@ def main() -> None:
 
     # A feed named after FTMO's MT5 symbol carries a dot of its own (OPEN.md 94): the key is
     # taken whole, a plain nested path and a selector still resolve, a missing key still raises.
-    fake = {"K": {"UKOIL.cash_M1": 20, "XAUUSD_M1": 7, "UKOIL": {"other": 1}},
-            "rows": [{"id": "a", "v": {"x.y": 3}}]}
-    for dotted, wanted in (("K.UKOIL.cash_M1", 20), ("K.XAUUSD_M1", 7), ("K.UKOIL.other", 1),
-                           ("rows[id=a].v.x.y", 3)):
+    fake = {
+        "K": {"UKOIL.cash_M1": 20, "XAUUSD_M1": 7, "UKOIL": {"other": 1}},
+        "rows": [{"id": "a", "v": {"x.y": 3}}],
+    }
+    for dotted, wanted in (
+        ("K.UKOIL.cash_M1", 20),
+        ("K.XAUUSD_M1", 7),
+        ("K.UKOIL.other", 1),
+        ("rows[id=a].v.x.y", 3),
+    ):
         if thresholds.walk(fake, dotted) != wanted:
             failures.append(f"walk({dotted!r}) no devuelve {wanted}")
     try:
@@ -78,9 +93,11 @@ def main() -> None:
     if not table["coincide"].all():
         failures.append("--check-thresholds encuentra divergencias")
     migrated = int((table["lee_de"] == "ledger").sum())
-    print("\n".join(failures) or
-          f"ok: {migrated} de {len(table)} umbrales llegan del ledger y de ningún otro sitio; "
-          "una clave ausente o duplicada hace fallar la lectura")
+    print(
+        "\n".join(failures)
+        or f"ok: {migrated} de {len(table)} umbrales llegan del ledger y de ningún otro sitio; "
+        "una clave ausente o duplicada hace fallar la lectura"
+    )
     sys.exit(1 if failures else 0)
 
 

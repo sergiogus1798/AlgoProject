@@ -9,11 +9,21 @@ from ui.text.glossary import label
 from ui.text.numbers import exact, num
 
 # The operators a metric's kind admits, as the daemon spells them → what the owner reads.
-OPS = {"numeric": [(">", ">"), ("<", "<"), (">=", "≥"), ("<=", "≤"), ("=", "="),
-                   ("entre", "entre")],
-       "text": [("=", "=")],
-       "dist": [("dentro", "mediana dentro del intervalo"),
-                ("fuera", "mediana fuera del intervalo")]}
+OPS = {
+    "numeric": [
+        (">", ">"),
+        ("<", "<"),
+        (">=", "≥"),
+        ("<=", "≤"),
+        ("=", "="),
+        ("entre", "entre"),
+    ],
+    "text": [("=", "=")],
+    "dist": [
+        ("dentro", "mediana dentro del intervalo"),
+        ("fuera", "mediana fuera del intervalo"),
+    ],
+}
 
 
 def shown_metric(m: dict) -> str:
@@ -29,14 +39,23 @@ def typed(value: object) -> str:
 
 def plain(rows: list[dict]) -> list[dict]:
     """Rows with every numeric text as a float, to compare what is typed with what is in force."""
+
     def one(v: Any) -> object:
         """A value as a float when it reads as one."""
         try:
             return float(v)
         except (TypeError, ValueError):
             return v
-    return [{**r, "value": [one(v) for v in r["value"]] if isinstance(r["value"], list)
-             else one(r["value"])} for r in rows]
+
+    return [
+        {
+            **r,
+            "value": [one(v) for v in r["value"]]
+            if isinstance(r["value"], list)
+            else one(r["value"]),
+        }
+        for r in rows
+    ]
 
 
 def guessed(got: dict) -> str:
@@ -44,9 +63,11 @@ def guessed(got: dict) -> str:
     if "error" in got:
         return f"Con estas condiciones: {got['error']}"
     blank = f" ({num(got['blank'])} sin valor, se quedan)" if got["blank"] else ""
-    return (f"Con estas condiciones, sin aplicar: {num(got['n_in'])} → {num(got['n_out'])} "
-            f"pasan{blank} · se verían {num(got['visible'])} contando los descartes a mano · "
-            "▶ Aplicar para que la tabla cambie")
+    return (
+        f"Con estas condiciones, sin aplicar: {num(got['n_in'])} → {num(got['n_out'])} "
+        f"pasan{blank} · se verían {num(got['visible'])} contando los descartes a mano · "
+        "▶ Aplicar para que la tabla cambie"
+    )
 
 
 class FilterRow(QWidget):
@@ -67,8 +88,11 @@ class FilterRow(QWidget):
         self.column.setMinimumWidth(320)
         for m in metrics:
             self.column.addItem(shown_metric(m), m["key"])
-            self.column.setItemData(self.column.count() - 1, m.get("reading") or
-                                    f"{num(m['n'])} estrategias tienen valor", Qt.ItemDataRole.ToolTipRole)
+            self.column.setItemData(
+                self.column.count() - 1,
+                m.get("reading") or f"{num(m['n'])} estrategias tienen valor",
+                Qt.ItemDataRole.ToolTipRole,
+            )
         self.column.currentIndexChanged.connect(self.retype)
         self.value, self.upper = QLineEdit(), QLineEdit()
         for w in (self.value, self.upper):
@@ -89,8 +113,12 @@ class FilterRow(QWidget):
 
     def kind(self) -> str:
         """numeric, text or dist: which operators the chosen metric admits."""
-        m = self.metrics.get(self.column.currentData(), {"kind": "metric", "numeric": True})
-        return "dist" if m["kind"] == "dist" else ("numeric" if m["numeric"] else "text")
+        m = self.metrics.get(
+            self.column.currentData(), {"kind": "metric", "numeric": True}
+        )
+        return (
+            "dist" if m["kind"] == "dist" else ("numeric" if m["numeric"] else "text")
+        )
 
     def retype(self) -> None:
         """Offer the chosen metric's operators."""
@@ -102,8 +130,11 @@ class FilterRow(QWidget):
         """Two value boxes for «entre», an interval % for a distribution."""
         code = self.op.currentData()
         self.upper.setVisible(code == "entre")
-        self.value.setPlaceholderText("intervalo %: 50, 80, 90, 98" if code in ("dentro", "fuera")
-                                      else ("desde" if code == "entre" else "valor"))
+        self.value.setPlaceholderText(
+            "intervalo %: 50, 80, 90, 98"
+            if code in ("dentro", "fuera")
+            else ("desde" if code == "entre" else "valor")
+        )
         self.upper.setPlaceholderText("hasta")
 
     def filled(self) -> bool:
@@ -113,13 +144,19 @@ class FilterRow(QWidget):
     def spec(self) -> dict[str, Any]:
         """The row as the daemon reads it."""
         code, text = self.op.currentData(), self.value.text().strip().replace(",", ".")
-        value = [text, self.upper.text().strip().replace(",", ".")] if code == "entre" else text
+        value = (
+            [text, self.upper.text().strip().replace(",", ".")]
+            if code == "entre"
+            else text
+        )
         return {"metric": self.column.currentData(), "op": code, "value": value}
 
     def put(self, row: dict) -> None:
         """Show a saved row."""
         self.column.setCurrentIndex(max(self.column.findData(row["metric"]), 0))
         self.op.setCurrentIndex(max(self.op.findData(row["op"]), 0))
-        low, high = row["value"] if isinstance(row["value"], list) else (row["value"], "")
+        low, high = (
+            row["value"] if isinstance(row["value"], list) else (row["value"], "")
+        )
         self.value.setText(typed(low))
         self.upper.setText(typed(high))

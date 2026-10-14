@@ -19,11 +19,15 @@ def main() -> None:
     """Write the report and print one verdict line per strategy."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--project", required=True)
-    ap.add_argument("--databank", default="WFM",
-                    help="export folder name, underscores not spaces")
+    ap.add_argument(
+        "--databank", default="WFM", help="export folder name, underscores not spaces"
+    )
     ap.add_argument("--day", help="export date; default is the most recent one")
-    ap.add_argument("--strategy", help="one strategy alone, as the export names it: writes "
-                    "only estrategias/<name>.json, never the population's files")
+    ap.add_argument(
+        "--strategy",
+        help="one strategy alone, as the export names it: writes "
+        "only estrategias/<name>.json, never the population's files",
+    )
     ap.add_argument("--set", dest="overrides", action="extend", nargs="+", default=[])
     args = ap.parse_args()
 
@@ -39,18 +43,27 @@ def main() -> None:
         return
     got = many.run(directory, config.load(args.overrides))
     title = f"Walk-Forward Matrix — {args.project} / {args.databank}"
-    output.population(out, "wfm", got["population"], title,
-                      "¿Reoptimizada, gana en el tramo que nadie miró?")
+    output.population(
+        out,
+        "wfm",
+        got["population"],
+        title,
+        "¿Reoptimizada, gana en el tramo que nadie miró?",
+    )
     for m in got["members"]:
         output.member(out, m, f"Walk-Forward Matrix — {m['strategy']}")
     draws.save(out, got.get("draws", []))
     got["cells"].to_csv(out / "cell_excess.csv", index=False)
     verdicts.write(out, got["table"], directory, " ".join(sys.argv), args.overrides)
     for r in cast(Iterable[Any], got["table"].itertuples()):
-        print(f"{r.strategy:22s} {r.verdict:8s} L1={r.l1_mediana_exceso:+10.2f}/año  "
-              f"p+={r.l1_p_mas:.3f} p-={r.l1_p_menos:.3f}  L2={r.l2_delta:+10.2f}  "
-              f"efectivas={r.celdas_efectivas:4.1f}  area={r.area_celdas:2d}")
-    print(steprows.log_wfm(args.project, directory, len(got["table"]), " ".join(sys.argv)))
+        print(
+            f"{r.strategy:22s} {r.verdict:8s} L1={r.l1_mediana_exceso:+10.2f}/año  "
+            f"p+={r.l1_p_mas:.3f} p-={r.l1_p_menos:.3f}  L2={r.l2_delta:+10.2f}  "
+            f"efectivas={r.celdas_efectivas:4.1f}  area={r.area_celdas:2d}"
+        )
+    print(
+        steprows.log_wfm(args.project, directory, len(got["table"]), " ".join(sys.argv))
+    )
     print(markdown.render(got["population"], title))
     print(f"\n-> {out}")
 

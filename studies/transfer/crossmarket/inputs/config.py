@@ -21,4 +21,3 @@ def load(overrides: list[str] | None = None) -> dict[str, Any]:
         this dict is a value nobody can change from the window, which is why none exist.
     """
     return study_config.load(FILE, overrides or [])
-

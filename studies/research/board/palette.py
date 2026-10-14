@@ -6,11 +6,13 @@ import argparse
 from sqx.blocks.taxonomy import family_blocks
 from studies.research.board.inputs import CONFIG
 
-RELATION = {"orthogonal": "ortogonal: lee otra clase de dato que la condición fija",
-            "counter": "contratendencia: lo contrario de la condición fija",
-            "same_data": "mismo dato, otra lectura",
-            "alike": "FUERA: dos iguales, sólo encarece la entrada",
-            "own": "FUERA: la propia familia de la condición fija"}
+RELATION = {
+    "orthogonal": "ortogonal: lee otra clase de dato que la condición fija",
+    "counter": "contratendencia: lo contrario de la condición fija",
+    "same_data": "mismo dato, otra lectura",
+    "alike": "FUERA: dos iguales, sólo encarece la entrada",
+    "own": "FUERA: la propia familia de la condición fija",
+}
 
 
 def relation(fixed: str, other: str, rules: dict) -> str:
@@ -44,9 +46,17 @@ def hole(family: str, role: str | None = "signal") -> list[dict]:
     for other in rules["data"]:
         rel = relation(fixed, other, rules)
         weight = rules["weights"].get(rel, 0)
-        rows.append({"family": other, "relation": rel, "weight": weight, "why": RELATION[rel],
-                     "blocks": family_blocks(other, rules["min_block_weight"], role=role)
-                     if weight else {}})
+        rows.append(
+            {
+                "family": other,
+                "relation": rel,
+                "weight": weight,
+                "why": RELATION[rel],
+                "blocks": family_blocks(other, rules["min_block_weight"], role=role)
+                if weight
+                else {},
+            }
+        )
     return sorted(rows, key=lambda r: (-r["weight"], r["family"]))
 
 
@@ -54,13 +64,19 @@ def main() -> None:
     """Print the hole's families for one idea family, with how many blocks each brings."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("family", choices=list(CONFIG["taxonomy_family"]))
-    ap.add_argument("--blocks", type=int, default=8, help="bloques de ejemplo por familia")
+    ap.add_argument(
+        "--blocks", type=int, default=8, help="bloques de ejemplo por familia"
+    )
     a = ap.parse_args()
-    print(f"Hueco libre para una idea de {a.family} ({CONFIG['taxonomy_family'][a.family]}):")
+    print(
+        f"Hueco libre para una idea de {a.family} ({CONFIG['taxonomy_family'][a.family]}):"
+    )
     for r in hole(a.family):
-        some = ", ".join(list(r["blocks"])[:a.blocks])
-        print(f"  peso {r['weight']}  {r['family']:<15} {len(r['blocks']):>3} bloques  {r['why']}"
-              + (f"\n          {some}" if some else ""))
+        some = ", ".join(list(r["blocks"])[: a.blocks])
+        print(
+            f"  peso {r['weight']}  {r['family']:<15} {len(r['blocks']):>3} bloques  {r['why']}"
+            + (f"\n          {some}" if some else "")
+        )
 
 
 if __name__ == "__main__":

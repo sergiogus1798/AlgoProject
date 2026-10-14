@@ -3,13 +3,24 @@
 from collections.abc import Callable
 
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import background, jobsfeed
 from ui.desktop.theme import C
 
 POLL_MS = 4000
-FLAGS = ("PREGUNTA:", "YA EXISTE:", "PLANTILLA:")   # lines of the author worth lifting out
+FLAGS = (
+    "PREGUNTA:",
+    "YA EXISTE:",
+    "PLANTILLA:",
+)  # lines of the author worth lifting out
 
 
 class JobButton(QWidget):
@@ -17,8 +28,14 @@ class JobButton(QWidget):
     with `body()`; then `/api/jobs` every POLL_MS until the job ends, its state and the end of
     its log under the button. `ended(job)` fires once, with the job's record."""
 
-    def __init__(self, text: str, path: str, body: Callable[[], dict],
-                 confirm: Callable[[], str | None], ended: Callable[[dict], None] = print) -> None:
+    def __init__(
+        self,
+        text: str,
+        path: str,
+        body: Callable[[], dict],
+        confirm: Callable[[], str | None],
+        ended: Callable[[dict], None] = print,
+    ) -> None:
         """Build the button and the empty state line."""
         super().__init__()
         self.path, self.body, self.confirm, self.ended = path, body, confirm, ended
@@ -43,7 +60,10 @@ class JobButton(QWidget):
         sentence = self.confirm()
         if sentence is None:
             return
-        if QMessageBox.question(self, "Confirmar", sentence) != QMessageBox.StandardButton.Yes:  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
+        if (
+            QMessageBox.question(self, "Confirmar", sentence)  # pyright: ignore[reportCallIssue]  # PySide6 stub lists the deprecated overload that wants buttons
+            != QMessageBox.StandardButton.Yes
+        ):
             return
         self.button.setEnabled(False)
         self.state.setText("enviando…")

@@ -45,17 +45,29 @@ def own_sizing(strategy: Path) -> Sizing:
     """
     with zipfile.ZipFile(strategy) as z:
         xml = z.read("strategy_Portfolio.xml").decode("utf-8")
-    found = re.search(r'<MoneyManagement type="(\w+)">(.*?)</MoneyManagement>', xml, re.S)
+    found = re.search(
+        r'<MoneyManagement type="(\w+)">(.*?)</MoneyManagement>', xml, re.S
+    )
     assert found is not None
-    params = dict(re.findall(r'<Param key="#?(\w+?)#?"[^>]*>([^<]*)</Param>', found.group(2)))
+    params = dict(
+        re.findall(r'<Param key="#?(\w+?)#?"[^>]*>([^<]*)</Param>', found.group(2))
+    )
     if found.group(1) != "FixedSize":
-        raise SystemExit(f"{strategy.stem} se dimensiona con {found.group(1)}: sólo FixedSize se "
-                         "copia hoy a los dos lados (dueño, 2026-09-29: el de la estrategia)")
+        raise SystemExit(
+            f"{strategy.stem} se dimensiona con {found.group(1)}: sólo FixedSize se "
+            "copia hoy a los dos lados (dueño, 2026-09-29: el de la estrategia)"
+        )
     return {"method": found.group(1), "params": params}
 
 
-def write_task(text: str, feed: str, costs: dict, window: tuple[str, str],
-               databanks: tuple[str, str], sizing: Mapping[str, Any]) -> str:
+def write_task(
+    text: str,
+    feed: str,
+    costs: dict,
+    window: tuple[str, str],
+    databanks: tuple[str, str],
+    sizing: Mapping[str, Any],
+) -> str:
     """Turn one of the donor's retests into one firm's backtest of the strategy.
 
     Args:
@@ -75,16 +87,23 @@ def write_task(text: str, feed: str, costs: dict, window: tuple[str, str],
     """
     a, b = (w.replace("-", ".") for w in window)
     chart = f'<Chart symbol="{feed}"'
-    text = SETUP.sub(lambda m: write_setup(m.group(0), costs, a, b) if chart in m.group(0)
-                     else m.group(0), text)
-    text, _ = set_data_range(text, {"sqx_symbol": feed}, (_ms(window[0], False),
-                                                         _ms(window[1], True)))
+    text = SETUP.sub(
+        lambda m: (
+            write_setup(m.group(0), costs, a, b) if chart in m.group(0) else m.group(0)
+        ),
+        text,
+    )
+    text, _ = set_data_range(
+        text, {"sqx_symbol": feed}, (_ms(window[0], False), _ms(window[1], True))
+    )
     text = OUT_OF_SAMPLE.sub('<OutOfSample showGraph="false" />', text, count=1)
     text = set_databank(text, "Input", databanks[0])[0]
     text = set_databank(text, "Output", databanks[1])[0]
     if 'retestSelected="false"' not in text:
         text = text.replace("<Databanks>", '<Databanks retestSelected="false">')
-    text = re.sub(r'<CrossChecks use="(?:true|false)"', '<CrossChecks use="false"', text, count=1)
+    text = re.sub(
+        r'<CrossChecks use="(?:true|false)"', '<CrossChecks use="false"', text, count=1
+    )
     text = set_money_management(text, {**doctrine()["money_management"], **sizing})
     return silence(text)[0]
 
@@ -164,8 +183,16 @@ class Configured(TypedDict):
     export: str
 
 
-def configure(cfx: Path, feed: str, window: tuple[str, str], firms: dict[str, dict],
-              mq5_dir: Path, cfg: dict, sizing: Mapping[str, Any], strategy: Path | None = None) -> Configured:
+def configure(
+    cfx: Path,
+    feed: str,
+    window: tuple[str, str],
+    firms: dict[str, dict],
+    mq5_dir: Path,
+    cfg: dict,
+    sizing: Mapping[str, Any],
+    strategy: Path | None = None,
+) -> Configured:
     """Write one retest per firm, and the EA's export, into a project the builder just cloned.
 
     Args:
@@ -186,14 +213,22 @@ def configure(cfx: Path, feed: str, window: tuple[str, str], firms: dict[str, di
     config = members["config.xml"].decode("utf-8")
     retests = [m for m in cfg["donor_members"] if m in members]
     if len(retests) < len(firms):
-        raise SystemExit(f"{cfx.parent.name} tiene {len(retests)} retests del donante y hacen "
-                         f"falta {len(firms)}: {', '.join(cfg['donor_members'])}")
+        raise SystemExit(
+            f"{cfx.parent.name} tiene {len(retests)} retests del donante y hacen "
+            f"falta {len(firms)}: {', '.join(cfg['donor_members'])}"
+        )
     config = re.sub(r'(<Task\b[^>]*?)active="true"', r'\g<1>active="false"', config)
     rows, extra = [], charts.wanted(strategy) if strategy else []
     for (firm, costs), member in zip(firms.items(), retests):
         output = cfg["output_prefix"] + firm
-        task = write_task(members[member].decode("utf-8"), feed, costs, window,
-                          (cfg["input"], output), sizing)
+        task = write_task(
+            members[member].decode("utf-8"),
+            feed,
+            costs,
+            window,
+            (cfg["input"], output),
+            sizing,
+        )
         members[member] = charts.ensure(task, extra)[0].encode("utf-8")
         title = cfg["task_title"].format(firm=firm.upper())
         config = retitle(config, member, title)
@@ -203,14 +238,23 @@ def configure(cfx: Path, feed: str, window: tuple[str, str], firms: dict[str, di
     # writes the sizing its last backtest ran, and a strategy built on the doctrine carries
     # ATRRiskBasedSizingFixedRisk — a user snippet with no MetaTrader 5 template, so the
     # export wrote nothing (📓 2026-09-30). The retest ran the strategy's own FixedSize.
-    members[SAVE_MEMBER] = save_task(rows[0]["output"], mq5_dir, cfg["generator"],
-                                     cfg["magic"]).encode("utf-8")
+    members[SAVE_MEMBER] = save_task(
+        rows[0]["output"], mq5_dir, cfg["generator"], cfg["magic"]
+    ).encode("utf-8")
     config = re.sub(rf'\s*<Task\b[^>]*taskXMLFile="{SAVE_MEMBER}"[^>]*/>', "", config)
-    config = config.replace("</Tasks>", f'    <Task name="Save to files" type="SaveToFiles" '
-                            f'taskXMLFile="{SAVE_MEMBER}" active="true" '
-                            f'title="{cfg["export_title"]}" />\n  </Tasks>', 1)
+    config = config.replace(
+        "</Tasks>",
+        f'    <Task name="Save to files" type="SaveToFiles" '
+        f'taskXMLFile="{SAVE_MEMBER}" active="true" '
+        f'title="{cfg["export_title"]}" />\n  </Tasks>',
+        1,
+    )
     config = declare(config, [cfg["input"]] + [r["output"] for r in rows])
     members["config.xml"] = config.encode("utf-8")
     cfxio.write(cfx, members)
-    return {"project": ElementTree.fromstring(config).get("name"), "input": cfg["input"],
-            "tasks": rows, "export": cfg["export_title"]}
+    return {
+        "project": ElementTree.fromstring(config).get("name"),
+        "input": cfg["input"],
+        "tasks": rows,
+        "export": cfg["export_title"],
+    }

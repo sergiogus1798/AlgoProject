@@ -52,8 +52,12 @@ TYPES = {bool: "bool", int: "int", float: "float", str: "str", list: "list"}
 # `split_mode` is where the owner picks the WFC's in-sample — `build` alone (oos1_oos2) or
 # `build+oos1` (oos2_only) — per run, in the strategy view, not as a databank sub-panel per
 # composition (owner, 2026-10-01).
-CHOICES = {"split_mode": list(panel.SHORTCUTS), "travel.judge_on": ["gross", "net"],
-           "travel.shift_unit": ["year", "semester"], "travel.shift_step": ["week", "day"]}
+CHOICES = {
+    "split_mode": list(panel.SHORTCUTS),
+    "travel.judge_on": ["gross", "net"],
+    "travel.shift_unit": ["year", "semester"],
+    "travel.shift_step": ["week", "day"],
+}
 
 # Where the loaders read from: a study's config.yaml, the shared variant and null configs,
 # the ledger's frozen thresholds. Any YAML there changing invalidates every cached config.
@@ -77,8 +81,10 @@ def _version() -> float:
         Seconds since the epoch; ~7 ms over the ~50 files, then reused for one second.
     """
     if time.monotonic() - _SEEN[0] > 1.0:
-        _SEEN[:] = [time.monotonic(),
-                    max(p.stat().st_mtime for d in SOURCES for p in (ROOT / d).rglob("*.yaml"))]
+        _SEEN[:] = [
+            time.monotonic(),
+            max(p.stat().st_mtime for d in SOURCES for p in (ROOT / d).rglob("*.yaml")),
+        ]
     return _SEEN[1]
 
 
@@ -136,12 +142,22 @@ def _leaves(node: object, path: str) -> list[tuple[str, object]]:
         list is one knob.
     """
     if isinstance(node, dict):
-        return [leaf for k, v in node.items() if k not in NOT_KNOBS
-                for leaf in _leaves(v, f"{path}.{k}" if path else str(k))]
-    if isinstance(node, list) and node and all(isinstance(x, dict) and "name" in x
-                                               for x in node):
-        return [leaf for x in node
-                for leaf in _leaves({k: v for k, v in x.items() if k != "name"}, x["name"])]
+        return [
+            leaf
+            for k, v in node.items()
+            if k not in NOT_KNOBS
+            for leaf in _leaves(v, f"{path}.{k}" if path else str(k))
+        ]
+    if (
+        isinstance(node, list)
+        and node
+        and all(isinstance(x, dict) and "name" in x for x in node)
+    ):
+        return [
+            leaf
+            for x in node
+            for leaf in _leaves({k: v for k, v in x.items() if k != "name"}, x["name"])
+        ]
     return [(path, node)]
 
 
@@ -178,12 +194,20 @@ def sections(key: str) -> dict[str, Any]:
     grouped: dict[str, list[dict]] = {}
     for dotted, value in _leaves(cfg, ""):
         section = dotted.split(".")[0] if "." in dotted else "general"
-        grouped.setdefault(section, []).append({
-            "key": dotted, "value": value, "default": value,
-            "type": TYPES.get(type(value), "str"), "tip": _tip(tips, dotted),
-            **({"choices": CHOICES[dotted]} if dotted in CHOICES else {})})
-    return {"sections": [{"name": n, "knobs": k} for n, k in grouped.items()],
-            "hash": fingerprint(cfg)}
+        grouped.setdefault(section, []).append(
+            {
+                "key": dotted,
+                "value": value,
+                "default": value,
+                "type": TYPES.get(type(value), "str"),
+                "tip": _tip(tips, dotted),
+                **({"choices": CHOICES[dotted]} if dotted in CHOICES else {}),
+            }
+        )
+    return {
+        "sections": [{"name": n, "knobs": k} for n, k in grouped.items()],
+        "hash": fingerprint(cfg),
+    }
 
 
 def signed(key: str, overrides: list[str], population: bool = False) -> str | None:

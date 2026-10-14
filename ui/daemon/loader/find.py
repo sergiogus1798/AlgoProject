@@ -12,7 +12,9 @@ from ui.daemon import diskmemo, progress
 # The retest the gate pairs a build databank with: the task that reads it and writes `OOS`,
 # the name `sqx/projects/builder.py` gives the oos1 retest of every workflow project.
 PARTNER = "OOS"
-AFTERRUN = DATA / "logs" / "afterrun"    # <role>.pid while `afterrun` exports after a stop
+AFTERRUN = (
+    DATA / "logs" / "afterrun"
+)  # <role>.pid while `afterrun` exports after a stop
 # 🔬 2026-10-04: opening a project asks for the same roster four times at once, and
 # `lru_cache` lets every caller compute it: 10,000 strategies listed four times under one
 # GIL took 47-80 s against the window's 20. One lists; the others wait and read the cache.
@@ -46,8 +48,10 @@ def top_of(project: str, databank: str) -> Path:
     """
     where = install_of(project, databank)
     if where is None:
-        raise FileNotFoundError(f"{project} / {databank} no está en ninguna instalación: "
-                                "comprueba el nombre del proyecto y del databank en user/projects")
+        raise FileNotFoundError(
+            f"{project} / {databank} no está en ninguna instalación: "
+            "comprueba el nombre del proyecto y del databank en user/projects"
+        )
     return where[1]
 
 
@@ -103,7 +107,10 @@ def built_from(project: str, databank: str) -> str | None:
         return None
     path = str(where[1] / "user" / "projects" / project / "project.cfx")
     for task in cfx.tasks(path):
-        io = {d.get("name"): d.get("value") for d in cfx.task_xml(path, task["file"]).iter("Databank")}
+        io = {
+            d.get("name"): d.get("value")
+            for d in cfx.task_xml(path, task["file"]).iter("Databank")
+        }
         if io.get("Output") == PARTNER:
             return io.get("Input")
     return None
@@ -143,7 +150,9 @@ def cross_market(files: list[Path]) -> bool:
     Returns:
         True when one of them holds an `AdditionalMarket` result besides its main one.
     """
-    return any(r.startswith("AdditionalMarket") for f in files for r in sqxstats.results(f))
+    return any(
+        r.startswith("AdditionalMarket") for f in files for r in sqxstats.results(f)
+    )
 
 
 def feed(sqx: Path) -> str:
@@ -174,8 +183,12 @@ def writing(top: Path, project: str) -> bool:
         until midnight («Recargar databank» did nothing, 2026-09-28).
     """
     state = progress.run_state(progress.log_lines(top)[0])
-    return (state["project"] == project and not state["finished"] and bool(worker.holding(top))
-            or exporting(top))
+    return (
+        state["project"] == project
+        and not state["finished"]
+        and bool(worker.holding(top))
+        or exporting(top)
+    )
 
 
 def exporting(top: Path) -> bool:
@@ -206,7 +219,9 @@ def roster(project: str, databank: str) -> dict[str, str]:
     with LISTING:
         known = len(sqxfile._SEEN)
         got = _roster(str(folder), folder.stat().st_mtime)
-        if len(sqxfile._SEEN) != known:      # hashed something new: the next daemon will not
+        if (
+            len(sqxfile._SEEN) != known
+        ):  # hashed something new: the next daemon will not
             diskmemo.save("identities", dict(sqxfile._SEEN))
         return got
 

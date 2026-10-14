@@ -4,7 +4,14 @@ from typing import Any
 
 from PySide6.QtCore import QTimer, Signal
 from PySide6.QtGui import QHideEvent, QResizeEvent, QShowEvent
-from PySide6.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+from PySide6.QtWidgets import (
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+)
 
 from ui.desktop import background, client
 from ui.text.glossary import label
@@ -29,19 +36,19 @@ class Rail(QFrame):
 
     opened = Signal(str, str)
     finished = Signal(str, str)
-    loaded = Signal(str)          # a project's rail was painted from the daemon's answer
+    loaded = Signal(str)  # a project's rail was painted from the daemon's answer
 
     def __init__(self) -> None:
         """Build the header, the grid and the drawer; `load` fills them."""
         super().__init__()
         self.setObjectName("term")
         self.project, self.data, self.chosen = "", {}, ""
-        self.sqx: dict[str, dict] = {}      # GET /api/launch/steps: each SQX step's ▶ SQX
+        self.sqx: dict[str, dict] = {}  # GET /api/launch/steps: each SQX step's ▶ SQX
         self.ticks: dict[tuple[str, str], bool] = {}
         self.live: dict[str, dict] = {}
-        self.ended: list[dict] = []           # jobs that ended since the last repaint
-        self.painted = 0.0                    # time.monotonic() of that repaint
-        self.cards, self.per_row = [], 0      # the step cards, laid by `reflow`
+        self.ended: list[dict] = []  # jobs that ended since the last repaint
+        self.painted = 0.0  # time.monotonic() of that repaint
+        self.cards, self.per_row = [], 0  # the step cards, laid by `reflow`
         head = QHBoxLayout()
         kicker = QLabel("Workflow")
         kicker.setObjectName("kicker")
@@ -52,20 +59,28 @@ class Rail(QFrame):
         self.backfill.clicked.connect(self.rebuild)
         head.addWidget(self.backfill)
         self.marked = QPushButton("▶ correr marcados")
-        self.marked.clicked.connect(lambda: self.run([k for k, on in self.ticks.items() if on]))
+        self.marked.clicked.connect(
+            lambda: self.run([k for k, on in self.ticks.items() if on])
+        )
         head.addWidget(self.marked)
         everything = QPushButton("▶ todas las pruebas Python pendientes")
-        everything.setToolTip(label("Toda prueba de Python sin resultado, a la vez, salvo las "
-                                    "que leen oos2 o escriben en el ledger y los pasos 21-25; "
-                                    "no toca SQX."))
+        everything.setToolTip(
+            label(
+                "Toda prueba de Python sin resultado, a la vez, salvo las "
+                "que leen oos2 o escriben en el ledger y los pasos 21-25; "
+                "no toca SQX."
+            )
+        )
         everything.clicked.connect(self.run_all)
         head.addWidget(everything)
         # «Correr workflow», on its own row: the one button that runs SQX and Python in order.
         self.chain = QPushButton("▶▶ Correr workflow (hasta la próxima decisión)")
-        self.chain.setStyleSheet(f"QPushButton {{ background: {C['accent']}; color: {T['bg']}; "
-                                 f"border: 1px solid {C['accent']}; padding: 4px 14px; }} "
-                                 f"QPushButton:disabled {{ background: {T['bg']}; "
-                                 f"color: {T['faint']}; border: 1px dashed {T['line']}; }}")
+        self.chain.setStyleSheet(
+            f"QPushButton {{ background: {C['accent']}; color: {T['bg']}; "
+            f"border: 1px solid {C['accent']}; padding: 4px 14px; }} "
+            f"QPushButton:disabled {{ background: {T['bg']}; "
+            f"color: {T['faint']}; border: 1px dashed {T['line']}; }}"
+        )
         self.chain.clicked.connect(lambda: railrun.chain(self))
         self.plan = small("", "mono")
         self.plan.setWordWrap(True)
@@ -78,7 +93,9 @@ class Rail(QFrame):
         self.said = self.lines[3]
         self.drawer = Drawer()
         self.drawer.ticked.connect(lambda n, k, on: self.tick([(n, k)], on))
-        self.drawer.ran.connect(lambda tests: self.run([(t["n"], t["key"]) for t in tests]))
+        self.drawer.ran.connect(
+            lambda tests: self.run([(t["n"], t["key"]) for t in tests])
+        )
         self.drawer.launched.connect(lambda n: railrun.sqx_step(self, n))
         self.drawer.tab_ran.connect(self.run_panel)
         lay = QVBoxLayout(self)
@@ -90,7 +107,7 @@ class Rail(QFrame):
             lay.addWidget(line)
         lay.addLayout(self.grid)
         lay.addWidget(self.drawer)
-        lay.addStretch(1)       # spare height below, not between the lines
+        lay.addStretch(1)  # spare height below, not between the lines
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.poll)
 
@@ -104,9 +121,18 @@ class Rail(QFrame):
             """The rail and each SQX step's launch state, on the pool's thread."""
             # 10 s cold, past the client's 20 s beside other first reads (📓 2026-09-29).
             got = client.get("workflow", wait=120, project=project)
-            return got if "error" in got else got | {"_launch": ask("launch/steps", project=project)}
-        background.run(both, lambda got: self.landed(project, got), key=f"rail:{id(self)}",
-                       owner=self)
+            return (
+                got
+                if "error" in got
+                else got | {"_launch": ask("launch/steps", project=project)}
+            )
+
+        background.run(
+            both,
+            lambda got: self.landed(project, got),
+            key=f"rail:{id(self)}",
+            owner=self,
+        )
 
     def landed(self, project: str, got: dict) -> None:
         """The daemon's answer to `load`: paint it, if the rail still shows that project."""
@@ -115,12 +141,14 @@ class Rail(QFrame):
         if "error" in got:
             return self.said.setText(line(got["error"]))
         launch = got.pop("_launch")
-        if launch.get("warnings"):          # a closed window's launcher, seen by its marker
-            self.said.setText("⚠ " + line(launch["warnings"]))   # the rest on hover
+        if launch.get("warnings"):  # a closed window's launcher, seen by its marker
+            self.said.setText("⚠ " + line(launch["warnings"]))  # the rest on hover
             self.said.setToolTip(full(launch["warnings"]))
             self.said.setStyleSheet(f"color: {C['dead']};")
-        self.sqx = launch.get("steps") or {n: {"ok": False, "reasons": [launch.get("error", "?")]}
-                                           for n in (s["n"] for s in got["steps"])}
+        self.sqx = launch.get("steps") or {
+            n: {"ok": False, "reasons": [launch.get("error", "?")]}
+            for n in (s["n"] for s in got["steps"])
+        }
         self.fill(got)
         self.loaded.emit(project)
 
@@ -134,21 +162,31 @@ class Rail(QFrame):
         steps = data["steps"]
         for step in steps:
             for t in step["tests"]:
-                self.ticks.setdefault((step["n"], t["key"]), t["auto"]
-                                      and t["state"] == "pending" and step["state"] == "pending")
+                self.ticks.setdefault(
+                    (step["n"], t["key"]),
+                    t["auto"]
+                    and t["state"] == "pending"
+                    and step["state"] == "pending",
+                )
         while self.grid.count():
             gone = self.grid.takeAt(0).widget()
-            gone.hide()          # hidden first, or it paints under the new ones until deleted
+            gone.hide()  # hidden first, or it paints under the new ones until deleted
             gone.deleteLater()
         self.cards = []
         for _i, step in enumerate(steps):
             tests = runnable(step)
-            card = StepCard(step, bool(tests) and all(self.ticks[(step["n"], t["key"])]
-                                                      for t in tests), step["n"] == self.chosen,
-                            self.sqx.get(step["n"]))
+            card = StepCard(
+                step,
+                bool(tests) and all(self.ticks[(step["n"], t["key"])] for t in tests),
+                step["n"] == self.chosen,
+                self.sqx.get(step["n"]),
+            )
             card.opened.connect(self.open_step)
-            card.ticked.connect(lambda n, on: self.tick(
-                [(n, t["key"]) for t in runnable(self.step(n))], on))
+            card.ticked.connect(
+                lambda n, on: self.tick(
+                    [(n, t["key"]) for t in runnable(self.step(n))], on
+                )
+            )
             card.ran.connect(lambda n: railrun.step(self, n))
             card.launched.connect(lambda n: railrun.sqx_step(self, n))
             card.configured.connect(lambda n: railrun.configure(self, n))
@@ -166,16 +204,32 @@ class Rail(QFrame):
         self.backfill.setToolTip(label(offer["why"]))
         self.lines[0].setText(label(data["oos2"]["text"]))
         blind = data["blind"]
-        self.lines[1].setText(("Sellado — " if blind["sealed"] else "") + label(blind["text"]))
-        self.lines[1].setStyleSheet(f"color: {C['weak'] if blind['sealed'] else C['promising']};")
+        self.lines[1].setText(
+            ("Sellado — " if blind["sealed"] else "") + label(blind["text"])
+        )
+        self.lines[1].setStyleSheet(
+            f"color: {C['weak'] if blind['sealed'] else C['promising']};"
+        )
         # A disabled button's tooltip never shows, so a blocked step's reason is a visible line.
-        self.lines[2].setText("   ".join(f"paso {s['n']} bloqueado: {s['why']}"
-                                         for s in steps if s["state"] == "blocked"))
+        self.lines[2].setText(
+            "   ".join(
+                f"paso {s['n']} bloqueado: {s['why']}"
+                for s in steps
+                if s["state"] == "blocked"
+            )
+        )
         self.lines[2].setStyleSheet(f"color: {C['dead']};")
-        self.lines[2].setVisible(bool(self.lines[2].text()))   # no empty band over the cards
+        self.lines[2].setVisible(
+            bool(self.lines[2].text())
+        )  # no empty band over the cards
         if self.chosen:
-            self.drawer.show_step(self.step(self.chosen), self.ticks, blind["sealed"],
-                                  self.sqx.get(self.chosen), data)
+            self.drawer.show_step(
+                self.step(self.chosen),
+                self.ticks,
+                blind["sealed"],
+                self.sqx.get(self.chosen),
+                data,
+            )
         self.drawer.setVisible(bool(self.chosen))
 
     def step(self, n: str) -> dict[str, Any]:
@@ -203,12 +257,18 @@ class Rail(QFrame):
         else:
             self.opened.emit(step["tab"], step["sub"])
 
-    def run(self, keys: list[tuple[str, str]], databank: str = "",
-            strategies: list[str] | None = None) -> None:
+    def run(
+        self,
+        keys: list[tuple[str, str]],
+        databank: str = "",
+        strategies: list[str] | None = None,
+    ) -> None:
         """Queue tests (`railrun.tests`): (step, study) pairs, the panel's databank and rows."""
         railrun.tests(self, keys, databank, strategies)
 
-    def run_panel(self, tab: str, databank: str = "", strategies: list[str] | None = None) -> None:
+    def run_panel(
+        self, tab: str, databank: str = "", strategies: list[str] | None = None
+    ) -> None:
         """«Correr los marcados de este panel»: every ticked test of the steps shown in one tab.
 
         Args:
@@ -217,19 +277,30 @@ class Rail(QFrame):
             strategies: The strategies chosen in the panel; None or [] for all of them.
         """
         in_tab = {s["n"] for s in self.data.get("steps", []) if s["tab"] == tab}
-        self.run([k for k, on in self.ticks.items() if on and k[0] in in_tab], databank,
-                 strategies)
+        self.run(
+            [k for k, on in self.ticks.items() if on and k[0] in in_tab],
+            databank,
+            strategies,
+        )
 
     def run_all(self) -> None:
         """Every free test with no result yet, whatever is ticked: never one that spends oos2
         or writes the ledger, never a step the rail cannot place (21-25)."""
-        self.run([(s["n"], t["key"]) for s in self.data.get("steps", []) for t in runnable(s)
-                  if t["auto"] and t["state"] == "pending"])
+        self.run(
+            [
+                (s["n"], t["key"])
+                for s in self.data.get("steps", [])
+                for t in runnable(s)
+                if t["auto"] and t["state"] == "pending"
+            ]
+        )
 
     def rebuild(self) -> None:
         """Queue `ledger.backfill --blind … --write` for this project."""
         got = railrun.post("workflow/backfill", {"project": self.project})
-        self.said.setText(got.get("error") or "Rehaciendo las filas de 17-19 (ver Trabajos).")
+        self.said.setText(
+            got.get("error") or "Rehaciendo las filas de 17-19 (ver Trabajos)."
+        )
         self.poll(True)
 
     def poll(self, fresh: bool = False) -> None:

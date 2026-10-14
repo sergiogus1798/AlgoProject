@@ -23,13 +23,16 @@ HELP = [
     "Entre qué valores cae, en IQR, el 90 % central de las propias re-ejecuciones: lo que "
     "leería un original que fuese una re-ejecución más. Un original fuera de este rango es un "
     "extremo de su distribución. No es el rango de una estrategia sin ventaja: ese no está "
-    "medido todavía (haría falta un MC Retest de estrategias de entrada aleatoria)."]
-NOTE = ("Calculadas y visibles, sin juzgar: ninguna tiene umbral ni cambia el veredicto. "
-        "Spread, slippage y estrés combinado sortean costes casi siempre peores que los del "
-        "original, así que ahí el original queda por encima de la mediana por construcción "
-        "(percentil 65–70 en spread y slippage aunque la estrategia sea robusta): compara cada "
-        "tarea con ella misma entre estrategias, no con 50. Las re-ejecuciones comparten el "
-        "mismo histórico: su número no es un tamaño de muestra y aquí no hay p-valores.")
+    "medido todavía (haría falta un MC Retest de estrategias de entrada aleatoria).",
+]
+NOTE = (
+    "Calculadas y visibles, sin juzgar: ninguna tiene umbral ni cambia el veredicto. "
+    "Spread, slippage y estrés combinado sortean costes casi siempre peores que los del "
+    "original, así que ahí el original queda por encima de la mediana por construcción "
+    "(percentil 65–70 en spread y slippage aunque la estrategia sea robusta): compara cada "
+    "tarea con ella misma entre estrategias, no con 50. Las re-ejecuciones comparten el "
+    "mismo histórico: su número no es un tamaño de muestra y aquí no hay p-valores."
+)
 
 
 def table(got: dict) -> dict[str, Any]:
@@ -38,16 +41,31 @@ def table(got: dict) -> dict[str, Any]:
     for task in tasks.TASKS:
         if task in got:
             p = got[task]["place"]
-            own = "—" if p["own"] is None else (
-                f"{p['own'][0]:+.2f} a {p['own'][1]:+.2f}".replace(".", ","))
-            rows.append([tasks.TITLES[task], p["percentile"], p["gap_pct"], p["gap_iqr"], own])
-    frame = pd.DataFrame(rows, columns=pd.Index([
-        "Tarea", "Percentil del original", "Brecha de la mediana (%)",
-        "Distancia a la mediana (IQR)", "Una re-ejecución más (IQR)"]))
+            own = (
+                "—"
+                if p["own"] is None
+                else (f"{p['own'][0]:+.2f} a {p['own'][1]:+.2f}".replace(".", ","))
+            )
+            rows.append(
+                [tasks.TITLES[task], p["percentile"], p["gap_pct"], p["gap_iqr"], own]
+            )
+    frame = pd.DataFrame(
+        rows,
+        columns=pd.Index(
+            [
+                "Tarea",
+                "Percentil del original",
+                "Brecha de la mediana (%)",
+                "Distancia a la mediana (IQR)",
+                "Una re-ejecución más (IQR)",
+            ]
+        ),
+    )
     for col in frame.columns[1:4]:
         frame[col] = frame[col].astype(float)
-    return blocks.table(f"{TITLE}: el original entre sus re-ejecuciones", frame, NOTE, 4) | {
-        "help": HELP, "compact": True}
+    return blocks.table(
+        f"{TITLE}: el original entre sus re-ejecuciones", frame, NOTE, 4
+    ) | {"help": HELP, "compact": True}
 
 
 def summary(got: dict) -> dict[str, float | None]:
@@ -55,6 +73,12 @@ def summary(got: dict) -> dict[str, float | None]:
     if "stress" not in got:
         return {}
     p = got["stress"]["place"]
-    return {"percentil_original_estres": round(p["percentile"], 1),
-            "brecha_mediana_pct_estres": None if p["gap_pct"] is None else round(p["gap_pct"], 1),
-            "distancia_IQR_estres": None if p["gap_iqr"] is None else round(p["gap_iqr"], 2)}
+    return {
+        "percentil_original_estres": round(p["percentile"], 1),
+        "brecha_mediana_pct_estres": None
+        if p["gap_pct"] is None
+        else round(p["gap_pct"], 1),
+        "distancia_IQR_estres": None
+        if p["gap_iqr"] is None
+        else round(p["gap_iqr"], 2),
+    }

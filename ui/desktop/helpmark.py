@@ -17,22 +17,50 @@ from typing import Any, TypeVar, cast
 
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtCore import QEvent, QObject, QRect, Qt
-from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QBoxLayout, QCalendarWidget,
-                               QComboBox, QDialogButtonBox, QLabel, QLayout, QLineEdit,
-                               QPushButton, QScrollBar, QTabBar, QToolButton, QToolTip,
-                               QWidget)
+from PySide6.QtWidgets import (
+    QAbstractSpinBox,
+    QApplication,
+    QBoxLayout,
+    QCalendarWidget,
+    QComboBox,
+    QDialogButtonBox,
+    QLabel,
+    QLayout,
+    QLineEdit,
+    QPushButton,
+    QScrollBar,
+    QTabBar,
+    QToolButton,
+    QToolTip,
+    QWidget,
+)
 
 from ui.text.buttonhelp import help_for, merge
 
-SIZE, GAP = 17, 4                 # the mark's diameter; its distance from the button, px
-SKIP_NAMES = {"nav", "helpmark"}  # the sidebar's zone buttons are navigation, not actions
+SIZE, GAP = 17, 4  # the mark's diameter; its distance from the button, px
+SKIP_NAMES = {
+    "nav",
+    "helpmark",
+}  # the sidebar's zone buttons are navigation, not actions
 # Qt's own buttons inside other controls, and the breadcrumbs: navigation, not actions.
-SKIP_PARENTS = (QTabBar, QComboBox, QDialogButtonBox, QAbstractSpinBox, QLineEdit, QScrollBar,
-                QCalendarWidget)
+SKIP_PARENTS = (
+    QTabBar,
+    QComboBox,
+    QDialogButtonBox,
+    QAbstractSpinBox,
+    QLineEdit,
+    QScrollBar,
+    QCalendarWidget,
+)
 SKIP_CLASSES = {"ContextBar"}
 SHOWN = {QEvent.Type.Show, QEvent.Type.ShowToParent}
-FOLLOWED = {QEvent.Type.ShowToParent, QEvent.Type.HideToParent, QEvent.Type.Move, QEvent.Type.Resize,
-            QEvent.Type.ParentChange}
+FOLLOWED = {
+    QEvent.Type.ShowToParent,
+    QEvent.Type.HideToParent,
+    QEvent.Type.Move,
+    QEvent.Type.Resize,
+    QEvent.Type.ParentChange,
+}
 
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -40,13 +68,17 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 def guarded(method: F) -> F:
     """Wrap a Python override of a Qt virtual: an exception is reported, never let into Qt."""
+
     def run(*args: object) -> object:
         """Call the override; on an exception report it and answer «not handled»."""
         try:
             return method(*args)
         except Exception:  # noqa: BLE001 — the window's boundary: a «?» must not take it down
-            sys.excepthook(*cast(tuple[type[BaseException], BaseException, Any], sys.exc_info()))
+            sys.excepthook(
+                *cast(tuple[type[BaseException], BaseException, Any], sys.exc_info())
+            )
             return False
+
     run.__doc__ = method.__doc__
     return cast(F, run)
 
@@ -59,7 +91,9 @@ def scopes(button: QWidget) -> list[str]:
 def text_of(button: QWidget) -> str:
     """What the mark says: the button's `help` property, else the registry by its text, merged
     with the button's own tooltip (which often says why it is off now)."""
-    said = button.property("help") or help_for(getattr(button, "text")(), scopes(button))
+    said = button.property("help") or help_for(
+        getattr(button, "text")(), scopes(button)
+    )
     return merge(said, button.toolTip())
 
 
@@ -70,8 +104,10 @@ def skipped(button: QWidget) -> bool:
         return True
     if isinstance(button, QPushButton) and button.isFlat():
         return True
-    return any(isinstance(p, SKIP_PARENTS) or type(p).__name__ in SKIP_CLASSES
-               for p in ancestors(button))
+    return any(
+        isinstance(p, SKIP_PARENTS) or type(p).__name__ in SKIP_CLASSES
+        for p in ancestors(button)
+    )
 
 
 def ancestors(widget: QWidget) -> list[QWidget]:
@@ -113,7 +149,9 @@ class Mark(QLabel):
         self.setCursor(Qt.CursorShape.WhatsThisCursor)
         self.setToolTip(text_of(button))
         button.installEventFilter(self)
-        button.destroyed.connect(self.orphan)   # a bound slot: Qt drops it if the mark dies first
+        button.destroyed.connect(
+            self.orphan
+        )  # a bound slot: Qt drops it if the mark dies first
 
     def orphan(self, *_: object) -> None:
         """The button is gone: forget it at once (it must never be read again), then go."""
@@ -145,9 +183,15 @@ class Mark(QLabel):
             return False
         if e.type() == QEvent.Type.ParentChange:
             obj.removeEventFilter(self)
-            obj.setProperty("helpmarked", False)   # the Watcher places a new one on next show
+            obj.setProperty(
+                "helpmarked", False
+            )  # the Watcher places a new one on next show
             self.orphan()
-            if isinstance(obj, QWidget) and obj.parentWidget() is not None and obj.isVisible():
+            if (
+                isinstance(obj, QWidget)
+                and obj.parentWidget() is not None
+                and obj.isVisible()
+            ):
                 attach(obj)
         elif self.floating:
             self.seat()
@@ -164,10 +208,16 @@ class Mark(QLabel):
         top = g.top() + (g.height() - SIZE) // 2
         beside = QRect(g.right() + 1 + GAP, top, SIZE, SIZE)
         inside = QRect(g.right() - GAP - SIZE, top, SIZE, SIZE)
-        others = [w.geometry() for w in parent.findChildren(QWidget,
-                                                            options=Qt.FindChildOption.FindDirectChildrenOnly)
-                  if not w.isHidden() and w is not b and not isinstance(w, Mark)]
-        free = parent.rect().contains(beside) and not any(o.intersects(beside) for o in others)
+        others = [
+            w.geometry()
+            for w in parent.findChildren(
+                QWidget, options=Qt.FindChildOption.FindDirectChildrenOnly
+            )
+            if not w.isHidden() and w is not b and not isinstance(w, Mark)
+        ]
+        free = parent.rect().contains(beside) and not any(
+            o.intersects(beside) for o in others
+        )
         spare = b.width() - b.sizeHint().width() >= 2 * (SIZE + GAP)
         spot = beside if free else inside if spare else None
         self.setVisible(spot is not None and not b.isHidden())
@@ -180,12 +230,16 @@ def attach(button: QWidget) -> None:
     """Mark a button: in its row when a horizontal box holds it, floating anywhere else."""
     parent = button.parentWidget()
     box = holder(parent.layout() if parent is not None else None, button)
-    boxed = isinstance(box, QBoxLayout) and box.direction() in (QBoxLayout.Direction.LeftToRight,
-                                                                QBoxLayout.Direction.RightToLeft)
+    boxed = isinstance(box, QBoxLayout) and box.direction() in (
+        QBoxLayout.Direction.LeftToRight,
+        QBoxLayout.Direction.RightToLeft,
+    )
     mark = Mark(button, floating=not boxed)
     button.setProperty("helpmarked", True)
     if isinstance(box, QBoxLayout) and boxed:
-        box.insertWidget(box.indexOf(button) + 1, mark, 0, Qt.AlignmentFlag.AlignVCenter)
+        box.insertWidget(
+            box.indexOf(button) + 1, mark, 0, Qt.AlignmentFlag.AlignVCenter
+        )
         mark.setVisible(not button.isHidden())
     else:
         mark.seat()
@@ -193,7 +247,11 @@ def attach(button: QWidget) -> None:
 
 def cursor(button: QWidget) -> None:
     """The hand over a button that can be pressed, the arrow over one that cannot."""
-    button.setCursor(Qt.CursorShape.PointingHandCursor if button.isEnabled() else Qt.CursorShape.ArrowCursor)
+    button.setCursor(
+        Qt.CursorShape.PointingHandCursor
+        if button.isEnabled()
+        else Qt.CursorShape.ArrowCursor
+    )
 
 
 class Watcher(QObject):
@@ -208,13 +266,20 @@ class Watcher(QObject):
         if not isinstance(obj, (QPushButton, QToolButton)):
             return False
         cursor(obj)
-        if kind in SHOWN and not obj.property("helpmarked") and obj.parentWidget() is not None \
-                and not skipped(obj) and text_of(obj):
+        if (
+            kind in SHOWN
+            and not obj.property("helpmarked")
+            and obj.parentWidget() is not None
+            and not skipped(obj)
+            and text_of(obj)
+        ):
             attach(obj)
         return False
 
 
 def install(app: QApplication) -> None:
     """Install the filter once on the application; a second call does nothing."""
-    if app.findChild(Watcher) is None:     # the filter is a child of the app: alive as long as it
+    if (
+        app.findChild(Watcher) is None
+    ):  # the filter is a child of the app: alive as long as it
         app.installEventFilter(Watcher(app))

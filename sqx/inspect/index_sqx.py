@@ -35,9 +35,15 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=48)
     a = ap.parse_args()
 
-    jobs = {p: name for name, root in STRATEGY_POOLS.items() if root.is_dir()
-            for p in root.rglob("*.sqx")}
-    print(f"scanning {len(jobs)} .sqx across {len(STRATEGY_POOLS)} pools", file=sys.stderr)
+    jobs = {
+        p: name
+        for name, root in STRATEGY_POOLS.items()
+        if root.is_dir()
+        for p in root.rglob("*.sqx")
+    }
+    print(
+        f"scanning {len(jobs)} .sqx across {len(STRATEGY_POOLS)} pools", file=sys.stderr
+    )
 
     index, unreadable = {}, {}
     with ProcessPoolExecutor(max_workers=a.workers) as ex:
@@ -45,11 +51,19 @@ def main() -> None:
             if digest is None:
                 unreadable[str(path)] = symbol
                 continue
-            record = index.setdefault(digest, {"symbol": symbol, "feed": feed, "copies": []})
-            record["copies"].append({"path": str(path), "pool": jobs[path],
-                                     "mtime": path.stat().st_mtime})
-    a.out.write_text(json.dumps({"by_hash": index, "unreadable": unreadable}), encoding="utf-8")
-    print(f"unique strategies: {len(index)}   unreadable: {len(unreadable)}", file=sys.stderr)
+            record = index.setdefault(
+                digest, {"symbol": symbol, "feed": feed, "copies": []}
+            )
+            record["copies"].append(
+                {"path": str(path), "pool": jobs[path], "mtime": path.stat().st_mtime}
+            )
+    a.out.write_text(
+        json.dumps({"by_hash": index, "unreadable": unreadable}), encoding="utf-8"
+    )
+    print(
+        f"unique strategies: {len(index)}   unreadable: {len(unreadable)}",
+        file=sys.stderr,
+    )
 
 
 if __name__ == "__main__":

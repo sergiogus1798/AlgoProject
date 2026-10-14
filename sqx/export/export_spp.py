@@ -14,8 +14,19 @@ from core.paths import MASTER, databank_dir, export_dir, worker_dir
 from sqx.export import spp_table
 from sqx.export.spp_table import Spilled
 
-RUN = ["strategy", "permutations", "profitable", "losing", "zero", "profitable_pct",
-       "avg_profit", "top_profit", "stdev", "uniform_changes", "parameters"]
+RUN = [
+    "strategy",
+    "permutations",
+    "profitable",
+    "losing",
+    "zero",
+    "profitable_pct",
+    "avg_profit",
+    "top_profit",
+    "stdev",
+    "uniform_changes",
+    "parameters",
+]
 
 
 # 🔬 2026-09-26: one reader holds ~0.34 GB for a 12,000-permutation profile, so 48 of them
@@ -45,7 +56,9 @@ def _read(path: Path) -> tuple[dict, Spilled | None]:
     return profile, got
 
 
-def profiles(project: str, databank: str, install: Path, spill: Path) -> tuple[dict, dict]:
+def profiles(
+    project: str, databank: str, install: Path, spill: Path
+) -> tuple[dict, dict]:
     """Read every SPP profile a databank's strategies carry, one process per file.
 
     Args:
@@ -62,14 +75,18 @@ def profiles(project: str, databank: str, install: Path, spill: Path) -> tuple[d
         for). Strategies whose .sqx holds no profile were never cross-checked with SPP and
         are skipped silently.
     """
-    found = {f: f.stat().st_size
-             for f in sorted(databank_dir(project, databank, install).glob("*.sqx"))
-             if optprofile.MEMBER in zipfile.ZipFile(f).namelist()}
+    found = {
+        f: f.stat().st_size
+        for f in sorted(databank_dir(project, databank, install).glob("*.sqx"))
+        if optprofile.MEMBER in zipfile.ZipFile(f).namelist()
+    }
     spill.mkdir(parents=True, exist_ok=True)
     _SPILL["folder"] = spill
     got = dict(fanout.run(_read, found, WORKERS))
-    return ({f.stem: got[f][0] for f in found},
-            {f.stem: got[f][1] for f in found if got[f][1] is not None})
+    return (
+        {f.stem: got[f][0] for f in found},
+        {f.stem: got[f][1] for f in found if got[f][1] is not None},
+    )
 
 
 def write_runs(found: dict, path: Path) -> int:
@@ -82,8 +99,14 @@ def write_runs(found: dict, path: Path) -> int:
     Returns:
         Rows written. `parameters` is the space-joined list of what the SPP permuted.
     """
-    rows = [{"strategy": name, "parameters": " ".join(p["params"]),
-             **{k: p[k] for k in RUN[1:-1]}} for name, p in found.items()]
+    rows = [
+        {
+            "strategy": name,
+            "parameters": " ".join(p["params"]),
+            **{k: p[k] for k in RUN[1:-1]},
+        }
+        for name, p in found.items()
+    ]
     pd.DataFrame(rows, columns=pd.Index(RUN)).to_parquet(path, index=False)
     return len(rows)
 
@@ -98,10 +121,17 @@ def write_metrics(found: dict, path: Path) -> int:
     Returns:
         Rows written.
     """
-    rows = [{"strategy": name, "metric": metric, "median": median,
-             "orig": p["orig"][metric],
-             "orig_over_median": p["orig"][metric] / median if median else float("nan")}
-            for name, p in found.items() for metric, median in p["medians"].items()]
+    rows = [
+        {
+            "strategy": name,
+            "metric": metric,
+            "median": median,
+            "orig": p["orig"][metric],
+            "orig_over_median": p["orig"][metric] / median if median else float("nan"),
+        }
+        for name, p in found.items()
+        for metric, median in p["medians"].items()
+    ]
     pd.DataFrame(rows).to_parquet(path, index=False)
     return len(rows)
 
@@ -116,9 +146,12 @@ def write_histograms(found: dict, path: Path) -> int:
     Returns:
         Rows written. Kept because the binning is SQX's own and cannot be derived back.
     """
-    rows = [{"strategy": name, "metric": metric, **b}
-            for name, p in found.items() for metric, chart in p["charts"].items()
-            for b in optprofile.histogram(chart)]
+    rows = [
+        {"strategy": name, "metric": metric, **b}
+        for name, p in found.items()
+        for metric, chart in p["charts"].items()
+        for b in optprofile.histogram(chart)
+    ]
     pd.DataFrame(rows).to_parquet(path, index=False)
     return len(rows)
 
@@ -155,32 +188,47 @@ def main() -> None:
     a = ap.parse_args()
 
     install = worker_dir(a.role) if a.role else MASTER
-    out = export_dir(a.project, a.out_databank or a.databank,
-                     date.today().isoformat()) / "spp"
+    out = (
+        export_dir(a.project, a.out_databank or a.databank, date.today().isoformat())
+        / "spp"
+    )
     out.mkdir(parents=True, exist_ok=True)
     found, spilled = profiles(a.project, a.databank, install, out / "_permutations")
     kept = list(spilled)
 
-    counts = {"runs.parquet": write_runs(found, out / "runs.parquet"),
-              "metrics.parquet": write_metrics(found, out / "metrics.parquet"),
-              "histograms.parquet": write_histograms(found, out / "histograms.parquet")}
+    counts = {
+        "runs.parquet": write_runs(found, out / "runs.parquet"),
+        "metrics.parquet": write_metrics(found, out / "metrics.parquet"),
+        "histograms.parquet": write_histograms(found, out / "histograms.parquet"),
+    }
     if kept:
-        counts["spp.parquet"] = spp_table.write(spilled, out / "_permutations",
-                                                out / "spp.parquet")
+        counts["spp.parquet"] = spp_table.write(
+            spilled, out / "_permutations", out / "spp.parquet"
+        )
     shutil.rmtree(out / "_permutations")
-    manifest.write(out,
-                   {"install": str(install), "project": a.project, "databank": a.databank,
-                    "profiles_found": len(found),
-                    "with_permutation_results": len(kept)},
-                   f"export_spp.py --project {a.project} --databank {a.databank}",
-                   counts)
+    manifest.write(
+        out,
+        {
+            "install": str(install),
+            "project": a.project,
+            "databank": a.databank,
+            "profiles_found": len(found),
+            "with_permutation_results": len(kept),
+        },
+        f"export_spp.py --project {a.project} --databank {a.databank}",
+        counts,
+    )
     mothers = copy_mothers(a.project, a.databank, install, out.parent)
-    manifest.write(out.parent / "strategies",
-                   {"install": str(install), "project": a.project, "databank": a.databank},
-                   f"export_spp.py --project {a.project} --databank {a.databank}",
-                   {"sqx": mothers})
+    manifest.write(
+        out.parent / "strategies",
+        {"install": str(install), "project": a.project, "databank": a.databank},
+        f"export_spp.py --project {a.project} --databank {a.databank}",
+        {"sqx": mothers},
+    )
     print(f"{len(found)} profiles -> {out}")
-    print(f"  strategies/      {mothers} madres, que es lo que abre la fábrica de variantes")
+    print(
+        f"  strategies/      {mothers} madres, que es lo que abre la fábrica de variantes"
+    )
     for name, n in counts.items():
         print(f"  {name:16s} {n} rows")
 

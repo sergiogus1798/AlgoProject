@@ -27,10 +27,14 @@ def main() -> None:
     true_start = assetdata.segment_start(assetdata.load(SYMBOL), "oos2")
 
     if boundary != true_start:
-        failures.append(f"split() = {boundary}, no coincide con el tramo real {true_start}")
+        failures.append(
+            f"split() = {boundary}, no coincide con el tramo real {true_start}"
+        )
     if boundary <= WARMUP:
-        failures.append(f"split() = {boundary} no es posterior al calentamiento {WARMUP}: "
-                        "el arreglo no habría movido nada")
+        failures.append(
+            f"split() = {boundary} no es posterior al calentamiento {WARMUP}: "
+            "el arreglo no habría movido nada"
+        )
 
     # A leg's curve carries real P&L through the tail of oos1 (…2022-12-31), including the
     # days its own warm-up (2022-11-03…12-31) overlaps — every one of them before oos2's
@@ -43,13 +47,17 @@ def main() -> None:
         failures.append("windows() no respeta su propio boundary")
     tail = wide.loc[WARMUP:"2022-12-31"]
     if not tail.index.isin(inside.index).all():
-        failures.append(f"P&L de {WARMUP} a 2022-12-31 (tramo oos1) cayó del lado OOS: "
-                        "ha vuelto el bug del calentamiento")
+        failures.append(
+            f"P&L de {WARMUP} a 2022-12-31 (tramo oos1) cayó del lado OOS: "
+            "ha vuelto el bug del calentamiento"
+        )
 
-    print("\n".join(failures) or
-          f"ok: split('{SYMBOL}', oos2_only) = {boundary}, el propio inicio de oos2 en "
-          f"_policy.yaml y no el calentamiento {WARMUP}; ningún P&L de antes de {boundary} "
-          "cae del lado OOS")
+    print(
+        "\n".join(failures)
+        or f"ok: split('{SYMBOL}', oos2_only) = {boundary}, el propio inicio de oos2 en "
+        f"_policy.yaml y no el calentamiento {WARMUP}; ningún P&L de antes de {boundary} "
+        "cae del lado OOS"
+    )
     sys.exit(1 if failures else 0)
 
 

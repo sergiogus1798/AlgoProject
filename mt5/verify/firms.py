@@ -1,4 +1,5 @@
 """Which prop firms the bridge can verify on: their saved MT5 account and their symbol names."""
+
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -48,8 +49,14 @@ def usable(asset: str) -> dict[str, dict]:
     out = {}
     for firm, account in MT5_ACCOUNTS.items():
         symbol = known.get(firm)
-        why = None if symbol else (f"{asset} no tiene símbolo de {label(firm)} en "
-                                   f"assets/symbols/{asset}.yaml (mt5.{firm}): añádelo en "
-                                   "Activos; nunca se adivina")
+        why = (
+            None
+            if symbol
+            else (
+                f"{asset} no tiene símbolo de {label(firm)} en "
+                f"assets/symbols/{asset}.yaml (mt5.{firm}): añádelo en "
+                "Activos; nunca se adivina"
+            )
+        )
         out[firm] = {"account": account, "symbol": symbol, "why": why}
     return out

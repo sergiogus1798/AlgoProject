@@ -3,8 +3,8 @@
 import numpy as np
 import pandas as pd
 
-INTRABAR = ("SL",)                           # `Close type`s that fill inside the bar, at their own price
-MINUTES = {"M": 1, "H": 60, "D": 1440}       # per unit of a timeframe's letter
+INTRABAR = ("SL",)  # `Close type`s that fill inside the bar, at their own price
+MINUTES = {"M": 1, "H": 60, "D": 1440}  # per unit of a timeframe's letter
 
 
 def retime(trades: pd.DataFrame, bars: pd.DataFrame, timeframe: str) -> pd.DataFrame:
@@ -25,7 +25,11 @@ def retime(trades: pd.DataFrame, bars: pd.DataFrame, timeframe: str) -> pd.DataF
         the bar's most adverse minute. A stamp whose bar has no M1 at all is left alone.
     """
     span = np.timedelta64(MINUTES[timeframe[0]] * int(timeframe[1:]), "m")
-    times, low, high = bars.index.to_numpy(), bars["Low"].to_numpy(), bars["High"].to_numpy()
+    times, low, high = (
+        bars.index.to_numpy(),
+        bars["Low"].to_numpy(),
+        bars["High"].to_numpy(),
+    )
     closes = trades["Close time"].to_numpy().copy()
     price = trades["Close price"].to_numpy(np.float64)
     long = (trades["Type"].astype(object) == "Buy").to_numpy()
@@ -33,13 +37,17 @@ def retime(trades: pd.DataFrame, bars: pd.DataFrame, timeframe: str) -> pd.DataF
         a, b = np.searchsorted(times, [closes[k], closes[k] + span])
         if a == b:
             continue
-        adverse = price[k] - low[a:b] if long[k] else high[a:b] - price[k]   # ≥ 0: the wick reached it
+        adverse = (
+            price[k] - low[a:b] if long[k] else high[a:b] - price[k]
+        )  # ≥ 0: the wick reached it
         reached = np.flatnonzero(adverse >= 0)
         closes[k] = times[a + (reached[0] if reached.size else adverse.argmax())]
     return trades.assign(**{"Close time": closes})
 
 
-def fills(rebuilt: pd.DataFrame, trades: pd.DataFrame, bars: pd.DataFrame, point_value: float) -> pd.DataFrame:
+def fills(
+    rebuilt: pd.DataFrame, trades: pd.DataFrame, bars: pd.DataFrame, point_value: float
+) -> pd.DataFrame:
     """Each trade's excursions with its own exit in them, as SQX counts it.
 
     🔬 2026-10-05, 2,775 NIKKEI225 trades: a stopped trade's `MAE ($)` is its move to
@@ -59,12 +67,30 @@ def fills(rebuilt: pd.DataFrame, trades: pd.DataFrame, bars: pd.DataFrame, point
     """
     side = np.where(trades["Type"].astype(object) == "Buy", 1.0, -1.0)
     stopped = trades["Close type"].astype(str).isin(INTRABAR).to_numpy()
-    at = np.searchsorted(bars.index.to_numpy(), trades["Close time"].to_numpy(), side="right") - 1
-    clamped = int((at < 0).sum())           # a close before the first bar: -1 would read the LAST bar
+    at = (
+        np.searchsorted(
+            bars.index.to_numpy(), trades["Close time"].to_numpy(), side="right"
+        )
+        - 1
+    )
+    clamped = int(
+        (at < 0).sum()
+    )  # a close before the first bar: -1 would read the LAST bar
     at = np.maximum(at, 0)
-    price = np.where(stopped, trades["Close price"].to_numpy(np.float64), bars["Open"].to_numpy()[at])
-    move = side * (price - trades["Open price"].to_numpy()) * trades["Size"].to_numpy() * point_value
-    out = rebuilt.assign(mae=np.minimum(rebuilt["mae"], move),
-                         mfe=np.where(stopped, rebuilt["mfe"], np.maximum(rebuilt["mfe"], move)))
-    out.attrs["clamped"] = clamped          # rows whose exit minute predates the first bar (read at bar 0)
+    price = np.where(
+        stopped, trades["Close price"].to_numpy(np.float64), bars["Open"].to_numpy()[at]
+    )
+    move = (
+        side
+        * (price - trades["Open price"].to_numpy())
+        * trades["Size"].to_numpy()
+        * point_value
+    )
+    out = rebuilt.assign(
+        mae=np.minimum(rebuilt["mae"], move),
+        mfe=np.where(stopped, rebuilt["mfe"], np.maximum(rebuilt["mfe"], move)),
+    )
+    out.attrs["clamped"] = (
+        clamped  # rows whose exit minute predates the first bar (read at bar 0)
+    )
     return out

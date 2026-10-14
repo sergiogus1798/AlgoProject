@@ -9,7 +9,7 @@ from engines.inference import fdr
 
 KEY = ["symbol", "timeframe", "direction", "measure"]
 CELL = ["symbol", "timeframe", "direction"]
-FLOOR = 35     # owner, 2026-10-02: no asset may be asked for fewer trades a year than this
+FLOOR = 35  # owner, 2026-10-02: no asset may be asked for fewer trades a year than this
 
 
 def min_trades(symbols: pd.Series, cfg: dict) -> pd.Series:
@@ -26,9 +26,15 @@ def min_trades(symbols: pd.Series, cfg: dict) -> pd.Series:
         ValueError: A figure below FLOOR, the default or an asset's.
     """
     own = cfg.get("min_trades_per_year_by_asset") or {}
-    low = {k: v for k, v in {"default": cfg["min_trades_per_year"], **own}.items() if v < FLOOR}
+    low = {
+        k: v
+        for k, v in {"default": cfg["min_trades_per_year"], **own}.items()
+        if v < FLOOR
+    }
     if low:
-        raise ValueError(f"min_trades_per_year below the floor of {FLOOR} a year: {low}")
+        raise ValueError(
+            f"min_trades_per_year below the floor of {FLOOR} a year: {low}"
+        )
     return symbols.map(own).fillna(cfg["min_trades_per_year"])
 
 
@@ -44,8 +50,11 @@ def corrected(rows: pd.DataFrame, alpha: float, within: list[str]) -> pd.DataFra
         `q` (the adjusted p) and `significant`, indexed like rows.
     """
     out = pd.DataFrame({"q": 1.0, "significant": False}, index=rows.index)
-    for _, part in (rows.groupby(within, sort=False) if within else [(None, rows)]):
-        tests = [{"metric": "|".join(k), "p": p} for k, p in zip(part[KEY].to_numpy(), part["p"])]
+    for _, part in rows.groupby(within, sort=False) if within else [(None, rows)]:
+        tests = [
+            {"metric": "|".join(k), "p": p}
+            for k, p in zip(part[KEY].to_numpy(), part["p"])
+        ]
         q, named = fdr.adjusted(tests), fdr.discoveries(tests, alpha)
         out.loc[part.index, "q"] = [q[t["metric"]] for t in tests]
         out.loc[part.index, "significant"] = [t["metric"] in named for t in tests]
@@ -75,9 +84,14 @@ def judged(rows: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     out["pays"] = out["multiple"].fillna(-np.inf) >= cfg["cost_multiple"]
     out["stability"] = out["years_with_sign"] / out["years"]
     out["stable"] = out["stability"].fillna(0) > cfg["stable_share"]
-    out["frequent"] = out["trades_per_year"].fillna(0) >= min_trades(pd.Series(out["symbol"]), cfg)
+    out["frequent"] = out["trades_per_year"].fillna(0) >= min_trades(
+        pd.Series(out["symbol"]), cfg
+    )
     rest = out["pays"] & out["stable"] & out["frequent"]
-    out["passes"], out["passes_family"] = out["significant"] & rest, out["significant_family"] & rest
+    out["passes"], out["passes_family"] = (
+        out["significant"] & rest,
+        out["significant_family"] & rest,
+    )
     return out
 
 
@@ -118,30 +132,53 @@ def scores(measures: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     families = list(dict.fromkeys(m["family"] for m in cfg["measures"]))
     both = pd.DataFrame(measures[measures["direction"] == "both"])
     rows = []
-    for (symbol, timeframe, direction), own in cast("Any", measures[measures["direction"] != "both"].groupby(
-            CELL, sort=False)):
-        shared = pd.DataFrame(both[(both["symbol"] == symbol) & (both["timeframe"] == timeframe)])
+    for (symbol, timeframe, direction), own in cast(
+        "Any", measures[measures["direction"] != "both"].groupby(CELL, sort=False)
+    ):
+        shared = pd.DataFrame(
+            both[(both["symbol"] == symbol) & (both["timeframe"] == timeframe)]
+        )
         cell = pd.concat([own, shared])
         for family in families:
             members = pd.DataFrame(cell[cell["family"] == family])
             trades = _tradable(members)
             lead = _lead(trades)
-            rows.append({
-                "symbol": symbol, "timeframe": timeframe, "direction": direction,
-                "family": family, "score": 100 * members["z"].clip(0, cap).mean() / cap,
-                "lead": lead["measure"], "p": lead["q"], "p_raw": lead["p"],
-                "multiple": lead["multiple"], "effect": lead["effect"], "cost": lead["cost"],
-                "stability": lead["stability"], "years_with_sign": lead["years_with_sign"],
-                "years": lead["years"], "trades_per_year": lead["trades_per_year"],
-                "significant": bool(lead["significant"]), "pays": bool(lead["pays"]),
-                "stable": bool(lead["stable"]), "frequent": bool(lead["frequent"]),
-                "passes": bool(trades["passes"].any()),
-                "fragile": bool((trades["significant"] & trades["pays"]
-                                 & ~trades["stable"]).any()) and not bool(trades["passes"].any()),
-                "needs_clock": bool(lead["needs_clock"]), "p_family": lead["q_family"],
-                "significant_family": bool(lead["significant_family"]),
-                "passes_family": bool(trades["passes_family"].any()),
-                "measures": len(members), "measures_significant": int(members["significant"].sum())})
+            rows.append(
+                {
+                    "symbol": symbol,
+                    "timeframe": timeframe,
+                    "direction": direction,
+                    "family": family,
+                    "score": 100 * members["z"].clip(0, cap).mean() / cap,
+                    "lead": lead["measure"],
+                    "p": lead["q"],
+                    "p_raw": lead["p"],
+                    "multiple": lead["multiple"],
+                    "effect": lead["effect"],
+                    "cost": lead["cost"],
+                    "stability": lead["stability"],
+                    "years_with_sign": lead["years_with_sign"],
+                    "years": lead["years"],
+                    "trades_per_year": lead["trades_per_year"],
+                    "significant": bool(lead["significant"]),
+                    "pays": bool(lead["pays"]),
+                    "stable": bool(lead["stable"]),
+                    "frequent": bool(lead["frequent"]),
+                    "passes": bool(trades["passes"].any()),
+                    "fragile": bool(
+                        (
+                            trades["significant"] & trades["pays"] & ~trades["stable"]
+                        ).any()
+                    )
+                    and not bool(trades["passes"].any()),
+                    "needs_clock": bool(lead["needs_clock"]),
+                    "p_family": lead["q_family"],
+                    "significant_family": bool(lead["significant_family"]),
+                    "passes_family": bool(trades["passes_family"].any()),
+                    "measures": len(members),
+                    "measures_significant": int(members["significant"].sum()),
+                }
+            )
     return pd.DataFrame(rows)
 
 
@@ -159,9 +196,18 @@ def correlation(table: pd.DataFrame) -> pd.DataFrame:
     for scope, part in [("ALL", table)] + list(table.groupby("timeframe", sort=False)):
         wide = part.pivot_table(index=CELL, columns="family", values="score")
         pearson, spearman = wide.corr(), wide.corr(method="spearman")
-        rows += [{"scope": scope, "family_a": a, "family_b": b, "cells": len(wide),
-                  "pearson": pearson.loc[a, b], "spearman": spearman.loc[a, b]}
-                 for i, a in enumerate(wide.columns) for b in wide.columns[i + 1:]]
+        rows += [
+            {
+                "scope": scope,
+                "family_a": a,
+                "family_b": b,
+                "cells": len(wide),
+                "pearson": pearson.loc[a, b],
+                "spearman": spearman.loc[a, b],
+            }
+            for i, a in enumerate(wide.columns)
+            for b in wide.columns[i + 1 :]
+        ]
     return pd.DataFrame(rows)
 
 

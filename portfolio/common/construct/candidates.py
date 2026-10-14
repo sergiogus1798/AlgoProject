@@ -15,12 +15,25 @@ from core.paths import DATA
 # `cloud` and `entryQuality` are deliberately absent — WORKFLOW.md calls them
 # extra readings, not steps, so they never enter the furthest-step count.
 STUDY_STEP = {
-    "gate": "8", "isOos": "8", "filters": "8", "replication": "8", "decay": "8",
-    "monkeyExcess": "8", "feedQuality": "8",
-    "edgeCost": "8", "monkey": "8",
-    "crossmarket": "10", "crossTF": "12", "mcRetest": "14", "spp": "16",
-    "wfc": "17", "cscv": "18", "marketSurfaces": "18.5", "wfm": "19",
-    "blindJoint": "20", "exposure": "21",
+    "gate": "8",
+    "isOos": "8",
+    "filters": "8",
+    "replication": "8",
+    "decay": "8",
+    "monkeyExcess": "8",
+    "feedQuality": "8",
+    "edgeCost": "8",
+    "monkey": "8",
+    "crossmarket": "10",
+    "crossTF": "12",
+    "mcRetest": "14",
+    "spp": "16",
+    "wfc": "17",
+    "cscv": "18",
+    "marketSurfaces": "18.5",
+    "wfm": "19",
+    "blindJoint": "20",
+    "exposure": "21",
 }
 SURVIVOR_WORDS = {"MANTENER", "survives", "predicts", "PASS"}
 NEAR_WORDS = {"DUDOSA", "INCONCLUSIVE"}
@@ -57,14 +70,28 @@ def _judgments(project_dir: Path) -> dict[str, list[dict]]:
         step = STUDY_STEP.get(study)
         if step is None:
             continue
-        frame = pd.read_csv(project_dir / databank / day / study / "verdict.csv",
-                            dtype=str, keep_default_na=False)
+        frame = pd.read_csv(
+            project_dir / databank / day / study / "verdict.csv",
+            dtype=str,
+            keep_default_na=False,
+        )
         if "identity" not in frame.columns:
             continue
-        for identity, word, name in zip(frame["identity"], frame["verdict"], frame["strategy"]):
-            if identity and (study, word) not in NOT_A_FILTER:  # crossmarket ships it empty
-                by_identity[identity].append({"step": step, "word": word, "study": study,
-                                              "databank": databank, "strategy": name})
+        for identity, word, name in zip(
+            frame["identity"], frame["verdict"], frame["strategy"]
+        ):
+            if (
+                identity and (study, word) not in NOT_A_FILTER
+            ):  # crossmarket ships it empty
+                by_identity[identity].append(
+                    {
+                        "step": step,
+                        "word": word,
+                        "study": study,
+                        "databank": databank,
+                        "strategy": name,
+                    }
+                )
     return by_identity
 
 
@@ -85,7 +112,11 @@ def _carried(project: str) -> set[str]:
     candidate whatever the words of the steps before it said; the line shows those words.
     """
     root = variants_dir(project, "_").parent
-    return {d.parent.name.replace("_", " ") for d in root.glob("*/sqx")} if root.is_dir() else set()
+    return (
+        {d.parent.name.replace("_", " ") for d in root.glob("*/sqx")}
+        if root.is_dir()
+        else set()
+    )
 
 
 def _family(project: str) -> str:
@@ -112,8 +143,13 @@ def _report(project: str, project_dir: Path) -> None:
         best = _furthest(entries)
         if any(e["strategy"] in carried for e in entries):
             words = ", ".join(sorted({f"{e['study']} {e['word']}" for e in entries}))
-            best = {"class": "survivor", "step": "16.5", "study": "llevada al 16.5",
-                    "word": f"[{words}]", "databank": "Results"}
+            best = {
+                "class": "survivor",
+                "step": "16.5",
+                "study": "llevada al 16.5",
+                "word": f"[{words}]",
+                "databank": "Results",
+            }
         if best["class"] == "other":
             left_out[best["word"]] += 1
             continue
@@ -126,10 +162,16 @@ def _report(project: str, project_dir: Path) -> None:
         else:
             near += 1
             label = "DUDOSA"
-        print(f"  [{label}] paso {best['step']} · {best['study']} · {best['word']} · {identity[:12]}…")
-        print(f"    python3 -m core.archive archive --project {project} --databank "
-              f"{best['databank']} --identity {identity} --step {best['step']} --family {family}")
-    print(f"  {survivors} supervivientes, {near} dudosas, {skipped_archived} ya archivadas")
+        print(
+            f"  [{label}] paso {best['step']} · {best['study']} · {best['word']} · {identity[:12]}…"
+        )
+        print(
+            f"    python3 -m core.archive archive --project {project} --databank "
+            f"{best['databank']} --identity {identity} --step {best['step']} --family {family}"
+        )
+    print(
+        f"  {survivors} supervivientes, {near} dudosas, {skipped_archived} ya archivadas"
+    )
     for word, n in sorted(left_out.items()):
         print(f"  descartadas por «{word}»: {n}")
 
@@ -140,7 +182,11 @@ def main() -> None:
     parser.add_argument("--project")
     args = parser.parse_args()
     reports_root = DATA / "reports"
-    projects = [args.project] if args.project else sorted(p.name for p in reports_root.iterdir())
+    projects = (
+        [args.project]
+        if args.project
+        else sorted(p.name for p in reports_root.iterdir())
+    )
     for project in projects:
         project_dir = reports_root / project
         if project_dir.is_dir():

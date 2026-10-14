@@ -7,8 +7,14 @@ from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QWidget
 
 from ui.desktop import background, client
-from ui.desktop.workspace.columns import (choices, column_id, diff, is_metric, resolve,
-                                          shown_ids)
+from ui.desktop.workspace.columns import (
+    choices,
+    column_id,
+    diff,
+    is_metric,
+    resolve,
+    shown_ids,
+)
 from ui.desktop.workspace.columnsmenu import ColumnsMenu
 from ui.desktop.workspace.table import pick
 
@@ -37,7 +43,7 @@ class Views(QObject):
         self.segs: dict[str, dict] = {}
         self.failed: dict[tuple, str] = {}
         self.asking: set[tuple] = set()
-        self.waiting = ""               # a databank whose chooser opens once its data lands
+        self.waiting = ""  # a databank whose chooser opens once its data lands
 
     def reset(self) -> None:
         """A new project: forget everything read."""
@@ -59,9 +65,15 @@ class Views(QObject):
         self.asking.add((kind, databank))
         project = self.panel.project
 
-        background.get(f"databank/{kind}", lambda got: self.land(
-            {"kind": kind, "project": project, "databank": databank, "got": got}),
-            owner=self, project=project, databank=databank)
+        background.get(
+            f"databank/{kind}",
+            lambda got: self.land(
+                {"kind": kind, "project": project, "databank": databank, "got": got}
+            ),
+            owner=self,
+            project=project,
+            databank=databank,
+        )
 
     def land(self, msg: dict) -> None:
         """Keep what a thread read (or its failure, unkept) and repaint or open the chooser."""
@@ -83,8 +95,10 @@ class Views(QObject):
             else:
                 self.panel.open_sub(self.panel.sub.currentIndex())
         if (kind, bank) in self.failed:
-            self.panel.say(f"No se pudieron leer las columnas de {bank}: "
-                           f"{self.failed[(kind, bank)]}")
+            self.panel.say(
+                f"No se pudieron leer las columnas de {bank}: "
+                f"{self.failed[(kind, bank)]}"
+            )
 
     def ready(self, bank: str, full: bool) -> bool:
         """Whether what a paint (or, `full`, the chooser) needs is read or failed."""
@@ -96,7 +110,9 @@ class Views(QObject):
         err = self.failed.get(("segments", bank))
         return {"error": err} if err else self.segs.get(bank)
 
-    def offer(self, table: dict, spec: dict, full: bool) -> tuple[dict, list[str], list[str]]:
+    def offer(
+        self, table: dict, spec: dict, full: bool
+    ) -> tuple[dict, list[str], list[str]]:
         """What the table can show, what it shows, and its default ids; asks what is missing.
 
         Args:
@@ -111,14 +127,23 @@ class Views(QObject):
         own = pick(table["columns"], spec)
         defaults = [column_id(table["columns"][i]) for i, _ in own[1:]]
         ids = shown_ids(held.get(WIDE), [d for d in defaults if is_metric(d)]) + [
-            k for k in shown_ids(held.get(self.name()), [d for d in defaults if not is_metric(d)])
-            if not is_metric(k)]
-        if ((full or any(k.endswith(UNION) for k in ids)) and bank not in self.segs
-                and ("segments", bank) not in self.failed):
+            k
+            for k in shown_ids(
+                held.get(self.name()), [d for d in defaults if not is_metric(d)]
+            )
+            if not is_metric(k)
+        ]
+        if (
+            (full or any(k.endswith(UNION) for k in ids))
+            and bank not in self.segs
+            and ("segments", bank) not in self.failed
+        ):
             self.fetch("segments", bank)
         return choices(table["columns"], own, self.seg_state(bank)), ids, defaults
 
-    def view(self, table: dict, spec: dict) -> tuple[list[dict], list[int], dict | None]:
+    def view(
+        self, table: dict, spec: dict
+    ) -> tuple[list[dict], list[int], dict | None]:
         """The columns to paint, the sub-panel's own study columns and the IS+OOS1 figures.
 
         Returns:
@@ -127,8 +152,11 @@ class Views(QObject):
         """
         offered, ids, _ = self.offer(table, spec, False)
         own = pick(table["columns"], spec)
-        judged = ([i for i, _ in own if table["columns"][i]["kind"] == "study"]
-                  if spec["studies"] != ["*"] else [])
+        judged = (
+            [i for i, _ in own if table["columns"][i]["kind"] == "study"]
+            if spec["studies"] != ["*"]
+            else []
+        )
         return resolve(ids, offered), judged, self.segs.get(spec["databank"])
 
     def keep(self, shown: list[str] | None) -> str:
@@ -144,23 +172,34 @@ class Views(QObject):
         if shown is not None:
             offered, _, defaults = self.offer(self.panel.cache[bank], spec, False)
             for key, metric in ((WIDE, True), (self.name(), False)):
-                wanted[key] = diff([k for k in shown if is_metric(k) == metric],
-                                   [d for d in defaults if is_metric(d) == metric],
-                                   held.get(key), offered)
+                wanted[key] = diff(
+                    [k for k in shown if is_metric(k) == metric],
+                    [d for d in defaults if is_metric(d) == metric],
+                    held.get(key),
+                    offered,
+                )
         errors: list[str] = []
         for key, view in wanted.items():
             got: dict
-            try:            # a click the owner waits for: two local writes, a few ms
-                got = client.post("databank/columns", {"project": self.panel.project,
-                                                       "databank": bank, "table": key,
-                                                       "view": view})
+            try:  # a click the owner waits for: two local writes, a few ms
+                got = client.post(
+                    "databank/columns",
+                    {
+                        "project": self.panel.project,
+                        "databank": bank,
+                        "table": key,
+                        "view": view,
+                    },
+                )
             except httpx.HTTPError as failed:
                 got = {"error": f"El demonio no respondió: {failed}"}
             if "views" in got:
                 self.views[bank] = got["views"]
                 continue
             errors.append(got.get("error", ""))
-            kept = self.views.setdefault(bank, {})    # not on disk: at least for this session
+            kept = self.views.setdefault(
+                bank, {}
+            )  # not on disk: at least for this session
             kept.pop(key, None)
             if view is not None:
                 kept[key] = view

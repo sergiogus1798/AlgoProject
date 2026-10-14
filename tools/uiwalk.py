@@ -25,8 +25,16 @@ from typing import TYPE_CHECKING, Any
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QInputDialog,  # noqa: E402
-                               QMessageBox, QTabBar, QTableWidget, QWidget)
+from PySide6.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QDialog,
+    QInputDialog,  # noqa: E402
+    QMessageBox,
+    QTabBar,
+    QTableWidget,
+    QWidget,
+)
 
 from shiboken6 import isValid  # noqa: E402
 
@@ -38,7 +46,11 @@ if TYPE_CHECKING:
 # POSTs that only read: the aggregate curve of chosen rows, a config's hash, the chat's next
 # question. Every other POST writes something (a YAML, a ledger row, a job, a load).
 READS = ("databank/equity", "config/hash", "interview/step", "filters/preview")
-ITEMS, TABS, WAIT_S = 6, 12, 25     # per combo, per tab bar; seconds a zone may take to read
+ITEMS, TABS, WAIT_S = (
+    6,
+    12,
+    25,
+)  # per combo, per tab bar; seconds a zone may take to read
 ERRORS: list[tuple[str, str]] = []
 HERE = {"zone": "arranque"}
 
@@ -46,7 +58,7 @@ HERE = {"zone": "arranque"}
 def aim(port: int, write: bool = False) -> None:
     """Point the window's client at the daemon on `port`, with writes refused unless `write`."""
     client.aim(port)
-    if write:       # `uiinventory --write`, on a test root: every «Calcular» really runs
+    if write:  # `uiinventory --write`, on a test root: every «Calcular» really runs
         return
     get, real = client.get, client.post
 
@@ -56,21 +68,32 @@ def aim(port: int, write: bool = False) -> None:
             return get("load", project=body["project"], databank=body["databank"])
         if path in READS:
             return real(path, body)
-        return {"error": f"uiwalk: POST /api/{path} no se envía (paseo de solo lectura)"}
+        return {
+            "error": f"uiwalk: POST /api/{path} no se envía (paseo de solo lectura)"
+        }
 
     client.post = post
 
 
 def trap() -> None:
     """Record exceptions from Qt slots and worker threads; make every modal answer «No»."""
-    def hook(kind: type[BaseException], value: BaseException | None, tb: TracebackType | None) -> None:
+
+    def hook(
+        kind: type[BaseException], value: BaseException | None, tb: TracebackType | None
+    ) -> None:
         """Keep one exception with the zone it happened in."""
-        ERRORS.append((HERE["zone"], "".join(traceback.format_exception(kind, value, tb))))
+        ERRORS.append(
+            (HERE["zone"], "".join(traceback.format_exception(kind, value, tb)))
+        )
 
     sys.excepthook = hook
     threading.excepthook = lambda a: hook(a.exc_type, a.exc_value, a.exc_traceback)
     for name in ("question", "warning", "information", "critical"):
-        setattr(QMessageBox, name, staticmethod(lambda *a, **k: QMessageBox.StandardButton.No))
+        setattr(
+            QMessageBox,
+            name,
+            staticmethod(lambda *a, **k: QMessageBox.StandardButton.No),
+        )
     setattr(QMessageBox, "exec", lambda *a, **k: QMessageBox.StandardButton.No)
     setattr(QDialog, "exec", lambda *a, **k: 0)
     setattr(QInputDialog, "getText", staticmethod(lambda *a, **k: ("", False)))
@@ -101,7 +124,7 @@ def drive(app: QApplication, zone: QWidget) -> int:
             settle(app, 0.3)
         moved += 1
     for bar in [b for b in zone.findChildren(QTabBar) if b.isVisible()]:
-        if not isValid(bar):        # a tab of another bar rebuilt the page this one lived in
+        if not isValid(bar):  # a tab of another bar rebuilt the page this one lived in
             continue
         for i in range(min(bar.count(), TABS)):
             if bar.isTabEnabled(i):
@@ -124,19 +147,26 @@ def walk(shell: "Shell", app: QApplication, name: str, project: str) -> str:
     before = len(ERRORS)
     if name == "Proyecto" and project:
         from ui.desktop.selection import SELECTION
+
         SELECTION.choose(project=project)
     shell.open_zone(name)
     settle(app, 2)
     moved = 0
     if name == "Estrategia":
         table = shell.workspace.panel.table
-        row = next((r for r in range(table.rowCount())
-                    if table.row_at(r)["identity"]), None)
+        row = next(
+            (r for r in range(table.rowCount()) if table.row_at(r)["identity"]), None
+        )
         if row is not None:
-            table.double(row, 0)        # the panel's double click: Databanks → Estrategia
+            table.double(row, 0)  # the panel's double click: Databanks → Estrategia
         else:
-            ERRORS.append((name, "uiwalk: el panel de Databanks no tiene ninguna fila con "
-                                 "identidad; Estrategia no se ha podido abrir"))
+            ERRORS.append(
+                (
+                    name,
+                    "uiwalk: el panel de Databanks no tiene ninguna fila con "
+                    "identidad; Estrategia no se ha podido abrir",
+                )
+            )
         settle(app, WAIT_S)
     elif name == "Portfolios":
         zone = shell.zones[name]
@@ -153,32 +183,46 @@ def walk(shell: "Shell", app: QApplication, name: str, project: str) -> str:
     title = getattr(shell.stack.currentWidget(), "title", None)
     if name.startswith("Estrategia") or name.startswith("Portfolios"):
         title = getattr(shell.estrategia.currentWidget(), "title")
-    shows = (f" · muestra «{title.text()}»" if title is not None and title.text() else
-             f" · la ventana dice «{shell.status.text()}»"
-             if name in ("Proyecto", "Estrategia") and shell.status.text() else "")
-    return (f"{name:<24} {moved:>3} controles movidos · {len(ERRORS) - before} excepciones"
-            + shows)
+    shows = (
+        f" · muestra «{title.text()}»"
+        if title is not None and title.text()
+        else f" · la ventana dice «{shell.status.text()}»"
+        if name in ("Proyecto", "Estrategia") and shell.status.text()
+        else ""
+    )
+    return (
+        f"{name:<24} {moved:>3} controles movidos · {len(ERRORS) - before} excepciones"
+        + shows
+    )
 
 
 def main() -> None:
     """Build the window against the daemon, walk every zone, print the report."""
     ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
-    ap.add_argument("--port", type=int, required=True, help="el puerto del demonio a usar")
-    ap.add_argument("--project", default="Test_USDJPY_donchianUpperCrossUp_M30",
-                    help="el proyecto con el que se abren Proyecto y Estrategia")
+    ap.add_argument(
+        "--port", type=int, required=True, help="el puerto del demonio a usar"
+    )
+    ap.add_argument(
+        "--project",
+        default="Test_USDJPY_donchianUpperCrossUp_M30",
+        help="el proyecto con el que se abren Proyecto y Estrategia",
+    )
     args = ap.parse_args()
     if not client.health(args.port):
-        sys.exit(f"No hay demonio en el puerto {args.port}: python3 -m ui.daemon.serve "
-                 f"--port {args.port}")
+        sys.exit(
+            f"No hay demonio en el puerto {args.port}: python3 -m ui.daemon.serve "
+            f"--port {args.port}"
+        )
     aim(args.port)
     trap()
     from ui.desktop.nav import ZONES
     from ui.desktop.shell import Shell
     from ui.desktop import helpmark
     from ui.desktop.theme import QSS
+
     app = QApplication(sys.argv)
     app.setStyleSheet(QSS)
-    helpmark.install(app)     # the «?» beside every button
+    helpmark.install(app)  # the «?» beside every button
     shell = Shell()
     shell.resize(1600, 1000)
     shell.show()
@@ -189,7 +233,7 @@ def main() -> None:
         print(f"\n--- {zone}\n{text}", file=sys.stderr)
     print(f"\n{len(ZONES)} zonas, {len(ERRORS)} excepciones", flush=True)
     sys.stderr.flush()
-    os._exit(1 if ERRORS else 0)       # worker threads may still be reading: do not wait
+    os._exit(1 if ERRORS else 0)  # worker threads may still be reading: do not wait
 
 
 if __name__ == "__main__":

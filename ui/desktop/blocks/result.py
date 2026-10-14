@@ -2,8 +2,16 @@
 
 from typing import Any
 
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QPushButton, QScrollArea, QSizePolicy,
-                               QTabWidget, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop.blocks import fuse, tools
 from ui.desktop.blocks.card import initial, text
@@ -15,10 +23,12 @@ from ui.desktop.blocks.tabpage import Slot, TabPage
 from ui.text.glossary import label as words
 from ui.desktop.theme import T
 
-FOLD = 8        # warnings shown before the rest fold behind a button
+FOLD = 8  # warnings shown before the rest fold behind a button
 
 
-def _warnings(results: list[dict], titles: list[str]) -> tuple[list[QWidget], list[QWidget]]:
+def _warnings(
+    results: list[dict], titles: list[str]
+) -> tuple[list[QWidget], list[QWidget]]:
     """Each distinct warning once, coloured, counted, split into a study's `highlight`ed ones
     (KS, say) and the rest — a population raises the same sentence once per strategy, so
     identical ones are counted, never dropped."""
@@ -35,12 +45,23 @@ def _warnings(results: list[dict], titles: list[str]) -> tuple[list[QWidget], li
     for (t, state, body), codes in seen.items():
         h, c = high[(t, state, body)], colour(state)
         times = f"×{len(codes)} · " if len(codes) > 1 else ""
-        said = helps[(t, state, body)]     # a warning that explains itself shows a «?» (KS)
+        said = helps[
+            (t, state, body)
+        ]  # a warning that explains itself shows a «?» (KS)
         mark = f" <span style='color:{T['faint']}'>(?)</span>" if said else ""
-        line = text(f"{times}{t + ' · ' if t else ''}{body}{mark}", T["text"], 15 if h else 13, h)
-        line.setStyleSheet(line.styleSheet() + f" border-left: {6 if h else 4}px solid {c}; "
-                           f"padding: {8 if h else 4}px 10px;")
-        line.setToolTip(said or f"Aviso «{codes[0]}» · {label(state)}: colorea, nunca elimina")
+        line = text(
+            f"{times}{t + ' · ' if t else ''}{body}{mark}",
+            T["text"],
+            15 if h else 13,
+            h,
+        )
+        line.setStyleSheet(
+            line.styleSheet() + f" border-left: {6 if h else 4}px solid {c}; "
+            f"padding: {8 if h else 4}px 10px;"
+        )
+        line.setToolTip(
+            said or f"Aviso «{codes[0]}» · {label(state)}: colorea, nunca elimina"
+        )
         (top if h else rest).append(line)
     return top, rest
 
@@ -69,7 +90,7 @@ class ResultView(QWidget):
         self.tab = ""
         self.results: list[dict] = []
         self.titles: list[str] = []
-        self.stored: dict | None = None     # the result as read, whatever is drawn from it
+        self.stored: dict | None = None  # the result as read, whatever is drawn from it
         self.meta: dict | None = None
         self.showing = "stored"
         self.pages: dict[int, TabPage] = {}
@@ -106,7 +127,9 @@ class ResultView(QWidget):
         self.stored, self.meta, self.showing = result, meta, "stored"
         if result is None:
             return self.empty("Sin resultado todavía: este estudio no ha corrido aquí.")
-        top = [_head(result, None)] + ([_stale(meta)] if meta and meta.get("stale") else [])
+        top = [_head(result, None)] + (
+            [_stale(meta)] if meta and meta.get("stale") else []
+        )
         self._build([result], [""], top + [self._tools()])
 
     def empty(self, sentence: str) -> None:
@@ -136,13 +159,19 @@ class ResultView(QWidget):
         """
         assert self.stored is not None
         part = self.stored["partials"][index]["result"]
-        for tab in part["tabs"]:            # open the stored side on the same market or test
+        for tab in part["tabs"]:  # open the stored side on the same market or test
             for s in selectors(tab):
                 if len(s["options"]) == 1:
                     self.memory.setdefault(tab["name"], {})[s["key"]] = s["options"][0]
         self.showing = f"beside:{index}"
-        self.compare(self.stored, part, (f"Guardado · {self.stored.get('computed_at')}",
-                                         f"Solo {part.get('only')} · {part.get('computed_at')}"))
+        self.compare(
+            self.stored,
+            part,
+            (
+                f"Guardado · {self.stored.get('computed_at')}",
+                f"Solo {part.get('only')} · {part.get('computed_at')}",
+            ),
+        )
 
     def merged(self, index: int) -> None:
         """The stored result with one sub-test taken from a partial re-run (`fuse.merge`).
@@ -155,8 +184,10 @@ class ResultView(QWidget):
         got = fuse.merge(self.stored, part)
         self.showing = f"merged:{index}"
         said = text(fuse.notice(self.stored, part), T["text"], 14, True)
-        said.setStyleSheet(said.styleSheet() + f" border-left: 4px solid {colour('info')}; "
-                           "padding: 4px 10px;")
+        said.setStyleSheet(
+            said.styleSheet() + f" border-left: 4px solid {colour('info')}; "
+            "padding: 4px 10px;"
+        )
         self._build([got], [""], [_head(got, None), said, self._tools()])
 
     def _tools(self) -> QWidget:
@@ -166,26 +197,46 @@ class ResultView(QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         said = text("", T["muted"], 12)
         button = QPushButton(words("screen.report"))
-        button.setToolTip("Escribe una página HTML con exactamente lo que ves: las pestañas, la "
-                          "combinación de cada selector, los mercados elegidos, los avisos y el "
-                          "glosario, dibujados por core.study.render desde el mismo resultado.")
-        button.clicked.connect(lambda: said.setText(tools.report(
-            self.results, self.titles, self.memory, (self.meta or {}).get("path"))))
+        button.setToolTip(
+            "Escribe una página HTML con exactamente lo que ves: las pestañas, la "
+            "combinación de cada selector, los mercados elegidos, los avisos y el "
+            "glosario, dibujados por core.study.render desde el mismo resultado."
+        )
+        button.clicked.connect(
+            lambda: said.setText(
+                tools.report(
+                    self.results,
+                    self.titles,
+                    self.memory,
+                    (self.meta or {}).get("path"),
+                )
+            )
+        )
         if not (self.meta or {}).get("path"):
             # A result read straight from AlgoData (Datos' step-4 studies) has no report
             # folder: the click could only ever say so (📓 2026-09-29), so it is off instead.
             button.setEnabled(False)
-            button.setToolTip("Este resultado no viene de un informe guardado: no hay dónde "
-                              "escribir la página.")
+            button.setToolTip(
+                "Este resultado no viene de un informe guardado: no hay dónde "
+                "escribir la página."
+            )
         lay.addWidget(button)
         lay.addWidget(said)
         if self.stored and self.stored.get("partials"):
-            lay.addWidget(tools.strip(self.stored["partials"], self.beside, self.merged,
-                                      lambda: self.show_result(self.stored, self.meta),
-                                      self.showing))
+            lay.addWidget(
+                tools.strip(
+                    self.stored["partials"],
+                    self.beside,
+                    self.merged,
+                    lambda: self.show_result(self.stored, self.meta),
+                    self.showing,
+                )
+            )
         return box
 
-    def _build(self, results: list[dict], titles: list[str], top: list[QWidget]) -> None:
+    def _build(
+        self, results: list[dict], titles: list[str], top: list[QWidget]
+    ) -> None:
         """Lay the page out again: header widgets, the warnings (highlighted first, top of the
         page — §1: «Avisos: moverlos arriba, visibles»), the tabs, the glossary."""
         self.results, self.titles, self.pages = results, titles, {}
@@ -206,23 +257,33 @@ class ResultView(QWidget):
                 w.setVisible(k < FOLD)
             if len(rest) > FOLD:
                 more = QPushButton(f"Ver los {len(rest) - FOLD} avisos restantes")
-                more.clicked.connect(lambda: [w.setVisible(True) for w in rest] + [more.hide()])
+                more.clicked.connect(
+                    lambda: [w.setVisible(True) for w in rest] + [more.hide()]
+                )
                 lay.addWidget(more)
         names = list(dict.fromkeys(t["name"] for r in results for t in r["tabs"]))
         self.names = names
         if names:
             self.tabs = QTabWidget()
             self.tabs.setDocumentMode(True)
-            self.tabs.setTabBarAutoHide(True)   # one tab: its name only repeats the title
+            self.tabs.setTabBarAutoHide(
+                True
+            )  # one tab: its name only repeats the title
             # Expanding (Qt's default) grabs the leftover space the outer stretch was meant
             # to hold, leaving a blank gap inside the tab instead of above the glossary
             # (§1 «hueco vacío enorme»); Minimum keeps it at its content's own height.
-            self.tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+            self.tabs.setSizePolicy(
+                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
+            )
             for n in names:
                 tab = next(t for r in results for t in r["tabs"] if t["name"] == n)
-                holder = Slot()            # the page goes in on first opening: a population
-                QVBoxLayout(holder).setContentsMargins(0, 0, 0, 0)   # has hundreds of tables
-                i = self.tabs.addTab(holder, initial(tab.get("title") or n).replace("&", "&&"))
+                holder = Slot()  # the page goes in on first opening: a population
+                QVBoxLayout(holder).setContentsMargins(
+                    0, 0, 0, 0
+                )  # has hundreds of tables
+                i = self.tabs.addTab(
+                    holder, initial(tab.get("title") or n).replace("&", "&&")
+                )
                 self.tabs.setTabToolTip(i, tab.get("note") or tab.get("title") or n)
             self.tabs.currentChanged.connect(self._open)
             lay.addWidget(self.tabs)
@@ -234,7 +295,7 @@ class ResultView(QWidget):
             for g in glossary:
                 lay.addWidget(g)
         lay.addStretch(1)
-        self.scroll.setWidget(self.content)   # deletes the previous page itself
+        self.scroll.setWidget(self.content)  # deletes the previous page itself
 
     def _open(self, index: int) -> None:
         """Build a tab's page the first time it is opened, and size the tabs to it alone.
@@ -244,9 +305,15 @@ class ResultView(QWidget):
         """
         name = self.names[index]
         if index not in self.pages:
-            sides = [next((t for t in r["tabs"] if t["name"] == name), None) for r in self.results]
-            pool = ([b for t in self.results[0]["tabs"] for b in t["blocks"]]
-                    if len(self.results) == 1 else None)
+            sides = [
+                next((t for t in r["tabs"] if t["name"] == name), None)
+                for r in self.results
+            ]
+            pool = (
+                [b for t in self.results[0]["tabs"] for b in t["blocks"]]
+                if len(self.results) == 1
+                else None
+            )
             page = TabPage(sides, self.memory.setdefault(name, {}), pool)
             self.memory[name] = page.chosen
             self.pages[index] = page
@@ -254,5 +321,7 @@ class ResultView(QWidget):
             assert holder is not None
             holder.addWidget(page)
         self.tab = name
-        self.tabs.widget(index).updateGeometry()   # the slots' hints changed with the tab shown
+        self.tabs.widget(
+            index
+        ).updateGeometry()  # the slots' hints changed with the tab shown
         self.tabs.updateGeometry()

@@ -5,13 +5,24 @@ import re
 # What SQX being busy with a run looks like in the daemon's refusals (advance/preflight,
 # launch, workerguard, workflow/derive): the port answering, its processes, its log, a
 # launcher still running, a step «en marcha».
-BUSY = ("install ocupado", "sigue corriendo", "lanzamiento en marcha", "lanzamiento de ",
-        "está en marcha", "está ahora en marcha", "empezó y no ha terminado", "se escribió hace",
-        "proceso(s) de sqx", "todas sus pruebas están en marcha")
+BUSY = (
+    "install ocupado",
+    "sigue corriendo",
+    "lanzamiento en marcha",
+    "lanzamiento de ",
+    "está en marcha",
+    "está ahora en marcha",
+    "empezó y no ha terminado",
+    "se escribió hace",
+    "proceso(s) de sqx",
+    "todas sus pruebas están en marcha",
+)
 RUNNING = "el workflow ya está corriendo"
-KNOWN = (("el demonio no respondió", "sin conexión: pulsa Recargar"),
-         ("ningún databank vivo", "aún no hay estrategias"),
-         ("sin comprobar todavía", "comprobando…"))
+KNOWN = (
+    ("el demonio no respondió", "sin conexión: pulsa Recargar"),
+    ("ningún databank vivo", "aún no hay estrategias"),
+    ("sin comprobar todavía", "comprobando…"),
+)
 LIMIT = 60
 
 
@@ -42,7 +53,7 @@ def brief(reasons: list[str] | str, limit: int = LIMIT) -> str:
     for key, words in KNOWN:
         if key in low:
             return words
-    text = re.sub(r"^\w+:\s+", "", said[0].strip())      # the runner's «study: » prefix
+    text = re.sub(r"^\w+:\s+", "", said[0].strip())  # the runner's «study: » prefix
     first = re.split(r"(?<=[.;])\s|\s·\s|\s\(", text)[0].rstrip(".;:")
     if len(first) <= limit:
         return first[:1].lower() + first[1:]

@@ -21,7 +21,9 @@ from sqx.variants.build import stoploss
 N = 40
 PLANT = np.arange(6)
 FIXTURES = Path(__file__).parent / "fixtures"
-REAL_STOPLESS_IDENTITY = "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048"
+REAL_STOPLESS_IDENTITY = (
+    "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048"
+)
 REAL_STOPLESS_VERSION = "2026-09-28T0919"
 
 FAILURES = []
@@ -64,19 +66,39 @@ def test_search() -> dict:
     """Greedy seeds + GA recover the planted clique; every evaluated child is a clique."""
     rng = np.random.default_rng(12345)
     graph = planted_graph(rng)
-    cfg = {"population": 60, "generations": 100, "elite": 0.2, "tournament": 4,
-           "crossover": 0.8, "mutation": 0.4, "stagnation": 5}
+    cfg = {
+        "population": 60,
+        "generations": 100,
+        "elite": 0.2,
+        "tournament": 4,
+        "crossover": 0.8,
+        "mutation": 0.4,
+        "stagnation": 5,
+    }
     seeds = greedy.seeds(graph, cfg["population"], rng)
-    check("greedy seeds are cliques", all(genetic.is_clique(graph, _mask(s)) for s in seeds))
+    check(
+        "greedy seeds are cliques",
+        all(genetic.is_clique(graph, _mask(s)) for s in seeds),
+    )
 
     run = genetic.run(graph, synthetic_score, seeds, cfg, rng)
-    check("children are always cliques",
-          all(genetic.is_clique(graph, _mask(m)) for m in run["members"]))
-    check("GA recovers the planted 6-clique", sorted(run["best"]["members"].tolist()) == list(PLANT))
+    check(
+        "children are always cliques",
+        all(genetic.is_clique(graph, _mask(m)) for m in run["members"]),
+    )
+    check(
+        "GA recovers the planted 6-clique",
+        sorted(run["best"]["members"].tolist()) == list(PLANT),
+    )
     check("best score is 6 planted members, no penalty", run["best"]["score"] == 12.0)
-    check("stagnation stops before the generation cap", run["generations_run"] < cfg["generations"])
-    check("overhead reported separately from scoring",
-          run["overhead_s"] >= 0 and run["score_s"] >= 0)
+    check(
+        "stagnation stops before the generation cap",
+        run["generations_run"] < cfg["generations"],
+    )
+    check(
+        "overhead reported separately from scoring",
+        run["overhead_s"] >= 0 and run["score_s"] >= 0,
+    )
     return run
 
 
@@ -90,13 +112,21 @@ def _mask(members: np.ndarray) -> np.ndarray:
 def test_ledger(run: dict) -> None:
     """`search.parquet` rows, evaluations and the ledger's n_scored all agree, on a temp ledger."""
     identities = [f"ID{i:02d}" for i in range(N)]
-    members_meta = {i: {"symbol": "TESTSYM", "timeframe": "M30", "family": "testFamily"}
-                    for i in identities}
+    members_meta = {
+        i: {"symbol": "TESTSYM", "timeframe": "M30", "family": "testFamily"}
+        for i in identities
+    }
     pool = {"hash": "deadbeef" * 4}
-    frame = pd.DataFrame({
-        "members": ["+".join(identities[i] for i in np.sort(m)) for m in run["members"]],
-        "score": run["score"], "origin": run["origin"], "generation": run["generation"],
-    })
+    frame = pd.DataFrame(
+        {
+            "members": [
+                "+".join(identities[i] for i in np.sort(m)) for m in run["members"]
+            ],
+            "score": run["score"],
+            "origin": run["origin"],
+            "generation": run["generation"],
+        }
+    )
 
     real_path = study.path
     with tempfile.TemporaryDirectory() as tmp:
@@ -113,7 +143,9 @@ def test_ledger(run: dict) -> None:
 
 def _grafted_sqx(tmp: Path, x: float = 2.5, name: str = "GRAFTED") -> tuple[str, str]:
     """A fake archive folder holding a strategy grafted with `stoploss.graft` in memory."""
-    portfolio = stoploss.graft((FIXTURES / "nostop_portfolio.xml").read_text(encoding="utf-8"), x)
+    portfolio = stoploss.graft(
+        (FIXTURES / "nostop_portfolio.xml").read_text(encoding="utf-8"), x
+    )
     last_settings = """<Settings>
   <RiskMoneyManagement customSettings="false">
     <MoneyManagement>
@@ -136,8 +168,12 @@ def _grafted_sqx(tmp: Path, x: float = 2.5, name: str = "GRAFTED") -> tuple[str,
         z.writestr("strategy_Portfolio.xml", portfolio)
         z.writestr("lastSettings.xml", last_settings)
     (folder / "manifest.json").write_text("{}", encoding="utf-8")
-    (folder / "view.json").write_text('{"tearsheet": "sin tearsheet"}', encoding="utf-8")
-    pd.DataFrame({"Size": [0.5, 0.3, 1.2]}).to_parquet(folder / "harvest" / "trades.parquet")
+    (folder / "view.json").write_text(
+        '{"tearsheet": "sin tearsheet"}', encoding="utf-8"
+    )
+    pd.DataFrame({"Size": [0.5, 0.3, 1.2]}).to_parquet(
+        folder / "harvest" / "trades.parquet"
+    )
     return name, "v1"
 
 
@@ -147,7 +183,9 @@ def test_risk() -> None:
         risk.sizing(REAL_STOPLESS_IDENTITY, REAL_STOPLESS_VERSION)
         check("refuses the archived strategy with no step-24 stop", False)
     except ValueError as exc:
-        check("refuses the archived strategy with no step-24 stop", "paso 24" in str(exc))
+        check(
+            "refuses the archived strategy with no step-24 stop", "paso 24" in str(exc)
+        )
 
     real_archive_dir = risk.archive_read.archive_dir
     with tempfile.TemporaryDirectory() as tmp:
@@ -162,7 +200,10 @@ def test_risk() -> None:
     check("risk_usd from Amount", got["risk_usd"] == 1000.0)
     check("atr_multiple from ATRMult", got["atr_multiple"] == 4.0)
     check("min_size is the smallest trade lot", got["min_size"] == 0.3)
-    check("factor = atr_multiple / (risk_usd * x)", abs(got["factor"] - 4.0 / (1000.0 * 2.5)) < 1e-12)
+    check(
+        "factor = atr_multiple / (risk_usd * x)",
+        abs(got["factor"] - 4.0 / (1000.0 * 2.5)) < 1e-12,
+    )
 
 
 def main() -> None:

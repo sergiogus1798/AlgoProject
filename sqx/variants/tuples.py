@@ -57,4 +57,4 @@ def from_columns(row: dict) -> dict[str, float]:
     Returns:
         Parameter name to value, the prefix stripped.
     """
-    return {k[len(PREFIX):]: v for k, v in row.items() if k.startswith(PREFIX)}
+    return {k[len(PREFIX) :]: v for k, v in row.items() if k.startswith(PREFIX)}

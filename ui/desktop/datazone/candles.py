@@ -10,8 +10,8 @@ from ui.desktop.blocks.states import REAL, SERIES
 from ui.desktop.theme import T
 
 HEIGHT = 440
-UP, DOWN = SERIES[0], SERIES[1]   # blue up, orange down: green and red are verdicts here
-CANDLE_PX = 3        # below this many pixels per bar a body is a smear: draw ranges instead
+UP, DOWN = SERIES[0], SERIES[1]  # blue up, orange down: green and red are verdicts here
+CANDLE_PX = 3  # below this many pixels per bar a body is a smear: draw ranges instead
 
 
 def _columns(b: dict, width: float) -> list[tuple[int, int]]:
@@ -29,7 +29,10 @@ def _columns(b: dict, width: float) -> list[tuple[int, int]]:
     if n * CANDLE_PX <= width:
         return [(i, i) for i in range(n)]
     cols = max(1, int(width))
-    return [(k * n // cols, max(k * n // cols, (k + 1) * n // cols - 1)) for k in range(cols)]
+    return [
+        (k * n // cols, max(k * n // cols, (k + 1) * n // cols - 1))
+        for k in range(cols)
+    ]
 
 
 def _geometry(b: dict, rect: QRectF) -> tuple[QRectF, list, list[float], Callable]:
@@ -39,8 +42,12 @@ def _geometry(b: dict, rect: QRectF) -> tuple[QRectF, list, list[float], Callabl
     x = axis.scale(0, max(len(cols) - 1, 1), box.left() + 6, box.right() - 6)
     lo, hi = min(b["l"]), max(b["h"])
     margin = 0.04 * (hi - lo)
-    return box, cols, [x(i) for i in range(len(cols))], axis.scale(lo - margin, hi + margin,
-                                                                    box.bottom(), box.top())
+    return (
+        box,
+        cols,
+        [x(i) for i in range(len(cols))],
+        axis.scale(lo - margin, hi + margin, box.bottom(), box.top()),
+    )
 
 
 def draw_for(b: dict, mode: Callable[[bool], None]) -> Callable:
@@ -55,17 +62,21 @@ def draw_for(b: dict, mode: Callable[[bool], None]) -> Callable:
         The draw function `chart.Canvas` takes. Up candles blue, down candles orange,
         as the trade gallery marks entry and exit: green and red are verdicts here.
     """
+
     def draw(p: QPainter, rect: QRectF, hover: QPointF | None) -> None:
         """Paint into the canvas; `hover` is the pointer, for a guide line."""
         box, cols, px, y = _geometry(b, rect)
         lo, hi = min(b["l"]), max(b["h"])
         step = max(1, len(cols) // 6)
-        xt = [(px[k], b["t"][cols[k][0]][:10]) for k in range(0, len(cols), step)
-              if px[k] < box.right() - 50]        # a date at the edge would be cut in half
+        xt = [
+            (px[k], b["t"][cols[k][0]][:10])
+            for k in range(0, len(cols), step)
+            if px[k] < box.right() - 50
+        ]  # a date at the edge would be cut in half
         chart.axes(p, box, xt, [(y(v), chart.num(v)) for v in axis.ticks(lo, hi, 6)])
         half = max(1.0, (px[1] - px[0]) * 0.35) if len(px) > 1 else 4.0
         mode(len(cols) == len(b["t"]))
-        if len(cols) == len(b["t"]):          # one column per bar: real candles
+        if len(cols) == len(b["t"]):  # one column per bar: real candles
             for x, (i, _) in zip(px, cols):
                 ink = QColor(UP if b["c"][i] >= b["o"][i] else DOWN)
                 p.setPen(QPen(ink, 1))
@@ -76,12 +87,22 @@ def draw_for(b: dict, mode: Callable[[bool], None]) -> Callable:
         else:
             p.setPen(QPen(QColor(T["faint"]), 1))
             for x, (i, j) in zip(px, cols):
-                p.drawLine(QPointF(x, y(max(b["h"][i:j + 1]))), QPointF(x, y(min(b["l"][i:j + 1]))))
+                p.drawLine(
+                    QPointF(x, y(max(b["h"][i : j + 1]))),
+                    QPointF(x, y(min(b["l"][i : j + 1]))),
+                )
             p.setPen(QPen(QColor(REAL), 1.6))
             p.setBrush(Qt.BrushStyle.NoBrush)
             p.drawPath(axis.curve(px, [b["c"][j] for _, j in cols], y))
         if hover is not None and box.contains(hover):
-            chart.vline(p, px[axis.nearest(px, hover.x())], box, T["muted"], 1, Qt.PenStyle.DotLine)
+            chart.vline(
+                p,
+                px[axis.nearest(px, hover.x())],
+                box,
+                T["muted"],
+                1,
+                Qt.PenStyle.DotLine,
+            )
 
     return draw
 
@@ -95,6 +116,7 @@ def tip_for(b: dict) -> Callable:
     Returns:
         The tip function `chart.Canvas` takes.
     """
+
     def tip(pos: QPointF, rect: QRectF) -> str | None:
         """What the bars under `pos` are, None outside the plot."""
         box, cols, px, _ = _geometry(b, rect)
@@ -102,8 +124,10 @@ def tip_for(b: dict) -> Callable:
             return None
         i, j = cols[axis.nearest(px, pos.x())]
         span = b["t"][i] if i == j else f"{b['t'][i]} → {b['t'][j]} ({j - i + 1} velas)"
-        return (f"{span}\napertura {chart.num(b['o'][i])} · máximo {chart.num(max(b['h'][i:j + 1]))}"
-                f" · mínimo {chart.num(min(b['l'][i:j + 1]))} · cierre {chart.num(b['c'][j])}")
+        return (
+            f"{span}\napertura {chart.num(b['o'][i])} · máximo {chart.num(max(b['h'][i : j + 1]))}"
+            f" · mínimo {chart.num(min(b['l'][i : j + 1]))} · cierre {chart.num(b['c'][j])}"
+        )
 
     return tip
 

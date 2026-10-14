@@ -23,8 +23,11 @@ def market(work: Path) -> tuple[str, str]:
         this run's. The batch records no study of its own, so this is where the ledger's
         symbol and timeframe come from.
     """
-    key = pq.read_table(work / "segments.parquet", columns=["result_key"],
-                        filters=[("market", "=", MAIN), ("segment", "=", "build")])
+    key = pq.read_table(
+        work / "segments.parquet",
+        columns=["result_key"],
+        filters=[("market", "=", MAIN), ("segment", "=", "build")],
+    )
     feed, timeframe = key.column(0)[0].as_py().split(": ", 1)[1].split("/")
     symbol = assetdata.symbol_for(feed)
     assert symbol, f"no asset file declares the feed {feed}"
@@ -68,6 +71,7 @@ def offered(symbol: str) -> list[str]:
         found.append(panel.label(comp))
     return found
 
+
 def log(work: Path, family: str, row: dict, segments: tuple) -> list[dict]:
     """One ledger row per segment read, through the door.
 
@@ -85,8 +89,19 @@ def log(work: Path, family: str, row: dict, segments: tuple) -> list[dict]:
     symbol, timeframe = market(work)
     sid = study.study_id(symbol, timeframe, family)
     note = f"lote {work.name}" + (f" · {row['note']}" if row.get("note") else "")
-    return [record.log(sid, {**row, "symbol": symbol, "timeframe": timeframe,
-                             "segment": s, "note": note}) for s in segments]
+    return [
+        record.log(
+            sid,
+            {
+                **row,
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "segment": s,
+                "note": note,
+            },
+        )
+        for s in segments
+    ]
 
 
 def log_all(work: Path, family: str, row: dict) -> list[dict]:
@@ -96,6 +111,10 @@ def log_all(work: Path, family: str, row: dict) -> list[dict]:
         work, family: As `log`.
         row: As `log`, without `criterion`.
     """
-    return [r for comp in panel.COMPOSITIONS
-            for r in log(work, family, {**row, "criterion": panel.label(comp)},
-                         comp[0] + comp[1])]
+    return [
+        r
+        for comp in panel.COMPOSITIONS
+        for r in log(
+            work, family, {**row, "criterion": panel.label(comp)}, comp[0] + comp[1]
+        )
+    ]

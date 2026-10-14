@@ -10,7 +10,10 @@ from core.paths import MASTER
 from core.symbols import alias
 
 REGISTRY = MASTER / "user" / "data" / "data.db"
-DUKASCOPY, DARWINEX = 2, 4   # DATA.SOURCE codes: what `-symbol action=list` prints as the source
+DUKASCOPY, DARWINEX = (
+    2,
+    4,
+)  # DATA.SOURCE codes: what `-symbol action=list` prints as the source
 
 
 def _query(sql: str, args: tuple = ()) -> list[tuple]:
@@ -53,9 +56,15 @@ def feeds(symbol: str) -> Feeds:
         since 2026-10-01 a name carries neither the source nor the broker. Several of one kind
         is a question for the owner.
     """
-    rows = [r for r in _query("SELECT SYMBOL, TIMEFRAME, SOURCE FROM DATA") if alias(r[0]) == symbol]
-    return Feeds(bars=sorted(n for n, tf, src in rows if tf == "M1" and src == DUKASCOPY),
-                 ticks=sorted(n for n, tf, src in rows if tf == "TICK" and src == DARWINEX))
+    rows = [
+        r
+        for r in _query("SELECT SYMBOL, TIMEFRAME, SOURCE FROM DATA")
+        if alias(r[0]) == symbol
+    ]
+    return Feeds(
+        bars=sorted(n for n, tf, src in rows if tf == "M1" and src == DUKASCOPY),
+        ticks=sorted(n for n, tf, src in rows if tf == "TICK" and src == DARWINEX),
+    )
 
 
 def broker(feed: str) -> str:
@@ -65,8 +74,11 @@ def broker(feed: str) -> str:
         The broker's postfix in SQX's registry without its underscore, e.g. "Infinox",
         "the5ers", "ftmo".
     """
-    return _query("SELECT B.POSTFIX FROM DATA D JOIN BROKER B ON B.ID = D.BROKER_ID "
-                  "WHERE D.SYMBOL = ?", (feed,))[0][0].lstrip("_")
+    return _query(
+        "SELECT B.POSTFIX FROM DATA D JOIN BROKER B ON B.ID = D.BROKER_ID "
+        "WHERE D.SYMBOL = ?",
+        (feed,),
+    )[0][0].lstrip("_")
 
 
 def instrument(feed: str) -> Instrument:
@@ -77,13 +89,17 @@ def instrument(feed: str) -> Instrument:
         distance; 0 is what every index already carries and it only matters to pending orders.
     """
     name = _query("SELECT INSTRUMENT FROM DATA WHERE SYMBOL = ?", (feed,))[0][0]
-    pv, tick = _query("SELECT POINTVALUE, TICKSIZE FROM INSTRUMENTS WHERE INSTRUMENT = ?", (name,))[0]
+    pv, tick = _query(
+        "SELECT POINTVALUE, TICKSIZE FROM INSTRUMENTS WHERE INSTRUMENT = ?", (name,)
+    )[0]
     return Instrument(tick_size=float(tick), point_value=float(pv), min_distance=0)
 
 
 def data_range(feed: str) -> tuple:
     """First and last day SQX holds for the feed, as dates."""
-    start, end = _query("SELECT DATEFROM, DATETO FROM DATA WHERE SYMBOL = ?", (feed,))[0]
+    start, end = _query("SELECT DATEFROM, DATETO FROM DATA WHERE SYMBOL = ?", (feed,))[
+        0
+    ]
     return pd.Timestamp(start, unit="ms").date(), pd.Timestamp(end, unit="ms").date()
 
 
@@ -105,9 +121,18 @@ def broker_swaps(symbol: str, tick: float) -> BrokerSwaps:
             continue
         at = dict(re.findall(r'(\w+)="([^"]*)"', swap))
         if at.get("use") != "true" or at["type"] != "points":
-            skipped.append(f"{name} ({'off' if at.get('use') != 'true' else at['type']})")
+            skipped.append(
+                f"{name} ({'off' if at.get('use') != 'true' else at['type']})"
+            )
             continue
-        got.append((name, float(at["long"]) * tk / tick, float(at["short"]) * tk / tick))
+        got.append(
+            (name, float(at["long"]) * tk / tick, float(at["short"]) * tk / tick)
+        )
     frame = pd.DataFrame(got, columns=pd.Index(["broker", "long", "short"]))
-    return BrokerSwaps(long=round(float(frame["long"].mean()), 2), short=round(float(frame["short"].mean()), 2),
-                       n=len(frame), brokers=frame["broker"].tolist(), skipped=skipped)
+    return BrokerSwaps(
+        long=round(float(frame["long"].mean()), 2),
+        short=round(float(frame["short"].mean()), 2),
+        n=len(frame),
+        brokers=frame["broker"].tolist(),
+        skipped=skipped,
+    )

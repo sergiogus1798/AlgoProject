@@ -27,7 +27,10 @@ ALLOW: set[tuple[str, str]] = {
     ("pipeline/autopilot/closing.py", "ui.daemon"),
     ("pipeline/autopilot/facts.py", "ui.daemon"),
     ("pipeline/autopilot/judge.py", "ui.daemon"),
-    ("pipeline/autopilot/neighbours.py", "ui.daemon"),   # 2026-10-07: closing.py's launcher, for step 13's T1
+    (
+        "pipeline/autopilot/neighbours.py",
+        "ui.daemon",
+    ),  # 2026-10-07: closing.py's launcher, for step 13's T1
     ("pipeline/autopilot/plan.py", "ui.daemon"),
     ("pipeline/autopilot/run.py", "ui.daemon"),
     ("pipeline/autopilot/survivors.py", "ui.daemon"),
@@ -42,7 +45,11 @@ def unit(parts: tuple[str, ...]) -> str:
 
 def edges(files: list[Path]) -> set[tuple[str, str, str]]:
     """Every (importer file, importer unit, imported unit) between project packages, lazy imports too."""
-    tops = {f.relative_to(ROOT).parts[0] for f in files if len(f.relative_to(ROOT).parts) > 1}
+    tops = {
+        f.relative_to(ROOT).parts[0]
+        for f in files
+        if len(f.relative_to(ROOT).parts) > 1
+    }
     out = set()
     for f in files:
         rel = f.relative_to(ROOT)
@@ -50,9 +57,13 @@ def edges(files: list[Path]) -> set[tuple[str, str, str]]:
             continue
         mine = unit(rel.parts)
         for node in depmap.nodes(f):
-            mods = ([a.name for a in node.names] if isinstance(node, ast.Import) else
-                    [node.module] + [f"{node.module}.{a.name}" for a in node.names]
-                    if isinstance(node, ast.ImportFrom) and node.module and not node.level else [])
+            mods = (
+                [a.name for a in node.names]
+                if isinstance(node, ast.Import)
+                else [node.module] + [f"{node.module}.{a.name}" for a in node.names]
+                if isinstance(node, ast.ImportFrom) and node.module and not node.level
+                else []
+            )
             for m in mods:
                 if m.split(".")[0] in tops:
                     out.add((rel.as_posix(), mine, unit(tuple(m.split(".")))))
@@ -64,10 +75,14 @@ def bad_layering(files: list[Path]) -> list[str]:
     out = []
     for path, mine, theirs in sorted(edges(files)):
         top, other = mine.split(".")[0], theirs.split(".")[0]
-        wrong = ((top != other and other in ONLY_FROM and top not in ONLY_FROM[other])
-                 or (top != other and top in MAY_IMPORT and other not in MAY_IMPORT[top])
-                 or (mine, theirs) == ("ui.desktop", "ui.daemon"))
+        wrong = (
+            (top != other and other in ONLY_FROM and top not in ONLY_FROM[other])
+            or (top != other and top in MAY_IMPORT and other not in MAY_IMPORT[top])
+            or (mine, theirs) == ("ui.desktop", "ui.daemon")
+        )
         if wrong and (path, theirs) not in ALLOW:
-            out.append(f"{path}: imports {theirs}, against the layering in CODESTYLE.md "
-                       f"(a violation that predates the rule goes in ALLOW, a new one is fixed)")
+            out.append(
+                f"{path}: imports {theirs}, against the layering in CODESTYLE.md "
+                f"(a violation that predates the rule goes in ALLOW, a new one is fixed)"
+            )
     return out

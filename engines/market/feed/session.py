@@ -7,7 +7,9 @@ from engines.market.feed.scale import WEEK
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 
-def deduce(at: np.ndarray, first_year_min: int, last_year_min: int, share: float) -> np.ndarray:
+def deduce(
+    at: np.ndarray, first_year_min: int, last_year_min: int, share: float
+) -> np.ndarray:
     """The minutes of the week the feed quotes in most weeks of a span.
 
     Args:
@@ -39,7 +41,9 @@ def text(mask: np.ndarray) -> str:
         Comma-separated half-open intervals, the form the ledger stores.
     """
     edges = np.flatnonzero(np.diff(np.r_[0, mask.astype(np.int8), 0]))
-    return ", ".join(f"{_clock(a)}-{_clock(b)}" for a, b in zip(edges[::2], edges[1::2]))
+    return ", ".join(
+        f"{_clock(a)}-{_clock(b)}" for a, b in zip(edges[::2], edges[1::2])
+    )
 
 
 def mask(spec: str) -> np.ndarray:
@@ -59,7 +63,7 @@ def mask(spec: str) -> np.ndarray:
             hh, mm = clock.split(":")
             bounds.append(DAYS.index(day) * 1440 + int(hh) * 60 + int(mm))
         a, b = bounds
-        out[a:b if b > a else WEEK] = True
+        out[a : b if b > a else WEEK] = True
     return out
 
 

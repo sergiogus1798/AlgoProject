@@ -34,7 +34,9 @@ def test_p_is_monotone_and_keeps_the_planted() -> None:
     got = localfdr.fit(z)
     p = got["p"][np.argsort(z)]
     assert (np.diff(p) >= -1e-12).all() and (got["p"][z <= got["delta0"]] == 0).all()
-    assert (got["p"][NULL:] >= 0.15).sum() >= 800 and (got["p"][:NULL] >= 0.15).mean() < 0.05
+    assert (got["p"][NULL:] >= 0.15).sum() >= 800 and (
+        got["p"][:NULL] >= 0.15
+    ).mean() < 0.05
 
 
 def test_a_light_tail_gets_zero() -> None:
@@ -47,7 +49,7 @@ def test_a_light_tail_gets_zero() -> None:
 
 def test_too_few_z_returns_empties() -> None:
     """Under MIN_Z z: no p, no figures, and the reason."""
-    got = localfdr.fit(mixture()[:localfdr.MIN_Z - 1])
+    got = localfdr.fit(mixture()[: localfdr.MIN_Z - 1])
     assert got["p"] is None and got["delta0"] is None and got["reason"]
 
 

@@ -35,7 +35,9 @@ def risk_grid(plan: Plan, cfg: dict) -> np.ndarray:
     return np.array(list(itertools.product(cfg["funded"]["risk_grid"], repeat=phases)))
 
 
-def flavours(data: StageBData, idxs: np.ndarray, cfg: dict, rng: np.random.Generator) -> Iterator[tuple[str, int, bool, dict[str, np.ndarray]]]:
+def flavours(
+    data: StageBData, idxs: np.ndarray, cfg: dict, rng: np.random.Generator
+) -> Iterator[tuple[str, int, bool, dict[str, np.ndarray]]]:
     """The path sets one combination is judged on, generated one at a time.
 
     Returns:
@@ -47,16 +49,30 @@ def flavours(data: StageBData, idxs: np.ndarray, cfg: dict, rng: np.random.Gener
     horizon, n_paths = cfg["funded"]["horizon_days"], cfg["stageb"]["n_paths"]
     measured = blocklen.lengths(days, cfg["stageb"]["sweep_days"])
     for length in measured["lengths"]:
-        yield "D", length, length == measured["measured"], paths.daily_blocks(
-            days, horizon, n_paths, length, rng)
+        yield (
+            "D",
+            length,
+            length == measured["measured"],
+            paths.daily_blocks(days, horizon, n_paths, length, rng),
+        )
     yield "T1", 0, False, paths.trade_bootstrap(members, horizon, n_paths, rng)
     for length in measured["lengths"]:
-        yield "T2", length, length == measured["measured"], paths.trade_blocks(
-            members, horizon, n_paths, length, rng)
+        yield (
+            "T2",
+            length,
+            length == measured["measured"],
+            paths.trade_blocks(members, horizon, n_paths, length, rng),
+        )
 
 
-def evaluate(data: StageBData, idxs: np.ndarray, plan: Plan, cfg: dict, risk: np.ndarray,
-             rng: np.random.Generator) -> pd.DataFrame:
+def evaluate(
+    data: StageBData,
+    idxs: np.ndarray,
+    plan: Plan,
+    cfg: dict,
+    risk: np.ndarray,
+    rng: np.random.Generator,
+) -> pd.DataFrame:
     """One combination: every Monte Carlo flavour and block length at every risk setting.
 
     Args:
@@ -76,11 +92,14 @@ def evaluate(data: StageBData, idxs: np.ndarray, plan: Plan, cfg: dict, risk: np
     """
     names = judge.stage_names(plan)
     floor = cfg["funded"]["min_lot"] / 2
-    feasible = ((risk * plan["size"] * data["lot_unit"][idxs].min() >= floor).all(axis=1)
-                & ~stagea.capped(np.array([len(idxs)]), risk, plan, cfg)[0])
+    feasible = (risk * plan["size"] * data["lot_unit"][idxs].min() >= floor).all(
+        axis=1
+    ) & ~stagea.capped(np.array([len(idxs)]), risk, plan, cfg)[0]
     frames = []
     for flavour, length, measured, drawn in flavours(data, np.asarray(idxs), cfg, rng):
-        got = judge.figures(judge.outcomes(drawn, plan, risk * plan["size"]), len(names))
+        got = judge.figures(
+            judge.outcomes(drawn, plan, risk * plan["size"]), len(names)
+        )
         frame = pd.DataFrame({k: np.where(feasible, v, np.nan) for k, v in got.items()})
         for j, name in enumerate(names):
             frame.insert(j, f"r_{name}", risk[:, j])
@@ -109,15 +128,27 @@ def decide(rows: pd.DataFrame) -> Decision:
     """
     worst: Any = rows.groupby("setting")["p_pass"].min()
     if bool(worst.isna().all()):
-        return {"p": float("nan"), "setting": -1, "risk": {}, "by_flavour": {}, "flavour": None,
-                "length": None, "figures": {}}
+        return {
+            "p": float("nan"),
+            "setting": -1,
+            "risk": {},
+            "by_flavour": {},
+            "flavour": None,
+            "length": None,
+            "figures": {},
+        }
     setting = int(cast(Any, worst.idxmax()))
     at = cast(pd.DataFrame, rows[rows["setting"] == setting])
     row: Any = at.loc[cast(Any, at["p_pass"]).idxmin()]
-    return {"p": float(worst[setting]), "setting": setting,
-            "risk": {c[2:]: float(row[c]) for c in rows.columns if c.startswith("r_")},
-            "by_flavour": cast(Any, at.groupby("flavour")["p_pass"].min()).to_dict(),
-            "flavour": row["flavour"], "length": int(row["length"]), "figures": row.to_dict()}
+    return {
+        "p": float(worst[setting]),
+        "setting": setting,
+        "risk": {c[2:]: float(row[c]) for c in rows.columns if c.startswith("r_")},
+        "by_flavour": cast(Any, at.groupby("flavour")["p_pass"].min()).to_dict(),
+        "flavour": row["flavour"],
+        "length": int(row["length"]),
+        "figures": row.to_dict(),
+    }
 
 
 class Stability(TypedDict):
@@ -130,8 +161,14 @@ class Stability(TypedDict):
     unstable: bool
 
 
-def stability(data: StageBData, idxs: np.ndarray, plan: Plan, cfg: dict, risk: np.ndarray,
-              rng: np.random.Generator) -> Stability:
+def stability(
+    data: StageBData,
+    idxs: np.ndarray,
+    plan: Plan,
+    cfg: dict,
+    risk: np.ndarray,
+    rng: np.random.Generator,
+) -> Stability:
     """Whether the paths drawn are enough: the deciding figure recomputed on fresh draws.
 
     Args:
@@ -142,8 +179,15 @@ def stability(data: StageBData, idxs: np.ndarray, plan: Plan, cfg: dict, risk: n
         smallest, in probability) and `unstable` (the spread exceeds `stageb.stability_tol`:
         raise `stageb.n_paths` before deciding on it).
     """
-    values = [float(evaluate(data, idxs, plan, cfg, risk, rng)["p_pass"].min())
-              for _ in range(cfg["stageb"]["stability_runs"])]
+    values = [
+        float(evaluate(data, idxs, plan, cfg, risk, rng)["p_pass"].min())
+        for _ in range(cfg["stageb"]["stability_runs"])
+    ]
     spread = max(values) - min(values)
-    return {"runs": len(values), "values": values, "mean": float(np.mean(values)),
-            "spread": spread, "unstable": bool(spread > cfg["stageb"]["stability_tol"])}
+    return {
+        "runs": len(values),
+        "values": values,
+        "mean": float(np.mean(values)),
+        "spread": spread,
+        "unstable": bool(spread > cfg["stageb"]["stability_tol"]),
+    }

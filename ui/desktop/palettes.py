@@ -3,8 +3,14 @@
 from typing import Any, TypedDict
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QLabel, QListWidget, QListWidgetItem, QSplitter, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import client, names
 from ui.desktop.blocktable import BlockTable
@@ -74,8 +80,9 @@ class Palettes(QWidget):
         """
         self.data = client.get("palettes")
         self.pending = {}
-        self.open = self.bar.fill(self.data["palettes"], self.data["family_labels"],
-                                  keep or self.open)
+        self.open = self.bar.fill(
+            self.data["palettes"], self.data["family_labels"], keep or self.open
+        )
         self.on_open(self.open)
 
     def show_family(self, key: str) -> None:
@@ -85,9 +92,11 @@ class Palettes(QWidget):
             key: The family in any spelling `names` knows.
         """
         family = names.spelt(key, names.TAXONOMY)
-        mine = sorted((p["palette"]["origin"] != "default", slug)
-                      for slug, p in self.data["palettes"].items()
-                      if p["palette"]["family"] == family)
+        mine = sorted(
+            (p["palette"]["origin"] != "default", slug)
+            for slug, p in self.data["palettes"].items()
+            if p["palette"]["family"] == family
+        )
         if mine:
             self.bar.picker.setCurrentIndex(self.bar.picker.findData(mine[0][1]))
 
@@ -104,7 +113,9 @@ class Palettes(QWidget):
         self.bar.delete.setEnabled(p["origin"] != "default")
         self.bar.delete.setToolTip(
             "Una paleta por defecto no se borra: clónala y edita la copia."
-            if p["origin"] == "default" else "")
+            if p["origin"] == "default"
+            else ""
+        )
         self.fill_categories()
         self.fill_table()
 
@@ -140,8 +151,15 @@ class Palettes(QWidget):
                 item.setForeground(Qt.GlobalColor.gray)
             self.categories.addItem(item)
         self.categories.setCurrentRow(
-            next((i for i in range(self.categories.count())
-                  if self.categories.item(i).data(Qt.ItemDataRole.UserRole) == keep), 0))
+            next(
+                (
+                    i
+                    for i in range(self.categories.count())
+                    if self.categories.item(i).data(Qt.ItemDataRole.UserRole) == keep
+                ),
+                0,
+            )
+        )
 
     def rows(self) -> list[tuple[str, dict]]:
         """The blocks the table should show, under the category and the search box.
@@ -167,10 +185,18 @@ class Palettes(QWidget):
         """Redraw the block table for the current category or search."""
         stored = self.entry()["palette"]["overrides"]
         family = self.entry()["palette"]["family"]
-        self.table.show_blocks([(key, block, self.resolved(key),
-                                 self.pending.get(key, stored.get(key)),
-                                 block["archetypes"].get(family))
-                                for key, block in self.rows()])
+        self.table.show_blocks(
+            [
+                (
+                    key,
+                    block,
+                    self.resolved(key),
+                    self.pending.get(key, stored.get(key)),
+                    block["archetypes"].get(family),
+                )
+                for key, block in self.rows()
+            ]
+        )
         self.restate()
 
     def on_weight(self, key: str, weight: int | None) -> None:
@@ -192,25 +218,34 @@ class Palettes(QWidget):
         """Update the counts, the description of the open palette and the caveat."""
         p, s = self.entry()["palette"], self.entry()["summary"]
         pend = f"  ·  {len(self.pending)} sin guardar" if self.pending else ""
-        band = chip(f"condiciones {s['signal']['on']}", C["promising"] if s["conditions_ok"]
-                    else C["dead"])
+        band = chip(
+            f"condiciones {s['signal']['on']}",
+            C["promising"] if s["conditions_ok"] else C["dead"],
+        )
         self.bar.counts.setText(
             f"{band}  de {s['signal']['of']}  ·  "
             f"indicador {s['indicator']['on']}/{s['indicator']['of']}  ·  "
             f"nivel {s['level']['on']}/{s['level']['of']}  ·  "
-            f"{s['overridden']} elegidos a mano  ·  {s['unlabelled']} sin etiquetar{pend}")
+            f"{s['overridden']} elegidos a mano  ·  {s['unlabelled']} sin etiquetar{pend}"
+        )
         self.bar.counts.setToolTip(
             "El dueño pide entre 90 y 170 condiciones por build: por debajo el builder no "
-            "tiene de dónde combinar, por encima vuelve el sobreajuste que esto evita.")
+            "tiene de dónde combinar, por encima vuelve el sobreajuste que esto evita."
+        )
         self.bar.save.setEnabled(
-            bool(self.pending) or self.bar.policy.currentData() != p["unlabelled"])
+            bool(self.pending) or self.bar.policy.currentData() != p["unlabelled"]
+        )
         self.about.setText(describe(p, s, len(self.data["blocks"])))
-        note = ("Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un "
-                "grupo sortea ese grupo y la ignora; un bloque fijo es parte del esqueleto. "
-                "Medido el 2026-09-24.")
+        note = (
+            "Una paleta gobierna los huecos LIBRES de una plantilla. Un hueco atado a un "
+            "grupo sortea ese grupo y la ignora; un bloque fijo es parte del esqueleto. "
+            "Medido el 2026-09-24."
+        )
         if s["pooled_off"]:
-            note += (f"  {chip(str(s['pooled_off']) + ' apagados están en un grupo', C['weak'])}"
-                     "  — esos se escapan por esa vía.")
+            note += (
+                f"  {chip(str(s['pooled_off']) + ' apagados están en un grupo', C['weak'])}"
+                "  — esos se escapan por esa vía."
+            )
         self.caveat.setText(note)
 
     def write(self) -> None:
@@ -218,9 +253,15 @@ class Palettes(QWidget):
         p = self.entry()["palette"]
         overrides = dict(p["overrides"])
         overrides.update(self.pending)
-        client.post(f"palette/{self.open}",
-                    {"label": p["label"], "note": p["note"],
-                     "unlabelled": self.bar.policy.currentData(), "overrides": overrides})
+        client.post(
+            f"palette/{self.open}",
+            {
+                "label": p["label"],
+                "note": p["note"],
+                "unlabelled": self.bar.policy.currentData(),
+                "overrides": overrides,
+            },
+        )
         self.reload()
 
     def on_clone(self, slug: str, label: str, source: str) -> None:
@@ -232,8 +273,10 @@ class Palettes(QWidget):
             source: Slug being copied.
         """
         family = self.data["palettes"][source]["palette"]["family"]
-        client.post("palettes/new",
-                    {"name": slug, "label": label, "family": family, "source": source})
+        client.post(
+            "palettes/new",
+            {"name": slug, "label": label, "family": family, "source": source},
+        )
         self.reload(slug)
 
     def on_delete(self) -> None:

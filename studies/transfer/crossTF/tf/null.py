@@ -9,7 +9,9 @@ from engines.market import reprice
 from studies.transfer.crossmarket.travel import cells, shift, stat, tensor
 
 
-def calendar(first: pd.Timestamp, last: pd.Timestamp, cuts: dict, null: dict) -> tuple[pd.DataFrame, np.ndarray]:
+def calendar(
+    first: pd.Timestamp, last: pd.Timestamp, cuts: dict, null: dict
+) -> tuple[pd.DataFrame, np.ndarray]:
     """The calendar cells and every run's shift of each, drawn once for a whole batch.
 
     Args:
@@ -27,8 +29,15 @@ def calendar(first: pd.Timestamp, last: pd.Timestamp, cuts: dict, null: dict) ->
     return cal, shift.draws(cal, null["seed"], null["draws"])
 
 
-def grids(bars: dict[str, pd.DataFrame], costs: reprice.Costs, params: dict, cal: pd.DataFrame,
-          shifts: np.ndarray, span: tuple[pd.Timestamp, pd.Timestamp], null: dict) -> dict[str, tensor.Market]:
+def grids(
+    bars: dict[str, pd.DataFrame],
+    costs: reprice.Costs,
+    params: dict,
+    cal: pd.DataFrame,
+    shifts: np.ndarray,
+    span: tuple[pd.Timestamp, pd.Timestamp],
+    null: dict,
+) -> dict[str, tensor.Market]:
     """What pricing needs of every timeframe inside one window, shared by every mother.
 
     Args:
@@ -45,18 +54,40 @@ def grids(bars: dict[str, pd.DataFrame], costs: reprice.Costs, params: dict, cal
         (`tensor.exclude`) is left out of all of them: a mother and her sibling are only ever
         compared over the same years.
     """
-    with np.errstate(divide="ignore"):       # lots on a flat bar are inf: `usable` never sizes there
-        out = {tf: tensor.market(cast(pd.DataFrame, b[(b.index >= span[0]) & (b.index < span[1])]), costs, params, cal,
-                                 null["flat_atr_fraction"]) for tf, b in bars.items()}
-    gone = np.any([tensor.exclude(m, cal, shifts, null["shift_step"], null["max_displaced_share"])
-                   for m in out.values()], axis=0)
+    with np.errstate(
+        divide="ignore"
+    ):  # lots on a flat bar are inf: `usable` never sizes there
+        out = {
+            tf: tensor.market(
+                cast(pd.DataFrame, b[(b.index >= span[0]) & (b.index < span[1])]),
+                costs,
+                params,
+                cal,
+                null["flat_atr_fraction"],
+            )
+            for tf, b in bars.items()
+        }
+    gone = np.any(
+        [
+            tensor.exclude(
+                m, cal, shifts, null["shift_step"], null["max_displaced_share"]
+            )
+            for m in out.values()
+        ],
+        axis=0,
+    )
     for m in out.values():
         m["data"] = m["data"] & ~gone
     return out
 
 
-def runs(trades: dict[str, pd.DataFrame], grid: dict[str, tensor.Market], cal: pd.DataFrame,
-         shifts: np.ndarray, null: dict) -> dict[str, dict]:
+def runs(
+    trades: dict[str, pd.DataFrame],
+    grid: dict[str, tensor.Market],
+    cal: pd.DataFrame,
+    shifts: np.ndarray,
+    null: dict,
+) -> dict[str, dict]:
     """One mother and her siblings through the same random runs, in one window.
 
     Args:
@@ -71,11 +102,24 @@ def runs(trades: dict[str, pd.DataFrame], grid: dict[str, tensor.Market], cal: p
         `null` (the total in R and one total per run, on the judged quantity) and `real_net`,
         `null_net` (the same on net R). Row b of every timeframe's `null` is the SAME run.
     """
-    one = tensor.build(trades, {tf: grid[tf] for tf in trades}, cal, shifts, null["shift_step"],
-                       null["judge_on"])
-    return {tf: {"n": float(stat.total(one["trades"], [j])),
-                 **{k: stat.total(one[k], [j]) for k in ("real", "null", "real_net", "null_net")}}
-            for j, tf in enumerate(one["markets"])}
+    one = tensor.build(
+        trades,
+        {tf: grid[tf] for tf in trades},
+        cal,
+        shifts,
+        null["shift_step"],
+        null["judge_on"],
+    )
+    return {
+        tf: {
+            "n": float(stat.total(one["trades"], [j])),
+            **{
+                k: stat.total(one[k], [j])
+                for k in ("real", "null", "real_net", "null_net")
+            },
+        }
+        for j, tf in enumerate(one["markets"])
+    }
 
 
 def edge(cell: dict) -> float:
@@ -87,7 +131,11 @@ def edge(cell: dict) -> float:
     Returns:
         (T_real - mean T_random) / n; NaN when the cell has no trade.
     """
-    return float((cell["real_net"] - np.mean(cell["null_net"])) / cell["n"]) if cell["n"] > 0 else np.nan
+    return (
+        float((cell["real_net"] - np.mean(cell["null_net"])) / cell["n"])
+        if cell["n"] > 0
+        else np.nan
+    )
 
 
 def z_total(cell: dict) -> float:
@@ -126,5 +174,5 @@ def z_delta(mother: dict, sibling: dict) -> float:
         return np.nan
     real, runs = got
     if real == 0 and not runs.any():
-        return 0.0          # the sibling IS her mother: no difference in any run, not «no data»
+        return 0.0  # the sibling IS her mother: no difference in any run, not «no data»
     return stat.z(real, runs)["z"]

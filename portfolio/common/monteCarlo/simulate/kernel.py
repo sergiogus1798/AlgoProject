@@ -39,7 +39,9 @@ def _row(pnl: np.ndarray, equity0: float, out: np.ndarray) -> None:
 
 
 @njit(cache=True, nogil=True, error_model="numpy")
-def gathered(source: np.ndarray, idx: np.ndarray, equity0: float, out: np.ndarray) -> None:
+def gathered(
+    source: np.ndarray, idx: np.ndarray, equity0: float, out: np.ndarray
+) -> None:
     """The statistics of the paths `source[idx]`, row by row.
 
     Args:
@@ -85,7 +87,11 @@ def prime() -> None:
         contiguous ones, and each layout is its own compilation; built once in the parent,
         every forked worker inherits the machine code.
     """
-    source, idx, out = np.zeros(4, np.float32), np.zeros((2, 6), np.int64), np.empty((2, 8))
+    source, idx, out = (
+        np.zeros(4, np.float32),
+        np.zeros((2, 6), np.int64),
+        np.empty((2, 8)),
+    )
     gathered(source, idx, 1.0, out)
     gathered(source, idx[:, :4], 1.0, out)
     priced(np.zeros((2, 4)), 1.0, out)

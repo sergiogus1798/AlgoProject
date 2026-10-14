@@ -19,7 +19,10 @@ TABS = [
     ("Puerta IS/OOS", [("Resumen", ["*"], "", None)]),
     ("Cross Market", [("Resumen", ["crossmarket"], "crossmarket", None)]),
     ("Cross Timeframe", [("Resumen", ["crossTF"], "crosstf", "crossTF")]),
-    ("MC Retest", [("Resumen", ["mcRetest"], "mcretest", None)]),   # tasks: strategy view
+    (
+        "MC Retest",
+        [("Resumen", ["mcRetest"], "mcretest", None)],
+    ),  # tasks: strategy view
     ("SPP", [("IS", ["spp"], "spp", None), ("OOS", ["spp"], "spp.1", None)]),
     # One virtual databank for the whole optimisation stage (owner, 2026-09-30 §2/§8): WFM,
     # WFC, CSCV and Market Surfaces never touch on disk — this groups their tabs in the
@@ -30,15 +33,24 @@ TABS = [
     # Not the WFC task's own databank, though: `WFC_Build` holds the VARIANTS (S00V000…),
     # never a mother, so every row read unjudged (🔬 2026-10-01). Stage "mothers" picks the
     # smallest databank that holds every mother (`mothers_bank`).
-    ("WFM + WFC + CSCV + Market Surfaces", [
-        ("Nube de parámetros", ["cloud"], "mothers", None),
-        ("WFC", ["wfc"], "mothers", None),
-        ("CSCV", ["cscv"], "mothers", None),
-        ("Market Surfaces", ["marketSurfaces"], "mothers", None),
-        ("Walk Forward Matrix", ["wfm"], "wfm", None)]),
-    ("Cierre", [("Análisis conjunto (paso 20)", ["blindJoint"], "", None),
-                ("Exposición", ["exposure"], "", None),
-                ("Edge por coste", ["edgeCost"], "", None)]),
+    (
+        "WFM + WFC + CSCV + Market Surfaces",
+        [
+            ("Nube de parámetros", ["cloud"], "mothers", None),
+            ("WFC", ["wfc"], "mothers", None),
+            ("CSCV", ["cscv"], "mothers", None),
+            ("Market Surfaces", ["marketSurfaces"], "mothers", None),
+            ("Walk Forward Matrix", ["wfm"], "wfm", None),
+        ],
+    ),
+    (
+        "Cierre",
+        [
+            ("Análisis conjunto (paso 20)", ["blindJoint"], "", None),
+            ("Exposición", ["exposure"], "", None),
+            ("Edge por coste", ["edgeCost"], "", None),
+        ],
+    ),
 ]
 # The sub-panels of step 20 and of the three it waits for, locked while the ledger's door is.
 LOCKED = {"blindJoint", "wfc", "cscv", "wfm"}
@@ -55,8 +67,11 @@ def outputs(project: str) -> dict[str, str]:
         return {}
     path = str(where[1] / "user" / "projects" / project / "project.cfx")
     out = {}
-    for t in cfx.tasks(path):       # a donor's ClearDatabanks or GoToTask writes no databank
-        io = {d.get("name"): d.get("value") for d in cfx.task_xml(path, t["file"]).iter("Databank")}
+    for t in cfx.tasks(path):  # a donor's ClearDatabanks or GoToTask writes no databank
+        io = {
+            d.get("name"): d.get("value")
+            for d in cfx.task_xml(path, t["file"]).iter("Databank")
+        }
         if io.get("Output"):
             out[t["title"]] = io["Output"]
     return out
@@ -64,8 +79,9 @@ def outputs(project: str) -> dict[str, str]:
 
 def reported(project: str, study: str) -> str | None:
     """The databank folder whose newest report holds this study, or None."""
-    found = sorted((DATA / "reports" / project).glob(f"*/*/{study}"),
-                   key=lambda p: p.parent.name)
+    found = sorted(
+        (DATA / "reports" / project).glob(f"*/*/{study}"), key=lambda p: p.parent.name
+    )
     return found[-1].parent.parent.name if found else None
 
 
@@ -93,23 +109,35 @@ def mothers_bank(project: str, out: dict) -> str | None:
     """
     # Imported here: batches → cells → results.catalogue → runner → readings → this module.
     from ui.daemon.databank import batches
+
     wanted = set(batches.mothers(project))
     if not wanted:
         return None
     # The stages the mothers come out of, read first: an MC Retest task's databank can hold
     # every mother too, but its metrics are a perturbed retest, not the strategy's own.
     near = [t for t in titles("wfm") + titles("spp")[::-1]]
-    near = list(dict.fromkeys(b for t in near for b in (out.get(t), known(project, t)) if b))
-    rest = sorted(set(out.values()) | {p.name for root in ("reports", "metrics")
-                                       for p in (DATA / root / project).glob("*")
-                                       if p.is_dir()})
+    near = list(
+        dict.fromkeys(b for t in near for b in (out.get(t), known(project, t)) if b)
+    )
+    rest = sorted(
+        set(out.values())
+        | {
+            p.name
+            for root in ("reports", "metrics")
+            for p in (DATA / root / project).glob("*")
+            if p.is_dir()
+        }
+    )
     for names in (near, rest):
         best = None
         for name in names:
             frame = metrics.source(project, name)[1]
             if frame is None:
                 continue
-            held = {cells.norm(n) for n in (frame["name"] if "name" in frame else frame.index)}
+            held = {
+                cells.norm(n)
+                for n in (frame["name"] if "name" in frame else frame.index)
+            }
             score = (len(wanted & held), -len(held))
             if score[0] and (best is None or score > best[0]):
                 best = (score, name)
@@ -132,14 +160,22 @@ def databank(project: str, out: dict, stage: str, studies: list[str]) -> str:
         if own:
             return own
         stage = "wfc"
-    own = (reported(project, studies[0])
-          if studies != ["*"] and stage not in ("spp", "spp.1") else None)
+    own = (
+        reported(project, studies[0])
+        if studies != ["*"] and stage not in ("spp", "spp.1")
+        else None
+    )
     if own:
         return own
     name, _, nth = stage.partition(".")
     wanted = titles(name)[int(nth or 0)] if name else titles("build")[0]
-    return out.get(wanted) or known(project, wanted) or out.get(titles("build")[0]) or \
-        reported(project, "gate") or "Results"
+    return (
+        out.get(wanted)
+        or known(project, wanted)
+        or out.get(titles("build")[0])
+        or reported(project, "gate")
+        or "Results"
+    )
 
 
 def splits(project: str, bank: str, study: str) -> list[str]:
@@ -151,8 +187,11 @@ def splits(project: str, bank: str, study: str) -> list[str]:
         got = table.table(project, bank)
     except Exception:  # noqa: BLE001 — the ui boundary: the tab row must always come back
         return []
-    return list(dict.fromkeys(s for c in got["columns"]
-                              if c.get("study") == study and (s := c.get("sub"))))
+    return list(
+        dict.fromkeys(
+            s for c in got["columns"] if c.get("study") == study and (s := c.get("sub"))
+        )
+    )
 
 
 class Sub(TypedDict):
@@ -198,12 +237,21 @@ def panels(project: str) -> Panels:
         subs: list[Sub] = []
         for name, studies, stage, split in specs:
             bank = databank(project, out, stage, studies)
-            locked = blind["text"] if blind["sealed"] and LOCKED & set(studies) else None
-            row: Sub = {"sub": name, "databank": bank, "studies": studies, "split": None,
-                   "blocked": locked}
+            locked = (
+                blind["text"] if blind["sealed"] and LOCKED & set(studies) else None
+            )
+            row: Sub = {
+                "sub": name,
+                "databank": bank,
+                "studies": studies,
+                "split": None,
+                "blocked": locked,
+            }
             subs.append(row)
             if split and not locked:
-                subs += [Sub(sub=s, databank=bank, studies=studies, split=s, blocked=locked)
-                         for s in splits(project, bank, split)]
+                subs += [
+                    Sub(sub=s, databank=bank, studies=studies, split=s, blocked=locked)
+                    for s in splits(project, bank, split)
+                ]
         tabs.append({"tab": tab, "subs": subs})
     return {"project": project, "tabs": tabs, "blind": blind}

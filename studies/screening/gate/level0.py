@@ -5,12 +5,19 @@ import pandas as pd
 from core.surface import dedupe
 
 # What `run` gives, read off the harvest alone (levels.py).
-FACTS = ("presencia_passed", "sanidad_passed", "sanidad_value", "estaticas_value",
-         "is_trades_per_year")
-NET = "Net profit [OOS]"     # `estaticas_value`: the retest databank's own net of oos1
+FACTS = (
+    "presencia_passed",
+    "sanidad_passed",
+    "sanidad_value",
+    "estaticas_value",
+    "is_trades_per_year",
+)
+NET = "Net profit [OOS]"  # `estaticas_value`: the retest databank's own net of oos1
 
 
-def result(value: pd.Series, passed: pd.Series, note: pd.Series | None = None) -> pd.DataFrame:
+def result(
+    value: pd.Series, passed: pd.Series, note: pd.Series | None = None
+) -> pd.DataFrame:
     """One screen's answer, in the shape the cascade expects.
 
     Args:
@@ -67,7 +74,7 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
         fails, so `sanidad_value` (the oos1 trade count) is there for everybody.
     """
     facts = pd.DataFrame(index=alive, columns=pd.Index(FACTS), dtype=float)
-    if not data:       # tests/test_gate_rules.py runs every level on an empty harvest
+    if not data:  # tests/test_gate_rules.py runs every level on an empty harvest
         return facts
     row = {s["name"]: s for s in cfg["screens"]}
     paired = alive[alive.isin(data["metrics"].index)]
@@ -76,7 +83,10 @@ def run(data: dict, alive: pd.Index, cfg: dict) -> pd.DataFrame:
     facts["presencia_passed"] = alive.isin(paired).astype(float)
     facts.loc[paired, "sanidad_passed"] = clean["passed"].astype(float)
     facts.loc[paired, "sanidad_value"] = clean["value"]
-    facts.loc[paired, "estaticas_value"] = data["metrics"].loc[paired, NET].astype(float)
-    facts["is_trades_per_year"] = (build.groupby("identity").size().reindex(alive)
-                                   / data["market"]["years"]["IS"])
+    facts.loc[paired, "estaticas_value"] = (
+        data["metrics"].loc[paired, NET].astype(float)
+    )
+    facts["is_trades_per_year"] = (
+        build.groupby("identity").size().reindex(alive) / data["market"]["years"]["IS"]
+    )
     return facts

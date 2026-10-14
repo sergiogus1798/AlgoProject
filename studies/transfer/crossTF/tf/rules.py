@@ -5,7 +5,11 @@ from typing import Any, TypedDict, cast
 import numpy as np
 import pandas as pd
 
-RANK = {"pass": 0, "limbo": 1, "fail": 2}       # the vocabulary of pipeline/autopilot/criteria.py
+RANK = {
+    "pass": 0,
+    "limbo": 1,
+    "fail": 2,
+}  # the vocabulary of pipeline/autopilot/criteria.py
 
 
 def comparable(made: pd.DataFrame, limit: float) -> pd.Series:
@@ -19,10 +23,18 @@ def comparable(made: pd.DataFrame, limit: float) -> pd.Series:
     Returns:
         "unverified", "clamped", "rounding_shift" or "", the first that applies.
     """
-    return pd.Series(np.select([made["unverified"].fillna(0).astype(bool),
-                                made["clamped"].fillna(0).astype(bool),
-                                made["rounding_shift"] > limit],
-                               ["unverified", "clamped", "rounding_shift"], ""), index=made.index)
+    return pd.Series(
+        np.select(
+            [
+                made["unverified"].fillna(0).astype(bool),
+                made["clamped"].fillna(0).astype(bool),
+                made["rounding_shift"] > limit,
+            ],
+            ["unverified", "clamped", "rounding_shift"],
+            "",
+        ),
+        index=made.index,
+    )
 
 
 def why(*reasons: pd.Series) -> pd.Series:
@@ -50,7 +62,9 @@ def percentile(values: pd.Series, pair: pd.Series, least: int) -> pd.Series:
     return by.rank(pct=True).where(cast(pd.Series, by.transform("count")) >= least)
 
 
-def z_frec(n_mother: pd.Series, n_sibling: pd.Series, phi: pd.Series, m_pop: pd.Series) -> pd.Series:
+def z_frec(
+    n_mother: pd.Series, n_sibling: pd.Series, phi: pd.Series, m_pop: pd.Series
+) -> pd.Series:
     """T1's z: the log ratio of trades over the same period, centred on the pair's population.
 
     Args:
@@ -59,23 +73,31 @@ def z_frec(n_mother: pd.Series, n_sibling: pd.Series, phi: pd.Series, m_pop: pd.
         phi: The overdispersion of the mother's yearly counts in the build, already bounded.
         m_pop: centre() of the same log ratio.
     """
-    return (np.log(n_sibling / n_mother) - m_pop) / np.sqrt(phi * (1 / n_sibling + 1 / n_mother))
+    return (np.log(n_sibling / n_mother) - m_pop) / np.sqrt(
+        phi * (1 / n_sibling + 1 / n_mother)
+    )
 
 
 def t1(z: pd.Series, f: dict) -> np.ndarray:
     """T1 per sibling: |z_frec| up to `pass` passes, beyond `fail` fails; no z is limbo."""
-    return np.select([z.abs() <= f["pass"], z.abs() > f["fail"]], ["pass", "fail"], "limbo")
+    return np.select(
+        [z.abs() <= f["pass"], z.abs() > f["fail"]], ["pass", "fail"], "limbo"
+    )
 
 
 def t2a(ret: pd.Series, z_delta: pd.Series, r: dict) -> np.ndarray:
     """T2a per sibling: ret at or over `pass` passes; ret <= 0 with z_delta at or over `z`
     fails; anything else, no data included, is limbo."""
-    return np.select([ret >= r["pass"], (ret <= 0) & (z_delta >= r["z"])], ["pass", "fail"], "limbo")
+    return np.select(
+        [ret >= r["pass"], (ret <= 0) & (z_delta >= r["z"])], ["pass", "fail"], "limbo"
+    )
 
 
 def t2b(z_build: pd.Series, b: dict) -> np.ndarray:
     """T2b per sibling: z_build at or over `pass` passes, at or under `fail` fails; no z is limbo."""
-    return np.select([z_build >= b["pass"], z_build <= b["fail"]], ["pass", "fail"], "limbo")
+    return np.select(
+        [z_build >= b["pass"], z_build <= b["fail"]], ["pass", "fail"], "limbo"
+    )
 
 
 def _both(states: pd.Series, expected: int) -> str:
@@ -125,8 +147,11 @@ def mother(rows: pd.DataFrame, expected: int, low_ret: float) -> Mother:
     a, b, f = (near.loc[near[f"{t}_why"] == "", t] for t in ("t2a", "t2b", "t1"))
     s1 = "fail" if (f == "fail").any() else _both(f, expected)
     s2a = _both(a, expected)
-    if len(a) == expected and (a == "fail").any() \
-            and (near.loc[a.index[a != "fail"], "ret"] < low_ret).all():
+    if (
+        len(a) == expected
+        and (a == "fail").any()
+        and (near.loc[a.index[a != "fail"], "ret"] < low_ret).all()
+    ):
         s2a = "fail"
     s2b = _both(b, expected)
     brakes = bool(((far["t2a_why"] == "") & (far["t2a"] == "fail")).any())
@@ -134,18 +159,42 @@ def mother(rows: pd.DataFrame, expected: int, low_ret: float) -> Mother:
     worst = max((s1, s2a, s2b), key=lambda s: RANK[s])
     state = "limbo" if worst == "pass" and brakes else worst
     lone = lambda s: len(s) < expected and len(s) > 0 and bool((s == "fail").all())
-    said = [w for w, hit in (("frequency", s1 == "fail"), ("isolated_peak_oos1", s2a == "fail"),
-                             ("isolated_peak_build", s2b == "fail"), ("far_brakes", brakes),
-                             ("t2a_lone_fail", lone(a)), ("t2b_lone_fail", lone(b))) if hit]
+    said = [
+        w
+        for w, hit in (
+            ("frequency", s1 == "fail"),
+            ("isolated_peak_oos1", s2a == "fail"),
+            ("isolated_peak_build", s2b == "fail"),
+            ("far_brakes", brakes),
+            ("t2a_lone_fail", lone(a)),
+            ("t2b_lone_fail", lone(b)),
+        )
+        if hit
+    ]
     if state == "limbo":
-        said += sorted({f"{r.timeframe}:{w}" for r in cast(Any, near.itertuples())
-                        for w in (r.t2a_why, r.t2b_why, r.t1_why) if w})
+        said += sorted(
+            {
+                f"{r.timeframe}:{w}"
+                for r in cast(Any, near.itertuples())
+                for w in (r.t2a_why, r.t2b_why, r.t1_why)
+                if w
+            }
+        )
         said += [f"neighbours={len(near)}/{expected}"] if len(near) < expected else []
-    return Mother(t1=s1, t2a=s2a, t2b=s2b, t3="limbo" if brakes else "pass",
-                  phase1=phase1, state=state, why=";".join(said))
+    return Mother(
+        t1=s1,
+        t2a=s2a,
+        t2b=s2b,
+        t3="limbo" if brakes else "pass",
+        phase1=phase1,
+        state=state,
+        why=";".join(said),
+    )
 
 
-def overlap(mother_open: np.ndarray, sibling_open: np.ndarray, bar_seconds: float) -> float:
+def overlap(
+    mother_open: np.ndarray, sibling_open: np.ndarray, bar_seconds: float
+) -> float:
     """T4: the share of a sibling's entries within one bar of the mother of one of her entries.
 
     Args:
@@ -160,6 +209,8 @@ def overlap(mother_open: np.ndarray, sibling_open: np.ndarray, bar_seconds: floa
     hers = np.sort(np.asarray(mother_open, "datetime64[s]").astype(np.int64))
     mine = np.asarray(sibling_open, "datetime64[s]").astype(np.int64)
     at = np.searchsorted(hers, mine)
-    gap = np.minimum(np.abs(mine - hers[np.clip(at - 1, 0, len(hers) - 1)]),
-                     np.abs(hers[np.clip(at, 0, len(hers) - 1)] - mine))
+    gap = np.minimum(
+        np.abs(mine - hers[np.clip(at - 1, 0, len(hers) - 1)]),
+        np.abs(hers[np.clip(at, 0, len(hers) - 1)] - mine),
+    )
     return float(np.mean(gap < bar_seconds))

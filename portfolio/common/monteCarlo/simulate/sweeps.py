@@ -26,11 +26,21 @@ def plan(n_trades: int, cfg: dict) -> list[dict]:
     out.append((config.HEADLINE, "stationary", config.stationary_block(n_trades), "A"))
     out.append((config.BASELINE, "iid_bootstrap", 0, "B"))
     out += [(f"block_bootstrap/{b}", "block_bootstrap", b, "B") for b in blocks]
-    return [{"label": label, "model": model, "block": block, "family": family,
-             "title": draws.title(model, block)} for label, model, block, family in out]
+    return [
+        {
+            "label": label,
+            "model": model,
+            "block": block,
+            "family": family,
+            "title": draws.title(model, block),
+        }
+        for label, model, block, family in out
+    ]
 
 
-def execute(data: dict, steps: list[dict], n_sims: int, cfg: dict) -> dict[str, dict[str, np.ndarray]]:
+def execute(
+    data: dict, steps: list[dict], n_sims: int, cfg: dict
+) -> dict[str, dict[str, np.ndarray]]:
     """Run every sub-run of a plan.
 
     Args:
@@ -44,9 +54,19 @@ def execute(data: dict, steps: list[dict], n_sims: int, cfg: dict) -> dict[str, 
         because the same pool is asked several questions — percentiles, ranks, histograms
         and the Sharpe cross-check of Family E all read the same draws.
     """
-    return {s["label"]: engine.run(data, "draw", s["model"], s["block"], n_sims, cfg,
-                                   s["title"], config.seed(cfg))
-            for s in steps}
+    return {
+        s["label"]: engine.run(
+            data,
+            "draw",
+            s["model"],
+            s["block"],
+            n_sims,
+            cfg,
+            s["title"],
+            config.seed(cfg),
+        )
+        for s in steps
+    }
 
 
 def invariant(stats: dict) -> float:

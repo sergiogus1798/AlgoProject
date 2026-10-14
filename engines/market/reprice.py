@@ -14,13 +14,33 @@ from core.symbols import current
 # = the holder is paid. Percent per year, unless `tick_step` is set: then points per night, a
 # point being one tick_step of price. `triple` is the weekday (Monday 0) whose night counts
 # three, `rollover` the hour the night is charged at.
-Costs = TypedDict("Costs", {"point_value": float, "tick_size": float, "spread": float,
-                            "slippage": float, "commission_method": str, "commission": float,
-                            "swap_long": float, "swap_short": float, "triple": int,
-                            "rollover": int, "tick_step": float | None})      # may be absent: percent
+Costs = TypedDict(
+    "Costs",
+    {
+        "point_value": float,
+        "tick_size": float,
+        "spread": float,
+        "slippage": float,
+        "commission_method": str,
+        "commission": float,
+        "swap_long": float,
+        "swap_short": float,
+        "triple": int,
+        "rollover": int,
+        "tick_step": float | None,
+    },
+)  # may be absent: percent
 
-WEEKDAYS = ("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY")
-DAY, EPOCH_WEEKDAY = 86400, 3      # seconds; 1970-01-01 was a Thursday
+WEEKDAYS = (
+    "MONDAY",
+    "TUESDAY",
+    "WEDNESDAY",
+    "THURSDAY",
+    "FRIDAY",
+    "SATURDAY",
+    "SUNDAY",
+)
+DAY, EPOCH_WEEKDAY = 86400, 3  # seconds; 1970-01-01 was a Thursday
 # SQX's `Close type`, by where the exit fills: at a price of its own inside the bar it is
 # stamped with (SL measured; PT by the owner's rule, none verified; EndTest measured 2026-10-12: the
 # trade still open when the window ends is closed at SQX's own price, 1,001 of 1,004 variants of
@@ -45,20 +65,28 @@ def costs(feed: str, segment: str) -> Costs:
     data = load(symbol)
     s, tick = sqx_settings(data, segment), data["instrument"]["tick_size"]
     points = schema(data)["swap"]["sqx_type"] == "points"
-    return {"point_value": data["instrument"]["point_value"], "tick_size": tick,
-            "spread": s["defaultSpread"] * tick, "slippage": s["defaultSlippage"] * tick,
-            "commission_method": s["commission"]["method"], "commission": s["commission"]["value"],
-            "swap_long": s["swap"]["long"], "swap_short": s["swap"]["short"],
-            "triple": WEEKDAYS.index(s["swap"]["triple_swap_on"]),
-            "rollover": int(str(s["swap"]["rollout_hour"]).split(":")[0]),
-            "tick_step": tick / 10 if points else None}
+    return {
+        "point_value": data["instrument"]["point_value"],
+        "tick_size": tick,
+        "spread": s["defaultSpread"] * tick,
+        "slippage": s["defaultSlippage"] * tick,
+        "commission_method": s["commission"]["method"],
+        "commission": s["commission"]["value"],
+        "swap_long": s["swap"]["long"],
+        "swap_short": s["swap"]["short"],
+        "triple": WEEKDAYS.index(s["swap"]["triple_swap_on"]),
+        "rollover": int(str(s["swap"]["rollout_hour"]).split(":")[0]),
+        "tick_step": tick / 10 if points else None,
+    }
 
 
 def _rollovers_before(time: np.ndarray, costs: Costs) -> np.ndarray:
     """Charged nights with a rollover strictly before each stamp, counted from 1970."""
     weight = [(d < 5) + 2 * (d == costs["triple"]) for d in range(7)]
     week = np.cumsum([0] + [weight[(EPOCH_WEEKDAY + i) % 7] for i in range(7)])
-    seconds = np.asarray(time, "datetime64[s]").astype(np.int64) - costs["rollover"] * 3600
+    seconds = (
+        np.asarray(time, "datetime64[s]").astype(np.int64) - costs["rollover"] * 3600
+    )
     days = -(-seconds // DAY)
     return week[7] * (days // 7) + week[days % 7]
 
@@ -76,9 +104,15 @@ def nights(open_time: np.ndarray, close_time: np.ndarray, costs: Costs) -> np.nd
     return _rollovers_before(close_time, costs) - _rollovers_before(open_time, costs)
 
 
-def pnl(open_px: np.ndarray, close_px: np.ndarray, open_time: np.ndarray,
-        close_time: np.ndarray, side: np.ndarray, size: np.ndarray,
-        costs: Costs) -> tuple[np.ndarray, np.ndarray]:
+def pnl(
+    open_px: np.ndarray,
+    close_px: np.ndarray,
+    open_time: np.ndarray,
+    close_time: np.ndarray,
+    side: np.ndarray,
+    size: np.ndarray,
+    costs: Costs,
+) -> tuple[np.ndarray, np.ndarray]:
     """Money P/L of market-order trades at the declared costs, and the cost each one was charged.
 
     `open_px` and `close_px` are RAW BAR prices — the open of the entry bar and of the exit
@@ -113,11 +147,18 @@ def pnl(open_px: np.ndarray, close_px: np.ndarray, open_time: np.ndarray,
     value, slip = costs["point_value"] * size, costs["slippage"]
     entry = np.round((open_px + side * (costs["spread"] + slip)) / tick) * tick
     leave = np.round((close_px - side * slip) / tick) * tick
-    rate, step = np.where(side > 0, costs["swap_long"], costs["swap_short"]), costs.get("tick_step")
+    rate, step = (
+        np.where(side > 0, costs["swap_long"], costs["swap_short"]),
+        costs.get("tick_step"),
+    )
     night = value * (entry * rate / 100 / 360 if step is None else step * rate)
-    charge = (-night * nights(open_time, close_time, costs)
-              + {"PercentageBased": value * entry / 100, "SizeBased": size
-                 }[costs["commission_method"]] * costs["commission"])
+    charge = (
+        -night * nights(open_time, close_time, costs)
+        + {"PercentageBased": value * entry / 100, "SizeBased": size}[
+            costs["commission_method"]
+        ]
+        * costs["commission"]
+    )
     net = np.round(value * side * (leave - entry) - charge, 2)
     return net, value * (costs["spread"] + 2 * slip) + charge
 
@@ -163,8 +204,9 @@ def located(bars: pd.DataFrame, time: np.ndarray, feed: str | None) -> np.ndarra
     return at
 
 
-def real(trades: pd.DataFrame, bars: pd.DataFrame, costs: Costs,
-         feed: str | None = None) -> pd.DataFrame:
+def real(
+    trades: pd.DataFrame, bars: pd.DataFrame, costs: Costs, feed: str | None = None
+) -> pd.DataFrame:
     """SQX's own trades priced by pnl(): the one place a harvested trade becomes fills.
 
     Args:
@@ -194,7 +236,10 @@ def real(trades: pd.DataFrame, bars: pd.DataFrame, costs: Costs,
     stop, known = np.full(len(trades), np.nan), np.ones(len(trades), bool)
     if "Close type" in trades:
         kind, px = trades["Close type"].astype(str), trades["Close price"].to_numpy()
-        priced, reach = kind.isin(AT_PRICE).to_numpy(), costs["spread"] + costs["slippage"]
+        priced, reach = (
+            kind.isin(AT_PRICE).to_numpy(),
+            costs["spread"] + costs["slippage"],
+        )
         known = kind.isin(AT_OPEN).to_numpy()
         if priced.any():
             low, high = (bars[k].to_numpy()[leave] for k in ("Low", "High"))
@@ -207,8 +252,25 @@ def real(trades: pd.DataFrame, bars: pd.DataFrame, costs: Costs,
             f"an unknown Close type or a price exit outside its bar): strategies "
             f"{trades.loc[bad, 'identity'].unique()[:5].tolist()}, first at "
             f"{trades.loc[bad, 'Close time'].min()}; the bars end at {bars.index[-1]} "
-            f"(behind the trades: python3 -m sqx.export.sync_bars)")
-    net, cost = pnl(fills(bars, enter), np.where(np.isnan(stop), fills(bars, leave), stop),
-                    opened, closed, side, trades["Size"].to_numpy(), costs)
-    return pd.DataFrame({"enter": enter, "leave": leave, "side": side, "stop": stop,
-                         "pnl": net, "cost": cost}, index=trades.index)
+            f"(behind the trades: python3 -m sqx.export.sync_bars)"
+        )
+    net, cost = pnl(
+        fills(bars, enter),
+        np.where(np.isnan(stop), fills(bars, leave), stop),
+        opened,
+        closed,
+        side,
+        trades["Size"].to_numpy(),
+        costs,
+    )
+    return pd.DataFrame(
+        {
+            "enter": enter,
+            "leave": leave,
+            "side": side,
+            "stop": stop,
+            "pnl": net,
+            "cost": cost,
+        },
+        index=trades.index,
+    )

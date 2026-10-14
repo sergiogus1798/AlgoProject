@@ -9,13 +9,22 @@ import unicodedata
 # memory's family (studies/research/memory/config.yaml) and the Spanish label of
 # `sqx.blocks.palette.FAMILY_ES`. One row per family, in the coverage's order.
 #         registry, taxonomy, research, Spanish label, shown, short
-TABLE = [("breakout", "breakout", "ruptura", "Ruptura", "Breakout", "BRK"),
-         ("meanReversion", "mean_reversion", "reversion", "Reversión a la media", "Mean reversion", "REV"),
-         ("trendFollowing", "trend", "tendencia", "Tendencia", "Trend following", "TRN"),
-         ("momentum", "momentum", "momentum", "Momentum", "Momentum", "MOM"),
-         ("volatility", "volatility", "volatilidad", "Volatilidad", "Volatility", "VOL"),
-         ("pattern", "pattern", "patron", "Patrón", "Pattern", "PAT"),
-         ("session", "session", "sesion", "Sesión", "Session", "SES")]
+TABLE = [
+    ("breakout", "breakout", "ruptura", "Ruptura", "Breakout", "BRK"),
+    (
+        "meanReversion",
+        "mean_reversion",
+        "reversion",
+        "Reversión a la media",
+        "Mean reversion",
+        "REV",
+    ),
+    ("trendFollowing", "trend", "tendencia", "Tendencia", "Trend following", "TRN"),
+    ("momentum", "momentum", "momentum", "Momentum", "Momentum", "MOM"),
+    ("volatility", "volatility", "volatilidad", "Volatilidad", "Volatility", "VOL"),
+    ("pattern", "pattern", "patron", "Patrón", "Pattern", "PAT"),
+    ("session", "session", "sesion", "Sesión", "Session", "SES"),
+]
 REGISTRY, TAXONOMY, RESEARCH, SPANISH, SHOWN, SHORT = range(6)
 
 
@@ -54,7 +63,9 @@ def family(key: str | None) -> str:
         back with a capital and nothing else changed; an empty one is «Sin familia».
     """
     text = str(key or "")
-    return spelt(text, SHOWN) or (text[:1].upper() + text[1:] if text else "Sin familia")
+    return spelt(text, SHOWN) or (
+        text[:1].upper() + text[1:] if text else "Sin familia"
+    )
 
 
 def short(key: str) -> str:
@@ -63,8 +74,11 @@ def short(key: str) -> str:
 
 
 # Longest first, so «Reversión a la media» is not cut by «Reversión».
-WORDS = sorted([(row[SPANISH], row[SHOWN]) for row in TABLE if row[SPANISH] != row[SHOWN]]
-               + [("Reversión", "Mean reversion")], key=lambda pair: -len(pair[0]))
+WORDS = sorted(
+    [(row[SPANISH], row[SHOWN]) for row in TABLE if row[SPANISH] != row[SHOWN]]
+    + [("Reversión", "Mean reversion")],
+    key=lambda pair: -len(pair[0]),
+)
 
 
 def palette(label: str) -> str:

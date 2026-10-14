@@ -14,8 +14,11 @@ IDENTITY = ("NetProfit", "NumberOfTrades")
 TRADE_COLUMNS = ("Open time", "Close time", "Profit/Loss")
 
 
-def drop_sentinels(frame: pd.DataFrame, columns: tuple[str, ...] = SENTINEL_COLUMNS,
-                   limit: float = SENTINEL_LIMIT) -> pd.DataFrame:
+def drop_sentinels(
+    frame: pd.DataFrame,
+    columns: tuple[str, ...] = SENTINEL_COLUMNS,
+    limit: float = SENTINEL_LIMIT,
+) -> pd.DataFrame:
     """Remove rows whose metric carries SQX's undefined marker instead of a measurement.
 
     Args:
@@ -68,9 +71,13 @@ def n_eff(frame: pd.DataFrame, keys: tuple[str, ...] = IDENTITY) -> int:
     return int(len(distinct(frame, keys)))
 
 
-def bootstrap_ci(values: np.ndarray, statistic: Callable[[np.ndarray], float],
-                 n_resamples: int = 9999, confidence: float = 0.95,
-                 seed: int = 0) -> tuple[float, float]:
+def bootstrap_ci(
+    values: np.ndarray,
+    statistic: Callable[[np.ndarray], float],
+    n_resamples: int = 9999,
+    confidence: float = 0.95,
+    seed: int = 0,
+) -> tuple[float, float]:
     """Percentile bootstrap interval, resampling the values it is given and nothing else.
 
     Args:
@@ -92,8 +99,9 @@ def bootstrap_ci(values: np.ndarray, statistic: Callable[[np.ndarray], float],
     return float(np.quantile(spread, tail)), float(np.quantile(spread, 1 - tail))
 
 
-def trade_duplicates(trades: pd.DataFrame, by: str,
-                     columns: tuple[str, ...] = TRADE_COLUMNS) -> pd.Series:
+def trade_duplicates(
+    trades: pd.DataFrame, by: str, columns: tuple[str, ...] = TRADE_COLUMNS
+) -> pd.Series:
     """Which strategies of a trade export are the same trade list under a different identity.
 
     Args:
@@ -128,6 +136,12 @@ def curve_duplicates(curves: dict[str, pd.Series]) -> pd.Series:
         builtin `hash()`, because Python salts a bytes hash per process: the same input
         would group differently in a report regenerated tomorrow.
     """
-    key = pd.Series({name: hashlib.sha1(cast(Any, curve.index).asi8.tobytes() + curve.to_numpy().tobytes()).digest()
-                     for name, curve in curves.items()})
+    key = pd.Series(
+        {
+            name: hashlib.sha1(
+                cast(Any, curve.index).asi8.tobytes() + curve.to_numpy().tobytes()
+            ).digest()
+            for name, curve in curves.items()
+        }
+    )
     return key.duplicated(keep="first")

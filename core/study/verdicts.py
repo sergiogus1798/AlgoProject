@@ -9,8 +9,15 @@ from core import manifest
 REQUIRED = ("strategy", "identity", "verdict")
 
 
-def write(out: Path, frame: pd.DataFrame, judged: Path, command: str,
-          overrides: list[str], name: str = "verdict.csv", extra: dict | None = None) -> Path:
+def write(
+    out: Path,
+    frame: pd.DataFrame,
+    judged: Path,
+    command: str,
+    overrides: list[str],
+    name: str = "verdict.csv",
+    extra: dict | None = None,
+) -> Path:
     """Write one verdict table and the manifest that ties it to what it judged.
 
     Args:
@@ -33,6 +40,10 @@ def write(out: Path, frame: pd.DataFrame, judged: Path, command: str,
         raise ValueError(f"verdict table lacks {missing}")
     out.mkdir(parents=True, exist_ok=True)
     frame.to_csv(out / name, index=False)
-    manifest.write(out, {"input": str(judged.resolve()), "overrides": overrides, **(extra or {})},
-                   command, {name: len(frame), **frame["verdict"].value_counts().to_dict()})
+    manifest.write(
+        out,
+        {"input": str(judged.resolve()), "overrides": overrides, **(extra or {})},
+        command,
+        {name: len(frame), **frame["verdict"].value_counts().to_dict()},
+    )
     return out / name

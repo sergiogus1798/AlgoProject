@@ -19,8 +19,13 @@ def query(where: dict, study: str) -> dict[str, Any]:
     Returns:
         The parameters `/api/result` and `/api/history` take.
     """
-    return {"project": where["project"], "databank": where["databank"], "study": study,
-            "strategy": where["strategy"] or "", "identity": where["identity"] or ""}
+    return {
+        "project": where["project"],
+        "databank": where["databank"],
+        "study": study,
+        "strategy": where["strategy"] or "",
+        "identity": where["identity"] or "",
+    }
 
 
 def result(query: dict, day: str = "") -> dict[str, Any]:
@@ -40,7 +45,9 @@ def result(query: dict, day: str = "") -> dict[str, Any]:
     return got
 
 
-def runs(where: dict, study: str, left: str, right: str) -> tuple[list, tuple[str, str]]:
+def runs(
+    where: dict, study: str, left: str, right: str
+) -> tuple[list, tuple[str, str]]:
     """Two runs of the study on screen.
 
     Args:
@@ -55,8 +62,9 @@ def runs(where: dict, study: str, left: str, right: str) -> tuple[list, tuple[st
     return got, (f"Run {left}", f"Run {right}")
 
 
-def strategies(where: dict, study: str, strategy: str,
-               identity: str) -> tuple[list, tuple[str, str]]:
+def strategies(
+    where: dict, study: str, strategy: str, identity: str
+) -> tuple[list, tuple[str, str]]:
     """The study for the strategy on screen and for another of the same databank.
 
     Args:
@@ -68,12 +76,15 @@ def strategies(where: dict, study: str, strategy: str,
         As `runs`: the strategy on screen left, the other right.
     """
     mine = result(query(where, study)).get("result")
-    other = result(query(where, study) | {"strategy": strategy,
-                                          "identity": identity}).get("result")
+    other = result(
+        query(where, study) | {"strategy": strategy, "identity": identity}
+    ).get("result")
     return [mine, other], (where["strategy"], strategy)
 
 
-def paint(page: "StudyPage", results: list[dict | None], titles: tuple[str, str]) -> None:
+def paint(
+    page: "StudyPage", results: list[dict | None], titles: tuple[str, str]
+) -> None:
     """Draw two results side by side on the page, or say which side has none.
 
     Args:
@@ -82,8 +93,10 @@ def paint(page: "StudyPage", results: list[dict | None], titles: tuple[str, str]
     """
     missing = [t for r, t in zip(results, titles) if r is None]
     if missing:
-        page.note.setText(f'<span style="color:{colour("fail")}">No se puede comparar: '
-                          f"{', '.join(missing)} no tiene resultado de este estudio aquí.</span>")
+        page.note.setText(
+            f'<span style="color:{colour("fail")}">No se puede comparar: '
+            f"{', '.join(missing)} no tiene resultado de este estudio aquí.</span>"
+        )
         return
     left, right = results
     assert left is not None and right is not None

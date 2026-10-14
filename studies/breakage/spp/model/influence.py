@@ -3,8 +3,9 @@
 import pandas as pd
 
 
-def eta_squared(frame: pd.DataFrame, parameters: list[str],
-                metrics: list[str]) -> pd.DataFrame:
+def eta_squared(
+    frame: pd.DataFrame, parameters: list[str], metrics: list[str]
+) -> pd.DataFrame:
     """Share of each metric's variance explained by each parameter on its own.
 
     Args:
@@ -25,14 +26,23 @@ def eta_squared(frame: pd.DataFrame, parameters: list[str],
         ok = y.notna()
         y, grouped = y[ok], frame[ok]
         total = ((y - y.mean()) ** 2).sum()
-        out[metric] = {p: grouped.groupby(p)[metric].apply(
-            lambda s: len(s) * (pd.Series(pd.to_numeric(s)).mean() - y.mean()) ** 2).sum() / total  # noqa: B023 apply runs immediately
-            for p in parameters}
+        out[metric] = {
+            p: grouped.groupby(p)[metric]
+            .apply(
+                lambda s: len(s) * (pd.Series(pd.to_numeric(s)).mean() - y.mean()) ** 2
+            )
+            .sum()
+            / total  # noqa: B023 apply runs immediately
+            for p in parameters
+        }
     return pd.DataFrame(out).loc[parameters]
 
 
-def duplicate_test(frame: pd.DataFrame, parameters: list[str],
-                   keys: tuple[str, ...] = ("NetProfit", "NumberOfTrades")) -> pd.DataFrame:
+def duplicate_test(
+    frame: pd.DataFrame,
+    parameters: list[str],
+    keys: tuple[str, ...] = ("NetProfit", "NumberOfTrades"),
+) -> pd.DataFrame:
     """Which parameters change nothing at all, including through interaction.
 
     Args:
@@ -59,6 +69,12 @@ def duplicate_test(frame: pd.DataFrame, parameters: list[str],
         several = grouped.size() > 1
         same = grouped[list(keys)].nunique().eq(1).all(axis=1)
         count, identical = int(several.sum()), int((several & same).sum())
-        rows.append({"parameter": name, "groups": count, "identical": identical,
-                     "inert": bool(count and identical == count)})
+        rows.append(
+            {
+                "parameter": name,
+                "groups": count,
+                "identical": identical,
+                "inert": bool(count and identical == count),
+            }
+        )
     return pd.DataFrame(rows).set_index("parameter")

@@ -19,8 +19,13 @@ def rows_of(data: StageBData, members: str) -> np.ndarray:
     return np.array([index[m] for m in members.split("+")], dtype=np.int64)
 
 
-def run(shortlisted: pd.DataFrame, data: StageBData, plan: Plan, cfg: dict,
-        rng: np.random.Generator) -> dict[str, Any]:
+def run(
+    shortlisted: pd.DataFrame,
+    data: StageBData,
+    plan: Plan,
+    cfg: dict,
+    rng: np.random.Generator,
+) -> dict[str, Any]:
     """Every shortlisted combination through stage B, and the one that comes out best.
 
     Args:
@@ -46,19 +51,41 @@ def run(shortlisted: pd.DataFrame, data: StageBData, plan: Plan, cfg: dict,
         got = stageb.decide(rows)
         rows.insert(0, "members", members)
         every.append(rows)
-        table.append({"members": members, "k": members.count("+") + 1, "p": got["p"],
-                      "setting": got["setting"],
-                      **{f"r_{phase}": r for phase, r in got["risk"].items()},
-                      "flavour": got["flavour"], "length": got["length"],
-                      **{f"p_{f}": got["by_flavour"].get(f, np.nan) for f in FLAVOURS},
-                      **{k: got["figures"].get(k, np.nan)
-                         for k in rows.columns if k.startswith(("p_stage", "fail_", "t_"))
-                         or k == "p_open"}})
-    table = pd.concat([shortlisted.reset_index(drop=True).drop(columns="members"),
-                       pd.DataFrame(table)], axis=1)
-    winner = table.loc[table["p"].idxmax()].to_dict() if bool(table["p"].notna().any()) else None
-    return {"rows": pd.concat(every, ignore_index=True), "table": table, "winner": winner,
-            "n_settings": len(risk)}
+        table.append(
+            {
+                "members": members,
+                "k": members.count("+") + 1,
+                "p": got["p"],
+                "setting": got["setting"],
+                **{f"r_{phase}": r for phase, r in got["risk"].items()},
+                "flavour": got["flavour"],
+                "length": got["length"],
+                **{f"p_{f}": got["by_flavour"].get(f, np.nan) for f in FLAVOURS},
+                **{
+                    k: got["figures"].get(k, np.nan)
+                    for k in rows.columns
+                    if k.startswith(("p_stage", "fail_", "t_")) or k == "p_open"
+                },
+            }
+        )
+    table = pd.concat(
+        [
+            shortlisted.reset_index(drop=True).drop(columns="members"),
+            pd.DataFrame(table),
+        ],
+        axis=1,
+    )
+    winner = (
+        table.loc[table["p"].idxmax()].to_dict()
+        if bool(table["p"].notna().any())
+        else None
+    )
+    return {
+        "rows": pd.concat(every, ignore_index=True),
+        "table": table,
+        "winner": winner,
+        "n_settings": len(risk),
+    }
 
 
 def risk_of(winner: dict, plan: Plan) -> np.ndarray:
@@ -66,8 +93,14 @@ def risk_of(winner: dict, plan: Plan) -> np.ndarray:
     return np.array([[winner[f"r_{name}"] for name in stageb.judge.stage_names(plan)]])
 
 
-def judged(data: StageBData, members: str, plan: Plan, cfg: dict, risk: np.ndarray,
-           rng: np.random.Generator) -> dict[str, Any]:
+def judged(
+    data: StageBData,
+    members: str,
+    plan: Plan,
+    cfg: dict,
+    risk: np.ndarray,
+    rng: np.random.Generator,
+) -> dict[str, Any]:
     """One combination at one fixed risk, on another stretch: the real path and the Monte Carlos.
 
     Args:
@@ -85,8 +118,14 @@ def judged(data: StageBData, members: str, plan: Plan, cfg: dict, risk: np.ndarr
     horizon = cfg["funded"]["horizon_days"]
     starts = np.arange(0, max(len(days["closed"]) - horizon + 1, 0), dtype=np.int64)
     names = stageb.judge.stage_names(plan)
-    codes = machine.sweep(days, plan, dict(zip(names, risk[0] * plan["size"])), starts, horizon)
+    codes = machine.sweep(
+        days, plan, dict(zip(names, risk[0] * plan["size"])), starts, horizon
+    )
     rows = stageb.evaluate(data, idxs, plan, cfg, risk, rng)
-    return {"start_p": float((codes == 1).mean()), "n_starts": int(len(starts)),
-            "mc_p": float(rows["p_pass"].min()),
-            "by_flavour": rows.groupby("flavour")["p_pass"].min().to_dict(), "rows": rows}
+    return {
+        "start_p": float((codes == 1).mean()),
+        "n_starts": int(len(starts)),
+        "mc_p": float(rows["p_pass"].min()),
+        "by_flavour": rows.groupby("flavour")["p_pass"].min().to_dict(),
+        "rows": rows,
+    }

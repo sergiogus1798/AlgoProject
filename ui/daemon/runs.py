@@ -41,20 +41,32 @@ def context(project: str, databank: str, strategy: str, asset: str) -> dict[str,
     harvests = sorted((DATA / "harvest" / project / folder).glob("*/metrics.parquet"))
     oos = a["segments"]["oos1"]
     feeds = where.markets(days[-1]) if days else []
-    return {"project": project, "databank": databank, "strategy": strategy, "asset": asset,
-            "feed": a["sqx_symbol"], "export": days[-1].parts[-2] if days else None,
-            "trades": str(days[-1]) if days else None,
-            "markets": feeds, "multimarket": len(feeds) > 1,
-            "harvest": bool(harvests),
-            "harvest_dir": harvests[-1].parent if harvests else None,
-            "split": f"{oos['from']}-01-01", "end": f"{oos['to']}-12-31"}
+    return {
+        "project": project,
+        "databank": databank,
+        "strategy": strategy,
+        "asset": asset,
+        "feed": a["sqx_symbol"],
+        "export": days[-1].parts[-2] if days else None,
+        "trades": str(days[-1]) if days else None,
+        "markets": feeds,
+        "multimarket": len(feeds) > 1,
+        "harvest": bool(harvests),
+        "harvest_dir": harvests[-1].parent if harvests else None,
+        "split": f"{oos['from']}-01-01",
+        "end": f"{oos['to']}-12-31",
+    }
 
 
-NO_TF = ("el export no dice en qué timeframe corre la estrategia (manifest sin un único "
-         "timeframe): córrelo desde la terminal")
+NO_TF = (
+    "el export no dice en qué timeframe corre la estrategia (manifest sin un único "
+    "timeframe): córrelo desde la terminal"
+)
 NO_TRADES = "necesita un export raw de operaciones de este databank (skill /export)"
-MIXED = ("el export de este databank es cross-market, mezcla mercados: este módulo lee la "
-         "estrategia en su propio mercado")
+MIXED = (
+    "el export de este databank es cross-market, mezcla mercados: este módulo lee la "
+    "estrategia en su propio mercado"
+)
 
 
 def own_trades(c: dict) -> str | None:
@@ -73,52 +85,113 @@ def gate(c: dict) -> list[str] | str:
     """Step 8: the whole databank through the gate; needs its cosecha."""
     if not c["harvest"]:
         return "necesita la cosecha de este databank (studies.screening.gate.harvest, skill /oos-gate)"
-    return ["-m", "studies.screening.gate.report", "--project", c["project"], "--databank", c["databank"],
-            "--feed", c["feed"]]
+    return [
+        "-m",
+        "studies.screening.gate.report",
+        "--project",
+        c["project"],
+        "--databank",
+        c["databank"],
+        "--feed",
+        c["feed"],
+    ]
 
 
 def monte_carlo(c: dict) -> list[str] | str:
     """Trade-level Monte Carlo over the databank's newest trades export."""
-    if (bad := own_trades(c)):
+    if bad := own_trades(c):
         return bad
-    return ["-m", "portfolio.common.monteCarlo.report", "--project", c["project"], "--databank",
-            c["databank"], "--asset", c["asset"], "--day", c["export"],
-            "--seed", str(rootseed.root(c["project"], c["databank"]))]
+    return [
+        "-m",
+        "portfolio.common.monteCarlo.report",
+        "--project",
+        c["project"],
+        "--databank",
+        c["databank"],
+        "--asset",
+        c["asset"],
+        "--day",
+        c["export"],
+        "--seed",
+        str(rootseed.root(c["project"], c["databank"])),
+    ]
 
 
 def nulls(c: dict) -> list[str] | str:
     """The entry-timing null of this one strategy."""
-    if (bad := own_trades(c)):
+    if bad := own_trades(c):
         return bad
     frame = where.export_timeframe(Path(c["trades"]).parent)
-    if not frame:       # never the report's M30 default: a wrong grid prices every monkey wrong
+    if (
+        not frame
+    ):  # never the report's M30 default: a wrong grid prices every monkey wrong
         return NO_TF
-    return ["-m", "studies.readings.monkey.report", "--project", c["project"], "--databank", c["databank"],
-            "--feed", c["feed"], "--timeframe", frame, "--strategy", c["strategy"],
-            "--seed", str(rootseed.root(c["project"], c["databank"]))]
+    return [
+        "-m",
+        "studies.readings.monkey.report",
+        "--project",
+        c["project"],
+        "--databank",
+        c["databank"],
+        "--feed",
+        c["feed"],
+        "--timeframe",
+        frame,
+        "--strategy",
+        c["strategy"],
+        "--seed",
+        str(rootseed.root(c["project"], c["databank"])),
+    ]
 
 
 def exposure(c: dict) -> list[str] | str:
     """Step 21: market time against buy and hold, this strategy only."""
-    if (bad := own_trades(c)):
+    if bad := own_trades(c):
         return bad
-    return ["-m", "studies.closing.exposure.report", "--project", c["project"], "--databank",
-            c["databank"], "--feed", c["feed"], "--symbol", c["asset"], "--strategy",
-            c["strategy"]]
+    return [
+        "-m",
+        "studies.closing.exposure.report",
+        "--project",
+        c["project"],
+        "--databank",
+        c["databank"],
+        "--feed",
+        c["feed"],
+        "--symbol",
+        c["asset"],
+        "--strategy",
+        c["strategy"],
+    ]
 
 
 def entryquality(c: dict) -> list[str] | str:
     """The entry alone, against random entries at the same hours; prints, writes nothing."""
-    if (bad := own_trades(c)):
+    if bad := own_trades(c):
         return bad
-    return ["-m", "studies.readings.entryQuality.report", "--export", c["trades"], "--strategy",
-            c["strategy"]]
+    return [
+        "-m",
+        "studies.readings.entryQuality.report",
+        "--export",
+        c["trades"],
+        "--strategy",
+        c["strategy"],
+    ]
 
 
 def decay(c: dict) -> list[str] | str:
     """IS to OOS decay of the whole databank, split at the asset's first oos1 day."""
-    return ["-m", "studies.screening.decay.report", "--project", c["project"], "--databank",
-            c["databank"], "--split", c["split"], "--end", c["end"]]
+    return [
+        "-m",
+        "studies.screening.decay.report",
+        "--project",
+        c["project"],
+        "--databank",
+        c["databank"],
+        "--split",
+        c["split"],
+        "--end",
+        c["end"],
+    ]
 
 
 def mc_retest(c: dict) -> list[str] | str:
@@ -135,16 +208,35 @@ def crossmarket(c: dict) -> list[str] | str:
     """Step 10; needs the cross-market retest export of this databank."""
     if not c["multimarket"]:
         return "necesita el export del retest cross-market (skill /crossmarket)"
-    return ["-m", "studies.transfer.crossmarket.report", "--project", c["project"], "--databank",
-            c["databank"], "--asset", c["asset"], "--day", c["export"],
-            "--seed", str(rootseed.root(c["project"], c["databank"]))]
+    return [
+        "-m",
+        "studies.transfer.crossmarket.report",
+        "--project",
+        c["project"],
+        "--databank",
+        c["databank"],
+        "--asset",
+        c["asset"],
+        "--day",
+        c["export"],
+        "--seed",
+        str(rootseed.root(c["project"], c["databank"])),
+    ]
 
 
-RUNS = {"gate": gate, "monteCarlo": monte_carlo, "monkey": nulls, "exposure": exposure,
-        "entryQuality": entryquality, "decay": decay,
-        "mcRetest": mc_retest, "wfm": wfm, "crossmarket": crossmarket,
-        "curate": lambda c: "es una skill: /curate, desde Claude Code",
-        "wfc": lambda c: "se corre desde el pipeline, sobre el lote de variantes"}
+RUNS = {
+    "gate": gate,
+    "monteCarlo": monte_carlo,
+    "monkey": nulls,
+    "exposure": exposure,
+    "entryQuality": entryquality,
+    "decay": decay,
+    "mcRetest": mc_retest,
+    "wfm": wfm,
+    "crossmarket": crossmarket,
+    "curate": lambda c: "es una skill: /curate, desde Claude Code",
+    "wfc": lambda c: "se corre desde el pipeline, sobre el lote de variantes",
+}
 
 
 def plan(module: str, c: dict) -> dict[str, Any]:

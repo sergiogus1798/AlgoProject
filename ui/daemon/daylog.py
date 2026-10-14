@@ -5,12 +5,14 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
-KEPT_MAX = 50_000           # kept lines of a log with no «Starting project» at all
+KEPT_MAX = 50_000  # kept lines of a log with no «Starting project» at all
 PROGRESS = re.compile(r"ProgressEngine - (.+)$")
 PERCENT = re.compile(r"\[Blocking computeThread[^\]]*?(\d+) %")
 # sqcli logs «Starting project 'P'»; a GUI session (`sqx.projects.live`) only «Creating project
 # log at '…/projects/P/log/…'». Either names the project in group 1.
-STARTING = re.compile(r"(?:Starting project '|Creating project log at '[^']*/projects/)([^'/]+)")
+STARTING = re.compile(
+    r"(?:Starting project '|Creating project log at '[^']*/projects/)([^'/]+)"
+)
 
 
 def trim(lines: list[str], keep: int = KEPT_MAX) -> list[str]:
@@ -21,13 +23,17 @@ def trim(lines: list[str], keep: int = KEPT_MAX) -> list[str]:
     never the one dropped: 🔬 2026-09-29, a watcher that kept only the last 20,000 lost it
     20 min into the WFM, read «SQX did not start» and stopped the custodian mid-run.
     """
-    last = next((i for i in range(len(lines) - 1, -1, -1) if STARTING.search(lines[i])), None)
-    head, after = ([], lines) if last is None else ([lines[last]], lines[last + 1:])
+    last = next(
+        (i for i in range(len(lines) - 1, -1, -1) if STARTING.search(lines[i])), None
+    )
+    head, after = ([], lines) if last is None else ([lines[last]], lines[last + 1 :])
     # Only the newest percentage is ever read, and during a WFM SQX logs thousands of
     # «StatsComputer - Exception computing databank column …» lines that carry one: kept
     # all, they pushed every task line out and the watcher said «esperando» (2026-09-29).
     bare = [x for x in after if PERCENT.search(x) and not PROGRESS.search(x)]
-    body = [x for x in after if not (PERCENT.search(x) and not PROGRESS.search(x))][-keep:]
+    body = [x for x in after if not (PERCENT.search(x) and not PROGRESS.search(x))][
+        -keep:
+    ]
     return head + body + bare[-1:]
 
 
@@ -52,29 +58,45 @@ def log_lines(install: Path) -> tuple[list[str], float]:
         The file is read whole once and then only what it gained, so the start is never
         lost however big the day grows.
     """
-    f = install / "user" / "log" / "StrategyQuant" / f"log_{datetime.now():%Y_%m_%d}.log"
+    f = (
+        install
+        / "user"
+        / "log"
+        / "StrategyQuant"
+        / f"log_{datetime.now():%Y_%m_%d}.log"
+    )
     if not f.exists():
         return [], 0.0
     with _LOCK:
         read, kept = _SEEN.get(f, (0, []))
         size = f.stat().st_size
-        if size < read:                         # rewritten from scratch: read it again
+        if size < read:  # rewritten from scratch: read it again
             read, kept = 0, []
         if size > read:
             with f.open("rb") as fh:
                 fh.seek(read)
                 data = fh.read(size - read)
-            cut = data.rfind(b"\n") + 1        # a line SQX is still writing waits
+            cut = data.rfind(b"\n") + 1  # a line SQX is still writing waits
             read += cut
             data = data[:cut]
             # `trim` drops what precedes the last start, so it is not even decoded: 🔬
             # 2026-10-05, a 452 MB day cost every new process 20 s of regex to keep 300 lines.
-            at = max(data.rfind(b"Starting project '"), data.rfind(b"Creating project log at '"))
+            at = max(
+                data.rfind(b"Starting project '"),
+                data.rfind(b"Creating project log at '"),
+            )
             first = data.rfind(b"\n", 0, max(at, 0)) + 1
-            if at >= 0 and STARTING.search(data[first:data.find(b"\n", at)].decode("utf-8", "replace")):
+            if at >= 0 and STARTING.search(
+                data[first : data.find(b"\n", at)].decode("utf-8", "replace")
+            ):
                 data, kept = data[first:], []
-            fresh = [line for line in data.decode("utf-8", errors="replace").splitlines()
-                     if STARTING.search(line) or PROGRESS.search(line) or PERCENT.search(line)]
+            fresh = [
+                line
+                for line in data.decode("utf-8", errors="replace").splitlines()
+                if STARTING.search(line)
+                or PROGRESS.search(line)
+                or PERCENT.search(line)
+            ]
             kept = trim(kept + fresh)
         _SEEN[f] = (read, kept)
         return list(kept), f.stat().st_mtime

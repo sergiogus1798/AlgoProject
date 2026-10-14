@@ -35,8 +35,14 @@ def atr(frame: pd.DataFrame, window: int = ATR_BARS) -> np.ndarray:
     key = (id(frame), len(frame), window)
     if key not in _ATR_CACHE:
         prev = frame["Close"].shift(1)
-        spread = pd.concat([frame["High"] - frame["Low"], (frame["High"] - prev).abs(),
-                            (frame["Low"] - prev).abs()], axis=1).max(axis=1)
+        spread = pd.concat(
+            [
+                frame["High"] - frame["Low"],
+                (frame["High"] - prev).abs(),
+                (frame["Low"] - prev).abs(),
+            ],
+            axis=1,
+        ).max(axis=1)
         _ATR_CACHE.clear()
         _ATR_CACHE[key] = (frame, np.asarray(spread.rolling(window).mean()))
     return _ATR_CACHE[key][1]
@@ -105,8 +111,10 @@ def sizing(trades: pd.DataFrame, entry_atr: np.ndarray) -> Sizing:
         ATR period belongs to the strategy and is read from its `.sqx`, not fitted here.
     """
     product = trades["Size"].to_numpy(np.float64) * entry_atr
-    return {"c": float(np.nanmedian(product)),
-            "cv": float(np.nanstd(product) / np.nanmean(product))}
+    return {
+        "c": float(np.nanmedian(product)),
+        "cv": float(np.nanstd(product) / np.nanmean(product)),
+    }
 
 
 class Convention(TypedDict):
@@ -118,12 +126,21 @@ class Convention(TypedDict):
     runner_up: float
 
 
-CONVENTIONS = {"open-open": ("Open", "Open"), "open-close": ("Open", "Close"),
-               "close-open": ("Close", "Open"), "close-close": ("Close", "Close")}
+CONVENTIONS = {
+    "open-open": ("Open", "Open"),
+    "open-close": ("Open", "Close"),
+    "close-open": ("Close", "Open"),
+    "close-close": ("Close", "Close"),
+}
 
 
-def convention(trades: pd.DataFrame, frame: pd.DataFrame, located: OnGrid, value: float,
-               cost: np.ndarray) -> Convention:
+def convention(
+    trades: pd.DataFrame,
+    frame: pd.DataFrame,
+    located: OnGrid,
+    value: float,
+    cost: np.ndarray,
+) -> Convention:
     """Which bar price SQX filled at, measured rather than assumed.
 
     Args:
@@ -146,11 +163,19 @@ def convention(trades: pd.DataFrame, frame: pd.DataFrame, located: OnGrid, value
     reported = trades["Profit/Loss"].to_numpy(np.float64)
     scored = {}
     for key, (enter, leave) in CONVENTIONS.items():
-        move = (frame[leave].to_numpy()[located["exit"]]
-                - frame[enter].to_numpy()[located["entry"]])
+        move = (
+            frame[leave].to_numpy()[located["exit"]]
+            - frame[enter].to_numpy()[located["entry"]]
+        )
         rebuilt = value * located["size"] * move - cost
-        scored[key] = (float(np.corrcoef(rebuilt, reported)[0, 1]),
-                       float(np.median(np.abs(rebuilt - reported))))
+        scored[key] = (
+            float(np.corrcoef(rebuilt, reported)[0, 1]),
+            float(np.median(np.abs(rebuilt - reported))),
+        )
     best = max(scored, key=lambda key: scored[key][0])
-    return {"fill": best, "corr": scored[best][0], "median_gap": scored[best][1],
-            "runner_up": sorted(value[0] for value in scored.values())[-2]}
+    return {
+        "fill": best,
+        "corr": scored[best][0],
+        "median_gap": scored[best][1],
+        "runner_up": sorted(value[0] for value in scored.values())[-2],
+    }

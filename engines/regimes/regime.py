@@ -18,8 +18,9 @@ def daily(bars: pd.DataFrame) -> pd.DataFrame:
         Daily OHLC. The regime is defined on daily data whatever the strategy trades:
         an M30 range is a fact about the last half hour, not about the market's state.
     """
-    out = bars.resample("1D").agg({"Open": "first", "High": "max", "Low": "min",
-                                   "Close": "last"})
+    out = bars.resample("1D").agg(
+        {"Open": "first", "High": "max", "Low": "min", "Close": "last"}
+    )
     return cast(pd.DataFrame, out.dropna())
 
 
@@ -56,12 +57,23 @@ def atr(day: pd.DataFrame, cfg: dict) -> Vol:
         something.
     """
     prev = day["Close"].shift(1)
-    span = pd.concat([day["High"] - day["Low"], (day["High"] - prev).abs(),
-                      (day["Low"] - prev).abs()], axis=1).max(axis=1)
+    span = pd.concat(
+        [
+            day["High"] - day["Low"],
+            (day["High"] - prev).abs(),
+            (day["Low"] - prev).abs(),
+        ],
+        axis=1,
+    ).max(axis=1)
     period = cfg["atr_period"]
-    vol = cast(pd.Series, span.ewm(alpha=1 / period, adjust=False, min_periods=period).mean())
-    return {"vol": cast(pd.Series, vol.shift(1)),
-            "model": f"ATR({period}) diario", "note": ""}
+    vol = cast(
+        pd.Series, span.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+    )
+    return {
+        "vol": cast(pd.Series, vol.shift(1)),
+        "model": f"ATR({period}) diario",
+        "note": "",
+    }
 
 
 def garch(day: pd.DataFrame, cfg: dict) -> Vol:
@@ -83,15 +95,22 @@ def garch(day: pd.DataFrame, cfg: dict) -> Vol:
         estimate to a module whose whole purpose is to avoid fitted choices.
     """
     from arch import arch_model
+
     returns = 100 * cast(pd.Series, np.log(day["Close"])).diff().dropna()
     p, q = cfg["garch_order"]
     fit = arch_model(returns, p=p, q=q, dist=cfg["garch_dist"]).fit(disp="off")
     if not fit.convergence_flag == 0:
         base = atr(day, cfg)
-        return {"vol": base["vol"], "model": base["model"], "note": "GARCH no convergió; se usó ATR"}
-    return {"vol": cast(pd.Series, fit.conditional_volatility).reindex(day.index),
-            "model": f"GARCH{tuple(cfg['garch_order'])} diario, dist {cfg['garch_dist']}",
-            "note": ""}
+        return {
+            "vol": base["vol"],
+            "model": base["model"],
+            "note": "GARCH no convergió; se usó ATR",
+        }
+    return {
+        "vol": cast(pd.Series, fit.conditional_volatility).reindex(day.index),
+        "model": f"GARCH{tuple(cfg['garch_order'])} diario, dist {cfg['garch_dist']}",
+        "note": "",
+    }
 
 
 VOL = {"atr": atr, "garch": garch}
@@ -117,7 +136,11 @@ def tag(opens: np.ndarray, vol: pd.Series) -> Tag:
     at = vol.reindex(days).to_numpy()
     edges = np.nanquantile(at, [1 / 3, 2 / 3])
     where = np.digitize(at, edges)
-    return {"positions": {b: np.flatnonzero(np.isfinite(at) & (where == i))
-                          for i, b in enumerate(BUCKETS)},
-            "edges": [float(e) for e in edges],
-            "coverage": float(np.mean(np.isfinite(at)))}
+    return {
+        "positions": {
+            b: np.flatnonzero(np.isfinite(at) & (where == i))
+            for i, b in enumerate(BUCKETS)
+        },
+        "edges": [float(e) for e in edges],
+        "coverage": float(np.mean(np.isfinite(at))),
+    }

@@ -1,6 +1,5 @@
 """The state dot on each study tab, and where the page reads those states from."""
 
-
 from typing import Any
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
@@ -50,15 +49,24 @@ def says(cell: dict | None) -> str:
     """
     if cell is None:
         return "Sin resultado en ningún databank del proyecto (círculo gris): no ha corrido."
-    stale = " · caducado: se calculó con otra configuración" if cell.get("stale") else ""
+    stale = (
+        " · caducado: se calculó con otra configuración" if cell.get("stale") else ""
+    )
     where = f" · de {cell['elsewhere']}" if cell.get("elsewhere") else ""
-    other = " · versión de otro databank (XML distinto)" if cell.get("other_identity") else ""
-    return (f"{label(cell['state'])} — «{cell.get('label') or '—'}» · día "
-            f"{cell.get('day') or '—'}{where}{other}{stale}")
+    other = (
+        " · versión de otro databank (XML distinto)"
+        if cell.get("other_identity")
+        else ""
+    )
+    return (
+        f"{label(cell['state'])} — «{cell.get('label') or '—'}» · día "
+        f"{cell.get('day') or '—'}{where}{other}{stale}"
+    )
 
 
-def of_strategy(project: str, databank: str, strategy: str,
-                identity: str | None) -> tuple[dict, list[dict]]:
+def of_strategy(
+    project: str, databank: str, strategy: str, identity: str | None
+) -> tuple[dict, list[dict]]:
     """Every study's stored state for one strategy anywhere in the project, and the databank's
     strategies.
 
@@ -73,8 +81,13 @@ def of_strategy(project: str, databank: str, strategy: str,
         [{"strategy", "identity"}] from `/api/matrix`, the rivals the history offers); empty
         on an error.
     """
-    got = fetch("presence", project=project, databank=databank, strategy=strategy,
-                identity=identity or "")
+    got = fetch(
+        "presence",
+        project=project,
+        databank=databank,
+        strategy=strategy,
+        identity=identity or "",
+    )
     bank = fetch("matrix", project=project, databank=databank)
     return got.get("studies") or {}, bank.get("strategies") or []
 
@@ -92,7 +105,10 @@ def of_population(project: str, databank: str, keys: list[str]) -> dict[str, Any
     """
     out = {}
     for k in keys:
-        runs = fetch("history", project=project, databank=databank, study=k).get("runs") or []
+        runs = (
+            fetch("history", project=project, databank=databank, study=k).get("runs")
+            or []
+        )
         if runs:
             out[k] = runs[0]
     return out

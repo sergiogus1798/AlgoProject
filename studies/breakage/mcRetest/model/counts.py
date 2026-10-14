@@ -62,8 +62,12 @@ def profit_factor(p: dict) -> np.ndarray:
         A ratio per simulation, inf where nothing lost. The most outlier-sensitive metric
         here: one large trade moves it far more than it moves net profit.
     """
-    return np.divide(p["wins_sum"], -p["losses_sum"],
-                     out=np.full_like(p["wins_sum"], np.inf), where=p["losses_sum"] < 0)
+    return np.divide(
+        p["wins_sum"],
+        -p["losses_sum"],
+        out=np.full_like(p["wins_sum"], np.inf),
+        where=p["losses_sum"] < 0,
+    )
 
 
 def number_of_profits(p: dict) -> np.ndarray:
@@ -114,8 +118,12 @@ def avg_win(p: dict) -> np.ndarray:
     Returns:
         USD per simulation.
     """
-    return np.divide(p["wins_sum"], p["wins_n"], out=np.zeros_like(p["wins_sum"]),
-                     where=p["wins_n"] > 0)
+    return np.divide(
+        p["wins_sum"],
+        p["wins_n"],
+        out=np.zeros_like(p["wins_sum"]),
+        where=p["wins_n"] > 0,
+    )
 
 
 def avg_loss(p: dict) -> np.ndarray:
@@ -128,8 +136,12 @@ def avg_loss(p: dict) -> np.ndarray:
         USD per simulation. Stored positive, as SQX stores it -- a signed reconstruction
         comes out with the wrong sign and looks like a factor-of-two error.
     """
-    return np.divide(-p["losses_sum"], p["losses_n"], out=np.zeros_like(p["losses_sum"]),
-                     where=p["losses_n"] > 0)
+    return np.divide(
+        -p["losses_sum"],
+        p["losses_n"],
+        out=np.zeros_like(p["losses_sum"]),
+        where=p["losses_n"] > 0,
+    )
 
 
 def avg_trade(p: dict) -> np.ndarray:
@@ -154,8 +166,12 @@ def win_loss_ratio(p: dict) -> np.ndarray:
         A count ratio per simulation. **Not** mean win over mean loss -- that is PayoutRatio,
         and the two are different columns despite the names. Calibrated against SQX.
     """
-    return np.divide(p["wins_n"].astype(np.float64), p["losses_n"],
-                     out=np.full(p["n"].shape, np.inf), where=p["losses_n"] > 0)
+    return np.divide(
+        p["wins_n"].astype(np.float64),
+        p["losses_n"],
+        out=np.full(p["n"].shape, np.inf),
+        where=p["losses_n"] > 0,
+    )
 
 
 def payout_ratio(p: dict) -> np.ndarray:
@@ -167,8 +183,12 @@ def payout_ratio(p: dict) -> np.ndarray:
     Returns:
         A ratio per simulation. This is the one the Kelly fraction uses as its R.
     """
-    return np.divide(avg_win(p), avg_loss(p), out=np.full(p["n"].shape, np.inf),
-                     where=avg_loss(p) > 0)
+    return np.divide(
+        avg_win(p),
+        avg_loss(p),
+        out=np.full(p["n"].shape, np.inf),
+        where=avg_loss(p) > 0,
+    )
 
 
 def max_profit(p: dict) -> np.ndarray:
@@ -208,7 +228,7 @@ def standard_dev(p: dict) -> np.ndarray:
         its stored tables, ddof=1 misses by 0.47 and ddof=0 by 0.008.
     """
     mean = p["total"] / p["n"]
-    return np.sqrt(np.maximum(p["sq_sum"] / p["n"] - mean ** 2, 0.0))
+    return np.sqrt(np.maximum(p["sq_sum"] / p["n"] - mean**2, 0.0))
 
 
 def sqn(p: dict) -> np.ndarray:
@@ -223,8 +243,12 @@ def sqn(p: dict) -> np.ndarray:
         0.77 and 2.12.
     """
     sd = standard_dev(p)
-    return np.divide(np.sqrt(np.minimum(p["n"], 100)) * (p["total"] / p["n"]), sd,
-                     out=np.zeros_like(sd), where=sd > 0)
+    return np.divide(
+        np.sqrt(np.minimum(p["n"], 100)) * (p["total"] / p["n"]),
+        sd,
+        out=np.zeros_like(sd),
+        where=sd > 0,
+    )
 
 
 def kelly_formula(p: dict) -> np.ndarray:
@@ -241,4 +265,6 @@ def kelly_formula(p: dict) -> np.ndarray:
         that lands on SQX's stored level at all eleven confidence levels.
     """
     r, w = payout_ratio(p), p["wins_n"] / (p["wins_n"] + p["losses_n"])
-    return 100.0 * np.divide(w * r - (1 - w), r, out=np.zeros_like(r), where=np.isfinite(r) & (r > 0))
+    return 100.0 * np.divide(
+        w * r - (1 - w), r, out=np.zeros_like(r), where=np.isfinite(r) & (r > 0)
+    )

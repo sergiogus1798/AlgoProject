@@ -43,14 +43,21 @@ def newest_harvest(project: str, databank: str) -> Path:
     """
     root = harvest_dir(project, databank, "x").parent
     days = sorted(d for d in root.glob("*") if (d / "trades.parquet").exists())
-    assert days, (f"no harvest under {root}; run "
-                 f"`python3 -m studies.screening.gate.harvest --project {project} "
-                 f"--databank {databank} ...` first")
+    assert days, (
+        f"no harvest under {root}; run "
+        f"`python3 -m studies.screening.gate.harvest --project {project} "
+        f"--databank {databank} ...` first"
+    )
     return days[-1]
 
 
-def read(project: str, harvest_databank: str, identities: dict[str, str],
-         point_value: float, sample: str = "OOS") -> pd.DataFrame:
+def read(
+    project: str,
+    harvest_databank: str,
+    identities: dict[str, str],
+    point_value: float,
+    sample: str = "OOS",
+) -> pd.DataFrame:
     """This ingest's own strategies, priced from their harvest's trade list.
 
     Args:
@@ -75,10 +82,24 @@ def read(project: str, harvest_databank: str, identities: dict[str, str],
     """
     by_identity = {identity: strategy for strategy, identity in identities.items()}
     # Only this ingest's rows and the columns `cost` and KEEP read: the harvest holds 10,000 strategies.
-    got = pd.read_parquet(newest_harvest(project, harvest_databank) / "trades.parquet",
-                          columns=["identity", "sample", "Type", "Open time", "Close time", "Size",
-                                   "Open price", "Close price", "Profit/Loss"],
-                          filters=[("identity", "in", pa.array(sorted(by_identity), pa.string())), ("sample", "==", sample)])
+    got = pd.read_parquet(
+        newest_harvest(project, harvest_databank) / "trades.parquet",
+        columns=[
+            "identity",
+            "sample",
+            "Type",
+            "Open time",
+            "Close time",
+            "Size",
+            "Open price",
+            "Close price",
+            "Profit/Loss",
+        ],
+        filters=[
+            ("identity", "in", pa.array(sorted(by_identity), pa.string())),
+            ("sample", "==", sample),
+        ],
+    )
     got["strategy"] = got["identity"].map(by_identity)  # pyright: ignore[reportArgumentType]  # pandas stubs reject a dict mapper; pandas takes it (NaN for a missing key)
     got["cost"] = core_trades.cost(got, point_value)
     got["pnl"] = got["Profit/Loss"]

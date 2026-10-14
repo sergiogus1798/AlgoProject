@@ -31,8 +31,9 @@ DEFAULT_SEGMENT = "oos1"
 # Kept for old imports; the guard of hard rule 4 now lives in `cfxio`.
 
 
-def apply(text: str, data: dict, segment: str,
-          timeframe: str | None = None) -> tuple[str, dict[str, int]]:
+def apply(
+    text: str, data: dict, segment: str, timeframe: str | None = None
+) -> tuple[str, dict[str, int]]:
     """Put one segment's window and costs into one task XML.
 
     Args:
@@ -78,11 +79,16 @@ def ignored_templates(members: dict[str, bytes]) -> list[str]:
         if not name.endswith(".xml") or name == "config.xml":
             continue
         for m in re.finditer(r"<StrategyType[^>]*>", blob.decode("utf-8")):
-            if ('templateFile="' in m.group(0) and 'type="template"' not in m.group(0)
-                    and f'templateFile="{NO_TEMPLATE}"' not in m.group(0)):
+            if (
+                'templateFile="' in m.group(0)
+                and 'type="template"' not in m.group(0)
+                and f'templateFile="{NO_TEMPLATE}"' not in m.group(0)
+            ):
                 kind = re.search(r'type="([^"]*)"', m.group(0))
-                out.append(f"{name}: names a templateFile but declares "
-                           f"type=\"{kind.group(1) if kind else '?'}\"")
+                out.append(
+                    f"{name}: names a templateFile but declares "
+                    f'type="{kind.group(1) if kind else "?"}"'
+                )
     return out
 
 
@@ -96,12 +102,15 @@ def segment_of(members: dict[str, bytes]) -> dict[str, str]:
         Task XML member name to segment name.
     """
     cfg = ElementTree.fromstring(members["config.xml"])
-    return {attr(t, "taskXMLFile"): BY_TASK.get(t.get("type") or "", DEFAULT_SEGMENT)
-            for t in el(cfg.find("Tasks"))}
+    return {
+        attr(t, "taskXMLFile"): BY_TASK.get(t.get("type") or "", DEFAULT_SEGMENT)
+        for t in el(cfg.find("Tasks"))
+    }
 
 
-def configure(cfx: Path, symbol: str, segment: str | None = None,
-              timeframe: str | None = None) -> dict[str, tuple]:
+def configure(
+    cfx: Path, symbol: str, segment: str | None = None, timeframe: str | None = None
+) -> dict[str, tuple]:
     """Rewrite every task of a project so it prices and dates this asset as assets/ says.
 
     Args:
@@ -145,14 +154,19 @@ def configure(cfx: Path, symbol: str, segment: str | None = None,
     if timeframe:
         added = unify_sessions(members, data["session"])
         if added is None:
-            raise SystemExit(f"ninguna tarea de este proyecto define la sesión "
-                             f"{data['session']}. Hay que darla de alta en SQX, o clonar de "
-                             "un donante que la lleve — no se inventan horarios de mercado.")
+            raise SystemExit(
+                f"ninguna tarea de este proyecto define la sesión "
+                f"{data['session']}. Hay que darla de alta en SQX, o clonar de "
+                "un donante que la lleve — no se inventan horarios de mercado."
+            )
         if added:
             # A stderr: `builder --json` promete JSON y nada más en stdout, y su salida la
             # consume un chat que hace json.load() sobre ella.
-            print(f"  sesión {data['session']} añadida a {len(added)} tarea(s) que la nombraban "
-                  "sin definirla", file=sys.stderr)
+            print(
+                f"  sesión {data['session']} añadida a {len(added)} tarea(s) que la nombraban "
+                "sin definirla",
+                file=sys.stderr,
+            )
     cfxio.write(cfx, members)
     return out
 
@@ -162,24 +176,36 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("cfx", type=Path)
     ap.add_argument("symbol")
-    ap.add_argument("--timeframe", help="put every task on this timeframe and apply "
-                    "the build doctrine of assets/_build.yaml")
-    ap.add_argument("--segment", choices=("build", "oos1", "oos2"),
-                    help="force one segment on every task; omit to take each task's own")
+    ap.add_argument(
+        "--timeframe",
+        help="put every task on this timeframe and apply "
+        "the build doctrine of assets/_build.yaml",
+    )
+    ap.add_argument(
+        "--segment",
+        choices=("build", "oos1", "oos2"),
+        help="force one segment on every task; omit to take each task's own",
+    )
     args = ap.parse_args()
 
     data = load(args.symbol)
-    if args.segment == "oos2" and enforced():          # an autonomous agent only (2026-09-28)
-        raise SystemExit("oos2 está reservado para el WFC y la WFM. Cada mirada lo gasta; "
-                         "si de verdad hace falta, que lo diga el dueño.")
+    if args.segment == "oos2" and enforced():  # an autonomous agent only (2026-09-28)
+        raise SystemExit(
+            "oos2 está reservado para el WFC y la WFM. Cada mirada lo gasta; "
+            "si de verdad hace falta, que lo diga el dueño."
+        )
     held = cfxio.held(args.cfx)
     if held:
-        raise SystemExit(f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
-                         f"Párala: bin/sqx-worker.sh --role {held} stop")
+        raise SystemExit(
+            f"el {held} tiene este proyecto abierto y reescribe el .cfx al salir. "
+            f"Párala: bin/sqx-worker.sh --role {held} stop"
+        )
     missing = pending(data)
     if missing:
-        raise SystemExit(f"{args.symbol}: {', '.join(missing)} sin valor pactado. "
-                         "Pregúntale al dueño antes de configurar nada.")
+        raise SystemExit(
+            f"{args.symbol}: {', '.join(missing)} sin valor pactado. "
+            "Pregúntale al dueño antes de configurar nada."
+        )
 
     for line in blockers(data, args.timeframe) if args.timeframe else []:
         raise SystemExit(line)
@@ -188,16 +214,20 @@ def main() -> None:
     for seg in sorted({s for s, _ in changed.values()}):
         s, (a, b) = sqx_settings(data, seg), window(data, seg)
         tasks = [n for n, (sg, _) in changed.items() if sg == seg]
-        print(f"  {seg}: spread {s['defaultSpread']}, slippage {s['defaultSlippage']}, "
-              f"{s['commission']['method']} {s['commission']['value']}, "
-              f"swap {s['swap']['type']} {s['swap']['long']}/{s['swap']['short']}, "
-              f"ventana {a} a {b}")
+        print(
+            f"  {seg}: spread {s['defaultSpread']}, slippage {s['defaultSlippage']}, "
+            f"{s['commission']['method']} {s['commission']['value']}, "
+            f"swap {s['swap']['type']} {s['swap']['long']}/{s['swap']['short']}, "
+            f"ventana {a} a {b}"
+        )
         print(f"    {len(tasks)} tarea(s): " + ", ".join(sorted(tasks)))
     if not changed:
         print("  NADA CAMBIADO — ni el instrumento ni el feed aparecen en estas tareas")
     if provisional(data):
-        print(f"  ⚠️ PROVISIONAL: {', '.join(provisional(data))} — cifras de trabajo, no "
-              "pactadas con el bróker. Todo resultado de este proyecto lo arrastra")
+        print(
+            f"  ⚠️ PROVISIONAL: {', '.join(provisional(data))} — cifras de trabajo, no "
+            "pactadas con el bróker. Todo resultado de este proyecto lo arrastra"
+        )
     if mc_pending(data):
         print(f"  ⚠️ rangos MC Retest sin decidir: {', '.join(mc_pending(data))}")
 

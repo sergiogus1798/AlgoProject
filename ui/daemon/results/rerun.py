@@ -28,8 +28,13 @@ def crossmarket(a: argparse.Namespace) -> dict[str, Any]:
     Returns:
         The partial contract dict: that market's blocks, no verdict.
     """
-    return cm_one.run(a.strategy, cm_load.load(a.project, a.databank, a.asset, a.day),
-                      cm_config.load(a.set), a.only, a.set)
+    return cm_one.run(
+        a.strategy,
+        cm_load.load(a.project, a.databank, a.asset, a.day),
+        cm_config.load(a.set),
+        a.only,
+        a.set,
+    )
 
 
 def monte_carlo(a: argparse.Namespace) -> dict[str, Any]:
@@ -50,8 +55,10 @@ def monte_carlo(a: argparse.Namespace) -> dict[str, Any]:
     titles = {s["title"]: s["label"] for s in sweeps.plan(n, cfg)}
     titles.update({t: k for k, t in stress.TITLES.items()})
     if a.only not in titles and a.only not in titles.values():
-        raise SystemExit(f"«{a.only}» no es una prueba de {a.strategy} con {n} operaciones: "
-                         f"elige una de {', '.join(titles)}")
+        raise SystemExit(
+            f"«{a.only}» no es una prueba de {a.strategy} con {n} operaciones: "
+            f"elige una de {', '.join(titles)}"
+        )
     return mc_one.run(a.strategy, inputs, cfg, titles.get(a.only, a.only))
 
 
@@ -86,9 +93,15 @@ def main() -> None:
     ap.add_argument("--asset", required=True, help="base asset, e.g. USDJPY")
     ap.add_argument("--day", required=True, help="the raw export's date, YYYY-MM-DD")
     ap.add_argument("--strategy", required=True)
-    ap.add_argument("--only", required=True, help="the sub-test: a feed, or a Monte Carlo test")
-    ap.add_argument("--seed", type=int, help="monteCarlo only, required there: seed of every draw")
-    ap.add_argument("--set", action="extend", nargs="+", default=[], metavar="KEY=VALUE")
+    ap.add_argument(
+        "--only", required=True, help="the sub-test: a feed, or a Monte Carlo test"
+    )
+    ap.add_argument(
+        "--seed", type=int, help="monteCarlo only, required there: seed of every draw"
+    )
+    ap.add_argument(
+        "--set", action="extend", nargs="+", default=[], metavar="KEY=VALUE"
+    )
     a = ap.parse_args()
     got = RUNS[a.study](a)
     got["only"] = a.only

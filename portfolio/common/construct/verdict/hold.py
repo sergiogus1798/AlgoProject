@@ -53,20 +53,40 @@ def held(pairs: pd.DataFrame, identities: list[str], cfg: dict) -> Held:
     row: Any
     for row in pairs.itertuples():
         if row.measure == "pearson_monthly" and np.isfinite(row.value):
-            corr[index[row.i], index[row.j]] = corr[index[row.j], index[row.i]] = row.value
+            corr[index[row.i], index[row.j]] = corr[index[row.j], index[row.i]] = (
+                row.value
+            )
         key = threshold_key(row.measure)
         if row.n_overlap_months < pc["min_overlap_months"]:
             short.add((row.i, row.j))
             continue
-        if key is None or not np.isfinite(row.value) or (
-                row.measure.startswith("rolling_") and row.n_overlap_months < pc["rolling_months"]):
+        if (
+            key is None
+            or not np.isfinite(row.value)
+            or (
+                row.measure.startswith("rolling_")
+                and row.n_overlap_months < pc["rolling_months"]
+            )
+        ):
             continue
         two_sided = pc["sign"] == "abs" and row.measure not in pc["one_sided"]
         if (abs(row.value) if two_sided else row.value) > pc[key]:
-            over.append({"i": row.i, "j": row.j, "measure": row.measure,
-                         "value": float(row.value), "threshold": float(pc[key])})
+            over.append(
+                {
+                    "i": row.i,
+                    "j": row.j,
+                    "measure": row.measure,
+                    "value": float(row.value),
+                    "threshold": float(pc[key]),
+                }
+            )
     n_pairs = len(identities) * (len(identities) - 1) // 2
     n_over = len({(o["i"], o["j"]) for o in over})
-    return {"over": over, "short": sorted(short), "n_pairs": n_pairs, "n_pairs_over": n_over,
-            "held": n_over == 0,
-            "effective_n": stress.effective_n(corr) if len(identities) > 1 else None}
+    return {
+        "over": over,
+        "short": sorted(short),
+        "n_pairs": n_pairs,
+        "n_pairs_over": n_over,
+        "held": n_over == 0,
+        "effective_n": stress.effective_n(corr) if len(identities) > 1 else None,
+    }

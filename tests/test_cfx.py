@@ -22,11 +22,17 @@ def parse() -> dict:
         Task list, each task's output databank, and its conditions.
     """
     tasks = cfx.tasks(str(FIXTURE))
-    return {"tasks": tasks,
-            "detail": [{"n": t["n"],
-                        "output": cfx.output_databank(cfx.task_xml(str(FIXTURE), t["file"])),
-                        "conditions": cfx.conditions(cfx.task_xml(str(FIXTURE), t["file"]))}
-                       for t in tasks]}
+    return {
+        "tasks": tasks,
+        "detail": [
+            {
+                "n": t["n"],
+                "output": cfx.output_databank(cfx.task_xml(str(FIXTURE), t["file"])),
+                "conditions": cfx.conditions(cfx.task_xml(str(FIXTURE), t["file"])),
+            }
+            for t in tasks
+        ],
+    }
 
 
 def main() -> None:

@@ -5,8 +5,15 @@ from datetime import date
 from functools import lru_cache
 
 from core import assetranges, assetwrite
-from core.assetcheck import (REQUIRED, mc_pending, past_data, pending, provisional,
-                             segments_pending, validate)
+from core.assetcheck import (
+    REQUIRED,
+    mc_pending,
+    past_data,
+    pending,
+    provisional,
+    segments_pending,
+    validate,
+)
 from core.assetdata import RESERVED, classes, fields, load, policy, schema, symbols
 from core.assetmarkets import markets, special_notes
 from core.assets import report
@@ -28,10 +35,12 @@ def units(data: dict) -> dict[str, Any]:
         by omission.
     """
     s = schema(data)
-    return {**{f: s["spread"]["unit"] for f in fields(data) if f.startswith("spread")},
-            s["commission"]["field"]: s["commission"]["unit"],
-            **{f: s["slippage"]["unit"] for f in fields(data) if f.startswith("slippage")},
-            **{f: s["swap"]["unit"] for f in s["swap"]["fields"]}}
+    return {
+        **{f: s["spread"]["unit"] for f in fields(data) if f.startswith("spread")},
+        s["commission"]["field"]: s["commission"]["unit"],
+        **{f: s["slippage"]["unit"] for f in fields(data) if f.startswith("slippage")},
+        **{f: s["swap"]["unit"] for f in s["swap"]["fields"]},
+    }
 
 
 def row(symbol: str) -> dict[str, Any]:
@@ -45,11 +54,18 @@ def row(symbol: str) -> dict[str, Any]:
         whether its windows and its schema hold up.
     """
     data = load(symbol)
-    return {"symbol": symbol, "class": data["class"], "broker": data["broker"],
-            "sqx_symbol": data["sqx_symbol"], "session": data.get("session"),
-            "pending": pending(data), "provisional": provisional(data),
-            "segments_pending": segments_pending(data), "broken": validate(data),
-            "data": data["data"]}
+    return {
+        "symbol": symbol,
+        "class": data["class"],
+        "broker": data["broker"],
+        "sqx_symbol": data["sqx_symbol"],
+        "session": data.get("session"),
+        "pending": pending(data),
+        "provisional": provisional(data),
+        "segments_pending": segments_pending(data),
+        "broken": validate(data),
+        "data": data["data"],
+    }
 
 
 def state() -> dict[str, Any]:
@@ -60,9 +76,13 @@ def state() -> dict[str, Any]:
         preflight surfaces. Nineteen assets is one parse, so paging it would add a mode for nothing
         on loopback.
     """
-    return {"assets": [row(s) for s in symbols()], "retired": assetwrite.retired(),
-            "classes": classes(),
-            "special": [f.name for f in special_notes()], "required": REQUIRED}
+    return {
+        "assets": [row(s) for s in symbols()],
+        "retired": assetwrite.retired(),
+        "classes": classes(),
+        "special": [f.name for f in special_notes()],
+        "required": REQUIRED,
+    }
 
 
 def one(symbol: str, leaves: bool = True) -> dict[str, Any]:
@@ -83,24 +103,48 @@ def one(symbol: str, leaves: bool = True) -> dict[str, Any]:
     # «SQX hoy» is the custodian's own registry, never the master's the file recorded (owner,
     # 2026-09-30): read off its data.db, without starting it.
     now = registry(WORKERS["custodian"]["path"], data["sqx_symbol"])
-    costs = [{"field": f, **data["costs"][f], "sqx_now": now.get(f), "unit": unit[f],
-              "required": f in REQUIRED[data["class"]]} for f in fields(data)]
-    segments = [{"name": n, **s, "reserved_for": s.get(RESERVED, [])}
-                for n, s in data["segments"].items()]
+    costs = [
+        {
+            "field": f,
+            **data["costs"][f],
+            "sqx_now": now.get(f),
+            "unit": unit[f],
+            "required": f in REQUIRED[data["class"]],
+        }
+        for f in fields(data)
+    ]
+    segments = [
+        {"name": n, **s, "reserved_for": s.get(RESERVED, [])}
+        for n, s in data["segments"].items()
+    ]
     # What the MC Retest will draw, beside what the file says: an empty slippage range is
     # 1x-4x the build's slippage in `core.assets`, and the card read it as «sin decidir».
     applied = assetranges.mc_retest(data)
-    mc = [{"name": n, **r, "applied": applied.get(n)}
-          for n, r in (data.get("mc_retest") or {}).items()]
-    return {"symbol": symbol, "class": data["class"], "broker": data["broker"],
-            "sqx_symbol": data["sqx_symbol"], "feeds": data["feeds"],
-            "session": data.get("session"), "verified": str(data["verified"]),
-            "instrument": dict(data["instrument"]), "costs": costs, "segments": segments,
-            "data": data["data"], "mc_retest": mc, "markets": universe(symbol),
-            "notes": list(data.get("notes") or []),
-            "projects": list(data.get("projects_using_it") or []),
-            "problems": problems(data), "report": report(symbol),
-            "leaves": _leaves(symbol) if leaves else [], "prior": prior(symbol)}
+    mc = [
+        {"name": n, **r, "applied": applied.get(n)}
+        for n, r in (data.get("mc_retest") or {}).items()
+    ]
+    return {
+        "symbol": symbol,
+        "class": data["class"],
+        "broker": data["broker"],
+        "sqx_symbol": data["sqx_symbol"],
+        "feeds": data["feeds"],
+        "session": data.get("session"),
+        "verified": str(data["verified"]),
+        "instrument": dict(data["instrument"]),
+        "costs": costs,
+        "segments": segments,
+        "data": data["data"],
+        "mc_retest": mc,
+        "markets": universe(symbol),
+        "notes": list(data.get("notes") or []),
+        "projects": list(data.get("projects_using_it") or []),
+        "problems": problems(data),
+        "report": report(symbol),
+        "leaves": _leaves(symbol) if leaves else [],
+        "prior": prior(symbol),
+    }
 
 
 @lru_cache(maxsize=1)
@@ -133,16 +177,36 @@ def universe(symbol: str) -> dict[str, Any]:
     declared = markets(symbol)
     names = feeds(tuple(f.stat().st_mtime_ns for f in sorted(ASSETS.rglob("*.yaml"))))
     owner = {feed: s for s, (main, rest) in names.items() for feed in [main, *rest]}
-    cats = {c: [{**f, "data_from": f["data_from"] and str(f["data_from"]),
-                 "asset": owner.get(f["feed"], f["feed"])}
-                for f in rows] for c, rows in (declared.get("categories") or {}).items()}
+    cats = {
+        c: [
+            {
+                **f,
+                "data_from": f["data_from"] and str(f["data_from"]),
+                "asset": owner.get(f["feed"], f["feed"]),
+            }
+            for f in rows
+        ]
+        for c, rows in (declared.get("categories") or {}).items()
+    }
     taken = {f["feed"] for rows in cats.values() for f in rows} | {declared.get("main")}
     spans = policy()["segments"]
-    free = [{"asset": s, "feed": main,
-             "data_from": str(((spans.get(s) or {}).get("data") or {}).get("from") or "")}
-            for s, (main, _) in names.items() if s != symbol and main not in taken]
-    return {"main": declared.get("main"), "timeframe": declared.get("timeframe"),
-            "categories": cats, "candidates": free if declared else []}
+    free = [
+        {
+            "asset": s,
+            "feed": main,
+            "data_from": str(
+                ((spans.get(s) or {}).get("data") or {}).get("from") or ""
+            ),
+        }
+        for s, (main, _) in names.items()
+        if s != symbol and main not in taken
+    ]
+    return {
+        "main": declared.get("main"),
+        "timeframe": declared.get("timeframe"),
+        "categories": cats,
+        "candidates": free if declared else [],
+    }
 
 
 def problems(data: dict) -> dict[str, Any]:
@@ -156,9 +220,14 @@ def problems(data: dict) -> dict[str, Any]:
         (exit 2); the rest are warnings it prints and carries on. The window paints them in
         that order because the owner acts on them in that order.
     """
-    return {"broken": validate(data), "pending": pending(data),
-            "provisional": provisional(data), "segments": segments_pending(data),
-            "past_data": past_data(data), "mc": mc_pending(data)}
+    return {
+        "broken": validate(data),
+        "pending": pending(data),
+        "provisional": provisional(data),
+        "segments": segments_pending(data),
+        "past_data": past_data(data),
+        "mc": mc_pending(data),
+    }
 
 
 def _leaves(name: str) -> list[dict]:
@@ -171,9 +240,16 @@ def _leaves(name: str) -> list[dict]:
         The leaves, with dates and paths rendered as text — a date survives the round trip
         because `parse()` reads it back with the same YAML rules that wrote it.
     """
-    return [{**leaf, "path": [str(k) for k in leaf["path"]],
-             "value": str(leaf["value"]) if isinstance(leaf["value"], date) else leaf["value"]}
-            for leaf in leaves(assetwrite.path_of(name))]
+    return [
+        {
+            **leaf,
+            "path": [str(k) for k in leaf["path"]],
+            "value": str(leaf["value"])
+            if isinstance(leaf["value"], date)
+            else leaf["value"],
+        }
+        for leaf in leaves(assetwrite.path_of(name))
+    ]
 
 
 def set_value(name: str, path: list, text: str, kind: str) -> assetwrite.ValueWrite:
@@ -218,9 +294,18 @@ def create(new: dict) -> dict[str, Any]:
     """
     symbol = new["symbol"]
     if symbol in symbols() or symbol in assetwrite.retired():
-        return {"error": f"`{symbol}` ya existe. Mira la lista, o restaura el retirado."}
-    assetwrite.create(symbol, new["class"], new["broker"], new["sqx_symbol"],
-                      new["session"] or None,
-                      {k: assetwrite.parse(str(new[k]), "scalar")
-                       for k in ("tick_size", "point_value", "min_distance")})
+        return {
+            "error": f"`{symbol}` ya existe. Mira la lista, o restaura el retirado."
+        }
+    assetwrite.create(
+        symbol,
+        new["class"],
+        new["broker"],
+        new["sqx_symbol"],
+        new["session"] or None,
+        {
+            k: assetwrite.parse(str(new[k]), "scalar")
+            for k in ("tick_size", "point_value", "min_distance")
+        },
+    )
     return {"created": symbol, "row": row(symbol)}

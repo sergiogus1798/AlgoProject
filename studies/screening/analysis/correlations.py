@@ -8,6 +8,7 @@ from scipy import stats
 
 class Correlation(TypedDict):
     """Pearson, Spearman, the Spearman p-value and the sample size of two columns."""
+
     pearson: float
     spearman: float
     p: float
@@ -26,13 +27,21 @@ def correlate(x: np.ndarray, y: np.ndarray) -> Correlation:
         blow-up strategy dominates Pearson. All three are NaN when either column is constant
         (no spread to correlate); a caller that ranks on them says «no medible», not 0.
     """
-    spearman, pearson = cast(Any, stats.spearmanr(x, y)), cast(Any, stats.pearsonr(x, y))  # scipy stubs lack .statistic
-    return Correlation(pearson=float(pearson.statistic), spearman=float(spearman.statistic),
-                       p=float(spearman.pvalue), n=int(len(x)))
+    spearman, pearson = (
+        cast(Any, stats.spearmanr(x, y)),
+        cast(Any, stats.pearsonr(x, y)),
+    )  # scipy stubs lack .statistic
+    return Correlation(
+        pearson=float(pearson.statistic),
+        spearman=float(spearman.statistic),
+        p=float(spearman.pvalue),
+        n=int(len(x)),
+    )
 
 
 class Persistence(Correlation):
     """A metric's in-sample and out-of-sample means, their ratio and the correlation."""
+
     metric: str
     is_mean: float
     oos_mean: float
@@ -41,6 +50,7 @@ class Persistence(Correlation):
 
 class Predictor(Correlation):
     """A metric and how well it predicts one outcome."""
+
     metric: str
 
 
@@ -56,7 +66,7 @@ def critical_r(n: int, alpha: float = 0.05) -> float:
         means almost nothing here and engines.inference.fdr.discoveries() is the threshold that matters.
     """
     t = stats.t.ppf(1 - alpha / 2, n - 2)
-    return float(t / np.sqrt(n - 2 + t ** 2))
+    return float(t / np.sqrt(n - 2 + t**2))
 
 
 def persistence(columns: dict[str, np.ndarray], names: list[str]) -> list[Persistence]:
@@ -73,13 +83,21 @@ def persistence(columns: dict[str, np.ndarray], names: list[str]) -> list[Persis
     rows: list[Persistence] = []
     for m in names:
         x, y = columns[f"{m} (IS)"], columns[f"{m} (OOS)"]
-        rows.append(Persistence(metric=m, is_mean=float(x.mean()), oos_mean=float(y.mean()),
-                                decay=float(y.mean() / x.mean()), **correlate(x, y)))
+        rows.append(
+            Persistence(
+                metric=m,
+                is_mean=float(x.mean()),
+                oos_mean=float(y.mean()),
+                decay=float(y.mean() / x.mean()),
+                **correlate(x, y),
+            )
+        )
     return sorted(rows, key=lambda r: -abs(r["spearman"]))
 
 
-def predictors(columns: dict[str, np.ndarray], target: str,
-               sources: list[str]) -> list[Predictor]:
+def predictors(
+    columns: dict[str, np.ndarray], target: str, sources: list[str]
+) -> list[Predictor]:
     """Rank every in-sample metric by how well it predicts one out-of-sample outcome.
 
     Args:

@@ -24,7 +24,11 @@ def kept(identity: str, member: str, prefix: str) -> pd.DataFrame:
         with zipfile.ZipFile(path) as z:
             if member in z.namelist():
                 data = io.BytesIO(z.read(member))
-                frames.append(pd.read_parquet(data) if member.endswith(".parquet") else pd.read_csv(data))
+                frames.append(
+                    pd.read_parquet(data)
+                    if member.endswith(".parquet")
+                    else pd.read_csv(data)
+                )
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
 
@@ -52,29 +56,49 @@ def sister(identity: str, target: str, out: Path) -> tuple[Path, list[str]]:
     row = rows.iloc[-1]
     c = None if math.isnan(row["atr_ratio"]) else float(row["atr_ratio"])
     with tempfile.TemporaryDirectory() as tmp:
-        mother = Path(tmp) / f"{name}.sqx"      # the scaler names the sister after the file
+        mother = Path(tmp) / f"{name}.sqx"  # the scaler names the sister after the file
         shutil.copy2(folder(identity) / SQX, mother)
         out.mkdir(parents=True, exist_ok=True)
-        got = scale.sibling(mother, out, row["source_tf"], target, scale.knobs(),
-                            int(row["variant_id"][3:6]), c)
+        got = scale.sibling(
+            mother,
+            out,
+            row["source_tf"],
+            target,
+            scale.knobs(),
+            int(row["variant_id"][3:6]),
+            c,
+        )
     was = {k: v for k, v in row.items() if k.startswith("param_") and pd.notna(v)}
-    bad = [f"{k[6:]}: guardado {was[k]}, ahora {got.get(k)}" for k in sorted(was)
-           if got.get(k) is None or float(got[k]) != float(was[k])]
+    bad = [
+        f"{k[6:]}: guardado {was[k]}, ahora {got.get(k)}"
+        for k in sorted(was)
+        if got.get(k) is None or float(got[k]) != float(was[k])
+    ]
     path = Path(got["path"])
     if row.get(FABRICATED) and sqxfile.identity(path) != row[FABRICATED]:
-        bad.append(f"la huella {sqxfile.identity(path)[:12]} no es la del archivo de entonces "
-                   f"({row[FABRICATED][:12]})")
+        bad.append(
+            f"la huella {sqxfile.identity(path)[:12]} no es la del archivo de entonces "
+            f"({row[FABRICATED][:12]})"
+        )
     return path, bad
 
 
 def main() -> None:
     """Rebuild one sister, or every one the store keeps of a mother."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("identity", help="huella de la madre guardada (python3 -m core.store list)")
-    ap.add_argument("timeframes", nargs="*", help="M15 H1 H4…; sin ninguno, todas las guardadas")
-    ap.add_argument("--out", type=Path, required=True, help="carpeta donde escribir los .sqx")
+    ap.add_argument(
+        "identity", help="huella de la madre guardada (python3 -m core.store list)"
+    )
+    ap.add_argument(
+        "timeframes", nargs="*", help="M15 H1 H4…; sin ninguno, todas las guardadas"
+    )
+    ap.add_argument(
+        "--out", type=Path, required=True, help="carpeta donde escribir los .sqx"
+    )
     a = ap.parse_args()
-    frames = a.timeframes or sorted(set(kept(a.identity, "scaling.parquet", "hermanas.")["target_tf"]))
+    frames = a.timeframes or sorted(
+        set(kept(a.identity, "scaling.parquet", "hermanas.")["target_tf"])
+    )
     wrong = 0
     for target in frames:
         path, bad = sister(a.identity, target, a.out)

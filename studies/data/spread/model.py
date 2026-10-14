@@ -21,14 +21,20 @@ import pandas as pd
 
 def _design(days: pd.DataFrame, cols: list[str]) -> np.ndarray:
     """An intercept and the logs of the named columns."""
-    return np.column_stack([np.ones(len(days))] + [np.log(days[c].to_numpy()) for c in cols])
+    return np.column_stack(
+        [np.ones(len(days))] + [np.log(days[c].to_numpy()) for c in cols]
+    )
 
 
 def _fit_log(days: pd.DataFrame, cols: list[str]) -> dict:
     """Least squares of log(rel) on the logs of `cols`, with its smearing factor."""
     x, y = _design(days, cols), np.log(days["rel"].to_numpy())
     beta, *_ = np.linalg.lstsq(x, y, rcond=None)
-    return {"cols": cols, "beta": beta.tolist(), "smear": float(np.exp(np.var(y - x @ beta) / 2))}
+    return {
+        "cols": cols,
+        "beta": beta.tolist(),
+        "smear": float(np.exp(np.var(y - x @ beta) / 2)),
+    }
 
 
 def _predict_log(params: dict, days: pd.DataFrame) -> pd.Series:
@@ -38,10 +44,14 @@ def _predict_log(params: dict, days: pd.DataFrame) -> pd.Series:
 
 
 MODELS = {
-    "relativo": (lambda d: {"rel": float(d["rel"].mean())},
-                 lambda p, d: pd.Series(p["rel"], d.index)),
-    "puntos": (lambda d: {"spread": float(d["spread"].mean())},
-               lambda p, d: p["spread"] / d["price"]),
+    "relativo": (
+        lambda d: {"rel": float(d["rel"].mean())},
+        lambda p, d: pd.Series(p["rel"], d.index),
+    ),
+    "puntos": (
+        lambda d: {"spread": float(d["spread"].mean())},
+        lambda p, d: p["spread"] / d["price"],
+    ),
     "volatilidad": (lambda d: _fit_log(d, ["rv"]), _predict_log),
     "volatilidad_precio": (lambda d: _fit_log(d, ["rv", "price"]), _predict_log),
 }

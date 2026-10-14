@@ -7,8 +7,9 @@ import pandas as pd
 from engines.market import excursion
 
 
-def per_trade(trades: pd.DataFrame, index: pd.DatetimeIndex, atr: np.ndarray,
-              point_value: float) -> pd.DataFrame:
+def per_trade(
+    trades: pd.DataFrame, index: pd.DatetimeIndex, atr: np.ndarray, point_value: float
+) -> pd.DataFrame:
     """Every trade with its MAE in ATR, its duration in bars and what one ATR is worth to it.
 
     Args:
@@ -26,8 +27,9 @@ def per_trade(trades: pd.DataFrame, index: pd.DatetimeIndex, atr: np.ndarray,
     """
     kept = pd.DataFrame(trades[trades["Open time"] >= index[2]])
     out = pd.DataFrame(excursion.measure(kept, index, atr, point_value))
-    held = (index.searchsorted(kept["Close time"].to_numpy(), side="right")
-            - index.searchsorted(kept["Open time"].to_numpy(), side="right"))
+    held = index.searchsorted(
+        kept["Close time"].to_numpy(), side="right"
+    ) - index.searchsorted(kept["Open time"].to_numpy(), side="right")
     out["bars"] = held
     out["unit"] = kept["Size"].to_numpy() * point_value * out["atr"].to_numpy()
     return out
@@ -50,18 +52,30 @@ def one_segment(t: pd.DataFrame, cfg: dict) -> dict[str, float | str]:
         at -(k + slippage) ATR instead. That last is a bound, not a stop's backtest.
     """
     k_list, slips = cfg["depth"]["k"], cfg["depth"]["slippage"]
-    mae, pnl, unit, held = (t[c].to_numpy() for c in ("mae_atr", "Profit/Loss", "unit", "bars"))
+    mae, pnl, unit, held = (
+        t[c].to_numpy() for c in ("mae_atr", "Profit/Loss", "unit", "bars")
+    )
     n, net = len(t), float(pnl.sum())
-    mean, std = (float(held.mean()), float(held.std(ddof=1))) if n > 1 else (np.nan, np.nan)
+    mean, std = (
+        (float(held.mean()), float(held.std(ddof=1))) if n > 1 else (np.nan, np.nan)
+    )
     cut = mean + cfg["anomaly"]["sigma"] * std
     long_ = held >= cut
-    out: dict[str, float | str] = {"n": n, "net": net, "dur_mean": mean, "dur_std": std, "dur_cut": cut,
-           "n_long": int(long_.sum())}
+    out: dict[str, float | str] = {
+        "n": n,
+        "net": net,
+        "dur_mean": mean,
+        "dur_std": std,
+        "dur_cut": cut,
+        "n_long": int(long_.sum()),
+    }
     worst = int(np.argmax(mae)) if n else 0
     out["peor_mae"] = float(mae[worst]) if n else np.nan
     out["peor_fecha"] = str(t["Open time"].iloc[worst].date()) if n else ""
     won = pnl > 0
-    out["mae_p95_ganadoras"] = float(np.percentile(mae[won], 95)) if won.any() else np.nan
+    out["mae_p95_ganadoras"] = (
+        float(np.percentile(mae[won], 95)) if won.any() else np.nan
+    )
     for k in k_list:
         for scope, mask in (("prof", mae >= k), ("anom", (mae >= k) & long_)):
             p, hit = f"{scope}{k:g}_", mask
@@ -72,5 +86,7 @@ def one_segment(t: pd.DataFrame, cfg: dict) -> dict[str, float | str]:
             pnl_rec = out[p + "pnl_rec"] = float(pnl[rec].sum())
             out[p + "cuota_rec"] = pnl_rec / net if net > 0 else np.nan
             for s in slips:
-                out[f"{p}cortado_{s:g}"] = float(np.where(hit, -(k + s) * unit, pnl).sum())
+                out[f"{p}cortado_{s:g}"] = float(
+                    np.where(hit, -(k + s) * unit, pnl).sum()
+                )
     return out

@@ -12,12 +12,26 @@ from ui.daemon.workflow import api as workflow, derive
 from ui.daemon.workflow.steps import STEPS
 
 # The step each SQX stage belongs to (the workflow's number, 16.5 for the WFC legs).
-STAGE_STEP = {"build": 6, "oos": 7, "crossmarket": 9, "crosstf": 11, "mcretest": 13, "spp": 15,
-              "wfc": 16.5, "wfm": 19}
-STALE_S = 6 * 3600     # an estado.txt older than this is a run that died without saying so
+STAGE_STEP = {
+    "build": 6,
+    "oos": 7,
+    "crossmarket": 9,
+    "crosstf": 11,
+    "mcretest": 13,
+    "spp": 15,
+    "wfc": 16.5,
+    "wfm": 19,
+}
+STALE_S = 6 * 3600  # an estado.txt older than this is a run that died without saying so
 STATE_OF = {"empezó": "running", "hecho": "done", "falló": "failed"}
-STATE = {"done": "done", "sealed": "done", "running": "running", "pending": "pending",
-         "blocked": "pending", "missing": "pending"}
+STATE = {
+    "done": "done",
+    "sealed": "done",
+    "running": "running",
+    "pending": "pending",
+    "blocked": "pending",
+    "missing": "pending",
+}
 
 
 def ranks() -> dict[str, float]:
@@ -74,7 +88,9 @@ def autopilot_marks(project: str, now: float | None = None) -> dict[str, str]:
     for n, word, _ in csv.reader(runs[-1].read_text(encoding="utf-8").splitlines()):
         for part in n.split("+"):
             last[part] = word
-    alive = (now or time.time()) - runs[-1].with_name("estado.txt").stat().st_mtime < STALE_S
+    alive = (now or time.time()) - runs[-1].with_name(
+        "estado.txt"
+    ).stat().st_mtime < STALE_S
     return {n: STATE_OF[w] for n, w in last.items() if w != "empezó" or alive}
 
 
@@ -87,21 +103,35 @@ def python_rows(project: str) -> list[dict]:
     """
     ctx = workflow.context(project)
     marks = autopilot_marks(project)
-    failed = {j.get("step") for j in jobs.listing() if j.get("project") == project
-              and j["rc"] not in (None, 0, jobs.CANCELLED)}
+    failed = {
+        j.get("step")
+        for j in jobs.listing()
+        if j.get("project") == project and j["rc"] not in (None, 0, jobs.CANCELLED)
+    }
     rows = []
     for spec in (s for s in STEPS if s["kind"] == "python"):
         row = derive.HOW[spec["how"]](spec, ctx)
         status = STATE[row["state"]]
         if status != "done":
-            status = marks.get(spec["n"]) or ("failed" if spec["n"] in failed else status)
-        rows.append({"kind": "python", "step": float(cast(str, spec["n"])), "n": spec["n"],
-                     "title": f"Paso {spec['n']} · {spec['title']}", "status": status,
-                     "why": row["why"]})
+            status = marks.get(spec["n"]) or (
+                "failed" if spec["n"] in failed else status
+            )
+        rows.append(
+            {
+                "kind": "python",
+                "step": float(cast(str, spec["n"])),
+                "n": spec["n"],
+                "title": f"Paso {spec['n']} · {spec['title']}",
+                "status": status,
+                "why": row["why"],
+            }
+        )
     return rows
 
 
-def order(tasks: list[dict], python: list[dict], runs: list[dict], of: int | None) -> list[dict]:
+def order(
+    tasks: list[dict], python: list[dict], runs: list[dict], of: int | None
+) -> list[dict]:
     """SQX tasks and Python steps in the workflow's order.
 
     A task no stage names keeps its place after the task before it in the project's file.
@@ -121,9 +151,18 @@ def order(tasks: list[dict], python: list[dict], runs: list[dict], of: int | Non
     rows = []
     for t in tasks:
         last = step_of(t["title"], known) or last
-        rows.append({**t, "kind": "sqx", "step": last,
-                     **({"mother": mothers(runs, t["title"], of)}
-                      if t["title"] in wfc and t["status"] == "running" else {})})
+        rows.append(
+            {
+                **t,
+                "kind": "sqx",
+                "step": last,
+                **(
+                    {"mother": mothers(runs, t["title"], of)}
+                    if t["title"] in wfc and t["status"] == "running"
+                    else {}
+                ),
+            }
+        )
     return sorted(rows + python, key=lambda r: r["step"])
 
 
@@ -131,5 +170,11 @@ def state(role: str, project: str) -> dict[str, Any]:
     """`progress.state` plus `rows`: what the zone paints."""
     got = progress.state(role, project)
     folder = progress.installs()[role] / "user" / "projects" / project
-    return got | {"rows": order(got["tasks"], python_rows(project), tasklog.task_runs(folder),
-                                got["banks"].get("SPP OOS"))}
+    return got | {
+        "rows": order(
+            got["tasks"],
+            python_rows(project),
+            tasklog.task_runs(folder),
+            got["banks"].get("SPP OOS"),
+        )
+    }

@@ -15,16 +15,35 @@ from ui.daemon.results import tfrows
 # A study's own verdict words (verdict.csv, for /curate) on the contract's five-state scale,
 # for a report that wrote no per-strategy JSON. Each row copies the study's own STATE map.
 WORDS = {
-    "pass": "pass", "fail": "fail", "watch": "watch", "info": "info", "none": "none",
-    "MANTENER": "pass", "DESCARTAR": "fail", "DUDOSA": "watch",               # curate, decay
-    "STRONG": "pass", "ACCEPTABLE": "pass", "MARGINAL": "watch",              # mcRetest
-    "FAIL": "fail", "INCONCLUSIVE": "none",
-    "predicts": "pass", "blind": "watch", "perverse": "fail",                 # old wfm
-    "pasa": "pass", "limbo": "watch", "no_pasa": "fail",                      # steps 17-19
-    "positivo": "pass", "neutro": "watch", "perverso": "fail",                # step 18.5
-    "REVISAR": "watch",                                                       # step 20
-    "survives": "pass", "inherited": "watch", "fails": "fail",                # crossTF
-    "control_failed": "watch", "silent": "none", "unusable": "none",
+    "pass": "pass",
+    "fail": "fail",
+    "watch": "watch",
+    "info": "info",
+    "none": "none",
+    "MANTENER": "pass",
+    "DESCARTAR": "fail",
+    "DUDOSA": "watch",  # curate, decay
+    "STRONG": "pass",
+    "ACCEPTABLE": "pass",
+    "MARGINAL": "watch",  # mcRetest
+    "FAIL": "fail",
+    "INCONCLUSIVE": "none",
+    "predicts": "pass",
+    "blind": "watch",
+    "perverse": "fail",  # old wfm
+    "pasa": "pass",
+    "limbo": "watch",
+    "no_pasa": "fail",  # steps 17-19
+    "positivo": "pass",
+    "neutro": "watch",
+    "perverso": "fail",  # step 18.5
+    "REVISAR": "watch",  # step 20
+    "survives": "pass",
+    "inherited": "watch",
+    "fails": "fail",  # crossTF
+    "control_failed": "watch",
+    "silent": "none",
+    "unusable": "none",
 }
 
 # (path, mtime, reader) -> what was read. A report is written once and never edited, so a file's
@@ -33,7 +52,7 @@ WORDS = {
 # megabyte JSONs again, ~12 s of a 30-s first open.
 T = TypeVar("T")
 _CACHE: dict[Any, Any] = diskmemo.load("results")
-_KEPT = [len(_CACHE)]       # how many entries the memo on disk holds
+_KEPT = [len(_CACHE)]  # how many entries the memo on disk holds
 # One reader at a time: three tables built at once each parsed the same megabyte JSONs
 # (🔬 2026-10-04, 12 s three times over under one GIL). Re-entrant: a reader may read.
 _READING = threading.RLock()
@@ -63,8 +82,14 @@ def days(project: str, databank: str, study: str) -> list[str]:
     Returns:
         YYYY-MM-DD strings, newest first.
     """
-    return sorted((d.parent.name for d in bank(project, databank).glob(f"*/{study}")
-                   if d.is_dir()), reverse=True)
+    return sorted(
+        (
+            d.parent.name
+            for d in bank(project, databank).glob(f"*/{study}")
+            if d.is_dir()
+        ),
+        reverse=True,
+    )
 
 
 def _read(path: Path) -> tuple[dict | None, str | None]:
@@ -76,7 +101,10 @@ def _read(path: Path) -> tuple[dict | None, str | None]:
     except (ValueError, UnicodeDecodeError) as e:
         return None, f"no es JSON legible: {e}"
     if not isinstance(got, dict) or "tabs" not in got or "config_hash" not in got:
-        return None, "informe anterior al contrato de estudios (sin tabs ni config_hash)"
+        return (
+            None,
+            "informe anterior al contrato de estudios (sin tabs ni config_hash)",
+        )
     return got, None
 
 
@@ -93,10 +121,21 @@ def partials(path: Path) -> list[dict]:
     """
     if path.parent.name != "estrategias":
         return []
-    found = sorted(path.parent.parent.glob(f"parciales/*/estrategias/{glob.escape(path.name)}"),
-                   reverse=True)
-    return [{"only": got.get("only"), "computed_at": got.get("computed_at"), "path": str(p),
-             "result": got} for p in found for got in [_read(p)[0]] if got is not None]
+    found = sorted(
+        path.parent.parent.glob(f"parciales/*/estrategias/{glob.escape(path.name)}"),
+        reverse=True,
+    )
+    return [
+        {
+            "only": got.get("only"),
+            "computed_at": got.get("computed_at"),
+            "path": str(p),
+            "result": got,
+        }
+        for p in found
+        for got in [_read(p)[0]]
+        if got is not None
+    ]
 
 
 def load(path: Path) -> tuple[dict | None, str | None]:
@@ -127,7 +166,7 @@ def _cached(path: Path, read: Callable[[Path], T]) -> T:
     Returns:
         Its result, computed once per (path, mtime).
     """
-    key = (str(path), path.stat().st_mtime, read.__name__)    # one file, several readers
+    key = (str(path), path.stat().st_mtime, read.__name__)  # one file, several readers
     with _READING:
         if key not in _CACHE:
             _CACHE[key] = read(path)
@@ -162,9 +201,14 @@ def _slim(path: Path) -> dict | None:
     if got is None:
         return None
     said = got.get("verdict") or {}
-    return {"strategy": got.get("strategy"), "identity": got.get("identity"),
-            "config_hash": got["config_hash"], "computed_at": got.get("computed_at"),
-            "state": said.get("state", "info"), "label": said.get("label", "descriptivo")}
+    return {
+        "strategy": got.get("strategy"),
+        "identity": got.get("identity"),
+        "config_hash": got["config_hash"],
+        "computed_at": got.get("computed_at"),
+        "state": said.get("state", "info"),
+        "label": said.get("label", "descriptivo"),
+    }
 
 
 def slim(path: Path) -> dict | None:
@@ -193,8 +237,10 @@ def _verdicts(path: Path) -> dict[str, dict] | None:
         rows = list(csv.DictReader(fh))
     if not rows or not {"strategy", "verdict"} <= rows[0].keys():
         return None
-    return {r["strategy"]: {"identity": r.get("identity") or None, "word": r["verdict"]}
-            for r in rows}
+    return {
+        r["strategy"]: {"identity": r.get("identity") or None, "word": r["verdict"]}
+        for r in rows
+    }
 
 
 def verdicts(folder: Path) -> dict[str, dict] | None:
@@ -235,8 +281,12 @@ def _tables(path: Path) -> dict[str, dict] | None:
     got, _ = _read(path)
     if got is None:
         return None
-    return {b["title"]: {"columns": b["columns"], "rows": b["rows"]}
-            for tab in got["tabs"] for b in tab["blocks"] if b.get("kind") == "table"}
+    return {
+        b["title"]: {"columns": b["columns"], "rows": b["rows"]}
+        for tab in got["tabs"]
+        for b in tab["blocks"]
+        if b.get("kind") == "table"
+    }
 
 
 def tables(path: Path) -> dict[str, dict] | None:

@@ -17,8 +17,15 @@ BANK = "Results"
 REFUSED = "RESULTS SIN RECORTAR:"
 
 
-def results(project: str, role: str, pop: pd.DataFrame, held: pd.DataFrame, out: Path,
-            full: Callable[[], set[str] | None], seal: Callable[[], Callable[[], None]]) -> str:
+def results(
+    project: str,
+    role: str,
+    pop: pd.DataFrame,
+    held: pd.DataFrame,
+    out: Path,
+    full: Callable[[], set[str] | None],
+    seal: Callable[[], Callable[[], None]],
+) -> str:
     """Cut `Results` to the strategies step 8 kept (survivors and limbo), worker stopped.
 
     Args:
@@ -44,18 +51,33 @@ def results(project: str, role: str, pop: pd.DataFrame, held: pd.DataFrame, out:
     whole = full()
     if whole is None or not keep <= whole:
         return f"{REFUSED} la cosecha completa de {BANK} no está en disco"
-    dirs = sorted(d for w in WORKERS.values() for d in (w["path"] / "user/projects" / project / "databanks").glob("*"))
+    dirs = sorted(
+        d
+        for w in WORKERS.values()
+        for d in (w["path"] / "user/projects" / project / "databanks").glob("*")
+    )
     try:
         save.project(project, dirs)
-    except (Exception, SystemExit) as e:        # a failed save is a refusal, not the end of the workflow
+    except (
+        Exception,
+        SystemExit,
+    ) as e:  # a failed save is a refusal, not the end of the workflow
         return f"{REFUSED} el guardado falló ({e})"
-    lost = sorted(set(save.unsaved(project)) & set(kept["strategy"]))      # this run's, not an older run's
+    lost = sorted(
+        set(save.unsaved(project)) & set(kept["strategy"])
+    )  # this run's, not an older run's
     if lost:
-        return (f"{REFUSED} {len(lost)} supervivientes del paso 8 no están en el almacén "
-                f"({', '.join(lost[:3])}); `python3 -m core.store save {project}`")
+        return (
+            f"{REFUSED} {len(lost)} supervivientes del paso 8 no están en el almacén "
+            f"({', '.join(lost[:3])}); `python3 -m core.store save {project}`"
+        )
     csv = out / "verdict-results.csv"
-    held.assign(verdict=[apply_verdict.DROP if i not in keep else "MANTENER" for i in held["identity"]]
-                ).to_csv(csv, index=False)
+    held.assign(
+        verdict=[
+            apply_verdict.DROP if i not in keep else "MANTENER"
+            for i in held["identity"]
+        ]
+    ).to_csv(csv, index=False)
     resign = seal()
     cut = apply_verdict.apply(project, BANK, csv, role)
     resign()

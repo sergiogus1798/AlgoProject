@@ -7,7 +7,7 @@ from pathlib import Path
 from core import worker
 from core.paths import STAGING, WORKER_SH
 
-SYMBOLS_TIMEOUT_S = 120     # `-symbol action=list` after a ~20 s JVM start
+SYMBOLS_TIMEOUT_S = 120  # `-symbol action=list` after a ~20 s JVM start
 TRADES_TIMEOUT_S = 6 * 3600  # orderstocsv ~4 min per 231 strategies (~90 min for 5,000)
 
 
@@ -28,16 +28,31 @@ def trades(source: Path, out_dir: Path, data: str = "main") -> str:
     """
     worker.require_posix()
     out_dir.mkdir(parents=True, exist_ok=True)
-    cmd = ["-tools", "action=orderstocsv", f"file={source}", f"output={out_dir}", f"data={data}"]
-    got = subprocess.run([str(WORKER_SH), "run", *cmd], capture_output=True, text=True,
-                         timeout=TRADES_TIMEOUT_S)
+    cmd = [
+        "-tools",
+        "action=orderstocsv",
+        f"file={source}",
+        f"output={out_dir}",
+        f"data={data}",
+    ]
+    got = subprocess.run(
+        [str(WORKER_SH), "run", *cmd],
+        capture_output=True,
+        text=True,
+        timeout=TRADES_TIMEOUT_S,
+    )
     if got.returncode:
         # SQX says why on stdout («No plugin loader was able to recognize file …»); a bare
         # CalledProcessError swallowed it and every failed export read the same.
-        said = [line for line in (got.stdout + got.stderr).splitlines()
-                if "rror" in line or "xception" in line][-5:]
-        raise RuntimeError(f"orderstocsv salió con {got.returncode} sobre {source}: "
-                           + (" | ".join(said) or (got.stderr or got.stdout).strip()[-800:]))
+        said = [
+            line
+            for line in (got.stdout + got.stderr).splitlines()
+            if "rror" in line or "xception" in line
+        ][-5:]
+        raise RuntimeError(
+            f"orderstocsv salió con {got.returncode} sobre {source}: "
+            + (" | ".join(said) or (got.stderr or got.stdout).strip()[-800:])
+        )
     return got.stdout
 
 
@@ -50,12 +65,18 @@ def symbols() -> str:
         bar count is what tells a sync whether a feed has grown since it was last pulled.
     """
     worker.require_posix()
-    return subprocess.run([str(WORKER_SH), "run", "-symbol", "action=list"],
-                          capture_output=True, text=True, check=True,
-                          timeout=SYMBOLS_TIMEOUT_S).stdout
+    return subprocess.run(
+        [str(WORKER_SH), "run", "-symbol", "action=list"],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=SYMBOLS_TIMEOUT_S,
+    ).stdout
 
 
-def bars(symbol: str, timeframe: str, out_dir: Path, date_from: str, date_to: str) -> Path:
+def bars(
+    symbol: str, timeframe: str, out_dir: Path, date_from: str, date_to: str
+) -> Path:
     """Export OHLC bars for one symbol and timeframe.
 
     Args:
@@ -71,12 +92,19 @@ def bars(symbol: str, timeframe: str, out_dir: Path, date_from: str, date_to: st
     """
     worker.require_posix()
     out_dir.mkdir(parents=True, exist_ok=True)
-    cmd = ["-data", "action=export", f"symbols={symbol}", f"timeframe={timeframe}",
-           f"datefrom={date_from}", f"dateto={date_to}",
-           "format=Custom", "cIncludeHeader=true",
-           "cHeader=Date,Time,Open,High,Low,Close,Volume",
-           "cFormat=[Date:yyyy.MM.dd],[Time:HH:mm],[Open],[High],[Low],[Close],[Volume]",
-           f"outputdir={out_dir}"]
+    cmd = [
+        "-data",
+        "action=export",
+        f"symbols={symbol}",
+        f"timeframe={timeframe}",
+        f"datefrom={date_from}",
+        f"dateto={date_to}",
+        "format=Custom",
+        "cIncludeHeader=true",
+        "cHeader=Date,Time,Open,High,Low,Close,Volume",
+        "cFormat=[Date:yyyy.MM.dd],[Time:HH:mm],[Open],[High],[Low],[Close],[Volume]",
+        f"outputdir={out_dir}",
+    ]
     subprocess.run([str(WORKER_SH), "run", *cmd], check=True)
     written = out_dir / f"{symbol}-{timeframe}-No Session.csv"
     target = out_dir / f"bars_{timeframe}.csv"

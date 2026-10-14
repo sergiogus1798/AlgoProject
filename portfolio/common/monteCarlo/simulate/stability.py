@@ -38,11 +38,25 @@ def _once(data: dict, cfg: dict, sims: int, seed: int) -> dict[str, float]:
         execution stress. Seeded by `seed`.
     """
     block = cfg["blocks"]["block_min"]
-    got = {config.HEADLINE: engine.sequential(data, "draw", "stationary", block, sims, cfg, seed),
-           config.BASELINE: engine.sequential(data, "draw", "iid_bootstrap", 0, sims, cfg, seed)}
-    got.update({k: engine.sequential(data, "stress", k, 0, sims, cfg, seed) for k in stress.STRESS})
-    return {f"{label}.{metric}.{q}": float(np.nanpercentile(arr[metric], q))
-            for label, arr in got.items() for metric, q in DRIVERS}
+    got = {
+        config.HEADLINE: engine.sequential(
+            data, "draw", "stationary", block, sims, cfg, seed
+        ),
+        config.BASELINE: engine.sequential(
+            data, "draw", "iid_bootstrap", 0, sims, cfg, seed
+        ),
+    }
+    got.update(
+        {
+            k: engine.sequential(data, "stress", k, 0, sims, cfg, seed)
+            for k in stress.STRESS
+        }
+    )
+    return {
+        f"{label}.{metric}.{q}": float(np.nanpercentile(arr[metric], q))
+        for label, arr in got.items()
+        for metric, q in DRIVERS
+    }
 
 
 def spread(source: dict, cfg: dict) -> Stability:
@@ -65,15 +79,25 @@ def spread(source: dict, cfg: dict) -> Stability:
     sims = cfg["global"]["n_sims"]
     repeats = cfgs["n_stability_runs"]
     seeds = [config.seed(cfg) + 1 + i for i in range(repeats)]
-    runs = list(engine.pool(cfg).map(_once, [data] * repeats, [cfg] * repeats,
-                                     [sims] * repeats, seeds))
+    runs = list(
+        engine.pool(cfg).map(
+            _once, [data] * repeats, [cfg] * repeats, [sims] * repeats, seeds
+        )
+    )
     out: dict[str, dict[str, float]] = {}
     for key in runs[0]:
         values = np.array([r[key] for r in runs])
         scale = abs(values.mean()) or 1.0
-        out[key] = {"mean": float(values.mean()),
-                    "spread": float((values.max() - values.min()) / scale)}
+        out[key] = {
+            "mean": float(values.mean()),
+            "spread": float((values.max() - values.min()) / scale),
+        }
     worst = max(out, key=lambda k: out[k]["spread"])
-    return {"runs": cfgs["n_stability_runs"], "seeds": seeds, "by_number": out, "worst": worst,
-            "worst_spread": out[worst]["spread"],
-            "unstable": bool(out[worst]["spread"] > cfgs["stability_tol"])}
+    return {
+        "runs": cfgs["n_stability_runs"],
+        "seeds": seeds,
+        "by_number": out,
+        "worst": worst,
+        "worst_spread": out[worst]["spread"],
+        "unstable": bool(out[worst]["spread"] > cfgs["stability_tol"]),
+    }

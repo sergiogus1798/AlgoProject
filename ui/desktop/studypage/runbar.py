@@ -3,8 +3,15 @@
 from collections.abc import Callable
 
 from PySide6.QtCore import QTimer, Signal
-from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QMessageBox, QPushButton,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop.blocks.card import initial, text
 from ui.desktop.blocks.states import colour
@@ -15,9 +22,11 @@ from ui.text.brief import full, off
 
 POLL_MS = 2000
 
-ONE_TIP = ("Calcula este estudio solo para esta estrategia, con la configuración del cajón "
-           "«Configuración». Debajo se ve «en marcha» y el %, y al acabar «terminado» y el "
-           "resultado nuevo aquí mismo.")
+ONE_TIP = (
+    "Calcula este estudio solo para esta estrategia, con la configuración del cajón "
+    "«Configuración». Debajo se ve «en marcha» y el %, y al acabar «terminado» y el "
+    "resultado nuevo aquí mismo."
+)
 
 
 class RunBar(QWidget):
@@ -49,13 +58,17 @@ class RunBar(QWidget):
         self.one.setToolTip(ONE_TIP)
         self.one.clicked.connect(lambda: self.run("one"))
         self.many = QPushButton("▶▶ Run todo el databank")
-        self.many.setToolTip("Calcula este estudio para todas las estrategias del databank, con la "
-                             "configuración del cajón. Tarda más; el avance sale debajo y en "
-                             "«En marcha».")
+        self.many.setToolTip(
+            "Calcula este estudio para todas las estrategias del databank, con la "
+            "configuración del cajón. Tarda más; el avance sale debajo y en "
+            "«En marcha»."
+        )
         self.many.clicked.connect(lambda: self.run("many"))
         self.only = QComboBox()
-        self.only.setToolTip("La subprueba que se corre sola; se escribe aparte, en "
-                             "<estudio>/parciales/, al lado del run entero, que no se toca.")
+        self.only.setToolTip(
+            "La subprueba que se corre sola; se escribe aparte, en "
+            "<estudio>/parciales/, al lado del run entero, que no se toca."
+        )
         self.solo = QPushButton("↻ Solo")
         self.solo.clicked.connect(lambda: self.run("one", self.only.currentData()))
         self.cancel = QPushButton("■ Cancelar")
@@ -79,19 +92,34 @@ class RunBar(QWidget):
         """
         same = self.entry.get("key") == entry["key"] and self.where == where
         self.entry, self.where = entry, dict(where)
-        if not same:          # the end of the last run stays on screen while it is still this study
+        if (
+            not same
+        ):  # the end of the last run stays on screen while it is still this study
             self._say(self.error, "")
             self._say(self.line, "")
         can = entry["runnable"]
         # A population-only study shows the button off, with why (owner, 2026-10-01).
-        self.one.setVisible(can and strategy_page and (entry["one"] or bool(entry.get("one_why"))))
+        self.one.setVisible(
+            can and strategy_page and (entry["one"] or bool(entry.get("one_why")))
+        )
         self.one.setProperty("off_why", None if entry["one"] else entry.get("one_why"))
         self.one.setToolTip(entry.get("one_why") or ONE_TIP)
         self.many.setVisible(can and entry["many"])
-        options = (fetch("study/only", study=entry["key"], project=where["project"],
-                         databank=where["databank"], asset=where["asset"] or "",
-                         strategy=where["strategy"] or "")
-                   .get("options") or []) if can and strategy_page and where["project"] else []
+        options = (
+            (
+                fetch(
+                    "study/only",
+                    study=entry["key"],
+                    project=where["project"],
+                    databank=where["databank"],
+                    asset=where["asset"] or "",
+                    strategy=where["strategy"] or "",
+                ).get("options")
+                or []
+            )
+            if can and strategy_page and where["project"]
+            else []
+        )
         self.only.clear()
         for o in options:
             self.only.addItem(initial(o["label"]), o["key"])
@@ -100,7 +128,9 @@ class RunBar(QWidget):
         if not can:
             self._say(self.line, f"No se corre desde aquí: {entry['why_not']}")
         elif not (entry["one"] or entry["many"]):
-            self._say(self.line, "Este estudio no tiene orden de run para este alcance.")
+            self._say(
+                self.line, "Este estudio no tiene orden de run para este alcance."
+            )
         self._busy(bool(self.ids))
 
     def run(self, scope: str, only: str | None = None) -> None:
@@ -114,38 +144,57 @@ class RunBar(QWidget):
         # The rail asks before a run that reads oos2 or writes the ledger; the study page ran
         # it on the click (📓 2026-09-29, WFM «toda la población»).
         spends = self.entry.get("spends")
-        if spends and QMessageBox.question(  # pyright: ignore[reportCallIssue]  # PySide6 stub wants button0/button1 for the 3-arg form
-                self, "Esto lee oos2 o escribe en el ledger",
+        if (
+            spends
+            and QMessageBox.question(  # pyright: ignore[reportCallIssue]  # PySide6 stub wants button0/button1 for the 3-arg form
+                self,
+                "Esto lee oos2 o escribe en el ledger",
                 f"{self.entry['key']}: {spends}. Cada run cuenta y no se deshace.\n\n"
-                "¿Correr?") != QMessageBox.StandardButton.Yes:
+                "¿Correr?",
+            )
+            != QMessageBox.StandardButton.Yes
+        ):
             self._say(self.line, "No se lanzó nada.")
             return
-        got = send("study/run", {
-            "study": self.entry["key"], "scope": scope, "project": w["project"],
-            "databank": w["databank"], "asset": w["asset"] or "", "only": only,
-            "strategies": [w["strategy"]] if scope == "one" else [],
-            "overrides": self.overrides()})
+        got = send(
+            "study/run",
+            {
+                "study": self.entry["key"],
+                "scope": scope,
+                "project": w["project"],
+                "databank": w["databank"],
+                "asset": w["asset"] or "",
+                "only": only,
+                "strategies": [w["strategy"]] if scope == "one" else [],
+                "overrides": self.overrides(),
+            },
+        )
         if "error" in got:
             self._say(self.error, off(got["error"]))
             self.error.setToolTip(full(got["error"]))
             return
         self._say(self.error, "")
         self.ids = [j["id"] for j in got["jobs"]]
-        self._say(self.line, f"En marcha: {self.entry['key']} · {scope}"
-                          + (f" · solo {only}" if only else ""))
+        self._say(
+            self.line,
+            f"En marcha: {self.entry['key']} · {scope}"
+            + (f" · solo {only}" if only else ""),
+        )
         self._busy(True)
         self.timer.start()
-        self.poll(True)      # the first read now, not after POLL_MS: a press must show
-                              # something changed at once, not after a silent couple of seconds
+        self.poll(True)  # the first read now, not after POLL_MS: a press must show
+        # something changed at once, not after a silent couple of seconds
 
     def poll(self, fresh: bool = False) -> None:
         """Read this bar's jobs off the GUI thread; `polled` reads them (`fresh`: not from memory)."""
-        jobsfeed.read(self.polled, f"runbar:{id(self)}", self, ttl=0 if fresh else jobsfeed.TTL_S)
+        jobsfeed.read(
+            self.polled, f"runbar:{id(self)}", self, ttl=0 if fresh else jobsfeed.TTL_S
+        )
 
     def polled(self, got: dict) -> None:
         """Show this bar's jobs; when all have ended, stop polling and say so."""
         if not self.ids:
-            return                            # an answer that landed after the last one
+            return  # an answer that landed after the last one
         if "error" in got:
             self._say(self.error, got["error"])
             return
@@ -164,7 +213,9 @@ class RunBar(QWidget):
             else:
                 # A clear word first, or "terminado" reads as one job's state among several
                 # and is easy to miss (owner, 2026-09-29: «no se ve que pase nada»).
-                self._say(self.line, f"Terminado: {self.entry['key']} · " + " | ".join(parts))
+                self._say(
+                    self.line, f"Terminado: {self.entry['key']} · " + " | ".join(parts)
+                )
             self.ids = []
             self._busy(False)
             self.finished.emit()

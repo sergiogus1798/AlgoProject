@@ -2,7 +2,14 @@
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QHideEvent, QShowEvent
-from PySide6.QtWidgets import QComboBox, QFrame, QHBoxLayout, QLabel, QSplitter, QVBoxLayout
+from PySide6.QtWidgets import (
+    QComboBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QSplitter,
+    QVBoxLayout,
+)
 
 from ui.desktop import background, client
 from ui.desktop.ops.pulse import Pulse
@@ -11,14 +18,24 @@ from ui.desktop.selection import SELECTION
 from ui.desktop.theme import C, kicker
 from ui.text.brief import full, line
 
-ROLE = {"custodian": "custodio · SQX_w2", "conductor": "conductor · SQX_w1", "master": "maestro"}
-ORDER = ("custodian", "conductor", "master")     # where a selected project is looked for first
+ROLE = {
+    "custodian": "custodio · SQX_w2",
+    "conductor": "conductor · SQX_w1",
+    "master": "maestro",
+}
+ORDER = (
+    "custodian",
+    "conductor",
+    "master",
+)  # where a selected project is looked for first
 EVERY_MS = 3000
-RESCAN_TICKS = 10        # 30 s: new projects and installs appear without «Recargar»
-PICKER_TIP = ("La ventana lee ficheros del install y, solo mientras un worker corre el proyecto, "
-              "le pide su línea de estado (action=status, lo único que el custodio puede recibir "
-              "a mitad de trabajo). No arranca, no para, no reconfigura. Al abrir se elige sola "
-              "el proyecto que corre; si nada corre, el proyecto elegido en la ventana.")
+RESCAN_TICKS = 10  # 30 s: new projects and installs appear without «Recargar»
+PICKER_TIP = (
+    "La ventana lee ficheros del install y, solo mientras un worker corre el proyecto, "
+    "le pide su línea de estado (action=status, lo único que el custodio puede recibir "
+    "a mitad de trabajo). No arranca, no para, no reconfigura. Al abrir se elige sola "
+    "el proyecto que corre; si nada corre, el proyecto elegido en la ventana."
+)
 
 
 class Running(QFrame):
@@ -28,12 +45,14 @@ class Running(QFrame):
         """Build the header with its pickers, the line that ties both halves, and the split."""
         super().__init__(objectName="term")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         self.data: dict[str, list[str]] = {}
-        self.by_hand = False                 # once the owner picks, the zone stops choosing
+        self.by_hand = False  # once the owner picks, the zone stops choosing
         self.timer = QTimer(self)
         self.timer.setInterval(EVERY_MS)
         self.timer.timeout.connect(self.tick)
         self.ticks = 0
-        self.running: set[tuple[str, str]] = set()   # (role, project) the last scan saw running
+        self.running: set[tuple[str, str]] = (
+            set()
+        )  # (role, project) the last scan saw running
         lay = QVBoxLayout(self)
         lay.setContentsMargins(16, 12, 16, 12)
         lay.setSpacing(8)
@@ -71,9 +90,14 @@ class Running(QFrame):
     def reload(self) -> None:
         """Ask the daemon which installs and projects exist and what SQX runs, off the GUI
         thread; `listed` chooses what to show."""
-        background.run(lambda: {"installs": client.get("progress/installs"),
-                                "runs": client.get("ops/sqx")["runs"]},
-                       self.listed, key=f"running:{id(self)}")
+        background.run(
+            lambda: {
+                "installs": client.get("progress/installs"),
+                "runs": client.get("ops/sqx")["runs"],
+            },
+            self.listed,
+            key=f"running:{id(self)}",
+        )
 
     def listed(self, got: dict) -> None:
         """The installs arrived: fill both pickers and draw."""
@@ -87,16 +111,20 @@ class Running(QFrame):
         runs = {(r["role"], r["project"]) for r in got["runs"]}
         fresh = runs - self.running
         self.running = runs
-        if fresh:                                   # started since the last scan: follow it
-            role, project = min(fresh, key=lambda r: ORDER.index(r[0]) if r[0] in ORDER else 9)
+        if fresh:  # started since the last scan: follow it
+            role, project = min(
+                fresh, key=lambda r: ORDER.index(r[0]) if r[0] in ORDER else 9
+            )
         elif same and self.install.count():
-            return                                  # nothing new: leave the open combos alone
+            return  # nothing new: leave the open combos alone
         elif not self.by_hand:
             role, project = self.default(got["runs"])
         self.install.clear()
         for r in self.data:
             self.install.addItem(r)
-            self.install.setItemData(self.install.count() - 1, ROLE.get(r, r), Qt.ItemDataRole.ToolTipRole)
+            self.install.setItemData(
+                self.install.count() - 1, ROLE.get(r, r), Qt.ItemDataRole.ToolTipRole
+            )
         self.install.setCurrentText(role if role in self.data else "custodian")
         self.fill_projects(project)
 
@@ -119,8 +147,11 @@ class Running(QFrame):
                 return role, chosen
         # Never a stock project (Builder, Retester) by default: no run of ours lives there
         # (CLAUDE.md rule 10), and ours are the ones named Test_, Trade_ or Research_ (rule 6).
-        ours = [p for p in self.data.get("custodian", [])
-                if p.startswith(("Test_", "Trade_", "Research_"))]
+        ours = [
+            p
+            for p in self.data.get("custodian", [])
+            if p.startswith(("Test_", "Trade_", "Research_"))
+        ]
         return "custodian", ours[0] if ours else ""
 
     def fill_projects(self, keep: str) -> None:
@@ -132,7 +163,9 @@ class Running(QFrame):
         names = self.data.get(self.install.currentText(), [])
         self.project.clear()
         self.project.addItems(names)
-        self.project.setCurrentText(keep if keep in names else (names[0] if names else ""))
+        self.project.setCurrentText(
+            keep if keep in names else (names[0] if names else "")
+        )
         self.refresh()
 
     def install_picked(self) -> None:
@@ -171,8 +204,14 @@ class Running(QFrame):
         if not project:
             self.note.setText("Este install no tiene proyectos.")
             return
-        background.get("ops/steps", lambda got: self.progressed(role, project, got),
-                       key=f"progress:{id(self)}", owner=self, install=role, project=project)
+        background.get(
+            "ops/steps",
+            lambda got: self.progressed(role, project, got),
+            key=f"progress:{id(self)}",
+            owner=self,
+            install=role,
+            project=project,
+        )
 
     def progressed(self, role: str, project: str, got: dict) -> None:
         """One project's tasks arrived: draw them, if that project is still the one picked."""
@@ -199,11 +238,15 @@ class Running(QFrame):
         where = ROLE.get(role, role)
         self.note.setStyleSheet("")
         if not p.get("up"):
-            return (f"El custodio está parado: el pulso solo lee la RAM libre. La tabla es de "
-                    f"{project} en {where}.")
+            return (
+                f"El custodio está parado: el pulso solo lee la RAM libre. La tabla es de "
+                f"{project} en {where}."
+            )
         if role == "custodian" and p.get("project") == project:
             return f"El pulso y la tabla son el mismo run: {project} en {where}."
         self.note.setStyleSheet(f"color:{C['weak']};")
         running = p.get("project") or "un proyecto que su log no nombra"
-        return (f"El pulso es del custodio, que corre {running}; la tabla es de {project} en "
-                f"{where}. Elige ese proyecto arriba para verlos juntos.")
+        return (
+            f"El pulso es del custodio, que corre {running}; la tabla es de {project} en "
+            f"{where}. Elige ese proyecto arriba para verlos juntos."
+        )

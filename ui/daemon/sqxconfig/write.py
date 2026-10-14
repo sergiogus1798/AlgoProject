@@ -89,7 +89,11 @@ def coerce(kind: dict, current: object, value: Any) -> object:
     if kind["type"] == "list":
         return _seq([yaml.safe_load(str(v)) for v in value if str(v).strip()], current)
     text = str(value)
-    return type(current)(text) if isinstance(current, ScalarString) else assetwrite.parse(text, "scalar")
+    return (
+        type(current)(text)
+        if isinstance(current, ScalarString)
+        else assetwrite.parse(text, "scalar")
+    )
 
 
 def _pair(doc: Any, path: list, value: object) -> None:
@@ -97,8 +101,10 @@ def _pair(doc: Any, path: list, value: object) -> None:
     if path[:2] == ["exits", "bars"]:
         bars = {**doc["exits"]["bars"], path[-1]: value}
         if bars["min_hours"] > bars["max_hours"]:
-            raise ValueError(f"min_hours {bars['min_hours']} quedaría por encima de "
-                             f"max_hours {bars['max_hours']}.")
+            raise ValueError(
+                f"min_hours {bars['min_hours']} quedaría por encima de "
+                f"max_hours {bars['max_hours']}."
+            )
 
 
 def _current(doc: Any, path: list) -> object:
@@ -122,7 +128,11 @@ def set_field(name: str, path: list, value: object) -> assetwrite.ValueWrite:
         section rather than one value is refused: writing a scalar over `exits` would erase
         the section.
     """
-    if name not in WRITABLE or not path or (name == "policy" and path[0] not in POLICY_KEYS):
+    if (
+        name not in WRITABLE
+        or not path
+        or (name == "policy" and path[0] not in POLICY_KEYS)
+    ):
         raise ValueError(f"{name}:{path} no se escribe desde esta zona.")
     file = ASSETS / assetwrite.SHARED[name]
     doc = read(file)
@@ -131,8 +141,10 @@ def set_field(name: str, path: list, value: object) -> assetwrite.ValueWrite:
     # whatever sits there — a scalar over «exits» erases the whole section.
     found = [leaf for leaf in leaves(file, doc) if leaf["path"] == list(path)]
     if not found:
-        raise ValueError(f"{name}:{path} no es un valor de este fichero: o no existe, o es "
-                         "una sección entera o un elemento suelto de una lista.")
+        raise ValueError(
+            f"{name}:{path} no es un valor de este fichero: o no existe, o es "
+            "una sección entera o un elemento suelto de una lista."
+        )
     node = found[0]["value"]
     kind = spec(name, list(path), node)
     if kind.get("locked"):

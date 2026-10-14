@@ -23,7 +23,7 @@ from ui.daemon.workflow.steps import STEPS
 # hand, not through the window or a Claude session's own `own_log`/release marker. A false
 # positive there costs a few minutes' wait; a missed one is rule 1 firing on a half-written
 # databank. Kept at 15 min (owner, 2026-09-29).
-QUIET_MIN = 15      # the install's SQX log written this recently: it just ran or is running
+QUIET_MIN = 15  # the install's SQX log written this recently: it just ran or is running
 # Where a cut's .sqx are copied before they go (owner, Q7): <P>/<D>/<stamp>/.
 DISCARDS = project_registry().parent / "discards"
 # (path, size, mtime) → identity. ~1 ms a file, but the window re-checks every 20 s.
@@ -72,14 +72,20 @@ def where(project: str) -> Refusal | Located:
     live = [r for r in registry.rows() if r["name"] == project and not r["retired"]]
     installs = {r["install"] for r in live}
     if MASTER.name in installs:
-        return {"refuse": f"{project} vive en el maestro ({MASTER.name}): la ventana nunca "
-                          "toca el install del dueño"}
+        return {
+            "refuse": f"{project} vive en el maestro ({MASTER.name}): la ventana nunca "
+            "toca el install del dueño"
+        }
     if not live:
-        return {"refuse": f"{project} no está en registry.csv (o está retirado): solo se "
-                          "continúa un proyecto creado por sqx.projects.builder"}
+        return {
+            "refuse": f"{project} no está en registry.csv (o está retirado): solo se "
+            "continúa un proyecto creado por sqx.projects.builder"
+        }
     if len(installs) > 1:
-        return {"refuse": f"{project} figura vivo en {', '.join(sorted(installs))}: no se sabe "
-                          "cuál tocar"}
+        return {
+            "refuse": f"{project} figura vivo en {', '.join(sorted(installs))}: no se sabe "
+            "cuál tocar"
+        }
     install = installs.pop()
     role = next((r for r, w in WORKERS.items() if w["path"].name == install), None)
     if role is None:
@@ -107,7 +113,7 @@ def busy(role: str, project: str, own_log: bool = False) -> list[str]:
         Q6): a `stop` kills anyone's run (OPEN.md §32). "Busy" is the lock held by a live
         holder, or the port up, or a live SQX process — not merely a project's mtime.
     """
-    if live.mine(role):            # this holder's GUI session: up on purpose, between its steps
+    if live.mine(role):  # this holder's GUI session: up on purpose, between its steps
         return []
     top, port = WORKERS[role]["path"], WORKERS[role]["port"]
     out = []
@@ -119,8 +125,10 @@ def busy(role: str, project: str, own_log: bool = False) -> list[str]:
             out.append(f"install ocupado: el puerto {port} de {top.name} responde{who}")
     pids = worker.holding(top)
     if pids:
-        out.append(f"install ocupado: {len(pids)} proceso(s) de SQX trabajan desde {top.name} "
-                   f"(PID {', '.join(map(str, pids))}){who}")
+        out.append(
+            f"install ocupado: {len(pids)} proceso(s) de SQX trabajan desde {top.name} "
+            f"(PID {', '.join(map(str, pids))}){who}"
+        )
     now = time.time()
     lines, mtime = progress.log_lines(top)
     run = progress.run_state(lines)
@@ -128,12 +136,16 @@ def busy(role: str, project: str, own_log: bool = False) -> list[str]:
     # window's own (owner, 2026-09-29): only a write after that release is a sign of anyone.
     own_log = own_log or bool(mtime and workerguard.own_last_write(role, mtime))
     if mtime and now - mtime < QUIET_MIN * 60 and not own_log:
-        out.append(f"el log de hoy de {top.name} se escribió hace {(now - mtime) / 60:.0f} "
-                   f"min (< {QUIET_MIN})")
+        out.append(
+            f"el log de hoy de {top.name} se escribió hace {(now - mtime) / 60:.0f} "
+            f"min (< {QUIET_MIN})"
+        )
     # A run killed before «Project finished» leaves the log saying «started» all day: it is a
     # sign of use only while an SQX process of the install is alive (2026-09-28).
     if run["project"] and not run["finished"] and pids:
-        out.append(f"el log de {top.name} dice que {run['project']} empezó y no ha terminado")
+        out.append(
+            f"el log de {top.name} dice que {run['project']} empezó y no ha terminado"
+        )
     return out
 
 
@@ -158,7 +170,9 @@ def by_identity(source: Path) -> dict[str, list[Path]]:
 
 def step_of(title: str) -> dict[str, Any] | None:
     """The workflow step (a row of `steps.STEPS`) whose SQX stage runs this task title."""
-    return next((s for s in STEPS if "stage" in s and title in stage.titles(s["stage"])), None)
+    return next(
+        (s for s in STEPS if "stage" in s and title in stage.titles(s["stage"])), None
+    )
 
 
 def next_task(tasks: list[dict[str, Any]], databank: str) -> Refusal | NextTask:
@@ -179,31 +193,51 @@ def next_task(tasks: list[dict[str, Any]], databank: str) -> Refusal | NextTask:
     here = step_of(producer["title"]) if producer else None
     if producer is None or here is None:
         return {"refuse": f"ninguna tarea de un paso del workflow escribe «{databank}»"}
-    later = STEPS[STEPS.index(here) + 1:]
+    later = STEPS[STEPS.index(here) + 1 :]
     # CrossTF reads the Cross Market survivors, and MC Retest the mothers CrossTF kept, through
     # a databank no task writes (`crosstfload`): the run fills it from this one before starting.
-    fed = crosstfload.feeders({t["title"]: {"Input": t["input"], "Output": t["output"]}
-                               for t in tasks})
+    fed = crosstfload.feeders(
+        {t["title"]: {"Input": t["input"], "Output": t["output"]} for t in tasks}
+    )
     for s in [s for s in later if "stage" in s]:
         titles = stage.titles(s["stage"])
-        hit = next((t for t in tasks if t["title"] in titles
-                    and databank in (t["input"], fed.get(t["input"]))), None)
+        hit = next(
+            (
+                t
+                for t in tasks
+                if t["title"] in titles
+                and databank in (t["input"], fed.get(t["input"]))
+            ),
+            None,
+        )
         if hit:
             # Every task of the step that reads the cut, or what an earlier one of it writes:
             # the eight MC Retests all read CrossTF_Mothers, SPP OOS reads SPP IS (📓
             # 2026-09-30: `skip` was «every other title», so only «MCR 1 Bar» ever ran).
             on = [hit["title"]]
             for t in tasks:
-                if t["title"] in titles and t["title"] not in on and (
+                if (
+                    t["title"] in titles
+                    and t["title"] not in on
+                    and (
                         t["input"] == hit["input"]
-                        or t["input"] in {u["output"] for u in tasks if u["title"] in on}):
+                        or t["input"]
+                        in {u["output"] for u in tasks if u["title"] in on}
+                    )
+                ):
                     on.append(t["title"])
-            return {"producer": producer["title"], "step": here["n"],
-                    "fill": hit["input"] if hit["input"] in fed else "",
-                    "segment": BY_TASK.get(producer["type"], DEFAULT_SEGMENT),
-                    "task": hit["title"], "stage": s["stage"],
-                    "skip": [t for t in titles if t not in on]}
-    return {"refuse": f"ninguna tarea posterior a «{producer['title']}» lee «{databank}»"}
+            return {
+                "producer": producer["title"],
+                "step": here["n"],
+                "fill": hit["input"] if hit["input"] in fed else "",
+                "segment": BY_TASK.get(producer["type"], DEFAULT_SEGMENT),
+                "task": hit["title"],
+                "stage": s["stage"],
+                "skip": [t for t in titles if t not in on],
+            }
+    return {
+        "refuse": f"ninguna tarea posterior a «{producer['title']}» lee «{databank}»"
+    }
 
 
 def check(project: str, databank: str) -> dict[str, Any]:
@@ -229,22 +263,34 @@ def check(project: str, databank: str) -> dict[str, Any]:
         return {"ok": False, "reasons": reasons + [f"{project} no está en {top.name}"]}
     tasks = progress.tasks(cfx)
     # The window may send either spelling; the install's folder is the one SQX writes.
-    databank = next((t["output"] for t in tasks
-                     if t["output"].replace(" ", "_") == databank.replace(" ", "_")), databank)
+    databank = next(
+        (
+            t["output"]
+            for t in tasks
+            if t["output"].replace(" ", "_") == databank.replace(" ", "_")
+        ),
+        databank,
+    )
     source = databank_dir(project, databank, top)
     rows = discards.live(project, databank)
     n = len({r["identity"] for r in rows})
     if not n:
-        reasons.append(f"no hay descartes de «{databank}»: filtra o borra a mano primero")
+        reasons.append(
+            f"no hay descartes de «{databank}»: filtra o borra a mano primero"
+        )
     held = by_identity(source)
     if not held:
-        reasons.append(f"«{databank}» no tiene ningún .sqx en {top.name}: no hay nada que "
-                       "borrar (¿Auto-sync never, o el databank no es de este install?)")
+        reasons.append(
+            f"«{databank}» no tiene ningún .sqx en {top.name}: no hay nada que "
+            "borrar (¿Auto-sync never, o el databank no es de este install?)"
+        )
     ids = {r["identity"] for r in rows}
     gone = ids - set(held)
     if held and gone:
-        reasons.append(f"{len(gone)} de {n} descartes ya no están en «{databank}»: el databank "
-                       "cambió desde el filtro. Quita los filtros y vuelve a filtrar")
+        reasons.append(
+            f"{len(gone)} de {n} descartes ya no están en «{databank}»: el databank "
+            "cambió desde el filtro. Quita los filtros y vuelve a filtrar"
+        )
     files = sum(len(held.get(i, [])) for i in ids)
     following = next_task(tasks, databank)
     extra: dict[str, Any] = {}
@@ -253,14 +299,29 @@ def check(project: str, databank: str) -> dict[str, Any]:
     else:
         extra = dict(following)
         # The launcher's configurators, on a task of the step whose cross-check is still off.
-        extra["configure"] = unconfigured(cfx, [t for t in stage.titles(following["stage"])
-                                                if t not in following["skip"]])
+        extra["configure"] = unconfigured(
+            cfx,
+            [t for t in stage.titles(following["stage"]) if t not in following["skip"]],
+        )
         extra["inputs"] = {t["title"]: t["input"] for t in tasks}
         # What the next task's output already holds: a retest appends beside it, so the
         # confirmation says so (📓 2026-09-29, OOS 200 + 21 as «Strategy X(1)»).
         out = next(t["output"] for t in tasks if t["title"] == following["task"])
-        extra |= {"output": out,
-                  "n_out": sum(1 for _ in databank_dir(project, out, top).glob("*.sqx"))
-                  if out else 0}
-    return {"ok": not reasons, "reasons": reasons, **got, "cfx": cfx, "databank": databank,
-            "source": source, "n": n, "files": files, "discards": rows, **extra}
+        extra |= {
+            "output": out,
+            "n_out": sum(1 for _ in databank_dir(project, out, top).glob("*.sqx"))
+            if out
+            else 0,
+        }
+    return {
+        "ok": not reasons,
+        "reasons": reasons,
+        **got,
+        "cfx": cfx,
+        "databank": databank,
+        "source": source,
+        "n": n,
+        "files": files,
+        "discards": rows,
+        **extra,
+    }

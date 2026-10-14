@@ -21,17 +21,30 @@ def pool_study(pool: Pool) -> str:
 def spent(pool: Pool) -> dict | None:
     """The row of the verdict that read this pool's `oos2`, or None while nobody has."""
     frame = study.read(pool_study(pool))
-    rows = frame[(frame["step"] == 27) & (frame["segment"] == "oos2")] if len(frame) else frame
+    rows = (
+        frame[(frame["step"] == 27) & (frame["segment"] == "oos2")]
+        if len(frame)
+        else frame
+    )
     return rows.iloc[0].to_dict() if len(rows) else None
 
 
 def counted() -> ledger_trials.Overall:
     """`ledger.trials.overall`: everything the whole project ever tried (owner 2026-10-05, R7)."""
-    return ledger_trials.overall([tried.with_sweeps(study.read(s), s) for s in study.studies()])
+    return ledger_trials.overall(
+        [tried.with_sweeps(study.read(s), s) for s in study.studies()]
+    )
 
 
-def read(path: Callable[[], np.ndarray], members: list[str], pool: Pool, members_meta: dict,
-         criterion: str, launched_by: str, note: str) -> dict[str, Any]:
+def read(
+    path: Callable[[], np.ndarray],
+    members: list[str],
+    pool: Pool,
+    members_meta: dict,
+    criterion: str,
+    launched_by: str,
+    note: str,
+) -> dict[str, Any]:
     """Judge the chosen portfolio on `oos2` by its deflated Sharpe -- once per pool, for good.
 
     The order is the guarantee: the pool's ledger is asked first, then the one-way door for
@@ -60,18 +73,29 @@ def read(path: Callable[[], np.ndarray], members: list[str], pool: Pool, members
         kept = row.get("thresholds") or {}
         if kept.get("members") == key:
             return {**kept, "stored": True, "read_on": row["ts"]}
-        return {"state": "refused", "read_on": row["ts"],
-                "reason": f"el oos2 de este pool ya lo leyó otra cartera el {row['ts'][:10]}: es "
-                          "una sola lectura, de una sola cartera, y está gastada"}
+        return {
+            "state": "refused",
+            "read_on": row["ts"],
+            "reason": f"el oos2 de este pool ya lo leyó otra cartera el {row['ts'][:10]}: es "
+            "una sola lectura, de una sola cartera, y está gastada",
+        }
     sigma = ledger_trials.accumulated(study.read(pool_study(pool)))["sigma"]
     if not np.isfinite(sigma) or sigma <= 0:
-        return {"state": "no_sigma",
-                "reason": "el estudio del pool no guarda Sharpes de build con los que deflactar "
-                          "(los escribe la búsqueda por rangos, real.py): oos2 no se abre"}
+        return {
+            "state": "no_sigma",
+            "reason": "el estudio del pool no guarda Sharpes de build con los que deflactar "
+            "(los escribe la búsqueda por rangos, real.py): oos2 no se abre",
+        }
     trials.admit(members_meta, ["oos2"])
     got = deflate.read(path(), sigma, counted()["n"])
     rows = trials.record_look(
-        pool, members_meta, "oos2", criterion, launched_by, got["state"] == "pass",
+        pool,
+        members_meta,
+        "oos2",
+        criterion,
+        launched_by,
+        got["state"] == "pass",
         f"Sharpe deflactado {got['excess']:+.4f} (N={got['n']}, sigma={got['sigma']:.4f}); {note}",
-        {**got, "members": key})
+        {**got, "members": key},
+    )
     return {**got, "stored": False, "read_on": rows[0]["ts"]}

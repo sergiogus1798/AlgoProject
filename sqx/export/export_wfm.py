@@ -11,8 +11,16 @@ import shutil
 import xml.etree.ElementTree as ET
 import zipfile
 
-from core import (exportdrv, manifest, sqxfile, trades, tradestore, wfmatrix, wfmobjectives,
-                  wftrades)
+from core import (
+    exportdrv,
+    manifest,
+    sqxfile,
+    trades,
+    tradestore,
+    wfmatrix,
+    wfmobjectives,
+    wftrades,
+)
 from core.paths import MASTER, databank_dir, export_dir, worker_dir
 from sqx.export.export_trades import stage
 from typing import cast
@@ -20,7 +28,9 @@ from typing import cast
 KEYS = ["strategy", "result", "oos_pct", "runs"]
 
 
-def tables(project: str, databank: str, install: Path = MASTER) -> dict[str, pd.DataFrame]:
+def tables(
+    project: str, databank: str, install: Path = MASTER
+) -> dict[str, pd.DataFrame]:
     """Read the matrix out of every .sqx in a databank, without SQX running.
 
     Args:
@@ -46,42 +56,68 @@ def tables(project: str, databank: str, install: Path = MASTER) -> dict[str, pd.
         if node is None:
             continue
         note = sqxfile.sqx_filter(f)
-        root = ET.fromstring(zipfile.ZipFile(f).read("settings.xml").decode("utf8", "replace"))
+        root = ET.fromstring(
+            zipfile.ZipFile(f).read("settings.xml").decode("utf8", "replace")
+        )
         rule, checked, shown = wfmobjectives.cells(root)
-        status.append({"strategy": f.stem, "sqx_filter": note,
-                       "sqx_failed": note is not None and note != "Passed"} | rule)
+        status.append(
+            {
+                "strategy": f.stem,
+                "sqx_filter": note,
+                "sqx_failed": note is not None and note != "Passed",
+            }
+            | rule
+        )
         conditions += [{"strategy": f.stem} | c for c in checked]
         objectives += [{"strategy": f.stem} | o for o in shown]
-        cells += [{"strategy": f.stem} | c for c in wfmatrix.cells(node, wfmatrix.results(f))]
+        cells += [
+            {"strategy": f.stem} | c for c in wfmatrix.cells(node, wfmatrix.results(f))
+        ]
         steps += [{"strategy": f.stem} | s for s in wfmatrix.periods(node)]
     if not steps:
         # 🔬 2026-09-29: a WFM task launched without its configurator is a plain retest; its
         # strategies carry no matrix and the pivot below raised KeyError: 'value'.
-        raise SystemExit(f"ninguna estrategia de «{databank}» lleva resultado de Walk-Forward "
-                         "Matrix: la tarea corrió sin la matriz configurada "
-                         "(sqx.projects.wfm, skill /wfm)")
-    params = [{**{k: s[k] for k in KEYS}, "index": s["index"], "parameter": k, "value": v}
-              for s in steps for k, v in s["params"].items()]
+        raise SystemExit(
+            f"ninguna estrategia de «{databank}» lleva resultado de Walk-Forward "
+            "Matrix: la tarea corrió sin la matriz configurada "
+            "(sqx.projects.wfm, skill /wfm)"
+        )
+    params = [
+        {**{k: s[k] for k in KEYS}, "index": s["index"], "parameter": k, "value": v}
+        for s in steps
+        for k, v in s["params"].items()
+    ]
     frame = lambda rows: pd.DataFrame(rows).drop(columns="params", errors="ignore")
     # Wide: one row per step, one column per parameter -- the shape every reader wants,
     # written once instead of pivoted on every read.
     # A step holds one value per parameter, so nothing is averaged: `first` takes it as SQX
     # wrote it. The values arrive as text -- 🔬 2026-09-25, pandas 2.3 refuses the old
     # implicit mean over them -- and a column becomes numeric only when every value is.
-    wide = (pd.DataFrame(params).pivot_table(index=[*KEYS, "index"], columns="parameter",
-                                             values="value", aggfunc="first").reset_index())
+    wide = (
+        pd.DataFrame(params)
+        .pivot_table(
+            index=[*KEYS, "index"], columns="parameter", values="value", aggfunc="first"
+        )
+        .reset_index()
+    )
     wide.columns.name = None
     for name in wide.columns.difference([*KEYS, "index"]):
         number = cast("pd.Series", pd.to_numeric(wide[name], errors="coerce"))
         if number.notna().sum() == wide[name].notna().sum():
             wide[name] = number
-    return {"cells": frame(cells), "steps": frame(steps), "params": wide,
-            "status": pd.DataFrame(status), "conditions": pd.DataFrame(conditions),
-            "objectives": pd.DataFrame(objectives)}
+    return {
+        "cells": frame(cells),
+        "steps": frame(steps),
+        "params": wide,
+        "status": pd.DataFrame(status),
+        "conditions": pd.DataFrame(conditions),
+        "objectives": pd.DataFrame(objectives),
+    }
 
 
-def split(raw_dir: Path, steps: pd.DataFrame, out: Path,
-          timeframes: dict[str, str]) -> pd.DataFrame:
+def split(
+    raw_dir: Path, steps: pd.DataFrame, out: Path, timeframes: dict[str, str]
+) -> pd.DataFrame:
     """Tag every strategy's data=all trades with their matrix cell and step, into one Parquet.
 
     Args:
@@ -106,22 +142,31 @@ def split(raw_dir: Path, steps: pd.DataFrame, out: Path,
         if mine.empty:
             continue
         main, *blocks = wftrades.chunks(trades.read(f))
-        mains.append(main[tradestore.KEEP + ["Symbol"]].assign(strategy=f.stem,
-                                                                timeframe=timeframes[f.stem]))
+        mains.append(
+            main[tradestore.KEEP + ["Symbol"]].assign(
+                strategy=f.stem, timeframe=timeframes[f.stem]
+            )
+        )
         for block, cell in zip(blocks, mine["result"].unique()):
             rows = cast("pd.DataFrame", mine[mine["result"] == cell]).to_dict("records")
             tagged = wftrades.label(block, rows)
-            keep = tradestore.KEEP + (["Ticket"] if not tradestore.ordered(tagged) else [])
-            frames.append(tagged[keep + ["period", "sample"]]
-                          .assign(strategy=f.stem, result=cell))
-            checked.append(wftrades.check(tagged, rows).assign(strategy=f.stem, result=cell))
+            keep = tradestore.KEEP + (
+                ["Ticket"] if not tradestore.ordered(tagged) else []
+            )
+            frames.append(
+                tagged[keep + ["period", "sample"]].assign(strategy=f.stem, result=cell)
+            )
+            checked.append(
+                wftrades.check(tagged, rows).assign(strategy=f.stem, result=cell)
+            )
     packed = pd.concat(frames, ignore_index=True)
     for c in (*tradestore.CATEGORICAL, "result", "sample"):
         if c in packed:
             packed[c] = packed[c].astype("category")
     packed.to_parquet(out, compression="zstd", index=False)
-    pd.concat(mains, ignore_index=True).to_parquet(out.with_name("main.parquet"),
-                                                   compression="zstd", index=False)
+    pd.concat(mains, ignore_index=True).to_parquet(
+        out.with_name("main.parquet"), compression="zstd", index=False
+    )
     return pd.concat(checked, ignore_index=True)
 
 
@@ -129,8 +174,12 @@ def main() -> None:
     """Export one WFM databank: the matrix tables, then the trades split per cell and step."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True)
-    ap.add_argument("--databank", required=True, help="the databank the WFM retest wrote into")
-    ap.add_argument("--role", help="worker role holding the project; the master if absent")
+    ap.add_argument(
+        "--databank", required=True, help="the databank the WFM retest wrote into"
+    )
+    ap.add_argument(
+        "--role", help="worker role holding the project; the master if absent"
+    )
     a = ap.parse_args()
 
     install = worker_dir(a.role) if a.role else MASTER
@@ -139,30 +188,43 @@ def main() -> None:
     written = tables(a.project, a.databank, install)
     for name, table in written.items():
         table.to_parquet(out / f"{name}.parquet", compression="zstd", index=False)
-        print(f"{name + '.parquet':16} {len(table):>7} rows  {len(table.columns):>4} columns")
+        print(
+            f"{name + '.parquet':16} {len(table):>7} rows  {len(table.columns):>4} columns"
+        )
 
-    for scratch in ("strategies", "raw"):          # intermediates a failed run leaves
+    for scratch in ("strategies", "raw"):  # intermediates a failed run leaves
         shutil.rmtree(out / scratch, ignore_errors=True)
     staged = stage(a.project, a.databank, out / "strategies", install=install)
     exportdrv.trades(out / "strategies", out / "raw", data="all")
     checked = split(out / "raw", written["steps"], out / "trades.parquet", staged)
     checked.to_parquet(out / "check.parquet", index=False)
     off = int((checked["assigned"] - checked["stored"]).abs().sum())
-    print(f"trades           {int(checked['assigned'].sum()):>7} assigned, {off} unaccounted for")
+    print(
+        f"trades           {int(checked['assigned'].sum()):>7} assigned, {off} unaccounted for"
+    )
     if off == 0:
         # The split reconciled trade for trade, so the CSVs orderstocsv wrote and the .sqx
         # copies are reproducible intermediates and go. A mismatch keeps them for inspection.
         shutil.rmtree(out / "raw")
         shutil.rmtree(out / "strategies")
 
-    manifest.write(out,
-                   {"install": str(install), "project": a.project, "databank": a.databank,
-                    "data": "all"},
-                   f"export_wfm.py --project {a.project} --databank {a.databank}",
-                   {"strategies": len(staged), "unaccounted_trades": off,
-                    "trades_in_steps": int(checked["assigned"].sum()),
-                    "failed_in_sqx": sorted(written["status"].query("sqx_failed")["strategy"]),
-                    **{f"{k}.parquet": len(v) for k, v in written.items()}})
+    manifest.write(
+        out,
+        {
+            "install": str(install),
+            "project": a.project,
+            "databank": a.databank,
+            "data": "all",
+        },
+        f"export_wfm.py --project {a.project} --databank {a.databank}",
+        {
+            "strategies": len(staged),
+            "unaccounted_trades": off,
+            "trades_in_steps": int(checked["assigned"].sum()),
+            "failed_in_sqx": sorted(written["status"].query("sqx_failed")["strategy"]),
+            **{f"{k}.parquet": len(v) for k, v in written.items()},
+        },
+    )
     print(f"wrote {out}")
 
 

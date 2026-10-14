@@ -8,8 +8,8 @@ import pandas as pd
 from core import fanout, sqxstats
 from sqx.variants import legs as legmod
 
-ROUNDING = 1.0        # dollars: the curve is stored at float32 precision
-BLOCK = 100           # files per worker task
+ROUNDING = 1.0  # dollars: the curve is stored at float32 precision
+BLOCK = 100  # files per worker task
 # An open position at a leg's last bar leaves the curve ahead of NetProfit by at most about
 # one trade's own size. 2026-09-26, USDJPY WFC on 1,093 variants of one mother: every variant
 # shared an open USDCAD position at the `build` boundary (they all trade the same fixed
@@ -43,27 +43,38 @@ def _block(start: int) -> tuple[dict, dict, dict]:
         several, not an open position.
     """
     files, keys = _SHARED["files"], _SHARED["keys"]
-    found, off, implausible = {m: {} for m in keys}, {m: [] for m in keys}, {m: [] for m in keys}
-    for path in files[start:start + BLOCK]:
-        every = sqxstats.every(path)       # one read of settings.xml per file, not one per market
+    found, off, implausible = (
+        {m: {} for m in keys},
+        {m: [] for m in keys},
+        {m: [] for m in keys},
+    )
+    for path in files[start : start + BLOCK]:
+        every = sqxstats.every(
+            path
+        )  # one read of settings.xml per file, not one per market
         for market, key in keys.items():
             try:
                 curve = sqxstats.equity(path, key)
             except StopIteration:
                 continue
             found[market][path.stem] = curve
-            stats = next(v for k, v in every.items() if k.startswith(key))[sqxstats.FULL]
+            stats = next(v for k, v in every.items() if k.startswith(key))[
+                sqxstats.FULL
+            ]
             diff = abs(float(curve.iloc[-1]) - stats["NetProfit"])
             if diff > ROUNDING:
                 off[market].append(path.stem)
-                bound = PLAUSIBLE_TRADES * max(abs(stats.get("MaxProfit") or 0),
-                                               abs(stats.get("MaxLoss") or 0))
+                bound = PLAUSIBLE_TRADES * max(
+                    abs(stats.get("MaxProfit") or 0), abs(stats.get("MaxLoss") or 0)
+                )
                 if bound == 0 or diff > bound:
                     implausible[market].append(path.stem)
     return {m: pd.DataFrame(c) for m, c in found.items()}, off, implausible
 
 
-def leg_curves(folder: Path, keys: dict[str, str]) -> dict[str, tuple[pd.DataFrame, list[str], list[str]]]:
+def leg_curves(
+    folder: Path, keys: dict[str, str]
+) -> dict[str, tuple[pd.DataFrame, list[str], list[str]]]:
     """Every result of one leg: its cumulative curves and the variants that did not reconcile.
 
     Args:
@@ -79,16 +90,28 @@ def leg_curves(folder: Path, keys: dict[str, str]) -> dict[str, tuple[pd.DataFra
     """
     files = sorted(folder.glob("*.sqx"))
     _SHARED.update(files=files, keys=keys)
-    parts = dict(fanout.run(_block, {i: BLOCK for i in range(0, len(files), BLOCK)},
-                            os.cpu_count() or 1))
+    parts = dict(
+        fanout.run(
+            _block, {i: BLOCK for i in range(0, len(files), BLOCK)}, os.cpu_count() or 1
+        )
+    )
     out = {}
     for market in keys:
-        frames = [parts[i][0][market] for i in sorted(parts) if not parts[i][0][market].empty]
-        cum = (pd.concat(frames, axis=1).sort_index().ffill().fillna(0.0) if frames
-               else pd.DataFrame())
-        out[market] = (cum, [v for i in sorted(parts) for v in parts[i][1][market]],
-                       [v for i in sorted(parts) for v in parts[i][2][market]])
+        frames = [
+            parts[i][0][market] for i in sorted(parts) if not parts[i][0][market].empty
+        ]
+        cum = (
+            pd.concat(frames, axis=1).sort_index().ffill().fillna(0.0)
+            if frames
+            else pd.DataFrame()
+        )
+        out[market] = (
+            cum,
+            [v for i in sorted(parts) for v in parts[i][1][market]],
+            [v for i in sorted(parts) for v in parts[i][2][market]],
+        )
     return out
+
 
 def markets_of(folder: Path) -> dict[str, str]:
     """Which results this leg's .sqx carry, main first and one per cross-check market.
@@ -107,5 +130,8 @@ def markets_of(folder: Path) -> dict[str, str]:
     # `Main: USDJPY_M1/H1` and the archive's folder is
     # `Results/Main: USDJPY_M1_LOM_H1/`, so the whole key matched no curve and
     # the harvest came back empty. Up to the "/" it is a prefix of both.
-    return {legmod.market(k): k.split("/")[0] for k in keys
-            if k.startswith(legmod.MAIN) or k.startswith(legmod.EXTRA)}
+    return {
+        legmod.market(k): k.split("/")[0]
+        for k in keys
+        if k.startswith(legmod.MAIN) or k.startswith(legmod.EXTRA)
+    }

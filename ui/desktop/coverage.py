@@ -2,8 +2,19 @@
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QBrush, QColor
-from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QFrame, QHBoxLayout, QHeaderView, QLabel, QPushButton,
-                               QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QComboBox,
+    QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import background, client, names
 from ui.desktop.coveragecells import ACTIONS, LEVELS, MARK, fill_tiles, level, swatch
@@ -11,14 +22,16 @@ from ui.desktop.studypage.net import fetch
 from ui.desktop.theme import C, verdict_label
 
 AXIS_LABEL = {"archetype": "Familia", "symbol": "Activo", "template": "Plantilla"}
-ROW_PX = 56          # three lines of a cell: the runs, where, and the board's count
+ROW_PX = 56  # three lines of a cell: the runs, where, and the board's count
 
 
 class Matrix(QWidget):
     """The grid of runs, the director's proposal above it and the chosen cell's actions below."""
 
-    picked = Signal(str)             # a template to open
-    go = Signal(str, dict)           # an action of `ACTIONS` (or «proposal») and the cell it is for
+    picked = Signal(str)  # a template to open
+    go = Signal(
+        str, dict
+    )  # an action of `ACTIONS` (or «proposal») and the cell it is for
 
     def __init__(self) -> None:
         """Build the header, the proposal line, the table, its legend and the cell's actions."""
@@ -49,8 +62,10 @@ class Matrix(QWidget):
         self.proposal.setStyleSheet("font-size:15px;")
         row.addWidget(self.proposal, 1)
         self.see = QPushButton("Ver propuesta", objectName="primary")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-        self.see.setToolTip("Abre Investigar en la propuesta del director: sus tres ideas, que "
-                            "sólo tienes que vetar, o el tablero para pedirle una.")
+        self.see.setToolTip(
+            "Abre Investigar en la propuesta del director: sus tres ideas, que "
+            "sólo tienes que vetar, o el tablero para pedirle una."
+        )
         self.see.clicked.connect(lambda: self.go.emit("proposal", {}))
         row.addWidget(self.see)
         lay.addWidget(box)
@@ -58,23 +73,33 @@ class Matrix(QWidget):
         self.table = QTableWidget()
         self.table.setShowGrid(True)
         self.table.verticalHeader().setDefaultSectionSize(ROW_PX)
-        self.table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)   # it is as tall as its rows
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.table.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )  # it is as tall as its rows
+        self.table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self.table.setStyleSheet(f"QTableWidget {{ font-size:14px; }} QHeaderView::section "
-                                 f"{{ font-size:15px; font-weight:700; color:{C['text']}; }}")
+        self.table.setStyleSheet(
+            f"QTableWidget {{ font-size:14px; }} QHeaderView::section "
+            f"{{ font-size:15px; font-weight:700; color:{C['text']}; }}"
+        )
         self.table.cellClicked.connect(self.on_click)
         self.table.cellDoubleClicked.connect(lambda *_: self.act("templates"))
         self.table.verticalHeader().sectionClicked.connect(self.on_row)
         lay.addWidget(self.table)
 
-        self.legend = QLabel(wordWrap=True)      # a one-line legend set the window's width  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-        self.legend.setToolTip("El fondo dice cuánto se ha probado en la celda, en cuatro "
-                               "escalones. La marca es el MEJOR veredicto que hay dentro: "
-                               "✔ algún run prometedor, ~ el mejor quedó flojo, ✘ todos "
-                               "muertos; sin marca, sin veredicto escrito. «Tablero» es el número de activos en que el director "
-                               "de investigación admite esa familia en ese marco (prior Alta o "
-                               "medida que pasa los filtros); sólo trabaja de M15 a H4.")
+        self.legend = QLabel(
+            wordWrap=True
+        )  # a one-line legend set the window's width  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.legend.setToolTip(
+            "El fondo dice cuánto se ha probado en la celda, en cuatro "
+            "escalones. La marca es el MEJOR veredicto que hay dentro: "
+            "✔ algún run prometedor, ~ el mejor quedó flojo, ✘ todos "
+            "muertos; sin marca, sin veredicto escrito. «Tablero» es el número de activos en que el director "
+            "de investigación admite esa familia en ese marco (prior Alta o "
+            "medida que pasa los filtros); sólo trabaja de M15 a H4."
+        )
         lay.addWidget(self.legend)
 
         box = QFrame(objectName="panel")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
@@ -105,19 +130,32 @@ class Matrix(QWidget):
         got = client.get("templates")
         self.templates = got["templates"]
         fill_tiles(self.tiles, got["totals"])
-        background.run(lambda: {"board": fetch("research/board"), "proposal": fetch("research/proposal")},
-                       self.board_landed, "coverage-board", self)
-        self.legend.setText(" &nbsp; ".join(swatch(colour, text) for _, text, colour, _ in LEVELS)
-                            + " &nbsp;·&nbsp; ✔ alguna prometedora &nbsp; ~ la mejor, floja &nbsp; "
-                              "✘ todas muertas &nbsp;·&nbsp; tablero N: activos (o familias) que "
-                              "el director admite ahí")
+        background.run(
+            lambda: {
+                "board": fetch("research/board"),
+                "proposal": fetch("research/proposal"),
+            },
+            self.board_landed,
+            "coverage-board",
+            self,
+        )
+        self.legend.setText(
+            " &nbsp; ".join(swatch(colour, text) for _, text, colour, _ in LEVELS)
+            + " &nbsp;·&nbsp; ✔ alguna prometedora &nbsp; ~ la mejor, floja &nbsp; "
+            "✘ todas muertas &nbsp;·&nbsp; tablero N: activos (o familias) que "
+            "el director admite ahí"
+        )
         self.choose({})
 
     def board_landed(self, got: dict) -> None:
         """The board and the proposal arrive after the table: repaint with them."""
         self.board = {}
         for c in got["board"].get("cells", []):
-            row = c["symbol"] if self.axis.currentData() == "symbol" else names.spelt(c["family"], names.REGISTRY)
+            row = (
+                c["symbol"]
+                if self.axis.currentData() == "symbol"
+                else names.spelt(c["family"], names.REGISTRY)
+            )
             self.board.setdefault(f"{row}|{c['timeframe']}", []).append(c)
         self.fill_proposal(got["proposal"])
         self.fill_table()
@@ -134,7 +172,9 @@ class Matrix(QWidget):
             f"<b>El director propone</b> &nbsp; {cell['symbol']} · {cell['timeframe']} · "
             f"{cell['direction']} · <b>{names.family(cell['family'])}</b> &nbsp; — "
             f"{len(p['ideas'])} ideas, {p['created'][:10]}. Tú sólo vetas."
-            if cell else "<b>No hay propuesta guardada.</b>")
+            if cell
+            else "<b>No hay propuesta guardada.</b>"
+        )
 
     def row_label(self, row: str) -> str:
         """A row's header: a family by its shown name and how many templates it has."""
@@ -154,8 +194,12 @@ class Matrix(QWidget):
         self.table.setVerticalHeaderLabels([self.row_label(r) for r in rows])
         for r, row in enumerate(rows):
             self.table.verticalHeaderItem(r).setToolTip(
-                "Clic: las plantillas de esta familia." if self.axis.currentData() == "archetype"
-                else "Clic: esta plantilla." if self.axis.currentData() == "template" else "")
+                "Clic: las plantillas de esta familia."
+                if self.axis.currentData() == "archetype"
+                else "Clic: esta plantilla."
+                if self.axis.currentData() == "template"
+                else ""
+            )
             for c, col in enumerate(cols):
                 cell = cells.get(f"{row}|{col}")
                 board = self.board.get(f"{row}|{col}", [])
@@ -164,24 +208,39 @@ class Matrix(QWidget):
                 lines = []
                 if cell:
                     n = cell["count"]
-                    lines += [MARK.get(cell["verdict"], "")
-                              + f"{n} run{'' if n == 1 else 's'}",
-                              ", ".join(cell["templates"] if by_symbol else cell["symbols"])]
+                    lines += [
+                        MARK.get(cell["verdict"], "")
+                        + f"{n} run{'' if n == 1 else 's'}",
+                        ", ".join(cell["templates"] if by_symbol else cell["symbols"]),
+                    ]
                 if wide:
                     lines.append(f"tablero {wide}")
                 item = QTableWidgetItem("\n".join(lines))
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 item.setForeground(QBrush(QColor(ink)))
                 item.setBackground(QBrush(QColor(ground)))
-                item.setToolTip("\n".join(
-                    [f"{self.row_label(row)} · {col}"
-                     + (f" — {verdict_label(cell['verdict'])}" if cell else ": sin probar.")]
-                    + [f"{x['template']} · {x['symbol']} · {x['date']} · "
-                       f"{x['strategies_kept'] or '?'}/{x['strategies_built'] or '?'} "
-                       f"estrategias" for x in (cell or {}).get("runs", [])]))
+                item.setToolTip(
+                    "\n".join(
+                        [
+                            f"{self.row_label(row)} · {col}"
+                            + (
+                                f" — {verdict_label(cell['verdict'])}"
+                                if cell
+                                else ": sin probar."
+                            )
+                        ]
+                        + [
+                            f"{x['template']} · {x['symbol']} · {x['date']} · "
+                            f"{x['strategies_kept'] or '?'}/{x['strategies_built'] or '?'} "
+                            f"estrategias"
+                            for x in (cell or {}).get("runs", [])
+                        ]
+                    )
+                )
                 self.table.setItem(r, c, item)
-        self.table.setFixedHeight(self.table.horizontalHeader().sizeHint().height()
-                                  + ROW_PX * len(rows) + 4)
+        self.table.setFixedHeight(
+            self.table.horizontalHeader().sizeHint().height() + ROW_PX * len(rows) + 4
+        )
 
     def choose(self, cell: dict) -> None:
         """Make one cell the subject of the action buttons, and say what is in it.
@@ -192,15 +251,29 @@ class Matrix(QWidget):
                 `{}` for no cell chosen.
         """
         self.cell = cell
-        self.cell_title.setText(f"{cell['row']} · {cell['timeframe']}" if cell else
-                                "Pulsa una celda, o el nombre de una familia")
-        self.cell_text.setText(cell.get("text", "Una celda lleva a sus plantillas, a la paleta "
-                                                "de su familia, a una plantilla nueva o a lo "
-                                                "que el director mide ahí. El nombre de una "
-                                                "familia, a sus plantillas."))
+        self.cell_title.setText(
+            f"{cell['row']} · {cell['timeframe']}"
+            if cell
+            else "Pulsa una celda, o el nombre de una familia"
+        )
+        self.cell_text.setText(
+            cell.get(
+                "text",
+                "Una celda lleva a sus plantillas, a la paleta "
+                "de su familia, a una plantilla nueva o a lo "
+                "que el director mide ahí. El nombre de una "
+                "familia, a sus plantillas.",
+            )
+        )
         for key, b in self.buttons.items():
-            b.setEnabled(bool(cell) and (key in ("new", "research") or bool(cell["family"])
-                                         or (key == "templates" and bool(cell["template"]))))
+            b.setEnabled(
+                bool(cell)
+                and (
+                    key in ("new", "research")
+                    or bool(cell["family"])
+                    or (key == "templates" and bool(cell["template"]))
+                )
+            )
 
     def on_click(self, r: int, c: int) -> None:
         """Choose the cell clicked.
@@ -212,20 +285,47 @@ class Matrix(QWidget):
         row, tf = self.data["rows"][r], self.data["columns"][c]
         cell = self.data["cells"].get(f"{row}|{tf}")
         template = cell["templates"][0] if cell else row if axis == "template" else ""
-        family = row if axis == "archetype" else next(
-            (t.get("archetype", "") for t in self.templates if t["name"] == template), "")
+        family = (
+            row
+            if axis == "archetype"
+            else next(
+                (
+                    t.get("archetype", "")
+                    for t in self.templates
+                    if t["name"] == template
+                ),
+                "",
+            )
+        )
         board = sorted(self.board.get(f"{row}|{tf}", []), key=lambda b: b["rank"])
         symbol = row if axis == "symbol" else board[0]["symbol"] if board else ""
-        tried = (f"{cell['count']} run(s): " + "; ".join(
-            f"{x['template']} en {x['symbol']} ({verdict_label(x['verdict'])})"
-            for x in cell["runs"]) + "." if cell else "Sin probar.")
-        said = (f" Tablero del director: {len(board)} celda(s); la primera, {board[0]['symbol']} "
-                f"{board[0]['direction']} · {names.family(board[0]['family'])} (puesto "
-                f"{board[0]['rank']})." if board else
-                " El tablero del director no tiene nada aquí.")
-        self.choose({"family": names.spelt(family, names.REGISTRY) or "", "symbol": symbol,
-                     "timeframe": tf, "template": template,
-                     "row": self.row_label(row).split("  ·  ")[0], "text": tried + said})
+        tried = (
+            f"{cell['count']} run(s): "
+            + "; ".join(
+                f"{x['template']} en {x['symbol']} ({verdict_label(x['verdict'])})"
+                for x in cell["runs"]
+            )
+            + "."
+            if cell
+            else "Sin probar."
+        )
+        said = (
+            f" Tablero del director: {len(board)} celda(s); la primera, {board[0]['symbol']} "
+            f"{board[0]['direction']} · {names.family(board[0]['family'])} (puesto "
+            f"{board[0]['rank']})."
+            if board
+            else " El tablero del director no tiene nada aquí."
+        )
+        self.choose(
+            {
+                "family": names.spelt(family, names.REGISTRY) or "",
+                "symbol": symbol,
+                "timeframe": tf,
+                "template": template,
+                "row": self.row_label(row).split("  ·  ")[0],
+                "text": tried + said,
+            }
+        )
 
     def on_row(self, r: int) -> None:
         """A row's name was clicked: a family leads to its templates, a template to its page.

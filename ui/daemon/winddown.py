@@ -20,7 +20,11 @@ def started(job: dict) -> str:
     """The role whose worker THIS job started and has not seen stop (`workerguard` marker with
     its PID), '' otherwise: a worker of anyone else is never stopped nor reported here."""
     mark = workerguard.marked(job.get("role")) if job["label"] in LAUNCHERS else None
-    return mark["role"] if mark and job["_proc"] and mark["pid"] == job["_proc"].pid else ""
+    return (
+        mark["role"]
+        if mark and job["_proc"] and mark["pid"] == job["_proc"].pid
+        else ""
+    )
 
 
 def left_up(job: dict) -> str:
@@ -29,7 +33,9 @@ def left_up(job: dict) -> str:
     return role if role and worker.holding(WORKERS[role]["path"]) else ""
 
 
-def wind_down(job: dict, kill: Callable[[dict], None], pump: Callable[[], None]) -> None:
+def wind_down(
+    job: dict, kill: Callable[[dict], None], pump: Callable[[], None]
+) -> None:
     """End a launcher so its `finally` stops the worker: SIGTERM, GRACE_S, then SIGKILL of
     the children it had then and of itself; a worker it started and left up is stopped here.
 
@@ -56,11 +62,13 @@ def wind_down(job: dict, kill: Callable[[dict], None], pump: Callable[[], None])
     role = left_up(job)
     if role:
         with open(job["log"], "a", encoding="utf-8") as log:
-            log.write(f"el demonio para el {role}, que este trabajo arrancó y dejó arrancado\n")
+            log.write(
+                f"el demonio para el {role}, que este trabajo arrancó y dejó arrancado\n"
+            )
         try:
             worker.stop(role, export=False)
         except subprocess.CalledProcessError:
-            pass        # still up: `jobs.public` says so in the job's state
+            pass  # still up: `jobs.public` says so in the job's state
         if not worker.holding(WORKERS[role]["path"]):
             workerguard.release(role)
     pump()

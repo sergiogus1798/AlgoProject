@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Step 26: one strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account."""
+
 import argparse
 import json
 import re
@@ -20,7 +21,7 @@ from sqx.projects import mt5verify
 from ui.daemon.launch.run import assets as rule_five, graceful
 
 RUNS = MT5_DATA / "verify"
-FALLBACK = 4        # years before Hasta when no server says how deep its history goes
+FALLBACK = 4  # years before Hasta when no server says how deep its history goes
 
 
 def say(pct: int, line: str) -> None:
@@ -39,7 +40,9 @@ def identify(strategy: Path) -> tuple[str, str]:
     name, rest = sqxfile.symbol(strategy)
     timeframe = rest.rsplit("_", 1)[-1]
     if name not in assetdata.symbols():
-        raise SystemExit(f"{strategy.name} opera {name}, que no tiene ficha en assets/symbols/")
+        raise SystemExit(
+            f"{strategy.name} opera {name}, que no tiene ficha en assets/symbols/"
+        )
     if timeframe not in judge.MINUTES:
         raise SystemExit(f"{strategy.name}: timeframe «{timeframe}» no reconocido")
     return name, timeframe
@@ -61,7 +64,9 @@ def segments(data: dict, window: tuple[str, str]) -> str:
 def capital(cfx: Path, member: str) -> float:
     """The initial capital the SQX retest starts from, which the MT5 tester is given too."""
     with zipfile.ZipFile(cfx) as z:
-        found = re.search(r"<InitialCapital>([\d.]+)</InitialCapital>", z.read(member).decode())
+        found = re.search(
+            r"<InitialCapital>([\d.]+)</InitialCapital>", z.read(member).decode()
+        )
     return float(found.group(1)) if found else 100000.0
 
 
@@ -69,10 +74,15 @@ def latest(end: str, data: dict) -> str:
     """The window's last day, never past the day before SQX's last one: a range that closes
     on SQX's last day (its next midnight) reads «Project has unresolved resources» and the
     project never starts (📓 2026-09-30, USDJPY to 2026-09-25)."""
-    last = (date.fromisoformat(str(data["data"]["to"])[:10]) - timedelta(days=1)).isoformat()
+    last = (
+        date.fromisoformat(str(data["data"]["to"])[:10]) - timedelta(days=1)
+    ).isoformat()
     if end > last:
-        print(f"Hasta: SQX tiene datos hasta el {str(data['data']['to'])[:10]}; la ventana "
-              f"acaba el {last}", flush=True)
+        print(
+            f"Hasta: SQX tiene datos hasta el {str(data['data']['to'])[:10]}; la ventana "
+            f"acaba el {last}",
+            flush=True,
+        )
     return min(end, last)
 
 
@@ -93,14 +103,25 @@ def earliest(start: str, end: str, depth: dict, data: dict) -> str:
         return start
     found = [d for d in depth.values() if d]
     if not found:
-        got = date.fromisoformat(end).replace(year=date.fromisoformat(end).year - FALLBACK)
-        print(f"Desde: ningún servidor dijo su histórico; {FALLBACK} años antes de Hasta, "
-              f"{got}", flush=True)
+        got = date.fromisoformat(end).replace(
+            year=date.fromisoformat(end).year - FALLBACK
+        )
+        print(
+            f"Desde: ningún servidor dijo su histórico; {FALLBACK} años antes de Hasta, "
+            f"{got}",
+            flush=True,
+        )
         return got.isoformat()
     got = max(found + [str(data["data"]["from"])[:10]])
-    print("Desde: " + ", ".join(f"{firms.label(f)} tiene barras desde {d}" for f, d in
-                                depth.items()) + f"; SQX desde {str(data['data']['from'])[:10]}"
-          f" -> {got}", flush=True)
+    print(
+        "Desde: "
+        + ", ".join(
+            f"{firms.label(f)} tiene barras desde {d}" for f, d in depth.items()
+        )
+        + f"; SQX desde {str(data['data']['from'])[:10]}"
+        f" -> {got}",
+        flush=True,
+    )
     if date.fromisoformat(got) >= date.fromisoformat(end):
         raise SystemExit(f"la historia común empieza el {got}, después de Hasta")
     return got
@@ -110,15 +131,28 @@ def main() -> None:
     """Price each firm, retest in SQX, backtest in MT5, compare, and write the result."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--strategy", type=Path, required=True, help="the .sqx to verify")
-    ap.add_argument("--from", dest="start", required=True,
-                    help="YYYY-MM-DD, the first day; «mt5»: the deepest history every firm's "
-                         "server holds (owner, 2026-09-29 §3.2)")
+    ap.add_argument(
+        "--from",
+        dest="start",
+        required=True,
+        help="YYYY-MM-DD, the first day; «mt5»: the deepest history every firm's "
+        "server holds (owner, 2026-09-29 §3.2)",
+    )
     ap.add_argument("--to", dest="end", required=True, help="YYYY-MM-DD, the last day")
-    ap.add_argument("--model", required=True, choices=sorted(tester.MODELS),
-                    help="the MT5 tester's model — chosen each time, never a default")
-    ap.add_argument("--firms", default="", help="comma-separated firm keys; all saved if empty")
-    ap.add_argument("--also-real-ticks", action="store_true",
-                    help="a second MT5 pass on real ticks, judged and drawn beside --model's")
+    ap.add_argument(
+        "--model",
+        required=True,
+        choices=sorted(tester.MODELS),
+        help="the MT5 tester's model — chosen each time, never a default",
+    )
+    ap.add_argument(
+        "--firms", default="", help="comma-separated firm keys; all saved if empty"
+    )
+    ap.add_argument(
+        "--also-real-ticks",
+        action="store_true",
+        help="a second MT5 pass on real ticks, judged and drawn beside --model's",
+    )
     ap.add_argument("--set", action="append", default=[], help="section.key=value")
     a = ap.parse_args()
     started = time.time()
@@ -128,17 +162,27 @@ def main() -> None:
         raise SystemExit("la ventana acaba antes de empezar")
     strategy = a.strategy.resolve()
     asset, timeframe = identify(strategy)
-    sizing = mt5verify.own_sizing(strategy)      # both sides trade it (owner, 2026-09-29)
+    sizing = mt5verify.own_sizing(strategy)  # both sides trade it (owner, 2026-09-29)
     data = assetdata.load(asset)
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id = f"{stamp}_{re.sub(r'[^A-Za-z0-9]+', '_', strategy.stem)}"
     work = RUNS / run_id
     mq5_dir = work / "mq5"
     mq5_dir.mkdir(parents=True, exist_ok=True)
-    meta = {"run": run_id, "strategy": strategy.stem, "file": str(strategy),
-            "identity": sqxfile.identity(strategy), "asset": asset, "timeframe": timeframe,
-            "from": a.start, "to": a.end, "model": a.model, "ticks": also, "state": "running",
-            "started": datetime.now().isoformat(timespec="seconds")}
+    meta = {
+        "run": run_id,
+        "strategy": strategy.stem,
+        "file": str(strategy),
+        "identity": sqxfile.identity(strategy),
+        "asset": asset,
+        "timeframe": timeframe,
+        "from": a.start,
+        "to": a.end,
+        "model": a.model,
+        "ticks": also,
+        "state": "running",
+        "started": datetime.now().isoformat(timespec="seconds"),
+    }
     (work / "run.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
 
     say(2, f"comprobando {asset} (regla 5)")
@@ -153,12 +197,19 @@ def main() -> None:
             if row["why"]:
                 refused[firm] = row["why"]
                 continue
-            say(5, f"leyendo {row['symbol']} en la cuenta de {firm} ({row['account']['server']})")
+            say(
+                5,
+                f"leyendo {row['symbol']} en la cuenta de {firm} ({row['account']['server']})",
+            )
             try:
                 info = conditions.read(row["symbol"], row["account"])
-                costs[firm], notes[firm] = conditions.for_sqx(data, firm, info,
-                                                              cfg["sqx"]["slippage"])
-                leverage[firm], depth[firm] = info["account_leverage"], info["first_bar"]
+                costs[firm], notes[firm] = conditions.for_sqx(
+                    data, firm, info, cfg["sqx"]["slippage"]
+                )
+                leverage[firm], depth[firm] = (
+                    info["account_leverage"],
+                    info["first_bar"],
+                )
             except conditions.Refused as why:
                 refused[firm] = str(why)
     finally:
@@ -166,23 +217,45 @@ def main() -> None:
     for firm, why in refused.items():
         print(f"⚠️ {firm}: {why}", flush=True)
     if not costs:
-        report.finish(work, meta, cfg, started, {}, refused, "ninguna empresa se pudo preparar")
-        raise SystemExit("ninguna empresa se pudo preparar: " + " | ".join(refused.values()))
+        report.finish(
+            work, meta, cfg, started, {}, refused, "ninguna empresa se pudo preparar"
+        )
+        raise SystemExit(
+            "ninguna empresa se pudo preparar: " + " | ".join(refused.values())
+        )
 
     window = (earliest(a.start, a.end, depth, data), latest(a.end, data))
-    gate.allow(26, segments(data, window), asset)    # the door before the CPU: the ledger row asks it again at the end
+    gate.allow(
+        26, segments(data, window), asset
+    )  # the door before the CPU: the ledger row asks it again at the end
     meta["from"], meta["to"] = window
     project = f"Test_MT5Verify_{asset}_{timeframe}_{stamp[9:]}"
     role = cfg["role"]
     say(10, f"creando {project} en el {role}")
-    built = sqxside.build(project, strategy, asset, timeframe, role, cfg["sqx"]["donor_members"])
+    built = sqxside.build(
+        project, strategy, asset, timeframe, role, cfg["sqx"]["donor_members"]
+    )
     cfx = Path(built["cfx"])
     try:
-        done = mt5verify.configure(cfx, data["sqx_symbol"], window, costs, mq5_dir, cfg["sqx"],
-                                   sizing, strategy)
+        done = mt5verify.configure(
+            cfx,
+            data["sqx_symbol"],
+            window,
+            costs,
+            mq5_dir,
+            cfg["sqx"],
+            sizing,
+            strategy,
+        )
         deposit = capital(cfx, done["tasks"][0]["member"])
-        folders = sqxside.run(project, role, strategy, work,
-                              {t["firm"]: t["output"] for t in done["tasks"]}, cfg["sqx"])
+        folders = sqxside.run(
+            project,
+            role,
+            strategy,
+            work,
+            {t["firm"]: t["output"] for t in done["tasks"]},
+            cfg["sqx"],
+        )
         say(55, "exportando las operaciones de SQX")
         sqx_trades = sqxside.firm_trades(folders, work)
     finally:
@@ -190,50 +263,106 @@ def main() -> None:
 
     found = sorted(mq5_dir.glob("*.mq5"))
     if not found:
-        raise SystemExit(f"SQX no escribió el .mq5 en {mq5_dir}: la tarea «{done['export']}» "
-                         f"no exportó (generador «{cfg['sqx']['generator']}»)")
+        raise SystemExit(
+            f"SQX no escribió el .mq5 en {mq5_dir}: la tarea «{done['export']}» "
+            f"no exportó (generador «{cfg['sqx']['generator']}»)"
+        )
     say(60, f"compilando {found[0].name}")
-    ea = mt5side.compile_ea(found[0], f"V{stamp[9:]}_{strategy.stem}", sizing["params"]["Size"])
+    ea = mt5side.compile_ea(
+        found[0], f"V{stamp[9:]}_{strategy.stem}", sizing["params"]["Size"]
+    )
 
     mt5_trades, reports, slow = {}, {}, {}
     usable = firms.usable(asset)
     for i, firm in enumerate(costs):
         say(65 + 25 * i // len(costs), f"backtest en MT5 en la cuenta de {firm}")
-        got = mt5side.backtest(ea["expert"], usable[firm]["symbol"], timeframe, window, a.model,
-                               deposit, leverage[firm], usable[firm]["account"], firm,
-                               cfg["mt5"])
-        mt5_trades[firm], reports[firm] = got["trades"], {"dir": got["dir"],
-                                                           "summary": got["summary"]}
+        got = mt5side.backtest(
+            ea["expert"],
+            usable[firm]["symbol"],
+            timeframe,
+            window,
+            a.model,
+            deposit,
+            leverage[firm],
+            usable[firm]["account"],
+            firm,
+            cfg["mt5"],
+        )
+        mt5_trades[firm], reports[firm] = (
+            got["trades"],
+            {"dir": got["dir"], "summary": got["summary"]},
+        )
         if also:
-            slow[firm] = ticks.backtest(ea["expert"], usable[firm], timeframe, window, deposit,
-                                        leverage[firm], firm, cfg["mt5"])
+            slow[firm] = ticks.backtest(
+                ea["expert"],
+                usable[firm],
+                timeframe,
+                window,
+                deposit,
+                leverage[firm],
+                firm,
+                cfg["mt5"],
+            )
 
     say(92, "comparando")
     zones = (feeds.timezone(data["sqx_symbol"]), cfg["clock"]["server_zone"])
     pieces, summaries = {}, {}
     for firm in costs:
         sqx_in = compare.window(sqx_trades[firm], *window)
-        for model, trades in [(a.model, mt5_trades[firm]), (ticks.MODEL, slow.get(firm))][:1 + also]:
-            piece = judge.firm_result(firm, sqx_in, compare.window(trades, *window), timeframe,
-                                      deposit, cfg, usable[firm]["symbol"], data["instrument"],
-                                      zones)
-            record.log(ledger_study.study_id(asset, timeframe, "mt5verify"), {
-                "step": 26, "launched_by": "mt5.verify", "symbol": asset, "timeframe": timeframe,
-                "segment": segments(data, window), "window_from": window[0],
-                "window_to": window[1], "n_in": 1,
-                "n_out": int(piece["summary"]["state"] == "pass"),
-                "criterion": f"SQX ↔ MT5 en {firm} ({model})",
-                "thresholds": cfg["thresholds"], "note": f"{strategy.stem} · {run_id}"})
+        for model, trades in [
+            (a.model, mt5_trades[firm]),
+            (ticks.MODEL, slow.get(firm)),
+        ][: 1 + also]:
+            piece = judge.firm_result(
+                firm,
+                sqx_in,
+                compare.window(trades, *window),
+                timeframe,
+                deposit,
+                cfg,
+                usable[firm]["symbol"],
+                data["instrument"],
+                zones,
+            )
+            record.log(
+                ledger_study.study_id(asset, timeframe, "mt5verify"),
+                {
+                    "step": 26,
+                    "launched_by": "mt5.verify",
+                    "symbol": asset,
+                    "timeframe": timeframe,
+                    "segment": segments(data, window),
+                    "window_from": window[0],
+                    "window_to": window[1],
+                    "n_in": 1,
+                    "n_out": int(piece["summary"]["state"] == "pass"),
+                    "criterion": f"SQX ↔ MT5 en {firm} ({model})",
+                    "thresholds": cfg["thresholds"],
+                    "note": f"{strategy.stem} · {run_id}",
+                },
+            )
             ticks.keep(pieces, summaries, firm, piece, reports[firm]["dir"])
-        summaries[firm]["mt5_history"] = {k: v for k, v in reports[firm]["summary"].items() if k[:5] in ("histo", "first", "start")}
+        summaries[firm]["mt5_history"] = {
+            k: v
+            for k, v in reports[firm]["summary"].items()
+            if k[:5] in ("histo", "first", "start")
+        }
     tabs = []
     if pieces:
         params = judge.params_table(assetdata.sqx_settings(data, "build"), costs)
         tabs = [ticks.tab(params, pieces, a.model)]
-    meta.update(project=project, deposit=deposit, ea=ea["expert"], lots=sizing["params"]["Size"])
+    meta.update(
+        project=project, deposit=deposit, ea=ea["expert"], lots=sizing["params"]["Size"]
+    )
     report.finish(work, meta, cfg, started, summaries, refused, "", tabs)
-    say(100, " · ".join(f"{firms.label(f)}: { {'pass': 'Validada', 'none': 'Sin veredicto'}.get(s['state'], 'No validada')}"
-                        for f, s in summaries.items()) or "sin empresas")
+    say(
+        100,
+        " · ".join(
+            f"{firms.label(f)}: { {'pass': 'Validada', 'none': 'Sin veredicto'}.get(s['state'], 'No validada') }"
+            for f, s in summaries.items()
+        )
+        or "sin empresas",
+    )
 
 
 if __name__ == "__main__":

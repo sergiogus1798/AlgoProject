@@ -48,7 +48,6 @@ class Analysis(TypedDict):
     overlap: float
 
 
-
 def _family_a(runs: dict, seen: dict, cfg: dict) -> dict:
     """Order luck: what the drawdown looks like when the same trades arrive differently.
 
@@ -66,14 +65,19 @@ def _family_a(runs: dict, seen: dict, cfg: dict) -> dict:
     q = cfg["global"]["report_percentile"]
     labels = [k for k in runs if k == config.HEADLINE or "shuffle" in k]
     head = runs[config.HEADLINE]
-    return {"runs": {k: metrics.table(runs[k], seen, qs) for k in labels},
-            "shapes": {k: metrics.shapes(runs[k], seen, q) for k in labels},
-            "invariant": {k: sweeps.invariant(runs[k]) for k in labels
-                          if k.split("/")[0] in draws.KEEPS_MULTISET},
-            "dd_pct_95": float(np.percentile(head["dd_pct"], 95)),
-            "dd_pct_99": float(np.percentile(head["dd_pct"], 99)),
-            "inflation": float(np.percentile(head["dd_pct"], 95) / seen["dd_pct"]),
-            "shape": metrics.shape(head["dd_pct"], seen["dd_pct"], q)}
+    return {
+        "runs": {k: metrics.table(runs[k], seen, qs) for k in labels},
+        "shapes": {k: metrics.shapes(runs[k], seen, q) for k in labels},
+        "invariant": {
+            k: sweeps.invariant(runs[k])
+            for k in labels
+            if k.split("/")[0] in draws.KEEPS_MULTISET
+        },
+        "dd_pct_95": float(np.percentile(head["dd_pct"], 95)),
+        "dd_pct_99": float(np.percentile(head["dd_pct"], 99)),
+        "inflation": float(np.percentile(head["dd_pct"], 95) / seen["dd_pct"]),
+        "shape": metrics.shape(head["dd_pct"], seen["dd_pct"], q),
+    }
 
 
 def _leave_one_out(pnl: np.ndarray) -> dict:
@@ -89,8 +93,11 @@ def _leave_one_out(pnl: np.ndarray) -> dict:
     """
     total = float(pnl.sum())
     without = total - float(pnl.max())
-    return {"net_without_best": without, "best": float(pnl.max()),
-            "share": float(1 - without / total) if total else float("nan")}
+    return {
+        "net_without_best": without,
+        "best": float(pnl.max()),
+        "share": float(1 - without / total) if total else float("nan"),
+    }
 
 
 def _family_b(runs: dict, source: dict, cfg: dict, sims: int) -> dict:
@@ -119,22 +126,33 @@ def _family_b(runs: dict, source: dict, cfg: dict, sims: int) -> dict:
         cut = engine.payload(source, positions)
         # sequential(), not single(): sims is the full study count here, and single() only
         # bounds memory for the small per-window counts family_d uses.
-        got = engine.sequential(cut, "draw", "iid_bootstrap", 0, sims, cfg, config.seed(cfg))
-        parts[name] = {"n": int(positions.size),
-                       "sharpe": float(np.median(got["sharpe"])),
-                       "net": float(np.median(got["net"])),
-                       "pf_5": float(np.nanpercentile(got["pf"], 5)),
-                       "shape": metrics.shape(got["net"],
-                                              float(source["pnl"][positions].sum()), q)}
-    ratio = (parts["OOS"]["sharpe"] / parts["IS"]["sharpe"]
-             if {"IS", "OOS"} <= parts.keys() and parts["IS"]["sharpe"] else float("nan"))
-    return {"runs": {k: metrics.table(runs[k], seen, qs) for k in labels},
-            "shapes": {k: metrics.shapes(runs[k], seen, q) for k in labels},
-            "net_5": min(float(np.percentile(runs[k]["net"], 5)) for k in labels),
-            "pf_5": min(float(np.nanpercentile(runs[k]["pf"], 5)) for k in labels),
-            "outlier": _leave_one_out(source["pnl"]),
-            "samples": parts, "oos_ratio": float(ratio),
-            "shape": metrics.shape(runs[config.BASELINE]["net"], seen["net"], q)}
+        got = engine.sequential(
+            cut, "draw", "iid_bootstrap", 0, sims, cfg, config.seed(cfg)
+        )
+        parts[name] = {
+            "n": int(positions.size),
+            "sharpe": float(np.median(got["sharpe"])),
+            "net": float(np.median(got["net"])),
+            "pf_5": float(np.nanpercentile(got["pf"], 5)),
+            "shape": metrics.shape(
+                got["net"], float(source["pnl"][positions].sum()), q
+            ),
+        }
+    ratio = (
+        parts["OOS"]["sharpe"] / parts["IS"]["sharpe"]
+        if {"IS", "OOS"} <= parts.keys() and parts["IS"]["sharpe"]
+        else float("nan")
+    )
+    return {
+        "runs": {k: metrics.table(runs[k], seen, qs) for k in labels},
+        "shapes": {k: metrics.shapes(runs[k], seen, q) for k in labels},
+        "net_5": min(float(np.percentile(runs[k]["net"], 5)) for k in labels),
+        "pf_5": min(float(np.nanpercentile(runs[k]["pf"], 5)) for k in labels),
+        "outlier": _leave_one_out(source["pnl"]),
+        "samples": parts,
+        "oos_ratio": float(ratio),
+        "shape": metrics.shape(runs[config.BASELINE]["net"], seen["net"], q),
+    }
 
 
 def _family_c(source: dict, cfg: dict, sims: int) -> dict:
@@ -154,15 +172,18 @@ def _family_c(source: dict, cfg: dict, sims: int) -> dict:
     data = engine.payload(source)
     out = {}
     for name in stress.STRESS:
-        got = engine.run(data, "stress", name, 0, sims, cfg, stress.TITLES[name],
-                         config.seed(cfg))
-        out[name] = {"median_net": float(np.median(got["net"])),
-                     "net_5": float(np.percentile(got["net"], 5)),
-                     "pf_5": float(np.nanpercentile(got["pf"], 5)),
-                     "keep": float(np.median(got["net"]) / seen["net"]),
-                     "model": stress.MODELS[name],
-                     "table": metrics.table(got, seen, cfg["global"]["percentile_set"]),
-                     "shapes": metrics.shapes(got, seen, q)}
+        got = engine.run(
+            data, "stress", name, 0, sims, cfg, stress.TITLES[name], config.seed(cfg)
+        )
+        out[name] = {
+            "median_net": float(np.median(got["net"])),
+            "net_5": float(np.percentile(got["net"], 5)),
+            "pf_5": float(np.nanpercentile(got["pf"], 5)),
+            "keep": float(np.median(got["net"]) / seen["net"]),
+            "model": stress.MODELS[name],
+            "table": metrics.table(got, seen, cfg["global"]["percentile_set"]),
+            "shapes": metrics.shapes(got, seen, q),
+        }
     return out
 
 
@@ -182,11 +203,22 @@ def one(source: dict, step: dict, cfg: dict) -> StepRun:
     """
     seen = metrics.observed(source["pnl"], cfg["global"]["starting_equity"])
     kind = "stress" if step["model"] in stress.STRESS else "draw"
-    got = engine.run(engine.payload(source), kind, step["model"], step["block"],
-                     cfg["global"]["n_sims"], cfg, step["title"], config.seed(cfg))
-    return {"label": step["label"], "title": step["title"],
-            "table": metrics.table(got, seen, cfg["global"]["percentile_set"]),
-            "shapes": metrics.shapes(got, seen, cfg["global"]["report_percentile"])}
+    got = engine.run(
+        engine.payload(source),
+        kind,
+        step["model"],
+        step["block"],
+        cfg["global"]["n_sims"],
+        cfg,
+        step["title"],
+        config.seed(cfg),
+    )
+    return {
+        "label": step["label"],
+        "title": step["title"],
+        "table": metrics.table(got, seen, cfg["global"]["percentile_set"]),
+        "shapes": metrics.shapes(got, seen, cfg["global"]["report_percentile"]),
+    }
 
 
 def _family_e(source: dict, day: pd.DataFrame, asset: Asset, cfg: dict) -> dict:
@@ -212,16 +244,35 @@ def _family_e(source: dict, day: pd.DataFrame, asset: Asset, cfg: dict) -> dict:
     n = int(oos["pnl"].size)
     if n < confidence.MEAN_PROVISIONAL:
         nan = float("nan")
-        return {"sharpe": nan, "skew": nan, "kurtosis": nan, "n": n, "psr": nan,
-                "benchmark": nan, "bootstrap": nan, "gap": nan,
-                "warning": f"sólo {n} operaciones OOS (mínimo {confidence.MEAN_PROVISIONAL}): "
-                           f"la PSR no se calcula sobre el build"}
+        return {
+            "sharpe": nan,
+            "skew": nan,
+            "kurtosis": nan,
+            "n": n,
+            "psr": nan,
+            "benchmark": nan,
+            "bootstrap": nan,
+            "gap": nan,
+            "warning": f"sólo {n} operaciones OOS (mínimo {confidence.MEAN_PROVISIONAL}): "
+            f"la PSR no se calcula sobre el build",
+        }
     benchmark = significance.footprint(oos, day, asset)
     psr = significance.psr(oos["pnl"], benchmark)
-    boot = engine.sequential(engine.payload(oos), "draw", "iid_bootstrap", 0,
-                          cfg["global"]["n_sims"], cfg, config.seed(cfg))
-    return {**psr, "benchmark": benchmark, **significance.crosscheck(psr["psr"], boot["sharpe"]),
-            "warning": None}
+    boot = engine.sequential(
+        engine.payload(oos),
+        "draw",
+        "iid_bootstrap",
+        0,
+        cfg["global"]["n_sims"],
+        cfg,
+        config.seed(cfg),
+    )
+    return {
+        **psr,
+        "benchmark": benchmark,
+        **significance.crosscheck(psr["psr"], boot["sharpe"]),
+        "warning": None,
+    }
 
 
 def analyse(source: dict, day: pd.DataFrame, asset: Asset, cfg: dict) -> Analysis:
@@ -242,14 +293,18 @@ def analyse(source: dict, day: pd.DataFrame, asset: Asset, cfg: dict) -> Analysi
     seen = metrics.observed(source["pnl"], g["starting_equity"])
     steps = sweeps.plan(n, cfg)
     runs = sweeps.execute(engine.payload(source), steps, g["n_sims"], cfg)
-    return {"name": source["name"], "n_trades": n, "observed": seen,
-            "blocks": sorted({s["block"] for s in steps if s["block"] > 1}),
-            "titles": {s["label"]: s["title"] for s in steps},
-            "A": _family_a(runs, seen, cfg),
-            "B": _family_b(runs, source, cfg, g["n_sims"]),
-            "C": _family_c(source, cfg, g["n_sims"]),
-            "D": family_d.run(source, day, cfg),
-            "degrade": degrade.overlay(source, cfg),
-            "E": _family_e(source, day, asset, cfg),
-            "cost_check": costs.crosscheck(source["frame"], asset),
-            "overlap": stream.overlap(source)}
+    return {
+        "name": source["name"],
+        "n_trades": n,
+        "observed": seen,
+        "blocks": sorted({s["block"] for s in steps if s["block"] > 1}),
+        "titles": {s["label"]: s["title"] for s in steps},
+        "A": _family_a(runs, seen, cfg),
+        "B": _family_b(runs, source, cfg, g["n_sims"]),
+        "C": _family_c(source, cfg, g["n_sims"]),
+        "D": family_d.run(source, day, cfg),
+        "degrade": degrade.overlay(source, cfg),
+        "E": _family_e(source, day, asset, cfg),
+        "cost_check": costs.crosscheck(source["frame"], asset),
+        "overlap": stream.overlap(source),
+    }

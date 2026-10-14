@@ -20,16 +20,21 @@ from ui.daemon.launch import steps as launchsteps
 from ui.daemon.launch.steps import Refusal
 
 BUILD = "Build"
-ROLES = {"custodian": "custodio", "conductor": "conductor"}   # the owner's words for the workers
+ROLES = {
+    "custodian": "custodio",
+    "conductor": "conductor",
+}  # the owner's words for the workers
 # What the run does to a databank `crosstfload` fills, said in the confirmation.
-FILLS = {"CrossTF_Input": "· Antes de arrancar (paso 10.5), con el worker parado: las "
-                          "supervivientes de Cross Market se escalan a los timeframes de "
-                          "`crosstf.timeframes` y se cargan con sus hermanas en «CrossTF_Input», "
-                          "que se vacía antes; «CrossTF» corre el timeframe de la madre, y cada "
-                          "otro, su tarea «CrossTF <TF>».",
-         "CrossTF_Mothers": "· Antes de arrancar, con el worker parado: las madres que tiene "
-                            "«CrossTF», sin sus hermanas escaladas, se copian a «CrossTF_Mothers» "
-                            "(que se vacía antes): es lo que lee el MC Retest."}
+FILLS = {
+    "CrossTF_Input": "· Antes de arrancar (paso 10.5), con el worker parado: las "
+    "supervivientes de Cross Market se escalan a los timeframes de "
+    "`crosstf.timeframes` y se cargan con sus hermanas en «CrossTF_Input», "
+    "que se vacía antes; «CrossTF» corre el timeframe de la madre, y cada "
+    "otro, su tarea «CrossTF <TF>».",
+    "CrossTF_Mothers": "· Antes de arrancar, con el worker parado: las madres que tiene "
+    "«CrossTF», sin sus hermanas escaladas, se copian a «CrossTF_Mothers» "
+    "(que se vacía antes): es lo que lee el MC Retest.",
+}
 
 
 class TaskRow(TypedDict):
@@ -73,15 +78,28 @@ def tasks(project: str) -> Refusal | Listing:
     cfx = project_dir(project, advance.WORKERS[got["role"]]["path"]) / "project.cfx"
     if not cfx.exists():
         return {"refuse": f"{project} no está en {got['install']}"}
-    rows: list[TaskRow] = [{"title": t["title"], "type": t["type"], "input": t["input"], "output": t["output"],
-             "n_in": count(project, t["input"], got["role"]) if t["input"] else 0,
-             "n_out": count(project, t["output"], got["role"]) if t["output"] else 0}
-            for t in progress.tasks(cfx) if t["title"]]
+    rows: list[TaskRow] = [
+        {
+            "title": t["title"],
+            "type": t["type"],
+            "input": t["input"],
+            "output": t["output"],
+            "n_in": count(project, t["input"], got["role"]) if t["input"] else 0,
+            "n_out": count(project, t["output"], got["role"]) if t["output"] else 0,
+        }
+        for t in progress.tasks(cfx)
+        if t["title"]
+    ]
     return {**got, "cfx": cfx, "tasks": rows}
 
 
-def check(project: str, titles: str | Sequence[str] = (), step: str = "",
-          own_log: bool = False, filled: Set[str] = frozenset()) -> dict[str, Any]:
+def check(
+    project: str,
+    titles: str | Sequence[str] = (),
+    step: str = "",
+    own_log: bool = False,
+    filled: Set[str] = frozenset(),
+) -> dict[str, Any]:
     """Every precondition of launching one task, or every task of one workflow step, together.
 
     Args:
@@ -105,8 +123,14 @@ def check(project: str, titles: str | Sequence[str] = (), step: str = "",
     return judge(project, got, reasons, titles, step, filled)
 
 
-def judge(project: str, got: Listing, reasons: list[str], titles: str | Sequence[str] = (),
-          step: str = "", filled: Set[str] = frozenset()) -> dict[str, Any]:
+def judge(
+    project: str,
+    got: Listing,
+    reasons: list[str],
+    titles: str | Sequence[str] = (),
+    step: str = "",
+    filled: Set[str] = frozenset(),
+) -> dict[str, Any]:
     """`check` once the project's tasks and the worker's state are read: the rail asks for
     every SQX step at once and reads them once.
 
@@ -124,41 +148,75 @@ def judge(project: str, got: Listing, reasons: list[str], titles: str | Sequence
     if step:
         picked = launchsteps.of_step(step, got["cfx"])
         if "refuse" in picked:
-            return {"ok": False, "reasons": reasons + [picked["refuse"]],
-                    "elsewhere": picked.get("elsewhere", False)}
+            return {
+                "ok": False,
+                "reasons": reasons + [picked["refuse"]],
+                "elsewhere": picked.get("elsewhere", False),
+            }
         titles, off = picked["titles"], picked["off"]
     titles = [titles] if isinstance(titles, str) else list(titles)
     rows = {t["title"]: t for t in got["tasks"]}
     missing = [t for t in titles if t not in rows]
     if missing or not titles:
-        return {"ok": False, "reasons": reasons + [f"{project} no lleva ninguna tarea «{t}»"
-                                                   for t in missing or ["?"]]}
+        return {
+            "ok": False,
+            "reasons": reasons
+            + [f"{project} no lleva ninguna tarea «{t}»" for t in missing or ["?"]],
+        }
     chosen = [rows[t] for t in titles]
-    made = {t["output"] for t in chosen} | set(filled)   # filled before this task reads it
+    made = {t["output"] for t in chosen} | set(
+        filled
+    )  # filled before this task reads it
     # CrossTF_Input and CrossTF_Mothers are no task's output: the run fills them from their
     # feeder just before the start (`crosstfload`), so an empty one is not a refusal.
     # Step 11.7 reads CrossTF_Input as step 11.5 left it: refilling it would bring back the
     # mothers that cut dropped (encargo 47, part P).
-    fed = {} if step == CROSSTF_BUILD["step"] else crosstfload.feeders(
-        {t["title"]: {"Input": t["input"], "Output": t["output"]} for t in got["tasks"]})
+    fed = (
+        {}
+        if step == CROSSTF_BUILD["step"]
+        else crosstfload.feeders(
+            {
+                t["title"]: {"Input": t["input"], "Output": t["output"]}
+                for t in got["tasks"]
+            }
+        )
+    )
     fill = sorted({t["input"] for t in chosen if t["input"] in fed})
     for t in chosen:
         if t["type"] == BUILD and got["role"] != "custodian":
-            reasons.append(f"un build va al custodio, y {project} vive en el "
-                           f"{ROLES.get(got['role'], got['role'])} (CLAUDE.md, regla 3: el "
-                           "conductor es para trabajos cortos)")
+            reasons.append(
+                f"un build va al custodio, y {project} vive en el "
+                f"{ROLES.get(got['role'], got['role'])} (CLAUDE.md, regla 3: el "
+                "conductor es para trabajos cortos)"
+            )
         src = fed.get(t["input"])
         if src and src not in made and not count(project, src, got["role"]):
-            reasons.append(f"«{t['input']}» se llena desde «{src}», que no tiene ninguna "
-                           f"estrategia en {got['install']}: «{t['title']}» no tendría nada "
-                           "que probar")
-        elif (not src and t["type"] != BUILD and t["input"] and t["input"] not in made
-              and not t["n_in"]):
-            reasons.append(f"«{t['input']}» no tiene ninguna estrategia en {got['install']}: "
-                           f"«{t['title']}» no tendría nada que probar")
-    return {"ok": not reasons, "reasons": reasons, **got, "chosen": chosen, "off": off,
-            "step": step, "fill": fill,
-            "configure": launchsteps.unconfigured(got["cfx"], titles)}
+            reasons.append(
+                f"«{t['input']}» se llena desde «{src}», que no tiene ninguna "
+                f"estrategia en {got['install']}: «{t['title']}» no tendría nada "
+                "que probar"
+            )
+        elif (
+            not src
+            and t["type"] != BUILD
+            and t["input"]
+            and t["input"] not in made
+            and not t["n_in"]
+        ):
+            reasons.append(
+                f"«{t['input']}» no tiene ninguna estrategia en {got['install']}: "
+                f"«{t['title']}» no tendría nada que probar"
+            )
+    return {
+        "ok": not reasons,
+        "reasons": reasons,
+        **got,
+        "chosen": chosen,
+        "off": off,
+        "step": step,
+        "fill": fill,
+        "configure": launchsteps.unconfigured(got["cfx"], titles),
+    }
 
 
 def text(pre: dict[str, Any], project: str) -> str:
@@ -173,25 +231,41 @@ def text(pre: dict[str, Any], project: str) -> str:
     """
     chosen, who = pre["chosen"], ROLES.get(pre["role"], pre["role"])
     names = ", ".join(f"«{t['title']}»" for t in chosen)
-    what = (f"el paso {pre['step']} ({names})" if pre["step"] else
-            f"«{chosen[0]['title']}» ({chosen[0]['type']})" if len(chosen) == 1 else names)
-    out = [f"Se va a lanzar {what} de {project} en {pre['install']}. Solo "
-           f"{'esa tarea quedará activa' if len(chosen) == 1 else 'esas tareas quedarán activas'}"
-           f"; el {who} arranca una vez, corre hasta «Project finished» y se para."]
+    what = (
+        f"el paso {pre['step']} ({names})"
+        if pre["step"]
+        else f"«{chosen[0]['title']}» ({chosen[0]['type']})"
+        if len(chosen) == 1
+        else names
+    )
+    out = [
+        f"Se va a lanzar {what} de {project} en {pre['install']}. Solo "
+        f"{'esa tarea quedará activa' if len(chosen) == 1 else 'esas tareas quedarán activas'}"
+        f"; el {who} arranca una vez, corre hasta «Project finished» y se para."
+    ]
     for t in chosen:
         if t["type"] == BUILD:
-            out.append(f"· «{t['title']}»: un build ocupa todos los núcleos del custodio y puede "
-                       f"durar horas. Escribe en «{t['output']}», que hoy tiene {t['n_out']} "
-                       "estrategias.")
+            out.append(
+                f"· «{t['title']}»: un build ocupa todos los núcleos del custodio y puede "
+                f"durar horas. Escribe en «{t['output']}», que hoy tiene {t['n_out']} "
+                "estrategias."
+            )
         else:
-            out.append(f"· «{t['title']}»: lee «{t['input']}» ({t['n_in']} estrategias) y "
-                       f"escribe en «{t['output']}» (hoy {t['n_out']})."
-                       + (confirm.held_note(t["output"], t["n_out"]) if t["n_out"] else ""))
+            out.append(
+                f"· «{t['title']}»: lee «{t['input']}» ({t['n_in']} estrategias) y "
+                f"escribe en «{t['output']}» (hoy {t['n_out']})."
+                + (confirm.held_note(t["output"], t["n_out"]) if t["n_out"] else "")
+            )
     out += [f"· «{t}» no se lanza: {why}" for t, why in pre["off"].items()]
-    out += [f"· {', '.join(f'«{t}»' for t in ts)} sin configurar: antes de arrancar se configura "
-            f"con `{module}` desde assets/ (lo mismo que su skill); una tarea ya configurada no "
-            "se toca." for module, ts in pre.get("configure", {}).items()]
+    out += [
+        f"· {', '.join(f'«{t}»' for t in ts)} sin configurar: antes de arrancar se configura "
+        f"con `{module}` desde assets/ (lo mismo que su skill); una tarea ya configurada no "
+        "se toca."
+        for module, ts in pre.get("configure", {}).items()
+    ]
     out += [FILLS[bank] for bank in pre.get("fill", [])]
-    return "\n".join(out) + ("\nLo que cada tarea borre al empezar lo decide su configuración "
-                             "en SQX; antes se copia el proyecto y al acabar se comparan los "
-                             "databanks.")
+    return "\n".join(out) + (
+        "\nLo que cada tarea borre al empezar lo decide su configuración "
+        "en SQX; antes se copia el proyecto y al acabar se comparan los "
+        "databanks."
+    )

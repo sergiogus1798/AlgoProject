@@ -16,8 +16,16 @@ ROUTER = APIRouter()
 # The queue is one more launcher: labelled `launch`, the other three refuse while it is queued
 # or running (`launch.api.queued`), and a cancel winds it down with SIGTERM (`winddown`).
 LABEL = "launch"
-FAILS = (OSError, KeyError, ValueError, StopIteration, IndexError, json.JSONDecodeError,
-         pd.errors.ParserError)
+FAILS = (
+    OSError,
+    KeyError,
+    ValueError,
+    StopIteration,
+    IndexError,
+    json.JSONDecodeError,
+    pd.errors.ParserError,
+)
+
 
 class Veto(BaseModel):
     """One idea of a proposal, vetoed or not."""
@@ -53,8 +61,16 @@ def safe(read: Callable[..., Any], *args: object) -> dict[str, Any]:
 
 def running(label: str, study: str = "") -> dict[str, Any] | None:
     """The job of that label (and study) queued or running, if any."""
-    return next((j for j in jobs.listing() if j["label"] == label and j["rc"] is None
-                 and (not study or j.get("study") == study)), None)
+    return next(
+        (
+            j
+            for j in jobs.listing()
+            if j["label"] == label
+            and j["rc"] is None
+            and (not study or j.get("study") == study)
+        ),
+        None,
+    )
 
 
 @ROUTER.get("/api/research/map")
@@ -105,7 +121,12 @@ def launch_check(id: str) -> dict[str, Any]:
     try:
         return cast("dict[str, Any]", preflight.check(id))
     except FAILS as e:
-        return {"ok": False, "reasons": [f"no se pudo comprobar: {e}"], "text": "", "ideas": []}
+        return {
+            "ok": False,
+            "reasons": [f"no se pudo comprobar: {e}"],
+            "text": "",
+            "ideas": [],
+        }
 
 
 @ROUTER.post("/api/research/launch")
@@ -115,12 +136,25 @@ def launch(req: Launch) -> dict[str, Any]:
     if not got["ok"]:
         return got
     if got["ideas"] != req.ideas:
-        return {**got, "ok": False, "reasons": ["las ideas que irían cambiaron desde que lo "
-                                                "viste: vuelve a pulsar y confirma"]}
-    job = jobs.start(LABEL, ["-m", "ui.daemon.research.queue", "--proposal", req.id],
-                     {"project": got["projects"][0], "role": got["role"],
-                      "databank": f"{len(req.ideas)} ideas", "study": "Investigar: cola"},
-                     lane="conductor")
+        return {
+            **got,
+            "ok": False,
+            "reasons": [
+                "las ideas que irían cambiaron desde que lo "
+                "viste: vuelve a pulsar y confirma"
+            ],
+        }
+    job = jobs.start(
+        LABEL,
+        ["-m", "ui.daemon.research.queue", "--proposal", req.id],
+        {
+            "project": got["projects"][0],
+            "role": got["role"],
+            "databank": f"{len(req.ideas)} ideas",
+            "study": "Investigar: cola",
+        },
+        lane="conductor",
+    )
     return {**got, "job": job["id"]}
 
 

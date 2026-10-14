@@ -23,21 +23,37 @@ ASKED: list = []
 
 def member(name: str) -> dict:
     """A contract result for one strategy."""
-    return envelope.envelope("studies.optimisation.wfm", name, f"id-{name}", {}, time.time(),
-                             [envelope.tab("m", "m", [blocks.table("t", pd.DataFrame(
-                                 {"x": [1]}))])], blocks.verdict("LIMBO", "watch", "m"))
+    return envelope.envelope(
+        "studies.optimisation.wfm",
+        name,
+        f"id-{name}",
+        {},
+        time.time(),
+        [envelope.tab("m", "m", [blocks.table("t", pd.DataFrame({"x": [1]}))])],
+        blocks.verdict("LIMBO", "watch", "m"),
+    )
 
 
 def population(directory: Path, cfg: dict) -> dict:
     """many.run stand-in over three strategies."""
-    return {"population": envelope.envelope("m", None, None, {}, time.time(), []),
-            "members": [member(n) for n in NAMES],
-            "table": pd.DataFrame({"strategy": NAMES, "identity": NAMES,
-                                   "verdict": ["limbo"] * 3, "l1_mediana_exceso": [0.0] * 3,
-                                   "l1_p_mas": [0.5] * 3, "l1_p_menos": [0.5] * 3,
-                                   "l2_delta": [0.0] * 3, "celdas_efectivas": [2.0] * 3,
-                                   "area_celdas": [4] * 3}),
-            "cells": pd.DataFrame({"strategy": NAMES, "oos2": [0.1, 0.2, 0.3]})}
+    return {
+        "population": envelope.envelope("m", None, None, {}, time.time(), []),
+        "members": [member(n) for n in NAMES],
+        "table": pd.DataFrame(
+            {
+                "strategy": NAMES,
+                "identity": NAMES,
+                "verdict": ["limbo"] * 3,
+                "l1_mediana_exceso": [0.0] * 3,
+                "l1_p_mas": [0.5] * 3,
+                "l1_p_menos": [0.5] * 3,
+                "l2_delta": [0.0] * 3,
+                "celdas_efectivas": [2.0] * 3,
+                "area_celdas": [4] * 3,
+            }
+        ),
+        "cells": pd.DataFrame({"strategy": NAMES, "oos2": [0.1, 0.2, 0.3]}),
+    }
 
 
 def one(directory: Path, cfg: dict, strategy: str) -> dict:
@@ -48,8 +64,11 @@ def one(directory: Path, cfg: dict, strategy: str) -> dict:
 
 def files(folder: Path) -> dict[str, str]:
     """Every file under a folder, by its SHA-256."""
-    return {f.relative_to(folder).as_posix(): hashlib.sha256(f.read_bytes()).hexdigest()
-            for f in folder.rglob("*") if f.is_file()}
+    return {
+        f.relative_to(folder).as_posix(): hashlib.sha256(f.read_bytes()).hexdigest()
+        for f in folder.rglob("*")
+        if f.is_file()
+    }
 
 
 def test_one_strategy_leaves_the_population_alone() -> None:
@@ -74,18 +93,26 @@ def test_one_strategy_leaves_the_population_alone() -> None:
         after = files(out)
         assert ASKED == ["Strategy 1.1.2"]
         assert set(after) == set(before)
-        assert {k: v for k, v in after.items() if "1.1.2" not in k} \
-            == {k: v for k, v in before.items() if "1.1.2" not in k}
+        assert {k: v for k, v in after.items() if "1.1.2" not in k} == {
+            k: v for k, v in before.items() if "1.1.2" not in k
+        }
         assert len(pd.read_csv(out / "verdict.csv")) == 3
         got = json.loads((out / "estrategias" / "Strategy 1.1.2.json").read_text())
-        assert got["strategy"] == "Strategy 1.1.2" and got["identity"] == "id-Strategy 1.1.2"
+        assert (
+            got["strategy"] == "Strategy 1.1.2"
+            and got["identity"] == "id-Strategy 1.1.2"
+        )
 
 
 def test_a_period_without_parameters_reads_empty() -> None:
     """SQX wrote WFM periods with no `testParameters`: the export of step 19 died on None
     (📓 2026-10-04, Trade_NIKKEI225_M30_volatilidadL)."""
     from core import wfmatrix
-    assert wfmatrix._params(None) == {} and wfmatrix._params("A=1,B=x,") == {"A": "1", "B": "x"}
+
+    assert wfmatrix._params(None) == {} and wfmatrix._params("A=1,B=x,") == {
+        "A": "1",
+        "B": "x",
+    }
 
 
 if __name__ == "__main__":

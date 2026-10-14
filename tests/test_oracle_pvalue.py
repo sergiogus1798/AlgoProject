@@ -47,29 +47,46 @@ G = verdict.GOOD_HIGH
 print("INFO GOOD_HIGH =", dict(G))
 hi = next((k for k, v in G.items() if v is True), None)
 lo = next((k for k, v in G.items() if v is False), None)
-print(f"INFO using high={hi} low={lo}" + ("" if lo else "  (no False direction exists)"))
+print(
+    f"INFO using high={hi} low={lo}" + ("" if lo else "  (no False direction exists)")
+)
 
 
 def a() -> None:
     """The p-value equals (1 + count of draws at least as good) / (n + 1) on a small tied sample."""
-    d = np.array([1., 2., 2., 3., 5.])
-    cases = [(2., 1+3, ), (0., 5), (9., 0), (5., 1), (1., 5), (3., 2)]  # noqa: F841
+    d = np.array([1.0, 2.0, 2.0, 3.0, 5.0])
+    cases = [
+        (
+            2.0,
+            1 + 3,
+        ),
+        (0.0, 5),
+        (9.0, 0),
+        (5.0, 1),
+        (1.0, 5),
+        (3.0, 2),
+    ]  # noqa: F841
     for name, up in ((hi, True), (lo, False)):
         if name is None:
             print(f"INFO a_exact skipped direction up={up}")
             continue
-        for s in (2., 0., 9., 5., 1., 3.):
+        for s in (2.0, 0.0, 9.0, 5.0, 1.0, 3.0):
             cnt = int(np.sum(d >= s)) if up else int(np.sum(d <= s))
             exp = (1 + cnt) / 6
             got = verdict.pvalue(s, d, name)
-            rep(abs(got - exp) < 1e-15, f"a_exact_{'high' if up else 'low'}_seen{s}",
-                f"got {got} exp {exp}")
+            rep(
+                abs(got - exp) < 1e-15,
+                f"a_exact_{'high' if up else 'low'}_seen{s}",
+                f"got {got} exp {exp}",
+            )
 
 
 run("a_exact", a)
 
 
-def null(draw: Callable[[Any, int], Any], name: str, tag: str, cons: bool = False) -> None:
+def null(
+    draw: Callable[[Any, int], Any], name: str, tag: str, cons: bool = False
+) -> None:
     """Check P(p <= alpha) over many null replications at four alphas.
 
     Args:
@@ -90,11 +107,17 @@ def null(draw: Callable[[Any, int], Any], name: str, tag: str, cons: bool = Fals
         exp = math.floor(al * 200 + 1e-9) / 200
         band = 2.576 * math.sqrt(max(exp * (1 - exp), 1e-9) / R)
         if cons:
-            rep(emp <= al + 2.576*math.sqrt(al*(1-al)/R), f"{tag}_{name}_a{al}",
-                f"P(p<=a)={emp:.4f} > a={al}")
+            rep(
+                emp <= al + 2.576 * math.sqrt(al * (1 - al) / R),
+                f"{tag}_{name}_a{al}",
+                f"P(p<=a)={emp:.4f} > a={al}",
+            )
         else:
-            rep(abs(emp - exp) <= band, f"{tag}_{name}_a{al}",
-                f"P(p<=a)={emp:.4f} expected {exp:.4f} +-{band:.4f}")
+            rep(
+                abs(emp - exp) <= band,
+                f"{tag}_{name}_a{al}",
+                f"P(p<=a)={emp:.4f} expected {exp:.4f} +-{band:.4f}",
+            )
 
 
 def bc() -> None:
@@ -118,7 +141,7 @@ def dd() -> None:
         d = np.zeros(99)
         s = 1e9 if G[name] else -1e9
         p = verdict.pvalue(s, d, name)
-        rep(abs(p - 1/100) < 1e-15 and p > 0, f"d_min_{name}", f"p={p}")
+        rep(abs(p - 1 / 100) < 1e-15 and p > 0, f"d_min_{name}", f"p={p}")
 
 
 run("dd", dd)
@@ -127,12 +150,12 @@ run("dd", dd)
 def e() -> None:
     """Report what NaN in the seen value or in the draws does (INFO lines only)."""
     name = hi
-    d = np.arange(1., 100.)
-    for lab, s, dr in (("seen_nan", float("nan"), d), ):
+    d = np.arange(1.0, 100.0)
+    for lab, s, dr in (("seen_nan", float("nan"), d),):
         print(f"INFO e_{lab} -> {verdict.pvalue(s, dr, name)}")
     dn = d.copy()
     dn[:10] = np.nan
-    seen = 50.
+    seen = 50.0
     c = int(np.sum(d[10:] >= seen))
     fin = d[10:]
     only = (1 + c) / (len(fin) + 1)

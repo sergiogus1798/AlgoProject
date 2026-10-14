@@ -14,7 +14,10 @@ def _overrides() -> dict:
     """The override file, re-parsed only when its mtime changes (same stamp as `current`)."""
     stamp = ALIASES.stat().st_mtime_ns
     if _aliases.get("stamp") != stamp:
-        _aliases.update(stamp=stamp, map=yaml.load(ALIASES.read_text(), Loader=yaml.CSafeLoader) or {})
+        _aliases.update(
+            stamp=stamp,
+            map=yaml.load(ALIASES.read_text(), Loader=yaml.CSafeLoader) or {},
+        )
     return _aliases["map"]
 
 
@@ -59,7 +62,11 @@ def current(text: str) -> str:
     stamp = RENAMES.stat().st_mtime_ns
     if _compiled.get("stamp") != stamp:
         old = renames()
-        rx = re.compile("|".join(sorted(map(re.escape, old), key=len, reverse=True))) if old else None
+        rx = (
+            re.compile("|".join(sorted(map(re.escape, old), key=len, reverse=True)))
+            if old
+            else None
+        )
         _compiled.update(stamp=stamp, old=old, rx=rx)
     rx, old = _compiled["rx"], _compiled["old"]
     return rx.sub(lambda m: old[m.group(0)], text) if rx else text

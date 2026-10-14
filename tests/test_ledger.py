@@ -29,10 +29,21 @@ def rows(units: str = "per_period") -> pd.DataFrame:
     first, second = rng.normal(0.02, 0.05, 400), rng.normal(-0.01, 0.06, 1600)
     made = []
     for step, scores in ((8, first), (16, second)):
-        row = record.search("T", {"step": step, "launched_by": "test", "symbol": "XAUUSD",
-                                  "timeframe": "M30", "segment": "oos1", "n_in": 10,
-                                  "n_out": 5, "criterion": "x", "score_unit": units},
-                            scores)
+        row = record.search(
+            "T",
+            {
+                "step": step,
+                "launched_by": "test",
+                "symbol": "XAUUSD",
+                "timeframe": "M30",
+                "segment": "oos1",
+                "n_in": 10,
+                "n_out": 5,
+                "criterion": "x",
+                "score_unit": units,
+            },
+            scores,
+        )
         made.append(row)
     return pd.DataFrame(made), np.concatenate([first, second])
 
@@ -63,8 +74,13 @@ def main() -> None:
     gate.allow(26, "build+oos1", "XAUUSD")
 
     # A composite segment is spent in each of its parts, in the map and in what is left virgin.
-    both = pd.DataFrame({"segment": ["oos1+oos2", "oos1"], "step": [26, 8],
-                         "ts": ["2026-10-01", "2026-10-02"]})
+    both = pd.DataFrame(
+        {
+            "segment": ["oos1+oos2", "oos1"],
+            "step": [26, 8],
+            "ts": ["2026-10-01", "2026-10-02"],
+        }
+    )
     got = spend.spent(both).set_index("segment")["searches"].to_dict()
     if got != {"oos1": 2, "oos2": 1}:
         failures.append(f"spend: oos1+oos2 contó {got}, no {{oos1: 2, oos2: 1}}")
@@ -88,8 +104,10 @@ def main() -> None:
     if counted["n"] != pooled.size:
         failures.append(f"accumulated: N {counted['n']} contra {pooled.size}")
     if abs(counted["sigma"] - pooled.std(ddof=1)) > 1e-9:
-        failures.append(f"accumulated: sigma {counted['sigma']:.9f} contra "
-                        f"{pooled.std(ddof=1):.9f} de la union")
+        failures.append(
+            f"accumulated: sigma {counted['sigma']:.9f} contra "
+            f"{pooled.std(ddof=1):.9f} de la union"
+        )
 
     # An annualised row is brought to the per-day scale before pooling: the same union, same sigma.
     mixed = frame.copy()
@@ -97,16 +115,27 @@ def main() -> None:
     mixed.loc[first, "score_unit"] = "annualised"
     mixed.loc[first, ["sharpe_mean", "sharpe_std"]] *= np.sqrt(trials.YEAR)
     converted = trials.accumulated(mixed)
-    if abs(converted["sigma"] - counted["sigma"]) > 1e-9 or converted["unit"] != "per_period":
-        failures.append(f"accumulated: un Sharpe anualizado no vuelve a la escala diaria "
-                        f"({converted['sigma']:.9f} contra {counted['sigma']:.9f})")
+    if (
+        abs(converted["sigma"] - counted["sigma"]) > 1e-9
+        or converted["unit"] != "per_period"
+    ):
+        failures.append(
+            f"accumulated: un Sharpe anualizado no vuelve a la escala diaria "
+            f"({converted['sigma']:.9f} contra {counted['sigma']:.9f})"
+        )
 
     # A study whose only scored rows are not Sharpes still counts its looks, with no sigma.
     looks = frame.copy()
     looks["score_unit"] = "p_pass"
     blank = trials.accumulated(looks)
-    if blank["n"] != counted["n"] or blank["sigma"] == blank["sigma"] or "unit" not in blank:
-        failures.append(f"accumulated: una búsqueda sin Sharpes debe contar N y no dar sigma: {blank}")
+    if (
+        blank["n"] != counted["n"]
+        or blank["sigma"] == blank["sigma"]
+        or "unit" not in blank
+    ):
+        failures.append(
+            f"accumulated: una búsqueda sin Sharpes debe contar N y no dar sigma: {blank}"
+        )
 
     # The point of the module: a wider N raises the bar the Sharpe has to clear.
     local = int(frame["n_scored"].iloc[-1])
@@ -118,13 +147,17 @@ def main() -> None:
     one = trials.deflated(returns, counted["sigma"], local)
     both = trials.deflated(returns, counted["sigma"], counted["n"])
     if not both["dsr"] < one["dsr"]:
-        failures.append(f"el DSR no baja al acumular: {one['dsr']:.4f} -> {both['dsr']:.4f}")
+        failures.append(
+            f"el DSR no baja al acumular: {one['dsr']:.4f} -> {both['dsr']:.4f}"
+        )
 
-    print("\n".join(failures) or
-          f"ok: la puerta rechaza el paso 8 sobre oos2 y el 20 sin los tres; la sigma "
-          f"agrupada reproduce la union exactamente; y al pasar de N={local} a "
-          f"N={counted['n']} el benchmark sube {near:.4f} -> {whole:.4f} y el DSR baja "
-          f"{one['dsr']:.4f} -> {both['dsr']:.4f}")
+    print(
+        "\n".join(failures)
+        or f"ok: la puerta rechaza el paso 8 sobre oos2 y el 20 sin los tres; la sigma "
+        f"agrupada reproduce la union exactamente; y al pasar de N={local} a "
+        f"N={counted['n']} el benchmark sube {near:.4f} -> {whole:.4f} y el DSR baja "
+        f"{one['dsr']:.4f} -> {both['dsr']:.4f}"
+    )
     sys.exit(1 if failures else 0)
 
 

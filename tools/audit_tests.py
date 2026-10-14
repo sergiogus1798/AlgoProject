@@ -18,9 +18,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.paths import ROOT
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))   # depmap, for --changed
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # depmap, for --changed
 
-TIMEOUT = 300   # seconds per test; a hang counts as a failure
+TIMEOUT = 300  # seconds per test; a hang counts as a failure
 WORKERS = 6
 
 # Set aside, never silently: path -> (reason, date). The audit prints this list as "apartadas" and
@@ -28,17 +28,24 @@ WORKERS = 6
 ASIDE: dict[str, tuple[str, str]] = {
     "tests/test_commission_segments.py": (
         "Darwinex's commission is PercentageBased 0.005 in the asset cards, the donor's Build and "
-        "Retest Setup still say SizeBased 5.0: cost cards in motion (assets/_build.yaml)", "2026-10-02"),
+        "Retest Setup still say SizeBased 5.0: cost cards in motion (assets/_build.yaml)",
+        "2026-10-02",
+    ),
     "tests/test_perf66_catalogue.py": (
         "test_timing_unchanged_by_memory_pass_for_numpy_free_code compares two 50 ms busy-waits to "
-        "20 ms: passes on an idle machine, fails under load (24 ms at load average 34)", "2026-10-14"),
+        "20 ms: passes on an idle machine, fails under load (24 ms at load average 34)",
+        "2026-10-14",
+    ),
     "tests/test_taxonomy.py": (
         "8 close-crosses blocks (Donchian, EMA, HMA, Keltner) entered sqx/blocks/taxonomy.yaml in "
         "c81dcbb with empty archetypes: their seven weights are an authoring call, not a test fix",
-        "2026-10-14"),
+        "2026-10-14",
+    ),
     "tests/test_ui_results.py": (
         "the results catalogue does not match studies/ (board, marketProfile, memory, monteCarlo): "
-        "ui/daemon/results/ and studies/research are in motion in another session", "2026-10-02"),
+        "ui/daemon/results/ and studies/research are in motion in another session",
+        "2026-10-02",
+    ),
 }
 
 
@@ -57,19 +64,29 @@ def run_one(path: str) -> tuple[str, int, float, str]:
     """
     text = (ROOT / path).read_text(encoding="utf-8")
     pytest_style = "__main__" not in text and "def test_" in text
-    command = ["python3", "-m", "pytest", "-q", path] if pytest_style else ["python3", path]
+    command = (
+        ["python3", "-m", "pytest", "-q", path] if pytest_style else ["python3", path]
+    )
     env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
     start = time.time()
     try:
-        p = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, text=True,
-                           timeout=TIMEOUT)
+        p = subprocess.run(
+            command, cwd=ROOT, env=env, capture_output=True, text=True, timeout=TIMEOUT
+        )
         code, out = p.returncode, p.stdout + p.stderr
     except subprocess.TimeoutExpired:
         code, out = 124, f"timed out after {TIMEOUT} s"
-    return path, code, time.time() - start, "\n".join(out.strip().splitlines()[-40:])[-3000:]
+    return (
+        path,
+        code,
+        time.time() - start,
+        "\n".join(out.strip().splitlines()[-40:])[-3000:],
+    )
 
 
-def run_all(paths: list[str] | None = None) -> tuple[list[tuple[str, int, float, str]], float]:
+def run_all(
+    paths: list[str] | None = None,
+) -> tuple[list[tuple[str, int, float, str]], float]:
     """Run tests/test_*.py, six at a time.
 
     Args:
@@ -85,7 +102,9 @@ def run_all(paths: list[str] | None = None) -> tuple[list[tuple[str, int, float,
         return list(pool.map(run_one, paths)), time.time() - start
 
 
-def report(results: list[tuple[str, int, float, str]], wall: float) -> tuple[list[str], int]:
+def report(
+    results: list[tuple[str, int, float, str]], wall: float
+) -> tuple[list[str], int]:
     """Markdown lines for the audit and the number of failures not set aside.
 
     Args:
@@ -98,14 +117,29 @@ def report(results: list[tuple[str, int, float, str]], wall: float) -> tuple[lis
     failed = [r for r in results if r[1] and r[0] not in ASIDE]
     aside = [r for r in results if r[0] in ASIDE]
     passed = len(results) - len(failed) - sum(1 for r in aside if r[1])
-    lines = [f"| `tests/test_*.py` | {len(results)} run in {wall:.0f} s: {passed} ok, "
-             f"{len(failed)} {'FAILED' if failed else 'failed'}, {len(aside)} apartadas |"]
+    lines = [
+        f"| `tests/test_*.py` | {len(results)} run in {wall:.0f} s: {passed} ok, "
+        f"{len(failed)} {'FAILED' if failed else 'failed'}, {len(aside)} apartadas |"
+    ]
     detail = []
     if failed:
         detail += ["", "## failed tests", ""]
         for path, code, secs, out in failed:
-            detail += [f"### `{path}` (exit {code}, {secs:.0f} s)", "", "```", out, "```", ""]
-    detail += ["", "## apartadas", "", "| test | now | since | reason |", "|---|---|---|---|"]
+            detail += [
+                f"### `{path}` (exit {code}, {secs:.0f} s)",
+                "",
+                "```",
+                out,
+                "```",
+                "",
+            ]
+    detail += [
+        "",
+        "## apartadas",
+        "",
+        "| test | now | since | reason |",
+        "|---|---|---|---|",
+    ]
     for path, code, _, _ in aside:
         reason, since = ASIDE[path]
         now = "fails" if code else "PASSES: remove it from ASIDE"
@@ -147,24 +181,43 @@ def select(changed: set[str], graph: dict[str, set[str]]) -> dict[str, str]:
 
 def git_changed() -> set[str]:
     """`.py` paths git sees as modified or untracked."""
-    out = subprocess.run(["git", "status", "--porcelain", "-uall"], cwd=ROOT, capture_output=True,
-                         text=True, check=True).stdout
-    return {line[3:].split(" -> ")[-1].strip('"') for line in out.splitlines()
-            if line[3:].endswith(".py")}
+    out = subprocess.run(
+        ["git", "status", "--porcelain", "-uall"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    return {
+        line[3:].split(" -> ")[-1].strip('"')
+        for line in out.splitlines()
+        if line[3:].endswith(".py")
+    }
 
 
 def main() -> None:
     """Run all tests, or with --changed the touched ones; print the report; exit 1 on a failure."""
     ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
-    ap.add_argument("--changed", nargs="*", metavar="FILE",
-                    help="only tests touched by FILEs (default: the .py files in git status)")
+    ap.add_argument(
+        "--changed",
+        nargs="*",
+        metavar="FILE",
+        help="only tests touched by FILEs (default: the .py files in git status)",
+    )
     args = ap.parse_args()
     paths = None
     if args.changed is not None:
         from depmap import file_graph, ROOT as DROOT
-        graph = {str(f.relative_to(DROOT)): {str(d.relative_to(DROOT)) for d in deps}
-                 for f, deps in file_graph().items()}
-        changed = {c for c in args.changed if c.endswith(".py")} if args.changed else git_changed()
+
+        graph = {
+            str(f.relative_to(DROOT)): {str(d.relative_to(DROOT)) for d in deps}
+            for f, deps in file_graph().items()
+        }
+        changed = (
+            {c for c in args.changed if c.endswith(".py")}
+            if args.changed
+            else git_changed()
+        )
         picked = select(changed, graph)
         print(f"{len(changed)} changed .py -> {len(picked)} tests selected")
         for test, why in picked.items():

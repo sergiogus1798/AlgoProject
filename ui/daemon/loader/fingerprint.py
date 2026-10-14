@@ -22,7 +22,10 @@ def _records(blob: str) -> bytes:
     while i < len(raw):
         kind, start = raw[i], i
         if kind > sqxstats.NAMED:
-            i, kind = i + 3 + struct.unpack(">H", raw[i + 1:i + 3])[0], kind - sqxstats.NAMED
+            i, kind = (
+                i + 3 + struct.unpack(">H", raw[i + 1 : i + 3])[0],
+                kind - sqxstats.NAMED,
+            )
         else:
             i += 2
         i += sqxstats.WIDTH[kind][2]
@@ -48,7 +51,11 @@ def _canonical(node: ElementTree.Element, h: hashlib.blake2b) -> None:
     attrs = sorted((k, JAVA_REF.sub(r"\1", v)) for k, v in node.attrib.items())
     h.update(node.tag.encode() + repr(attrs).encode())
     text = (node.text or "").strip()
-    h.update(_records(text) if node.tag == "SQStats" and node.get("e") == "b64" else text.encode())
+    h.update(
+        _records(text)
+        if node.tag == "SQStats" and node.get("e") == "b64"
+        else text.encode()
+    )
     for part in sorted(parts):
         h.update(part)
 
@@ -69,12 +76,20 @@ def _entries(key: tuple[str, int, int]) -> str:
                 else:
                     parts.append(f"{i.filename}:{sqxfile.mark(z, i)}:{i.file_size}")
             return "|".join(parts)
-    except (OSError, zipfile.BadZipFile, ValueError, ElementTree.ParseError, struct.error):
-        return f"unreadable:{mtime_ns}:{size}"       # half written: never equal to a sig
+    except (
+        OSError,
+        zipfile.BadZipFile,
+        ValueError,
+        ElementTree.ParseError,
+        struct.error,
+    ):
+        return f"unreadable:{mtime_ns}:{size}"  # half written: never equal to a sig
 
 
-SEEN: dict[str, tuple[tuple[str, int, int], str]] = {}   # path → (key, content): one per file
-POOL_FROM = 20                                           # fewer files than this: read here
+SEEN: dict[
+    str, tuple[tuple[str, int, int], str]
+] = {}  # path → (key, content): one per file
+POOL_FROM = 20  # fewer files than this: read here
 
 
 def fingerprint(sources: list[Path]) -> str:
@@ -88,11 +103,16 @@ def fingerprint(sources: list[Path]) -> str:
     keys = [(str(f), st.st_mtime_ns, st.st_size) for f in files for st in [f.stat()]]
     cold = [k for k in keys if SEEN.get(k[0], (None,))[0] != k]
     if len(cold) >= POOL_FROM:
-        with ProcessPoolExecutor(max_workers=min(CORES, len(cold)),
-                                 mp_context=get_context("fork")) as pool:
-            read = pool.map(_entries, cold, chunksize=max(1, min(50, len(cold) // CORES)))
+        with ProcessPoolExecutor(
+            max_workers=min(CORES, len(cold)), mp_context=get_context("fork")
+        ) as pool:
+            read = pool.map(
+                _entries, cold, chunksize=max(1, min(50, len(cold) // CORES))
+            )
             SEEN.update((k[0], (k, got)) for k, got in zip(cold, read))
-    SEEN.update((k[0], (k, _entries(k))) for k in cold if SEEN.get(k[0], (None,))[0] != k)
+    SEEN.update(
+        (k[0], (k, _entries(k))) for k in cold if SEEN.get(k[0], (None,))[0] != k
+    )
     h = hashlib.blake2b(digest_size=16)
     for f, k in zip(files, keys):
         h.update(f"{f.name}={SEEN[k[0]][1]}\n".encode())

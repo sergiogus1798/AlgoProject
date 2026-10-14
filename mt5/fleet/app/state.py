@@ -1,16 +1,22 @@
 """The fleet as rows: each account's beat, its floors and the light the window paints."""
+
 from collections.abc import Sequence
 
 from mt5.fleet.app import floors, history, progress, read, risk, rules
 
 SILENT, RED, YELLOW, GREEN, UNKNOWN = "silent", "red", "yellow", "green", "unknown"
 ORDER = [SILENT, RED, YELLOW]
-_SWITCHES = [("connected", "Desconectado"), ("autotrading", "AutoTrading apagado"),
-             ("account_trade_allowed", "Cuenta sin permiso de operar"),
-             ("account_trade_expert", "Cuenta sin permiso para EAs")]
+_SWITCHES = [
+    ("connected", "Desconectado"),
+    ("autotrading", "AutoTrading apagado"),
+    ("account_trade_allowed", "Cuenta sin permiso de operar"),
+    ("account_trade_expert", "Cuenta sin permiso para EAs"),
+]
 
 
-def reasons(beat: dict, floor: dict | None, now: int, extra: Sequence[tuple[str, str]] = ()) -> list[tuple[str, str]]:
+def reasons(
+    beat: dict, floor: dict | None, now: int, extra: Sequence[tuple[str, str]] = ()
+) -> list[tuple[str, str]]:
     """Every reason an account is not green, worst first, as (level, Spanish text).
 
     Args:
@@ -27,8 +33,11 @@ def reasons(beat: dict, floor: dict | None, now: int, extra: Sequence[tuple[str,
     age = now - beat["written_gmt"]
     if age > read.CFG["silence_s"]:
         out.append((SILENT, f"Calla {_age(age)}"))
-    near = [name for name, key in (("diario", "daily_left"), ("total", "max_left"))
-            if floor and floor[key] < read.CFG["red_margin_left"]]
+    near = [
+        name
+        for name, key in (("diario", "daily_left"), ("total", "max_left"))
+        if floor and floor[key] < read.CFG["red_margin_left"]
+    ]
     if near:
         out.append((RED, "Cerca del suelo " + " y del ".join(near)))
     out += list(extra)
@@ -36,7 +45,9 @@ def reasons(beat: dict, floor: dict | None, now: int, extra: Sequence[tuple[str,
     return sorted(out, key=lambda r: ORDER.index(r[0]))
 
 
-def light(beat: dict, floor: dict | None, now: int, extra: Sequence[tuple[str, str]] = ()) -> tuple[str, str]:
+def light(
+    beat: dict, floor: dict | None, now: int, extra: Sequence[tuple[str, str]] = ()
+) -> tuple[str, str]:
     """An account's light and the Spanish words beside it: its worst reason, or green when it has none."""
     found = reasons(beat, floor, now, extra)
     if found:
@@ -75,19 +86,41 @@ def rows(now: int) -> list[dict]:
             zone = zones.get(stage["firm"])
             floor = floors.reading(beat, stage, zone)
             if zone is None:
-                doubts.append("El catálogo no trae el reloj ni la base de la pérdida diaria de esta "
-                              "firma: se lee el día del servidor y la base de Hantec.")
+                doubts.append(
+                    "El catálogo no trae el reloj ni la base de la pérdida diaria de esta "
+                    "firma: se lee el día del servidor y la base de Hantec."
+                )
             elif stage["firm"] in unconfirmed or "daily_loss_basis" in stage["flags"]:
-                doubts.append("El reloj y la base de la pérdida diaria de esta firma están sin "
-                              "confirmar en el catálogo.")
+                doubts.append(
+                    "El reloj y la base de la pérdida diaria de esta firma están sin "
+                    "confirmar en el catálogo."
+                )
             extra = rules.reasons(beat, stage, now + floors.server_offset(beat))
             if deals is not None:
-                prog = progress.reading(beat, stage, read.terms(stage["plan_key"], stage["phase"]), deals, zone)
+                prog = progress.reading(
+                    beat,
+                    stage,
+                    read.terms(stage["plan_key"], stage["phase"]),
+                    deals,
+                    zone,
+                )
         stops = risk.reading(beat, floor)
         extra = risk.reasons(stops) + extra
         found = reasons(beat, floor, now, extra)
         code, text = light(beat, floor, now, extra)
-        out.append({"beat": beat, "stage": stage, "floor": floor, "risk": stops, "deals": deals,
-                    "progress": prog, "reasons": found, "light": code, "text": text,
-                    "age": _age(max(now - beat["written_gmt"], 0)), "doubts": doubts})
+        out.append(
+            {
+                "beat": beat,
+                "stage": stage,
+                "floor": floor,
+                "risk": stops,
+                "deals": deals,
+                "progress": prog,
+                "reasons": found,
+                "light": code,
+                "text": text,
+                "age": _age(max(now - beat["written_gmt"], 0)),
+                "doubts": doubts,
+            }
+        )
     return out

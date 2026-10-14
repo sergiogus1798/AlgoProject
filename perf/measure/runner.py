@@ -25,7 +25,7 @@ def _cpu() -> float:
     for child in psutil.Process().children(recursive=True):
         try:
             alive += sum(child.cpu_times()[:2])
-        except psutil.Error:        # gone between the listing and the read: os.times() has it
+        except psutil.Error:  # gone between the listing and the read: os.times() has it
             pass
     return sum(os.times()[:4]) + alive
 
@@ -62,11 +62,14 @@ def measure(name: str, cfg: dict, memtop: int = 0) -> harness.Measured:
         allocated here: numpy buffers inside a worker process are invisible to it, which is
         why the harness samples the whole tree's RSS as well.
     """
-    if memtop:      # tracemalloc slows object-heavy code up to x1,8: only when memory is asked for
+    if (
+        memtop
+    ):  # tracemalloc slows object-heavy code up to x1,8: only when memory is asked for
         tracemalloc.start()
     state, done = {"size": 0, "snap": None}, threading.Event()
-    watcher = threading.Thread(target=_watch, args=(state, done,
-                                                    cfg["harness"]["sample_ms"] / 1000))
+    watcher = threading.Thread(
+        target=_watch, args=(state, done, cfg["harness"]["sample_ms"] / 1000)
+    )
     if memtop:
         watcher.start()
     wall, cpu = time.perf_counter(), _cpu()
@@ -78,22 +81,40 @@ def measure(name: str, cfg: dict, memtop: int = 0) -> harness.Measured:
     alloc, sites = None, []
     if memtop:
         alloc = tracemalloc.get_traced_memory()[1] / MB
-        sites = [f"{s.traceback[0]}  {s.size / MB:.1f} MB"
-                 for s in state["snap"].statistics("lineno")[:memtop]] if state["snap"] else []
+        sites = (
+            [
+                f"{s.traceback[0]}  {s.size / MB:.1f} MB"
+                for s in state["snap"].statistics("lineno")[:memtop]
+            ]
+            if state["snap"]
+            else []
+        )
         tracemalloc.stop()
-    return {"wall_s": wall, "cpu_s": cpu, "alloc_peak_mb": alloc, "alloc_top": sites,
-            "self_rss_mb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024,
-            "scale": out["scale"], "bytes_in_mb": out["bytes_in"] / MB}
+    return {
+        "wall_s": wall,
+        "cpu_s": cpu,
+        "alloc_peak_mb": alloc,
+        "alloc_top": sites,
+        "self_rss_mb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024,
+        "scale": out["scale"],
+        "bytes_in_mb": out["bytes_in"] / MB,
+    }
 
 
 def main() -> None:
     """Measure the named target and write the result as JSON."""
-    ap = argparse.ArgumentParser(description="Run one perf target; used by the harness.")
+    ap = argparse.ArgumentParser(
+        description="Run one perf target; used by the harness."
+    )
     ap.add_argument("target")
     ap.add_argument("--out", required=True, help="where the JSON result is written")
     ap.add_argument("--profile", help="also dump cProfile statistics to this path")
-    ap.add_argument("--memtop", type=int, default=0, help="report this many allocation sites")
-    ap.add_argument("--set", action="append", default=[], help="config override, dotted.key=value")
+    ap.add_argument(
+        "--memtop", type=int, default=0, help="report this many allocation sites"
+    )
+    ap.add_argument(
+        "--set", action="append", default=[], help="config override, dotted.key=value"
+    )
     a = ap.parse_args()
     cfg = config.load(a.set)
     if a.profile:

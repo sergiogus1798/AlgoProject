@@ -10,8 +10,14 @@ from studies.screening.analysis import tradelevel
 SHIFTS = {"E+1": (1, 0), "S+1": (0, 1), "ES+1": (1, 1), "E-1": (-1, 0)}
 
 
-def excess(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str], costs: reprice.Costs,
-           drift: dict, shift: tuple[int, int] = (0, 0)) -> np.ndarray:
+def excess(
+    trades: pd.DataFrame,
+    bars: pd.DataFrame,
+    span: tuple[str, str],
+    costs: reprice.Costs,
+    drift: dict,
+    shift: tuple[int, int] = (0, 0),
+) -> np.ndarray:
     """Each trade's excess over the market's drift with its fills moved, as level 1a prices it.
 
     Args:
@@ -39,20 +45,43 @@ def excess(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str], cost
     enter = bars.index.get_indexer(trades["open_time"]) + shift[0]
     gone = (enter >= leave) & (shift[0] > late)
     enter = np.minimum(enter, leave)
-    when, side, lots = bars.index.to_numpy(), trades["side"].to_numpy(), trades["lots"].to_numpy()
-    pnl, _ = reprice.pnl(reprice.fills(bars, enter),
-                         np.where(np.isnan(stop), reprice.fills(bars, leave), stop),
-                         when[enter], when[leave], side, lots, costs)
-    moved = pd.DataFrame({"Open time": when[enter], "Close time": when[leave],
-                          "Type": np.where(side < 0, "Sell", "Buy"), "Size": lots})
-    term = tradelevel.drift_term(moved, bars, span, drift["window"], drift["variant"],
-                                 costs["point_value"])[0]
+    when, side, lots = (
+        bars.index.to_numpy(),
+        trades["side"].to_numpy(),
+        trades["lots"].to_numpy(),
+    )
+    pnl, _ = reprice.pnl(
+        reprice.fills(bars, enter),
+        np.where(np.isnan(stop), reprice.fills(bars, leave), stop),
+        when[enter],
+        when[leave],
+        side,
+        lots,
+        costs,
+    )
+    moved = pd.DataFrame(
+        {
+            "Open time": when[enter],
+            "Close time": when[leave],
+            "Type": np.where(side < 0, "Sell", "Buy"),
+            "Size": lots,
+        }
+    )
+    term = tradelevel.drift_term(
+        moved, bars, span, drift["window"], drift["variant"], costs["point_value"]
+    )[0]
     return np.where(gone, np.nan, pnl - term)
 
 
-def measure(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str],
-            costs: reprice.Costs, drift: dict, variants: list[str],
-            moved: dict[str, np.ndarray] | None = None) -> pd.DataFrame:
+def measure(
+    trades: pd.DataFrame,
+    bars: pd.DataFrame,
+    span: tuple[str, str],
+    costs: reprice.Costs,
+    drift: dict,
+    variants: list[str],
+    moved: dict[str, np.ndarray] | None = None,
+) -> pd.DataFrame:
     """Retention and paired t of every delay variant, per strategy.
 
     Args:
@@ -77,11 +106,22 @@ def measure(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str],
     for name in variants:
         if name not in cache:
             cache[name] = excess(trades, bars, span, costs, drift, SHIFTS[name])
-        pair = trades.assign(moved=cache[name], delta=trades["excess"] - cache[name]).dropna(subset=["delta"])
+        pair = trades.assign(
+            moved=cache[name], delta=trades["excess"] - cache[name]
+        ).dropna(subset=["delta"])
         mean = pair.groupby("identity", sort=False)[["excess", "moved"]].mean()
-        rows.append(pd.DataFrame({
-            "variant": name, "ret": pd.Series(mean["moved"] / mean["excess"]).where(mean["excess"] > 0),
-            "t_delta": tradelevel.t(pair, "delta")["iid"], "t": t(pair, "moved")["ar1"]}))
+        rows.append(
+            pd.DataFrame(
+                {
+                    "variant": name,
+                    "ret": pd.Series(mean["moved"] / mean["excess"]).where(
+                        mean["excess"] > 0
+                    ),
+                    "t_delta": tradelevel.t(pair, "delta")["iid"],
+                    "t": t(pair, "moved")["ar1"],
+                }
+            )
+        )
     return pd.concat(rows).rename_axis("identity").reset_index()
 
 
@@ -95,5 +135,9 @@ def worst(table: pd.DataFrame) -> pd.DataFrame:
         Indexed by identity, measure()'s row of the smallest `ret` — so `t_delta` is that same
         variant's; a tie goes to the variant listed first. Strategies with no `ret` are absent.
     """
-    return (table.dropna(subset=["ret"]).sort_values("ret", kind="stable")
-            .drop_duplicates("identity").set_index("identity"))
+    return (
+        table.dropna(subset=["ret"])
+        .sort_values("ret", kind="stable")
+        .drop_duplicates("identity")
+        .set_index("identity")
+    )

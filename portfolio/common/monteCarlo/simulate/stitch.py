@@ -11,11 +11,12 @@ from portfolio.common.monteCarlo.simulate import metrics
 # only a redraw. Until that date the path was drawn from OS entropy: a stitched figure stored
 # before it does not reproduce, one stored after does.
 SEED = 20261013
-STRIP_BYTES = 256_000_000   # the index matrix and the gathered P&L of one strip
+STRIP_BYTES = 256_000_000  # the index matrix and the gathered P&L of one strip
 
 
-def _bad_draws(pnl: np.ndarray, sims: int, quantiles: list[float],
-               rng: np.random.Generator) -> dict[float, np.ndarray]:
+def _bad_draws(
+    pnl: np.ndarray, sims: int, quantiles: list[float], rng: np.random.Generator
+) -> dict[float, np.ndarray]:
     """One bootstrap realisation of a single period, per requested severity.
 
     Args:
@@ -39,7 +40,9 @@ def _bad_draws(pnl: np.ndarray, sims: int, quantiles: list[float],
     for lo in range(0, sims, height):
         states.append(rng.bit_generator.state)
         rows = min(height, sims - lo)
-        totals[lo:lo + rows] = pnl[rng.integers(0, pnl.size, (rows, pnl.size))].sum(axis=1)
+        totals[lo : lo + rows] = pnl[rng.integers(0, pnl.size, (rows, pnl.size))].sum(
+            axis=1
+        )
     after = rng.bit_generator.state
     order = np.argsort(totals)
     out = {}
@@ -51,8 +54,13 @@ def _bad_draws(pnl: np.ndarray, sims: int, quantiles: list[float],
     return out
 
 
-def worst_path(pnl: np.ndarray, segments: list[dict], sims: int, quantiles: list[float],
-               equity0: float) -> dict[float, dict]:
+def worst_path(
+    pnl: np.ndarray,
+    segments: list[dict],
+    sims: int,
+    quantiles: list[float],
+    equity0: float,
+) -> dict[float, dict]:
     """Stitch a bad period from each segment into one continuous path, at each severity.
 
     Args:
@@ -74,8 +82,18 @@ def worst_path(pnl: np.ndarray, segments: list[dict], sims: int, quantiles: list
         stream gives the same path.
     """
     rng = np.random.default_rng(SEED)
-    per_segment = [_bad_draws(pnl[s["positions"]], sims, quantiles, rng) for s in segments
-                   if s["positions"].size > 1]
-    return {q: {**metrics.observed(np.concatenate([seg[q] for seg in per_segment]), equity0),
-               "segments": len(per_segment), "quantile": q}
-           for q in quantiles}
+    per_segment = [
+        _bad_draws(pnl[s["positions"]], sims, quantiles, rng)
+        for s in segments
+        if s["positions"].size > 1
+    ]
+    return {
+        q: {
+            **metrics.observed(
+                np.concatenate([seg[q] for seg in per_segment]), equity0
+            ),
+            "segments": len(per_segment),
+            "quantile": q,
+        }
+        for q in quantiles
+    }

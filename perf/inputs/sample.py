@@ -26,8 +26,10 @@ def export(cfg: dict, databank: str) -> Path:
         owner re-exports.
     """
     if not databank:
-        raise SystemExit("perf/config.yaml: sample.trades_databank is empty — choose an export with "
-                         "trades/ and strategies/ (MC_Trades was deleted 2026-09-25)")
+        raise SystemExit(
+            "perf/config.yaml: sample.trades_databank is empty — choose an export with "
+            "trades/ and strategies/ (MC_Trades was deleted 2026-09-25)"
+        )
     where = DATA / "raw" / cfg["sample"]["project"] / databank
     return max(d for d in where.iterdir() if d.is_dir())
 
@@ -45,7 +47,7 @@ def files(cfg: dict, kind: str) -> list[Path]:
         the clock.
     """
     where = export(cfg, cfg["sample"]["trades_databank"]) / kind
-    return sorted(where.iterdir())[:cfg["sample"]["files"]]
+    return sorted(where.iterdir())[: cfg["sample"]["files"]]
 
 
 def bars(cfg: dict) -> Path:

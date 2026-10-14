@@ -12,4 +12,10 @@ def test_an_empty_period_raises() -> None:
     with pytest.raises(AssertionError):
         resample.q_null(values, sizes, 3, resample.stream(1, "x"))
     with pytest.raises(ValueError):
-        permuted.between(values - values.mean(), np.cumsum(sizes) - sizes, sizes, 3, resample.stream(1, "x"))
+        permuted.between(
+            values - values.mean(),
+            np.cumsum(sizes) - sizes,
+            sizes,
+            3,
+            resample.stream(1, "x"),
+        )

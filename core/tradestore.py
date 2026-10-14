@@ -14,8 +14,20 @@ from core import trades
 # `Symbol` constant per file — except under data=all, where it is kept because it names the
 # market. It does not separate the blocks on its own: see `pack`. `Balance` is derivable too
 # (100k + cumsum) and is kept by the owner's call.
-KEEP = ["Type", "Open time", "Open price", "Size", "Close time", "Close price",
-        "Profit/Loss", "Balance", "Sample type", "Close type", "MAE ($)", "MFE ($)"]
+KEEP = [
+    "Type",
+    "Open time",
+    "Open price",
+    "Size",
+    "Close time",
+    "Close price",
+    "Profit/Loss",
+    "Balance",
+    "Sample type",
+    "Close type",
+    "MAE ($)",
+    "MFE ($)",
+]
 CATEGORICAL = ("strategy", "Symbol", "Type", "Sample type", "Close type")
 
 
@@ -32,8 +44,11 @@ def ordered(frame: pd.DataFrame) -> bool:
         and `Ticket` has to be kept for it — core.tradepack.pack() checks rather than assumes.
     """
     opens, closes = frame["Open time"], frame["Close time"]
-    return bool(opens.is_monotonic_increasing and not opens.duplicated().any()
-                and (opens.iloc[1:].to_numpy() >= closes.iloc[:-1].to_numpy()).all())
+    return bool(
+        opens.is_monotonic_increasing
+        and not opens.duplicated().any()
+        and (opens.iloc[1:].to_numpy() >= closes.iloc[:-1].to_numpy()).all()
+    )
 
 
 def blocks_of(frame: pd.DataFrame) -> pd.Series:
@@ -99,8 +114,10 @@ def by_strategy(packed: pd.DataFrame) -> dict[str, pd.DataFrame]:
         {strategy name: its trades}, in the order they were packed. Splitting one read beats
         reading one file per strategy: the whole 757-strategy export loads in 0.16 s.
     """
-    return {str(n): g.reset_index(drop=True)
-            for n, g in packed.groupby("strategy", sort=False, observed=True)}
+    return {
+        str(n): g.reset_index(drop=True)
+        for n, g in packed.groupby("strategy", sort=False, observed=True)
+    }
 
 
 def read(path: Path, strategy: str = "") -> pd.DataFrame:

@@ -21,9 +21,13 @@ def records(frame: pd.DataFrame) -> list[dict[str, Any]]:
     return json.loads(cast("str", frame.to_json(orient="records")))
 
 
-SEEN = {"naked": "pasa los cuatro filtros", "plateau": "una variante del barrido pasa en meseta",
-        "weak": "significativa, paga menos de 2×", "none": "sin evidencia medida",
-        "against": "Medido en contra"}
+SEEN = {
+    "naked": "pasa los cuatro filtros",
+    "plateau": "una variante del barrido pasa en meseta",
+    "weak": "significativa, paga menos de 2×",
+    "none": "sin evidencia medida",
+    "against": "Medido en contra",
+}
 
 
 class BestCell(TypedDict):
@@ -97,21 +101,39 @@ def profile_map() -> ProfileMap:
     on: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for c in board()["cells"]:
         on.setdefault((c["symbol"], c["timeframe"]), []).append(
-            {"family": c["family"], "direction": c["direction"], "multiple": c["multiple"],
-             "level": explain.level(c["multiple"])[0], "trades_per_year": c["trades_per_year"],
-             "entered_by": c["entered_by"], "prior": c["prior"], "evidence": c["evidence"],
-             "state": SEEN[c["evidence"]], "points": c["points"]})
+            {
+                "family": c["family"],
+                "direction": c["direction"],
+                "multiple": c["multiple"],
+                "level": explain.level(c["multiple"])[0],
+                "trades_per_year": c["trades_per_year"],
+                "entered_by": c["entered_by"],
+                "prior": c["prior"],
+                "evidence": c["evidence"],
+                "state": SEEN[c["evidence"]],
+                "points": c["points"],
+            }
+        )
     cells: dict[str, MapCell] = {}
     for pair, rows in scores.groupby(["symbol", "timeframe"]):
         symbol, tf = cast("tuple[str, str]", pair)
         top = rows.sort_values("score", ascending=False).iloc[0]
-        cells[f"{symbol}|{tf}"] = {"passing": on.get((symbol, tf), []),
-                                   "best": {"family": top["family"], "direction": top["direction"],
-                                            "score": round(float(top["score"]), 1)}}
-    return {"symbols": list(MEMORY["asset_class"]), "timeframes": MEMORY["timeframes"],
-            "families": MEMORY["families"], "cells": cells,
-            "provisional": inputs.CONFIG["marks"]["provisional_costs"],
-            "levels": [{"level": n, "label": label} for _, n, label in explain.LEVELS]}
+        cells[f"{symbol}|{tf}"] = {
+            "passing": on.get((symbol, tf), []),
+            "best": {
+                "family": top["family"],
+                "direction": top["direction"],
+                "score": round(float(top["score"]), 1),
+            },
+        }
+    return {
+        "symbols": list(MEMORY["asset_class"]),
+        "timeframes": MEMORY["timeframes"],
+        "families": MEMORY["families"],
+        "cells": cells,
+        "provisional": inputs.CONFIG["marks"]["provisional_costs"],
+        "levels": [{"level": n, "label": label} for _, n, label in explain.LEVELS],
+    }
 
 
 def cell(symbol: str, timeframe: str) -> CellView:
@@ -122,27 +144,62 @@ def cell(symbol: str, timeframe: str) -> CellView:
     rows = records(measures.sort_values(["passes", "multiple"], ascending=False))
     cfg = profile.config()
     for r in rows:
-        r["explanation"] = explain.MEASURES.get(r["measure"]) or familias.describe(r["measure"], cfg)
+        r["explanation"] = explain.MEASURES.get(r["measure"]) or familias.describe(
+            r["measure"], cfg
+        )
     context = records(here(pd.read_csv(top / "context.csv")))
-    return {"symbol": symbol, "timeframe": timeframe, "measures": rows,
-            "families": records(here(inputs.scores()).sort_values("score", ascending=False)),
-            "context": context[0] if context else {}, "columns": explain.COLUMNS,
-            "context_help": explain.CONTEXT}
+    return {
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "measures": rows,
+        "families": records(
+            here(inputs.scores()).sort_values("score", ascending=False)
+        ),
+        "context": context[0] if context else {},
+        "columns": explain.COLUMNS,
+        "context_help": explain.CONTEXT,
+    }
 
 
 def memory() -> MemoryView:
     """The memory: coverage, the funnel of every attempt, survivors per family, ideas spent."""
     got = inputs.memory()
-    attempts = [{**{k: a[k] for k in ("project", "template", "family", "symbol", "timeframe",
-                                      "direction", "date", "outcome", "verdict",
-                                      "custodian_hours")},
-                 "funnel": [{"stage": s, "n": a[s]} for s in FUNNEL if a[s] not in ("", None)]}
-                for a in got["attempts"]]
+    attempts = [
+        {
+            **{
+                k: a[k]
+                for k in (
+                    "project",
+                    "template",
+                    "family",
+                    "symbol",
+                    "timeframe",
+                    "direction",
+                    "date",
+                    "outcome",
+                    "verdict",
+                    "custodian_hours",
+                )
+            },
+            "funnel": [
+                {"stage": s, "n": a[s]} for s in FUNNEL if a[s] not in ("", None)
+            ],
+        }
+        for a in got["attempts"]
+    ]
     grid = len(queries.grid())
-    return {"attempts": attempts, "by_family": got["by_family"], "spent": got["spent"],
-            "ideas": len(got["ideas"]), "stages": FUNNEL,
-            "coverage": {"cells": grid, "untouched": len(queries.untouched_cells(got["attempts"])),
-                         "closed": sum(r["closed"] for r in got["by_family"])}}
+    return {
+        "attempts": attempts,
+        "by_family": got["by_family"],
+        "spent": got["spent"],
+        "ideas": len(got["ideas"]),
+        "stages": FUNNEL,
+        "coverage": {
+            "cells": grid,
+            "untouched": len(queries.untouched_cells(got["attempts"])),
+            "closed": sum(r["closed"] for r in got["by_family"]),
+        },
+    }
 
 
 def board() -> dict[str, Any]:

@@ -60,14 +60,20 @@ def located(packed: Path, strategy: str, cfg: dict, frame: pd.DataFrame) -> Loca
     """
     trades = nullinputs.sample(packed, strategy, cfg["sample"]).sort_values("Open time")
     trades = trades.reset_index(drop=True)
-    entry = np.maximum(frame.index.searchsorted(trades["Open time"].to_numpy(), side="right") - 1, 0)
+    entry = np.maximum(
+        frame.index.searchsorted(trades["Open time"].to_numpy(), side="right") - 1, 0
+    )
     value = calibrate.point_value(trades)
     scale = calibrate.atr(frame, cfg["atr"])
-    return {"trades": trades, "entry": entry,
-            "side": trades["Type"].map(cast("Any", SIDE)).to_numpy(np.float64),
-            "atr": scale[entry - 1], "point_value": value,
-            "charged": calibrate.charged(trades, value),
-            "size": trades["Size"].to_numpy(np.float64)}
+    return {
+        "trades": trades,
+        "entry": entry,
+        "side": trades["Type"].map(cast("Any", SIDE)).to_numpy(np.float64),
+        "atr": scale[entry - 1],
+        "point_value": value,
+        "charged": calibrate.charged(trades, value),
+        "size": trades["Size"].to_numpy(np.float64),
+    }
 
 
 def usable(found: Located, horizon: int, bars: int) -> np.ndarray:

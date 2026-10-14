@@ -7,8 +7,21 @@ from pathlib import Path
 
 from core.datapaths import campaign_dir
 
-COLUMNS = ("date", "symbol", "timeframe", "direction", "family", "template", "strategy", "mother",
-           "identity", "stop_x", "test", "folder", "workflow")
+COLUMNS = (
+    "date",
+    "symbol",
+    "timeframe",
+    "direction",
+    "family",
+    "template",
+    "strategy",
+    "mother",
+    "identity",
+    "stop_x",
+    "test",
+    "folder",
+    "workflow",
+)
 
 
 def place(cell: dict, strategies: list[dict], workflow: Path) -> None:
@@ -25,7 +38,12 @@ def place(cell: dict, strategies: list[dict], workflow: Path) -> None:
     root = campaign_dir() / "supervivientes"
     day = datetime.now().strftime("%Y%m%d")
     base = (root / "_pruebas" if cell.get("test") else root).joinpath(
-        cell["symbol"], cell["timeframe"], cell["direction"], cell["family"], cell["template"])
+        cell["symbol"],
+        cell["timeframe"],
+        cell["direction"],
+        cell["family"],
+        cell["template"],
+    )
     index = root / "indice.csv"
     root.mkdir(parents=True, exist_ok=True)
     new = not index.exists()
@@ -37,9 +55,22 @@ def place(cell: dict, strategies: list[dict], workflow: Path) -> None:
             folder = base / f"{day}_{s['strategy'].replace(' ', '_')}"
             folder.mkdir(parents=True, exist_ok=True)
             shutil.copy(s["sqx"], folder / "estrategia.sqx")
-            for name, target in (("archivo", s["archive"]), ("madre", s["mother_archive"]), ("workflow", workflow)):
+            for name, target in (
+                ("archivo", s["archive"]),
+                ("madre", s["mother_archive"]),
+                ("workflow", workflow),
+            ):
                 if target:
                     (folder / name).symlink_to(target)
-            rows.writerow({**{k: cell[k] for k in COLUMNS[1:6]}, "date": day, "strategy": s["strategy"],
-                           "mother": s["mother"], "identity": s["identity"],
-                           "test": bool(cell.get("test")), "folder": folder, "workflow": workflow})
+            rows.writerow(
+                {
+                    **{k: cell[k] for k in COLUMNS[1:6]},
+                    "date": day,
+                    "strategy": s["strategy"],
+                    "mother": s["mother"],
+                    "identity": s["identity"],
+                    "test": bool(cell.get("test")),
+                    "folder": folder,
+                    "workflow": workflow,
+                }
+            )

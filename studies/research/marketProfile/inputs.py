@@ -13,7 +13,7 @@ from core.study import config as study_config
 from core.symbols import current
 
 CONFIG = Path(__file__).with_name("config.yaml")
-SEGMENT = "build"      # the only segment the profile may read
+SEGMENT = "build"  # the only segment the profile may read
 PRICES = ["Open", "High", "Low", "Close"]
 
 
@@ -21,7 +21,9 @@ def config(overrides: list[str] | None = None) -> dict[str, Any]:
     """The parsed config.yaml with its overrides; a null seed becomes a fresh, recorded root."""
     cfg = study_config.load(CONFIG, overrides or [])
     if cfg["nulls"]["seed"] is None:
-        cfg["nulls"]["seed"] = int(cast("int", np.random.SeedSequence().entropy) % 2 ** 32)
+        cfg["nulls"]["seed"] = int(
+            cast("int", np.random.SeedSequence().entropy) % 2**32
+        )
     return cfg
 
 
@@ -31,7 +33,9 @@ def span(symbol: str) -> tuple[pd.Timestamp, pd.Timestamp]:
     Raises ValueError when the asset has no build dates: a window is never invented.
     """
     lo, hi = assetdata.window(assetdata.load(symbol), SEGMENT)
-    return cast("pd.Timestamp", pd.Timestamp(lo, unit="ms")), cast("pd.Timestamp", pd.Timestamp(hi, unit="ms"))
+    return cast("pd.Timestamp", pd.Timestamp(lo, unit="ms")), cast(
+        "pd.Timestamp", pd.Timestamp(hi, unit="ms")
+    )
 
 
 def cut(m1: pd.DataFrame, symbol: str) -> pd.DataFrame:
@@ -93,5 +97,9 @@ def cost(asset: dict, price: np.ndarray) -> np.ndarray:
     points = use[f"spread_{half}"]["use"] + 2 * use[f"slippage_{half}"]["use"]
     fee = use["commission"]["use"][SEGMENT]
     if fee["method"] == "SizeBased":
-        return points * tick + fee["value"] / asset["instrument"]["point_value"] + 0 * price
+        return (
+            points * tick
+            + fee["value"] / asset["instrument"]["point_value"]
+            + 0 * price
+        )
     return points * tick + fee["value"] / 100 * price

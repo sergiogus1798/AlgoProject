@@ -25,8 +25,10 @@ from core.datapaths import projects_backup
 from core.paths import MASTER
 from sqx.projects import builder, doctrine, resources
 
-TEMPLATE = (Path(__file__).resolve().parent.parent / "tools/sqx-lab/plugins/sqx-lab/skills/"
-            "sqx-strategy-template/engine/skeletons/market_skeleton.sqx")
+TEMPLATE = (
+    Path(__file__).resolve().parent.parent / "tools/sqx-lab/plugins/sqx-lab/skills/"
+    "sqx-strategy-template/engine/skeletons/market_skeleton.sqx"
+)
 DONOR = projects_backup("XAUUSD_base_2026-09-21") / "project.cfx"
 USDJPY_SOURCE = MASTER / "user/projects/USDJPY/project.cfx"
 
@@ -42,7 +44,14 @@ def check(label: str, ok: bool, detail: str = "") -> None:
         FAILURES.append(label)
 
 
-FORBIDDEN = ("<Setup", "<Task", "<Databank", "<AcceptanceCondition", "<Exit", "<StrategyType")
+FORBIDDEN = (
+    "<Setup",
+    "<Task",
+    "<Databank",
+    "<AcceptanceCondition",
+    "<Exit",
+    "<StrategyType",
+)
 
 
 def test_definitions_scope() -> None:
@@ -55,7 +64,11 @@ def test_definitions_scope() -> None:
     check("Symbol block", symbol.startswith("<Symbol"))
     check("InstrumentInfo block", instrument.startswith("<InstrumentInfo"))
     check("Broker block", broker.startswith("<Broker"))
-    for name, block in (("Symbol", symbol), ("InstrumentInfo", instrument), ("Broker", broker)):
+    for name, block in (
+        ("Symbol", symbol),
+        ("InstrumentInfo", instrument),
+        ("Broker", broker),
+    ):
         hit = next((f for f in FORBIDDEN if f in block), None)
         check(f"{name} carries no task-shaped element", hit is None, hit or "")
 
@@ -68,12 +81,20 @@ def test_session_scope() -> None:
         return
     session = load("USDJPY")["session"]
     with zipfile.ZipFile(USDJPY_SOURCE) as z:
-        candidates = [doctrine.settings.session_block(z.read(n).decode("utf-8", "replace"), session)
-                      for n in z.namelist() if n.endswith(".xml") and n != "config.xml"]
+        candidates = [
+            doctrine.settings.session_block(
+                z.read(n).decode("utf-8", "replace"), session
+            )
+            for n in z.namelist()
+            if n.endswith(".xml") and n != "config.xml"
+        ]
     block = next((b for b in candidates if b), None)
     check("a session block was found on the master", block is not None)
     if block:
-        check("Session block only", block.startswith("<Session") and block.endswith("</Session>"))
+        check(
+            "Session block only",
+            block.startswith("<Session") and block.endswith("</Session>"),
+        )
         hit = next((f for f in FORBIDDEN if f in block), None)
         check("Session carries no task-shaped element", hit is None, hit or "")
 
@@ -92,37 +113,62 @@ def test_finished_setups_carry_assets_costs_not_the_masters() -> None:
         master_spread = None
         for n in z.namelist():
             if n.endswith(".xml") and n != "config.xml":
-                m = re.search(r'defaultSpread="([^"]*)"', z.read(n).decode("utf-8", "replace"))
+                m = re.search(
+                    r'defaultSpread="([^"]*)"', z.read(n).decode("utf-8", "replace")
+                )
                 if m:
                     master_spread = m.group(0)
                     break
-    check("precondition: the master's own spread differs from assets/'s declared one",
-          master_spread is not None and 'defaultSpread="0.1"' == master_spread,
-          f"master carries {master_spread!r}, expected the known 0.1 fixture value")
+    check(
+        "precondition: the master's own spread differs from assets/'s declared one",
+        master_spread is not None and 'defaultSpread="0.1"' == master_spread,
+        f"master carries {master_spread!r}, expected the known 0.1 fixture value",
+    )
 
     with tempfile.TemporaryDirectory(prefix="sqx-test-install-") as install:
         builder.worker_dir = lambda role: Path(install)
         done = builder.build(
-            name="Test_fixture_usdjpy_scope", template=TEMPLATE, symbol="USDJPY",
-            role="conductor", timeframe="M30", strategies=50, minutes=5, donor=DONOR,
-            session_from=USDJPY_SOURCE)
+            name="Test_fixture_usdjpy_scope",
+            template=TEMPLATE,
+            symbol="USDJPY",
+            role="conductor",
+            timeframe="M30",
+            strategies=50,
+            minutes=5,
+            donor=DONOR,
+            session_from=USDJPY_SOURCE,
+        )
 
         with zipfile.ZipFile(done["cfx"]) as z:
-            texts = {n: z.read(n).decode("utf-8", "replace") for n in z.namelist()
-                     if n.endswith(".xml") and n != "config.xml"}
+            texts = {
+                n: z.read(n).decode("utf-8", "replace")
+                for n in z.namelist()
+                if n.endswith(".xml") and n != "config.xml"
+            }
 
-        setups = [m.group(0) for t in texts.values()
-                  for m in re.finditer(r"<Setup\b[^>]*>.*?</Setup>", t, re.S)
-                  if f'symbol="{asset["sqx_symbol"]}"' in m.group(0)]
+        setups = [
+            m.group(0)
+            for t in texts.values()
+            for m in re.finditer(r"<Setup\b[^>]*>.*?</Setup>", t, re.S)
+            if f'symbol="{asset["sqx_symbol"]}"' in m.group(0)
+        ]
         check("the built project has Setups trading USDJPY", bool(setups))
         # One spread per segment since 2026-09-30: each Setup carries one of the declared three.
-        declared = {asset["costs"][f]["use"] for f in asset["costs"] if f.startswith("spread_")}
+        declared = {
+            asset["costs"][f]["use"] for f in asset["costs"] if f.startswith("spread_")
+        }
         wrong = [s for s in setups if not any(f'spread="{v}"' in s for v in declared)]
-        check("every Setup carries assets/'s declared spread, not the master's",
-              not wrong, f"{len(wrong)} of {len(setups)} Setups")
+        check(
+            "every Setup carries assets/'s declared spread, not the master's",
+            not wrong,
+            f"{len(wrong)} of {len(setups)} Setups",
+        )
         stray_master_spread = [s for s in setups if 'spread="0.1"' in s]
-        check("the master's own spread (0.1) never appears in a finished Setup",
-              not stray_master_spread, f"{len(stray_master_spread)} Setup(s)")
+        check(
+            "the master's own spread (0.1) never appears in a finished Setup",
+            not stray_master_spread,
+            f"{len(stray_master_spread)} Setup(s)",
+        )
 
 
 def main() -> None:

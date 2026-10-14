@@ -10,7 +10,9 @@ from core.researchpaths import research_profiles_dir
 from studies.research.memory import attempts, ideas, queries
 from studies.research.memory.sources import CONFIG as MEMORY
 
-CONFIG = yaml.safe_load((Path(__file__).parent / "config.yaml").read_text(encoding="utf-8"))
+CONFIG = yaml.safe_load(
+    (Path(__file__).parent / "config.yaml").read_text(encoding="utf-8")
+)
 CELL = ["symbol", "timeframe", "direction", "family"]
 
 
@@ -37,9 +39,12 @@ def memory(own_files: tuple = ()) -> dict[str, Any]:
     index = ideas.index()
     rows = attempts.table({i["idea"] for i in index})
     index = ideas.index(rows)
-    return {"attempts": rows, "ideas": index, "by_family": queries.survivors_by_family(rows),
-            "spent": queries.ideas_spent(
-                [i for i in index if i["file"] not in own_files])}
+    return {
+        "attempts": rows,
+        "ideas": index,
+        "by_family": queries.survivors_by_family(rows),
+        "spent": queries.ideas_spent([i for i in index if i["file"] not in own_files]),
+    }
 
 
 def asset_class(symbol: str) -> str:
@@ -47,19 +52,25 @@ def asset_class(symbol: str) -> str:
     return MEMORY["asset_class"][symbol]
 
 
-def ideas_spent(spent: list[dict], symbol: str, timeframe: str, direction: str,
-                family: str) -> int:
+def ideas_spent(
+    spent: list[dict], symbol: str, timeframe: str, direction: str, family: str
+) -> int:
     """Ideas already proposed for one cell — the «ya van K ideas» of the proposal.
 
     An idea that never became a template has no family yet (family ''): it was a look at that
     asset, timeframe and direction, so it counts against every family there.
     """
-    return sum(r["ideas"] for r in spent
-               if (r["symbol"], r["timeframe"], r["direction"]) == (symbol, timeframe, direction)
-               and r["family"] in ("", family))
+    return sum(
+        r["ideas"]
+        for r in spent
+        if (r["symbol"], r["timeframe"], r["direction"])
+        == (symbol, timeframe, direction)
+        and r["family"] in ("", family)
+    )
 
 
-def attempts_in(rows: list[dict], symbol: str, timeframe: str, direction: str,
-                family: str) -> int:
+def attempts_in(
+    rows: list[dict], symbol: str, timeframe: str, direction: str, family: str
+) -> int:
     """Project runs of that family's templates on that asset, timeframe and direction."""
     return sum(queries.cell(r) == (symbol, timeframe, direction, family) for r in rows)

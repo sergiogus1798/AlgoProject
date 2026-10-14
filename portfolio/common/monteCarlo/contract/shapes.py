@@ -12,8 +12,13 @@ from portfolio.common.monteCarlo.simulate.fan import Bands
 
 # A share of the account is stored as a fraction and read as a percentage.
 SCALE = {"%": 100.0}
-TIER_STATE = {"STRONG": "pass", "ACCEPTABLE": "pass", "MARGINAL": "watch", "FAIL": "fail",
-              "INCONCLUSIVE": "none"}
+TIER_STATE = {
+    "STRONG": "pass",
+    "ACCEPTABLE": "pass",
+    "MARGINAL": "watch",
+    "FAIL": "fail",
+    "INCONCLUSIVE": "none",
+}
 
 
 def scale(metric: str) -> float:
@@ -21,8 +26,9 @@ def scale(metric: str) -> float:
     return SCALE.get(UNITS[metric], 1.0)
 
 
-def distribution(shape: dict, table: dict | None, metric: str, title: str,
-                 note: str = "") -> dict[str, Any]:
+def distribution(
+    shape: dict, table: dict | None, metric: str, title: str, note: str = ""
+) -> dict[str, Any]:
     """One stored histogram as a "distribution" block.
 
     Args:
@@ -44,29 +50,49 @@ def distribution(shape: dict, table: dict | None, metric: str, title: str,
         pct = {str(q): v * k for q, v in table["p"].items()}
         band = [pct.get("5"), pct.get("95")]
         rank = table["rank"]
-        note = note or (f"El backtest queda por encima del {rank:.0%} de las simulaciones."
-                        if metric != "dd_pct" else
-                        f"El backtest tuvo un drawdown mayor que el {rank:.0%} de las "
-                        f"simulaciones.")
+        note = note or (
+            f"El backtest queda por encima del {rank:.0%} de las simulaciones."
+            if metric != "dd_pct"
+            else f"El backtest tuvo un drawdown mayor que el {rank:.0%} de las "
+            f"simulaciones."
+        )
     else:
         pct, band = {}, [None, None]
-    return {"kind": "distribution", "title": title, "unit": UNITS[metric],
-            "bins": [float(e) for e in edges], "counts": [int(c) for c in counts],
-            "real": shape["observed"] * k, "median": shape["median"] * k, "band": band,
-            "percentiles": pct, "p": None, "note": note + caption(shape.get("left_out", 0))}
+    return {
+        "kind": "distribution",
+        "title": title,
+        "unit": UNITS[metric],
+        "bins": [float(e) for e in edges],
+        "counts": [int(c) for c in counts],
+        "real": shape["observed"] * k,
+        "median": shape["median"] * k,
+        "band": band,
+        "percentiles": pct,
+        "p": None,
+        "note": note + caption(shape.get("left_out", 0)),
+    }
 
 
 def summary(table: dict, metric: str, title: str) -> dict[str, Any]:
     """One sub-run's percentile table for one statistic, with its moments, as a table block."""
     k = scale(metric)
     rows = [[f"Percentil {q}", v * k] for q, v in table["p"].items()]
-    rows += [["Media", table["mean"] * k], ["Mediana", table["median"] * k],
-             ["Desviación estándar", table["std"] * k], ["Curtosis (exceso)", table["kurtosis"]],
-             ["Backtest", table["observed"] * k], ["Simulaciones utilizables", table["n"]]]
-    return blocks.table(title, pd.DataFrame(rows, columns=pd.Index(["qué", LABELS[metric]])))
+    rows += [
+        ["Media", table["mean"] * k],
+        ["Mediana", table["median"] * k],
+        ["Desviación estándar", table["std"] * k],
+        ["Curtosis (exceso)", table["kurtosis"]],
+        ["Backtest", table["observed"] * k],
+        ["Simulaciones utilizables", table["n"]],
+    ]
+    return blocks.table(
+        title, pd.DataFrame(rows, columns=pd.Index(["qué", LABELS[metric]]))
+    )
 
 
-def by_model(runs: dict, titles: dict, q: int, first: tuple[str, dict] | None = None) -> pd.DataFrame:
+def by_model(
+    runs: dict, titles: dict, q: int, first: tuple[str, dict] | None = None
+) -> pd.DataFrame:
     """Every model of a family at one percentile, one column per statistic.
 
     Args:
@@ -78,23 +104,45 @@ def by_model(runs: dict, titles: dict, q: int, first: tuple[str, dict] | None = 
     Returns:
         A frame ready for blocks.table, shares already in percent.
     """
-    rows = [[title] + [s[m]["p"][q] * scale(m) for m in LABELS]
-            for title, s in ((titles[k], v) for k, v in runs.items())]
+    rows = [
+        [title] + [s[m]["p"][q] * scale(m) for m in LABELS]
+        for title, s in ((titles[k], v) for k, v in runs.items())
+    ]
     if first:
         rows.insert(0, [first[0]] + [first[1][m] * scale(m) for m in LABELS])
-    return pd.DataFrame(rows, columns=pd.Index(["modelo"] + [f"{v} ({UNITS[m]})" if UNITS[m] else v
-                                                     for m, v in LABELS.items()]))
+    return pd.DataFrame(
+        rows,
+        columns=pd.Index(
+            ["modelo"]
+            + [f"{v} ({UNITS[m]})" if UNITS[m] else v for m, v in LABELS.items()]
+        ),
+    )
 
 
 def overlay(entry: dict, title: str) -> list[dict]:
     """The in-sample and out-of-sample halves of one degradation check, one block each."""
-    return [distribution(entry[scope], None, entry["metric"], f"{title} — {scope}",
-                         "Mismo modelo sobre sólo las operaciones de esta muestra.")
-            for scope in ("IS", "OOS") if entry.get(scope) is not None]
+    return [
+        distribution(
+            entry[scope],
+            None,
+            entry["metric"],
+            f"{title} — {scope}",
+            "Mismo modelo sobre sólo las operaciones de esta muestra.",
+        )
+        for scope in ("IS", "OOS")
+        if entry.get(scope) is not None
+    ]
 
 
 def cone(band: Bands, title: str, note: str) -> dict[str, Any]:
     """A fan.envelope() at 2.5/25/50/75/97.5 as a "cone" block, x in trade order."""
-    return {"kind": "cone", "title": title, "unit": "USD", "x": band["at"],
-            "bands": {str(q): v for q, v in band["bands"].items()},
-            "real": band["observed"], "split": None, "note": note}
+    return {
+        "kind": "cone",
+        "title": title,
+        "unit": "USD",
+        "x": band["at"],
+        "bands": {str(q): v for q, v in band["bands"].items()},
+        "real": band["observed"],
+        "split": None,
+        "note": note,
+    }

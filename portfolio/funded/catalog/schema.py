@@ -20,17 +20,42 @@ DB = funding_dir() / "funding.sqlite"
 # Natural key and value columns of every versioned table. A row is current while `valid_to` is
 # NULL; a change closes it and opens a new one, so every past price and rule stays queryable.
 TABLES = {
-    "plans": (("plan_key",),
-              ("firm", "family", "steps", "size", "account_ccy", "price", "price_ccy",
-               "platform", "eas_allowed")),
-    "stages": (("plan_key", "stage"),
-               ("profit_target_pct", "daily_loss_pct", "max_loss_pct", "max_loss_mode",
-                "min_days", "time_limit_days", "consistency_pct", "reward_share_pct",
-                "payout_days", "news_ok", "weekend_ok", "filled_from")),
-    "options": (("plan_key", "option_key"),
-                ("label", "effect", "price_pct")),
-    "rules": (("firm", "family", "rule_key"),
-              ("value", "text", "source", "status", "checked_on")),
+    "plans": (
+        ("plan_key",),
+        (
+            "firm",
+            "family",
+            "steps",
+            "size",
+            "account_ccy",
+            "price",
+            "price_ccy",
+            "platform",
+            "eas_allowed",
+        ),
+    ),
+    "stages": (
+        ("plan_key", "stage"),
+        (
+            "profit_target_pct",
+            "daily_loss_pct",
+            "max_loss_pct",
+            "max_loss_mode",
+            "min_days",
+            "time_limit_days",
+            "consistency_pct",
+            "reward_share_pct",
+            "payout_days",
+            "news_ok",
+            "weekend_ok",
+            "filled_from",
+        ),
+    ),
+    "options": (("plan_key", "option_key"), ("label", "effect", "price_pct")),
+    "rules": (
+        ("firm", "family", "rule_key"),
+        ("value", "text", "source", "status", "checked_on"),
+    ),
 }
 
 _DDL = """
@@ -59,9 +84,12 @@ CREATE TABLE IF NOT EXISTS combos (plan_key TEXT, options TEXT, price REAL, pric
 def connect(path: Path = DB) -> sqlite3.Connection:
     """Open the database, creating any missing table."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(path, timeout=60)  # the daily deals and the weekly refresh may meet
+    db = sqlite3.connect(
+        path, timeout=60
+    )  # the daily deals and the weekly refresh may meet
     for name, (keys, values) in TABLES.items():
-        db.executescript(_DDL.format(name=name, cols=", ".join(keys + values),
-                                     keys=", ".join(keys)))
+        db.executescript(
+            _DDL.format(name=name, cols=", ".join(keys + values), keys=", ".join(keys))
+        )
     db.executescript(EXTRA)
     return db

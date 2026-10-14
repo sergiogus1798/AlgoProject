@@ -24,11 +24,15 @@ def _reconcile_lines(reconcile: pd.DataFrame) -> list[str]:
     lines = []
     for identity, rows in reconcile.groupby("identity"):
         first = rows.iloc[0]
-        segments = ", ".join(f"{r.segment} {r.exact:.0%}" for r in cast(Any, rows).itertuples())
+        segments = ", ".join(
+            f"{r.segment} {r.exact:.0%}" for r in cast(Any, rows).itertuples()
+        )
         estado = "excluida" if first.excluded else "conservada"
-        lines.append(f"  {str(identity)[:12]}… [{estado}] daily-low {segments} · "
-                     f"MAE {first.mae_exact:.0%} · MFE {first.mfe_exact:.0%}"
-                     + (f" · motivo: {first.reason}" if first.excluded else ""))
+        lines.append(
+            f"  {str(identity)[:12]}… [{estado}] daily-low {segments} · "
+            f"MAE {first.mae_exact:.0%} · MFE {first.mfe_exact:.0%}"
+            + (f" · motivo: {first.reason}" if first.excluded else "")
+        )
     return lines
 
 
@@ -50,14 +54,22 @@ def summarise(pool_name: str, cfg: dict, out: Path) -> str:
     if cfg["relaxed"]:
         lines.append(f"AJUSTADO: umbrales relajados {cfg['relaxed']}")
     lines += pool_mod.prohibited_lines(pool_name, cfg)
-    lines.append(f"Miembros: {len(kept)} conservados, {len(excluded)} excluidos de {len(kept) + len(excluded)}")
+    lines.append(
+        f"Miembros: {len(kept)} conservados, {len(excluded)} excluidos de {len(kept) + len(excluded)}"
+    )
     lines += _reconcile_lines(data["reconcile"])
-    lines.append("Calendario: " + ", ".join(f"{k} {v[0][:10]}…{v[1][:10]}"
-                                            for k, v in manifest["calendar"].items()))
+    lines.append(
+        "Calendario: "
+        + ", ".join(
+            f"{k} {v[0][:10]}…{v[1][:10]}" for k, v in manifest["calendar"].items()
+        )
+    )
     for symbol, days in manifest["borrowed"].items():
         borrowed = {k: v for k, v in days.items() if v}
         if borrowed:
-            lines.append(f"  {symbol} toma prestados {borrowed} días de otro de sus propios tramos")
+            lines.append(
+                f"  {symbol} toma prestados {borrowed} días de otro de sus propios tramos"
+            )
     if manifest["unconfirmed_clocks"]:
         lines.append(f"Relojes sin confirmar: {manifest['unconfirmed_clocks']}")
     lines.append(f"Carpeta: {out}")
@@ -80,31 +92,65 @@ def screen(data: dict, cfg: dict, out: Path) -> dict[str, Any]:
     Returns:
         `search.admissible`'s dict.
     """
-    calendar = {k: (pd.Timestamp(v[0]), pd.Timestamp(v[1]))
-                for k, v in data["manifest"]["calendar"].items()}
+    calendar = {
+        k: (pd.Timestamp(v[0]), pd.Timestamp(v[1]))
+        for k, v in data["manifest"]["calendar"].items()
+    }
     daily = matrix.segment(data["daily"], calendar, "build")
     pairs = table.table(daily, matrix.monthly(daily), cfg)
     pairs.to_parquet(out / "pairs.parquet")
     got = admissible.admissible(pairs, list(daily.columns), cfg)
     # What the window's «Correlación» paints: the thresholds in force and the screen's outcome
     # (the folder's key is the config's fingerprint, which does not say what the config was).
-    edges = [[i, j] for a, i in enumerate(daily.columns) for b, j in enumerate(daily.columns)
-             if a < b and got["graph"][a, b]]
-    (out / "screen.json").write_text(json.dumps(
-        {"thresholds": {k: cfg["pairs"][k] for k in config.PAIR_THRESHOLDS}, "relaxed": cfg["relaxed"],
-         "sign": cfg["pairs"]["sign"], "one_sided": cfg["pairs"]["one_sided"],
-         "identities": list(daily.columns), "edges": edges, "failing": got["failing"].to_dict("records"),
-         **{k: got[k] for k in ("counts", "n_pairs", "n_admissible_pairs", "n_without_rolling", "n_in",
-                                "n_out", "effective_n")}}, ensure_ascii=False, default=float), encoding="utf-8")
-    print(f"Parejas (solo build): {got['n_admissible_pairs']} admisibles de {got['n_pairs']}; "
-          f"{got['n_out']} de {got['n_in']} estrategias tienen al menos una pareja admisible")
+    edges = [
+        [i, j]
+        for a, i in enumerate(daily.columns)
+        for b, j in enumerate(daily.columns)
+        if a < b and got["graph"][a, b]
+    ]
+    (out / "screen.json").write_text(
+        json.dumps(
+            {
+                "thresholds": {k: cfg["pairs"][k] for k in config.PAIR_THRESHOLDS},
+                "relaxed": cfg["relaxed"],
+                "sign": cfg["pairs"]["sign"],
+                "one_sided": cfg["pairs"]["one_sided"],
+                "identities": list(daily.columns),
+                "edges": edges,
+                "failing": got["failing"].to_dict("records"),
+                **{
+                    k: got[k]
+                    for k in (
+                        "counts",
+                        "n_pairs",
+                        "n_admissible_pairs",
+                        "n_without_rolling",
+                        "n_in",
+                        "n_out",
+                        "effective_n",
+                    )
+                },
+            },
+            ensure_ascii=False,
+            default=float,
+        ),
+        encoding="utf-8",
+    )
+    print(
+        f"Parejas (solo build): {got['n_admissible_pairs']} admisibles de {got['n_pairs']}; "
+        f"{got['n_out']} de {got['n_in']} estrategias tienen al menos una pareja admisible"
+    )
     for name, n in sorted(got["counts"].items(), key=lambda kv: -kv[1]):
         print(f"  caen por {FILTER_WORDS.get(name, name)}: {n}")
     if got["n_without_rolling"]:
-        print(f"  juzgadas sin ventana móvil (menos de 60 meses compartidos): {got['n_without_rolling']}")
+        print(
+            f"  juzgadas sin ventana móvil (menos de 60 meses compartidos): {got['n_without_rolling']}"
+        )
     calm, stress = got["effective_n"]["calm"], got["effective_n"]["stress"]
-    print(f"N efectivo: calma {calm['participation']:.1f} / {calm['average']:.1f}, "
-          f"estrés {stress['participation']:.1f} / {stress['average']:.1f} (autovalores / media de ρ)")
+    print(
+        f"N efectivo: calma {calm['participation']:.1f} / {calm['average']:.1f}, "
+        f"estrés {stress['participation']:.1f} / {stress['average']:.1f} (autovalores / media de ρ)"
+    )
     return got
 
 

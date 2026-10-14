@@ -3,8 +3,15 @@
 from collections.abc import Callable
 
 from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QLabel, QTabWidget, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import background
 from ui.desktop.blocks.card import text
@@ -25,7 +32,8 @@ TAB_HELP = (
     "Paso 4: la banda del spread medio diario contra el precio y los rangos del MC Retest "
     "(studies.data.spread.bands).",
     "Paso 4: los picos, congelados y huecos del feed M1 por año y por mes, y desde qué año es "
-    "estable (studies.data.feedQuality.scan).")
+    "estable (studies.data.feedQuality.scan).",
+)
 
 
 class DataZone(QFrame):
@@ -64,10 +72,13 @@ class DataZone(QFrame):
         self.tabs.setDocumentMode(True)
         self.catalogue = QWidget()
         QVBoxLayout(self.catalogue).setContentsMargins(0, 8, 0, 0)
-        self.pages = {"Catálogo": self.catalogue, "Velas": BarsPage(fetch),
-                      "Spread real": StudyPage(fetch, "data/spread", "spread", "spread"),
-                      "Banda del spread": StudyPage(fetch, "data/spread", "spread", "band"),
-                      "Calidad del feed": StudyPage(fetch, "data/feedquality", "feedQuality")}
+        self.pages = {
+            "Catálogo": self.catalogue,
+            "Velas": BarsPage(fetch),
+            "Spread real": StudyPage(fetch, "data/spread", "spread", "spread"),
+            "Banda del spread": StudyPage(fetch, "data/spread", "spread", "band"),
+            "Calidad del feed": StudyPage(fetch, "data/feedquality", "feedQuality"),
+        }
         for i, name in enumerate(TABS):
             self.tabs.addTab(self.pages[name], name)
             self.tabs.setTabToolTip(i, TAB_HELP[i])
@@ -121,10 +132,15 @@ class DataZone(QFrame):
         a = self.asset()
         if a is None:
             return
-        bars = (f"M1 {a['from']} → {a['to']} · {num(a['count'])} velas" if a["bars"]
-                else "sin barras en la librería")
-        self.facts.setText(f"{bars} · spread: {a['spread'] or '—'} · calidad: "
-                           f"{a['feedQuality'] or '—'}")
+        bars = (
+            f"M1 {a['from']} → {a['to']} · {num(a['count'])} velas"
+            if a["bars"]
+            else "sin barras en la librería"
+        )
+        self.facts.setText(
+            f"{bars} · spread: {a['spread'] or '—'} · calidad: "
+            f"{a['feedQuality'] or '—'}"
+        )
         self.loaded &= {"Catálogo"}
         self._refresh()
 
@@ -142,12 +158,14 @@ class DataZone(QFrame):
     def _draw_catalogue(self) -> None:
         """Ask for the tree of AlgoData off the GUI thread (the walk takes seconds when cold)."""
         self.total.setText("leyendo AlgoData…")
-        background.get("data/catalogue", self._paint_catalogue, key="data/catalogue", owner=self)
+        background.get(
+            "data/catalogue", self._paint_catalogue, key="data/catalogue", owner=self
+        )
 
     def _paint_catalogue(self, body: dict) -> None:
         """The tree of AlgoData, and the total above the tabs."""
         lay = self.catalogue.layout()
-        assert lay is not None   # built with its layout in `__init__`
+        assert lay is not None  # built with its layout in `__init__`
         while lay.count():
             old = lay.takeAt(0).widget()
             old.hide()
@@ -155,7 +173,9 @@ class DataZone(QFrame):
         if "error" in body:
             lay.addWidget(text(body["error"], T["muted"], 14))
             return
-        self.total.setText(f"{body['root']}/ · "
-                           f"{num(sum(r['files'] for r in body['rows'] if r['depth'] == 1))} "
-                           f"ficheros · rancio a partir de {body['stale_days']} días sin escribir")
+        self.total.setText(
+            f"{body['root']}/ · "
+            f"{num(sum(r['files'] for r in body['rows'] if r['depth'] == 1))} "
+            f"ficheros · rancio a partir de {body['stale_days']} días sin escribir"
+        )
         lay.addWidget(tree.build(body))

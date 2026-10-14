@@ -19,13 +19,19 @@ from typing import Any
 # "Custom blocks" was missing until 2026-09-22 and the omission was not visible: a template
 # whose only fixed block is a custom one signed as MarketPositionIsLong instead, which every
 # strategy carries, so the check reported a confident pass about the wrong block.
-BLOCK_CATEGORIES = ("indicator", "simpleRules", "priceValue", "priceRange", "Custom blocks")
+BLOCK_CATEGORIES = (
+    "indicator",
+    "simpleRules",
+    "priceValue",
+    "priceRange",
+    "Custom blocks",
+)
 
 # A random block is the hole the builder fills, so what it contains is not fixed by the
 # template and must not enter the signature.
 RANDOM_CATEGORY = "randomBlock"
 
-SAMPLE = 0          # strategies opened per databank; 0 is all of them
+SAMPLE = 0  # strategies opened per databank; 0 is all of them
 
 
 def blocks(node: ElementTree.Element) -> set[str]:
@@ -77,13 +83,21 @@ def signature(template: Path) -> set[str]:
         carries, and the check passed about the wrong block.
     """
     with zipfile.ZipFile(template) as z:
-        root = ElementTree.fromstring(z.read(next(n for n in z.namelist() if n.endswith(INNER))))
-    groups = {g.get("id"): [i.get("key") for i in g.findall("Item")]
-              for g in root.iter("Group")}
-    bound = {p.text for p in hit(root.find(".//Rules")).iter("Param")
-             if p.get("key") == "#Group#" and p.text}
-    return blocks(el(root.find(".//Rules"))) | {hit(groups[g][0]) for g in bound
-                                            if len(groups.get(g, [])) == 1}
+        root = ElementTree.fromstring(
+            z.read(next(n for n in z.namelist() if n.endswith(INNER)))
+        )
+    groups = {
+        g.get("id"): [i.get("key") for i in g.findall("Item")]
+        for g in root.iter("Group")
+    }
+    bound = {
+        p.text
+        for p in hit(root.find(".//Rules")).iter("Param")
+        if p.get("key") == "#Group#" and p.text
+    }
+    return blocks(el(root.find(".//Rules"))) | {
+        hit(groups[g][0]) for g in bound if len(groups.get(g, [])) == 1
+    }
 
 
 def carried(path: Path) -> set[str]:
@@ -136,7 +150,9 @@ def databanks(project: str, install: Path = MASTER) -> dict[str, list[Path]]:
     return found
 
 
-def verdict(project: str, sample: int, seed: int, install: Path = MASTER) -> dict[str, Any]:
+def verdict(
+    project: str, sample: int, seed: int, install: Path = MASTER
+) -> dict[str, Any]:
     """Whether one project's strategies on disk carry its template's blocks.
 
     Args:
@@ -154,7 +170,11 @@ def verdict(project: str, sample: int, seed: int, install: Path = MASTER) -> dic
     if settings is None:
         return {"project": project, "note": "no build task"}
     template = Path(settings.get("templateFile", ""))
-    row = {"project": project, "declared": settings.get("type"), "template": template.name}
+    row = {
+        "project": project,
+        "declared": settings.get("type"),
+        "template": template.name,
+    }
     if not template.is_absolute() or not template.exists():
         return {**row, "note": "template file missing"}
 
@@ -170,8 +190,10 @@ def verdict(project: str, sample: int, seed: int, install: Path = MASTER) -> dic
     row["databanks"] = {}
     for name, pool in found.items():
         picked = rng.sample(pool, min(sample, len(pool))) if sample else pool
-        row["databanks"][name] = {"checked": len(picked),
-                                  "carrying": sum(fixed <= carried(p) for p in picked)}
+        row["databanks"][name] = {
+            "checked": len(picked),
+            "carrying": sum(fixed <= carried(p) for p in picked),
+        }
     return row
 
 
@@ -182,26 +204,35 @@ def main() -> None:
     ap.add_argument("-n", "--sample", type=int, default=SAMPLE)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--json", action="store_true")
-    ap.add_argument("--role", choices=sorted(WORKERS), help="check a worker's projects instead")
+    ap.add_argument(
+        "--role", choices=sorted(WORKERS), help="check a worker's projects instead"
+    )
     a = ap.parse_args()
 
     install = WORKERS[a.role]["path"] if a.role else MASTER
-    names = a.projects or sorted(d.name for d in (install / "user/projects").iterdir()
-                                 if (d / "project.cfx").exists())
+    names = a.projects or sorted(
+        d.name
+        for d in (install / "user/projects").iterdir()
+        if (d / "project.cfx").exists()
+    )
     rows = [verdict(n, a.sample, a.seed, install) for n in names]
 
     if a.json:
         print(json.dumps(rows, indent=2))
         return
     for r in rows:
-        head = f"{r['project']:22} {r.get('declared') or '-':9} {r.get('template') or '-'}"
+        head = (
+            f"{r['project']:22} {r.get('declared') or '-':9} {r.get('template') or '-'}"
+        )
         if "databanks" not in r:
             print(f"{head}\n    {r['note']}")
             continue
         print(f"{head}\n    template fixes {', '.join(r['signature'])}")
         for name, c in sorted(r["databanks"].items()):
             mark = "ok" if c["carrying"] == c["checked"] else "TEMPLATE NOT APPLIED"
-            print(f"    {name:28} {c['carrying']:>4}/{c['checked']:<4} carry it   {mark}")
+            print(
+                f"    {name:28} {c['carrying']:>4}/{c['checked']:<4} carry it   {mark}"
+            )
 
 
 if __name__ == "__main__":

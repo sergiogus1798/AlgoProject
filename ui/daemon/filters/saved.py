@@ -19,7 +19,9 @@ class SavedFilter(TypedDict):
 
 def every() -> dict[str, SavedFilter]:
     """name → {rows, saved}; {} when nothing was saved yet."""
-    return yaml.safe_load(FILE.read_text(encoding="utf-8")) or {} if FILE.is_file() else {}
+    return (
+        yaml.safe_load(FILE.read_text(encoding="utf-8")) or {} if FILE.is_file() else {}
+    )
 
 
 def save(name: str, rows: list[dict]) -> SavedFilter:
@@ -35,5 +37,7 @@ def save(name: str, rows: list[dict]) -> SavedFilter:
     kept = every()
     kept[name] = {"rows": rows, "saved": stamp()}
     FILE.parent.mkdir(parents=True, exist_ok=True)
-    FILE.write_text(yaml.safe_dump(kept, allow_unicode=True, sort_keys=True), encoding="utf-8")
+    FILE.write_text(
+        yaml.safe_dump(kept, allow_unicode=True, sort_keys=True), encoding="utf-8"
+    )
     return kept[name]

@@ -72,12 +72,16 @@ def contrast(left: np.ndarray, right: np.ndarray, sigma: float) -> Contrast:
         6e-34 down to 0. A number that a setting drives to zero is not evidence.
     """
     a, b = np.asarray(left, float), np.asarray(right, float)
-    return {"delta": cliffs_delta(a, b),
-            "median_shift": float(np.median(a) - np.median(b)),
-            "shift_in_sigmas": float((np.median(a) - np.median(b)) / sigma) if sigma else np.nan,
-            "dispersion_ratio": float(np.std(a) / np.std(b)) if np.std(b) else np.inf,
-            "ks_p": float(cast(Any, stats.ks_2samp(a, b)).pvalue),
-            "levene_p": float(stats.levene(a, b, center="median").pvalue)}
+    return {
+        "delta": cliffs_delta(a, b),
+        "median_shift": float(np.median(a) - np.median(b)),
+        "shift_in_sigmas": float((np.median(a) - np.median(b)) / sigma)
+        if sigma
+        else np.nan,
+        "dispersion_ratio": float(np.std(a) / np.std(b)) if np.std(b) else np.inf,
+        "ks_p": float(cast(Any, stats.ks_2samp(a, b)).pvalue),
+        "levene_p": float(stats.levene(a, b, center="median").pvalue),
+    }
 
 
 def ranking(per_task: dict, control: str, sigma: float) -> list[dict]:
@@ -100,10 +104,17 @@ def ranking(per_task: dict, control: str, sigma: float) -> list[dict]:
         if task == control:
             continue
         values = np.asarray(values, float)
-        out.append({"task": task, "role": tasks.ROLE[task],
-                    "cost": base - float(np.median(values)),
-                    "cost_in_sigmas": (base - float(np.median(values))) / sigma if sigma else np.nan,
-                    "spread_vs_control": float(np.std(values) / sigma) if sigma else np.inf})
+        out.append(
+            {
+                "task": task,
+                "role": tasks.ROLE[task],
+                "cost": base - float(np.median(values)),
+                "cost_in_sigmas": (base - float(np.median(values))) / sigma
+                if sigma
+                else np.nan,
+                "spread_vs_control": float(np.std(values) / sigma) if sigma else np.inf,
+            }
+        )
     return sorted(out, key=lambda row: -row["cost"])
 
 
@@ -127,6 +138,12 @@ def describe(per_task: dict, cfg: dict) -> dict | None:
     pairs = {}
     for left, right, asks in tasks.CONTRASTS:
         if left in per_task and right in per_task:
-            pairs[f"{left}_vs_{right}"] = {"asks": asks,
-                                           **contrast(per_task[left], per_task[right], sigma)}
-    return {"control_sigma": sigma, "ranking": ranking(per_task, control, sigma), "contrasts": pairs}
+            pairs[f"{left}_vs_{right}"] = {
+                "asks": asks,
+                **contrast(per_task[left], per_task[right], sigma),
+            }
+    return {
+        "control_sigma": sigma,
+        "ranking": ranking(per_task, control, sigma),
+        "contrasts": pairs,
+    }

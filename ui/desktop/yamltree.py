@@ -1,7 +1,12 @@
 """Any assets/ file as a table of its values, each one beside what the file says about it."""
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (QAbstractItemView, QHeaderView, QTableWidget, QTableWidgetItem)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHeaderView,
+    QTableWidget,
+    QTableWidgetItem,
+)
 
 from ui.desktop.assetforms import TextBox
 
@@ -13,7 +18,7 @@ LONG = 60
 class YamlTree(QTableWidget):
     """One file's editable values, in file order, with its own comments as the explanation."""
 
-    edited = Signal(str, list, str, str)   # file name, path, what was typed, kind
+    edited = Signal(str, list, str, str)  # file name, path, what was typed, kind
 
     def __init__(self) -> None:
         """Build the three columns and wire the two ways of editing a value."""
@@ -48,15 +53,18 @@ class YamlTree(QTableWidget):
         for i, leaf in enumerate(leaves):
             where = QTableWidgetItem(" / ".join(leaf["path"]))
             where.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
-            where.setForeground(Qt.GlobalColor.gray if len(leaf["path"]) > 1 else
-                                where.foreground())
+            where.setForeground(
+                Qt.GlobalColor.gray if len(leaf["path"]) > 1 else where.foreground()
+            )
             self.setItem(i, 0, where)
 
             value = QTableWidgetItem(shown(leaf))
             if not editable(leaf):
                 value.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
-                value.setToolTip("Doble clic para editarlo en una caja: es una lista o un texto "
-                                 "largo, y una celda lo escondería.")
+                value.setToolTip(
+                    "Doble clic para editarlo en una caja: es una lista o un texto "
+                    "largo, y una celda lo escondería."
+                )
             if leaf["value"] is None:
                 value.setForeground(Qt.GlobalColor.gray)
             self.setItem(i, 1, value)
@@ -90,8 +98,9 @@ class YamlTree(QTableWidget):
         leaf = self.leaves[row]
         if column != 1 or editable(leaf):
             return
-        box = TextBox(" / ".join(leaf["path"]), leaf["hint"], shown(leaf),
-                      leaf["kind"] == "list")
+        box = TextBox(
+            " / ".join(leaf["path"]), leaf["hint"], shown(leaf), leaf["kind"] == "list"
+        )
         if box.exec():
             self.edited.emit(self.name, leaf["path"], box.text(), leaf["kind"])
 
@@ -109,7 +118,7 @@ def shown(leaf: dict) -> str:
     if leaf["kind"] == "list":
         return "\n".join(str(v) for v in leaf["value"])
     if isinstance(leaf["value"], bool):
-        return str(leaf["value"]).lower()   # the file says true/false, not Python's True
+        return str(leaf["value"]).lower()  # the file says true/false, not Python's True
     return "null" if leaf["value"] is None else str(leaf["value"])
 
 

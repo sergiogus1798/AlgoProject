@@ -70,8 +70,14 @@ def key(values: list, cuts: list[float]) -> list[tuple[str, str, str]]:
         if at is not None:
             counts[at] += 1
     # No-break spaces: a range split across two lines of the key reads as two ranges.
-    items = [("line", DIVERGING[i],
-              f"{num(cuts[i])} a {num(cuts[i + 1])}: {counts[i]}".replace(" ", "\u00a0"))
-             for i in range(len(DIVERGING)) if counts[i]]
+    items = [
+        (
+            "line",
+            DIVERGING[i],
+            f"{num(cuts[i])} a {num(cuts[i + 1])}: {counts[i]}".replace(" ", "\u00a0"),
+        )
+        for i in range(len(DIVERGING))
+        if counts[i]
+    ]
     gone = sum(v is None for v in values)
     return items + ([("line", MISSING, f"sin valor: {gone}")] if gone else [])

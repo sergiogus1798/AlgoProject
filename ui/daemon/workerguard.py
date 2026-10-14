@@ -30,10 +30,16 @@ def up(top: Path, port: int) -> str:
     """
     pids = worker.holding(top)
     if pids:
-        return f"proceso(s) de SQX vivos en {top.name} (PID {', '.join(map(str, pids))})"
+        return (
+            f"proceso(s) de SQX vivos en {top.name} (PID {', '.join(map(str, pids))})"
+        )
     with socket.socket() as probe:
         probe.settimeout(0.5)
-        return f"el puerto {port} responde" if probe.connect_ex(("127.0.0.1", port)) == 0 else ""
+        return (
+            f"el puerto {port} responde"
+            if probe.connect_ex(("127.0.0.1", port)) == 0
+            else ""
+        )
 
 
 def refuse_if_up(role: str, top: Path, port: int) -> None:
@@ -54,8 +60,15 @@ def _put(name: str, data: dict) -> None:
 
 def mark(role: str, project: str) -> None:
     """Record that this process started the role's worker (call right after `worker.start`)."""
-    _put(f"{role}.json", {"role": role, "project": project, "pid": os.getpid(),
-                          "since": datetime.now().isoformat(timespec="seconds")})
+    _put(
+        f"{role}.json",
+        {
+            "role": role,
+            "project": project,
+            "pid": os.getpid(),
+            "since": datetime.now().isoformat(timespec="seconds"),
+        },
+    )
 
 
 def marked(role: str | None) -> dict | None:
@@ -78,8 +91,11 @@ def stopped(role: str, top: Path, port: int) -> str:
     """
     left = up(top, port)
     if left:
-        print(f"⚠️ el {role} sigue arrancado tras `stop` ({left}): páralo con "
-              f"bin/sqx-worker.sh --role {role} stop", flush=True)
+        print(
+            f"⚠️ el {role} sigue arrancado tras `stop` ({left}): páralo con "
+            f"bin/sqx-worker.sh --role {role} stop",
+            flush=True,
+        )
     else:
         release(role)
         print(f"el {role} está parado", flush=True)
@@ -95,8 +111,15 @@ def release(role: str) -> None:
     caused is older than `at`.
     """
     mark = marked(role) or {}
-    _put(f"{role}.released.json", {"role": role, "project": mark.get("project"),
-                                   "pid": mark.get("pid", os.getpid()), "at": time.time()})
+    _put(
+        f"{role}.released.json",
+        {
+            "role": role,
+            "project": mark.get("project"),
+            "pid": mark.get("pid", os.getpid()),
+            "at": time.time(),
+        },
+    )
     (MARKS / f"{role}.json").unlink(missing_ok=True)
 
 
@@ -139,14 +162,26 @@ def orphans(own: set[int]) -> list[dict]:
         try:
             m = json.loads(f.read_text(encoding="utf-8"))
             m["pid"], m["project"], m["since"], m["role"]  # pyright: ignore[reportUnusedExpression]  # raises KeyError on a corrupt marker
-        except (ValueError, KeyError):      # half-written or corrupt: nothing to say about it
+        except (
+            ValueError,
+            KeyError,
+        ):  # half-written or corrupt: nothing to say about it
             continue
         if m["pid"] in own:
             continue
         alive = psutil.pid_exists(m["pid"])
-        out.append({"alive": alive, "text": (
-            f"un lanzamiento de {m['project']} (PID {m['pid']}, desde {m['since']}) "
-            + (f"sigue corriendo con el {m['role']} arrancado" if alive else
-               f"terminó sin parar el {m['role']}: si sigue arrancado, "
-               f"bin/sqx-worker.sh --role {m['role']} stop"))})
+        out.append(
+            {
+                "alive": alive,
+                "text": (
+                    f"un lanzamiento de {m['project']} (PID {m['pid']}, desde {m['since']}) "
+                    + (
+                        f"sigue corriendo con el {m['role']} arrancado"
+                        if alive
+                        else f"terminó sin parar el {m['role']}: si sigue arrancado, "
+                        f"bin/sqx-worker.sh --role {m['role']} stop"
+                    )
+                ),
+            }
+        )
     return out

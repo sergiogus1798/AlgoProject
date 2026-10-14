@@ -1,18 +1,24 @@
 """The stretches of a tester run with no M1 history under them, read from the patched EA's own log lines."""
+
 import re
 from pathlib import Path
 
 import pandas as pd
 
-THIN = re.compile(r"News filter \(tester\): thin history (\d{4}\.\d{2}\.\d{2}) (\d+) ticks")
+THIN = re.compile(
+    r"News filter \(tester\): thin history (\d{4}\.\d{2}\.\d{2}) (\d+) ticks"
+)
 LOADED = re.compile(r"News filter \(tester\): (\d+ releases that move|no release in)")
-JOIN = pd.Timedelta(days=4)   # thin Friday + thin Monday is one stretch, not two
+JOIN = pd.Timedelta(days=4)  # thin Friday + thin Monday is one stretch, not two
 
 
 def agent_log() -> Path:
     """The newest log of the local tester agent, where a single test's Print lines land (UTF-16)."""
     from mt5 import wine
-    return max((wine.data_dir() / "Tester" / "Agent-127.0.0.1-3000" / "logs").glob("2*.log"))
+
+    return max(
+        (wine.data_dir() / "Tester" / "Agent-127.0.0.1-3000" / "logs").glob("2*.log")
+    )
 
 
 def thin_days(text: str, stem: str) -> list[pd.Timestamp]:
@@ -32,7 +38,7 @@ def thin_days(text: str, stem: str) -> list[pd.Timestamp]:
         if len(cols) < 5 or not cols[3].startswith(stem + " ("):
             continue
         if LOADED.search(cols[4]):
-            days = []                       # a new run of the same EA starts here
+            days = []  # a new run of the same EA starts here
         hit = THIN.search(cols[4])
         if hit:
             days.append(pd.Timestamp(hit.group(1).replace(".", "-")))

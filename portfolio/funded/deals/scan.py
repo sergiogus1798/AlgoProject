@@ -13,9 +13,15 @@ def scan(today: str) -> list[dict]:
     of requests, and the database must not stay locked while they run.
     """
     db = connect()
-    codes = db.execute("SELECT DISTINCT code, source FROM deals WHERE firm = 'hantec' AND "
-                       "kind = 'code' AND status = 'valid'").fetchall()
-    ftmo, banners, fnext = sources.ftmo_table(), sources.hantec_banners(), sources.fundednext_table()
+    codes = db.execute(
+        "SELECT DISTINCT code, source FROM deals WHERE firm = 'hantec' AND "
+        "kind = 'code' AND status = 'valid'"
+    ).fetchall()
+    ftmo, banners, fnext = (
+        sources.ftmo_table(),
+        sources.hantec_banners(),
+        sources.fundednext_table(),
+    )
     checked = {code: sources.hantec_code(code, source) for code, source in codes}
     fresh = []
     with db:
@@ -36,8 +42,10 @@ def main() -> None:
     fresh = scan(dt.date.today().isoformat())
     print(f"{len(fresh)} deal rows new or better today")
     for r in fresh:
-        print(f"  {r['firm']:7} {r['kind']:6} {r['code'] or '-':12} {r['plan_key']:28} "
-              f"{r['list_price']} → {r['deal_price']}  −{r['pct']} %  {r['terms'][:60]}")
+        print(
+            f"  {r['firm']:7} {r['kind']:6} {r['code'] or '-':12} {r['plan_key']:28} "
+            f"{r['list_price']} → {r['deal_price']}  −{r['pct']} %  {r['terms'][:60]}"
+        )
 
 
 if __name__ == "__main__":

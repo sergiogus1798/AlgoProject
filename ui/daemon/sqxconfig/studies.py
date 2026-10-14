@@ -26,18 +26,29 @@ from studies.screening.analysis.tradelevel import WINDOWS
 from studies.screening.falsePositives.tooltips import TIPS as FP_TIPS
 from studies.screening.gate.tooltips import TIPS as GATE_TIPS
 from ui.daemon.sqxconfig.options import choice
-from ui.daemon.sqxconfig.studyhelp import CSCV_HELP, FP_HELP, GATE_HELP, SURF_HELP, WFM_HELP  # noqa: F401
+from ui.daemon.sqxconfig.studyhelp import (
+    CSCV_HELP,
+    FP_HELP,
+    GATE_HELP,
+    SURF_HELP,
+    WFM_HELP,
+)  # noqa: F401
 
 # Short names the window sends back, so it never sends a path; REL is what the window prints.
-REL = {"variants": "sqx/variants/config.yaml", "sppdesign": "studies/breakage/spp/config.yaml",
-       "batch": "engines/variants/config.yaml", "wfcstudy": "studies/optimisation/wfc/config.yaml",
-       "cscvstudy": "studies/optimisation/cscv/config.yaml",
-       "surfstudy": "studies/optimisation/marketSurfaces/config.yaml",
-       "wfmstudy": "studies/optimisation/wfm/config.yaml", "thresholds": "ledger/thresholds.yaml",
-       "gatecfg": "studies/screening/gate/config.yaml",
-       "fpcfg": "studies/screening/falsePositives/config.yaml",
-       "cloudcfg": "studies/optimisation/cloud/config.yaml",
-       "calibcfg": "studies/optimisation/wfc/calibrate/config.yaml"}
+REL = {
+    "variants": "sqx/variants/config.yaml",
+    "sppdesign": "studies/breakage/spp/config.yaml",
+    "batch": "engines/variants/config.yaml",
+    "wfcstudy": "studies/optimisation/wfc/config.yaml",
+    "cscvstudy": "studies/optimisation/cscv/config.yaml",
+    "surfstudy": "studies/optimisation/marketSurfaces/config.yaml",
+    "wfmstudy": "studies/optimisation/wfm/config.yaml",
+    "thresholds": "ledger/thresholds.yaml",
+    "gatecfg": "studies/screening/gate/config.yaml",
+    "fpcfg": "studies/screening/falsePositives/config.yaml",
+    "cloudcfg": "studies/optimisation/cloud/config.yaml",
+    "calibcfg": "studies/optimisation/wfc/calibrate/config.yaml",
+}
 FILES = {name: ROOT / rel for name, rel in REL.items()}
 
 # (file, the branch shown, its heading) per section, in the order the section lists them.
@@ -45,59 +56,87 @@ PARTS = {
     # Encargo 48: the batch's size is the ledger's `variants.*`; the SPP's `n_target` and `strata`
     # are no longer read by the factory (OPEN question to the owner: drop this first part?). The
     # map (step 16.5) and the calibration (a file that may not exist yet) have their own parts.
-    "wfc": [("sppdesign", ["design"], "Variantes por madre · diseño del lote (el brief del SPP)"),
-            ("variants", ["size"], "Tamaño del lote de variantes"),
-            ("variants", ["design"], "Fábrica de variantes · semilla y rejillas"),
-            ("variants", ["canaries"], "Canarios de control"),
-            ("cloudcfg", [], "Mapa de parámetros · paso 16.5"),
-            ("batch", [], "Lectura del lote · compartido con el CSCV"),
-            ("wfcstudy", [], "Lectura del WFC"),
-            ("calibcfg", [], "Calibración del criterio del WFC")],
+    "wfc": [
+        (
+            "sppdesign",
+            ["design"],
+            "Variantes por madre · diseño del lote (el brief del SPP)",
+        ),
+        ("variants", ["size"], "Tamaño del lote de variantes"),
+        ("variants", ["design"], "Fábrica de variantes · semilla y rejillas"),
+        ("variants", ["canaries"], "Canarios de control"),
+        ("cloudcfg", [], "Mapa de parámetros · paso 16.5"),
+        ("batch", [], "Lectura del lote · compartido con el CSCV"),
+        ("wfcstudy", [], "Lectura del WFC"),
+        ("calibcfg", [], "Calibración del criterio del WFC"),
+    ],
     "cscv": [("cscvstudy", [], "El CSCV")],
     # Steps 18.5 and 19 (owner, 2026-10-07): one part each, the study's whole file.
-    "surfaces": [("surfstudy", [], "Las superficies de mercado"),
-                 ("batch", [], "Lectura del lote · compartido con el WFC")],
+    "surfaces": [
+        ("surfstudy", [], "Las superficies de mercado"),
+        ("batch", [], "Lectura del lote · compartido con el WFC"),
+    ],
     "wfmreading": [("wfmstudy", [], "La WFM")],
     # Step 8, owner 2026-10-07: every value a rule of the gate reads is an input. The rules'
     # own thresholds live in pipeline/autopilot/criteria.yaml, not here.
-    "gate": [("gatecfg", ["screens"], "Cribas del nivel 0"),
-             ("gatecfg", ["cascade"], "Cascada"),
-             ("gatecfg", ["drift"], "R3 · la deriva del mercado"),
-             ("gatecfg", ["frequency"], "R5 · sobredispersión de la frecuencia"),
-             ("gatecfg", ["centring"], "R5 y R5d · el centro de la población"),
-             ("gatecfg", ["cost_stress"], "R5c · el coste estresado"),
-             ("gatecfg", ["concentration"], "R8 · la t sin lo mejor"),
-             ("gatecfg", ["mae"], "R9b · la peor excursión en contra"),
-             ("gatecfg", ["delay"], "Nivel 2 · ejecución una barra tarde"),
-             ("gatecfg", ["homogeneity"], "R7 · homogeneidad por periodo"),
-             ("gatecfg", ["drawdown"], "R6 · el drawdown contra el build"),
-             ("gatecfg", ["monkey"], "Nivel 3c · el mono")],
-    "falsepositives": [("fpcfg", ["monkeys"], "Los monos de la cadena"),
-                       ("fpcfg", ["population"], "Poblaciones de prueba con ventaja plantada")],
+    "gate": [
+        ("gatecfg", ["screens"], "Cribas del nivel 0"),
+        ("gatecfg", ["cascade"], "Cascada"),
+        ("gatecfg", ["drift"], "R3 · la deriva del mercado"),
+        ("gatecfg", ["frequency"], "R5 · sobredispersión de la frecuencia"),
+        ("gatecfg", ["centring"], "R5 y R5d · el centro de la población"),
+        ("gatecfg", ["cost_stress"], "R5c · el coste estresado"),
+        ("gatecfg", ["concentration"], "R8 · la t sin lo mejor"),
+        ("gatecfg", ["mae"], "R9b · la peor excursión en contra"),
+        ("gatecfg", ["delay"], "Nivel 2 · ejecución una barra tarde"),
+        ("gatecfg", ["homogeneity"], "R7 · homogeneidad por periodo"),
+        ("gatecfg", ["drawdown"], "R6 · el drawdown contra el build"),
+        ("gatecfg", ["monkey"], "Nivel 3c · el mono"),
+    ],
+    "falsepositives": [
+        ("fpcfg", ["monkeys"], "Los monos de la cadena"),
+        ("fpcfg", ["population"], "Poblaciones de prueba con ventaja plantada"),
+    ],
 }
 
 from studies.optimisation.wfc.calibrate.tooltips import TIPS as CALIB_TIPS
 from ui.daemon.sqxconfig.ranges import RANGES
 
-PLACEHOLDER = "ledger:"   # what a config.yaml writes where the ledger owns the number
+PLACEHOLDER = "ledger:"  # what a config.yaml writes where the ledger owns the number
 # A key that may be blank: a blank seed draws a new one each run, a blank cap leaves it open.
 OPTIONAL = {("gatecfg", "seed"), ("gatecfg", "cap_slope"), ("fpcfg", "seed")}
-CHOICES = {("batch", "split_mode"): list(SHORTCUTS), ("wfmstudy", "modo_real"): ["fijo", "reoptimizado"],
-           ("gatecfg", "window"): list(WINDOWS), ("gatecfg", "variant"): list("abcd"),
-           ("gatecfg", "drop_period"): list(WINDOWS), ("gatecfg", "period"): list(WINDOWS),
-           ("fpcfg", "rung"): ["free", "timing"], ("fpcfg", "sizing"): ["donor", "atr"]}
+CHOICES = {
+    ("batch", "split_mode"): list(SHORTCUTS),
+    ("wfmstudy", "modo_real"): ["fijo", "reoptimizado"],
+    ("gatecfg", "window"): list(WINDOWS),
+    ("gatecfg", "variant"): list("abcd"),
+    ("gatecfg", "drop_period"): list(WINDOWS),
+    ("gatecfg", "period"): list(WINDOWS),
+    ("fpcfg", "rung"): ["free", "timing"],
+    ("fpcfg", "sizing"): ["donor", "atr"],
+}
 # The two studies re-read these at analysis time: a batch already harvested reads differently.
 # Said once per group, not per row: in CSCV every row would carry it.
 REREAD = ("batch", "wfcstudy", "cscvstudy", "surfstudy", "wfmstudy", "thresholds")
-WARN = ("⚠ El WFC y el CSCV leen estos valores al leer el lote, no al fabricarlo: volver a leer "
-        "un lote ya hecho con otro valor da otro resultado. Cámbialos antes de leer, no después.")
+WARN = (
+    "⚠ El WFC y el CSCV leen estos valores al leer el lote, no al fabricarlo: volver a leer "
+    "un lote ya hecho con otro valor da otro resultado. Cámbialos antes de leer, no después."
+)
 # The window speaks Spanish and these config.yaml comments are English, written for the code:
 # each value's help is its study's own Spanish tooltip. `batch` is the exception, its comments
 # are already the owner's words, in Spanish.
-TIPS = {"variants": FACTORY_TIPS, "cloudcfg": CLOUD_TIPS, "calibcfg": CALIB_TIPS, "sppdesign": SPP_TIPS, "wfcstudy": WFC_TIPS,
-        "cscvstudy": CSCV_TIPS,
-        "surfstudy": SURF_TIPS, "wfmstudy": WFM_TIPS, "gatecfg": GATE_TIPS, "fpcfg": FP_TIPS}
-
+TIPS = {
+    "variants": FACTORY_TIPS,
+    "cloudcfg": CLOUD_TIPS,
+    "calibcfg": CALIB_TIPS,
+    "sppdesign": SPP_TIPS,
+    "wfcstudy": WFC_TIPS,
+    "cscvstudy": CSCV_TIPS,
+    "surfstudy": SURF_TIPS,
+    "wfmstudy": WFM_TIPS,
+    "gatecfg": GATE_TIPS,
+    "fpcfg": FP_TIPS,
+}
 
 
 def spec(name: str, path: list, value: object, threshold: str = "") -> dict[str, Any]:
@@ -118,12 +157,17 @@ def spec(name: str, path: list, value: object, threshold: str = "") -> dict[str,
         return {"type": "text"}
     if (name, last) in CHOICES:
         return {"type": "choice", "options": choice(CHOICES[name, last])}
-    if (name, last) in OPTIONAL:   # empty or a number, never anything else
+    if (name, last) in OPTIONAL:  # empty or a number, never anything else
         lo, hi = RANGES[name, last]
         return {"type": "number", "min": lo, "max": hi, "optional": True}
     if isinstance(value, bool):
-        return {"type": "bool", "options": [{"value": True, "text": "sí · true"},
-                                            {"value": False, "text": "no · false"}]}
+        return {
+            "type": "bool",
+            "options": [
+                {"value": True, "text": "sí · true"},
+                {"value": False, "text": "no · false"},
+            ],
+        }
     if isinstance(value, (int, float)):
         lo, hi = RANGES.get((name, last), (None, None))
         return {"type": "number", "min": lo, "max": hi}
@@ -144,11 +188,16 @@ def row(key: str) -> tuple[int, dict]:
         ValueError unless the key is declared exactly once, as `ledger.thresholds.value`
         refuses too; `ledger_fields` shows that as a locked value instead of failing the zone.
     """
-    rows = [(i, r) for i, r in _ledger(FILES["thresholds"], FILES["thresholds"].stat().st_mtime_ns)
-            if r["key"] == key]
+    rows = [
+        (i, r)
+        for i, r in _ledger(FILES["thresholds"], FILES["thresholds"].stat().st_mtime_ns)
+        if r["key"] == key
+    ]
     if len(rows) != 1:
-        raise ValueError(f"{key}: declarado {len(rows)} veces en ledger/thresholds.yaml, y "
-                         "el estudio necesita exactamente una fila")
+        raise ValueError(
+            f"{key}: declarado {len(rows)} veces en ledger/thresholds.yaml, y "
+            "el estudio necesita exactamente una fila"
+        )
     return rows[0]
 
 
@@ -156,11 +205,13 @@ def blocks_help(n: int) -> str:
     """What a number of CSCV blocks buys: its partitions, C(n, n/2)."""
     if n % 2:
         return f"{n} es impar: el CSCV necesita un número par de bloques"
-    many = f"{comb(n, n // 2):,}".replace(",", ".")   # 12.870, the Spanish thousands
+    many = f"{comb(n, n // 2):,}".replace(",", ".")  # 12.870, the Spanish thousands
     return f"{n} bloques dan C({n},{n // 2}) = {many} particiones"
 
 
-def ledger_fields(key: str, hint: str, group: str, base: list, warn: str = WARN) -> list[dict]:
+def ledger_fields(
+    key: str, hint: str, group: str, base: list, warn: str = WARN
+) -> list[dict]:
     """A `ledger:<key>` placeholder as the two values the window edits: the number and its why.
 
     Args:
@@ -176,20 +227,50 @@ def ledger_fields(key: str, hint: str, group: str, base: list, warn: str = WARN)
     """
     try:
         i, r = row(key)
-    except ValueError as err:   # a bad merge in the ledger must not take the whole zone down
-        return [{"file": "thresholds", "group": group, "base": base[:-1], "path": base,
-                 "key": base[-1], "value": f"ledger:{key}", "help": hint, "type": "text",
-                 "locked": str(err)}]
+    except (
+        ValueError
+    ) as err:  # a bad merge in the ledger must not take the whole zone down
+        return [
+            {
+                "file": "thresholds",
+                "group": group,
+                "base": base[:-1],
+                "path": base,
+                "key": base[-1],
+                "value": f"ledger:{key}",
+                "help": hint,
+                "type": "text",
+                "locked": str(err),
+            }
+        ]
     stamp = f"Umbral congelado del Ledger ({key}): fijado por {r['set_by']} el {r['set_on']}."
     value = r["value"]
     extra = blocks_help(value) + ". " if key == "cscv.blocks" else ""
-    common = {"file": "thresholds", "group": group, "base": ["thresholds", i], "group_help": warn}
-    return [{**common, "path": ["thresholds", i, "value"], "key": base[-1], "value": value,
-             "help": f"{extra}{stamp} {hint}".strip(), **spec("thresholds", ["value"], value, key)},
-            {**common, "path": ["thresholds", i, "why"], "key": "why", "value": r["why"],
-             "help": "Por qué tiene este valor. Al cambiar el número la ventana propone uno "
-                     "nuevo con la fecha y el valor anterior; edítalo si no es el tuyo.",
-             **spec("thresholds", ["why"], r["why"])}]
+    common = {
+        "file": "thresholds",
+        "group": group,
+        "base": ["thresholds", i],
+        "group_help": warn,
+    }
+    return [
+        {
+            **common,
+            "path": ["thresholds", i, "value"],
+            "key": base[-1],
+            "value": value,
+            "help": f"{extra}{stamp} {hint}".strip(),
+            **spec("thresholds", ["value"], value, key),
+        },
+        {
+            **common,
+            "path": ["thresholds", i, "why"],
+            "key": "why",
+            "value": r["why"],
+            "help": "Por qué tiene este valor. Al cambiar el número la ventana propone uno "
+            "nuevo con la fecha y el valor anterior; edítalo si no es el tuyo.",
+            **spec("thresholds", ["why"], r["why"]),
+        },
+    ]
 
 
 def help_of(name: str, path: list, leaf: dict) -> str:
@@ -206,7 +287,9 @@ def help_of(name: str, path: list, leaf: dict) -> str:
     if name not in TIPS:
         return leaf["hint"]
     tips = TIPS[name]
-    if name == "gatecfg" and path[0] == "screens":   # a screen's knob is keyed by its name
+    if (
+        name == "gatecfg" and path[0] == "screens"
+    ):  # a screen's knob is keyed by its name
         path = [read(FILES[name])["screens"][path[1]]["name"], *path[2:]]
     for depth in range(len(path), 0, -1):
         if ".".join(map(str, path[:depth])) in tips:
@@ -231,14 +314,31 @@ def fields(section: str) -> list[dict]:
             continue
         for leaf in leaves(FILES[name]):
             path = leaf["path"]
-            if path[:len(branch)] != branch or (path[0] == "screens" and path[-1] != "min_trades"):
+            if path[: len(branch)] != branch or (
+                path[0] == "screens" and path[-1] != "min_trades"
+            ):
                 continue
             value = leaf["value"]
             if isinstance(value, str) and value.startswith(PLACEHOLDER):
-                out += ledger_fields(value.removeprefix(PLACEHOLDER), help_of(name, path, leaf),
-                                     group, path, "" if name in ("gatecfg", "fpcfg") else WARN)
+                out += ledger_fields(
+                    value.removeprefix(PLACEHOLDER),
+                    help_of(name, path, leaf),
+                    group,
+                    path,
+                    "" if name in ("gatecfg", "fpcfg") else WARN,
+                )
                 continue
-            out.append({"file": name, "group": group, "base": branch, "path": path,
-                        "key": leaf["label"], "value": value, "help": help_of(name, path, leaf),
-                        "group_help": WARN if name in REREAD else "", **spec(name, path, value)})
+            out.append(
+                {
+                    "file": name,
+                    "group": group,
+                    "base": branch,
+                    "path": path,
+                    "key": leaf["label"],
+                    "value": value,
+                    "help": help_of(name, path, leaf),
+                    "group_help": WARN if name in REREAD else "",
+                    **spec(name, path, value),
+                }
+            )
     return out

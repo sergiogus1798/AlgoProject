@@ -9,8 +9,8 @@ from fastapi.responses import JSONResponse, Response
 
 from core import uitoken
 
-ENV = "ALGO_UI_PORT"            # set by `serve` before the app is imported: the port it holds
-OPEN = ("/api/health",)         # GET only: how a window learns a daemon is there at all
+ENV = "ALGO_UI_PORT"  # set by `serve` before the app is imported: the port it holds
+OPEN = ("/api/health",)  # GET only: how a window learns a daemon is there at all
 # Unarmed (port None) only when the app is imported without `serve` — a test's TestClient,
 # which binds no socket. `serve` is the one thing that listens, and it arms first.
 STATE: dict = {"port": None, "token": ""}
@@ -20,8 +20,10 @@ def arm(port: int) -> None:
     """Hold the port and the token `serve` minted for it; a daemon without one does not start."""
     token = uitoken.read(port)
     if not token:
-        raise SystemExit(f"no hay token de sesión para el puerto {port}: arranca el demonio con "
-                         "python3 -m ui.daemon.serve")
+        raise SystemExit(
+            f"no hay token de sesión para el puerto {port}: arranca el demonio con "
+            "python3 -m ui.daemon.serve"
+        )
     STATE.update(port=port, token=token)
 
 
@@ -48,7 +50,11 @@ def refusal(method: str, path: str, headers: dict) -> str | None:
     if method == "GET" and path in OPEN:
         return None
     sent = headers.get(uitoken.HEADER.lower(), "")
-    return None if secrets.compare_digest(sent.encode(), STATE["token"].encode()) else "token"
+    return (
+        None
+        if secrets.compare_digest(sent.encode(), STATE["token"].encode())
+        else "token"
+    )
 
 
 def install(app: FastAPI) -> None:
@@ -57,9 +63,13 @@ def install(app: FastAPI) -> None:
         arm(int(os.environ[ENV]))
 
     @app.middleware("http")
-    async def gate(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def gate(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         """403 with the reason's one word, or the route's own answer."""
         why = refusal(request.method, request.url.path, dict(request.headers))
         if why:
-            return JSONResponse({"error": f"petición rechazada: {why}"}, status_code=403)
+            return JSONResponse(
+                {"error": f"petición rechazada: {why}"}, status_code=403
+            )
         return await call_next(request)

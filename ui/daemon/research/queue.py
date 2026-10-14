@@ -18,7 +18,7 @@ from studies.research.board import proposal, store
 from ui.daemon.research import steps
 
 ORDER = ("activos", "plantilla", "proyecto", "paleta", "autopilot")
-PREFIX = "Research_"       # owner, 2026-10-02: the research director's projects, no choice
+PREFIX = "Research_"  # owner, 2026-10-02: the research director's projects, no choice
 
 
 def path(proposal_id: str) -> Path:
@@ -38,15 +38,32 @@ def initial(p: dict[str, Any]) -> dict[str, Any]:
     ideas = []
     for i in p["ideas"]:
         ok, why = proposal.launchable(i)
-        ideas.append({"name": i["name"], "step": "", "project": "", "error": "",
-                      "state": "esperando" if ok else ("vetada" if i.get("vetoed") else "pregunta"),
-                      "note": why})
-    return {"proposal": p["id"], "state": "en marcha", "ideas": ideas,
-            "started": datetime.now().isoformat(timespec="seconds"), "finished": ""}
+        ideas.append(
+            {
+                "name": i["name"],
+                "step": "",
+                "project": "",
+                "error": "",
+                "state": "esperando"
+                if ok
+                else ("vetada" if i.get("vetoed") else "pregunta"),
+                "note": why,
+            }
+        )
+    return {
+        "proposal": p["id"],
+        "state": "en marcha",
+        "ideas": ideas,
+        "started": datetime.now().isoformat(timespec="seconds"),
+        "finished": "",
+    }
 
 
-def run(p: dict[str, Any], runners: dict[str, Callable[[dict[str, Any]], None]],
-        save: Callable[[dict[str, Any]], object]) -> dict[str, Any]:
+def run(
+    p: dict[str, Any],
+    runners: dict[str, Callable[[dict[str, Any]], None]],
+    save: Callable[[dict[str, Any]], object],
+) -> dict[str, Any]:
     """Take every launchable idea through the five steps, in the proposal's order.
 
     An idea whose template or palette step comes back with a question (`steps.Question`, hard
@@ -68,18 +85,27 @@ def run(p: dict[str, Any], runners: dict[str, Callable[[dict[str, Any]], None]],
     for row, idea in zip(q["ideas"], p["ideas"]):
         if row["state"] != "esperando":
             continue
-        ctx = {"proposal": p, "idea": idea, "template": idea["name"],
-               "symbol": p["cell"]["symbol"], "timeframe": p["cell"]["timeframe"],
-               "ran_before": any(r["step"] == "autopilot" or r["state"] == "hecha"
-                                 for r in q["ideas"])}
+        ctx = {
+            "proposal": p,
+            "idea": idea,
+            "template": idea["name"],
+            "symbol": p["cell"]["symbol"],
+            "timeframe": p["cell"]["timeframe"],
+            "ran_before": any(
+                r["step"] == "autopilot" or r["state"] == "hecha" for r in q["ideas"]
+            ),
+        }
         row["state"] = "en marcha"
         try:
             for name in ORDER:
                 ctx["project"] = row["project"] = project_name(p, ctx["template"])
                 row["step"] = name
                 save(q)
-                print(f"PROGRESS {100 * q['ideas'].index(row) // len(q['ideas'])} "
-                      f"{row['name']}: {name}", flush=True)
+                print(
+                    f"PROGRESS {100 * q['ideas'].index(row) // len(q['ideas'])} "
+                    f"{row['name']}: {name}",
+                    flush=True,
+                )
                 runners[name](ctx)
             row["state"], row["step"] = "hecha", ""
         except steps.Question as asked:
@@ -101,8 +127,11 @@ def main() -> None:
     ap.add_argument("--proposal", required=True)
     a = ap.parse_args()
     signal.signal(signal.SIGTERM, steps.terminate)
-    q = run(proposal.load(a.proposal), steps.RUNNERS,
-            lambda state: store.write(path(a.proposal), state))
+    q = run(
+        proposal.load(a.proposal),
+        steps.RUNNERS,
+        lambda state: store.write(path(a.proposal), state),
+    )
     print("PROGRESS 100 cola " + q["state"], flush=True)
     sys.exit(0 if q["state"] == "terminada" else 1)
 

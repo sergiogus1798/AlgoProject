@@ -10,7 +10,9 @@ from core.study import config as study_config
 FILE = Path(__file__).parents[1] / "config.yaml"
 # Which sub-run of the sweep is the one the gates and the report speak about. A choice
 # of the study, not a result of it, which is why it is configuration and not execution.
-HEADLINE = "stationary"     # its drawdown distribution is the order-luck one the gates read
+HEADLINE = (
+    "stationary"  # its drawdown distribution is the order-luck one the gates read
+)
 BASELINE = "iid_bootstrap"  # the independence baseline of the composition family
 
 
@@ -58,8 +60,9 @@ def block_sizes(n_trades: int, cfg: dict) -> list[int]:
     top = n_trades // b["min_blocks"]
     if top < b["block_min"]:
         return []
-    return sorted({int(round(x)) for x in
-                   np.linspace(b["block_min"], top, b["n_block_sizes"])})
+    return sorted(
+        {int(round(x)) for x in np.linspace(b["block_min"], top, b["n_block_sizes"])}
+    )
 
 
 def stationary_block(n_trades: int) -> int:

@@ -2,35 +2,49 @@
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QLabel, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHeaderView,
+    QLabel,
+    QTableWidget,
+    QTableWidgetItem,
+)
 
 from ui.desktop.criteria.overrides import HELP
 from ui.desktop.theme import C
 
 COLUMNS = ("Criterio", "Tipo", "Condición", "Limbo", "Excepciones")
-OUTCOMES = ("Cada criterio da a cada estrategia uno de tres resultados. Pasa: cumple la "
-            "condición. Limbo: no la cumple pero entra en la banda de limbo — sigue adelante, "
-            "marcada. Fallo: ni una ni otra — se elimina. El resultado de una estrategia en "
-            "un paso es el de su PEOR criterio, y un criterio cuyo dato falta es Limbo.")
+OUTCOMES = (
+    "Cada criterio da a cada estrategia uno de tres resultados. Pasa: cumple la "
+    "condición. Limbo: no la cumple pero entra en la banda de limbo — sigue adelante, "
+    "marcada. Fallo: ni una ni otra — se elimina. El resultado de una estrategia en "
+    "un paso es el de su PEOR criterio, y un criterio cuyo dato falta es Limbo."
+)
 TIPS = {
     "Criterio": "El dato que se mira. Al pasar el ratón: su clave en el fichero y lo que "
-                "criteria.yaml dice de la regla.",
+    "criteria.yaml dice de la regla.",
     "Tipo": HELP["kind"],
     "Condición": "Lo que tiene que cumplir para pasar. " + HELP["shape"],
     "Limbo": "La banda intermedia: no pasa, pero tampoco se elimina. «—»: no hay banda, no "
-             "pasar es Fallo. «Si no cumple»: este criterio nunca elimina, solo marca.",
+    "pasar es Fallo. «Si no cumple»: este criterio nunca elimina, solo marca.",
     "Excepciones": "Umbrales distintos según lo que es el proyecto: su timeframe, su activo "
-                   "o su clase (forex, no_forex). Manda la primera excepción que encaja.",
+    "o su clase (forex, no_forex). Manda la primera excepción que encaja.",
 }
-CUT = ("El databank de SQX donde se aplica el veredicto del paso: de él se quitan las "
-       "estrategias con Fallo, y es el que lee la tarea siguiente.")
-INTRO = ("Lo que tiene que cumplir una estrategia en cada paso para pasar sola al siguiente. "
-         "Juzga el autopilot; los filtros del Build (paso 6) son los únicos que aplica SQX. "
-         "Doble clic en un criterio para cambiarlo o borrarlo.")
-FREEZE = ("Bloquea los criterios: a partir de ahí esta pestaña solo se lee y dice desde "
-          "cuándo. Un umbral movido después de ver resultados es la forma más barata de "
-          "sobreajustar; congelar deja constancia de que no se movieron. No se puede "
-          "descongelar desde la ventana.")
+CUT = (
+    "El databank de SQX donde se aplica el veredicto del paso: de él se quitan las "
+    "estrategias con Fallo, y es el que lee la tarea siguiente."
+)
+INTRO = (
+    "Lo que tiene que cumplir una estrategia en cada paso para pasar sola al siguiente. "
+    "Juzga el autopilot; los filtros del Build (paso 6) son los únicos que aplica SQX. "
+    "Doble clic en un criterio para cambiarlo o borrarlo."
+)
+FREEZE = (
+    "Bloquea los criterios: a partir de ahí esta pestaña solo se lee y dice desde "
+    "cuándo. Un umbral movido después de ver resultados es la forma más barata de "
+    "sobreajustar; congelar deja constancia de que no se movieron. No se puede "
+    "descongelar desde la ventana."
+)
 
 
 def mark(text: str) -> QLabel:
@@ -43,7 +57,9 @@ def mark(text: str) -> QLabel:
     return label
 
 
-def table(columns: tuple, rows: list[list[tuple[str, str]]], tips: dict) -> QTableWidget:
+def table(
+    columns: tuple, rows: list[list[tuple[str, str]]], tips: dict
+) -> QTableWidget:
     """A read-only table as tall as its rows.
 
     Args:
@@ -58,13 +74,15 @@ def table(columns: tuple, rows: list[list[tuple[str, str]]], tips: dict) -> QTab
     t.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
     t.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
     t.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-    t.setWordWrap(False)          # a long cell is cut with «…»; its tooltip says all of it
+    t.setWordWrap(False)  # a long cell is cut with «…»; its tooltip says all of it
     colours = {"Condición": C["promising"], "Limbo": C["weak"]}
     for c, name in enumerate(columns):
         head = t.horizontalHeaderItem(c)
         if head is not None:
             head.setToolTip(tips.get(name, ""))
-        t.horizontalHeader().setSectionResizeMode(c, QHeaderView.ResizeMode.ResizeToContents)
+        t.horizontalHeader().setSectionResizeMode(
+            c, QHeaderView.ResizeMode.ResizeToContents
+        )
         for r, row in enumerate(rows):
             item = QTableWidgetItem(row[c][0])
             item.setToolTip(row[c][1])
@@ -72,15 +90,26 @@ def table(columns: tuple, rows: list[list[tuple[str, str]]], tips: dict) -> QTab
                 item.setForeground(QColor(colours[name]))
             t.setItem(r, c, item)
     t.horizontalHeader().setStretchLastSection(True)
-    t.resizeRowsToContents()      # a compound says one condition per line
-    t.setFixedHeight(t.horizontalHeader().sizeHint().height() + 2
-                     + sum(t.rowHeight(r) for r in range(len(rows))))
+    t.resizeRowsToContents()  # a compound says one condition per line
+    t.setFixedHeight(
+        t.horizontalHeader().sizeHint().height()
+        + 2
+        + sum(t.rowHeight(r) for r in range(len(rows)))
+    )
     return t
 
 
 def cells(row: dict) -> list[tuple[str, str]]:
     """One rule, or one Build filter, as the five cells of its row."""
-    why = f"{row['tip']}\n\n{row['why']}" if row.get("why") and "rule" in row else row["tip"]
-    return [(row["label"], why), (row["kind"], TIPS["Tipo"]), (row["passes"], row["passes"]),
-            (row["limbo"], TIPS["Limbo"]),
-            (row["by"] or "—", row.get("why", "") if "rule" not in row else row["by"])]
+    why = (
+        f"{row['tip']}\n\n{row['why']}"
+        if row.get("why") and "rule" in row
+        else row["tip"]
+    )
+    return [
+        (row["label"], why),
+        (row["kind"], TIPS["Tipo"]),
+        (row["passes"], row["passes"]),
+        (row["limbo"], TIPS["Limbo"]),
+        (row["by"] or "—", row.get("why", "") if "rule" not in row else row["by"]),
+    ]

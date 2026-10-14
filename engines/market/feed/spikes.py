@@ -5,8 +5,9 @@ from typing import TypedDict
 import numpy as np
 
 
-def wick_excursion(o: np.ndarray, h: np.ndarray, low: np.ndarray, c: np.ndarray
-                   ) -> tuple[np.ndarray, np.ndarray]:
+def wick_excursion(
+    o: np.ndarray, h: np.ndarray, low: np.ndarray, c: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """How far each bar's wick reaches past its body, on the side that reaches further.
 
     Args:
@@ -21,8 +22,9 @@ def wick_excursion(o: np.ndarray, h: np.ndarray, low: np.ndarray, c: np.ndarray
     return np.maximum(up, down), np.where(up >= down, h, low)
 
 
-def reverted(c: np.ndarray, at: np.ndarray, i: np.ndarray, reach: np.ndarray, m: int,
-             rho: float) -> np.ndarray:
+def reverted(
+    c: np.ndarray, at: np.ndarray, i: np.ndarray, reach: np.ndarray, m: int, rho: float
+) -> np.ndarray:
     """Whether the price came back to within (1 - rho) of a jump, m bars later.
 
     Args:
@@ -52,8 +54,15 @@ class Spikes(TypedDict):
     wick_price: np.ndarray
 
 
-def spikes(o: np.ndarray, h: np.ndarray, low: np.ndarray, c: np.ndarray, at: np.ndarray,
-           r: np.ndarray, sigma: np.ndarray) -> Spikes:
+def spikes(
+    o: np.ndarray,
+    h: np.ndarray,
+    low: np.ndarray,
+    c: np.ndarray,
+    at: np.ndarray,
+    r: np.ndarray,
+    sigma: np.ndarray,
+) -> Spikes:
     """Each bar's move on the close and on the wick, in multiples of its scale.
 
     Args:
@@ -72,8 +81,15 @@ def spikes(o: np.ndarray, h: np.ndarray, low: np.ndarray, c: np.ndarray, at: np.
     return {"z_close": z_close, "z_wick": z_wick, "wick_price": price}
 
 
-def classify(c: np.ndarray, at: np.ndarray, z: np.ndarray, reach: np.ndarray, k: float,
-             m: int, rho: float) -> tuple[np.ndarray, np.ndarray]:
+def classify(
+    c: np.ndarray,
+    at: np.ndarray,
+    z: np.ndarray,
+    reach: np.ndarray,
+    k: float,
+    m: int,
+    rho: float,
+) -> tuple[np.ndarray, np.ndarray]:
     """The bars over K on one column, and which of them reverted.
 
     Args:

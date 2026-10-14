@@ -60,20 +60,39 @@ def _short(v: float | None) -> str:
     if v is None:
         return "–"
     a = abs(v)
-    return (f"{v / 1e6:.1f}M" if a >= 1e6 else f"{v / 1e3:.1f}K" if a >= 1e4 else f"{v:.0f}"
-            if a >= 100 else f"{v:.1f}" if a >= 10 else f"{v:.2f}")
+    return (
+        f"{v / 1e6:.1f}M"
+        if a >= 1e6
+        else f"{v / 1e3:.1f}K"
+        if a >= 1e4
+        else f"{v:.0f}"
+        if a >= 100
+        else f"{v:.1f}"
+        if a >= 10
+        else f"{v:.2f}"
+    )
 
 
 def _ink(fill: str) -> str:
     """Black or white text, whichever reads on the cell's fill."""
     c = QColor(fill)
-    return "#000000" if 0.299 * c.red() + 0.587 * c.green() + 0.114 * c.blue() > 140 else "#ffffff"
+    return (
+        "#000000"
+        if 0.299 * c.red() + 0.587 * c.green() + 0.114 * c.blue() > 140
+        else "#ffffff"
+    )
 
 
 def _geometry(b: dict, rect: QRectF) -> tuple[float, float, float]:
     """The row-label column's width, the cell width and the cell height."""
-    left = min(340, 20 + max(QFontMetrics(chart.font(11, True)).horizontalAdvance(str(r))
-                             for r in b["rows"]))
+    left = min(
+        340,
+        20
+        + max(
+            QFontMetrics(chart.font(11, True)).horizontalAdvance(str(r))
+            for r in b["rows"]
+        ),
+    )
     cw = (rect.width() - left - 8) / len(b["cols"])
     ch = (rect.height() - HEAD) / len(b["rows"])
     return left, cw, ch
@@ -89,12 +108,20 @@ def _draw(b: dict) -> Callable:
         p.setFont(chart.font(11, True))
         p.setPen(QColor(T["text"]))
         for j, c in enumerate(b["cols"]):
-            p.drawText(QRectF(left + j * cw, 0, cw, HEAD - 4), Qt.AlignmentFlag.AlignCenter, str(c))
+            p.drawText(
+                QRectF(left + j * cw, 0, cw, HEAD - 4),
+                Qt.AlignmentFlag.AlignCenter,
+                str(c),
+            )
         for i, r in enumerate(b["rows"]):
             top = HEAD + i * ch
             p.setFont(chart.font(11, True))
             p.setPen(QColor(T["text"]))
-            p.drawText(QRectF(0, top, left - 10, ch), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, str(r))
+            p.drawText(
+                QRectF(0, top, left - 10, ch),
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+                str(r),
+            )
             p.setFont(chart.font(11))
             for j, v in enumerate(b["values"][i]):
                 cell = QRectF(left + j * cw + 1, top + 1, cw - 2, ch - 2)
@@ -104,10 +131,17 @@ def _draw(b: dict) -> Callable:
                 text = b["labels"][i][j] if b["labels"] else chart.num(v)
                 # Three maps side by side leave ~30 px a cell: a figure that does not fit is
                 # written short («24.4K», «0.31»), and left to the hover only if that fails too.
-                if not b["labels"] and p.fontMetrics().horizontalAdvance(text) >= cw - 6:
+                if (
+                    not b["labels"]
+                    and p.fontMetrics().horizontalAdvance(text) >= cw - 6
+                ):
                     text = _short(v)
                 if b["labels"] or p.fontMetrics().horizontalAdvance(text) < cw - 6:
-                    p.drawText(cell.adjusted(4, 0, -4, 0), Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap, text)
+                    p.drawText(
+                        cell.adjusted(4, 0, -4, 0),
+                        Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap,
+                        text,
+                    )
         if b.get("region"):
             _region(p, b, left, cw, ch)
         if b.get("mark"):
@@ -137,8 +171,12 @@ def _mark(p: QPainter, b: dict, left: float, cw: float, ch: float) -> None:
     p.setPen(QPen(QColor(REAL), 3))
     p.drawRect(cell.adjusted(1, 1, -1, -1))
     p.setFont(chart.font(10, True))
-    tag = QRectF(cell.left() + 3, cell.top() + 2, p.fontMetrics().horizontalAdvance(m["label"]) + 6,
-                 p.fontMetrics().height())
+    tag = QRectF(
+        cell.left() + 3,
+        cell.top() + 2,
+        p.fontMetrics().horizontalAdvance(m["label"]) + 6,
+        p.fontMetrics().height(),
+    )
     p.fillRect(tag, QColor(T["bg"]))
     p.setPen(QColor(REAL))
     p.drawText(tag, Qt.AlignmentFlag.AlignCenter, m["label"])
@@ -157,7 +195,10 @@ def _tip(b: dict) -> Callable:
         m = b.get("mark")
         if m and (m["row"], m["col"]) == (b["rows"][i], b["cols"][j]):
             out += f"\n{m['label']}: {label('grid.mark')}"
-        if any((c["row"], c["col"]) == (b["rows"][i], b["cols"][j]) for c in b.get("region") or []):
+        if any(
+            (c["row"], c["col"]) == (b["rows"][i], b["cols"][j])
+            for c in b.get("region") or []
+        ):
             out += "\ndentro de la región marcada"
         return out + (f"\n{b['labels'][i][j]}" if b["labels"] else "")
 
@@ -168,16 +209,24 @@ def _key(b: dict) -> QWidget:
     """The discrete scale: each colour beside the interval it paints."""
     cuts, colours = levels(b), palette(b)
     # Repeated cuts (a scale of three states written as eight cuts) paint empty steps: skipped.
-    bounds = ([(True, f"< {chart.num(cuts[0])}")]
-              + [(a < z, f"{chart.num(a)} … {chart.num(z)}") for a, z in zip(cuts, cuts[1:])]
-              + [(True, f"≥ {chart.num(cuts[-1])}")])
+    bounds = (
+        [(True, f"< {chart.num(cuts[0])}")]
+        + [(a < z, f"{chart.num(a)} … {chart.num(z)}") for a, z in zip(cuts, cuts[1:])]
+        + [(True, f"≥ {chart.num(cuts[-1])}")]
+    )
     items = [("box", c, t) for c, (live, t) in zip(colours, bounds) if live]
     items.append(("box", T["rule"], label("grid.empty")))
     if b.get("mark"):
         items.append(("line", REAL, f"{b['mark']['label']} — {label('grid.mark')}"))
     if b.get("scale_range"):
         lo, hi = b["scale_range"]
-        items.append(("box", T["faint"], f"{label('grid.shared')} {chart.num(lo)} … {chart.num(hi)}"))
+        items.append(
+            (
+                "box",
+                T["faint"],
+                f"{label('grid.shared')} {chart.num(lo)} … {chart.num(hi)}",
+            )
+        )
     return chart.key(items)
 
 
@@ -194,7 +243,9 @@ def widget(block: dict) -> QWidget:
     # 🔬 2026-09-27: isOos on a build-only export wrote 21 rows and no column, and painting
     # it killed the whole window with a segfault — an empty map is said, never painted.
     if not b["rows"] or not b["cols"]:
-        return card(b, text("(vacía: el estudio no dejó ninguna celda aquí)", T["faint"]))
+        return card(
+            b, text("(vacía: el estudio no dejó ninguna celda aquí)", T["faint"])
+        )
     # Sized to its rows, not to the charts' 320 px: two rows stretched to 320 read as a
     # colour field, and blank rows under a short map read as missing data.
     row = max(36, min(72, (chart.HEIGHT - HEAD) // len(b["rows"])))

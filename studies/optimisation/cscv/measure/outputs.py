@@ -3,6 +3,7 @@
 from typing import Any, TypedDict
 import numpy as np
 
+
 class Line(TypedDict):
     """The degradation line: slope, intercept and adjusted R-squared."""
 
@@ -28,7 +29,7 @@ class Selection(TypedDict):
     tabla: list[tuple[str, float]]
 
 
-HALF = 0.5          # omega at or under it is lambda <= 0: the pick landed in the worse half
+HALF = 0.5  # omega at or under it is lambda <= 0: the pick landed in the worse half
 EPS = 1e-12
 
 
@@ -45,15 +46,22 @@ def line(inside: np.ndarray, outside: np.ndarray) -> Line:
     beta = sxy / sxx if sxx > 0 else np.nan
     r2 = sxy * sxy / (sxx * syy) if sxx > 0 and syy > 0 else np.nan
     count = len(inside)
-    return {"beta": float(beta), "alfa": float(outside.mean() - beta * inside.mean()),
-            "r2": float(1 - (1 - r2) * (count - 1) / (count - 2))}
+    return {
+        "beta": float(beta),
+        "alfa": float(outside.mean() - beta * inside.mean()),
+        "r2": float(1 - (1 - r2) * (count - 1) / (count - 2)),
+    }
 
 
 def cdf(values: np.ndarray, found: dict) -> np.ndarray:
     """The share of `values` at or under each bin's right edge, on the bins of `found["hist"]`."""
     bins = len(found["hist"])
-    cell = ((values - found["lo"]) * (bins / (found["hi"] - found["lo"]))).astype(np.int64)
-    return np.bincount(np.clip(cell, 0, bins - 1), minlength=bins).cumsum() / len(values)
+    cell = ((values - found["lo"]) * (bins / (found["hi"] - found["lo"]))).astype(
+        np.int64
+    )
+    return np.bincount(np.clip(cell, 0, bins - 1), minlength=bins).cumsum() / len(
+        values
+    )
 
 
 def dominance(values: np.ndarray, found: dict, tolerance: float) -> Dominance:
@@ -71,9 +79,11 @@ def dominance(values: np.ndarray, found: dict, tolerance: float) -> Dominance:
         on the running integrals, no tolerance) and `brecha`, the largest F_list - F_all.
     """
     gap = cdf(values, found) - found["hist"].cumsum() / found["hist"].sum()
-    return {"primer_orden": bool(gap.max() <= tolerance),
-            "segundo_orden": bool(gap.cumsum().max() <= EPS * len(gap)),
-            "brecha": float(gap.max())}
+    return {
+        "primer_orden": bool(gap.max() <= tolerance),
+        "segundo_orden": bool(gap.cumsum().max() <= EPS * len(gap)),
+        "brecha": float(gap.max()),
+    }
 
 
 def summary(found: dict, tolerance: float) -> dict[str, Any]:
@@ -91,11 +101,13 @@ def summary(found: dict, tolerance: float) -> dict[str, Any]:
     """
     inside, outside = found["sr_in"], found["sr_out"]
     middle = float(np.median(inside))
-    return {"pbo": float((found["omega"] <= HALF).mean()),
-            "p_perdida": float((outside <= 0).mean()),
-            **line(inside, outside),
-            "hc": float(1 - np.median(outside) / middle) if middle > 0 else np.nan,
-            **dominance(outside, found, tolerance)}
+    return {
+        "pbo": float((found["omega"] <= HALF).mean()),
+        "p_perdida": float((outside <= 0).mean()),
+        **line(inside, outside),
+        "hc": float(1 - np.median(outside) / middle) if middle > 0 else np.nan,
+        **dominance(outside, found, tolerance),
+    }
 
 
 def selection(pick: np.ndarray, names: np.ndarray) -> Selection:
@@ -113,9 +125,12 @@ def selection(pick: np.ndarray, names: np.ndarray) -> Selection:
     count = np.bincount(pick, minlength=len(names))
     order = np.argsort(-count, kind="stable")
     order = order[count[order] > 0]
-    return {"distintas": int(len(order)), "mas_elegida": str(names[order[0]]),
-            "peso": float(count[order[0]] / len(pick)),
-            "tabla": [(str(names[i]), float(count[i] / len(pick))) for i in order]}
+    return {
+        "distintas": int(len(order)),
+        "mas_elegida": str(names[order[0]]),
+        "peso": float(count[order[0]] / len(pick)),
+        "tabla": [(str(names[i]), float(count[i] / len(pick))) for i in order],
+    }
 
 
 def mother(found: dict, tolerance: float) -> dict[str, Any]:
@@ -126,7 +141,9 @@ def mother(found: dict, tolerance: float) -> dict[str, Any]:
         partitions where she is above half the variants), `p_perdida` and dominance()'s three.
         She was chosen looking at `build`, which sits in sample in many partitions: annotated.
     """
-    return {"puesto_mediano": float(np.median(found["track_omega"])),
-            "sobre_mediana": float((found["track_omega"] > HALF).mean()),
-            "p_perdida": float((found["track_out"] <= 0).mean()),
-            **dominance(found["track_out"], found, tolerance)}
+    return {
+        "puesto_mediano": float(np.median(found["track_omega"])),
+        "sobre_mediana": float((found["track_omega"] > HALF).mean()),
+        "p_perdida": float((found["track_out"] <= 0).mean()),
+        **dominance(found["track_out"], found, tolerance),
+    }

@@ -21,15 +21,22 @@ def code_version() -> str:
     Returns:
         Short commit hash, with "-dirty" appended when the tree has uncommitted changes.
     """
-    head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"],
-                          capture_output=True, text=True).stdout.strip()
-    dirty = subprocess.run(["git", "-C", str(ROOT), "status", "--porcelain"],
-                           capture_output=True, text=True).stdout.strip()
+    head = subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"],
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    dirty = subprocess.run(
+        ["git", "-C", str(ROOT), "status", "--porcelain"],
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
     return head + ("-dirty" if dirty else "")
 
 
-def write(out_dir: Path, source: dict, command: str, counts: dict,
-          since: float | None = None) -> Path:
+def write(
+    out_dir: Path, source: dict, command: str, counts: dict, since: float | None = None
+) -> Path:
     """Record what produced the files in one export directory.
 
     Args:
@@ -44,11 +51,20 @@ def write(out_dir: Path, source: dict, command: str, counts: dict,
         Path of the manifest written.
     """
     path = out_dir / "manifest.json"
-    path.write_text(json.dumps({"date": date.today().isoformat(),
-                                "code_version": code_version(),
-                                "source": source,
-                                "command": command,
-                                "counts": counts}, indent=2, default=str), encoding="utf-8")
+    path.write_text(
+        json.dumps(
+            {
+                "date": date.today().isoformat(),
+                "code_version": code_version(),
+                "source": source,
+                "command": command,
+                "counts": counts,
+            },
+            indent=2,
+            default=str,
+        ),
+        encoding="utf-8",
+    )
     if since is not None:
         os.utime(path, (since, since))
     return path

@@ -28,7 +28,11 @@ def score(conditions: pd.DataFrame) -> pd.DataFrame:
         `KEYS` plus `met`, `active` and `score_pct` (`round(met / active * 100)`, half up as
         SQX's `SQUtils.round`).
     """
-    out = conditions.groupby(KEYS, observed=True)["met"].agg(met="sum", active="size").reset_index()
+    out = (
+        conditions.groupby(KEYS, observed=True)["met"]
+        .agg(met="sum", active="size")
+        .reset_index()
+    )
     out["score_pct"] = np.floor(out["met"] / out["active"] * 100 + 0.5).astype(int)
     return out
 
@@ -52,7 +56,9 @@ def oos_only(conditions: pd.DataFrame, cells: pd.DataFrame) -> pd.DataFrame:
     value = out["value"].to_numpy(float).copy()
     for metric in out.loc[score, "metric"].unique():
         rows = score & (out["metric"] == metric).to_numpy()
-        value[rows] *= (out.loc[rows, f"oos_{metric}"] / out.loc[rows, f"all_{metric}"]).to_numpy()
+        value[rows] *= (
+            out.loc[rows, f"oos_{metric}"] / out.loc[rows, f"all_{metric}"]
+        ).to_numpy()
     met = out["met"].to_numpy().copy()
     for op in out.loc[score, "op"].unique():
         rows = score & (out["op"] == op).to_numpy()
@@ -69,8 +75,9 @@ class Area(TypedDict):
     centre: tuple[int, int]
 
 
-def area(passed: np.ndarray, scores: np.ndarray, rows: int, cols: int,
-         min_squares: int) -> Area:
+def area(
+    passed: np.ndarray, scores: np.ndarray, rows: int, cols: int, min_squares: int
+) -> Area:
     """SQX's `findBestGroupOfPassedCombinations`, its tie-break and its centre included.
 
     Args:
@@ -91,12 +98,21 @@ def area(passed: np.ndarray, scores: np.ndarray, rows: int, cols: int,
     if rows > n_rows or cols > n_cols:
         # SQX walks its result list, which runs down the runs axis first.
         j, i = divmod(int(np.argmax(scores.T)), n_rows)
-        return {"passed": 1 >= min_squares, "count": 1, "corner": None, "centre": (i, j)}
+        return {
+            "passed": 1 >= min_squares,
+            "count": 1,
+            "corner": None,
+            "centre": (i, j),
+        }
     best, corner = -1, (0, 0)
     for i in range(n_rows - rows + 1):
         for j in range(n_cols - cols + 1):
-            count = int(passed[i:i + rows, j:j + cols].sum())
+            count = int(passed[i : i + rows, j : j + cols].sum())
             if count > best:
                 best, corner = count, (i, j)
-    return {"passed": best >= min_squares, "count": best, "corner": corner,
-            "centre": (corner[0] + (rows - 1) // 2, corner[1] + (cols - 1) // 2)}
+    return {
+        "passed": best >= min_squares,
+        "count": best,
+        "corner": corner,
+        "centre": (corner[0] + (rows - 1) // 2, corner[1] + (cols - 1) // 2),
+    }

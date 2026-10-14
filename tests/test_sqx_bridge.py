@@ -14,8 +14,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from core import worker                                    # noqa: E402
-from sqx.variants import banks, execute                    # noqa: E402
+from core import worker  # noqa: E402
+from sqx.variants import banks, execute  # noqa: E402
 
 CFG = {"role": "custodian", "project": "Test_X", "poll_seconds": 0, "ready_tries": 2}
 ABORT = "07:00 Error while running project Test_X\n"
@@ -68,10 +68,12 @@ def test_call_has_a_timeout_and_checked_refuses_an_error_body() -> None:
 
     with patched((urllib.request, "urlopen", urlopen)):
         reply = worker.call("-project action=list", "custodian")
-        assert seen["timeout"] == worker.TIMEOUT == 600 and "%20action=list" in seen["url"]
+        assert (
+            seen["timeout"] == worker.TIMEOUT == 600 and "%20action=list" in seen["url"]
+        )
         worker.call("-project action=list", "custodian", timeout=5)
         assert seen["timeout"] == 5
-    assert reply == "Error: CLI not ready."                 # the return type did not change
+    assert reply == "Error: CLI not ready."  # the return type did not change
     raises("CLI not ready", worker.checked, reply, "-project action=list")
     assert worker.checked("Loaded", "x") == "Loaded"
 
@@ -80,9 +82,12 @@ def test_awake_refuses_a_running_install_that_is_not_this_holders() -> None:
     """Up with no lock, or another holder's: SystemExit and nothing started; this holder's: False."""
     top, started = install(), []
     lock = top / "user/log/OWNER"
-    with patched((worker, "call", lambda command, role="conductor": "Projects: Test_X"),
-                 (worker, "start", lambda role: started.append(role)),
-                 (worker, "holder", lambda: "me"), (execute, "worker_dir", lambda role: top)):
+    with patched(
+        (worker, "call", lambda command, role="conductor": "Projects: Test_X"),
+        (worker, "start", lambda role: started.append(role)),
+        (worker, "holder", lambda: "me"),
+        (execute, "worker_dir", lambda role: top),
+    ):
         raises("no hay OWNER", execute.awake, CFG)
         lock.write_text(json.dumps({"holder": "calib-queue", "pid": 1, "since": "x"}))
         raises("calib-queue", execute.awake, CFG)
@@ -101,8 +106,11 @@ def test_awake_starts_an_install_that_is_down() -> None:
             raise ConnectionRefusedError
         return "Projects: Test_X"
 
-    with patched((worker, "call", call), (worker, "start", lambda role: state.update(up=True)),
-                 (time, "sleep", lambda s: None)):
+    with patched(
+        (worker, "call", call),
+        (worker, "start", lambda role: state.update(up=True)),
+        (time, "sleep", lambda s: None),
+    ):
         assert execute.awake(CFG) is True
 
 
@@ -110,7 +118,9 @@ def test_holder_resolves_as_the_lock_does() -> None:
     """Session id, then $SQX_OWNER, then «owner»: bin/sqx-lock.sh's order."""
     with patched((os, "environ", {"SQX_OWNER": "human"})):
         assert worker.holder() == "human"
-    with patched((os, "environ", {"SQX_OWNER": "human", "CLAUDE_CODE_SESSION_ID": "s1"})):
+    with patched(
+        (os, "environ", {"SQX_OWNER": "human", "CLAUDE_CODE_SESSION_ID": "s1"})
+    ):
         assert worker.holder() == "s1"
     with patched((os, "environ", {})):
         assert worker.holder() == "owner"
@@ -120,19 +130,23 @@ def test_aborted_follows_every_log_and_reads_each_byte_once() -> None:
     """An abort before the mark is not this run's; a half line waits; the next day's log is read."""
     logs = install() / "user/log/StrategyQuant"
     day1, day2 = logs / "log_2026_01_01.log", logs / "log_2026_01_02.log"
-    day1.write_text(ABORT)                                  # an earlier run's abort
+    day1.write_text(ABORT)  # an earlier run's abort
     seen = banks.mark(logs)
     assert not banks.aborted(logs, seen)
-    day2.write_text("00:00 Starting\n07:00 Error while runn")          # half a line
+    day2.write_text("00:00 Starting\n07:00 Error while runn")  # half a line
     assert not banks.aborted(logs, seen) and seen[day2] == len("00:00 Starting\n")
     with day2.open("a") as f:
         f.write("ing project Test_X\n")
     assert banks.aborted(logs, seen)
-    assert not banks.aborted(logs, seen)                    # read once, not again
+    assert not banks.aborted(logs, seen)  # read once, not again
 
 
-def run_with(status: list[str], top: Path, step: float = 0.0,
-             started: Callable[[], object] = lambda: None) -> int:
+def run_with(
+    status: list[str],
+    top: Path,
+    step: float = 0.0,
+    started: Callable[[], object] = lambda: None,
+) -> int:
     """`execute.run` for 4 retests against a scripted `action=status`; `started` runs at the start."""
     replies = iter(status)
 
@@ -143,8 +157,12 @@ def run_with(status: list[str], top: Path, step: float = 0.0,
             return "Project started"
         return next(replies)
 
-    with patched((worker, "call", call), (execute, "worker_dir", lambda role: top),
-                 (time, "sleep", lambda s: None), (time, "monotonic", clock(step))):
+    with patched(
+        (worker, "call", call),
+        (execute, "worker_dir", lambda role: top),
+        (time, "sleep", lambda s: None),
+        (time, "monotonic", clock(step)),
+    ):
         return execute.run(4, CFG, lambda pct, line: None)
 
 
@@ -153,7 +171,12 @@ def test_run_counts_from_its_base_and_names_a_reply_without_a_count() -> None:
     top = install()
     assert run_with(["In databank 10", "In databank 12", "In databank 14"], top) == 4
     raises("Error: CLI not ready.", run_with, ["Error: CLI not ready."], top)
-    raises("Error: Project 'Test_X'", run_with, ["In databank 10", "Error: Project 'Test_X' gone"], top)
+    raises(
+        "Error: Project 'Test_X'",
+        run_with,
+        ["In databank 10", "Error: Project 'Test_X' gone"],
+        top,
+    )
 
 
 def test_run_sees_an_abort_in_the_next_days_log_and_is_bounded() -> None:
@@ -161,22 +184,41 @@ def test_run_sees_an_abort_in_the_next_days_log_and_is_bounded() -> None:
     top = install()
     logs = top / "user/log/StrategyQuant"
     (logs / "log_2026_01_01.log").write_text("23:59 Starting\n")
-    day2 = logs / "log_2026_01_02.log"                      # opened after the mark: midnight
-    raises("abortó Test_X", run_with, ["In databank 10"] * 50, top, 0.0,
-           lambda: day2.write_text(ABORT))
+    day2 = logs / "log_2026_01_02.log"  # opened after the mark: midnight
+    raises(
+        "abortó Test_X",
+        run_with,
+        ["In databank 10"] * 50,
+        top,
+        0.0,
+        lambda: day2.write_text(ABORT),
+    )
     day2.unlink()
-    raises(f"tras {worker.MAX_HOURS} h", run_with, ["In databank 10"] * 50, top, 3600 * 30.0)
+    raises(
+        f"tras {worker.MAX_HOURS} h",
+        run_with,
+        ["In databank 10"] * 50,
+        top,
+        3600 * 30.0,
+    )
 
 
 def test_load_refuses_an_error_reply_on_clear_and_load() -> None:
     """`Error:` to a clear, a load or an export is fatal."""
+
     def call(command: str, role: str = "conductor") -> str:
         """core.worker.call: every reply an error body."""
-        return "Error: Databank 'X' doesn't exist." if "action=load" in command else "Error: odd"
+        return (
+            "Error: Databank 'X' doesn't exist."
+            if "action=load" in command
+            else "Error: odd"
+        )
 
     with patched((worker, "call", call), (time, "sleep", lambda s: None)):
         raises("action=clear", execute.load, Path("/nowhere"), CFG)
-        raises("action=export", execute.panel, Path("/nowhere"), CFG, "WFC", "retest_oos1")
+        raises(
+            "action=export", execute.panel, Path("/nowhere"), CFG, "WFC", "retest_oos1"
+        )
 
 
 if __name__ == "__main__":

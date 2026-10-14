@@ -16,19 +16,35 @@ S = "XAUUSD_H1_x"
 @pytest.fixture(autouse=True)
 def ledger(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """A ledger that lives in a temporary folder."""
-    monkeypatch.setattr(studymod, "ledger_file", lambda s: tmp_path / "ledger" / f"{s}.jsonl")
+    monkeypatch.setattr(
+        studymod, "ledger_file", lambda s: tmp_path / "ledger" / f"{s}.jsonl"
+    )
 
 
 def l1(n: int, mean: float, sd: float) -> pd.DataFrame:
     """One L1 search of n candidates."""
-    return pd.DataFrame([{"n_scored": n, "score_unit": "per_period", "sharpe_mean": mean, "sharpe_std": sd}])
+    return pd.DataFrame(
+        [
+            {
+                "n_scored": n,
+                "score_unit": "per_period",
+                "sharpe_mean": mean,
+                "sharpe_std": sd,
+            }
+        ]
+    )
 
 
 def test_three_values_three_rows_one_chosen() -> None:
     """The report line says probados 3, elegido 1, and a studies() listing ignores the L2 folder."""
     sid = tried.sweep(S, "threshold", "p", ["1", "2", "3"], "t", chosen="2", why="x")
     got = tried.summary(S).set_index("search_id").loc[sid]
-    assert (len(tried.read(S)), got["probados"], got["elegido"], got["cuenta"]) == (3, 3, "2", 3)
+    assert (len(tried.read(S)), got["probados"], got["elegido"], got["cuenta"]) == (
+        3,
+        3,
+        "2",
+        3,
+    )
     assert studymod.studies() == []
 
 
@@ -47,8 +63,15 @@ def test_n_rises_deflation_falls_and_a_look_moves_nothing() -> None:
     n0 = trials.accumulated(base)["n"]
     tried.sweep(S, "parameter", "look", list("abcd"), "t")
     assert trials.accumulated(tried.with_sweeps(base, S))["n"] == n0
-    tried.sweep(S, "parameter", "q", [str(i) for i in range(10)], "t", scores=[0.01 * i for i in range(10)],
-                chosen="9")
+    tried.sweep(
+        S,
+        "parameter",
+        "q",
+        [str(i) for i in range(10)],
+        "t",
+        scores=[0.01 * i for i in range(10)],
+        chosen="9",
+    )
     after = trials.accumulated(tried.with_sweeps(base, S))
     assert after["n"] == n0 + 10
     returns = pd.Series([0.001, 0.0004, -0.002, 0.0012] * 25).to_numpy()

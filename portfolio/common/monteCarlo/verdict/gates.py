@@ -17,7 +17,10 @@ class Flag(TypedDict):
 
 
 # A sub-test's floor: which numbers of the Family C entry are read, and against what.
-C_FLOORS = {"skip": ("keep", "skip_keep_frac"), "fill_degrade": ("keep", "fill_keep_frac")}
+C_FLOORS = {
+    "skip": ("keep", "skip_keep_frac"),
+    "fill_degrade": ("keep", "fill_keep_frac"),
+}
 
 
 def _flag(family: str, test: str, value: float, limit: float, gate: bool) -> Flag:
@@ -34,8 +37,13 @@ def _flag(family: str, test: str, value: float, limit: float, gate: bool) -> Fla
         The record the report prints. The words that describe it live in text.py: this
         module decides, it does not narrate.
     """
-    return {"family": family, "test": test, "value": float(value),
-            "limit": float(limit), "gate": gate}
+    return {
+        "family": family,
+        "test": test,
+        "value": float(value),
+        "limit": float(limit),
+        "gate": gate,
+    }
 
 
 def tiers(result: Analysis, cfg: dict) -> dict[str, str]:
@@ -51,11 +59,17 @@ def tiers(result: Analysis, cfg: dict) -> dict[str, str]:
     """
     n = result["n_trades"]
     oos = result["B"]["samples"].get("OOS", {}).get("n", 0)
-    out = {"dd_95": confidence.percentile(n, 95), "dd_99": confidence.percentile(n, 99),
-           "net_5": confidence.percentile(n, 5),
-           "blocks": (confidence.blocks(n, min(result["blocks"]), cfg["blocks"]["min_blocks"])
-                      if result["blocks"] else confidence.TIERS[2]),
-           "oos_median": confidence.average(oos)}
+    out = {
+        "dd_95": confidence.percentile(n, 95),
+        "dd_99": confidence.percentile(n, 99),
+        "net_5": confidence.percentile(n, 5),
+        "blocks": (
+            confidence.blocks(n, min(result["blocks"]), cfg["blocks"]["min_blocks"])
+            if result["blocks"]
+            else confidence.TIERS[2]
+        ),
+        "oos_median": confidence.average(oos),
+    }
     return {**out, "worst": confidence.worst(list(out.values()))}
 
 
@@ -112,16 +126,23 @@ def check(result: Analysis, cfg: dict) -> list[Flag]:
     if a_["dd_pct_99"] > s["survival_dd_pct"]:
         out.append(_flag("A", "dd_99", a_["dd_pct_99"], s["survival_dd_pct"], True))
     if a_["inflation"] > s["dd_inflation_flag"]:
-        out.append(_flag("A", "inflation", a_["inflation"], s["dd_inflation_flag"], True))
+        out.append(
+            _flag("A", "inflation", a_["inflation"], s["dd_inflation_flag"], True)
+        )
     elif a_["inflation"] > s["dd_inflation_watch"]:
-        out.append(_flag("A", "inflation_watch", a_["inflation"], s["dd_inflation_watch"],
-                         False))
+        out.append(
+            _flag(
+                "A", "inflation_watch", a_["inflation"], s["dd_inflation_watch"], False
+            )
+        )
     if bb["net_5"] <= 0:
         out.append(_flag("B", "net_5", bb["net_5"], 0, True))
     if bb["pf_5"] <= s["min_pf"]:
         out.append(_flag("B", "pf_5", bb["pf_5"], s["min_pf"], True))
     if bb["outlier"]["share"] > b["outlier_frac"]:
-        out.append(_flag("B", "outlier", bb["outlier"]["share"], b["outlier_frac"], False))
+        out.append(
+            _flag("B", "outlier", bb["outlier"]["share"], b["outlier_frac"], False)
+        )
     if bb["oos_ratio"] < b["oos_red_frac"]:
         out.append(_flag("B", "oos_red", bb["oos_ratio"], b["oos_red_frac"], False))
     elif bb["oos_ratio"] < b["oos_amber_frac"]:
@@ -132,22 +153,36 @@ def check(result: Analysis, cfg: dict) -> list[Flag]:
         out.append(_flag("D", "high_vol", high["median_net"], 0, True))
     dead = [w for w in dd["nonoverlapping"] if w["median_net"] < 0]
     if dead:
-        out.append(_flag("D", "dead_block", min(w["median_net"] for w in dead), 0, True))
+        out.append(
+            _flag("D", "dead_block", min(w["median_net"] for w in dead), 0, True)
+        )
     share = passing(dd["overlapping"])
     if share < d["window_pass_frac"]:
         out.append(_flag("D", "windows", share, d["window_pass_frac"], False))
     if dd["regime"]["concentration"] > d["regime_concentration"]:
-        out.append(_flag("D", "concentration", dd["regime"]["concentration"],
-                         d["regime_concentration"], False))
+        out.append(
+            _flag(
+                "D",
+                "concentration",
+                dd["regime"]["concentration"],
+                d["regime_concentration"],
+                False,
+            )
+        )
     if result["E"]["warning"]:
-        out.append(_flag("data", "oos_thin", result["E"]["n"], confidence.MEAN_PROVISIONAL,
-                         True))
+        out.append(
+            _flag(
+                "data", "oos_thin", result["E"]["n"], confidence.MEAN_PROVISIONAL, True
+            )
+        )
     elif result["E"]["psr"] < e["psr_gate"]:
         out.append(_flag("E", "psr", result["E"]["psr"], e["psr_gate"], True))
     elif result["E"]["psr"] < e["psr_target"]:
         out.append(_flag("E", "psr_amber", result["E"]["psr"], e["psr_target"], False))
     if result["cost_check"]["diverges"]:
-        out.append(_flag("data", "cost_file", result["cost_check"]["ratio"], 1.0, False))
+        out.append(
+            _flag("data", "cost_file", result["cost_check"]["ratio"], 1.0, False)
+        )
     if tiers(result, cfg)["worst"] == confidence.TIERS[2]:
         out.append(_flag("data", "sample", result["n_trades"], 0, True))
     return out

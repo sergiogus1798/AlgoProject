@@ -7,12 +7,21 @@ from ui.daemon.runner import where
 def cloud(c: dict, strategy: str) -> list[str] | str:
     """The parameter cloud of one mother's variant batch."""
     # Asset and timeframe come off the batch itself (`look.market`), so no `--set run.symbol`.
-    work = where.batch(c["project"], strategy, ("metrics.parquet", "manifest.parquet", "variant_trades.parquet"))
-    return work if isinstance(work, str) else [
-        "-m", "studies.optimisation.cloud.report", "--work", str(work)]
+    work = where.batch(
+        c["project"],
+        strategy,
+        ("metrics.parquet", "manifest.parquet", "variant_trades.parquet"),
+    )
+    return (
+        work
+        if isinstance(work, str)
+        else ["-m", "studies.optimisation.cloud.report", "--work", str(work)]
+    )
 
 
-def signed(c: dict, strategy: str, module: str, needs: tuple[str, ...]) -> list[str] | str:
+def signed(
+    c: dict, strategy: str, module: str, needs: tuple[str, ...]
+) -> list[str] | str:
     """A batch study that signs its look in the ledger under the project's template family.
 
     Args:
@@ -29,36 +38,62 @@ def signed(c: dict, strategy: str, module: str, needs: tuple[str, ...]) -> list[
     if family is None:
         return where.no_family(c["project"])
     work = where.batch(c["project"], strategy, needs)
-    return work if isinstance(work, str) else [
-        "-m", module, "--work", str(work), "--family", family]
+    return (
+        work
+        if isinstance(work, str)
+        else ["-m", module, "--work", str(work), "--family", family]
+    )
 
 
 def wfc(c: dict, strategy: str) -> list[str] | str:
     """Step 17: in against out over one mother's variant batch, the composition config.yaml says."""
-    return signed(c, strategy, "studies.optimisation.wfc.report",
-                  ("metrics.parquet", "variant_trades.parquet"))
+    return signed(
+        c,
+        strategy,
+        "studies.optimisation.wfc.report",
+        ("metrics.parquet", "variant_trades.parquet"),
+    )
 
 
 def cscv(c: dict, strategy: str) -> list[str] | str:
     """Step 18: the probability the selection overfits, over one mother's variant batch."""
-    return signed(c, strategy, "studies.optimisation.cscv.report",
-                  ("metrics.parquet", "variant_trades.parquet"))
+    return signed(
+        c,
+        strategy,
+        "studies.optimisation.cscv.report",
+        ("metrics.parquet", "variant_trades.parquet"),
+    )
 
 
 def market_surfaces(c: dict, strategy: str) -> list[str] | str:
     """Step 18.5: the same parameter region on every market, over one mother's batch."""
-    return signed(c, strategy, "studies.optimisation.marketSurfaces.report",
-                  ("metrics.parquet", "segments.parquet", "variant_trades.parquet"))
+    return signed(
+        c,
+        strategy,
+        "studies.optimisation.marketSurfaces.report",
+        ("metrics.parquet", "segments.parquet", "variant_trades.parquet"),
+    )
 
 
 def wfm(c: dict, strategy: str) -> list[str] | str:
     """Step 19 over the newest Walk-Forward Matrix export of this databank."""
-    found = where.newest(DATA / "raw" / c["project"] / c["databank"].replace(" ", "_"), "*/wfm")
+    found = where.newest(
+        DATA / "raw" / c["project"] / c["databank"].replace(" ", "_"), "*/wfm"
+    )
     if not found:
-        return "necesita el export de la Walk-Forward Matrix de este databank (skill /wfm)"
-    return (["-m", "studies.optimisation.wfm.report", "--project", c["project"], "--databank",
-             c["databank"], "--day", found.parent.name]
-            + (["--strategy", strategy] if strategy else []))
+        return (
+            "necesita el export de la Walk-Forward Matrix de este databank (skill /wfm)"
+        )
+    return [
+        "-m",
+        "studies.optimisation.wfm.report",
+        "--project",
+        c["project"],
+        "--databank",
+        c["databank"],
+        "--day",
+        found.parent.name,
+    ] + (["--strategy", strategy] if strategy else [])
 
 
 def mothers(project: str) -> list[str] | str:
@@ -75,8 +110,11 @@ def mothers(project: str) -> list[str] | str:
         2026-09-30 §8.4/§8.5): every mother, not the population `where.distinct` would find.
     """
     root = DATA / "strategyPermutations" / project
-    found = sorted(d.name.replace("_", " ", 1) for d in root.iterdir() if d.is_dir()) \
-        if root.is_dir() else []
+    found = (
+        sorted(d.name.replace("_", " ", 1) for d in root.iterdir() if d.is_dir())
+        if root.is_dir()
+        else []
+    )
     return found or f"ningún lote de variantes en {project} (skill /variants)"
 
 
@@ -85,13 +123,33 @@ def mothers(project: str) -> list[str] | str:
 # (jobs.WIDE) and runs them side by side; the others are grouped by `runner.batch.fold` into
 # one forked batchrun (cloud and wfc gained «Run todo el databank» this way, owner 2026-10-01).
 STUDIES = {
-    "cloud": {"plan": cloud, "one": True, "many": True, "sets": True,
-              "population": lambda c: mothers(c["project"])},
-    "wfc": {"plan": wfc, "one": True, "many": True, "sets": True,
-            "population": lambda c: mothers(c["project"])},
-    "cscv": {"plan": cscv, "one": True, "many": True, "sets": True,
-             "population": lambda c: mothers(c["project"])},
-    "marketSurfaces": {"plan": market_surfaces, "one": True, "many": True, "sets": True,
-                       "population": lambda c: mothers(c["project"])},
+    "cloud": {
+        "plan": cloud,
+        "one": True,
+        "many": True,
+        "sets": True,
+        "population": lambda c: mothers(c["project"]),
+    },
+    "wfc": {
+        "plan": wfc,
+        "one": True,
+        "many": True,
+        "sets": True,
+        "population": lambda c: mothers(c["project"]),
+    },
+    "cscv": {
+        "plan": cscv,
+        "one": True,
+        "many": True,
+        "sets": True,
+        "population": lambda c: mothers(c["project"]),
+    },
+    "marketSurfaces": {
+        "plan": market_surfaces,
+        "one": True,
+        "many": True,
+        "sets": True,
+        "population": lambda c: mothers(c["project"]),
+    },
     "wfm": {"plan": wfm, "one": True, "many": True, "sets": True},
 }

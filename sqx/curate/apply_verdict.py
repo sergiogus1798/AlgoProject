@@ -26,7 +26,9 @@ def install_of(role: str) -> Path:
 def is_up(role: str) -> bool:
     """Whether anything holds that install; a file moved underneath it is undone by its next sync."""
     port = None if role == "master" else WORKERS[role]["port"]
-    return bool(worker.holding(install_of(role))) or (port is not None and worker.listening(port))
+    return bool(worker.holding(install_of(role))) or (
+        port is not None and worker.listening(port)
+    )
 
 
 def rejected(verdict: Path) -> dict[str, str]:
@@ -57,7 +59,11 @@ def mismatched(source: Path, names: dict[str, str]) -> list[str]:
         source: Databank directory.
         names: Name to expected identity; "" skips the check for that name. Only reads.
     """
-    known = hashed(source / f"{n}.sqx" for n, i in names.items() if i and (source / f"{n}.sqx").exists())
+    known = hashed(
+        source / f"{n}.sqx"
+        for n, i in names.items()
+        if i and (source / f"{n}.sqx").exists()
+    )
     return [n for n, i in names.items() if i and known.get(source / f"{n}.sqx", i) != i]
 
 
@@ -78,8 +84,15 @@ def reasons(verdict: Path) -> dict[str, str]:
     return dict(zip(drop.strategy, why))
 
 
-def record(source: Path, names: dict[str, str], why: dict[str, str], out: Path, stamp: str,
-           project: str, databank: str) -> None:
+def record(
+    source: Path,
+    names: dict[str, str],
+    why: dict[str, str],
+    out: Path,
+    stamp: str,
+    project: str,
+    databank: str,
+) -> None:
     """Write down what the cut removes, and why, before the files are gone.
 
     Args:
@@ -97,13 +110,18 @@ def record(source: Path, names: dict[str, str], why: dict[str, str], out: Path, 
     workflow» copies them to `AlgoData/projects/discards/` before calling (owner, Q7, 2026-09-27).
     """
     files = sorted(source.glob("*.sqx"))
-    known = hashed(files)       # the files `mismatched` hashed are read from the cache, not again
-    pd.DataFrame({"strategy": [f.stem for f in files],
-                  "identity": [known[f] for f in files],
-                  "bytes": [f.stat().st_size for f in files],
-                  "verdict": [DROP if f.stem in names else "MANTENER" for f in files],
-                  "reason": [why.get(f.stem, "") for f in files]}
-                 ).to_csv(out / f"before-{stamp}.csv", index=False)
+    known = hashed(
+        files
+    )  # the files `mismatched` hashed are read from the cache, not again
+    pd.DataFrame(
+        {
+            "strategy": [f.stem for f in files],
+            "identity": [known[f] for f in files],
+            "bytes": [f.stat().st_size for f in files],
+            "verdict": [DROP if f.stem in names else "MANTENER" for f in files],
+            "reason": [why.get(f.stem, "") for f in files],
+        }
+    ).to_csv(out / f"before-{stamp}.csv", index=False)
     csv = metrics_export(project, databank) / "metrics.csv"
     if csv.exists():
         m = pd.read_csv(csv, sep=";", quotechar='"')
@@ -115,18 +133,22 @@ def record(source: Path, names: dict[str, str], why: dict[str, str], out: Path, 
         print(f"  no metrics export at {csv}: only names and identities are kept")
 
 
-EMPTY = ("{source} holds no .sqx at all: a databank on `Auto-sync never` keeps its records in "
-         "memory only. Run `-databank action=synctofiles` on the instance that holds them, "
-         "before stopping it — a project.cfx edited under a live instance is lost (rule 4).")
+EMPTY = (
+    "{source} holds no .sqx at all: a databank on `Auto-sync never` keeps its records in "
+    "memory only. Run `-databank action=synctofiles` on the instance that holds them, "
+    "before stopping it — a project.cfx edited under a live instance is lost (rule 4)."
+)
 
 
 def refuse_mismatch(source: Path, names: dict[str, str]) -> None:
     """Stop, with nothing moved, when a file is not the strategy the verdict judged."""
     wrong = mismatched(source, names)
     if wrong:
-        sys.exit(f"  ✗ {len(wrong)} carry a different strategy than the verdict judged: "
-                 f"{', '.join(wrong[:5])}. The databank changed under that name since the "
-                 f"verdict was written; re-export and judge again. Nothing was moved.")
+        sys.exit(
+            f"  ✗ {len(wrong)} carry a different strategy than the verdict judged: "
+            f"{', '.join(wrong[:5])}. The databank changed under that name since the "
+            f"verdict was written; re-export and judge again. Nothing was moved."
+        )
 
 
 class Applied(TypedDict):
@@ -139,8 +161,14 @@ class Applied(TypedDict):
     out: Any
 
 
-def apply(project: str, databank: str, verdict_csv: Path, role: str,
-          into: str | None = None, trades_fresh: bool = False) -> Applied:
+def apply(
+    project: str,
+    databank: str,
+    verdict_csv: Path,
+    role: str,
+    into: str | None = None,
+    trades_fresh: bool = False,
+) -> Applied:
     """Cut a databank by a verdict: check, record, then delete (or move) the rejected files.
 
     Args:
@@ -162,46 +190,84 @@ def apply(project: str, databank: str, verdict_csv: Path, role: str,
     on_disk = sorted(f.stem for f in source.glob("*.sqx"))
     if not on_disk:
         sys.exit(EMPTY.format(source=source))
-    known = hashed(source / f"{n}.sqx" for n in on_disk)      # every file once: here, then in `record`
+    known = hashed(
+        source / f"{n}.sqx" for n in on_disk
+    )  # every file once: here, then in `record`
     refuse_mismatch(source, names)
     on_live = role != "master" and live.mine(role)
     if is_up(role) and not (on_live and not into):
-        sys.exit(f"the {role} is running. It holds this databank in memory and rewrites the "
-                 f"files from it, so the move would be undone. Stop it first"
-                 + ("." if role == "master" else f": bin/sqx-worker.sh --role {role} stop"))
+        sys.exit(
+            f"the {role} is running. It holds this databank in memory and rewrites the "
+            f"files from it, so the move would be undone. Stop it first"
+            + ("." if role == "master" else f": bin/sqx-worker.sh --role {role} stop")
+        )
     now = datetime.now()
-    out, stamp = report_dir(project, databank, now.date().isoformat()) / "curate", f"{now:%H%M%S}"
+    out, stamp = (
+        report_dir(project, databank, now.date().isoformat()) / "curate",
+        f"{now:%H%M%S}",
+    )
     out.mkdir(parents=True, exist_ok=True)
     record(source, names, reasons(verdict_csv), out, stamp, project, databank)
     print(f"  what was here is listed in {out / f'before-{stamp}.csv'}")
     target = databank_dir(project, into, install) if into else None
-    gone, absent = ((live.cut(role, project, databank, list(names)),   # memory, then sync
-                     sorted(set(names) - set(on_disk))) if on_live
-                    else aftercut.remove(source, target, list(names)))
+    gone, absent = (
+        (
+            live.cut(role, project, databank, list(names)),  # memory, then sync
+            sorted(set(names) - set(on_disk)),
+        )
+        if on_live
+        else aftercut.remove(source, target, list(names))
+    )
     after = len(list(source.glob("*.sqx")))
-    print(f"{databank}: {len(on_disk)} → {after}   "
-          + (f"{target}: +{gone}" if target else f"deleted {gone}"))
+    print(
+        f"{databank}: {len(on_disk)} → {after}   "
+        + (f"{target}: +{gone}" if target else f"deleted {gone}")
+    )
     if len(on_disk) - after != gone or absent:
-        sys.exit(f"{len(absent)} had no file and {len(on_disk) - after} left against {gone} "
-                 f"gone. Compare the directory with {out / f'before-{stamp}.csv'} before "
-                 "running anything else.")
+        sys.exit(
+            f"{len(absent)} had no file and {len(on_disk) - after} left against {gone} "
+            f"gone. Compare the directory with {out / f'before-{stamp}.csv'} before "
+            "running anything else."
+        )
     if trades_fresh and not into:
         try:
-            done = aftercut.refilter(project, databank,
-                                     {n: known[source / f"{n}.sqx"] for n in on_disk},
-                                     {f.stem for f in source.glob("*.sqx")})
-        except Exception as err:    # an optimisation: stale is the safe answer, the cut stands
+            done = aftercut.refilter(
+                project,
+                databank,
+                {n: known[source / f"{n}.sqx"] for n in on_disk},
+                {f.stem for f in source.glob("*.sqx")},
+            )
+        except (
+            Exception
+        ) as err:  # an optimisation: stale is the safe answer, the cut stands
             done = ""
             print(f"  refilter failed ({type(err).__name__}: {err})")
-        print(f"  trade export cut by name: {done}" if done else "  trade export left stale")
-    manifest.write(out,
-                   {"install": install.name, "project": project, "databank": databank,
-                    "into": str(target), "verdict": str(verdict_csv), "stamp": stamp},
-                   f"apply_verdict.py --project {project} --databank {databank} "
-                   f"--role {role} --apply" + (f" --into {into}" if into else ""),
-                   {"judged": len(on_disk), "kept": after, "removed": gone})
-    return {"install": install.name, "before": len(on_disk), "after": after, "removed": gone,
-            "out": out}
+        print(
+            f"  trade export cut by name: {done}"
+            if done
+            else "  trade export left stale"
+        )
+    manifest.write(
+        out,
+        {
+            "install": install.name,
+            "project": project,
+            "databank": databank,
+            "into": str(target),
+            "verdict": str(verdict_csv),
+            "stamp": stamp,
+        },
+        f"apply_verdict.py --project {project} --databank {databank} "
+        f"--role {role} --apply" + (f" --into {into}" if into else ""),
+        {"judged": len(on_disk), "kept": after, "removed": gone},
+    )
+    return {
+        "install": install.name,
+        "before": len(on_disk),
+        "after": after,
+        "removed": gone,
+        "out": out,
+    }
 
 
 def main() -> None:
@@ -210,33 +276,46 @@ def main() -> None:
     for flag in ("--project", "--databank"):
         ap.add_argument(flag, required=True)
     ap.add_argument("--verdict", required=True, type=Path, help="path of a verdict.csv")
-    ap.add_argument("--into", help="databank of the same project to move the rejected into instead "
-                                   "of deleting them; it is loaded on the next start, so it costs RAM")
+    ap.add_argument(
+        "--into",
+        help="databank of the same project to move the rejected into instead "
+        "of deleting them; it is loaded on the next start, so it costs RAM",
+    )
     # Required since 2026-09-28 (F7): its old default, the master, made a forgotten flag cut his.
     ap.add_argument("--role", required=True, choices=["master", *sorted(WORKERS)])
-    ap.add_argument("--apply", action="store_true", help="without it nothing is touched")
+    ap.add_argument(
+        "--apply", action="store_true", help="without it nothing is touched"
+    )
     a = ap.parse_args()
 
     install = install_of(a.role)
     source = databank_dir(a.project, a.databank, install)
     names = rejected(a.verdict)
     on_disk = sorted(f.stem for f in source.glob("*.sqx"))
-    print(f"{install.name} · {a.project}/{a.databank}: {len(on_disk)} strategies on disk\n"
-          f"  the verdict drops {len(names)}, keeping {len(on_disk) - len(names)}")
+    print(
+        f"{install.name} · {a.project}/{a.databank}: {len(on_disk)} strategies on disk\n"
+        f"  the verdict drops {len(names)}, keeping {len(on_disk) - len(names)}"
+    )
     if not on_disk:
         sys.exit(EMPTY.format(source=source))
     held = set(on_disk)
     unknown = [n for n in names if n not in held]
     if unknown:
-        print(f"  ⚠️ {len(unknown)} named by the verdict are not here: {', '.join(unknown[:5])}")
-    print(f"  identity checked on {sum(1 for i in names.values() if i)} of {len(names)}")
+        print(
+            f"  ⚠️ {len(unknown)} named by the verdict are not here: {', '.join(unknown[:5])}"
+        )
+    print(
+        f"  identity checked on {sum(1 for i in names.values() if i)} of {len(names)}"
+    )
     if not a.apply:
         refuse_mismatch(source, names)
         print(f"\ndry run. Re-run with --apply, with the {a.role} stopped.")
         return
     done = apply(a.project, a.databank, a.verdict, a.role, a.into)
-    print(f"start the {a.role} and the sync from files makes memory match: the next task "
-          f"reads {done['after']}.")
+    print(
+        f"start the {a.role} and the sync from files makes memory match: the next task "
+        f"reads {done['after']}."
+    )
 
 
 if __name__ == "__main__":

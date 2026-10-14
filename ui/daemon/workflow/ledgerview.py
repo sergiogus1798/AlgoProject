@@ -22,15 +22,22 @@ def studies_of(project: str) -> list[str]:
         `launched_by` or a `note` pointing at its folders). The ledger is keyed by asset,
         timeframe and family, not by project, so this link is read, not recorded.
     """
-    return [s for s in studymod.studies()
-            if s.endswith(f"_{project}")
-            or project in studymod.path(s).read_text(encoding="utf-8")]
+    return [
+        s
+        for s in studymod.studies()
+        if s.endswith(f"_{project}")
+        or project in studymod.path(s).read_text(encoding="utf-8")
+    ]
 
 
 def frame(ids: list[str]) -> pd.DataFrame:
     """Every row of those studies, oldest first, in the contract's columns."""
     rows = [r for s in ids for r in studymod.read(s).to_dict("records")]
-    return pd.DataFrame(rows) if rows else pd.DataFrame(columns=pd.Index(list(studymod.COLUMNS)))
+    return (
+        pd.DataFrame(rows)
+        if rows
+        else pd.DataFrame(columns=pd.Index(list(studymod.COLUMNS)))
+    )
 
 
 def symbol(rows: pd.DataFrame, project: str) -> str | None:
@@ -67,24 +74,51 @@ def oos2(rows: pd.DataFrame, asset: str | None) -> Oos2Gauge:
         times), `virgin`, `text`, and `reserved_for` (steps) and `by_step` (step → reads).
     """
     if asset is None:
-        return {"looks": 0, "allowed": None, "virgin": True, "reserved_for": [],
-                "by_step": {}, "text": "Sin activo: ni el ledger ni el nombre del proyecto "
-                                       "dicen cuál es, así que no se sabe de qué oos2 hablar."}
+        return {
+            "looks": 0,
+            "allowed": None,
+            "virgin": True,
+            "reserved_for": [],
+            "by_step": {},
+            "text": "Sin activo: ni el ledger ni el nombre del proyecto "
+            "dicen cuál es, así que no se sabe de qué oos2 hablar.",
+        }
     reads = cast("pd.DataFrame", rows[rows["segment"] == "oos2"])
-    by_step = {num(s): int(n) for s, n in reads["step"].value_counts().sort_index().items()}
+    by_step = {
+        num(s): int(n) for s, n in reads["step"].value_counts().sort_index().items()
+    }
     allowed_steps = gate.reserved(asset).get("oos2", [])
     stray = sorted(num(s) for s in set(reads["step"]) if s not in allowed_steps)
     looks = spend.virgin(rows, asset)["oos2"]["reads"]
     total, studies = asset_reads(asset)
-    text = (f"OOS2 de {asset}: {looks} mirada(s) de este proyecto"
-            + (f" ({', '.join(f'paso {k}: {v}' for k, v in by_step.items())})" if looks else "")
-            + f"; {total} en {studies} estudio(s) de {asset}"
-            + (f". Reservado para los pasos {', '.join(num(s) for s in allowed_steps)}"
-               f" (sólo para un agente autónomo)" if gate.enforced() else "")
-            + (f". ⚠ lo leyeron pasos fuera de la reserva: {', '.join(stray)}"
-               if stray and gate.enforced() else ""))
-    return {"looks": looks, "allowed": None, "virgin": looks == 0, "text": text,
-            "reserved_for": [num(s) for s in allowed_steps], "by_step": by_step}
+    text = (
+        f"OOS2 de {asset}: {looks} mirada(s) de este proyecto"
+        + (
+            f" ({', '.join(f'paso {k}: {v}' for k, v in by_step.items())})"
+            if looks
+            else ""
+        )
+        + f"; {total} en {studies} estudio(s) de {asset}"
+        + (
+            f". Reservado para los pasos {', '.join(num(s) for s in allowed_steps)}"
+            f" (sólo para un agente autónomo)"
+            if gate.enforced()
+            else ""
+        )
+        + (
+            f". ⚠ lo leyeron pasos fuera de la reserva: {', '.join(stray)}"
+            if stray and gate.enforced()
+            else ""
+        )
+    )
+    return {
+        "looks": looks,
+        "allowed": None,
+        "virgin": looks == 0,
+        "text": text,
+        "reserved_for": [num(s) for s in allowed_steps],
+        "by_step": by_step,
+    }
 
 
 def door_study(project: str) -> str | None:
@@ -99,9 +133,13 @@ def door_study(project: str) -> str | None:
         project's own name (E1's tests) are never counted: the rail's door and step 20's
         must be the same door.
     """
-    row = cast("dict[str, Any]", where.enrolled(project))   # the same registry row as `family`
+    row = cast(
+        "dict[str, Any]", where.enrolled(project)
+    )  # the same registry row as `family`
     family = where.family(project)
-    return studymod.study_id(row["symbol"], row["timeframe"], family) if family else None
+    return (
+        studymod.study_id(row["symbol"], row["timeframe"], family) if family else None
+    )
 
 
 def blind(rows: pd.DataFrame) -> Door:
@@ -116,15 +154,25 @@ def blind(rows: pd.DataFrame) -> Door:
     """
     done = [num(s) for s, ran in gate.done(rows).items() if ran]
     if not gate.enforced():
-        return {"sealed": False, "done": done,
-                "text": "abierto: 17, 18 y 19 se leen cuando quieras (la puerta ciega sólo "
-                        "se cierra a un agente autónomo)"}
+        return {
+            "sealed": False,
+            "done": done,
+            "text": "abierto: 17, 18 y 19 se leen cuando quieras (la puerta ciega sólo "
+            "se cierra a un agente autónomo)",
+        }
     try:
         gate.allow_read(rows)
     except PermissionError as refused:
-        return {"sealed": True, "done": done, "text": str(refused).removeprefix("ledger: ")}
-    return {"sealed": False, "done": done,
-            "text": "17, 18 y 19 están los tres en el ledger: se leen a la vez."}
+        return {
+            "sealed": True,
+            "done": done,
+            "text": str(refused).removeprefix("ledger: "),
+        }
+    return {
+        "sealed": False,
+        "done": done,
+        "text": "17, 18 y 19 están los tres en el ledger: se leen a la vez.",
+    }
 
 
 def door(project: str) -> Door:
@@ -139,13 +187,25 @@ def door(project: str) -> Door:
     """
     study = door_study(project)
     if study is None and gate.enforced():
-        return {"sealed": True, "done": [], "study": None,
-                "text": "sin plantilla en projects/registry.csv no hay estudio del ledger que "
-                        "abra el paso 20: queda cerrado"}
+        return {
+            "sealed": True,
+            "done": [],
+            "study": None,
+            "text": "sin plantilla en projects/registry.csv no hay estudio del ledger que "
+            "abra el paso 20: queda cerrado",
+        }
     if not gate.enforced():
         return {**blind(pd.DataFrame(columns=pd.Index(["step"]))), "study": study}
-    got = blind(studymod.read(cast("str", study)))   # not None: `enforced` was True above
-    return {**got, "study": study, "text": (f"{got['text']} (en el estudio {study})"
-                                          if got["sealed"] else
-                                          f"17, 18 y 19 están los tres en el ledger del estudio "
-                                          f"{study}: se leen a la vez.")}
+    got = blind(
+        studymod.read(cast("str", study))
+    )  # not None: `enforced` was True above
+    return {
+        **got,
+        "study": study,
+        "text": (
+            f"{got['text']} (en el estudio {study})"
+            if got["sealed"]
+            else f"17, 18 y 19 están los tres en el ledger del estudio "
+            f"{study}: se leen a la vez."
+        ),
+    }

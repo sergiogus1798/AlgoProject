@@ -4,18 +4,31 @@ import json
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QGuiApplication
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit,
-                               QPushButton, QScrollArea, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPlainTextEdit,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import client, names
 from ui.desktop.chatparts import bubble, drop
 from ui.desktop.jobbutton import JobButton
 
-OPENING = ("Cuatro o cinco preguntas y te dejo el brief escrito: créala desde aquí o pega el "
-           "prompt en Claude Code. Lo que no contestes lleva el default, y el brief lo dirá.")
-AUTHOR = ("Claude Code, sin nadie delante, corre /sqx-strategy-template sobre «{name}»: mira el "
-          "vocabulario del install, crea el bloque si falta e instala, emite y registra la "
-          "plantilla. Si algo es ambiguo no elige: el trabajo acaba con una PREGUNTA. ¿Lanzar?")
+OPENING = (
+    "Cuatro o cinco preguntas y te dejo el brief escrito: créala desde aquí o pega el "
+    "prompt en Claude Code. Lo que no contestes lleva el default, y el brief lo dirá."
+)
+AUTHOR = (
+    "Claude Code, sin nadie delante, corre /sqx-strategy-template sobre «{name}»: mira el "
+    "vocabulario del install, crea el bloque si falta e instala, emite y registra la "
+    "plantilla. Si algo es ambiguo no elige: el trabajo acaba con una PREGUNTA. ¿Lanzar?"
+)
 
 
 class Chat(QWidget):
@@ -71,9 +84,13 @@ class Chat(QWidget):
         self.pane.setWidget(body)
         self.say(OPENING, mine=False)
         if key:
-            self.say(f"Familia ya elegida en Cobertura: {names.family(key)}"
-                     + (f", pensando en {where}" if where else "") + ". «Empezar de nuevo» "
-                     "la vuelve a preguntar.", mine=False)
+            self.say(
+                f"Familia ya elegida en Cobertura: {names.family(key)}"
+                + (f", pensando en {where}" if where else "")
+                + ". «Empezar de nuevo» "
+                "la vuelve a preguntar.",
+                mine=False,
+            )
         self.next()
 
     def say(self, text: str, mine: bool) -> None:
@@ -122,7 +139,9 @@ class Chat(QWidget):
         q = step["question"]
         n, total = step["progress"]
         self.say(f"{q['ask']}\n\n{q['why']}", mine=False)
-        self.answer_lay.addWidget(QLabel(f"Pregunta {n} de {total}", objectName="faint"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        self.answer_lay.addWidget(
+            QLabel(f"Pregunta {n} de {total}", objectName="faint")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        )
         if q["kind"] == "choice":
             self.draw_options(q)
         else:
@@ -136,9 +155,13 @@ class Chat(QWidget):
         """
         row = QHBoxLayout()
         for opt in q["options"]:
-            shown = names.family(opt["label"]) if q["id"] == "archetype" else opt["label"]
+            shown = (
+                names.family(opt["label"]) if q["id"] == "archetype" else opt["label"]
+            )
             b = QPushButton(shown)
-            b.clicked.connect(lambda _, i=q["id"], v=opt["value"], t=shown: self.answer(i, v, t))
+            b.clicked.connect(
+                lambda _, i=q["id"], v=opt["value"], t=shown: self.answer(i, v, t)
+            )
             row.addWidget(b)
         if q["default"]:
             skip = QPushButton("Elige tú")
@@ -182,9 +205,11 @@ class Chat(QWidget):
         """Write the draft brief and show the prompt and the commands."""
         result = client.post("interview/finish", {"answers": self.answers})
         applied = result["brief"]["defaults_applied"]
-        self.say(f"Listo. Brief escrito en {result['path']}."
-                 + (f"\n\nDefaults aplicados: {', '.join(applied)}." if applied else ""),
-                 mine=False)
+        self.say(
+            f"Listo. Brief escrito en {result['path']}."
+            + (f"\n\nDefaults aplicados: {', '.join(applied)}." if applied else ""),
+            mine=False,
+        )
 
         panel = QFrame(objectName="panel")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
         lay = QVBoxLayout(panel)
@@ -196,27 +221,46 @@ class Chat(QWidget):
         box.setReadOnly(True)
         box.setFixedHeight(170)
         lay.addWidget(box)
-        lay.addWidget(QLabel("Y esto es lo que la skill ejecutará:", objectName="muted"))  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-        cmds = QLabel("\n".join(f"·  {c['what']}\n    {c['cmd']}" for c in result["commands"]))
+        lay.addWidget(
+            QLabel("Y esto es lo que la skill ejecutará:", objectName="muted")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
+        )
+        cmds = QLabel(
+            "\n".join(f"·  {c['what']}\n    {c['cmd']}" for c in result["commands"])
+        )
         cmds.setObjectName("faint")
         cmds.setWordWrap(True)
         cmds.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        cmds.setToolTip("Esta ventana no los corre: instalar un bloque escribe en una instalación "
-                        "de SQX de verdad, y eso es el carril del conductor.")
+        cmds.setToolTip(
+            "Esta ventana no los corre: instalar un bloque escribe en una instalación "
+            "de SQX de verdad, y eso es el carril del conductor."
+        )
         lay.addWidget(cmds)
         self.attach(panel)
 
         row = QHBoxLayout()
         copy = QPushButton("Copiar el prompt", objectName="primary")  # pyright: ignore[reportCallIssue]  # PySide6 stub lacks property kwargs
-        copy.clicked.connect(lambda: QGuiApplication.clipboard().setText(result["prompt"]))
+        copy.clicked.connect(
+            lambda: QGuiApplication.clipboard().setText(result["prompt"])
+        )
         row.addWidget(copy)
         as_json = QPushButton("Copiar el brief en JSON")
-        as_json.clicked.connect(lambda: QGuiApplication.clipboard().setText(
-            json.dumps(result["brief"], indent=2, ensure_ascii=False)))
+        as_json.clicked.connect(
+            lambda: QGuiApplication.clipboard().setText(
+                json.dumps(result["brief"], indent=2, ensure_ascii=False)
+            )
+        )
         row.addWidget(as_json)
         row.addStretch()
         self.answer_lay.addLayout(row)
-        name = result["brief"]["name"]       # the owner, 2026-09-28: every step from a button
-        self.answer_lay.addWidget(JobButton("Crear la plantilla con Claude", "create/template",
-                                            lambda: {"name": name}, lambda: AUTHOR.format(name=name)))
+        name = result["brief"][
+            "name"
+        ]  # the owner, 2026-09-28: every step from a button
+        self.answer_lay.addWidget(
+            JobButton(
+                "Crear la plantilla con Claude",
+                "create/template",
+                lambda: {"name": name},
+                lambda: AUTHOR.format(name=name),
+            )
+        )
         self.authored.emit()

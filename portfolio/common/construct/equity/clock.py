@@ -23,7 +23,9 @@ def to_utc(times: pd.DatetimeIndex, zone: str) -> tuple[pd.DatetimeIndex, int]:
         is never guessed, it is dropped and counted.
     """
     if zone == NY_PLUS_7:
-        local = (times - SHIFT).tz_localize(NEW_YORK, ambiguous="NaT", nonexistent="NaT")
+        local = (times - SHIFT).tz_localize(
+            NEW_YORK, ambiguous="NaT", nonexistent="NaT"
+        )
     else:
         local = times.tz_localize(zone, ambiguous="NaT", nonexistent="NaT")
     utc = local.tz_convert("UTC")
@@ -71,5 +73,7 @@ def reclock(bars: pd.DataFrame, zone_from: str, zone_to: str) -> pd.DataFrame:
         is kept.
     """
     utc, _ = to_utc(pd.DatetimeIndex(bars.index), zone_from)
-    stamped = bars[~utc.isna()].set_axis(local(pd.DatetimeIndex(utc[~utc.isna()]), zone_to))
+    stamped = bars[~utc.isna()].set_axis(
+        local(pd.DatetimeIndex(utc[~utc.isna()]), zone_to)
+    )
     return cast(pd.DataFrame, stamped[~stamped.index.duplicated()]).sort_index()

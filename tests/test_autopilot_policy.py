@@ -30,21 +30,31 @@ def test_missing_is_fail_in_exactly_the_sanity_rules_and_the_z() -> None:
             for r in leaves(rule):
                 seen.setdefault(r["fact"], set()).add(r.get("missing", "limbo"))
     assert {k for k, v in seen.items() if "fail" in v} == {
-        "gate.scorecard.presencia_passed", "gate.scorecard.sanidad_passed",
-        "gate.scorecard.z_mono"}
+        "gate.scorecard.presencia_passed",
+        "gate.scorecard.sanidad_passed",
+        "gate.scorecard.z_mono",
+    }
     # `pass` only where a fact is absent by design: 18.5's oos2 reading before the blind
     # block, and the WFM's reoptimised rules in modo fijo (owner, 2026-10-07)
     assert {k for k, v in seen.items() if "pass" in v} == {
-        "marketSurfaces.oos2.perverso", "marketSurfaces.oos2.sin_dato", "wfm.reopt.centro_exceso", "wfm.reopt.l2_p_menos"}
+        "marketSurfaces.oos2.perverso",
+        "marketSurfaces.oos2.sin_dato",
+        "wfm.reopt.centro_exceso",
+        "wfm.reopt.l2_p_menos",
+    }
 
 
 def test_steps_8_to_16_declare_oos1() -> None:
     """R4: no step relies on the judge's default segment."""
     steps = judge.settings()["steps"]
-    assert {n for n in steps if 8 <= float(n) <= 16 and steps[n].get("segment") != "oos1"} == set()
+    assert {
+        n for n in steps if 8 <= float(n) <= 16 and steps[n].get("segment") != "oos1"
+    } == set()
 
 
-def test_the_autopilot_entry_shuts_the_oos2_door(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_autopilot_entry_shuts_the_oos2_door(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """R2: `run.main` sets ALGO_AUTONOMOUS=1; then step 8 may not read oos2 and 19 may."""
     monkeypatch.delenv(AUTONOMOUS, raising=False)
     monkeypatch.setattr(sys, "argv", ["run", "--project", "Test_X", "--plan"])

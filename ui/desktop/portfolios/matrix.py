@@ -4,8 +4,19 @@ from collections.abc import Callable
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QFont
-from PySide6.QtWidgets import (QAbstractItemView, QDialog, QFrame, QHBoxLayout, QHeaderView, QLabel, QScrollArea,
-                               QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QDialog,
+    QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QScrollArea,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.desktop import background
 from ui.desktop.blocks.card import text
@@ -13,13 +24,15 @@ from ui.desktop.blocks.kinds import draw
 from ui.desktop.blocks.states import colour
 from ui.desktop.theme import T
 
-CELL, ROW = 78, 44       # big enough to read two decimals from the owner's chair
+CELL, ROW = 78, 44  # big enough to read two decimals from the owner's chair
 
 
 def chip(state: str, words: str) -> QLabel:
     """One step of the legend: its colour and what it means."""
     label = QLabel(f"  {words}  ")
-    label.setStyleSheet(f"background: {colour(state)}; color: {T['bg']}; font-weight: 700; padding: 3px 6px;")
+    label.setStyleSheet(
+        f"background: {colour(state)}; color: {T['bg']}; font-weight: 700; padding: 3px 6px;"
+    )
     return label
 
 
@@ -32,24 +45,36 @@ class Matrix(QWidget):
         super().__init__()
         lay = QVBoxLayout(self)
         lay.setContentsMargins(4, 10, 4, 4)
-        limit = "sin umbral leído" if m["threshold"] is None else (
-            f"umbral en vigor {m['threshold']:g}" + (" en valor absoluto" if m["two_sided"] else " (solo por arriba)"))
+        limit = (
+            "sin umbral leído"
+            if m["threshold"] is None
+            else (
+                f"umbral en vigor {m['threshold']:g}"
+                + (" en valor absoluto" if m["two_sided"] else " (solo por arriba)")
+            )
+        )
         lay.addWidget(text(f"{m['measure']} — {limit}", T["text"], 16, True))
         lay.addWidget(text(m["meaning"], T["muted"], 14))
         legend = QHBoxLayout()
         for step in m["steps"]:
             legend.addWidget(chip(step["state"], step["text"]))
-        legend.addWidget(text("Haz clic en una celda para ver esa pareja.", T["faint"], 13))
+        legend.addWidget(
+            text("Haz clic en una celda para ver esa pareja.", T["faint"], 13)
+        )
         legend.addStretch(1)
         lay.addLayout(legend)
         n = len(m["ids"])
-        short = [label.split(" · ")[0].replace("Strategy ", "") for label in m["labels"]]
+        short = [
+            label.split(" · ")[0].replace("Strategy ", "") for label in m["labels"]
+        ]
         table = QTableWidget(n, n)
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         table.setHorizontalHeaderLabels(short)
         table.setVerticalHeaderLabels(short)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)      # the matrix takes the module's width
+        table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )  # the matrix takes the module's width
         table.horizontalHeader().setMinimumSectionSize(CELL)
         table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
         table.verticalHeader().setDefaultSectionSize(ROW)
@@ -66,13 +91,25 @@ class Matrix(QWidget):
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 item.setFont(bold)
                 if a != b:
-                    item.setToolTip(f"{m['labels'][a]}\n{m['labels'][b]}\n{m['measure']}: "
-                                    + ("sin medir (solape insuficiente)" if value is None else f"{value:+.3f}"))
-                    item.setBackground(QBrush(QColor(colour(state) if state else T["line"])))
-                    item.setForeground(QBrush(QColor(T["bg"] if state else T["text"])))     # no threshold read: plain, readable
+                    item.setToolTip(
+                        f"{m['labels'][a]}\n{m['labels'][b]}\n{m['measure']}: "
+                        + (
+                            "sin medir (solape insuficiente)"
+                            if value is None
+                            else f"{value:+.3f}"
+                        )
+                    )
+                    item.setBackground(
+                        QBrush(QColor(colour(state) if state else T["line"]))
+                    )
+                    item.setForeground(
+                        QBrush(QColor(T["bg"] if state else T["text"]))
+                    )  # no threshold read: plain, readable
                 table.setItem(a, b, item)
         table.setMinimumHeight(min(ROW * n + 60, 620))
-        table.cellClicked.connect(lambda a, b: a != b and on_pair(m["ids"][a], m["ids"][b]))
+        table.cellClicked.connect(
+            lambda a, b: a != b and on_pair(m["ids"][a], m["ids"][b])
+        )
         lay.addWidget(table, 1)
 
 

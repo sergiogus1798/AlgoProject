@@ -9,49 +9,49 @@ _T = TypeVar("_T")
 # One plain sentence per figure the zone shows (owner: every statistic on screen is explained).
 WORDS = {
     "score": "Puntuación por rangos: la media de los rangos de las cuatro métricas (RAR, R³, "
-             "gain-to-pain, P(año perdedor)) entre todas las combinaciones medidas. 0 = la peor en "
-             "todo, 1 = la mejor en todo.",
+    "gain-to-pain, P(año perdedor)) entre todas las combinaciones medidas. 0 = la peor en "
+    "todo, 1 = la mejor en todo.",
     "rar": "RAR: lo que gana al año la recta ajustada a la curva de P&L, por unidad de riesgo. "
-           "Más alto, mejor.",
+    "Más alto, mejor.",
     "r_cubed": "R³: el RAR dividido por la caída media de las cinco mayores y por lo que duran. "
-               "Premia curvas rectas con caídas cortas.",
+    "Premia curvas rectas con caídas cortas.",
     "gain_to_pain": "Gain-to-pain: suma de todos los meses entre la suma de los meses perdedores "
-                    "(en valor absoluto). Por encima de 1 gana más de lo que sufre.",
+    "(en valor absoluto). Por encima de 1 gana más de lo que sufre.",
     "p_losing_year": "P(año perdedor): la parte de los años naturales que acaban en pérdida. Más "
-                     "bajo, mejor.",
+    "bajo, mejor.",
     "sharpe": "Sharpe diario: media del P&L de un día entre su desviación típica. No está "
-              "anualizado.",
+    "anualizado.",
     "floor_risk": "Riesgo mínimo: el riesgo por operación que exige el lote mínimo en la cuenta; "
-                  "por debajo no se puede operar.",
+    "por debajo no se puede operar.",
     "k": "K: cuántas estrategias lleva la combinación.",
     "p95": "Percentil {q:.0f} del azar: la puntuación que solo superan {rest:.0f} de cada 100 carteras admisibles "
-           "elegidas al azar del mismo tamaño. La elegida tiene que quedar por encima.",
+    "elegidas al azar del mismo tamaño. La elegida tiene que quedar por encima.",
     "p_pass": "P(pasar): de cada 100 intentos simulados del challenge, cuántos llegan al objetivo "
-              "sin romper ninguna regla, dentro del plazo.",
+    "sin romper ninguna regla, dentro del plazo.",
     "D": "D: Monte Carlo de días enteros en bloques — conserva qué estrategias coinciden el mismo "
-         "día.",
+    "día.",
     "T1": "T1: Monte Carlo que baraja las operaciones de cada estrategia por separado — optimista "
-          "con estrategias parecidas, porque rompe su coincidencia.",
+    "con estrategias parecidas, porque rompe su coincidencia.",
     "T2": "T2: Monte Carlo de ventanas de historia con todas las operaciones que se abrieron en "
-          "ellas — conserva qué operaciones van juntas.",
+    "ellas — conserva qué operaciones van juntas.",
     "risk": "Riesgo por operación: fracción del saldo inicial que se arriesga en cada entrada.",
     "p_fresh": "P(pasar) repetida: la misma cifra recalculada con sorteos nuevos; si se mueve "
-               "mucho, hacen falta más caminos.",
+    "mucho, hacen falta más caminos.",
     "ev": "VE_banco: lo que se espera ganar o perder, en dólares, con toda la caja durante el "
-          "horizonte simulado — cuotas pagadas, cobros, impuestos y comisiones dentro.",
+    "horizonte simulado — cuotas pagadas, cobros, impuestos y comisiones dentro.",
     "h": "Recorte h: qué parte del edge fuera de muestra se da por perdida. h = 0 % deja el edge "
-         "entero, h = 100 % lo borra.",
+    "entero, h = 100 % lo borra.",
     "monkey": "Mono: la misma cartera sin edge (la media quitada). Es lo que sacaría la suerte "
-              "sola con ese riesgo; lo que no lo supera no vale la cuota.",
+    "sola con ese riesgo; lo que no lo supera no vale la cuota.",
     "se": "± error: el error de Monte Carlo de la cifra. Dos planes más cerca que su error no se "
-          "distinguen.",
+    "distinguen.",
     "breakeven_h": "h de equilibrio: el recorte del edge con el que la caja deja de ganar.",
     "p_first_payout": "P(1.er cobro): probabilidad de llegar a cobrar al menos una vez.",
     "purchases": "Compras: cuántas cuentas se compran de media en el horizonte.",
     "diff": "Diferencia: Sharpe diario del método menos el de pesos iguales, en oos1. El "
-            "intervalo dice entre qué valores puede estar; solo «gana» si entero queda sobre 0.",
+    "intervalo dice entre qué valores puede estar; solo «gana» si entero queda sobre 0.",
     "band": "Banda: entre qué valores han caído los tramos de la misma duración de la propia "
-            "historia de la cartera. Fuera de la banda, la lectura se marca.",
+    "historia de la cartera. Fuera de la banda, la lectura se marca.",
 }
 
 
@@ -97,15 +97,35 @@ def pct(share: float | None) -> float | None:
     return None if share is None or share != share else round(100 * float(share), 1)
 
 
-def table(title: str, columns: list[str], rows: list[list[Any]], note: str = "",
-          helps: list[str | None] | None = None, states: list[list[Any]] | None = None) -> TableBlock:
+def table(
+    title: str,
+    columns: list[str],
+    rows: list[list[Any]],
+    note: str = "",
+    helps: list[str | None] | None = None,
+    states: list[list[Any]] | None = None,
+) -> TableBlock:
     """A contract `table` block, compact, text columns left and figures right."""
     rows = [[clean(v) for v in r] for r in rows]
-    align = ["right" if any(isinstance(r[i], (int, float)) and not isinstance(r[i], bool) for r in rows)
-             else "left" for i in range(len(columns))]
-    return {"kind": "table", "title": title, "columns": columns, "rows": rows, "align": align,
-            "note": note, "help": helps, "states": states,
-            "compact": align[-1] != "left"}       # a last column of words takes the width left
+    align = [
+        "right"
+        if any(
+            isinstance(r[i], (int, float)) and not isinstance(r[i], bool) for r in rows
+        )
+        else "left"
+        for i in range(len(columns))
+    ]
+    return {
+        "kind": "table",
+        "title": title,
+        "columns": columns,
+        "rows": rows,
+        "align": align,
+        "note": note,
+        "help": helps,
+        "states": states,
+        "compact": align[-1] != "left",
+    }  # a last column of words takes the width left
 
 
 def callout(text: str, state: str = "info") -> CalloutBlock:
@@ -115,8 +135,13 @@ def callout(text: str, state: str = "info") -> CalloutBlock:
 
 def tab(title: str, *blocks: Mapping[str, Any] | None, note: str = "") -> TabBlock:
     """A contract tab holding the given blocks (None ones dropped)."""
-    return {"name": title, "title": title, "note": note, "selectors": [],
-            "blocks": [b for b in blocks if b]}
+    return {
+        "name": title,
+        "title": title,
+        "note": note,
+        "selectors": [],
+        "blocks": [b for b in blocks if b],
+    }
 
 
 def headline(label: str) -> str:

@@ -32,7 +32,7 @@ class Offer(QObject):
     marked «sin datos», when its own databank holds a strategy of the same name to run it on
     («→ abrir en …», a jump the owner chooses); with nowhere to run it either, it is hidden."""
 
-    jump = Signal(str, dict)          # study key, `go` of `/api/study/offer`
+    jump = Signal(str, dict)  # study key, `go` of `/api/study/offer`
 
     def __init__(self, page: "StudyPage") -> None:
         """Hold the page and the jump button, hidden.
@@ -43,11 +43,16 @@ class Offer(QObject):
         super().__init__(page)
         self.page = page
         self.refused: dict[str, dict] = {}
-        self.found: set[str] = set()      # studies whose result this page did find elsewhere
+        self.found: set[str] = (
+            set()
+        )  # studies whose result this page did find elsewhere
         self.button = QPushButton("")
-        self.button.setProperty("help", "Abre la estrategia del mismo nombre en el databank de "
-                                "este test. Se empareja por nombre: allí su identidad puede ser "
-                                "otra, y la ficha lo lee todo de ese databank.")
+        self.button.setProperty(
+            "help",
+            "Abre la estrategia del mismo nombre en el databank de "
+            "este test. Se empareja por nombre: allí su identidad puede ser "
+            "otra, y la ficha lo lee todo de ese databank.",
+        )
         self.button.clicked.connect(lambda: self.jump.emit(self.page.key, self.go))
         self.button.hide()
         self.go: dict = {}
@@ -56,11 +61,20 @@ class Offer(QObject):
         """Ask the daemon, off the GUI thread, for this place; the tabs repaint on arrival."""
         self.refused, self.found = {}, set()
         w = self.page.where
-        if not (self.page.strategy_page and w["project"] and w["databank"] and w["strategy"]):
+        if not (
+            self.page.strategy_page and w["project"] and w["databank"] and w["strategy"]
+        ):
             return self.paint()
-        background.get("study/offer", self.arrived, key=f"offer-{id(self)}", owner=self.page,
-                       project=w["project"], databank=w["databank"], strategy=w["strategy"],
-                       asset=w["asset"] or "")
+        background.get(
+            "study/offer",
+            self.arrived,
+            key=f"offer-{id(self)}",
+            owner=self.page,
+            project=w["project"],
+            databank=w["databank"],
+            strategy=w["strategy"],
+            asset=w["asset"] or "",
+        )
 
     def arrived(self, got: dict) -> None:
         """Keep the answer (an error greys nothing) and repaint what is on screen."""
@@ -71,7 +85,11 @@ class Offer(QObject):
 
     def off(self, key: str) -> dict | None:
         """The refusal of a study with nothing stored anywhere, or None when it can be used."""
-        return None if key in self.page.cells or key in self.found else self.refused.get(key)
+        return (
+            None
+            if key in self.page.cells or key in self.found
+            else self.refused.get(key)
+        )
 
     def hide(self, key: str) -> bool:
         """A tab to drop, not merely grey: no result anywhere in the project, refused here AND
@@ -87,8 +105,9 @@ class Offer(QObject):
             off = self.off(page.studies.tabData(i))
             mark(page.studies, i, bool(off))
             if off:
-                page.studies.setTabToolTip(i, "Sin resultado en ningún databank del proyecto: "
-                                              f"{off['why']}")
+                page.studies.setTabToolTip(
+                    i, f"Sin resultado en ningún databank del proyecto: {off['why']}"
+                )
         families = {}
         for key, entry in page.catalogue.items():
             families.setdefault(entry["family"], []).append(key)
@@ -109,7 +128,7 @@ class Offer(QObject):
         page, off = self.page, self.off(self.page.key)
         self.button.hide()
         page.note.setToolTip("")
-        if page.studies.isHidden():           # the Ficha is on screen: no study to explain
+        if page.studies.isHidden():  # the Ficha is on screen: no study to explain
             return False
         if off and page.view.stored is not None:
             # A result `/api/presence` had not seen yet (a run that just ended) is not «sin datos»
@@ -120,15 +139,22 @@ class Offer(QObject):
         if not off:
             return False
         self.go = off["go"]
-        where = (f"Su databank es {self.go['databank']} (pestaña {self.go['tab']} de "
-                 "Databanks), que tiene una estrategia con este nombre."
-                 if "databank" in self.go else self.go.get("absent", ""))
+        where = (
+            f"Su databank es {self.go['databank']} (pestaña {self.go['tab']} de "
+            "Databanks), que tiene una estrategia con este nombre."
+            if "databank" in self.go
+            else self.go.get("absent", "")
+        )
         # A line, not the runner's paragraph (owner, 2026-09-30): the reasons are on hover.
-        page.note.setText(f'<span style="color:{T["muted"]}">Sin datos de este test en ningún '
-                          "databank del proyecto.</span>")
+        page.note.setText(
+            f'<span style="color:{T["muted"]}">Sin datos de este test en ningún '
+            "databank del proyecto.</span>"
+        )
         page.note.setToolTip(f"{off['why']}\n\n{where}".strip())
-        if page.view.stored is None:          # «no ha corrido aquí» would promise a run
-            why = off["why"].removeprefix(f"{page.key}: ").rstrip(".")   # the runner names the key
+        if page.view.stored is None:  # «no ha corrido aquí» would promise a run
+            why = (
+                off["why"].removeprefix(f"{page.key}: ").rstrip(".")
+            )  # the runner names the key
             page.view.empty(f"No se corre desde aquí: {why}.")
         if "databank" in self.go:
             self.button.setText(f"→ abrir en {self.go['tab']}")

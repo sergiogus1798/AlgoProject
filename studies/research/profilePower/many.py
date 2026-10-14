@@ -21,11 +21,17 @@ def judged(runs: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     filters, judge = cfg["profile"]["filters"], cfg["judge"]
     out = runs.copy()
     out["p"] = (1 + out["exceed"]) / (out["drawn"] + 1)
-    out["significant"] = (out["drawn"] >= out["draws"]) & (out["p"] <= judge["cut"] * (1 + 1e-9))
+    out["significant"] = (out["drawn"] >= out["draws"]) & (
+        out["p"] <= judge["cut"] * (1 + 1e-9)
+    )
     out["single"] = out["p_first"] <= judge["single_level"]
     out["pays"] = out["multiple"].fillna(-np.inf) >= filters["cost_multiple"]
-    out["stable"] = (out["years_with_sign"] / out["years"]).fillna(0) > filters["stable_share"]
-    out["frequent"] = out["trades_per_year"] >= profile_many.min_trades(pd.Series(out["symbol"]), filters)
+    out["stable"] = (out["years_with_sign"] / out["years"]).fillna(0) > filters[
+        "stable_share"
+    ]
+    out["frequent"] = out["trades_per_year"] >= profile_many.min_trades(
+        pd.Series(out["symbol"]), filters
+    )
     out["passes"] = out["significant"] & out["pays"] & out["stable"] & out["frequent"]
     return out
 
@@ -41,10 +47,19 @@ def curve(runs: pd.DataFrame, by: list[str]) -> pd.DataFrame:
         One row per group and effect: `runs`, the rates `significant`, `passes`, `single`,
         `frequent`, the mean realised `multiple` and the mean `trades_per_year`.
     """
-    return runs.groupby([*by, "effect_planted"], sort=True).agg(
-        runs=("significant", "size"), significant=("significant", "mean"),
-        passes=("passes", "mean"), single=("single", "mean"), frequent=("frequent", "mean"),
-        multiple=("multiple", "mean"), trades_per_year=("trades_per_year", "mean")).reset_index()
+    return (
+        runs.groupby([*by, "effect_planted"], sort=True)
+        .agg(
+            runs=("significant", "size"),
+            significant=("significant", "mean"),
+            passes=("passes", "mean"),
+            single=("single", "mean"),
+            frequent=("frequent", "mean"),
+            multiple=("multiple", "mean"),
+            trades_per_year=("trades_per_year", "mean"),
+        )
+        .reset_index()
+    )
 
 
 def crossing(effects: np.ndarray, rates: np.ndarray, target: float) -> float:
@@ -60,7 +75,7 @@ def crossing(effects: np.ndarray, rates: np.ndarray, target: float) -> float:
     k = above[0]
     if k == 0:
         return float(effects[0])
-    return float(np.interp(target, rates[k - 1:k + 1], effects[k - 1:k + 1]))
+    return float(np.interp(target, rates[k - 1 : k + 1], effects[k - 1 : k + 1]))
 
 
 def minimum(table: pd.DataFrame, by: list[str], target: float) -> pd.DataFrame:
@@ -80,12 +95,19 @@ def minimum(table: pd.DataFrame, by: list[str], target: float) -> pd.DataFrame:
     for key, part in table.groupby(by, sort=True):
         part = part.sort_values("effect_planted")
         x, none = part["effect_planted"].to_numpy(), part.iloc[0]
-        rows.append({**dict(zip(by, key if isinstance(key, tuple) else (key,))),
-                     "runs": int(part["runs"].sum()),
-                     "trades_per_year": part["trades_per_year"].mean(),
-                     **{f"mde_{v}": crossing(x, part[v].to_numpy(), target)
-                        for v in ("significant", "passes", "single")},
-                     "alarm_significant": none["significant"], "alarm_single": none["single"],
-                     "top_significant": part.iloc[-1]["significant"],
-                     "top_passes": part.iloc[-1]["passes"]})
+        rows.append(
+            {
+                **dict(zip(by, key if isinstance(key, tuple) else (key,))),
+                "runs": int(part["runs"].sum()),
+                "trades_per_year": part["trades_per_year"].mean(),
+                **{
+                    f"mde_{v}": crossing(x, part[v].to_numpy(), target)
+                    for v in ("significant", "passes", "single")
+                },
+                "alarm_significant": none["significant"],
+                "alarm_single": none["single"],
+                "top_significant": part.iloc[-1]["significant"],
+                "top_passes": part.iloc[-1]["passes"],
+            }
+        )
     return pd.DataFrame(rows)
