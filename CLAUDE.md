@@ -179,6 +179,12 @@ it is the rule firing, never something to route around. → `knowhow/eng/claude-
     commented-out block, no compatibility shim: git is the archive. Before deleting, grep every
     caller; a live one means it is not old.
 
+22. **`PROJECT_MAP.md` must match what you changed — every agent, every task.** Owner, 2026-10-14, «regla
+    dura». Any task that adds, moves, deletes or resizes Python modules or folders ends by refreshing the
+    map: `graphify update . && python3 tools/projectmap.py`, then confirm its row for each folder you
+    touched (files, lines, class) reflects the change, and list `PROJECT_MAP.md` among the files changed.
+    The map is generated: never edit it by hand, and a stale one is a defect of the task that caused it.
+
 ## ROUTER — read only what the task needs
 
 | task | read |
