@@ -11,3 +11,4 @@
 - `sqx-rewrites-loaded-files-at-exit` — Why is a databank's .sqx no longer byte-identical to my snapshot after SQX ran, and is anything lost?
 - `sync-deletes-unloaded-files` — Why does a databank sync delete .sqx files that were not loaded in memory — and is a databank nobody opened safe?
 - `variants-one-big-load-loses-is-results` — Why does a 5,000-variant WFC load end with fewer strategies in WFC_Build than in the OOS legs?
+- `wfc-databanks-hold-variants` — What do the WFC tasks' databanks hold, and where do batch studies read from?

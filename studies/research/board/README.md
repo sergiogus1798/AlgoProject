@@ -59,6 +59,6 @@ looks, not the ideas), through `studies.research.memory.trials.spent` — each i
 study, only the study's direction, an idea with no family yet in every study of its asset,
 timeframe and direction. The board is not in that path: `inputs.ideas_spent(…)` stays what the
 proposal prints as «ya van K ideas», a count of ideas, per cell. The profile's own measures stay
-out of N. → `ledger/README.md`, `knowhow/market-profile/ideas-are-ledger-trials.md`.
+out of N. → `ledger/README.md`, `knowhow/research/ideas-are-ledger-trials.md`.
 
 Manual: `AlgoData/manual-fuentes/83-tablero-de-investigacion.md`. Test: `tests/test_research_board.py`.

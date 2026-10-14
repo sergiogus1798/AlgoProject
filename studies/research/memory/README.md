@@ -82,4 +82,4 @@ it rules out and what to try next. Pattern: the typed failure record of
   the running total (24, then «29 (24 de antes + 5 nuevas)»), and the first match undercounted.
 
 Manual: `AlgoData/manual-fuentes/81-memoria-de-resultados.md`. Test: `tests/test_research_memory.py`.
-Cards: `knowhow/market-profile/typed-failure-causes.md`, `knowhow/market-profile/hypothesis-sheet-vs-build.md`.
+Cards: `knowhow/pipeline/typed-failure-causes.md`, `knowhow/research/hypothesis-sheet-vs-build.md`.

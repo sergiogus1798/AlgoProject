@@ -1,7 +1,7 @@
 ---
 q: How do I reach the Windows VPS fleet machine?
 kw: how to reach the Windows VPS; ssh vps; Tailscale; live MT5 terminals; fleet; run PowerShell remotely; VPS specs RAM OS; ports open to the internet
-tag: 🔬  date: 2026-10-02  see: sqx-drive/api-no-auth, locations/live-ea-magic-numbers
+tag: 🔬  date: 2026-10-02  see: sqx-drive/api-no-auth, mt5/live-ea-magic-numbers
 ---
 # The Windows VPS is reached with `ssh vps`, over Tailscale only
 `ssh vps` (alias in `~/.ssh/config`, key `~/.ssh/id_ed25519_vps`, no passphrase so cron can use it) logs in as `administrator`; host, IP and terminal folders are in `config/machine.yaml` under `fleet.vps`. Its sshd rule admits `100.64.0.0/10` only, so port 22 is closed from the internet.

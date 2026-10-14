@@ -17,5 +17,6 @@
 - `store-second-identity-is-an-alias` — Why did a stored strategy lack its crossmarket and its step-12 sisters, which sat under another identity?
 - `study-partial-evidence-counts-as-done` — Why does a resume skip a study step that crashed halfway and leave it with partial results?
 - `thresholds-live-in-the-ledger` — Where does a threshold's number live, and what does config.yaml hold instead?
+- `typed-failure-causes` — Where does a closed run's failure cause come from in the autopilot?
 - `until-trim-keeps-the-wfc-legs` — Why did a run trimmed with --until mcretest|spp fail at step 13 with "None no esta en project.cfx"?
 - `variant-batch-refused-on-negative-zero` — Why does step 16.5 fail with «the batch on disk is not the batch that was planned; do not load it»?

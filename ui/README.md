@@ -136,7 +136,7 @@ runs at `nice 10`, and a population run of a one-strategy study is ONE batch job
 cores minus four (`daemon/runner/batch.py`). **The window never waits on the daemon for anything a
 timer or a finished job triggers**: those calls go through `desktop/background.py` and only the
 painting happens on the GUI thread (owner, 2026-09-28: «la UI se congela»; measured and fixed in
-`knowhow/perf/window-waits-off-gui-thread.md`). The **conductor** lane runs one job
+`knowhow/ui/window-waits-off-gui-thread.md`). The **conductor** lane runs one job
 at a time: the loader's `orderstocsv` exports, «Continuar workflow», «Lanzar en SQX» and
 «Verificar en SQX y en MT5» (the three launchers also refuse each other while one is queued or
 running). Nothing else reaches an install.

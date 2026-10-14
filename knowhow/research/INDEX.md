@@ -33,12 +33,16 @@
 - `gates-are-owner-decisions` — Who decides a threshold that removes strategies: the analysis or the owner?
 - `genetic-build-islands-are-the-sampling-unit` — Are the strategies of one SQX genetic build independent draws when I compare two builds or count survivors?
 - `hardest-null` — Does a null that randomises more make the null harder to beat?
+- `hypothesis-sheet-vs-build` — Where is what a build produced read from when checking a hypothesis sheet?
+- `ideas-are-ledger-trials` — How is a study's N of trials counted from the ideaExpert's measured hypotheses?
 - `incubation-band-is-not-its-nominal-level` — How often does M9's band of equal-length windows flag a healthy portfolio, and how soon a broken one?
 - `index-feed-holes-and-the-shift-null` — Why did a no-edge population read z_conj +0.44 in V1, and what do the index feeds' holes do to a shift null?
 - `is-filters-inside-the-build` — Does an in-sample filter inside the Build (trade floor, PF, Ret/DD, WinningPct) breed better strategies than none?
 - `is-optimisation-vs-oos` — How well does in-sample optimisation rank the out-of-sample results?
 - `is-proxies-top-decile` — Which in-sample metrics separate survivors inside the top Sharpe decile?
 - `joint-null-year-shift` — Why must a cross-market null share one shift across markets, and how do I test it?
+- `literature-same-paper-short-title` — How is a new paper matched to the hand-built literature file, and when is a short title enough?
+- `literature-scout-yield` — What did the first literature scout run yield and cost per read?
 - `m1-feed-anomaly-statistics` — Are extreme moves on the Dukascopy M1 feed real events or bad data, and how to mark them?
 - `mcretest-original-among-reruns` — Is the MC Retest's «the original is not an outlier of its re-runs» usable as a criterion?
 - `mintrl-explosion-is-correct` — What does MinTRL return when the Sharpe is below the benchmark Sharpe?
@@ -47,6 +51,7 @@
 - `monkey-size-carries-donor-volatility` — Why do random-entry monkeys fail the floating-risk rules (worst MAE, worst day in R) far more than real strategies?
 - `oos1-oos2-persistence` — How much of a strategy's per-trade Sharpe on oos1 persists on oos2, and what is a step-8 line worth there?
 - `pair-filters-false-rejection` — Why do pair filters (tail, rolling max, co-loss) reject independent strategies?
+- `paper-search-sources` — Which paper search sources (arXiv, OpenAlex, SSRN, Semantic Scholar) answer a plain script?
 - `per-trade-usd-conflates-sizing` — Why does a per-trade IS/OOS comparison in USD confuse lot size with edge?
 - `plateau-radius-degenerates-at-six-params` — Why does a radius-2 Chebyshev plateau box across six parameters hold only the mother?
 - `pooling-moments` — How are stored ddof=1 search spreads pooled exactly for the deflated Sharpe?
@@ -58,6 +63,7 @@
 - `rank-score-rar-is-a-mean` — Why does the portfolio rank search (M3) pick a single strategy, K = 1, on a pool of similar strategies?
 - `regime-atr-is-lagged-one-day` — Must I shift engines.regimes.regime.atr by a day before using it?
 - `research-lessons` — What lessons apply to stop-fill simulations, range restriction and p-values at large n?
+- `reviewer-adds-no-trials` — Does the idea reviewer add trials to the multiple-testing count?
 - `robustness-monte-carlo` — How much drawdown should an account be sized for versus the backtest, and how many sims?
 - `rungs-share-random-entries` — Do the four rungs of the monkey (timing, timing_holds, timing_sizing, free) draw the same random entries?
 - `seasonality-indistinguishable-from-chance` — Does a strategy's oos1 result concentrate in a month, weekday or hour beyond chance, and how is that tested?
@@ -76,6 +82,7 @@
 - `trade-t-vs-frequency-and-skew` — Does a higher trade frequency buy the trade-level t more power, and does skew distort its false-positive rate?
 - `trades-per-year-floor-35-vs-what-builds` — Why do most built strategies fall under step 8's 35 trades/year floor?
 - `trial-count-half-rule` — When does trials.independent over-count the independent trials of a family?
+- `verbatim-quote-matching` — How is a literature quote matched against the source text (spaces, hyphens, ligatures, minus signs)?
 - `weekly-flip-null-skewed-lower-tail` — Does the weekly sign-flip null keep its size on skewed weekly excess, for a median statistic?
 - `wfc-dependence-moves-missed-pass` — Does making the variants more alike change the WFC's false PASA or its missed PASA?
 - `wfc-real-batch-rehearsal-build-oos1` — What does the step-17 criterion say on real batches, build in and oos1 out, and what does reading one cost?

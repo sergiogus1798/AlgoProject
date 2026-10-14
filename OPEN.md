@@ -35,14 +35,14 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 19 | 🟡 | Three Monte Carlo thresholds are placeholders | OPEN.md |
 | 20 | 🟢 | `.claude/settings.json` gates one destructive repair script but not the other... | docs/OPEN-closed.md |
 | 21 | ⚪ | `bin/sqx-worker.sh` keeps half the project off Windows | docs/OPEN-closed.md |
-| 22 | 🟡 | `studies/transfer/crossmarket` — state of play after the 2026-09-14/15 rebuild | OPEN.md |
+| 22 | ⚪ | `studies/transfer/crossmarket` — state of play after the 2026-09-14/15 rebuild | docs/OPEN-closed.md |
 | 23 | 🟢 | The XAUUSD robustness protocol is half built | docs/OPEN-closed.md |
 | 24 | ⚪ | The holdout pre-registration — CLOSED 2026-09-26, the owner declined it | docs/OPEN-closed.md |
 | 25 | 🟢 | The authoring chain is proven headless end to end — issue 9's positive control | docs/OPEN-closed.md |
 | 26 | 🟢 | `PercentageBased` is charged ONCE per trade — settled 2026-09-27 | docs/OPEN-closed.md |
 | 27 | 🟢 | Sixteen of seventeen assets have no agreed cost, and the schema changed under... | docs/OPEN-closed.md |
 | 28 | 🟠 | `DAX40`'s feed is in SQX's registry but in no project — builds, not yet run | OPEN.md |
-| 29 | 🟠 | Six index assets have no IS/OOS window, and `SP500ft`'s feed does not exist | OPEN.md |
+| 29 | ⚪ | Six index assets have no IS/OOS window, and `SP500ft`'s feed does not exist | docs/OPEN-closed.md |
 | 30 | ✅ | `sqx.data.update` ran end to end on 2026-09-25 | docs/OPEN-closed.md |
 | 31 | ⚪ | Revisión completa del proyecto — 2026-09-22 — CERRADO 2026-09-26 | docs/OPEN-closed.md |
 | 32 | 🟢 | El custodio no tiene candado de propietario | docs/OPEN-closed.md |
@@ -109,7 +109,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 92 | 🟢 | Data root over budget: `reports` 5.05 GB > 5 GB (audit 2026-10-02) | docs/OPEN-closed.md |
 | 93 | 🔴 | Criteria of steps 6 and 8 proposed 2026-10-02 — four owner decisions, 15 assets unmeasured | OPEN.md |
 | 94 | 🟢 | `ledger/thresholds.py` splits the feed name `UKOIL.cash_M1` on its dot — `ledger.report --check-thresholds` crashes | docs/OPEN-closed.md |
-| 95 | 🟡 | Twelve tests set aside in `tools/audit_tests.py` — each with its reason, so the skip list has an owner | OPEN.md |
+| 95 | 🟢 | Twelve tests set aside in `tools/audit_tests.py` — each with its reason, so the skip list has an owner | docs/OPEN-closed.md |
 | 96 | 🟡 | `core.surface.trials.independent` over-counts when one family holds more than half (rule kept, owner 2026-10-02); the raw crash is now a clear error | OPEN.md |
 | 97 | 🟢 | `core.sqxfile.symbol()` returns ("", "") for a symbol with a dot, a lowercase letter or an `@` | docs/OPEN-closed.md |
 | 98 | 🟢 | Nothing reads SQX's own `StrategyProblems` flag | docs/OPEN-closed.md |
@@ -121,14 +121,14 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 104 | 🟡 | Portfolio build 2026-10-05: six findings left unfixed (universe cache, frozen version, GA rank saturation, `funded_b` overwrite, pyarrow abort, `test_portfolio_build`) | OPEN.md |
 | 105 | 🟢 | `execute.synced` divides by `poll_seconds`: 0 raises ZeroDivisionError instead of SystemExit | docs/OPEN-closed.md |
 | 106 | 🟢 | Leftovers of the September infra and calculation reviews (reports deleted 2026-10-06): one spread suspicion (m30), five small infra items | docs/OPEN-closed.md |
-| 107 | 🟡 | Seven tests fail in the 2026-10-07 mechanical audit: four depend on data deleted by the 10-06 disk cleanup, one on cwd (`afterrun` stop path), two undiagnosed | OPEN.md |
+| 107 | 🟢 | Seven tests fail in the 2026-10-07 mechanical audit: four depend on data deleted by the 10-06 disk cleanup, one on cwd (`afterrun` stop path), two undiagnosed | docs/OPEN-closed.md |
 | 108 | 🟠 | Step 12 redesigned (T0-T4, steps 11.5 and 11.7) built beside the old one: waits for the first real run and the owner's «corta» | OPEN.md |
-| 109 | 🟠 | mcRetest «Estrategia a estrategia» table fails to draw in the window: 11 help entries for 8 columns | OPEN.md |
+| 109 | 🟢 | mcRetest «Estrategia a estrategia» table fails to draw in the window: 11 help entries for 8 columns | docs/OPEN-closed.md |
 | 110 | 🟡 | Two-chart strategies: steps 10, 13-18.5 not yet run in SQX on a two-chart mother (wired in `stage.just`, verified through step 8 and step 26) | OPEN.md |
 | 111 | 🟢 | A study that fails halfway leaves partial results and the resume treats its step as done | docs/OPEN-closed.md |
 | 112 | 🟡 | Knowhow weekly pass 2026-10-11: cards in the wrong domain (market-profile, perf, locations), one open corpus contradiction | OPEN.md |
 | 113 | 🔴 | Next batch needing MT5 or the custodian: portfolio sizing without a per-trade stop, step-26 calibration run, no-edge population through 18/18.5/19, leftovers | OPEN.md |
-| 114 | 🟠 | `builder.build()` installs the template before the gates: a refusal leaves it under live projects | OPEN.md |
+| 114 | 🟢 | `builder.build()` installs the template before the gates: a refusal leaves it under live projects | docs/OPEN-closed.md |
 | 115 | 🟠 | The harvest cannot record WHY SQX dismissed a strategy | OPEN.md |
 | 116 | 🟠 | `sweep.py` retires a `Test_` parked between workflow steps (data loss) | OPEN.md |
 | 117 | 🟠 | NIKKEI225_M1 feed is nearly empty at the start of `build` | OPEN.md |
@@ -137,6 +137,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 120 | 🟠 | El repreciador no reproduce a SQX en XAUUSD y USA500 (oos1) ni en DAX40 por décimas | OPEN.md |
 | 121 | 🟠 | Step 18.5 skips every XAUUSD mother: the repricer's tick rounding matches SQX on some assets and not on others | OPEN.md |
 | 122 | 🟠 | Integridad de la investigación: lo que F22 no arregló | OPEN.md |
+| 123 | 🟠 | Una superviviente de gorilla no llega al paso 26 de leaseWeb: no existe el «collect» | OPEN.md |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -173,84 +174,6 @@ changing one re-decides every strategy without touching code.
 
 ---
 
-## 22. 🟡 `studies/transfer/crossmarket` — state of play after the 2026-09-14/15 rebuild
-
-Read `studies/transfer/crossmarket/README.md` first — it is now a folder map and an import-direction
-table, not a file list — then the `README.md` of the layer you are touching (`inputs/`,
-`mechanics/`, `model/`, `simulate/`, `verdict/`, `render/`, `explorer/`), then
-`POSSIBLE_IMPROVEMENTS.md`. All of those are current as of the 2026-09-18/19 reorganisation into
-layer packages, which moved 37 flat modules and changed no calculation. What is **not** written in
-them:
-
-**What changed, in one line each.** No verdict and no market is ever dropped (warnings replace the
-gates). Nothing is cached or written to disk — the panel is the output. Random runs are priced in
-dollars with the real trades' own sizes and costs, so net / DD / Ret/DD / Sharpe / PF are directly
-comparable to SQX's. Four null models, 25,000 draws each per market. Test 1b (paired) and the market
-drivers (PDF §5.4 metrics) are new. Everything runs on `envelope.window()` — the backtest's own span,
-not the bar file's.
-
-**Open threads, in the order they are worth picking up:**
-
-1. 🔴 **The manual has no screenshots.** `docs/manual/07-otros-mercados-y-timeframes.pdf` (cap. 05-retest-mercados) describes every tab of a
-   panel nobody has photographed. Rule 8 forbids inventing them; whoever next opens the panel for
-   real should paste a few in. This is the only thing blocking that page from being finished.
-2. 🟠 **Only 30 of the 757 strategies are exported.** `raw/XAUUSD/Retest_Markets_-_Family/2026-09-14`
-   is a reproducible random sample (`--limit 30`, seed 20260914). The full export is one command and
-   ~15 minutes on the worker.
-3. 🟠 **`assets/_markets.yaml`'s `structural` category is empty**, so every conclusion so far rests on two
-   correlated metals-and-energy markets. The edge-driver regression (`drivers.py` has the metrics,
-   not the regression) needs six or more markets before it can be fitted at all, and the PCA on two
-   markets is close to vacuous. This is the single change that would most improve what the module
-   can say — and it is a retest the owner runs in the GUI, not code.
-4. ⚪ **The shareable report was removed** (`text.py`, `panel.render`, the batch command) on the
-   owner's instruction that the panel is a one-strategy tool. `reports/XAUUSD/Retest_Markets_-_Family/2026-09-14/crossmarket/`
-   is an orphan left by the last batch run. Bringing the report back is a revert, not a rebuild, if
-   he ever wants to send someone a page.
-5. 🟠 **The only strictly unseen window of this project starts 2023-01-01, and nothing has been
-   retested on it.** Added 2026-09-21, building the OOS-stretch tab. Every `dateTo` in every build
-   and retest task stops at `2022.12.31` while the bar files run to 2026-01-16 (gold, silver) and
-   2026-06-01 (Brent). So the 2018–2022 stretch the new tab tests is out of sample for the
-   *generator* but not for the *project*: it entered selection through every `sampleType=127`
-   acceptance condition and through the walk-forward matrix's OOS net profit, which is what the
-   `selected_window` warning says. A retest over 2023-01-01 → today would be unseen for the base
-   asset and for the additional markets at once, would need no such warning, and is a task the
-   owner runs in the GUI. `knowhow/conditions/` holds the measurement.
-7. ⚪ **`pending_fills` and `fill_mismatch` were measuring the wrong quantity — FIXED 2026-09-21.**
-   `pending_fills` read the entry clock, `fill_mismatch` fired on any non-zero price error. Both now
-   go through `mechanics/pricing.fill_profile()`: the entry **price** against its own bar's with the
-   market's constant spread discounted, and the median error in ATR units against
-   `diagnostics.max_fill_error`. Both verified to still fire (a feed displaced 3 ATR, 6% of entries
-   moved half an ATR, H1 bars under an M30 backtest). On the three real markets both are now silent,
-   which is correct: there are no intrabar fills in this fleet.
-   `studies/transfer/crossmarket/POSSIBLE_IMPROVEMENTS.md` §4 held every measurement (file gone by 2026-10-11 — the numbers are in git history).
-8. ⚪ **M1 execution was considered for the random-entry study and is not needed by this fleet.**
-   Asked 2026-09-21. It would fix nothing here: no strategy has a price exit, every exit lands on a
-   bar open, the zero-duration trades share one timestamp (no interval exists at any resolution),
-   and the 0.05–0.09 entry offset is a spread. Pricing on M1 would put the study on a grid SQX never
-   executed on and *create* a mismatch. It becomes the right build the day a strategy carries a stop,
-   a target or a trailing, and `mechanics/pricing.reconcile()`'s exit-side median error is the
-   trigger to watch — 0.0000 on 757 of 757 today. Shape it would need then: entries drawn on the
-   **logic** timeframe's grid (an M1 placement grid gives the null 30× more room and makes it a
-   different, wider null), holds carried in minutes, pricing on M1.
-
-**Two documented reversals live in `knowhow/research/hardest-null.md`** — a null's width is a measurement and
-not an intuition, and a bar file is wider than the backtest that ran on it. Read them before
-changing anything about how the nulls are placed.
-
-**A gap in `tools/checks.py`, found 2026-09-15.** It verifies every `.py` appears in its folder
-README, but not that every file the README names still exists — `text.py` sat in the table for a day
-after being deleted. It also cannot catch a call-site broken by a signature change:
-`sqx/export/export_bars.py` called `markets.feeds(asset)` for a day after that function started
-taking a universe dict, and only failed at runtime. Both classes of drift are cheap to check.
-
-**2026-09-29.** Owner, 2026-09-29: delete the 757 (the master XAUUSD project's `Retest Markets - Family` and `MC Trades`, 757 .sqx each, plus `AlgoData/raw|reports/XAUUSD/Retest_Markets_-_Family`). The master was closed; the deletion was refused by the session's safety classifier and waits on the owner running it or allowing it.
-
-**2026-10-06.** The owner's 2026-09-29 decision is carried out on the data root: `raw|reports|metrics/XAUUSD/Retest_Markets_-_Family` and `raw|metrics/XAUUSD/MC_Trades` deleted (36 MB; no code read them). The 757 `.sqx` inside the master's XAUUSD project stay his to delete.
-
-**2026-10-07.** The study this section describes was replaced by encargo 46 (2026-10-07): step 10 now asks «does the logic travel?» through nine facts P1-P9 read from one joint tensor of year-shifted random runs (studies/transfer/crossmarket/travel/, judged on gross R), and the old nulls-per-market, breadth, Fieller, Timing Alpha, exposure and window-sweep code (simulate/, verdict/, mechanics/, orchestrate/, six contract/ files) was deleted. The state of play below is history; what is left open is the calibration of the P1-P9 lines (criteria.yaml, PROVISIONAL).
-
----
-
 ## 28. 🟠 `DAX40`'s feed is in SQX's registry but in no project — builds, not yet run
 
 Stale until 2026-10-02: this said the master had no DAX40 feed and named `DAX40_DukasM1_Infinox`.
@@ -267,35 +190,6 @@ byte-identical tasks.
 
 ---
 
-
-## 29. 🟠 Six index assets have no IS/OOS window, and `SP500ft`'s feed does not exist
-
-`assets/_policy.yaml` now carries `segments: <SYMBOL>:` for all seventeen, each with the date range
-SQX actually holds for its feed (read 2026-09-22 with `-symbol action=list` on the conductor).
-**Forex and metals were filled on 2026-09-22** — `build` 2008-01-01 to 2017-12-31, `oos1` to
-2022-12-31, `oos2` to 2026-08-30, eleven assets. The **six index CFDs are still
-`{from: null, to: null}`**: `window()` refuses to invent one and the preflight warns, so nothing
-silently runs on a made-up window.
-
-They were left out deliberately, and it is not a free choice — their histories start in 2011-2013,
-so gold's 2008 build window would not fit and `validate()` would reject it:
-
-| asset | data from | | asset | data from |
-|---|---|---|---|---|
-| EURUSD, GBPUSD, USDCHF, USDJPY, XAUUSD | 2003-05-05 | | NIKKEI225 | 2011-09-19 |
-| AUDUSD, EURJPY, GBPJPY, USDCAD | 2003-08-04 | | USA500, USATEC | 2012-01-19 |
-| AUDJPY | 2003-12-01 | | DAX40, DJ30 | 2013-09-30 |
-| CADJPY | 2004-10-25 | | **SP500ft** | **none** |
-
-⚠️ **`SP500ft_Plus02_Infinox` is in no SQX feed list**, so that asset cannot be built or tested at
-all. Its `data` is null and `validate()` reports it. Either the feed needs setting up or the file
-describes a market that was never wired.
-
-**2026-09-29.** Also blocks index authoring (#35): no install defines a trading session for any index CFD, so `builder` refuses them until the session exists in SQX.
-
-**2026-09-29.** Windows were already set (build → 2019, oos1 2020-2023, oos2 2024 → 2026-08-31) for the five index CFDs; `core.assets` passes for all five. Left for the owner, later: SP500ft's feed and the index sessions in SQX.
-
-**2026-10-04.** The index windows are filled since 2026-10-01 (assets/_policy.yaml: UKOIL, DAX40, DJ30 and the rest carry build/oos1/oos2). What is left is only SP500ft, whose feed does not exist in SQX (data: null), and the index sessions.
 
 ## 38b. 🟡 `/plugin` does not exist here — sqx-lab installed by hand, does not auto-update
 
@@ -407,6 +301,8 @@ new MT5 BRIDGE section run the whole check. Still open from this section: point 
 owner's thresholds of encargo 34 (in `ledger/thresholds.yaml`, `mt5verify.*`); the MetaQuotes MCP
 tester stays unproven; the tester still cannot pass EA inputs.
 
+**2026-10-14.** Status 2026-10-14: the title is stale. mt5/ exists (tester, verify, reconcile, fleet), mt5_prefix is set in config/machine.yaml, the terminal runs, step 26 is built (mt5/verify/README.md, encargo 55). Still open: the MetaQuotes MCP tester is unproven, the tester cannot pass EA inputs, and the weeklyReconciler (mt5/reconcile) follows OPEN 113 and encargo 55.
+
 ## 81. 🟡 The window's cut-over (plan 24) left five owner's calls open
 
 2026-09-28, closing F13 of `docs/encargos/24-plan-ventana.md` — the owner: «borra la UI anterior;
@@ -494,10 +390,10 @@ validated pool). Manual chapters 73 and 74.
    USD, converted at the day's rate).
 2. **FundedNext** (candidate): the EA usage fee's amount; accepting one account per portfolio
    (identical trades across accounts are banned); gates G3 Spain and G4 payout record; then activate
-   or not — `docs/AgentPDFs/fondeo-admision-fundednext-2026-09-29.md`.
+   or not — `docs/AgentPDFs/fondeo-admision-fundednext-2026-10-14.md`.
 3. **FundingPips** (candidate, blocked): may a self-built SQX EA trade? Ask its support. If yes,
    confirm the 8 typed prices and rules in the universe (`AlgoData/funding/manual/fundingpips.yaml`,
-   `confirmed: false`) — `docs/AgentPDFs/fondeo-admision-fundingpips-2026-09-29.md`.
+   `confirmed: false`) — `docs/AgentPDFs/fondeo-admision-fundingpips-2026-10-14.md`.
 4. **FTMO**: is the 2-Step fee refund per account? Read as yes, unconfirmed — ask support
    (`rules/ftmo.yaml`, `fee_refund_scope`).
 5. **Hantec**: whether the fee is refunded; whether the "Profit Target −2 %" add-on lowers every
@@ -627,6 +523,8 @@ Opened by the unattended docs pass from `audit/2026-09-30.md`. None is a documen
 **2026-10-06.** The cause of the log storm is being removed on the owner's order: the custom columns `ParameterCount` and `DoFRatio` (they raised on every WF step). Done on the conductor and verified on two starts (`knowhow/columns/param-count.md`); Python computes both (`core.sqxview.frame`). PENDING on the custodian — it was running another session's job: with it stopped, `python3 ~/Desktop/AlgoData/snapshots/sqx-columns-2026-10-06/drop_columns.py ~/Desktop/SQX_w2 ~/Desktop/AlgoData/snapshots/sqx-columns-2026-10-06`. PENDING on the master, the owner's call: `Build-Task3.xml` of his projects AUDJPY, EURUSD and USDJPY carries a `ParameterCount` column value, which removing the class may break. Four archived storm logs over 10 MB deleted from `AlgoData/logs` (131 → 53 MB).
 
 **2026-10-13.** 2026-10-13 (owner P9=A, encargo 66): the gate's `Param Count` and `DoF Ratio` are now always Python's (`sqxfile.param_count`, `sqxview.dof_ratio`, used by `sqxview.frame` and `studies/screening/gate/collect.py`); SQX's stored value is ignored even when the export carries it; `tests/test_perf66_harvest.py`. The columns part of this issue is closed. Still open: the custodian column drop, the master's Build-Task3.xml of AUDJPY, EURUSD and USDJPY (owner's call), and the export-manifest items.
+
+**2026-10-14.** Status 2026-10-14: the export-manifest items and the file-length item are closed (see 2026-10-06 above). Still open and the owner's: the custodian column drop (drop_columns.py) and the master's Build-Task3.xml of AUDJPY, EURUSD and USDJPY, which carry a ParameterCount value.
 
 ## 87. 🟠 Portfolio construction engine — M0-M2, F1 and the F2 engine built 2026-09-30; the owner's calls gate each milestone
 
@@ -762,38 +660,6 @@ proposal, calibrated in `docs/AgentPDFs/criterios-implementados-2026-10-12.md`. 
 
 **2026-10-06.** Cleanup by the owner's order: nothing named `Test_Calib_*` is left under `harvest`, `reports`, `raw` or `metrics`, and `AlgoData/scratch/{null2,null-fpr-2026-10-04,close-curve-2026-10-04}` are deleted, as is the card `research/step6-floor-vs-step8-yield` (its numbers came from the invalid calibration). The sentence above about ~28 remaining trees no longer holds.
 
-## 95. 🟡 Twelve tests set aside in `tools/audit_tests.py` — each with its reason, so the skip list has an owner
-📓 2026-10-02. The mechanical audit runs every `tests/test_*.py` (105 on the day) and lists in `ASIDE`
-the ones it does not count as failures: 92 passed, 13 set aside. The thirteenth, `test_thresholds`,
-is #94. The twelve below are not bugs of the audit; each is either another session's work in
-motion or a drift that needs a decision. The audit prints them as «apartadas» and says «PASSES:
-remove it from ASIDE» when one recovers, so the list cannot rot silently. Reasons as written in
-`tools/audit_tests.py`, all dated 2026-10-02:
-
-| test | why it fails | whose / what clears it |
-|---|---|---|
-| `test_commission_segments` | Darwinex's commission is PercentageBased 0.005 in the asset cards; the donor's Build and Retest Setup still say SizeBased 5.0 | cost cards in motion (`assets/_build.yaml`): align the donor or the test |
-| `test_feedquality` | `calibration.json` is keyed by the old feed names (`XAUUSD_DukasM1_Infinox…`); the feeds became `XAUUSD_M1` on 2026-10-01 | recalibrate or rekey the file |
-| `test_mt5verify` | 5 assertions fail while `mt5/verify` (`firms.py`, `judge.py`, `run.py`) is being rewritten | the session rewriting it |
-| `test_portfolio_build` | `AttributeError: RangeIndex.to_period` in `portfolio/common/construct/equity/matrix.py` with the test's fixture | a code or fixture bug, not a one-line fix |
-| ~~`test_portfolio_mtm`~~ | **passes since 2026-10-04**: the drift was the feed's clock alone (Asia/Jerusalem → EETUS); the golden is pinned on its own clock, bar still 0.99 (MAE 1.000) | out of ASIDE; open decision: production still reads clock and commission live for archived strategies (`knowhow/export/archived-trades-vs-reclocked-bars.md`) |
-| ~~`test_portfolio_universe`~~ | **passes since 2026-10-04**: 3,983 of 3,983 days within 1 $ (max 0.16 $) on the archive's clock; the current feed has its own golden, `test_portfolio_golden_current` | out of ASIDE |
-| `test_strategymeta` | the golden's `asset_card_sha256` is not the sha of `assets/symbols/XAUUSD.yaml` after the cost-card edits, and `strategymeta` reads the golden strategies differently | re-freeze the golden after the cost cards settle |
-| `test_ui_columns` | the databank column chooser's default order changed while `ui/daemon/databank/` is modified | the session working on it |
-| `test_ui_research` | the research board's passing cells differ | `studies/research/board`, another session's work in progress |
-| `test_ui_results` | the results catalogue does not match `studies/` (board, marketProfile, memory, monteCarlo) | `ui/daemon/results/` and `studies/research` in motion |
-| `test_ui_sqxconfig_studies` | the ledger changed more than its three lines (sealed 2026-10-02); the test's expectation of `ledger/thresholds.yaml` is out of date | update the expectation |
-| `test_ui_strategy` | strategy meta has no `backtest` key — the same failure as in #89 | `ui/daemon/` modified by another session |
-
-Decision for the owner: none yet. Each row closes when its test passes again and is removed from
-`ASIDE`; close this issue when `ASIDE` is empty or holds only entries with an open OPEN number.
-Reproduce: `python3 tools/audit_tests.py` or the single file (`python3 tests/test_<name>.py`, or
-`python3 -m pytest -q tests/test_<name>.py` when it has no `__main__`).
-
-**2026-10-06.** `test_feedquality` and `test_ui_columns` pass and left `ASIDE` (8 remain). The runner now sends a file to pytest only if it has no `__main__` and defines `def test_`: eight nightly false failures gone. Fixed today: `test_builder_feedswap` (no live install read), `test_ui_shell` (a shared ruamel `YAML()` was loaded from several threads — lock in `core/assetyaml.py`), `test_ui_blocks` (three population reports per study, 103 s), `test_ui_cmdpalette` (a real window bug in `studypage/picker.py`), `test_ui_screen`, `test_ui_tearsheet`, `test_ui_campaign`, `test_ui_studypage` (its batch fixture now a kept `Trade_` project).
-
-**2026-10-06.** `test_ui_blocks` draws every population report again (307 results, 196 s on a loaded machine) plus three strategy reports per study, long tables cut to 200 rows. What made it slow was the window, not the test: `bars._geometry` measured 1,000 labels on every paint and mouse move, fixed (`knowhow/ui/qt-painting-traps.md`).
-
 ## 96. 🟡 `core.surface.trials.independent` over-counts when one family holds more than half (rule kept, owner 2026-10-02); the raw crash is now a clear error
 
 Found 2026-10-02 contrasting with tschm/jsharpe (encargo 42, C1). On balanced blocks it is exact
@@ -817,7 +683,7 @@ changed. **Open:** nothing prints the silhouette next to the count in a window o
 ## 100. 🟠 Literature scout built 2026-10-02 — owner decisions pending, 8 questions and 8 entries without a condition
 
 `studies/research/literature/`, `/literature-scout`, `bin/daily-literature-scout.sh`; day one in
-`knowhow/market-profile/literature-scout-yield.md` (67 papers read, 9 useful, 17 entries, 1 measured: no cell passes).
+`knowhow/research/literature-scout-yield.md` (67 papers read, 9 useful, 17 entries, 1 measured: no cell passes).
 
 - **Cron installed 2026-10-02**: `0 7 * * *` (backup `AlgoData/logs/crontab-backup-2026-10-02c.txt`). Owner:
   spend what reading needs — opus reads, sonnet triages, `run.budget_tokens` 3M is only a runaway guard.
@@ -856,6 +722,8 @@ Decision needed: move them (then rerun `python3 tools/knowhowmap.py` and fix eve
 Also left: `locations/xauusd-corpus` (🤔, 231 strategies, old export) and `export/exits-and-m1-library` (🔬, 757 strategies)
 describe two XAUUSD corpora; neither can be recomputed for the first (OPEN §12) — the owner may retire the older card.
 
+**2026-10-14.** 2026-10-14: moved with git mv, indexes regenerated, citations fixed: the four literature cards, hypothesis-sheet-vs-build, ideas-are-ledger-trials, reviewer-adds-no-trials to research/; typed-failure-causes to pipeline/; window-waits-off-gui-thread to ui/. Left: the seven eng/ study cards (monkeyexcess-needs-oos-partner, population-signs-a-different-config-than-strategy, stale-signs-with-the-runners-overrides, decay-needs-build-and-retest, isoos-filters-read-the-harvest, step25-reads-a-harvest-of-the-traded-version, studies-reread-build-yaml) need the owner to pick the target domain, and the xauusd-corpus vs exits-and-m1-library contradiction.
+
 ## 104. 🟡 Portfolio build 2026-10-05: six findings left unfixed — found while running the module on the Nikkei test pool
 
 📓 2026-10-05, the build of `portfolio/` (impl log phases 0-6). Each is found, not fixed; the first four are the code's, the fifth is pyarrow's, the sixth predates the build.
@@ -870,33 +738,6 @@ describe two XAUUSD corpora; neither can be recomputed for the first (OPEN §12)
 **2026-10-05.** 2026-10-05, the walk of the PORTFOLIOS zone (`tools/uiinventory.py`). **Fixed, each with its test:** (1) the universe folder is now keyed `<pool hash>-<config fingerprint>-<code hash>` (`construct/equity/store.py`, `tests/test_portfolio_universe.py`) — a `--set` still makes its own folder; (4, the overwrite half) every run folder is made exclusively (`core.manifest.fresh_dir`: `_2`, `_3`… within one minute) and a second stage B on a run that holds one goes to a run aside with `stage_a_run` in its manifest, the first left byte for byte (`funded_b.target`, `tests/test_portfolio_verdict_funded.py`; seen through the window on a disposable root); (5) the planted-pool tests take `pa.set_cpu_count(1)` from `tests/portfolio_planted.py`: 9 of 60 aborts before, 0 of 180 after — nothing project-wide changed. **Investigated, not fixed:** (6) is a stale fixture, not portfolio code — `USDJPY_DukasM1_the5ers` now maps to `USDJPY_M1` on the EETUS clock (commit 1f22b6f) while the archived trades are stamped Asia/Jerusalem, and the card charges 5 $/lot since d8e1ffe where the strategy was built at 0: re-stamped and at commission 0 it reconciles 1.0000/1.0000, max gap 0.2 $ (as archived 0.44/0.39). Pinning the fixture to its archive-time conditions or moving it to a strategy archived on `USDJPY_M1` is the owner's. **Still open, the owner's:** (2) which archived version sizes a member, (3) the rank reference above `real.exhaustive_max`, (4) which near-tied finalist is «the» portfolio (no seed recorded yet).
 
 **2026-10-05.** Item 3 decided (owner, 2026-10-05, «sube»): `real.exhaustive_max` is now 1,000,000 combinations (~11 min on one core at the limit); `portfolio/common/construct/search/README.md` and `portfolio/PLAN.md` say so; above the limit the GA still runs and its rank score still saturates — still open. Item 6 (owner, 2026-10-05: «Usa las condiciones más actualizadas que tenemos»): the test must run on today's conditions, no re-stamping shim, no skip. Found: nothing in the archive reconciles under today's conditions. The only archives after 2026-10-01 are the 30 mothers of `Test_USDJPY_donchianUpperCrossUp_H1` (2026-10-04, step 16.5), all on feed `USDJPY_DukasM1_the5ers`; 15 have a harvest, the other 15 no `harvest/` at all (FileNotFoundError). The 15 with one are refused by the universe builder on the MAE/MFE licence (0.73-0.97 exact, floor 0.99) and reconcile 0.92-0.99 on build and oos1 (e.g. 16425b8a: licence 0.97/0.99, build 0.98, oos1 0.99), so they fail the same way as the golden 4d679e0c (0.44) but closer, which points to the same feed-clock mismatch (archived stamps vs the EETUS bars now behind that feed name) at a smaller scale. `tests/test_portfolio_build.py` is unchanged and still fails; the owner decides whether the equity reconstruction or the archived stamping is what to fix, or whether to archive a fresh strategy after the feeds settle. Items 2 and 4 remain.
-
-
-## 107. 🟡 Seven tests fail in the 2026-10-07 mechanical audit
-
-Source: `AlgoData/audit/2026-10-07-mechanical.md` (242 run, 227 ok, 7 failed). Not fixed here (documentation pass).
-
-| test | failure | provenance |
-|---|---|---|
-| `test_ui_batch` | asserts `strategyPermutations/<REAL>/metrics.parquet` (line 194); data gone | 📓 log; cause (10-06 disk cleanup) 🤔 — confirm by checking which cleanup removed it |
-| `test_autopilot_closing` | no variants batch with `metrics.parquet, collected.json` for Strategy 10.9.72 | 📓 same 🤔 |
-| `test_portfolio_universe` | only check failing: «real fixtures present skipped: files not found» | 📓 same 🤔 |
-| `test_mt5_start_check` | reads Tester journal `…/Tester/logs/20260930.log`, no longer on disk | 📓 |
-| `test_worker_lifecycle` | stop path runs `python3 -m ui.daemon.loader.afterrun` from a cwd outside the repo → `No module named 'ui'` | 📓; possible real bug in `bin/sqx-worker.sh stop` run from another cwd |
-| `test_sqx_live` | `KeyError: 'strategies'` at `sqx/projects/live.py:235` (`listStrategies` reply) | 📓; stub vs contract not diagnosed |
-| `test_variants` | shapes/hash dump differs | 📓; not diagnosed |
-
-Fix direction: point the data-dependent tests at a fixture; set cwd/`PYTHONPATH` in `bin/sqx-worker.sh`.
-
-**2026-10-08 (documentation pass).** The 10-08 mechanical audit (`AlgoData/audit/2026-10-08-mechanical.md`: 265 run, 249 ok, 9 failed) repeats these seven and adds three — 📓 from the report, none diagnosed here:
-
-| test | failure |
-|---|---|
-| `test_batches` | `No module named 'studies'` at line 6 — run without the repo root on `PYTHONPATH` |
-| `test_ui_blocks` | `KeyError: 'tabs'` at `tests/test_ui_blocks.py:60`: a block JSON has no `tabs` (test or data drifted; yesterday a shell timeout) |
-| `test_feed_from_db` | fixture ranges end the day after the last bar (bars now end 2026-10-0x) and `B.xml` reads timezone `XEETUS` vs registry `EETUS` — time-dependent fixture dates |
-
-`bin/sqx-worker.sh` line 386 already runs `afterrun` inside `cd "$ROOT"`, so the `test_worker_lifecycle` failure 🤔 comes from the test's own call or an uncommitted edit — confirm by rerunning it after the script's change is committed.
 
 
 ## 108. 🟠 Step 12 redesigned (T0-T4, steps 11.5 and 11.7) built beside the old one: waits for the first real run and the owner's «corta»
@@ -918,16 +759,6 @@ Encargo 47 (`docs/encargos/47-paso-12-otras-temporalidades-pico-aislado.md`), pa
 - K-2: a lone measured neighbour that fails T2a or T2b (its NO PASA, or LIMBO as implemented);
 - K-3: the window of T4 (the mother's bar, as implemented, or the slower of the two);
 - `CBlock_CandleBreakoutLong*.Double2` («body > Mult × ATR»): `bar` or a ratio `other` (today `unverified` in `sqx/variants/ranges.yaml`).
-
-## 109. 🟠 mcRetest «Estrategia a estrategia» does not draw: `help` longer than `columns`
-
-Found by the 2026-10-09 audit (`tests/test_ui_blocks.py`). `studies/breakage/mcRetest/many.py:34-35` sets
-`strategy_table["help"] = SHOWN_HELP + criteria.HELP[1:4]` (11 entries) whatever the table holds; for
-`reports/Test_USDJPY_M30_doubleROCLong_10k/MCR_All/2026-10-08/mcRetest/mcRetest.json` the table has 8 columns,
-so `ui/desktop/blocks/table.py:137` gets `horizontalHeaderItem(j) is None` and the window shows «No se pudo dibujar».
-Fix: build `help` from the columns actually present (or truncate to `len(columns)`), and make `table.py` skip a missing item.
-Also: `raw/<project>/T1_Neighbours/<day>/` (written by `studies/breakage/mcRetest/neighbours/t1.py:126`) carries no `manifest.json`.
-Also (audit 2026-10-09): `tools/checks.py` fails on `pipeline/autopilot/run.py` at 256 lines (max 250) after the 10-08 edit — split it; `test_export_manifests` fails its output-folder listing assert while `sqx/export` has uncommitted edits — rerun after the commit.
 
 ## 110. 🟡 Two-chart strategies: steps 10 and 13 to 18.5 have not yet run in SQX on a two-chart mother
 
@@ -959,6 +790,8 @@ Found by the weekly quality pass (one domain at a time; `eng`, `costs`, `locatio
 
 **Stale words in `perf/server-cores-and-ram`:** its `kw:` still names «Xmx108g» and the `smt-in-sqx-retest` body speaks of the master at `-1`; heaps are now 24/16/80 g (`perf/ram-budget`). 🤔 Re-measure core counts on the leaseWeb machine before editing.
 
+**2026-10-14.** 2026-10-14: the wrong-domain moves of this pass are done (market-profile literature/idea cards to research/, typed-failure-causes to pipeline/, window-waits-off-gui-thread to ui/, live-ea-magic-numbers to mt5/, wfc-databanks-hold-variants to databanks/). Still open: the xauusd-corpus contradiction needs the owner to say which corpus is live, and perf/server-cores-and-ram needs a core-count re-measure on leaseWeb before its stale Xmx108g words are edited.
+
 ## 113. 🔴 Next batch that needs MT5 or the custodian (owner, 2026-10-11)
 
 Opened with the 2026-10-11 tail change; updated the same day after the stop decision. Steps 22, 23
@@ -982,12 +815,6 @@ and «Sin veredicto».
   `--strategy` mode stays because ~55 old result folders would otherwise be read by step 8.
   `portfolio/common/construct/candidates.py:26` still names `worth_it` in `SURVIVOR_WORDS`. The dossiers
   `docs/AgentPDFs/criterios-implementados-2026-10-12{2,3,4}-*.md` are historical.
-
-## 114. 🟠 `builder.build()` installs the template before the gates: a refusal leaves it under live projects
-
-Decisión pendiente del dueño. `builder.build()` hace `install_template` antes de los gates (`refuse`), así que una negativa deja la copia de la plantilla en el install, bajo proyectos vivos. 🔬 Mover `install_template` después de `refuse` falla: `configure.py:127` → `charts.streams` → `charts.wanted` (`charts.py:33`) abre el `templateFile` de la tarea (la ruta instalada) → `BadZipFile`.
-
-Opciones: (a) dejar la plantilla en el directorio temporal y apuntar `templateFile` ahí durante los gates; (b) que `charts.streams` reciba la plantilla de origen.
 
 ## 115. 🟠 The harvest cannot record WHY SQX dismissed a strategy
 
@@ -1063,3 +890,6 @@ Origen: encargo 68 F22 (`e1ce890`, `78d1fe0`), 2026-10-14. Opus midió contra `C
 
 **2026-10-14.** Restos del encargo 68, que se borra hoy (dueño). (1) `F401` y `B904` entran en el `select` de ruff en cuanto se comiteen `portfolio/testroot/harvest.py`, `tests/test_autopilot_closing.py` y `tests/test_perf66_review_data.py` (son del encargo 66; ya se ha pedido a las sesiones). (2) Los 8 bloques `close-crosses` nuevos copian los pesos de arquetipo de sus análogos `close-crosses` ya existentes en `sqx/blocks/taxonomy.yaml`, y `test_taxonomy` deja de estar apartado. (3) Enterado: los MC y nulos guardados antes del 2026-10-14 ya no se reproducen (semillas obligatorias y frescas, F5). (4) D20: el número de supervivientes del 17 puede variar al repetir. Cada corrida registra su semilla para poder repetirla después; si hoy no la registra, se añade.
 
+## 123. 🟠 Una superviviente de gorilla no llega al paso 26 de leaseWeb: no existe el «collect»
+
+Hallado en el encargo 71 (2026-10-14), al apartar `test_mt5_start_check` en gorilla (D3: el dueño condiciona que lo que salga de gorilla se verifique en el MT5 de leaseWeb). Lectura sin ejecutar nada. Hoy NO hay camino: `bin/remote.sh` sólo ejecuta (`run`, `--detach`), `bin/mirror-data.sh` sólo copia leaseWeb a gorilla, y ninguna ruta trae supervivientes, `.sqx`, tienda de estrategias, ledger ni `projects/registry.csv` de vuelta (grep de `rsync`/`scp`/`ssh`: nada hacia leaseWeb). El paso 26 pide el `.sqx` en la ruta absoluta de la finalista (`mt5/verify/autopilot.py:36-38`, «su .sqx no existe en…») y la verificación previa lee `AlgoData/structural/<P>/mothers`; ambos viven en el `AlgoData` de gorilla. El «collect» es el verbo 3 de la fase 2 del encargo 57, que el dueño dejó PARADA (2026-10-14). Pendiente cuando se reanude: traer a leaseWeb el `.sqx` de la superviviente, su fila de la tienda, los trials al ledger único (66 D27) y la carpeta `autopilot/<P>/<run>/`, antes de que el MT5 Bridge pueda «Verificar».

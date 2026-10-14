@@ -241,7 +241,7 @@ cifras (1001, 1002…). Así nunca chocan dentro de una cuenta y cualquier opera
 combinación la abrió, que es lo que lee la conciliación.
 
 **No existe ningún asignador.** Y hay dos hechos que hay que reconciliar antes de escribir uno
-(`knowhow/locations/live-ea-magic-numbers.md`): los EAs en vivo llevan hoy los magic **1…7**, y el registro que
+(`knowhow/mt5/live-ea-magic-numbers.md`): los EAs en vivo llevan hoy los magic **1…7**, y el registro que
 lee la conciliación, `AlgoData/mt5/reconcile/register.csv` (`magic,strategy,identity,sqx,firm,since`), es **del
 dueño** y no está escrito. → K-5 antes de construir. Cuando conteste, el asignador (un módulo pequeño en
 `mt5/fleet/`) debe: leer/escribir un solo fichero en `AlgoData/fleet/`, asignar el siguiente libre desde 1001,
@@ -442,7 +442,7 @@ python3 tests/test_mt5verify.py && python3 -m pytest tests/test_fleet_collect.py
 
 Qué hiciste · qué verificaste, con la salida pegada de cada comando · qué dejaste sin hacer y por qué · qué
 descubriste para `knowhow/` (edita la card existente: `knowhow/mt5/mt5-validated-pool-register.md`,
-`knowhow/locations/live-ea-magic-numbers.md`, `knowhow/locations/vps-fleet-access.md`; no añadas al final).
+`knowhow/mt5/live-ea-magic-numbers.md`, `knowhow/locations/vps-fleet-access.md`; no añadas al final).
 Cada comando nuevo, con su capítulo del manual (regla 8: `AlgoData/manual-fuentes/` y `python3 tools/manual.py`).
 Cuando un frente quede entero, bórralo de la tabla de estado y apúntalo en la bitácora con la fecha.
 Termina con la lista de ficheros cambiados y, como última línea de tu respuesta: **¿Quieres hacer el commit?**

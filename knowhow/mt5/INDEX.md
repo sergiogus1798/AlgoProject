@@ -3,6 +3,7 @@
 - `ea-news-filter` — At which four places does an SQX EA get a news filter, and how does it read news live versus in the tester?
 - `fleet-beat-daily-floor-needs-more-than-one-beat` — Why can a schema-1 FleetBeacon beat not give a live account's daily floor exactly?
 - `ftmo-news-vs-mt5-importance` — Why is a filter on MT5's HIGH importance alone not FTMO-safe?
+- `live-ea-magic-numbers` — Is there any file that maps a live EA magic number to its strategy?
 - `metaeditor-compile-under-wine` — Why does MetaEditor64.exe under Wine exit 0 yet compile nothing, or not what I changed?
 - `metaeditor-compiles-outside-data-folder` — Can MetaEditor compile with the terminal open if the source is outside the data folder?
 - `mt5-account-switch-unattended` — How do I make the MT5 terminal log into a saved account by itself unattended?

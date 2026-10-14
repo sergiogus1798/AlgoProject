@@ -37,7 +37,7 @@ applies the answer through the same `reject` and `accept` — the validator is u
 triage call over the abstracts, one extraction call per surviving paper on its `excerpt`, one
 retry when a draft is refused, then `failed`. `run.model` (opus) reads, `run.triage_model` (haiku)
 triages; `run.budget_tokens` is a runaway guard, not a ration (owner: spend what reading needs).
-What each scheme cost per paper: `knowhow/market-profile/literature-scout-yield.md`; today: `report`.
+What each scheme cost per paper: `knowhow/research/literature-scout-yield.md`; today: `report`.
 
 ## What it writes — `AlgoData/research/literature/`
 

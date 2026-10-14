@@ -71,7 +71,7 @@ asks `studies.research.memory.trials.spent` and passes the number to `accumulate
 `trials.py` imports no study — the count arrives as an argument — so the dependency runs
 command → memory and never inference → memory; the window's ledger view and `core.archive` still
 call `accumulated(frame)` and show the searches alone. The market profile's own measures are
-printed beside it and **not** added (`knowhow/market-profile/ideas-are-ledger-trials.md`).
+printed beside it and **not** added (`knowhow/research/ideas-are-ledger-trials.md`).
 
 **A reconstructed row is weaker than a recorded one, and says so.** `backfill` can only recover what
 an artefact wrote down — a funnel knows what it counted, not what else was tried and discarded — so
