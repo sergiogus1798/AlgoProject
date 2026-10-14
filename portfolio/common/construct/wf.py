@@ -136,7 +136,7 @@ def write(got: dict, pool_name: str, cfg: dict, source: str) -> Path:
     blob = {"pool": pool_name, "members": got["members"], "source": source, "states": got["states"],
             "state_words": walkforward.STATES, "sentence": sentence(got, cfg), "failed": got["failed"],
             "windows": got["cuts"], "build": got["build"], "test": got["test"], "test_days": len(got["dates"]),
-            "wf": cfg["wf"], "relaxed": cfg["relaxed"], "selected_method": cfg["weights"]["method"]}
+            "seed": got["seed"], "wf": cfg["wf"], "relaxed": cfg["relaxed"], "selected_method": cfg["weights"]["method"]}
     (out / "result.json").write_text(json.dumps(blob, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
     return out
 
@@ -150,18 +150,20 @@ def main() -> None:
     which.add_argument("--run", type=Path, help="carpeta de una run de real.py o report.py: su cartera elegida")
     which.add_argument("--members", help="identidades por prefijo, separadas por comas")
     parser.add_argument("--set", dest="overrides", action="append", default=[])
+    parser.add_argument("--seed", type=int, required=True, help="semilla de los sorteos; queda en lo que se escribe")
     args = parser.parse_args()
     cfg = pool_mod.scoped(config.load(args.overrides), args.firm)
     if cfg["wf"]["confidence"] is None:
         raise SystemExit("wf.confidence no tiene valor y no lleva defecto: --set wf.confidence=<0..1> "
                          "(el intervalo que una diferencia de Sharpe debe superar para «ganar»)")
-    result = real.build(args.pool, cfg, search=False)
+    result = real.build(args.pool, cfg, args.seed, search=False)
     if "unit" not in result:
         raise SystemExit(real.summarise(result, None, None))
     members = members_of(result, args.run, args.members)
     if len(members) < 2:
         raise SystemExit("la cartera tiene un solo miembro: no hay pesos que comparar")
-    got = run(result, members, cfg, np.random.default_rng())
+    got = run(result, members, cfg, np.random.default_rng(args.seed))
+    got["seed"] = args.seed
     record(got, pool_mod.declared(args.pool, cfg), cfg)
     out = write(got, args.pool, cfg, args.run.name if args.run else "--members")
     if cfg["relaxed"]:

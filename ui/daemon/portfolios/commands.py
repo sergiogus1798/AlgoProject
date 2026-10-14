@@ -8,6 +8,7 @@ from ui.daemon import jobs
 from ui.daemon.portfolios import bankjob, construct, shelf
 
 LABEL = "portfolio"
+SEED = 0   # the same in the preflight and the launch (the nonce binds argv); each run records it
 SET = re.compile(r"^[a-z_0-9]+(\.[a-z_0-9]+)+=\S+$")
 TITLES = {"universe": "Universo y parejas", "real": "Búsqueda de la cartera", "verdict": "Veredicto de la cartera",
           "stage_a": "Fondeo · etapa A", "stage_b": "Fondeo · etapa B y veredicto", "weights": "Walk-forward de pesos",
@@ -93,6 +94,8 @@ def plan(action: str, p: dict) -> dict:
             "verdict": ["--pool", pool, "--run", folder, *firm], "weights": ["--pool", pool, "--run", folder, *firm],
             "stage_a": ["--pool", pool, "--plan", p.get("plan", ""), *firm], "stage_b": ["--run", folder],
         }[action] + flags(over)
+        if action != "universe":
+            argv += ["--seed", str(SEED)]
         if action in ("verdict", "stage_b"):
             confirm, text = True, confirmation(action, pool, row, cfg)
     return {"ok": not why, "reasons": why, "text": text, "confirm": confirm, "argv": argv,

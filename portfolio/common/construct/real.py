@@ -54,12 +54,13 @@ def on_build(daily: pd.DataFrame, calendar: dict, scale: np.ndarray, cfg: dict) 
             "graph": admissible.admissible(pairs, list(daily.columns), cfg)}
 
 
-def build(pool_name: str, cfg: dict, search: bool = True) -> dict:
+def build(pool_name: str, cfg: dict, seed: int, search: bool = True) -> dict:
     """Universe, fixed-risk sizing, the minimum-lot floor, the pair screen and the search.
 
     Args:
         pool_name: A declared pool.
         cfg: `inputs.config.load()`'s result.
+        seed: Root of the search's draws; returned as `root_seed`.
         search: False prepares everything and searches nothing (the admission pass).
 
     Returns:
@@ -70,7 +71,7 @@ def build(pool_name: str, cfg: dict, search: bool = True) -> dict:
         `root_seed`, and what the verdict reads later -- `daily` (every segment), `calendar`,
         `scale`; no `unit` and `found` None when nothing is usable.
     """
-    root_seed = int(np.random.default_rng().integers(0, 2**63 - 1))
+    root_seed = seed
     data = universe.load(universe.build(pool_name, cfg))
     kept = data["manifest"]["members"]["kept"]
     factors, excluded = size_members(kept)
@@ -187,6 +188,7 @@ def main() -> None:
     parser.add_argument("--firm", help="empresa cuyas prohibiciones se quitan del pool")
     parser.add_argument("--base", type=Path, help="carpeta de una run: juzga la admisión a su cartera")
     parser.add_argument("--set", dest="overrides", action="append", default=[])
+    parser.add_argument("--seed", type=int, required=True, help="semilla de los sorteos; queda en lo que se escribe")
     args = parser.parse_args()
 
     cfg = pool_mod.scoped(config.load(args.overrides), args.firm)
@@ -195,7 +197,7 @@ def main() -> None:
         if cfg["real"][key] not in allowed:
             raise SystemExit(f"real.{key} no tiene valor y no lleva defecto: --set real.{key}="
                              f"{'|'.join(allowed)}")
-    result = build(args.pool, cfg, search=not args.base)
+    result = build(args.pool, cfg, args.seed, search=not args.base)
     if "unit" not in result:
         print(summarise(result, None, None))
         return

@@ -91,22 +91,21 @@ def judge(inputs: dict, cfg: dict, rng: np.random.Generator) -> dict:
     return decide.verdict({"members": members}, first, second, held(inputs, segments, cfg), cost)
 
 
-def run(inputs: dict, cfg: dict, rng: np.random.Generator | None = None) -> dict:
+def run(inputs: dict, cfg: dict, seed: int) -> dict:
     """A portfolio run judged and drawn: the population result of the contract.
 
     Args:
         inputs: `report.load()`'s dict -- `result` (`real.build()`'s), `members` (the chosen
             identities), `pool` (the declared pool), `table` (the run's `search.parquet`).
         cfg: The construct config.
-        rng: Fresh entropy when None; its root is recorded.
+        seed: Root of the verdict's draws; recorded as `root_seed`.
 
     Returns:
         `verdict` (`judge()`'s), `sentence` (Spanish), `root_seed`, and `population` (the
         contract dict, `core.study.result.envelope`).
     """
     started = time.time()
-    root_seed = int(np.random.default_rng().integers(0, 2**63 - 1))
-    v = judge(inputs, cfg, rng or np.random.default_rng(root_seed))
+    v = judge(inputs, cfg, np.random.default_rng(seed))
     text = decide_real.sentence(v) if "oos1" in v else f"Veredicto: {v['label']}."
-    return {"verdict": v, "sentence": text, "root_seed": None if rng else root_seed,
+    return {"verdict": v, "sentence": text, "root_seed": seed,
             "population": tabs.population(inputs, v, text, cfg, started)}

@@ -15,7 +15,7 @@ from .search import trials_real
 TITLE = "Cartera por rangos: la elección en build y su veredicto"
 
 
-def load(pool_name: str, cfg: dict, run: Path | None) -> dict:
+def load(pool_name: str, cfg: dict, run: Path | None, seed: int) -> dict:
     """What the verdict reads: a run of `real.py` (made now when `run` is None) and its world.
 
     Returns:
@@ -23,7 +23,7 @@ def load(pool_name: str, cfg: dict, run: Path | None) -> dict:
         declared pool), `table` (`search.parquet`), `run` (the folder); `run` None when no
         member of the pool is usable.
     """
-    result = real.build(pool_name, cfg, search=run is None)
+    result = real.build(pool_name, cfg, seed, search=run is None)
     pool = pool_mod.declared(pool_name, cfg)
     if "unit" not in result:
         return {"result": result, "run": None}
@@ -71,17 +71,18 @@ def main() -> None:
     parser.add_argument("--run", type=Path, help="carpeta de una run de real.py: juzga su "
                                                  "cartera sin buscar otra vez")
     parser.add_argument("--set", dest="overrides", action="append", default=[])
+    parser.add_argument("--seed", type=int, required=True, help="semilla de los sorteos; queda en lo que se escribe")
     args = parser.parse_args()
     cfg = pool_mod.scoped(config.load(args.overrides), args.firm)
     for key, allowed in real.REQUIRED.items():
         if cfg["real"][key] not in allowed:
             raise SystemExit(f"real.{key} no tiene valor y no lleva defecto: --set real.{key}="
                              f"{'|'.join(allowed)}")
-    inputs = load(args.pool, cfg, args.run)
+    inputs = load(args.pool, cfg, args.run, args.seed)
     if inputs["run"] is None:
         print(real.summarise(inputs["result"], None, None))
         return
-    got = many.run(inputs, cfg)
+    got = many.run(inputs, cfg, args.seed)
     write(inputs, got, cfg)
     if cfg["relaxed"]:
         print(f"AJUSTADO: umbrales relajados {cfg['relaxed']} — no es un resultado")

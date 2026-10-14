@@ -207,7 +207,7 @@ def main() -> int:
         check("verdict: with it, ONE job of report.py on that run (command stubbed)", done["ok"] and len(queued) == 1
               and queued[0][0] == "portfolio" and queued[0][1][:4] == ["-m", "portfolio.common.construct.report",
                                                                       "--pool", "Test_p"]
-              and queued[0][1][4:] == ["--run", str(root / "runs" / RUN)])
+              and queued[0][1][4:6] == ["--run", str(root / "runs" / RUN)] and "--seed" in queued[0][1])
         again = api.run_action(api.Run(action="verdict", params={"run": RUN}, nonce=pre["nonce"]))
         check("verdict: the nonce is spent — a second press queues nothing", not again["ok"] and len(queued) == 1)
         spent, construct.spent = construct.spent, real_spent

@@ -140,7 +140,6 @@ def test_level3ab_does_not_depend_on_the_workers_and_keeps_its_q(monkeypatch: py
     runs = []
     for n in (1, 4):
         monkeypatch.setattr(fanout, "CORES", n)
-        np.random.seed(0)
         runs.append(level3ab.run({**data, "keep_draws": n == 1}, everyone, cfg))
     assert runs[0]["q_seed"].iloc[0] != runs[1]["q_seed"].iloc[0]            # roots differ, as asked
     assert all(r[c].nunique() == 1 for r in runs for c in ("q_seed", "dd_seed"))   # one root across a run's workers

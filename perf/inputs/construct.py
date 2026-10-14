@@ -16,6 +16,7 @@ from portfolio.funded.sim import bank, monkey
 from portfolio.funded.sim import inputs as bank_inputs
 from portfolio.funded.sim import table as bank_table
 
+SEED = 0   # the synthetic benchmark inputs are one fixed draw: timings compare run to run on the same data
 PAIRS_POOL = 500   # strategies in the synthetic pool: 124,750 pairs, the plan's large case
 RANK_BATCH = 30_000   # combinations a full GA scores: 300 x 100 generations
 CLOSE_HARVEST = ("Test_Calib_USDJPY_H1_momentumL", "Results", "2026-10-02")
@@ -72,7 +73,7 @@ def pairs_table(cfg: dict) -> dict:
         Pairs measured; nothing read from disk.
     """
     days = pd.bdate_range("2008-01-01", "2017-12-29")
-    daily = pd.DataFrame(np.random.default_rng().normal(size=(len(days), PAIRS_POOL)), index=days,
+    daily = pd.DataFrame(np.random.default_rng(SEED).normal(size=(len(days), PAIRS_POOL)), index=days,
                          columns=[f"S{k:03d}" for k in range(PAIRS_POOL)])
     got = table.table(daily, daily.groupby(daily.index.to_period("M")).sum(), config.load())
     return {"scale": int(len(got) // 11), "bytes_in": 0}
@@ -87,7 +88,7 @@ def rank_search(cfg: dict) -> dict:
     Returns:
         Combinations scored; nothing read from disk.
     """
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(SEED)
     days = pd.bdate_range("2008-01-01", "2017-12-29")
     unit = 0.02 + rng.normal(size=(50, len(days)))
     members = rng.random((RANK_BATCH, 50)) < 0.15
@@ -108,7 +109,7 @@ def verdict_null(cfg: dict) -> dict:
     Returns:
         Draws measured and ranked; nothing read from disk.
     """
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(SEED)
     days = pd.bdate_range("2020-01-01", "2021-12-31")
     unit = 0.02 + rng.normal(size=(50, len(days)))
     engine = config.load()      # the committed knobs: 10,000 draws, four shifted windows
@@ -147,7 +148,7 @@ def stage_b(cfg: dict) -> dict:
     Returns:
         Paths drawn and judged; nothing read from disk.
     """
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(SEED)
     engine = config.load(["funded.open_risk_cap=1.0"])
     k, days, per_day = STAGEB["members"], STAGEB["days"], 1440 // engine["equity"]["block_minutes"]
     units = [_trade_units(rng, per_day) for _ in range(k)]
@@ -177,7 +178,7 @@ def weights_wf(cfg: dict) -> dict:
     Returns:
         Arms compared; nothing read from disk.
     """
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(SEED)
     engine = config.load(["wf.confidence=0.95", "wf.step_years=1"])
     days = pd.bdate_range("2012-01-02", "2023-12-29")
     unit = pd.DataFrame(0.05 + rng.normal(size=(len(days), 5)) * [1, 1.5, 2, 2.5, 3], index=days)
@@ -195,7 +196,7 @@ def funded_bank(cfg: dict) -> dict:
     Returns:
         Configurations scored; nothing read from disk but the catalogue.
     """
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(SEED)
     shape = (BANK["n_paths"], BANK["horizon"])
     closed = rng.normal(0.14, 1.0, shape) * (rng.random(shape) < 0.6)
     paths = {"closed": closed, "float_end": np.zeros(shape), "low": np.minimum(closed, 0.0) - 0.2,

@@ -64,13 +64,14 @@ def refuse_uncapped(cfg: dict) -> None:
                          "operación). No lleva valor por defecto: --set funded.open_risk_cap=<fracción>")
 
 
-def build(pool_name: str, plan_key: str, cfg: dict) -> dict:
+def build(pool_name: str, plan_key: str, cfg: dict, seed: int) -> dict:
     """Run the whole funded search: universe, sizing, pair screen, greedy seeds + GA.
 
     Args:
         pool_name: A declared pool (`inputs.pool.declare`).
         plan_key: A funded plan, as `portfolio.funded.rules.catalog.plans` lists it.
         cfg: `inputs.config.load()`'s result.
+        seed: Root of the search's draws; returned as `root_seed`.
 
     Returns:
         `usable`, `excluded_stop`, `graph` (admissible.admissible's dict), `identities`
@@ -80,8 +81,7 @@ def build(pool_name: str, plan_key: str, cfg: dict) -> dict:
         `capped`: those the open-risk cap forbade). `run` is `None` when no member is usable.
     """
     start = time.perf_counter()
-    rng = np.random.default_rng()
-    root_seed = int(rng.integers(0, 2**63 - 1))
+    root_seed = seed
     rng = np.random.default_rng(root_seed)
 
     plan = catalog.plan(plan_key)
@@ -213,13 +213,14 @@ def main() -> None:
     parser.add_argument("--plan", required=True)
     parser.add_argument("--firm", help="empresa cuyas prohibiciones se quitan del pool: la del plan")
     parser.add_argument("--set", dest="overrides", action="append", default=[])
+    parser.add_argument("--seed", type=int, required=True, help="semilla de los sorteos; queda en lo que se escribe")
     args = parser.parse_args()
 
     if args.firm and not args.plan.startswith(args.firm + ":"):
         raise SystemExit(f"--firm {args.firm} no es la empresa del plan {args.plan}")
     cfg = pool_mod.scoped(config.load(args.overrides), args.firm, args.plan)
     refuse_uncapped(cfg)
-    result = build(args.pool, args.plan, cfg)
+    result = build(args.pool, args.plan, cfg, args.seed)
     result["firm"] = args.firm
     if result["run"] is None:
         summarise(result, None)

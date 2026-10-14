@@ -101,7 +101,7 @@ def test_shifted_windows() -> None:
     check("worst: the highest P(losing year), the lowest of the rest, a window with no drawdown skipped",
           worst["p_losing_year"].tolist() == [0.1, 0.0, 0.2] and worst["r_cubed"].tolist() == [1.0, 0.5, 1.0])
 
-    argv, sys.argv = sys.argv, ["real", "--pool", "no_existe", "--set", "real.shift_minimum=score"]
+    argv, sys.argv = sys.argv, ["real", "--pool", "no_existe", "--seed", "0", "--set", "real.shift_minimum=score"]
     try:
         real.main()
         refused = ""

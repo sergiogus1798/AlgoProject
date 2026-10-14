@@ -38,7 +38,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/bars.py` | 23 | Read an OHLC bar file exported by SQX into a frame indexed by bar open time. | — | pandas |
 | `core/barstore.py` | 108 | The bar library: M1 is the only bar data stored, every other timeframe is resampled from it. | core | pandas |
 | `core/buildfilters.py` | 83 | The Build's acceptance filters for one asset and timeframe, resolved from assets/_study.yaml. | core | yaml |
-| `core/cfx.py` | 136 | Read a project.cfx without SQX. It is a ZIP holding config.xml plus one XML per task. | core | — |
+| `core/cfx.py` | 143 | Read a project.cfx without SQX. It is a ZIP holding config.xml plus one XML per task. | core | — |
 | `core/commission.py` | 96 | Each broker's own commission as a %, refreshed weekly from the latest close. | core | — |
 | `core/datapaths.py` | 248 | The data root's secondary trees: template library, pipeline, permutations, logs, backups, caches, spread. | core | — |
 | `core/exportdrv.py` | 106 | What leaves SQX through the worker: trades, the symbol list and bars (metrics are read off the .sqx). | core | — |
@@ -51,8 +51,8 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `core/phases.py` | 39 | Wall clock of a named sub-phase, appended to the CSV `ALGO_PHASES` names; nothing without it. | — | — |
 | `core/researchpaths.py` | 30 | Where the research director's pieces live under the data root. | core | — |
 | `core/significance.py` | 164 | Could this edge be zero? The Sharpe-based tests three studies now share, and the one Sharpe total. | — | numpy, pandas, scipy |
-| `core/sqxfile.py` | 247 | Read a .sqx strategy without SQX. It is a ZIP; everything useful is in its inner XML. | — | numpy |
-| `core/sqxretest.py` | 198 | Read a Monte Carlo Retest result out of a .sqx: its simulation P/L vectors and its level table. | core | numpy |
+| `core/sqxfile.py` | 254 | Read a .sqx strategy without SQX. It is a ZIP; everything useful is in its inner XML. | — | numpy |
+| `core/sqxretest.py` | 207 | Read a Monte Carlo Retest result out of a .sqx: its simulation P/L vectors and its level table. | core | numpy |
 | `core/sqxstats.py` | 169 | Read a .sqx result without SQX: its stored metrics and its daily equity curve. | — | numpy, pandas |
 | `core/sqxview.py` | 112 | The owner's «Export Data View» as SQStats keys: a databank's metrics with no SQX running. | core | pandas |
 | `core/store/__init__.py` | 1 | The strategy store: one folder per strategy that passed the gate, one file per set of tests. | — | — |
@@ -228,7 +228,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `perf/disk/report.py` | 87 | Inventory the data root: where the bytes are, what is over budget, and what could go. | perf | — |
 | `perf/disk/retention.py` | 184 | What could be deleted and how much it would free. Proposes; never deletes, never moves. | core | — |
 | `perf/inputs/config.py` | 28 | The single source of truth for what the catalogue measures and what it calls a regression. | — | yaml |
-| `perf/inputs/construct.py` | 209 | The portfolio engine's work the catalogue times: one universe member, a close-to-close panel, the pairs table, a rank search, stage B, the verdict's null, the bank table. | core, portfolio | numpy, pandas |
+| `perf/inputs/construct.py` | 210 | The portfolio engine's work the catalogue times: one universe member, a close-to-close panel, the pairs table, a rank search, stage B, the verdict's null, the bank table. | core, portfolio | numpy, pandas |
 | `perf/inputs/gate.py` | 114 | The gate's levels, the monkey and `kept`, each timed on the same pinned slice of one harvest. | core, perf, pipeline, studies | pandas |
 | `perf/inputs/parsers.py` | 82 | The reading work the catalogue times: the formats every study opens before it can start. | core, perf | — |
 | `perf/inputs/sample.py` | 67 | Where the real files a measurement runs on are found, so two dates measure the same thing. | core | — |
@@ -288,7 +288,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `portfolio/common/construct/equity/stopexit.py` | 70 | A stopped trade's real exit minute: SQX stamps a stop-loss exit at the OPEN of the bar it was hit in. | — | numpy, pandas |
 | `portfolio/common/construct/equity/store.py` | 106 | Where a built universe lives on disk, and reading a finished one back. | core | numpy, pandas |
 | `portfolio/common/construct/equity/universe.py` | 215 | Pool -> per-member equity, reconciled against SQX, cached under its pool hash and config fingerprint. | core, inputs | numpy, pandas |
-| `portfolio/common/construct/funded.py` | 234 | THE COMMAND: build a funded portfolio -- universe, sizing, pair screen, greedy seeds + GA. | core, equity, inputs, ledger, pairs, portfolio | numpy, pandas |
+| `portfolio/common/construct/funded.py` | 235 | THE COMMAND: build a funded portfolio -- universe, sizing, pair screen, greedy seeds + GA. | core, equity, inputs, ledger, pairs, portfolio | numpy, pandas |
 | `portfolio/common/construct/funded_b.py` | 241 | THE COMMAND: stage B and the funded verdict on an existing stage-A run. | core, equity, funded_verdict, inputs, pairs, portfolio, search, verdict | numba, numpy, pandas |
 | `portfolio/common/construct/funded_verdict.py` | 99 | The funded verdict (F4, Q11 d): stage B's winner on oos1 against the selected null, then oos2 once. | equity, inputs, pairs, search, verdict | numpy, pandas |
 | `portfolio/common/construct/handoff.py` | 58 | The hand-off package encargo 33 receives (PLAN §2.2): the chosen portfolio, its daily P&L, its trades. | inputs | pandas |
@@ -302,7 +302,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `portfolio/common/construct/inputs/pool.py` | 135 | A declared pool of archived strategies: write it once (frozen), read it, drop prohibitions, hash it. | core | pandas |
 | `portfolio/common/construct/inputs/risk.py` | 49 | A member's fixed-risk factor: the step-24 ATR stop's X, the sizing it scales, its floor lot. | core, sqx | pandas |
 | `portfolio/common/construct/inputs/source.py` | 41 | One archived strategy as the engine reads it — files only, nothing recomputed. | core, engines | pandas |
-| `portfolio/common/construct/many.py` | 112 | The real path's verdict on a chosen portfolio (M5): oos1 against random portfolios, then oos2 once. | contract, equity, pairs, search, verdict | numpy, pandas |
+| `portfolio/common/construct/many.py` | 111 | The real path's verdict on a chosen portfolio (M5): oos1 against random portfolios, then oos2 once. | contract, equity, pairs, search, verdict | numpy, pandas |
 | `portfolio/common/construct/mc/blocklen.py` | 28 | How long the resampled blocks are: measured on the combination's own daily P&L, plus a sweep. | engines | numpy, pandas |
 | `portfolio/common/construct/mc/judge.py` | 161 | The rule machine over Monte Carlo paths and risk settings: who passes, when, and which rule fails. | portfolio | numba, numpy |
 | `portfolio/common/construct/mc/lay.py` | 142 | Whole trades laid on a synthetic calendar of server days: the kernels behind T1 and T2. | — | numba, numpy |
@@ -313,8 +313,8 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `portfolio/common/construct/pairs/rolling.py` | 80 | Rolling-window correlation extremes over a pair's aligned series. | — | numpy, scipy |
 | `portfolio/common/construct/pairs/stress.py` | 45 | Stress-day selection, stress-day correlation, and effective N of a candidate set. | measures | numpy, pandas |
 | `portfolio/common/construct/pairs/table.py` | 82 | Long-form pairwise measure table over every pair of build columns, in parallel blocks of pairs. | core | numpy, pandas |
-| `portfolio/common/construct/real.py` | 218 | THE COMMAND: choose a portfolio by ranks on build (M3) -- universe, sizing, pair screen, search. | core, equity, funded, inputs, pairs, portfolio | numpy, pandas |
-| `portfolio/common/construct/report.py` | 93 | THE COMMAND: a pool's portfolio by ranks and its verdict (M5) -- search, oos1, oos2 once, hand-off. | core, inputs, search | pandas |
+| `portfolio/common/construct/real.py` | 220 | THE COMMAND: choose a portfolio by ranks on build (M3) -- universe, sizing, pair screen, search. | core, equity, funded, inputs, pairs, portfolio | numpy, pandas |
+| `portfolio/common/construct/report.py` | 94 | THE COMMAND: a pool's portfolio by ranks and its verdict (M5) -- search, oos1, oos2 once, hand-off. | core, inputs, search | pandas |
 | `portfolio/common/construct/search/admissible.py` | 94 | The admissible graph: which pairs of a pool clear every pairwise filter. | portfolio | numpy, pandas |
 | `portfolio/common/construct/search/admission.py` | 90 | Admission to a base (Q16 c): pair filters against each member and Sharpe, one entry at a time. | — | numpy, pandas |
 | `portfolio/common/construct/search/choose.py` | 60 | The search by ranks (M3): every admissible combination when they are few, the GA otherwise. | portfolio | numpy, pandas |
@@ -346,7 +346,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `portfolio/common/construct/weights/hrp.py` | 57 | Hierarchical risk parity (López de Prado), with AlphaForge's label bug fixed. | — | numpy, pandas, scipy |
 | `portfolio/common/construct/weights/min_variance.py` | 63 | Minimum variance, long only, on a Ledoit-Wolf shrunk covariance (AlphaForge's had no shrinkage). | — | numpy, pandas, scipy |
 | `portfolio/common/construct/weights/risk_parity.py` | 26 | Risk parity as AlphaForge defines it: each member weighted by 1 / its daily volatility. | — | numpy, pandas |
-| `portfolio/common/construct/wf.py` | 174 | THE COMMAND: the weight walk-forward (M8) -- does any method beat equal weight on oos1, fixed or only re-estimated. | core, equity, inputs, search | numpy, pandas |
+| `portfolio/common/construct/wf.py` | 176 | THE COMMAND: the weight walk-forward (M8) -- does any method beat equal weight on oos1, fixed or only re-estimated. | core, equity, inputs, search | numpy, pandas |
 | `portfolio/common/monteCarlo/contract/__init__.py` | 1 | The Monte Carlo result read as the contract's blocks. | — | — |
 | `portfolio/common/monteCarlo/contract/explorer.py` | 96 | The explorer tab: any sub-test's distribution of any statistic, chosen by two selectors. | core, portfolio | pandas |
 | `portfolio/common/monteCarlo/contract/headline.py` | 96 | The verdict tab: the call and why, what failed, the backtest at a glance, and the sub-scores. | core, portfolio | pandas |
@@ -1081,7 +1081,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_perf66_fakesqx.py` | 109 | Encargo 66, `live.sync` and `live.cut` over real HTTP against a fake SQX servlet on a free port. | sqx, tests | pytest |
 | `tests/test_perf66_files.py` | 28 | Encargo 66, files no longer written (owner, 2026-10-13): the per-strategy page and the 18.5 detail. | core, studies | pytest |
 | `tests/test_perf66_footprint.py` | 94 | Encargo 66 §3.4e: the footprint priced in blocks gives the daily series it gave — the oracle below is the code replaced. | engines, test_perf66_resample | numpy, pandas, pytest |
-| `tests/test_perf66_fp.py` | 168 | Encargo 66 §2 and §3.1: the false-positive control does the same maths in a fraction of the work. | core, engines, pipeline, studies, test_false_positives | numpy, pandas, pytest, yaml |
+| `tests/test_perf66_fp.py` | 167 | Encargo 66 §2 and §3.1: the false-positive control does the same maths in a fraction of the work. | core, engines, pipeline, studies, test_false_positives | numpy, pandas, pytest, yaml |
 | `tests/test_perf66_harvest.py` | 212 | Encargo 66 store loop: harvesting the days outside the loop, aliases once and the deferred distributions fold into a save. | core, sqx, studies | numpy, pandas, pytest |
 | `tests/test_perf66_kernel.py` | 230 | Encargo 66 §3.2 and §3.9: the gate's monkey read off a priced table with PCG64 in the kernel | core, engines, studies | numba, numpy, pandas, pytest |
 | `tests/test_perf66_ladder.py` | 226 | Encargo 66 §3.3, §3.5, §3.6: the ladder without `argsort` and on threads gives the bits it gave. | core, engines | numba, numpy |
@@ -1339,7 +1339,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `ui/daemon/portfolios/api.py` | 117 | The routes of the PORTFOLIOS zone: what exists, each module's tabs, and the «Calcular» launchers. | inspect, portfolio, ui | fastapi, pydantic |
 | `ui/daemon/portfolios/bank.py` | 104 | «Banco» (encargo 33 §7.5): the bank's expected value per plan, re-buy policy and haircut, and the decision. | portfolio, ui | pandas |
 | `ui/daemon/portfolios/bankjob.py` | 49 | «Calcular la caja» as one job: the portfolio's paths, the bank table on them, then the decision. | core, portfolio | — |
-| `ui/daemon/portfolios/commands.py` | 127 | What each «Calcular» of the zone launches: its command, what it still lacks, and the sentence to confirm. | portfolio, ui | — |
+| `ui/daemon/portfolios/commands.py` | 130 | What each «Calcular» of the zone launches: its command, what it still lacks, and the sentence to confirm. | portfolio, ui | — |
 | `ui/daemon/portfolios/construct.py` | 133 | «Constructor»: one real-path run — the portfolio chosen in build, every combination scored, its verdict. | portfolio, ui | pandas |
 | `ui/daemon/portfolios/correlation.py` | 148 | «Correlación»: a pool's pair measures as a matrix judged against the threshold, and its admissible graph. | portfolio, ui | pandas |
 | `ui/daemon/portfolios/funded.py` | 128 | «Fondeo»: one funded run — stage A's P(pass) per combination and risk, stage B's three Monte Carlos, its verdict. | portfolio, ui | pandas |
