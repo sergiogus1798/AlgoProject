@@ -3,7 +3,7 @@
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 
 from core.manifest import code_version
 from core.paths import perf_dir
@@ -20,6 +20,20 @@ COLUMNS = ["day", "time", "commit", "target", "area", "unit", "scale", "budget",
            "repeats", "load1", "avail_mb"]
 
 
+class Context(TypedDict):
+    """Machine load while a measurement ran."""
+
+    load1: float
+    avail_mb: float
+
+
+class Stamp(TypedDict):
+    """Day and time a run is recorded under."""
+
+    day: str
+    time: str
+
+
 def commit() -> str:
     """Which version of the code was measured.
 
@@ -30,7 +44,7 @@ def commit() -> str:
     return code_version()
 
 
-def context() -> dict:
+def context() -> Context:
     """What else the machine was doing while the measurement ran.
 
     Returns:
@@ -67,7 +81,7 @@ def append(rows: list[dict], name: str = HISTORY) -> Path:
         stored = pd.read_csv(where)
         if list(stored.columns) != list(frame.columns):
             pd.concat([stored, frame]).reindex(
-                columns=list(dict.fromkeys(list(stored.columns) + list(frame.columns)))
+                columns=list(dict.fromkeys(list(stored.columns) + list(frame.columns)))  # pyright: ignore[reportCallIssue]  # stub: concat typed as Series | DataFrame
             ).to_csv(where, index=False)
             return where
     frame.to_csv(where, mode="a", header=not where.exists(), index=False)
@@ -87,11 +101,11 @@ def history(name: str = HISTORY) -> "pd.DataFrame":
     import pandas as pd
     where = perf_dir() / name
     if not where.exists():
-        return pd.DataFrame(columns=COLUMNS)
+        return pd.DataFrame(columns=pd.Index(COLUMNS))
     return pd.read_csv(where)
 
 
-def stamp() -> dict:
+def stamp() -> Stamp:
     """Day and time a run is recorded under.
 
     Returns:

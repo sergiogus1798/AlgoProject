@@ -35,7 +35,7 @@ def _gate_sample(cfg: dict) -> tuple[dict, Path]:
                               Path(tempfile.mkdtemp())), folder
 
 
-def _gate_level(cfg: dict, *modules) -> dict:
+def _gate_level(cfg: dict, *modules) -> sample.Workload:
     """Stage the sample, run level 1a (which writes the per-trade table), then `modules`.
 
     Args:
@@ -57,45 +57,45 @@ def _gate_level(cfg: dict, *modules) -> dict:
     return {"scale": len(everyone), "bytes_in": sample.weight([folder / "trades.parquet"])}
 
 
-def gate_stage(cfg: dict) -> dict:
+def gate_stage(cfg: dict) -> sample.Workload:
     """Read and stage the sample only: the part every gate target shares."""
     data, folder = _gate_sample(cfg)
     return {"scale": len(data["metrics"]), "bytes_in": sample.weight([folder / "trades.parquet"])}
 
 
-def gate_level0(cfg: dict) -> dict:
+def gate_level0(cfg: dict) -> sample.Workload:
     """Stage the sample and run level 0 (presence, sanity, statics) over it."""
     data, folder = _gate_sample(cfg)
     level0.run(data, data["metrics"].index, gate_inputs.config([]))
     return {"scale": len(data["metrics"]), "bytes_in": sample.weight([folder / "trades.parquet"])}
 
 
-def gate_level1a(cfg: dict) -> dict:
+def gate_level1a(cfg: dict) -> sample.Workload:
     """Staging plus level 1a: R3's excess and its t, and the table every later level reads."""
     return _gate_level(cfg)
 
 
-def gate_level1b(cfg: dict) -> dict:
+def gate_level1b(cfg: dict) -> sample.Workload:
     """Staging, 1a and the three modules of level 1b (centred, one pass, data quality)."""
     return _gate_level(cfg, level1b_centred, level1b_onepass, level1b_data)
 
 
-def gate_level2(cfg: dict) -> dict:
+def gate_level2(cfg: dict) -> sample.Workload:
     """Staging, 1a and level 2: every strategy repriced one bar later."""
     return _gate_level(cfg, level2)
 
 
-def gate_level3ab(cfg: dict) -> dict:
+def gate_level3ab(cfg: dict) -> sample.Workload:
     """Staging, 1a and levels 3a-3b: the resampling tests against the build."""
     return _gate_level(cfg, level3ab)
 
 
-def gate_monkey(cfg: dict) -> dict:
+def gate_monkey(cfg: dict) -> sample.Workload:
     """Staging, 1a and level 3c: the monkey at `monkey.draws` (5,000) over the four rungs."""
     return _gate_level(cfg, level3c)
 
 
-def kept_rows(cfg: dict) -> dict:
+def kept_rows(cfg: dict) -> sample.Workload:
     """What step 25's save keeps for funding: the join and the oos1 curves, in memory only.
 
     Args:
@@ -108,7 +108,7 @@ def kept_rows(cfg: dict) -> dict:
     """
     folder = harvest_dir(*cfg["sample"]["gate"]["harvest"])
     metrics = pd.read_parquet(folder / "metrics.parquet")
-    card = metrics[["strategy"]].reindex(columns=["strategy", *kept.FACTS])
+    card = metrics[["strategy"]].reindex(columns=["strategy", *kept.FACTS])  # pyright: ignore[reportCallIssue]  # stub: list-select typed as Series
     equity = pd.read_parquet(folder / "equity.parquet")
     got, _ = kept.rows(card, list(card["strategy"]), equity, 1000.0)
     return {"scale": len(got), "bytes_in": sample.weight([folder / "equity.parquet"])}

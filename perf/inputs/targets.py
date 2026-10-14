@@ -1,13 +1,23 @@
 """The registry of everything the catalogue measures: one row is one comparable number."""
 
 from collections.abc import Callable
+from typing import TypedDict
 
 from perf.inputs import construct, gate, parsers, workloads
+from perf.inputs.sample import Workload
 
 # Adding a target is a function in workloads.py or parsers.py and one row here. Nothing
 # else changes: the harness, the history and the panel all read this dict. `unit` is what
 # `scale` counts, and it is stored with every row so a time can be read per unit of work.
-TARGETS: dict[str, dict] = {
+class Target(TypedDict):
+    """One catalogue row: its area, what `scale` counts, and the function that does the work."""
+
+    area: str
+    unit: str
+    call: Callable[[dict], Workload]
+
+
+TARGETS: dict[str, Target] = {
     "montecarlo.stream": {"area": "strategies", "unit": "trades",
                           "call": workloads.montecarlo_stream},
     "montecarlo.analyse": {"area": "strategies", "unit": "trades",
@@ -56,7 +66,7 @@ TARGETS: dict[str, dict] = {
 }
 
 
-def resolve(names: list[str] | None) -> dict[str, Callable]:
+def resolve(names: list[str] | None) -> dict[str, Target]:
     """The targets a run covers, by name.
 
     Args:

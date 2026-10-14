@@ -74,4 +74,4 @@ def failing(judged: pd.DataFrame) -> pd.DataFrame:
     Returns:
         The regressions, worst first. This is what a caller exits non-zero on.
     """
-    return judged[judged["verdict"] == REGRESSION].sort_values("wall_pct", ascending=False)
+    return judged[judged["verdict"] == REGRESSION].sort_values("wall_pct", ascending=False)  # pyright: ignore[reportCallIssue]  # stub: boolean-mask result widened

@@ -1,13 +1,14 @@
 """The single source of truth for what the catalogue measures and what it calls a regression."""
 
 from pathlib import Path
+from typing import Any
 
 import yaml
 
 FILE = Path(__file__).parents[1] / "config.yaml"
 
 
-def load(overrides: list[str] | None = None) -> dict:
+def load(overrides: list[str] | None = None) -> dict[str, Any]:
     """Read config.yaml and apply command-line overrides.
 
     Args:

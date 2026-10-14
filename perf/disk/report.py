@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from typing import Any, TypedDict
 
 from perf import store
 from perf.disk import budget, duplicates, formats, inventory, retention
@@ -11,7 +12,18 @@ BRANCHES, COPIES, FORMATS = "disk.csv", "duplicates.csv", "formats.csv"
 BUDGETS, RECLAIM = "budgets.csv", "reclaimable.csv"
 
 
-def run(cfg: dict, quick: bool) -> dict:
+class Report(TypedDict):
+    """The five tables of one disk report, and the total."""
+
+    tree: list[dict[str, Any]]
+    copies: list[dict[str, Any]]
+    formats: list[dict[str, Any]]
+    budgets: list[dict[str, Any]]
+    reclaimable: list[dict[str, Any]]
+    total: budget.Total
+
+
+def run(cfg: dict, quick: bool) -> Report:
     """Measure the data root and append every part to the catalogue.
 
     Args:

@@ -2,6 +2,7 @@
 
 import pstats
 import tempfile
+from typing import TypedDict
 from pathlib import Path
 
 from core.datapaths import tmp_dir
@@ -10,7 +11,25 @@ from perf.measure import harness
 SITES = 12
 
 
-def profile(target: str, cfg: dict, top: int = SITES) -> dict:
+class Hotspot(TypedDict):
+    """One function ranked by its own time."""
+
+    where: str
+    own_s: float
+    calls: int
+    share: float
+
+
+class Profile(TypedDict):
+    """What dominated one profiled target run."""
+
+    target: str
+    wall_s: float
+    memory: list[str]
+    time: list[Hotspot]
+
+
+def profile(target: str, cfg: dict, top: int = SITES) -> Profile:
     """Profile one target once and read back what dominated it.
 
     Args:
@@ -26,7 +45,7 @@ def profile(target: str, cfg: dict, top: int = SITES) -> dict:
     dump = Path(tempfile.mkstemp(suffix=".prof", dir=tmp_dir())[1])
     run = harness.once(target, [], cfg, profile=dump, memtop=top)
     stats = pstats.Stats(str(dump))
-    rows = sorted(stats.stats.items(), key=lambda kv: kv[1][2], reverse=True)[:top]
+    rows = sorted(stats.stats.items(), key=lambda kv: kv[1][2], reverse=True)[:top]  # pyright: ignore[reportAttributeAccessIssue]  # typeshed omits Stats.stats
     dump.unlink()
     return {"target": target, "wall_s": run["wall_s"], "memory": run["alloc_top"],
             "time": [{"where": f"{Path(f).name}:{line}({name})", "own_s": v[2],
@@ -34,7 +53,7 @@ def profile(target: str, cfg: dict, top: int = SITES) -> dict:
                      for (f, line, name), v in rows]}
 
 
-def text(found: dict) -> str:
+def text(found: Profile) -> str:
     """The profile as a table a report can paste.
 
     Args:

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import assetdata, bars
+from core import assetdata, bars, trades
 from core.paths import DATA, harvest_dir
 from engines.regimes import regime
 from perf.inputs import sample
@@ -21,7 +21,7 @@ from studies.closing.blindJoint import inputs as joint
 from ui.daemon.workflow import sources
 
 
-def montecarlo_stream(cfg: dict) -> dict:
+def montecarlo_stream(cfg: dict) -> sample.Workload:
     """Turn one strategy's exported trades into the arrays every family runs on.
 
     Args:
@@ -33,11 +33,11 @@ def montecarlo_stream(cfg: dict) -> dict:
     path = sample.files(cfg, "trades")[0]
     asset = costs.load(cfg["sample"]["asset"])
     mc = mc_config.load()
-    source = stream.build(path, asset, mc["global"]["risk_per_trade"])
+    source = stream.build(trades.read(path), path.stem, asset, mc["global"]["risk_per_trade"])
     return {"scale": int(source["pnl"].size), "bytes_in": sample.weight([path])}
 
 
-def _analyse(path: Path, cfg: dict) -> dict:
+def _analyse(path: Path, cfg: dict) -> sample.Workload:
     """One trade file through every Monte Carlo family, at the catalogue's budget.
 
     Args:
@@ -51,12 +51,12 @@ def _analyse(path: Path, cfg: dict) -> dict:
     bar_file = sample.bars(cfg)
     asset = costs.load(cfg["sample"]["asset"])
     mc = mc_config.load([f"global.n_sims={cfg['sample']['n_sims']}", "global.seed=0"])
-    source = stream.build(path, asset, mc["global"]["risk_per_trade"])
+    source = stream.build(trades.read(path), path.stem, asset, mc["global"]["risk_per_trade"])
     run.analyse(source, regime.daily(bars.read(bar_file)), asset, mc)
     return {"scale": int(source["pnl"].size), "bytes_in": sample.weight([path, bar_file])}
 
 
-def montecarlo_analyse(cfg: dict) -> dict:
+def montecarlo_analyse(cfg: dict) -> sample.Workload:
     """One strategy through every Monte Carlo family, at the catalogue's simulation budget.
 
     Args:
@@ -68,7 +68,7 @@ def montecarlo_analyse(cfg: dict) -> dict:
     return _analyse(sample.files(cfg, "trades")[0], cfg)
 
 
-def montecarlo_analyse_long(cfg: dict) -> dict:
+def montecarlo_analyse_long(cfg: dict) -> sample.Workload:
     """The export's longest strategy through every Monte Carlo family.
 
     Args:
@@ -82,7 +82,7 @@ def montecarlo_analyse_long(cfg: dict) -> dict:
     return _analyse(max(where.iterdir(), key=lambda p: p.stat().st_size), cfg)
 
 
-def retest_load_sims(cfg: dict) -> dict:
+def retest_load_sims(cfg: dict) -> sample.Workload:
     """Read back the whole simulation table of one ingested retest battery.
 
     Args:
@@ -99,7 +99,7 @@ def retest_load_sims(cfg: dict) -> dict:
     return {"scale": len(frame), "bytes_in": size}
 
 
-def snooping_superior(cfg: dict) -> dict:
+def snooping_superior(cfg: dict) -> sample.Workload:
     """The SPA and the StepM over one gate harvest's daily panel, at step 20's settings.
 
     Args:
@@ -123,7 +123,7 @@ def snooping_superior(cfg: dict) -> dict:
     return {"scale": int(panel.size), "bytes_in": sample.weight([folder / "equity.parquet"])}
 
 
-def feedquality_detect(cfg: dict) -> dict:
+def feedquality_detect(cfg: dict) -> sample.Workload:
     """One feed through the feed-quality detector: the trailing scale, the spikes, the runs.
 
     Args:
@@ -141,7 +141,7 @@ def feedquality_detect(cfg: dict) -> dict:
     return {"scale": len(b["c"]), "bytes_in": int(sum(b[x].nbytes for x in "ohlc"))}
 
 
-def autopilot_facts(cfg: dict) -> dict:
+def autopilot_facts(cfg: dict) -> sample.Workload:
     """Every number of one judging step's studies, as the autopilot gathers them before a judge.
 
     Args:
@@ -159,7 +159,7 @@ def autopilot_facts(cfg: dict) -> dict:
 
 
 
-def profilepower_replication(cfg: dict) -> dict:
+def profilepower_replication(cfg: dict) -> sample.Workload:
     """One planted edge through the profile's own test, on one cell, at a short null.
 
     Args:
@@ -177,7 +177,7 @@ def profilepower_replication(cfg: dict) -> dict:
     return {"scale": len(frame), "bytes_in": int(frame.memory_usage().sum())}
 
 
-def pooledprofile_asset(cfg: dict) -> dict:
+def pooledprofile_asset(cfg: dict) -> sample.Workload:
     """One asset of a group against the group's joint null, every measure, at a short null.
 
     Args:
@@ -193,7 +193,7 @@ def pooledprofile_asset(cfg: dict) -> dict:
     return {"scale": len(frame), "bytes_in": int(frame.memory_usage().sum())}
 
 
-def falsepositives_donor(cfg: dict) -> dict:
+def falsepositives_donor(cfg: dict) -> sample.Workload:
     """One donor's monkeys drawn and read by the whole chain, cascade off, at the control's settings.
 
     Args:

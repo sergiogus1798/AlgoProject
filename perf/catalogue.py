@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from typing import Any, cast
 
 import pandas as pd
 
@@ -54,7 +55,7 @@ def table(judged: pd.DataFrame) -> str:
 
     lines = [f"{r.target:<22}{r.wall_s:>9.2f}s{before(r.prev_wall_s)}"
              f"{r.wall_pct:>8.1f}%{r.rss_pct:>8.1f}%  {r.verdict}"
-             for r in judged.itertuples()]
+             for r in cast("Any", judged.itertuples())]  # stub types the rows as plain tuples
     return "\n".join([head] + lines)
 
 

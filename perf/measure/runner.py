@@ -14,6 +14,7 @@ from pathlib import Path
 
 from perf.inputs import config
 from perf.inputs.targets import TARGETS
+from perf.measure import harness
 
 MB = 1024 * 1024
 
@@ -47,7 +48,7 @@ def _watch(state: dict, done: threading.Event, every: float) -> None:
             state["size"], state["snap"] = size, tracemalloc.take_snapshot()
 
 
-def measure(name: str, cfg: dict, memtop: int = 0) -> dict:
+def measure(name: str, cfg: dict, memtop: int = 0) -> harness.Measured:
     """Call one target once, with the clock and the allocator watching.
 
     Args:

@@ -2,6 +2,7 @@
 
 import shutil
 import tempfile
+from typing import TypedDict
 
 OVER, NEAR, OK, UNBUDGETED = "over", "near", "ok", "unbudgeted"
 
@@ -62,7 +63,27 @@ def failed(judged: list[dict]) -> list[dict]:
     return [r for r in judged if r["verdict"] == OVER]
 
 
-def total(rows: list[dict], cfg: dict) -> dict:
+class Total(TypedDict):
+    """The whole data root against its ceiling."""
+
+    gb: float
+    budget_gb: float
+    share: float
+    over: bool
+
+
+class TmpUse(TypedDict):
+    """How full the system temp partition is."""
+
+    path: str
+    gb: float
+    total_gb: float
+    share: float
+    max_share: float
+    over: bool
+
+
+def total(rows: list[dict], cfg: dict) -> Total:
     """The whole data root against its own ceiling.
 
     Args:
@@ -79,7 +100,7 @@ def total(rows: list[dict], cfg: dict) -> dict:
     return {"gb": gb, "budget_gb": limit, "share": gb / limit, "over": gb > limit}
 
 
-def system_tmp(cfg: dict) -> dict:
+def system_tmp(cfg: dict) -> TmpUse:
     """How full the system temp partition is, against `disk.tmp_max_share`.
 
     Args:

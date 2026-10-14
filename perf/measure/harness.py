@@ -7,9 +7,35 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import TypedDict
 
 from core.datapaths import tmp_dir
 from core.paths import ROOT
+
+
+class Measured(TypedDict):
+    """What the runner reports for one target call."""
+
+    wall_s: float
+    cpu_s: float
+    alloc_peak_mb: float | None
+    alloc_top: list[str]
+    self_rss_mb: float
+    scale: int
+    bytes_in_mb: float
+
+
+class Run(Measured):
+    """A measured run plus the tree-wide memory peak the harness saw."""
+
+    rss_peak_mb: float
+
+
+class Repeated(Run):
+    """The median run plus how far apart the repeats sat."""
+
+    wall_spread_pct: float
+    repeats: int
 
 def _pss_mb(pid: int) -> float:
     """Proportional set size of one process: shared pages divided among their sharers."""
@@ -52,7 +78,7 @@ def _tree_rss(root_pid: int) -> float:
 
 
 def once(target: str, overrides: list[str], cfg: dict,
-         profile: Path | None = None, memtop: int = 0) -> dict:
+         profile: Path | None = None, memtop: int = 0) -> Run:
     """One measured run of one target.
 
     Args:
@@ -82,10 +108,10 @@ def once(target: str, overrides: list[str], cfg: dict,
     assert proc.returncode == 0, f"{target} failed with exit code {proc.returncode}"
     record = json.loads(out.read_text(encoding="utf-8"))
     out.unlink()
-    return record | {"rss_peak_mb": peak}
+    return Run(**record, rss_peak_mb=peak)
 
 
-def repeat(target: str, cfg: dict, overrides: list[str] | None = None) -> dict:
+def repeat(target: str, cfg: dict, overrides: list[str] | None = None) -> Repeated:
     """Run a target `harness.repeats` times and keep the middle one.
 
     Args:
@@ -103,4 +129,4 @@ def repeat(target: str, cfg: dict, overrides: list[str] | None = None) -> dict:
     middle = runs[len(runs) // 2]
     spread = (runs[-1]["wall_s"] - runs[0]["wall_s"]) / statistics.median(
         [r["wall_s"] for r in runs]) * 100
-    return middle | {"wall_spread_pct": spread, "repeats": len(runs)}
+    return Repeated(**middle, wall_spread_pct=spread, repeats=len(runs))

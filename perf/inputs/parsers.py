@@ -5,7 +5,7 @@ from core.datapaths import tick_file
 from perf.inputs import sample
 
 
-def trades_read(cfg: dict) -> dict:
+def trades_read(cfg: dict) -> sample.Workload:
     """Parse a run of exported trade CSVs.
 
     Args:
@@ -20,7 +20,7 @@ def trades_read(cfg: dict) -> dict:
     return {"scale": rows, "bytes_in": sample.weight(paths)}
 
 
-def sqx_xml(cfg: dict) -> dict:
+def sqx_xml(cfg: dict) -> sample.Workload:
     """Unzip and parse the strategy XML out of a run of .sqx files.
 
     Args:
@@ -35,7 +35,7 @@ def sqx_xml(cfg: dict) -> dict:
     return {"scale": len(paths), "bytes_in": sample.weight(paths)}
 
 
-def sqx_stats(cfg: dict) -> dict:
+def sqx_stats(cfg: dict) -> sample.Workload:
     """Decode the stored statistics block of a run of .sqx files.
 
     Args:
@@ -51,7 +51,7 @@ def sqx_stats(cfg: dict) -> dict:
     return {"scale": len(paths), "bytes_in": sample.weight(paths)}
 
 
-def bars_read(cfg: dict) -> dict:
+def bars_read(cfg: dict) -> sample.Workload:
     """Read one feed's stored M1 bars into the indexed frame everything aligns on.
 
     Args:
@@ -66,7 +66,7 @@ def bars_read(cfg: dict) -> dict:
             "bytes_in": sample.weight([path])}
 
 
-def ticks_read(cfg: dict) -> dict:
+def ticks_read(cfg: dict) -> sample.Workload:
     """Decode one SQX tick file into its minute table of spread, as the spread study does.
 
     Args:

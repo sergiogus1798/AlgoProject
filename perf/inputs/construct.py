@@ -6,6 +6,7 @@ import pandas as pd
 from core import assetdata, barstore
 from core.archive.read import listing
 from core.paths import bar_source, harvest_dir
+from perf.inputs.sample import Workload
 from portfolio.common.construct import walkforward, weights
 from portfolio.common.construct.equity import closecurve, universe
 from portfolio.common.construct.inputs import config, source
@@ -30,7 +31,7 @@ BANK_SETS = ["owner.eurusd=1.1", "owner.payout_cushion=0", "owner.tax_rate=0.2",
              "gaps.ftmo_1step_floor_after_payout=stays"]
 
 
-def universe_member(cfg: dict) -> dict:
+def universe_member(cfg: dict) -> Workload:
     """One archived strategy through the universe (M1 path, days per clock, M5 blocks, reconciliation).
 
     Args:
@@ -45,7 +46,7 @@ def universe_member(cfg: dict) -> dict:
     return {"scale": len(s["trades"]), "bytes_in": bar_source(s["feed"]).stat().st_size}
 
 
-def close_curve(cfg: dict) -> dict:
+def close_curve(cfg: dict) -> Workload:
     """The close-to-close daily panel of 64 strategies of one harvest over oos1, on 16 workers.
 
     Args:
@@ -59,11 +60,12 @@ def close_curve(cfg: dict) -> dict:
     lo, hi = (pd.Timestamp(x, unit="ms") for x in assetdata.window(assetdata.load("USDJPY"), "oos1"))
     mine = pd.read_parquet(trades, filters=[("identity", "in", ids), ("sample", "==", "OOS")])
     bars = barstore.source("USDJPY_M1", ["High", "Low", "Close"])
-    closecurve.panel(mine, bars[(bars.index >= lo) & (bars.index < hi)], *closecurve.measured(mine))
+    closecurve.panel(mine, bars[(bars.index >= lo) & (bars.index < hi)],  # pyright: ignore[reportArgumentType]  # stub: boolean mask indexing
+                     *closecurve.measured(mine))
     return {"scale": len(ids), "bytes_in": bar_source("USDJPY_M1").stat().st_size}
 
 
-def pairs_table(cfg: dict) -> dict:
+def pairs_table(cfg: dict) -> Workload:
     """Every pair measure over a 500-strategy synthetic pool on a 10-year build, on every core.
 
     Args:
@@ -74,12 +76,13 @@ def pairs_table(cfg: dict) -> dict:
     """
     days = pd.bdate_range("2008-01-01", "2017-12-29")
     daily = pd.DataFrame(np.random.default_rng(SEED).normal(size=(len(days), PAIRS_POOL)), index=days,
-                         columns=[f"S{k:03d}" for k in range(PAIRS_POOL)])
-    got = table.table(daily, daily.groupby(daily.index.to_period("M")).sum(), config.load())
+                         columns=pd.Index([f"S{k:03d}" for k in range(PAIRS_POOL)]))
+    got = table.table(daily, daily.groupby(pd.DatetimeIndex(daily.index).to_period("M")).sum(),  # pyright: ignore[reportArgumentType]  # stub: groupby().sum() widens to NDFrame
+                       config.load())
     return {"scale": int(len(got) // 11), "bytes_in": 0}
 
 
-def rank_search(cfg: dict) -> dict:
+def rank_search(cfg: dict) -> Workload:
     """A whole GA's worth of combinations of a 50-member pool scored by ranks on a 10-year build.
 
     Args:
@@ -100,7 +103,7 @@ def rank_search(cfg: dict) -> dict:
     return {"scale": RANK_BATCH, "bytes_in": 0}
 
 
-def verdict_null(cfg: dict) -> dict:
+def verdict_null(cfg: dict) -> Workload:
     """The real verdict's oos1 null: 10,000 random combinations of five of a 50-member pool on two years.
 
     Args:
@@ -135,7 +138,7 @@ def _trade_units(rng: np.random.Generator, per_day: int) -> dict:
             "per_day": per_day, "n_days": days}
 
 
-def stage_b(cfg: dict) -> dict:
+def stage_b(cfg: dict) -> Workload:
     """One 5-member combination through stage B: three Monte Carlos, every block length, every risk.
 
     The committed knobs (10,000 paths; the sweep of 5, 10, 20 and 40 days and the measured
@@ -166,7 +169,7 @@ def stage_b(cfg: dict) -> dict:
             "bytes_in": 0}
 
 
-def weights_wf(cfg: dict) -> dict:
+def weights_wf(cfg: dict) -> Workload:
     """The weight walk-forward's maths on a synthetic 5-member portfolio: 8 years to estimate, 4 to test.
 
     Every `weights.REGISTRY` method re-estimated each January (4 windows), 2,000 bootstrap
@@ -182,12 +185,12 @@ def weights_wf(cfg: dict) -> dict:
     engine = config.load(["wf.confidence=0.95", "wf.step_years=1"])
     days = pd.bdate_range("2012-01-02", "2023-12-29")
     unit = pd.DataFrame(0.05 + rng.normal(size=(len(days), 5)) * [1, 1.5, 2, 2.5, 3], index=days)
-    cuts = walkforward.folds(days, pd.Timestamp("2020-01-01"), 0, 1)
+    cuts = walkforward.folds(days, pd.Timestamp("2020-01-01"), 0, 1)  # pyright: ignore[reportArgumentType]  # stub: Timestamp(str) may be NaT
     table = walkforward.compare(walkforward.arms(unit, cuts, weights.REGISTRY, engine), engine, rng)
     return {"scale": len(table), "bytes_in": 0}
 
 
-def funded_bank(cfg: dict) -> dict:
+def funded_bank(cfg: dict) -> Workload:
     """The whole bank table (encargo 33 §4) on a synthetic path set: every plan × add-on × risk × re-buy policy.
 
     Args:

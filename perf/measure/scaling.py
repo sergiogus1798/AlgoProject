@@ -2,6 +2,7 @@
 
 import os
 import time
+from typing import TypedDict
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import get_context
 
@@ -88,7 +89,15 @@ def sweep(cfg: dict, kb: float) -> list[dict]:
     return [r | {"speedup": r["gb_s"] / out[0]["gb_s"]} for r in out]
 
 
-def machine(cfg: dict) -> dict:
+class Machine(TypedDict):
+    """Both scaling curves and the core count."""
+
+    cores: int | None
+    cache: list[dict]
+    dram: list[dict]
+
+
+def machine(cfg: dict) -> Machine:
     """Both curves plus what the machine says about itself.
 
     Args:

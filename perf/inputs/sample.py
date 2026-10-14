@@ -1,8 +1,16 @@
 """Where the real files a measurement runs on are found, so two dates measure the same thing."""
 
 from pathlib import Path
+from typing import TypedDict
 
 from core.paths import DATA, bar_source
+
+
+class Workload(TypedDict):
+    """What a target reports: units of work done and bytes read."""
+
+    scale: int
+    bytes_in: int
 
 
 def export(cfg: dict, databank: str) -> Path:
