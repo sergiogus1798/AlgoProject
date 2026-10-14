@@ -422,7 +422,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `portfolio/testroot/__init__.py` | 1 | The portfolio module's test root: where a test run of the real code writes. | — | — |
 | `portfolio/testroot/build.py` | 82 | Build the portfolio test root: a second data root for test runs of the real code. | core | — |
 | `portfolio/testroot/guard.py` | 58 | Proof that a run left a folder alone: a fingerprint before and after, or the folder made read-only. | — | — |
-| `portfolio/testroot/harvest.py` | 112 | The traded (stop) versions' cosecha for the test root, keyed by the grafted file's own identity. | core, engines, portfolio, sqx | pandas |
+| `portfolio/testroot/harvest.py` | 161 | The traded (stop) versions' cosecha for the test root, keyed by the grafted file's own identity. | core, engines, portfolio, sqx | pandas |
 | `sqx/blocks/install.py` | 175 | Install authored custom blocks or random groups into a stopped SQX install's settings. | core, sqx | — |
 | `sqx/blocks/palette.py` | 304 | The palette library: named block selections, each one a family plus what it changes. | core, sqx | yaml |
 | `sqx/blocks/taxonomy.py` | 246 | The block taxonomy: every block the builder can sample, grouped and ready to be labelled. | core, sqx | yaml |
@@ -909,7 +909,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_audit_select.py` | 33 | Known-answer test for tools/audit_tests.py `select`: which tests a change reaches. | audit_tests | — |
 | `tests/test_autopilot_again.py` | 56 | `call.again`: one retry on SQX's transient abort, and on nothing else. | pipeline | pytest |
 | `tests/test_autopilot_blind_criteria.py` | 149 | The rules `criteria.yaml` gives steps 18.5 (off, entry kept) and 19; 18 has none, on hand-made fact rows: every branch | pipeline | pandas |
-| `tests/test_autopilot_closing.py` | 96 | The autopilot's step 26 hand-over: a finalist is the mother's own `.sqx` (no stop, no | core, mt5, pipeline, tests | pandas |
+| `tests/test_autopilot_closing.py` | 129 | The autopilot's step 26 hand-over: a finalist is the mother's own `.sqx` (no stop, no | core, mt5, pipeline, tests | pandas |
 | `tests/test_autopilot_criteria.py` | 171 | The autopilot's inference: one rule gives pass, limbo or fail; a strategy is its worst rule; | pipeline, sqx | pandas |
 | `tests/test_autopilot_crosstf_cascade.py` | 367 | Steps 11 -> 11.5 -> 11.7 -> 12 (encargo 47, part P): the autopilot's plan and the window's chain | pipeline, sqx, studies, ui | pandas |
 | `tests/test_autopilot_facts.py` | 183 | The autopilot's facts: every number a step-8 study writes per strategy reaches a key a | pipeline, studies | pandas |
@@ -947,7 +947,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_close_curve.py` | 136 | The close-to-close rebuild on a hand-computed case: commission from the entry, and the joint study's panel. | portfolio, studies | numpy, pandas |
 | `tests/test_cloud_map.py` | 156 | Known-answer tests of the parameter map: a planted quadratic is legible with the right ranking, noise is not. | studies | numpy, pandas, pytest |
 | `tests/test_columnhelp.py` | 276 | ui.text.columnhelp: every column the databank tables show today has its «?» sentence, every | ui | — |
-| `tests/test_commission_segments.py` | 144 | Known-answer test for the 2026-09-29 commission fix: a `no_forex` asset with commission | core, sqx | — |
+| `tests/test_commission_segments.py` | 142 | Known-answer test for the commission per segment: an asset with commission confirmed prices | core, sqx | — |
 | `tests/test_commit_apply.py` | 137 | tools/commit_apply on a throwaway git repo: a normal apply, a path changed after the proposal, --only, a clean tree. | tools | — |
 | `tests/test_condition_count.py` | 193 | Known-answer test for the owner's rule 14: at most 2 entry and 2 exit conditions per strategy. | core, sqx | — |
 | `tests/test_crossmarket_contract.py` | 38 | The equity lines of the window take their style from their sign alone, the reference included. | ui | PySide6 |
@@ -1108,7 +1108,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_perf66_portfolio_mc.py` | 278 | Encargo 66, the portfolio Monte Carlo: each fast or reseeded path against the code it replaced. | engines, portfolio, test_portfolio_mc_paths | numpy, pandas, pytest, scipy |
 | `tests/test_perf66_resample.py` | 356 | Encargo 66 §3.4 and §3.9c: the gate's resampling made lighter gives the numbers it gave — each oracle below is the code replaced. | studies | numpy, pytest |
 | `tests/test_perf66_retest.py` | 197 | Encargo 66, tanda E: export_retest packs a live session's `.abk` in place of one orderstocsv pass, fakes only. | core, sqx, tests | pandas, pytest |
-| `tests/test_perf66_review_data.py` | 199 | Encargo 66, the data reviewer's findings: each test fails on the code before the fix. | core, mt5, pipeline, portfolio, studies, ui | numpy, pandas, pytest, yaml |
+| `tests/test_perf66_review_data.py` | 294 | Encargo 66, the data reviewer's findings: each test fails on the code before the fix. | core, mt5, pipeline, portfolio, studies, ui | numpy, pandas, pytest, yaml |
 | `tests/test_perf66_scripts.py` | 77 | Encargo 66, the shell and process launchers: the clone script and the one-autopilot lock. | — | — |
 | `tests/test_perf66_shards.py` | 83 | Encargo 66, the data reviewer's findings on the draws shards: names, concurrency and the deferred fold. | core | numpy, pandas |
 | `tests/test_perf66_shared_entries.py` | 183 | Encargo 66, N12 B (owner, 2026-10-13): the four rungs of the monkey share their random entries. | engines, studies, test_perf66_kernel, test_perf66_ladder | numpy |
@@ -1211,7 +1211,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_ui_ops.py` | 306 | The operation zone: /api/pulse, /api/ops/sqx and /api/ledger read-only, and its widgets offscreen. | core, ui | PySide6, fastapi |
 | `tests/test_ui_portfolios.py` | 433 | Known-answer test of the PORTFOLIOS zone's daemon: known folders → the JSON the window paints, and the launchers' plumbing. | portfolio, ui, ui_portfolios_planted | PySide6 |
 | `tests/test_ui_research.py` | 347 | «Investigar»: its routes on a local app, the queue with fake steps, the preflight's refusals and | core, studies, ui | PySide6, fastapi, pandas |
-| `tests/test_ui_results.py` | 168 | The results routes over the real reports, read-only: shapes, pairing by identity, staleness, old reports. | core, ui | fastapi |
+| `tests/test_ui_results.py` | 170 | The results routes over the real reports, read-only: shapes, pairing by identity, staleness, old reports. | core, ui | fastapi |
 | `tests/test_ui_runner.py` | 231 | The window's run side: the python queue, cancel, the refusals, and with `--run` a real study | core, ui | fastapi, pandas |
 | `tests/test_ui_screen.py` | 207 | The F5 drawings' pure halves: what the screen report keeps is what the page draws, merges, partials, market rows. | core, ui | PySide6 |
 | `tests/test_ui_shell.py` | 217 | The whole window offscreen over the whole daemon in-process: every zone, the context bar, the signals. | core, ui | PySide6, fastapi |
@@ -1245,7 +1245,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_worker_lock.py` | 197 | bin/sqx-lock.sh's owner lock (OPEN.md #32): a fake install dir, no real worker touched. | core | — |
 | `tests/test_workflow_family.py` | 123 | A Simple Strategy carries its idea family (owner, 2026-10-12): the refusal, the registry column, | core, pipeline, sqx, studies | pytest |
 | `tests/ui_portfolios_planted.py` | 112 | The folders the PORTFOLIOS zone test reads, planted in a temp root: shared by test_ui_portfolios, not a test itself. | — | pandas |
-| `tools/audit_tests.py` | 235 | Runs tests/test_*.py in parallel and names the ones set aside. | core, depmap | — |
+| `tools/audit_tests.py` | 220 | Runs tests/test_*.py in parallel and names the ones set aside. | core, depmap | — |
 | `tools/checks.py` | 342 | Verify every mechanical rule in CODESTYLE.md and list what breaks them. | core, depmap, knowhowmap, knowhowrefs, layering, ratchet, readmetable | — |
 | `tools/commit_apply.py` | 223 | Apply the night's commit proposal: per group `git add -- paths` + `git commit -- paths`, then one push. No model. | core | — |
 | `tools/daily_audit.py` | 182 | The half of the daily audit a machine can do alone. Judgement stays with the /audit agent. | core, tools | — |

@@ -23,22 +23,37 @@ def mothers(folder: Path, names: list[str]) -> pd.DataFrame:
     folder.mkdir(parents=True, exist_ok=True)
     for name in names:
         (folder / f"{name}.sqx").write_bytes(b"")
-    return pd.DataFrame({"strategy": names, "identity": [f"id-{n}" for n in names],
-                         "file": [folder / f"{n}.sqx" for n in names]})
+    return pd.DataFrame(
+        {
+            "strategy": names,
+            "identity": [f"id-{n}" for n in names],
+            "file": [folder / f"{n}.sqx" for n in names],
+        }
+    )
 
 
 def test_a_finalist_is_the_mothers_own_file() -> None:
     """One row per mother: her name, her `.sqx` (absolute), no `stop` field; none is a clean end."""
-    with tempfile.TemporaryDirectory() as tmp, \
-            patched(survivors, about=lambda p: WHO), \
-            patched(finalists.identity, hashed=lambda files: {Path(f): f"id-{Path(f).stem}" for f in files}):
+    with (
+        tempfile.TemporaryDirectory() as tmp,
+        patched(survivors, about=lambda p: WHO),
+        patched(
+            finalists.identity,
+            hashed=lambda files: {Path(f): f"id-{Path(f).stem}" for f in files},
+        ),
+    ):
         who = mothers(Path(tmp) / "bank", ["Strategy 1", "Strategy 2"])
         said = finalists.write("Pr", who, Path(tmp))
         rows = json.loads((Path(tmp) / finalists.FILE).read_text())
         assert "2 finalista(s)" in said and len(rows) == 2
-        assert rows[0] == {"strategy": "Strategy 1", "identity": "id-Strategy 1",
-                           "mother": "Strategy 1", "sqx": str((Path(tmp) / "bank" / "Strategy 1.sqx").resolve()),
-                           "symbol": "USDJPY", "timeframe": "H1"}
+        assert rows[0] == {
+            "strategy": "Strategy 1",
+            "identity": "id-Strategy 1",
+            "mother": "Strategy 1",
+            "sqx": str((Path(tmp) / "bank" / "Strategy 1.sqx").resolve()),
+            "symbol": "USDJPY",
+            "timeframe": "H1",
+        }
         try:
             finalists.write("Pr", who.iloc[:0], Path(tmp))
             raise AssertionError("an empty list went on to step 26")
@@ -50,12 +65,21 @@ def test_a_finalist_is_the_mothers_own_file() -> None:
 def test_step_26_is_its_agents_and_refuses_cleanly() -> None:
     """`mt5.verify.autopilot` is imported only when step 26 runs; a check that is not ok is
     a clean stop carrying its reasons, an ok one hands back the step's own line."""
-    calls, params = [], {"start": "2024-01-01", "end": "2026-08-30", "model": "m", "firms": ["f"]}
+    calls, params = (
+        [],
+        {"start": "2024-01-01", "end": "2026-08-30", "model": "m", "firms": ["f"]},
+    )
     fake = types.ModuleType("mt5.verify.autopilot")
-    fake.check = lambda project, rows, got: {"ok": got is params and bool(rows), "text": "",
-                                             "reasons": ["sin cuenta guardada", "sin EA"]}
-    fake.run = lambda project, rows, got, out: calls.append((project, rows, got, out)) or "1 de 1"
+    fake.check = lambda project, rows, got, own_log=False: {
+        "ok": got is params and bool(rows),
+        "text": "",
+        "reasons": ["sin cuenta guardada", "sin EA"],
+    }
+    fake.run = lambda project, rows, got, out: (
+        calls.append((project, rows, got, out)) or "1 de 1"
+    )
     import mt5.verify
+
     name, absent = "mt5.verify.autopilot", object()
     kept = sys.modules.get(name, absent), getattr(mt5.verify, "autopilot", absent)
     sys.modules[name] = mt5.verify.autopilot = fake
@@ -67,7 +91,9 @@ def test_step_26_is_its_agents_and_refuses_cleanly() -> None:
                 finalists.verify("Pr", params, out)
                 raise AssertionError("step 26 started with its check not ok")
             except survivors.Done as said:
-                assert str(said) == "el paso 26 no se lanza: sin cuenta guardada; sin EA"
+                assert (
+                    str(said) == "el paso 26 no se lanza: sin cuenta guardada; sin EA"
+                )
             (out / finalists.FILE).write_text('[{"strategy": "S"}]')
             assert finalists.verify("Pr", params, out) == "1 de 1"
             assert calls == [("Pr", [{"strategy": "S"}], params, out)]
@@ -82,11 +108,18 @@ def test_step_26_is_its_agents_and_refuses_cleanly() -> None:
 def test_window_wfc_command_signs_the_family() -> None:
     """Read-only, when the data root holds a batch with trades: the window's command for a blind look."""
     from core.paths import DATA
-    if not list((DATA / "strategyPermutations" / REAL).glob("*/variant_trades.parquet")):
-        print("skipped the window's wfc command: no batch of this run holds variant_trades.parquet")
+
+    if not list(
+        (DATA / "strategyPermutations" / REAL).glob("*/variant_trades.parquet")
+    ):
+        print(
+            "skipped the window's wfc command: no batch of this run holds variant_trades.parquet"
+        )
         return
     argv = call.window("wfc", REAL, "", "USDJPY", ["Strategy 16.9.76"])[0]
-    assert argv[:2] == ["-m", "studies.optimisation.wfc.report"] and argv[-2] == "--family"
+    assert (
+        argv[:2] == ["-m", "studies.optimisation.wfc.report"] and argv[-2] == "--family"
+    )
 
 
 if __name__ == "__main__":
