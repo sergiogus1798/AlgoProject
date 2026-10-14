@@ -18,7 +18,7 @@ Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los 
 |---|---|---|---|---|
 | F0 | decisiones del dueño: todas contestadas; D11 la propone Opus en F14 | dueño | — | hecho |
 | F1 | los tests corren al entregar | Sonnet | D1 | hecho 2026-10-14 |
-| F2 | hooks: lint ampliado al escribir, y cierre que no deja terminar en rojo | Sonnet | F1, D2 | sin empezar |
+| F2 | hooks: lint ampliado al escribir, y cierre que no deja terminar en rojo | Sonnet | F1, D2 | hecho 2026-10-14 |
 | F3 | trinquete en `checks.py` | Sonnet | — | hecho 2026-10-14 (`1e78492`) |
 | F4 | ruff con `F401` y `B`; los 25 `B023` leídos | Sonnet | D3 | sin empezar |
 | F5 | semillas | Sonnet | D4 | sin empezar |
