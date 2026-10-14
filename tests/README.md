@@ -389,6 +389,7 @@ The window's tests (`ui/`), all offscreen (`QT_QPA_PLATFORM=offscreen`) over the
 | `test_perf66_resample.py` | encargo 66 §3.4 and §3.9c, the gate's resampling (`drawdowns`, `q_null`, `_resampled`) made lighter gives the numbers it gave, each oracle the code replaced | `PYTHONPATH=. python3 -m pytest tests/test_perf66_resample.py -q` |
 | `test_perf66_periods.py` | encargo 66 review 3: `q_null` and `permuted.between` refuse a trailing period of size 0 instead of reading out of bounds |
 | `test_perf66_review_data.py` | encargo 66, the data reviewer's findings: each test fails on the code before the fix | `PYTHONPATH=. python3 -m pytest tests/test_perf66_review_data.py -q` |
+| `test_ratchet.py` | `tools/ratchet.py`: each counter on a planted snippet, and a rise is refused without touching the baseline | `python3 tests/test_ratchet.py` |
 | `test_perf66_shards.py` | encargo 66, the draws shards: names that sanitise alike, concurrent writers and the deferred fold equal the old merge | `PYTHONPATH=. python3 -m pytest tests/test_perf66_shards.py -q` |
 | `test_perf66_shared_entries.py` | encargo 66 N12 B, the four rungs of the monkey share one random stream: same uniforms and entries, each rung the same null as before, a tighter paired difference, `--only` replays | `PYTHONPATH=. python3 -m pytest tests/test_perf66_shared_entries.py -q` |
 | `test_perf66_cscv.py` | encargo 66, the CSCV row kernel equals the old per-row numpy passes, bit for bit | `PYTHONPATH=. python3 -m pytest tests/test_perf66_cscv.py -q` |

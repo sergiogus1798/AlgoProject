@@ -6,6 +6,7 @@
 | `depmap.py` | Read the real imports and regenerate `docs/DEPENDENCIES.md` | `python3 tools/depmap.py` |
 | `projectmap.py` | Read Graphify's graph and regenerate `PROJECT_MAP.md`: modules, interfaces, infra vs calculation, hot spots | `python3 tools/projectmap.py` |
 | `skillmap.py` | Read every installed skill and regenerate `docs/SKILLS.md` — what exists, what it costs to invoke, what is stale | `python3 tools/skillmap.py` |
+| `ratchet.py` | The debt ratchet `checks.py` runs: `-> dict` public functions per package, broad `except`, unseeded `default_rng()`, legacy `np.random`, `layering.ALLOW` size and ruff's B905/C901/PLR0913 may not rise above `ratchet.json`; a fall rewrites that file (commit it). Run bare it prints counts vs baseline | `python3 tools/ratchet.py` |
 | `layering.py` | The import-direction check `checks.py` runs (core, engines, sqx, ui, tools); its ALLOW list is debt | imported, not run |
 | `knowhowmap.py` | Regenerate each `knowhow/<domain>/INDEX.md` from its cards' `q:` lines; `checks.py` uses it to check the cards, the `knowhow/` links and the indexes | `python3 tools/knowhowmap.py` |
 | `knowhowrefs.py` | The knowhow check `checks.py` runs: a card's header (above `## Evidence`) must not cite a repo path that no longer exists | imported, not run |

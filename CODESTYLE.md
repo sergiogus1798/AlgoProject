@@ -148,6 +148,10 @@ docstrings, functions without a docstring or without type hints, absolute paths 
 `core/paths.py`, imports missing from `requirements.txt`, and a stale `DEPENDENCIES.md`. It blocks
 nothing while you work — it just has to be green before the work is done.
 
+`checks.py` also runs the ratchet (`tools/ratchet.py`): public functions annotated bare `-> dict` (per package), broad `except`,
+unseeded `default_rng()`, legacy `np.random.*`, the size of `layering.ALLOW` and ruff's B905/C901/PLR0913 may not rise above
+`tools/ratchet.json`. When a count falls the check rewrites that file by itself; commit it with the change.
+
 ## 9. Measure what you change
 
 The load here is thousands of strategies times hundreds of thousands of simulations, on a machine

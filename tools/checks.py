@@ -11,6 +11,7 @@ from pathlib import Path
 import depmap
 import knowhowmap
 import knowhowrefs
+import ratchet
 from layering import bad_layering
 
 ROOT, MAX_LINES = depmap.ROOT, 500
@@ -234,7 +235,7 @@ def main() -> None:
               ("manual pages", no_manual_page), ("lint", lint_bugs), ("dependency map", stale_depmap),
               ("knowhow cards", knowhowmap.bad_cards), ("knowhow links", knowhowmap.broken_links),
               ("knowhow header paths", knowhowrefs.dead_header_paths), ("knowhow indexes", knowhowmap.stale_indexes),
-              ("workflow table", workflow_drift), ("layering", bad_layering)]
+              ("workflow table", workflow_drift), ("layering", bad_layering), ("ratchet", ratchet.check)]
     total = 0
     for name, check in checks:
         problems = check(files)

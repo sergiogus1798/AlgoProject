@@ -43,6 +43,11 @@ Lee `CODESTYLE.md` entero (174 → ~250 líneas; §4, §11, §12 y §13 son los 
 - 2026-10-13 — El dueño contesta D7, D8, D9, D10, D12 y D13.
 - 2026-10-13 — El dueño contesta D1, D2, D4, D5, D6 y D14: `ruff format` se hace al lanzar el encargo.
 - 2026-10-13 — El dueño contesta D3: C.
+- 2026-10-14 — Arranca la ejecución (sesión algoproject-7c, árbol limpio en `71c5e92`). El dueño: D6 sólo
+  `discards.root()`, `portfolio_dir()` y `funding_dir()` vuelven a `core/paths.py`; D11 = de las
+  operaciones exportadas al veredicto del paso 8; un commit por fase; sin Council. Línea base medida:
+  ruff `F401,B` 344 (B905 235, F401 56, B023 25), C901 52, PLR0913 231, `default_rng()` 14,
+  `np.random.*` 5, `-> dict` 1.377, `except` amplios 29, `ruff format` 1.511 ficheros, 330 tests.
 
 ## Objetivo — un comando
 
