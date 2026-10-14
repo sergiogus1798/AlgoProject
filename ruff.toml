@@ -1,5 +1,5 @@
 # Real-bug lint only. No formatter, no style rules — CODESTYLE.md decides those.
-target-version = "py310"
+# Python version: pyproject.toml (requires-python) — ruff reads it from there.
 extend-exclude = ["scratch", "tools/sqx-lab"]
 
 [lint]

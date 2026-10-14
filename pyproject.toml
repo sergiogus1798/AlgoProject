@@ -1,0 +1,8 @@
+# Not a package: the one place the Python floor lives. Move these two together.
+[project]
+name = "algoproject"
+version = "0"
+requires-python = ">=3.10"
+
+[tool.pyright]
+pythonVersion = "3.10"
