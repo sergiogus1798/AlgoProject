@@ -90,7 +90,7 @@ def composition(comp: tuple[tuple, tuple], metrics: pd.DataFrame, got: dict, sym
 
     def screen(floors: bool) -> tuple[pd.DataFrame, dict]:
         """The variants measured, exact duplicates told by their trade lists."""
-        return filters.screen(metrics, comp, k, span, symbol, e, floors=floors, step=STEP,
+        return filters.screen(metrics, comp, k, batch.years(asset, panel.SEGMENTS[1:2]), symbol, e, floors=floors, step=STEP,
                               cfg=cfg["panel"], prints=got["prints"])
 
     kept, counts = screen(True)

@@ -36,6 +36,7 @@ class Harvest(TypedDict):
     missing: pd.DataFrame
     split: str
     end: str
+    folder: str
 
 
 def config(overrides: list[str]) -> dict[str, Any]:
@@ -104,6 +105,31 @@ def market(feed: str) -> Market:
                       for s, (a, b) in edges.items()}}
 
 
+def check_oos1(trades: pd.DataFrame, windows: tuple[str, str], where: str) -> None:
+    """Refuse a harvest whose trades labelled "OOS" are not all inside the oos1 window.
+
+    Step 8 reads the retest databank's "OOS" as oos1; a retest task that ran past it would
+    carry oos2 trades into the verdict unannounced.
+
+    Args:
+        trades: The harvest's trades, with `sample`, `Open time` and `Close time`.
+        windows: `market()["windows"]["OOS"]`, the oos1 pair of strings.
+        where: The harvest's folder, named in the error.
+
+    Raises:
+        ValueError: Some "OOS" trade opens before or closes after the window.
+    """
+    start, end = (cast(pd.Period, pd.Period(windows[0])).start_time,
+                  cast(pd.Period, pd.Period(windows[1])).end_time)
+    oos = trades[trades["sample"] == "OOS"]
+    out = oos[(oos["Open time"] < start) | (oos["Close time"] > end)]
+    if len(out):
+        raise ValueError(
+            f"gate: {len(out)} operaciones «OOS» de {where} caen fuera de oos1 ({start.date()} a "
+            f"{end.date()}): de {out['Open time'].min()} a {out['Close time'].max()}. La tarea de "
+            "retest cubrió más que oos1; rehaz el retest sobre oos1 y vuelve a cosechar")
+
+
 def staged(data: Mapping[str, Any], feed: str, frame: str, out: Path) -> dict[str, Any]:
     """A harvest with everything the levels read beside it (the `data` contract of levels.py).
 
@@ -117,10 +143,15 @@ def staged(data: Mapping[str, Any], feed: str, frame: str, out: Path) -> dict[st
         `data`, with `bars` (the strategies' own timeframe, the whole file), `market`,
         `costs` and `costs_build` (reprice.costs of the feed's oos1 and build segments),
         `out`, `feed`, and `quality`, the feed's anomaly inventory, left out when it has none.
+
+    Raises:
+        ValueError: An "OOS" trade lies outside the oos1 window (`check_oos1`).
     """
     out.mkdir(parents=True, exist_ok=True)
+    asset = market(feed)
+    check_oos1(data["trades"], asset["windows"]["OOS"], str(data.get("folder", feed)))
     staged_data: dict[str, Any] = {
-        **data, "bars": read_bars(feed, frame), "market": market(feed), "out": out, "feed": feed,
+        **data, "bars": read_bars(feed, frame), "market": asset, "out": out, "feed": feed,
         "costs": reprice.costs(feed, "oos1"), "costs_build": reprice.costs(feed, "build")}
     if (feed_quality_dir(current(feed)) / "events.parquet").exists():
         staged_data["quality"] = feed_quality_dir(current(feed))
@@ -226,4 +257,5 @@ def load(folder: Path) -> Harvest:
     return Harvest(metrics=metrics, trades=trades, equity=equity, curve=daily.cumsum(),
                    missing=pd.read_csv(folder / "missing_oos.csv"),
                    split=split.date().isoformat(),
-                   end=cast(pd.Timestamp, curves["OOS"].index.max()).date().isoformat())
+                   end=cast(pd.Timestamp, curves["OOS"].index.max()).date().isoformat(),
+                   folder=str(folder))

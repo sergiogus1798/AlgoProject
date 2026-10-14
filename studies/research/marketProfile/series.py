@@ -71,7 +71,7 @@ def _mean(a: np.ndarray, n: int) -> np.ndarray:
 
 
 def _lag(a: np.ndarray) -> np.ndarray:
-    """The series as the previous bar saw it."""
+    """The series as the previous bar saw it: element i is bar i-1's value, element 0 is NaN."""
     return np.concatenate([[np.nan], a[:-1]])
 
 

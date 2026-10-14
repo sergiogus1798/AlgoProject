@@ -116,6 +116,13 @@ def closed(values: np.ndarray, cal: dict) -> np.ndarray:
     """A per-day array as each bar may use it: the value of the last day ALREADY closed.
 
     Every bar of day d reads day d-1, never its own day: the bars of the first day read NaN.
+
+    Args:
+        values: One value per day, each computed from that day's whole session.
+        cal: The cell's calendar (`day`, the day index of each bar).
+
+    Returns:
+        One value per bar: element b is `values[cal["day"][b] - 1]`.
     """
     return np.concatenate([[np.nan], values[:-1]])[cal["day"]]
 

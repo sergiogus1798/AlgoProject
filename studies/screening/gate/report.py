@@ -8,7 +8,7 @@ from datetime import date
 from core.manifest import write as write_manifest
 from core.paths import report_dir
 from core.study import draws, output
-from ledger import tried
+from ledger import steprows, tried
 from pipeline.autopilot import criteria, judge
 from studies.screening.gate import cascade, inputs, many
 from studies.screening.gate.levels import LEVELS
@@ -78,6 +78,8 @@ def main() -> None:
                    + (f" --set {replay}" if replay else ""),
                    {"entered": len(scores), "survives": int(scores["survives"].sum())} | got["fdr"])
     print(f"\n{int(scores['survives'].sum())} de {len(scores)} siguen, semillas {used} -> {out}")
+    print(steprows.log_cut(a.project, 8, (len(scores), int(scores["survives"].sum())),
+                           "gate: la puerta OOS por niveles", "studies.screening.gate.report"))
 
 
 if __name__ == "__main__":

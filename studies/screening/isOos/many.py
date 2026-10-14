@@ -22,7 +22,9 @@ def run(inputs: dict, cfg: dict) -> dict[str, Any]:
         cfg: The study's config; this half has no knob, so the hash is the outcomes'.
 
     Returns:
-        The contract dict, the Benjamini-Hochberg survivors marked in every ranking.
+        The contract dict, the Benjamini-Hochberg survivors marked in every ranking. The mark
+        is soft: it removes no strategy and writes no verdict, so nothing is owed to the
+        ledger (n_out would equal n_in).
     """
     started = time.time()
     columns, n, is_metrics = inputs["columns"], inputs["n"], inputs["is"]

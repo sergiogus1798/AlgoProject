@@ -61,7 +61,7 @@ def synthetic(n: int = 150, seed: int = 3) -> tuple[pd.DataFrame, dict]:
     copies, thin, idle, lost = ids[-4:-2], ids[-2], ids[-1], ids[1]
     metrics.loc[metrics["variant_id"] == thin, ["NumberOfTrades (build)",
                                                 "NumberOfTrades (build+oos1)"]] = 20
-    metrics.loc[metrics["variant_id"] == idle, ["NumberOfTrades (oos2)"]] = 0
+    metrics.loc[metrics["variant_id"] == idle, ["NumberOfTrades (oos1)", "NumberOfTrades (oos2)"]] = 0
     days = {leg: frame.drop(index=[lost] + ([idle] if leg == "oos2" else []))
             for leg, frame in days.items()}
     for leg in panel.SEGMENTS:           # SQX's figure: the trades exported, nothing for the rest
@@ -109,7 +109,7 @@ def test_a_synthetic_batch_from_the_seal_to_the_facts_and_step_20() -> None:
     c1, c2, c3 = (measured[k]["facts"] for k in ("c1", "c2", "c3"))
     assert (c1["lote"], c1["controles"], c1["suelo_dentro"], c1["duplicados"]) == (158, 3, 1, 2)
     assert (c1["suelo_fuera"], c1["sin_valor"], c1["quedan"], c1["vivos"]) == (1, 1, 150, 2)
-    assert c2["suelo_fuera"] == 0 and c2["quedan"] == 151         # 320 trades in oos1+oos2
+    assert c2["suelo_fuera"] == 1 and c2["quedan"] == 150         # the outside floor counts oos1 trades, for every composition (D20)
     assert c1["estado"] == "pasa" and c1["orden"] == "positivo" and c1["fuerte"]
     assert "estado" not in c2 and "estado" not in c3 and c2["orden"] == "positivo"
     assert c1["n_top"] == 30 and c1["nivel_top"] > c1["nivel_todas"] > 0

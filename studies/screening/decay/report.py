@@ -16,6 +16,7 @@ from core.paths import MASTER, databank_dir, report_dir, worker_dir
 from core.study import blocks, output, result as envelope, verdicts
 from core.study.render import markdown
 from core.surface import dedupe
+from ledger import steprows
 from studies.screening.analysis import decay
 from studies.screening.decay import one
 
@@ -186,6 +187,8 @@ def main() -> None:
     table.insert(1, "identity", pd.Series(table["strategy"]).map(identity))
     verdicts.write(out, table, folder, " ".join(sys.argv), [])
     print(markdown.render(got, title))
+    print(steprows.log_cut(a.project, 8, (len(found), int((rows.verdict != "DESCARTAR").sum())),
+                           "decay: retención del Sharpe fuera de muestra", MODULE))
     print(f"{len(rows)} estrategias ({dropped} duplicadas de trades idénticos descartadas "
           f"de {len(found)}) → {out}")
 

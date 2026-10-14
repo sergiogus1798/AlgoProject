@@ -32,7 +32,7 @@ def test_a_batch_against_itself_stops_the_cell() -> None:
     one = batch(1)
     dup = measure.repeats({"a": one, "b": one})
     assert dup[0]["share"] == 1.0 and dup[0]["state"] == "parar"
-    same = measure.homogeneity(measure.table({"a": one, "b": one}))
+    same = measure.homogeneity(measure.table({"a": one, "b": one}), 0)
     assert measure.decision([], same, dup)[0] == "PARAR CELDA"
 
 
@@ -40,7 +40,7 @@ def test_two_fair_draws_add_up_though_their_islands_are_relatives() -> None:
     """Islands differ a lot inside a batch (phi well above 1): relabelling islands, not
     strategies, is what keeps two honest batches from raising the alarm."""
     lots = {"a": batch(1), "b": batch(2)}
-    same = measure.homogeneity(measure.table(lots))
+    same = measure.homogeneity(measure.table(lots), 0)
     assert same["phi"] > 3 and not same["alarm"]
     assert measure.decision([], same, measure.repeats(lots))[0] == "SUMAR"
 
@@ -48,7 +48,7 @@ def test_two_fair_draws_add_up_though_their_islands_are_relatives() -> None:
 def test_a_shifted_funnel_is_not_added() -> None:
     """Twelve points moved from one rule to another in every island is seen through the relatives."""
     lots = {"a": batch(1), "b": batch(2, shift=0.12)}
-    same = measure.homogeneity(measure.table(lots))
+    same = measure.homogeneity(measure.table(lots), 0)
     assert same["alarm"]
     assert measure.decision([], same, measure.repeats(lots))[0] == "NO SUMAR"
 

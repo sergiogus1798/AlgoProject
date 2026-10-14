@@ -84,7 +84,7 @@ def read(work: Path, symbol: str, timeframe: str, legs: tuple = panel.SEGMENTS) 
 
     Returns:
         `per`: leg -> one row per trade, COLUMNS; `prints`: each variant's fingerprint over
-        its trades of every leg read (`engines.variants.fingerprint`), by `variant_id`; and,
+        its trades of the legs read but `oos2` (the duplicate filter never sees it) (`engines.variants.fingerprint`), by `variant_id`; and,
         when `oos2` is read, `prior`: each variant's net excess there summed, with the drift
         measured on the bars from the first day of `build` to the last of `oos1` (`PRIOR`).
 
@@ -96,7 +96,7 @@ def read(work: Path, symbol: str, timeframe: str, legs: tuple = panel.SEGMENTS) 
     bars = barstore.read(asset["sqx_symbol"], timeframe)
     raw = {leg: trades(work, leg) for leg in legs}
     got = {"per": {leg: priced(raw[leg], symbol, bars, leg)[COLUMNS] for leg in legs},
-           "prints": fingerprint.prints(pd.concat(raw.values()))}
+           "prints": fingerprint.prints(pd.concat([raw[leg] for leg in legs if leg != "oos2"]))}
     if "oos2" in legs:
         prior = priced(raw["oos2"], symbol, bars, "oos2", PRIOR, span(asset, panel.SEGMENTS[:2]))
         got["prior"] = prior.groupby("variant_id")["net"].sum()

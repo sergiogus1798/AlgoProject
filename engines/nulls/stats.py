@@ -42,6 +42,22 @@ def profit_factor(pnl: np.ndarray) -> np.ndarray:
     return np.divide(gain, loss, out=np.full_like(gain, np.inf), where=loss > 0)
 
 
+def sharpe(pnl: np.ndarray) -> np.ndarray:
+    """Per-trade Sharpe (mean over sample std) of every run; NaN for a run with no dispersion.
+
+    Args:
+        pnl: One row per run, one column per trade.
+
+    Returns:
+        One ratio per run. NaN where the run is flat -- every trade equal, std 0 up to float
+        noise (std <= 1e-12 of the largest |P&L|): there is no ratio to rank, and an infinite
+        one would read as the best run of all. The caller says «no medible».
+    """
+    std = pnl.std(axis=1, ddof=1)
+    flat = std <= 1e-12 * np.abs(pnl).max(axis=1)
+    return np.divide(pnl.mean(axis=1), std, out=np.full_like(std, np.nan), where=~flat)
+
+
 def measure(pnl: np.ndarray, names: list[str]) -> dict[str, np.ndarray]:
     """Every requested statistic, for every run.
 
@@ -50,7 +66,7 @@ def measure(pnl: np.ndarray, names: list[str]) -> dict[str, np.ndarray]:
         names: Keys of GOOD_HIGH, from statistics.report.
 
     Returns:
-        One array per name, each of length `runs`. Only what is asked for is built: the
+        One array per name, each of length `runs`; `sharpe` is NaN for a flat run. Only what is asked for is built: the
         drawdown scan and the profit factor are each about a fifth of a null run, and a
         caller that reads one statistic -- the gate reads `sharpe` alone -- paid for five.
         Measured on 2,000 runs x 570 trades: 22.5 ms for the five, 1.75 ms for `sharpe`.
@@ -65,7 +81,7 @@ def measure(pnl: np.ndarray, names: list[str]) -> dict[str, np.ndarray]:
     net = pnl.sum(axis=1) if wanted & {"net", "retdd"} else np.empty(0)
     fall = drawdown(pnl) if wanted & {"dd", "retdd"} else np.empty(0)
     build = {"net": lambda: net,
-             "sharpe": lambda: pnl.mean(axis=1) / pnl.std(axis=1, ddof=1),
+             "sharpe": lambda: sharpe(pnl),
              "pf": lambda: profit_factor(pnl),
              "dd": lambda: fall,
              "retdd": lambda: np.divide(net, fall, out=np.zeros_like(net), where=fall > 0)}

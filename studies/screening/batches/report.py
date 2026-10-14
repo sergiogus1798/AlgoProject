@@ -96,13 +96,15 @@ def main() -> None:
     """Read each project's gate report and say whether the batches add up."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("projects", nargs="+", help="los lotes, del más antiguo al más nuevo")
+    ap.add_argument("--seed", type=int, required=True,
+                    help="semilla de la permutación de la homogeneidad; queda en batches.json")
     a = ap.parse_args()
 
     lots = {p: read(p) for p in a.projects}
     fields = measure.differing({p: lot["print"] for p, lot in lots.items()})
     parts = {p: lot["parts"] for p, lot in lots.items()}
     dup = measure.repeats(parts)
-    same = None if fields else measure.homogeneity(measure.table(parts))
+    same = None if fields else measure.homogeneity(measure.table(parts), a.seed)
     verdict = measure.decision(fields, same, dup)
     out = report_dir(a.projects[-1], DATABANK, date.today().isoformat()) / "batches"
     out.mkdir(parents=True, exist_ok=True)
@@ -110,7 +112,7 @@ def main() -> None:
     (out / "batches.md").write_text(page, encoding="utf-8")
     (out / "batches.json").write_text(json.dumps(
         {"verdict": verdict[0], "why": verdict[1], "differing": fields, "homogeneity": same,
-         "repeats": dup, "inputs": {p: lot["gate"] for p, lot in lots.items()}},
+         "repeats": dup, "seed": a.seed, "inputs": {p: lot["gate"] for p, lot in lots.items()}},
         ensure_ascii=False, indent=1), encoding="utf-8")
     print(page)
     print(f"-> {Path(out) / 'batches.md'}")

@@ -89,7 +89,8 @@ def real_from_trades(trades: pd.DataFrame) -> dict[str, float]:
 
     Returns:
         {"SharpeRatio", "SortinoRatio"}, both `mean / deviation * sqrt(252)` of the daily
-        P/L (flat days at zero) -- the same daily-equity basis SQX itself uses for these two
+        P/L (flat days at zero; `SharpeRatio` NaN or infinite when the P/L has no dispersion,
+        std 0) -- the same daily-equity basis SQX itself uses for these two
         (`studies/breakage/mcRetest/model/recon.py`), and the app's own "Sharpe total"
         (owner, 2026-09-30). Only called when both windows' trades were exported; the grid
         alone cannot give this because it holds no per-permutation trades.

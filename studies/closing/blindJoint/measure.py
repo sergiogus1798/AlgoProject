@@ -9,6 +9,10 @@ from studies.closing.blindJoint import readings
 from studies.closing.blindJoint.pieces import PIECES
 
 YEAR = 252   # SQX's own convention (its SharpeRatio is weekday rows x sqrt(252))
+# A column is flat when its std is under this fraction of the panel's largest |daily P&L|:
+# an excess that is zero up to float noise (1e-17) has no variance to studentize by, and its
+# Sharpe would be an enormous number made of rounding.
+FLAT = 1e-9
 
 
 def states(population: pd.DataFrame) -> pd.DataFrame:
@@ -77,7 +81,7 @@ def run(data: dict, cfg: dict) -> dict[str, Any]:
 
     days, random = data["panel"], data["benchmark"]
     excess = cast(pd.DataFrame, days - random)
-    flat = list(excess.columns[excess.std(ddof=1) == 0])
+    flat = list(excess.columns[excess.std(ddof=1) <= FLAT * float(np.abs(days.to_numpy()).max())])
     tested = cast(pd.DataFrame, excess.drop(columns=flat))
     boot = cfg["bootstrap"]
     block = superior.block_length(tested)

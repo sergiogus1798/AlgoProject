@@ -23,7 +23,8 @@ def correlate(x: np.ndarray, y: np.ndarray) -> Correlation:
     Returns:
         Keys pearson, spearman, p and n, where p is the Spearman two-tailed p-value.
         Spearman is the one to trust here: these metrics are heavy-tailed and a single
-        blow-up strategy dominates Pearson.
+        blow-up strategy dominates Pearson. All three are NaN when either column is constant
+        (no spread to correlate); a caller that ranks on them says «no medible», not 0.
     """
     spearman, pearson = cast(Any, stats.spearmanr(x, y)), cast(Any, stats.pearsonr(x, y))  # scipy stubs lack .statistic
     return Correlation(pearson=float(pearson.statistic), spearman=float(spearman.statistic),

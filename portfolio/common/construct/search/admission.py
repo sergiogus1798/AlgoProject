@@ -7,7 +7,11 @@ INCREMENTS = ("finite", "marginal")
 
 
 def _sharpe(path: np.ndarray) -> float:
-    """Daily Sharpe, not annualised."""
+    """Daily Sharpe, not annualised; infinite or NaN for a flat path (std 0).
+
+    Such a candidate never enters: `increment` multiplies it by a correlation that is NaN for a
+    flat path, so its increment is NaN and `gain > 0` is False (`finite` stays finite).
+    """
     return float(path.mean() / path.std(ddof=1))
 
 

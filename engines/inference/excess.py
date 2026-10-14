@@ -31,6 +31,7 @@ class Excess(TypedDict):
     """excess() — passes against chance."""
 
     n: int
+    unmeasured: int
     observed: int
     expected_all_null: float
     expected: float
@@ -43,11 +44,14 @@ def excess(p: np.ndarray, alpha: float) -> Excess:
     """How many tests passed, how many chance alone would have, and what is left over.
 
     Args:
-        p: One p-value per test.
+        p: One p-value per test; a NaN is a test that could not be measured (flat P&L, no
+            draws) and is left out of the family.
         alpha: The level each test was read at.
 
     Returns:
-        `observed` passes, `expected_all_null` if not one test had an edge, `expected`
+        `n`, the tests with a p-value (NaN ones excluded, so they are neither passes nor
+        failures and do not dilute the expected count), `unmeasured`, how many NaN were left
+        out, `observed` passes, `expected_all_null` if not one test had an edge, `expected`
         using Storey's share, the `excess` over the all-null count, and `fdr`, the
         fraction of the passes that are probably luck. `excess` deliberately uses the
         all-null count: it is the conservative reading and the one that survives Storey
@@ -57,11 +61,14 @@ def excess(p: np.ndarray, alpha: float) -> Excess:
     carry obvious signal -- many more passes than chance -- while not one of its members is
     extreme enough to be named. The two readings are independent and both belong in a report.
     """
+    p = np.asarray(p, dtype=float)
+    unmeasured = int(np.isnan(p).sum())
+    p = p[~np.isnan(p)]
     n = len(p)
     observed = int((p <= alpha).sum())
     null_share = share_null(p)
     expected = null_share * alpha * n
-    return {"n": n, "observed": observed, "expected_all_null": alpha * n,
+    return {"n": n, "unmeasured": unmeasured, "observed": observed, "expected_all_null": alpha * n,
             "expected": expected, "share_null": null_share,
             "excess": observed - alpha * n,
             "fdr": float(min(1.0, alpha * n / observed)) if observed else float("nan")}

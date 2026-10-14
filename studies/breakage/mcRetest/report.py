@@ -11,6 +11,7 @@ import pandas as pd
 
 from core.paths import report_dir
 from core.study import draws, output, verdicts
+from ledger import steprows
 from studies.breakage.mcRetest import load, many, one
 from studies.breakage.mcRetest.contract import words
 from studies.breakage.mcRetest.inputs import config
@@ -100,6 +101,9 @@ def main() -> None:
     draws.save(out, got.get("draws", []))
     table = many.table(got["members"])
     verdicts.write(out, table, inputs["folder"], " ".join(sys.argv), args.overrides)
+    print(steprows.log_cut(args.project, 14, (len(table),
+                                           int(table["verdict"].isin(["STRONG", "ACCEPTABLE", "MARGINAL"]).sum())),
+                           "mcRetest: veredicto de la batería", "studies.breakage.mcRetest.report"))
     print(f"report: {len(table)} strategies -> {out}")
     print(table.drop(columns=["identity"]).to_string(index=False, max_colwidth=40))
 

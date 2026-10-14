@@ -50,7 +50,9 @@ def table(paths: np.ndarray, dates: pd.DatetimeIndex, losing_year: str) -> dict[
     Returns:
         `rar`; `r_cubed` (RAR over the five deepest drawdowns' mean depth times their mean
         length in years); `gain_to_pain` (mean annual profit over the mean of the N deepest
-        drawdowns, N = years); `p_losing_year`; `sharpe` (per day, not annualised) -- each [P].
+        drawdowns, N = years); `p_losing_year`; `sharpe` (per day, not annualised) -- each [P]. `sharpe` is NaN or infinite for a flat
+        path (std 0): no path of a real combination is flat, and a ranking that meets one is
+        reading a pool with no trades, not a result.
     """
     day = dates.values.astype("datetime64[D]").astype(np.int64)
     years = (day[-1] - day[0] + 1) / 365.25

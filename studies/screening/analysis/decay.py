@@ -37,7 +37,8 @@ def sharpe(returns: pd.Series) -> float:
         returns: Daily change in cumulative P&L.
 
     Returns:
-        Mean over standard deviation, scaled by sqrt(252), SQX's own convention.
+        Mean over standard deviation, scaled by sqrt(252), SQX's own convention. NaN (0/0) or infinite for a flat series (std 0), and NaN
+        for fewer than two days; the caller's verdict compares it, and a NaN compares false.
     """
     return returns.mean() / returns.std(ddof=1) * np.sqrt(YEAR)
 

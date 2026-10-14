@@ -19,29 +19,31 @@ def knobs() -> dict[str, Any]:
     return cast(dict[str, Any], thresholds.fill(study_config.load(path, [])))["panel"]
 
 
-def screen(metrics: pd.DataFrame, comp: tuple[tuple, tuple], k: int, years_out: float,
+def screen(metrics: pd.DataFrame, comp: tuple[tuple, tuple], k: int, years_oos1: float,
            symbol: str, values: pd.DataFrame | None = None, floors: bool = True,
            step: float = 17, cfg: dict | None = None,
            prints: pd.Series | None = None) -> tuple[pd.DataFrame, dict[str, Any]]:
     """The variants one composition of the split measures, and how many each filter removed.
 
-    Order: controls and the inside floor (read no out-of-sample column); then the seal
-    (`gate.seal`, raises PermissionError); then exact duplicates and the outside floor, which
-    read oos2. A mother below a floor warns and that floor is not applied to the batch.
+    Order: controls and the inside floor; then the seal (`gate.seal`, raises PermissionError);
+    then exact duplicates and the outside floor. None of the four reads `oos2`: duplicates
+    compare build and oos1, and the outside floor counts the trades of oos1 (the last segment
+    that is not held out), whichever composition is asked (owner, 2026-10-14, D20). A mother
+    below a floor warns and that floor is not applied to the batch.
 
     Args:
         metrics: Contract C3: `variant_id`, `stratum` and the C3 columns of `panel.columns`.
         comp: One of `panel.COMPOSITIONS`.
         k: Live parameters of the mother (frozen and shifted ones do not count).
-        years_out: Length of the outside window in years.
+        years_oos1: Length of the oos1 window in years, what the outside floor is per.
         symbol: The asset, for the seal.
         values: The measure, supplied by the caller (`engines.variants.excess`): index
             `variant_id`, columns `e_is` and `e_oos`. Variants without one are dropped.
         floors: False skips both floors (the sensitivity reading, proposal §2).
         step: The step asking, for the seal.
         cfg: `knobs()` when None.
-        prints: `fingerprint.prints` of the batch's trades: exact duplicates are then equal
-            trade lists. None compares the three legs' NetProfit to the cent, which also
+        prints: `fingerprint.prints` of the batch's build and oos1 trades (never oos2): exact
+            duplicates are then equal trade lists. None compares the build and oos1 NetProfit to the cent, which also
             drops distinct variants that happen to total the same.
 
     Returns:
@@ -72,12 +74,12 @@ def screen(metrics: pd.DataFrame, comp: tuple[tuple, tuple], k: int, years_out: 
 
     drop("controles", cast(pd.Series, ~left["stratum"].isin(CONTROLS)))
     floor("suelo_dentro", cols["trades_is"], cfg["floor_is_per_param"] * k)
-    gate.seal(step, "+".join(comp[1]), symbol)        # everything below reads oos2
+    gate.seal(step, "+".join(comp[1]), symbol)
     first = left.assign(_o=left["stratum"] != ORIGIN).sort_values("_o", kind="stable")
-    sig = (first[[f"NetProfit ({s})" for s in panel.SEGMENTS]].round(2) if prints is None
+    sig = (first[[f"NetProfit ({s})" for s in panel.SEGMENTS[:2]]].round(2) if prints is None
            else first["variant_id"].map(prints))  # pyright: ignore[reportArgumentType]  # stub types map() without a Series mapper
     drop("duplicados", cast(pd.Series, ~sig.duplicated().reindex(left.index)))
-    floor("suelo_fuera", cols["trades_oos"], cfg["floor_oos_per_year"] * years_out)
+    floor("suelo_fuera", "NumberOfTrades (oos1)", cfg["floor_oos_per_year"] * years_oos1)
     if values is not None:
         left = left.join(values[["e_is", "e_oos"]], on="variant_id")
         drop("sin_valor", cast(pd.Series, left[["e_is", "e_oos"]].notna().all(axis=1)))

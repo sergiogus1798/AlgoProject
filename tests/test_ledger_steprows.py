@@ -50,3 +50,14 @@ def test_build_row_and_both_ns(ledger: Path, monkeypatch: pytest.MonkeyPatch,
     printed = capsys.readouterr().out
     assert "N global entre 1 estudios: 4332347" in printed
     assert "N = 43323" in printed
+
+
+def test_log_cut_once_and_never_inside_the_workflow(ledger: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A standalone cut leaves one row; under ALGO_AUTONOMOUS the judge's row is the only one."""
+    monkeypatch.delenv("ALGO_AUTONOMOUS", raising=False)
+    steprows.log_cut("Test_X", 8, (100, 12), "decay: no DESCARTAR", "test")
+    row = studymod.read("XAUUSD_H1_foo").iloc[0]
+    assert (row["step"], row["n_in"], row["n_out"], row["segment"]) == (8, 100, 12, "oos1")
+    monkeypatch.setenv("ALGO_AUTONOMOUS", "1")
+    steprows.log_cut("Test_X", 8, (100, 12), "decay: no DESCARTAR", "test")
+    assert len(studymod.read("XAUUSD_H1_foo")) == 1

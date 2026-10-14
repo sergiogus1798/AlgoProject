@@ -105,7 +105,7 @@ class Spread(TypedDict):
     top_n: int
 
 
-def homogeneity(islands: pd.DataFrame, seed: int = 0) -> Homogeneity:
+def homogeneity(islands: pd.DataFrame, seed: int) -> Homogeneity:
     """Whether the batches' funnels differ more than batches of related strategies do by chance.
 
     Args:

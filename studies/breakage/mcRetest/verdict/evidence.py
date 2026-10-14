@@ -91,11 +91,12 @@ class _RankMeasured(TypedDict):
 
 
 class _RankUnmeasured(TypedDict):
-    """Too few strategies to rank: how many there are and how many are needed."""
+    """No tau: too few strategies (`needed`), or an ordering with no spread (`constant`)."""
 
     measurable: Literal[False]
     n: int
     needed: int
+    constant: bool
 
 
 RankStability = _RankMeasured | _RankUnmeasured
@@ -224,8 +225,9 @@ def rank_stability(original: dict, stressed: dict, cfg: dict) -> RankStability:
         cfg: What inputs.config.load() returned.
 
     Returns:
-        Kendall's tau between the two orderings, or a refusal when there are too few
-        strategies to measure one. **At five strategies it is not measurable**: the null has
+        Kendall's tau between the two orderings, or a refusal (`measurable` False) when there
+        are too few strategies to measure one or when either list is constant (tau NaN,
+        `constant` True). **At five strategies it is not measurable**: the null has
         120 points, the smallest two-sided p is 0.0167, and a bootstrap interval spans
         almost the whole range. Printing tau = 0.6 from five strategies is how a study
         acquires a conclusion it cannot support. At databank scale it becomes the single
@@ -234,7 +236,10 @@ def rank_stability(original: dict, stressed: dict, cfg: dict) -> RankStability:
     names = sorted(set(original) & set(stressed))
     if len(names) < cfg["evidence"]["ranks_min_strategies"]:
         return {"measurable": False, "n": len(names),
-                "needed": cfg["evidence"]["ranks_min_strategies"]}
+                "needed": cfg["evidence"]["ranks_min_strategies"], "constant": False}
     got = cast(Any, stats.kendalltau([original[n] for n in names], [stressed[n] for n in names]))
+    if not np.isfinite(got.statistic):         # one of the two lists is constant: no ranking to compare
+        return {"measurable": False, "n": len(names),
+                "needed": cfg["evidence"]["ranks_min_strategies"], "constant": True}
     return {"measurable": True, "n": len(names),
             "tau": float(got.statistic), "p": float(got.pvalue)}

@@ -67,6 +67,11 @@ def atr(day: pd.DataFrame, cfg: dict) -> Vol:
 def garch(day: pd.DataFrame, cfg: dict) -> Vol:
     """Conditional volatility of daily returns under a GARCH model.
 
+    The parameters are fitted on the WHOLE history, so the recursion's sigma for day D uses
+    parameters that have seen later days: descriptive only (family D of the Monte Carlo), never
+    an input to a decision. The default method is `atr`; to use this one as an input, fit on
+    build alone.
+
     Args:
         day: What daily() returned.
         cfg: The family_d section of the config.

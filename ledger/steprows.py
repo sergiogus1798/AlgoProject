@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from core import assetdata
 from ledger import blind, record, study as studymod
 from sqx.projects import registry
 
@@ -81,6 +82,34 @@ def log_wfm(project: str, export: Path, n: int, command: str) -> str:
                          "timeframe": row["timeframe"], "segment": segment, "n_in": n,
                          "n_out": n, "criterion": "wfm/l1_mediana_exceso+l1_p_menos", "note": note})
     return f"Ledger: tres filas del paso 19 en {sid}"
+
+
+def log_cut(project: str, step: float, cut: tuple[int, int], criterion: str, launched_by: str) -> str:
+    """Sign a cut a study made by hand on oos1: one row, unless the workflow runs it.
+
+    Inside the workflow (`ALGO_AUTONOMOUS=1`) `pipeline.autopilot.judge.ledger_row` signs the
+    step's cut once, so the study's own row would count the same search twice.
+
+    Args:
+        project: Project name, as `registry.csv` knows it.
+        step: Workflow step the study belongs to.
+        cut: (entered, survived); equal for a reading that removes nothing.
+        criterion: What was cut on.
+        launched_by: The command.
+
+    Returns:
+        The line to print: the study written, or why nothing was.
+    """
+    if assetdata.enforced():
+        return "Ledger: dentro del workflow el corte lo apunta el juez; este estudio no lo repite"
+    sign = signed(project)
+    if sign is None:
+        return "Ledger: sin plantilla en registry.csv: el corte no se apunta"
+    sid, row = sign
+    record.log(sid, {"step": float(step), "launched_by": launched_by, "symbol": row["symbol"],
+                     "timeframe": row["timeframe"], "segment": "oos1", "n_in": cut[0],
+                     "n_out": cut[1], "criterion": criterion, "note": f"proyecto {project}"})
+    return f"Ledger: {criterion} ({cut[0]} -> {cut[1]}) apuntado en {sid}"
 
 
 def calib_rows(populations: Path) -> list[tuple[str, dict]]:

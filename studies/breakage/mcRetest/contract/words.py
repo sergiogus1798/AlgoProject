@@ -97,7 +97,9 @@ def battery(result: Battery) -> list[list[str]]:
     enb, mult, ranks = result["effective_bets"], result["multiplicity"], result["rank_stability"]
     bets = ("sin dato: sin el estrés combinado no hay equity diaria" if enb is None else
             f"{enb['enb']:.2f} de {enb['n']} ({enb['ratio']:.1%})")
-    order = (f"no evaluable con {ranks['n']} estrategias, hacen falta {ranks['needed']}"
+    order = ((f"no evaluable: las {ranks['n']} estrategias tienen todas la misma cifra en una de las dos listas"
+              if ranks["constant"] else
+              f"no evaluable con {ranks['n']} estrategias, hacen falta {ranks['needed']}")
              if ranks["measurable"] is False else
              f"tau de Kendall {ranks['tau']:+.2f} (p = {ranks['p']:.3f})")
     return [["Apuestas efectivas", bets,

@@ -1,6 +1,7 @@
 """One strategy against its monkeys, as the contract's data: where it landed, where its edge came from."""
 
 import time
+from collections.abc import Mapping
 from typing import Any, TypedDict
 
 import numpy as np
@@ -121,6 +122,34 @@ def records(got: Measured, name: str, cfg: dict, market: str = "") -> list[dict]
             for rung, values in got["per_rung"].items() for n in cfg["statistics"]["report"]]
 
 
+def call(p: float, alpha: float, statistic: str, cfg: dict, checks: Mapping[str, Any]) -> dict[str, Any]:
+    """The headline verdict block for the p of `statistic` on the headline rung.
+
+    Args:
+        p: Share of monkeys at or above the real statistic; NaN when the real statistic is
+            NaN (constant P&L, std 0, `engines.nulls.stats`).
+        alpha: The verdict's alpha.
+        statistic: Which statistic `p` is of.
+        cfg: What inputs.config() returned (the headline rung).
+        checks: The reconciliation (`corr`, `fill`).
+
+    Returns:
+        A "verdict" block: «bate al mono» / «no se distingue del mono», or, for a NaN p,
+        «no medible» in state `none` with its reason -- never a fail.
+    """
+    if not np.isfinite(p):
+        return blocks.verdict(
+            "no medible", "none",
+            f"El estadístico real ({statistic}) no es un número: con un P&L constante o sin "
+            "dispersión no hay mono que batir ni que no batir. Revisa la estrategia y su muestra.")
+    return blocks.verdict(
+        "bate al mono" if p <= alpha else "no se distingue del mono",
+        "pass" if p <= alpha else "fail",
+        f"En {statistic}, el {100 * (1 - p):.1f} % de los monos del peldaño "
+        f"{cfg['nulls']['headline']} ({RUNGS_ES[cfg['nulls']['headline']]}) quedó por debajo; "
+        f"p = {p:.4f}. Reconciliación {checks['corr']:.6f} (relleno {checks['fill']}).", p)
+
+
 def run(strategy: str, given: dict, cfg: dict, statistic: str = "net",
         keep: list | None = None) -> dict[str, Any]:
     """One strategy against its monkeys.
@@ -142,13 +171,7 @@ def run(strategy: str, given: dict, cfg: dict, statistic: str = "net",
     if keep is not None:
         keep.extend(records(got, strategy, cfg))
     p, alpha = got["found"][statistic], cfg["verdict"]["alpha"]
-    said = blocks.verdict(
-        "bate al mono" if p <= alpha else "no se distingue del mono",
-        "pass" if p <= alpha else "fail",
-        f"En {statistic}, el {100 * (1 - p):.1f} % de los monos del peldaño "
-        f"{cfg['nulls']['headline']} ({RUNGS_ES[cfg['nulls']['headline']]}) quedó por debajo; "
-        f"p = {p:.4f}. Reconciliación {got['kept']['checks']['corr']:.6f} "
-        f"(relleno {got['kept']['checks']['fill']}).", p)
+    said = call(p, alpha, statistic, cfg, got["kept"]["checks"])
     warn = [{"code": line.split(":")[0].lower(), "state": "watch",
              "text": line.split(":", 1)[1].strip()}
             for line in verdict.distrust(got["kept"], got["found"], len(trades), cfg)]

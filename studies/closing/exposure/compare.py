@@ -43,7 +43,8 @@ def stats(daily: pd.Series, equity: float) -> Stats:
     Returns:
         `net` in account currency, `return_pct` on the starting balance, `cagr_pct`,
         `maxdd_pct` off the running peak of that same balance, `vol` as the daily standard
-        deviation, and `sharpe` annualised at 252 days against a zero benchmark.
+        deviation, and `sharpe` annualised at 252 days against a zero benchmark (NaN or infinite when
+        the series is flat, std 0; the study only describes, nothing ranks on it).
 
         Every rate is per calendar day of the window, flat days included -- the honest
         denominator for "what did the account do", and the reason the study reports the

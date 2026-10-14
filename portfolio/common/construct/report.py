@@ -9,7 +9,7 @@ import pandas as pd
 
 from core.study import output
 
-from . import handoff, many, real, weights
+from . import handoff, many, real, segment
 from .inputs import config
 from .inputs import pool as pool_mod
 from .search import trials_real
@@ -59,7 +59,7 @@ def write(inputs: dict, got: dict, cfg: dict) -> None:
     (run / "manifest.json").write_text(json.dumps(manifest, indent=2, default=float), encoding="utf-8")
     output.population(run, "cartera", got["population"], TITLE, got["sentence"])
     r, members = inputs["result"], inputs["members"]
-    held = weights.matrix(r["daily"], many.mask(inputs), cfg)[0]
+    held = segment.held(r["daily"], r["calendar"], r["scale"], many.mask(inputs), cfg)[0]
     handoff.write(run, r["pool_name"], inputs["pool"], members,
                   {i: float(w) for i, w in zip(r["identities"], held) if w > 0},
                   r["daily"], r["calendar"], v, got["sentence"], cfg)

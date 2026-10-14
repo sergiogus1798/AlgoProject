@@ -15,6 +15,7 @@ from core.manifest import write as write_manifest
 from core.paths import report_dir
 from core.study import output
 from core.study.render import markdown
+from ledger import steprows
 from studies.readings.edgeCost import costs, inputs, many, one
 
 
@@ -58,6 +59,10 @@ def main() -> None:
                    " ".join(["python3 -m studies.readings.edgeCost.report", "--project",
                              a.project, "--databank", a.databank, "--feed", a.feed]),
                    {"verdict.csv": len(got["panel"])})
+    print(steprows.log_cut(a.project, 8, (len(got["panel"]),
+                                          int((got["panel"]["verdict"] != "DESCARTAR").sum())),
+                           "edgeCost: edge por coste (DESCARTAR sólo en modo drop)",
+                           "studies.readings.edgeCost.report"))
     print(f"\n{len(got['panel'])} estrategias -> {out}")
 
 

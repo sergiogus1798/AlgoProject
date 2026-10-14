@@ -68,10 +68,40 @@ def test_sources_name_no_later_segment() -> None:
     check("real.py's code (strings aside) names no later segment", not re.search(r"oos[12]", code))
 
 
+def test_handoff_weights_are_the_judged_ones() -> None:
+    """(c) The weights handed off are the build-segment, scaled ones the verdict used (D18)."""
+    import tempfile
+
+    from portfolio.common.construct import report
+    cfg = planted_cfg()
+    cfg["weights"]["method"] = "risk_parity"
+    full = planted_pool()
+    scale = np.linspace(1.0, 3.0, len(NAMES))
+    seen = []
+    report.handoff.write = lambda *a, **k: seen.append(a[4])     # the weights argument
+    report.output.population = lambda *a, **k: None
+    for segment in ("oos2", "oos1"):
+        for frame in (full, full.copy()):
+            if frame is not full:
+                lo, hi = CALENDAR[segment]
+                frame.loc[lo:hi] = frame.loc[lo:hi] * 7 + 3
+            with tempfile.TemporaryDirectory() as tmp:
+                run = Path(tmp)
+                (run / "manifest.json").write_text("{}", encoding="utf-8")
+                result = {"daily": frame, "calendar": CALENDAR, "scale": scale, "identities": NAMES,
+                          "pool_name": "p"}
+                report.write({"run": run, "result": result, "members": NAMES[:4], "pool": None},
+                             {"verdict": {"label": "x", "pass": True}, "sentence": "", "root_seed": 1,
+                              "population": None}, cfg)
+    check("risk_parity weights do not move when oos1 or oos2 daily P&L is perturbed",
+          len(seen) == 4 and all(seen[0] == w for w in seen[1:]))
+
+
 def main() -> None:
     """Run every case; exit non-zero on any failure."""
     test_later_rows_change_nothing()
     test_sources_name_no_later_segment()
+    test_handoff_weights_are_the_judged_ones()
     print(f"\n{'TODO OK' if not FAILURES else 'FALLOS: ' + ', '.join(FAILURES)}")
     sys.exit(1 if FAILURES else 0)
 

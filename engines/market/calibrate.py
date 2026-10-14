@@ -27,7 +27,8 @@ def atr(frame: pd.DataFrame, window: int = ATR_BARS) -> np.ndarray:
         window: Lookback in bars.
 
     Returns:
-        One value per bar; the first `window` are NaN. Wilder's smoothing is deliberately
+        One value per bar; the first `window` are NaN. Element i INCLUDES bar i's own range:
+        to decide at bar i, read element i-1 (the callers lag it by hand). Wilder's smoothing is deliberately
         not used: nothing here reproduces an indicator SQX computed. The array is shared,
         not copied: it is read-only to every caller here.
     """

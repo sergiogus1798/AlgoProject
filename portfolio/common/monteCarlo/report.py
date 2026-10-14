@@ -10,9 +10,11 @@ import pandas as pd
 from core import assets
 from core.paths import report_dir
 from core.study import output, verdicts
+from ledger import steprows
 from portfolio.common.monteCarlo import load, many, one
 from portfolio.common.monteCarlo.inputs import config
 from portfolio.common.monteCarlo.load import Inputs
+from portfolio.common.monteCarlo.verdict import scoring
 
 LEDE = ("Robustez de una estrategia ya aceptada: cuánto de este resultado es suerte, y de "
         "qué tipo.")
@@ -79,6 +81,9 @@ def main() -> None:
     for m in got["members"]:
         output.member(out, m, f"Monte Carlo — {m['strategy']}", LEDE)
     output.population(out, "monteCarlo", got["population"], title)
+    print(steprows.log_cut(a.project, 20, (len(got["members"]),
+                                          sum(m["summary"]["tier"] in scoring.VERDICTS[:3] for m in got["members"])),
+                           "monteCarlo: veredicto sin vetos", "portfolio.common.monteCarlo.report"))
     fired = [{"strategy": m["strategy"], **f} for m in got["members"]
              for f in m["summary"]["fired"]]
     pd.DataFrame(fired, columns=pd.Index(["strategy", "family", "test", "value", "limit", "gate"])

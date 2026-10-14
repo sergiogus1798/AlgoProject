@@ -3,7 +3,7 @@
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `measure.py` | Whether several builds of one cell are one population: same setup, same funnel, few repeats. | imported | the gate's `verdict.csv`, `funnel.csv`, manifest → dicts |
-| `report.py` | Can several builds of one cell be added up as one big build? Setup, funnel and repeats, in one line. | `python3 -m studies.screening.batches.report Test_USDJPY_M30_doubleROCLong_10k Test_USDJPY_M30_doubleROCLong_10k_L2` | `reports/<P>/Results/<day>/gate/` of each → `reports/<last P>/Results/<day>/batches/batches.md`, `.json` |
+| `report.py` | Can several builds of one cell be added up as one big build? Setup, funnel and repeats, in one line. | `python3 -m studies.screening.batches.report Test_USDJPY_M30_doubleROCLong_10k Test_USDJPY_M30_doubleROCLong_10k_L2 --seed 1` | `reports/<P>/Results/<day>/gate/` of each → `reports/<last P>/Results/<day>/batches/batches.md`, `.json` |
 
 A machine that cannot build 100,000 strategies at once builds ten batches of 10,000. They are one
 population only when the setup is identical (template, feed, segments, the gate's rules), the

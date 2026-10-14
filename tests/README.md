@@ -13,6 +13,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_advance.py` | «Continuar workflow» on a scratch install: its refusals, and the order of what it sends SQX. | — |
 | `test_advance_edges.py` | «Continuar workflow» when things go wrong: every failure stops the worker it started. | — |
 | `test_advance_nexttask.py` | «Continuar workflow» switches on every task of the next step that reads the cut, or what one of them writes (📓 2026-09-30: after a cut on CrossTF only «MCR 1 Bar» ever ran). | — |
+| `test_alignment_shift.py` | One-bar-shift cases for the aligners: a spike at bar i must not show in bar i's own decision (encargo 68 F22). | — |
 | `test_archive.py` | The strategy archive on a real strategy: frozen versions never overwritten, read back equal, nothing run. | — |
 | `test_assets_blocked.py` | An asset card with an undecided commission ends in BLOQUEADO and exit 2, never a traceback. | `python3 -m pytest tests/test_assets_blocked.py` |
 | `test_atr.py` | SQX's ATR against a series worked out by hand, gap and running-mean start included. | `python3 tests/test_atr.py` |
@@ -39,6 +40,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_autopilot_zero.py` | Zero survivors end the autopilot cleanly, a missing fact goes where its rule says, the judge signs its cut in the ledger with criteria.yaml's hash, and `live.wait` fails on an abort line instead of returning it. All on fakes: no SQX, no install, no ledger on disk. | — |
 | `test_batches.py` | Known answers for the batch check: a batch against itself, two fair draws, and a shifted funnel. | `python3 tests/test_batches.py` |
 | `test_blindjoint.py` | Step 20 on mothers whose answer is known: noise and random traders name nobody, a planted edge is named, the pieces veto. | — |
+| `test_blindjoint_flat.py` | A mother whose excess is zero up to float noise is flat, not a huge Sharpe (encargo 68 D22). | — |
 | `test_blocks_shared.py` | Known answers for the shared drawing blocks: sign caption, band helper, scatter cap, red-green ramp. | — |
 | `test_build_acceptance.py` | Golden and refusal tests for step 6: the Build's acceptance filters from a `_study.yaml`. | `python3 tests/test_build_acceptance.py` (`--update` rewrites the goldens) |
 | `test_builder_feedswap.py` | Known-answer test for `sqx.projects.builder`: a non-XAUUSD project must actually swap feed, and a failed build must leave nothing behind (OPEN.md issues 34-35). | `python3 tests/test_builder_feedswap.py` |
@@ -85,6 +87,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_draws_transfer.py` | Known-answer test of crossmarket/travel's recorded distributions (encargo: draws behind every z): on the rules test's toy tensor, each raw row reproduces the study's own z (or p) from its observed value and its draws, and the per-market rows keep only the histogram. | `python3 -m pytest tests/test_draws_transfer.py` |
 | `test_edgecost.py` | edgeCost on trades built by hand: oos1 only, the common repricer's cost as the denominator. | — |
 | `test_entry_location.py` | entryQuality puts an entry filled inside a bar on the bar that contains it. | — |
+| `test_excess_nan.py` | NaN p-values are left out of the family's n, and counted apart (encargo 68 D22). | — |
 | `test_exits.py` | `sqx.projects.orders.exits_set`: a portfolio with an exit method set vs one that exits by condition only. | `python3 tests/test_exits.py` |
 | `test_export_manifests.py` | A trades export and an SPP export of the same databank and day keep each other's files. | `python3 tests/test_export_manifests.py` |
 | `test_exposure.py` | studies.closing.exposure on hand-built bars and trades: which bar a position is held on, which move it is paired with, where a trade's profit lands, and the Sharpe's annualisation. | — |
@@ -146,6 +149,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_mcretest_psr.py` | Known-answer test: the MC Retest's analytic PSR is the ORIGINAL's per-trade PSR, never the PSR of one net total per simulation (which saturates at 1.0 and keeps the edge veto from firing). | — |
 | `test_mcretest_retention.py` | studies.breakage.mcRetest.model.retention from its definition: runs [2, 4, 6, -1] against an original of 4 keep 0.75 at the median and three in four are positive; an original at zero has no retention but still a positive share; no runs gives nothing. | — |
 | `test_models.py` | Regression test for `trade_models.semester_shift`: the same calendar semester moves the same way in every market, and by batches reproduces the whole draw — what the travel test's joint shift rests on. | `python3 tests/test_models.py` |
+| `test_monkey_verdict.py` | The monkey's headline call: a NaN p-value is «no medible», never a fail (encargo 68 D21). | — |
 | `test_montecarlo_one.py` | The trade Monte Carlo's «Run solo esta estrategia»: `--strategy` runs `one.run` on that strategy alone and writes only estrategias/<name>.json; monteCarlo.json, verdict.csv, flags.csv, the manifest and every other strategy's JSON stay byte-identical, an unknown name is refused, and `--strategy` with `--portfolio` is refused. | `python3 tests/test_montecarlo_one.py` |
 | `test_montecarlo_oos.py` | Family E reads the out-of-sample trades alone (owner, 2026-09-29): a strategy whose IS is great and whose OOS is flat must get the flat OOS reading, never the IS-inflated one that mixing both sides in `core.significance.footprint()`/`psr()` used to produce. | `python3 tests/test_montecarlo_oos.py` |
 | `test_mothertrades.py` | sqx.variants.mothertrades: each batch gets its own mother's trades, tagged with her id and leg. | — |
@@ -256,6 +260,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_progress_genetic.py` | «En marcha» shows the genetic settings of a running Build: PopulationSize × Islands must fill first. | — |
 | `test_project_map.py` | Known-answer test for sqx.inspect.project_map: an inactive task runs nothing in SQX, so it must not appear as live in databank_flow(), tldr()'s loop/at-risk/terminal lines, or task_order()'s [INACTIVE] flag. OPEN.md #10. | `python3 tests/test_project_map.py` |
 | `test_rail_run.py` | The rail's run buttons offscreen, the daemon faked: every card can run, and says why when not. | — |
+| `test_rank_stability.py` | A constant ordering gives no Kendall tau: it is not «measurable» (encargo 68 D22). | — |
 | `test_ratchet.py` | Known-answer test for tools/ratchet.py: each counter on a small source snippet. | — |
 | `test_readmetable.py` | tools/readmetable.render on a temp folder: a stale row, a missing row and a gone row, hand columns kept. | `python3 tests/test_readmetable.py` |
 | `test_registry_names.py` | `registry.check_name` and `registry.kind`: the three allowed prefixes and what is refused. | — |
@@ -608,3 +613,8 @@ The window's tests (`ui/`), all offscreen (`QT_QPA_PLATFORM=offscreen`) over the
 | `test_perf66_trim8.py` | encargo 66 D16, `Results` trimmed to the survivors after step 8: save, check, trim, re-sign in that order; a kept strategy unsaved (this run's only), a missing full harvest or a failed save is a `RESULTS SIN RECORTAR:` report line, never an exit; empty or already-cut `Results` is skipped | `PYTHONPATH=. python3 -m pytest tests/test_perf66_trim8.py -q` |
 | `test_perf66_wfc_blocks.py` | encargo 66 3.9d, the wfc null read in blocks of draws equals the whole-matrix reading (1e-12) and peaks under a quarter of its memory | `PYTHONPATH=. python3 -m pytest tests/test_perf66_wfc_blocks.py -q` |
 | `test_perf66_waits.py` | encargo 66 §5.6/§5.7, fixed sleeps are waits on the real condition: PID gone, X socket, CLI ready, core gate — return at once, fail loud at the timeout | `PYTHONPATH=. python3 -m pytest tests/test_perf66_waits.py -q` |
+| `test_monkey_verdict.py` | The monkey's headline call: a NaN p (constant P&L) is «no medible», never a fail; a flat run has a NaN Sharpe, not inf. | `python3 -m pytest tests/test_monkey_verdict.py` |
+| `test_excess_nan.py` | `engines.inference.excess`: NaN p-values are left out of n and counted in `unmeasured`. | `python3 -m pytest tests/test_excess_nan.py` |
+| `test_rank_stability.py` | Step 14's Kendall tau: a constant list is not `measurable`, a varied one has tau. | `python3 -m pytest tests/test_rank_stability.py` |
+| `test_blindjoint_flat.py` | Step 20: a mother whose excess is zero up to float noise is flat, not an enormous Sharpe. | `python3 -m pytest tests/test_blindjoint_flat.py` |
+| `test_alignment_shift.py` | One-bar-shift cases: `higher.closed`, `series._lag`, `trades.after`, and `on_grid`'s off-grid stamp pinned. | `python3 -m pytest tests/test_alignment_shift.py` |

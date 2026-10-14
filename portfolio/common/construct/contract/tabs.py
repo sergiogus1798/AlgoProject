@@ -8,7 +8,7 @@ import pandas as pd
 from core.study import blocks
 from core.study import result as envelope
 
-from .. import segment, weights
+from .. import segment
 from ..equity import matrix
 from . import words
 
@@ -95,7 +95,7 @@ def _portfolio_tab(inputs: dict, v: dict, cfg: dict) -> list[dict]:
         values = [None] * before + path.tolist() + [None] * (len(x) - before - len(path))
         series.append({"label": s, "values": values, "role": "real" if s == "build" else "sim"})
         before += len(path)
-    held = weights.matrix(matrix.segment(r["daily"], r["calendar"], "build").fillna(0.0) * r["scale"], mask, cfg)[0]
+    held = segment.held(r["daily"], r["calendar"], r["scale"], mask, cfg)[0]
     for k in np.flatnonzero(mask[0]):      # each member's own share of that path: same unit, same weights
         alone = (np.arange(mask.shape[1]) == k)[None, :]
         shares = [held[k] * np.cumsum(segment.paths(r["daily"], r["calendar"], r["scale"], alone, cfg, s)[0][0])

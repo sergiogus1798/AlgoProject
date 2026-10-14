@@ -138,7 +138,12 @@ def on_grid(trades: pd.DataFrame, index: pd.DatetimeIndex, max_hold: float) -> O
 
     Returns:
         Keys `entry` and `exit` as bar indices, `hold` in bars, `size` in lots, and
-        `window`, the first and last bar index the sample occupies.
+        `window`, the first and last bar index the sample occupies. A stamp on the grid is
+        its own bar's (`searchsorted` left); a stamp OFF the grid (a bar whose first M1
+        minutes are missing, stamped late) falls on the NEXT bar, whereas
+        `reprice.located` puts a late stamp on its own bar -- so the monkey's hold can differ by one
+        bar from the hold the repricer prices on such a trade. It delays, never advances.
+        Aligning the two would move stored monkey results; not done (encargo 68 F22).
 
     Raises:
         SystemExit: A hold exceeds the scan ceiling. Truncating it would silently price a

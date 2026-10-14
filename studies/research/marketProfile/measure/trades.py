@@ -18,8 +18,9 @@ def after(mask: np.ndarray, hold: int) -> tuple[np.ndarray, np.ndarray]:
         hold: Bars the trade is held.
 
     Returns:
-        (entry, exit): the open of the next bar, and the open `hold` bars later — the
-        open-to-open fill SQX was measured to use.
+        (entry, exit): the open of the next bar (index + 1, never the signal bar's own: its
+        close is only known when it ends), and the open `hold` bars later -- the open-to-open
+        fill SQX was measured to use.
     """
     idx = np.flatnonzero(mask[: mask.size - hold - 1])
     return idx + 1, idx + 1 + hold

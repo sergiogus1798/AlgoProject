@@ -14,6 +14,7 @@ from core.paths import report_dir
 from core.study import blocks, output, result as envelope
 from core.study.render import markdown
 from engines.inference import fdr
+from ledger import steprows
 from studies.screening.analysis import improvement, metrics
 
 TARGETS = ["Sharpe Ratio (OOS)", "Ret/DD Ratio (OOS)"]
@@ -111,6 +112,9 @@ def main() -> None:
                    {"strategies": len(names), "duplicates_dropped": dropped,
                     "candidates": tried, "targets": targets})
     print(markdown.render(got, title))
+    print(steprows.log_cut(a.project, 8, (tried * len(targets), tried * len(targets)),
+                           f"filters: {tried} filtros candidatos x {len(targets)} salidas (no quita estrategias)",
+                           "studies.screening.filters.report"))
     print(f"  {out / 'filters.md'}")
 
 

@@ -112,6 +112,10 @@ def drift_term(trades: pd.DataFrame, bars: pd.DataFrame, span: tuple[str, str], 
         (drift per trade in account currency, each trade's window label). `a` and `b` assume
         every bar held was a mean bar, which leaves a break-even trader sized by 1 / ATR a
         remainder of opposite sign for longs and shorts; `c` and `d` do not.
+
+        The drift is the span's (or the window's) BENCHMARK: it averages bars after each
+        trade's entry, so it is what the excess is measured against, never information a
+        decision could have used.
     """
     per_window, blind = VARIANTS[variant]
     label = calendar(pd.Series(trades["Open time"]), window)
