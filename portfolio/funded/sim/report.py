@@ -5,6 +5,7 @@ from typing import Any
 import pandas as pd
 
 from core.study import blocks, result
+from portfolio.funded.sim import measures
 from portfolio.funded.sim.table import Built
 
 MODULE = "portfolio.funded.sim"
@@ -39,7 +40,7 @@ def lines(table: Built, owner: dict) -> list[str]:
     """The printed tables: the economics per plan and policy, the odds and the cash drawdown, the two re-buy policies side by side."""
     hs = owner["haircuts"]
     out = [
-        f"{'plan':27} {'recompra':9} {'precio$':>8} {'riesgo % f→fond':>17} {'VE/compra':>10} {'VE/$':>6} {'VE/mes':>8} "
+        f"{'plan':27} {'recompra':9} {'precio$':>8} {'riesgo % f→fond':>17} {'VE/compra':>10} {'VE/$':>6} {'VE/mes':>8} {'c/imp./mes':>10} "
         f"{'[90 %]':>17} {'mono':>8} {'ventaja':>8} {'h equil.':>8}  "
         + " ".join(f"{'h=' + _pct(h):>8}" for h in hs)
     ]
@@ -48,7 +49,7 @@ def lines(table: Built, owner: dict) -> list[str]:
         band = f"[{r['ev_lo'] / months:.1f}, {r['ev_hi'] / months:.1f}]"
         out.append(
             f"{r['plan']:27} {r['rebuy']:9} {r['price_usd']:8.2f} {_risk(r):>17} {r['ev_per_purchase']:10.1f} "
-            f"{r['ev_per_dollar']:6.2f} {r['ev_per_month']:8.1f} "
+            f"{r['ev_per_dollar']:6.2f} {r['ev_per_month']:8.1f} {measures.after_tax(r['ev_per_month'], owner['tax_rate']):10.1f} "
             f"{band:>17} {r['ev_monkey']:8.1f} "
             f"{r['advantage']:8.1f} {_breakeven(r, hs):>8}  "
             + " ".join(f"{r[f'ev_h{round(100 * h)}']:8.1f}" for h in hs)
@@ -135,7 +136,7 @@ def sentence(table: Built, owner: dict) -> str:
     )
     return (
         f"{given}: el VE_banco más alto es {best['plan']} con recompra «{best['rebuy']}», riesgo {_risk(best)} % por operación "
-        f"(fases → fondeada), VE {best['ev_per_month']:+.1f} $/mes [{best['ev_lo']:.0f}, {best['ev_hi']:.0f}] $ "
+        f"(fases → fondeada), VE {best['ev_per_month']:+.1f} $/mes ({measures.after_tax(best['ev_per_month'], owner['tax_rate']):+.1f} con impuestos) [{best['ev_lo']:.0f}, {best['ev_hi']:.0f}] $ "
         f"en el horizonte; sigue positivo con {live} edge del OOS; ventaja sobre el mono "
         f"{best['advantage']:+.1f} $.{tail} Esto ordena, no decide: el criterio robusto de compra "
         f"(encargo 33 §3.5.6) es tuyo."

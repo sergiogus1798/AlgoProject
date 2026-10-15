@@ -5,7 +5,7 @@ from typing import Any, cast
 import pandas as pd
 
 from portfolio.funded.decide import tables
-from portfolio.funded.sim import inputs, table as table_mod
+from portfolio.funded.sim import inputs, measures, table as table_mod
 from ui.daemon.portfolios import parts, shelf
 from ui.text import numbers
 
@@ -49,6 +49,7 @@ def read(bank: str = "", plan: str = "", **_: str) -> dict[str, Any]:
             REBUY.get(r["rebuy"], r["rebuy"]),
             r["price_usd"],
             *[round(r[h], 1) for h in hs],
+            round(measures.after_tax(r[at], owner["tax_rate"]), 1),
             round(r["ev_monkey"], 1),
             round(r["ev_se"], 1),
             None if pd.isna(r["breakeven_h"]) else parts.pct(r["breakeven_h"]),
@@ -63,6 +64,7 @@ def read(bank: str = "", plan: str = "", **_: str) -> dict[str, Any]:
         "recompra",
         "precio $",
         *[f"VE $ con h = {int(round(parts.pct(h) or 0))} %" for h in owner["haircuts"]],
+        f"VE $ con imp. (h = {int(round(parts.pct(owner['haircut_decides']) or 0))} %)",
         "mono $",
         "± error $",
         "h de equilibrio %",
@@ -75,6 +77,7 @@ def read(bank: str = "", plan: str = "", **_: str) -> dict[str, Any]:
         "Mismo plan: se recompra el mismo plan mientras quede caja. Sin recompra: una sola compra.",
         "Lo que cuesta la cuenta hoy.",
         *[parts.WORDS["ev"] + " " + parts.WORDS["h"]] * len(hs),
+        "El VE del h que ordena la tabla, con impuestos sobre el beneficio neto; sólo informativo.",
         parts.WORDS["monkey"],
         parts.WORDS["se"],
         parts.WORDS["breakeven_h"],
@@ -132,6 +135,7 @@ def decided() -> parts.TabBlock:
             r["plan"],
             REBUY.get(r["rebuy"], r["rebuy"]),
             round(r["ev"], 1),
+            round(measures.after_tax(r["ev"], d["owner"]["tax_rate"]), 1),
             round(r["ev_se"], 1),
             round(r["ev_monkey"], 1),
             r["reason"],
@@ -139,7 +143,7 @@ def decided() -> parts.TabBlock:
         for r in d["rows"]
     ]
     states = [
-        [None] * 5
+        [None] * 6
         + [
             "pass"
             if r["reason"] == "sí"
@@ -153,10 +157,26 @@ def decided() -> parts.TabBlock:
         f"Cada plan contra los filtros, con h = {d['rows'][0]['h']:.0%}"
         if d["rows"]
         else "Sin planes",
-        ["plan", "recompra", "VE $", "± error $", "mono $", "¿se compra?"],
+        [
+            "plan",
+            "recompra",
+            "VE $",
+            "VE $ con imp.",
+            "± error $",
+            "mono $",
+            "¿se compra?",
+        ],
         rows,
         "«Sí», o el primer filtro que no pasa.",
-        [None, None, parts.WORDS["ev"], parts.WORDS["se"], parts.WORDS["monkey"], None],
+        [
+            None,
+            None,
+            parts.WORDS["ev"],
+            "El VE con impuestos: sobre el beneficio neto, sólo informativo.",
+            parts.WORDS["se"],
+            parts.WORDS["monkey"],
+            None,
+        ],
         states,
     )
     waits = parts.table(

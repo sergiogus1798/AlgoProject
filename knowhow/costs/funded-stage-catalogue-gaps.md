@@ -9,7 +9,7 @@ tag: 📓  date: 2026-10-14  see: costs/prop-firm-catalogue-hantec, research/fun
 - **Answered 2026-10-14 (encargo 54, B), in `portfolio/funded/sim/config.yaml`:** Hantec refund `false`,
   Endurance payout `14` days, floor after payout `initial` (Express) / `stays` (FTMO 1-step, ambiguous).
   FTMO 2-step DOES refund the fee (`rules/ftmo.yaml`, confirmed; the Council's `false` was wrong).
-  Still `null`: `tax_rate`, `p_payout_denied`.
+  Answered 2026-10-15: `tax_rate` 0.40 (display only, never in the kernel), `p_payout_denied` 0.05 per payout.
 
 ## Evidence
 `sqlite3 'file:…/funding.sqlite?mode=ro'`, 2026-10-02:

@@ -43,8 +43,10 @@ FTMO 2-step refunds the fee with the first payout (`rules/ftmo.yaml`, confirmed)
 
 **Still open in #6 (the owner's calls; nothing here is guessed):**
 
-- `owner.tax_rate` (the tax type, 54-11) and `owner.p_payout_denied` (he said «5 % al año»; the model reads it per
-  payout request — which one?), `stageb.t1_gap`: all `null`, the bank simulation refuses without the first two.
+- Answered 2026-10-15 (54-11): `owner.tax_rate` 0.40 on NET profit — every calculation, verdict and ranking is
+  done without it and money figures are shown beside the same figure with it (`measures.after_tax`);
+  `owner.p_payout_denied` 0.05 PER PAYOUT, each independent (as `bank.hazards` draws it); `stageb.t1_gap`
+  `close_to_open_blocks`.
 - Hantec's «Profit Target −2 %» (Council: phase 1 only; Hantec's article does not say), Hantec's prohibited-strategies
   article (read, nothing new).
 - From encargo 33 §2: the target of phases 2 and 3, the base profit share of the challenges, the exact

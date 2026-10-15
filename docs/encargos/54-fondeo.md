@@ -30,7 +30,7 @@ nunca la raíz real (`portfolio/testroot/README.md`).
 | frente | qué | modelo | depende de | estado |
 |---|---|---|---|---|
 | A | La ventana edita los huecos del catálogo, el precio pagado y las entradas `owner.*` (33 entregable 5) | Sonnet (mecánico) | nada | hecho 2026-10-14 salvo el precio pagado (el modelo no tiene esa entrada; usa lista) |
-| B | Las entradas del dueño aún `null` y las preguntas abiertas de 33: listarlas y preguntarlas, nunca rellenarlas | Opus | A (para que él las escriba) | hecho 2026-10-14 con lo contestado; abiertas: `tax_rate`, `p_payout_denied`, `t1_gap` |
+| B | Las entradas del dueño aún `null` y las preguntas abiertas de 33: listarlas y preguntarlas, nunca rellenarlas | Opus | A (para que él las escriba) | hecho 2026-10-14 y 2026-10-15; no queda nada abierto |
 | C | «Hecho es» de 33: la tabla de §4 sobre una cartera REAL, contra el mono, con recortes y una frase de decisión | Opus | encargo 55 (pool validado), B | bloqueado |
 | D | Módulo de riesgo máximo: inventario y las cinco decisiones (45 parte 1) | Opus | nada | inventario hecho 2026-10-14 (abajo); decisiones 1-7 ya contestadas; E desbloqueado |
 | E | `q_día`, `DD_95`, `riesgo_max` y veredicto (45 partes 2-4) | Opus | D contestado | bloqueado |
@@ -47,6 +47,10 @@ nunca la raíz real (`portfolio/testroot/README.md`).
   `fee_refund` pasa a `true` (confirmado) en `rules/ftmo.yaml` y en `funding.sqlite`. Sin escribir:
   `tax_rate` (pendiente del dueño), `p_payout_denied` («5 % al año»: el modelo es por petición de cobro,
   ¿cuál?) y `t1_gap`. D: inventario en §4.
+- 2026-10-15 · B cerrado (Sonnet): contestadas `tax_rate`, `p_payout_denied`, `t1_gap` y `seasonality.fdr_q`
+  (bloque «Contestadas por el dueño (2026-10-15)», abajo). `tax_rate` sale del núcleo de la caja
+  (`kernel`, `bank`, `plans`): todo se calcula sin impuestos y `measures.after_tax` pone el VE con ellos
+  al lado en `funded.sim.report`, `funded.decide` y la ventana (Decisión y Tabla VE).
 - 2026-10-09 · consolidado desde los encargos 33 y 45; nada ejecutado desde la consolidación. Verificado
   ese día: lo construido de 33 (§0), las rutas de A y que `kept/` solo tiene `Trade_NIKKEI225_M30_volatilidadL`.
 
@@ -116,7 +120,7 @@ y la raíz de prueba no toca la real. Verifica con `/ui-shot`. Capítulo del man
 *Decisión previa (regla 11):* ¿el editor escribe el YAML en el repo (el que se versiona) o una capa
 local en `config/`? — pregunta abajo (ex 33, entregable 5).
 
-## 2 · Frente B — lo que es del dueño y sigue sin contestar
+## 2 · Frente B — lo que es del dueño (cerrado 2026-10-15; lo de abajo es el histórico)
 
 Todo esto lo contesta el dueño; este plan lo **lista y lo pregunta** (frente A lo hace escribible), y
 **nunca** rellena un valor. Mientras sean `null`, `decide` responde siempre «ninguno».
@@ -254,6 +258,16 @@ y `/ui-shot` antes de dar nada por hecho.
 ---
 
 ## Decisiones del dueño — pregúntalas (regla 11)
+
+**Contestadas por el dueño (2026-10-15)** — cierran 11 (lo de B):
+- `tax_rate` = 0,40 sobre beneficio neto. Todo cálculo, veredicto, umbral y orden se hace SIN impuestos;
+  donde se enseñe dinero, la cifra sin impuestos y con ellos, una al lado de la otra; el impuesto nunca es
+  entrada de una decisión. Texto neutro: «impuestos: 40 % sobre beneficio neto, sólo informativo».
+  Vive en `portfolio/funded/sim/config.yaml` (`owner.tax_rate`).
+- `p_payout_denied` = 0,05 POR COBRO, cada cobro por separado (como ya lo sortea `bank.hazards`).
+  Mismo fichero.
+- `t1_gap` = `close_to_open_blocks`, en `portfolio/common/construct/config.yaml` (`stageb.t1_gap`).
+- `seasonality.fdr_q` = 0,05 confirmado: ya estaba en `ledger/thresholds.yaml`, ahora `set_by: dueño`.
 
 **Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
 - 1 → **en `portfolio/funded/`**. 2 → **se marca y se queda**. 3 → **la cartera a mano + el número de cada estrategia suelta**. 4 → **las cuentas que elija el dueño en la ventana**.

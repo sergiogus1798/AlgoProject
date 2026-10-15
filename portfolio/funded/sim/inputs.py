@@ -17,9 +17,9 @@ OWNER = {
     "haircuts": "los recortes h de la curva VE(h), p. ej. [0, 0.25, 0.5, 0.75, 1]",
     "haircut_decides": "el recorte h con el que se ordena la tabla (uno de owner.haircuts)",
     "payout_cushion": "fracción del tamaño que se deja en la cuenta en cada cobro (0 = retirar todo)",
-    "tax_rate": "fracción de cada cobro que se va en impuestos (0 sólo si tú dices 0)",
+    "tax_rate": "fracción del beneficio neto que se va en impuestos; sólo se muestra al lado, nunca entra en un cálculo",
     "payout_fee": "fracción de cada cobro que se va en comisiones de pago y divisa",
-    "p_payout_denied": "probabilidad de que la empresa deniegue un cobro",
+    "p_payout_denied": "probabilidad de que la empresa deniegue CADA cobro, de forma independiente",
     "p_firm_closes_year": "probabilidad de que la empresa cierre en un año",
 }
 

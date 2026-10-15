@@ -51,7 +51,7 @@ stageb:                         # F3, stage B of the funded search (PLAN §14.3,
   shortlist_size: 50            # PLAN §14.3: the top ~50 diverse combinations of a stage-A run
   max_shared: 0.5               # no two of them share MORE than this share of their members
   shared_of: larger             # owner 2026-10-05: half of the LARGER combination when the two differ in K (the other reading: smaller)
-  t1_gap: null                  # REQUIRED, no default (rule 11): T1's gap model; the only one built is close_to_open_blocks
+  t1_gap: close_to_open_blocks  # owner 2026-10-15 (54, 11): T1's gap model; the only one built
   n_paths: 10000                # PLAN §14.3: paths per Monte Carlo flavour and block length
   sweep_days: [5, 10, 20, 40]   # owner 2026-09-30: block lengths read besides the measured one (Politis-White); the most pessimistic decides
   worker_ram_gb: 2.5            # 🔬 2026-10-02: one member's exact-M1 worker on an 8.7 M-bar feed peaks 2.5 GB

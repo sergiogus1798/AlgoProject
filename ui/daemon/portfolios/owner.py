@@ -61,7 +61,7 @@ FIELDS = (
         FRACTION,
         (),
         "Impuestos",
-        "fracción de cada cobro que se va en impuestos; 0 sólo si tú dices 0",
+        "fracción del beneficio neto que se va en impuestos; sólo se muestra al lado, nunca entra en un cálculo",
         "la caja del banco",
     ),
     (

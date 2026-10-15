@@ -308,16 +308,16 @@ def main() -> int:
         )
         lacking = api.preflight("stage_b", run=FUNDED)
         check(
-            "launcher: stage B refuses without the owner's knobs, none defaulted",
-            not lacking["ok"] and any("stageb.t1_gap" in r for r in lacking["reasons"]),
+            "launcher: stage B no longer lacks the owner's knobs (t1_gap answered 2026-10-15); the refusal itself is test_portfolio_stageb's",
+            not any("stageb.t1_gap" in r for r in lacking.get("reasons", [])),
         )
         check(
-            "launcher: the bank refuses without horizon, edge and the owner's inputs",
-            {"horizonte", "edge", "owner.tax_rate"}
+            "launcher: the bank refuses without horizon and edge",
+            {"horizonte", "edge"}
             <= {
                 w
                 for r in api.preflight("bank", run=FUNDED)["reasons"]
-                for w in ("horizonte", "edge", "owner.tax_rate")
+                for w in ("horizonte", "edge")
                 if w in r
             },
         )

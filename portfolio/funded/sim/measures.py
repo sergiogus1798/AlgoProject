@@ -22,6 +22,19 @@ def net(out: np.ndarray) -> np.ndarray:
     return out[:, C["received"]] - out[:, C["paid"]]
 
 
+def after_tax(x: float, rate: float) -> float:
+    """A net figure with `rate` taken off when it is a profit; shown beside the real one, never decided on.
+
+    Args:
+        x: A net result in USD — the mean EV, so the tax is taken on the mean, not path by path.
+        rate: The fraction of a net profit that goes to tax (`owner.tax_rate`).
+
+    Returns:
+        `x` for a loss, `x * (1 - rate)` for a profit.
+    """
+    return x - rate * max(x, 0.0)
+
+
 def ev(out: np.ndarray) -> float:
     """The bank's expected value over the draws' whole horizon."""
     return float(net(out).mean())

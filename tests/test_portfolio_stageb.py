@@ -310,9 +310,9 @@ def test_unset_knobs_are_refused() -> None:
             assert key in str(stop)
     shipped = config.load()
     assert (shipped["stageb"]["t1_gap"], shipped["funded"]["open_risk_cap"]) == (
-        None,
+        "close_to_open_blocks",
         0.5,
-    )  # t1_gap is not the owner's yet; the cap is his (2026-10-14)
+    )  # both the owner's: the cap 2026-10-14, the gap model 2026-10-15
     assert shipped["stageb"]["shared_of"] == "larger"  # owner, 2026-10-05
 
 

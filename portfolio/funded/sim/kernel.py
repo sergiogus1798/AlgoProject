@@ -48,7 +48,6 @@ TERMS = (
     "refund",
     "cushion",
     "fee",
-    "tax",
     "budget",
     "rebuy",
     "lock",
@@ -126,7 +125,7 @@ def run(
     Returns:
         float64 [n_paths, len(COLS)].
     """
-    price, share, cycle, refund, cushion, fee, tax, budget, rebuy, lock = terms
+    price, share, cycle, refund, cushion, fee, budget, rebuy, lock = terms
     n_paths, horizon = closed.shape
     n_ch = stagemat.shape[0] - 1
     out = np.zeros((n_paths, len(COLS)))
@@ -253,7 +252,7 @@ def run(
                                 end = d
                                 code = 2
                                 break
-                            row[_RECV] += gross * share * (1 - fee) * (1 - tax)
+                            row[_RECV] += gross * share * (1 - fee)
                             row[_PAYS] += 1.0
                             if row[_FIRST] < 0:
                                 row[_FIRST] = d

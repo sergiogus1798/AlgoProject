@@ -63,7 +63,6 @@ def terms(**kw) -> dict:
             refund=1.0,
             cushion=0.0,
             fee=0.0,
-            tax=0.0,
             budget=1e9,
             rebuy=1.0,
             lock=0.0,
@@ -117,11 +116,11 @@ ONE_STEP = plan(stage("phase1"), stage("funded", target=0.0))
 
 # 1. passes on day 1, is paid twice, breaks on day 12; the next account is bought on day 13
 path = one([600, 400] + [100] * 5 + [50] * 5 + [0] * 4, low={12: -1000.01})
-row, log, accounts = both(path, ONE_STEP, terms(fee=0.02, tax=0.10))
+row, log, accounts = both(path, ONE_STEP, terms(fee=0.02))
 check("cash to the cent: paid 2 x 99.00", abs(row["paid"] - 198.00) < 1e-9, row["paid"])
 check(
-    "cash to the cent: received 400 and 200 x 0.98 x 0.90, plus the 99 refund",
-    abs(row["received"] - (352.80 + 176.40 + 99.00)) < 1e-9,
+    "cash to the cent: received 400 and 200 x 0.98, plus the 99 refund",
+    abs(row["received"] - (392.00 + 196.00 + 99.00)) < 1e-9,
     row["received"],
 )
 check(
@@ -414,7 +413,7 @@ risk = {"phase1": 60.0, "phase2": 40.0, "phase3": 50.0, "funded": 45.0}
 close_day, deny = bank.hazards(n, horizon, 0.15, 0.30, 260, np.random.default_rng(5))
 for name, shape in shapes.items():
     for policy in (
-        terms(budget=600.0, fee=0.02, tax=0.1),
+        terms(budget=600.0, fee=0.02),
         terms(budget=600.0, cushion=0.02),
         terms(rebuy=0.0, lock=1.0),
     ):

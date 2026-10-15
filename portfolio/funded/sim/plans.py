@@ -27,7 +27,6 @@ class Cash(TypedDict):
     refund: float
     cushion: float
     fee: float
-    tax: float
     budget: float
     rebuy: float
     lock: float
@@ -277,7 +276,6 @@ def cash(plan: Terms, owner: dict, days_per_year: float, rebuy: str) -> Cash:
         "refund": float(plan["refund"]),
         "cushion": owner["payout_cushion"],
         "fee": owner["payout_fee"],
-        "tax": owner["tax_rate"],
         "budget": owner["budget_eur"] * owner["eurusd"],
         "rebuy": float(rebuy == "same_plan"),
         "lock": float(plan["lock"]),

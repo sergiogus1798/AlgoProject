@@ -66,7 +66,6 @@ TERMS = dict(
     refund=1.0,
     cushion=0.0,
     fee=0.02,
-    tax=0.2,
     budget=1e9,
     rebuy=0.0,
     lock=0.0,
@@ -95,10 +94,10 @@ def sim(**terms: float) -> np.ndarray:
     return bank.simulate(paths, PLAN, RISK, {**TERMS, **terms}, *quiet, threads=1)[0]
 
 
-payout = 0.8 * 500 * (1 - 0.02) * (1 - 0.2)  # 313.6 reaches the bank per funded account
+payout = 0.8 * 500 * (1 - 0.02)  # 392 reaches the bank per funded account
 one = sim()
 check(
-    "rebuy = none: EV = -fee + P(pass) x (payout + refunded fee) = -99 + 0.3 x 412.6 = 24.78",
+    "rebuy = none: EV = -fee + P(pass) x (payout + refunded fee) = -99 + 0.3 x 491 = 48.3",
     abs(measures.ev(one) - (-99 + p * (payout + 99))) < 1e-9,
     measures.ev(one),
 )
@@ -109,12 +108,12 @@ check(
 )
 many = sim(rebuy=1.0)
 check(
-    "rebuy = same_plan: the 70 % that failed pay a second fee for nothing: EV = 24.78 - 0.7 x 99 = -44.52",
+    "rebuy = same_plan: the 70 % that failed pay a second fee for nothing: EV = 48.3 - 0.7 x 99 = -21.0",
     abs(measures.ev(many) - (-99 + p * (payout + 99) - (1 - p) * 99)) < 1e-9,
     measures.ev(many),
 )
 check(
-    "no refund: EV = -99 + 0.3 x 313.6 = -4.92",
+    "no refund: EV = -99 + 0.3 x 392 = 18.6",
     abs(measures.ev(sim(refund=0.0)) - (-99 + p * payout)) < 1e-9,
 )
 
@@ -146,10 +145,10 @@ resim = {
     "same_plan": measures.ev(sim(price=49.5, rebuy=1.0)),
 }
 check(
-    "worth: at half price the EV is the re-simulated one under both policies (59.43 and 24.78), and a plan without a table is left out",
+    "worth: at half price the EV is the re-simulated one under both policies (82.95 and 48.3), and a plan without a table is left out",
     len(judged) == 2
     and all(abs(j["ev_now"] - resim[j["rebuy"]]) < 1e-9 for j in judged)
-    and abs(resim["none"] - 59.43) < 1e-9,
+    and abs(resim["none"] - 82.95) < 1e-9,
     (judged, resim),
 )
 check(
@@ -190,7 +189,7 @@ out = bank.simulate(
     walks,
     option,
     RISK,
-    {**TERMS, "share": 1.0, "cycle": 1, "refund": 0.0, "fee": 0.0, "tax": 0.0},
+    {**TERMS, "share": 1.0, "cycle": 1, "refund": 0.0, "fee": 0.0},
     np.full(m, NEVER),
     np.zeros((m, long_), dtype=bool),
 )[0]
@@ -243,7 +242,7 @@ def table(plan: str, **source) -> dict:
     }
 
 
-OWNER = {"haircuts": [0, 0.5, 1], "haircut_decides": 0.5}
+OWNER = {"haircuts": [0, 0.5, 1], "haircut_decides": 0.5, "tax_rate": 0.4}
 book = {
     "A": {
         "own": True,
@@ -263,6 +262,16 @@ book = {
 }
 got = choose.decide(book, OWNER, ignore_verdict=False)
 why = {(r["plan"], r["rebuy"]): r["reason"] for r in got["rows"]}
+same = choose.decide(book, {**OWNER, "tax_rate": 0.0}, ignore_verdict=False)
+check(
+    "tax is only shown: another rate changes `ev_net`, never the choice or the order",
+    [(r["plan"], r["rebuy"], r["reason"]) for r in same["rows"]]
+    == [(r["plan"], r["rebuy"], r["reason"]) for r in got["rows"]]
+    and all(
+        abs(r["ev_net"] - (r["ev"] - 0.4 * max(r["ev"], 0.0))) < 1e-9
+        for r in got["rows"]
+    ),
+)
 check(
     "the highest EV that passes every gate is chosen — not B (another plan's portfolio), C (no verdict), D (negative OOS edge) nor A/same_plan (p90 outlay over the cash)",
     (got["chosen"]["plan"], got["chosen"]["rebuy"]) == ("A", "none"),
@@ -317,9 +326,9 @@ meta = {
 SET = [
     "owner.eurusd=1.12",
     "owner.payout_cushion=0.0",
-    "owner.tax_rate=0",
+    "owner.tax_rate=0.4",
     "owner.payout_fee=0.02",
-    "owner.p_payout_denied=0",
+    "owner.p_payout_denied=0.05",
     "owner.p_firm_closes_year=0.05",
     "gaps.hantec_fee_refund=false",
     "gaps.hantec_endurance_payout_days=14",
@@ -342,7 +351,7 @@ with tempfile.TemporaryDirectory() as tmp:
     run.run(
         synthetic,
         meta,
-        inputs.load([x.replace("tax_rate=0", "tax_rate=0.3") for x in SET]),
+        inputs.load([x.replace("tax_rate=0.4", "tax_rate=0.3") for x in SET]),
         tmp / "20260102_000000_b",
         seed=1,
     )

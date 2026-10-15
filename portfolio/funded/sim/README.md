@@ -57,8 +57,8 @@ become path days at `days_per_year / 365`). A risk level r scales a path by `r �
 Answered and committed (owner, 2026-10-05, encargo 33 §6.4 and §6.7): `owner.rebuy: [same_plan,
 none]` — **both, compared**: the policy is a searched dimension, every plan gets one row per policy
 and the trial count doubles — `owner.haircuts: [0, 0.25, 0.5, 0.75, 1]`, `owner.haircut_decides: 0.5`.
-Still `null`: `owner.eurusd` (never fetched), `owner.payout_cushion`, `owner.tax_rate`, `owner.payout_fee`,
-`owner.p_payout_denied`, `owner.p_firm_closes_year`, and every `gaps.*` the catalogue does not hold
+Still `null`: `owner.eurusd` (never fetched), `owner.payout_cushion`, `owner.payout_fee`,
+`owner.p_firm_closes_year`, and every `gaps.*` the catalogue does not hold
 (today `hantec_endurance_payout_days` and `<firm>_<family>_floor_after_payout`
 for the two families whose funded max loss trails: Hantec Express and FTMO 1-Step;
 `gaps.hantec_fee_refund` is asked only if the catalogue loses its answer — it holds «no refund», confirmed, since 2026-10-04). No pass criterion lives here: the table
@@ -73,7 +73,7 @@ is ranked at the given `h`, and the sentence says so.
   cycle after the stage starts and one cycle after each payout; it is paid on the first day from
   then on with a closed profit above the cushion, a positive profit in the cycle, and the stage's
   minimum days and consistency met **since the previous payout**. It withdraws
-  `balance − size − cushion·size`; the bank gets `share × (1 − fee) × (1 − tax)` of it, plus the
+  `balance − size − cushion·size`; the bank gets `share × (1 − fee)` of it, plus the
   price back with the account's first payout where the plan refunds. The eligibility window and
   the first payout's timing are assumptions, flagged in every result (`plans.ASSUMED`).
 - **The max-loss floor after a payout** matters only where it trails, and is the owner's reading

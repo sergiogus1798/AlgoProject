@@ -2,6 +2,8 @@
 
 from typing import Any, TypedDict
 
+from portfolio.funded.sim import measures
+
 # The gates, in the order they are asked; the first that fails is the row's reason (Spanish, the owner reads it).
 GATES = (
     ("own", "cartera de otro plan ({source_plan})"),
@@ -93,6 +95,7 @@ def decide(per_plan: dict[str, dict], owner: dict, ignore_verdict: bool) -> Choi
     ]
     for r in rows:
         r["reason"] = gate(r, ignore_verdict)
+        r["ev_net"] = measures.after_tax(r["ev"], owner["tax_rate"])  # shown only
     ranks(rows, hs)
     rows.sort(key=lambda r: -r["ev"])
     eligible = [r for r in rows if r["reason"] is None]

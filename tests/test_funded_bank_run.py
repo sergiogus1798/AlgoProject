@@ -185,7 +185,7 @@ with tempfile.TemporaryDirectory() as tmp:
 # 5. the command refuses, naming the input, when the owner's policy is missing
 for missing in (
     "owner.eurusd",
-    "owner.tax_rate",
+    "owner.p_payout_denied",
     "owner.payout_cushion",
     "gaps.hantec_express_floor_after_payout",
 ):
@@ -229,6 +229,8 @@ answered = {
     "haircut_decides": 0.5,
     "payout_cushion": 0.0,
     "payout_fee": 0.02,
+    "tax_rate": 0.4,
+    "p_payout_denied": 0.05,
     "p_firm_closes_year": 0.05,
 }
 answered_gaps = {
@@ -238,7 +240,7 @@ answered_gaps = {
     "ftmo_1step_floor_after_payout": "stays",
 }
 check(
-    "the committed config holds the owner's answers of 2026-09-29, 2026-10-05 and 2026-10-14 and nothing else: tax_rate and p_payout_denied stay null",
+    "the committed config holds the owner's answers of 2026-09-29, 2026-10-05, 2026-10-14 and 2026-10-15 and nothing else",
     committed == {**dict.fromkeys(committed), **answered}
     and inputs.load([])["gaps"] == answered_gaps,
     committed,

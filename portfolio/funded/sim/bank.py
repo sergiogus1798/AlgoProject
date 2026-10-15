@@ -86,9 +86,7 @@ def walk(
                 (n - 1 if acc["end"] is None else acc["end"]) - acc["funded_from"] + 1
             )
         for day, gross in acc["payouts"]:
-            row["received"] += (
-                gross * terms["share"] * (1 - terms["fee"]) * (1 - terms["tax"])
-            )
+            row["received"] += gross * terms["share"] * (1 - terms["fee"])
             row["payouts"] += 1
             if row["first_payout_day"] < 0:
                 row["first_payout_day"] = day
