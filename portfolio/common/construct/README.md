@@ -66,3 +66,31 @@ nothing of the engine; `verdict/` never imports `search/` or `equity/` — the o
   «SIN VEREDICTO … no guarda Sharpes de build» without opening oos2.
 - **«Deflated Sharpe > 0»** is the Sharpe minus the expected maximum of N trials (DSR > 0.5), not
   DSR > 0.95; the row keeps both (`verdict/deflate.py`).
+
+## Con supervivientes reales
+
+The whole engine on a real pool, in order (each step reads the previous one's folder; real root, full defaults,
+nothing here is `nice`d or shrunk). Rehearsed 2026-10-15 in the test root on `Test_nikkei_ref`
+(`ALGO_DATA_ROOT=~/Desktop/AlgoData/portfolio/_test/root`, relaxed pairs, `search.seeds=20`,
+`search.ga.population=20 generations=5`, `stageb.n_paths=300`, `verdict.null_draws=3`): every command below
+ran and wrote its folder; M9 only registers (nothing produces fresh rows).
+
+```bash
+P=Trade_<ASSET>_<TF>_<idea>          # the project whose survivors enter; POOL=<pool name>, PLAN=hantec:enhanced:10000:USD
+cd ~/Desktop/AlgoProject
+python3 -m portfolio.common.construct.candidates --project $P      # prints one `core.archive archive …` per survivor; run them (SQX stopped)
+python3 -m portfolio.common.construct.inputs.pool declare $POOL --added-by "<who>" --file <identities.txt>   # frozen: never re-pointed
+python3 -m portfolio.common.construct.universe --pool $POOL                      # M0-M2: rebuild, licence MAE/MFE, pairs
+python3 -m portfolio.common.construct.funded   --seed 1 --pool $POOL --plan $PLAN --set funded.open_risk_cap=0.5   # F1-F2, stage A
+RUN=$(ls -d ~/Desktop/AlgoData/portfolio/runs/*_${POOL}_${PLAN//:/_} | tail -1)
+python3 -m portfolio.common.construct.funded_b --seed 1 --run $RUN --set funded.open_risk_cap=0.5 --set stageb.t1_gap=close_to_open_blocks   # F3-F4, spends oos2 of the pool
+python3 -m portfolio.common.construct.wf       --seed 1 --pool $POOL --run $RUN --set wf.confidence=0.95   # M8 (reads oos1 only)
+python3 -m portfolio.common.construct.incubation.run register --run $RUN         # M9 (judged runs only)
+# the real path (M3-M5) is `real` then `report --seed 1 --pool $POOL`; it needs its OWN pool or a pool whose oos2 is still unspent
+```
+
+**What stops it today (2026-10-15):** `real`, `funded` and `incubation` size every member by its step-24 ATR stop
+(`inputs/risk.py`). Step 24 was deleted (OPEN #113 (1)), so a pool of today's survivors reads «0 utilizables ·
+sin stop del paso 24». Rehearsal on the archived current-cost pool (19 members of `Test_NIKKEI225_M30_simpleL_fin`,
+`Test_USA500_H1_indicesIBS`, `Test_USDJPY_M30_doubleROCLong`; `universe` ran, 12 kept, 18 admissible pairs of 66;
+all 12 refused at sizing). Friday needs the stop-free sizing of #113 (1), which is the owner's decision.
