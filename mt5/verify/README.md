@@ -68,12 +68,13 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
 
 ## Traps
 
-- **Real accounts are never logged into** (owner, 2026-10-15): `mt5/guard.py` refuses, before any
-  terminal starts, every login of `fleet.vps.accounts` (`config/machine.yaml`) that
-  `mt5_verify_logins` does not list — Hantec 8063673 is a funded account stopped on purpose.
-  `firms.usable` marks that firm «sin cuenta de verificación (cuenta fondeada protegida)»; the run
-  reports it and judges the others (`runs.check` stops only when none is left). `bin/workflow-test.sh`
-  verifies on `ftmo` only until a Hantec demo login exists. `tests/test_mt5verify.py::protected`.
+- **Real accounts are logged into only for backtests and for reading commission/spread** (owner,
+  2026-10-15: FTMO 541350656, Hantec 8063673, FundingPips 11308943 — no EAs on charts, no orders):
+  `mt5/guard.py` still refuses, before any terminal starts, every login of `fleet.vps.accounts`
+  (`config/machine.yaml`) that `mt5_verify_logins` does not list; the three above are listed.
+  A firm whose login is not listed is marked «sin cuenta de verificación (cuenta fondeada protegida)»;
+  the run reports it and judges the others (`runs.check` stops only when none is left).
+  `tests/test_mt5verify.py::protected`.
 
 - **`mt5.initialize(path=…)` must not start the terminal**: its child holds the Windows Python's
   stdout and `wine.run` waits forever. `wine.open_terminal()` starts it detached first

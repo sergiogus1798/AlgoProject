@@ -24,7 +24,7 @@ OPEN.md`) · `knowhow/mt5/INDEX.md` · `knowhow/locations/vps-fleet-access.md` �
 |---|---|---|---|---|
 | B | Paso 26: queda la fila 5 con flotante (M1 del terminal de cada firma, K-2; sin decidir si cambia `dd_rel_gap_max`) y «R» = distancia al stop donde haya stop (K-1b); ninguna superviviente con stop para probarlo | Opus / Sonnet | una corrida real en MT5 | parcial: símbolos y `mt5/README.md` hechos |
 | C | Paso 26: «Hecho es» — una superviviente real, su veredicto y su fila en el pool | Sonnet (la corrida es mecánica) | A, B, #78, una superviviente real | bloqueado |
-| E | Flota — pieza B: hecho `mt5/fleet/package.py` + `deploy.py` + `vps/*.ps1`; falta validar el `.chr` en una cuenta DEMO del terminal de Wine (otra cuenta demo: la Hantec 8063673 es una cuenta fondeada en fase 1, parada a propósito, y no se toca) y probar contra la VPS | Sonnet | demo en Wine, visto bueno del dueño | parcial |
+| E | Flota — pieza B: hecho `mt5/fleet/package.py` + `deploy.py` + `vps/*.ps1`; falta validar el `.chr` en una cuenta DEMO del terminal de Wine (cuenta de pruebas: la Hantec 8063673, fondeada en fase 1, sólo sirve para backtests y leer condiciones, nunca con EAs ni órdenes; el dueño, 2026-10-15) y probar contra la VPS | Sonnet | demo en Wine, visto bueno del dueño | parcial |
 | F | Flota — pieza C: hecho el reinicio con tarea programada (`deploy.py --install-watchdog`, sin probar en la VPS); falta pausar una cuenta (K-8c, fichero de control: exige que el EA o la baliza lo lean) | Sonnet | el dueño ve el diseño | parcial |
 | H | Exportador de carteras (§3 de 35): magic, riesgo en USD, noticias, comentario, nombre | Opus (diseño) → Sonnet | G, E, encargo 54 (riesgo por tamaño) | pendiente |
 | I | Flota — pieza D: la conciliación alimentada por las cuentas de la flota | Sonnet | decisión del dueño | pendiente |
@@ -451,4 +451,4 @@ Termina con la lista de ficheros cambiados y, como última línea de tu respuest
 
 ## Contestadas por el dueño (2026-10-15)
 
-- **55-E:** la cuenta Hantec 8063673 es una cuenta fondeada en fase 1, parada a propósito. NUNCA se toca ni se le enganchan EAs. La validación del `.chr` necesita otra cuenta demo.
+- **55-E:** las tres cuentas MT5 (FTMO 541350656, Hantec 8063673, FundingPips 11308943) pueden usarse para backtests y para leer comisiones y spread, y nada más: ningún EA en un gráfico, ninguna orden (dueño, 2026-10-15). Hantec es una cuenta fondeada en fase 1: la validación del `.chr` (EAs en gráficos) no puede hacerse en ella y necesita otra cuenta demo.
