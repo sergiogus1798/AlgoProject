@@ -4,15 +4,15 @@
 
 | # | frente | sesión | recurso | estado | espera |
 |---|---|---|---|---|---|
-| 1 | V del 50: corrida entera con el paso 8 vigente (`Test_USATEC_H1_breakoutL_v8_leaseWeb`) | 18 | custodio leaseWeb | en curso desde jue 19:23 UTC | — |
-| 2 | Z1 del 50 y resto del 49 (ledger, autopilot, umbrales al ledger, higiene de `criteria.yaml`) | 18 | Python | pendiente | 1 |
+| 1 | V del 50: corrida entera con el paso 8 vigente | 18 | custodio leaseWeb | ✅ jue 21:30: paso 8 verificado en `Test_USATEC_H1_breakoutL_v8b_leaseWeb` (B=2, línea 2,576, 10.000 → 4 medoides); la cadena llegó al 18 y paró en el 18.5 por fichas sin `price_rounding` (medidas y arregladas esta noche); 4 + 2 supervivientes en el almacén | — |
+| 2 | Z1 del 50 y resto del 49 (ledger, autopilot, umbrales al ledger, higiene de `criteria.yaml`) | 18 | Python | ✅ Z1/M del 50 (5c8055d), 49: `--calib` fuera, umbrales al ledger, `ledger/blind` arreglado (aaa03d6); la parte de `criteria.yaml` (paso 16 + higiene) va en el commit de la #93 de 07; mcRetest P14-7 → pregunta S3 | 1 |
 | 3 | #93: C2-C11 del 72 en `criteria.yaml` y `assets/_study.yaml` | 07 | Python | pendiente | 2 commiteado, y el dueño confirma a 07 |
 | 4 | Resto del F3 del 56 (`entryQuality` lee el replay tier 2 con stop) | 07 | Python | **hecho** (ya estaba: bitácora del 56, 2026-10-14; `tests/test_replay.py` + `test_entry_delay_replay.py` 10/10, 2026-10-15) | — |
 | 5 | 66 frentes 1, 2, 4, 5, 9, 10 (sin SQX; sin medir mientras corra SQX) | 95 | Python | hecho jue noche: casi todo ya estaba construido; quedan las mediciones con la máquina libre (bitácora del 66) | P10, D27 |
 | 6 | #96 (L4): silueta en el CSCV · #104 (F8a/b) | 95 | Python | hecho jue noche: #96 cerrada (fila en la lectura del CSCV), #104 F8a/b (F8c tras la corrida limpia), #119 cerrada | — |
 | 7 | 66 frentes 6-7 (SQX vivo) · #112 (núcleos) · mediciones aplazadas del 66 | 95 | conductor y custodio | pendiente | 1 terminado |
 | 8 | Corrida real en gorilla (celda del dueño) → `bin/remote.sh gorilla collect` → paso 26 en leaseWeb (#123, 72 D) | 95 | gorilla, luego MT5 | build 10.000 hecho; **paso 8 falló: EURUSD sin `price_rounding`** (sólo 6 activos medidos). Medida `engines.market.rounding` en curso → ficha → `run` | medida |
-| 9 | Si V falla: arreglo con su test y V otra vez desde cero (regla de la corrida limpia) | 18 | custodio | — | 1 |
+| 9 | Si V falla: arreglo con su test y V otra vez desde cero (regla de la corrida limpia) | 18 | custodio | ✅ 1.ª V cayó en el 8 (`List index overflow`, d52908d) → 2.ª desde cero; su parada en el 18.5 → `rollout_hour` sin comillas en 4 fichas (1fcb33b) y `price_rounding` de DJ30/UK100/HK50/AUS200/UKOIL/USOIL (dc6eede, 4fe279b). No hay 3.ª V: la próxima corrida entera (GBPJPY u otra) hace de prueba limpia | 1 |
 | 10 | Paso 26 con una superviviente real (55 C) → su fila en el pool | 95 | conductor, MT5 | pendiente | supervivientes de 1 u 8 |
 | 11 | Motor de carteras con un pool real (#87; M0 ya filtra por costes actuales) | 07 | Python | pendiente | 10 |
 | 12 | Ensayo general: dos celdas a la vez (leaseWeb y gorilla), del director a la cartera, sin manos | 95 + 18 | todo | sábado | 2, 3, 10 |
@@ -60,6 +60,10 @@
 | W6 ✅ A, N = 2 | 7 | lanzar la campaña esta noche | lanzada 22:05: `Trade_EURUSD_M30_cciPercLong`, `Trade_USDJPY_H1_cciPercLong_withExit` | — |
 | W7 ✅ B | 7 | 21 activos sin `price_rounding` fuera de la campaña (`ad41f58`) | se miden la semana que viene; si R1 = A el filtro se borra | — |
 | R1 | 8, 12, 13 | un activo sin `price_rounding` en su primera corrida | A el paso 8 lo mide solo sobre las operaciones del build y escribe la ficha (con `why`), y sigue · B se para, se mide a mano y `run` · C la campaña sólo elige activos ya medidos | A: sin ella la campaña del sábado se para en cada activo nuevo |
+| S1 | 2 | ¿segundo sello de `criteria.yaml`? El sello es del 12-10; el α 0,01 del 15-10 y el commit de la #93 + 49 cuentan como ediciones en cada celda juzgada después (`edits_since_seal`) | A sellar de nuevo tras la #93 (el contador vuelve a 0 desde ahí) · B dejar el sello del 12-10 y que cuenten | A: las dos ediciones son del dueño y ya están medidas |
+| S2 | 9 | `price_rounding` indistinguible (tick y none ≈ 0 %): DJ30, UK100, HK50 (18) y EURAUD, EURGBP, XAGUSD, XCUUSD (95) escritos `tick` por el precedente de USATEC/NIKKEI225 | A vale · B dejarlos sin ficha hasta un lote que distinga | A: con 0 % por los dos lados el reprecio da lo mismo |
+| S3 | 2 | 49 P14-7: borrar los cortes viejos de mcRetest (`verdict/gates.py`) deja sin veredicto a `scoring.py` (STRONG…FAIL), los vetos del informe y las columnas de la ventana | A el paso 14 se queda sólo con columnas: se borra el veredicto entero · B se conserva el veredicto como columna informativa | B: es lo que el 65 hizo con el 14 (columnas) sin perder la lectura |
+| S4 | 2 | los pasos sin regla (11.5, 16, 16.5) no dejan fila en el ledger (`judge.py:242` sale antes) | A que dejen fila (con 0 cortes) · B así está bien | A: el registro completo era el punto 1.3 del 49 |
 
 ## Informe de las 5:40 (viernes 2026-10-16, hora del servidor, UTC)
 
