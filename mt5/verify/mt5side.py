@@ -2,6 +2,7 @@
 
 import re
 import time
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -47,14 +48,40 @@ def fixed_lots(source: str, lots: str) -> str:
     return out
 
 
-def compile_ea(mq5: Path, stem: str, lots: str) -> dict[str, Any]:
-    """Compile the exported EA under a name with no space, trading the strategy's fixed lot.
+def fixed_risk(source: str, usd: str) -> str:
+    """The EA's source with its «Fixed Amount» sizing set to risk `usd` per trade from its stop.
+
+    SQX's FixedAmount template (`mmRiskedMoney`, `UseMoneyManagement`) sizes by the order's own
+    stop; the tester cannot pass inputs, so the default in the source is what runs. Raises when
+    the input is missing rather than guess (🤔 2026-10-15: the input names are those of
+    `FixedAmount_variables.tpl`; no EA has been exported through this path yet).
+    """
+    out, k = re.subn(
+        r"input double mmRiskedMoney = [\d.]+;",
+        f"input double mmRiskedMoney = {usd};",
+        source,
+    )
+    if k != 1:
+        raise SystemExit(
+            "el EA exportado no trae mmRiskedMoney: no es un EA de «Fixed Amount»; no se "
+            "le puede fijar el riesgo por operación"
+        )
+    return re.sub(
+        r"input bool UseMoneyManagement = \w+;",
+        "input bool UseMoneyManagement = true;",
+        out,
+    )
+
+
+def compile_ea(mq5: Path, stem: str, sizing: Mapping[str, Any]) -> dict[str, Any]:
+    """Compile the exported EA under a name with no space, trading the sizing of the concordance mode.
 
     Args:
         mq5: What SaveToFiles wrote, e.g. «Strategy 3.48.75.mq5».
         stem: The name it is compiled under: Wine splits a command-line argument at its
             first space (`wine.run`), so «Strategy 3.48.75» would never reach MetaEditor whole.
-        lots: The strategy's own FixedSize, the one SQX's retest trades too.
+        sizing: What SQX's retest traded too (`sqx.projects.mt5verify.mode_sizing`): FixedSize
+            becomes a fixed lot in the EA, FixedAmount a fixed risk per trade.
 
     Returns:
         `metaeditor.expert`'s dict. Raises when it did not compile.
@@ -64,7 +91,14 @@ def compile_ea(mq5: Path, stem: str, lots: str) -> dict[str, Any]:
             "el terminal de MT5 sigue abierto y MetaEditor no compila con él"
         )
     safe = mq5.with_name(re.sub(r"\W+", "_", stem) + ".mq5")
-    safe.write_text(fixed_lots(mq5.read_text(encoding="utf-8"), lots), encoding="utf-8")
+    source = mq5.read_text(encoding="utf-8")
+    p = sizing["params"]
+    source = (
+        fixed_lots(source, p["Size"])
+        if sizing["method"] == "FixedSize"
+        else fixed_risk(source, p["RiskedMoney"])
+    )
+    safe.write_text(source, encoding="utf-8")
     got = metaeditor.expert(safe)
     if not got["ok"] or not got["ex5_exists"]:
         raise SystemExit(

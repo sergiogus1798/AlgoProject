@@ -7,8 +7,9 @@ from datetime import date
 from pathlib import Path
 from xml.etree import ElementTree
 
-from core import assetdata
+from core import assetdata, sqxfile
 from core.assetdata import doctrine
+from sqx.inspect.strategymeta import rules
 from sqx.projects import cfxio, charts
 from sqx.projects.crosschecks import silence
 from sqx.projects.databanks import set_databank
@@ -20,6 +21,7 @@ from typing import Any, TypedDict
 from collections.abc import Mapping
 
 SAVE_MEMBER = "SaveToFiles-Task1.xml"
+METHODS = ("FixedSize", "FixedAmount")  # what the EA can be given on both sides
 
 
 def _ms(day: str, end: bool) -> int:
@@ -40,8 +42,9 @@ def own_sizing(strategy: Path) -> Sizing:
 
     Returns:
         {"method", "params"} from `strategy_Portfolio.xml`'s <MoneyManagement>, e.g.
-        {"method": "FixedSize", "params": {"Size": "0.1"}}. Only FixedSize is read today:
-        another method is refused rather than translated by guess into the EA.
+        {"method": "FixedSize", "params": {"Size": "0.1"}}. FixedSize and FixedAmount (owner,
+        2026-10-15, encargo 61-4a: the sizing lives in the strategy); another method is
+        refused rather than translated by guess into the EA.
     """
     with zipfile.ZipFile(strategy) as z:
         xml = z.read("strategy_Portfolio.xml").decode("utf-8")
@@ -52,12 +55,35 @@ def own_sizing(strategy: Path) -> Sizing:
     params = dict(
         re.findall(r'<Param key="#?(\w+?)#?"[^>]*>([^<]*)</Param>', found.group(2))
     )
-    if found.group(1) != "FixedSize":
+    if found.group(1) not in METHODS:
         raise SystemExit(
-            f"{strategy.stem} se dimensiona con {found.group(1)}: sólo FixedSize se "
-            "copia hoy a los dos lados (dueño, 2026-09-29: el de la estrategia)"
+            f"{strategy.stem} se dimensiona con {found.group(1)}: sólo {' y '.join(METHODS)} "
+            "se copian a los dos lados (dueño, 2026-09-29: el de la estrategia)"
         )
     return {"method": found.group(1), "params": params}
+
+
+def mode_sizing(mode: str, value: float) -> Sizing:
+    """The sizing one concordance mode trades on both sides (encargo 61-4d).
+
+    Args:
+        mode: "lot" (a fixed lot) or "risk" (a fixed risk per trade from the stop).
+        value: Lots for "lot", USD risked per trade for "risk".
+
+    Returns:
+        FixedSize {"Size"} or FixedAmount {"RiskedMoney"}, as `own_sizing` returns them.
+    """
+    if mode == "lot":
+        return {"method": "FixedSize", "params": {"Size": f"{value:g}"}}
+    if mode == "risk":
+        return {"method": "FixedAmount", "params": {"RiskedMoney": f"{value:g}"}}
+    raise ValueError(f"modo de dimensionado desconocido: {mode!r} (lot o risk)")
+
+
+def has_stop(strategy: Path) -> bool:
+    """Whether any entry order of the strategy carries a stop loss: `risk` mode sizes from it."""
+    root = sqxfile.xml(strategy)
+    return any(o["stop_loss"] for o in rules.orders(root))
 
 
 def write_task(

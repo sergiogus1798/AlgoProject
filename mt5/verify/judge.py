@@ -11,7 +11,7 @@ import pandas as pd
 
 from core.study import blocks
 from mt5 import compare
-from mt5.verify import firms
+from mt5.verify import firms, sizing
 
 MINUTES = {"M1": 1, "M5": 5, "M15": 15, "M30": 30, "H1": 60, "H4": 240, "D1": 1440}
 
@@ -65,9 +65,13 @@ def max_dd(frame: pd.DataFrame, deposit: float) -> float:
 
 
 def rows(
-    sqx: pd.DataFrame, mt5: pd.DataFrame, pairs: pd.DataFrame, deposit: float, th: dict
+    sqx: pd.DataFrame,
+    mt5: pd.DataFrame,
+    pairs: pd.DataFrame,
+    deposit: float,
+    th: dict,
 ) -> list[dict]:
-    """The six figures, each with its threshold and whether it passes.
+    """The figures, each with its threshold and whether it passes.
 
     Returns:
         [{"row", "label", "value", "limit", "state", "note"}]. A figure that cannot be
@@ -86,6 +90,13 @@ def rows(
         float((hit["Close time_mt5"] == hit["Close time"]).mean()) if len(hit) else None
     )
     r = compare.mean_loss(sqx)
+    s_sqx, s_mt5 = (hit[c].to_numpy(float) for c in ("Size", "Size_mt5"))
+    live = s_sqx > 0
+    size_gap = (
+        float((abs(s_mt5[live] - s_sqx[live]) / s_sqx[live]).mean())
+        if live.any()
+        else None
+    )
     diff = hit["Profit/Loss_mt5"] - hit["Profit/Loss"]
     gap_r = float(diff.abs().mean()) / r if r and len(hit) else None
     a, b = daily(sqx, deposit), daily(mt5, deposit)
@@ -114,7 +125,7 @@ def rows(
             "note": note,
         }
 
-    return [
+    out = [
         one(
             "1",
             "operaciones emparejadas, en el peor de los dos sentidos",
@@ -178,7 +189,17 @@ def rows(
             f"SQX {dd[0]:.3f} %, MT5 {dd[1]:.3f} % — sobre el balance al cerrar cada "
             "operación; el flotante intradía con M1 está pendiente",
         ),
+        one(
+            "6",
+            "tamaño por operación emparejada: diferencia relativa media",
+            size_gap,
+            th["size_gap_max_pct"],
+            False,
+            "|lotes MT5 − lotes SQX| / lotes SQX: el redondeo del lote y el valor del tick "
+            "de la empresa",
+        ),
     ]
+    return out
 
 
 def firm_result(
@@ -191,6 +212,7 @@ def firm_result(
     symbol: str,
     instrument: dict,
     zones: tuple[str, str],
+    mode: str = "lot",
 ) -> dict[str, Any]:
     """One firm's clock-aligned comparison: its verdict, its unpaired-trades table, its curves.
 
@@ -205,6 +227,8 @@ def firm_result(
             one point value (`compare.in_points`); USD is only shown.
         zones: (SQX feed's zone, the firm server's): SQX's times are moved trade by trade
             (`compare.to_zone`) before `clock` looks for any whole-hour shift left.
+        mode: "lot" or "risk" — which sizing both sides traded (`rows`); "risk" is named in
+            the verdict's label.
 
     Returns:
         {"verdict", "lonely", "summary", "pairs", "hours", "daily_sqx", "daily_mt5", "label"}
@@ -220,13 +244,15 @@ def firm_result(
     moved = shifted(sqx, hours)
     pairs = compare.pair(moved, mt5, tolerance)
     got = rows(moved, mt5, pairs, deposit, th)
+    if mode == "risk":
+        got.append(sizing.loss_cap_row(moved, mt5, th))
     few = len(sqx) < th["trades_min"]
     state = (
         "none" if few else "pass" if all(r["state"] == "pass" for r in got) else "fail"
     )
     ok = state == "pass"
     failed = [r["row"] for r in got if r["state"] == "fail"]
-    label = firms.label(firm)
+    label = firms.label(firm) + (" · riesgo fijo" if mode == "risk" else "")
     meaning = (
         f"{label} — SQX tiene menos de {th['trades_min']} operaciones en la ventana: muestra corta, ni "
         "pasa ni falla y no se anota en el pool."

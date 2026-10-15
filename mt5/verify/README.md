@@ -10,7 +10,7 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
             ─▶ sqx.projects.mt5verify: Test_ project on the conductor — «MT5 FTMO», «MT5 HANTEC», «MQL5»
             ─▶ sqxside: start, load, run, sync, stop · orderstocsv · retire the project
             ─▶ mt5side: compile the exported .mq5 · tester on each account ([Common] Login/Server)
-            ─▶ judge: clock offset · pair · the five rows of encargo 34 ─▶ result.json (study contract)
+            ─▶ judge: clock offset · pair · the rows of encargo 34 (and 6, 7 of encargo 61) ─▶ result.json (study contract)
 ```
 
 | file | what it does | run it | in → out |
@@ -24,6 +24,7 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
 | `report.py` | Write mt5.verify.run's result.json (the study contract) and its run.json, and mark a crash. | imported | summaries + tabs → the two files |
 | `run.py` | Step 26: one strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account. | `python3 -m mt5.verify.run --strategy <sqx> --from YYYY-MM-DD --to YYYY-MM-DD --model ohlc_m1 [--firms ftmo,hantec] [--set k=v]` | a `.sqx` → a verdict per firm |
 | `sidebyside.py` | Every SQX entry beside the MT5 trade each firm's EA opened for it: one row per entry, one set of columns per firm. | imported | `firm_result`'s pairs → one table block |
+| `sizing.py` | The fixed-risk mode's own pieces of the judge (encargo 61): the real-loss cap and the no-stop verdict. | — | — |
 | `sqxside.py` | The SQX half of a check: a Test_ project on the conductor, one retest per firm, the EA exported. | imported | project → trades per firm |
 | `ticks.py` | The optional second MT5 pass on real ticks: its backtest, its verdict beside the chosen model's, and the merged tab with three curves per firm. | imported by `run.py` | pieces → the Verificación tab |
 | `config.yaml` | Role, the donor's retests reused, the databank names, SaveToFiles' generator and first magic, slippage 0, tester polling, clock search span; thresholds as `ledger:<key>` | edited | — |
@@ -34,13 +35,20 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
   comparison answers "is SQX's long history valid for this firm" (owner, 2026-09-29).
 - **Spread:** the one the firm quotes at the moment of reading (owner: «spread actual del
   símbolo»). It moves with the hour: 41 points on FTMO's gold at 19:31 Madrid on 2026-09-29.
-- **Sizing: the strategy's own, on both sides** (owner, 2026-09-29, after the first real run).
-  `sqx.projects.mt5verify.own_sizing` reads `strategy_Portfolio.xml`'s `<MoneyManagement>`
-  (only FixedSize today; anything else is refused); the retest tasks get it through
-  `tasksettings.set_money_management`, and the exported EA is compiled with
-  `UseMoneyManagement = false` and `mmLotsIfNoMM` = that lot (`mt5side.fixed_lots`). Neither side
-  does it on its own: the task applies the donor's ATR sizing whatever `customSettings` says,
-  and SaveToFiles writes the EA with a «Fixed Amount» of its own.
+- **Two sizing modes, both must pass** (owner, 2026-10-15, encargo 61-4d): `config.yaml`
+  `modes` — `lot` (1 lot, SQX `FixedSize`) and `risk` (1,000 USD per trade from the stop, SQX
+  `FixedAmount`, `RiskedMoney`). `run.one_pass` builds a project and an EA per mode
+  (`mt5verify.mode_sizing`, `mt5side.fixed_lots` / `fixed_risk`); the firm's state is the worst
+  of the two (`ticks.keep_risk`). `risk` needs a strategy with a stop (`mt5verify.has_stop`);
+  without one that mode is «none» and the firm is not validated. The real-ticks pass
+  (`--also-real-ticks`) is judged in `lot` mode only. `own_sizing` still reads the
+  strategy's `<MoneyManagement>` as a door only (its value is not traded): only FixedSize or FixedAmount (encargo 61-4a).
+  🤔 The EA's `mmRiskedMoney` input name comes from `FixedAmount_variables.tpl`; no EA has been
+  exported through the `risk` path yet.
+- **Rows 6 and 7:** 6 is the mean relative lot gap of the pairs (`size_gap_max_pct`, 10 %); 7,
+  in `risk` mode only, is the worst real loss in USD of either side against `loss_cap_usd`
+  — **unset until the owner gives the figure (61-4c)**: `judge.require_cap` refuses in
+  `run.main` before any CPU is spent. Row 2 is now ≤ 0.10 R.
 - **Slippage 0 in SQX:** the MT5 tester does not slip a market order.
 - **The window and the tester's model have no default** — some firms' data is poor.
 - **R in row 2** is the SQX side's average losing trade, because the doctrine's strategies

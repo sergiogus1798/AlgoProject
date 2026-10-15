@@ -9,15 +9,17 @@ import time
 import zipfile
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 from core import assetdata, sqxfile
 from core.paths import MT5_DATA
 from core.study import result as study_result
 from ledger import gate, record, study as ledger_study
 from mt5 import compare, tester, wine
-from mt5.verify import conditions, firms, judge, mt5side, report, sqxside, ticks
+from mt5.verify import conditions, firms, judge, mt5side, report, sizing, sqxside, ticks
 from sqx.inspect import feeds
 from sqx.projects import mt5verify
+from sqx.projects.mt5verify import Sizing
 from ui.daemon.launch.run import assets as rule_five, graceful
 
 RUNS = MT5_DATA / "verify"
@@ -127,6 +129,114 @@ def earliest(start: str, end: str, depth: dict, data: dict) -> str:
     return got
 
 
+def one_pass(mode: str, size: Sizing, ctx: dict[str, Any]) -> dict[str, Any]:
+    """One concordance mode end to end: SQX retests at every firm, the EA compiled, MT5 backtests.
+
+    Args:
+        mode: "lot" or "risk" (`config.yaml` modes); names the project and the EA.
+        size: `mt5verify.mode_sizing`: what SQX and the EA both trade.
+        ctx: The run's fixed part — strategy, asset, timeframe, stamp, cfg, data, window, costs
+            (per firm), leverage (per firm), work, model, also (the real-ticks pass).
+
+    Returns:
+        {"project", "deposit", "ea", "sqx_trades", "mt5_trades", "slow", "reports"}, the
+        trades and reports per firm.
+    """
+    strategy, asset, timeframe, stamp = (
+        ctx[k] for k in ("strategy", "asset", "timeframe", "stamp")
+    )
+    cfg, data, window, costs = (ctx[k] for k in ("cfg", "data", "window", "costs"))
+    work, model, also, leverage = (
+        ctx[k] for k in ("work", "model", "also", "leverage")
+    )
+    project = f"Test_MT5Verify_{asset}_{timeframe}_{stamp[9:]}_{mode}"
+    mq5_dir = work / f"mq5_{mode}"
+    mq5_dir.mkdir(parents=True, exist_ok=True)
+    role = cfg["role"]
+    say(10, f"creando {project} en el {role}")
+    built = sqxside.build(
+        project, strategy, asset, timeframe, role, cfg["sqx"]["donor_members"]
+    )
+    cfx = Path(built["cfx"])
+    try:
+        done = mt5verify.configure(
+            cfx,
+            data["sqx_symbol"],
+            window,
+            costs,
+            mq5_dir,
+            cfg["sqx"],
+            size,
+            strategy,
+        )
+        deposit = capital(cfx, done["tasks"][0]["member"])
+        folders = sqxside.run(
+            project,
+            role,
+            strategy,
+            work,
+            {t["firm"]: t["output"] for t in done["tasks"]},
+            cfg["sqx"],
+        )
+        say(55, f"exportando las operaciones de SQX ({mode})")
+        sqx_trades = sqxside.firm_trades(folders, work)
+    finally:
+        print(sqxside.retire(project, role), flush=True)
+
+    found = sorted(mq5_dir.glob("*.mq5"))
+    if not found:
+        raise SystemExit(
+            f"SQX no escribió el .mq5 en {mq5_dir}: la tarea «{done['export']}» "
+            f"no exportó (generador «{cfg['sqx']['generator']}»)"
+        )
+    say(60, f"compilando {found[0].name} ({mode})")
+    ea = mt5side.compile_ea(found[0], f"V{stamp[9:]}{mode}_{strategy.stem}", size)
+
+    mt5_trades, reports, slow = {}, {}, {}
+    usable = firms.usable(asset)
+    for i, firm in enumerate(costs):
+        say(
+            65 + 25 * i // len(costs),
+            f"backtest en MT5 en la cuenta de {firm} ({mode})",
+        )
+        got = mt5side.backtest(
+            ea["expert"],
+            usable[firm]["symbol"],
+            timeframe,
+            window,
+            model,
+            deposit,
+            leverage[firm],
+            usable[firm]["account"],
+            firm,
+            cfg["mt5"],
+        )
+        mt5_trades[firm], reports[firm] = (
+            got["trades"],
+            {"dir": got["dir"], "summary": got["summary"]},
+        )
+        if also:
+            slow[firm] = ticks.backtest(
+                ea["expert"],
+                usable[firm],
+                timeframe,
+                window,
+                deposit,
+                leverage[firm],
+                firm,
+                cfg["mt5"],
+            )
+    return {
+        "project": project,
+        "deposit": deposit,
+        "ea": ea["expert"],
+        "sqx_trades": sqx_trades,
+        "mt5_trades": mt5_trades,
+        "slow": slow,
+        "reports": reports,
+    }
+
+
 def main() -> None:
     """Price each firm, retest in SQX, backtest in MT5, compare, and write the result."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -162,13 +272,15 @@ def main() -> None:
         raise SystemExit("la ventana acaba antes de empezar")
     strategy = a.strategy.resolve()
     asset, timeframe = identify(strategy)
-    sizing = mt5verify.own_sizing(strategy)  # both sides trade it (owner, 2026-09-29)
+    mt5verify.own_sizing(strategy)  # only a door: FixedSize or FixedAmount (61-4a)
+    if "lot" not in cfg["modes"]:
+        raise SystemExit("mt5/verify/config.yaml: modes necesita «lot» (1 lote fijo)")
+    if "risk" in cfg["modes"]:
+        sizing.require_cap(cfg["thresholds"])  # refuse before any CPU is spent (61-4c)
     data = assetdata.load(asset)
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id = f"{stamp}_{re.sub(r'[^A-Za-z0-9]+', '_', strategy.stem)}"
     work = RUNS / run_id
-    mq5_dir = work / "mq5"
-    mq5_dir.mkdir(parents=True, exist_ok=True)
     meta = {
         "run": run_id,
         "strategy": strategy.stem,
@@ -229,130 +341,93 @@ def main() -> None:
         26, segments(data, window), asset
     )  # the door before the CPU: the ledger row asks it again at the end
     meta["from"], meta["to"] = window
-    project = f"Test_MT5Verify_{asset}_{timeframe}_{stamp[9:]}"
-    role = cfg["role"]
-    say(10, f"creando {project} en el {role}")
-    built = sqxside.build(
-        project, strategy, asset, timeframe, role, cfg["sqx"]["donor_members"]
-    )
-    cfx = Path(built["cfx"])
-    try:
-        done = mt5verify.configure(
-            cfx,
-            data["sqx_symbol"],
-            window,
-            costs,
-            mq5_dir,
-            cfg["sqx"],
-            sizing,
-            strategy,
-        )
-        deposit = capital(cfx, done["tasks"][0]["member"])
-        folders = sqxside.run(
-            project,
-            role,
-            strategy,
-            work,
-            {t["firm"]: t["output"] for t in done["tasks"]},
-            cfg["sqx"],
-        )
-        say(55, "exportando las operaciones de SQX")
-        sqx_trades = sqxside.firm_trades(folders, work)
-    finally:
-        print(sqxside.retire(project, role), flush=True)
-
-    found = sorted(mq5_dir.glob("*.mq5"))
-    if not found:
-        raise SystemExit(
-            f"SQX no escribió el .mq5 en {mq5_dir}: la tarea «{done['export']}» "
-            f"no exportó (generador «{cfg['sqx']['generator']}»)"
-        )
-    say(60, f"compilando {found[0].name}")
-    ea = mt5side.compile_ea(
-        found[0], f"V{stamp[9:]}_{strategy.stem}", sizing["params"]["Size"]
-    )
-
-    mt5_trades, reports, slow = {}, {}, {}
-    usable = firms.usable(asset)
-    for i, firm in enumerate(costs):
-        say(65 + 25 * i // len(costs), f"backtest en MT5 en la cuenta de {firm}")
-        got = mt5side.backtest(
-            ea["expert"],
-            usable[firm]["symbol"],
-            timeframe,
-            window,
-            a.model,
-            deposit,
-            leverage[firm],
-            usable[firm]["account"],
-            firm,
-            cfg["mt5"],
-        )
-        mt5_trades[firm], reports[firm] = (
-            got["trades"],
-            {"dir": got["dir"], "summary": got["summary"]},
-        )
-        if also:
-            slow[firm] = ticks.backtest(
-                ea["expert"],
-                usable[firm],
-                timeframe,
-                window,
-                deposit,
-                leverage[firm],
-                firm,
-                cfg["mt5"],
+    ctx = {
+        "strategy": strategy,
+        "asset": asset,
+        "timeframe": timeframe,
+        "stamp": stamp,
+        "cfg": cfg,
+        "data": data,
+        "window": window,
+        "costs": costs,
+        "leverage": leverage,
+        "work": work,
+        "model": a.model,
+        "also": also,
+    }
+    passes = {}
+    for mode, value in cfg["modes"].items():
+        if mode == "risk" and not mt5verify.has_stop(strategy):
+            print(
+                "⚠️ riesgo fijo: la estrategia no lleva stop loss, no hay SL desde el que "
+                "dimensionar: el modo queda «sin veredicto»",
+                flush=True,
             )
+            continue
+        passes[mode] = one_pass(mode, mt5verify.mode_sizing(mode, value), ctx)
+    deposit = next(iter(passes.values()))["deposit"]
 
     say(92, "comparando")
+    usable = firms.usable(asset)
     zones = (feeds.timezone(data["sqx_symbol"]), cfg["clock"]["server_zone"])
     pieces, summaries = {}, {}
     for firm in costs:
-        sqx_in = compare.window(sqx_trades[firm], *window)
-        for model, trades in [
-            (a.model, mt5_trades[firm]),
-            (ticks.MODEL, slow.get(firm)),
-        ][: 1 + also]:
-            piece = judge.firm_result(
-                firm,
-                sqx_in,
-                compare.window(trades, *window),
-                timeframe,
-                deposit,
-                cfg,
-                usable[firm]["symbol"],
-                data["instrument"],
-                zones,
-            )
-            record.log(
-                ledger_study.study_id(asset, timeframe, "mt5verify"),
-                {
-                    "step": 26,
-                    "launched_by": "mt5.verify",
-                    "symbol": asset,
-                    "timeframe": timeframe,
-                    "segment": segments(data, window),
-                    "window_from": window[0],
-                    "window_to": window[1],
-                    "n_in": 1,
-                    "n_out": int(piece["summary"]["state"] == "pass"),
-                    "criterion": f"SQX ↔ MT5 en {firm} ({model})",
-                    "thresholds": cfg["thresholds"],
-                    "note": f"{strategy.stem} · {run_id}",
-                },
-            )
-            ticks.keep(pieces, summaries, firm, piece, reports[firm]["dir"])
+        for mode, got in passes.items():
+            sqx_in = compare.window(got["sqx_trades"][firm], *window)
+            for model, trades in [
+                (a.model, got["mt5_trades"][firm]),
+                (ticks.MODEL, got["slow"].get(firm)),
+            ][: 1 + (also and mode == "lot")]:
+                piece = judge.firm_result(
+                    firm,
+                    sqx_in,
+                    compare.window(trades, *window),
+                    timeframe,
+                    got["deposit"],
+                    cfg,
+                    usable[firm]["symbol"],
+                    data["instrument"],
+                    zones,
+                    mode,
+                )
+                record.log(
+                    ledger_study.study_id(asset, timeframe, "mt5verify"),
+                    {
+                        "step": 26,
+                        "launched_by": "mt5.verify",
+                        "symbol": asset,
+                        "timeframe": timeframe,
+                        "segment": segments(data, window),
+                        "window_from": window[0],
+                        "window_to": window[1],
+                        "n_in": 1,
+                        "n_out": int(piece["summary"]["state"] == "pass"),
+                        "criterion": f"SQX ↔ MT5 en {firm} ({model}, {mode})",
+                        "thresholds": cfg["thresholds"],
+                        "note": f"{strategy.stem} · {run_id}",
+                    },
+                )
+                if mode == "lot":
+                    ticks.keep(
+                        pieces, summaries, firm, piece, got["reports"][firm]["dir"]
+                    )
+                else:
+                    ticks.keep_risk(pieces, summaries, firm, piece)
+        if "risk" not in passes and "risk" in cfg["modes"]:
+            ticks.keep_risk(pieces, summaries, firm, sizing.no_stop(firm))
+        lot = passes["lot"]["reports"][firm]["summary"]
         summaries[firm]["mt5_history"] = {
-            k: v
-            for k, v in reports[firm]["summary"].items()
-            if k[:5] in ("histo", "first", "start")
+            k: v for k, v in lot.items() if k[:5] in ("histo", "first", "start")
         }
     tabs = []
     if pieces:
         params = judge.params_table(assetdata.sqx_settings(data, "build"), costs)
         tabs = [ticks.tab(params, pieces, a.model)]
     meta.update(
-        project=project, deposit=deposit, ea=ea["expert"], lots=sizing["params"]["Size"]
+        projects={m: p["project"] for m, p in passes.items()},
+        deposit=deposit,
+        eas={m: p["ea"] for m, p in passes.items()},
+        modes=cfg["modes"],
     )
     report.finish(work, meta, cfg, started, summaries, refused, "", tabs)
     say(

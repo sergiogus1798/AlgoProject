@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from core import assetdata
 from core.datapaths import projects_backup
 from mt5 import compare, tester
-from mt5.verify import conditions, firms, judge, mt5side
+from mt5.verify import conditions, firms, judge, mt5side, sizing
 from sqx.projects import cfxio, mt5verify
 from sqx.projects.resources import definitions, main_feed, one_task
 
@@ -294,10 +294,83 @@ def zoned(failures: list[str]) -> None:
         failures.append(f"Asia/Jerusalem → EETUS no convierte por fecha: {list(got)}")
 
 
+def modes(failures: list[str]) -> None:
+    """Encargo 61-4d: the two sizings, the size row, the loss-cap row and the combined state."""
+
+    if mt5verify.mode_sizing("risk", 1000) != {
+        "method": "FixedAmount",
+        "params": {"RiskedMoney": "1000"},
+    } or mt5verify.mode_sizing("lot", 1.0)["params"] != {"Size": "1"}:
+        failures.append("mode_sizing no escribe FixedAmount/FixedSize")
+    if not mt5verify.has_stop(Path(__file__).parent / "fixtures" / "strategy.sqx"):
+        failures.append("has_stop no ve el stop de la estrategia con stop")
+    src = (
+        "input bool UseMoneyManagement = false;\ninput double mmRiskedMoney = 100.0;\n"
+    )
+    if mt5side.fixed_risk(src, "1000") != (
+        "input bool UseMoneyManagement = true;\ninput double mmRiskedMoney = 1000;\n"
+    ):
+        failures.append("fixed_risk no fija el riesgo por operación")
+    try:
+        mt5side.fixed_risk("input double mmLots = 1;\n", "1000")
+        failures.append("un EA sin mmRiskedMoney no se rechaza")
+    except SystemExit:
+        pass
+    risk_rows(failures)
+
+
+def risk_rows(failures: list[str]) -> None:
+    """Rows 6 and 7 and the combination of the two modes' states."""
+    from mt5.verify import ticks
+
+    cfg = firms.config()
+    th = cfg["thresholds"]
+    try:
+        sizing.require_cap(th)
+        failures.append("sin loss_cap_usd el juez no se niega")
+    except SystemExit as why:
+        if "mt5verify.loss_cap_usd" not in str(why):
+            failures.append(f"el rechazo no nombra la clave: {why}")
+    sqx = trades(60, 1)
+    args = (
+        "H1",
+        100000,
+        {**cfg, "thresholds": {**th, "loss_cap_usd": 1e9}},
+        "XAUUSD",
+        INST,
+    )
+    zone = ("EETUS", "EETUS")
+    ok = judge.firm_result("ftmo", sqx, sqx, *args, zone, "risk")["summary"]
+    if ok["state"] != "pass" or ok["row_6"] != 0 or "row_7" not in ok:
+        failures.append(f"una copia exacta en modo riesgo no pasa filas 6 y 7: {ok}")
+    capped = {**cfg, "thresholds": {**th, "loss_cap_usd": 1.0}}
+    got = judge.firm_result(
+        "ftmo", sqx, sqx, "H1", 100000, capped, "XAUUSD", INST, zone, "risk"
+    )["summary"]
+    if got["state"] != "fail":
+        failures.append(f"una pérdida sobre el tope no falla la estrategia: {got}")
+    halved = moved(
+        sqx.assign(Size=sqx["Size"] * 0.8, **{"Profit/Loss": sqx["Profit/Loss"] * 0.8})
+    )
+    halved = halved.assign(Size=sqx["Size"] * 0.8)
+    got = judge.firm_result("ftmo", sqx, halved, *args, zone)["summary"]
+    if not got["row_6"] > th["size_gap_max_pct"]:
+        failures.append(f"un tamaño un 20 % distinto no sube la fila 6: {got}")
+    pieces = {"ftmo": {}}
+    summaries = {"ftmo": {"state": "pass"}}
+    ticks.keep_risk(pieces, summaries, "ftmo", sizing.no_stop("ftmo"))
+    if summaries["ftmo"]["state"] != "none":
+        failures.append("un modo sin stop no deja la empresa en «sin veredicto»")
+    summaries = {"ftmo": {"state": "pass"}}
+    ticks.keep_risk(pieces, summaries, "ftmo", {"summary": {"state": "fail"}})
+    if summaries["ftmo"]["state"] != "fail":
+        failures.append("un modo fallido no falla la empresa")
+
+
 def main() -> None:
-    """Run the six checks."""
+    """Run the checks."""
     failures = []
-    for check in (judged, zoned, priced, written, ini, lots):
+    for check in (judged, zoned, priced, written, ini, lots, modes):
         check(failures)
     print(
         "\n".join(failures)
@@ -305,7 +378,7 @@ def main() -> None:
         "lado vacío la 1; FTMO se traduce a unidades de SQX, Hantec lleva su comisión y una empresa sin "
         "comisión confirmada se rechaza; el proyecto solo enciende las dos empresas y la exportación, cada una a "
         "sus costes, con el FixedSize de la estrategia; el ini del tester cambia de cuenta; el EA "
-        "queda en el lote fijo de la estrategia"
+        "queda en el lote fijo de la estrategia; los dos modos (1 lote y riesgo fijo) juzgan tamaño y tope de pérdida"
     )
     sys.exit(1 if failures else 0)
 

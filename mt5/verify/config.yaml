@@ -40,6 +40,13 @@ clock:
   # their feed's zone (`sqx.inspect.feeds.timezone`) to this one before any shift is sought.
   server_zone: EETUS
 
+# The two modes the MT5-SQX concordance is checked in; BOTH must pass (owner, 2026-10-15,
+# encargo 61-4d). `lot`: every trade at a fixed lot. `risk`: every trade sized so its stop
+# risks `risk_usd` (SQX's FixedAmount; needs a strategy with a stop loss).
+modes:
+  lot: 1.0       # lots
+  risk: 1000.0   # USD risked per trade
+
 # Encargo 34 §3, the owner's starting values — each one lives in ledger/thresholds.yaml.
 thresholds:
   matched_min: ledger:mt5verify.matched_min
@@ -51,3 +58,5 @@ thresholds:
   dd_rel_gap_max: ledger:mt5verify.dd_rel_gap_max
   exit_same_min: ledger:mt5verify.exit_same_min
   trades_min: ledger:mt5verify.trades_min
+  size_gap_max_pct: ledger:mt5verify.size_gap_max_pct
+  loss_cap_usd: ledger:mt5verify.loss_cap_usd

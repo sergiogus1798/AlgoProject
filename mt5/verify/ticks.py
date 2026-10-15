@@ -84,6 +84,23 @@ def keep(pieces: dict, summaries: dict, firm: str, piece: dict, report: str) -> 
         summaries[firm] = {**piece["summary"], "report": report}
 
 
+def keep_risk(pieces: dict, summaries: dict, firm: str, piece: dict) -> None:
+    """File the fixed-risk mode's judged pass beside the firm's fixed-lot one (encargo 61-4d).
+
+    The firm's state is the worst of the two modes — both must pass: a fail anywhere is a
+    fail, else any «none» (a mode that could not be judged) makes it «none». The mode's own
+    figures go in the summary under `risk_`.
+    """
+    pieces[firm]["risk"] = piece
+    summaries[firm] |= {
+        f"risk_{k}": v for k, v in piece["summary"].items() if k != "firm"
+    }
+    states = [summaries[firm]["state"], piece["summary"]["state"]]
+    summaries[firm]["state"] = (
+        "fail" if "fail" in states else "none" if "none" in states else "pass"
+    )
+
+
 def chart(pieces: dict[str, dict], model: str) -> dict[str, Any]:
     """The merged P&L chart; with a real-ticks piece, three curves per firm.
 
@@ -128,6 +145,9 @@ def tab(params: dict, pieces: dict[str, dict], model: str) -> dict[str, Any]:
         both = "ticks" in piece
         blocks += named(piece, model) if both else [piece["verdict"], piece["lonely"]]
         blocks += named(piece["ticks"], MODEL) if both else []
+        risk = piece.get("risk")
+        if risk:
+            blocks += [risk["verdict"]] + ([risk["lonely"]] if "lonely" in risk else [])
     return {
         "name": "verificacion",
         "title": "Verificación",
