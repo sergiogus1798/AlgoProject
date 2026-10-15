@@ -52,6 +52,9 @@
 | K1 ✅ A | 11 | cómo se dimensiona en cartera una estrategia sin stop (OPEN #113 (1); el M3 para con «sin stop del paso 24») | A pérdida diaria flotante de la firma + tope de exposición conjunta · B stop ATR sintético sólo para el tamaño · C 1 lote fijo (rompe límites en 50-77 % de cuentas) | A |
 | K2 ✅ A | 11 | `oos2` se gasta una vez por pool: ¿quién lo lee? | A sólo la cartera de fondeo · B dos pools · C la real primero | A |
 | K3 | 11 | de qué proyecto salen las supervivientes del pool del viernes | nombre del proyecto, o «las de la corrida V del 50» | — |
+| K1a | 11 | forma del lote (hecho A en `4f8241a`) | A la gestión ATR de SQX escalada por una constante: el lote varía con el ATR · B lote fijo por miembro = cuota del límite diario / peor pérdida por lote (reconstruye curvas por lote, EA con `FixedSize`) | A, salvo que el EA de MT5 no pueda llevar `ATRRiskBasedSizingFixedRisk` |
+| K1b | 11 | qué es el «peor día» (hecho A) | A suma del MAE de las operaciones que cierran ese día, reloj del feed (barato, aproximado) · B mínimo intradía exacto del flotante en barras M5, reloj de cada firma (dimensiona por firma) | A; B si las quiebras simuladas no cuadran |
+| K1c | 11 | unidad de la rejilla de riesgo (hecho A) | A fracción del saldo inicial (0,001-0,01, la de hoy) · B cuota del límite diario de cada plan | A |
 | W1 ✅ fuera | 7 | la celda interrumpida `squeezeBBLong XAUUSD H1` es un test de 15 min y `following()` la corre la primera | A dejar que termine · B marcarla hecha/fallida en el ledger | B |
 | W2 ✅ B (`c5ca165`) | 7 | `claude -p` con límite de uso: el bucle ahora para (`7f6a293`) | A parar · B dormir 30 min y reintentar, con tope | B si va desatendido |
 | W3 ✅ B | 7 | la campaña no retira sus `Trade_` (1,1 GB el de NIKKEI) y SQX los carga al arrancar | A dejarlos · B retirarlos tras `keep` | A un fin de semana, B si dura semanas |
