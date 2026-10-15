@@ -80,7 +80,21 @@ sesión rellena sólo su sección antes de las 5:35; 95 las junta para el dueño
 
 ### Informe de las 5:40 — algoproject-18
 
-(pendiente)
+| qué | estado | commit |
+|---|---|---|
+| V del 50 (paso 8 vigente) | ✅ verificada en `Test_USATEC_H1_breakoutL_v8b_leaseWeb`: B=2, línea 2,576, z_mono máx. 2,84, 10.000 → 7.356 → 6 → 4 medoides; la cadena llegó al 18; 4 + 2 supervivientes en el almacén; proyectos retirados, custodio cedido a 07 | `5c8055d` |
+| 1.ª V cayó en el 8: `List index overflow` | `distribuciones.parquet` en grupos de 1.000 filas; `facts` lee primero `strategy`; ficha de knowhow y fila en `/workflow` | `d52908d`, `cad155e` |
+| 2.ª V paró en el 18.5 (fichas sin `price_rounding`) | causa de fondo: `rollout_hour: 23:00` sin comillas = entero 1380 en UK100/HK50/AUS200/XCUUSD → entrecomillado y `core.assetdata.load` se niega a uno sin comillas (test); medidos UKOIL, USOIL, DJ30, UK100, HK50 tick y AUS200 none | `1fcb33b`, `dc6eede`, `4fe279b` |
+| 49 | `--calib` y `calib_rows` fuera; umbrales de crossmarket/crossTF/spp a `ledger/thresholds.yaml`; `ledger/blind` lee el CSCV; T-2 `ALGO_OOS2_PIN`; SPP media/sd/media−sd en `verdict.csv`; tramos gastados en `campaign plan`. Parche de `criteria.yaml` (paso 16 + higiene) entregado a 07 para su commit de la #93 | `aaa03d6`, `a4c2f71`, `9fe9bf3` |
+| 50 Z1 y frente 4 M | la documentación de la puerta (WORKFLOW, especificación, README, skill, glosario, manual 03-05) describe el paso 8 vigente | `5c8055d` |
+| OPEN #118 (a) | el builder se niega si la ventana de una tarea se sale de su tramo (`refuse_off_segment`); probado sin conexión con builds `--workflow` de USATEC H1, GBPJPY H1, EURUSD M30 y XAUUSD H1 | `94be9dd` |
+| encargos | 52 y 62 borrados (hechos); 49, 50 y 53 reescritos con las respuestas; #91 cerrada | — |
+
+**Siguientes pasos del día (viernes):**
+1. Cuando aterrice el commit de la #93 de 07: marcar hecha la fila 1.6 del 49 y, si S1 = A, sellar de nuevo `criteria.yaml`.
+2. Respuestas S1-S4 → aplicarlas (S3 y S4 son código en `verdict/gates.py` y `ledger/judge.py`, ficheros míos).
+3. Fila 12 del 74 (ensayo del sábado en leaseWeb): en cuanto el custodio quede libre de la campaña de 07, una celda del director a la cartera sin manos.
+4. Pendiente con la máquina libre: frente 5 del 50 (receta IS, Opus), calibraciones 12 y 16 del 49 (esperan al 53, aparcado), GBPJPY sin `price_rounding` (50/50, necesita un lote que distinga).
 
 ### Informe de las 5:40 — algoproject-07
 
