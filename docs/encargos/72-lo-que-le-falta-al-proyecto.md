@@ -5,7 +5,7 @@
 | parte | qué | modelo | estado | espera a |
 |---|---|---|---|---|
 | A1 | cola única de decisiones del dueño, dossier PDF | Opus redacta, Sonnet recoge | hecho 2026-10-15 (`docs/AgentPDFs/decisiones-pendientes-2026-10-15.pdf`, 8 págs.) | — |
-| A2 | aplicar las respuestas del dueño | Sonnet | pendiente | A1 contestado |
+| A2 | aplicar las respuestas del dueño | Sonnet | pendiente | contestado 2026-10-15 salvo F2 y V1; coordinar con la otra sesión |
 | B | guardián de suelos con la ventana cerrada | Sonnet | hecho 2026-10-15 (`mt5/fleet/guard.py`) | — |
 | C | conciliador semanal + SPRT en cron | Sonnet; Haiku instala la línea | pendiente | claves del dueño (A1) |
 | D | «collect» gorilla → leaseWeb (OPEN #123) | Sonnet | hecho 2026-10-15 salvo la verificación real (`bin/remote.sh gorilla collect`) | una superviviente en gorilla |
@@ -20,6 +20,7 @@
 - 2026-10-15 — A1 hecho: 3 recolectores Sonnet, dossier escrito en Opus, PDF de 8 páginas. La otra sesión (c8) confirma que no hay solape; tiene el custodio, `assets/`, el repreciador, `ledger/thresholds.yaml` y, después, `mt5/verify/` y `portfolio/funded/`: A2 coordina con ella antes de tocar `thresholds.yaml`. B, D y E esperan B-1, D-1 y E-1.
 - 2026-10-15 — dueño: B-1 A, D-1 A, E-1 A. B, D y E lanzados a la vez en Sonnet. Reloj de Hantec: UTC+3 hoy (beacon), se distingue EETUS/EET entre el 25-10 y el 1-11. La cuenta Hantec 8063673 es fondeada (guarda `mt5/guard.py`, commit 37d197a).
 - 2026-10-15 — B, D y E hechos; revisión independiente con 8 arreglos (rsync a temporal, guardián aislado por cuenta y del log del collector, `guard.json` atómico, tupla de excepciones del janitor). Objetivo: 11 tests verdes; `checks.py` sólo con 3 fallos previos ajenos (`tools/manual.py`, `xauusd-corpus`). Quedan C y A2 (respuestas del dueño) y la verificación real de D.
+- 2026-10-15 — **dueño: «toma todas tus recomendaciones»** sobre `docs/AgentPDFs/decisiones-pendientes-2026-10-15.md`. Contestadas con la recomendación del dossier: C1 C (α 0,01) · C2 A · C3 A · C4 A (v0 provisional) · C5 A · C6 A · C7 A · C8 A (manda el 65; se borra `sin_fallo`) · C9 A · C10 A (`oos2` sólo para los monos de 17-18, anotado en el ledger) · C11 A · F1 `close_to_open_blocks` · F3 A · F4 B · F5 `pnl` / `[build, oos1, oos2]` / `[5, 100]` · F6 A · F7a, c, d, e confirmar · F7b cambiar (el tope cuenta el trailing) · F7f dejar · F8a, b arreglar · F8c archivar tras la corrida limpia · V2 A (1 barra) · V3 A (registro desde `magics.csv`) · V4 A · L1 2014-01-01 · L2 no construir sobre Brent · L3 (a) ya, (b) después · L4 mostrar. **Sin respuesta, porque el dossier no recomendaba nada:** F2 (`tax_rate`) y V1 (qué es la cuenta FTMO 541350656; Hantec 8063673 es fondeada, FundingPips 11308943 es SIM). S1-S6 son preguntas del dueño a soporte. **A2 coordina antes con la sesión que tiene `ledger/thresholds.yaml`, `pipeline/autopilot/criteria.yaml` y `assets/`.**
 
 ## Tu oficio
 
