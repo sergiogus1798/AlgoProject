@@ -117,8 +117,8 @@ def main() -> None:
         },
     )
     check(
-        "the committed comparison is unanswered: figure, history and band (rule 11)",
-        record.missing(config.load()) == list(record.KNOBS),
+        "the committed comparison is answered: figure, history and band (owner 2026-10-15, F5)",
+        record.missing(config.load()) == [],
     )
 
     meta = {

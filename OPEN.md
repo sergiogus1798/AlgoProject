@@ -25,7 +25,6 @@ and in `knowhow/`. The index below lists open issues only.
 | 88 | 🟠 | SQX's daily curve is each day's LOW equity — readers that difference it |
 | 89 | 🟡 | What the 2026-09-30 H1 workflow run (steps 5-26) left open |
 | 93 | 🔴 | Criteria of steps 6 and 8 — owner answers of 2026-10-15 to apply, 15 assets unmeasured |
-| 96 | 🟡 | `core.surface.trials.independent`: nothing prints the silhouette next to the count |
 | 100 | 🟠 | Literature scout — owner decisions pending, entries without a condition |
 | 104 | 🟡 | Portfolio build 2026-10-05: findings left unfixed |
 | 108 | 🟠 | Step 12 redesigned (T0-T4, steps 11.5 and 11.7) built beside the old one |
@@ -34,7 +33,6 @@ and in `knowhow/`. The index below lists open issues only.
 | 113 | 🔴 | Next batch needing MT5 or the custodian |
 | 115 | 🟠 | The harvest cannot record WHY SQX dismissed a strategy |
 | 118 | 🟠 | Deferred builder gates: task windows vs segment, second chart in a template |
-| 119 | 🟡 | `MonteCarloManipulation` removed — gorilla still ON |
 | 120 | 🟠 | El repreciador no reproduce a SQX en el oro (oos1) |
 | 121 | 🟠 | Step 18.5 still skips XAUUSD mothers |
 | 122 | 🟠 | Integridad de la investigación: lo que F22 no arregló |
@@ -173,6 +171,8 @@ calls `minute_path` without the commission; universe caches built before 2026-10
 PercentageBased branch is unverified; a perf target for `closecurve`; decay t = 0.78-0.88× close-based, use
 `drift_excess_t`; exposure is document-only. Card: `knowhow/sqx-format/equity-reconstruction-usdjpy-gap.md`.
 
+**2026-10-15.** Revisado: los tres lectores que nombra ya no diferencian la curva baja. snoopingScreen (hoy engines/inference/snooping) y blindJoint leen cierre a cierre con closecurve (studies/closing/blindJoint/inputs.py:panel, test tests/test_close_curve.py); el CSCV pesa desde variant_trades.parquet (studies/optimisation/cscv/inputs/batch.py:read), que el 16.5 ya cosecha (pipeline/autopilot/variants.py:186) - la pregunta del dueño sobre cosechar operaciones queda contestada por el código. stageb_data ya pasa la comisión a minute_path (stageb_data.py:102). Siguen leyendo la curva baja a propósito y documentado: gate (measures.py:23, inputs.py:293; los *_max_dd_r y *_worst_day_r son flotantes) y decay (decay t 0.78-0.88x, usar drift_excess_t). Pendiente: rama PercentageBased sin verificar, objetivo de perf de closecurve, cachés de universo anteriores al 2026-10-04 por reconstruir.
+
 ## 89. 🟡 What the 2026-09-30 H1 workflow run (steps 5-26) left open
 
 Run on `Test_USDJPY_donchianUpperCrossUp_H1`. Still open:
@@ -216,17 +216,6 @@ C6 A exit rule, C7 A clock-block list, C9-C11 A. Still open:
   XAGUSD and HK50 (`knowhow/sqx-drive/cannot-start-unresolved-past-data.md`); 31 H1 base cells have no oos2.
 - The 28 calibration populations used the broad palette (842 blocks): rebuild per family.
 
-## 96. 🟡 `core.surface.trials.independent`: nothing prints the silhouette next to the count
-
-Rule kept (owner, 2026-10-02: keep the half rule, silhouette below ~0.2 = no structure,
-`knowhow/research/trial-count-half-rule.md`). **Contestado 2026-10-15 (encargo 72, L4): mostrar la silueta;
-falta aplicarlo** — it travels in the dict `independent` returns (`cscv.json` › `trials`) but no window
-or report line prints it.
-
-**2026-10-15.** Revisado 2026-10-15 (encargo 72 L4): la premisa es falsa. `trials.independent` no tiene llamador fuera de tests (`tests/test_inference_vs_jsharpe.py`); `cscv.json` no escribe `trials` ni el CSCV importa `core.surface.trials` (se perdió en el rework de CSCV). No hay recuento que acompañar. Para mostrar la silueta hay que cablear `independent` en `studies/optimisation/cscv` (panel IS, `k_max`, contrato y pestaña) o borrarla (regla 21): decisión de diseño, no mecánica.
-
-**2026-10-15.** Dueño (encargo 72, L4): opción A — conectar `independent` al CSCV para mostrar la silueta junto al recuento, en un encargo aparte (diseño: panel, `k_max`, contrato y pestaña). No se borra.
-
 ## 100. 🟠 Literature scout — owner decisions pending, entries without a condition
 
 `studies/research/literature/`, `/literature-scout`, `bin/daily-literature-scout.sh` (cron `0 7 * * *`;
@@ -258,6 +247,8 @@ opus reads, sonnet triages, `run.budget_tokens` 3M is a runaway guard). Open:
    suspected). Owner (2026-10-05): run on today's conditions, no re-stamping shim, no skip. **Contestado 2026-10-15 (F8c): archivar una estrategia nueva cuando la corrida limpia dé una superviviente.**
 5. pyarrow 25.0.1 `pd.read_parquet` aborts at exit under load (178 call sites, no shared reader; planted-pool
    tests use `pa.set_cpu_count(1)`): `knowhow/eng/pyarrow-read-parquet-aborts-at-exit-under-load.md`. Project-wide choice open.
+
+**2026-10-15.** Puntos 1 y 3 hechos (encargo 72 F8a/F8b): `funded.frozen_versions(pool, cfg)` da identity -> versión congelada y `size_members`, `_member_meta`, `real.py` y `funded_b.load` la leen en vez de `versions()[-1]` (sin pool, p. ej. `incubation/run.py`, sigue la última); la etapa B escribe `stage_b_seed` en el manifiesto y ya tenía carpeta por corrida (`funded_b.target`). Tests en `tests/test_portfolio_verdict_funded.py`. Punto 4 (F8c): archivar una estrategia nueva cuando la corrida limpia dé una superviviente; no se hace ahora. Quedan abiertos el 2, el 4 y el 5.
 
 ## 108. 🟠 Step 12 redesigned (T0-T4, steps 11.5 and 11.7) built beside the old one
 
@@ -313,10 +304,6 @@ Decisión pendiente del dueño. 🔬 En `Test_NIKKEI225_M30_simpleL_fin`, `_val`
 ## 118. 🟠 Deferred builder gates: task windows vs segment, second chart in a template
 
 **Contestado 2026-10-15 (encargo 72, L3): (a) ya, (b) cuando aparezca la primera plantilla de dos gráficos; falta aplicar (a).** (a) ningún gate comprueba que la ventana de cada tarea coincida con su segmento (`registryxml.clip` ya imprime lo que recorta); (b) ningún gate rechaza una plantilla con un segundo gráfico.
-
-## 119. 🟡 `MonteCarloManipulation` removed — gorilla still ON
-
-Owner 2026-10-11: never again; the code rejects it, and the conductor and custodian are off. Pendiente: en gorilla, `python3 -m sqx.projects.rankings <project.cfx> --mc-off` por `bin/remote.sh gorilla` tras commit y push (con SQX cerrado). Abierto también: `sqx/projects/mt5verify.py:183` emite `<MonteCarloManipulation />` sin atributo `use` en su plantilla de tarea; 🤔 confirmar que SQX lo lee como apagado.
 
 ## 120. 🟠 El repreciador no reproduce a SQX en el oro (oos1)
 

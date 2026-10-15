@@ -106,3 +106,5 @@ the null's band, power, scaling and the state's table; `python3 tests/test_cscv_
 synthetic batch end to end, synthetic trades into cells, the loss against its null's percentile
 by hand and how often no edge is over it. No batch on disk carries `variant_trades.parquet` yet, so nothing trade-based
 has run on a real mother.
+
+Cost of `many.trials` (`core.surface.trials.independent`, display only, no subsample or cap): one process, synthetic 5,000 variants x 520 weeks, 1.5 s and 726 MB peak (measured 2026-10-15; a mother carries about 500 variants at step 16.5, so far less). `trials.weak` (0.2) is the owner's reading aid for «débil», not a threshold.

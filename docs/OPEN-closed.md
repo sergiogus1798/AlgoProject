@@ -1837,6 +1837,19 @@ Reproduce: `python3 tools/audit_tests.py` or the single file (`python3 tests/tes
 
 **Closed 2026-10-14.** ASIDE in tools/audit_tests.py:33 is empty; every test set aside here recovered or was deleted, verified 2026-10-14.
 
+## 96. ✅ `core.surface.trials.independent`: nothing prints the silhouette next to the count
+
+Rule kept (owner, 2026-10-02: keep the half rule, silhouette below ~0.2 = no structure,
+`knowhow/research/trial-count-half-rule.md`). **Contestado 2026-10-15 (encargo 72, L4): mostrar la silueta;
+falta aplicarlo** — it travels in the dict `independent` returns (`cscv.json` › `trials`) but no window
+or report line prints it.
+
+**2026-10-15.** Revisado 2026-10-15 (encargo 72 L4): la premisa es falsa. `trials.independent` no tiene llamador fuera de tests (`tests/test_inference_vs_jsharpe.py`); `cscv.json` no escribe `trials` ni el CSCV importa `core.surface.trials` (se perdió en el rework de CSCV). No hay recuento que acompañar. Para mostrar la silueta hay que cablear `independent` en `studies/optimisation/cscv` (panel IS, `k_max`, contrato y pestaña) o borrarla (regla 21): decisión de diseño, no mecánica.
+
+**2026-10-15.** Dueño (encargo 72, L4): opción A — conectar `independent` al CSCV para mostrar la silueta junto al recuento, en un encargo aparte (diseño: panel, `k_max`, contrato y pestaña). No se borra.
+
+**Closed 2026-10-15.** Cableado: many.trials llama a core.surface.trials.independent sobre el panel neto entero de cada madre (k_max 40, trials.k_max) y lo guarda en facts["trials"]; fila "Pruebas independientes" en la lectura del CSCV; sin split, aviso en notas. Solo se muestra.
+
 ## 97. 🟢 `core.sqxfile.symbol()` returns ("", "") for a symbol with a dot, a lowercase letter or an `@`
 
 Found 2026-10-02 (encargo 42, C3). `RESULTS_RE` wants `[A-Z0-9]+` before the first underscore:
@@ -2009,3 +2022,11 @@ Opciones: (a) inyectar `finished(project) -> bool` en `sweep.candidates`, como y
 **Contestado 2026-10-15 (encargo 72, L1): mover `build.from` a 2014-01-01 (2013 aún tiene marzo y abril vacíos); falta aplicarlo** en `assets/_policy.yaml:102-106` (hoy empieza en 2011-09-19). 📓 Medido: 702 barras en 2011, ninguna oct 2011–ene 2012, 68.079 en 2012, 187.775 en 2013, mar–abr 2013 vacíos, ~305-336 mil/año desde 2020 (`~/Desktop/AlgoData/bars/NIKKEI225_M1/M1.parquet`, `feedQuality/NIKKEI225_M1/`).
 
 **Closed 2026-10-15.** Hecho 2026-10-15 (encargo 72 L1): `assets/_policy.yaml` NIKKEI225 `build.from` 2011-09-19 -> 2014-01-01, escrito con `core.assetwrite`; `data.from` y `_markets.yaml` no cambian (disponibilidad de datos).
+
+## 119. ✅ `MonteCarloManipulation` removed — gorilla still ON
+
+Owner 2026-10-11: never again; the code rejects it, and the conductor and custodian are off. Pendiente: en gorilla, `python3 -m sqx.projects.rankings <project.cfx> --mc-off` por `bin/remote.sh gorilla` tras commit y push (con SQX cerrado). Abierto también: `sqx/projects/mt5verify.py:183` emite `<MonteCarloManipulation />` sin atributo `use` en su plantilla de tarea; 🤔 confirmar que SQX lo lee como apagado.
+
+**2026-10-15.** Gorilla hecho: sin SQX ni workflow en marcha, `rankings --mc-off` por `bin/remote.sh gorilla` sobre Test_UK100_H1_tendencia_gorilla3 y Test_XAUUSD_H1_smoke_gorilla (1 tarea cada una, ahora todo use="false"); los 17 project.cfx de gorilla sin ningún use="true". Queda sólo `mt5verify.py:183` (confirmar que sin `use` SQX lo lee como apagado).
+
+**Closed 2026-10-15.** Gorilla: los dos proyectos custom con MonteCarloManipulation encendido (Test_UK100_H1_tendencia_gorilla3, Test_XAUUSD_H1_smoke_gorilla) apagados con rankings --mc-off por bin/remote.sh; ningún project.cfx de gorilla queda con use="true". sqx/projects/mt5verify.py:183 emite ahora use="false" explícito (los nueve cross-checks de esa plantilla iban sin use, que SQX lee como apagado).

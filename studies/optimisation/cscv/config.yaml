@@ -58,6 +58,14 @@ dominance:
   # Standard errors of a half-sample Sharpe the histogram reaches beyond the full-sample ones.
   reach: 6.0
 
+# Independent trials behind the variants (display only: it feeds no deflated Sharpe).
+trials:
+  # Largest cluster count tried (knowhow/research/trial-count-half-rule.md).
+  k_max: 40
+  # Silhouette under which the reading says «débil». The owner's reading aid, not a threshold:
+  # no code path changes with it.
+  weak: 0.2
+
 perf:
   # Processes of the one queue; core.fanout never uses more than the physical cores.
   workers: 96

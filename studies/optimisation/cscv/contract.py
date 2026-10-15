@@ -108,7 +108,7 @@ def filters(counts: dict) -> dict[str, Any]:
     )
 
 
-def reading(facts: dict) -> dict[str, Any]:
+def reading(facts: dict, cfg: dict) -> dict[str, Any]:
     """The outputs of the method, each beside its null and with what it is."""
     null, gross = facts["nulo"], facts["bruto"]
     rows = [
@@ -167,6 +167,27 @@ def reading(facts: dict) -> dict[str, Any]:
             words.WHAT["hc"],
         ),
     ]
+    found = facts.get("trials", {})
+    if "n_clusters" in found:
+        rows.append(
+            (
+                "Pruebas independientes",
+                f"{found['n_clusters']} de {found['n_variants']}",
+                DASH,
+                DASH,
+                DASH,
+                DASH,
+                words.WHAT["trials"].format(
+                    k=found["n_clusters"],
+                    n=found["n_variants"],
+                    weak_at=f"{cfg['trials']['weak']:g}".replace(".", ","),
+                    s=f"{found['silhouette']:.2f}".replace(".", ","),
+                    weak=" (débil)"
+                    if found["silhouette"] < cfg["trials"]["weak"]
+                    else "",
+                ),
+            )
+        )
     table = blocks.table(
         "Las salidas del método, contra su nulo",
         pd.DataFrame(
@@ -301,7 +322,7 @@ def tabs(got: dict, perf: dict, cfg: dict) -> list[dict]:
     lam = np.log(found["omega"] / (1 - found["omega"]))
     weeks = cfg["null"]["block_weeks"]
     first = [
-        reading(facts),
+        reading(facts, cfg),
         blocks.distribution(
             "El PBO sin nada que elegir (nulo)",
             "%",

@@ -154,12 +154,12 @@ def main() -> None:
                 "la comparación no tiene valor y no lleva defecto (regla 11): --set "
                 + " --set ".join(f"incubation.{b}=…" for b in bad)
             )
-        members = list(
-            json.loads(
-                (args.run / "handoff" / "portfolio.json").read_text(encoding="utf-8")
-            )["weights"]
+        blob = json.loads(
+            (args.run / "handoff" / "portfolio.json").read_text(encoding="utf-8")
         )
-        factors, excluded = size_members(members)
+        members = list(blob["weights"])
+        versions = {m["identity"]: m["version"] for m in blob["members"]}
+        factors, excluded = size_members(members, versions)
         if excluded:
             raise SystemExit(
                 f"miembros sin stop del paso 24, sin unidad de riesgo: {excluded}"
@@ -197,6 +197,7 @@ def main() -> None:
         else pd.read_csv(args.rows)
     )
     origin = f"{args.rows.name} sha256:{hashlib.sha256(args.rows.read_bytes()).hexdigest()[:16]}"
+    # no versions: the registered record keeps no pool nor versions, so it reads the latest archived
     got = read(
         record,
         folder,

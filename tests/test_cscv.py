@@ -11,6 +11,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core import fanout
+from studies.optimisation.cscv import contract, many
 from studies.optimisation.cscv.inputs import config
 from studies.optimisation.cscv.measure import cscv, null, outputs, queue
 from studies.optimisation.cscv.verdict import state
@@ -289,6 +290,61 @@ def test_the_state_follows_the_proposal_s_table() -> None:
         == "no_pasa"
     )
     assert state.state({"n": 29}, cfg) == "limbo"
+
+
+def test_independent_trials_of_a_two_block_panel_and_the_no_split_note() -> None:
+    """Two families of 10 variants: 2 clusters, high silhouette; one family alone: an error, not a crash."""
+    rng = np.random.default_rng(7)
+    a, b = rng.normal(0, 1, (300, 1)), rng.normal(0, 1, (300, 1))
+    panel = np.hstack(
+        [a + 0.1 * rng.normal(0, 1, (300, 10)), b + 0.1 * rng.normal(0, 1, (300, 10))]
+    )
+    got = many.trials(panel, 40)
+    assert (
+        got["n_clusters"] == 2 and got["silhouette"] > 0.5 and got["n_variants"] == 20
+    )
+    assert "error" in many.trials(a + 0.1 * rng.normal(0, 1, (300, 10)), 1)
+
+
+def test_the_reading_row_of_independent_trials() -> None:
+    """Row with the count; no row on an error; «(débil)» below the weak line only."""
+    cfg = config.load()
+    base = {
+        "pbo": 0.3,
+        "pbo_p": 0.5,
+        "beta": -0.1,
+        "beta_p": 0.5,
+        "r2": 0.1,
+        "p_perdida": 0.2,
+        "hc": 0.3,
+        "bruto": {"pbo": 0.3, "nulo_p5": 0.1, "nulo_p95": 0.9, "pbo_p": 0.5},
+        "nulo": dict.fromkeys(
+            [
+                "pbo_p5",
+                "pbo_mediana",
+                "pbo_p95",
+                "beta_p5",
+                "beta_mediana",
+                "beta_p95",
+                "r2_mediana",
+                "p_perdida",
+                "p_perdida_p95",
+                "hc_mediana",
+            ],
+            0.5,
+        )
+        | {"sorteos": 10},
+    }
+
+    def rows(trials: dict) -> list:
+        """The reading table's independent-trials rows."""
+        got = contract.reading(base | {"trials": trials}, cfg)
+        return [r for r in got["rows"] if r[0] == "Pruebas independientes"]
+
+    ok = {"n_clusters": 3, "silhouette": 0.5, "n_variants": 40}
+    assert rows(ok)[0][1] == "3 de 40" and "(débil)" not in rows(ok)[0][-1]
+    assert "(débil)" in rows(ok | {"silhouette": 0.1})[0][-1]
+    assert rows({"error": "x"}) == []
 
 
 if __name__ == "__main__":

@@ -180,7 +180,7 @@ def save_task(input_bank: str, dest: Path, generator: str, magic: int) -> str:
   <CrossChecks>
     <RetestOnAdditionalMarkets />
     <WhatIf />
-    <MonteCarloManipulation />
+    <MonteCarloManipulation use="false" />
     <MonteCarloRetest />
     <OptProfileSysParamPermutation />
     <WalkForwardOptimization />

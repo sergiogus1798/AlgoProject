@@ -5,6 +5,7 @@ from collections.abc import Callable
 import numpy as np
 import pandas as pd
 
+from core.surface.trials import Independent, independent
 from studies.optimisation.cscv.inputs import batch
 from studies.optimisation.cscv.inputs.batch import Weekly
 from studies.optimisation.cscv.measure import outputs, queue
@@ -16,6 +17,7 @@ BAND = (
     "la mediana del PBO del nulo es {got:.2f}, fuera de {low}–{high}: el remuestreo no "
     "está dejando el panel sin nada que elegir; no leas el PBO contra este nulo"
 )
+NO_SPLIT = "pruebas independientes sin dato: {why}"
 BUDGET = "la cola tardó {got:.0f} s, por encima del presupuesto de {budget:.0f} s"
 
 
@@ -40,6 +42,18 @@ def panel(metrics: pd.DataFrame, cells: Weekly, cfg: dict) -> Panel:
         "net": cells["net"][kept].to_numpy(np.float64),
         "gross": cells["gross"][kept].to_numpy(np.float64),
     }
+
+
+def trials(net: np.ndarray, k_max: int) -> Independent | dict[str, str]:
+    """The independent-trial count of one mother's whole screened net panel (display only).
+
+    Returns:
+        `n_clusters`, `silhouette`, `n_variants`; or `error` when the half rule admits no split.
+    """
+    try:
+        return independent(pd.DataFrame(net), k_max)
+    except ValueError as why:
+        return {"error": str(why)}
 
 
 def run(
@@ -85,6 +99,9 @@ def run(
             else outputs.mother(ran["net"], tolerance),
         }
         facts = state.facts(read, ran["draws"], got["counts"], cfg)
+        facts["trials"] = trials(got["net"], cfg["trials"]["k_max"])
+        if "error" in facts["trials"]:
+            notes.append(NO_SPLIT.format(why=facts["trials"]["error"]))
         if not facts["nulo"]["mediana_en_banda"]:
             notes.append(
                 BAND.format(

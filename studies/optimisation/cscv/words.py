@@ -56,6 +56,10 @@ WHAT = {
     "madre_perdida": "Fracción de particiones en que la madre tiene Sharpe ≤ 0 fuera.",
     "duplicados": "Variantes cuya lista de operaciones es idéntica, operación por operación, "
     "a la de otra: dice cuántos parámetros actúan de verdad.",
+    "trials": "Pruebas independientes: {k} de {n} variantes, silueta {s}{weak}. Cuántos "
+    "grupos de variantes ganan de verdad distinto (correlación de sus semanas netas); "
+    "por debajo de {weak_at} de silueta el recuento casi no tiene estructura. Sólo se muestra: "
+    "no corrige ningún número.",
     "potencia": "Fracción de sorteos, con ese Sharpe anual plantado en el {share:.0%} de las "
     "variantes, en que el PBO cae bajo el p5 del nulo: qué diferencia real ve el "
     "CSCV en esta madre. Sin nada plantado sería un 5 %.",

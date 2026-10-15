@@ -13,7 +13,6 @@ import numpy as np
 import pandas as pd
 
 from core import fanout
-from core.archive import read as archive_read
 from core.barstore import source as bars_of
 from portfolio.funded.rules import catalog
 
@@ -71,7 +70,8 @@ def load(run: Path, overrides: list[str]) -> dict[str, Any]:
         manifest["plan"],
     )  # the run's own prohibitions
     data = universe.load(universe.build(manifest["pool"], base))
-    sized, _ = funded.size_members(data["manifest"]["members"]["kept"])
+    versions = funded.frozen_versions(manifest["pool"], base)
+    sized, _ = funded.size_members(data["manifest"]["members"]["kept"], versions)
     identities = list(sized)
     calendar = {
         k: (pd.Timestamp(v[0]), pd.Timestamp(v[1]))
@@ -82,7 +82,7 @@ def load(run: Path, overrides: list[str]) -> dict[str, Any]:
     pairs = pairs_table.table(
         build, build.groupby(build.index.to_period("M")).sum(min_count=1), base
     )
-    sources = {i: source.load(i, archive_read.versions(i)[-1]) for i in identities}
+    sources = {i: source.load(i, versions[i]) for i in identities}
     feeds = sorted({s["feed"] for s in sources.values()})
     return {
         "pool_name": manifest["pool"],
@@ -100,7 +100,7 @@ def load(run: Path, overrides: list[str]) -> dict[str, Any]:
         "bars": {f: bars_of(f, ["High", "Low", "Close"]) for f in feeds},
         "factors": {i: s["factor"] for i, s in sized.items()},
         "min_size": {i: s["min_size"] for i, s in sized.items()},
-        "meta": {i: funded._member_meta(i) for i in identities},
+        "meta": {i: funded._member_meta(i, versions) for i in identities},
     }
 
 
@@ -237,6 +237,12 @@ def write(run: Path, result: dict, extra: dict) -> None:
     )
     if judged is not None:
         judged["rows"].to_parquet(run / "verdict_rows.parquet")
+    # the seed beside the stage-A one, in the manifest the run folder is read by (OPEN #104-3)
+    manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
+    manifest["stage_b_seed"] = extra["root_seed"]
+    (run / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, default=str), encoding="utf-8"
+    )
 
 
 def summarise(world: dict, result: dict) -> str:

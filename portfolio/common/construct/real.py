@@ -22,7 +22,7 @@ from portfolio.common.construct.search import (
 from portfolio.common.construct.verdict import decide, metrics
 
 from .equity import matrix, universe
-from .funded import _member_meta, size_members
+from .funded import _member_meta, frozen_versions, size_members
 from .inputs import config
 from .inputs import pool as pool_mod
 from .pairs import table as pairs_table
@@ -94,7 +94,8 @@ def build(pool_name: str, cfg: dict, seed: int, search: bool = True) -> dict[str
     root_seed = seed
     data = universe.load(universe.build(pool_name, cfg))
     kept = data["manifest"]["members"]["kept"]
-    factors, excluded = size_members(kept)
+    versions = frozen_versions(pool_name, cfg)
+    factors, excluded = size_members(kept, versions)
     floor = floor_risk(factors, cfg)
     top = max(cfg["funded"]["risk_grid"])
     excluded += [
@@ -133,7 +134,7 @@ def build(pool_name: str, cfg: dict, seed: int, search: bool = True) -> dict[str
         calendar=calendar,
         daily=data["daily"][usable],
         scale=scale,
-        members_meta={i: _member_meta(i) for i in usable},
+        members_meta={i: _member_meta(i, versions) for i in usable},
     )
     if search:
         result["found"] = choose.choose(

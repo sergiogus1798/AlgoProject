@@ -63,6 +63,7 @@ def test_verdict_end_to_end() -> None:
             read = funded_b.build(world, bar, np.random.default_rng(3))["verdict"]
             again = funded_b.build(world, bar, np.random.default_rng(4))["verdict"]
             rows = study.read(pool_study)
+            (Path(tmp) / "manifest.json").write_text("{}")
             funded_b.write(Path(tmp), result, {"root_seed": 3})
             blob = json.loads((Path(tmp) / "verdict.json").read_text())
         finally:
@@ -157,7 +158,66 @@ def test_a_rerun_keeps_the_earlier_stage_b() -> None:
             funded.RUNS = kept
 
 
+def test_sizing_reads_the_pool_frozen_version() -> None:
+    """OPEN #104-1: a member archived again after the pool froze it is sized off the frozen version."""
+    seen = []
+    real = (funded.archive_read.versions, funded.risk.sizing)
+    funded.archive_read.versions = lambda identity: ["v1", "v2"]
+    funded.risk.sizing = lambda identity, version: seen.append(version) or {"factor": 1}
+    try:
+        funded.size_members(["A"], {"A": "v1"})
+        funded.size_members(["B"])
+        try:
+            funded.size_members(["A", "B"], {"A": "v1"})
+            raise AssertionError(
+                "a pool that lacks the member must not fall back to latest"
+            )
+        except KeyError:
+            pass
+    finally:
+        funded.archive_read.versions, funded.risk.sizing = real
+    assert seen == ["v1", "v2", "v1"], seen
+
+
+def test_a_pool_with_one_identity_at_two_versions_is_refused() -> None:
+    """OPEN #104-1: two versions of one identity have no single frozen one."""
+    real = funded.pool_mod.declared
+    funded.pool_mod.declared = lambda name, cfg: {
+        "members": [
+            {"identity": "A", "version": "v1"},
+            {"identity": "A", "version": "v2"},
+        ]
+    }
+    try:
+        funded.frozen_versions("Test_p", {})
+        raise AssertionError("expected ValueError")
+    except ValueError as exc:
+        assert "dos versiones" in str(exc)
+    finally:
+        funded.pool_mod.declared = real
+
+
+def test_stage_b_seed_lands_in_the_manifest() -> None:
+    """OPEN #104-3: the stage-B seed is written into the run's manifest.json."""
+    with tempfile.TemporaryDirectory() as tmp:
+        run = Path(tmp)
+        (run / "manifest.json").write_text(json.dumps({"pool": "Test_p"}))
+        empty = pd.DataFrame({"x": [1]})
+        result = {
+            "stage_b": {"table": empty, "rows": empty, "winner": None},
+            "stability": None,
+            "segments": None,
+            "verdict": None,
+            "nulls": None,
+        }
+        funded_b.write(run, result, {"root_seed": 7})
+        assert json.loads((run / "manifest.json").read_text())["stage_b_seed"] == 7
+
+
 if __name__ == "__main__":
+    test_sizing_reads_the_pool_frozen_version()
+    test_a_pool_with_one_identity_at_two_versions_is_refused()
+    test_stage_b_seed_lands_in_the_manifest()
     test_a_rerun_keeps_the_earlier_stage_b()
     test_verdict_end_to_end()
     print("test_portfolio_verdict_funded: ok")

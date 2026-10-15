@@ -33,13 +33,31 @@ from .inputs import pool as pool_mod
 RUNS = portfolio_dir() / "runs"
 
 
-def _member_meta(identity: str) -> dict:
+def frozen_versions(pool_name: str, cfg: dict) -> dict[str, str]:
+    """identity -> the version the pool froze (OPEN #104-1).
+
+    Raises:
+        ValueError: The pool declares one identity at two versions.
+    """
+    out: dict[str, str] = {}
+    for r in pool_mod.declared(pool_name, cfg)["members"]:
+        if out.setdefault(r["identity"], r["version"]) != r["version"]:
+            raise ValueError(
+                f"El pool '{pool_name}' declara {r['identity']} en dos versiones: "
+                f"{out[r['identity']]} y {r['version']}"
+            )
+    return out
+
+
+def _member_meta(identity: str, versions: dict | None = None) -> dict:
     """symbol, timeframe and family off the member's own archived manifest.
 
     The family is the one the archive named its ledger study with, so the member's rows land
     in that study: a Simple Strategy has no template folder to read it from («simple:long»).
     """
-    version = archive_read.versions(identity)[-1]
+    version = (
+        archive_read.versions(identity)[-1] if versions is None else versions[identity]
+    )
     manifest = archive_read.load(identity, version)["manifest"]
     row = manifest["registry"]
     prefix = study_id(row["symbol"], row["timeframe"], "") + "_"
@@ -50,18 +68,25 @@ def _member_meta(identity: str) -> dict:
     }
 
 
-def size_members(kept: list[str]) -> tuple[dict, list[tuple[str, str]]]:
+def size_members(
+    kept: list[str], versions: dict | None = None
+) -> tuple[dict, list[tuple[str, str]]]:
     """Every kept member's fixed-risk factor; names those with no step-24 stop.
 
     Args:
         kept: Identities the universe kept (reconciled, licensed).
+        versions: `frozen_versions()` of the pool; None reads the latest archived (no pool).
 
     Returns:
         `factors` (identity -> `inputs.risk.sizing()`), `excluded` (identity, reason) pairs.
     """
     factors, excluded = {}, []
     for identity in kept:
-        version = archive_read.versions(identity)[-1]
+        version = (
+            archive_read.versions(identity)[-1]
+            if versions is None
+            else versions[identity]
+        )
         try:
             factors[identity] = risk.sizing(identity, version)
         except ValueError as exc:
@@ -104,7 +129,8 @@ def build(pool_name: str, plan_key: str, cfg: dict, seed: int) -> dict[str, Any]
     data = universe.load(out_dir)
     kept = data["manifest"]["members"]["kept"]
 
-    factors, excluded_stop = size_members(kept)
+    versions = frozen_versions(pool_name, cfg)
+    factors, excluded_stop = size_members(kept, versions)
     usable = [i for i in kept if i in factors]
     result = {
         "pool_name": pool_name,
@@ -137,7 +163,7 @@ def build(pool_name: str, plan_key: str, cfg: dict, seed: int) -> dict[str, Any]
     got = admissible.admissible(pairs, usable, cfg)
     identities = usable
 
-    members_meta = {i: _member_meta(i) for i in identities}
+    members_meta = {i: _member_meta(i, versions) for i in identities}
     min_size = {i: factors[i]["min_size"] for i in identities}
     fc = {i: factors[i]["factor"] for i in identities}
     prepared = stagea_data.prepare(

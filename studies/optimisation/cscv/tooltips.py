@@ -28,6 +28,10 @@ TIPS = {
     "dominance.bins": "Barras del histograma sobre el que se lee la dominancia.",
     "dominance.reach": "Hasta dónde llega el histograma, en errores estándar de un Sharpe "
     "de media muestra.",
+    "trials.k_max": "Mayor número de grupos que se prueba al contar las pruebas independientes "
+    "del panel; sólo se muestra, no corrige ningún Sharpe.",
+    "trials.weak": "Silueta bajo la cual la lectura dice «débil»: ayuda de lectura del dueño, no "
+    "umbral.",
     "perf.workers": "Procesos de la cola; nunca más que los núcleos físicos.",
     "perf.chunk": "Mitades de un CSCV que se puntúan a la vez.",
     "perf.budget_s": "Segundos de reloj a partir de los cuales el informe avisa de que la "

@@ -389,6 +389,7 @@ def test_stage_b_end_to_end() -> None:
         assert rows[0]["study"].startswith("PORTFOLIO_") and len(rows) == 1 + len(
             members
         )
+        (Path(tmp) / "manifest.json").write_text("{}")
         funded_b.write(Path(tmp), result, {"root_seed": 7})
         assert len(pd.read_parquet(Path(tmp) / "stageb.parquet")) == len(b["rows"])
         assert len(pd.read_parquet(Path(tmp) / "shortlist.parquet")) == len(b["table"])
