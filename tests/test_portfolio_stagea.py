@@ -218,6 +218,18 @@ check(
     ).tolist()
     == [[False, True]],
 )
+trail = {
+    **plan,
+    "stages": [{**plan["stages"][0], "max_loss_mode": "trailing", "max_loss": 0.01}],
+}
+check(
+    "trailing plan: the cap's room is the tighter max loss (owner 2026-10-15), not the daily loss",
+    np.allclose(
+        stagea.open_cap(trail, capped_cfg),
+        [capped_cfg["funded"]["open_risk_cap"] * 0.01],
+    )
+    and np.allclose(stagea.open_cap(plan, capped_cfg), [0.02]),
+)
 
 # --- horizon: a pass on the last day is not a pass once the deadline closes one day earlier -----
 hidx = pd.bdate_range("2022-01-03", periods=12)

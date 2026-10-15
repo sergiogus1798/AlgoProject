@@ -257,9 +257,7 @@ def summarise(result: dict, out: Path | None) -> str:
     )
     cap, daily = (
         result["cap"],
-        min(
-            s["daily_loss"] for s in result["plan"]["stages"] if s["stage"] != "funded"
-        ),
+        min(stagea.room(s) for s in result["plan"]["stages"] if s["stage"] != "funded"),
     )
     lines.append(
         f"Tope de riesgo abierto: miembros × riesgo ≤ {result['open_risk_cap']:g} × pérdida "

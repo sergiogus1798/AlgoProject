@@ -101,7 +101,7 @@ segments:
     oos2: {from: 2023, to: 2026-09-30}
   NIKKEI225:
     data: {from: 2011-09-19, to: 2026-10-09}   # NIKKEI225_M1, 4.096.622 barras M1
-    build: {from: 2011-09-19, to: 2019}
+    build: {from: 2014-01-01, to: 2019}
     oos1: {from: 2020, to: 2023}
     oos2: {from: 2024, to: 2026-09-30, spread: oos2}
   XAGUSD:

@@ -558,9 +558,9 @@ known-answer test, and ran on the **relaxed `Test_nikkei_ref` pool under the tes
 (`AlgoData/portfolio/_test/root`, pair thresholds 0.90, a pseudo oos2 cut from the tail, test values
 for the null knobs). **No real result exists**: no real pool has been run, the real root holds no
 portfolio run, ledger row or bank table, a real `oos2` has not been read, and incubation is not
-running. Knobs still `null` (the real run refuses): `funded.open_risk_cap`, `stageb.t1_gap`,
-`verdict.pass_percentile`, `wf.confidence`, `incubation.figure/history/band`, and in `funded/sim/config.yaml`
-`owner.eurusd`, `payout_cushion`, `tax_rate`, `payout_fee`, `p_payout_denied`, `p_firm_closes_year`,
+running. Fixed since: `funded.open_risk_cap` 0.5 and `verdict.pass_percentile` 0.95 (2026-10-14), `wf.confidence` 0.95 joint
+and `incubation.figure/history/band` (2026-10-15). `stageb.t1_gap` (close_to_open_blocks), `tax_rate` (informational) and `p_payout_denied` (0.05) were fixed on 2026-10-15. Knobs still `null` (the real run refuses), in `funded/sim/config.yaml`:
+`owner.eurusd`, `payout_cushion`, `payout_fee`, `p_firm_closes_year`,
 `gaps.hantec_endurance_payout_days`, `gaps.hantec_express_floor_after_payout`,
 `gaps.ftmo_1step_floor_after_payout`. Unfixed findings: `OPEN.md` #104.
 
@@ -758,19 +758,19 @@ code needed one (rule 11), otherwise not built; each is the owner's:
    grows, the rest are re-judged — pair filters against every member of the new base, increment
    against the new base — until none is admissible with increment > 0 (`search/admission.py::sequence`;
    every judgement of every round is a ledger trial). Q16 (c) itself stays provisional.
-5. **#2, the cap. RULE DECIDED — owner, 2026-10-05 (R5); the fraction is OPEN.** In the funded
+5. **#2, the cap. RULE AND FRACTION DECIDED — owner, 2026-10-05 (R5), fraction 0.5 on 2026-10-14; readings confirmed 2026-10-15.** In the funded
    search the risk open at once is capped per plan: K × risk per trade ≤ `funded.open_risk_cap` ×
-   the plan's maximum daily loss (`search/stagea.py::open_cap`, `capped`). The knob ships `null`
-   and `funded`/`funded_b` refuse to start without it. No per-symbol cap. 🤔 **Two readings the
-   code took, the owner's to confirm:** «the plan's maximum daily loss» is the catalogue's
+   the plan's maximum daily loss (`search/stagea.py::open_cap`, `capped`). No per-symbol cap.
+   **Readings confirmed by the owner, 2026-10-15:** «the plan's maximum daily loss» is the catalogue's
    `daily_loss` as a fraction of the **initial** balance whatever the plan's daily basis (balance,
-   or the higher of balance and equity), and the trailing maximum loss plays no part; with one risk
+   or the higher of balance and equity); **in a trailing plan the room is the tighter of that and the
+   trailing max loss** (the floor that breaks first; `stagea.room`); with one risk
    for every phase (stage A) the tightest challenge phase binds, with a risk per phase (stage B)
    each phase has its own. The real path (`real.py`) still has no cap: K × floor is printed.
 6. **Q11, the oos1 figure. DECIDED — owner, 2026-10-05 (R6):** the **rank score** (the four
    signed ranks of the search, taken among the 10,000 draws plus the chosen one), and the null is
-   **random admissible combinations of the same size K**, no search per draw. 🤔 Readings the code
-   took, his to confirm: «same size» is the chosen portfolio's K; each metric is its worst over the
+   **random admissible combinations of the same size K**, no search per draw. Readings confirmed by the
+   owner, 2026-10-15: «same size» is the chosen portfolio's K; each metric is its worst over the
    shifted starts on oos1, as on build; under 20 admissible combinations of that K the answer is
    «no se puede juzgar», neither pass nor fail.
 7. **Q11, the ledger's N on oos2. DECIDED — owner, 2026-10-05 (R7): `ledger.trials.overall`**, the
@@ -782,8 +782,9 @@ code needed one (rule 11), otherwise not built; each is the owner's:
    inflated by the portfolio rows.
 8. **M0, the pool's extent.** `candidates.py` lists 182,464 archive commands today, 182,220 of them
    step-8 survivors of the `Test_Calib_*` calibration populations (and 182,045 with an empty
-   `--family`). Archived: Q2's reading only. Whether calibration survivors, `XAUUSD` (237 + 214
-   near) and the other `Test_*` projects belong to the development pool is not decided.
+   `--family`). Archived: Q2's reading only. **Decided — owner, 2026-10-15 (F6, A):** the development pool excludes
+   `Test_Calib_*` and everything built with costs before 2026-10-01; only current-cost work enters
+   (enforced in `candidates.in_pool`, `tests/test_portfolio_candidates_pool.py`).
 9. **Q10/R1, the GA's reference saturates** (found 2026-10-05, 🔬 on the planted pool of
    `tests/portfolio_planted.py` forced to the GA). `seeds` are greedy MAXIMAL cliques; a combination
    that beats every seed on the four metrics scores 1.0, every better one scores 1.0 too, and the GA
@@ -792,18 +793,17 @@ code needed one (rule 11), otherwise not built; each is the owner's:
    `real.exhaustive_max` = 1,000,000 combinations (raised from 100,000 by the owner, 2026-10-05:
    ~11 min on one core at the limit; 100,000 took ~70 s with the four windows). Above the limit the
    GA still runs and its rank score still saturates; ranking the GA in another fixed set (random
-   cliques of every size) stays the owner's — open.
-10. **M8, what «beats equal weight» means** (built 2026-10-05). `wf.confidence` has no default
-   and the command refuses without it. Built on this plan's reading, each the owner's to move:
-   the figure is the difference of daily Sharpe (not the Q10 rank score); no correction for the
-   number of arms compared (6 two-sided intervals at 95 % find a «winner» by chance up to one run in seven,
-   1 − 0.975⁶); the test is oos1 alone, so every run is one more look at it; `wf.lookback_years`
+   cliques of every size): owner, 2026-10-15 (F7f) — leave as is until a real pool exceeds the limit.
+10. **M8, what «beats equal weight» means** (built 2026-10-05). `wf.confidence` = 0.95
+   (owner, 2026-10-15, F4 B): JOINT, Bonferroni over the arms compared (≈0.99 per arm; `walkforward.compare`).
+   Built on this plan's reading, each the owner's to move:
+   the figure is the difference of daily Sharpe (not the Q10 rank score); the test is oos1 alone, so every run is one more look at it; `wf.lookback_years`
    0 (expanding) against AF's rolling 6; the reversal condition of #5 is read literally — the
    re-estimated arm beats equal and the fixed arm does not.
 11. **M8, which methods.** Risk parity, minimum variance and HRP are built; Carver handcrafting
    is not (its correlation groups and its diversification multiplier need thresholds nobody set).
 12. **M9, everything the plan does not fix.** `incubation.figure`, `.history` and `.band` are
-   null. Not decided and not built: how many flagged readings retire a portfolio or a member, how
+   `pnl`, `[build, oos1, oos2]`, `[5, 100]` (owner, 2026-10-15, F5). Not decided and not built: how many flagged readings retire a portfolio or a member, how
    long incubation lasts, the correction for reading every month, the size ramp, whether a
    portfolio whose verdict failed may be registered (today it may; the verdict is written in the
    record), and whether each reading takes the whole fresh stretch since registration (built) or

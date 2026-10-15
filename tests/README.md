@@ -247,6 +247,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_perf66_width.py` | Encargo 66, piece B4: studies that ran in series inside their process, wide, with the same numbers. | — |
 | `test_pooledprofile.py` | Known-answer tests of the pooled profile, and the proof that it never reads past `build`. | `python3 tests/test_pooledprofile.py` |
 | `test_portfolio_build.py` | Known-answer test of the universe builder (M1): one planted archived strategy, temp pool and cache root. | — |
+| `test_portfolio_candidates_pool.py` | The development pool takes only current-cost work (owner, 2026-10-15): no Test_Calib_*, nothing before 2026-10-01. | — |
 | `test_portfolio_fixes.py` | Known-answer regressions of the portfolio/ calculation review (scratch/cleanup/calc-portfolio.md, findings 1-6). | — |
 | `test_portfolio_fixes_latent.py` | Known-answer regressions of CALC_REVIEW.md m33-m36: time limit in path days, months cut by day, the re-drawn winner, guarded ratios. | — |
 | `test_portfolio_golden_current.py` | Golden of the M1 rebuild on the CURRENT feed: one USDJPY_M1 strategy against SQX's daily curve. | — |

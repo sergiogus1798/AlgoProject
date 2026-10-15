@@ -5,7 +5,7 @@ from typing import cast
 
 import pandas as pd
 
-from core.paths import MT5_ACCOUNTS, MT5_DATA
+from core.paths import MT5_ACCOUNTS
 from mt5 import compare
 from mt5.fleet.app import history
 from mt5.reconcile import live, register
@@ -15,14 +15,14 @@ def from_fleet(strategy: str, firm: str) -> tuple[pd.DataFrame, Path, str]:
     """The closed trades of a strategy on a firm's account, by the magic the live register gives it.
 
     Args:
-        strategy: Its name in the register (`AlgoData/mt5/reconcile/register.csv`).
+        strategy: Its name in the register (`mt5.reconcile.register`, derived from the fleet's magics.csv).
         firm: The register's and `mt5_accounts`' key.
 
     Returns:
         (trades in the project's trade frame, the strategy's .sqx, its timeframe). Stops when
         the collector has no history for the account.
     """
-    rows = register.read(MT5_DATA / "reconcile" / "register.csv")
+    rows = register.read()
     mine = cast(
         pd.DataFrame, rows[(rows["strategy"] == strategy) & (rows["firm"] == firm)]
     )

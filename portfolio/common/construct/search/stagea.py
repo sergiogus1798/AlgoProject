@@ -11,6 +11,13 @@ from portfolio.funded.rules.machine import _MINDAYS, _RISK, _stage_matrix, _swee
 from .stagea_data import StageAData
 
 
+def room(stage: dict) -> float:
+    """The loss room a stage leaves the open-risk cap: daily loss, or the trailing max loss if tighter."""
+    if stage["max_loss_mode"] == "static":
+        return stage["daily_loss"]
+    return min(stage["daily_loss"], stage["max_loss"])
+
+
 def open_cap(plan: Plan, cfg: dict) -> np.ndarray:
     """The most risk a combination may have open at once, per challenge stage (owner, 2026-10-05).
 
@@ -18,13 +25,15 @@ def open_cap(plan: Plan, cfg: dict) -> np.ndarray:
     together (the worst case; no netting, no per-symbol cap). That may not exceed
     `funded.open_risk_cap` of the stage's maximum daily loss -- the catalogue's `daily_loss`,
     a fraction of the initial balance whatever the firm then measures the day's floor from.
+    In a trailing plan the room is the tighter of that and `max_loss` -- the trailing floor is the
+    one that breaks first (owner, 2026-10-15).
 
     Returns:
         float64 [challenge stages], as a fraction of the initial balance.
     """
     return np.array(
         [
-            cfg["funded"]["open_risk_cap"] * s["daily_loss"]
+            cfg["funded"]["open_risk_cap"] * room(s)
             for s in plan["stages"]
             if s["stage"] != "funded"
         ]

@@ -83,7 +83,7 @@ def read(pool: str = "", run: str = "", **_: str) -> dict[str, Any]:
         ],
         rows,
         f"{len(doc['windows'])} ventanas de prueba sobre {doc['test_days']} días de oos1; "
-        f"intervalo al {doc['wf']['confidence']:.0%}, sin corregir por el número de comparaciones.",
+        f"intervalo al {doc['wf']['confidence']:.0%}, conjunto, corregido por Bonferroni entre los intervalos.",
         [
             None,
             "Fijo: los pesos de build no se tocan. Re-estimado: se recalculan al empezar cada "

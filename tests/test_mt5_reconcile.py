@@ -6,13 +6,17 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from unittest import mock
 
+import openpyxl
 import pandas as pd
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core import fleetpaths
 from core.study import blocks
+from mt5.fleet import magics
 from mt5.reconcile import (
     floating,
     judge,
@@ -317,36 +321,37 @@ def test_deals_become_trades_split_by_magic() -> None:
 
 
 def test_owner_inputs_are_refused_in_spanish() -> None:
-    """No register, a magic used twice, no tolerance, no live account: each stops with its reason."""
-    raw = yaml.safe_load(run.CONFIG.read_text(encoding="utf-8"))
+    """No magics.csv, an empty tolerance, an empty live account list: each stops with its reason."""
+    raw = {"pairing": {"entry_tolerance_bars": None}, "live": {"accounts": None}}
     for key in ("pairing.entry_tolerance_bars", "live.accounts"):
         try:
             run.required(raw, key, "x")
             raise AssertionError(f"{key} has a default")
         except SystemExit as stop:
             assert "decisión del dueño" in str(stop)
-    with tempfile.TemporaryDirectory() as tmp:
-        path = Path(tmp) / "register.csv"
+    with (
+        tempfile.TemporaryDirectory() as tmp,
+        mock.patch.object(fleetpaths, "FLEET", Path(tmp)),
+    ):
         try:
-            register.read(path)
-            raise AssertionError("an absent register was accepted")
+            register.read()
+            raise AssertionError("an absent magics.csv was accepted")
         except SystemExit as stop:
-            assert "falta el registro" in str(stop)
-        head = ",".join(register.COLUMNS)
-        path.write_text(
-            f"{head}\n1,A,aa,a.sqx,ftmo,2026-09-01\n1,B,bb,b.sqx,ftmo,2026-09-01\n"
-        )
-        try:
-            register.read(path)
-            raise AssertionError("a repeated magic was accepted")
-        except SystemExit as stop:
-            assert "ftmo/1" in str(stop)
-        path.write_text(
-            f"{head}\n1,A,aa,a.sqx,ftmo,2026-09-01\n1,A,aa,a.sqx,hantec,2026-09-22\n"
-        )
-        assert list(
-            register.live_in(register.read(path), pd.Timestamp("2026-09-21"))["firm"]
-        ) == ["ftmo"]
+            assert "falta el registro de magics" in str(stop)
+        book = openpyxl.Workbook()
+        book.active.title = "Cuentas"  # pyright: ignore[reportOptionalMemberAccess]  # a new workbook has an active sheet
+        book["Cuentas"].append(["hoja", "firma"])
+        book["Cuentas"].append(["FTMO_10k", "FTMO"])
+        book.create_sheet("FTMO_10k").append(["symbol", "tf", "strategy", "magic"])
+        book["FTMO_10k"].append(["EURUSD", "H1", "S1", None])
+        book["FTMO_10k"].append(["GBPUSD", "H1", "S2", None])  # no magic saved
+        book.save(fleetpaths.workbook())
+        magics.add(1001, ("S1", "EURUSD", "H1"))
+        magics.identify(1001, "aa", "s1.sqx")
+        got = register.read()
+        assert list(got["firm"]) == ["ftmo"] and list(got["magic"]) == [1001]
+        assert len(magics.read()) == 1  # fill() assigned nothing for S2
+        assert not register.live_in(got, pd.Timestamp("2000-01-01")).shape[0]
 
 
 def test_sqx_window() -> None:

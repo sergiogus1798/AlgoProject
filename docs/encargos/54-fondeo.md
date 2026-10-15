@@ -33,7 +33,7 @@ nunca la raíz real (`portfolio/testroot/README.md`).
 | B | Las entradas del dueño aún `null` y las preguntas abiertas de 33: listarlas y preguntarlas, nunca rellenarlas | Opus | A (para que él las escriba) | hecho 2026-10-14 y 2026-10-15; no queda nada abierto |
 | C | «Hecho es» de 33: la tabla de §4 sobre una cartera REAL, contra el mono, con recortes y una frase de decisión | Opus | encargo 55 (pool validado), B | bloqueado |
 | D | Módulo de riesgo máximo: inventario y las cinco decisiones (45 parte 1) | Opus | nada | inventario hecho 2026-10-14 (abajo); decisiones 1-7 ya contestadas; E desbloqueado |
-| E | `q_día`, `DD_95`, `riesgo_max` y veredicto (45 partes 2-4) | Opus | D contestado | bloqueado |
+| E | `q_día`, `DD_95`, `riesgo_max` y veredicto (45 partes 2-4) | Opus | D contestado | libre |
 | F | La prueba del retraso con el feed de la firma (45 parte 5) | Opus | D; paso 26 (encargo 55) | bloqueado |
 | G | Vista del módulo de riesgo máximo y su capítulo del manual (45 parte 6) | Sonnet tras el dibujo del dueño | E | bloqueado |
 

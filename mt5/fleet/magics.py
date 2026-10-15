@@ -8,7 +8,6 @@ import openpyxl
 import pandas as pd
 
 from core import fleetpaths
-from core.paths import MT5_DATA
 
 FIRST = (
     1001  # owner, 2026-10-14: the seven live EAs keep 1..7, new combinations start here
@@ -167,7 +166,7 @@ def fill(workbook: Path, write: bool) -> list[dict]:
 
 
 def register_rows(filled: list[dict]) -> pd.DataFrame:
-    """The reconciler's `register.csv` from the filled rows, with `identity` and `sqx` from this registry.
+    """The reconciler's register (`mt5.reconcile.register.read`) from the filled rows, with `identity` and `sqx` from this registry.
 
     A combination whose identity or .sqx nobody recorded cannot be reconciled and is left out.
     """
@@ -192,18 +191,13 @@ def register_rows(filled: list[dict]) -> pd.DataFrame:
 
 
 def main() -> None:
-    """Assign the magics of the workbook; with --register also write the reconciler's register."""
+    """Assign the magics of the workbook."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--workbook", type=Path, default=fleetpaths.workbook())
     ap.add_argument(
         "--write",
         action="store_true",
         help="guardar los magic en el Excel (sin esto solo se informa)",
-    )
-    ap.add_argument(
-        "--register",
-        action="store_true",
-        help="escribir también AlgoData/mt5/reconcile/register.csv",
     )
     ap.add_argument(
         "--adopt",
@@ -229,14 +223,6 @@ def main() -> None:
     print(
         f"{len(filled)} filas con magic ({'guardado en' if a.write else 'sin guardar en'} {a.workbook.name})"
     )
-    if a.register:
-        reg = register_rows(filled)
-        out = MT5_DATA / "reconcile" / "register.csv"
-        out.parent.mkdir(parents=True, exist_ok=True)
-        reg.to_csv(out, index=False)
-        print(
-            f"{len(reg)} filas en {out} ({len(filled) - len(reg)} sin identidad o .sqx, fuera)"
-        )
 
 
 if __name__ == "__main__":

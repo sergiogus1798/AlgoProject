@@ -16,7 +16,7 @@ places no order and touches no terminal: the accounts are opened by the owner.
 
 Behaviour (owner, 2026-10-12):
 - **Source.** The fleet history; `--real` (CSV in SQX's export shape) overrides it and is what the tests use.
-- **Join.** The deal's magic number, through the reconciler's register (`AlgoData/mt5/reconcile/register.csv`, `mt5/reconcile/register.py`) — no new table.
+- **Join.** The deal's magic number, through the reconciler's register (`mt5/reconcile/register.py`, derived from the fleet's `magics.csv`) — no new table.
 - **1 R** is the mean losing trade of the SQX backtest, `compare.mean_loss` (the judge's `rows` calls it too), in points (`compare.in_points`), for stage A and for the SPRT's R alike; `--r` overrides the R column.
 - **Step 26's preparation is reused:** SQX moved from its feed's zone to the server's (`compare.to_zone`) and then the whole-hour shift `judge.clock` finds; P&L of both sides in points.
 - **The SQX side is clipped** to the first real trades' time window.

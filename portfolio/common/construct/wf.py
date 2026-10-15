@@ -141,7 +141,7 @@ def sentence(got: Walkforward, cfg: dict) -> str:
     states, table = got["states"], got["table"]
     cost = (
         f"{len(table) - 1} brazos comparados con pesos iguales sobre {len(got['dates'])} días de oos1, intervalo al "
-        f"{float(cfg['wf']['confidence']):.0%} sin corregir por el número de comparaciones"
+        f"{float(cfg['wf']['confidence']):.0%} conjunto, corregido por Bonferroni entre los intervalos"
     )
     fixed = [m for m, s in states.items() if s == "fixed"]
     only = [m for m, s in states.items() if s == "only_reestimated"]

@@ -77,9 +77,6 @@ def main() -> None:
         "(`sqx/trades.parquet` of a week) instead of a run on the conductor",
     )
     ap.add_argument(
-        "--register", type=Path, help="the register CSV, if not config.yaml's"
-    )
-    ap.add_argument(
         "--out",
         type=Path,
         help="the week's folder, if not AlgoData/mt5/reconcile/<week>",
@@ -94,9 +91,11 @@ def main() -> None:
         "pairing.entry_tolerance_bars",
         "a cuántas barras de distancia dos entradas siguen siendo la misma operación",
     )
-    rows = register.live_in(
-        register.read(a.register or MT5_DATA / cfg["register"]), end
+    accounts = required(
+        cfg, "live.accounts", "qué cuentas de mt5_accounts están en real"
     )
+    rows = register.live_in(register.read(), end)
+    rows = rows[rows["firm"].isin(accounts)].reset_index(drop=True)
     markets = [register.market(Path(p)) for p in rows["sqx"]]
     rows = rows.assign(asset=[m[0] for m in markets], timeframe=[m[1] for m in markets])
     work = a.out or RUNS / a.week

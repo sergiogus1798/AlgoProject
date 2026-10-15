@@ -1,28 +1,28 @@
 # mt5.reconcile — the weeklyReconciler (OPEN.md #78): what the live account did in one ISO week
 # against the SQX backtest of the same strategies over the same days, on the development data.
-# It describes; it does not judge: there is NO pass bar here (owner pending, rule 11).
+# It describes; it does not judge: there is NO pass bar for «coincide» — the report describes and
+# the bar is set after 8 real weeks (owner 2026-10-15, V4).
 #
 # A key left empty is the OWNER'S decision and has no default: the command refuses in Spanish
-# until it is filled here or given as --set section.key=value.
+# until it is filled here or given as --set section.key=value. None is empty today.
 
-# Which accounts of config/machine.yaml `mt5_accounts` are LIVE (keys, e.g. [ftmo]). Never
-# guessed from a name. Only needed when the live side is read from the terminal.
+# Which accounts of config/machine.yaml `mt5_accounts` are LIVE (keys). Never guessed from a name.
+# Owner 2026-10-15: FTMO 541350656 (funded, real), FundingPips 11308943 (phase 2 of 2), Hantec
+# 8063673 (phase 1 of 2). `fundingpips` must also be a key of `mt5_accounts` (login + server).
 live:
-  accounts:
+  accounts: [ftmo, fundingpips, hantec]
   # Days of history asked past the week's end, so a trade opened on Friday and closed the
   # next week is read whole.
   spill_days: 7
 
-# magic number -> strategy. CSV, columns `magic,strategy,identity,sqx,firm,since`, kept in the
-# data root (it names the owner's accounts' EAs, so it is not versioned). Relative to
-# core.paths.MT5_DATA. The file is the owner's to write: absent, the command refuses.
-register: reconcile/register.csv
+# magic number -> strategy: not a file of this folder — mt5.reconcile.register derives it from the
+# fleet's magics.csv (mt5/fleet/magics.py) and the owner's workbook (owner 2026-10-15, V3).
 
 # Pairing. `entry_tolerance_bars` — how many bars of the strategy's timeframe apart two entries
-# may be and still be called the same trade — is the owner's; step 26 uses
-# ledger `mt5verify.entry_tolerance_bars`, shown in the report as a reference only.
+# may be and still be called the same trade. 1, as step 26 (ledger `mt5verify.entry_tolerance_bars`):
+# owner 2026-10-15, V2.
 pairing:
-  entry_tolerance_bars:
+  entry_tolerance_bars: 1
 
 # The clock, as in mt5/verify/config.yaml (knowhow/mt5/mt5-verify-clock-zones.md): the firms'
 # servers run on EETUS; SQX's times are converted from their feed's zone, then any whole-hour

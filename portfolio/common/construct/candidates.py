@@ -35,6 +35,7 @@ STUDY_STEP = {
     "blindJoint": "20",
     "exposure": "21",
 }
+COSTS_SINCE = "2026-10-01"  # costs before this day are not the current ones
 SURVIVOR_WORDS = {"MANTENER", "survives", "predicts", "PASS"}
 NEAR_WORDS = {"DUDOSA", "INCONCLUSIVE"}
 # (study, word) pairs that inform without filtering: the workflow carries the strategy on and the
@@ -119,19 +120,37 @@ def _carried(project: str) -> set[str]:
     )
 
 
-def _family(project: str) -> str:
-    """The template folder name a project builds, from the last matching row of the registry."""
+def _row(project: str) -> dict | None:
+    """The last registry row of a project, or None."""
     row = None
     with project_registry().open(newline="", encoding="utf-8") as fh:
         for candidate in csv.DictReader(fh):
             if candidate["name"] == project:
                 row = candidate
+    return row
+
+
+def _family(project: str) -> str:
+    """The template folder name a project builds, from the last matching row of the registry."""
+    row = _row(project)
     return Path(row["template"]).parent.name if row else ""
+
+
+def in_pool(project: str) -> bool:
+    """Whether a project may enter the development pool (owner, 2026-10-15, PLAN §12 point 8).
+
+    Only current-cost work enters: no `Test_Calib_*` and nothing created before `COSTS_SINCE`.
+    A project the registry does not know is left out.
+    """
+    row = _row(project)
+    return bool(
+        row and not project.startswith("Test_Calib_") and row["created"] >= COSTS_SINCE
+    )
 
 
 def _report(project: str, project_dir: Path) -> None:
     """Print one project's header, its candidates' archive commands, and what was left out."""
-    by_identity = _judgments(project_dir)
+    by_identity = _judgments(project_dir) if in_pool(project) else {}
     if not by_identity:
         return
     print(f"\n=== {project} ===")

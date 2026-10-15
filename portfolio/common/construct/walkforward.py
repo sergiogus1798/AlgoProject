@@ -165,7 +165,7 @@ def compare(got: Arms, cfg: dict, rng: np.random.Generator) -> pd.DataFrame:
 
     The interval is the stationary bootstrap's: the test days resampled in blocks, the SAME
     days for every arm (the difference is paired), mean block by Politis and White on the
-    equal-weight path. Nothing is corrected for the number of arms compared.
+    equal-weight path. `wf.confidence` is JOINT: Bonferroni over every interval built, vs equal weight and vs fixed (owner 2026-10-15).
 
     Args:
         got: `arms()`'s result.
@@ -185,7 +185,14 @@ def compare(got: Arms, cfg: dict, rng: np.random.Generator) -> pd.DataFrame:
     days = stack.shape[1]
     index = mc_paths.indices(days, days, int(cfg["wf"]["bootstrap_draws"]), block, rng)
     drawn = {k: _sharpe(p[index]) for k, p in zip(keys, stack)}
-    tail = (1 - float(cfg["wf"]["confidence"])) / 2
+    pairs = [
+        (n, k, versus, suffix)
+        for n, k in enumerate(keys)
+        for versus, suffix in ((("equal", "fixed"), ""), (((k[0], "fixed")), "_fixed"))
+        if not (versus == k or (suffix and k[1] == "fixed"))
+    ]
+    # Bonferroni over every interval built (vs equal weight and vs the same method held fixed)
+    tail = (1 - float(cfg["wf"]["confidence"])) / len(pairs) / 2
     rows = []
     for n, (method, arm) in enumerate(keys):
         row = {
@@ -194,9 +201,7 @@ def compare(got: Arms, cfg: dict, rng: np.random.Generator) -> pd.DataFrame:
             **{m: float(v[n]) for m, v in table.items()},
             "block": block,
         }
-        for versus, suffix in ((("equal", "fixed"), ""), ((method, "fixed"), "_fixed")):
-            if versus == (method, arm) or (suffix and arm == "fixed"):
-                continue
+        for _, _, versus, suffix in (q for q in pairs if q[0] == n):
             lo, hi = np.quantile(drawn[method, arm] - drawn[versus], [tail, 1 - tail])
             row.update(
                 {

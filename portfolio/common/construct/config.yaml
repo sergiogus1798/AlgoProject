@@ -64,13 +64,13 @@ weights:                        # M4 (PLAN §5.4): chosen on build, fixed for go
 wf:                             # M8 (PLAN §5.4): the weight walk-forward (construct.wf) -- a study that reports; it selects nothing, weights.method stays equal
   lookback_years: 0             # 🤔 phase M8: 0 = every day before the window, so the first estimation is the whole of build -- what DECISIONS #5 holds fixed. AlphaForge used 6
   step_years: 3                 # AlphaForge: weights re-estimated every 3 years, on 1 January
-  confidence: null              # REQUIRED, no default (rule 11): the two-sided interval a Sharpe difference against equal weight must clear to count as "beats" (e.g. 0.95)
+  confidence: 0.95              # owner 2026-10-15: JOINT two-sided interval a Sharpe difference against equal weight must clear to count as "beats", Bonferroni: per interval 0.05/m per tail, m = intervals compared
   bootstrap_draws: 2000         # 🤔 phase M8: stationary-bootstrap resamples of the test days behind that interval; mean block by Politis-White on the equal-weight path
 
 incubation:                     # M9 (PLAN §14.5): the fresh stretch after oos2 against the band of equal-length windows of the portfolio's own history. NOT RUNNING: nothing produces its rows yet
-  figure: null                  # REQUIRED, no default (rule 11): what is read on the stretch -- pnl (its sum, per unit of risk) | sharpe (per day)
-  history: null                 # REQUIRED: the segments whose windows make the band, e.g. [oos1, oos2] or [build, oos1, oos2]
-  band: null                    # REQUIRED: [low, high] percentiles of those windows; a stretch outside is flagged ([5, 100] flags the low side only)
+  figure: pnl                   # owner 2026-10-15. REQUIRED, no default (rule 11): what is read on the stretch -- pnl (its sum, per unit of risk) | sharpe (per day)
+  history: [build, oos1, oos2]  # owner 2026-10-15. REQUIRED: the segments whose windows make the band
+  band: [5, 100]                # owner 2026-10-15. REQUIRED: [low, high] percentiles of those windows; a stretch outside is flagged ([5, 100] flags the low side only)
 
 verdict:                        # F4, the funded verdict (PLAN §14.3, Q11 d): oos1 against the selected null, then oos2's deflated Sharpe, once
   null_draws: 100               # 🤔 this plan: null SEARCHES of the funded path, each one stage A on random admissible combinations + stage B (not real.null_draws)

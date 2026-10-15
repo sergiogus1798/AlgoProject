@@ -10,6 +10,8 @@ import pandas as pd
 import yaml
 
 from core import fleetpaths, paths
+from mt5.fleet import magics
+from mt5.reconcile import register
 from portfolio.funded.rules import catalog
 
 CFG = yaml.safe_load(
@@ -93,10 +95,9 @@ def terms(plan_key: str, phase: str) -> dict[str, Any]:
 
 def names() -> dict[tuple[str, int], str]:
     """`(firm, magic)` → strategy from the reconciler's register; empty until the owner writes it."""
-    register = reconcile_dir() / "register.csv"
-    if not register.exists():
+    if not (magics.path().exists() and fleetpaths.workbook().exists()):
         return {}
-    reg = pd.read_csv(register)
+    reg = register.read()
     return {
         (f, int(m)): s for f, m, s in zip(reg["firm"], reg["magic"], reg["strategy"])
     }

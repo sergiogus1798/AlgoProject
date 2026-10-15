@@ -93,10 +93,9 @@ class ReconcileTab(QWidget):
         self.empty.setVisible(found is None)
         self.empty.setText(
             "Aún no hay ninguna semana conciliada: el reconciliador semanal no ha corrido nunca. Para su primera "
-            "semana le faltan tres cosas tuyas: el registro de magics (<code>AlgoData/mt5/reconcile/register.csv</code>: "
-            "qué magic es qué estrategia en qué firma), qué cuentas están en vivo (<code>live.accounts</code>) y la "
-            "tolerancia de entrada en barras (<code>pairing.entry_tolerance_bars</code>), las dos últimas en "
-            "<code>mt5/reconcile/config.yaml</code>. Después: <code>python3 -m mt5.reconcile.run --week 2026-W40</code> "
+            "semana le hace falta el registro de magics de la flota (<code>python3 -m mt5.fleet.magics --write</code>: "
+            "de él salen qué magic es qué estrategia en qué firma) y las claves de <code>mt5/reconcile/config.yaml</code> "
+            "(<code>live.accounts</code> y <code>pairing.entry_tolerance_bars</code>). Después: <code>python3 -m mt5.reconcile.run --week 2026-W40</code> "
             "(capítulo 89 del manual)."
         )
         for w in (self.head, self.summary, self.pairs_head, self.pairs):

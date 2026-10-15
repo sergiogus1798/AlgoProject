@@ -249,6 +249,8 @@ they differ:
 - **Spread on crude:** no Darwinex ticks exist, so all three segments carry FTMO's spread of today
   × 1.25 (UKOIL 90, USOIL 97.88 points; slippage half). It tripled from 2025-01 with no price move
   behind it, so it is not modelled back; 2013–2024 is unmeasured.
+- **Brent (UKOIL) session undeclared (owner, 2026-10-15, encargo 72 L2):** its feed has 109 own gaps a year
+  against a limit of 30. **Do not build on UKOIL until its session is declared.**
 - **Commission on metals and crude:** the worse of FTMO and Hantec per segment, no longer Darwinex's
   0.005 %. Gold: Hantec's 5 USD/lot round trip beats FTMO's 0.0014 % at every segment's median
   price. Silver: 5 USD/lot too, **assuming** Hantec charges silver as it does gold — unconfirmed

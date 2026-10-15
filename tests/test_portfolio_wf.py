@@ -82,8 +82,8 @@ def main() -> None:
 
     cfg = config.load(["wf.confidence=0.95", "wf.lookback_years=1", "wf.step_years=1"])
     check(
-        "the committed bar is unset (rule 11) and AlphaForge's 3 years stand",
-        config.load()["wf"]["confidence"] is None
+        "the committed bar is 0.95 joint (owner 2026-10-15) and AlphaForge's 3 years stand",
+        config.load()["wf"]["confidence"] == 0.95
         and config.load()["wf"]["step_years"] == 3,
     )
     real_path = study.path
@@ -136,6 +136,22 @@ def main() -> None:
         "no volatility pattern: no method beats equal weight, fixed or re-estimated",
         set(noise["states"].values()) == {"no"}
         and "se mantienen los pesos iguales" in wf.sentence(noise, cfg),
+    )
+    few = {
+        k: v
+        for k, v in got["paths"].items()
+        if k in (("equal", "fixed"), ("hrp", "fixed"), ("hrp", "reestimated"))
+    }
+    narrow = walkforward.compare(
+        {**got, "paths": few}, cfg, np.random.default_rng(9)
+    ).set_index(["method", "arm"])
+    wide = walkforward.compare(got, cfg, np.random.default_rng(9)).set_index(
+        ["method", "arm"]
+    )
+    check(
+        "Bonferroni: the same arm's interval is wider with more intervals compared",
+        wide.loc[("hrp", "reestimated"), "lo"]
+        < narrow.loc[("hrp", "reestimated"), "lo"],
     )
     check(
         "one test window: the two arms are the same path",

@@ -2,9 +2,8 @@
 # weekly-reconcile — the weeklyReconciler, unattended from cron: the ISO week that just ended,
 # the live accounts against the SQX backtest of the same strategies (OPEN.md #78).
 #
-# WRITTEN, NOT INSTALLED: the crontab line is the owner's to add. Proposed slot: Saturday 02:10,
-# after bin/weekly-data-update.sh (02:00) — this script waits on that script's lock, because the
-# backtest needs the week's bars — and after bin/monthly-oos2-roll.sh (02:05).
+# Crontab line (proposed): 10 2 * * 6 — Saturday 02:10, after bin/weekly-data-update.sh (02:00),
+# whose lock this script waits for because the backtest needs the week's bars.
 #
 # What it does: python3 -m mt5.reconcile.run --week <this ISO week>. That command
 #   - reads the live accounts through the MT5 terminal, READ-ONLY (it logs the terminal into

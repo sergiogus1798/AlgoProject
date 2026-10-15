@@ -3,10 +3,10 @@
 OPEN.md #78 (owner, 2026-09-29): each weekend, the SQX backtest of the strategies that are
 live, over the week that just ended, on the development data, against what the account really
 did. Live EAs run on another server; this machine only **reads** the account. It **describes
-and does not judge**: every gap is a number, there is no pass bar (owner pending).
+and does not judge**: every gap is a number, there is no pass bar for «coincide»: the report describes and the bar is set after 8 real weeks (owner, 2026-10-15).
 
 ```
-register.csv (magic → strategy, firm)                         ── the owner's file
+magics.csv + workbook → register (magic → strategy, firm)      ── derived, register.py
 live:   terminal `history` verb ─▶ deals ─▶ trades per position ─▶ split by magic   (live.py)
 sqx:    Test_Reconcile_<asset>_<tf>_<week> on the conductor ─▶ orderstocsv          (sqxside.py)
 judge:  zones → residual whole-hour clock → cut to the ISO week → pair → gaps       (judge.py)
@@ -19,7 +19,7 @@ report: result.json (study contract, no verdict) + Spanish lines on stdout      
 | `floating.py` | Live trades' MAE and MFE rebuilt from M1 wicks (PLAN §14.2), only where the bars cover the trade. | imported | trades + M1 → `mae`, `mfe` |
 | `judge.py` | One strategy's week: live trades paired with the SQX backtest's, and every gap as a number — no pass bar. | imported | two trade frames → pairs, lonely, summary |
 | `live.py` | The live side: an account's deals of one week as trades in the project's trade frame, per strategy. | imported | deals → {strategy: trades}, strays |
-| `register.py` | The register of live EAs: which magic number on which firm's account is which strategy. | imported | CSV → rows |
+| `register.py` | The register of live EAs: which magic number on which firm's account is which strategy. | imported | magics.csv + workbook → rows |
 | `report.py` | Write a week's reconciliation as result.json (the study contract) and say it in Spanish. | imported | pieces → files, text |
 | `run.py` | weeklyReconciler: one ISO week of the live accounts against the SQX backtest of the same strategies. | `python3 -m mt5.reconcile.run --week YYYY-Www [--live-trades P] [--sqx-trades P] [--register CSV] [--out DIR] [--set k=v]` | a week → `AlgoData/mt5/reconcile/<week>/` |
 | `sqxside.py` | The SQX side: the live strategies retested over one week in a Test_Reconcile project on the conductor. UNRUN. | imported | register rows + week → trades per strategy |
@@ -41,9 +41,9 @@ report: result.json (study contract, no verdict) + Spanish lines on stdout      
 | what | where | until then |
 |---|---|---|
 | which `mt5_accounts` are live | `live.accounts` | refused when the terminal would be read |
-| magic → strategy | `AlgoData/mt5/reconcile/register.csv` (`register:`) | refused |
-| entry tolerance, in bars | `pairing.entry_tolerance_bars` | refused |
-| what «matches» means | — | no bar: numbers only |
+| magic → strategy | not an owner's file: derived from the fleet's `AlgoData/fleet/magics.csv` + the workbook (`register.read()`, owner 2026-10-15) | refused in Spanish while `magics.csv` is absent |
+| entry tolerance, in bars | `pairing.entry_tolerance_bars` = 1, as step 26 (owner 2026-10-15) | — |
+| what «matches» means | — | no bar: numbers only, until 8 real weeks have run |
 
 ## Decisions it carries (each one a reading the owner may overturn)
 

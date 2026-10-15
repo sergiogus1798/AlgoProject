@@ -4,42 +4,35 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import sqxfile
+from core import fleetpaths, sqxfile
+from mt5.fleet import magics
 
 COLUMNS = ["magic", "strategy", "identity", "sqx", "firm", "since"]
 TIMEFRAMES = {"M1", "M5", "M15", "M30", "H1", "H4", "D1"}
 
 
-def read(path: Path) -> pd.DataFrame:
-    """The register, refused when absent or ambiguous — it is the owner's file, never guessed.
-
-    Args:
-        path: CSV with COLUMNS: the EA's magic number, the strategy's name, its identity
-            (`core.sqxfile.identity`), its `.sqx`, the firm key of `mt5_accounts` it runs
-            on, and the day it went live (YYYY-MM-DD).
+def read() -> pd.DataFrame:
+    """The register, generated from the fleet's magics.csv and the owner's workbook — never a second file.
 
     Returns:
-        One row per live EA, `since` as a Timestamp. A magic used twice on one firm stops
-        here: its deals could not be told apart.
+        One row per live EA (`COLUMNS`), `since` as a Timestamp. Refused in Spanish when the
+        fleet has no magics.csv yet or no workbook; a magic used twice on one firm stops here:
+        its deals could not be told apart.
     """
-    if not path.exists():
+    if not (magics.path().exists() and fleetpaths.workbook().exists()):
         raise SystemExit(
-            f"falta el registro de estrategias en real: {path}\n"
-            f"Es un CSV con las columnas {','.join(COLUMNS)} — una fila por EA en real: su "
-            "magic number, el nombre de la estrategia, su identidad, la ruta de su .sqx, la "
-            "empresa (clave de mt5_accounts) y el día que empezó. Lo escribe el dueño; no se "
-            "adivina por los nombres."
+            f"falta el registro de magics de la flota: {magics.path()} (y el Excel "
+            f"{fleetpaths.workbook().name}). Se crea con `python3 -m mt5.fleet.magics --write`; "
+            "de él sale la lista de EAs en real, con su magic, identidad, .sqx y empresa."
         )
-    rows = pd.read_csv(
-        path, dtype={"magic": int, "identity": str}, parse_dates=["since"]
+    rows = magics.register_rows(magics.fill(fleetpaths.workbook(), False))
+    rows = rows.astype({"magic": int, "identity": str}).assign(
+        since=lambda d: pd.to_datetime(d["since"])
     )
-    missing = [c for c in COLUMNS if c not in rows.columns]
-    if missing:
-        raise SystemExit(f"{path.name}: faltan las columnas {', '.join(missing)}")
     twice = rows[rows.duplicated(["firm", "magic"], keep=False)]
     if len(twice):
         raise SystemExit(
-            f"{path.name}: magic repetido en la misma empresa — "
+            "magic repetido en la misma empresa — "
             + ", ".join(f"{r.firm}/{r.magic}" for r in twice.itertuples())  # pyright: ignore[reportAttributeAccessIssue]  # pandas stubs: itertuples rows lose their field names
         )
     return rows
