@@ -37,11 +37,10 @@ pairs:
   stress_quantile: 0.05         # owner 2026-09-30, Q15: the pool's worst 5 % of build days
 
 funded:                         # F2, the funded search's stage A (PLAN §14.3; owner 2026-09-30)
-  stop_percentile: ledger:portfolio.funded.stop_percentile   # the step-24 X that sizes every trade
-  risk_grid: [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.010]  # risk per trade, fraction of the INITIAL balance
+  risk_grid: [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.010]  # r: what each member's worst build day of floating loss costs, fraction of the INITIAL balance (inputs/risk.sizing, factor = 1 / worst_day)
   horizon_days: 126             # a pass counts only within ~6 months of trading days of the purchase
   min_lot: 0.01                 # a trade whose lot rounds below it cannot be placed: that risk level is infeasible
-  open_risk_cap: 0.5            # owner 2026-10-14 (encargo 54, 15): 0.5 — all stops at once spend at most half the plan's maximum daily loss. (owner 2026-10-05, R5: the cap exists, its size was not set): members x risk per trade <= this fraction of the plan's maximum daily loss; above it a (combination, risk) pair is infeasible. No per-symbol cap
+  open_risk_cap: 0.5            # owner 2026-10-14 (encargo 54, 15): 0.5 — every member's worst build day at once spends at most half the plan's maximum daily loss. (owner 2026-10-05, R5: the cap exists, its size was not set): members x r <= this fraction of the plan's maximum daily loss; above it a (combination, risk) pair is infeasible. No per-symbol cap
 
 search:                         # AlphaForge's GA defaults (PLAN §5.3), set_by AlphaForge until the owner moves them
   seeds: 300
