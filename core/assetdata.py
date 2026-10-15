@@ -119,6 +119,12 @@ def load(symbol: str) -> dict[str, Any]:
     }
     # One copy of what is handed out; `base["segments"]` (every asset's block, the big part)
     # is replaced above and never copied. 🔬 2026-10-13: encargo 66 §9.12.
+    hour = (data.get("swap") or base.get("swap") or {}).get("rollout_hour")
+    if hour is not None and not isinstance(hour, str):
+        raise ValueError(
+            f"{symbol}: swap.rollout_hour is {hour!r}, not 'HH:MM': quote it — unquoted 23:00 is"
+            " the YAML integer 1380 and shifts every swap night"
+        )
     return copy.deepcopy(
         {**base, **data, "segments": segments, "data": mine.get("data")}
     )

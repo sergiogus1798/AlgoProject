@@ -70,7 +70,7 @@ mc_retest:
     sqx_now: null
 swap:
   triple_swap_on: WEDNESDAY
-  rollout_hour: 23:00
+  rollout_hour: "23:00"
 mt5:
   ftmo: XCUUSD
 mt5_point:

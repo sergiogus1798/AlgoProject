@@ -10,6 +10,10 @@ instrument:
   tick_size: 0.01
   point_value: 0.127444
   min_distance: 0
+price_rounding:
+  use: tick
+  why: '2026-10-15, engines.market.rounding.measure over Retest_Markets_-_Family trades of 127 NIKKEI225/DAX40/USATEC H1 mothers (raw/Test_*/Retest_Markets_-_Family), segment oos1 over 2013-2023 (H1, n=127): indistinguishable (tick 0.00 % / none 0.79 %); tick as USATEC and NIKKEI225, measured the same way'
+  measured: 2026-10-15
 costs:
   spread_is:
     use: 698.42
@@ -69,7 +73,7 @@ mc_retest:
     sqx_now: null
 swap:
   triple_swap_on: FRIDAY
-  rollout_hour: 23:00
+  rollout_hour: "23:00"
 mt5:
   ftmo: HK50.cash
   hantec: HK50.h
