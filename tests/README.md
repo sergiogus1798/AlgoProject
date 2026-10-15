@@ -148,6 +148,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_ledger.py` | The ledger's two guarantees: the door refuses, and pooling widens what the DSR must clear. | — |
 | `test_ledger_cells.py` | Known-answer tests: the per-cell counter and accumulated(extra=None). | — |
 | `test_ledger_ideas.py` | Known answer: the hypotheses the research memory counts raise the ledger's N and lower the DSR. | — |
+| `test_ledger_shards.py` | D27 phase 1: the union of shards counts a common row once, legacy rows dedup against the same row with `id`/`host`, and the rows of every shard add up. Data root is a temp folder. | — |
 | `test_ledger_steprows.py` | A recorded build leaves a step-6 row, and the report prints the study's N and the global N. | — |
 | `test_ledger_tried.py` | L2: a sweep leaves one line per value, a rerun with another config joins the first, and N moves. | — |
 | `test_literature.py` | Literature scout: the anchors, the validator's refusals, the two dedupes, the build overlap, the queue's states and the measures the profile takes from the entries — on a synthetic paper and synthetic entries (nothing of AlgoData is read or written). | `python3 tests/test_literature.py` |

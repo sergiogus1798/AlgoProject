@@ -84,3 +84,6 @@ strategy_pools:
   worksqx: ~/Desktop/WorkSQX
   addons: ~/Desktop/AddonsSQX
   problem: ~/Desktop/StratsProblem
+
+# This machine's name in the ledger shards (ledger/shards.py): leaseWeb when absent, `gorilla` on the second server.
+# server: leaseWeb
