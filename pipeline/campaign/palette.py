@@ -35,7 +35,7 @@ def choose(cell: dict) -> tuple[str | None, str]:
         f"Al terminar, una línea «PALETA: {name}»."
     )
     try:
-        out = subprocess.run(
+        done = subprocess.run(
             [
                 str(CLAUDE_BIN),
                 "-p",
@@ -51,9 +51,14 @@ def choose(cell: dict) -> tuple[str | None, str]:
             capture_output=True,
             text=True,
             timeout=MINUTES * 60,
-        ).stdout
+        )
     except subprocess.TimeoutExpired:
         return None, f"el buildingBlocksExpert no contestó en {MINUTES} min"
+    out = done.stdout
+    if done.returncode:  # a usage limit or a crash is the session's, not the cell's: stop, do not set the cell aside
+        raise RuntimeError(
+            f"claude -p salió con {done.returncode}: {(out + done.stderr).strip()[-300:]}"
+        )
     if "PREGUNTA:" in out:
         return None, out[out.index("PREGUNTA:") :].splitlines()[0]
     if (

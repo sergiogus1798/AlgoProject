@@ -36,7 +36,7 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 | `perf/measure` | INFRA | 4 | 484 | Execution only. What gets measured is `perf/inputs/`; what the number means is `perf/verdict.py`. |
 | `pipeline` | INFRA | 1 | 141 | > 2026-10-13: the old chain (`run.py`, `stages/`, `verify/`, `stubs/`, `recipe.yaml`) was deleted — no production caller. What runs is `auto |
 | `pipeline/autopilot` | MIXED | 22 | 3607 | The window's «Correr workflow» (`ui/daemon/launch/chain.py`) already runs every SQX step and |
-| `pipeline/campaign` | INFRA | 7 | 891 | The campaign walks cells (template × asset × timeframe, long only, M30/H1/H4) and runs the whole workflow |
+| `pipeline/campaign` | INFRA | 7 | 907 | The campaign walks cells (template × asset × timeframe, long only, M30/H1/H4) and runs the whole workflow |
 | `pipeline/ledger` | INFRA | 2 | 162 | One `state.json` per mother strategy, at `AlgoData/pipeline/<project>/<strategy>/state.json`. |
 | `portfolio/common` | MIXED | 106 | 14007 | Strategies that survive the generation and robustness pipeline are individually plausible; this folder |
 | `portfolio/funded` | MIXED | 40 | 5370 | Strategies that survive the generation and robustness pipeline are individually plausible; this folder |
@@ -59,7 +59,7 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 | `studies/research` | MIXED | 84 | 10712 | The family that decides **what to investigate**, before any idea exists: which asset, timeframe, |
 | `studies/screening` | MIXED | 56 | 8176 | WORKFLOW steps 7–8. |
 | `studies/transfer` | CALC | 33 | 5045 | WORKFLOW steps 9–12. |
-| `tests` | INFRA | 367 | 62968 | A handful of tests, only where a silent break would go unnoticed for weeks: the parsers everything |
+| `tests` | INFRA | 368 | 63026 | A handful of tests, only where a silent break would go unnoticed for weeks: the parsers everything |
 | `tools` | INFRA | 18 | 3756 | `manual.py` renders the chapters to `docs/manual/NN-<family>.pdf` through headless Chrome, whose path lives in `config/machine.yaml`. The ow |
 | `ui/daemon` | MIXED | 192 | 26976 | FastAPI on loopback. Everything the window knows, it learns here; everything it changes, it changes |
 | `ui/desktop` | INFRA | 173 | 26836 | PySide6. Draws what the daemon says, and asks the daemon for every change. **No view here opens a |
@@ -98,7 +98,7 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 | `perf/measure` | core (7), perf/inputs (3) | 3 | `_prepare()` (2), `measure()` (2), `text()` (1), `repeat()` (1), `triad()` (1), `_tree_rss()` (1) |
 | `pipeline` | pipeline/ledger (6), perf/disk (2), core (1) | 0 | — |
 | `pipeline/autopilot` | core (100), ui/daemon (65), sqx/projects (39), sqx/variants (12), core/store (11), sqx/curate (10), core/study (6), mt5/verify (3) | 4 | `outcomes()` (11), `resolved()` (10), `reads()` (10), `settings()` (10), `flatten()` (7), `resolve()` (5), `from_folder()` (4), `builder_argv()` (4) |
-| `pipeline/campaign` | core (46), studies/optimisation (1) | 1 | `cells()` (2), `place()` (1), `steps()` (1), `_spent()` (1), `mark()` (1), `_stop_file()` (1), `loop()` (1), `following()` (1) |
+| `pipeline/campaign` | core (46), studies/optimisation (1) | 1 | `mark()` (2), `following()` (2), `cells()` (2), `place()` (1), `steps()` (1), `_spent()` (1), `_stop_file()` (1), `loop()` (1) |
 | `pipeline/ledger` | core (3) | 2 | `work_dir()` (7), `read()` (2), `now()` (1), `write()` (1) |
 | `portfolio/common` | core (100), core/study (88), portfolio/funded (31), core/archive (26), ledger (11), engines/resample (9), engines/regimes (7), sqx/inspect (6) | 9 | `load()` (41), `server_days()` (14), `table()` (14), `read()` (11), `admissible()` (9), `build()` (8), `rebuild()` (7), `low_equity()` (6) |
 | `portfolio/funded` | core (42), portfolio/common (16), core/study (13), mt5 (7), mt5/reconcile (6), mt5/verify (4), mt5/fleet (2), sqx/inspect (2) | 5 | `Plan` (15), `load()` (8), `simulate()` (7), `_stage_matrix()` (5), `run()` (4), `variants()` (3), `_sweep_kernel()` (3), `refuse()` (3) |
@@ -143,12 +143,12 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 - `sqx/projects` — uses 7, used by 13
 - `perf/inputs` — uses 15, used by 4
 - `studies/screening` — uses 10, used by 8
-- `engines/market` — uses 1, used by 16
 - `sqx/inspect` — uses 3, used by 14
-- `portfolio/funded` — uses 10, used by 5
+- `engines/market` — uses 1, used by 16
 - `pipeline/autopilot` — uses 11, used by 4
-- `mt5/verify` — uses 6, used by 7
+- `portfolio/funded` — uses 10, used by 5
 - `studies/transfer` — uses 8, used by 5
+- `mt5/verify` — uses 6, used by 7
 
 ### Function names defined in three or more modules
 
@@ -156,39 +156,39 @@ Class: CALC is a module of the computing folders (engines, studies, portfolio, l
 - `one()` — core/store, engines/nulls, mt5/verify, perf/disk, pipeline/autopilot, portfolio/common, sqx/projects, sqx/variants, studies/breakage, studies/data, studies/optimisation, studies/research, ui/daemon, ui/desktop
 - `measure()` — engines/market, engines/nulls, perf, perf/measure, portfolio/common, studies/breakage, studies/closing, studies/data, studies/optimisation, studies/readings, studies/research, studies/screening, studies/transfer
 - `trades()` — core, core/store, engines/nulls, mt5, mt5/fleet, mt5/reconcile, portfolio/funded, studies/breakage, studies/data, studies/optimisation, studies/readings, studies/research, studies/transfer
+- `label()` — core, engines/variants, mt5/fleet, mt5/verify, studies/closing, studies/optimisation, studies/readings, studies/screening, ui/daemon, ui/desktop, ui/text
 - `record()` — core/store, core/study, mt5/fleet, mt5/verify, portfolio/common, portfolio/funded, sqx/curate, sqx/export, sqx/projects, studies/optimisation, ui/daemon
+- `summary()` — ledger, pipeline/autopilot, portfolio/common, portfolio/funded, sqx/blocks, studies/breakage, studies/optimisation, studies/research, tools, ui/daemon, ui/desktop
+- `population()` — core/store, core/study, pipeline/autopilot, portfolio/common, sqx/projects, studies/breakage, studies/closing, studies/readings, studies/screening, studies/transfer, ui/daemon
 - `bars()` — core, core/study, engines/nulls, perf/inputs, sqx/projects, sqx/variants, studies/closing, studies/data, studies/research, studies/transfer, ui/daemon
 - `config()` — core, engines/nulls, mt5/verify, studies/closing, studies/data, studies/optimisation, studies/readings, studies/research, studies/screening, studies/transfer, ui/daemon
-- `population()` — core/store, core/study, pipeline/autopilot, portfolio/common, sqx/projects, studies/breakage, studies/closing, studies/readings, studies/screening, studies/transfer, ui/daemon
-- `summary()` — ledger, pipeline/autopilot, portfolio/common, portfolio/funded, sqx/blocks, studies/breakage, studies/optimisation, studies/research, tools, ui/daemon, ui/desktop
-- `label()` — core, engines/variants, mt5/fleet, mt5/verify, studies/closing, studies/optimisation, studies/readings, studies/screening, ui/daemon, ui/desktop, ui/text
-- `compare()` — mt5/fleet, mt5/newsfilter, perf, perf/disk, portfolio/common, studies/breakage, studies/research, studies/screening, ui/daemon
-- `curve()` — portfolio/common, portfolio/testroot, studies/breakage, studies/readings, studies/research, studies/screening, studies/transfer, ui/daemon, ui/desktop
-- `mark()` — core, pipeline/autopilot, pipeline/campaign, sqx/projects, sqx/variants, studies/data, studies/screening, ui/daemon, ui/desktop
-- `text()` — core, engines/market, mt5/newsfilter, perf/measure, studies/optimisation, studies/research, studies/screening, ui/daemon, ui/desktop
 - `grid()` — core/study, engines/nulls, portfolio/common, sqx/projects, studies/breakage, studies/closing, studies/optimisation, studies/research, ui/desktop
-- `path()` — core, ledger, mt5/fleet, mt5/verify, portfolio/common, sqx/blocks, studies/research, ui/daemon
-- `judge()` — perf/disk, pipeline/autopilot, portfolio/common, studies/optimisation, studies/readings, studies/research, studies/transfer, ui/daemon
-- `plan()` — mt5/fleet, portfolio/common, portfolio/funded, sqx/data, sqx/variants, studies/data, studies/transfer, ui/daemon
-- `check()` — core, core/store, mt5/verify, portfolio/common, studies/breakage, studies/research, tools, ui/daemon
-- `resolve()` — core, core/store, core/study, ledger, perf/inputs, pipeline/autopilot, sqx/blocks, ui/desktop
+- `curve()` — portfolio/common, portfolio/testroot, studies/breakage, studies/readings, studies/research, studies/screening, studies/transfer, ui/daemon, ui/desktop
+- `text()` — core, engines/market, mt5/newsfilter, perf/measure, studies/optimisation, studies/research, studies/screening, ui/daemon, ui/desktop
+- `mark()` — core, pipeline/autopilot, pipeline/campaign, sqx/projects, sqx/variants, studies/data, studies/screening, ui/daemon, ui/desktop
+- `compare()` — mt5/fleet, mt5/newsfilter, perf, perf/disk, portfolio/common, studies/breakage, studies/research, studies/screening, ui/daemon
 - `window()` — core, mt5, mt5/reconcile, pipeline/autopilot, sqx/projects, studies/closing, studies/optimisation, studies/screening
+- `check()` — core, core/store, mt5/verify, portfolio/common, studies/breakage, studies/research, tools, ui/daemon
+- `plan()` — mt5/fleet, portfolio/common, portfolio/funded, sqx/data, sqx/variants, studies/data, studies/transfer, ui/daemon
+- `path()` — core, ledger, mt5/fleet, mt5/verify, portfolio/common, sqx/blocks, studies/research, ui/daemon
 - `panel()` — engines/variants, portfolio/common, sqx/variants, studies/closing, studies/optimisation, studies/screening, studies/transfer, ui/desktop
 - `daily()` — engines/regimes, engines/variants, mt5/verify, sqx/variants, studies/closing, studies/optimisation, studies/research, ui/daemon
+- `resolve()` — core, core/store, core/study, ledger, perf/inputs, pipeline/autopilot, sqx/blocks, ui/desktop
+- `judge()` — perf/disk, pipeline/autopilot, portfolio/common, studies/optimisation, studies/readings, studies/research, studies/transfer, ui/daemon
 - `named()` — core/store, mt5/fleet, mt5/verify, portfolio/funded, studies/breakage, studies/research, ui/daemon
-- `export()` — mt5/newsfilter, perf/inputs, pipeline/autopilot, studies/breakage, studies/optimisation, studies/screening, ui/daemon
 - `key()` — engines/variants, ledger, pipeline/campaign, studies/optimisation, ui/daemon, ui/desktop, ui/text
-- `_table()` — core, core/archive, core/study, pipeline/campaign, portfolio/funded, studies/breakage, ui/desktop
+- `verdict()` — core/study, portfolio/common, sqx/inspect, studies/breakage, studies/optimisation, studies/screening, ui/daemon
+- `export()` — mt5/newsfilter, perf/inputs, pipeline/autopilot, studies/breakage, studies/optimisation, studies/screening, ui/daemon
 - `describe()` — core, ledger, sqx/projects, studies/breakage, studies/research, tools, ui/desktop
 - `names()` — core/store, mt5/fleet, mt5/verify, pipeline/autopilot, studies/closing, studies/readings, ui/daemon
+- `call()` — core, mt5/newsfilter, sqx/projects, studies/closing, studies/readings, ui/daemon, ui/desktop
+- `runs()` — engines/nulls, portfolio/common, portfolio/funded, studies/research, studies/transfer, ui/daemon, ui/desktop
+- `_table()` — core, core/archive, core/study, pipeline/campaign, portfolio/funded, studies/breakage, ui/desktop
+- `tab()` — core/study, mt5/verify, portfolio/common, studies/breakage, studies/optimisation, studies/screening, ui/daemon
 - `facts()` — portfolio/funded, studies/breakage, studies/data, studies/optimisation, studies/screening, tools, ui/daemon
 - `sweep()` — ledger, perf/measure, pipeline, portfolio/funded, studies/research, studies/screening, tools
-- `verdict()` — core/study, portfolio/common, sqx/inspect, studies/breakage, studies/optimisation, studies/screening, ui/daemon
-- `runs()` — engines/nulls, portfolio/common, portfolio/funded, studies/research, studies/transfer, ui/daemon, ui/desktop
-- `tab()` — core/study, mt5/verify, portfolio/common, studies/breakage, studies/optimisation, studies/screening, ui/daemon
-- `call()` — core, mt5/newsfilter, sqx/projects, studies/closing, studies/readings, ui/daemon, ui/desktop
 - `save()` — core/study, pipeline/autopilot, sqx/blocks, sqx/data, studies/research, ui/daemon
 - `step()` — core/store, engines/nulls, studies/optimisation, studies/research, ui/daemon, ui/desktop
-- `draw()` — engines/nulls, portfolio/funded, sqx/variants, studies/optimisation, studies/research, ui/desktop
-- `metrics()` — core, core/store, sqx/curate, studies/optimisation, studies/screening, ui/daemon
-- `fingerprint()` — core, core/study, portfolio/testroot, studies/screening, tools, ui/daemon
+- `note()` — core, core/study, ledger, pipeline/ledger, sqx/projects, ui/desktop
+- `cell()` — core/study, mt5/fleet, studies/optimisation, studies/research, ui/daemon, ui/desktop
+- `row()` — .claude/skills, core, studies/readings, studies/research, ui/daemon, ui/desktop

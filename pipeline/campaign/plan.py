@@ -136,7 +136,18 @@ def queue(n: int) -> list[dict]:
         ),
         encoding="utf-8",
     )
-    return [ledger.mark(row, "pending", batch=batch, **row) for row in rows[:n]]
+    cfg = yaml.safe_load((HERE / "config.yaml").read_text(encoding="utf-8"))
+    # `ledger.cells()` merges every line of a key: a test queued earlier on this key would leave
+    # `test`, its short build and `precision` on the real cell, so they are overwritten here.
+    real = {
+        "test": False,
+        "precision": None,
+        "strategies": cfg["strategies"],
+        "minutes": cfg["minutes"],
+    }
+    return [
+        ledger.mark(row, "pending", batch=batch, **{**row, **real}) for row in rows[:n]
+    ]
 
 
 def test(template: str, symbol: str, timeframe: str) -> dict[str, Any]:
