@@ -51,7 +51,7 @@ def _run(monkeypatch: pytest.MonkeyPatch, grid: bool) -> dict:
     rd = (lambda x: np.round(x / 0.25) * 0.25) if grid else (lambda x: x)
     trades["Close price"] = leave
     trades["Profit/Loss"] = rd(leave) - rd(enter)
-    return rounding.measure("X", trades)
+    return rounding.measure("X", trades, "build")
 
 
 def test_tick_grid_fills_choose_tick(monkeypatch: pytest.MonkeyPatch) -> None:

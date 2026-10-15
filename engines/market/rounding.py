@@ -11,14 +11,12 @@ from engines.weekly import panel
 from core import barstore
 from ledger import thresholds
 
-SEGMENT = {"OOS1": "oos1", "OOS2": "oos2"}  # export `Sample type` -> the card's segment
-
 
 def measure(
     symbol: str,
     trades: pd.DataFrame,
+    segment: str,
     timeframe: str = "M1",
-    segment: str | None = None,
 ) -> dict[str, Any]:
     """Which rounding reprices these trades closest to SQX's own NetProfit.
 
@@ -29,7 +27,10 @@ def measure(
             price`, `Close price`, `Size`, `Close type`, `Profit/Loss`. One segment's trades.
         timeframe: The strategies' timeframe; M1 bars hold every stamp whatever it is, but a
             stop exit is checked against its bar's range, so a coarser one is wider.
-        segment: "build", "oos1" or "oos2" (the costs); None reads the export's `Sample type`.
+        segment: "build", "oos1" or "oos2": the cost profile the SQX task ran with. Not read
+            from the export: its `Sample type` says IST for any task without an OOS split, and
+            one task charges one profile over its whole window (a family retest spans
+            2008-2023 on oos1 costs) — the build costs on those trades put every strategy off.
 
     Returns:
         {"tick": off-share rounding to the tick, "none": off-share unrounded, "n": strategies,
@@ -38,7 +39,6 @@ def measure(
         wfc.sqx_gap_relative x |NetProfit|).
     """
     feed = assetdata.load(symbol)["sqx_symbol"]
-    seg = segment or SEGMENT.get(str(trades["Sample type"].iloc[0]).upper(), "build")
     got = trades.assign(variant_id=trades["strategy"].astype(str))
     net = cast(pd.Series, got.groupby("variant_id")["Profit/Loss"].sum())
     bars = barstore.read(feed, timeframe)
@@ -52,7 +52,7 @@ def measure(
         per = panel.per_trade(
             got,
             bars,
-            reprice.costs(feed, seg, rounds),
+            reprice.costs(feed, segment, rounds),
             span,
             {"window": "year", "variant": "a"},
             feed,
@@ -66,7 +66,7 @@ def measure(
     return share | {
         "n": len(net),
         "use": use,
-        "why": f"{date.today()}, {symbol} {seg}, n={len(net)}: off-share tick {share['tick']:.1%}, "
+        "why": f"{date.today()}, {symbol} {segment}, n={len(net)}: off-share tick {share['tick']:.1%}, "
         f"none {share['none']:.1%}"
         + (f" -> {use}" if use else " -> indistinguishable"),
     }
