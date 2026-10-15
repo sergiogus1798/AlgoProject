@@ -8,6 +8,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from core.paths import feed_quality_dir  # noqa: E402
+from live_only import only_here  # noqa: E402
 from engines.market.feed import scale, session  # noqa: E402
 from studies.data.feedQuality import (
     alarm,
@@ -151,6 +153,10 @@ def the_rest() -> None:
     assert summary.stability(yearly, CFG)[0] == 2012  # 29 passes the floor of 30
 
 
+@only_here(
+    feed_quality_dir() / "calibration.json",
+    "planta eventos en el feed de oro con la calibración medida aquí; gorilla no la tiene",
+)
 def injection() -> None:
     """The owner's grid (2.16), a fifth of its counts, planted in a copy of the gold feed."""
     inject.CFG.update(CFG)

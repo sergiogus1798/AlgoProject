@@ -34,21 +34,24 @@ Which rules, and of which firm. Each line says where the owner's answer is writt
   §6.4). **Prices are list prices, discounts ignored** (owner, 2026-09-29; encargo 33 §6.6).
   **USD accounts only** (§6.5). **Cash budget 1,000 € in total** (§3.5).
 
+**Settled by the owner — 2026-10-14 (encargo 54, B; the values are in the two `config.yaml` with their citation):**
+`owner.eurusd` 1.12 · `payout_cushion` 0 · `payout_fee` 0.02 · `p_firm_closes_year` 0.05 ·
+`gaps.hantec_fee_refund` false · `hantec_endurance_payout_days` 14 (first payout; the later ones only per third
+parties) · `hantec_express_floor_after_payout` initial · `ftmo_1step_floor_after_payout` stays (ambiguous) ·
+`funded.open_risk_cap` 0.5 · `verdict.pass_percentile` 95 (`ledger:portfolio.funded.verdict_percentile`).
+FTMO 2-step refunds the fee with the first payout (`rules/ftmo.yaml`, confirmed).
+
 **Still open in #6 (the owner's calls; nothing here is guessed):**
 
-- The gaps the catalogue lacks and the Terms do not settle (encargo 33 §2, `knowhow/costs/funded-stage-catalogue-gaps.md`):
-  Hantec fee refund (`gaps.hantec_fee_refund`), Hantec Endurance days between payouts, what a payout does
-  to the trailing floor of a funded Hantec Express and of the FTMO 1-step (`gaps.*`, all `null`, the
-  bank simulation refuses without them), FTMO 2-step fee refund per account (modelled as no refund by
-  the Council, 2026-10-04, unconfirmed), whether Hantec's «Profit Target −2 %» lowers every phase
-  (Council: phase 1 only), Hantec's prohibited-strategies article.
+- `owner.tax_rate` (the tax type, 54-11) and `owner.p_payout_denied` (he said «5 % al año»; the model reads it per
+  payout request — which one?), `stageb.t1_gap`: all `null`, the bank simulation refuses without the first two.
+- Hantec's «Profit Target −2 %» (Council: phase 1 only; Hantec's article does not say), Hantec's prohibited-strategies
+  article (read, nothing new).
 - From encargo 33 §2: the target of phases 2 and 3, the base profit share of the challenges, the exact
   consistency formula, the daily-loss basis as the Terms word it, minimum payout, open-risk limit,
   leverage and scaling plan — no owner answer is recorded for them in the brief, the READMEs or
   `OPEN.md` #85.
-- Candidate firms (FundedNext, FundingPips) wait on the owner's admission calls (`OPEN.md` #85).
-- `funded.open_risk_cap` (R5 above) and the payout cushion, tax rate, payout fee, denied-payout and
-  firm-closure probabilities (`owner.*`, `null`) are his and unanswered.
+- Candidate firms: FundedNext (accounts under 25k only) and FundingPips are admitted; they enter by `/firm-onboard`.
 
 ## Settled by the owner — 2026-10-11 (the per-trade stop: the p90 leaves; a criterion written before looking decides the far stop)
 

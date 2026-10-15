@@ -2,7 +2,6 @@
 """«Reloj parado»: the funded search's stage A moves when the step-24 stop in the .sqx moves."""
 
 import itertools
-import os
 import sys
 import tempfile
 import zipfile
@@ -16,7 +15,7 @@ import pandas as pd
 import portfolio.common.construct.funded as funded
 import portfolio.common.construct.inputs.risk as risk
 from portfolio.common.construct.equity import universe
-from portfolio.common.construct.inputs import config
+from portfolio.common.construct.inputs import config, pool
 from portfolio.common.construct.search import stagea, stagea_data
 from portfolio.funded.rules import catalog
 from sqx.variants.build import rewrite, stoploss
@@ -226,12 +225,12 @@ def test_real_pool() -> None:
 def main() -> None:
     """The synthetic case always; the archived pool only under the portfolio test root."""
     test_synthetic()
-    if os.environ.get("ALGO_DATA_ROOT"):
+    if (pool.ROOT / "pools" / f"{POOL}.csv").exists():
         test_real_pool()
     else:
         print(
-            "OMITIDA la parte real: sólo corre con ALGO_DATA_ROOT en la raíz de prueba "
-            "(portfolio/testroot), donde está el pool Test_nikkei_ref"
+            "OMITIDA la parte real: sólo corre donde está el pool (la raíz de prueba "
+            "de portfolio/testroot lo lleva: Test_nikkei_ref)"
         )
     print(f"\n{'TODO OK' if not FAILURES else 'FALLOS: ' + ', '.join(FAILURES)}")
     sys.exit(1 if FAILURES else 0)

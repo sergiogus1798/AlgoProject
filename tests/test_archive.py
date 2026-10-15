@@ -10,6 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import live_only  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from core import sqxfile  # noqa: E402
@@ -51,6 +52,11 @@ loaded = sorted(m for m in sys.modules if m.split(".")[0] in ("studies", "ui"))
 assert not loaded, loaded
 print("child ok:", sum(len(v) for v in got["results"].values()), "results, no studies.*, no ui.*")
 """
+
+
+live_only.require(
+    SQX, "archiva y compara con el proyecto vivo Test_USDJPY de esta máquina"
+)
 
 
 def same(a: object, b: object) -> bool:

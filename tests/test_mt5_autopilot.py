@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core import assetdata, sqxfile  # noqa: E402
 from core.paths import DATA  # noqa: E402
+from live_only import require  # noqa: E402
 from mt5.verify import autopilot, firms, pool  # noqa: E402
 from ui.daemon.mt5bridge import runs  # noqa: E402
 
@@ -25,6 +26,10 @@ REAL = {
     "Strategy 10.9.72": "20260930-142145_Strategy_10_9_72",
 }  # FTMO pass, Hantec fail
 REAL_RUNS = pool.RUNS
+require(
+    MOTHERS,
+    "describe las madres reales de un proyecto y copia sus verificaciones de MT5; gorilla no las tiene",
+)
 PARAMS = {
     "start": "2022-06-01",
     "end": "2026-09-24",

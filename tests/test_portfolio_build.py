@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Known-answer test of the universe builder (M1): one archived strategy, temp pool and cache root."""
+"""Known-answer test of the universe builder (M1): one planted archived strategy, temp pool and cache root."""
 
 import resource
 import sys
@@ -8,6 +8,10 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import archive_planted  # noqa: E402
+
+PLANTED = archive_planted.plant()  # before anything imports core.paths
 
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
@@ -18,8 +22,7 @@ from portfolio.common.construct import universe as command  # noqa: E402
 from portfolio.common.construct.equity import blocks, matrix, universe  # noqa: E402
 from portfolio.common.construct.inputs import config, source  # noqa: E402
 
-IDENTITY = "11278e59164e5e493095627093928bb1d8898afe6e0c2b51d0b07c8d39f00730"
-VERSION = "2026-10-06T2148"
+IDENTITY, VERSION = PLANTED["identity"], PLANTED["version"]
 FAILURES = []
 
 

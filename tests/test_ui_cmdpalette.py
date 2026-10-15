@@ -10,6 +10,11 @@ from types import SimpleNamespace
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import harvest_planted  # noqa: E402
+
+harvest_planted.plant()  # before core.paths: the harvest below is planted, not the machine's
 
 from fastapi.testclient import TestClient  # noqa: E402
 from PySide6.QtCore import QSettings, Qt  # noqa: E402
@@ -28,7 +33,7 @@ from ui.desktop.selection import SELECTION  # noqa: E402
 from ui.desktop.shell import Shell  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
 
-PROJECT, DATABANK = "Test_USDJPY_donchianUpperCrossUp_M30", "Results"
+PROJECT, DATABANK = harvest_planted.PROJECT, "Results"
 # The strategy is read off the newest export rather than pinned by name: a nightly workflow
 # re-run gives this project a fresh population under new names (📓 2026-09-30, T1/R UI feedback
 # pass — a hardcoded "Strategy 1.15.54" no longer existed and made this test fail on unrelated

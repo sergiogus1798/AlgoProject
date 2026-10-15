@@ -31,6 +31,7 @@ SLOW: dict[str, int] = {
 # Set aside, never silently: path -> (reason, date). The audit prints this list as "apartadas" and
 # says when one passes again, so the entry is removed. Not a failure while listed.
 ASIDE: dict[str, tuple[str, str]] = {}
+MACHINE_MARK = "APARTADA EN ESTA MÁQUINA"  # printed by tests/live_only.py
 
 
 def run_one(path: str) -> tuple[str, int, float, str]:
@@ -49,7 +50,9 @@ def run_one(path: str) -> tuple[str, int, float, str]:
     text = (ROOT / path).read_text(encoding="utf-8")
     pytest_style = "__main__" not in text and "def test_" in text
     command = (
-        ["python3", "-m", "pytest", "-q", path] if pytest_style else ["python3", path]
+        ["python3", "-m", "pytest", "-q", "-rs", path]
+        if pytest_style
+        else ["python3", path]
     )
     env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
     cap = SLOW.get(path, TIMEOUT)
@@ -59,6 +62,10 @@ def run_one(path: str) -> tuple[str, int, float, str]:
             command, cwd=ROOT, env=env, capture_output=True, text=True, timeout=cap
         )
         code, out = p.returncode, p.stdout + p.stderr
+        if (
+            code == 5 and MACHINE_MARK in out
+        ):  # every test skipped by live_only: pytest's «nothing ran»
+            code = 0
     except subprocess.TimeoutExpired:
         code, out = 124, f"timed out after {cap} s"
     return (
@@ -85,6 +92,18 @@ def run_all(
     start = time.time()
     with ThreadPoolExecutor(WORKERS) as pool:
         return list(pool.map(run_one, paths)), time.time() - start
+
+
+def machine_only(results: list[tuple[str, int, float, str]]) -> list[str]:
+    """Report lines for the tests that set themselves aside (tests/live_only.py) for lack of live data."""
+    live = [r for r in results if not r[1] and MACHINE_MARK in r[3]]
+    if not live:
+        return []
+    lines = ["", "## apartadas en esta máquina (sin sus datos vivos)", ""]
+    return lines + [
+        f"- `{r[0]}`: {r[3].split(MACHINE_MARK + ': ')[-1].splitlines()[0]}"
+        for r in live
+    ]
 
 
 def report(
@@ -131,6 +150,7 @@ def report(
         detail.append(f"| `{path}` | {now} | {since} | {reason} |")
     gone = sorted(p for p in ASIDE if not (ROOT / p).exists())
     detail += [f"| `{p}` | file gone: remove it from ASIDE | | |" for p in gone]
+    detail += machine_only(results)
     slow = sorted(results, key=lambda r: -r[2])[:3]
     detail += ["", "slowest: " + ", ".join(f"`{r[0]}` {r[2]:.0f} s" for r in slow)]
     return lines + detail, len(failed)

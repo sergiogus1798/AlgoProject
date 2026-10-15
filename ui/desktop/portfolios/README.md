@@ -32,6 +32,7 @@ zone (PortfoliosZone) ─▶ /api/archive/list · /api/archive/show ─▶ detai
 | `imported.py` | The Estrategia page of an archived version: F4's ficha, every read on `source=archive`, nothing run. | imported | a version → the page |
 | `matrix.py` | The correlation matrix: one cell per pair, coloured in discrete steps against the threshold in force. | imported | a matrix dict → widget |
 | `modulepage.py` | One rail module of PORTFOLIOS: its settings strip with «Calcular», and below it the result's tabs. | imported | `/api/portfolios/module` → widgets |
+| `ownerinputs.py` | «Entradas del dueño»: the inputs the funding modules refuse without, typed and saved one by one. | opened by `modulepage.py` | `/api/portfolios/owner` → rows |
 | `preview.py` | PORTFOLIOS alone in a window, «Importar» opening the archived ficha beside it — until the sidebar wires it. | `python3 -m ui.desktop.portfolios.preview [--shot DIR] [--identity I] [--version V] [--port N]` | daemon → window / PNGs |
 | `series.py` | The bar that walks a saved workflow's strategies one by one: «anterior», where you are, «siguiente». | imported | index → `step(i)` |
 | `strips.py` | What each rail module of PORTFOLIOS puts in its settings strip: one line of what it is, selectors, launchers. | imported | — |

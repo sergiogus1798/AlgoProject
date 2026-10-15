@@ -1,7 +1,6 @@
 """«Continuar workflow» on a scratch install: its refusals, and the order of what it sends SQX."""
 
 import os
-import shutil
 import socket
 import sys
 import tempfile
@@ -17,7 +16,7 @@ from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from core import sqxfile, worker  # noqa: E402
-from core.paths import DATA  # noqa: E402
+import sqx_synthetic  # noqa: E402
 from ledger import record  # noqa: E402
 from sqx.curate import apply_verdict  # noqa: E402
 from sqx.projects import registry, stage  # noqa: E402
@@ -25,15 +24,6 @@ from ui.daemon import progress, workerguard  # noqa: E402
 from ui.daemon.advance import api, preflight, run, sqxlog  # noqa: E402
 from ui.daemon.filters import discards, ledgerrow  # noqa: E402
 
-# Three real strategies, copied into the scratch databank; nothing under an install is read.
-SAMPLE = (
-    DATA
-    / "raw"
-    / "Test_USDJPY_donchianUpperCrossUp_M30"
-    / "SPP_IS"
-    / "2026-09-27"
-    / "strategies"
-)
 P, OTHER = "Test_UiFake", "Test_Otro"
 TASKS = [
     ("CONSTRUCCION", "Build", "", "Results"),
@@ -87,8 +77,9 @@ def tree(
     source = top / "user/projects" / P / "databanks" / "Results"
     source.mkdir(parents=True)
     (master / "user/projects").mkdir(parents=True, exist_ok=True)
-    for f in sorted(SAMPLE.glob("*.sqx")):
-        shutil.copy2(f, source / f.name)
+    sqx_synthetic.databank(
+        source
+    )  # three synthetic strategies; nothing under an install is read
     cfx(source.parents[1] / "project.cfx")
     (top / "user/projects" / OTHER).mkdir()
     cfx(top / "user/projects" / OTHER / "project.cfx")

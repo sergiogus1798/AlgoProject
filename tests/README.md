@@ -9,7 +9,13 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 
 | file | what it protects | run it |
 |---|---|---|
+| `archive_planted.py` | A one-strategy archive version planted in a temporary data root: shared by the portfolio tests, not a test itself. | — |
+| `funding_planted.py` | A prop-firm catalogue planted in a temporary data root: shared by the funded tests, not a test itself. | — |
+| `harvest_planted.py` | A project's harvests, exports, reports and variant batch planted in a temporary data root: shared by the `test_ui_*` and `test_identity` tests, not a test itself. | — |
+| `live_only.py` | For a test that exists to check THIS machine's live data (its harvest, its archive): not a test itself. | — |
 | `portfolio_planted.py` | A synthetic pool whose right portfolio is known: shared by the M3/M4 tests, not a test itself. | — |
+| `reports_planted.py` | The stored reports of the planted project (IS/OOS, cross-market with a partial re-run, gate on two days): part of `harvest_planted`, not a test itself. Contract results with the keys `core.study.blocks` asks of a report. | — |
+| `sqx_synthetic.py` | Tiny synthetic .sqx strategies for the tests that only move files about: not a test itself. | — |
 | `test_advance.py` | «Continuar workflow» on a scratch install: its refusals, and the order of what it sends SQX. | — |
 | `test_advance_edges.py` | «Continuar workflow» when things go wrong: every failure stops the worker it started. | — |
 | `test_advance_nexttask.py` | «Continuar workflow» switches on every task of the next step that reads the cut, or what one of them writes (📓 2026-09-30: after a cut on CrossTF only «MCR 1 Bar» ever ran). | — |
@@ -86,6 +92,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_draws_readings.py` | The monkey's recorded distributions reproduce its own p: (n_ge or n_le, + 1) / (n + 1). | `python3 -m pytest tests/test_draws_readings.py` |
 | `test_draws_transfer.py` | Known-answer test of crossmarket/travel's recorded distributions (encargo: draws behind every z): on the rules test's toy tensor, each raw row reproduces the study's own z (or p) from its observed value and its draws, and the per-market rows keep only the histogram. | `python3 -m pytest tests/test_draws_transfer.py` |
 | `test_edgecost.py` | edgeCost on trades built by hand: oos1 only, the common repricer's cost as the denominator. | — |
+| `test_entry_delay_replay.py` | entryQuality delay of a stop: tier 2 replays the trade, and a stop outside a harvest is refused. | — |
 | `test_entry_location.py` | entryQuality puts an entry filled inside a bar on the bar that contains it. | — |
 | `test_excess_nan.py` | NaN p-values are left out of the family's n, and counted apart (encargo 68 D22). | — |
 | `test_exits.py` | `sqx.projects.orders.exits_set`: a portfolio with an exit method set vs one that exits by condition only. | `python3 tests/test_exits.py` |
@@ -101,12 +108,15 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_fleet_collect.py` | The collector on known answers: a beat's history row, skipping an unchanged beat, the floating min and max per ticket. | — |
 | `test_fleet_equity.py` | MetaTracker's per-strategy equity series: cumulative net, drawdown in % of size, and the combined sum. | — |
 | `test_fleet_floors.py` | MetaTracker on known answers: each firm's day start, the two floors, what makes a figure approximate, each light. | — |
+| `test_fleet_magics.py` | The fleet's magic registry: sequential from 1001, stable per combination, never reused. | — |
+| `test_fleet_package.py` | The deployment package's pure parts: the file name that ties an EA to a firm and size, and the chart with its magic. | — |
 | `test_fleet_progress.py` | MetaTracker's stage progress on the firm's clock, the payout, the EA comparison, the strategy record and the cross-account pairing. | — |
 | `test_fleet_risk_rules.py` | MetaTracker's stop risk, weekend and news rules at their edges, the hours[] floors, the reasons' order, and the fixture's three lights. | — |
 | `test_funded_bank.py` | Known-answer tests for the bank run: the budget is a hard stop, the measures, the catalogue's terms, the table, the ledger row, the refusal. | — |
 | `test_funded_bank_run.py` | Known-answer tests for the bank run: the whole run on a synthetic path set, the ledger row, the refusal. | — |
 | `test_funded_decide.py` | Known-answer tests for the funding decision: the bank's EV by hand on a one-phase plan, the zero-edge option, the gates of the choice, the deal's ΔEV, the command. | — |
 | `test_funded_live.py` | Known-answer tests of the live protocol: SPRT boundaries and crossings, and stage A's rows. | `python3 -m pytest tests/test_funded_live.py -q` |
+| `test_funded_ownerinputs.py` | The «Entradas del dueño» writer: a typed value reaches the local layer and the loaders, a blank one goes back, comments survive. | — |
 | `test_funded_price.py` | Encargo 33 §7.1: the catalogue's price is Hantec's JS formula, and it is the fee the bank simulation charges. | — |
 | `test_funded_rules.py` | Known-answer tests for portfolio.funded.rules: one tick breaks each floor, its twin only touches it. | — |
 | `test_funded_sim.py` | Known-answer tests for portfolio.funded.sim: one account's cash to the cent, barrier odds, the haircut, kernel == reference. | — |
@@ -156,7 +166,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_montecarlo_oos.py` | Family E reads the out-of-sample trades alone (owner, 2026-09-29): a strategy whose IS is great and whose OOS is flat must get the flat OOS reading, never the IS-inflated one that mixing both sides in `core.significance.footprint()`/`psr()` used to produce. | `python3 tests/test_montecarlo_oos.py` |
 | `test_mothertrades.py` | sqx.variants.mothertrades: each batch gets its own mother's trades, tagged with her id and leg. | — |
 | `test_mt5_autopilot.py` | Step 26 as an autopilot action: every refusal of the preflight, and the loop over a stubbed job. | — |
-| `test_mt5_pool.py` | The validated pool's register on the real checks on disk: rebuilt rows, latest verdict wins, append-only. | — |
+| `test_mt5_pool.py` | The validated pool's register on the real checks on disk: rebuilt rows, first verdict per check wins, append-only. | — |
 | `test_mt5_reconcile.py` | weeklyReconciler on known answers: the week's bounds, deals into trades, pairing, each gap, MAE from M1, an empty week. | — |
 | `test_mt5_server_exit.py` | A helper's SystemExit must reach FastMCP as an Exception, not kill the stdio server. | — |
 | `test_mt5_sidebyside.py` | MT5 Bridge › Verificar's side-by-side trades (owner, 2026-09-30: paired by entry time): one row per SQX entry in the feed's clock, three columns per firm, and a firm's light off drops exactly its three. | `python3 tests/test_mt5_sidebyside.py` |
@@ -200,7 +210,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_perf66_fakesqx.py` | Encargo 66, `live.sync` and `live.cut` over real HTTP against a fake SQX servlet on a free port. | — |
 | `test_perf66_files.py` | Encargo 66, files no longer written (owner, 2026-10-13): the per-strategy page and the 18.5 detail. | — |
 | `test_perf66_footprint.py` | Encargo 66 §3.4e: the footprint priced in blocks gives the daily series it gave — the oracle below is the code replaced. | — |
-| `test_perf66_fp.py` | Encargo 66 §2 and §3.1: the false-positive control does the same maths in a fraction of the work. The oracle is the control as it was (every pass alone, every rung, nothing cached): the shared passes give its facts bit for bit, except the three rung columns nobody judges, which are empty; the funnel and the rules, which are what the owner reads, do not move; the answer does not depend on the number of workers; level 3c's real-gate rows keep the histogram and drop the raw draws. | — |
+| `test_perf66_fp.py` | Encargo 66 §2 and §3.1: the false-positive control does the same maths in a fraction of the work. The oracle is the control as it was (every pass alone, every rung, nothing cached): the shared passes give its facts bit for bit, except the three rung columns nobody judges, which are empty; the funnel and the rules, which are what the owner reads, do not move; the answer does not depend on the number of workers; level 3c's real-gate rows keep the histogram and the raw draws (owner, 2026-10-14: they are a distribution). | — |
 | `test_perf66_harvest.py` | Encargo 66 store loop: harvesting the days outside the loop, aliases once and the deferred distributions fold into a save. | — |
 | `test_perf66_kernel.py` | Encargo 66 §3.2 and §3.9: the gate's monkey read off a priced table with PCG64 in the kernel gives the draws and the numbers of the code it replaced, bit for bit, and leaves the generator where numpy would. | — |
 | `test_perf66_ladder.py` | Encargo 66 §3.3, §3.5, §3.6: the ladder without `argsort` and on threads gives the bits it gave. | — |
@@ -232,7 +242,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_perf66_wfc_blocks.py` | 3.9d: the wfc null read in blocks of draws equals the whole-matrix reading and holds a fraction of its memory. | — |
 | `test_perf66_width.py` | Encargo 66, piece B4: studies that ran in series inside their process, wide, with the same numbers. | — |
 | `test_pooledprofile.py` | Known-answer tests of the pooled profile, and the proof that it never reads past `build`. | `python3 tests/test_pooledprofile.py` |
-| `test_portfolio_build.py` | Known-answer test of the universe builder (M1): one archived strategy, temp pool and cache root. | — |
+| `test_portfolio_build.py` | Known-answer test of the universe builder (M1): one planted archived strategy, temp pool and cache root. | — |
 | `test_portfolio_fixes.py` | Known-answer regressions of the portfolio/ calculation review (scratch/cleanup/calc-portfolio.md, findings 1-6). | — |
 | `test_portfolio_fixes_latent.py` | Known-answer regressions of CALC_REVIEW.md m33-m36: time limit in path days, months cut by day, the re-drawn winner, guarded ratios. | — |
 | `test_portfolio_golden_current.py` | Golden of the M1 rebuild on the CURRENT feed: one USDJPY_M1 strategy against SQX's daily curve. | — |
@@ -267,6 +277,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_ratchet.py` | Known-answer test for tools/ratchet.py: each counter on a small source snippet. | — |
 | `test_readmetable.py` | tools/readmetable.render on a temp folder: a stale row, a missing row and a gone row, hand columns kept. | `python3 tests/test_readmetable.py` |
 | `test_registry_names.py` | `registry.check_name` and `registry.kind`: the three allowed prefixes and what is refused. | — |
+| `test_replay.py` | engines.market.replay: the stop walk on bars built by hand, and the delay-0 replay against SQX's stop harvests. | — |
 | `test_reprice.py` | The common repricer against SQX's own P/L on audited trades, and against cases worked out by hand. | `python3 tests/test_reprice.py` |
 | `test_research_board.py` | Research board: the gate, the four factors, the hole rules, the proposal's refusals (sheet, review and previous failures included) and the profile's self-examination, on synthetic tables (no AlgoData). | `python3 tests/test_research_board.py` |
 | `test_research_board_own_ideas.py` | The proposal's stamp does not count the proposal's own ideas as spent (OPEN #101). | `python3 -m pytest tests/test_research_board_own_ideas.py` |
@@ -277,6 +288,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_run_record.py` | Known-answer test for OPEN.md #80: crossTF must read an old run's own record (blocks.json, ran.json) rather than today's assets/_build.yaml, and fall back only when it is missing. | — |
 | `test_scale_lengths.py` | Cross TF scaling (owner, 2026-10-02: «arregla el escalado»): every bar-length parameter moves with the timeframe — what SQX types `ParamTypePeriod`, the custom-block lengths `lengths.yaml` rules, the exit after bars — and nothing else does: levels, multipliers, shifts, selectors. | `python3 tests/test_scale_lengths.py` |
 | `test_scale_ranges.py` | Cross TF coefficients (encargo 47 part F, owner 2026-10-07): a coefficient that multiplies a per-bar measure is divided by the measured ATR ratio c; one over a window, a level and a ratio stay; one nobody ruled flags the sibling. | `python3 tests/test_scale_ranges.py` |
+| `test_seasonality.py` | seasonality on synthetic trades: an hour that carries the result is found after BH; spread trades find nothing. | — |
 | `test_session_from_db.py` | Known-answer test: a session no project defines is built from SQX's Data Manager database. | `python3 tests/test_session_from_db.py` |
 | `test_significance.py` | core.significance's benchmark argument (OPEN.md #71): psr() and min_track_record() must read a non-zero benchmark as the harder bar it is, and agree with each other at benchmark=0. Also footprint() itself (fixed 2026-09-29): the version this replaced gave the random trader no market noise, only the dispersion of holding time, and scored it a Sharpe near the market's own (~+2 on USDJPY) instead of near zero. | `python3 tests/test_significance.py` |
 | `test_snippets_install.py` | `install.pending` names a snippet whose class is missing or older than its source: SQX keeps the old class when a compile fails. | |
@@ -287,6 +299,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_spp_origin.py` | Known-answer test for OPEN.md #79: theta-zero's own level, sampled by no other tuple, must not read as the marginal profile's argmax. | — |
 | `test_spp_sharpe.py` | Known-answer test: the SPP `combinado` Sharpe is on weekdays, as SQX's and `annual_sharpe` are. | — |
 | `test_spread.py` | The tick-file reader on a file written by hand, and a trade repriced at a spread worked out by hand. | — |
+| `test_spread_method.py` | The funded-firms spread method on toy ticks and a toy card. | — |
 | `test_sqx_bridge.py` | `core.worker` and `sqx.variants.execute` waiting for and talking to SQX, on fakes: no HTTP, no install. | — |
 | `test_sqx_live.py` | `sqx.projects.live` and `livexec` waiting for a GUI-mode run, on fakes: no HTTP, no install. | — |
 | `test_sqx_problems.py` | core.sqxfile.strategy_problems decodes SQX's «Strategy Problems» bitmask on a real strategy (value 8). | `python3 tests/test_sqx_problems.py` |
@@ -323,12 +336,12 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_ui_portfolios.py` | Known-answer test of the PORTFOLIOS zone's daemon: known folders → the JSON the window paints, and the launchers' plumbing. | — |
 | `test_ui_research.py` | «Investigar»: its routes on a local app, the queue with fake steps, the preflight's refusals and the four views offscreen. No worker, no Claude, no SQX: every step that would reach one is a fake, and the proposals folder is a temp dir holding the hand-made fixture. | `QT_QPA_PLATFORM=offscreen python3 tests/test_ui_research.py` |
 | `test_ui_results.py` | The results routes over the real reports, read-only: shapes, pairing by identity, staleness, old reports. | — |
-| `test_ui_runner.py` | The window's run side: the python queue, cancel, the refusals, and with `--run` a real study run end to end (it writes a report under AlgoData/reports/). | — |
+| `test_ui_runner.py` | The window's run side: the python queue, cancel, the refusals, and with `--run` a real study run end to end on this machine's live export (it writes a report under AlgoData/reports/). Without it every folder is planted in a temporary data root. | — |
 | `test_ui_screen.py` | The F5 drawings' pure halves: what the screen report keeps is what the page draws, merges, partials, market rows. | `python3 tests/test_ui_screen.py` |
 | `test_ui_shell.py` | The whole window offscreen over the whole daemon in-process: every zone, the context bar, the signals. | — |
 | `test_ui_sqxconfig_studies.py` | WFC and CSCV in Configuración SQX: every study input listed, and each write one line, on copies of the files. | `python3 tests/test_ui_sqxconfig_studies.py` |
 | `test_ui_strategy.py` | The Estrategia routes on a real project: metadata, basic stats, and OOS2 open to a human but shut to an autonomous agent. | — |
-| `test_ui_studypage.py` | The study page offscreen over the real routes in-process: result, drawer, history, compare, and with `--run` one real edgeCost run (it writes a report under AlgoData/reports/). | — |
+| `test_ui_studypage.py` | The study page offscreen over the real routes in-process: result, drawer, history, compare, and with `--run` one real edgeCost run on this machine's live export (it writes a report under AlgoData/reports/). Without it every folder is planted in a temporary data root. | — |
 | `test_ui_studypicker.py` | The study page's «Estrategia» dropdown: picking an entry announces that strategy's identity. | — |
 | `test_ui_tearmarket.py` | The tear sheet's market routes in-process on a real harvest, and the trade gallery drawn offscreen. | — |
 | `test_ui_tearsheet.py` | The Ficha: its two routes on the real cosecha and on synthetic ones, and its drawing offscreen. | — |

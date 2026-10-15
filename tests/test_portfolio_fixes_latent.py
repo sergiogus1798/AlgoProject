@@ -10,7 +10,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from portfolio.common.construct import funded_b, universe
+# first: test_portfolio_stageb plants the data root, which must precede every project import
+from test_portfolio_stageb import BUILD, complete, small_cfg  # noqa: E402
+from portfolio.common.construct import funded_b, universe  # noqa: E402
 from portfolio.common.construct.equity import matrix
 from portfolio.common.construct.inputs import config as construct_config
 from portfolio.common.construct.search import stageb, stageb_run
@@ -21,7 +23,6 @@ from portfolio.funded.rules import catalog, machine
 from portfolio.funded.sim import haircut
 from test_portfolio_fixes import RISK, _all_ways, _days, _plan, _stage
 from test_portfolio_mc_paths import bar_world, lenient_plan
-from test_portfolio_stageb import BUILD, complete, small_cfg
 
 
 def test_time_limit_is_converted_to_path_days(monkeypatch: pytest.MonkeyPatch) -> None:

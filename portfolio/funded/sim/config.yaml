@@ -21,20 +21,20 @@ compute:
 
 owner:
   budget_eur: 1000              # owner 2026-09-29: 1,000 EUR in the bank account, a hard stop
-  eurusd: null                  # USD per EUR on the day of the calculation, written beside the result — never fetched
+  eurusd: 1.12                  # owner 2026-10-14 (encargo 54, 11): USD per EUR on the day of the calculation, written beside the result — never fetched
   rebuy: [same_plan, none]      # owner 2026-10-05 (encargo 33 §6.4): BOTH, compared — every policy listed is simulated, shown side by side and
                                 # counted in the ledger's trials. same_plan = buy the same plan again after every failure while cash lasts; none = one account
   haircuts: [0, 0.25, 0.5, 0.75, 1]   # owner 2026-10-05 (encargo 33 §6.7): the h of the curve EV(h), fractions ascending
   haircut_decides: 0.5          # owner 2026-10-05 (encargo 33 §6.7): the one h of that list the table is ranked at
-  payout_cushion: null          # fraction of the account size left in the account at each payout; 0 = withdraw everything
+  payout_cushion: 0.0        # owner 2026-10-14 (54, 11: withdraw everything): fraction of the account size left in the account at each payout; 0 = withdraw everything
   tax_rate: null                # fraction of every payout that goes to tax; 0 only if he says 0
-  payout_fee: null              # fraction of every payout lost to payment and currency fees
+  payout_fee: 0.02              # owner 2026-10-14 (54, 11: payment and currency, 2 %): fraction of every payout lost to payment and currency fees
   p_payout_denied: null         # probability a payout request is denied (the account ends there)
-  p_firm_closes_year: null      # probability the firm closes within a year (nothing more is paid)
+  p_firm_closes_year: 0.05      # owner 2026-10-14 (54, 11: 5 % a year): probability the firm closes within a year (nothing more is paid)
 
 gaps:                           # what the catalogue does not hold for a plan of the universe (OPEN.md #85)
-  hantec_fee_refund: null       # true | false — Hantec: is the fee refunded with the first payout?
-  hantec_endurance_payout_days: null   # calendar days between payouts of a funded Endurance (stages.payout_days is NULL)
-  hantec_express_floor_after_payout: null   # stays | initial — the trailing max-loss floor of a funded Express after a payout:
+  hantec_fee_refund: false       # owner 2026-10-14 (54, 8: Hantec help article 158000444247, no refund; rules/hantec.yaml fee_refund): true | false — Hantec: is the fee refunded with the first payout?
+  hantec_endurance_payout_days: 14   # owner 2026-10-14 (54, 8: first payout 14 days, article 158000445800; the later ones also 14 only per third parties): calendar days between payouts of a funded Endurance (stages.payout_days is NULL)
+  hantec_express_floor_after_payout: initial   # owner 2026-10-14 (54, 8: article 158000445797 «will lock in at your starting balance»): stays | initial — the trailing max-loss floor of a funded Express after a payout:
                                             # stays where the high-water mark put it, or fixed at the initial balance from the first withdrawal (encargo 33 §3.5.4)
-  ftmo_1step_floor_after_payout: null       # stays | initial — the same for the funded FTMO 1-Step (end-of-day trailing)
+  ftmo_1step_floor_after_payout: stays       # owner 2026-10-14 (54, 8: ftmo.com/en/faq/how-do-i-withdraw-my-profits/ «does not reset»; ambiguous): stays | initial — the same for the funded FTMO 1-Step (end-of-day trailing)

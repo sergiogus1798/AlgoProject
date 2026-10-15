@@ -26,7 +26,7 @@ OWNER = {
 
 def load(overrides: list[str]) -> dict[str, Any]:
     """The module's config with `section.key=value` overrides applied."""
-    return study_config.load(FILE, overrides)
+    return study_config.load(FILE, overrides, owner="sim")
 
 
 def refuse(cfg: dict) -> list[str]:

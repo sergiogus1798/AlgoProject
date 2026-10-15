@@ -13,6 +13,7 @@ from unittest import mock
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import pandas as pd
 from fastapi import FastAPI
@@ -20,11 +21,16 @@ from fastapi.testclient import TestClient
 from PySide6.QtWidgets import QApplication, QCheckBox, QMessageBox
 
 from core.paths import ROOT
+from core.researchpaths import research_profiles_dir
+from live_only import only_here
 from studies.research.board import inputs, many, proposal, store
 from ui.daemon.research import api, preflight, proposals, queue, steps
 from ui.desktop.research.zone import ResearchZone
 from ui.desktop.theme import QSS
 
+PROFILE = (
+    research_profiles_dir() / "scores.csv"
+)  # the market profile `build` measured on this machine
 SHOTS = Path(
     os.environ.get("RESEARCH_SHOTS", ROOT / "scratch" / "research-director" / "shots")
 )
@@ -101,6 +107,10 @@ def fakes(log: list, ask: str = "", fail: tuple = ()) -> dict:
     return {name: step(name) for name in queue.ORDER}
 
 
+@only_here(
+    PROFILE,
+    "lee el perfil de mercado medido en esta máquina (19 activos x 4 timeframes) y gorilla no lo tiene",
+)
 def test_routes_read_the_real_profile() -> None:
     """Map, cell, memory and board answer from today's files; the map colours what is on the board."""
     c = http()
@@ -258,6 +268,10 @@ def test_launch_route_queues_one_job() -> None:
     assert kwargs == {"lane": "conductor"} and about["role"] == "custodian"
 
 
+@only_here(
+    PROFILE,
+    "dibuja el mapa del perfil de mercado medido en esta máquina (19 activos x 5 filas) y gorilla no lo tiene",
+)
 def test_views_offscreen() -> None:
     """The four views paint from the routes; a veto in the window reaches the file; the launch
     button asks before it sends, and there is no prefix to choose."""

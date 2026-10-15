@@ -29,16 +29,24 @@ nunca la raíz real (`portfolio/testroot/README.md`).
 
 | frente | qué | modelo | depende de | estado |
 |---|---|---|---|---|
-| A | La ventana edita los huecos del catálogo, el precio pagado y las entradas `owner.*` (33 entregable 5) | Sonnet (mecánico) | nada | pendiente |
-| B | Las entradas del dueño aún `null` y las preguntas abiertas de 33: listarlas y preguntarlas, nunca rellenarlas | Opus | A (para que él las escriba) | pendiente |
+| A | La ventana edita los huecos del catálogo, el precio pagado y las entradas `owner.*` (33 entregable 5) | Sonnet (mecánico) | nada | hecho 2026-10-14 salvo el precio pagado (el modelo no tiene esa entrada; usa lista) |
+| B | Las entradas del dueño aún `null` y las preguntas abiertas de 33: listarlas y preguntarlas, nunca rellenarlas | Opus | A (para que él las escriba) | hecho 2026-10-14 con lo contestado; abiertas: `tax_rate`, `p_payout_denied`, `t1_gap` |
 | C | «Hecho es» de 33: la tabla de §4 sobre una cartera REAL, contra el mono, con recortes y una frase de decisión | Opus | encargo 55 (pool validado), B | bloqueado |
-| D | Módulo de riesgo máximo: inventario y las cinco decisiones (45 parte 1) | Opus | nada | pendiente |
+| D | Módulo de riesgo máximo: inventario y las cinco decisiones (45 parte 1) | Opus | nada | inventario hecho 2026-10-14 (abajo); decisiones 1-7 ya contestadas; E desbloqueado |
 | E | `q_día`, `DD_95`, `riesgo_max` y veredicto (45 partes 2-4) | Opus | D contestado | bloqueado |
 | F | La prueba del retraso con el feed de la firma (45 parte 5) | Opus | D; paso 26 (encargo 55) | bloqueado |
 | G | Vista del módulo de riesgo máximo y su capítulo del manual (45 parte 6) | Sonnet tras el dibujo del dueño | E | bloqueado |
 
 **Bitácora:**
 
+- 2026-10-14 · A, B y D ejecutados (Sonnet). A: botón «Entradas del dueño» en Fondeo y Banco
+  (`ui/daemon/portfolios/owner.py`, `ui/desktop/portfolios/ownerinputs.py`), escribe la capa local
+  `config/owner.yaml` (decisión 14; fuera de git, así que gorilla no la ve). B: escritos en los
+  `config.yaml` del repo (eurusd 1,12, colchón 0, comisión 0,02, cierre 0,05/año, los 4 huecos,
+  `open_risk_cap` 0,5, `pass_percentile` 95 vía ledger `portfolio.funded.verdict_percentile`); FTMO 2-step
+  `fee_refund` pasa a `true` (confirmado) en `rules/ftmo.yaml` y en `funding.sqlite`. Sin escribir:
+  `tax_rate` (pendiente del dueño), `p_payout_denied` («5 % al año»: el modelo es por petición de cobro,
+  ¿cuál?) y `t1_gap`. D: inventario en §4.
 - 2026-10-09 · consolidado desde los encargos 33 y 45; nada ejecutado desde la consolidación. Verificado
   ese día: lo construido de 33 (§0), las rutas de A y que `kept/` solo tiene `Trade_NIKKEI225_M30_volatilidadL`.
 
@@ -158,6 +166,27 @@ operación `portfolio/common/monteCarlo/` (`README.md`, `POSSIBLE_IMPROVEMENTS.m
 E ya exista con otro nombre** — la etapa A/B de la cartera fondeada (`ui/daemon/portfolios/funded.py`,
 P(pasar), `open_risk_cap`) ya dimensiona riesgo; el inventario dice cuánto se solapa. Cada decisión, con tu
 recomendación y su coste. No se escribe código hasta que el dueño conteste.
+
+### Inventario (hecho 2026-10-14; qué existe, qué responde hoy, distancia)
+
+| pieza | qué existe | distancia |
+|---|---|---|
+| Entrada por estrategia | `pipeline/autopilot/kept.py:12` `FACTS`, `:15` `rows()` (curva oos1 en R, mínimo diario de SQX), `:68` `save()` | poca; la curva es el mínimo diario, cota conservadora al sumar |
+| E2a curva diaria de cartera en R | `portfolio/common/construct/equity/blocks.py:82` `joint_day_low`; `construct/mc/blocklen.py:11` `daily_pnl` (en divisa, universo M1 reconstruido) | media: falta sumar las curvas de `kept` de los miembros elegidos a mano, solo oos1 |
+| E2b POT / Pareto, `q_día` | nada (`scipy.stats.genpareto` está instalado) | total: ajuste, umbral, bootstrap ≥ 5.000 con extremo conservador, «sin dato» |
+| E2c declustering | nada (`construct/mc/paths.py:45` `daily_blocks` es otra cosa) | total, pequeño |
+| E3 `DD_95` de cartera | R6: `studies/screening/gate/level3ab.py:67-74` → `studies/screening/analysis/resample.py:151` (bloques de operaciones, por estrategia) | media-alta: hace falta bloques por fecha comunes sobre la curva de cartera; decidir si R6 se extrae a núcleo común |
+| Monte Carlo `portfolio/common/monteCarlo/` | por estrategia (orden, omitidas, ejecución, régimen) | casi nada que reutilizar |
+| E4a `L_d`, `L_tot` y semántica | `portfolio/funded/rules/catalog.py:158` `plan()`, `floors.py:6,27`, `machine.py:175` | baja; falta la hora de corte por plan (`construct/equity/days.py:76` calcula el día de servidor) |
+| E4b `riesgo_max` y veredicto | nada (`construct/search/stagea.py:14` `open_cap` es otra cosa) | total, ~30 líneas + config |
+| Cuentas que elige el dueño | `rules/catalog.py:50` `plans()`, `funded/sim/plans.py:287`, `decide/` | baja; un mando que pase `plan_key` |
+| `funded/sim/` | `account.py`, `bank.py`, `haircut.py`, `monkey.py`, `frompool.py` | ninguno responde «cuánto riesgo cabe»; la comprobación va al lado (decisión 5) |
+
+Solape: solo `open_risk_cap` (0,5; riesgo abierto simultáneo, no una cola estadística) y la P(pasar) de la
+etapa A/B (probabilidad de aprobar con un riesgo dado); `riesgo_max` es lo inverso. Se muestran juntos, no
+se fusionan. El «número por estrategia suelta» (decisión 3) con la curva diaria no cuadra con `dd_esperado_r`
+de la puerta (remuestreo por operaciones): la prueba «cartera de una estrategia = `dd_esperado_r`» exige
+reutilizar `resample.drawdowns` con operaciones.
 
 ## 5 · Frente E — `q_día`, `DD_95`, `riesgo_max` y veredicto (45 partes 2-4)
 

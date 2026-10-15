@@ -8,6 +8,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import funding_planted  # noqa: E402
+
+funding_planted.plant()  # before anything imports core.paths
+
 import numba  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402

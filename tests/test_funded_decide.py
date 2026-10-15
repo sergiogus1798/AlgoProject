@@ -11,6 +11,10 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+import funding_planted  # noqa: E402
+
+funding_planted.plant()  # before anything imports core.paths
+
 from portfolio.funded.deals import worth
 from portfolio.funded.decide import choose, tables
 from portfolio.funded.sim import bank, inputs, measures, run
@@ -311,12 +315,12 @@ meta = {
     "source": None,
 }
 SET = [
-    "owner.eurusd=1.2",
-    "owner.payout_cushion=0",
+    "owner.eurusd=1.12",
+    "owner.payout_cushion=0.0",
     "owner.tax_rate=0",
-    "owner.payout_fee=0",
+    "owner.payout_fee=0.02",
     "owner.p_payout_denied=0",
-    "owner.p_firm_closes_year=0",
+    "owner.p_firm_closes_year=0.05",
     "gaps.hantec_fee_refund=false",
     "gaps.hantec_endurance_payout_days=14",
     "gaps.hantec_express_floor_after_payout=stays",

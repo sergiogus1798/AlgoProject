@@ -114,3 +114,8 @@ Qué hizo · qué verificó, con las tablas pegadas · qué dejó sin poder comp
 descubrió para `knowhow/` (el comportamiento exacto del método de SQX y si el factor es constante, en
 `knowhow/sqx-drive/` o `knowhow/conditions/`, editando la ficha que exista) · la lista de ficheros cambiados
 y, como última línea, **¿Quieres hacer el commit?**
+
+## Contestadas por el dueño (2026-10-14, noche)
+
+- **61-1 → A con condiciones:** pasar a `FixedAmount` por stop, con riesgo común ≈ 550 USD o `MaxLots` por activo, y tope de pérdida real por operación.
+- **61-4 → C:** sólo en el paso 24 y el EA (aceptar `FixedAmount` en `own_sizing` de `sqx/projects/mt5verify.py` y una fila de tamaño por operación en `mt5/verify/judge.py`).

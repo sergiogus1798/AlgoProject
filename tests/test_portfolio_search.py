@@ -21,10 +21,6 @@ from sqx.variants.build import stoploss
 N = 40
 PLANT = np.arange(6)
 FIXTURES = Path(__file__).parent / "fixtures"
-REAL_STOPLESS_IDENTITY = (
-    "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048"
-)
-REAL_STOPLESS_VERSION = "2026-09-28T0919"
 
 FAILURES = []
 
@@ -141,11 +137,13 @@ def test_ledger(run: dict) -> None:
     check("one ledger row per member plus the pool row", len(rows) == 1 + N)
 
 
-def _grafted_sqx(tmp: Path, x: float = 2.5, name: str = "GRAFTED") -> tuple[str, str]:
-    """A fake archive folder holding a strategy grafted with `stoploss.graft` in memory."""
-    portfolio = stoploss.graft(
-        (FIXTURES / "nostop_portfolio.xml").read_text(encoding="utf-8"), x
-    )
+def _grafted_sqx(
+    tmp: Path, x: float | None = 2.5, name: str = "GRAFTED"
+) -> tuple[str, str]:
+    """A fake archive folder holding a strategy grafted with `stoploss.graft` in memory (x None: left without a stop)."""
+    portfolio = (FIXTURES / "nostop_portfolio.xml").read_text(encoding="utf-8")
+    if x is not None:
+        portfolio = stoploss.graft(portfolio, x)
     last_settings = """<Settings>
   <RiskMoneyManagement customSettings="false">
     <MoneyManagement>
@@ -179,16 +177,16 @@ def _grafted_sqx(tmp: Path, x: float = 2.5, name: str = "GRAFTED") -> tuple[str,
 
 def test_risk() -> None:
     """`risk.sizing` reads X off a strategy grafted in memory, and refuses the stopless archive."""
-    try:
-        risk.sizing(REAL_STOPLESS_IDENTITY, REAL_STOPLESS_VERSION)
-        check("refuses the archived strategy with no step-24 stop", False)
-    except ValueError as exc:
-        check(
-            "refuses the archived strategy with no step-24 stop", "paso 24" in str(exc)
-        )
-
     real_archive_dir = risk.archive_read.archive_dir
     with tempfile.TemporaryDirectory() as tmp:
+        risk.archive_read.archive_dir = lambda: Path(tmp)
+        try:
+            risk.sizing(*_grafted_sqx(Path(tmp), None, "STOPLESS"))
+            check("refuses a strategy with no step-24 stop", False)
+        except ValueError as exc:
+            check("refuses a strategy with no step-24 stop", "paso 24" in str(exc))
+        finally:
+            risk.archive_read.archive_dir = real_archive_dir
         identity, version = _grafted_sqx(Path(tmp))
         risk.archive_read.archive_dir = lambda: Path(tmp)
         try:

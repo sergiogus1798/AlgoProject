@@ -41,7 +41,7 @@ funded:                         # F2, the funded search's stage A (PLAN §14.3; 
   risk_grid: [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.010]  # risk per trade, fraction of the INITIAL balance
   horizon_days: 126             # a pass counts only within ~6 months of trading days of the purchase
   min_lot: 0.01                 # a trade whose lot rounds below it cannot be placed: that risk level is infeasible
-  open_risk_cap: null           # REQUIRED, no default (rule 11; owner 2026-10-05, R5: the cap exists, its size is not set): members x risk per trade <= this fraction of the plan's maximum daily loss; above it a (combination, risk) pair is infeasible. No per-symbol cap
+  open_risk_cap: 0.5            # owner 2026-10-14 (encargo 54, 15): 0.5 — all stops at once spend at most half the plan's maximum daily loss. (owner 2026-10-05, R5: the cap exists, its size was not set): members x risk per trade <= this fraction of the plan's maximum daily loss; above it a (combination, risk) pair is infeasible. No per-symbol cap
 
 search:                         # AlphaForge's GA defaults (PLAN §5.3), set_by AlphaForge until the owner moves them
   seeds: 300
@@ -76,7 +76,7 @@ verdict:                        # F4, the funded verdict (PLAN §14.3, Q11 d): o
   null_draws: 100               # 🤔 this plan: null SEARCHES of the funded path, each one stage A on random admissible combinations + stage B (not real.null_draws)
   null_candidates: 0            # combinations per null search; 0 = as many as the stage-A run evaluated
   pass_measure: mc_p            # owner 2026-10-05: the bar reads the P(pass) of the most pessimistic Monte Carlo on oos1 (the other reading: start_p)
-  pass_percentile: null         # OPEN (Q11), the owner's: when he sets it it becomes ledger:portfolio.funded.verdict_percentile; empty = «sin criterio (falta verdict.pass_percentile)» and oos2 is not opened
+  pass_percentile: ledger:portfolio.funded.verdict_percentile   # owner 2026-10-14 (encargo 54, 15): the portfolio must beat 95 % of the random portfolios; the number (0.95, a 0-1 scale) lives in the ledger
 
 real:                           # M3, the search by ranks (PLAN §5.3). Council 2026-10-04 on the owner's delegation: Q10 (a), Q16 (c, provisional), DECISIONS #2
   account: 10000                # C5: the size is the funding economics' -- the 10k account; a member's floor is the minimum lot on it (funded.min_lot, funded.risk_grid)

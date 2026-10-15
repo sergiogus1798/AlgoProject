@@ -8,11 +8,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.paths import MT5_DATA
+from live_only import require
 from mt5.newsfilter.firms import FIRMS
 from mt5.newsfilter.patch import patch
 from mt5.newsfilter.run import safe
 
 REF = MT5_DATA / "newsfilter-reference"
+require(
+    REF,
+    "compara el parche con las EAs que el dueño parcheó a mano, que gorilla no tiene",
+)
 
 
 def ops(a: list[str], b: list[str]) -> list[tuple]:

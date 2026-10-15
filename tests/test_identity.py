@@ -9,17 +9,25 @@ from unittest import mock
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import harvest_planted  # noqa: E402
+
+harvest_planted.plant()  # before core.paths: the cosechas and kept .sqx are planted, not the machine's
+
+from core import sqxfile  # noqa: E402
 from core.paths import DATA  # noqa: E402
 from core.study import identity, output  # noqa: E402
 from pipeline.autopilot import closing  # noqa: E402
 from sqx.export import export_trades  # noqa: E402
 
-PROJECT = "Test_USDJPY_donchianUpperCrossUp_M30"  # live on SQX_w2; the names below were cut from it on 2026-09-29
+PROJECT = harvest_planted.PROJECT
 RAW = DATA / "raw" / PROJECT
+# Two strategies the 2026-09-27 cosecha names and the 2026-09-29 one no longer does; their identity is
+# the hash of the planted .sqx kept under SPP_IS, so every source must agree with the file itself.
 KNOWN = {
-    "Strategy 10.11.79": "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048",
-    "Strategy 9.25.72": "2d1ac02dd185f3027469ee8d8d9cbc809d64e048393dc4972eb2f82fb42d2da4",
+    n: sqxfile.identity(RAW / "SPP_IS" / "2026-09-27" / "strategies" / f"{n}.sqx")
+    for n in ("Strategy 10.11.79", "Strategy 9.25.72")
 }
 
 

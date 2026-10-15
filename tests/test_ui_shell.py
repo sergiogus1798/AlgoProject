@@ -9,6 +9,11 @@ from types import SimpleNamespace
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import harvest_planted  # noqa: E402
+
+harvest_planted.plant()  # before core.paths: the project below is planted, not the machine's
 
 from fastapi.testclient import TestClient  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
@@ -23,9 +28,9 @@ from ui.desktop.selection import SELECTION  # noqa: E402
 from ui.desktop.shell import Shell  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
 
-# The fixture since F13 (2026-09-28): the USDJPY Donchian project, whose Results databank the
-# custodian no longer holds — its panel rows come from the cosecha and the reports.
-PROJECT, DATABANK = "Test_USDJPY_donchianUpperCrossUp_M30", "Results"
+# The planted USDJPY Donchian project, whose Results databank no install holds — its panel rows
+# come from the cosecha and the reports.
+PROJECT, DATABANK = harvest_planted.PROJECT, "Results"
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 SCRATCH = tempfile.TemporaryDirectory(prefix="ui-shell-")
 LOADS: list = []  # what the load bar asked the daemon to start

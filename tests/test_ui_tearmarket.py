@@ -8,6 +8,11 @@ from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import harvest_planted  # noqa: E402
+
+harvest_planted.plant()  # before core.paths: the harvest below is planted, not the machine's
 
 import pyarrow.parquet as pq  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
@@ -21,15 +26,14 @@ from ui.desktop.blocks.result import ResultView  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
 from ui.desktop.tradegallery import TradeGallery  # noqa: E402
 
-# The USDJPY Donchian project's newest cosecha — the one the route reads. It was pinned to 09-27,
-# and the cosecha of 2026-09-29 (Results cut to 21) no longer held those identities.
-PROJECT, DATABANK = "Test_USDJPY_donchianUpperCrossUp_M30", "Results"
+# The planted USDJPY Donchian project's newest cosecha — the one the route reads.
+PROJECT, DATABANK = harvest_planted.PROJECT, "Results"
 HARVEST = max(
     d
     for d in (DATA / "harvest" / PROJECT / DATABANK).iterdir()
     if (d / "metrics.parquet").exists()
 )
-XAU = "XAU_ISOOS_ejemplo"  # a project whose name holds no asset symbol
+XAU = harvest_planted.NO_ASSET  # a project whose name holds no asset symbol
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
 
 

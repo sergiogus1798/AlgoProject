@@ -1,0 +1,48 @@
+# FundingPips — the rules the catalogue does not carry. Same format as hantec.yaml (see its header).
+# The firm's own pages block automated reading: sources are third parties or search snippets of the
+# firm's pages, so nothing here is `confirmed` until the owner reads it on the firm's site.
+
+- rule_key: eas_allowed
+  family: '*'
+  stage: plan
+  field: eas_allowed
+  value: null
+  text: "Third parties quote the help centre ('Trading Conduct and Security Standards'): third-party EAs only as trade or risk managers, any other third-party EA for trading denies the evaluation or reward. Whether a self-built EA (SQX-generated) counts as third-party is not stated. Ask FundingPips support."
+  source: https://help.fundingpips.com/hc/en-us/articles/34505029138449-Trading-Conduct-and-Security-Standards
+  status: conflict
+  checked_on: 2026-10-04
+- rule_key: reward_share_base
+  family: [2step-standard, 1step]
+  value: 60-100 by payout frequency
+  text: "Weekly (Tuesday) 60 %, bi-weekly 80 %, on-demand 90 %, monthly 100 % (propfirmsfinder)."
+  source: https://propfirmsfinder.com/prop-firm/fundingpips/challenges/
+  status: unconfirmed
+  checked_on: 2026-10-04
+- rule_key: reward_share_base
+  family: zero
+  value: null
+  text: "95 % bi-weekly per propfirmsfinder; 80 % per other reviews."
+  source: https://propfirmsfinder.com/prop-firm/fundingpips/challenges/
+  status: conflict
+  checked_on: 2026-10-04
+- rule_key: fee_refund
+  family: [2step-standard, 1step]
+  value: after the 4th payout
+  text: "Fee refunded after the 4th payout (propfirmsfinder)."
+  source: https://propfirmsfinder.com/prop-firm/fundingpips/challenges/
+  status: unconfirmed
+  checked_on: 2026-10-04
+- rule_key: fee_refund
+  family: [2step-pro, zero]
+  value: false
+  text: "No refund (propfirmsfinder)."
+  source: https://propfirmsfinder.com/prop-firm/fundingpips/challenges/
+  status: unconfirmed
+  checked_on: 2026-10-04
+- rule_key: payout_consistency
+  family: '*'
+  value: 35
+  text: "Daily payouts carry a 35 % consistency requirement (search snippet)."
+  source: https://propfirmmap.com/blog/fundingpips-review-2026-trustpilot-rating-safety-grade-challenge-prices
+  status: unconfirmed
+  checked_on: 2026-10-04

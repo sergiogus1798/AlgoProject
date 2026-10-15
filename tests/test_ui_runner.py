@@ -1,5 +1,6 @@
 """The window's run side: the python queue, cancel, the refusals, and with `--run` a real study
-run end to end (it writes a report under AlgoData/reports/)."""
+run end to end on this machine's live export (it writes a report under AlgoData/reports/).
+Without it every folder is planted in a temporary data root."""
 
 import sys
 import tempfile
@@ -11,6 +12,14 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import harvest_planted  # noqa: E402
+
+# Before core.paths: the harvest below is planted, not the machine's. `--run` is the one exception: edgeCost
+# reprices the trades on the real bars, which a planted trade does not sit on, so it reads the live export.
+if "--run" not in sys.argv:
+    harvest_planted.plant()
 
 import pandas as pd
 
@@ -22,7 +31,7 @@ from ui.daemon.runner import api, where  # noqa: E402
 # export rather than pinned by name: a nightly workflow re-run gives this project a fresh
 # population under new names (📓 2026-09-30, T1 UI feedback pass — a hardcoded "Strategy
 # 1.15.54" no longer existed in the export and made this test fail on unrelated grounds).
-PROJECT, DATABANK = "Test_USDJPY_donchianUpperCrossUp_M30", "Results"
+PROJECT, DATABANK = harvest_planted.PROJECT, "Results"
 _export = where.newest(DATA / "raw" / PROJECT / DATABANK, "*/trades.parquet")
 STRATEGY = pd.read_parquet(_export, columns=["strategy"])["strategy"].iloc[0]
 # Job logs go here, not to AlgoData/logs/ui, and vanish with the test.
@@ -223,7 +232,7 @@ if __name__ == "__main__":
     else:
         print(
             "    (sin --run: test_real_run no corre edgeCost de verdad; escribiría un informe "
-            "del día en AlgoData/reports/ de este proyecto)"
+            "del día en AlgoData/reports/ de este proyecto; con --run el test lee los datos vivos de esta máquina)"
         )
     for test in tests:
         started = time.time()

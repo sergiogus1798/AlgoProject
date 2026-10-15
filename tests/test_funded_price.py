@@ -9,6 +9,10 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+import funding_planted  # noqa: E402
+
+funding_planted.plant()  # before anything imports core.paths
+
 from core.paths import funding_dir
 from portfolio.funded.rules import catalog
 from portfolio.funded.sim import bank, plans

@@ -27,7 +27,7 @@ def load(overrides: list[str] | None = None) -> dict[str, Any]:
         for a run at the owner's thresholds on the policy's calendar.
     """
     cfg = study_config.apply(
-        thresholds.fill(study_config.load(FILE, [])), overrides or []
+        thresholds.fill(study_config.load(FILE, [], owner="construct")), overrides or []
     )
     if cfg["weights"]["method"] != "equal":
         raise SystemExit(

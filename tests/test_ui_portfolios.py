@@ -9,6 +9,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import funding_planted  # noqa: E402
+
+funding_planted.plant()  # before anything imports core.paths
+
 
 from ui_portfolios_planted import A, B, C, FUNDED, RUN, plant  # noqa: E402
 
@@ -305,17 +309,15 @@ def main() -> int:
         lacking = api.preflight("stage_b", run=FUNDED)
         check(
             "launcher: stage B refuses without the owner's knobs, none defaulted",
-            not lacking["ok"]
-            and any("funded.open_risk_cap" in r for r in lacking["reasons"])
-            and any("stageb.t1_gap" in r for r in lacking["reasons"]),
+            not lacking["ok"] and any("stageb.t1_gap" in r for r in lacking["reasons"]),
         )
         check(
             "launcher: the bank refuses without horizon, edge and the owner's inputs",
-            {"horizonte", "edge", "owner.eurusd"}
+            {"horizonte", "edge", "owner.tax_rate"}
             <= {
                 w
                 for r in api.preflight("bank", run=FUNDED)["reasons"]
-                for w in ("horizonte", "edge", "owner.eurusd")
+                for w in ("horizonte", "edge", "owner.tax_rate")
                 if w in r
             },
         )

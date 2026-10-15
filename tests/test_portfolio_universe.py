@@ -15,6 +15,7 @@ from core.barstore import source as bar_source  # noqa: E402
 from portfolio.common.construct.equity import days, matrix, paths, reconcile, sqxcurve  # noqa: E402
 from portfolio.common.construct.inputs import source  # noqa: E402
 from portfolio.common.construct.inputs import calendar  # noqa: E402
+from live_only import only_here  # noqa: E402
 
 FAILED = []
 
@@ -25,6 +26,7 @@ HARVEST = (
     / "harvest"
     / "equity.parquet"
 )
+LIVE = "compara el archivo real de la USDJPY de 2026-10-06 con la curva real de SQX: valida los datos vivos de esta máquina"
 BATCH = (
     variants_dir("Test_USDJPY_donchianUpperCrossUp_H1", "Strategy_10.1.79")
     / "equity.parquet"
@@ -211,13 +213,9 @@ def test_reconcile_ok_and_out() -> None:
     )
 
 
+@only_here(BATCH, LIVE)
 def test_real_harvest_and_batch() -> None:
     """The archived strategy's harvest and the real 16.5 batch: segments, windows, duplicates."""
-    if not HARVEST.exists() or not BATCH.exists():
-        print(
-            "SKIP real harvest and batch: files not found (the Test_ project was retired)"
-        )
-        return
     data = assetdata.load("USDJPY")
     got = {
         "harvest": sqxcurve.from_harvest(pd.read_parquet(HARVEST), "USDJPY"),
@@ -237,15 +235,13 @@ def test_real_harvest_and_batch() -> None:
     check("batch carries oos2", "oos2" in set(got["batch"]["segment"]))
 
 
+@only_here(HARVEST, LIVE)
 def test_golden_rebuild_against_sqx_curve() -> None:
     """The M1 rebuild's daily lowest equity equals SQX's own curve, leg by leg (🔬 max < 1 $).
 
     A USDJPY member of 2026-10-06 (feed already on EETUS): its trades, SQX's days and the bars
     on disk share the frozen clock, so no re-stamp; the card's commission is charged per leg.
     """
-    if not HARVEST.exists():
-        check("golden archive present", False, "skipped: archive not found")
-        return
     s = source.load(HARVEST.parts[-4], HARVEST.parts[-3])
     bars = bar_source(s["feed"], ["High", "Low", "Close"])
     sqx = sqxcurve.from_harvest(s["sqx_equity"], s["symbol"])
@@ -304,6 +300,9 @@ def main() -> int:
     test_calendar_matching_symbols()
     test_calendar_fx_plus_synthetic_index()
     test_reconcile_ok_and_out()
+    if FAILED:
+        print(f"\n{len(FAILED)} check(s) failed: {FAILED}")
+        return 1
     test_real_harvest_and_batch()
     test_golden_rebuild_against_sqx_curve()
     if FAILED:

@@ -7,10 +7,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import portfolio.common.construct.inputs.pool as pool
+import archive_planted  # noqa: E402
 
-REAL_IDENTITY = "4d679e0c2ce2a63ee53bc6cb305830bcaf5a74997e6e6e2c1deeb4c30f307048"
-REAL_VERSION = "2026-09-28T0919"
+PLANTED = archive_planted.plant()  # before anything imports core.paths
+
+import portfolio.common.construct.inputs.pool as pool  # noqa: E402
+
+REAL_IDENTITY, REAL_VERSION = PLANTED["identity"], PLANTED["version"]
 
 FAKE_STEPS = {
     ("AAA", "v1"): "16.5",

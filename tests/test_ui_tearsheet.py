@@ -8,6 +8,11 @@ from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import harvest_planted  # noqa: E402
+
+harvest_planted.plant()  # before core.paths: the harvest below is planted, not the machine's
 
 import pandas as pd  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
@@ -24,15 +29,13 @@ from ui.desktop.selection import SELECTION  # noqa: E402
 from ui.desktop.studypage.views import StrategyPage  # noqa: E402
 from ui.desktop.theme import QSS  # noqa: E402
 
-# The USDJPY Donchian project's newest cosecha, the one the routes read (2026-09-29: Results cut
-# to 21; the 5.16.75 pinned before went with the other 178). Strategy 13.14.82 is among the 21
-# and its harvest.
+# The planted USDJPY Donchian project's newest cosecha, the one the routes read.
 PROJECT, DATABANK, STRATEGY = (
-    "Test_USDJPY_donchianUpperCrossUp_M30",
+    harvest_planted.PROJECT,
     "Results",
-    "Strategy 13.14.82",
+    harvest_planted.NAMES[0],
 )
-IDENTITY = "47da0743d600c27cedda1f78cc30de3ebd4935f6624d8ffbf4e9cc0e0e6140dd"
+IDENTITY = harvest_planted.identity_of(STRATEGY)
 FOLDER = max(
     d
     for d in (DATA / "harvest" / PROJECT / DATABANK).iterdir()

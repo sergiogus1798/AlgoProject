@@ -1,0 +1,167 @@
+# FTMO — the rules its pricing table does not carry, curated by hand and by the fundingWatcher
+# agent every Sunday. Same format as hantec.yaml (see its header).
+# Discounts are ignored on purpose (owner, 2026-09-29): prices are list prices.
+
+- rule_key: eas_allowed
+  family: '*'
+  stage: plan
+  field: eas_allowed
+  value: true
+  text: Expert advisors allowed within the Forbidden Trading Practices. The FAQ warns that a third-party EA shared with other traders can breach the maximum capital allocation rule, and that platform servers cap 200 orders at a time and 2000 positions per day.
+  source: https://ftmo.com/en/faq/which-instruments-can-i-trade-and-what-strategies-am-i-allowed-to-use/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: reward_share_base
+  family: 2step
+  stage: funded
+  field: reward_share_pct
+  value: 80
+  text: Starts at 80 %, up to 90 % with the Scaling Plan or Premium Programme (the table shows the 90 % ceiling).
+  source: https://ftmo.com/en/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: fee_refund
+  family: 2step
+  value: false
+  text: "Pending support's answer; prudent reading by Council decision 2026-10-04: modelled as NO refund per account (value false). What FTMO's FAQ states is that the entry fee may be refunded with the first Reward withdrawal, to the initial payment method (it is not stated whether this holds for every account when several are bought); the owner was refunded once (2026-09-29). Support question: support_questions.md."
+  source: https://ftmo.com/en/faq/is-the-entry-fee-refunded/
+  status: unconfirmed
+  checked_on: 2026-10-11
+- rule_key: fee_refund_scope
+  family: 2step
+  value: not per account (prudent reading, pending support)
+  text: "Re-read 2026-10-04: the FAQ 'Are the fees recurrent?' still says only 'the paid fee is refunded with your first Reward withdrawal' (2-Step) and 'not refunded' (1-Step); per-account vs per-trader is still not stated. Read as per account: each 2-Step Challenge that becomes an FTMO Account refunds its own fee with that account's first Reward; fees of failed Challenges are not refunded. FTMO's pages tie 'the paid fee' to the Challenge that produced the account and 'your first Reward' on it, and never say 'once per trader'. Not stated explicitly — confirm with FTMO support. The owner has been refunded once (2026-09-29)."
+  source: https://ftmo.com/en/faq/are-the-fees-recurrent/
+  status: unconfirmed
+  checked_on: 2026-10-11
+- rule_key: fee_refund
+  family: 1step
+  value: false
+  text: The FAQ says the 1-Step entry fee is not refunded.
+  source: https://ftmo.com/en/faq/is-the-entry-fee-refunded/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: daily_loss_basis
+  family: '*'
+  value: balance at midnight CE(S)T minus X % of initial balance
+  text: Closed plus floating P&L during the CE(S)T day must not fall below balance at midnight minus the daily % of the initial balance.
+  source: https://ftmo.com/en/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: best_day
+  family: 1step
+  value: 50
+  text: The best day may not exceed 50 % of the positive days' profit, to pass or to withdraw.
+  source: https://ftmo.com/en/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: news_weekend_evaluation
+  family: '*'
+  stage: phases
+  field: news_ok
+  value: true
+  text: News and overnight/weekend restrictions do not apply during the evaluation, whatever the account type.
+  source: https://ftmo.com/en/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: weekend_evaluation
+  family: '*'
+  stage: phases
+  field: weekend_ok
+  value: true
+  text: Weekend holding allowed during the evaluation.
+  source: https://ftmo.com/en/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: news_funded_standard
+  family: '*'
+  stage: funded
+  field: news_ok
+  value: false
+  text: On a Standard FTMO Account, opening or closing trades from 2 minutes before to 2 minutes after selected news releases is restricted (positions opened earlier may be held). The Swing type lifts it.
+  source: https://ftmo.com/en/faq/can-i-trade-news/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: weekend_funded_standard
+  family: '*'
+  stage: funded
+  field: weekend_ok
+  value: false
+  text: On a Standard FTMO Account, positions may not be held overnight (over 2 hours after market close) or over the weekend. The Swing type lifts it.
+  source: https://ftmo.com/en/faq/do-i-have-to-close-my-positions-overnight-or-before-the-weekend/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: swing_price
+  family: 2step
+  value: null
+  text: Swing is offered only on the 2-Step (confirmed, not on 1-Step; a Standard account cannot be converted later). Swing can be switched to Standard before each new cycle, never the reverse. Its price is not in the pricing table (re-checked 2026-10-04) and not on the FAQ pages read.
+  source: https://ftmo.com/en/faq/ftmo-swing-account-type/
+  status: unconfirmed
+  checked_on: 2026-10-11
+- rule_key: payout_cycle
+  family: '*'
+  stage: funded
+  field: payout_days
+  value: 14
+  text: A Reward can be requested from the 14th day after the first trade placed on the account, with all positions and orders closed; review 1-2 business days.
+  source: https://ftmo.com/en/faq/how-do-i-withdraw-my-profits/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: price_currency
+  family: '*'
+  value: EUR
+  text: The table's prices are read as euros (its deal tooltip says "€439"); the same price per size rank in every account currency.
+  source: https://ftmo.com/en/
+  status: unconfirmed
+  checked_on: 2026-10-11
+- rule_key: min_days
+  family: 1step
+  value: 0
+  text: No minimum trading days. FTMO's FAQ — "Due to the Best Day Rule, it is possible to complete the FTMO Challenge 1-Step in as few as 2 trading days, provided that exactly 50% of the total profit target is achieved on each of two separate trading days." The floor comes from the best-day rule, not from a days rule.
+  source: https://ftmo.com/en/faq/what-is-the-minimum-time-required-to-pass-ftmo-challenge-1-step/
+  status: confirmed
+  checked_on: 2026-09-30
+- rule_key: reward_share_base
+  family: 1step
+  stage: funded
+  field: reward_share_pct
+  value: 90
+  text: 1-Step Challenge pays 90 % of profits.
+  source: https://ftmo.com/en/faq/how-do-i-withdraw-my-profits/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: min_days
+  family: 2step
+  value: 4
+  text: At least 4 trading days (00:00-23:59 CET) with at least one position opened each.
+  source: https://ftmo.com/en/trading-objectives/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: forbidden_practices
+  family: '*'
+  value: exploiting price errors or update delays; opposite positions across accounts; gap trading (within 2 h of market close or around major macro events); ultra-high-speed tools or mass data entry; EAs over 2000 server requests per day; spreading profit to dodge the Best Day rule; disproportionate position sizes; third-party access
+  text: Summary of the Forbidden Trading Practices page. HFT, tick scalping, martingale, grid and copy trading are not named on it (only "ultra-high-speed tools" and EA request volume). The general FAQ requires strategies replicable on live and conforming to a real market.
+  source: https://ftmo.com/en/forbidden-trading-practices/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: consistency
+  family: '*'
+  value: null
+  text: The FAQ says there are no additional consistency requirements beyond the Trading Objectives (Best Day Rule, minimum days) if risk management is sustainable.
+  source: https://ftmo.com/en/faq/do-you-have-any-consistency-rules/
+  status: confirmed
+  checked_on: 2026-10-11
+- rule_key: payout_min
+  family: '*'
+  value: 20 USD bank wire, 50 USD crypto
+  text: Minimum closed profit to withdraw; no commission charged by FTMO.
+  source: https://ftmo.com/en/faq/how-do-i-withdraw-my-profits/
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: ea_hyperactivity
+  family: '*'
+  value: "200 orders at a time, 2000 positions per day"
+  text: "Platform servers cap 200 simultaneous orders and 2000 max positions per day; an EA that overloads the server is warned and asked to adjust. A third-party EA used by other traders may be denied the account if it exceeds the maximum capital allocation rule. No stop loss required."
+  source: https://ftmo.com/en/faq/which-instruments-can-i-trade-and-what-strategies-am-i-allowed-to-use/
+  status: confirmed
+  checked_on: 2026-10-04

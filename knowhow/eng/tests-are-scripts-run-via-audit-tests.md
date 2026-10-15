@@ -8,6 +8,7 @@ Run one with `python3 tests/<file>.py`. A file without `__main__` runs under pyt
 
 - `tests/test_portfolio_verdict.py` takes 276-455 s; under load it hits `audit_tests`' 300 s per-test cap (exit 124) while passing alone. Rerun it alone before calling it a failure.
 - Splitting a test file: other tests may import its private helpers (`_csv` moved to `test_perf66_algobank_pack` broke liveexport/membank/retest). `grep 'from tests.<module> import'` before moving one.
+- A test must not read the machine's `AlgoData` (gorilla holds only market data, encargo 71): it plants a temp root with `tests/{funding,archive,harvest}_planted.py` + `tests/sqx_synthetic.py`, `plant()` BEFORE any project import (`core.paths` binds `DATA` once; the helpers raise otherwise, and a test that imports `test_portfolio_stageb` must do it first). A test that exists to validate this machine's live data starts with `live_only.require(path, reason)`: it prints «APARTADA EN ESTA MÁQUINA» and exits 0, and `audit_tests` lists it. Simulate gorilla with `ALGO_DATA_ROOT=<dir with only bars/ and manual-fuentes/>`.
 
 ## Evidence
 2026-10-04 cleanup (`INFRA_REVIEW.md`, deleted 2026-10-06).

@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Any
 
 from core.assetyaml import safe_load
+from core.paths import ROOT
+
+# The owner's local layer (encargo 54, A, owner 2026-10-14): what the window's editor writes; not in git.
+LAYER = ROOT / "config" / "owner.yaml"
 
 
 def _cast(old: object, raw: str) -> object:
@@ -57,8 +61,18 @@ def apply(
     return cfg
 
 
+def layer(name: str) -> dict[str, Any]:
+    """The owner's local layer for one module: `{section: {key: value}}`, empty when there is none."""
+    if not LAYER.exists():
+        return {}
+    return (safe_load(LAYER.read_text(encoding="utf-8")) or {}).get(name) or {}
+
+
 def load(
-    path: Path, overrides: list[str], names: Callable[[dict], dict] | None = None
+    path: Path,
+    overrides: list[str],
+    names: Callable[[dict], dict] | None = None,
+    owner: str = "",
 ) -> dict[str, Any]:
     """A config.yaml with its overrides applied.
 
@@ -66,11 +80,15 @@ def load(
         path: The module's config.yaml.
         overrides: "section.key=value" strings.
         names: Builds apply()'s extra names from the parsed config.
+        owner: The module's name in the owner's local layer (`config/owner.yaml`), laid over the
+            file before the overrides; "" = this module has no layer.
 
     Returns:
         The parsed config.
     """
     cfg = safe_load(path.read_text(encoding="utf-8"))
+    for section, keys in layer(owner).items() if owner else ():
+        apply(cfg, [f"{section}.{k}={json.dumps(v)}" for k, v in (keys or {}).items()])
     return apply(cfg, overrides, names(cfg) if names else None)
 
 

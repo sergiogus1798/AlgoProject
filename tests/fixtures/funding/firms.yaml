@@ -1,0 +1,43 @@
+# The prop firms the project follows. Read by portfolio/funded/catalog/firms.py, the weekly
+# fundingWatcher, the daily dealHunter and the buying universe. Protocol for adding one: the
+# /firm-onboard skill (.claude/skills/firm-onboard/SKILL.md).
+#
+# status: candidate — followed (catalogue, rules, deals) while the admission protocol runs, NOT in
+#         the studies or the notifications; active — admitted by the owner, in the universe and the
+#         studies; rejected — no longer followed (kept here with the reason).
+# catalogue: auto = a code adapter reads the firm's own site; manual = the site blocks automated
+#         reading, the catalogue is typed in manual/<firm>.yaml and confirmed by the owner.
+# code_check: whether a discount code can be verified with the firm itself (dealHunter).
+
+- firm: hantec
+  name: Hantec Trader
+  status: active
+  catalogue: auto
+  code_check: true
+  added_on: 2026-09-29
+  admitted_by: owner, 2026-09-29
+  notes: "Public purchase JSON; EAs on the challenges, not on the Instant programs."
+- firm: ftmo
+  name: FTMO
+  status: active
+  catalogue: auto
+  code_check: false
+  added_on: 2026-09-29
+  admitted_by: owner, 2026-09-29
+  notes: "Pricing table inline in the home page; sales visible there. The owner has an account."
+- firm: fundednext
+  name: FundedNext
+  status: candidate
+  catalogue: auto
+  code_check: false
+  added_on: 2026-09-29
+  admitted_by: ''
+  notes: "CFD packages in the home page's Next.js payload (futures block excluded, not MT5). EAs below 50k on MT4/MT5 with an EA usage fee of unknown amount; identical trades across accounts forbidden. Blocking the admission: the EA fee."
+- firm: fundingpips
+  name: FundingPips
+  status: candidate
+  catalogue: manual
+  code_check: false
+  added_on: 2026-09-29
+  admitted_by: ''
+  notes: "Site and help centre block automated reading (Vercel checkpoint, Cloudflare). Third-party sources say third-party EAs are allowed only as trade or risk managers. Blocking the admission — whether self-built SQX EAs may trade, and the list prices."

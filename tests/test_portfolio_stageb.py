@@ -11,6 +11,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import archive_planted  # noqa: E402
+import funding_planted  # noqa: E402
+
+PLANTED = archive_planted.plant(
+    funding_planted.plant()
+)  # before anything imports core.paths
+
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
@@ -32,8 +39,7 @@ from portfolio.common.construct.search import (
 from portfolio.funded.rules import catalog, machine  # noqa: E402
 from test_portfolio_mc_paths import bar_world, lenient_plan  # noqa: E402
 
-ARCHIVED = "11278e59164e5e493095627093928bb1d8898afe6e0c2b51d0b07c8d39f00730"
-VERSION = "2026-10-06T2148"
+ARCHIVED, VERSION = PLANTED["identity"], PLANTED["version"]
 BUILD = (pd.Timestamp("2021-01-04"), pd.Timestamp("2021-12-31"))
 
 
@@ -201,9 +207,9 @@ def test_exact_minutes_against_blocks_and_bound() -> None:
 
 
 def test_golden_archived_strategy() -> None:
-    """The archived USDJPY strategy: stage B's exact M1 day low and high equal the universe's stored ones.
+    """The planted USDJPY strategy: stage B's exact M1 day low and high equal the universe's stored ones.
 
-    The one-member universe is built here in a temp root from the real archive, so both paths
+    The one-member universe is built here in a temp root from the planted archive, so both paths
     price the member with the same card and the same clock (`universe._commission`).
     """
     with tempfile.TemporaryDirectory() as tmp:
@@ -305,8 +311,8 @@ def test_unset_knobs_are_refused() -> None:
     shipped = config.load()
     assert (shipped["stageb"]["t1_gap"], shipped["funded"]["open_risk_cap"]) == (
         None,
-        None,
-    )  # not the owner's yet
+        0.5,
+    )  # t1_gap is not the owner's yet; the cap is his (2026-10-14)
     assert shipped["stageb"]["shared_of"] == "larger"  # owner, 2026-10-05
 
 

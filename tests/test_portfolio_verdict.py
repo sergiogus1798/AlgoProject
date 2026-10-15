@@ -8,6 +8,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# first: test_portfolio_stageb plants the data root, which must precede every project import
+from test_portfolio_stageb import small_cfg  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
@@ -16,7 +18,6 @@ from portfolio.common.construct.pairs import table as pairs_table  # noqa: E402
 from portfolio.common.construct.search import shortlist, stagea, stageb_null, stageb_run  # noqa: E402
 from portfolio.common.construct.verdict import decide, hold, null  # noqa: E402
 from test_portfolio_mc_paths import _member, lenient_plan  # noqa: E402
-from test_portfolio_stageb import small_cfg  # noqa: E402
 
 VERDICT_DIR = Path(funded_b.__file__).parent / "verdict"
 PLAN = lenient_plan(target=0.04, max_loss=0.10, daily_loss=0.05)
@@ -256,9 +257,10 @@ def test_no_criterion_is_said() -> None:
     }
     cfg = small_cfg()
     assert (
-        cfg["verdict"]["pass_percentile"] is None
+        cfg["verdict"]["pass_percentile"] == 0.95
         and cfg["verdict"]["pass_measure"] == "mc_p"
-    )  # owner 2026-10-05
+    )  # owner 2026-10-05 (measure), 2026-10-14 (percentile)
+    cfg["verdict"]["pass_percentile"] = None  # the no-bar case this test is about
     first = decide.funded_oos1(read, 0, cfg)
     none = decide.verdict(chosen, first, decide.UNOPENED, held, cost)
     assert first["state"] == "sin_criterio" and none["pass"] is None

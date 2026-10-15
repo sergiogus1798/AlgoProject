@@ -8,6 +8,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# first: test_portfolio_stageb plants the data root, which must precede every project import
+from test_portfolio_stageb import BUILD, complete, small_cfg  # noqa: E402
+
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
@@ -15,12 +18,14 @@ import ledger.study as study  # noqa: E402
 from ledger import record as ledger_record  # noqa: E402
 from portfolio.common.construct import funded, funded_b  # noqa: E402
 from test_portfolio_mc_paths import bar_world, lenient_plan  # noqa: E402
-from test_portfolio_stageb import BUILD, complete, small_cfg  # noqa: E402
 
 
 def test_verdict_end_to_end() -> None:
     """A synthetic pool through `funded_b.build`: oos1 alone, then oos2 once, a ledger row per segment opened."""
     cfg = small_cfg()
+    cfg["verdict"]["pass_percentile"] = (
+        None  # the criterion left unset: the verdict says so
+    )
     plan = lenient_plan(target=0.04, max_loss=0.10, phases=2, daily_loss=0.05)
     calendar = {
         "build": BUILD,

@@ -7,8 +7,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core import sqxfile  # noqa: E402
 from core.paths import MASTER  # noqa: E402
+from live_only import require  # noqa: E402
 
 PATH = MASTER / "user/projects/GBPJPY_H1/databanks/RetestPairs/Strategy 9.19.191.sqx"
+require(
+    PATH,
+    "descodifica los problemas de una estrategia real del master, que gorilla no tiene",
+)
 got = sqxfile.strategy_problems(PATH)
 print(got)
 assert got == {"value": 8, "reasons": ["TooShortTrades"], "unknown": 0}

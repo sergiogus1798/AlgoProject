@@ -26,6 +26,7 @@ GET /preflight ─▶ commands.plan ─▶ {ok, reasons, text, confirm}      POS
 | `construct.py` | «Constructor»: one real-path run — the portfolio chosen in build, every combination scored, its verdict. | imported | `runs/<run>/` → tabs |
 | `correlation.py` | «Correlación»: a pool's pair measures as a matrix judged against the threshold, and its admissible graph. | imported | `universe/<key>/pairs*.parquet`, `screen.json` → tabs |
 | `funded.py` | «Fondeo»: one funded run — stage A's P(pass) per combination and risk, stage B's three Monte Carlos, its verdict. | imported | `runs/<run>/` → tabs |
+| `owner.py` | «Entradas del dueño» (encargo 54, A): the inputs the funding modules refuse without, written from the window. | imported | `{id, value}` → `config/owner.yaml` |
 | `parts.py` | The pieces every portfolio reader answers with: contract blocks, tabs, the relaxed line, the words. | imported | values → contract blocks |
 | `shelf.py` | What exists under the portfolio folder: pools, runs, universes, bank tables — listed, never computed. | imported | `AlgoData/portfolio/` → dicts |
 | `weights.py` | «Pesos» and «Incubación»: the weight walk-forward's decision, and the incubation reading if one exists. | imported | `weights_wf/`, `incubation/` → tabs |

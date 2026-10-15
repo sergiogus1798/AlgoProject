@@ -2,17 +2,23 @@
 
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from unittest import mock  # noqa: E402
+
+import harvest_planted  # noqa: E402
 import pytest  # noqa: E402
+from live_only import only_here  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from PySide6.QtWidgets import QApplication, QPushButton  # noqa: E402
 
-from core.paths import ROOT  # noqa: E402
+from core.paths import DATA, ROOT  # noqa: E402
 from ledger import gate  # noqa: E402
 from ui.daemon.workflow import derive  # noqa: E402
 from ui.daemon.workflow.api import ROUTER  # noqa: E402
@@ -62,6 +68,11 @@ def _route_autonomous() -> dict:
         put_back(before)
 
 
+@only_here(
+    DATA / "harvest" / PROJECT,
+    "comprueba el estado vivo del proyecto Test_USDJPY (paso 8 hecho, 17-19 sin correr del todo, "
+    "consultas al OOS2 del registro) y sólo esta máquina lo tiene",
+)
 def test_route() -> None:
     """The real project, read as an autonomous agent: every step in WORKFLOW order, the
     contract's keys, the ledger's door. Step 8 is checked by invariants, not by today's
@@ -230,21 +241,36 @@ def test_project_knobs() -> None:
     from ui.daemon import runs
     from ui.daemon.runner import readings
 
-    got = {
-        k["key"]: k
-        for s in config("entryQuality", PROJECT)["sections"]
-        for k in s["knobs"]
-    }
-    mine = forproject.facts(PROJECT)
-    assert got["run.feed"]["value"] == mine["feed"] and "note" in got["run.feed"]
-    argv = readings.entry_quality(
-        runs.context(PROJECT, "CrossTF", "S", mine["symbol"]), "S"
-    )
-    assert f"run.feed={mine['feed']}" in argv, argv
-    cloud = {k["key"] for s in config("cloud", PROJECT)["sections"] for k in s["knobs"]}
-    assert not any(k.startswith("run.") for k in cloud), (
-        cloud
-    )  # the cloud takes no symbol now
+    row = {
+        "name": PROJECT,
+        "symbol": "USDJPY",
+        "timeframe": "M30",
+    }  # the builder's registry row
+    tmp = tempfile.TemporaryDirectory(prefix="ui-workflow-")
+    day = harvest_planted.DAY
+    planted = Path(tmp.name) / "raw" / PROJECT / "CrossTF" / day
+    harvest_planted.export(planted, harvest_planted.NAMES[:1], 5, PROJECT, "CrossTF")
+    with (
+        mock.patch.object(forproject.registry, "rows", lambda: [row]),
+        mock.patch.object(runs, "DATA", Path(tmp.name)),
+    ):
+        got = {
+            k["key"]: k
+            for s in config("entryQuality", PROJECT)["sections"]
+            for k in s["knobs"]
+        }
+        mine = forproject.facts(PROJECT)
+        assert got["run.feed"]["value"] == mine["feed"] and "note" in got["run.feed"]
+        argv = readings.entry_quality(
+            runs.context(PROJECT, "CrossTF", "S", mine["symbol"]), "S"
+        )
+        assert f"run.feed={mine['feed']}" in argv, argv
+        cloud = {
+            k["key"] for s in config("cloud", PROJECT)["sections"] for k in s["knobs"]
+        }
+        assert not any(k.startswith("run.") for k in cloud), (
+            cloud
+        )  # the cloud takes no symbol now
 
 
 if __name__ == "__main__":

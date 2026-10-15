@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from PySide6.QtWidgets import (
     QComboBox,
+    QPushButton,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -21,6 +22,7 @@ from ui.desktop.blocks.tabpage import TabPage
 from ui.desktop.portfolios import strips
 from ui.desktop.portfolios.calc import CalcButton
 from ui.desktop.portfolios.matrix import Matrix, PairDialog
+from ui.desktop.portfolios.ownerinputs import OwnerInputs
 from ui.desktop.theme import T
 
 if TYPE_CHECKING:
@@ -28,6 +30,10 @@ if TYPE_CHECKING:
 
 NOTHING = "Todavía no hay nada que enseñar"
 MANY = 1
+OWNER_MODULES = (
+    "Fondeo",
+    "Banco",
+)  # the modules whose «Calcular» refuses without the owner's inputs
 ONE_ROW = 3  # selectors that fit beside the launchers; more, and the typed ones get a row of their own
 
 
@@ -94,6 +100,13 @@ class ModulePage(QWidget):
                     primary=n == 0,
                 )
             )
+        if name in OWNER_MODULES:
+            own = QPushButton("Entradas del dueño")
+            own.setToolTip(
+                "Las decisiones tuyas sin las que el fondeo se niega: se escriben aquí, nunca en un YAML."
+            )
+            own.clicked.connect(lambda: OwnerInputs(self, self.reread).show())
+            strip.addWidget(own)
         lay.addLayout(strip)
         lay.addLayout(typed)
         self.state = text("", T["muted"], 13)
@@ -146,6 +159,11 @@ class ModulePage(QWidget):
             table.blockSignals(True)
             table.clear()
             table.blockSignals(False)
+        self.board.computed()
+
+    def reread(self) -> None:
+        """An owner input was saved: the module asks again, so its «Falta…» lines are up to date."""
+        self.asked = None
         self.board.computed()
 
     def query(self) -> dict[str, str]:

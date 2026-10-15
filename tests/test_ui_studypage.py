@@ -1,5 +1,6 @@
 """The study page offscreen over the real routes in-process: result, drawer, history, compare,
-and with `--run` one real edgeCost run (it writes a report under AlgoData/reports/)."""
+and with `--run` one real edgeCost run on this machine's live export (it writes a report under
+AlgoData/reports/). Without it every folder is planted in a temporary data root."""
 
 import os
 import sys
@@ -11,6 +12,14 @@ from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import harvest_planted  # noqa: E402
+
+# Before core.paths: the folders below are planted, not the machine's. `--run` is the one exception:
+# edgeCost reprices the trades on the real bars, which a planted trade does not sit on.
+if "--run" not in sys.argv:
+    harvest_planted.plant()
 
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -30,9 +39,11 @@ from ui.desktop.theme import QSS  # noqa: E402
 from ui.desktop.workspace.fichaorigin import default_study  # noqa: E402
 
 # Since F13 (2026-09-28): the USDJPY Donchian project; its gate ran on 09-27 and 09-28.
-PROJECT, DATABANK = "Test_USDJPY_donchianUpperCrossUp_M30", "Results"
+PROJECT, DATABANK = harvest_planted.PROJECT, "Results"
 MOTHER = "Strategy 9.27.83"
-LOTE_PROJECT = "Trade_NIKKEI225_M30_volatilidadL"  # a kept project with variant batches (strategyPermutations/)
+LOTE_PROJECT = (
+    harvest_planted.LOTE
+)  # a kept project with variant batches (strategyPermutations/)
 NO_BATCH = "Strategy 4.10.81"  # one of Results no 16.5 has fabricated variants for
 RUN = "--run" in sys.argv
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
@@ -189,14 +200,16 @@ def test_lote() -> None:
         "/api/matrix", params={"project": LOTE_PROJECT, "databank": DATABANK}
     ).json()
     names = {s["strategy"]: s["identity"] for s in bank["strategies"]}
-    has = {
-        n: HTTP.get(
-            "/api/batch/has", params={"project": LOTE_PROJECT, "strategy": n}
-        ).json()["has_batch"]
-        for n in names
-    }
-    mother = next(n for n in names if has[n])
-    no_batch = next(n for n in names if not has[n])
+
+    def has(name: str) -> bool:
+        """Whether the mother has a variant batch (asked one by one: an install can list thousands)."""
+        got = HTTP.get(
+            "/api/batch/has", params={"project": LOTE_PROJECT, "strategy": name}
+        )
+        return got.json()["has_batch"]
+
+    mother = next(n for n in names if has(n))
+    no_batch = next(n for n in names if not has(n))
     SELECTION.choose(
         project=LOTE_PROJECT,
         databank=DATABANK,

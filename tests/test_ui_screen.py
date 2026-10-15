@@ -6,7 +6,12 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+import harvest_planted  # noqa: E402
+
+harvest_planted.plant()  # before core.paths: the stored reports below are planted, not the machine's
 
 from PySide6.QtWidgets import QApplication, QLabel, QPushButton  # noqa: E402
 
@@ -19,18 +24,18 @@ from ui.desktop.blocks import fuse, markets  # noqa: E402
 from ui.desktop.blocks.head import head  # noqa: E402
 from ui.desktop.blocks.screen import screen  # noqa: E402
 
-PROJECT = "Test_USDJPY_donchianUpperCrossUp_M30"
+PROJECT = harvest_planted.PROJECT
 ISOOS = (
-    report_dir(PROJECT, "Results", "2026-09-27")
+    report_dir(PROJECT, "Results", harvest_planted.OLD_DAY)
     / "isOos"
     / "estrategias"
-    / "Strategy 1.1.85.json"
+    / f"{harvest_planted.ISOOS_NAME}.json"
 )
 CROSS = (
-    report_dir(PROJECT, "Retest_Markets_-_Family", "2026-09-27")
+    report_dir(PROJECT, "Retest_Markets_-_Family", harvest_planted.OLD_DAY)
     / "crossmarket"
     / "estrategias"
-    / "Strategy 9.18.85(1).json"
+    / f"{harvest_planted.CROSS_NAME}.json"
 )
 
 

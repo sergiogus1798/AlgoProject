@@ -1,7 +1,6 @@
 """Known-answer tests for the bank run: the whole run on a synthetic path set, the ledger row, the refusal."""
 
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -11,6 +10,10 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+
+import funding_planted  # noqa: E402
+
+funding_planted.plant()  # before anything imports core.paths
 
 import ledger.study as study
 from portfolio.funded.rules import catalog
@@ -186,17 +189,16 @@ for missing in (
     "owner.payout_cushion",
     "gaps.hantec_express_floor_after_payout",
 ):
-    args = [a for s_ in SET if not s_.startswith(missing) for a in ("--set", s_)]
-    res = subprocess.run(
-        [sys.executable, "-m", "portfolio.funded.sim.run", "--paths", "x.npz", *args],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-    )
+    # the committed config now holds some of these (2026-10-14) and an override cannot
+    # null a typed knob: blank the one under test in the loaded config, as run.main reads it
+    cfg = inputs.load(SET)
+    section, key = missing.split(".")
+    cfg[section][key] = None
+    lines = inputs.refuse(cfg) + table.variants(cfg)[1]
     check(
         f"without {missing} the command refuses and names it",
-        res.returncode != 0 and "No simulo" in res.stderr and missing in res.stderr,
-        res.stderr[-300:],
+        any(missing in line or key in line for line in lines),
+        lines,
     )
 bad = inputs.load(
     [s_.replace("haircut_decides=0.5", "haircut_decides=0.4") for s_ in SET]
@@ -221,14 +223,24 @@ for value in ("[same_plan, sometimes]", "[same_plan, same_plan]", "[]"):
 committed = inputs.load([])["owner"]
 answered = {
     "budget_eur": 1000,
+    "eurusd": 1.12,
     "rebuy": ["same_plan", "none"],
     "haircuts": [0, 0.25, 0.5, 0.75, 1],
     "haircut_decides": 0.5,
+    "payout_cushion": 0.0,
+    "payout_fee": 0.02,
+    "p_firm_closes_year": 0.05,
+}
+answered_gaps = {
+    "hantec_fee_refund": False,
+    "hantec_endurance_payout_days": 14,
+    "hantec_express_floor_after_payout": "initial",
+    "ftmo_1step_floor_after_payout": "stays",
 }
 check(
-    "the committed config holds the owner's answers of 2026-09-29 and 2026-10-05 and nothing else: every other knob is null",
+    "the committed config holds the owner's answers of 2026-09-29, 2026-10-05 and 2026-10-14 and nothing else: tax_rate and p_payout_denied stay null",
     committed == {**dict.fromkeys(committed), **answered}
-    and all(v is None for v in inputs.load([])["gaps"].values()),
+    and inputs.load([])["gaps"] == answered_gaps,
     committed,
 )
 

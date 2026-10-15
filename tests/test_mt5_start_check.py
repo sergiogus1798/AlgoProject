@@ -5,8 +5,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.paths import MT5_DATA  # noqa: E402
+from core.paths import MT5_DATA, MT5_PREFIX  # noqa: E402
+from live_only import require  # noqa: E402
 from mt5 import report, wine  # noqa: E402
+
+require(
+    MT5_PREFIX,
+    "lee un informe real del probador de MT5 y su diario, y gorilla no tiene el terminal bajo Wine (D3)",
+)
 
 RUN = (
     MT5_DATA
@@ -15,11 +21,8 @@ RUN = (
 )
 JOURNAL = wine.data_dir() / "Tester" / "logs" / "20260930.log"
 
-if not (RUN / "report.htm").exists() or not JOURNAL.exists():
-    print(
-        "SKIP test_mt5_start_check: the real tester report or journal is not on this machine"
-    )
-    sys.exit(0)
+require(RUN / "report.htm", "lee el informe real del tester de esta máquina")
+require(JOURNAL, "lee el diario real del tester de esta máquina")
 
 summary, deals = report.read(RUN / "report.htm")
 got = report.start_check(

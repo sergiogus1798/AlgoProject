@@ -33,3 +33,6 @@ __pycache__/
 .claude/settings.local.json
 # Graph output is a link into AlgoData (rule 7).
 graphify-out
+
+# The owner's local layer, written by the window (encargo 54).
+config/owner.yaml

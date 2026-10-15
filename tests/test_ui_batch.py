@@ -8,6 +8,11 @@ from unittest import mock
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import harvest_planted
+
+harvest_planted.plant()  # before core.paths: the batch below is planted, not the machine's
 
 import pandas as pd
 from fastapi import FastAPI
@@ -21,11 +26,10 @@ from ui.daemon.batch import api, panel
 from ui.desktop.batchview import tab
 
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
-# One real batch on disk. The batch folder without metrics.parquet has no real counterpart:
+# One planted batch on disk. The batch folder without metrics.parquet has no counterpart there:
 # that refusal is built in a temporary folder, and the view is drawn on this batch only.
-# A `Trade_` project's batch: a `Test_` one is retired with its data (the one pinned before was).
-REAL = ("Trade_NIKKEI225_M30_volatilidadL", "Strategy_10.11.484")
-VARIANTS, AXES = 420, 8
+REAL = (harvest_planted.LOTE, harvest_planted.MOTHER.replace(" ", "_"))
+VARIANTS, AXES = harvest_planted.VARIANTS, harvest_planted.AXES
 
 
 def http() -> TestClient:

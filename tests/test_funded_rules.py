@@ -8,6 +8,10 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import funding_planted  # noqa: E402
+
+funding_planted.plant()  # before anything imports core.paths
+
 from portfolio.funded.rules import catalog, machine
 
 FAILED = []

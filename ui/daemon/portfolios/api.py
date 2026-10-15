@@ -18,6 +18,7 @@ from ui.daemon.portfolios import (
     construct,
     correlation,
     funded,
+    owner,
     shelf,
     weights,
 )
@@ -42,6 +43,13 @@ class Run(BaseModel):
     action: str
     params: dict[str, str] = {}
     nonce: str = ""
+
+
+class OwnerInput(BaseModel):
+    """One owner input typed in the window: a row's id and the text of its box ("" = back to the file's value)."""
+
+    field: str
+    value: str
 
 
 class Pool(BaseModel):
@@ -219,3 +227,18 @@ def declare(req: Pool) -> dict[str, object]:
     except (FileExistsError, *FAILS) as e:
         return {"ok": False, "reasons": [str(e)]}
     return {"ok": True, "reasons": [], "path": str(path)}
+
+
+@ROUTER.get("/api/portfolios/owner")
+def owner_inputs() -> dict[str, object]:
+    """The owner's inputs of the funding modules, each with the value in force and what it blocks."""
+    return {"fields": owner.read()}
+
+
+@ROUTER.post("/api/portfolios/owner")
+def owner_write(req: OwnerInput) -> dict[str, object]:
+    """Write one typed input to the owner's local layer; nothing else is ever written."""
+    try:
+        return {"ok": True, "reasons": [], **owner.set_field(req.field, req.value)}
+    except (*FAILS, OSError) as e:
+        return {"ok": False, "reasons": [str(e)]}

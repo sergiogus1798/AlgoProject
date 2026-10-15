@@ -1,0 +1,261 @@
+# Hantec Trader — the rules its catalogue JSON does not carry, curated by hand and by the
+# fundingWatcher agent every Sunday. Read by `python3 -m portfolio.funded.catalog.refresh`.
+#
+# One entry per rule. `family`: one family, a list, or '*'. `field` + `stage` (optional): the value
+# overwrites that column of the database — stage 'plan' (plans table), 'phases' (every phase),
+# 'funded', 'phase1'…'phase3' or 'all'. Without `field` the rule is compendium text only.
+# `value: null` = still unknown. `status`: confirmed (read on the firm's own current pages) ·
+# unconfirmed (help centre, third party or inferred) · conflict (sources disagree — never guessed).
+# Discounts are ignored on purpose (owner, 2026-09-29): prices are list prices.
+
+- rule_key: eas_allowed
+  family: [express, enhanced, enhancedx, endurance]
+  stage: plan
+  field: eas_allowed
+  value: true
+  text: "Expert advisors allowed in the Challenge and Hantec Trader stages, as long as they do not breach the prohibited strategies (that page not read yet)."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445798-enhanced-2-step-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: eas_allowed
+  family: instant-funding
+  stage: plan
+  field: eas_allowed
+  value: false
+  text: "We do not allow EA & Robots for Instant funding programs."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445801-instant-funding"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: eas_allowed
+  family: [instant-lite, instant24]
+  stage: plan
+  field: eas_allowed
+  value: false
+  text: "\"We do not allow EA & Robots\" on Instant Lite (this URL) nor on Instant24 (158000445803-instant24)."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445802-instant-lite"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: reward_share_base
+  family: [express, enhanced, enhancedx, endurance]
+  stage: funded
+  field: reward_share_pct
+  value: 80
+  text: "Default split 80 %; the \"95 % Reward Share\" add-on raises it (the live JSON sells 95 %). Earlier value 75 was wrong."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445798-enhanced-2-step-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: reward_share_base
+  family: [instant-funding, instant-lite, instant24]
+  stage: funded
+  field: reward_share_pct
+  value: 80
+  text: "Default split 80 %, 95 % with the add-on."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445803-instant24"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: phase2_target
+  family: enhanced
+  stage: phase2
+  field: profit_target_pct
+  value: 5
+  text: "Stage 2 needs 5 % (stage 1 is 10 %)."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445798-enhanced-2-step-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: phase2_target
+  family: enhancedx
+  stage: phase2
+  field: profit_target_pct
+  value: 4
+  text: "Stage 2 needs 4 % (stage 1 is 8 %)."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445799-enhancedx-2-step-consistency-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: phase2_target
+  family: endurance
+  stage: phase2
+  field: profit_target_pct
+  value: 6
+  text: "Stage 2 needs 6 % (stage 1 is 6 %)."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445800-endurance-3-step-challenge-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: phase3_target
+  family: endurance
+  stage: phase3
+  field: profit_target_pct
+  value: 6
+  text: "Stage 3 needs a further 6 %."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445800-endurance-3-step-challenge-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: daily_loss_basis
+  family: '*'
+  value: "max(balance, equity) at previous 00:00 server time"
+  text: "Enhanced 2-Step page (2026-10-11): At 00:00 Server time the daily loss limit is calculated for the next day based on the higher of balance or equity. Instant24 page states it exactly (previous end-of-day 00:00 server balance or equity, whichever is higher); Express says \"recalculated daily at 00:00 server time\"; the other pages give only the percentage."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445798-enhanced-2-step-"
+  status: confirmed
+  checked_on: 2026-10-11
+- rule_key: trailing_lock
+  family: express
+  value: "locks at starting balance once profit equals the max loss (6 %)"
+  text: "Max total loss 6 % trails upward and locks at the starting balance once 6 % gains are reached."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445797-express-1-step-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: trailing_max_loss
+  family: [instant-funding, instant24]
+  value: "trails balance high watermark"
+  text: "Instant Funding: 6 % max loss trailing as balance rises. Instant24: 3 % initially, trails (high watermark - 3 %) on closed balance."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445803-instant24"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: min_days
+  family: express
+  value: 0
+  text: "\"There is no minimum required days in order to pass the Express Challenge.\" The third-party claim of 3 days is wrong."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445797-express-1-step-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: min_days
+  family: [enhanced]
+  value: "3 profitable days per stage (0.5 % each)"
+  text: "A minimum of 3 profitable days at each stage to progress or be eligible for payout."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445798-enhanced-2-step-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: min_days
+  family: endurance
+  value: "3 trading days per stage"
+  text: "Removable with an add-on."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445800-endurance-3-step-challenge-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: min_days
+  family: [enhancedx, instant-funding]
+  value: 0
+  text: "No minimum days."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445799-enhancedx-2-step-consistency-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: payout_min_days
+  family: instant-lite
+  value: "5 days with at least 0.5 % profit per payout cycle"
+  text: "Each payout cycle needs at least 5 days with at least 0.5 % profit."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445802-instant-lite"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: inactivity
+  family: instant24
+  value: "one trade every 30 days"
+  text: "No trade in 30 days is a hard breach."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445803-instant24"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: weekend_holding
+  family: [express, enhanced, enhancedx, endurance]
+  value: true
+  text: "Holding over the weekend permitted in Challenge and Hantec Trader accounts (crypto included). Third-party claim of the contrary is wrong."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445797-express-1-step-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: weekend_holding
+  family: [instant-funding, instant-lite, instant24]
+  value: "close by Friday 23:45 GMT+3"
+  text: "All trades closed Friday 23:45 GMT+3 (server); crypto may be traded over the weekend; an add-on lifts it on Instant Funding."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445801-instant-funding"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: fee_refund
+  family: '*'
+  value: false
+  text: "Help article 'Do I receive a Refund after passing my challenge or after reaching payout?' answers: 'No, refund of challenge fees are not issued upon withdrawals.' (modified 11 May). Wording speaks of withdrawals; the Terms and the purchase page were not read."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000444247-do-i-receive-a-refund-after-passing-my-challenge-or-after-reaching-payout-"
+  status: confirmed
+  checked_on: 2026-10-04
+- rule_key: consistency_formula
+  family: enhancedx
+  value: "best day profit / total profit <= 35 %"
+  text: "\"(Best Trading Day's Profit / Total Profit) x 100\" with a 35 % threshold."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445799-enhancedx-2-step-consistency-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: consistency_formula
+  family: instant-lite
+  value: "best day profit / total profit <= 20 %"
+  text: "Score of 20 % or lower required for withdrawal."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445802-instant-lite"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: profit_target_addon_phases
+  family: [express, enhanced, enhancedx, endurance]
+  value: phase1 only
+  text: "Pending support's answer; prudent reading by Council decision 2026-10-04: the \"Profit Target -2%\" add-on lowers phase 1 only (combos.EFFECTS). Help articles do not say which phases (add-ons article 158000444230 re-read 2026-10-04: only 'Reduces the required profit target'; Enhanced 2-Step article 158000445798 re-read 2026-10-11 lists no such add-on). Today the catalogue sells it on Express (one phase) alone, so the reading moves no number yet."
+  source: ""
+  status: unconfirmed
+  checked_on: 2026-10-11
+- rule_key: news_window
+  family: [express, enhanced, enhancedx, endurance]
+  value: "none in challenge; funded: no open/close 3 min before/after red-folder news"
+  text: "Add-ons allow news trading on funded accounts."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445797-express-1-step-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: news_window
+  family: [instant-funding, instant-lite]
+  value: "no open/close 3 min before/after red-folder news (Forex Factory)"
+  text: "Instant Funding restriction can be removed with an add-on."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445801-instant-funding"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: news_window
+  family: instant24
+  value: "permitted"
+  text: "News Trading is Permitted."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445803-instant24"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: news_funded
+  family: [express, enhanced, enhancedx, endurance, instant-funding, instant-lite]
+  stage: funded
+  field: news_ok
+  value: false
+  text: "The news window of `news_window` applies on the funded account unless the news add-on is bought; the catalogue JSON's newsProhibited=false does not reflect it."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445797-express-1-step-"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: trade_consistency
+  family: instant24
+  value: 15
+  text: "No single trade above 15 % of total accumulated profit; minimum profit 3 % before a reward can be requested."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000445803-instant24"
+  status: confirmed
+  checked_on: 2026-09-29
+- rule_key: forbidden_practices
+  family: '*'
+  value: "scalping (net profit from trades held under 3 min >= 30 % of total); copy/group/coordinated trading and identical strategies across accounts or users; reverse hedging across accounts; overleveraging, overexposure, one-sided bets; multiple registrations; EAs built to pass challenges"
+  text: "Folder 'Prohibited Strategies/Practices' (6 articles, modified 13-14 May). HFT, arbitrage, grid, martingale and tick scalping are not named; scalping is defined by the 3-minute / 30 % profit test and the company may adjust or remove profits. Overleveraging articles give no numeric limit; the Risk Management Group article sets 3 % risked per trade (1 % Instant Lite) as 'all-or-nothing' trading, which cuts funded leverage (FX 1:30, indices/commodities 1:5, metals 1:3, crypto 1:1) — not applied to Challenge accounts."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/folders/158001034577"
+  status: confirmed
+  checked_on: 2026-10-04
+- rule_key: ea_policy
+  family: '*'
+  value: "EAs allowed on MT5 except Instant accounts; max $400,000 allocation per EA/strategy; no identical EA across accounts/users"
+  text: "Article 'Can I trade with an EA?' (modified 7 Sep): third-party or custom EAs allowed if customised, genuine and with a unique strategy; no coordinated or mirrored automated trading; EAs designed to pass challenges, same EA across accounts without meaningful variation, and anything that circumvents rules are prohibited; Hantec may ask for EA details. Instant accounts: all automation prohibited."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000444279-can-i-trade-with-an-ea-"
+  status: confirmed
+  checked_on: 2026-10-04
+- rule_key: max_risk_per_trade
+  family: '*'
+  value: "3 % (1 % Instant Lite) — soft, via Risk Management Group"
+  text: "Consistently risking more than 3 % per trade (open exposure and closed trades) puts a trader in the Risk Management Group: funded leverage reduced, review after 3 successful payouts. Challenge accounts excluded. No hard breach stated."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000444270-what-is-the-risk-management-group-"
+  status: confirmed
+  checked_on: 2026-10-04
+- rule_key: stop_loss_required
+  family: '*'
+  value: false
+  text: "Stop loss not mandatory, strongly recommended."
+  source: "https://help.htrader.hmarkets.com/en/support/solutions/articles/158000444281-do-i-need-to-use-a-stop-loss-"
+  status: confirmed
+  checked_on: 2026-10-04

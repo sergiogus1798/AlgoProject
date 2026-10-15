@@ -73,3 +73,5 @@ Lee `CLAUDE.md` (reglas 3, 8, 12) · `ui/README.md` · `ui/daemon/ops/pulse.py` 
 - 57-1 → **«Lanzar en SQX» primero**. 57-2 → **botón** para traer supervivientes. 57-3 → **ledger único** (66 D27).
 - 57-4 → **la corrida sigue en gorilla** y se recoge al volver. Lo hallado en gorilla se verifica (paso 26) en el MT5 de leaseWeb.
 - **Encargo PARADO por el dueño (2026-10-14)**, las dos fases: no se conecta ni se pone a correr gorilla desde la ventana hasta que él lo diga.
+
+- **Hallazgo del encargo 71 (2026-10-14):** el «collect» de la fase 2 es lo único que falta para que una superviviente de gorilla llegue al MT5 Bridge de leaseWeb (paso 26); hoy no existe ningún camino de vuelta. Detalle en `OPEN.md` #123.

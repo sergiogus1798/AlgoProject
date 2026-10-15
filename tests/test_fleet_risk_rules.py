@@ -6,6 +6,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import funding_planted  # noqa: E402
+
+funding_planted.plant()  # before anything imports core.paths
+
 from core import fleetpaths
 from mt5.fleet.app import floors, read, risk, rules, state
 from mt5.newsfilter.firms import FIRMS

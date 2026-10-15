@@ -4,8 +4,9 @@
 |---|---|---|
 | `machine.example.yaml` | yes | the template, with every key commented |
 | `machine.yaml` | **no** (gitignored) | this computer's copy; the only file that may differ between machines |
+| `owner.yaml` | **no** (gitignored) | the owner's local layer, written by the window's «Entradas del dueño»: `sim:` and `construct:` sections laid over `portfolio/funded/sim/config.yaml` and `portfolio/common/construct/config.yaml` before any `--set`; absent until he types something |
 
-Copy the example to `machine.yaml` and edit it. `core/paths.py` is the only module that reads it;
+Copy the example to `machine.yaml` and edit it. `core/paths.py` is the only module that reads it (`owner.yaml` is read by `core/study/config.py`);
 everything else asks `core.paths`.
 
 | key | meaning |
