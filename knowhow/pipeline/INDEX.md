@@ -5,6 +5,7 @@
 - `blind-door-is-per-study-not-per-project` — Is the blind door scoped per project or per study, and what does backfill --blind cover?
 - `blind-steps-write-no-ledger-rows` — Which blind steps (WFC, CSCV, WFM) record their own look in the ledger?
 - `collect-never-hashed-its-own-files` — Why was metrics.parquet never hashed by collect, and what rewrote it afterwards?
+- `distributions-parquet-list-overflow` — Why does step 8 (or `core.store save`) die with `OSError: List index overflow` on a 10,000-strategy build?
 - `monkey-after-cut-has-no-cap` — Why did a run sit for hours in "paso 8 · python" after the judge?
 - `monkeyexcess-after-the-cut` — Why does the autopilot not run monkeyExcess after step 8's cut?
 - `mother-names-differ-from-the-cosecha` — Why did step 22 (conditionalMap) die with IndexError on a mother the cosecha does hold?
