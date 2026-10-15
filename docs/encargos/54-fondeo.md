@@ -285,6 +285,7 @@ y `/ui-shot` antes de dar nada por hecho.
   - Estrategias prohibidas de Hantec: la ficha ya las tiene (`forbidden_practices`, `ea_policy`, confirmadas 2026-10-04), contrastadas con los 6 artículos de su carpeta de ayuda; nada nuevo.
 - 11 (en parte) → **EUR/USD = 1,12**. Siguen abiertos: colchón de retiro, impuestos, comisión de cobro, probabilidades de cobro denegado y de cierre de firma.
 - 11 (resto) → **colchón de retiro 0** (retirar todo), **comisión de cobro y divisa 2 %**, **5 % al año** de cobro denegado y **5 % al año** de cierre de firma. Sigue abierto: el tipo de impuestos.
+- 11 (impuestos) → **impuestos: opción apagada, encargo 73** (`owner.tax_rate: null` = nada se calcula ni se muestra; con una fracción, informativo al lado del VE; sustituye el 0,40 del 2026-10-15).
 - 15 → **`funded.open_risk_cap = 0,5`** (todos los stops a la vez gastan como mucho la mitad de la pérdida diaria máxima) y **`verdict.pass_percentile = 95`** (la cartera pasa mejor que el 95 % de las carteras al azar). Se escriben al ejecutar el frente B: el primero en `portfolio/common/construct/config.yaml`, el segundo como `ledger:portfolio.funded.verdict_percentile`.
 
 

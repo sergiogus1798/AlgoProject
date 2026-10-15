@@ -109,6 +109,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_fleet_collect.py` | The collector on known answers: a beat's history row, skipping an unchanged beat, the floating min and max per ticket. | — |
 | `test_fleet_equity.py` | MetaTracker's per-strategy equity series: cumulative net, drawdown in % of size, and the combined sum. | — |
 | `test_fleet_floors.py` | MetaTracker on known answers: each firm's day start, the two floors, what makes a figure approximate, each light. | — |
+| `test_fleet_guard.py` | The fleet guard on a planted beat: one notification on the crossing into red, none while it stays red, re-armed by green. | — |
 | `test_fleet_magics.py` | The fleet's magic registry: sequential from 1001, stable per combination, never reused. | — |
 | `test_fleet_package.py` | The deployment package's pure parts: the file name that ties an EA to a firm and size, and the chart with its magic. | — |
 | `test_fleet_progress.py` | MetaTracker's stage progress on the firm's clock, the payout, the EA comparison, the strategy record and the cross-account pairing. | — |
@@ -121,6 +122,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_funded_price.py` | Encargo 33 §7.1: the catalogue's price is Hantec's JS formula, and it is the fee the bank simulation charges. | — |
 | `test_funded_rules.py` | Known-answer tests for portfolio.funded.rules: one tick breaks each floor, its twin only touches it. | — |
 | `test_funded_sim.py` | Known-answer tests for portfolio.funded.sim: one account's cash to the cent, barrier odds, the haircut, kernel == reference. | — |
+| `test_funded_tax_optional.py` | Tax is an optional extra (encargo 73): null = nothing about it anywhere; a rate = shown beside, never decides. | — |
 | `test_gate_cascade.py` | The gate's cascade over its levels: a strategy leaves at its first Fail and gets nothing of the levels after it, the cascade switched off computes everything and gives the same verdict, the funnel counts per level and rule, and a run resumes at a level. | `python3 -m pytest tests/test_gate_cascade.py` |
 | `test_gate_centred.py` | R5 and R5d of the gate (level 1b, centred): the same trading rate reads zero, a population under the minimum is not centred, a population that falls as one keeps what exceeds the cap, an excess with no trend has no slope, the projected excess uses the centred slope at half oos1, a strategy of both sides is a population apart, and the fallen keep their facts. | `python3 tests/test_gate_centred.py` |
 | `test_gate_dataquality.py` | Gate level 1b, data quality: known answers on hand-made frames. | `python3 tests/test_gate_dataquality.py` |
@@ -134,6 +136,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_gate_r3.py` | R3 of the gate (level 1a): a trader with no timing has no excess under the drift term that fits how it trades, a window under a quarter is refused, and the skewness-kurtosis t reduces to its closed form. | `python3 tests/test_gate_r3.py` |
 | `test_gate_resample.py` | R7 and R6 of the gate (levels 3a and 3b): the homogeneity p reads identical quarters as homogeneous and one profitable quarter as not, the drawdown p of a resampled build is centred and of clustered losses is extreme, and a seed — given or drawn — replays the result. | `python3 tests/test_gate_resample.py` |
 | `test_gate_rules.py` | The 10 rules that judge at step 8 (encargo 44 §1.2, cut down by encargo 65 §5.2), each against a hand truth table read through the judge's own `pipeline.autopilot.criteria`, and the contract that every fact a rule names is declared by a level of the gate. | `python3 tests/test_gate_rules.py` |
+| `test_gorilla_collect.py` | collect: a planted store stands for gorilla; rsync runs between two local folders, no ssh. | — |
 | `test_guard.py` | `.claude/hooks/guard.py` blocks what breaks rules 2, 4, 7 and 12 and nothing else. | — |
 | `test_histogram_clip.py` | The shared histogram clip: the axis spans percentiles 0.5-99.5 and says how many values it left out. | — |
 | `test_identity.py` | Identity resolution after the databank left every install: the cosecha, the kept .sqx, and no guess. | — |
@@ -315,6 +318,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_strategymeta_fixed_distance.py` | Test for sqx.inspect.strategymeta.fixed_distance: fixed pips found, ATR/percent/level not. | — |
 | `test_studycontract.py` | The study contract refuses what the window cannot draw, and every kind renders. | `python3 tests/test_studycontract.py` |
 | `test_surface.py` | Property test for core.surface on grids whose answer is known in advance — above all the shuffled one, where the level statistics must read zero and the pairing must not. | `python3 tests/test_surface.py` |
+| `test_sweep_parked.py` | A Test_ parked between workflow steps is never swept; a finished one is (OPEN #116). | — |
 | `test_tasklog.py` | A project log SQX is still writing, and a run killed before its end: neither may stop a run or block a load. | — |
 | `test_taxonomy.py` | The block taxonomy carries seven weights 0-3 on every block, and the palettes still resolve. | `python3 tests/test_taxonomy.py` |
 | `test_tearsheet_borrow.py` | A test databank's Ficha reads the build's cosecha by name, and says so (ui.daemon.tearsheet.borrow). | — |

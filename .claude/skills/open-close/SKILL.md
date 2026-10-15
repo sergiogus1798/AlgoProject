@@ -1,6 +1,6 @@
 ---
 name: open-close
-description: Close issues of OPEN.md or add a dated note to one — move each closed section verbatim to docs/OPEN-closed.md in numeric order, flip its emoji and its index row. Use when the owner says an issue is done, asks to close, archive or update OPEN.md issues, or after a task that resolved one. Replaces the throwaway scratch/close_open*.py scripts.
+description: Close issues of OPEN.md or add a dated note to one — move each closed section verbatim to docs/OPEN-closed.md in numeric order, flip its emoji and drop its index row (the index lists only open issues). Use when the owner says an issue is done, asks to close, archive or update OPEN.md issues, or after a task that resolved one. Replaces the throwaway scratch/close_open*.py scripts.
 ---
 
 # /open-close

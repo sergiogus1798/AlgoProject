@@ -788,6 +788,21 @@ first forex harvest built with it. A forex swap model by date (rate differential
 
 **Closed 2026-09-29.** Owner, 2026-09-29, his figures: forex 5 $/lot at every broker; indices 0 everywhere; gold, silver and crude Infinox 8 $/lot, FTMO 0.0014 %, Darwinex 0.005 %. Building and testing apply the MAXIMUM per segment: `costs.commission.use` is one {method, value} per segment (`core/commission.per_segment`), so each task carries its own method — gold build Infinox SizeBased 8, oos1/oos2 Darwinex PercentageBased 0.005; silver and Brent Infinox 8 throughout. `core.assetwrite.set_cost` spreads a bare figure over the three segments in the class's method. `tests/test_commission_segments.py`. SizeBased once-vs-per-fill is checked on the first forex harvest with edgeCost.
 
+## 28. 🟢 `DAX40`'s feed is in SQX's registry but in no project — builds, not yet run
+
+Stale until 2026-10-02: this said the master had no DAX40 feed and named `DAX40_DukasM1_Infinox`.
+Today the master's Data Manager holds `DAX40_M1` (instrument `DAX40_ftmo`, FTMO, EETUS, 3.9 M bars
+from 2013-09-30) and `DAX40_TICK` (from 2018-06), with bars under `user/data/History/`; the card
+names `DAX40_M1` and `python3 -m core.assets DAX40` exits 0. What is still true: **no `project.cfx`
+on any install carries that feed**, so the builder writes its resources from the registry
+(`registryxml.definitions`, `knowhow/costs/sessions-live-in-data-db.md`). A DAX40 H1 project built
+into a temp install carries main chart `DAX40_M1`, instrument `DAX40_ftmo`, session
+`GER40.cash_ftmo`. **Open: nobody has started such a project in SQX yet** — the first real run is
+the proof that SQX resolves it; on USA500 the registry route and the project route give
+byte-identical tasks.
+
+**Closed 2026-10-15.** DAX40 has been built in SQX: harvest folders AlgoData/harvest/Test_DAX40_M30_momentumL_cal5, _mc3, _mc4 and Test_DAX40_H1_reversion_wf2 exist (registry.csv rows on SQX_w2, 2026-10-08), and OPEN 120/121 measured a DAX40 M30 mother (12.3.344) over build and oos1, so SQX resolves the DAX40_M1 feed from the registry route.
+
 ## 29. ⚪ Six index assets have no IS/OOS window, and `SP500ft`'s feed does not exist
 
 `assets/_policy.yaml` now carries `segments: <SYMBOL>:` for all seventeen, each with the date range
@@ -1696,6 +1711,50 @@ written before that is the window's (owner's choice). The 24-h rule is unchanged
 `→ knowhow/sqx-drive/export-after-every-stop.md`
 
 **Closed 2026-09-29.** Owner, 2026-09-29: one task at a time per worker, but a finished task frees it for any project. The 24 h rule is gone from `advance.busy()`; busy = a live owner lock, the port, or an SQX PID. The 15-min quiet guard stays for a hand-made `stop` (released.json intact).
+
+## 90. 🟢 The autopilot (`pipeline/autopilot/`) — phase 1 ran end to end 2026-10-01 (6 → 16), its holes fixed
+
+Owner, 2026-10-01: a fully automatic, fast workflow; binary criteria with three outcomes (pass /
+limbo / fail), a limbo goes on marked, a step without criteria lets everyone through; meanwhile a
+random draw of 5 at step 8 only; not `ALGO_AUTONOMOUS`. Phase 1 = steps 7 → 16; tested offline
+(facts, criteria, plan) on `Test_USDJPY_donchianUpperCrossUp_H1`, never a real run.
+
+- **First real run done 2026-10-01** (`Test_XAUUSD_timeRangeBreakout2_M30`, crossmarket on XAGUSD
+  only — UKOIL was mid-conversion): 6 → 16 in ~51 min after a build stopped by hand at 571
+  strategies. Costs in `knowhow/perf/autopilot-dead-time.md`. Fixed the same day: consecutive SQX
+  steps share one start (`run.merged`, 6+7), `--own-log`, the YAML `on:` key in `judge.settings`.
+- **Fixed 2026-10-01 — a refused study counted as done:** the autopilot runs
+  `chain.python_step(strict=True)`, a refusal is a failure.
+- **Fixed 2026-10-01 — the MC Retest ingest refusal:** SQX stores each trade in whole cents and
+  counts losses on the full figure; with the %-annual swap a 0-cent trade is often a fraction of a
+  cent lost. `integrity.zero_readings` reconciles a stored zero as any of zero / loss / win.
+- **Fixed 2026-10-01 — re-exports at every stop:** the fingerprint read only settings.xml
+  order-free; `MonteCarloManipulation_Results.xml` moved all 571 on a bare start+stop
+  (`state._entries` now reads every XML entry). The MCR databanks' trades are no longer exported
+  (no study reads them).
+- **Decided 2026-10-01 (owner) — build cap, whichever first:** `Trade_` 10,000 strategies or 180
+  min, `Test_` 300 or 10 min (`databank.caps`, `builder` defaults). SQX stops on the count; the
+  minutes are enforced by `ui/daemon/advance/buildcap.py`, and the autopilot then runs the OOS
+  the stopped project skipped.
+- **Decided 2026-10-01 (owner) — `profitShape` and `entryQuality` run after step 8's cut**, on its
+  survivors only (`pipeline/autopilot/run.py` `AFTER_CUT`); they were 200 of step 8's 297 s on all
+  571. The window's «Correr workflow» still runs them before its stop at 8.
+- **Decided 2026-10-01:** step 12 judges each mother by her siblings and cuts `CrossTF` (losers
+  and every scaled sibling), so step 13's refill of `CrossTF_Mothers` holds only the passing
+  mothers, unscaled. A fact missing for a strategy → limbo (owner: odd, but limbo).
+- **Decided 2026-10-01:** step 14 cuts `MCR 8 Stress` (what SPP IS reads), step 16 cuts `SPP OOS`
+  (what the WFM reads; 16.5 takes the survivors from it and their SPP IS counterparts).
+- **Blocks the «compared with the original» facts of step 12:** the baseline cell had 0 trades on
+  all 30 mothers of the 2026-09-30 run (§89, the empty «madre reconstruida» control).
+- **Phase 2** (16.5 → 20, mother by mother): the mothers are those left in `SPP OOS` after the
+  step-16 cut, each matched to her counterpart in `SPP IS`; the variants are designed from the
+  metrics of the combined backtest (owner, 2026-10-01: «no es necesario coger solo SPP OOS»).
+  The brief reads only IS.
+- **Phase 3** (21 → 26): the stopped version is not harvested for step 25, no pool for 26 (§89, §85).
+- **Overlapping two populations** (one in SQX, one in Python) only if the measurement shows the
+  dead time is large.
+
+**Closed 2026-10-15.** Autopilot phase 1 ran 2026-10-01 and every hole listed was fixed; phases 2 and 3 exist since and the whole chain (steps 6-21, then 26) passes the functional test (encargo 70, workflow-test p70e PASA, 2026-10-15). Step 25 left the chain (OPEN 113) so the phase-3 gap is moot; the step-12 baseline control is superseded by the redesign of OPEN 108.
 
 ## 92. 🟢 Data root over budget: `reports` 5.05 GB > 5 GB (audit 2026-10-02)
 

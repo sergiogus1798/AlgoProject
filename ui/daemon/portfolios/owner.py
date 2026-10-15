@@ -61,7 +61,7 @@ FIELDS = (
         FRACTION,
         (),
         "Impuestos",
-        "fracción del beneficio neto que se va en impuestos; sólo se muestra al lado, nunca entra en un cálculo",
+        "opcional; vacío = apagado (no se calcula ni se muestra nada de impuestos). Con una fracción, se muestra al lado del dinero, nunca entra en un cálculo",
         "la caja del banco",
     ),
     (

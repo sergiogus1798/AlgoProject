@@ -229,7 +229,7 @@ answered = {
     "haircut_decides": 0.5,
     "payout_cushion": 0.0,
     "payout_fee": 0.02,
-    "tax_rate": 0.4,
+    "tax_rate": None,
     "p_payout_denied": 0.05,
     "p_firm_closes_year": 0.05,
 }

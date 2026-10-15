@@ -11,13 +11,15 @@ from portfolio.funded.sim.bank import ARRAYS
 
 FILE = Path(__file__).parent / "config.yaml"
 REBUY = ("same_plan", "none")  # the re-buy policies the kernel knows
+OPTIONAL = (
+    "tax_rate",
+)  # null = off: nothing is refused for it (encargo 73); a fraction 0..1 shows tax beside the money, never decides
 OWNER = {
     "eurusd": "el cambio EUR/USD del día del cálculo (dólares por euro)",
     "rebuy": "las políticas de recompra que se comparan: lista de same_plan (recomprar el mismo plan mientras quede caja) y/o none",
     "haircuts": "los recortes h de la curva VE(h), p. ej. [0, 0.25, 0.5, 0.75, 1]",
     "haircut_decides": "el recorte h con el que se ordena la tabla (uno de owner.haircuts)",
     "payout_cushion": "fracción del tamaño que se deja en la cuenta en cada cobro (0 = retirar todo)",
-    "tax_rate": "fracción del beneficio neto que se va en impuestos; sólo se muestra al lado, nunca entra en un cálculo",
     "payout_fee": "fracción de cada cobro que se va en comisiones de pago y divisa",
     "p_payout_denied": "probabilidad de que la empresa deniegue CADA cobro, de forma independiente",
     "p_firm_closes_year": "probabilidad de que la empresa cierre en un año",
@@ -32,7 +34,11 @@ def load(overrides: list[str]) -> dict[str, Any]:
 def refuse(cfg: dict) -> list[str]:
     """Every owner input still missing or unreadable, one Spanish line each; empty = go."""
     owner = cfg["owner"]
-    out = [f"owner.{key} — {what}" for key, what in OWNER.items() if owner[key] is None]
+    out = [
+        f"owner.{key} — {what}"
+        for key, what in OWNER.items()
+        if owner[key] is None and key not in OPTIONAL
+    ]
     rebuy = owner["rebuy"]
     if rebuy is not None and not (
         isinstance(rebuy, list)

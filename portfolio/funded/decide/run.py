@@ -52,18 +52,25 @@ def _risk(row: dict) -> str:
     return f"{phases} → {100 * row['risk_funded']:g}"
 
 
+def _with_tax(r: dict) -> str:
+    """«($ con impuestos) » when the row carries the optional tax figure, else nothing."""
+    return f"({r['ev_net']:+.1f} $ con impuestos) " if "ev_net" in r else ""
+
+
 def lines(result: Choice, owner: dict) -> list[str]:
     """The table of every row judged: its gain, its cost, its place at each haircut, and whether it may be bought."""
     hs = owner["haircuts"]
+    tax_head = f"{'VE c/imp.':>9} " if owner["tax_rate"] is not None else ""
     out = [
-        f"{'plan':27} {'recompra':9} {'precio$':>8} {'riesgo % f→fond':>17} {'VE ± e.t. $':>14} {'VE c/imp.':>9} {'mono':>7} "
+        f"{'plan':27} {'recompra':9} {'precio$':>8} {'riesgo % f→fond':>17} {'VE ± e.t. $':>14} {tax_head}{'mono':>7} "
         f"{'ventaja':>7} {'P cobro':>7} {'cuotas$':>7} {'desemb. p90':>11} {'puesto h=' + '/'.join(f'{h:g}' for h in hs):>26}  ¿se puede comprar?"
     ]
     for r in result["rows"]:
+        net = f"{r['ev_net']:9.1f} " if "ev_net" in r else ""
         place = "/".join(str(r[f"rank_h{round(100 * h)}"]) for h in hs)
         out.append(
             f"{r['plan']:27} {r['rebuy']:9} {r['price_usd']:8.2f} {_risk(r):>17} "
-            f"{'%+.1f ± %.1f' % (r['ev'], r['ev_se']):>14} {r['ev_net']:9.1f} {r['ev_monkey']:7.1f} {r['advantage']:7.1f} "
+            f"{'%+.1f ± %.1f' % (r['ev'], r['ev_se']):>14} {net}{r['ev_monkey']:7.1f} {r['advantage']:7.1f} "
             f"{r['p_first_payout']:7.0%} {r['fees']:7.1f} {r['outlay_p90']:11.0f} {place:>26}  "
             f"{'SÍ' if r['reason'] is None else 'no: ' + r['reason']}"
         )
@@ -84,7 +91,7 @@ def sentence(result: Choice, owner: dict) -> str:
         return (
             f"DECISIÓN: ninguno — {why}. El más cercano, {near['plan']} con recompra «{near['rebuy']}»: "
             f"costaría {near['fees']:.0f} $ de cuotas esperadas por un VE_banco de {near['ev']:+.1f} ± "
-            f"{near['ev_se']:.1f} $ ({near['ev_net']:+.1f} $ con impuestos) con h = {h:.0%} (mono {near['ev_monkey']:+.1f} $); no se compra porque "
+            f"{near['ev_se']:.1f} $ {_with_tax(near)}con h = {h:.0%} (mono {near['ev_monkey']:+.1f} $); no se compra porque "
             f"{near['reason']}."
         )
     live = (
@@ -105,7 +112,7 @@ def sentence(result: Choice, owner: dict) -> str:
         f"«{best['rebuy']}», con la cartera {', '.join(m[:8] for m in best['members'])}, riesgo {_risk(best)} % "
         f"por operación (fases → fondeada). CUESTA {best['fees']:.0f} $ de cuotas esperadas (p90 del desembolso "
         f"antes del primer cobro {best['outlay_p90']:.0f} $ de una caja de {best['budget_usd']:.0f} $). GANA un "
-        f"VE_banco de {best['ev']:+.1f} ± {best['ev_se']:.1f} $ ({best['ev_net']:+.1f} $ con impuestos) con h = {h:.0%} ({best['ev_per_month']:+.1f} $/mes), "
+        f"VE_banco de {best['ev']:+.1f} ± {best['ev_se']:.1f} $ {_with_tax(best)}con h = {h:.0%} ({best['ev_per_month']:+.1f} $/mes), "
         f"{best['advantage']:+.1f} $ sobre el mono, P(primer cobro) {best['p_first_payout']:.0%}; sigue positivo "
         f"con {live} del edge fuera de muestra.{tie}"
     )
@@ -165,8 +172,14 @@ def main() -> None:
             f"AJUSTADO: {'veredicto de la cartera ignorado; ' if args.ignore_verdict else ''}"
             f"{'caminos sintéticos o de una corrida con umbrales relajados; ' if relaxed else ''}no es un resultado"
         )
+    t = owner["tax_rate"]
+    tax_note = (
+        f"impuestos: {t:.0%} sobre beneficio neto, sólo informativo, "
+        if t is not None
+        else ""
+    )
     print(
-        f"Con los valores que diste: colchón {owner['payout_cushion']:.0%}, impuestos: {owner['tax_rate']:.0%} sobre beneficio neto, sólo informativo, "
+        f"Con los valores que diste: colchón {owner['payout_cushion']:.0%}, {tax_note}"
         f"comisión de cobro {owner['payout_fee']:.0%}, cobro denegado {owner['p_payout_denied']:.0%}, cierre de la "
         f"empresa {owner['p_firm_closes_year']:.0%}/año"
     )

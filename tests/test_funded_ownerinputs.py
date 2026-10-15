@@ -41,7 +41,7 @@ def test_owner_inputs() -> None:
             owner.set_field("sim.gaps.ftmo_1step_floor_after_payout", "initial")
             owner.set_field("construct.funded.open_risk_cap", "0.4")
             got = inputs.load([])
-            assert was == 0.4 and got["owner"]["tax_rate"] == 0.21, (
+            assert was is None and got["owner"]["tax_rate"] == 0.21, (
                 "the layer reaches the sim loader"
             )
             assert got["gaps"]["ftmo_1step_floor_after_payout"] == "initial"
@@ -55,8 +55,8 @@ def test_owner_inputs() -> None:
                 "an input never typed keeps the file's value"
             )
             owner.set_field("sim.owner.tax_rate", "")
-            assert inputs.load([])["owner"]["tax_rate"] == 0.4, (
-                "a blank box gives the file's value back"
+            assert inputs.load([])["owner"]["tax_rate"] is None, (
+                "a blank box gives the file's value back (tax off)"
             )
             for field, bad in (
                 ("sim.owner.tax_rate", "1.5"),

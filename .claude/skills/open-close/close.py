@@ -5,7 +5,7 @@
 spec.json: {"close": {"<N>": ["<emoji>", "<note>"]}, "note": {"<N>": ["<emoji>", "<note>"]}}
 
 A closed section moves verbatim to docs/OPEN-closed.md, in numeric order, with its heading emoji
-flipped and `**Closed <today>.** <note>` appended; its index row points at the archive. A noted
+flipped and `**Closed <today>.** <note>` appended; its index row is dropped (the index lists only open issues). A noted
 section stays, with `**<today>.** <note>` appended and its emoji updated.
 """
 
@@ -79,17 +79,17 @@ pieces.append(op[last:])
 
 
 def row(m: re.Match) -> str:
-    """One index row, repointed if its issue was closed or noted."""
+    """One index row: dropped if its issue was closed (the index lists only open ones), re-flagged if noted."""
     n = m.group(1)
     if n in close:
-        return f"| {n} | {close[n][0]} |{m.group(3)}| docs/OPEN-closed.md |"
+        return ""
     if n in note:
-        return f"| {n} | {note[n][0]} |{m.group(3)}| OPEN.md |"
+        return f"| {n} | {note[n][0]} |{m.group(3)}|\n"
     return m.group(0)
 
 
 op2 = re.sub(
-    r"^\| (\d+[a-z]?) \| (\S+) \|([^|]*)\| OPEN\.md \|$",
+    r"^\| (\d+[a-z]?) \| (\S+) \|([^|]*)\|\n",
     row,
     "".join(pieces),
     flags=re.M,

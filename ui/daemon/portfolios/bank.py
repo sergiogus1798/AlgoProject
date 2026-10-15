@@ -49,7 +49,11 @@ def read(bank: str = "", plan: str = "", **_: str) -> dict[str, Any]:
             REBUY.get(r["rebuy"], r["rebuy"]),
             r["price_usd"],
             *[round(r[h], 1) for h in hs],
-            round(measures.after_tax(r[at], owner["tax_rate"]), 1),
+            *(
+                [round(measures.after_tax(r[at], owner["tax_rate"]), 1)]
+                if owner["tax_rate"] is not None
+                else []
+            ),
             round(r["ev_monkey"], 1),
             round(r["ev_se"], 1),
             None if pd.isna(r["breakeven_h"]) else parts.pct(r["breakeven_h"]),
@@ -64,7 +68,13 @@ def read(bank: str = "", plan: str = "", **_: str) -> dict[str, Any]:
         "recompra",
         "precio $",
         *[f"VE $ con h = {int(round(parts.pct(h) or 0))} %" for h in owner["haircuts"]],
-        f"VE $ con imp. (h = {int(round(parts.pct(owner['haircut_decides']) or 0))} %)",
+        *(
+            [
+                f"VE $ con imp. (h = {int(round(parts.pct(owner['haircut_decides']) or 0))} %)"
+            ]
+            if owner["tax_rate"] is not None
+            else []
+        ),
         "mono $",
         "± error $",
         "h de equilibrio %",
@@ -77,7 +87,13 @@ def read(bank: str = "", plan: str = "", **_: str) -> dict[str, Any]:
         "Mismo plan: se recompra el mismo plan mientras quede caja. Sin recompra: una sola compra.",
         "Lo que cuesta la cuenta hoy.",
         *[parts.WORDS["ev"] + " " + parts.WORDS["h"]] * len(hs),
-        "El VE del h que ordena la tabla, con impuestos sobre el beneficio neto; sólo informativo.",
+        *(
+            [
+                "El VE del h que ordena la tabla, con impuestos sobre el beneficio neto; sólo informativo."
+            ]
+            if owner["tax_rate"] is not None
+            else []
+        ),
         parts.WORDS["monkey"],
         parts.WORDS["se"],
         parts.WORDS["breakeven_h"],
@@ -130,12 +146,17 @@ def decided() -> parts.TabBlock:
                 "watch",
             ),
         )
+    tax = d["owner"]["tax_rate"] is not None  # optional (encargo 73)
     rows = [
         [
             r["plan"],
             REBUY.get(r["rebuy"], r["rebuy"]),
             round(r["ev"], 1),
-            round(measures.after_tax(r["ev"], d["owner"]["tax_rate"]), 1),
+            *(
+                [round(measures.after_tax(r["ev"], d["owner"]["tax_rate"]), 1)]
+                if tax
+                else []
+            ),
             round(r["ev_se"], 1),
             round(r["ev_monkey"], 1),
             r["reason"],
@@ -143,7 +164,7 @@ def decided() -> parts.TabBlock:
         for r in d["rows"]
     ]
     states = [
-        [None] * 6
+        [None] * (6 if tax else 5)
         + [
             "pass"
             if r["reason"] == "sí"
@@ -161,7 +182,7 @@ def decided() -> parts.TabBlock:
             "plan",
             "recompra",
             "VE $",
-            "VE $ con imp.",
+            *(["VE $ con imp."] if tax else []),
             "± error $",
             "mono $",
             "¿se compra?",
@@ -172,7 +193,11 @@ def decided() -> parts.TabBlock:
             None,
             None,
             parts.WORDS["ev"],
-            "El VE con impuestos: sobre el beneficio neto, sólo informativo.",
+            *(
+                ["El VE con impuestos: sobre el beneficio neto, sólo informativo."]
+                if tax
+                else []
+            ),
             parts.WORDS["se"],
             parts.WORDS["monkey"],
             None,

@@ -95,7 +95,8 @@ def decide(per_plan: dict[str, dict], owner: dict, ignore_verdict: bool) -> Choi
     ]
     for r in rows:
         r["reason"] = gate(r, ignore_verdict)
-        r["ev_net"] = measures.after_tax(r["ev"], owner["tax_rate"])  # shown only
+        if owner["tax_rate"] is not None:  # optional (encargo 73): off = no key at all
+            r["ev_net"] = measures.after_tax(r["ev"], owner["tax_rate"])  # shown only
     ranks(rows, hs)
     rows.sort(key=lambda r: -r["ev"])
     eligible = [r for r in rows if r["reason"] is None]

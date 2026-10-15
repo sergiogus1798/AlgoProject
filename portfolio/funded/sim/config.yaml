@@ -27,7 +27,7 @@ owner:
   haircuts: [0, 0.25, 0.5, 0.75, 1]   # owner 2026-10-05 (encargo 33 §6.7): the h of the curve EV(h), fractions ascending
   haircut_decides: 0.5          # owner 2026-10-05 (encargo 33 §6.7): the one h of that list the table is ranked at
   payout_cushion: 0.0        # owner 2026-10-14 (54, 11: withdraw everything): fraction of the account size left in the account at each payout; 0 = withdraw everything
-  tax_rate: 0.40                # owner 2026-10-15 (54, 11): tax on NET profit — shown beside the money figures, never an input to any calculation or decision
+  tax_rate: null                # owner 2026-10-15 (encargo 73): OPTIONAL, null = off (nothing about tax is computed or shown); a fraction 0..1 = on, tax on NET profit shown beside the money figures, never an input to any calculation or decision
   payout_fee: 0.02              # owner 2026-10-14 (54, 11: payment and currency, 2 %): fraction of every payout lost to payment and currency fees
   p_payout_denied: 0.05         # owner 2026-10-15 (54, 11): 5 % PER PAYOUT, each independently — probability a payout request is denied (the account ends there)
   p_firm_closes_year: 0.05      # owner 2026-10-14 (54, 11: 5 % a year): probability the firm closes within a year (nothing more is paid)
