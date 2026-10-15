@@ -1,148 +1,140 @@
 # 62 · Registro único de «ya probado» — una sola respuesta a «¿se probó esta celda?»
 
-**Tu oficio:** contabilidad de búsquedas y corrección por pruebas múltiples; Python sobre tres registros
-que ya existen, sin SQX. **Opus**: cambiar cómo se cuenta N es estadística (regla 17).
-**Tu encargo:** (1) **un comando de sólo lectura** que, para una celda, diga qué se construyó, qué tramos
-se gastaron y cuántas veces — contando los `Test_`; y (2) **dos tablas de «antes y después»** para que el
-dueño decida dos cambios que tú **no** aplicas sin su sí: el número de ensayos N por serie de precios en
-vez de por plantilla, y Benjamini-Hochberg sobre una familia fijada por propuesta.
+**Tu oficio:** contabilidad de búsquedas y corrección por pruebas múltiples; Python sobre el contador
+por celda que ya existe (`ledger/cells.py`), sin SQX. **Opus**: cambiar qué se cuenta para el listón
+es estadística (regla 17).
+**Tu encargo:** (1) **una tabla de «antes y después»** para que el dueño decida si el listón del paso 8
+cuenta los lotes por celda (hoy) o por símbolo entero; (2) el aviso de tramos gastados en la campaña,
+que el dueño ya contestó; (3) aplicar lo que él elija en las preguntas de abajo, y nada antes de su sí.
 
-> **Cambiar N cambia veredictos estadísticos.** Un N mayor baja el Sharpe deflactado y sube el listón de
-> todo lo que se juzga con él; una familia de BH distinta cambia qué celdas del perfil «pasan». No es un
-> arreglo de código: es una decisión de estadística, del dueño. La parte 1 no mueve ningún veredicto; las
-> partes 2 y 3 sólo los **calculan de las dos maneras** hasta que él elija.
+> **Cambiar qué se cuenta cambia veredictos.** El paso 8 corta en z ≥ Φ⁻¹(1 − α/B), con α 0,01 y B =
+> lotes cribados en `oos1` en la celda (`pipeline/autopilot/criteria.py:93-95`,
+> `pipeline/autopilot/judge.py:111-126`, `ledger/cells.py:215-230`). Contar B en otro sitio mueve
+> ese listón para todo lo que se juzgue después. La parte 1 sólo lo **calcula de las dos maneras**.
 
-Lee `CLAUDE.md` (reglas 6, 7, 8, 9, 11, 16, 20) · `CODESTYLE.md` · `ledger/README.md` ·
-`pipeline/campaign/README.md` · `engines/README.md` (pruebas múltiples) · `studies/research/marketProfile/README.md`.
+Lee `CLAUDE.md` (reglas 8, 9, 11, 16, 20, 21) · `CODESTYLE.md` · `ledger/README.md` ·
+`docs/encargos/65-consenso-cuatro-opiniones.md` §5.1, §5.2 y §6 (sólo esos trozos: `grep -n '^### 5.1\|^### 5.2\|^### 6' …`).
 
-## 0 · De dónde sale
+## Estado
 
-Revisión del dueño del 2026-10-11 (`~/Desktop/revision-pasos-01-07-2026-10-11.md`). §3: «Un solo registro
-de "ya probado". Que cuente los `Test_` y los tramos gastados. Para la campaña, la celda del ejemplo está
-sin probar, y tiene `oos1` cribado cuatro veces y 24 filas sobre `oos2`» y «El número de ensayos por serie
-de precios, no por plantilla. Hoy otra plantilla sobre el mismo USDJPY M30 empieza la cuenta de cero».
-§1: «Aplicar BH sobre una familia fijada por propuesta, no sobre todo lo medido alguna vez. Esa familia
-crece cada mañana y mueve los veredictos». Cifras: `docs/AgentPDFs/criterios-implementados-2026-10-12.md:349-363,522,528`
-(celda `doubleROCLong` USDJPY M30: 11 proyectos en el registro, todos `Test_`; `oos1` cribado cuatro veces
-con cuatro versiones de `criteria.yaml`; 24 filas sobre `oos2`, todas del 2026-10-06) y
-`criterios-implementados-2026-10-12.md:36,358,584` (2 celdas de 1.064 pasan el perfil).
+| # | parte | modelo | depende de | estado |
+|---|---|---|---|---|
+| 0 | El comando «¿se probó esta celda?» | — | — | ✅ `python3 -m ledger.cells --ask <SÍMBOLO> <MARCO> [--template T] [--direction D] [--json]` (commit 0df79b2), test `tests/test_ledger_cells.py`. Falta sólo explicar en `ledger/README.md` las dos diferencias de la celda del ejemplo (ver parte 0) |
+| 1 | Tabla «B por celda → B por símbolo» | Opus | — | ⬜ |
+| 2 | Aviso de tramos gastados en la campaña (pregunta 1, ya contestada) | Sonnet | — | ⬜ |
+| 3 | Aplicar B por símbolo y recalcular/marcar lo juzgado | Sonnet | P62-A, P62-D | 🔴 espera al dueño |
+| 4 | Tope de cribas en `oos1` | Sonnet | P62-C | 🔴 espera al dueño |
 
-Lo que se comprobó en el código el 2026-10-11 — «ya probado» vive en **tres sitios** que no se hablan:
+**Bitácora**
+- 2026-10-12 — el encargo 65 §5.1 hizo el contador por celda (`ledger/cells.py`: seis enteros por activo ×
+  TF × dirección × familia, `Test_` cuenta igual que `Trade_`), el sello del paso 8 (`seal.json`,
+  `judgements.csv`) y el tope de 3 miradas a `oos2` («solo vivo», `cells.look_oos2`,
+  `ledger:oos2Reading.max_looks`). §5.2 puso el paso 8 a una z del mono con horas con listón por B.
+- 2026-10-14 — respuestas del dueño a las preguntas 1-5 (abajo). La parte 1 antigua se hizo sobre `ledger/cells.py`.
+- 2026-10-15: reescrito contra el 65 (fila 5 del orden). Fuera: el N por serie de `ledger/trials.py`
+  (no juzga nada — ver §0), BH del perfil de mercado (el paso 1 está apagado — pregunta P62-B), y el
+  comando `ledger.cell` (existe como `ledger.cells --ask`).
 
-| dónde | qué sabe | qué no sabe |
-|---|---|---|
-| `AlgoData/projects/registry.csv` (lo escribe `sqx/projects/builder.py`) | todo proyecto creado, `Test_` incluidos: símbolo, marco, plantilla, fecha | resultados; tramos gastados |
-| `AlgoData/campaign/ledger.jsonl`, clave `plantilla\|símbolo\|marco\|dirección` | lo que la campaña planeó y lanzó | **ignora los `Test_`**: `pipeline/campaign/plan.py:36-39` sólo mira `Trade_` y `Research_` |
-| `AlgoData/ledger/<símbolo>_<marco>_<familia>.jsonl` (el libro de búsqueda) | filas por tramo y criterio, con `n_in`, `n_out`, `segment` (`ledger/study.py:15-17`) | N es **por estudio** — activo, marco y familia de plantilla (`ledger/study.py:21`, `ledger/trials.py:13`): otra familia sobre la misma serie empieza de cero |
+## 0 · De dónde sale, y qué cambió
 
-Y en el perfil de mercado: BH se aplica sobre **todas las filas que se le pasan**
-(`studies/research/marketProfile/many.py:53-71`); la `q` por familia se guarda (`q_family`,
-`passes_family`) pero **no es el veredicto**.
+Revisión del dueño del 2026-10-11 (`~/Desktop/revision-pasos-01-07-2026-10-11.md`) §3: «Un solo registro
+de "ya probado". Que cuente los `Test_` y los tramos gastados» y «El número de ensayos por serie de
+precios, no por plantilla». §1: «Aplicar BH sobre una familia fijada por propuesta».
 
-## 1 · El comando: «¿se probó esta celda?» (sólo lectura)
+Lo que el 65 dejó, comprobado en el código el 2026-10-15:
 
-`python3 -m ledger.cell <SÍMBOLO> <MARCO> [--template T] [--direction long|short]` (si `ledger/README.md`
-pide otro nombre, el suyo). Lee los tres sitios por `core.paths` — no escribe en ninguno, no crea un cuarto
-registro — y devuelve una respuesta, texto y `--json`:
+- **Lo que juzga es B, no N.** El N acumulado de `ledger/trials.py` (Sharpe deflactado) ya no corta en
+  ningún paso: sólo se muestra (`core/archive/manifest.py:113`, `ui/daemon/ops/ledgerview.py:65`, el panel
+  de variantes `engines/variants/panel.py:162`). La parte 2 antigua («N por serie» sobre `trials.py`)
+  no movería ningún veredicto: fuera. La cuenta que juzga es B, la del paso 8.
+- **La celda del ejemplo** (`USDJPY M30 doubleROCLong`), hoy con `--ask`: 7 `Test_` (el dossier decía
+  11), `oos1` cribado 4 veces ✓, 30 filas sobre `oos2` (decía 24). Sobre el símbolo entero `oos1` lleva
+  58 cribas. Explica las dos diferencias en `ledger/README.md` (proyectos retirados o con otro nombre;
+  filas de `oos2` escritas después del 2026-10-12): no ajustes la cuenta.
+- **El perfil de mercado ya no lanza nada**: el paso 1 está apagado (65 §2; el mapa se regenera a mano).
+  BH por familia sellada (pregunta 3, contestada) no tiene hoy propuestas que sellar: pregunta P62-B.
+- **La campaña ya cumple la respuesta 1 en lo que mira**: `pipeline/campaign/plan.py:36-42` sólo da por
+  lanzada una celda con `Trade_` o `Research_`. Le falta el aviso (parte 2).
 
-- **Construido:** proyectos del registro en esa celda, `Test_`, `Trade_` y `Research_` por separado, con
-  fecha y si están retirados.
-- **Campaña:** su fila en `campaign/ledger.jsonl` y su estado, si la hay.
-- **Tramos gastados:** por tramo (`build`, `oos1`, `oos2`), cuántas filas del libro lo leen, en cuántas
-  fechas distintas y con cuántos `criterion` distintos — «`oos1` cribado 4 veces», «24 filas sobre `oos2`».
-- **Por serie de precios:** lo mismo sumado sobre **todas** las plantillas y familias de ese símbolo y
-  marco, al lado.
-- **El veredicto en una línea:** `sin probar` · `construida, sin juzgar` · `oos1 gastado N veces` ·
-  `oos2 abierto`.
+## 1 · La tabla «B por celda → B por símbolo» (sólo lectura)
 
-Comprueba cómo deciden «serie de precios» los nombres del libro (hay `DAX40_H1.jsonl` y
-`DAX40_H1_simple_long.jsonl` en la misma carpeta) y qué hay en `AlgoData/ledger/archive/`: dilo en el README.
-Un test (`tests/test_ledger_cell.py`) sobre tres registros de juguete: una celda con sólo `Test_` sale
-«construida», no «sin probar»; una con filas de `oos2` sale «oos2 abierto». La celda del ejemplo debe dar
-11 proyectos, `oos1` × 4 y 24 filas de `oos2` — si no da eso, explica la diferencia, no ajustes la cuenta.
-Capítulo del manual por `/manual-chapter` (regla 8).
+Un script de un solo uso en `scratch/` (no se queda en el código, regla 21; sin `__main__` nuevo en el
+repo) que lea `cells.table()` y `judgements.csv`, y escriba `AlgoData/audit/ledger/b-por-simbolo-<fecha>.md`:
 
-**Quién lo consulta** — la campaña, el director de investigación, `/template-run` — es la pregunta 1: hasta
-su respuesta, el comando existe y nadie cambia de comportamiento.
-
-## 2 · N por serie de precios — la tabla, no el cambio
-
-Sin tocar `ledger/trials.py` ni `ledger/study.py`: una función aparte que calcule, para cada estudio del
-libro, el N de hoy (por estudio) y el N si se contara por serie (símbolo × marco, todas las familias y
-direcciones — y di qué pasa con las direcciones, pregunta 2). Entrega, en
-`AlgoData/audit/ledger/n-por-serie-<fecha>.md`:
-
-| serie | estudios | N hoy (por estudio) | N por serie | listón de Sharpe hoy → por serie | veredictos que cambiarían |
+| símbolo | celdas | B por celda (máx · mediana) | B por símbolo | z mínima hoy → por símbolo | juicios del 8 que cambiarían |
 |---|---|---|---|---|---|
 
-Los «veredictos que cambiarían»: busca con `graphify affected "accumulated"` (o `grep -rn 'trials.accumulated\|
-ledger.trials' --include=*.py .`) quién lee N — el Sharpe deflactado, el PSR, los pasos que lo usan — y
-recalcula con los dos N **sobre lo ya guardado**, sin volver a correr nada en SQX. Nombra las estrategias
-del almacén que pasarían de Pasa a no pasar.
+«Juicios que cambiarían»: para cada proyecto juzgado en el paso 8, recalcula con la z del mono que ya
+guardó la puerta (`z_mono` en su scorecard, `studies/screening/gate/many.py:50`) cuántas estrategias
+pasan con el B de hoy y con el B del símbolo — **sobre lo ya guardado**, sin medir nada nuevo. Nombra las
+del almacén que pasarían de Pasa a no pasar. La columna «hoy» debe reproducir los veredictos vigentes
+(diferencia 0); si no, para y explica por qué.
 
-## 3 · BH por familia fijada en la propuesta — la tabla, no el cambio
+## 2 · Aviso de tramos gastados en la campaña (respuesta 1: «un `Test_` gasta tramos, no la celda»)
 
-Con las filas que el perfil ya tiene medidas (no midas nada nuevo: cada medida es una mirada más), tres
-columnas por celda: `passes` (BH sobre todo, lo de hoy), `passes_family` (ya calculado,
-`many.py:67-71`) y «BH sobre la familia de la propuesta» según la lectura que el dueño elija (pregunta 3).
-Entrega cuántas celdas pasan con cada una (hoy: 2 de 1.064) y cuáles cambian. Y una comprobación de
-estabilidad: recalcula el `passes` de hoy quitando las filas del último mes — ¿cambia alguna celda de
-veredicto sólo porque la familia creció?
+`pipeline/campaign/plan.py`: al proponer una celda, una línea con lo que `cells.ask(símbolo, marco,
+plantilla, dirección)` devuelve de `oos1` (cribas) y `oos2` (filas) — sólo informa, no cambia qué se
+propone. Test en `tests/test_campaign.py`: una celda con sólo `Test_` sigue
+propuesta y lleva el aviso. Si cambia lo que imprime un comando del manual, actualiza su capítulo (regla 8,
+`106-campana.md`).
 
-## 4 · Aplicar (sólo tras el sí del dueño a cada pregunta)
+## 3 · Aplicar B por símbolo (sólo tras el sí a P62-A)
 
-Lo que elija: la campaña y el director leen el comando de la parte 1; `ledger/trials.py` cuenta como diga;
-`many.py` da por veredicto la corrección elegida. Cada cambio con su test, y **un cambio de N o de familia
-deja una línea en `ledger/criteria-history.jsonl`** (o donde `ledger/README.md` diga que se anota un cambio
-de criterio) con fecha, antes, después y la frase del dueño — los veredictos anteriores no se reescriben.
+Si el dueño elige A: `per: symbol` en la regla del paso 8 de `pipeline/autopilot/criteria.yaml:112`,
+y `judge.per_cell` / `cells.batches_for` cuentan B sobre todas las celdas del símbolo cuando la regla lo
+declara. Test en `tests/test_ledger_cells.py`. La edición de `criteria.yaml` queda en
+`ledger/criteria-history.jsonl` como las demás (`ledger/README.md:26`) con la frase del dueño. Luego la
+respuesta 4 («recalcular y marcar»): los juicios ya hechos se recalculan con la tabla de la parte 1 y se
+**marcan** junto a su veredicto en el almacén, sin reescribirlo ni retirar nada (dónde se marca: lo que
+diga `core/store/README.md`; si no lo dice, pregunta).
+
+## 4 · Tope de cribas en `oos1` (sólo tras el sí a P62-C)
+
+La respuesta 5 («el workflow se niega a partir de 3 cribas de un tramo») ya se cumple en `oos2`
+(`cells.look_oos2`, tope 3). En `oos1` hoy no hay tope: lo cobra el listón α/B. Si el dueño elige A,
+el paso 8 se niega cuando `cells.batches_for(proyecto) > 3`, con mensaje claro y su test.
 
 ## Lo que no tocas
 
-SQX, en ningún install · `ledger/thresholds.yaml` (mover un umbral es del dueño) · las filas ya escritas de
-los tres registros (ni se corrigen ni se rellenan hacia atrás) · `oos2`, ni una medida nueva sobre `oos1`
-· `ledger/trials.py`, `ledger/study.py`, `pipeline/campaign/plan.py` y `studies/research/marketProfile/many.py`
-**antes** del sí de la parte 4 · `studies/research/memory/ideas.py` (el lector de «Hipótesis medidas» es
-otro arreglo) · el estudio del build (encargo 60), que anotará su selección en este mismo libro.
+SQX, en ningún install · `ledger/thresholds.yaml` · `AlgoData/ledger/cells/seal.json` (el sello es uno)
+· las filas ya escritas del registro, del libro y de `cells/` · `oos2`, ni una medida nueva sobre `oos1`
+· `pipeline/autopilot/criteria.yaml`, `judge.py` y `ledger/cells.py` antes del sí a P62-A/C ·
+`studies/research/marketProfile/many.py` (P62-B) · `ledger/trials.py` y `ledger/study.py`.
 
 ## Decisiones del dueño — pregúntalas (regla 11)
 
-**Contestadas por el dueño (2026-10-14)** — lo que sigue manda sobre la lista de abajo:
-- 1 → **un `Test_` gasta tramos, no la celda**. 2 → **una serie de precios es el símbolo entero**. 3 → **familias declaradas y selladas antes de medir**.
-- 4 → **recalcular y marcar** lo ya juzgado. 5 → **el workflow se niega a partir de 3 cribas** de un tramo.
-- La parte 1 ya la hace `ledger/cells.py`: se reescribe sobre él.
+**Contestadas por el dueño (2026-10-14)** — mandan:
+1 → un `Test_` gasta tramos, no la celda. 2 → una serie de precios es el símbolo entero. 3 → familias
+declaradas y selladas antes de medir. 4 → recalcular y marcar lo ya juzgado. 5 → el workflow se niega a
+partir de 3 cribas de un tramo.
 
+**Nuevas tras el 65** (la respuesta 2 se dio sobre el N de `trials.py`, que ya no juzga):
 
-1. **¿Un `Test_` gasta la celda?** (a) sí: la campaña y el director la dan por probada; (b) gasta los
-   tramos pero no la celda — se puede relanzar, avisando de que `oos1` ya se miró N veces; (c) sólo informa.
-   ¿Y un `Test_` que no pasó del build?
-2. **¿Qué es «una serie de precios» para N?** (a) símbolo × marco; (b) símbolo × marco × dirección; (c) el
-   símbolo entero, todos los marcos (el H1 y el M30 del mismo activo no son independientes). Con la tabla
-   de la parte 2 delante: cada lectura sube N — y el listón — más que la anterior.
-3. **¿Cuál es «la familia fijada por propuesta» para BH?** (a) las celdas de la familia de ideas de la
-   propuesta (lo que ya calcula `q_family`); (b) las celdas que la propuesta declara antes de medir,
-   selladas con ella; (c) todo lo medido hasta la fecha de la propuesta, congelado ese día.
-4. **¿Y lo ya juzgado?** Si N cambia: (a) sólo de aquí en adelante; (b) se recalculan los veredictos del
-   almacén y se marcan los que caen; (c) se recalculan y se retiran.
-5. **Tramos gastados: ¿hay un tope?** Hoy nada impide cribar `oos1` una quinta vez. (a) sólo avisar;
-   (b) el comando de workflow se niega a partir de N veces — ¿qué N?
+| código | qué se decide | A | B | recomendación |
+|---|---|---|---|---|
+| P62-A | ¿La respuesta 2 («serie = símbolo entero») vale para el B del paso 8? | B se cuenta sobre todo el símbolo: en USDJPY pasaría de 4 a 58 lotes, z mínima de 2,81 a 3,58 | B sigue por celda (lo que calibró la corrida nula del 65 §5.4); el símbolo entero se queda en lo que se muestra | **B**, con la tabla de la parte 1 delante: las cribas de M30 y H1 del mismo símbolo leen el mismo `oos1` y están correlacionadas; Bonferroni sobre ellas castiga de más |
+| P62-B | BH sobre familia sellada (respuesta 3), con el paso 1 apagado | se quita de este encargo; la respuesta 3 se escribe en `studies/research/marketProfile/README.md` para cuando vuelva el paso 1 | se aplica ya en `many.py` para el tablero que `/research-direct` usa a mano | **A**: hoy no hay propuestas que sellar |
+| P62-C | ¿La respuesta 5 pide también un tope en `oos1`? | sí: el paso 8 se niega a partir del 4.º lote en la celda (la celda del ejemplo ya tiene 4) | no: en `oos1` lo cobra α/B; el tope vale para `oos2`, donde ya está | **B**: un tope encima de α/B cobra dos veces la misma mirada |
+| P62-D | Si P62-A = A, el cambio de `criteria.yaml` suma una edición a todas las celdas (`cells.edits`) y el sello no se repone | se acepta la edición: queda contada | se permite un segundo sello | **A**: la edición es real y el contador debe verla |
 
 ## Objetivo — un comando
 
 ```
-python3 tools/depmap.py && python3 tools/checks.py && python3 -m pytest tests/test_ledger_cell.py -q \
-  && python3 -m ledger.cell USDJPY M30 --template doubleROCLong --json
+python3 tools/depmap.py && python3 tools/checks.py \
+  && python3 -m pytest tests/test_ledger_cells.py tests/test_oos2_reading.py tests/test_campaign.py -q \
+  && ls ~/Desktop/AlgoData/audit/ledger/b-por-simbolo-*.md \
+  && grep -q 'doubleROCLong' ledger/README.md
 ```
 
-Sale 0 con la parte 1 hecha. Las partes 2 y 3 se verifican a ojo: las dos tablas existen, la columna «hoy»
-de cada una reproduce los veredictos vigentes (diferencia 0), y `git diff --stat` no toca
-`ledger/trials.py`, `ledger/study.py`, `plan.py` ni `many.py` antes del sí.
+Sale 0 con las partes 0 (las diferencias explicadas), 1 y 2 hechas. Las partes 3 y 4 quedan «bloqueadas
+por P62-A / P62-C» mientras no haya respuesta, y su test se añade al comando cuando se hagan.
 
 ## Cómo cierras
 
-Qué hizo · qué verificó, con la salida del Objetivo y las dos tablas pegadas · qué dejó sin hacer y por qué
-(la parte 4 queda «bloqueada por la pregunta N» mientras no haya respuesta) · qué descubrió para
-`knowhow/` (los tres registros y qué sabe cada uno, en `knowhow/locations/` o `knowhow/pipeline/`, editando
-la ficha que exista) · la lista de ficheros cambiados y, como última línea, **¿Quieres hacer el commit?**
+Qué hizo · qué verificó, con la salida del Objetivo y la tabla de la parte 1 pegadas · qué dejó sin hacer
+y por qué · qué descubrió para `knowhow/` (qué cuenta juzga y cuál sólo se muestra: B del paso 8 frente al
+N de `trials.py`, en `knowhow/pipeline/` o `knowhow/locations/`, editando la ficha que exista) · la lista
+de ficheros cambiados y, como última línea, **¿Quieres hacer el commit?**
 
 ```
 /loop Lee docs/encargos/62-registro-unico-de-ya-probado.md y ejecútalo entero. Tras cada iteración corre el Objetivo; si sale 0, para el bucle; si no, arregla lo que falló y vuelve a correrlo.

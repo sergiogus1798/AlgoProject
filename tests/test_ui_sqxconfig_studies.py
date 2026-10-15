@@ -20,7 +20,7 @@ from ui.daemon.sqxconfig import api, studies
 
 # What the owner found missing on 2026-09-28, and the rest of both steps' inputs.
 WFC = {
-    ("sppdesign", "n_target"),
+    ("sppdesign", "min_levels"),
     ("thresholds", "value"),
     ("variants", "seed"),
     ("batch", "min_trades"),
@@ -179,19 +179,19 @@ def main() -> None:
             shutil.copy(studies.FILES[k], copies[k])
         with mock.patch.dict(studies.FILES, copies):
             text = {k: p.read_text(encoding="utf-8") for k, p in copies.items()}
-            code, out = post(c, "sppdesign", ["design", "n_target"], "6000")
+            code, out = post(c, "sppdesign", ["design", "min_levels"], "6")
             diff = changed(
                 text["sppdesign"], copies["sppdesign"].read_text(encoding="utf-8")
             )
             if (
                 code != 200
                 or len(diff) != 1
-                or "6000" not in diff[0]
+                or "min_levels: 6" not in diff[0]
                 or "#" not in diff[0]
             ):
-                failures.append(f"n_target: {code} {out} {diff}")
+                failures.append(f"min_levels: {code} {out} {diff}")
             for file, path, value, why in (
-                ("sppdesign", ["design", "n_target"], "5000.5", "entero"),
+                ("sppdesign", ["design", "min_levels"], "5.5", "entero"),
                 ("sppdesign", ["design", "min_levels"], "12", "max_levels"),
                 ("wfmstudy", ["modo_real"], "otro", "opciones"),
                 ("variants", ["execute", "project"], "Builder", "no es un valor"),
@@ -202,9 +202,6 @@ def main() -> None:
                     failures.append(
                         f"{path} = {value!r} debió negarse por «{why}»: {code} {out}"
                     )
-            code, out = post(c, "sppdesign", ["design", "strata", "factorial"], "0.5")
-            if code != 200 or "suman 0.9" not in out["note"]:
-                failures.append(f"estratos: no avisa de la suma: {code} {out}")
             i = blocks[0]["path"][1]
             code, out = post(c, "thresholds", ["thresholds", i, "value"], "13")
             if code != 422 or "impar" not in out.get("detail", ""):

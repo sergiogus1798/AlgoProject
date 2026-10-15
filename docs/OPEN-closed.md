@@ -1756,6 +1756,18 @@ random draw of 5 at step 8 only; not `ALGO_AUTONOMOUS`. Phase 1 = steps 7 → 16
 
 **Closed 2026-10-15.** Autopilot phase 1 ran 2026-10-01 and every hole listed was fixed; phases 2 and 3 exist since and the whole chain (steps 6-21, then 26) passes the functional test (encargo 70, workflow-test p70e PASA, 2026-10-15). Step 25 left the chain (OPEN 113) so the phase-3 gap is moot; the step-12 baseline control is superseded by the redesign of OPEN 108.
 
+## 91. ✅ Gate t scale: which t step 8 judges on, and the null is not on that statistic
+
+`decay.py` had compressed the t (fixed 2026-10-02; old 1.3 / 1.65 / 2.0 = new 1.42 / 1.92 / 2.55 on 5
+years of oos1, `knowhow/research/gate-t-scales.md`). No gate threshold reads that t (`degradacion.min_t`
+= 0.0); the live rule is R3 `drift_excess_t` ≥ 2.33 (FPR under the null 0.00 % [0.23] with costs, 0.58 %
+[1.08] without). Open, the owner's: which t step 8 judges on (session recommends `drift_excess_t`, it
+barely matters); still using XAUUSD/OOS?; which null defines edge, with or without costs; is the XAGUSD
+card final. `worst_day_r` is low-to-low (#88). Reports written before 2026-10-02 (`gate/scorecard.parquet`,
+`decay/`) keep the old t. The null tables of 2026-10-04 were deleted: any null FPR must be recomputed.
+
+**Closed 2026-10-15.** 2026-10-15: nothing left to decide — encargo 65 made step 8 judge on one z of the hours-matched monkey (α 0,01 per strategy, Φ⁻¹(1−0,01/B)); R3 and the t scales are columns now, not judges (encargo 50 rewrite).
+
 ## 92. 🟢 Data root over budget: `reports` 5.05 GB > 5 GB (audit 2026-10-02)
 
 `logs/disk-nightly.log` ends with `FUERA DE PRESUPUESTO: reports 5.05 GB > 5 GB`; the data root is 40.57 GB of 90.
@@ -1991,3 +2003,9 @@ Decisión pendiente del dueño. `sqx/projects/sweep.py` retira un `Test_` intact
 Opciones: (a) inyectar `finished(project) -> bool` en `sweep.candidates`, como ya se hace con `describe`, desde un llamador fuera de `sqx/`; (b) bajar la derivación del carril por debajo de `ui/`. El Council del dueño rechazó una gracia de 7 días como sustituto.
 
 **Closed 2026-10-15.** Owner 2026-10-15 E-1=A: sweep.candidates recibe finished(project); un Test_ cuyo paso 21 no esta hecho se queda. El llamador es ui/daemon/projects/janitor.py (python3 -m ui.daemon.projects.janitor [--yes]); retire --sweep desaparecio. Prueba: tests/test_sweep_parked.py.
+
+## 117. ✅ NIKKEI225_M1 feed is nearly empty at the start of `build`
+
+**Contestado 2026-10-15 (encargo 72, L1): mover `build.from` a 2014-01-01 (2013 aún tiene marzo y abril vacíos); falta aplicarlo** en `assets/_policy.yaml:102-106` (hoy empieza en 2011-09-19). 📓 Medido: 702 barras en 2011, ninguna oct 2011–ene 2012, 68.079 en 2012, 187.775 en 2013, mar–abr 2013 vacíos, ~305-336 mil/año desde 2020 (`~/Desktop/AlgoData/bars/NIKKEI225_M1/M1.parquet`, `feedQuality/NIKKEI225_M1/`).
+
+**Closed 2026-10-15.** Hecho 2026-10-15 (encargo 72 L1): `assets/_policy.yaml` NIKKEI225 `build.from` 2011-09-19 -> 2014-01-01, escrito con `core.assetwrite`; `data.from` y `_markets.yaml` no cambian (disponibilidad de datos).

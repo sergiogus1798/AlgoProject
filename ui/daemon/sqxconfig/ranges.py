@@ -3,14 +3,10 @@
 SHARE = (0, 1)  # a fraction of something
 # (file, last key) -> (min, max). Every other number is open.
 RANGES = {
-    ("sppdesign", "n_target"): (1, None),
     ("sppdesign", "min_span"): SHARE,
     ("sppdesign", "min_levels"): (2, 50),
     ("sppdesign", "max_levels"): (2, 50),
     ("sppdesign", "plateau_share"): SHARE,
-    ("sppdesign", "neighbourhood"): SHARE,
-    ("sppdesign", "factorial"): SHARE,
-    ("sppdesign", "coverage"): SHARE,
     ("variants", "variants"): (1, None),
     ("variants", "widen_step"): SHARE,
     ("variants", "max_span"): (0, 2),

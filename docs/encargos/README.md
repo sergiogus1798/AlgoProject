@@ -55,32 +55,31 @@ decisiones de los pasos 1 a 4 ya están contestadas en cada encargo.
 | 2 | **66** cierre de performance | D24 desbloquea el 67 y la fila 9 del 65 | conductor + custodio parado |
 | 3 | **65** cerrar el bloque B (corrida nula del 5.4, de noche) | fija el paso 8 definitivo | ~10 h de CPU Python, nada al lado |
 | 4 | ~~70~~ redondeo al tick — **hecho 2026-10-15** (workflow-test p70e PASA) | hereda la fila 8 del 65 | Python |
-| 5 | **reescribir 50, 49, 53 y 62 contra el 65**; borrar las partes M y R del 52 (dueño, 14-10) | se basan en un paso 8 y un 18.5 que ya no existen | docs, Opus; una tanda de preguntas al dueño |
-| 6 | **50** frente V: la corrida entera con el paso 8 nuevo | la corrida de referencia para lo demás | custodio |
+| 5 | ~~reescribir 50, 49, 53 y 62 contra el 65; borrar M y R del 52~~ — **hecho 2026-10-15**; el 52 se borró entero (V hecha, Q-5a hecha: `n_target`/`strata` fuera del SPP) | se basaban en un paso 8 y un 18.5 que ya no existen | docs |
+| 6 | **50** frente V: la corrida entera con el paso 8 vigente (α 0,01 por celda, medoides), en un `Test_` | la corrida de referencia para lo demás; espera QV y Q4 del dueño | custodio |
 | 7 | **51** frentes 4 → 1 → 5 | necesita el paso 8 estable; el 53 espera su regla | custodio, muchas horas |
 | 8 | — **parado por el dueño** (14-10): la fila 9 del 65, el 58 y el 67 | compiten por el custodio y comparten el generador | custodio (+ gorilla) |
 | 9 | **60** estudio del build — **aparcado por el dueño** (14-10) | necesita el 62, el 58 y el paso 8 congelado | custodio, 14-30 h |
-| 10 | **53** monos por la cadena 10-20 y en SQX — **parado por el dueño** (14-10) | necesita las reglas firmadas de 49, 51 y 52 | custodio |
+| 10 | **53** mono de Python en el paso 10; monos con semilla en SQX; A/B del hueco — **parado por el dueño** (14-10) | regla del 10 estable (51); pregunta 12 | custodio |
 | 11 | **55 C** → **54 C/E/F** → **55 H/I** | necesitan una superviviente real | conductor, MT5, VPS |
 | 12 | **65 bloque D**, **69**, **56 F2/F4/F5**; el **57** entero, **parado por el dueño** (14-10) | aplazados o aparcados; el 69 al final, porque pide otra corrida | — |
 
 **En cualquier momento, en paralelo** (no compiten por el custodio): **72** (dueño, 2026-10-15; su parte A1 va antes que el 53) · 59 parte 1 · 62 parte 1
-sobre `ledger/cells.py` · 55 A/B/D-G · 54 A/B/D · 52 V · 56 F1/F3.
+sobre `ledger/cells.py` · 55 A/B/D-G · 54 A/B/D · 56 F1/F3.
 
-**Una sola autorización de `oos2`** responde a la vez al 49 §3.4, al 52 Q-8, al 53 P6 y al 54 punto
+**Una sola autorización de `oos2`** responde a la vez al 49 §3.4, al 53 P6 y al 54 punto
 12: pedirla una vez, no cuatro.
 
 ## Los encargos vivos — reagrupados por temática el 2026-10-09 (el 57 es posterior, 2026-10-10)
 
-Los nueve son **planes vivos**: llevan tabla de estado y bitácora, y cada sesión actualiza su fila.
+Los diecisiete (49-58, 60, 62, 65, 66, 67, 69, 72) son **planes vivos**: llevan tabla de estado y bitácora, y cada sesión actualiza su fila.
 
 | fichero | qué queda por hacer | depende de |
 |---|---|---|
-| `49-plan-fases-0-y-1-y-criterios-10-a-20.md` | **el plan que ordena a los demás** (puntos 0.1-1.9, misma numeración que el 41): cerrar la fase 0, el registro completo, el autopilot para poblaciones nulas, las firmas del dueño; y el punto 1.6 — una regla medida o una razón escrita para los pasos 10, 12, 14, 16 y 20, los hechos del paso 16 y los umbrales de cuatro estudios al ledger | las firmas del dueño; los encargos 50 y 53 |
-| `50-pasos-6-a-8-puerta-y-receta.md` | la puerta del paso 8: el embudo de las dos poblaciones de prueba, las líneas que fija el dueño, cargarlas, la documentación, la corrida de verificación y apagar `dev.on`; y la receta de filtros del IS del paso 6 por activo × marco × familia | máquina libre; dos paradas del dueño; el carril (regla 19) |
+| `49-plan-fases-0-y-1-y-criterios-10-a-20.md` | reescrito contra el 65 el 15-10: 0.5, 0.6, 0.8 puerto 22 (dueño); 1.3 repaso del registro y borrar el relleno de Test_Calib; 1.4 prueba en SQX; 1.6: paso 16 (P16-1/2/3 y sus hechos), umbrales de crossmarket/crossTF/spp al ledger y borrar los cortes de mcRetest, calibrar 12 y 16; 1.9 congelación. La copia restic a gorilla (0.4), aparcada por el dueño (15-10) | encargo 50 (paso 6, OPEN #93); encargo 53 (población nula) para 1.4, §3.4 y 1.9; Q-1 |
+| `50-pasos-6-a-8-puerta-y-receta.md` | reescrito contra el 65 el 15-10: frente V (corrida entera por `/workflow` con el paso 8 vigente, α 0,01 por celda, medoides, en un `Test_`); QV, Q2-Q4 y Q7 del dueño; corrida nula sobre la población de V si Q4 → B; Z1 + documentación de la puerta; receta del IS del paso 6 | V → parada → Z1; la receta, de Q7 y de la máquina libre |
 | `51-pasos-10-a-12-transferencia.md` | paso 10: calibrar P1-P9 y adaptar la pestaña Cross Market de la ventana; pasos 10.5-12: la primera corrida real, el «corta» del dueño con su paquete de reglas y borrar la lectura vieja `z_new` | el custodio libre; el «corta» del dueño |
-| `52-pasos-16.5-a-18.5-variantes-y-meseta.md` | V hecho 2026-10-14 (ensayo build→oos1 en 29 lotes: 1 PASA, 10 LIMBO, 18 NO PASA; criterio sin cambios); la meseta en el tiempo (tramo contra tramo) y el mapa de ventaja sobre el mono en Market Surfaces, ambos a reescribir contra el estudio actual | el «adelante» del dueño; `oos2` para la meseta |
-| `53-monos-y-nulos.md` | el control negativo: el mono por los pasos 10 a 20 y la corrida a 10.000, los monos seleccionados dentro de SQX con el bloque con semilla, lo que queda vivo de los nulos, y el hueco aleatorio a prueba | reglas firmadas de los pasos 10-20 (encargo 49); el custodio libre |
+| `53-monos-y-nulos.md` | (parado; reescrito contra el 65 el 15-10) control negativo: el mono de Python en el paso 10 con su tasa en thresholds.yaml (el 8 ya lo midió el 65), los monos con semilla dentro de SQX, 5a y 5b de los nulos, y el A/B del hueco con el ruido | regla del 10 estable (51); pregunta 12; custodio libre |
 | `54-fondeo.md` | A (editor «Entradas del dueño»), B (valores contestados, también `tax_rate` 0,40 sólo informativo, `p_payout_denied` 0,05 por cobro y `t1_gap`, 2026-10-15) y D (inventario) hechos; quedan C, E, F y G | los datos y decisiones del dueño; un pool validado (encargo 55) |
 | `55-mt5-paso-26-y-flota.md` | quedan: fila 5 con flotante y «R» (B), validar el .chr en una demo de Wine y probar el despliegue en la VPS (E), pausar una cuenta (F); hechos A, D y G el 2026-10-14; C, H e I necesitan una superviviente real | una superviviente real; la VPS; una cuenta demo en Wine; OPEN.md #78 |
 | `56-lecturas-nuevas.md` | **F2, F4 y F5 congelados por el dueño (2026-10-15, encargo 72 Q4)**; quedan: señal por plantilla (F2), cerebro con probabilidades (F4), alfa y beta aparcado (F5), y el resto del F3: que `entryQuality` lea el replay tier 2 en las estrategias con stop. F1 (estacionalidad) hecho 2026-10-14 → `studies/readings/seasonality/`; motor del F3 → `engines/market/replay/` | lo ya exportado; preguntas del dueño por frente |
@@ -96,7 +95,7 @@ suelo de 35 operaciones al año y la retirada de `MonteCarloManipulation` ya est
 | fichero | qué construye | depende de |
 |---|---|---|
 | `60-estudio-del-build.md` | métrica de fitness × genético/aleatorio, ≥ 3 réplicas por brazo en una celda nueva con `criteria.yaml` congelado; la medida es supervivientes del paso 8 menos el control de monos, registrada por celda y plantilla; el resultado queda escrito en `_build.yaml` | la celda, las métricas y el brazo aleatorio (dueño); el custodio libre 14-30 h; el mono por el paso 8 (encargo 53 si falta la pieza) |
-| `62-registro-unico-de-ya-probado.md` | un comando de sólo lectura que responde «¿se probó esta celda?» contando los `Test_` y los tramos gastados, y las tablas de antes y después de dos cambios de estadística que decide el dueño: N por serie de precios y BH por familia fijada en la propuesta; parte 1 hecha 2026-10-14 (`python3 -m ledger.cells --ask`), quedan 2, 3, 4 y la ficha de knowhow — **partes 2-4 congeladas por el dueño (2026-10-15, encargo 72 Q4)** | nada para el comando y las tablas; el sí del dueño para aplicar |
+| `62-registro-unico-de-ya-probado.md` | reescrito contra el 65 el 15-10: parte 0 (explicar 2 diferencias en `ledger/README.md`), 1 (tabla B por celda → por símbolo) y 2 (aviso de tramos ya leídos en la campaña); partes 3-4 esperan a P62-A/C/D | dueño (P62-A..D) |
 
 ## Tanda del 2026-10-12 — de la opinión sobre los criterios de los 26 pasos
 
@@ -129,11 +128,11 @@ Para resolver una cita antigua («encargo 44», «el plan 41 §1.5») en el cód
 | 25 estacionalidad | 56, frente 1 | 41 fases 0 y 1 | 49 (misma numeración de puntos) |
 | 26 señal por plantilla | 56, frente 2 | 42 recalibración 6-7-8 | 50, parte 7 |
 | 28 hueco aleatorio | 53, parte 6 | 43 criterios 10 a 20 | 49, §3 |
-| 29 meseta en el tiempo | 52, parte M | 44 puerta del paso 8 | 50, partes 1-6 |
+| 29 meseta en el tiempo | borrada por el dueño (2026-10-14) | 44 puerta del paso 8 | 50, partes 1-6 |
 | 30 monos en SQX | 53, parte 4 | 45 módulo de fondeo | 54, frentes D-G |
-| 31 mapa de ventaja sobre el mono | 52, parte R | 46 paso 10 | 51 |
+| 31 mapa de ventaja sobre el mono | borrada por el dueño (2026-10-14) | 46 paso 10 | 51 |
 | 33 economía del fondeo | 54, frentes A-C | 47 paso 12 | 51 |
-| 34 validación MT5 y pool | 55 (su §0.5 es ahora el §1) | 48 pasos 16.5 y 17 | 52, partes V y Q |
+| 34 validación MT5 y pool | 55 (su §0.5 es ahora el §1) | 48 pasos 16.5 y 17 | hecho: `studies/optimisation/{wfc,cloud,marketSurfaces}/`, `sqx/variants/` (52 borrado 2026-10-15) |
 | 63 opinión y cola | 65 (frente 3 → fila 13; el resto lo sustituyó el consenso) | 64 modelo global | 65 (frentes A y C → filas 11 y 12; el resto, sustituido) |
 | 63/64 prompts de opinión | usados: dossiers `criterios-{tercera,cuarta}-opinion-2026-10-12` | 68 CODESTYLE | cerrado el 2026-10-14; sus restos, en `OPEN.md` #122 |
 

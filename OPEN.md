@@ -24,7 +24,6 @@ and in `knowhow/`. The index below lists open issues only.
 | 87 | 🟠 | Portfolio construction engine — nothing real has run |
 | 88 | 🟠 | SQX's daily curve is each day's LOW equity — readers that difference it |
 | 89 | 🟡 | What the 2026-09-30 H1 workflow run (steps 5-26) left open |
-| 91 | 🟠 | Gate t scale: which t step 8 judges on, and the null is not on that statistic |
 | 93 | 🔴 | Criteria of steps 6 and 8 — owner answers of 2026-10-15 to apply, 15 assets unmeasured |
 | 96 | 🟡 | `core.surface.trials.independent`: nothing prints the silhouette next to the count |
 | 100 | 🟠 | Literature scout — owner decisions pending, entries without a condition |
@@ -34,7 +33,6 @@ and in `knowhow/`. The index below lists open issues only.
 | 112 | 🟡 | Knowhow weekly pass 2026-10-11: one core-count re-measure left |
 | 113 | 🔴 | Next batch needing MT5 or the custodian |
 | 115 | 🟠 | The harvest cannot record WHY SQX dismissed a strategy |
-| 117 | 🟠 | NIKKEI225_M1 feed is nearly empty at the start of `build` |
 | 118 | 🟠 | Deferred builder gates: task windows vs segment, second chart in a template |
 | 119 | 🟡 | `MonteCarloManipulation` removed — gorilla still ON |
 | 120 | 🟠 | El repreciador no reproduce a SQX en el oro (oos1) |
@@ -191,16 +189,6 @@ Run on `Test_USDJPY_donchianUpperCrossUp_H1`. Still open:
 - **Hantec after the clock fix still fails rows 1/3a/5** on the three USDJPY mothers (drawdown 0.292 % SQX
   vs 0.228 % MT5 on 10.9.72): not the clock (`clock_h` 0 on all six) — costs or Hantec's history, to diagnose.
 
-## 91. 🟠 Gate t scale: which t step 8 judges on, and the null is not on that statistic
-
-`decay.py` had compressed the t (fixed 2026-10-02; old 1.3 / 1.65 / 2.0 = new 1.42 / 1.92 / 2.55 on 5
-years of oos1, `knowhow/research/gate-t-scales.md`). No gate threshold reads that t (`degradacion.min_t`
-= 0.0); the live rule is R3 `drift_excess_t` ≥ 2.33 (FPR under the null 0.00 % [0.23] with costs, 0.58 %
-[1.08] without). Open, the owner's: which t step 8 judges on (session recommends `drift_excess_t`, it
-barely matters); still using XAUUSD/OOS?; which null defines edge, with or without costs; is the XAGUSD
-card final. `worst_day_r` is low-to-low (#88). Reports written before 2026-10-02 (`gate/scorecard.parquet`,
-`decay/`) keep the old t. The null tables of 2026-10-04 were deleted: any null FPR must be recomputed.
-
 ## 93. 🔴 Criteria of steps 6 and 8 — owner answers of 2026-10-15 to apply, 15 assets unmeasured
 
 `assets/_study.yaml` (step 6) and step 8 of `pipeline/autopilot/criteria.yaml` carry an agent's PROVISIONAL
@@ -234,6 +222,8 @@ Rule kept (owner, 2026-10-02: keep the half rule, silhouette below ~0.2 = no str
 `knowhow/research/trial-count-half-rule.md`). **Contestado 2026-10-15 (encargo 72, L4): mostrar la silueta;
 falta aplicarlo** — it travels in the dict `independent` returns (`cscv.json` › `trials`) but no window
 or report line prints it.
+
+**2026-10-15.** Revisado 2026-10-15 (encargo 72 L4): la premisa es falsa. `trials.independent` no tiene llamador fuera de tests (`tests/test_inference_vs_jsharpe.py`); `cscv.json` no escribe `trials` ni el CSCV importa `core.surface.trials` (se perdió en el rework de CSCV). No hay recuento que acompañar. Para mostrar la silueta hay que cablear `independent` en `studies/optimisation/cscv` (panel IS, `k_max`, contrato y pestaña) o borrarla (regla 21): decisión de diseño, no mecánica.
 
 ## 100. 🟠 Literature scout — owner decisions pending, entries without a condition
 
@@ -317,10 +307,6 @@ against a random trader with the same footprint (dossier `docs/AgentPDFs/medicio
 ## 115. 🟠 The harvest cannot record WHY SQX dismissed a strategy
 
 Decisión pendiente del dueño. 🔬 En `Test_NIKKEI225_M30_simpleL_fin`, `_val` y `Test_USDJPY_M30_doubleROCLong` el bitmask `StrategyProblems` del fichero de build es 0 en toda estrategia sin gemela OOS (300 muestreadas en cada uno); la razón vive en el fichero retestado, que es el que falta. `missing_oos.csv` ya tiene la columna y la cosecha imprime un aviso en mayúsculas; NO está activado un paro por «gemela ausente sin explicar». Para activarlo hay que leer la razón de SQX antes del descarte (`AutomaticDismissal` de la tarea Retest, 10 códigos, heredados del donante). Ficha: `knowhow/sqx-format/dismissal-reason-not-on-build-file.md`.
-
-## 117. 🟠 NIKKEI225_M1 feed is nearly empty at the start of `build`
-
-**Contestado 2026-10-15 (encargo 72, L1): mover `build.from` a 2014-01-01 (2013 aún tiene marzo y abril vacíos); falta aplicarlo** en `assets/_policy.yaml:102-106` (hoy empieza en 2011-09-19). 📓 Medido: 702 barras en 2011, ninguna oct 2011–ene 2012, 68.079 en 2012, 187.775 en 2013, mar–abr 2013 vacíos, ~305-336 mil/año desde 2020 (`~/Desktop/AlgoData/bars/NIKKEI225_M1/M1.parquet`, `feedQuality/NIKKEI225_M1/`).
 
 ## 118. 🟠 Deferred builder gates: task windows vs segment, second chart in a template
 

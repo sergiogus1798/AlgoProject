@@ -16,7 +16,7 @@ Step 16.5 **cuts nothing** (`criteria.yaml` `"16.5"`: `cut: null`, `rules: []`).
 parameters inside the SPP IS plateau (`from`..`to`; frozen and shifted ones stay at the mother's value in
 every variant), `n = min(n_max, max(n_min, 8 × p))` with `p = 1 + 2k + k(k-1)/2` (ledger rows
 `variants.*`; 1,000..5,000). `stratum` is `lhs`, `origin`, `canary` or `inert`. The old three strata
-and `n_target`/`strata`/`minimum` no longer exist for the factory. → `sqx/variants/design/README.md`
+and `minimum` no longer exist for the factory. → `sqx/variants/design/README.md`
 
 ## Why it exists
 

@@ -53,9 +53,8 @@ FILES = {name: ROOT / rel for name, rel in REL.items()}
 
 # (file, the branch shown, its heading) per section, in the order the section lists them.
 PARTS = {
-    # Encargo 48: the batch's size is the ledger's `variants.*`; the SPP's `n_target` and `strata`
-    # are no longer read by the factory (OPEN question to the owner: drop this first part?). The
-    # map (step 16.5) and the calibration (a file that may not exist yet) have their own parts.
+    # The batch's size is the ledger's `variants.*`. The map (step 16.5) and the calibration
+    # (a file that may not exist yet) have their own parts.
     "wfc": [
         (
             "sppdesign",

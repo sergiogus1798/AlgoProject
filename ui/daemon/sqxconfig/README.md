@@ -10,7 +10,7 @@ The per-asset parts of those files (`segments.<SIM>`, the symbol files) stay in 
 **WFC and CSCV also show their study files** (owner, 2026-09-28: «faltan el número de variantes
 máximo por madre, o las combinaciones del CSCV»). The `wfc` section is extended and a `cscv` section
 follows it, each value carrying its own `file`: the SPP design that sizes each mother's batch
-(`studies/breakage/spp/config.yaml` `design`, `n_target` being the cap), the factory's floor, seed,
+(`studies/breakage/spp/config.yaml` `design`), the factory's floor, seed,
 grids and canaries (`sqx/variants/config.yaml` `minimum`, `design`, `canaries`), the trade floor and
 split both studies read (`engines/variants/config.yaml`, shown in both sections), each study's own
 `config.yaml`, and `cscv.blocks` from `ledger/thresholds.yaml` in place of its `ledger:` placeholder.

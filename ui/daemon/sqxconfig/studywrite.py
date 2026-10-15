@@ -3,7 +3,6 @@
 from typing import Any, cast
 import re
 from datetime import date
-from math import isclose
 
 from core.assetyaml import read, write
 from ui.daemon.sqxconfig import studies
@@ -57,9 +56,7 @@ def _pair(name: str, doc: Any, path: list, new: Any) -> str:
         new: Its new value.
 
     Returns:
-        "" or the sentence to add to the status line. The strata shares are only warned:
-        moving one share breaks the sum until the next one is moved, and refusing would
-        make the three impossible to edit one at a time.
+        "" or the sentence to add to the status line.
     """
     if (
         name == "thresholds"
@@ -100,10 +97,6 @@ def _pair(name: str, doc: Any, path: list, new: Any) -> str:
             return f" — ojo: el mínimo de variantes ({new}) queda por encima del tope ({rows['variants.n_max']})"
         if key == "variants.n_max" and new < rows["variants.n_min"]:
             return f" — ojo: el tope de variantes ({new}) queda por debajo del mínimo ({rows['variants.n_min']})"
-    if name == "sppdesign" and path[:2] == ["design", "strata"]:
-        total = sum({**doc["design"]["strata"], path[-1]: new}.values())
-        if not isclose(total, 1.0):
-            return f" — ojo: los tres estratos suman {total:g}, no 1"
     return ""
 
 

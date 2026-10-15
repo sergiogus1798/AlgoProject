@@ -75,8 +75,6 @@ class Brief(TypedDict):
     excess: float
     parameters: list[Live]
     frozen: list[Frozen]
-    strata: int
-    n_target: int
 
 
 def read(directory: Path, strategy: str, settings: dict) -> Read:
@@ -243,6 +241,4 @@ def brief(result: Read, settings: dict) -> Brief:
             }
             for n in frozen
         ],
-        "strata": design["strata"],
-        "n_target": design["n_target"],
     }
