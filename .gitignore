@@ -9,7 +9,7 @@ config/machine.yaml
 # Until 2026-10-11 only the first was here, and gorilla — which only ever gets `git pull` — had
 # no template skeletons (sqx/templates/build.py reads them), no fleet fixtures and no symbol
 # table: 344 KB in all.
-!tests/fixtures/*.sqx
+!tests/fixtures/**/*.sqx
 !tests/fixtures/**/*.csv
 !tests/fixtures/**/*.parquet
 !tools/sqx-lab/**/skeletons/*.sqx

@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
-"""The results routes over the real reports, read-only: shapes, pairing by identity, staleness, old reports."""
+"""The results routes over the reports of the planted project: shapes, pairing by identity, staleness, old reports."""
 
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
+import harvest_planted  # noqa: E402
 
-from core.paths import DATA, ROOT
-from ui.daemon.results import catalogue
-from ui.daemon.results.api import ROUTER
+harvest_planted.plant()  # before core.paths: the reports are planted, not the machine's
+
+from fastapi import FastAPI  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+
+from core.paths import DATA, ROOT  # noqa: E402
+from ui.daemon.results import catalogue  # noqa: E402
+from ui.daemon.results.api import ROUTER  # noqa: E402
 
 STATES = {"pass", "fail", "watch", "info", "none"}
 
@@ -45,7 +50,11 @@ def check_catalogue(c: TestClient, failures: list[str]) -> None:
     folders = {
         p.name
         for p in ROOT.glob("studies/*/*")
-        if p.is_dir() and p.parent.name != "research" and p.name != "__pycache__"
+        if p.is_dir()
+        and any(
+            p.glob("*.py")
+        )  # a folder a pull left with only ignored files is no study
+        and p.parent.name != "research"
     } - {"analysis", "spread", "batches"}
     if set(keys) != folders | {"monteCarlo"} or len(keys) != len(set(keys)):
         failures.append(

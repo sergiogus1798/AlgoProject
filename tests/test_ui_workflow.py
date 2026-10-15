@@ -249,7 +249,7 @@ def test_project_knobs() -> None:
     tmp = tempfile.TemporaryDirectory(prefix="ui-workflow-")
     day = harvest_planted.DAY
     planted = Path(tmp.name) / "raw" / PROJECT / "CrossTF" / day
-    harvest_planted.export(planted, harvest_planted.NAMES[:1], 5, PROJECT, "CrossTF")
+    harvest_planted.export(planted, harvest_planted.NAMES[:1], 5, (PROJECT, "CrossTF"))
     with (
         mock.patch.object(forproject.registry, "rows", lambda: [row]),
         mock.patch.object(runs, "DATA", Path(tmp.name)),

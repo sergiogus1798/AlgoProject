@@ -14,6 +14,8 @@ sys.path.insert(0, str(REPO))
 TMP = Path(tempfile.mkdtemp(prefix="algo-testroot-"))
 os.environ["ALGO_DATA_ROOT"] = str(TMP)  # before anything imports core.paths
 
+from live_only import only_here  # noqa: E402
+
 from core import paths  # noqa: E402
 from ledger import record, study  # noqa: E402
 from portfolio.common.construct import funded, real  # noqa: E402
@@ -68,6 +70,16 @@ def redirected() -> None:
     check("a process on the real root says nothing", quiet.stderr == "")
 
 
+def _names(folder: Path) -> set[str]:
+    """What a real folder holds; none when the machine never made it (a clean clone)."""
+    return set(os.listdir(folder)) if folder.is_dir() else set()
+
+
+@only_here(
+    build.REAL / "harvest" / PROJECT / DATABANK,
+    "re-escribe la cosecha real del proyecto de referencia Test_NIKKEI225 (sus .sqx de las versiones con stop) "
+    "bajo la raíz de prueba, y sólo esta máquina la tiene",
+)
 def writers() -> None:
     """The real ledger, harvest, archive and pool writers, run once each, leave the real root alone."""
     token = uuid.uuid4().hex
@@ -82,8 +94,8 @@ def writers() -> None:
         "criterion": "testroot",
         "note": token,
     }
-    real_archive = set(os.listdir(build.REAL / "archive"))
-    real_pools = set(os.listdir(build.REAL / "portfolio" / "pools"))
+    real_archive = _names(build.REAL / "archive")
+    real_pools = _names(build.REAL / "portfolio" / "pools")
     with guard.untouched(build.REAL / "ledger", "PORTFOLIO_*"):
         record.log("PORTFOLIO_testroot_construct", row)
         record.log(MEMBER_STUDY, row)
@@ -117,12 +129,12 @@ def writers() -> None:
     )
     check(
         "the real archive holds the same identities as before",
-        set(os.listdir(build.REAL / "archive")) == real_archive,
+        _names(build.REAL / "archive") == real_archive,
     )
     check("the pool is in the test root", TMP in declared.parents)
     check(
         "the real pools are the same as before",
-        set(os.listdir(build.REAL / "portfolio" / "pools")) == real_pools,
+        _names(build.REAL / "portfolio" / "pools") == real_pools,
     )
     try:
         pool.declare("t", [], "test")

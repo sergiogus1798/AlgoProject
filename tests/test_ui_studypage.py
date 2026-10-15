@@ -44,6 +44,7 @@ MOTHER = "Strategy 9.27.83"
 LOTE_PROJECT = (
     harvest_planted.LOTE
 )  # a kept project with variant batches (strategyPermutations/)
+MOTHER_LOTE = harvest_planted.MOTHER
 NO_BATCH = "Strategy 4.10.81"  # one of Results no 16.5 has fabricated variants for
 RUN = "--run" in sys.argv
 SHOTS = ROOT / "scratch" / "ui-plan" / "shots"
@@ -196,20 +197,12 @@ def test_strategy() -> None:
 def test_lote() -> None:
     """«Lote» sits beside the drawer only while the WFC study is open on a mother with a batch —
     it left the Ficha on 2026-09-29 (a strategy can have no batch)."""
-    bank = HTTP.get(
-        "/api/matrix", params={"project": LOTE_PROJECT, "databank": DATABANK}
-    ).json()
-    names = {s["strategy"]: s["identity"] for s in bank["strategies"]}
-
-    def has(name: str) -> bool:
-        """Whether the mother has a variant batch (asked one by one: an install can list thousands)."""
-        got = HTTP.get(
-            "/api/batch/has", params={"project": LOTE_PROJECT, "strategy": name}
-        )
-        return got.json()["has_batch"]
-
-    mother = next(n for n in names if has(n))
-    no_batch = next(n for n in names if not has(n))
+    # planted names, not the matrix: its roster reads the .sqx an install holds, which a clean machine lacks
+    names = {n: harvest_planted.identity_of(n) for n in harvest_planted.NAMES_LOTE}
+    assert HTTP.get(
+        "/api/batch/has", params={"project": LOTE_PROJECT, "strategy": MOTHER_LOTE}
+    ).json()["has_batch"]
+    mother, no_batch = MOTHER_LOTE, harvest_planted.NAMES_LOTE[1]
     SELECTION.choose(
         project=LOTE_PROJECT,
         databank=DATABANK,
