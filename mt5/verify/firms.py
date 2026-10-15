@@ -9,6 +9,7 @@ import yaml
 from core import assetdata
 from core.paths import MT5_ACCOUNTS
 from core.study import config as study_config
+from mt5 import guard
 from ledger import thresholds
 
 HERE = Path(__file__).resolve().parent
@@ -50,7 +51,9 @@ def usable(asset: str) -> dict[str, dict]:
     for firm, account in MT5_ACCOUNTS.items():
         symbol = known.get(firm)
         why = (
-            None
+            guard.WHY
+            if guard.is_protected(account)
+            else None
             if symbol
             else (
                 f"{asset} no tiene símbolo de {label(firm)} en "

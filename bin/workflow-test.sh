@@ -27,13 +27,16 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
+# Step 26 verifies on FTMO only: Hantec's one login (8063673) is a real funded account, stopped
+# on purpose, and mt5.guard refuses it («sin cuenta de verificación»). Put hantec back in
+# --mt5-firms when a Hantec demo login exists in machine.yaml (owner, 2026-10-15).
 TAG=${1:-$(date +%H%M)}
 [[ $TAG =~ ^[A-Za-z0-9]+$ ]] || { echo "workflow-test: TAG sólo lleva letras y dígitos, no «$TAG»" >&2; exit 2; }
 P=Test_XAUUSD_H1_ruptura_wt$TAG
 SAID=$(mktemp)
 bin/workflow.sh simple "$P" XAUUSD H1 long breakout ruptura_base_v3 \
     "Prueba funcional del workflow entero, del builder al paso 26" 10000 30 --smoke \
-    --mt5-from=2021-07-01 --mt5-to=2022-12-31 --mt5-model=ohlc_m1 --mt5-firms=ftmo,hantec 2>&1 | tee "$SAID"
+    --mt5-from=2021-07-01 --mt5-to=2022-12-31 --mt5-model=ohlc_m1 --mt5-firms=ftmo 2>&1 | tee "$SAID"
 CODE=${PIPESTATUS[0]}
 OUT=$(sed -n 's|^resumen: \(.*\)/resumen.md$|\1|p' "$SAID" | tail -1)
 rm -f "$SAID"

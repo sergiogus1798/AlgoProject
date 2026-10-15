@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core import assetdata
 from core.datapaths import projects_backup
-from mt5 import compare, tester
+from mt5 import compare, guard, tester
 from mt5.verify import conditions, firms, judge, mt5side, sizing
 from sqx.projects import cfxio, mt5verify
 from sqx.projects.resources import definitions, main_feed, one_task
@@ -258,6 +258,39 @@ def ini(failures: list[str]) -> None:
         failures.append(f"el ini no cambia de cuenta: {text[:80]!r}")
 
 
+def protected(failures: list[str]) -> None:
+    """A real account (fleet.vps.accounts, not in mt5_verify_logins) never reaches the terminal."""
+    real = {"login": 8063673, "server": "HantecMarketsMU-MT5"}
+    with (
+        mock.patch.object(guard, "MT5_REAL_LOGINS", {8063673, 541350656}),
+        mock.patch.object(guard, "MT5_VERIFY_LOGINS", {541350656}),
+        mock.patch.object(tester.wine, "terminal_running", side_effect=AssertionError),
+        mock.patch.object(tester.subprocess, "Popen", side_effect=AssertionError),
+        mock.patch.object(firms, "MT5_ACCOUNTS", {"hantec": real}),
+        mock.patch.object(firms, "names", return_value={"hantec": "X"}),
+    ):
+        try:
+            tester.start(
+                "E", "X", "H1", "2025-01-01", "2025-02-01", "ohlc_m1", 1, 1, real
+            )
+            failures.append("el tester arranca con una cuenta fondeada")
+        except guard.Protected:
+            pass
+        except AssertionError:
+            failures.append("la guarda actúa después de tocar el terminal")
+        try:
+            conditions.read("X", real)
+            failures.append("conditions.read entra en una cuenta fondeada")
+        except guard.Protected:
+            pass
+        if firms.usable("XAUUSD")["hantec"]["why"] != guard.WHY:
+            failures.append(
+                "la empresa protegida no sale como «sin cuenta de verificación»"
+            )
+        if guard.is_protected({"login": 541350656, "server": "S"}):
+            failures.append("un login de mt5_verify_logins se rechaza")
+
+
 def lots(failures: list[str]) -> None:
     """The EA's own sizing is replaced by the strategy's fixed lot, or refused when it cannot be."""
     source = (
@@ -413,14 +446,14 @@ def started(failures: list[str]) -> None:
 def main() -> None:
     """Run the checks."""
     failures = []
-    for check in (judged, zoned, priced, written, ini, lots, modes, started):
+    for check in (judged, zoned, priced, written, ini, protected, lots, modes, started):
         check(failures)
     print(
         "\n".join(failures)
         or "ok: el reloj se lee de las operaciones (+1 h) y se convierte de zona fecha a fecha, un P&L barajado falla la fila 2 y un "
         "lado vacío la 1; FTMO se traduce a unidades de SQX, Hantec lleva su comisión y una empresa sin "
         "comisión confirmada se rechaza; el proyecto solo enciende las dos empresas y la exportación, cada una a "
-        "sus costes, con el FixedSize de la estrategia; el ini del tester cambia de cuenta; el EA "
+        "sus costes, con el FixedSize de la estrategia; el ini del tester cambia de cuenta; una cuenta fondeada no llega al terminal; el EA "
         "queda en el lote fijo de la estrategia; los dos modos (1 lote y riesgo fijo) juzgan tamaño y tope de pérdida"
     )
     sys.exit(1 if failures else 0)

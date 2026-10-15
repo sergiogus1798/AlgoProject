@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from core.paths import MT5_DATA
-from mt5 import report, wine
+from mt5 import guard, report, wine
 
 # The tester's Model= codes (MT5 help, "Platform Start"). real_ticks is what a live EA would see.
 MODELS = {"every_tick": 0, "ohlc_m1": 1, "open_prices": 2, "real_ticks": 4}
@@ -90,6 +90,7 @@ def start(
     Returns:
         {"run": its id, "dir": where the result will land}.
     """
+    guard.refuse(account)
     if wine.terminal_running():
         raise SystemExit(
             "the MT5 terminal is open: the tester needs it closed (one terminal per data folder)"

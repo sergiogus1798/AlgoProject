@@ -9,7 +9,7 @@ from typing import Any, TypedDict
 from core import assetdata, sqxfile
 from core.archive import read as archive
 from core.paths import MT5_ACCOUNTS, MT5_DATA, STRATEGY_POOLS, archive_dir
-from mt5 import tester, wine
+from mt5 import guard, tester, wine
 from mt5.verify import firms
 from ui.daemon.advance import preflight as advance
 from ui.daemon.mt5bridge.display import polish
@@ -186,10 +186,12 @@ def check(
     else:
         asset, rest = sqxfile.symbol(path)
         timeframe = rest.rsplit("_", 1)[-1]
-        for firm in chosen:
-            why = firms.usable(asset).get(firm, {}).get("why")
-            if why:
-                reasons.append(why)
+        whys = {f: firms.usable(asset).get(f, {}).get("why") for f in chosen}
+        # a protected account is reported by the run and the others are judged; only when
+        # none is left is there nothing to verify
+        reasons += [w for w in whys.values() if w and w != guard.WHY]
+        if chosen and all(w == guard.WHY for w in whys.values()):
+            reasons.append(guard.WHY)
     reasons += advance.busy("conductor", "", own_log)
     if wine.terminal_running():
         reasons.append(

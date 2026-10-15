@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from mt5 import live
+from mt5 import guard, live
 
 # MT5's ENUM_SYMBOL_SWAP_MODE → SQX's <Swap type>. The ones left out (swap in the base or the
 # margin currency, reopen modes) have no SQX equivalent: a firm quoting one is refused.
@@ -29,6 +29,7 @@ def read(symbol: str, account: dict) -> dict[str, Any]:
         how far back «Desde = MT5» can reach.
         Refused when the terminal is not on that account afterwards.
     """
+    guard.refuse(account)
     info = live.ask("symbol", {"symbol": symbol}, account)
     if not isinstance(info, dict) or "error" in info or info.get("point") is None:
         raise Refused(f"MT5 no da {symbol} en {account['server']}: {info}")

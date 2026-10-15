@@ -37,6 +37,9 @@ mt5_prefix: ~/Desktop/MT5
 # The funded accounts saved in that terminal (password saved there, never here), by firm key
 # of AlgoData/funding/firms.yaml. MT5 Bridge › Verificar logs the tester into each one in turn.
 # Optional: without it the bridge verifies nothing.
+# `fleet.vps.accounts` lists the REAL accounts; mt5.guard never lets the verifier log into one
+# unless its login is named here (owner's decision, per login). Empty = none.
+# mt5_verify_logins: [12345678]
 # mt5_accounts:
 #   ftmo: {login: 12345678, server: FTMO-Server4}
 #   hantec: {login: 1234567, server: HantecMarketsMU-MT5}

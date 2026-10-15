@@ -29,6 +29,7 @@ relative to `cwd` does, and is how `metaeditor.py` calls MetaEditor now.
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `compare.py` | Pair the trades of an MT5 backtest with SQX's for the same strategy and window, and measure the gap. | imported | two trade frames → pairs + figures |
+| `guard.py` | Keep the verification terminal off the owner's real accounts (funded, in a phase, live). | imported by `tester.py`, `verify/conditions.py`, `verify/firms.py` | account → nothing, or `Protected` |
 | `live.py` | Ask the running MT5 terminal read-only questions through the Windows Python in its Wine prefix. | imported | verb → JSON / parquet |
 | `metaeditor.py` | Compile MQL5 sources with MetaEditor under Wine, and install the Sq* indicators SQX's EAs call. | imported | .mq5 → .ex5 + errors |
 | `report.py` | Read a Strategy Tester HTML report: its summary figures, its deals, and the trades they make. | imported | report.htm → summary, deals, trades |

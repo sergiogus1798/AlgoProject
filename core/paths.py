@@ -37,6 +37,13 @@ MT5_DATA = DATA / "mt5"
 MT5_ACCOUNTS = (
     _CFG.get("mt5_accounts") or {}
 )  # {firm: {login, server}}; the terminal keeps the passwords
+# Logins the fleet lists as real accounts (funded, in a phase, live): `fleet.vps.accounts`.
+# `mt5.guard` keeps the verification terminal off every one but the logins named in
+# `mt5_verify_logins` (owner's list; empty = none may be used).
+MT5_REAL_LOGINS = {
+    int(k) for k in (((_CFG.get("fleet") or {}).get("vps") or {}).get("accounts") or {})
+}
+MT5_VERIFY_LOGINS = {int(k) for k in (_CFG.get("mt5_verify_logins") or [])}
 CLAUDE_BIN = Path(
     _CFG.get("claude_bin")
     or max(  # «Crear la plantilla con Claude»; else VS Code's
