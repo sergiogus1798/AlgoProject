@@ -6,6 +6,7 @@ import shutil
 import sys
 import tempfile
 import zipfile
+from unittest import mock
 from pathlib import Path
 
 import numpy as np
@@ -375,10 +376,44 @@ def risk_rows(failures: list[str]) -> None:
         failures.append("un modo fallido no falla la empresa")
 
 
+class _Stop(Exception):
+    """Raised by the stubbed first step after run.json, to end main() early."""
+
+
+def _stop(*args: object, **kwargs: object) -> None:
+    """Replace `say`: the first call comes right after run.json is written."""
+    raise _Stop
+
+
+def started(failures: list[str]) -> None:
+    """main() creates its run folder before writing run.json (p70d: it did not, step 26 died)."""
+    from mt5.verify import run as verifyrun
+
+    tmp = Path(tempfile.mkdtemp())
+    argv = ["run", "--strategy", str(tmp / "S 1.2.3(1).sqx"), "--from", "2020-01-01"]
+    argv += ["--to", "2021-01-01", "--model", sorted(tester.MODELS)[0]]
+    with (
+        mock.patch.object(verifyrun, "RUNS", tmp / "verify"),
+        mock.patch.object(verifyrun, "identify", lambda s: ("XAUUSD", "H1")),
+        mock.patch.object(verifyrun, "say", _stop),
+        mock.patch.object(verifyrun.mt5verify, "own_sizing", lambda s: None),
+        mock.patch.object(verifyrun.assetdata, "load", lambda a: {}),
+        mock.patch.object(verifyrun.sqxfile, "identity", lambda s: "x"),
+        mock.patch.object(sys, "argv", argv),
+    ):
+        try:
+            verifyrun.main()
+        except (_Stop, FileNotFoundError):
+            pass
+    if not list((tmp / "verify").glob("*/run.json")):
+        failures.append("main() no dejó run.json en la carpeta de la corrida")
+    shutil.rmtree(tmp, ignore_errors=True)
+
+
 def main() -> None:
     """Run the checks."""
     failures = []
-    for check in (judged, zoned, priced, written, ini, lots, modes):
+    for check in (judged, zoned, priced, written, ini, lots, modes, started):
         check(failures)
     print(
         "\n".join(failures)

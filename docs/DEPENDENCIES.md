@@ -220,7 +220,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `mt5/verify/mt5side.py` | 174 | The MT5 half of a check: compile the EA SQX exported, and backtest it on each firm's account. | mt5 | pandas |
 | `mt5/verify/pool.py` | 241 | The validated pool of step 26: an append-only SQLite register of verdicts, the first verdict per check counts. | core, ledger | pandas |
 | `mt5/verify/report.py` | 172 | Write mt5.verify.run's result.json (the study contract) and its run.json, and mark a crash. | core, mt5 | pandas |
-| `mt5/verify/run.py` | 455 | Step 26: one strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account. | core, ledger, mt5, sqx, ui | — |
+| `mt5/verify/run.py` | 456 | Step 26: one strategy in SQX at each prop firm's conditions against its MT5 backtest on that firm's account. | core, ledger, mt5, sqx, ui | — |
 | `mt5/verify/sidebyside.py` | 65 | Every SQX entry beside the MT5 trade each firm's EA opened for it: one row per entry, one set of columns per firm. | core, mt5 | pandas |
 | `mt5/verify/sizing.py` | 65 | The fixed-risk mode's own pieces of the judge (encargo 61): the real-loss cap and the no-stop verdict. | core, mt5 | pandas |
 | `mt5/verify/sqxside.py` | 209 | The SQX half of a check: a Test_ project on the conductor, one retest per firm, the EA exported. | core, sqx, ui | pandas |
@@ -1078,7 +1078,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_mt5_start_check.py` | 52 | mt5.report.start_check on a real tester report and its journal: 22 % history and a start moved to 2008-12-03. | core, live_only, mt5 | — |
 | `tests/test_mt5_ticks.py` | 64 | Step 26's optional real-ticks pass: three curves per firm on the merged chart, the verdicts | mt5 | pandas |
 | `tests/test_mt5bridge_render.py` | 23 | Known answers for the Verificar table's helpers: the state cell and the missing result. | ui | — |
-| `tests/test_mt5verify.py` | 395 | MT5 Bridge's step 26 on known answers: the clock, the five rows, a firm's costs and the project it writes. | core, mt5, sqx | numpy, pandas |
+| `tests/test_mt5verify.py` | 430 | MT5 Bridge's step 26 on known answers: the clock, the five rows, a firm's costs and the project it writes. | core, mt5, sqx | numpy, pandas |
 | `tests/test_neighbours_autopilot.py` | 105 | Step 13's T1 chain in the autopilot: its order on both routes, and the refusal of a reserved leg. | pipeline | pandas, pytest |
 | `tests/test_neighbours_draw.py` | 152 | Step 14's T1 draw (`sqx.variants.neighbours`) and its batch: classes, bounds, determinism, de-dup. | sqx | pandas, pytest |
 | `tests/test_neighbours_measure.py` | 165 | Step 14's T1 measure: excess per neighbour and window on a market whose drift is known, and its facts. | engines, pipeline, studies | numpy, pandas, pytest |

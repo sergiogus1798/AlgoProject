@@ -281,6 +281,7 @@ def main() -> None:
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id = f"{stamp}_{re.sub(r'[^A-Za-z0-9]+', '_', strategy.stem)}"
     work = RUNS / run_id
+    work.mkdir(parents=True, exist_ok=True)
     meta = {
         "run": run_id,
         "strategy": strategy.stem,
