@@ -51,12 +51,14 @@ AT_PRICE = ("SL", "PT", "EndTest")
 AT_OPEN = ("Exit After X Bars", "Exit Signal", "End Of Friday (Time)", "Deleted")
 
 
-def costs(feed: str, segment: str) -> Costs:
+def costs(feed: str, segment: str, rounds: bool | None = None) -> Costs:
     """What a task on this feed and segment charges, read from the asset card.
 
     Args:
         feed: SQX feed name, e.g. "NIKKEI225_M1".
         segment: "build", "oos1" or "oos2"; picks the spread, the slippage and the commission.
+        rounds: Only the rounding measurement (engines.market.rounding) gives it: the fills'
+            tick rounding to try, which skips the card's `price_rounding` and its refusal.
 
     Returns:
         The card's costs for that segment. A `points` swap (every forex card) is in tickStep,
@@ -66,7 +68,7 @@ def costs(feed: str, segment: str) -> Costs:
     assert symbol, f"no asset file declares the feed {feed}"
     data = load(symbol)
     mode = (data.get("price_rounding") or {}).get("use")
-    if mode not in ("tick", "none"):
+    if rounds is None and mode not in ("tick", "none"):
         raise ValueError(
             f"{symbol}: its card has no `price_rounding` (tick | none), so the repricer will not "
             f"price it: measure it on a batch of variants and write it with "
@@ -86,7 +88,7 @@ def costs(feed: str, segment: str) -> Costs:
         "triple": WEEKDAYS.index(s["swap"]["triple_swap_on"]),
         "rollover": int(str(s["swap"]["rollout_hour"]).split(":")[0]),
         "tick_step": tick / 10 if points else None,
-        "rounds": mode == "tick",
+        "rounds": mode == "tick" if rounds is None else rounds,
     }
 
 
