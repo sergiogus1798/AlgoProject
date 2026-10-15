@@ -49,14 +49,16 @@
 | G1 | 8 | celda de la corrida de gorilla | **contestada: B** (EURUSD M30 largos reversión, `Trade_EURUSD_M30_reversionL_gorilla`) | — |
 | P10 ✅ B | 5 | dos objetivos de `perf/inputs/construct.py` apuntan a datos borrados | A primer miembro + cosecha USDJPY (no existe) · B cosecha XAUUSD `Test_XAUUSD_H1_ruptura_wtc3` · C retirarlos | B |
 | D27 ✅ A | 5 | ledger único del 66 | el diseño A/B/C está escrito en el 66, sección «D27 · Diseño…» | sin recomendación aquí; fuera de la ruta crítica |
-| K1 | 11 | cómo se dimensiona en cartera una estrategia sin stop (OPEN #113 (1); el M3 para con «sin stop del paso 24») | A pérdida diaria flotante de la firma + tope de exposición conjunta · B stop ATR sintético sólo para el tamaño · C 1 lote fijo (rompe límites en 50-77 % de cuentas) | A |
-| K2 | 11 | `oos2` se gasta una vez por pool: ¿quién lo lee? | A sólo la cartera de fondeo · B dos pools · C la real primero | A |
+| K1 ✅ A | 11 | cómo se dimensiona en cartera una estrategia sin stop (OPEN #113 (1); el M3 para con «sin stop del paso 24») | A pérdida diaria flotante de la firma + tope de exposición conjunta · B stop ATR sintético sólo para el tamaño · C 1 lote fijo (rompe límites en 50-77 % de cuentas) | A |
+| K2 ✅ A | 11 | `oos2` se gasta una vez por pool: ¿quién lo lee? | A sólo la cartera de fondeo · B dos pools · C la real primero | A |
 | K3 | 11 | de qué proyecto salen las supervivientes del pool del viernes | nombre del proyecto, o «las de la corrida V del 50» | — |
 | W1 ✅ fuera | 7 | la celda interrumpida `squeezeBBLong XAUUSD H1` es un test de 15 min y `following()` la corre la primera | A dejar que termine · B marcarla hecha/fallida en el ledger | B |
-| W2 | 7 | `claude -p` con límite de uso: el bucle ahora para (`7f6a293`) | A parar · B dormir 30 min y reintentar, con tope | B si va desatendido |
+| W2 ✅ B (`c5ca165`) | 7 | `claude -p` con límite de uso: el bucle ahora para (`7f6a293`) | A parar · B dormir 30 min y reintentar, con tope | B si va desatendido |
 | W3 ✅ B | 7 | la campaña no retira sus `Trade_` (1,1 GB el de NIKKEI) y SQX los carga al arrancar | A dejarlos · B retirarlos tras `keep` | A un fin de semana, B si dura semanas |
 | W4 ✅ fuera (`dropped_templates`) | 7 | `squeezeBBLong` falla en 16.5 (`not variables of this strategy: ['SqueezeBB']`, la causa sigue) | A dejarla en la cola · B al final | B |
 | W5 ✅ No | 7 | antes de lanzar: existe `AlgoData/campaign/STOP` (desde 07-10), la cola está vacía y nada relanza el bucle si muere | `run --go` quita el STOP; `plan --queue N` encola; ¿supervisor (cron) sí/no? | encolar y lanzar a mano; supervisor no hasta ver una noche limpia |
+| W6 ✅ A, N = 2 | 7 | lanzar la campaña esta noche | lanzada 22:05: `Trade_EURUSD_M30_cciPercLong`, `Trade_USDJPY_H1_cciPercLong_withExit` | — |
+| W7 ✅ B | 7 | 21 activos sin `price_rounding` fuera de la campaña (`ad41f58`) | se miden la semana que viene; si R1 = A el filtro se borra | — |
 | R1 | 8, 12, 13 | un activo sin `price_rounding` en su primera corrida | A el paso 8 lo mide solo sobre las operaciones del build y escribe la ficha (con `why`), y sigue · B se para, se mide a mano y `run` · C la campaña sólo elige activos ya medidos | A: sin ella la campaña del sábado se para en cada activo nuevo |
 
 ## Informe de las 5:40 (viernes 2026-10-16, hora del servidor, UTC)
