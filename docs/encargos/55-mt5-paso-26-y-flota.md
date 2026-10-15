@@ -24,7 +24,7 @@ OPEN.md`) · `knowhow/mt5/INDEX.md` · `knowhow/locations/vps-fleet-access.md` �
 |---|---|---|---|---|
 | B | Paso 26: queda la fila 5 con flotante (M1 del terminal de cada firma, K-2; sin decidir si cambia `dd_rel_gap_max`) y «R» = distancia al stop donde haya stop (K-1b); ninguna superviviente con stop para probarlo | Opus / Sonnet | una corrida real en MT5 | parcial: símbolos y `mt5/README.md` hechos |
 | C | Paso 26: «Hecho es» — una superviviente real, su veredicto y su fila en el pool | Sonnet (la corrida es mecánica) | A, B, #78, una superviviente real | bloqueado |
-| E | Flota — pieza B: hecho `mt5/fleet/package.py` + `deploy.py` + `vps/*.ps1`; falta validar el `.chr` en una cuenta DEMO del terminal de Wine (la cuenta que tiene hoy es Hantec 8063673, no se sabe si demo) y probar contra la VPS | Sonnet | demo en Wine, visto bueno del dueño | parcial |
+| E | Flota — pieza B: hecho `mt5/fleet/package.py` + `deploy.py` + `vps/*.ps1`; falta validar el `.chr` en una cuenta DEMO del terminal de Wine (otra cuenta demo: la Hantec 8063673 es una cuenta fondeada en fase 1, parada a propósito, y no se toca) y probar contra la VPS | Sonnet | demo en Wine, visto bueno del dueño | parcial |
 | F | Flota — pieza C: hecho el reinicio con tarea programada (`deploy.py --install-watchdog`, sin probar en la VPS); falta pausar una cuenta (K-8c, fichero de control: exige que el EA o la baliza lo lean) | Sonnet | el dueño ve el diseño | parcial |
 | H | Exportador de carteras (§3 de 35): magic, riesgo en USD, noticias, comentario, nombre | Opus (diseño) → Sonnet | G, E, encargo 54 (riesgo por tamaño) | pendiente |
 | I | Flota — pieza D: la conciliación alimentada por las cuentas de la flota | Sonnet | decisión del dueño | pendiente |
@@ -448,3 +448,7 @@ Cuando un frente quede entero, bórralo de la tabla de estado y apúntalo en la 
 Termina con la lista de ficheros cambiados y, como última línea de tu respuesta: **¿Quieres hacer el commit?**
 
 /loop Lee docs/encargos/55-mt5-paso-26-y-flota.md y ejecútalo entero. Tras cada iteración corre el Objetivo; si sale 0, para el bucle; si no, arregla lo que falló y vuelve a correrlo.
+
+## Contestadas por el dueño (2026-10-15)
+
+- **55-E:** la cuenta Hantec 8063673 es una cuenta fondeada en fase 1, parada a propósito. NUNCA se toca ni se le enganchan EAs. La validación del `.chr` necesita otra cuenta demo.

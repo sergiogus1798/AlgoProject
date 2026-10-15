@@ -421,3 +421,12 @@ build sintético (9) no caben en un comando: su cifra va en la fila al cerrarla.
   cumplido.
 
 No se despacha con `/loop`: cada fila la lanza y la verifica la sesión que orquesta.
+
+## Contestadas por el dueño (2026-10-15)
+
+Decisiones del paso 8 tras la corrida nula (dossier `docs/AgentPDFs/criterios-paso-08-corrida-nula-2026-10-12.md` §4):
+
+- **P8-Z → C:** α 0,01 para «z del mono con horas». En una mitad partida midió 0,78 % de supervivencia nula; plantadas 23/57/80 %.
+- **P8-L → A:** el limbo continúa.
+- **P8-E → A:** `edge_mean_oos` no se endurece.
+- Aplicar α 0,01 en `pipeline/autopilot/criteria.yaml` queda pendiente hasta que el encargo 70 haga commit, porque ese fichero está ocupado.

@@ -356,3 +356,7 @@ de la decisión del dueño, y los frentes 4-6 de una corrida real en SQX. La lis
 Qué hiciste · qué verificaste, con la salida pegada · qué dejaste sin hacer y por qué · qué descubriste
 para `knowhow/` (tarjetas nuevas o editadas, nunca añadidas al final) · actualiza la tabla de estado y la
 bitácora · la lista de ficheros cambiados y, como última línea, **¿Quieres hacer el commit?**
+
+## Contestadas por el dueño (2026-10-15)
+
+- **D-1 → A:** se construyen las poblaciones nula y plantada para el frente 1.
