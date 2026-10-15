@@ -26,7 +26,7 @@ bin/workflow.sh simple <PROJECT> <SYMBOL> <TF> <long|short> <FAMILY> <PALETTE> "
 | SYMBOL | the asset, as in `assets/` | `NIKKEI225` |
 | TF | `M15`, `M30`, `H1` or `H4` | `M30` |
 | SIDE | `long` or `short` — never both (hard rule 13) | `long` |
-| FAMILY | the idea family, one key of `_expected_sign` in `assets/_markets.yaml` (`python3 -c "from core.assetdata import expected_sign; print(list(expected_sign()))"`). Step 10 reads it | `breakout` |
+| FAMILY | the idea family, one key of `_expected_sign` in `assets/_markets.yaml` (`python3 -c "from core.assetmarkets import expected_sign; print(list(expected_sign()))"`). Step 10 reads it | `breakout` |
 | PALETTE | one idea family: a file name of `sqx/blocks/palettes/` without `.yaml` (hard rule 15) | `tendencia_base_v3` |
 | PURPOSE | one sentence, what the project is for | `"Tendencia en Nikkei M30, largos"` |
 | STRATEGIES | the databank's capacity; the build stops at MINUTES, not when this fills | `1000` |
