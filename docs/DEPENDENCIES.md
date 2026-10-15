@@ -962,7 +962,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_blocks_shared.py` | 105 | Known answers for the shared drawing blocks: sign caption, band helper, scatter cap, red-green ramp. | core, ui | PySide6, numpy |
 | `tests/test_build_acceptance.py` | 140 | Golden and refusal tests for step 6: the Build's acceptance filters from a `_study.yaml`. | core, sqx | — |
 | `tests/test_builder_feedswap.py` | 178 | Known-answer test for `sqx.projects.builder`: a non-XAUUSD project must actually swap | core, sqx | — |
-| `tests/test_builder_gates.py` | 82 | Builder gates: a live project name is refused, a refusal leaves the install's template alone, | core, pipeline, sqx | pytest |
+| `tests/test_builder_gates.py` | 83 | Builder gates: a live project name is refused, a refusal leaves the install's template alone, | core, pipeline, sqx | pytest |
 | `tests/test_builder_scope.py` | 186 | Known-answer test for the builder's scope rule (owner, 2026-09-29): from the master, a new | core, sqx | — |
 | `tests/test_builder_simple.py` | 224 | A Simple Strategy project straight out of `builder.build`: its shape, the owner's genetic block | core, sqx | — |
 | `tests/test_calc_engines.py` | 275 | Known-answer tests for the calc-engines review (2026-10-04): BH, the empirical p, the | core, engines, ledger | arch, numpy, pandas, pytest, scipy |
@@ -1299,7 +1299,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tools/knowhowq.py` | 50 | The q: rule of a knowhow card: one question, at most 120 characters, ending in '?'. | — | — |
 | `tools/knowhowrefs.py` | 112 | Knowhow check: a card's header must not cite a repo path that no longer exists. | knowhowmap | — |
 | `tools/layering.py` | 88 | Layering check: which project package may import which, with today's violations as debt. | depmap | — |
-| `tools/manual.py` | 374 | Build the user manual as one PDF per workflow family, from the markdown in AlgoData. | core, markdown | — |
+| `tools/manual.py` | 379 | Build the user manual as one PDF per workflow family, from the markdown in AlgoData. | core, markdown | — |
 | `tools/projectmap.py` | 244 | Generate PROJECT_MAP.md from Graphify's graph: modules, who talks to whom, infra vs calculation, hot spots. | — | — |
 | `tools/ratchet.py` | 185 | Ratchet: debt counts that may fall but never rise (CODESTYLE.md §12), baseline in ratchet.json. | depmap, layering | — |
 | `tools/readmetable.py` | 115 | Generate the «file» and «what it does» columns of every code folder's README table from the modules' docstrings. | depmap | — |

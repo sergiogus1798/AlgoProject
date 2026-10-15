@@ -94,7 +94,7 @@ sesión rellena sólo su sección antes de las 5:35; 95 las junta para el dueño
 1. Cuando aterrice el commit de la #93 de 07: marcar hecha la fila 1.6 del 49 y, si S1 = A, sellar de nuevo `criteria.yaml`.
 2. Respuestas S1-S4 → aplicarlas (S3 y S4 son código en `verdict/gates.py` y `ledger/judge.py`, ficheros míos).
 3. Fila 12 del 74 (ensayo del sábado en leaseWeb): en cuanto el custodio quede libre de la campaña de 07, una celda del director a la cartera sin manos.
-4. Pendiente con la máquina libre: frente 5 del 50 (receta IS, Opus), calibraciones 12 y 16 del 49 (esperan al 53, aparcado), GBPJPY sin `price_rounding` (50/50, necesita un lote que distinga).
+4. Pendiente con la máquina libre: frente 5 del 50 (receta IS, Opus), calibraciones 12 y 16 del 49 (esperan al 53, aparcado).
 
 ### Informe de las 5:40 — algoproject-07
 

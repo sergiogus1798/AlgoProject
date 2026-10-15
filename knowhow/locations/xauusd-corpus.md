@@ -1,17 +1,14 @@
 ---
-q: What exits, direction and stops did the OLD historical 231-strategy XAUUSD corpus have (the current corpus is export/exits-and-m1-library)?
+q: What exits, direction and stops did the OLD 231-strategy XAUUSD corpus have (superseded by exits-and-m1-library)?
 kw: XAUUSD generated strategies stop loss take profit; SLPT None; long only; ExitAfterBars 8; bar-cap vs signal-exit populations; XAUUSD in-sample window
 tag: 🤔  date: 2026-10-04  see: export/exits-and-m1-library, authoring/bar-exit-ignores-task, authoring/build-doctrine-sections, research/research-lessons
 ---
 # HISTORICAL 231-strategy XAUUSD corpus (superseded by export/exits-and-m1-library): no SL, no PT, no trailing; long-only; every exit capped at 8 bars
-Owner decision 2026-10-15 (OPEN #112): this card describes the old historical corpus (231 strategies, an old project's export, not reproducible); the live corpus is the 757-strategy `MC_Trades` of `export/exits-and-m1-library` (19.55 % `Exit Signal`). Do not pool the two.
-All 231 carry `SQ.Formulas.SLPT.None`: Build task `<SLRequired>false`, `<SLATR>false`, `<PTRequired>false`
-(ATR machinery configured — `MinSLATRMultiple 2`, `MaxSLATRMultiple 8`, period 20 — but toggled off).
-Two structurally different populations share the pool: never pool exit statistics. **The bar-cap
-vs signal-exit split below is 🤔, not 🔬 (retagged 2026-09-29, issue 13): unstated threshold,
-n=11 for one arm, and the 231 denominator itself carries the corpus's own duplicate-trade problem —
-redo on deduplicated trade lists over one window before trusting the comparison.** Every figure
-here is from the old project's export and cannot be reproduced from today's data root (OPEN §12). Not: «every exit is capped at 8 bars» for the 757-strategy `MC_Trades` corpus — there 19.55 % of trades close on `Exit Signal` (🔬, `export/exits-and-m1-library`, counted 2026-09-25).
+Owner decision 2026-10-15 (OPEN #112): old historical corpus, not reproducible; the live one is the 757-strategy `MC_Trades` of `export/exits-and-m1-library` (19.55 % `Exit Signal`, 🔬). Do not pool the two.
+All 231 carry `SQ.Formulas.SLPT.None`: Build `<SLRequired>false`, `<SLATR>false`, `<PTRequired>false` (ATR machinery
+configured — `MinSLATRMultiple 2`, `MaxSLATRMultiple 8`, period 20 — but toggled off). Two populations share the pool:
+never pool exit statistics. **The bar-cap vs signal-exit split below is 🤔 (retagged 2026-09-29, issue 13): unstated
+threshold, n=11 in one arm, duplicate trades in the 231 — redo on deduplicated trades over one window before trusting it.**
 
 ## Evidence
 - `<MarketSides type="long">`: 231/231 long entry, 0 short.

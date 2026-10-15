@@ -117,7 +117,12 @@ FAMILIES = {
     ),
     "06-lecturas": (
         "Lecturas de una estrategia",
-        ["26-nulos", "50-edge-por-coste", "51-estacionalidad", "42-calidad-de-la-entrada"],
+        [
+            "26-nulos",
+            "50-edge-por-coste",
+            "51-estacionalidad",
+            "42-calidad-de-la-entrada",
+        ],
     ),
     "07-otros-mercados-y-timeframes": (
         "Otros mercados y otros timeframes",
