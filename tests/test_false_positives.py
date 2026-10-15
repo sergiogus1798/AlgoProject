@@ -267,7 +267,8 @@ def test_every_population_walks_the_real_criteria_side_by_side() -> None:
     assert (first["applied"] == first["rules"]).all() and not got["skipped"]
     rules = got["rules"][got["rules"]["applied"]]
     r3 = rules[rules["label"].str.startswith("z del mono")].set_index("nivel")["pass"]
-    assert r3["nula"] <= r3["0.05"] <= r3["0.10"] <= r3["0.15"] and r3["0.15"] >= 20
+    # α 0,01 since 9aef247: 14 of 40 at 0.15 (it was ≥ 20 at α 0,05)
+    assert r3["nula"] <= r3["0.05"] <= r3["0.10"] <= r3["0.15"] and r3["0.15"] >= 10
     assert (rules[["pass", "limbo", "fail"]].sum(axis=1) == rules["n_in"]).all()
     assert set(got["facts"].index.get_level_values("nivel")) == set(first.index)
     wide = many.shares(got["rules"], list(first.index), "pass")
