@@ -25,12 +25,14 @@ their strategies from the archive), `tests/test_campaign.py`.
 
 ## On disk — `AlgoData/campaign/` (`core.datapaths.campaign_dir`)
 
-- `ledger.jsonl` — append-only; the last line of a key is its state (`pending`, `running`, `interrupted`, `done`, `failed`).
+- `ledger.jsonl` — append-only; the last line of a key is its state (`pending`, `running`, `interrupted`, `done`, `failed`, `question`, `dropped` — a template the owner took out, `config.yaml` `dropped_templates`).
 - `batches/<id>.json` — a batch as it was frozen, whole.
 - `runs/<template>_<symbol>_<tf>_<direction>_<stamp>/` — `workflow.json` (time per step, survivor counts, `criteria.yaml` hash, finalists, `not_kept`), `run/` (the autopilot's run folder), `estrategias/` (links to each finalist frozen in `AlgoData/archive/`).
 - `STOP` (the owner's veto), `loop.lock`, `loop.log`.
 
 ## Traps
+
+- **A `done` cell's `Trade_` project is retired at once** (owner, 2026-10-15): its finalists are in the store and its databanks only slow SQX's start (1.1 GB for one NIKKEI run). `sqx.projects.retire` archives its `project.cfx`; it refuses while step-8 survivors are unsaved or the custodian is up, and then the project stays and the loop goes on. A `failed` or `interrupted` cell keeps its project: the next try resumes it.
 
 - **The Build cap is 180 minutes always.** SQX's live session honours only `time-limit`; `strategies: 10000` is the databank's size (it keeps the best 10,000), not a stop. A running build cannot be stopped early from outside (`/project/stop` does nothing), and an exit request makes SQX save every project while the build runs on. So a STOP mid-build ends the session the hard way (owner, 2026-10-06): once the other projects' databanks are saved again, the JVM is killed by PID, the build's memory is lost, its outputs on disk and that start's project log are set aside, and the cell resumes by building again (`ui/daemon/launch/liverun.close`, `sqx/projects/exiting.py`). → `knowhow/sqx-drive/live-chain-without-restart.md`
 - **A task that does not advance is a step failure**, not a wait: past 3× the longest its title ever took (`AlgoData/autopilot/task-durations.json`, floor 20 min, 60 for a title never seen) `sqx.projects.taskcap` aborts it, the session is killed and the loop's three tries follow (🔬 2026-10-06: «MCR 6 Exits» sat 1 h 40 on 2 cores — `RandomizeExitParameters` over strategies that exit by condition only never returns; the configurator now drops that method where no exit method is set). → `knowhow/sqx-drive/retest-task-hangs-silently-deadline.md`

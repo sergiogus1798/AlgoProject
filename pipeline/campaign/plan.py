@@ -74,6 +74,10 @@ def candidates() -> list[dict]:
         and c["timeframe"] in cfg["timeframes"]
         and c["family"] in pool
     ]
+    pool = {
+        f: [d for d in docs if d["name"] not in cfg["dropped_templates"]]
+        for f, docs in pool.items()
+    }
     costed = {s: _costed(s) for s in sorted({c["symbol"] for c in board})}
     board = sorted(
         (c for c in board if costed[c["symbol"]]), key=lambda c: -c["points"]

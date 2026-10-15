@@ -15,6 +15,7 @@ from core.datapaths import campaign_dir, template_dir
 from core.paths import DATA, ROOT, project_dir, worker_dir
 from core.researchpaths import autopilot_runs
 from pipeline.campaign import keep, ledger, palette
+from sqx.projects import retire
 
 HERE = Path(__file__).parent
 WORKFLOW = [str(ROOT / "bin" / "workflow.sh")]
@@ -141,6 +142,16 @@ def once(cell: dict, cfg: dict) -> str:
         tries=tries + 1,
         **facts,
     )
+    if (
+        state == "done"
+    ):  # owner, 2026-10-15 (W3 B): its survivors are in the store, its databanks only weigh on SQX's start
+        try:
+            print(
+                retire.retire(cell["project"], "custodian", [], apply=True, own=True),
+                flush=True,
+            )
+        except SystemExit as e:  # unsaved survivors or SQX still up: the project stays, the loop goes on
+            print(f"{cell['project']}: no retirado — {e}", flush=True)
     print(
         f"{cell['project']}: {state} · {facts['steps_minutes']} min · {facts['finalists']} finalista(s) · "
         f"{facts['folder']}",

@@ -2,7 +2,7 @@
 """The campaign's loop on a fake workflow command: a STOP mid-run leaves the cell interrupted and SQX's
 stop called, a restart resumes it with `run` and repeats nothing, three failed tries make a cell
 failed and two failed cells running end the loop, and a cell whose palette expert asks a question is
-set aside while the next one runs. No SQX, no install; the data root is a temp folder."""
+set aside while the next one runs; only a done cell's project is retired. No SQX, no install; the data root is a temp folder."""
 
 import os
 import sys
@@ -35,6 +35,10 @@ run.AUTOPILOT = "fakeflow.sh [a-z]+ {} "
 run.POLL = run.BOOT = 0.2
 run.project_dir = lambda name, install: TMP / "projects" / name
 run.template_dir = lambda name: TMP / name
+RETIRED: list[str] = []
+run.retire = types.SimpleNamespace(
+    retire=lambda name, *a, **k: RETIRED.append(name) or f"retired {name}"
+)
 run.shutil.disk_usage = lambda path: types.SimpleNamespace(free=1e12)  # /tmp is small
 
 
@@ -132,6 +136,9 @@ def main() -> None:
     }
     row = {**cell("H"), "template": "tH"}
     assert plan._spent(row) == "oos1 4 cribas, oos2 30 filas"
+    assert RETIRED == ["Trade_A", "Trade_B", "Trade_E"], (
+        RETIRED
+    )  # only a done cell is retired
     print("ok")
 
 

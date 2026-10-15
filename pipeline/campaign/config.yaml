@@ -17,6 +17,8 @@ test: {strategies: 3000, minutes: 15, precision: 1}
 min_free_gb: 50                 # the loop does not start a cell with less free under the data root
 failures_in_a_row: 2            # this many failed cells running stop the loop: the fault is not the cell's
 
+dropped_templates: [squeezeBBLong]  # owner, 2026-10-15: «olvida squeezeBB, usa otra plantilla»
+
 # A template written for one asset class is offered only there (owner, 2026-10-05); the rest go
 # wherever the board admits their family. Classes as the board names them.
 asset_class:
