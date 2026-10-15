@@ -90,6 +90,8 @@ sesión rellena sólo su sección antes de las 5:35; 95 las junta para el dueño
 | 49 | `--calib` y `calib_rows` fuera; umbrales de crossmarket/crossTF/spp a `ledger/thresholds.yaml`; `ledger/blind` lee el CSCV; T-2 `ALGO_OOS2_PIN`; SPP media/sd/media−sd en `verdict.csv`; tramos gastados en `campaign plan`. Parche de `criteria.yaml` (paso 16 + higiene) entregado a 07 para su commit de la #93 | `aaa03d6`, `a4c2f71`, `9fe9bf3` |
 | 50 Z1 y frente 4 M | la documentación de la puerta (WORKFLOW, especificación, README, skill, glosario, manual 03-05) describe el paso 8 vigente | `5c8055d` |
 | OPEN #118 (a) | el builder se niega si la ventana de una tarea se sale de su tramo (`refuse_off_segment`); probado sin conexión con builds `--workflow` de USATEC H1, GBPJPY H1, EURUSD M30 y XAUUSD H1 | `94be9dd` |
+| paso 19.5 bajo `ALGO_AUTONOMOUS` | toda corrida moría en el 19.5 (`PermissionError`, gorilla EURUSD): la fila del corte firmaba 19.5 y la reserva de oos2 sólo conoce el 19 con que firma su estudio → `ledger.gate.READS_AS = {19.5: 19}`, test | `ca27380` |
+| `test_false_positives` | suelo de potencia del R3 a 10 de 40 con α 0,01 | `e97c475` |
 | encargos | 52 y 62 borrados (hechos); 49, 50 y 53 reescritos con las respuestas; #91 cerrada | — |
 
 **Siguientes pasos del día (viernes):**
