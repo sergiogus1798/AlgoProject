@@ -19,6 +19,7 @@ places that each know part of a project:
 |---|---|---|---|
 | `__init__.py` | The gallery's projects: every project the window can open, merged from the four sources. | imported | — |
 | `api.py` | The gallery's routes: every project on one list, and where one strategy of a project lives. | imported | request → JSON |
+| `janitor.py` | The weekly sweep, run from where the workflow rail can be read (`sqx` may not import `ui`). | `python3 -m ui.daemon.projects.janitor [--yes]` | the installs → one keep/retire line per project |
 | `sources.py` | Every project the window can open, merged from the four places that each know part of it. | imported | disk → cards |
 
 ## Traps

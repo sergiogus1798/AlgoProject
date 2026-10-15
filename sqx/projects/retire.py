@@ -5,6 +5,7 @@ import shutil
 import tarfile
 import time
 import zipfile
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 from xml.etree import ElementTree
@@ -153,10 +154,17 @@ def is_up(role: str) -> bool:
     )
 
 
-def sweep_all(apply: bool) -> None:
-    """Apply the weekly rule to every install and print one line per project looked at."""
+def sweep_all(apply: bool, parked: Callable[[str], bool]) -> None:
+    """Apply the weekly rule to every install and print one line per project looked at.
+
+    Args:
+        apply: Really retire; without it, a dry run.
+        parked: Whether a project's workflow stopped between steps (`sweep.candidates`).
+    """
     inst = installs()
-    for row in sweep.candidates(inst, {r: is_up(r) for r in inst}, STOCK, describe):
+    for row in sweep.candidates(
+        inst, {r: is_up(r) for r in inst}, STOCK, describe, parked
+    ):
         head = f"{row['role']:<9} {row['name']:<34} {row['tasks']:>3} tareas {row['mb']:>6} MB"
         if row["action"] == "keep":
             print(f"keep    {head}  {row['reason']}")
@@ -187,11 +195,6 @@ def main() -> None:
         help="a databank to archive with the config, e.g. --keep WFM; repeatable",
     )
     ap.add_argument(
-        "--sweep",
-        action="store_true",
-        help="the weekly rule: Test_, fewer than 10 tasks, the owner's queue",
-    )
-    ap.add_argument(
         "--yes", action="store_true", help="really do it; without it, a dry run"
     )
     ap.add_argument(
@@ -205,9 +208,6 @@ def main() -> None:
         help="retire although step-8 survivors are not in the store: their .sqx are lost",
     )
     a = ap.parse_args()
-    if a.sweep:
-        sweep_all(a.yes)
-        return
     if a.list or not a.names:
         listing()
         return

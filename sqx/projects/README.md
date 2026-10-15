@@ -41,7 +41,7 @@
 | `spp.py` | Write the two SPP tasks of a custom project: the permutation grid, one window each. | `python3 -m sqx.projects.spp <SYM> --cfx <cfx> --input <databank>` | un `.cfx` + el catálogo `spp:` de `_build.yaml` → `SPP IS` y `SPP OOS` escritas y activas |
 | `stage.py` | Switch on only one workflow step's tasks, so `action=start` runs that step and nothing else. | `python3 -m sqx.projects.stage --cfx <cfx> --step build,oos` | a workflow project → the same project, one step switched on |
 | `summary.py` | Say out loud what building a project applied, which is the half a human reads. | imported | `builder.build`'s result → the lines a human reads |
-| `sweep.py` | Which custom projects the weekly cleanup retires: the owner's rule, as code. | `python3 -m sqx.projects.retire --sweep [--yes]` | the three installs → one keep/retire line per project, with its reason |
+| `sweep.py` | Which custom projects the weekly cleanup retires: the owner's rule, as code. | `python3 -m ui.daemon.projects.janitor [--yes]` | the three installs → one keep/retire line per project, with its reason |
 | `taskcap.py` | A live task's deadline: 3× the longest its title ever took in SQX's own log; past it, the abort. | imported | log lines → the abort of a task that does not advance |
 | `tasksettings.py` | Task settings that must be identical across a whole project: timeframe, engine, MM, hours. | imported | a task → the same task, aligned with its siblings |
 | `wfc.py` | Write the WFC/CSCV retest: one task per segment, each at its own costs, markets included. | `python3 -m sqx.projects.wfc <SYM> --cfx <cfx> --timeframe <TF> --tasks t1,t2,t3` | `wfc:` + `_markets.yaml` → three tasks writing three databanks |

@@ -130,7 +130,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 113 | 🔴 | Next batch needing MT5 or the custodian: portfolio sizing without a per-trade stop, step-26 calibration run, no-edge population through 18/18.5/19, leftovers | OPEN.md |
 | 114 | 🟢 | `builder.build()` installs the template before the gates: a refusal leaves it under live projects | docs/OPEN-closed.md |
 | 115 | 🟠 | The harvest cannot record WHY SQX dismissed a strategy | OPEN.md |
-| 116 | 🟠 | `sweep.py` retires a `Test_` parked between workflow steps (data loss) | OPEN.md |
+| 116 | ✅ | `sweep.py` retires a `Test_` parked between workflow steps (data loss) | docs/OPEN-closed.md |
 | 117 | 🟠 | NIKKEI225_M1 feed is nearly empty at the start of `build` | OPEN.md |
 | 118 | 🟠 | Deferred builder gates: task windows vs segment, second chart in a template | OPEN.md |
 | 119 | 🟡 | `MonteCarloManipulation` removed (owner 2026-10-11: never again) — custodian and gorilla still ON | OPEN.md |
@@ -804,12 +804,6 @@ and «Sin veredicto».
 
 Decisión pendiente del dueño. 🔬 En `Test_NIKKEI225_M30_simpleL_fin`, `_val` y `Test_USDJPY_M30_doubleROCLong` el bitmask `StrategyProblems` del fichero de build es 0 en toda estrategia sin gemela OOS (300 muestreadas en cada uno); la razón vive en el fichero retestado, que es el que falta. `missing_oos.csv` ya tiene la columna y la cosecha imprime un aviso en mayúsculas; NO está activado un paro por «gemela ausente sin explicar». Para activarlo hay que leer la razón de SQX antes del descarte (`AutomaticDismissal` de la tarea Retest, 10 códigos, heredados del donante). Ficha: `knowhow/sqx-format/dismissal-reason-not-on-build-file.md`.
 
-## 116. 🟠 `sweep.py` retires a `Test_` parked between workflow steps (data loss)
-
-Decisión pendiente del dueño. `sqx/projects/sweep.py` retira un `Test_` intacto 24 h y no distingue un workflow aparcado entre pasos; `retire.py` hace rmtree de los databanks (pérdida de datos). El estado del carril vive en `ui.daemon.workflow.api.workflow`, y `tools/layering.py` deja a `sqx` importar solo `core`.
-
-Opciones: (a) inyectar `finished(project) -> bool` en `sweep.candidates`, como ya se hace con `describe`, desde un llamador fuera de `sqx/`; (b) bajar la derivación del carril por debajo de `ui/`. El Council del dueño rechazó una gracia de 7 días como sustituto.
-
 ## 117. 🟠 NIKKEI225_M1 feed is nearly empty at the start of `build`
 
 Decisión pendiente del dueño. 📓 `build` empieza en el primer dato (2011-09-19; `assets/_policy.yaml:102-106`) y el feed M1 está casi vacío: 702 barras en 2011, ninguna oct 2011–ene 2012, 68.079 en 2012 (~305/día), 187.775 en 2013, mar–abr 2013 vacíos, ~305-336 mil/año desde 2020 (fuente: `~/Desktop/AlgoData/bars/NIKKEI225_M1/M1.parquet` y `feedQuality/NIKKEI225_M1/`). 🤔 Causa más probable de las primeras operaciones tardías; no comprobado contra un registro de operaciones. Lo que lo confirmaría: la fecha de la primera operación de una estrategia construida.
@@ -885,3 +879,6 @@ Origen: encargo 68 F22 (`e1ce890`, `78d1fe0`), 2026-10-14. Opus midió contra `C
 ## 123. 🟠 Una superviviente de gorilla no llega al paso 26 de leaseWeb: no existe el «collect»
 
 Hallado en el encargo 71 (2026-10-14), al apartar `test_mt5_start_check` en gorilla (D3: el dueño condiciona que lo que salga de gorilla se verifique en el MT5 de leaseWeb). Lectura sin ejecutar nada. Hoy NO hay camino: `bin/remote.sh` sólo ejecuta (`run`, `--detach`), `bin/mirror-data.sh` sólo copia leaseWeb a gorilla, y ninguna ruta trae supervivientes, `.sqx`, tienda de estrategias, ledger ni `projects/registry.csv` de vuelta (grep de `rsync`/`scp`/`ssh`: nada hacia leaseWeb). El paso 26 pide el `.sqx` en la ruta absoluta de la finalista (`mt5/verify/autopilot.py:36-38`, «su .sqx no existe en…») y la verificación previa lee `AlgoData/structural/<P>/mothers`; ambos viven en el `AlgoData` de gorilla. El «collect» es el verbo 3 de la fase 2 del encargo 57, que el dueño dejó PARADA (2026-10-14). Pendiente cuando se reanude: traer a leaseWeb el `.sqx` de la superviviente, su fila de la tienda, los trials al ledger único (66 D27) y la carpeta `autopilot/<P>/<run>/`, antes de que el MT5 Bridge pueda «Verificar».
+
+**2026-10-15.** Parte D del encargo 72 (D-1 = A): hecho `bin/remote.sh gorilla collect <PROYECTO> [--dry-run]` (`core/store/collect.py`, `tests/test_gorilla_collect.py`, cap. 109 del manual). Trae sólo la carpeta de la tienda de cada superviviente (con su `strategy.sqx`) y las filas del ledger de su activo×marco, con sufijo `_gorilla`, sin pisar nada. PENDIENTE: la verificación real, que necesita la primera superviviente guardada en gorilla; y que la finalista del paso 26 apunte a `store/<celda>_gorilla/<carpeta>/strategy.sqx` (el paso 26 lee `mt5/verify/`, de otra sesión). No trae `structural/<P>/mothers` ni `autopilot/<P>/<run>/`: fuera de D-1.
+

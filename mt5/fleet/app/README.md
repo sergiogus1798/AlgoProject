@@ -95,6 +95,6 @@ Tests: `tests/test_fleet_floors.py`, `tests/test_fleet_risk_rules.py`, `tests/te
 
 ## Por ahora
 
-Deferred by the owner (2026-10-03): alerts to the phone and alerts with the window closed (today a
-notification only fires while the window is open). Acting on accounts (pause, close) is refused:
+Deferred by the owner (2026-10-03): alerts to the phone. (Closed-window desktop alerts on a floor or on
+silence exist since 2026-10-15: `mt5/fleet/guard.py`.) Acting on accounts (pause, close) is refused:
 the app never sends, modifies or closes an order.

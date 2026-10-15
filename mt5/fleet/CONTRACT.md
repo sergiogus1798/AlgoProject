@@ -1,8 +1,9 @@
 # Fleet v2 — the contract between FleetBeacon, the collector and MetaTracker
 
 Owner decisions, 2026-10-03 (do not reopen): MetaTracker gets ideas 1-10 and 12; idea 11 (acting on
-accounts: pause, close) is REFUSED — nothing here ever sends, modifies or closes an order. Phone /
-closed-window alerts (idea 3) are deferred to a «Por ahora» list. The session that owns this work now
+accounts: pause, close) is REFUSED — nothing here ever sends, modifies or closes an order. Phone
+alerts (idea 3) are deferred to a «Por ahora» list; the closed-window desktop alert on a floor or on
+silence is `guard.py` (owner, 2026-10-15; not news, not Friday close). The session that owns this work now
 also owns `mt5/fleet/vps/FleetBeacon.mq5` and the collector. The service stays READ-ONLY.
 
 Thresholds (owner): weekend — yellow 3 h before the symbol's Friday close, red 1 h before; news —

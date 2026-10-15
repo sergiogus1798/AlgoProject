@@ -6,11 +6,11 @@
 |---|---|---|---|---|
 | A1 | cola única de decisiones del dueño, dossier PDF | Opus redacta, Sonnet recoge | hecho 2026-10-15 (`docs/AgentPDFs/decisiones-pendientes-2026-10-15.pdf`, 8 págs.) | — |
 | A2 | aplicar las respuestas del dueño | Sonnet | pendiente | A1 contestado |
-| B | guardián de suelos con la ventana cerrada | Sonnet | pendiente | — |
+| B | guardián de suelos con la ventana cerrada | Sonnet | hecho 2026-10-15 (`mt5/fleet/guard.py`) | — |
 | C | conciliador semanal + SPRT en cron | Sonnet; Haiku instala la línea | pendiente | claves del dueño (A1) |
-| D | «collect» gorilla → leaseWeb (OPEN #123) | Sonnet | pendiente | D-1 |
-| E | el janitor no retira un workflow aparcado (OPEN #116) | Sonnet | pendiente | E-1 |
-| F | mapa, dependencias, revisión y cierre | Haiku + `reviewer` | pendiente | B, D, E |
+| D | «collect» gorilla → leaseWeb (OPEN #123) | Sonnet | hecho 2026-10-15 salvo la verificación real (`bin/remote.sh gorilla collect`) | una superviviente en gorilla |
+| E | el janitor no retira un workflow aparcado (OPEN #116) | Sonnet | hecho 2026-10-15, #116 cerrada (`python3 -m ui.daemon.projects.janitor`) | — |
+| F | mapa, dependencias, revisión y cierre | Haiku + `reviewer` | hecho 2026-10-15 (revisión: 8 arreglos aplicados) | — |
 
 **Bitácora**
 
@@ -18,6 +18,8 @@
   Q3 A (el guardián sólo avisa), Q4 A (56 F2/F4/F5 y 62 partes 2-4 congelados), Q5 A (empieza ya, en
   paralelo), Q6 A (la cola es un dossier PDF).
 - 2026-10-15 — A1 hecho: 3 recolectores Sonnet, dossier escrito en Opus, PDF de 8 páginas. La otra sesión (c8) confirma que no hay solape; tiene el custodio, `assets/`, el repreciador, `ledger/thresholds.yaml` y, después, `mt5/verify/` y `portfolio/funded/`: A2 coordina con ella antes de tocar `thresholds.yaml`. B, D y E esperan B-1, D-1 y E-1.
+- 2026-10-15 — dueño: B-1 A, D-1 A, E-1 A. B, D y E lanzados a la vez en Sonnet. Reloj de Hantec: UTC+3 hoy (beacon), se distingue EETUS/EET entre el 25-10 y el 1-11. La cuenta Hantec 8063673 es fondeada (guarda `mt5/guard.py`, commit 37d197a).
+- 2026-10-15 — B, D y E hechos; revisión independiente con 8 arreglos (rsync a temporal, guardián aislado por cuenta y del log del collector, `guard.json` atómico, tupla de excepciones del janitor). Objetivo: 11 tests verdes; `checks.py` sólo con 3 fallos previos ajenos (`tools/manual.py`, `xauusd-corpus`). Quedan C y A2 (respuestas del dueño) y la verificación real de D.
 
 ## Tu oficio
 

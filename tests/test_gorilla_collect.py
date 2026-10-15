@@ -1,0 +1,79 @@
+"""collect: a planted store stands for gorilla; rsync runs between two local folders, no ssh."""
+
+import json
+import subprocess
+from pathlib import Path
+
+import pytest
+
+from core.store import collect
+
+
+def plant(data: Path, ident: str = "1530c225") -> None:
+    """One survivor folder and ledger files in a store standing for gorilla."""
+    folder = data / "store" / "DAX40_H1_" / f"Strategy 1.2.3 {ident}"
+    folder.mkdir(parents=True)
+    (folder / "strategy.sqx").write_bytes(b"sqx")
+    origin: dict[str, str] = {"project": "Test_A", "symbol": "DAX40", "timeframe": "H1"}
+    (folder / "manifest.json").write_text(json.dumps({"origin": origin}))
+    (data / "ledger").mkdir()
+    (data / "ledger" / "DAX40_H1_simple_long.jsonl").write_text('{"a": 1}\n{"a": 2}\n')
+    (data / "ledger" / "DAX40_H1_other_P.jsonl").write_text(
+        '{"x": 1}\n'
+    )  # not this cell
+    (data / "ledger" / "DAX40_M30.jsonl").write_text('{"x": 2}\n')  # other timeframe
+
+
+def test_collect_lands_suffixed_and_never_overwrites(tmp_path: Path) -> None:
+    """A collect lands suffixed; a repeat leaves it alone."""
+    gor, here = tmp_path / "gorilla", tmp_path / "here"
+    plant(gor)
+    plan = collect.listing("Test_A", gor)
+    assert plan["ledgers"] == ["DAX40_H1_other_P.jsonl", "DAX40_H1_simple_long.jsonl"]
+    assert collect.listing("Test_B", gor)["folders"] == []
+
+    dry = collect.collect(plan, f"{gor}/", here, dry=True)
+    assert dry[0].startswith("traería") and not (here / "store").exists()
+
+    out = collect.collect(plan, f"{gor}/", here)
+    got = here / "store" / "DAX40_H1__gorilla" / "Strategy 1.2.3_gorilla 1530c225"
+    assert (got / "strategy.sqx").read_bytes() == b"sqx"
+    assert (here / "ledger" / "DAX40_H1_simple_long_gorilla.jsonl").read_text().count(
+        "\n"
+    ) == 2
+
+    (got / "strategy.sqx").write_bytes(b"edited")  # a second collect leaves it alone
+    again = collect.collect(plan, f"{gor}/", here)
+    assert (got / "strategy.sqx").read_bytes() == b"edited"
+    assert again[0].startswith("existe") and "0 filas nuevas" in again[1]
+    assert out[0].startswith("traída")
+
+
+def test_same_identity_held_locally_is_not_fetched(tmp_path: Path) -> None:
+    """An identity already held locally is not fetched."""
+    gor, here = tmp_path / "gorilla", tmp_path / "here"
+    plant(gor)
+    plant(here)  # the same strategy is already a local survivor
+    out = collect.collect(collect.listing("Test_A", gor), f"{gor}/", here)
+    assert out[0].startswith("ya local")
+    assert not (here / "store" / "DAX40_H1__gorilla").exists()
+
+
+def test_failed_rsync_leaves_no_folder(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A fetch that fails leaves neither the target nor the temp, so the next run retries."""
+    gor, here = tmp_path / "gorilla", tmp_path / "here"
+    plant(gor)
+
+    def boom(src: str, dest: Path) -> None:
+        """rsync dies after creating a partial file."""
+        (dest / "partial").write_text("x")
+        raise subprocess.CalledProcessError(23, "rsync", stderr="boom")
+
+    monkeypatch.setattr(collect, "_rsync", boom)
+    with pytest.raises(subprocess.CalledProcessError):
+        collect.collect(collect.listing("Test_A", gor), f"{gor}/", here)
+    assert not list((here / "store").glob("*/*")) and not list(
+        (here / "store").glob(".collect-*")
+    )

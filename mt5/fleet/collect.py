@@ -2,6 +2,7 @@
 
 import json
 import os
+import subprocess
 import tempfile
 import time
 from pathlib import Path
@@ -11,7 +12,7 @@ import pyarrow as pa
 
 from core.fleetpaths import history_dir, live_dir
 from core.paths import DATA
-from mt5.fleet import remote, rows
+from mt5.fleet import guard, remote, rows
 
 LOG = DATA / "logs" / "fleet-collect.log"
 PROBE_EVERY_S = 290  # cron runs every minute; the VPS health is asked about every 5
@@ -88,6 +89,16 @@ def main() -> None:
             log("FAIL pull: the VPS did not answer")
             notes = []
     notes.append(collect_vps())
+    try:
+        notes += [f"guard:{login}" for login in guard.run()]
+    except (
+        OSError,
+        ValueError,
+        KeyError,
+        TypeError,
+        subprocess.CalledProcessError,
+    ) as e:
+        notes.append(f"guard:error {type(e).__name__}")
     log(f"{' '.join(notes)} {time.time() - t0:.1f}s")
 
 

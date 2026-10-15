@@ -8,6 +8,7 @@ The beacon is read-only: it sends, modifies and closes nothing. The VPS is reach
 |---|---|---|---|
 | `collect.py` | Pull the VPS's FleetBeacon files and keep the fleet's live copy, minute history, excursions and health. | `python3 -m mt5.fleet.collect` (cron: `bin/fleet-collect.sh`, every minute) | VPS → `AlgoData/fleet/` |
 | `deploy.py` | Send one account's package to the VPS and relaunch its terminal; or install the relaunch task. Dry-run unless --yes. | `python3 -m mt5.fleet.deploy ...` | package → VPS |
+| `guard.py` | Fleet guard: a critical desktop notification when an account crosses into red on a floor or on silence, window closed or open. | called at the end of each `collect` pass | `live/` → notification, `AlgoData/fleet/guard.json` |
 | `magics.py` | The magic-number registry of the fleet: one magic per strategy x asset x timeframe, the same on every account. | `python3 -m mt5.fleet.magics [--write] [--register] [--adopt M S A TF] [--retire M]` | `AlgoData/fleet/magics.csv` |
 | `package.py` | One account's deployment package: its .ex5, a .set per EA with its magic, and a chart profile. | `python3 -m mt5.fleet.package <sheet> --eas <folder>` | workbook + `.mq5` → `AlgoData/fleet/packages/<sheet>/` |
 | `remote.py` | The two calls to the VPS over `ssh vps`: pull the beacon's files, run the health probe. | imported | VPS → files, dict |
@@ -22,4 +23,4 @@ The collector writes, under `AlgoData/fleet/` (`core/fleetpaths.py`): `live/<log
 (`written_gmt, server_time, balance, equity, floating, margin, connected, autotrading, ping_us,
 n_positions`) and `history/<login>/excursions.json` (per ticket, floating min and max profit at one-minute
 resolution). Log: `AlgoData/logs/fleet-collect.log`. It works on schema-1 beats too; a VPS that does not
-answer leaves the files unchanged. Manual: chapter `94-flota-colector`.
+answer leaves the files unchanged. The guard (`guard.py`, read-only on the accounts) runs after each pass and notifies once per crossing into red (a floor under `red_margin_left`, or silence over 300 s), re-arming when the account is green again. Manual: chapter `94-flota-colector`.

@@ -47,6 +47,7 @@ def candidates(
     up: dict[str, bool],
     stock: set[str],
     describe: Callable[[Path], "Described"],
+    parked: Callable[[str], bool],
 ) -> list[dict]:
     """Every project the rule would retire, and every one it held back and why.
 
@@ -55,6 +56,9 @@ def candidates(
         up: Role → whether that install is running now; a running one is left alone whole.
         stock: Project names never touched.
         describe: `retire.describe`, passed in to avoid a circular import.
+        parked: Whether a project's workflow stopped between steps (started, not ended); the
+            rail lives in `ui/`, which `sqx` may not import, so the caller outside `sqx` hands
+            it in (OPEN #116).
 
     Returns:
         One dict per project looked at: role, name, tasks, mb, action ("retire" or "keep")
@@ -100,6 +104,8 @@ def candidates(
                     reason="Research_: sin decidir si se tira o se queda "
                     "(pregunta abierta al dueño)",
                 )
+            elif kind == "test" and parked(p.name):
+                row.update(action="keep", reason="Test_: workflow aparcado entre pasos")
             elif kind == "test":
                 row.update(action="retire", reason="Test_: ya respondió")
             elif isinstance(d["tasks"], int) and d["tasks"] < WORKFLOW_MIN_TASKS:

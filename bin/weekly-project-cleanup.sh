@@ -45,7 +45,7 @@ exec 9>"$LOCK"
 flock -n 9 || { echo "$(date -Is) another project cleanup is going; skipped"; exit 0; }
 
 echo "=== $(date -Is) weekly project cleanup start"
-python3 -m sqx.projects.retire --sweep
+python3 -m ui.daemon.projects.janitor
 echo "--- dry run above"
 
 if [ -z "$CLAUDE" ] || [ ! -x "$CLAUDE" ]; then

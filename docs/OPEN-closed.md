@@ -1924,3 +1924,11 @@ Decisión pendiente del dueño. `builder.build()` hace `install_template` antes 
 Opciones: (a) dejar la plantilla en el directorio temporal y apuntar `templateFile` ahí durante los gates; (b) que `charts.streams` reciba la plantilla de origen.
 
 **Closed 2026-10-14.** Owner chose option A (2026-10-14): builder.build() stages the template in a temp dir, the tasks point there while the gates run, and only after refuse() passes is it copied under the install and the staged path rewritten in the .cfx. Covered by tests/test_builder_feedswap.py (installed template exists and is what the tasks name; a refused build leaves no .sqx in the install).
+
+## 116. ✅ `sweep.py` retires a `Test_` parked between workflow steps (data loss)
+
+Decisión pendiente del dueño. `sqx/projects/sweep.py` retira un `Test_` intacto 24 h y no distingue un workflow aparcado entre pasos; `retire.py` hace rmtree de los databanks (pérdida de datos). El estado del carril vive en `ui.daemon.workflow.api.workflow`, y `tools/layering.py` deja a `sqx` importar solo `core`.
+
+Opciones: (a) inyectar `finished(project) -> bool` en `sweep.candidates`, como ya se hace con `describe`, desde un llamador fuera de `sqx/`; (b) bajar la derivación del carril por debajo de `ui/`. El Council del dueño rechazó una gracia de 7 días como sustituto.
+
+**Closed 2026-10-15.** Owner 2026-10-15 E-1=A: sweep.candidates recibe finished(project); un Test_ cuyo paso 21 no esta hecho se queda. El llamador es ui/daemon/projects/janitor.py (python3 -m ui.daemon.projects.janitor [--yes]); retire --sweep desaparecio. Prueba: tests/test_sweep_parked.py.
