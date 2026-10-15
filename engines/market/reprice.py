@@ -161,7 +161,11 @@ def pnl(
     value, slip = costs["point_value"] * size, costs["slippage"]
     entry, leave = open_px + side * (costs["spread"] + slip), close_px - side * slip
     if costs["rounds"]:
-        entry, leave = (np.round(x / tick) * tick for x in (entry, leave))
+        # Half a tick rounds UP, as SQX does: np.round goes to the even tick and put half the
+        # fills one tick off where spread + slippage lands on a half (GBPJPY oos1 27.5 steps,
+        # AUDUSD build 8.5: OPEN #124, 🔬 2026-10-15, 100 % of trades to 0.01 USD after). The
+        # 1e-9 keeps a half that float division leaves a hair below .5 a half.
+        entry, leave = (np.floor(x / tick + 0.5 + 1e-9) * tick for x in (entry, leave))
     rate, step = (
         np.where(side > 0, costs["swap_long"], costs["swap_short"]),
         costs.get("tick_step"),

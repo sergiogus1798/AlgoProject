@@ -28,7 +28,7 @@ instrument:
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 price_rounding:
   use: tick
-  why: '2026-10-15, engines.market.rounding.measure over the 18.5 variant batch of Trade_EURUSD_M30_reversionL_gorilla (150 variants): build tick 0 % vs none 0 % (indistinguishable); oos1 tick 93 % vs none 87 % — both off, a cost mismatch of that segment, not the rounding (OPEN #124); tick as every JPY cross measured (AUDJPY, CADJPY, EURJPY, USDJPY)'
+  why: '2026-10-15, engines.market.rounding.measure after the half-up fix (OPEN #124), 18.5 variant batch of Trade_EURUSD_M30_reversionL_gorilla (20 variants, ~4,000 trades a segment): build tick 0 % vs none 0 %, oos1 tick 0 % vs none 85 %'
   measured: 2026-10-15
 costs:
   spread_is:

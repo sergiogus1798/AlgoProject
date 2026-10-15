@@ -80,6 +80,19 @@ def test_flat_price_loses_exactly_its_cost() -> None:
     assert got == -0.54 and cost == 0.54, (got, cost)
 
 
+def test_half_a_tick_rounds_up_like_sqx() -> None:
+    """A 0.045 spread on a 0.01 tick fills at +0.05 whatever the open's parity (np.round gave +0.04 on even ticks)."""
+    got, _ = reprice.pnl(
+        np.array([100.00, 100.01]),
+        np.array([100.00, 100.01]),
+        *DAY,
+        1,
+        3.0,
+        {**HAND, "spread": 0.045, "slippage": 0.0},
+    )
+    assert np.allclose(got, [-0.30, -0.30]), got
+
+
 def test_long_and_short_are_symmetric() -> None:
     """The same 10.00 move costs both sides the same 0.54: +59.46 long (100.07 -> 109.98),
     -60.54 short (99.93 -> 110.02, the spread on the entry)."""

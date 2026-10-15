@@ -37,7 +37,6 @@ and in `knowhow/`. The index below lists open issues only.
 | 121 | 🟠 | Step 18.5 still skips XAUUSD mothers |
 | 122 | 🟠 | Integridad de la investigación: lo que F22 no arregló |
 | 123 | 🟠 | Una superviviente de gorilla no llega al paso 26 de leaseWeb (falta la verificación real) |
-| 124 | 🟠 | El repreciador descuadra un tramo entero de algunos forex con tick y con none (costes del tramo, no redondeo) |
 
 Read this index, then only the section you need: `grep -n '^## <N>' OPEN.md`.
 
@@ -332,8 +331,3 @@ Origen: encargo 68 F22, 2026-10-14. 🔬 Cada punto es una decisión del dueño 
 ## 123. 🟠 Una superviviente de gorilla no llega al paso 26 de leaseWeb (falta la verificación real)
 
 Hecho 2026-10-15 (encargo 72 D-1 = A): `bin/remote.sh gorilla collect <PROYECTO> [--dry-run]` (`core/store/collect.py`, `tests/test_gorilla_collect.py`, cap. 109). PENDIENTE: la verificación real, que necesita la primera superviviente guardada en gorilla; y que la finalista del paso 26 apunte a `store/<celda>_gorilla/<carpeta>/strategy.sqx` (`mt5/verify/autopilot.py:36-38` pide el `.sqx` en la ruta absoluta de la finalista). No trae `structural/<P>/mothers` ni `autopilot/<P>/<run>/` (fuera de D-1).
-
-## 124. 🟠 El repreciador descuadra un tramo entero de algunos forex con tick y con none (costes del tramo, no redondeo)
-
-🔬 2026-10-15, lote del 18.5 de `Trade_EURUSD_M30_reversionL_gorilla` (150 variantes, `engines.market.rounding.measure`): un modo de redondeo cuadra a 0 % en la mayoría de mercados y tramos, pero en estos los DOS descuadran: GBPJPY oos1 (tick 93 %, none 87 %), AUDUSD build (100 % / 87 %), AUDNZD oos1 (100 % / 54 %). Ningún redondeo lo arregla: algo de los costes de ese tramo en la ficha (spread, comisión, swap, hora de rollover) no es lo que la tarea de SQX cobró. Efecto: el filtro `marketSurfaces.sqx_off_share` (0,01) del 18.5 saltará las madres con esos mercados. Pendiente: comparar operación a operación el P/L de SQX con el repreciado en esos tres casos y corregir la ficha (`core.assetwrite`). Las fichas de price_rounding de esos activos se escribieron con el tramo que sí cuadra.
-
