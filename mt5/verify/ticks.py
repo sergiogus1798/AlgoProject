@@ -87,7 +87,7 @@ def keep(pieces: dict, summaries: dict, firm: str, piece: dict, report: str) -> 
 def keep_risk(pieces: dict, summaries: dict, firm: str, piece: dict) -> None:
     """File the fixed-risk mode's judged pass beside the firm's fixed-lot one (encargo 61-4d).
 
-    The firm's state is the worst of the two modes — both must pass: a fail anywhere is a
+    The firm's state is the worst of the two modes — both must pass (a skipped mode, `sizing.no_stop`, does not count): a fail anywhere is a
     fail, else any «none» (a mode that could not be judged) makes it «none». The mode's own
     figures go in the summary under `risk_`.
     """
@@ -95,7 +95,8 @@ def keep_risk(pieces: dict, summaries: dict, firm: str, piece: dict) -> None:
     summaries[firm] |= {
         f"risk_{k}": v for k, v in piece["summary"].items() if k != "firm"
     }
-    states = [summaries[firm]["state"], piece["summary"]["state"]]
+    states = [summaries[firm]["state"]]
+    states += [s for s in [piece["summary"]["state"]] if s != "skip"]
     summaries[firm]["state"] = (
         "fail" if "fail" in states else "none" if "none" in states else "pass"
     )

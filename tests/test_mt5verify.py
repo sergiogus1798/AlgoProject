@@ -326,7 +326,7 @@ def risk_rows(failures: list[str]) -> None:
     cfg = firms.config()
     th = cfg["thresholds"]
     try:
-        sizing.require_cap(th)
+        sizing.require_cap({**th, "loss_cap_usd": None})
         failures.append("sin loss_cap_usd el juez no se niega")
     except SystemExit as why:
         if "mt5verify.loss_cap_usd" not in str(why):
@@ -359,8 +359,16 @@ def risk_rows(failures: list[str]) -> None:
     pieces = {"ftmo": {}}
     summaries = {"ftmo": {"state": "pass"}}
     ticks.keep_risk(pieces, summaries, "ftmo", sizing.no_stop("ftmo"))
-    if summaries["ftmo"]["state"] != "none":
-        failures.append("un modo sin stop no deja la empresa en «sin veredicto»")
+    if (
+        summaries["ftmo"]["state"] != "pass"
+        or summaries["ftmo"]["risk_state"] != "skip"
+    ):
+        failures.append(f"sin SL el modo de riesgo no se salta: {summaries}")
+    for lot in ("fail", "none"):
+        summaries = {"ftmo": {"state": lot}}
+        ticks.keep_risk(pieces, summaries, "ftmo", sizing.no_stop("ftmo"))
+        if summaries["ftmo"]["state"] != lot:
+            failures.append(f"sin SL el veredicto no es el del lote fijo ({lot})")
     summaries = {"ftmo": {"state": "pass"}}
     ticks.keep_risk(pieces, summaries, "ftmo", {"summary": {"state": "fail"}})
     if summaries["ftmo"]["state"] != "fail":

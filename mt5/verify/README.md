@@ -40,15 +40,16 @@ strategy.sqx ─▶ conditions (MT5, each account: spread now, swap, leverage) +
   `FixedAmount`, `RiskedMoney`). `run.one_pass` builds a project and an EA per mode
   (`mt5verify.mode_sizing`, `mt5side.fixed_lots` / `fixed_risk`); the firm's state is the worst
   of the two (`ticks.keep_risk`). `risk` needs a strategy with a stop (`mt5verify.has_stop`);
-  without one that mode is «none» and the firm is not validated. The real-ticks pass
+  without one (owner, 2026-10-15, 61-SL) that mode is skipped — «riesgo fijo: no aplica, sin SL»,
+  `sizing.no_stop` — and the verdict is the 1-lot one; with a stop both must pass. The real-ticks pass
   (`--also-real-ticks`) is judged in `lot` mode only. `own_sizing` still reads the
   strategy's `<MoneyManagement>` as a door only (its value is not traded): only FixedSize or FixedAmount (encargo 61-4a).
   🤔 The EA's `mmRiskedMoney` input name comes from `FixedAmount_variables.tpl`; no EA has been
   exported through the `risk` path yet.
 - **Rows 6 and 7:** 6 is the mean relative lot gap of the pairs (`size_gap_max_pct`, 10 %); 7,
   in `risk` mode only, is the worst real loss in USD of either side against `loss_cap_usd`
-  — **unset until the owner gives the figure (61-4c)**: `judge.require_cap` refuses in
-  `run.main` before any CPU is spent. Row 2 is now ≤ 0.10 R.
+  = 1,000 USD (owner, 2026-10-15; `sizing.require_cap` still refuses in `run.main` if it is ever
+  unset, before any CPU is spent). Row 2 is now ≤ 0.10 R.
 - **Slippage 0 in SQX:** the MT5 tester does not slip a market order.
 - **The window and the tester's model have no default** — some firms' data is poor.
 - **R in row 2** is the SQX side's average losing trade, because the doctrine's strategies

@@ -1116,11 +1116,11 @@ thresholds:
     why: encargo 61-4d — diferencia relativa media del tamaño (lotes) por operación emparejada entre MT5 y SQX, en los dos modos (1 lote fijo y riesgo fijo)
 
   - key: mt5verify.loss_cap_usd
-    value: null
+    value: 1000
     source: mt5/verify/config.yaml#thresholds.loss_cap_usd
-    set_by: PENDIENTE del dueño (encargo 61-4c)
+    set_by: dueño
     set_on: 2026-10-15
-    why: tope de la pérdida real de UNA operación, en USD, en el modo de riesgo fijo; si la peor de SQX lo pasa la estrategia FALLA (61-4e). Sin cifra el juez se niega (mt5.verify.judge.require_cap)
+    why: encargo 61-4c — tope de la pérdida real de UNA operación, en USD, en el modo de riesgo fijo; si la peor de SQX o de MT5 lo pasa la estrategia FALLA (61-4e)
 
   # ── Paso 27 · la cartera: filtros de parejas (portfolio/PLAN.md §5.2) ──────────────────
   - key: portfolio.pairs.pearson

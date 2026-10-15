@@ -57,3 +57,8 @@ enseña con su cifra vieja y nueva, no se actualiza a ciegas.
 Cada activo medido tiene su valor en la ficha con su fecha y su fuente; el descuadre de build y oos1
 queda por debajo del umbral en los activos medidos, o se dice cuál no y por qué; `bin/workflow-test.sh`
 dice PASA; `python3 tools/checks.py` da 0 problemas.
+
+## Contestadas por el dueño (2026-10-15)
+
+- P1 → A: las 22 fichas sin `price_rounding` se quedan sin valor hasta que haya un lote para medirlas; se miden con un lote corto cuando vaya a usarse ese activo.
+- P2: el `.sqx` truncado (`Trade_NIKKEI225_M30_volatilidadL/databanks/Results/Strategy 1.10.434.sqx`, 139 bytes) está en cuarentena en `AlgoData/quarantine/sqx_w2_2026-10-15/`.

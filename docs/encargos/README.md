@@ -64,7 +64,7 @@ decisiones de los pasos 1 a 4 ya están contestadas en cada encargo.
 | 11 | **55 C** → **54 C/E/F** → **55 H/I** | necesitan una superviviente real | conductor, MT5, VPS |
 | 12 | **65 bloque D**, **69**, **56 F2/F4/F5**; el **57** entero, **parado por el dueño** (14-10) | aplazados o aparcados; el 69 al final, porque pide otra corrida | — |
 
-**En cualquier momento, en paralelo** (no compiten por el custodio): **72** (dueño, 2026-10-15; su parte A1 va antes que el 53) · 61 · 59 parte 1 · 62 parte 1
+**En cualquier momento, en paralelo** (no compiten por el custodio): **72** (dueño, 2026-10-15; su parte A1 va antes que el 53) · 59 parte 1 · 62 parte 1
 sobre `ledger/cells.py` · 55 A/B/D-G · 54 A/B/D · 52 V · 56 F1/F3.
 
 **Una sola autorización de `oos2`** responde a la vez al 49 §3.4, al 52 Q-8, al 53 P6 y al 54 punto
@@ -96,7 +96,6 @@ suelo de 35 operaciones al año y la retirada de `MonteCarloManipulation` ya est
 | fichero | qué construye | depende de |
 |---|---|---|
 | `60-estudio-del-build.md` | métrica de fitness × genético/aleatorio, ≥ 3 réplicas por brazo en una celda nueva con `criteria.yaml` congelado; la medida es supervivientes del paso 8 menos el control de monos, registrada por celda y plantilla; el resultado queda escrito en `_build.yaml` | la celda, las métricas y el brazo aleatorio (dueño); el custodio libre 14-30 h; el mono por el paso 8 (encargo 53 si falta la pieza) |
-| `61-money-management-por-stop.md` | money management por stop loss en `mt5/verify` (dos modos, 10 %, filas 6 y 7); informe en `AlgoData/audit/money-management/por-stop-2026-10-14.md` | hecho salvo 61-4c: la cifra de `mt5verify.loss_cap_usd` |
 | `62-registro-unico-de-ya-probado.md` | un comando de sólo lectura que responde «¿se probó esta celda?» contando los `Test_` y los tramos gastados, y las tablas de antes y después de dos cambios de estadística que decide el dueño: N por serie de precios y BH por familia fijada en la propuesta; parte 1 hecha 2026-10-14 (`python3 -m ledger.cells --ask`), quedan 2, 3, 4 y la ficha de knowhow — **partes 2-4 congeladas por el dueño (2026-10-15, encargo 72 Q4)** | nada para el comando y las tablas; el sí del dueño para aplicar |
 
 ## Tanda del 2026-10-12 — de la opinión sobre los criterios de los 26 pasos

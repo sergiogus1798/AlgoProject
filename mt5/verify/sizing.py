@@ -48,20 +48,18 @@ def loss_cap_row(sqx: pd.DataFrame, mt5: pd.DataFrame, th: dict) -> dict[str, An
 
 
 def no_stop(firm: str) -> dict[str, Any]:
-    """The fixed-risk mode of a strategy with no stop loss: nothing to size from, no verdict.
+    """The fixed-risk mode of a strategy with no stop loss: not applicable, and skipped.
 
-    Returns:
-        A piece with a «none» verdict block and summary, which `ticks.keep_risk` files.
+    Owner, 2026-10-15 (61-SL): such a strategy is verified in the 1-lot mode alone, whose
+    verdict stands. The piece's state is «skip», which `ticks.keep_risk` leaves out.
     """
-    label = firms.label(firm)
     verdict = blocks.verdict(
-        "Sin veredicto",
+        "No aplica",
         "none",
-        f"{label} · riesgo fijo — la estrategia no lleva stop loss: no hay SL desde el que "
-        "dimensionar el riesgo, el modo no se puede comprobar y, con los dos modos "
-        "obligatorios, la estrategia no queda validada.",
+        f"{firms.label(firm)} · riesgo fijo: no aplica, sin SL — la estrategia no lleva stop "
+        "loss, no hay desde dónde dimensionar el riesgo; vale el veredicto del lote fijo.",
     )
     return {
         "verdict": {**verdict, "firm": firm},
-        "summary": {"firm": firm, "state": "none"},
+        "summary": {"firm": firm, "state": "skip"},
     }
