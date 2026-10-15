@@ -112,6 +112,18 @@ def _base_root() -> Path:
     ).expanduser()
 
 
+def _on_bars(stamps: pd.DatetimeIndex) -> pd.DatetimeIndex:
+    """Each stamp moved to the next real USDJPY M30 bar (a holiday has none), so the common repricer can fill it."""
+    from core import barstore  # here: core.paths must read ALGO_DATA_ROOT after plant() sets it
+
+    try:
+        grid = barstore.read("USDJPY_M1", "M30").index
+    except (KeyError, FileNotFoundError):  # a machine without the bars: nothing reprices here anyway
+        return stamps
+    at = grid.searchsorted(stamps).clip(max=len(grid) - 1)
+    return pd.DatetimeIndex(grid[at])
+
+
 def _trades(seed: int, span: tuple[str, str], n: int, price: float) -> pd.DataFrame:
     """`n` trades on the M30 grid of the weekdays in `span`: Buy, held 2..20 bars, mean P&L above zero."""
     rng = np.random.default_rng(seed)
@@ -120,6 +132,7 @@ def _trades(seed: int, span: tuple[str, str], n: int, price: float) -> pd.DataFr
         rng.integers(2, 40, n) * 30, unit="min"
     )
     closed = opened + pd.to_timedelta(rng.integers(2, 20, n) * 30, unit="min")
+    opened, closed = (_on_bars(t) for t in (opened, closed))
     pnl = np.round(rng.normal(25.0, 150.0, n), 2)
     entry = np.round(price + rng.normal(0, 3, n), 3)
     return pd.DataFrame(
@@ -133,9 +146,8 @@ def _trades(seed: int, span: tuple[str, str], n: int, price: float) -> pd.DataFr
             "Profit/Loss": pnl,
             "Balance": 100000.0 + np.cumsum(pnl),
             "Sample type": "",
-            "Close type": pd.Categorical(
-                rng.choice(["Exit After X Bars", "Stop Loss", "Profit Target"], n)
-            ),
+            # a bar exit, as the real USDJPY harvest: a planted price exit would need a Close price inside a real bar
+            "Close type": pd.Categorical(["Exit After X Bars"] * n),
             "MAE ($)": -np.abs(np.round(rng.normal(300, 150, n), 2)),
             "MFE ($)": np.abs(np.round(rng.normal(300, 150, n), 2)),
         }

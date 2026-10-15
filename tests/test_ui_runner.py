@@ -85,7 +85,7 @@ def test_real_run() -> None:
     ).json()
     assert "jobs" in got, got
     job = wait(http, got["jobs"][0]["id"])
-    assert job["rc"] == 0 and job["percent"] == 100, job["tail"]
+    assert job["rc"] == 0 and job["percent"] == 100, "\n".join(job["tail"])
     assert (job["lane"], job["study"], job["scope"]) == ("python", "edgeCost", "one")
     landed = (
         report_dir(PROJECT, DATABANK, date.today().isoformat())
