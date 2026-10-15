@@ -28,6 +28,10 @@ instrument:
 
 # Lo que se aplica. `use: null` = sin decidir, y eso BLOQUEA la autoría (regla dura 5).
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
+price_rounding:
+  use: tick
+  why: '2026-10-15, engines.market.rounding.measure over Trade_EURUSD_M30_reversionL_gorilla (M30, 10,000 strategies): off-share tick 0.00 % vs none 86.81 % in build, 0.00 % vs 25.57 % in oos1'
+  measured: 2026-10-15
 costs:
   spread_is:
     use: 0.32                # points
