@@ -28,6 +28,7 @@
   56 F2/F4/F5, 69); D4 = «lo que sea, pero termina a tiempo»; D5 = sin Council. Reparto acordado
   con 18 y 07 por mensajes. N3: commit y push por frente con pathspec y `checks.py` verde. N4: una
   ambigüedad para ese frente; la pregunta va a «Preguntas para la mañana» y se sigue con otro.
+- 2026-10-15 20:40 — dueño: «cuanto más rápido mejor», «elige, pero dale». Reparto: 18 = V, criteria.yaml y 49, ensayo en leaseWeb; 95 = gorilla, D27, 66 frentes 6-7, collect, paso 26, celdas del viernes, campaña; 07 = ya sin esperar: F3 del 56, prueba en seco de la campaña, preparar #87 con un pool archivado; luego #93 y #87 real. Celdas del viernes (elegidas por 95): leaseWeb `Trade_GBPJPY_H1_momentumL_leaseWeb` (simple, largo, `momentum_base_v3`), gorilla `Trade_AUDUSD_H1_reversionL_gorilla` (simple, largo, `reversion_base_v3`), 10.000 estrategias y 30 min cada una. Hecho esta noche: #96, #104, #119, P10, D27 fase 1, dos fallos de gorilla (`remote.sh`, `live._log`).
 
 ## Reglas de la noche
 
@@ -42,6 +43,6 @@
 
 | código | frente | qué se decide | lecturas | recomendación |
 |---|---|---|---|---|
-| G1 | 8 | celda de la corrida de gorilla | A AUDUSD H1 largos reversión · B EURUSD M30 · C GBPJPY H1 o XAUUSD M15 momentum | A |
-| P10 | 5 | dos objetivos de `perf/inputs/construct.py` apuntan a datos borrados | A primer miembro + cosecha USDJPY (no existe) · B cosecha XAUUSD `Test_XAUUSD_H1_ruptura_wtc3` · C retirarlos | B |
-| D27 | 5 | ledger único del 66 | el diseño A/B/C está escrito en el 66, sección «D27 · Diseño…» | sin recomendación aquí; fuera de la ruta crítica |
+| G1 | 8 | celda de la corrida de gorilla | **contestada: B** (EURUSD M30 largos reversión, `Trade_EURUSD_M30_reversionL_gorilla`) | — |
+| P10 ✅ B | 5 | dos objetivos de `perf/inputs/construct.py` apuntan a datos borrados | A primer miembro + cosecha USDJPY (no existe) · B cosecha XAUUSD `Test_XAUUSD_H1_ruptura_wtc3` · C retirarlos | B |
+| D27 ✅ A | 5 | ledger único del 66 | el diseño A/B/C está escrito en el 66, sección «D27 · Diseño…» | sin recomendación aquí; fuera de la ruta crítica |
