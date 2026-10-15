@@ -11,6 +11,7 @@ Run everything with `bin/remote.sh [--detach] gorilla <cmd>` (pulls first; no pu
 - `mirror-data.sh` now also rsyncs `AlgoData/manual-fuentes` and runs `sqx.export.sync_bars` there via remote.sh (the M1 library, not SQX's `user/data`, is what Python reads). The feedQuality scan stays by hand per server.
 - Fresh data root: empty `AlgoData` broke `feedQuality.scan` twice (`calendar.parquet` before `feedQuality/` exists; `write_index` read a missing `INDEX.md`), fixed in code. Bars were 27 feeds behind (`sqx.export.sync_bars --check`), which kills 18.5 and step 4 (fixed in `mirror-data.sh`, next bullet). Unscanned asset feed: `plan.scanned` refuses the plan.
 - Gorilla eats only GitHub code: `8b84b8b` pushed `run.py` calling a `plan.scanned` left uncommitted on leaseWeb (`AttributeError`).
+- 🔬 2026-10-15: the «workflow running» guard of `bin/remote.sh` (`pgrep -f bin/workflow.sh`) matched the remote shell itself, whose command line carries the text, so `bin/remote.sh --detach gorilla bin/workflow.sh …` was always refused with exit 96; fixed by dropping the shell's own PID (`grep -qvx $$`). Wait for a detached run with a read-only `ssh sqx2 tail --pid=<PID> -f /dev/null`: remote.sh refuses everything while a workflow runs.
 
 ## Evidence
 - OPEN (owner's decision): ledgers `AlgoData/ledger/*.jsonl` (asset×TF), store and reports are per server, nothing brings gorilla's back; trial counts for multiple testing are split (gorilla: UK100_H1 only; leaseWeb: USATEC_H1, USA500_H1, DAX40_H1, XAUUSD_H1).

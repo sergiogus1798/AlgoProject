@@ -454,3 +454,19 @@ def test_summary_lists_the_fallbacks_of_the_run(tmp_path: Path) -> None:
         and "Test_X/A: una" in text
         and "Test_X/B: dos" in text
     )
+
+
+def test_today_log_skips_a_log_sqx_deletes_while_starting(tmp_path, monkeypatch):
+    """A log the glob listed and SQX deleted before its stat is skipped (gorilla, 2026-10-15)."""
+    from pathlib import Path
+
+    from sqx.projects import live
+
+    logs = tmp_path / "user/log/StrategyQuant"
+    logs.mkdir(parents=True)
+    (logs / "log_2026_10_15.log").write_text("today")
+    ghost = logs / "log_2026_10_12.log"
+    real_glob = Path.glob
+    monkeypatch.setattr(live, "_top", lambda role: tmp_path)
+    monkeypatch.setattr(Path, "glob", lambda self, pat: [ghost, *real_glob(self, pat)])
+    assert live._log("custodian").name == "log_2026_10_15.log"

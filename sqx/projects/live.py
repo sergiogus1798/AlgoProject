@@ -102,11 +102,16 @@ def stop(role: str, export: bool = True) -> None:
 
 
 def _log(role: str) -> Path:
-    """SQX's own log of today."""
-    return max(
-        (_top(role) / "user/log/StrategyQuant").glob("log_*.log"),
-        key=lambda p: p.stat().st_mtime,
-    )
+    """SQX's own log of today.
+
+    SQX deletes its old logs while it starts: a file the glob listed can be gone by its `stat`
+    (gorilla, 2026-10-15, `log_2026_10_12.log`), so a vanished one is skipped.
+    """
+    found = []
+    for log in (_top(role) / "user/log/StrategyQuant").glob("log_*.log"):
+        with contextlib.suppress(FileNotFoundError):
+            found.append((log.stat().st_mtime, log))
+    return max(found)[1]
 
 
 def _files(project: str, role: str, bank: str) -> int:

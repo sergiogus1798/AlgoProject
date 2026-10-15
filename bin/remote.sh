@@ -18,7 +18,8 @@
 #   bin/remote.sh --detach gorilla <command...>   launch it detached (it survives the SSH
 #                                                 session), print its PID and its log, return
 #
-# Wait for a detached one with:  bin/remote.sh gorilla tail --pid=<PID> -f /dev/null
+# Wait for a detached one with:  ssh <host> tail --pid=<PID> -f /dev/null   (a read-only wait;
+# remote.sh refuses anything while a workflow runs there, so it cannot be the door for this)
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -49,7 +50,7 @@ fi
 
 ssh -o BatchMode=yes -o ServerAliveInterval=30 "$HOST" "
 cd ~/$REPO || { echo 'remote: no clone at ~/$REPO on $NAME' >&2; exit 97; }
-if pgrep -u \"\$USER\" -f '[p]ipeline\\.autopilot|[b]in/workflow\\.sh' >/dev/null; then
+if pgrep -u \"\$USER\" -f '[p]ipeline\\.autopilot|[b]in/workflow\\.sh' | grep -qvx \"\$\$\"; then
   echo 'remote: a workflow is running on $NAME — nothing run (rule 19: nothing CPU-heavy beside it)' >&2; exit 96
 fi
 if pgrep -u \"\$USER\" -x 'sqcli|StrategyQuantX' >/dev/null; then
