@@ -16,6 +16,7 @@ family: the unit the multiple-testing correction is owed to.
 | `gate.py` | The one-way door: who may look at a reserved segment, and when 17-19 may be read. | imported | step, segment → pass or raise |
 | `record.py` | Contract L1: one appended line per search that looked at data and reduced a population. | imported | a search → a line |
 | `report.py` | The study's whole search, read back: the funnel, what was spent, and what it costs the Sharpe. | `python3 -m ledger.report --study XAUUSD_M30_DirectionalMomentum` | ledger → the panel |
+| `shards.py` | Ledger shards (D27, option A): one writer per file, the union read back deduplicated. | — | — |
 | `spend.py` | The map of spent data: which stretches of history a search has already looked at. | imported | ledger → segments |
 | `steprows.py` | The rows a finished build (step 6) and a WFM reading (step 19) write themselves, live. | called by `ui/daemon/launch/run.py` and `studies/optimisation/wfm/report.py`; `python3 -m ledger.backfill --calib <populations.csv> --dry-run` | log/export → rows |
 | `study.py` | What a study is, and where its ledger lives. | imported | ids → path, frame |
@@ -26,6 +27,10 @@ family: the unit the multiple-testing correction is owed to.
 | `criteria-history.jsonl` | One line per change the window's «Criterios» zone made to `pipeline/autopilot/criteria.yaml` — `at`, `by`, `step`, `what` (añadida, cambiada, borrada, congelado), the rule `before` and `after` — append-only; absent until the first change | written by `ui/daemon/criteria/write.py` | — |
 
 Manual page, in Spanish: `docs/manual/03-datos-costes-y-registro.pdf` (cap. 43-ledger). Tests: `tests/test_ledger_tried.py`, `tests/test_ledger.py`, `tests/test_ledger_ideas.py`.
+
+## Asking whether a cell was tried
+
+`python3 -m ledger.cells --ask <SYMBOL> <TF> [--template T] [--direction D] [--json]` prints the three registries side by side (projects by kind, campaign state, ledger rows and step-8 screenings per segment for the cell, the symbol x timeframe and the whole symbol). The step-8 line reads B from `cells.table()`, not from this printout. Example, `USDJPY M30 --template doubleROCLong` (2026-10-15): 7 `Test_` projects, `oos1` screened 4 times, 30 rows on `oos2`, 58 screenings on `oos1` over the whole symbol. The encargo-62 dossier of 2026-10-11 said 11 `Test_` and 24 `oos2` rows; both differences are explained, not adjustments: the 11 counted projects since retired or renamed (the registry lists only the 7 that still exist under that template), and the 24 predates the `oos2` rows written after 2026-10-12. A `Test_` spends segments, not the cell (owner, 2026-10-14).
 
 ## The three things this module exists to get right
 

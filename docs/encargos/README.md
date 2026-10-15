@@ -59,20 +59,19 @@ decisiones de los pasos 1 a 4 ya están contestadas en cada encargo.
 | 6 | **50** frente V: la corrida entera con el paso 8 vigente (α 0,01 por celda, medoides), en un `Test_` | la corrida de referencia para lo demás; espera QV y Q4 del dueño | custodio |
 | 7 | **51** frentes 4 → 1 → 5 | necesita el paso 8 estable; el 53 espera su regla | custodio, muchas horas |
 | 8 | — **parado por el dueño** (14-10): la fila 9 del 65, el 58 y el 67 | compiten por el custodio y comparten el generador | custodio (+ gorilla) |
-| 9 | **60** estudio del build — **aparcado por el dueño** (14-10) | necesita el 62, el 58 y el paso 8 congelado | custodio, 14-30 h |
+| 9 | **60** estudio del build — **aparcado por el dueño** (14-10) | necesita el 58 y el paso 8 congelado (el 62 se hizo y borró el 2026-10-15) | custodio, 14-30 h |
 | 10 | **53** mono de Python en el paso 10; monos con semilla en SQX; A/B del hueco — **parado por el dueño** (14-10) | regla del 10 estable (51); pregunta 12 | custodio |
 | 11 | **55 C** → **54 C/E/F** → **55 H/I** | necesitan una superviviente real | conductor, MT5, VPS |
 | 12 | **65 bloque D**, **69**, **56 F2/F4/F5**; el **57** entero, **parado por el dueño** (14-10) | aplazados o aparcados; el 69 al final, porque pide otra corrida | — |
 
-**En cualquier momento, en paralelo** (no compiten por el custodio): **72** (dueño, 2026-10-15; su parte A1 va antes que el 53) · 59 parte 1 · 62 parte 1
-sobre `ledger/cells.py` · 55 A/B/D-G · 54 A/B/D · 56 F1/F3.
+**En cualquier momento, en paralelo** (no compiten por el custodio): **72** (dueño, 2026-10-15; su parte A1 va antes que el 53) · 59 parte 1 · 55 A/B/D-G · 54 A/B/D · 56 F1/F3.
 
 **Una sola autorización de `oos2`** responde a la vez al 49 §3.4, al 53 P6 y al 54 punto
 12: pedirla una vez, no cuatro.
 
 ## Los encargos vivos — reagrupados por temática el 2026-10-09 (el 57 es posterior, 2026-10-10)
 
-Los diecisiete (49-58, 60, 62, 65, 66, 67, 69, 72) son **planes vivos**: llevan tabla de estado y bitácora, y cada sesión actualiza su fila.
+Los dieciséis (49-58, 60, 65, 66, 67, 69, 72) son **planes vivos**: llevan tabla de estado y bitácora, y cada sesión actualiza su fila.
 
 | fichero | qué queda por hacer | depende de |
 |---|---|---|
@@ -95,7 +94,6 @@ suelo de 35 operaciones al año y la retirada de `MonteCarloManipulation` ya est
 | fichero | qué construye | depende de |
 |---|---|---|
 | `60-estudio-del-build.md` | métrica de fitness × genético/aleatorio, ≥ 3 réplicas por brazo en una celda nueva con `criteria.yaml` congelado; la medida es supervivientes del paso 8 menos el control de monos, registrada por celda y plantilla; el resultado queda escrito en `_build.yaml` | la celda, las métricas y el brazo aleatorio (dueño); el custodio libre 14-30 h; el mono por el paso 8 (encargo 53 si falta la pieza) |
-| `62-registro-unico-de-ya-probado.md` | reescrito contra el 65 el 15-10: parte 0 (explicar 2 diferencias en `ledger/README.md`), 1 (tabla B por celda → por símbolo) y 2 (aviso de tramos ya leídos en la campaña); partes 3-4 esperan a P62-A/C/D | dueño (P62-A..D) |
 
 ## Tanda del 2026-10-12 — de la opinión sobre los criterios de los 26 pasos
 

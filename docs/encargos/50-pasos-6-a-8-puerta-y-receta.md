@@ -9,7 +9,7 @@
 sobre `master` (regla 12).
 
 **Tu encargo:** verificar el paso 8 nuevo en una corrida entera (frente 1, **el siguiente que se
-ejecuta**), cerrar las tres decisiones que le quedan a la puerta (Q2-Q4) y su documentación, y entregar
+ejecuta**), dejar la documentación de la puerta al día (las decisiones Q2-Q4 las cerró el dueño el 2026-10-15), y entregar
 la **receta del IS del paso 6** (qué pedir en el Build de SQX), medida.
 
 ## El paso 8 vigente (verificado el 2026-10-15 contra el código)
@@ -33,17 +33,17 @@ la **receta del IS del paso 6** (qué pedir en el Build de SQX), medida.
 
 | frente | qué | modelo | depende de | estado |
 |---|---|---|---|---|
-| 1 · V | una corrida entera por `/workflow` con el paso 8 vigente | Sonnet | los argumentos del dueño al lanzarla (Q4c) y QV; máquina libre | **pendiente — siguiente** |
-| 2 · Parada | el dueño contesta Q2, Q3 y Q4 | dueño | 1 (Q4 puede pedir su población) | pendiente |
-| 3 · N | la corrida nula del 5.4 sobre la población de V | Opus (+ Sonnet para lanzar) | 1; sólo si Q4 → B | pendiente |
-| 4 · Z1 + M | cargar lo que decida la parada; documentación de la puerta | Sonnet | 2 (y 3 si corre); M puede empezar ya | pendiente |
+| 1 · V | una corrida entera por `/workflow` con el paso 8 vigente | Sonnet | máquina libre | 🟡 en curso: lanzada el 2026-10-15 (Q4c) en el custodio: `bin/workflow.sh simple Test_USATEC_H1_breakoutL_v8_leaseWeb USATEC H1 long breakout ruptura_base_v3 ... 10000 30`, sin parámetros de MT5 |
+| 2 · Parada | Q2, Q3 y Q4 | dueño | — | ✅ contestada el 2026-10-15 (todas las recomendaciones) |
+| 4 · Z1 + M | cargar lo que decida la parada; documentación de la puerta | Sonnet | 2 ✅ (Z1 sin trabajo: Q2 y Q3 dejan todo como está); M puede empezar ya | pendiente |
 | 5 · Receta del IS (ex 42) | paso 6: dosis-respuesta, A/B dentro/fuera del Build, familia contra gemela, flotante, equipo rojo | Opus (+ Sonnet para lanzar) | Q7; nada pesado junto a un workflow | sin empezar |
 
-Orden: 1 → 2 → (3) → 4. El 5 es independiente salvo por la máquina (regla 19).
+Orden: 1 → 4. El 5 es independiente salvo por la máquina (regla 19).
 
 **Bitácora** (una línea por sesión: fecha, qué frentes, qué quedó a medias):
 
 - 2026-10-09 · consolidado desde los encargos 44 y 42. De 44 estaban hechas las oleadas 0 a 6 salvo K-m; 42 no se ejecutó nunca.
+- 2026-10-15 · el dueño contestó «todas las recomendaciones»: QV = A, Q2 = A (las reglas se quedan y se firman como v1), Q3 = A (sin tope en R5d), Q4 = A (sin frente N: V corre en USATEC H1 largo ruptura, la misma celda de la corrida nula), Q7 = A (las poblaciones de la receta suman a la B de sus celdas). Q4c: V lanzada el mismo día (🟡 en curso). El frente 3 (N) se borra.
 - 2026-10-15: reescrito contra el 65 (fila 5 del orden). Fuera: K-m (lo hizo la corrida nula del 65 §5.4 para la única regla que pesa), la tabla 1.2 de líneas (R3 ya no juzga), la parada 3 (`dev` borrado), los nulos de la t (Q5: R3 es columna) y la clave `by:` de familia (Q6 → no).
 
 ---
@@ -56,7 +56,7 @@ de `bin/workflow.sh`, **siempre a través de la skill `/workflow`** (regla 19), 
 (reglas 6 y 10), **nunca `--smoke`** (con él sólo juzgan las reglas de lectura y el 8 no se verifica),
 sin `--until`.
 
-1. **Antes de nada, al dueño (Q4c y QV):** modo (`simple` o `template`), activo, marco, lado, familia,
+1. **Ya contestado (Q4c, 2026-10-15): V corre en USATEC H1 largo ruptura** (`Test_USATEC_H1_breakoutL_v8_leaseWeb`, paleta `ruptura_base_v3`, 10.000 estrategias, 30 min, sin MT5); si hubiera que relanzarla, pregunta antes: modo (`simple` o `template`), activo, marco, lado, familia,
    paleta (o plantilla `.sqx`), STRATEGIES, MINUTES, y los cuatro parámetros de MT5 o ninguno (sin ellos
    la corrida acaba antes del paso 26). Con la pregunta, enséñale la fila de la celda:
    `python3 -m ledger.cells | grep '<ACTIVO>_<TF>_<long|short>_<familia>'` — su `batches_screened`
@@ -72,31 +72,19 @@ sin `--until`.
      aplicada es la de la tabla para la B de la celda; las que salen del 8 son ≤ 4;
    - `python3 -m ledger.cells` — `batches_screened` de la celda subió en 1 y `edits_since_seal` no se movió;
    - el `funnel.csv` del paso 8, pegado.
-5. **Si el 8 no deja ninguna** («no dejó ninguna superviviente»): es un resultado, no un fallo; lo que
-   cuenta como hecho lo decide QV. No se edita `criteria.yaml` para pasar, ni se conduce un paso a mano.
+5. **Si el 8 no deja ninguna** («no dejó ninguna superviviente»): es un resultado, no un fallo; V cuenta como
+   hecha (QV = A). No se edita `criteria.yaml` para pasar, ni se conduce un paso a mano.
 6. Si falla: las tres tentativas de la skill (§6) y un informe. Un `Test_` que acaba bien se retira solo;
    uno fallido o parado, `python3 -m sqx.projects.retire <P> --role custodian --yes`, worker parado.
    Antes de retirar, comprueba que la cosecha del 8 está en `AlgoData/reports/<P>/Results/<fecha>/gate/`
-   (el frente 3 la lee si Q4 → B).
 
-## 2 · Parada — Q2, Q3 y Q4 (no se salta)
+## 2 · Parada — contestada (2026-10-15)
 
-Ver «Decisiones del dueño». Llévale la tabla tal cual, con el resultado de V al lado.
+Q2 = A, Q3 = A, Q4 = A: ver «Decisiones del dueño». No hay frente 3 (N): Q4 = A no pide comprobar la tasa de la nula fuera de USATEC H1 largo.
 
-## 3 · N — corrida nula sobre la población de V (sólo si Q4 → B)
+## 3 · Z1 + M — documentar (Sonnet)
 
-Lo mismo que el 65 §5.4 sobre otra población: `python3 -m studies.screening.falsePositives.report
---project <P> --databank Results --feed <FEED> --harvest <carpeta del gate de V>`, con 5.000 monos y la
-cascada como en el 5.4; `preflight.sh` antes y nada pesado al lado. Entrega, a la tarjeta
-`knowhow/research/gate-chain-false-positives.md` (no existe: créala) y al dueño, la misma tabla del
-dossier §4.1 (nula, plantas, reales, con su IC) y por regla Falla/Limbo de nula y plantas
-(`reglas.csv`). Si la supervivencia nula de esta celda cae fuera del IC de USATEC H1, se le **propone**
-una excepción por marco; no se carga ninguna. Recuerda lo que el plantado no mide: es un exceso
-constante, así que no informa sobre R5d, R7 ni R6 (degradación, homogeneidad, drawdown).
-
-## 4 · Z1 + M — cargar y documentar (Sonnet)
-
-**Z1 (tras la parada):** lo que decidan Q2-Q4 en `pipeline/autopilot/criteria.yaml` (paso "8") y
+**Z1: sin trabajo** (Q2 = A y Q3 = A: nada cambia; las reglas se firman como v1 por el dueño). Si algo cambiara, iría en `pipeline/autopilot/criteria.yaml` (paso "8") y
 `studies/screening/gate/config.yaml`; prueba `python3 -m pytest -q tests/test_gate_rules.py
 tests/test_thresholds.py tests/test_autopilot_criteria.py`. Si nada cambia, Z1 no tiene trabajo.
 
@@ -202,16 +190,7 @@ capítulo del manual de cualquier comando que cambie (regla 8).
   vuelve a leer oos1.
 - 2026-10-15 (65 §5.4): P8-Z → α 0,01; P8-L → el Limbo sigue; P8-E → `edge_mean_oos` no se endurece.
 
-**Abiertas** (cifras de `AlgoData/reports/Test_USATEC_H1_ruptura_leaseWeb/Results/2026-10-15/falsePositives/reglas.csv`,
-con α 0,05 y en cascada: Falla / Limbo sobre las que llegan a cada regla):
-
-| código | qué se decide | A | B | recomendación |
-|---|---|---|---|---|
-| QV | qué cuenta como «V hecha» si el paso 8 no deja ninguna (en USATEC no quedó ninguna de 10.000 con α 0,01) | V hecha: se verificó el juicio del 8; lo que va detrás ya lo cubre `workflow-test` (encargo 70, p70e PASA) | relanzar en otra celda hasta que alguna pase el 8 (cada intento gasta una B y una mirada a oos2) | **A** |
-| Q2 | las líneas de las reglas que aún juzgan junto a la z (R1a, R1b, R2, R5c, R5d, calidad de datos, retraso, R7, R6) | se quedan como están y se firman como v1: con la planta 0,10 cada una hace Fallar ≤ 3,4 % (en total ~8 %) y juntas sólo bajan la nula de 5,2 % a 4,8 % | pasar a columna las que no separan nula de planta: R5d (Falla 3,5 % nula, 3,4 % planta) y la Falla de R6 (0,2 % nula, 2,3 % planta) | **A** — el plantado es un exceso constante y no puede juzgar degradación ni drawdown, que es justo lo que miran R5d y R6 |
-| Q3 | el tope del centro de R5d (`centring.cap_slope`, vacío en `gate/config.yaml:74`); el ±0,35 de R5 ya no importa (R5 es columna) | se queda vacío (sin tope) | se mide un valor con la corrida N | **A** — R5d falla igual en nula y plantas (3,5 / 3,4 %): el centrado no muestra sesgo que topar |
-| Q4 | si la tasa de la nula se comprueba fuera de USATEC H1 largo antes de dar el 8 por calibrado (nada medido en H4, M30, cortos ni otro activo) | no: una sola excepción por marco (R4a en H4, hoy columna), nada más | sí: frente 3 sobre la población de V, si V es de otro marco o lado (horas de CPU como el 5.4, `manifest.json`) | **B** si V cae en otro marco o lado; **A** si V es otra vez H1 largo |
-| Q7 | si las poblaciones de la receta (frente 5), que leen oos1 en sus celdas, suman a la B de esas celdas | sí: cuentan como lotes cribados (la línea de un `Trade_` posterior en esa celda sube: 2,58 con B = 2, 2,81 con B = 4) | no: se anotan aparte en el ledger como miradas de calibración y no tocan la B | **A** — la B es el contador de miradas que el dueño aprobó en el 65 §5.1; elegir umbrales en oos1 es una mirada |
+- 2026-10-15 («todas las recomendaciones»): QV = A (V cuenta como hecha cuando el paso 8 está verificado, aunque no deje ninguna) · Q2 = A (las reglas se quedan y se firman como v1) · Q3 = A (sin tope en R5d) · Q4 = A (sin frente N: V corre en USATEC H1 largo ruptura) · Q7 = A (las poblaciones de la receta suman a la B de sus celdas).
 
 ## Lo que no tocas
 
@@ -235,8 +214,7 @@ con `/loop`.
 - `python3 -m pytest -q tests/test_gate_rules.py tests/test_gate_cascade.py tests/test_gate_mono.py
   tests/test_false_positives.py tests/test_thresholds.py tests/test_autopilot_criteria.py
   tests/test_ui_gate.py` en verde (por fichero: `tests/test_oracle_draws.py` tropieza con un `-k` global).
-- Si corre N: la tarjeta `gate-chain-false-positives` existe y trae su tabla.
-- `python3 tools/manual.py && python3 tools/depmap.py && python3 tools/checks.py`.
+- - `python3 tools/manual.py && python3 tools/depmap.py && python3 tools/checks.py`.
 
 ## Cómo cierras
 

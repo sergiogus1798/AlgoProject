@@ -45,9 +45,9 @@ Lee `CLAUDE.md` (reglas 1-6, 10, 11, 13-19) · `docs/AgentPDFs/WORKFLOW.md` ·
 | 1 | Monos de Python por la cadena: paso 10 y la corrida 8 → 10 a α 0,01, con su tasa por paso en `ledger/thresholds.yaml` | Opus (diseño) + Sonnet (corrida) | regla del 10 estable (encargo 51); ~10 h de CPU sin nada pesado al lado | paso 8 hecho (65 fila 5.4); resto parado |
 | 2 | ~~Corrida a 10.000 y tasa por umbral~~ | — | — | **quitado**: la corrida a escala la hizo 65 fila 5.4 (5.000 por población); la tasa por paso pasa al frente 1 |
 | 3 | ~~Export de operaciones de la población real~~ | — | — | **quitado**: la cosecha del paso 8 ya exporta las operaciones de toda la población (`knowhow/export/orderstocsv-slow-is-datamanager.md`) |
-| 4 | Monos seleccionados dentro de SQX (ex-30) | Opus + Sonnet | punto 1.4 de `49`; pregunta 12 | parado |
+| 4 | Monos seleccionados dentro de SQX (ex-30) | Opus + Sonnet | punto 1.4 de `49` | parado |
 | 5 | Nulos: 5a (exceso sobre una cosecha sin preselección) y 5b (ATR del `.sqx`) | Opus | — (sólo Python) | 5c cerrado; 5a y 5b parados |
-| 6 | El hueco aleatorio a prueba: A/B y bloque de ruido (ex-28) | Opus + Sonnet | custodio libre; frente 4 para el ruido; pregunta 12 | parado |
+| 6 | El hueco aleatorio a prueba: A/B y bloque de ruido (ex-28) | Opus + Sonnet | custodio libre; frente 4 para el ruido | parado |
 
 **Bitácora** (una línea por sesión: fecha · frente · qué quedó · qué sigue)
 
@@ -63,6 +63,7 @@ Lee `CLAUDE.md` (reglas 1-6, 10, 11, 13-19) · `docs/AgentPDFs/WORKFLOW.md` ·
 - 2026-10-13 · 5c · B1 = A: clave `barrier.intrabar` borrada con sus citas — nadie la leía y la medida la desmiente; `kernel.touched` se queda, la usa `studies.readings.monkey.verify`; la regla medida está en `knowhow/export/sl-pt-same-bar-convention.md`.
 - 2026-10-13 — **5c a precisión de 1 minuto** (las mismas 300 estrategias, `Test_E53_5c_M1_XAUUSD_H1`, retirado): 🔬 a 1 minuto SQX sigue el camino de M1 (99,45 % de 70.201 operaciones con las dos barreras en la vela H1 de salida) y, si una sola vela de M1 contiene las dos, decide por el sentido de esa vela (268 de 268). La regla del sentido de la vela H1 cae al 78,8 %. De precisión 1 a 2 cambia la salida del 5,4 % de las operaciones y el beneficio neto baja en el 73,7 % de las estrategias (mediana −890 $). Un corpus de referencia para comportamiento intrabar se retestea a `testPrecision=2`; la precisión del workflow no se toca.
 - 2026-10-14 · todo · **parado por el dueño**: no se empieza hasta que él lo diga.
+- 2026-10-15 · el dueño contestó la pregunta 12 → B (recomendación): los controles (monos de SQX y brazos A/B) van a una celda propia y se juzgan con el B congelado de la celda real que controlan; no suman a la real. Sigue parado.
 - 2026-10-15: reescrito contra el 65 (fila 5 del orden). Quitados los frentes 2 y 3 (los hizo el 65 y
   la cosecha del 8), el 5c (cerrado el 13) y la atribución 6b (su estudio de ablación se borró con los
   pasos 22-25, commit `443315f`); el frente 1 se reduce al paso 10; pregunta 12 nueva (contador por celda).
@@ -197,9 +198,9 @@ backtests de la misma estrategia dan operaciones distintas. Copia fuente:
    aleatorio y nada más, probabilidad libre dentro del rango de frecuencias de la real (contestada 2).
    Espera con `/sqx-wait` (regla 18).
 5. **Retest `oos1`, cosecha y paso 8** tal como esté en `criteria.yaml`, con el umbral que fije la
-   pregunta 12. Más allá del 8 sólo si sobrevive alguno (contestada 4).
+   la pregunta 12 (B congelado de la celda real). Más allá del 8 sólo si sobrevive alguno (contestada 4).
 6. **Ledger:** familia `mono_sqx` y marca de población nula; nunca se mezclan con las reales en un
-   recuento de supervivientes. Cómo entran en el contador por celda: pregunta 12.
+   recuento de supervivientes. Entran en una celda propia (pregunta 12 = B), nunca en la real.
 7. **Informe** en `AlgoData/reports/…/monosSQX/` con la forma de `core/study/CONTRACT.md`: el embudo de
    los monos de SQX al lado del de la real y del de los monos de Python (frente 1).
 8. **Limpieza:** `python3 -m sqx.projects.retire <P> --role <rol> --yes` con el worker parado.
@@ -275,11 +276,8 @@ repeticiones difieren; (4) el ledger cuadra. Cierre: capítulo de manual para `/
   sobreviva alguna. 11 → **el brazo A es legítimo**; el B lleva «What to build» 0..1.
 - **Encargo PARADO (2026-10-14)**: no se empieza hasta que él lo diga.
 
-**Abierta (nueva, 2026-10-15, por el contador por celda del 65 §5.1)**
-
-| código | qué se decide | A | B | recomendación |
-|---|---|---|---|---|
-| 12 | Con qué B (lotes de la celda) se juzgan en el paso 8 los monos de SQX (frente 4) y los brazos del A/B (frente 6), y si suman al contador de la celda real | Cuentan como lotes de la celda real (un `Test_` cuenta como un `Trade_`): cada build sube B y endurece el umbral de las reales de USATEC H1 ruptura; los brazos se juzgarían con B distintos según el orden | No suman a la celda real: los monos van a su propia celda (familia `mono_sqx`) y los brazos a la suya; todos se juzgan con el **B de la celda real que controlan, congelado al empezar** | **B**: un control tiene que verse con la misma vara que lo controlado, y un mono no es una mirada a la hipótesis; los brazos A/B sí son búsqueda, pero se cuentan en su celda propia |
+**Contestada el 2026-10-15 («todas las recomendaciones»):**
+- 12 → **B**: los monos de SQX (familia `mono_sqx`) y los brazos del A/B van a una celda propia y se juzgan en el paso 8 con el B congelado, al empezar, de la celda real que controlan; no suman al contador de la real. Un control se ve con la misma vara que lo controlado.
 
 ## Lo que no tocas
 

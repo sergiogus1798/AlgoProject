@@ -14,6 +14,7 @@ import yaml
 from core.assetdata import load
 from core.datapaths import campaign_dir, template_dir
 from core.paths import DATA, ROOT, feed_quality_dir
+from ledger import cells as cellbook
 from pipeline.campaign import ledger
 
 HERE = Path(__file__).parent
@@ -173,12 +174,21 @@ def test(template: str, symbol: str, timeframe: str) -> dict[str, Any]:
     return ledger.mark(row, "pending", **row)
 
 
+def _spent(row: dict) -> str:
+    """What the cell already cost the segments, from the cell counter (owner, 2026-10-14: a `Test_` spends segments, not the cell); informs, never filters."""
+    got = cellbook.ask(
+        row["symbol"], row["timeframe"], row["template"], row["direction"]
+    )["cell"]
+    return f"oos1 {got['oos1']['screenings']} cribas, oos2 {got['oos2']['rows']} filas"
+
+
 def _table(rows: list[dict]) -> None:
-    """Print cells one per line, in Spanish."""
+    """Print cells one per line, in Spanish, each with the segments already spent."""
     for r in rows:
         print(
             f"  {r['symbol']:<10} {r['timeframe']:<4} {r['family']:<12} {r['template']:<36} "
             f"nota {r['points']:>5}  prior {r['prior'] or '-':<6} {r.get('state', '')}"
+            f"  [tramos gastados: {_spent(r)}]"
         )
 
 

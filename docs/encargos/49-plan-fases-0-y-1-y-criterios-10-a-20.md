@@ -27,7 +27,7 @@ Modelo: **S** = Sonnet, mecánico · **O** = Opus, diseño o estadística (regla
 | 0.1 | Cerrar la API de SQX al exterior | — (dueño) | — | ✅ ufw + Tailscale, 2026-10-02 |
 | 0.2 | Commit y push de lo pendiente | — | — | ✅ |
 | 0.3 | Propuesta diaria de commit | — | 0.2 | ✅ |
-| 0.4 | Copia fuera del disco: nocturna, `restic` a gorilla | S | Q-2 | ⬜ dueño 2026-10-14: «copia nocturna restic a gorilla»; hoy sólo la copia a mano |
+| 0.4 | Copia fuera del disco: nocturna, `restic` a gorilla | S | — | ⏸ aparcada por el dueño (2026-10-15, «no te preocupes»); hoy sólo la copia a mano. No se ejecuta hasta que él lo retome |
 | 0.5 | `/tmp` por debajo del 50 % tras una corrida | S | — | 🟡 hoy 42 % sin corrida; falta leerlo tras una completa |
 | 0.6 | Auditoría mecánica a 0 | S | OPEN #95 | 🟡 |
 | 0.7 | Documentación al día | — | 0.2 | ✅ |
@@ -51,6 +51,8 @@ por paso, y se sabe cuántos monos de N llegan al final.
 ## Bitácora
 
 Una línea por sesión que avance algo: fecha, punto, qué quedó.
+
+- 2026-10-15 · Q-1 → A (la regla «oos2 sólo en el 19.5» vale para los agentes de Claude; ya cumplida). Q-2 sin objeto: el dueño aparcó 0.4 (restic), «no te preocupes».
 
 - 2026-10-09 — consolidado a partir de los encargos 41 y 43 (`git show c923d10:docs/encargos/41-fases-0-y-1.md`).
   0.1 cerrado (Tailscale, `ufw` con entrada solo por `tailscale0`, 22/tcp y 3389/tcp; 5050-5071,
@@ -97,12 +99,12 @@ el dueño (0.8, 1.9 y cada criterio) se le prepara y se para.
 
 ## §1 Fase 0 — lo que queda
 
-**0.4 · Copia nocturna con `restic` a gorilla** (S). Decidido por el dueño (2026-10-14). `restic`
+**0.4 · Copia nocturna con `restic` a gorilla** (S). **APARCADA (dueño, 2026-10-15): no la ejecutes.** Decidido por el dueño (2026-10-14). `restic`
 en `~/.local/bin` (aquí `sudo` pide contraseña), cifrado, 7 diarias y 4 semanales, cron 05:30
 (comprueba que el minuto está libre: `crontab -l`). Se copia `AlgoData` sin `raw/`, `scratch/` ni
 `snapshots/` (~40,6 GB), `user/projects` y los bloques y plantillas propios de las tres
 instalaciones, `config/machine.yaml` y la carpeta de memoria de `~/.claude/projects/`. Destino:
-el repositorio de Q-2 en gorilla por SFTP (`ssh sqx2`; la copia es almacenamiento, no código que
+el repositorio `~/backups/restic_leaseWeb` en gorilla por SFTP (`ssh sqx2`; la copia es almacenamiento, no código que
 corra allí, así que no pasa por `bin/remote.sh`). Script en `bin/` con su candado y su capítulo del
 manual (regla 8; `/cron-agent` tiene la forma). **Hecho:** dos noches seguidas en el registro del
 cron y una restauración de prueba de un proyecto de SQX y un estudio a una carpeta de scratch.
@@ -228,20 +230,10 @@ debajo Limbo, nunca Falla (P12-1, P12-6), con T0-T4 al lado como hechos `crossTF
 - P8-Z/L/E → del 65 (α 0,01; limbo sigue; `edge_mean_oos` no se endurece).
 - Sin objeto por el 65: P20-1, P14-2/3/8, T-6, T-9, D2 «sobre qué t».
 
-**Abiertas:**
+**Contestadas el 2026-10-15 («todas las recomendaciones»):**
+- Q-1 → A: «oos2 sólo en el 19.5» obliga a los agentes de Claude (ideaExpert, researchDirector…), no al autopilot; ya se cumple, nada que hacer. Los pasos 17-20 siguen leyendo `oos2` dentro del bloque ciego (D2 del 65).
+- Q-2 → sin objeto: el dueño aparcó la copia `restic` (0.4), «no te preocupes». No hay repositorio que crear en gorilla.
 
-| código | qué se decide | A | B | recomendación |
-|---|---|---|---|---|
-| Q-1 | P20-2 dice «retirar a los agentes la lectura de oos2 (oos2 sólo en el 19.5)», pero el 65 (D2) deja que 17, 18, 19 y 20 sigan leyendo `oos2` y juzgando dentro del bloque ciego. ¿Qué quiso decir? | sólo los agentes de Claude (ideaExpert, researchDirector…) no leen `oos2` — ya se cumple, nada que hacer | el autopilot tampoco: 17-20 dejan de leer `oos2` y sólo el 19.5 lo lee | **A**: es lo que cuadra con D2 y no deshace el 65 |
-| Q-2 | Dónde vive la copia `restic` en gorilla (~40,6 GB, más el histórico de 7+4) | en el disco de datos de gorilla, carpeta `~/backups/restic_leaseWeb` | otro disco o almacenamiento de objetos (gasto, tuyo) | **A**, si gorilla tiene ≥ 100 GB libres; el agente lo mide antes de crear el repositorio |
-
-## Lo que no tocas
-
-- El master. **`oos2`**, reservado.
-- Los criterios de los pasos 6 y 8 y su bloque de `criteria.yaml`: son del encargo 50.
-- La campaña (`pipeline/campaign/`). El riesgo por operación y las sesiones.
-- Los ficheros de los otros encargos. `docs/DEPENDENCIES.md` se regenera; `ledger/thresholds.yaml`
-  gana filas al final de su sección.
 - Nada de SQX fuera de `/workflow` ni sin `/sqx-wait`; ningún proyecto fuera de
   `Test_`/`Trade_`/`Research_`; un `Test_` se retira al acabar. Nada en gorilla fuera de
   `bin/remote.sh`, salvo el destino de la copia de 0.4.
@@ -257,7 +249,7 @@ del 53 para §3.4): **no se reduce a un comando**. Verificación:
 3. `grep -n 'rules: \[\]' pipeline/autopilot/criteria.yaml`: cada resultado lleva su razón al lado.
 4. `python3 -m pipeline.autopilot.facts --project <P> --step 16`: existen los hechos de §3.1.
 5. `python3 tools/daily_audit.py` sale con 0 (0.6); `df -h /tmp` < 50 % tras una corrida (0.5);
-   `restic snapshots` con dos noches y la restauración de prueba (0.4).
+   (0.4 aparcada: sin `restic snapshots` hasta que el dueño la retome).
 6. 1.4: las tres corridas a cero supervivientes y la JVM matada, con la salida pegada.
 7. §3.4: el embudo por el camino real y el informe del equipo rojo, pegados.
 8. Si se movieron o borraron módulos: `graphify update . && python3 tools/projectmap.py` (regla 22).

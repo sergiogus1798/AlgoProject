@@ -105,6 +105,7 @@ def _write(path: Path, df: pd.DataFrame) -> None:
         compression_level=9,  # 19 took 24 s vs 1.6 s, file +6 %
         use_dictionary=[c for c in df.columns if c not in (*LISTS, "counts")],
         use_byte_stream_split=[f"{c}.list.element" for c in LISTS],
+        row_group_size=1_000,  # one group of 42,538 rows held > 2**31 list elements: unreadable
     )
     os.replace(tmp, path)
 

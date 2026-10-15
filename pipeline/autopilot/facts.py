@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pandas as pd
+import pyarrow.parquet as pq
 
 from pipeline.autopilot import batchfacts, tffacts
 from pipeline.autopilot.batchfacts import number
@@ -142,6 +143,12 @@ def from_folder(study: str, folder: Path) -> list[dict]:
             for k, x in flatten(r) + batchfacts.flat(r.get("facts") or {})
         ]  # the WFM's page
     for f in sorted(folder.glob("*.parquet")):
+        names = set(pq.read_schema(f).names)
+        if "strategy" not in names:
+            continue
+        keys = pd.read_parquet(f, columns=["strategy", *({"market"} & names)])
+        if "market" not in keys.columns and keys["strategy"].dropna().duplicated().any():
+            continue  # trades or distributions: never one row per strategy, never read whole
         df = pd.read_parquet(f)
         df = df.reset_index() if df.index.name == "identity" else df
         if "strategy" not in df.columns:

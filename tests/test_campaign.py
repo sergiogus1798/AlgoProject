@@ -123,6 +123,15 @@ def main() -> None:
 
     rows = keep.steps(TMP / "autopilot" / "Trade_B" / "r1" / "resumen.md")
     assert [c["out"] for r in rows for c in r["counts"]] == [1000, 1000, 10]
+
+    from pipeline.campaign import plan
+
+    seg = {"rows": 0, "screenings": 0}
+    plan.cellbook.ask = lambda *a: {  # a cell with only Test_ rows spent oos1 and oos2
+        "cell": {"oos1": {**seg, "screenings": 4}, "oos2": {**seg, "rows": 30}}
+    }
+    row = {**cell("H"), "template": "tH"}
+    assert plan._spent(row) == "oos1 4 cribas, oos2 30 filas"
     print("ok")
 
 
