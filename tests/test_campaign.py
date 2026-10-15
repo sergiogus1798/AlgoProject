@@ -107,6 +107,22 @@ def main() -> None:
     run.loop()
     assert states()["Trade_F"] == "question" and states()["Trade_E"] == "done", states()
 
+    tries = iter(
+        [RuntimeError("límite de uso"), ("p", "")]
+    )  # W2: a failed claude -p waits and tries again
+
+    def flaky(c: dict) -> tuple[str, str]:
+        """Fails once, then answers."""
+        got = next(tries)
+        if isinstance(got, Exception):
+            raise got
+        return got
+
+    run.palette.choose = flaky
+    assert run._palette(
+        cell("G"), {"palette_retries": 1, "palette_wait_minutes": 0}
+    ) == ("p", "")
+
     from pipeline.campaign import shelf
 
     sqx = TMP / "s.sqx"

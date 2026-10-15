@@ -106,6 +106,30 @@ def _newest(project: str) -> Path | None:
     )
 
 
+def _palette(cell: dict, cfg: dict) -> tuple[str | None, str]:
+    """The expert's palette; a failed `claude -p` (a usage limit) waits and tries again (owner, 2026-10-15, W2 B).
+
+    Raises:
+        RuntimeError: still failing after `palette_retries` waits; the cell stays pending.
+    """
+    for left in range(cfg["palette_retries"], -1, -1):
+        try:
+            return palette.choose(cell)
+        except RuntimeError as e:
+            if not left:
+                raise
+            print(
+                f"{cell['project']}: {e} — espero {cfg['palette_wait_minutes']} min",
+                flush=True,
+            )
+            until = time.time() + cfg["palette_wait_minutes"] * 60
+            while time.time() < until:
+                if _stop_file().exists():
+                    raise
+                time.sleep(POLL)
+    raise AssertionError("unreachable")
+
+
 def once(cell: dict, cfg: dict) -> str:
     """One cell from start to kept: three tries (the skill's routine), then its folder and its ledger line.
 
@@ -114,7 +138,7 @@ def once(cell: dict, cfg: dict) -> str:
         asked one — the cell is set aside for the owner and the loop goes on.
     """
     if cell["palette"] == "experto":
-        chosen, why = palette.choose(cell)
+        chosen, why = _palette(cell, cfg)
         if chosen is None:
             ledger.mark(cell, "question", question=why)
             print(f"{cell['project']}: apartada — {why}", flush=True)
