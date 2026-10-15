@@ -23,6 +23,10 @@ instrument:
   point_value: 100             # $ por 1.0 de precio y 1.0 de lote
   min_distance: 10             # SQX lleva minDistance 0.0; el <Setup> del cross-check escribe 10
 
+price_rounding:
+  use: tick
+  why: '2026-10-15, engines.market.rounding.measure over Retest_Markets_-_Family trades of 32 XAUUSD H1 ruptura/squeeze/donchian mothers (raw/Test_XAUUSD_H1_*/Retest_Markets_-_Family), oos1 costs over 2013-2023 (H1, n=32): off-share tick 0.00 % vs none 71.88 %'
+  measured: 2026-10-15
 costs:
   spread_is:
     use: 52.46               # points — tramo `build`
