@@ -84,7 +84,7 @@ index CFDs do since 2026-09-27: their spread fell or rose between the two OOS wi
 - `class`, `broker`, `sqx_symbol`, `feeds` — what the instrument is.
 - `instrument` — `tick_size`, `point_value`, `min_distance`. Facts read from SQX, never decisions.
   Regenerate with `python3 -m sqx.inspect.instruments`.
-- `price_rounding` — `use: tick | none`, with `why` and `measured`: whether SQX fills this asset's market orders on the tick grid (the repricer rounds) or at the bar open plus the unrounded cost. Measured per asset on a batch of variants, no default: `reprice.costs` refuses an asset without it (crossmarket marks its market `cost_card_pending: price_rounding`). Written only by `core.assetwrite.set_price_rounding`. Measured 2026-10-15 (encargo 70): XAUUSD, USA500, DAX40 `none`; NIKKEI225, USATEC, USDJPY, UKOIL, USOIL `tick` (the oils on the XAUUSD mothers' cross-market retest; USOIL margin 0 vs 6 %).
+- `price_rounding` — `use: tick | none`, with `why` and `measured`: whether SQX fills this asset's market orders on the tick grid (the repricer rounds) or at the bar open plus the unrounded cost. Measured per asset on a batch of variants, no default: `reprice.costs` refuses an asset without it (crossmarket marks its market `cost_card_pending: price_rounding`). Written only by `core.assetwrite.set_price_rounding`. Measured 2026-10-15 (encargo 70): XAUUSD, USA500, DAX40, AUS200 `none`; DJ30, UK100, HK50, NIKKEI225, USATEC, USDJPY, UKOIL, USOIL `tick` (the oils on the XAUUSD mothers' cross-market retest; USOIL margin 0 vs 6 %).
 - `costs` — one block per field of its class, each with:
   - `use` — what to actually apply. `null` blocks authoring.
   - `sqx_now` — the value recorded in the file, **with its own unit**, which is often not the unit

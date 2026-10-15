@@ -147,7 +147,10 @@ def from_folder(study: str, folder: Path) -> list[dict]:
         if "strategy" not in names:
             continue
         keys = pd.read_parquet(f, columns=["strategy", *({"market"} & names)])
-        if "market" not in keys.columns and keys["strategy"].dropna().duplicated().any():
+        if (
+            "market" not in keys.columns
+            and keys["strategy"].dropna().duplicated().any()
+        ):
             continue  # trades or distributions: never one row per strategy, never read whole
         df = pd.read_parquet(f)
         df = df.reset_index() if df.index.name == "identity" else df
