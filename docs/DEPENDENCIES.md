@@ -216,7 +216,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `mt5/verify/autopilot.py` | 269 | Step 26 as an autopilot action: the window's preflight over a list of finalists, one check each, the pool filled. | core, mt5, ui | pandas |
 | `mt5/verify/conditions.py` | 123 | A prop firm's conditions for one symbol, read off its own MT5 account and put in SQX's units. | mt5 | — |
 | `mt5/verify/firms.py` | 62 | Which prop firms the bridge can verify on: their saved MT5 account and their symbol names. | core, ledger | yaml |
-| `mt5/verify/judge.py` | 448 | Compare each firm's SQX retest with its MT5 backtest on the rows of encargo 34, and judge. | core, mt5 | pandas |
+| `mt5/verify/judge.py` | 451 | Compare each firm's SQX retest with its MT5 backtest on the rows of encargo 34, and judge. | core, mt5 | pandas |
 | `mt5/verify/mt5side.py` | 174 | The MT5 half of a check: compile the EA SQX exported, and backtest it on each firm's account. | mt5 | pandas |
 | `mt5/verify/pool.py` | 241 | The validated pool of step 26: an append-only SQLite register of verdicts, the first verdict per check counts. | core, ledger | pandas |
 | `mt5/verify/report.py` | 172 | Write mt5.verify.run's result.json (the study contract) and its run.json, and mark a crash. | core, mt5 | pandas |

@@ -104,9 +104,12 @@ steps:
       # La z — LA regla que juzga (encargo 65 §5.2): la z de la estrategia sobre su mono con horas
       # (sorteado solo en sus horas de entrada) >= Φ⁻¹(1 − alpha/B), B = lotes cribados en oos1 en
       # la celda (activo × TF × dirección × familia) contando este. No lleva número: el umbral es
-      # por celda y lo calcula el juez (criteria.thresholded, ledger.cells.batches_for): 1,645 con
-      # B = 1; 1,960 con 2; 2,241 con 4. La fila del ledger anota B y el umbral usado.
-      - {name: "z del mono con horas, por celda", fact: gate.scorecard.z_mono, alpha: 0.05, per: cell,
+      # por celda y lo calcula el juez (criteria.thresholded, ledger.cells.batches_for): 2,326 con
+      # B = 1; 2,576 con 2; 2,807 con 4. La fila del ledger anota B y el umbral usado.
+      # alpha 0.01 (dueño, 2026-10-15, P8-Z → C; era 0.05): la corrida nula (encargo 65 fila 5.4,
+      # dossier criterios-paso-08-corrida-nula §4) dejaba pasar el 4,8 % de los monos nulos; a
+      # z >= 2,326 sobrevive el 0,78 % en una mitad partida, con plantas 23/57/80 %.
+      - {name: "z del mono con horas, por celda", fact: gate.scorecard.z_mono, alpha: 0.01, per: cell,
          missing: fail}
       # p_fdr (probabilidad de no ser nula, nula empírica del lote; engines/inference/localfdr) es
       # una COLUMNA del scorecard, sin regla: su corte espera a la fila 9 del encargo 65.

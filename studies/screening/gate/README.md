@@ -124,9 +124,9 @@ screen that needs new maths **extends that module** rather than growing a second
 ## The z — the one statistical rule of step 8 (owner, 2026-10-12, encargo 65 §5.2)
 
 `z_mono` (the strategy's mean P/L per trade against the hours monkey, in the monkey's own sd) must
-reach **Φ⁻¹(1 − 0.05/B)**, B = the batches screened on oos1 in the project's cell (asset × timeframe ×
-direction × family) counting the current one (`ledger.cells.batches_for`): 1.645 with B = 1, 1.960
-with 2, 2.241 with 4. `criteria.yaml` declares only `alpha: 0.05, per: cell`; the line is computed by
+reach **Φ⁻¹(1 − 0.01/B)**, B = the batches screened on oos1 in the project's cell (asset × timeframe ×
+direction × family) counting the current one (`ledger.cells.batches_for`): 2.326 with B = 1, 2.576
+with 2, 2.807 with 4 (alpha 0.01 since 2026-10-15; it was 0.05). `criteria.yaml` declares only `alpha: 0.01, per: cell`; the line is computed by
 `judge.per_cell` (the gate's `report.py` and the judge both call it, so they cannot disagree) and the
 ledger row of the judgement records B and the line used (`thresholds`). No data means Fail. It replaces
 R3, R5c's t and the old fixed `z_mono >= 1.65` as judges. **R4a, R5, R5b, R8 and R9b are columns**: still
@@ -141,7 +141,7 @@ z it is empty. The scorecard comes ordered: survivors first, by `p_fdr` descendi
 
 `monkey.draws` is **100,000** (it was 5,000; owner: no compute limits). The Monte Carlo standard error
 of a z near the line is √((1 + z²/2)/n) ≈ 0.0048 at n = 100,000 (0.021 at 5,000), so the draw no longer
-moves a verdict at 1.645 / 1.960 / 2.241 except for a strategy within about 0.01 of the line.
+moves a verdict at 2.326 / 2.576 / 2.807 except for a strategy within about 0.01 of the line.
 Measured 2026-10-12 on the USATEC export (`Test_USATEC_H1_ruptura_leaseWeb`, 169 alive, all cores):
 **149 s** for level 3c, four rungs each, i.e. 0.9 s per strategy — so a gate that no longer cuts at R3
 sends many more strategies to 3c: budget ~1 s per strategy per run, and the raw draws kept in

@@ -71,7 +71,7 @@ TABLES = {
     ],  # delay
     "q_p": [(0.051, P), (0.05, L), (0, L), (None, L)],  # R7
     "dd_p": [(0.11, P), (0.10, L), (0.011, L), (0.01, F), (None, L)],  # R6
-    "z_mono": [(1.645, P), (1.644, F), (-3, F), (None, F)],  # the z, B = 1
+    "z_mono": [(2.327, P), (2.325, F), (-3, F), (None, F)],  # the z, B = 1
 }
 
 
@@ -116,22 +116,22 @@ def test_truth_tables() -> None:
 
 
 def test_the_z_line_is_per_cell() -> None:
-    """Known answer: Φ⁻¹(1 − 0.05/B) is 1.645 / 1.960 / 2.241 for B = 1 / 2 / 4, and a strategy at
-    z = 1.8 passes with B = 1 and is cut with B = 2. The yaml declares alpha, never a number."""
+    """Known answer: Φ⁻¹(1 − 0.01/B) is 2.326 / 2.576 / 2.807 for B = 1 / 2 / 4, and a strategy at
+    z = 2.4 passes with B = 1 and is cut with B = 2. The yaml declares alpha, never a number."""
     rule = next(r for r in RULES if r.get("fact") == PREFIX + "z_mono")
-    assert rule["alpha"] == 0.05 and "pass" not in rule and "limbo" not in rule
-    assert [round(criteria.threshold(0.05, b), 3) for b in (1, 2, 4)] == [
-        1.645,
-        1.960,
-        2.241,
+    assert rule["alpha"] == 0.01 and "pass" not in rule and "limbo" not in rule
+    assert [round(criteria.threshold(0.01, b), 3) for b in (1, 2, 4)] == [
+        2.326,
+        2.576,
+        2.807,
     ]
     assert (
-        verdict("z_mono", (1.8,), {"H1"}, 1) == P
-        and verdict("z_mono", (1.8,), {"H1"}, 2) == F
+        verdict("z_mono", (2.4,), {"H1"}, 1) == P
+        and verdict("z_mono", (2.4,), {"H1"}, 2) == F
     )
     assert (
-        verdict("z_mono", (2.25,), {"H1"}, 4) == P
-        and verdict("z_mono", (2.24,), {"H1"}, 4) == F
+        verdict("z_mono", (2.81,), {"H1"}, 4) == P
+        and verdict("z_mono", (2.80,), {"H1"}, 4) == F
     )
 
 

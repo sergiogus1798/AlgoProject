@@ -118,3 +118,5 @@ sólo dicen que la cifra es estable. Plantas y reales no se usan para elegir nad
 | P8-Z | la α de la regla «z del mono con horas» (`criteria.yaml` paso 8; el umbral sigue dividiéndose por B de la celda) | 0,05 (hoy): nula 4,8 %, plantas 45/76/89 %, reales 122 | 0,0125: nula 1,04 % (techo 1,36), plantas 25/59/82 %, reales 2 | 0,01: nula 0,78 % (techo 1,06), plantas 23/57/80 %, reales 0 | **C** — cumple el 1,2 % con el intervalo entero por 2 puntos de planta más que B |
 | P8-L | el Limbo del paso 8 | sigue adelante (hoy) | sale (sólo el Pasa sigue) | — | **A** — quitarlo cuesta 24 puntos de la planta 0,15 y con la z de P8-Z no hace falta |
 | P8-E | endurecer `edge_mean_oos` en vez de la z | no (hoy, ≥ 2 / Limbo ≥ 1,25) | ≥ 5,75: nula 0,88 %, plantas 17/48/79 %, reales 106 | — | **A** — a igual nula pierde más plantas que la z; las 106 reales que deja son las que la nula empírica explica |
+
+**Resultado (dueño, 2026-10-15):** P8-Z → C, P8-L → A, P8-E → A. α 0,01 aplicada en `criteria.yaml`: la línea pasa a 2,326 con B = 1; el Limbo sigue y `edge_mean_oos` no se endurece.

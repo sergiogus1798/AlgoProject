@@ -12,7 +12,7 @@ Sources: `pipeline/autopilot/{plan.py,criteria.yaml,README.md}`, `sqx/projects/{
 | 6 | sqx | task `CONSTRUCCION` | - | `Results` | - |
 | 7 | sqx | task `OOS` (run chained with 6) | `Results` | `OOS` | - |
 | 8 | python | gate, edgeCost, feedQuality, spread, isOos, filters, decay, monkeyExcess, falsePositives, monkey, then profitShape, entryQuality | `OOS` (+ build) | facts | - |
-| 8 | judge | rules of step 8 (R1a, R1b, R2, R5c cost, R5d, data quality, delay, R6, R7 and ONE statistical rule: `z_mono >= Φ⁻¹(1 − 0.05/B)`, B = the cell's batches screened; R3, R4a, R5, R5b, R8, R9b are columns) + medoids | facts | `paso-8/` | `OOS`; then saves survivors to the store and trims `Results` to them (`trim.py`) |
+| 8 | judge | rules of step 8 (R1a, R1b, R2, R5c cost, R5d, data quality, delay, R6, R7 and ONE statistical rule: `z_mono >= Φ⁻¹(1 − 0.01/B)`, B = the cell's batches screened; R3, R4a, R5, R5b, R8, R9b are columns) + medoids | facts | `paso-8/` | `OOS`; then saves survivors to the store and trims `Results` to them (`trim.py`) |
 | 9 | sqx | `Retest Markets - Family` | `OOS` (the cut's databank) | `Retest Markets - Family` | - |
 | 10 | python | crossmarket | `Retest Markets - Family` | facts | - |
 | 10 | judge | P1-P9 of encargo 46 (`criteria.yaml` step 10, provisional): `invalid_fraction`, `fixed_distance`, `freq_off`/`freq_off_fraction`, `z_conj`, `z_conj_v2`, `z_minus_market`, `p_breadth`, `tau_half` (over `e_principal`, the main's own e on oos1, computed by crossmarket), `worse`/`worse_fraction`, `z_beta`+`e_end`; the study writes no verdict of its own | facts | `paso-10/` | `Retest Markets - Family` |

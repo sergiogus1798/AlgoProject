@@ -13,8 +13,8 @@ only the medoid (highest mean Jaccard of entry bars within its `structure` group
 groups goes on; the rest are DROPped with «no es la medoide de su grupo». The gate marks the medoid of every group
 (`studies/screening/gate/redundancy.medoides`, `medoide` in the scorecard); the judge keeps the N largest (`selection.largest`).
 
-**The z** (owner, 2026-10-12, encargo 65 §5.2): step 8 has ONE statistical rule, `gate.scorecard.z_mono >= Φ⁻¹(1 − 0.05/B)`,
-B = batches screened on oos1 in the project's cell counting this one (`ledger.cells.batches_for`: 1.645 / 1.960 / 2.241 for
+**The z** (owner, 2026-10-12, encargo 65 §5.2): step 8 has ONE statistical rule, `gate.scorecard.z_mono >= Φ⁻¹(1 − 0.01/B)`,
+B = batches screened on oos1 in the project's cell counting this one (`ledger.cells.batches_for`: 2.326 / 2.576 / 2.807 for
 B = 1 / 2 / 4). A rule that declares `alpha:` instead of `pass:` is per-cell: `judge.per_cell` (via `criteria.thresholded`)
 writes its line from B before the rules are read, the gate's `report.py` does the same, and the ledger row of step 8 records
 `thresholds: {batches_screened, alpha, z_min}`. No `z_mono` is a Fail. R3, R5c's t and the old fixed `z_mono` line no longer judge;
