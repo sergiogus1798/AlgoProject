@@ -267,7 +267,6 @@ en una medición contra SQX (3) y uno está aparcado (5). Por eso **no se despac
 cierra con su propia **Verificación**:
 
 - **Frente 2:** respuestas D-4 y D-5 en la bitácora; después `python3 -m pytest tests/test_<estudio>.py -q && python3 tools/depmap.py && python3 tools/checks.py`
-- **Frente 3 (lo que queda):** `entryQuality` lee el tier 2 en las estrategias con stop; `python3 -m pytest tests/test_replay.py -q` más el test que cubra la lectura nueva; `python3 tools/depmap.py && python3 tools/checks.py`
 - **Frente 4:** `scratch/cerebro/logit.py` ya copiado al estudio, `pytest` verde, la tabla de cortes en manos del dueño
 - **Frente 5:** nada que verificar.
 

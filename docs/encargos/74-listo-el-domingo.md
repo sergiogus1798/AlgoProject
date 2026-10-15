@@ -7,7 +7,7 @@
 | 1 | V del 50: corrida entera con el paso 8 vigente (`Test_USATEC_H1_breakoutL_v8_leaseWeb`) | 18 | custodio leaseWeb | en curso desde jue 19:23 UTC | — |
 | 2 | Z1 del 50 y resto del 49 (ledger, autopilot, umbrales al ledger, higiene de `criteria.yaml`) | 18 | Python | pendiente | 1 |
 | 3 | #93: C2-C11 del 72 en `criteria.yaml` y `assets/_study.yaml` | 07 | Python | pendiente | 2 commiteado, y el dueño confirma a 07 |
-| 4 | Resto del F3 del 56 (`entryQuality` lee el replay tier 2 con stop) | 07 | Python | pendiente | el dueño confirma a 07 |
+| 4 | Resto del F3 del 56 (`entryQuality` lee el replay tier 2 con stop) | 07 | Python | **hecho** (ya estaba: bitácora del 56, 2026-10-14; `tests/test_replay.py` + `test_entry_delay_replay.py` 10/10, 2026-10-15) | — |
 | 5 | 66 frentes 1, 2, 4, 5, 9, 10 (sin SQX; sin medir mientras corra SQX) | 95 | Python | hecho jue noche: casi todo ya estaba construido; quedan las mediciones con la máquina libre (bitácora del 66) | P10, D27 |
 | 6 | #96 (L4): silueta en el CSCV · #104 (F8a/b) | 95 | Python | hecho jue noche: #96 cerrada (fila en la lectura del CSCV), #104 F8a/b (F8c tras la corrida limpia), #119 cerrada | — |
 | 7 | 66 frentes 6-7 (SQX vivo) · #112 (núcleos) · mediciones aplazadas del 66 | 95 | conductor y custodio | pendiente | 1 terminado |
