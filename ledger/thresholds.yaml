@@ -1544,3 +1544,27 @@ thresholds:
       FDR de Benjamini-Hochberg sobre todas las celdas probadas de una estrategia. El 0,05 que
       el dueño fijó en todos sus alfas (wfc, wfm, marketSurfaces, oos2Reading); no corta nada,
       sólo colorea una descripción. Confirmado por el dueño (encargo 54, 11).
+
+  # ── Pasos 10, 12 y 15 · umbrales de juicio de crossmarket, crossTF y SPP (encargo 49 §3.3) ──
+  # Movidos desde sus config.yaml el 2026-10-15 SIN cambiar el valor; los números de «cómo se
+  # mide» (draws, seed, min_trades...) se quedan en cada config.yaml.
+  - key: crossmarket.worse_z
+    value: -1.65
+    source: studies/transfer/crossmarket/config.yaml#travel.worse_z
+    set_by: "migrado sin cambio de valor (encargo 49 §3.3, 2026-10-15)"
+    set_on: 2026-10-15
+    why: "z de un mercado frente al azar a partir de la cual, hacia abajo, cuenta como mercado en contra (P8, encargo 46 §4.4)"
+
+  - key: crossTF.alpha
+    value: 0.05
+    source: studies/transfer/crossTF/config.yaml#verdict.alpha
+    set_by: "migrado sin cambio de valor (encargo 49 §3.3, 2026-10-15)"
+    set_on: 2026-10-15
+    why: "nivel sobre la p de la celda y, como cuantil normal, sobre z_new: lo que la hermana añade sobre su madre"
+
+  - key: spp.margin
+    value: 1.0
+    source: studies/breakage/spp/config.yaml#verdict.margin
+    set_by: "migrado sin cambio de valor (encargo 49 §3.3, 2026-10-15)"
+    set_on: 2026-10-15
+    why: "múltiplos del máximo del nulo que el máximo observado debe superar"

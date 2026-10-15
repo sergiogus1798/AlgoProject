@@ -66,8 +66,8 @@ def from_batch(batch: Path, base: dict, frame: pd.DataFrame) -> list[dict]:
     """The WFC's and the CSCV's rows for one mother's variant batch.
 
     Args:
-        batch: `strategyPermutations/<project>/<mother>/`, holding `wfc.json` and
-            `cscv.json` and their contract results in `estudios/`.
+        batch: `strategyPermutations/<project>/<mother>/`, holding `wfc.json` and the
+            CSCV's contract result, `estudios/cscv.json` (its `summary`).
         base: The fields every row shares.
         frame: The study's ledger as it stands; a step the batch already recorded live is
             not rebuilt.
@@ -88,16 +88,16 @@ def from_batch(batch: Path, base: dict, frame: pd.DataFrame) -> list[dict]:
             f"backfill · {batch.name} · {w['call']} rho {w['rho']} "
             f"· IS {w['in_sample']} OOS {w['out_of_sample']}",
         )
-    if (batch / "cscv.json").exists() and not recorded(frame, 18, batch):
-        c = json.loads((batch / "cscv.json").read_text(encoding="utf-8"))
+    result = batch / "estudios" / "cscv.json"
+    if result.exists() and not recorded(frame, 18, batch):
+        c = json.loads(result.read_text(encoding="utf-8"))["summary"]
         found += rows(
             18,
             {**base, "launched_by": "studies.optimisation.cscv.report"},
             c["n"],
-            computed(batch / "estudios" / "cscv.json"),
+            computed(result),
             "cscv/pbo",
-            f"backfill · {batch.name} · PBO argmax {c['pbo_argmax']:.3f} "
-            f"DSR {c['dsr']:.3f} · {c['periods']} periodos {c['period']}",
+            f"backfill · {batch.name} · P pérdida {c['p_perdida']:.3f} PBO {c['pbo']:.3f}",
         )
     return found
 

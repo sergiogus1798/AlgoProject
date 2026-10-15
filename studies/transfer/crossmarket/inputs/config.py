@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from core.study import config as study_config
+from ledger import thresholds
 
 # parents[1]: the .yaml stays in the module root, where the manual names it.
 FILE = Path(__file__).parents[1] / "config.yaml"
@@ -20,4 +21,6 @@ def load(overrides: list[str] | None = None) -> dict[str, Any]:
         The whole config. Every number the study uses comes from here; a value that is not in
         this dict is a value nobody can change from the window, which is why none exist.
     """
-    return study_config.load(FILE, overrides or [])
+    return study_config.apply(
+        thresholds.fill(study_config.load(FILE, [])), overrides or []
+    )

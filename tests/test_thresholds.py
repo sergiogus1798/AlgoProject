@@ -19,6 +19,9 @@ MIGRATED = (
     "studies/optimisation/cscv/",
     "studies/optimisation/marketSurfaces/",
     "studies/readings/edgeCost/",
+    "studies/transfer/crossmarket/",
+    "studies/transfer/crossTF/",
+    "studies/breakage/spp/",
 )
 
 

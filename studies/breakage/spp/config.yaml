@@ -12,7 +12,7 @@ read:
   breakeven: 0.0          # where `metric` stops being profitable; 1.0 for profit factor
 
 verdict:
-  margin: 1.0             # multiples of the null maximum the observed max must clear
+  margin: ledger:spp.margin           # multiples of the null maximum the observed max must clear
 
 design:
   # There is no eta-squared freezing threshold, deliberately. Freezing is decided by the

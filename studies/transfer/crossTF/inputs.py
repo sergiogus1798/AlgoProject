@@ -10,6 +10,7 @@ from core import assetdata
 from core.assetdata import doctrine
 from core.barstore import read as read_bars
 from core.study import config as study_config
+from ledger import thresholds
 
 CONFIG = Path(__file__).with_name("config.yaml")
 
@@ -24,7 +25,7 @@ def config(overrides: list[str]) -> dict[str, Any]:
     Returns:
         What config.yaml holds.
     """
-    return study_config.load(CONFIG, overrides)
+    return study_config.apply(thresholds.fill(study_config.load(CONFIG, [])), overrides)
 
 
 def blocks(

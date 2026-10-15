@@ -28,16 +28,16 @@ Modelo: **S** = Sonnet, mecánico · **O** = Opus, diseño o estadística (regla
 | 0.2 | Commit y push de lo pendiente | — | — | ✅ |
 | 0.3 | Propuesta diaria de commit | — | 0.2 | ✅ |
 | 0.4 | Copia fuera del disco: nocturna, `restic` a gorilla | S | — | ⏸ aparcada por el dueño (2026-10-15, «no te preocupes»); hoy sólo la copia a mano. No se ejecuta hasta que él lo retome |
-| 0.5 | `/tmp` por debajo del 50 % tras una corrida | S | — | 🟡 hoy 42 % sin corrida; falta leerlo tras una completa |
+| 0.5 | `/tmp` por debajo del 50 % tras una corrida | S | — | 🟡 hoy 42 % (1,6 G de 3,9 G; mayores: `claude-1000` 388 M, un `tmp*` 273 M, `pytest-of` 94 M) sin corrida; falta leerlo tras una completa |
 | 0.6 | Auditoría mecánica a 0 | S | OPEN #95 | 🟡 |
 | 0.7 | Documentación al día | — | 0.2 | ✅ |
 | 0.8 | Cerrar el 22 público (SSH sólo por Tailscale) | — (dueño) | — | 🔴 dueño 2026-10-14: «cerrarlo, tras probar Tailscale desde fuera»; `ufw` pide `sudo` |
 | 1.1 | Hoja de decisiones en PDF | — | — | ✅ |
 | 1.2 | Firma provisional de los pasos 6 y 8 | — (dueño) | 1.1 | 🟡 paso 8 y `dev` hechos por el 65; paso 6 y lo pendiente de OPEN #93 → encargo **50** |
-| 1.3 | Registro completo | S | — | 🟡 falta el repaso paso a paso y borrar el relleno de `Test_Calib_*` |
+| 1.3 | Registro completo | S | — | 🟡 borrado el relleno de `Test_Calib_*` (2026-10-15); el repaso por paso dice que 11.5, 16 y 16.5 (`rules: []`) no dejan fila: `judge.judge` sale antes de `ledger_row`; ¿deben dejarla? |
 | 1.4 | Autopilot: lo mínimo para una población nula | S | — | 🟡 código hecho, falta la prueba en SQX |
 | 1.5 | Nulos y curva de mínimos | O | — | → encargo **50** (OPEN #88, #91) |
-| 1.6 | Regla o razón escrita en 10, 12, 14, 16 y 20 | O + S | — | 🟡 10, 14, 18, 18.5 y 20 ✅ por el 65; quedan **12 y 16**, el ledger de umbrales y la higiene del YAML (§3) |
+| 1.6 | Regla o razón escrita en 10, 12, 14, 16 y 20 | O + S | — | 🟡 10, 14, 18, 18.5 y 20 ✅ por el 65; quedan **12 y 16** y la higiene del YAML (§3); umbrales de crossmarket, crossTF y spp ya en el ledger (2026-10-15); los cortes viejos de mcRetest (P14-7) siguen: `gates.py` alimenta `scoring`, `report` y las columnas de la ventana |
 | 1.7 | Monos por la cadena en Python | O | 1.3 | 🟡 → encargo **53** |
 | 1.8 | Monos seleccionados en SQX | O | 1.4, 1.7 | ⬜ → encargo **53** |
 | 1.9 | Congelación final de umbrales | — (dueño) | 1.6, 1.7, 1.8 | ⬜ |
@@ -52,6 +52,7 @@ por paso, y se sabe cuántos monos de N llegan al final.
 
 Una línea por sesión que avance algo: fecha, punto, qué quedó.
 
+- 2026-10-15 · 1.3: borrados `backfill --calib` y `steprows.calib_rows`. 1.6: `crossmarket.worse_z`, `crossTF.alpha` y `spp.margin` pasan a `ledger/thresholds.yaml` (mismo valor). `ledger/blind.py::from_batch` leía el `cscv.json` plano que ya nadie escribe: ahora lee `estudios/cscv.json` (`tests/test_ledger_blind_cscv.py`).
 - 2026-10-15 · Q-1 → A (la regla «oos2 sólo en el 19.5» vale para los agentes de Claude; ya cumplida). Q-2 sin objeto: el dueño aparcó 0.4 (restic), «no te preocupes».
 
 - 2026-10-09 — consolidado a partir de los encargos 41 y 43 (`git show c923d10:docs/encargos/41-fases-0-y-1.md`).

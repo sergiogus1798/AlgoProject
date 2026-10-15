@@ -13,7 +13,7 @@ travel:                       # «¿la lógica viaja?» (encargo 46): the joint 
   shift_step: week            # week | day — what the shift is counted in; week keeps weekday and hour
   min_trades_market: 30       # below it a market still adds to the total, but tau = -inf and it is
                               # not counted among the markets against
-  worse_z: -1.65              # the z of one market at or below which it is a market against
+  worse_z: ledger:crossmarket.worse_z              # the z of one market at or below which it is a market against
   frequency: {z: 3.5, phi_min: 1.5, phi_max: 3.5}   # P2: |z_freq| that flags a market, and the
                               # bounds of the overdispersion estimated on the main's build
   validity: {point_value_margin: 0.02, flat_atr_fraction: 0.02, max_displaced_share: 0.20, max_fill_error: 0.25}

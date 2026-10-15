@@ -3,7 +3,6 @@
 import re
 from pathlib import Path
 
-import pandas as pd
 
 from core import assetdata
 from ledger import blind, record, study as studymod
@@ -154,49 +153,3 @@ def log_cut(
         },
     )
     return f"Ledger: {criterion} ({cut[0]} -> {cut[1]}) apuntado en {sid}"
-
-
-def calib_rows(populations: Path) -> list[tuple[str, dict]]:
-    """(study, row) for each calibration population `populations.csv` lists, not yet written.
-
-    Each was built (step 6, `n` strategies in the databank, counted in N as `generated`) and
-    then read on its out-of-sample stretch to set step 8's criteria (step 8, oos1, a look that
-    adds no candidates). Studies come from the registry; a population it does not know is skipped.
-    """
-    found = []
-    for pop, n in pd.read_csv(populations)[["pop", "n"]].itertuples(index=False):
-        sign = signed(pop)
-        if sign is None:
-            continue
-        sid, reg = sign
-        base = {
-            "launched_by": "ledger.backfill --calib",
-            "symbol": reg["symbol"],
-            "timeframe": reg["timeframe"],
-            "n_in": int(n),
-            "n_out": int(n),
-            "note": f"backfill calibración · {pop}",
-        }
-        found += [
-            (
-                sid,
-                {
-                    **base,
-                    "step": 6,
-                    "segment": "build",
-                    "n_scored": int(n),
-                    "score_unit": GENERATED_UNIT,
-                    "criterion": "build de calibración: estrategias del databank",
-                },
-            ),
-            (
-                sid,
-                {
-                    **base,
-                    "step": 8,
-                    "segment": "oos1",
-                    "criterion": "calibración de criterios del paso 8, leída en OOS",
-                },
-            ),
-        ]
-    return found

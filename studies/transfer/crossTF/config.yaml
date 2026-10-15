@@ -33,7 +33,7 @@ verdict:
   rung: timing               # the null that randomises entry timing alone, holding the
                              # opportunity set fixed -- the rung that says whether the edge
                              # on this timeframe is its own or inherited from the source
-  alpha: 0.05                # on the cell's own p AND, as a normal quantile, on `z_new`: what
+  alpha: ledger:crossTF.alpha              # on the cell's own p AND, as a normal quantile, on `z_new`: what
                              # the sibling adds beyond its mother's result (cells.beyond)
 
 # «¿Pico aislado en su TF?» — T0 to T4 (encargo 47, studies/transfer/crossTF/tf/). Written BESIDE

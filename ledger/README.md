@@ -18,7 +18,7 @@ family: the unit the multiple-testing correction is owed to.
 | `report.py` | The study's whole search, read back: the funnel, what was spent, and what it costs the Sharpe. | `python3 -m ledger.report --study XAUUSD_M30_DirectionalMomentum` | ledger → the panel |
 | `shards.py` | Ledger shards (D27, option A): one writer per file, the union read back deduplicated. | — | — |
 | `spend.py` | The map of spent data: which stretches of history a search has already looked at. | imported | ledger → segments |
-| `steprows.py` | The rows a finished build (step 6) and a WFM reading (step 19) write themselves, live. | called by `ui/daemon/launch/run.py` and `studies/optimisation/wfm/report.py`; `python3 -m ledger.backfill --calib <populations.csv> --dry-run` | log/export → rows |
+| `steprows.py` | The rows a finished build (step 6) and a WFM reading (step 19) write themselves, live. | called by `ui/daemon/launch/run.py` and `studies/optimisation/wfm/report.py` | log/export → rows |
 | `study.py` | What a study is, and where its ledger lives. | imported | ids → path, frame |
 | `thresholds.py` | The versioned thresholds, and whether the code still uses the numbers they declare. | imported | register → numbers, divergences |
 | `trials.py` | How much was really tried, across every search of a study rather than inside the last one. | imported | ledger (+ extra) → N, sigma, DSR |
