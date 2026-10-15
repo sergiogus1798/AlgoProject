@@ -35,7 +35,7 @@ def prepare(
         firm: Which firm's server-day clock and M5 grid to read (`days_<firm>`, `m5_<firm>`).
         members: Identities to include, in the order the output's rows follow.
         calendar: A portfolio calendar dict (`inputs.calendar.portfolio()`); only `"build"` is used.
-        factors: Each member's `f = atr_multiple / (risk_usd * X)` — SQX dollars to per-(r*S) dollars.
+        factors: Each member's `f = 1 / worst_day` (`inputs.risk.sizing`) — SQX dollars to per-(r*S) dollars.
         min_size: Each member's smallest trade lot (from its harvest, unscaled).
 
     Returns:

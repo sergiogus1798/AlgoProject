@@ -103,7 +103,7 @@ def units(
         bars: The feed's M1 bars (High, Low, Close), the same frame `where` was built on.
         where: `slots()` output for `bars.index`.
         point_value: Account currency per 1.0 of price per lot.
-        factor: The member's fixed-risk factor (`inputs.risk.sizing`); 1.0 leaves SQX's money.
+        factor: The member's sizing factor (`inputs.risk.sizing`); 1.0 leaves SQX's money.
 
     Returns:
         Only the trades that open and close inside the days of `where`, in open-time order:

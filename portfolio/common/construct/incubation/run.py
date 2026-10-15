@@ -161,9 +161,7 @@ def main() -> None:
         versions = {m["identity"]: m["version"] for m in blob["members"]}
         factors, excluded = size_members(members, versions)
         if excluded:
-            raise SystemExit(
-                f"miembros sin stop del paso 24, sin unidad de riesgo: {excluded}"
-            )
+            raise SystemExit(f"miembros sin dimensionar: {excluded}")
         got = record_mod.register(
             args.run,
             {k: cfg["incubation"][k] for k in record_mod.KNOBS},

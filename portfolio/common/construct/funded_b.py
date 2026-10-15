@@ -57,7 +57,7 @@ def load(run: Path, overrides: list[str]) -> dict[str, Any]:
     Returns:
         The world `build()` reads: `pool_name`, `plan`, `search` (`search.parquet`),
         `universe` (`equity.store.load()`), `firm`, `calendar`, `identities` and `graph` (the
-        admissible graph over the members with a step-24 stop), `sources`, `bars` (per feed),
+        admissible graph over the members `inputs.risk.sizing` could size), `sources`, `bars` (per feed),
         `factors`, `min_size`, `meta` (identity -> symbol, timeframe, family),
         `clock_unconfirmed` (the firm's clock is flagged in `config.yaml`), `base` (the config
         the universe is read under, scoped to the run's `--firm`), `pool` (the declared pool).

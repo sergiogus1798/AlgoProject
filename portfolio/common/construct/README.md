@@ -89,8 +89,10 @@ python3 -m portfolio.common.construct.incubation.run register --run $RUN        
 # the real path (M3-M5) is `real` then `report --seed 1 --pool $POOL`; it needs its OWN pool or a pool whose oos2 is still unspent
 ```
 
-**What stops it today (2026-10-15):** `real`, `funded` and `incubation` size every member by its step-24 ATR stop
-(`inputs/risk.py`). Step 24 was deleted (OPEN #113 (1)), so a pool of today's survivors reads «0 utilizables ·
-sin stop del paso 24». Rehearsal on the archived current-cost pool (19 members of `Test_NIKKEI225_M30_simpleL_fin`,
-`Test_USA500_H1_indicesIBS`, `Test_USDJPY_M30_doubleROCLong`; `universe` ran, 12 kept, 18 admissible pairs of 66;
-all 12 refused at sizing). Friday needs the stop-free sizing of #113 (1), which is the owner's decision.
+**Sizing without a stop (2026-10-15, OPEN #113 (1), owner K1 = A):** `inputs/risk.py` sizes each member by
+its worst build day of floating loss (`worst_day`: the sum of the MAE of the build trades closing that day,
+SQX dollars at SQX's own money management) and `factor = 1 / worst_day`. So a level `r` of the risk grid
+means «this member's worst build day costs `r` of the initial balance», and `funded.open_risk_cap` bounds the
+SUM of those worst days, members × r, against the plan's daily-loss room (`search/stagea.open_cap`). The
+grid's and the cap's comments in `config.yaml` still speak of stops: same numbers, new meaning. Not yet run on
+the rehearsal pool (no engine run while the campaign holds the machine).

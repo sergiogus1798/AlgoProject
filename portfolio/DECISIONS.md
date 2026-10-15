@@ -67,7 +67,8 @@ numbers live in `ledger/thresholds.yaml` (`closing.stop.far_k`, `closing.stop.fa
 - Background (measured before the decision): the p90 stop, grafted after all validation, fires on
   23-41 % of the trades and costs 32 % of the `oos1` net.
 - `portfolio.funded.stop_percentile: 90` stays in the ledger until the pipeline stops reading it;
-  this entry is what supersedes its `why`.
+  this entry is what supersedes its `why`. Since 2026-10-15 no code reads it (`inputs/risk.py` sizes by
+  the worst build day, OPEN #113 (1)); only its `config.yaml` line and its ledger row remain.
 
 ## Settled by the owner — 2026-10-05 (the readings the Council's answers left open)
 

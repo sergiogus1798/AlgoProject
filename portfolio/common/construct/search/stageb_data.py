@@ -49,7 +49,7 @@ def day_arrays(
         day_table: One firm clock's long day table (`equity.store.load()["days"][firm]`).
         members: Identities, in the order the rows follow.
         span: (first, last) day, both inclusive.
-        factors: Each member's fixed-risk factor.
+        factors: Each member's sizing factor (`inputs.risk.sizing`).
 
     Returns:
         `days` (int64 ns, the stretch's server days some member has), `closed`, `float_end`
@@ -135,7 +135,7 @@ def prepare(
         day_table: The firm clock's long day table.
         zone: The firm's server clock.
         span: (first, last) server day of the stretch, both inclusive.
-        factors, min_size: Each member's fixed-risk factor and smallest lot.
+        factors, min_size: Each member's sizing factor and smallest lot.
         cfg: The construct config (`equity.block_minutes`, `compute.max_ram_gb`,
             `stageb.worker_ram_gb`).
 

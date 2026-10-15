@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Known-answer test of the funded search: greedy+GA on a planted clique, ledger rows, risk.sizing."""
+"""Known-answer test of the funded search: greedy+GA on a planted clique, ledger rows."""
 
 import sys
 import tempfile
-import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -12,15 +11,12 @@ import numpy as np
 import pandas as pd
 
 import ledger.study as study
-import portfolio.common.construct.inputs.risk as risk
 import portfolio.common.construct.search.genetic as genetic
 import portfolio.common.construct.search.greedy as greedy
 import portfolio.common.construct.search.trials as trials
-from sqx.variants.build import stoploss
 
 N = 40
 PLANT = np.arange(6)
-FIXTURES = Path(__file__).parent / "fixtures"
 
 FAILURES = []
 
@@ -137,78 +133,10 @@ def test_ledger(run: dict) -> None:
     check("one ledger row per member plus the pool row", len(rows) == 1 + N)
 
 
-def _grafted_sqx(
-    tmp: Path, x: float | None = 2.5, name: str = "GRAFTED"
-) -> tuple[str, str]:
-    """A fake archive folder holding a strategy grafted with `stoploss.graft` in memory (x None: left without a stop)."""
-    portfolio = (FIXTURES / "nostop_portfolio.xml").read_text(encoding="utf-8")
-    if x is not None:
-        portfolio = stoploss.graft(portfolio, x)
-    last_settings = """<Settings>
-  <RiskMoneyManagement customSettings="false">
-    <MoneyManagement>
-      <Method type="ATRRiskBasedSizingFixedRisk" use="true">
-        <Params>
-          <Param key="Amount" className="ATRRiskBasedSizingFixedRisk">1000</Param>
-          <Param key="ATRPeriod" className="ATRRiskBasedSizingFixedRisk">20</Param>
-          <Param key="ATRMult" className="ATRRiskBasedSizingFixedRisk">4</Param>
-          <Param key="Decimals" className="ATRRiskBasedSizingFixedRisk">2</Param>
-          <Param key="LotsIfNoMM" className="ATRRiskBasedSizingFixedRisk">0.01</Param>
-          <Param key="MaxLots" className="ATRRiskBasedSizingFixedRisk">500</Param>
-        </Params>
-      </Method>
-    </MoneyManagement>
-  </RiskMoneyManagement>
-</Settings>"""
-    folder = tmp / name / "v1"
-    (folder / "harvest").mkdir(parents=True)
-    with zipfile.ZipFile(folder / "strategy.sqx", "w") as z:
-        z.writestr("strategy_Portfolio.xml", portfolio)
-        z.writestr("lastSettings.xml", last_settings)
-    (folder / "manifest.json").write_text("{}", encoding="utf-8")
-    (folder / "view.json").write_text(
-        '{"tearsheet": "sin tearsheet"}', encoding="utf-8"
-    )
-    pd.DataFrame({"Size": [0.5, 0.3, 1.2]}).to_parquet(
-        folder / "harvest" / "trades.parquet"
-    )
-    return name, "v1"
-
-
-def test_risk() -> None:
-    """`risk.sizing` reads X off a strategy grafted in memory, and refuses the stopless archive."""
-    real_archive_dir = risk.archive_read.archive_dir
-    with tempfile.TemporaryDirectory() as tmp:
-        risk.archive_read.archive_dir = lambda: Path(tmp)
-        try:
-            risk.sizing(*_grafted_sqx(Path(tmp), None, "STOPLESS"))
-            check("refuses a strategy with no step-24 stop", False)
-        except ValueError as exc:
-            check("refuses a strategy with no step-24 stop", "paso 24" in str(exc))
-        finally:
-            risk.archive_read.archive_dir = real_archive_dir
-        identity, version = _grafted_sqx(Path(tmp))
-        risk.archive_read.archive_dir = lambda: Path(tmp)
-        try:
-            got = risk.sizing(identity, version)
-        finally:
-            risk.archive_read.archive_dir = real_archive_dir
-
-    check("x read back from the grafted stop", got["x"] == 2.5)
-    check("risk_usd from Amount", got["risk_usd"] == 1000.0)
-    check("atr_multiple from ATRMult", got["atr_multiple"] == 4.0)
-    check("min_size is the smallest trade lot", got["min_size"] == 0.3)
-    check(
-        "factor = atr_multiple / (risk_usd * x)",
-        abs(got["factor"] - 4.0 / (1000.0 * 2.5)) < 1e-12,
-    )
-
-
 def main() -> None:
     """Run every case, print a line each, exit non-zero if any failed."""
     run = test_search()
     test_ledger(run)
-    test_risk()
     if FAILURES:
         raise SystemExit(f"{len(FAILURES)} fallo(s): {FAILURES}")
     print("test_portfolio_search: ok")

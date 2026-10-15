@@ -55,7 +55,7 @@ def on_build(
     Args:
         daily: days x members daily P&L over every segment (`universe.load()["daily"]`).
         calendar: The portfolio calendar, naive Timestamps.
-        scale: [N] each member's fixed-risk factor.
+        scale: [N] each member's sizing factor (`inputs.risk.sizing`).
         cfg: The construct config.
 
     Returns:
@@ -75,7 +75,7 @@ def on_build(
 
 
 def build(pool_name: str, cfg: dict, seed: int, search: bool = True) -> dict[str, Any]:
-    """Universe, fixed-risk sizing, the minimum-lot floor, the pair screen and the search.
+    """Universe, sizing by the worst build day, the minimum-lot floor, the pair screen and the search.
 
     Args:
         pool_name: A declared pool.
@@ -84,7 +84,7 @@ def build(pool_name: str, cfg: dict, seed: int, search: bool = True) -> dict[str
         search: False prepares everything and searches nothing (the admission pass).
 
     Returns:
-        `kept`, `excluded` ((identity, reason) pairs: no step-24 stop, or a floor above the
+        `kept`, `excluded` ((identity, reason) pairs: not sizeable, or a floor above the
         risk grid's top), `identities` (graph order), `floor` (identity -> floor risk),
         `account`, `unit` ([N, D] build daily P&L per unit of risk), `dates`, `graph`
         (`admissible.admissible`'s dict), `found` (`choose.choose`'s), `members_meta`,

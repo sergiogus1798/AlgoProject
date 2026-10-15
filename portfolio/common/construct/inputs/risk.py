@@ -1,66 +1,62 @@
-"""A member's fixed-risk factor: the step-24 ATR stop's X, the sizing it scales, its floor lot."""
+"""A member's sizing factor: its worst build day of floating loss, the scale it sets, its floor lot."""
 
-import zipfile
 from pathlib import Path
 from typing import TypedDict
 
 import pandas as pd
 
 from core.archive import read as archive_read
-from core.xmlget import el
-from sqx.inspect.strategymeta import settings
-from sqx.variants.build import rewrite, stoploss
 
 
 class Sizing(TypedDict):
-    """A member's fixed-risk inputs: ATR multiple, risk in USD, the lot floor and the factor."""
+    """A member's sizing inputs: its worst build day in SQX dollars, the lot floor and the factor."""
 
-    x: float
-    risk_usd: float
-    atr_multiple: float
+    worst_day: float
     min_size: float
     factor: float
 
 
-def sizing(identity: str, version: str) -> Sizing:
-    """The member's fixed-risk factor, `f = atr_multiple / (risk_usd * x)`.
+def worst_day(trades: pd.DataFrame) -> float:
+    """The worst day of floating loss on build, in SQX dollars at SQX's own sizing (positive).
 
-    SQX sizes every trade of the archived strategy at `risk_usd` over `atr_multiple` * ATR(20)
-    (`ATRRiskBasedSizingFixedRisk`); at risk `r` of a balance `S` a member's P&L is SQX's own
-    times `factor * r * S`.
+    A day's loss is the sum of the MAE of the trades that close on it (feed clock), build (`IS`)
+    only so no held-out sample sizes the member. Summing MAEs that did not happen at the same
+    minute over-states the day; a trade at a gain at the day's open can lose more that day than
+    its MAE, which under-states it.
+    # ponytail: per-trade MAE by close day; the exact figure is the universe's M5 low per firm day
+
+    Raises:
+        ValueError: No build trade ever went against the strategy -- nothing to size it by.
+    """
+    build = trades.loc[trades["sample"] == "IS"]
+    loss = build["MAE ($)"].clip(upper=0.0)
+    worst = -float(loss.groupby(build["Close time"].dt.date).sum().min())
+    if not worst > 0:
+        raise ValueError("sin pérdida flotante en build: nada con que dimensionarla")
+    return worst
+
+
+def sizing(identity: str, version: str) -> Sizing:
+    """The member's factor, `f = 1 / worst_day`: SQX dollars to per-(r*S) dollars.
+
+    The member keeps SQX's own money management (`knowhow/sqx-format/money-management-atr-fixed-risk.md`)
+    scaled by one constant, so at level `r` of a balance `S` its worst build day of floating loss
+    is `r * S`. The funded search's `open_risk_cap` then bounds the sum of those worst days over
+    the members against the plan's daily-loss room (`search/stagea.open_cap`).
 
     Args:
         identity: SHA-256 of the strategy's normalised XML.
         version: The archived version folder name.
 
     Returns:
-        `x` (the grafted stop's ATR multiple, `sqx/variants/build/stoploss.graft`), `risk_usd`
-        and `atr_multiple` (the money management's `Amount` and `ATRMult`), `min_size` (the
-        smallest trade lot SQX drew, `harvest/trades.parquet`), `factor`.
-
-    Raises:
-        ValueError: The strategy carries no step-24 ATR stop (`StopLossCoef1` undeclared) --
-            it was never sized for a fixed risk and cannot enter a funded search.
+        `worst_day` (`worst_day()` of `harvest/trades.parquet`), `min_size` (the smallest trade
+        lot SQX drew, every sample), `factor`.
     """
     got = archive_read.load(identity, version)
-    sqx_path = Path(got["sqx"])
-    with zipfile.ZipFile(sqx_path) as z:
-        portfolio = z.read(rewrite.PORTFOLIO).decode("utf-8", "replace")
-    if stoploss.VARIABLE not in rewrite.declared(portfolio):
-        raise ValueError("sin stop del paso 24")
-    x = float(rewrite.values(portfolio)[stoploss.VARIABLE])
-
-    node = settings.last_settings(sqx_path).find("RiskMoneyManagement/MoneyManagement")
-    mm = settings.sizing(el(node))
-    risk_usd = float(mm["params"]["Amount"])
-    atr_multiple = float(mm["params"]["ATRMult"])
-
     trades = pd.read_parquet(Path(got["folder"]) / "harvest" / "trades.parquet")
-    min_size = float(trades["Size"].min())
+    worst = worst_day(trades)
     return {
-        "x": x,
-        "risk_usd": risk_usd,
-        "atr_multiple": atr_multiple,
-        "min_size": min_size,
-        "factor": atr_multiple / (risk_usd * x),
+        "worst_day": worst,
+        "min_size": float(trades["Size"].min()),
+        "factor": 1.0 / worst,
     }

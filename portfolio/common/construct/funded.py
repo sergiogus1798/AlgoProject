@@ -71,7 +71,7 @@ def _member_meta(identity: str, versions: dict | None = None) -> dict:
 def size_members(
     kept: list[str], versions: dict | None = None
 ) -> tuple[dict, list[tuple[str, str]]]:
-    """Every kept member's fixed-risk factor; names those with no step-24 stop.
+    """Every kept member's sizing factor (`inputs.risk.sizing`); names those it cannot size.
 
     Args:
         kept: Identities the universe kept (reconciled, licensed).
@@ -267,7 +267,7 @@ def summarise(result: dict, out: Path | None) -> str:
     for identity, reason in result["excluded_stop"]:
         lines.append(f"  excluida {identity[:12]}…: {reason}")
     if result["run"] is None:
-        lines.append("Ningun miembro utilizable: no hay stop del paso 24 en ninguno.")
+        lines.append("Ningun miembro utilizable: ninguno se pudo dimensionar.")
         print(text := "\n".join(lines))
         return text
     run = result["run"]

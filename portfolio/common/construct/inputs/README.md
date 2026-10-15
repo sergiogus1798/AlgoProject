@@ -11,7 +11,7 @@ the engine reads it, and the portfolio calendar. Nothing here is computed from e
 | `calendar.py` | The portfolio's one calendar (owner, Q1), and what a member borrows from its own other segments. | imported | symbols → segments |
 | `config.py` | The engine's knobs: config.yaml with the ledger's thresholds filled and any override applied. | imported | overrides → cfg |
 | `pool.py` | A declared pool of archived strategies: write it once (frozen), read it, drop prohibitions, hash it. | `python3 -m portfolio.common.construct.inputs.pool declare <name> --added-by <who> (--identity <id>[@<version>] … \| --file <ids.txt>) [--note …]` | archive → `pools/<name>.csv` → members, hash |
-| `risk.py` | A member's fixed-risk factor: the step-24 ATR stop's X, the sizing it scales, its floor lot. | imported | archive → dict |
+| `risk.py` | A member's sizing factor: its worst build day of floating loss, the scale it sets, its floor lot. | imported | archive → dict |
 | `source.py` | One archived strategy as the engine reads it — files only, nothing recomputed. | imported | archive folder → dict |
 
 ## Traps

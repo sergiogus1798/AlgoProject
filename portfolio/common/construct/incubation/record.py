@@ -72,7 +72,7 @@ def register(run: Path, comparison: dict, scale: dict[str, float]) -> dict[str, 
     Args:
         run: A run folder holding `handoff/` (`report.py`'s or `funded_b`'s).
         comparison: `figure`, `history` (segments), `band` -- the owner's, none defaulted.
-        scale: identity -> fixed-risk factor (`funded.size_members`).
+        scale: identity -> sizing factor (`funded.size_members`).
 
     Returns:
         The record written to `ROOT/<hash12>/record.json`: `portfolio` (the hand-off's
