@@ -56,3 +56,21 @@
 | W4 ✅ fuera (`dropped_templates`) | 7 | `squeezeBBLong` falla en 16.5 (`not variables of this strategy: ['SqueezeBB']`, la causa sigue) | A dejarla en la cola · B al final | B |
 | W5 ✅ No | 7 | antes de lanzar: existe `AlgoData/campaign/STOP` (desde 07-10), la cola está vacía y nada relanza el bucle si muere | `run --go` quita el STOP; `plan --queue N` encola; ¿supervisor (cron) sí/no? | encolar y lanzar a mano; supervisor no hasta ver una noche limpia |
 | R1 | 8, 12, 13 | un activo sin `price_rounding` en su primera corrida | A el paso 8 lo mide solo sobre las operaciones del build y escribe la ficha (con `why`), y sigue · B se para, se mide a mano y `run` · C la campaña sólo elige activos ya medidos | A: sin ella la campaña del sábado se para en cada activo nuevo |
+
+## Informe de las 5:40 (viernes 2026-10-16, hora del servidor, UTC)
+
+Orden del dueño (jue 21:30): toda la noche buscando soluciones, testeando, arreglando y commiteando,
+las tres instancias; a las 5:40 cada una dice qué ha hecho y sus siguientes pasos del día. Cada
+sesión rellena sólo su sección antes de las 5:35; 95 las junta para el dueño.
+
+### Informe de las 5:40 — algoproject-95
+
+(pendiente)
+
+### Informe de las 5:40 — algoproject-18
+
+(pendiente)
+
+### Informe de las 5:40 — algoproject-07
+
+(pendiente)
