@@ -57,6 +57,7 @@ RANGES = {
     ("thresholds", "wfc.straddle_warn"): SHARE,
     ("thresholds", "wfc.sqx_gap_tolerance"): (0, None),
     ("thresholds", "wfc.sqx_gap_relative"): SHARE,
+    ("thresholds", "marketSurfaces.sqx_off_share"): SHARE,
     ("thresholds", "wfc.alpha"): (0, 0.5),
     ("thresholds", "wfc.rho_strong"): (0, 1),
     ("thresholds", "wfc.top_share"): (0.01, 0.99),

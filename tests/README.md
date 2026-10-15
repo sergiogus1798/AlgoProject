@@ -22,6 +22,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_alignment_shift.py` | One-bar-shift cases for the aligners: a spike at bar i must not show in bar i's own decision (encargo 68 F22). | — |
 | `test_archive.py` | The strategy archive on a real strategy: frozen versions never overwritten, read back equal, nothing run. | — |
 | `test_assets_blocked.py` | An asset card with an undecided commission ends in BLOQUEADO and exit 2, never a traceback. | `python3 -m pytest tests/test_assets_blocked.py` |
+| `test_assetwrite_price_rounding.py` | `assetwrite.set_price_rounding` writes the card's block after `instrument`, keeps the comments, and refuses a bad value. | `python3 tests/test_assetwrite_price_rounding.py` |
 | `test_atr.py` | SQX's ATR against a series worked out by hand, gap and running-mean start included. | `python3 tests/test_atr.py` |
 | `test_audit_select.py` | Known-answer test for tools/audit_tests.py `select`: which tests a change reaches. | — |
 | `test_autopilot_again.py` | `call.again`: one retry on SQX's transient abort, and on nothing else. | — |
@@ -40,7 +41,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_autopilot_step14_rules.py` | Step 14 in criteria.yaml is a column (encargo 65 §3d, owner 2026-10-12): `rules: []`, so the judge cuts nobody there, and the study's «Fragilidad» tab carries T1's facts alone, under the keys `facts.flatten` gives them (the ones step 16.5's report reads). | — |
 | `test_autopilot_step20.py` | Step 20's rule: its cut is the bank 21 and 24 read from, and only the study's DESCARTAR fails. | — |
 | `test_autopilot_tail.py` | The autopilot's tail, 17 → 26, on hand-built rails and a ledger in a temp folder: the order of the plan, its clean stops, the blind block under the ledger's door, and a run with nobody left ending without a failure. No SQX and no study runs: every command is recorded by a stub. | — |
-| `test_autopilot_tail_185.py` | 18.5 per mother, at execution time: it runs only where step 17's `descuadre_sqx` is under `wfc.sqx_gap_relative`. | — |
+| `test_autopilot_tail_185.py` | 18.5 per mother, at execution time: it runs only where step 17's `descuadre_sqx` is under `marketSurfaces.sqx_off_share`. | — |
 | `test_autopilot_timing.py` | The autopilot's timing table: a nested phase's seconds leave its parent, and SQX stays apart. | — |
 | `test_autopilot_variants_order.py` | Step 16.5's order of work: live, every pilot first on the main market alone; restart, as it was. | — |
 | `test_autopilot_zero.py` | Zero survivors end the autopilot cleanly, a missing fact goes where its rule says, the judge signs its cut in the ledger with criteria.yaml's hash, and `live.wait` fails on an abort line instead of returning it. All on fakes: no SQX, no install, no ledger on disk. | — |
@@ -335,7 +336,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_ui_ops.py` | The operation zone: /api/pulse, /api/ops/sqx and /api/ledger read-only, and its widgets offscreen. | — |
 | `test_ui_portfolios.py` | Known-answer test of the PORTFOLIOS zone's daemon: known folders → the JSON the window paints, and the launchers' plumbing. | — |
 | `test_ui_research.py` | «Investigar»: its routes on a local app, the queue with fake steps, the preflight's refusals and the four views offscreen. No worker, no Claude, no SQX: every step that would reach one is a fake, and the proposals folder is a temp dir holding the hand-made fixture. | `QT_QPA_PLATFORM=offscreen python3 tests/test_ui_research.py` |
-| `test_ui_results.py` | The results routes over the real reports, read-only: shapes, pairing by identity, staleness, old reports. | — |
+| `test_ui_results.py` | The results routes over the reports of the planted project: shapes, pairing by identity, staleness, old reports. | — |
 | `test_ui_runner.py` | The window's run side: the python queue, cancel, the refusals, and with `--run` a real study run end to end on this machine's live export (it writes a report under AlgoData/reports/). Without it every folder is planted in a temporary data root. | — |
 | `test_ui_screen.py` | The F5 drawings' pure halves: what the screen report keeps is what the page draws, merges, partials, market rows. | `python3 tests/test_ui_screen.py` |
 | `test_ui_shell.py` | The whole window offscreen over the whole daemon in-process: every zone, the context bar, the signals. | — |

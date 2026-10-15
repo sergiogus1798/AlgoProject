@@ -56,6 +56,7 @@
 - `plateau-radius-degenerates-at-six-params` — Why does a radius-2 Chebyshev plateau box across six parameters hold only the mother?
 - `pooling-moments` — How are stored ddof=1 search spreads pooled exactly for the deflated Sharpe?
 - `post-selection-bias` — Why is any statistic measured after filtering on the OOS biased?
+- `price-rounding-per-asset` — Does SQX round its fills to the tick, and which assets does the repricer round for?
 - `psr-dsr-two-conventions-jsharpe` — How does our PSR/MinTRL/DSR convention differ from the jsharpe package?
 - `random-entry-nulls` — Why does a monkey verdict depend more on the statistic than on the null?
 - `random-trader-benchmark-footprint` — Why was benchmark=0 the wrong null for PSR, and what does footprint() price instead?

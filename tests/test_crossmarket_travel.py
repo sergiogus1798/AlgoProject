@@ -38,6 +38,7 @@ def costs(point_value: float, spread: float) -> reprice.Costs:
         "spread": spread,
         "slippage": spread / 5,
         "commission_method": "PercentageBased",
+        "rounds": True,
         "commission": 0.0,
         "swap_long": -3.0,
         "swap_short": -1.0,

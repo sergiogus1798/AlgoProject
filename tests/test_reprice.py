@@ -21,6 +21,7 @@ NIKKEI = {
     "point_value": 0.063137,
     "tick_size": 0.01,
     "commission_method": "PercentageBased",
+    "rounds": True,
     "commission": 0.0,
     "swap_long": -4.78,
     "swap_short": -1.87,
@@ -36,6 +37,7 @@ HAND = {
     "spread": 0.05,
     "slippage": 0.02,
     "commission_method": "PercentageBased",
+    "rounds": True,
     "commission": 0.0,
     "swap_long": -3.6,
     "swap_short": -1.8,
@@ -139,6 +141,27 @@ def test_cost_off_the_tick_rounds_the_fill() -> None:
     )  # paid 6 x 0.25, declared 6 x 0.40
 
 
+def test_a_card_that_says_none_fills_at_the_unrounded_cost() -> None:
+    """`rounds` False (card `price_rounding: none`): in at 100.35, out at 99.95, no tick in between."""
+    c = {**HAND, "tick_size": 0.25, "spread": 0.30, "slippage": 0.05, "rounds": False}
+    got, _ = reprice.pnl(100.0, 100.0, *DAY, 1, 3.0, c)
+    assert np.isclose(got, -2.4, atol=0.005), got  # 6 x (99.95 - 100.35); rounded: -1.5
+
+
+def test_an_asset_without_a_measured_rounding_is_refused() -> None:
+    """A card with no `price_rounding` (planted: XAUUSD's without it) is refused, not guessed."""
+    load = reprice.load
+    reprice.load = lambda s: {k: v for k, v in load(s).items() if k != "price_rounding"}
+    try:
+        reprice.costs("XAUUSD_M1", "oos1")
+    except ValueError as err:
+        assert "price_rounding" in str(err)
+    else:
+        raise AssertionError("an asset was repriced without a measured rounding")
+    finally:
+        reprice.load = load
+
+
 def test_forex_fill_rounds_to_the_price_step_not_the_pip() -> None:
     """A card with `tick_step` (forex) rounds the fill to it: the pip would swallow the cost."""
     c = {
@@ -198,10 +221,15 @@ def test_costs_come_from_the_card() -> None:
     assert np.isclose(c["slippage"], card["costs"]["slippage_oos"]["use"] * 0.01)
     assert c["swap_long"] == card["costs"]["swap_long"]["use"] < 0
     assert set(c) == set(reprice.Costs.__annotations__) and c["tick_step"] is None
-    fx, yen = reprice.costs("EURUSD_M1", "oos1"), load("USDJPY")
-    assert np.isclose(fx["tick_step"], 0.00001) and (fx["triple"], fx["rollover"]) == (
+    fx, yen = reprice.costs("USDJPY_M1", "oos1"), load("USDJPY")
+    assert np.isclose(fx["tick_step"], 0.001) and (fx["triple"], fx["rollover"]) == (
         2,
         23,
+    )
+    assert (
+        fx["rounds"]
+        and c["rounds"]
+        and not reprice.costs("XAUUSD_M1", "oos1")["rounds"]
     )
     assert (
         reprice.costs("USDJPY_M1", "oos1")["swap_short"]
@@ -224,6 +252,7 @@ DONCHIAN = {
     "spread": 0.002,
     "slippage": 0.0,
     "commission_method": "SizeBased",
+    "rounds": True,
     "commission": 0.0,
     "swap_long": 0.0,
     "swap_short": -10.4,
@@ -237,6 +266,7 @@ USDJPY_5USD = {
     "spread": 0.0058,
     "slippage": 0.002,
     "commission_method": "SizeBased",
+    "rounds": True,
     "commission": 5.0,
     "swap_long": 2.57,
     "swap_short": -22.15,
@@ -249,6 +279,7 @@ USA500_BUILD = {
     "spread": 0.2767,
     "slippage": 0.0968,
     "commission_method": "PercentageBased",
+    "rounds": True,
     "commission": 0.0,
     "swap_long": -5.72,
     "swap_short": -2.84,

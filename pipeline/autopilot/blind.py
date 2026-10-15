@@ -41,7 +41,7 @@ def skipped(project: str, mother: str) -> str | None:
 
     Returns:
         None when step 17's `wfc.json` gives `descuadre_sqx` (largest over c1-c3) strictly under
-        `wfc.sqx_gap_relative`; otherwise the Spanish line saying why, a missing figure included.
+        `marketSurfaces.sqx_off_share`; otherwise the Spanish line saying why, a missing figure included.
     """
     file = variants_dir(project, mother) / "estudios" / "wfc.json"
     facts = (
@@ -52,7 +52,7 @@ def skipped(project: str, mother: str) -> str | None:
     gaps = [
         c["descuadre_sqx"] for c in facts.values() if c.get("descuadre_sqx") is not None
     ]
-    limit = thresholds.value("wfc.sqx_gap_relative")
+    limit = thresholds.value("marketSurfaces.sqx_off_share")
     if gaps and max(gaps) < limit:
         return None
     what = (

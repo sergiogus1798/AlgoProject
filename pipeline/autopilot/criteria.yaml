@@ -227,7 +227,7 @@ steps:
     rules: []
   "18.5":
     # De VUELTA (encargo 65 fila 8) sin su lectura previa build+oos1: `blind.skipped` salta la madre
-    # cuyo `descuadre_sqx` (wfc.json) no es < `wfc.sqx_gap_relative`, o no existe; sin hecho,
+    # cuyo `descuadre_sqx` (wfc.json) no es < `marketSurfaces.sqx_off_share`, o no existe; sin hecho,
     # `missing: limbo` la deja en LIMBO, nunca corta.
     # Paso 18.5 — superficies por mercado (propuesta criterios-implementados-2026-10-12, §5 y §9;
     # dueño, 2026-10-07). El paso se parte: la lectura que decide (build+oos1) se corre y se

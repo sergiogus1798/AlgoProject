@@ -6,14 +6,14 @@ never touch the strategy's own exits:
 | | the question | the PDF's item |
 |---|---|---|
 | **e-ratio** | did price run further in favour than against, more than a random entry at the same hours would have? | 3 |
-| **retraso** | how much of the edge is given up by entering d bars late? | 4, tier 1 |
+| **retraso** | how much of the edge is given up by entering d bars late? | 4; strategies with a stop by the replay |
 
 They share one kernel — the forward path from an entry — which is why they are one folder.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
 | `contract.py` | The two readings as the contract's tabs: the entry against random entries, and the delay. | imported | numbers → tabs |
-| `delay.py` | Item 4, tier 1: how much of the edge is given up by entering a few bars late. | imported | bars → delay tables |
+| `delay.py` | Item 4: how much of the edge is given up by entering a few bars late. | imported | bars → delay tables |
 | `eratio.py` | Item 3: does the entry itself predict favourable movement, or would any entry do? | imported | paths → curve, band |
 | `excursion.py` | The forward path: how far price ran for and against each entry, bar by bar. | imported | bars → paths |
 | `inputs.py` | What the study is run on: its knobs, one strategy's trades, and the bars under them. | imported | export → located trades |
@@ -44,13 +44,17 @@ drawn hour by hour in the real proportions, and the real sides are shuffled rath
 Without the first, the band is partly a statement about the session the strategy trades in; without
 the second, a long-only strategy in a rising market beats any band by being long.
 
-## What tier 1 assumes, and when it is wrong
+## Delay: fixed exits, or the replay when there is a stop
 
-The delay table holds the exits where they were. That is approximately right for signal and
-bar-count exits, and **wrong for a stop or a target**, which move with the entry price. The XAUUSD
-population carries none of those (`studies/CLAUDE.md`), which is what makes tier 1 readable here
-and will stop being true. Tier 2 — the replay simulator — is
-`docs/encargos/16-replay-de-operaciones.md`.
+Without a stop the delay table holds the exits where they were (tier 1): right for signal and
+bar-count exits. **A strategy with a stop is read by the replay** (`engines/market/replay/`, tier 2): the
+export must be a `harvest/<P>/Stop_p90/<day>/trades.parquet`, which names the stop's ATR multiple;
+each trade is walked again from `d` bars later with the stop recomputed. Two tables: entry late only,
+and full latency (signal exits late too), each with the share of trades that no longer exist
+(`descartadas`) and of those whose exit became unknown (`desconocidas`). The minutes table is
+dropped there: the stop is ATR(20) of the strategy's own timeframe. An export with SL exits that is
+not such a harvest is refused. Why tier 1 is wrong for a stop:
+`knowhow/research/delay-tier1-overstates-stop-strategies.md`.
 
 ⚠️ **The delay cost is expressed against total modelled cost, not against the spread.** The PDF asks
 for spread units; on this install the spread is inside the fill prices and does not appear in the

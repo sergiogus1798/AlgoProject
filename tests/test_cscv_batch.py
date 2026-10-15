@@ -149,6 +149,7 @@ def test_trades_become_the_weekly_cells_whatever_the_cut() -> None:
         "spread": 0.5,
         "slippage": 0.25,
         "commission_method": "SizeBased",
+        "rounds": True,
         "commission": 2.0,
         "swap_long": 0.0,
         "swap_short": 0.0,

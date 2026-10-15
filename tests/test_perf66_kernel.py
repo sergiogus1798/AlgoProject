@@ -20,6 +20,7 @@ COSTS = {
     "spread": 0.05,
     "slippage": 0.01,
     "commission_method": "SizeBased",
+    "rounds": True,
     "commission": 0.0,
     "swap_long": 0.0,
     "swap_short": 0.0,
@@ -28,6 +29,7 @@ COSTS = {
 }
 HARD = COSTS | {
     "commission_method": "PercentageBased",
+    "rounds": True,
     "commission": 0.003,
     "tick_step": 0.001,
     "swap_long": -7.5,

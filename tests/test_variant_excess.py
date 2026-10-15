@@ -16,6 +16,7 @@ FREE = {
     "spread": 0.0,
     "slippage": 0.0,
     "commission_method": "SizeBased",
+    "rounds": True,
     "commission": 0.0,
     "swap_long": 0.0,
     "swap_short": 0.0,

@@ -285,6 +285,12 @@ los que hacen viable el millón de sorteos. 6 y 7 esperan a un hueco del conduct
     - Después: AlgoBank en el custodio (aviso previo), 7.3 «16.5 sin sync», 8.1 con su consumidor, D27 (diseño al dueño antes de construir), y el cierre (dos medidas de escala, catálogo `perf/`, manual, corrida completa contra §0).
     - Tarjeta ajena caducada: la ficha `unselected-build-population` de `knowhow/sqx-drive/` (borrada el 2026-10-13 por orden del dueño) dice «nunca dejarlo llenar», y D24 lo contradice. Es de otra sesión: se corrige cuando esa sesión cierre.
 
+- 2026-10-15 — **cierre.** Respuestas del dueño del 2026-10-14 ejecutadas.
+  - **Hecho.** (2) `studies/screening/gate/level3c.py` vuelve a guardar los sorteos crudos (`raw` por defecto), con su test cambiado (`tests/test_perf66_fp.py`, 8 pasan). Riesgo anotado: 100.000 sorteos × 4 peldaños × 4 B = ~1,6 MB por estrategia; a 10.000 estrategias ~16 GB en memoria antes de guardar. (3) 3.9d ya construido (`wfc/measure/reading.py`, bloques de sorteos, igual a 1e-12, `tests/test_perf66_wfc_blocks.py`). (4) la clave `barrier.intrabar` ya no existe: cerrado. (6) cita `_per_bar` corregida en `docs/AgentPDFs/criterios-implementados-2026-10-12.md:2297` y su PDF regenerado. Presave: variante B siempre activa, ya hecho. Tarjeta `unselected-build-population`: borrada, nada que corregir.
+  - **Corrida de cierre `Test_XAUUSD_H1_ruptura_wtc3`: PASA** (`bin/workflow-test.sh c3`, 05:56 → 07:24, 88 min con la máquina cargada por otros agentes, load ~23): 0 filas `fallback`, sin reintentos, proyecto retirado solo, custodio parado. Segundos: Build + OOS 2.092 · estudios del 8 650 + juez 320 · 16.5 620 · SPP 182 · WFM 747. 18.5 saltado por descuadre en las 3 madres (R18c: resultado, no fallo).
+  - **D27: diseño escrito** (sección «D27 · Diseño…»), sin construir: espera la elección A/B/C del dueño.
+  - **No hecho.** D15 (96 contra 48 procesos): pide la máquina libre y arranca la corrida nula de 10 h. 8.1 (almacén `.npy`): sin consumidor, no se construye. Frente 10: sigue pendiente una población sin `--smoke` y decidir a qué apuntan los dos objetivos de cartera.
+
 ## Tu oficio
 
 Eres un programador de Python de rendimiento: numba, paralelismo por procesos con `fork`, formatos
@@ -1403,6 +1409,31 @@ N10d código y test · N11 A · N12 no se construye salvo «N12 sí» · N13 A (
 - **D27 → diseñarlo dentro del cierre** de este encargo y presentarlo antes de construir.
 - **Defecto de presave → variante B** siempre activa (52,4 → 15,2-15,8 s); se borra la otra.
 - **Tarjeta `unselected-build-population`** → corregir contra D24 cuando cierre la sesión que la tiene.
+
+## D27 · Diseño del ledger único leaseWeb + gorilla (2026-10-15, SIN construir; el dueño elige)
+
+**Qué hay hoy.** Cuatro familias de ficheros de anexado, todas bajo `AlgoData/` de cada servidor: el
+ledger L1 por estudio (`ledger/study.py::path`, `ledger/record.py::append`, un `.jsonl` por
+activo × timeframe × familia), el L2 `ledger/tried/<estudio>.jsonl` (`ledger/tried.py::_append`), el
+ledger de la campaña (`pipeline/campaign/ledger.py`, `ledger.jsonl`) y los CSV por celda
+(`ledger/cells.py`: `projects.csv`, `judgements.csv`). El número de lotes B de la z del paso 8
+(`ledger.cells.batches_for`) y el N del Sharpe deflactado (`ledger/trials.py`) salen de contar esas
+líneas: dos servidores con ledgers separados cuentan cada uno la mitad y la z sale más benévola.
+`bin/remote.sh` sólo ejecuta; `bin/mirror-data.sh` sólo copia datos de mercado; el clon de gorilla no
+se edita.
+
+| opción | cómo | cuesta | riesgo |
+|---|---|---|---|
+| **A · fragmentos por servidor y unión al leer (recomendada)** | cada servidor anexa sólo a su fichero (`<estudio>.<servidor>.jsonl`; las filas llevan `host` e `id` = hash del contenido); un script `bin/ledger-pull.sh gorilla` trae por `rsync` los fragmentos de gorilla a una carpeta `ledger/_remote/gorilla/`; los lectores (`study.read`, `tried.read`, `cells`, `campaign`) leen la unión deduplicada por `id` | un escritor por fichero: sin candado distribuido, sin carrera, idempotente (traer dos veces no duplica); tocan 4 lectores y 1 script nuevo | gorilla corre con un N atrasado hasta el próximo `pull`: se lanza `ledger-pull` antes de cada celda, igual que `remote.sh` hace `git pull` |
+| B · un solo fichero, gorilla escribe por `ssh` en leaseWeb | `record.append` en gorilla hace `ssh leaseWeb flock … >>` | N siempre exacto | gorilla depende de que leaseWeb esté arriba y del ssh en cada anexado; un corte pierde filas; rompe «gorilla es instalación independiente» |
+| C · el ledger en git | cada fila un commit | historial gratis | regla 12 (sólo el dueño comitea) y conflictos de fusión |
+
+**Recomendación: A.** Es el único que mantiene a gorilla independiente (la decisión del 2026-10-13)
+y no inventa un protocolo de escritura. Orden de trabajo: (1) `id` y `host` en las filas nuevas (las
+viejas se leen sin ellos: `id` = hash de su línea); (2) un `ledger/shards.py::read_all(estudio)`
+que todos los lectores usen; (3) `bin/ledger-pull.sh`; (4) prueba: dos fragmentos con una fila común,
+la unión la cuenta una vez, y el N de `trials` es la suma. Sin esto, repartir celdas entre los dos
+servidores NO debe hacerse. **Pregunta al dueño: ¿A, B o C?**
 
 ## Lo que no tocas
 

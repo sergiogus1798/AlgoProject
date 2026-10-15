@@ -134,6 +134,33 @@ def set_cost(
     return {"file": str(path), "field": field, "use": value, "why": why}
 
 
+def set_price_rounding(symbol: str, use: str, why: str) -> dict[str, str]:
+    """Say whether SQX fills this asset's orders on the tick grid, as measured on a batch.
+
+    Args:
+        symbol: Asset name.
+        use: "tick" (the repricer rounds each fill to the tick) or "none" (it does not).
+        why: The measurement: date, batch and figures. The repricer refuses an asset without it.
+
+    Returns:
+        The file written and what the card now holds.
+    """
+    if use not in ("tick", "none"):
+        raise ValueError(f"price_rounding is tick | none, not {use!r}")
+    path = path_of(symbol)
+    doc = read(path)
+    block = {"use": use, "why": why, "measured": date.today()}
+    if "price_rounding" in doc:
+        doc["price_rounding"].update(block)  # in place: the comment above it stays
+    else:
+        doc.insert(
+            list(doc).index("instrument") + 1, "price_rounding", CommentedMap(block)
+        )
+    write(path, doc)
+    reindex()
+    return {"file": str(path), "use": use, "why": why}
+
+
 def rename_cost(symbol: str, old: str, new: str) -> None:
     """Give a cost field a new name in place, its `use`, `sqx_now` and `why` kept — the forex
     `spread` became `spread_is` when every asset got one spread per segment (2026-09-30)."""

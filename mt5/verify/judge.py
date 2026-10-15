@@ -90,13 +90,13 @@ def rows(
         float((hit["Close time_mt5"] == hit["Close time"]).mean()) if len(hit) else None
     )
     r = compare.mean_loss(sqx)
-    s_sqx, s_mt5 = (hit[c].to_numpy(float) for c in ("Size", "Size_mt5"))
-    live = s_sqx > 0
-    size_gap = (
-        float((abs(s_mt5[live] - s_sqx[live]) / s_sqx[live]).mean())
-        if live.any()
-        else None
-    )
+    sized = {"Size", "Size_mt5"} <= set(hit.columns)  # trades with no lots get no row 6
+    size_gap = None
+    if sized:
+        s_sqx, s_mt5 = (hit[c].to_numpy(float) for c in ("Size", "Size_mt5"))
+        live = s_sqx > 0
+        if live.any():
+            size_gap = float((abs(s_mt5[live] - s_sqx[live]) / s_sqx[live]).mean())
     diff = hit["Profit/Loss_mt5"] - hit["Profit/Loss"]
     gap_r = float(diff.abs().mean()) / r if r and len(hit) else None
     a, b = daily(sqx, deposit), daily(mt5, deposit)
@@ -189,16 +189,19 @@ def rows(
             f"SQX {dd[0]:.3f} %, MT5 {dd[1]:.3f} % — sobre el balance al cerrar cada "
             "operación; el flotante intradía con M1 está pendiente",
         ),
-        one(
-            "6",
-            "tamaño por operación emparejada: diferencia relativa media",
-            size_gap,
-            th["size_gap_max_pct"],
-            False,
-            "|lotes MT5 − lotes SQX| / lotes SQX: el redondeo del lote y el valor del tick "
-            "de la empresa",
-        ),
     ]
+    if sized:
+        out.append(
+            one(
+                "6",
+                "tamaño por operación emparejada: diferencia relativa media",
+                size_gap,
+                th["size_gap_max_pct"],
+                False,
+                "|lotes MT5 − lotes SQX| / lotes SQX: el redondeo del lote y el valor del "
+                "tick de la empresa",
+            )
+        )
     return out
 
 

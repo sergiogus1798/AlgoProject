@@ -64,7 +64,7 @@ decisiones de los pasos 1 a 4 ya están contestadas en cada encargo.
 | 11 | **55 C** → **54 C/E/F** → **55 H/I** | necesitan una superviviente real | conductor, MT5, VPS |
 | 12 | **65 bloque D**, **69**, **56 F2/F4/F5**; el **57** entero, **parado por el dueño** (14-10) | aplazados o aparcados; el 69 al final, porque pide otra corrida | — |
 
-**En cualquier momento, en paralelo** (no compiten por el custodio): 61 · 59 parte 1 · 62 parte 1
+**En cualquier momento, en paralelo** (no compiten por el custodio): **72** (dueño, 2026-10-15; su parte A1 va antes que el 53) · 61 · 59 parte 1 · 62 parte 1
 sobre `ledger/cells.py` · 55 A/B/D-G · 54 A/B/D · 52 V · 56 F1/F3.
 
 **Una sola autorización de `oos2`** responde a la vez al 49 §3.4, al 52 Q-8, al 53 P6 y al 54 punto
@@ -81,9 +81,9 @@ Los nueve son **planes vivos**: llevan tabla de estado y bitácora, y cada sesi�
 | `51-pasos-10-a-12-transferencia.md` | paso 10: calibrar P1-P9 y adaptar la pestaña Cross Market de la ventana; pasos 10.5-12: la primera corrida real, el «corta» del dueño con su paquete de reglas y borrar la lectura vieja `z_new` | el custodio libre; el «corta» del dueño |
 | `52-pasos-16.5-a-18.5-variantes-y-meseta.md` | V hecho 2026-10-14 (ensayo build→oos1 en 29 lotes: 1 PASA, 10 LIMBO, 18 NO PASA; criterio sin cambios); la meseta en el tiempo (tramo contra tramo) y el mapa de ventaja sobre el mono en Market Surfaces, ambos a reescribir contra el estudio actual | el «adelante» del dueño; `oos2` para la meseta |
 | `53-monos-y-nulos.md` | el control negativo: el mono por los pasos 10 a 20 y la corrida a 10.000, los monos seleccionados dentro de SQX con el bloque con semilla, lo que queda vivo de los nulos, y el hueco aleatorio a prueba | reglas firmadas de los pasos 10-20 (encargo 49); el custodio libre |
-| `54-fondeo.md` | A (editor «Entradas del dueño»), B (valores contestados, FTMO 2-step `fee_refund: true`) y D (inventario) hechos 2026-10-14; quedan C, E, F y G, y de B `tax_rate`, `p_payout_denied` y `t1_gap` | los datos y decisiones del dueño; un pool validado (encargo 55) |
+| `54-fondeo.md` | A (editor «Entradas del dueño»), B (valores contestados, también `tax_rate` 0,40 sólo informativo, `p_payout_denied` 0,05 por cobro y `t1_gap`, 2026-10-15) y D (inventario) hechos; quedan C, E, F y G | los datos y decisiones del dueño; un pool validado (encargo 55) |
 | `55-mt5-paso-26-y-flota.md` | quedan: fila 5 con flotante y «R» (B), validar el .chr en una demo de Wine y probar el despliegue en la VPS (E), pausar una cuenta (F); hechos A, D y G el 2026-10-14; C, H e I necesitan una superviviente real | una superviviente real; la VPS; una cuenta demo en Wine; OPEN.md #78 |
-| `56-lecturas-nuevas.md` | quedan: señal por plantilla (F2), cerebro con probabilidades (F4), alfa y beta aparcado (F5), y el resto del F3: que `entryQuality` lea el replay tier 2 en las estrategias con stop. F1 (estacionalidad) hecho 2026-10-14 → `studies/readings/seasonality/`; motor del F3 → `engines/market/replay/` | lo ya exportado; preguntas del dueño por frente |
+| `56-lecturas-nuevas.md` | **F2, F4 y F5 congelados por el dueño (2026-10-15, encargo 72 Q4)**; quedan: señal por plantilla (F2), cerebro con probabilidades (F4), alfa y beta aparcado (F5), y el resto del F3: que `entryQuality` lea el replay tier 2 en las estrategias con stop. F1 (estacionalidad) hecho 2026-10-14 → `studies/readings/seasonality/`; motor del F3 → `engines/market/replay/` | lo ya exportado; preguntas del dueño por frente |
 | `57-gorilla-en-la-ventana.md` | fase 1: bloque «custodio_gorilla» en «En marcha» leyendo `/proc` por SSH (sólo mirar); fase 2: selector de servidor en los tres lanzadores, bloqueada por las respuestas del dueño | regla 3, regla 12 |
 | `58-mcpt-fabrica.md` | MCPT de la fábrica: el generador de series sintéticas (volteo de signo alrededor de la deriva anual) en el repo y validado, el símbolo SYN reimportado en el worker, la fábrica entera K = 5 veces sobre el real y K = 5 sobre ruido, y el veredicto por configuración (FDR por etapa, lift por paso, TFP del paso 8 frente al 5 %, repetibilidad); primera configuración XAUUSD H1 ruptura | la propuesta del dueño (`docs/AgentPDFs/criterios-mcpt-fabrica-propuesta-2026-10-12.md`); dos servidores libres ~14 h; preguntas §8 |
 
@@ -96,8 +96,8 @@ suelo de 35 operaciones al año y la retirada de `MonteCarloManipulation` ya est
 | fichero | qué construye | depende de |
 |---|---|---|
 | `60-estudio-del-build.md` | métrica de fitness × genético/aleatorio, ≥ 3 réplicas por brazo en una celda nueva con `criteria.yaml` congelado; la medida es supervivientes del paso 8 menos el control de monos, registrada por celda y plantilla; el resultado queda escrito en `_build.yaml` | la celda, las métricas y el brazo aleatorio (dueño); el custodio libre 14-30 h; el mono por el paso 8 (encargo 53 si falta la pieza) |
-| `61-money-management-por-stop.md` | las cinco comprobaciones antes de pasar al money management por stop loss; informe hecho 2026-10-14 (`AlgoData/audit/money-management/por-stop-2026-10-14.md`), pendiente 61-1 y 61-4 del dueño; no cambia nada | informe hecho; esperando respuestas |
-| `62-registro-unico-de-ya-probado.md` | un comando de sólo lectura que responde «¿se probó esta celda?» contando los `Test_` y los tramos gastados, y las tablas de antes y después de dos cambios de estadística que decide el dueño: N por serie de precios y BH por familia fijada en la propuesta; parte 1 hecha 2026-10-14 (`python3 -m ledger.cells --ask`), quedan 2, 3, 4 y la ficha de knowhow | nada para el comando y las tablas; el sí del dueño para aplicar |
+| `61-money-management-por-stop.md` | money management por stop loss en `mt5/verify` (dos modos, 10 %, filas 6 y 7); informe en `AlgoData/audit/money-management/por-stop-2026-10-14.md` | hecho salvo 61-4c: la cifra de `mt5verify.loss_cap_usd` |
+| `62-registro-unico-de-ya-probado.md` | un comando de sólo lectura que responde «¿se probó esta celda?» contando los `Test_` y los tramos gastados, y las tablas de antes y después de dos cambios de estadística que decide el dueño: N por serie de precios y BH por familia fijada en la propuesta; parte 1 hecha 2026-10-14 (`python3 -m ledger.cells --ask`), quedan 2, 3, 4 y la ficha de knowhow — **partes 2-4 congeladas por el dueño (2026-10-15, encargo 72 Q4)** | nada para el comando y las tablas; el sí del dueño para aplicar |
 
 ## Tanda del 2026-10-12 — de la opinión sobre los criterios de los 26 pasos
 
@@ -111,6 +111,12 @@ Sale de la lectura del dossier `docs/AgentPDFs/criterios-implementados-2026-10-1
 | `67-filtro-minimo-calibrado-con-sinteticos.md` | el umbral mínimo del Build por celda (activo × TF), medido en lo que halla una hora de build sin filtros sobre series sintéticas; con su coste en estrategias rechazadas y minutos hasta 10.000 | `66` (D24 estable), `58` (generador) |
 | `69-renumerar-los-pasos-del-workflow.md` | aplazado: renumerar los pasos ahora que 22-25 no existen y el MT5 sigue siendo el 26; lo medido (77 + 82 ficheros), por qué se dejó y las tres preguntas previas | sin empezar; sólo cuando el dueño lo pida |
 | `70-redondeo-al-tick-del-repreciador-por-activo.md` | que el repreciador redondee al tick sólo donde SQX lo hace (oro y USA500 no, Nikkei sí, DAX40 mixto), con un campo en la ficha medido activo a activo; incluye el resto de 0,043 USD del oro y la clave propia de la puerta del 18.5 | sin empezar |
+
+## Tanda del 2026-10-15 — de la revisión «qué le falta al proyecto»
+
+| fichero | qué construye | depende de |
+|---|---|---|
+| `72-lo-que-le-falta-al-proyecto.md` | plan vivo: la cola única de decisiones del dueño en un PDF (A1) y su aplicación (A2), el guardián de suelos con la ventana cerrada (B), el conciliador y el SPRT en cron (C), el «collect» gorilla → leaseWeb (D, #123) y el janitor que respeta un workflow aparcado (E, #116); el 53 se despacha cuando A2 firme los umbrales 10-20 | C espera las claves del dueño; A2 sus respuestas |
 
 ## Adónde fue cada encargo viejo
 

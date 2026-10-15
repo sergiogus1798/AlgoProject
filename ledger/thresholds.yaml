@@ -117,6 +117,13 @@ thresholds:
     set_on: 2026-10-07
     why: "semanas por bloque del volteo; con más del `straddle_max` de operaciones a caballo de un fin de semana el orden se clasifica además con 2"
 
+  - key: marketSurfaces.sqx_off_share
+    value: 0.01
+    source: studies/optimisation/marketSurfaces/config.yaml#gate.sqx_off_share
+    set_by: "dueño, encargo 70 parte 5 (2026-10-14): arranca con el valor de hoy y se recalibra después"
+    set_on: 2026-10-15
+    why: "fracción de variantes que no cuadran con el NetProfit de SQX (`descuadre_sqx` del WFC) por debajo de la cual el paso 18.5 corre en una madre; no es la tolerancia relativa del neto (`wfc.sqx_gap_relative`), aunque hoy valga lo mismo"
+
   - key: marketSurfaces.alpha
     value: 0.05
     source: studies/optimisation/marketSurfaces/config.yaml#null.alpha
@@ -1053,11 +1060,11 @@ thresholds:
     why: valor de partida aceptado — la misma operación puede entrar como mucho una barra del timeframe más tarde o antes
 
   - key: mt5verify.trade_gap_max_r
-    value: 0.05
+    value: 0.10
     source: mt5/verify/config.yaml#thresholds.trade_gap_max_r
     set_by: dueño
-    set_on: 2026-09-29
-    why: valor de partida aceptado — diferencia media de P&L por operación emparejada, en R
+    set_on: 2026-10-15
+    why: encargo 61-4d, «amplía la diferencia al 10 %» (era 0,05 desde 2026-09-29) — diferencia media de P&L por operación emparejada, en R
 
   - key: mt5verify.daily_corr_min
     value: 0.95
@@ -1100,6 +1107,20 @@ thresholds:
     set_by: dueño
     set_on: 2026-09-29
     why: valor de partida aceptado — diferencia relativa del drawdown máximo
+
+  - key: mt5verify.size_gap_max_pct
+    value: 0.10
+    source: mt5/verify/config.yaml#thresholds.size_gap_max_pct
+    set_by: dueño
+    set_on: 2026-10-15
+    why: encargo 61-4d — diferencia relativa media del tamaño (lotes) por operación emparejada entre MT5 y SQX, en los dos modos (1 lote fijo y riesgo fijo)
+
+  - key: mt5verify.loss_cap_usd
+    value: null
+    source: mt5/verify/config.yaml#thresholds.loss_cap_usd
+    set_by: PENDIENTE del dueño (encargo 61-4c)
+    set_on: 2026-10-15
+    why: tope de la pérdida real de UNA operación, en USD, en el modo de riesgo fijo; si la peor de SQX lo pasa la estrategia FALLA (61-4e). Sin cifra el juez se niega (mt5.verify.judge.require_cap)
 
   # ── Paso 27 · la cartera: filtros de parejas (portfolio/PLAN.md §5.2) ──────────────────
   - key: portfolio.pairs.pearson
@@ -1517,9 +1538,9 @@ thresholds:
   - key: seasonality.fdr_q
     value: 0.05
     source: studies/readings/seasonality/config.yaml#verdict.fdr_q
-    set_by: agente
-    set_on: 2026-10-14
+    set_by: dueño
+    set_on: 2026-10-15
     why: >-
-      FDR de Benjamini-Hochberg sobre todas las celdas probadas de una estrategia. Es el 0,05
-      que el dueño fijó en todos sus alfas (wfc, wfm, marketSurfaces, oos2Reading); no corta
-      nada, sólo colorea una descripción. Pendiente de que el dueño lo confirme.
+      FDR de Benjamini-Hochberg sobre todas las celdas probadas de una estrategia. El 0,05 que
+      el dueño fijó en todos sus alfas (wfc, wfm, marketSurfaces, oos2Reading); no corta nada,
+      sólo colorea una descripción. Confirmado por el dueño (encargo 54, 11).

@@ -10,7 +10,7 @@ from core.paths import DATA, report_dir
 
 # Each piece, the step it is, and where its result lives. The first three are written beside
 # the mother's variant batch; the WFM reads SQX's own matrix, one export for every mother.
-# 18.5 ("marketSurfaces") is off (encargo 65 row 8): back when the repricer's `descuadre < wfc.sqx_gap_relative`.
+# 18.5 ("marketSurfaces") is off (encargo 65 row 8): back when the repricer's `descuadre < marketSurfaces.sqx_off_share`.
 PIECES = {"wfc": 17, "cscv": 18, "wfm": 19}
 NAMES = {"wfc": "WFC", "cscv": "CSCV", "wfm": "WFM"}
 # Step 17 says PASA / LIMBO / NO PASA (owner, 2026-10-07): PASA is no failure, NO PASA a failure,

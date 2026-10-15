@@ -25,6 +25,13 @@ instrument:
   point_value: 0.063137     # $ por 1.0 de precio y 1.0 de lote
   min_distance: 0
 
+# Cómo rellena SQX las órdenes (`tick`: en la rejilla del tick; `none`: open + coste sin redondear):
+# medido en un lote de variantes, sin valor el repreciador se niega a repreciar el activo (encargo 70).
+price_rounding:
+  use: tick
+  why: 'encargo 70, 2026-10-15: 2 madres de Test_NIKKEI225_M30_volatilidad_wf3: descuadre build 0,0 % en los dos modos y oos1 0,0 % con redondeo, 0,2 % y 1,0 % sin él. En oos1 SQX rellena en 6,41 y 1,66 el 100 % de las operaciones (declarado 6,4118 y 1,6623: el tick más cercano). Un tick son 0,0006 USD por lote: la distinción es de centavos.'
+  measured: 2026-10-15
+
 # Lo que se aplica. `use: null` = sin decidir, y eso BLOQUEA la autoría (regla dura 5).
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:

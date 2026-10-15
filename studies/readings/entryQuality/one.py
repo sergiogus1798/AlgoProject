@@ -5,17 +5,94 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pandas as pd
 
 from core import barstore
 from core.barstore import read as read_bars
 from core.study import draws, output, result as envelope
-from engines.market import calibrate
+from engines.market import calibrate, reprice
+from engines.market.replay import inputs as replay
 from studies.readings.entryQuality import contract, delay, eratio, excursion, inputs
 from studies.readings.entryQuality.excursion import Walk
 from studies.readings.entryQuality.contract import Reading
 from studies.readings.entryQuality.inputs import Located
 
 MODULE = "studies.readings.entryQuality"
+
+
+def delay_tables(
+    frame: pd.DataFrame,
+    run: dict,
+    d: dict,
+    found: Located,
+    harvest: replay.Ready | None,
+) -> list[tuple[str, pd.DataFrame, str]]:
+    """The delay tables: replayed when the strategy has a stop, fixed exits otherwise.
+
+    Args:
+        frame: The strategy's own timeframe.
+        run: The `run` block of config.yaml (with the harvest's feed and timeframe).
+        d: The `delay` block.
+        found: What `inputs.located` returned.
+        harvest: What `inputs.stopped` returned.
+
+    Returns:
+        (title, table, note) per table; the first is the one the verdict reads.
+    """
+    pnl = found["trades"]["Profit/Loss"].to_numpy(np.float64)
+    if harvest:
+        card = reprice.costs(
+            run["feed"], "oos1" if run["sample"] == "OOS1" else "build"
+        )
+        tables = [
+            (
+                "En barras de la estrategia",
+                delay.replayed(frame, found["trades"], card, d["bars"], False),
+                f"Barras de {run['timeframe']}; sólo la entrada llega tarde, el stop se recalcula.",
+            ),
+            (
+                "En barras, con latencia completa",
+                delay.replayed(frame, found["trades"], card, d["bars"], True),
+                "Además las salidas de señal llegan d barras tarde.",
+            ),
+        ]
+    else:
+        minute = barstore.source(run["feed"], ["Open"])
+        at_m1 = minute.index.searchsorted(found["trades"]["Open time"].to_numpy())
+        tables = [
+            (
+                "En barras de la estrategia",
+                delay.cost(
+                    delay.given_up(
+                        frame["Open"].to_numpy(),
+                        found["entry"],
+                        found["side"],
+                        d["bars"],
+                    ),
+                    found["size"],
+                    found["point_value"],
+                    pnl,
+                    found["charged"],
+                    d["bars"],
+                ),
+                f"Barras de {run['timeframe']}; d en barras.",
+            ),
+            (
+                "En minutos",
+                delay.cost(
+                    delay.given_up(
+                        minute["Open"].to_numpy(), at_m1, found["side"], d["minutes"]
+                    ),
+                    found["size"],
+                    found["point_value"],
+                    pnl,
+                    found["charged"],
+                    d["minutes"],
+                ),
+                "d en minutos.",
+            ),
+        ]
+    return tables
 
 
 def read(packed: Path, strategy: str, cfg: dict) -> Reading:
@@ -30,8 +107,13 @@ def read(packed: Path, strategy: str, cfg: dict) -> Reading:
         The e-ratio curve and its band, the two delay tables, and the counts behind them.
     """
     run, e, d = cfg["run"], cfg["eratio"], cfg["delay"]
-    frame = read_bars(run["feed"], run["timeframe"])
-    found = inputs.located(packed, strategy, run, frame)
+    harvest = inputs.stopped(packed)
+    if harvest:
+        run = {**run, "feed": harvest["feed"], "timeframe": harvest["timeframe"]}
+        frame = harvest["bars"]
+    else:
+        frame = read_bars(run["feed"], run["timeframe"])
+    found = inputs.located(packed, strategy, run, frame, harvest)
     keep = inputs.usable(found, e["horizon"], len(frame))
 
     price = found["trades"]["Open price"].to_numpy(np.float64)
@@ -43,26 +125,7 @@ def read(packed: Path, strategy: str, cfg: dict) -> Reading:
     real = eratio.curve(normal)
     bands = eratio.band(frame, found, keep, scale, e)
 
-    opens = frame["Open"].to_numpy()
-    on_tf = delay.cost(
-        delay.given_up(opens, found["entry"], found["side"], d["bars"]),
-        found["size"],
-        found["point_value"],
-        found["trades"]["Profit/Loss"].to_numpy(np.float64),
-        found["charged"],
-        d["bars"],
-    )
-
-    minute = barstore.source(run["feed"], ["Open"])
-    at_m1 = minute.index.searchsorted(found["trades"]["Open time"].to_numpy())
-    on_m1 = delay.cost(
-        delay.given_up(minute["Open"].to_numpy(), at_m1, found["side"], d["minutes"]),
-        found["size"],
-        found["point_value"],
-        found["trades"]["Profit/Loss"].to_numpy(np.float64),
-        found["charged"],
-        d["minutes"],
-    )
+    tables = delay_tables(frame, run, d, found, harvest)
 
     hold = found["trades"]["Close time"] - found["trades"]["Open time"]
     return {
@@ -71,8 +134,8 @@ def read(packed: Path, strategy: str, cfg: dict) -> Reading:
         "real": real,
         "bands": bands,
         "walk": normal,
-        "on_tf": on_tf,
-        "on_m1": on_m1,
+        "delay": tables,
+        "stop": harvest is not None,
         "peak": int(np.argmax(real)) + 1,
         "hold": hold.median(),
         "sides": by_side(found, normal, keep),
@@ -158,13 +221,14 @@ def run(
         cfg,
         started,
         [contract.eratio_tab(found, cfg), contract.delay_tab(found, cfg)],
-        warnings=[
+        warnings=[]
+        if found["stop"]
+        else [
             {
                 "code": "tier_1",
                 "state": "info",
-                "text": "El retraso supone que las salidas no se mueven. Con stop o target "
-                "eso es falso, y ahí manda el simulador de replay "
-                "(docs/encargos/16-replay-de-operaciones.md).",
+                "text": "El retraso supone que las salidas no se mueven: vale sin stop. "
+                "Una estrategia con stop se lee con la cosecha Stop_p90 y el replay.",
             }
         ],
         glossary=contract.GLOSSARY,

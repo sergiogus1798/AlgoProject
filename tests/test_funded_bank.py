@@ -62,7 +62,6 @@ TERMS = dict(
     refund=1.0,
     cushion=0.0,
     fee=0.0,
-    tax=0.0,
     budget=1e9,
     rebuy=1.0,
     lock=0.0,

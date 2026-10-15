@@ -828,6 +828,8 @@ El código ya lo rechaza; apagado en el proyecto del conductor. Los 12 proyectos
 
 Origen: encargo 65 fila 8, 2026-10-12. Hechos en `knowhow/research/monkey-reprice-audit.md`. SQX reparte cada fill entre los dos ticks que rodean al coste declarado y las barras guardadas no pueden reproducirlo (ruido sin sesgo). Descuadre medido: XAUUSD oos1 0,28-0,46, USA500 oos1 0,15, DAX40 0,011, 0-0,002 en el resto. Consecuencia: el paso 18.5 corre por madre sólo donde el descuadre es < `wfc.sqx_gap_relative` (`pipeline/autopilot/blind.py`, `skipped`). Sin verificar contra SQX: stop-loss corto, salidas por profit target, comisión PercentageBased (el builder simple corto en USDJPY no activa SL/PT, así que `Test_USDJPY_M30_cortosReprice_leaseWeb` se retiró sin correr). El `variant_trades.parquet` de 10k de USDJPY es anterior al commit c443f1d y mezcla 16 símbolos bajo `Main`: regenerar.
 
+**2026-10-15.** Ver #121 (2026-10-15): USA500 y DAX40 quedan por debajo o cerca de 0,01 en oos1 sin redondeo; el oro sigue en 7-22 %.
+
 ## 121. 🟠 Step 18.5 skips every XAUUSD mother: the repricer's tick rounding matches SQX on some assets and not on others
 
 Found 2026-10-13. Refines the cause of #120 for gold (🔬 measured; scratch scripts `/dev/shm/tmp66/d185/{b,c,d,e,g,h,i}.py`, `/dev/shm/tmp66/s0.py`). **Trap:** `engines/market/reprice.py:110-113` rounds entry and exit prices to the tick; SQX does that on NIKKEI225 but **not** on XAUUSD or USA500, so the gate skips them.
@@ -859,6 +861,8 @@ Found 2026-10-13. Refines the cause of #120 for gold (🔬 measured; scratch scr
 | 3 | Residual 0.043 USD/trade on gold oos1 | A: investigate · B: accept |
 
 Fix of 1 would also close the gold and USA500 part of #120. Written in English because it was recorded from a scratch measurement log; #120 is in Spanish.
+
+**2026-10-15.** Encargo 70, partes 1-3 y 5 hechas (código sin commit): campo `price_rounding: tick|none` en la ficha (`core.assetwrite.set_price_rounding`), `reprice.costs` se niega sin él; medido en 29 lotes: `none` XAUUSD, USA500, DAX40; `tick` NIKKEI225, USATEC, USDJPY. Descuadre del oro oos1 48,5 % -> 7-22 %, USA500 oos1 15,5 % -> 0,6-1,2 %, DAX40 oos1 1-16 % -> 0,2-3,7 % (el 'mixto' del DAX40 era ruido en build: 8 frente a 10 variantes). Puerta del 18.5 con clave propia `marketSurfaces.sqx_off_share` (0,01). SIGUE ABIERTA: el oro en oos1 queda por encima de 0,01 (el 18.5 aún salta sus madres) y el resto -0,043 USD/operación es dispersión sub-tick de las barras de SQX, no reproducible (decidido aceptarlo, parte 4). Pendiente: 22 fichas sin valor (el repreciador se niega) y `bin/workflow-test.sh` en PASA (la corrida p70b falló al parar el custodio: .sqx truncado por haber matado una corrida anterior; ver knowhow/research/price-rounding-per-asset.md).
 
 ## 122. 🟠 Integridad de la investigación: lo que F22 no arregló
 

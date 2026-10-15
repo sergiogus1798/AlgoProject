@@ -13,7 +13,8 @@ from core.symbols import current
 # as the card and MetaTrader 5 sign them, both sides alike: negative = the holder pays, positive
 # = the holder is paid. Percent per year, unless `tick_step` is set: then points per night, a
 # point being one tick_step of price. `triple` is the weekday (Monday 0) whose night counts
-# three, `rollover` the hour the night is charged at.
+# three, `rollover` the hour the night is charged at. `rounds`: SQX fills on the tick grid
+# (card `price_rounding: tick`) or at the bar open plus the unrounded cost (`none`).
 Costs = TypedDict(
     "Costs",
     {
@@ -28,6 +29,7 @@ Costs = TypedDict(
         "triple": int,
         "rollover": int,
         "tick_step": float | None,
+        "rounds": bool,
     },
 )  # may be absent: percent
 
@@ -63,6 +65,13 @@ def costs(feed: str, segment: str) -> Costs:
     symbol = symbol_for(feed)
     assert symbol, f"no asset file declares the feed {feed}"
     data = load(symbol)
+    mode = (data.get("price_rounding") or {}).get("use")
+    if mode not in ("tick", "none"):
+        raise ValueError(
+            f"{symbol}: its card has no `price_rounding` (tick | none), so the repricer will not "
+            f"price it: measure it on a batch of variants and write it with "
+            f"core.assetwrite.set_price_rounding (encargo 70)"
+        )
     s, tick = sqx_settings(data, segment), data["instrument"]["tick_size"]
     points = schema(data)["swap"]["sqx_type"] == "points"
     return {
@@ -77,6 +86,7 @@ def costs(feed: str, segment: str) -> Costs:
         "triple": WEEKDAYS.index(s["swap"]["triple_swap_on"]),
         "rollover": int(str(s["swap"]["rollout_hour"]).split(":")[0]),
         "tick_step": tick / 10 if points else None,
+        "rounds": mode == "tick",
     }
 
 
@@ -142,11 +152,14 @@ def pnl(
     """
     size, side = np.asarray(size, float), np.asarray(side, float)
     # Forex prices move in tickStep (a tenth of the pip the card calls tick_size): fills round
-    # to it. 🔬 2026-10-07, USDJPY M30, 973 trades: max gap to SQX 77.73 USD -> 0.01.
+    # to it. 🔬 2026-10-07, USDJPY M30, 973 trades: max gap to SQX 77.73 USD -> 0.01. Where the
+    # card says `none` SQX's fill is the bar open plus the unrounded cost on average (it lands on
+    # the two ticks around it: encargo 70), so the unrounded fill is the unbiased one.
     tick = costs.get("tick_step") or costs["tick_size"]
     value, slip = costs["point_value"] * size, costs["slippage"]
-    entry = np.round((open_px + side * (costs["spread"] + slip)) / tick) * tick
-    leave = np.round((close_px - side * slip) / tick) * tick
+    entry, leave = open_px + side * (costs["spread"] + slip), close_px - side * slip
+    if costs["rounds"]:
+        entry, leave = (np.round(x / tick) * tick for x in (entry, leave))
     rate, step = (
         np.where(side > 0, costs["swap_long"], costs["swap_short"]),
         costs.get("tick_step"),

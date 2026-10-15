@@ -1,4 +1,4 @@
-"""18.5 per mother, at execution time: it runs only where step 17's `descuadre_sqx` is under `wfc.sqx_gap_relative`."""
+"""18.5 per mother, at execution time: it runs only where step 17's `descuadre_sqx` is under `marketSurfaces.sqx_off_share`."""
 
 import json
 import sys

@@ -192,7 +192,7 @@ databanks after 11.7 like any other).
 `tail.walk` gives, when any of 17-19 has to run: the looks **17, 18, 18.5** (`oos2: true`) → **`judge`
 17, 18.5** (18 has `rules: []`; 18.5 with `segment: build+oos1+oos2`) → 19 `sqx` → `wfm` → `kept` → **19 `judge`** → the ledger rows → 20.
 **18.5 runs per mother** (encargo 65 row 8): at execution, `blind.skipped` reads step 17's
-`estudios/wfc.json` `facts.*.descuadre_sqx` and runs it only if the maximum is < `wfc.sqx_gap_relative`;
+`estudios/wfc.json` `facts.*.descuadre_sqx` and runs it only if the maximum is < `marketSurfaces.sqx_off_share`;
 else (or no file) it is skipped with one line naming mother, figure and threshold, and leaves no
 fact: its rules say `missing: limbo` (the `oos2` ones `pass`), so it is limbo, never a cut or a crash.
 Step 20 does not read 18.5 (`blindJoint/pieces.py` has no 18.5: a skipped mother would be «incomplete»). A judge is planned only for a step `criteria.yaml` gives rules; all are

@@ -3,7 +3,7 @@
 The oracle is the control as it was (every pass alone, every rung, nothing cached): the shared
 passes give its facts bit for bit, except the three rung columns nobody judges, which are empty;
 the funnel and the rules, which are what the owner reads, do not move; the answer does not depend
-on the number of workers; level 3c's real-gate rows keep the histogram and drop the raw draws."""
+on the number of workers; level 3c's real-gate rows keep the histogram and the raw draws (owner, 2026-10-14: they are a distribution)."""
 
 import sys
 import tempfile
@@ -238,10 +238,10 @@ def test_level3ab_does_not_depend_on_the_workers_and_keeps_its_q(
     }  # the one with keep_draws left them
 
 
-def test_the_real_gate_keeps_the_histogram_and_not_the_raw_draws(
+def test_the_real_gate_keeps_the_histogram_and_the_raw_draws(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """3.1: level 3c's rows have counts, tails, n_ge, n_le; `draws` is empty; z and p are readable from them."""
+    """3.1: level 3c's rows have counts, tails, n_ge, n_le; `draws` holds every draw; z and p are readable from them."""
     monkeypatch.setattr(fanout, "CORES", 2)
     given = inputs()
     out, cfg, everyone = (
@@ -254,7 +254,7 @@ def test_the_real_gate_keeps_the_histogram_and_not_the_raw_draws(
     facts = level3c.run(data, everyone, cfg)
     rows = draws.read(out)
     assert set(rows["test"]) == {"gate.3c"} and len(rows) == 4 * len(everyone)
-    assert all(len(d) == 0 for d in rows["draws"]) and all(
+    assert all(len(d) == cfg["monkey"]["draws"] for d in rows["draws"]) and all(
         sum(c) == cfg["monkey"]["draws"] for c in rows["counts"]
     )
     head = rows[rows["metric"] == "z_mono_timing"].set_index("identity")

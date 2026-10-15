@@ -28,7 +28,8 @@
   "swap_short": -2.21,
   "triple": 4,
   "rollover": 23,
-  "tick_step": null
+  "tick_step": null,
+  "rounds": true
  },
  "costs_build": {
   "point_value": 1.0,
@@ -41,6 +42,7 @@
   "swap_short": -2.21,
   "triple": 4,
   "rollover": 23,
-  "tick_step": null
+  "tick_step": null,
+  "rounds": true
  }
 }

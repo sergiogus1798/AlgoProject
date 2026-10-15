@@ -19,7 +19,7 @@ sitios y cada uno olvidado es un hallazgo de auditoría) · `core/study/CONTRACT
 |---|---|---|---|---|
 | 1 | Estacionalidad: ¿el resultado se concentra en meses, días o horas, medido contra el azar? (ex 25) | Opus (estadística) | nada | **hecho 2026-10-14** → `studies/readings/seasonality/` (§1 borrado: ver bitácora) |
 | 2 | Señal agregada por plantilla: qué plantillas de la librería merece la pena seguir explotando (ex 26) | Opus | **la pregunta del dueño §2.0** (alcance 1, 2 o ambos) y §2.1 (ubicación) | sin empezar; **bloqueado por una pregunta** |
-| 3 | Replay de operaciones, tier 2 del retraso: re-ejecutar cada operación desde una entrada desplazada (ex 16) | Opus (diseño) + Sonnet | decisiones §3.3; ver el bloqueo ya levantado | **motor y reconciliación hechos 2026-10-14** (`engines/market/replay/`); queda §3: que `entryQuality` lo consuma |
+| 3 | Replay de operaciones, tier 2 del retraso: re-ejecutar cada operación desde una entrada desplazada (ex 16) | Opus (diseño) + Sonnet | decisiones §3.3; ver el bloqueo ya levantado | **hecho 2026-10-14** (motor `engines/market/replay/`; `entryQuality` lo consume en las estrategias con stop) |
 | 4 | Cerebro con probabilidades: regresión logística que da a cada estrategia la `p` de pasar el paso siguiente (ex 40) | Opus | decisiones del dueño (objetivo, corte, scikit-learn) | sólo prototipo en `scratch/cerebro/logit.py` (50 líneas, **fuera de git**) |
 | 5 | Alfa y beta (ex 13) | — | — | **aparcado por el dueño — no se despacha** |
 
@@ -35,6 +35,7 @@ sitios y cada uno olvidado es un hallazgo de auditoría) · `core/study/CONTRACT
   apertura y cierre se leen las dos por separado. Lectura: XAUUSD donchian2 H1 1/300 y USDCAD
   reversion M30 0/64 con celda descubierta, bajo el techo del azar (15 y 3,2) → el calendario no
   explica el resultado; no aporta filtro (y la regla 15 no lo permitiría).
+- 2026-10-14 — **Frente 3 entero: `entryQuality` consume el replay** (`delay.replayed`, `inputs.stopped`): una cosecha `Stop_p90` da dos tablas (sólo entrada tarde / latencia completa) con `descartadas` y `desconocidas`; sin tabla de minutos; un export con SL que no sea cosecha se rechaza; el tier 1 queda sólo para estrategias sin stop (`tests/test_entry_delay_replay.py`). USDJPY doubleROC, 1 barra: entregado 2,0 $ (tier 1) → 9,6 $ (tier 2).
 - 2026-10-14 — **Frente 3: motor y reconciliación hechos.** `engines/market/replay/` (walk, reconcile,
   inputs; README con la tabla por cosecha), `tests/test_replay.py`. La definición del stop SÍ existe
   (D-6 se cumple sin esperar): las cosechas `harvest/<P>/Stop_p90/` nombran su lote de variantes y su
@@ -119,7 +120,7 @@ README de la familia elegida.
 
 ---
 
-## 3 · Replay de operaciones, tier 2 (ex 16) — lo que queda
+## 3 · Replay de operaciones, tier 2 (ex 16) — HECHO 2026-10-14
 
 El motor está hecho y reconciliado (bitácora 2026-10-14; `engines/market/replay/README.md`). Queda
 **que `studies/readings/entryQuality/` lo consuma** para las estrategias con stop: hoy su `delay.py`
@@ -277,3 +278,7 @@ descubrió** para `knowhow/` (una ficha por hecho no obvio: el huso horario, la 
 barra, la calibración del cerebro) · la fila de la tabla de estado y la bitácora actualizadas · la lista de
 ficheros cambiados. Un frente cumplido se borra de este fichero diciendo dónde fue cada parte. Último renglón:
 **¿Quieres hacer el commit?**
+
+## Contestadas por el dueño (2026-10-15)
+
+- `seasonality.fdr_q` = 0,05, confirmado.

@@ -20,8 +20,8 @@ class Reading(TypedDict):
     real: np.ndarray
     bands: Band
     walk: Walk
-    on_tf: pd.DataFrame
-    on_m1: pd.DataFrame
+    delay: list[tuple[str, pd.DataFrame, str]]  # title, table, note of each delay table
+    stop: bool  # read by the replay (tier 2) instead of the fixed-exit delay
     peak: int
     hold: Any
     sides: dict[str, np.ndarray]
@@ -116,23 +116,25 @@ def eratio_tab(found: Reading, cfg: dict) -> dict[str, Any]:
 
 
 def delay_tab(found: Reading, cfg: dict) -> dict[str, Any]:
-    """How much of the edge entering d bars late gives up, with the exits left where they were."""
-    tf = cfg["run"]["timeframe"]
+    """How much of the edge entering d bars late gives up."""
     return envelope.tab(
         "delay",
         "4 · Lo que cuesta llegar tarde",
         [
-            reading(verdict.latency(found["on_tf"], cfg["verdict"]["dcr_high"])),
+            reading(verdict.latency(found["delay"][0][1], cfg["verdict"]["dcr_high"])),
             # The delay `d` is each row's first cell, so a row is addressable by it
             # (`entryQuality.delay.en_barras_de_la_estrategia.1.dcr`), whatever the timeframe.
-            blocks.table(
-                "En barras de la estrategia",
-                found["on_tf"].reset_index(),
-                f"Barras de {tf}; d en barras.",
+            *(
+                blocks.table(title, table.reset_index(), note)
+                for title, table, note in found["delay"]
             ),
-            blocks.table("En minutos", found["on_m1"].reset_index(), "d en minutos."),
         ],
-        note="Tier 1: las mismas salidas, la entrada desplazada. Una barra de retraso que se "
-        "lleva mucho del edge es fragilidad a la latencia, o información del futuro en la "
-        "entrada.",
+        note=(
+            "Con stop: cada operación se vuelve a recorrer desde la entrada tarde, con el stop "
+            "recalculado, y las descartadas y desconocidas se cuentan. "
+            if found["stop"]
+            else "Las mismas salidas, la entrada desplazada. "
+        )
+        + "Una barra de retraso que se lleva mucho del edge es fragilidad a la latencia, o "
+        "información del futuro en la entrada.",
     )

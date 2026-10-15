@@ -19,18 +19,20 @@ def card(feed: str, segment: str) -> tuple[reprice.Costs | None, str]:
         segment: "build", "oos1" or "oos2".
 
     Returns:
-        (`reprice.costs`, "") or (None, reason): no asset file declares the feed, or the file
-        still has a field the owner has not decided.
+        (`reprice.costs`, "") or (None, reason): no asset file declares the feed, its card has
+        no `price_rounding` (the repricer refuses it), or it still has a field the owner has
+        not decided.
     """
     owner = assetdata.symbol_for(feed)
     if not owner:
         return None, "no_cost_card"
     late = assetcheck.pending(assetdata.load(owner))
-    return (
-        (None, "cost_card_pending: " + ", ".join(late))
-        if late
-        else (reprice.costs(feed, segment), "")
-    )
+    if late:
+        return None, "cost_card_pending: " + ", ".join(late)
+    try:
+        return reprice.costs(feed, segment), ""
+    except ValueError:  # no `price_rounding` on the card: the repricer refuses it
+        return None, "cost_card_pending: price_rounding"
 
 
 class Check(TypedDict):

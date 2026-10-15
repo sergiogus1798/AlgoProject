@@ -20,6 +20,7 @@ COSTS = {
     "spread": 0.2,
     "slippage": 0.1,
     "commission_method": "SizeBased",
+    "rounds": True,
     "commission": 1.0,
     "swap_long": -2.0,
     "swap_short": -2.0,

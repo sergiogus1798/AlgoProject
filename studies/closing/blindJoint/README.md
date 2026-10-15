@@ -1,6 +1,6 @@
 # blindJoint — step 20: the three withheld results read at once, and does the mother beat her own trades entered at random?
 
-WORKFLOW step 20, encargo 10 part B. Steps 17 (WFC), 18 (CSCV) and 19 (18.5, market surfaces, is off: encargo 65 row 8, back when the repricer's `descuadre < wfc.sqx_gap_relative`)
+WORKFLOW step 20, encargo 10 part B. Steps 17 (WFC), 18 (CSCV) and 19 (18.5, market surfaces, is off: encargo 65 row 8, back when the repricer's `descuadre < marketSurfaces.sqx_off_share`)
 (WFM) run one after another and **nobody reads them until all exist** (owner, 2026-09-23). This is
 the reading: it opens the three through the ledger's door, puts each study's own call side by side,
 and adds the question none of them asks — **does the mother beat a random trader with her own

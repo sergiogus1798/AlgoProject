@@ -132,7 +132,13 @@ def test_reading_and_delay_rows_are_addressable() -> None:
         }
     ).set_index("d")
     tab = contract.delay_tab(
-        {"on_tf": table, "on_m1": table},
+        {
+            "delay": [
+                ("En barras de la estrategia", table, ""),
+                ("En minutos", table, ""),
+            ],
+            "stop": False,
+        },
         {"run": {"timeframe": "H4"}, "verdict": {"dcr_high": 0.3}},
     )
     got = dict(facts.flatten({"tabs": [tab]}))

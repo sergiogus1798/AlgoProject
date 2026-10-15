@@ -135,7 +135,7 @@ a missing year is NaN.
 ## Part C — readings the spec left open
 
 - **Costs:** each market's own card at `oos1` (`reprice.costs(feed, "oos1")`), as step 9 charges. A card with a
-  pending field or none → market invalid (`no_cost_card`, `cost_card_pending`).
+  pending field (`price_rounding` included) or none → market invalid (`no_cost_card`, `cost_card_pending`).
 - **§7.1 fill mismatch** is measured per market over the trades of ALL the export's strategies pooled (side-signed
   median gap between recorded fill and bar open, in median-ATR units, ), refused above
   `travel.validity.max_fill_error` (0.25). **Point value:** slope of P/L on side x move x size, pooled, against the card.

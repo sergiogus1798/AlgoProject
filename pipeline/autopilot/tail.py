@@ -7,7 +7,7 @@ FIRST = "17"
 DONE = ("done", "sealed")  # sealed: 17-19 done, hidden by the ledger's door
 # Computed per mother over her variant batch, one after another, and read only at step 20.
 # 18.5 is back (encargo 65 row 8) without its build+oos1 split; `blind.skipped` skips the mothers whose
-# `descuadre_sqx` is not under `wfc.sqx_gap_relative`, at execution time.
+# `descuadre_sqx` is not under `marketSurfaces.sqx_off_share`, at execution time.
 BLOCK = {"17": "wfc", "18": "cscv", "18.5": "marketSurfaces"}
 # Their tests read «the databank the panel shows» (`workflow.steps`, feeds ()): the rail
 # knows none, and the 2026-09-30 hand run used two (exposure on CrossTF_Mothers, the map on

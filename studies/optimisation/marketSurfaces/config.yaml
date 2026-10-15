@@ -20,6 +20,11 @@ step: 18.5
   # from which the result warns and the order is classified again with two-week blocks.
   straddle_max: ledger:marketSurfaces.straddle_max
 
+# The door of the step, per mother: it runs only where step 17's `descuadre_sqx` (the SHARE of
+# variants whose repriced net misses SQX's NetProfit) is strictly under this.
+gate:
+  sqx_off_share: ledger:marketSurfaces.sqx_off_share
+
 # Which markets enter the joint mean.
 markets:
   min_common: ledger:marketSurfaces.min_common   # variants usable on the main market AND on this one

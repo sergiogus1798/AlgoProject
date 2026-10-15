@@ -6,11 +6,11 @@ tag: 🔬  date: 2026-10-13  see: export/fill-and-pricing, costs/per-task-costs,
 # The monkey never charges spread or slippage: they sit in SQX's fill prices, not in its residual "cost"
 - `calibrate.charged()` = `v·size·(Close price − Open price) − P/L` is taken from SQX's **fills**, so it holds only swap (+ commission). `kernel.runs` then moves **bar open to bar open**. Gap = `v·size·(spread + 2·slippage)` per trade, exactly; the real run and every null are under-charged alike. Closed for the gate only (`engines/nulls/windowed.py`); the `engines/nulls` simulate path and its ~35 importers still charge none.
 - SQX, long, market orders, reproduced from bars + the task's declared costs alone:
-  `entry = Open[entry bar] + spread + slippage` · `exit = Open[exit bar] − slippage`, each rounded to the tick **only where SQX rounds (NIKKEI225 yes; XAUUSD, USA500 no; DAX40 mixed)** ·
+  `entry = Open[entry bar] + spread + slippage` · `exit = Open[exit bar] − slippage`, each rounded to the tick **only where the card says `price_rounding: tick` (NIKKEI225, USATEC, USDJPY; `none`: XAUUSD, USA500, DAX40)** ·
   `swap = PV·size·entry_fill·(pct/100/360)·nights` · `P/L = round(PV·size·(exit − entry) − swap, 0.01)`.
 - `nights` = rollovers T (declared hour, Mon–Fri) with `open ≤ T < close`; the triple night counts 3. Card values, not fitted: 23:00, FRIDAY, PV 0.063137.
 - Tolerance per trade: `0.02 USD + 2·tick·PV·size` (cents + one tick per fill); the tick term is spent only when a declared cost falls within ~0.1 tick of a half tick (build: 304.11+106.44 → x.55, 106.44 → x.44); SQX lands on either side.
-- 🔬 Verified 2026-10-12: shorts, swap in points, SizeBased commission, EndTest (a bug, fixed: fills at SQX's price). Unverified: short SL, PT, PercentageBased commission. Not: «SQX always rounds» (gold costs −0.237 USD/trade, `OPEN.md` #121). Other gaps: Evidence.
+- 🔬 Verified 2026-10-12: shorts, swap in points, SizeBased commission, EndTest (a bug, fixed: fills at SQX's price). Unverified: short SL, PT, PercentageBased commission. Not: «SQX always rounds» (gold costs −0.237 USD/trade, `OPEN.md` #121). Per-asset rounding and its evidence: `research/price-rounding-per-asset.md`.
 
 ## Evidence
 

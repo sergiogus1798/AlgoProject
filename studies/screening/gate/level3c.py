@@ -72,7 +72,6 @@ def _one(identity: str) -> dict[str, Any]:
                     seen,
                     drawn,
                     str(identity),
-                    raw=False,
                     rung=rung,
                     seed=_SHARED["seed"],
                     p="nulls.verdict.pvalue(net)",

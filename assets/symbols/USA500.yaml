@@ -25,6 +25,13 @@ instrument:
   point_value: 1.0          # $ por 1.0 de precio y 1.0 de lote
   min_distance: 0
 
+# Cómo rellena SQX las órdenes (`tick`: en la rejilla del tick; `none`: open + coste sin redondear):
+# medido en un lote de variantes, sin valor el repreciador se niega a repreciar el activo (encargo 70).
+price_rounding:
+  use: none
+  why: 'encargo 70, 2026-10-15: 2 madres de Test_USA500_H1_tendencia_wf1: descuadre oos1 15,4-15,7 % con redondeo, 0,6-1,2 % sin él; build 0,0 % en los dos casos. Entradas de SQX en .68 (97 %) y .67 (3 %) con coste declarado 0,6797.'
+  measured: 2026-10-15
+
 # Lo que se aplica. `use: null` = sin decidir, y eso BLOQUEA la autoría (regla dura 5).
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.
 costs:
