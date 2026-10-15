@@ -113,7 +113,7 @@ Sale de la lectura del dossier `docs/AgentPDFs/criterios-implementados-2026-10-1
 
 | fichero | qué construye | depende de |
 |---|---|---|
-| `72-lo-que-le-falta-al-proyecto.md` | plan vivo: la cola única de decisiones del dueño en un PDF (A1) y su aplicación (A2), el guardián de suelos con la ventana cerrada (B), el conciliador y el SPRT en cron (C), el «collect» gorilla → leaseWeb (D, #123) y el janitor que respeta un workflow aparcado (E, #116); el 53 se despacha cuando A2 firme los umbrales 10-20 | C espera las claves del dueño; A2 sus respuestas |
+| `72-lo-que-le-falta-al-proyecto.md` | plan vivo: la cola única de decisiones del dueño en un PDF (A1) y su aplicación (A2), el guardián de suelos con la ventana cerrada (B), el conciliador y el SPRT en cron (C), el «collect» gorilla → leaseWeb (D, #123) y el janitor que respeta un workflow aparcado (E, #116); el 53 se despacha cuando A2 firme los umbrales 10-20 | A2 hecho salvo L4; C espera la cuenta FundingPips en `mt5_accounts` y cómo encadenar `live.run` |
 
 ## Adónde fue cada encargo viejo
 
