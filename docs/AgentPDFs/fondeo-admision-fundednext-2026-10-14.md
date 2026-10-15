@@ -52,3 +52,10 @@ en el propio catálogo.
 | FN-5 | el cobro a España | A: confirmar con soporte; B: aceptar cripto | A |
 
 **¿La doy de alta como activa?**
+
+## FN-1 — búsqueda en la web (2026-10-15)
+
+- FundedNext no publica el importe de la tasa de EA en su web ni en su centro de ayuda (help.fundednext.com, artículo 8020763 «Is EA allowed in FundedNext»). Sólo dice que existe un «EA usage fee», que **no se reembolsa** aunque no se use, y que en cuentas Free/BOGO se puede añadir pagándola.
+- El complemento «EA» / «VPS & EA» sólo existe para tamaños **por debajo de 50k** (artículo 17252927, Stellar 1-Step); cubre las cuentas de menos de 25k.
+- Terceros (thegodfunded.com, fundedtrading.com) hablan de «EA +5 %» sobre el precio del reto, pagado al comprar y por cuenta. **Sin confirmar**: se comprueba en la página de compra o preguntando al soporte.
+- EA prohibidos: los hechos para pasar retos (Prop Pilot, PropEA, Gold OneShot EA MT5, Forex Flex EA, X Pass Bot).
