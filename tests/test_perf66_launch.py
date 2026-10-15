@@ -456,7 +456,9 @@ def test_summary_lists_the_fallbacks_of_the_run(tmp_path: Path) -> None:
     )
 
 
-def test_today_log_skips_a_log_sqx_deletes_while_starting(tmp_path, monkeypatch):
+def test_today_log_skips_a_log_sqx_deletes_while_starting(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """A log the glob listed and SQX deleted before its stat is skipped (gorilla, 2026-10-15)."""
     from pathlib import Path
 

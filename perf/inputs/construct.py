@@ -1,15 +1,17 @@
 """The portfolio engine's work the catalogue times: one universe member, a close-to-close panel, the pairs table, a rank search, stage B, the verdict's null, the bank table."""
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
 from core import assetdata, barstore
-from core.archive.read import listing
 from core.paths import bar_source, harvest_dir
 from perf.inputs.sample import Workload
+from engines.market import calibrate
 from portfolio.common.construct import walkforward, weights
 from portfolio.common.construct.equity import closecurve, universe
-from portfolio.common.construct.inputs import config, source
+from portfolio.common.construct.inputs import config
 from portfolio.common.construct.mc.units import Unit
 from portfolio.common.construct.pairs import table
 from portfolio.common.construct.search import objective, random_k, stageb
@@ -18,15 +20,17 @@ from portfolio.funded.rules import catalog
 from portfolio.funded.sim import bank, monkey
 from portfolio.funded.sim import inputs as bank_inputs
 from portfolio.funded.sim import table as bank_table
+from sqx.inspect import feeds
 
 SEED = 0  # the synthetic benchmark inputs are one fixed draw: timings compare run to run on the same data
 PAIRS_POOL = (
     500  # strategies in the synthetic pool: 124,750 pairs, the plan's large case
 )
 RANK_BATCH = 30_000  # combinations a full GA scores: 300 x 100 generations
-CLOSE_HARVEST = ("Test_Calib_USDJPY_H1_momentumL", "Results", "2026-10-02")
+CLOSE_HARVEST = ("Test_XAUUSD_H1_ruptura_wtc3", "Results", "2026-10-15")
+CLOSE_SYMBOL, CLOSE_FEED = "XAUUSD", "XAUUSD_M1"
 CLOSE_POOL = (
-    64  # strategies of that harvest, 4 per worker: a whole population is ~3,700
+    64  # strategies at most: that harvest holds 3, a whole population is ~3,700
 )
 STAGEB = {
     "members": 5,
@@ -63,10 +67,28 @@ def universe_member(cfg: dict) -> Workload:
     Returns:
         Trades processed, and the M1 file read.
     """
-    first = listing()[0]
-    s = source.load(first["identity"], first["version"])
+    folder = harvest_dir(*CLOSE_HARVEST)
+    trades = pd.read_parquet(folder / "trades.parquet")
+    name = trades["identity"].iloc[0]
+    one = cast(pd.DataFrame, trades[trades["identity"] == name])
+    s = {
+        "identity": name,
+        "symbol": CLOSE_SYMBOL,
+        "feed": CLOSE_FEED,
+        "timeframe": "H1",
+        "clock": feeds.timezone(CLOSE_FEED),
+        "commission": assetdata.load(CLOSE_SYMBOL)["costs"]["commission"]["use"],
+        "trades": one,
+        "sqx_equity": pd.read_parquet(folder / "equity.parquet").query(
+            "identity == @name"
+        ),
+        "point_value": calibrate.point_value(one),
+    }
     universe._processed({s["identity"]: s}, config.load())
-    return {"scale": len(s["trades"]), "bytes_in": bar_source(s["feed"]).stat().st_size}
+    return {
+        "scale": len(s["trades"]),
+        "bytes_in": bar_source(CLOSE_FEED).stat().st_size,
+    }
 
 
 def close_curve(cfg: dict) -> Workload:
@@ -84,18 +106,18 @@ def close_curve(cfg: dict) -> Workload:
     ]
     lo, hi = (
         pd.Timestamp(x, unit="ms")
-        for x in assetdata.window(assetdata.load("USDJPY"), "oos1")
+        for x in assetdata.window(assetdata.load(CLOSE_SYMBOL), "oos1")
     )
     mine = pd.read_parquet(
         trades, filters=[("identity", "in", ids), ("sample", "==", "OOS")]
     )
-    bars = barstore.source("USDJPY_M1", ["High", "Low", "Close"])
+    bars = barstore.source(CLOSE_FEED, ["High", "Low", "Close"])
     closecurve.panel(
         mine,
         bars[(bars.index >= lo) & (bars.index < hi)],  # pyright: ignore[reportArgumentType]  # stub: boolean mask indexing
         *closecurve.measured(mine),
     )
-    return {"scale": len(ids), "bytes_in": bar_source("USDJPY_M1").stat().st_size}
+    return {"scale": len(ids), "bytes_in": bar_source(CLOSE_FEED).stat().st_size}
 
 
 def pairs_table(cfg: dict) -> Workload:
