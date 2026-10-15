@@ -11,7 +11,7 @@
 | 5 | 66 frentes 1, 2, 4, 5, 9, 10 (sin SQX; sin medir mientras corra SQX) | 95 | Python | hecho jue noche: casi todo ya estaba construido; quedan las mediciones con la máquina libre (bitácora del 66) | P10, D27 |
 | 6 | #96 (L4): silueta en el CSCV · #104 (F8a/b) | 95 | Python | hecho jue noche: #96 cerrada (fila en la lectura del CSCV), #104 F8a/b (F8c tras la corrida limpia), #119 cerrada | — |
 | 7 | 66 frentes 6-7 (SQX vivo) · #112 (núcleos) · mediciones aplazadas del 66 | 95 | conductor y custodio | pendiente | 1 terminado |
-| 8 | Corrida real en gorilla (celda del dueño) → `bin/remote.sh gorilla collect` → paso 26 en leaseWeb (#123, 72 D) | 95 | gorilla, luego MT5 | pendiente | celda del dueño |
+| 8 | Corrida real en gorilla (celda del dueño) → `bin/remote.sh gorilla collect` → paso 26 en leaseWeb (#123, 72 D) | 95 | gorilla, luego MT5 | build 10.000 hecho; **paso 8 falló: EURUSD sin `price_rounding`** (sólo 6 activos medidos). Medida `engines.market.rounding` en curso → ficha → `run` | medida |
 | 9 | Si V falla: arreglo con su test y V otra vez desde cero (regla de la corrida limpia) | 18 | custodio | — | 1 |
 | 10 | Paso 26 con una superviviente real (55 C) → su fila en el pool | 95 | conductor, MT5 | pendiente | supervivientes de 1 u 8 |
 | 11 | Motor de carteras con un pool real (#87; M0 ya filtra por costes actuales) | 07 | Python | pendiente | 10 |
@@ -29,6 +29,7 @@
   con 18 y 07 por mensajes. N3: commit y push por frente con pathspec y `checks.py` verde. N4: una
   ambigüedad para ese frente; la pregunta va a «Preguntas para la mañana» y se sigue con otro.
 - 2026-10-15 20:40 — dueño: «cuanto más rápido mejor», «elige, pero dale». Reparto: 18 = V, criteria.yaml y 49, ensayo en leaseWeb; 95 = gorilla, D27, 66 frentes 6-7, collect, paso 26, celdas del viernes, campaña; 07 = ya sin esperar: F3 del 56, prueba en seco de la campaña, preparar #87 con un pool archivado; luego #93 y #87 real. Celdas del viernes (elegidas por 95): leaseWeb `Trade_GBPJPY_H1_momentumL_leaseWeb` (simple, largo, `momentum_base_v3`), gorilla `Trade_AUDUSD_H1_reversionL_gorilla` (simple, largo, `reversion_base_v3`), 10.000 estrategias y 30 min cada una. Hecho esta noche: #96, #104, #119, P10, D27 fase 1, dos fallos de gorilla (`remote.sh`, `live._log`).
+- 2026-10-15 21:05 — gorilla `Trade_EURUSD_M30_reversionL_gorilla`: build 0 → 10.000 en 35 min; paso 8 falla: la ficha de EURUSD no tiene `price_rounding` (#120: 22 fichas sin medir). Bloquea también GBPJPY y AUDUSD (celdas del viernes) y la campaña fuera de XAUUSD, USA500, DAX40, NIKKEI225, USATEC y USDJPY. 95: medida reutilizable sobre las operaciones del propio build, y EURUSD medido con el build de gorilla. Pregunta R1 abajo.
 
 ## Reglas de la noche
 
@@ -54,3 +55,4 @@
 | W3 ✅ B | 7 | la campaña no retira sus `Trade_` (1,1 GB el de NIKKEI) y SQX los carga al arrancar | A dejarlos · B retirarlos tras `keep` | A un fin de semana, B si dura semanas |
 | W4 ✅ fuera (`dropped_templates`) | 7 | `squeezeBBLong` falla en 16.5 (`not variables of this strategy: ['SqueezeBB']`, la causa sigue) | A dejarla en la cola · B al final | B |
 | W5 ✅ No | 7 | antes de lanzar: existe `AlgoData/campaign/STOP` (desde 07-10), la cola está vacía y nada relanza el bucle si muere | `run --go` quita el STOP; `plan --queue N` encola; ¿supervisor (cron) sí/no? | encolar y lanzar a mano; supervisor no hasta ver una noche limpia |
+| R1 | 8, 12, 13 | un activo sin `price_rounding` en su primera corrida | A el paso 8 lo mide solo sobre las operaciones del build y escribe la ficha (con `why`), y sigue · B se para, se mide a mano y `run` · C la campaña sólo elige activos ya medidos | A: sin ella la campaña del sábado se para en cada activo nuevo |
