@@ -7,6 +7,10 @@ tag: 🔬  date: 2026-09-30  see: export/feed-clock-timezones, mt5/mt5-history-d
 - FTMO's and Hantec's MT5 servers run on `EETUS` (New York + 7 h); the5ers' feeds on
   `Asia/Jerusalem`. They agree most of the year and differ by 1 h in the weeks between the US and
   the European/Israeli change (mid-March to late March, late October to early November).
+- 📓 2026-10-15, FleetBeacon `server_time − written_gmt`: Hantec (`HantecMarketsMU-MT5`), FTMO
+  (`FTMO-Server4`) and FundingPips (`FundingPips2-SIM`) all at UTC+3 — consistent with `EETUS`,
+  but EET summer time reads the same. Only a reading between 2026-10-25 and 2026-11-01 tells
+  them apart (`EETUS` stays UTC+3, EET drops to UTC+2): `AlgoData/fleet/live/<login>.json`.
 - `mt5.verify.judge` converts every SQX time zone to zone (`mt5.compare.to_zone`, server zone in
   `mt5/verify/config.yaml` `clock.server_zone`) before seeking any whole-hour shift left.
 - The residual shift is scored on pairs within half the tolerance first: with a one-bar
