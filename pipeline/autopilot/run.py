@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 
 from core import phases
-from core.assetdata import AUTONOMOUS
+from core.assetdata import AUTONOMOUS, pin_oos2
 from core.paths import DATA
 from pipeline.autopilot import (
     blind,
@@ -26,7 +26,7 @@ from pipeline.autopilot import (
     timing,
     variants,
 )
-from pipeline.autopilot.survivors import Done, mothers
+from pipeline.autopilot.survivors import Done, about, mothers
 from ui.daemon.advance import preflight as advance, sqxlog
 from sqx.projects import live
 from ui.daemon.launch import (
@@ -403,6 +403,7 @@ def main() -> None:
             )
         )
         return
+    pin_oos2(about(a.project)["symbol"])  # T-2: the roll cannot move it mid-run
     entry.alone(w["role"]) if "role" in (w := advance.where(a.project)) else sys.exit(
         w["refuse"]
     )  # before the run's folder: a refused run leaves none

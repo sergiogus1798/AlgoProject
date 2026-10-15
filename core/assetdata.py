@@ -1,6 +1,7 @@
 """What assets/ declares: costs resolved against the shared policy, checked against the class."""
 
 import copy
+import json
 import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -22,6 +23,7 @@ RESERVED = (
     "reserved_for"  # a segment spent by looking at it; binds only under enforced()
 )
 AUTONOMOUS = "ALGO_AUTONOMOUS"
+OOS2_PIN = "ALGO_OOS2_PIN"  # JSON {symbol: oos2 `to`}: the window an autopilot run started with
 
 
 def enforced() -> bool:
@@ -96,6 +98,17 @@ def symbols() -> list[str]:
     return sorted(f.stem for f in SYMBOLS.glob("*.yaml"))
 
 
+def pin_oos2(symbol: str) -> None:
+    """Keep this process tree on the oos2 `to` it sees now, though `monthly-oos2-roll` extends it.
+
+    The first call per symbol wins, so a run reads one window from its start to its end
+    (T-2, encargo 49); subprocesses inherit it through the environment.
+    """
+    pinned = json.loads(os.environ.get(OOS2_PIN, "{}"))
+    pinned.setdefault(symbol, load(symbol)["segments"]["oos2"]["to"])
+    os.environ[OOS2_PIN] = json.dumps(pinned, default=str)
+
+
 def load(symbol: str) -> dict[str, Any]:
     """One asset, with the shared policy folded in.
 
@@ -119,6 +132,12 @@ def load(symbol: str) -> dict[str, Any]:
     }
     # One copy of what is handed out; `base["segments"]` (every asset's block, the big part)
     # is replaced above and never copied. 🔬 2026-10-13: encargo 66 §9.12.
+    pinned = json.loads(os.environ.get(OOS2_PIN, "{}"))
+    if symbol in pinned:
+        to = pinned[symbol]
+        segments["oos2"]["to"] = (
+            date.fromisoformat(to) if isinstance(to, str) and "-" in to else to
+        )
     hour = (data.get("swap") or base.get("swap") or {}).get("rollout_hour")
     if hour is not None and not isinstance(hour, str):
         raise ValueError(

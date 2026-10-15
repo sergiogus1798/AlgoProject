@@ -21,6 +21,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_advance_nexttask.py` | «Continuar workflow» switches on every task of the next step that reads the cut, or what one of them writes (📓 2026-09-30: after a cut on CrossTF only «MCR 1 Bar» ever ran). | — |
 | `test_alignment_shift.py` | One-bar-shift cases for the aligners: a spike at bar i must not show in bar i's own decision (encargo 68 F22). | — |
 | `test_archive.py` | The strategy archive on a real strategy: frozen versions never overwritten, read back equal, nothing run. | — |
+| `test_assetdata_oos2_pin.py` | T-2: a run that pinned oos2 keeps its `to` when the monthly roll moves the policy. | — |
 | `test_assetdata_rollout_hour.py` | `assetdata.load` refuses an unquoted `rollout_hour`: YAML reads 23:00 as the integer 1380. | — |
 | `test_assets_blocked.py` | An asset card with an undecided commission ends in BLOQUEADO and exit 2, never a traceback. | `python3 -m pytest tests/test_assets_blocked.py` |
 | `test_assetwrite_price_rounding.py` | `assetwrite.set_price_rounding` writes the card's block after `instrument`, keeps the comments, and refuses a bad value. | `python3 tests/test_assetwrite_price_rounding.py` |

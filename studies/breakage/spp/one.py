@@ -12,6 +12,7 @@ from studies.breakage.spp import contract, criteria
 from studies.breakage.spp import run as reading
 from studies.breakage.spp.inputs import config, export
 from studies.breakage.spp.model import combine, decay, mapa
+from studies.breakage.spp.verdict import noise
 
 MODULE = "studies.breakage.spp"
 COMBINED = "IS + OOS1 combinado"
@@ -282,6 +283,7 @@ def run(strategy: str, directory: Path, cfg: dict) -> dict[str, Any]:
             "live": len(brief["parameters"]),
             "frozen": len(brief["frozen"]),
             "brief": brief,
-            "criterios": criteria.flat(measured) if measured else {},
+            "criterios": (criteria.flat(measured) if measured else {})
+            | noise.columns(found["noise"]),
         },
     ) | {"draws": kept}

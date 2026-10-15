@@ -16,6 +16,7 @@ class NoiseCheck(TypedDict):
     n_rows: int
     n_eff: int
     sigma: float
+    mean: float
     observed_max: float
     noise_max: float
     excess: float
@@ -67,6 +68,7 @@ def noise_check(frame: pd.DataFrame, metric: str, margin: float = 1.0) -> NoiseC
         "n_rows": int(len(frame)),
         "n_eff": n_eff,
         "sigma": float(values.std()),
+        "mean": float(values.mean()),
         "observed_max": observed,
         "noise_max": threshold,
         "excess": excess,
@@ -74,6 +76,15 @@ def noise_check(frame: pd.DataFrame, metric: str, margin: float = 1.0) -> NoiseC
         "plateau_area": plateau.plateau_area(values),
         "above_half_max": plateau.above_half_max(values),
         "verdict": PROCEED if excess > threshold * margin else NOISE,
+    }
+
+
+def columns(n: NoiseCheck) -> dict[str, float]:
+    """The grid's mean, sd and mean - sd on the verdict metric: the verdict.csv columns step 16 may judge."""
+    return {
+        "rejilla_media": n["mean"],
+        "rejilla_sd": n["sigma"],
+        "rejilla_media_menos_sd": n["mean"] - n["sigma"],
     }
 
 

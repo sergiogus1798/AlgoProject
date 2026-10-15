@@ -41,3 +41,12 @@ if __name__ == "__main__":
     test_pure_noise_with_a_positive_mean_reads_noise()
     test_a_real_ridge_proceeds()
     print("ok")
+
+
+def test_columns_expose_mean_sd_and_mean_less_sd() -> None:
+    """The verdict.csv columns step 16 may judge: mean, sd and mean - sd of the grid's metric."""
+    values = np.random.default_rng(1).normal(5.0, 2.0, 1_000)
+    got = noise.columns(noise.noise_check(grid(values), "m"))
+    assert got["rejilla_media"] == float(values.mean())
+    assert got["rejilla_sd"] == float(values.std())
+    assert got["rejilla_media_menos_sd"] == got["rejilla_media"] - got["rejilla_sd"]
