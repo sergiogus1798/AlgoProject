@@ -47,13 +47,17 @@ def _launched() -> set[str]:
 def _costed(symbol: str) -> bool:
     """Whether the asset can run: its cost card is complete (hard rule 5) and its feed was scanned.
 
-    Step 8's feedQuality reads the feed's `summary.json`; without it the run dies after the build.
+    Step 8's feedQuality reads the feed's `summary.json`, and its repricer the card's
+    `price_rounding.use`; without either the run dies after the build (🔬 2026-10-15, EURUSD).
     """
     return (
-        feed_quality_dir(load(symbol)["sqx_symbol"]) / "summary.json"
-    ).exists() and subprocess.run(
-        [sys.executable, "-m", "core.assets", symbol], cwd=ROOT, capture_output=True
-    ).returncode == 0
+        (load(symbol).get("price_rounding") or {}).get("use") is not None
+        and (feed_quality_dir(load(symbol)["sqx_symbol"]) / "summary.json").exists()
+        and subprocess.run(
+            [sys.executable, "-m", "core.assets", symbol], cwd=ROOT, capture_output=True
+        ).returncode
+        == 0
+    )
 
 
 def candidates() -> list[dict]:
