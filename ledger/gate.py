@@ -27,6 +27,10 @@ STEPS = {
     "BlindJoint": 20,
     "ATRStop": 24,
 }
+# Step 19.5 (oos2Reading) reads oos2 under WFM's reserve: its study signs as 19
+# (`studies/optimisation/oos2Reading/inputs.py`, encargo 65 fila 6) and its cut's ledger row
+# keeps 19.5 but passes the door as 19.
+READS_AS = {19.5: 19}
 BLIND = (17, 18, 19)
 AUTONOMOUS = assetdata.AUTONOMOUS
 enforced = assetdata.enforced  # the door is shut only for an autonomous agent
@@ -83,7 +87,7 @@ def allow(step: float, segment: str, symbol: str) -> None:
         "+"
     ):  # step 26 reads "oos1+oos2": any reserved part binds
         allowed = held.get(part)
-        if allowed is not None and step not in allowed:
+        if allowed is not None and READS_AS.get(step, step) not in allowed:
             names = [n for n, s in STEPS.items() if s in allowed]
             raise PermissionError(
                 f"ledger: el paso {step} no puede mirar `{part}` de {symbol}: está "
