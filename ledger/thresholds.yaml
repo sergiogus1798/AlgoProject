@@ -1165,13 +1165,6 @@ thresholds:
     set_on: 2026-09-29
     why: todos los umbrales de correlación a 0,30 — el mismo máximo en las ventanas que terminan en los últimos 36 meses del build
 
-  - key: portfolio.funded.stop_percentile
-    value: 90
-    source: portfolio/common/construct/config.yaml#funded.stop_percentile
-    set_by: dueño
-    set_on: 2026-09-30
-    why: el stop con el que se opera es SL = X·ATR(20) del paso 24; X = p90 del MAE/ATR de las ganadoras de build, la misma regla para todas, fijada antes de mirar ninguna cartera
-
   - key: portfolio.funded.verdict_percentile
     value: 0.95
     source: portfolio/common/construct/config.yaml#verdict.pass_percentile
