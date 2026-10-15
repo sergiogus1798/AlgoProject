@@ -51,7 +51,7 @@ decisiones de los pasos 1 a 4 ya están contestadas en cada encargo.
 
 | # | encargo | por qué aquí | recurso |
 |---|---|---|---|
-| 1 | **71** tests independientes de la máquina | su condición es la pasada limpia; es la red de todo lo que viene después | Python |
+| 1 | ~~71~~ tests independientes de la máquina — **hecho 2026-10-15** (351/351 en gorilla) | su condición es la pasada limpia; es la red de todo lo que viene después | Python |
 | 2 | **66** cierre de performance | D24 desbloquea el 67 y la fila 9 del 65 | conductor + custodio parado |
 | 3 | **65** cerrar el bloque B (corrida nula del 5.4, de noche) | fija el paso 8 definitivo | ~10 h de CPU Python, nada al lado |
 | 4 | **70** redondeo al tick | hereda la fila 8 del 65 | Python |
@@ -111,7 +111,6 @@ Sale de la lectura del dossier `docs/AgentPDFs/criterios-implementados-2026-10-1
 | `67-filtro-minimo-calibrado-con-sinteticos.md` | el umbral mínimo del Build por celda (activo × TF), medido en lo que halla una hora de build sin filtros sobre series sintéticas; con su coste en estrategias rechazadas y minutos hasta 10.000 | `66` (D24 estable), `58` (generador) |
 | `69-renumerar-los-pasos-del-workflow.md` | aplazado: renumerar los pasos ahora que 22-25 no existen y el MT5 sigue siendo el 26; lo medido (77 + 82 ficheros), por qué se dejó y las tres preguntas previas | sin empezar; sólo cuando el dueño lo pida |
 | `70-redondeo-al-tick-del-repreciador-por-activo.md` | que el repreciador redondee al tick sólo donde SQX lo hace (oro y USA500 no, Nikkei sí, DAX40 mixto), con un campo en la ficha medido activo a activo; incluye el resto de 0,043 USD del oro y la clave propia de la puerta del 18.5 | sin empezar |
-| `71-tests-independientes-de-la-maquina.md` | partes 1-6 hechas 2026-10-15 (datos plantados, `live_only`, fuga al AlgoData real arreglada); falta `audit_tests` en gorilla | una pasada limpia del workflow |
 
 ## Adónde fue cada encargo viejo
 
