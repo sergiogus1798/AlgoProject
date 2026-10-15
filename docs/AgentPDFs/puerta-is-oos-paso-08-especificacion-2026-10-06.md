@@ -1,5 +1,7 @@
 # Paso 8 — La puerta IS/OOS: especificación completa del rediseño
 
+> **Vigente desde el 2026-10-12 (encargo 65), actualizado el 2026-10-15:** la regla estadística de este documento (R3 y la t de R5c) la sustituyó **una sola z del mono con horas por celda** (`z_mono`): pasa si `z_mono ≥ Φ⁻¹(1 − 0,01/B)`, con B los lotes cribados de la celda (2,326 con B = 1; 2,576 con 2). Tras el juicio sobreviven como mucho **4 medoides por lote**. R3, R4a, R5, R5b, R8, R9b y las escalas de la t son **columnas**, no juzgan. Lo vigente está en `criterios-paso-08-corrida-nula-2026-10-12`; lo que sigue describe el diseño original, con R3 como juez.
+
 **Fecha:** 2026-10-06 · **Para:** el dueño · **Alcance:** sólo el paso 8 · **Sustituye a:** `criterios-implementados-2026-10-12`, que describía las 16 reglas anteriores.
 
 **Qué es:** el documento de referencia de la puerta tal como quedó decidida en tu revisión del 2026-10-06. De cada regla dice qué pregunta contesta, cómo se calcula paso a paso, qué significa cada estadístico, un ejemplo, sus líneas de Pasa / Limbo / Falla, sus parámetros, lo que cuesta calcularla y lo que falta por medir antes de congelar su línea. Después explica el orden de cálculo (la cascada), las dos poblaciones de prueba, la tabla de parámetros, lo que se quita, lo que pasa al módulo de fondeo y lo que queda por decidir.
@@ -942,7 +944,7 @@ No descarta porque algo de heterogeneidad entre regímenes es normal en trading,
 
 ### 8.2 R6 — El drawdown de oos1 es el esperable
 
-Hecho: `dd_p` (y `gate.scorecard.dd_esperado_p95_r`, que se guarda para el módulo de fondeo)
+Hecho: `dd_p` (y `gate.scorecard.dd_esperado_r`, que se guarda para el módulo de fondeo)
 
 **La pregunta.** *Con la ventaja que de verdad tuvo en oos1, ¿es normal un drawdown como el de oos1 para la forma de riesgo que la estrategia enseñó en el build?*
 
@@ -1216,7 +1218,7 @@ El paso 8 **calcula y no juzga**. Cuando una estrategia **pasa el WFM** se guard
 |---|---|
 | la curva diaria de flotante de oos1 | hoy sólo se conserva de las del sorteo |
 | `oos_worst_day_r`, el peor día en R | como hoy |
-| `gate.scorecard.dd_esperado_p95_r`, el percentil 95 del drawdown simulado | el bootstrap de R6 |
+| `gate.scorecard.dd_esperado_r`, el percentil 95 del drawdown simulado | el bootstrap de R6 |
 | el neto anual en R | oos1 |
 
 El módulo es otro encargo, `docs/encargos/45-modulo-de-fondeo.md`, todavía en redacción. **Desde que estas reglas salgan y hasta que ese módulo exista, nada en la cadena juzga el peor día ni el drawdown sobre el neto.** Ese hueco está aceptado. El caso grave — pérdidas sistemáticamente mucho mayores de 1R — lo sigue cortando R9b en la puerta.

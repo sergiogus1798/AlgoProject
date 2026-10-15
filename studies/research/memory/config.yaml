@@ -123,12 +123,7 @@ causes:
     - {fact: "gate.scorecard.oos_trades_per_year", cause: oos_decay}
     - {fact: "gate.scorecard.estaticas_*", cause: oos_decay}
     - {fact: "gate.scorecard.forma_*", cause: oos_decay}
-    - {fact: "gate.scorecard.degradacion_years_positive", cause: oos_decay}
-    - {fact: "gate.scorecard.degradacion_value", cause: oos_decay}
-    - {fact: "gate.scorecard.degradacion_passed", cause: oos_decay}
-    - {fact: "gate.scorecard.degradacion_concentration", cause: not_beyond_random}
-    - {fact: "gate.scorecard.degradacion_t", cause: not_beyond_random}
-    - {fact: "gate.scorecard.drift_excess_t", cause: not_beyond_random}
+    - {fact: "gate.scorecard.z_mono", cause: not_beyond_random}
     - {fact: "gate.scorecard.trade_t", cause: not_beyond_random}
     - {fact: "gate.scorecard.mono_*", cause: not_beyond_random}
     - {fact: "gate.scorecard.familia_*", cause: not_beyond_random}

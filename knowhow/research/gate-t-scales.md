@@ -4,7 +4,7 @@ kw: gate degradacion_t scale, mark-to-market vs closed-trade mismatch, Lo (2002)
 tag: 🔬  date: 2026-10-06  see: sqx-format/equity-reconstruction-usdjpy-gap, drift-term-biased-by-side, sqx-format/daily-equity-bin, research/random-entry-nulls, research/post-selection-bias, research/gates-are-owner-decisions
 ---
 # The gate's three t's are three scales; before 2026-10-02 `degradacion_t` was compressed and capped
-Judge on `gate.scorecard.drift_excess_t` (or `trade_t`); never compare a t across these, nor against a null
+Since encargo 65 (2026-10-12) step 8 judges on `gate.scorecard.z_mono` alone; the t's below are columns. Never compare a t across these, nor against a null
 computed on another one. `degradacion_t` (Lo 2002 on SQX's daily equity: each day's LOW, floating in, `OPEN.md`
 #88) ≈ 0.78–0.88 × `trade_t`. A null that books **closed trades** has a daily t ≈ 1.00 × its trade t, so its
 FPRs read at the gate's line are 2–4× too high. Scorecards and decay reports from **before 2026-10-02** carry
@@ -19,8 +19,8 @@ leaves ≤ 0.06: `drift-term-biased-by-side.md`. A no-edge strategy does NOT cro
 4.4, skew-kurt AR(1) 4.05), net of oos1 costs 0.7-1.0 % — R3's line lets through ~90 per 10,000, not 390.
 
 **Which line is live (🔬 2026-10-04, OPEN.md #91):** the old 1.65 = 1.92 on the corrected scale (oos1 of 5.16 years).
-No live rule reads that t (`min_t` = 0.0); the live rule is R3 of `pipeline/autopilot/criteria.yaml`,
-`drift_excess_t` ≥ 2.33, which was never on the old scale. FPR under the null, H1, 40-100 trades/year,
+No live rule reads any of these t's (`min_t` = 0.0; R3 is a column since encargo 65): the live rule is
+`z_mono` ≥ Φ⁻¹(1 − 0.01/B), B = the cell's `batches_screened`, in `pipeline/autopilot/criteria.yaml` step "8". The FPRs below are R3's, kept as the t-scale record. FPR under the null, H1, 40-100 trades/year,
 median cell [worst cell]: R3 ≥ 2.33 with costs 0.00 % [0.23], **without costs 0.58 % [1.08]**; R3 at 1.65 with
 costs 0.07 % [1.8], without 3.6 % [5.8]. Corrected 1.42 / 1.92 / 2.55: FPR 0.15 % [7.8] / 0.02 % [2.4] / 0.00 % [0.24];
 left on the old lines 0.24 % [10.3] / 0.07 % [5.2] / 0.02 % [2.5]. Which null defines «has edge» (with or

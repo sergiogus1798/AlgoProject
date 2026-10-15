@@ -1,7 +1,7 @@
 # gate — two databanks in, one verdict per strategy out
 
 The screening that happens after a build and its out-of-sample retest, and before anything
-expensive. Thousands of strategies enter, a cascade of screens thins them, and what comes out is a
+expensive. Thousands of strategies enter, a cascade of rules, by levels, thins them (one statistical rule, the z of the hours monkey; the rest are presence, sanity and cost rules), and what comes out is a
 `verdict.csv` that `sqx/curate/apply_verdict.py` already knows how to apply.
 
 **It reads two databanks, not one.** SQX charges one spread and one slippage per backtest, and these
@@ -10,9 +10,9 @@ two separate tasks with their own costs — and therefore two databanks. The har
 
 ```
 config.yaml ─▶ harvest ─▶ cascade ─▶ scorecard ─▶ verdict ─▶ resumen
- the screens   two        each       every        what SQX   the funnel
- as data       databanks  screen     number per   can apply  and what
-               matched    over what  strategy                each screen
+ the rules     two        each       every        what SQX   the funnel
+ as data       databanks  rule       number per   can apply  and what
+               matched    over what  strategy                each rule
                on         the last                           cost
                identity   left
 ```
@@ -33,7 +33,7 @@ config.yaml ─▶ harvest ─▶ cascade ─▶ scorecard ─▶ verdict ─▶
 | `level3c.py` | Level 3c of the gate: the strategy against monkeys drawn inside R3's drift window. | imported | oos trades + bars → facts |
 | `levels.py` | The gate's levels in the order they run, and which level produces each fact. | imported | — → `LEVELS`, fact → level |
 | `many.py` | The gate over one harvest: every level in order, and the population read as one result. | imported | harvest → results |
-| `measures.py` | The scorecard's measured columns: numbers every paired strategy gets and no screen judges. | imported | trades + equity + bars → 14 columns |
+| `measures.py` | The scorecard's measured columns: numbers every paired strategy gets and no rule judges. | imported | trades + equity + bars → 14 columns |
 | `one.py` | One strategy through the gate, as the contract's data: where it fell, and every fact of every level. | imported — the window calls it | scorecard row → result |
 | `pairing.py` | Pair two databanks by strategy identity: the build's file and the retest's file of the same strategy. | imported | two indexes → pairs, aliases, unpaired |
 | `redundancy.py` | The soft screen: are these N strategies, or one strategy repeated N times? | imported | equity → groups |

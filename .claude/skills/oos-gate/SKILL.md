@@ -1,6 +1,6 @@
 ---
 name: oos-gate
-description: Screen a population after its OOS retest — harvest the two databanks (build and OOS) into Python, run the gate's screens and write the survivors list and verdict.csv. Stops the install to harvest. Moving the verdict back into SQX (deleting the rejected strategies) is `/curate`, which this skill hands over to. Use when the owner asks to screen or cull a population after its out-of-sample retest, or to prepare the survivors for the cross-market test.
+description: Screen a population after its OOS retest — harvest the two databanks (build and OOS) into Python, run the gate's level-by-level rules and write the survivors list and verdict.csv. Stops the install to harvest. Moving the verdict back into SQX (deleting the rejected strategies) is `/curate`, which this skill hands over to. Use when the owner asks to screen or cull a population after its out-of-sample retest, or to prepare the survivors for the cross-market test.
 ---
 
 # /oos-gate
@@ -12,7 +12,7 @@ Build → retest → **this** → the next task. Python decides, SQX obeys.
 ```
 Results (IS)  ┐                                              ┌ verdict.csv ┐
               ├─ studies.screening.gate.harvest ─▶ studies.screening.gate.report ─▶ scorecard ───┤             ├─▶ curate ─▶ next task
-OOS (retest)  ┘   join on identity    seven screens           └ gate.md     ┘
+OOS (retest)  ┘   join on identity    rules by level           └ gate.md     ┘
                                                      └─▶ snoopingScreen: SPA/StepM vs buy & hold (annotates)
 ```
 
@@ -43,21 +43,21 @@ red flags.
 That drop happens **before** anything is exported, so nothing is spent on the dead. On `XAU_ISOOS_ejemplo`, 5 of 120
 died there and only the 115 pairs were exported.
 
-## 2 · The screens
+## 2 · The rules
 
 ```bash
 python3 -m studies.screening.gate.report --project <P> --databank Results --feed <FEED>
 ```
 
-`studies/screening/gate/config.yaml` holds the screens as data — order, kind, threshold, and why each exists — so the
-owner's UI edits that file and not this skill. Read the funnel out loud: **how many each screen
+`studies/screening/gate/config.yaml` holds the rules as data — order, kind, threshold, and why each exists — so the
+owner's UI edits that file and not this skill. Read the funnel out loud: **how many each rule
 killed** is the finding, not the survivor count.
 
 Two things that are easy to get wrong when reporting:
 
-- **The thresholds are deliberately loose** and were set to measure what each screen kills before
-  any of them is tightened. A cut made under them is a statement about the threshold, not about the
-  strategies. Say so.
+- **One rule is statistical: the z of the hours-matched monkey (`z_mono`)**, line Φ⁻¹(1 − 0.01/B) with B the
+  cell's `batches_screened`; at most 4 medoids survive per batch. R3 and the t scales are columns, not judges.
+  A cut is a statement about that line, not about the strategies. Say so.
 - **`redundancia` is `soft`**: it groups and names, it does not drop. Do not report its groups as
   rejections.
 
@@ -101,5 +101,5 @@ left behind, so the handover is just that databank's name and its count.
 
 - Run any of this while the custodian is working. One job at a time.
 - Curate a databank a task is writing.
-- Report a survivor count as a result. The population that entered, what each screen removed, and
+- Report a survivor count as a result. The population that entered, what each rule removed, and
   on which threshold — that is the result.

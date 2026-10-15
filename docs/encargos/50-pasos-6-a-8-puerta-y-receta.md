@@ -33,9 +33,9 @@ la **receta del IS del paso 6** (qué pedir en el Build de SQX), medida.
 
 | frente | qué | modelo | depende de | estado |
 |---|---|---|---|---|
-| 1 · V | una corrida entera por `/workflow` con el paso 8 vigente | Sonnet | máquina libre | 🟡 en curso: lanzada el 2026-10-15 (Q4c) en el custodio: `bin/workflow.sh simple Test_USATEC_H1_breakoutL_v8_leaseWeb USATEC H1 long breakout ruptura_base_v3 ... 10000 30`, sin parámetros de MT5 |
+| 1 · V | una corrida entera por `/workflow` con el paso 8 vigente | Sonnet | máquina libre | ✅ 2026-10-15: segunda corrida (Test_USATEC_H1_breakoutL_v8b_leaseWeb) — paso 8 verificado: B=2, línea 2,576, z_mono máx 2,84, embudo 10.000 → 7.356 → 6 → 4 medoides; ledger B 1→2; edits_since_seal = 1 por el α 0,01 del 15-10 (posterior al sello del 12-10, edición contada, no fallo). La primera corrida cayó en el paso 8 por «List index overflow» (arreglado en d52908d). La segunda llegó al 18 y paró en el 18.5 por fichas sin price_rounding (medidas esta noche; causa extra: rollout_hour sin comillas, 1fcb33b). Supervivientes en el almacén; proyectos retirados. |
 | 2 · Parada | Q2, Q3 y Q4 | dueño | — | ✅ contestada el 2026-10-15 (todas las recomendaciones) |
-| 4 · Z1 + M | cargar lo que decida la parada; documentación de la puerta | Sonnet | 2 ✅ (Z1 sin trabajo: Q2 y Q3 dejan todo como está); M puede empezar ya | pendiente |
+| 4 · Z1 + M | cargar lo que decida la parada; documentación de la puerta | Sonnet | 2 ✅ (Z1 sin trabajo: Q2 y Q3 dejan todo como está); M puede empezar ya | ✅ 2026-10-15: documentación de la puerta al día (salvo `criterios-implementados-2026-10-12`, que tiene otra sesión, y la cabecera de `criteria.yaml`, que no se toca) |
 | 5 · Receta del IS (ex 42) | paso 6: dosis-respuesta, A/B dentro/fuera del Build, familia contra gemela, flotante, equipo rojo | Opus (+ Sonnet para lanzar) | Q7; nada pesado junto a un workflow | sin empezar |
 
 Orden: 1 → 4. El 5 es independiente salvo por la máquina (regla 19).
@@ -45,6 +45,7 @@ Orden: 1 → 4. El 5 es independiente salvo por la máquina (regla 19).
 - 2026-10-09 · consolidado desde los encargos 44 y 42. De 44 estaban hechas las oleadas 0 a 6 salvo K-m; 42 no se ejecutó nunca.
 - 2026-10-15 · el dueño contestó «todas las recomendaciones»: QV = A, Q2 = A (las reglas se quedan y se firman como v1), Q3 = A (sin tope en R5d), Q4 = A (sin frente N: V corre en USATEC H1 largo ruptura, la misma celda de la corrida nula), Q7 = A (las poblaciones de la receta suman a la B de sus celdas). Q4c: V lanzada el mismo día (🟡 en curso). El frente 3 (N) se borra.
 - 2026-10-15: reescrito contra el 65 (fila 5 del orden). Fuera: K-m (lo hizo la corrida nula del 65 §5.4 para la única regla que pesa), la tabla 1.2 de líneas (R3 ya no juzga), la parada 3 (`dev` borrado), los nulos de la t (Q5: R3 es columna) y la clave `by:` de familia (Q6 → no).
+- 2026-10-15 · frentes 1 y 4: V ✅ (segunda corrida, ver la tabla); M hecho: dossier del paso 8 con cabecera y `dd_esperado_r`, fila 8 de WORKFLOW, README de la puerta, `/oos-gate`, glosario, `memory/config.yaml` (`z_mono` → `not_beyond_random`), `gate-t-scales` y capítulo 29. Pendiente: `criterios-implementados-2026-10-12` (otra sesión) y el párrafo `dev` de la cabecera de `criteria.yaml`.
 
 ---
 

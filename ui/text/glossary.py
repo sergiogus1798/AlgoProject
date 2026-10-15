@@ -5,7 +5,7 @@ import re
 from ui.text import glossary_crossmarket, glossary_gate, glossary_steps, glossary_zones
 
 # Metric and column keys the window shows today, by the spelling their writer uses: SQX's
-# metric names, the report columns of the studies, the gate's screens and the config knobs.
+# metric names, the report columns of the studies, the gate's rules and the config knobs.
 # Append new keys at the end (plan 24 §5): never change an existing one, a view may rely on it.
 LABELS = {
     # SQX metrics, as the exports name them
@@ -105,7 +105,7 @@ LABELS = {
     "min_track_enough": "Historia suficiente",
     "stress_net_p5": "Neto p5 bajo estrés",
     "stress_cvar_dd_pct": "CVaR del DD % bajo estrés",
-    # the gate's level-0 screens (studies/screening/gate/config.yaml); the later screens died
+    # the gate's level-0 rules (studies/screening/gate/config.yaml); the later rules died
     # with encargo 44, their rules are the facts below
     "presencia": "Presencia",
     "sanidad": "Sanidad",
