@@ -1,9 +1,10 @@
 ---
-q: What exits, direction and stops does the XAUUSD corpus have?
+q: What exits, direction and stops did the OLD historical 231-strategy XAUUSD corpus have (the current corpus is export/exits-and-m1-library)?
 kw: XAUUSD generated strategies stop loss take profit; SLPT None; long only; ExitAfterBars 8; bar-cap vs signal-exit populations; XAUUSD in-sample window
 tag: 🤔  date: 2026-10-04  see: export/exits-and-m1-library, authoring/bar-exit-ignores-task, authoring/build-doctrine-sections, research/research-lessons
 ---
-# The XAUUSD corpus has no SL, no PT, no trailing; long-only; every exit capped at 8 bars
+# HISTORICAL 231-strategy XAUUSD corpus (superseded by export/exits-and-m1-library): no SL, no PT, no trailing; long-only; every exit capped at 8 bars
+Owner decision 2026-10-15 (OPEN #112): this card describes the old historical corpus (231 strategies, an old project's export, not reproducible); the live corpus is the 757-strategy `MC_Trades` of `export/exits-and-m1-library` (19.55 % `Exit Signal`). Do not pool the two.
 All 231 carry `SQ.Formulas.SLPT.None`: Build task `<SLRequired>false`, `<SLATR>false`, `<PTRequired>false`
 (ATR machinery configured — `MinSLATRMultiple 2`, `MaxSLATRMultiple 8`, period 20 — but toggled off).
 Two structurally different populations share the pool: never pool exit statistics. **The bar-cap

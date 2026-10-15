@@ -116,7 +116,7 @@ file (2026-09-29 cleanup) keeps only open sections plus the full index below, so
 | 99 | 🟢 | `mt5.tester.collect()` ignores the tester's history quality and its «start time changed» line | docs/OPEN-closed.md |
 | 100 | 🟠 | Literature scout built 2026-10-02 — owner decisions pending, 8 questions and 8 entries without a condition | OPEN.md |
 | 101 | 🟢 | A proposal's stamp counts its own three ideas as already spent — «ya van 3 ideas», rank 311 instead of 1 | docs/OPEN-closed.md |
-| 102 | 🟠 | Knowhow cards filed in the wrong domain (weekly quality pass 2026-10-04) — to move or leave, owner's call | OPEN.md |
+| 102 | 🟢 | Knowhow cards filed in the wrong domain (weekly quality pass 2026-10-04) — to move or leave, owner's call | docs/OPEN-closed.md |
 | 103 | 🟢 | `python3 -m sqx.inspect.instruments` crashes (empty `commissions` attribute) — the asset-override check cannot run | docs/OPEN-closed.md |
 | 104 | 🟡 | Portfolio build 2026-10-05: six findings left unfixed (universe cache, frozen version, GA rank saturation, `funded_b` overwrite, pyarrow abort, `test_portfolio_build`) | OPEN.md |
 | 105 | 🟢 | `execute.synced` divides by `poll_seconds`: 0 raises ZeroDivisionError instead of SystemExit | docs/OPEN-closed.md |
@@ -706,24 +706,6 @@ changed. **Open:** nothing prints the silhouette next to the count in a window o
 - `tools/manual.py` refuses to build while chapters 85, 87, 88 and 89 (other sessions') have no family:
   the PDF of family 04 was built alone for chapter 90.
 
-## 102. 🟠 Knowhow cards filed in the wrong domain — found by the weekly quality pass, 2026-10-04
-
-The pass does not move cards (it would change `see:` slugs and the per-domain indexes). Candidates, judged from
-their `q:` and header only (🤔: confirm by reading each card's callers):
-- `knowhow/market-profile/` holds six cards that are not about the market profile: `literature-same-paper-short-title`,
-  `literature-scout-yield`, `paper-search-sources`, `verbatim-quote-matching` (→ `research/`, literature scout);
-  `typed-failure-causes`, `hypothesis-sheet-vs-build`, `ideas-are-ledger-trials`, `reviewer-adds-no-trials`
-  (→ `research/` or `pipeline/`, the idea/autopilot memory).
-- `perf/window-waits-off-gui-thread` is a Qt/window fact (→ `ui/`).
-- `eng/` holds study facts: `monkeyexcess-needs-oos-partner`, `population-signs-a-different-config-than-strategy`,
-  `stale-signs-with-the-runners-overrides`, `decay-needs-build-and-retest`, `isoos-filters-read-the-harvest`,
-  `step25-reads-a-harvest-of-the-traded-version`, `studies-reread-build-yaml` (→ `pipeline/` or `research/`).
-Decision needed: move them (then rerun `python3 tools/knowhowmap.py` and fix every `see:`), or declare the domains broader.
-Also left: `locations/xauusd-corpus` (🤔, 231 strategies, old export) and `export/exits-and-m1-library` (🔬, 757 strategies)
-describe two XAUUSD corpora; neither can be recomputed for the first (OPEN §12) — the owner may retire the older card.
-
-**2026-10-14.** 2026-10-14: moved with git mv, indexes regenerated, citations fixed: the four literature cards, hypothesis-sheet-vs-build, ideas-are-ledger-trials, reviewer-adds-no-trials to research/; typed-failure-causes to pipeline/; window-waits-off-gui-thread to ui/. Left: the seven eng/ study cards (monkeyexcess-needs-oos-partner, population-signs-a-different-config-than-strategy, stale-signs-with-the-runners-overrides, decay-needs-build-and-retest, isoos-filters-read-the-harvest, step25-reads-a-harvest-of-the-traded-version, studies-reread-build-yaml) need the owner to pick the target domain, and the xauusd-corpus vs exits-and-m1-library contradiction.
-
 ## 104. 🟡 Portfolio build 2026-10-05: six findings left unfixed — found while running the module on the Nikkei test pool
 
 📓 2026-10-05, the build of `portfolio/` (impl log phases 0-6). Each is found, not fixed; the first four are the code's, the fifth is pyarrow's, the sixth predates the build.
@@ -791,6 +773,8 @@ Found by the weekly quality pass (one domain at a time; `eng`, `costs`, `locatio
 **Stale words in `perf/server-cores-and-ram`:** its `kw:` still names «Xmx108g» and the `smt-in-sqx-retest` body speaks of the master at `-1`; heaps are now 24/16/80 g (`perf/ram-budget`). 🤔 Re-measure core counts on the leaseWeb machine before editing.
 
 **2026-10-14.** 2026-10-14: the wrong-domain moves of this pass are done (market-profile literature/idea cards to research/, typed-failure-causes to pipeline/, window-waits-off-gui-thread to ui/, live-ea-magic-numbers to mt5/, wfc-databanks-hold-variants to databanks/). Still open: the xauusd-corpus contradiction needs the owner to say which corpus is live, and perf/server-cores-and-ram needs a core-count re-measure on leaseWeb before its stale Xmx108g words are edited.
+
+**2026-10-15.** 2026-10-15 owner decision: xauusd-corpus card retitled as the historical 231-strategy corpus pointing to export/exits-and-m1-library (done). Only the re-measure of core counts on leaseWeb for perf/server-cores-and-ram (stale Xmx108g) remains, DEFERRED until the machine is free (a null run is running); do not measure before.
 
 ## 113. 🔴 Next batch that needs MT5 or the custodian (owner, 2026-10-11)
 

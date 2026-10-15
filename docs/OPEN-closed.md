@@ -1817,6 +1817,26 @@ and the brake are shared with the ledger's trial count (another session's work i
 
 **Closed 2026-10-04.** studies/research/board/inputs.memory(own_files=) leaves the proposal's own idea files out of `spent` only; proposal.own_idea_files(draft) feeds it, so the board row, the rank and the stamp come out as before the ideaExpert ran. The ledger's trial count does not go through memory() and is unchanged. tests/test_research_board_own_ideas.py passes (fixture: 4 spent -> 1).
 
+## 102. 🟢 Knowhow cards filed in the wrong domain — found by the weekly quality pass, 2026-10-04
+
+The pass does not move cards (it would change `see:` slugs and the per-domain indexes). Candidates, judged from
+their `q:` and header only (🤔: confirm by reading each card's callers):
+- `knowhow/market-profile/` holds six cards that are not about the market profile: `literature-same-paper-short-title`,
+  `literature-scout-yield`, `paper-search-sources`, `verbatim-quote-matching` (→ `research/`, literature scout);
+  `typed-failure-causes`, `hypothesis-sheet-vs-build`, `ideas-are-ledger-trials`, `reviewer-adds-no-trials`
+  (→ `research/` or `pipeline/`, the idea/autopilot memory).
+- `perf/window-waits-off-gui-thread` is a Qt/window fact (→ `ui/`).
+- `eng/` holds study facts: `monkeyexcess-needs-oos-partner`, `population-signs-a-different-config-than-strategy`,
+  `stale-signs-with-the-runners-overrides`, `decay-needs-build-and-retest`, `isoos-filters-read-the-harvest`,
+  `step25-reads-a-harvest-of-the-traded-version`, `studies-reread-build-yaml` (→ `pipeline/` or `research/`).
+Decision needed: move them (then rerun `python3 tools/knowhowmap.py` and fix every `see:`), or declare the domains broader.
+Also left: `locations/xauusd-corpus` (🤔, 231 strategies, old export) and `export/exits-and-m1-library` (🔬, 757 strategies)
+describe two XAUUSD corpora; neither can be recomputed for the first (OPEN §12) — the owner may retire the older card.
+
+**2026-10-14.** 2026-10-14: moved with git mv, indexes regenerated, citations fixed: the four literature cards, hypothesis-sheet-vs-build, ideas-are-ledger-trials, reviewer-adds-no-trials to research/; typed-failure-causes to pipeline/; window-waits-off-gui-thread to ui/. Left: the seven eng/ study cards (monkeyexcess-needs-oos-partner, population-signs-a-different-config-than-strategy, stale-signs-with-the-runners-overrides, decay-needs-build-and-retest, isoos-filters-read-the-harvest, step25-reads-a-harvest-of-the-traded-version, studies-reread-build-yaml) need the owner to pick the target domain, and the xauusd-corpus vs exits-and-m1-library contradiction.
+
+**Closed 2026-10-15.** Owner decision 2026-10-15 (B): the 7 eng/ cards (monkeyexcess-needs-oos-partner, population-signs-a-different-config-than-strategy, stale-signs-with-the-runners-overrides, decay-needs-build-and-retest, isoos-filters-read-the-harvest, step25-reads-a-harvest-of-the-traded-version, studies-reread-build-yaml) stay in knowhow/eng/; the rest of the moves were done 2026-10-14.
+
 ## 103. 🟢 `sqx.inspect.instruments` crashes on an empty `commissions` attribute — found by the audit, 2026-10-05
 
 `python3 -m sqx.inspect.instruments` dies with `ElementTree.ParseError: no element found` in `commission()` (`sqx/inspect/instruments.py:28`). Master projects `Builder` and `Test_Calib_NIKKEI225_M30_volatilidadL_ab8_r1` have an `InstrumentInfo` whose `commissions` is empty. Until it tolerates an empty string, the audit cannot compare `assets/*.yaml` `sqx_default` against SQX. Fix: return `""` for an empty `raw`. Found, not fixed (auditor changes no code).

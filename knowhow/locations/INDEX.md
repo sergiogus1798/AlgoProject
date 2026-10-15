@@ -11,4 +11,4 @@
 - `where-things-live` — Where are strategy and template stores outside the installs, and which tools inspect them?
 - `which-reports-pair-by-identity` — Which studies and reports resolve strategy identity back to a kept .sqx, and which may not?
 - `xau-isoos-example-project` — What is `XAU_ISOOS_ejemplo` on the custodian and how are its databanks laid out?
-- `xauusd-corpus` — What exits, direction and stops does the XAUUSD corpus have?
+- `xauusd-corpus` — What exits, direction and stops did the OLD historical 231-strategy XAUUSD corpus have (the current corpus is export/exits-and-m1-library)?
