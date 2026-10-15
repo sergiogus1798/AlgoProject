@@ -58,3 +58,26 @@ def test_early_gates() -> None:
     assert buildrules.early_gates("Test_zz", "custodian", None, True, "M5")
     assert not buildrules.early_gates("Test_zz", "custodian", None, True, "H1")
     assert not buildrules.early_gates("Test_zz", "custodian", None, False, "M5")
+
+
+def test_off_segment_refuses_a_window_beyond_its_segment() -> None:
+    """A main-feed range inside its segment passes; one reaching past it is named."""
+    from core.assetdata import load, window
+    from sqx.projects.resources import off_segment
+
+    data = load("XAUUSD")
+    lo, hi = window(data, "oos1")
+
+    def cfx(a: int, b: int) -> dict[str, bytes]:
+        """One staged task with a main-feed range."""
+        return {
+            "T.xml": f'<Symbol name="{data["sqx_symbol"]}" dateFrom="{a}" dateTo="{b}"></Symbol>'.encode()
+        }
+
+    r = {
+        "project_asset": "XAUUSD",
+        "feed": data["sqx_symbol"],
+        "segments": {"T.xml": "oos1"},
+    }
+    assert off_segment(r, cfx(lo, hi)) == []
+    assert "fuera de oos1" in off_segment(r, cfx(lo - 1, hi))[0]

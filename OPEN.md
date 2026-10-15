@@ -305,6 +305,8 @@ Decisión pendiente del dueño. 🔬 En `Test_NIKKEI225_M30_simpleL_fin`, `_val`
 
 **Contestado 2026-10-15 (encargo 72, L3): (a) ya, (b) cuando aparezca la primera plantilla de dos gráficos; falta aplicar (a).** (a) ningún gate comprueba que la ventana de cada tarea coincida con su segmento (`registryxml.clip` ya imprime lo que recorta); (b) ningún gate rechaza una plantilla con un segundo gráfico.
 
+**2026-10-15.** 2026-10-16: (a) hecho — sqx/projects/resources.py::refuse_off_segment, llamado desde builder.build tras configure y antes de wf.finish; (b) espera a la primera plantilla de dos gráficos
+
 ## 120. 🟠 El repreciador no reproduce a SQX en el oro (oos1)
 
 Hechos en `knowhow/research/monkey-reprice-audit.md` y `knowhow/research/price-rounding-per-asset.md`. `price_rounding` por activo está hecho (encargo 70, p70e PASA); el oro en oos1 sigue con descuadre 0,11-0,18 (> 0,01) y el 18.5 salta sus madres (`pipeline/autopilot/blind.py`, `skipped`); el resto de −0,043 USD/operación es dispersión sub-tick de las barras de SQX, no reproducible (aceptado). Sin verificar contra SQX: stop-loss corto, salidas por profit target, comisión PercentageBased. El `variant_trades.parquet` de 10k de USDJPY es anterior al commit c443f1d y mezcla 16 símbolos bajo `Main`: regenerar. 22 fichas sin `price_rounding` (el repreciador se niega) hasta medirlas (P1 A).

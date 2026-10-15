@@ -37,7 +37,12 @@ from sqx.projects.patch import (
     sync_databanks,
 )
 from sqx.projects.registryxml import refresh_all
-from sqx.projects.resources import borrow_symbol, main_feed, refuse
+from sqx.projects.resources import (
+    borrow_symbol,
+    main_feed,
+    refuse,
+    refuse_off_segment,
+)
 from sqx.projects import workflow as wf
 from xml.etree import ElementTree
 from core.xmlget import el, hit
@@ -204,6 +209,12 @@ def build(
 
         costs = configure(staged, symbol, segment, timeframe)
         accepted = rankings.apply(staged, symbol, timeframe, acceptance)
+        mid = {
+            "project_asset": symbol,
+            "feed": load(symbol)["sqx_symbol"],
+            "segments": {n: seg for n, (seg, _) in costs.items()},
+        }
+        refuse_off_segment(mid, staged)
         if workflow:
             wf.finish(staged, symbol)
         with zipfile.ZipFile(staged) as z:

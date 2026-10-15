@@ -5,7 +5,9 @@ import re
 import zipfile
 from pathlib import Path
 
+from core.assetdata import load, window
 from core.symbols import current
+from sqx.projects import cfxio
 from sqx.projects import registryxml
 from sqx.projects.crosschecks import mc_manipulation_on
 from core.xmlget import rx, hit
@@ -151,6 +153,50 @@ def borrow_symbol(
             members[member].decode("utf-8"), donor_feed, blocks
         ).encode("utf-8")
     return donor_feed
+
+
+def off_segment(result: dict, final: dict[str, bytes]) -> list[str]:
+    """Tasks whose main-feed <Symbol> range falls outside the window of their segment.
+
+    Args:
+        result: `builder.build`'s result: `segments` (task member to segment or `a..b` span),
+            `feed` (the SQX symbol) and `project_asset` (the asset name).
+        final: The staged .cfx contents by member name.
+
+    Returns:
+        One line per offending task; empty when every window sits inside its segment.
+        A range cut shorter by `registryxml.clip` is inside; one reaching beyond is not.
+    """
+    data = load(result["project_asset"])
+    bad = []
+    for member, seg in result["segments"].items():
+        first, _, last = seg.partition("..")
+        lo, hi = window(data, first)[0], window(data, last or first)[1]
+        for m in SYMBOL.finditer(final[member].decode("utf-8")):
+            if m.group(1) != result["feed"]:
+                continue
+            a, b = (
+                int(rx(rf'{k}="(\d+)"', m.group(0)).group(1))
+                for k in ("dateFrom", "dateTo")
+            )
+            if a < lo or b > hi:
+                bad.append(f"{member}: {a}..{b} fuera de {seg} ({lo}..{hi})")
+    return bad
+
+
+def refuse_off_segment(result: dict, staged: Path) -> None:
+    """Stop when a task's data window is not its segment's (OPEN.md 118a); run before `wf.finish`.
+
+    Raises:
+        SystemExit: Naming each task; `wf.finish` later widens the CrossTF task on purpose.
+    """
+    off = off_segment(result, cfxio.members(staged))
+    if off:
+        raise SystemExit(
+            "la ventana de datos de una tarea no coincide con su tramo: "
+            + "; ".join(off)
+            + ". No se instala nada."
+        )
 
 
 def refuse(
