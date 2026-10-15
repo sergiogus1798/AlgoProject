@@ -331,3 +331,4 @@ Origen: encargo 68 F22, 2026-10-14. 🔬 Cada punto es una decisión del dueño 
 ## 123. 🟠 Una superviviente de gorilla no llega al paso 26 de leaseWeb (falta la verificación real)
 
 Hecho 2026-10-15 (encargo 72 D-1 = A): `bin/remote.sh gorilla collect <PROYECTO> [--dry-run]` (`core/store/collect.py`, `tests/test_gorilla_collect.py`, cap. 109). PENDIENTE: la verificación real, que necesita la primera superviviente guardada en gorilla; y que la finalista del paso 26 apunte a `store/<celda>_gorilla/<carpeta>/strategy.sqx` (`mt5/verify/autopilot.py:36-38` pide el `.sqx` en la ruta absoluta de la finalista). No trae `structural/<P>/mothers` ni `autopilot/<P>/<run>/` (fuera de D-1).
+
