@@ -225,6 +225,8 @@ or report line prints it.
 
 **2026-10-15.** Revisado 2026-10-15 (encargo 72 L4): la premisa es falsa. `trials.independent` no tiene llamador fuera de tests (`tests/test_inference_vs_jsharpe.py`); `cscv.json` no escribe `trials` ni el CSCV importa `core.surface.trials` (se perdió en el rework de CSCV). No hay recuento que acompañar. Para mostrar la silueta hay que cablear `independent` en `studies/optimisation/cscv` (panel IS, `k_max`, contrato y pestaña) o borrarla (regla 21): decisión de diseño, no mecánica.
 
+**2026-10-15.** Dueño (encargo 72, L4): opción A — conectar `independent` al CSCV para mostrar la silueta junto al recuento, en un encargo aparte (diseño: panel, `k_max`, contrato y pestaña). No se borra.
+
 ## 100. 🟠 Literature scout — owner decisions pending, entries without a condition
 
 `studies/research/literature/`, `/literature-scout`, `bin/daily-literature-scout.sh` (cron `0 7 * * *`;
