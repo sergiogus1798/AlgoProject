@@ -161,7 +161,12 @@ def ready(project: str, role: str) -> None:
     """
     top = preflight.WORKERS[role]["path"]
     for _ in range(READY_TRIES):
-        answer = worker.call(f"-project action=status name={project}", role)
+        try:
+            answer = worker.call(f"-project action=status name={project}", role)
+        except (
+            OSError
+        ):  # port not open yet: step 26 died on a refused connection 2026-10-16
+            answer = "not ready"
         if "not ready" not in answer and not syncing(top):
             return
         time.sleep(POLL)

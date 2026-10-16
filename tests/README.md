@@ -10,6 +10,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | file | what it protects | run it |
 |---|---|---|
 | `archive_planted.py` | A one-strategy archive version planted in a temporary data root: shared by the portfolio tests, not a test itself. | — |
+| `conftest.py` | Marks tests by what they need, so `pytest -m "not ui and not sqx and not slow"` filters a file. | — |
 | `funding_planted.py` | A prop-firm catalogue planted in a temporary data root: shared by the funded tests, not a test itself. | — |
 | `harvest_planted.py` | A project's harvests, exports, reports and variant batch planted in a temporary data root: shared by the `test_ui_*` and `test_identity` tests, not a test itself. | — |
 | `live_only.py` | For a test that exists to check THIS machine's live data (its harvest, its archive): not a test itself. | — |

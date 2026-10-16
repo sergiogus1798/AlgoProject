@@ -27,9 +27,9 @@ instrument:
 # Cómo rellena SQX las órdenes (`tick`: en la rejilla del tick; `none`: open + coste sin redondear):
 # medido en un lote de variantes, sin valor el repreciador se niega a repreciar el activo (encargo 70).
 price_rounding:
-  use: none
-  why: 'encargo 70, 2026-10-15: 19 madres de 6 proyectos Test_XAUUSD_H1_ruptura_* (perf66, wf4s, wtc1-3, wtp1): descuadre con SQX build 0,0-0,3 % (con redondeo 0,0-25 %) y oos1 7-22 % (con redondeo 28-77 %); sesgo por operación en build -0,24 -> +0,02 USD. Las entradas de SQX caen en los dos ticks que rodean al coste (en oos1 .23 el 86 % y .22 el 14 %, media = el coste declarado). Resto en oos1: -0,043 USD por operación (la salida cae .0587 de media frente a .0593 declarado, y la media por año oscila .0573-.0596: dispersión sub-tick de las barras de SQX que las guardadas no llevan), sin más causa.'
-  measured: 2026-10-15
+  use: tick
+  why: '2026-10-16, R3e A: con las barras del .dat a 3 decimales (e9cf09e), rounding.measure sobre 41 variantes de Strategy_16.12.283 (M15): tick 0 % en build, oos1 y oos2; none 0/0/56 %. El none anterior salía de la librería redondeada a 2 decimales'
+  measured: 2026-10-16
 
 # Lo que se aplica. `use: null` = sin decidir, y eso BLOQUEA la autoría (regla dura 5).
 # `sqx_now` es lo que el maestro lleva hoy — OJO, no siempre en la misma unidad que `use`.

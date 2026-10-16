@@ -11,9 +11,9 @@ instrument:
   point_value: 0.69395
   min_distance: 0
 price_rounding:
-  use: none
-  why: '2026-10-15, engines.market.rounding.measure over Retest_Markets_-_Family trades of 127 NIKKEI225/DAX40/USATEC H1 mothers (raw/Test_*/Retest_Markets_-_Family), segment oos1 over 2013-2023 (H1, n=127): off-share tick 20.47 % vs none 2.36 %'
-  measured: 2026-10-15
+  use: tick
+  why: '2026-10-16, R3e A, INFERIDO sin medir (no hay tandas de AUS200 aquí): su none salió de la librería a 2 decimales, y con las barras del .dat a 3 los otros tres activos que daban none (XAUUSD 28 tandas, DAX40, USA500) dan tick 0 %. Medirlo con la primera cosecha de AUS200'
+  measured: 2026-10-16
 costs:
   spread_is:
     use: 80.1
