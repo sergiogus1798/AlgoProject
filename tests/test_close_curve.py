@@ -93,6 +93,37 @@ def tolerance_failures() -> list[str]:
     return []
 
 
+def swap_failures() -> list[str]:
+    """`measured` against same-day trades carrying a rollover swap, small and large."""
+    failures: list[str] = []
+    rng = np.random.default_rng(0)
+    move = rng.uniform(-5, 5, 60)
+    swapped = pd.DataFrame(
+        {
+            "Type": "Buy",
+            "Open time": pd.Timestamp("2020-01-02 01:00"),
+            "Close time": pd.Timestamp("2020-01-02 09:00"),
+            "Open price": 100.0,
+            "Close price": 100.0 + move,
+            "Size": 1.0,
+            "Profit/Loss": VALUE * move - PER_LOT,
+        }
+    )
+    swapped.loc[:2, "Profit/Loss"] -= (
+        40.0  # a rollover inside the day: swap, not commission
+    )
+    value2, commission2 = closecurve.measured(swapped)
+    if not np.isclose(value2, VALUE) or not np.isclose(commission2["value"], PER_LOT):
+        failures.append(f"el swap arrastra el ajuste: {value2} {commission2}")
+    swapped.loc[:5, "Profit/Loss"] -= (
+        600.0  # XAUUSD M15: swaps big enough to bias every residual past 0.5
+    )
+    value3, commission3 = closecurve.measured(swapped)
+    if not np.isclose(value3, VALUE) or not np.isclose(commission3["value"], PER_LOT):
+        failures.append(f"swaps grandes vacían el recorte: {value3} {commission3}")
+    return failures
+
+
 def main() -> None:
     """Run every check and exit non-zero on any failure."""
     failures = []
@@ -129,31 +160,7 @@ def main() -> None:
     value, commission = closecurve.measured(TRADES)
     if not np.isclose(value, VALUE) or not np.isclose(commission["value"], PER_LOT):
         failures.append(f"medido de las operaciones: {value} {commission}")
-    rng = np.random.default_rng(0)
-    move = rng.uniform(-5, 5, 60)
-    swapped = pd.DataFrame(
-        {
-            "Type": "Buy",
-            "Open time": pd.Timestamp("2020-01-02 01:00"),
-            "Close time": pd.Timestamp("2020-01-02 09:00"),
-            "Open price": 100.0,
-            "Close price": 100.0 + move,
-            "Size": 1.0,
-            "Profit/Loss": VALUE * move - PER_LOT,
-        }
-    )
-    swapped.loc[:2, "Profit/Loss"] -= (
-        40.0  # a rollover inside the day: swap, not commission
-    )
-    value2, commission2 = closecurve.measured(swapped)
-    if not np.isclose(value2, VALUE) or not np.isclose(commission2["value"], PER_LOT):
-        failures.append(f"el swap arrastra el ajuste: {value2} {commission2}")
-    swapped.loc[:5, "Profit/Loss"] -= (
-        600.0  # XAUUSD M15: swaps big enough to bias every residual past 0.5
-    )
-    value3, commission3 = closecurve.measured(swapped)
-    if not np.isclose(value3, VALUE) or not np.isclose(commission3["value"], PER_LOT):
-        failures.append(f"swaps grandes vacían el recorte: {value3} {commission3}")
+    failures += swap_failures()
     profit, low = closecurve.panel(TRADES, BARS, value, commission)
     if not np.allclose(profit, PROFIT) or not np.allclose(low.fillna(LOW), LOW):
         failures.append(f"panel:\n{profit}\n{low}")

@@ -290,7 +290,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `portfolio/common/construct/contract/words.py` | 50 | The Spanish words of the portfolio result: tab titles, the notes each block opens with. | — | — |
 | `portfolio/common/construct/equity/blocks.py` | 95 | M5 floating-equity blocks per member, and a combination's joint day extremes (contract M). | — | numpy, pandas |
 | `portfolio/common/construct/equity/clock.py` | 79 | Naive feed-clock times to UTC, and the day a UTC instant belongs to in any server clock. | — | pandas |
-| `portfolio/common/construct/equity/closecurve.py` | 90 | A population's close-to-close daily P&L on its feed's own days, rebuilt from trades and M1. | core | numpy, pandas |
+| `portfolio/common/construct/equity/closecurve.py` | 92 | A population's close-to-close daily P&L on its feed's own days, rebuilt from trades and M1. | core | numpy, pandas |
 | `portfolio/common/construct/equity/days.py` | 163 | One row per server day from a minute path, and the daily P&L it implies (contract D). | — | numpy, pandas |
 | `portfolio/common/construct/equity/excursions.py` | 95 | Per-trade MAE/MFE rebuilt from M1 wicks, and the check that licenses the rebuild (§14.2). | — | numpy, pandas |
 | `portfolio/common/construct/equity/matrix.py` | 55 | Per-strategy daily P&L series stacked into day and month matrices, and a calendar segment slice. | — | pandas |
@@ -976,7 +976,7 @@ Regenerate after touching code; `tools/checks.py` fails when this file is stale.
 | `tests/test_chain.py` | 280 | «Correr workflow» and the per-step ▶ SQX on a scratch install: the stop rule, one start per step. | core, sqx, tests, ui | fastapi |
 | `tests/test_chain_cancel.py` | 144 | Cancelling a launcher: its worker stopped by itself, or by the daemon only when it started it. | core, tests, ui | — |
 | `tests/test_charts.py` | 150 | The extra chart of a multi-timeframe template: inserted in all three places, once. | sqx | — |
-| `tests/test_close_curve.py` | 177 | The close-to-close rebuild on a hand-computed case: commission from the entry, and the joint study's panel. | portfolio, studies | numpy, pandas |
+| `tests/test_close_curve.py` | 190 | The close-to-close rebuild on a hand-computed case: commission from the entry, and the joint study's panel. | portfolio, studies | numpy, pandas |
 | `tests/test_cloud_map.py` | 156 | Known-answer tests of the parameter map: a planted quadratic is legible with the right ranking, noise is not. | studies | numpy, pandas, pytest |
 | `tests/test_columnhelp.py` | 276 | ui.text.columnhelp: every column the databank tables show today has its «?» sentence, every | ui | — |
 | `tests/test_commission_segments.py` | 142 | Known-answer test for the commission per segment: an asset with commission confirmed prices | core, sqx | — |
