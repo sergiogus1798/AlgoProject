@@ -4,7 +4,7 @@ kw: MetaTrader 5 on Linux, Wine, mt5linux.sh official install, MetaTrader5 pytho
 tag: 🔬  date: 2026-09-29  see: export/feed-clock-timezones, mt5/metaeditor-compile-under-wine
 ---
 # MT5 runs under WineHQ staging; SQX's EAs need SQX's Sq* indicators; the Python API is Windows-only
-- Official route: MetaQuotes' `mt5linux.sh` = WineHQ `winehq-staging` (root) + prefix set to win11, WebView2, `mt5setup.exe`. Ours: `bin/mt5-wine-system.sh` + `bin/mt5-install.sh`.
+- Official route: MetaQuotes' mt5linux.sh = WineHQ `winehq-staging` (root) + prefix set to win11, WebView2, `mt5setup.exe`. Ours: `bin/mt5-wine-system.sh` + `bin/mt5-install.sh`.
 - An SQX MQL5 export calls `Sq*` custom indicators: copy `<SQX>/custom_indicators/MetaTrader5/{Indicators,Include}` into `MQL5/` and compile, or the EA fails — compiling them under Wine has its own traps, `mt5/metaeditor-compile-under-wine`.
 - The `MetaTrader5` pip package ships only Windows wheels → a Windows Python inside the prefix (`mt5/winside/`).
 - It does not drive the Strategy Tester: that is `terminal64.exe /config:<ini>` with `ShutdownTerminal=1`, report in the data folder.

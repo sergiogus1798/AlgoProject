@@ -3,7 +3,7 @@
 The project workspace of encargo 22 §3-§5: the four PROYECTO zones of the sidebar. Proyecto and
 Databanks were one zone until the owner split them (2026-09-28): rail, funnel and databank panel
 together did not fit a 1080-px screen. Every widget
-reads the daemon; the phase-1 mock on invented data (`mock.py`, `fake.py`) and its desktop
+reads the daemon; the phase-1 mock on invented data (mock.py, fake.py) and its desktop
 shortcut were retired by F13 of plan 24 (2026-09-28): the owner wants only the real window on
 this machine.
 
@@ -18,7 +18,7 @@ Gallery (gallery) ──click a card──▶ WorkspaceZone (zone)            Pr
          every widget ─▶ the daemon · tabs for the rounded-box bars · texts for the families' lines
 ```
 
-**Imports from:** `ui.desktop.theme`, `ui.text` (`numbers`, `glossary`), `selection`, `client`, `blocks` (the histogram), `studypage` (the ficha's family tabs) · **Consumed by:** `ui/desktop/shell.py`, `projectflow.py`, `portfolios/imported.py`
+**Imports from:** `ui.desktop.theme`, `ui.text` (`numbers`, `glossary`), `selection`, `client`, `blocks` (the histogram), `studypage` (the ficha's family tabs) · **Consumed by:** `ui/desktop/shell.py`, `projectflow.py`, `ui/desktop/portfolios/imported.py`
 
 | file | what it does | run it | in → out |
 |---|---|---|---|

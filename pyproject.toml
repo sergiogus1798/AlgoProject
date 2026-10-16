@@ -10,3 +10,11 @@ typeCheckingMode = "basic"
 # Packages whose error count is ratcheted (tools/ratchet.py); a package joins when its F9 migration is done.
 include = ["core", "engines", "ledger", "sqx", "perf", "mt5", "tools", "pipeline", "portfolio", "ui", "studies"]
 exclude = ["scratch", "tools/sqx-lab", "**/__pycache__"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "ui: imports PySide6 (marked by tests/conftest.py)",
+    "sqx: needs a real SQX install or its data (files using tests/live_only.py, marked by tests/conftest.py)",
+    "slow: long-running; mark by hand with @pytest.mark.slow",
+]

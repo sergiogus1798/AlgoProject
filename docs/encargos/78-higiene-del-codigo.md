@@ -8,9 +8,9 @@
 | B | Un escritor atómico, `core/fsio.atomic_write` | pendiente |
 | C | Un `core/proc.run` con timeout; un solo cliente de worker SQX | pendiente |
 | D | `bin/lib-agent-alert.sh` recoge lo repetido de los scripts | pendiente |
-| E | Tests: marcas, `conftest.py`, `checks.py --fast`, hook del mapa | pendiente |
+| E | Tests: marcas, `conftest.py`, `checks.py --fast`, hook del mapa | hecho 2026-10-16 salvo: helpers duplicados de `conftest.py` (ninguno es mover tal cual: los cuerpos difieren), marca `slow` sin tests marcados, `pytest` en un solo proceso no corre (los `*_planted` exigen un proceso por fichero: usar `tools/audit_tests.py`), y lo de las barras (docstrings, `sync_bars`, README de `core`, ratchet `pyright.perf`) que es de otra sesión |
 | F | Contrato de estudios: `verdict.csv` y `config_hash` donde faltan | pendiente |
-| G | Rutas muertas en la documentación; Flask; `translate` | pendiente |
+| G | Rutas muertas en la documentación; Flask; `translate` | hecho 2026-10-16 salvo `mt5/README.md`, `ui/daemon/README.md` (`studyapi.py`, `saved.yaml`) y `bin/README.md` (`mt5linux.sh`, es un script externo de MetaQuotes), fuera de alcance de esta sesión |
 
 ## Tu oficio
 
@@ -74,7 +74,7 @@ mientras tengan cambios sin commitear de otra sesión.
 ## Parte E — Tests y checks
 
 - `pyproject.toml`: `testpaths`, y las marcas `ui` (PySide6), `sqx` (necesita una instalación) y
-  `slow`; `pytest -m "not ui and not sqx and not slow"` es el subconjunto rápido.
+  `slow`; `pytest -m "not ui and not sqx and not slow"` filtra dentro de un fichero; la batería entera va por `tools/audit_tests.py` (los `*_planted` piden un proceso por fichero, 2026-10-16).
 - `tests/conftest.py` con los helpers que hoy se copian (`_sqx`, `_days`, `_trades`, `_stage`, `_rows`).
 - `tools/checks.py --fast` sin pyright ni ruff sobre todo el árbol; hoy tarda 68 s.
 - `.claude/hooks/stop_checks.py` falla si se añadieron o borraron `.py` y `PROJECT_MAP.md` no se
@@ -111,7 +111,7 @@ commitear de otra sesión; `ui/daemon/` hasta que el 77 haya movido lo suyo.
 ## Objetivo — un comando
 
 ```bash
-python3 -m pytest -m "not ui and not sqx and not slow" -q && \
+python3 tools/audit_tests.py --changed && \
 ! test -e studies/data/spread/fundedswap.py && ! test -e pipeline/ledger/progress.py && \
 python3 tools/depmap.py && python3 tools/checks.py
 ```

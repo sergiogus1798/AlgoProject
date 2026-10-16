@@ -33,11 +33,11 @@ The PROYECTO group was six zones, three since F13 of plan 24 (2026-09-28), and f
 same day's split of Proyecto into Proyecto (the workflow) and Databanks (the databank panel). The five older
 zones — the step rail, the strategies × studies matrix, the population's study page, the first
 strategies zone and the step-8 gate zone — were retired with their files (`studies.py`,
-`strategytable.py`, `resultspanel.py`, `gate.py`, `scorecard.py`, `gatedetail.py`,
-`equitychart.py`, `funnel.py`, `soon.py`, `matrix/`, `workflow/`, and `generation.py`, which F11
+strategytable.py, resultspanel.py, gate.py, scorecard.py, gatedetail.py,
+equitychart.py, funnel.py, soon.py, `matrix/`, `workflow/`, and generation.py, which F11
 folded into En marcha); their content lives in Proyecto
 (the rail, the funnel), Databanks (the databank panel with every study's columns) and Estrategia (the ficha
-and the study tabs). The mock on invented data (`workspace/mock.py`, `fake.py`) went with them.
+and the study tabs). The mock on invented data (workspace/mock.py, fake.py) went with them.
 
 | file | what it does | run it | in → out |
 |---|---|---|---|

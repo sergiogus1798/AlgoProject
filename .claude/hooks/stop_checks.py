@@ -45,6 +45,31 @@ def run(cmd: list[str]) -> str:
     )
 
 
+def stale_map(files: list[str]) -> str:
+    """'' unless this session added a .py and PROJECT_MAP.md was not regenerated after it (rule 22).
+
+    Added = a file this session edited that git neither tracks nor ignores (scratch/ is ignored and
+    the map skips it). Deletions are not counted: in the shared tree a missing file may be another
+    session's. Regenerated = the map is newer than every added file.
+    """
+    new = [
+        f
+        for f in files
+        if subprocess.run(
+            ["git", "ls-files", "--others", "--exclude-standard", f],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    ]
+    if not new:
+        return ""
+    pmap = ROOT / "PROJECT_MAP.md"
+    if all(pmap.stat().st_mtime >= Path(f).stat().st_mtime for f in new):
+        return ""
+    return "PROJECT_MAP.md sin regenerar (regla 22): graphify update . && python3 tools/projectmap.py"
+
+
 def main() -> int:
     """Exit 0 always; on a red check print the block decision."""
     try:
@@ -55,6 +80,8 @@ def main() -> int:
         if not files:
             return 0
         failures = []
+        if msg := stale_map(files):
+            failures.append(msg)
         for name, cmd in (
             (
                 "ruff",

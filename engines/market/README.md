@@ -15,4 +15,4 @@ filled at — reconciled against SQX's own P/L before anything downstream is tru
 | `replay/` | Each trade walked again from a shifted entry until its recomputed ATR stop or its scheduled exit (tier 2 of the delay; encargo 56 F3) | imported | stop harvest + delay → exits |
 | `feed/` | Whether the feed itself is sound, minute by minute: the trailing hour-of-week scale, spikes and their reversion, frozen runs, gaps in a session (encargo 17) | imported | bars → anomalies |
 
-The cross-market study imports this package (`studies/transfer/crossmarket/`); it has no pricing module of its own any more (`mechanics/pricing.py` no longer exists, checked 2026-10-11).
+The cross-market study imports this package (`studies/transfer/crossmarket/`); it has no pricing module of its own any more (mechanics/pricing.py no longer exists, checked 2026-10-11).

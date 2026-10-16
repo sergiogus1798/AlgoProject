@@ -306,7 +306,7 @@ def workflow_drift(files: list[Path]) -> list[str]:
 
 
 def main() -> None:
-    """Run every check and exit non-zero if anything fails."""
+    """Run every check and exit non-zero if anything fails; `--fast` skips lint, format and the pyright ratchet."""
     files = depmap.py_files()
     checks = [
         ("file length", too_long),
@@ -327,6 +327,8 @@ def main() -> None:
         ("layering", bad_layering),
         ("ratchet", ratchet.check),
     ]
+    if "--fast" in sys.argv:
+        checks = [c for c in checks if c[0] not in ("lint", "format", "ratchet")]
     total = 0
     for name, check in checks:
         problems = check(files)

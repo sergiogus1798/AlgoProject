@@ -4,7 +4,7 @@ Views only; every figure comes from the daemon (`/api/jobs`, `/api/ops/sqx`, `/a
 `/api/progress`, `/api/ledger`). Labels through `glossary.label`, numbers through `numbers.num`.
 
 **Imports from:** `ui/desktop/client.py`, `theme.py`, `glossary.py`, `numbers.py`,
-`durations.py`, `resultspanel.py`, `selection.py` · **Consumed by:** `ui/desktop/shell.py`
+`durations.py`, `selection.py` · **Consumed by:** `ui/desktop/shell.py`
 
 | file | what it does | run it | in → out |
 |---|---|---|---|
