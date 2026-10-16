@@ -16,7 +16,7 @@ feed because bars are a fact about the market, not about a run. See `studies/CLA
 | `export_wfm.py` | Export everything a Walk-Forward Matrix cross-check stored: cells, steps, parameters, trades. Parquet. | `python3 -m sqx.export.export_wfm --project XAUUSD --databank WFM` |
 | `membank.py` | Whole databanks written from a live session's memory by the AlgoBank snippet, one `.abk` each. | imported by the memory exports |
 | `spp_table.py` | The SPP permutation table: one row per permutation, streamed to Parquet a strategy at a time. | imported by `export_spp` |
-| `sync_bars.py` | Keep the M1 bar library in step with SQX: pull what is missing, refresh what SQX has grown. | `python3 -m sqx.export.sync_bars --check` |
+| `sync_bars.py` | Keep the M1 bar library in step with SQX: decode its M1 .dat files for what is missing or has grown. | `python3 -m sqx.export.sync_bars --check` |
 
 `export_spp.py` and `archive_logs.py` are the exceptions to the paragraph below: they only read files, drive no instance,
 and are safe while the GUI is up. SQX keeps 14 days of logs and deletes the rest on start, so this has

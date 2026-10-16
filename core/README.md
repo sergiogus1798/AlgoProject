@@ -15,13 +15,12 @@ live deeper add the root to `sys.path` in their first lines.
 | `assetyaml.py` | The assets/ YAML files read and written without losing a comment — the only round-trip here. | file → leaves |
 | `bankfile.py` | Read an `.abk`: one databank as the AlgoBank snippet wrote it from SQX's memory. | `.abk` → dict, frame |
 | `bankframes.py` | An `.abk` loaded by `core.bankfile`, as the strategies' XML, statistics and daily equity. | dict → frame |
-| `bars.py` | Read an OHLC bar file exported by SQX into a frame indexed by bar open time. | CSV → frame |
 | `barstore.py` | The bar library: M1 is the only bar data stored, every other timeframe is resampled from it. | feed, timeframe → frame |
 | `buildfilters.py` | The Build's acceptance filters for one asset and timeframe, resolved from assets/_study.yaml. | asset dict + timeframe + mode → the conditions to write |
 | `cfx.py` | Read a project.cfx without SQX. It is a ZIP holding config.xml plus one XML per task. | project → dicts |
 | `commission.py` | Each broker's own commission as a %, refreshed weekly from the latest close. | brokers, feed → `pct_now` per broker |
 | `datapaths.py` | The data root's secondary trees: template library, pipeline, permutations, logs, backups, caches, spread. | names → `Path` |
-| `exportdrv.py` | What leaves SQX through the worker: trades, the symbol list and bars (metrics are read off the .sqx). | request → files |
+| `exportdrv.py` | What leaves SQX through the worker: trades, and the symbol list (metrics are read off the .sqx). | request → files |
 | `fanout.py` | Independent tasks across processes, the costliest first, each result handed back as it lands. | tasks + costs → results |
 | `fleetpaths.py` | Where the live MT5 fleet's files are, and each account's plan from machine.yaml. | → `Path`, dict |
 | `identities.py` | `sqxfile.identity` of many files across processes, the hashes kept in this process's cache. | files → identities |

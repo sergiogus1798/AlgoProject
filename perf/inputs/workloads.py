@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from core import assetdata, bars, trades
+from core import assetdata, barstore, trades
 from core.paths import DATA, harvest_dir
 from engines.regimes import regime
 from perf.inputs import sample
@@ -60,7 +60,9 @@ def _analyse(path: Path, cfg: dict) -> sample.Workload:
     source = stream.build(
         trades.read(path), path.stem, asset, mc["global"]["risk_per_trade"]
     )
-    run.analyse(source, regime.daily(bars.read(bar_file)), asset, mc)
+    run.analyse(
+        source, regime.daily(barstore.source(cfg["sample"]["bars_feed"])), asset, mc
+    )
     return {
         "scale": int(source["pnl"].size),
         "bytes_in": sample.weight([path, bar_file]),

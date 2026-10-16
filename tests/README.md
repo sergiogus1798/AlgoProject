@@ -47,6 +47,7 @@ A test that fails and is not yet fixed is listed in `ASIDE` there with reason an
 | `test_autopilot_timing.py` | The autopilot's timing table: a nested phase's seconds leave its parent, and SQX stays apart. | — |
 | `test_autopilot_variants_order.py` | Step 16.5's order of work: live, every pilot first on the main market alone; restart, as it was. | — |
 | `test_autopilot_zero.py` | Zero survivors end the autopilot cleanly, a missing fact goes where its rule says, the judge signs its cut in the ledger with criteria.yaml's hash, and `live.wait` fails on an abort line instead of returning it. All on fakes: no SQX, no install, no ledger on disk. | — |
+| `test_barstore_dat.py` | The bar library is filled from SQX's .dat at full precision, and its fingerprint tells sources apart. | — |
 | `test_batches.py` | Known answers for the batch check: a batch against itself, two fair draws, and a shifted funnel. | `python3 tests/test_batches.py` |
 | `test_blindjoint.py` | Step 20 on mothers whose answer is known: noise and random traders name nobody, a planted edge is named, the pieces veto. | — |
 | `test_blindjoint_flat.py` | A mother whose excess is zero up to float noise is flat, not a huge Sharpe (encargo 68 D22). | — |

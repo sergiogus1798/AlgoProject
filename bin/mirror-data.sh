@@ -9,7 +9,7 @@
 # The remote workers pick the new data up by themselves: bin/sqx-worker.sh syncs on every start.
 #
 # After the copy the mirror gets the manual's sources, refreshes its own M1 bar library
-# (sqx.export.sync_bars through bin/remote.sh) and rescans its feeds' quality, so its studies
+# (sqx.export.sync_bars through bin/remote.sh: it decodes the .dat the copy just brought) and rescans its feeds' quality, so its studies
 # read what its SQX reads and step 4 finds every feed scanned.
 #
 # Called by bin/weekly-data-update.sh after a successful update; by hand after adding a feed.

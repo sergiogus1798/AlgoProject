@@ -25,6 +25,7 @@ from numba import njit
 from core.datapaths import bar_file, tick_file
 
 PRICE = 1e6
+BAR_VOLUME = 1e5  # an M1 file stores volume x 10^5; SQX's own export prints it divided (measured on XAUUSD, USDJPY)
 BLOCK = 1000
 CHAIN = 15 + 4
 MINUTE = 60_000
@@ -155,9 +156,9 @@ def _minutes(
 
 @njit(cache=True)
 def _bars(buf: np.ndarray, start: int, capacity: int) -> tuple[np.ndarray, np.ndarray]:
-    """Decode every M1 bar: times in ms and open, high, low, close."""
+    """Decode every M1 bar: times in ms and open, high, low, close, volume."""
     stamp = np.empty(capacity, np.int64)
-    out = np.empty((capacity, 4), np.float64)
+    out = np.empty((capacity, 5), np.float64)
     pos, count, size = start, 0, len(buf)
     prev = np.zeros(6, np.int64)
     while pos + 9 <= size and count < capacity:
@@ -186,6 +187,7 @@ def _bars(buf: np.ndarray, start: int, capacity: int) -> tuple[np.ndarray, np.nd
         stamp[count] = prev[0]
         for k in range(4):
             out[count, k] = prev[k + 1] / PRICE
+        out[count, 4] = prev[5] / BAR_VOLUME
         count += 1
     return stamp[:count], out[:count]
 
@@ -194,7 +196,7 @@ def bars(feed: str) -> pd.DataFrame:
     """One M1 feed of SQX's own history (`<feed>_M1.dat`) as bars, for feeds the bar library lacks.
 
     Returns:
-        Open, High, Low, Close indexed by bar open time on the feed's clock. Matches the
+        Open, High, Low, Close, Volume indexed by bar open time on the feed's clock. Matches the
         library's SQX export on 8,734,187 of 8,734,300 USDJPY bars; the rest are a duplicated
         hour in the file.
     """
@@ -203,7 +205,7 @@ def bars(feed: str) -> pd.DataFrame:
     stamp, rows = _bars(buf, start, len(buf) // 9)
     frame = pd.DataFrame(
         rows,
-        columns=pd.Index(["Open", "High", "Low", "Close"]),
+        columns=pd.Index(["Open", "High", "Low", "Close", "Volume"]),
         index=pd.to_datetime(stamp, unit="ms"),
     )
     frame.index.name = "t"

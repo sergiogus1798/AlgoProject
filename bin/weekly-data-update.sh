@@ -11,8 +11,8 @@
 #   4. python3 -m core.commission --refresh — every confirmed broker's `pct_now` from the
 #      close the update just brought in (owner, 2026-09-29). Runs even if step 2 found nothing
 #      new; does not stop the script on failure, since it only affects step 26/weeklyReconciler.
-#   5. python3 -m sqx.export.sync_bars — the M1 bar library the studies read, brought up to what
-#      step 2 fetched; a failure alerts and does not stop the script.
+#   5. python3 -m sqx.export.sync_bars — the M1 bar library the studies read, decoded from SQX's
+#      own M1 .dat (no SQX start), brought up to what step 2 fetched; a failure alerts and does not stop the script.
 #
 # Cron: Saturday 02:00 (it was 03:00, the audit's minute). bin/monthly-oos2-roll.sh starts five
 # minutes later and waits on this script's lock, so that order must hold.

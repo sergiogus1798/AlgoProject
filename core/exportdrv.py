@@ -1,4 +1,4 @@
-"""What leaves SQX through the worker: trades, the symbol list and bars (metrics are read off the .sqx)."""
+"""What leaves SQX through the worker: trades, and the symbol list (metrics are read off the .sqx)."""
 
 import shutil
 import subprocess
@@ -72,44 +72,6 @@ def symbols() -> str:
         check=True,
         timeout=SYMBOLS_TIMEOUT_S,
     ).stdout
-
-
-def bars(
-    symbol: str, timeframe: str, out_dir: Path, date_from: str, date_to: str
-) -> Path:
-    """Export OHLC bars for one symbol and timeframe.
-
-    Args:
-        symbol: SQX symbol WITHOUT the timeframe suffix, e.g. "XAUUSD_M1".
-            Passing the suffixed name fails with "Symbol ... not found."
-        timeframe: SQX timeframe code, e.g. "M30".
-        out_dir: Directory the CSV is written into.
-        date_from, date_to: Window as YYYY.MM.DD.
-
-    Returns:
-        Path of the renamed CSV. SQX writes "<symbol>-<TF>-No Session.csv"; run one
-        timeframe per invocation, because a second export in the same JVM overwrites it.
-    """
-    worker.require_posix()
-    out_dir.mkdir(parents=True, exist_ok=True)
-    cmd = [
-        "-data",
-        "action=export",
-        f"symbols={symbol}",
-        f"timeframe={timeframe}",
-        f"datefrom={date_from}",
-        f"dateto={date_to}",
-        "format=Custom",
-        "cIncludeHeader=true",
-        "cHeader=Date,Time,Open,High,Low,Close,Volume",
-        "cFormat=[Date:yyyy.MM.dd],[Time:HH:mm],[Open],[High],[Low],[Close],[Volume]",
-        f"outputdir={out_dir}",
-    ]
-    subprocess.run([str(WORKER_SH), "run", *cmd], check=True)
-    written = out_dir / f"{symbol}-{timeframe}-No Session.csv"
-    target = out_dir / f"bars_{timeframe}.csv"
-    written.rename(target)
-    return target
 
 
 def stage(source: Path) -> int:

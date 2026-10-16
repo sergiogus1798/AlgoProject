@@ -7,13 +7,17 @@ from typing import TypedDict, cast
 
 import pandas as pd
 
-from core import bars, manifest
+from core import manifest, tickfile
+from core.datapaths import bar_file
 from core.paths import DATA, bar_cache, bar_source
 from core.symbols import current
 
 # SQX timeframe code to the pandas offset that reproduces it. Verified on XAUUSD 2026-09-21:
 # resampling 7,708,823 M1 bars to M30 gives SQX's own M30 export to the last decimal on all
 # four prices, same index, no bar on either side — see knowhow/export/bars.md.
+# SQX's export rounded XAUUSD to 2 decimals while its own .dat carries 3, so the library is filled
+# from the .dat (`store`); SOURCE tags every fingerprint so caches built from the old export die.
+SOURCE = "dat"
 RULE = {
     "M1": "1min",
     "M5": "5min",
@@ -35,15 +39,18 @@ def fingerprint(frame: pd.DataFrame) -> str:
         frame: The M1 bars, indexed by bar open time.
 
     Returns:
-        Eight hex characters over the bar count and the last bar's time. Those two move
-        whenever SQX's data for the feed moves, which is the only event that has to
-        invalidate a resampled timeframe.
+        Eight hex characters over the source tag, the bar count and the last bar's time.
+        The count and the time move whenever SQX's data for the feed moves, which is the
+        event that invalidates a resampled timeframe; the tag moves when the way the
+        library is filled changes precision under an unchanged count.
     """
-    text = f"{len(frame)}-{frame.index[-1]:%Y%m%d%H%M}"
+    text = f"{SOURCE}-{len(frame)}-{frame.index[-1]:%Y%m%d%H%M}"
     return hashlib.sha1(text.encode("utf-8")).hexdigest()[:8]
 
 
-BarEntry = TypedDict("BarEntry", {"bars": int, "version": str, "from": str, "to": str})
+BarEntry = TypedDict(
+    "BarEntry", {"bars": int, "version": str, "from": str, "to": str, "dat": int}
+)
 """One feed of the bar library, as the last sync wrote it."""
 
 
@@ -51,34 +58,35 @@ def library() -> dict[str, BarEntry]:
     """What the bar library currently holds.
 
     Returns:
-        {feed: {"bars": int, "version": str, "from": str, "to": str}}, as the last sync
+        {feed: {"bars": int, "version": str, "from": str, "to": str, "dat": int}}, as the last sync
         wrote it, and empty before the first sync has run.
     """
     path = DATA / "bars"
     return manifest.read(path)["counts"] if (path / "manifest.json").exists() else {}
 
 
-def store(feed: str, csv: Path) -> BarEntry:
-    """Put one feed's freshly exported M1 CSV into the library as Parquet.
+def store(feed: str) -> BarEntry:
+    """Put one feed's M1 history into the library as Parquet, decoded from SQX's own .dat.
 
     Args:
         feed: SQX symbol without the timeframe suffix.
-        csv: Path of the CSV `-data action=export` wrote.
 
     Returns:
-        The library entry for that feed. The CSV is removed once the Parquet is written:
-        it is three times the size and nothing reads it again.
+        The library entry for that feed, with `dat` the size in bytes of the file it was
+        decoded from. The Parquet is written whole or not at all: readers may be open.
     """
-    frame = bars.read(csv)
+    frame = tickfile.bars(feed)
     out = bar_source(feed)
     out.parent.mkdir(parents=True, exist_ok=True)
-    frame.reset_index(names="t").to_parquet(out, compression="zstd", index=False)
-    csv.unlink()
+    tmp = out.with_name(f".{out.name}.{os.getpid()}.tmp")
+    frame.reset_index(names="t").to_parquet(tmp, compression="zstd", index=False)
+    os.replace(tmp, out)
     return {
         "bars": len(frame),
         "version": fingerprint(frame),
         "from": f"{frame.index[0]:%Y-%m-%d}",
         "to": f"{frame.index[-1]:%Y-%m-%d}",
+        "dat": bar_file(feed).stat().st_size,
     }
 
 
@@ -91,7 +99,7 @@ def source(feed: str, columns: list[str] | None = None) -> pd.DataFrame:
             feed is 7.7 M bars and each column read is 62 MB.
 
     Returns:
-        Columns Open, High, Low, Close, Volume indexed by bar open time, as core.bars.read()
+        Columns Open, High, Low, Close, Volume indexed by bar open time, as tickfile.bars()
         returns them. Prices stay float64: under zstd they compress smaller than float32
         does, so rounding them buys nothing and costs precision.
     """
@@ -108,7 +116,7 @@ def read(feed: str, timeframe: str) -> pd.DataFrame:
         timeframe: A key of RULE, e.g. "M30".
 
     Returns:
-        The same frame core.bars.read() returns. M1 comes straight from the library;
+        The same frame tickfile.bars() returns. M1 comes straight from the library;
         anything else is resampled on first use — 0.4 s for a feed of 7.7 M bars — and
         kept under the M1 fingerprint, so a refreshed feed rebuilds it instead of serving
         bars from the previous data.
