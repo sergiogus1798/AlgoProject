@@ -52,4 +52,5 @@ def _inlined(path: Path) -> str:
     text = sqxfile.rules(path)
     values = dict(VARIABLE.findall(text))
     text = REFERENCE.sub(lambda m: f'variable="false">{values.get(m[1], m[1])}<', text)
-    return sqxfile._hashed(VARIABLE.sub("", text))
+    # Whitespace too: a removed <variable> leaves its indentation behind, the retest's file none.
+    return sqxfile._hashed(re.sub(r">\s+<", "><", VARIABLE.sub("", text)))
