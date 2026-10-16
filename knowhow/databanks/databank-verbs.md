@@ -12,6 +12,11 @@ project it does not resync. Never verify with `count`; verify with `export`. A s
 never wait for «saved» on an already-clean bank. 🔬 2026-10-13, conductor, encargo 66.
 
 ## Evidence
+- 🔬 2026-10-16, custodian, `Trade_EURUSD_M30_cciPercLong` (10,000-strategy build): the build task
+  finished 03:54:54, the hourly auto-sync saved `Results` 03:58:07-03:58:17, Project finished 03:59:18;
+  the forced `synchronizeDatabank` of `Results` then logged nothing and `live.sync` failed at 120 s —
+  twice (00:44 / 00:48 the first time). `live._clean` now accepts a save of any trigger that BEGAN
+  after its task's «Task finished».
 - After `action=load` put 3 in `Retester/VerifA`, `count` printed `Syncing databank(s) from files /
   Loaded 0 strategies to databank VerifA / Records: 0`; reload + `export` returned all 3.
   (`sqx/variants/execute.py`.)

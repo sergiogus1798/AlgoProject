@@ -243,11 +243,50 @@ def _saved(role: str, since: tuple[Path, int], project: str) -> set[str]:
     )
 
 
+def _secs(m: re.Match) -> float:
+    """Seconds of the day of a log line's `HH:MM:SS.mmm` (groups 1-4)."""
+    h, mi, s, ms = (int(g) for g in m.groups()[:4])
+    return h * 3600 + mi * 60 + s + ms / 1000
+
+
+def _clean(
+    role: str, project: str, ended: tuple[tuple[Path, int], dict[str, str]] | None
+) -> set[str]:
+    """The banks a save of ANY trigger mirrored after the task writing them finished, past `run`.
+
+    A sync with nothing pending logs no «saved» line (`knowhow/databanks/databank-verbs.md`): the
+    hourly auto-sync landing between a build's end and the run's end leaves `Results` clean, and
+    its forced sync silent (🔬 2026-10-16, Trade_EURUSD_M30_cciPercLong, two tries lost).
+    # ponytail: seconds of the day; a save past midnight is not seen and the wait stays loud
+    """
+    if not ended:
+        return set()
+    run, titles = ended
+    text, out = tail(role, run), set()
+    stamp = r"^(\d\d):(\d\d):(\d\d)\.(\d{3}) "
+    for bank, title in titles.items():
+        done = [
+            _secs(m)
+            for m in re.finditer(
+                rf"{stamp}.*{re.escape(title)} : Task finished", text, re.M
+            )
+        ]
+        saves = re.finditer(
+            rf"{stamp}.*Databank '{re.escape(project)}/{re.escape(bank)}' saved .* in ([\d.]+) s\. Sync triggered",
+            text,
+            re.M,
+        )
+        if done and any(_secs(m) - float(m.group(5)) >= done[-1] for m in saves):
+            out.add(bank)
+    return out
+
+
 def sync(
     role: str,
     project: str,
     banks: list[str] | None = None,
     force: frozenset[str] | set[str] = frozenset(),
+    ended: tuple[tuple[Path, int], dict[str, str]] | None = None,
 ) -> dict[str, int]:
     """Write memory onto disk (a sync mirrors it) and wait until every file count matches.
 
@@ -256,7 +295,9 @@ def sync(
     ones synced even when files == memory (a count cannot tell): their end is SQX's own «saved …
     API request» line. SystemExit on a name SQX does not hold.
 
-    SQX's saver is serial (🔬 2026-10-13): a queued forced bank sits untouched, so only its line ends it."""
+    SQX's saver is serial (🔬 2026-10-13): a queued forced bank sits untouched, so only its line ends it
+    — or, with `ended` (the log mark before the tasks, and bank → title of the task writing it), a
+    save of any trigger that began after that task finished (`_clean`)."""
     listed = call(role, "databankList", projectName=project)["databanks"]
     mem = {
         d["name"]: d["records"] for d in listed if d["syncType"] != "Auto-sync never"
@@ -287,7 +328,8 @@ def sync(
     ):  # 120 s with no new file: a 15,000-strategy flush takes longer than that
         disk = {b: _files(project, role, b) for b in banks}
         if all(disk[b] == mem[b] for b in banks) and (
-            not forced or forced <= _saved(role, since, project)
+            not forced
+            or forced <= _saved(role, since, project) | _clean(role, project, ended)
         ):
             return mem
         now = (disk, [_newest(project, role, b) for b in forced])

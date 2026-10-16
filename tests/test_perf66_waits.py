@@ -320,3 +320,28 @@ def test_start_refuses_an_install_somebody_holds_and_kills_nothing(
     with pytest.raises(SystemExit, match="ya está arrancado"):
         live.start("custodian")
     assert calls == [] and killed == []
+
+
+def test_forced_bank_saved_by_the_hourly_sync_after_its_task_is_clean(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """An auto-sync that began after the build finished leaves `Results` clean: no API line, still done (🔬 2026-10-16)."""
+    _sync_world(monkeypatch, tmp_path, 2, line=False)
+    log = tmp_path / "log_2026_01_01.log"
+    run = live.mark("custodian")
+    periodic = "Periodical sync of databank Test_X/Results - Auto-sync every 1 hour"
+    log.open("a").write(
+        "03:54:54.289 [t] INFO  c.s.t.project.ProgressEngine - CONSTRUCCION : Task finished\n"
+        "03:58:17.302 [t] INFO  StrategiesSaver - " + SAVED.format("Results", periodic)
+    )
+    monkeypatch.setattr(live.time, "sleep", lambda s: None)
+    ended = {"Results": "CONSTRUCCION"}
+    assert live.sync("custodian", "Test_X", force={"Results"}, ended=(run, ended)) == {
+        "Results": 2
+    }
+    log.write_text(  # the same save began before the build ended: stale, still loud
+        "03:58:17.302 [t] INFO  c.s.t.project.ProgressEngine - CONSTRUCCION : Task finished\n"
+        "03:58:17.400 [t] INFO  StrategiesSaver - " + SAVED.format("Results", periodic)
+    )
+    with pytest.raises(SystemExit, match="sin «saved»"):
+        live.sync("custodian", "Test_X", force={"Results"}, ended=((log, 0), ended))

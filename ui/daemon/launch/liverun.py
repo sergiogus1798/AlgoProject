@@ -253,6 +253,7 @@ def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:
         before = counts(held.parent)
     say(60, f"{', '.join(titles)} lanzada(s)")
     began = time.time()
+    run = live.mark(role)  # where the tasks' «Task finished» lines start
     with phase("sqx", " + ".join(titles)):
         live.run(
             role, project, config
@@ -265,6 +266,7 @@ def execute(pre: dict[str, Any], project: str) -> dict[str, tuple[int, int]]:
             project,
             force={t["output"] for t in chosen if t["output"]}
             | set(pre.get("fill", [])),
+            ended=(run, {t["output"]: t["title"] for t in chosen if t["output"]}),
         )
     # the extra-timeframe tasks are not in `chosen` (preflight runs before the fill creates them)
     outputs = {t["output"] for t in chosen} | {
